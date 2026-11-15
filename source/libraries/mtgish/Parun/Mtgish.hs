@@ -467,7 +467,8 @@ triggeredAbility condition m =
       TriggeredAbility.intervening = Nothing,
       TriggeredAbility.name = Nothing,
       TriggeredAbility.limit = TriggerLimit.Unlimited,
-      TriggeredAbility.functionsFrom = Set.empty
+      TriggeredAbility.functionsFrom = Set.empty,
+      TriggeredAbility.keyword = Nothing
     }
 
 -- | The clauses of an activated ability's "Activate only ..." rider (CR

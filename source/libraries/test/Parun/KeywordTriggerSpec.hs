@@ -98,8 +98,8 @@ poisonousSpec s registry =
         -- rider. The falsifier is a mint that collapses the count to one
         -- ability.
         Spec.it s "CR 702.70b each instance of poisonous is its own ability" $ do
-          Spec.assertEqWith s "poisonous 1 held twice is two abilities" (Keyword.triggeredAbilitiesOf (Map.singleton (Keyword.Type.Poisonous 1) 2)) [Keyword.poisonous 1, Keyword.poisonous 1]
-          Spec.assertEqWith s "and poisonous 3 once is one" (Keyword.triggeredAbilitiesOf (Map.singleton (Keyword.Type.Poisonous 3) 1)) [Keyword.poisonous 3]
+          Spec.assertEqWith s "poisonous 1 held twice is two abilities" (Keyword.triggeredAbilitiesOf (Map.singleton (Keyword.Type.Poisonous 1) 2)) (fmap (Keyword.mintedTriggerBy (Keyword.Type.Poisonous 1)) [Keyword.poisonous 1, Keyword.poisonous 1])
+          Spec.assertEqWith s "and poisonous 3 once is one" (Keyword.triggeredAbilitiesOf (Map.singleton (Keyword.Type.Poisonous 3) 1)) (fmap (Keyword.mintedTriggerBy (Keyword.Type.Poisonous 3)) [Keyword.poisonous 3])
         -- Rule 702.70 is the only keyword in the pool that mints an ability;
         -- every other one is read where it matters (Projection.hasKeyword, the
         -- infect/toxic damage riders), so it must mint nothing here.
@@ -201,8 +201,8 @@ ingestSpec s registry =
         -- reading rather than shadow's redundancy. The falsifier is a mint that
         -- collapses the count to one ability.
         Spec.it s "CR 702.115b each instance of ingest is its own ability" $ do
-          Spec.assertEqWith s "ingest held twice is two abilities" (Keyword.triggeredAbilitiesOf (Map.singleton Keyword.Type.Ingest 2)) [Keyword.ingest, Keyword.ingest]
-          Spec.assertEqWith s "and once is one" (Keyword.triggeredAbilitiesOf (Map.singleton Keyword.Type.Ingest 1)) [Keyword.ingest]
+          Spec.assertEqWith s "ingest held twice is two abilities" (Keyword.triggeredAbilitiesOf (Map.singleton Keyword.Type.Ingest 2)) (fmap (Keyword.mintedTriggerBy Keyword.Type.Ingest) [Keyword.ingest, Keyword.ingest])
+          Spec.assertEqWith s "and once is one" (Keyword.triggeredAbilitiesOf (Map.singleton Keyword.Type.Ingest 1)) (fmap (Keyword.mintedTriggerBy Keyword.Type.Ingest) [Keyword.ingest])
         -- CR 800.1 at three seats, the poisonous spec's shape: rule 702.115a's
         -- "that player" is whoever was DEALT the damage, and at two players that
         -- is indistinguishable from "the attacker's one opponent". The two runs
@@ -266,8 +266,8 @@ annihilatorSpec s registry =
         -- 702.70b makes poisonous'. The falsifier is a mint that collapses the
         -- count to one ability.
         Spec.it s "CR 702.86b each instance of annihilator is its own ability" $ do
-          Spec.assertEqWith s "annihilator 1 held twice is two abilities" (Keyword.triggeredAbilitiesOf (Map.singleton (Keyword.Type.Annihilator 1) 2)) [Keyword.annihilator 1, Keyword.annihilator 1]
-          Spec.assertEqWith s "and annihilator 2 once is one" (Keyword.triggeredAbilitiesOf (Map.singleton (Keyword.Type.Annihilator 2) 1)) [Keyword.annihilator 2]
+          Spec.assertEqWith s "annihilator 1 held twice is two abilities" (Keyword.triggeredAbilitiesOf (Map.singleton (Keyword.Type.Annihilator 1) 2)) (fmap (Keyword.mintedTriggerBy (Keyword.Type.Annihilator 1)) [Keyword.annihilator 1, Keyword.annihilator 1])
+          Spec.assertEqWith s "and annihilator 2 once is one" (Keyword.triggeredAbilitiesOf (Map.singleton (Keyword.Type.Annihilator 2) 1)) (fmap (Keyword.mintedTriggerBy (Keyword.Type.Annihilator 2)) [Keyword.annihilator 2])
         -- CR 508.5 through CR 603.2: the declaration event carries the defending
         -- player, and the scan stamps them under the reserved slot rule 702.86a's
         -- "defending player" reads. The falsifier is an arm that binds the
@@ -308,8 +308,8 @@ battleCrySpec s _ =
     -- instance is not reachable through play (Snake Cult Initiation is what
     -- makes it reachable for poisonous).
     Spec.it s "CR 702.91b each instance of battle cry is its own ability" $ do
-      Spec.assertEqWith s "battle cry held twice is two abilities" (Keyword.triggeredAbilitiesOf (Map.singleton Keyword.Type.BattleCry 2)) [Keyword.battleCry, Keyword.battleCry]
-      Spec.assertEqWith s "and held once is one" (Keyword.triggeredAbilitiesOf (Map.singleton Keyword.Type.BattleCry 1)) [Keyword.battleCry]
+      Spec.assertEqWith s "battle cry held twice is two abilities" (Keyword.triggeredAbilitiesOf (Map.singleton Keyword.Type.BattleCry 2)) (fmap (Keyword.mintedTriggerBy Keyword.Type.BattleCry) [Keyword.battleCry, Keyword.battleCry])
+      Spec.assertEqWith s "and held once is one" (Keyword.triggeredAbilitiesOf (Map.singleton Keyword.Type.BattleCry 1)) (fmap (Keyword.mintedTriggerBy Keyword.Type.BattleCry) [Keyword.battleCry])
 
 -- CR 702.108a: "Prowess is a triggered ability. 'Prowess' means 'Whenever you
 -- cast a noncreature spell, this creature gets +1/+1 until end of turn.'" The
@@ -342,8 +342,8 @@ prowessSpec s _ =
     -- battle cry's is: no card in this pool prints prowess twice and nothing
     -- here grants it, so a second instance is unreachable through play.
     Spec.it s "CR 702.108b each instance of prowess is its own ability" $ do
-      Spec.assertEqWith s "prowess held twice is two abilities" (Keyword.triggeredAbilitiesOf (Map.singleton Keyword.Type.Prowess 2)) [Keyword.prowess, Keyword.prowess]
-      Spec.assertEqWith s "and held once is one" (Keyword.triggeredAbilitiesOf (Map.singleton Keyword.Type.Prowess 1)) [Keyword.prowess]
+      Spec.assertEqWith s "prowess held twice is two abilities" (Keyword.triggeredAbilitiesOf (Map.singleton Keyword.Type.Prowess 2)) (fmap (Keyword.mintedTriggerBy Keyword.Type.Prowess) [Keyword.prowess, Keyword.prowess])
+      Spec.assertEqWith s "and held once is one" (Keyword.triggeredAbilitiesOf (Map.singleton Keyword.Type.Prowess 1)) (fmap (Keyword.mintedTriggerBy Keyword.Type.Prowess) [Keyword.prowess])
 
 -- CR 509.3e: "Whenever [a creature] blocks two or more creatures, . . ." -- the
 -- form that reads HOW MANY, matched against the same grouped
@@ -2567,8 +2567,8 @@ extortSpec s = Spec.describe s "Extort" $ do
   -- triggers separately." Asked of the mint, as prowess' 702.108b is: no
   -- card here prints extort twice and nothing grants it.
   Spec.it s "CR 702.101b each instance of extort is its own ability" $ do
-    Spec.assertEqWith s "extort held twice is two abilities" (Keyword.triggeredAbilitiesOf (Map.singleton Keyword.Type.Extort 2)) [Keyword.extort, Keyword.extort]
-    Spec.assertEqWith s "and held once is one" (Keyword.triggeredAbilitiesOf (Map.singleton Keyword.Type.Extort 1)) [Keyword.extort]
+    Spec.assertEqWith s "extort held twice is two abilities" (Keyword.triggeredAbilitiesOf (Map.singleton Keyword.Type.Extort 2)) (fmap (Keyword.mintedTriggerBy Keyword.Type.Extort) [Keyword.extort, Keyword.extort])
+    Spec.assertEqWith s "and held once is one" (Keyword.triggeredAbilitiesOf (Map.singleton Keyword.Type.Extort 1)) (fmap (Keyword.mintedTriggerBy Keyword.Type.Extort) [Keyword.extort])
 
 -- CR 702.191a: "Increment is a triggered ability. 'Increment' means 'Whenever you
 -- cast a spell, if this permanent is a creature and the amount of mana spent to
@@ -2589,8 +2589,8 @@ incrementSpec s _ =
     -- CR 702.191b: "If a creature has multiple instances of increment, each
     -- one triggers separately." Asked of the mint, as rule 702.101b's is.
     Spec.it s "CR 702.191b each instance of increment is its own ability" $ do
-      Spec.assertEqWith s "increment held twice is two abilities" (Keyword.triggeredAbilitiesOf (Map.singleton Keyword.Type.Increment 2)) [Keyword.increment, Keyword.increment]
-      Spec.assertEqWith s "and held once is one" (Keyword.triggeredAbilitiesOf (Map.singleton Keyword.Type.Increment 1)) [Keyword.increment]
+      Spec.assertEqWith s "increment held twice is two abilities" (Keyword.triggeredAbilitiesOf (Map.singleton Keyword.Type.Increment 2)) (fmap (Keyword.mintedTriggerBy Keyword.Type.Increment) [Keyword.increment, Keyword.increment])
+      Spec.assertEqWith s "and held once is one" (Keyword.triggeredAbilitiesOf (Map.singleton Keyword.Type.Increment 1)) (fmap (Keyword.mintedTriggerBy Keyword.Type.Increment) [Keyword.increment])
 
 -- CR 702.59a: "Recover is a triggered ability that functions only while the card
 -- with recover is in a player's graveyard. 'Recover [cost]' means 'When a

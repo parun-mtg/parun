@@ -1801,8 +1801,8 @@ afterlifeSpec s _ =
     -- gameplay-level board, and Parun.CounterspellSpec's "an evolved Ministrant
     -- plus a granted afterlife" is where it is played out.
     Spec.it s "CR 702.135b each instance of afterlife is its own ability" $ do
-      Spec.assertEqWith s "afterlife 2 held twice is two abilities" (Keyword.triggeredAbilitiesOf (Map.singleton (Keyword.Type.Afterlife 2) 2)) [Keyword.afterlife 2, Keyword.afterlife 2]
-      Spec.assertEqWith s "and afterlife 3 once is one" (Keyword.triggeredAbilitiesOf (Map.singleton (Keyword.Type.Afterlife 3) 1)) [Keyword.afterlife 3]
+      Spec.assertEqWith s "afterlife 2 held twice is two abilities" (Keyword.triggeredAbilitiesOf (Map.singleton (Keyword.Type.Afterlife 2) 2)) (fmap (Keyword.mintedTriggerBy (Keyword.Type.Afterlife 2)) [Keyword.afterlife 2, Keyword.afterlife 2])
+      Spec.assertEqWith s "and afterlife 3 once is one" (Keyword.triggeredAbilitiesOf (Map.singleton (Keyword.Type.Afterlife 3) 1)) (fmap (Keyword.mintedTriggerBy (Keyword.Type.Afterlife 3)) [Keyword.afterlife 3])
       Spec.assertBool s (Keyword.afterlife 2 /= Keyword.afterlife 3) "and the N reaches the minted ability"
 
 -- The pay-or-not answers in a transcript, in order.
@@ -1902,8 +1902,8 @@ fabricateSpec s registry =
         -- triggers separately". Asserted of the MINT, as afterlife's multiplicity
         -- is, no card in the pool printing fabricate twice.
         Spec.it s "CR 702.123b each instance of fabricate is its own ability" $ do
-          Spec.assertEqWith s "fabricate 1 held twice is two abilities" (Keyword.triggeredAbilitiesOf (Map.singleton (Keyword.Type.Fabricate 1) 2)) [Keyword.fabricate 1, Keyword.fabricate 1]
-          Spec.assertEqWith s "and fabricate 2 once is one" (Keyword.triggeredAbilitiesOf (Map.singleton (Keyword.Type.Fabricate 2) 1)) [Keyword.fabricate 2]
+          Spec.assertEqWith s "fabricate 1 held twice is two abilities" (Keyword.triggeredAbilitiesOf (Map.singleton (Keyword.Type.Fabricate 1) 2)) (fmap (Keyword.mintedTriggerBy (Keyword.Type.Fabricate 1)) [Keyword.fabricate 1, Keyword.fabricate 1])
+          Spec.assertEqWith s "and fabricate 2 once is one" (Keyword.triggeredAbilitiesOf (Map.singleton (Keyword.Type.Fabricate 2) 1)) (fmap (Keyword.mintedTriggerBy (Keyword.Type.Fabricate 2)) [Keyword.fabricate 2])
           Spec.assertBool s (Keyword.fabricate 1 /= Keyword.fabricate 2) "and the N reaches the minted ability"
 
 -- CR 702.21a ward [cost]: "Whenever this permanent becomes the target of a spell
@@ -1987,7 +1987,7 @@ wardSpec s registry =
         -- fabricate's multiplicity is: no printing carries ward twice.
         Spec.it s "CR 603.2 each instance of ward is its own ability" $ do
           let cost n = Ward.MkWard (NonEmpty.singleton (Cost.Type.MkCost (Just (ManaCost.MkManaCost [ManaSymbol.Generic n])) [])) Nothing
-          Spec.assertEqWith s "ward {2} held twice is two abilities" (Keyword.triggeredAbilitiesOf (Map.singleton (Keyword.Type.Ward (cost 2)) 2)) [Keyword.ward (cost 2), Keyword.ward (cost 2)]
+          Spec.assertEqWith s "ward {2} held twice is two abilities" (Keyword.triggeredAbilitiesOf (Map.singleton (Keyword.Type.Ward (cost 2)) 2)) (fmap (Keyword.mintedTriggerBy (Keyword.Type.Ward (cost 2))) [Keyword.ward (cost 2), Keyword.ward (cost 2)])
           Spec.assertBool s (Keyword.ward (cost 2) /= Keyword.ward (cost 3)) "and the cost reaches the minted ability"
 
 -- CR 118.12a over MORE THAN ONE PAYER: "[Do something] unless [a player does
@@ -2436,8 +2436,8 @@ soulshiftSpec s = Spec.describe s "Soulshift" $ do
   -- is: Forked-Branch Garami prints "soulshift 4, soulshift 4" and is not in
   -- the pool.
   Spec.it s "CR 702.46b each instance of soulshift is its own ability" $ do
-    Spec.assertEqWith s "soulshift 3 held twice is two abilities" (Keyword.triggeredAbilitiesOf (Map.singleton (Keyword.Type.Soulshift 3) 2)) [Keyword.soulshift 3, Keyword.soulshift 3]
-    Spec.assertEqWith s "and soulshift 4 once is one" (Keyword.triggeredAbilitiesOf (Map.singleton (Keyword.Type.Soulshift 4) 1)) [Keyword.soulshift 4]
+    Spec.assertEqWith s "soulshift 3 held twice is two abilities" (Keyword.triggeredAbilitiesOf (Map.singleton (Keyword.Type.Soulshift 3) 2)) (fmap (Keyword.mintedTriggerBy (Keyword.Type.Soulshift 3)) [Keyword.soulshift 3, Keyword.soulshift 3])
+    Spec.assertEqWith s "and soulshift 4 once is one" (Keyword.triggeredAbilitiesOf (Map.singleton (Keyword.Type.Soulshift 4) 1)) (fmap (Keyword.mintedTriggerBy (Keyword.Type.Soulshift 4)) [Keyword.soulshift 4])
     Spec.assertBool s (Keyword.soulshift 3 /= Keyword.soulshift 4) "and the N reaches the minted ability"
 
 -- Radiant Fountain, a Land: "When this land enters, you gain 2 life. / {T}: Add

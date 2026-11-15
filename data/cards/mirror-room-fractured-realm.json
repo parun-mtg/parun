@@ -102,10 +102,13 @@
       "playerAbilities": [
         {
           "effect": {
-            "type": "AdditionalTriggers",
+            "type": "BearersTrigger",
             "value": {
-              "type": "And",
-              "value": []
+              "bearers": {
+                "type": "And",
+                "value": []
+              },
+              "triggering": "AnAdditionalTime"
             }
           },
           "scope": {

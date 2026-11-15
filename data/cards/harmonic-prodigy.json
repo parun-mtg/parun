@@ -24,30 +24,33 @@
       "playerAbilities": [
         {
           "effect": {
-            "type": "AdditionalTriggers",
+            "type": "BearersTrigger",
             "value": {
-              "type": "Or",
-              "value": [
-                {
-                  "type": "HasSubtype",
-                  "value": "Shaman"
-                },
-                {
-                  "type": "And",
-                  "value": [
-                    {
-                      "type": "Not",
-                      "value": {
-                        "type": "IsSource"
+              "bearers": {
+                "type": "Or",
+                "value": [
+                  {
+                    "type": "HasSubtype",
+                    "value": "Shaman"
+                  },
+                  {
+                    "type": "And",
+                    "value": [
+                      {
+                        "type": "Not",
+                        "value": {
+                          "type": "IsSource"
+                        }
+                      },
+                      {
+                        "type": "HasSubtype",
+                        "value": "Wizard"
                       }
-                    },
-                    {
-                      "type": "HasSubtype",
-                      "value": "Wizard"
-                    }
-                  ]
-                }
-              ]
+                    ]
+                  }
+                ]
+              },
+              "triggering": "AnAdditionalTime"
             }
           },
           "scope": {

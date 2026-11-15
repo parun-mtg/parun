@@ -61,6 +61,7 @@ import qualified Parun.Types.AttackerTarget as AttackerTarget
 import qualified Parun.Types.AttackerTrigger as AttackerTrigger
 import qualified Parun.Types.Backup as Backup
 import qualified Parun.Types.BeamMeUp as BeamMeUp
+import qualified Parun.Types.BearersTrigger as BearersTrigger
 import qualified Parun.Types.BecomeCopy as BecomeCopy
 import qualified Parun.Types.BecomesTapState as BecomesTapState
 import qualified Parun.Types.BecomesTargetedTrigger as BecomesTargetedTrigger
@@ -2226,7 +2227,8 @@ playerEffectChildren c effect = case effect of
   PlayerEffect.CantSetSchemesInMotion -> pure effect
   PlayerEffect.EntriesTrigger (EntriesTrigger.MkEntriesTrigger entrants bearers move triggering) ->
     fmap PlayerEffect.EntriesTrigger (EntriesTrigger.MkEntriesTrigger <$> playerFilter c entrants <*> playerFilter c bearers <*> pure move <*> pure triggering)
-  PlayerEffect.AdditionalTriggers bearers -> PlayerEffect.AdditionalTriggers <$> playerFilter c bearers
+  PlayerEffect.BearersTrigger (BearersTrigger.MkBearersTrigger bearers abilities triggering) ->
+    fmap PlayerEffect.BearersTrigger (BearersTrigger.MkBearersTrigger <$> playerFilter c bearers <*> traverse (playerDesignator c) abilities <*> pure triggering)
   PlayerEffect.ControlledWhileSearching -> pure effect
   PlayerEffect.YouChoose _ -> pure effect
   PlayerEffect.BlocksFromPiles -> pure effect
@@ -2774,7 +2776,7 @@ activatedAbilityChildren c (ActivatedAbility.MkActivatedAbility cost costChoices
 
 -- | A triggered ability's children.
 triggeredAbilityChildren :: (Applicative f) => AbilityChildren card ability effect f -> TriggeredAbility.TriggeredAbility card ability -> f (TriggeredAbility.TriggeredAbility card ability)
-triggeredAbilityChildren c (TriggeredAbility.MkTriggeredAbility condition modal intervening name limit functionsFrom) =
+triggeredAbilityChildren c (TriggeredAbility.MkTriggeredAbility condition modal intervening name limit functionsFrom stamp) =
   TriggeredAbility.MkTriggeredAbility
     <$> abilityTrigger c condition
     <*> abilityModal c modal
@@ -2782,6 +2784,7 @@ triggeredAbilityChildren c (TriggeredAbility.MkTriggeredAbility condition modal 
     <*> pure name
     <*> abilityLimit c limit
     <*> pure functionsFrom
+    <*> traverse (abilityKeyword c) stamp
 
 -- | A static ability's children.
 staticAbilityChildren :: (Applicative f) => AbilityChildren card ability effect f -> StaticAbility.StaticAbility ability -> f (StaticAbility.StaticAbility ability)

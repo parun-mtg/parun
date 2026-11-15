@@ -110,6 +110,7 @@ import qualified Parun.Types.AttackerTarget as AttackerTarget
 import qualified Parun.Types.AttackerTrigger as AttackerTrigger
 import qualified Parun.Types.Backup as Backup
 import qualified Parun.Types.BeamMeUp as BeamMeUp
+import qualified Parun.Types.BearersTrigger as BearersTrigger
 import qualified Parun.Types.BecomeCopy as BecomeCopy
 import qualified Parun.Types.BecomesTapState as BecomesTapState
 import qualified Parun.Types.BecomesTargetedTrigger as BecomesTargetedTrigger
@@ -4093,7 +4094,7 @@ playerEffectFilters playerEffect = case playerEffect of
   PlayerEffect.StateBasedActionDoesntApply _ exempted -> [exempted]
   PlayerEffect.CantSetSchemesInMotion -> []
   PlayerEffect.EntriesTrigger e -> [EntriesTrigger.entrants e, EntriesTrigger.bearers e]
-  PlayerEffect.AdditionalTriggers bearers -> [bearers]
+  PlayerEffect.BearersTrigger e -> [BearersTrigger.bearers e]
   PlayerEffect.ControlledWhileSearching -> []
   PlayerEffect.BlocksFromPiles -> []
   PlayerEffect.YouChoose _ -> []
@@ -7085,7 +7086,10 @@ lintSpec s registry corpus = Spec.describe s "Lint" $ do
   Spec.it s "CR 702 no card claims a keyword minted an ability it printed" $ do
     ps <- S.allPrintings s corpus
     let claimed f = filter (not . all KeywordEngine.addsRulesToPrintedAbility . ActivatedAbility.keyword) (Face.activatedAbilities f <> grantedActivatedAbilities f)
-        claims f = not (null (claimed f))
+        -- Parun.Types.TriggeredAbility.keyword's twin, which no keyword adds
+        -- rules to a printed ability through, so any stamp is a claim.
+        claimedTriggered f = filter (Maybe.isJust . TriggeredAbility.keyword) (Face.triggeredAbilities f <> grantedTriggeredAbilities f)
+        claims f = not (null (claimed f)) || not (null (claimedTriggered f))
         printsAbilities f = not (null (Face.activatedAbilities f))
         everyFace = overFaces withMinted
         offenders = filter (any claims . everyFace . Printing.card) ps
@@ -7121,6 +7125,10 @@ lintSpec s registry corpus = Spec.describe s "Lint" $ do
       s
       (not (claims ((vanillaFace "Honest" instantLine) {Face.activatedAbilities = [printedAbility]})))
       "while CR 702.177a's printed stamp is not a claim"
+    Spec.assertBool
+      s
+      (claims ((vanillaFace "Liar" instantLine) {Face.triggeredAbilities = [(Mint.trigger (TriggerCondition.Enters EntersTrigger.defaultValue) (Seq.singleton (youDraw 1))) {TriggeredAbility.keyword = Just Keyword.Flying}]}))
+      "and a face claiming a triggered one is caught"
     Spec.assertBool s (null (claimed minter)) "the minting face itself claims nothing"
     -- Through `everyFace`, the sweep's own walk, so this reddens if that walk
     -- narrows back to the printing's own faces.

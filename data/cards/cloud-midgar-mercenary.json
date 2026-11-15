@@ -22,41 +22,44 @@
       "playerAbilities": [
         {
           "effect": {
-            "type": "AdditionalTriggers",
+            "type": "BearersTrigger",
             "value": {
-              "type": "Or",
-              "value": [
-                {
-                  "type": "And",
-                  "value": [
-                    {
-                      "type": "IsSource"
-                    },
-                    {
-                      "type": "HasAttached",
-                      "value": {
+              "bearers": {
+                "type": "Or",
+                "value": [
+                  {
+                    "type": "And",
+                    "value": [
+                      {
+                        "type": "IsSource"
+                      },
+                      {
+                        "type": "HasAttached",
+                        "value": {
+                          "type": "HasSubtype",
+                          "value": "Equipment"
+                        }
+                      }
+                    ]
+                  },
+                  {
+                    "type": "And",
+                    "value": [
+                      {
                         "type": "HasSubtype",
                         "value": "Equipment"
+                      },
+                      {
+                        "type": "IsAttachedTo",
+                        "value": {
+                          "type": "Source"
+                        }
                       }
-                    }
-                  ]
-                },
-                {
-                  "type": "And",
-                  "value": [
-                    {
-                      "type": "HasSubtype",
-                      "value": "Equipment"
-                    },
-                    {
-                      "type": "IsAttachedTo",
-                      "value": {
-                        "type": "Source"
-                      }
-                    }
-                  ]
-                }
-              ]
+                    ]
+                  }
+                ]
+              },
+              "triggering": "AnAdditionalTime"
             }
           },
           "scope": {

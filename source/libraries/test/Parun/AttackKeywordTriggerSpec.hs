@@ -186,8 +186,8 @@ frenzySpec s registry =
         -- triggers separately" -- poisonous' multiplicity, asserted at the MINT
         -- because no board in this pool grants a second instance.
         Spec.it s "CR 702.68b each instance is its own ability" $ do
-          Spec.assertEqWith s "frenzy 1 held twice is two abilities" (Keyword.triggeredAbilitiesOf (Map.singleton (Keyword.Type.Frenzy 1) 2)) [Keyword.frenzy 1, Keyword.frenzy 1]
-          Spec.assertEqWith s "and frenzy 3 once is one" (Keyword.triggeredAbilitiesOf (Map.singleton (Keyword.Type.Frenzy 3) 1)) [Keyword.frenzy 3]
+          Spec.assertEqWith s "frenzy 1 held twice is two abilities" (Keyword.triggeredAbilitiesOf (Map.singleton (Keyword.Type.Frenzy 1) 2)) (fmap (Keyword.mintedTriggerBy (Keyword.Type.Frenzy 1)) [Keyword.frenzy 1, Keyword.frenzy 1])
+          Spec.assertEqWith s "and frenzy 3 once is one" (Keyword.triggeredAbilitiesOf (Map.singleton (Keyword.Type.Frenzy 3) 1)) (fmap (Keyword.mintedTriggerBy (Keyword.Type.Frenzy 3)) [Keyword.frenzy 3])
 
 -- CR 702.83a's exalted, which rule 702 states as a triggered
 -- ability, and with it CR 506.5 -- "attacks alone", the one attack-trigger form

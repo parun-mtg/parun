@@ -3,6 +3,7 @@ module Parun.Types.PlayerEffect where
 import qualified Numeric.Natural as Natural
 import qualified Parun.Types.AbilityKind as AbilityKind
 import qualified Parun.Types.AlternativeActivationCost as AlternativeActivationCost
+import qualified Parun.Types.BearersTrigger as BearersTrigger
 import qualified Parun.Types.CantSearchLibraries as CantSearchLibraries
 import qualified Parun.Types.CastFromZone as CastFromZone
 import qualified Parun.Types.CombatDeclaration as CombatDeclaration
@@ -195,10 +196,9 @@ data PlayerEffect
     -- how entries, deaths or attacks change the triggering of this player's
     -- abilities.
     EntriesTrigger EntriesTrigger.EntriesTrigger
-  | -- | CR 603.2d / Sanctum of All, Harmonic Prodigy: a triggered ability of a
-    -- permanent matching the filter, whatever its event, triggers an additional
-    -- time.
-    AdditionalTriggers (Filter.Filter Keyword.Keyword)
+  | -- | CR 603.2d / 613.11 / Sanctum of All, Nowhere to Run: how this player's
+    -- triggered abilities of matching permanents trigger, whatever their event.
+    BearersTrigger BearersTrigger.BearersTrigger
   | -- | CR 724.2 / Opposition Agent: while this player searches their library,
     -- CR 109.5's "you" of the row controls them.
     ControlledWhileSearching

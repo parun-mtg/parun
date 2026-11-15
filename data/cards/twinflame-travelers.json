@@ -31,21 +31,24 @@
       "playerAbilities": [
         {
           "effect": {
-            "type": "AdditionalTriggers",
+            "type": "BearersTrigger",
             "value": {
-              "type": "And",
-              "value": [
-                {
-                  "type": "HasSubtype",
-                  "value": "Elemental"
-                },
-                {
-                  "type": "Not",
-                  "value": {
-                    "type": "IsSource"
+              "bearers": {
+                "type": "And",
+                "value": [
+                  {
+                    "type": "HasSubtype",
+                    "value": "Elemental"
+                  },
+                  {
+                    "type": "Not",
+                    "value": {
+                      "type": "IsSource"
+                    }
                   }
-                }
-              ]
+                ]
+              },
+              "triggering": "AnAdditionalTime"
             }
           },
           "scope": {

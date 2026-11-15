@@ -63,10 +63,13 @@
             }
           },
           "effect": {
-            "type": "AdditionalTriggers",
+            "type": "BearersTrigger",
             "value": {
-              "type": "HasSubtype",
-              "value": "Dwarf"
+              "bearers": {
+                "type": "HasSubtype",
+                "value": "Dwarf"
+              },
+              "triggering": "AnAdditionalTime"
             }
           },
           "scope": {

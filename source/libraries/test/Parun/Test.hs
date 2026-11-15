@@ -122,6 +122,7 @@ import qualified Parun.Codec.AudienceSpec
 import qualified Parun.Codec.BackupSpec
 import qualified Parun.Codec.BatchingSpec
 import qualified Parun.Codec.BattlefieldCandidateSpec
+import qualified Parun.Codec.BearersTriggerSpec
 import qualified Parun.Codec.BecameAttackedSpec
 import qualified Parun.Codec.BecameBlockingSpec
 import qualified Parun.Codec.BecameDesignatedSpec
@@ -1726,6 +1727,7 @@ spec s reference corpus = do
   Parun.Codec.BlockCountSpec.spec s
   Parun.Codec.BlockTriggerSpec.spec s
   Parun.Codec.PlayerActsOnSpec.spec s
+  Parun.Codec.BearersTriggerSpec.spec s
   Parun.Codec.BecomesTargetedTriggerSpec.spec s
   Parun.Codec.PermanentsDealDamageToPlayerSpec.spec s
   Parun.Codec.TappedForManaTriggerSpec.spec s

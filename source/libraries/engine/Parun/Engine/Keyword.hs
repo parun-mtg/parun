@@ -1742,9 +1742,15 @@ castFromGraveyardIfInstantOrSorcery cardTypes =
 triggeredAbilitiesOf :: Map Keyword Natural -> [TriggeredAbility Card (GrantedAbility.GrantedAbility Card)]
 triggeredAbilitiesOf counts = concatMap (uncurry abilitiesFor) (Map.toAscList counts)
 
--- The triggered abilities one keyword, held `count` times, contributes.
+-- The triggered abilities one keyword, held `count` times, contributes, each
+-- stamped by `mintedTriggerBy`.
 abilitiesFor :: Keyword -> Natural -> [TriggeredAbility Card (GrantedAbility.GrantedAbility Card)]
-abilitiesFor = KeywordExpansion.triggered . expansionOf
+abilitiesFor keyword = fmap (mintedTriggerBy keyword) . KeywordExpansion.triggered (expansionOf keyword)
+
+-- | CR 702: `mintedBy` for a triggered ability (TriggeredAbility.keyword),
+-- applied by the roster for `mintedBy`'s reason.
+mintedTriggerBy :: Keyword -> TriggeredAbility Card (GrantedAbility.GrantedAbility Card) -> TriggeredAbility Card (GrantedAbility.GrantedAbility Card)
+mintedTriggerBy keyword ability = ability {TriggeredAbility.keyword = Just keyword}
 
 -- CR 702: record WHICH KEYWORD's rules this minted ability is under, which is
 -- Parun.Types.ActivatedAbility.keyword and what `designates` below compares.

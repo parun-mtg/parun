@@ -29,10 +29,13 @@
       "playerAbilities": [
         {
           "effect": {
-            "type": "AdditionalTriggers",
+            "type": "BearersTrigger",
             "value": {
-              "type": "HasSubtype",
-              "value": "Ally"
+              "bearers": {
+                "type": "HasSubtype",
+                "value": "Ally"
+              },
+              "triggering": "AnAdditionalTime"
             }
           },
           "scope": {

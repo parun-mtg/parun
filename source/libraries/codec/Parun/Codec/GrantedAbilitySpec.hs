@@ -103,6 +103,7 @@ spec s = Spec.describe s "Parun.Codec.GrantedAbility" $ do
               Nothing
               TriggerLimit.Unlimited
               Set.empty
+              Nothing
           )
       )
       " {\"type\":\"Triggered\",\"value\":{\"condition\":{\"type\":\"DealsDamage\",\"value\":{\"actor\":{\"type\":\"Self\"},\"kind\":\"Combat\",\"recipients\":[{\"type\":\"Player\",\"value\":\"AnyPlayer\"}]}},\"modal\":{\"modes\":[{}]}}} "

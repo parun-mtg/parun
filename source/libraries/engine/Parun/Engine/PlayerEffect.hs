@@ -67,6 +67,7 @@ import qualified Parun.Types.ActivePlayerEffect as ActivePlayerEffect
 import qualified Parun.Types.AffectedPlayers as AffectedPlayers
 import qualified Parun.Types.AlternativeActivationCost as AlternativeActivationCost
 import qualified Parun.Types.AppliedReduction as AppliedReduction
+import qualified Parun.Types.BearersTrigger as BearersTrigger
 import qualified Parun.Types.CantSearchLibraries as CantSearchLibraries
 import qualified Parun.Types.CastFromZone as CastFromZone
 import qualified Parun.Types.CastWindow as CastWindow
@@ -157,6 +158,7 @@ import qualified Parun.Types.TapForMana as TapForMana
 import qualified Parun.Types.TargetRestriction as TargetRestriction
 import qualified Parun.Types.Teams as Teams
 import Parun.Types.Timestamp (Timestamp)
+import qualified Parun.Types.TriggeredAbility as TriggeredAbility
 import qualified Parun.Types.TriggeringMove as TriggeringMove
 import qualified Parun.Types.TurnOrdinal as TurnOrdinal
 import qualified Parun.Types.TurnRegisters as TurnRegisters
@@ -681,7 +683,7 @@ prohibitsCasting pid oid variable gs =
         PlayerEffect.StateBasedActionDoesntApply _ _ -> False
         PlayerEffect.CantSetSchemesInMotion -> False
         PlayerEffect.EntriesTrigger _ -> False
-        PlayerEffect.AdditionalTriggers _ -> False
+        PlayerEffect.BearersTrigger _ -> False
         PlayerEffect.ControlledWhileSearching -> False
         PlayerEffect.BlocksFromPiles -> False
         PlayerEffect.YouChoose _ -> False
@@ -877,7 +879,7 @@ prohibitsPlayingLand pid oid gs =
         PlayerEffect.StateBasedActionDoesntApply _ _ -> False
         PlayerEffect.CantSetSchemesInMotion -> False
         PlayerEffect.EntriesTrigger _ -> False
-        PlayerEffect.AdditionalTriggers _ -> False
+        PlayerEffect.BearersTrigger _ -> False
         PlayerEffect.ControlledWhileSearching -> False
         PlayerEffect.BlocksFromPiles -> False
         PlayerEffect.YouChoose _ -> False
@@ -948,7 +950,7 @@ searchPortion pid gs =
         PlayerEffect.StateBasedActionDoesntApply _ _ -> Nothing
         PlayerEffect.CantSetSchemesInMotion -> Nothing
         PlayerEffect.EntriesTrigger _ -> Nothing
-        PlayerEffect.AdditionalTriggers _ -> Nothing
+        PlayerEffect.BearersTrigger _ -> Nothing
         PlayerEffect.CantAttackWithCreatures -> Nothing
         PlayerEffect.CantCastMatching _ -> Nothing
         PlayerEffect.PutTappedAsYouCascade _ -> Nothing
@@ -1040,7 +1042,7 @@ prohibitsSearching pid owner causeController gs =
         PlayerEffect.StateBasedActionDoesntApply _ _ -> False
         PlayerEffect.CantSetSchemesInMotion -> False
         PlayerEffect.EntriesTrigger _ -> False
-        PlayerEffect.AdditionalTriggers _ -> False
+        PlayerEffect.BearersTrigger _ -> False
         PlayerEffect.CantAttackWithCreatures -> False
         PlayerEffect.CantCastMatching _ -> False
         PlayerEffect.PutTappedAsYouCascade _ -> False
@@ -1154,7 +1156,7 @@ prohibitsCounters pid kind gs =
         PlayerEffect.StateBasedActionDoesntApply _ _ -> False
         PlayerEffect.CantSetSchemesInMotion -> False
         PlayerEffect.EntriesTrigger _ -> False
-        PlayerEffect.AdditionalTriggers _ -> False
+        PlayerEffect.BearersTrigger _ -> False
         PlayerEffect.ControlledWhileSearching -> False
         PlayerEffect.BlocksFromPiles -> False
         PlayerEffect.YouChoose _ -> False
@@ -1201,7 +1203,7 @@ stateBasedActionDoesntApplyTo action pid oid gs =
         PlayerEffect.StateBasedActionDoesntApply exempted matching -> exempted == action && matchesObjectFrom source matching oid gs
         PlayerEffect.CantSetSchemesInMotion -> False
         PlayerEffect.EntriesTrigger _ -> False
-        PlayerEffect.AdditionalTriggers _ -> False
+        PlayerEffect.BearersTrigger _ -> False
         PlayerEffect.ControlledWhileSearching -> False
         PlayerEffect.BlocksFromPiles -> False
         PlayerEffect.YouChoose _ -> False
@@ -1266,7 +1268,7 @@ schemesCantBeSetInMotion gs =
   let prohibits effect = case effect of
         PlayerEffect.CantSetSchemesInMotion -> True
         PlayerEffect.EntriesTrigger _ -> False
-        PlayerEffect.AdditionalTriggers _ -> False
+        PlayerEffect.BearersTrigger _ -> False
         PlayerEffect.ControlledWhileSearching -> False
         PlayerEffect.BlocksFromPiles -> False
         PlayerEffect.YouChoose _ -> False
@@ -1347,7 +1349,7 @@ moveTriggerings move pid subjects (bearer, atBearer) effects board =
           if EntriesTrigger.move entries == move && any (\subject -> matchesObjectFor pid source (EntriesTrigger.entrants entries) subject board) subjects && matchesObjectFor pid source (EntriesTrigger.bearers entries) bearer atBearer
             then Just (EntriesTrigger.triggering entries)
             else Nothing
-        PlayerEffect.AdditionalTriggers _ -> Nothing
+        PlayerEffect.BearersTrigger _ -> Nothing
         PlayerEffect.CantSetSchemesInMotion -> Nothing
         PlayerEffect.ControlledWhileSearching -> Nothing
         PlayerEffect.BlocksFromPiles -> Nothing
@@ -1429,72 +1431,90 @@ silencesDeath pid dying bearer effects before = elem EntryTriggering.NoTrigger (
 additionalMoveTriggers :: TriggeringMove.TriggeringMove -> PlayerId -> [ObjectId] -> (ObjectId, GameState) -> GameState -> GameState -> Natural
 additionalMoveTriggers move pid subjects bearer effects board = List.genericLength (filter (== EntryTriggering.AnAdditionalTime) (moveTriggerings move pid subjects bearer effects board))
 
--- CR 603.2d: how many additional times `bearer`'s triggered abilities that
--- `pid` controls trigger, one per effect (Roaming Throne's ruling on two
+-- CR 603.2d / 613.11 / 101.2: how the effects applying to `pid` change the
+-- triggering of `ability`, `pid`'s triggered ability of `bearer`, whatever its
+-- event, one entry per effect admitting it (Roaming Throne's ruling on two
 -- Thrones), asked of the game `gs` as the ability triggers: a Sanctum of All's
 -- "while you control six or more Shrines" is the row's own condition (Event.Match
--- picks the board).
-additionalTriggers :: PlayerId -> ObjectId -> GameState -> Natural
-additionalTriggers pid bearer gs =
-  let admits (source, effect) = case effect of
-        PlayerEffect.AdditionalTriggers bearers -> matchesObjectFrom source bearers bearer gs
-        PlayerEffect.EntriesTrigger _ -> False
-        PlayerEffect.CantSetSchemesInMotion -> False
-        PlayerEffect.ControlledWhileSearching -> False
-        PlayerEffect.BlocksFromPiles -> False
-        PlayerEffect.YouChoose _ -> False
-        PlayerEffect.ExilesFoundWhileSearching -> False
-        PlayerEffect.StateBasedActionDoesntApply _ _ -> False
-        PlayerEffect.CantAttackWithCreatures -> False
-        PlayerEffect.CantCastSpells -> False
-        PlayerEffect.CantActivateAbilities {} -> False
-        PlayerEffect.CantCastMoreThan _ -> False
-        PlayerEffect.ModifyCost {} -> False
-        PlayerEffect.AlternativeActivationCost {} -> False
-        PlayerEffect.PlayAdditionalLands _ -> False
-        PlayerEffect.NoMaximumHandSize -> False
-        PlayerEffect.SetMaximumHandSize _ -> False
-        PlayerEffect.IncreaseMaximumHandSize _ -> False
-        PlayerEffect.IncreaseDevotion _ -> False
-        PlayerEffect.ReduceMaximumHandSize _ -> False
-        PlayerEffect.DontLoseUnspentMana {} -> False
-        PlayerEffect.LoseLifeForUnspentMana -> False
-        PlayerEffect.MayPayLifeForMana {} -> False
-        PlayerEffect.SpendManaAsThough _ -> False
-        PlayerEffect.CantBeTargetedBy {} -> False
-        PlayerEffect.CastAsThoughItHadFlash {} -> False
-        PlayerEffect.MayPlayAsThoughItHadFlash _ -> False
-        PlayerEffect.KeywordRiderGrant _ -> False
-        PlayerEffect.LoyaltyGrant _ -> False
-        PlayerEffect.MayTapForMana _ -> False
-        PlayerEffect.CantBeCountered _ -> False
-        PlayerEffect.NextSpell _ _ -> False
-        PlayerEffect.RestrictTargeting _ -> False
-        PlayerEffect.TargetPastHexproof _ -> False
-        PlayerEffect.DamageCantBePrevented _ -> False
-        PlayerEffect.DamageCantBeRedirected _ -> False
-        PlayerEffect.DamageAsThoughSourceHad {} -> False
-        PlayerEffect.CantSearchLibraries _ -> False
-        PlayerEffect.SearchesTopOfLibraries _ -> False
-        PlayerEffect.HasProtectionFrom _ -> False
-        PlayerEffect.CantCastMatching _ -> False
-        PlayerEffect.PutTappedAsYouCascade _ -> False
-        PlayerEffect.CastOnlyAtSorcerySpeed -> False
-        PlayerEffect.CantPlayLands _ -> False
-        PlayerEffect.CastFrom _ -> False
-        PlayerEffect.PlayLandsFrom _ -> False
-        PlayerEffect.PlotFrom _ -> False
-        PlayerEffect.PayRatherThanManaCost _ -> False
-        PlayerEffect.CantGetCounters _ -> False
-        PlayerEffect.StateCoinFlip _ -> False
-        PlayerEffect.ModifyDieRoll _ -> False
-        PlayerEffect.AdditionalVotes _ -> False
-        PlayerEffect.AdditionalSurveilCards _ -> False
-        PlayerEffect.Cant _ -> False
-        PlayerEffect.RevealsDraw _ -> False
-        PlayerEffect.Precluded _ -> False
-        PlayerEffect.Shows _ -> False
-   in List.genericLength (filter admits (applying pid gs))
+-- picks the board). CR 109.5's "you" in the bearers is the bearer's controller.
+-- An ability is admitted by the keyword that minted it (TriggeredAbility.keyword),
+-- so Nowhere to Run's "ward abilities" reach rule 702.21a's and no printed twin.
+bearerTriggerings :: PlayerId -> ObjectId -> TriggeredAbility.TriggeredAbility card ability -> GameState -> [EntryTriggering.EntryTriggering]
+bearerTriggerings pid bearer ability gs =
+  let triggering (source, effect) = case effect of
+        PlayerEffect.BearersTrigger rule ->
+          if matchesObjectFrom source (BearersTrigger.bearers rule) bearer gs && all (\designator -> any (Keyword.designates designator) (TriggeredAbility.keyword ability)) (BearersTrigger.abilities rule)
+            then Just (BearersTrigger.triggering rule)
+            else Nothing
+        PlayerEffect.EntriesTrigger _ -> Nothing
+        PlayerEffect.CantSetSchemesInMotion -> Nothing
+        PlayerEffect.ControlledWhileSearching -> Nothing
+        PlayerEffect.BlocksFromPiles -> Nothing
+        PlayerEffect.YouChoose _ -> Nothing
+        PlayerEffect.ExilesFoundWhileSearching -> Nothing
+        PlayerEffect.StateBasedActionDoesntApply _ _ -> Nothing
+        PlayerEffect.CantAttackWithCreatures -> Nothing
+        PlayerEffect.CantCastSpells -> Nothing
+        PlayerEffect.CantActivateAbilities {} -> Nothing
+        PlayerEffect.CantCastMoreThan _ -> Nothing
+        PlayerEffect.ModifyCost {} -> Nothing
+        PlayerEffect.AlternativeActivationCost {} -> Nothing
+        PlayerEffect.PlayAdditionalLands _ -> Nothing
+        PlayerEffect.NoMaximumHandSize -> Nothing
+        PlayerEffect.SetMaximumHandSize _ -> Nothing
+        PlayerEffect.IncreaseMaximumHandSize _ -> Nothing
+        PlayerEffect.IncreaseDevotion _ -> Nothing
+        PlayerEffect.ReduceMaximumHandSize _ -> Nothing
+        PlayerEffect.DontLoseUnspentMana {} -> Nothing
+        PlayerEffect.LoseLifeForUnspentMana -> Nothing
+        PlayerEffect.MayPayLifeForMana {} -> Nothing
+        PlayerEffect.SpendManaAsThough _ -> Nothing
+        PlayerEffect.CantBeTargetedBy {} -> Nothing
+        PlayerEffect.CastAsThoughItHadFlash {} -> Nothing
+        PlayerEffect.MayPlayAsThoughItHadFlash _ -> Nothing
+        PlayerEffect.KeywordRiderGrant _ -> Nothing
+        PlayerEffect.LoyaltyGrant _ -> Nothing
+        PlayerEffect.MayTapForMana _ -> Nothing
+        PlayerEffect.CantBeCountered _ -> Nothing
+        PlayerEffect.NextSpell _ _ -> Nothing
+        PlayerEffect.RestrictTargeting _ -> Nothing
+        PlayerEffect.TargetPastHexproof _ -> Nothing
+        PlayerEffect.DamageCantBePrevented _ -> Nothing
+        PlayerEffect.DamageCantBeRedirected _ -> Nothing
+        PlayerEffect.DamageAsThoughSourceHad {} -> Nothing
+        PlayerEffect.CantSearchLibraries _ -> Nothing
+        PlayerEffect.SearchesTopOfLibraries _ -> Nothing
+        PlayerEffect.HasProtectionFrom _ -> Nothing
+        PlayerEffect.CantCastMatching _ -> Nothing
+        PlayerEffect.PutTappedAsYouCascade _ -> Nothing
+        PlayerEffect.CastOnlyAtSorcerySpeed -> Nothing
+        PlayerEffect.CantPlayLands _ -> Nothing
+        PlayerEffect.CastFrom _ -> Nothing
+        PlayerEffect.PlayLandsFrom _ -> Nothing
+        PlayerEffect.PlotFrom _ -> Nothing
+        PlayerEffect.PayRatherThanManaCost _ -> Nothing
+        PlayerEffect.CantGetCounters _ -> Nothing
+        PlayerEffect.StateCoinFlip _ -> Nothing
+        PlayerEffect.ModifyDieRoll _ -> Nothing
+        PlayerEffect.AdditionalVotes _ -> Nothing
+        PlayerEffect.AdditionalSurveilCards _ -> Nothing
+        PlayerEffect.Cant _ -> Nothing
+        PlayerEffect.RevealsDraw _ -> Nothing
+        PlayerEffect.Precluded _ -> Nothing
+        PlayerEffect.Shows _ -> Nothing
+   in Maybe.mapMaybe triggering (applying pid gs)
+
+-- CR 603.2d: how many additional times `ability`, `pid`'s triggered ability of
+-- `bearer`, triggers, one per effect (`bearerTriggerings`).
+additionalTriggers :: PlayerId -> ObjectId -> TriggeredAbility.TriggeredAbility card ability -> GameState -> Natural
+additionalTriggers pid bearer ability gs = List.genericLength (filter (== EntryTriggering.AnAdditionalTime) (bearerTriggerings pid bearer ability gs))
+
+-- CR 613.11 / 101.2: does an effect keep `ability`, `pid`'s triggered ability
+-- of `bearer`, from triggering at all (Nowhere to Run)? Parun.Engine.Event.Match.bearerTriggers
+-- is the reader, for the event scan alone: rule 702.21a's ward, the one
+-- ability a row names (grep, 2026-11-15), is no state trigger.
+silencesTriggers :: PlayerId -> ObjectId -> TriggeredAbility.TriggeredAbility card ability -> GameState -> Bool
+silencesTriggers pid bearer ability gs = elem EntryTriggering.NoTrigger (bearerTriggerings pid bearer ability gs)
 
 -- CR 508.1c / 101.2: is `pid` forbidden from attacking with creatures? A
 -- restriction on the PLAYER (Angelic Arbiter), read by
@@ -1507,7 +1527,7 @@ prohibitsAttackingWithCreatures pid gs =
         PlayerEffect.StateBasedActionDoesntApply _ _ -> False
         PlayerEffect.CantSetSchemesInMotion -> False
         PlayerEffect.EntriesTrigger _ -> False
-        PlayerEffect.AdditionalTriggers _ -> False
+        PlayerEffect.BearersTrigger _ -> False
         PlayerEffect.ControlledWhileSearching -> False
         PlayerEffect.BlocksFromPiles -> False
         PlayerEffect.YouChoose _ -> False
@@ -2322,7 +2342,7 @@ landPlayFlashGrant effect = case effect of
   PlayerEffect.StateBasedActionDoesntApply _ _ -> Nothing
   PlayerEffect.CantSetSchemesInMotion -> Nothing
   PlayerEffect.EntriesTrigger _ -> Nothing
-  PlayerEffect.AdditionalTriggers _ -> Nothing
+  PlayerEffect.BearersTrigger _ -> Nothing
   PlayerEffect.ControlledWhileSearching -> Nothing
   PlayerEffect.BlocksFromPiles -> Nothing
   PlayerEffect.YouChoose _ -> Nothing
@@ -2584,7 +2604,7 @@ castFromGrantOf effect = case effect of
   PlayerEffect.StateBasedActionDoesntApply _ _ -> Nothing
   PlayerEffect.CantSetSchemesInMotion -> Nothing
   PlayerEffect.EntriesTrigger _ -> Nothing
-  PlayerEffect.AdditionalTriggers _ -> Nothing
+  PlayerEffect.BearersTrigger _ -> Nothing
   PlayerEffect.ControlledWhileSearching -> Nothing
   PlayerEffect.BlocksFromPiles -> Nothing
   PlayerEffect.YouChoose _ -> Nothing
@@ -2985,7 +3005,7 @@ ratherThanManaCost pid oid gs =
         PlayerEffect.StateBasedActionDoesntApply _ _ -> Nothing
         PlayerEffect.CantSetSchemesInMotion -> Nothing
         PlayerEffect.EntriesTrigger _ -> Nothing
-        PlayerEffect.AdditionalTriggers _ -> Nothing
+        PlayerEffect.BearersTrigger _ -> Nothing
         PlayerEffect.ControlledWhileSearching -> Nothing
         PlayerEffect.BlocksFromPiles -> Nothing
         PlayerEffect.YouChoose _ -> Nothing
@@ -3069,7 +3089,7 @@ playLandPiles pid gs =
         PlayerEffect.StateBasedActionDoesntApply _ _ -> []
         PlayerEffect.CantSetSchemesInMotion -> []
         PlayerEffect.EntriesTrigger _ -> []
-        PlayerEffect.AdditionalTriggers _ -> []
+        PlayerEffect.BearersTrigger _ -> []
         PlayerEffect.ControlledWhileSearching -> []
         PlayerEffect.BlocksFromPiles -> []
         PlayerEffect.YouChoose _ -> []
@@ -3190,7 +3210,7 @@ protectedFromTargeting rows pastHexproof caster source sourceView pid gs =
         PlayerEffect.StateBasedActionDoesntApply _ _ -> False
         PlayerEffect.CantSetSchemesInMotion -> False
         PlayerEffect.EntriesTrigger _ -> False
-        PlayerEffect.AdditionalTriggers _ -> False
+        PlayerEffect.BearersTrigger _ -> False
         PlayerEffect.ControlledWhileSearching -> False
         PlayerEffect.BlocksFromPiles -> False
         PlayerEffect.YouChoose _ -> False
@@ -3304,7 +3324,7 @@ protectedFromGiven rows aimer view gs =
         PlayerEffect.StateBasedActionDoesntApply _ _ -> False
         PlayerEffect.CantSetSchemesInMotion -> False
         PlayerEffect.EntriesTrigger _ -> False
-        PlayerEffect.AdditionalTriggers _ -> False
+        PlayerEffect.BearersTrigger _ -> False
         PlayerEffect.ControlledWhileSearching -> False
         PlayerEffect.BlocksFromPiles -> False
         PlayerEffect.YouChoose _ -> False
@@ -3402,7 +3422,7 @@ protectionCarriers gs =
         PlayerEffect.StateBasedActionDoesntApply _ _ -> Nothing
         PlayerEffect.CantSetSchemesInMotion -> Nothing
         PlayerEffect.EntriesTrigger _ -> Nothing
-        PlayerEffect.AdditionalTriggers _ -> Nothing
+        PlayerEffect.BearersTrigger _ -> Nothing
         PlayerEffect.ControlledWhileSearching -> Nothing
         PlayerEffect.BlocksFromPiles -> Nothing
         PlayerEffect.YouChoose _ -> Nothing
@@ -3493,7 +3513,7 @@ landPlaysAllowed pid gs =
         PlayerEffect.StateBasedActionDoesntApply _ _ -> Nothing
         PlayerEffect.CantSetSchemesInMotion -> Nothing
         PlayerEffect.EntriesTrigger _ -> Nothing
-        PlayerEffect.AdditionalTriggers _ -> Nothing
+        PlayerEffect.BearersTrigger _ -> Nothing
         PlayerEffect.ControlledWhileSearching -> Nothing
         PlayerEffect.BlocksFromPiles -> Nothing
         PlayerEffect.YouChoose _ -> Nothing
@@ -3576,7 +3596,7 @@ votesAllowed pid gs =
         PlayerEffect.StateBasedActionDoesntApply _ _ -> Nothing
         PlayerEffect.CantSetSchemesInMotion -> Nothing
         PlayerEffect.EntriesTrigger _ -> Nothing
-        PlayerEffect.AdditionalTriggers _ -> Nothing
+        PlayerEffect.BearersTrigger _ -> Nothing
         PlayerEffect.ControlledWhileSearching -> Nothing
         PlayerEffect.BlocksFromPiles -> Nothing
         PlayerEffect.YouChoose _ -> Nothing
@@ -3645,7 +3665,7 @@ offeredExtras pid gs =
         PlayerEffect.StateBasedActionDoesntApply _ _ -> False
         PlayerEffect.CantSetSchemesInMotion -> False
         PlayerEffect.EntriesTrigger _ -> False
-        PlayerEffect.AdditionalTriggers _ -> False
+        PlayerEffect.BearersTrigger _ -> False
         PlayerEffect.ControlledWhileSearching -> False
         PlayerEffect.BlocksFromPiles -> False
         PlayerEffect.YouChoose _ -> False
@@ -3715,7 +3735,7 @@ cascadeActions pid gs =
         PlayerEffect.StateBasedActionDoesntApply _ _ -> Nothing
         PlayerEffect.CantSetSchemesInMotion -> Nothing
         PlayerEffect.EntriesTrigger _ -> Nothing
-        PlayerEffect.AdditionalTriggers _ -> Nothing
+        PlayerEffect.BearersTrigger _ -> Nothing
         PlayerEffect.ControlledWhileSearching -> Nothing
         PlayerEffect.BlocksFromPiles -> Nothing
         PlayerEffect.YouChoose _ -> Nothing
@@ -3784,7 +3804,7 @@ drawReveals pid nth gs =
         PlayerEffect.StateBasedActionDoesntApply _ _ -> Nothing
         PlayerEffect.CantSetSchemesInMotion -> Nothing
         PlayerEffect.EntriesTrigger _ -> Nothing
-        PlayerEffect.AdditionalTriggers _ -> Nothing
+        PlayerEffect.BearersTrigger _ -> Nothing
         PlayerEffect.ControlledWhileSearching -> Nothing
         PlayerEffect.BlocksFromPiles -> Nothing
         PlayerEffect.YouChoose _ -> Nothing
@@ -3853,7 +3873,7 @@ shownGrants pid gs =
         PlayerEffect.StateBasedActionDoesntApply _ _ -> Nothing
         PlayerEffect.CantSetSchemesInMotion -> Nothing
         PlayerEffect.EntriesTrigger _ -> Nothing
-        PlayerEffect.AdditionalTriggers _ -> Nothing
+        PlayerEffect.BearersTrigger _ -> Nothing
         PlayerEffect.ControlledWhileSearching -> Nothing
         PlayerEffect.BlocksFromPiles -> Nothing
         PlayerEffect.YouChoose _ -> Nothing
@@ -3956,7 +3976,7 @@ maximumHandSize pid gs =
         PlayerEffect.StateBasedActionDoesntApply _ _ -> current
         PlayerEffect.CantSetSchemesInMotion -> current
         PlayerEffect.EntriesTrigger _ -> current
-        PlayerEffect.AdditionalTriggers _ -> current
+        PlayerEffect.BearersTrigger _ -> current
         PlayerEffect.ControlledWhileSearching -> current
         PlayerEffect.BlocksFromPiles -> current
         PlayerEffect.YouChoose _ -> current
@@ -4067,7 +4087,7 @@ unspentManaRows pid gs =
         PlayerEffect.StateBasedActionDoesntApply _ _ -> Nothing
         PlayerEffect.CantSetSchemesInMotion -> Nothing
         PlayerEffect.EntriesTrigger _ -> Nothing
-        PlayerEffect.AdditionalTriggers _ -> Nothing
+        PlayerEffect.BearersTrigger _ -> Nothing
         PlayerEffect.ControlledWhileSearching -> Nothing
         PlayerEffect.BlocksFromPiles -> Nothing
         PlayerEffect.YouChoose _ -> Nothing
@@ -4146,7 +4166,7 @@ losesLifeForUnspentMana pid gs =
         PlayerEffect.StateBasedActionDoesntApply _ _ -> False
         PlayerEffect.CantSetSchemesInMotion -> False
         PlayerEffect.EntriesTrigger _ -> False
-        PlayerEffect.AdditionalTriggers _ -> False
+        PlayerEffect.BearersTrigger _ -> False
         PlayerEffect.ControlledWhileSearching -> False
         PlayerEffect.BlocksFromPiles -> False
         PlayerEffect.YouChoose _ -> False
@@ -4236,7 +4256,7 @@ forbids reaches pid gs =
         PlayerEffect.StateBasedActionDoesntApply _ _ -> False
         PlayerEffect.CantSetSchemesInMotion -> False
         PlayerEffect.EntriesTrigger _ -> False
-        PlayerEffect.AdditionalTriggers _ -> False
+        PlayerEffect.BearersTrigger _ -> False
         PlayerEffect.ControlledWhileSearching -> False
         PlayerEffect.BlocksFromPiles -> False
         PlayerEffect.YouChoose _ -> False
@@ -4357,7 +4377,7 @@ precludes outcome pid gs =
         PlayerEffect.StateBasedActionDoesntApply _ _ -> False
         PlayerEffect.CantSetSchemesInMotion -> False
         PlayerEffect.EntriesTrigger _ -> False
-        PlayerEffect.AdditionalTriggers _ -> False
+        PlayerEffect.BearersTrigger _ -> False
         PlayerEffect.ControlledWhileSearching -> False
         PlayerEffect.BlocksFromPiles -> False
         PlayerEffect.YouChoose _ -> False
@@ -4435,7 +4455,7 @@ spendManaAsThoughRows pid gs =
         PlayerEffect.StateBasedActionDoesntApply _ _ -> Nothing
         PlayerEffect.CantSetSchemesInMotion -> Nothing
         PlayerEffect.EntriesTrigger _ -> Nothing
-        PlayerEffect.AdditionalTriggers _ -> Nothing
+        PlayerEffect.BearersTrigger _ -> Nothing
         PlayerEffect.ControlledWhileSearching -> Nothing
         PlayerEffect.BlocksFromPiles -> Nothing
         PlayerEffect.YouChoose _ -> Nothing
@@ -4609,7 +4629,7 @@ cantBeCountered pid counterer oid gs =
         PlayerEffect.StateBasedActionDoesntApply _ _ -> False
         PlayerEffect.CantSetSchemesInMotion -> False
         PlayerEffect.EntriesTrigger _ -> False
-        PlayerEffect.AdditionalTriggers _ -> False
+        PlayerEffect.BearersTrigger _ -> False
         PlayerEffect.ControlledWhileSearching -> False
         PlayerEffect.BlocksFromPiles -> False
         PlayerEffect.YouChoose _ -> False
@@ -4674,7 +4694,7 @@ targetingRestrictions =
         PlayerEffect.StateBasedActionDoesntApply _ _ -> Nothing
         PlayerEffect.CantSetSchemesInMotion -> Nothing
         PlayerEffect.EntriesTrigger _ -> Nothing
-        PlayerEffect.AdditionalTriggers _ -> Nothing
+        PlayerEffect.BearersTrigger _ -> Nothing
         PlayerEffect.ControlledWhileSearching -> Nothing
         PlayerEffect.BlocksFromPiles -> Nothing
         PlayerEffect.YouChoose _ -> Nothing
@@ -4758,7 +4778,7 @@ hexproofExemptions =
         PlayerEffect.StateBasedActionDoesntApply _ _ -> Nothing
         PlayerEffect.CantSetSchemesInMotion -> Nothing
         PlayerEffect.EntriesTrigger _ -> Nothing
-        PlayerEffect.AdditionalTriggers _ -> Nothing
+        PlayerEffect.BearersTrigger _ -> Nothing
         PlayerEffect.ControlledWhileSearching -> Nothing
         PlayerEffect.BlocksFromPiles -> Nothing
         PlayerEffect.YouChoose _ -> Nothing
@@ -4785,14 +4805,17 @@ hexproofExemptions =
         PlayerEffect.NextSpell _ _ -> Nothing
    in Maybe.mapMaybe exemption
 
--- CR 702.11e: may `you` target `candidate` as though it didn't have hexproof?
--- `you`, the aiming player, stands in for CR 109.5's "you", the effect's
--- controller: the same player for Detection Tower, which grants only its
--- controller. Read live, so a creature an opponent gains control of later in
--- the turn is covered (Detection Tower's third ruling; CR 611.2c).
+-- CR 702.11e: may `aimer` target `candidate` as though it didn't have hexproof?
+-- CR 109.5's "you" in the filter is the effect's controller (RowSource.controller),
+-- the aimer only where the row has none: Nowhere to Run's "creatures your
+-- opponents control" are its controller's opponents' whoever aims, which
+-- data/scenarios/nowhere-to-run-lifts-hexproof-only-from-its-controllers-opponents-creatures.json
+-- proves. Read live, so a creature an
+-- opponent gains control of later in the turn is covered (Detection Tower's
+-- third ruling; CR 611.2c).
 ignoresHexproofOf :: [(RowSource, HexproofExemption.HexproofExemption)] -> PlayerId -> ObjectId -> GameState -> Bool
-ignoresHexproofOf exemptions you candidate gs =
-  any (\(source, e) -> matchesObjectFor you source (HexproofExemption.permanents e) candidate gs) exemptions
+ignoresHexproofOf exemptions aimer candidate gs =
+  any (\(source, e) -> matchesObjectFor (Maybe.fromMaybe aimer (RowSource.controller source)) source (HexproofExemption.permanents e) candidate gs) exemptions
 
 -- CR 702.11e: may the aiming player target players as though they didn't have
 -- hexproof? protectedFromTargeting's `pastHexproof`.
@@ -4853,7 +4876,7 @@ unpreventable gs =
         PlayerEffect.StateBasedActionDoesntApply _ _ -> Nothing
         PlayerEffect.CantSetSchemesInMotion -> Nothing
         PlayerEffect.EntriesTrigger _ -> Nothing
-        PlayerEffect.AdditionalTriggers _ -> Nothing
+        PlayerEffect.BearersTrigger _ -> Nothing
         PlayerEffect.ControlledWhileSearching -> Nothing
         PlayerEffect.BlocksFromPiles -> Nothing
         PlayerEffect.YouChoose _ -> Nothing
@@ -4939,7 +4962,7 @@ unredirectable gs =
         PlayerEffect.StateBasedActionDoesntApply _ _ -> Nothing
         PlayerEffect.CantSetSchemesInMotion -> Nothing
         PlayerEffect.EntriesTrigger _ -> Nothing
-        PlayerEffect.AdditionalTriggers _ -> Nothing
+        PlayerEffect.BearersTrigger _ -> Nothing
         PlayerEffect.ControlledWhileSearching -> Nothing
         PlayerEffect.BlocksFromPiles -> Nothing
         PlayerEffect.YouChoose _ -> Nothing
@@ -5009,7 +5032,7 @@ damageAsThough gs =
         PlayerEffect.StateBasedActionDoesntApply _ _ -> Nothing
         PlayerEffect.CantSetSchemesInMotion -> Nothing
         PlayerEffect.EntriesTrigger _ -> Nothing
-        PlayerEffect.AdditionalTriggers _ -> Nothing
+        PlayerEffect.BearersTrigger _ -> Nothing
         PlayerEffect.ControlledWhileSearching -> Nothing
         PlayerEffect.BlocksFromPiles -> Nothing
         PlayerEffect.YouChoose _ -> Nothing
@@ -5125,7 +5148,7 @@ statedFlips pid gs =
         PlayerEffect.StateBasedActionDoesntApply _ _ -> Nothing
         PlayerEffect.CantSetSchemesInMotion -> Nothing
         PlayerEffect.EntriesTrigger _ -> Nothing
-        PlayerEffect.AdditionalTriggers _ -> Nothing
+        PlayerEffect.BearersTrigger _ -> Nothing
         PlayerEffect.ControlledWhileSearching -> Nothing
         PlayerEffect.BlocksFromPiles -> Nothing
         PlayerEffect.YouChoose _ -> Nothing
@@ -5207,7 +5230,7 @@ rollModifiers pid gs =
         PlayerEffect.StateBasedActionDoesntApply _ _ -> Nothing
         PlayerEffect.CantSetSchemesInMotion -> Nothing
         PlayerEffect.EntriesTrigger _ -> Nothing
-        PlayerEffect.AdditionalTriggers _ -> Nothing
+        PlayerEffect.BearersTrigger _ -> Nothing
         PlayerEffect.ControlledWhileSearching -> Nothing
         PlayerEffect.BlocksFromPiles -> Nothing
         PlayerEffect.YouChoose _ -> Nothing
@@ -5343,7 +5366,7 @@ overPlayerRefs f effect = case effect of
   PlayerEffect.StateBasedActionDoesntApply _ _ -> pure effect
   PlayerEffect.CantSetSchemesInMotion -> pure effect
   PlayerEffect.EntriesTrigger _ -> pure effect
-  PlayerEffect.AdditionalTriggers _ -> pure effect
+  PlayerEffect.BearersTrigger _ -> pure effect
   PlayerEffect.ControlledWhileSearching -> pure effect
   PlayerEffect.BlocksFromPiles -> pure effect
   PlayerEffect.YouChoose _ -> pure effect
@@ -5443,7 +5466,7 @@ overDamagePatterns f effect = case effect of
   PlayerEffect.StateBasedActionDoesntApply _ _ -> pure effect
   PlayerEffect.CantSetSchemesInMotion -> pure effect
   PlayerEffect.EntriesTrigger _ -> pure effect
-  PlayerEffect.AdditionalTriggers _ -> pure effect
+  PlayerEffect.BearersTrigger _ -> pure effect
   PlayerEffect.ControlledWhileSearching -> pure effect
   PlayerEffect.BlocksFromPiles -> pure effect
   PlayerEffect.YouChoose _ -> pure effect

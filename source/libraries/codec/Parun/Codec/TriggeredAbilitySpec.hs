@@ -28,6 +28,7 @@ import qualified Parun.Types.EntersTrigger as EntersTrigger
 import qualified Parun.Types.EntryRiders as EntryRiders
 import qualified Parun.Types.Filter as Filter
 import qualified Parun.Types.InZone as InZone
+import qualified Parun.Types.Keyword as Keyword
 import qualified Parun.Types.Modal as Modal
 import qualified Parun.Types.Mode as Mode
 import qualified Parun.Types.ModeMemory as ModeMemory
@@ -90,7 +91,8 @@ spec s = Spec.describe s "Parun.Codec.TriggeredAbility" $ do
             TriggeredAbility.intervening = Nothing,
             TriggeredAbility.name = Nothing,
             TriggeredAbility.limit = TriggerLimit.Unlimited,
-            TriggeredAbility.functionsFrom = Set.empty
+            TriggeredAbility.functionsFrom = Set.empty,
+            TriggeredAbility.keyword = Nothing
           }
       )
       " {\"condition\":{\"type\":\"Enters\",\"value\":{}},\"modal\":{\"modes\":[{\"clauses\":[{\"effects\":[{\"type\":\"Create\",\"value\":{\"quantity\":{\"type\":\"Literal\",\"value\":1},\"card\":\"Zombie Token\"}}]}]}]}} "
@@ -120,7 +122,8 @@ spec s = Spec.describe s "Parun.Codec.TriggeredAbility" $ do
                 ),
             TriggeredAbility.name = Nothing,
             TriggeredAbility.limit = TriggerLimit.Unlimited,
-            TriggeredAbility.functionsFrom = Set.empty
+            TriggeredAbility.functionsFrom = Set.empty,
+            TriggeredAbility.keyword = Nothing
           }
       )
       " {\"condition\":{\"type\":\"StepBegins\",\"value\":{\"phase\":{\"type\":\"Beginning\",\"value\":\"Upkeep\"},\"scope\":{\"type\":\"PlayersTurn\",\"value\":{\"type\":\"Relative\",\"value\":\"You\"}}}},\"modal\":{\"modes\":[{\"clauses\":[{\"effects\":[{\"type\":\"DealDamage\",\"value\":{\"parts\":[{\"ref\":{\"type\":\"InSlot\",\"value\":\"you\"},\"quantity\":{\"type\":\"Literal\",\"value\":1}}]}}]}]}]},\"intervening\":{\"type\":\"Compares\",\"value\":{\"measured\":{\"type\":\"Count\",\"value\":{\"scope\":{\"type\":\"InZone\",\"value\":{\"zone\":\"Battlefield\",\"player\":{\"type\":\"Relative\",\"value\":\"AnyPlayer\"}}},\"filter\":{\"type\":\"HasSubtype\",\"value\":\"Zombie\"},\"aggregation\":{\"type\":\"Members\"}}},\"comparison\":\"Exactly\",\"threshold\":{\"type\":\"Literal\",\"value\":0}}}} "
@@ -146,7 +149,8 @@ spec s = Spec.describe s "Parun.Codec.TriggeredAbility" $ do
                   TriggeredAbility.intervening = Nothing,
                   TriggeredAbility.name = Nothing,
                   TriggeredAbility.limit = TriggerLimit.Unlimited,
-                  TriggeredAbility.functionsFrom = Set.empty
+                  TriggeredAbility.functionsFrom = Set.empty,
+                  TriggeredAbility.keyword = Nothing
                 }
             ),
             ( AbilityName.MkAbilityName (Text.pack "each combat"),
@@ -161,7 +165,8 @@ spec s = Spec.describe s "Parun.Codec.TriggeredAbility" $ do
                   TriggeredAbility.intervening = Nothing,
                   TriggeredAbility.name = Nothing,
                   TriggeredAbility.limit = TriggerLimit.Unlimited,
-                  TriggeredAbility.functionsFrom = Set.empty
+                  TriggeredAbility.functionsFrom = Set.empty,
+                  TriggeredAbility.keyword = Nothing
                 }
             )
           ]
@@ -185,7 +190,8 @@ spec s = Spec.describe s "Parun.Codec.TriggeredAbility" $ do
           TriggeredAbility.intervening = Nothing,
           TriggeredAbility.name = Nothing,
           TriggeredAbility.limit = TriggerLimit.Unlimited,
-          TriggeredAbility.functionsFrom = Set.empty
+          TriggeredAbility.functionsFrom = Set.empty,
+          TriggeredAbility.keyword = Nothing
         }
       " {\"condition\":{\"type\":\"Enters\",\"value\":{}},\"modal\":{\"modes\":[{}]}} "
   -- CR 613.1f: the name a LoseNamedAbility removal joins to.
@@ -205,7 +211,8 @@ spec s = Spec.describe s "Parun.Codec.TriggeredAbility" $ do
           TriggeredAbility.intervening = Nothing,
           TriggeredAbility.name = Just (AbilityName.MkAbilityName (Text.pack "vigil")),
           TriggeredAbility.limit = TriggerLimit.Unlimited,
-          TriggeredAbility.functionsFrom = Set.empty
+          TriggeredAbility.functionsFrom = Set.empty,
+          TriggeredAbility.keyword = Nothing
         }
       " {\"condition\":{\"type\":\"Enters\",\"value\":{}},\"modal\":{\"modes\":[{}]},\"name\":\"vigil\"} "
   -- CR 113.6b: the zones an ability states it functions in.
@@ -225,6 +232,29 @@ spec s = Spec.describe s "Parun.Codec.TriggeredAbility" $ do
           TriggeredAbility.intervening = Nothing,
           TriggeredAbility.name = Nothing,
           TriggeredAbility.limit = TriggerLimit.Unlimited,
-          TriggeredAbility.functionsFrom = Set.fromList [Zone.Library, Zone.Hand]
+          TriggeredAbility.functionsFrom = Set.fromList [Zone.Library, Zone.Hand],
+          TriggeredAbility.keyword = Nothing
         }
       " {\"condition\":{\"type\":\"Enters\",\"value\":{}},\"functionsFrom\":[\"Library\",\"Hand\"],\"modal\":{\"modes\":[{}]}} "
+  -- CR 702: the keyword whose rules minted the ability, round-tripped for an
+  -- ability on the stack.
+  Spec.it s "a minted ability carries its keyword" $
+    Common.assertJsonCodec
+      s
+      toJson
+      fromJson
+      TriggeredAbility.MkTriggeredAbility
+        { TriggeredAbility.condition = TriggerCondition.Enters EntersTrigger.defaultValue,
+          TriggeredAbility.modal =
+            Modal.MkModal
+              (Seq.singleton (Mode.MkMode Seq.empty Map.empty))
+              (ModeSelection.ChooseExactly 1)
+              ModeMemory.NoMemory
+              Seq.empty,
+          TriggeredAbility.intervening = Nothing,
+          TriggeredAbility.name = Nothing,
+          TriggeredAbility.limit = TriggerLimit.Unlimited,
+          TriggeredAbility.functionsFrom = Set.empty,
+          TriggeredAbility.keyword = Just Keyword.Flying
+        }
+      " {\"condition\":{\"type\":\"Enters\",\"value\":{}},\"keyword\":{\"type\":\"Flying\"},\"modal\":{\"modes\":[{}]}} "
