@@ -1,5 +1,6 @@
 module Parun.Codec.EventShape where
 
+import qualified Parun.Codec.AttackWindow as AttackWindow
 import qualified Parun.Codec.CardArrivedIn as CardArrivedIn
 import qualified Parun.Codec.CastWindow as CastWindow
 import qualified Parun.Codec.MovedBetween as MovedBetween
@@ -19,7 +20,7 @@ codec =
       Arm.payload "MovedFrom" Zone.codec EventShape.MovedFrom (\x -> case x of EventShape.MovedFrom y -> Just y; _ -> Nothing),
       Arm.payload "CardArrivedIn" CardArrivedIn.codec EventShape.CardArrivedIn (\x -> case x of EventShape.CardArrivedIn y -> Just y; _ -> Nothing),
       Arm.payload "SpellCast" CastWindow.codec EventShape.SpellCast (\x -> case x of EventShape.SpellCast y -> Just y; _ -> Nothing),
-      Arm.nullary "AttackerDeclared" EventShape.AttackerDeclared,
+      Arm.payload "AttackerDeclared" AttackWindow.codec EventShape.AttackerDeclared (\x -> case x of EventShape.AttackerDeclared y -> Just y; _ -> Nothing),
       Arm.nullary "CountersPut" EventShape.CountersPut,
       Arm.nullary "Sacrificed" EventShape.Sacrificed,
       Arm.nullary "DealtCombatDamageToPlayer" EventShape.DealtCombatDamageToPlayer
@@ -31,7 +32,7 @@ tagOf x = case x of
   EventShape.MovedFrom {} -> "MovedFrom"
   EventShape.CardArrivedIn {} -> "CardArrivedIn"
   EventShape.SpellCast {} -> "SpellCast"
-  EventShape.AttackerDeclared -> "AttackerDeclared"
+  EventShape.AttackerDeclared {} -> "AttackerDeclared"
   EventShape.CountersPut -> "CountersPut"
   EventShape.Sacrificed -> "Sacrificed"
   EventShape.DealtCombatDamageToPlayer -> "DealtCombatDamageToPlayer"

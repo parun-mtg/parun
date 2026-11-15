@@ -4,6 +4,7 @@ import qualified Data.Set as Set
 import qualified Parun.Codec.EventShape as EventShape
 import qualified Parun.JsonCodec.Common as Common
 import qualified Parun.Spec as Spec
+import qualified Parun.Types.AttackWindow as AttackWindow
 import qualified Parun.Types.CardArrivedIn as CardArrivedIn
 import qualified Parun.Types.CastWindow as CastWindow
 import qualified Parun.Types.EventShape as EventShape
@@ -43,14 +44,13 @@ spec s = Spec.describe s "Parun.Codec.EventShape" $ do
       EventShape.codec
       (EventShape.SpellCast CastWindow.BeforeEvaluated)
       " {\"type\":\"SpellCast\",\"value\":\"BeforeEvaluated\"} "
-  -- CR 508.1a: payloadless, the bare tag.
-  Spec.it s "AttackerDeclared" $
+  Spec.it s "AttackerDeclared names its window" $
     Common.assertCodec
       s
       EventShape.codec
-      EventShape.AttackerDeclared
-      " {\"type\":\"AttackerDeclared\"} "
-  -- CR 122.6: payloadless too.
+      (EventShape.AttackerDeclared AttackWindow.ThisCombat)
+      " {\"type\":\"AttackerDeclared\",\"value\":\"ThisCombat\"} "
+  -- CR 122.6: payloadless.
   Spec.it s "CountersPut" $
     Common.assertCodec
       s

@@ -733,7 +733,7 @@ eventShapeNames asking x = case x of
   EventShape.MovedFrom _zone -> history asking HistoryRead.Moves
   EventShape.CardArrivedIn _cardArrivedIn -> history asking HistoryRead.Moves
   EventShape.SpellCast _castWindow -> history asking HistoryRead.Casts
-  EventShape.AttackerDeclared -> history asking HistoryRead.Attacks
+  EventShape.AttackerDeclared _attackWindow -> history asking HistoryRead.Attacks
   EventShape.CountersPut -> history asking HistoryRead.CounterPlacements
   EventShape.Sacrificed -> history asking HistoryRead.Sacrifices
   EventShape.DealtCombatDamageToPlayer -> history asking HistoryRead.Damage

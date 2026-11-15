@@ -1,5 +1,6 @@
 module Parun.Types.EventShape where
 
+import qualified Parun.Types.AttackWindow as AttackWindow
 import qualified Parun.Types.CardArrivedIn as CardArrivedIn
 import qualified Parun.Types.CastWindow as CastWindow
 import qualified Parun.Types.MovedBetween as MovedBetween
@@ -72,7 +73,7 @@ data EventShape
     -- attacker as it was declared, controlled by the player who attacked with
     -- it. A creature put onto the battlefield attacking never "attacked"
     -- (CR 508.4).
-    AttackerDeclared
+    AttackerDeclared AttackWindow.AttackWindow
   | -- | CR 122.6 / 608.2i: counters of one kind were put on an object, each
     -- member the object as they landed -- Lasting Tarfire's "you put a counter
     -- on a creature this turn". Filter.CountersPutThisTurn asks a member that

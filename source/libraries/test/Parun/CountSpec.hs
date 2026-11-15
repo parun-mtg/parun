@@ -30,10 +30,14 @@ import qualified Parun.Registry as Registry
 import qualified Parun.Spec as Spec
 import qualified Parun.Support as S
 import qualified Parun.Types.Aggregation as Aggregation
+import qualified Parun.Types.AttackTarget as AttackTarget
+import qualified Parun.Types.AttackWindow as AttackWindow
+import qualified Parun.Types.AttackerDeclared as AttackerDeclared
 import qualified Parun.Types.BeginningStep as BeginningStep
 import qualified Parun.Types.CardName as CardName
 import qualified Parun.Types.CardType as CardType
 import qualified Parun.Types.Color as Color
+import qualified Parun.Types.Combat as Combat
 import qualified Parun.Types.Count as Count.Type
 import qualified Parun.Types.CounterKind as CounterKind
 import qualified Parun.Types.Departure as Departure.Type
@@ -53,6 +57,7 @@ import qualified Parun.Types.Measure as Measure
 import qualified Parun.Types.Moved as Moved
 import qualified Parun.Types.MovedBetween as MovedBetween
 import qualified Parun.Types.Object as Object
+import qualified Parun.Types.ObjectSnapshot as ObjectSnapshot
 import qualified Parun.Types.OutsideDestination as OutsideDestination
 import qualified Parun.Types.Phase as Phase
 import qualified Parun.Types.PlayerCounterKind as PlayerCounterKind
@@ -286,6 +291,24 @@ spec s registry = Spec.describe s "Parun.Engine.Count" $ do
             (Filter.Type.HasCardType CardType.Creature)
             Aggregation.Members
     Spec.assertEqWith s "one death" (S.countOf (S.stubView []) (Filter.contextFor Teams.none Nothing Nothing) gs count) $ Just 1
+
+  Spec.it s "CR 508.1a / 511.3 AttackWindow.ThisCombat folds this combat's declarations" $ do
+    -- An earlier combat phase (CR 500.8) declared x as a Vehicle and y; this one
+    -- declares x again, no longer a Vehicle. Only this combat's x counts, as it
+    -- was declared now, and y belongs to the turn alone.
+    bearsPrinting <- S.printingOf s registry "Grizzly Bears"
+    let gs0 = Setup.emptyGame S.bothPlayers
+        (x, gs1) = S.addPermanent bearsPrinting S.alice gs0
+        (y, gs2) = S.addPermanent bearsPrinting S.alice gs1
+        declared oid subtypes = GameEvent.AttackerDeclared (AttackerDeclared.MkAttackerDeclared oid S.bob (AttackTarget.OfPlayer S.bob) 1 S.alice ((S.permanentSnapshot oid S.alice 2) {ObjectSnapshot.characteristics = S.emptyCharacteristics {PC.subtypes = subtypes}}))
+        logged = S.withEvents [declared x (Set.singleton Subtype.Vehicle), declared y Set.empty, declared x Set.empty] gs2
+        turn = GameState.turn logged
+        gs = logged {GameState.turn = turn {TurnRegisters.combat = (TurnRegisters.combat turn) {Combat.declaredAttackers = Set.singleton x}}}
+        viewOf = S.stubView [(x, Set.empty, Set.empty, Just S.alice), (y, Set.empty, Set.empty, Just S.alice)]
+        countOver window filter' = S.countOf viewOf (Filter.contextFor Teams.none (Just S.alice) Nothing) gs (Count.Type.MkCount (Scope.InHistory (EventShape.AttackerDeclared window)) filter' Aggregation.Members)
+    Spec.assertEqWith s "this combat declared one attacker" (countOver AttackWindow.ThisCombat (Filter.Type.And [])) (Just 1)
+    Spec.assertEqWith s "and not as a Vehicle" (countOver AttackWindow.ThisCombat (Filter.Type.HasSubtype Subtype.Vehicle)) (Just 0)
+    Spec.assertEqWith s "this turn declared three" (countOver AttackWindow.ThisTurn (Filter.Type.And [])) (Just 3)
 
   Spec.it s "Relative AnyPlayer folds every player's copy" $ do
     -- The first case's board with the HeldBy Controller conjunct dropped: all
