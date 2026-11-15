@@ -81,8 +81,17 @@
             "targetSlots": {
               "target": {
                 "filter": {
-                  "type": "HasCardType",
-                  "value": "Planeswalker"
+                  "type": "Or",
+                  "value": [
+                    {
+                      "type": "HasCardType",
+                      "value": "Creature"
+                    },
+                    {
+                      "type": "HasCardType",
+                      "value": "Planeswalker"
+                    }
+                  ]
                 },
                 "pool": {
                   "type": "Permanents"
