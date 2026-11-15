@@ -60,6 +60,10 @@ data Scratch = MkScratch
     -- `enteringBeside`, what Parun.Engine.Projection.boardAsEntering subtracts.
     -- Empty at every priority window.
     enteringSubjects :: !(Map.Map ObjectId.ObjectId (Maybe EntryOrigin.EntryOrigin)),
+    -- | CR 400.7d: the spell each entering permanent is becoming as it
+    -- resolves, which a count its entry makes reads the cast off before the
+    -- move is logged (Quantity.Convokers). Empty at every priority window.
+    enteringSpells :: !(Map.Map ObjectId.ObjectId ObjectId.ObjectId),
     -- | CR 614.12 / 608.2f: the zone each permanent that has entered so far in
     -- the Event.arrivingTogether scope under way left, so a later member's
     -- entry still counts it there (Parun.Engine.Projection.boardAsEntering).

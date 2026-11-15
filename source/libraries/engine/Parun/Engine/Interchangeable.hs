@@ -363,6 +363,7 @@ quiet gs =
   Seq.null (GameState.broughtIn gs)
     && Set.null (Scratch.enteringBeside (GameState.scratch gs))
     && Map.null (Scratch.enteringSubjects (GameState.scratch gs))
+    && Map.null (Scratch.enteringSpells (GameState.scratch gs))
     && Map.null (Scratch.enteredFrom (GameState.scratch gs))
     && Map.null (Scratch.enteringPending (GameState.scratch gs))
     && Maybe.isNothing (Scratch.refusedEntries (GameState.scratch gs))

@@ -775,8 +775,14 @@ evaluateAgainst viewOf context gs announcedOn mOid mView quantity =
         -- id, so CR 400.7's new object starts again at 0.
         Quantity.TimesTappedThisTurn -> fmap (Game.timesTappedThisTurn gs) mOid
         -- CR 702.51c off the cast's own record rather than over the board, so a
-        -- convoker that has since left still counts (Knight-Errant of Eos).
-        Quantity.Convokers -> fmap (\oid -> toInteger (Set.size (Count.convokersOf oid (fmap LoggedEvent.event (Foldable.toList (TurnRegisters.events (GameState.turn gs))))))) mOid
+        -- convoker that has since left still counts (Knight-Errant of Eos). A
+        -- permanent still entering is asked as the spell it is becoming (CR
+        -- 400.7d, Scratch.enteringSpells), since its move is not logged yet;
+        -- the scenario ancient-imperiosaur-enters-with-two-counters-per-convoker
+        -- proves it.
+        Quantity.Convokers ->
+          let asCast oid = Map.findWithDefault oid oid (Scratch.enteringSpells (GameState.scratch gs))
+           in fmap (\oid -> toInteger (Set.size (Count.convokersOf (asCast oid) (fmap LoggedEvent.event (Foldable.toList (TurnRegisters.events (GameState.turn gs))))))) mOid
         -- CR 702.30a's window as a 0/1 -- echo's intervening "if", read of the
         -- ability's own source at both CR 603.4 and CR 608.2a.
         --

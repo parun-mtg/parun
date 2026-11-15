@@ -504,6 +504,7 @@ blankScratch =
       Scratch.ambientAmounts = Map.empty,
       Scratch.enteringBeside = Set.empty,
       Scratch.enteringSubjects = Map.empty,
+      Scratch.enteringSpells = Map.empty,
       Scratch.enteredFrom = Map.empty,
       Scratch.enteringPending = Map.empty,
       Scratch.refusedEntries = Nothing,

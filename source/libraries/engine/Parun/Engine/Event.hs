@@ -9373,7 +9373,16 @@ changeZoneWithCause settle discarded asOf batch oid requestedDest requestedPosit
                     -- under data/scenarios/aura prove it.
                     State.modify' (\g -> List.foldl' (storeEntryEffect newId) g defining)
                     Monad.mapM_ (uncurry (addEnteringCounters Nothing newId)) (Map.toAscList entering)
+                    -- CR 400.7d: for the span of the loop, the permanent names the
+                    -- spell it is becoming, which the Moved event below does only
+                    -- once it has entered (Ancient Imperiosaur's "each creature that
+                    -- convoked it"). Restored rather than cleared, as runEntry's own
+                    -- spans are.
+                    spellsBefore <- State.gets (Scratch.enteringSpells . GameState.scratch)
+                    let withSpells spells g = g {GameState.scratch = (GameState.scratch g) {Scratch.enteringSpells = spells}}
+                    Monad.when resolvedOnto (State.modify' (withSpells (Map.insert newId oid spellsBefore)))
                     refusal <- runEntry settle (Just fromZone) (Game.entryOriginOf oid unentered) batch newId
+                    State.modify' (withSpells spellsBefore)
                     fallen <- case refusal of
                       Nothing -> pure Seq.empty
                       -- CR 614.1a: EntryRewrite.SacrificeToEnter's "if you don't, put
