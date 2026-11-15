@@ -20,7 +20,7 @@
         }
       ],
       "name": "Entity Tracker",
-      "oracleText": "Flash\nEerie \u2014 Whenever an enchantment you control enters and whenever you fully unlock a Room, draw a card.",
+      "oracleText": "Flash\nEerie — Whenever an enchantment you control enters and whenever you fully unlock a Room, draw a card.",
       "power": {
         "type": "Literal",
         "value": 2
@@ -42,10 +42,6 @@
                     "value": {
                       "type": "And",
                       "value": [
-                        {
-                          "type": "HasCardType",
-                          "value": "Enchantment"
-                        },
                         {
                           "type": "HeldBy",
                           "value": {

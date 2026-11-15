@@ -112,8 +112,8 @@
           "Creature"
         ],
         "subtypes": [
-          "Human",
-          "Cleric"
+          "Cleric",
+          "Human"
         ]
       }
     }
