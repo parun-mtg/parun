@@ -15,8 +15,9 @@ container is built fresh.
 ```bash
 #!/usr/bin/env bash
 # Cloud environment setup for parun: install Nix, enter the dev shell,
-# configure cabal, build dependencies. The project itself changes too often
-# for a prebuilt copy to stay useful, so sessions build it themselves.
+# configure cabal, fetch card data, build dependencies. The project itself
+# changes too often for a prebuilt copy to stay useful, so sessions build it
+# themselves.
 set -euo pipefail
 cd parun
 export USER=root HOME=/root PATH="/root/.nix-profile/bin:$PATH"
@@ -54,6 +55,22 @@ program-options
   ghc-options: -j4 +RTS -A64m -RTS
 EOF
 
-# 4. Build dependencies. A failure here must not stop sessions starting.
+# 4. Fetch MTGJSON and mtgish into _scratch/ beside the build, which they
+# must not push past the snapshot's time limit. mtgish comes as a tarball,
+# like the flake inputs. A failure here must not stop sessions starting.
+mkdir -p _scratch
+mtgjson() {
+  curl -fsSL "https://mtgjson.com/api/v5/$1.json.gz" | gunzip > "_scratch/$1.json.part" &&
+    mv "_scratch/$1.json.part" "_scratch/$1.json"
+}
+(mtgjson AllPrintings) || true &
+(mtgjson AtomicCards &&
+  jq -f script/ingest/candidates.jq _scratch/AtomicCards.json > _scratch/candidates.json) || true &
+(rm -rf _scratch/mtgish && mkdir _scratch/mtgish &&
+  curl -fsSL https://github.com/i5jb/mtgish/archive/HEAD.tar.gz |
+  tar -xz --strip-components=1 -C _scratch/mtgish) || true &
+
+# 5. Build dependencies. A failure here must not stop sessions starting.
 shell 'cabal update && cabal build all --only-dependencies' || true
+wait
 ```

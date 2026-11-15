@@ -33,9 +33,10 @@ The units, as sub-issues of the tracker:
 
 ## Session setup
 
-A cloud session starts without `_scratch/` (gitignored). Fetch each input
-when a step needs it; a missing file is a fetch, not a blocker. Its machine
-is set up by `docs/agents/cloud-environment.md`.
+A cloud session's machine is set up by `docs/agents/cloud-environment.md`,
+which fetches MTGJSON and mtgish into `_scratch/` (gitignored) up to a week
+before the session. Fetch any other input when a step needs it, and re-fetch
+one that is missing or too old; a missing file is a fetch, not a blocker.
 
 - MTGJSON: `curl -sfL -o _scratch/X.json.gz
   https://mtgjson.com/api/v5/X.json.gz && gunzip _scratch/X.json.gz` for `X`
@@ -43,7 +44,8 @@ is set up by `docs/agents/cloud-environment.md`.
   script/ingest/candidates.jq _scratch/AtomicCards.json >
   _scratch/candidates.json`, the CANDIDATES file.
 - mtgish: `git clone https://github.com/i5jb/mtgish _scratch/mtgish`; it
-  commits `data/mtgish.lines.json` pre-built, and `git pull` refreshes it.
+  commits `data/mtgish.lines.json` pre-built. The environment's copy is a
+  tarball, not a clone: re-fetch it the way the script does.
 - Prior art, optional: clone `https://github.com/phase-rs/phase` and
   `https://github.com/wingedsheep/argentum-engine` into `_scratch/`.
 - A binary run outside `cabal run` (`cabal list-bin parun`) needs
