@@ -1,0 +1,114 @@
+{
+  "faces": [
+    {
+      "enchant": [
+        {
+          "filter": {
+            "type": "Or",
+            "value": [
+              {
+                "type": "HasCardType",
+                "value": "Creature"
+              },
+              {
+                "type": "HasSubtype",
+                "value": "Vehicle"
+              }
+            ]
+          },
+          "pool": {
+            "type": "Permanents"
+          }
+        }
+      ],
+      "keywords": [
+        {
+          "type": "StartYourEngines"
+        }
+      ],
+      "manaCost": [
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "White"
+          }
+        }
+      ],
+      "name": "Lightwheel Enhancements",
+      "oracleText": "Enchant creature or Vehicle\nStart your engines! (If you have no speed, it starts at 1. It increases once on each of your turns when an opponent loses life. Max speed is 4.)\nEnchanted permanent gets +1/+1 and has vigilance.\nMax speed — You may cast this card from your graveyard.",
+      "staticAbilities": [
+        {
+          "affected": {
+            "type": "Attached"
+          },
+          "modifications": [
+            {
+              "type": "ModifyPowerToughness",
+              "value": {
+                "power": {
+                  "type": "Literal",
+                  "value": 1
+                },
+                "toughness": {
+                  "type": "Literal",
+                  "value": 1
+                }
+              }
+            },
+            {
+              "type": "GainKeyword",
+              "value": {
+                "type": "Vigilance"
+              }
+            }
+          ]
+        },
+        {
+          "affected": {
+            "type": "MatchingAnywhere",
+            "value": {
+              "type": "IsSource"
+            }
+          },
+          "condition": {
+            "type": "Compares",
+            "value": {
+              "comparison": "AtLeast",
+              "measured": {
+                "type": "Speed",
+                "value": {
+                  "type": "Relative",
+                  "value": "You"
+                }
+              },
+              "threshold": {
+                "type": "Literal",
+                "value": 4
+              }
+            }
+          },
+          "functionsFrom": [
+            "Graveyard"
+          ],
+          "modifications": [
+            {
+              "type": "GainCastingPermission",
+              "value": {
+                "type": "PlayFromGraveyard"
+              }
+            }
+          ]
+        }
+      ],
+      "typeLine": {
+        "subtypes": [
+          "Aura"
+        ],
+        "types": [
+          "Enchantment"
+        ]
+      }
+    }
+  ]
+}
