@@ -647,7 +647,7 @@ becomeCopy resolving source controller legal chosen (BecomeCopy.MkBecomeCopy ori
 cantBeCopied :: ObjectId -> Object.Object -> StackObjectKind.StackObjectKind -> GameState.GameState -> Bool
 cantBeCopied oid obj kind gs =
   Copyability.CantBeCopied == case kind of
-    StackObjectKind.Spell -> PC.copyability (Projection.projectWithLastKnown oid gs)
+    StackObjectKind.Spell -> PC.copyability (Projection.projectWithLastKnown Map.empty oid gs)
     StackObjectKind.ActivatedAbility -> case Object.source obj of
       Source.OfAbility a -> ActivatedAbility.copyability (ActivatedAbilitySource.ability a)
       _ -> Copyability.Copyable

@@ -43,7 +43,7 @@
         }
       ],
       "name": "Ancient Imperiosaur",
-      "oracleText": "Convoke\nTrample, ward {2}\nThis creature enters with two +1/+1 counters on it for each creature that convoked it.",
+      "oracleText": "Convoke (Your creatures can help cast this spell. Each creature you tap while casting this spell pays for {1} or one mana of that creature's color.)\nTrample, ward {2}\nThis creature enters with two +1/+1 counters on it for each creature that convoked it.",
       "power": {
         "type": "Literal",
         "value": 6
