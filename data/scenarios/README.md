@@ -36,7 +36,9 @@ subdirectory named for that spec; `docs/scenario-burndown.md` lists the ones sti
   Cryptic Spires' (CR 207.5, `["Blue", "Black"]`). `stack` lists the
   spells on the stack, top first, each a placement with its `owner` seat
   (CR 112.1, `{ "owner": "alice", "card": "Divination" }`); a placed spell was
-  never cast (CR 601.2i) and holds no cast's choices, no mode, target or X.
+  never cast (CR 601.2i) and holds only the modes its selection forces (CR
+  601.2b). A spell whose cast would choose a mode or target is rejected; X
+  is never chosen.
   `active` names a seat;
   `turn` (default 1) and `step` are where the game starts; `monarch` optionally names a seat;
   `attackOption` (CR 806.2b) is `MultiplePlayers` unless given, and `null` is

@@ -33,6 +33,9 @@ data ScenarioFailure
     MkUnknownProtector Label.Label
   | -- | A spell on the board's stack whose owner names no seat.
     MkUnknownOwner Label.Label
+  | -- | A spell on the board's stack whose cast would have chosen a mode or
+    -- target (CR 601.2b-c), which a board cannot name.
+    MkUnannouncedSpell CardName.CardName
   | -- | A placement shows a face its card does not have (CR 712.6), card first.
     MkUnknownFace CardName.CardName CardName.CardName
   | -- | A placement attached to a label that names nothing on the board, or to

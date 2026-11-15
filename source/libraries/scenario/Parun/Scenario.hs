@@ -127,6 +127,8 @@ import qualified Parun.Types.ManaRetention as ManaRetention
 import qualified Parun.Types.ManaType as ManaType
 import qualified Parun.Types.ManaUnit as ManaUnit
 import qualified Parun.Types.MatchScope as MatchScope
+import qualified Parun.Types.Modal as Modal.Type
+import qualified Parun.Types.ModeIndex as ModeIndex
 import qualified Parun.Types.MonarchIs as MonarchIs
 import qualified Parun.Types.Move as Move
 import qualified Parun.Types.NamesAre as NamesAre
@@ -511,7 +513,34 @@ placeStack registry board seated = Monad.foldM placeOne (Right seated) (stackUpw
       Left failure -> pure (Left failure)
       Right sofar -> case Map.lookup (StackPlacement.owner spell) (Staged.seats sofar) of
         Nothing -> pure (Left (Failure.MkUnknownOwner (StackPlacement.owner spell)))
-        Just owner -> placeAll registry Zone.Stack Nothing owner [StackPlacement.placement spell] sofar
+        Just owner -> do
+          placed <- placeAll registry Zone.Stack Nothing owner [StackPlacement.placement spell] sofar
+          pure (placed >>= announcePlaced (StackPlacement.placement spell))
+
+-- | CR 601.2b-c: the spell just placed holds the modes its selection forces,
+-- as a cast would have stamped them. A board names no mode or target, so a
+-- spell that would have asked for either is rejected rather than placed
+-- unannounced.
+announcePlaced :: Placement.Placement -> Staged.Staged -> Either Failure.ScenarioFailure Staged.Staged
+announcePlaced placement board =
+  let gs = Staged.state board
+      -- Staging mints ids in placement order (attachAll), so the spell is the
+      -- newest object.
+      placed = do
+        (oid, _) <- Map.lookupMax (GameState.objects gs)
+        face <- Projection.spellFaceOf oid gs
+        pure (oid, face)
+   in case placed of
+        Nothing -> Right board
+        Just (oid, face) ->
+          let modal = Face.spell face
+              everyMode = Set.fromList (fmap ModeIndex.MkModeIndex (take (Seq.length (Modal.Type.modes modal)) [0 ..]))
+           in case Modal.forcedSelection everyMode (Modal.Type.selection modal) of
+                Just chosen
+                  | Map.null (Engine.Card.modesTargetSlots chosen face) ->
+                      let stamp obj = obj {Object.bindings = Map.union (Object.bindings obj) (Binding.fromChoices Map.empty Nothing chosen)}
+                       in Right board {Staged.state = gs {GameState.objects = Map.adjust stamp oid (GameState.objects gs)}}
+                _ -> Left (Failure.MkUnannouncedSpell (Placement.card placement))
 
 -- | A seat's zones in the order they are placed, which is creation order, each
 -- supplementary deck last and in the command zone (CR 718.2 / 904.3).
@@ -2289,6 +2318,7 @@ render failure = case failure of
   Failure.MkUnreadableDeck label problem -> Label.unwrap label <> Text.pack "'s deck: " <> problem
   Failure.MkUnknownProtector label -> Label.unwrap label <> Text.pack " protects a placed battle but has no seat"
   Failure.MkUnknownOwner label -> Label.unwrap label <> Text.pack " owns a spell on the stack but has no seat"
+  Failure.MkUnannouncedSpell name -> Text.pack "a spell " <> CardName.unwrap name <> Text.pack " placed on the stack with a mode or target to choose"
   Failure.MkUnknownFace name face -> CardName.unwrap name <> Text.pack " has no face named " <> CardName.unwrap face
   Failure.MkIllegalAttachment label -> Text.pack "a placement cannot be attached to " <> Label.unwrap label
   Failure.MkIllegalEmperor label -> Label.unwrap label <> Text.pack " is an emperor on no team, or not its team's only one"

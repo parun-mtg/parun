@@ -164,6 +164,18 @@ spec s registry = Spec.describe s "Scenario" $ do
     result <- Scenario.stage registry setup
     Spec.assertEqWith s "unknown owner" result (Left (ScenarioFailure.MkUnknownOwner (Label.MkLabel (Text.pack "carol"))))
 
+  Spec.it s "CR 601.2b a placed spell with modes to choose is rejected" $ do
+    let spell = StackPlacement.MkStackPlacement {StackPlacement.owner = Label.MkLabel (Text.pack "alice"), StackPlacement.placement = S.permanent "Fortify"}
+        setup = (S.duel S.precombatMain [] []) {Board.stack = Seq.singleton spell}
+    result <- Scenario.stage registry setup
+    Spec.assertEqWith s "unchosen modes" result (Left (ScenarioFailure.MkUnannouncedSpell (CardName.MkCardName (Text.pack "Fortify"))))
+
+  Spec.it s "CR 601.2c a placed spell with a target to choose is rejected" $ do
+    let spell = StackPlacement.MkStackPlacement {StackPlacement.owner = Label.MkLabel (Text.pack "alice"), StackPlacement.placement = S.permanent "Shock"}
+        setup = (S.duel S.precombatMain [] []) {Board.stack = Seq.singleton spell}
+    result <- Scenario.stage registry setup
+    Spec.assertEqWith s "unchosen target" result (Left (ScenarioFailure.MkUnannouncedSpell (CardName.MkCardName (Text.pack "Shock"))))
+
   Spec.it s "unreached scheduled entries fail" $ do
     let setup = S.duel S.precombatMain [] []
         script = S.turn 1 [S.on S.precombatMain S.alice (S.attack [])]
