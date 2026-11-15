@@ -6,11 +6,11 @@ import qualified Parun.Codec.ColorSpread as ColorSpread
 import qualified Parun.Codec.CouldProduce as CouldProduce
 import qualified Parun.Codec.Filter as Filter
 import qualified Parun.Codec.Keyword as Keyword
+import qualified Parun.Codec.ManaAmong as ManaAmong
 import qualified Parun.Codec.ManaCount as ManaCount
 import qualified Parun.Codec.ManaType as ManaType
 import qualified Parun.JsonCodec.Arm as Arm
 import qualified Parun.JsonCodec.Codec as Codec
-import qualified Parun.JsonCodec.Common as Common
 import qualified Parun.Types.ColorSpread as ColorSpread
 import qualified Parun.Types.ManaProduction as ManaProduction
 
@@ -21,7 +21,7 @@ codec =
   Arm.tagged
     tagOf
     [ Arm.payload "OfType" ManaType.codec ManaProduction.OfType (\x -> case x of ManaProduction.OfType y -> Just y; _ -> Nothing),
-      Arm.payload "OneOf" (Common.set ManaType.codec) ManaProduction.OneOf (\x -> case x of ManaProduction.OneOf y -> Just y; _ -> Nothing),
+      Arm.payload "OneOf" ManaAmong.codec ManaProduction.OneOf (\x -> case x of ManaProduction.OneOf y -> Just y; _ -> Nothing),
       Arm.optionalPayload "AnyColor" ColorSpread.codec (ManaProduction.AnyColor . Maybe.fromMaybe ColorSpread.OneColor) (\x -> case x of ManaProduction.AnyColor ColorSpread.OneColor -> Just Nothing; ManaProduction.AnyColor y -> Just (Just y); _ -> Nothing),
       Arm.nullary "Chosen" ManaProduction.Chosen,
       Arm.nullary "SnowSymbol" ManaProduction.SnowSymbol,

@@ -528,6 +528,7 @@ import qualified Parun.Codec.ManaAbilityResolvedSpec
 import qualified Parun.Codec.ManaAddedCauseSpec
 import qualified Parun.Codec.ManaAddedSpec
 import qualified Parun.Codec.ManaAdditionSpec
+import qualified Parun.Codec.ManaAmongSpec
 import qualified Parun.Codec.ManaCostSpec
 import qualified Parun.Codec.ManaCountSpec
 import qualified Parun.Codec.ManaFilterSpec
@@ -1615,6 +1616,7 @@ spec s reference corpus = do
   Parun.Codec.ManaAddedCauseSpec.spec s
   Parun.Codec.ManaAddedSpec.spec s
   Parun.Codec.ManaAdditionSpec.spec s
+  Parun.Codec.ManaAmongSpec.spec s
   Parun.Codec.ManaCostSpec.spec s
   Parun.Codec.ManaCountSpec.spec s
   Parun.Codec.ManaFilterSpec.spec s

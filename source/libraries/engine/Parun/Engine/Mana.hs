@@ -93,6 +93,7 @@ import qualified Parun.Types.ManaAbilityResolved as ManaAbilityResolved
 import qualified Parun.Types.ManaAdded as ManaAdded
 import qualified Parun.Types.ManaAddedCause as ManaAddedCause
 import qualified Parun.Types.ManaAddition as ManaAddition
+import qualified Parun.Types.ManaAmong as ManaAmong
 import Parun.Types.ManaCost (ManaCost)
 import qualified Parun.Types.ManaCost as ManaCost
 import Parun.Types.ManaOption (ManaOption)
@@ -327,7 +328,7 @@ produced bound oid gs = producedVisiting bound Set.empty oid gs gs
 producedVisiting :: Map.Map SlotName (Set.Set Recipient.Recipient) -> Set.Set ObjectId -> ObjectId -> GameState -> GameState -> ManaProduction -> Produced
 producedVisiting bound visited oid gs poolBoard production = case production of
   ManaProduction.OfType manaType -> Settles [manaType]
-  ManaProduction.OneOf types -> among (Set.toList types)
+  ManaProduction.OneOf amongTypes -> amongSpread (ManaAmong.spread amongTypes) (Set.toList (ManaAmong.types amongTypes))
   ManaProduction.AnyColor spread ->
     Offers
       spread
@@ -363,8 +364,9 @@ producedVisiting bound visited oid gs poolBoard production = case production of
         symbols = fmap (\symbol -> (symbol, symbolAdds symbol)) (concatMap costOf (Set.toList (GameState.battlefield gs)))
      in if all (null . NonEmpty.tail . snd) symbols then Settles (concatMap (snd . NonEmpty.head . snd) symbols) else PerSymbol symbols
   where
-    among types = case types of
-      first : second : more -> Offers ColorSpread.OneColor (first NonEmpty.:| (second : more))
+    among = amongSpread ColorSpread.OneColor
+    amongSpread spread types = case types of
+      first : second : more -> Offers spread (first NonEmpty.:| (second : more))
       settled -> Settles settled
 
 -- CR 105.1 / 106.1b: the colours among some mana's types, colourless having none.
