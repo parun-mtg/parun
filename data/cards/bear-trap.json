@@ -1,1 +1,80 @@
-{"faces":[{"name":"Bear Trap","oracleText":"Flash\n{3}, {T}, Sacrifice this artifact: It deals 3 damage to target creature.","typeLine":{"types":["Artifact"]},"manaCost":[{"type":"Generic","value":1}],"keywords":[{"type":"Flash"}],"activatedAbilities":[{"cost":{"mana":[{"type":"Generic","value":3}],"components":[{"type":"TapThis"},{"type":"SacrificeThis"}]},"modal":{"modes":[{"clauses":[{"effects":[{"type":"DealDamage","value":{"parts":[{"ref":{"type":"InSlot","value":"target"},"quantity":{"type":"Literal","value":3}}]}}]}],"targetSlots":{"target":{"pool":{"type":"Creatures"}}}}]}}]}]}
+{
+  "faces": [
+    {
+      "activatedAbilities": [
+        {
+          "cost": {
+            "components": [
+              {
+                "type": "TapThis"
+              },
+              {
+                "type": "SacrificeThis"
+              }
+            ],
+            "mana": [
+              {
+                "type": "Generic",
+                "value": 3
+              }
+            ]
+          },
+          "modal": {
+            "modes": [
+              {
+                "clauses": [
+                  {
+                    "effects": [
+                      {
+                        "type": "DealDamage",
+                        "value": {
+                          "parts": [
+                            {
+                              "quantity": {
+                                "type": "Literal",
+                                "value": 3
+                              },
+                              "ref": {
+                                "type": "InSlot",
+                                "value": "target"
+                              }
+                            }
+                          ]
+                        }
+                      }
+                    ]
+                  }
+                ],
+                "targetSlots": {
+                  "target": {
+                    "pool": {
+                      "type": "Creatures"
+                    }
+                  }
+                }
+              }
+            ]
+          }
+        }
+      ],
+      "keywords": [
+        {
+          "type": "Flash"
+        }
+      ],
+      "manaCost": [
+        {
+          "type": "Generic",
+          "value": 1
+        }
+      ],
+      "name": "Bear Trap",
+      "oracleText": "Flash\n{3}, {T}, Sacrifice this artifact: It deals 3 damage to target creature.",
+      "typeLine": {
+        "types": [
+          "Artifact"
+        ]
+      }
+    }
+  ]
+}

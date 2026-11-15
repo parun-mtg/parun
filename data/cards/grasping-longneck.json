@@ -1,1 +1,82 @@
-{"faces":[{"name":"Grasping Longneck","oracleText":"Reach\nWhen this creature dies, you gain 2 life.","typeLine":{"types":["Creature","Enchantment"],"subtypes":["Horror"]},"manaCost":[{"type":"Generic","value":2},{"type":"OfType","value":{"type":"Colored","value":"Green"}}],"power":{"type":"Literal","value":4},"toughness":{"type":"Literal","value":2},"keywords":[{"type":"Reach"}],"triggeredAbilities":[{"condition":{"type":"Leaves","value":{"destinations":[{"zone":"Graveyard"}]}},"modal":{"modes":[{"clauses":[{"effects":[{"type":"GainLife","value":{"player":{"type":"Relative","value":"You"},"quantity":{"type":"Literal","value":2}}}]}]}]}}]}]}
+{
+  "faces": [
+    {
+      "keywords": [
+        {
+          "type": "Reach"
+        }
+      ],
+      "manaCost": [
+        {
+          "type": "Generic",
+          "value": 2
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "Green"
+          }
+        }
+      ],
+      "name": "Grasping Longneck",
+      "oracleText": "Reach\nWhen this creature dies, you gain 2 life.",
+      "power": {
+        "type": "Literal",
+        "value": 4
+      },
+      "toughness": {
+        "type": "Literal",
+        "value": 2
+      },
+      "triggeredAbilities": [
+        {
+          "condition": {
+            "type": "Leaves",
+            "value": {
+              "destinations": [
+                {
+                  "zone": "Graveyard"
+                }
+              ]
+            }
+          },
+          "modal": {
+            "modes": [
+              {
+                "clauses": [
+                  {
+                    "effects": [
+                      {
+                        "type": "GainLife",
+                        "value": {
+                          "player": {
+                            "type": "Relative",
+                            "value": "You"
+                          },
+                          "quantity": {
+                            "type": "Literal",
+                            "value": 2
+                          }
+                        }
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      ],
+      "typeLine": {
+        "subtypes": [
+          "Horror"
+        ],
+        "types": [
+          "Creature",
+          "Enchantment"
+        ]
+      }
+    }
+  ]
+}

@@ -1,1 +1,98 @@
-{"faces":[{"name":"Split Up","oracleText":"Choose one —\n• Destroy all tapped creatures.\n• Destroy all untapped creatures.","typeLine":{"types":["Sorcery"]},"manaCost":[{"type":"Generic","value":1},{"type":"OfType","value":{"type":"Colored","value":"White"}},{"type":"OfType","value":{"type":"Colored","value":"White"}}],"spell":{"modes":[{"clauses":[{"effects":[{"type":"Destroy","value":{"ref":{"type":"EachMatching","value":{"type":"And","value":[{"type":"IsTapped"},{"type":"HasCardType","value":"Creature"}]}},"regenerability":"Regenerable"}}]}]},{"clauses":[{"effects":[{"type":"Destroy","value":{"ref":{"type":"EachMatching","value":{"type":"And","value":[{"type":"Not","value":{"type":"IsTapped"}},{"type":"HasCardType","value":"Creature"}]}},"regenerability":"Regenerable"}}]}]}]}}]}
+{
+  "faces": [
+    {
+      "manaCost": [
+        {
+          "type": "Generic",
+          "value": 1
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "White"
+          }
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "White"
+          }
+        }
+      ],
+      "name": "Split Up",
+      "oracleText": "Choose one —\n• Destroy all tapped creatures.\n• Destroy all untapped creatures.",
+      "spell": {
+        "modes": [
+          {
+            "clauses": [
+              {
+                "effects": [
+                  {
+                    "type": "Destroy",
+                    "value": {
+                      "ref": {
+                        "type": "EachMatching",
+                        "value": {
+                          "type": "And",
+                          "value": [
+                            {
+                              "type": "IsTapped"
+                            },
+                            {
+                              "type": "HasCardType",
+                              "value": "Creature"
+                            }
+                          ]
+                        }
+                      },
+                      "regenerability": "Regenerable"
+                    }
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "clauses": [
+              {
+                "effects": [
+                  {
+                    "type": "Destroy",
+                    "value": {
+                      "ref": {
+                        "type": "EachMatching",
+                        "value": {
+                          "type": "And",
+                          "value": [
+                            {
+                              "type": "Not",
+                              "value": {
+                                "type": "IsTapped"
+                              }
+                            },
+                            {
+                              "type": "HasCardType",
+                              "value": "Creature"
+                            }
+                          ]
+                        }
+                      },
+                      "regenerability": "Regenerable"
+                    }
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "typeLine": {
+        "types": [
+          "Sorcery"
+        ]
+      }
+    }
+  ]
+}

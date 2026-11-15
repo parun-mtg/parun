@@ -1,1 +1,117 @@
-{"faces":[{"name":"Intruding Soulrager","oracleText":"Vigilance\n{T}, Sacrifice a Room: This creature deals 2 damage to each opponent. Draw a card.","typeLine":{"types":["Creature"],"subtypes":["Spirit"]},"manaCost":[{"type":"OfType","value":{"type":"Colored","value":"Blue"}},{"type":"OfType","value":{"type":"Colored","value":"Red"}}],"power":{"type":"Literal","value":2},"toughness":{"type":"Literal","value":2},"keywords":[{"type":"Vigilance"}],"activatedAbilities":[{"cost":{"mana":[],"components":[{"type":"TapThis"},{"type":"Sacrifice","value":{"count":{"type":"Fixed","value":1},"whichPermanents":{"type":"HasSubtype","value":"Room"}}}]},"modal":{"modes":[{"clauses":[{"effects":[{"type":"DealDamage","value":{"parts":[{"ref":{"type":"Players","value":{"players":{"type":"Relative","value":"Opponent"}}},"quantity":{"type":"Literal","value":2}}]}},{"type":"Draw","value":{"player":{"type":"Relative","value":"You"},"quantity":{"type":"Literal","value":1}}}]}]}]}}]}]}
+{
+  "faces": [
+    {
+      "activatedAbilities": [
+        {
+          "cost": {
+            "components": [
+              {
+                "type": "TapThis"
+              },
+              {
+                "type": "Sacrifice",
+                "value": {
+                  "count": {
+                    "type": "Fixed",
+                    "value": 1
+                  },
+                  "whichPermanents": {
+                    "type": "HasSubtype",
+                    "value": "Room"
+                  }
+                }
+              }
+            ],
+            "mana": []
+          },
+          "modal": {
+            "modes": [
+              {
+                "clauses": [
+                  {
+                    "effects": [
+                      {
+                        "type": "DealDamage",
+                        "value": {
+                          "parts": [
+                            {
+                              "quantity": {
+                                "type": "Literal",
+                                "value": 2
+                              },
+                              "ref": {
+                                "type": "Players",
+                                "value": {
+                                  "players": {
+                                    "type": "Relative",
+                                    "value": "Opponent"
+                                  }
+                                }
+                              }
+                            }
+                          ]
+                        }
+                      },
+                      {
+                        "type": "Draw",
+                        "value": {
+                          "player": {
+                            "type": "Relative",
+                            "value": "You"
+                          },
+                          "quantity": {
+                            "type": "Literal",
+                            "value": 1
+                          }
+                        }
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      ],
+      "keywords": [
+        {
+          "type": "Vigilance"
+        }
+      ],
+      "manaCost": [
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "Blue"
+          }
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "Red"
+          }
+        }
+      ],
+      "name": "Intruding Soulrager",
+      "oracleText": "Vigilance\n{T}, Sacrifice a Room: This creature deals 2 damage to each opponent. Draw a card.",
+      "power": {
+        "type": "Literal",
+        "value": 2
+      },
+      "toughness": {
+        "type": "Literal",
+        "value": 2
+      },
+      "typeLine": {
+        "subtypes": [
+          "Spirit"
+        ],
+        "types": [
+          "Creature"
+        ]
+      }
+    }
+  ]
+}

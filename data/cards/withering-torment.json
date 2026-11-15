@@ -1,1 +1,81 @@
-{"faces":[{"name":"Withering Torment","oracleText":"Destroy target creature or enchantment. You lose 2 life.","typeLine":{"types":["Instant"]},"manaCost":[{"type":"Generic","value":2},{"type":"OfType","value":{"type":"Colored","value":"Black"}}],"spell":{"modes":[{"clauses":[{"effects":[{"type":"Destroy","value":{"ref":{"type":"InSlot","value":"target"},"regenerability":"Regenerable"}},{"type":"LoseLife","value":{"player":{"type":"Relative","value":"You"},"quantity":{"type":"Literal","value":2}}}]}],"targetSlots":{"target":{"pool":{"type":"Permanents"},"filter":{"type":"Or","value":[{"type":"HasCardType","value":"Creature"},{"type":"HasCardType","value":"Enchantment"}]}}}}]}}]}
+{
+  "faces": [
+    {
+      "manaCost": [
+        {
+          "type": "Generic",
+          "value": 2
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "Black"
+          }
+        }
+      ],
+      "name": "Withering Torment",
+      "oracleText": "Destroy target creature or enchantment. You lose 2 life.",
+      "spell": {
+        "modes": [
+          {
+            "clauses": [
+              {
+                "effects": [
+                  {
+                    "type": "Destroy",
+                    "value": {
+                      "ref": {
+                        "type": "InSlot",
+                        "value": "target"
+                      },
+                      "regenerability": "Regenerable"
+                    }
+                  },
+                  {
+                    "type": "LoseLife",
+                    "value": {
+                      "player": {
+                        "type": "Relative",
+                        "value": "You"
+                      },
+                      "quantity": {
+                        "type": "Literal",
+                        "value": 2
+                      }
+                    }
+                  }
+                ]
+              }
+            ],
+            "targetSlots": {
+              "target": {
+                "filter": {
+                  "type": "Or",
+                  "value": [
+                    {
+                      "type": "HasCardType",
+                      "value": "Creature"
+                    },
+                    {
+                      "type": "HasCardType",
+                      "value": "Enchantment"
+                    }
+                  ]
+                },
+                "pool": {
+                  "type": "Permanents"
+                }
+              }
+            }
+          }
+        ]
+      },
+      "typeLine": {
+        "types": [
+          "Instant"
+        ]
+      }
+    }
+  ]
+}

@@ -1,1 +1,87 @@
-{"faces":[{"name":"Glimmerburst","oracleText":"Draw two cards. Create a 1/1 white Glimmer enchantment creature token.","typeLine":{"types":["Instant"]},"manaCost":[{"type":"Generic","value":3},{"type":"OfType","value":{"type":"Colored","value":"Blue"}}],"spell":{"modes":[{"clauses":[{"effects":[{"type":"Draw","value":{"player":{"type":"Relative","value":"You"},"quantity":{"type":"Literal","value":2}}},{"type":"Create","value":{"quantity":{"type":"Literal","value":1},"card":{"faces":[{"name":"Glimmer Token","typeLine":{"types":["Creature","Enchantment"],"subtypes":["Glimmer"]},"power":{"type":"Literal","value":1},"toughness":{"type":"Literal","value":1},"colorIndicator":["White"]}]}}}]}]}]}}]}
+{
+  "faces": [
+    {
+      "manaCost": [
+        {
+          "type": "Generic",
+          "value": 3
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "Blue"
+          }
+        }
+      ],
+      "name": "Glimmerburst",
+      "oracleText": "Draw two cards. Create a 1/1 white Glimmer enchantment creature token.",
+      "spell": {
+        "modes": [
+          {
+            "clauses": [
+              {
+                "effects": [
+                  {
+                    "type": "Draw",
+                    "value": {
+                      "player": {
+                        "type": "Relative",
+                        "value": "You"
+                      },
+                      "quantity": {
+                        "type": "Literal",
+                        "value": 2
+                      }
+                    }
+                  },
+                  {
+                    "type": "Create",
+                    "value": {
+                      "card": {
+                        "faces": [
+                          {
+                            "colorIndicator": [
+                              "White"
+                            ],
+                            "name": "Glimmer Token",
+                            "power": {
+                              "type": "Literal",
+                              "value": 1
+                            },
+                            "toughness": {
+                              "type": "Literal",
+                              "value": 1
+                            },
+                            "typeLine": {
+                              "subtypes": [
+                                "Glimmer"
+                              ],
+                              "types": [
+                                "Creature",
+                                "Enchantment"
+                              ]
+                            }
+                          }
+                        ]
+                      },
+                      "quantity": {
+                        "type": "Literal",
+                        "value": 1
+                      }
+                    }
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "typeLine": {
+        "types": [
+          "Instant"
+        ]
+      }
+    }
+  ]
+}

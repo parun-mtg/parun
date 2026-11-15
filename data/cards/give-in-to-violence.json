@@ -1,1 +1,88 @@
-{"faces":[{"name":"Give In to Violence","oracleText":"Target creature gets +2/+2 and gains lifelink until end of turn.","typeLine":{"types":["Instant"]},"manaCost":[{"type":"Generic","value":1},{"type":"OfType","value":{"type":"Colored","value":"Black"}}],"spell":{"modes":[{"clauses":[{"effects":[{"type":"ModifyTarget","value":{"duration":{"type":"UntilEndOfTurn"},"modification":{"type":"ModifyPowerToughness","value":{"power":{"type":"Literal","value":2},"toughness":{"type":"Literal","value":2}}},"ref":{"type":"InSlot","value":"target"}}},{"type":"ModifyTarget","value":{"duration":{"type":"UntilEndOfTurn"},"modification":{"type":"GainKeyword","value":{"type":"Lifelink"}},"ref":{"type":"InSlot","value":"target"}}}]}],"targetSlots":{"target":{"pool":{"type":"Creatures"}}}}]}}]}
+{
+  "faces": [
+    {
+      "manaCost": [
+        {
+          "type": "Generic",
+          "value": 1
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "Black"
+          }
+        }
+      ],
+      "name": "Give In to Violence",
+      "oracleText": "Target creature gets +2/+2 and gains lifelink until end of turn.",
+      "spell": {
+        "modes": [
+          {
+            "clauses": [
+              {
+                "effects": [
+                  {
+                    "type": "ModifyTarget",
+                    "value": {
+                      "duration": {
+                        "type": "UntilEndOfTurn"
+                      },
+                      "modification": {
+                        "type": "ModifyPowerToughness",
+                        "value": {
+                          "power": {
+                            "type": "Literal",
+                            "value": 2
+                          },
+                          "toughness": {
+                            "type": "Literal",
+                            "value": 2
+                          }
+                        }
+                      },
+                      "ref": {
+                        "type": "InSlot",
+                        "value": "target"
+                      }
+                    }
+                  },
+                  {
+                    "type": "ModifyTarget",
+                    "value": {
+                      "duration": {
+                        "type": "UntilEndOfTurn"
+                      },
+                      "modification": {
+                        "type": "GainKeyword",
+                        "value": {
+                          "type": "Lifelink"
+                        }
+                      },
+                      "ref": {
+                        "type": "InSlot",
+                        "value": "target"
+                      }
+                    }
+                  }
+                ]
+              }
+            ],
+            "targetSlots": {
+              "target": {
+                "pool": {
+                  "type": "Creatures"
+                }
+              }
+            }
+          }
+        ]
+      },
+      "typeLine": {
+        "types": [
+          "Instant"
+        ]
+      }
+    }
+  ]
+}
