@@ -469,25 +469,25 @@ instructions context es = case es of
             (run, others) = span (maybe False alike . modifyTarget) rest
         p <- modified context m (Maybe.mapMaybe (fmap ModifyTarget.modification . modifyTarget) run)
         fmap (p :) (instructions (noting context (e : run)) others)
-  -- Two placements on one object, as Oracle text puts them in one: "Put a
-  -- +1/+1 counter and a trample counter on target creature" (Champion of
-  -- Dusan). Free: the two apart, below.
-  e@(Effect.PutCounters p) : f@(Effect.PutCounters q) : rest
-    | PutCounters.ref p == PutCounters.ref q,
-      Maybe.isNothing (PutCounters.totalAtMost p),
-      Maybe.isNothing (PutCounters.totalAtMost q) ->
+  -- Placements on one object, as Oracle text puts them in one: "Put a +1/+1
+  -- counter and a trample counter on target creature" (Champion of Dusan),
+  -- "Put a flying counter, a deathtouch counter, and a lifelink counter on
+  -- target creature" (Qarsi Revenant). Free: the first apart, below.
+  e@(Effect.PutCounters p) : rest
+    | Maybe.isNothing (PutCounters.totalAtMost p),
+      (run, others) <- span (placedOn p) rest,
+      not (null run) ->
         let together = do
               ref <- Target.object context Target.Each (PutCounters.ref p)
-              first <- counters (Target.keyword context) (PutCounters.kind p) (PutCounters.quantity p)
-              second <- counters (Target.keyword context) (PutCounters.kind q) (PutCounters.quantity q)
-              let put = Text.pack "put " <> first <> Text.pack " and " <> second <> Text.pack " on " <> Target.wording ref
+              each' <- traverse (\q -> counters (Target.keyword context) (PutCounters.kind q) (PutCounters.quantity q)) (p : Maybe.mapMaybe putCounters run)
+              let put = Text.pack "put " <> Prose.listing "and" each' <> Text.pack " on " <> Target.wording ref
               pure (MkPredicate Nothing put [] (Target.mentions ref) Nothing False)
             apart = do
               pe <- effect context e
-              fmap (pe :) (instructions (noting context [e]) (f : rest))
+              fmap (pe :) (instructions (noting context [e]) rest)
          in ( do
                 pt <- together
-                fmap (pt :) (instructions (noting context [e, f]) rest)
+                fmap (pt :) (instructions (noting context (e : run)) others)
             )
               <> apart
   e : rest
@@ -602,6 +602,18 @@ returned context objects = do
   [MkPredicate Nothing (Text.pack "return " <> Prose.listing "and" (fmap Target.wording refs) <> Text.pack " to their owners' hands") [] (concatMap Target.mentions refs) Nothing False]
 
 -- | The instruction's continuous effect, if it is one.
+-- | Whether an instruction is an unlimited placement of counters on the
+-- object this placement puts them on.
+placedOn :: PutCounters.PutCounters -> Effect.Effect card ability -> Bool
+placedOn p e = case e of
+  Effect.PutCounters q -> PutCounters.ref q == PutCounters.ref p && Maybe.isNothing (PutCounters.totalAtMost q)
+  _ -> False
+
+putCounters :: Effect.Effect card ability -> Maybe PutCounters.PutCounters
+putCounters e = case e of
+  Effect.PutCounters q -> Just q
+  _ -> Nothing
+
 modifyTarget :: Effect.Effect card ability -> Maybe (ModifyTarget.ModifyTarget ability)
 modifyTarget e = case e of
   Effect.ModifyTarget m -> Just m

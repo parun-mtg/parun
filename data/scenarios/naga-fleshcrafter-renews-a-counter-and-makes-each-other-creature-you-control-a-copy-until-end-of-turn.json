@@ -1,0 +1,54 @@
+{
+  "description": "CR 113.6m, 601.2h, 602.5d, 122.1a, 707.2, 613.2a, 611.2a, 514.2: Naga Fleshcrafter's Renew exiles it from alice's graveyard, puts a +1/+1 counter on target nonlegendary creature she controls, and makes each other creature she controls a copy of it until end of turn, only as a sorcery",
+  "note": "Grizzly Bears 2/2 takes the counter (3/3) and copies of it are 2/2: the counter is not copiable. Alice's Hill Giant 3/3 and her legendary Mirri 2/3 both become Grizzly Bears, ruling out a nonlegendary filter on the subject; bob's Air Elemental 4/4 and carol's Kird Ape stay themselves, ruling out 'each other creature'. Mirri (legendary) and the Air Elemental (bob's) are refused as targets, and the upkeep activation, with the same three Islands, for timing. The copies end at cleanup; the counter stays.",
+  "board": {
+    "active": "alice",
+    "step": "Upkeep",
+    "seats": [
+      {
+        "name": "alice",
+        "battlefield": [
+          {"card": "Island", "label": "i1"},
+          {"card": "Island", "label": "i2"},
+          {"card": "Island", "label": "i3"},
+          {"card": "Grizzly Bears", "label": "bears"},
+          {"card": "Hill Giant", "label": "giant"},
+          {"card": "Mirri, Cat Warrior", "label": "mirri"}
+        ],
+        "graveyard": [{"card": "Naga Fleshcrafter", "label": "naga"}],
+        "library": [{"card": "Plains"},{"card": "Plains"},{"card": "Plains"},{"card": "Plains"},{"card": "Plains"},{"card": "Plains"},{"card": "Plains"},{"card": "Plains"}]
+      },
+      {
+        "name": "bob",
+        "battlefield": [{"card": "Air Elemental", "label": "elemental"}],
+        "library": [{"card": "Plains"},{"card": "Plains"},{"card": "Plains"},{"card": "Plains"},{"card": "Plains"},{"card": "Plains"},{"card": "Plains"},{"card": "Plains"}]
+      },
+      {
+        "name": "carol",
+        "battlefield": [{"card": "Kird Ape", "label": "ape"}],
+        "library": [{"card": "Plains"},{"card": "Plains"},{"card": "Plains"},{"card": "Plains"},{"card": "Plains"},{"card": "Plains"},{"card": "Plains"},{"card": "Plains"}]
+      }
+    ]
+  },
+  "timeline": [
+    {"turn": 1, "step": "Upkeep", "player": "alice", "refuse": {"Activate": {"object": "$naga", "targets": ["$bears"], "mana": ["$i1", "$i2", "$i3"]}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "refuse": {"Activate": {"object": "$naga", "targets": ["$mirri"], "mana": ["$i1", "$i2", "$i3"]}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "refuse": {"Activate": {"object": "$naga", "targets": ["$elemental"], "mana": ["$i1", "$i2", "$i3"]}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": {"Activate": {"object": "$naga", "targets": ["$bears"], "mana": ["$i1", "$i2", "$i3"]}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Count": {"card": "Naga Fleshcrafter", "player": "alice", "zone": "Exile", "count": 1}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass"},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Counters": {"object": "$bears", "kind": {"type": "PlusOnePlusOne"}, "count": 1}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"PowerToughness": {"object": "$bears", "power": 3, "toughness": 3}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Names": {"object": "$giant", "names": ["Grizzly Bears"]}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"PowerToughness": {"object": "$giant", "power": 2, "toughness": 2}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Names": {"object": "$mirri", "names": ["Grizzly Bears"]}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"PowerToughness": {"object": "$mirri", "power": 2, "toughness": 2}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Names": {"object": "$bears", "names": ["Grizzly Bears"]}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Names": {"object": "$elemental", "names": ["Air Elemental"]}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Names": {"object": "$ape", "names": ["Kird Ape"]}}},
+    {"turn": 2, "step": "Upkeep", "player": "bob", "check": {"Names": {"object": "$giant", "names": ["Hill Giant"]}}},
+    {"turn": 2, "step": "Upkeep", "player": "bob", "check": {"PowerToughness": {"object": "$giant", "power": 3, "toughness": 3}}},
+    {"turn": 2, "step": "Upkeep", "player": "bob", "check": {"Names": {"object": "$mirri", "names": ["Mirri, Cat Warrior"]}}},
+    {"turn": 2, "step": "Upkeep", "player": "bob", "check": {"PowerToughness": {"object": "$bears", "power": 3, "toughness": 3}}}
+  ]
+}
