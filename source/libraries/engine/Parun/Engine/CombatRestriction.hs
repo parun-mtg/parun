@@ -157,6 +157,17 @@ cantAttackDefender candidates players gs =
           (restrictedIn (filter (not . lifted (Just player) gs) rows) attacking candidates gs)
    in Set.unions (fmap forSeat players)
 
+-- CR 508.1b-c: which of `targets` -- attackable permanents, each beside the
+-- defending player it is attacked through (CR 508.5) -- an effect in force
+-- right now says CAN'T BE ATTACKED. The Aetherspark's, while it is attached to
+-- a creature. `cantAttackDefender`'s shape: one gather, the gate read at the
+-- permanent's seat.
+cantBeAttacked :: [(ObjectId, PlayerId)] -> GameState -> Set ObjectId
+cantBeAttacked targets gs =
+  let rows = gathered gs
+      forSeat seat = restrictedIn (filter (not . lifted (Just seat) gs) rows) unattackable [oid | (oid, at) <- targets, at == seat] gs
+   in Set.unions (fmap forSeat (Set.toList (Set.fromList (fmap snd targets))))
+
 -- CR 509.1b: which of `candidates` an effect in force right now says CAN'T
 -- BLOCK. Pacifism's second half, Blind-Spot Giant's when its gate is shut, CR
 -- 701.35a's second clause, and Zirda, the Dawnwaker's stored restriction.
@@ -505,6 +516,7 @@ attacking :: CombatRestriction.CombatRestriction -> Maybe Affected.Affected
 attacking cr = case cr of
   CombatRestriction.CantAttack (AffectedUnless.MkAffectedUnless a _ _ _) -> Just a
   CombatRestriction.CantBlock {} -> Nothing
+  CombatRestriction.CantBeAttacked {} -> Nothing
   CombatRestriction.CantBeBlockedBy {} -> Nothing
   CombatRestriction.CantBlockCreatures {} -> Nothing
   CombatRestriction.CantAttackPlayer {} -> Nothing
@@ -517,9 +529,25 @@ blocking :: CombatRestriction.CombatRestriction -> Maybe Affected.Affected
 blocking cr = case cr of
   CombatRestriction.CantAttack {} -> Nothing
   CombatRestriction.CantBlock (AffectedUnless.MkAffectedUnless a _ _ _) -> Just a
+  CombatRestriction.CantBeAttacked {} -> Nothing
   -- The Affected here names ATTACKERS, never blockers, so this selector must not
   -- see it: answering Just would take the Ring-bearer off CR 509.1a's candidate
   -- list, which is the opposite of what CR 701.54c says.
+  CombatRestriction.CantBeBlockedBy {} -> Nothing
+  CombatRestriction.CantBlockCreatures {} -> Nothing
+  CombatRestriction.CantAttackPlayer {} -> Nothing
+  CombatRestriction.CantAttackAlone {} -> Nothing
+  CombatRestriction.CantBlockAlone {} -> Nothing
+  CombatRestriction.CantAttackMoreThan {} -> Nothing
+  CombatRestriction.CantBlockMoreThan {} -> Nothing
+
+-- The permanents a restriction says can't be ATTACKED (CR 508.1b-c): the
+-- object half of an announcement, where every selector above names its subject.
+unattackable :: CombatRestriction.CombatRestriction -> Maybe Affected.Affected
+unattackable cr = case cr of
+  CombatRestriction.CantAttack {} -> Nothing
+  CombatRestriction.CantBlock {} -> Nothing
+  CombatRestriction.CantBeAttacked (AffectedUnless.MkAffectedUnless a _ _ _) -> Just a
   CombatRestriction.CantBeBlockedBy {} -> Nothing
   CombatRestriction.CantBlockCreatures {} -> Nothing
   CombatRestriction.CantAttackPlayer {} -> Nothing
@@ -534,6 +562,7 @@ attackingAlone :: CombatRestriction.CombatRestriction -> Maybe AloneUnless.Alone
 attackingAlone cr = case cr of
   CombatRestriction.CantAttack {} -> Nothing
   CombatRestriction.CantBlock {} -> Nothing
+  CombatRestriction.CantBeAttacked {} -> Nothing
   CombatRestriction.CantBeBlockedBy {} -> Nothing
   CombatRestriction.CantBlockCreatures {} -> Nothing
   CombatRestriction.CantAttackPlayer {} -> Nothing
@@ -546,6 +575,7 @@ blockingAlone :: CombatRestriction.CombatRestriction -> Maybe AloneUnless.AloneU
 blockingAlone cr = case cr of
   CombatRestriction.CantAttack {} -> Nothing
   CombatRestriction.CantBlock {} -> Nothing
+  CombatRestriction.CantBeAttacked {} -> Nothing
   CombatRestriction.CantBeBlockedBy {} -> Nothing
   CombatRestriction.CantBlockCreatures {} -> Nothing
   CombatRestriction.CantAttackPlayer {} -> Nothing
@@ -563,6 +593,7 @@ blockedBy :: CombatRestriction.CombatRestriction -> Maybe (Affected.Affected, Fi
 blockedBy cr = case cr of
   CombatRestriction.CantAttack {} -> Nothing
   CombatRestriction.CantBlock {} -> Nothing
+  CombatRestriction.CantBeAttacked {} -> Nothing
   CombatRestriction.CantBeBlockedBy (CantBeBlockedBy.MkCantBeBlockedBy a f frame _ _) -> Just (a, f, frame)
   CombatRestriction.CantBlockCreatures {} -> Nothing
   CombatRestriction.CantAttackPlayer {} -> Nothing
@@ -577,6 +608,7 @@ blocksNot :: CombatRestriction.CombatRestriction -> Maybe (Affected.Affected, Fi
 blocksNot cr = case cr of
   CombatRestriction.CantAttack {} -> Nothing
   CombatRestriction.CantBlock {} -> Nothing
+  CombatRestriction.CantBeAttacked {} -> Nothing
   CombatRestriction.CantBeBlockedBy {} -> Nothing
   CombatRestriction.CantBlockCreatures (CantBlockCreatures.MkCantBlockCreatures a f _ _) -> Just (a, f)
   CombatRestriction.CantAttackPlayer {} -> Nothing
@@ -595,6 +627,7 @@ attackingPlayer :: CombatRestriction.CombatRestriction -> Maybe (Affected.Affect
 attackingPlayer cr = case cr of
   CombatRestriction.CantAttack {} -> Nothing
   CombatRestriction.CantBlock {} -> Nothing
+  CombatRestriction.CantBeAttacked {} -> Nothing
   CombatRestriction.CantBeBlockedBy {} -> Nothing
   CombatRestriction.CantBlockCreatures {} -> Nothing
   CombatRestriction.CantAttackPlayer (CantAttackPlayer.MkCantAttackPlayer a scope kinds _ _) -> Just (a, scope, kinds)
@@ -614,6 +647,7 @@ attackingMoreThan :: CombatRestriction.CombatRestriction -> Maybe (Natural, Mayb
 attackingMoreThan cr = case cr of
   CombatRestriction.CantAttack {} -> Nothing
   CombatRestriction.CantBlock {} -> Nothing
+  CombatRestriction.CantBeAttacked {} -> Nothing
   CombatRestriction.CantBeBlockedBy {} -> Nothing
   CombatRestriction.CantBlockCreatures {} -> Nothing
   CombatRestriction.CantAttackPlayer {} -> Nothing
@@ -626,6 +660,7 @@ blockingBound :: CombatRestriction.CombatRestriction -> Maybe (Bounds, Maybe Aff
 blockingBound cr = case cr of
   CombatRestriction.CantAttack {} -> Nothing
   CombatRestriction.CantBlock {} -> Nothing
+  CombatRestriction.CantBeAttacked {} -> Nothing
   CombatRestriction.CantBeBlockedBy {} -> Nothing
   CombatRestriction.CantBlockCreatures {} -> Nothing
   CombatRestriction.CantAttackPlayer {} -> Nothing
@@ -645,6 +680,7 @@ gate :: CombatRestriction.CombatRestriction -> Maybe Condition.Type.Condition
 gate cr = case cr of
   CombatRestriction.CantAttack (AffectedUnless.MkAffectedUnless _ c _ _) -> c
   CombatRestriction.CantBlock (AffectedUnless.MkAffectedUnless _ c _ _) -> c
+  CombatRestriction.CantBeAttacked (AffectedUnless.MkAffectedUnless _ c _ _) -> c
   CombatRestriction.CantBeBlockedBy (CantBeBlockedBy.MkCantBeBlockedBy _ _ _ c _) -> c
   CombatRestriction.CantBlockCreatures (CantBlockCreatures.MkCantBlockCreatures _ _ c _) -> c
   CombatRestriction.CantAttackPlayer (CantAttackPlayer.MkCantAttackPlayer _ _ _ c _) -> c
@@ -660,6 +696,7 @@ amountOf :: CombatRestriction.CombatRestriction -> Maybe Quantity.Type.Quantity
 amountOf cr = case cr of
   CombatRestriction.CantAttack x -> AffectedUnless.amount x
   CombatRestriction.CantBlock x -> AffectedUnless.amount x
+  CombatRestriction.CantBeAttacked x -> AffectedUnless.amount x
   CombatRestriction.CantBeBlockedBy {} -> Nothing
   CombatRestriction.CantBlockCreatures {} -> Nothing
   CombatRestriction.CantAttackPlayer {} -> Nothing
@@ -1097,6 +1134,8 @@ subjectOf :: CombatRestriction.CombatRestriction -> Maybe Affected.Affected
 subjectOf cr = case cr of
   CombatRestriction.CantAttack (AffectedUnless.MkAffectedUnless a _ _ _) -> Just a
   CombatRestriction.CantBlock (AffectedUnless.MkAffectedUnless a _ _ _) -> Just a
+  -- Names what is ATTACKED, not a creature restricted, so no offer reaches it.
+  CombatRestriction.CantBeAttacked {} -> Nothing
   CombatRestriction.CantBeBlockedBy (CantBeBlockedBy.MkCantBeBlockedBy a _ _ _ _) -> Just a
   CombatRestriction.CantBlockCreatures (CantBlockCreatures.MkCantBlockCreatures a _ _ _) -> Just a
   CombatRestriction.CantAttackPlayer (CantAttackPlayer.MkCantAttackPlayer a _ _ _ _) -> Just a

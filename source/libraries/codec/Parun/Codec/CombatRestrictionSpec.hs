@@ -80,6 +80,14 @@ spec s = Spec.describe s "Parun.Codec.CombatRestriction" $ do
       CombatRestriction.codec
       (CombatRestriction.CantAttackPlayer (CantAttackPlayer.MkCantAttackPlayer Affected.Attached (PlayerScope.Related PlayerRelation.You) (Set.singleton AttackTargetKind.OfPlaneswalker) Nothing Nothing))
       " {\"type\":\"CantAttackPlayer\",\"value\":{\"affected\":{\"type\":\"Attached\"},\"defenders\":{\"type\":\"You\"},\"kinds\":[\"OfPlaneswalker\"]}} "
+  -- CR 508.1b-c, the arm naming what is attacked: the same payload as
+  -- CantAttack, so only the tag tells them apart.
+  Spec.it s "CantBeAttacked carries its Affected" $
+    Common.assertCodec
+      s
+      CombatRestriction.codec
+      (CombatRestriction.CantBeAttacked (AffectedUnless.MkAffectedUnless (Affected.Matching Filter.IsSource) Nothing Nothing Nothing))
+      " {\"type\":\"CantBeAttacked\",\"value\":{\"affected\":{\"type\":\"Matching\",\"value\":{\"type\":\"IsSource\"}}}} "
   -- CR 508.1c together with CR 506.5, the SET-SHAPED arm: the same payload as
   -- the two above, so the tag is the only thing that tells a reader this one is
   -- answered against a whole declaration.

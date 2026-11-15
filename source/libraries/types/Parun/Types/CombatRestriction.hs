@@ -158,6 +158,9 @@ data CombatRestriction
     -- (Parun.Engine.Keyword.mintedCombatRestrictionsFor). A restriction naming
     -- WHICH attackers is CantBlockCreatures.
     CantBlock AffectedUnless.AffectedUnless
+  | -- | CR 508.1b-c: these permanents can't be attacked, unless the gate holds.
+    -- The Aetherspark.
+    CantBeAttacked AffectedUnless.AffectedUnless
   | -- | CR 509.1b's second paragraph: these ATTACKING creatures can't be blocked
     -- by creatures matching the Filter, unless the gate holds. Questing Beast's
     -- "can't be blocked by creatures with power 2 or less" and Relic Runner's

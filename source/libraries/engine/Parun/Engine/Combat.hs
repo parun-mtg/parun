@@ -747,6 +747,15 @@ barredAnnouncements candidates gs =
       gated = CombatRestriction.cantAttackDefender candidates defenders gs
       aimedAt oid target = Maybe.maybe False (\d -> Set.member (oid, d, attackTargetKind target) aimed) (targetDefender target gs)
       gatedAt oid target = Maybe.maybe False (\d -> Set.member (oid, d) gated) (targetDefender target gs)
+      -- CR 508.1b-c: an announcement naming a permanent that can't be attacked
+      -- is barred for every creature (The Aetherspark).
+      targets = declarableTargets gs
+      permanentOf target = case target of
+        AttackTarget.OfPlayer {} -> Nothing
+        AttackTarget.OfPlaneswalker oid -> Just oid
+        AttackTarget.OfBattle oid -> Just oid
+      unattackable = CombatRestriction.cantBeAttacked [(oid, d) | target <- targets, Just oid <- [permanentOf target], Just d <- [targetDefender target gs]] gs
+      unattackableAt target = Maybe.maybe False (`Set.member` unattackable) (permanentOf target)
       -- CR 302.6 / 702.3b through CR 508.1b: a creature canAttackGiven admitted
       -- on a waiver bound to what it attacks (Frenzied Saddlebrute's "your
       -- opponents and planeswalkers your opponents control") is barred from
@@ -767,8 +776,8 @@ barredAnnouncements candidates gs =
    in Set.fromList
         ( do
             oid <- candidates
-            target <- declarableTargets gs
-            Monad.guard (aimedAt oid target || gatedAt oid target || outOfReach oid target)
+            target <- targets
+            Monad.guard (aimedAt oid target || gatedAt oid target || unattackableAt target || outOfReach oid target)
             pure (oid, target)
         )
 
