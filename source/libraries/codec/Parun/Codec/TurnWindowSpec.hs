@@ -3,13 +3,14 @@ module Parun.Codec.TurnWindowSpec where
 import qualified Parun.Codec.TurnWindow as TurnWindow
 import qualified Parun.JsonCodec.Common as Common
 import qualified Parun.Spec as Spec
+import qualified Parun.Types.EventGroup as EventGroup
 import qualified Parun.Types.PlayerId as PlayerId
 import qualified Parun.Types.Timestamp as Timestamp
 import qualified Parun.Types.TurnWindow as TurnWindow
 
 -- | One case per arm of the stored onset's life cycle (Parun.Types.TurnWindow): no
--- restriction, waiting for a player's next turn or for one extra turn, and
--- settled on the turn that turned out to be.
+-- restriction, waiting for a player's next turn or for one extra turn,
+-- settled on the turn that turned out to be, and lapsed at cleanup.
 spec :: (Monad m, Monad n) => Spec.Spec m n -> n ()
 spec s = Spec.describe s "Parun.Codec.TurnWindow" $ do
   Spec.it s "AnyTurn" $
@@ -42,5 +43,11 @@ spec s = Spec.describe s "Parun.Codec.TurnWindow" $ do
       TurnWindow.codec
       (TurnWindow.OnExtraTurn (Timestamp.MkTimestamp 12))
       " {\"type\":\"OnExtraTurn\",\"value\":12} "
+  Spec.it s "Lapsed names the event group its duration ended in" $
+    Common.assertCodec
+      s
+      TurnWindow.codec
+      (TurnWindow.Lapsed (EventGroup.MkEventGroup 5))
+      " {\"type\":\"Lapsed\",\"value\":5} "
   Spec.it s "has a schema" $
     Common.assertHasSchema s TurnWindow.codec

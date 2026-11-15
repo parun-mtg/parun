@@ -1,5 +1,6 @@
 module Parun.Codec.TurnWindow where
 
+import qualified Parun.Codec.EventGroup as EventGroup
 import qualified Parun.Codec.PlayerId as PlayerId
 import qualified Parun.Codec.Timestamp as Timestamp
 import qualified Parun.JsonCodec.Arm as Arm
@@ -17,7 +18,8 @@ codec =
     [ Arm.nullary "AnyTurn" TurnWindow.AnyTurn,
       Arm.optionalPayload "NextTurnOf" PlayerId.codec TurnWindow.NextTurnOf (\x -> case x of TurnWindow.NextTurnOf y -> Just y; _ -> Nothing),
       Arm.payload "OnTurn" Common.natural TurnWindow.OnTurn (\x -> case x of TurnWindow.OnTurn y -> Just y; _ -> Nothing),
-      Arm.payload "OnExtraTurn" Timestamp.codec TurnWindow.OnExtraTurn (\x -> case x of TurnWindow.OnExtraTurn y -> Just y; _ -> Nothing)
+      Arm.payload "OnExtraTurn" Timestamp.codec TurnWindow.OnExtraTurn (\x -> case x of TurnWindow.OnExtraTurn y -> Just y; _ -> Nothing),
+      Arm.payload "Lapsed" EventGroup.codec TurnWindow.Lapsed (\x -> case x of TurnWindow.Lapsed y -> Just y; _ -> Nothing)
     ]
 
 tagOf :: TurnWindow.TurnWindow -> String
@@ -26,3 +28,4 @@ tagOf x = case x of
   TurnWindow.NextTurnOf {} -> "NextTurnOf"
   TurnWindow.OnTurn {} -> "OnTurn"
   TurnWindow.OnExtraTurn {} -> "OnExtraTurn"
+  TurnWindow.Lapsed {} -> "Lapsed"

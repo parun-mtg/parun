@@ -3446,6 +3446,23 @@ delayedArmed gs entry = case DelayedTrigger.window entry of
   -- is over its event is impossible (CR 603.7a), so the window has an upper end
   -- and not merely a lower one.
   TurnWindow.OnTurn n -> n == TurnRegisters.turnNumber (GameState.turn gs)
+  -- Armed, `delayedSees` bounding which events it still sees.
+  TurnWindow.Lapsed _ -> True
+
+-- CR 514.2: a lapsed entry sees the events of the action that ended its
+-- duration and earlier, never a later one (the cleanup step's CR 514.3a
+-- state-based actions included). Every other window sees every event.
+delayedSees :: DelayedTrigger -> LoggedEvent.LoggedEvent -> Bool
+delayedSees entry logged = case DelayedTrigger.window entry of
+  TurnWindow.Lapsed ended -> LoggedEvent.group logged <= ended
+  _ -> True
+
+-- Is this entry's duration already over (TurnWindow.Lapsed)? It is retired by
+-- the gather that gives it its last look, whether or not it fired.
+hasLapsed :: DelayedTrigger -> Bool
+hasLapsed entry = case DelayedTrigger.window entry of
+  TurnWindow.Lapsed _ -> True
+  _ -> False
 
 -- CR 603.12: is this delayed entry REFLEXIVE? The exception to delayedPending's
 -- matching below, and the ONE place the reflexive form differs from an ordinary
@@ -3524,7 +3541,8 @@ delayedMatches grouped gs =
                 filter
                   ( \logged ->
                       let board = battlefieldAt (LoggedEvent.group logged) gs
-                       in matchesTriggerGiven (DelayedTrigger.bindings entry) board (LoggedEvent.group logged) gs (DelayedTrigger.source entry) (DelayedTrigger.controller entry) cond (LoggedEvent.event logged)
+                       in delayedSees entry logged
+                            && matchesTriggerGiven (DelayedTrigger.bindings entry) board (LoggedEvent.group logged) gs (DelayedTrigger.source entry) (DelayedTrigger.controller entry) cond (LoggedEvent.event logged)
                             -- CR 801.7, as eventTriggers asks it; a fence for a planar source,
                             -- since no plane in `data/cards/` arms a delayed trigger.
                             && eventWithinRange board gs (Plane.rangePerspective (DelayedTrigger.source entry) (DelayedTrigger.controller entry) gs) (LoggedEvent.event logged)
@@ -3772,7 +3790,7 @@ delayedPending grouped gs =
             asked (index, entry) = fmap (\fired -> (index, (entry, fired))) (triggered entry)
         answered <- fmap concat (traverse (ordering Monad.>=> traverse asked) controllers)
         let outcomes = Seq.fromList (fmap snd (List.sortOn fst answered))
-        pure (concatMap snd outcomes, fmap fst (Seq.filter (not . spent) outcomes))
+        pure (concatMap snd outcomes, fmap fst (Seq.filter (\outcome -> not (spent outcome || hasLapsed (fst outcome))) outcomes))
 
 -- CR 603.4: the ability doesn't trigger at all when its intervening "if" is false
 -- as the trigger event occurs. Decided at the gather rather than at placement,

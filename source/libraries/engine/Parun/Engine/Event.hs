@@ -12703,11 +12703,15 @@ settleOnsets begun gs =
         TurnWindow.AnyTurn -> entry
         -- Already settled, and this is a later turn -- `live` is what ends it.
         TurnWindow.OnTurn _ -> entry
+        TurnWindow.Lapsed _ -> entry
       live entry = case DelayedTrigger.window entry of
         TurnWindow.AnyTurn -> True
         TurnWindow.NextTurnOf _ -> True
         TurnWindow.OnExtraTurn stamp -> any ((== stamp) . ExtraTurn.createdAt) (GameState.extraTurns gs)
         TurnWindow.OnTurn n -> n >= TurnRegisters.turnNumber (GameState.turn gs)
+        -- CR 514.2 ended it last turn; a turn whose cleanup no gather followed
+        -- (CR 500.11's skipped ending phase) retires it here.
+        TurnWindow.Lapsed _ -> False
    in gs {GameState.stored = (GameState.stored gs) {StoredEffects.delayedTriggers = Seq.filter live (fmap settled (StoredEffects.delayedTriggers (GameState.stored gs)))}}
 
 -- Everything that has triggered and is not yet on the stack, from all three

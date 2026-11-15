@@ -15,6 +15,7 @@ module Parun.TriggerSpec where
 
 import qualified Control.Monad as Monad
 import qualified Control.Monad.Trans.State.Strict as State
+import qualified Data.Foldable as Foldable
 import qualified Data.List as List
 import qualified Data.Map.Strict as Map
 import qualified Data.Maybe as Maybe
@@ -50,6 +51,7 @@ import qualified Parun.Types.AttackTrigger as AttackTrigger
 import qualified Parun.Types.AttackerDeclared as AttackerDeclared
 import qualified Parun.Types.AttackerTrigger as AttackerTrigger
 import qualified Parun.Types.BeginningStep as BeginningStep
+import qualified Parun.Types.Bookkeeping as Bookkeeping
 import qualified Parun.Types.Card as Card.Type
 import qualified Parun.Types.CardName as CardName
 import qualified Parun.Types.CardType as CardType
@@ -106,6 +108,7 @@ import qualified Parun.Types.TriggeredAbility as TriggeredAbility
 import qualified Parun.Types.TriggeredAbilitySource as TriggeredAbilitySource
 import qualified Parun.Types.TurnRegisters as TurnRegisters
 import qualified Parun.Types.TurnScope as TurnScope
+import qualified Parun.Types.TurnWindow as TurnWindow
 import qualified Parun.Types.Zone as Zone
 import qualified Parun.Types.ZoneChange as ZoneChange
 
@@ -1324,11 +1327,26 @@ delayedSpec s registry =
           island <- S.printingOf s registry "Island"
           let armed = castWave tidalWave island
               swept expiry = (StoredEffects.delayedTriggers . GameState.stored) (Expiry.dropAtCleanup (withExpiry expiry armed))
-          Spec.assertEqWith s "an 'this turn' entry is gone" (Seq.length (swept (Just Expiry.Type.AtCleanup))) 0
+          Spec.assertEqWith s "an 'this turn' entry lapses" (fmap DelayedTrigger.window (Foldable.toList (swept (Just Expiry.Type.AtCleanup)))) [TurnWindow.Lapsed (Bookkeeping.nextEventGroup (GameState.bookkeeping armed))]
           Spec.assertEqWith s "an end-of-game entry stays" (Seq.length (swept (Just Expiry.Type.Never))) 1
           -- CR 603.7b's one shot is spent by FIRING, not by time, so an entry
           -- on no duration at all must survive every sweep.
           Spec.assertEqWith s "and a one-shot entry stays" (Seq.length (swept Nothing)) 1
+        -- CR 514.2's simultaneity: the lapsed entry sees an event of the
+        -- action that ended it, never a later one, and the gather retires it.
+        Spec.it s "CR 514.2 a lapsed delayed ability sees only its own cleanup action's events" $ do
+          tidalWave <- S.printingOf s registry "Tidal Wave"
+          island <- S.printingOf s registry "Island"
+          let armed = castWave tidalWave island
+              ended = Bookkeeping.nextEventGroup (GameState.bookkeeping armed)
+              lapsedState = Expiry.dropAtCleanup (withExpiry (Just Expiry.Type.AtCleanup) armed)
+              began group = [LoggedEvent.MkLoggedEvent {LoggedEvent.group = group, LoggedEvent.event = GameEvent.StepBegan (StepBegan.MkStepBegan endStep S.alice)}]
+              gather logged = fst (S.runPureWith S.identityAnswer lapsedState (Event.delayedPending logged lapsedState))
+              (inAction, retired) = gather (began ended)
+              (afterAction, _) = gather (began (EventGroup.next ended))
+          Spec.assertEqWith s "it fires on its own action's event" (length inAction) 1
+          Spec.assertEqWith s "and not on a later one" (length afterAction) 0
+          Spec.assertEqWith s "and the gather retires it" (Seq.length retired) 0
         -- IMPORTANT-1 (fix pass 1): Engine.placeOne merges a delayed ability's
         -- OWN placement-time bindings (its chosen modes/targets, chosen just now)
         -- with the environment CAPTURED when the ability was armed, under
