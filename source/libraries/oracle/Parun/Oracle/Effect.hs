@@ -469,6 +469,27 @@ instructions context es = case es of
             (run, others) = span (maybe False alike . modifyTarget) rest
         p <- modified context m (Maybe.mapMaybe (fmap ModifyTarget.modification . modifyTarget) run)
         fmap (p :) (instructions (noting context (e : run)) others)
+  -- Two placements on one object, as Oracle text puts them in one: "Put a
+  -- +1/+1 counter and a trample counter on target creature" (Champion of
+  -- Dusan). Free: the two apart, below.
+  e@(Effect.PutCounters p) : f@(Effect.PutCounters q) : rest
+    | PutCounters.ref p == PutCounters.ref q,
+      Maybe.isNothing (PutCounters.totalAtMost p),
+      Maybe.isNothing (PutCounters.totalAtMost q) ->
+        let together = do
+              ref <- Target.object context Target.Each (PutCounters.ref p)
+              first <- counters (Target.keyword context) (PutCounters.kind p) (PutCounters.quantity p)
+              second <- counters (Target.keyword context) (PutCounters.kind q) (PutCounters.quantity q)
+              let put = Text.pack "put " <> first <> Text.pack " and " <> second <> Text.pack " on " <> Target.wording ref
+              pure (MkPredicate Nothing put [] (Target.mentions ref) Nothing False)
+            apart = do
+              pe <- effect context e
+              fmap (pe :) (instructions (noting context [e]) (f : rest))
+         in ( do
+                pt <- together
+                fmap (pt :) (instructions (noting context [e, f]) rest)
+            )
+              <> apart
   e : rest
     | Just refs <- returnOf context e -> do
         p <- returned context refs
