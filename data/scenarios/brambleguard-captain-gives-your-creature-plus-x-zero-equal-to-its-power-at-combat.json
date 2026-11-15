@@ -81,7 +81,7 @@
     ],
     "step": "PrecombatMain"
   },
-  "description": "CR 505.1 / 603.2 / 611.2a / 608.2h: at the beginning of combat on alice's turn, Brambleguard Captain gives target creature she controls +X/+0 until end of turn, X its power",
+  "description": "CR 507.1 / 603.2 / 611.2a / 608.2h: at the beginning of combat on alice's turn, Brambleguard Captain gives target creature she controls +X/+0 until end of turn, X its power",
   "note": "The Captain's power is 2, so Grizzly Bears becomes 4/2; bob's Hill Giant is no legal target, and no trigger comes on bob's turn.",
   "timeline": [
     {

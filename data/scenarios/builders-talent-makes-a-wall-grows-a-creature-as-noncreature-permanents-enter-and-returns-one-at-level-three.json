@@ -137,7 +137,7 @@
     ],
     "step": "PrecombatMain"
   },
-  "description": "CR 716.2a / 603.2c / 716.2c: Builder's Talent creates a 0/4 Wall as it enters; at level 2 it puts a +1/+1 counter on target creature alice controls whenever noncreature, nonland permanents she controls enter; becoming level 3 returns a noncreature, nonland permanent card from her graveyard",
+  "description": "CR 717.2a / 603.2c: Builder's Talent creates a 0/4 Wall as it enters; at level 2 it puts a +1/+1 counter on target creature alice controls whenever noncreature, nonland permanents she controls enter; becoming level 3 returns a noncreature, nonland permanent card from her graveyard",
   "note": "Savannah Lions entering grows nothing; each Mind Stone entering grows the Wall: the one cast and the one level 3 returns; Grizzly Bears is no legal target for the return, and Fountainport Bell stays.",
   "timeline": [
     {

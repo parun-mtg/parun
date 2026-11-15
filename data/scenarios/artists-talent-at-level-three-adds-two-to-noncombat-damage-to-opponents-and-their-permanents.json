@@ -117,8 +117,8 @@
     ],
     "step": "PrecombatMain"
   },
-  "description": "CR 716.2a / 614.1a / 120.3: at level 3, Artist's Talent makes noncombat damage a source alice controls would deal to an opponent or a permanent an opponent controls that much plus 2",
-  "note": "Each Shock, still {R} since level 2 reduces only generic mana, deals 4: one to bob, the other 4 to his 3-toughness Hill Giant, which 2 would not have killed; with alice's hand empty the second loot is not offered.",
+  "description": "CR 717.2a / 614.1a / 120.3: at level 3, Artist's Talent makes noncombat damage a source alice controls would deal to an opponent or a permanent an opponent controls that much plus 2",
+  "note": "Each Shock, still {R} since level 2 reduces only generic mana, deals 4: to bob, and to his 3-toughness Hill Giant, which 2 would not have killed; with alice's hand empty the second loot is not offered.",
   "timeline": [
     {
       "do": {

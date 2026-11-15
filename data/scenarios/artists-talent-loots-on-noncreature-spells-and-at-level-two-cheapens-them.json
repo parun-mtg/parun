@@ -134,7 +134,7 @@
     ],
     "step": "PrecombatMain"
   },
-  "description": "CR 716.2a / 601.2f / 603.2: Artist's Talent lets alice discard a card to draw one whenever she casts a noncreature spell, and at level 2 makes noncreature spells she casts cost {1} less",
+  "description": "CR 717.2a / 601.2f / 603.2: Artist's Talent lets alice discard a card to draw one whenever she casts a noncreature spell, and at level 2 makes noncreature spells she casts cost {1} less",
   "note": "Alice loots away Hill Giant on the first Shock; after leveling up, Divination's {2}{U} is paid with two Islands.",
   "timeline": [
     {

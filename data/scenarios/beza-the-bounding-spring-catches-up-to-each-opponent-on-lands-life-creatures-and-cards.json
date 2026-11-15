@@ -153,7 +153,7 @@
     ],
     "step": "PrecombatMain"
   },
-  "description": "CR 603.6a / 608.2c / 102.2: Beza's enters trigger checks each comparison against every opponent as it resolves: a Treasure for lands, 4 life for life, two Fish for creatures, a card for cards in hand",
+  "description": "CR 603.6a / 608.2c / 102.3: Beza's enters trigger checks each comparison against every opponent as it resolves: a Treasure for lands, 4 life for life, two Fish for creatures, a card for cards in hand",
   "note": "Bob leads alice only on lands (5 to 4) and creatures (2 to Beza alone); carol only on life (21 to 20) and cards in hand (1 to 0): every bonus comes from one opponent or the other.",
   "timeline": [
     {

@@ -77,7 +77,7 @@
     "step": "PrecombatMain"
   },
   "description": "CR 611.2a / 613.1f / 613.4b / 702.20b: Azure Beastbinder's attack trigger makes bob's Serra Angel lose all abilities and have base power and toughness 2/2 until alice's next turn",
-  "note": "The Angel is 2/2 without flying or vigilance through bob's turn and back to 4/4 with flying on alice's next; at power 2 it cannot block the Beastbinder, which deals 1 and stays untapped by vigilance.",
+  "note": "The Angel is 2/2 without flying or vigilance through bob's turn and back to 4/4 with flying on alice's next; the Beastbinder deals 1 and stays untapped by vigilance.",
   "timeline": [
     {
       "do": {

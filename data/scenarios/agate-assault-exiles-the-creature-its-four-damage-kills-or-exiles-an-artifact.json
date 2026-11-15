@@ -118,7 +118,7 @@
     "step": "PrecombatMain"
   },
   "description": "CR 700.2 / 120.3 / 614.1a / 704.5g / 406.1: Agate Assault's first mode deals 4 damage to a creature and exiles it if it would die this turn; its second exiles target artifact",
-  "note": "Hill Giant's 3 toughness dies to the 4 damage, and the replacement sends it to exile, not bob's graveyard; the second copy exiles Mind Stone, which is in neither bob's battlefield nor graveyard.",
+  "note": "Hill Giant's 3 toughness dies to the 4 damage, and the replacement sends it to exile, not bob's graveyard; the second copy exiles one of bob's two Mind Stones, not to his graveyard.",
   "timeline": [
     {
       "do": {
