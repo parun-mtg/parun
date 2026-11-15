@@ -1,8 +1,8 @@
 {
   "board": {
+    "active": "alice",
     "seats": [
       {
-        "name": "alice",
         "battlefield": [
           {
             "card": "Daring Mechanic",
@@ -78,10 +78,10 @@
           {
             "card": "Island"
           }
-        ]
+        ],
+        "name": "alice"
       },
       {
-        "name": "bob",
         "battlefield": [
           {
             "card": "Giant Beaver",
@@ -129,10 +129,10 @@
           {
             "card": "Island"
           }
-        ]
+        ],
+        "name": "bob"
       },
       {
-        "name": "carol",
         "battlefield": [
           {
             "card": "Great Gilded Boat",
@@ -180,22 +180,19 @@
           {
             "card": "Island"
           }
-        ]
+        ],
+        "name": "carol"
       }
     ],
-    "step": "PrecombatMain",
-    "active": "alice"
+    "step": "PrecombatMain"
   },
-  "description": "CR 602.2, 118.3, 115.1, 122.1, Daring Mechanic's {3}{W} ability puts a +1/+1 counter on target Mount or Vehicle; the white mana is required, and a creature that is neither is not a legal target",
+  "description": "CR 602.2, 118.3, 115.1, 122.1: Daring Mechanic's {3}{W} ability puts a +1/+1 counter on target Mount or Vehicle; the white mana is required, and a creature that is neither is not a legal target",
   "note": "Alice has a Daring Mechanic, two Plains and six Mountains; bob has a Giant Beaver (Mount, 4/4) and a Hill Giant; carol has a Great Gilded Boat (noncreature Vehicle) and a Rambling Possum (Mount). The Hill Giant and the Mechanic itself are refused as targets, as are four Mountains (no white) and three mana of the four, with the positive's mana available. Then the Beaver goes 4/4 to 5/5, the Boat takes a counter, and the Possum, the Giant and the Mechanic take none.",
   "timeline": [
     {
-      "turn": 1,
-      "step": "PrecombatMain",
       "player": "alice",
       "refuse": {
         "Activate": {
-          "object": "$dm",
           "mana": [
             "$p1",
             "$m1",
@@ -203,19 +200,19 @@
             "$m3",
             null
           ],
+          "object": "$dm",
           "targets": [
             "$giant"
           ]
         }
-      }
+      },
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PrecombatMain",
       "player": "alice",
       "refuse": {
         "Activate": {
-          "object": "$dm",
           "mana": [
             "$p1",
             "$m1",
@@ -223,19 +220,19 @@
             "$m3",
             null
           ],
+          "object": "$dm",
           "targets": [
             "$dm"
           ]
         }
-      }
+      },
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PrecombatMain",
       "player": "alice",
       "refuse": {
         "Activate": {
-          "object": "$dm",
           "mana": [
             "$m1",
             "$m2",
@@ -243,141 +240,140 @@
             "$m4",
             null
           ],
+          "object": "$dm",
           "targets": [
             "$beaver"
           ]
         }
-      }
+      },
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PrecombatMain",
-      "player": "alice",
       "do": {
         "Answer": {
           "prompt": "ReverseManaAbilities",
           "with": "Exercises"
         }
-      }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PrecombatMain",
-      "player": "alice",
       "do": {
         "Answer": {
           "prompt": "ReverseManaAbilities",
           "with": "Exercises"
         }
-      }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PrecombatMain",
-      "player": "alice",
       "do": {
         "Answer": {
           "prompt": "ReverseManaAbilities",
           "with": "Exercises"
         }
-      }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PrecombatMain",
-      "player": "alice",
       "do": {
         "Answer": {
           "prompt": "ReverseManaAbilities",
           "with": "Exercises"
         }
-      }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PrecombatMain",
       "player": "alice",
       "refuse": {
         "Activate": {
-          "object": "$dm",
           "mana": [
             "$p1",
             "$m1",
             "$m2",
             null
           ],
+          "object": "$dm",
           "targets": [
             "$beaver"
           ]
         }
-      }
+      },
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PrecombatMain",
-      "player": "alice",
       "do": {
         "Answer": {
           "prompt": "ReverseManaAbilities",
           "with": "Exercises"
         }
-      }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PrecombatMain",
-      "player": "alice",
       "do": {
         "Answer": {
           "prompt": "ReverseManaAbilities",
           "with": "Exercises"
         }
-      }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PrecombatMain",
-      "player": "alice",
       "do": {
         "Answer": {
           "prompt": "ReverseManaAbilities",
           "with": "Exercises"
         }
-      }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PrecombatMain",
-      "player": "alice",
       "check": {
         "Counters": {
-          "object": "$beaver",
+          "count": 0,
           "kind": {
             "type": "PlusOnePlusOne"
           },
-          "count": 0
+          "object": "$beaver"
         }
-      }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PrecombatMain",
-      "player": "alice",
       "check": {
         "PowerToughness": {
           "object": "$beaver",
           "power": 4,
           "toughness": 4
         }
-      }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PrecombatMain",
-      "player": "alice",
       "do": {
         "Activate": {
-          "object": "$dm",
           "mana": [
             "$p1",
             "$m1",
@@ -385,138 +381,142 @@
             "$m3",
             null
           ],
+          "object": "$dm",
           "targets": [
             "$beaver"
           ]
         }
-      }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PrecombatMain",
+      "do": "Pass",
       "player": "alice",
-      "do": "Pass"
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PrecombatMain",
-      "player": "alice",
       "check": {
         "Counters": {
-          "object": "$beaver",
+          "count": 1,
           "kind": {
             "type": "PlusOnePlusOne"
           },
-          "count": 1
+          "object": "$beaver"
         }
-      }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PrecombatMain",
-      "player": "alice",
       "check": {
         "PowerToughness": {
           "object": "$beaver",
           "power": 5,
           "toughness": 5
         }
-      }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PrecombatMain",
-      "player": "alice",
       "do": {
         "Activate": {
-          "object": "$dm",
           "mana": [
             "$p2",
             "$m4",
             "$m5",
             "$m6"
           ],
+          "object": "$dm",
           "targets": [
             "$boat"
           ]
         }
-      }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PrecombatMain",
+      "do": "Pass",
       "player": "alice",
-      "do": "Pass"
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PrecombatMain",
-      "player": "alice",
       "check": {
         "Counters": {
-          "object": "$boat",
+          "count": 1,
           "kind": {
             "type": "PlusOnePlusOne"
           },
-          "count": 1
+          "object": "$boat"
         }
-      }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PrecombatMain",
-      "player": "alice",
       "check": {
         "Counters": {
-          "object": "$beaver",
+          "count": 1,
           "kind": {
             "type": "PlusOnePlusOne"
           },
-          "count": 1
+          "object": "$beaver"
         }
-      }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PrecombatMain",
-      "player": "alice",
       "check": {
         "Counters": {
-          "object": "$possum",
+          "count": 0,
           "kind": {
             "type": "PlusOnePlusOne"
           },
-          "count": 0
+          "object": "$possum"
         }
-      }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PrecombatMain",
-      "player": "alice",
       "check": {
         "Counters": {
-          "object": "$giant",
+          "count": 0,
           "kind": {
             "type": "PlusOnePlusOne"
           },
-          "count": 0
+          "object": "$giant"
         }
-      }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PrecombatMain",
-      "player": "alice",
       "check": {
         "Counters": {
-          "object": "$dm",
+          "count": 0,
           "kind": {
             "type": "PlusOnePlusOne"
           },
-          "count": 0
+          "object": "$dm"
         }
-      }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
     }
   ]
 }

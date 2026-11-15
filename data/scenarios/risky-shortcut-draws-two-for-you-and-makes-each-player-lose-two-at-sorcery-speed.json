@@ -115,7 +115,7 @@
     ],
     "step": "Upkeep"
   },
-  "description": "CR 117.1a, 307.1, 121.1, 119.3, 701.9a: Risky Shortcut is a sorcery that is cast only in its controller's main phase with an empty stack; it makes its caster draw two cards and every player, caster and both opponents, lose 2 life",
+  "description": "CR 117.1a, 307.1, 121.1, 119.3: Risky Shortcut is a sorcery that is cast only in its controller's main phase with an empty stack; it makes its caster draw two cards and every player, caster and both opponents, lose 2 life",
   "note": "Alice (11 life) holds Risky Shortcut and three Swamps; bob has 12 and carol 13. Casting it in her upkeep is refused with the mana available. In her main phase it resolves: alice has 9, bob 10, carol 11, alice has drawn the Mountain and the Plains (the Forest on top came with her draw step) and not the Swamp beneath them, and neither opponent has drawn.",
   "timeline": [
     {

@@ -1,8 +1,8 @@
 {
   "board": {
+    "active": "alice",
     "seats": [
       {
-        "name": "alice",
         "battlefield": [
           {
             "card": "Aetherjacket",
@@ -68,10 +68,10 @@
           {
             "card": "Island"
           }
-        ]
+        ],
+        "name": "alice"
       },
       {
-        "name": "bob",
         "battlefield": [
           {
             "card": "Great Gilded Boat",
@@ -119,10 +119,10 @@
           {
             "card": "Island"
           }
-        ]
+        ],
+        "name": "bob"
       },
       {
-        "name": "carol",
         "battlefield": [
           {
             "card": "Ornithopter",
@@ -170,155 +170,152 @@
           {
             "card": "Island"
           }
-        ]
+        ],
+        "name": "carol"
       }
     ],
-    "step": "PrecombatMain",
-    "active": "alice"
+    "step": "PrecombatMain"
   },
-  "description": "CR 602.2, 602.5d, 701.8a, 115.1, 118.3: Aetherjacket's {2}, {T}, Sacrifice ability destroys another target artifact, only at sorcery speed; it cannot target itself or a nonartifact, and one mana is not enough",
+  "description": "CR 602.2, 602.5d, 701.8a, 701.21a, 115.4, 118.3: Aetherjacket's {2}, {T}, Sacrifice ability destroys another target artifact, only at sorcery speed; it cannot target itself or a nonartifact, and one mana is not enough",
   "note": "Alice has two ready Aetherjackets and four Mountains; bob has a Great Gilded Boat (noncreature artifact) and Grizzly Bears; carol has an Ornithopter. Targeting itself (the other Aetherjacket is a legal target, so only 'another' refuses it), targeting the nonartifact Bears and paying one mana are refused with the positive's mana available, as is activating in the beginning of combat step. In the second main phase the Boat and then carol's Ornithopter are destroyed, each Aetherjacket sacrificed as a cost.",
   "timeline": [
     {
-      "turn": 1,
-      "step": "PrecombatMain",
       "player": "alice",
       "refuse": {
         "Activate": {
-          "object": "$aj1",
           "mana": [
             "$m1",
             "$m2",
             null
           ],
+          "object": "$aj1",
           "targets": [
             "$aj1"
           ]
         }
-      }
+      },
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PrecombatMain",
       "player": "alice",
       "refuse": {
         "Activate": {
-          "object": "$aj1",
           "mana": [
             "$m1",
             "$m2",
             null
           ],
+          "object": "$aj1",
           "targets": [
             "$bears"
           ]
         }
-      }
+      },
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PrecombatMain",
       "player": "alice",
       "refuse": {
         "Activate": {
-          "object": "$aj1",
           "mana": [
             "$m1",
             null
           ],
+          "object": "$aj1",
           "targets": [
             "$boat"
           ]
         }
-      }
+      },
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PrecombatMain",
-      "player": "alice",
       "do": {
         "Answer": {
           "prompt": "ReverseManaAbilities",
           "with": "Exercises"
         }
-      }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PrecombatMain",
-      "player": "alice",
       "check": {
         "Tapped": {
           "object": "$aj1",
           "tapped": false
         }
-      }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PrecombatMain",
-      "player": "alice",
       "check": {
         "Tapped": {
           "object": "$m1",
           "tapped": false
         }
-      }
-    },
-    {
-      "turn": 1,
-      "step": "PrecombatMain",
+      },
       "player": "alice",
-      "do": "Pass"
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "BeginningOfCombat",
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
       "player": "alice",
       "refuse": {
         "Activate": {
-          "object": "$aj1",
           "mana": [
             "$m1",
             "$m2",
             null
           ],
+          "object": "$aj1",
           "targets": [
             "$boat"
           ]
         }
-      }
+      },
+      "step": "BeginningOfCombat",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "DeclareAttackers",
-      "player": "alice",
       "do": {
         "Attack": []
-      }
+      },
+      "player": "alice",
+      "step": "DeclareAttackers",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PostcombatMain",
-      "player": "alice",
       "do": {
         "Activate": {
-          "object": "$aj1",
           "mana": [
             "$m1",
             "$m2",
             null
           ],
+          "object": "$aj1",
           "targets": [
             "$boat"
           ]
         }
-      }
+      },
+      "player": "alice",
+      "step": "PostcombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PostcombatMain",
-      "player": "alice",
       "check": {
         "Count": {
           "card": "Aetherjacket",
@@ -326,18 +323,18 @@
           "player": "alice",
           "zone": "Graveyard"
         }
-      }
+      },
+      "player": "alice",
+      "step": "PostcombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PostcombatMain",
+      "do": "Pass",
       "player": "alice",
-      "do": "Pass"
+      "step": "PostcombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PostcombatMain",
-      "player": "alice",
       "check": {
         "Count": {
           "card": "Great Gilded Boat",
@@ -345,12 +342,12 @@
           "player": "bob",
           "zone": "Battlefield"
         }
-      }
+      },
+      "player": "alice",
+      "step": "PostcombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PostcombatMain",
-      "player": "alice",
       "check": {
         "Count": {
           "card": "Great Gilded Boat",
@@ -358,12 +355,12 @@
           "player": "bob",
           "zone": "Graveyard"
         }
-      }
+      },
+      "player": "alice",
+      "step": "PostcombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PostcombatMain",
-      "player": "alice",
       "check": {
         "Count": {
           "card": "Aetherjacket",
@@ -371,12 +368,12 @@
           "player": "alice",
           "zone": "Battlefield"
         }
-      }
+      },
+      "player": "alice",
+      "step": "PostcombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PostcombatMain",
-      "player": "alice",
       "check": {
         "Count": {
           "card": "Grizzly Bears",
@@ -384,12 +381,12 @@
           "player": "bob",
           "zone": "Battlefield"
         }
-      }
+      },
+      "player": "alice",
+      "step": "PostcombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PostcombatMain",
-      "player": "alice",
       "check": {
         "Count": {
           "card": "Ornithopter",
@@ -397,35 +394,35 @@
           "player": "carol",
           "zone": "Battlefield"
         }
-      }
+      },
+      "player": "alice",
+      "step": "PostcombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PostcombatMain",
-      "player": "alice",
       "do": {
         "Activate": {
-          "object": "$aj2",
           "mana": [
             "$m3",
             "$m4"
           ],
+          "object": "$aj2",
           "targets": [
             "$orni"
           ]
         }
-      }
+      },
+      "player": "alice",
+      "step": "PostcombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PostcombatMain",
+      "do": "Pass",
       "player": "alice",
-      "do": "Pass"
+      "step": "PostcombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PostcombatMain",
-      "player": "alice",
       "check": {
         "Count": {
           "card": "Ornithopter",
@@ -433,12 +430,12 @@
           "player": "carol",
           "zone": "Battlefield"
         }
-      }
+      },
+      "player": "alice",
+      "step": "PostcombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PostcombatMain",
-      "player": "alice",
       "check": {
         "Count": {
           "card": "Ornithopter",
@@ -446,12 +443,12 @@
           "player": "carol",
           "zone": "Graveyard"
         }
-      }
+      },
+      "player": "alice",
+      "step": "PostcombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PostcombatMain",
-      "player": "alice",
       "check": {
         "Count": {
           "card": "Aetherjacket",
@@ -459,12 +456,12 @@
           "player": "alice",
           "zone": "Graveyard"
         }
-      }
+      },
+      "player": "alice",
+      "step": "PostcombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PostcombatMain",
-      "player": "alice",
       "check": {
         "Count": {
           "card": "Grizzly Bears",
@@ -472,12 +469,12 @@
           "player": "bob",
           "zone": "Battlefield"
         }
-      }
+      },
+      "player": "alice",
+      "step": "PostcombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PostcombatMain",
-      "player": "alice",
       "check": {
         "Count": {
           "card": "Sol Ring",
@@ -485,7 +482,10 @@
           "player": "carol",
           "zone": "Battlefield"
         }
-      }
+      },
+      "player": "alice",
+      "step": "PostcombatMain",
+      "turn": 1
     }
   ]
 }
