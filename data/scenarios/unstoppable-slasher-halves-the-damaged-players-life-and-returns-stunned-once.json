@@ -1,0 +1,32 @@
+{
+  "description": "CR 510.2, 603.2, 107.1a, 603.4, 603.10a, 122.1: Unstoppable Slasher makes the player it damaged lose half their life rounded up, and returns tapped with two stun counters only when it died with no counters",
+  "note": "Three seats so 'they' is the damaged player: alice attacks carol, not the default bob. Carol goes 17 to 15 by damage, then loses 8 (half of 15, rounded up) to 7; bob stays at 19. A first Bolt kills the counterless Slasher, which returns tapped with two stun counters; a second Bolt kills it with counters on it, so it stays in the graveyard.",
+  "board": {
+    "active": "alice",
+    "step": "PrecombatMain",
+    "seats": [
+      {"name": "alice", "battlefield": [{"card": "Unstoppable Slasher", "label": "slasher", "ready": true}, {"card": "Mountain", "label": "m1"}, {"card": "Mountain", "label": "m2"}], "hand": [{"card": "Lightning Bolt", "label": "b1"}, {"card": "Lightning Bolt", "label": "b2"}], "library": [{"card": "Swamp"}, {"card": "Swamp"}, {"card": "Swamp"}]},
+      {"name": "bob", "life": 19, "library": [{"card": "Island"}, {"card": "Island"}, {"card": "Island"}]},
+      {"name": "carol", "life": 17, "library": [{"card": "Forest"}, {"card": "Forest"}, {"card": "Forest"}]}
+    ]
+  },
+  "timeline": [
+    {"turn": 1, "step": "DeclareAttackers", "player": "alice", "do": {"Attack": ["$slasher"]}},
+    {"turn": 1, "step": "DeclareAttackers", "player": "alice", "do": {"Answer": {"prompt": "ChooseAttackTarget", "with": ["Player", "carol"]}}},
+    {"turn": 1, "step": "EndOfCombat", "player": "alice", "check": {"Life": {"player": "carol", "life": 7}}},
+    {"turn": 1, "step": "EndOfCombat", "player": "alice", "check": {"Life": {"player": "bob", "life": 19}}},
+    {"turn": 1, "step": "EndOfCombat", "player": "alice", "check": {"Life": {"player": "alice", "life": 20}}},
+    {"turn": 1, "step": "PostcombatMain", "player": "alice", "do": {"Cast": {"object": "$b1", "targets": ["$slasher"], "mana": ["$m1", null]}}},
+    {"turn": 1, "step": "PostcombatMain", "player": "alice", "do": "Pass"},
+    {"turn": 1, "step": "PostcombatMain", "player": "alice", "check": {"View": {"of": "Stack", "is": ["trigger of $slasher"]}}},
+    {"turn": 1, "step": "PostcombatMain", "player": "alice", "do": "Pass"},
+    {"turn": 1, "step": "PostcombatMain", "player": "alice", "check": {"Count": {"player": "alice", "zone": "Battlefield", "card": "Unstoppable Slasher", "count": 1}}},
+    {"turn": 1, "step": "PostcombatMain", "player": "alice", "check": {"Tapped": {"object": "Unstoppable Slasher", "tapped": true}}},
+    {"turn": 1, "step": "PostcombatMain", "player": "alice", "check": {"Counters": {"object": "Unstoppable Slasher", "kind": {"type": "Stun"}, "count": 2}}},
+    {"turn": 1, "step": "PostcombatMain", "player": "alice", "do": {"Cast": {"object": "$b2", "targets": ["Unstoppable Slasher"], "mana": ["$m2"]}}},
+    {"turn": 1, "step": "PostcombatMain", "player": "alice", "do": "Pass"},
+    {"turn": 1, "step": "PostcombatMain", "player": "alice", "check": {"View": {"of": "Stack", "is": []}}},
+    {"turn": 1, "step": "PostcombatMain", "player": "alice", "check": {"Count": {"player": "alice", "zone": "Graveyard", "card": "Unstoppable Slasher", "count": 1}}},
+    {"turn": 1, "step": "PostcombatMain", "player": "alice", "check": {"Count": {"player": "alice", "zone": "Battlefield", "card": "Unstoppable Slasher", "count": 0}}}
+  ]
+}

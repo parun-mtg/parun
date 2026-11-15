@@ -59,7 +59,6 @@ out: grep for them.
 - `check:tapped-count`: how many permanents a player has tapped
 - `board:player-effect`: a player effect already in force
 - `check:face-down`: whether an exiled card is face down
-- `move:nested`: the `nested` prompt
 - `board:replacement`: a replacement effect already in force
 - `board:object-bindings`
 - `board:stack`: something on the stack
@@ -90,6 +89,7 @@ out: grep for them.
 - `board:object-chosennames`
 - `move:pile-target`: a target naming a face-down pile
 - `move:out-of-range-answer`: an answer outside what the prompt offers, which the engine clamps or ignores and the runner refuses up front
+- `move:another-game`: an answer naming an object in another game (CR 730.4), which no reference names
 - `board:object-goadedby`
 - `board:zone-phasedout`
 - `board:object-unlockedhalves`
@@ -198,9 +198,9 @@ out: grep for them.
 
 ### `CastRestrictionSpec`
 
-- CR 305.1 alice may play a land out of bob's hand | `board:player-effect`
-- CR 601.3 alice casts the Bolt she picked out of the Shell's pile | `board:exile-linked` `check:tapped-count`
-- CR 601.3 the same pile casts the Doom Blade when she picks that instead | `board:exile-linked` `check:tapped-count`
+- ~~CR 305.1 alice may play a land out of bob's hand~~
+- ~~CR 601.3 alice casts the Bolt she picked out of the Shell's pile~~
+- ~~CR 601.3 the same pile casts the Doom Blade when she picks that instead~~
 
 ### `CastSpec`
 
@@ -248,11 +248,11 @@ out: grep for them.
 
 ### `CodecIntegrationSpec`
 
-- a cast on an earlier turn round trips | `check:other-Game.castsThisGame` `check:codec-round-trip`
+- ~~a cast on an earlier turn round trips~~
 
 ### `CoinSpec`
 
-- CR 705.2 only the flipping player calls, and calls before the coin comes up
+- ~~CR 705.2 only the flipping player calls, and calls before the coin comes up~~
 
 ### `ColorSpec`
 
@@ -516,7 +516,7 @@ out: grep for them.
 
 ### `DetainSpec`
 
-- CR 508.1c the detained creature does not end up among the attackers | `board:combat` `board:object-detaineduntil`
+- ~~CR 508.1c the detained creature does not end up among the attackers~~
 
 ### `DiceSpec`
 
@@ -543,7 +543,7 @@ out: grep for them.
 
 ### `EarthbendSpec`
 
-- CR 702.10b the earthbent land can attack the turn it was animated | `check:other-Combat.legalAttackDeclarationAs`
+- ~~CR 702.10b the earthbent land can attack the turn it was animated~~
 
 ### `EmperorSpec`
 
@@ -566,8 +566,8 @@ out: grep for them.
 
 ### `EventSpec`
 
-- CR 101.4b Fleshbag Marauder's later victim knows the earlier victim's pick | `check:prompt-payload`
-- CR 800.4b no token is created under the control of a player who has left the game | `check:other-Game.objectCount`
+- ~~CR 101.4b Fleshbag Marauder's later victim knows the earlier victim's pick~~
+- ~~CR 800.4b no token is created under the control of a player who has left the game~~
 
 ### `EventTriggerSpec`
 
@@ -643,7 +643,7 @@ out: grep for them.
 
 ### `GameSpec`
 
-- CR 104.2c gameplay: a Shahrazad subgame won by a team excludes every player on it | `move:nested`
+- ~~CR 104.2c gameplay: a Shahrazad subgame won by a team excludes every player on it | `move:nested`~~
 - ~~CR 400.7/728.2 gameplay: a restart puts Painter's Servant into a library with its chosen colour forgotten | `board:object-chosencolor`~~
 - ~~CR 514.3 a cleanup step with nothing waiting grants no priority | `check:helper-runCountingActions`~~
 - ~~CR 514.3a the exception grants a real priority round | `check:prompt-count`~~
@@ -659,11 +659,11 @@ out: grep for them.
 - ~~CR 724.6 a controlled player concedes themselves; their controller cannot do it for them~~
 - ~~CR 728.5/728.4 gameplay: Karn's ultimate leaves its own exiles in exile and then plays them | `board:exile-linked`~~
 - ~~CR 730.1a #153: a question names the game it came from, so a subgame's is not a main-game one | `move:nested`~~
-- CR 730.1a/730.1b #137 gameplay: a TRIGGERED ability plays the subgame, and CR 730.1b's winner is bound | `move:nested` `check:other-GameState.subgamesThisMatch`
-- CR 730.1b gameplay: Shahrazad's non-winners each lose half their own life, rounded up | `move:nested`
-- CR 730.1b gameplay: a DRAWN Shahrazad subgame is won by nobody, so every player pays | `move:nested`
-- CR 730.1b/730.3 gameplay: alice casts a subgame spell, bob decks, bob loses 3 | `move:nested`
-- CR 730.5/730.4b gameplay: cards funnel back, main-game board survives, main-game counters untouched | `move:nested`
+- CR 730.1a/730.1b #137 gameplay: a TRIGGERED ability plays the subgame, and CR 730.1b's winner is bound | `check:other-GameState.subgamesThisMatch`
+- ~~CR 730.1b gameplay: Shahrazad's non-winners each lose half their own life, rounded up | `move:nested`~~
+- ~~CR 730.1b gameplay: a DRAWN Shahrazad subgame is won by nobody, so every player pays | `move:nested`~~
+- ~~CR 730.1b/730.3 gameplay: alice casts a subgame spell, bob decks, bob loses 3 | `move:nested`~~
+- ~~CR 730.5/730.4b gameplay: cards funnel back, main-game board survives, main-game counters untouched | `move:nested`~~
 - ~~CR 800.4a a player who departs paying a cost is not asked again | `check:prompt-count` `check:other-Player.status`~~
 - ~~CR 800.4a/117.4 priority after a concede goes to the next seat, and the pass cycle restarts | `check:other-GameState.players` `check:other-Player.status`~~
 - ~~CR 800.4j after a resolution, priority returns to the next seat, not the departed active player | `board:stack`~~
@@ -682,11 +682,11 @@ out: grep for them.
 
 ### `GoadSpec`
 
-- CR 701.15b whole cards: the goaded creature is sent at carol, not at carol's Jace | `board:combat` `board:object-goadedby`
+- ~~CR 701.15b whole cards: the goaded creature is sent at carol, not at carol's Jace~~
 
 ### `HarnessSpec`
 
-- CR 702.186b the infinity ability exists only once CR 701.64a has harnessed the Stone | `board:object-designations`
+- ~~CR 702.186b the infinity ability exists only once CR 701.64a has harnessed the Stone~~
 
 ### `InitiativeSpec`
 
@@ -714,7 +714,7 @@ out: grep for them.
 
 ### `LearnSpec`
 
-- CR 118.12 Library of Leng does not reach learn's discard | `board:outside-the-game`
+- ~~CR 118.12 Library of Leng does not reach learn's discard~~
 - CR 701.48a a learner may decline both branches | `board:outside-the-game`
 - CR 701.48a the first branch discards a card and then draws one | `board:outside-the-game`
 - CR 701.48a the second branch takes the Lesson from outside the game, and leaves the non-Lesson there | `board:outside-the-game`
@@ -761,7 +761,7 @@ out: grep for them.
 
 ### `LifeReplacementSpec`
 
-- CR 121.4 with no row the same empty library records the failed draw | `check:other-GameState.drewFromEmpty`
+- ~~CR 121.4 with no row the same empty library records the failed draw~~
 
 ### `LifeTriggerSpec`
 
@@ -799,8 +799,8 @@ out: grep for them.
 
 ### `ManaSymbolSpec`
 
-- CR 107.4e each symbol picks its own route: {R}{R}{2} and {R}{4} | `check:other-Mana.canPay`
-- CR 107.4h whole card: Berg Strider's victim does not untap when snow mana paid for it, and does when it did not | `board:object-doesnotuntapfor`
+- ~~CR 107.4e each symbol picks its own route: {R}{R}{2} and {R}{4}~~
+- ~~CR 107.4h whole card: Berg Strider's victim does not untap when snow mana paid for it, and does when it did not~~
 
 ### `MassEffectSpec`
 
@@ -833,7 +833,7 @@ out: grep for them.
 
 ### `ModalDoubleFacedSpec`
 
-- CR 712.9 playing the land face puts THAT face onto the battlefield | `check:abilities` `check:other-GameState.landsPlayed`
+- ~~CR 712.9 playing the land face puts THAT face onto the battlefield~~
 
 ### `ModalSpec`
 
@@ -847,7 +847,7 @@ out: grep for them.
 
 ### `MulliganSpec`
 
-- CR 800.1: a game that BEGAN with three players keeps its free mulligan after a departure | `check:other-Mulligan.freeMulligans`
+- ~~CR 800.1: a game that BEGAN with three players keeps its free mulligan after a departure~~
 
 ### `MutateSpec`
 
@@ -884,15 +884,15 @@ out: grep for them.
 - CR 400.11c a pool holding no sorcery yields nothing | `board:outside-the-game`
 - CR 400.11c two eligible cards are a choice, and the answer decides which arrives | `board:outside-the-game`
 - CR 400.2 declining outside the game too, the graveyard's match is found | `board:outside-the-game`
-- CR 604.2/730.4a gameplay: Death Wish takes Titania's Song out of the main game and its effect goes on applying there | `move:nested`
+- CR 604.2/730.4a gameplay: Death Wish takes Titania's Song out of the main game and its effect goes on applying there | `move:another-game`
 - CR 701.20a Death Wish brings the card in without revealing it, where Burning Wish reveals | `board:outside-the-game`
 - CR 701.23a/701.23j a library find fills the one count, and the library is shuffled | `board:outside-the-game`
 - CR 701.23j Invasion of Arcavios brings an instant in from outside the game, and a search that skipped her library shuffles nothing | `board:outside-the-game`
 - CR 701.23j a card taken from outside the game fills the count, sparing the graveyard's match | `board:outside-the-game`
 - CR 701.23j outside the game alone may find nothing | `board:outside-the-game`
 - ~~CR 708.2/730.4 a manifested main-game sorcery is offered to a subgame's wish as a creature and not as a sorcery | `board:objects-ids` `board:outsideobjects`~~
-- CR 730.4/730.4a/730.5 gameplay: Living Wish takes two main-game creatures out of a Shahrazad subgame, and the triggers wait for the main game | `move:nested`
-- CR 730.5 gameplay: a wish that takes the resolving Shahrazad itself still finishes resolving with the winner it bound | `move:nested`
+- CR 730.4/730.4a/730.5 gameplay: Living Wish takes two main-game creatures out of a Shahrazad subgame, and the triggers wait for the main game | `move:another-game`
+- CR 730.5 gameplay: a wish that takes the resolving Shahrazad itself still finishes resolving with the winner it bound | `move:another-game`
 
 ### `PhasingSpec`
 
@@ -910,9 +910,9 @@ out: grep for them.
 
 ### `PlanechaseSpec`
 
-- CR 311.5 a departing active player's plane is replaced from the next seat's planar deck | `board:objects-ids`
-- CR 901.10a a plane leaving the game ends a pending planeswalking ability | `board:objects-ids`
-- CR 901.6 the chaos ability's you is the planar controller | `move:roll-planar-die`
+- ~~CR 311.5 a departing active player's plane is replaced from the next seat's planar deck~~
+- ~~CR 901.10a a plane leaving the game ends a pending planeswalking ability~~
+- ~~CR 901.6 the chaos ability's you is the planar controller~~
 
 ### `PlaneswalkerCombatSpec`
 
@@ -963,12 +963,12 @@ out: grep for them.
 
 ### `PopulateSpec`
 
-- CR 701.36a the creature token is copied, and neither the nontoken beside it nor the opponent's token is | `check:tokens`
+- ~~CR 701.36a the creature token is copied, and neither the nontoken beside it nor the opponent's token is~~
 
 ### `PowerToughnessSpec`
 
-- CR 119.3/608.2i two gains in one turn add up: +2/+2 then +4/+4 | `board:events`
-- CR 613.1d a Convincing Mirage'd Forest stops being one, and the pump stops with it | `board:hypothetical`
+- ~~CR 119.3/608.2i two gains in one turn add up: +2/+2 then +4/+4~~
+- ~~CR 613.1d a Convincing Mirage'd Forest stops being one, and the pump stops with it~~
 
 ### `PreventionSpec`
 
@@ -1002,11 +1002,11 @@ out: grep for them.
 ### `PrototypeSpec`
 
 - ~~CR 719.3b cast prototyped the Assembler is a white 2/2 with mana value 2; cast normally a colourless 4/5 with mana value 5 | `check:mana-value`~~
-- CR 719.5 the prototyped permanent keeps vigilance and its activated ability | `board:object-castusing` `board:object-prototyped`
+- ~~CR 719.5 the prototyped permanent keeps vigilance and its activated ability~~
 
 ### `RemoveCounterSpec`
 
-- CR 122.1 / 608.2d alice removes counters of several kinds from among every permanent, then draws and loses that many | `check:prompt-payload`
+- ~~CR 122.1 / 608.2d alice removes counters of several kinds from among every permanent, then draws and loses that many~~
 
 ### `ReplacementSpec`
 
@@ -1041,12 +1041,12 @@ out: grep for them.
 
 ### `RestampSpec`
 
-- ~~CR 614.12 / 608.2f a card one conjure loop made later enters beside the earlier ones, not after them | `move:ReferenceCards`~~
+- ~~CR 614.12 / 608.2f a card one conjure loop made later enters beside the earlier ones, not after them~~
 
 ### `ReversalSpec`
 
-- CR 734.1 a window that wrote nothing undoes the announcement | `check:other-Reversal.withoutAnnouncement` `check:events` `check:other-GameState.nextEventGroup` `check:other-GameState.lastChoice`
-- CR 734.1 an announcement that wrote nothing keeps the window whole | `check:other-Reversal.withoutAnnouncement`
+- ~~CR 734.1 a window that wrote nothing undoes the announcement~~
+- ~~CR 734.1 an announcement that wrote nothing keeps the window whole~~
 
 ### `RingSpec`
 
@@ -1172,9 +1172,9 @@ out: grep for them.
 
 ### `UntapRestrictionSpec`
 
-- CR 502.3 a control change between the steps: the new controller's untap step is the second one skipped | `board:object-doesnotuntapfor` `board:replacement`
-- CR 502.3/611.2a whole card: Telekinesis' target stays tapped through its controller's next two untap steps and untaps at the third | `board:object-doesnotuntapfor` `board:replacement`
-- CR 611.2a Elvish Hunter's one step on top of Telekinesis' two still ends at the second step | `board:object-doesnotuntapfor` `board:replacement`
+- ~~CR 502.3 a control change between the steps: the new controller's untap step is the second one skipped~~
+- ~~CR 502.3/611.2a whole card: Telekinesis' target stays tapped through its controller's next two untap steps and untaps at the third~~
+- ~~CR 611.2a Elvish Hunter's one step on top of Telekinesis' two still ends at the second step~~
 
 ### `VariableEffectSpec`
 

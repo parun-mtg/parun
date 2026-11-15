@@ -17,7 +17,7 @@
 -- its Rite of Replication files, on Mirror Match's CR 608.2f loop by
 -- cr-613-7m-608-2f-the-controller-orders-every-token-one-loop.json,
 -- and on Ornate Imitations' conjure loop by
--- cr-614-12-608-2f-a-card-one-conjure-loop-made-later-enters-beside-the-earlier-ones-not.json.
+-- cr-613-7m-608-2f-the-controller-orders-every-card-one-conjure-loop-made.json.
 module Parun.RestampSpec where
 
 import qualified Control.Monad.Trans.State.Strict as State

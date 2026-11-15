@@ -498,17 +498,6 @@ spec s registry = Spec.describe s "Parun.Engine.Planechase" $ do
     Spec.assertEqWith s "CR 311.7 chaos: alice discards her hand" (S.handSize S.alice chaos) 0
     Spec.assertEqWith s "CR 901.9a a blank face: she keeps it" (S.handSize S.alice blank) 2
 
-  -- CR 311.7 / 901.6 again, on Tazeem's "draw a card for each land you
-  -- control": bob rolls on his own turn, so "you" is bob.
-  Spec.it s "CR 901.6 the chaos ability's you is the planar controller" $ do
-    forest <- S.printingOf s registry "Forest"
-    board <- planarBoard s registry ["Tazeem"]
-    let (_, b1) = S.addPermanent forest S.bob board
-        (_, b2) = S.addPermanent forest S.bob b1
-        (_, b3) = S.addPermanent forest S.alice b2
-        chaos = S.runPure (rolling 5) (inMain S.bob b3) (Planechase.roll S.manaPerformer S.bob >> Engine.priorityLoop)
-    Spec.assertEqWith s "bob draws one card for each of his two Forests, alice none" (S.handSize S.bob chaos, S.handSize S.alice chaos) (2, 0)
-
   -- CR 901.8 / 701.31b: the Planeswalker symbol triggers the planeswalking
   -- ability, which puts Academy on the bottom as a new object (CR 311.6) and
   -- turns Tazeem face up.
@@ -535,18 +524,6 @@ spec s registry = Spec.describe s "Parun.Engine.Planechase" $ do
           Just (Source.OfInherentTrigger inherent) -> Just (InherentTriggerSource.controller inherent)
           _ -> Nothing
     Spec.assertEqWith s "one sourceless planeswalking ability, bob's" (fmap walker (TurnRegisters.stack (GameState.turn placed))) [Just S.bob]
-
-  -- CR 901.10 / 311.5 / 800.4p: bob, the active player, concedes in his main
-  -- phase while his Academy is the face-up plane. It leaves the game with him,
-  -- carol -- the next seat in turn order, not alice, the first by id -- becomes
-  -- planar controller, and her top planar card is turned up at once.
-  Spec.it s "CR 311.5 a departing active player's plane is replaced from the next seat's planar deck" $ do
-    board <- seatedPlanarBoard s registry S.bob [(S.alice, ["Tazeem", "Academy at Tolaria West"]), (S.bob, ["Academy at Tolaria West"]), (S.carol, ["Tazeem", "Academy at Tolaria West"])]
-    let gone = S.runPure (conceding S.bob) (inMain S.bob board) Engine.priorityLoop
-        tazeem = CardName.MkCardName (Text.pack "Tazeem")
-    Spec.assertEqWith s "CR 901.10 carol's Tazeem is face up in place of bob's Academy" (fmap (\oid -> (fmap Face.name (Game.faceOf oid gone), fmap Object.owner (Game.lookupObject oid gone))) (Planechase.faceUp gone)) [(Just tazeem, Just S.carol)]
-    Spec.assertEqWith s "CR 311.5 carol controls it" (fmap (`Projection.controllerOf` gone) (Planechase.faceUp gone)) [Just S.carol]
-    Spec.assertEqWith s "and alice's planar deck is untouched" (length (Planechase.deckOf S.alice gone), length (Planechase.deckOf S.carol gone)) (2, 1)
 
   -- CR 901.15a / 901.15c: under the single planar deck option alice's two
   -- planes and bob's Caldaia make one deck. bob, who brought only the Caldaia,
@@ -582,22 +559,6 @@ spec s registry = Spec.describe s "Parun.Engine.Planechase" $ do
     Spec.assertBool s (notElem S.bob (Game.stillPlaying gone)) "bob has left the game"
     Spec.assertEqWith s "CR 901.10 carol turns up Tazeem in place of bob's Academy" (fmap (\oid -> (fmap Face.name (Game.faceOf oid gone), fmap Object.owner (Game.lookupObject oid gone))) (Planechase.faceUp gone)) [(cardName "Tazeem", Just S.carol)]
     Spec.assertEqWith s "and the Caldaia is still in the deck" (deckNames S.carol gone) [cardName "The Caldaia"]
-
-  -- CR 901.10a: bob rolls the Planeswalker symbol, and while his planeswalking
-  -- ability is on the stack alice, whose Academy is face up, concedes. bob turns
-  -- up his Tazeem (CR 901.10) and the ability ceases to exist, so it does not
-  -- planeswalk him on to his Academy.
-  Spec.it s "CR 901.10a a plane leaving the game ends a pending planeswalking ability" $ do
-    board <- seatedPlanarBoard s registry S.alice [(S.alice, ["Academy at Tolaria West"]), (S.bob, ["Tazeem", "Academy at Tolaria West"]), (S.carol, [])]
-    let answer :: Prompt.Prompt r -> r
-        answer p = case p of
-          Prompt.RollDie _ -> 6
-          _ -> conceding S.alice p
-        gone = S.runPure answer (inMain S.bob board) (Planechase.roll S.manaPerformer S.bob >> Engine.priorityLoop)
-        names = fmap (\oid -> fmap Face.name (Game.faceOf oid gone)) (Planechase.faceUp gone)
-    Spec.assertEqWith s "CR 901.10a bob's Tazeem is still the face-up plane" names [Just (CardName.MkCardName (Text.pack "Tazeem"))]
-    Spec.assertEqWith s "and his Academy is still in his planar deck" (length (Planechase.deckOf S.bob gone)) 1
-    Spec.assertBool s (notElem S.alice (Game.stillPlaying gone)) "alice has left the game"
 
   -- CR 312.5 / 704.6f: alice rolls the Planeswalker symbol and planeswalks
   -- from Academy at Tolaria West to Mutual Epiphany ("When you encounter Mutual

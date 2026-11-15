@@ -5,6 +5,22 @@
       {
         "battlefield": [
           {
+            "card": "Island",
+            "label": "i1"
+          },
+          {
+            "card": "Island",
+            "label": "i2"
+          },
+          {
+            "card": "Island",
+            "label": "i3"
+          },
+          {
+            "card": "Island",
+            "label": "i4"
+          },
+          {
             "card": "Forest",
             "label": "f1"
           },
@@ -19,43 +35,21 @@
           {
             "card": "Forest",
             "label": "f4"
-          },
-          {
-            "card": "Island",
-            "label": "i1"
-          },
-          {
-            "card": "Island",
-            "label": "i2"
-          },
-          {
-            "card": "Island",
-            "label": "i3"
           }
         ],
         "hand": [
           {
             "card": "Ornate Imitations",
-            "label": "ornate"
-          }
-        ],
-        "library": [
-          {
-            "card": "Island"
-          },
-          {
-            "card": "Island"
+            "label": "oi"
           }
         ],
         "name": "alice"
       },
       {
-        "library": [
+        "battlefield": [
           {
-            "card": "Island"
-          },
-          {
-            "card": "Island"
+            "card": "Goblin Piker",
+            "label": "piker"
           }
         ],
         "name": "bob"
@@ -64,22 +58,40 @@
     "step": "PrecombatMain"
   },
   "description": "CR 614.12 / 608.2f a card one conjure loop made later enters beside the earlier ones, not after them",
-  "note": "Ornate Imitations for X = 5 conjures Tayam at 4 and the Godhead of Awe at 5 in one action, so they enter at one moment and Tayam's replacement does not see the Godhead. The control differs only in a Tayam alice already controls.",
+  "note": "Ornate Imitations for X = 6 conjures at each number one action makes (CR 608.2f), so every card enters at one moment. The ReferenceCards answers are the test's fixture: Tayam, Luminous Enigma at 4, Godhead of Awe at 5, nothing else. Tayam's replacement (CR 614.12) sees only creatures entering after it is on the battlefield, so the Godhead, conjured beside it, gets no vigilance counter. The control places a Tayam on alice's battlefield first, and it gives the Godhead one.",
   "timeline": [
     {
       "do": {
         "Cast": {
           "mana": [
+            "$i1",
+            "$i2",
+            "$i3",
+            "$i4",
             "$f1",
             "$f2",
             "$f3",
-            "$f4",
-            "$i1",
-            "$i2",
-            "$i3"
+            "$f4"
           ],
-          "object": "$ornate",
-          "x": 5
+          "object": "$oi",
+          "x": 6
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Answer": {
+          "prompt": "ReferenceCards",
+          "with": []
         }
       },
       "player": "alice",
@@ -89,8 +101,8 @@
     {
       "do": {
         "Answer": {
-          "prompt": "RandomCard",
-          "with": "Llanowar Elves"
+          "prompt": "ReferenceCards",
+          "with": []
         }
       },
       "player": "alice",
@@ -100,8 +112,8 @@
     {
       "do": {
         "Answer": {
-          "prompt": "RandomCard",
-          "with": "Grizzly Bears"
+          "prompt": "ReferenceCards",
+          "with": []
         }
       },
       "player": "alice",
@@ -111,8 +123,10 @@
     {
       "do": {
         "Answer": {
-          "prompt": "RandomCard",
-          "with": "Centaur Courser"
+          "prompt": "ReferenceCards",
+          "with": [
+            "Tayam, Luminous Enigma"
+          ]
         }
       },
       "player": "alice",
@@ -122,8 +136,10 @@
     {
       "do": {
         "Answer": {
-          "prompt": "RandomCard",
-          "with": "Tayam, Luminous Enigma"
+          "prompt": "ReferenceCards",
+          "with": [
+            "Godhead of Awe"
+          ]
         }
       },
       "player": "alice",
@@ -133,8 +149,8 @@
     {
       "do": {
         "Answer": {
-          "prompt": "RandomCard",
-          "with": "Godhead of Awe"
+          "prompt": "ReferenceCards",
+          "with": []
         }
       },
       "player": "alice",
@@ -144,28 +160,12 @@
     {
       "do": {
         "OrderTimestamps": [
-          "Llanowar Elves",
-          "Grizzly Bears",
-          "Centaur Courser",
           "Tayam, Luminous Enigma",
           "Godhead of Awe"
         ]
       },
       "player": "alice",
       "step": "PrecombatMain",
-      "turn": 1
-    },
-    {
-      "check": {
-        "Count": {
-          "card": "Godhead of Awe",
-          "count": 1,
-          "player": "alice",
-          "zone": "Battlefield"
-        }
-      },
-      "player": "alice",
-      "step": "PostcombatMain",
       "turn": 1
     },
     {
@@ -182,7 +182,7 @@
         }
       },
       "player": "alice",
-      "step": "PostcombatMain",
+      "step": "PrecombatMain",
       "turn": 1
     }
   ]

@@ -7,10 +7,8 @@
 -- which keeps the machinery.
 module Parun.CastRestrictionSpec where
 
-import qualified Control.Monad.Trans.State.Strict as State
 import qualified Data.Foldable as Foldable
 import qualified Data.List as List
-import qualified Data.List.NonEmpty as NonEmpty
 import qualified Data.Map.Strict as Map
 import qualified Data.Maybe as Maybe
 import qualified Data.Sequence as Seq
@@ -38,7 +36,6 @@ import qualified Parun.Engine.Turn as Turn
 import qualified Parun.Registry as Registry
 import qualified Parun.Spec as Spec
 import qualified Parun.Support as S
-import qualified Parun.Types.Acquisition as Acquisition
 import qualified Parun.Types.Action as A
 import qualified Parun.Types.AttackTarget as AttackTarget
 import qualified Parun.Types.BeginningStep as BeginningStep
@@ -48,7 +45,6 @@ import qualified Parun.Types.Combat as Combat.Type
 import qualified Parun.Types.CombatStep as CombatStep
 import qualified Parun.Types.CounterKind as CounterKind
 import qualified Parun.Types.EndingStep as EndingStep
-import qualified Parun.Types.ExileLink as ExileLink
 import qualified Parun.Types.Face as Face
 import qualified Parun.Types.Facing as Facing
 import qualified Parun.Types.GameEvent as GameEvent
@@ -61,7 +57,6 @@ import qualified Parun.Types.ManaType as ManaType
 import qualified Parun.Types.ModeIndex as ModeIndex
 import qualified Parun.Types.Object as Object
 import qualified Parun.Types.ObjectId as ObjectId
-import qualified Parun.Types.OptionalDecision as OptionalDecision
 import qualified Parun.Types.Phase as Phase
 import qualified Parun.Types.PlayerId as PlayerId
 import qualified Parun.Types.Printing as Printing
@@ -2075,7 +2070,7 @@ senTripletsBoard ::
   Printing.Printing ->
   Printing.Printing ->
   Printing.Printing ->
-  (ObjectId.ObjectId, ObjectId.ObjectId, ObjectId.ObjectId, ObjectId.ObjectId, GameState.GameState)
+  (ObjectId.ObjectId, ObjectId.ObjectId, ObjectId.ObjectId, GameState.GameState)
 senTripletsBoard island thinkTwice triplets =
   let gs1 = S.landsFor island S.alice 6 S.threePlayerGame
       gs2 = S.landsFor island S.bob 6 gs1
@@ -2084,11 +2079,12 @@ senTripletsBoard island thinkTwice triplets =
       (bobSpell, gs5) = S.addHandCard thinkTwice S.bob gs4
       (carolSpell, gs6) = S.addHandCard thinkTwice S.carol gs5
       (aliceSpell, gs7) = S.addHandCard thinkTwice S.alice gs6
-      (bobLand, gs8) = S.addHandCard island S.bob gs7
+      -- A land beside his Think Twice, so his hand is not emptied by the cast.
+      (_, gs8) = S.addHandCard island S.bob gs7
       -- CR 104.3c: Think Twice draws, and a seat drawing from an empty library
       -- loses before any assertion runs.
       stocked = List.foldl' (\g pid -> snd (S.addLibraryCard island pid g)) gs8 [S.alice, S.bob, S.carol]
-   in (aliceSpell, bobSpell, carolSpell, bobLand, aliceOnTurn stocked)
+   in (aliceSpell, bobSpell, carolSpell, aliceOnTurn stocked)
 
 -- CR 603.3d: the trigger's target is chosen as it goes on the stack, so the
 -- answerer is needed at the settle and not only at the resolution. bob is the
@@ -2099,8 +2095,7 @@ answerSenTriplets p = case p of
   _ -> S.identityAnswer p
 
 -- alice's upkeep begins, the trigger goes on the stack naming bob, and it
--- resolves. Left in the UPKEEP, which is where the instant cases below want it;
--- the land case moves to a main phase, the grant lasting the whole turn.
+-- resolves. Left in the UPKEEP, which is where the instant cases below want it.
 senTripletsResolved :: GameState.GameState -> GameState.GameState
 senTripletsResolved gs =
   let upkeep = Phase.Beginning BeginningStep.Upkeep
@@ -2164,7 +2159,7 @@ senTripletsSpec s registry =
         -- the same board offers alice nothing out of bob's hand, so the offer
         -- below is the permission's rather than the widened candidate list's.
         Spec.it s "CR 601.3 alice casts a spell out of bob's hand, and the card goes to bob's graveyard" $ do
-          ((_, bobSpell, _, _, open), name) <- board
+          ((_, bobSpell, _, open), name) <- board
           let after = senTripletsResolved open
               resolved =
                 S.runPure
@@ -2191,7 +2186,7 @@ senTripletsSpec s registry =
         -- is bob's. Two copies of one card in the two opponents' hands differ in
         -- nothing but whose hand they are in.
         Spec.it s "CR 601.3 the grant names bob's hand alone" $ do
-          ((_, bobSpell, carolSpell, _, open), name) <- board
+          ((_, bobSpell, carolSpell, open), name) <- board
           let after = senTripletsResolved open
           Spec.assertBool s (notElem (A.Cast carolSpell name Facing.FaceUp) (offeredTo S.alice after)) "alice is not offered the identical card in carol's hand"
           Spec.assertBool s (notElem (A.Cast bobSpell name Facing.FaceUp) (offeredTo S.carol after)) "and carol is not offered the card in bob's"
@@ -2199,7 +2194,7 @@ senTripletsSpec s registry =
         -- cast the very card alice is offered. One card, two seats, two answers --
         -- and carol, whom the trigger did not name, still casts hers.
         Spec.it s "CR 601.3 bob can't cast spells this turn while carol still can" $ do
-          ((_, bobSpell, carolSpell, _, open), name) <- board
+          ((_, bobSpell, carolSpell, open), name) <- board
           let after = senTripletsResolved open
           Spec.assertBool s (notElem (A.Cast bobSpell name Facing.FaceUp) (offeredTo S.bob after)) "bob may not cast his own card"
           Spec.assertBool s (elem (A.Cast bobSpell name Facing.FaceUp) (offeredTo S.bob open)) "though he may on the board where the trigger has not resolved"
@@ -2210,49 +2205,16 @@ senTripletsSpec s registry =
         -- prohibition has to reach that road too: CR 602.5 states no carve-out
         -- where CR 702.61b writes one for split second.
         Spec.it s "CR 602.5 bob can't activate abilities this turn, mana abilities included" $ do
-          ((_, _, _, _, open), _) <- board
+          ((_, _, _, open), _) <- board
           let after = senTripletsResolved open
               manaOffers pid gs = filter manaActivationOffer (offeredTo pid gs)
           Spec.assertEqWith s "bob is offered no mana ability at all" (manaOffers S.bob after) []
           Spec.assertEqWith s "off six Islands he was offered six before the trigger" (length (manaOffers S.bob open)) 6
           Spec.assertEqWith s "and carol, unnamed, still has her six" (length (manaOffers S.carol after)) 6
-        -- The LAND half of the last sentence, a separate permission because CR
-        -- 305.1 makes playing a land a special action rather than a cast. In a
-        -- MAIN phase, CR 305.1's own window, where the cases above sit in upkeep.
-        Spec.it s "CR 305.1 alice may play a land out of bob's hand" $ do
-          ((_, _, _, bobLand, open), _) <- board
-          let after =
-                (senTripletsResolved open)
-                  { GameState.turn =
-                      (GameState.turn (senTripletsResolved open))
-                        { TurnRegisters.phase = Phase.PrecombatMain
-                        }
-                  }
-              controlledBy pid gs = length (filter (\o -> Projection.controllerOf o gs == Just pid) (Set.toList (GameState.battlefield gs)))
-              played =
-                S.runPure
-                  (takeOnly (A.Play bobLand Nothing))
-                  ( after
-                      { GameState.turn =
-                          (GameState.turn after)
-                            { TurnRegisters.priority = Just S.alice
-                            }
-                      }
-                  )
-                  Engine.priorityLoop
-          -- The GAMEPLAY assertions first, so no offer count absorbs a mutation
-          -- ahead of them. CR 305.1: the land enters under the player who PLAYED
-          -- it, so alice's side of the battlefield grows and bob's does not.
-          Spec.assertEqWith s "alice controlled six Islands and the Triplets" (controlledBy S.alice after) 7
-          Spec.assertEqWith s "and eight afterwards" (controlledBy S.alice played) 8
-          Spec.assertEqWith s "bob still controls his own six" (controlledBy S.bob played) 6
-          Spec.assertEqWith s "and his hand is one card lighter" (length (Game.zoneMembers Zone.Hand S.bob played)) 1
-          Spec.assertBool s (notElem (A.Play bobLand Nothing) (offeredTo S.alice open)) "before the trigger the land in bob's hand is not offered"
-          Spec.assertBool s (elem (A.Play bobLand Nothing) (offeredTo S.alice after)) "with the grant it is"
         -- CR 514.2: the grant is stored with an until-end-of-turn expiry, so
         -- cleanup takes it and the same board refuses the same cast.
         Spec.it s "CR 514.2 the permission ends at cleanup" $ do
-          ((_, bobSpell, _, _, open), name) <- board
+          ((_, bobSpell, _, open), name) <- board
           let after = senTripletsResolved open
               ended = S.runPure S.identityAnswer after (Engine.runTurnBasedActions (Phase.Ending EndingStep.Cleanup))
           Spec.assertBool s (notElem (A.Cast bobSpell name Facing.FaceUp) (offeredTo S.alice ended)) "alice is no longer offered bob's card"
@@ -2320,7 +2282,7 @@ senTripletsSpec s registry =
         -- perspective allows both too -- a hand card's controller is its owner, so
         -- "owned by you" is vacuous there (CR 108.4 / 109.5).
         Spec.it s "CR 601.3a Drannith Magistrate stops the cross-hand cast and leaves the own-hand cast alone" $ do
-          ((aliceSpell, bobSpell, _, _, open), name) <- board
+          ((aliceSpell, bobSpell, _, open), name) <- board
           magistrate <- S.printingOf s registry "Drannith Magistrate"
           let after = senTripletsResolved open
               policed = snd (S.addPermanent magistrate S.bob after)
@@ -2750,7 +2712,8 @@ hinataSpec s registry = Spec.describe s "Hinata, Dawn-Crowned" $ do
 --
 -- The second ability is CR 601.3's offer over a SET: Effect.OfferCast reads an
 -- ObjectRef, and ObjectRef.EachCardInExiledPile is CR 607.2a's link to the
--- pile. ShellSecondAbility below is what proves it.
+-- pile. data/scenarios/cast-restriction/cr-601-3-alice-casts-the-bolt-she-picked-out-of-the-shell-s-pile.json
+-- is what proves it.
 --
 -- THREE SEATS, so "you" is told from "a player": bob's Lightning Bolt aims at
 -- alice on one board and at carol on the next, alice holds the Shell and three
@@ -2780,111 +2743,9 @@ shellRun :: (forall r. Prompt.Prompt r -> r) -> ObjectId.ObjectId -> ObjectId.Ob
 shellRun aim shellId boltId board =
   let cast = S.runPure aim board (S.cast S.bob boltId)
    in case Activatable.abilitiesFor shellId cast of
-        -- The FIRST printed ability: the Shell prints two, and the second one is
-        -- ShellSecondAbility's.
+        -- The FIRST printed ability: the Shell prints two.
         ability : _ -> S.runPure (avenAnswer boltId) cast (Activate.activateAbility S.alice shellId ability >> Engine.priorityLoop)
         _ -> cast
-
--- The second ability's board: alice's Shell untapped among three Islands, bob's
--- Goblin Piker on the battlefield, and THREE cards of bob's in exile -- a
--- Lightning Bolt ({R}) and a Doom Blade ({1}{B}) filed against the Shell by CR
--- 607.2a, plus a second Bolt filed against nothing.
---
--- The exiledWith rows stand in for two earlier activations of the FIRST ability,
--- which is proven on its own board above; two activations would need the Shell
--- untapped twice and settle nothing this case is about.
---
--- FOUR things the board is built to tell apart. Neither exiled card's colour is
--- one three Islands can make, so a cast that happens at all happened without
--- paying the mana cost (CR 118.9). The Doom Blade needs a legal creature and the
--- Bolt does not, so the two casts are observable in different places -- a life
--- total and a battlefield. The unlinked second Bolt is the ZONE decoy: an offer
--- that swept exile rather than following GameState.exiledWith would carry three
--- options. And the two linked cards are DISTINCT printings, so the answer pinned
--- by index below cannot be repaired into the other one.
-shellPileBoard ::
-  Printing.Printing ->
-  Printing.Printing ->
-  Printing.Printing ->
-  Printing.Printing ->
-  Printing.Printing ->
-  (ObjectId.ObjectId, GameState.GameState)
-shellPileBoard island shell piker bolt blade =
-  let (shellId, g1) = S.addPermanent shell S.alice (S.landsFor island S.alice 3 (Setup.emptyGame S.bothPlayers))
-      (_, g2) = S.addPermanent piker S.bob g1
-      (boltId, g3) = S.addExiledCard bolt S.bob g2
-      (bladeId, g4) = S.addExiledCard blade S.bob g3
-      (_, g5) = S.addExiledCard bolt S.bob g4
-   in (shellId, g5 {GameState.exiledWith = Map.fromList [(boltId, ExileLink.MkExileLink {ExileLink.source = shellId, ExileLink.ability = Nothing, ExileLink.acquisition = Acquisition.Own, ExileLink.chosen = False}), (bladeId, ExileLink.MkExileLink {ExileLink.source = shellId, ExileLink.ability = Nothing, ExileLink.acquisition = Acquisition.Own, ExileLink.chosen = False})]})
-
--- Activates the Shell's SECOND ability and answers CR 601.3's choice with the
--- option at `wanted`, then resolves the stack down.
---
--- The choice is pinned BY INDEX into the offered list rather than searched for by
--- name: an answerer that looked for a castable option would find the other card
--- again after a mutation, and the point of the case is which option the engine
--- offered where. `casts` records what it was offered, so a shrunken or reordered
--- offer shows up rather than being silently answered.
-shellPileRun :: Int -> ObjectId.ObjectId -> GameState.GameState -> (GameState.GameState, [[CardName.CardName]])
-shellPileRun wanted shellId board =
-  let answering :: Prompt.Prompt r -> State.State [[CardName.CardName]] r
-      answering p = case p of
-        Prompt.ChooseOfferedCastSpell _ _ options -> do
-          State.modify' (<> [fmap snd (NonEmpty.toList options)])
-          pure (NonEmpty.toList options !! min wanted (length options - 1))
-        Prompt.OfferedCast {} -> pure OptionalDecision.Exercises
-        -- BOB wherever he is legal, so the Bolt goes at him rather than at the
-        -- Piker: the Piker is the Doom Blade's observable, and a Bolt that killed
-        -- it would make the two cases read the same. The Doom Blade's own slot
-        -- offers no player at all, so preferring falls back to the creature there.
-        Prompt.ChooseTargets _ _ _ sets -> pure (S.preferring ((== Just S.bob) . Recipient.playerOf) sets)
-        _ -> pure (S.identityAnswer p)
-      driven = case drop 1 (Activatable.abilitiesFor shellId board) of
-        ability : _ -> Activate.activateAbility S.alice shellId ability >> Engine.priorityLoop
-        [] -> pure ()
-   in State.runState (fmap snd (Engine.runGame answering board driven)) []
-
--- CR 601.3's choice among several cards, which is what separates the Shell's
--- second ability from every other offered cast in the pool: the others name one
--- object and this one names a pile.
-shellSecondAbilitySpec :: (Monad m, Monad n) => Spec.Spec m n -> Registry.Registry m -> n ()
-shellSecondAbilitySpec s registry = Spec.describe s "ShellSecondAbility" $ do
-  Spec.it s "CR 601.3 alice casts the Bolt she picked out of the Shell's pile" $ do
-    (shellId, board, bolt, blade, piker) <- shellPilePrintings s registry
-    let (after, offers) = shellPileRun 0 shellId board
-    Spec.assertEqWith s "CR 601.3 the Bolt alice picked was cast and is in bob's graveyard" (avenNamed bolt Zone.Graveyard S.bob after) 1
-    Spec.assertEqWith s "and the Doom Blade she did not pick stayed in exile" (avenNamed blade Zone.Exile S.bob after) 1
-    Spec.assertEqWith s "with the Piker the Doom Blade would have killed still on the battlefield" (S.countOnBattlefieldByName (S.printingName piker) S.bob after) 1
-    Spec.assertEqWith s "and bob took the Bolt's 3" (S.lifeOf S.bob after) (Just 17)
-    -- The offer itself, after the behaviour: two options and not three, so the
-    -- unlinked Bolt in the same exile zone was never on it (CR 607.2a).
-    Spec.assertEqWith s "CR 607.2a the offer carried the two cards the Shell exiled and no more" offers [[S.printingName bolt, S.printingName blade]]
-    -- CR 118.9: three Islands paid the ability's {3} and nothing else was
-    -- available, so the {R} was never paid.
-    Spec.assertEqWith s "CR 118.9 only the three Islands tapped, so the {R} went unpaid" (S.tappedCount S.alice after) 3
-  -- The pair, one index over: same board, same answerer shape, a different option
-  -- taken. Without it "alice was asked" could not be told from "the engine cast
-  -- the first thing it found".
-  Spec.it s "CR 601.3 the same pile casts the Doom Blade when she picks that instead" $ do
-    (shellId, board, bolt, blade, piker) <- shellPilePrintings s registry
-    let (after, offers) = shellPileRun 1 shellId board
-    Spec.assertEqWith s "CR 601.3 the Doom Blade alice picked was cast and killed the Piker" (S.countOnBattlefieldByName (S.printingName piker) S.bob after) 0
-    Spec.assertEqWith s "and both Bolts stayed in exile" (avenNamed bolt Zone.Exile S.bob after) 2
-    Spec.assertEqWith s "so bob took no damage" (S.lifeOf S.bob after) (Just 20)
-    Spec.assertEqWith s "the Doom Blade itself is in bob's graveyard" (avenNamed blade Zone.Graveyard S.bob after) 1
-    Spec.assertEqWith s "off the same two-option offer" offers [[S.printingName bolt, S.printingName blade]]
-    Spec.assertEqWith s "CR 118.9 and the {1}{B} went unpaid, three Islands having paid the {3}" (S.tappedCount S.alice after) 3
-
--- shellPileBoard's printings, fetched once per case.
-shellPilePrintings :: (Monad m) => Spec.Spec m n -> Registry.Registry m -> m (ObjectId.ObjectId, GameState.GameState, Printing.Printing, Printing.Printing, Printing.Printing)
-shellPilePrintings s registry = do
-  island <- S.printingOf s registry "Island"
-  shell <- S.printingOf s registry "Shell of the Last Kappa"
-  piker <- S.printingOf s registry "Goblin Piker"
-  bolt <- S.printingOf s registry "Lightning Bolt"
-  blade <- S.printingOf s registry "Doom Blade"
-  let (shellId, board) = shellPileBoard island shell piker bolt blade
-  pure (shellId, board, bolt, blade, piker)
 
 shellOfTheLastKappaSpec :: (Monad m, Monad n) => Spec.Spec m n -> Registry.Registry m -> n ()
 shellOfTheLastKappaSpec s registry = Spec.describe s "Shell of the Last Kappa" $ do
@@ -2937,5 +2798,4 @@ spec s registry = Spec.describe s "Parun.Engine.Cast" $ do
   terrorOfThePeaksSpec s registry
   hinataSpec s registry
   shellOfTheLastKappaSpec s registry
-  shellSecondAbilitySpec s registry
   senTripletsSpec s registry

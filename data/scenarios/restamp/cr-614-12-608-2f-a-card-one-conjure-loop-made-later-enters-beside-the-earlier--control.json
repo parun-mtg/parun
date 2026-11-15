@@ -5,6 +5,22 @@
       {
         "battlefield": [
           {
+            "card": "Island",
+            "label": "i1"
+          },
+          {
+            "card": "Island",
+            "label": "i2"
+          },
+          {
+            "card": "Island",
+            "label": "i3"
+          },
+          {
+            "card": "Island",
+            "label": "i4"
+          },
+          {
             "card": "Forest",
             "label": "f1"
           },
@@ -21,18 +37,6 @@
             "label": "f4"
           },
           {
-            "card": "Island",
-            "label": "i1"
-          },
-          {
-            "card": "Island",
-            "label": "i2"
-          },
-          {
-            "card": "Island",
-            "label": "i3"
-          },
-          {
             "card": "Tayam, Luminous Enigma",
             "label": "tayam"
           }
@@ -40,26 +44,16 @@
         "hand": [
           {
             "card": "Ornate Imitations",
-            "label": "ornate"
-          }
-        ],
-        "library": [
-          {
-            "card": "Island"
-          },
-          {
-            "card": "Island"
+            "label": "oi"
           }
         ],
         "name": "alice"
       },
       {
-        "library": [
+        "battlefield": [
           {
-            "card": "Island"
-          },
-          {
-            "card": "Island"
+            "card": "Goblin Piker",
+            "label": "piker"
           }
         ],
         "name": "bob"
@@ -67,23 +61,41 @@
     ],
     "step": "PrecombatMain"
   },
-  "description": "CR 614.12 / 608.2f a Tayam already on the battlefield gives the conjured Godhead a vigilance counter",
-  "note": "The control: a Tayam alice already controls gives the conjured Godhead its counter. The conjured Tayam then goes to the legend rule (CR 704.5j), alice keeping hers.",
+  "description": "CR 614.12 / 608.2f a card one conjure loop made later enters beside the earlier ones, not after them",
+  "note": "The pair's one difference: a Tayam, Luminous Enigma already on alice's battlefield, whose replacement gives the conjured Godhead of Awe a vigilance counter (CR 614.12). The legend rule (CR 704.5j) then asks which Tayam alice keeps; she keeps the first, and the Godhead's counter stays.",
   "timeline": [
     {
       "do": {
         "Cast": {
           "mana": [
+            "$i1",
+            "$i2",
+            "$i3",
+            "$i4",
             "$f1",
             "$f2",
             "$f3",
-            "$f4",
-            "$i1",
-            "$i2",
-            "$i3"
+            "$f4"
           ],
-          "object": "$ornate",
-          "x": 5
+          "object": "$oi",
+          "x": 6
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Answer": {
+          "prompt": "ReferenceCards",
+          "with": []
         }
       },
       "player": "alice",
@@ -93,8 +105,8 @@
     {
       "do": {
         "Answer": {
-          "prompt": "RandomCard",
-          "with": "Llanowar Elves"
+          "prompt": "ReferenceCards",
+          "with": []
         }
       },
       "player": "alice",
@@ -104,8 +116,8 @@
     {
       "do": {
         "Answer": {
-          "prompt": "RandomCard",
-          "with": "Grizzly Bears"
+          "prompt": "ReferenceCards",
+          "with": []
         }
       },
       "player": "alice",
@@ -115,8 +127,10 @@
     {
       "do": {
         "Answer": {
-          "prompt": "RandomCard",
-          "with": "Centaur Courser"
+          "prompt": "ReferenceCards",
+          "with": [
+            "Tayam, Luminous Enigma"
+          ]
         }
       },
       "player": "alice",
@@ -126,8 +140,10 @@
     {
       "do": {
         "Answer": {
-          "prompt": "RandomCard",
-          "with": "Tayam, Luminous Enigma"
+          "prompt": "ReferenceCards",
+          "with": [
+            "Godhead of Awe"
+          ]
         }
       },
       "player": "alice",
@@ -137,8 +153,8 @@
     {
       "do": {
         "Answer": {
-          "prompt": "RandomCard",
-          "with": "Godhead of Awe"
+          "prompt": "ReferenceCards",
+          "with": []
         }
       },
       "player": "alice",
@@ -148,9 +164,6 @@
     {
       "do": {
         "OrderTimestamps": [
-          "Llanowar Elves",
-          "Grizzly Bears",
-          "Centaur Courser",
           "Tayam, Luminous Enigma#2",
           "Godhead of Awe"
         ]
@@ -172,19 +185,6 @@
     },
     {
       "check": {
-        "Count": {
-          "card": "Godhead of Awe",
-          "count": 1,
-          "player": "alice",
-          "zone": "Battlefield"
-        }
-      },
-      "player": "alice",
-      "step": "PostcombatMain",
-      "turn": 1
-    },
-    {
-      "check": {
         "Counters": {
           "count": 1,
           "kind": {
@@ -197,7 +197,7 @@
         }
       },
       "player": "alice",
-      "step": "PostcombatMain",
+      "step": "PrecombatMain",
       "turn": 1
     }
   ]
