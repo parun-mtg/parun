@@ -12872,8 +12872,8 @@ withinTriggerLimit gs =
 -- object to tell them apart, where an object-borne ability is CR 113.7's one
 -- instance whoever controls it.
 --
--- The controller component is proved by Parun.TeamSpec's "CR 702.179d each
--- active teammate's speed rises once": under the shared team turns option two
+-- The controller component is proved by data/scenarios/team's "CR 702.179d
+-- each active teammate's speed rises once": under the shared team turns option two
 -- active players each spend their own instance of rule 702.179d's ability.
 -- CR 603.2h's by Parun.EventTriggerSpec's "CR 603.2h a taken instruction is
 -- spent only for the player who took it".

@@ -1,12 +1,8 @@
 {
-  "description": "CR 702.179d each active teammate's speed rises once (control)",
-  "note": "The same board without shared team turns: bob is not an active player, so only alice's speed rises.",
   "board": {
+    "active": "alice",
     "seats": [
       {
-        "name": "alice",
-        "team": 1,
-        "speed": 1,
         "battlefield": [
           {
             "card": "Mountain",
@@ -19,12 +15,15 @@
             "card": "Lightning Bolt",
             "label": "bolt"
           }
-        ]
+        ],
+        "name": "alice",
+        "speed": 1,
+        "team": 1
       },
       {
         "name": "bob",
-        "team": 1,
-        "speed": 2
+        "speed": 2,
+        "team": 1
       },
       {
         "name": "carol",
@@ -35,66 +34,73 @@
         "team": 2
       }
     ],
-    "active": "alice",
     "step": "PrecombatMain"
   },
+  "description": "CR 702.179d each active teammate's speed rises once, control",
+  "note": "The same board without shared team turns: bob is not an active player, so only alice's speed rises.",
   "timeline": [
     {
-      "turn": 1,
-      "step": "PrecombatMain",
-      "player": "alice",
       "do": {
         "Cast": {
-          "object": "$bolt",
           "mana": [
             "$mountain"
           ],
+          "object": "$bolt",
           "targets": [
             "$carol"
           ]
         }
-      }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PrecombatMain",
+      "do": "Pass",
       "player": "alice",
-      "do": "Pass"
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PrecombatMain",
-      "player": "alice",
       "check": {
         "Life": {
-          "player": "carol",
-          "life": 17
+          "life": 17,
+          "player": "carol"
         }
-      }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PrecombatMain",
+      "do": "Pass",
       "player": "alice",
-      "check": {
-        "View": {
-          "of": "Speed",
-          "player": "alice",
-          "is": 2
-        }
-      }
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PrecombatMain",
-      "player": "alice",
       "check": {
         "View": {
+          "is": 2,
           "of": "Speed",
-          "player": "bob",
-          "is": 2
+          "player": "alice"
         }
-      }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "View": {
+          "is": 2,
+          "of": "Speed",
+          "player": "bob"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
     }
   ]
 }
