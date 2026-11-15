@@ -78,7 +78,7 @@ import qualified Parun.Types.ZoneChangeR as ZoneChangeR
 -- something]" on Parun.Types.ZoneChangeR's riders,
 -- CR 614.1c's "as [this permanent] enters, [do something]" on
 -- Parun.Types.EntryRewrite's RunEffects, and CR 701.27i's "as [this permanent]
--- transforms" on Parun.Types.TransformR's effects. Parun.Types.Effect holds
+-- transforms" on Parun.Types.TransformRewrite's RunEffects. Parun.Types.Effect holds
 -- this type and this type holds effects. See Parun.Types.DamageR. Every other arm ignores the
 -- parameter, so a card writing a rider onto anything but a prevention is a lint's
 -- job rather than the type's.

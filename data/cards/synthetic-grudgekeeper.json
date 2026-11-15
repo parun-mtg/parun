@@ -27,7 +27,7 @@
                               "value": [
                                 "self",
                                 {
-                                  "type": "AsEnters"
+                                  "type": "AsEntersOrTransforms"
                                 }
                               ]
                             }

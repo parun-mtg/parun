@@ -41,7 +41,7 @@
                   "value": [
                     "self",
                     {
-                      "type": "AsEnters"
+                      "type": "AsEntersOrTransforms"
                     }
                   ]
                 }
@@ -80,7 +80,7 @@
                                             "value": [
                                               "self",
                                               {
-                                                "type": "AsEnters"
+                                                "type": "AsEntersOrTransforms"
                                               }
                                             ]
                                           },
@@ -103,7 +103,7 @@
                                     "value": [
                                       "self",
                                       {
-                                        "type": "AsEnters"
+                                        "type": "AsEntersOrTransforms"
                                       }
                                     ]
                                   }

@@ -471,6 +471,7 @@ import qualified Parun.Types.TopOfLibraryUntil as TopOfLibraryUntil
 import qualified Parun.Types.TotalCap as TotalCap
 import qualified Parun.Types.Toughness as Toughness
 import qualified Parun.Types.TransformR as TransformR
+import qualified Parun.Types.TransformRewrite as TransformRewrite
 import qualified Parun.Types.TransformTrigger as TransformTrigger
 import qualified Parun.Types.TriggerCondition as TriggerCondition
 import qualified Parun.Types.TriggerFrequency as TriggerFrequency
@@ -2352,7 +2353,7 @@ replacementEffectChildren c replacement = case replacement of
   ReplacementEffect.TurnUpR (TurnUpR.MkTurnUpR matching requiring paying rewrite) ->
     fmap ReplacementEffect.TurnUpR (TurnUpR.MkTurnUpR <$> replacementFilter c matching <*> pure requiring <*> traverse (replacementProcedureCost c) paying <*> turnUpRewriteChildren c rewrite)
   ReplacementEffect.AttachR (AttachR.MkAttachR matching rewrite) -> fmap ReplacementEffect.AttachR (AttachR.MkAttachR <$> replacementFilter c matching <*> attachRewriteChildren c rewrite)
-  ReplacementEffect.TransformR (TransformR.MkTransformR matching effects) -> fmap ReplacementEffect.TransformR (TransformR.MkTransformR <$> replacementFilter c matching <*> traverse (replacementEffect c) effects)
+  ReplacementEffect.TransformR (TransformR.MkTransformR matching rewrite) -> fmap ReplacementEffect.TransformR (TransformR.MkTransformR <$> replacementFilter c matching <*> transformRewriteChildren c rewrite)
   ReplacementEffect.UntapR (UntapR.MkUntapR during rewrite) -> fmap ReplacementEffect.UntapR (UntapR.MkUntapR during <$> untapRewriteChildren c rewrite)
   ReplacementEffect.LifeLossR (LifeLossR.MkLifeLossR (LifeLossPattern.MkLifeLossPattern whose cause) rewrite) ->
     fmap ReplacementEffect.LifeLossR (LifeLossR.MkLifeLossR <$> (LifeLossPattern.MkLifeLossPattern <$> replacementWhose c whose <*> pure cause) <*> lifeLossRewriteChildren c rewrite)
@@ -2485,6 +2486,12 @@ attachRewriteChildren :: (Applicative f) => ReplacementChildren card ability eff
 attachRewriteChildren c rewrite = case rewrite of
   AttachRewrite.AsCopy copy -> AttachRewrite.AsCopy <$> replacementCopy c copy
   AttachRewrite.ChooseQuality quality -> AttachRewrite.ChooseQuality <$> chosenQualityChildren (replacementSubtype c) (replacementFilter c) quality
+
+-- | What an as-transforms ability does (CR 701.27i).
+transformRewriteChildren :: (Applicative f) => ReplacementChildren card ability effect f -> TransformRewrite.TransformRewrite effect -> f (TransformRewrite.TransformRewrite effect)
+transformRewriteChildren c rewrite = case rewrite of
+  TransformRewrite.RunEffects effects -> TransformRewrite.RunEffects <$> traverse (replacementEffect c) effects
+  TransformRewrite.ChoosePlayer _ -> pure rewrite
 
 -- | What an untap replacement does (CR 614.1a).
 untapRewriteChildren :: (Applicative f) => ReplacementChildren card ability effect f -> UntapRewrite.UntapRewrite -> f UntapRewrite.UntapRewrite

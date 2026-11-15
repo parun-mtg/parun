@@ -154,7 +154,9 @@
         {
           "condition": {
             "type": "PlayerLosesGame",
-            "value": "AnyPlayer"
+            "value": {
+              "type": "AnyPlayer"
+            }
           },
           "modal": {
             "modes": [

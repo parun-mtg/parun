@@ -2746,7 +2746,7 @@ trueNameNemesisSpec s registry =
               Spec.assertEqWith
                 s
                 "CR 614.1c and each board's Nemesis really remembers the seat it was told"
-                (Game.lookupObject chosenBobId chosenBob >>= Map.lookup PlayerChoice.AsEnters . Map.findWithDefault Map.empty Acquisition.Own . Object.chosenPlayers, Game.lookupObject chosenCarolId chosenCarol >>= Map.lookup PlayerChoice.AsEnters . Map.findWithDefault Map.empty Acquisition.Own . Object.chosenPlayers)
+                (Game.lookupObject chosenBobId chosenBob >>= Map.lookup PlayerChoice.AsEntersOrTransforms . Map.findWithDefault Map.empty Acquisition.Own . Object.chosenPlayers, Game.lookupObject chosenCarolId chosenCarol >>= Map.lookup PlayerChoice.AsEntersOrTransforms . Map.findWithDefault Map.empty Acquisition.Own . Object.chosenPlayers)
                 (Just S.bob, Just S.carol)
             _ -> Spec.assertFailure s "the Nemesis did not reach the battlefield"
 

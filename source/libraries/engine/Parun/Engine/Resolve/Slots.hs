@@ -284,6 +284,7 @@ import qualified Parun.Types.TopOfLibraryUntil as TopOfLibraryUntil
 import qualified Parun.Types.TotalCap as TotalCap
 import qualified Parun.Types.Toughness as Toughness
 import qualified Parun.Types.TransformR as TransformR
+import qualified Parun.Types.TransformRewrite as TransformRewrite
 import qualified Parun.Types.TriggeredAbility as TriggeredAbility
 import qualified Parun.Types.TurnRegisters as TurnRegisters
 import qualified Parun.Types.TurnUpR as TurnUpR
@@ -1939,7 +1940,8 @@ replacementRowEffects re = case re of
   ReplacementEffect.TurnUpR _ -> []
   ReplacementEffect.AttachR _ -> []
   -- CR 701.27i's "as [this permanent] transforms, [do something]".
-  ReplacementEffect.TransformR (TransformR.MkTransformR _ effects) -> Foldable.toList effects
+  ReplacementEffect.TransformR (TransformR.MkTransformR _ (TransformRewrite.RunEffects effects)) -> Foldable.toList effects
+  ReplacementEffect.TransformR (TransformR.MkTransformR _ (TransformRewrite.ChoosePlayer _)) -> []
   ReplacementEffect.UntapR _ -> []
   ReplacementEffect.LifeLossR _ -> []
   ReplacementEffect.LifeGainR _ -> []

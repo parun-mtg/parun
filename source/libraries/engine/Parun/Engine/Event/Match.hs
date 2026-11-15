@@ -2201,12 +2201,13 @@ armMatches bindings board atEvent beforeEvent groupEvents gs bearer you cond eve
       PlayerActed.action acted == PlayerActed.action watched
         && PlayerRelation.holds (Game.teams gs) (PlayerActed.player watched) you (PlayerActed.player acted)
     Nothing -> False
-  -- CR 603.9: a player lost the game. The relation reads the loser against CR
-  -- 109.5's "you", the ability's controller -- PlayerActs' shape. Game.teams
-  -- is read off the settings (CR 800.2), so a loser who has already left is
-  -- still judged against the team they played on.
-  TriggerCondition.PlayerLosesGame relation -> case event of
-    GameEvent.LostTheGame loser -> PlayerRelation.holds (Game.teams gs) relation you loser
+  -- CR 603.9: a player lost the game. The scope reads the loser against CR
+  -- 109.5's "you", the ability's controller -- PlayerActs' shape -- and a
+  -- ChosenPlayer against the bearer's choice (CR 607.2d). Game.teams is read
+  -- off the settings (CR 800.2), so a loser who has already left is still
+  -- judged against the team they played on.
+  TriggerCondition.PlayerLosesGame scope -> case event of
+    GameEvent.LostTheGame loser -> PlayerEffect.inScopeWithin (Just bearer) (Just you) loser you gs scope
     _ -> False
   -- CR 305.1: "whenever you play a land from exile" (Urianger Augurelt). The
   -- player is the one who played it, which CR 305.1 makes the special

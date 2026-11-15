@@ -1012,7 +1012,7 @@ playerEffectNames asking =
 
 playerChoiceNames :: (Monoid r) => Asking r -> PlayerChoice.PlayerChoice -> r
 playerChoiceNames asking x = case x of
-  PlayerChoice.AsEnters -> mempty
+  PlayerChoice.AsEntersOrTransforms -> mempty
   PlayerChoice.Promised _gift instance_ -> keywordInstanceNames asking instance_
 
 keywordInstanceNames :: (Monoid r) => Asking r -> KeywordInstance.KeywordInstance -> r

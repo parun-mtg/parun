@@ -281,8 +281,9 @@ data Object = MkObject
     -- the whole of what "the chosen name" then means (Petra Sphinx activated
     -- twice, Parun.ResolveSpec).
     chosenNames :: Map.Map Acquisition.Acquisition (Map.Map PlayerId.PlayerId (Set.Set CardName.CardName)),
-    -- | CR 614.1c / 702.174a: the players chosen for this object, keyed by which
-    -- choice -- the one its controller made as it entered (Stuffy Doll), and the
+    -- | CR 614.1c / 701.27i / 702.174a: the players chosen for this object, keyed
+    -- by which choice -- the one its controller made as it entered (Stuffy Doll)
+    -- or transformed (Shinryu, Transcendent Rival), and the
     -- opponent each gift instance's cost promised (Scrapshooter), one per paid
     -- instance (CR 118.8a). Read by PlayerRef.ChosenPlayerOfBound off the
     -- effect's SOURCE -- a triggered ability's payload rather than a

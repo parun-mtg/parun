@@ -487,6 +487,7 @@ import qualified Parun.Types.TopOfLibrary as TopOfLibrary
 import qualified Parun.Types.TopOfLibraryUntil as TopOfLibraryUntil
 import qualified Parun.Types.Toughness as Toughness
 import qualified Parun.Types.TransformR as TransformR
+import qualified Parun.Types.TransformRewrite as TransformRewrite
 import qualified Parun.Types.TransformTrigger as TransformTrigger
 import qualified Parun.Types.TriggerCondition as TriggerCondition
 import qualified Parun.Types.TriggerLimit as TriggerLimit
@@ -1718,7 +1719,8 @@ replacementRewriteEffects replacement = case replacement of
   ReplacementEffect.AttachR (AttachR.MkAttachR _ (AttachRewrite.AsCopy asCopy)) -> Foldable.toList (AsCopy.whenYouDo asCopy)
   ReplacementEffect.AttachR (AttachR.MkAttachR _ (AttachRewrite.ChooseQuality _)) -> []
   -- CR 701.27i's as-transforms effects (Sephiroth, One-Winged Angel's emblem).
-  ReplacementEffect.TransformR (TransformR.MkTransformR _ effects) -> Foldable.toList effects
+  ReplacementEffect.TransformR (TransformR.MkTransformR _ (TransformRewrite.RunEffects effects)) -> Foldable.toList effects
+  ReplacementEffect.TransformR (TransformR.MkTransformR _ (TransformRewrite.ChoosePlayer _)) -> []
   ReplacementEffect.UntapR _ -> []
   ReplacementEffect.LifeLossR {} -> []
   ReplacementEffect.LifeGainR {} -> []

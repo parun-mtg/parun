@@ -38,6 +38,7 @@ import qualified Parun.Types.PlayerDrawsNthCard as PlayerDrawsNthCard
 import qualified Parun.Types.PlayerExpends as PlayerExpends
 import qualified Parun.Types.PlayerIsDealtDamage as PlayerIsDealtDamage
 import qualified Parun.Types.PlayerRelation as PlayerRelation
+import qualified Parun.Types.PlayerScope as PlayerScope
 import qualified Parun.Types.PlaysLand as PlaysLand
 import qualified Parun.Types.PutIntoZoneTrigger as PutIntoZoneTrigger
 import qualified Parun.Types.RevealedThisWay as RevealedThisWay
@@ -249,8 +250,9 @@ data TriggerCondition
     -- Parun.Engine.Dungeon rather than written by card data.
     RoomEntered RoomIndex.RoomIndex
   | -- | CR 603.9: "whenever a player loses the game" (Withengar Unbound),
+    -- "when the chosen player loses the game" (Shinryu, Transcendent Rival),
     -- against GameEvent.LostTheGame.
-    PlayerLosesGame PlayerRelation.PlayerRelation
+    PlayerLosesGame PlayerScope.PlayerScope
   | -- | CR 305.1: "whenever you play a land" (Fastbond), from a zone or not
     -- (Urianger Augurelt's "from exile"), against GameEvent.LandPlayed.
     PlayerPlaysLand PlaysLand.PlaysLand

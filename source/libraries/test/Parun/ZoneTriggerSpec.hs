@@ -189,6 +189,7 @@ import qualified Parun.Types.PlayerId as PlayerId
 import qualified Parun.Types.PlayerIsDealtDamage as PlayerIsDealtDamage
 import qualified Parun.Types.PlayerRef as PlayerRef
 import qualified Parun.Types.PlayerRelation as PlayerRelation
+import qualified Parun.Types.PlayerScope as PlayerScope
 import qualified Parun.Types.PlaysLand as PlaysLand
 import qualified Parun.Types.ProjectedCharacteristics as PC
 import qualified Parun.Types.Prompt as Prompt
@@ -2664,9 +2665,11 @@ everyTriggerCondition =
     TriggerCondition.Leaves (LeavesTrigger.dies (LeavingPermanent.Bound (SlotName.MkSlotName (Text.pack "target")))),
     TriggerCondition.RoomEntered RoomIndex.topmost,
     -- Withengar Unbound's relation and Share the Spoils', on the
-    -- PlayerBecomesMonarch pair's reasoning.
-    TriggerCondition.PlayerLosesGame PlayerRelation.AnyPlayer,
-    TriggerCondition.PlayerLosesGame PlayerRelation.Opponent,
+    -- PlayerBecomesMonarch pair's reasoning, and Shinryu, Transcendent Rival's
+    -- chosen player.
+    TriggerCondition.PlayerLosesGame (PlayerScope.Related PlayerRelation.AnyPlayer),
+    TriggerCondition.PlayerLosesGame (PlayerScope.Related PlayerRelation.Opponent),
+    TriggerCondition.PlayerLosesGame PlayerScope.ChosenPlayer,
     TriggerCondition.PlayerPlaysLand (PlaysLand.MkPlaysLand PlayerRelation.You (Just Zone.Exile) (Filter.Type.And [])),
     -- Fastbond's play from any zone.
     TriggerCondition.PlayerPlaysLand (PlaysLand.MkPlaysLand PlayerRelation.You Nothing (Filter.Type.And [])),

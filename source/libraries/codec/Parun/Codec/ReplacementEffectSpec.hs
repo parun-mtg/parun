@@ -73,6 +73,7 @@ import qualified Parun.Types.Subtype as Subtype
 import qualified Parun.Types.TokenPattern as TokenPattern
 import qualified Parun.Types.TokenR as TokenR
 import qualified Parun.Types.TransformR as TransformR
+import qualified Parun.Types.TransformRewrite as TransformRewrite
 import qualified Parun.Types.TurnKind as TurnKind
 import qualified Parun.Types.TurnUpProcedure as TurnUpProcedure
 import qualified Parun.Types.TurnUpR as TurnUpR
@@ -405,6 +406,6 @@ spec s =
           Common.assertCodec
             s
             codec
-            (ReplacementEffect.TransformR (TransformR.MkTransformR Filter.IsSource (Seq.singleton (Effect.Type.Proliferate Nothing))))
-            " {\"type\":\"TransformR\",\"value\":{\"matching\":{\"type\":\"IsSource\"},\"effects\":[{\"type\":\"Proliferate\"}]}} "
+            (ReplacementEffect.TransformR (TransformR.MkTransformR Filter.IsSource (TransformRewrite.RunEffects (Seq.singleton (Effect.Type.Proliferate Nothing)))))
+            " {\"type\":\"TransformR\",\"value\":{\"matching\":{\"type\":\"IsSource\"},\"rewrite\":{\"type\":\"RunEffects\",\"value\":[{\"type\":\"Proliferate\"}]}}} "
         Spec.it s "has a schema" $ Common.assertHasSchema s codec
