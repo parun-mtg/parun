@@ -21,4 +21,6 @@ data DistinctOf
     Powers
   | -- | CR 205.3j / 306.3: planeswalker types, other subtypes adding none.
     PlaneswalkerTypes
+  | -- | CR 122.1: kinds of counters, each keyword counter a kind of its own (CR 122.1b).
+    CounterKinds
   deriving (Bounded, Enum, Eq, Ord, Show)

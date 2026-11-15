@@ -6,13 +6,13 @@ import qualified Data.Map.Strict as Map
 import qualified Data.Sequence as Seq
 import qualified Data.Set as Set
 import qualified Parun.Codec.DifferentIn as DifferentIn
-import qualified Parun.Codec.EntryRiders as EntryRiders
 import qualified Parun.Codec.Filter as Filter
 import qualified Parun.Codec.Keyword as Keyword
 import qualified Parun.Codec.PlayerRef as PlayerRef
 import qualified Parun.Codec.Quantity as Quantity
 import qualified Parun.Codec.SearchDestination as SearchDestination
 import qualified Parun.Codec.SlotName as SlotName
+import qualified Parun.Codec.WithCounters as WithCounters
 import qualified Parun.Codec.Zone as Zone
 import qualified Parun.JsonCodec.Codec as Codec
 import qualified Parun.JsonCodec.Common as Common
@@ -51,7 +51,7 @@ codec = Fields.object $ do
   upTo <- Fields.defaulted "upTo" False Common.boolean Search.upTo
   destination <- Fields.required "destination" SearchDestination.codec Search.destination
   -- Defaulted: an absent key is a search whose find enters with no counters.
-  counters <- Fields.defaulted "counters" Map.empty (Common.keyedList EntryRiders.counter) Search.counters
+  counters <- Fields.defaulted "counters" Map.empty (Common.keyedList WithCounters.counter) Search.counters
   -- Defaulted rather than required: an absent key is a card whose "it" is its own
   -- source, which is every card file already written and the reading CR 113.7
   -- gives a search that names no slot.

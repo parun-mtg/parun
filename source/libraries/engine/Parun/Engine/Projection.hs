@@ -5228,6 +5228,8 @@ aggregationReads a = case a of
   Aggregation.Distinct DistinctOf.ManaCosts -> Set.empty
   Aggregation.Distinct DistinctOf.Powers -> Set.singleton PowerA
   Aggregation.Distinct DistinctOf.PlaneswalkerTypes -> Set.singleton Subtypes
+  -- CR 109.3 lists no counters among the characteristics, HasCounters' reason.
+  Aggregation.Distinct DistinctOf.CounterKinds -> Set.empty
   Aggregation.MostSharing trait -> traitReads trait
   -- CR 201.1's names have no Aspect, HasName's reason in filterReads.
   Aggregation.DistinctNames -> Set.empty
