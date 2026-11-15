@@ -1,0 +1,223 @@
+{
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "battlefield": [
+          {
+            "card": "Secret Door",
+            "label": "door"
+          },
+          {
+            "card": "Swamp",
+            "label": "s1"
+          },
+          {
+            "card": "Swamp",
+            "label": "s2"
+          },
+          {
+            "card": "Swamp",
+            "label": "s3"
+          },
+          {
+            "card": "Island",
+            "label": "i1"
+          },
+          {
+            "card": "Island",
+            "label": "i2"
+          },
+          {
+            "card": "Island",
+            "label": "i3"
+          },
+          {
+            "card": "Island",
+            "label": "i4"
+          },
+          {
+            "card": "Island",
+            "label": "i5"
+          },
+          {
+            "card": "Island",
+            "label": "i6"
+          },
+          {
+            "card": "Island",
+            "label": "i7"
+          },
+          {
+            "card": "Island",
+            "label": "i8"
+          },
+          {
+            "card": "Island",
+            "label": "i9"
+          },
+          {
+            "card": "Island",
+            "label": "i10"
+          },
+          {
+            "card": "Island",
+            "label": "i11"
+          },
+          {
+            "card": "Island",
+            "label": "i12"
+          },
+          {
+            "card": "Island",
+            "label": "i13"
+          },
+          {
+            "card": "Island",
+            "label": "i14"
+          },
+          {
+            "card": "Island",
+            "label": "i15"
+          },
+          {
+            "card": "Island",
+            "label": "i16"
+          },
+          {
+            "card": "Island",
+            "label": "i17"
+          },
+          {
+            "card": "Island",
+            "label": "i18"
+          },
+          {
+            "card": "Island",
+            "label": "i19"
+          },
+          {
+            "card": "Island",
+            "label": "i20"
+          }
+        ],
+        "dungeons": [
+          "Lost Mine of Phandelver"
+        ],
+        "hand": [
+          {
+            "card": "Acererak the Archlich",
+            "label": "acererak"
+          }
+        ],
+        "library": [
+          {
+            "card": "Island",
+            "label": "top"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ],
+        "name": "alice"
+      },
+      {
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ],
+        "name": "bob"
+      }
+    ],
+    "step": "PrecombatMain"
+  },
+  "description": "Acererak, with no dungeon completed, returns to hand and ventures",
+  "note": "CR 309.7 / 603.4: Acererak's intervening if reads WHICH dungeon alice completed; completing Lost Mine of Phandelver and completing Tomb of Annihilation both leave one dungeon completed, so only the name tells them apart.",
+  "timeline": [
+    {
+      "do": {
+        "Cast": {
+          "mana": [
+            "$s1",
+            "$s2",
+            "$s3",
+            null
+          ],
+          "object": "$acererak"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Answer": {
+          "prompt": "ChooseScry",
+          "with": [
+            [],
+            [
+              "$top"
+            ]
+          ]
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Acererak the Archlich",
+          "count": 1,
+          "player": "alice",
+          "zone": "Hand"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    }
+  ]
+}
