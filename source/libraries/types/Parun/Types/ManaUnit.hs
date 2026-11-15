@@ -12,9 +12,10 @@ import qualified Parun.Types.SpendTrigger as SpendTrigger
 
 -- | One unit of mana in a pool.
 --
--- EIGHT axes, and three of them are facts about how the mana was made: the tags,
--- what its source had chosen (`sourceChoices` below), and the card
--- last exiled with its source (`sourceLastExiled`).
+-- NINE axes, and four of them are facts about how the mana was made: the tags,
+-- what its source had chosen (`sourceChoices` below), the card
+-- last exiled with its source (`sourceLastExiled`), and, rarely, the source
+-- itself (`producer`).
 -- Parun.Types.ProductionTag is the CLOSED half -- snow-ness, "this activation
 -- caused you to lose life" -- observable facts about the production event that
 -- the engine determines with no card knowledge.
@@ -31,8 +32,8 @@ import qualified Parun.Types.SpendTrigger as SpendTrigger
 -- payment evaluates it through the one generic matcher
 -- (Parun.Engine.Filter.matches) and never cases on what it says.
 --
--- Deliberately no source ObjectId, and `sourceChoices` below is that rule
--- kept rather than broken: it is a VALUE read off the source at production, which
+-- No source ObjectId but `producer`'s narrow one, and `sourceChoices` below is
+-- that rule kept rather than broken: it is a VALUE read off the source at production, which
 -- is the only way a CR 106.6 restriction can ask about the thing that made the
 -- mana. Snow cares about a PROPERTY of the source, not
 -- its identity, and a reference would dangle by construction: mana outlives its
@@ -127,6 +128,17 @@ data ManaUnit = MkManaUnit
     -- it named is the cast itself -- Parun.Engine.Cast.followIntoPools renames
     -- the card to the spell it becomes (CR 601.2a), which is what the
     -- restriction is about.
-    sourceLastExiled :: Maybe ObjectId.ObjectId
+    sourceLastExiled :: Maybe ObjectId.ObjectId,
+    -- | CR 106.3: the object that produced this mana, for
+    -- Filter.PaidWithManaFromSource to compare against its own source --
+    -- Tecutlan, the Searing Rift's "using mana produced by Tecutlan". Stamped
+    -- by both producers off Parun.Engine.Mana.producerOf.
+    --
+    -- Nothing unless the producer, as it makes the mana, has an ability asking
+    -- that question, so a plain unit stays equal to every other of its type and
+    -- CR 601.2h's choice of which to spend is asked only where it is observable.
+    -- The id dangles by design: a source that changed zones is a new object (CR
+    -- 400.7) that produced none of it.
+    producer :: Maybe ObjectId.ObjectId
   }
   deriving (Eq, Ord, Show)

@@ -698,6 +698,11 @@ data Filter keyword
     -- at; this atom is the per-candidate one a static ability's Affected filter
     -- needs. Vacuously False for a player and for everything nothing paid for.
     TagWasSpent ProductionTag.ProductionTag
+  | -- | CR 106.3 / 601.2h: mana the evaluating ability's SOURCE produced was
+    -- among what paid the candidate's cost -- Tecutlan, the Searing Rift's
+    -- "using mana produced by Tecutlan". Read off Parun.Types.ManaUnit.producer;
+    -- vacuously False where no source frames the match.
+    PaidWithManaFromSource
   | -- | CR 601.2b: a cost the designated keywords offer was declared for the
     -- candidate, Quantity.TimesPaid's read at least once or Quantity.CastUsing's
     -- -- Hallar's "if that spell was kicked", Henzie "Toolbox" Torre's "blitz

@@ -37,7 +37,8 @@ spec s = Spec.describe s "Parun.Codec.ManaUnit" $ do
           ManaUnit.rider = Nothing,
           ManaUnit.spendTrigger = Nothing,
           ManaUnit.sourceChoices = Nothing,
-          ManaUnit.sourceLastExiled = Nothing
+          ManaUnit.sourceLastExiled = Nothing,
+          ManaUnit.producer = Nothing
         }
       " {\"manaType\":{\"type\":\"Colorless\"},\"tags\":[],\"retention\":\"Ordinary\",\"restriction\":null,\"rider\":null,\"sourceChoices\":null} "
   -- Every axis but the rider at once, each away from its default: CR 107.4h's
@@ -56,7 +57,8 @@ spec s = Spec.describe s "Parun.Codec.ManaUnit" $ do
           ManaUnit.rider = Nothing,
           ManaUnit.spendTrigger = Nothing,
           ManaUnit.sourceChoices = Just SourceChoices.MkSourceChoices {SourceChoices.names = Map.empty, SourceChoices.colors = Set.singleton Color.Red, SourceChoices.subtype = Just Subtype.Goblin, SourceChoices.cardType = Nothing, SourceChoices.number = Nothing, SourceChoices.acquisition = Acquisition.Own},
-          ManaUnit.sourceLastExiled = Just (ObjectId.MkObjectId 7)
+          ManaUnit.sourceLastExiled = Just (ObjectId.MkObjectId 7),
+          ManaUnit.producer = Nothing
         }
       " {\"manaType\":{\"type\":\"Colored\",\"value\":\"Red\"},\"tags\":[\"Snow\"],\"retention\":\"UntilEndOfTurn\",\"restriction\":{\"casts\":{\"type\":\"HasCardType\",\"value\":\"Creature\"}},\"rider\":null,\"sourceChoices\":{\"colors\":[\"Red\"],\"subtype\":\"Goblin\"},\"sourceLastExiled\":7} "
   -- Pyromancer's Goggles' red: CR 106.6's third shape, written only when set.
@@ -79,11 +81,29 @@ spec s = Spec.describe s "Parun.Codec.ManaUnit" $ do
                   SpendTrigger.controller = PlayerId.MkPlayerId 0
                 },
           ManaUnit.sourceChoices = Nothing,
-          ManaUnit.sourceLastExiled = Nothing
+          ManaUnit.sourceLastExiled = Nothing,
+          ManaUnit.producer = Nothing
         }
       ( " {\"manaType\":{\"type\":\"Colored\",\"value\":\"Red\"},\"tags\":[],\"retention\":\"Ordinary\",\"restriction\":null,\"rider\":null,"
           <> "\"spendTrigger\":{\"casts\":{\"type\":\"HasCardType\",\"value\":\"Instant\"},\"ability\":{\"condition\":{\"type\":\"Enters\",\"value\":{}},\"modal\":{\"modes\":[{}]}},\"source\":4,\"controller\":0},"
           <> "\"sourceChoices\":null} "
       )
+  -- Tecutlan, the Searing Rift's red: CR 106.3's producer, written only when set.
+  Spec.it s "mana naming its producer" $
+    Common.assertCodec
+      s
+      ManaUnit.codec
+      ManaUnit.MkManaUnit
+        { ManaUnit.manaType = ManaType.Colored Color.Red,
+          ManaUnit.tags = Set.empty,
+          ManaUnit.retention = ManaRetention.Ordinary,
+          ManaUnit.restriction = Nothing,
+          ManaUnit.rider = Nothing,
+          ManaUnit.spendTrigger = Nothing,
+          ManaUnit.sourceChoices = Nothing,
+          ManaUnit.sourceLastExiled = Nothing,
+          ManaUnit.producer = Just (ObjectId.MkObjectId 3)
+        }
+      " {\"manaType\":{\"type\":\"Colored\",\"value\":\"Red\"},\"tags\":[],\"retention\":\"Ordinary\",\"restriction\":null,\"rider\":null,\"sourceChoices\":null,\"producer\":3} "
   Spec.it s "has a schema" $
     Common.assertHasSchema s ManaUnit.codec

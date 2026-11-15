@@ -537,7 +537,8 @@ addMana resolving source controller legal (ManaAddition.MkManaAddition ref produ
             ManaUnit.rider = rider,
             ManaUnit.spendTrigger = Mana.spendTriggerOf (resolvingAbilityName resolving gs0) controller source gs0 =<< whenSpent,
             ManaUnit.sourceChoices = Mana.sourceChoicesOf source gs0,
-            ManaUnit.sourceLastExiled = Mana.lastExiledWith (resolvingAbilityName resolving gs0) (Game.readingAcquisition resolving source gs0 source) source gs0
+            ManaUnit.sourceLastExiled = Mana.lastExiledWith (resolvingAbilityName resolving gs0) (Game.readingAcquisition resolving source gs0 source) source gs0,
+            ManaUnit.producer = Mana.producerOf Map.empty source gs0
           }
       -- CR 605.1b's event, per recipient. Nothing is recorded where the
       -- instruction added no mana: an addition of none is no addition, and CR
