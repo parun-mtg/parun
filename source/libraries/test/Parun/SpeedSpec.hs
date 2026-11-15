@@ -56,6 +56,7 @@ import qualified Parun.Types.AbilityTriggered as AbilityTriggered
 import qualified Parun.Types.Action as A
 import qualified Parun.Types.GameEvent as GameEvent
 import qualified Parun.Types.GameState as GameState
+import qualified Parun.Types.Keyword as Keyword
 import qualified Parun.Types.LifeChange as LifeChange
 import qualified Parun.Types.Mana as Mana.Type
 import qualified Parun.Types.ObjectId as ObjectId
@@ -400,6 +401,14 @@ maxSpeedSpec s registry = Spec.describe s "MaxSpeed" $ do
     Spec.assertEqWith s "the effect pushed her past 4, uncapped" (speedOf S.alice after) (Just (Just 5))
     Spec.assertEqWith s "and the max speed ability still makes two mana at 5" (pooledBy biggestYield racewayId after) 2
     Spec.assertEqWith s "two activated abilities at 5" (length (Projection.abilitiesOf racewayId after)) 2
+  -- Burnout Bashtronaut's "Max speed — This creature has double strike": a
+  -- keyword the max speed ability grants its own object, asked at 4 and at 3.
+  Spec.it s "CR 702.178a at max speed Burnout Bashtronaut has double strike, one short it does not" $ do
+    bashtronaut <- S.printingOf s registry "Burnout Bashtronaut"
+    let (botId, board) = S.addPermanent bashtronaut S.alice (Setup.emptyGame S.bothPlayers)
+        settled = S.settleSba board
+    Spec.assertBool s (Projection.hasKeyword Keyword.DoubleStrike botId (atSpeed 4 S.alice settled)) "double strike at speed 4"
+    Spec.assertBool s (not (Projection.hasKeyword Keyword.DoubleStrike botId (atSpeed 3 S.alice settled))) "no double strike at speed 3"
   -- CR 604.1 makes a static ability "simply true", so CR 702.178a's clause is
   -- re-asked on every read rather than latched: dropping the same player's speed
   -- back takes the ability away again, with no event and no resolution in

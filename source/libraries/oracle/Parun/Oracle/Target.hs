@@ -234,7 +234,7 @@ possessive word
 -- a zone is spelled out here.
 counting :: Context -> Count.Count Quantity.Quantity -> [(Text.Text, Text.Text, [SlotName.SlotName])]
 counting context c = case (Count.aggregation c, Count.scope c) of
-  (Aggregation.Members, Scope.InZone (InZone.MkInZone zone whose)) -> do
+  (Aggregation.Members, Scope.InZone (InZone.MkInZone zone whose)) -> (<> kinds zone whose) $ do
     p <- Filter.phrase (Filter.Type.And rest) (keyword context)
     (placed, fallback, ms) <- case (zone, whose, controllers) of
       (Zone.Battlefield, PlayerRef.Relative PlayerRelation.AnyPlayer, []) ->
@@ -271,6 +271,22 @@ counting context c = case (Count.aggregation c, Count.scope c) of
       Filter.Type.HeldByRecipient Holder.Controller -> True
       _ -> False
     (controllers, rest) = (filter controls conjuncts, filter (not . controls) conjuncts)
+    -- Free for kinds of permanent one object may be several of: "permanents
+    -- you control that are creatures and/or Vehicles" (Collision Course).
+    kinds zone whose = case (zone, whose, controllers, rest) of
+      (Zone.Battlefield, PlayerRef.Relative PlayerRelation.AnyPlayer, [], Filter.Type.Or fs : others@(_ : _)) -> do
+        ps <- traverse (\g -> Filter.phrase g (keyword context)) fs
+        Monad.guard (all (\k -> null (Filter.adjectives k) && null (Filter.qualifiers k)) ps)
+        ones <- traverse (Filter.describe Filter.Singular permanent) ps
+        manys <- traverse (Filter.describe Filter.Plural permanent) ps
+        q <- Filter.phrase (Filter.Type.And others) (keyword context)
+        Monad.guard (null (Filter.nouns q))
+        let that = Filter.MkQualifier (Text.pack "that's " <> Prose.article (Prose.listing "or" ones) <> Text.pack " " <> Prose.listing "or" ones) (Text.pack "that are " <> Prose.listing "and/or" manys)
+            placed = Filter.merge (Filter.merge (Filter.MkPhrase [] [permanent] []) q) (Filter.MkPhrase [] [] [that])
+        one <- Filter.describe Filter.Singular permanent placed
+        many <- Filter.describe Filter.Plural permanent placed
+        [(one, many, [])]
+      _ -> []
     -- A player a slot names is named there (Theft of Dreams) or, named
     -- already, "that player"; the mode keeps the one naming it once.
     controllerOf f = case f of
