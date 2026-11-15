@@ -422,6 +422,11 @@ candidateCostsFor = candidateCostsGiven False
 --
 -- Here rather than in Parun.Engine.Cast, whose gates read it, because
 -- candidateCostsGiven's graveyard arm prices a permission that names its cost.
+permissionsOf :: ObjectId -> Face.Face Card.Type.Card -> GameState -> [CastingPermission.CastingPermission]
+permissionsOf oid face gs =
+  PC.castingPermissions (Projection.project oid gs)
+    <> Keyword.castingPermissionsOf (TypeLine.types (Face.typeLine face)) (Map.keysSet (Projection.keywordsOf oid gs))
+
 -- CR 118.8 / 614.1d: a graveyard permission the card carries for itself that
 -- adds to a cast made under it -- a cost (Demonic Embrace) or entry counters
 -- (Hundred-Battle Veteran) -- and so is a way of its own
@@ -432,11 +437,6 @@ addsToItsCast permission = case permission of
   CastingPermission.PlayFromGraveyard -> False
   CastingPermission.CastFromLibraryWhileSearching -> False
   CastingPermission.CastAsThoughItHadFlash {} -> False
-
-permissionsOf :: ObjectId -> Face.Face Card.Type.Card -> GameState -> [CastingPermission.CastingPermission]
-permissionsOf oid face gs =
-  PC.castingPermissions (Projection.project oid gs)
-    <> Keyword.castingPermissionsOf (TypeLine.types (Face.typeLine face)) (Map.keysSet (Projection.keywordsOf oid gs))
 
 -- CR 712.8d / 613.1f: the keywords a double-faced card's FRONT face has where
 -- the card lies -- its projection with the object stamped as that face, face up

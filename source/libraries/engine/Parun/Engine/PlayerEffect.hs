@@ -2668,8 +2668,9 @@ unspentPermission pid source grant gs =
 -- Parun.CastPermissionSpec's "CR 702.138a an escaped Chimera takes neither Serra
 -- Paragon's use nor its rider" proves it.
 --
--- `own` is a permission the card carries for itself that adds a cost of its
--- own, and so is a way like a player's (Parun.Engine.Cast.castWays).
+-- `own` is a permission the card carries for itself that adds a cost or entry
+-- counters of its own, and so is a way like a player's
+-- (Parun.Engine.Cast.ownPayingWays).
 castPermissionOptions :: (ObjectId -> Bool) -> Bool -> [(Maybe ObjectId, CastFromZone.CastFromZone)] -> PlayerId -> Zone.Zone -> ObjectId -> GameState -> [Maybe (ObjectId, CastFromZone.CastFromZone)]
 castPermissionOptions rides open own pid zone oid gs =
   let owned = fmap Object.owner (Game.lookupObject oid gs) == Just pid
