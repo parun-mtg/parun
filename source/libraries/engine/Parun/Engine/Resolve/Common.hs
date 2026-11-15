@@ -458,9 +458,10 @@ instructionDone asked =
 -- 608.2f Nihiloor tapping nothing for one opponent arms no reflexive for them"
 -- holds it. The ObjectRef half goes through effectObjectRefs, the one
 -- enumeration of where a ref sits; the opcodes carrying a count of their own
--- are named. Only ChoosePermanents is observed (Yotia Declares War); the other
--- arms are a REGRESSION FENCE, since no card in data/cards/ puts them ahead of
--- a mandatory "when you do".
+-- are named. Only ChoosePermanents (Yotia Declares War) and ChosenCardInHand
+-- ("CR 603.12 Invasion of Tarkir revealing no Dragons still deals 2 damage")
+-- are observed; the other arms are a REGRESSION FENCE, since no card in
+-- data/cards/ puts them ahead of a mandatory "when you do".
 choosesAnyNumber :: Effect card ability -> Bool
 choosesAnyNumber effect =
   any refChoosesAnyNumber (effectObjectRefs effect) || case effect of
@@ -477,6 +478,8 @@ choosesAnyNumber effect =
     refChoosesAnyNumber ref = case ref of
       ObjectRef.ChosenPermanents chosen -> anyNumber (ChosenPermanents.count chosen)
       ObjectRef.ChosenCardFromAmong chosen -> anyNumber (ChosenCardFromAmong.count chosen)
+      ObjectRef.ChosenCardInHand chosen -> anyNumber (ChosenCardInHand.count chosen)
+      ObjectRef.ChosenCardInGraveyard chosen -> anyNumber (ChosenCardInGraveyard.count chosen)
       ObjectRef.AllOf refs -> any refChoosesAnyNumber refs
       _ -> False
 

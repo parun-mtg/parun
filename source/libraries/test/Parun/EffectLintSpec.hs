@@ -1300,7 +1300,7 @@ storedPlayerScope effect = case effect of
 -- reveal's test (Lead the Stampede) and a move's (Ransack) reach, and its pile
 -- split (CR 700.3), which only a move's test (Sphinx of Uthuun) reaches.
 -- ChosenCardInHand splits off its "up to", which only a move's test (The Great
--- Aurora) reaches, and ChosenCardInGraveyard its "up to", which only a move's
+-- Aurora) and a reveal's (Invasion of Tarkir) reach, and ChosenCardInGraveyard its "up to", which only a move's
 -- test (Liliana, the Necromancer; Ill-Gotten Gains) reaches.
 data Question
   = CardInGraveyard
@@ -1500,8 +1500,9 @@ effectObjectRefs effect =
         Effect.Draw {} -> []
         Effect.Mill {} -> []
         -- Blackmail's "target player reveals three cards from their hand" asks
-        -- the hand's owner.
-        Effect.Reveal (Reveal.MkReveal ref _ _) -> [(AnyCardsFromAmong : CardInHand : shownQuestions, ref)]
+        -- the hand's owner, and Invasion of Tarkir's "any number of Dragon
+        -- cards from your hand" its controller.
+        Effect.Reveal (Reveal.MkReveal ref _ _) -> [(AnyCardsFromAmong : CardInHand : AnyCardsInHand : shownQuestions, ref)]
         -- Urza's Bauble's "a card at random in target player's hand" asks here.
         Effect.LookAt (LookAt.MkLookAt ref _ _) -> [([RandomInHand], ref)]
         -- Master of Predicaments' "choose a card in your hand" asks here.
