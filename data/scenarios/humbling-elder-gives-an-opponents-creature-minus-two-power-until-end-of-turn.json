@@ -1,38 +1,8 @@
 {
-  "description": "CR 603.6a, 601.2c, 613.4c, 611.2a: Humbling Elder's enters trigger gives target creature an opponent controls -2/-0 until end of turn",
-  "note": "Turn 1: bob's Hill Giant 3/3 becomes 1/3 (toughness unchanged); carol's Air Elemental 4/4 is untouched. Alice's own Memnite and Elder itself are refused as targets. Giant is back to 3/3 at bob's upkeep.",
   "board": {
     "active": "alice",
-    "step": "PrecombatMain",
     "seats": [
       {
-        "name": "alice",
-        "library": [
-          {
-            "card": "Island"
-          },
-          {
-            "card": "Island"
-          },
-          {
-            "card": "Island"
-          },
-          {
-            "card": "Island"
-          },
-          {
-            "card": "Island"
-          },
-          {
-            "card": "Island"
-          },
-          {
-            "card": "Island"
-          },
-          {
-            "card": "Island"
-          }
-        ],
         "battlefield": [
           {
             "card": "Memnite",
@@ -45,10 +15,6 @@
             "label": "elder"
           }
         ],
-        "manaPool": "U"
-      },
-      {
-        "name": "bob",
         "library": [
           {
             "card": "Island"
@@ -75,15 +41,16 @@
             "card": "Island"
           }
         ],
+        "manaPool": "U",
+        "name": "alice"
+      },
+      {
         "battlefield": [
           {
             "card": "Hill Giant",
             "label": "giant"
           }
-        ]
-      },
-      {
-        "name": "carol",
+        ],
         "library": [
           {
             "card": "Island"
@@ -110,35 +77,66 @@
             "card": "Island"
           }
         ],
+        "name": "bob"
+      },
+      {
         "battlefield": [
           {
             "card": "Air Elemental",
             "label": "elemental"
           }
-        ]
+        ],
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ],
+        "name": "carol"
       }
-    ]
+    ],
+    "step": "PrecombatMain"
   },
+  "description": "CR 603.6a, 601.2c, 613.4c, 611.2a: Humbling Elder's enters trigger gives target creature an opponent controls -2/-0 until end of turn",
+  "note": "Turn 1: bob's Hill Giant 3/3 becomes 1/3 (toughness unchanged); carol's Air Elemental 4/4 is untouched. Alice's own Memnite and Elder itself are refused as targets. Giant is back to 3/3 at bob's upkeep.",
   "timeline": [
     {
-      "turn": 1,
-      "step": "PrecombatMain",
-      "player": "alice",
       "do": {
         "Cast": {
           "object": "$elder"
         }
-      }
-    },
-    {
-      "turn": 1,
-      "step": "PrecombatMain",
+      },
       "player": "alice",
-      "do": "Pass"
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
+      "do": "Pass",
+      "player": "alice",
       "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
       "player": "alice",
       "refuse": {
         "ChooseTargets": {
@@ -146,11 +144,11 @@
             "$memnite"
           ]
         }
-      }
+      },
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PrecombatMain",
       "player": "alice",
       "refuse": {
         "ChooseTargets": {
@@ -158,85 +156,87 @@
             "Humbling Elder"
           ]
         }
-      }
+      },
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PrecombatMain",
-      "player": "alice",
       "do": {
         "ChooseTargets": {
           "target": [
             "$giant"
           ]
         }
-      }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PrecombatMain",
+      "do": "Pass",
       "player": "alice",
-      "do": "Pass"
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PrecombatMain",
-      "player": "alice",
       "check": {
         "PowerToughness": {
           "object": "$giant",
           "power": 1,
           "toughness": 3
         }
-      }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PrecombatMain",
-      "player": "alice",
       "check": {
         "PowerToughness": {
           "object": "$elemental",
           "power": 4,
           "toughness": 4
         }
-      }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PrecombatMain",
-      "player": "alice",
       "check": {
         "PowerToughness": {
           "object": "$memnite",
           "power": 1,
           "toughness": 1
         }
-      }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PrecombatMain",
-      "player": "alice",
       "check": {
         "PowerToughness": {
           "object": "Humbling Elder",
           "power": 1,
           "toughness": 2
         }
-      }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
-      "turn": 2,
-      "step": "Upkeep",
-      "player": "bob",
       "check": {
         "PowerToughness": {
           "object": "$giant",
           "power": 3,
           "toughness": 3
         }
-      }
+      },
+      "player": "bob",
+      "step": "Upkeep",
+      "turn": 2
     }
   ]
 }

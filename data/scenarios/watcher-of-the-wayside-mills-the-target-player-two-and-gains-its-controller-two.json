@@ -1,12 +1,14 @@
 {
-  "description": "CR 603.6a, 701.17a, 115.1, 119.1: Watcher of the Wayside's enters trigger has target player put the top two cards of their library into their graveyard, and its controller (not the target) gains 2 life",
-  "note": "Turn 1: alice targets bob, whose top two cards (Mountain, Swamp) go to his graveyard leaving six Islands; alice goes 20 to 22, bob and carol stay at 20, and neither alice's nor carol's library or graveyard changes.",
   "board": {
     "active": "alice",
-    "step": "PrecombatMain",
     "seats": [
       {
-        "name": "alice",
+        "hand": [
+          {
+            "card": "Watcher of the Wayside",
+            "label": "watcher"
+          }
+        ],
         "library": [
           {
             "card": "Island"
@@ -33,16 +35,10 @@
             "card": "Island"
           }
         ],
-        "hand": [
-          {
-            "card": "Watcher of the Wayside",
-            "label": "watcher"
-          }
-        ],
-        "manaPool": "RRR"
+        "manaPool": "RRR",
+        "name": "alice"
       },
       {
-        "name": "bob",
         "library": [
           {
             "card": "Mountain"
@@ -68,10 +64,10 @@
           {
             "card": "Island"
           }
-        ]
+        ],
+        "name": "bob"
       },
       {
-        "name": "carol",
         "library": [
           {
             "card": "Island"
@@ -97,181 +93,185 @@
           {
             "card": "Island"
           }
-        ]
+        ],
+        "name": "carol"
       }
-    ]
+    ],
+    "step": "PrecombatMain"
   },
+  "description": "CR 603.6a, 701.17a, 115.1, 119.1: Watcher of the Wayside's enters trigger has target player put the top two cards of their library into their graveyard, and its controller (not the target) gains 2 life",
+  "note": "Turn 1: alice targets bob, whose top two cards (Mountain, Swamp) go to his graveyard leaving six Islands; alice goes 20 to 22, bob and carol stay at 20, and neither alice's nor carol's library or graveyard changes.",
   "timeline": [
     {
-      "turn": 1,
-      "step": "PrecombatMain",
-      "player": "alice",
       "do": {
         "Cast": {
           "object": "$watcher"
         }
-      }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PrecombatMain",
+      "do": "Pass",
       "player": "alice",
-      "do": "Pass"
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PrecombatMain",
-      "player": "alice",
       "do": {
         "ChooseTargets": {
           "target": [
             "$bob"
           ]
         }
-      }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PrecombatMain",
+      "do": "Pass",
       "player": "alice",
-      "do": "Pass"
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PrecombatMain",
-      "player": "alice",
       "check": {
         "Life": {
-          "player": "alice",
-          "life": 22
+          "life": 22,
+          "player": "alice"
         }
-      }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PrecombatMain",
-      "player": "alice",
       "check": {
         "Life": {
-          "player": "bob",
-          "life": 20
+          "life": 20,
+          "player": "bob"
         }
-      }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PrecombatMain",
-      "player": "alice",
       "check": {
         "Life": {
-          "player": "carol",
-          "life": 20
+          "life": 20,
+          "player": "carol"
         }
-      }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PrecombatMain",
-      "player": "alice",
       "check": {
         "Count": {
-          "player": "bob",
           "card": "Mountain",
-          "zone": "Graveyard",
-          "count": 1
+          "count": 1,
+          "player": "bob",
+          "zone": "Graveyard"
         }
-      }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PrecombatMain",
-      "player": "alice",
       "check": {
         "Count": {
-          "player": "bob",
           "card": "Swamp",
-          "zone": "Graveyard",
-          "count": 1
-        }
-      }
-    },
-    {
-      "turn": 1,
-      "step": "PrecombatMain",
-      "player": "alice",
-      "check": {
-        "Count": {
+          "count": 1,
           "player": "bob",
-          "card": "Island",
-          "zone": "Graveyard",
-          "count": 0
+          "zone": "Graveyard"
         }
-      }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PrecombatMain",
-      "player": "alice",
       "check": {
         "Count": {
+          "card": "Island",
+          "count": 0,
           "player": "bob",
-          "card": "Island",
-          "zone": "Library",
-          "count": 6
+          "zone": "Graveyard"
         }
-      }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PrecombatMain",
-      "player": "alice",
       "check": {
         "Count": {
-          "player": "alice",
           "card": "Island",
-          "zone": "Library",
-          "count": 8
+          "count": 6,
+          "player": "bob",
+          "zone": "Library"
         }
-      }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PrecombatMain",
-      "player": "alice",
       "check": {
         "Count": {
+          "card": "Island",
+          "count": 8,
           "player": "alice",
+          "zone": "Library"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Count": {
           "card": "Mountain",
-          "zone": "Graveyard",
-          "count": 0
+          "count": 0,
+          "player": "alice",
+          "zone": "Graveyard"
         }
-      }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PrecombatMain",
-      "player": "alice",
       "check": {
         "Count": {
-          "player": "carol",
           "card": "Island",
-          "zone": "Library",
-          "count": 8
+          "count": 8,
+          "player": "carol",
+          "zone": "Library"
         }
-      }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PrecombatMain",
-      "player": "alice",
       "check": {
         "Count": {
-          "player": "carol",
           "card": "Plains",
-          "zone": "Graveyard",
-          "count": 0
+          "count": 0,
+          "player": "carol",
+          "zone": "Graveyard"
         }
-      }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
     }
   ]
 }

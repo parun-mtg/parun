@@ -1,38 +1,8 @@
 {
-  "description": "CR 613.4c, 205.3m, 604.1: Stormscale Scion's static ability gives each other Dragon its controller controls +1/+1, and no other creature, nor itself",
-  "note": "Alice's Jeskai Shrinekeeper (a Dragon, 3/3) becomes 4/4 while her Grizzly Bears (2/2, not a Dragon) and the Scion itself (4/4, not 'other') are unchanged, and bob's Shivan Dragon stays 5/5 because he is not the Scion's controller.",
   "board": {
     "active": "alice",
-    "step": "PrecombatMain",
     "seats": [
       {
-        "name": "alice",
-        "library": [
-          {
-            "card": "Island"
-          },
-          {
-            "card": "Island"
-          },
-          {
-            "card": "Island"
-          },
-          {
-            "card": "Island"
-          },
-          {
-            "card": "Island"
-          },
-          {
-            "card": "Island"
-          },
-          {
-            "card": "Island"
-          },
-          {
-            "card": "Island"
-          }
-        ],
         "battlefield": [
           {
             "card": "Stormscale Scion",
@@ -46,10 +16,7 @@
             "card": "Grizzly Bears",
             "label": "bears"
           }
-        ]
-      },
-      {
-        "name": "bob",
+        ],
         "library": [
           {
             "card": "Island"
@@ -76,6 +43,9 @@
             "card": "Island"
           }
         ],
+        "name": "alice"
+      },
+      {
         "battlefield": [
           {
             "card": "Shivan Dragon",
@@ -85,10 +55,7 @@
             "card": "Hill Giant",
             "label": "giant"
           }
-        ]
-      },
-      {
-        "name": "carol",
+        ],
         "library": [
           {
             "card": "Island"
@@ -114,70 +81,103 @@
           {
             "card": "Island"
           }
-        ]
+        ],
+        "name": "bob"
+      },
+      {
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ],
+        "name": "carol"
       }
-    ]
+    ],
+    "step": "PrecombatMain"
   },
+  "description": "CR 613.4c, 205.3m, 604.1: Stormscale Scion's static ability gives each other Dragon its controller controls +1/+1, and no other creature, nor itself",
+  "note": "Alice's Jeskai Shrinekeeper (a Dragon, 3/3) becomes 4/4 while her Grizzly Bears (2/2, not a Dragon) and the Scion itself (4/4, not 'other') are unchanged, and bob's Shivan Dragon stays 5/5 because he is not the Scion's controller.",
   "timeline": [
     {
-      "turn": 1,
-      "step": "PrecombatMain",
-      "player": "alice",
       "check": {
         "PowerToughness": {
           "object": "$shrine",
           "power": 4,
           "toughness": 4
         }
-      }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PrecombatMain",
-      "player": "alice",
       "check": {
         "PowerToughness": {
           "object": "$scion",
           "power": 4,
           "toughness": 4
         }
-      }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PrecombatMain",
-      "player": "alice",
       "check": {
         "PowerToughness": {
           "object": "$bears",
           "power": 2,
           "toughness": 2
         }
-      }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PrecombatMain",
-      "player": "alice",
       "check": {
         "PowerToughness": {
           "object": "$bobdragon",
           "power": 5,
           "toughness": 5
         }
-      }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PrecombatMain",
-      "player": "alice",
       "check": {
         "PowerToughness": {
           "object": "$giant",
           "power": 3,
           "toughness": 3
         }
-      }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
     }
   ]
 }

@@ -237,6 +237,18 @@
       "step": "PrecombatMain",
       "player": "alice",
       "check": {
+        "View": {
+          "of": "ManaPool",
+          "player": "alice",
+          "is": []
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "check": {
         "PowerToughness": {
           "object": "$be",
           "power": 2,
@@ -246,7 +258,23 @@
     },
     {
       "turn": 1,
-      "step": "PrecombatMain",
+      "step": "DeclareAttackers",
+      "player": "alice",
+      "do": {
+        "Attack": []
+      }
+    },
+    {
+      "turn": 2,
+      "step": "DeclareAttackers",
+      "player": "bob",
+      "do": {
+        "Attack": []
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PostcombatMain",
       "player": "bob",
       "do": {
         "Activate": {
@@ -262,7 +290,7 @@
     },
     {
       "turn": 1,
-      "step": "PrecombatMain",
+      "step": "PostcombatMain",
       "player": "bob",
       "do": {
         "Activate": {
@@ -270,21 +298,26 @@
           "mana": [
             "$bm2",
             "$bw3",
-            "$bw4",
-            null
+            "$bw4"
           ]
         }
       }
     },
     {
       "turn": 1,
-      "step": "PrecombatMain",
+      "step": "PostcombatMain",
       "player": "bob",
       "do": "Pass"
     },
     {
       "turn": 1,
-      "step": "PrecombatMain",
+      "step": "PostcombatMain",
+      "player": "bob",
+      "do": "Pass"
+    },
+    {
+      "turn": 1,
+      "step": "PostcombatMain",
       "player": "bob",
       "check": {
         "PowerToughness": {
@@ -296,7 +329,19 @@
     },
     {
       "turn": 1,
-      "step": "PrecombatMain",
+      "step": "PostcombatMain",
+      "player": "bob",
+      "check": {
+        "View": {
+          "of": "ManaPool",
+          "player": "bob",
+          "is": []
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PostcombatMain",
       "player": "bob",
       "check": {
         "PowerToughness": {

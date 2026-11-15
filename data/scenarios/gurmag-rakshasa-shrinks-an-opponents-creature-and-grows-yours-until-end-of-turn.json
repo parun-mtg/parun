@@ -1,38 +1,8 @@
 {
-  "description": "CR 603.6a, 601.2c, 613.4c, 611.2a, 514.2: Gurmag Rakshasa's enters trigger gives target creature an opponent controls -2/-2 and target creature you control +2/+2 until end of turn; each slot restricts its controller",
-  "note": "Turn 1: bob's Hill Giant 3/3 becomes 1/1 and alice's Memnite 1/1 becomes 3/3; alice's Grizzly Bears 2/2, carol's Air Elemental 4/4 and Gurmag 5/5 are untouched. An own creature in the opponent slot, and an opponent's in the own slot, are refused. Both effects end at bob's upkeep.",
   "board": {
     "active": "alice",
-    "step": "PrecombatMain",
     "seats": [
       {
-        "name": "alice",
-        "library": [
-          {
-            "card": "Island"
-          },
-          {
-            "card": "Island"
-          },
-          {
-            "card": "Island"
-          },
-          {
-            "card": "Island"
-          },
-          {
-            "card": "Island"
-          },
-          {
-            "card": "Island"
-          },
-          {
-            "card": "Island"
-          },
-          {
-            "card": "Island"
-          }
-        ],
         "battlefield": [
           {
             "card": "Grizzly Bears",
@@ -49,10 +19,6 @@
             "label": "gurmag"
           }
         ],
-        "manaPool": "BBBBBB"
-      },
-      {
-        "name": "bob",
         "library": [
           {
             "card": "Island"
@@ -79,15 +45,16 @@
             "card": "Island"
           }
         ],
+        "manaPool": "BBBBBB",
+        "name": "alice"
+      },
+      {
         "battlefield": [
           {
             "card": "Hill Giant",
             "label": "giant"
           }
-        ]
-      },
-      {
-        "name": "carol",
+        ],
         "library": [
           {
             "card": "Island"
@@ -114,35 +81,66 @@
             "card": "Island"
           }
         ],
+        "name": "bob"
+      },
+      {
         "battlefield": [
           {
             "card": "Air Elemental",
             "label": "elemental"
           }
-        ]
+        ],
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ],
+        "name": "carol"
       }
-    ]
+    ],
+    "step": "PrecombatMain"
   },
+  "description": "CR 603.6a, 601.2c, 613.4c, 611.2a, 514.2: Gurmag Rakshasa's enters trigger gives target creature an opponent controls -2/-2 and target creature you control +2/+2 until end of turn; each slot restricts its controller",
+  "note": "Turn 1: bob's Hill Giant 3/3 becomes 1/1 and alice's Memnite 1/1 becomes 3/3; alice's Grizzly Bears 2/2, carol's Air Elemental 4/4 and Gurmag 5/5 are untouched. An own creature in the opponent slot, and an opponent's in the own slot, are refused. Both effects end at bob's upkeep.",
   "timeline": [
     {
-      "turn": 1,
-      "step": "PrecombatMain",
-      "player": "alice",
       "do": {
         "Cast": {
           "object": "$gurmag"
         }
-      }
-    },
-    {
-      "turn": 1,
-      "step": "PrecombatMain",
+      },
       "player": "alice",
-      "do": "Pass"
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
+      "do": "Pass",
+      "player": "alice",
       "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
       "player": "alice",
       "refuse": {
         "ChooseTargets": {
@@ -153,11 +151,11 @@
             "$memnite"
           ]
         }
-      }
+      },
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PrecombatMain",
       "player": "alice",
       "refuse": {
         "ChooseTargets": {
@@ -168,12 +166,11 @@
             "$giant"
           ]
         }
-      }
+      },
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PrecombatMain",
-      "player": "alice",
       "do": {
         "ChooseTargets": {
           "target1": [
@@ -183,97 +180,100 @@
             "$memnite"
           ]
         }
-      }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PrecombatMain",
+      "do": "Pass",
       "player": "alice",
-      "do": "Pass"
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PrecombatMain",
-      "player": "alice",
       "check": {
         "PowerToughness": {
           "object": "$giant",
           "power": 1,
           "toughness": 1
         }
-      }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PrecombatMain",
-      "player": "alice",
       "check": {
         "PowerToughness": {
           "object": "$memnite",
           "power": 3,
           "toughness": 3
         }
-      }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PrecombatMain",
-      "player": "alice",
       "check": {
         "PowerToughness": {
           "object": "$elemental",
           "power": 4,
           "toughness": 4
         }
-      }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PrecombatMain",
-      "player": "alice",
       "check": {
         "PowerToughness": {
           "object": "$bears",
           "power": 2,
           "toughness": 2
         }
-      }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PrecombatMain",
-      "player": "alice",
       "check": {
         "PowerToughness": {
           "object": "Gurmag Rakshasa",
           "power": 5,
           "toughness": 5
         }
-      }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
-      "turn": 2,
-      "step": "Upkeep",
-      "player": "bob",
       "check": {
         "PowerToughness": {
           "object": "$giant",
           "power": 3,
           "toughness": 3
         }
-      }
+      },
+      "player": "bob",
+      "step": "Upkeep",
+      "turn": 2
     },
     {
-      "turn": 2,
-      "step": "Upkeep",
-      "player": "bob",
       "check": {
         "PowerToughness": {
           "object": "$memnite",
           "power": 1,
           "toughness": 1
         }
-      }
+      },
+      "player": "bob",
+      "step": "Upkeep",
+      "turn": 2
     }
   ]
 }

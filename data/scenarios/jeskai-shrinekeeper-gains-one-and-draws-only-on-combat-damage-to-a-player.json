@@ -1,38 +1,8 @@
 {
-  "description": "CR 510.2, 120.2a, 603.2, 119.1, 121.1: Jeskai Shrinekeeper's trigger gains 1 life and draws a card for each combat damage event to a player, and not for combat damage dealt to a creature",
-  "note": "Turn 1: alice at 17 life attacks with two Shrinekeepers, one at bob (blocked by his flying Air Elemental, which takes 3) and one at carol (unblocked, 20 to 17). Only the unblocked one triggers: alice reaches 18 not 19 and holds exactly one Forest drawn from her 8-card library, so combat damage to a creature gives neither life nor card.",
   "board": {
     "active": "alice",
-    "step": "PrecombatMain",
     "seats": [
       {
-        "name": "alice",
-        "library": [
-          {
-            "card": "Forest"
-          },
-          {
-            "card": "Forest"
-          },
-          {
-            "card": "Forest"
-          },
-          {
-            "card": "Forest"
-          },
-          {
-            "card": "Forest"
-          },
-          {
-            "card": "Forest"
-          },
-          {
-            "card": "Forest"
-          },
-          {
-            "card": "Forest"
-          }
-        ],
         "battlefield": [
           {
             "card": "Jeskai Shrinekeeper",
@@ -45,45 +15,42 @@
             "ready": true
           }
         ],
-        "life": 17
-      },
-      {
-        "name": "bob",
         "library": [
           {
-            "card": "Island"
+            "card": "Forest"
           },
           {
-            "card": "Island"
+            "card": "Forest"
           },
           {
-            "card": "Island"
+            "card": "Forest"
           },
           {
-            "card": "Island"
+            "card": "Forest"
           },
           {
-            "card": "Island"
+            "card": "Forest"
           },
           {
-            "card": "Island"
+            "card": "Forest"
           },
           {
-            "card": "Island"
+            "card": "Forest"
           },
           {
-            "card": "Island"
+            "card": "Forest"
           }
         ],
+        "life": 17,
+        "name": "alice"
+      },
+      {
         "battlefield": [
           {
             "card": "Air Elemental",
             "label": "elemental"
           }
-        ]
-      },
-      {
-        "name": "carol",
+        ],
         "library": [
           {
             "card": "Island"
@@ -110,100 +77,130 @@
             "card": "Island"
           }
         ],
-        "life": 20
+        "name": "bob"
+      },
+      {
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ],
+        "life": 20,
+        "name": "carol"
       }
-    ]
+    ],
+    "step": "PrecombatMain"
   },
+  "description": "CR 510.2, 120.2a, 603.2, 119.1, 121.1: Jeskai Shrinekeeper's trigger gains 1 life and draws a card for each combat damage event to a player, and not for combat damage dealt to a creature",
+  "note": "Turn 1: alice at 17 life attacks with two Shrinekeepers, one at bob (blocked by his flying Air Elemental, which takes 3) and one at carol (unblocked, 20 to 17). Only the unblocked one triggers: alice reaches 18 not 19 and holds exactly one Forest drawn from her 8-card library, so combat damage to a creature gives neither life nor card.",
   "timeline": [
     {
-      "turn": 1,
-      "step": "DeclareAttackers",
-      "player": "alice",
       "do": {
         "Attack": [
           "$ska",
           "$skb"
         ]
-      }
+      },
+      "player": "alice",
+      "step": "DeclareAttackers",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "DeclareAttackers",
-      "player": "alice",
       "do": {
         "ChooseAttackTarget": "$bob"
       },
-      "source": "$ska"
+      "player": "alice",
+      "source": "$ska",
+      "step": "DeclareAttackers",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "DeclareAttackers",
-      "player": "alice",
       "do": {
         "ChooseAttackTarget": "$carol"
       },
-      "source": "$skb"
+      "player": "alice",
+      "source": "$skb",
+      "step": "DeclareAttackers",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "DeclareBlockers",
-      "player": "bob",
       "do": {
         "Block": {
           "$elemental": [
             "$ska"
           ]
         }
-      }
+      },
+      "player": "bob",
+      "step": "DeclareBlockers",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "EndOfCombat",
-      "player": "alice",
       "check": {
         "Life": {
-          "player": "alice",
-          "life": 18
+          "life": 18,
+          "player": "alice"
         }
-      }
+      },
+      "player": "alice",
+      "step": "EndOfCombat",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "EndOfCombat",
-      "player": "alice",
       "check": {
         "Life": {
-          "player": "carol",
-          "life": 17
+          "life": 17,
+          "player": "carol"
         }
-      }
+      },
+      "player": "alice",
+      "step": "EndOfCombat",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "EndOfCombat",
-      "player": "alice",
       "check": {
         "Life": {
-          "player": "bob",
-          "life": 20
+          "life": 20,
+          "player": "bob"
         }
-      }
+      },
+      "player": "alice",
+      "step": "EndOfCombat",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "EndOfCombat",
-      "player": "alice",
       "check": {
         "Damage": {
-          "object": "$elemental",
-          "damage": 3
+          "damage": 3,
+          "object": "$elemental"
         }
-      }
+      },
+      "player": "alice",
+      "step": "EndOfCombat",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "EndOfCombat",
-      "player": "alice",
       "check": {
         "Count": {
           "card": "Forest",
@@ -211,12 +208,12 @@
           "player": "alice",
           "zone": "Hand"
         }
-      }
+      },
+      "player": "alice",
+      "step": "EndOfCombat",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "EndOfCombat",
-      "player": "alice",
       "check": {
         "Count": {
           "card": "Forest",
@@ -224,7 +221,10 @@
           "player": "alice",
           "zone": "Library"
         }
-      }
+      },
+      "player": "alice",
+      "step": "EndOfCombat",
+      "turn": 1
     }
   ]
 }
