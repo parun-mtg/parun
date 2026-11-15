@@ -216,7 +216,8 @@ import qualified Parun.Types.TapState as TapState
 -- the hosts the effect's filter admits as well as the Aura's enchant ability --
 -- the rule's "and any other applicable effects": Nomad Mythmaker's "attached to
 -- a creature you control". Its CardSelection.AtRandom draws the host instead
--- of asking (Infectious Rage). Read by the MOVETOZONE alone
+-- of asking (Infectious Rage), and its chooser asks another player
+-- (Takklemaggot's "that creature's controller chooses"). Read by the MOVETOZONE alone
 -- (Parun.Engine.Resolve.Arms.Zones's moveOne). Parun.EffectLintSpec fences both
 -- arms; putFound carries CR 303.4i's fixed host down its own road instead.
 --

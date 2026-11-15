@@ -92,6 +92,12 @@ spec s = Spec.describe s "Parun.Codec.PlayerRef" $ do
       PlayerRef.codec
       (PlayerRef.HolderOfObject Holder.Owner (ObjectId.MkObjectId 7))
       " {\"type\":\"HolderOfObject\",\"value\":{\"holder\":\"Owner\",\"object\":7}} "
+  Spec.it s "AtGrant" $
+    Common.assertCodec
+      s
+      PlayerRef.codec
+      (PlayerRef.AtGrant (PlayerRef.HolderOfBound Holder.Controller Hop.Itself (SlotName.MkSlotName (Text.pack "thatDepartedPermanent"))))
+      " {\"type\":\"AtGrant\",\"value\":{\"type\":\"HolderOfBound\",\"value\":{\"holder\":\"Controller\",\"hop\":\"Itself\",\"slot\":\"thatDepartedPermanent\"}}} "
   Spec.it s "PlayerHostOfBound" $
     Common.assertCodec
       s

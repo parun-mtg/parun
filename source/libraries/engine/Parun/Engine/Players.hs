@@ -266,6 +266,10 @@ namedUncut given gs ref =
         -- and, for phasing,
         -- data/scenarios/phasing/cr-702-26f-a-duration-reading-its-permanent-s-controller-ends-when-it-phases-out.json.
         PlayerRef.HolderOfObject holder oid -> fmap pure (unlessPhasedOut oid >>= holderOf holder)
+        -- Unbaked, Candidate's posture: the slots it reads are a resolution's
+        -- that is over, so it names nobody rather than whoever the granted
+        -- ability's own slots hold.
+        PlayerRef.AtGrant _ -> Nothing
         -- CR 614.1c / CR 702.174b: the player the object a slot names chose,
         -- read off Object.chosenPlayers rather than any view -- a choice is a
         -- record, not a characteristic (CR 707.2) -- through CR 608.2h's

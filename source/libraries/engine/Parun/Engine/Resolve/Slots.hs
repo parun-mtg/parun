@@ -430,11 +430,18 @@ tokenBoxQuantities card =
 -- Foliage), a CreateCopy its copies (Mirror Match), and a MoveToZone the card it
 -- moved, from moveOne (Aetherplasm). What stays inert is the rider on a
 -- destination other than the battlefield, which Parun.CardSpec lints.
--- CR 110.2a's instructed player, the one reference an entry rider holds.
+-- CR 110.2a's instructed player and CR 303.4f's host chooser, the references
+-- an entry rider holds.
 riderPlayerRefs :: EntryRiders.EntryRiders count ability -> [PlayerRef]
-riderPlayerRefs riders = case EntryRiders.under riders of
-  EntryController.Instructed who -> [who]
-  EntryController.Owner -> []
+riderPlayerRefs riders =
+  let instructed = case EntryRiders.under riders of
+        EntryController.Instructed who -> [who]
+        EntryController.Owner -> []
+      chooser = case EntryRiders.attachedTo riders of
+        Just (EntryHost.Chosen _ who _) -> Maybe.maybeToList who
+        Just (EntryHost.Specified _) -> []
+        Nothing -> []
+   in instructed <> chooser
 
 riderSlots :: EntryRiders.EntryRiders count ability -> Map.Map SlotName SlotArity
 riderSlots riders =
@@ -453,7 +460,7 @@ riderSlots riders =
         Nothing -> Map.empty
       hosted = case EntryRiders.attachedTo riders of
         Just (EntryHost.Specified slot) -> oneSlot slot
-        Just (EntryHost.Chosen _ filter_) -> filterSlotsOf filter_
+        Just (EntryHost.Chosen _ _ filter_) -> filterSlotsOf filter_
         Nothing -> Map.empty
    in joinSlots [attacked, blocked, hosted]
 
@@ -475,6 +482,8 @@ playerRefSlots ref = case ref of
   PlayerRef.Specific _ -> Map.empty
   -- Specific's answer: the baked object is named outright.
   PlayerRef.HolderOfObject _ _ -> Map.empty
+  -- The granting resolution's slots, read as the grant applies.
+  PlayerRef.AtGrant inner -> playerRefSlots inner
   PlayerRef.Candidate -> Map.empty
   -- Read at arity one: a slot naming several objects names no one controller,
   -- owner or host.

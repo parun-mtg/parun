@@ -2302,6 +2302,7 @@ filterPositionLintSpec s registry corpus = Spec.describe s "Lint" $ do
         ("Thrull Retainer", 1), -- the same as Carapace
         ("Prismatic Ward", 1), -- a CR 614.1 replacement row's own Filter, as Pariah's
         ("Unstable Mutation", 1), -- a trigger putting a counter on it
+        ("Takklemaggot", 1), -- Unstable Mutation's wording
         ("Enchanted River's Grasp", 2), -- its entering tap and counter removal
         ("Honest Work", 2), -- Enchanted River's Grasp's wording
         ("Flood the Engine", 1), -- Enchanted River's Grasp's entering tap

@@ -248,6 +248,7 @@ import qualified Parun.Types.TriggerCondition as TriggerCondition
 import qualified Parun.Types.TriggeredAbility as TriggeredAbility
 import qualified Parun.Types.TriggeredAbilitySource as TriggeredAbilitySource
 import qualified Parun.Types.TurnRegisters as TurnRegisters
+import qualified Parun.Types.TurnScope as TurnScope
 import qualified Parun.Types.Uses as Uses
 import qualified Parun.Types.Voted as Voted
 import qualified Parun.Types.WhichCounters as WhichCounters
@@ -2087,6 +2088,29 @@ freezeCounters viewOf context gs resolving source =
   Map.mapMaybe $ \quantity -> case Quantity.evaluateFor viewOf context gs resolving source quantity of
     Just n | n > 0 -> Just (Integer.toNaturalSaturating n)
     _ -> Nothing
+
+-- CR 113.10 / 608.2h: an ability a resolution grants with its
+-- PlayerRef.AtGrant references baked, each to the one seat `seat` reads it as
+-- naming as the grant applies -- Takklemaggot's "that player", whose
+-- creature's controller the dies trigger's slot names. One naming no one seat
+-- is left standing and names nobody. Every other modification passes whole.
+--
+-- Not implemented: an AtGrant anywhere but a granted triggered ability's
+-- trigger, its "may" and either-or askers and its effects' player and object
+-- references (#7776).
+bakeAtGrant :: (PlayerRef -> Maybe PlayerId) -> Modification.Modification (GrantedAbility.GrantedAbility Card.Type.Card) -> Modification.Modification (GrantedAbility.GrantedAbility Card.Type.Card)
+bakeAtGrant seat modification = case modification of
+  Modification.GainAbility ability -> Modification.GainAbility (granted ability)
+  _ -> modification
+  where
+    granted = Identity.runIdentity . Children.grantedAbilityChildren Children.abilityLeaves {Children.abilityTrigger = Identity.Identity . trigger, Children.abilityModal = Identity.Identity . modal}
+    player ref = case ref of
+      PlayerRef.AtGrant inner -> maybe ref PlayerRef.Specific (seat inner)
+      _ -> ref
+    trigger = Identity.runIdentity . Children.triggerConditionChildren Children.triggerLeaves {Children.triggerTurn = \(TurnScope.PlayersTurn whose) -> Identity.Identity (TurnScope.PlayersTurn (player whose)), Children.triggerNested = Identity.Identity . trigger}
+    modal = Identity.runIdentity . Children.modalChildren Children.modalLeaves {Children.modalPlayer = Identity.Identity . player, Children.modalEffect = Identity.Identity . effect}
+    effect = Identity.runIdentity . Children.effectChildren Children.effectLeaves {Children.onPlayer = Identity.Identity . player, Children.onObjectRef = Identity.Identity . objectRef, Children.onEffect = Identity.Identity . effect}
+    objectRef = Identity.runIdentity . Children.objectRefChildren Children.objectRefLeaves {Children.refPlayer = Identity.Identity . player, Children.refNested = Identity.Identity . objectRef}
 
 -- The amount ONE RECIPIENT of a per-player instruction reads, which need not be
 -- the amount the rest of the table reads (Stronghold Discipline). Every opcode

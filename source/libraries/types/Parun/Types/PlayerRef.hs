@@ -165,6 +165,9 @@ data PlayerRef
     -- one particular object, read at each check (CR 611.2b, 108.3, 108.4).
     -- Written by Parun.Engine.Quantity.bakePlayerRef; no card may write it.
     HolderOfObject Holder.Holder ObjectId.ObjectId
+  | -- | CR 113.10 / 608.2h: in a granted ability, the player this names as
+    -- the grant applies (Takklemaggot's "that player").
+    AtGrant PlayerRef
   | -- | CR 614.1c / CR 702.174b: the player the object a slot names CHOSE, by
     -- which choice -- "the chosen player" of the gift ability Parun.Engine.Keyword
     -- mints per instance, read off the object CR 113.7a's source slot holds.

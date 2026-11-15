@@ -1034,6 +1034,7 @@ playerRefNames asking x = case x of
   PlayerRef.PlayerHostOfBound slotName -> slotNames asking slotName
   PlayerRef.AttackedByBound slotName -> slotNames asking slotName
   PlayerRef.HolderOfObject _holder objectId -> names asking (== objectId)
+  PlayerRef.AtGrant inner -> playerRefNames asking inner
   PlayerRef.ChosenPlayerOfBound slotName choice -> slotNames asking slotName <> playerChoiceNames asking choice
   PlayerRef.Attacking attackingPlayers -> attackingPlayersNames asking attackingPlayers
   PlayerRef.Superlative _ -> mempty
