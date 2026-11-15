@@ -1826,13 +1826,31 @@ spellCostAdjustments targets pid oid gs =
         -- -- the mirror of what keeps Thalia off an activation cost in
         -- activationCostAdjustmentsGiven below (#90).
         CostSubject.Activations _ -> False
+        CostSubject.Unlocks -> False
    in modifierAdjustments
         [(source, modifier) | (source, PlayerEffect.ModifyCost modifier) <- applying pid gs, reaches source modifier]
         (\source wanted -> any (perTargetMatches pid source gs wanted) (Set.toList targets))
         (\source wanted -> perTargetCount targets pid source gs wanted)
         (perEachCount pid oid gs)
 
--- CR 601.2f, once for both subjects (CR 602.2b): the adjustments the given
+-- CR 118.7 / 709.5e: the cost increases, reductions and additional components
+-- that apply to `pid` paying the unlock cost of a door of the Room `oid` --
+-- `modifierAdjustments` over the rows whose subject is CostSubject.Unlocks and
+-- whose criterion matches the permanent (Inquisitive Glimmer). An unlock has
+-- no targets and no ordinal, Parun.Codec.CostModifier refusing both, so
+-- neither is asked.
+unlockCostAdjustments :: PlayerId -> ObjectId -> GameState -> CostAdjustments
+unlockCostAdjustments pid oid gs =
+  let reaches source modifier =
+        CostModifier.subject modifier == CostSubject.Unlocks
+          && matchesObjectFrom source (CostModifier.matching modifier) oid gs
+   in modifierAdjustments
+        [(source, modifier) | (source, PlayerEffect.ModifyCost modifier) <- applying pid gs, reaches source modifier]
+        (\_ _ -> False)
+        (\_ _ -> 0)
+        (perEachCount pid oid gs)
+
+-- CR 601.2f, once for every subject (CR 602.2b): the adjustments the given
 -- modifiers make, every one of them already known to reach the payment. `aims`
 -- answers `whichTargets` -- SOME announced target matches, once however many do
 -- (Kopala, Warden of Waves' ruling) -- `counted` answers `perTarget`, the
@@ -2026,6 +2044,8 @@ targetQuestions pid gs r =
           let matches wanted = case CostModifier.subject modifier of
                 CostSubject.Spells -> perTargetMatches pid source gs wanted r
                 CostSubject.Activations _ -> maybe False (\oid -> matchesObjectFor (targetPerspective pid source gs) source wanted oid gs) (Recipient.objectOf r)
+                -- Refused a target criterion (Parun.Codec.CostModifier).
+                CostSubject.Unlocks -> False
               weighed perTarget = if matches (PerTarget.matching perTarget) then toInteger (perTargetTimes pid source gs perTarget (Recipient.objectOf r)) else -1
            in fmap (toInteger . fromEnum . matches) (Maybe.maybeToList (CostModifier.whichTargets modifier)) <> fmap weighed (Maybe.maybeToList (CostModifier.perTarget modifier))
         _ -> []
@@ -2155,6 +2175,7 @@ activationCostAdjustmentsGiven effects pid targets stamp named kind loyalty srcI
         -- their Filters, which is what keeps a noncreature permanent's activated
         -- ability untaxed (#90).
         CostSubject.Spells -> False
+        CostSubject.Unlocks -> False
       gathered =
         modifierAdjustments
           [(source, modifier) | (source, PlayerEffect.ModifyCost modifier) <- effects, reaches source modifier]

@@ -34,7 +34,9 @@ import qualified Parun.Types.TurnOrdinal as TurnOrdinal.Type
 -- 2026-11-14, finds spells only; and a target criterion on an
 -- addition to an activation, whose components Parun.Engine.Activate measures
 -- before CR 601.2c announces the targets -- Scryfall o:"abilities"
--- o:"activate that target" o:"additional", 2026-10-10, no printing.
+-- o:"activate that target" o:"additional", 2026-10-10, no printing; and a
+-- target criterion or an ordinal on an unlock, which CR 709.5e gives neither
+-- (Inquisitive Glimmer is the one printing, MTGJSON 2026-11-15).
 codec :: Codec.Codec CostModifier.CostModifier
 codec = Fields.objectWith check $ do
   subject <- Fields.required "subject" CostSubject.codec CostModifier.subject
@@ -61,12 +63,16 @@ codec = Fields.objectWith check $ do
       (Nothing, CountedAgainst.Type.PaidFor) -> Left (Text.pack "CostModifier: countedAgainst without perEach counts nothing")
       _ -> onlyNthCheck modifier
     onlyNthCheck modifier = case (CostModifier.subject modifier, CostModifier.onlyNth modifier) of
+      (CostSubject.Type.Unlocks, _) -> unlockCheck modifier
       (_, Nothing) -> additionCheck modifier
       (CostSubject.Type.Spells, Just _) -> additionCheck modifier
       (CostSubject.Type.Activations criteria, Just nth)
         | Just _ <- ActivationCriteria.whichLoyalty criteria -> Left (Text.pack "CostModifier: onlyNth beside whichLoyalty has no printing")
         | TurnOrdinal.Type.ordinal nth /= 1 -> Left (Text.pack "CostModifier: an activation past the first has no printing")
         | otherwise -> additionCheck modifier
+    unlockCheck modifier
+      | Maybe.isJust (CostModifier.onlyNth modifier) || Maybe.isJust (CostModifier.whichTargets modifier) || Maybe.isJust (CostModifier.perTarget modifier) = Left (Text.pack "CostModifier: an unlock has no targets and no ordinal")
+      | otherwise = additionCheck modifier
     additionCheck modifier = case (CostModifier.subject modifier, CostModifier.change modifier) of
       (CostSubject.Type.Activations _, CostChange.Type.Add _)
         | Maybe.isJust (CostModifier.whichTargets modifier) || Maybe.isJust (CostModifier.perTarget modifier) -> Left (Text.pack "CostModifier: an addition to an activation cannot read its targets")

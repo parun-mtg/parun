@@ -11,10 +11,12 @@ codec =
   Arm.tagged
     tagOf
     [ Arm.nullary "Spells" CostSubject.Spells,
-      Arm.payload "Activations" (ActivationCriteria.codec Keyword.codec) CostSubject.Activations (\x -> case x of CostSubject.Activations y -> Just y; _ -> Nothing)
+      Arm.payload "Activations" (ActivationCriteria.codec Keyword.codec) CostSubject.Activations (\x -> case x of CostSubject.Activations y -> Just y; _ -> Nothing),
+      Arm.nullary "Unlocks" CostSubject.Unlocks
     ]
 
 tagOf :: CostSubject.CostSubject -> String
 tagOf x = case x of
   CostSubject.Spells {} -> "Spells"
   CostSubject.Activations {} -> "Activations"
+  CostSubject.Unlocks {} -> "Unlocks"
