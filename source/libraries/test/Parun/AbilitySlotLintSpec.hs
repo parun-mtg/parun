@@ -1255,8 +1255,9 @@ abilitySlotLintSpec s registry corpus = Spec.describe s "Lint" $ do
   -- a player reference only on an effect's own field, so a reference buried in a
   -- Quantity was recovered by nobody until quantitySlots folded
   -- QuantitySlot.nestedRefs. Dream Salvage writes it -- "draw cards equal to the
-  -- number of cards target opponent discarded this turn" -- and
-  -- Parun.ZoneChangeSpec drives that card at gameplay level.
+  -- number of cards target opponent discarded this turn" -- and the
+  -- data/scenarios/zone-change/cr-701-9a-dream-salvage-*.json pair drives that
+  -- card at gameplay level.
   Spec.it s "the lint itself catches a slot read only from inside a number" $ do
     let drawsTally ref =
           Mode.MkMode

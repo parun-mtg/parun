@@ -1,0 +1,157 @@
+{
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "battlefield": [
+          {
+            "card": "Swamp",
+            "label": "land-1"
+          },
+          {
+            "card": "Swamp",
+            "label": "land-2"
+          },
+          {
+            "card": "Swamp",
+            "label": "land-3"
+          }
+        ],
+        "hand": [
+          {
+            "card": "Psychic Miasma",
+            "label": "miasma"
+          }
+        ],
+        "name": "alice"
+      },
+      {
+        "battlefield": [
+          {
+            "card": "Library of Leng"
+          }
+        ],
+        "hand": [
+          {
+            "card": "Swamp"
+          }
+        ],
+        "library": [
+          {
+            "card": "Goblin Piker"
+          }
+        ],
+        "name": "bob"
+      }
+    ],
+    "step": "PrecombatMain"
+  },
+  "description": "CR 701.9c a land discarded into a library unrevealed does not return Psychic Miasma",
+  "note": "bob's Library of Leng puts the discarded Swamp on top of his library, and its ruling says the card is not revealed unless the discard says so. CR 701.9c leaves the hidden card's characteristics undefined, so CR 400.7j's find has nothing to ask and the rider does not return the spell. The CR 614.1a file is the twin where bob declines and the Miasma returns; the Swamp on top and alice seeing nothing are the guard against a pass that never hid the card.",
+  "timeline": [
+    {
+      "do": {
+        "Answer": {
+          "prompt": "ChooseRedirect",
+          "with": "Exercises"
+        }
+      },
+      "player": "bob",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Cast": {
+          "mana": [
+            "$land-1",
+            "$land-2",
+            null
+          ],
+          "object": "$miasma",
+          "targets": [
+            "$bob"
+          ]
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "View": {
+          "is": [
+            "Psychic Miasma"
+          ],
+          "of": "Zone",
+          "player": "alice",
+          "zone": "Graveyard"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "View": {
+          "is": [],
+          "of": "Zone",
+          "player": "alice",
+          "zone": "Hand"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "View": {
+          "is": [
+            "Swamp#4",
+            "Goblin Piker"
+          ],
+          "of": "Zone",
+          "player": "bob",
+          "zone": "Library"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "View": {
+          "is": [],
+          "of": "Zone",
+          "player": "bob",
+          "zone": "Graveyard"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "View": {
+          "is": [],
+          "of": "Witnessed",
+          "player": "alice"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    }
+  ]
+}

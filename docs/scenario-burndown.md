@@ -1257,43 +1257,9 @@ out: grep for them.
 
 ### `ZoneChangeSpec`
 
-- #222 an answer naming a player who is not in the game is refused | `move:out-of-range-answer` `check:events`
-- CR 104.3b the control: one creature is one life, and carol stays in the game | `check:events` `check:helper-lifeGains` `check:helper-lifeLosses`
-- CR 110.2 the control: a creature carol owns but bob controls is charged to BOB | `check:helper-lifeLosses`
-- CR 110.2 the control: a land carol owns but bob controls is charged to BOB | `check:helper-damages`
-- CR 118.12a carol pays 5 life, so the discarded creature stays in the graveyard | `check:helper-battlefieldNames` `check:helper-namesIn` `check:helper-payResponses`
-- CR 119.3 Sign in Blood makes the player it targets draw two and lose two life | `check:events` `check:helper-subtract`
-- CR 119.3 Stronghold Discipline charges each player for their OWN creatures | `check:helper-lifeLosses`
-- CR 119.5 Arbiter of Knollridge raises every seat to the HIGHEST total, gaining only where the total moves | `check:helper-lifeGains` `check:helper-lifeLosses`
-- CR 119.5 Biorhythm sets EACH seat to its OWN creature count | `check:events` `check:helper-lifeGains` `check:helper-lifeLosses`
-- CR 119.7 an exchange that would raise a player who can't gain life doesn't happen at all | `check:helper-lifeGains` `check:helper-lifeLosses`
-- CR 119.9 an exchange between equal totals logs no life event | `check:helper-lifeGains` `check:helper-lifeLosses`
-- CR 120.3a Acidic Soil deals each player their OWN land count | `check:helper-damages`
-- CR 121.2c Vision Skeins draws for the active player first, then in turn order | `check:helper-drawersOf`
-- CR 121.3 drawing from an empty library records the failed draw | `check:other-GameState.drewFromEmpty`
-- CR 202.3b a Clone copying a TRANSFORMED Stonewing Antagonizer has mana value 0, not the front face's 1 | `check:mana-value`
 - CR 401.2 each attacking creature's OWNER picks the end, not the resolving controller | `check:prompt-order`
 - CR 401.7 Temporal Cleansing: the OWNER picks second from the top, and it lands under the top card | `check:prompt-payload`
-- CR 701.10d doubling a life total leaves the target at twice its OWN total, as a life gain | `check:helper-lifeGains` `check:helper-lifeLosses`
-- CR 701.10d the control: the same card aimed at another seat doubles THAT seat's total | `check:helper-lifeGains`
-- CR 701.12a an exchange left with one side does nothing at all | `check:helper-lifeGains` `check:helper-lifeLosses`
-- CR 701.12c Soul Conduit exchanges the totals of two players, neither of them its controller | `check:helper-lifeGains` `check:helper-lifeLosses`
-- CR 701.12c whole card: Mirror Universe swaps its controller's total with the target's | `check:helper-lifeGains` `check:helper-lifeLosses` `check:other-Target.legalSets`
 - CR 701.9 / 101.4 Tinybones Joins Up has every targeted player discard, in APNAP order | `check:prompt-order`
-- CR 701.9a Aether Rift returns the creature card it discarded when nobody pays | `check:helper-battlefieldNames` `check:helper-namesIn` `check:helper-payResponses`
-- CR 701.9a Dream Salvage draws as many cards as the target discarded this turn | `board:battlefield` `board:objects-ids`
-- CR 701.9a a noncreature card discarded by Aether Rift stays put and nobody is asked to pay | `check:helper-battlefieldNames` `check:helper-namesIn` `check:helper-payResponses`
-- CR 701.9b Duress discards the card its caster chose from the revealed hand | `check:other-prompt-offer` `check:helper-revealsOf`
-- CR 701.9c a creature card Aether Rift discarded into exile is not returned | `check:helper-battlefieldNames` `check:helper-namesIn` `check:helper-payResponses`
-- CR 701.9c a land discarded into a library unrevealed does not return Psychic Miasma | `check:helper-revealsOf`
-- CR 707.2 a Clone copying the UNTRANSFORMED Thraben Gargoyle keeps that face's mana value | `check:mana-value`
-- CR 725.1e Psychic Theft's card cast before a Time Stop triggers nothing at the next turn's end step | `check:delayed-triggers`
-- CR 800.4a Vision Skeins does not draw for a player who has left the game | `check:helper-drawersOf`
-- Reverse the Sands whole card: the controller's permutation is what happens, seat by seat | `check:helper-lifeGains` `check:helper-lifeLosses`
-- a rotation moves every seat, and in the direction the answer names | `check:helper-lifeGains` `check:helper-lifeLosses`
-- one remaining player leaves only the identity, so no prompt is raised | `board:player-status`
-- redistributing among nobody is a legal answer and moves nothing | `check:helper-lifeGains` `check:helper-lifeLosses`
-- the same board answered differently redistributes differently at every seat | `check:helper-lifeGains` `check:helper-lifeLosses`
 
 ### `ZoneTriggerSpec`
 

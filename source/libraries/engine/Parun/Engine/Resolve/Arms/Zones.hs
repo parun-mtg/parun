@@ -1875,7 +1875,7 @@ gainLife settle resolving source controller legal (PlayerQuantity.MkPlayerQuanti
 -- given a lower one, and CR 119.7-8 both say what happens then -- "the
 -- exchange won't happen", the WHOLE exchange, which is CR 701.12a's
 -- all-or-nothing again. Asked through `barred` below, so nothing here cases on
--- an effect. Parun.ZoneChangeSpec's ExchangeLifeTotals group is the proof.
+-- an effect. data/scenarios/zone-change/cr-119-7-*.json are the proof.
 --
 -- CR 810.9e needs nothing: teammates sharing a total (Game.lifeSharers) hold
 -- the same one, so both deltas are zero and the exchange moves nothing.

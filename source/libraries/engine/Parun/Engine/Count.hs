@@ -317,11 +317,12 @@ boundMember gs aggregation predicate oid =
 -- Moved entry the same change records pairs that id with the incarnation the
 -- binding holds, so the two are joined through Moved rather than by id.
 --
--- All three legs are proven in Parun.ZoneChangeSpec's Psychic Miasma cases:
--- under Rest in Peace the discarded land is read out of exile, and under Wheel
--- of Sun and Moon it is revealed on its way to the bottom of the discarding
--- player's library, so the spell returns in both; under Library of Leng it goes
--- to the top of that library unrevealed, and the spell does not.
+-- All three legs are proven by the Psychic Miasma scenarios in
+-- data/scenarios/zone-change/: under Rest in Peace the discarded land is read
+-- out of exile, and under Wheel of Sun and Moon it is revealed on its way to the
+-- bottom of the discarding player's library, so the spell returns in both;
+-- under Library of Leng it goes to the top of that library unrevealed, and the
+-- spell does not.
 --
 findableAfterMove :: GameState -> ObjectId -> Bool
 findableAfterMove gs oid = case Game.lookupObject oid gs of
