@@ -30,13 +30,6 @@
                             "slot": "first"
                           }
                         },
-                        "count": {
-                          "type": "Exactly",
-                          "value": {
-                            "type": "Literal",
-                            "value": 1
-                          }
-                        },
                         "filter": {
                           "type": "And",
                           "value": [

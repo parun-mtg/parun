@@ -18,8 +18,8 @@
         ],
         "library": [
           {
-            "card": "Hill Giant",
-            "label": "giant"
+            "card": "Serra Angel",
+            "label": "angel"
           },
           {
             "card": "Forest",
@@ -213,7 +213,7 @@
       "do": {
         "Answer": {
           "prompt": "ChooseCardFromAmong",
-          "with": "$giant"
+          "with": "$angel"
         }
       },
       "player": "alice",
@@ -224,7 +224,7 @@
       "check": {
         "View": {
           "is": [
-            "$bgiant2"
+            "Hill Giant#2"
           ],
           "of": "Stack"
         }
@@ -237,7 +237,7 @@
       "check": {
         "View": {
           "is": [
-            "Hill Giant"
+            "Serra Angel"
           ],
           "of": "Zone",
           "player": "alice",
@@ -251,7 +251,7 @@
     {
       "check": {
         "PowerToughness": {
-          "object": "Hill Giant",
+          "object": "Serra Angel",
           "power": 2,
           "toughness": 2
         }

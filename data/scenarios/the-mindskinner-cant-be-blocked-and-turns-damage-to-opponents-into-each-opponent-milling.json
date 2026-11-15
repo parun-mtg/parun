@@ -1,12 +1,8 @@
 {
-  "description": "CR 615.1a, 615.5, 701.17a, 509.1b, 120.3: The Mindskinner can't be blocked, and damage a source you control would deal to an opponent is prevented and each opponent mills that many cards",
-  "note": "Three seats so each opponent mills, not only the one damaged: Shock's 2 to bob mills bob and carol two each, the Mindskinner's 10 mills each ten, and alice mills nothing. Shock to carol's Grizzly Bears is damage to a permanent and is dealt. On turn 2 bob's Hill Giant hits carol, an opponent of alice, from a source alice does not control: dealt, and nobody mills. Bob's Hill Giant is never asked to block: a blockable attacker would raise an unscheduled DeclareBlockers prompt.",
   "board": {
     "active": "alice",
-    "step": "PrecombatMain",
     "seats": [
       {
-        "name": "alice",
         "battlefield": [
           {
             "card": "The Mindskinner",
@@ -51,10 +47,10 @@
           {
             "card": "Island"
           }
-        ]
+        ],
+        "name": "alice"
       },
       {
-        "name": "bob",
         "battlefield": [
           {
             "card": "Hill Giant",
@@ -105,10 +101,10 @@
           {
             "card": "Island"
           }
-        ]
+        ],
+        "name": "bob"
       },
       {
-        "name": "carol",
         "battlefield": [
           {
             "card": "Grizzly Bears",
@@ -161,49 +157,50 @@
           {
             "card": "Island"
           }
-        ]
+        ],
+        "name": "carol"
       }
-    ]
+    ],
+    "step": "PrecombatMain"
   },
+  "description": "CR 615.1a, 615.5, 701.17a, 509.1b, 120.3: The Mindskinner can't be blocked, and damage a source you control would deal to an opponent is prevented and each opponent mills that many cards",
+  "note": "Three seats so each opponent mills, not only the one damaged: Shock's 2 to bob mills bob and carol two each, the Mindskinner's 10 mills each ten, and alice mills nothing. Shock to carol's Grizzly Bears is damage to a permanent and is dealt. On turn 2 bob's Hill Giant hits carol, an opponent of alice, from a source alice does not control: dealt, and nobody mills. Bob's Hill Giant is never asked to block: a blockable attacker would raise an unscheduled DeclareBlockers prompt.",
   "timeline": [
     {
-      "turn": 1,
-      "step": "PrecombatMain",
-      "player": "alice",
       "do": {
         "Cast": {
-          "object": "$shock1",
           "mana": [
             "$m0",
             null
           ],
+          "object": "$shock1",
           "targets": [
             "$bob"
           ]
         }
-      }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PrecombatMain",
+      "do": "Pass",
       "player": "alice",
-      "do": "Pass"
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PrecombatMain",
-      "player": "alice",
       "check": {
         "Life": {
-          "player": "bob",
-          "life": 20
+          "life": 20,
+          "player": "bob"
         }
-      }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PrecombatMain",
-      "player": "alice",
       "check": {
         "Count": {
           "card": "Island",
@@ -211,12 +208,12 @@
           "player": "bob",
           "zone": "Library"
         }
-      }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PrecombatMain",
-      "player": "alice",
       "check": {
         "Count": {
           "card": "Island",
@@ -224,12 +221,12 @@
           "player": "carol",
           "zone": "Library"
         }
-      }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PrecombatMain",
-      "player": "alice",
       "check": {
         "Count": {
           "card": "Island",
@@ -237,34 +234,34 @@
           "player": "alice",
           "zone": "Library"
         }
-      }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PrecombatMain",
-      "player": "alice",
       "do": {
         "Cast": {
-          "object": "$shock2",
           "mana": [
             "$m1"
           ],
+          "object": "$shock2",
           "targets": [
             "$bears"
           ]
         }
-      }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PrecombatMain",
+      "do": "Pass",
       "player": "alice",
-      "do": "Pass"
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PrecombatMain",
-      "player": "alice",
       "check": {
         "Count": {
           "card": "Grizzly Bears",
@@ -272,12 +269,12 @@
           "player": "carol",
           "zone": "Graveyard"
         }
-      }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PrecombatMain",
-      "player": "alice",
       "check": {
         "Count": {
           "card": "Island",
@@ -285,12 +282,12 @@
           "player": "bob",
           "zone": "Library"
         }
-      }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PrecombatMain",
-      "player": "alice",
       "check": {
         "Count": {
           "card": "Island",
@@ -298,41 +295,41 @@
           "player": "carol",
           "zone": "Library"
         }
-      }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "DeclareAttackers",
-      "player": "alice",
       "do": {
         "Attack": [
           "$ms"
         ]
-      }
+      },
+      "player": "alice",
+      "step": "DeclareAttackers",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "DeclareAttackers",
-      "player": "alice",
       "do": {
         "ChooseAttackTarget": "$bob"
-      }
+      },
+      "player": "alice",
+      "step": "DeclareAttackers",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "CombatDamage",
-      "player": "alice",
       "check": {
         "Life": {
-          "player": "bob",
-          "life": 20
+          "life": 20,
+          "player": "bob"
         }
-      }
+      },
+      "player": "alice",
+      "step": "CombatDamage",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "CombatDamage",
-      "player": "alice",
       "check": {
         "Count": {
           "card": "Island",
@@ -340,12 +337,12 @@
           "player": "bob",
           "zone": "Library"
         }
-      }
+      },
+      "player": "alice",
+      "step": "CombatDamage",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "CombatDamage",
-      "player": "alice",
       "check": {
         "Count": {
           "card": "Island",
@@ -353,12 +350,12 @@
           "player": "carol",
           "zone": "Library"
         }
-      }
+      },
+      "player": "alice",
+      "step": "CombatDamage",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "CombatDamage",
-      "player": "alice",
       "check": {
         "Count": {
           "card": "Island",
@@ -366,41 +363,41 @@
           "player": "alice",
           "zone": "Library"
         }
-      }
+      },
+      "player": "alice",
+      "step": "CombatDamage",
+      "turn": 1
     },
     {
-      "turn": 2,
-      "step": "DeclareAttackers",
-      "player": "bob",
       "do": {
         "Attack": [
           "$giant"
         ]
-      }
+      },
+      "player": "bob",
+      "step": "DeclareAttackers",
+      "turn": 2
     },
     {
-      "turn": 2,
-      "step": "DeclareAttackers",
-      "player": "bob",
       "do": {
         "ChooseAttackTarget": "$carol"
-      }
+      },
+      "player": "bob",
+      "step": "DeclareAttackers",
+      "turn": 2
     },
     {
-      "turn": 2,
-      "step": "CombatDamage",
-      "player": "bob",
       "check": {
         "Life": {
-          "player": "carol",
-          "life": 17
+          "life": 17,
+          "player": "carol"
         }
-      }
+      },
+      "player": "bob",
+      "step": "CombatDamage",
+      "turn": 2
     },
     {
-      "turn": 2,
-      "step": "CombatDamage",
-      "player": "bob",
       "check": {
         "Count": {
           "card": "Island",
@@ -408,12 +405,12 @@
           "player": "carol",
           "zone": "Library"
         }
-      }
+      },
+      "player": "bob",
+      "step": "CombatDamage",
+      "turn": 2
     },
     {
-      "turn": 1,
-      "step": "CombatDamage",
-      "player": "alice",
       "check": {
         "Count": {
           "card": "Island",
@@ -421,7 +418,10 @@
           "player": "bob",
           "zone": "Graveyard"
         }
-      }
+      },
+      "player": "alice",
+      "step": "CombatDamage",
+      "turn": 1
     }
   ]
 }

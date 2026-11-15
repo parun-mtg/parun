@@ -1,12 +1,8 @@
 {
-  "description": "CR 107.3m, 601.2c, 603.3d, 614.1a, 120.3, 207.2c: The Rollercrusher Ride's enters trigger deals X damage to each of up to X target creatures, and with delirium noncombat damage a source you control would deal is doubled",
-  "note": "X is 3: four targets are refused, and two (fewer than X) take 3 each, undoubled with three card types in alice's graveyard (bob's Mind Stone would make four if any graveyard counted). The first Shock deals 2 from the stack; once it is in the graveyard there are four types and the second deals 4. Grizzly Bears' combat damage stays 2.",
   "board": {
     "active": "alice",
-    "step": "PrecombatMain",
     "seats": [
       {
-        "name": "alice",
         "battlefield": [
           {
             "card": "Mountain",
@@ -90,10 +86,10 @@
           {
             "card": "Island"
           }
-        ]
+        ],
+        "name": "alice"
       },
       {
-        "name": "bob",
         "battlefield": [
           {
             "card": "Hill Giant",
@@ -136,19 +132,18 @@
           {
             "card": "Island"
           }
-        ]
+        ],
+        "name": "bob"
       }
-    ]
+    ],
+    "step": "PrecombatMain"
   },
+  "description": "CR 107.3m, 601.2c, 603.3d, 614.1a, 120.3, 207.2c: The Rollercrusher Ride's enters trigger deals X damage to each of up to X target creatures, and with delirium noncombat damage a source you control would deal is doubled",
+  "note": "X is 3: four targets are refused, and two (fewer than X) take 3 each, undoubled with three card types in alice's graveyard (bob's Mind Stone would make four if any graveyard counted). The first Shock deals 2 from the stack; once it is in the graveyard there are four types and the second deals 4. Grizzly Bears' combat damage stays 2.",
   "timeline": [
     {
-      "turn": 1,
-      "step": "PrecombatMain",
-      "player": "alice",
       "do": {
         "Cast": {
-          "object": "$ride",
-          "x": 3,
           "mana": [
             "$m0",
             "$m1",
@@ -157,19 +152,22 @@
             "$m4",
             "$m5",
             null
-          ]
+          ],
+          "object": "$ride",
+          "x": 3
         }
-      }
-    },
-    {
-      "turn": 1,
-      "step": "PrecombatMain",
+      },
       "player": "alice",
-      "do": "Pass"
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
+      "do": "Pass",
+      "player": "alice",
       "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
       "player": "alice",
       "refuse": {
         "ChooseTargets": {
@@ -180,12 +178,11 @@
             "$angel"
           ]
         }
-      }
+      },
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PrecombatMain",
-      "player": "alice",
       "do": {
         "ChooseTargets": {
           "target": [
@@ -193,142 +190,145 @@
             "$angel"
           ]
         }
-      }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PrecombatMain",
+      "do": "Pass",
       "player": "alice",
-      "do": "Pass"
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PrecombatMain",
-      "player": "alice",
       "check": {
         "Damage": {
-          "object": "$wurm",
-          "damage": 3
+          "damage": 3,
+          "object": "$wurm"
         }
-      }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PrecombatMain",
-      "player": "alice",
       "check": {
         "Damage": {
-          "object": "$angel",
-          "damage": 3
+          "damage": 3,
+          "object": "$angel"
         }
-      }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PrecombatMain",
-      "player": "alice",
       "check": {
         "Damage": {
-          "object": "$giant",
-          "damage": 0
+          "damage": 0,
+          "object": "$giant"
         }
-      }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PrecombatMain",
-      "player": "alice",
       "do": {
         "Cast": {
-          "object": "$shock1",
           "mana": [
             "$m6",
             null
           ],
+          "object": "$shock1",
           "targets": [
             "$bob"
           ]
         }
-      }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PrecombatMain",
+      "do": "Pass",
       "player": "alice",
-      "do": "Pass"
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PrecombatMain",
-      "player": "alice",
       "check": {
         "Life": {
-          "player": "bob",
-          "life": 18
+          "life": 18,
+          "player": "bob"
         }
-      }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PrecombatMain",
-      "player": "alice",
       "do": {
         "Cast": {
-          "object": "$shock2",
           "mana": [
             "$m7"
           ],
+          "object": "$shock2",
           "targets": [
             "$bob"
           ]
         }
-      }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PrecombatMain",
+      "do": "Pass",
       "player": "alice",
-      "do": "Pass"
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PrecombatMain",
-      "player": "alice",
       "check": {
         "Life": {
-          "player": "bob",
-          "life": 14
+          "life": 14,
+          "player": "bob"
         }
-      }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "DeclareAttackers",
-      "player": "alice",
       "do": {
         "Attack": [
           "$bears"
         ]
-      }
+      },
+      "player": "alice",
+      "step": "DeclareAttackers",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "DeclareBlockers",
-      "player": "bob",
       "do": {
         "Block": {}
-      }
+      },
+      "player": "bob",
+      "step": "DeclareBlockers",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "CombatDamage",
-      "player": "alice",
       "check": {
         "Life": {
-          "player": "bob",
-          "life": 12
+          "life": 12,
+          "player": "bob"
         }
-      }
+      },
+      "player": "alice",
+      "step": "CombatDamage",
+      "turn": 1
     }
   ]
 }
