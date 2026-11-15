@@ -244,7 +244,7 @@ spec s registry = Spec.describe s "Protocol" $ do
     -- CR 118.9: the object whose budgeted grant a candidate spends, only where one does.
     let space = ObjectId.MkObjectId 8
         grant = FreeCast.MkFreeCast (Filter.Type.IsInZone Zone.Exile) (ManaCost.MkManaCost []) [] Nothing Nothing Nothing PermissionLimit.OnceEachTurn
-        spending = PromptOffer.offerOf Protocol.namer gs (Prompt.ChooseCost (Decider.MkDecider S.alice) S.alice oid [CandidateCost.plain Nothing cost, (CandidateCost.plain Nothing cost) {CandidateCost.spends = Just (space, grant)}] Seq.empty)
+        spending = PromptOffer.offerOf Protocol.namer gs (Prompt.ChooseCost (Decider.MkDecider S.alice) S.alice oid [CandidateCost.plain Nothing cost, (CandidateCost.plain Nothing cost) {CandidateCost.granted = Just (Just (space, grant))}] Seq.empty)
     Spec.assertEqWith s "CR 118.9 the budgets spent" (field "spending" spending) (Just (R.Array [R.Null, Reply.encode Reply.object Protocol.namer space]))
     Spec.assertEqWith s "and none where no candidate spends one" (field "spending" choosing) Nothing
 

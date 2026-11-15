@@ -916,7 +916,7 @@ candidateCostsGiven permitted pid name oid gs =
               -- the face's additional costs, CR 118.9d; its filter reads the
               -- spell, discardCandidates' Source.
               freeCast =
-                [ (untagged (free {Cost.components = instead <> Cost.components free})) {CandidateCost.spends = budget}
+                [ (untagged (free {Cost.components = instead <> Cost.components free})) {CandidateCost.granted = Just budget}
                 | (mana, instead, budget) <- PlayerEffect.ratherThanManaCost pid oid gs,
                   let free = insteadOfManaCost mana face
                 ]

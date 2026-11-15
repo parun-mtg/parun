@@ -115,6 +115,15 @@
             "card": "Plains"
           },
           {
+            "card": "Centaur Courser"
+          },
+          {
+            "card": "Plains"
+          },
+          {
+            "card": "Plains"
+          },
+          {
             "card": "Plains"
           },
           {
@@ -140,8 +149,8 @@
     ],
     "step": "PrecombatMain"
   },
-  "description": "Warped Space lets a spell cast from exile pay zero once each turn, not only the first",
-  "note": "Alice unlocks three Charred Foyers and Warped Space on turn 1; in her turn 3 upkeep the Foyers exile Grizzly Bears, Runeclaw Bear and Hill Giant. She pays the Bears' own cost with her two Forests, so the once is still hers: Runeclaw Bear, its green unpayable by Mountains, is cast for {0}. Hill Giant is then cast with no cost to choose, its own the only one offered.",
+  "description": "Warped Space lets a spell cast from exile pay zero once each turn, not only the first, and again on a later turn",
+  "note": "Alice unlocks three Charred Foyers and Warped Space on turn 1; in her turn 3 upkeep the Foyers exile Grizzly Bears, Runeclaw Bear and Hill Giant. She pays the Bears' own cost with her two Forests, so the once is still hers: Runeclaw Bear, its green unpayable by Mountains, is cast for {0}. Hill Giant is then cast with no cost to choose, its own the only one offered. On turn 5 the Foyers exile a Centaur Courser, which takes Warped Space's {0} again with both Forests untapped.",
   "timeline": [
     {
       "do": {
@@ -375,6 +384,93 @@
       "player": "alice",
       "step": "PrecombatMain",
       "turn": 3
+    },
+    {
+      "do": {
+        "OrderTriggers": [
+          "$foyer1",
+          "$foyer2",
+          "$foyer3"
+        ]
+      },
+      "player": "alice",
+      "step": "Upkeep",
+      "turn": 5
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Centaur Courser",
+          "count": 1,
+          "player": "alice",
+          "zone": "Exile"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 5
+    },
+    {
+      "do": {
+        "Answer": {
+          "prompt": "ChooseCost",
+          "with": 1
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 5
+    },
+    {
+      "do": {
+        "Cast": {
+          "object": "Centaur Courser"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 5
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 5
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Centaur Courser",
+          "count": 1,
+          "player": "alice",
+          "zone": "Battlefield"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 5
+    },
+    {
+      "check": {
+        "Tapped": {
+          "object": "$f1",
+          "tapped": false
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 5
+    },
+    {
+      "check": {
+        "Tapped": {
+          "object": "$f2",
+          "tapped": false
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 5
     }
   ]
 }

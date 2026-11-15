@@ -1943,7 +1943,8 @@ freeCastBudget pid source grant gs =
 
 -- CR 118.9: record the budget a cast's chosen candidate spends
 -- (CandidateCost.spends), cleared at the turn handoff
--- (Parun.Engine.Engine.beginTurnOf); spendCastPermission's per-turn arm.
+-- (Parun.Engine.Engine.closeTurn, which Warped Space's once-each-turn scenario
+-- proves); spendCastPermission's per-turn arm.
 spendFreeCast :: Maybe (ObjectId, FreeCast.FreeCast) -> GameState -> GameState
 spendFreeCast spent gs = case spent of
   Nothing -> gs

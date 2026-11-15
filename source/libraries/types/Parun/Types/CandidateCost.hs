@@ -1,5 +1,6 @@
 module Parun.Types.CandidateCost where
 
+import qualified Control.Monad as Monad
 import Numeric.Natural (Natural)
 import qualified Parun.Types.AbilityName as AbilityName
 import qualified Parun.Types.Cost as Cost
@@ -67,15 +68,20 @@ data CandidateCost = MkCandidateCost
     -- Binding.printedAlternativeCost, Baleful Mastery's "if the {1}{B} cost was
     -- paid".
     printedAlternative :: Maybe Natural,
-    -- | CR 118.9: the budgeted grant this candidate spends, under the object
-    -- granting it (Warped Space's "Once each turn"), recorded in
-    -- Parun.Types.TurnRegisters.freeCastsUsedThisTurn once the spell becomes
-    -- cast; Nothing for every other candidate.
-    spends :: Maybe (ObjectId.ObjectId, FreeCast.FreeCast)
+    -- | CR 118.9: the alternative cost an effect applies (Omniscience, Leyline
+    -- of Mutation), with the budget it spends: Just Nothing for an unlimited
+    -- grant, Just its key under the granting object for a budgeted one (Warped
+    -- Space's "Once each turn"); Nothing for every other candidate.
+    granted :: Maybe (Maybe (ObjectId.ObjectId, FreeCast.FreeCast))
   }
   deriving (Eq, Ord, Show)
 
 -- | A candidate bringing no reduction, no window of its own, no delayed ability,
--- no printed alternative and no budget.
+-- no printed alternative and no grant.
 plain :: Maybe Keyword.Keyword -> Cost.Cost Keyword.Keyword -> CandidateCost
 plain k c = MkCandidateCost k c [] False Nothing Nothing Nothing
+
+-- | CR 118.9: the budgeted grant this candidate spends, recorded in
+-- Parun.Types.TurnRegisters.freeCastsUsedThisTurn once the spell becomes cast.
+spends :: CandidateCost -> Maybe (ObjectId.ObjectId, FreeCast.FreeCast)
+spends = Monad.join . granted
