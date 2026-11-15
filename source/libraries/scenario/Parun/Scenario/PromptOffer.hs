@@ -155,7 +155,8 @@ offerOf namer gs prompt = case prompt of
   -- CR 601.2b / 702.51a: each candidate's cost and, beside it, the keyword
   -- that offered it (CR 702.152a) or null; CR 101.4b: what earlier payers
   -- answered. CR 603.7g: the delayed ability each creates or null, where one
-  -- does.
+  -- does. CR 118.9: the object whose budgeted grant each spends or null, where
+  -- one does.
   Prompt.ChooseCost _ _ source candidates earlier ->
     fields
       ( [ ("source", object namer source),
@@ -164,6 +165,7 @@ offerOf namer gs prompt = case prompt of
           ("earlier", payerAnswers namer earlier)
         ]
           <> [("arming", Reply.encode (Reply.list (Reply.maybeOf (Reply.viaCodec Codec.AbilityName.codec))) namer (fmap CandidateCost.arms candidates)) | any (Maybe.isJust . CandidateCost.arms) candidates]
+          <> [("spending", Reply.encode (Reply.list (Reply.maybeOf Reply.object)) namer (fmap (fmap fst . CandidateCost.spends) candidates)) | any (Maybe.isJust . CandidateCost.spends) candidates]
       )
   Prompt.PayLifeForMana _ _ life mana -> fields [("life", natural life), ("mana", Reply.encode (Reply.viaCodec Codec.ManaType.codec) namer mana)]
   Prompt.ChooseManaYield _ _ source options -> fields [("source", object namer source), ("yields", Reply.encode (Reply.list (Reply.list (Reply.viaCodec Codec.ManaType.codec))) namer (fmap (fmap ManaUnit.manaType . Mana.yieldUnits) (Foldable.toList options)))]

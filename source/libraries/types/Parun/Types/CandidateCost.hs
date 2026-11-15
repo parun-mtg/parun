@@ -3,8 +3,10 @@ module Parun.Types.CandidateCost where
 import Numeric.Natural (Natural)
 import qualified Parun.Types.AbilityName as AbilityName
 import qualified Parun.Types.Cost as Cost
+import qualified Parun.Types.FreeCast as FreeCast
 import qualified Parun.Types.Keyword as Keyword
 import qualified Parun.Types.ManaCost as ManaCost
+import qualified Parun.Types.ObjectId as ObjectId
 
 -- | CR 601.2b: one of the costs a spell may be cast for, together with WHAT
 -- OFFERED IT.
@@ -64,11 +66,16 @@ data CandidateCost = MkCandidateCost
     -- candidate, a granted alternative included. Parun.Engine.Cast binds it under
     -- Binding.printedAlternativeCost, Baleful Mastery's "if the {1}{B} cost was
     -- paid".
-    printedAlternative :: Maybe Natural
+    printedAlternative :: Maybe Natural,
+    -- | CR 118.9: the budgeted grant this candidate spends, under the object
+    -- granting it (Warped Space's "Once each turn"), recorded in
+    -- Parun.Types.TurnRegisters.freeCastsUsedThisTurn once the spell becomes
+    -- cast; Nothing for every other candidate.
+    spends :: Maybe (ObjectId.ObjectId, FreeCast.FreeCast)
   }
   deriving (Eq, Ord, Show)
 
--- | A candidate bringing no reduction, no window of its own, no delayed ability
--- and no printed alternative.
+-- | A candidate bringing no reduction, no window of its own, no delayed ability,
+-- no printed alternative and no budget.
 plain :: Maybe Keyword.Keyword -> Cost.Cost Keyword.Keyword -> CandidateCost
-plain k c = MkCandidateCost k c [] False Nothing Nothing
+plain k c = MkCandidateCost k c [] False Nothing Nothing Nothing

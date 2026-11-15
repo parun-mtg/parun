@@ -11,6 +11,7 @@ import qualified Parun.Types.CastFromZone as CastFromZone
 import qualified Parun.Types.Combat as Combat
 import qualified Parun.Types.EndTurnSignal as EndTurnSignal
 import qualified Parun.Types.EventGroup as EventGroup
+import qualified Parun.Types.FreeCast as FreeCast
 import qualified Parun.Types.GrantedAbility as GrantedAbility
 import qualified Parun.Types.LastKnown as LastKnown
 import qualified Parun.Types.LoggedEvent as LoggedEvent
@@ -130,6 +131,11 @@ data TurnRegisters = MkTurnRegisters
     -- PermissionLimit.OnceEachTurn (Night Shift of the Living Dead); cleared at
     -- turn handoff. Keyed as castPermissionsUsedThisTurn above and for its reason.
     rollModifiersUsedThisTurn :: Map.Map ObjectId.ObjectId (Set.Set ModifiedRoll.ModifiedRoll),
+    -- | CR 118.9: which budgeted pay-rather-than grants a cast has paid this
+    -- turn, read by a Parun.Types.FreeCast whose limit is
+    -- PermissionLimit.OnceEachTurn (Warped Space); cleared at turn handoff.
+    -- Keyed as castPermissionsUsedThisTurn above and for its reason.
+    freeCastsUsedThisTurn :: Map.Map ObjectId.ObjectId (Set.Set FreeCast.FreeCast),
     -- | CR 603.2h: each resolution this turn of a triggered ability whose
     -- "Do this only once each turn" instruction was taken
     -- (Parun.Types.SpentOn's TakingInstruction), as the record CR 603.3b's log

@@ -606,11 +606,11 @@ affectedNames oid source gs affected = case affected of
 --     naming the sources whose effects moved counters on it.
 --   * The per-object budgets and notes: TurnRegisters.activatedThisTurn (CR
 --     602.5b), castPermissionsUsedThisTurn (CR 601.3), rollModifiersUsedThisTurn
---     (CR 706.2), namedCopyChoices (CR 707.13), notedCards (CR 707.14),
---     notedMana (CR 607.2e), keptFaceDown (CR 121.8), announcedTops and
---     actionTops (CR 401.5), loopPicks (CR 101.4b), repeatPicks (CR 733.3),
---     revealedTops (CR 401.6) and outsideCopies (CR 400.11), each keyed by the
---     object it is about; and
+--     (CR 706.2), freeCastsUsedThisTurn (CR 118.9), namedCopyChoices (CR
+--     707.13), notedCards (CR 707.14), notedMana (CR 607.2e), keptFaceDown
+--     (CR 121.8), announcedTops and actionTops (CR 401.5), loopPicks (CR
+--     101.4b), repeatPicks (CR 733.3), revealedTops (CR 401.6) and
+--     outsideCopies (CR 400.11), each keyed by the object it is about; and
 --     the logs triggeredThisGame (a "triggers only once" rider's spent
 --     triggerings), instructionsTakenThisTurn (CR 603.2h),
 --     activationsThisTurn (CR 602.2) and each player's own last turn's attacks
@@ -666,6 +666,7 @@ namedByRelation oid gs =
         || keyed (TurnRegisters.stackedIn (GameState.turn gs))
         || keyed (TurnRegisters.castPermissionsUsedThisTurn (GameState.turn gs))
         || keyed (TurnRegisters.rollModifiersUsedThisTurn (GameState.turn gs))
+        || keyed (TurnRegisters.freeCastsUsedThisTurn (GameState.turn gs))
         || keyed (GameState.namedCopyChoices gs)
         || keyed (GameState.notedCards gs)
         || keyed (GameState.notedMana gs)
@@ -687,6 +688,7 @@ namedByRelation oid gs =
         || any (keyed . TurnRegisters.stackedIn) parked
         || any (keyed . TurnRegisters.castPermissionsUsedThisTurn) parked
         || any (keyed . TurnRegisters.rollModifiersUsedThisTurn) parked
+        || any (keyed . TurnRegisters.freeCastsUsedThisTurn) parked
         || any (any (triggeredNames oid) . TurnRegisters.instructionsTakenThisTurn) parked
         || any (triggeredNames oid) [record | r <- parked, GameEvent.AbilityTriggered record <- fmap LoggedEvent.event (Foldable.toList (TurnRegisters.events r))]
         || any (any (any (spentActivationNames oid) . Map.keys) . Map.elems . TurnRegisters.activatedThisTurn) parked

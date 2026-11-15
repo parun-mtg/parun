@@ -82,6 +82,7 @@ import qualified Parun.Types.FaceDownReason as FaceDownReason
 import qualified Parun.Types.FaceDownState as FaceDownState
 import qualified Parun.Types.Facing as Facing
 import qualified Parun.Types.Filter as Filter.Type
+import qualified Parun.Types.FreeCast as FreeCast
 import qualified Parun.Types.Game as Game.Type
 import qualified Parun.Types.GameEvent as GameEvent
 import qualified Parun.Types.GameSettings as GameSettings
@@ -112,6 +113,7 @@ import qualified Parun.Types.OptionalDecision as OptionalDecision
 import qualified Parun.Types.OutsideCard as OutsideCard
 import qualified Parun.Types.PayOffer as PayOffer
 import qualified Parun.Types.PayerAnswer as PayerAnswer
+import qualified Parun.Types.PermissionLimit as PermissionLimit
 import qualified Parun.Types.PlayerId as PlayerId
 import qualified Parun.Types.PlayerView as PlayerView
 import qualified Parun.Types.Prompt as Prompt
@@ -239,6 +241,12 @@ spec s registry = Spec.describe s "Protocol" $ do
         arming = PromptOffer.offerOf Protocol.namer gs (Prompt.ChooseCost (Decider.MkDecider S.alice) S.alice oid [CandidateCost.plain Nothing cost, (CandidateCost.plain Nothing cost) {CandidateCost.arms = Just named}] Seq.empty)
     Spec.assertEqWith s "CR 603.7g the delayed abilities" (field "arming" arming) (Just (R.Array [R.Null, R.Text (Text.pack "sacrifice it")]))
     Spec.assertEqWith s "and none where no candidate creates one" (field "arming" choosing) Nothing
+    -- CR 118.9: the object whose budgeted grant a candidate spends, only where one does.
+    let space = ObjectId.MkObjectId 8
+        grant = FreeCast.MkFreeCast (Filter.Type.IsInZone Zone.Exile) (ManaCost.MkManaCost []) [] Nothing Nothing Nothing PermissionLimit.OnceEachTurn
+        spending = PromptOffer.offerOf Protocol.namer gs (Prompt.ChooseCost (Decider.MkDecider S.alice) S.alice oid [CandidateCost.plain Nothing cost, (CandidateCost.plain Nothing cost) {CandidateCost.spends = Just (space, grant)}] Seq.empty)
+    Spec.assertEqWith s "CR 118.9 the budgets spent" (field "spending" spending) (Just (R.Array [R.Null, Reply.encode Reply.object Protocol.namer space]))
+    Spec.assertEqWith s "and none where no candidate spends one" (field "spending" choosing) Nothing
 
   Spec.it s "CR 101.4b / 608.2f a may offers what earlier seats answered, and a loop's offer to pay names its member" $ do
     let oid = ObjectId.MkObjectId 7

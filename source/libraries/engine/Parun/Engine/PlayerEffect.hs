@@ -1903,6 +1903,38 @@ freeCastAdmits pid source grant oid gs =
   Filter.matches (amountFramed pid source (FreeCast.amount grant) oid gs (contextFrom source oid gs)) (Projection.viewOfObject oid gs) (FreeCast.spells grant)
     && maybe True (nthCast pid source (FreeCast.spells grant) oid gs) (FreeCast.onlyNth grant)
 
+-- CR 118.9: the budget a cast paying `grant`'s cost spends -- Just Nothing for
+-- an unlimited grant, Just its key while a use is left, and Nothing once it is
+-- spent. Once each turn is TurnRegisters.freeCastsUsedThisTurn under the
+-- granting object, unspentPermission's reading of the same PermissionLimit; a
+-- once-per-effect one has no stored row to drop, so no use (Parun.EffectLintSpec's
+-- OncePerEffect lint keeps a card from writing one).
+freeCastBudget :: PlayerId -> RowSource -> FreeCast.FreeCast -> GameState -> Maybe (Maybe (ObjectId, FreeCast.FreeCast))
+freeCastBudget pid source grant gs =
+  let spent sid = Set.member grant (Map.findWithDefault Set.empty sid (TurnRegisters.freeCastsUsedThisTurn (GameState.turn gs)))
+      budgeted usable = case RowSource.object source of
+        Just sid | usable && not (spent sid) -> Just (Just (sid, grant))
+        _ -> Nothing
+   in case FreeCast.limit grant of
+        PermissionLimit.Unlimited -> Just Nothing
+        PermissionLimit.OnceEachTurn -> budgeted True
+        PermissionLimit.OnceEachOfYourTurns -> budgeted (Turn.isActive gs pid)
+        PermissionLimit.OncePerEffect -> Nothing
+
+-- CR 118.9: record the budget a cast's chosen candidate spends
+-- (CandidateCost.spends), cleared at the turn handoff
+-- (Parun.Engine.Engine.beginTurnOf); spendCastPermission's per-turn arm.
+spendFreeCast :: Maybe (ObjectId, FreeCast.FreeCast) -> GameState -> GameState
+spendFreeCast spent gs = case spent of
+  Nothing -> gs
+  Just (sid, grant) ->
+    gs
+      { GameState.turn =
+          (GameState.turn gs)
+            { TurnRegisters.freeCastsUsedThisTurn = Map.insertWith Set.union sid (Set.singleton grant) (TurnRegisters.freeCastsUsedThisTurn (GameState.turn gs))
+            }
+      }
+
 -- CR 109.5: a grant's `amount` evaluated into Filter.slotAmount for the
 -- EnclosingAmount operand: read against the row's SOURCE with
 -- targetPerspective's "you", perEachCount's posture; against the card where
@@ -2864,9 +2896,11 @@ mayPlotFrom pid zone oid gs =
     | (source, PlayerEffect.PlotFrom grant) <- applying pid gs
     ]
 
--- CR 118.9 / Omniscience, Dream Halls: what may `pid` pay rather than `oid`'s
--- mana cost, because an EFFECT applies that alternative cost to it? One list of
--- components per distinct cost, empty for "without paying its mana cost".
+-- CR 118.9 / Omniscience, Dream Halls, Leyline of Mutation: what may `pid` pay
+-- rather than `oid`'s mana cost, because an EFFECT applies that alternative
+-- cost to it? One mana price and list of components per distinct cost, {0} and
+-- empty for "without paying its mana cost", each with the budget it spends
+-- (freeCastBudget).
 --
 -- The typed question Parun.Engine.Cost.candidateCostsFor asks wherever it
 -- offers the printed cost, so that module never sees a PlayerEffect
@@ -2877,7 +2911,8 @@ mayPlotFrom pid zone oid gs =
 --
 -- A DISJUNCTION, for mayCastFromGraveyard's reason: an alternative cost is
 -- OFFERED rather than imposed (CR 118.9b), so two effects offering the same
--- {0} give the player the same one choice -- hence the nub -- and CR 613.11's
+-- {0} give the player the same one choice -- hence the nub, which keeps two
+-- budgets apart as permissionOptions does -- and CR 613.11's
 -- timestamp order has nothing to order. CR 118.9a's "only one alternative cost" is not this
 -- function's to enforce -- it is CR 601.2b's announcement picking one candidate
 -- from the list.
@@ -2889,11 +2924,13 @@ mayPlotFrom pid zone oid gs =
 -- A grant's `from` is the GRANTEE's zone: Omniscience's "from YOUR hand" says
 -- nothing of alice's cast from bob's hand under Sen Triplets (see #2169), so
 -- the card's owner is asked beside its zone.
-ratherThanManaCost :: PlayerId -> ObjectId -> GameState -> [[CostComponent.CostComponent Keyword]]
+ratherThanManaCost :: PlayerId -> ObjectId -> GameState -> [(ManaCost.ManaCost, [CostComponent.CostComponent Keyword], Maybe (ObjectId, FreeCast.FreeCast))]
 ratherThanManaCost pid oid gs =
   let inTheirOwn zone = Game.zoneOf oid gs == Just zone && fmap Object.owner (Game.lookupObject oid gs) == Just pid
       allows (source, effect) = case effect of
-        PlayerEffect.PayRatherThanManaCost grant -> if all inTheirOwn (FreeCast.from grant) && freeCastAdmits pid source grant oid gs then Just (FreeCast.instead grant) else Nothing
+        PlayerEffect.PayRatherThanManaCost grant -> do
+          budget <- freeCastBudget pid source grant gs
+          if all inTheirOwn (FreeCast.from grant) && freeCastAdmits pid source grant oid gs then Just (FreeCast.mana grant, FreeCast.instead grant, budget) else Nothing
         PlayerEffect.CantGetCounters _ -> Nothing
         PlayerEffect.StateCoinFlip _ -> Nothing
         PlayerEffect.ModifyDieRoll _ -> Nothing
@@ -5227,12 +5264,12 @@ castUse effect = case effect of
   -- its target criteria never reached. No card in `data/cards/` writes one.
   PlayerEffect.ModifyCost modifier
     | CostModifier.subject modifier == CostSubject.Spells && Maybe.isNothing (CostModifier.whichTargets modifier) && Maybe.isNothing (CostModifier.perTarget modifier) -> Just (CostModifier.matching modifier)
-  -- A grant comparing against a computed number, confined to a zone or limited
-  -- to an ordinal answers Nothing for the targets' reason: `spells` alone would
-  -- spend it on a spell outside its `amount`, `from` or `onlyNth`. No card in
-  -- `data/cards/` writes one under Duration.UntilUsed.
+  -- A grant comparing against a computed number, confined to a zone, limited
+  -- to an ordinal or budgeted answers Nothing for the targets' reason: `spells`
+  -- alone would spend it on a spell outside its `amount`, `from`, `onlyNth` or
+  -- `limit`. No card in `data/cards/` writes one under Duration.UntilUsed.
   PlayerEffect.PayRatherThanManaCost grant
-    | Maybe.isNothing (FreeCast.amount grant) && Maybe.isNothing (FreeCast.from grant) && Maybe.isNothing (FreeCast.onlyNth grant) -> Just (FreeCast.spells grant)
+    | Maybe.isNothing (FreeCast.amount grant) && Maybe.isNothing (FreeCast.from grant) && Maybe.isNothing (FreeCast.onlyNth grant) && FreeCast.limit grant == PermissionLimit.Unlimited -> Just (FreeCast.spells grant)
   PlayerEffect.NextSpell criterion _ -> Just criterion
   _ -> fst <$> castFlashGrant effect
 

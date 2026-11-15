@@ -12,6 +12,7 @@ import qualified Parun.Codec.CastFromZone as CastFromZone
 import qualified Parun.Codec.Combat as Combat
 import qualified Parun.Codec.EndTurnSignal as EndTurnSignal
 import qualified Parun.Codec.EventGroup as EventGroup
+import qualified Parun.Codec.FreeCast as FreeCast
 import qualified Parun.Codec.GrantedAbility as GrantedAbility
 import qualified Parun.Codec.LastKnown as LastKnown
 import qualified Parun.Codec.LoggedEvent as LoggedEvent
@@ -61,6 +62,7 @@ codec = Fields.object $ do
   activationsThisTurn <- Fields.defaulted "activationsThisTurn" Seq.empty (Common.seq PastActivation.codec) TurnRegisters.activationsThisTurn
   castPermissionsUsedThisTurn <- Fields.defaulted "castPermissionsUsedThisTurn" Map.empty (Common.naturalMap ObjectId.codec (Common.set CastFromZone.codec)) TurnRegisters.castPermissionsUsedThisTurn
   rollModifiersUsedThisTurn <- Fields.defaulted "rollModifiersUsedThisTurn" Map.empty (Common.naturalMap ObjectId.codec (Common.set ModifiedRoll.codec)) TurnRegisters.rollModifiersUsedThisTurn
+  freeCastsUsedThisTurn <- Fields.defaulted "freeCastsUsedThisTurn" Map.empty (Common.naturalMap ObjectId.codec (Common.set FreeCast.codec)) TurnRegisters.freeCastsUsedThisTurn
   instructionsTakenThisTurn <- Fields.defaulted "instructionsTakenThisTurn" Seq.empty (Common.seq AbilityTriggered.codec) TurnRegisters.instructionsTakenThisTurn
   turnResume <- Fields.defaulted "turnResume" TurnResume.Type.AtStepStart TurnResume.codec TurnRegisters.turnResume
   pure
@@ -88,6 +90,7 @@ codec = Fields.object $ do
         TurnRegisters.activationsThisTurn = activationsThisTurn,
         TurnRegisters.castPermissionsUsedThisTurn = castPermissionsUsedThisTurn,
         TurnRegisters.rollModifiersUsedThisTurn = rollModifiersUsedThisTurn,
+        TurnRegisters.freeCastsUsedThisTurn = freeCastsUsedThisTurn,
         TurnRegisters.instructionsTakenThisTurn = instructionsTakenThisTurn,
         TurnRegisters.turnResume = turnResume
       }

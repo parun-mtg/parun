@@ -12,7 +12,9 @@ module Parun.Types.PermissionLimit where
 --
 -- Also the budget on a CR 706.2 die-roll modifier (Parun.Types.ModifiedRoll's
 -- `limit`, Night Shift of the Living Dead's "Do this only once each turn"),
--- spent in Parun.Types.TurnRegisters.rollModifiersUsedThisTurn.
+-- spent in Parun.Types.TurnRegisters.rollModifiersUsedThisTurn, and on a CR
+-- 118.9 grant (Parun.Types.FreeCast's `limit`, Warped Space's "Once each
+-- turn"), spent in Parun.Types.TurnRegisters.freeCastsUsedThisTurn.
 --
 -- The CASTING-side twin of Parun.Types.ActivationRestriction's TimesEachTurn,
 -- and deliberately a separate type rather than that one reused: CR 602.5b's
