@@ -303,9 +303,9 @@ eventBindingsOver board gs bearerBecame becameInGraveyard bearer you cond event 
   -- group. That is what makes a melded permanent's two triggers exile a card
   -- each instead of both exiling both. putIntoZoneSlots says which triggers.
   (TriggerCondition.PutIntoZone t, GameEvent.Moved m)
-    | bindsArrival t -> Binding.setBecame (ZoneChange.object (Moved.change m)) Map.empty
+    | bindsArrival t -> arrivalBindings t (ZoneChange.object (Moved.change m))
   (TriggerCondition.PutIntoZone t, GameEvent.CardArrived zc)
-    | bindsArrival t -> Binding.setBecame (ZoneChange.object zc) Map.empty
+    | bindsArrival t -> arrivalBindings t (ZoneChange.object zc)
   -- CR 603.6a: entersSlots' slots, off the entry matched.
   (TriggerCondition.Enters t, GameEvent.Moved (Moved.MkMoved zc _ _ _ _ _ _ _ _)) -> entersBindings gs t zc
   -- CR 708.7 through CR 603.2. A Matching subject binds Pine Walker's "that
@@ -1137,16 +1137,24 @@ putIntoZoneSlots t
   | bindsArrival t = Set.singleton Binding.became
   | otherwise = Set.empty
 
--- Does a PutIntoZone bind CR 400.7e's arrival? Only a single Matching card's,
--- and only into a public zone, which that rule's proviso asks (CR 400.2). A
--- Self subject's bearer already IS the arriving incarnation, which the source
--- slot names (Narcomoeba, Serra Avatar's "shuffle IT"); a batch names no one
--- card (Dutiful Knowledge Seeker).
+-- Does a PutIntoZone bind CR 400.7e's arrival? Only a Matching card's, and
+-- only into a public zone, which that rule's proviso asks (CR 400.2): Dutiful
+-- Knowledge Seeker's library names no card. A Self subject's bearer already IS
+-- the arriving incarnation, which the source slot names (Narcomoeba, Serra
+-- Avatar's "shuffle IT").
 bindsArrival :: PutIntoZoneTrigger.PutIntoZoneTrigger -> Bool
 bindsArrival t = case PutIntoZoneTrigger.card t of
   ActingPermanent.Self -> False
-  ActingPermanent.Matching _ ->
-    PutIntoZoneTrigger.batching t == Batching.EachOccurrence && not (Game.isHiddenZone (PutIntoZoneTrigger.to t))
+  ActingPermanent.Matching _ -> not (Game.isHiddenZone (PutIntoZoneTrigger.to t))
+
+-- CR 400.7e's arrival, as bindsArrival admits it. Per occurrence the one card;
+-- a OneOrMore batch stamps it as a one-member GROUP, which batchBindings joins
+-- across the batch (CR 603.2c), entersBindings' reason: Hedge Shredder's "put
+-- them onto the battlefield tapped" names every land card milled at once.
+arrivalBindings :: PutIntoZoneTrigger.PutIntoZoneTrigger -> ObjectId -> Map.Map SlotName.SlotName Binding
+arrivalBindings t arrival = case PutIntoZoneTrigger.batching t of
+  Batching.EachOccurrence -> Binding.setBecame arrival Map.empty
+  Batching.OneOrMore -> Binding.setBecameGroup (Seq.singleton arrival) Map.empty
 
 -- CR 603.6a: the slots an entry trigger stamps, by subject: the floor, then
 -- those bound only sometimes.

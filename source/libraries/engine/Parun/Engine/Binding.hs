@@ -337,8 +337,9 @@ facingPlayers = SlotName.MkSlotName (Text.pack "thoseFacing")
 -- shape follows -- a recipient for one (setBecame), a group for several
 -- (setBecameGroup) -- and Parun.Engine.Event.Binding.setBecameArrivals is where the
 -- choice is made and justified. CR 701.62a's "a card you put into your
--- graveyard this way" (Paranormal Analyst) is the other plural: a CR 701.40f
--- refusal puts both looked-at cards there.
+-- graveyard this way" (Paranormal Analyst) is another plural: a CR 701.40f
+-- refusal puts both looked-at cards there. A OneOrMore batch is the third (CR
+-- 603.2c): Dunbarrow Revivalist's entrants, Hedge Shredder's milled lands.
 became :: SlotName
 became = SlotName.MkSlotName (Text.pack "became")
 
@@ -1612,8 +1613,9 @@ setPreventedDamageSources :: Set ObjectId -> Map SlotName Binding -> Map SlotNam
 setPreventedDamageSources oids = Map.insert preventedDamageSource (toRecipients (Set.map Recipient.ToObject oids))
 
 -- setBecame for a plural: the SEVERAL cards a melded permanent became as it left
--- the battlefield (CR 713.8c), or that a manifest dread put into a graveyard (CR
--- 701.62a), bound as a group so an ObjectRef.InSlot reader acts on each of them.
+-- the battlefield (CR 713.8c), that a manifest dread put into a graveyard (CR
+-- 701.62a), or that a OneOrMore batch moved (CR 603.2c), bound as a group so an
+-- ObjectRef.InSlot reader acts on each of them.
 -- Parun.Engine.Event.Binding.setBecameArrivals says why the shape differs from
 -- setBecame's.
 setBecameGroup :: Seq ObjectId -> Map SlotName Binding -> Map SlotName Binding
