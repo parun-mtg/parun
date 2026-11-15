@@ -11394,7 +11394,7 @@ merge sid target side = do
             -- earlier than the merge, so while it lasts the merge applies OVER
             -- it, and once it ends over the stamp above. Each row keeps its own
             -- expiry and timestamp and carries the merge read over it.
-            -- Parun.MutateSpec's "CR 731.2a/613.7 a merge outranks Mirrorweave's
+            -- The mutate scenario "CR 731.2a/613.7 a merge outranks Mirrorweave's
             -- copy at once and is recomputed when it ends" proves both.
             --
             -- The row carries CR 731.2h's flipped reading of the merge as its

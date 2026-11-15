@@ -55,7 +55,7 @@ import Parun.Types.PlayerId (PlayerId)
 -- because the rule keeps it alive past the instruction that gave it, which
 -- leaves nothing to derive it from. It names a player who need not be the OWNER:
 -- Extract Power looks at each player's top card and exiles them, so the caster
--- may look at a card somebody else owns. Parun.ExileSpec's "CR 406.3 the player
+-- may look at a card somebody else owns. The exile scenario "CR 406.3 the player
 -- the exiling instruction let look names both cards, and the owner who was shown
 -- nothing gets their pile" is what proves the two seats come apart.
 --
@@ -63,7 +63,7 @@ import Parun.Types.PlayerId (PlayerId)
 -- stored as a seat: hideaway's granted ability names "the player who controls
 -- the permanent that exiled this card", so control is read afresh here. Which
 -- permanent that is comes off CR 607.2's link (GameState.exiledWith), written by
--- the same instruction's exile. Parun.ExileSpec's "CR 702.75a the look follows
+-- the same instruction's exile. The exile scenario "CR 702.75a the look follows
 -- control of the land that exiled the card, and CR 406.3's does not" is what
 -- proves the read is live. Live and STICKY are not in tension: `accrueLookers`
 -- below turns each seat that read into an ExileLooker.ThePlayer of its own, which
@@ -124,7 +124,7 @@ exilerController oid gs = do
 -- stamp on a face-up exiled card is inert, `mayLookAt` reading Object.exileLookers
 -- only where CR 406.3's face-up default has not already answered yes.
 --
--- Parun.ExileSpec's "CR 406.3 the look bob had while he controlled the land
+-- The exile scenario "CR 406.3 the look bob had while he controlled the land
 -- survives losing it, and a land that exiled nothing gives him none" is what
 -- proves the stamp outlives the control.
 accrueLookers :: GameState.GameState -> GameState.GameState

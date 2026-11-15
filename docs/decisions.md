@@ -1116,9 +1116,9 @@ Entries are ordered by the first rule each cites.
   status, stops Cubwarden over a nightbound Werewolf turning at day. Neither front
   nor back face up, reading CR 731.2i with 701.27h, does the same. A pile with two
   double-faced components has no printing.
-- **Site**: `Parun.Engine.Game.isFrontFaceUp`, proved by `Parun.MutateSpec`'s
-  "CR 731.2i/702.145c a Cubwarden over a nightbound Werewolf turns with the day
-  and back with the night".
+- **Site**: `Parun.Engine.Game.isFrontFaceUp`, proved by the scenario "CR
+  731.2i/702.145c a Cubwarden over a nightbound Werewolf turns with the day and
+  back with the night" (`data/scenarios/mutate/`).
 - **Issue**: #5037.
 
 ## Whether speed can pass 4
@@ -1341,8 +1341,9 @@ Entries are ordered by the first rule each cites.
 - **Rejected**: One component per card: "topmost" gets two heads and no
   tie-break. Refusing the merge: the CR states no exclusion.
 - **Site**: `Parun.Types.MergeComponent.OfMeld` and
-  `Parun.Engine.Event.mergeComponents`, proved by `Parun.MutateSpec`'s "CR
-  731.2a/713.5c Cubwarden merges with a melded permanent, over and under".
+  `Parun.Engine.Event.mergeComponents`, proved by the scenario pair "CR
+  731.2a/713.5c Cubwarden merges with a melded permanent, over and under"
+  (`data/scenarios/mutate/`).
 - **Issue**: PR #3456.
 
 ## Which rows CR 731.3e counts as reaching only cards

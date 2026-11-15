@@ -3831,7 +3831,7 @@ mutateCosts keywords =
 -- The owner conjunct is Filter.Shares Owner Source and NOT
 -- Filter.HeldBy Holder.Owner You: rule 702.140a names the SPELL's owner, where CR 109.5's
 -- "you" is the spell's controller at CR 601.2c and CR 608.2b. The two part for a
--- spell cast off a card its caster does not own (Hostage Taker's permission). See Parun.MutateSpec's "CR
+-- spell cast off a card its caster does not own (Hostage Taker's permission). See the mutate scenario "CR
 -- 702.140a a stolen mutate spell may target the owner's creature and not the
 -- caster's".
 --

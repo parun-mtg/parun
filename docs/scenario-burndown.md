@@ -582,23 +582,23 @@ out: grep for them.
 
 ### `ExileSpec`
 
-- CR 305.9 a hidden Forest is played as the turn's land and never cast for free | `board:exile-linked` `check:lands-played`
-- CR 406.3 the look bob had while he controlled the land survives losing it, and a land that exiled nothing gives him none | `check:pile-offer`
-- CR 406.3 the player the exiling instruction let look names both cards, and the owner who was shown nothing gets their pile | `check:helper-offerTo` `check:helper-pilesIn` `check:helper-faceDownExiled` `check:other-Object.owner`
-- CR 406.3a a Grist card exiled FACE DOWN has no characteristics to function from | `check:power-toughness-absent` `board:second-game`
-- CR 406.3a the flashback card exiled face down has no flashback to be targeted by, so the casting is reversed | `check:face-down` `check:legal-targets`
-- CR 406.3a the foretold card is turned face up as it is cast, so the noncreature tax passes it by | `board:foretold`
-- CR 406.4 a draw answered with a card outside the named pile falls back to a card in it | `check:face-down` `move:pile-target`
-- CR 406.4 a pile of one card is drawn from without asking, and a pile of two is asked about | `move:pile-target`
-- CR 406.4 choosing the pile shuffles the card the random draw named, not the other one | `check:face-down` `move:pile-target`
-- CR 406.4 the owner of a foretold card shuffles it out of exile and an opponent aiming at it by name gets the face-up one | `board:foretold`
-- CR 406.4 two castings of one spell make two piles, and the draw comes out of the pile that was named | `check:face-down` `check:legal-targets` `move:pile-target`
-- CR 603.7 at the next end step the exiled cards return to hand and alice draws | `check:delayed-triggers` `check:face-down`
-- CR 607.2a the play ability names only what THIS permanent exiled, and a copy names what the copy exiled | `board:exile-linked`
-- CR 608.2h the play ability reads the turn's declarations as it resolves, so two attackers is one short and three is not | `board:exile-linked`
-- CR 702.75a hideaway 4 hides the card its controller named and bottoms the other three, and only she may name it afterwards | `check:helper-offerTo` `check:helper-pilesIn`
-- CR 702.75a the look follows control of the land that exiled the card, and CR 406.3's does not | `board:exile-linked` `check:legal-targets`
-- CR 707.2 the look follows the copy that exiled the card, not the Windbrisk Heights it copied | `board:exile-linked` `check:legal-targets`
+- ~~CR 305.9 a hidden Forest is played as the turn's land and never cast for free | `board:exile-linked` `check:lands-played`~~
+- ~~CR 406.3 the look bob had while he controlled the land survives losing it, and a land that exiled nothing gives him none | `check:pile-offer`~~
+- ~~CR 406.3 the player the exiling instruction let look names both cards, and the owner who was shown nothing gets their pile | `check:helper-offerTo` `check:helper-pilesIn` `check:helper-faceDownExiled` `check:other-Object.owner`~~
+- ~~CR 406.3a a Grist card exiled FACE DOWN has no characteristics to function from | `check:power-toughness-absent` `board:second-game`~~
+- ~~CR 406.3a the flashback card exiled face down has no flashback to be targeted by, so the casting is reversed | `check:face-down` `check:legal-targets`~~
+- ~~CR 406.3a the foretold card is turned face up as it is cast, so the noncreature tax passes it by | `board:foretold`~~
+- ~~CR 406.4 a draw answered with a card outside the named pile falls back to a card in it | `check:face-down` `move:pile-target`~~
+- ~~CR 406.4 a pile of one card is drawn from without asking, and a pile of two is asked about | `move:pile-target`~~
+- ~~CR 406.4 choosing the pile shuffles the card the random draw named, not the other one | `check:face-down` `move:pile-target`~~
+- ~~CR 406.4 the owner of a foretold card shuffles it out of exile and an opponent aiming at it by name gets the face-up one | `board:foretold`~~
+- ~~CR 406.4 two castings of one spell make two piles, and the draw comes out of the pile that was named | `check:face-down` `check:legal-targets` `move:pile-target`~~
+- ~~CR 603.7 at the next end step the exiled cards return to hand and alice draws | `check:delayed-triggers` `check:face-down`~~
+- ~~CR 607.2a the play ability names only what THIS permanent exiled, and a copy names what the copy exiled | `board:exile-linked`~~
+- ~~CR 608.2h the play ability reads the turn's declarations as it resolves, so two attackers is one short and three is not | `board:exile-linked`~~
+- ~~CR 702.75a hideaway 4 hides the card its controller named and bottoms the other three, and only she may name it afterwards | `check:helper-offerTo` `check:helper-pilesIn`~~
+- ~~CR 702.75a the look follows control of the land that exiled the card, and CR 406.3's does not | `board:exile-linked` `check:legal-targets`~~
+- ~~CR 707.2 the look follows the copy that exiled the card, not the Windbrisk Heights it copied | `board:exile-linked` `check:legal-targets`~~
 
 ### `ExpirySpec`
 
@@ -853,26 +853,26 @@ out: grep for them.
 
 ### `MutateSpec`
 
-- CR 702.140a a stolen mutate spell may target the owner's creature and not the caster's | `board:exile-linked`
-- CR 702.140c a merge asks for its side exactly once, whatever represents the target | `board:source-ofmeld`
-- CR 702.140e a Dormant Gomazoa under a Cubwarden still does not untap | `board:source-ofmerge`
-- CR 702.140e a Prized Unicorn under a Cubwarden still makes bob block it | `board:source-ofmerge`
-- CR 702.140e an Exalted Dragon under a Cubwarden still charges a land to attack | `board:source-ofmerge`
-- CR 731.2/111.13 a copy of a mutating creature spell merges, as a token and not as a card | `check:other-Game.componentsOf`
-- CR 731.2a/613.7 a merge outranks Mirrorweave's copy at once and is recomputed when it ends | `board:copyeffects`
-- CR 731.2a/713.5c Cubwarden merges with a melded permanent, over and under | `board:source-ofmeld`
-- CR 731.2a/731.2e a face-down merged permanent turned face up shows the topmost component's own face | `board:battlefield` `board:objects-ids`
-- CR 731.2d a merged permanent is a token only if its topmost component is | `board:source-ofmerge`
-- CR 731.2e a merge over a face-down permanent leaves the topmost component's face-up status | `board:battlefield` `board:objects-ids`
-- CR 731.2g a face-down merged permanent with a sorcery card in it stays face down | `board:entered-with`
-- CR 731.2h a flipped merged permanent uses its flip component's alternative characteristics | `board:source-ofmerge`
-- CR 731.2h a merged permanent flips for a flip component that is not its topmost one | `board:source-ofmerge`
-- CR 731.2i a merged permanent transforms by turning its double-faced component over | `board:source-ofmerge`
-- CR 731.2i/702.145c a Cubwarden over a nightbound Werewolf turns with the day and back with the night | `board:daytime`
-- CR 731.2i/707.2 a Clone of a transformed merged permanent copies the turned-over reading | `board:source-ofmerge`
-- CR 731.2j Cyber Conversion does nothing to a merged permanent with a double-faced component | `board:source-ofmerge`
-- CR 731.3/111.7 a merged permanent's token component ceases to exist while its card is put into the graveyard | `board:source-ofmerge`
-- CR 731.3/603.6c a merged permanent's component fires its own put-into-a-graveyard trigger from either arrangement | `board:source-ofmerge`
+- ~~CR 702.140a a stolen mutate spell may target the owner's creature and not the caster's | `board:exile-linked`~~
+- ~~CR 702.140c a merge asks for its side exactly once, whatever represents the target | `board:source-ofmeld`~~
+- ~~CR 702.140e a Dormant Gomazoa under a Cubwarden still does not untap | `board:source-ofmerge`~~
+- ~~CR 702.140e a Prized Unicorn under a Cubwarden still makes bob block it | `board:source-ofmerge`~~
+- ~~CR 702.140e an Exalted Dragon under a Cubwarden still charges a land to attack | `board:source-ofmerge`~~
+- ~~CR 731.2/111.13 a copy of a mutating creature spell merges, as a token and not as a card | `check:other-Game.componentsOf`~~
+- ~~CR 731.2a/613.7 a merge outranks Mirrorweave's copy at once and is recomputed when it ends | `board:copyeffects`~~
+- ~~CR 731.2a/713.5c Cubwarden merges with a melded permanent, over and under | `board:source-ofmeld`~~
+- ~~CR 731.2a/731.2e a face-down merged permanent turned face up shows the topmost component's own face | `board:battlefield` `board:objects-ids`~~
+- ~~CR 731.2d a merged permanent is a token only if its topmost component is | `board:source-ofmerge`~~
+- ~~CR 731.2e a merge over a face-down permanent leaves the topmost component's face-up status | `board:battlefield` `board:objects-ids`~~
+- ~~CR 731.2g a face-down merged permanent with a sorcery card in it stays face down | `board:entered-with`~~
+- ~~CR 731.2h a flipped merged permanent uses its flip component's alternative characteristics | `board:source-ofmerge`~~
+- ~~CR 731.2h a merged permanent flips for a flip component that is not its topmost one | `board:source-ofmerge`~~
+- ~~CR 731.2i a merged permanent transforms by turning its double-faced component over | `board:source-ofmerge`~~
+- ~~CR 731.2i/702.145c a Cubwarden over a nightbound Werewolf turns with the day and back with the night | `board:daytime`~~
+- ~~CR 731.2i/707.2 a Clone of a transformed merged permanent copies the turned-over reading | `board:source-ofmerge`~~
+- ~~CR 731.2j Cyber Conversion does nothing to a merged permanent with a double-faced component | `board:source-ofmerge`~~
+- ~~CR 731.3/111.7 a merged permanent's token component ceases to exist while its card is put into the graveyard | `board:source-ofmerge`~~
+- ~~CR 731.3/603.6c a merged permanent's component fires its own put-into-a-graveyard trigger from either arrangement | `board:source-ofmerge`~~
 
 ### `OutsideTheGameSpec`
 

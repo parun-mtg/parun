@@ -2150,8 +2150,9 @@ divisionCap counting = fmap counting . TargetSlot.divided
 -- face-down card has no characteristics, so the only filters that can admit one
 -- ask about public facts -- who owns it (CR 108.3), whether it is face down.
 -- Parun.Engine.Projection.View.baseCharacteristics is what makes that true of
--- parun's own answer, and Parun.ExileSpec's Runic Repetition group proves it: a
--- slot wanting flashback admits no card of a face-down pile, so no pile is
+-- parun's own answer, and the exile scenario "CR 406.3a the flashback card
+-- exiled face down has no flashback to be targeted by" proves it: a slot wanting
+-- flashback admits no card of a face-down pile, so no pile is
 -- offered for it at all.
 piledOffer :: Maybe Natural -> Maybe PlayerId -> GameState -> Set Recipient -> Set Recipient
 piledOffer most perspective gs recipients =

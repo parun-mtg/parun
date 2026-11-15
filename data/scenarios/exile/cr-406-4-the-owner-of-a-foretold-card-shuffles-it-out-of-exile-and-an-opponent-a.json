@@ -1,0 +1,53 @@
+{
+  "description": "CR 406.4 the owner of a foretold card shuffles it out of exile and an opponent aiming at it by name gets the face-up one",
+  "note": "CR 406.4 turns a permission to look into a permission to choose: alice may look at her foretold Raven, so her Synthetic Blind Reclamation names it; bob may not, so the same spell offers him the face-up Ogre Sentry by name and the Raven only as its pile, and his aim takes the face-up card. Each shuffle goes to the chosen card's owner's library, so the two casts stock different libraries.",
+  "board": {
+    "seats": [
+      {
+        "name": "alice",
+        "battlefield": [
+          { "card": "Island", "label": "i1" },
+          { "card": "Island", "label": "i2" },
+          { "card": "Island", "label": "i3" },
+          { "card": "Island", "label": "i4" }
+        ],
+        "hand": [
+          { "card": "Augury Raven", "label": "raven" },
+          { "card": "Synthetic Blind Reclamation", "label": "a-spell" }
+        ]
+      },
+      {
+        "name": "bob",
+        "battlefield": [
+          { "card": "Island", "label": "b1" },
+          { "card": "Island", "label": "b2" }
+        ],
+        "hand": [{ "card": "Synthetic Blind Reclamation", "label": "b-spell" }],
+        "exile": [
+          { "card": "Ogre Sentry", "label": "sentry" },
+          { "card": "Goblin Piker", "label": "piker" }
+        ]
+      }
+    ],
+    "active": "alice",
+    "step": "PrecombatMain"
+  },
+  "timeline": [
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": { "Take": { "action": "Foretell $raven", "mana": ["$i1", "$i2", null] } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass" },
+    { "turn": 1, "step": "PrecombatMain", "player": "bob", "do": { "Cast": { "object": "$b-spell", "targets": ["$sentry"], "mana": ["$b1", "$b2"] } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "bob", "check": { "View": { "of": "Prompt", "is": {"kind":"ChooseTargets","offer":{"source":"Synthetic Blind Reclamation#2","slots":[["target",[1,[["Object","$sentry"],["Object","$piker"],["Pile",{"pile":{"type":"OfForetold","value":11},"ordinal":1}]]]]]}} } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "bob", "do": "Pass" },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass" },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": { "Answer": { "prompt": "Shuffle", "with": ["Ogre Sentry"] } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "View": { "of": "Zone", "player": "alice", "zone": "Exile", "is": ["Augury Raven"] } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "View": { "of": "Zone", "player": "bob", "zone": "Library", "is": ["Ogre Sentry"] } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": { "Cast": { "object": "$a-spell", "targets": ["Augury Raven"], "mana": ["$i3", "$i4"] } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "View": { "of": "Prompt", "is": {"kind":"ChooseTargets","offer":{"source":"Synthetic Blind Reclamation#2","slots":[["target",[1,[["Object","$piker"],["Object","Augury Raven"]]]]]}} } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass" },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": { "Answer": { "prompt": "Shuffle", "with": ["Augury Raven"] } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "View": { "of": "Zone", "player": "alice", "zone": "Exile", "is": [] } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "View": { "of": "Zone", "player": "bob", "zone": "Exile", "is": ["$piker"] } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "View": { "of": "Zone", "player": "alice", "zone": "Library", "is": ["Augury Raven"] } } }
+  ]
+}
