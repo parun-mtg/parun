@@ -10,6 +10,7 @@ import qualified Parun.Engine.Decide as Decide
 import qualified Parun.Engine.Exile as Exile
 import qualified Parun.Engine.Game as Game
 import qualified Parun.Engine.PlayerEffect as PlayerEffect
+import qualified Parun.Engine.Projection as Projection
 import qualified Parun.Engine.Projection.View as View
 import qualified Parun.Types.Audience as Audience
 import qualified Parun.Types.BeginningStep as BeginningStep
@@ -179,7 +180,7 @@ base pid oid gs = case Game.lookupObject oid gs of
     Just zone -> case Object.facing obj of
       Facing.FaceUp -> Visibility.Visible
       Facing.FaceDown _
-        | zone == Zone.Battlefield || zone == Zone.Stack -> visibleIf (View.controllerOf oid gs == Just pid) -- CR 708.5
+        | zone == Zone.Battlefield || zone == Zone.Stack -> visibleIf (View.controllerOf oid gs == Just pid) <> shownTo pid oid gs -- CR 708.5
         | Conspiracy.isFaceDownConspiracy oid gs -> visibleIf (View.controllerOf oid gs == Just pid) -- CR 315.7
         | otherwise -> Visibility.Obscured -- CR 708.5
 
@@ -194,31 +195,37 @@ reviewsHandOf pid owner gs =
       beside = List.elem owner (Game.neighbours pid gs)
    in pid == owner || Teams.sameTeam (Game.teams gs) pid owner && (not (GameSettings.alternatingTeams settings) || beside)
 
--- | CR 401.5 / 400.2: a player effect showing the owner's hand or top card.
+-- | CR 401.5 / 400.2 / 708.5: a player effect showing a player's hand, top card
+-- or face-down creatures.
 shownTo :: PlayerId -> ObjectId -> GameState.GameState -> Visibility.Visibility
 shownTo seat oid gs = case Game.lookupObject oid gs of
   Nothing -> Visibility.Obscured
   Just obj ->
     let owner = Object.owner obj
+        zone = Game.zoneOf oid gs
+        -- CR 108.3, 110.2: a hidden card is its owner's, a permanent its controller's.
+        holder = if zone == Just Zone.Battlefield then View.controllerOf oid gs else Just owner
         isTop = Game.shownTop owner gs == Just oid
-        reaches grant = case Shows.to grant of
+        reaches (controller, grant) = case Shows.to grant of
           Audience.Everyone -> True
-          Audience.ThatPlayer -> seat == owner
-        covers grant = case (Shows.cards grant, Game.zoneOf oid gs) of
+          Audience.ThatPlayer -> holder == Just seat
+          Audience.Controller -> controller == Just seat
+        covers (_, grant) = case (Shows.cards grant, zone) of
           (ShownCards.Hand, Just Zone.Hand) -> True
           (ShownCards.TopOfLibrary, Just Zone.Library) -> isTop
+          (ShownCards.FaceDownCreatures, Just Zone.Battlefield) -> Projection.isCreatureOf oid gs && not (Map.member oid (GameState.phasedOut gs)) -- CR 109.2, 702.26b
           _ -> False
      in -- Only the top card of a library can be shown, so skip the grants below it.
-        if Game.zoneOf oid gs == Just Zone.Library && not isTop
+        if zone == Just Zone.Library && not isTop
           then Visibility.Obscured
-          else visibleIf (any (\grant -> covers grant && reaches grant) (PlayerEffect.shownGrants owner gs))
+          else visibleIf (any (\row -> covers row && reaches row) (foldMap (`PlayerEffect.shownGrants` gs) holder))
 
 -- | CR 401.6: the top card of a player's library, if a player effect reveals it
 -- to every player now. A grant showing it to its owner alone is a look, not a
 -- reveal.
 revealedTop :: PlayerId -> GameState.GameState -> Maybe ObjectId
 revealedTop pid gs =
-  let reveals grant = Shows.cards grant == ShownCards.TopOfLibrary && Shows.to grant == Audience.Everyone
+  let reveals (_, grant) = Shows.cards grant == ShownCards.TopOfLibrary && Shows.to grant == Audience.Everyone
    in if any reveals (PlayerEffect.shownGrants pid gs) then Game.shownTop pid gs else Nothing
 
 visibleIf :: Bool -> Visibility.Visibility
