@@ -2024,19 +2024,26 @@ mergeBinding a b =
       Binding.perMember = Binding.perMember a <|> Binding.perMember b
     }
 
--- CR 400.7h: `binding` with every naming of `old` renamed to `new`, each
--- recipient keeping its kind. Built field by field, as mergeBinding is, so a
--- new field is a missing-field error here rather than silently kept.
-renameObject :: ObjectId -> ObjectId -> Binding -> Binding
-renameObject old new binding =
+-- CR 400.7h: `recipient` with a naming of `old` renamed to `new`, keeping its
+-- kind.
+renameRecipientObject :: ObjectId -> ObjectId -> Recipient.Recipient -> Recipient.Recipient
+renameRecipientObject old new recipient =
   let rename oid = if oid == old then new else oid
-      renameRecipient recipient = case recipient of
+   in case recipient of
         Recipient.ToCreature oid -> Recipient.ToCreature (rename oid)
         Recipient.ToPlaneswalker oid -> Recipient.ToPlaneswalker (rename oid)
         Recipient.ToBattle oid -> Recipient.ToBattle (rename oid)
         Recipient.ToObject oid -> Recipient.ToObject (rename oid)
         Recipient.ToPlayer pid -> Recipient.ToPlayer pid
         Recipient.ToPile pile -> Recipient.ToPile pile
+
+-- CR 400.7h: `binding` with every naming of `old` renamed to `new`, each
+-- recipient keeping its kind. Built field by field, as mergeBinding is, so a
+-- new field is a missing-field error here rather than silently kept.
+renameObject :: ObjectId -> ObjectId -> Binding -> Binding
+renameObject old new binding =
+  let rename oid = if oid == old then new else oid
+      renameRecipient = renameRecipientObject old new
    in Binding.MkBinding
         { Binding.targets = fmap (Set.map renameRecipient) (Binding.targets binding),
           Binding.amount = Binding.amount binding,

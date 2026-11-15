@@ -10,6 +10,7 @@ import qualified Parun.Types.GrantedAbility as GrantedAbility
 import qualified Parun.Types.ObjectId as ObjectId
 import qualified Parun.Types.PlayerId as PlayerId
 import qualified Parun.Types.PreventionRider as PreventionRider
+import qualified Parun.Types.Recipient as Recipient
 import qualified Parun.Types.ReplacementEffect as ReplacementEffect
 import qualified Parun.Types.ReplacementOrigin as ReplacementOrigin
 import qualified Parun.Types.SlotName as SlotName
@@ -69,7 +70,7 @@ data ReplacementCandidate = MkReplacementCandidate
     -- a context that knows them. For a permanent's static replacement ability,
     -- which has no resolution behind it, the objects of its source's CR 400.7d
     -- cost record (Parun.Engine.Binding.paidCostRecord).
-    slots :: Map.Map SlotName.SlotName (Set.Set ObjectId.ObjectId),
+    slots :: Map.Map SlotName.SlotName (Set.Set Recipient.Recipient),
     -- | CR 608.2h: a stored effect's baked source choices, read in place of
     -- `source`'s own; Nothing reads them live.
     choices :: Maybe SourceChoices.SourceChoices

@@ -756,11 +756,9 @@ scopePlayers viewOf context =
 -- announcement behind it at all -- a static ability's projection -- and for a
 -- spell, whose source IS its stack object.
 --
--- A replacement's CONDITION still takes the fallback, which for it is #1783's
--- failure over again: Parun.Types.ActiveReplacement.slots holds only the OBJECT
--- half of the installing resolution's slots. No printing asks it -- see
--- Filter.Context.slotPlayers for the query -- since a row's "if that player"
--- is its pattern, which ControllerRelation.InSlot bakes at install.
+-- A floating replacement's condition never takes the fallback for a slot its
+-- row captured: Parun.Types.ActiveReplacement.slots holds the installing
+-- resolution's players beside its objects, and framedBySlots keys them here.
 slotPlayers :: Filter.Context -> GameState -> SlotName.SlotName -> Maybe [PlayerId]
 slotPlayers context gs name = case Map.lookup name (Filter.slotPlayers context) of
   Just pids -> Just (Set.toList pids)

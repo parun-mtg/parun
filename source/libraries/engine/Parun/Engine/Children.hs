@@ -3183,7 +3183,7 @@ activeReplacementChildren c (ActiveReplacement.MkActiveReplacement effect source
     <*> pure origin
     <*> traverse (storedCondition c) condition
     <*> traverse (preventionRiderChildren c) rider
-    <*> traverseSlots c (traverseSet (storedObject c)) slots
+    <*> traverseSlots c (traverseSet (storedRecipient c)) slots
     <*> pure choices
 
 -- | A delayed triggered ability's children (CR 603.7a).

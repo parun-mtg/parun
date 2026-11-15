@@ -1581,13 +1581,9 @@ data Context = MkContext
     -- `slotObjects` above's player half (Parun.Engine.Binding.playersBySlot),
     -- filled beside it by Parun.Engine.Projection.framedBySlots.
     --
-    -- A replacement's CONDITION leaves it empty: Parun.Types.ActiveReplacement
-    -- captures only the object half of the installing resolution's slots. Its
-    -- PATTERN names a slot's player through ControllerRelation.InSlot instead,
-    -- baked as the row is installed. Scryfall `o:/(this turn|until end of turn),
-    -- if (target|that) (player|opponent)/`, 2026-10-03, answers Plagiarize alone,
-    -- whose "if" is its pattern; a floating row whose condition named a slot's
-    -- player would need the half.
+    -- A replacement's CONDITION reads the players Parun.Types.ActiveReplacement
+    -- captured beside its objects. Its PATTERN names a slot's player through
+    -- ControllerRelation.InSlot instead, baked as the row is installed.
     --
     -- `matches` below reads it for IsBound against a player view and for an
     -- unbaked HeldByBound. It is otherwise a channel

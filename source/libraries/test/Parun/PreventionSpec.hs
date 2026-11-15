@@ -1363,7 +1363,7 @@ communalBulwarkReferentSpec s registry = Spec.describe s "Synthetic Communal Bul
     Spec.assertEqWith s "alice was OFFERED the captured source and answered it" (chosenSourcesIn (answersFor (aimAndChoose victim fireEater) armed rest)) [fireEater]
     Spec.assertBool s (Maybe.isNothing (Game.lookupObject fireEater armed)) "setup: the cost really did remove the Fire-Eater, so the id names nothing"
     Spec.assertEqWith s "setup: the Bulwark left exactly one floating row, and the stack is empty" (length (StoredEffects.replacements (GameState.stored armed)), TurnRegisters.stack (GameState.turn armed)) (1, [])
-    Spec.assertEqWith s "setup: that row captured the one slot its recipient names, holding the Fire-Eater" (foldMap (foldMap Set.toList . ActiveReplacement.slots) (StoredEffects.replacements (GameState.stored armed))) [fireEater]
+    Spec.assertEqWith s "setup: that row captured the one slot its recipient names, holding the Fire-Eater" (foldMap (foldMap Set.toList . ActiveReplacement.slots) (StoredEffects.replacements (GameState.stored armed))) [Recipient.ToObject fireEater]
     Spec.assertBool s (plainsId /= fireEater && plainsId /= victim) "setup: the id the twin names is a Plains and neither creature"
 
 -- CR 609.7a's third class off its LAST carrier, whose producers are Come Back

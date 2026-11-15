@@ -3181,7 +3181,7 @@ apply settle batch applied batchPrevented candidate event =
                             Seq.|> PendingReplacementEffect.MkPendingReplacementEffect
                               { PendingReplacementEffect.effects = riders,
                                 PendingReplacementEffect.targets =
-                                  Map.insert Binding.departedPermanent (Set.singleton (Recipient.ToObject (ZoneChange.departed zc))) (fmap (Set.map Recipient.ToObject) (ReplacementCandidate.slots candidate)),
+                                  Map.insert Binding.departedPermanent (Set.singleton (Recipient.ToObject (ZoneChange.departed zc))) (ReplacementCandidate.slots candidate),
                                 PendingReplacementEffect.controller = controller,
                                 PendingReplacementEffect.source = ReplacementCandidate.source candidate
                               }
@@ -4713,10 +4713,7 @@ apply settle batch applied batchPrevented candidate event =
       -- Parun.Types.PendingReplacementEffect.
       --
       -- The row's SLOTS carry CR 601.2c's target forward, which is what makes
-      -- "that creature" nameable at the event, and they are objects rather than
-      -- recipients (Parun.Types.ActiveReplacement.slots), so the tag is rebuilt
-      -- generically -- Recipient.objectOf is what every reader of an
-      -- ObjectRef.InSlot asks, and it admits ToObject.
+      -- "that creature" nameable at the event (Parun.Types.ActiveReplacement.slots).
       DamageRewrite.RunEffects effects -> do
         Replacement.consume (ReplacementCandidate.identity candidate)
         case ReplacementCandidate.controller candidate of
@@ -4734,7 +4731,7 @@ apply settle batch applied batchPrevented candidate event =
                           StoredEffects.pendingReplacementEffects (GameState.stored g)
                             Seq.|> PendingReplacementEffect.MkPendingReplacementEffect
                               { PendingReplacementEffect.effects = effects,
-                                PendingReplacementEffect.targets = fmap (Set.map Recipient.ToObject) (ReplacementCandidate.slots candidate),
+                                PendingReplacementEffect.targets = ReplacementCandidate.slots candidate,
                                 PendingReplacementEffect.controller = controller,
                                 PendingReplacementEffect.source = ReplacementCandidate.source candidate
                               }
@@ -5312,7 +5309,7 @@ apply settle batch applied batchPrevented candidate event =
                             StoredEffects.pendingReplacementEffects (GameState.stored g)
                               Seq.|> PendingReplacementEffect.MkPendingReplacementEffect
                                 { PendingReplacementEffect.effects = effects,
-                                  PendingReplacementEffect.targets = fmap (Set.map Recipient.ToObject) (ReplacementCandidate.slots candidate),
+                                  PendingReplacementEffect.targets = ReplacementCandidate.slots candidate,
                                   PendingReplacementEffect.controller = controller,
                                   PendingReplacementEffect.source = ReplacementCandidate.source candidate
                                 }
@@ -5477,7 +5474,7 @@ apply settle batch applied batchPrevented candidate event =
                       StoredEffects.pendingReplacementEffects (GameState.stored g)
                         Seq.|> PendingReplacementEffect.MkPendingReplacementEffect
                           { PendingReplacementEffect.effects = effects,
-                            PendingReplacementEffect.targets = fmap (Set.map Recipient.ToObject) (ReplacementCandidate.slots candidate),
+                            PendingReplacementEffect.targets = ReplacementCandidate.slots candidate,
                             PendingReplacementEffect.controller = controller,
                             PendingReplacementEffect.source = ReplacementCandidate.source candidate
                           }
@@ -5508,7 +5505,7 @@ apply settle batch applied batchPrevented candidate event =
                           StoredEffects.pendingReplacementEffects (GameState.stored g)
                             Seq.|> PendingReplacementEffect.MkPendingReplacementEffect
                               { PendingReplacementEffect.effects = effects,
-                                PendingReplacementEffect.targets = fmap (Set.map Recipient.ToObject) (ReplacementCandidate.slots candidate),
+                                PendingReplacementEffect.targets = ReplacementCandidate.slots candidate,
                                 PendingReplacementEffect.controller = controller,
                                 PendingReplacementEffect.source = ReplacementCandidate.source candidate
                               }
@@ -5729,7 +5726,7 @@ apply settle batch applied batchPrevented candidate event =
                                 PendingReplacementEffect.MkPendingReplacementEffect
                                   { PendingReplacementEffect.effects = effects,
                                     -- "this artifact" (Time Vault), Replacement.printedRider's binding.
-                                    PendingReplacementEffect.targets = Map.insert Binding.triggerSource (Set.singleton (Recipient.ToObject (ReplacementCandidate.source candidate))) (fmap (Set.map Recipient.ToObject) (ReplacementCandidate.slots candidate)),
+                                    PendingReplacementEffect.targets = Map.insert Binding.triggerSource (Set.singleton (Recipient.ToObject (ReplacementCandidate.source candidate))) (ReplacementCandidate.slots candidate),
                                     PendingReplacementEffect.controller = decider,
                                     PendingReplacementEffect.source = ReplacementCandidate.source candidate
                                   },
@@ -6141,7 +6138,7 @@ becomeCopyAs batch candidate asCopy oid = do
               -- it copies (Undercover Operative's "if you control that
               -- creature").
               hypothetical = stampOnto (stampWith (foldMap CopyClause.exceptions (filter (Maybe.isNothing . CopyClause.condition) clauses))) g0
-              framing = candidate {ReplacementCandidate.slots = Map.insert Binding.copiedObject (Set.singleton src2) (ReplacementCandidate.slots candidate)}
+              framing = candidate {ReplacementCandidate.slots = Map.insert Binding.copiedObject (Set.singleton (Recipient.ToObject src2)) (ReplacementCandidate.slots candidate)}
               holds = Condition.holds (Projection.fullView hypothetical) (Replacement.candidateContext hypothetical framing) hypothetical copier
               applies clause = all holds (CopyClause.condition clause)
               held = filter applies clauses
@@ -9745,8 +9742,7 @@ reenter oldId newId row = case ActiveReplacement.effect row of
 -- Parun.Engine.Cast.followIntoSpell, which differ only in which rows they pick.
 renameSlots :: ObjectId -> ObjectId -> ActiveReplacement.ActiveReplacement -> ActiveReplacement.ActiveReplacement
 renameSlots old new row =
-  let rename oid = if oid == old then new else oid
-   in row {ActiveReplacement.slots = fmap (Set.map rename) (ActiveReplacement.slots row)}
+  row {ActiveReplacement.slots = fmap (Set.map (Binding.renameRecipientObject old new)) (ActiveReplacement.slots row)}
 
 -- CR 400.7k / 702.35c: "effects referencing the discarded card can find" what a
 -- madness card not cast became, in a public zone: every stack object holding its

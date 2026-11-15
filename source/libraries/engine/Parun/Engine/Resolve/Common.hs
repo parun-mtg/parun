@@ -1701,7 +1701,7 @@ installDamageRow resolving targets slots controller source duration kind rewrite
               -- DamagePattern.whatSource, which Synthetic Turn the Blade writes,
               -- and Harm's Way's recipient description rides it as Divine
               -- Deflection's does.
-              ActiveReplacement.slots = Map.restrictKeys slots namedSlots,
+              ActiveReplacement.slots = fmap (Set.map Recipient.ToObject) (Map.restrictKeys slots namedSlots),
               -- CR 608.2h: the colour Avacyn, Guardian Angel chose as THIS
               -- resolution ran, under the acquisition it froze (CR 607.5).
               ActiveReplacement.choices = SourceContext.choicesOf (Game.readingAcquisition resolving source g source) source g
@@ -1904,7 +1904,7 @@ damageSourceCandidates context gs filter_ =
 referredToSources :: GameState -> [ObjectId]
 referredToSources gs =
   foldMap (\oid -> foldMap referentsOfObject (Game.lookupObject oid gs)) (Game.allStacks gs)
-    <> foldMap (\row -> ActiveReplacement.source row : (referentsOfReplacement (ActiveReplacement.effect row) <> foldMap Set.toList (ActiveReplacement.slots row))) (StoredEffects.replacements (GameState.stored gs))
+    <> foldMap (\row -> ActiveReplacement.source row : (referentsOfReplacement (ActiveReplacement.effect row) <> foldMap (Maybe.mapMaybe Recipient.objectOf . Set.toList) (ActiveReplacement.slots row))) (StoredEffects.replacements (GameState.stored gs))
     <> foldMap (\entry -> DelayedTrigger.source entry : referentsOfBindings (DelayedTrigger.bindings entry)) (StoredEffects.delayedTriggers (GameState.stored gs))
     -- CR 106.6a's spend triggers wait on the unspent units that carry them.
     <> foldMap (Maybe.mapMaybe (fmap SpendTrigger.source . ManaUnit.spendTrigger) . Mana.Type.unwrap) (GameState.manaPool gs)

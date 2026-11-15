@@ -3234,7 +3234,7 @@ replacementRow src controller slot oid rewrite gs =
             ActiveReplacement.origin = ReplacementOrigin.Other,
             ActiveReplacement.condition = Nothing,
             ActiveReplacement.rider = Nothing,
-            ActiveReplacement.slots = Map.singleton slot (Set.singleton oid),
+            ActiveReplacement.slots = Map.singleton slot (Set.singleton (Recipient.ToObject oid)),
             ActiveReplacement.choices = SourceContext.choicesOf (Game.acquisitionOf src gs) src gs
           }
    in (ts, stamped {GameState.stored = (GameState.stored stamped) {StoredEffects.replacements = active : StoredEffects.replacements (GameState.stored stamped)}})
@@ -3445,9 +3445,9 @@ armCastUnder caster sid name gs = case Projection.declaredDelayedAbility sid nam
 bindUser :: [ActivePlayerEffect.ActivePlayerEffect] -> ObjectId -> GameState -> GameState
 bindUser spent spell gs =
   let binds = [(ActivePlayerEffect.source row, slot) | row <- spent, Expiry.WhenUsed (Just slot) <- [ActivePlayerEffect.expiry row]]
-      bindIn source slots = foldr (\(from, slot) -> if from == source then Map.insertWith (\_ old -> old) slot (Set.singleton spell) else id) slots binds
-      bindPlayer row = row {ActivePlayerEffect.slots = bindIn (ActivePlayerEffect.source row) (ActivePlayerEffect.slots row)}
-      bindReplacement row = row {ActiveReplacement.slots = bindIn (ActiveReplacement.source row) (ActiveReplacement.slots row)}
+      bindIn named source slots = foldr (\(from, slot) -> if from == source then Map.insertWith (\_ old -> old) slot (Set.singleton named) else id) slots binds
+      bindPlayer row = row {ActivePlayerEffect.slots = bindIn spell (ActivePlayerEffect.source row) (ActivePlayerEffect.slots row)}
+      bindReplacement row = row {ActiveReplacement.slots = bindIn (Recipient.ToObject spell) (ActiveReplacement.source row) (ActiveReplacement.slots row)}
    in if null binds
         then gs
         else
