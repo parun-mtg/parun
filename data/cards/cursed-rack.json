@@ -13,7 +13,10 @@
         {
           "effect": {
             "type": "SetMaximumHandSize",
-            "value": 4
+            "value": {
+              "type": "Literal",
+              "value": 4
+            }
           },
           "scope": {
             "type": "ChosenPlayer"
