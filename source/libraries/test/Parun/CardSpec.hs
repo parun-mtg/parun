@@ -3412,7 +3412,7 @@ objectRefFilters ref = case ref of
   ObjectRef.AttachedToBound (AttachedToBound.MkAttachedToBound _ f _) -> unframed [f]
   ObjectRef.AttackedBy _ -> []
   ObjectRef.FromAnywhere _ -> []
-  ObjectRef.AtRandom inner -> objectRefFilters inner
+  ObjectRef.OneAmong _ inner -> objectRefFilters inner
   ObjectRef.AllOf refs -> foldMap objectRefFilters refs
 
 -- The Filter a Count folds over (CR 608.2h). Delegated to the *Counts family

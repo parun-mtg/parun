@@ -860,10 +860,13 @@ askingObjects offered resolving source controller legal chosen ref = case ref of
   ObjectRef.RandomCardInGraveyard random -> randomCardsInGraveyard resolving source controller legal random
   -- Capricious Efreet's "one of them": the pool read or asked first, then one
   -- drawn from it. The pool's InSlot reads `legal`, so a target CR 608.2b made
-  -- illegal is not among them.
-  ObjectRef.AtRandom inner -> do
+  -- illegal is not among them. Zack Fair's "an Equipment that was attached to
+  -- Zack Fair" is the controller's pick instead (CR 608.2d), unasked at one.
+  ObjectRef.OneAmong selection inner -> do
     pool <- askingObjects offered resolving source controller legal chosen inner
-    Maybe.maybeToList <$> Game.drawAmong Prompt.RandomObject pool
+    Maybe.maybeToList <$> case selection of
+      CardSelection.AtRandom -> Game.drawAmong Prompt.RandomObject pool
+      CardSelection.ByChoice -> Game.chooseAmong (\decider who candidates -> Prompt.ChoosePermanent decider who source candidates Seq.empty) controller pool
   -- Tovolar's "any number of Human Werewolves you control", read off a board CR
   -- 702.145c has already turned him over on.
   ObjectRef.ChosenPermanents choice -> snd <$> chosenPermanents AnyNumberOf.Permanents legal resolving controller source choice
@@ -1282,7 +1285,7 @@ objectRefRecipients legal resolving controller source gs ref = case ref of
   -- No recipients, for the same reason.
   ObjectRef.RandomCard _ -> []
   ObjectRef.RandomCardInGraveyard _ -> []
-  ObjectRef.AtRandom _ -> []
+  ObjectRef.OneAmong _ _ -> []
   ObjectRef.ChosenPermanents _ -> []
   -- A read, so the sweep answers it.
   ObjectRef.AttachedToBound _ -> fmap Recipient.ToObject (objectRefObjects legal resolving controller source gs ref)

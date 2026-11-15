@@ -22,6 +22,7 @@ import qualified Parun.Codec.TopOfLibraryUntil as TopOfLibraryUntil
 import qualified Parun.JsonCodec.Arm as Arm
 import qualified Parun.JsonCodec.Codec as Codec
 import qualified Parun.JsonCodec.Common as Common
+import qualified Parun.Types.CardSelection as CardSelection
 import qualified Parun.Types.ObjectRef as ObjectRef
 
 -- | Tagged like every other sum. The arms were previously told apart by
@@ -76,7 +77,10 @@ codec =
           Arm.payload "EachCardFromAmong" EachCardFromAmong.codec ObjectRef.EachCardFromAmong (\x -> case x of ObjectRef.EachCardFromAmong y -> Just y; _ -> Nothing),
           Arm.payload "RandomCard" RandomCard.codec ObjectRef.RandomCard (\x -> case x of ObjectRef.RandomCard y -> Just y; _ -> Nothing),
           Arm.payload "RandomCardInGraveyard" RandomCardInGraveyard.codec ObjectRef.RandomCardInGraveyard (\x -> case x of ObjectRef.RandomCardInGraveyard y -> Just y; _ -> Nothing),
-          Arm.payload "AtRandom" codec ObjectRef.AtRandom (\x -> case x of ObjectRef.AtRandom y -> Just y; _ -> Nothing),
+          -- OneAmong's two selections under a tag each, so the random arm's
+          -- printings kept their wire format.
+          Arm.payload "AtRandom" codec (ObjectRef.OneAmong CardSelection.AtRandom) (\x -> case x of ObjectRef.OneAmong CardSelection.AtRandom y -> Just y; _ -> Nothing),
+          Arm.payload "OneChosenAmong" codec (ObjectRef.OneAmong CardSelection.ByChoice) (\x -> case x of ObjectRef.OneAmong CardSelection.ByChoice y -> Just y; _ -> Nothing),
           Arm.payload "ChosenPermanents" ChosenPermanents.codec ObjectRef.ChosenPermanents (\x -> case x of ObjectRef.ChosenPermanents y -> Just y; _ -> Nothing),
           Arm.payload "AttachedToBound" AttachedToBound.codec ObjectRef.AttachedToBound (\x -> case x of ObjectRef.AttachedToBound y -> Just y; _ -> Nothing),
           Arm.payload "AttackedBy" SlotName.codec ObjectRef.AttackedBy (\x -> case x of ObjectRef.AttackedBy y -> Just y; _ -> Nothing),
@@ -108,7 +112,8 @@ tagOf x = case x of
   ObjectRef.EachCardFromAmong {} -> "EachCardFromAmong"
   ObjectRef.RandomCard {} -> "RandomCard"
   ObjectRef.RandomCardInGraveyard {} -> "RandomCardInGraveyard"
-  ObjectRef.AtRandom {} -> "AtRandom"
+  ObjectRef.OneAmong CardSelection.AtRandom _ -> "AtRandom"
+  ObjectRef.OneAmong CardSelection.ByChoice _ -> "OneChosenAmong"
   ObjectRef.ChosenPermanents {} -> "ChosenPermanents"
   ObjectRef.AttachedToBound {} -> "AttachedToBound"
   ObjectRef.AttackedBy {} -> "AttackedBy"

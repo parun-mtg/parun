@@ -615,7 +615,7 @@ objectRefSlots ref = joinTwo (joinSlots (fmap playerRefSlots (objectRefPlayerRef
   -- come through the scope, and the COUNT is TopOfLibrary's read.
   ObjectRef.RandomCardInGraveyard (RandomCardInGraveyard.MkRandomCardInGraveyard scope filter_ count) -> joinSlots [zoneScopeSlots scope, filterSlotsOf filter_, quantitySlots count]
   -- The pool's own reads.
-  ObjectRef.AtRandom inner -> objectRefSlots inner
+  ObjectRef.OneAmong _ inner -> objectRefSlots inner
   -- EachMatching's answer: the candidates come off the battlefield, so only the
   -- Filter reads a slot of its own. The CHOOSER's slots are the generic
   -- playerRefSlots fold this case is joined into, ChosenCardFromAmong's route
@@ -689,7 +689,7 @@ objectRefQuantities ref = case ref of
   -- How many cards randomness names out of each graveyard -- Make a Wish's
   -- printed two. The arm above's regression fence, for its reason.
   ObjectRef.RandomCardInGraveyard (RandomCardInGraveyard.MkRandomCardInGraveyard _ _ count) -> [count]
-  ObjectRef.AtRandom inner -> objectRefQuantities inner
+  ObjectRef.OneAmong _ inner -> objectRefQuantities inner
   -- At most how many permanents are chosen -- Teferi, Hero of Dominaria's
   -- printed two.
   ObjectRef.ChosenPermanents choice -> chosenPermanentsQuantities choice
@@ -741,7 +741,7 @@ objectRefPlayerRefs ref = case ref of
   -- ChosenCardInGraveyard's answer: the graveyards are named by a ZoneScope,
   -- which is not a PlayerRef, and randomness names no seat at all.
   ObjectRef.RandomCardInGraveyard (RandomCardInGraveyard.MkRandomCardInGraveyard _ _ _) -> []
-  ObjectRef.AtRandom inner -> objectRefPlayerRefs inner
+  ObjectRef.OneAmong _ inner -> objectRefPlayerRefs inner
   -- The seat that picks off the battlefield -- Wormfang Crab's opponent, and
   -- by default CR 608.2c's resolving controller. Pinned as the arm above is.
   ObjectRef.ChosenPermanents choice -> [ChosenPermanents.chooser choice]
@@ -3382,7 +3382,7 @@ objectRefObjects legal resolving controller source gs ref = case ref of
   -- Randomness, answered for real by Resolve.Effect.askingObjects.
   ObjectRef.RandomCard _ -> []
   ObjectRef.RandomCardInGraveyard _ -> []
-  ObjectRef.AtRandom _ -> []
+  ObjectRef.OneAmong _ _ -> []
 
 -- The CARDS in one player's library, top first (CR 401.2): a token shuffled in
 -- is there until CR 704.5d removes it (CR 111.7), and is not a card.

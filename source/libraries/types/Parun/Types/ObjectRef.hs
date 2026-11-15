@@ -2,6 +2,7 @@ module Parun.Types.ObjectRef where
 
 import qualified Data.List.NonEmpty as NonEmpty
 import qualified Parun.Types.AttachedToBound as AttachedToBound
+import qualified Parun.Types.CardSelection as CardSelection
 import qualified Parun.Types.ChosenCardFromAmong as ChosenCardFromAmong
 import qualified Parun.Types.ChosenCardInGraveyard as ChosenCardInGraveyard
 import qualified Parun.Types.ChosenCardInHand as ChosenCardInHand
@@ -136,9 +137,10 @@ data ObjectRef
     -- over a PUBLIC zone (CR 400.2), which is why a ZoneScope stands where that
     -- arm's single PlayerRef does.
     RandomCardInGraveyard RandomCardInGraveyard.RandomCardInGraveyard
-  | -- | CR 608.2b / Capricious Efreet: one object randomness names out of what the
-    -- inner ref names as the effect runs -- a target slot's still-legal members.
-    AtRandom ObjectRef
+  | -- | CR 608.2b / 608.2d: one object out of what the inner ref names as the
+    -- effect runs, drawn at random (Capricious Efreet) or chosen by the resolving
+    -- controller (Zack Fair's "an Equipment that was attached to Zack Fair").
+    OneAmong CardSelection.CardSelection ObjectRef
   | -- | CR 608.2d: the permanents on the battlefield -- or the objects
     -- in another shared zone, Mirror of Fate's exile -- matching the payload's
     -- Filter that its chooser picks as the effect runs, one or up to a ceiling
