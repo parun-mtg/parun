@@ -118,31 +118,31 @@ out: grep for them.
 
 ### `BoardEffectSpec`
 
-- CR 109.2 Corrosive Gale deals X to each creature with flying, and none to the one without
+- ~~CR 109.2 Corrosive Gale deals X to each creature with flying, and none to the one without~~
 - CR 109.2b/701.6a counters every other spell on the stack and draws for what it countered | `board:stack`
-- CR 109.5 no other player's library is touched | `check:helper-sortedNames`
-- CR 111.3 the Horror is an X/X where X is the number of creatures DESTROYED | `check:helper-horrorPrintedPower`
+- ~~CR 109.5 no other player's library is touched | `check:helper-sortedNames`~~
+- ~~CR 111.3 the Horror is an X/X where X is the number of creatures DESTROYED | `check:helper-horrorPrintedPower`~~
 - CR 113.6g removing the uncounterable spell leaves the count unchanged | `board:stack`
 - CR 113.9 with only abilities countered, the Faeries still come and Baral stays silent | `board:stack`
-- CR 206.3c destroys the listed nontoken permanents, through a shield, and nothing else | `card:reknit`
-- CR 302.6 the newly gained enchantments are re-Sicked and the one alice already controlled is not | `check:other-Object.sickness`
-- CR 401.2 an empty library has no top card, so the exile does nothing | `check:helper-namesIn`
-- CR 401.2 the top three cards of your library are exiled, and the rest stay put | `check:helper-permissionsIn`
+- ~~CR 206.3c destroys the listed nontoken permanents, through a shield, and nothing else | `card:reknit`~~
+- ~~CR 302.6 the newly gained enchantments are re-Sicked and the one alice already controlled is not | `check:other-Object.sickness`~~
+- ~~CR 401.2 an empty library has no top card, so the exile does nothing | `check:helper-namesIn`~~
+- ~~CR 401.2 the top three cards of your library are exiled, and the rest stay put | `check:helper-permissionsIn`~~
 - CR 405.1/701.6a counters an opponent's abilities beside their spells, and makes a Faerie for each | `board:stack`
-- CR 514.2 the window closes at the end of the turn it named | `check:other-Object.playPermissions`
-- CR 603.7 the delayed ability sacrifices what came back at the caster's next end step | `board:delayed-trigger` `board:entered-with` `board:graveyard`
+- ~~CR 514.2 the window closes at the end of the turn it named | `check:other-Object.playPermissions`~~
+- ~~CR 603.7 the delayed ability sacrifices what came back at the caster's next end step | `board:delayed-trigger` `board:entered-with` `board:graveyard`~~
 - CR 608.2d the delayed +1 untaps the two lands named, of five offered | `check:prompt-payload`
-- CR 609.3 X above the library's size exiles what it has | `check:helper-permissionsIn`
-- CR 609.3 a library shorter than the depth gives up what it has | `check:helper-permissionsIn`
-- CR 609.3 a one-card library gives up its one card | `check:helper-permissionsIn`
-- CR 611.2c a creature that becomes attacking after the spell resolves is not in the set | `check:helper-affected`
-- CR 611.2c an enchantment that enters after the trigger resolves is not stolen | `move:other-addPermanent`
-- CR 611.2c the stored control effect holds the swept ids, not the filter that swept them | `check:helper-affectedSets`
-- CR 611.2c the stored effect holds the swept ids, not the filter that swept them | `check:helper-affectedSets`
-- CR 701.12b the source and its one target swap controllers | `check:other-Combat.legalAttackers`
-- CR 701.12b two creatures of different controllers swap controllers | `check:other-Combat.legalAttackers`
+- ~~CR 609.3 X above the library's size exiles what it has | `check:helper-permissionsIn`~~
+- ~~CR 609.3 a library shorter than the depth gives up what it has | `check:helper-permissionsIn`~~
+- ~~CR 609.3 a one-card library gives up its one card | `check:helper-permissionsIn`~~
+- ~~CR 611.2c a creature that becomes attacking after the spell resolves is not in the set | `check:helper-affected`~~
+- ~~CR 611.2c an enchantment that enters after the trigger resolves is not stolen | `move:other-addPermanent`~~
+- ~~CR 611.2c the stored control effect holds the swept ids, not the filter that swept them | `check:helper-affectedSets`~~
+- ~~CR 611.2c the stored effect holds the swept ids, not the filter that swept them | `check:helper-affectedSets`~~
+- ~~CR 701.12b the source and its one target swap controllers | `check:other-Combat.legalAttackers`~~
+- ~~CR 701.12b two creatures of different controllers swap controllers | `check:other-Combat.legalAttackers`~~
 - CR 701.21a draws one card for each permanent she named and sacrificed | `check:prompt-options`
-- CR 702.26d phasing the source out is not leaving, so nothing returns | `board:exile-linked` `board:zone-phasedout`
+- ~~CR 702.26d phasing the source out is not leaving, so nothing returns | `board:exile-linked` `board:zone-phasedout`~~
 
 ### `CardTriggerSpec`
 
@@ -585,12 +585,12 @@ out: grep for them.
 
 ### `EventTriggerSpec`
 
-- CR 112.2 Kambal's 'that player' is the opponent who cast it | `check:helper-lives`
-- CR 113.6k Desolation Twin's cast trigger fires from the stack | `check:helper-eldraziOf`
-- CR 505.1b an extra main phase makes the postcombat main the third, and it does not trigger | `check:other-GameState.triggeredThisGame`
-- CR 601.2i casting an instant fires Young Pyromancer | `check:helper-elementalsOf`
-- CR 601.2i the turn's SECOND cast fires Clarion Spirit, and no other | `check:helper-spiritsOf`
-- a creature spell neither fires the ability nor spends its rider | `check:helper-spiritsOf`
+- ~~CR 112.2 Kambal's 'that player' is the opponent who cast it | `check:helper-lives`~~
+- ~~CR 113.6k Desolation Twin's cast trigger fires from the stack | `check:helper-eldraziOf`~~
+- ~~CR 505.1b an extra main phase makes the postcombat main the third, and it does not trigger | `check:other-GameState.triggeredThisGame`~~
+- ~~CR 601.2i casting an instant fires Young Pyromancer | `check:helper-elementalsOf`~~
+- ~~CR 601.2i the turn's SECOND cast fires Clarion Spirit, and no other | `check:helper-spiritsOf`~~
+- ~~a creature spell neither fires the ability nor spends its rider | `check:helper-spiritsOf`~~
 
 ### `ExileSpec`
 

@@ -22,12 +22,10 @@ import qualified Parun.Engine.Activatable as Activatable
 import qualified Parun.Engine.Activate as Activate
 import qualified Parun.Engine.Binding as Binding
 import qualified Parun.Engine.Card as Card
-import qualified Parun.Engine.Combat as Combat
 import qualified Parun.Engine.Engine as Engine
 import qualified Parun.Engine.Event as Event
 import qualified Parun.Engine.Expiry as Expiry
 import qualified Parun.Engine.Game as Game
-import qualified Parun.Engine.Phasing as Phasing
 import qualified Parun.Engine.Projection as Projection
 import qualified Parun.Engine.Projection.View as Projection
 import qualified Parun.Engine.Replay as Replay
@@ -71,11 +69,9 @@ import qualified Parun.Types.ObjectId as ObjectId
 import qualified Parun.Types.ObjectRef as ObjectRef
 import qualified Parun.Types.OptionalDecision as OptionalDecision
 import qualified Parun.Types.Phase as Phase
-import qualified Parun.Types.PhasedOut as PhasedOut
 import qualified Parun.Types.PlayerId as PlayerId
 import qualified Parun.Types.PlayerRef as PlayerRef
 import qualified Parun.Types.PlayerRelation as PlayerRelation
-import qualified Parun.Types.Power as Power
 import qualified Parun.Types.Printing as Printing
 import qualified Parun.Types.Prompt as Prompt
 import qualified Parun.Types.Quantity as Quantity
@@ -992,7 +988,7 @@ elvishPiperSpec s registry =
 -- The permission the second sentence grants is asserted only as far as CR 400.7's
 -- binding goes: the exiled card carries one, which is what proves the MoveToZone's
 -- slot bound the incarnation this arm minted rather than some other object.
-countOnLuckSpec :: (Monad m, Monad n) => Spec.Spec m n -> Registry.Registry m -> n ()
+countOnLuckSpec :: (Monad m) => Spec.Spec m n -> Registry.Registry m -> n ()
 countOnLuckSpec s registry =
   let -- alice controls Count on Luck and her library holds `stock`, DEEPEST
       -- FIRST -- S.addLibraryCard puts each card on top, so the last name given
@@ -1044,103 +1040,6 @@ countOnLuckSpec s registry =
             "the one exiled card carries the play permission, so the move bound the incarnation IT minted"
             (fmap Maybe.isJust (permissionsIn S.alice after))
             [True]
-        -- The empty-library case, which is the same board minus the stock alone.
-        -- CR 104.3c takes nobody out of the game here: an empty library only
-        -- loses when its owner would DRAW from it, and the trigger draws nothing.
-        Spec.it s "CR 401.2 an empty library has no top card, so the exile does nothing" $ do
-          (luckId, after) <- board []
-          Spec.assertEqWith
-            s
-            "nothing at all was exiled"
-            (namesIn Zone.Exile S.alice after, namesIn Zone.Exile S.bob after)
-            ([], [])
-          Spec.assertEqWith s "bob's library is still untouched" (namesIn Zone.Library S.bob after) [named "Ogre Sentry"]
-          Spec.assertBool s (S.onBattlefield luckId after) "and alice is still in the game with her enchantment"
-          Spec.assertEqWith s "the game has no result: an empty library is not itself a loss" (GameState.result after) Nothing
-
--- The DEPTH on ObjectRef.TopOfLibrary, and the group binding a move of several
--- cards owes its second sentence.
---
--- Act on Impulse {2}{R} Sorcery -- "Exile the top three cards of your library.
--- Until end of turn, you may play those cards." (name, cost, type line and Oracle
--- text checked against api.scryfall.com). Its whole printed text is those two
--- sentences, so nothing else on the card can be what these assertions read.
---
--- alice casts it off three Mountains and the priority loop resolves it, which is
--- what makes this gameplay-level rather than an applyEffect call.
---
--- The board tells the readings apart that a wrong depth or a wrong binding would
--- take:
---
---   * THREE versus one, and versus all of them. Her library holds FIVE distinct
---     cards, so "the top card" leaves four behind and "her library" leaves none;
---     both the exiled three and the two left are asserted, in the pile's order
---     for the two that stay (CR 401.2).
---   * THE TOP three versus the bottom three. The five are distinct printings, so
---     the two answers name disjoint sets.
---   * YOUR library versus each player's. bob's library is stocked with a
---     printing alice never has, and it must be untouched.
---   * THOSE CARDS versus one of them. All three exiled cards must carry the play
---     permission: a MoveToZone that bound only the last incarnation it minted
---     leaves two of the three without one.
-actOnImpulseSpec :: (Monad m, Monad n) => Spec.Spec m n -> Registry.Registry m -> n ()
-actOnImpulseSpec s registry =
-  let -- alice's library holds `stock`, DEEPEST FIRST -- S.addLibraryCard puts
-      -- each card on top, so the last name given is the top card. bob's library
-      -- holds one Ogre Sentry, a printing alice never has.
-      board stock = do
-        mountain <- S.printingOf s registry "Mountain"
-        actOnImpulse <- S.printingOf s registry "Act on Impulse"
-        sentry <- S.printingOf s registry "Ogre Sentry"
-        stocked <- mapM (S.printingOf s registry) stock
-        let g1 = List.foldl' (\g p -> snd (S.addLibraryCard p S.alice g)) (S.landsInPlay mountain 3) stocked
-            g2 = snd (S.addLibraryCard sentry S.bob g1)
-            (withSpell, spell) = S.handOne actOnImpulse g2
-            afterCast = S.runPure S.identityAnswer withSpell (S.cast S.alice spell)
-        pure (S.runPure S.identityAnswer afterCast Engine.priorityLoop)
-      named = Just . CardName.MkCardName . Text.pack
-      -- SORTED, because exile is a holding area with no order of its own (CR
-      -- 406.1) -- unlike the library below, whose order CR 401.2 fixes.
-      exiledNames pid = List.sort . namesIn Zone.Exile pid
-      permissionsIn pid gs = fmap (not . null . Object.playPermissions) (Maybe.mapMaybe (\oid -> Game.lookupObject oid gs) (Game.zoneMembers Zone.Exile pid gs))
-   in Spec.describe s "ActOnImpulse" $ do
-        Spec.it s "CR 401.2 the top three cards of your library are exiled, and the rest stay put" $ do
-          after <- board ["Goblin Piker", "Bird Maiden", "Benalish Hero", "Hill Giant", "Sabretooth Tiger"]
-          Spec.assertEqWith
-            s
-            "the top three are in exile and the two under them are still in the library, in order"
-            (exiledNames S.alice after, namesIn Zone.Library S.alice after)
-            ( List.sort [named "Sabretooth Tiger", named "Hill Giant", named "Benalish Hero"],
-              [named "Bird Maiden", named "Goblin Piker"]
-            )
-          Spec.assertEqWith
-            s
-            "bob's library is untouched, so this is not each player's library"
-            (namesIn Zone.Library S.bob after, namesIn Zone.Exile S.bob after)
-            ([named "Ogre Sentry"], [])
-          Spec.assertEqWith
-            s
-            "ALL THREE exiled cards carry the play permission, so the move bound the whole group and not one incarnation of it"
-            (permissionsIn S.alice after)
-            [True, True, True]
-        -- Fewer cards than the depth: CR 609.3 does only as much as possible, and
-        -- CR 104.3c takes nobody out of the game for it -- an empty library only
-        -- loses when its owner would DRAW from it, and this spell draws nothing.
-        Spec.it s "CR 609.3 a library shorter than the depth gives up what it has" $ do
-          after <- board ["Goblin Piker", "Bird Maiden"]
-          Spec.assertEqWith
-            s
-            "both cards were exiled and the library is empty"
-            (exiledNames S.alice after, namesIn Zone.Library S.alice after)
-            (List.sort [named "Goblin Piker", named "Bird Maiden"], [])
-          Spec.assertEqWith s "and both carry the permission" (permissionsIn S.alice after) [True, True]
-          Spec.assertEqWith s "the game has no result: an empty library is not itself a loss" (GameState.result after) Nothing
-        -- ONE card, which is the other binding shape: a single arrival binds the
-        -- singular slot, and the permission still reaches it.
-        Spec.it s "CR 609.3 a one-card library gives up its one card" $ do
-          after <- board ["Goblin Piker"]
-          Spec.assertEqWith s "the one card is exiled" (exiledNames S.alice after) [named "Goblin Piker"]
-          Spec.assertEqWith s "and carries the permission" (permissionsIn S.alice after) [True]
 
 -- CR 611.2a: a duration that names a WINDOW rather than a deadline, on the PLAY
 -- PERMISSION carrier -- Galvanic Relay {2}{R} Sorcery, "Exile the top card of
@@ -1204,15 +1103,6 @@ galvanicRelaySpec s registry =
           Spec.assertBool s (offeredTo S.alice exiled alicesTurn) "CR 611.2a: the window is open, so alice may play the exiled card"
           -- Not swept on bob's turn, just not begun -- which is the whole claim.
           Spec.assertBool s (Maybe.isJust (permissionFor exiled bobsTurn)) "and the permission was still stored through bob's turn"
-        Spec.it s "CR 514.2 the window closes at the end of the turn it named" $ do
-          (exiled, relayed) <- relayBoard s registry "Galvanic Relay"
-          let afterwards = handoff (handoff (handoff relayed))
-              later = handoff afterwards
-          Spec.assertEqWith s "alice is active again on turn 5" (TurnRegisters.activePlayer (GameState.turn later), TurnRegisters.turnNumber (GameState.turn later)) (S.alice, 5)
-          Spec.assertBool s (not (offeredTo S.alice exiled later)) "the card is no longer playable on the turn after the one the window named"
-          -- Ordered BEHIND the offer so a sweep that kept the permission reddens
-          -- the gameplay assertion rather than an absence here.
-          Spec.assertEqWith s "with the permission cleared once that turn's cleanup has run" (permissionFor exiled afterwards) Nothing
 
 -- alice's precombat main phase on turn 1, eight Mountains out and one Goblin
 -- Piker as the whole of her library, with `name` in hand and cast. Returns the
@@ -1250,9 +1140,10 @@ relayBoard s registry name = do
     _ -> pure (ObjectId.MkObjectId 0, after)
 
 -- A COMPUTED depth on ObjectRef.TopOfLibrary: CR 601.2b's announced X, read as
--- how deep into a library a move reaches. Act on Impulse's literal three above
--- cannot tell "the depth is a number" from "the depth is a number the card
--- computed"; Commune with Lava's X is the first printing that can.
+-- how deep into a library a move reaches. Act on Impulse's literal three
+-- (data/scenarios/board-effect) cannot tell "the depth is a number" from "the
+-- depth is a number the card computed"; Commune with Lava's X is the first
+-- printing that can.
 --
 -- Commune with Lava {X}{R}{R} Instant -- "Exile the top X cards of your library.
 -- Until the end of your next turn, you may play those cards." (name, cost, type
@@ -1293,7 +1184,7 @@ communeWithLavaSpec s registry =
         pure (S.runPure announcing afterCast Engine.priorityLoop)
       named = Just . CardName.MkCardName . Text.pack
       -- SORTED, because exile is a holding area with no order of its own (CR
-      -- 406.1) -- actOnImpulseSpec's reason.
+      -- 406.1).
       exiledNames pid = List.sort . namesIn Zone.Exile pid
       permissionsIn pid gs = fmap (not . null . Object.playPermissions) (Maybe.mapMaybe (\oid -> Game.lookupObject oid gs) (Game.zoneMembers Zone.Exile pid gs))
       fiveCards = ["Goblin Piker", "Bird Maiden", "Benalish Hero", "Hill Giant", "Sabretooth Tiger"]
@@ -1327,18 +1218,6 @@ communeWithLavaSpec s registry =
             "every exiled card carries the play permission on both legs, so the move bound the whole group"
             (permissionsIn S.alice one, permissionsIn S.alice three)
             ([True], [True, True, True])
-        -- CR 609.3: fewer cards than the announced depth gives up what there is.
-        -- CR 104.3c takes nobody out of the game for it -- an empty library only
-        -- loses when its owner would DRAW from it, and this spell draws nothing.
-        Spec.it s "CR 609.3 X above the library's size exiles what it has" $ do
-          after <- board 3 ["Goblin Piker", "Bird Maiden"]
-          Spec.assertEqWith
-            s
-            "both cards were exiled and the library is empty"
-            (exiledNames S.alice after, namesIn Zone.Library S.alice after)
-            (List.sort [named "Goblin Piker", named "Bird Maiden"], [])
-          Spec.assertEqWith s "and both carry the permission" (permissionsIn S.alice after) [True, True]
-          Spec.assertEqWith s "the game has no result: an empty library is not itself a loss" (GameState.result after) Nothing
         -- The STATIC-ANALYSIS half, planted rather than read off a card, because no
         -- printing puts a TARGET slot in a library's depth and the gameplay cases
         -- above pass whatever these two answer. Both are the seam a nested Quantity
@@ -1538,12 +1417,6 @@ gloriousProtectorSpec s registry =
             (_, g4) = S.addPermanent angel S.alice g3
             (_, g5) = S.addPermanent giant S.bob g4
          in S.handOne protector g5
-      -- Cast the Protector and run the priority loop out, so its enters trigger is
-      -- placed and resolved under the same answerer.
-      cast :: (forall r. Prompt.Prompt r -> r) -> (GameState.GameState, ObjectId.ObjectId) -> GameState.GameState
-      cast answer (withSpell, spell) =
-        let afterCast = S.runPure answer withSpell (S.cast S.alice spell)
-         in S.runPure answer afterCast Engine.priorityLoop
       -- Accepts the printed "may" -- without which no leg below reaches the
       -- gather at all, CR 603.5's default being to decline.
       accepting :: Prompt.Prompt r -> r
@@ -1579,13 +1452,6 @@ gloriousProtectorSpec s registry =
         angel <- S.printingOf s registry "Angel of Finality"
         giant <- S.printingOf s registry "Hill Giant"
         pure (board protector plains piker maiden sentry angel giant)
-      -- The Bird Maiden on alice's battlefield, which is the one permanent every
-      -- leg below names or declines to name.
-      maidenId = permanentNamed "Bird Maiden"
-      permanentNamed name gs =
-        List.find
-          (\oid -> fmap S.nameOf (Game.cardOf oid gs) == Just (named name))
-          (Set.toList (GameState.battlefield gs))
    in Spec.describe s "GloriousProtector" $ do
         -- The empty answer CR 608.2d admits, which is a different thing from the
         -- may being declined below: the player WAS asked and named nobody.
@@ -1606,25 +1472,6 @@ gloriousProtectorSpec s registry =
             "and every creature alice controls is still hers"
             (controlledNames S.alice after)
             (List.sort (fmap (Just . named) ["Angel of Finality", "Bird Maiden", "Glorious Protector", "Goblin Piker", "Ogre Sentry", "Plains", "Plains", "Plains", "Plains"]))
-        -- The same board with the one thing changed: the Protector PHASES OUT
-        -- instead of dying. CR 702.26d makes that no zone change, so CR 610.3's
-        -- specified event has not happened and the creature stays in exile --
-        -- which is why the watch asks the source's zone rather than its membership
-        -- of the battlefield set, the one question rule 702.26b makes answer
-        -- differently.
-        Spec.it s "CR 702.26d phasing the source out is not leaving, so nothing returns" $ do
-          staged <- printings
-          case maidenId (fst staged) of
-            Nothing -> Spec.assertFailure s "fixture should give alice a Bird Maiden"
-            Just maiden -> do
-              let exiled = cast (namingExactly (Set.singleton maiden)) staged
-              case permanentNamed "Glorious Protector" exiled of
-                Nothing -> Spec.assertFailure s "the Protector should be on the battlefield"
-                Just oid -> do
-                  let phased = Phasing.phaseOut (PhasedOut.Directly S.alice) oid exiled
-                      settled = S.runPure S.identityAnswer phased Engine.settleForPriority
-                  Spec.assertEqWith s "the Bird Maiden is still in exile" (exiledNames settled) [Just (named "Bird Maiden")]
-                  Spec.assertEqWith s "and the watch still stands" (Map.size (GameState.movedUntil settled)) 1
 
 -- The Oblivion Ring family's opponent-facing half, which Glorious Protector above
 -- structurally cannot reach: its gather is "creatures YOU control", so every card
@@ -1779,17 +1626,6 @@ levelerSpec s registry =
         angel <- S.printingOf s registry "Angel of Finality"
         pure (board leveler plains piker maiden sentry giant angel)
    in Spec.describe s "Leveler" $ do
-        -- CR 109.5's "you" is one seat: bob's library is not swept and his exile
-        -- stays empty, which is what parts "your library" from "each library".
-        Spec.it s "CR 109.5 no other player's library is touched" $ do
-          staged <- printings
-          let after = cast staged
-          Spec.assertEqWith
-            s
-            "bob's library still holds both his cards"
-            (sortedNames Zone.Library S.bob after)
-            (List.sort (fmap (Just . named) ["Angel of Finality", "Hill Giant"]))
-          Spec.assertEqWith s "and nothing of his is in exile" (sortedNames Zone.Exile S.bob after) []
         -- CR 701.23 and CR 701.24, read off the recorded responses: the sweep asks
         -- nobody to find anything and shuffles nothing. A board cannot show this,
         -- because a search that found every card would leave the same exile.
@@ -1934,17 +1770,6 @@ calderaBreakerSpec s registry =
             (sortedNames Zone.Exile S.alice after)
             (replicate 3 (Just (named "Mountain")))
           Spec.assertEqWith s "the Mountain in her hand is untouched, so the sweep found the library and not the other hidden zone" (sortedNames Zone.Hand S.alice after) [Just (named "Mountain")]
-        -- CR 109.5's "you" is one seat, and the filter is not a licence to reach
-        -- another library that also holds matches.
-        Spec.it s "CR 109.5 no other player's library is touched" $ do
-          staged <- printings
-          let after = cast staged
-          Spec.assertEqWith
-            s
-            "bob's library still holds both his Mountains"
-            (sortedNames Zone.Library S.bob after)
-            (replicate 2 (Just (named "Mountain")))
-          Spec.assertEqWith s "and nothing of his is in exile" (sortedNames Zone.Exile S.bob after) []
         -- CR 603.12 and CR 400.7j: the reflexive fires once and reads "that much"
         -- off the group the move bound, not off the library it emptied of matches.
         Spec.it s "CR 603.12 / 400.7j the reflexive deals damage equal to the cards exiled" $ do
@@ -1992,9 +1817,9 @@ calderaBreakerSpec s registry =
 --   After that point, the set won't change."
 --
 -- So the sweep happens ONCE, at resolution, and its RESULT is frozen into the
--- stored effect as Affected.TheseObjects. The three legs below are the ones a
--- stored-and-re-evaluated Filter would fail: it would pump a creature that
--- became attacking later, and drop the pump from one that left combat.
+-- stored effect as Affected.TheseObjects. A stored-and-re-evaluated Filter
+-- would pump a creature that became attacking later, and drop the pump from one
+-- that left combat: data/scenarios/board-effect's Trumpet Blast scenarios.
 --
 -- The modification is layer 7c (CR 613.4c: "effects and counters that modify
 -- power and/or toughness"), the same layer Giant Growth's already lands in --
@@ -2012,31 +1837,6 @@ trumpetBlastSpec s registry = Spec.describe s "TrumpetBlast" $ do
     let (board, ours, _) = trumpetBoard mountain trumpetBlast [piker, piker] [piker]
         after = runToStep (Phase.Combat CombatStep.DeclareBlockers) attackAndCast board
     Spec.assertEqWith s "one stored effect, over exactly the two attackers" (affectedSets after) [Affected.TheseObjects (Set.fromList ours)]
-  -- CR 611.2c's own sentence, in the direction it is usually quoted: the set
-  -- is fixed when the effect BEGINS, so a creature that becomes attacking
-  -- afterwards is not in it.
-  --
-  -- Hanweir Garrison is the pool's producer for "becomes attacking later":
-  -- its CR 508.3a attack trigger creates two 1/1 Humans "that are tapped and
-  -- attacking". The trigger is put on the stack as attackers are declared,
-  -- alice casts Trumpet Blast on top of it, and the spell therefore resolves
-  -- FIRST -- so the tokens are minted, already attacking, after the continuous
-  -- effect began. They are attacking, which is exactly what makes this
-  -- discriminating: a stored Filter re-evaluated each projection would find
-  -- them and pump them to 3/1.
-  Spec.it s "CR 611.2c a creature that becomes attacking after the spell resolves is not in the set" $ do
-    mountain <- S.printingOf s registry "Mountain"
-    garrison <- S.printingOf s registry "Hanweir Garrison"
-    trumpetBlast <- S.printingOf s registry "Trumpet Blast"
-    let (board, ours, _) = trumpetBoard mountain trumpetBlast [garrison] []
-        after = runToStep (Phase.Combat CombatStep.DeclareBlockers) attackAndCast board
-        tokens = filter (`List.notElem` ours) (attackerIds after)
-    Spec.assertEqWith s "the stack is empty: both the spell and the trigger resolved" (length (TurnRegisters.stack (GameState.turn after))) 0
-    Spec.assertEqWith s "the trigger made two tokens" (length tokens) 2
-    Spec.assertEqWith s "the Garrison was attacking when the spell resolved, so it is a 4/3" (fmap (`Projection.powerOf` after) ours) (fmap (const (Just 4)) ours)
-    Spec.assertEqWith s "the tokens ARE attacking" (length (filter (`List.elem` attackerIds after) tokens)) 2
-    Spec.assertEqWith s "and are 1/1 all the same: they were not in the set when it was determined" (fmap (`Projection.powerOf` after) tokens) (fmap (const (Just 1)) tokens)
-    Spec.assertEqWith s "the stored set still names only the Garrison" (affectedSets after) [Affected.TheseObjects (Set.fromList ours)]
   -- CR 400.7: "An object that moves from one zone to another becomes a new
   -- object with no memory of, or relation to, its previous existence." A
   -- frozen set is a set of ObjectIds, so the creature that comes back is
@@ -2116,16 +1916,6 @@ auraThiefSpec s registry =
             "one stored effect, over all three enchantments"
             (affectedSets after)
             [Affected.TheseObjects (Set.fromList (hers <> theirs))]
-        -- "After that point, the set won't change." An enchantment that arrives
-        -- after the trigger has resolved is not in the set, so its controller
-        -- keeps it -- the control-side twin of the Hanweir Garrison tokens.
-        Spec.it s "CR 611.2c an enchantment that enters after the trigger resolves is not stolen" $ do
-          (board, spell, _, _, theirs) <- thiefBoard
-          greed <- S.printingOf s registry "Greed"
-          let (_, after) = boltIt (board, spell)
-              (latecomer, later) = S.addPermanent greed S.bob after
-          Spec.assertEqWith s "the ones that were there are alice's" (fmap (`Projection.controllerOf` later) theirs) (fmap (const (Just S.alice)) theirs)
-          Spec.assertEqWith s "the one that arrived afterwards is still bob's" (Projection.controllerOf latecomer later) (Just S.bob)
         -- CR 302.6: "A creature's activated ability with the tap symbol ... in
         -- its activation cost can't be activated unless the creature has been
         -- under its controller's control continuously since their most recent
@@ -2664,53 +2454,8 @@ rampageOfTheClansSpec s registry = Spec.describe s "RampageOfTheClans" $ do
 -- printed box. CR 111.3 makes the value the creating effect defines part of the
 -- token's TEXT, which is why Resolve.bakeTokenCharacteristics stamps it as a
 -- literal at the mint rather than leaving a board-reading box on a permanent.
---
--- THREE SEATS, and the doomed creatures are split across two of them, so a
--- count keyed to the caster's own board would read 1 rather than 3. carol's
--- Darksteel Myr is a creature the filter MATCHES and CR 702.12b will not let be
--- destroyed, so a box counting the SWEPT set would read 4.
-castRebirth :: Printing.Printing -> Printing.Printing -> GameState.GameState -> GameState.GameState
-castRebirth plains rebirth board =
-  let (withSpell, spell) = S.handOne rebirth (S.landsFor plains S.alice 6 board)
-   in S.settleSba (S.runPure S.identityAnswer withSpell (S.cast S.alice spell >> Engine.priorityLoop))
-
--- The Horror's printed power AS TEXT, which is CR 111.3's "this becomes the
--- token's text" made observable: a stamped literal cannot be re-read, and
--- the spell that bound the count is in a graveyard under a fresh id by now
--- (CR 400.7), so a box left standing would answer nothing at all.
-horrorPrintedPower :: ObjectId.ObjectId -> GameState.GameState -> Maybe Quantity.Quantity
-horrorPrintedPower oid gs = fmap Power.unwrap (Game.faceOf oid gs >>= Face.power)
-
-phyrexianRebirthSpec :: (Monad m, Monad n) => Spec.Spec m n -> Registry.Registry m -> n ()
+phyrexianRebirthSpec :: (Monad m) => Spec.Spec m n -> Registry.Registry m -> n ()
 phyrexianRebirthSpec s registry = Spec.describe s "PhyrexianRebirth" $ do
-  -- The case that PROVES a token's printed box may be a Quantity.InSlot naming
-  -- an amount an EARLIER effect of the same resolution bound, which
-  -- Resolve.bakeTokenCharacteristics reads against the resolution rather than
-  -- against the token.
-  --
-  -- Every other reading gives a different number here, which is the whole point
-  -- of the board: 4 for the swept set, 1 for the caster's own creatures, 2 and 1
-  -- for the Pikers' printed box, and 0 for a box that reads the token's own
-  -- (empty) bindings.
-  Spec.it s "CR 111.3 the Horror is an X/X where X is the number of creatures DESTROYED" $ do
-    plains <- S.printingOf s registry "Plains"
-    rebirth <- S.printingOf s registry "Phyrexian Rebirth"
-    piker <- S.printingOf s registry "Goblin Piker"
-    evangel <- S.printingOf s registry "Cabal Evangel"
-    myr <- S.printingOf s registry "Darksteel Myr"
-    let (alicePiker, g1) = S.addPermanent piker S.alice (Setup.emptyGame S.threePlayers)
-        (bobPiker, g2) = S.addPermanent piker S.bob g1
-        (bobEvangel, g3) = S.addPermanent evangel S.bob g2
-        (carolMyr, board) = S.addPermanent myr S.carol g3
-        resolved = castRebirth plains rebirth board
-        horrors = fmap (\oid -> S.powerToughnessOf oid resolved) (S.tokensOf resolved)
-    Spec.assertEqWith s "a 3/3 Horror: three creatures were destroyed, four were swept, one was alice's" horrors [Just (3, 3)]
-    Spec.assertEqWith s "CR 111.3 and 3 is its printed power, stamped as text at the mint" (fmap (`horrorPrintedPower` resolved) (S.tokensOf resolved)) [Just (Quantity.Literal 3)]
-    Spec.assertBool s (not (S.onBattlefield alicePiker resolved)) "alice's Piker died"
-    Spec.assertBool s (not (S.onBattlefield bobPiker resolved)) "bob's Piker died"
-    Spec.assertBool s (not (S.onBattlefield bobEvangel resolved)) "bob's Evangel died"
-    Spec.assertBool s (S.onBattlefield carolMyr resolved) "CR 702.12b carol's indestructible Myr was swept and stands"
-    Spec.assertEqWith s "stack empty: the spell resolved" (length (TurnRegisters.stack (GameState.turn resolved))) 0
   -- The STATIC-ANALYSIS half. The gameplay cases above pass whatever the walkers
   -- answer, because Parun.Engine.Resolve.Common.bakeTokenCharacteristics evaluates
   -- the box whether or not anything reported it -- so only this case says that
@@ -2786,57 +2531,6 @@ plummetSpec s registry = Spec.describe s "Plummet" $ do
         Spec.assertBool s (Set.member (Recipient.ToCreature flierId) (Target.legalRecipients StackObjectKind.Spell Nothing S.noSource theSlot before)) "legal while it flies"
         Spec.assertBool s (not (Projection.hasKeyword Keyword.Flying flierId after)) "Humility took the flying"
         Spec.assertBool s (not (Set.member (Recipient.ToCreature flierId) (Target.legalRecipients StackObjectKind.Spell Nothing S.noSource theSlot after))) "so it is no longer a legal target"
-
--- Announces X=2 and takes the identity fallback everywhere else -- which answers
--- CR 601.2b's Phyrexian question with the FIRST offer, the mana route, so the
--- {G/P} is paid with a Forest rather than with life.
-answerXTwo :: Prompt.Prompt r -> r
-answerXTwo p = case p of
-  Prompt.ChooseX {} -> 2
-  _ -> S.identityAnswer p
-
--- The damage marked on a permanent (CR 120.3e), or Nothing if it is gone.
-markedOn :: ObjectId.ObjectId -> GameState.GameState -> Maybe Natural
-markedOn oid gs = fmap Object.damage (Game.lookupObject oid gs)
-
--- Corrosive Gale ({X}{G/P} Sorcery, "Corrosive Gale deals X damage to each
--- creature with flying") -- the pool's first Effect.DealDamage over a SET rather
--- than a slot, and the first producer of ObjectRef.EachMatching at all whose
--- filter names a keyword.
---
--- One board throughout: bob's Bird Maiden (1/2, prints flying), alice's
--- Narcomoeba (1/1, prints flying) and bob's Goblin Piker (2/1, prints none),
--- beside three of alice's Forests. The fliers are split between the two players
--- on purpose: "each creature with flying" is not "each creature your opponents
--- control", and alice burning her own Narcomoeba is what says so. The Piker is
--- the other half of the claim: CR 109.2 hands an EachMatching the WHOLE
--- battlefield, so a filter missing its HasKeyword half would burn it too.
---
--- The Forests are not a third control and could not be: CR 120.1a takes a land
--- out of the batch at Damage.damageRecipient whatever the filter said. The
--- HasCardType half of the filter is pinned by CardsSpec instead.
-corrosiveGaleSpec :: (Monad m) => Spec.Spec m n -> Registry.Registry m -> n ()
-corrosiveGaleSpec s registry = Spec.describe s "CorrosiveGale" $ do
-  Spec.it s "CR 109.2 Corrosive Gale deals X to each creature with flying, and none to the one without" $ do
-    gale <- S.printingOf s registry "Corrosive Gale"
-    forest <- S.printingOf s registry "Forest"
-    birdMaiden <- S.printingOf s registry "Bird Maiden"
-    narcomoeba <- S.printingOf s registry "Narcomoeba"
-    piker <- S.printingOf s registry "Goblin Piker"
-    let (maidenId, g1) = S.addPermanent birdMaiden S.bob (S.landsInPlay forest 3)
-        (moebaId, g2) = S.addPermanent narcomoeba S.alice g1
-        (pikerId, g3) = S.addPermanent piker S.bob g2
-        (gs, spellId) = S.handOne gale g3
-        cast = snd (Engine.runGamePure answerXTwo gs (S.cast S.alice spellId))
-        resolved = snd (Engine.runGamePure answerXTwo cast Stack.resolveTop)
-        after = S.settleSba resolved
-    Spec.assertEqWith s "three Forests paid {2}{G}" (S.tappedCount S.alice after) 3
-    Spec.assertEqWith s "CR 120.3e: 2 marked on the Bird Maiden" (markedOn maidenId resolved) (Just 2)
-    Spec.assertEqWith s "CR 120.3e: 2 marked on the Narcomoeba, an opponent's flier is no different" (markedOn moebaId resolved) (Just 2)
-    Spec.assertEqWith s "and nothing at all on the Goblin Piker" (markedOn pikerId resolved) (Just 0)
-    Spec.assertBool s (not (S.onBattlefield maidenId after)) "CR 704.5g buried the 1/2"
-    Spec.assertBool s (not (S.onBattlefield moebaId after)) "and the 1/1"
-    Spec.assertBool s (S.onBattlefield pikerId after) "the creature without flying was never in the set"
 
 -- Teferi, Hero of Dominaria {3}{W}{U} Legendary Planeswalker -- Teferi, loyalty
 -- 4: "+1: Draw a card. At the beginning of the next end step, untap up to two
@@ -3116,195 +2810,6 @@ standOrFallSpec s registry =
             asked
             [(S.bob, bobTook, []), (S.carol, Set.fromList (drop 1 carols), [(S.bob, bobTook)])]
 
--- Come Back Wrong {2}{B} Sorcery (DSK 86): "Destroy target creature. If a
--- creature card is put into a graveyard this way, return it to the battlefield
--- under your control. Sacrifice it at the beginning of your next end step."
---
--- The pool's first card to NAME what a destruction buried, where Bane of
--- Progress above only COUNTS it. The two are different questions about the same
--- printed phrase, and the difference is CR 400.7: the permanent that was
--- destroyed does not exist by the time the second sentence runs, so the only
--- object left to name is the incarnation the graveyard move minted -- a
--- different id, in a different zone, which is why Effect.Destroy's `buried` slot
--- is bound from the move's answer rather than from its own target slot.
---
--- One board throughout: bob's lone creature, alice's three Swamps, and Come Back
--- Wrong in alice's hand. The creature is bob's on purpose -- "under YOUR
--- control" is a change of controller (CR 110.2a), which one seat could not show.
-comeBackWrongSpec :: (Monad m) => Spec.Spec m n -> Registry.Registry m -> n ()
-comeBackWrongSpec s registry =
-  let endStep = Phase.Ending EndingStep.EndStep
-      beginEndStep gs =
-        Event.recordEvent
-          (GameEvent.StepBegan (StepBegan.MkStepBegan endStep S.alice))
-          ( gs
-              { GameState.turn =
-                  (GameState.turn gs)
-                    { TurnRegisters.phase = endStep
-                    }
-              }
-          )
-      settle gs = snd (Engine.runGamePure S.identityAnswer gs Engine.settleForPriority)
-      resolveAll gs = snd (Engine.runGamePure S.identityAnswer gs Engine.priorityLoop)
-      creaturesOnBattlefield gs = filter (`Projection.isCreatureOf` gs) (Set.toList (GameState.battlefield gs))
-      -- alice casts Come Back Wrong at `victim` off three Swamps and lets it
-      -- resolve, then settles state-based actions.
-      castAt spell base =
-        let (withSpell, spellId) = S.handOne spell base
-            afterCast = S.runPure S.identityAnswer withSpell (S.cast S.alice spellId)
-         in S.settleSba (S.runPure S.identityAnswer afterCast Stack.resolveTop)
-   in Spec.describe s "ComeBackWrong" $ do
-        -- The card's last sentence, and the reason the MoveToZone binds a slot of
-        -- its own: "it" is the BATTLEFIELD incarnation, a third object again (CR
-        -- 400.7). "Your next end step" is @Relative You@, so alice's.
-        Spec.it s "CR 603.7 the delayed ability sacrifices what came back at the caster's next end step" $ do
-          comeBackWrong <- S.printingOf s registry "Come Back Wrong"
-          swamp <- S.printingOf s registry "Swamp"
-          piker <- S.printingOf s registry "Goblin Piker"
-          let (_, board) = S.addPermanent piker S.bob (S.landsInPlay swamp 3)
-              armed = castAt comeBackWrong board
-              after = resolveAll (settle (beginEndStep armed))
-          Spec.assertEqWith s "one creature was on the battlefield to sacrifice" (length (creaturesOnBattlefield armed)) 1
-          Spec.assertEqWith s "and none is left" (creaturesOnBattlefield after) []
-          Spec.assertEqWith s "CR 701.21a a sacrifice puts it in its OWNER's graveyard, not the caster's" (namesIn Zone.Graveyard S.bob after) [Just (S.nameOf (Printing.card piker))]
-          Spec.assertEqWith s "the delayed store is spent" (length (StoredEffects.delayedTriggers (GameState.stored after))) 0
-
--- Apocalypse Chime {2} Artifact -- "{2}, {T}, Sacrifice this artifact: Destroy
--- all nontoken permanents with a name originally printed in the Homelands
--- expansion. They can't be regenerated." (name, cost, type line and Oracle text
--- checked against api.scryfall.com, 2026-09-02.)
---
--- CR 206.3 is what makes this a name question rather than a question about
--- sets: the errata reads "a name originally printed in", and CR 206.3c DEFINES
--- the list of names. The card names the expansion symbolically --
--- Filter.HasNameOriginallyPrintedIn "HML" -- and the rule's own list is
--- Parun.Types.Expansion.catalog, so a name is still a characteristic (CR 109.3)
--- and the card still enumerates nothing.
---
--- The board tells apart the readings a wrong list or a dropped conjunct takes:
---
---   * A LISTED name versus every permanent. carol's Serra Inquisitors is on CR
---     206.3c's list and alice's Goblin Piker is not.
---   * NONTOKEN versus every permanent (CR 111.1). bob's token is built from the
---     same Serra Inquisitors card, so its name matches too and only that
---     conjunct tells the two apart.
---   * CR 701.19c versus an ordinary destruction. alice's Aether Storm carries a
---     regeneration shield and is destroyed through it.
---   * EVERY controller versus the activator's. Three seats, one of the listed
---     permanents each.
---
--- Aether Storm rather than a second Serra Inquisitors for the shielded
--- permanent, so that no one mutation can redden two of these assertions at
--- once: it is an enchantment, which is also "all nontoken PERMANENTS" being
--- read wider than creatures. Neither its "creature spells can't be cast" nor
--- its pay-life ability is reachable here -- nothing is cast and no other
--- ability is activated.
-apocalypseChimeSpec :: (Monad m) => Spec.Spec m n -> Registry.Registry m -> n ()
-apocalypseChimeSpec s registry =
-  Spec.describe s "ApocalypseChime" $ do
-    Spec.it s "CR 206.3c destroys the listed nontoken permanents, through a shield, and nothing else" $ do
-      chime <- S.printingOf s registry "Apocalypse Chime"
-      plains <- S.printingOf s registry "Plains"
-      piker <- S.printingOf s registry "Goblin Piker"
-      storm <- S.printingOf s registry "Aether Storm"
-      inquisitors <- S.printingOf s registry "Serra Inquisitors"
-      let (chimeId, g1) = S.addPermanent chime S.alice (S.landsFor plains S.alice 2 S.threePlayerGame)
-          (pikerId, g2) = S.addPermanent piker S.alice g1
-          (stormId, g3) = S.addPermanent storm S.alice g2
-          (tokenId, g4) = S.addToken (Printing.card inquisitors) S.bob (S.addRegenShield stormId g3)
-          (carolsId, g5) = S.addPermanent inquisitors S.carol g4
-          board =
-            g5
-              { GameState.turn =
-                  (GameState.turn g5)
-                    { TurnRegisters.priority = Just S.alice
-                    }
-              }
-      case soleActivatedAbility chime of
-        Nothing -> Spec.assertFailure s "Apocalypse Chime should print exactly one activated ability"
-        Just ability -> do
-          let after = S.runPure S.identityAnswer board (Activate.activateAbility S.alice chimeId ability >> Stack.resolveTop)
-          Spec.assertBool s (not (null (StoredEffects.replacements (GameState.stored board)))) "the fixture really armed a regeneration shield"
-          Spec.assertBool s (not (S.onBattlefield carolsId after)) "CR 206.3c carol's Serra Inquisitors, a listed nontoken permanent, was destroyed"
-          Spec.assertBool s (not (S.onBattlefield stormId after)) "CR 701.19c alice's Aether Storm was destroyed through its regeneration shield"
-          Spec.assertBool s (S.onBattlefield tokenId after) "CR 111.1 bob's token of that same listed card survives"
-          Spec.assertBool s (S.onBattlefield pikerId after) "and alice's Goblin Piker, whose name is not on the list, survives"
-
--- Switcheroo ({4}{U} Sorcery, "Exchange control of two target creatures.")
--- against CR 701.12b, whose two sentences are the two tests below: different
--- controllers swap simultaneously, one controller does nothing at all.
---
--- The two boards differ in EXACTLY one thing -- who controls the second targeted
--- creature -- so the negative is not assembled on a board of its own. Three
--- seats, and carol's Bog Wraith is a third candidate the slot's count of two
--- cannot take, so the targeting is a real choice rather than a forced one; the
--- answerer FILTERS the offered set (S.preferring) rather than building
--- recipients, so CR 608.2b's re-read at resolution still finds them.
-switcherooBoard ::
-  (Monad m) =>
-  Spec.Spec m n ->
-  Registry.Registry m ->
-  PlayerId.PlayerId ->
-  m (ObjectId.ObjectId, ObjectId.ObjectId, ObjectId.ObjectId, ObjectId.ObjectId, GameState.GameState)
-switcherooBoard s registry secondController = do
-  switcheroo <- S.printingOf s registry "Switcheroo"
-  island <- S.printingOf s registry "Island"
-  piker <- S.printingOf s registry "Goblin Piker"
-  evangel <- S.printingOf s registry "Cabal Evangel"
-  wraith <- S.printingOf s registry "Bog Wraith"
-  let withLands = List.foldl' (\gs _ -> snd (S.addPermanent island S.alice gs)) S.threePlayerGame [1 .. 5 :: Int]
-      (alicePiker, g1) = S.addPermanent piker S.alice withLands
-      (second, g2) = S.addPermanent evangel secondController g1
-      (carolWraith, g3) = S.addPermanent wraith S.carol g2
-      (g4, spellId) = S.handOne switcheroo g3
-  pure
-    ( alicePiker,
-      second,
-      carolWraith,
-      spellId,
-      g4
-        { GameState.turn =
-            (GameState.turn g4)
-              { TurnRegisters.phase = Phase.PrecombatMain,
-                TurnRegisters.activePlayer = S.alice,
-                TurnRegisters.priority = Just S.alice
-              }
-        }
-    )
-
--- Casts nothing itself -- S.cast drives that -- but pays the mana and aims the
--- one target slot at the two creatures `wanted` names.
-switcherooAnswer :: [ObjectId.ObjectId] -> Prompt.Prompt r -> r
-switcherooAnswer wanted p =
-  let isWanted r = case r of
-        Recipient.ToCreature oid -> elem oid wanted
-        _ -> False
-   in case p of
-        Prompt.ChooseManaSource _ _ _ candidates -> Just (NonEmpty.head candidates)
-        Prompt.ChooseTargets _ _ _ sets -> S.preferring isWanted sets
-        _ -> S.identityAnswer p
-
-switcherooSpec :: (Monad m) => Spec.Spec m n -> Registry.Registry m -> n ()
-switcherooSpec s registry = Spec.describe s "Switcheroo" $ do
-  -- CR 701.12b's first sentence. BOTH halves are asserted, in that order: an
-  -- implementation that moved one creature and left the other is the reading
-  -- this discriminates, and "the permanent that was controlled by the other
-  -- player" is not satisfied by either half alone.
-  Spec.it s "CR 701.12b two creatures of different controllers swap controllers" $ do
-    (alicePiker, bobEvangel, carolWraith, spellId, board) <- switcherooBoard s registry S.bob
-    let answer :: Prompt.Prompt r -> r
-        answer = switcherooAnswer [alicePiker, bobEvangel]
-        cast = S.runPure answer board (S.cast S.alice spellId)
-        after = S.runPure answer cast Stack.resolveTop
-    Spec.assertEqWith s "bob controls what was alice's Goblin Piker" (Projection.controllerOf alicePiker after) (Just S.bob)
-    Spec.assertEqWith s "alice controls what was bob's Cabal Evangel" (Projection.controllerOf bobEvangel after) (Just S.alice)
-    Spec.assertEqWith s "carol's Bog Wraith, whom nobody targeted, is untouched" (Projection.controllerOf carolWraith after) (Just S.carol)
-    -- CR 302.6: neither creature has been under its new controller's control
-    -- since that player's most recent turn began, so neither may attack now. The
-    -- Piker could attack for alice on the board this one came from.
-    Spec.assertBool s (alicePiker `notElem` Combat.legalAttackers S.alice after) "CR 302.6 alice can no longer attack with the Piker she gave away"
-    Spec.assertBool s (bobEvangel `notElem` Combat.legalAttackers S.alice after) "CR 302.6 nor with the Evangel she just took"
-
 -- Spawnbroker {2}{U} 1/1 (Magic Origins; Oracle checked against Scryfall
 -- 2026-10-08): "When this creature enters, you may exchange control of target
 -- creature you control and target creature with power less than or equal to that
@@ -3355,80 +2860,6 @@ spawnbrokerSpec s registry = Spec.describe s "Spawnbroker" $ do
     Spec.assertEqWith s "where measured against her Wraith it did" (length (TurnRegisters.stack (GameState.turn measuredPlaced))) 1
     Spec.assertEqWith s "and bob keeps his Wraith" (Projection.controllerOf bobWraith refused) (Just S.bob)
     Spec.assertEqWith s "and alice her Piker" (Projection.controllerOf alicePiker refused) (Just S.alice)
-
--- Avarice Totem ({1} Artifact, "{5}: Exchange control of this artifact and
--- target nonland permanent.") against CR 701.12b's OTHER printed shape: one side
--- is CR 113.7's source object rather than a second target.
---
--- Switcheroo's board one type over, and for its reasons: three seats, the two
--- boards differing in EXACTLY one thing -- who controls the targeted Evangel --
--- and carol's Bog Wraith a candidate nobody names, so the slot's one target is a
--- real choice. The five Islands are lands and so are not candidates; the Totem
--- itself is one, which is why the answerer FILTERS rather than building a
--- recipient.
-avariceTotemBoard ::
-  (Monad m) =>
-  Spec.Spec m n ->
-  Registry.Registry m ->
-  PlayerId.PlayerId ->
-  m (Printing.Printing, ObjectId.ObjectId, ObjectId.ObjectId, ObjectId.ObjectId, GameState.GameState)
-avariceTotemBoard s registry evangelController = do
-  totem <- S.printingOf s registry "Avarice Totem"
-  island <- S.printingOf s registry "Island"
-  evangel <- S.printingOf s registry "Cabal Evangel"
-  wraith <- S.printingOf s registry "Bog Wraith"
-  let withLands = List.foldl' (\gs _ -> snd (S.addPermanent island S.alice gs)) S.threePlayerGame [1 .. 5 :: Int]
-      (totemId, g1) = S.addPermanent totem S.alice withLands
-      (evangelId, g2) = S.addPermanent evangel evangelController g1
-      (wraithId, g3) = S.addPermanent wraith S.carol g2
-  pure
-    ( totem,
-      totemId,
-      evangelId,
-      wraithId,
-      g3
-        { GameState.turn =
-            (GameState.turn g3)
-              { TurnRegisters.phase = Phase.PrecombatMain,
-                TurnRegisters.activePlayer = S.alice,
-                TurnRegisters.priority = Just S.alice
-              }
-        }
-    )
-
--- Pays the {5} off whatever mana source comes first and aims the one target slot
--- at `wanted`. A Permanents pool offers Recipient.ToObject, so that is the tag
--- filtered on.
-avariceTotemAnswer :: ObjectId.ObjectId -> Prompt.Prompt r -> r
-avariceTotemAnswer wanted p =
-  let isWanted r = case r of
-        Recipient.ToObject oid -> oid == wanted
-        _ -> False
-   in case p of
-        Prompt.ChooseManaSource _ _ _ candidates -> Just (NonEmpty.head candidates)
-        Prompt.ChooseTargets _ _ _ sets -> S.preferring isWanted sets
-        _ -> S.identityAnswer p
-
-avariceTotemSpec :: (Monad m) => Spec.Spec m n -> Registry.Registry m -> n ()
-avariceTotemSpec s registry = Spec.describe s "AvariceTotem" $ do
-  -- CR 701.12b's first sentence, with the source as one side. Both halves are
-  -- asserted, in that order: the reading this discriminates is one that moved the
-  -- targeted permanent and left the source where it was.
-  Spec.it s "CR 701.12b the source and its one target swap controllers" $ do
-    (totem, totemId, bobEvangel, carolWraith, board) <- avariceTotemBoard s registry S.bob
-    case soleActivatedAbility totem of
-      Nothing -> Spec.assertFailure s "Avarice Totem should print exactly one activated ability"
-      Just ability -> do
-        let answer :: Prompt.Prompt r -> r
-            answer = avariceTotemAnswer bobEvangel
-            after = S.runPure answer board (Activate.activateAbility S.alice totemId ability >> Stack.resolveTop)
-        Spec.assertEqWith s "bob controls the Totem alice activated" (Projection.controllerOf totemId after) (Just S.bob)
-        Spec.assertEqWith s "alice controls what was bob's Cabal Evangel" (Projection.controllerOf bobEvangel after) (Just S.alice)
-        Spec.assertEqWith s "carol's Bog Wraith, whom nobody targeted, is untouched" (Projection.controllerOf carolWraith after) (Just S.carol)
-        -- CR 302.6 re-Sicks the Evangel under its new controller, so alice cannot
-        -- attack with what she just took. It could attack for bob on the board
-        -- this one came from.
-        Spec.assertBool s (bobEvangel `notElem` Combat.legalAttackers S.alice after) "CR 302.6 alice cannot attack with the Evangel she just took"
 
 -- God-Eternal Bontu {3}{B}{B} 5/6 menace: "When God-Eternal Bontu enters,
 -- sacrifice any number of other permanents, then draw that many cards."
@@ -3494,11 +2925,8 @@ godEternalBontuSpec s registry =
 spec :: (Monad m, Monad n) => Spec.Spec m n -> Registry.Registry m -> n ()
 spec s registry = Spec.describe s "Parun.Engine.Resolve" $ do
   godEternalBontuSpec s registry
-  switcherooSpec s registry
   spawnbrokerSpec s registry
-  avariceTotemSpec s registry
   plummetSpec s registry
-  corrosiveGaleSpec s registry
   exhumeSpec s registry
   illGottenGainsSpec s registry
   bloodForBonesSpec s registry
@@ -3517,11 +2945,8 @@ spec s registry = Spec.describe s "Parun.Engine.Resolve" $ do
   auraThiefSpec s registry
   rampageOfTheClansSpec s registry
   phyrexianRebirthSpec s registry
-  comeBackWrongSpec s registry
   swiftSilenceSpec s registry
   glenElendrasAnswerSpec s registry
   countOnLuckSpec s registry
-  actOnImpulseSpec s registry
   galvanicRelaySpec s registry
   communeWithLavaSpec s registry
-  apocalypseChimeSpec s registry
