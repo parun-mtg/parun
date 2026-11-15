@@ -1631,6 +1631,7 @@ conditionSlots condition = case condition of
   Condition.Type.Any conditions -> joinSlots (fmap conditionSlots conditions)
   Condition.Type.All conditions -> joinSlots (fmap conditionSlots conditions)
   Condition.Type.During _ -> Map.empty
+  Condition.Type.IsPrime measured -> quantitySlots measured
 
 -- Everything one waiting ROW can name a slot with: the Filters its pattern and its
 -- rewrite describe things with, and the Quantities its rewrite counts with. A
@@ -1827,6 +1828,7 @@ conditionQuantities condition = case condition of
   Condition.Type.Any conditions -> foldMap conditionQuantities conditions
   Condition.Type.All conditions -> foldMap conditionQuantities conditions
   Condition.Type.During _ -> []
+  Condition.Type.IsPrime measured -> [measured]
 
 -- What a DRAW rewrite reads. entryRewriteReads' discipline again, and the answer
 -- is SYNTACTIC rather than per-reader: CR 400.11c keeps a spell or ability from
@@ -2405,6 +2407,7 @@ conditionSlotsAreExhaustive condition = case condition of
   Condition.Type.Any conditions -> all conditionSlotsAreExhaustive conditions
   Condition.Type.All conditions -> all conditionSlotsAreExhaustive conditions
   Condition.Type.During _ -> True
+  Condition.Type.IsPrime measured -> Quantity.slotsAreExhaustive measured
 
 -- conditionSlots' mirror for a static read: does either side of any
 -- comparison make it?
@@ -2414,6 +2417,7 @@ conditionHasRead wanted condition = case condition of
   Condition.Type.Any conditions -> any (conditionHasRead wanted) conditions
   Condition.Type.All conditions -> any (conditionHasRead wanted) conditions
   Condition.Type.During _ -> False
+  Condition.Type.IsPrime measured -> Quantity.hasRead wanted measured
 
 -- Does any of these effects make the read `wanted` names? A card that reads X
 -- must declare it in its cost (CR 107.3, CR 107.3a, CR 118.4), the same
