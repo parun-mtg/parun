@@ -84,38 +84,19 @@
                       }
                     },
                     {
-                      "type": "During",
+                      "type": "Compares",
                       "value": {
-                        "scope": {
-                          "type": "PlayersTurn",
+                        "comparison": "Exactly",
+                        "measured": {
+                          "type": "IsActivePlayer",
                           "value": {
                             "type": "Relative",
-                            "value": "Opponent"
+                            "value": "You"
                           }
                         },
-                        "window": {
-                          "type": "Step",
-                          "value": {
-                            "type": "PrecombatMain"
-                          }
-                        }
-                      }
-                    },
-                    {
-                      "type": "During",
-                      "value": {
-                        "scope": {
-                          "type": "PlayersTurn",
-                          "value": {
-                            "type": "Relative",
-                            "value": "Opponent"
-                          }
-                        },
-                        "window": {
-                          "type": "Step",
-                          "value": {
-                            "type": "PostcombatMain"
-                          }
+                        "threshold": {
+                          "type": "Literal",
+                          "value": 0
                         }
                       }
                     }
