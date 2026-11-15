@@ -151,10 +151,10 @@ chosenCard registry name = do
 -- Over Asked rather than Prompt because rule 201.4a's match needs the asking
 -- game's teams for its Filter context, and Asked is where that state is.
 --
--- Parun.CastProhibitionSpec's "CR 201.4 a name no card has is refused and the
--- chooser is asked again", "CR 201.4 a slug the registry answers to is not a
--- card's name" and "CR 201.4a a real card the restriction forbids is refused and
--- the chooser is asked again" are what prove it.
+-- Parun.CastProhibitionSpec's "CR 201.4 a slug the registry answers to is not a
+-- card's name" proves it; the "CR 201.4" and "CR 201.4a" scenarios under
+-- data/scenarios/cast-prohibition prove admitsName, which the scenario runner
+-- judges a chosen name by too.
 policingCardNames ::
   (Monad m) =>
   Registry.Registry m ->

@@ -20,8 +20,6 @@ import qualified Parun.Engine.Activate as Activate
 import qualified Parun.Engine.Combat as Combat
 import qualified Parun.Engine.Damage as Damage
 import qualified Parun.Engine.Engine as Engine
-import qualified Parun.Engine.Event as Event
-import qualified Parun.Engine.Expiry as Expiry
 import qualified Parun.Engine.Game as Game
 import qualified Parun.Engine.PlayerEffect as PlayerEffect
 import qualified Parun.Engine.Projection as Projection
@@ -29,29 +27,21 @@ import qualified Parun.Engine.Setup as Setup
 import qualified Parun.Engine.Stack as Stack
 import qualified Parun.Exceptions.InvalidCorpus as InvalidCorpus
 import qualified Parun.Interpreter as Interpreter
-import Parun.PlayerEffectSpec (anySpellId, isCast, silenceAfter, swapAt, threeSeatSilenceBoard)
+import Parun.PlayerEffectSpec (isCast, silenceAfter)
 import qualified Parun.Registry as Registry
 import qualified Parun.Spec as Spec
 import qualified Parun.Support as S
 import qualified Parun.Types.Acquisition as Acquisition
 import qualified Parun.Types.Action as Action.Type
-import qualified Parun.Types.ActivatedAbility as ActivatedAbility
-import qualified Parun.Types.ActivePlayerEffect as ActivePlayerEffect
-import qualified Parun.Types.AffectedPlayers as AffectedPlayers
 import qualified Parun.Types.Asked as Asked
-import qualified Parun.Types.Card as Card.Type
 import qualified Parun.Types.CardName as CardName
 import qualified Parun.Types.CardType as CardType
 import qualified Parun.Types.Color as Color
 import qualified Parun.Types.Combat as Combat.Type
 import qualified Parun.Types.CombatStep as CombatStep
-import qualified Parun.Types.CounterKind as CounterKind
-import qualified Parun.Types.EndingStep as EndingStep
-import qualified Parun.Types.Expiry as Expiry.Type
 import qualified Parun.Types.Facing as Facing
 import qualified Parun.Types.Filter as Filter.Type
 import qualified Parun.Types.GameState as GameState
-import qualified Parun.Types.GrantedAbility as GrantedAbility
 import qualified Parun.Types.Keyword as Keyword
 import qualified Parun.Types.Object as Object
 import qualified Parun.Types.ObjectId as ObjectId
@@ -61,18 +51,14 @@ import qualified Parun.Types.Printing as Printing
 import qualified Parun.Types.PrintingTable as PrintingTable
 import qualified Parun.Types.Prompt as Prompt
 import qualified Parun.Types.Recipient as Recipient
-import qualified Parun.Types.Regenerability as Regenerability
 import qualified Parun.Types.StoredEffects as StoredEffects
-import qualified Parun.Types.Subtype as Subtype
 import qualified Parun.Types.Supertype as Supertype
-import qualified Parun.Types.TextWord as TextWord
 import qualified Parun.Types.TurnRegisters as TurnRegisters
 import qualified Parun.Types.VariableChoice as VariableChoice
-import qualified Parun.Types.While as While
 import qualified Parun.Types.Zone as Zone
 
 -- Silence {W} Instant: "Your opponents can't cast spells this turn."
-silenceSpec :: (Monad m, Monad n) => Spec.Spec m n -> Registry.Registry m -> n ()
+silenceSpec :: (Monad m) => Spec.Spec m n -> Registry.Registry m -> n ()
 silenceSpec s registry =
   Spec.describe s "Silence" $ do
     Spec.it s "before Silence resolves, bob may cast his creature" $ do
@@ -83,17 +69,6 @@ silenceSpec s registry =
       piker <- S.printingOf s registry "Goblin Piker"
       let (_, _, pikerId, _, before, _) = silenceAfter plains silence mountain prodigalSorcerer piker
       Spec.assertBool s (elem (Action.Type.Cast pikerId (S.printingName piker) Facing.FaceUp) (Action.legalActions S.bob before)) "offered"
-
-    Spec.it s "CR 514.2 the prohibition ends at cleanup" $ do
-      plains <- S.printingOf s registry "Plains"
-      silence <- S.printingOf s registry "Silence"
-      mountain <- S.printingOf s registry "Mountain"
-      prodigalSorcerer <- S.printingOf s registry "Prodigal Sorcerer"
-      piker <- S.printingOf s registry "Goblin Piker"
-      let (_, _, _, _, _, after) = silenceAfter plains silence mountain prodigalSorcerer piker
-          ended = S.runPure S.identityAnswer after (Engine.runTurnBasedActions (Phase.Ending EndingStep.Cleanup))
-      Spec.assertEqWith s "nothing stored" (StoredEffects.playerEffects (GameState.stored ended)) []
-      Spec.assertBool s (not (PlayerEffect.prohibitsCasting S.bob anySpellId VariableChoice.Announced ended)) "bob may cast again"
 
 -- CR 601.2c: the three-seat Cease-Fire board. alice has three Plains and the
 -- Cease-Fire; all three seats have two Mountains, a Goblin Piker in hand and two
@@ -185,62 +160,15 @@ offersCast pid oid printing gs =
         )
     )
 
--- Sphinx's Decree {1}{W} Sorcery: "Each opponent can't cast instant or sorcery
--- spells during that player's next turn." (Oracle checked against Scryfall
--- 2026-09-25.) CR 611.2a's window, one per opponent: each opponent's next turn
--- is a different turn from three seats on, so each is barred on their own turn
--- and not on the other's. Turn order is alice, bob, carol; bob and carol each
--- hold a Lightning Bolt and two Mountains, so a cast is offered whenever nothing
--- bars it.
-sphinxsDecreeSpec :: (Monad m) => Spec.Spec m n -> Registry.Registry m -> n ()
-sphinxsDecreeSpec s registry =
-  Spec.describe s "Sphinx's Decree" $ do
-    Spec.it s "CR 611.2a each opponent is barred during their own next turn and no other" $ do
-      plains <- S.printingOf s registry "Plains"
-      decree <- S.printingOf s registry "Sphinx's Decree"
-      mountain <- S.printingOf s registry "Mountain"
-      bolt <- S.printingOf s registry "Lightning Bolt"
-      let (decreeId, bobsBolt, carolsBolt, before) = threeSeatSilenceBoard plains decree mountain bolt
-          resolved = S.runPure S.identityAnswer (S.runPure S.identityAnswer before (S.cast S.alice decreeId)) Engine.priorityLoop
-          handoff gs =
-            Game.overTurn
-              ( \registers ->
-                  registers
-                    { TurnRegisters.phase = Phase.PrecombatMain
-                    }
-              )
-              (S.runPure S.identityAnswer (Expiry.dropAtCleanup gs) Engine.handoffTurn)
-
-          bobsTurn = handoff resolved
-          carolsTurn = handoff bobsTurn
-          offered pid oid gs =
-            elem
-              (Action.Type.Cast oid (S.printingName bolt) Facing.FaceUp)
-              ( Action.legalActions
-                  pid
-                  ( gs
-                      { GameState.turn =
-                          (GameState.turn gs)
-                            { TurnRegisters.priority = Just pid
-                            }
-                      }
-                  )
-              )
-      Spec.assertBool s (offered S.bob bobsBolt resolved) "the window has not begun on alice's turn, so bob may still cast his Bolt"
-      Spec.assertEqWith s "on bob's turn bob is barred and carol is not" (offered S.bob bobsBolt bobsTurn, offered S.carol carolsBolt bobsTurn) (False, True)
-      Spec.assertEqWith s "on carol's turn carol is barred and bob is not" (offered S.carol carolsBolt carolsTurn, offered S.bob bobsBolt carolsTurn) (False, True)
-      -- Preconditions, ordered behind the gameplay assertions.
-      Spec.assertEqWith s "the Decree resolved on alice's turn 1, into a turn each for bob and carol" (fmap (TurnRegisters.activePlayer . GameState.turn) [resolved, bobsTurn, carolsTurn], TurnRegisters.turnNumber (GameState.turn carolsTurn)) ([S.alice, S.bob, S.carol], 3)
-      Spec.assertEqWith s "one row per opponent, each over that opponent alone" (List.sort (fmap ActivePlayerEffect.scope (StoredEffects.playerEffects (GameState.stored resolved)))) [AffectedPlayers.Named S.bob, AffectedPlayers.Named S.carol]
-
 -- Cease-Fire {2}{W} Instant: "Target player can't cast creature spells this
 -- turn. Draw a card." The first card in the pool to store a player effect on a
 -- TARGETED seat.
-ceaseFireSpec :: (Monad m, Monad n) => Spec.Spec m n -> Registry.Registry m -> n ()
+ceaseFireSpec :: (Monad m) => Spec.Spec m n -> Registry.Registry m -> n ()
 ceaseFireSpec s registry =
   Spec.describe s "CeaseFire" $ do
-    -- The positive control both negatives are read against: before the spell
-    -- resolves, every seat may cast its Goblin Piker.
+    -- The positive control the scenarios' negatives are read against
+    -- (data/scenarios/cast-prohibition, "CR 601.2c" and "CR 514.2"): before the
+    -- spell resolves, every seat may cast its Goblin Piker.
     Spec.it s "before Cease-Fire resolves, all three seats may cast their creature" $ do
       plains <- S.printingOf s registry "Plains"
       ceaseFire <- S.printingOf s registry "Cease-Fire"
@@ -252,175 +180,6 @@ ceaseFireSpec s registry =
       Spec.assertBool s (offersCast S.alice alicesPiker piker before) "alice could cast"
       Spec.assertBool s (offersCast S.bob bobsPiker piker before) "bob could cast"
       Spec.assertBool s (offersCast S.carol carolsPiker piker before) "carol could cast"
-
-    -- THE DISCRIMINATOR: the restriction lands on the seat CR 601.2c chose and on
-    -- no other. No PlayerScope can say this -- Opponents would stop bob too, and
-    -- You would stop alice.
-    Spec.it s "CR 601.2c the restriction lands on the targeted seat alone" $ do
-      plains <- S.printingOf s registry "Plains"
-      ceaseFire <- S.printingOf s registry "Cease-Fire"
-      mountain <- S.printingOf s registry "Mountain"
-      piker <- S.printingOf s registry "Goblin Piker"
-      lightningBolt <- S.printingOf s registry "Lightning Bolt"
-      let (alicesPiker, bobsPiker, carolsPiker, _, _, after) = ceaseFireAfter plains ceaseFire mountain piker lightningBolt
-      -- The gameplay reading first, so a mutation is answered by the offers
-      -- rather than by the store's shape alone.
-      Spec.assertBool s (not (offersCast S.carol carolsPiker piker after)) "carol may not cast her creature"
-      Spec.assertBool s (offersCast S.bob bobsPiker piker after) "bob, the untargeted opponent, still may"
-      Spec.assertBool s (offersCast S.alice alicesPiker piker after) "and so may alice, who cast it"
-      Spec.assertEqWith s "one stored effect" (length (StoredEffects.playerEffects (GameState.stored after))) 1
-      Spec.assertEqWith
-        s
-        "stored against the seat itself, not a scope"
-        (fmap ActivePlayerEffect.scope (StoredEffects.playerEffects (GameState.stored after)))
-        [AffectedPlayers.Named S.carol]
-
-    -- CR 514.2: "this turn" ends at cleanup, so the restriction has to end with
-    -- it. Driven through the cleanup step's own turn-based actions rather than
-    -- the priority loop -- the narrowest path that ends the effect.
-    Spec.it s "CR 514.2 the restriction ends at cleanup" $ do
-      plains <- S.printingOf s registry "Plains"
-      ceaseFire <- S.printingOf s registry "Cease-Fire"
-      mountain <- S.printingOf s registry "Mountain"
-      piker <- S.printingOf s registry "Goblin Piker"
-      lightningBolt <- S.printingOf s registry "Lightning Bolt"
-      let (_, _, carolsPiker, _, _, after) = ceaseFireAfter plains ceaseFire mountain piker lightningBolt
-          ended = S.runPure S.identityAnswer after (Engine.runTurnBasedActions (Phase.Ending EndingStep.Cleanup))
-      Spec.assertEqWith s "nothing stored" (StoredEffects.playerEffects (GameState.stored ended)) []
-      Spec.assertBool s (offersCast S.carol carolsPiker piker ended) "carol may cast her creature again"
-
--- CR 611.2a's board: three seats, and the SEAT COUNT is load-bearing twice
--- over. "Until your next turn" has to pass two other seats before it ends, so a
--- two-player board cannot tell "the next turn" from "your next turn"; and CR
--- 702.11c's opponents are two players, not one.
---
--- alice has one Plains and Blossoming Calm in hand. bob has one Mountain and a
--- Lightning Bolt. carol has nothing -- she is a seat to pass and a rival target,
--- both of which she is by existing. Mana is held EQUAL across every case below,
--- because each one casts the same Bolt off the same untapped Mountain: the only
--- thing that ever differs is whether alice's stored effect is still there.
---
--- Loaded fresh inside each case that needs it -- equivalent because loading is
--- deterministic and cached (batch-recipe.md).
-blossomingCalmBoard :: Printing.Printing -> Printing.Printing -> Printing.Printing -> Printing.Printing -> (ObjectId.ObjectId, ObjectId.ObjectId, GameState.GameState)
-blossomingCalmBoard plains calm mountain bolt =
-  let gs0 = Setup.emptyGame S.threePlayers
-      (_, gs1) = S.addPermanent plains S.alice gs0
-      (calmId, gs2) = S.addHandCard calm S.alice gs1
-      (_, gs3) = S.addPermanent mountain S.bob gs2
-      (boltId, gs4) = S.addHandCard bolt S.bob gs3
-   in ( calmId,
-        boltId,
-        gs4
-          { GameState.turn =
-              (GameState.turn gs4)
-                { TurnRegisters.phase = Phase.PrecombatMain,
-                  TurnRegisters.activePlayer = S.alice,
-                  TurnRegisters.priority = Just S.alice
-                }
-          }
-      )
-
--- alice casts Blossoming Calm and it resolves.
-blossomingCalmAfter :: ObjectId.ObjectId -> GameState.GameState -> GameState.GameState
-blossomingCalmAfter calmId before =
-  S.runPure S.identityAnswer (S.runPure S.identityAnswer before (S.cast S.alice calmId)) Engine.priorityLoop
-
--- bob casts his Bolt with an answerer that aims at alice whenever the engine
--- offers her, so "alice was never offered" is the only way the damage can land
--- anywhere else -- Parun.TargetSpec's prefersBob, pointed the other way.
---
--- The phase and priority are restated rather than inherited, so a board that has
--- been handed off two seats is cast on under exactly the conditions the
--- un-handed-off one was.
-blossomingCalmBolt :: ObjectId.ObjectId -> GameState.GameState -> GameState.GameState
-blossomingCalmBolt boltId gs =
-  let prefersAlice :: Prompt.Prompt r -> r
-      prefersAlice p = case p of
-        Prompt.ChooseTargets _ _ _ sets -> S.preferring (== Recipient.ToPlayer S.alice) sets
-        _ -> S.identityAnswer p
-      staged =
-        gs
-          { GameState.turn =
-              (GameState.turn gs)
-                { TurnRegisters.phase = Phase.PrecombatMain,
-                  TurnRegisters.priority = Just S.bob
-                }
-          }
-   in S.runPure prefersAlice staged (S.cast S.bob boltId >> Stack.resolveTop)
-
--- CR 611.2a's turn boundary, as Engine.handoffTurn -- the call every "until your
--- next turn" duration is ended by (Expiry.dropAtTurnOf), and the one a test can
--- make without running whole turns and decking the fixture (CR 104.3c).
-blossomingCalmHandoff :: GameState.GameState -> GameState.GameState
-blossomingCalmHandoff gs = S.runPure S.identityAnswer gs Engine.handoffTurn
-
--- Blossoming Calm {W} Instant: "You gain hexproof until your next turn. You gain
--- 2 life." The stored player-effect carrier's turn-relative expiry, end to end:
--- Parun.Engine.Resolve stamps Expiry.AtTurnOf off the resolution's controller
--- (CR 109.5) and Expiry.dropAtTurnOf ends it at alice's seat, two handoffs later.
---
--- The card's third line is rebound (CR 702.88), which Parun.CastSpec's Rebound
--- group proves on Staggershock; nothing below reaches it.
-blossomingCalmSpec :: (Monad m, Monad n) => Spec.Spec m n -> Registry.Registry m -> n ()
-blossomingCalmSpec s registry =
-  Spec.describe s "Blossoming Calm" $ do
-    -- CR 611.1: the resolution stores the effect, and CR 702.11c's player
-    -- hexproof takes alice out of the Bolt's candidate set. The life gain is the
-    -- second clause of the same spell, and it is asserted for its own sake: it is
-    -- what shows the spell RESOLVED rather than fizzling somewhere earlier.
-    Spec.it s "CR 702.11c once it resolves, alice has gained 2 and bob's Bolt cannot reach her" $ do
-      plains <- S.printingOf s registry "Plains"
-      calm <- S.printingOf s registry "Blossoming Calm"
-      mountain <- S.printingOf s registry "Mountain"
-      bolt <- S.printingOf s registry "Lightning Bolt"
-      let (calmId, boltId, before) = blossomingCalmBoard plains calm mountain bolt
-          resolved = blossomingCalmAfter calmId before
-          burned = blossomingCalmBolt boltId resolved
-      Spec.assertEqWith s "one stored player effect" (length (StoredEffects.playerEffects (GameState.stored resolved))) 1
-      Spec.assertEqWith s "and it ends at alice's next turn" (fmap ActivePlayerEffect.expiry (StoredEffects.playerEffects (GameState.stored resolved))) [Expiry.Type.AtTurnOf S.alice]
-      Spec.assertEqWith s "alice gained 2" (S.lifeOf S.alice resolved) (Just 22)
-      Spec.assertEqWith s "and takes nothing from the Bolt" (S.lifeOf S.alice burned) (Just 22)
-      Spec.assertEqWith s "which landed on bob, the lowest candidate left" (S.lifeOf S.bob burned) (Just 17)
-
-    -- CR 514.2 is the wrong sweep for this duration, and this is where an
-    -- UntilEndOfTurn mis-arming would show: the effect has to outlive the
-    -- cleanup of the very turn it was cast in.
-    Spec.it s "CR 514.2 the hexproof outlives the cleanup of the turn it was cast in" $ do
-      plains <- S.printingOf s registry "Plains"
-      calm <- S.printingOf s registry "Blossoming Calm"
-      mountain <- S.printingOf s registry "Mountain"
-      bolt <- S.printingOf s registry "Lightning Bolt"
-      let (calmId, boltId, before) = blossomingCalmBoard plains calm mountain bolt
-          swept = Expiry.dropAtCleanup (blossomingCalmAfter calmId before)
-          burned = blossomingCalmBolt boltId swept
-      Spec.assertEqWith s "still stored" (length (StoredEffects.playerEffects (GameState.stored swept))) 1
-      Spec.assertEqWith s "and alice still takes nothing" (S.lifeOf S.alice burned) (Just 22)
-
-    -- THE UNIT'S POINT. Two handoffs pass and the effect survives both; the
-    -- third begins alice's own turn and ends it. A duration keyed to the next
-    -- turn, or to the victim rather than to CR 109.5's "you", would end at the
-    -- first handoff -- which is why the assertion is made at every seat rather
-    -- than only at the last.
-    Spec.it s "CR 611.2a it survives bob's turn and carol's turn, and ends as alice's next turn begins" $ do
-      plains <- S.printingOf s registry "Plains"
-      calm <- S.printingOf s registry "Blossoming Calm"
-      mountain <- S.printingOf s registry "Mountain"
-      bolt <- S.printingOf s registry "Lightning Bolt"
-      let (calmId, boltId, before) = blossomingCalmBoard plains calm mountain bolt
-          resolved = blossomingCalmAfter calmId before
-          bobsTurn = blossomingCalmHandoff resolved
-          carolsTurn = blossomingCalmHandoff bobsTurn
-          alicesTurn = blossomingCalmHandoff carolsTurn
-      Spec.assertEqWith s "bob's turn begins" (TurnRegisters.activePlayer (GameState.turn bobsTurn)) S.bob
-      Spec.assertEqWith s "and the effect is still stored" (length (StoredEffects.playerEffects (GameState.stored bobsTurn))) 1
-      Spec.assertEqWith s "alice takes nothing on bob's turn" (S.lifeOf S.alice (blossomingCalmBolt boltId bobsTurn)) (Just 22)
-      Spec.assertEqWith s "carol's turn begins" (TurnRegisters.activePlayer (GameState.turn carolsTurn)) S.carol
-      Spec.assertEqWith s "and the effect is still stored" (length (StoredEffects.playerEffects (GameState.stored carolsTurn))) 1
-      Spec.assertEqWith s "alice takes nothing on carol's turn either" (S.lifeOf S.alice (blossomingCalmBolt boltId carolsTurn)) (Just 22)
-      Spec.assertEqWith s "alice's own next turn begins" (TurnRegisters.activePlayer (GameState.turn alicesTurn)) S.alice
-      Spec.assertEqWith s "and the effect is gone" (StoredEffects.playerEffects (GameState.stored alicesTurn)) []
-      Spec.assertEqWith s "so the same Bolt now reaches her" (S.lifeOf S.alice (blossomingCalmBolt boltId alicesTurn)) (Just 19)
 
 -- CR 611.2b's board, and the SWAMP is the only thing about it that varies. alice
 -- has an Island (which pays for the spell) and, on the holding board, a Swamp
@@ -466,15 +225,9 @@ conditionalSilenceBoard withSwamp island swamp hush mountain piker =
           }
       )
 
--- alice casts it and it resolves.
-conditionalSilenceAfter :: ObjectId.ObjectId -> GameState.GameState -> GameState.GameState
-conditionalSilenceAfter hushId before =
-  S.runPure S.identityAnswer (S.runPure S.identityAnswer before (S.cast S.alice hushId)) Engine.priorityLoop
-
 -- Goblin Piker is a creature, so CR 302.1 offers it only to the ACTIVE player.
 -- The board is alice's own main phase, so each opponent's cast is read off a copy
--- with activePlayer flipped to them and nothing else changed -- threeSeatSilenceBoard's
--- device.
+-- with activePlayer flipped to them and nothing else changed.
 conditionalSilenceCasts :: PlayerId.PlayerId -> GameState.GameState -> [Action.Type.Action]
 conditionalSilenceCasts who gs =
   filter
@@ -503,8 +256,9 @@ conditionalSilenceCasts who gs =
 conditionalSilenceSpec :: (Monad m, Monad n) => Spec.Spec m n -> Registry.Registry m -> n ()
 conditionalSilenceSpec s registry =
   Spec.describe s "Synthetic Conditional Silence" $ do
-    -- THE CONTROL TWIN: both opponents really could cast, so a later empty list
-    -- is the prohibition and not an unaffordable Piker.
+    -- THE CONTROL TWIN: both opponents really could cast, so the refusals in
+    -- data/scenarios/cast-prohibition's "CR 611.2b it is stored while the
+    -- condition holds" are the prohibition and not an unaffordable Piker.
     Spec.it s "before it resolves, both opponents may cast" $ do
       island <- S.printingOf s registry "Island"
       swamp <- S.printingOf s registry "Swamp"
@@ -514,40 +268,6 @@ conditionalSilenceSpec s registry =
       let (_, _, bobsPiker, carolsPiker, before) = conditionalSilenceBoard True island swamp hush mountain piker
       Spec.assertBool s (elem (Action.Type.Cast bobsPiker (S.printingName piker) Facing.FaceUp) (conditionalSilenceCasts S.bob before)) "bob is offered his Piker"
       Spec.assertBool s (elem (Action.Type.Cast carolsPiker (S.printingName piker) Facing.FaceUp) (conditionalSilenceCasts S.carol before)) "and carol hers"
-
-    -- CR 611.2b: the duration began, so the effect is stored -- keyed to CR
-    -- 109.5's "you", which Expiry.arm bakes in because the sweep that re-reads
-    -- the condition has no resolution left to read a controller off.
-    Spec.it s "CR 611.2b it is stored while the condition holds, and stops both opponents" $ do
-      island <- S.printingOf s registry "Island"
-      swamp <- S.printingOf s registry "Swamp"
-      hush <- S.printingOf s registry "Synthetic Conditional Silence"
-      mountain <- S.printingOf s registry "Mountain"
-      piker <- S.printingOf s registry "Goblin Piker"
-      let (hushId, _, _, _, before) = conditionalSilenceBoard True island swamp hush mountain piker
-          resolved = conditionalSilenceAfter hushId before
-      case fmap ActivePlayerEffect.expiry (StoredEffects.playerEffects (GameState.stored resolved)) of
-        [Expiry.Type.While (While.MkWhile who _)] -> Spec.assertEqWith s "the duration is keyed to its controller" who S.alice
-        other -> Spec.assertFailure s ("expected one conditional player effect, got " <> show other)
-      Spec.assertBool s (PlayerEffect.prohibitsCasting S.bob anySpellId VariableChoice.Announced resolved) "bob is prohibited"
-      Spec.assertBool s (PlayerEffect.prohibitsCasting S.carol anySpellId VariableChoice.Announced resolved) "carol is prohibited too"
-      Spec.assertBool s (not (PlayerEffect.prohibitsCasting S.alice anySpellId VariableChoice.Announced resolved)) "alice is not"
-      Spec.assertEqWith s "and nothing is offered to either" (conditionalSilenceCasts S.bob resolved <> conditionalSilenceCasts S.carol resolved) []
-
-    -- THE POSITIVE HALF of the sweep. Without it, "deletes when the condition
-    -- fails" is indistinguishable from "deletes at the first settle".
-    Spec.it s "CR 611.2b a sweep with the Swamp still there changes nothing" $ do
-      island <- S.printingOf s registry "Island"
-      swamp <- S.printingOf s registry "Swamp"
-      hush <- S.printingOf s registry "Synthetic Conditional Silence"
-      mountain <- S.printingOf s registry "Mountain"
-      piker <- S.printingOf s registry "Goblin Piker"
-      let (hushId, _, _, _, before) = conditionalSilenceBoard True island swamp hush mountain piker
-          resolved = conditionalSilenceAfter hushId before
-          (changed, swept) = Engine.runGamePure S.identityAnswer resolved Expiry.sweepConditional
-      Spec.assertBool s (not changed) "the sweep reports no change"
-      Spec.assertEqWith s "still stored" (length (StoredEffects.playerEffects (GameState.stored swept))) 1
-      Spec.assertEqWith s "and bob is still stopped" (conditionalSilenceCasts S.bob swept) []
 
     -- CR 611.2b's first sentence: a duration that never STARTS means the effect
     -- does nothing at all. The board differs from the holding one by the Swamp
@@ -571,240 +291,6 @@ conditionalSilenceSpec s registry =
       Spec.assertBool s (notElem hushId (TurnRegisters.stack (GameState.turn resolved))) "the spell really did resolve"
       Spec.assertEqWith s "nothing stored" (StoredEffects.playerEffects (GameState.stored resolved)) []
       Spec.assertBool s (elem (Action.Type.Cast bobsPiker (S.printingName piker) Facing.FaceUp) (conditionalSilenceCasts S.bob settled)) "so bob may cast"
-
--- Aims a text changer's one target slot at `oid` -- the SpellsAndPermanents
--- pool's recipient shape -- and answers the basic-land-type swap with
--- (from, to). The offered set is FILTERED rather than rebuilt, so CR 608.2b's
--- re-read at resolution sees the recipient the engine itself offered rather than
--- a hand-built one that merely looks the same.
-hackSpellAt :: ObjectId.ObjectId -> Subtype.Subtype -> Subtype.Subtype -> Prompt.Prompt r -> r
-hackSpellAt oid from to p = case p of
-  Prompt.ChooseTargets _ _ _ sets -> fmap (\(_, candidates) -> Set.filter (== Recipient.ToObject oid) candidates) sets
-  Prompt.ChooseWordSwap {} -> (TextWord.SubtypeWord from, TextWord.SubtypeWord to)
-  _ -> S.identityAnswer p
-
--- conditionalSilenceBoard's no-Swamp shape, plus the two things a Magical Hack
--- needs: a SECOND Island (two {U} spells are cast, so two lands pay) and the
--- Hack in hand. alice controls no Swamp on either board here, so the
--- Silence's printed "for as long as you control a Swamp" can never start and the
--- Islands are the only thing the hacked word can count.
---
--- bob and carol each hold a Goblin Piker over two Mountains, so both opponents
--- genuinely could cast -- an empty action list later is the prohibition and not
--- an unaffordable Piker.
---
--- Returns the Silence, the Hack, alice's two Islands, bob's Piker and carol's.
-hackedSilenceBoard ::
-  Printing.Printing ->
-  Printing.Printing ->
-  Printing.Printing ->
-  Printing.Printing ->
-  Printing.Printing ->
-  (ObjectId.ObjectId, ObjectId.ObjectId, ObjectId.ObjectId, ObjectId.ObjectId, ObjectId.ObjectId, ObjectId.ObjectId, GameState.GameState)
-hackedSilenceBoard island hush magicalHack mountain piker =
-  let gs0 = Setup.emptyGame S.threePlayers
-      (firstIsland, gs1) = S.addPermanent island S.alice gs0
-      (secondIsland, gs2) = S.addPermanent island S.alice gs1
-      (hushId, gs3) = S.addHandCard hush S.alice gs2
-      (hackId, gs4) = S.addHandCard magicalHack S.alice gs3
-      (_, gs5) = S.addPermanent mountain S.bob gs4
-      (_, gs6) = S.addPermanent mountain S.bob gs5
-      (bobsPiker, gs7) = S.addHandCard piker S.bob gs6
-      (_, gs8) = S.addPermanent mountain S.carol gs7
-      (_, gs9) = S.addPermanent mountain S.carol gs8
-      (carolsPiker, gs10) = S.addHandCard piker S.carol gs9
-   in ( hushId,
-        hackId,
-        firstIsland,
-        secondIsland,
-        bobsPiker,
-        carolsPiker,
-        gs10
-          { GameState.turn =
-              (GameState.turn gs10)
-                { TurnRegisters.phase = Phase.PrecombatMain,
-                  TurnRegisters.activePlayer = S.alice,
-                  TurnRegisters.priority = Just S.alice
-                }
-          }
-      )
-
--- alice casts the Silence; when `hack`, she then casts the Magical Hack at the
--- Silence SPELL on the stack and lets it resolve, swapping Swamp -> Island; then
--- the Silence itself resolves. The Hack is cast SECOND so it resolves first and
--- the Silence resolves already rewritten -- theftChain's ordering.
---
--- Stack.resolveTop and not the priority loop, for the reason
--- conditionalSilenceSpec's never-starts case gives: a settle runs
--- Expiry.sweepConditional, which deletes an effect whose condition is already
--- false, so a loop cannot tell "the duration never started" from "it started and
--- was swept an instant later".
-hackedSilenceAfter :: Bool -> ObjectId.ObjectId -> ObjectId.ObjectId -> GameState.GameState -> GameState.GameState
-hackedSilenceAfter hack hushId hackId before =
-  let onStack = S.runPure S.identityAnswer before (S.cast S.alice hushId)
-      spellId = case TurnRegisters.stack (GameState.turn onStack) of
-        top : _ -> top
-        [] -> S.noSource
-      hacked =
-        if hack
-          then S.runPure (hackSpellAt spellId Subtype.Swamp Subtype.Island) onStack $ do
-            S.cast S.alice hackId
-            Stack.resolveTop
-          else onStack
-   in S.runPure S.identityAnswer hacked Stack.resolveTop
-
--- CR 612.1 reaching the DURATION a spell stores over players. The restriction's
--- own Filter is the other half a word swap can touch, and Liliana, Untouched by
--- Death's group below proves it; the players axis between them is a PlayerScope
--- or a SlotName, neither of which is a word.
---
--- The printed carrier already had this -- Edgewalker under a Magical Hack, above
--- -- so what is new here is the STORED one: Synthetic Conditional Silence hacked
--- while it sits on the stack.
-hackedSilenceSpec :: (Monad m) => Spec.Spec m n -> Registry.Registry m -> n ()
-hackedSilenceSpec s registry =
-  Spec.describe s "Synthetic Conditional Silence" $ do
-    -- THE CONTROL TWIN, differing from the case below in the Hack alone: it sits
-    -- unspent in alice's hand and her second Island stays untapped. Without a
-    -- Swamp the printed duration never starts, so nothing is stored.
-    Spec.it s "CR 611.2b unhacked, with no Swamp the duration never starts" $ do
-      island <- S.printingOf s registry "Island"
-      hush <- S.printingOf s registry "Synthetic Conditional Silence"
-      magicalHack <- S.printingOf s registry "Magical Hack"
-      mountain <- S.printingOf s registry "Mountain"
-      piker <- S.printingOf s registry "Goblin Piker"
-      let (hushId, hackId, _, _, bobsPiker, carolsPiker, before) = hackedSilenceBoard island hush magicalHack mountain piker
-          after = hackedSilenceAfter False hushId hackId before
-      Spec.assertBool s (elem (Action.Type.Cast bobsPiker (S.printingName piker) Facing.FaceUp) (conditionalSilenceCasts S.bob after)) "bob is still offered his Piker"
-      Spec.assertBool s (elem (Action.Type.Cast carolsPiker (S.printingName piker) Facing.FaceUp) (conditionalSilenceCasts S.carol after)) "and carol hers"
-      Spec.assertEqWith s "the Silence really did resolve" (length (TurnRegisters.stack (GameState.turn after))) 0
-      Spec.assertEqWith s "and nothing is stored" (StoredEffects.playerEffects (GameState.stored after)) []
-
--- The one activated ability at index `n` of what the PROJECTION hands out for
--- `oid` -- not Face.activatedAbilities, which is the printed list a text change
--- has not reached. Projection.abilitiesOf is the list Activate itself offers
--- from, so this is the same ability a player would be given.
-projectedAbility :: Int -> ObjectId.ObjectId -> GameState.GameState -> Maybe (ActivatedAbility.ActivatedAbility Card.Type.Card (GrantedAbility.GrantedAbility Card.Type.Card))
-projectedAbility n oid gs = case drop n (Projection.abilitiesOf oid gs) of
-  ability : _ -> Just ability
-  [] -> Nothing
-
--- alice controls Liliana with four loyalty counters, one untapped Island (the
--- {U} the changer costs) and two untapped Swamps; she holds an Artificial
--- Evolution. Her graveyard holds a Whipstitched Zombie ({1}{B} Creature --
--- Zombie 2/2) and a Cabal Evangel ({1}{B} Creature -- Human Cleric 2/2). The two
--- graveyard cards cost the SAME, so no assertion below can turn on mana, and
--- they differ in the subtype word alone -- which is the word the -3 names.
---
--- Two Swamps rather than three: the Island pays the {U} on the hacked board and
--- goes unspent on the control, so both boards can still afford exactly one
--- {1}{B} cast out of the graveyard.
---
--- Returns Liliana, the changer, the Zombie card, the Cleric card and the board.
-lilianaBoard ::
-  Printing.Printing ->
-  Printing.Printing ->
-  Printing.Printing ->
-  Printing.Printing ->
-  Printing.Printing ->
-  Printing.Printing ->
-  (ObjectId.ObjectId, ObjectId.ObjectId, ObjectId.ObjectId, ObjectId.ObjectId, GameState.GameState)
-lilianaBoard island swamp liliana evolution zombie evangel =
-  let (_, g1) = S.addPermanent island S.alice (Setup.emptyGame S.bothPlayers)
-      (_, g2) = S.addPermanent swamp S.alice g1
-      (_, g3) = S.addPermanent swamp S.alice g2
-      (lilianaId, g4) = S.addPermanent liliana S.alice g3
-      (evolutionId, g5) = S.addHandCard evolution S.alice g4
-      (zombieId, g6) = S.addGraveyardCard zombie S.alice g5
-      (evangelId, g7) = S.addGraveyardCard evangel S.alice g6
-   in ( lilianaId,
-        evolutionId,
-        zombieId,
-        evangelId,
-        Game.overTurn
-          ( \registers ->
-              registers
-                { TurnRegisters.phase = Phase.PrecombatMain,
-                  TurnRegisters.activePlayer = S.alice,
-                  TurnRegisters.priority = Just S.alice
-                }
-          )
-          (S.addCounter CounterKind.Loyalty 4 lilianaId g7)
-      )
-
--- alice casts the Artificial Evolution at Liliana THE PERMANENT and lets it
--- resolve. Aimed at the permanent rather than at a spell because Liliana is
--- already on the battlefield -- Parun.ActivateSpec's Tidal Warrior chain is the
--- same road, and the reason the swap is visible to an ability activated
--- afterwards is that the ability is enumerated off the projected permanent.
-hackLiliana :: ObjectId.ObjectId -> ObjectId.ObjectId -> Subtype.Subtype -> Subtype.Subtype -> GameState.GameState -> GameState.GameState
-hackLiliana lilianaId evolutionId from to before =
-  S.runPure (swapAt lilianaId from to) before $ do
-    S.cast S.alice evolutionId
-    Stack.resolveTop
-
--- alice activates the loyalty ability at index `n` of what the projection hands
--- out and resolves it. A board where Liliana has no such ability is returned
--- untouched, which every case below catches by asserting on what the resolution
--- did rather than only on what it did not.
-activateLoyalty :: (forall r. Prompt.Prompt r -> r) -> Int -> ObjectId.ObjectId -> GameState.GameState -> GameState.GameState
-activateLoyalty answer n lilianaId gs = case projectedAbility n lilianaId gs of
-  Nothing -> gs
-  Just ability ->
-    S.runPure answer gs $ do
-      Activate.activateAbility S.alice lilianaId ability
-      Stack.resolveTop
-
--- Liliana, Untouched by Death {2}{B}{B} Legendary Planeswalker -- Liliana,
--- loyalty 4 (Oracle text checked against Scryfall, 2026-08-27):
---   +1: Mill three cards. If at least one Zombie card is milled this way, each
---       opponent loses 2 life and you gain 2 life.
---   -2: Target creature gets -X/-X until end of turn, where X is the number of
---       Zombies you control.
---   -3: You may cast Zombie spells from your graveyard this turn.
---
--- THE UNIT'S POINT is the -3 under an Artificial Evolution: CR 612.1's word swap
--- has to reach the Filter inside the restriction a RESOLUTION stores over
--- players, which is the half of Effect.AffectPlayers the duration case above
--- leaves. The board is an ACTIVATE-chain rather than a cast-chain: Scryfall
--- `oracle:/cast [A-Z][a-z]+ spells/ -t:instant -t:sorcery` and
--- `oracle:/(cast|costs?|counter)[^.]*this turn/ -t:instant -t:sorcery`, read
--- 2026-08-27, turned up no instant or sorcery naming a subtype in a player
--- restriction -- Cherished Hatchling's dies-trigger is the nearest other
--- producer, and it is a permanent's too. Both reach Projection.rewriteEffect by
--- the same road, through Projection.abilitiesOf.
---
--- The +1 comes with it because it is the card's other subtype word, and because
--- it is the first card in `data/cards/` to write a MillTally at all: its "if at
--- least one" is a clause condition comparing Quantity.InSlot against a literal,
--- and the whole tally-then-gate road had no producer before it.
-lilianaSpec :: (Monad m) => Spec.Spec m n -> Registry.Registry m -> n ()
-lilianaSpec s registry =
-  let board = do
-        island <- S.printingOf s registry "Island"
-        swamp <- S.printingOf s registry "Swamp"
-        liliana <- S.printingOf s registry "Liliana, Untouched by Death"
-        evolution <- S.printingOf s registry "Artificial Evolution"
-        zombie <- S.printingOf s registry "Whipstitched Zombie"
-        evangel <- S.printingOf s registry "Cabal Evangel"
-        pure (lilianaBoard island swamp liliana evolution zombie evangel)
-   in Spec.describe s "LilianaUntouchedByDeath" $ do
-        -- THE UNIT'S POINT. The same board with Zombie swapped for Cleric on
-        -- Liliana herself. The gameplay assertions lead, and they lead in BOTH
-        -- directions: an arm that dropped the descent would leave the restriction
-        -- naming Zombie, so the Zombie would still be castable and the Cleric
-        -- would not -- which is exactly the case above. Two graveyard cards of
-        -- the same cost are what separates "rewrote the word" from "dropped the
-        -- restriction", since dropping it would make both castable.
-        Spec.it s "CR 612.1/612.2 an Artificial Evolution on Liliana moves the -3 onto the new word" $ do
-          (lilianaId, evolutionId, zombieId, evangelId, before) <- board
-          let after = activateLoyalty S.identityAnswer 2 lilianaId (hackLiliana lilianaId evolutionId Subtype.Zombie Subtype.Cleric before)
-          Spec.assertBool s (S.castable S.alice evangelId after) "the Cleric is castable out of the graveyard"
-          Spec.assertBool s (not (S.castable S.alice zombieId after)) "and the Zombie no longer is"
-          Spec.assertBool s (any (S.isCastOf evangelId) (Action.legalActions S.alice after)) "the Cleric is offered"
-          Spec.assertBool s (not (any (S.isCastOf zombieId) (Action.legalActions S.alice after))) "while the Zombie is not"
-          Spec.assertBool s (PlayerEffect.mayCastFrom S.alice Zone.Graveyard evangelId after) "the typed question agrees"
-          Spec.assertEqWith s "and exactly one restriction is stored" (length (StoredEffects.playerEffects (GameState.stored after))) 1
 
 -- Loaded fresh inside each case that needs it -- equivalent because loading
 -- is deterministic and cached (batch-recipe.md).
@@ -874,25 +360,9 @@ chamberAnswer opponent pick p = case p of
   Prompt.ChooseOpponent {} -> opponent
   _ -> S.identityAnswer p
 
--- chamberAnswer, also RECORDING each name ask as the (chooser, restriction) pair
--- it arrived as. Both halves are invisible from the finished board:
--- Object.chosenNames is keyed by chooser and has forgotten CR 101.4's order, and CR 201.4a's
--- restriction is never written to the board at all. Reading the prompt is the
--- only way to see either.
-recordingChamberAnswer ::
-  PlayerId.PlayerId ->
-  (PlayerId.PlayerId -> CardName.CardName) ->
-  Prompt.Prompt r ->
-  State.State [(PlayerId.PlayerId, Filter.Type.Filter Keyword.Keyword)] r
-recordingChamberAnswer opponent pick p = case p of
-  Prompt.ChooseCardName _ chooser _ restriction _ -> do
-    State.modify' (<> [(chooser, restriction)])
-    pure (pick chooser)
-  _ -> pure (chamberAnswer opponent pick p)
-
 -- chamberAnswer, taking each name off a QUEUE rather than off a function of the
 -- chooser. CR 201.4 refuses an illegal name and the same chooser is asked again,
--- so the two cases below need an answerer whose second answer differs from its
+-- so the case below needs an answerer whose second answer differs from its
 -- first, which a pure Prompt r -> r cannot be -- State-threaded, as
 -- Parun.CopySpec's countingAnswer is.
 --
@@ -921,7 +391,7 @@ queuedChamberAnswer opponent fallback asked = case Asked.prompt asked of
 -- castChamber, with the name answers coming off `queue` through
 -- Parun.Interpreter.policingCardNames -- the wrapper an interpreter installs over
 -- its own answerer. Hands back the finished board and what the queue has LEFT,
--- which is how the cases below count the asks.
+-- which is how the case below counts the asks.
 --
 -- The registry is lifted into the answerer's own monad: Registry.Registry is
 -- parameterized over the monad a lookup works in exactly so that a caller can.
@@ -955,12 +425,6 @@ nonBasicLandName = Filter.Type.Not (Filter.Type.And [Filter.Type.HasSupertype Su
 pikerSlug :: CardName.CardName
 pikerSlug = CardName.MkCardName (Text.pack "goblin-piker")
 
--- A name CR 201.4's reference does not have, which the refusal case needs one of.
--- Scryfall !"No Such Card", 2026-09-05, no hit; `data/cards/` has no file for it
--- either, and Parun.Registry is the reference Parun.Interpreter.legalCardName reads.
-noSuchCard :: CardName.CardName
-noSuchCard = CardName.MkCardName (Text.pack "No Such Card")
-
 -- Cast the Chamber and let it resolve, answering both name choices.
 --
 -- CAST rather than S.addPermanent, because the choice happens only on the entry
@@ -983,93 +447,16 @@ enteredOne before after = case Set.toList (Set.difference (GameState.battlefield
 nullChamberSpec :: (Monad m, Monad n) => Spec.Spec m n -> Registry.Registry m -> n ()
 nullChamberSpec s registry =
   Spec.describe s "NullChamber" $ do
-    -- CR 101.4: "If multiple players would make choices . . . at the same time,
-    -- the active player . . . makes any choices required, then the next player
-    -- in turn order". Both names are chosen as one event, so the order is the
-    -- rule's.
-    --
-    -- NOT yet a discriminating test of CR 101.4 against "the controller first":
-    -- the only way a permanent enters in this pool is its controller casting it,
-    -- and a sorcery-speed enchantment is cast on its controller's own turn, so
-    -- the two orders name the same player. A card that put a permanent onto the
-    -- battlefield under another player's control would separate them.
-    Spec.it s "CR 101.4 the active player is asked to name a card first" $ do
-      plains <- S.printingOf s registry "Plains"
-      mountain <- S.printingOf s registry "Mountain"
-      nullChamber <- S.printingOf s registry "Null Chamber"
-      piker <- S.printingOf s registry "Goblin Piker"
-      cancel <- S.printingOf s registry "Cancel"
-      let (oid, board) = nullChamberBoard plains mountain nullChamber
-          picks pid = if pid == S.alice then S.printingName piker else S.printingName cancel
-          asked =
-            State.execState
-              (Engine.runGame (recordingChamberAnswer S.bob picks) board (S.cast S.alice oid >> Stack.resolveTop))
-              []
-      Spec.assertEqWith s "alice is active" (TurnRegisters.activePlayer (GameState.turn board)) S.alice
-      Spec.assertEqWith s "alice names first, then bob" (fmap fst asked) [S.alice, S.bob]
-
-    -- CR 101.4b: a pair of casts differing only in alice's name. bob names
-    -- whatever his prompt says alice named, and Cancel when it says nothing, so
-    -- the Chamber holds one name exactly when bob was told hers.
-    Spec.it s "CR 101.4b the later chooser knows the name the earlier one chose" $ do
-      plains <- S.printingOf s registry "Plains"
-      mountain <- S.printingOf s registry "Mountain"
-      nullChamber <- S.printingOf s registry "Null Chamber"
-      piker <- S.printingOf s registry "Goblin Piker"
-      giant <- S.printingOf s registry "Hill Giant"
-      cancel <- S.printingOf s registry "Cancel"
-      let (oid, board) = nullChamberBoard plains mountain nullChamber
-          echoing :: CardName.CardName -> Prompt.Prompt r -> r
-          echoing hers p = case p of
-            Prompt.ChooseCardName _ chooser _ _ earlier
-              | chooser == S.alice -> hers
-              | otherwise -> maybe (S.printingName cancel) snd (List.find ((== S.alice) . fst) earlier)
-            _ -> chamberAnswer S.bob (const (S.printingName cancel)) p
-          run hers =
-            let cast = snd (Engine.runGamePure (echoing hers) board (S.cast S.alice oid))
-                after = snd (Engine.runGamePure (echoing hers) cast Stack.resolveTop)
-             in fmap (Map.findWithDefault Map.empty Acquisition.Own . Object.chosenNames) (enteredOne board after >>= \chamber -> Game.lookupObject chamber after)
-      Spec.assertEqWith s "CR 101.4b told alice named Goblin Piker, bob named it too" (run (S.printingName piker)) (Just (fmap Set.singleton (Map.fromList [(S.alice, S.printingName piker), (S.bob, S.printingName piker)])))
-      Spec.assertEqWith s "CR 101.4b told alice named Hill Giant, bob named it too" (run (S.printingName giant)) (Just (fmap Set.singleton (Map.fromList [(S.alice, S.printingName giant), (S.bob, S.printingName giant)])))
-
-    -- CR 201.4: "the player must choose the name of a card in the Oracle card
-    -- reference." Parun.Registry is that reference, and it sits on the far side of
-    -- Parun.Engine.Engine.runGameAsked, so the refusal is
-    -- Parun.Interpreter.policingCardNames: an answer no card answers to is not
-    -- recorded and the same chooser is asked again.
-    --
-    -- THE FALSIFIER is the queue's length. Alice is asked twice and bob once, so
-    -- an unpoliced answerer records the name no card has AND leaves bob holding
-    -- alice's second answer -- two names, both wrong, and one answer unconsumed.
-    Spec.it s "CR 201.4 a name no card has is refused and the chooser is asked again" $ do
-      plains <- S.printingOf s registry "Plains"
-      mountain <- S.printingOf s registry "Mountain"
-      nullChamber <- S.printingOf s registry "Null Chamber"
-      piker <- S.printingOf s registry "Goblin Piker"
-      cancel <- S.printingOf s registry "Cancel"
-      lightningBolt <- S.printingOf s registry "Lightning Bolt"
-      let (oid, board) = nullChamberBoard plains mountain nullChamber
-          queue = [noSuchCard, S.printingName piker, S.printingName cancel]
-      (after, left) <- policedChamber s registry S.bob (S.printingName lightningBolt) queue board oid
-      case enteredOne board after >>= \chamber -> Game.lookupObject chamber after of
-        Nothing -> Spec.assertFailure s "Null Chamber did not reach the battlefield"
-        Just chamber -> do
-          Spec.assertEqWith
-            s
-            "the two legal names, and not the name no card has"
-            (Map.findWithDefault Map.empty Acquisition.Own (Object.chosenNames chamber))
-            (fmap Set.singleton (Map.fromList [(S.alice, S.printingName piker), (S.bob, S.printingName cancel)]))
-          Spec.assertEqWith s "every queued answer was drawn, so alice was asked twice" left []
-
-    -- CR 201.4's OTHER refusal, which the case above cannot reach: a string the
-    -- registry answers to that is still not a card's name. The file registry
+    -- CR 201.4's OTHER refusal, which data/scenarios/cast-prohibition's "CR
+    -- 201.4 a name no card has" cannot reach: a string the registry answers
+    -- to that is still not a card's name. The file registry
     -- looks up a slug, so "goblin-piker" fetches the Goblin Piker; rule 201.4
     -- asks for the name of a card, and Parun.Engine.Filter's HasChosenName
     -- compares names exactly, so admitting the slug would write a name into
     -- Object.chosenNames that prohibits nothing.
     --
     -- THE DISCRIMINATOR is the last assertion: without it this case passes for
-    -- the case above's reason -- a name the registry cannot resolve at all.
+    -- that scenario's reason -- a name the registry cannot resolve at all.
     Spec.it s "CR 201.4 a slug the registry answers to is not a card's name" $ do
       plains <- S.printingOf s registry "Plains"
       mountain <- S.printingOf s registry "Mountain"
@@ -1091,37 +478,6 @@ nullChamberSpec s registry =
             (fmap Set.singleton (Map.fromList [(S.alice, S.printingName piker), (S.bob, S.printingName cancel)]))
           Spec.assertEqWith s "every queued answer was drawn, so alice was asked twice" left []
       Spec.assertBool s (either (const False) Maybe.isJust fetched) "the registry does answer to the slug"
-
-    -- CR 201.4a's own half, which the case above cannot reach: Island is a name
-    -- the reference HAS, and it is refused only because Null Chamber's
-    -- restriction forbids a basic land card name. The two legalCardName
-    -- assertions are what keep the rules apart -- without them a check that
-    -- resolved no name at all would pass this case too -- and they sit LAST so
-    -- that a mutation reaches the board assertion first.
-    Spec.it s "CR 201.4a a real card the restriction forbids is refused and the chooser is asked again" $ do
-      plains <- S.printingOf s registry "Plains"
-      mountain <- S.printingOf s registry "Mountain"
-      nullChamber <- S.printingOf s registry "Null Chamber"
-      island <- S.printingOf s registry "Island"
-      piker <- S.printingOf s registry "Goblin Piker"
-      cancel <- S.printingOf s registry "Cancel"
-      lightningBolt <- S.printingOf s registry "Lightning Bolt"
-      let (oid, board) = nullChamberBoard plains mountain nullChamber
-          queue = [S.printingName island, S.printingName piker, S.printingName cancel]
-      unrestricted <- Interpreter.legalCardName registry (S.brokenCorpus s) board S.alice (Filter.Type.And []) (S.printingName island)
-      restricted <- Interpreter.legalCardName registry (S.brokenCorpus s) board S.alice nonBasicLandName (S.printingName island)
-      (after, left) <- policedChamber s registry S.bob (S.printingName lightningBolt) queue board oid
-      case enteredOne board after >>= \chamber -> Game.lookupObject chamber after of
-        Nothing -> Spec.assertFailure s "Null Chamber did not reach the battlefield"
-        Just chamber -> do
-          Spec.assertEqWith
-            s
-            "the two legal names, and not the basic land the card forbids"
-            (Map.findWithDefault Map.empty Acquisition.Own (Object.chosenNames chamber))
-            (fmap Set.singleton (Map.fromList [(S.alice, S.printingName piker), (S.bob, S.printingName cancel)]))
-          Spec.assertEqWith s "every queued answer was drawn, so alice was asked twice" left []
-      Spec.assertBool s unrestricted "Island is a name the reference has"
-      Spec.assertBool s (not restricted) "and the restriction is the only thing refusing it"
 
     -- CR 709.3a / 709.3b: only the half being cast is asked about, so naming
     -- "Wax" stops Wax and leaves Wane castable. The prohibition reads the
@@ -1152,34 +508,6 @@ nullChamberSpec s registry =
       Spec.assertBool s (notElem (Action.Type.Cast splitId wax Facing.FaceUp) offered) "the named Wax half is not offered"
       Spec.assertBool s (elem (Action.Type.Cast splitId wane Facing.FaceUp) offered) "the Wane half still is"
       Spec.assertBool s (elem (Action.Type.Cast controlId wax Facing.FaceUp) (Action.legalActions S.alice control)) "and Wax is offered when nobody named it"
-
-    -- CR 604.2: the effect is re-derived from the battlefield on every read, so
-    -- destroying the Chamber lifts both halves with nothing to unwind.
-    --
-    -- The names go with it too -- CR 400.7 mints a new incarnation in the
-    -- graveyard and Event.changeZone empties its chosenNames, CR 608.2h's record
-    -- of them staying behind under the OLD id -- but that is a separate fact and
-    -- NOT what this case observes: `applying` walks only the battlefield, so both
-    -- prohibitions would lift here even if the names had survived the move.
-    Spec.it s "CR 604.2 destroying the Chamber lifts both prohibitions" $ do
-      plains <- S.printingOf s registry "Plains"
-      mountain <- S.printingOf s registry "Mountain"
-      nullChamber <- S.printingOf s registry "Null Chamber"
-      piker <- S.printingOf s registry "Goblin Piker"
-      ashBarrens <- S.printingOf s registry "Ash Barrens"
-      let (oid, board) = nullChamberBoard plains mountain nullChamber
-          picks pid = if pid == S.alice then S.printingName piker else S.printingName ashBarrens
-          after = castChamber S.bob picks board oid
-          (pikerId, withPiker) = S.addHandCard piker S.alice after
-          (barrensId, gs) = S.addHandCard ashBarrens S.alice withPiker
-      case enteredOne board after of
-        Nothing -> Spec.assertFailure s "Null Chamber did not reach the battlefield"
-        Just chamber -> do
-          let gone = S.runPure S.identityAnswer gs (Event.destroy (pure ()) Regenerability.Regenerable [chamber])
-          Spec.assertBool s (PlayerEffect.prohibitsCasting S.alice pikerId VariableChoice.Announced gs) "prohibited while it stands"
-          Spec.assertBool s (not (PlayerEffect.prohibitsCasting S.alice pikerId VariableChoice.Announced gone)) "not prohibited once it is gone"
-          Spec.assertBool s (elem (Action.Type.Cast pikerId (S.printingName piker) Facing.FaceUp) (Action.legalActions S.alice gone)) "and the cast is offered again"
-          Spec.assertBool s (elem (barrensId, Nothing) (Action.playableLands S.alice gone)) "and the land may be played again"
 
 -- Take every land play the board allows and stop. S.playLandAnswer plays a land
 -- whenever one is offered and passes otherwise, so the loop halts exactly when
@@ -1352,46 +680,6 @@ runedHaloBoard plains halo curse =
           }
       )
 
--- runedHaloBoard carried through one combat: the Halo enters naming `name`, bob's
--- Goblin Piker attacks `defender` alone, and the pair (before, after) comes back
--- so a case can read the life it cost. Nothing blocks -- neither alice nor carol
--- has a creature -- so CR 510.1b assigns the Piker's 2 to the player it attacks.
---
--- COMBAT damage and not a burn spell, which is the whole reason this helper
--- exists: rule 702.16b already stops a spell with the chosen name from TARGETING
--- the protected player, so a Lightning Bolt aimed at alice never reaches rule
--- 702.16e -- and a case built on one stays green with the prevention deleted,
--- which is how this one was found. CR 510.2's combat damage is a turn-based
--- action that uses no stack and chooses no CR 115.1 target, so rule 702.16e is
--- the only clause of rule 702.16 that can stop it.
---
--- The attacker is bob's, so it is bob's combat: the board is re-pointed at him
--- after the Halo resolves on alice's own main phase, which is the only order
--- CR 614.1c's as-enters choice can happen in.
-runedHaloCombat ::
-  Printing.Printing ->
-  Printing.Printing ->
-  Printing.Printing ->
-  Printing.Printing ->
-  CardName.CardName ->
-  PlayerId.PlayerId ->
-  (GameState.GameState, GameState.GameState)
-runedHaloCombat plains halo curse piker name defender =
-  let (haloId, _, base) = runedHaloBoard plains halo curse
-      (_, withPiker) = S.addPermanent piker S.bob (castHalo name base haloId)
-      before =
-        withPiker
-          { GameState.turn =
-              (GameState.turn withPiker)
-                { TurnRegisters.activePlayer = S.bob,
-                  TurnRegisters.priority = Just S.bob,
-                  TurnRegisters.phase = Phase.Combat CombatStep.DeclareAttackers,
-                  TurnRegisters.combat = Combat.emptyCombat {Combat.Type.defenders = [defender]}
-                }
-          }
-      fight = Combat.declareAttackers S.manaPerformer S.bob >> Combat.declareBlockers S.manaPerformer >> Damage.dealCombatDamage (pure ())
-   in (before, S.settleSba (S.runPure (S.attackTo defender) before fight))
-
 -- Cast the Halo and let it resolve, naming `name`.
 --
 -- CAST rather than S.addPermanent, castChamber's reason: the choice happens only
@@ -1422,8 +710,8 @@ namingAnswer name asked = case Asked.prompt asked of
 
 -- A Hill Giant of bob's, carrying `kit` when there is one, attacks alice alone
 -- off a board the Halo has already entered; the pair (before, after) comes back
--- for the life it cost. runedHaloCombat's shape, with an attacker that is no
--- Goblin Piker.
+-- for the life it cost. Combat damage and not a burn spell, since CR 702.16b
+-- already stops a spell with the chosen name from targeting alice.
 spyKitCombat :: Printing.Printing -> Maybe Printing.Printing -> GameState.GameState -> (GameState.GameState, GameState.GameState)
 spyKitCombat giant kit haloed =
   let (giantId, withGiant) = S.addPermanent giant S.bob haloed
@@ -1448,31 +736,6 @@ spyKitCombat giant kit haloed =
 runedHaloSpec :: (Monad m, Monad n) => Spec.Spec m n -> Registry.Registry m -> n ()
 runedHaloSpec s registry =
   Spec.describe s "RunedHalo" $ do
-    -- CR 702.16e's PLAYER half: "any damage that would be dealt by sources that
-    -- have the stated quality to a permanent or player with protection is
-    -- prevented." The clause that had no mint at all until
-    -- Parun.Engine.Replacement.collect grew a segment reading this axis: the
-    -- targeting and Aura bars above are gates a caller asks, where a prevention
-    -- has to be a CR 615.1 row before the damage event is proposed.
-    --
-    -- THREE combats, each differing from the first in exactly one thing. alice
-    -- takes none of the Piker's 2 (the shield exists); carol takes all of it off
-    -- the same named board (the shield is scoped to the Halo's controller, and is
-    -- not a Fog); and alice takes all of it when the Halo named the Curse instead
-    -- (the shield reads CR 201.4's chosen name rather than firing on every
-    -- source). The second is also what says combat damage really flowed.
-    Spec.it s "CR 702.16e combat damage from a source with the chosen name is prevented, and the same attacker otherwise connects" $ do
-      plains <- S.printingOf s registry "Plains"
-      halo <- S.printingOf s registry "Runed Halo"
-      curse <- S.printingOf s registry "Curse of Vitality"
-      piker <- S.printingOf s registry "Goblin Piker"
-      let combat = runedHaloCombat plains halo curse piker
-          (beforeNamed, named) = combat (S.printingName piker) S.alice
-          (beforeCarol, atCarol) = combat (S.printingName piker) S.carol
-          (beforeOther, other) = combat (S.printingName curse) S.alice
-      Spec.assertEqWith s "with the Piker named, alice takes none of its 2" (S.lifeOf S.alice named) (S.lifeOf S.alice beforeNamed)
-      Spec.assertEqWith s "carol takes the whole 2 with the same name chosen -- the Halo protects its controller alone" (S.lifeOf S.carol atCarol) (fmap (subtract 2) (S.lifeOf S.carol beforeCarol))
-      Spec.assertEqWith s "and with the Curse named instead, so does alice" (S.lifeOf S.alice other) (fmap (subtract 2) (S.lifeOf S.alice beforeOther))
     -- CR 612.7 with CR 108.1: Spy Kit's host has every nonlegendary creature
     -- card's name in the Oracle card reference, not just the game's. The Halo
     -- names Goblin Piker, which is in no zone, so only Prompt.LookUpCard's answer
@@ -1650,69 +913,6 @@ stasisCoffinSpec s registry =
       Spec.assertEqWith s "in its OWNER's graveyard, and bob owns it" (length (Game.zoneMembers Zone.Graveyard S.bob after)) 1
       Spec.assertBool s (S.onBattlefield aura (S.settleSba cursed)) "and without the ability it stays where it is"
 
--- Conjurer's Ban {W}{B} Sorcery: "Choose a card name. Until your next turn,
--- spells with the chosen name can't be cast and lands with the chosen name can't
--- be played. Draw a card."
---
--- The STORED twin of nullChamberSpec above, and the whole reason this group
--- exists: it is the pool's only writer of a chosen-name prohibition as a
--- resolution (CR 611.2c) rather than as a permanent's printed ability, so it is
--- the only card whose Filter.HasChosenName is read through a
--- StoredEffects.playerEffects row. The name is chosen by CR 201.4 during the resolution (Effect
--- .ChooseCardName) and the two rows stored a clause later read it back.
---
--- alice has four Plains, four Mountains and four Swamps -- mana is never the
--- reason a cast is unavailable, before or after the Ban's own {W}{B} is paid --
--- the Ban in hand, and a Plains in her library for the card it draws.
-conjurersBanBoard ::
-  Printing.Printing ->
-  Printing.Printing ->
-  Printing.Printing ->
-  Printing.Printing ->
-  (ObjectId.ObjectId, GameState.GameState)
-conjurersBanBoard plains mountain swamp ban =
-  let lands = S.landsFor swamp S.alice 4 (S.landsFor mountain S.alice 4 (S.landsInPlay plains 4))
-      (gs, oid) = S.handOne ban lands
-   in (oid, snd (S.addLibraryCard plains S.alice gs))
-
--- Cast the Ban and let it resolve, answering CR 201.4's one name choice.
-castBan :: CardName.CardName -> GameState.GameState -> ObjectId.ObjectId -> GameState.GameState
-castBan name gs oid =
-  let answer :: Prompt.Prompt r -> r
-      answer p = case p of
-        Prompt.ChooseCardName {} -> name
-        _ -> S.identityAnswer p
-      cast = snd (Engine.runGamePure answer gs (S.cast S.alice oid))
-   in snd (Engine.runGamePure answer cast Stack.resolveTop)
-
-conjurersBanSpec :: (Monad m) => Spec.Spec m n -> Registry.Registry m -> n ()
-conjurersBanSpec s registry =
-  Spec.describe s "ConjurersBan" $ do
-    -- CR 601.3's prohibit half carrying a QUALITY, read off a stored row. The
-    -- Bolt is the falsifier twice over: a blanket prohibition would take it away
-    -- too, and it is castable on the same board with the same untapped lands, so
-    -- mana is not what stops the Piker.
-    Spec.it s "CR 611.2c a spell with the name the resolution chose can't be cast, and its neighbour still can" $ do
-      plains <- S.printingOf s registry "Plains"
-      mountain <- S.printingOf s registry "Mountain"
-      swamp <- S.printingOf s registry "Swamp"
-      ban <- S.printingOf s registry "Conjurer's Ban"
-      piker <- S.printingOf s registry "Goblin Piker"
-      lightningBolt <- S.printingOf s registry "Lightning Bolt"
-      let (oid, board) = conjurersBanBoard plains mountain swamp ban
-          (pikerId, withPiker) = S.addHandCard piker S.alice board
-          (boltId, before) = S.addHandCard lightningBolt S.alice withPiker
-          after = castBan (S.printingName piker) before oid
-          castPiker = Action.Type.Cast pikerId (S.printingName piker) Facing.FaceUp
-          castBolt = Action.Type.Cast boltId (S.printingName lightningBolt) Facing.FaceUp
-      Spec.assertBool s (elem castPiker (Action.legalActions S.alice before)) "alice may cast her Piker before the Ban resolves"
-      Spec.assertBool s (notElem castPiker (Action.legalActions S.alice after)) "and may not once it has"
-      Spec.assertBool s (elem castBolt (Action.legalActions S.alice after)) "the unnamed Bolt still is offered"
-      Spec.assertBool s (PlayerEffect.prohibitsCasting S.alice pikerId VariableChoice.Announced after) "and the prohibition is the named one"
-      -- The carrier, asserted AFTER the behaviour: nothing this card makes is a
-      -- permanent, so both rows are CR 611.2c stored ones.
-      Spec.assertEqWith s "two stored rows" (length (StoredEffects.playerEffects (GameState.stored after))) 2
-
 -- City in a Bottle {2} Artifact -- second sentence: "Players can't cast spells
 -- or play lands with a name originally printed in the Arabian Nights
 -- expansion." (name, cost, type line and Oracle text checked against
@@ -1790,13 +990,8 @@ spec s registry = Spec.describe s "Parun.Engine.PlayerEffect" $ do
   nullChamberSpec s registry
   runedHaloSpec s registry
   stasisCoffinSpec s registry
-  conjurersBanSpec s registry
   cityInABottleSpec s registry
   silenceSpec s registry
-  sphinxsDecreeSpec s registry
   ceaseFireSpec s registry
-  blossomingCalmSpec s registry
   conditionalSilenceSpec s registry
-  hackedSilenceSpec s registry
-  lilianaSpec s registry
   matchesObjectSpec s registry

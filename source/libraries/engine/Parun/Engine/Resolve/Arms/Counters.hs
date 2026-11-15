@@ -1578,8 +1578,9 @@ removePlayerCounters resolving source controller legal (RemovePlayerCounters.MkR
 --
 -- The offer is skipped at a bound of 0, where CR 118.3 leaves 0 as the only
 -- payable amount and there is nothing to decide. Proven by
--- Parun.CounterKeywordTriggerSpec's "a payer with no {E} is not asked how much
--- to pay", whose twin one {E} higher is asked.
+-- data/scenarios/counter-keyword-trigger/cr-118-3-a-payer-with-no-e-is-not-asked-how-much-to-pay.json,
+-- whose twin cr-107-14-two-e-makes-it-a-real-choice-and-the-aetherjet-is-a-2-2.json
+-- is asked.
 payAnyEnergy :: ObjectId -> ObjectId -> PlayerId -> SlotName -> Game ()
 payAnyEnergy resolving source controller slot = do
   gs <- State.get

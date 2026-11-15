@@ -1,0 +1,288 @@
+{
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "battlefield": [
+          {
+            "card": "Island",
+            "label": "a1",
+            "ready": true
+          },
+          {
+            "card": "Island",
+            "label": "a2",
+            "ready": true
+          },
+          {
+            "card": "Island",
+            "label": "a3",
+            "ready": true
+          },
+          {
+            "card": "Goblin Piker",
+            "label": "alice-piker",
+            "ready": true,
+            "tapped": true
+          }
+        ],
+        "hand": [
+          {
+            "card": "Savor the Moment",
+            "label": "savor"
+          }
+        ],
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ],
+        "name": "alice"
+      },
+      {
+        "battlefield": [
+          {
+            "card": "Island",
+            "label": "b1",
+            "ready": true
+          },
+          {
+            "card": "Island",
+            "label": "b2",
+            "ready": true
+          },
+          {
+            "card": "Island",
+            "label": "b3",
+            "ready": true
+          },
+          {
+            "card": "Island",
+            "label": "b4",
+            "ready": true
+          },
+          {
+            "card": "Island",
+            "label": "b5",
+            "ready": true
+          },
+          {
+            "card": "Island",
+            "label": "b6",
+            "ready": true
+          },
+          {
+            "card": "Island",
+            "label": "b7",
+            "ready": true
+          },
+          {
+            "card": "Brine Elemental",
+            "faceDown": "Morphed",
+            "label": "brine",
+            "ready": true
+          },
+          {
+            "card": "Goblin Piker",
+            "label": "bob-piker",
+            "ready": true,
+            "tapped": true
+          }
+        ],
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ],
+        "name": "bob"
+      },
+      {
+        "battlefield": [
+          {
+            "card": "Goblin Piker",
+            "label": "carol-piker",
+            "ready": true,
+            "tapped": true
+          }
+        ],
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ],
+        "name": "carol"
+      }
+    ],
+    "step": "PrecombatMain"
+  },
+  "description": "CR 614.10a spending Savor's row leaves Brine's to take the following untap step",
+  "note": "Three seats: at two, each opponent and each player name the same set. bob holds Brine Elemental face down (CR 702.37) and turns it face up during alice's turn while her Savor the Moment is on the stack. Each player's tapped Goblin Piker is the observable: CR 502.3 untaps the active player's permanents, so a skipped untap step leaves it tapped. alice answers Savor's row, so Brine's remains to skip her next untap step too (CR 614.10a): her Piker is still tapped through turn 5, and untaps on turn 8. carol's lone skip is no choice, so she is asked nothing (any prompt would be unscheduled), and it takes exactly one untap step of hers. The pair is cr-614-10a-spending-brine-s-row-lets-savor-s-expire-with-its-own-turn.",
+  "timeline": [
+    {
+      "do": {
+        "Cast": {
+          "mana": [
+            "$a1",
+            "$a2",
+            "$a3"
+          ],
+          "object": "$savor"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Take": {
+          "action": "TurnFaceUp $brine",
+          "mana": [
+            "$b1",
+            "$b2",
+            "$b3",
+            "$b4",
+            "$b5",
+            "$b6",
+            "$b7"
+          ]
+        }
+      },
+      "player": "bob",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Answer": {
+          "prompt": "ChooseReplacement",
+          "with": 0
+        }
+      },
+      "player": "alice",
+      "step": "Untap",
+      "turn": 2
+    },
+    {
+      "check": {
+        "Tapped": {
+          "object": "$alice-piker",
+          "tapped": true
+        }
+      },
+      "player": "alice",
+      "step": "Upkeep",
+      "turn": 2
+    },
+    {
+      "do": {
+        "Attack": []
+      },
+      "player": "bob",
+      "step": "DeclareAttackers",
+      "turn": 3
+    },
+    {
+      "check": {
+        "Tapped": {
+          "object": "$carol-piker",
+          "tapped": true
+        }
+      },
+      "player": "carol",
+      "step": "Upkeep",
+      "turn": 4
+    },
+    {
+      "check": {
+        "Tapped": {
+          "object": "$alice-piker",
+          "tapped": true
+        }
+      },
+      "player": "alice",
+      "step": "Upkeep",
+      "turn": 5
+    },
+    {
+      "do": {
+        "Attack": []
+      },
+      "player": "bob",
+      "step": "DeclareAttackers",
+      "turn": 6
+    },
+    {
+      "check": {
+        "Tapped": {
+          "object": "$carol-piker",
+          "tapped": false
+        }
+      },
+      "player": "carol",
+      "step": "Upkeep",
+      "turn": 7
+    },
+    {
+      "do": {
+        "Attack": []
+      },
+      "player": "carol",
+      "step": "DeclareAttackers",
+      "turn": 7
+    },
+    {
+      "check": {
+        "Tapped": {
+          "object": "$alice-piker",
+          "tapped": false
+        }
+      },
+      "player": "alice",
+      "step": "Upkeep",
+      "turn": 8
+    }
+  ]
+}

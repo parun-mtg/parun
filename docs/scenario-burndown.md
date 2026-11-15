@@ -174,29 +174,29 @@ out: grep for them.
 
 ### `CastProhibitionSpec`
 
-- CR 101.4 the active player is asked to name a card first
-- CR 101.4b the later chooser knows the name the earlier one chose | `check:prompt-payload`
-- CR 201.4 a name no card has is refused and the chooser is asked again
-- CR 201.4 a slug the registry answers to is not a card's name | `check:other-Registry.fetchCard`
-- CR 201.4a a real card the restriction forbids is refused and the chooser is asked again | `check:other-Interpreter.legalCardName`
-- CR 514.2 the hexproof outlives the cleanup of the turn it was cast in | `check:player-effects`
-- CR 514.2 the prohibition ends at cleanup | `check:other-StoredEffects.playerEffects`
-- CR 514.2 the restriction ends at cleanup | `check:helper-offersCast` `check:other-StoredEffects.playerEffects`
-- CR 601.2c the restriction lands on the targeted seat alone | `check:other-ActivePlayerEffect.scope` `check:other-StoredEffects.playerEffects` `check:helper-offersCast`
-- CR 604.2 destroying the Chamber lifts both prohibitions | `board:object-chosennames`
-- CR 611.2a each opponent is barred during their own next turn and no other | `board:player-effect`
-- CR 611.2a it survives bob's turn and carol's turn, and ends as alice's next turn begins | `check:player-effects`
-- CR 611.2b a sweep with the Swamp still there changes nothing | `check:helper-conditionalSilenceCasts` `check:other-StoredEffects.playerEffects` `check:other-Expiry.sweepConditional`
-- CR 611.2b it is stored while the condition holds, and stops both opponents | `check:other-Expiry.While` `check:other-PlayerEffect.prohibitsCasting` `check:helper-conditionalSilenceCasts`
-- CR 611.2b unhacked, with no Swamp the duration never starts | `check:helper-conditionalSilenceCasts` `check:other-StoredEffects.playerEffects`
-- CR 611.2b with no Swamp the duration never starts and nothing is stored | `check:other-Stack.resolveTop` `check:other-StoredEffects.playerEffects` `check:helper-conditionalSilenceCasts`
-- CR 611.2c a spell with the name the resolution chose can't be cast, and its neighbour still can | `check:other-StoredEffects.playerEffects`
-- CR 612.1/612.2 an Artificial Evolution on Liliana moves the -3 onto the new word | `check:player-effects`
-- CR 612.7 / 206.3a a Spy Kit host has the Arabian Nights names of cards the game has never seen, and City in a Bottle sweeps it
-- CR 612.7 / 702.16e a Spy Kit host has the chosen name of a card in no zone, and its damage is prevented | `board:combat` `board:object-chosennames`
-- CR 612.7 / 709.4a a Spy Kit host has both names of a split card with a creature half | `board:combat` `board:object-chosennames`
-- CR 702.11c once it resolves, alice has gained 2 and bob's Bolt cannot reach her | `check:player-effects`
-- CR 702.16e combat damage from a source with the chosen name is prevented, and the same attacker otherwise connects | `board:combat` `board:object-chosennames`
+- ~~CR 101.4 the active player is asked to name a card first~~
+- ~~CR 101.4b the later chooser knows the name the earlier one chose | `check:prompt-payload`~~
+- ~~CR 201.4 a name no card has is refused and the chooser is asked again~~
+- ~~CR 201.4 a slug the registry answers to is not a card's name | `check:other-Registry.fetchCard`~~
+- ~~CR 201.4a a real card the restriction forbids is refused and the chooser is asked again | `check:other-Interpreter.legalCardName`~~
+- ~~CR 514.2 the hexproof outlives the cleanup of the turn it was cast in | `check:player-effects`~~
+- ~~CR 514.2 the prohibition ends at cleanup | `check:other-StoredEffects.playerEffects`~~
+- ~~CR 514.2 the restriction ends at cleanup | `check:helper-offersCast` `check:other-StoredEffects.playerEffects`~~
+- ~~CR 601.2c the restriction lands on the targeted seat alone | `check:other-ActivePlayerEffect.scope` `check:other-StoredEffects.playerEffects` `check:helper-offersCast`~~
+- ~~CR 604.2 destroying the Chamber lifts both prohibitions | `board:object-chosennames`~~
+- ~~CR 611.2a each opponent is barred during their own next turn and no other | `board:player-effect`~~
+- ~~CR 611.2a it survives bob's turn and carol's turn, and ends as alice's next turn begins | `check:player-effects`~~
+- ~~CR 611.2b a sweep with the Swamp still there changes nothing | `check:helper-conditionalSilenceCasts` `check:other-StoredEffects.playerEffects` `check:other-Expiry.sweepConditional`~~
+- ~~CR 611.2b it is stored while the condition holds, and stops both opponents | `check:other-Expiry.While` `check:other-PlayerEffect.prohibitsCasting` `check:helper-conditionalSilenceCasts`~~
+- ~~CR 611.2b unhacked, with no Swamp the duration never starts | `check:helper-conditionalSilenceCasts` `check:other-StoredEffects.playerEffects`~~
+- ~~CR 611.2b with no Swamp the duration never starts and nothing is stored | `check:other-Stack.resolveTop` `check:other-StoredEffects.playerEffects` `check:helper-conditionalSilenceCasts`~~
+- ~~CR 611.2c a spell with the name the resolution chose can't be cast, and its neighbour still can | `check:other-StoredEffects.playerEffects`~~
+- ~~CR 612.1/612.2 an Artificial Evolution on Liliana moves the -3 onto the new word | `check:player-effects`~~
+- ~~CR 612.7 / 206.3a a Spy Kit host has the Arabian Nights names of cards the game has never seen, and City in a Bottle sweeps it~~
+- ~~CR 612.7 / 702.16e a Spy Kit host has the chosen name of a card in no zone, and its damage is prevented | `board:combat` `board:object-chosennames`~~
+- ~~CR 612.7 / 709.4a a Spy Kit host has both names of a split card with a creature half | `board:combat` `board:object-chosennames`~~
+- ~~CR 702.11c once it resolves, alice has gained 2 and bob's Bolt cannot reach her | `check:player-effects`~~
+- ~~CR 702.16e combat damage from a source with the chosen name is prevented, and the same attacker otherwise connects | `board:combat` `board:object-chosennames`~~
 
 ### `CastRestrictionSpec`
 
@@ -414,16 +414,16 @@ out: grep for them.
 
 ### `CounterKeywordTriggerSpec`
 
-- CR 107.14 two {E} makes it a real choice, and the Aetherjet is a 2/2 | `check:prompt-count`
-- CR 111.3 the Aetherjet's X/X is the energy PAID, not the energy held | `check:power-toughness-absent`
-- CR 603.2c two artifact creatures connecting in one step give {E}{E}, not {E}{E}{E}{E} | `check:events`
-- CR 603.4 a wurm with no time counters neither triggers nor is sacrificed | `check:helper-times`
-- CR 611.2d the +1/+1 outlives the combat record it was computed from | `check:other-Combat.Type.declaredAttacked`
-- CR 701.37a a second monstrosity marks nothing, so nothing triggers | `board:object-designations`
-- CR 701.37b a second monstrosity announcing 3 makes nothing and leaves the recorded X at 2 | `check:designation-values`
-- CR 701.37c monstrosity 2 makes TWO 2/2 Hydras | `check:designation-values`
-- CR 702.112b the designation does not survive CR 400.7 | `check:other-Object.newIncarnation`
-- CR 702.112b whole card: a renowned creature's counters double when it connects | `board:combat` `board:object-designations`
+- ~~CR 107.14 two {E} makes it a real choice, and the Aetherjet is a 2/2 | `check:prompt-count`~~
+- ~~CR 111.3 the Aetherjet's X/X is the energy PAID, not the energy held | `check:power-toughness-absent`~~
+- ~~CR 603.2c two artifact creatures connecting in one step give {E}{E}, not {E}{E}{E}{E} | `check:events`~~
+- ~~CR 603.4 a wurm with no time counters neither triggers nor is sacrificed | `check:helper-times`~~
+- ~~CR 611.2d the +1/+1 outlives the combat record it was computed from | `check:other-Combat.Type.declaredAttacked`~~
+- ~~CR 701.37a a second monstrosity marks nothing, so nothing triggers | `board:object-designations`~~
+- ~~CR 701.37b a second monstrosity announcing 3 makes nothing and leaves the recorded X at 2 | `check:designation-values`~~
+- ~~CR 701.37c monstrosity 2 makes TWO 2/2 Hydras | `check:designation-values`~~
+- ~~CR 702.112b the designation does not survive CR 400.7 | `check:other-Object.newIncarnation`~~
+- ~~CR 702.112b whole card: a renowned creature's counters double when it connects | `board:combat` `board:object-designations`~~
 
 ### `CounterspellSpec`
 
@@ -553,18 +553,18 @@ out: grep for them.
 
 ### `EntryReplacementSpec`
 
-- CR 120.1 the Doll's own {T} ability feeds its own trigger | `board:object-chosenplayer`
-- CR 614.10a spending Brine's row lets Savor's expire with its own turn | `check:continuous-effects`
-- CR 614.10a spending Savor's row leaves Brine's to take the following untap step | `check:continuous-effects`
-- CR 614.1b Brine Elemental arms one skip per opponent, and Savor's turn one more | `check:continuous-effects`
-- CR 616.1 two entry replacements of ONE source are distinct entries | `check:prompt-payload`
-- CR 616.1 two skips alike in effect but not in lifetime raise a choice
-- CR 702.136b riot twice is asked twice, and both counters land | `board:twin-run`
-- CR 702.38a the Ogre Sentry in the same hand is not offered | `move:answer-all-offered`
-- CR 702.38a two Beast cards revealed are four +1/+1 counters | `check:events`
-- CR 702.98a a +1/+1 counter arriving later shuts blocking off too | `check:other-Combat.canBlock` `board:mid-test-counter-fixture`
-- CR 702.98a declining leaves a 2/1 that can block | `check:other-Combat.canBlock` `check:other-Combat.legalBlockers`
-- CR 702.98a taking the counter makes it bigger and stops it blocking | `check:other-Combat.canBlock` `check:other-Combat.legalBlockers`
+- ~~CR 120.1 the Doll's own {T} ability feeds its own trigger | `board:object-chosenplayer`~~
+- ~~CR 614.10a spending Brine's row lets Savor's expire with its own turn | `check:continuous-effects`~~
+- ~~CR 614.10a spending Savor's row leaves Brine's to take the following untap step | `check:continuous-effects`~~
+- ~~CR 614.1b Brine Elemental arms one skip per opponent, and Savor's turn one more | `check:continuous-effects`~~
+- ~~CR 616.1 two entry replacements of ONE source are distinct entries | `check:prompt-payload`~~
+- ~~CR 616.1 two skips alike in effect but not in lifetime raise a choice~~
+- ~~CR 702.136b riot twice is asked twice, and both counters land | `board:twin-run`~~
+- ~~CR 702.38a the Ogre Sentry in the same hand is not offered | `move:answer-all-offered`~~
+- ~~CR 702.38a two Beast cards revealed are four +1/+1 counters | `check:events`~~
+- ~~CR 702.98a a +1/+1 counter arriving later shuts blocking off too | `check:other-Combat.canBlock` `board:mid-test-counter-fixture`~~
+- ~~CR 702.98a declining leaves a 2/1 that can block | `check:other-Combat.canBlock` `check:other-Combat.legalBlockers`~~
+- ~~CR 702.98a taking the counter makes it bigger and stops it blocking | `check:other-Combat.canBlock` `check:other-Combat.legalBlockers`~~
 
 ### `EventSpec`
 

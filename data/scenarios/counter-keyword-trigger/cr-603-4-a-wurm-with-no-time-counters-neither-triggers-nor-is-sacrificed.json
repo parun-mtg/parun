@@ -1,0 +1,62 @@
+{
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "battlefield": [
+          {
+            "card": "Waning Wurm",
+            "label": "wurm"
+          }
+        ],
+        "name": "alice"
+      },
+      {
+        "name": "bob"
+      }
+    ],
+    "step": "Untap"
+  },
+  "description": "CR 603.4 a wurm with no time counters neither triggers nor is sacrificed",
+  "note": "A placed Waning Wurm skips CR 702.63a's entry replacement, the position of a wurm that lost its counters some other way. The intervening if keeps the upkeep trigger off the stack, and with no last counter removed nothing sacrifices it.",
+  "timeline": [
+    {
+      "check": {
+        "Counters": {
+          "count": 0,
+          "kind": {
+            "type": "Time"
+          },
+          "object": "$wurm"
+        }
+      },
+      "player": "alice",
+      "step": "Upkeep",
+      "turn": 1
+    },
+    {
+      "check": {
+        "View": {
+          "is": [],
+          "of": "Stack"
+        }
+      },
+      "player": "alice",
+      "step": "Upkeep",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Waning Wurm",
+          "count": 1,
+          "player": "alice",
+          "zone": "Battlefield"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    }
+  ]
+}

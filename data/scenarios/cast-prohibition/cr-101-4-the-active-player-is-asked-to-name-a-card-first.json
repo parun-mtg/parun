@@ -1,0 +1,219 @@
+{
+  "description": "CR 101.4 the active player is asked to name a card first",
+  "note": "Both names are chosen as the Chamber enters. alice's prompt carries no earlier name and bob's carries hers, so she was asked first. Not yet a discriminating test against \"the controller first\": a sorcery-speed enchantment is cast on its controller's own turn, so the two orders name the same player.",
+  "board": {
+    "active": "alice",
+    "step": "PrecombatMain",
+    "seats": [
+      {
+        "name": "alice",
+        "battlefield": [
+          {
+            "card": "Plains",
+            "label": "p1"
+          },
+          {
+            "card": "Plains",
+            "label": "p2"
+          },
+          {
+            "card": "Plains",
+            "label": "p3"
+          },
+          {
+            "card": "Plains",
+            "label": "p4"
+          },
+          {
+            "card": "Plains",
+            "label": "p5"
+          },
+          {
+            "card": "Plains",
+            "label": "p6"
+          },
+          {
+            "card": "Plains",
+            "label": "p7"
+          },
+          {
+            "card": "Plains",
+            "label": "p8"
+          },
+          {
+            "card": "Mountain",
+            "label": "m1"
+          },
+          {
+            "card": "Mountain",
+            "label": "m2"
+          },
+          {
+            "card": "Mountain",
+            "label": "m3"
+          },
+          {
+            "card": "Mountain",
+            "label": "m4"
+          }
+        ],
+        "hand": [
+          {
+            "card": "Null Chamber",
+            "label": "chamber"
+          },
+          {
+            "card": "Goblin Piker",
+            "label": "piker"
+          }
+        ]
+      },
+      {
+        "name": "bob"
+      }
+    ]
+  },
+  "timeline": [
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "do": {
+        "Cast": {
+          "object": "$chamber",
+          "mana": [
+            "$p1",
+            "$p2",
+            "$p3",
+            "$p4",
+            null
+          ]
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "do": "Pass"
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "check": {
+        "View": {
+          "of": "Prompt",
+          "is": {
+            "kind": "ChooseCardName",
+            "offer": {
+              "source": "Null Chamber",
+              "filter": {
+                "type": "Not",
+                "value": {
+                  "type": "And",
+                  "value": [
+                    {
+                      "type": "HasSupertype",
+                      "value": "Basic"
+                    },
+                    {
+                      "type": "HasCardType",
+                      "value": "Land"
+                    }
+                  ]
+                }
+              },
+              "earlier": []
+            }
+          }
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "do": {
+        "Answer": {
+          "prompt": "ChooseCardName",
+          "with": "Goblin Piker"
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "bob",
+      "check": {
+        "View": {
+          "of": "Prompt",
+          "is": {
+            "kind": "ChooseCardName",
+            "offer": {
+              "source": "Null Chamber",
+              "filter": {
+                "type": "Not",
+                "value": {
+                  "type": "And",
+                  "value": [
+                    {
+                      "type": "HasSupertype",
+                      "value": "Basic"
+                    },
+                    {
+                      "type": "HasCardType",
+                      "value": "Land"
+                    }
+                  ]
+                }
+              },
+              "earlier": [
+                [
+                  "alice",
+                  "Goblin Piker"
+                ]
+              ]
+            }
+          }
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "bob",
+      "do": {
+        "Answer": {
+          "prompt": "ChooseCardName",
+          "with": "Cancel"
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "refuse": {
+        "Cast": {
+          "object": "$piker",
+          "mana": [
+            "$m1",
+            "$m2",
+            null
+          ]
+        }
+      }
+    }
+  ],
+  "final": [
+    {
+      "Count": {
+        "player": "alice",
+        "zone": "Battlefield",
+        "card": "Null Chamber",
+        "count": 1
+      }
+    }
+  ]
+}
