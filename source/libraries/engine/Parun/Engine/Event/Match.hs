@@ -905,7 +905,7 @@ additionalMoveTriggers gs you bearer group looksBack zc
   | ZoneChange.to zc == Zone.Battlefield =
       let atIt = atEntry gs (ZoneChange.object zc)
        in PlayerEffect.additionalMoveTriggers TriggeringMove.Entering you (ZoneChange.object zc) atIt atIt
-  | ZoneChange.from zc == Zone.Battlefield && ZoneChange.to zc == Zone.Graveyard,
+  | Game.dies zc,
     Just before <- Map.lookup group (Snapshots.boardBeforeEvent (GameState.snapshots gs)),
     any (Set.member bearer . GameState.battlefield) ([before | looksBack] <> [gameAfter group gs]) =
       PlayerEffect.additionalMoveTriggers TriggeringMove.Dying you (ZoneChange.departed zc) before before

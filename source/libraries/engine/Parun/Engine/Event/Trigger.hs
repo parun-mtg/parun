@@ -2389,7 +2389,9 @@ eventTriggersGiven scope standing events gs =
             -- whichever side of the move its condition names (docs/decisions.md,
             -- "A silenced entry silences its departure"), but not an event
             -- riding the entry (docs/decisions.md, "An entry's own triggers are
-            -- the zone change's"); so may a creature dying (Teysa Karlov), but
+            -- the zone change's"); so may a creature dying (Teysa Karlov), for
+            -- every card the death puts into a graveyard, a melded or merged
+            -- creature's second included (CR 713.8, 731.3), but
             -- not an event causing the death, a sacrifice being its own
             -- (GameEvent.PermanentSacrificed, Teysa's ruling). Only a bearer on
             -- the battlefield is a permanent (CR 110.1): not a card in a
@@ -2403,7 +2405,7 @@ eventTriggersGiven scope standing events gs =
             additional cond =
               additionalTriggers gs (controllerFor cond) oid (LoggedEvent.group logged) (looksBack cond) + case Game.enteredBattlefieldChange event of
                 Just zc | Map.member oid board -> additionalMoveTriggers gs (controllerFor cond) oid (LoggedEvent.group logged) (looksBack cond) zc
-                _ -> maybe 0 (additionalMoveTriggers gs (controllerFor cond) oid (LoggedEvent.group logged) (looksBack cond)) (Game.diedChange event)
+                _ -> maybe 0 (additionalMoveTriggers gs (controllerFor cond) oid (LoggedEvent.group logged) (looksBack cond)) (Monad.mfilter Game.dies (movedOf event))
             -- CR 805.4d: one trigger per player whose step this is (stepCopies).
             -- Each paired with which of CR 603.2d's instances it is.
             pends (cond, ab) =

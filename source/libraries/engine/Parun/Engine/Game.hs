@@ -3874,9 +3874,13 @@ entryGroup oid gs =
 -- GameEvent.CardArrived does not, so reading this event and not that one is the
 -- rule rather than an omission.
 diedChange :: GameEvent -> Maybe ZoneChange.ZoneChange
-diedChange event = do
-  change <- movedChange event
-  if ZoneChange.from change == Zone.Battlefield && ZoneChange.to change == Zone.Graveyard then Just change else Nothing
+diedChange = Monad.mfilter dies . movedChange
+
+-- CR 700.4: is this zone change one into a graveyard from the battlefield? A
+-- GameEvent.CardArrived's can be (CR 713.8, 731.3), though diedChange reads
+-- only the Moved event's.
+dies :: ZoneChange.ZoneChange -> Bool
+dies change = ZoneChange.from change == Zone.Battlefield && ZoneChange.to change == Zone.Graveyard
 
 -- CR 400.7j's finding, read back for a card that says "from anywhere" (Tempest
 -- Efreet, Timmerian Fiends): the objects this id is now, following each logged
