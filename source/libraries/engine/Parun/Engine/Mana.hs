@@ -88,6 +88,7 @@ import qualified Parun.Types.Hybrid as Hybrid
 import qualified Parun.Types.HybridPayment as HybridPayment
 import qualified Parun.Types.HybridPhyrexian as HybridPhyrexian
 import qualified Parun.Types.Keyword as Keyword
+import qualified Parun.Types.LastKnown as LastKnown
 import qualified Parun.Types.LifeLossCause as LifeLossCause
 import qualified Parun.Types.LoggedEvent as LoggedEvent
 import Parun.Types.Mana (Mana)
@@ -283,7 +284,10 @@ noActivations = Activations.MkActivations {Activations.times = 0, Activations.cl
 -- color" means the colour its own object was told to choose. One option, so it
 -- offers no choice; none at all when nothing has been chosen, which for
 -- Coldsteel Heart cannot happen on a permanent that entered (CR 614.1c) and is
--- not a colour for the engine to invent when it does.
+-- not a colour for the engine to invent when it does. The choice is read under
+-- `acquisition`, the one its writer used (CR 607.5), and off the source's last
+-- known information once it has left (CR 608.2h): Radiant Lotus chooses as its
+-- ability resolves (CR 608.2d), having sacrificed itself to pay for it.
 --
 -- CR 607.2e's noted mana is a SETTLED production of more than one unit: Ice
 -- Cauldron adds the run its linked ability noted for it (GameState.notedMana),
@@ -326,11 +330,11 @@ noActivations = Activations.MkActivations {Activations.times = 0, Activations.cl
 -- Elemental Resonance's "mana equal to enchanted permanent's mana cost" reads
 -- the PROJECTED cost (CR 707.2), each symbol rewritten by symbolAdds: settled
 -- where no symbol is hybrid, else CR 106.8's half asked per hybrid symbol.
-produced :: Map.Map SlotName (Set.Set Recipient.Recipient) -> ObjectId -> GameState -> ManaProduction -> Produced
-produced bound oid gs = producedVisiting bound Set.empty oid gs gs
+produced :: Map.Map SlotName (Set.Set Recipient.Recipient) -> Acquisition.Acquisition -> ObjectId -> GameState -> ManaProduction -> Produced
+produced bound acquisition oid gs = producedVisiting bound Set.empty acquisition oid gs gs
 
-producedVisiting :: Map.Map SlotName (Set.Set Recipient.Recipient) -> Set.Set ObjectId -> ObjectId -> GameState -> GameState -> ManaProduction -> Produced
-producedVisiting bound visited oid gs poolBoard production = case production of
+producedVisiting :: Map.Map SlotName (Set.Set Recipient.Recipient) -> Set.Set ObjectId -> Acquisition.Acquisition -> ObjectId -> GameState -> GameState -> ManaProduction -> Produced
+producedVisiting bound visited acquisition oid gs poolBoard production = case production of
   ManaProduction.OfType manaType -> Settles [manaType]
   ManaProduction.OneOf amongTypes -> amongSpread (ManaAmong.spread amongTypes) (Set.toList (ManaAmong.types amongTypes))
   ManaProduction.AnyColor spread ->
@@ -338,7 +342,7 @@ producedVisiting bound visited oid gs poolBoard production = case production of
       spread
       (fmap ManaType.Colored (Color.White NonEmpty.:| [Color.Blue, Color.Black, Color.Red, Color.Green]))
   ManaProduction.Chosen ->
-    among (fmap ManaType.Colored (Set.toList (Maybe.fromMaybe Set.empty (Game.currentChoice Chosen.Colors oid gs))))
+    among (fmap ManaType.Colored (Set.toList (Maybe.fromMaybe Set.empty (Game.choiceWithLastKnown Chosen.Colors acquisition oid gs))))
   ManaProduction.SnowSymbol -> Settles [ManaType.Colorless]
   ManaProduction.Noted -> Settles (foldMap Foldable.toList (Map.lookup oid (GameState.notedMana gs)))
   ManaProduction.CouldProduce could ->
@@ -950,7 +954,7 @@ triggerAdds pid gs pending = case PendingTrigger.source pending of
           | List.notElem pid (Maybe.fromMaybe [] (Players.named resolutionReads gs (ManaAddition.player addition))) = [[]]
           | otherwise =
               let howMany = max 0 (Integer.toIntSaturating (Maybe.fromMaybe 0 (Quantity.evaluate (Projection.fullView gs) context gs source (ManaAddition.count addition))))
-               in case produced bound source gs (ManaAddition.production addition) of
+               in case produced bound (Game.acquisitionOf source gs) source gs (ManaAddition.production addition) of
                     Settles run -> [concat (replicate howMany (fmap (unitOf addition) run))]
                     Offers spread offered -> fmap (fmap (unitOf addition)) (choicesOf howMany spread offered)
                     PerSymbol symbols -> fmap (fmap (unitOf addition)) (symbolRuns howMany symbols)
@@ -1188,7 +1192,7 @@ pricedOptionsVisiting visited rewritesOf paid poolBoard pcs oid gs =
       additionRuns reader addition =
         let offeredCount = howManyIn countContext addition
             pricedCount = howManyIn pricedContext addition
-            producedWith slots board = producedVisiting slots visited oid gs board (ManaAddition.production addition)
+            producedWith slots board = producedVisiting slots visited (Game.acquisitionOf oid gs) oid gs board (ManaAddition.production addition)
             offeredProduced = producedWith Map.empty gs
             pricedProduced = producedWith pricedSlots poolBoard
             runsOf answer howMany = case answer of
@@ -1365,20 +1369,25 @@ lastExiledWith reader acquisition oid gs = Game.lastExiled (Game.linkedPile Noth
 -- from manaSourcesGiven, which filters the battlefield; Parun.Engine.Resolve's
 -- Effect.AddMana arm takes the resolving ability's source, which is a permanent
 -- for every producer in the pool and need not be one in general.
+--
+-- A source gone by then is read on its last known information (CR 608.2h):
+-- the mana Radiant Lotus adds after its own cost sacrificed it is still mana
+-- from an artifact.
 productionTagsGiven :: Map.Map ObjectId PC.ProjectedCharacteristics -> ObjectId -> GameState -> Set.Set ProductionTag.ProductionTag
 productionTagsGiven pcs oid gs =
-  Set.unions
-    [ if Set.member Supertype.Snow (Projection.supertypesGiven pcs oid gs) then Set.singleton ProductionTag.Snow else Set.empty,
-      -- Forsworn Paladin's "mana from a Treasure", read off the same source and by
-      -- the same rule: CR 106.3 names the source, and being a Treasure is CR
-      -- 205.3g's subtype where being snow is CR 205.4g's supertype. Two independent
-      -- axes, so the answer is a union rather than a choice.
-      if Set.member Subtype.Treasure (Projection.subtypesGiven pcs oid gs) then Set.singleton ProductionTag.Treasure else Set.empty,
-      -- Shadow the Hedgehog's "mana from an artifact", the same read a third axis
-      -- over: CR 205.2a's card type, and independent of the other two -- a snow
-      -- Treasure token is all three at once, which is why this stays a union.
-      if Set.member CardType.Artifact (Projection.cardTypesGiven pcs oid gs) then Set.singleton ProductionTag.Artifact else Set.empty
-    ]
+  let characteristics = maybe (Projection.projectGiven pcs oid gs) LastKnown.characteristics (Game.lastKnownOf oid gs)
+   in Set.unions
+        [ if Set.member Supertype.Snow (PC.supertypes characteristics) then Set.singleton ProductionTag.Snow else Set.empty,
+          -- Forsworn Paladin's "mana from a Treasure", read off the same source and by
+          -- the same rule: CR 106.3 names the source, and being a Treasure is CR
+          -- 205.3g's subtype where being snow is CR 205.4g's supertype. Two independent
+          -- axes, so the answer is a union rather than a choice.
+          if Set.member Subtype.Treasure (PC.subtypes characteristics) then Set.singleton ProductionTag.Treasure else Set.empty,
+          -- Shadow the Hedgehog's "mana from an artifact", the same read a third axis
+          -- over: CR 205.2a's card type, and independent of the other two -- a snow
+          -- Treasure token is all three at once, which is why this stays a union.
+          if Set.member CardType.Artifact (PC.cardTypes characteristics) then Set.singleton ProductionTag.Artifact else Set.empty
+        ]
 
 -- The units of one yield, in printed order.
 unitsOf :: Mana -> [ManaUnit]
