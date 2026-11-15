@@ -1,0 +1,143 @@
+{
+  "board": {
+    "active": "alice",
+    "step": "PrecombatMain",
+    "seats": [
+      {
+        "name": "alice",
+        "battlefield": [
+          {
+            "card": "Quicksilver Elemental",
+            "label": "qe",
+            "ready": true
+          },
+          {
+            "card": "Island",
+            "label": "i1"
+          },
+          {
+            "card": "Island",
+            "label": "i2"
+          }
+        ],
+        "library": [
+          {
+            "card": "Island",
+            "label": "a1"
+          },
+          {
+            "card": "Island",
+            "label": "a2"
+          },
+          {
+            "card": "Island",
+            "label": "a3"
+          },
+          {
+            "card": "Island",
+            "label": "a4"
+          }
+        ]
+      },
+      {
+        "name": "bob",
+        "battlefield": [
+          {
+            "card": "Shivan Dragon",
+            "label": "shivan"
+          }
+        ],
+        "library": [
+          {
+            "card": "Island",
+            "label": "b1"
+          },
+          {
+            "card": "Island",
+            "label": "b2"
+          },
+          {
+            "card": "Island",
+            "label": "b3"
+          },
+          {
+            "card": "Island",
+            "label": "b4"
+          }
+        ]
+      }
+    ]
+  },
+  "description": "CR 613.1f / 609.4b: Quicksilver Elemental gains the activated abilities of a target creature an opponent controls until end of turn, and pays the gained {R} with blue mana as though it were red",
+  "note": "bob controls Shivan Dragon. alice pays {U} for the Elemental's ability with one Island, then its copy of the Dragon's {R} pump with the other Island. The pump lands on the Elemental, not the Dragon (CR 201.5b).",
+  "timeline": [
+    {
+      "do": {
+        "Activate": {
+          "object": "$qe",
+          "ability": 0,
+          "mana": [
+            "$i1",
+            null
+          ],
+          "targets": [
+            "$shivan"
+          ]
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Activate": {
+          "object": "$qe",
+          "ability": 1,
+          "mana": [
+            "$i2"
+          ]
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "PowerToughness": {
+          "object": "$qe",
+          "power": 4,
+          "toughness": 4
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "PowerToughness": {
+          "object": "$shivan",
+          "power": 5,
+          "toughness": 5
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    }
+  ]
+}

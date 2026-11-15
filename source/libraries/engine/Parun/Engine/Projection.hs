@@ -595,13 +595,9 @@ applyModification textBoxOf viewOf src stamp gs oid unitTypes affected m pc =
                 LentCards.OnTheBattlefield -> textBoxOf card
                 _ -> copiableCharacteristics card gs
               named card a = a {ActivatedAbility.name = Just (Binding.acquiredFrom card (ActivatedAbility.name a))}
-              -- CR 305.6: a land's intrinsic mana abilities, one per basic land
-              -- type (the ruling on Manascape Refractor).
-              intrinsic copied = if Subtype.intrinsicManaAbilityOf copied then fmap Mint.intrinsicManaAbility (Maybe.mapMaybe Subtype.subtypeMana (Set.toAscList (PC.subtypes copied))) else []
               -- CR 113.6 / 702.178b: a card has, where it is, only the "as long
               -- as" grants that function there (AbilityZone.grantFunctionsIn).
-              lent card = let copied = lenderOf card in filter ofKind (intrinsic copied <> filter (AbilityZone.grantFunctionsIn Zone.Battlefield (PC.delayedAbilities copied) zone) (PC.activatedAbilities copied))
-              ofKind a = all (== (if ManaAbility.isManaAbility a then AbilityKind.ManaAbility else AbilityKind.NonManaAbility)) only
+              lent card = let copied = lenderOf card in filter (lendsKind only) (intrinsicManaAbilitiesOf copied <> filter (AbilityZone.grantFunctionsIn Zone.Battlefield (PC.delayedAbilities copied) zone) (PC.activatedAbilities copied))
               gained = foldMap (\card -> fmap (named card) (lent card)) cards
               restricted a = a {ActivatedAbility.restrictions = ActivatedAbility.restrictions a <> extra}
               titled card t = t {TriggeredAbility.name = Just (Binding.acquiredFrom card (TriggeredAbility.name t))}
@@ -986,6 +982,19 @@ bakeGranter granter = Identity.runIdentity . Children.modalChildren Children.mod
     condition = Identity.runIdentity . Children.conditionChildren Children.conditionLeaves {Children.conditionQuantity = Identity.Identity . quantity, Children.conditionNested = Identity.Identity . condition}
     quantity = Identity.runIdentity . Children.quantityChildren (Children.descendingQuantities (Identity.Identity . quantity)) {Children.nest = Identity.Identity . bake}
     bake = Filter.bakeBound Map.empty (Map.singleton Binding.grantingPermanent (Set.singleton granter)) Map.empty
+
+-- | CR 305.6: a land's intrinsic mana abilities, one per basic land type (the
+-- ruling on Manascape Refractor), which a lend takes beside its printed ones.
+intrinsicManaAbilitiesOf :: ProjectedCharacteristics -> [ActivatedAbility.ActivatedAbility Card.Type.Card (GrantedAbility.GrantedAbility Card.Type.Card)]
+intrinsicManaAbilitiesOf pc =
+  if Subtype.intrinsicManaAbilityOf pc
+    then fmap Mint.intrinsicManaAbility (Maybe.mapMaybe Subtype.subtypeMana (Set.toAscList (PC.subtypes pc)))
+    else []
+
+-- | CR 605.1a: whether a lend naming this kind of activated ability, or
+-- Nothing for both, takes this one.
+lendsKind :: Maybe AbilityKind.AbilityKind -> ActivatedAbility.ActivatedAbility Card.Type.Card (GrantedAbility.GrantedAbility Card.Type.Card) -> Bool
+lendsKind only a = all (== (if ManaAbility.isManaAbility a then AbilityKind.ManaAbility else AbilityKind.NonManaAbility)) only
 
 -- CR 113.2c / 201.5a: a granted activated ability, named for its granter
 -- (Binding.acquiredFrom) where a rider counts its activations or a quantity of

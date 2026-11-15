@@ -78,6 +78,7 @@ import qualified Parun.Types.Binding as Binding.Type
 import qualified Parun.Types.Blight as Blight.Type
 import qualified Parun.Types.Bookkeeping as Bookkeeping
 import qualified Parun.Types.Card as Card.Type
+import qualified Parun.Types.CardAbilities as CardAbilities
 import qualified Parun.Types.CardName as CardName
 import qualified Parun.Types.CardSelection as CardSelection
 import qualified Parun.Types.CardType as CardType
@@ -149,6 +150,7 @@ import qualified Parun.Types.InherentTriggerSource as InherentTriggerSource
 import qualified Parun.Types.Keyword as Keyword.Type
 import qualified Parun.Types.KeywordFamily as KeywordFamily
 import qualified Parun.Types.LastKnown as LastKnown
+import qualified Parun.Types.LentCards as LentCards
 import qualified Parun.Types.LibraryPlacement as LibraryPlacement
 import qualified Parun.Types.LibraryPosition as LibraryPosition
 import qualified Parun.Types.LifeLossCause as LifeLossCause
@@ -4113,6 +4115,20 @@ bindEarthbentLand resolving land gs =
 -- instance. The scenario
 -- concerted-effort-shares-every-landwalk-and-protection-found proves it; no
 -- card in the pool resolves one over a zone other than the battlefield.
+--
+-- CR 613.1f: a resolving lend from the battlefield expands likewise, into one
+-- GainAbility per activated ability each lender has now, keyword and CR 305.6
+-- intrinsic ones among them (Quicksilver Elemental's rulings), so the receiver
+-- keeps them after the lender leaves (docs/decisions.md, "A resolving lend
+-- takes the lender's abilities as it resolves"). Each is named for the
+-- resolving ability (Binding.acquiredFrom), not the lender: CR 607.5 links the
+-- pairs one resolution lends and no others, and a once-each-turn ability lent
+-- twice is two abilities (the 2004-10-04 rulings). The quicksilver-elemental-*
+-- scenarios prove it.
+--
+-- Not implemented: the lender's triggered abilities where the payload lends
+-- them, its delayed abilities armed by name, and its keywords as keywords, so
+-- the receiver is not "with" one (CR 702.1d) (#7672).
 expandGrant :: Map.Map SlotName (Set Recipient) -> ObjectId -> PlayerId -> ObjectId -> GameState -> Modification.Modification (GrantedAbility.GrantedAbility Card.Type.Card) -> [Modification.Modification (GrantedAbility.GrantedAbility Card.Type.Card)]
 expandGrant legal resolving controller source gs modification = case modification of
   Modification.GainKeywordsAmong designator zone among ->
@@ -4136,6 +4152,13 @@ expandGrant legal resolving controller source gs modification = case modificatio
           <> fmap (Modification.GainAbility . GrantedAbility.Replacement) (PC.replacementEffects pc)
           <> fmap (Modification.GainAbility . GrantedAbility.Player) (PC.playerAbilities pc)
           <> fmap (Modification.GainAbility . GrantedAbility.SelfCostReduction) (PC.costReductions pc)
+  Modification.GainCardAbilities (CardAbilities.MkCardAbilities LentCards.OnTheBattlefield among _ only extra) ->
+    let lenders = battlefieldMatching legal resolving controller source gs among
+        named a = a {ActivatedAbility.name = Just (Binding.acquiredFrom resolving (ActivatedAbility.name a)), ActivatedAbility.restrictions = ActivatedAbility.restrictions a <> extra}
+        lent oid =
+          let pc = Projection.project oid gs
+           in fmap (Modification.GainAbility . GrantedAbility.Activated . named) (filter (Projection.lendsKind only) (Projection.intrinsicManaAbilitiesOf pc <> Count.abilitiesOf False pc))
+     in foldMap lent lenders
   _ -> [modification]
 
 -- CR 614.12: the other permanents that entered in the same event as `oid` (CR
