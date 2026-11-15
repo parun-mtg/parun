@@ -688,7 +688,8 @@ spec s = Spec.describe s "Parun.Oracle" $ do
   -- CR 701.26a: tapping and untapping; "another target" for one other object.
   Spec.it s "render taps and untaps" $ do
     Spec.assertEq s (Just (Text.pack "Tap another target creature.")) (Oracle.render (spell [clause [Effect.Tap (Tap.plain (ObjectRef.InSlot target))]] [(target, TargetSlot.required Pool.Creatures (Just (Filter.Not Filter.IsSource)))]))
-    Spec.assertEq s (Just (Text.pack "Untap all creatures you control.")) (Oracle.render (spell [clause [Effect.Untap (ObjectRef.EachMatching (Filter.And [Filter.HasCardType CardType.Creature, Filter.HeldBy Holder.Controller PlayerRelation.You]))]] []))
+    let untapYours = spell [clause [Effect.Untap (ObjectRef.EachMatching (Filter.And [Filter.HasCardType CardType.Creature, Filter.HeldBy Holder.Controller PlayerRelation.You]))]] []
+    Spec.assertEq s [[Text.pack "Untap all creatures you control.", Text.pack "Untap each creature you control."]] (Oracle.abilities untapYours)
     let lands = ObjectRef.ChosenPermanents (ChosenPermanents.MkChosenPermanents (Filter.HasCardType CardType.Land) (PlayerRef.Relative PlayerRelation.You) (HowMany.UpTo (Just (Quantity.Literal 4))) Nothing Zone.Battlefield Set.empty)
     Spec.assertEq s (Just (Text.pack "Untap up to four lands.")) (Oracle.render (spell [clause [Effect.Untap lands]] []))
 
