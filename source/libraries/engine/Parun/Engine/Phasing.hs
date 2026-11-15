@@ -478,8 +478,8 @@ phaseIn oid gs =
 -- Clever Concealment is what reaches it: a permanent attached to a player is an
 -- Aura (CR 702.5d), which Reality Ripple's artifact, creature or land cannot
 -- name but which "any number of target nonland permanents you control" does.
--- Parun.PhasingSpec's "CR 702.26i an Aura attached to a PLAYER phases in still
--- attached" is the case.
+-- The scenario phasing/cr-702-26i-an-aura-attached-to-a-player-phases-in-still-attached
+-- is the case.
 hostRemains :: ObjectId -> GameState -> Bool
 hostRemains oid gs = case Game.lookupObject oid gs >>= Object.attachedTo of
   Nothing -> True

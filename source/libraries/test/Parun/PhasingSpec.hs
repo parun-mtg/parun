@@ -21,8 +21,7 @@
 -- rule 702.26 too. Bonesplitter rides with it for CR 702.26i, an Equipment being
 -- an artifact (CR 301.5) and so a legal target -- which is how a DIRECTLY
 -- phased-out attachment becomes reachable without the Aura-with-phasing that has
--- never been printed. Goblin Piker is its host, and its own phase-out is what
--- distinguishes CR 702.26a's "the keyword decides who leaves, never who returns".
+-- never been printed. Goblin Piker is its host.
 --
 -- Ray of Command joins them in the Departure group, where CR 702.26n needs a
 -- permanent whose owner and controller come apart: "untap target creature an
@@ -34,12 +33,6 @@
 -- control phase out" is what names a permanent and its own Equipment in one
 -- announcement, which is CR 702.26h's tie-break. Its convoke is transcribed and
 -- no case here takes it: every board below pays {2}{W}{W} out of lands.
---
--- Nyxborn Rollicker joins them for CR 702.103g, whose "phases in unattached"
--- needs a BESTOWED Aura: it is the one bestow printing in data/cards/, and its
--- only non-bestow clause is a +1/+1 on the enchanted creature. Goblin Piker is
--- the host it is cast onto, and the permanent left behind when Clever
--- Concealment names the Aura alone.
 --
 -- Synthetic Puppeteer's Yoke joins them for the CR 613.1b layer-2 fold, whose
 -- Affected.AttachedPlayerControls arm names a permanent by its CONTROLLER rather
@@ -62,7 +55,6 @@ import qualified Data.Sequence as Seq
 import qualified Data.Set as Set
 import qualified Parun.Engine.Activate as Activate
 import qualified Parun.Engine.Combat as Combat
-import qualified Parun.Engine.Cost as Cost
 import qualified Parun.Engine.Damage as Damage
 import qualified Parun.Engine.Departure as Departure
 import qualified Parun.Engine.Engine as Engine
@@ -79,10 +71,6 @@ import qualified Parun.Spec as Spec
 import qualified Parun.Support as S
 import qualified Parun.Types.ActiveObjectProhibition as ActiveObjectProhibition
 import qualified Parun.Types.BeginningStep as BeginningStep
-import qualified Parun.Types.CandidateCost as CandidateCost
-import qualified Parun.Types.CardType as CardType
-import qualified Parun.Types.Color as Color
-import qualified Parun.Types.Cost as Cost.Type
 import qualified Parun.Types.Departure as Departure.Type
 import qualified Parun.Types.EndingStep as EndingStep
 import qualified Parun.Types.Expiry as Expiry
@@ -90,9 +78,6 @@ import qualified Parun.Types.Face as Face
 import qualified Parun.Types.GameEvent as GameEvent
 import qualified Parun.Types.GameState as GameState
 import qualified Parun.Types.LoggedEvent as LoggedEvent
-import qualified Parun.Types.ManaCost as ManaCost
-import qualified Parun.Types.ManaSymbol as ManaSymbol
-import qualified Parun.Types.ManaType as ManaType
 import qualified Parun.Types.Object as Object
 import qualified Parun.Types.ObjectId as ObjectId
 import qualified Parun.Types.PermanentActed as PermanentActed
@@ -106,7 +91,6 @@ import qualified Parun.Types.Prompt as Prompt
 import qualified Parun.Types.Recipient as Recipient
 import qualified Parun.Types.RestrictedCreatures as RestrictedCreatures
 import qualified Parun.Types.StoredEffects as StoredEffects
-import qualified Parun.Types.Subtype as Subtype
 import qualified Parun.Types.TapState as TapState
 import qualified Parun.Types.Timestamp as Timestamp
 import qualified Parun.Types.TurnRegisters as TurnRegisters
@@ -310,65 +294,10 @@ spec s registry = Spec.describe s "Parun.Engine.Phasing" $ do
   effectSpec s registry
   attachedSpec s registry
 
--- CR 702.26b's other door: an effect that says a permanent phases out. Reality
--- Ripple throughout, whose whole printed text is "target artifact, creature, or
--- land phases out" -- so nothing here is about a card either.
+-- CR 702.26b's other door: an effect that says a permanent phases out, here
+-- Clever Concealment's.
 effectSpec :: (Monad m, Monad n) => Spec.Spec m n -> Registry.Registry m -> n ()
 effectSpec s registry = Spec.describe s "Effect" $ do
-  -- The capability itself: GameState.phasedOut written by something other than CR
-  -- 502.1's turn-based action, with no phasing ability anywhere on the board.
-  --
-  -- The row says bob and not alice, which is CR 702.26a's "phased out under that
-  -- player's control" -- alice cast the spell, bob controls the creature.
-  Spec.it s "CR 702.26b Reality Ripple phases out a creature with no phasing" $ do
-    island <- S.printingOf s registry "Island"
-    piker <- S.printingOf s registry "Goblin Piker"
-    ripple <- S.printingOf s registry "Reality Ripple"
-    let ((victim, bystander), spell, board) =
-          rippleBoard island ripple $ \gs ->
-            let (a, g1) = S.addPermanent piker S.bob gs
-                (b, g2) = S.addPermanent piker S.bob g1
-             in ((a, b), g2)
-        after = rippleAt victim spell board
-    Spec.assertEqWith s "setup: both of bob's Pikers are on the battlefield" (fmap (`onBattlefield` board) [victim, bystander]) [True, True]
-    Spec.assertEqWith s "setup: and neither is phased out" (fmap (`Phasing.isPhasedOut` board) [victim, bystander]) [False, False]
-    Spec.assertEqWith s "the one it targeted is phased out" (Phasing.isPhasedOut victim after) True
-    Spec.assertEqWith s "directly, under BOB, who controls it" (Phasing.phasedOutStatus victim after) (Just (PhasedOut.Directly S.bob))
-    Spec.assertEqWith s "and gone from the battlefield" (onBattlefield victim after) False
-    -- The same board's falsifier: the second Piker nobody aimed at is untouched,
-    -- so this is not an effect that swept the board.
-    Spec.assertEqWith s "the other Piker is not" (Phasing.isPhasedOut bystander after) False
-    Spec.assertEqWith s "and is still on the battlefield" (onBattlefield bystander after) True
-    -- CR 702.26d: no zone change, so Object.zone is untouched and the object still
-    -- exists. Both are what CR 702.26i's host test later reads.
-    Spec.assertEqWith s "its zone still says battlefield" (zoneOf victim after) (Just Zone.Battlefield)
-  -- CR 702.26a's phase-in half applied to a permanent with NO phasing, which is
-  -- the reading Parun.Engine.Phasing.phasingIn implements -- "the keyword decides
-  -- who leaves, never who returns" -- and which no board could distinguish from
-  -- "only a permanent with phasing phases in" until an effect could phase one out.
-  --
-  -- And the schedule is BOB's, not the caster's: alice's untap step comes and goes
-  -- with the Piker still away.
-  Spec.it s "CR 702.26a it phases back in at its own controller's next untap step" $ do
-    island <- S.printingOf s registry "Island"
-    piker <- S.printingOf s registry "Goblin Piker"
-    ripple <- S.printingOf s registry "Reality Ripple"
-    let ((victim, _), spell, board) =
-          rippleBoard island ripple $ \gs ->
-            let (a, g1) = S.addPermanent piker S.bob gs
-                (b, g2) = S.addPermanent piker S.bob g1
-             in ((a, b), g2)
-        gone = rippleAt victim spell board
-        alices = untapStep S.alice gone
-        bobs = untapStep S.bob alices
-    Spec.assertEqWith s "setup: it is phased out" (Phasing.isPhasedOut victim gone) True
-    Spec.assertEqWith s "alice's untap step does not bring it back" (onBattlefield victim alices) False
-    Spec.assertEqWith s "bob's, the controller's, does" (onBattlefield victim bobs) True
-    Spec.assertEqWith s "with no row left" (Phasing.isPhasedOut victim bobs) False
-    -- CR 702.26a's first sentence, the other way round: only a permanent WITH
-    -- phasing phases out on the schedule, so bob's untap step does not
-    -- send it straight back out again.
-    Spec.assertEqWith s "and it does not phase out again at once" (Phasing.phasedOutStatus victim bobs) Nothing
   -- CR 702.26e: Lurking Evil's "this enchantment becomes a 4/4 Phyrexian Horror
   -- creature with flying" names its source through the `self` group slot, not a
   -- target, so CR 608.2b never drops it. Phased out in response by Clever
@@ -497,21 +426,6 @@ indirectSpec s registry = Spec.describe s "Indirect" $ do
     -- first sentence: a Fortification left behind would be attached to a
     -- permanent the game no longer treats as existing.
     Spec.assertEqWith s "and is still attached to its host" (attachedHostOf garrisonId after) (Just (Recipient.ToObject isleId))
-  -- CR 702.26g's last sentence: "an Aura, Equipment, or Fortification that phased
-  -- out indirectly won't phase in by itself, but instead phases in along with the
-  -- permanent it's attached to."
-  Spec.it s "CR 702.26g the Aura phases in with its host, still attached" $ do
-    crocodile <- S.printingOf s registry "Sandbar Crocodile"
-    pacifism <- S.printingOf s registry "Pacifism"
-    let (crocId, auraId, board) = enchantedCrocodile crocodile pacifism S.alice S.alice (Setup.emptyGame S.bothPlayers)
-        gone = untapStep S.alice board
-        back = untapStep S.alice gone
-    Spec.assertEqWith s "both are back on the battlefield" (fmap (`onBattlefield` back) [crocId, auraId]) [True, True]
-    Spec.assertEqWith s "neither has a phased-out row left" (fmap (`Phasing.isPhasedOut` back) [crocId, auraId]) [False, False]
-    Spec.assertEqWith s "and the Aura is still attached to the Crocodile" (attachedHostOf auraId back) (Just (Recipient.ToCreature crocId))
-    -- And CR 704.5m has nothing to say about it once it is back, which is the
-    -- second half of "phases in ATTACHED".
-    Spec.assertEqWith s "which a settle pass leaves alone" (elem auraId (Game.zoneMembers Zone.Graveyard S.alice (S.settleSba back))) False
   -- "Won't phase in by itself", as a board where by itself and with its host are
   -- different answers: alice's Pacifism on BOB's Crocodile. The Aura phased out
   -- under alice, so a schedule read off the stored player would bring it back at
@@ -590,29 +504,9 @@ phaseOutSpec s registry = Spec.describe s "PhaseOut" $ do
     Spec.assertEqWith s "the object still exists" (Maybe.isJust (Game.lookupObject crocId after)) True
     Spec.assertEqWith s "and its zone is still the battlefield" (zoneOf crocId after) (Just Zone.Battlefield)
     Spec.assertEqWith s "no object was created or destroyed" (Map.size (GameState.objects after)) (Map.size (GameState.objects board))
-  -- The falsifier for an action that emptied the battlefield rather than reading
-  -- rule 702.26a's "with phasing". Goblin Piker has no phasing and stays.
-  Spec.it s "CR 702.26a a permanent without phasing does not phase out" $ do
-    piker <- S.printingOf s registry "Goblin Piker"
-    let (pikerId, board) = S.addPermanent piker S.alice (Setup.emptyGame S.bothPlayers)
-        after = untapStep S.alice board
-    Spec.assertEqWith s "the Piker is still on the battlefield" (onBattlefield pikerId after) True
-    Spec.assertEqWith s "and is not phased out" (Phasing.isPhasedOut pikerId after) False
 
-phaseInSpec :: (Monad m, Monad n) => Spec.Spec m n -> Registry.Registry m -> n ()
+phaseInSpec :: (Monad m) => Spec.Spec m n -> Registry.Registry m -> n ()
 phaseInSpec s registry = Spec.describe s "PhaseIn" $ do
-  -- CR 702.26a's second half and CR 702.26c: the next untap step of the player it
-  -- phased out under brings it back. Two of alice's untap steps in a row, which is
-  -- the whole cycle the card is printed to do.
-  Spec.it s "CR 702.26a/702.26c a phased-out permanent phases in at its controller's next untap step" $ do
-    crocodile <- S.printingOf s registry "Sandbar Crocodile"
-    let (crocId, board) = crocodileBoard crocodile
-        gone = untapStep S.alice board
-        back = untapStep S.alice gone
-    Spec.assertEqWith s "it was phased out" (onBattlefield crocId gone) False
-    Spec.assertEqWith s "and is back on the battlefield" (onBattlefield crocId back) True
-    Spec.assertEqWith s "with no phased-out status left" (Phasing.isPhasedOut crocId back) False
-    Spec.assertEqWith s "and alice controls a creature again" (S.creaturesInPlay S.alice back) 1
   -- "This all happens simultaneously" (CR 702.26a's third sentence). Both halves
   -- read the state before either writes, so the permanent this step phased OUT is
   -- not also a permanent this step phases IN. The falsifier for a sequential
@@ -622,29 +516,9 @@ phaseInSpec s registry = Spec.describe s "PhaseIn" $ do
     let (crocId, board) = crocodileBoard crocodile
         after = Phasing.phasingEvent S.alice board
     Spec.assertEqWith s "one step out, and it stays out" (onBattlefield crocId after) False
-  -- A third untap step phases it back out: the card alternates for as long as it
-  -- is on the battlefield, which is what makes rule 702.26a a schedule rather than
-  -- a one-shot.
-  Spec.it s "CR 702.26a the cycle repeats every untap step" $ do
-    crocodile <- S.printingOf s registry "Sandbar Crocodile"
-    let (crocId, board) = crocodileBoard crocodile
-        states = iterate (untapStep S.alice) board
-    Spec.assertEqWith
-      s
-      "in, out, in, out, in"
-      (fmap (onBattlefield crocId) (take 5 states))
-      [True, False, True, False, True]
 
-controllerSpec :: (Monad m, Monad n) => Spec.Spec m n -> Registry.Registry m -> n ()
+controllerSpec :: (Monad m) => Spec.Spec m n -> Registry.Registry m -> n ()
 controllerSpec s registry = Spec.describe s "Controller" $ do
-  -- CR 702.26a scopes both halves to the player whose untap step it is: "that
-  -- player controls" and "under that player's control". Bob's untap step does
-  -- nothing to alice's Crocodile.
-  Spec.it s "CR 702.26a another player's untap step phases nothing out" $ do
-    crocodile <- S.printingOf s registry "Sandbar Crocodile"
-    let (crocId, board) = crocodileBoard crocodile
-        after = untapStep S.bob board
-    Spec.assertEqWith s "alice's Crocodile is still on the battlefield" (onBattlefield crocId after) True
   -- The other direction, and the case a `phasedOut` set without the player in it
   -- would get wrong: once it has phased out under alice, BOB's untap step must
   -- leave it out. Only alice's brings it back.
@@ -976,74 +850,14 @@ zoneOfNamed printing gs = case namedIn printing gs of
   [oid] -> zoneOf oid gs
   _ -> Nothing
 
--- CR 601.2b's announcement answered by NAMING Nyxborn Rollicker's bestow cost
--- rather than its printed one, and CR 601.2c's granted enchant slot filtered to
--- `host`. AuraSpec's `castingFor` in shape and for its reasons: naming the cost
--- rather than indexing it, and FILTERING the offered set rather than building a
--- recipient CR 608.2b's re-read would drop.
---
--- Duplicated from Parun.AuraSpec rather than hoisted into Parun.Support, which
--- rebuilds every spec in the tree.
-bestowingOn :: ObjectId.ObjectId -> Prompt.Prompt r -> r
-bestowingOn host p = case p of
-  Prompt.ChooseCost _ _ _ candidates _ ->
-    Maybe.fromMaybe
-      (Cost.firstOffered candidates)
-      (List.find ((== Just (ManaCost.MkManaCost [ManaSymbol.Generic 1, ManaSymbol.OfType (ManaType.Colored Color.Red)])) . Cost.Type.mana . CandidateCost.cost) candidates)
-  Prompt.ChooseTargets _ _ _ sets -> fmap (Set.filter ((== Just host) . Recipient.objectOf) . snd) sets
-  _ -> S.identityAnswer p
-
--- The battlefield permanent alice OWNS with this printing's name --
--- Game.zoneMembers indexes by owner (CR 108.3), which is the right question here
--- because alice both owns and controls everything on this board. Needed because
--- CR 400.7 mints a new object as the bestowed spell resolves, so the id the cast
--- returned names nothing on the battlefield.
-battlefieldNamed :: Printing.Printing -> GameState.GameState -> Maybe ObjectId.ObjectId
-battlefieldNamed printing gs =
-  List.find
-    (\oid -> fmap S.nameOf (Game.cardOf oid gs) == Just (S.printingName printing))
-    (Game.zoneMembers Zone.Battlefield S.alice gs)
-
--- alice's Goblin Piker with a Nyxborn Rollicker CAST BESTOWED onto it, and a
--- Clever Concealment still in hand. Cast rather than attached by fixture, which
--- is the one departure from enchantedCrocodile's posture above and is forced:
--- Object.bestowed is stamped by Parun.Engine.Cast and by nothing else, so a state
--- fixture could produce an attached Aura but not a BESTOWED one, and the case
--- below is entirely about that bit.
---
--- Two Mountains and four Plains is EXACTLY bestow {1}{R} plus {2}{W}{W}, which is
--- rippleBoard's reasoning carried over -- a board that could not pay would leave
--- a spell in hand and the assertions downstream would pass for the wrong reason,
--- which is why the case asserts the bestowed setup first. The Plains and
--- Mountains are lands and Clever Concealment's slot filter is "nonland", so the
--- Piker and the Rollicker are its whole offer.
---
--- Returns the host, the Concealment in hand, and the board after the bestowed
--- spell has resolved.
-bestowedBoard ::
-  Printing.Printing ->
-  Printing.Printing ->
-  Printing.Printing ->
-  Printing.Printing ->
-  Printing.Printing ->
-  (ObjectId.ObjectId, ObjectId.ObjectId, GameState.GameState)
-bestowedBoard plains mountain piker rollicker conceal =
-  let base = S.landsFor mountain S.alice 2 (S.landsFor plains S.alice 4 (Setup.emptyGame S.bothPlayers))
-      (host, withHost) = S.addPermanent piker S.alice base
-      (withRollicker, spellId) = S.handOne rollicker withHost
-      (concealId, board) = S.addHandCard conceal S.alice withRollicker
-      cast = S.runPure (bestowingOn host) board (S.cast S.alice spellId)
-   in (host, concealId, S.settleSba (S.runPure (bestowingOn host) cast Stack.resolveTop))
-
 -- CR 702.26i, the DIRECTLY phased-out attachment. Bonesplitter is the fixture and
 -- Reality Ripple is what reaches it: an Equipment is an artifact (CR 301.5), so
 -- rule 702.26i needs no Aura or Equipment carrying the phasing keyword -- which is
 -- as well, since none has been printed.
 --
--- Clever Concealment reaches the two things Reality Ripple's one artifact,
+-- Clever Concealment reaches the thing Reality Ripple's one artifact,
 -- creature or land target cannot: CR 702.26h's tie-break, which needs a permanent
--- and its own Equipment named together, and rule 702.26i's PLAYER clause, which
--- needs an enchant-player Aura (CR 702.5d) phased out directly.
+-- and its own Equipment named together.
 attachedSpec :: (Monad m, Monad n) => Spec.Spec m n -> Registry.Registry m -> n ()
 attachedSpec s registry = Spec.describe s "Attached" $ do
   -- CR 702.26b's "treated as though it does not exist", read off the equipped
@@ -1171,82 +985,3 @@ attachedSpec s registry = Spec.describe s "Attached" $ do
     Spec.assertEqWith s "the Equipment still phased out meanwhile" (Phasing.isPhasedOut equip dead) True
     Spec.assertEqWith s "it phases in" (onBattlefield equip back) True
     Spec.assertEqWith s "unattached, its host being gone" (attachedHostOf equip back) Nothing
-  -- CR 702.26i's PLAYER clause: "the object or player it was attached to when it
-  -- phased out, if that object is still in the same zone or that player is still
-  -- in the game". A permanent attached to a player is an Aura (CR 702.5d), and
-  -- Clever Concealment is what phases one out DIRECTLY -- "any number of target
-  -- nonland permanents you control" names the Aura itself, where Reality Ripple's
-  -- artifact, creature or land cannot.
-  --
-  -- alice's Curse of Death's Hold on BOB, so the Aura's controller and its host
-  -- are different seats and CR 702.26a's schedule is alice's while rule 702.26i's
-  -- question is about bob. Attached directly, which is enchantedCrocodile's
-  -- posture above and for its reason.
-  Spec.it s "CR 702.26i an Aura attached to a PLAYER phases in still attached" $ do
-    plains <- S.printingOf s registry "Plains"
-    curse <- S.printingOf s registry "Curse of Death's Hold"
-    conceal <- S.printingOf s registry "Clever Concealment"
-    let (aura, withAura) = S.addPermanent curse S.alice (S.landsFor plains S.alice 4 (Setup.emptyGame S.bothPlayers))
-        (board, spell) = S.handOne conceal (S.attachTo aura (Recipient.ToPlayer S.bob) withAura)
-        gone = concealAll (Set.singleton aura) spell board
-        back = untapStep S.alice gone
-    Spec.assertEqWith s "setup: the Aura is on bob" (attachedHostOf aura board) (Just (Recipient.ToPlayer S.bob))
-    Spec.assertEqWith s "it phased out DIRECTLY, under alice who controls it" (Phasing.phasedOutStatus aura gone) (Just (PhasedOut.Directly S.alice))
-    Spec.assertEqWith s "still attached while away" (attachedHostOf aura gone) (Just (Recipient.ToPlayer S.bob))
-    Spec.assertEqWith s "and phases in still on bob, who is still in the game" (attachedHostOf aura back) (Just (Recipient.ToPlayer S.bob))
-    Spec.assertEqWith s "back on the battlefield" (onBattlefield aura back) True
-  -- CR 702.103g: "If a bestowed Aura phases in unattached, it ceases to be
-  -- bestowed." The board the rule needs is narrow, and CR 702.26g is why: an Aura
-  -- on a permanent that phases out is dragged INDIRECTLY and comes back attached
-  -- whatever happened meanwhile, so the only road to "phases in unattached" is a
-  -- DIRECT row (CR 702.26i) whose host left while it was away. Clever
-  -- Concealment's "any number of target nonland permanents you control" is what
-  -- names the Aura alone, exactly as the player-clause case above needs it.
-  --
-  -- Rule 702.103g is reached by composition rather than by a clause of its own:
-  -- Parun.Engine.Phasing.phaseIn clears Object.attachedTo per CR 702.26i, and the
-  -- next state-based-action pass -- which rule 702.26i's own last sentence sends
-  -- it to -- reaches Parun.Engine.Sba's CR 702.103f branch, whose condition this
-  -- rule's is a subset of. So nothing here would discriminate rule 702.103g from
-  -- rule 702.103f on its own; what it proves is that the composite holds.
-  --
-  -- The CONTROL is the same board with the host left alive, and it is what
-  -- separates "phasing in unbestowed it" from "it was never bestowed": there the
-  -- Rollicker comes back an Aura still on the Piker, with no P/T of its own.
-  Spec.it s "CR 702.103g a bestowed Aura that phases in unattached is a creature again" $ do
-    plains <- S.printingOf s registry "Plains"
-    mountain <- S.printingOf s registry "Mountain"
-    piker <- S.printingOf s registry "Goblin Piker"
-    rollicker <- S.printingOf s registry "Nyxborn Rollicker"
-    conceal <- S.printingOf s registry "Clever Concealment"
-    let (host, spell, attached) = bestowedBoard plains mountain piker rollicker conceal
-    case battlefieldNamed rollicker attached of
-      Nothing -> Spec.assertFailure s "the bestowed Nyxborn Rollicker should be on the battlefield"
-      Just aura -> do
-        let gone = concealAll (Set.singleton aura) spell attached
-            dead = S.runPure S.identityAnswer gone (Event.changeZone (pure ()) host Zone.Graveyard)
-            hostless = S.settleSba (untapStep S.alice dead)
-            kept = S.settleSba (untapStep S.alice gone)
-        -- The premise, first, so nothing below passes for a Rollicker that was
-        -- cast for its printed {R} and so never was an Aura at all.
-        Spec.assertEqWith s "setup: CR 702.103b made it an Aura with no P/T of its own" (S.powerToughnessOf aura attached) Nothing
-        Spec.assertEqWith s "and the Piker it is attached to is pumped to 3/2" (S.powerToughnessOf host attached) (Just (3, 2))
-        Spec.assertEqWith s "it phased out DIRECTLY, its host staying behind" (Phasing.phasedOutStatus aura gone) (Just (PhasedOut.Directly S.alice))
-        Spec.assertEqWith s "and the host then left the battlefield" (Maybe.isJust (Game.lookupObject host dead)) False
-        -- CR 702.103g itself, ahead of every reading that could absorb a mutation
-        -- to it: an Aura that merely came back detached is still an Enchantment
-        -- with no P/T, so the P/T is the bit only "ceases to be bestowed" sets.
-        Spec.assertEqWith s "CR 702.103g: it phases in unattached and is a 1/1 Satyr creature again" (S.powerToughnessOf aura hostless) (Just (1, 1))
-        Spec.assertEqWith
-          s
-          "with its printed card types and subtypes back"
-          (Projection.cardTypesOf aura hostless, Projection.subtypesOf aura hostless)
-          (Set.fromList [CardType.Creature, CardType.Enchantment], Set.singleton Subtype.Satyr)
-        Spec.assertEqWith s "attached to nothing" (attachedHostOf aura hostless) Nothing
-        Spec.assertEqWith s "and on the battlefield rather than buried by CR 704.5m" (onBattlefield aura hostless) True
-        -- The control: the same phase-out with the host left alive. CR 702.26i
-        -- returns it attached, so rule 702.103g never fires and it is still a
-        -- bestowed Aura.
-        Spec.assertEqWith s "control: with its host alive it phases in still attached" (attachedHostOf aura kept) (Just (Recipient.ToCreature host))
-        Spec.assertEqWith s "still bestowed, so still no P/T of its own" (S.powerToughnessOf aura kept) Nothing
-        Spec.assertEqWith s "and the Piker is 3/2 again" (S.powerToughnessOf host kept) (Just (3, 2))

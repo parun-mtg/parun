@@ -16,14 +16,13 @@ import qualified Data.Sequence as Seq
 import qualified Data.Set as Set
 import qualified Data.Text as Text
 import Numeric.Natural (Natural)
-import Parun.CastProhibitionSpec (equipBoard, flashBoard, flashOnOwnTurn, isActivateOf, isPlay, landDropBoard, orreryScopeBoard, playEveryLand)
+import Parun.CastProhibitionSpec (equipBoard, flashBoard, flashOnOwnTurn, isActivateOf, isPlay, orreryScopeBoard, playEveryLand)
 import qualified Parun.Engine.Action as Action
 import qualified Parun.Engine.Activatable as Activatable
 import qualified Parun.Engine.Activate as Activate
 import qualified Parun.Engine.Cast as Cast
 import qualified Parun.Engine.Engine as Engine
 import qualified Parun.Engine.Event as Event
-import qualified Parun.Engine.Expiry as Expiry
 import qualified Parun.Engine.Filter as Filter
 import qualified Parun.Engine.Game as Game
 import qualified Parun.Engine.PlayerEffect as PlayerEffect
@@ -48,9 +47,7 @@ import qualified Parun.Types.DamageEvent as DamageEvent
 import qualified Parun.Types.DamageKind as DamageKind
 import qualified Parun.Types.EndingStep as EndingStep
 import qualified Parun.Types.ExileLink as ExileLink
-import qualified Parun.Types.Expiry as Expiry.Type
 import qualified Parun.Types.Face as Face
-import qualified Parun.Types.FaceDownReason as FaceDownReason
 import qualified Parun.Types.Facing as Facing
 import qualified Parun.Types.Filter as Filter.Type
 import qualified Parun.Types.ForbiddenAct as ForbiddenAct
@@ -92,22 +89,9 @@ import qualified Parun.Types.ZoneChange as ZoneChange
 -- boolean-plus-one, because both readings answer "two". Azusa's three is what
 -- separates them, and the two of them together answer four, which separates a
 -- SUM from a maximum.
-extraLandDropsSpec :: (Monad m, Monad n) => Spec.Spec m n -> Registry.Registry m -> n ()
+extraLandDropsSpec :: (Monad m) => Spec.Spec m n -> Registry.Registry m -> n ()
 extraLandDropsSpec s registry =
   Spec.describe s "ExtraLandDrops" $ do
-    -- CR 109.5: the You scope. alice's Exploration is alice's, and bob playing
-    -- lands on his own turn is still held to CR 305.2's one.
-    Spec.it s "CR 109.5 one player's Exploration does not raise another's allowance" $ do
-      mountain <- S.printingOf s registry "Mountain"
-      exploration <- S.printingOf s registry "Exploration"
-      let board = landDropBoard mountain [exploration] S.bob
-          after = playEveryLand board
-      Spec.assertEqWith s "alice's allowance is two" (PlayerEffect.landPlaysAllowed S.alice board) (Just 2)
-      Spec.assertEqWith s "bob's is still one" (PlayerEffect.landPlaysAllowed S.bob board) (Just 1)
-      Spec.assertEqWith s "one Mountain landed for bob" (S.countOnBattlefieldByName (S.printingName mountain) S.bob after) 1
-      Spec.assertEqWith s "four are still in his hand" (S.handSize S.bob after) 4
-      Spec.assertEqWith s "and his second is refused" (filter isPlay (Action.legalActions S.bob after)) []
-
     -- CR 604.2: the grant is re-read from the battlefield on every look, so
     -- destroying Exploration between the second land and the third takes the
     -- extra play back. The already-played tally is untouched by that, which is
@@ -478,61 +462,6 @@ yawgmothsWillSpec s registry =
           Spec.assertEqWith s "it drew and cost 2 life" (S.lifeOf S.alice resolved) (Just 18)
           Spec.assertEqWith s "it is not back in the graveyard" (Game.zoneMembers Zone.Graveyard S.alice resolved) []
           Spec.assertEqWith s "it was exiled instead, beside the Will" (length (Game.zoneMembers Zone.Exile S.alice resolved)) 2
-
-        -- CR 109.5 / PlayerScope.Related You: alice's Will does nothing for bob, whose
-        -- board is hers in every other respect. Asked of the typed question as
-        -- well as of the gate, because CR 307.1's sorcery window is shut for bob
-        -- on alice's turn and would refuse his cast on its own.
-        Spec.it s "CR 109.5 the You scope does not reach bob's graveyard" $ do
-          (willId, hers, his, gs) <- board
-          let after = willResolved willId gs
-              bobsTurn =
-                after
-                  { GameState.turn =
-                      (GameState.turn after)
-                        { TurnRegisters.activePlayer = S.bob,
-                          TurnRegisters.priority = Just S.bob
-                        }
-                  }
-          Spec.assertBool s (PlayerEffect.mayCastFrom S.alice Zone.Graveyard hers after) "alice has the permission"
-          Spec.assertBool s (not (PlayerEffect.mayCastFrom S.bob Zone.Graveyard his after)) "bob does not"
-          Spec.assertBool s (not (S.castable S.bob his bobsTurn)) "and it is not castable even in his own main phase"
-          Spec.assertBool s (not (any (S.isCastOf his) (Action.legalActions S.bob bobsTurn))) "nor offered"
-
-        -- CR 400.1 / 400.3: the grant says "your graveyard", and the two copies of
-        -- Sign in Blood differ in nothing but whose graveyard they lie in -- so
-        -- this is that word and nothing else. The case above asked whether BOB
-        -- may cast his own copy; this asks whether ALICE, who holds the grant,
-        -- may reach it, which is the half that decides whether a caster and a
-        -- card's owner can ever come apart on this road.
-        --
-        -- The typed question is asked beside the gate to name WHICH conjunct
-        -- refuses. It is the PERMISSION's own zone reference: Yawgmoth's Will
-        -- writes PlayerRef.Relative You, so mayCastFrom resolves the pile to
-        -- alice's and bob's copy is not in it. Cast.zoneCandidates offers her
-        -- bob's graveyard now (see #2169) and the permission is the only thing
-        -- standing between the offer and the cast, which is why the assertion
-        -- below reads False where it once read True: the empty filter still says
-        -- yes to bob's copy, and the reference says no.
-        Spec.it s "CR 400.1 the grant does not reach the copy in bob's graveyard" $ do
-          (willId, hers, his, gs) <- board
-          let after = willResolved willId gs
-          Spec.assertBool s (not (S.castable S.alice his after)) "alice may not cast the copy in bob's graveyard"
-          Spec.assertBool s (not (any (S.isCastOf his) (Action.legalActions S.alice after))) "nor is it offered to her"
-          Spec.assertBool s (S.castable S.alice hers after) "though the identical copy in her own graveyard is castable"
-          Spec.assertBool s (not (PlayerEffect.mayCastFrom S.alice Zone.Graveyard his after)) "and the refusal is the permission's zone reference, not its filter"
-
-        -- CR 514.2: "until end of turn" is the stored CR 611.2c carrier's expiry,
-        -- so the grant dies at cleanup and the same board refuses the same cast.
-        Spec.it s "CR 514.2 the permission ends at cleanup" $ do
-          (willId, hers, _, gs) <- board
-          let after = willResolved willId gs
-              ended = S.runPure S.identityAnswer after (Engine.runTurnBasedActions (Phase.Ending EndingStep.Cleanup))
-          -- TWO, one per half of the card's first sentence.
-          Spec.assertEqWith s "both stored effects while they last" (length (StoredEffects.playerEffects (GameState.stored after))) 2
-          Spec.assertEqWith s "nothing stored afterwards" (StoredEffects.playerEffects (GameState.stored ended)) []
-          Spec.assertBool s (not (PlayerEffect.mayCastFrom S.alice Zone.Graveyard hers ended)) "the permission is gone"
-          Spec.assertBool s (not (S.castable S.alice hers ended)) "and the cast is refused again"
 
 -- THREE SEATS, each with a Mountain in hand and a Swamp in their own graveyard,
 -- and `present` says whether alice also controls a Crucible of Worlds. It is
@@ -1324,39 +1253,6 @@ voidWinnowerSpec s registry =
       Spec.assertBool s (not (PlayerEffect.choiceCouldApply (PlayerEffect.liveSource Nothing) Filter.Type.IsPrototyped giantId board)) "Hill Giant has no prototype to cast it with"
       Spec.assertBool s (PlayerEffect.choiceCouldApply (PlayerEffect.liveSource Nothing) Filter.Type.IsPrototyped assemblerId board) "while the Assembler beside it does"
 
-    -- CR 601.2e with CR 202.3e's second half: CR 601.3a let bob BEGIN, and the X
-    -- he announces is then judged. X = 2 leaves {X}{R}{R} at mana value 4, even,
-    -- so the cast is taken back; X = 3 makes it 5 on the stack. The Winnower gone
-    -- is the pair for the X = 2 announcement.
-    Spec.it s "CR 601.2e an announced X that leaves the spell even takes the cast back" $ do
-      mountain <- S.printingOf s registry "Mountain"
-      piker <- S.printingOf s registry "Goblin Piker"
-      bolt <- S.printingOf s registry "Lightning Bolt"
-      disaster <- S.printingOf s registry "Molten Disaster"
-      winnower <- S.printingOf s registry "Void Winnower"
-      let (_, _, _, bobsDisaster, board) = voidWinnowerBoard mountain piker bolt disaster [winnower]
-          (_, _, _, bareDisaster, bare) = voidWinnowerBoard mountain piker bolt disaster []
-          announcing :: Natural -> Prompt.Prompt r -> r
-          announcing x p = case p of
-            Prompt.ChooseX {} -> x
-            _ -> S.identityAnswer p
-          castAt x gs oid =
-            S.runPure
-              (announcing x)
-              ( gs
-                  { GameState.turn =
-                      (GameState.turn gs)
-                        { TurnRegisters.activePlayer = S.bob,
-                          TurnRegisters.priority = Just S.bob
-                        }
-                  }
-              )
-              (S.cast S.bob oid)
-          odd' = castAt 3 board bobsDisaster
-      Spec.assertEqWith s "X = 3: the spell on the stack has mana value 5" (fmap (\sid -> Filter.manaValue (Projection.viewOfObject sid odd')) (TurnRegisters.stack (GameState.turn odd'))) [Just 5]
-      Spec.assertEqWith s "X = 2: mana value 4 is even, so the cast is taken back" (TurnRegisters.stack (GameState.turn (castAt 2 board bobsDisaster))) []
-      Spec.assertEqWith s "the pair: with the Winnower gone X = 2 is cast" (length (TurnRegisters.stack (GameState.turn (castAt 2 bare bareDisaster)))) 1
-
 -- CR 601.2f / 602.2b: the MANA half of a cost increase, at the activation
 -- moment. Oppressive Rays -- "{W} Enchantment -- Aura. Enchant creature.
 -- Enchanted creature can't attack or block unless its controller pays {3}.
@@ -1515,20 +1411,6 @@ scoutsWarningSpec s registry =
       let (_, arborId, board) = scoutsWarningBoard plains warning dryadArbor
       Spec.assertBool s (not (any (playing arborId) (Action.legalActions S.alice (busyStack board)))) "not offered"
 
-    -- The resolution itself: CR 611.2's stored effect the card installs, and
-    -- CR 611.2a's Expiry.WhenUsed the Duration.UntilUsed on the card resolved
-    -- into (#3008).
-    Spec.it s "CR 611.2 resolving stores one MayPlayAsThoughItHadFlash grant expiring on use" $ do
-      plains <- S.printingOf s registry "Plains"
-      warning <- S.printingOf s registry "Scout's Warning"
-      dryadArbor <- S.printingOf s registry "Dryad Arbor"
-      let (_, after) = scoutsWarningResolved plains warning dryadArbor
-      Spec.assertEqWith
-        s
-        "one stored grant, expiring on use"
-        (fmap (\a -> (ActivePlayerEffect.effect a, ActivePlayerEffect.expiry a)) (StoredEffects.playerEffects (GameState.stored after)))
-        [(PlayerEffect.Type.MayPlayAsThoughItHadFlash (Filter.Type.HasCardType CardType.Creature), Expiry.Type.WhenUsed Nothing)]
-
     -- WotC's own Scout's Warning / Quicken ruling: "until the turn ends or
     -- until you cast [play] a creature card ... even if you [cast/play] it at
     -- a time you normally could" -- so playing Dryad Arbor through the REAL
@@ -1553,52 +1435,6 @@ scoutsWarningSpec s registry =
       let (_, resolved) = scoutsWarningResolved plains warning mountain
           played = S.runPure S.playLandAnswer resolved Engine.priorityLoop
       Spec.assertEqWith s "the grant survives" (length (StoredEffects.playerEffects (GameState.stored played))) 1
-
-    -- CR 514.2 / 611.2a: the "or until the turn ends" half -- an UNUSED grant
-    -- still ends at cleanup exactly as AtCleanup's does, so Scout's Warning
-    -- never lingers into a later turn with nothing to spend it on.
-    Spec.it s "CR 514.2 the cleanup sweep drops an unused WhenUsed grant" $ do
-      plains <- S.printingOf s registry "Plains"
-      warning <- S.printingOf s registry "Scout's Warning"
-      dryadArbor <- S.printingOf s registry "Dryad Arbor"
-      let (_, resolved) = scoutsWarningResolved plains warning dryadArbor
-      Spec.assertEqWith s "one stored before" (length (StoredEffects.playerEffects (GameState.stored resolved))) 1
-      Spec.assertEqWith s "none after cleanup" ((StoredEffects.playerEffects . GameState.stored) (Expiry.dropAtCleanup resolved)) []
-
-    -- CR 601.2e / 734.1: a cast that is rejected -- here at CR 601.2h, the mana
-    -- refused -- is returned to the moment before it was proposed, and the
-    -- grant it would have spent is part of that moment. Driven through
-    -- Parun.Engine.Engine's own Cast arm, where a spend ahead of
-    -- Cast.castSpellWith's rewind snapshot once lost the grant: the answerer
-    -- proposes the Piker ONCE, refuses every mana source, then passes.
-    Spec.it s "CR 601.2e a rejected cast leaves the grant standing" $ do
-      plains <- S.printingOf s registry "Plains"
-      mountain <- S.printingOf s registry "Mountain"
-      warning <- S.printingOf s registry "Scout's Warning"
-      piker <- S.printingOf s registry "Goblin Piker"
-      let (pikerId, resolved) = scoutsWarningResolved plains warning piker
-          -- Two untapped Mountains, so the Piker is OFFERED (Cast.castable
-          -- prices it) and the refusal happens at the payment, not the gate.
-          funded = S.landsFor mountain S.alice 2 resolved
-          castOfPiker action = case action of
-            Action.Type.Cast oid _ _ -> oid == pikerId
-            _ -> False
-          -- (asked, found): pass once the cast has been proposed, and record
-          -- whether it ever was.
-          answerer :: Prompt.Prompt r -> State.State (Bool, Bool) r
-          answerer p = case p of
-            Prompt.ChooseAction _ _ actions -> do
-              (asked, found) <- State.get
-              let offer = List.find castOfPiker actions
-              State.put (True, found || Maybe.isJust offer)
-              pure (if asked then Action.Type.Pass else Maybe.fromMaybe Action.Type.Pass offer)
-            Prompt.ChooseManaSource {} -> pure Nothing
-            _ -> pure (S.identityAnswer p)
-          ((_, after), (_, proposed)) = State.runState (Engine.runGame answerer funded Engine.priorityLoop) (False, False)
-      Spec.assertEqWith s "CR 601.2e the grant survives the rejected cast" (length (StoredEffects.playerEffects (GameState.stored after))) 1
-      Spec.assertBool s proposed "the Piker really was proposed"
-      Spec.assertEqWith s "nothing was tapped for it" (S.tappedCount S.alice after) 1
-      Spec.assertEqWith s "and it is back in hand" (fmap Object.zone (Game.lookupObject pikerId after)) (Just Zone.Hand)
 
     -- CR 601.3's door into a cast, not Parun.Engine.Engine's: Panglacial Wurm
     -- cast during a search goes through Cast.castWhileSearching, and the grant
@@ -1634,21 +1470,6 @@ scoutsWarningSpec s registry =
       Spec.assertEqWith s "CR 611.2a the grant is spent by the search's own cast" (StoredEffects.playerEffects (GameState.stored after)) []
       Spec.assertEqWith s "the grant stood before it" (length (StoredEffects.playerEffects (GameState.stored resolved))) 1
       Spec.assertEqWith s "and the Wurm really was cast" (length (TurnRegisters.stack (GameState.turn after))) 1
-
-    -- CR 708.2a: a face-down cast is a 2/2 creature spell, which is the face
-    -- the cast's gate read the grant against -- and the spend reads the same
-    -- face, not the Aura printed underneath. Gift of Doom is an Aura with
-    -- morph, so its printed face fails HasCardType Creature and only the
-    -- proposed, face-down view spends the grant.
-    Spec.it s "CR 708.2a a face-down cast spends the grant off the face the gate read" $ do
-      plains <- S.printingOf s registry "Plains"
-      warning <- S.printingOf s registry "Scout's Warning"
-      giftOfDoom <- S.printingOf s registry "Gift of Doom"
-      let (giftId, resolved) = scoutsWarningResolved plains warning giftOfDoom
-          funded = S.landsFor plains S.alice 3 resolved
-          after = S.runPure S.identityAnswer funded (Cast.castSpell S.manaPerformer S.alice giftId (CardName.MkCardName (Text.pack "Gift of Doom")) (Facing.faceDown FaceDownReason.Morphed))
-      Spec.assertEqWith s "CR 708.2a the grant is spent by the face-down creature spell" (StoredEffects.playerEffects (GameState.stored after)) []
-      Spec.assertEqWith s "and the spell really is on the stack" (length (TurnRegisters.stack (GameState.turn after))) 1
 
 -- The first action any of `wanted` admits, in the order `wanted` lists them, or
 -- a pass -- castAnyOf above widened to a land play.
@@ -1737,23 +1558,6 @@ serraParagonSpec s registry =
         pure (paragonBoard forest buriedCard heldCard (if withParagon then Just paragon else Nothing))
       playOf oid = (== Action.Type.Play oid Nothing)
    in Spec.describe s "SerraParagon" $ do
-        -- CR 614.1a: Heart of Yavimaya played from the graveyard with no Forest
-        -- to sacrifice goes back to the graveyard instead of entering -- but it
-        -- WAS played (CR 305.1), so the one use is spent and the buried
-        -- Ornithopter is not cast. Swamps, so nothing can pay the Heart; the
-        -- case below is the pair.
-        Spec.it s "CR 305.1 / 614.1a a graveyard land turned away by its own sacrifice still spends the use" $ do
-          swamp <- S.printingOf s registry "Swamp"
-          ornithopter <- S.printingOf s registry "Ornithopter"
-          paragon <- S.printingOf s registry "Serra Paragon"
-          heart <- S.printingOf s registry "Heart of Yavimaya"
-          let b = paragonBoard swamp ornithopter swamp (Just paragon)
-              (heartId, gs) = S.addGraveyardCard heart S.alice (pbState b)
-              after = S.runPure (takeFirst [playOf heartId, S.isCastOf (pbBuried b)]) gs Engine.priorityLoop
-          Spec.assertBool s (elem (pbBuried b) (Game.zoneMembers Zone.Graveyard S.alice after)) "the Ornithopter is still in alice's graveyard"
-          Spec.assertEqWith s "and Heart of Yavimaya went back there rather than entering" (namesIn Zone.Graveyard S.alice after List.\\ namesIn Zone.Graveyard S.alice gs) []
-          Spec.assertEqWith s "and nothing arrived" (arrivedBetween gs after) []
-
         -- Without the Paragon nothing in the graveyard is playable.
         Spec.it s "CR 305.1 without Serra Paragon the graveyard Forest is not playable" $ do
           b <- board "Llanowar Elves" "Forest" False
@@ -1854,15 +1658,6 @@ spec s registry = Spec.describe s "Parun.Engine.PlayerEffect" $ do
 dawnhandSpec :: (Monad m, Monad n) => Spec.Spec m n -> Registry.Registry m -> n ()
 dawnhandSpec s registry =
   Spec.describe s "DawnhandDissident" $ do
-    Spec.it s "CR 601.3 / 118.8 the linked creature is cast by removing three counters" $ do
-      (linked, _, _, _, pikerId, giantId, gs) <- dawnhandBoard s registry 2 S.alice
-      cheetah <- S.printingOf s registry "Pouncing Cheetah"
-      let answer = Map.fromList [(pikerId, Map.singleton dawnhandVigilance 1), (giantId, Map.singleton CounterKind.PlusOnePlusOne 2)]
-          resolved = S.runPure (castLinkedAnswering linked answer) gs Engine.priorityLoop
-      Spec.assertEqWith s "the linked Cheetah resolved onto alice's battlefield" (S.countOnBattlefieldByName (S.printingName cheetah) S.alice resolved) 1
-      Spec.assertEqWith s "CR 601.2h the Piker's vigilance counter came off" (S.counterOf dawnhandVigilance pikerId resolved) 0
-      Spec.assertEqWith s "and both of the Giant's" (S.counterOf CounterKind.PlusOnePlusOne giantId resolved) 0
-      Spec.assertEqWith s "and the Piker kept its +1/+1 counter" (S.counterOf CounterKind.PlusOnePlusOne pikerId resolved) 1
     Spec.it s "CR 607.2a only her own cards exiled with it are reached" $ do
       (linked, unlinked, bobs, _, _, _, gs) <- dawnhandBoard s registry 2 S.alice
       let offered oid = any (S.isCastOf oid) (Action.legalActions S.alice gs)

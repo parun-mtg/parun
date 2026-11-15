@@ -4,9 +4,10 @@
 -- Covers Parun.Engine.Expiry and Parun.Types.Expiry: the printed Duration -> stored Expiry
 -- arming (CR 611.2), the sweeps that end a duration (CR 514.2, 500.5, 611.2a,
 -- 611.2b), and the gate cards: Master Thief, Hag of Inner Weakness, Jade
--- Statue, Soulfire Eruption for "until the END of your next turn", Suspend
--- Aggression for that same window counted against a seat a reference names, and
--- Brazen Cannonade for "until end of combat on your next turn".
+-- Statue, Suspend Aggression for "until the end of their next turn" counted
+-- against a seat a reference names, and Brazen Cannonade for "until end of
+-- combat on your next turn". Soulfire Eruption's and Titania's Song's whole-card
+-- tests are scenarios under data/scenarios/expiry.
 --
 -- Alchemy's "perpetually" is here too, at the bottom of the file: it is a
 -- duration in card data like any other, and its producer is Pearl Collector.
@@ -821,7 +822,8 @@ garlandSpec s registry = Spec.describe s "GarlandRoyalKidnapper" $ do
       [Expiry.Type.While (While.MkWhile S.alice garlandCondition)]
   -- The other half of a duration: it must not end while its condition holds. A
   -- duration that never ends passes every assertion in the case above, so this
-  -- and the two below are what separate the two.
+  -- and data/scenarios/expiry's two crown-moving scenarios are what separate the
+  -- two.
   Spec.it s "CR 611.2b it holds while bob wears the crown, cleanup included" $ do
     piker <- S.printingOf s registry "Goblin Piker"
     garland <- S.printingOf s registry "Garland, Royal Kidnapper"
@@ -833,22 +835,6 @@ garlandSpec s registry = Spec.describe s "GarlandRoyalKidnapper" $ do
         pastCleanup = monarchSettle (Expiry.dropAtCleanup swept)
     Spec.assertEqWith s "still alice's at the next settle" (Projection.controllerOf bobs swept) (Just S.alice)
     Spec.assertEqWith s "and after the turn ends" (Projection.controllerOf bobs pastCleanup) (Just S.alice)
-  -- CR 726.3: as carol becomes the monarch, bob ceases to be, so the condition
-  -- the duration named stops holding. THE case a two-player board cannot state:
-  -- there is still a monarch and it is still not alice, so only a duration that
-  -- names BOB ends here.
-  Spec.it s "CR 611.2b it ends when the crown moves to the third player" $ do
-    piker <- S.printingOf s registry "Goblin Piker"
-    garland <- S.printingOf s registry "Garland, Royal Kidnapper"
-    let (bobs, _, entering) = garlandBoard piker garland
-        stolen = S.runPure garlandPlan (monarchSettle entering) Engine.priorityLoop
-        -- S.withMonarch rather than a second crowning through the rules: it
-        -- records no GameEvent, so Garland's trigger does not fire again and
-        -- this case is about the sweep alone.
-        crowned = monarchSettle (S.withMonarch S.carol stolen)
-    Spec.assertEqWith s "control goes back to bob" (Projection.controllerOf bobs crowned) (Just S.bob)
-    -- CR 611.2b's one continuous period: the effect is deleted, not masked.
-    Spec.assertEqWith s "and the stored effect is gone" (filter (S.continuousEffectAffects bobs) (StoredEffects.continuousEffects (GameState.stored crowned))) []
 
 hagUpkeep :: Phase.Phase
 hagUpkeep = Phase.Beginning BeginningStep.Upkeep
@@ -1157,55 +1143,6 @@ untilEndOfCombatSpec s registry = Spec.describe s "UntilEndOfCombat" $ do
       "and a retention that does NOT expire keeps it across the same boundary"
       (poolSize S.alice (S.runPure S.identityAnswer permanent Engine.runStep))
       1
-  -- The gameplay-level proof (design.md section 4), driven through
-  -- Engine.runStep: alice animates her Jade Statue in the BEGINNING OF COMBAT
-  -- step, and it is still a 3/6 creature once that step has ended.
-  --
-  -- This is the case a step-scoped duration fails. An implementation that ended
-  -- the effect at the end of the step it was created in would leave a plain
-  -- artifact here, and it would still pass a test that only asked "is it a
-  -- creature during combat and not next turn".
-  Spec.it s "CR 500.5a whole card: the animation outlives the step it was made in" $ do
-    statue <- S.printingOf s registry "Jade Statue"
-    mountain <- S.printingOf s registry "Mountain"
-    let (statueId, _, jade) = jadeBoard statue mountain []
-        afterBeginningOfCombat = animateStep jade
-    Spec.assertBool s (not (Projection.isCreatureOf statueId jade)) "a Jade Statue is a noncreature artifact to begin with"
-    Spec.assertEqWith s "the beginning of combat step is over" (TurnRegisters.phase (GameState.turn afterBeginningOfCombat)) (Phase.Combat CombatStep.DeclareAttackers)
-    Spec.assertBool s (Projection.isCreatureOf statueId afterBeginningOfCombat) "and it is a creature in the NEXT step, not just the one it was animated in"
-    Spec.assertEqWith s "a 3/6" (S.powerToughnessOf statueId afterBeginningOfCombat) (Just (3, 6))
-    Spec.assertEqWith
-      s
-      "CR 500.5a stored against the combat PHASE's end, not the step's"
-      (fmap ContinuousEffect.expiry (StoredEffects.continuousEffects (GameState.stored afterBeginningOfCombat)))
-      [ Expiry.Type.AtEndOf PhaseSelector.CombatPhase,
-        Expiry.Type.AtEndOf PhaseSelector.CombatPhase,
-        Expiry.Type.AtEndOf PhaseSelector.CombatPhase
-      ]
-  -- The other half of CR 500.5a, step by step through the whole combat phase:
-  -- the animation is live at the START of the end of combat step -- "not at the
-  -- beginning of the end of combat step" is the rule's own wording -- and gone
-  -- once the phase is over.
-  --
-  -- Each step is taken separately so the state can be read BETWEEN them, which
-  -- is the only place the difference shows: S.runCombat would run past the whole
-  -- phase and could not tell an effect that ended at the step's beginning from
-  -- one that ended at the phase's end.
-  Spec.it s "CR 500.5a whole card: live throughout the end of combat step, gone once the phase ends" $ do
-    statue <- S.printingOf s registry "Jade Statue"
-    mountain <- S.printingOf s registry "Mountain"
-    let (statueId, _, jade) = jadeBoard statue mountain []
-        afterDeclareAttackers = animateStep (animateStep jade)
-        afterDeclareBlockers = animateStep afterDeclareAttackers
-        afterCombatDamage = animateStep afterDeclareBlockers
-        afterEndOfCombat = animateStep afterCombatDamage
-    Spec.assertEqWith s "the end of combat step is the one about to run" (TurnRegisters.phase (GameState.turn afterCombatDamage)) (Phase.Combat CombatStep.EndOfCombat)
-    Spec.assertBool s (Projection.isCreatureOf statueId afterCombatDamage) "CR 500.5a it is STILL a creature as the end of combat step begins"
-    Spec.assertEqWith s "still a 3/6" (S.powerToughnessOf statueId afterCombatDamage) (Just (3, 6))
-    Spec.assertEqWith s "CR 511.3 the combat phase is over" (TurnRegisters.phase (GameState.turn afterEndOfCombat)) Phase.PostcombatMain
-    Spec.assertBool s (not (Projection.isCreatureOf statueId afterEndOfCombat)) "and the animation expired with the phase"
-    Spec.assertEqWith s "nothing is left stored" (StoredEffects.continuousEffects (GameState.stored afterEndOfCombat)) []
-    Spec.assertEqWith s "it kept its printed 3 damage to bob on the way through" (S.lifeOf S.bob afterEndOfCombat) (Just 17)
   -- The same claim made by a CARD rather than by a projection query, which is
   -- what makes it a gameplay-level observation of the end of combat step itself.
   --
@@ -1234,178 +1171,6 @@ untilEndOfCombatSpec s registry = Spec.describe s "UntilEndOfCombat" $ do
     Spec.assertEqWith s "bob still took 3 from the same attacker" (S.lifeOf S.bob unpinged) (Just 17)
     Spec.assertEqWith s "and the Statue took nothing when bob declined" (S.damageOf statueId unpinged) (Just 0)
 
--- Aims every target slot at one object, so a spell with two legal targets on
--- the board is pointed at the one the test means. S.identityAnswer would take
--- the engine's first offer, and below that offer is a choice between Titania's
--- Song and the Bonesplitter the Song has itself turned into a creature.
-aimAtObject :: ObjectId.ObjectId -> Prompt.Prompt r -> r
-aimAtObject oid p = case p of
-  Prompt.ChooseTargets _ _ _ sets -> fmap (const (Set.singleton (Recipient.ToObject oid))) sets
-  _ -> S.identityAnswer p
-
--- The duration that begins when a permanent LEAVES the battlefield rather than
--- when a spell resolves.
---
--- Titania's Song ({3}{G} Enchantment, Antiquities / Masters Edition IV): "Each
--- noncreature artifact loses all abilities and becomes an artifact creature
--- with power and toughness each equal to its mana value. If this enchantment
--- leaves the battlefield, this effect continues until end of turn."
---
--- CR 604.2 gives a static ability's continuous effect exactly the life of its
--- permanent on the battlefield, so the second sentence is the card overriding
--- that: the effect has to survive the ability that made it, which means being
--- handed over to StoredEffects.continuousEffects as the Song goes.
-lingeringSpec :: (Monad m, Monad n) => Spec.Spec m n -> Registry.Registry m -> n ()
-lingeringSpec s registry = Spec.describe s "TitaniasSong" $ do
-  -- The gameplay-level proof (design.md section 4), all five moments in one
-  -- test because they are one board: only a run that ANIMATED the Bonesplitter,
-  -- then really removed the Song, can say anything about what happens after.
-  --
-  -- Bonesplitter ({1} Artifact -- Equipment) is the animated permanent because
-  -- it makes all three of the Song's parts observable at once: it is a
-  -- noncreature artifact (so the layer-4 animation reaches it), its mana value
-  -- is 1 (so CR 613.4b's base P/T is a 1/1 rather than a 0/0 CR 704.5f would
-  -- bury), and it declares CR 702.6a's equip keyword, whose minted ability is
-  -- read off the POST-LAYER keyword map (so the layer-6 strip is observable at
-  -- all -- without one, steps 1 and 4 would pass vacuously).
-  --
-  -- Angelic Edict ({4}{W} Sorcery, "Exile target creature or enchantment") is
-  -- how the Song leaves: exiling is leaving the battlefield, and no card in the
-  -- pool destroys an enchantment. Five Plains pay for it.
-  Spec.it s "CR 611.2a whole card: the animation outlives Titania's Song and ends at cleanup" $ do
-    plains <- S.printingOf s registry "Plains"
-    titaniasSong <- S.printingOf s registry "Titania's Song"
-    bonesplitter <- S.printingOf s registry "Bonesplitter"
-    jadeStatue <- S.printingOf s registry "Jade Statue"
-    angelicEdict <- S.printingOf s registry "Angelic Edict"
-    let base = S.landsInPlay plains 5
-        (songId, g1) = S.addPermanent titaniasSong S.alice base
-        (axeId, g2) = S.addPermanent bonesplitter S.alice g1
-        (staged, spellId) = S.handOne angelicEdict g2
-        cast = S.runPure (aimAtObject songId) staged (S.cast S.alice spellId)
-        exiled = S.settleSba (S.runPure (aimAtObject songId) cast Stack.resolveTop)
-        -- CR 611.2c's anti-over-reach probe: a noncreature artifact that
-        -- arrives AFTER the handover. Jade Statue is a {4} artifact with an
-        -- activated ability, so an implementation that carried the Song's live
-        -- "each noncreature artifact" filter forward would show up here twice
-        -- over -- as a 4/4 creature, and as one with no abilities.
-        (statueId, withStatue) = S.addPermanent jadeStatue S.alice exiled
-        toCleanup =
-          withStatue
-            { GameState.turn =
-                (GameState.turn withStatue)
-                  { TurnRegisters.remaining = Seq.fromList [Phase.Ending EndingStep.EndStep, Phase.Ending EndingStep.Cleanup]
-                  }
-            }
-        afterMain = S.runPure S.identityAnswer toCleanup Engine.runStep
-        afterEnd = S.runPure S.identityAnswer afterMain Engine.runStep
-        afterCleanup = S.runPure S.identityAnswer afterEnd Engine.runStep
-    -- 1. Before: the Song is doing all three of its jobs.
-    Spec.assertBool s (Projection.isCreatureOf axeId staged) "CR 613.1d the Song animates the Bonesplitter"
-    Spec.assertEqWith s "CR 613.4b a 1/1, its mana value" (S.powerToughnessOf axeId staged) (Just (1, 1))
-    Spec.assertEqWith s "CR 613.1f and its Equip ability is stripped" (Projection.abilitiesOf axeId staged) []
-    -- 2. The Song really left. Without this the rest passes trivially.
-    Spec.assertEqWith s "Angelic Edict exiled Titania's Song" (Game.lookupObject songId exiled) Nothing
-    Spec.assertBool s (not (S.onBattlefield songId exiled)) "so it is off the battlefield"
-    -- 3. CR 611.2c: the set was fixed when the effect began.
-    Spec.assertBool s (not (Projection.isCreatureOf statueId withStatue)) "CR 611.2c an artifact entering afterwards is NOT animated"
-    Spec.assertEqWith s "and keeps its own ability" (length (Projection.abilitiesOf statueId withStatue)) 1
-    -- 4. Same turn, Song gone: the effect continues.
-    Spec.assertBool s (Projection.isCreatureOf axeId exiled) "CR 611.2a the animation continues without the Song"
-    Spec.assertEqWith s "still a 1/1" (S.powerToughnessOf axeId exiled) (Just (1, 1))
-    Spec.assertEqWith s "still no abilities" (Projection.abilitiesOf axeId exiled) []
-    -- 5. CR 514.2: and the whole thing ends in the cleanup step.
-    Spec.assertEqWith s "the cleanup step ran" (TurnRegisters.phase (GameState.turn afterEnd)) (Phase.Ending EndingStep.Cleanup)
-    Spec.assertBool s (not (Projection.isCreatureOf axeId afterCleanup)) "CR 514.2 no longer a creature after cleanup"
-    Spec.assertEqWith s "and its Equip ability is back" (length (Projection.abilitiesOf axeId afterCleanup)) 1
-  -- The control, and CR 604.2 read straight: a static ability whose card says
-  -- nothing about leaving the battlefield ends with its permanent, THIS
-  -- INSTANT. Humility is the same shape as Titania's Song one card over -- a
-  -- layer-6 strip beside a layer-7b P/T set -- so an implementation that handed
-  -- every departing permanent's static abilities over would keep Bird Maiden a
-  -- 1/1 with no flying here, and the test above could not tell it apart.
-  Spec.it s "CR 604.2 an ordinary static ability does NOT linger past its permanent" $ do
-    plains <- S.printingOf s registry "Plains"
-    humility <- S.printingOf s registry "Humility"
-    birdMaiden <- S.printingOf s registry "Bird Maiden"
-    angelicEdict <- S.printingOf s registry "Angelic Edict"
-    let base = S.landsInPlay plains 5
-        (humilityId, g1) = S.addPermanent humility S.alice base
-        (birdId, g2) = S.addPermanent birdMaiden S.alice g1
-        (staged, spellId) = S.handOne angelicEdict g2
-        cast = S.runPure (aimAtObject humilityId) staged (S.cast S.alice spellId)
-        exiled = S.settleSba (S.runPure (aimAtObject humilityId) cast Stack.resolveTop)
-    Spec.assertEqWith s "CR 613 Humility makes it a 1/1" (S.powerToughnessOf birdId staged) (Just (1, 1))
-    Spec.assertBool s (not (Projection.hasKeyword Keyword.Flying birdId staged)) "with no flying"
-    Spec.assertEqWith s "Angelic Edict exiled Humility" (Game.lookupObject humilityId exiled) Nothing
-    Spec.assertEqWith s "CR 604.2 and the Maiden is a 1/2 again at once" (S.powerToughnessOf birdId exiled) (Just (1, 2))
-    Spec.assertBool s (Projection.hasKeyword Keyword.Flying birdId exiled) "with its flying back"
-    Spec.assertEqWith s "nothing was handed over" (StoredEffects.continuousEffects (GameState.stored exiled)) []
-  -- CR 707.2a on the lingering carrier: a COPY of Titania's Song hands its own
-  -- effect over as it leaves, which it can only do if the departure walk reads
-  -- the copy's static abilities rather than Copy Enchantment's printed face.
-  -- Parun.Engine.Projection.permanentParts and Parun.Engine.Event.lingeringHandover
-  -- index the same list by CR 613.6's `n`, so the two must agree about which list
-  -- that is.
-  --
-  -- Jade Statue is the probe, and it is what separates the copy's handover from
-  -- the ORIGINAL's: it enters AFTER the original was exiled, so CR 611.2c had
-  -- already frozen the original's effect to a set that cannot hold it (the case
-  -- above proves that freeze). Only the copy's own handover reaches it.
-  --
-  -- Both Songs have to go, and in that order: Copy Enchantment's own text names
-  -- an enchantment on the battlefield, so the original has to still be there when
-  -- the copy enters (CR 707.5), and a Song still in play would animate the Statue
-  -- live and prove nothing about the handover.
-  Spec.it s "CR 707.2a a copy of Titania's Song hands over its own effect" $ do
-    plains <- S.printingOf s registry "Plains"
-    titaniasSong <- S.printingOf s registry "Titania's Song"
-    bonesplitter <- S.printingOf s registry "Bonesplitter"
-    jadeStatue <- S.printingOf s registry "Jade Statue"
-    copyEnchantment <- S.printingOf s registry "Copy Enchantment"
-    angelicEdict <- S.printingOf s registry "Angelic Edict"
-    let (songId, g1) = S.addPermanent titaniasSong S.alice (S.landsInPlay plains 12)
-        (axeId, g2) = S.addPermanent bonesplitter S.alice g1
-        (_, g3) = S.spellOnStack copyEnchantment S.alice g2
-        copied = S.settleSba (S.runPure (copyingNamed songId) g3 Stack.resolveTop)
-    case Set.toList (Set.difference (GameState.battlefield copied) (GameState.battlefield g2)) of
-      [copyId] -> do
-        let (g4, edict1) = S.handOne angelicEdict copied
-            cast1 = S.runPure (aimAtObject songId) g4 (S.cast S.alice edict1)
-            originalGone = S.settleSba (S.runPure (aimAtObject songId) cast1 Stack.resolveTop)
-            (statueId, withStatue) = S.addPermanent jadeStatue S.alice originalGone
-            (g5, edict2) = S.handOne angelicEdict withStatue
-            cast2 = S.runPure (aimAtObject copyId) g5 (S.cast S.alice edict2)
-            copyGone = S.settleSba (S.runPure (aimAtObject copyId) cast2 Stack.resolveTop)
-        -- The gameplay-level assertion the case exists for, first.
-        Spec.assertBool s (Projection.isCreatureOf statueId copyGone) "CR 611.2a the copy's own animation continues after the copy leaves"
-        Spec.assertEqWith s "CR 613.4b and it is a 4/4, its mana value" (S.powerToughnessOf statueId copyGone) (Just (4, 4))
-        -- The preconditions it rests on: the copy really was a Titania's Song
-        -- while it was there, and neither Song is on the battlefield any more.
-        Spec.assertBool s (Projection.isCreatureOf statueId withStatue) "CR 707.2a the copy animated the Statue while it was on the battlefield"
-        Spec.assertEqWith s "the original Song was exiled first" (Game.lookupObject songId copyGone) Nothing
-        Spec.assertEqWith s "and the copy after it" (Game.lookupObject copyId copyGone) Nothing
-        -- Both departures handed over, rather than one of them twice: two
-        -- modifications each (CR 613.6), stored as one effect per part.
-        Spec.assertEqWith s "CR 613.6 each departure stored the Song's four parts, so the copy's doubled the store" (length (StoredEffects.continuousEffects (GameState.stored originalGone)), length (StoredEffects.continuousEffects (GameState.stored copyGone))) (4, 8)
-        Spec.assertBool s (Projection.isCreatureOf axeId copyGone) "and the Bonesplitter, which both sets hold, is animated too"
-      _ -> Spec.assertFailure s "the Copy Enchantment did not enter the battlefield as the one new permanent"
-
--- CR 707.5's copy choice, pinned to one named permanent rather than searched --
--- Parun.ClassSpec's copyNamed. An answerer that hunted for a legal enchantment
--- would find the Song again after a mutation and repair the assertion.
-copyingNamed :: ObjectId.ObjectId -> Prompt.Prompt r -> r
-copyingNamed wanted p = case p of
-  Prompt.ChooseCopyTarget {} -> Just wanted
-  _ -> S.identityAnswer p
-
--- CR 601.2c: Soulfire Eruption's target slot allows none, so a fixture that
--- wants a card exiled has to say how many. One target, aimed by S.identityAnswer.
-soulfireCast :: Prompt.Prompt r -> r
-soulfireCast p = case p of
-  Prompt.AnnounceTargets _ _ _ offers -> fmap (const 1) offers
-  _ -> S.identityAnswer p
-
 -- Casts THAT object whenever the engine offers it, and passes otherwise. Pinned
 -- to one id rather than "the first legal cast": an answerer that searched for
 -- something castable would repair the assertion by playing a land or a card from
@@ -1428,92 +1193,6 @@ runToTurn answer turn =
 -- CR 601.3's permission, as the player it names.
 permissionOn :: ObjectId.ObjectId -> GameState.GameState -> Maybe PlayerId.PlayerId
 permissionOn oid gs = fmap ExilePlayPermission.player (Game.lookupObject oid gs >>= Maybe.listToMaybe . Object.playPermissions)
-
--- alice, on turn 1, casts Soulfire Eruption off nine Mountains at one target.
--- That exiles the top card of her library -- a Goblin Piker, the one card here
--- she can afford off Mountains later -- and grants CR 601.3's play permission for
--- the printed duration. Returns the exiled card and the board the spell left.
---
--- BOTH libraries are stocked underneath, because the cases below advance five
--- turns and a fixture player who runs out of cards loses to CR 104.3c before the
--- assertion runs.
-soulfireBoard :: (Monad m) => Spec.Spec m n -> Registry.Registry m -> m (ObjectId.ObjectId, GameState.GameState)
-soulfireBoard s registry = do
-  mountain <- S.printingOf s registry "Mountain"
-  soulfire <- S.printingOf s registry "Soulfire Eruption"
-  piker <- S.printingOf s registry "Goblin Piker"
-  let stockedWith printing pid gs = List.foldl' (\g _ -> snd (S.addLibraryCard printing pid g)) gs [1 :: Int .. 6]
-      g1 = S.landsFor mountain S.alice 9 (Setup.emptyGame S.bothPlayers)
-      g2 = stockedWith mountain S.bob (stockedWith mountain S.alice g1)
-      -- Last in is on top, so this is the card the spell exiles.
-      g3 = snd (S.addLibraryCard piker S.alice g2)
-      (withSpell, spell) = S.handOne soulfire g3
-      cast = S.runPure soulfireCast withSpell (S.cast S.alice spell)
-      resolved = S.runPure soulfireCast cast Engine.priorityLoop
-  pure
-    ( case Game.zoneMembers Zone.Exile S.alice resolved of
-        [oid] -> oid
-        oids -> error ("Parun.ExpirySpec: expected one exiled card, got " <> show (length oids)),
-      resolved
-    )
-
--- Soulfire Eruption {6}{R}{R}{R} Sorcery (data/cards/soulfire-eruption.json) --
--- "... You may play the exiled cards until the end of your next turn." (name,
--- cost, type line and Oracle text checked against api.scryfall.com.) The pool's
--- producer of CR 611.2a's second phrasing, and the Hag above is its exact
--- contrast: the Hag's effect is gone as alice's next turn BEGINS, this one lasts
--- through the whole of it.
---
--- alice takes turns 1, 3 and 5, so the two readings disagree about turn 3 and
--- agree about turns 1, 2 and 4 onwards -- which is why every assertion here is
--- stated at turn 3 or at turn 4. Both are driven through Engine.runStep, so the
--- permission is observed the way a player would: by the engine offering the cast
--- as a legal action, or not.
-soulfireSpec :: (Monad m) => Spec.Spec m n -> Registry.Registry m -> n ()
-soulfireSpec s registry = Spec.describe s "SoulfireEruption" $ do
-  Spec.it s "CR 611.2a / 514.2 it ends as that turn ends, and no later turn of theirs can play the card" $ do
-    (pikerId, resolved) <- soulfireBoard s registry
-    -- The same board, run one turn further with the same answerer: the only
-    -- difference from the case above is which turn the cast is attempted on.
-    let afterwards = runToTurn S.identityAnswer 4 resolved
-        later = runToTurn (castingFromExile pikerId) 6 afterwards
-    Spec.assertEqWith s "turn 4 began, so alice's next turn is over" (TurnRegisters.activePlayer (GameState.turn afterwards), TurnRegisters.turnNumber (GameState.turn afterwards)) (S.bob, 4)
-    Spec.assertEqWith s "the permission is gone" (permissionOn pikerId afterwards) Nothing
-    Spec.assertEqWith s "the card itself is untouched, still in exile" (Game.zoneMembers Zone.Exile S.alice afterwards) [pikerId]
-    Spec.assertEqWith s "and alice cannot play it on turn 5 either" (S.creaturesInPlay S.alice later, Game.zoneMembers Zone.Exile S.alice later) (0, [pikerId])
-
--- Whole steps under `answer` until `done` holds or the game ends, bounded as
--- runToTurn is.
-runUntil :: (forall r. Prompt.Prompt r -> r) -> (GameState.GameState -> Bool) -> GameState.GameState -> GameState.GameState
-runUntil answer done =
-  let go budget gs =
-        if budget <= 0 || done gs || Maybe.isJust (GameState.result gs)
-          then gs
-          else go (budget - 1) (S.runPure answer gs Engine.runStep)
-   in go (128 :: Int)
-
--- alice, from the start of turn 1, with Brazen Cannonade, a Hill Giant to
--- attack with, two Mountains for the {1}{R} Goblin Piker on top of her library,
--- and no creature for bob. Played to the start of turn 2 attacking with
--- everything, so the raid trigger in her postcombat main phase has exiled the
--- Piker. Returns the exiled card and that board.
-cannonadeBoard :: (Monad m) => Spec.Spec m n -> Registry.Registry m -> m (ObjectId.ObjectId, GameState.GameState)
-cannonadeBoard s registry = do
-  mountain <- S.printingOf s registry "Mountain"
-  cannonade <- S.printingOf s registry "Brazen Cannonade"
-  giant <- S.printingOf s registry "Hill Giant"
-  piker <- S.printingOf s registry "Goblin Piker"
-  let stockedWith printing pid gs = List.foldl' (\g _ -> snd (S.addLibraryCard printing pid g)) gs [1 :: Int .. 6]
-      g1 = S.landsFor mountain S.alice 2 (Setup.emptyGame S.bothPlayers)
-      g2 = snd (S.addPermanent giant S.alice (snd (S.addPermanent cannonade S.alice g1)))
-      g3 = stockedWith mountain S.bob (stockedWith mountain S.alice g2)
-      armed = runToTurn S.aggressiveAnswer 2 (snd (S.addLibraryCard piker S.alice g3))
-  pure
-    ( case Game.zoneMembers Zone.Exile S.alice armed of
-        [oid] -> oid
-        oids -> error ("Parun.ExpirySpec: expected one exiled card, got " <> show (length oids)),
-      armed
-    )
 
 -- Brazen Cannonade {3}{R} Enchantment (data/cards/brazen-cannonade.json; name,
 -- cost, type line and Oracle text checked against api.scryfall.com) -- "Raid --
@@ -1549,16 +1228,6 @@ cannonadeSpec s registry = Spec.describe s "BrazenCannonade" $ do
     let gone = S.departs Departure.Type.Conceded S.bob S.threePlayerGame
         armed = effectWith (Expiry.Type.AtEndOfCombatOn (AfterTurn.MkAfterTurn S.bob 1)) gone
     Spec.assertEqWith s "it ended at bob's seat" ((StoredEffects.continuousEffects . GameState.stored) (handoff armed)) []
-  Spec.it s "CR 500.5a whole card: the permission ends as alice's next combat phase ends" $ do
-    (pikerId, armed) <- cannonadeBoard s registry
-    let atTurn n phase gs = TurnRegisters.turnNumber (GameState.turn gs) == n && TurnRegisters.phase (GameState.turn gs) == phase
-        beforeCombat = runUntil S.identityAnswer (atTurn 3 (Phase.Combat CombatStep.EndOfCombat)) armed
-        afterCombat = runUntil S.identityAnswer (atTurn 3 Phase.PostcombatMain) beforeCombat
-        later = runToTurn (castingFromExile pikerId) 6 afterCombat
-    Spec.assertEqWith s "the end of combat step of turn 3 began" (TurnRegisters.turnNumber (GameState.turn beforeCombat), TurnRegisters.phase (GameState.turn beforeCombat)) (3, Phase.Combat CombatStep.EndOfCombat)
-    Spec.assertEqWith s "the permission is live in it" (permissionOn pikerId beforeCombat) (Just S.alice)
-    Spec.assertEqWith s "and gone once the phase is over" (permissionOn pikerId afterCombat) Nothing
-    Spec.assertEqWith s "so alice never plays the card" (S.creaturesInPlay S.alice later, Game.zoneMembers Zone.Exile S.alice later) (1, [pikerId])
   -- The paired control is the same two creatures with bob attacking: alice's
   -- Piker then dies blocking, which is not attacking.
   Spec.it s "CR 603.10a an attacking creature alice controls dying deals 2 to each opponent" $ do
@@ -1589,10 +1258,10 @@ cannonadeSpec s registry = Spec.describe s "BrazenCannonade" $ do
 -- until the end of their next turn."
 --
 -- The pool's producer of CR 611.2a's window counted against a seat a REFERENCE
--- names, which Soulfire Eruption above is the exact contrast for: that card's
--- "until the end of YOUR next turn" is CR 109.5's controller and can only ever
--- be the caster's, where this one is the exiled card's owner and so is bob's on
--- the leg alice aims at him.
+-- names, which Soulfire Eruption (data/scenarios/expiry) is the exact contrast
+-- for: that card's "until the end of YOUR next turn" is CR 109.5's controller
+-- and can only ever be the caster's, where this one is the exiled card's owner
+-- and so is bob's on the leg alice aims at him.
 --
 -- "Its owner" is written as PlayerRef.HolderOfBound Controller: CR 108.4 leaves a card
 -- in exile with no controller and CR 108.4a then answers with its owner, so the
@@ -1966,25 +1635,6 @@ oldFatSpiderSpec s registry = Spec.describe s "OldFatSpiderCantSeeMe" $ do
       Spec.assertEqWith s "one floating replacement" (length (StoredEffects.replacements (GameState.stored gs))) 1
       Spec.assertBool s (all (isWhile . ActiveReplacement.expiry) (StoredEffects.replacements (GameState.stored gs))) "armed to a While, not to a turn or a cleanup"
       Spec.assertEqWith s "CR 514.2's cleanup leaves it alone" (length ((StoredEffects.replacements . GameState.stored) (Expiry.dropAtCleanup gs))) 1
-  -- Chapter I, from a CAST, so the entering lore counter (CR 715.3a) is what
-  -- fires it. Same printed duration, same source, other carrier: the grant is a
-  -- ContinuousEffect where chapter II's shield is an ActiveReplacement, and the
-  -- one sweep ends both.
-  Spec.it s "CR 611.2b chapter I grants hexproof for the same duration, and it ends with the Saga" $ do
-    island <- S.printingOf s registry "Island"
-    piker <- S.printingOf s registry "Goblin Piker"
-    spider <- S.printingOf s registry "Old Fat Spider Can't See Me"
-    let (mine, gs1) = S.addPermanent piker S.alice (S.landsFor island S.alice 3 (Setup.emptyGame S.bothPlayers))
-        (gs2, handId) = S.handOne spider (stockLibrary island gs1)
-        cast = S.runPure S.identityAnswer gs2 (do S.cast S.alice handId; Stack.resolveTop)
-        granted = S.runPure (aimedAtObject mine) cast Engine.priorityLoop
-        -- Three more chapters: II crosses at two, III at three, IV at four, and
-        -- CR 704.5s takes the Saga once the story is told.
-        told = List.foldl' (\g _ -> advanceSaga (aimedAtObject mine) g) granted [1 .. 3 :: Int]
-        hexproof g = Map.member (Keyword.Hexproof Nothing) (Projection.keywordsOf mine g)
-    Spec.assertBool s (hexproof granted) "alice's creature has hexproof while the Saga stands"
-    Spec.assertBool s (not (hexproof told)) "and loses it once the Saga is sacrificed"
-    Spec.assertEqWith s "the effect is deleted, not masked" (StoredEffects.continuousEffects (GameState.stored told)) []
 
 poolSize :: PlayerId.PlayerId -> GameState.GameState -> Int
 poolSize pid gs = case Game.poolOf pid gs of
@@ -2005,12 +1655,10 @@ spec s registry = Spec.describe s "Parun.Engine.Expiry" $ do
   hagSpec s registry
   endOfNextTurnSpec s
   windowSpec s
-  soulfireSpec s registry
   cannonadeSpec s registry
   suspendAggressionSpec s registry
   dovinSpec s registry
   oldFatSpiderSpec s registry
-  lingeringSpec s registry
 
 -- CR 116.2c's duration, which no sweep of this module ends: the unit-level half
 -- of the Gliding Licid pair, Parun.AuraSpec's and data/scenarios/aura's. The

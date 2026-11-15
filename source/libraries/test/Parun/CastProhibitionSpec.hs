@@ -1181,33 +1181,6 @@ nullChamberSpec s registry =
           Spec.assertBool s (elem (Action.Type.Cast pikerId (S.printingName piker) Facing.FaceUp) (Action.legalActions S.alice gone)) "and the cast is offered again"
           Spec.assertBool s (elem (barrensId, Nothing) (Action.playableLands S.alice gone)) "and the land may be played again"
 
--- `active` is the active player in their own precombat main phase with an empty
--- stack (CR 305.1's window) holding FIVE Mountains, while `grantors` are already
--- on the battlefield under ALICE's control.
---
--- Five is deliberately more than any case below plays. Every "and no more"
--- assertion is otherwise satisfiable by an empty hand, which is the trap this
--- whole group is built to avoid: each case checks the leftover hand as well as
--- the lands that landed.
---
--- The grantors go under alice while the HAND is the argument's, so the one case
--- that makes bob active reads alice's Exploration against bob's land plays --
--- CR 109.5's You scope with the two players actually pulled apart.
-landDropBoard :: Printing.Printing -> [Printing.Printing] -> PlayerId.PlayerId -> GameState.GameState
-landDropBoard mountain grantors active =
-  let put g printing = snd (S.addPermanent printing S.alice g)
-      withGrantors = List.foldl' put (Setup.emptyGame S.bothPlayers) grantors
-      add g _ = snd (S.addHandCard mountain active g)
-      withHand = List.foldl' add withGrantors [1 .. 5 :: Int]
-   in withHand
-        { GameState.turn =
-            (GameState.turn withHand)
-              { TurnRegisters.phase = Phase.PrecombatMain,
-                TurnRegisters.activePlayer = active,
-                TurnRegisters.priority = Just active
-              }
-        }
-
 -- Take every land play the board allows and stop. S.playLandAnswer plays a land
 -- whenever one is offered and passes otherwise, so the loop halts exactly when
 -- CR 305.2a's comparison refuses -- the whole gate, through the real priority

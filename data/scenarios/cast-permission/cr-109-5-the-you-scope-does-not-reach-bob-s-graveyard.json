@@ -1,0 +1,230 @@
+{
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "battlefield": [
+          {
+            "card": "Swamp",
+            "label": "swamp1",
+            "ready": true
+          },
+          {
+            "card": "Swamp",
+            "label": "swamp2",
+            "ready": true
+          },
+          {
+            "card": "Swamp",
+            "label": "swamp3",
+            "ready": true
+          },
+          {
+            "card": "Swamp",
+            "label": "swamp4",
+            "ready": true
+          },
+          {
+            "card": "Swamp",
+            "label": "swamp5",
+            "ready": true
+          },
+          {
+            "card": "Swamp",
+            "label": "swamp6",
+            "ready": true
+          }
+        ],
+        "graveyard": [
+          {
+            "card": "Sign in Blood",
+            "label": "sib"
+          }
+        ],
+        "hand": [
+          {
+            "card": "Yawgmoth's Will",
+            "label": "will"
+          }
+        ],
+        "library": [
+          {
+            "card": "Swamp"
+          },
+          {
+            "card": "Swamp"
+          },
+          {
+            "card": "Swamp"
+          }
+        ],
+        "name": "alice"
+      },
+      {
+        "battlefield": [
+          {
+            "card": "Swamp",
+            "label": "bswamp1",
+            "ready": true
+          },
+          {
+            "card": "Swamp",
+            "label": "bswamp2",
+            "ready": true
+          },
+          {
+            "card": "Swamp",
+            "label": "bswamp3",
+            "ready": true
+          },
+          {
+            "card": "Swamp",
+            "label": "bswamp4",
+            "ready": true
+          },
+          {
+            "card": "Swamp",
+            "label": "bswamp5",
+            "ready": true
+          },
+          {
+            "card": "Swamp",
+            "label": "bswamp6",
+            "ready": true
+          }
+        ],
+        "graveyard": [
+          {
+            "card": "Sign in Blood"
+          },
+          {
+            "card": "Dark Ritual",
+            "label": "buried-ritual"
+          }
+        ],
+        "hand": [
+          {
+            "card": "Dark Ritual",
+            "label": "ritual"
+          }
+        ],
+        "library": [
+          {
+            "card": "Swamp"
+          },
+          {
+            "card": "Swamp"
+          },
+          {
+            "card": "Swamp"
+          }
+        ],
+        "name": "bob"
+      }
+    ],
+    "step": "PrecombatMain"
+  },
+  "description": "CR 109.5 the You scope does not reach bob's graveyard",
+  "final": [
+    {
+      "Count": {
+        "card": "Dark Ritual",
+        "count": 1,
+        "player": "bob",
+        "zone": "Graveyard"
+      }
+    },
+    {
+      "Count": {
+        "card": "Dark Ritual",
+        "count": 1,
+        "player": "bob",
+        "zone": "Hand"
+      }
+    }
+  ],
+  "note": "CR 109.5 / PlayerScope.Related You: alice's Yawgmoth's Will does nothing for bob. bob's graveyard holds Dark Ritual, an instant, so CR 307.1's sorcery window is not why it is refused while alice's grant is live on her own turn; the Dark Ritual in his hand, offered beside it, is the control.",
+  "timeline": [
+    {
+      "do": {
+        "Cast": {
+          "mana": [
+            "$swamp1",
+            "$swamp2",
+            "$swamp3",
+            null
+          ],
+          "object": "$will"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "View": {
+          "is": [
+            "Pass",
+            "Cast $sib",
+            "ActivateManaAbility $swamp4",
+            "ActivateManaAbility $swamp5",
+            "ActivateManaAbility $swamp6"
+          ],
+          "of": "Offered",
+          "player": "alice"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "View": {
+          "is": [
+            "Pass",
+            "Cast $ritual",
+            "ActivateManaAbility $bswamp1",
+            "ActivateManaAbility $bswamp2",
+            "ActivateManaAbility $bswamp3",
+            "ActivateManaAbility $bswamp4",
+            "ActivateManaAbility $bswamp5",
+            "ActivateManaAbility $bswamp6"
+          ],
+          "of": "Offered",
+          "player": "bob"
+        }
+      },
+      "player": "bob",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "player": "bob",
+      "refuse": {
+        "Cast": {
+          "mana": [
+            "$bswamp1",
+            null
+          ],
+          "object": "$buried-ritual"
+        }
+      },
+      "step": "PrecombatMain",
+      "turn": 1
+    }
+  ]
+}

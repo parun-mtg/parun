@@ -1,0 +1,233 @@
+{
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "battlefield": [
+          {
+            "card": "Mountain",
+            "label": "mountain-1"
+          },
+          {
+            "card": "Mountain",
+            "label": "mountain-2"
+          },
+          {
+            "card": "Mountain",
+            "label": "mountain-3"
+          },
+          {
+            "card": "Mountain",
+            "label": "mountain-4"
+          },
+          {
+            "card": "Mountain",
+            "label": "mountain-5"
+          },
+          {
+            "card": "Mountain",
+            "label": "mountain-6"
+          },
+          {
+            "card": "Mountain",
+            "label": "mountain-7"
+          },
+          {
+            "card": "Mountain",
+            "label": "mountain-8"
+          },
+          {
+            "card": "Mountain",
+            "label": "mountain-9"
+          }
+        ],
+        "hand": [
+          {
+            "card": "Soulfire Eruption",
+            "label": "soulfire"
+          }
+        ],
+        "library": [
+          {
+            "card": "Goblin Piker"
+          },
+          {
+            "card": "Mountain"
+          },
+          {
+            "card": "Mountain"
+          },
+          {
+            "card": "Mountain"
+          },
+          {
+            "card": "Mountain"
+          },
+          {
+            "card": "Mountain"
+          },
+          {
+            "card": "Mountain"
+          }
+        ],
+        "name": "alice"
+      },
+      {
+        "library": [
+          {
+            "card": "Mountain"
+          },
+          {
+            "card": "Mountain"
+          },
+          {
+            "card": "Mountain"
+          },
+          {
+            "card": "Mountain"
+          },
+          {
+            "card": "Mountain"
+          },
+          {
+            "card": "Mountain"
+          }
+        ],
+        "name": "bob"
+      }
+    ],
+    "step": "PrecombatMain"
+  },
+  "description": "CR 611.2a / 514.2 it ends as that turn ends, and no later turn of theirs can play the card",
+  "final": [
+    {
+      "View": {
+        "is": [
+          "Goblin Piker"
+        ],
+        "of": "Zone",
+        "player": "alice",
+        "zone": "Exile"
+      }
+    },
+    {
+      "Count": {
+        "card": "Goblin Piker",
+        "count": 0,
+        "player": "alice",
+        "zone": "Battlefield"
+      }
+    }
+  ],
+  "note": "Soulfire Eruption's \"until the end of your next turn\": alice's turn 3 offers the exiled Goblin Piker, and her turn 5 does not, the card still in exile. Turns 2 and 4 are bob's, where a sorcery-speed creature is not offered either way, so the permission is read on alice's own turns. Both libraries are stocked so nobody decks out.",
+  "timeline": [
+    {
+      "do": {
+        "Cast": {
+          "mana": [
+            "$mountain-1",
+            "$mountain-2",
+            "$mountain-3",
+            "$mountain-4",
+            "$mountain-5",
+            "$mountain-6",
+            "$mountain-7",
+            "$mountain-8",
+            "$mountain-9"
+          ],
+          "object": "$soulfire",
+          "targets": [
+            "$bob"
+          ]
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Goblin Piker",
+          "count": 1,
+          "player": "alice",
+          "zone": "Exile"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "View": {
+          "is": [
+            "Pass",
+            "PlayLand Mountain#21",
+            "Cast Goblin Piker",
+            "ActivateManaAbility $mountain-1",
+            "ActivateManaAbility $mountain-2",
+            "ActivateManaAbility $mountain-3",
+            "ActivateManaAbility $mountain-4",
+            "ActivateManaAbility $mountain-5",
+            "ActivateManaAbility $mountain-6",
+            "ActivateManaAbility $mountain-7",
+            "ActivateManaAbility $mountain-8",
+            "ActivateManaAbility $mountain-9"
+          ],
+          "of": "Offered",
+          "player": "alice"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 3
+    },
+    {
+      "check": {
+        "View": {
+          "is": [
+            "Pass",
+            "PlayLand Mountain#19",
+            "PlayLand Mountain#21",
+            "ActivateManaAbility $mountain-1",
+            "ActivateManaAbility $mountain-2",
+            "ActivateManaAbility $mountain-3",
+            "ActivateManaAbility $mountain-4",
+            "ActivateManaAbility $mountain-5",
+            "ActivateManaAbility $mountain-6",
+            "ActivateManaAbility $mountain-7",
+            "ActivateManaAbility $mountain-8",
+            "ActivateManaAbility $mountain-9"
+          ],
+          "of": "Offered",
+          "player": "alice"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 5
+    },
+    {
+      "player": "alice",
+      "refuse": {
+        "Cast": {
+          "mana": [
+            "$mountain-1",
+            "$mountain-2",
+            null
+          ],
+          "object": "Goblin Piker"
+        }
+      },
+      "step": "PrecombatMain",
+      "turn": 5
+    }
+  ]
+}
