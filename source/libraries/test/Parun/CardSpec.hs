@@ -1029,8 +1029,8 @@ counterabilityConditions counterability = case counterability of
   Counterability.Counterable -> []
   Counterability.CantBeCountered condition -> Maybe.maybeToList condition
 
--- Every Condition a casting permission holds: only CR 601.3d's flash
--- permission carries one.
+-- Every Condition a casting permission holds: CR 601.3d's flash
+-- permission's and a graveyard permission's (CR 601.3).
 castingPermissionConditions :: CastingPermission.CastingPermission -> [Condition.Type.Condition]
 castingPermissionConditions = Const.getConst . Children.castingPermissionChildren Children.permissionLeaves {Children.permissionCondition = \condition -> Const.Const [condition]}
 
@@ -5803,7 +5803,8 @@ activatedAbilityFilters ability =
 --     every mode's target slots and effects, plus an activation cost, a
 --     trigger's own condition and its intervening clause.
 --   * `castingRestrictions` -- CR 601.3's OnlyIf condition.
---   * `castingPermissions` -- CR 601.3d's flash permission condition.
+--   * `castingPermissions` -- CR 601.3d's flash permission condition and a
+--     graveyard permission's (CR 601.3).
 --   * `counterability` -- CR 113.6g's condition (Exquisite Firecraft).
 --   * `mulliganActions` (CR 103.5b) and `openingHandActions` (CR 103.6) -- the two
 --     pregame actions, which `cardResolutionEffects` above does not reach.

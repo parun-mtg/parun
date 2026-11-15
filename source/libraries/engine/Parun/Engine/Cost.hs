@@ -402,7 +402,7 @@ candidateCostsFor = candidateCostsGiven False
 -- candidateCostsGiven's graveyard arm prices a permission that names its cost.
 permissionsOf :: ObjectId -> Face.Face Card.Type.Card -> GameState -> [CastingPermission.CastingPermission]
 permissionsOf oid face gs =
-  PC.castingPermissions (Projection.project oid gs)
+  filter (PlayerEffect.graveyardPermissionHolds oid gs) (PC.castingPermissions (Projection.project oid gs))
     <> Keyword.castingPermissionsOf (TypeLine.types (Face.typeLine face)) (Map.keysSet (Projection.keywordsOf oid gs))
 
 -- CR 118.8 / 614.1d: a graveyard permission the card carries for itself that
@@ -411,7 +411,7 @@ permissionsOf oid face gs =
 -- (Parun.Engine.Cast.ownPayingWays).
 addsToItsCast :: CastingPermission.CastingPermission -> Bool
 addsToItsCast permission = case permission of
-  CastingPermission.CastFromGraveyard _ additional entersWith -> not (null additional) || Maybe.isJust entersWith
+  CastingPermission.CastFromGraveyard _ _ additional entersWith -> not (null additional) || Maybe.isJust entersWith
   CastingPermission.PlayFromGraveyard -> False
   CastingPermission.CastFromLibraryWhileSearching -> False
   CastingPermission.CastAsThoughItHadFlash {} -> False
@@ -1063,7 +1063,7 @@ candidateCostsGiven permitted pid name oid gs =
                       -- keyword of that family offers, never the printed cost.
                       -- Parun.CastSpec's "Blitz from a graveyard" group proves
                       -- both halves.
-                      usingFamilies = [family | CastingPermission.CastFromGraveyard (Just family) _ _ <- permissionsOf oid face gs]
+                      usingFamilies = [family | CastingPermission.CastFromGraveyard _ (Just family) _ _ <- permissionsOf oid face gs]
                       usingPermitted candidate = any (\family -> (CandidateCost.keyword candidate >>= Keyword.familyOf) == Just family) usingFamilies
                       -- CR 118.8 / 614.1d: a permission stating an additional
                       -- cost or entry counters admits the printed cost and its
@@ -1071,7 +1071,7 @@ candidateCostsGiven permitted pid name oid gs =
                       -- Parun.Engine.Cast.castWays adds what it states.
                       payingPermitted = any (\permission -> addsToItsCast permission && namesNoFamily permission) (permissionsOf oid face gs)
                       namesNoFamily permission = case permission of
-                        CastingPermission.CastFromGraveyard Nothing _ _ -> True
+                        CastingPermission.CastFromGraveyard _ Nothing _ _ -> True
                         _ -> False
                    in fmap flashback (filter (stated Keyword.Type.Flashback) (Keyword.flashbackCosts keywords))
                         <> fmap beamedUp (filter (stated Keyword.Type.BeamMeUp) (Keyword.beamMeUpCosts keywords))

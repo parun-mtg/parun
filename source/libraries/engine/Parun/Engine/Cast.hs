@@ -3255,7 +3255,7 @@ replacementRow src controller slot oid rewrite gs =
 -- blitz ability") opens the zone for that cost alone.
 castWays :: (ObjectId -> Bool) -> PlayerId -> ObjectId -> Zone.Zone -> Face.Face Card.Type.Card -> GameState -> Maybe Keyword -> [Maybe (ObjectId, CastFromZone.CastFromZone)]
 castWays rides pid oid zone face gs castFor =
-  let named = ownedBy pid oid gs && any (\family -> (castFor >>= Keyword.familyOf) == Just family) [family | CastingPermission.CastFromGraveyard (Just family) [] Nothing <- Cost.permissionsOf oid face gs]
+  let named = ownedBy pid oid gs && any (\family -> (castFor >>= Keyword.familyOf) == Just family) [family | CastingPermission.CastFromGraveyard _ (Just family) [] Nothing <- Cost.permissionsOf oid face gs]
       ownOpen = case zone of
         Zone.Exile -> exileOpen pid oid face gs
         Zone.Graveyard -> permitsPlayUnderPermission pid oid gs || PlayerEffect.mayPlayFromOwnGraveyard Map.empty PermissionVerb.Cast pid oid gs || named
@@ -3291,7 +3291,7 @@ ownPayingWays oid face gs =
           CastFromZone.amount = Nothing
         }
     )
-  | permission@(CastingPermission.CastFromGraveyard _ additional entersWith) <- Cost.permissionsOf oid face gs,
+  | permission@(CastingPermission.CastFromGraveyard _ _ additional entersWith) <- Cost.permissionsOf oid face gs,
     Cost.addsToItsCast permission
   ]
 
