@@ -1,0 +1,239 @@
+{
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "battlefield": [
+          {
+            "card": "Grizzly Bears",
+            "label": "bears"
+          },
+          {
+            "card": "Plains",
+            "label": "plains",
+            "tapped": true
+          },
+          {
+            "card": "Forest",
+            "label": "forest",
+            "tapped": true
+          },
+          {
+            "card": "Mountain",
+            "label": "mountain",
+            "tapped": true
+          },
+          {
+            "card": "Swamp",
+            "label": "swamp",
+            "tapped": true
+          },
+          {
+            "card": "Island",
+            "label": "island",
+            "tapped": true
+          },
+          {
+            "card": "Sol Ring",
+            "label": "ring",
+            "tapped": true
+          }
+        ],
+        "hand": [
+          {
+            "card": "Fear of Exposure",
+            "label": "fear"
+          }
+        ],
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ],
+        "manaPool": "GGG",
+        "name": "alice"
+      },
+      {
+        "battlefield": [
+          {
+            "card": "Wall of Wood",
+            "label": "bobwall"
+          }
+        ],
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ],
+        "name": "bob"
+      }
+    ],
+    "step": "PrecombatMain"
+  },
+  "description": "CR 601.2f, 601.2h, 118.3: Fear of Exposure's additional cost taps two untapped creatures and/or lands its caster controls",
+  "note": "On turn 1 alice has the mana but only Grizzly Bears untapped among her creatures and lands (a Sol Ring is neither, bob's Wall of Wood is not hers), so the cast is refused; on turn 3 she pays the mana with a Forest, a Mountain and a Swamp and taps the Bears and the Plains, leaving the Island untapped.",
+  "timeline": [
+    {
+      "player": "alice",
+      "refuse": {
+        "Cast": {
+          "object": "$fear"
+        }
+      },
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "player": "alice",
+      "refuse": {
+        "Answer": {
+          "prompt": "ChooseTaps",
+          "with": [
+            "$bears",
+            "$bobwall"
+          ]
+        }
+      },
+      "step": "PrecombatMain",
+      "turn": 3
+    },
+    {
+      "player": "alice",
+      "refuse": {
+        "Answer": {
+          "prompt": "ChooseTaps",
+          "with": [
+            "$bears",
+            "$ring"
+          ]
+        }
+      },
+      "step": "PrecombatMain",
+      "turn": 3
+    },
+    {
+      "do": {
+        "Answer": {
+          "prompt": "ChooseTaps",
+          "with": [
+            "$bears",
+            "$plains"
+          ]
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 3
+    },
+    {
+      "do": {
+        "Cast": {
+          "mana": [
+            "$forest",
+            "$mountain",
+            "$swamp",
+            null
+          ],
+          "object": "$fear"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 3
+    },
+    {
+      "check": {
+        "Tapped": {
+          "object": "$bears",
+          "tapped": true
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 3
+    },
+    {
+      "check": {
+        "Tapped": {
+          "object": "$plains",
+          "tapped": true
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 3
+    },
+    {
+      "check": {
+        "Tapped": {
+          "object": "$island",
+          "tapped": false
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 3
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 3
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Fear of Exposure",
+          "count": 1,
+          "player": "alice",
+          "zone": "Battlefield"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 3
+    }
+  ]
+}
