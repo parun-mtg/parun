@@ -646,41 +646,41 @@ out: grep for them.
 ### `GameSpec`
 
 - CR 104.2c gameplay: a Shahrazad subgame won by a team excludes every player on it | `move:nested`
-- CR 400.7/728.2 gameplay: a restart puts Painter's Servant into a library with its chosen colour forgotten | `board:object-chosencolor`
-- CR 514.3 a cleanup step with nothing waiting grants no priority | `check:helper-runCountingActions`
-- CR 514.3a the exception grants a real priority round | `check:prompt-count`
-- CR 514.3a the second cleanup step finds nothing waiting and ends the turn | `check:prompt-count`
-- CR 603.4/100.6a gameplay: Shahrazad and Sindbad does not trigger once the match has had a subgame | `board:subgamesthismatch`
-- CR 605.3a an untapped land's own mana ability is that optional action | `check:other-GameState.lastChoice`
-- CR 607.2a: Karn's -3 files the permanent it exiles against Karn | `check:exile-linked`
-- CR 724.1/724.3 gameplay: Mindslaver hands alice bob's whole turn, then control lapses
-- CR 724.1a gameplay: Word of Command over a Mindslaver hands bob back to alice, not to himself
-- CR 724.3/724.5: alice decides for bob, but bob's resources move
-- CR 724.5 combat: alice declares bob's attackers, so alice takes the hit
-- CR 724.5a: the controller spends only the controlled player's resources
-- CR 724.6 a controlled player concedes themselves; their controller cannot do it for them
-- CR 728.5/728.4 gameplay: Karn's ultimate leaves its own exiles in exile and then plays them | `board:exile-linked`
-- CR 730.1a #153: a question names the game it came from, so a subgame's is not a main-game one | `move:nested`
+- ~~CR 400.7/728.2 gameplay: a restart puts Painter's Servant into a library with its chosen colour forgotten | `board:object-chosencolor`~~
+- ~~CR 514.3 a cleanup step with nothing waiting grants no priority | `check:helper-runCountingActions`~~
+- ~~CR 514.3a the exception grants a real priority round | `check:prompt-count`~~
+- ~~CR 514.3a the second cleanup step finds nothing waiting and ends the turn | `check:prompt-count`~~
+- ~~CR 603.4/100.6a gameplay: Shahrazad and Sindbad does not trigger once the match has had a subgame | `board:subgamesthismatch`~~
+- ~~CR 605.3a an untapped land's own mana ability is that optional action | `check:other-GameState.lastChoice`~~
+- ~~CR 607.2a: Karn's -3 files the permanent it exiles against Karn | `check:exile-linked`~~
+- ~~CR 724.1/724.3 gameplay: Mindslaver hands alice bob's whole turn, then control lapses~~
+- ~~CR 724.1a gameplay: Word of Command over a Mindslaver hands bob back to alice, not to himself~~
+- ~~CR 724.3/724.5: alice decides for bob, but bob's resources move~~
+- ~~CR 724.5 combat: alice declares bob's attackers, so alice takes the hit~~
+- ~~CR 724.5a: the controller spends only the controlled player's resources~~
+- ~~CR 724.6 a controlled player concedes themselves; their controller cannot do it for them~~
+- ~~CR 728.5/728.4 gameplay: Karn's ultimate leaves its own exiles in exile and then plays them | `board:exile-linked`~~
+- ~~CR 730.1a #153: a question names the game it came from, so a subgame's is not a main-game one | `move:nested`~~
 - CR 730.1a/730.1b #137 gameplay: a TRIGGERED ability plays the subgame, and CR 730.1b's winner is bound | `move:nested` `check:other-GameState.subgamesThisMatch`
 - CR 730.1b gameplay: Shahrazad's non-winners each lose half their own life, rounded up | `move:nested`
 - CR 730.1b gameplay: a DRAWN Shahrazad subgame is won by nobody, so every player pays | `move:nested`
 - CR 730.1b/730.3 gameplay: alice casts a subgame spell, bob decks, bob loses 3 | `move:nested`
 - CR 730.5/730.4b gameplay: cards funnel back, main-game board survives, main-game counters untouched | `move:nested`
-- CR 800.4a a player who departs paying a cost is not asked again | `check:prompt-count` `check:other-Player.status`
-- CR 800.4a/117.4 priority after a concede goes to the next seat, and the pass cycle restarts | `check:other-GameState.players` `check:other-Player.status`
-- CR 800.4j after a resolution, priority returns to the next seat, not the departed active player | `board:stack`
-- CR 800.4j the active player having left does not stop the turn: priority starts at the next seat | `check:other-Engine.priorityHolder`
-- CR 800.4j/703.4i the declare-attackers guard is load-bearing at two seats, where the game loop cannot reach this state | `check:combat` `check:other-Projection.controls`
-- CR 800.4k a departed player's turn does not begin | `check:other-TurnRegisters.turnNumber` `check:other-GameState.turnOrder`
-- M5.6a gate: a three-player game survives a concede, and the departed seat still ends its durations | `board:player-effect`
-- M5.6d gate: attacking the monarch takes the crown and frees Palace Jailer's prisoner; attacking the other opponent does neither | `board:exiled-until-monarch`
-- a priority round whose only action is Pass leaves it alone | `check:other-GameState.lastChoice`
-- no player receives priority after the restart resolves | `board:stack`
-- playing lands fills the battlefield, conserving cards, at most one land per turn (CR 305.2) | `board:matchup` `check:object-count`
-- the conceding player departs as Conceded, not Lost | `check:other-GameState.players` `check:other-Player.status`
-- the next step runs the rebuilt turn 1's untap step | `board:stack`
-- the seat walk terminates when every seat has departed | `check:other-TurnRegisters.turnNumber`
-- the step the restart fired in does not advance past turn 1's untap step | `board:stack`
+- ~~CR 800.4a a player who departs paying a cost is not asked again | `check:prompt-count` `check:other-Player.status`~~
+- ~~CR 800.4a/117.4 priority after a concede goes to the next seat, and the pass cycle restarts | `check:other-GameState.players` `check:other-Player.status`~~
+- ~~CR 800.4j after a resolution, priority returns to the next seat, not the departed active player | `board:stack`~~
+- ~~CR 800.4j the active player having left does not stop the turn: priority starts at the next seat | `check:other-Engine.priorityHolder`~~
+- ~~CR 800.4j/703.4i the declare-attackers guard is load-bearing at two seats, where the game loop cannot reach this state | `check:combat` `check:other-Projection.controls`~~
+- ~~CR 800.4k a departed player's turn does not begin | `check:other-TurnRegisters.turnNumber` `check:other-GameState.turnOrder`~~
+- ~~M5.6a gate: a three-player game survives a concede, and the departed seat still ends its durations | `board:player-effect`~~
+- ~~M5.6d gate: attacking the monarch takes the crown and frees Palace Jailer's prisoner; attacking the other opponent does neither | `board:exiled-until-monarch`~~
+- ~~a priority round whose only action is Pass leaves it alone | `check:other-GameState.lastChoice`~~
+- ~~no player receives priority after the restart resolves | `board:stack`~~
+- ~~playing lands fills the battlefield, conserving cards, at most one land per turn (CR 305.2) | `board:matchup` `check:object-count`~~
+- ~~the conceding player departs as Conceded, not Lost | `check:other-GameState.players` `check:other-Player.status`~~
+- ~~the next step runs the rebuilt turn 1's untap step | `board:stack`~~
+- ~~the seat walk terminates when every seat has departed | `check:other-TurnRegisters.turnNumber`~~
+- ~~the step the restart fired in does not advance past turn 1's untap step | `board:stack`~~
 
 ### `GoadSpec`
 
