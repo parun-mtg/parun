@@ -1155,8 +1155,8 @@ effectChildren c effect = case effect of
       )
   Effect.Counter (Counter.MkCounter ref named sources instead) ->
     fmap Effect.Counter (Counter.MkCounter <$> onObjectRef c ref <*> traverse (onSlot c) named <*> traverse (onSlot c) sources <*> traverse (counterDestinationChildren c) instead)
-  Effect.PutCounters (PutCounters.MkPutCounters kind quantity ref totalAtMost) ->
-    fmap Effect.PutCounters (PutCounters.MkPutCounters <$> onCounterKind c kind <*> onQuantity c quantity <*> onObjectRef c ref <*> pure totalAtMost)
+  Effect.PutCounters (PutCounters.MkPutCounters kind quantity ref totalAtMost placed) ->
+    fmap Effect.PutCounters (PutCounters.MkPutCounters <$> onCounterKind c kind <*> onQuantity c quantity <*> onObjectRef c ref <*> pure totalAtMost <*> traverse (onSlot c) placed)
   Effect.Divide (Divide.MkDivide quantity among chooser named) -> fmap Effect.Divide (Divide.MkDivide <$> onQuantity c quantity <*> onObjectRef c among <*> onPlayer c chooser <*> onSlot c named)
   Effect.RemoveCounters (RemoveCounters.MkRemoveCounters kind quantity named tally) ->
     fmap Effect.RemoveCounters (RemoveCounters.MkRemoveCounters <$> onCounterKind c kind <*> onQuantity c quantity <*> onSlot c named <*> traverse (onSlot c) tally)

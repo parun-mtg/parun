@@ -1,0 +1,174 @@
+{
+  "board": {
+    "active": "bob",
+    "seats": [
+      {
+        "battlefield": [
+          {
+            "card": "Call the Spirit Dragons"
+          },
+          {
+            "card": "Pearl Dragon",
+            "label": "white"
+          },
+          {
+            "card": "Cloud Dragon",
+            "label": "blue"
+          },
+          {
+            "card": "Ebon Dragon",
+            "label": "black"
+          },
+          {
+            "card": "Volcanic Dragon",
+            "label": "red"
+          },
+          {
+            "card": "Foe-Razer Regent",
+            "label": "green"
+          }
+        ],
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ],
+        "name": "alice"
+      },
+      {
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ],
+        "name": "bob"
+      }
+    ],
+    "step": "EndStep",
+    "turn": 1
+  },
+  "description": "Call the Spirit Dragons puts a +1/+1 counter on a Dragon of each color and wins with five",
+  "final": [
+    {
+      "View": {
+        "is": {
+          "won": "alice"
+        },
+        "of": "Result"
+      }
+    },
+    {
+      "Counters": {
+        "count": 1,
+        "kind": {
+          "type": "PlusOnePlusOne"
+        },
+        "object": "$white"
+      }
+    },
+    {
+      "Counters": {
+        "count": 1,
+        "kind": {
+          "type": "PlusOnePlusOne"
+        },
+        "object": "$blue"
+      }
+    },
+    {
+      "Counters": {
+        "count": 1,
+        "kind": {
+          "type": "PlusOnePlusOne"
+        },
+        "object": "$black"
+      }
+    },
+    {
+      "Counters": {
+        "count": 1,
+        "kind": {
+          "type": "PlusOnePlusOne"
+        },
+        "object": "$red"
+      }
+    },
+    {
+      "Counters": {
+        "count": 1,
+        "kind": {
+          "type": "PlusOnePlusOne"
+        },
+        "object": "$green"
+      }
+    }
+  ],
+  "note": "alice controls the enchantment and one mono-colored Dragon of each color as her upkeep begins: each Dragon gets one counter, five Dragons got one, and she wins.",
+  "timeline": [
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "Upkeep",
+      "turn": 2
+    },
+    {
+      "do": {
+        "Answer": {
+          "prompt": "OrderForEach",
+          "with": [
+            0,
+            1,
+            2,
+            3,
+            4
+          ]
+        }
+      },
+      "player": "alice",
+      "step": "Upkeep",
+      "turn": 2
+    }
+  ]
+}

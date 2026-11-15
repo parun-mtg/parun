@@ -241,7 +241,7 @@ counter settle resolving source controller legal (Counter.MkCounter ref mSlot mS
     Monad.unless (null permanents) (State.modify' (Common.bindObjectsSlot resolving slot (Seq.fromList permanents)))
 
 putCounters :: ObjectId -> ObjectId -> PlayerId -> Map.Map SlotName (Set Recipient) -> Map.Map SlotName (Set Recipient) -> PutCounters.PutCounters -> Game ()
-putCounters resolving source controller legal chosen (PutCounters.MkPutCounters kind quantity ref totalAtMost) = do
+putCounters resolving source controller legal chosen (PutCounters.MkPutCounters kind quantity ref totalAtMost mSlot) = do
   -- CR 608.2c: the set is swept as this instruction is reached, and an
   -- illegal slot (CR 608.2b) or a player recipient answers with nobody. A
   -- CR 608.2d choice is asked through askingObjects, ModifyTarget's reason:
@@ -284,8 +284,16 @@ putCounters resolving source controller legal chosen (PutCounters.MkPutCounters 
   -- The cause is Event.resolvingCounterCause's: Sphinx-Bone Wand's "you may put
   -- a charge counter" is CR 118.12's cost, and no effect.
   cause <- State.gets (Event.resolvingCounterCause controller)
-  Monad.unless (null placements) . Event.simultaneously . Monad.forM_ placements $ \(target, n) ->
-    Event.putCountersWithin totalAtMost cause target kind n
+  placed <-
+    if null placements
+      then pure []
+      else Event.simultaneously . fmap concat . Monad.forM placements $ \(target, n) -> do
+        settled <- Event.putCountersWithin totalAtMost cause target kind n
+        pure [target | settled > 0]
+  -- PutCounters.slot: the recipients the funnel settled at least one counter
+  -- on, so a placement CR 614 or CR 101.2 brought to none is not among them.
+  Monad.forM_ mSlot $ \slot ->
+    Monad.unless (null placed) (State.modify' (Common.bindObjectsSlot resolving slot (Seq.fromList placed)))
 
 -- CR 608.2d: the chooser picks which of the objects the ref names get a
 -- part and how much, each chosen one at least one, the whole amount handed

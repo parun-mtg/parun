@@ -1,0 +1,175 @@
+{
+  "board": {
+    "active": "bob",
+    "seats": [
+      {
+        "battlefield": [
+          {
+            "card": "Call the Spirit Dragons"
+          },
+          {
+            "card": "Solemnity"
+          },
+          {
+            "card": "Pearl Dragon",
+            "label": "white"
+          },
+          {
+            "card": "Cloud Dragon",
+            "label": "blue"
+          },
+          {
+            "card": "Ebon Dragon",
+            "label": "black"
+          },
+          {
+            "card": "Volcanic Dragon",
+            "label": "red"
+          },
+          {
+            "card": "Foe-Razer Regent",
+            "label": "green"
+          }
+        ],
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ],
+        "name": "alice"
+      },
+      {
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ],
+        "name": "bob"
+      }
+    ],
+    "step": "EndStep",
+    "turn": 1
+  },
+  "description": "Call the Spirit Dragons does not win when Solemnity stops every counter",
+  "final": [
+    {
+      "View": {
+        "is": null,
+        "of": "Result"
+      }
+    },
+    {
+      "Counters": {
+        "count": 0,
+        "kind": {
+          "type": "PlusOnePlusOne"
+        },
+        "object": "$white"
+      }
+    },
+    {
+      "Counters": {
+        "count": 0,
+        "kind": {
+          "type": "PlusOnePlusOne"
+        },
+        "object": "$blue"
+      }
+    },
+    {
+      "Counters": {
+        "count": 0,
+        "kind": {
+          "type": "PlusOnePlusOne"
+        },
+        "object": "$black"
+      }
+    },
+    {
+      "Counters": {
+        "count": 0,
+        "kind": {
+          "type": "PlusOnePlusOne"
+        },
+        "object": "$red"
+      }
+    },
+    {
+      "Counters": {
+        "count": 0,
+        "kind": {
+          "type": "PlusOnePlusOne"
+        },
+        "object": "$green"
+      }
+    }
+  ],
+  "note": "Solemnity says counters can't be put on creatures, so none of alice's five Dragons gets a counter and none counts toward the five.",
+  "timeline": [
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "Upkeep",
+      "turn": 2
+    },
+    {
+      "do": {
+        "Answer": {
+          "prompt": "OrderForEach",
+          "with": [
+            0,
+            1,
+            2,
+            3,
+            4
+          ]
+        }
+      },
+      "player": "alice",
+      "step": "Upkeep",
+      "turn": 2
+    }
+  ]
+}

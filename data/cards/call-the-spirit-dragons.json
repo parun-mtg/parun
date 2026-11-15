@@ -1,0 +1,427 @@
+{
+  "faces": [
+    {
+      "manaCost": [
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "White"
+          }
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "Blue"
+          }
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "Black"
+          }
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "Red"
+          }
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "Green"
+          }
+        }
+      ],
+      "name": "Call the Spirit Dragons",
+      "oracleText": "Dragons you control have indestructible.\nAt the beginning of your upkeep, for each color, put a +1/+1 counter on a Dragon you control of that color. If you put +1/+1 counters on five Dragons this way, you win the game.",
+      "staticAbilities": [
+        {
+          "affected": {
+            "type": "Matching",
+            "value": {
+              "type": "And",
+              "value": [
+                {
+                  "type": "HasSubtype",
+                  "value": "Dragon"
+                },
+                {
+                  "type": "HeldBy",
+                  "value": {
+                    "holder": "Controller",
+                    "relation": "You"
+                  }
+                }
+              ]
+            }
+          },
+          "modifications": [
+            {
+              "type": "GainKeyword",
+              "value": {
+                "type": "Indestructible"
+              }
+            }
+          ]
+        }
+      ],
+      "triggeredAbilities": [
+        {
+          "condition": {
+            "type": "StepBegins",
+            "value": {
+              "phase": {
+                "type": "Beginning",
+                "value": "Upkeep"
+              },
+              "scope": {
+                "type": "PlayersTurn",
+                "value": {
+                  "type": "Relative",
+                  "value": "You"
+                }
+              }
+            }
+          },
+          "modal": {
+            "modes": [
+              {
+                "clauses": [
+                  {
+                    "effects": [
+                      {
+                        "type": "ChoosePermanents",
+                        "value": {
+                          "permanents": {
+                            "filter": {
+                              "type": "And",
+                              "value": [
+                                {
+                                  "type": "HasSubtype",
+                                  "value": "Dragon"
+                                },
+                                {
+                                  "type": "HeldBy",
+                                  "value": {
+                                    "holder": "Controller",
+                                    "relation": "You"
+                                  }
+                                },
+                                {
+                                  "type": "HasColor",
+                                  "value": "White"
+                                }
+                              ]
+                            }
+                          },
+                          "slot": "white"
+                        }
+                      },
+                      {
+                        "type": "ChoosePermanents",
+                        "value": {
+                          "permanents": {
+                            "filter": {
+                              "type": "And",
+                              "value": [
+                                {
+                                  "type": "HasSubtype",
+                                  "value": "Dragon"
+                                },
+                                {
+                                  "type": "HeldBy",
+                                  "value": {
+                                    "holder": "Controller",
+                                    "relation": "You"
+                                  }
+                                },
+                                {
+                                  "type": "HasColor",
+                                  "value": "Blue"
+                                }
+                              ]
+                            }
+                          },
+                          "slot": "blue"
+                        }
+                      },
+                      {
+                        "type": "ChoosePermanents",
+                        "value": {
+                          "permanents": {
+                            "filter": {
+                              "type": "And",
+                              "value": [
+                                {
+                                  "type": "HasSubtype",
+                                  "value": "Dragon"
+                                },
+                                {
+                                  "type": "HeldBy",
+                                  "value": {
+                                    "holder": "Controller",
+                                    "relation": "You"
+                                  }
+                                },
+                                {
+                                  "type": "HasColor",
+                                  "value": "Black"
+                                }
+                              ]
+                            }
+                          },
+                          "slot": "black"
+                        }
+                      },
+                      {
+                        "type": "ChoosePermanents",
+                        "value": {
+                          "permanents": {
+                            "filter": {
+                              "type": "And",
+                              "value": [
+                                {
+                                  "type": "HasSubtype",
+                                  "value": "Dragon"
+                                },
+                                {
+                                  "type": "HeldBy",
+                                  "value": {
+                                    "holder": "Controller",
+                                    "relation": "You"
+                                  }
+                                },
+                                {
+                                  "type": "HasColor",
+                                  "value": "Red"
+                                }
+                              ]
+                            }
+                          },
+                          "slot": "red"
+                        }
+                      },
+                      {
+                        "type": "ChoosePermanents",
+                        "value": {
+                          "permanents": {
+                            "filter": {
+                              "type": "And",
+                              "value": [
+                                {
+                                  "type": "HasSubtype",
+                                  "value": "Dragon"
+                                },
+                                {
+                                  "type": "HeldBy",
+                                  "value": {
+                                    "holder": "Controller",
+                                    "relation": "You"
+                                  }
+                                },
+                                {
+                                  "type": "HasColor",
+                                  "value": "Green"
+                                }
+                              ]
+                            }
+                          },
+                          "slot": "green"
+                        }
+                      },
+                      {
+                        "type": "ForEach",
+                        "value": {
+                          "body": [
+                            {
+                              "type": "PutCounters",
+                              "value": {
+                                "kind": {
+                                  "type": "PlusOnePlusOne"
+                                },
+                                "quantity": {
+                                  "type": "Plus",
+                                  "value": {
+                                    "left": {
+                                      "type": "Plus",
+                                      "value": {
+                                        "left": {
+                                          "type": "Plus",
+                                          "value": {
+                                            "left": {
+                                              "type": "Plus",
+                                              "value": {
+                                                "left": {
+                                                  "type": "Count",
+                                                  "value": {
+                                                    "aggregation": {
+                                                      "type": "Members"
+                                                    },
+                                                    "filter": {
+                                                      "type": "IsBound",
+                                                      "value": "white"
+                                                    },
+                                                    "scope": {
+                                                      "type": "OverBound",
+                                                      "value": "dragon"
+                                                    }
+                                                  }
+                                                },
+                                                "right": {
+                                                  "type": "Count",
+                                                  "value": {
+                                                    "aggregation": {
+                                                      "type": "Members"
+                                                    },
+                                                    "filter": {
+                                                      "type": "IsBound",
+                                                      "value": "blue"
+                                                    },
+                                                    "scope": {
+                                                      "type": "OverBound",
+                                                      "value": "dragon"
+                                                    }
+                                                  }
+                                                }
+                                              }
+                                            },
+                                            "right": {
+                                              "type": "Count",
+                                              "value": {
+                                                "aggregation": {
+                                                  "type": "Members"
+                                                },
+                                                "filter": {
+                                                  "type": "IsBound",
+                                                  "value": "black"
+                                                },
+                                                "scope": {
+                                                  "type": "OverBound",
+                                                  "value": "dragon"
+                                                }
+                                              }
+                                            }
+                                          }
+                                        },
+                                        "right": {
+                                          "type": "Count",
+                                          "value": {
+                                            "aggregation": {
+                                              "type": "Members"
+                                            },
+                                            "filter": {
+                                              "type": "IsBound",
+                                              "value": "red"
+                                            },
+                                            "scope": {
+                                              "type": "OverBound",
+                                              "value": "dragon"
+                                            }
+                                          }
+                                        }
+                                      }
+                                    },
+                                    "right": {
+                                      "type": "Count",
+                                      "value": {
+                                        "aggregation": {
+                                          "type": "Members"
+                                        },
+                                        "filter": {
+                                          "type": "IsBound",
+                                          "value": "green"
+                                        },
+                                        "scope": {
+                                          "type": "OverBound",
+                                          "value": "dragon"
+                                        }
+                                      }
+                                    }
+                                  }
+                                },
+                                "ref": {
+                                  "type": "InSlot",
+                                  "value": "dragon"
+                                },
+                                "slot": "placed"
+                              }
+                            }
+                          ],
+                          "ref": {
+                            "type": "EachMatching",
+                            "value": {
+                              "type": "Or",
+                              "value": [
+                                {
+                                  "type": "IsBound",
+                                  "value": "white"
+                                },
+                                {
+                                  "type": "IsBound",
+                                  "value": "blue"
+                                },
+                                {
+                                  "type": "IsBound",
+                                  "value": "black"
+                                },
+                                {
+                                  "type": "IsBound",
+                                  "value": "red"
+                                },
+                                {
+                                  "type": "IsBound",
+                                  "value": "green"
+                                }
+                              ]
+                            }
+                          },
+                          "slot": "dragon"
+                        }
+                      }
+                    ]
+                  },
+                  {
+                    "condition": {
+                      "type": "Compares",
+                      "value": {
+                        "comparison": "AtLeast",
+                        "measured": {
+                          "type": "BoundCount",
+                          "value": "placed"
+                        },
+                        "threshold": {
+                          "type": "Literal",
+                          "value": 5
+                        }
+                      }
+                    },
+                    "effects": [
+                      {
+                        "type": "WinGame",
+                        "value": {
+                          "type": "Relative",
+                          "value": "You"
+                        }
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      ],
+      "typeLine": {
+        "types": [
+          "Enchantment"
+        ]
+      }
+    }
+  ]
+}

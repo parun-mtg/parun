@@ -1,0 +1,204 @@
+{
+  "board": {
+    "active": "bob",
+    "seats": [
+      {
+        "battlefield": [
+          {
+            "card": "Call the Spirit Dragons"
+          },
+          {
+            "card": "Adult Gold Dragon",
+            "label": "gold"
+          },
+          {
+            "card": "Pearl Dragon",
+            "label": "pearl"
+          },
+          {
+            "card": "Cloud Dragon",
+            "label": "blue"
+          },
+          {
+            "card": "Ebon Dragon",
+            "label": "black"
+          },
+          {
+            "card": "Foe-Razer Regent",
+            "label": "green"
+          },
+          {
+            "card": "Grizzly Bears",
+            "label": "bears"
+          }
+        ],
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ],
+        "name": "alice"
+      },
+      {
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ],
+        "name": "bob"
+      }
+    ],
+    "step": "EndStep",
+    "turn": 1
+  },
+  "description": "Call the Spirit Dragons puts two counters on a two-color Dragon chosen for both its colors, which counts as one Dragon",
+  "final": [
+    {
+      "View": {
+        "is": null,
+        "of": "Result"
+      }
+    },
+    {
+      "Counters": {
+        "count": 2,
+        "kind": {
+          "type": "PlusOnePlusOne"
+        },
+        "object": "$gold"
+      }
+    },
+    {
+      "Counters": {
+        "count": 0,
+        "kind": {
+          "type": "PlusOnePlusOne"
+        },
+        "object": "$pearl"
+      }
+    },
+    {
+      "Counters": {
+        "count": 1,
+        "kind": {
+          "type": "PlusOnePlusOne"
+        },
+        "object": "$blue"
+      }
+    },
+    {
+      "Counters": {
+        "count": 1,
+        "kind": {
+          "type": "PlusOnePlusOne"
+        },
+        "object": "$black"
+      }
+    },
+    {
+      "Counters": {
+        "count": 1,
+        "kind": {
+          "type": "PlusOnePlusOne"
+        },
+        "object": "$green"
+      }
+    },
+    {
+      "Keywords": {
+        "count": 1,
+        "keyword": {
+          "type": "Indestructible"
+        },
+        "object": "$pearl"
+      }
+    },
+    {
+      "Keywords": {
+        "count": 0,
+        "keyword": {
+          "type": "Indestructible"
+        },
+        "object": "$bears"
+      }
+    }
+  ],
+  "note": "alice picks Adult Gold Dragon, red and white, for white as well as red, so it gets two counters and the white Pearl Dragon none: four Dragons got counters, and she does not win. Dragons she controls have indestructible; her Grizzly Bears does not.",
+  "timeline": [
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "Upkeep",
+      "turn": 2
+    },
+    {
+      "do": {
+        "Answer": {
+          "prompt": "ChoosePermanent",
+          "with": "$gold"
+        }
+      },
+      "player": "alice",
+      "step": "Upkeep",
+      "turn": 2
+    },
+    {
+      "do": {
+        "Answer": {
+          "prompt": "OrderForEach",
+          "with": [
+            0,
+            1,
+            2,
+            3
+          ]
+        }
+      },
+      "player": "alice",
+      "step": "Upkeep",
+      "turn": 2
+    }
+  ]
+}

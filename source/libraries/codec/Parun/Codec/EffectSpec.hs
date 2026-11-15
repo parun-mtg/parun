@@ -1139,7 +1139,7 @@ spec s = Spec.describe s "Parun.Codec.Effect" $ do
               PreventNextDamage.chosenSource = Nothing,
               PreventNextDamage.quantity = Quantity.Literal 3,
               PreventNextDamage.riders =
-                Seq.singleton (Effect.PutCounters (PutCounters.MkPutCounters CounterKind.PlusOnePlusOne (Quantity.InSlot (SlotName.MkSlotName (Text.pack "thatMuch"))) (ObjectRef.InSlot (SlotName.MkSlotName (Text.pack "target"))) Nothing))
+                Seq.singleton (Effect.PutCounters (PutCounters.MkPutCounters CounterKind.PlusOnePlusOne (Quantity.InSlot (SlotName.MkSlotName (Text.pack "thatMuch"))) (ObjectRef.InSlot (SlotName.MkSlotName (Text.pack "target"))) Nothing Nothing))
             }
       )
       " {\"type\":\"PreventNextDamage\",\"value\":{\"duration\":{\"type\":\"UntilEndOfTurn\"},\"kind\":\"Combat\",\"ref\":{\"type\":\"InSlot\",\"value\":\"target\"},\"quantity\":{\"type\":\"Literal\",\"value\":3},\"riders\":[{\"type\":\"PutCounters\",\"value\":{\"kind\":{\"type\":\"PlusOnePlusOne\"},\"quantity\":{\"type\":\"InSlot\",\"value\":\"thatMuch\"},\"ref\":{\"type\":\"InSlot\",\"value\":\"target\"}}}]}} "
@@ -1273,7 +1273,7 @@ spec s = Spec.describe s "Parun.Codec.Effect" $ do
               PreventAllDamage.chosenSource = Nothing,
               PreventAllDamage.whatSource = Filter.And [],
               PreventAllDamage.riders =
-                Seq.singleton (Effect.PutCounters (PutCounters.MkPutCounters CounterKind.PlusOnePlusOne (Quantity.InSlot (SlotName.MkSlotName (Text.pack "thatMuch"))) (ObjectRef.InSlot (SlotName.MkSlotName (Text.pack "target"))) Nothing))
+                Seq.singleton (Effect.PutCounters (PutCounters.MkPutCounters CounterKind.PlusOnePlusOne (Quantity.InSlot (SlotName.MkSlotName (Text.pack "thatMuch"))) (ObjectRef.InSlot (SlotName.MkSlotName (Text.pack "target"))) Nothing Nothing))
             }
       )
       " {\"type\":\"PreventAllDamage\",\"value\":{\"duration\":{\"type\":\"UntilEndOfTurn\"},\"kind\":\"Combat\",\"ref\":{\"type\":\"InSlot\",\"value\":\"target\"},\"riders\":[{\"type\":\"PutCounters\",\"value\":{\"kind\":{\"type\":\"PlusOnePlusOne\"},\"quantity\":{\"type\":\"InSlot\",\"value\":\"thatMuch\"},\"ref\":{\"type\":\"InSlot\",\"value\":\"target\"}}}]}} "
@@ -1502,7 +1502,7 @@ spec s = Spec.describe s "Parun.Codec.Effect" $ do
       s
       toJson
       fromJson
-      (Effect.PutCounters (PutCounters.MkPutCounters CounterKind.PlusOnePlusOne (Quantity.Literal 1) (ObjectRef.InSlot (SlotName.MkSlotName (Text.pack "creature"))) Nothing))
+      (Effect.PutCounters (PutCounters.MkPutCounters CounterKind.PlusOnePlusOne (Quantity.Literal 1) (ObjectRef.InSlot (SlotName.MkSlotName (Text.pack "creature"))) Nothing Nothing))
       " {\"type\":\"PutCounters\",\"value\":{\"kind\":{\"type\":\"PlusOnePlusOne\"},\"quantity\":{\"type\":\"Literal\",\"value\":1},\"ref\":{\"type\":\"InSlot\",\"value\":\"creature\"}}} "
   -- The ObjectRef's other arm: a Filter is an object where a slot is a string, so
   -- the widening left every card's spelling alone (Parun.Codec.ObjectRef).
@@ -1511,7 +1511,7 @@ spec s = Spec.describe s "Parun.Codec.Effect" $ do
       s
       toJson
       fromJson
-      (Effect.PutCounters (PutCounters.MkPutCounters CounterKind.PlusOnePlusOne (Quantity.Literal 1) (ObjectRef.EachMatching (Filter.HasDesignation Designation.Renowned)) Nothing))
+      (Effect.PutCounters (PutCounters.MkPutCounters CounterKind.PlusOnePlusOne (Quantity.Literal 1) (ObjectRef.EachMatching (Filter.HasDesignation Designation.Renowned)) Nothing Nothing))
       " {\"type\":\"PutCounters\",\"value\":{\"kind\":{\"type\":\"PlusOnePlusOne\"},\"quantity\":{\"type\":\"Literal\",\"value\":1},\"ref\":{\"type\":\"EachMatching\",\"value\":{\"type\":\"HasDesignation\",\"value\":\"Renowned\"}}}} "
   -- CR 608.2d: a division bound for a later instruction, under its own tag.
   Spec.it s "Divide" $
