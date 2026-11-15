@@ -23,11 +23,13 @@ import qualified Parun.Types.RollDie as RollDie
 -- the Endeavor cycle's and Neverwinter Hydra's throws one die and reads one
 -- result. CR 706.1's `roller` elides to the controller and `highest` to
 -- nothing: only Chaos Dragon has every player roll. CR 706.8a's `store` elides
--- to nothing: only Centaur of Attention stores its results.
+-- to nothing: only Centaur of Attention stores its results. CR 706.6's `ignore`
+-- elides to zero: only Berserker's Frenzy ignores a roll of its own.
 codec :: Codec.Codec RollDie.RollDie
 codec = Fields.object $ do
   sides <- Fields.required "sides" Common.natural RollDie.sides
   count <- Fields.defaulted "count" RollDie.defaultCount Quantity.codec RollDie.count
+  ignore <- Fields.defaulted "ignore" 0 Common.natural RollDie.ignore
   modifier <- Fields.defaulted "modifier" Nothing (Common.maybe Quantity.codec) RollDie.modifier
   reading <- Fields.defaulted "reading" RollDie.defaultReading DiceReading.codec RollDie.reading
   slot <- Fields.required "slot" SlotName.codec RollDie.slot
@@ -35,4 +37,4 @@ codec = Fields.object $ do
   roller <- Fields.defaulted "roller" RollDie.defaultRoller PlayerScope.codec RollDie.roller
   highest <- Fields.defaulted "highest" Nothing (Common.maybe SlotName.codec) RollDie.highest
   store <- Fields.defaulted "store" Nothing (Common.maybe SlotName.codec) RollDie.store
-  pure RollDie.MkRollDie {RollDie.sides = sides, RollDie.count = count, RollDie.modifier = modifier, RollDie.reading = reading, RollDie.slot = slot, RollDie.other = other, RollDie.roller = roller, RollDie.highest = highest, RollDie.store = store}
+  pure RollDie.MkRollDie {RollDie.sides = sides, RollDie.count = count, RollDie.ignore = ignore, RollDie.modifier = modifier, RollDie.reading = reading, RollDie.slot = slot, RollDie.other = other, RollDie.roller = roller, RollDie.highest = highest, RollDie.store = store}

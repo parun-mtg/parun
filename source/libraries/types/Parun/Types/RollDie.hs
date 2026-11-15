@@ -48,13 +48,12 @@ import qualified Parun.Types.SlotName as SlotName
 -- rather than left to the card to re-derive, FlipCoin's `misses` and for its
 -- reason. Nothing for every roll that reads one result.
 --
--- CR 706.6's ignored roll is not a field here YET: the count of ignored rolls
--- rides Parun.Types.Throw, where a replacement over the roll can change it,
--- and the only printings of the word in data\/cards\/ are such replacements
--- (Parun.Types.DieRollRewrite, Pixie Guide). An instruction that prints the
--- ignore itself -- Berserker's Frenzy, "roll two d20 and ignore the lower roll"
--- -- would seed this record's count instead of leaving it at zero. The field
--- appears when that card does.
+-- `ignore` is CR 706.6's count of the lowest rolls the instruction ITSELF
+-- throws away -- Berserker's Frenzy's "roll two d20 and ignore the lower roll"
+-- is a count of two and an ignore of one. It seeds Parun.Types.Throw's
+-- `ignored`, which a replacement over the roll may then raise (Pixie Guide), so
+-- the ignored roll never reaches CR 706.2b's modifiers or the log a "whenever
+-- you roll" trigger reads. Zero for every other roll.
 --
 -- `reading` is how `slot` reads the results where the instruction threw more
 -- than one: the roller's choice of one (the Endeavor cycle), their total
@@ -90,6 +89,7 @@ import qualified Parun.Types.SlotName as SlotName
 data RollDie = MkRollDie
   { sides :: Natural.Natural,
     count :: Quantity.Quantity,
+    ignore :: Natural.Natural,
     modifier :: Maybe Quantity.Quantity,
     reading :: DiceReading.DiceReading,
     slot :: SlotName.SlotName,

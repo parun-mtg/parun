@@ -1,0 +1,253 @@
+{
+  "faces": [
+    {
+      "castingRestrictions": [
+        {
+          "type": "OnlyIf",
+          "value": {
+            "type": "Any",
+            "value": [
+              {
+                "type": "During",
+                "value": {
+                  "scope": {
+                    "type": "PlayersTurn",
+                    "value": {
+                      "type": "Relative",
+                      "value": "AnyPlayer"
+                    }
+                  },
+                  "window": {
+                    "type": "BeginningPhase"
+                  }
+                }
+              },
+              {
+                "type": "During",
+                "value": {
+                  "scope": {
+                    "type": "PlayersTurn",
+                    "value": {
+                      "type": "Relative",
+                      "value": "AnyPlayer"
+                    }
+                  },
+                  "window": {
+                    "type": "Step",
+                    "value": {
+                      "type": "PrecombatMain"
+                    }
+                  }
+                }
+              },
+              {
+                "type": "During",
+                "value": {
+                  "scope": {
+                    "type": "PlayersTurn",
+                    "value": {
+                      "type": "Relative",
+                      "value": "AnyPlayer"
+                    }
+                  },
+                  "window": {
+                    "type": "Step",
+                    "value": {
+                      "type": "Combat",
+                      "value": "BeginningOfCombat"
+                    }
+                  }
+                }
+              },
+              {
+                "type": "During",
+                "value": {
+                  "scope": {
+                    "type": "PlayersTurn",
+                    "value": {
+                      "type": "Relative",
+                      "value": "AnyPlayer"
+                    }
+                  },
+                  "window": {
+                    "type": "Step",
+                    "value": {
+                      "type": "Combat",
+                      "value": "DeclareAttackers"
+                    }
+                  }
+                }
+              }
+            ]
+          }
+        }
+      ],
+      "manaCost": [
+        {
+          "type": "Generic",
+          "value": 2
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "Red"
+          }
+        }
+      ],
+      "name": "Berserker's Frenzy",
+      "oracleText": "Cast this spell only before combat or during combat before blockers are declared.\nRoll two d20 and ignore the lower roll.\n1—14 | Choose any number of creatures. They block this turn if able.\n15—20 | You choose which creatures block this turn and how those creatures block.",
+      "spell": {
+        "modes": [
+          {
+            "clauses": [
+              {
+                "effects": [
+                  {
+                    "type": "RollDie",
+                    "value": {
+                      "count": {
+                        "type": "Literal",
+                        "value": 2
+                      },
+                      "ignore": 1,
+                      "sides": 20,
+                      "slot": "result"
+                    }
+                  }
+                ]
+              },
+              {
+                "condition": {
+                  "type": "All",
+                  "value": [
+                    {
+                      "type": "Compares",
+                      "value": {
+                        "comparison": "AtLeast",
+                        "measured": {
+                          "type": "InSlot",
+                          "value": "result"
+                        },
+                        "threshold": {
+                          "type": "Literal",
+                          "value": 1
+                        }
+                      }
+                    },
+                    {
+                      "type": "Compares",
+                      "value": {
+                        "comparison": "AtMost",
+                        "measured": {
+                          "type": "InSlot",
+                          "value": "result"
+                        },
+                        "threshold": {
+                          "type": "Literal",
+                          "value": 14
+                        }
+                      }
+                    }
+                  ]
+                },
+                "effects": [
+                  {
+                    "type": "ChoosePermanents",
+                    "value": {
+                      "permanents": {
+                        "count": {
+                          "type": "UpTo"
+                        },
+                        "filter": {
+                          "type": "HasCardType",
+                          "value": "Creature"
+                        }
+                      },
+                      "slot": "chosen"
+                    }
+                  },
+                  {
+                    "type": "RequireBlock",
+                    "value": {
+                      "blocker": {
+                        "type": "Named",
+                        "value": {
+                          "type": "InSlot",
+                          "value": "chosen"
+                        }
+                      },
+                      "duration": {
+                        "type": "UntilEndOfTurn"
+                      }
+                    }
+                  }
+                ]
+              },
+              {
+                "condition": {
+                  "type": "All",
+                  "value": [
+                    {
+                      "type": "Compares",
+                      "value": {
+                        "comparison": "AtLeast",
+                        "measured": {
+                          "type": "InSlot",
+                          "value": "result"
+                        },
+                        "threshold": {
+                          "type": "Literal",
+                          "value": 15
+                        }
+                      }
+                    },
+                    {
+                      "type": "Compares",
+                      "value": {
+                        "comparison": "AtMost",
+                        "measured": {
+                          "type": "InSlot",
+                          "value": "result"
+                        },
+                        "threshold": {
+                          "type": "Literal",
+                          "value": 20
+                        }
+                      }
+                    }
+                  ]
+                },
+                "effects": [
+                  {
+                    "type": "AffectPlayers",
+                    "value": {
+                      "duration": {
+                        "type": "UntilEndOfTurn"
+                      },
+                      "effect": {
+                        "type": "YouChoose",
+                        "value": "Blockers"
+                      },
+                      "players": {
+                        "type": "Scoped",
+                        "value": {
+                          "type": "AnyPlayer"
+                        }
+                      }
+                    }
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "typeLine": {
+        "types": [
+          "Instant"
+        ]
+      }
+    }
+  ]
+}

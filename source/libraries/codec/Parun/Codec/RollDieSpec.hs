@@ -22,6 +22,7 @@ spec s = Spec.describe s "Parun.Codec.RollDie" $ do
       RollDie.MkRollDie
         { RollDie.sides = 20,
           RollDie.count = Quantity.Literal 1,
+          RollDie.ignore = 0,
           RollDie.modifier = Nothing,
           RollDie.reading = DiceReading.ChooseOne,
           RollDie.slot = SlotName.MkSlotName (Text.pack "result"),
@@ -40,6 +41,7 @@ spec s = Spec.describe s "Parun.Codec.RollDie" $ do
       RollDie.MkRollDie
         { RollDie.sides = 20,
           RollDie.count = Quantity.Literal 1,
+          RollDie.ignore = 0,
           RollDie.modifier = Just (Quantity.Literal 3),
           RollDie.reading = DiceReading.ChooseOne,
           RollDie.slot = SlotName.MkSlotName (Text.pack "result"),
@@ -59,6 +61,7 @@ spec s = Spec.describe s "Parun.Codec.RollDie" $ do
       RollDie.MkRollDie
         { RollDie.sides = 6,
           RollDie.count = Quantity.Literal 2,
+          RollDie.ignore = 0,
           RollDie.modifier = Nothing,
           RollDie.reading = DiceReading.ChooseOne,
           RollDie.slot = SlotName.MkSlotName (Text.pack "chosen"),
@@ -77,6 +80,7 @@ spec s = Spec.describe s "Parun.Codec.RollDie" $ do
       RollDie.MkRollDie
         { RollDie.sides = 6,
           RollDie.count = Quantity.InSlot (SlotName.MkSlotName (Text.pack "X")),
+          RollDie.ignore = 0,
           RollDie.modifier = Nothing,
           RollDie.reading = DiceReading.Total,
           RollDie.slot = SlotName.MkSlotName (Text.pack "total"),
@@ -95,6 +99,7 @@ spec s = Spec.describe s "Parun.Codec.RollDie" $ do
       RollDie.MkRollDie
         { RollDie.sides = 20,
           RollDie.count = Quantity.Literal 1,
+          RollDie.ignore = 0,
           RollDie.modifier = Nothing,
           RollDie.reading = DiceReading.ChooseOne,
           RollDie.slot = SlotName.MkSlotName (Text.pack "result"),
@@ -113,6 +118,7 @@ spec s = Spec.describe s "Parun.Codec.RollDie" $ do
       RollDie.MkRollDie
         { RollDie.sides = 6,
           RollDie.count = Quantity.Literal 5,
+          RollDie.ignore = 0,
           RollDie.modifier = Nothing,
           RollDie.reading = DiceReading.ChooseOne,
           RollDie.slot = SlotName.MkSlotName (Text.pack "result"),
@@ -123,3 +129,22 @@ spec s = Spec.describe s "Parun.Codec.RollDie" $ do
         }
       " {\"count\":{\"type\":\"Literal\",\"value\":5},\"sides\":6,\"slot\":\"result\",\"store\":\"self\"} "
   Spec.it s "has a schema" $ Common.assertHasSchema s RollDie.codec
+  -- CR 706.6's ignore, Berserker's Frenzy's wire form: an always-defaulted
+  -- field would round-trip vacuously.
+  Spec.it s "two dice ignoring the lower" $
+    Common.assertCodec
+      s
+      RollDie.codec
+      RollDie.MkRollDie
+        { RollDie.sides = 20,
+          RollDie.count = Quantity.Literal 2,
+          RollDie.ignore = 1,
+          RollDie.modifier = Nothing,
+          RollDie.reading = DiceReading.ChooseOne,
+          RollDie.slot = SlotName.MkSlotName (Text.pack "result"),
+          RollDie.other = Nothing,
+          RollDie.roller = PlayerScope.Related PlayerRelation.You,
+          RollDie.highest = Nothing,
+          RollDie.store = Nothing
+        }
+      " {\"count\":{\"type\":\"Literal\",\"value\":2},\"ignore\":1,\"sides\":20,\"slot\":\"result\"} "
