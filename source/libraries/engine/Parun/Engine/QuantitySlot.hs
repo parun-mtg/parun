@@ -174,6 +174,9 @@ overPlayerRefSlots f ref = case ref of
   PlayerRef.AttackedByBound slot -> fmap PlayerRef.AttackedByBound (f slot)
   -- The arm above's namespace, one record over.
   PlayerRef.ChosenPlayerOfBound slot choice -> fmap (`PlayerRef.ChosenPlayerOfBound` choice) (f slot)
+  -- The granting resolution's slots, which are the namespace of the effect
+  -- holding the grant.
+  PlayerRef.AtGrant inner -> fmap PlayerRef.AtGrant (overPlayerRefSlots f inner)
   PlayerRef.Attacking attacking -> fmap (\slot -> PlayerRef.Attacking attacking {AttackingPlayers.attacked = slot}) (f (AttackingPlayers.attacked attacking))
   -- The ones that name no slot at all: the table, CR 109.5's relation, a baked
   -- seat or object, and the candidate whichever fold is running supplies.

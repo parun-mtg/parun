@@ -1507,6 +1507,8 @@ playerRefIsSlotless ref = case ref of
   PlayerRef.AttackedByBound _ -> False
   -- Specific's answer: the baked half names its object outright.
   PlayerRef.HolderOfObject _ _ -> True
+  -- The reference it wraps' answer, whose slots it reads as the grant applies.
+  PlayerRef.AtGrant inner -> playerRefIsSlotless inner
   -- The arm above's answer: the object is named by a slot.
   PlayerRef.ChosenPlayerOfBound _ _ -> False
   -- InSlot's answer again: the player attacked is named by a slot.
@@ -1585,6 +1587,7 @@ forCandidate pid =
         PlayerRef.PlayerHostOfBound _ -> ref
         PlayerRef.AttackedByBound _ -> ref
         PlayerRef.HolderOfObject _ _ -> ref
+        PlayerRef.AtGrant _ -> ref
         PlayerRef.ChosenPlayerOfBound _ _ -> ref
         PlayerRef.Attacking _ -> ref
         PlayerRef.Superlative _ -> ref
@@ -1640,6 +1643,8 @@ bakePlayerRef players objects ref = case ref of
   -- read.
   PlayerRef.AttackedByBound _ -> ref
   PlayerRef.HolderOfObject _ _ -> ref
+  -- LEFT STANDING: baked as its grant applies (Resolve.Common.bakeAtGrant).
+  PlayerRef.AtGrant _ -> ref
   -- LEFT STANDING: not implemented, a stored condition reading the player an
   -- object chose, which goes unanswered and ends (#4833).
   PlayerRef.ChosenPlayerOfBound _ _ -> ref

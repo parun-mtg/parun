@@ -51,6 +51,9 @@ codec =
       -- The arm above, baked: decodable for Specific's reason, and swept out of
       -- card data beside it.
       Arm.payload "HolderOfObject" holderOfObject (uncurry PlayerRef.HolderOfObject) (\x -> case x of PlayerRef.HolderOfObject h y -> Just (h, y); _ -> Nothing),
+      -- A grant's own reference, which a card writes: Takklemaggot's "that
+      -- player".
+      Arm.payload "AtGrant" codec PlayerRef.AtGrant (\x -> case x of PlayerRef.AtGrant y -> Just y; _ -> Nothing),
       Arm.payload "PlayerHostOfBound" SlotName.codec PlayerRef.PlayerHostOfBound (\x -> case x of PlayerRef.PlayerHostOfBound y -> Just y; _ -> Nothing),
       Arm.payload "AttackedByBound" SlotName.codec PlayerRef.AttackedByBound (\x -> case x of PlayerRef.AttackedByBound y -> Just y; _ -> Nothing),
       Arm.payload "ChosenPlayerOfBound" (Common.tuple SlotName.codec PlayerChoice.codec) (uncurry PlayerRef.ChosenPlayerOfBound) (\x -> case x of PlayerRef.ChosenPlayerOfBound y z -> Just (y, z); _ -> Nothing),
@@ -78,6 +81,7 @@ tagOf x = case x of
   PlayerRef.PlayerHostOfBound {} -> "PlayerHostOfBound"
   PlayerRef.AttackedByBound {} -> "AttackedByBound"
   PlayerRef.HolderOfObject {} -> "HolderOfObject"
+  PlayerRef.AtGrant {} -> "AtGrant"
   PlayerRef.ChosenPlayerOfBound {} -> "ChosenPlayerOfBound"
   PlayerRef.Attacking {} -> "Attacking"
   PlayerRef.Superlative {} -> "Superlative"

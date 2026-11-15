@@ -8946,6 +8946,11 @@ changeZoneWithCause settle discarded asOf batch oid requestedDest requestedPosit
           -- effect names the host itself (EntryRiders.attachedTo) and a token with
           -- none is refused rather than minted.
           --
+          -- CR 611.2e's `defining` effects apply as it enters, so whether it
+          -- enters an Aura at all is theirs to say: an Aura card returned "as a
+          -- non-Aura enchantment" (Takklemaggot) is none, and seatEnteringAura
+          -- asks after placement instead, of whatever the effects made it.
+          --
           -- CR 303.4g's STACK branch never reaches this gate: CR 303.4a makes a
           -- cast Aura spell target, so Parun.Engine.Stack's Aura branch always
           -- hands this funnel a seed. A permanent spell that becomes an Aura only
@@ -8953,7 +8958,7 @@ changeZoneWithCause settle discarded asOf batch oid requestedDest requestedPosit
           -- all; seatEnteringAura asks it after the entry loop has made the copy
           -- choice, which CR 614.12a puts first.
           settledSeed <-
-            if dest == Zone.Battlefield && entryFacing == Facing.FaceUp && Maybe.isNothing seed && Set.member Subtype.Aura (Projection.subtypesOf oid gs)
+            if dest == Zone.Battlefield && entryFacing == Facing.FaceUp && Maybe.isNothing seed && Seq.null defining && Set.member Subtype.Aura (Projection.subtypesOf oid gs)
               then do
                 -- CR 303.4f's "that player" is CR 110.2a's entry controller, which
                 -- is `under` -- falling back to the owner when the effect named

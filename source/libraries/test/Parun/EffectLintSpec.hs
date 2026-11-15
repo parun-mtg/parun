@@ -2259,6 +2259,8 @@ effectLintSpec s registry corpus = Spec.describe s "Lint" $ do
           -- One seat -- the arm above's answer, baked; unreachable from card
           -- data, Specific's answer.
           PlayerRef.HolderOfObject _ _ -> True
+          -- One seat or none: baked to Specific, or naming nobody unbaked.
+          PlayerRef.AtGrant _ -> True
           -- One seat -- the arm above's answer, one record over.
           PlayerRef.ChosenPlayerOfBound _ _ -> True
           -- A SET -- Relative Opponent's answer, and for its reason: CR 508.6 is
@@ -3090,7 +3092,7 @@ effectLintSpec s registry corpus = Spec.describe s "Lint" $ do
           Just (EntryHost.Specified _) -> True
           _ -> False
         chosenAmong riders = case EntryRiders.attachedTo riders of
-          Just (EntryHost.Chosen _ _) -> True
+          Just (EntryHost.Chosen {}) -> True
           _ -> False
         offends effect = case effect of
           Effect.MoveToZone (MoveToZone.MkMoveToZone _ zone riders _ _ _ _) -> (specified riders || chosenAmong riders) && zone /= Zone.Battlefield
