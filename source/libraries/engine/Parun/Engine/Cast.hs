@@ -1936,7 +1936,7 @@ controlsLegendaryCreatureOrPlaneswalker pid gs =
 -- CR 305.9's "it can't be cast as a spell" rides here too, since it is the one
 -- prohibition every face states by its type line: without it only CR 118.6's
 -- absent mana cost stops a land cast, and a CR 118.9 waiver prices that at zero.
--- Parun.ExileSpec's "CR 305.9 a hidden Forest is played as the turn's land and
+-- The exile scenario "CR 305.9 a hidden Forest is played as the turn's land and
 -- never cast for free" proves it.
 printedRestrictionsOk :: PlayerId -> ObjectId -> CardName.CardName -> GameState -> Bool
 printedRestrictionsOk pid oid name gs = case proposedFace oid name gs of

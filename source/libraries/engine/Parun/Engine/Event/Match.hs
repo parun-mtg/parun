@@ -774,7 +774,9 @@ leavesZone before board gs bearer you admitsTurn t event = case event of
 -- permanent's departure puts into the zone and a CardArrived event names each
 -- card after it, so such a death fires a per-card trigger twice. A CardArrived
 -- is never CR 608.2n's move, nor a move from anywhere but the battlefield.
--- Parun.MutateSpec's "from either arrangement" case proves it over both orders.
+-- The mutate scenario "CR 731.3/603.6c a merged permanent's component fires its
+-- own put-into-a-graveyard trigger from either arrangement" proves it over both
+-- orders.
 --
 -- The subject, by ActingPermanent:
 --

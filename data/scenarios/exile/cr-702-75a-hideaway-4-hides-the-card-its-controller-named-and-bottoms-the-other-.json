@@ -1,0 +1,55 @@
+{
+  "description": "CR 702.75a hideaway 4 hides the card its controller named and bottoms the other three, and only she may name it afterwards",
+  "note": "Windbrisk Heights' hideaway names the looker by a keyword ability nobody cast: alice hides the Goblin Piker she chose out of the four she looked at, the other three go under the fifth card the look never reached in the order the random-order prompt was answered, and only alice, who controls the land that exiled it, is offered the card by name; bob is offered its pile (CR 406.4). A face-up Riftsweeper in exile gives each Synthetic Blind Reclamation a second candidate, so its target prompt is asked rather than bound.",
+  "board": {
+    "seats": [
+      {
+        "name": "alice",
+        "battlefield": [
+          { "card": "Island", "label": "i1" },
+          { "card": "Island", "label": "i2" }
+        ],
+        "hand": [
+          { "card": "Windbrisk Heights", "label": "heights" },
+          { "card": "Synthetic Blind Reclamation", "label": "a-spell" }
+        ],
+        "library": [
+          { "card": "Lightning Bolt", "label": "bolt" },
+          { "card": "Goblin Piker", "label": "piker" },
+          { "card": "Ogre Sentry", "label": "sentry" },
+          { "card": "Cancel", "label": "cancel" },
+          { "card": "Think Twice", "label": "think" }
+        ]
+      },
+      {
+        "name": "bob",
+        "battlefield": [
+          { "card": "Island", "label": "b1" },
+          { "card": "Island", "label": "b2" }
+        ],
+        "hand": [{ "card": "Synthetic Blind Reclamation", "label": "b-spell" }],
+        "exile": [{ "card": "Riftsweeper", "label": "rift" }]
+      }
+    ],
+    "active": "alice",
+    "step": "PrecombatMain"
+  },
+  "timeline": [
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": { "PlayLand": "$heights" } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass" },
+    { "turn": 1, "step": "PrecombatMain", "player": "bob", "do": "Pass" },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": { "Answer": { "prompt": "ChooseCardFromAmong", "with": "$piker" } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": { "Answer": { "prompt": "Shuffle", "with": ["$cancel", "$bolt", "$sentry"] } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "View": { "of": "Zone", "player": "alice", "zone": "Exile", "is": ["Goblin Piker"] } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "View": { "of": "Zone", "player": "alice", "zone": "Library", "is": ["$think", "Ogre Sentry", "Lightning Bolt", "Cancel"] } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": { "Cast": { "object": "$a-spell", "targets": ["Goblin Piker"], "mana": ["$i1", "$i2"] } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "View": { "of": "Prompt", "is": {"kind":"ChooseTargets","offer":{"source":"Synthetic Blind Reclamation#2","slots":[["target",[1,[["Object","$rift"],["Object","Goblin Piker"]]]]]}} } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass" },
+    { "turn": 1, "step": "PrecombatMain", "player": "bob", "do": { "Cast": { "object": "$b-spell", "targets": ["$rift"], "mana": ["$b1", "$b2"] } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "bob", "check": { "View": { "of": "Prompt", "is": {"kind":"ChooseTargets","offer":{"source":"Synthetic Blind Reclamation#2","slots":[["target",[1,[["Object","$rift"],["Pile",{"pile":{"type":"OfFaceDown","value":16},"ordinal":1}]]]]]}} } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass" },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": { "Answer": { "prompt": "Shuffle", "with": ["Riftsweeper"] } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": { "Answer": { "prompt": "Shuffle", "with": ["$think", "Ogre Sentry", "Lightning Bolt", "Cancel", "Goblin Piker"] } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "View": { "of": "Zone", "player": "alice", "zone": "Exile", "is": [] } } }
+  ]
+}

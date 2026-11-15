@@ -1,0 +1,578 @@
+{
+  "description": "CR 406.3 the look bob had while he controlled the land survives losing it, and a land that exiled nothing gives him none",
+  "note": "CR 406.3's sticky half: once a player may look at a card exiled face down, they may keep looking until it leaves exile, even if the instruction that allowed it no longer applies. bob takes each land with a Confiscate and holds it through his own priority, then alice's Aura Graft moves the Confiscate onto her Island and the land comes home. Having held the Windbrisk Heights the Vesuva copied, which exiled nothing, bob's Synthetic Blind Reclamation is offered the hidden card's pile (CR 406.4); having held the Vesuva whose hideaway exiled it, he is offered the card by name. Both legs end with alice controlling every land, so no live read of hideaway's control can tell them apart; the copied land is taken first, since the look the copy gives would otherwise already be recorded. Face-up cards in exile give each Reclamation a second candidate, so its target prompt is asked rather than bound.",
+  "board": {
+    "seats": [
+      {
+        "name": "alice",
+        "battlefield": [
+          {
+            "card": "Windbrisk Heights",
+            "label": "copied",
+            "ready": true
+          },
+          {
+            "card": "Island",
+            "label": "i1"
+          },
+          {
+            "card": "Island",
+            "label": "i2"
+          },
+          {
+            "card": "Island",
+            "label": "i3"
+          },
+          {
+            "card": "Island",
+            "label": "i4"
+          },
+          {
+            "card": "Island",
+            "label": "perch"
+          }
+        ],
+        "hand": [
+          {
+            "card": "Vesuva",
+            "label": "vesuva"
+          },
+          {
+            "card": "Aura Graft",
+            "label": "graft-1"
+          },
+          {
+            "card": "Aura Graft",
+            "label": "graft-2"
+          }
+        ],
+        "library": [
+          {
+            "card": "Lightning Bolt",
+            "label": "bolt"
+          },
+          {
+            "card": "Goblin Piker",
+            "label": "piker"
+          },
+          {
+            "card": "Ogre Sentry",
+            "label": "sentry"
+          },
+          {
+            "card": "Cancel",
+            "label": "cancel"
+          },
+          {
+            "card": "Think Twice",
+            "label": "think"
+          }
+        ]
+      },
+      {
+        "name": "bob",
+        "battlefield": [
+          {
+            "card": "Island",
+            "label": "b1"
+          },
+          {
+            "card": "Island",
+            "label": "b2"
+          },
+          {
+            "card": "Island",
+            "label": "b3"
+          },
+          {
+            "card": "Island",
+            "label": "b4"
+          },
+          {
+            "card": "Island",
+            "label": "b5"
+          },
+          {
+            "card": "Island",
+            "label": "b6"
+          },
+          {
+            "card": "Island",
+            "label": "b7"
+          },
+          {
+            "card": "Island",
+            "label": "b8"
+          },
+          {
+            "card": "Island",
+            "label": "b9"
+          },
+          {
+            "card": "Island",
+            "label": "b10"
+          },
+          {
+            "card": "Island",
+            "label": "b11"
+          },
+          {
+            "card": "Island",
+            "label": "b12"
+          },
+          {
+            "card": "Island",
+            "label": "b13"
+          },
+          {
+            "card": "Island",
+            "label": "b14"
+          },
+          {
+            "card": "Island",
+            "label": "b15"
+          },
+          {
+            "card": "Island",
+            "label": "b16"
+          }
+        ],
+        "hand": [
+          {
+            "card": "Synthetic Blind Reclamation",
+            "label": "b-copied"
+          },
+          {
+            "card": "Synthetic Blind Reclamation",
+            "label": "b-copy"
+          },
+          {
+            "card": "Confiscate",
+            "label": "take-copied"
+          },
+          {
+            "card": "Confiscate",
+            "label": "take-copy"
+          }
+        ],
+        "exile": [
+          {
+            "card": "Riftsweeper",
+            "label": "rift"
+          },
+          {
+            "card": "Grizzly Bears",
+            "label": "bears"
+          }
+        ],
+        "library": [
+          {
+            "card": "Island"
+          }
+        ]
+      }
+    ],
+    "active": "alice",
+    "step": "PrecombatMain"
+  },
+  "timeline": [
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "do": {
+        "PlayLand": "$vesuva"
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "do": {
+        "Answer": {
+          "prompt": "ChooseCopyTarget",
+          "with": "$copied"
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "do": "Pass"
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "do": {
+        "Answer": {
+          "prompt": "ChooseCardFromAmong",
+          "with": "$piker"
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "do": {
+        "Answer": {
+          "prompt": "Shuffle",
+          "with": [
+            "$cancel",
+            "$bolt",
+            "$sentry"
+          ]
+        }
+      }
+    },
+    {
+      "turn": 2,
+      "step": "PrecombatMain",
+      "player": "bob",
+      "do": {
+        "Cast": {
+          "object": "$take-copied",
+          "targets": [
+            "$copied"
+          ],
+          "mana": [
+            "$b1",
+            "$b2",
+            "$b3",
+            "$b4",
+            "$b5",
+            "$b6",
+            null
+          ]
+        }
+      }
+    },
+    {
+      "turn": 2,
+      "step": "PrecombatMain",
+      "player": "bob",
+      "do": "Pass"
+    },
+    {
+      "turn": 2,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "do": "Pass"
+    },
+    {
+      "turn": 2,
+      "step": "PrecombatMain",
+      "player": "bob",
+      "do": "Pass"
+    },
+    {
+      "turn": 2,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "do": {
+        "Cast": {
+          "object": "$graft-1",
+          "mana": [
+            "$i1",
+            "$i2",
+            null
+          ]
+        }
+      }
+    },
+    {
+      "turn": 2,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "do": "Pass"
+    },
+    {
+      "turn": 2,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "do": {
+        "Answer": {
+          "prompt": "ChooseAttachment",
+          "with": "$perch"
+        }
+      }
+    },
+    {
+      "turn": 2,
+      "step": "PrecombatMain",
+      "player": "bob",
+      "do": "Pass"
+    },
+    {
+      "turn": 2,
+      "step": "PrecombatMain",
+      "player": "bob",
+      "check": {
+        "View": {
+          "of": "Controller",
+          "object": "$copied",
+          "is": "alice"
+        }
+      }
+    },
+    {
+      "turn": 2,
+      "step": "PrecombatMain",
+      "player": "bob",
+      "do": {
+        "Cast": {
+          "object": "$b-copied",
+          "targets": [
+            "$rift"
+          ],
+          "mana": [
+            "$b7",
+            "$b8",
+            null
+          ]
+        }
+      }
+    },
+    {
+      "turn": 2,
+      "step": "PrecombatMain",
+      "player": "bob",
+      "check": {
+        "View": {
+          "of": "Prompt",
+          "is": {
+            "kind": "ChooseTargets",
+            "offer": {
+              "source": "Synthetic Blind Reclamation#2",
+              "slots": [
+                [
+                  "target",
+                  [
+                    1,
+                    [
+                      [
+                        "Object",
+                        "$rift"
+                      ],
+                      [
+                        "Object",
+                        "$bears"
+                      ],
+                      [
+                        "Pile",
+                        {
+                          "pile": {
+                            "type": "OfFaceDown",
+                            "value": 40
+                          },
+                          "ordinal": 1
+                        }
+                      ]
+                    ]
+                  ]
+                ]
+              ]
+            }
+          }
+        }
+      }
+    },
+    {
+      "turn": 2,
+      "step": "PrecombatMain",
+      "player": "bob",
+      "do": "Pass"
+    },
+    {
+      "turn": 2,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "do": "Pass"
+    },
+    {
+      "turn": 2,
+      "step": "PrecombatMain",
+      "player": "bob",
+      "do": {
+        "Answer": {
+          "prompt": "Shuffle",
+          "with": [
+            "Riftsweeper"
+          ]
+        }
+      }
+    },
+    {
+      "turn": 2,
+      "step": "PrecombatMain",
+      "player": "bob",
+      "do": {
+        "Cast": {
+          "object": "$take-copy",
+          "targets": [
+            "Vesuva"
+          ],
+          "mana": [
+            "$b9",
+            "$b10",
+            "$b11",
+            "$b12",
+            "$b13",
+            "$b14",
+            null
+          ]
+        }
+      }
+    },
+    {
+      "turn": 2,
+      "step": "PrecombatMain",
+      "player": "bob",
+      "do": "Pass"
+    },
+    {
+      "turn": 2,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "do": "Pass"
+    },
+    {
+      "turn": 2,
+      "step": "PrecombatMain",
+      "player": "bob",
+      "do": "Pass"
+    },
+    {
+      "turn": 2,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "do": {
+        "Cast": {
+          "object": "$graft-2",
+          "targets": [
+            "Confiscate#2"
+          ],
+          "mana": [
+            "$i3",
+            "$i4",
+            null
+          ]
+        }
+      }
+    },
+    {
+      "turn": 2,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "do": "Pass"
+    },
+    {
+      "turn": 2,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "do": {
+        "Answer": {
+          "prompt": "ChooseAttachment",
+          "with": "$perch"
+        }
+      }
+    },
+    {
+      "turn": 2,
+      "step": "PrecombatMain",
+      "player": "bob",
+      "do": "Pass"
+    },
+    {
+      "turn": 2,
+      "step": "PrecombatMain",
+      "player": "bob",
+      "check": {
+        "View": {
+          "of": "Controller",
+          "object": "Vesuva",
+          "is": "alice"
+        }
+      }
+    },
+    {
+      "turn": 2,
+      "step": "PrecombatMain",
+      "player": "bob",
+      "do": {
+        "Cast": {
+          "object": "$b-copy",
+          "targets": [
+            "$bears"
+          ],
+          "mana": [
+            "$b15",
+            "$b16"
+          ]
+        }
+      }
+    },
+    {
+      "turn": 2,
+      "step": "PrecombatMain",
+      "player": "bob",
+      "check": {
+        "View": {
+          "of": "Prompt",
+          "is": {
+            "kind": "ChooseTargets",
+            "offer": {
+              "source": "Synthetic Blind Reclamation#2",
+              "slots": [
+                [
+                  "target",
+                  [
+                    1,
+                    [
+                      [
+                        "Object",
+                        "$bears"
+                      ],
+                      [
+                        "Object",
+                        "Goblin Piker"
+                      ]
+                    ]
+                  ]
+                ]
+              ]
+            }
+          }
+        }
+      }
+    },
+    {
+      "turn": 2,
+      "step": "PrecombatMain",
+      "player": "bob",
+      "do": "Pass"
+    },
+    {
+      "turn": 2,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "do": "Pass"
+    },
+    {
+      "turn": 2,
+      "step": "PrecombatMain",
+      "player": "bob",
+      "do": {
+        "Answer": {
+          "prompt": "Shuffle",
+          "with": [
+            "Riftsweeper",
+            "Grizzly Bears"
+          ]
+        }
+      }
+    }
+  ]
+}

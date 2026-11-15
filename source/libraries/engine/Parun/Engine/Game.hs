@@ -2420,7 +2420,7 @@ flipPermanent oid gs
 -- Tok-Tok, and a Clone of that is Akki" proves it. A merged permanent answers off
 -- the flipped reading its merge stamped, which folds every component's (CR
 -- 731.2h), so a flip card merged UNDER another component counts too -- proved by
--- Parun.MutateSpec's "CR 731.2h a merged permanent flips for a flip component that
+-- the mutate scenario "CR 731.2h a merged permanent flips for a flip component that
 -- is not its topmost one".
 flipsOver :: ObjectId -> GameState -> Bool
 flipsOver oid gs = Set.member oid (GameState.battlefield gs) && hasFlipHalf oid gs
@@ -2744,7 +2744,7 @@ facesTurned before after =
 --
 -- The face is `frontFaceQuestion`'s, so a merged permanent answers for its
 -- topmost double-faced component and not its topmost one (CR 731.2i). Proved by
--- Parun.MutateSpec's
+-- the mutate scenario
 -- "CR 731.2i/702.145c a Cubwarden over a nightbound Werewolf turns with the day
 -- and back with the night".
 --

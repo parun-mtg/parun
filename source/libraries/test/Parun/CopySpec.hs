@@ -2488,7 +2488,7 @@ graveyardTokenCopySpec s registry = Spec.describe s "Parun.Engine.Copy" $ do
     plains <- S.printingOf s registry "Plains"
     let (thallidId, withThallid) = S.addPermanent thallid S.alice (S.landsFor plains S.alice 4 (Setup.emptyGame S.bothPlayers))
         (giant, withGiant) = S.addPermanent hillGiant S.alice withThallid
-        -- PLACED back face up, as Parun.MutateSpec places its Werewolf.
+        -- PLACED back face up, which no move reaches more directly.
         transformed = withGiant {GameState.objects = Map.adjust (\o -> o {Object.face = Just (CardName.MkCardName (Text.pack "Blightsower Thallid"))}) thallidId (GameState.objects withGiant)}
         (staged, weaveId) = S.handOne mirrorweave transformed
         woven = snd (Engine.runGamePure (targetingCard giant) staged (S.cast S.alice weaveId >> Stack.resolveTop >> Engine.settleForPriority))

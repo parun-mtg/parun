@@ -1,0 +1,167 @@
+{
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "battlefield": [
+          {
+            "card": "Island",
+            "label": "i1",
+            "ready": true
+          },
+          {
+            "card": "Island",
+            "label": "i2",
+            "ready": true
+          },
+          {
+            "card": "Thalia, Guardian of Thraben",
+            "label": "thalia"
+          }
+        ],
+        "hand": [
+          {
+            "card": "Augury Raven",
+            "label": "raven"
+          },
+          {
+            "card": "Think Twice",
+            "label": "think"
+          }
+        ],
+        "library": [
+          {
+            "card": "Cancel"
+          },
+          {
+            "card": "Cancel"
+          }
+        ],
+        "name": "alice"
+      },
+      {
+        "library": [
+          {
+            "card": "Cancel"
+          },
+          {
+            "card": "Cancel"
+          }
+        ],
+        "name": "bob"
+      }
+    ],
+    "step": "PrecombatMain"
+  },
+  "description": "CR 406.3a the foretold card is turned face up as it is cast, so the noncreature tax passes it by",
+  "note": "CR 406.3a turns the card face up before the cast is announced, so Thalia's noncreature tax reads a creature card: the foretold Raven is offered at its untaxed {1}{U} off the two Islands, while the Think Twice in hand, a sorcery Thalia does tax to {2}{U}, is not. Two Islands only, foretold off on turn 1 and untapped by turn 3, so the tax is live and is what refuses the Think Twice.",
+  "timeline": [
+    {
+      "do": {
+        "Take": {
+          "action": "Foretell $raven",
+          "mana": [
+            "$i1",
+            "$i2"
+          ]
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "View": {
+          "is": [
+            "Pass",
+            "Cast Augury Raven",
+            "ActivateManaAbility $i1",
+            "ActivateManaAbility $i2"
+          ],
+          "of": "Offered",
+          "player": "alice"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 3
+    },
+    {
+      "do": {
+        "Cast": {
+          "mana": [
+            "$i1",
+            "$i2"
+          ],
+          "object": "Augury Raven"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 3
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 3
+    },
+    {
+      "do": {
+        "Attack": []
+      },
+      "player": "alice",
+      "step": "DeclareAttackers",
+      "turn": 3
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Augury Raven",
+          "count": 1,
+          "player": "alice",
+          "zone": "Battlefield"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 3
+    },
+    {
+      "check": {
+        "View": {
+          "is": [],
+          "of": "Zone",
+          "player": "alice",
+          "zone": "Exile"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 3
+    },
+    {
+      "check": {
+        "Tapped": {
+          "object": "$i1",
+          "tapped": true
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 3
+    },
+    {
+      "check": {
+        "Tapped": {
+          "object": "$i2",
+          "tapped": true
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 3
+    }
+  ]
+}

@@ -131,8 +131,9 @@ data Object = MkObject
     -- CR 406.3a's "no characteristics" is the other half, and it is
     -- Parun.Engine.Projection.View.baseCharacteristics that answers it: the seed
     -- CR 613.1 starts from holds nothing for a card flagged here, so a filter
-    -- reading one sees no name, no type and no keyword. Parun.ExileSpec's Runic
-    -- Repetition group is what proves it.
+    -- reading one sees no name, no type and no keyword. The exile scenario "CR
+    -- 406.3a the flashback card exiled face down has no flashback to be targeted
+    -- by" is what proves it.
     --
     -- Per-incarnation: reset by newIncarnation (CR 400.7), the effect's own rider
     -- through Event.changeZoneEntering being CR 406.3's "exiled face down".

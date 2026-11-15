@@ -1,0 +1,444 @@
+{
+  "description": "CR 406.4 two castings of one spell make two piles, and the draw comes out of the pile that was named",
+  "note": "CR 406.4 keeps face-down exiled cards in separate piles by when and how they were exiled: two castings of Ignorant Bliss are two instructions at two times, so the three cards they hide are offered as two piles, and a chooser who may not look names WHICH pile to draw out of. Naming the first casting's pile hands over its one card, the Goblin Piker, which a merged pile of three would not; the other pile's two cards stay hidden. Ignorant Bliss hides the Goblin Piker alone; the Think Twice and Divination it was cast over then draw the second Ignorant Bliss and the Lightning Bolt and Riftsweeper it hides; Think Twice's flashback draws the Synthetic Blind Reclamation. bob's face-up Grizzly Bears gives the slot another candidate, so its target prompt is asked rather than bound.",
+  "board": {
+    "seats": [
+      {
+        "name": "alice",
+        "battlefield": [
+          {
+            "card": "Mountain",
+            "label": "m1"
+          },
+          {
+            "card": "Mountain",
+            "label": "m2"
+          },
+          {
+            "card": "Mountain",
+            "label": "m3"
+          },
+          {
+            "card": "Mountain",
+            "label": "m4"
+          },
+          {
+            "card": "Island",
+            "label": "i1"
+          },
+          {
+            "card": "Island",
+            "label": "i2"
+          },
+          {
+            "card": "Island",
+            "label": "i3"
+          },
+          {
+            "card": "Island",
+            "label": "i4"
+          },
+          {
+            "card": "Island",
+            "label": "i5"
+          },
+          {
+            "card": "Island",
+            "label": "i6"
+          },
+          {
+            "card": "Island",
+            "label": "i7"
+          },
+          {
+            "card": "Island",
+            "label": "i8"
+          },
+          {
+            "card": "Island",
+            "label": "i9"
+          },
+          {
+            "card": "Island",
+            "label": "i10"
+          }
+        ],
+        "hand": [
+          {
+            "card": "Divination",
+            "label": "divination"
+          },
+          {
+            "card": "Think Twice",
+            "label": "think"
+          },
+          {
+            "card": "Ignorant Bliss",
+            "label": "first"
+          },
+          {
+            "card": "Goblin Piker",
+            "label": "piker"
+          }
+        ],
+        "library": [
+          {
+            "card": "Ignorant Bliss",
+            "label": "second"
+          },
+          {
+            "card": "Lightning Bolt",
+            "label": "bolt"
+          },
+          {
+            "card": "Riftsweeper",
+            "label": "rift"
+          },
+          {
+            "card": "Synthetic Blind Reclamation"
+          },
+          {
+            "card": "Ogre Sentry"
+          }
+        ]
+      },
+      {
+        "name": "bob",
+        "exile": [
+          {
+            "card": "Grizzly Bears",
+            "label": "bears"
+          }
+        ]
+      }
+    ],
+    "active": "alice",
+    "step": "PrecombatMain"
+  },
+  "timeline": [
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "do": {
+        "Cast": {
+          "object": "$divination",
+          "mana": [
+            "$i1",
+            "$i2",
+            "$i3",
+            null
+          ]
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "do": {
+        "Cast": {
+          "object": "$think",
+          "mana": [
+            "$i4",
+            "$i5",
+            null
+          ]
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "do": {
+        "Cast": {
+          "object": "$first",
+          "mana": [
+            "$m1",
+            "$m2",
+            null
+          ]
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "do": "Pass"
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "do": "Pass"
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "do": "Pass"
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "do": {
+        "Cast": {
+          "object": "Ignorant Bliss#2",
+          "mana": [
+            "$m3",
+            "$m4",
+            null
+          ]
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "do": "Pass"
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "do": {
+        "Cast": {
+          "object": "Think Twice",
+          "mana": [
+            "$i6",
+            "$i7",
+            "$i8",
+            null
+          ]
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "do": "Pass"
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "check": {
+        "View": {
+          "of": "Zone",
+          "player": "alice",
+          "zone": "Exile",
+          "is": [
+            "Goblin Piker",
+            "Lightning Bolt",
+            "Riftsweeper",
+            "Think Twice"
+          ]
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "check": {
+        "View": {
+          "of": "Seers",
+          "object": "Goblin Piker",
+          "is": []
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "check": {
+        "View": {
+          "of": "Zone",
+          "player": "alice",
+          "zone": "Hand",
+          "is": [
+            "Synthetic Blind Reclamation"
+          ]
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "do": {
+        "Cast": {
+          "object": "Synthetic Blind Reclamation",
+          "mana": [
+            "$i9",
+            "$i10"
+          ]
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "check": {
+        "View": {
+          "of": "Prompt",
+          "is": {
+            "kind": "ChooseTargets",
+            "offer": {
+              "source": "Synthetic Blind Reclamation",
+              "slots": [
+                [
+                  "target",
+                  [
+                    1,
+                    [
+                      [
+                        "Object",
+                        "$bears"
+                      ],
+                      [
+                        "Object",
+                        "Think Twice"
+                      ],
+                      [
+                        "Pile",
+                        {
+                          "pile": {
+                            "type": "OfFaceDown",
+                            "value": 28
+                          },
+                          "ordinal": 1
+                        }
+                      ],
+                      [
+                        "Pile",
+                        {
+                          "pile": {
+                            "type": "OfFaceDown",
+                            "value": 39
+                          },
+                          "ordinal": 1
+                        }
+                      ]
+                    ]
+                  ]
+                ]
+              ]
+            }
+          }
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "do": {
+        "Answer": {
+          "prompt": "ChooseTargets",
+          "with": [
+            [
+              "target",
+              [
+                [
+                  "Pile",
+                  {
+                    "pile": {
+                      "type": "OfFaceDown",
+                      "value": 28
+                    },
+                    "ordinal": 1
+                  }
+                ]
+              ]
+            ]
+          ]
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "do": "Pass"
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "do": {
+        "Answer": {
+          "prompt": "Shuffle",
+          "with": [
+            "Ogre Sentry",
+            "Goblin Piker"
+          ]
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "check": {
+        "View": {
+          "of": "Zone",
+          "player": "alice",
+          "zone": "Library",
+          "is": [
+            "Ogre Sentry",
+            "Goblin Piker"
+          ]
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "check": {
+        "View": {
+          "of": "Zone",
+          "player": "alice",
+          "zone": "Exile",
+          "is": [
+            "Lightning Bolt",
+            "Riftsweeper",
+            "Think Twice"
+          ]
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "check": {
+        "View": {
+          "of": "Seers",
+          "object": "Lightning Bolt",
+          "is": []
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "check": {
+        "View": {
+          "of": "Seers",
+          "object": "Riftsweeper",
+          "is": []
+        }
+      }
+    }
+  ]
+}
