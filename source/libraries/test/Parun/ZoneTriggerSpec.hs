@@ -2575,21 +2575,23 @@ everyTriggerCondition =
     -- A Player subject, for the Self pair's reason just above and one axis more: it
     -- narrows on a relation AND on a kind. Amulet of Safekeeping's pair first,
     -- then Dormant Gomazoa's.
-    TriggerCondition.BecomesTargeted (BecomesTargetedTrigger.MkBecomesTargetedTrigger (TargetedSubject.Player PlayerRelation.You) PlayerRelation.Opponent (BecomesTargetedTrigger.kinds BecomesTargetedTrigger.defaultValue) Batching.EachOccurrence),
-    TriggerCondition.BecomesTargeted (BecomesTargetedTrigger.MkBecomesTargetedTrigger (TargetedSubject.Player PlayerRelation.You) PlayerRelation.AnyPlayer (Set.singleton StackObjectKind.Spell) Batching.EachOccurrence),
+    TriggerCondition.BecomesTargeted (BecomesTargetedTrigger.MkBecomesTargetedTrigger (TargetedSubject.Player PlayerRelation.You) PlayerRelation.Opponent (BecomesTargetedTrigger.kinds BecomesTargetedTrigger.defaultValue) Batching.EachOccurrence (BecomesTargetedTrigger.zones BecomesTargetedTrigger.defaultValue)),
+    TriggerCondition.BecomesTargeted (BecomesTargetedTrigger.MkBecomesTargetedTrigger (TargetedSubject.Player PlayerRelation.You) PlayerRelation.AnyPlayer (Set.singleton StackObjectKind.Spell) Batching.EachOccurrence (BecomesTargetedTrigger.zones BecomesTargetedTrigger.defaultValue)),
     -- Professor Hojo's own: a Filter beside the pair above's relation and kind.
-    TriggerCondition.BecomesTargeted (BecomesTargetedTrigger.MkBecomesTargetedTrigger (TargetedSubject.Permanent (ActingPermanent.Matching Filter.Type.IsSource)) PlayerRelation.AnyPlayer (Set.singleton StackObjectKind.ActivatedAbility) Batching.OneOrMore),
+    TriggerCondition.BecomesTargeted (BecomesTargetedTrigger.MkBecomesTargetedTrigger (TargetedSubject.Permanent (ActingPermanent.Matching Filter.Type.IsSource)) PlayerRelation.AnyPlayer (Set.singleton StackObjectKind.ActivatedAbility) Batching.OneOrMore (BecomesTargetedTrigger.zones BecomesTargetedTrigger.defaultValue)),
     -- Venerated Rotpriest's per-creature twin, and Diffusion Sliver's: both
     -- relations, for the Self BecomesTargeted pair's reason.
-    TriggerCondition.BecomesTargeted (BecomesTargetedTrigger.MkBecomesTargetedTrigger (TargetedSubject.Permanent (ActingPermanent.Matching Filter.Type.IsSource)) PlayerRelation.AnyPlayer (Set.singleton StackObjectKind.Spell) Batching.EachOccurrence),
-    TriggerCondition.BecomesTargeted (BecomesTargetedTrigger.MkBecomesTargetedTrigger (TargetedSubject.Permanent (ActingPermanent.Matching Filter.Type.IsSource)) PlayerRelation.Opponent (BecomesTargetedTrigger.kinds BecomesTargetedTrigger.defaultValue) Batching.EachOccurrence),
+    TriggerCondition.BecomesTargeted (BecomesTargetedTrigger.MkBecomesTargetedTrigger (TargetedSubject.Permanent (ActingPermanent.Matching Filter.Type.IsSource)) PlayerRelation.AnyPlayer (Set.singleton StackObjectKind.Spell) Batching.EachOccurrence (BecomesTargetedTrigger.zones BecomesTargetedTrigger.defaultValue)),
+    TriggerCondition.BecomesTargeted (BecomesTargetedTrigger.MkBecomesTargetedTrigger (TargetedSubject.Permanent (ActingPermanent.Matching Filter.Type.IsSource)) PlayerRelation.Opponent (BecomesTargetedTrigger.kinds BecomesTargetedTrigger.defaultValue) Batching.EachOccurrence (BecomesTargetedTrigger.zones BecomesTargetedTrigger.defaultValue)),
+    -- Surrak, Elusive Hunter's: the stack beside the battlefield.
+    TriggerCondition.BecomesTargeted (BecomesTargetedTrigger.MkBecomesTargetedTrigger (TargetedSubject.Permanent (ActingPermanent.Matching Filter.Type.IsSource)) PlayerRelation.Opponent (BecomesTargetedTrigger.kinds BecomesTargetedTrigger.defaultValue) Batching.EachOccurrence (Set.fromList [Zone.Battlefield, Zone.Stack])),
     -- Leyline of Combustion's and Unsettled Mariner's, "you" included: their
     -- representative events name alice as well, the path only these admit.
-    TriggerCondition.BecomesTargeted (BecomesTargetedTrigger.MkBecomesTargetedTrigger (TargetedSubject.PlayerOrPermanent PlayerRelation.You (ActingPermanent.Matching Filter.Type.IsSource)) PlayerRelation.Opponent (BecomesTargetedTrigger.kinds BecomesTargetedTrigger.defaultValue) Batching.OneOrMore),
-    TriggerCondition.BecomesTargeted (BecomesTargetedTrigger.MkBecomesTargetedTrigger (TargetedSubject.PlayerOrPermanent PlayerRelation.You (ActingPermanent.Matching Filter.Type.IsSource)) PlayerRelation.Opponent (BecomesTargetedTrigger.kinds BecomesTargetedTrigger.defaultValue) Batching.EachOccurrence),
+    TriggerCondition.BecomesTargeted (BecomesTargetedTrigger.MkBecomesTargetedTrigger (TargetedSubject.PlayerOrPermanent PlayerRelation.You (ActingPermanent.Matching Filter.Type.IsSource)) PlayerRelation.Opponent (BecomesTargetedTrigger.kinds BecomesTargetedTrigger.defaultValue) Batching.OneOrMore (BecomesTargetedTrigger.zones BecomesTargetedTrigger.defaultValue)),
+    TriggerCondition.BecomesTargeted (BecomesTargetedTrigger.MkBecomesTargetedTrigger (TargetedSubject.PlayerOrPermanent PlayerRelation.You (ActingPermanent.Matching Filter.Type.IsSource)) PlayerRelation.Opponent (BecomesTargetedTrigger.kinds BecomesTargetedTrigger.defaultValue) Batching.EachOccurrence (BecomesTargetedTrigger.zones BecomesTargetedTrigger.defaultValue)),
     -- Loki, God of Mischief's any player beside any permanent, an ability of
     -- either kind.
-    TriggerCondition.BecomesTargeted (BecomesTargetedTrigger.MkBecomesTargetedTrigger (TargetedSubject.PlayerOrPermanent PlayerRelation.AnyPlayer (ActingPermanent.Matching Filter.Type.IsSource)) PlayerRelation.AnyPlayer (Set.fromList [StackObjectKind.ActivatedAbility, StackObjectKind.TriggeredAbility]) Batching.EachOccurrence),
+    TriggerCondition.BecomesTargeted (BecomesTargetedTrigger.MkBecomesTargetedTrigger (TargetedSubject.PlayerOrPermanent PlayerRelation.AnyPlayer (ActingPermanent.Matching Filter.Type.IsSource)) PlayerRelation.AnyPlayer (Set.fromList [StackObjectKind.ActivatedAbility, StackObjectKind.TriggeredAbility]) Batching.EachOccurrence (BecomesTargetedTrigger.zones BecomesTargetedTrigger.defaultValue)),
     TriggerCondition.SelfHalfUnlocked (CardName.MkCardName (Text.pack "Steaming Sauna")),
     TriggerCondition.RoomFullyUnlocked PlayerRelation.You,
     -- Balemurk Leech's own pair, and not an arbitrary one: a Matching Enters binds

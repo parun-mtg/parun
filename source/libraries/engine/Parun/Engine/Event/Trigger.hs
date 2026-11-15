@@ -3135,7 +3135,8 @@ zonesTriggeredFrom cond =
         TriggerCondition.AbilityActivated _ -> battlefield
         -- CR 113.6's default, unlike a Self SpellCast just above: rule 702.21a prints ward on a
         -- permanent, so the bearer watches the announcement from the battlefield. A
-        -- spell on the stack can become a target too, and no card in the pool is one.
+        -- bearer on the stack could too, and no card in the pool watches from
+        -- there; Surrak, Elusive Hunter watches a spell from the battlefield.
         --
         -- And for a Matching subject: Professor Hojo is a creature, watching the
         -- creatures beside it from the battlefield. And for a You subject: Dormant

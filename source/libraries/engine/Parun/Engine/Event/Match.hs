@@ -1761,7 +1761,12 @@ armMatches bindings board atEvent beforeEvent groupEvents gs bearer you cond eve
   -- CR 109.2 scopes the Filter to the BATTLEFIELD, which is the arm's other
   -- rules content and belongs here rather than in each card's Filter: a target
   -- is any Recipient, so a creature SPELL on the stack its controller named
-  -- would otherwise satisfy "creatures you control".
+  -- would otherwise satisfy "creatures you control". The condition's `zones`
+  -- widens that: Surrak, Elusive Hunter's "or a creature spell you control"
+  -- (CR 112.1, 115.1) reads a target on the stack too, as it stood once the
+  -- group was recorded, the spell's controller its caster's (CR 112.2).
+  -- data/scenarios's surrak-elusive-hunter-draws-when-an-opponent-targets-a-creature-spell-you-control
+  -- proves it.
   --
   -- Membership and view both off `board`, CR 603.10's sample of the
   -- announcement (Event.becameTarget takes it before any cost is paid), not the
@@ -1791,8 +1796,8 @@ armMatches bindings board atEvent beforeEvent groupEvents gs bearer you cond eve
             Nothing -> False
             Just ActingPermanent.Self -> oid == bearer
             Just (ActingPermanent.Matching f) -> case Map.lookup oid board of
-              Nothing -> False
-              Just candidate -> Filter.matches bearerContext (Projection.sampledView board oid candidate gs) f
+              Just candidate -> Set.member Zone.Battlefield (BecomesTargetedTrigger.zones c) && Filter.matches bearerContext (Projection.sampledView board oid candidate gs) f
+              Nothing -> Set.member Zone.Stack (BecomesTargetedTrigger.zones c) && Game.zoneOf oid atEvent == Just Zone.Stack && Filter.matches bearerContext (Projection.viewOfObject oid atEvent) f
     _ -> False
   -- CR 709.5h: the bearer is the permanent that was given the designation, and
   -- the door named is the one it was given for. A bare comparison of an id and a
