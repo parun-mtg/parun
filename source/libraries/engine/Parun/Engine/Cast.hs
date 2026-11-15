@@ -3341,15 +3341,18 @@ wayCosts ways = case Maybe.fromMaybe [] ways of
 -- additional mana `Cost.plus` appended), the alternative replaces that printed
 -- share and every additional cost stays: Eaten Alive's {3}{B}, a waterbend
 -- {X}, a flash permission's {2}. Nothing, the way being unusable for it, where
--- the candidate is already an alternative cost, since only one applies to a
--- spell, or where `allowed` refuses the spell that cost makes (CR 601.2e): its
--- X fixed at 0 by CR 107.3b is below Mind Grind's floor or leaves Mind Spring
--- even under Void Winnower. Zaffai and the Tempests' scenarios prove it.
+-- the candidate is already an alternative cost, a keyword's or an effect's
+-- grant (Warped Space's {0}), since only one applies to a spell (CR 118.9a),
+-- or where `allowed` refuses the spell that cost makes (CR 601.2e): its X
+-- fixed at 0 by CR 107.3b is below Mind Grind's floor or leaves Mind Spring
+-- even under Void Winnower. Zaffai and the Tempests' scenarios prove the
+-- latter, "warped-space-adds-no-second-alternative-cost-to-a-valgavoth-cast"
+-- the grant.
 underAlternative :: (CandidateCost.CandidateCost -> Bool) -> Face.Face card -> Maybe PermissionCost.PermissionCost -> CandidateCost.CandidateCost -> Maybe (Cost Keyword)
 underAlternative allowed face alternative candidate = case alternative of
   Nothing -> Just cost
   Just paid -> do
-    Monad.guard (Maybe.isNothing (CandidateCost.keyword candidate))
+    Monad.guard (Maybe.isNothing (CandidateCost.keyword candidate) && Maybe.isNothing (CandidateCost.granted candidate))
     added <- case (Face.manaCost face, Cost.Type.mana cost) of
       (Nothing, Nothing) -> Just []
       (Just (ManaCost.MkManaCost printed), Just (ManaCost.MkManaCost symbols)) -> List.stripPrefix printed symbols
