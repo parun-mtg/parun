@@ -15,6 +15,7 @@
         }
       ],
       "name": "Most Valuable Slayer",
+      "oracleText": "Whenever you attack, target attacking creature gets +1/+0 and gains first strike until end of turn.",
       "power": {
         "type": "Literal",
         "value": 2

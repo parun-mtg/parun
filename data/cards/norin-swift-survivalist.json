@@ -24,6 +24,7 @@
         }
       ],
       "name": "Norin, Swift Survivalist",
+      "oracleText": "Norin can't block.\nWhenever a creature you control becomes blocked, you may exile it. You may play that card from exile this turn.",
       "power": {
         "type": "Literal",
         "value": 2

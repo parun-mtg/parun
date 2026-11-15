@@ -121,6 +121,7 @@
         }
       ],
       "name": "Marina Vendrell",
+      "oracleText": "When Marina Vendrell enters, reveal the top seven cards of your library. Put all enchantment cards from among them into your hand and the rest on the bottom of your library in a random order.\n{T}: Lock or unlock a door of target Room you control. Activate only as a sorcery.",
       "power": {
         "type": "Literal",
         "value": 3

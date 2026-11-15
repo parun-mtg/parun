@@ -15,6 +15,7 @@
         }
       ],
       "name": "Orphans of the Wheat",
+      "oracleText": "Whenever this creature attacks, tap any number of untapped creatures you control. This creature gets +1/+1 until end of turn for each creature tapped this way.",
       "power": {
         "type": "Literal",
         "value": 2
