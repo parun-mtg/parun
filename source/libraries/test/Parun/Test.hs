@@ -794,6 +794,7 @@ import qualified Parun.Codec.SpendTriggerSpec
 import qualified Parun.Codec.SpentOnSpec
 import qualified Parun.Codec.SpliceSpec
 import qualified Parun.Codec.StackObjectKindSpec
+import qualified Parun.Codec.StackPlacementSpec
 import qualified Parun.Codec.StackedAbilitySpec
 import qualified Parun.Codec.StateBasedActionSpec
 import qualified Parun.Codec.StatedFlipSpec
@@ -1893,6 +1894,7 @@ spec s reference corpus = do
   Parun.Codec.SpendTriggerSpec.spec s
   Parun.Codec.SpliceSpec.spec s
   Parun.Codec.StackObjectKindSpec.spec s
+  Parun.Codec.StackPlacementSpec.spec s
   Parun.Codec.StackedAbilitySpec.spec s
   Parun.Codec.StateBasedActionSpec.spec s
   Parun.Codec.StatedFlipSpec.spec s

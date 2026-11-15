@@ -119,16 +119,16 @@ out: grep for them.
 ### `BoardEffectSpec`
 
 - ~~CR 109.2 Corrosive Gale deals X to each creature with flying, and none to the one without~~
-- CR 109.2b/701.6a counters every other spell on the stack and draws for what it countered | `board:stack`
+- ~~CR 109.2b/701.6a counters every other spell on the stack and draws for what it countered | `board:stack`~~
 - ~~CR 109.5 no other player's library is touched | `check:helper-sortedNames`~~
 - ~~CR 111.3 the Horror is an X/X where X is the number of creatures DESTROYED | `check:helper-horrorPrintedPower`~~
-- CR 113.6g removing the uncounterable spell leaves the count unchanged | `board:stack`
-- CR 113.9 with only abilities countered, the Faeries still come and Baral stays silent | `board:stack`
+- ~~CR 113.6g removing the uncounterable spell leaves the count unchanged | `board:stack`~~
+- ~~CR 113.9 with only abilities countered, the Faeries still come and Baral stays silent | `board:stack`~~
 - ~~CR 206.3c destroys the listed nontoken permanents, through a shield, and nothing else | `card:reknit`~~
 - ~~CR 302.6 the newly gained enchantments are re-Sicked and the one alice already controlled is not | `check:other-Object.sickness`~~
 - ~~CR 401.2 an empty library has no top card, so the exile does nothing | `check:helper-namesIn`~~
 - ~~CR 401.2 the top three cards of your library are exiled, and the rest stay put | `check:helper-permissionsIn`~~
-- CR 405.1/701.6a counters an opponent's abilities beside their spells, and makes a Faerie for each | `board:stack`
+- ~~CR 405.1/701.6a counters an opponent's abilities beside their spells, and makes a Faerie for each | `board:stack`~~
 - ~~CR 514.2 the window closes at the end of the turn it named | `check:other-Object.playPermissions`~~
 - ~~CR 603.7 the delayed ability sacrifices what came back at the caster's next end step | `board:delayed-trigger` `board:entered-with` `board:graveyard`~~
 - CR 608.2d the delayed +1 untaps the two lands named, of five offered | `check:prompt-payload`

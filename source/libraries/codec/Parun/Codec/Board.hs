@@ -2,9 +2,11 @@
 
 module Parun.Codec.Board where
 
+import qualified Data.Sequence as Seq
 import qualified Parun.Codec.Label as Label
 import qualified Parun.Codec.Phase as Phase
 import qualified Parun.Codec.Seat as Seat
+import qualified Parun.Codec.StackPlacement as StackPlacement
 import qualified Parun.JsonCodec.Arm as Arm
 import qualified Parun.JsonCodec.Codec as Codec
 import qualified Parun.JsonCodec.Common as Common
@@ -16,6 +18,7 @@ codec :: Codec.Codec Board.Board
 codec = Fields.object $ do
   seats <- Fields.required "seats" (Common.nonEmpty Seat.codec) Board.seats
   active <- Fields.required "active" Label.codec Board.active
+  stack <- Fields.defaulted "stack" Seq.empty (Common.seq StackPlacement.codec) Board.stack
   turn <- Fields.defaulted "turn" 1 Common.natural Board.turn
   phase <- Fields.required "step" Phase.flat Board.phase
   monarch <- Fields.defaulted "monarch" Nothing (Common.maybe Label.codec) Board.monarch
@@ -31,6 +34,7 @@ codec = Fields.object $ do
     Board.MkBoard
       { Board.seats = seats,
         Board.active = active,
+        Board.stack = stack,
         Board.turn = turn,
         Board.phase = phase,
         Board.monarch = monarch,

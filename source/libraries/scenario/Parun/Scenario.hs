@@ -160,6 +160,7 @@ import qualified Parun.Types.SideDeck as SideDeck
 import qualified Parun.Types.SlotName as SlotName
 import qualified Parun.Types.Snapshots as Snapshots
 import qualified Parun.Types.Source as Source
+import qualified Parun.Types.StackPlacement as StackPlacement
 import qualified Parun.Types.Staged as Staged
 import qualified Parun.Types.Start as Start
 import qualified Parun.Types.SubtypesAre as SubtypesAre
@@ -407,7 +408,8 @@ stage registry board =
           case misseat of
             Just label -> pure (Left (Failure.MkMisseated label))
             Nothing -> do
-              placed <- placeSeats registry (NonEmpty.toList seated) (Staged.MkStaged positioned ids Map.empty)
+              seatsPlaced <- placeSeats registry (NonEmpty.toList seated) (Staged.MkStaged positioned ids Map.empty)
+              placed <- either (pure . Left) (placeStack registry board) seatsPlaced
               withDecks <- either (pure . Left) (recordStartingDecks registry (NonEmpty.toList seated)) placed
               pure (fmap (designateDefenders . settleStartingLife) (withDecks >>= attachAll (placementsOf board)))
 
@@ -484,9 +486,27 @@ quietAnswer p = case p of
   Prompt.Type.ChooseAction {} -> Action.Pass
   _ -> Script.declining p
 
--- | Every placement on the board, in placement order.
+-- | Every placement on the board, in placement order: the seats', then the
+-- stack's from the bottom up.
 placementsOf :: Board.Board -> [Placement.Placement]
-placementsOf board = concatMap (concatMap (\(_, _, placements) -> Foldable.toList placements) . zonesOf) (NonEmpty.toList (Board.seats board))
+placementsOf board =
+  concatMap (concatMap (\(_, _, placements) -> Foldable.toList placements) . zonesOf) (NonEmpty.toList (Board.seats board))
+    <> fmap StackPlacement.placement (stackUpward board)
+
+-- | CR 405.2: the board's spells in the order they go on the stack, the
+-- bottom one first.
+stackUpward :: Board.Board -> [StackPlacement.StackPlacement]
+stackUpward = reverse . Foldable.toList . Board.stack
+
+-- | Each spell on the board's stack, by its owner, the top one placed last.
+placeStack :: (Monad m) => Registry.Registry m -> Board.Board -> Staged.Staged -> m (Either Failure.ScenarioFailure Staged.Staged)
+placeStack registry board seated = Monad.foldM placeOne (Right seated) (stackUpward board)
+  where
+    placeOne next spell = case next of
+      Left failure -> pure (Left failure)
+      Right sofar -> case Map.lookup (StackPlacement.owner spell) (Staged.seats sofar) of
+        Nothing -> pure (Left (Failure.MkUnknownOwner (StackPlacement.owner spell)))
+        Just owner -> placeAll registry Zone.Stack Nothing owner [StackPlacement.placement spell] sofar
 
 -- | A seat's zones in the order they are placed, which is creation order, each
 -- supplementary deck last and in the command zone (CR 718.2 / 904.3).
@@ -2254,6 +2274,7 @@ render failure = case failure of
   Failure.MkInvalidCorpus corpus -> Text.pack (Exception.displayException corpus)
   Failure.MkUnreadableDeck label problem -> Label.unwrap label <> Text.pack "'s deck: " <> problem
   Failure.MkUnknownProtector label -> Label.unwrap label <> Text.pack " protects a placed battle but has no seat"
+  Failure.MkUnknownOwner label -> Label.unwrap label <> Text.pack " owns a spell on the stack but has no seat"
   Failure.MkUnknownFace name face -> CardName.unwrap name <> Text.pack " has no face named " <> CardName.unwrap face
   Failure.MkIllegalAttachment label -> Text.pack "a placement cannot be attached to " <> Label.unwrap label
   Failure.MkIllegalEmperor label -> Label.unwrap label <> Text.pack " is an emperor on no team, or not its team's only one"

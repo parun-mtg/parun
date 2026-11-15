@@ -20,7 +20,11 @@ import qualified Parun.Types.Readiness as Readiness.Type
 import qualified Parun.Types.TapState as TapState.Type
 
 codec :: Codec.Codec Placement.Placement
-codec = Fields.object $ do
+codec = Fields.object fields
+
+-- | A placement's keys, which a stack placement shares beside its owner's.
+fields :: Fields.Fields Placement.Placement Placement.Placement
+fields = do
   card <- Fields.required "card" CardName.codec Placement.card
   label <- Fields.defaulted "label" Nothing (Common.maybe Label.codec) Placement.label
   tapped <- Fields.defaulted "tapped" TapState.Type.Untapped TapState.flag Placement.tapped
