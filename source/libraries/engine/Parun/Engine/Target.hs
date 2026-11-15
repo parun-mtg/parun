@@ -53,6 +53,7 @@ import Parun.Types.Game (Game)
 import Parun.Types.GameState (GameState)
 import qualified Parun.Types.GameState as GameState
 import qualified Parun.Types.GrantedAbility as GrantedAbility
+import qualified Parun.Types.GraveyardPartner as GraveyardPartner
 import qualified Parun.Types.Keyword as Keyword
 import qualified Parun.Types.LastKnown as LastKnown
 import qualified Parun.Types.Modal as Modal
@@ -616,7 +617,10 @@ poolHeldLastKnown pool view =
         Pool.CardsInGraveyard _ -> False
         Pool.CardsInExile -> False
         Pool.CardsInAnte -> False
-        Pool.CreaturesAndCardsInGraveyard _ -> hasType CardType.Creature
+        -- The battlefield half, Pool.Creatures's answer; neither card half is a permanent.
+        Pool.CardsInGraveyardAnd partner _ -> case partner of
+          GraveyardPartner.BattlefieldCreatures -> hasType CardType.Creature
+          GraveyardPartner.ExiledCards -> False
 
 -- CR 702.18a (shroud), CR 702.11b/702.11d (hexproof) and CR 702.16b
 -- (protection): THE targeting-restriction gate, the one every restriction rule
@@ -847,8 +851,8 @@ protectionQuality keyword = case keyword of
 -- shared by every slot of every ability in one enumeration (#1073). One field
 -- per Pool constructor that ignores the Filter.Context, which is every one that
 -- names no graveyard -- see basePoolGiven for why a graveyard arm cannot be here.
--- Pool.CreaturesAndCardsInGraveyard is half of each: its battlefield half is the
--- creature field below, and only its graveyard half is built per slot.
+-- Pool.CardsInGraveyardAnd is half of each: its partner is the creature or exile
+-- field below, and only its graveyard half is built per slot.
 --
 -- LAZY FIELDS, and that is the whole design: a record with no strictness
 -- annotations makes each pool a thunk, so an enumeration whose abilities all
@@ -970,12 +974,16 @@ basePoolGiven pools context bindings pool gs = case pool of
   -- narrowing where the prompt is raised and nowhere else.
   Pool.CardsInExile -> exilePool pools
   Pool.CardsInAnte -> antePool pools
-  -- The union of the two arms above, built HERE rather than hoisted into Pools for
-  -- the graveyard arm's reason: half of it is per-slot. The battlefield half is the
-  -- shared thunk, so a slot naming this pool pays the creature walk once with every
-  -- other slot that names one.
-  Pool.CreaturesAndCardsInGraveyard scope ->
-    Set.union (creaturePool pools) (graveyardRecipients context bindings scope gs)
+  -- The graveyard arm above joined to its partner's, built HERE rather than
+  -- hoisted into Pools for the graveyard arm's reason: half of it is per-slot.
+  -- The partner is the shared thunk, so a slot naming this pool pays the creature
+  -- or exile walk once with every other slot that names one.
+  Pool.CardsInGraveyardAnd partner scope ->
+    Set.union (partnerPool partner) (graveyardRecipients context bindings scope gs)
+  where
+    partnerPool partner = case partner of
+      GraveyardPartner.BattlefieldCreatures -> creaturePool pools
+      GraveyardPartner.ExiledCards -> exilePool pools
 
 -- CR 115.2 (only permanents are legal targets, save for the exceptions the
 -- graveyard, exile, spell and player arms above are) with CR 109.2 (an
@@ -1725,7 +1733,7 @@ scopeSlot pool = case pool of
   Pool.CardsInExile -> Nothing
   Pool.CardsInAnte -> Nothing
   -- Its graveyard half carries the same axis, so the answer is that half's.
-  Pool.CreaturesAndCardsInGraveyard scope -> zoneScopeSlot scope
+  Pool.CardsInGraveyardAnd _ scope -> zoneScopeSlot scope
 
 -- The slot a ZoneScope names, if it names one. Both slot-named arms do, and the
 -- dependency is the same one either way: what this pool offers turns on how
@@ -1849,8 +1857,8 @@ countAt counting x count = case (x, count) of
 -- player, so `k` is 1 and this is a maximum; the general form costs a sort.)
 --
 -- Anything in the legal set that is in NO candidate player's graveyard is added
--- back whole: Pool.CreaturesAndCardsInGraveyard's battlefield half is scoped by
--- nothing, so a coherent answer may take every creature it offers beside the
+-- back whole: Pool.CardsInGraveyardAnd's partner is scoped by nothing, so a
+-- coherent answer may take every creature or exiled card it offers beside the
 -- cards from one graveyard.
 --
 -- The named slot's own capacity is its plain candidate count rather than another
@@ -2792,7 +2800,7 @@ bakePerPlayer name pid slot =
         _ -> scope
       bakePool pool = case pool of
         Pool.CardsInGraveyard scope -> Pool.CardsInGraveyard (bakeScope scope)
-        Pool.CreaturesAndCardsInGraveyard scope -> Pool.CreaturesAndCardsInGraveyard (bakeScope scope)
+        Pool.CardsInGraveyardAnd partner scope -> Pool.CardsInGraveyardAnd partner (bakeScope scope)
         Pool.Creatures -> pool
         Pool.Players -> pool
         Pool.AnyTarget -> pool

@@ -3,6 +3,7 @@ module Parun.Codec.PoolSpec where
 import qualified Parun.Codec.Pool as Pool
 import qualified Parun.JsonCodec.Common as Common
 import qualified Parun.Spec as Spec
+import qualified Parun.Types.GraveyardPartner as GraveyardPartner
 import qualified Parun.Types.PlayerRelation as PlayerRelation
 import qualified Parun.Types.PlayerScope as PlayerScope
 import qualified Parun.Types.Pool as Pool
@@ -102,6 +103,14 @@ spec s = Spec.describe s "Parun.Codec.Pool" $ do
     Common.assertCodec
       s
       Pool.codec
-      (Pool.CreaturesAndCardsInGraveyard (ZoneScope.Scoped (PlayerScope.Related PlayerRelation.AnyPlayer)))
+      (Pool.CardsInGraveyardAnd GraveyardPartner.BattlefieldCreatures (ZoneScope.Scoped (PlayerScope.Related PlayerRelation.AnyPlayer)))
       " {\"type\":\"CreaturesAndCardsInGraveyard\",\"value\":{\"type\":\"Scoped\",\"value\":{\"type\":\"AnyPlayer\"}}} "
+  -- CR 404.1's graveyard and CR 406.1's exile in one slot, told apart from the
+  -- arm above by the tag alone.
+  Spec.it s "CardsInGraveyardAndExile" $
+    Common.assertCodec
+      s
+      Pool.codec
+      (Pool.CardsInGraveyardAnd GraveyardPartner.ExiledCards (ZoneScope.Scoped (PlayerScope.Related PlayerRelation.You)))
+      " {\"type\":\"CardsInGraveyardAndExile\",\"value\":{\"type\":\"Scoped\",\"value\":{\"type\":\"You\"}}} "
   Spec.it s "has a schema" $ Common.assertHasSchema s Pool.codec

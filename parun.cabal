@@ -3227,6 +3227,7 @@ library types
     Parun.Types.GraveyardArrangement
     Parun.Types.GraveyardCostDestination
     Parun.Types.GraveyardOrder
+    Parun.Types.GraveyardPartner
     Parun.Types.Grouping
     Parun.Types.Guess
     Parun.Types.GuessAnswer

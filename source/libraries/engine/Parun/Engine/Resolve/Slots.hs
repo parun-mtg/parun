@@ -3764,8 +3764,8 @@ poolSlot pool = case pool of
     ZoneScope.BoundPlayer _ -> Map.empty
   Pool.CardsInExile -> Map.empty
   Pool.CardsInAnte -> Map.empty
-  -- The graveyard half's scope; the battlefield half names no slot.
-  Pool.CreaturesAndCardsInGraveyard scope -> case scope of
+  -- The graveyard half's scope; the partner names no slot.
+  Pool.CardsInGraveyardAnd _ scope -> case scope of
     ZoneScope.Scoped _ -> Map.empty
     ZoneScope.InSlot slot -> oneSlot slot
     ZoneScope.ControllerOfBound slot -> oneSlot slot

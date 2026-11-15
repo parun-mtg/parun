@@ -1,0 +1,189 @@
+{
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "battlefield": [
+          {
+            "card": "Mountain",
+            "label": "m1"
+          },
+          {
+            "card": "Mountain",
+            "label": "m2"
+          },
+          {
+            "card": "Mountain",
+            "label": "m3"
+          },
+          {
+            "card": "Mountain",
+            "label": "m4"
+          }
+        ],
+        "exile": [
+          {
+            "card": "Think Twice",
+            "label": "think"
+          },
+          {
+            "card": "Lightning Bolt",
+            "label": "exiled-bolt"
+          }
+        ],
+        "graveyard": [
+          {
+            "card": "Shock",
+            "label": "shock"
+          },
+          {
+            "card": "Shock",
+            "label": "shock2"
+          }
+        ],
+        "hand": [
+          {
+            "card": "Sorceress's Schemes",
+            "label": "schemes"
+          }
+        ],
+        "name": "alice"
+      },
+      {
+        "exile": [
+          {
+            "card": "Think Twice",
+            "label": "bob-think"
+          }
+        ],
+        "name": "bob"
+      }
+    ],
+    "step": "PrecombatMain"
+  },
+  "description": "Sorceress's Schemes returns an exiled card with flashback she owns, and refuses an exiled instant without flashback and bob's exiled flashback card",
+  "note": "Each half of the one slot asks its own filter. Alice's exiled Lightning Bolt is an instant, which only the graveyard half accepts, and has no flashback, so it is refused; bob's exiled Think Twice has flashback but alice does not own it, so it is refused; her own exiled Think Twice is returned. Her graveyard's two Shocks keep the slot at more than one candidate whichever half is lost, so the target is always asked.",
+  "timeline": [
+    {
+      "player": "alice",
+      "refuse": {
+        "Cast": {
+          "mana": [
+            "$m1",
+            "$m2",
+            "$m3",
+            "$m4"
+          ],
+          "object": "$schemes",
+          "targets": [
+            "$exiled-bolt"
+          ]
+        }
+      },
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "player": "alice",
+      "refuse": {
+        "Cast": {
+          "mana": [
+            "$m1",
+            "$m2",
+            "$m3",
+            "$m4"
+          ],
+          "object": "$schemes",
+          "targets": [
+            "$bob-think"
+          ]
+        }
+      },
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Cast": {
+          "mana": [
+            "$m1",
+            "$m2",
+            "$m3",
+            "$m4"
+          ],
+          "object": "$schemes",
+          "targets": [
+            "$think"
+          ]
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Think Twice",
+          "count": 1,
+          "player": "alice",
+          "zone": "Hand"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "View": {
+          "is": [
+            "$exiled-bolt"
+          ],
+          "of": "Zone",
+          "player": "alice",
+          "zone": "Exile"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "View": {
+          "is": [
+            "$shock",
+            "$shock2",
+            "Sorceress's Schemes"
+          ],
+          "of": "Zone",
+          "player": "alice",
+          "zone": "Graveyard"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Think Twice",
+          "count": 1,
+          "player": "bob",
+          "zone": "Exile"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    }
+  ]
+}
