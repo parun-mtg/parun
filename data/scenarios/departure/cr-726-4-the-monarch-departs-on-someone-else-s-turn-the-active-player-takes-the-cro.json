@@ -1,0 +1,161 @@
+{
+  "board": {
+    "active": "alice",
+    "monarch": "bob",
+    "seats": [
+      {
+        "battlefield": [
+          {
+            "card": "Custodi Lich",
+            "label": "alice-lich"
+          }
+        ],
+        "name": "alice"
+      },
+      {
+        "name": "bob"
+      },
+      {
+        "battlefield": [
+          {
+            "card": "Custodi Lich",
+            "label": "carol-lich"
+          }
+        ],
+        "name": "carol"
+      }
+    ],
+    "step": "PrecombatMain"
+  },
+  "description": "CR 726.4 the monarch departs on someone else's turn: the active player takes the crown",
+  "note": "Bob is the monarch and concedes on alice's turn. Each survivor holds a Custodi Lich, so a crowning is observable: alice's edict fires exactly once (a second crowning of her would raise a second target prompt), and carol's never does (it would raise an unscheduled one). Carol's Lich is her only creature, so the edict needs no choice.",
+  "timeline": [
+    {
+      "check": {
+        "View": {
+          "is": "alice",
+          "of": "ActivePlayer"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Monarch": {
+          "player": "bob"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Concede",
+      "player": "bob",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "ChooseTargets": {
+          "target": [
+            "$carol"
+          ]
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Monarch": {
+          "player": "alice"
+        }
+      },
+      "player": "carol",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "View": {
+          "is": [
+            "trigger of $alice-lich"
+          ],
+          "of": "Stack"
+        }
+      },
+      "player": "carol",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "carol",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "View": {
+          "is": [],
+          "of": "Stack"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Custodi Lich",
+          "count": 0,
+          "player": "carol",
+          "zone": "Battlefield"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Custodi Lich",
+          "count": 1,
+          "player": "alice",
+          "zone": "Battlefield"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Monarch": {
+          "player": "alice"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    }
+  ]
+}

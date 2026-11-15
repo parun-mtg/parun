@@ -1,0 +1,179 @@
+{
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "battlefield": [
+          {
+            "attached": "towershell",
+            "card": "Control Magic",
+            "label": "magic"
+          }
+        ],
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ],
+        "name": "alice"
+      },
+      {
+        "battlefield": [
+          {
+            "card": "Meandering Towershell",
+            "controller": "alice",
+            "label": "towershell",
+            "ready": true
+          }
+        ],
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ],
+        "name": "bob"
+      }
+    ],
+    "step": "PrecombatMain"
+  },
+  "description": "CR 800.1/104.2a two seats: the same departure ends the game instead of running CR 800.4a",
+  "final": [
+    {
+      "View": {
+        "is": {
+          "won": "bob"
+        },
+        "of": "Result"
+      }
+    },
+    {
+      "Count": {
+        "card": "Meandering Towershell",
+        "count": 1,
+        "player": "alice",
+        "zone": "Battlefield"
+      }
+    },
+    {
+      "Count": {
+        "card": "Meandering Towershell",
+        "count": 0,
+        "player": "bob",
+        "zone": "Exile"
+      }
+    }
+  ],
+  "note": "The two-seat control for the three-seat case where alice's departure exiles the Towershell she controls by CR 110.2a alone. Alice controls bob's Meandering Towershell through Control Magic (the placement's controller and ready stand for settled control) and attacks with it on turn 1, so it is exiled and the Aura goes to the graveyard; on turn 3, her next turn, it returns under her control. She concedes: the game began with two players, so it ends with bob the winner (CR 104.2a) and CR 800.4a's exile never runs.",
+  "timeline": [
+    {
+      "do": {
+        "Attack": [
+          "$towershell"
+        ]
+      },
+      "player": "alice",
+      "step": "DeclareAttackers",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Meandering Towershell",
+          "count": 1,
+          "player": "bob",
+          "zone": "Exile"
+        }
+      },
+      "player": "alice",
+      "step": "PostcombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Control Magic",
+          "count": 1,
+          "player": "alice",
+          "zone": "Graveyard"
+        }
+      },
+      "player": "alice",
+      "step": "PostcombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "View": {
+          "is": [
+            "trigger of $towershell"
+          ],
+          "of": "Stack"
+        }
+      },
+      "player": "alice",
+      "step": "DeclareAttackers",
+      "turn": 3
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "DeclareAttackers",
+      "turn": 3
+    },
+    {
+      "check": {
+        "View": {
+          "is": "alice",
+          "object": "Meandering Towershell",
+          "of": "Controller"
+        }
+      },
+      "player": "alice",
+      "step": "DeclareAttackers",
+      "turn": 3
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Meandering Towershell",
+          "count": 1,
+          "player": "alice",
+          "zone": "Battlefield"
+        }
+      },
+      "player": "alice",
+      "step": "DeclareAttackers",
+      "turn": 3
+    },
+    {
+      "do": "Pass",
+      "player": "bob",
+      "step": "DeclareAttackers",
+      "turn": 3
+    },
+    {
+      "do": "Concede",
+      "player": "alice",
+      "step": "DeclareBlockers",
+      "turn": 3
+    }
+  ]
+}

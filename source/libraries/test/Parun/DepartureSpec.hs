@@ -124,10 +124,10 @@ beastToken = CardName.MkCardName (Text.pack "Beast Token")
 -- bob's Meandering Towershell, stolen by alice's Control Magic, on a board that
 -- has not started its first turn -- so alice's own untap step is what writes CR
 -- 302.6's continuity claim for the creature she has taken (Engine.settleAll),
--- and no fixture hand-stamps it. `base` is the seating: the same line of play
--- runs at three seats and at two.
+-- and no fixture hand-stamps it. `base` is the seating; the two-seat control
+-- is the scenario data/scenarios/departure/cr-800-1-104-2a-*.json.
 --
--- Both libraries are stocked well past the draws the four turns below take, so
+-- Every library is stocked well past the draws the four turns below take, so
 -- CR 104.3c cannot end the game before the departure under test.
 stolenTowershellBoard :: GameState.GameState -> Printing -> Printing -> Printing -> GameState.GameState
 stolenTowershellBoard base towershell controlMagic island =
@@ -225,28 +225,6 @@ spec s registry = Spec.describe s "Parun.Engine.Departure" $ do
     let after = S.runPure S.identityAnswer S.threePlayerGame (Departure.leaveGame Departure.Type.Conceded S.bob)
     Spec.assertEqWith s "bob keeps his seat" (GameState.seating after) [S.alice, S.bob, S.carol]
     Spec.assertEqWith s "but is no longer playing" (Game.stillPlaying after) [S.alice, S.carol]
-
-  -- CR 726.4: "If the monarch leaves the game, the active player becomes the
-  -- monarch at the same time as that player leaves the game."
-  Spec.it s "CR 726.4 the monarch departs on someone else's turn: the active player takes the crown" $ do
-    let board = S.withMonarch S.bob S.threePlayerGame
-        gone = S.departs Departure.Type.Conceded S.bob board
-    Spec.assertEqWith s "alice is the active player on this board" (TurnRegisters.activePlayer (GameState.turn board)) S.alice
-    Spec.assertEqWith s "so alice is the monarch" (GameState.monarch gone) (Just S.alice)
-    -- CR 603.2: that is a player BECOMING the monarch, so the reassignment
-    -- records the event a "whenever you become the monarch" ability matches --
-    -- naming the NEW monarch, not the departing one. TriggerSpec's Custodi Lich
-    -- case is the gameplay-level proof.
-    Spec.assertEqWith s "and exactly one crowning was recorded, naming her" (crownings gone) [S.alice]
-
-  -- CR 726.4: "If the active player is leaving the game or if there is no
-  -- active player, the next player in turn order who can become the monarch
-  -- becomes the monarch."
-  Spec.it s "CR 726.4 the monarch departs on their own turn: the next seat in turn order takes the crown" $ do
-    let board = S.withMonarch S.alice S.threePlayerGame
-        gone = S.departs Departure.Type.Conceded S.alice board
-    Spec.assertEqWith s "bob, the seat after alice's" (GameState.monarch gone) (Just S.bob)
-    Spec.assertEqWith s "and the crowning names him, so the walk's branch records too" (crownings gone) [S.bob]
 
   Spec.it s "CR 726.4 the walk past the active player's seat skips a seat that has already departed" $ do
     -- alice is the active player and has already left, so there is no active
@@ -441,25 +419,6 @@ spec s registry = Spec.describe s "Parun.Engine.Departure" $ do
     Spec.assertBool s (Projection.hasKeyword Keyword.Flying birdId gone) "with its flying back"
     Spec.assertEqWith s "nothing was handed over" (StoredEffects.continuousEffects (GameState.stored gone)) []
     Spec.assertEqWith s "and bob's Humility really left the game" (Game.lookupObject humilityId gone) Nothing
-
-  -- The control for the case above, and what makes its third seat load-bearing:
-  -- the same two permanents and the same concede on a board that BEGAN with two
-  -- players. CR 800.1 makes that game not a multiplayer game, so
-  -- continuesAfterDeparture is False and CR 800.4a runs none of its clauses --
-  -- the Song is still on the battlefield, and the Bonesplitter is a 1/1 because
-  -- the LIVE static ability is still animating it rather than because anything
-  -- was handed over. A two-seat version of the case above would pass with the
-  -- handover deleted.
-  Spec.it s "CR 800.1 two seats: the same concede leaves the Song on the battlefield, so nothing is handed over" $ do
-    song <- S.printingOf s registry "Titania's Song"
-    bonesplitter <- S.printingOf s registry "Bonesplitter"
-    let (axeId, g1) = S.addPermanent bonesplitter S.alice (Setup.emptyGame S.bothPlayers)
-        (songId, before) = S.addPermanent song S.bob g1
-        gone = S.departs Departure.Type.Conceded S.bob before
-    Spec.assertEqWith s "the seam says CR 800.4a does not run" (Departure.continuesAfterDeparture before) False
-    Spec.assertBool s (S.onBattlefield songId gone) "so bob's Song is still on the battlefield"
-    Spec.assertBool s (Projection.isCreatureOf axeId gone) "and the live static ability is what animates the Bonesplitter"
-    Spec.assertEqWith s "nothing became a stored effect" (StoredEffects.continuousEffects (GameState.stored gone)) []
 
   Spec.it s "CR 510.4 a departing player's id is dropped from the struckFirst snapshot" $ do
     piker <- S.printingOf s registry "Goblin Piker"
@@ -770,26 +729,6 @@ spec s registry = Spec.describe s "Parun.Engine.Departure" $ do
     Spec.assertEqWith s "the stack no longer holds it" (fmap (\(oid, _) -> List.elem oid (TurnRegisters.stack (GameState.turn after))) (spellOf after)) (Just False)
     Spec.assertEqWith s "and exile really holds it" (fmap (\(oid, _) -> List.elem oid (Game.zoneMembers Zone.Exile S.bob after)) (spellOf after)) (Just True)
     Spec.assertEqWith s "CR 104.2a: bob and carol are still playing" (GameState.result after) Nothing
-
-  -- The two-seat control for the case above, and the reason it needs three seats
-  -- at all: CR 800.1 makes a game that begins with two players not a multiplayer
-  -- game, and CR 104.2a ends it the moment alice leaves, so
-  -- continuesAfterDeparture skips the whole of CR 800.4a. The SAME fixture and
-  -- the SAME line of play -- alice's next turn is turn 3 rather than turn 4,
-  -- since there is no carol between them -- leaves the Towershell on the
-  -- battlefield.
-  Spec.it s "CR 800.1/104.2a two seats: the same departure ends the game instead of running CR 800.4a" $ do
-    towershell <- S.printingOf s registry "Meandering Towershell"
-    controlMagic <- S.printingOf s registry "Control Magic"
-    island <- S.printingOf s registry "Island"
-    let board = stolenTowershellBoard (Setup.emptyGame S.bothPlayers) towershell controlMagic island
-        returned = runToTurnStep 3 (Phase.Combat CombatStep.DeclareBlockers) board
-        after = S.runPure S.identityAnswer returned (Departure.leaveGame Departure.Type.Conceded S.alice)
-    Spec.assertEqWith s "the same return happened" (fmap (Object.zone . snd) (soleObjectOf towershell returned)) (Just Zone.Battlefield)
-    Spec.assertEqWith s "under alice, the same way" (fmap (\(oid, _) -> Projection.controllerOf oid returned) (soleObjectOf towershell returned)) (Just (Just S.alice))
-    Spec.assertEqWith s "the seam says CR 800.4a does not run" (Departure.continuesAfterDeparture returned) False
-    Spec.assertEqWith s "so bob simply wins (CR 104.2a)" (GameState.result after) (Just (Result.Won S.bob))
-    Spec.assertEqWith s "and the Towershell is not exiled" (fmap (Object.zone . snd) (soleObjectOf towershell after)) (Just Zone.Battlefield)
 
   -- CR 603.6c's SECOND trigger event: "Leaves-the-battlefield abilities trigger
   -- when a permanent moves from the battlefield to another zone, OR WHEN A

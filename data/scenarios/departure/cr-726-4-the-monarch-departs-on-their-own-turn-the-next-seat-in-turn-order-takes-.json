@@ -1,0 +1,149 @@
+{
+  "board": {
+    "active": "alice",
+    "monarch": "alice",
+    "seats": [
+      {
+        "library": [
+          {
+            "card": "Island"
+          }
+        ],
+        "name": "alice"
+      },
+      {
+        "battlefield": [
+          {
+            "card": "Custodi Lich",
+            "label": "bob-lich"
+          }
+        ],
+        "name": "bob"
+      },
+      {
+        "battlefield": [
+          {
+            "card": "Custodi Lich",
+            "label": "carol-lich"
+          }
+        ],
+        "name": "carol"
+      }
+    ],
+    "step": "Upkeep"
+  },
+  "description": "CR 726.4 the monarch departs on their own turn: the next seat in turn order takes the crown",
+  "note": "Alice is the monarch and the active player, and concedes, so CR 726.4's walk crowns bob, the seat after hers. Each survivor holds a Custodi Lich, so the crowning is observable: bob's edict fires exactly once and carol's never does (either mistake raises an unscheduled target prompt). Carol's Lich is her only creature, so the edict needs no choice. The board starts in the upkeep so the first check precedes the concession, and alice's library holds her draw (CR 704.5b).",
+  "timeline": [
+    {
+      "check": {
+        "Monarch": {
+          "player": "alice"
+        }
+      },
+      "player": "alice",
+      "step": "Upkeep",
+      "turn": 1
+    },
+    {
+      "do": "Concede",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "ChooseTargets": {
+          "target": [
+            "$carol"
+          ]
+        }
+      },
+      "player": "bob",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Monarch": {
+          "player": "bob"
+        }
+      },
+      "player": "bob",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "View": {
+          "is": [
+            "trigger of $bob-lich"
+          ],
+          "of": "Stack"
+        }
+      },
+      "player": "bob",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "bob",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "carol",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "View": {
+          "is": [],
+          "of": "Stack"
+        }
+      },
+      "player": "bob",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Custodi Lich",
+          "count": 0,
+          "player": "carol",
+          "zone": "Battlefield"
+        }
+      },
+      "player": "bob",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Custodi Lich",
+          "count": 1,
+          "player": "bob",
+          "zone": "Battlefield"
+        }
+      },
+      "player": "bob",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Monarch": {
+          "player": "bob"
+        }
+      },
+      "player": "bob",
+      "step": "PrecombatMain",
+      "turn": 1
+    }
+  ]
+}

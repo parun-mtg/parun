@@ -12,7 +12,6 @@ module Parun.RingSpec where
 
 import qualified Control.Monad as Monad
 import qualified Data.List as List
-import qualified Data.List.NonEmpty as NonEmpty
 import qualified Data.Map.Strict as Map
 import qualified Data.Set as Set
 import qualified Numeric.Natural as Natural
@@ -34,7 +33,6 @@ import qualified Parun.Types.Player as Player
 import qualified Parun.Types.PlayerActed as PlayerActed
 import qualified Parun.Types.PlayerAction as PlayerAction
 import Parun.Types.PlayerId (PlayerId)
-import qualified Parun.Types.Printing as Printing
 import qualified Parun.Types.Prompt as Prompt
 import qualified Parun.Types.Supertype as Supertype
 import qualified Parun.Types.TurnRegisters as TurnRegisters
@@ -69,35 +67,6 @@ castAndResolve answer pid spellId gs =
   let cast = S.runPure answer gs (S.cast pid spellId)
    in S.runPure answer cast (Stack.resolveTop >> Engine.settleForPriority)
 
--- Answers Prompt.ChooseRingBearer with the LAST candidate offered, delegating
--- everything else to S.identityAnswer (which answers it with the FIRST).
---
--- The discriminator, and the reason it is not just S.identityAnswer: the candidate
--- list Ring.tempt builds is ascending, so an implementation that never prompted --
--- or that ignored the answer -- would designate the first creature. A case
--- asserting the SECOND one passes only for an implementation that asked and
--- honoured the reply.
-lastCandidate :: Prompt.Prompt r -> r
-lastCandidate p = case p of
-  Prompt.ChooseRingBearer _ _ candidates -> NonEmpty.last candidates
-  _ -> S.identityAnswer p
-
--- alice controls two creatures, holds one Birthday Escape, has `lands` untapped
--- lands and one card left in her library to draw.
---
--- TWO creatures, never one: CR 701.54a's choice is only a real prompt with two or
--- more, so a one-creature board would let a never-prompts implementation pass.
-twoCreatureBoard :: Printing.Printing -> Printing.Printing -> Printing.Printing -> Int -> (ObjectId, ObjectId, ObjectId, GameState.GameState)
-twoCreatureBoard island piker escape lands =
-  let (_, g0) = S.addLibraryCard piker S.alice (S.landsInPlay island lands)
-      (a, g1) = S.addPermanent piker S.alice g0
-      (b, g2) = S.addPermanent piker S.alice g1
-      (gs, spellId) = S.handOne escape g2
-      -- Ring.tempt sorts its candidates, so name them in that order rather than in
-      -- the order they were added.
-      (lower, higher) = if a < b then (a, b) else (b, a)
-   in (lower, higher, spellId, gs)
-
 -- CR 205.4: is this object legendary? Read off the PROJECTION, which is where CR
 -- 613.1d's layer 4 writes a granted supertype -- never off the printed type line,
 -- which for the two cases below says nothing about it either way.
@@ -106,26 +75,6 @@ isLegendary oid gs = Set.member Supertype.Legendary (Projection.supertypesOf oid
 
 spec :: (Monad m, Monad n) => Spec.Spec m n -> Registry.Registry m -> n ()
 spec s registry = Spec.describe s "Parun.Engine.Ring" $ do
-  -- The gate. Birthday Escape's other half (draw a card) was already implemented,
-  -- so everything else asserted here is the temptation and nothing but.
-  Spec.it s "CR 701.54 Birthday Escape draws, mints the emblem, and designates the creature its controller chose" $ do
-    island <- S.printingOf s registry "Island"
-    piker <- S.printingOf s registry "Goblin Piker"
-    escape <- S.printingOf s registry "Birthday Escape"
-    let (firstCreature, secondCreature, spellId, gs) = twoCreatureBoard island piker escape 1
-        after = castAndResolve lastCandidate S.alice spellId gs
-    Spec.assertEqWith s "the other half still draws" (S.handSize S.alice after) 1
-    -- CR 701.54c: the emblem, and exactly one of it.
-    Spec.assertEqWith s "alice has an emblem named The Ring" (length (theRingsOf S.alice after)) 1
-    -- CR 701.54a: the creature ALICE chose, not the first one on the board.
-    Spec.assertEqWith s "the chosen creature is the Ring-bearer" (markedFor S.alice after) [secondCreature]
-    -- CR 701.54e, through the rule's own predicate.
-    Spec.assertBool s (Ring.isRingBearerOf S.alice secondCreature after) "CR 701.54e holds of the chosen creature"
-    Spec.assertBool s (not (Ring.isRingBearerOf S.alice firstCreature after)) "and not of the other one"
-    -- CR 701.54d: one temptation, and only for the player tempted.
-    Spec.assertEqWith s "alice has been tempted once" (temptationsOf S.alice after) (Just 1)
-    Spec.assertEqWith s "bob has not been tempted" (temptationsOf S.bob after) (Just 0)
-    Spec.assertEqWith s "and bob got no emblem" (theRingsOf S.bob after) []
   -- CR 701.54d's whole point: "the Ring tempts a player whenever they complete the
   -- actions in 701.54a, even if some or all of those actions were impossible."
   --
