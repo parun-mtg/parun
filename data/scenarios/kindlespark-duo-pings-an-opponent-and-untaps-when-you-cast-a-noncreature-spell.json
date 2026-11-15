@@ -105,7 +105,7 @@
     ],
     "step": "PrecombatMain"
   },
-  "description": "CR 602.2, 115.1, 102.3, 120.3a, 603.2, 701.26b: Kindlespark Duo's {T} deals 1 damage to target opponent only, and it untaps whenever its controller casts a noncreature spell, not for a creature spell or an opponent's spell",
+  "description": "CR 602.2, 115.1, 120.3a, 603.2, 701.26b: Kindlespark Duo's {T} deals 1 damage to target opponent only, and it untaps whenever its controller casts a noncreature spell, not for a creature spell or an opponent's spell",
   "note": "Three seats, so 'target opponent' has two candidates and alice herself is refused. The Duo is tapped for carol (20 to 19) and stays tapped through bob's Giant Growth; alice's Giant Growth untaps it, it pings bob (20 to 19), and alice's Grizzly Bears leaves it tapped.",
   "timeline": [
     {

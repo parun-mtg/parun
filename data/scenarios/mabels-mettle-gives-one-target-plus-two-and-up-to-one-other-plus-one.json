@@ -83,26 +83,8 @@
     "step": "PrecombatMain"
   },
   "description": "CR 115.1, 115.3, 601.2c, 611.2a, 514.2: Mabel's Mettle gives target creature +2/+2 and up to one other target creature +1/+1 until end of turn; the second target can't be the first, and may be left out",
-  "note": "The same Goblin Piker in both slots is refused. The first Mettle makes alice's Piker 4/3 and bob's Hill Giant 4/4; the second, with no second target, makes bob's Craw Wurm 8/6 and leaves alice's Grizzly Bears 2/2. At bob's upkeep all are back to printed size.",
+  "note": "The first Mettle makes alice's Goblin Piker 4/3 and bob's Hill Giant 4/4; the second, aimed at Grizzly Bears in both slots, is refused, and with no second target it makes bob's Craw Wurm 8/6 and leaves alice's Grizzly Bears 2/2. At bob's upkeep all are back to printed size.",
   "timeline": [
-    {
-      "player": "alice",
-      "refuse": {
-        "Cast": {
-          "object": "$m1",
-          "targetsBySlot": {
-            "target1": [
-              "$piker"
-            ],
-            "target2": [
-              "$piker"
-            ]
-          }
-        }
-      },
-      "step": "PrecombatMain",
-      "turn": 1
-    },
     {
       "do": {
         "Cast": {
@@ -172,6 +154,24 @@
         }
       },
       "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "player": "alice",
+      "refuse": {
+        "Cast": {
+          "object": "$m2",
+          "targetsBySlot": {
+            "target1": [
+              "$bears"
+            ],
+            "target2": [
+              "$bears"
+            ]
+          }
+        }
+      },
       "step": "PrecombatMain",
       "turn": 1
     },
