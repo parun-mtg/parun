@@ -23,6 +23,10 @@
             "label": "giant"
           },
           {
+            "card": "Ancient Tomb",
+            "label": "tomb"
+          },
+          {
             "card": "Plains",
             "label": "plains"
           },
@@ -104,7 +108,7 @@
     "step": "PrecombatMain"
   },
   "description": "CR 603.2, 603.6a, 701.62a, 701.40a, 701.23a: Threats Around Every Corner manifests dread on entering, and a face-down permanent its controller's entering fetches a tapped basic land; a face-up land or an opponent's face-down permanent entering does not",
-  "note": "The manifested Grizzly Bears is the only face-down permanent alice's that enters; her Forest enters face up and bob's manifested Craw Wurm is his, and either one triggering would raise an unscheduled Search. Hill Giant is milled, Plains is the only basic land the search can find besides the Swamps.",
+  "note": "The manifested Grizzly Bears is the only face-down permanent alice's that enters; her Forest enters face up and bob's manifested Craw Wurm is his, and either one triggering would raise an unscheduled Search. Hill Giant is milled; the nonbasic Ancient Tomb is refused before the Plains is found.",
   "timeline": [
     {
       "do": {
@@ -172,6 +176,19 @@
       "turn": 1
     },
     {
+      "player": "alice",
+      "refuse": {
+        "Answer": {
+          "prompt": "Search",
+          "with": [
+            "$tomb"
+          ]
+        }
+      },
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
       "do": {
         "Answer": {
           "prompt": "Search",
@@ -189,6 +206,7 @@
         "Answer": {
           "prompt": "Shuffle",
           "with": [
+            "$tomb",
             "$s1",
             "$s2"
           ]

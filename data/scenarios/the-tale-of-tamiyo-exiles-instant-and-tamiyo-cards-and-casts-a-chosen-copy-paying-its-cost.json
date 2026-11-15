@@ -53,6 +53,10 @@
           {
             "card": "Divination",
             "label": "div"
+          },
+          {
+            "card": "Chandra Nalaar",
+            "label": "chandra"
           }
         ],
         "library": [
@@ -116,7 +120,7 @@
     "step": "Upkeep"
   },
   "description": "CR 714.2b / 714.4 / 707.12 / 707.12a / 608.2g / 205.3j: The Tale of Tamiyo's chapter IV exiles any number of target instant, sorcery and Tamiyo planeswalker cards from its controller's graveyard, copies them, and its controller casts any number of the copies, paying their costs",
-  "note": "The Saga enters the scenario with three lore counters, so its fourth arrives in the turn-1 precombat main phase. The Grizzly Bears target is refused. Alice casts the Lightning Bolt copy, tapping a Mountain for it, and declines the Tamiyo copy, which her other four lands could pay for; the Saga is then sacrificed.",
+  "note": "The Saga enters the scenario with three lore counters, so its fourth arrives in the turn-1 precombat main phase. Targeting the Grizzly Bears, a creature, or Chandra Nalaar, a planeswalker that is no Tamiyo, is refused. Alice casts the Lightning Bolt copy, then the Divination copy, choosing among the copies left each time and tapping lands for each; the Tamiyo copy is left uncast, and the Saga is then sacrificed.",
   "timeline": [
     {
       "player": "alice",
@@ -132,11 +136,25 @@
       "turn": 1
     },
     {
+      "player": "alice",
+      "refuse": {
+        "ChooseTargets": {
+          "target": [
+            "$bolt",
+            "$chandra"
+          ]
+        }
+      },
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
       "do": {
         "ChooseTargets": {
           "target": [
             "$bolt",
-            "$tamiyo"
+            "$tamiyo",
+            "$div"
           ]
         }
       },
@@ -170,6 +188,10 @@
                 [
                   "Tamiyo, Compleated Sage#2",
                   "Tamiyo, Compleated Sage"
+                ],
+                [
+                  "Divination#2",
+                  "Divination"
                 ]
               ]
             }
@@ -241,10 +263,93 @@
       "turn": 1
     },
     {
+      "check": {
+        "View": {
+          "is": {
+            "kind": "ChooseOfferedCastSpell",
+            "offer": {
+              "options": [
+                [
+                  "Tamiyo, Compleated Sage#2",
+                  "Tamiyo, Compleated Sage"
+                ],
+                [
+                  "Divination#2",
+                  "Divination"
+                ]
+              ]
+            }
+          },
+          "of": "Prompt"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Answer": {
+          "prompt": "ChooseOfferedCastSpell",
+          "with": [
+            "Divination#2",
+            "Divination"
+          ]
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
       "do": {
         "Answer": {
           "prompt": "OfferedCast",
-          "with": "Declines"
+          "with": "Exercises"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Answer": {
+          "prompt": "ChooseManaSource",
+          "with": "$i1"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Answer": {
+          "prompt": "ChooseManaSource",
+          "with": "$m2"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Answer": {
+          "prompt": "ChooseManaSource",
+          "with": "$f1"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Answer": {
+          "prompt": "ChooseExtraManaSource",
+          "with": null
         }
       },
       "player": "alice",
@@ -255,6 +360,7 @@
       "check": {
         "View": {
           "is": [
+            "Divination#2",
             "Lightning Bolt#2"
           ],
           "of": "Stack"
@@ -322,6 +428,19 @@
           "card": "Divination",
           "count": 1,
           "player": "alice",
+          "zone": "Exile"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Chandra Nalaar",
+          "count": 1,
+          "player": "alice",
           "zone": "Graveyard"
         }
       },
@@ -334,6 +453,31 @@
         "Tapped": {
           "object": "$m1",
           "tapped": true
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "bob",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Island",
+          "count": 2,
+          "player": "alice",
+          "zone": "Hand"
         }
       },
       "player": "alice",
