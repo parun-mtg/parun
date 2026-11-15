@@ -23,7 +23,7 @@
         }
       ],
       "name": "Erratic Apparition",
-      "oracleText": "Flying, vigilance\nEerie \u2014 Whenever an enchantment you control enters and whenever you fully unlock a Room, this creature gets +1/+1 until end of turn.",
+      "oracleText": "Flying, vigilance\nEerie — Whenever an enchantment you control enters and whenever you fully unlock a Room, this creature gets +1/+1 until end of turn.",
       "power": {
         "type": "Literal",
         "value": 1
@@ -107,11 +107,11 @@
         }
       ],
       "typeLine": {
-        "types": [
-          "Creature"
-        ],
         "subtypes": [
           "Spirit"
+        ],
+        "types": [
+          "Creature"
         ]
       }
     }

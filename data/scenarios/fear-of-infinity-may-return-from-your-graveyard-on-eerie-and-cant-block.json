@@ -1,10 +1,8 @@
 {
   "board": {
     "active": "alice",
-    "step": "PrecombatMain",
     "seats": [
       {
-        "name": "alice",
         "battlefield": [
           {
             "card": "Plains",
@@ -59,10 +57,10 @@
           {
             "card": "Plains"
           }
-        ]
+        ],
+        "name": "alice"
       },
       {
-        "name": "bob",
         "battlefield": [
           {
             "card": "Grizzly Bears",
@@ -89,10 +87,10 @@
           {
             "card": "Island"
           }
-        ]
+        ],
+        "name": "bob"
       },
       {
-        "name": "carol",
         "library": [
           {
             "card": "Island"
@@ -112,79 +110,78 @@
           {
             "card": "Island"
           }
-        ]
+        ],
+        "name": "carol"
       }
-    ]
+    ],
+    "step": "PrecombatMain"
   },
   "description": "CR 113.6m, 603.5, 509.1a: Fear of Infinity's eerie ability returns it from its owner's graveyard to their hand if they choose, does not trigger from the battlefield, and it can't block",
   "note": "Glorious Anthem entering under alice's control triggers both Fears in her graveyard, not the one on the battlefield, whose ability moves it out of the graveyard (no prompt is scheduled for it). She returns one and declines the other. On bob's turn alice, whose only creature is the battlefield Fear, is not asked to block his Grizzly Bears (no blocker prompt is scheduled) and takes 2.",
   "timeline": [
     {
-      "turn": 1,
-      "step": "PrecombatMain",
-      "player": "alice",
       "do": {
         "Cast": {
-          "object": "$anthem",
           "mana": [
             "$p1",
             "$p2",
             "$p3"
-          ]
+          ],
+          "object": "$anthem"
         }
-      }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PrecombatMain",
+      "do": "Pass",
       "player": "alice",
-      "do": "Pass"
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PrecombatMain",
-      "player": "alice",
       "do": {
         "OrderTriggers": [
           "$g1",
           "$g2"
         ]
-      }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PrecombatMain",
-      "player": "alice",
-      "source": "$g2",
       "do": {
         "ChooseOptional": "Declines"
-      }
+      },
+      "player": "alice",
+      "source": "$g2",
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PrecombatMain",
-      "player": "alice",
-      "source": "$g1",
       "do": {
         "ChooseOptional": "Exercises"
-      }
+      },
+      "player": "alice",
+      "source": "$g1",
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PrecombatMain",
+      "do": "Pass",
       "player": "alice",
-      "do": "Pass"
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PrecombatMain",
+      "do": "Pass",
       "player": "alice",
-      "do": "Pass"
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PrecombatMain",
-      "player": "alice",
       "check": {
         "Count": {
           "card": "Fear of Infinity",
@@ -192,12 +189,12 @@
           "player": "alice",
           "zone": "Hand"
         }
-      }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PrecombatMain",
-      "player": "alice",
       "check": {
         "Count": {
           "card": "Fear of Infinity",
@@ -205,12 +202,12 @@
           "player": "alice",
           "zone": "Graveyard"
         }
-      }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PrecombatMain",
-      "player": "alice",
       "check": {
         "Count": {
           "card": "Fear of Infinity",
@@ -218,30 +215,30 @@
           "player": "alice",
           "zone": "Battlefield"
         }
-      }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "DeclareAttackers",
-      "player": "alice",
       "do": {
         "Attack": []
-      }
+      },
+      "player": "alice",
+      "step": "DeclareAttackers",
+      "turn": 1
     },
     {
-      "turn": 2,
-      "step": "DeclareAttackers",
-      "player": "bob",
       "do": {
         "Attack": [
           "$bears"
         ]
-      }
+      },
+      "player": "bob",
+      "step": "DeclareAttackers",
+      "turn": 2
     },
     {
-      "turn": 2,
-      "step": "DeclareAttackers",
-      "player": "bob",
       "do": {
         "Answer": {
           "prompt": "ChooseAttackTarget",
@@ -250,18 +247,21 @@
             "alice"
           ]
         }
-      }
+      },
+      "player": "bob",
+      "step": "DeclareAttackers",
+      "turn": 2
     },
     {
-      "turn": 2,
-      "step": "PostcombatMain",
-      "player": "alice",
       "check": {
         "Life": {
-          "player": "alice",
-          "life": 18
+          "life": 18,
+          "player": "alice"
         }
-      }
+      },
+      "player": "alice",
+      "step": "PostcombatMain",
+      "turn": 2
     }
   ]
 }

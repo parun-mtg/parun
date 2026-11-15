@@ -137,12 +137,12 @@
         }
       ],
       "typeLine": {
+        "subtypes": [
+          "Nightmare"
+        ],
         "types": [
           "Creature",
           "Enchantment"
-        ],
-        "subtypes": [
-          "Nightmare"
         ]
       }
     }

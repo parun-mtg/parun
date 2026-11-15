@@ -43,6 +43,10 @@
                       "type": "And",
                       "value": [
                         {
+                          "type": "HasCardType",
+                          "value": "Enchantment"
+                        },
+                        {
                           "type": "HeldBy",
                           "value": {
                             "holder": "Controller",
@@ -88,12 +92,12 @@
         }
       ],
       "typeLine": {
-        "types": [
-          "Creature"
-        ],
         "subtypes": [
           "Human",
           "Scout"
+        ],
+        "types": [
+          "Creature"
         ]
       }
     }

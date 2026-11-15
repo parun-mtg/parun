@@ -66,12 +66,12 @@
                                   "value": 1
                                 },
                                 "typeLine": {
+                                  "subtypes": [
+                                    "Toy"
+                                  ],
                                   "types": [
                                     "Artifact",
                                     "Creature"
-                                  ],
-                                  "subtypes": [
-                                    "Toy"
                                   ]
                                 }
                               }
@@ -92,11 +92,11 @@
         }
       ],
       "typeLine": {
-        "types": [
-          "Enchantment"
-        ],
         "subtypes": [
           "Room"
+        ],
+        "types": [
+          "Enchantment"
         ]
       }
     },
@@ -222,11 +222,11 @@
         }
       ],
       "typeLine": {
-        "types": [
-          "Enchantment"
-        ],
         "subtypes": [
           "Room"
+        ],
+        "types": [
+          "Enchantment"
         ]
       }
     }

@@ -1,10 +1,8 @@
 {
   "board": {
     "active": "alice",
-    "step": "PrecombatMain",
     "seats": [
       {
-        "name": "alice",
         "battlefield": [
           {
             "card": "Plains",
@@ -64,10 +62,10 @@
           {
             "card": "Plains"
           }
-        ]
+        ],
+        "name": "alice"
       },
       {
-        "name": "bob",
         "battlefield": [
           {
             "card": "Hill Giant",
@@ -107,10 +105,10 @@
           {
             "card": "Swamp"
           }
-        ]
+        ],
+        "name": "bob"
       },
       {
-        "name": "carol",
         "battlefield": [
           {
             "card": "Wall of Stone",
@@ -136,20 +134,18 @@
           {
             "card": "Island"
           }
-        ]
+        ],
+        "name": "carol"
       }
-    ]
+    ],
+    "step": "PrecombatMain"
   },
-  "description": "CR 601.2b, 601.2h, 607.2a: Fear of Abduction exiles a creature you control as it is cast, exiles target creature an opponent controls on entering, and on leaving returns only the card its own ability exiled, to its owner's hand",
+  "description": "CR 601.2f, 601.2h, 607.2a: Fear of Abduction exiles a creature you control as it is cast, exiles target creature an opponent controls on entering, and on leaving returns only the card its own ability exiled, to its owner's hand",
   "note": "Three seats. Alice exiles her Savannah Lions to cast the Fear (bob's Hill Giant is refused as that cost); her Grizzly Bears is refused as its target, and bob's Hill Giant is exiled rather than carol's Wall of Stone. On bob's turn his Doom Blade destroys the Fear: the Giant goes to bob's hand, while the Lions, exiled to pay the cost and not by the Fear, stays in exile.",
   "timeline": [
     {
-      "turn": 1,
-      "step": "PrecombatMain",
-      "player": "alice",
       "do": {
         "Cast": {
-          "object": "$fear",
           "mana": [
             "$p1",
             "$p2",
@@ -157,13 +153,15 @@
             "$p4",
             "$p5",
             "$p6"
-          ]
+          ],
+          "object": "$fear"
         }
-      }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PrecombatMain",
       "player": "alice",
       "refuse": {
         "Answer": {
@@ -172,12 +170,11 @@
             "$giant"
           ]
         }
-      }
+      },
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PrecombatMain",
-      "player": "alice",
       "do": {
         "Answer": {
           "prompt": "ChooseExiles",
@@ -185,17 +182,18 @@
             "$lions"
           ]
         }
-      }
-    },
-    {
-      "turn": 1,
-      "step": "PrecombatMain",
+      },
       "player": "alice",
-      "do": "Pass"
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
+      "do": "Pass",
+      "player": "alice",
       "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
       "player": "alice",
       "refuse": {
         "ChooseTargets": {
@@ -203,30 +201,29 @@
             "$bears"
           ]
         }
-      }
+      },
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PrecombatMain",
-      "player": "alice",
       "do": {
         "ChooseTargets": {
           "target": [
             "$giant"
           ]
         }
-      }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PrecombatMain",
+      "do": "Pass",
       "player": "alice",
-      "do": "Pass"
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PrecombatMain",
-      "player": "alice",
       "check": {
         "Count": {
           "card": "Savannah Lions",
@@ -234,12 +231,12 @@
           "player": "alice",
           "zone": "Exile"
         }
-      }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PrecombatMain",
-      "player": "alice",
       "check": {
         "Count": {
           "card": "Hill Giant",
@@ -247,12 +244,12 @@
           "player": "bob",
           "zone": "Exile"
         }
-      }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PrecombatMain",
-      "player": "alice",
       "check": {
         "Count": {
           "card": "Wall of Stone",
@@ -260,12 +257,12 @@
           "player": "carol",
           "zone": "Battlefield"
         }
-      }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PrecombatMain",
-      "player": "alice",
       "check": {
         "Count": {
           "card": "Grizzly Bears",
@@ -273,41 +270,41 @@
           "player": "alice",
           "zone": "Battlefield"
         }
-      }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
-      "turn": 2,
-      "step": "PrecombatMain",
-      "player": "bob",
       "do": {
         "Cast": {
-          "object": "$blade",
-          "targets": [
-            "Fear of Abduction"
-          ],
           "mana": [
             "$b1",
             "$b2"
+          ],
+          "object": "$blade",
+          "targets": [
+            "Fear of Abduction"
           ]
         }
-      }
+      },
+      "player": "bob",
+      "step": "PrecombatMain",
+      "turn": 2
     },
     {
-      "turn": 2,
-      "step": "PrecombatMain",
+      "do": "Pass",
       "player": "bob",
-      "do": "Pass"
+      "step": "PrecombatMain",
+      "turn": 2
     },
     {
-      "turn": 2,
-      "step": "PrecombatMain",
+      "do": "Pass",
       "player": "bob",
-      "do": "Pass"
+      "step": "PrecombatMain",
+      "turn": 2
     },
     {
-      "turn": 2,
-      "step": "PrecombatMain",
-      "player": "bob",
       "check": {
         "Count": {
           "card": "Hill Giant",
@@ -315,12 +312,12 @@
           "player": "bob",
           "zone": "Hand"
         }
-      }
+      },
+      "player": "bob",
+      "step": "PrecombatMain",
+      "turn": 2
     },
     {
-      "turn": 2,
-      "step": "PrecombatMain",
-      "player": "bob",
       "check": {
         "Count": {
           "card": "Savannah Lions",
@@ -328,12 +325,12 @@
           "player": "alice",
           "zone": "Exile"
         }
-      }
+      },
+      "player": "bob",
+      "step": "PrecombatMain",
+      "turn": 2
     },
     {
-      "turn": 2,
-      "step": "PrecombatMain",
-      "player": "bob",
       "check": {
         "Count": {
           "card": "Fear of Abduction",
@@ -341,7 +338,10 @@
           "player": "alice",
           "zone": "Graveyard"
         }
-      }
+      },
+      "player": "bob",
+      "step": "PrecombatMain",
+      "turn": 2
     }
   ]
 }

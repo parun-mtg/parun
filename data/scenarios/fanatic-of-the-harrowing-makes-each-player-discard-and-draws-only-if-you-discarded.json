@@ -1,10 +1,8 @@
 {
   "board": {
     "active": "alice",
-    "step": "PrecombatMain",
     "seats": [
       {
-        "name": "alice",
         "battlefield": [
           {
             "card": "Swamp",
@@ -55,10 +53,10 @@
           {
             "card": "Plains"
           }
-        ]
+        ],
+        "name": "alice"
       },
       {
-        "name": "bob",
         "hand": [
           {
             "card": "Wastes"
@@ -83,10 +81,10 @@
           {
             "card": "Swamp"
           }
-        ]
+        ],
+        "name": "bob"
       },
       {
-        "name": "carol",
         "hand": [
           {
             "card": "Plains"
@@ -111,45 +109,44 @@
           {
             "card": "Island"
           }
-        ]
+        ],
+        "name": "carol"
       }
-    ]
+    ],
+    "step": "PrecombatMain"
   },
   "description": "CR 701.9a, 608.2c: Fanatic of the Harrowing makes each player discard a card, and its controller draws only if they discarded one",
   "note": "Three seats. On turn 1 alice, bob and carol each discard their one card and alice draws the Forest. On turn 4 alice plays that Forest and casts the second Fanatic she drew with an empty hand: bob and carol discard the cards they drew, alice discards nothing and draws nothing, so the Plains under it stays in her library.",
   "timeline": [
     {
-      "turn": 1,
-      "step": "PrecombatMain",
-      "player": "alice",
       "do": {
         "Cast": {
-          "object": "$f1",
           "mana": [
             "$s1",
             "$s2",
             "$s3",
             "$s4"
-          ]
+          ],
+          "object": "$f1"
         }
-      }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PrecombatMain",
+      "do": "Pass",
       "player": "alice",
-      "do": "Pass"
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PrecombatMain",
+      "do": "Pass",
       "player": "alice",
-      "do": "Pass"
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PrecombatMain",
-      "player": "alice",
       "check": {
         "Count": {
           "card": "Mountain",
@@ -157,12 +154,12 @@
           "player": "alice",
           "zone": "Graveyard"
         }
-      }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PrecombatMain",
-      "player": "alice",
       "check": {
         "Count": {
           "card": "Forest",
@@ -170,12 +167,12 @@
           "player": "alice",
           "zone": "Hand"
         }
-      }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PrecombatMain",
-      "player": "alice",
       "check": {
         "Count": {
           "card": "Wastes",
@@ -183,12 +180,12 @@
           "player": "bob",
           "zone": "Graveyard"
         }
-      }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PrecombatMain",
-      "player": "alice",
       "check": {
         "Count": {
           "card": "Plains",
@@ -196,49 +193,49 @@
           "player": "carol",
           "zone": "Graveyard"
         }
-      }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
-      "turn": 4,
-      "step": "PrecombatMain",
-      "player": "alice",
       "do": {
         "PlayLand": "Forest"
-      }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 4
     },
     {
-      "turn": 4,
-      "step": "PrecombatMain",
-      "player": "alice",
       "do": {
         "Cast": {
-          "object": "Fanatic of the Harrowing#2",
           "mana": [
             "$s1",
             "$s2",
             "$s3",
             "$s4",
             null
-          ]
+          ],
+          "object": "Fanatic of the Harrowing#2"
         }
-      }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 4
     },
     {
-      "turn": 4,
-      "step": "PrecombatMain",
+      "do": "Pass",
       "player": "alice",
-      "do": "Pass"
+      "step": "PrecombatMain",
+      "turn": 4
     },
     {
-      "turn": 4,
-      "step": "PrecombatMain",
+      "do": "Pass",
       "player": "alice",
-      "do": "Pass"
+      "step": "PrecombatMain",
+      "turn": 4
     },
     {
-      "turn": 4,
-      "step": "PrecombatMain",
-      "player": "alice",
       "check": {
         "Count": {
           "card": "Plains",
@@ -246,12 +243,12 @@
           "player": "alice",
           "zone": "Hand"
         }
-      }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 4
     },
     {
-      "turn": 4,
-      "step": "PrecombatMain",
-      "player": "alice",
       "check": {
         "Count": {
           "card": "Swamp",
@@ -259,12 +256,12 @@
           "player": "bob",
           "zone": "Graveyard"
         }
-      }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 4
     },
     {
-      "turn": 4,
-      "step": "PrecombatMain",
-      "player": "alice",
       "check": {
         "Count": {
           "card": "Island",
@@ -272,20 +269,23 @@
           "player": "carol",
           "zone": "Graveyard"
         }
-      }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 4
     },
     {
-      "turn": 4,
-      "step": "PrecombatMain",
-      "player": "alice",
       "check": {
         "View": {
+          "is": [],
           "of": "Zone",
           "player": "alice",
-          "zone": "Hand",
-          "is": []
+          "zone": "Hand"
         }
-      }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 4
     }
   ]
 }

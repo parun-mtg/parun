@@ -1,16 +1,8 @@
 {
   "board": {
     "active": "alice",
-    "step": "PrecombatMain",
     "seats": [
       {
-        "name": "alice",
-        "hand": [
-          {
-            "card": "Dollmaker's Shop",
-            "label": "room"
-          }
-        ],
         "battlefield": [
           {
             "card": "Plains",
@@ -36,6 +28,12 @@
             "ready": true
           }
         ],
+        "hand": [
+          {
+            "card": "Dollmaker's Shop",
+            "label": "room"
+          }
+        ],
         "library": [
           {
             "card": "Plains"
@@ -55,10 +53,10 @@
           {
             "card": "Plains"
           }
-        ]
+        ],
+        "name": "alice"
       },
       {
-        "name": "bob",
         "library": [
           {
             "card": "Island"
@@ -78,10 +76,10 @@
           {
             "card": "Island"
           }
-        ]
+        ],
+        "name": "bob"
       },
       {
-        "name": "carol",
         "library": [
           {
             "card": "Island"
@@ -101,49 +99,48 @@
           {
             "card": "Island"
           }
-        ]
+        ],
+        "name": "carol"
       }
-    ]
+    ],
+    "step": "PrecombatMain"
   },
   "description": "CR 709.3, 508.1, 603.2c, 111.1: Dollmaker's Shop creates one Toy when one or more non-Toy creatures its controller controls attack a player, and none when only Toys attack",
   "note": "Three seats. Alice casts the Shop half (a Room placed on the battlefield has both doors locked). On turn 1 Savannah Lions and Grizzly Bears attack bob: one trigger, one white 1/1 Toy artifact creature token. On turn 4 Friendly Teddy (a Toy) and that token attack carol: no trigger, so still one token.",
   "timeline": [
     {
-      "turn": 1,
-      "step": "PrecombatMain",
-      "player": "alice",
       "do": {
         "Cast": {
           "face": "Dollmaker's Shop",
-          "object": "$room",
           "mana": [
             "$p1",
             "$p2"
-          ]
+          ],
+          "object": "$room"
         }
-      }
-    },
-    {
-      "turn": 1,
+      },
+      "player": "alice",
       "step": "PrecombatMain",
-      "player": "alice",
-      "do": "Pass"
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "DeclareAttackers",
+      "do": "Pass",
       "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
       "do": {
         "Attack": [
           "$lions",
           "$bears"
         ]
-      }
+      },
+      "player": "alice",
+      "step": "DeclareAttackers",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "DeclareAttackers",
-      "player": "alice",
       "do": {
         "Answer": {
           "prompt": "ChooseAttackTarget",
@@ -152,12 +149,12 @@
             "bob"
           ]
         }
-      }
+      },
+      "player": "alice",
+      "step": "DeclareAttackers",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "DeclareAttackers",
-      "player": "alice",
       "do": {
         "Answer": {
           "prompt": "ChooseAttackTarget",
@@ -166,12 +163,12 @@
             "bob"
           ]
         }
-      }
+      },
+      "player": "alice",
+      "step": "DeclareAttackers",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PostcombatMain",
-      "player": "alice",
       "check": {
         "Count": {
           "card": "Toy Token",
@@ -179,49 +176,49 @@
           "player": "alice",
           "zone": "Battlefield"
         }
-      }
+      },
+      "player": "alice",
+      "step": "PostcombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PostcombatMain",
-      "player": "alice",
       "check": {
         "Life": {
-          "player": "bob",
-          "life": 16
+          "life": 16,
+          "player": "bob"
         }
-      }
+      },
+      "player": "alice",
+      "step": "PostcombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PostcombatMain",
-      "player": "alice",
       "check": {
         "PowerToughness": {
           "object": "Toy Token",
           "power": 1,
           "toughness": 1
         }
-      }
+      },
+      "player": "alice",
+      "step": "PostcombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PostcombatMain",
-      "player": "alice",
       "check": {
         "View": {
-          "of": "Colors",
-          "object": "Toy Token",
           "is": [
             "White"
-          ]
+          ],
+          "object": "Toy Token",
+          "of": "Colors"
         }
-      }
+      },
+      "player": "alice",
+      "step": "PostcombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PostcombatMain",
-      "player": "alice",
       "check": {
         "Types": {
           "object": "Toy Token",
@@ -230,12 +227,12 @@
             "Creature"
           ]
         }
-      }
+      },
+      "player": "alice",
+      "step": "PostcombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PostcombatMain",
-      "player": "alice",
       "check": {
         "Subtypes": {
           "object": "Toy Token",
@@ -243,23 +240,23 @@
             "Toy"
           ]
         }
-      }
+      },
+      "player": "alice",
+      "step": "PostcombatMain",
+      "turn": 1
     },
     {
-      "turn": 4,
-      "step": "DeclareAttackers",
-      "player": "alice",
       "do": {
         "Attack": [
           "$teddy",
           "Toy Token"
         ]
-      }
+      },
+      "player": "alice",
+      "step": "DeclareAttackers",
+      "turn": 4
     },
     {
-      "turn": 4,
-      "step": "DeclareAttackers",
-      "player": "alice",
       "do": {
         "Answer": {
           "prompt": "ChooseAttackTarget",
@@ -268,12 +265,12 @@
             "carol"
           ]
         }
-      }
+      },
+      "player": "alice",
+      "step": "DeclareAttackers",
+      "turn": 4
     },
     {
-      "turn": 4,
-      "step": "DeclareAttackers",
-      "player": "alice",
       "do": {
         "Answer": {
           "prompt": "ChooseAttackTarget",
@@ -282,23 +279,23 @@
             "carol"
           ]
         }
-      }
+      },
+      "player": "alice",
+      "step": "DeclareAttackers",
+      "turn": 4
     },
     {
-      "turn": 4,
-      "step": "PostcombatMain",
-      "player": "alice",
       "check": {
         "Life": {
-          "player": "carol",
-          "life": 17
+          "life": 17,
+          "player": "carol"
         }
-      }
+      },
+      "player": "alice",
+      "step": "PostcombatMain",
+      "turn": 4
     },
     {
-      "turn": 4,
-      "step": "PostcombatMain",
-      "player": "alice",
       "check": {
         "Count": {
           "card": "Toy Token",
@@ -306,7 +303,10 @@
           "player": "alice",
           "zone": "Battlefield"
         }
-      }
+      },
+      "player": "alice",
+      "step": "PostcombatMain",
+      "turn": 4
     }
   ]
 }
