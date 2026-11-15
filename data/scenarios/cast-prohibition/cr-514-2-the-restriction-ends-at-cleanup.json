@@ -1,0 +1,217 @@
+{
+  "board": {
+    "active": "carol",
+    "seats": [
+      {
+        "battlefield": [
+          {
+            "card": "Plains",
+            "label": "a1"
+          },
+          {
+            "card": "Plains",
+            "label": "a2"
+          },
+          {
+            "card": "Plains",
+            "label": "a3"
+          },
+          {
+            "card": "Mountain",
+            "label": "am1"
+          },
+          {
+            "card": "Mountain",
+            "label": "am2"
+          }
+        ],
+        "hand": [
+          {
+            "card": "Cease-Fire",
+            "label": "cease-fire"
+          },
+          {
+            "card": "Goblin Piker",
+            "label": "alices-piker"
+          }
+        ],
+        "library": [
+          {
+            "card": "Plains"
+          },
+          {
+            "card": "Plains"
+          }
+        ],
+        "name": "alice"
+      },
+      {
+        "battlefield": [
+          {
+            "card": "Mountain",
+            "label": "bm1"
+          },
+          {
+            "card": "Mountain",
+            "label": "bm2"
+          }
+        ],
+        "hand": [
+          {
+            "card": "Goblin Piker",
+            "label": "bobs-piker"
+          }
+        ],
+        "library": [
+          {
+            "card": "Plains"
+          },
+          {
+            "card": "Plains"
+          }
+        ],
+        "name": "bob"
+      },
+      {
+        "battlefield": [
+          {
+            "card": "Mountain",
+            "label": "cm1"
+          },
+          {
+            "card": "Mountain",
+            "label": "cm2"
+          },
+          {
+            "card": "Vedalken Orrery",
+            "label": "carols-orrery"
+          }
+        ],
+        "hand": [
+          {
+            "card": "Goblin Piker",
+            "label": "carols-piker"
+          },
+          {
+            "card": "Lightning Bolt",
+            "label": "carols-bolt"
+          }
+        ],
+        "library": [
+          {
+            "card": "Plains"
+          },
+          {
+            "card": "Plains"
+          }
+        ],
+        "name": "carol"
+      }
+    ],
+    "step": "PrecombatMain"
+  },
+  "description": "CR 514.2 the restriction ends at cleanup",
+  "final": [
+    {
+      "Count": {
+        "card": "Goblin Piker",
+        "count": 1,
+        "player": "carol",
+        "zone": "Battlefield"
+      }
+    }
+  ],
+  "note": "Cease-Fire's \"this turn\" ends at cleanup: carol's Goblin Piker is refused on her turn, and her Vedalken Orrery lets her cast it in alice's upkeep that follows, off the same Mountains.",
+  "timeline": [
+    {
+      "do": "Pass",
+      "player": "carol",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Cast": {
+          "mana": [
+            "$a1",
+            "$a2",
+            "$a3",
+            null
+          ],
+          "object": "$cease-fire",
+          "targets": [
+            "$carol"
+          ]
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "bob",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "carol",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Cease-Fire",
+          "count": 1,
+          "player": "alice",
+          "zone": "Graveyard"
+        }
+      },
+      "player": "carol",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "player": "carol",
+      "refuse": {
+        "Cast": {
+          "mana": [
+            "$cm1",
+            "$cm2"
+          ],
+          "object": "$carols-piker"
+        }
+      },
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Cast": {
+          "mana": [
+            "$cm1",
+            "$cm2"
+          ],
+          "object": "$carols-piker"
+        }
+      },
+      "player": "carol",
+      "step": "Upkeep",
+      "turn": 2
+    },
+    {
+      "do": "Pass",
+      "player": "carol",
+      "step": "Upkeep",
+      "turn": 2
+    }
+  ]
+}

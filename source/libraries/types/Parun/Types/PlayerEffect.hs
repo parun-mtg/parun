@@ -125,7 +125,8 @@ data PlayerEffect
     -- this player has protection from the quality the Filter states. Rule
     -- 702.16e's prevention
     -- reaches the player through Parun.Engine.PlayerEffect.protectionCarriers,
-    -- proven by Parun.CastProhibitionSpec's "CR 702.16e" Runed Halo case.
+    -- proven by data/scenarios/cast-prohibition's "CR 702.16e" Runed Halo
+    -- scenarios.
     HasProtectionFrom (Filter.Filter Keyword.Keyword)
   | -- | CR 601.3b / Vedalken Orrery: this player may cast a matching spell as
     -- though it had flash; given a scope, only the first matching spell they

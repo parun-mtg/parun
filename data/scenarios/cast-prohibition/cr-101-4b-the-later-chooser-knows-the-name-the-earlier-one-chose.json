@@ -1,0 +1,195 @@
+{
+  "description": "CR 101.4b the later chooser knows the name the earlier one chose",
+  "note": "alice names Hill Giant and bob's prompt tells him so; he names it too. The Giant alice holds is then refused, read through the prohibition.",
+  "board": {
+    "active": "alice",
+    "step": "PrecombatMain",
+    "seats": [
+      {
+        "name": "alice",
+        "battlefield": [
+          {
+            "card": "Plains",
+            "label": "p1"
+          },
+          {
+            "card": "Plains",
+            "label": "p2"
+          },
+          {
+            "card": "Plains",
+            "label": "p3"
+          },
+          {
+            "card": "Plains",
+            "label": "p4"
+          },
+          {
+            "card": "Plains",
+            "label": "p5"
+          },
+          {
+            "card": "Plains",
+            "label": "p6"
+          },
+          {
+            "card": "Plains",
+            "label": "p7"
+          },
+          {
+            "card": "Plains",
+            "label": "p8"
+          },
+          {
+            "card": "Mountain",
+            "label": "m1"
+          },
+          {
+            "card": "Mountain",
+            "label": "m2"
+          },
+          {
+            "card": "Mountain",
+            "label": "m3"
+          },
+          {
+            "card": "Mountain",
+            "label": "m4"
+          }
+        ],
+        "hand": [
+          {
+            "card": "Null Chamber",
+            "label": "chamber"
+          },
+          {
+            "card": "Hill Giant",
+            "label": "giant"
+          }
+        ]
+      },
+      {
+        "name": "bob"
+      }
+    ]
+  },
+  "timeline": [
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "do": {
+        "Cast": {
+          "object": "$chamber",
+          "mana": [
+            "$p1",
+            "$p2",
+            "$p3",
+            "$p4",
+            null
+          ]
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "do": "Pass"
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "do": {
+        "Answer": {
+          "prompt": "ChooseCardName",
+          "with": "Hill Giant"
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "bob",
+      "check": {
+        "View": {
+          "of": "Prompt",
+          "is": {
+            "kind": "ChooseCardName",
+            "offer": {
+              "source": "Null Chamber",
+              "filter": {
+                "type": "Not",
+                "value": {
+                  "type": "And",
+                  "value": [
+                    {
+                      "type": "HasSupertype",
+                      "value": "Basic"
+                    },
+                    {
+                      "type": "HasCardType",
+                      "value": "Land"
+                    }
+                  ]
+                }
+              },
+              "earlier": [
+                [
+                  "alice",
+                  "Hill Giant"
+                ]
+              ]
+            }
+          }
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "bob",
+      "do": {
+        "Answer": {
+          "prompt": "ChooseCardName",
+          "with": "Hill Giant"
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "refuse": {
+        "Cast": {
+          "object": "$giant",
+          "mana": [
+            "$m1",
+            "$m2",
+            "$m3",
+            "$m4"
+          ]
+        }
+      }
+    }
+  ],
+  "final": [
+    {
+      "Count": {
+        "player": "alice",
+        "zone": "Battlefield",
+        "card": "Null Chamber",
+        "count": 1
+      }
+    },
+    {
+      "Count": {
+        "player": "alice",
+        "zone": "Hand",
+        "card": "Hill Giant",
+        "count": 1
+      }
+    }
+  ]
+}

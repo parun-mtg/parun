@@ -1,0 +1,136 @@
+{
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "battlefield": [
+          {
+            "card": "Plains",
+            "label": "plains"
+          }
+        ],
+        "hand": [
+          {
+            "card": "Silence",
+            "label": "silence"
+          }
+        ],
+        "library": [
+          {
+            "card": "Plains"
+          }
+        ],
+        "name": "alice"
+      },
+      {
+        "battlefield": [
+          {
+            "card": "Mountain",
+            "label": "mountain"
+          }
+        ],
+        "hand": [
+          {
+            "card": "Lightning Bolt",
+            "label": "bolt"
+          }
+        ],
+        "library": [
+          {
+            "card": "Plains"
+          }
+        ],
+        "name": "bob"
+      }
+    ],
+    "step": "PrecombatMain"
+  },
+  "description": "CR 514.2 the prohibition ends at cleanup",
+  "final": [
+    {
+      "Life": {
+        "life": 17,
+        "player": "alice"
+      }
+    }
+  ],
+  "note": "Silence's \"this turn\" ends at cleanup: bob's Bolt is refused on alice's turn and cast in his own upkeep off the same Mountain.",
+  "timeline": [
+    {
+      "do": {
+        "Cast": {
+          "mana": [
+            "$plains"
+          ],
+          "object": "$silence"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "bob",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Silence",
+          "count": 1,
+          "player": "alice",
+          "zone": "Graveyard"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "player": "bob",
+      "refuse": {
+        "Cast": {
+          "mana": [
+            "$mountain"
+          ],
+          "object": "$bolt",
+          "targets": [
+            "$alice"
+          ]
+        }
+      },
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Cast": {
+          "mana": [
+            "$mountain"
+          ],
+          "object": "$bolt",
+          "targets": [
+            "$alice"
+          ]
+        }
+      },
+      "player": "bob",
+      "step": "Upkeep",
+      "turn": 2
+    },
+    {
+      "do": "Pass",
+      "player": "bob",
+      "step": "Upkeep",
+      "turn": 2
+    }
+  ]
+}

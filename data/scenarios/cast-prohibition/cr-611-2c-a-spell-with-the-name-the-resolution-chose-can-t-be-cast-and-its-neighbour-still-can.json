@@ -1,0 +1,207 @@
+{
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "battlefield": [
+          {
+            "card": "Plains",
+            "label": "p1"
+          },
+          {
+            "card": "Plains",
+            "label": "p2"
+          },
+          {
+            "card": "Plains",
+            "label": "p3"
+          },
+          {
+            "card": "Plains",
+            "label": "p4"
+          },
+          {
+            "card": "Mountain",
+            "label": "m1"
+          },
+          {
+            "card": "Mountain",
+            "label": "m2"
+          },
+          {
+            "card": "Mountain",
+            "label": "m3"
+          },
+          {
+            "card": "Mountain",
+            "label": "m4"
+          },
+          {
+            "card": "Swamp",
+            "label": "s1"
+          },
+          {
+            "card": "Swamp",
+            "label": "s2"
+          },
+          {
+            "card": "Swamp",
+            "label": "s3"
+          },
+          {
+            "card": "Swamp",
+            "label": "s4"
+          }
+        ],
+        "hand": [
+          {
+            "card": "Conjurer's Ban",
+            "label": "ban"
+          },
+          {
+            "card": "Goblin Piker",
+            "label": "piker"
+          },
+          {
+            "card": "Lightning Bolt",
+            "label": "bolt"
+          }
+        ],
+        "library": [
+          {
+            "card": "Plains"
+          }
+        ],
+        "name": "alice"
+      },
+      {
+        "name": "bob"
+      }
+    ],
+    "step": "PrecombatMain"
+  },
+  "description": "CR 611.2c a spell with the name the resolution chose can't be cast, and its neighbour still can",
+  "final": [
+    {
+      "Count": {
+        "card": "Goblin Piker",
+        "count": 1,
+        "player": "alice",
+        "zone": "Hand"
+      }
+    },
+    {
+      "Count": {
+        "card": "Conjurer's Ban",
+        "count": 1,
+        "player": "alice",
+        "zone": "Graveyard"
+      }
+    }
+  ],
+  "note": "Conjurer's Ban names Goblin Piker as it resolves, and the stored row stops it while the Lightning Bolt beside it, on the same untapped lands, is still offered. Its land row is the CR 305.1 scenario's.",
+  "timeline": [
+    {
+      "check": {
+        "View": {
+          "is": [
+            "Pass",
+            "Cast $ban",
+            "Cast $piker",
+            "Cast $bolt",
+            "ActivateManaAbility $p1",
+            "ActivateManaAbility $p2",
+            "ActivateManaAbility $p3",
+            "ActivateManaAbility $p4",
+            "ActivateManaAbility $m1",
+            "ActivateManaAbility $m2",
+            "ActivateManaAbility $m3",
+            "ActivateManaAbility $m4",
+            "ActivateManaAbility $s1",
+            "ActivateManaAbility $s2",
+            "ActivateManaAbility $s3",
+            "ActivateManaAbility $s4"
+          ],
+          "of": "Offered",
+          "player": "alice"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Cast": {
+          "mana": [
+            "$p1",
+            "$s1",
+            null
+          ],
+          "object": "$ban"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Answer": {
+          "prompt": "ChooseCardName",
+          "with": "Goblin Piker"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "View": {
+          "is": [
+            "Pass",
+            "PlayLand Plains#5",
+            "Cast $bolt",
+            "ActivateManaAbility $p2",
+            "ActivateManaAbility $p3",
+            "ActivateManaAbility $p4",
+            "ActivateManaAbility $m1",
+            "ActivateManaAbility $m2",
+            "ActivateManaAbility $m3",
+            "ActivateManaAbility $m4",
+            "ActivateManaAbility $s2",
+            "ActivateManaAbility $s3",
+            "ActivateManaAbility $s4"
+          ],
+          "of": "Offered",
+          "player": "alice"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "player": "alice",
+      "refuse": {
+        "Cast": {
+          "mana": [
+            "$m1",
+            "$m2",
+            null
+          ],
+          "object": "$piker"
+        }
+      },
+      "step": "PrecombatMain",
+      "turn": 1
+    }
+  ]
+}

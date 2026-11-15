@@ -159,12 +159,10 @@ import qualified Parun.Types.PlayerScope as PlayerScope
 import qualified Parun.Types.Printing as Printing
 import qualified Parun.Types.ProjectedCharacteristics as PC
 import qualified Parun.Types.Prompt as Prompt
-import qualified Parun.Types.Recipient as Recipient
 import qualified Parun.Types.Regenerability as Regenerability
 import qualified Parun.Types.SpellWasCast as SpellWasCast
 import qualified Parun.Types.StoredEffects as StoredEffects
 import qualified Parun.Types.Subtype as Subtype
-import qualified Parun.Types.TextWord as TextWord
 import qualified Parun.Types.TurnRegisters as TurnRegisters
 import qualified Parun.Types.VariableChoice as VariableChoice
 import qualified Parun.Types.While as While
@@ -1622,15 +1620,6 @@ monocoloredHybridDiscountSpec s registry =
       let (ghoulId, _, gs) = hybridDiscountBoard swamp discount ghoul solRing 1 0
       Spec.assertBool s (not (S.castable S.alice ghoulId gs)) "no mana pays either half"
 
--- Aims the text changer's one target slot at `oid` -- the SpellsAndPermanents
--- pool's recipient shape -- and answers the swap prompt with (from, to),
--- whichever family the changer names.
-swapAt :: ObjectId.ObjectId -> Subtype.Subtype -> Subtype.Subtype -> Prompt.Prompt r -> r
-swapAt oid from to p = case p of
-  Prompt.ChooseTargets _ _ _ sets -> fmap (const (Set.singleton (Recipient.ToObject oid))) sets
-  Prompt.ChooseWordSwap {} -> (TextWord.SubtypeWord from, TextWord.SubtypeWord to)
-  _ -> S.identityAnswer p
-
 -- alice controls one Edgewalker, one untapped Plains and one untapped Island;
 -- her hand holds a second Edgewalker ({1}{W}{B} Human Cleric) and a Whipstitched
 -- Zombie ({1}{B} Zombie). Returns the state, the Cleric spell and the Zombie
@@ -2214,9 +2203,9 @@ storedConditional piker =
 -- The STORED carrier: a player effect that outlives the object that made it.
 -- Hand-built here, exactly as ExpirySpec hand-builds a ContinuousEffect. Every
 -- expiry now has a card driving it end to end (the Silence, Blossoming Calm and
--- Synthetic Conditional Silence groups); these stay because they discriminate
--- shapes no single card reaches -- two AtTurnOf entries keyed to two players on
--- one handoff being the sharpest.
+-- Synthetic Conditional Silence scenarios in data/scenarios/cast-prohibition);
+-- these stay because they discriminate shapes no single card reaches -- two
+-- AtTurnOf entries keyed to two players on one handoff being the sharpest.
 storedSpec :: (Monad m, Monad n) => Spec.Spec m n -> Registry.Registry m -> n ()
 storedSpec s registry =
   Spec.describe s "Stored" $ do
@@ -2316,38 +2305,6 @@ silenceBoard plains silence mountain prodigalSorcerer piker =
                 { TurnRegisters.phase = Phase.PrecombatMain,
                   TurnRegisters.activePlayer = S.bob,
                   TurnRegisters.priority = Just S.bob
-                }
-          }
-      )
-
--- CR 800.1: the three-seat Silence board. alice has two Plains and a Silence in
--- hand; bob and carol each have TWO Mountains (Goblin Piker is {1}{R}, two mana,
--- so one Mountain each -- as the brief originally specified -- cannot afford it;
--- the two-seat silenceBoard above gives bob two Mountains for the same reason)
--- and a creature in hand to cast. The SEAT COUNT is the whole point -- at two
--- players "the other player" and "every other player" are the same set, so
--- silenceBoard cannot tell the readings apart.
-threeSeatSilenceBoard :: Printing.Printing -> Printing.Printing -> Printing.Printing -> Printing.Printing -> (ObjectId.ObjectId, ObjectId.ObjectId, ObjectId.ObjectId, GameState.GameState)
-threeSeatSilenceBoard plains silence mountain piker =
-  let gs0 = Setup.emptyGame S.threePlayers
-      (_, gs1) = S.addPermanent plains S.alice gs0
-      (_, gs2) = S.addPermanent plains S.alice gs1
-      (silenceId, gs3) = S.addHandCard silence S.alice gs2
-      (_, gs4) = S.addPermanent mountain S.bob gs3
-      (_, gs5) = S.addPermanent mountain S.bob gs4
-      (bobsPiker, gs6) = S.addHandCard piker S.bob gs5
-      (_, gs7) = S.addPermanent mountain S.carol gs6
-      (_, gs8) = S.addPermanent mountain S.carol gs7
-      (carolsPiker, gs9) = S.addHandCard piker S.carol gs8
-   in ( silenceId,
-        bobsPiker,
-        carolsPiker,
-        gs9
-          { GameState.turn =
-              (GameState.turn gs9)
-                { TurnRegisters.phase = Phase.PrecombatMain,
-                  TurnRegisters.activePlayer = S.alice,
-                  TurnRegisters.priority = Just S.alice
                 }
           }
       )

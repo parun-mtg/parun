@@ -1,0 +1,206 @@
+{
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "battlefield": [
+          {
+            "card": "Plains",
+            "label": "a1"
+          },
+          {
+            "card": "Plains",
+            "label": "a2"
+          }
+        ],
+        "hand": [
+          {
+            "card": "Sphinx's Decree",
+            "label": "decree"
+          }
+        ],
+        "library": [
+          {
+            "card": "Plains"
+          }
+        ],
+        "name": "alice"
+      },
+      {
+        "battlefield": [
+          {
+            "card": "Mountain",
+            "label": "b1"
+          },
+          {
+            "card": "Mountain",
+            "label": "b2"
+          }
+        ],
+        "hand": [
+          {
+            "card": "Lightning Bolt",
+            "label": "bobs-bolt"
+          }
+        ],
+        "library": [
+          {
+            "card": "Plains"
+          }
+        ],
+        "name": "bob"
+      },
+      {
+        "battlefield": [
+          {
+            "card": "Mountain",
+            "label": "c1"
+          },
+          {
+            "card": "Mountain",
+            "label": "c2"
+          }
+        ],
+        "hand": [
+          {
+            "card": "Lightning Bolt",
+            "label": "carols-bolt"
+          }
+        ],
+        "library": [
+          {
+            "card": "Plains"
+          }
+        ],
+        "name": "carol"
+      }
+    ],
+    "step": "PrecombatMain"
+  },
+  "description": "CR 611.2a each opponent is barred during their own next turn and no other",
+  "note": "Sphinx's Decree: \"Each opponent can't cast instant or sorcery spells during that player's next turn.\" Three seats, so each opponent's next turn is a different turn. bob and carol each hold a Lightning Bolt over two Mountains, so a cast is offered whenever nothing bars it: to bob on alice's turn, to carol and not bob on bob's turn, to bob and not carol on carol's turn.",
+  "timeline": [
+    {
+      "do": {
+        "Cast": {
+          "mana": [
+            "$a1",
+            "$a2"
+          ],
+          "object": "$decree"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "bob",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Sphinx's Decree",
+          "count": 1,
+          "player": "alice",
+          "zone": "Graveyard"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "View": {
+          "is": [
+            "Pass",
+            "Cast $bobs-bolt",
+            "ActivateManaAbility $b1",
+            "ActivateManaAbility $b2"
+          ],
+          "of": "Offered",
+          "player": "bob"
+        }
+      },
+      "player": "bob",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "View": {
+          "is": [
+            "Pass",
+            "ActivateManaAbility $b1",
+            "ActivateManaAbility $b2"
+          ],
+          "of": "Offered",
+          "player": "bob"
+        }
+      },
+      "player": "bob",
+      "step": "Upkeep",
+      "turn": 2
+    },
+    {
+      "check": {
+        "View": {
+          "is": [
+            "Pass",
+            "Cast $carols-bolt",
+            "ActivateManaAbility $c1",
+            "ActivateManaAbility $c2"
+          ],
+          "of": "Offered",
+          "player": "carol"
+        }
+      },
+      "player": "carol",
+      "step": "Upkeep",
+      "turn": 2
+    },
+    {
+      "check": {
+        "View": {
+          "is": [
+            "Pass",
+            "ActivateManaAbility $c1",
+            "ActivateManaAbility $c2"
+          ],
+          "of": "Offered",
+          "player": "carol"
+        }
+      },
+      "player": "carol",
+      "step": "Upkeep",
+      "turn": 3
+    },
+    {
+      "check": {
+        "View": {
+          "is": [
+            "Pass",
+            "Cast $bobs-bolt",
+            "ActivateManaAbility $b1",
+            "ActivateManaAbility $b2"
+          ],
+          "of": "Offered",
+          "player": "bob"
+        }
+      },
+      "player": "bob",
+      "step": "Upkeep",
+      "turn": 3
+    }
+  ]
+}

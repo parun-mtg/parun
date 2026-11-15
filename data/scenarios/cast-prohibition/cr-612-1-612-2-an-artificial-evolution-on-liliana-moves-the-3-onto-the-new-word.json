@@ -1,0 +1,185 @@
+{
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "battlefield": [
+          {
+            "card": "Island",
+            "label": "island"
+          },
+          {
+            "card": "Swamp",
+            "label": "swamp"
+          },
+          {
+            "card": "Swamp",
+            "label": "swamp-2"
+          },
+          {
+            "card": "Liliana, Untouched by Death",
+            "counters": [
+              {
+                "key": {
+                  "type": "Loyalty"
+                },
+                "value": 4
+              }
+            ],
+            "label": "liliana"
+          }
+        ],
+        "graveyard": [
+          {
+            "card": "Whipstitched Zombie",
+            "label": "zombie"
+          },
+          {
+            "card": "Cabal Evangel",
+            "label": "evangel"
+          }
+        ],
+        "hand": [
+          {
+            "card": "Artificial Evolution",
+            "label": "evolution"
+          }
+        ],
+        "name": "alice"
+      },
+      {
+        "name": "bob"
+      }
+    ],
+    "step": "PrecombatMain"
+  },
+  "description": "CR 612.1/612.2 an Artificial Evolution on Liliana moves the -3 onto the new word",
+  "final": [
+    {
+      "Count": {
+        "card": "Cabal Evangel",
+        "count": 1,
+        "player": "alice",
+        "zone": "Battlefield"
+      }
+    },
+    {
+      "Count": {
+        "card": "Whipstitched Zombie",
+        "count": 1,
+        "player": "alice",
+        "zone": "Graveyard"
+      }
+    }
+  ],
+  "note": "The unhacked scenario's board, with Artificial Evolution cast at Liliana swapping Zombie for Cleric before the -3. The two graveyard cards cost the same and differ in the subtype word alone: the Cleric is offered and cast, the Zombie is not, so the word was rewritten rather than the restriction dropped.",
+  "timeline": [
+    {
+      "do": {
+        "Cast": {
+          "mana": [
+            "$island",
+            null
+          ],
+          "object": "$evolution",
+          "targets": [
+            "$liliana"
+          ]
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "ChooseWordSwap": {
+          "from": {
+            "type": "Zombie"
+          },
+          "to": {
+            "type": "Cleric"
+          }
+        }
+      },
+      "player": "alice",
+      "source": "Artificial Evolution",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Activate": {
+          "ability": 2,
+          "object": "$liliana"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "View": {
+          "is": [
+            "Pass",
+            "Cast $evangel",
+            "ActivateManaAbility $swamp",
+            "ActivateManaAbility $swamp-2"
+          ],
+          "of": "Offered",
+          "player": "alice"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "player": "alice",
+      "refuse": {
+        "Cast": {
+          "mana": [
+            "$swamp",
+            "$swamp-2"
+          ],
+          "object": "$zombie"
+        }
+      },
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Cast": {
+          "mana": [
+            "$swamp",
+            "$swamp-2"
+          ],
+          "object": "$evangel"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    }
+  ]
+}

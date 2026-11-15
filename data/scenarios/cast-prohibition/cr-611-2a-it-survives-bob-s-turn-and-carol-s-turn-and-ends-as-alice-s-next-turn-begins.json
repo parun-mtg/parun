@@ -1,0 +1,180 @@
+{
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "battlefield": [
+          {
+            "card": "Plains",
+            "label": "plains"
+          }
+        ],
+        "hand": [
+          {
+            "card": "Blossoming Calm",
+            "label": "calm"
+          }
+        ],
+        "library": [
+          {
+            "card": "Plains"
+          }
+        ],
+        "name": "alice"
+      },
+      {
+        "battlefield": [
+          {
+            "card": "Mountain",
+            "label": "mountain"
+          }
+        ],
+        "hand": [
+          {
+            "card": "Lightning Bolt",
+            "label": "bolt"
+          }
+        ],
+        "library": [
+          {
+            "card": "Plains"
+          }
+        ],
+        "name": "bob"
+      },
+      {
+        "library": [
+          {
+            "card": "Plains"
+          }
+        ],
+        "name": "carol"
+      }
+    ],
+    "step": "PrecombatMain"
+  },
+  "description": "CR 611.2a it survives bob's turn and carol's turn, and ends as alice's next turn begins",
+  "final": [
+    {
+      "Life": {
+        "life": 19,
+        "player": "alice"
+      }
+    }
+  ],
+  "note": "Three seats, so \"until your next turn\" passes two other turns before it ends: a duration keyed to the next turn, or to the victim rather than CR 109.5's \"you\", would end at bob's. bob's Bolt is refused at alice in bob's upkeep and in carol's, and reaches her in alice's own upkeep, where she declines the Calm's rebound cast.",
+  "timeline": [
+    {
+      "do": {
+        "Cast": {
+          "mana": [
+            "$plains"
+          ],
+          "object": "$calm"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "bob",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Life": {
+          "life": 22,
+          "player": "alice"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "player": "bob",
+      "refuse": {
+        "Cast": {
+          "mana": [
+            "$mountain"
+          ],
+          "object": "$bolt",
+          "targets": [
+            "$alice"
+          ]
+        }
+      },
+      "step": "Upkeep",
+      "turn": 2
+    },
+    {
+      "player": "bob",
+      "refuse": {
+        "Cast": {
+          "mana": [
+            "$mountain"
+          ],
+          "object": "$bolt",
+          "targets": [
+            "$alice"
+          ]
+        }
+      },
+      "step": "Upkeep",
+      "turn": 3
+    },
+    {
+      "check": {
+        "View": {
+          "is": "carol",
+          "of": "ActivePlayer"
+        }
+      },
+      "player": "bob",
+      "step": "Upkeep",
+      "turn": 3
+    },
+    {
+      "do": {
+        "Cast": {
+          "mana": [
+            "$mountain"
+          ],
+          "object": "$bolt",
+          "targets": [
+            "$alice"
+          ]
+        }
+      },
+      "player": "bob",
+      "step": "Upkeep",
+      "turn": 4
+    },
+    {
+      "do": "Pass",
+      "player": "bob",
+      "step": "Upkeep",
+      "turn": 4
+    },
+    {
+      "do": {
+        "Answer": {
+          "prompt": "OfferedCast",
+          "with": "Declines"
+        }
+      },
+      "player": "alice",
+      "step": "Upkeep",
+      "turn": 4
+    }
+  ]
+}
