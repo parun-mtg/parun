@@ -1,0 +1,25 @@
+{
+  "description": "CR 205.2a, 702.11b, 614.1c, 614.1d, 605.1a: Valgavoth's Lair is an enchantment land with hexproof that enters tapped, has a colour chosen as it enters and taps for that colour",
+  "note": "Alice plays the Lair, choosing green. On turn 2 bob's Disenchant has no legal target (hexproof, the Lair being the only artifact or enchantment), so it is refused with the mana to cast it. On turn 3 alice pays her own Disenchant with the Lair's green and a Plains and destroys the Lair: its controller may target it, and it is an enchantment.",
+  "board": {
+    "active": "alice",
+    "step": "PrecombatMain",
+    "seats": [
+      {"name": "alice", "battlefield": [{"card": "Plains", "label": "ap"}], "hand": [{"card": "Valgavoth's Lair", "label": "lair"}, {"card": "Disenchant", "label": "mine"}], "library": [{"card": "Plains"}, {"card": "Plains"}, {"card": "Plains"}, {"card": "Plains"}]},
+      {"name": "bob", "battlefield": [{"card": "Plains", "label": "bp1"}, {"card": "Plains", "label": "bp2"}], "hand": [{"card": "Disenchant", "label": "theirs"}], "library": [{"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}]}
+    ]
+  },
+  "timeline": [
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": {"PlayLand": "$lair"}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": {"Answer": {"prompt": "ChooseReplacement", "with": 0}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": {"Answer": {"prompt": "ChooseColor", "with": "Green"}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Tapped": {"object": "Valgavoth's Lair", "tapped": true}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Types": {"object": "Valgavoth's Lair", "types": ["Enchantment", "Land"]}}},
+    {"turn": 2, "step": "PrecombatMain", "player": "bob", "refuse": {"Cast": {"object": "$theirs", "targets": ["Valgavoth's Lair"], "mana": ["$bp1", "$bp2"]}}},
+    {"turn": 3, "step": "PrecombatMain", "player": "alice", "do": {"Take": {"action": "ActivateManaAbility Valgavoth's Lair"}}},
+    {"turn": 3, "step": "PrecombatMain", "player": "alice", "check": {"View": {"of": "ManaPool", "player": "alice", "is": [{"manaType": {"type": "Colored", "value": "Green"}, "tags": [], "retention": "Ordinary", "restriction": null, "rider": null, "sourceChoices": {"colors": ["Green"]}}]}}},
+    {"turn": 3, "step": "PrecombatMain", "player": "alice", "do": {"Cast": {"object": "$mine", "mana": ["$ap"]}}},
+    {"turn": 3, "step": "PrecombatMain", "player": "alice", "do": "Pass"},
+    {"turn": 3, "step": "PrecombatMain", "player": "alice", "check": {"Count": {"player": "alice", "zone": "Graveyard", "card": "Valgavoth's Lair", "count": 1}}}
+  ]
+}
