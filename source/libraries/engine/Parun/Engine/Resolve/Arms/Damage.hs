@@ -2017,6 +2017,14 @@ joinAttack resolving source controller legal (JoinAttack.MkJoinAttack ref alongs
     [attacking] -> Monad.mapM_ (Combat.joinAttack controller attacking) (objectRefObjects legal resolving controller source gs ref)
     _ -> pure ()
 
+-- CR 508.7 for each named creature, through Combat.reselectAttack, which owns
+-- the candidates and the rewrite. The resolving controller chooses (Portal
+-- Mage's "you may reselect").
+reselectAttack :: ObjectId -> ObjectId -> PlayerId -> Map.Map SlotName (Set Recipient) -> ObjectRef -> Game ()
+reselectAttack resolving source controller legal ref = do
+  gs <- State.get
+  Monad.mapM_ (Combat.reselectAttack controller) (objectRefObjects legal resolving controller source gs ref)
+
 -- CR 509.3b's third producer, through Combat.switchBlockers, which owns the
 -- whole reassignment: General Jarkeld's hypothetical legality test over CR
 -- 509.1b's restrictions, CR 509.1h's

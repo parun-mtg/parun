@@ -1190,6 +1190,7 @@ effectChildren c effect = case effect of
   Effect.RemoveFromCombat (RemoveFromCombat.MkRemoveFromCombat removed unblocking) -> fmap (\rewritten -> Effect.RemoveFromCombat (RemoveFromCombat.MkRemoveFromCombat rewritten unblocking)) (onObjectRef c removed)
   Effect.BecomesBlocked named -> fmap Effect.BecomesBlocked (onSlot c named)
   Effect.BlockAttacker ref -> fmap Effect.BlockAttacker (onObjectRef c ref)
+  Effect.ReselectAttack ref -> fmap Effect.ReselectAttack (onObjectRef c ref)
   Effect.JoinAttack (JoinAttack.MkJoinAttack creature alongside) -> fmap Effect.JoinAttack (JoinAttack.MkJoinAttack <$> onObjectRef c creature <*> onPlayer c alongside)
   Effect.SwitchBlockers named -> fmap Effect.SwitchBlockers (onSlot c named)
   Effect.ExchangeBlocks (ExchangeBlocks.MkExchangeBlocks first second) -> fmap Effect.ExchangeBlocks (ExchangeBlocks.MkExchangeBlocks <$> onSlot c first <*> onSlot c second)

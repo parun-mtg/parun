@@ -830,6 +830,7 @@ objectRefPositions =
         ("turn-face-down", Effect.TurnFaceDown (TurnFaceDown.MkTurnFaceDown (plantedRef "tf") FaceDownCharacteristics.defaultValue), [plantedRef "tf"]),
         ("remove-from-combat", Effect.RemoveFromCombat (RemoveFromCombat.MkRemoveFromCombat (plantedRef "rc") Unblocking.StayBlocked), [plantedRef "rc"]),
         ("block-attacker", Effect.BlockAttacker (plantedRef "ba"), [plantedRef "ba"]),
+        ("reselect-attack", Effect.ReselectAttack (plantedRef "ra"), [plantedRef "ra"]),
         ("join-attack", Effect.JoinAttack (JoinAttack.MkJoinAttack (plantedRef "ja") (PlayerRef.Relative PlayerRelation.You)), [plantedRef "ja"]),
         ("gain-control", Effect.GainControl (GainControl.MkGainControl Duration.UntilEndOfTurn (plantedRef "gc") Nothing (PlayerRef.Relative PlayerRelation.You)), [plantedRef "gc"]),
         ("require-block", Effect.RequireBlock (RequireBlock.MkRequireBlock Duration.UntilEndOfTurn (RestrictedCreatures.Named (plantedRef "rb-blocker")) (Just (RestrictedCreatures.Named (plantedRef "rb-attacker"))) RequirementArity.EachSubject), [plantedRef "rb-blocker", plantedRef "rb-attacker"]),
@@ -5314,6 +5315,7 @@ effectFilters effect = case effect of
   Effect.Fight _ -> []
   Effect.RemoveFromCombat payload -> frame SourceHostFramed (objectRefFilters (RemoveFromCombat.removed payload))
   Effect.BlockAttacker ref -> frame SourceHostFramed (objectRefFilters ref)
+  Effect.ReselectAttack ref -> frame SourceHostFramed (objectRefFilters ref)
   Effect.JoinAttack payload -> frame SourceHostFramed (objectRefFilters (JoinAttack.creature payload))
   Effect.BecomesBlocked _ -> []
   Effect.SwitchBlockers _ -> []

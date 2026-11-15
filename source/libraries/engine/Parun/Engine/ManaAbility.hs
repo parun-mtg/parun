@@ -385,6 +385,7 @@ manaProduced effect = case effect of
   Effect.TurnFaceUp _ -> Nothing
   Effect.RemoveFromCombat _ -> Nothing
   Effect.BlockAttacker _ -> Nothing
+  Effect.ReselectAttack _ -> Nothing
   Effect.JoinAttack _ -> Nothing
   Effect.BecomesBlocked _ -> Nothing
   Effect.SwitchBlockers _ -> Nothing
@@ -599,6 +600,7 @@ playerChoice effect = case effect of
   Effect.TurnFaceUp _ -> Nothing
   Effect.RemoveFromCombat _ -> Nothing
   Effect.BlockAttacker _ -> Nothing
+  Effect.ReselectAttack _ -> Nothing
   Effect.JoinAttack _ -> Nothing
   Effect.BecomesBlocked _ -> Nothing
   Effect.SwitchBlockers _ -> Nothing
@@ -871,6 +873,7 @@ movesLibraryCard effect = case effect of
   Effect.TurnFaceUp _ -> False
   Effect.RemoveFromCombat _ -> False
   Effect.BlockAttacker _ -> False
+  Effect.ReselectAttack _ -> False
   Effect.JoinAttack _ -> False
   Effect.BecomesBlocked _ -> False
   Effect.SwitchBlockers _ -> False

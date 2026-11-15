@@ -212,6 +212,7 @@ codec cardCodec abilityCodec =
           Arm.payload "RemoveFromCombat" RemoveFromCombat.codec Effect.RemoveFromCombat (\x -> case x of Effect.RemoveFromCombat y -> Just y; _ -> Nothing),
           Arm.payload "BecomesBlocked" SlotName.codec Effect.BecomesBlocked (\x -> case x of Effect.BecomesBlocked y -> Just y; _ -> Nothing),
           Arm.payload "BlockAttacker" ObjectRef.codec Effect.BlockAttacker (\x -> case x of Effect.BlockAttacker y -> Just y; _ -> Nothing),
+          Arm.payload "ReselectAttack" ObjectRef.codec Effect.ReselectAttack (\x -> case x of Effect.ReselectAttack y -> Just y; _ -> Nothing),
           Arm.payload "JoinAttack" JoinAttack.codec Effect.JoinAttack (\x -> case x of Effect.JoinAttack y -> Just y; _ -> Nothing),
           Arm.payload "SwitchBlockers" SlotName.codec Effect.SwitchBlockers (\x -> case x of Effect.SwitchBlockers y -> Just y; _ -> Nothing),
           Arm.payload "ExchangeBlocks" ExchangeBlocks.codec Effect.ExchangeBlocks (\x -> case x of Effect.ExchangeBlocks y -> Just y; _ -> Nothing),
@@ -406,6 +407,7 @@ tagOf x = case x of
   Effect.BecomesBlocked {} -> "BecomesBlocked"
   Effect.BlockAttacker {} -> "BlockAttacker"
   Effect.JoinAttack {} -> "JoinAttack"
+  Effect.ReselectAttack {} -> "ReselectAttack"
   Effect.SwitchBlockers {} -> "SwitchBlockers"
   Effect.ExchangeBlocks {} -> "ExchangeBlocks"
   Effect.Counter {} -> "Counter"

@@ -1574,6 +1574,7 @@ effectObjectRefs effect =
         Effect.Fight {} -> []
         Effect.RemoveFromCombat payload -> read_ [RemoveFromCombat.removed payload]
         Effect.BlockAttacker ref -> read_ [ref]
+        Effect.ReselectAttack ref -> read_ [ref]
         Effect.JoinAttack payload -> read_ [JoinAttack.creature payload]
         Effect.BecomesBlocked {} -> []
         -- The pair comes out of a target slot, not an ObjectRef.
