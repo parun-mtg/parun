@@ -2379,3 +2379,20 @@ Entries are ordered by the first rule each cites.
   by the scenario
   `call-the-spirit-dragons-puts-a-two-color-dragons-counters-in-one-placement`.
 - **Issue**: #7697.
+
+## A reselected attacker takes its band along
+
+- **Question**: Portal Mage reselects what one member of an attacking band is
+  attacking. CR 702.22d keeps a band on one target, and CR 508.7b exempts the
+  reselected creature from the declaration's requirements and restrictions. Does
+  the band follow it, or is the reselection impossible?
+- **Rules**: CR 508.7, 508.7b, 702.22d, 702.22e, 702.22f; Portal Mage's rulings;
+  CR of 2026-11-06. Leaving the band is refuted: CR 702.22e keeps the band for
+  the rest of combat, and CR 702.22f removes a member only with combat.
+- **Decision**: The whole band moves to the reselected target, its other members'
+  attacks rewritten as the reselected creature's is.
+- **Rejected**: Offering only the current target, which makes CR 702.22d the
+  kind of restriction the card's ruling says reselection ignores.
+- **Site**: `Parun.Engine.Combat.reselectAttack`, proved by the scenario
+  `cr-702-22d-portal-mage-reselecting-one-member-of-a-band-moves-the-whole-band`.
+- **Issue**: #7688.

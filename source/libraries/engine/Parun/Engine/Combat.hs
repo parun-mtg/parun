@@ -3400,8 +3400,8 @@ joinAttack chooser alongside oid = do
 -- (Capricopian's ruling that "whenever this creature attacks" does not
 -- trigger).
 --
--- Not implemented: keeping an attacking band on one target (CR 702.22d) when
--- one of its members is reselected (#7688).
+-- Its band moves with it (CR 702.22d, 702.22e): docs/decisions.md, "A
+-- reselected attacker takes its band along".
 reselectAttack :: Set AttackTargetKind.AttackTargetKind -> PlayerId -> ObjectId -> Game ()
 reselectAttack kinds chooser oid = do
   gs <- State.get
@@ -3410,20 +3410,21 @@ reselectAttack kinds chooser oid = do
     target <- announceAttackTarget chooser oid (current NonEmpty.:| List.delete current (filter allowed (declarableTargets gs)))
     Monad.when (target /= current) . State.modify' $ \g ->
       let c = TurnRegisters.combat (GameState.turn g)
-          reseat seat = Map.alter (const seat) oid
+          moved = Set.insert oid (bandmatesOf oid c)
+          reseat seat m = Set.foldr (Map.alter (const seat)) m moved
        in g
             { GameState.turn =
                 (GameState.turn g)
                   { TurnRegisters.combat =
                       c
-                        { Combat.attackers = Map.insert oid target (Combat.attackers c),
+                        { Combat.attackers = Map.union (Map.fromSet (const target) moved) (Combat.attackers c),
                           Combat.attackedUnder = reseat (Defender.playerOf Projection.viewWithLastKnownAnywhere target g) (Combat.attackedUnder c),
                           Combat.attackedControlledBy = reseat (attackedBattleController target g) (Combat.attackedControlledBy c),
                           -- Written afresh by noteAttackingNothing, as on the
                           -- declaration's road.
-                          Combat.attackedProtectedBy = Map.delete oid (Combat.attackedProtectedBy c),
-                          -- CR 506.4c: it is attacking something again.
-                          Combat.attackingNothing = Set.delete oid (Combat.attackingNothing c)
+                          Combat.attackedProtectedBy = Map.withoutKeys (Combat.attackedProtectedBy c) moved,
+                          -- CR 506.4c: they are attacking something again.
+                          Combat.attackingNothing = Set.difference (Combat.attackingNothing c) moved
                         }
                   }
             }
