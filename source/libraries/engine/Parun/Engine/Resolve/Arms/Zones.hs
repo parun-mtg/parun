@@ -1090,8 +1090,9 @@ forEach applyEffectWith loopOffers runSubgame resolving source controller legal 
       -- (including the newcomers) are checked" reach a token a LATER member
       -- minted, and two actions are two events. Nihiloor's ruling (2021-07-23)
       -- is the order: a creature is chosen for each opponent, then all are
-      -- tapped at the same time. No board in data/scenarios can tell that
-      -- order from each member's whole body in turn inside one group, see #7304.
+      -- tapped at the same time. Proved by the scenario
+      -- luminate-primordial-exiles-every-target-before-anyone-gains: every
+      -- exile precedes every life gain.
       --
       -- A member makes all of one action's choices before the next member
       -- makes any (CR 101.4), Liliana, Dreadhorde General's six.
