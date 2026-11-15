@@ -106,6 +106,7 @@ import qualified Parun.Types.Subtype as Subtype.Type
 import qualified Parun.Types.TappedForMana as TappedForMana
 import qualified Parun.Types.Trait as Trait
 import qualified Parun.Types.TurnRegisters as TurnRegisters
+import qualified Parun.Types.TurnedFaceUp as TurnedFaceUp
 import qualified Parun.Types.TypeLine as TypeLine
 import qualified Parun.Types.WhichTurn as WhichTurn
 import qualified Parun.Types.Zone as Zone
@@ -797,7 +798,7 @@ slotPlayers context gs name = case Map.lookup name (Filter.slotPlayers context) 
 -- itself is: Parun.Engine.Projection imports this module.
 snapshotView :: ViewOf -> GameState -> EventShape.EventShape -> GameEvent.GameEvent -> Maybe Filter.View
 snapshotView viewOf gs shape event = case event of
-  GameEvent.Moved (Moved.MkMoved zc snapshot _ _ _ _ _ _ arrivedAs) -> case shape of
+  GameEvent.Moved (Moved.MkMoved zc snapshot _ _ _ _ seenArriving _ arrivedAs) -> case shape of
     EventShape.MovedBetween (MovedBetween.MkMovedBetween from to) ->
       if ZoneChange.from zc == from && ZoneChange.to zc == to then Just (departedView viewOf gs zc snapshot) else Nothing
     -- CR 603.6c: to another zone, so Event.recordMintedArrival's same-zone
@@ -820,16 +821,22 @@ snapshotView viewOf gs shape event = case event of
     -- Where the event recorded none, the arrival as it is or last was, under
     -- the controller it entered under. Either way over that view, which keeps
     -- a token that ceased (CR 111.7) a token.
+    --
+    -- Face down as it entered, too, which CR 400.2 makes the one way onto the
+    -- battlefield nobody sees: one since turned face up still entered face
+    -- down, and one since turned face down did not (Oblivious Bookworm).
     EventShape.CardArrivedIn arrival ->
       if arrivalMatches arrival zc
         then
           let current = Maybe.fromMaybe (departedView viewOf gs zc snapshot) (orLastKnown viewOf gs (ZoneChange.object zc))
-           in Just (maybe (asArrived gs (ZoneChange.object zc) current) (\entered -> asSnapshotted gs entered current) arrivedAs)
+              entered = maybe (asArrived gs (ZoneChange.object zc) current) (\arrived -> asSnapshotted gs arrived current) arrivedAs
+           in Just entered {Filter.faceDown = ZoneChange.to zc == Zone.Battlefield && not seenArriving}
         else Nothing
     EventShape.SpellCast _ -> Nothing
     EventShape.AttackerDeclared _ -> Nothing
     EventShape.CountersPut -> Nothing
     EventShape.Sacrificed -> Nothing
+    EventShape.TurnedFaceUp -> Nothing
     EventShape.DealtCombatDamageToPlayer -> Nothing
   -- CR 510.2 / 608.2i: the source as it dealt the damage, off the event's
   -- deal-time riders, so a creature that has since died or changed hands still
@@ -846,6 +853,7 @@ snapshotView viewOf gs shape event = case event of
     EventShape.AttackerDeclared _ -> Nothing
     EventShape.CountersPut -> Nothing
     EventShape.Sacrificed -> Nothing
+    EventShape.TurnedFaceUp -> Nothing
   -- CR 615.13's record names two ids, a recipient and an amount, and snapshots no
   -- characteristics, so there is nothing for a Filter to look at.
   GameEvent.DamagePrevented {} -> Nothing
@@ -883,6 +891,7 @@ snapshotView viewOf gs shape event = case event of
     EventShape.AttackerDeclared _ -> Nothing
     EventShape.CountersPut -> Nothing
     EventShape.Sacrificed -> Nothing
+    EventShape.TurnedFaceUp -> Nothing
     EventShape.DealtCombatDamageToPlayer -> Nothing
     where
       -- CR 113.6 / 604.2: on the stack. A regression fence: nothing in
@@ -925,6 +934,7 @@ snapshotView viewOf gs shape event = case event of
     EventShape.SpellCast _ -> Nothing
     EventShape.CountersPut -> Nothing
     EventShape.Sacrificed -> Nothing
+    EventShape.TurnedFaceUp -> Nothing
     EventShape.DealtCombatDamageToPlayer -> Nothing
   GameEvent.BecameBlocking {} -> Nothing
   GameEvent.BlocksDeclared {} -> Nothing
@@ -939,7 +949,23 @@ snapshotView viewOf gs shape event = case event of
   -- ability from the stack rather than moving it, and carries no snapshot for the same reason.
   GameEvent.AbilityCountered _ -> Nothing
   GameEvent.HalfUnlocked {} -> Nothing
-  GameEvent.TurnedFaceUp _ -> Nothing
+  -- CR 708.7 / 608.2i: the permanent as it is or last was, controlled by the
+  -- player who turned it, whom Parun.Types.TurnedFaceUp records: CR 608.2c's
+  -- controller of Break Open turns an opponent's permanent, and "you turned"
+  -- asks for the turner. The event snapshots no characteristics.
+  GameEvent.TurnedFaceUp turned -> case shape of
+    EventShape.TurnedFaceUp ->
+      fmap
+        (\view -> view {Filter.controller = Just (TurnedFaceUp.player turned)})
+        (orLastKnown viewOf gs (TurnedFaceUp.object turned))
+    EventShape.MovedBetween {} -> Nothing
+    EventShape.MovedFrom {} -> Nothing
+    EventShape.CardArrivedIn {} -> Nothing
+    EventShape.SpellCast _ -> Nothing
+    EventShape.AttackerDeclared _ -> Nothing
+    EventShape.CountersPut -> Nothing
+    EventShape.Sacrificed -> Nothing
+    EventShape.DealtCombatDamageToPlayer -> Nothing
   GameEvent.PermanentActed _ -> Nothing
   GameEvent.Transformed {} -> Nothing
   GameEvent.BecameDesignated {} -> Nothing
@@ -961,6 +987,7 @@ snapshotView viewOf gs shape event = case event of
     EventShape.SpellCast _ -> Nothing
     EventShape.AttackerDeclared _ -> Nothing
     EventShape.CountersPut -> Nothing
+    EventShape.TurnedFaceUp -> Nothing
     EventShape.DealtCombatDamageToPlayer -> Nothing
   GameEvent.AbilityTriggered {} -> Nothing
   GameEvent.AbilityActivated _ -> Nothing
@@ -991,6 +1018,7 @@ snapshotView viewOf gs shape event = case event of
     EventShape.SpellCast _ -> Nothing
     EventShape.AttackerDeclared _ -> Nothing
     EventShape.Sacrificed -> Nothing
+    EventShape.TurnedFaceUp -> Nothing
     EventShape.DealtCombatDamageToPlayer -> Nothing
   -- CR 122.1's removal names an object by id and snapshots no characteristics,
   -- and no EventShape names it.
@@ -1080,6 +1108,7 @@ snapshotView viewOf gs shape event = case event of
     EventShape.AttackerDeclared _ -> Nothing
     EventShape.CountersPut -> Nothing
     EventShape.Sacrificed -> Nothing
+    EventShape.TurnedFaceUp -> Nothing
     EventShape.DealtCombatDamageToPlayer -> Nothing
 
 -- Does a fold over this shape count each object once, however many of its
@@ -1095,6 +1124,7 @@ oncePerObject shape = case shape of
   EventShape.AttackerDeclared _ -> False
   EventShape.CountersPut -> False
   EventShape.Sacrificed -> False
+  EventShape.TurnedFaceUp -> False
 
 -- CR 110.2 / 608.2i: an arrival under the controller it entered under, so
 -- "entered the battlefield under your control this turn" still counts one

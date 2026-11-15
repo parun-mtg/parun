@@ -64,6 +64,13 @@ spec s = Spec.describe s "Parun.Codec.EventShape" $ do
       EventShape.codec
       EventShape.Sacrificed
       " {\"type\":\"Sacrificed\"} "
+  -- CR 708.7: payloadless too.
+  Spec.it s "TurnedFaceUp" $
+    Common.assertCodec
+      s
+      EventShape.codec
+      EventShape.TurnedFaceUp
+      " {\"type\":\"TurnedFaceUp\"} "
   -- CR 510.2: payloadless too.
   Spec.it s "DealtCombatDamageToPlayer" $
     Common.assertCodec

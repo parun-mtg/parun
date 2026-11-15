@@ -1,0 +1,151 @@
+{
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "battlefield": [
+          {
+            "card": "Oblivious Bookworm",
+            "label": "worm"
+          },
+          {
+            "card": "Grizzly Bears",
+            "faceDown": "Manifested",
+            "label": "bear"
+          }
+        ],
+        "hand": [
+          {
+            "card": "Forest",
+            "label": "land"
+          },
+          {
+            "card": "Island",
+            "label": "isl"
+          }
+        ],
+        "library": [
+          {
+            "card": "Savannah Lions"
+          },
+          {
+            "card": "Plains"
+          },
+          {
+            "card": "Plains"
+          }
+        ],
+        "name": "alice"
+      },
+      {
+        "battlefield": [
+          {
+            "card": "Mountain",
+            "label": "m1"
+          },
+          {
+            "card": "Mountain",
+            "label": "m2"
+          }
+        ],
+        "hand": [
+          {
+            "card": "Break Open",
+            "label": "break"
+          }
+        ],
+        "library": [
+          {
+            "card": "Goblin Piker"
+          },
+          {
+            "card": "Plains"
+          },
+          {
+            "card": "Plains"
+          }
+        ],
+        "name": "bob"
+      }
+    ],
+    "step": "PrecombatMain"
+  },
+  "description": "CR 708.7 Oblivious Bookworm discards after bob turns alice's manifested Grizzly Bears face up and a land enters face up",
+  "final": [
+    {
+      "View": {
+        "is": [
+          "Savannah Lions"
+        ],
+        "of": "Zone",
+        "player": "alice",
+        "zone": "Hand"
+      }
+    }
+  ],
+  "note": "bob's Break Open turns the bear up, so the turner is bob and not alice (CR 708.7); alice's Forest entered this turn face up, so a face-up entry does not satisfy the unless clause either.",
+  "timeline": [
+    {
+      "do": {
+        "PlayLand": "$land"
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Cast": {
+          "mana": [
+            "$m1",
+            "$m2"
+          ],
+          "object": "$break"
+        }
+      },
+      "player": "bob",
+      "step": "BeginningOfCombat",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "bob",
+      "step": "BeginningOfCombat",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Names": {
+          "names": [
+            "Grizzly Bears"
+          ],
+          "object": "$bear"
+        }
+      },
+      "player": "bob",
+      "step": "BeginningOfCombat",
+      "turn": 1
+    },
+    {
+      "do": {
+        "ChooseOptional": "Exercises"
+      },
+      "player": "alice",
+      "step": "EndStep",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Answer": {
+          "prompt": "ChooseDiscard",
+          "with": [
+            "$isl"
+          ]
+        }
+      },
+      "player": "alice",
+      "step": "EndStep",
+      "turn": 1
+    }
+  ]
+}
