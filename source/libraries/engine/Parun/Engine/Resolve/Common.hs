@@ -153,6 +153,7 @@ import qualified Parun.Types.Keyword as Keyword.Type
 import qualified Parun.Types.KeywordFamily as KeywordFamily
 import qualified Parun.Types.LastKnown as LastKnown
 import qualified Parun.Types.LentCards as LentCards
+import qualified Parun.Types.LentKeyword as LentKeyword
 import qualified Parun.Types.LibraryPlacement as LibraryPlacement
 import qualified Parun.Types.LibraryPosition as LibraryPosition
 import qualified Parun.Types.LifeLossCause as LifeLossCause
@@ -4140,6 +4141,9 @@ bindEarthbentLand resolving land gs =
 -- printing with backup prints either, nor a special action, which has no arm
 -- (Scryfall `keyword:backup`, 2026-09-24).
 --
+-- Not implemented: the delayed abilities a granted ability arms by name, so
+-- it arms none of the source's (#7766).
+--
 -- CR 702.1c's grant expands the same way, into one GainKeyword per distinct
 -- keyword the designator names among the projected keywords of the objects in
 -- its zone its Filter matches, read now: Concerted Effort's ruling keeps the
@@ -4150,18 +4154,24 @@ bindEarthbentLand resolving land gs =
 -- card in the pool resolves one over a zone other than the battlefield.
 --
 -- CR 613.1f: a resolving lend from the battlefield expands likewise, into one
--- GainAbility per activated ability each lender has now, keyword and CR 305.6
--- intrinsic ones among them (Quicksilver Elemental's rulings), so the receiver
--- keeps them after the lender leaves (docs/decisions.md, "A resolving lend
--- takes the lender's abilities as it resolves"). Each is named for the
--- resolving ability (Binding.acquiredFrom), not the lender: CR 607.5 links the
--- pairs one resolution lends and no others, and a once-each-turn ability lent
--- twice is two abilities (the 2004-10-04 rulings). The quicksilver-elemental-*
+-- GainAbility per activated ability each lender has now, CR 305.6 intrinsic
+-- ones among them, and one GainLentKeyword per keyword it lends, so the
+-- receiver is "with" it (CR 702.1d; Quicksilver Elemental's rulings) and keeps
+-- them after the lender leaves (docs/decisions.md, "A resolving lend takes the
+-- lender's abilities as it resolves"). Each is named for the resolving ability
+-- (Binding.acquiredFrom), not the lender: CR 607.5 links the pairs one
+-- resolution lends and no others, and a once-each-turn ability lent twice is
+-- two abilities (the 2004-10-04 rulings). The quicksilver-elemental-*
 -- scenarios prove it.
 --
+-- CR 603.7 / 613.1f: each lent ability's arms carry the delayed ability their
+-- name means to the lender (Projection.carryingDelayed), so the receiver arms
+-- the lender's. The scenario
+-- quicksilver-elemental-arms-the-delayed-trigger-of-a-gained-ability proves
+-- it.
+--
 -- Not implemented: the lender's triggered abilities where the payload lends
--- them, its delayed abilities armed by name, and its keywords as keywords, so
--- the receiver is not "with" one (CR 702.1d) (#7672).
+-- them (#7766).
 expandGrant :: Map.Map SlotName (Set Recipient) -> ObjectId -> PlayerId -> ObjectId -> GameState -> Modification.Modification (GrantedAbility.GrantedAbility Card.Type.Card) -> [Modification.Modification (GrantedAbility.GrantedAbility Card.Type.Card)]
 expandGrant legal resolving controller source gs modification = case modification of
   Modification.GainKeywordsAmong designator zone among ->
@@ -4188,9 +4198,13 @@ expandGrant legal resolving controller source gs modification = case modificatio
   Modification.GainCardAbilities (CardAbilities.MkCardAbilities LentCards.OnTheBattlefield among _ only extra) ->
     let lenders = battlefieldMatching legal resolving controller source gs among
         named a = a {ActivatedAbility.name = Just (Binding.acquiredFrom resolving (ActivatedAbility.name a)), ActivatedAbility.restrictions = ActivatedAbility.restrictions a <> extra}
+        withDelayed oid a = a {ActivatedAbility.modal = Identity.runIdentity (Children.modalChildren Children.modalLeaves {Children.modalEffect = Identity.Identity . Projection.carryingDelayed (ActivatedAbility.name a) oid gs} (ActivatedAbility.modal a))}
+        recorded keyword count restrictions = [LentKeyword.MkLentKeyword keyword count (Binding.acquiredFrom resolving Nothing) False (restrictions <> extra) | Keyword.lends False keyword count]
         lent oid =
           let pc = Projection.project oid gs
-           in fmap (Modification.GainAbility . GrantedAbility.Activated . named) (filter (Projection.lendsKind only) (Projection.intrinsicManaAbilitiesOf pc <> Count.abilitiesOf False pc))
+              abilities = filter (Projection.lendsKind only) (Projection.intrinsicManaAbilitiesOf pc <> PC.activatedAbilities pc)
+              keywords = foldMap (\(k, n) -> recorded k n []) (Map.toAscList (PC.keywords pc)) <> foldMap (\l -> recorded (LentKeyword.keyword l) (LentKeyword.instances l) (LentKeyword.restrictions l)) (PC.lentKeywords pc)
+           in fmap (Modification.GainAbility . GrantedAbility.Activated . named . withDelayed oid) abilities <> fmap Modification.GainLentKeyword keywords
      in foldMap lent lenders
   _ -> [modification]
 

@@ -35,6 +35,7 @@ import qualified Parun.Types.Keyword as Keyword
 import qualified Parun.Types.KeywordDesignator as KeywordDesignator
 import qualified Parun.Types.KeywordFamily as KeywordFamily
 import qualified Parun.Types.LentCards as LentCards
+import qualified Parun.Types.LentKeyword as LentKeyword
 import qualified Parun.Types.Modal as Modal
 import qualified Parun.Types.Mode as Mode
 import qualified Parun.Types.ModeMemory as ModeMemory
@@ -354,6 +355,13 @@ spec s = Spec.describe s "Parun.Codec.Modification" $ do
       codec
       (Modification.GainCardAbilities CardAbilities.MkCardAbilities {CardAbilities.from = LentCards.InExile, CardAbilities.cards = Filter.IsExiledWithSource ExiledPile.CraftMaterials, CardAbilities.triggered = False, CardAbilities.only = Nothing, CardAbilities.restrictions = [ActivationRestriction.TimesEachTurn 1]})
       " {\"type\":\"GainCardAbilities\",\"value\":{\"cards\":{\"type\":\"IsExiledWithSource\",\"value\":{\"type\":\"CraftMaterials\"}},\"restrictions\":[{\"type\":\"TimesEachTurn\",\"value\":1}]}} "
+  -- layer 6, CR 702.1d: the keyword a resolving lend recorded.
+  Spec.it s "GainLentKeyword" $
+    Common.assertCodec
+      s
+      codec
+      (Modification.GainLentKeyword LentKeyword.MkLentKeyword {LentKeyword.keyword = Keyword.Flash, LentKeyword.instances = 1, LentKeyword.lender = AbilityName.MkAbilityName (Text.pack "acquiredFrom7"), LentKeyword.triggered = False, LentKeyword.restrictions = []})
+      " {\"type\":\"GainLentKeyword\",\"value\":{\"keyword\":{\"type\":\"Flash\"},\"lender\":\"acquiredFrom7\"}} "
   -- layer 3, CR 612.5: the two sides come from the effect's affected set, so
   -- the arm itself is payload-free.
   Spec.it s "ExchangeTextBoxes" $

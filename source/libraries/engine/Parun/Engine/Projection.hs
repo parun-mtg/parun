@@ -196,6 +196,7 @@ layer m = case m of
   Modification.GainAbilitiesOfSource _ -> Layer.Ability
   Modification.GainKeywordsAmong {} -> Layer.Ability
   Modification.GainCardAbilities _ -> Layer.Ability
+  Modification.GainLentKeyword _ -> Layer.Ability
   Modification.GainAbilitiesOfStickers -> Layer.Ability
   Modification.LoseAllAbilities -> Layer.Ability
   -- CR 613.1f again, and the same layer as the wipe above: what differs is the
@@ -271,6 +272,8 @@ barred designators keyword = any (`Keyword.designates` keyword) designators
 admitting :: GameState -> Modification.Modification ability -> [ObjectId] -> [ObjectId]
 admitting gs m oids = case m of
   Modification.GainKeyword k -> filter (\oid -> not (barred (PC.barredKeywords (project oid gs)) k)) oids
+  -- Unproven: no board bars a keyword Quicksilver Elemental borrows.
+  Modification.GainLentKeyword lent -> filter (\oid -> not (barred (PC.barredKeywords (project oid gs)) (LentKeyword.keyword lent))) oids
   _ -> oids
 
 -- CR 612.1: the word swaps a modification makes, read off its SOURCE where the
@@ -606,6 +609,14 @@ applyModification textBoxOf viewOf src stamp gs oid unitTypes affected m pc =
               fired = if triggered then foldMap (\card -> fmap (titled card) (triggers card)) cards else []
               armable card = Map.mapKeys (Binding.acquiredFrom card . Just) (fmap (titled card) (PC.delayedAbilities (lenderOf card)))
            in pc {PC.activatedAbilities = PC.activatedAbilities pc <> fmap restricted gained, PC.triggeredAbilities = PC.triggeredAbilities pc <> fired, PC.delayedAbilities = Map.union (PC.delayedAbilities pc) (foldMap armable cards), PC.lentKeywords = PC.lentKeywords pc <> foldMap keywords cards}
+        -- CR 702.1d: a keyword a resolving lend took (Resolve.Common's
+        -- expandGrant), recorded as the arm above records one, and kept out
+        -- by CR 113.11's bar likewise. The scenario
+        -- quicksilver-elemental-with-gained-level-up-is-a-creature-with-level-up
+        -- proves it.
+        Modification.GainLentKeyword lent
+          | barred (PC.barredKeywords pc) (LentKeyword.keyword lent) -> pc
+          | otherwise -> pc {PC.lentKeywords = PC.lentKeywords pc <> [lent]}
         -- CR 613.1f / 123.7a: the abilities printed on the ability stickers on
         -- `src`, read off the stickers and never off src's projection, so a
         -- layer-6 loss on src does not reach them. Each goes through the
@@ -1062,6 +1073,7 @@ cardTypesAfter m types = case m of
   Modification.GainAbilitiesOfSource _ -> types
   Modification.GainKeywordsAmong {} -> types
   Modification.GainCardAbilities _ -> types
+  Modification.GainLentKeyword _ -> types
   Modification.GainAbilitiesOfStickers -> types
   Modification.LoseAllAbilities -> types
   Modification.LoseNamedAbility _ -> types
@@ -1994,6 +2006,7 @@ freezeQuantities viewOf gs announcedOn source context m =
         Modification.GainAbilitiesOfSource _ -> Just m
         Modification.GainKeywordsAmong {} -> Just m
         Modification.GainCardAbilities _ -> Just m
+        Modification.GainLentKeyword _ -> Just m
         Modification.GainAbilitiesOfStickers -> Just m
         Modification.LoseAllAbilities -> Just m
         Modification.LoseNamedAbility _ -> Just m
@@ -2070,6 +2083,7 @@ quantitiesOf m = case m of
   Modification.GainAbilitiesOfSource _ -> []
   Modification.GainKeywordsAmong {} -> []
   Modification.GainCardAbilities _ -> []
+  Modification.GainLentKeyword _ -> []
   Modification.GainAbilitiesOfStickers -> []
   Modification.LoseAllAbilities -> []
   Modification.LoseNamedAbility _ -> []
@@ -2128,6 +2142,7 @@ referenceQuery m = case m of
   Modification.GainAbilitiesOfSource _ -> Nothing
   Modification.GainKeywordsAmong {} -> Nothing
   Modification.GainCardAbilities _ -> Nothing
+  Modification.GainLentKeyword _ -> Nothing
   Modification.GainAbilitiesOfStickers -> Nothing
   Modification.LoseAllAbilities -> Nothing
   Modification.LoseNamedAbility _ -> Nothing
@@ -2198,6 +2213,7 @@ setsLandSubtype m = case m of
   Modification.GainAbilitiesOfSource _ -> False
   Modification.GainKeywordsAmong {} -> False
   Modification.GainCardAbilities _ -> False
+  Modification.GainLentKeyword _ -> False
   Modification.GainAbilitiesOfStickers -> False
   Modification.GainKeyword _ -> False
   Modification.GainKeywordAtManaCost _ -> False
@@ -3557,6 +3573,7 @@ removesAbilities m = case m of
   Modification.GainAbilitiesOfSource _ -> False
   Modification.GainKeywordsAmong {} -> False
   Modification.GainCardAbilities _ -> False
+  Modification.GainLentKeyword _ -> False
   Modification.GainAbilitiesOfStickers -> False
   -- CR 305.7 strips a land's rules text, but as a layer-4 type change performed
   -- by setLandSubtypeTo and the two gates beside it, never a layer-6 removal.
@@ -4911,6 +4928,7 @@ modificationWrites m = case m of
   Modification.GainAbilitiesOfSource _ -> Set.singleton Keywords
   Modification.GainKeywordsAmong {} -> Set.singleton Keywords
   Modification.GainCardAbilities _ -> Set.singleton Keywords
+  Modification.GainLentKeyword _ -> Set.singleton Keywords
   Modification.GainAbilitiesOfStickers -> Set.singleton Keywords
   Modification.LoseAllAbilities -> Set.singleton Keywords
   -- Writes ProjectedCharacteristics.activatedAbilities, which Aspect has no finer
@@ -5032,6 +5050,8 @@ modificationReads m = case m of
   Modification.GainCardAbilities lend -> case CardAbilities.from lend of
     LentCards.OnTheBattlefield -> Set.singleton Keywords
     _ -> Set.empty
+  -- A resolving lend's record, read off its lender as it resolved.
+  Modification.GainLentKeyword _ -> Set.empty
   Modification.GainAbilitiesOfStickers -> Set.empty
   Modification.LoseAllAbilities -> Set.empty
   -- Carries a name, which is not a Quantity: a grant and a removal of one
@@ -7047,6 +7067,9 @@ grantsKeywordWhere p m = case m of
     KeywordDesignator.OfFamily _ -> True
     KeywordDesignator.Printed _ -> True
   Modification.GainCardAbilities _ -> False
+  -- Over-approximates: a lent keyword mints its activated abilities, and
+  -- its triggered ones where it says so, and nothing else.
+  Modification.GainLentKeyword lent -> p (LentKeyword.keyword lent)
   -- The sticker data is not in the modification, so True over-approximates.
   Modification.GainAbilitiesOfStickers -> True
   Modification.LoseAllAbilities -> False
@@ -7139,6 +7162,7 @@ grantsMintingType m = case m of
   Modification.GainAbilitiesOfSource _ -> False
   Modification.GainKeywordsAmong {} -> False
   Modification.GainCardAbilities _ -> False
+  Modification.GainLentKeyword _ -> False
   Modification.GainAbilitiesOfStickers -> False
   Modification.LoseAllAbilities -> False
   Modification.LoseNamedAbility _ -> False
@@ -7240,6 +7264,7 @@ grantsAbilityWhere p m = case m of
   Modification.GainAbilitiesOfSource _ -> False
   Modification.GainKeywordsAmong {} -> False
   Modification.GainCardAbilities _ -> False
+  Modification.GainLentKeyword _ -> False
   -- The sticker data is not in the modification, so True over-approximates.
   Modification.GainAbilitiesOfStickers -> True
   Modification.LoseAllAbilities -> False

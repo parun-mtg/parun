@@ -287,6 +287,7 @@ import qualified Parun.Types.LaterPayment as LaterPayment
 import qualified Parun.Types.LeavesTrigger as LeavesTrigger
 import qualified Parun.Types.LeavesZoneTrigger as LeavesZoneTrigger
 import qualified Parun.Types.LeavingPermanent as LeavingPermanent
+import qualified Parun.Types.LentKeyword as LentKeyword
 import qualified Parun.Types.LibraryPlacement as LibraryPlacement
 import qualified Parun.Types.LifeDirection as LifeDirection
 import qualified Parun.Types.LifeExchange as LifeExchange
@@ -3586,6 +3587,9 @@ modificationChildren c modification = case modification of
     (\d -> Modification.GainKeywordsAmong d zone) <$> modificationDesignator c designator <*> modificationFilter c among
   Modification.GainCardAbilities (CardAbilities.MkCardAbilities from cards triggered only restrictions) ->
     fmap Modification.GainCardAbilities (CardAbilities.MkCardAbilities from <$> modificationFilter c cards <*> pure triggered <*> pure only <*> traverse (modificationRestriction c) restrictions)
+  -- The lender is a reserved name (Binding.acquiredFrom), never a card's.
+  Modification.GainLentKeyword (LentKeyword.MkLentKeyword held instances lender triggered restrictions) ->
+    fmap Modification.GainLentKeyword ((\k -> LentKeyword.MkLentKeyword k instances lender triggered) <$> modificationKeyword c held <*> traverse (modificationRestriction c) restrictions)
   Modification.GainAbilitiesOfStickers -> pure modification
   Modification.LoseAllAbilities -> pure modification
   Modification.LoseNamedAbility name -> Modification.LoseNamedAbility <$> modificationAbilityName c name

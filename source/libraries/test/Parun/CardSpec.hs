@@ -308,6 +308,7 @@ import qualified Parun.Types.Layout as Layout
 import qualified Parun.Types.LeavesTrigger as LeavesTrigger
 import qualified Parun.Types.LeavesZoneTrigger as LeavesZoneTrigger
 import qualified Parun.Types.LeavingPermanent as LeavingPermanent
+import qualified Parun.Types.LentKeyword as LentKeyword
 import qualified Parun.Types.LibraryPlacement as LibraryPlacement
 import qualified Parun.Types.LibraryPosition as LibraryPosition
 import qualified Parun.Types.LifeGainR as LifeGainR
@@ -3675,6 +3676,7 @@ modificationFilters modification = case modification of
   -- The rider's CR 602.5 conditions, as a printed ability's are swept, and the
   -- Filter naming the exiled cards.
   Modification.GainCardAbilities (CardAbilities.MkCardAbilities _ cards _ _ extra) -> (Unframed, cards) : frame Unframed (concatMap conditionFilters (concatMap restrictionConditions extra))
+  Modification.GainLentKeyword lent -> frame Unframed (concatMap conditionFilters (concatMap restrictionConditions (LentKeyword.restrictions lent)))
   Modification.GainAbilitiesOfStickers -> []
   Modification.SetBasePowerToughness (SetBasePowerToughness.MkSetBasePowerToughness p t) -> foldMap quantityFilters p <> foldMap quantityFilters t
   Modification.ModifyPowerToughness (ModifyPowerToughness.MkModifyPowerToughness p t) -> quantityFilters p <> quantityFilters t
