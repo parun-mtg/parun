@@ -8,6 +8,7 @@ import qualified Parun.Codec.DamageIs as DamageIs
 import qualified Parun.Codec.DefendersAre as DefendersAre
 import qualified Parun.Codec.KeywordsAre as KeywordsAre
 import qualified Parun.Codec.LifeIs as LifeIs
+import qualified Parun.Codec.ManaValueIs as ManaValueIs
 import qualified Parun.Codec.MonarchIs as MonarchIs
 import qualified Parun.Codec.NamesAre as NamesAre
 import qualified Parun.Codec.PlayerCountersAre as PlayerCountersAre
@@ -40,7 +41,8 @@ codec =
       Arm.payload "Subtypes" SubtypesAre.codec Check.Subtypes (\x -> case x of Check.Subtypes y -> Just y; _ -> Nothing),
       Arm.payload "Names" NamesAre.codec Check.Names (\x -> case x of Check.Names y -> Just y; _ -> Nothing),
       Arm.payload "View" ViewIs.codec Check.View (\x -> case x of Check.View y -> Just y; _ -> Nothing),
-      Arm.payload "Keywords" KeywordsAre.codec Check.Keywords (\x -> case x of Check.Keywords y -> Just y; _ -> Nothing)
+      Arm.payload "Keywords" KeywordsAre.codec Check.Keywords (\x -> case x of Check.Keywords y -> Just y; _ -> Nothing),
+      Arm.payload "ManaValue" ManaValueIs.codec Check.ManaValue (\x -> case x of Check.ManaValue y -> Just y; _ -> Nothing)
     ]
 
 tagOf :: Check.Check -> String
@@ -61,3 +63,4 @@ tagOf x = case x of
   Check.Names {} -> "Names"
   Check.View {} -> "View"
   Check.Keywords {} -> "Keywords"
+  Check.ManaValue {} -> "ManaValue"

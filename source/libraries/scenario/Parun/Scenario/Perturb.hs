@@ -27,6 +27,7 @@ import qualified Parun.Types.Entry as Entry
 import qualified Parun.Types.KeywordsAre as KeywordsAre
 import qualified Parun.Types.Label as Label
 import qualified Parun.Types.LifeIs as LifeIs
+import qualified Parun.Types.ManaValueIs as ManaValueIs
 import qualified Parun.Types.MonarchIs as MonarchIs
 import qualified Parun.Types.NamesAre as NamesAre
 import qualified Parun.Types.PlayerCountersAre as PlayerCountersAre
@@ -144,6 +145,7 @@ perturb seats check = case check of
      in fmap (\n -> Check.Names x {NamesAre.names = n}) (dropMin names <> [Set.insert perturbedName names])
   Check.View x -> fmap (\r -> Check.View x {ViewIs.is = r}) (replies (ViewIs.is x))
   Check.Keywords x -> fmap (\n -> Check.Keywords x {KeywordsAre.count = n}) (naturals (KeywordsAre.count x))
+  Check.ManaValue x -> fmap (\n -> Check.ManaValue x {ManaValueIs.value = n}) (integers (ManaValueIs.value x))
 
 integers :: Integer -> [Integer]
 integers n = [n + 1, n - 1]

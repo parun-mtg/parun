@@ -25,9 +25,9 @@
 -- no candidate list, so a player may already choose it -- Parun.AdventureSpec
 -- says the same of CR 716.5.
 --
--- CR 707.2 / 707.3's copies of it are the Clone cases at the end, and CR
--- 707.9b's exceptions on a copy that flips are the Sakashima case after them.
--- CR 110.5c's flipped permanent that copies a Room is the Mirrorweave case last.
+-- CR 710.2's flip in play, CR 707.2 / 707.3's copies of it and CR 707.9b's
+-- exceptions on a copy that flips are data/scenarios/flip/'s too. CR 110.5c's
+-- flipped permanent that copies a Room is the Mirrorweave case last.
 --
 -- CR 731.2h's merged permanent containing a flip card is Parun.MutateSpec's, this
 -- card being the pool's only flip printing and Cubwarden what merges with it.
@@ -58,7 +58,6 @@ import qualified Parun.Types.Keyword as Keyword
 import qualified Parun.Types.Label as Label
 import qualified Parun.Types.Object as Object
 import qualified Parun.Types.ObjectId as ObjectId
-import qualified Parun.Types.Printing as Printing
 import qualified Parun.Types.ProjectedCharacteristics as PC
 import qualified Parun.Types.Prompt as Prompt
 import qualified Parun.Types.Protection as Protection
@@ -95,9 +94,7 @@ normalHalf = (Set.singleton akkiName, Just (1, 1), Set.fromList [Subtype.Goblin,
 alternativeHalf = (Set.singleton tokTokName, Just (2, 2), Set.fromList [Subtype.Goblin, Subtype.Shaman], Set.singleton Supertype.Legendary, True)
 
 -- The two characteristics CR 710.1c withholds from the swap, read as a pair:
--- mana value and colour. The DISCRIMINATOR this whole unit turns on -- an engine
--- that implemented flipping as a face swap gets `halfReadings` entirely right and
--- answers 0 and colourless here, Tok-Tok's half printing no mana cost.
+-- mana value and colour.
 costReadings :: ObjectId.ObjectId -> GameState.GameState -> (Maybe Integer, Set.Set Color.Color)
 costReadings oid gs = (PC.manaValue (Projection.project oid gs), Projection.colorsOf oid gs)
 
@@ -158,41 +155,6 @@ spec s registry = Spec.describe s "Flip" $ do
     let (oid, gs) = S.addObjectIn Zone.Library akki S.alice (Setup.emptyGame S.bothPlayers)
     Spec.assertBool s (not (isLegendary oid gs)) "a legendary search must not find the flip card"
     Spec.assertEqWith s "and it is named for its normal half" (Projection.namesOf oid gs) (Set.singleton akkiName)
-  -- THE proving case. CR 710.2: "once a permanent is flipped, its normal name,
-  -- text box, type line, power, and toughness don't apply and the alternative
-  -- versions of those characteristics apply instead."
-  --
-  -- Played out from the card's own text: Akki attacks unblocked, CR 510.2 deals
-  -- bob 1 combat damage, the printed trigger fires and resolves, and its Flip
-  -- opcode sets the status. Every characteristic reader is asked before and
-  -- after, on the SAME ObjectId -- CR 110.5 makes flipping a status change, not
-  -- a new object -- so an engine that answered by replacing the permanent fails
-  -- here too.
-  --
-  -- The mana-value pair is what separates this rule from a face swap, and it is
-  -- asserted at both ends: Tok-Tok's half prints no mana cost, so an
-  -- implementation that reached the alternative half by pointing Object.face at
-  -- it would answer mana value 0 and colourless after the flip and pass every
-  -- other assertion in this case.
-  Spec.it s "CR 710.2 Akki flips into Tok-Tok, keeping CR 710.1c's mana value and colour" $ do
-    built <- S.buildBoardOrFail s registry akkiDuel
-    case Map.lookup (Label.MkLabel (Text.pack "akki")) (Staged.objects built) of
-      Nothing -> Spec.assertFailure s "the board omitted the Akki alias"
-      Just oid -> do
-        Spec.assertEqWith s "before: Akki Lavarunner" (halfReadings oid (Staged.state built)) normalHalf
-        Spec.assertBool s (not (isLegendary oid (Staged.state built))) "and a legendary pump does not reach Akki"
-        (_, after) <- S.runScriptOrFail s attackScript built S.combatGame
-        Spec.assertEqWith s "the 1/1 connected" (S.lifeOf S.bob after) (Just 19)
-        Spec.assertEqWith s "after: Tok-Tok, Volcano Born" (halfReadings oid after) alternativeHalf
-        Spec.assertBool s (isLegendary oid after) "CR 710.2's Example: a legendary pump does reach Tok-Tok"
-        Spec.assertEqWith
-          s
-          "CR 710.1c: the flipped permanent is still mana value 4 and still red"
-          (costReadings oid after)
-          (Just 4, Set.singleton Color.Red)
-        -- CR 110.5 with CR 710.2: what changed is the object's STATUS, so the
-        -- permanent that reads as Tok-Tok is the one the flag is on.
-        Spec.assertEqWith s "and the status itself is set" (fmap Object.flipped (Game.lookupObject oid after)) (Just True)
   -- CR 710.4: "if a flipped permanent leaves the battlefield, it retains no
   -- memory of its status." The flipped permanent is put into its owner's hand
   -- and then back onto the battlefield; CR 400.7's new object arrives unflipped,
@@ -215,27 +177,6 @@ spec s registry = Spec.describe s "Flip" $ do
                 Spec.assertBool s (not (isLegendary returnedId returned)) "so a legendary pump no longer reaches it"
               other -> Spec.assertFailure s ("expected one permanent back, got " <> show (length other))
           other -> Spec.assertFailure s ("expected one card in hand, got " <> show (length other))
-  -- CR 707.3 / 110.5c: the copy's copiable values are the flip card's, "as
-  -- modified by the copy's status", so a Clone of an unflipped Akki carries the
-  -- trigger AND the alternative half it reaches -- CR 110.5c's Example flips a
-  -- Dimir Doppelganger that copied Jushi Apprentice. Only the Clone attacks, so
-  -- its own trigger is the only thing that can flip it.
-  --
-  -- Then a second Clone copies the FLIPPED first one: the snapshot road's
-  -- unflipped reading, where the first case is the printed card's.
-  Spec.it s "CR 707.3 a Clone of Akki Lavarunner flips into Tok-Tok, and a Clone of that is Akki" $ do
-    (akkiId, base, clone) <- cloneBoard s registry
-    case enterCopyOf akkiId clone base of
-      Nothing -> Spec.assertFailure s "the Clone did not enter"
-      Just (cloneId, copied) -> do
-        let fought = S.runCombat (attackWithOnly cloneId) copied
-        Spec.assertEqWith s "CR 710.2: the Clone's own trigger flipped it into Tok-Tok" (halfReadings cloneId fought) alternativeHalf
-        Spec.assertEqWith s "CR 710.1c: still mana value 4 and red" (costReadings cloneId fought) (Just 4, Set.singleton Color.Red)
-        Spec.assertEqWith s "the Clone alone connected, and the Akki beside it is unflipped" (S.lifeOf S.bob fought, halfReadings akkiId fought) (Just 19, normalHalf)
-        case enterCopyOf cloneId clone fought of
-          Nothing -> Spec.assertFailure s "the second Clone did not enter"
-          Just (secondId, recopied) ->
-            Spec.assertEqWith s "CR 707.2: a Clone of the flipped Clone is Akki Lavarunner" (halfReadings secondId recopied) normalHalf
   -- CR 707.3 / 110.5c over CR 709.5: a flipped Tok-Tok that Mirrorweave makes a
   -- copy of an Opalescence-animated Roaring Furnace // Steaming Sauna has the
   -- Room's halves against its OWN doors, both shut -- a nameless 0/0 Room its
@@ -272,33 +213,3 @@ spec s registry = Spec.describe s "Flip" $ do
       "control: before Mirrorweave it was a 3/3 Tok-Tok, and the Room a 2/2 Roaring Furnace"
       (Projection.namesOf akkiId opened, S.powerToughnessOf akkiId opened, Projection.namesOf roomId woven, S.powerToughnessOf roomId woven)
       (Set.singleton tokTokName, Just (3, 3), Set.singleton (CardName.MkCardName (Text.pack "Roaring Furnace")), Just (2, 2))
-
--- S.attackTo bob, declaring `attacker` and nothing else.
-attackWithOnly :: ObjectId.ObjectId -> Prompt.Prompt r -> r
-attackWithOnly attacker p = case p of
-  Prompt.DeclareAttackers _ _ ids -> filter (== attacker) ids
-  _ -> S.attackTo S.bob p
-
--- alice's settled Akki at declare attackers against an empty bob, and the Clone
--- printing the copy cases cast.
-cloneBoard :: (Monad m) => Spec.Spec m n -> Registry.Registry m -> m (ObjectId.ObjectId, GameState.GameState, Printing.Printing)
-cloneBoard s registry = do
-  akki <- S.printingOf s registry "Akki Lavarunner"
-  clone <- S.printingOf s registry "Clone"
-  case S.combatBoardOf [akki] [] of
-    (base, [akkiId], _) -> pure (akkiId, base, clone)
-    _ -> Spec.assertFailure s "the fixture should have exactly one Akki"
-
--- Resolve a Clone (or another copier) for alice, its CR 707.2 choice PINNED to
--- `original`, and answer with the one new permanent.
-enterCopyOf :: ObjectId.ObjectId -> Printing.Printing -> GameState.GameState -> Maybe (ObjectId.ObjectId, GameState.GameState)
-enterCopyOf original copier gs =
-  let (_, staged) = S.spellOnStack copier S.alice gs
-      pinned :: Prompt.Prompt r -> r
-      pinned p = case p of
-        Prompt.ChooseCopyTarget _ _ _ legal -> if elem original legal then Just original else Nothing
-        _ -> S.identityAnswer p
-      resolved = S.runPure pinned staged Stack.resolveTop
-   in case Set.toList (Set.difference (GameState.battlefield resolved) (GameState.battlefield gs)) of
-        [cloneId] -> Just (cloneId, resolved)
-        _ -> Nothing

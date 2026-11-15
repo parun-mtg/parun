@@ -547,6 +547,7 @@ import qualified Parun.Codec.ManaSymbolKindSpec
 import qualified Parun.Codec.ManaSymbolSpec
 import qualified Parun.Codec.ManaTypeSpec
 import qualified Parun.Codec.ManaUnitSpec
+import qualified Parun.Codec.ManaValueIsSpec
 import qualified Parun.Codec.ManifestedDreadSpec
 import qualified Parun.Codec.MeasureSpec
 import qualified Parun.Codec.MeasuresSpec
@@ -1642,6 +1643,7 @@ spec s reference corpus = do
   Parun.Codec.ManaSymbolSpec.spec s
   Parun.Codec.ManaTypeSpec.spec s
   Parun.Codec.ManaUnitSpec.spec s
+  Parun.Codec.ManaValueIsSpec.spec s
   Parun.Codec.ManifestedDreadSpec.spec s
   Parun.Codec.MeasureSpec.spec s
   Parun.Codec.MeasuresSpec.spec s

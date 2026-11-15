@@ -70,7 +70,6 @@ out: grep for them.
 - `board:graveyard`
 - `check:creature-count`: how many creatures a player controls
 - `check:combat`: combat state beyond attackers and blockers
-- `check:mana-value`: an object's mana value
 - `check:prompt-order`: the order priority was offered in
 - `board:objects-ids`
 - `board:object-classlevel`
@@ -636,8 +635,8 @@ out: grep for them.
 - ~~CR 603.2 Akki flips on the NONCOMBAT damage Soul's Fire makes it deal to bob | `check:events`~~
 - ~~CR 603.2 Harm's Way sends Akki's combat damage to alice, and Akki does not flip~~
 - ~~CR 603.2 the same noncombat damage aimed at alice does not flip Akki | `check:events`~~
-- CR 707.3 a Clone of Akki Lavarunner flips into Tok-Tok, and a Clone of that is Akki | `check:mana-value`
-- CR 710.2 Akki flips into Tok-Tok, keeping CR 710.1c's mana value and colour | `check:mana-value`
+- ~~CR 707.3 a Clone of Akki Lavarunner flips into Tok-Tok, and a Clone of that is Akki | `check:mana-value`~~
+- ~~CR 710.2 Akki flips into Tok-Tok, keeping CR 710.1c's mana value and colour | `check:mana-value`~~
 
 ### `ForageSpec`
 
@@ -1003,7 +1002,7 @@ out: grep for them.
 
 ### `PrototypeSpec`
 
-- CR 719.3b cast prototyped the Assembler is a white 2/2 with mana value 2; cast normally a colourless 4/5 with mana value 5 | `check:mana-value`
+- ~~CR 719.3b cast prototyped the Assembler is a white 2/2 with mana value 2; cast normally a colourless 4/5 with mana value 5 | `check:mana-value`~~
 - CR 719.5 the prototyped permanent keeps vigilance and its activated ability | `board:object-castusing` `board:object-prototyped`
 
 ### `RemoveCounterSpec`

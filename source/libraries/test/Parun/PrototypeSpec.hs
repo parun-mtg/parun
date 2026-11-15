@@ -18,6 +18,9 @@
 -- one assertion tells "the cost was swapped" from "the characteristics were". Its
 -- numbers are non-degenerate too -- 4\/5 against 2\/2, mana value 5 against 2 --
 -- so no reading coincides with another.
+--
+-- CR 719.3b's characteristics, cast prototyped and cast normally, are
+-- data/scenarios/prototype/'s.
 module Parun.PrototypeSpec where
 
 import qualified Data.List as List
@@ -46,17 +49,14 @@ import qualified Parun.Types.ManaType as ManaType
 import qualified Parun.Types.Object as Object
 import qualified Parun.Types.ObjectId as ObjectId
 import qualified Parun.Types.Printing as Printing
-import qualified Parun.Types.ProjectedCharacteristics as PC
 import qualified Parun.Types.Prompt as Prompt
 import qualified Parun.Types.Regenerability as Regenerability
 import qualified Parun.Types.Sickness as Sickness
-import qualified Parun.Types.TurnRegisters as TurnRegisters
 import qualified Parun.Types.Zone as Zone
 
--- The two costs the card offers (CR 719.3), written out so every board names the
--- same symbols the card file does.
-printedCost, insetCost :: [ManaSymbol.ManaSymbol]
-printedCost = [ManaSymbol.Generic 5]
+-- The inset cost (CR 719.3), written out so every board names the same symbols
+-- the card file does.
+insetCost :: [ManaSymbol.ManaSymbol]
 insetCost = [ManaSymbol.Generic 1, ManaSymbol.OfType (ManaType.Colored Color.White)]
 
 -- CR 601.2b's announcement answered by NAMING a cost rather than an index: an
@@ -68,16 +68,9 @@ castingFor wanted p = case p of
     Maybe.fromMaybe (Cost.firstOffered candidates) (List.find ((== Just (ManaCost.MkManaCost wanted)) . Cost.Type.mana . CandidateCost.cost) candidates)
   _ -> S.identityAnswer p
 
--- The two answerers every discriminating pair below differs by, and the only thing
--- they differ by: Autonomous Assembler's inset {1}{W} against its printed {5}.
-prototyping, payingPrinted :: Prompt.Prompt r -> r
+-- The answerer every case below casts with: Autonomous Assembler's inset {1}{W}.
+prototyping :: Prompt.Prompt r -> r
 prototyping = castingFor insetCost
-payingPrinted = castingFor printedCost
-
-topOfStack :: GameState.GameState -> Maybe ObjectId.ObjectId
-topOfStack gs = case TurnRegisters.stack (GameState.turn gs) of
-  oid : _ -> Just oid
-  [] -> Nothing
 
 -- The permanent that printing became, found by NAME rather than by the
 -- characteristics under test: a cast that resolved and one that is still on the
@@ -104,90 +97,6 @@ plusOnePlusOne = CounterKind.PlusOnePlusOne
 
 spec :: (Monad m, Monad n) => Spec.Spec m n -> Registry.Registry m -> n ()
 spec s registry = Spec.describe s "Prototype" $ do
-  -- CR 719.3b, the case this unit exists for: "both a prototyped spell and the
-  -- permanent it becomes have only its alternative set of power, toughness, and
-  -- mana cost characteristics. If that mana cost includes one or more colored
-  -- mana symbols, the spell and the permanent it becomes are also that color or
-  -- colors."
-  --
-  -- The COLOUR is the half that discriminates. An implementation that merely let
-  -- the player pay {1}{W} and changed nothing else reaches the same battlefield,
-  -- the same 4/5 and -- if it read the announced cost back -- even the same mana
-  -- value; it cannot reach white. So the colour assertion comes first, ahead of
-  -- every number.
-  Spec.it s "CR 719.3b cast prototyped the Assembler is a white 2/2 with mana value 2; cast normally a colourless 4/5 with mana value 5" $ do
-    assembler <- S.printingOf s registry "Autonomous Assembler"
-    plains <- S.printingOf s registry "Plains"
-    let (board, spellId) = S.handOne assembler (S.landsInPlay plains 5)
-        prototyped = S.runPure prototyping board (S.cast S.alice spellId)
-        printed = S.runPure payingPrinted board (S.cast S.alice spellId)
-    -- Both candidates really are offered from the hand, so neither leg passes for
-    -- want of the other, and the printed one comes FIRST (CR 118.9a).
-    Spec.assertEqWith
-      s
-      "CR 702.160a: the printed cost and the inset cost are both offered from the hand"
-      (fmap Cost.Type.mana (Cost.costsFor S.alice (S.printingName assembler) spellId board))
-      [Just (ManaCost.MkManaCost printedCost), Just (ManaCost.MkManaCost insetCost)]
-    -- CR 719.3b's colour clause, read off the SPELL on the stack.
-    Spec.assertEqWith
-      s
-      "CR 719.3b: the prototyped spell is white"
-      (fmap (\oid -> Projection.colorsOf oid prototyped) (topOfStack prototyped))
-      (Just (Set.singleton Color.White))
-    Spec.assertEqWith
-      s
-      "CR 202.2b: cast for its printed {5} the same spell is colourless"
-      (fmap (\oid -> Projection.colorsOf oid printed) (topOfStack printed))
-      (Just Set.empty)
-    -- CR 719.3b's box and cost, on the stack.
-    Spec.assertEqWith
-      s
-      "CR 719.3b: the prototyped spell is a 2/2"
-      (topOfStack prototyped >>= \oid -> S.powerToughnessOf oid prototyped)
-      (Just (2, 2))
-    Spec.assertEqWith
-      s
-      "CR 719.3b: and its mana value is 2, not the printed 5"
-      (fmap (\oid -> PC.manaValue (Projection.project oid prototyped)) (topOfStack prototyped))
-      (Just (Just 2))
-    Spec.assertEqWith
-      s
-      "CR 719.3b: its mana cost is the inset {1}{W}"
-      (fmap (\oid -> PC.manaCost (Projection.project oid prototyped)) (topOfStack prototyped))
-      (Just (Just (ManaCost.MkManaCost insetCost)))
-    Spec.assertEqWith
-      s
-      "CR 719.4: cast normally it is the printed 4/5"
-      (topOfStack printed >>= \oid -> S.powerToughnessOf oid printed)
-      (Just (4, 5))
-    Spec.assertEqWith
-      s
-      "CR 719.4: with mana value 5"
-      (fmap (\oid -> PC.manaValue (Projection.project oid printed)) (topOfStack printed))
-      (Just (Just 5))
-    -- CR 719.3b's "and the permanent it becomes": the same four readings once the
-    -- spell has resolved, which is the half CR 719.2's "while it is a permanent on
-    -- the battlefield" adds over every other alternative-cost keyword.
-    let resolvedPrototyped = S.settleSba (S.runPure prototyping prototyped Stack.resolveTop)
-        resolvedPrinted = S.settleSba (S.runPure payingPrinted printed Stack.resolveTop)
-    Spec.assertEqWith
-      s
-      "CR 719.3b: the permanent it becomes is white too"
-      (fmap (\oid -> Projection.colorsOf oid resolvedPrototyped) (assemblerOn assembler resolvedPrototyped))
-      (Just (Set.singleton Color.White))
-    Spec.assertEqWith
-      s
-      "and a 2/2"
-      (assemblerOn assembler resolvedPrototyped >>= \oid -> S.powerToughnessOf oid resolvedPrototyped)
-      (Just (2, 2))
-    Spec.assertEqWith
-      s
-      "CR 719.4: the permanent the printed cast became is a colourless 4/5"
-      ( (,)
-          <$> fmap (\oid -> Projection.colorsOf oid resolvedPrinted) (assemblerOn assembler resolvedPrinted)
-          <*> (assemblerOn assembler resolvedPrinted >>= \oid -> S.powerToughnessOf oid resolvedPrinted)
-      )
-      (Just (Set.empty, (4, 5)))
   -- CR 719.5: "a prototype card's characteristics other than its power,
   -- toughness, and mana cost (and other than color) remain the same whether it
   -- was cast as a prototyped spell or cast normally." Vigilance and the printed

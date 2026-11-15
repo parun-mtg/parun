@@ -157,6 +157,17 @@
       "player": "bob",
       "step": "DeclareBlockers",
       "turn": 2
+    },
+    {
+      "check": {
+        "ManaValue": {
+          "object": "Hanweir, the Writhing Township",
+          "value": 3
+        }
+      },
+      "player": "bob",
+      "step": "DeclareBlockers",
+      "turn": 2
     }
   ]
 }
