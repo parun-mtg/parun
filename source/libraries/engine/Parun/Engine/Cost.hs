@@ -422,6 +422,17 @@ candidateCostsFor = candidateCostsGiven False
 --
 -- Here rather than in Parun.Engine.Cast, whose gates read it, because
 -- candidateCostsGiven's graveyard arm prices a permission that names its cost.
+-- CR 118.8 / 614.1d: a graveyard permission the card carries for itself that
+-- adds to a cast made under it -- a cost (Demonic Embrace) or entry counters
+-- (Hundred-Battle Veteran) -- and so is a way of its own
+-- (Parun.Engine.Cast.ownPayingWays).
+addsToItsCast :: CastingPermission.CastingPermission -> Bool
+addsToItsCast permission = case permission of
+  CastingPermission.CastFromGraveyard _ additional entersWith -> not (null additional) || Maybe.isJust entersWith
+  CastingPermission.PlayFromGraveyard -> False
+  CastingPermission.CastFromLibraryWhileSearching -> False
+  CastingPermission.CastAsThoughItHadFlash {} -> False
+
 permissionsOf :: ObjectId -> Face.Face Card.Type.Card -> GameState -> [CastingPermission.CastingPermission]
 permissionsOf oid face gs =
   PC.castingPermissions (Projection.project oid gs)
@@ -1072,12 +1083,16 @@ candidateCostsGiven permitted pid name oid gs =
                       -- keyword of that family offers, never the printed cost.
                       -- Parun.CastSpec's "Blitz from a graveyard" group proves
                       -- both halves.
-                      usingFamilies = [family | CastingPermission.CastFromGraveyard (Just family) _ <- permissionsOf oid face gs]
+                      usingFamilies = [family | CastingPermission.CastFromGraveyard (Just family) _ _ <- permissionsOf oid face gs]
                       usingPermitted candidate = any (\family -> (CandidateCost.keyword candidate >>= Keyword.familyOf) == Just family) usingFamilies
-                      -- CR 118.8: a permission stating an additional cost admits
-                      -- the printed cost and its alternatives (Demonic Embrace);
+                      -- CR 118.8 / 614.1d: a permission stating an additional
+                      -- cost or entry counters admits the printed cost and its
+                      -- alternatives (Demonic Embrace, Hundred-Battle Veteran);
                       -- Parun.Engine.Cast.castWays adds what it states.
-                      payingPermitted = not (null [() | CastingPermission.CastFromGraveyard Nothing (_ : _) <- permissionsOf oid face gs])
+                      payingPermitted = any (\permission -> addsToItsCast permission && namesNoFamily permission) (permissionsOf oid face gs)
+                      namesNoFamily permission = case permission of
+                        CastingPermission.CastFromGraveyard Nothing _ _ -> True
+                        _ -> False
                    in fmap flashback (filter (stated Keyword.Type.Flashback) (Keyword.flashbackCosts keywords))
                         <> fmap beamedUp (filter (stated Keyword.Type.BeamMeUp) (Keyword.beamMeUpCosts keywords))
                         <> fmap escape (Keyword.escapeCosts keywords)

@@ -1,5 +1,6 @@
 module Parun.Codec.CastingPermissionSpec where
 
+import qualified Data.Map.Strict as Map
 import qualified Data.Text as Text
 import qualified Parun.Codec.CastingPermission as CastingPermission
 import qualified Parun.JsonCodec.Common as Common
@@ -9,9 +10,12 @@ import qualified Parun.Types.CastingPermission as CastingPermission
 import qualified Parun.Types.Condition as Condition
 import qualified Parun.Types.CostAmount as CostAmount
 import qualified Parun.Types.CostComponent as CostComponent
+import qualified Parun.Types.CounterKind as CounterKind
 import qualified Parun.Types.KeywordFamily as KeywordFamily
 import qualified Parun.Types.ManaCost as ManaCost
 import qualified Parun.Types.ManaSymbol as ManaSymbol
+import qualified Parun.Types.Quantity as Quantity
+import qualified Parun.Types.WithCounters as WithCounters
 
 spec :: (Monad m, Monad n) => Spec.Spec m n -> n ()
 spec s = Spec.describe s "Parun.Codec.CastingPermission" $ do
@@ -25,20 +29,26 @@ spec s = Spec.describe s "Parun.Codec.CastingPermission" $ do
     Common.assertCodec
       s
       CastingPermission.codec
-      (CastingPermission.CastFromGraveyard Nothing [])
+      (CastingPermission.CastFromGraveyard Nothing [] Nothing)
       " {\"type\":\"CastFromGraveyard\",\"value\":{}} "
   Spec.it s "CastFromGraveyard using a keyword" $
     Common.assertCodec
       s
       CastingPermission.codec
-      (CastingPermission.CastFromGraveyard (Just KeywordFamily.Blitz) [])
+      (CastingPermission.CastFromGraveyard (Just KeywordFamily.Blitz) [] Nothing)
       " {\"type\":\"CastFromGraveyard\",\"value\":{\"using\":\"Blitz\"}} "
   Spec.it s "CastFromGraveyard paying an additional cost" $
     Common.assertCodec
       s
       CastingPermission.codec
-      (CastingPermission.CastFromGraveyard Nothing [CostComponent.PayLife (CostAmount.Fixed 2)])
+      (CastingPermission.CastFromGraveyard Nothing [CostComponent.PayLife (CostAmount.Fixed 2)] Nothing)
       " {\"type\":\"CastFromGraveyard\",\"value\":{\"additionalCosts\":[{\"type\":\"PayLife\",\"value\":{\"type\":\"Fixed\",\"value\":2}}]}} "
+  Spec.it s "CastFromGraveyard entering with counters" $
+    Common.assertCodec
+      s
+      CastingPermission.codec
+      (CastingPermission.CastFromGraveyard Nothing [] (Just (WithCounters.MkWithCounters (Map.singleton CounterKind.Finality (Quantity.Literal 1)))))
+      " {\"type\":\"CastFromGraveyard\",\"value\":{\"entersWith\":[{\"count\":{\"type\":\"Literal\",\"value\":1},\"kind\":{\"type\":\"Finality\"}}]}} "
   Spec.it s "PlayFromGraveyard" $
     Common.assertCodec
       s

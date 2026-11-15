@@ -3,9 +3,9 @@
 module Parun.Codec.MovedKinds where
 
 import qualified Parun.Codec.CounterKind as CounterKind
-import qualified Parun.Codec.EntryRiders as EntryRiders
 import qualified Parun.Codec.Keyword as Keyword
 import qualified Parun.Codec.Quantity as Quantity
+import qualified Parun.Codec.WithCounters as WithCounters
 import qualified Parun.JsonCodec.Arm as Arm
 import qualified Parun.JsonCodec.Codec as Codec
 import qualified Parun.Types.MovedKinds as MovedKinds
@@ -28,7 +28,7 @@ codec =
   Arm.tagged
     tagOf
     [ Arm.nullary "Every" MovedKinds.Every,
-      Arm.payload "Named" EntryRiders.counter (uncurry MovedKinds.Named) (\x -> case x of MovedKinds.Named kind quantity -> Just (kind, quantity); _ -> Nothing),
+      Arm.payload "Named" WithCounters.counter (uncurry MovedKinds.Named) (\x -> case x of MovedKinds.Named kind quantity -> Just (kind, quantity); _ -> Nothing),
       Arm.payload "EveryOfKind" (CounterKind.codec Keyword.codec) MovedKinds.EveryOfKind (\x -> case x of MovedKinds.EveryOfKind kind -> Just kind; _ -> Nothing),
       Arm.payload "Chosen" Quantity.codec MovedKinds.Chosen (\x -> case x of MovedKinds.Chosen quantity -> Just quantity; _ -> Nothing),
       Arm.nullary "AnyNumber" MovedKinds.AnyNumber,

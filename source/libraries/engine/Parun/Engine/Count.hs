@@ -619,6 +619,8 @@ aggregate quantityOf aggregation members = case aggregation of
   Aggregation.Distinct DistinctOf.Powers -> toInteger (Set.size (Set.fromList (Maybe.mapMaybe (Filter.power . snd) members)))
   -- CR 205.3j: a member's creature or other subtypes add nothing.
   Aggregation.Distinct DistinctOf.PlaneswalkerTypes -> toInteger (Set.size (Set.filter Subtype.isPlaneswalkerType (Set.unions (fmap (Filter.subtypes . snd) members))))
+  -- CR 122.1: a kind no member holds a counter of adds nothing.
+  Aggregation.Distinct DistinctOf.CounterKinds -> toInteger (Set.size (Set.unions (fmap (Map.keysSet . Map.filter (> 0) . Filter.counters . snd) members)))
   -- The size of the largest group of members holding one value in common --
   -- not "pairwise sharing", which is not transitive (a Human Cleric, a Human
   -- Rogue and an Elf Rogue are no three sharing a type). A member joins a group

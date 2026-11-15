@@ -1,0 +1,151 @@
+{
+  "board": {
+    "active": "alice",
+    "step": "PrecombatMain",
+    "seats": [
+      {
+        "name": "alice",
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ],
+        "battlefield": [
+          {
+            "card": "Hundred-Battle Veteran",
+            "label": "vet"
+          },
+          {
+            "card": "Grizzly Bears",
+            "label": "bears",
+            "counters": [
+              {
+                "key": {
+                  "type": "PlusOnePlusOne"
+                },
+                "value": 2
+              }
+            ]
+          },
+          {
+            "card": "Hill Giant",
+            "label": "giant",
+            "counters": [
+              {
+                "key": {
+                  "type": "Keyword",
+                  "value": {
+                    "type": "Deathtouch"
+                  }
+                },
+                "value": 1
+              }
+            ]
+          },
+          {
+            "card": "Sol Ring",
+            "label": "ring",
+            "counters": [
+              {
+                "key": {
+                  "type": "Named",
+                  "value": "charge"
+                },
+                "value": 1
+              }
+            ],
+            "tapped": true
+          }
+        ],
+        "hand": [
+          {
+            "card": "Spontaneous Flight",
+            "label": "flight"
+          }
+        ],
+        "manaPool": "WWW"
+      },
+      {
+        "name": "bob",
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ],
+        "battlefield": [
+          {
+            "card": "Grizzly Bears",
+            "label": "bobbears",
+            "counters": [
+              {
+                "key": {
+                  "type": "MinusOneMinusOne"
+                },
+                "value": 1
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  "description": "CR 122.1 / 122.1b: Hundred-Battle Veteran counts kinds of counters among creatures you control, a flying counter a kind apart from a deathtouch counter",
+  "timeline": [
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "check": {
+        "PowerToughness": {
+          "object": "$vet",
+          "power": 4,
+          "toughness": 2
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "do": {
+        "Cast": {
+          "object": "$flight",
+          "targets": [
+            "$giant"
+          ]
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "do": "Pass"
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "check": {
+        "PowerToughness": {
+          "object": "$vet",
+          "power": 6,
+          "toughness": 6
+        }
+      }
+    }
+  ],
+  "note": "Two +1/+1 counters are one kind. Sol Ring's charge counter is on no creature and Bob's -1/-1 counter on no creature Alice controls, so either counted would switch the bonus on before Spontaneous Flight. The flying counter lands on the creature already holding a deathtouch counter: a third kind only if keyword counters differ by keyword."
+}

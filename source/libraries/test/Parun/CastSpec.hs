@@ -4492,12 +4492,12 @@ jumpStartSpec s registry = Spec.describe s "JumpStart" $ do
       s
       "a sorcery gets the permission"
       (Keyword.Engine.permissionsFor (Set.singleton CardType.Sorcery) Keyword.JumpStart)
-      [CastingPermission.CastFromGraveyard Nothing []]
+      [CastingPermission.CastFromGraveyard Nothing [] Nothing]
     Spec.assertEqWith
       s
       "an instant does too"
       (Keyword.Engine.permissionsFor (Set.singleton CardType.Instant) Keyword.JumpStart)
-      [CastingPermission.CastFromGraveyard Nothing []]
+      [CastingPermission.CastFromGraveyard Nothing [] Nothing]
     Spec.assertEqWith
       s
       "a creature does not"

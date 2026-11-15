@@ -2404,7 +2404,7 @@ permitsCastWhileSearching oid face gs =
 -- prices the cast, and offers nothing where the permission admits nothing.
 isGraveyardPermission :: CastingPermission.CastingPermission -> Bool
 isGraveyardPermission permission = case permission of
-  CastingPermission.CastFromGraveyard _ _ -> True
+  CastingPermission.CastFromGraveyard {} -> True
   CastingPermission.PlayFromGraveyard -> True
   CastingPermission.CastFromLibraryWhileSearching -> False
   CastingPermission.CastAsThoughItHadFlash {} -> False
@@ -2414,7 +2414,7 @@ isGraveyardPermission permission = case permission of
 isFlashPermission :: CastingPermission.CastingPermission -> Bool
 isFlashPermission permission = case permission of
   CastingPermission.CastAsThoughItHadFlash {} -> True
-  CastingPermission.CastFromGraveyard _ _ -> False
+  CastingPermission.CastFromGraveyard {} -> False
   CastingPermission.PlayFromGraveyard -> False
   CastingPermission.CastFromLibraryWhileSearching -> False
 
@@ -3226,7 +3226,7 @@ replacementRow src controller slot oid rewrite gs =
 -- blitz ability") opens the zone for that cost alone.
 castWays :: (ObjectId -> Bool) -> PlayerId -> ObjectId -> Zone.Zone -> Face.Face Card.Type.Card -> GameState -> Maybe Keyword -> [Maybe (ObjectId, CastFromZone.CastFromZone)]
 castWays rides pid oid zone face gs castFor =
-  let named = ownedBy pid oid gs && any (\family -> (castFor >>= Keyword.familyOf) == Just family) [family | CastingPermission.CastFromGraveyard (Just family) [] <- Cost.permissionsOf oid face gs]
+  let named = ownedBy pid oid gs && any (\family -> (castFor >>= Keyword.familyOf) == Just family) [family | CastingPermission.CastFromGraveyard (Just family) [] Nothing <- Cost.permissionsOf oid face gs]
       ownOpen = case zone of
         Zone.Exile -> exileOpen pid oid face gs
         Zone.Graveyard -> permitsPlayUnderPermission pid oid gs || PlayerEffect.mayPlayFromOwnGraveyard Map.empty pid oid gs || named
@@ -3242,8 +3242,9 @@ castWays rides pid oid zone face gs castFor =
    in PlayerEffect.castPermissionOptions rides ownOpen own pid zone oid gs
 
 -- CR 118.8 / 601.3: each graveyard permission the card carries for itself that
--- states an additional cost, as the unlimited CastFrom row a way is: the choice
--- among ways is what lets a cast under another permission skip that cost.
+-- states an additional cost or entry counters (Cost.addsToItsCast), as the
+-- unlimited CastFrom row a way is: the choice among ways is what lets a cast
+-- under another permission skip that cost and those counters.
 ownPayingWays :: ObjectId -> Face.Face Card.Type.Card -> GameState -> [(Maybe ObjectId, CastFromZone.CastFromZone)]
 ownPayingWays oid face gs =
   [ ( Just oid,
@@ -3257,11 +3258,12 @@ ownPayingWays oid face gs =
           CastFromZone.reduction = 0,
           CastFromZone.spending = ManaSpending.AsProduced,
           CastFromZone.alternativeCost = Nothing,
-          CastFromZone.entersWith = Nothing,
+          CastFromZone.entersWith = entersWith,
           CastFromZone.amount = Nothing
         }
     )
-  | CastingPermission.CastFromGraveyard _ additional@(_ : _) <- Cost.permissionsOf oid face gs
+  | permission@(CastingPermission.CastFromGraveyard _ additional entersWith) <- Cost.permissionsOf oid face gs,
+    Cost.addsToItsCast permission
   ]
 
 -- CR 601.3 / 702.138a: what a cast for the cost of `castFor` is made under, the
