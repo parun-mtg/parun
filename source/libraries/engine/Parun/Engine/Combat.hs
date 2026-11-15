@@ -3384,6 +3384,47 @@ joinAttack chooser alongside oid = do
     target <- announceAttackTarget chooser oid options
     putOntoBattlefieldAttacking (Specified target) oid
 
+-- CR 508.7: `chooser` may reselect which player `oid` is attacking, among the
+-- defending players still in the game -- Combat.defenders already being CR
+-- 508.7c's opponents narrowed by CR 508.7d's chosen player and CR 508.7e's
+-- range (CR 801.3). Its current target heads the offer as the decline, which is
+-- indistinguishable from reselecting it (CR 508.7a); elided at one candidate.
+-- A no-op for a creature not attacking.
+--
+-- Neither a declaration nor an entry: no event (CR 508.7a, and Capricopian's
+-- ruling that "whenever this creature attacks" does not trigger), no CR 508.1
+-- check (CR 508.7b), and Combat.declaredAttacked keeps the declared target. The
+-- seat CR 802.2a reads becomes the new player's, and the battle seats and CR
+-- 506.4c's mark go with the old target.
+reselectAttack :: PlayerId -> ObjectId -> Game ()
+reselectAttack chooser oid = do
+  gs <- State.get
+  let c = TurnRegisters.combat (GameState.turn gs)
+      playing = Game.stillPlaying gs
+  Monad.forM_ (Map.lookup oid (Combat.attackers c)) $ \current -> do
+    let players = [AttackTarget.OfPlayer pid | pid <- Defender.defendingPlayers gs, List.elem pid playing]
+    target <- announceAttackTarget chooser oid (current NonEmpty.:| List.delete current players)
+    Monad.forM_ (if target == current then Nothing else attackedPlayer target) $ \pid ->
+      State.modify' $ \g ->
+        let c' = TurnRegisters.combat (GameState.turn g)
+         in g
+              { GameState.turn =
+                  (GameState.turn g)
+                    { TurnRegisters.combat =
+                        c'
+                          { Combat.attackers = Map.insert oid target (Combat.attackers c'),
+                            Combat.attackedUnder = Map.insert oid pid (Combat.attackedUnder c'),
+                            Combat.attackedControlledBy = Map.delete oid (Combat.attackedControlledBy c'),
+                            Combat.attackedProtectedBy = Map.delete oid (Combat.attackedProtectedBy c'),
+                            Combat.attackingNothing = Set.delete oid (Combat.attackingNothing c')
+                          }
+                    }
+              }
+  where
+    attackedPlayer target = case target of
+      AttackTarget.OfPlayer pid -> Just pid
+      _ -> Nothing
+
 -- What an effect leaves open about CR 509.4's choice, AttackChoice's twin:
 -- settled by Parun.Engine.Resolve.Common's read of Parun.Types.EntryBlock.
 data BlockChoice

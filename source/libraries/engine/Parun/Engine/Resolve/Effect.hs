@@ -582,6 +582,7 @@ applyOneEffect runSubgame resolving source controller legal chosen effect = case
   Effect.BecomesBlocked payload -> Damage.becomesBlocked legal payload
   Effect.BlockAttacker payload -> Damage.blockAttacker resolving source controller legal payload
   Effect.JoinAttack payload -> Damage.joinAttack resolving source controller legal payload
+  Effect.ReselectAttack payload -> Damage.reselectAttack resolving source controller legal payload
   Effect.SwitchBlockers payload -> Damage.switchBlockers legal payload
   Effect.ExchangeBlocks payload -> Damage.exchangeBlocks legal payload
   Effect.MoveToZone payload -> Zones.moveToZone (runReplacementEffects runSubgame) resolving source controller legal chosen payload

@@ -542,6 +542,8 @@ data Effect card ability
     -- what the resolving controller chooses among the players and planeswalkers
     -- a player is attacking (Tahngarth, First Mate).
     JoinAttack JoinAttack.JoinAttack
+  | -- | CR 508.7: the resolving controller may reselect which player the named attacking creatures are attacking (Capricopian).
+    ReselectAttack ObjectRef.ObjectRef
   | -- | CR 509.3b's third road onto the battlefield's blocking side: an effect
     -- makes creatures ALREADY in combat block the other of two attacking
     -- creatures (General Jarkeld). The slot holds both attackers, one instance
