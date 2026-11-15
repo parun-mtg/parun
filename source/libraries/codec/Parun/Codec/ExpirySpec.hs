@@ -1,5 +1,6 @@
 module Parun.Codec.ExpirySpec where
 
+import qualified Data.Set as Set
 import qualified Data.Text as Text
 import qualified Parun.Codec.Expiry as Expiry
 import qualified Parun.JsonCodec.Codec as Codec
@@ -27,8 +28,8 @@ import qualified Parun.Types.PhaseSelector as PhaseSelector
 import qualified Parun.Types.PlayerId as PlayerId
 import qualified Parun.Types.Quantity as Quantity
 import qualified Parun.Types.SlotName as SlotName
-import qualified Parun.Types.StepBegan as StepBegan
 import qualified Parun.Types.StepOfControllerOf as StepOfControllerOf
+import qualified Parun.Types.StepOfSeats as StepOfSeats
 import qualified Parun.Types.Timestamp as Timestamp
 import qualified Parun.Types.While as While
 
@@ -80,13 +81,13 @@ spec s = Spec.describe s "Parun.Codec.Expiry" $ do
       Expiry.codec
       (Expiry.AtTurnOf (PlayerId.MkPlayerId 1))
       " {\"type\":\"AtTurnOf\",\"value\":1} "
-  -- CR 611.2a: until that step of that player's turn next begins.
-  Spec.it s "AtStepOf carries its step and player" $
+  -- CR 611.2a: until that step of one of those players' turns next begins.
+  Spec.it s "AtStepOf carries its step and seats" $
     Common.assertCodec
       s
       Expiry.codec
-      (Expiry.AtStepOf (StepBegan.MkStepBegan (Phase.Beginning BeginningStep.Upkeep) (PlayerId.MkPlayerId 2)))
-      " {\"type\":\"AtStepOf\",\"value\":{\"phase\":{\"type\":\"Beginning\",\"value\":\"Upkeep\"},\"player\":2}} "
+      (Expiry.AtStepOf (StepOfSeats.MkStepOfSeats (Phase.Beginning BeginningStep.Upkeep) (Set.singleton (PlayerId.MkPlayerId 2))))
+      " {\"type\":\"AtStepOf\",\"value\":{\"step\":{\"type\":\"Beginning\",\"value\":\"Upkeep\"},\"seats\":[2]}} "
   -- CR 611.2a's other phrasing, which needs the turn as well as the player: the
   -- effect ends at the end of the first turn of theirs numbered above it.
   Spec.it s "AtEndOfTurnOf carries its player and turn" $

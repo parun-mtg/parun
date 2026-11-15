@@ -2,6 +2,7 @@ module Parun.Types.Seat where
 
 import qualified Data.Map.Strict as Map
 import qualified Data.Sequence as Seq
+import qualified Data.Set as Set
 import Numeric.Natural (Natural)
 import qualified Parun.Types.CardName as CardName
 import qualified Parun.Types.DraftNote as DraftNote
@@ -51,6 +52,9 @@ data Seat = MkSeat
     -- | CR 103.2a: the player's starting deck, counted by name, which no zone
     -- above records once the game has begun.
     startingDeck :: Map.Map CardName.CardName Natural,
+    -- | CR 309.2: the dungeon cards the player owns outside the game, by name
+    -- (Player.dungeons).
+    dungeons :: Set.Set CardName.CardName,
     -- | CR 905.2b: what the player noted during the draft, by card
     -- name (Player.draftNotes).
     draftNotes :: Map.Map CardName.CardName (Seq.Seq DraftNote.DraftNote)

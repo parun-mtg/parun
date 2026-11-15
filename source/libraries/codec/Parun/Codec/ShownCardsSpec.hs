@@ -19,6 +19,12 @@ spec s = Spec.describe s "Parun.Codec.ShownCards" $ do
       ShownCards.codec
       ShownCards.TopOfLibrary
       " \"TopOfLibrary\" "
+  Spec.it s "FaceDownCreatures" $
+    Common.assertCodec
+      s
+      ShownCards.codec
+      ShownCards.FaceDownCreatures
+      " \"FaceDownCreatures\" "
   Spec.it s "round trips every constructor" $ Common.assertEnumCodec s ShownCards.codec
   Spec.it s "has a schema" $
     Common.assertHasSchema s ShownCards.codec

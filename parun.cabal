@@ -1713,6 +1713,8 @@ library codec
     Parun.Codec.StepBegins
     Parun.Codec.StepBeginsSpec
     Parun.Codec.StepOfControllerOf
+    Parun.Codec.StepOfSeats
+    Parun.Codec.StepOfSeatsSpec
     Parun.Codec.StickerKind
     Parun.Codec.StickerKindSpec
     Parun.Codec.StickerPlacement
@@ -2628,7 +2630,6 @@ library test
     Parun.GameSpec
     Parun.GoadSpec
     Parun.GrandMeleeSpec
-    Parun.HarnessSpec
     Parun.HealSpec
     Parun.IngestSpec
     Parun.InitiativeSpec
@@ -3687,6 +3688,7 @@ library types
     Parun.Types.StepBegan
     Parun.Types.StepBegins
     Parun.Types.StepOfControllerOf
+    Parun.Types.StepOfSeats
     Parun.Types.StickerContent
     Parun.Types.StickerKind
     Parun.Types.StickerPlacement

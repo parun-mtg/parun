@@ -1,0 +1,42 @@
+{
+  "description": "CR 111.10e / 701.22a: a Shard token Niko, Light of Hope makes sacrifices itself for {2} to scry 1, then draw a card",
+  "note": "The scry bottoms Hill Giant, so the card drawn is Grizzly Bears beneath it: the draw follows the scry, not the other way round.",
+  "board": {
+    "active": "alice",
+    "step": "PrecombatMain",
+    "seats": [
+      {
+        "name": "alice",
+        "battlefield": [
+          {"card": "Plains", "label": "p1"},
+          {"card": "Island", "label": "i1"},
+          {"card": "Plains", "label": "p2"},
+          {"card": "Island", "label": "i2"},
+          {"card": "Plains", "label": "p3"},
+          {"card": "Island", "label": "i3"}
+        ],
+        "hand": [{"card": "Niko, Light of Hope", "label": "niko"}],
+        "library": [{"card": "Hill Giant", "label": "top"}, {"card": "Grizzly Bears", "label": "second"}, {"card": "Island"}]
+      },
+      {
+        "name": "bob",
+        "library": [{"card": "Island"}, {"card": "Island"}]
+      }
+    ]
+  },
+  "timeline": [
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": {"Cast": {"object": "$niko", "mana": ["$p1", "$i1", "$p2", "$i2", null]}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass"},
+    {"turn": 1, "step": "PrecombatMain", "player": "bob", "do": "Pass"},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass"},
+    {"turn": 1, "step": "PrecombatMain", "player": "bob", "do": "Pass"},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": {"Activate": {"object": "Shard Token", "ability": 0, "mana": ["$p3", "$i3"]}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Count": {"player": "alice", "zone": "Battlefield", "card": "Shard Token", "count": 1}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass"},
+    {"turn": 1, "step": "PrecombatMain", "player": "bob", "do": "Pass"},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": {"Answer": {"prompt": "ChooseScry", "with": [["$top"], []]}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Count": {"player": "alice", "zone": "Hand", "card": "Grizzly Bears", "count": 1}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Count": {"player": "alice", "zone": "Hand", "card": "Hill Giant", "count": 0}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"View": {"of": "Zone", "player": "alice", "zone": "Library", "is": ["Island#4", "Hill Giant"]}}}
+  ]
+}

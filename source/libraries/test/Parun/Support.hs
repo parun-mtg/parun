@@ -254,6 +254,7 @@ playerSetup pid =
       Seat.ante = Seq.empty,
       Seat.sideDecks = Map.empty,
       Seat.startingDeck = Map.empty,
+      Seat.dungeons = Set.empty,
       Seat.draftNotes = Map.empty
     }
 
@@ -356,7 +357,7 @@ on :: Phase.Phase -> PlayerId.PlayerId -> Move.Move -> Untimed
 on step pid verb =
   MkUntimed $ \number ->
     Timed.MkTimed
-      { Timed.when = When.MkWhen number step (seatLabel pid),
+      { Timed.when = When.MkWhen number step (seatLabel pid) 0,
         Timed.source = Nothing,
         Timed.entry = Entry.Do verb
       }

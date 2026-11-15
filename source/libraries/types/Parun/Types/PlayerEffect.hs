@@ -284,7 +284,7 @@ data PlayerEffect
   | -- | CR 104.2b / 104.3 / 704.5a / Abyssal Persecutor, Platinum Angel, Lich: this
     -- player can't win, can't lose, or doesn't lose for having 0 or less life.
     Precluded GameOutcome.GameOutcome
-  | -- | CR 401.5 / 400.2: cards of this player's that are shown, and to whom.
+  | -- | CR 401.5 / 400.2 / 708.5: cards of this player's that are shown, and to whom.
     Shows Shows.Shows
   | -- | CR 603.11 / 121.9 / Rowen, God-Eternal Kefnet, Booby Trap: this player
     -- reveals, or may reveal, the first card or each card they draw as they

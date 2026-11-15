@@ -600,81 +600,6 @@ ruleSpec s registry = Spec.describe s "Rules" $ do
     Spec.assertEqWith s "and carol's" (length (Game.zoneMembers Zone.Library S.carol after)) 7
     Spec.assertEqWith s "the main game is not decided by the subgame" (GameState.result after) Nothing
 
-  Spec.it s "CR 730.1b/730.3 gameplay: alice casts a subgame spell, bob decks, bob loses 3" $ do
-    -- alice has the {0} subgame sorcery in hand and an 8-card library; bob has
-    -- a 3-card library (decks in the subgame, CR 730.3). alice casts through
-    -- the priority loop; the subgame resolves alice the winner; the follow-on
-    -- LoseLife charges bob, the one player who did not win, 3.
-    mountain <- S.printingOf s registry "Mountain"
-    syntheticSubgame <- S.printingOf s registry "Synthetic Subgame"
-    let g0 = Setup.emptyGame S.bothPlayers
-        g1 = poolToLibraryG S.bob (poolToLibraryG S.alice (addManyG mountain 3 S.bob (addManyG mountain 8 S.alice g0)))
-        (spellId, g2) = S.addHandCard syntheticSubgame S.alice g1
-        gStart =
-          g2
-            { GameState.turn =
-                (GameState.turn g2)
-                  { TurnRegisters.activePlayer = S.alice,
-                    TurnRegisters.phase = Phase.PrecombatMain,
-                    TurnRegisters.priority = Just S.alice
-                  }
-            }
-        after = snd (Engine.runGamePure subgameAnswer gStart Engine.priorityLoop)
-    Spec.assertEqWith s "CR 730.1b: bob (the one player who did not win) lost 3 to the follow-on LoseLife" (S.lifeOf S.bob after) (Just 17)
-    Spec.assertEqWith s "alice, the winner, is untouched" (S.lifeOf S.alice after) (Just 20)
-    Spec.assertEqWith s "the subgame spell resolved and left the stack" (TurnRegisters.stack (GameState.turn after)) []
-    Spec.assertEqWith s "the main game did not end" (GameState.result after) Nothing
-    -- Casting routes through changeZone (CR 400.7), which mints a fresh
-    -- id and drops spellId entirely -- Game.lookupObject spellId after
-    -- is unconditionally Nothing, so that alone proves nothing about
-    -- alice's hand. The load-bearing check is that spellId's old
-    -- incarnation is not lingering in her hand's member list.
-    Spec.assertEqWith s "the subgame spell's original id no longer sits in alice's hand (cast)" (notElem spellId (Game.zoneMembers Zone.Hand S.alice after)) True
-
-  -- CR 730.1b, real Shahrazad: "each player who doesn't win the subgame
-  -- loses half their life, rounded up". Three seats, because at two the
-  -- non-winner set and "the loser" coincide; three distinct life totals, because
-  -- the amount is read against each payer's own; three distinct library sizes,
-  -- because who wins the subgame is decided by them (CR 730.3) and equal sizes
-  -- would make two readings agree.
-  --
-  -- 20, 13 and 9 halve to 10, 7 and 5, so alice's is exact and the other two both
-  -- round UP -- a truncating halve leaves bob on 7 and carol on 5 rather than 6
-  -- and 4, which no other error produces.
-  --
-  -- The two cases below are the SAME board with exactly one thing different:
-  -- alice's library holds 8 cards in one and 3 in the other. That decides whether
-  -- she survives the subgame's opening hand (CR 730.3) and so whether the subgame
-  -- has a winner at all.
-  Spec.it s "CR 730.1b gameplay: Shahrazad's non-winners each lose half their own life, rounded up" $ do
-    mountain <- S.printingOf s registry "Mountain"
-    plains <- S.printingOf s registry "Plains"
-    shahrazad <- S.printingOf s registry "Shahrazad"
-    let after = castShahrazad id mountain plains shahrazad 8
-    Spec.assertEqWith s "alice's 8-card library survives the opening hand, so she wins and pays nothing" (S.lifeOf S.alice after) (Just 20)
-    Spec.assertEqWith s "bob did not win: 13 halves to 7 rounded up, leaving 6" (S.lifeOf S.bob after) (Just 6)
-    Spec.assertEqWith s "carol did not win either, and pays her OWN half: 9 halves to 5, leaving 4" (S.lifeOf S.carol after) (Just 4)
-    Spec.assertEqWith s "Shahrazad resolved and left the stack" (TurnRegisters.stack (GameState.turn after)) []
-    Spec.assertEqWith s "the main game did not end" (GameState.result after) Nothing
-    Spec.assertEqWith s "CR 730.5: alice's cards funnelled back" (length (Game.zoneMembers Zone.Library S.alice after)) 8
-    Spec.assertEqWith s "and bob's" (length (Game.zoneMembers Zone.Library S.bob after)) 6
-    Spec.assertEqWith s "and carol's" (length (Game.zoneMembers Zone.Library S.carol after)) 4
-
-  Spec.it s "CR 730.1b gameplay: a DRAWN Shahrazad subgame is won by nobody, so every player pays" $ do
-    -- alice's library drops to 3, so all three deck on the subgame's opening hand
-    -- (CR 730.3) and leave together -- CR 104.4a's draw, which
-    -- Departure.outcomeAfterLeaving reports as Result.Drawn. Nobody won, so
-    -- nobody is excluded and alice pays her own half alongside the other two.
-    mountain <- S.printingOf s registry "Mountain"
-    plains <- S.printingOf s registry "Plains"
-    shahrazad <- S.printingOf s registry "Shahrazad"
-    let after = castShahrazad id mountain plains shahrazad 3
-    Spec.assertEqWith s "alice won nothing this time: 20 halves to 10" (S.lifeOf S.alice after) (Just 10)
-    Spec.assertEqWith s "bob pays exactly what he paid when alice won" (S.lifeOf S.bob after) (Just 6)
-    Spec.assertEqWith s "and so does carol" (S.lifeOf S.carol after) (Just 4)
-    Spec.assertEqWith s "the drawn SUBGAME did not decide the main game (CR 730.1a)" (GameState.result after) Nothing
-    Spec.assertEqWith s "Shahrazad resolved and left the stack" (TurnRegisters.stack (GameState.turn after)) []
-
   -- The CR 730.1b board played for ante: the subgame antes one card from each
   -- library (CR 407.2), bob's 6 and carol's 4 cannot fill a 7-card hand, both
   -- leave (CR 800.4a: three seats), and CR 800.4n keeps their ante cards for
@@ -728,20 +653,6 @@ ruleSpec s registry = Spec.describe s "Rules" $ do
         after = castShahrazad (forAnte . teamed) mountain plains shahrazad 9
     Spec.assertEqWith s "CR 407.2 alice's and carol's ante cards are bob's" (List.sort (changesOf after)) [(S.alice, S.bob), (S.carol, S.bob)]
     Spec.assertEqWith s "CR 730.5 and they went to his main-game library" (fmap (\pid -> length (Game.zoneMembers Zone.Library pid after)) [S.alice, S.bob, S.carol]) [8, 8, 3]
-
-  -- CR 104.2c with CR 730.1b: the same board as the first case with alice and
-  -- bob on one team. bob decks in the subgame, but alice's survival is their
-  -- team's win, so bob wins too and only carol pays.
-  Spec.it s "CR 104.2c gameplay: a Shahrazad subgame won by a team excludes every player on it" $ do
-    mountain <- S.printingOf s registry "Mountain"
-    plains <- S.printingOf s registry "Plains"
-    shahrazad <- S.printingOf s registry "Shahrazad"
-    let teamed gs = gs {GameState.match = (GameState.match gs) {MatchScope.settings = (MatchScope.settings (GameState.match gs)) {GameSettings.teams = Teams.MkTeams (Map.fromList [(S.alice, TeamId.MkTeamId 0), (S.bob, TeamId.MkTeamId 0), (S.carol, TeamId.MkTeamId 1)])}}}
-        after = castShahrazad teamed mountain plains shahrazad 8
-    Spec.assertEqWith s "CR 104.2c bob, on the winning team, pays nothing" (S.lifeOf S.bob after) (Just 13)
-    Spec.assertEqWith s "and neither does alice" (S.lifeOf S.alice after) (Just 20)
-    Spec.assertEqWith s "carol pays her half" (S.lifeOf S.carol after) (Just 4)
-    Spec.assertEqWith s "the main game did not end" (GameState.result after) Nothing
 
   -- CR 614.1c with CR 730.1a: a subgame started by an as-enters effect, which
   -- never reaches the stack. Three seats and a winner who is not the caster, so
@@ -919,46 +830,6 @@ ruleSpec s registry = Spec.describe s "Rules" $ do
       "a main-game question is about the main game, and it holds the creature"
       (filter (not . askedGameHasSurvivor) mainAsks)
       []
-
-  Spec.it s "CR 730.5/730.4b gameplay: cards funnel back, main-game board survives, main-game counters untouched" $ do
-    -- library pool built first, THEN the survivor is added to the battlefield --
-    -- poolToLibraryG sweeps every object a player owns onto their library, so a
-    -- survivor added before it would be swept in too and vanish from the board.
-    mountain <- S.printingOf s registry "Mountain"
-    syntheticSubgame <- S.printingOf s registry "Synthetic Subgame"
-    let g0 = Setup.emptyGame S.bothPlayers
-        g1 = poolToLibraryG S.bob (poolToLibraryG S.alice (addManyG mountain 3 S.bob (addManyG mountain 8 S.alice g0)))
-        -- a survivor on the main battlefield that must remain after the subgame
-        (survivorId, g2) = S.addPermanent mountain S.alice g1
-        (_spellId, g3) = S.addHandCard syntheticSubgame S.alice g2
-        -- give bob a main-game poison counter (CR 730.4b: outside the subgame)
-        g4 =
-          g3
-            { GameState.players =
-                Map.adjust
-                  (\pl -> pl {Player.counters = Map.insert PlayerCounterKind.Poison 1 (Player.counters pl)})
-                  S.bob
-                  (GameState.players g3)
-            }
-        gStart =
-          g4
-            { GameState.turn =
-                (GameState.turn g4)
-                  { TurnRegisters.activePlayer = S.alice,
-                    TurnRegisters.phase = Phase.PrecombatMain,
-                    TurnRegisters.priority = Just S.alice
-                  }
-            }
-        after = snd (Engine.runGamePure subgameAnswer gStart Engine.priorityLoop)
-        bobPoison =
-          maybe
-            0
-            (Map.findWithDefault 0 PlayerCounterKind.Poison . Player.counters)
-            (Map.lookup S.bob (GameState.players after))
-    Spec.assertEqWith s "CR 730.4b: bob's main-game poison counter is untouched by the subgame" bobPoison 1
-    Spec.assertEqWith s "CR 730.5: alice's library holds her 8 subgame cards again" (length (Game.zoneMembers Zone.Library S.alice after)) 8
-    Spec.assertEqWith s "CR 730.5: bob's library holds his 3 subgame cards again" (length (Game.zoneMembers Zone.Library S.bob after)) 3
-    Spec.assertEqWith s "the main-game survivor is still on the battlefield" (Set.member survivorId (GameState.battlefield after)) True
 
   Spec.it s "CR 730.6 gameplay: a subgame nests a subgame; nesting terminates and the main game resumes" $ do
     -- alice's MAIN-GAME library feeds level 1's library: one nested

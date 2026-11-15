@@ -27,10 +27,8 @@ data RowSource = MkRowSource
     -- | A stored row's bound slots (Parun.Types.ActivePlayerEffect.slots),
     -- which a Filter.IsBound in the row reads. Empty for a printed row.
     slots :: Map.Map SlotName.SlotName (Set.Set ObjectId.ObjectId),
-    -- | CR 611.2a / 109.5: a stored row's controller
-    -- (Parun.Types.ActivePlayerEffect.controller). Nothing for a printed row,
-    -- whose controller is its object's, read live
-    -- (Parun.Engine.PlayerEffect.rowController).
+    -- | CR 109.5: the row's controller, its "you". Nothing for a source built
+    -- only to match a filter against (liveSource).
     controller :: Maybe PlayerId.PlayerId
   }
   deriving (Eq, Ord, Show)

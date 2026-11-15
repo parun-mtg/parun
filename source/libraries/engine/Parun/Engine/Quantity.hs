@@ -1020,8 +1020,9 @@ evaluateAgainst viewOf context gs announcedOn mOid mView quantity =
         -- A COPY of the ability answers off its OWN id, CR 707.10's last sentence making
         -- it an ability of its own: Resolve.Effect's CopyStackObject arm re-stamps CR
         -- 602.2a's thisAbility slot, so the read still lands on an object once the
-        -- original has been countered out from under it. Parun.CopySpec's Stifle case over
-        -- Ashling the Pilgrim is what proves that.
+        -- original has been countered out from under it. data/scenarios/copy's CR
+        -- 707.10b Stifle cases prove that, once this read's archive fence is off
+        -- too.
         --
         -- ACTIVATED counts CR 602.2's log instead, TurnRegisters.activationsThisTurn,
         -- by the source object and the ability as activated: every activation of

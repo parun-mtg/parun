@@ -26,7 +26,6 @@
 -- Parun.Engine.Interchangeable.Mentions both run.
 module Parun.Engine.PlayerEffect where
 
-import qualified Control.Applicative as Applicative
 import qualified Data.Bifunctor as Bifunctor
 import qualified Data.Containers.ListUtils as ListUtils
 import qualified Data.Foldable as Foldable
@@ -294,7 +293,7 @@ playerAbilitiesOf carrier gs =
 --
 -- UNSORTED and UNFILTERED. Both are `applying`'s job, and neither reader may
 -- assume the other's.
-printedRows :: GameState -> [(Timestamp, Maybe ObjectId, Maybe AbilityName.AbilityName, PlayerId -> Bool, PlayerEffect)]
+printedRows :: GameState -> [(Timestamp, RowSource, Maybe AbilityName.AbilityName, PlayerId -> Bool, PlayerEffect)]
 printedRows gs =
   let -- Hoisted out of the walk exactly as Projection.gather hoists it: an
       -- inlined call would recompute the whole game's LandSubtype Replace list once
@@ -354,7 +353,7 @@ printedRows gs =
               (Plane.exemptFromRange oid gs || Game.inRangeOf controller pid gs)
                 && inScopeWithin (Just oid) (Plane.rangePerspective oid controller gs) pid controller gs (PlayerStaticAbility.scope ability)
                 && lives ability pid
-         in fmap (\(stamp, ability) -> (stamp, Just oid, PlayerStaticAbility.name ability, reaches ability, readAs (PlayerStaticAbility.effect ability))) stamped
+         in fmap (\(stamp, ability) -> (stamp, (liveSource (Just oid)) {RowSource.controller = Just controller}, PlayerStaticAbility.name ability, reaches ability, readAs (PlayerStaticAbility.effect ability))) stamped
       fromPermanent oid = case playerAbilitiesOf oid gs of
         -- The overwhelming majority of permanents: no ability, so no
         -- controller projection and no CR 305.7 check is paid for.
@@ -457,7 +456,7 @@ printedRows gs =
 affectedBy :: PlayerId -> ObjectId -> AbilityName.AbilityName -> GameState -> Bool
 affectedBy pid oid name gs =
   let affected (_, source, abilityName, reaches, _) =
-        source == Just oid && abilityName == Just name && reaches pid
+        RowSource.object source == Just oid && abilityName == Just name && reaches pid
    in any affected (printedRows gs)
 
 -- CR 604.2: every player effect applying to `pid` right now. Gathered LIVE from
@@ -561,8 +560,7 @@ applying pid gs =
       applyingScope (_, _, _, reaches, _) = reaches pid
       effectOf (_, source, _, _, effect) = (source, effect)
       stampOf (timestamp, _, _, _, _) = timestamp
-      printedOne (timestamp, source, name, reaches, effect) = (timestamp, liveSource source, name, reaches, effect)
-   in fmap effectOf (List.sortOn stampOf (filter applyingScope (filter notIgnored (fmap printedOne printed) <> stored)))
+   in fmap effectOf (List.sortOn stampOf (filter applyingScope (filter notIgnored printed <> stored)))
 
 -- A printed row's source: its choices are read off the object live (CR 611.3a).
 liveSource :: Maybe ObjectId -> RowSource
@@ -571,12 +569,6 @@ liveSource source = RowSource.MkRowSource source Nothing Nothing Map.empty Nothi
 -- A stored row's source, carrying the choices baked as it began (CR 608.2h).
 storedSource :: ActivePlayerEffect.ActivePlayerEffect -> RowSource
 storedSource active = RowSource.MkRowSource (Just (ActivePlayerEffect.source active)) (Just (ActivePlayerEffect.choices active)) (ActivePlayerEffect.ability active) (ActivePlayerEffect.slots active) (Just (ActivePlayerEffect.controller active))
-
--- CR 109.5: the controller of a row's effect -- a stored row's own record, or a
--- printed row's object's controller, read live; Nothing for a printed row whose
--- object has none.
-rowController :: RowSource -> GameState -> Maybe PlayerId
-rowController source gs = RowSource.controller source Applicative.<|> (RowSource.object source >>= \oid -> Projection.controllerOf oid gs)
 
 -- CR 601.2i: how many spells this player has cast this turn. A fold over the
 -- whole event log, which is exactly "this turn" because Engine.handoffTurn clears
@@ -3804,9 +3796,10 @@ drawReveals pid nth gs =
       rowOf (source, effect) = (,) <$> RowSource.object source <*> (revealOf effect >>= \reveal -> if revealing reveal then Just reveal else Nothing)
    in Maybe.mapMaybe rowOf (applying pid gs)
 
--- CR 401.5 / 400.2: the grants showing this player's hand or top card, each
--- naming whom it shows them to. Read by Parun.Engine.Visibility.shownTo.
-shownGrants :: PlayerId -> GameState -> [Shows.Shows]
+-- CR 401.5 / 400.2 / 708.5: the grants showing this player's hidden cards,
+-- each naming whom it shows them to, beside its row's controller (CR 109.5).
+-- Read by Parun.Engine.Visibility.shownTo.
+shownGrants :: PlayerId -> GameState -> [(Maybe PlayerId, Shows.Shows)]
 shownGrants pid gs =
   let grantOf effect = case effect of
         PlayerEffect.CantCastSpells -> Nothing
@@ -3866,7 +3859,7 @@ shownGrants pid gs =
         PlayerEffect.RevealsDraw _ -> Nothing
         PlayerEffect.Precluded _ -> Nothing
         PlayerEffect.Shows grant -> Just grant
-   in Maybe.mapMaybe (grantOf . snd) (applying pid gs)
+   in Maybe.mapMaybe (\(source, effect) -> (,) (RowSource.controller source) <$> grantOf effect) (applying pid gs)
 
 -- CR 402.2: a player's maximum hand size, normally seven cards. NOT CR 103.5's
 -- starting hand size, which is a different seven (Mulligan.openingHand) that
@@ -4776,7 +4769,7 @@ hexproofExemptions =
    in Maybe.mapMaybe exemption
 
 -- CR 702.11e: may `aimer` target `candidate` as though it didn't have hexproof?
--- CR 109.5's "you" in the filter is the effect's controller (`rowController`),
+-- CR 109.5's "you" in the filter is the effect's controller (RowSource.controller),
 -- the aimer only where the row has none: Nowhere to Run's "creatures your
 -- opponents control" are its controller's opponents' whoever aims, which
 -- data/scenarios/nowhere-to-run-lifts-hexproof-only-from-its-controllers-opponents-creatures.json
@@ -4785,7 +4778,7 @@ hexproofExemptions =
 -- third ruling; CR 611.2c).
 ignoresHexproofOf :: [(RowSource, HexproofExemption.HexproofExemption)] -> PlayerId -> ObjectId -> GameState -> Bool
 ignoresHexproofOf exemptions aimer candidate gs =
-  any (\(source, e) -> matchesObjectFor (Maybe.fromMaybe aimer (rowController source gs)) source (HexproofExemption.permanents e) candidate gs) exemptions
+  any (\(source, e) -> matchesObjectFor (Maybe.fromMaybe aimer (RowSource.controller source)) source (HexproofExemption.permanents e) candidate gs) exemptions
 
 -- CR 702.11e: may the aiming player target players as though they didn't have
 -- hexproof? protectedFromTargeting's `pastHexproof`.

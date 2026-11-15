@@ -3,6 +3,7 @@ module Parun.Codec.BoardSpec where
 import qualified Data.List.NonEmpty as NonEmpty
 import qualified Data.Map.Strict as Map
 import qualified Data.Sequence as Seq
+import qualified Data.Set as Set
 import qualified Data.Text as Text
 import qualified Parun.Codec.Board as Board
 import qualified Parun.Codec.PlacementSpec as PlacementSpec
@@ -189,6 +190,7 @@ seat name =
       Seat.Type.ante = Seq.empty,
       Seat.Type.sideDecks = Map.empty,
       Seat.Type.startingDeck = Map.empty,
+      Seat.Type.dungeons = Set.empty,
       Seat.Type.draftNotes = Map.empty
     }
 

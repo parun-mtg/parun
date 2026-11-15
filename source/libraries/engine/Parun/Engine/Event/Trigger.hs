@@ -2882,7 +2882,7 @@ zonesTriggeredFrom cond =
         -- graveyard, though Dungeon Crawler watches a completed dungeon from
         -- there: what puts its ability in the graveyard is CR 113.6m, read off its
         -- effect by `zonesFunctionedIn` above -- Squee, Goblin Nabob's road, proved
-        -- by Parun.DungeonSpec's "CR 309.7 completing a dungeon triggers Dungeon
+        -- by data/scenarios/dungeon's "completing a dungeon triggers Dungeon
         -- Crawler out of the graveyard".
         TriggerCondition.PlayerActs _ -> battlefield
         TriggerCondition.PlayerPlaysLand _ -> battlefield

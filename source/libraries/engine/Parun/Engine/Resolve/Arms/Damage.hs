@@ -1705,8 +1705,9 @@ flipCoinArm throwForCoin reflipWindow runSubgame resolving source controller leg
           -- comparison and the CR 705.1 event all belong to
           -- Event.flipWinLoseCoin, which is also the road a COST'S flip takes.
           -- That module's haddock argues the order of the two questions, and
-          -- Parun.CoinSpec's "only the flipping player calls" proves it by what
-          -- the engine ASKED rather than by anything the board shows.
+          -- data/scenarios/coin/cr-705-2-only-the-flipping-player-calls-*.json
+          -- proves it by what the engine ASKED rather than by anything the board
+          -- shows.
           CoinReading.Wins -> Event.flipWinLoseCoin (Just (throwForCoin runSubgame)) (reflipWindow runSubgame) flipper statements
           -- CR 705.2's first sentence: the effect cares only about the face, so
           -- no Prompt.CallCoin is asked -- "no player wins or loses a coin flip

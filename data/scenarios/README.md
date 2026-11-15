@@ -24,7 +24,9 @@ subdirectory named for that spec; `docs/scenario-burndown.md` lists the ones sti
   `sideDecks`, each a supplementary deck of placements top first, face down
   in the command zone (CR 718.2, 904.3): `[{ "key": "Scheme", "value":
   [...] }]`, and a `startingDeck` counted by name (CR 103.2a, `[{ "key":
-  "Plains", "value": 199 }]`), which places nothing. A
+  "Plains", "value": 199 }]`), and the `dungeons` it owns outside the game
+  by name (CR 309.2, `["Undercity"]`), which a venture enters; neither places
+  anything. A
   placement names its `card` and may give a `label`, `tapped`, `ready` (CR
   302.6), `damage`, `counters`, `token` (CR 111.1, battlefield only), a
   `controller`, the label of the object or seat it is `attached` to, and
@@ -58,9 +60,15 @@ subdirectory named for that spec; `docs/scenario-burndown.md` lists the ones sti
   whose id no longer names one, counted the same way --- a card that has moved
   zones among them, since CR 400.7 left its old self behind. `"trigger of $x"` and `"ability of $x"`
   name the topmost triggered or activated ability on the stack from that
-  source, which may have left the game (CR 113.7a).
+  source, which may have left the game (CR 113.7a). `"stack 2"` is the object
+  second from the top of the stack as the move reads it, which names an ability
+  under an identical copy of it (CR 707.10); a spell being cast is already on
+  top as its targets are chosen (CR 601.2a).
 - **Timeline.** Each entry is keyed by `turn`, `step` and the `player` who
-  decides, and carries `do` (a move) or `check`. Entries sharing a key are
+  decides, and carries `do` (a move) or `check`. An entry for a subgame (CR
+  730.1a) adds its `depth`, 1 for the main game's subgame, and names that
+  game's own turn and step; CR 730.2's first-player roll and CR 730.5's
+  shuffles are the main game's. Entries sharing a key are
   taken in order; order across keys is not kept, so an entry is taken the first
   time its key comes up once the entries before it at that key are spent. A
   step that occurs twice in a turn (an extra combat or main phase) is one key,
@@ -159,7 +167,10 @@ subdirectory named for that spec; `docs/scenario-burndown.md` lists the ones sti
   sacrifice, cards a search finds, spellbook names) or a range (an X, a die,
   counters a permanent carries) is refused already when it names something
   the list lacks or leaves the range; a `do` naming one goes to the engine, and so does a `refuse` naming one, which the engine must then ask again. The engine's card lookups are answered from the card data, for
-  every name the engine asks about.
+  every name the engine asks about, and so is a conjure's question to the card
+  reference (CR 108.1), which offers its `RandomCard` every card of the data
+  the filter admits, never a synthetic one, unless an `Answer` to
+  `ReferenceCards` names the cards instead.
 - **Checks.** `Life`, `Count` (cards of one name in one of a player's zones,
   `Stack` included; the controller's, for the battlefield), `Damage`, `Tapped`, `Counters` (of
   one kind on an object), `Types` (an object's card types, all of them),

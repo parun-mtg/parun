@@ -14,6 +14,7 @@ import qualified Parun.DeckList as DeckList
 import qualified Parun.Engine.Driver as Driver
 import qualified Parun.Engine.Game as Game
 import qualified Parun.Extra.Int as Int
+import qualified Parun.Extra.Natural as Natural
 import qualified Parun.Scenario as Scenario
 import qualified Parun.Scenario.Prompt as Scenario.Prompt
 import qualified Parun.Scenario.Reply as Reply
@@ -69,7 +70,7 @@ entryFor seats asked answer = case prompt of
   where
     prompt = Asked.prompt asked
     gs = Asked.game asked
-    at pid move = Timed.MkTimed (When.MkWhen (TurnRegisters.turnNumber (GameState.turn gs)) (TurnRegisters.phase (GameState.turn gs)) (labelOf seats pid)) Nothing (Entry.Do move)
+    at pid move = Timed.MkTimed (When.MkWhen (TurnRegisters.turnNumber (GameState.turn gs)) (TurnRegisters.phase (GameState.turn gs)) (labelOf seats pid) (Natural.length (Asked.enclosing asked))) Nothing (Entry.Do move)
 
 -- | Objects by card name and creation order, as the runner reads them back
 -- on the same state, a departed one (CR 400.7) among the departed, and an

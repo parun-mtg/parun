@@ -47,9 +47,10 @@ spec s = Spec.describe s "Parun.Codec.Seat" $ do
           Seat.Type.command = Seq.singleton (card "Shimatsu the Bloodcloaked"),
           Seat.Type.ante = Seq.singleton (card "Contract from Below"),
           Seat.Type.sideDecks = Map.fromList [(SideDeck.Type.Attraction, Seq.singleton (card "Bumper Cars")), (SideDeck.Type.Scheme, Seq.fromList [card "Look Skyward and Despair", card "All in Good Time"])],
-          Seat.Type.startingDeck = Map.fromList [(CardName.Type.MkCardName (Text.pack "Plains"), 199)]
+          Seat.Type.startingDeck = Map.fromList [(CardName.Type.MkCardName (Text.pack "Plains"), 199)],
+          Seat.Type.dungeons = Set.fromList [CardName.Type.MkCardName (Text.pack "Lost Mine of Phandelver"), CardName.Type.MkCardName (Text.pack "Undercity")]
         }
-      " {\"name\":\"alice\",\"life\":7,\"counters\":[{\"key\":\"Energy\",\"value\":3}],\"team\":1,\"range\":2,\"emperor\":true,\"speed\":0,\"graveyardOrder\":\"Matters\",\"manaPool\":\"RC\",\"battlefield\":[{\"card\":\"Mountain\"}],\"hand\":[{\"card\":\"Lightning Bolt\"}],\"graveyard\":[{\"card\":\"Goblin Piker\"}],\"library\":[{\"card\":\"Island\"}],\"exile\":[{\"card\":\"Bad Moon\"}],\"command\":[{\"card\":\"Shimatsu the Bloodcloaked\"}],\"ante\":[{\"card\":\"Contract from Below\"}],\"sideDecks\":[{\"key\":\"Attraction\",\"value\":[{\"card\":\"Bumper Cars\"}]},{\"key\":\"Scheme\",\"value\":[{\"card\":\"Look Skyward and Despair\"},{\"card\":\"All in Good Time\"}]}],\"startingDeck\":[{\"key\":\"Plains\",\"value\":199}]} "
+      " {\"name\":\"alice\",\"life\":7,\"counters\":[{\"key\":\"Energy\",\"value\":3}],\"team\":1,\"range\":2,\"emperor\":true,\"speed\":0,\"graveyardOrder\":\"Matters\",\"manaPool\":\"RC\",\"battlefield\":[{\"card\":\"Mountain\"}],\"hand\":[{\"card\":\"Lightning Bolt\"}],\"graveyard\":[{\"card\":\"Goblin Piker\"}],\"library\":[{\"card\":\"Island\"}],\"exile\":[{\"card\":\"Bad Moon\"}],\"command\":[{\"card\":\"Shimatsu the Bloodcloaked\"}],\"ante\":[{\"card\":\"Contract from Below\"}],\"sideDecks\":[{\"key\":\"Attraction\",\"value\":[{\"card\":\"Bumper Cars\"}]},{\"key\":\"Scheme\",\"value\":[{\"card\":\"Look Skyward and Despair\"},{\"card\":\"All in Good Time\"}]}],\"startingDeck\":[{\"key\":\"Plains\",\"value\":199}],\"dungeons\":[\"Lost Mine of Phandelver\",\"Undercity\"]} "
   Spec.it s "an unknown mana symbol is refused" $
     Spec.assertBool
       s
@@ -79,6 +80,7 @@ empty name =
       Seat.Type.ante = Seq.empty,
       Seat.Type.sideDecks = Map.empty,
       Seat.Type.startingDeck = Map.empty,
+      Seat.Type.dungeons = Set.empty,
       Seat.Type.draftNotes = Map.empty
     }
 

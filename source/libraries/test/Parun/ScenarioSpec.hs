@@ -224,7 +224,7 @@ spec s registry = Spec.describe s "Scenario" $ do
           Left failure -> Spec.assertFailure s (S.renderFailure failure)
           Right (chosen, _) -> Spec.assertEqWith s "alice's entry answered bob's prompt" chosen [attacker]
         case Scenario.rehearse (S.turn 1 [S.on S.declareAttackers S.bob attack]) built ask of
-          Left (ScenarioFailure.MkUnscheduledPrompt _ _ _ kind _) ->
+          Left (ScenarioFailure.MkUnscheduledPrompt _ _ _ _ kind _) ->
             Spec.assertEqWith s "bob's entry answered nothing" kind (Text.pack "DeclareAttackers")
           Left failure -> Spec.assertFailure s (S.renderFailure failure)
           Right _ -> Spec.assertFailure s "an entry keyed on the affected player was consumed"
@@ -436,7 +436,7 @@ spec s registry = Spec.describe s "Scenario" $ do
     let setup = S.duel S.beginningOfCombat [S.ready (S.permanent "Goblin Piker")] []
     built <- S.buildBoardOrFail s registry setup
     case Scenario.rehearse Seq.empty built S.combatGame of
-      Left (ScenarioFailure.MkUnscheduledPrompt _ _ _ kind _) ->
+      Left (ScenarioFailure.MkUnscheduledPrompt _ _ _ _ kind _) ->
         Spec.assertEqWith s "the prompt kind" kind (Text.pack "DeclareAttackers")
       Left failure -> Spec.assertFailure s (S.renderFailure failure)
       Right _ -> Spec.assertFailure s "the attackers prompt was silently answered"
@@ -573,7 +573,7 @@ spec s registry = Spec.describe s "Scenario" $ do
         )
     case result of
       Left (ScenarioFailure.MkUnrefusedMove key verb next) -> do
-        Spec.assertEqWith s "the moment it answered" key (When.MkWhen 1 S.declareBlockers (S.seatLabel S.bob))
+        Spec.assertEqWith s "the moment it answered" key (When.MkWhen 1 S.declareBlockers (S.seatLabel S.bob) 0)
         Spec.assertEqWith s "the move that stood" verb (Move.Block Map.empty)
         Spec.assertBool s (next /= Just (Text.pack "DeclareBlockers")) "the declaration was asked again"
       Left failure -> Spec.assertFailure s (S.renderFailure failure)
@@ -623,7 +623,7 @@ spec s registry = Spec.describe s "Scenario" $ do
     result <- runJson s registry (convokeLoxodon ["$p1", "$p2", "$p3", "$p4", "$guard"])
     case result of
       Left (ScenarioFailure.MkUnmadeMove key verb) -> do
-        Spec.assertEqWith s "the moment it was taken" key (When.MkWhen 1 S.precombatMain (S.seatLabel S.alice))
+        Spec.assertEqWith s "the moment it was taken" key (When.MkWhen 1 S.precombatMain (S.seatLabel S.alice) 0)
         Spec.assertBool s (case verb of Move.Cast {} -> True; _ -> False) "the move named is the cast"
       Left failure -> Spec.assertFailure s (S.renderFailure failure)
       Right _ -> Spec.assertFailure s "the reversed cast passed with the Loxodon still in hand"
@@ -641,7 +641,7 @@ spec s registry = Spec.describe s "Scenario" $ do
     result <- runJson s registry (castForetold True)
     case result of
       Left (ScenarioFailure.MkUnmadeMove key verb) -> do
-        Spec.assertEqWith s "the moment it was taken" key (When.MkWhen 3 S.precombatMain (S.seatLabel S.alice))
+        Spec.assertEqWith s "the moment it was taken" key (When.MkWhen 3 S.precombatMain (S.seatLabel S.alice) 0)
         Spec.assertBool s (case verb of Move.Cast {} -> True; _ -> False) "the move named is the cast"
       Left failure -> Spec.assertFailure s (S.renderFailure failure)
       Right _ -> Spec.assertFailure s "the reversed cast passed with the Raven still in exile"
@@ -667,7 +667,7 @@ spec s registry = Spec.describe s "Scenario" $ do
             between :: Game.Type.Game () -> Game.Type.Game A.Action
             between write = Game.ask prompt >> write >> Game.ask prompt
         case Scenario.rehearse Seq.empty built (between bare) of
-          Left (ScenarioFailure.MkUnloggedChanges _ _ found) ->
+          Left (ScenarioFailure.MkUnloggedChanges _ _ _ found) ->
             Spec.assertEqWith s "the unlogged tap" (NonEmpty.toList found) [Discrepancy.MkTapState land TapState.Untapped TapState.Tapped]
           Left failure -> Spec.assertFailure s (S.renderFailure failure)
           Right _ -> Spec.assertFailure s "a tap with no event passed"
@@ -715,7 +715,7 @@ spec s registry = Spec.describe s "Scenario" $ do
   Spec.it s "a failed Mana Leak payment is asked again, failing the script" $ do
     result <- runJson s registry leakUnpaid
     case result of
-      Left (ScenarioFailure.MkUnscheduledPrompt _ _ decider kind _) -> do
+      Left (ScenarioFailure.MkUnscheduledPrompt _ _ _ decider kind _) -> do
         Spec.assertEqWith s "the prompt asked again" kind (Text.pack "ChooseToPay")
         Spec.assertEqWith s "of the payer" decider (Just (S.seatLabel S.bob))
       Left failure -> Spec.assertFailure s (S.renderFailure failure)
@@ -727,7 +727,7 @@ spec s registry = Spec.describe s "Scenario" $ do
   Spec.it s "a trample assignment short of lethal is asked again, failing the script" $ do
     result <- runJson s registry trampleShort
     case result of
-      Left (ScenarioFailure.MkUnscheduledPrompt _ step decider kind _) -> do
+      Left (ScenarioFailure.MkUnscheduledPrompt _ _ step decider kind _) -> do
         Spec.assertEqWith s "the prompt asked again" kind (Text.pack "AssignCombatDamage")
         Spec.assertEqWith s "in the combat damage step" step S.combatDamage
         Spec.assertEqWith s "of the attacker's controller" decider (Just (S.seatLabel S.alice))
@@ -751,7 +751,7 @@ spec s registry = Spec.describe s "Scenario" $ do
     result <- runJson s registry (attackThen "{\"turn\":1,\"step\":\"EndOfCombat\",\"player\":\"alice\",\"check\":{\"Life\":{\"player\":\"bob\",\"life\":17}}}" "[]")
     case result of
       Left (ScenarioFailure.MkCheckFailed (Just key) _ observed skipped) -> do
-        Spec.assertEqWith s "the moment it ran at" key (When.MkWhen 1 S.endOfCombat (S.seatLabel S.alice))
+        Spec.assertEqWith s "the moment it ran at" key (When.MkWhen 1 S.endOfCombat (S.seatLabel S.alice) 0)
         Spec.assertEqWith s "what it saw" observed (Text.pack "18")
         Spec.assertEqWith s "nothing skipped before it" (length skipped) 0
       Left failure -> Spec.assertFailure s (S.renderFailure failure)
@@ -772,8 +772,8 @@ spec s registry = Spec.describe s "Scenario" $ do
     result <- runJson s registry (attackThen "{\"turn\":1,\"step\":\"Cleanup\",\"player\":\"alice\",\"check\":{\"Life\":{\"player\":\"bob\",\"life\":18}}},{\"turn\":2,\"step\":\"Upkeep\",\"player\":\"bob\",\"check\":{\"Life\":{\"player\":\"bob\",\"life\":17}}}" "[]")
     case result of
       Left failure@(ScenarioFailure.MkCheckFailed (Just key) _ _ skipped) -> do
-        Spec.assertEqWith s "the false check" key (When.MkWhen 2 (Phase.Beginning BeginningStep.Upkeep) (S.seatLabel S.bob))
-        Spec.assertEqWith s "the unrun check" (fmap Timed.when (Foldable.toList skipped)) [When.MkWhen 1 (Phase.Ending EndingStep.Cleanup) (S.seatLabel S.alice)]
+        Spec.assertEqWith s "the false check" key (When.MkWhen 2 (Phase.Beginning BeginningStep.Upkeep) (S.seatLabel S.bob) 0)
+        Spec.assertEqWith s "the unrun check" (fmap Timed.when (Foldable.toList skipped)) [When.MkWhen 1 (Phase.Ending EndingStep.Cleanup) (S.seatLabel S.alice) 0]
         Spec.assertBool s (List.isInfixOf "never ran" (S.renderFailure failure)) "the unrun check is rendered"
       Left failure -> Spec.assertFailure s (S.renderFailure failure)
       Right _ -> Spec.assertFailure s "a false check passed"
@@ -786,6 +786,37 @@ spec s registry = Spec.describe s "Scenario" $ do
       Left (ScenarioFailure.MkCheckFailed Nothing _ observed _) -> Spec.assertEqWith s "bob before damage" observed (Text.pack "20")
       Left failure -> Spec.assertFailure s (S.renderFailure failure)
       Right _ -> Spec.assertFailure s "the final check read a state past the run's end"
+
+  -- CR 730.1a: a subgame is a separate game with its own turns, so an entry
+  -- answers its prompts only at its depth.
+  Spec.it s "a subgame's prompt is not answered by a main-game entry at its turn and step" $ do
+    result <- runJson s registry (subgameKeyedAt "" "")
+    case result of
+      Left (ScenarioFailure.MkUnscheduledPrompt nesting turn step _ kind _) -> do
+        Spec.assertEqWith s "the subgame's depth" nesting 1
+        Spec.assertEqWith s "its own turn and step" (turn, step) (1, Phase.Beginning BeginningStep.Untap)
+        Spec.assertEqWith s "its first prompt" kind (Text.pack "Shuffle")
+      Left failure -> Spec.assertFailure s (S.renderFailure failure)
+      Right _ -> Spec.assertFailure s "a main-game entry answered a subgame's prompt"
+
+  Spec.it s "a check at a subgame's depth reads the subgame's prompt" $ do
+    result <- runJson s registry (subgameKeyedAt "\"depth\":1," "{\"depth\":1,\"turn\":1,\"step\":\"Untap\",\"player\":\"bob\",\"check\":{\"View\":{\"of\":\"Prompt\",\"is\":null}}},")
+    case result of
+      Left (ScenarioFailure.MkCheckFailed (Just key) _ observed _) -> do
+        Spec.assertEqWith s "the moment it ran at" key (When.MkWhen 1 (Phase.Beginning BeginningStep.Untap) (S.seatLabel S.bob) 1)
+        Spec.assertBool s (List.isInfixOf "DeclareMulligan" (Text.unpack observed)) "it read bob's subgame mulligan"
+      Left failure -> Spec.assertFailure s (S.renderFailure failure)
+      Right _ -> Spec.assertFailure s "a false subgame check passed"
+
+  -- bob's 7 cards fill his subgame opening hand (CR 730.3), so the subgame
+  -- reaches priority before he decks on his first draw. His main-game life is
+  -- 15 and his subgame life 20 (CR 730.1a), so the depth-1 check reads the
+  -- subgame's board, and the Ledger audits each game against its own.
+  Spec.it s "a check at a subgame's depth runs at the subgame's priority" $ do
+    result <- runJson s registry subgamePriority
+    case result of
+      Left failure -> Spec.assertFailure s (S.renderFailure failure)
+      Right final -> Spec.assertEqWith s "bob paid 3 in the main game" (S.lifeOf S.bob final) (Just 12)
 
   Spec.it s "a label naming a seat is not an object" $ do
     result <- runJson s registry (attackThenAttacking "$bob")
@@ -1068,6 +1099,44 @@ attackThen entry final =
     <> "],\"final\":"
     <> final
     <> "}"
+
+-- alice casts Synthetic Subgame and wins it on bob's 3-card library (CR
+-- 730.3): its setup entries carry `nesting` before their keys, and `checks`
+-- precede them.
+subgameKeyedAt :: String -> String -> String
+subgameKeyedAt nesting checks =
+  let entry body = "{\"turn\":1,\"step\":\"PrecombatMain\",\"player\":\"alice\"," <> body <> "}"
+      sub player body = "{" <> nesting <> "\"turn\":1,\"step\":\"Untap\",\"player\":\"" <> player <> "\"," <> body <> "}"
+      mountains from to = "[" <> List.intercalate "," [if k == (1 :: Int) then "\"Mountain\"" else "\"Mountain#" <> show k <> "\"" | k <- [from .. to]] <> "]"
+      library n = "\"library\":[" <> List.intercalate "," (replicate n "{\"card\":\"Mountain\"}") <> "]"
+      shuffle refs = "\"do\":{\"Answer\":{\"prompt\":\"Shuffle\",\"with\":" <> refs <> "}}"
+      keep = "\"do\":{\"Answer\":{\"prompt\":\"DeclareMulligan\",\"with\":\"Keep\"}}"
+   in "{\"description\":\"x\",\"board\":{\"seats\":[{\"name\":\"alice\",\"hand\":[{\"card\":\"Synthetic Subgame\",\"label\":\"subgame\"}],"
+        <> library 8
+        <> "},{\"name\":\"bob\","
+        <> library 3
+        <> "}],\"active\":\"alice\",\"step\":\"PrecombatMain\"},\"timeline\":["
+        <> checks
+        <> List.intercalate
+          ","
+          [ entry "\"do\":{\"Cast\":{\"object\":\"$subgame\"}}",
+            entry "\"do\":\"Pass\"",
+            entry "\"do\":{\"Answer\":{\"prompt\":\"RandomFirstPlayer\",\"with\":\"alice\"}}",
+            sub "alice" (shuffle (mountains 1 8)),
+            sub "alice" (shuffle (mountains 9 11)),
+            sub "alice" keep,
+            sub "bob" keep,
+            entry (shuffle (mountains 1 8)),
+            entry (shuffle (mountains 9 11)),
+            entry "\"check\":{\"Life\":{\"player\":\"bob\",\"life\":17}}"
+          ]
+        <> "]}"
+
+-- alice casts Synthetic Subgame against bob's 7-card library, with a depth-1
+-- check at alice's first subgame main phase.
+subgamePriority :: String
+subgamePriority =
+  "{\"description\":\"x\",\"board\":{\"seats\":[{\"name\":\"alice\",\"hand\":[{\"card\":\"Synthetic Subgame\",\"label\":\"subgame\"}],\"library\":[{\"card\":\"Mountain\"},{\"card\":\"Mountain\"},{\"card\":\"Mountain\"},{\"card\":\"Mountain\"},{\"card\":\"Mountain\"},{\"card\":\"Mountain\"},{\"card\":\"Mountain\"},{\"card\":\"Mountain\"}]},{\"name\":\"bob\",\"life\":15,\"library\":[{\"card\":\"Mountain\"},{\"card\":\"Mountain\"},{\"card\":\"Mountain\"},{\"card\":\"Mountain\"},{\"card\":\"Mountain\"},{\"card\":\"Mountain\"},{\"card\":\"Mountain\"}]}],\"active\":\"alice\",\"step\":\"PrecombatMain\"},\"timeline\":[{\"turn\":1,\"step\":\"PrecombatMain\",\"player\":\"alice\",\"do\":{\"Cast\":{\"object\":\"$subgame\"}}},{\"turn\":1,\"step\":\"PrecombatMain\",\"player\":\"alice\",\"do\":\"Pass\"},{\"turn\":1,\"step\":\"PrecombatMain\",\"player\":\"alice\",\"do\":{\"Answer\":{\"prompt\":\"RandomFirstPlayer\",\"with\":\"alice\"}}},{\"turn\":1,\"step\":\"Untap\",\"player\":\"alice\",\"depth\":1,\"do\":{\"Answer\":{\"prompt\":\"Shuffle\",\"with\":[\"Mountain\",\"Mountain#2\",\"Mountain#3\",\"Mountain#4\",\"Mountain#5\",\"Mountain#6\",\"Mountain#7\",\"Mountain#8\"]}}},{\"turn\":1,\"step\":\"Untap\",\"player\":\"alice\",\"depth\":1,\"do\":{\"Answer\":{\"prompt\":\"Shuffle\",\"with\":[\"Mountain#9\",\"Mountain#10\",\"Mountain#11\",\"Mountain#12\",\"Mountain#13\",\"Mountain#14\",\"Mountain#15\"]}}},{\"turn\":1,\"step\":\"Untap\",\"player\":\"alice\",\"depth\":1,\"do\":{\"Answer\":{\"prompt\":\"DeclareMulligan\",\"with\":\"Keep\"}}},{\"turn\":1,\"step\":\"Untap\",\"player\":\"bob\",\"depth\":1,\"do\":{\"Answer\":{\"prompt\":\"DeclareMulligan\",\"with\":\"Keep\"}}},{\"turn\":1,\"step\":\"PrecombatMain\",\"player\":\"alice\",\"depth\":1,\"check\":{\"Life\":{\"player\":\"bob\",\"life\":20}}},{\"turn\":1,\"step\":\"PrecombatMain\",\"player\":\"alice\",\"do\":{\"Answer\":{\"prompt\":\"Shuffle\",\"with\":[\"Mountain\",\"Mountain#2\",\"Mountain#3\",\"Mountain#4\",\"Mountain#5\",\"Mountain#6\",\"Mountain#7\",\"Mountain#8\"]}}},{\"turn\":1,\"step\":\"PrecombatMain\",\"player\":\"alice\",\"do\":{\"Answer\":{\"prompt\":\"Shuffle\",\"with\":[\"Mountain#9\",\"Mountain#10\",\"Mountain#11\",\"Mountain#12\",\"Mountain#13\",\"Mountain#14\",\"Mountain#15\"]}}},{\"turn\":1,\"step\":\"PrecombatMain\",\"player\":\"alice\",\"check\":{\"Life\":{\"player\":\"bob\",\"life\":12}}}]}"
 
 -- The same board, attacking with whatever `attacker` names.
 attackThenAttacking :: String -> String

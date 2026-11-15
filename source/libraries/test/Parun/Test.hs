@@ -804,6 +804,7 @@ import qualified Parun.Codec.StaticAbilitySpec
 import qualified Parun.Codec.StatusSpec
 import qualified Parun.Codec.StepBeganSpec
 import qualified Parun.Codec.StepBeginsSpec
+import qualified Parun.Codec.StepOfSeatsSpec
 import qualified Parun.Codec.StickerKindSpec
 import qualified Parun.Codec.StickerSheetSpec
 import qualified Parun.Codec.StoredResultSpec
@@ -968,7 +969,6 @@ import qualified Parun.FragmentedSpec
 import qualified Parun.GameSpec
 import qualified Parun.GoadSpec
 import qualified Parun.GrandMeleeSpec
-import qualified Parun.HarnessSpec
 import qualified Parun.HealSpec
 import qualified Parun.IngestSpec
 import qualified Parun.InitiativeSpec
@@ -1906,6 +1906,7 @@ spec s reference corpus = do
   Parun.Codec.StatusSpec.spec s
   Parun.Codec.StepBeganSpec.spec s
   Parun.Codec.StepBeginsSpec.spec s
+  Parun.Codec.StepOfSeatsSpec.spec s
   Parun.Codec.StickerKindSpec.spec s
   Parun.Codec.StickerSheetSpec.spec s
   Parun.Codec.StoredResultSpec.spec s
@@ -2075,7 +2076,6 @@ spec s reference corpus = do
   Parun.GameSpec.spec s registry
   Parun.GoadSpec.spec s registry
   Parun.GrandMeleeSpec.spec s registry
-  Parun.HarnessSpec.spec s registry
   Parun.HealSpec.spec s registry
   Parun.IngestSpec.spec s corpus
   Parun.InitiativeSpec.spec s registry

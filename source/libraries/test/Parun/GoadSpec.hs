@@ -39,7 +39,6 @@
 -- named, so no assertion below can pass because the whole board was forced.
 module Parun.GoadSpec where
 
-import qualified Data.Map.Strict as Map
 import qualified Data.Sequence as Seq
 import qualified Data.Set as Set
 import qualified Parun.Engine.Combat as Combat
@@ -79,14 +78,6 @@ goadAt decision victim p = case p of
   Prompt.ChooseTargets _ _ _ sets -> fmap (\(_, offered) -> Set.filter ((== Just victim) . Recipient.objectOf) offered) sets
   Prompt.ChooseOptional {} -> decision
   _ -> S.identityAnswer p
-
--- Attacks with everything and announces the PLANESWALKER for every attacker,
--- which CR 508.1d then has to refuse. CombatEffectSpec's `announcing`, kept local
--- rather than hoisted (Parun.Support rebuilds every spec in the tree).
-announcing :: ObjectId.ObjectId -> Prompt.Prompt r -> r
-announcing walker p = case p of
-  Prompt.ChooseAttackTarget {} -> AttackTarget.OfPlaneswalker walker
-  _ -> S.aggressiveAnswer p
 
 -- alice's two creatures, bob's Homunculus and one planeswalker each for bob and
 -- carol, with the Homunculus's CR 603.6a trigger placed and resolved against
@@ -151,9 +142,6 @@ attacking defender gs =
           }
     }
 
-announced :: GameState.GameState -> ObjectId.ObjectId -> Maybe AttackTarget.AttackTarget
-announced gs oid = Map.lookup oid (Combat.Type.attackers (TurnRegisters.combat (GameState.turn gs)))
-
 spec :: (Monad m, Monad n) => Spec.Spec m n -> Registry.Registry m -> n ()
 spec s registry = Spec.describe s "Goad" $ do
   objectSpec s registry
@@ -161,17 +149,8 @@ spec s registry = Spec.describe s "Goad" $ do
   durationSpec s registry
 
 -- CR 701.15b's SECOND requirement, on the board where it can be obeyed.
-objectSpec :: (Monad m, Monad n) => Spec.Spec m n -> Registry.Registry m -> n ()
+objectSpec :: (Monad m) => Spec.Spec m n -> Registry.Registry m -> n ()
 objectSpec s registry = Spec.describe s "Object" $ do
-  Spec.it s "CR 701.15b whole cards: the goaded creature is sent at carol, not at carol's Jace" $ do
-    (goaded, _, _, carolWalker, resolved) <- homunculusBoard s registry OptionalDecision.Exercises
-    (_, _, _, controlWalker, declined) <- homunculusBoard s registry OptionalDecision.Declines
-    let after = S.runPure (announcing carolWalker) (attacking S.carol resolved) (Combat.declareAttackers S.manaPerformer S.alice)
-        without = S.runPure (announcing controlWalker) (attacking S.carol declined) (Combat.declareAttackers S.manaPerformer S.alice)
-    Spec.assertEqWith s "CR 701.15b the goaded creature attacks carol, not the Jace it was announced against" (announced after goaded) (Just (AttackTarget.OfPlayer S.carol))
-    -- The SAME interpreter and the same board bar the "may", so the redirect is
-    -- rule 701.15b and not a rule about announcements.
-    Spec.assertEqWith s "with the may declined the announcement stands" (announced without goaded) (Just (AttackTarget.OfPlaneswalker controlWalker))
   Spec.it s "CR 701.15b attacking a planeswalker is not attacking a player" $ do
     (goaded, untouched, _, carolWalker, resolved) <- homunculusBoard s registry OptionalDecision.Exercises
     (control, _, _, controlWalker, declined) <- homunculusBoard s registry OptionalDecision.Declines
