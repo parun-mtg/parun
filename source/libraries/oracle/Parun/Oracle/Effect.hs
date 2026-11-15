@@ -469,6 +469,15 @@ instructions context es = case es of
             (run, others) = span (maybe False alike . modifyTarget) rest
         p <- modified context m (Maybe.mapMaybe (fmap ModifyTarget.modification . modifyTarget) run)
         fmap (p :) (instructions (noting context (e : run)) others)
+  -- Stated counters of several kinds on one object read as one list: "Put a
+  -- flying counter, a deathtouch counter, and a lifelink counter on target
+  -- creature." (Qarsi Revenant).
+  e@(Effect.PutCounters p) : rest
+    | Just (ps, others) <- placedTogether p rest -> do
+        ref <- Target.object context Target.Each (PutCounters.ref p)
+        each' <- traverse (\q -> counters (Target.keyword context) (PutCounters.kind q) (PutCounters.quantity q)) ps
+        let put = MkPredicate Nothing (Text.pack "put " <> Prose.listing "and" each' <> Text.pack " on " <> Target.wording ref) [] (Target.mentions ref) Nothing False
+        fmap (put :) (instructions (noting context (e : fmap Effect.PutCounters (drop 1 ps))) others)
   e : rest
     | Just refs <- returnOf context e -> do
         p <- returned context refs
@@ -581,6 +590,23 @@ returned context objects = do
   [MkPredicate Nothing (Text.pack "return " <> Prose.listing "and" (fmap Target.wording refs) <> Text.pack " to their owners' hands") [] (concatMap Target.mentions refs) Nothing False]
 
 -- | The instruction's continuous effect, if it is one.
+-- | A placement of counters followed by placements on the same object, each
+-- an unlimited stated count, and the instructions after them.
+placedTogether :: PutCounters.PutCounters -> [Effect.Effect card ability] -> Maybe ([PutCounters.PutCounters], [Effect.Effect card ability])
+placedTogether p rest =
+  let stated q =
+        Maybe.isNothing (PutCounters.totalAtMost q) && case PutCounters.quantity q of
+          Quantity.Literal n -> n >= 1
+          _ -> False
+      alike e = case e of
+        Effect.PutCounters q | stated q, PutCounters.ref q == PutCounters.ref p -> [q]
+        _ -> []
+      (run, others) = break (null . alike) rest
+      ps = p : concatMap alike run
+   in if stated p && not (null run)
+        then Just (ps, others)
+        else Nothing
+
 modifyTarget :: Effect.Effect card ability -> Maybe (ModifyTarget.ModifyTarget ability)
 modifyTarget e = case e of
   Effect.ModifyTarget m -> Just m
