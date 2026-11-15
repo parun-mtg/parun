@@ -1,0 +1,211 @@
+{
+  "description": "CR 601.2c Fall of the Hammer's victim slot cannot be the creature its dealer slot names",
+  "note": "CR 601.2c lets one object be chosen once for each instance of the word \"target\", so a card that forbids sharing says \"another\" and the victim slot's own filter reads what the dealer slot holds. Naming alice's Piker in both slots is not an announcement the rule allows, so the cast is reversed (CR 601.2e) and the Piker takes none of its own damage. The target prompt still offers the victim slot every creature, the dealer included, so the reversal is the joint check and not a slot emptied. Naming bob's Typhoid Rats instead, the Piker's 2 damage kills them (the Haskell original read the damage before state-based actions) and the Piker is unharmed. The --control file names alice's own Wall of Stone: \"another\" is about the object, not its controller, which is the whole difference from Rabid Bite.",
+  "board": {
+    "seats": [
+      {
+        "name": "alice",
+        "battlefield": [
+          {
+            "card": "Mountain",
+            "label": "m1"
+          },
+          {
+            "card": "Mountain",
+            "label": "m2"
+          },
+          {
+            "card": "Goblin Piker",
+            "label": "dealer"
+          },
+          {
+            "card": "Wall of Stone",
+            "label": "wall"
+          }
+        ],
+        "hand": [
+          {
+            "card": "Fall of the Hammer",
+            "label": "hammer"
+          }
+        ]
+      },
+      {
+        "name": "bob",
+        "battlefield": [
+          {
+            "card": "Typhoid Rats",
+            "label": "rats"
+          }
+        ]
+      }
+    ],
+    "active": "alice",
+    "step": "PrecombatMain"
+  },
+  "timeline": [
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "refuse": {
+        "Cast": {
+          "object": "$hammer",
+          "mana": [
+            "$m1",
+            "$m2"
+          ],
+          "targetsBySlot": {
+            "dealer": [
+              "$dealer"
+            ],
+            "victim": [
+              "$dealer"
+            ]
+          }
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "check": {
+        "Count": {
+          "player": "alice",
+          "zone": "Hand",
+          "card": "Fall of the Hammer",
+          "count": 1
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "check": {
+        "Damage": {
+          "object": "$dealer",
+          "damage": 0
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "do": {
+        "Cast": {
+          "object": "$hammer",
+          "mana": [
+            "$m1",
+            "$m2"
+          ],
+          "targetsBySlot": {
+            "dealer": [
+              "$dealer"
+            ],
+            "victim": [
+              "$rats"
+            ]
+          }
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "check": {
+        "View": {
+          "of": "Prompt",
+          "is": {
+            "kind": "ChooseTargets",
+            "offer": {
+              "source": "Fall of the Hammer",
+              "slots": [
+                [
+                  "dealer",
+                  [
+                    1,
+                    [
+                      [
+                        "Creature",
+                        "$dealer"
+                      ],
+                      [
+                        "Creature",
+                        "$wall"
+                      ]
+                    ]
+                  ]
+                ],
+                [
+                  "victim",
+                  [
+                    1,
+                    [
+                      [
+                        "Creature",
+                        "$dealer"
+                      ],
+                      [
+                        "Creature",
+                        "$wall"
+                      ],
+                      [
+                        "Creature",
+                        "$rats"
+                      ]
+                    ]
+                  ]
+                ]
+              ]
+            }
+          }
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "do": "Pass"
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "check": {
+        "View": {
+          "of": "Stack",
+          "is": []
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "check": {
+        "Count": {
+          "player": "bob",
+          "zone": "Graveyard",
+          "card": "Typhoid Rats",
+          "count": 1
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "check": {
+        "Damage": {
+          "object": "$dealer",
+          "damage": 0
+        }
+      }
+    }
+  ]
+}

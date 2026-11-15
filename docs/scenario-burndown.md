@@ -493,19 +493,19 @@ out: grep for them.
 
 ### `DaytimeSpec`
 
-- CR 502.2 neither day nor night: the check does not happen | `check:other-GameState.daytime`
-- CR 502.2 night and only one spell last turn stays night | `board:daytime`
-- CR 502.2/702.145f night and two spells last turn becomes day | `board:daytime`
-- CR 603.4 two Wolves are not three, so it stays day | `board:daytime`
-- CR 608.2d an answer naming what was never offered turns nothing over | `board:daytime`
-- CR 608.2d naming nothing is a legal answer and turns nothing over | `board:daytime`
-- CR 608.2d the chooser names the Human Werewolf and it turns over | `board:daytime`
-- CR 702.145b by day the same spell enters front face up | `board:daytime`
-- CR 702.145d controlling a daybound permanent makes it day | `check:helper-faceNameOf` `check:helper-frontName` `check:other-GameState.daytime`
-- CR 712.10 by day that spell enters front face up | `board:daytime`
-- CR 732.1 a game with no daybound permanent stays neither day nor night | `check:other-GameState.daytime`
-- CR 732.1/702.145c Tovolar's upkeep trigger makes it night and transforms him | `board:daytime`
-- CR 732.2 the handoff records what the previous turn's active player cast | `check:other-Game.spellsCastLastTurn` `check:events`
+- ~~CR 502.2 neither day nor night: the check does not happen | `check:other-GameState.daytime`~~
+- ~~CR 502.2 night and only one spell last turn stays night | `board:daytime`~~
+- ~~CR 502.2/702.145f night and two spells last turn becomes day | `board:daytime`~~
+- ~~CR 603.4 two Wolves are not three, so it stays day | `board:daytime`~~
+- ~~CR 608.2d an answer naming what was never offered turns nothing over | `board:daytime`~~
+- ~~CR 608.2d naming nothing is a legal answer and turns nothing over | `board:daytime`~~
+- ~~CR 608.2d the chooser names the Human Werewolf and it turns over | `board:daytime`~~
+- ~~CR 702.145b by day the same spell enters front face up | `board:daytime`~~
+- ~~CR 702.145d controlling a daybound permanent makes it day | `check:helper-faceNameOf` `check:helper-frontName` `check:other-GameState.daytime`~~
+- ~~CR 712.10 by day that spell enters front face up | `board:daytime`~~
+- ~~CR 732.1 a game with no daybound permanent stays neither day nor night | `check:other-GameState.daytime`~~
+- ~~CR 732.1/702.145c Tovolar's upkeep trigger makes it night and transforms him | `board:daytime`~~
+- ~~CR 732.2 the handoff records what the previous turn's active player cast | `check:other-Game.spellsCastLastTurn` `check:events`~~
 
 ### `DepartureSpec`
 
@@ -530,7 +530,7 @@ out: grep for them.
 ### `DungeonSpec`
 
 - CR 118.12a Veils of Fear offers each player the discard and only the seats that declined lose the life | `board:dungeons`
-- CR 309.2 a deck's dungeon cards are recorded on its player and minted into no zone | `check:other-Game.printingOf` `check:other-GameState.objects` `check:other-GameState.players` `check:other-Player.dungeons`
+- ~~CR 309.2 a deck's dungeon cards are recorded on its player and minted into no zone | `check:other-Game.printingOf` `check:other-GameState.objects` `check:other-GameState.players` `check:other-Player.dungeons`~~
 - CR 309.2a a player owning two dungeons chooses which one to enter | `board:dungeons`
 - CR 309.4c / 701.22a Cave Entrance's Scry 1 puts the top card where its controller says | `board:dungeons`
 - CR 309.5a a room with two arrows asks which one to follow, and the answer decides the room | `board:dungeons`
@@ -1113,20 +1113,20 @@ out: grep for them.
 
 ### `TargetSpec`
 
-- CR 115.7d / 702.21a an unchanged target already illegal may stay, and the new one draws ward | `check:bindings`
-- CR 115.7d a new target that makes an unchanged target illegal is refused | `check:spell-targets`
-- CR 601.2c Bioshift's second slot cannot be a creature its first slot's controller does not control | `check:prompt-payload`
-- CR 601.2c Dwell on the Past's card slot is scoped to the player its other slot targets | `check:other-Target.legalSets`
-- CR 601.2c Fall of the Hammer's victim slot cannot be the creature its dealer slot names | `check:legal-targets`
-- CR 601.2c the joint check re-derives a jointly judged slot against the announced X | `check:legal-targets`
-- CR 601.2c the slot admits exactly the creature with a counter on it | `check:helper-abolisherOf` `check:legal-targets`
-- CR 601.2c whole card: hexproof from black leaves alice's Doom Blade no legal target, hexproof from white leaves it one | `board:continuous-effect`
-- CR 602.2a/115.5 Adric's ability is not offered its own object among the abilities it may counter | `check:legal-targets` `check:events`
-- CR 608.2b Doom Blade fizzles when its target gains shroud in response | `board:continuous-effect`
-- CR 700.2d a repeated mode's computed bound measures its own occurrence's sibling slot | `check:legal-targets`
-- CR 700.2d a repeated mode's filter reads its own occurrence's sibling slot, not the first's | `check:legal-targets`
-- CR 701.24c Dwell on the Past shuffles the targeted player's library even when both targeted cards have left the graveyard | `move:other-changeZone`
-- CR 702.16k / 702.16b a Saltfield Recluse the chosen player steals in response no longer weakens the Nemesis | `board:object-chosenplayer`
+- ~~CR 115.7d / 702.21a an unchanged target already illegal may stay, and the new one draws ward | `check:bindings`~~
+- ~~CR 115.7d a new target that makes an unchanged target illegal is refused | `check:spell-targets`~~
+- ~~CR 601.2c Bioshift's second slot cannot be a creature its first slot's controller does not control | `check:prompt-payload`~~
+- ~~CR 601.2c Dwell on the Past's card slot is scoped to the player its other slot targets | `check:other-Target.legalSets`~~
+- ~~CR 601.2c Fall of the Hammer's victim slot cannot be the creature its dealer slot names | `check:legal-targets`~~
+- ~~CR 601.2c the joint check re-derives a jointly judged slot against the announced X | `check:legal-targets`~~
+- ~~CR 601.2c the slot admits exactly the creature with a counter on it | `check:helper-abolisherOf` `check:legal-targets`~~
+- ~~CR 601.2c whole card: hexproof from black leaves alice's Doom Blade no legal target, hexproof from white leaves it one | `board:continuous-effect`~~
+- ~~CR 602.2a/115.5 Adric's ability is not offered its own object among the abilities it may counter | `check:legal-targets` `check:events`~~
+- ~~CR 608.2b Doom Blade fizzles when its target gains shroud in response | `board:continuous-effect`~~
+- ~~CR 700.2d a repeated mode's computed bound measures its own occurrence's sibling slot | `check:legal-targets`~~
+- ~~CR 700.2d a repeated mode's filter reads its own occurrence's sibling slot, not the first's | `check:legal-targets`~~
+- ~~CR 701.24c Dwell on the Past shuffles the targeted player's library even when both targeted cards have left the graveyard | `move:other-changeZone`~~
+- ~~CR 702.16k / 702.16b a Saltfield Recluse the chosen player steals in response no longer weakens the Nemesis | `board:object-chosenplayer`~~
 
 ### `TeamSpec`
 

@@ -1,0 +1,329 @@
+{
+  "description": "CR 601.2c Dwell on the Past's card slot is scoped to the player its other slot targets",
+  "note": "\"Target player shuffles up to four target cards from their graveyard\" scopes the card slot's pool, CR 400.1's per-player graveyard, to whoever the player slot names; CR 601.2c's one announcement is judged whole. The target prompts offer the union over the player slot's candidates, every graveyard's cards and every player, which is why carol's Bolt, named beside bob, is rejected by the joint check and the cast reversed rather than never offered. Three seats, because with two \"bob's graveyard\" and \"not the caster's\" pick out the same cards; carol's card is the one only the scoping can exclude. Named with bob, his Piker leaves his graveyard for his empty library and his Bolt stays. The --control file names both of bob's cards: the slot is up to four, so both arrive.",
+  "board": {
+    "seats": [
+      {
+        "name": "alice",
+        "battlefield": [
+          {
+            "card": "Forest",
+            "label": "forest"
+          }
+        ],
+        "hand": [
+          {
+            "card": "Dwell on the Past",
+            "label": "dwell"
+          }
+        ]
+      },
+      {
+        "name": "bob",
+        "graveyard": [
+          {
+            "card": "Goblin Piker",
+            "label": "his"
+          },
+          {
+            "card": "Lightning Bolt",
+            "label": "his-other"
+          }
+        ]
+      },
+      {
+        "name": "carol",
+        "graveyard": [
+          {
+            "card": "Lightning Bolt",
+            "label": "hers"
+          }
+        ]
+      }
+    ],
+    "active": "alice",
+    "step": "PrecombatMain"
+  },
+  "timeline": [
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "refuse": {
+        "Cast": {
+          "object": "$dwell",
+          "mana": [
+            "$forest"
+          ],
+          "targetsBySlot": {
+            "player": [
+              "$bob"
+            ],
+            "cards": [
+              "$hers"
+            ]
+          }
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "check": {
+        "Count": {
+          "player": "alice",
+          "zone": "Hand",
+          "card": "Dwell on the Past",
+          "count": 1
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "do": {
+        "Cast": {
+          "object": "$dwell",
+          "mana": [
+            "$forest"
+          ]
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "check": {
+        "View": {
+          "of": "Prompt",
+          "is": {
+            "kind": "AnnounceTargets",
+            "offer": {
+              "source": "Dwell on the Past",
+              "recipients": [
+                [
+                  "cards",
+                  [
+                    [
+                      "Object",
+                      "$his"
+                    ],
+                    [
+                      "Object",
+                      "$his-other"
+                    ],
+                    [
+                      "Object",
+                      "$hers"
+                    ]
+                  ]
+                ]
+              ],
+              "amounts": [
+                [
+                  "cards",
+                  3
+                ]
+              ]
+            }
+          }
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "do": {
+        "Answer": {
+          "prompt": "AnnounceTargets",
+          "with": [
+            [
+              "cards",
+              1
+            ]
+          ]
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "check": {
+        "View": {
+          "of": "Prompt",
+          "is": {
+            "kind": "ChooseTargets",
+            "offer": {
+              "source": "Dwell on the Past",
+              "slots": [
+                [
+                  "cards",
+                  [
+                    1,
+                    [
+                      [
+                        "Object",
+                        "$his"
+                      ],
+                      [
+                        "Object",
+                        "$his-other"
+                      ],
+                      [
+                        "Object",
+                        "$hers"
+                      ]
+                    ]
+                  ]
+                ],
+                [
+                  "player",
+                  [
+                    1,
+                    [
+                      [
+                        "Player",
+                        "alice"
+                      ],
+                      [
+                        "Player",
+                        "bob"
+                      ],
+                      [
+                        "Player",
+                        "carol"
+                      ]
+                    ]
+                  ]
+                ]
+              ]
+            }
+          }
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "do": {
+        "Answer": {
+          "prompt": "ChooseTargets",
+          "with": [
+            [
+              "cards",
+              [
+                [
+                  "Object",
+                  "$his"
+                ]
+              ]
+            ],
+            [
+              "player",
+              [
+                [
+                  "Player",
+                  "bob"
+                ]
+              ]
+            ]
+          ]
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "check": {
+        "View": {
+          "of": "Stack",
+          "is": [
+            "Dwell on the Past"
+          ]
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "do": "Pass"
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "do": {
+        "Answer": {
+          "prompt": "Shuffle",
+          "with": [
+            "Goblin Piker"
+          ]
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "check": {
+        "View": {
+          "of": "Stack",
+          "is": []
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "check": {
+        "View": {
+          "of": "Zone",
+          "player": "bob",
+          "zone": "Graveyard",
+          "is": [
+            "$his-other"
+          ]
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "check": {
+        "View": {
+          "of": "Zone",
+          "player": "bob",
+          "zone": "Library",
+          "is": [
+            "Goblin Piker"
+          ]
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "check": {
+        "View": {
+          "of": "Zone",
+          "player": "carol",
+          "zone": "Graveyard",
+          "is": [
+            "$hers"
+          ]
+        }
+      }
+    }
+  ]
+}
