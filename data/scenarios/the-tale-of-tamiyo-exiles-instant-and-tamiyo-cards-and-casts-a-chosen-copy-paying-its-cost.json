@@ -119,7 +119,7 @@
     ],
     "step": "Upkeep"
   },
-  "description": "CR 714.2b / 714.4 / 707.12 / 707.12a / 608.2g / 205.3j: The Tale of Tamiyo's chapter IV exiles any number of target instant, sorcery and Tamiyo planeswalker cards from its controller's graveyard, copies them, and its controller casts any number of the copies, paying their costs",
+  "description": "CR 715.2b / 715.4 / 707.12 / 707.12a / 608.2g / 205.3j: The Tale of Tamiyo's chapter IV exiles any number of target instant, sorcery and Tamiyo planeswalker cards from its controller's graveyard, copies them, and its controller casts any number of the copies, paying their costs",
   "note": "The Saga enters the scenario with three lore counters, so its fourth arrives in the turn-1 precombat main phase. Targeting the Grizzly Bears, a creature, or Chandra Nalaar, a planeswalker that is no Tamiyo, is refused. Alice casts the Lightning Bolt copy, then the Divination copy, choosing among the copies left each time and tapping lands for each; the Tamiyo copy is left uncast, and the Saga is then sacrificed.",
   "timeline": [
     {

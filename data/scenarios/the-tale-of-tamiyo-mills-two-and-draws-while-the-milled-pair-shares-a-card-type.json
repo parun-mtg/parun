@@ -92,7 +92,7 @@
     ],
     "step": "PrecombatMain"
   },
-  "description": "CR 714.2b / 714.3a / 714.3b / 701.17a / 608.2c: The Tale of Tamiyo's chapters I-III mill two cards, and while the two milled share a card type, draw a card and repeat",
+  "description": "CR 715.2b / 715.3a / 703.4f / 701.17a / 608.2c: The Tale of Tamiyo's chapters I-III mill two cards, and while the two milled share a card type, draw a card and repeat",
   "note": "Chapter I mills Island and Plains (both lands), draws the Forest, then mills Grizzly Bears and Lightning Bolt (no shared type) and stops, leaving Hill Giant on top. Chapter II on turn 3, after alice draws the Hill Giant, mills Swamp and Divination and stops.",
   "timeline": [
     {

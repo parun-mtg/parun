@@ -1952,7 +1952,8 @@ filterPositionLintSpec s registry corpus = Spec.describe s "Lint" $ do
         ("Cloak and Dagger, Entwined", 1), -- its trigger's second target slot, Soul of Shandalar's shape
         ("Legion's End", 1), -- its exile's object, relative to the target's controller
         ("Run Away Together", 2), -- both target slots, each relative to the other
-        ("Kitsune, Dragon's Daughter", 2) -- both target slots, Run Away Together's shape
+        ("Kitsune, Dragon's Daughter", 2), -- both target slots, Run Away Together's shape
+        ("Trial of Agony", 1) -- its second target slot, Sorrow's Path's shape
       ]
     -- The REJECTING direction, hand-built for the reason every sibling lint's is:
     -- a card that offends must not be loadable, so no file can carry one. Buried
