@@ -32,7 +32,6 @@
 -- same board answers the combat clauses too.
 module Parun.DetainSpec where
 
-import qualified Data.Map.Strict as Map
 import qualified Data.Maybe as Maybe
 import qualified Data.Sequence as Seq
 import qualified Data.Set as Set
@@ -138,9 +137,6 @@ activatableIds =
         _ -> Nothing
     )
 
-declaredAttackers :: GameState.GameState -> [ObjectId.ObjectId]
-declaredAttackers gs = Map.keys (Combat.Type.attackers (TurnRegisters.combat (GameState.turn gs)))
-
 spec :: (Monad m, Monad n) => Spec.Spec m n -> Registry.Registry m -> n ()
 spec s registry = Spec.describe s "Detain" $ do
   attackSpec s registry
@@ -156,13 +152,6 @@ attackSpec s registry = Spec.describe s "Attack" $ do
     let gs = bobAttacks resolved
     Spec.assertBool s (not (Combat.canAttack S.bob victim gs)) "the detained creature is off CR 508.1a's candidate list"
     Spec.assertBool s (Combat.canAttack S.bob control gs) "its twin is still on it"
-  -- The declaration itself, so the clause is proved where the game reads it and
-  -- not only at the predicate. aggressiveAnswer attacks with everything it is
-  -- offered, so exactly one attacker means exactly one was offered.
-  Spec.it s "CR 508.1c the detained creature does not end up among the attackers" $ do
-    (_, control, resolved) <- arresterBoard s registry "Prodigal Sorcerer"
-    let after = S.runPure S.aggressiveAnswer (bobAttacks resolved) (Combat.declareAttackers S.manaPerformer S.bob)
-    Spec.assertEqWith s "only the twin attacked" (declaredAttackers after) [control]
 
 -- CR 701.35a's second clause, through CR 509.1b.
 blockSpec :: (Monad m, Monad n) => Spec.Spec m n -> Registry.Registry m -> n ()

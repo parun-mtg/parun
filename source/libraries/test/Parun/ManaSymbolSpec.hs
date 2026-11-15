@@ -31,7 +31,6 @@ import qualified Parun.Registry as Registry
 import qualified Parun.Spec as Spec
 import qualified Parun.Support as S
 import qualified Parun.Types.ActivatedAbility as ActivatedAbility
-import qualified Parun.Types.BeginningStep as BeginningStep
 import qualified Parun.Types.Card as Card.Type
 import qualified Parun.Types.CardName as CardName
 import qualified Parun.Types.Color as Color
@@ -52,7 +51,6 @@ import qualified Parun.Types.ManaUnit as ManaUnit
 import qualified Parun.Types.Object as Object
 import qualified Parun.Types.ObjectId as ObjectId
 import qualified Parun.Types.PaymentSubject as PaymentSubject
-import qualified Parun.Types.Phase as Phase
 import qualified Parun.Types.PhyrexianPayment as PhyrexianPayment
 import qualified Parun.Types.Printing as Printing
 import qualified Parun.Types.ProductionTag as ProductionTag
@@ -562,22 +560,6 @@ monocoloredHybridSpec s registry = Spec.describe s "MonocoloredHybrid" $ do
     Spec.assertBool s (not (Mana.canPay Cost.manaActivations S.alice javelinCost gs)) "canPay says no"
     Spec.assertEqWith s "and it does not cast" (castsOff flameJavelin gs) 0
     Spec.assertBool s (not (Mana.canPay Cost.manaActivations S.alice javelinCost (S.landsInPlay island 3))) "three Islands are nowhere near"
-
-  -- CR 107.4e symbol by symbol, which the card's own ruling spells out:
-  -- "you can pay for Flame Javelin by spending {R}{R}{R}, {2}{R}{R},
-  -- {4}{R}, or {6}." So the routes are chosen per symbol, and a search
-  -- that picked one route for the whole cost would reject both of these.
-  Spec.it s "CR 107.4e each symbol picks its own route: {R}{R}{2} and {R}{4}" $ do
-    mountain <- S.printingOf s registry "Mountain"
-    island <- S.printingOf s registry "Island"
-    flameJavelin <- S.printingOf s registry "Flame Javelin"
-    let cost = javelinCost
-    Spec.assertBool s (Mana.canPay Cost.manaActivations S.alice cost (mixedLands mountain island 2 2)) "two Mountains and two Islands: {R}{R}{2}"
-    Spec.assertBool s (Mana.canPay Cost.manaActivations S.alice cost (mixedLands mountain island 1 4)) "one Mountain and four Islands: {R}{4}"
-    Spec.assertEqWith s "and that one really casts" (castsOff flameJavelin (mixedLands mountain island 1 4)) 1
-    -- One short of {R}{4} and one red short of {R}{R}{2}: four mana with
-    -- only one red pays no route at all.
-    Spec.assertBool s (not (Mana.canPay Cost.manaActivations S.alice cost (mixedLands mountain island 1 3))) "one Mountain and three Islands: no route"
 
   -- What CR 118.13a's announcement leaves behind. Both halves are payable
   -- out of this pool and they leave DIFFERENT pools behind, so the choice
@@ -1851,35 +1833,15 @@ greenOnly = ManaCost.MkManaCost [ManaSymbol.OfType (ManaType.Colored Color.Green
 -- everything across.
 bergStriderSpec :: (Monad m, Monad n) => Spec.Spec m n -> Registry.Registry m -> n ()
 bergStriderSpec s registry = Spec.describe s "BergStrider" $ do
-  -- The unit's whole claim, on a PAIR of boards that differ in one thing: the
-  -- four lands paying the {4} are Snow-Covered Mountains on one and Mountains on
-  -- the other. Same seats, same Island paying the {U}, same Berg Strider, same
-  -- target, same untap step -- so a permanent that stays tapped on one board and
-  -- untaps on the other did so because of where its payment's mana came from.
-  --
-  -- The two behavioural assertions come first, and both can differ: an
-  -- implementation that never records the payment unt-taps the first board's
-  -- victim, and one that always reports snow leaves the second's tapped.
-  Spec.it s "CR 107.4h whole card: Berg Strider's victim does not untap when snow mana paid for it, and does when it did not" $ do
-    (snowVictim, snowBoard) <- bergBoard s registry True
-    (plainVictim, plainBoard) <- bergBoard s registry False
-    Spec.assertBool s (Game.isTapped snowVictim (bergUntapStep snowBoard)) "{S} was spent, so the permanent does not untap during its controller's untap step"
-    Spec.assertBool s (not (Game.isTapped plainVictim (bergUntapStep plainBoard))) "and off the nonsnow board, which is the same board otherwise, it untaps"
-    -- The supporting checks, and they are insensitive to the record by
-    -- construction: the tap is the trigger's FIRST clause, which carries no
-    -- condition at all. They are here so the assertion above cannot pass on a
-    -- board where nothing was ever tapped, or where the spell never resolved.
-    Spec.assertBool s (Game.isTapped snowVictim snowBoard && Game.isTapped plainVictim plainBoard) "both triggers tapped their target before either untap step"
-    Spec.assertEqWith s "and both Berg Striders resolved" (S.countOnBattlefieldByName (CardName.MkCardName $ Text.pack "Berg Strider") S.alice snowBoard, S.countOnBattlefieldByName (CardName.MkCardName $ Text.pack "Berg Strider") S.alice plainBoard) (1, 1)
-
   -- The record itself, off the PERMANENT rather than off the spell -- CR 400.7d's
-  -- exception, which the case above reads only through its consequence. The
+  -- exception, which data/scenarios/mana-symbol/cr-107-4h-whole-card-berg-*.json
+  -- read only through its consequence. The
   -- nonsnow board is the control: it spends five mana too, so a non-empty record
   -- carrying no snow tag is what says the tags come from the sources and not from
   -- the fact that something was spent.
   Spec.it s "CR 400.7d the permanent carries the mana its spell was paid with" $ do
-    (_, snowBoard) <- bergBoard s registry True
-    (_, plainBoard) <- bergBoard s registry False
+    snowBoard <- bergBoard s registry True
+    plainBoard <- bergBoard s registry False
     Spec.assertEqWith s "the snow board's Berg Strider remembers a snow tag" (bergSpentTags snowBoard) (Set.singleton ProductionTag.Snow)
     Spec.assertEqWith s "the nonsnow board's remembers the payment with no tag on it" (bergSpentTags plainBoard) Set.empty
     Spec.assertEqWith s "and both spent five mana" (bergSpentCount snowBoard, bergSpentCount plainBoard) (5, 5)
@@ -1888,33 +1850,15 @@ bergStriderSpec s registry = Spec.describe s "BergStrider" $ do
 -- resolves against bob's Goblin Piker, the only artifact or creature an opponent
 -- controls. `snowy` picks what the four lands paying the {4} are and decides
 -- NOTHING else; the Island paying the {U} is on both boards.
---
--- Returns bob's Piker and the board with bob made active, which is whose untap
--- step the card's second clause speaks about.
-bergBoard :: (Monad m) => Spec.Spec m n -> Registry.Registry m -> Bool -> m (ObjectId.ObjectId, GameState.GameState)
+bergBoard :: (Monad m) => Spec.Spec m n -> Registry.Registry m -> Bool -> m GameState.GameState
 bergBoard s registry snowy = do
   island <- S.printingOf s registry "Island"
   filler <- S.printingOf s registry (if snowy then "Snow-Covered Mountain" else "Mountain")
   strider <- S.printingOf s registry "Berg Strider"
   piker <- S.printingOf s registry "Goblin Piker"
-  let (victim, board) = S.addPermanent piker S.bob (S.landsFor filler S.alice 4 (S.landsInPlay island 1))
+  let (_, board) = S.addPermanent piker S.bob (S.landsFor filler S.alice 4 (S.landsInPlay island 1))
       (gs, spellId) = S.handOne strider board
-      resolved = S.runPure S.identityAnswer gs (S.cast S.alice spellId *> Stack.resolveTop *> Engine.placePendingTriggers [] *> Stack.resolveTop)
-  pure
-    ( victim,
-      resolved
-        { GameState.turn =
-            (GameState.turn resolved)
-              { TurnRegisters.activePlayer = S.bob
-              }
-        }
-    )
-
--- The untap step's turn-based actions, run for whoever the state says is active
--- (CR 502.3) -- Parun.UntapRestrictionSpec's `untapStep`, kept here rather than
--- shared, since Parun.Support rebuilds every spec in the tree.
-bergUntapStep :: GameState.GameState -> GameState.GameState
-bergUntapStep gs = S.runPure S.identityAnswer gs (Engine.runTurnBasedActions (Phase.Beginning BeginningStep.Untap))
+  pure (S.runPure S.identityAnswer gs (S.cast S.alice spellId *> Stack.resolveTop *> Engine.placePendingTriggers [] *> Stack.resolveTop))
 
 -- Alice's Berg Strider on the battlefield, or a placeholder id that reads as
 -- nothing -- so a board where the spell never resolved answers empty rather than
