@@ -1,0 +1,85 @@
+{
+  "faces": [
+    {
+      "keywords": [
+        {
+          "type": "Ward",
+          "value": {
+            "cost": {
+              "components": [
+                {
+                  "type": "DiscardCards",
+                  "value": {
+                    "count": {
+                      "type": "Fixed",
+                      "value": 1
+                    },
+                    "whichCards": {
+                      "type": "And",
+                      "value": []
+                    }
+                  }
+                }
+              ],
+              "mana": []
+            }
+          }
+        },
+        {
+          "type": "Cycling",
+          "value": {
+            "cost": {
+              "mana": [
+                {
+                  "type": "Generic",
+                  "value": 2
+                }
+              ]
+            },
+            "searchFor": {
+              "type": "HasSubtype",
+              "value": "Swamp"
+            }
+          }
+        }
+      ],
+      "manaCost": [
+        {
+          "type": "Generic",
+          "value": 4
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "Black"
+          }
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "Black"
+          }
+        }
+      ],
+      "name": "Spectral Snatcher",
+      "power": {
+        "type": "Literal",
+        "value": 6
+      },
+      "toughness": {
+        "type": "Literal",
+        "value": 5
+      },
+      "typeLine": {
+        "subtypes": [
+          "Spirit"
+        ],
+        "types": [
+          "Creature"
+        ]
+      }
+    }
+  ]
+}
