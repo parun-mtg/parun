@@ -1,0 +1,69 @@
+{
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "battlefield": [
+          {
+            "card": "Mountain",
+            "label": "m1"
+          }
+        ],
+        "hand": [
+          {
+            "card": "Lightning Bolt",
+            "label": "bolt"
+          }
+        ],
+        "name": "alice"
+      },
+      {
+        "life": 3,
+        "name": "bob"
+      }
+    ],
+    "step": "PrecombatMain"
+  },
+  "description": "CR 704.5a a player at 0 life loses the game",
+  "final": [
+    {
+      "Life": {
+        "life": 0,
+        "player": "bob"
+      }
+    },
+    {
+      "View": {
+        "is": {
+          "won": "alice"
+        },
+        "of": "Result"
+      }
+    }
+  ],
+  "note": "Lightning Bolt takes bob from 3 to exactly 0; CR 704.5a's state-based action makes him lose, and with alice the only one left she wins (CR 104.2a).",
+  "timeline": [
+    {
+      "do": {
+        "Cast": {
+          "mana": [
+            "$m1"
+          ],
+          "object": "$bolt",
+          "targets": [
+            "$bob"
+          ]
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    }
+  ]
+}

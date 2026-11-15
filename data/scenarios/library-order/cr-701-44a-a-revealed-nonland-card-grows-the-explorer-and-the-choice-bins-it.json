@@ -1,0 +1,145 @@
+{
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "battlefield": [
+          {
+            "card": "Forest",
+            "label": "forest",
+            "ready": true
+          },
+          {
+            "card": "Forest",
+            "label": "forest-2",
+            "ready": true
+          },
+          {
+            "card": "Darksteel Myr",
+            "label": "myr",
+            "ready": true
+          }
+        ],
+        "hand": [
+          {
+            "card": "Merfolk Branchwalker",
+            "label": "merfolk-branchwalker"
+          }
+        ],
+        "library": [
+          {
+            "card": "Goblin Piker"
+          },
+          {
+            "card": "Bird Maiden"
+          }
+        ],
+        "name": "alice"
+      },
+      {
+        "name": "bob"
+      }
+    ],
+    "step": "PrecombatMain"
+  },
+  "description": "CR 701.44a a revealed nonland card grows the explorer, and the choice bins it",
+  "final": [
+    {
+      "Count": {
+        "card": "Merfolk Branchwalker",
+        "count": 1,
+        "player": "alice",
+        "zone": "Battlefield"
+      }
+    },
+    {
+      "View": {
+        "is": [],
+        "of": "Stack"
+      }
+    },
+    {
+      "Counters": {
+        "count": 0,
+        "kind": {
+          "type": "PlusOnePlusOne"
+        },
+        "object": "$myr"
+      }
+    },
+    {
+      "Counters": {
+        "count": 1,
+        "kind": {
+          "type": "PlusOnePlusOne"
+        },
+        "object": "Merfolk Branchwalker"
+      }
+    },
+    {
+      "View": {
+        "is": [
+          "Goblin Piker"
+        ],
+        "of": "Zone",
+        "player": "alice",
+        "zone": "Graveyard"
+      }
+    },
+    {
+      "View": {
+        "is": [
+          "Bird Maiden"
+        ],
+        "of": "Zone",
+        "player": "alice",
+        "zone": "Library"
+      }
+    },
+    {
+      "View": {
+        "is": [
+          "Goblin Piker"
+        ],
+        "of": "Witnessed",
+        "player": "bob"
+      }
+    },
+    {
+      "View": {
+        "is": [],
+        "of": "Zone",
+        "player": "alice",
+        "zone": "Hand"
+      }
+    }
+  ],
+  "note": "The nonland branch, the same board with a Goblin Piker on top: only it is revealed, the Branchwalker and not the Myr gets the +1/+1 counter, and taking the may bins the Piker, leaving the Bird Maiden on top.",
+  "timeline": [
+    {
+      "do": {
+        "Cast": {
+          "mana": [
+            "$forest",
+            "$forest-2"
+          ],
+          "object": "$merfolk-branchwalker"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Answer": {
+          "prompt": "ChooseExplore",
+          "with": "Exercises"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    }
+  ]
+}

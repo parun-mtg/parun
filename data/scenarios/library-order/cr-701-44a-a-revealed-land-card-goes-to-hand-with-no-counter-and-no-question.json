@@ -1,0 +1,134 @@
+{
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "battlefield": [
+          {
+            "card": "Forest",
+            "label": "forest",
+            "ready": true
+          },
+          {
+            "card": "Forest",
+            "label": "forest-2",
+            "ready": true
+          },
+          {
+            "card": "Darksteel Myr",
+            "label": "myr",
+            "ready": true
+          }
+        ],
+        "hand": [
+          {
+            "card": "Merfolk Branchwalker",
+            "label": "merfolk-branchwalker"
+          }
+        ],
+        "library": [
+          {
+            "card": "Mountain"
+          },
+          {
+            "card": "Bird Maiden"
+          }
+        ],
+        "name": "alice"
+      },
+      {
+        "name": "bob"
+      }
+    ],
+    "step": "PrecombatMain"
+  },
+  "description": "CR 701.44a a revealed land card goes to hand, with no counter and no question",
+  "final": [
+    {
+      "Count": {
+        "card": "Merfolk Branchwalker",
+        "count": 1,
+        "player": "alice",
+        "zone": "Battlefield"
+      }
+    },
+    {
+      "View": {
+        "is": [],
+        "of": "Stack"
+      }
+    },
+    {
+      "Counters": {
+        "count": 0,
+        "kind": {
+          "type": "PlusOnePlusOne"
+        },
+        "object": "$myr"
+      }
+    },
+    {
+      "View": {
+        "is": [
+          "Bird Maiden"
+        ],
+        "of": "Zone",
+        "player": "alice",
+        "zone": "Library"
+      }
+    },
+    {
+      "View": {
+        "is": [
+          "Mountain"
+        ],
+        "of": "Zone",
+        "player": "alice",
+        "zone": "Hand"
+      }
+    },
+    {
+      "View": {
+        "is": [],
+        "of": "Zone",
+        "player": "alice",
+        "zone": "Graveyard"
+      }
+    },
+    {
+      "View": {
+        "is": [
+          "Mountain"
+        ],
+        "of": "Witnessed",
+        "player": "bob"
+      }
+    },
+    {
+      "Counters": {
+        "count": 0,
+        "kind": {
+          "type": "PlusOnePlusOne"
+        },
+        "object": "Merfolk Branchwalker"
+      }
+    }
+  ],
+  "note": "The land branch: the Mountain on top is revealed (bob sees it, CR 701.20a) and put into alice's hand, with no ChooseExplore raised, no +1/+1 counter on the Branchwalker and none on her Darksteel Myr. The Bird Maiden beneath is untouched.",
+  "timeline": [
+    {
+      "do": {
+        "Cast": {
+          "mana": [
+            "$forest",
+            "$forest-2"
+          ],
+          "object": "$merfolk-branchwalker"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    }
+  ]
+}

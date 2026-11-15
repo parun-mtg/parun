@@ -94,8 +94,8 @@ abilities gs = case GameState.monarch gs of
 -- made here: a comparison against the monarch seen at the previous settle cannot
 -- tell a crown that never moved from one that moved away and came back, and no
 -- comparison against the CURRENT monarch can see a reign that began and ended
--- between two settles at all. Parun.LibraryOrderSpec's "a crown that goes to an
--- opponent and back inside one resolution still frees the prisoner" is the
+-- between two settles at all. data/scenarios/library-order/'s "a crown that goes
+-- to an opponent and back inside one resolution still frees the prisoner" is the
 -- proof (see #208).
 crown :: PlayerId -> GameState -> GameState
 crown pid gs =
