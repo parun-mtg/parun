@@ -2169,7 +2169,8 @@ Entries are ordered by the first rule each cites.
   the same whether or not Hermes attacks. Counting "attacks and isn't
   blocked": its event is the declaration of blockers.
 - **Site**: `Parun.Engine.Event.Binding.attackCausers`, read by
-  `Parun.Engine.Event.Match.matchesTriggerGiven`'s `AbilityWatch` arm. Proved
+  `Parun.Engine.Event.Match.matchesTriggerGiven`'s `AbilityWatch` arm and by
+  `Parun.Engine.Event.Match.additionalAttackTriggers` (Windcrag Siege). Proved
   by the scenarios
   `firebender-ascension-does-not-count-a-counted-attack-ability-of-an-attacker-the-count-leaves-out`,
   `firebender-ascension-counts-a-whenever-you-attack-a-player-ability-only-for-the-player-its-creature-attacked`

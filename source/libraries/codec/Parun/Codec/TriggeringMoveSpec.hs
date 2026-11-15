@@ -19,6 +19,12 @@ spec s = Spec.describe s "Parun.Codec.TriggeringMove" $ do
       TriggeringMove.codec
       TriggeringMove.Dying
       " \"Dying\" "
+  Spec.it s "Attacking" $
+    Common.assertCodec
+      s
+      TriggeringMove.codec
+      TriggeringMove.Attacking
+      " \"Attacking\" "
   Spec.it s "round trips every constructor" $ Common.assertEnumCodec s TriggeringMove.codec
   Spec.it s "has a schema" $
     Common.assertHasSchema s TriggeringMove.codec

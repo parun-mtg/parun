@@ -1,6 +1,6 @@
 module Parun.Types.EntryTriggering where
 
--- | How a permanent entering or dying changes the triggering of the abilities
+-- | How a permanent entering, dying or attacking changes the triggering of the abilities
 -- it causes to trigger (Parun.Types.EntriesTrigger).
 data EntryTriggering
   = -- | CR 603.6a / 613.11 / Hushwing Gryff: the entry doesn't cause them to

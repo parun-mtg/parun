@@ -21,8 +21,8 @@ import qualified Parun.Engine.Binding as Binding
 import qualified Parun.Engine.Condition as Condition
 import qualified Parun.Engine.Decide as Decide
 import qualified Parun.Engine.EffectZone as EffectZone
-import Parun.Engine.Event.Binding (batchBindings, batchPartition, countersMovedOn, eventBindingsOver)
-import Parun.Engine.Event.Match (additionalMoveTriggers, additionalTriggers, gameAfter, leavesZoneLooksBack, matchesTriggerGiven, putIntoZoneLooksBack, stepPlayers)
+import Parun.Engine.Event.Binding (attackCausers, batchBindings, batchPartition, countersMovedOn, eventBindingsOver)
+import Parun.Engine.Event.Match (additionalAttackTriggers, additionalMoveTriggers, additionalTriggers, gameAfter, leavesZoneLooksBack, matchesTriggerGiven, putIntoZoneLooksBack, stepPlayers)
 import qualified Parun.Engine.Expiry as Expiry
 import qualified Parun.Engine.Filter as Filter
 import qualified Parun.Engine.Game as Game
@@ -2403,11 +2403,16 @@ eventTriggersGiven scope standing events gs =
             -- the limit over it. Delayed and reflexive triggers
             -- are gathered elsewhere and never multiplied, as CR 603.2d asks.
             -- Each effect adds its own, so one that names the bearer (Sanctum
-            -- of All) adds to one that names the entry.
+            -- of All) adds to one that names the entry. So may a creature
+            -- attacking (Windcrag Siege), counted over the creatures whose
+            -- attacking was the event (Binding.attackCausers, Firebender
+            -- Ascension's reading).
             additional cond =
-              additionalTriggers gs (controllerFor cond) oid (LoggedEvent.group logged) (looksBack cond) + case Game.enteredBattlefieldChange event of
-                Just zc -> additionalMoveTriggers gs (controllerFor cond) oid (LoggedEvent.group logged) (looksBack cond) zc
-                _ -> maybe 0 (additionalMoveTriggers gs (controllerFor cond) oid (LoggedEvent.group logged) (looksBack cond)) (Monad.mfilter Game.dies (movedOf event))
+              additionalTriggers gs (controllerFor cond) oid (LoggedEvent.group logged) (looksBack cond)
+                + additionalAttackTriggers gs (controllerFor cond) oid (LoggedEvent.group logged) (looksBack cond) (attackCausers gs oid (controllerFor cond) cond event)
+                + case Game.enteredBattlefieldChange event of
+                  Just zc -> additionalMoveTriggers gs (controllerFor cond) oid (LoggedEvent.group logged) (looksBack cond) zc
+                  _ -> maybe 0 (additionalMoveTriggers gs (controllerFor cond) oid (LoggedEvent.group logged) (looksBack cond)) (Monad.mfilter Game.dies (movedOf event))
             -- CR 805.4d: one trigger per player whose step this is (stepCopies).
             -- Each paired with which of CR 603.2d's instances it is.
             pends (cond, ab) =
