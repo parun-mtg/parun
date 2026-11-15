@@ -1,20 +1,18 @@
 {
-  "description": "CR 506.8b the window opens at the declaration and runs to the end of the combat phase",
-  "note": "",
   "board": {
+    "active": "alice",
     "seats": [
       {
-        "name": "alice",
         "battlefield": [
           {
             "card": "Sacred Prey",
             "label": "prey",
             "ready": true
           }
-        ]
+        ],
+        "name": "alice"
       },
       {
-        "name": "bob",
         "battlefield": [
           {
             "card": "Goblin Piker",
@@ -51,86 +49,107 @@
           {
             "card": "Plains"
           }
-        ]
+        ],
+        "name": "bob"
       }
     ],
-    "active": "alice",
     "step": "DeclareAttackers"
   },
+  "description": "CR 506.8b the window opens at the declaration and runs to the end of the combat phase",
+  "note": "Bob holds Curtain of Light and Lightning Bolt with the mana for either, and alice's unblocked attacking Sacred Prey is the Curtain's legal target throughout, so the offer moves only with the step: the Curtain is not offered in the declare attackers step and is from the declaration of blockers through the end of combat step, while the unrestricted Bolt is offered at every one. The declare blockers step before blockers are declared holds no priority, so its refusal is not checked.",
   "timeline": [
     {
-      "turn": 1,
-      "step": "DeclareAttackers",
-      "player": "alice",
       "do": {
         "Attack": [
           "$prey"
         ]
-      }
+      },
+      "player": "alice",
+      "step": "DeclareAttackers",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "DeclareAttackers",
-      "player": "bob",
       "check": {
         "View": {
-          "of": "Offered",
-          "player": "bob",
           "is": [
-            "Pass"
-          ]
+            "Pass",
+            "Cast $bolt",
+            "ActivateManaAbility $p0",
+            "ActivateManaAbility $p1",
+            "ActivateManaAbility $mountain"
+          ],
+          "of": "Offered",
+          "player": "bob"
         }
-      }
+      },
+      "player": "bob",
+      "step": "DeclareAttackers",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "DeclareBlockers",
-      "player": "bob",
       "do": {
         "Block": {}
-      }
-    },
-    {
-      "turn": 1,
+      },
+      "player": "bob",
       "step": "DeclareBlockers",
-      "player": "bob",
-      "check": {
-        "View": {
-          "of": "Offered",
-          "player": "bob",
-          "is": [
-            "Pass"
-          ]
-        }
-      }
+      "turn": 1
     },
     {
-      "turn": 1,
+      "check": {
+        "View": {
+          "is": [
+            "Pass",
+            "Cast $curtain",
+            "Cast $bolt",
+            "ActivateManaAbility $p0",
+            "ActivateManaAbility $p1",
+            "ActivateManaAbility $mountain"
+          ],
+          "of": "Offered",
+          "player": "bob"
+        }
+      },
+      "player": "bob",
+      "step": "DeclareBlockers",
+      "turn": 1
+    },
+    {
+      "check": {
+        "View": {
+          "is": [
+            "Pass",
+            "Cast $curtain",
+            "Cast $bolt",
+            "ActivateManaAbility $p0",
+            "ActivateManaAbility $p1",
+            "ActivateManaAbility $mountain"
+          ],
+          "of": "Offered",
+          "player": "bob"
+        }
+      },
+      "player": "bob",
       "step": "CombatDamage",
-      "player": "bob",
-      "check": {
-        "View": {
-          "of": "Offered",
-          "player": "bob",
-          "is": [
-            "Pass"
-          ]
-        }
-      }
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "EndOfCombat",
-      "player": "bob",
       "check": {
         "View": {
-          "of": "Offered",
-          "player": "bob",
           "is": [
-            "Pass"
-          ]
+            "Pass",
+            "Cast $curtain",
+            "Cast $bolt",
+            "ActivateManaAbility $p0",
+            "ActivateManaAbility $p1",
+            "ActivateManaAbility $mountain"
+          ],
+          "of": "Offered",
+          "player": "bob"
         }
-      }
+      },
+      "player": "bob",
+      "step": "EndOfCombat",
+      "turn": 1
     }
   ]
 }

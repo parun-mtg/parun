@@ -1,0 +1,386 @@
+{
+  "description": "CR 725.1d ending the turn during combat expires that phase's effects",
+  "note": "The CR 725.2d file's board with Time Stop for Mandate of Peace: alice animates Jade Statue (3/6 Golem until end of combat) after attackers are declared, and ends the turn in the declare blockers step over bob's Burst Lightning. Eight cards in hand make her discard in cleanup, and bob's Megrim triggers on it, so CR 514.3a gives the cleanup step a priority round: there, after the turn jumped straight to cleanup (no combat damage reached bob), the Statue is a plain artifact with no creature type, so no power or toughness. Read in cleanup, since an end-of-combat expiry the turn's end missed would otherwise survive past CR 514.2.",
+  "board": {
+    "active": "alice",
+    "step": "BeginningOfCombat",
+    "seats": [
+      {
+        "name": "alice",
+        "battlefield": [
+          {
+            "card": "Goblin Piker",
+            "label": "attacker",
+            "ready": true
+          },
+          {
+            "card": "Jade Statue",
+            "label": "jade"
+          },
+          {
+            "card": "Plains",
+            "label": "plains1"
+          },
+          {
+            "card": "Plains",
+            "label": "plains2"
+          },
+          {
+            "card": "Plains",
+            "label": "plains3"
+          },
+          {
+            "card": "Plains",
+            "label": "plains4"
+          },
+          {
+            "card": "Mountain",
+            "label": "amountain"
+          },
+          {
+            "card": "Island",
+            "label": "island1"
+          },
+          {
+            "card": "Island",
+            "label": "island2"
+          },
+          {
+            "card": "Island",
+            "label": "island3"
+          },
+          {
+            "card": "Island",
+            "label": "island4"
+          },
+          {
+            "card": "Island",
+            "label": "island5"
+          },
+          {
+            "card": "Island",
+            "label": "island6"
+          }
+        ],
+        "hand": [
+          {
+            "card": "Burst Lightning",
+            "label": "hers"
+          },
+          {
+            "card": "Time Stop",
+            "label": "time-stop"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ],
+        "library": [
+          {
+            "card": "Mountain"
+          },
+          {
+            "card": "Mountain"
+          },
+          {
+            "card": "Mountain"
+          },
+          {
+            "card": "Mountain"
+          },
+          {
+            "card": "Mountain"
+          },
+          {
+            "card": "Mountain"
+          },
+          {
+            "card": "Mountain"
+          },
+          {
+            "card": "Mountain"
+          },
+          {
+            "card": "Mountain"
+          },
+          {
+            "card": "Mountain"
+          }
+        ]
+      },
+      {
+        "name": "bob",
+        "battlefield": [
+          {
+            "card": "Goblin Piker",
+            "label": "blocker",
+            "ready": true
+          },
+          {
+            "card": "Mountain",
+            "label": "bmountain1"
+          },
+          {
+            "card": "Mountain",
+            "label": "bmountain2"
+          },
+          {
+            "card": "Megrim",
+            "label": "megrim"
+          }
+        ],
+        "hand": [
+          {
+            "card": "Burst Lightning",
+            "label": "his"
+          },
+          {
+            "card": "Burst Lightning",
+            "label": "stacked"
+          }
+        ],
+        "library": [
+          {
+            "card": "Mountain"
+          },
+          {
+            "card": "Mountain"
+          },
+          {
+            "card": "Mountain"
+          },
+          {
+            "card": "Mountain"
+          },
+          {
+            "card": "Mountain"
+          },
+          {
+            "card": "Mountain"
+          },
+          {
+            "card": "Mountain"
+          },
+          {
+            "card": "Mountain"
+          },
+          {
+            "card": "Mountain"
+          },
+          {
+            "card": "Mountain"
+          }
+        ]
+      }
+    ]
+  },
+  "timeline": [
+    {
+      "turn": 1,
+      "step": "DeclareAttackers",
+      "player": "alice",
+      "do": {
+        "Attack": [
+          "$attacker"
+        ]
+      }
+    },
+    {
+      "turn": 1,
+      "step": "DeclareBlockers",
+      "player": "bob",
+      "do": {
+        "Block": {
+          "$blocker": [
+            "$attacker"
+          ]
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "DeclareBlockers",
+      "player": "alice",
+      "do": {
+        "Activate": {
+          "object": "$jade",
+          "mana": [
+            "$plains1",
+            "$plains2",
+            null
+          ]
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "DeclareBlockers",
+      "player": "alice",
+      "do": "Pass"
+    },
+    {
+      "turn": 1,
+      "step": "DeclareBlockers",
+      "player": "bob",
+      "do": "Pass"
+    },
+    {
+      "turn": 1,
+      "step": "DeclareBlockers",
+      "player": "alice",
+      "check": {
+        "Types": {
+          "object": "$jade",
+          "types": [
+            "Artifact",
+            "Creature"
+          ]
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "DeclareBlockers",
+      "player": "alice",
+      "check": {
+        "PowerToughness": {
+          "object": "$jade",
+          "power": 3,
+          "toughness": 6
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "DeclareBlockers",
+      "player": "alice",
+      "do": "Pass"
+    },
+    {
+      "turn": 1,
+      "step": "DeclareBlockers",
+      "player": "bob",
+      "do": {
+        "Cast": {
+          "object": "$stacked",
+          "targets": [
+            "$alice"
+          ],
+          "mana": [
+            "$bmountain1",
+            null
+          ]
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "DeclareBlockers",
+      "player": "alice",
+      "do": {
+        "Cast": {
+          "object": "$time-stop",
+          "mana": [
+            "$island1",
+            "$island2",
+            "$island3",
+            "$island4",
+            "$island5",
+            "$island6",
+            null
+          ]
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "Cleanup",
+      "player": "alice",
+      "do": {
+        "Answer": {
+          "prompt": "ChooseDiscard",
+          "with": [
+            "$hers"
+          ]
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "Cleanup",
+      "player": "alice",
+      "check": {
+        "View": {
+          "of": "Step",
+          "is": "Cleanup"
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "Cleanup",
+      "player": "alice",
+      "check": {
+        "View": {
+          "of": "Stack",
+          "is": [
+            "trigger of $megrim"
+          ]
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "Cleanup",
+      "player": "alice",
+      "check": {
+        "Types": {
+          "object": "$jade",
+          "types": [
+            "Artifact"
+          ]
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "Cleanup",
+      "player": "alice",
+      "check": {
+        "Subtypes": {
+          "object": "$jade",
+          "subtypes": []
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "Cleanup",
+      "player": "alice",
+      "check": {
+        "Life": {
+          "player": "bob",
+          "life": 20
+        }
+      }
+    }
+  ]
+}
