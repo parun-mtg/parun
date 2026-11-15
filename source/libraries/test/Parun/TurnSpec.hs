@@ -161,7 +161,7 @@ turnDataSpec s = Spec.describe s "TurnData" $ do
     Spec.assertEqWith
       s
       "one Just per stepped phase"
-      (fmap Turn.phaseBeginningAt Turn.allPhases)
+      (fmap (Turn.phaseBeginningAt Nothing) Turn.allPhases)
       [ Just PhaseSelector.BeginningPhase,
         Nothing,
         Nothing,
@@ -315,6 +315,18 @@ skipSpec s registry = Spec.describe s "Skip" $ do
     -- schedule and everything remaining is already after it.
     let remaining = Seq.fromList [Phase.Combat CombatStep.BeginningOfCombat, Phase.PostcombatMain]
      in Spec.assertEqWith s "empty prefix" (Turn.thisPhase Phase.PrecombatMain remaining) (Seq.empty, remaining)
+  Spec.it s "CR 500.9 an end step added after the end step stays in the ending phase" $
+    let added = Phase.Ending EndingStep.EndStep
+        remaining = Seq.fromList [added, Phase.Ending EndingStep.Cleanup]
+     in do
+          Spec.assertEqWith s "no phase begins" (Turn.phaseBeginningAt (Just added) added) Nothing
+          Spec.assertEqWith s "whole prefix" (Turn.thisPhase added remaining) (remaining, Seq.empty)
+  Spec.it s "CR 500.8 a combat phase after a combat phase begins anew" $
+    Spec.assertEqWith
+      s
+      "combat begins"
+      (Turn.phaseBeginningAt (Just (Phase.Combat CombatStep.EndOfCombat)) (Phase.Combat CombatStep.BeginningOfCombat))
+      (Just PhaseSelector.CombatPhase)
   Spec.it s "thisPhase yields an empty prefix when this phase's final step is gone" $
     -- Unreachable from either caller, and asserted anyway: dropping nothing
     -- is the safer failure than treating the whole rest of the turn as this

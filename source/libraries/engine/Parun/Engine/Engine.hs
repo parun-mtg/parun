@@ -2547,19 +2547,20 @@ enterStep = do
   -- TurnRegisters.phase but records no event and grants no priority, so the step is
   -- scheduled, not started.
   --
-  -- TWO questions, in CR 500.1's own order: `Turn.phaseBeginningAt` answers Just
+  -- TWO questions, in CR 500.1's own order: `Turn.phaseBeginningNow` answers Just
   -- only at a stepped phase's FIRST step, and a main phase raises only the step
   -- question (CR 505.2). Both are asked even when the phase says yes -- Stasis
   -- skipping an untap step must still take it in an unskipped phase.
   --
   -- Asked of `active` alone even under the shared team turns option: CR 805.8
   -- makes a teammate's skip the team's, which Replacement.applies answers.
-  phaseBegins <- case Turn.phaseBeginningAt phase of
+  beginning <- State.gets Turn.phaseBeginningNow
+  phaseBegins <- case beginning of
     Nothing -> pure True
     Just selector -> Event.beginsPhase (SkipWindow.PartOfTurn selector) active
   -- CR 500.8: "during that combat phase" opens or ends here, where its phase is
   -- reached and the skip has been answered.
-  Monad.when (Turn.phaseBeginningAt phase == Just PhaseSelector.CombatPhase) (State.modify' (Expiry.reachCombatPhase phaseBegins))
+  Monad.when (beginning == Just PhaseSelector.CombatPhase) (State.modify' (Expiry.reachCombatPhase phaseBegins))
   if not phaseBegins
     then Nothing <$ skipWholePhase phase
     else do
@@ -2567,7 +2568,7 @@ enterStep = do
       -- one of that player's begins, a skipped phase never reaching this line.
       -- Scenario
       -- secret-of-bloodbending-waits-past-a-skipped-combat-phase proves the wait.
-      Monad.when (Turn.phaseBeginningAt phase == Just PhaseSelector.CombatPhase) $
+      Monad.when (beginning == Just PhaseSelector.CombatPhase) $
         State.modify' (\gs -> promoteControl ControlDuration.UntilCombatEnds (Turn.activePlayers gs) gs)
       -- CR 103.8a's skip is the rules', not an effect's, so it is asked FIRST: a
       -- "skip your next draw step" waits for the first occurrence that isn't
