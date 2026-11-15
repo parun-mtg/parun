@@ -239,13 +239,13 @@ out: grep for them.
 
 ### `ClassSpec`
 
-- CR 717.2a / CR 120.1 the level-3 trigger has the spell deal damage by instants and sorceries cast | `board:object-classlevel`
-- CR 717.2a / CR 508.3d the level-3 trigger pumps by each OTHER attacker and grants double strike | `board:object-classlevel`
-- CR 717.2a / CR 603.10 the level-2 section's trigger fires on the very activation that grants it | `board:object-classlevel`
-- CR 717.2a the level-2 trigger does not fire again when the Class goes from 2 to 3 | `board:object-classlevel`
-- CR 717.2a the level-3 section is off while the Class is level 2 | `board:object-classlevel`
-- CR 717.2b a Class retains its level even if it stops being a Class | `board:object-classlevel`
-- CR 717.2c Sorcerer Class's mana pays to gain a Class level | `board:object-classlevel`
+- ~~CR 717.2a / CR 120.1 the level-3 trigger has the spell deal damage by instants and sorceries cast | `board:object-classlevel`~~
+- ~~CR 717.2a / CR 508.3d the level-3 trigger pumps by each OTHER attacker and grants double strike | `board:object-classlevel`~~
+- ~~CR 717.2a / CR 603.10 the level-2 section's trigger fires on the very activation that grants it | `board:object-classlevel`~~
+- ~~CR 717.2a the level-2 trigger does not fire again when the Class goes from 2 to 3 | `board:object-classlevel`~~
+- ~~CR 717.2a the level-3 section is off while the Class is level 2 | `board:object-classlevel`~~
+- ~~CR 717.2b a Class retains its level even if it stops being a Class | `board:object-classlevel`~~
+- ~~CR 717.2c Sorcerer Class's mana pays to gain a Class level | `board:object-classlevel`~~
 
 ### `CodecIntegrationSpec`
 
@@ -257,12 +257,12 @@ out: grep for them.
 
 ### `ColorSpec`
 
-- CR 113.1c Painter's Servant does not colour an ability on the stack | `board:object-chosencolor`
-- CR 114.3 a Koth emblem's damage lands through protection from the colour Painter's Servant named | `board:object-chosencolor`
-- CR 607.2d two Gauntlets of Power each pump the creatures of their OWN chosen colour | `board:object-chosencolor`
-- CR 611.2a Moonlace states no duration, so a permanent it made colourless stays colourless past cleanup | `check:other-StoredEffects.continuousEffects`
-- CR 613.3 devoid beats an OLDER layer-5 'in addition' effect | `board:object-chosencolor`
-- CR 613.7a a granted devoid clears an OLDER 'in addition' colour | `move:other-addPermanent`
+- ~~CR 113.1c Painter's Servant does not colour an ability on the stack | `board:object-chosencolor`~~
+- ~~CR 114.3 a Koth emblem's damage lands through protection from the colour Painter's Servant named | `board:object-chosencolor`~~
+- ~~CR 607.2d two Gauntlets of Power each pump the creatures of their OWN chosen colour | `board:object-chosencolor`~~
+- ~~CR 611.2a Moonlace states no duration, so a permanent it made colourless stays colourless past cleanup | `check:other-StoredEffects.continuousEffects`~~
+- ~~CR 613.3 devoid beats an OLDER layer-5 'in addition' effect | `board:object-chosencolor`~~
+- ~~CR 613.7a a granted devoid clears an OLDER 'in addition' colour | `move:other-addPermanent`~~
 
 ### `CombatCostSpec`
 
@@ -404,12 +404,12 @@ out: grep for them.
 
 ### `CountSpec`
 
-- CR 108.3 a spell still on the stack is read off the object, not off a record | `board:exile-cast-permission` `board:stack`
-- CR 110.2 X counts the one seat with more lands than alice and the one with fewer | `check:events`
-- CR 110.2 a seat TIED with alice controls no more lands than she does | `check:events`
-- CR 601.2a the second, cast from the LIBRARY, does not win | `board:library-order`
-- CR 800.4a a player who has conceded is not one of alice's opponents | `board:player-status`
-- CR 800.4a neither AnyPlayer nor Opponent names a player who has left the game | `check:other-Count.playersFor` `check:other-Filter.contextFor` `check:other-S.countOf` `check:other-S.stubView` `check:other-Teams.none`
+- ~~CR 108.3 a spell still on the stack is read off the object, not off a record | `board:exile-cast-permission` `board:stack`~~
+- ~~CR 110.2 X counts the one seat with more lands than alice and the one with fewer | `check:events`~~
+- ~~CR 110.2 a seat TIED with alice controls no more lands than she does | `check:events`~~
+- ~~CR 601.2a the second, cast from the LIBRARY, does not win | `board:library-order`~~
+- ~~CR 800.4a a player who has conceded is not one of alice's opponents | `board:player-status`~~
+- ~~CR 800.4a neither AnyPlayer nor Opponent names a player who has left the game | `check:other-Count.playersFor` `check:other-Filter.contextFor` `check:other-S.countOf` `check:other-S.stubView` `check:other-Teams.none`~~
 
 ### `CounterKeywordTriggerSpec`
 
@@ -521,10 +521,10 @@ out: grep for them.
 
 ### `DiceSpec`
 
-- CR 108.3 a creature reanimated under another player's control still makes its OWNER lose the game | `board:delayed-trigger` `board:entered-with` `board:graveyard` `board:object-bindings`
-- CR 706.2a the modifier is taken only once each turn | `board:battlefield` `board:objects-ids`
-- CR 706.2b Goblin Bookie rerolls another player's die | `check:events`
-- CR 706.2b a reroll is a roll by the player who throws it | `check:events`
+- ~~CR 108.3 a creature reanimated under another player's control still makes its OWNER lose the game | `board:delayed-trigger` `board:entered-with` `board:graveyard` `board:object-bindings`~~
+- ~~CR 706.2a the modifier is taken only once each turn | `board:battlefield` `board:objects-ids`~~
+- ~~CR 706.2b Goblin Bookie rerolls another player's die | `check:events`~~
+- ~~CR 706.2b a reroll is a roll by the player who throws it | `check:events`~~
 
 ### `DungeonSpec`
 
@@ -766,15 +766,15 @@ out: grep for them.
 
 ### `LifeTriggerSpec`
 
-- CR 101.4 arming the other way round changes nothing | `check:prompt-payload` `check:other-StoredEffects.delayedTriggers`
-- CR 101.4 the active player is asked first even though the other seat armed first | `check:prompt-payload` `check:other-StoredEffects.delayedTriggers` `check:events`
-- CR 101.4c the entry alice names first is asked first | `check:prompt-payload` `check:events`
-- CR 111.3 / 601.2b cast for X=2, it mints two 2/2 red Human Knights with trample and haste and arms one entry | `check:delayed-triggers`
-- CR 119.9 one lifelink source damaging two blockers at once is one life gain event | `check:events`
-- CR 603.10 stripping the PRIDEMATE takes the second gain from it and not the first | `check:other-Projection.triggeredAbilitiesOf`
-- CR 603.2c two Knights connecting in one step are one trigger event, so the entry fires once | `check:delayed-triggers` `check:events`
-- CR 603.7b / 514.2 the same Knights connecting on alice's next turn crown nobody | `check:delayed-triggers`
-- CR 702.15e two lifelink attackers connecting at once are two life gain events | `check:events`
+- ~~CR 101.4 arming the other way round changes nothing | `check:prompt-payload` `check:other-StoredEffects.delayedTriggers`~~
+- ~~CR 101.4 the active player is asked first even though the other seat armed first | `check:prompt-payload` `check:other-StoredEffects.delayedTriggers` `check:events`~~
+- ~~CR 101.4c the entry alice names first is asked first | `check:prompt-payload` `check:events`~~
+- ~~CR 111.3 / 601.2b cast for X=2, it mints two 2/2 red Human Knights with trample and haste and arms one entry | `check:delayed-triggers`~~
+- ~~CR 119.9 one lifelink source damaging two blockers at once is one life gain event | `check:events`~~
+- ~~CR 603.10 stripping the PRIDEMATE takes the second gain from it and not the first | `check:other-Projection.triggeredAbilitiesOf`~~
+- ~~CR 603.2c two Knights connecting in one step are one trigger event, so the entry fires once | `check:delayed-triggers` `check:events`~~
+- ~~CR 603.7b / 514.2 the same Knights connecting on alice's next turn crown nobody | `check:delayed-triggers`~~
+- ~~CR 702.15e two lifelink attackers connecting at once are two life gain events | `check:events`~~
 
 ### `ManaSourceSpec`
 
@@ -1064,12 +1064,12 @@ out: grep for them.
 
 ### `SetupSpec`
 
-- CR 728.1 / 103.7 a restarted Planechase game sets a new starting plane | `check:other-Planechase.deckOf`
-- CR 728.2 / 103.3a a restart puts a face-up scheme back into the shuffled scheme deck | `check:other-Archenemy.deckOf` `check:events`
+- ~~CR 728.1 / 103.7 a restarted Planechase game sets a new starting plane | `check:other-Planechase.deckOf`~~
+- ~~CR 728.2 / 103.3a a restart puts a face-up scheme back into the shuffled scheme deck | `check:other-Archenemy.deckOf` `check:events`~~
 - ~~CR 730.2a the planar deck plays the subgame and comes back | `check:other-Planechase.deckOf` `check:events`~~
 - ~~CR 730.2a the scheme deck plays the subgame and comes back | `check:other-Archenemy.deckOf` `check:events`~~
-- CR 730.5/713.8 a subgame ending with a melded permanent returns both of its cards to the main-game library | `check:helper-componentsOn` `check:helper-sourcesOf` `check:other-Game.componentsOf` `check:other-GameState.objects` `check:other-GameState.nextObjectId`
-- CR 903.6/903.9c a restarted Commander game puts the melded commander's own card into the command zone and its partner into the deck | `board:source-ofmeld`
+- ~~CR 730.5/713.8 a subgame ending with a melded permanent returns both of its cards to the main-game library | `check:helper-componentsOn` `check:helper-sourcesOf` `check:other-Game.componentsOf` `check:other-GameState.objects` `check:other-GameState.nextObjectId`~~
+- ~~CR 903.6/903.9c a restarted Commander game puts the melded commander's own card into the command zone and its partner into the deck | `board:source-ofmeld`~~
 
 ### `ShieldCounterSpec`
 
