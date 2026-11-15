@@ -798,8 +798,9 @@ copyStackObject resolving source controller legal (CopyStackObject.MkCopyStackOb
               -- same reason `you` is -- Parun.Engine.Activate wrote the
               -- original's id there as it went on the stack -- and not a
               -- decision CR 707.10 copies. data/scenarios/copy's Forsworn Paladin
-              -- case proves the aim moved, and Parun.CopySpec's Stifle case that
-              -- it answers once the original has left the stack. A triggered ability's copy is
+              -- case proves the aim moved, and its CR 707.10b Stifle cases that
+              -- it answers once the original has left the stack, with
+              -- Parun.Engine.Quantity's archive fence off. A triggered ability's copy is
               -- re-stamped the same way, Parun.Engine.Engine.placeBorne having
               -- written the original's id there.
               stampSelf = case kind of
