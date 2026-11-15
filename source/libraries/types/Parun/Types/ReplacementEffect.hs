@@ -18,6 +18,7 @@ import qualified Parun.Types.PerformerR as PerformerR
 import qualified Parun.Types.PhaseR as PhaseR
 import qualified Parun.Types.PlaneswalkR as PlaneswalkR
 import qualified Parun.Types.TokenR as TokenR
+import qualified Parun.Types.TransformR as TransformR
 import qualified Parun.Types.TurnUpR as TurnUpR
 import qualified Parun.Types.UntapR as UntapR
 import qualified Parun.Types.ZoneChangeR as ZoneChangeR
@@ -75,9 +76,10 @@ import qualified Parun.Types.ZoneChangeR as ZoneChangeR
 -- 614.1a's "instead [do something]" on Parun.Types.DamageRewrite's RunEffects
 -- and Parun.Types.DrawRewrite's RunEffects, its "instead exile it and [do
 -- something]" on Parun.Types.ZoneChangeR's riders,
--- and CR 614.1c's "as [this permanent] enters, [do something]" on
--- Parun.Types.EntryRewrite's RunEffects. Parun.Types.Effect holds this type and
--- this type holds effects. See Parun.Types.DamageR. Every other arm ignores the
+-- CR 614.1c's "as [this permanent] enters, [do something]" on
+-- Parun.Types.EntryRewrite's RunEffects, and CR 701.27i's "as [this permanent]
+-- transforms" on Parun.Types.TransformR's effects. Parun.Types.Effect holds
+-- this type and this type holds effects. See Parun.Types.DamageR. Every other arm ignores the
 -- parameter, so a card writing a rider onto anything but a prevention is a lint's
 -- job rather than the type's.
 --
@@ -119,6 +121,12 @@ data ReplacementEffect card ability effect
     -- event class: a permanent that becomes attached neither enters nor turns
     -- face up. Raised by Parun.Engine.Event.attach, after the move is written.
     AttachR (AttachR.AttachR ability effect)
+  | -- | CR 701.27i: "As [this permanent] transforms . . ." (Sephiroth,
+    -- One-Winged Angel). Its own arm because transforming is its own event
+    -- class: CR 701.27b parts it from turning face up, and a permanent that
+    -- transforms neither enters nor becomes attached. Raised by
+    -- Parun.Engine.Event.transformed, after the face is written.
+    TransformR (TransformR.TransformR effect)
   | -- | CR 614.1a / 122.1d: "If a permanent with a stun counter on it would
     -- become untapped, instead remove a stun counter from it." A separate arm
     -- from every other because becoming untapped is its own event class: CR

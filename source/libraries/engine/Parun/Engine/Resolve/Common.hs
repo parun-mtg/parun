@@ -968,40 +968,39 @@ turnPermanentsOver legal chosen resolving controller source ref = do
   -- part of anybody's choice.
   gs0 <- State.get
   ordered <- Restamp.orderTurning (filter (turnsOver (Projection.projectAll gs0) resolving gs0) victims)
-  State.modify' $ \gs ->
-    -- CR 701.27a: turn each victim over -- one assignment to Object.face, which
-    -- is all a turn IS here, every characteristic read already resolving
-    -- through Game.faceOf. The victims were enumerated ONCE above (CR 608.2f),
-    -- ahead of this write so no member of the batch is judged against a board a
-    -- sibling has already turned over on. WHICH face is
-    -- Parun.Engine.Card.turnedOver's answer, off the card's layout, which
-    -- withholds a turn from a permanent that is not double-faced (CR 701.27d)
-    -- or whose other face is an instant or sorcery (CR 701.27e).
-    --
-    -- CR 701.27b: turning over is its own game action, so it records its own
-    -- event -- Event.recordTransformed, over the victims that ACTUALLY turned
-    -- rather than the ones this instruction named, since the ways a turn
-    -- is withheld leave nothing for CR 603.2 to fire on.
-    --
-    -- AFTER the fold, and the order is load-bearing: Parun.Engine.Card gives a
-    -- transforming permanent only the SHOWN face's abilities, so a trigger
-    -- printed on the face just turned to is among recordEvent's candidates only
-    -- because the write has already happened. Parun.TransformSpec's CR 701.27f
-    -- group is what proves it.
-    --
-    -- ONE fresh timestamp for the whole instruction (CR 701.27g), minted even
-    -- when nothing turns over, and ONE whole-board projection, CR 702.145b's
-    -- restriction being read off the layer fold. CR 613.7g's per-permanent stamp
-    -- is a second thing, minted inside Game.turnFaceOver.
-    --
-    -- LEFT fold, where this was a right one before the stamp: the fold hands out
-    -- CR 613.7g's timestamps, so it must run `ordered` forwards for the earlier
-    -- stamp to go to the permanent CR 613.7m put first.
-    let (now, g1) = Game.freshTimestamp gs
-        g2 = List.foldl' (flip (Game.turnFaceOver now)) g1 ordered
-     in Event.recordTransformed
-          (Game.facesTurned (GameState.objects g1) (GameState.objects g2) ordered)
-          g2
+  gs <- State.get
+  -- CR 701.27a: turn each victim over -- one assignment to Object.face, which
+  -- is all a turn IS here, every characteristic read already resolving
+  -- through Game.faceOf. The victims were enumerated ONCE above (CR 608.2f),
+  -- ahead of this write so no member of the batch is judged against a board a
+  -- sibling has already turned over on. WHICH face is
+  -- Parun.Engine.Card.turnedOver's answer, off the card's layout, which
+  -- withholds a turn from a permanent that is not double-faced (CR 701.27d)
+  -- or whose other face is an instant or sorcery (CR 701.27e).
+  --
+  -- CR 701.27b: turning over is its own game action, so it records its own
+  -- event -- Event.transformed, over the victims that ACTUALLY turned
+  -- rather than the ones this instruction named, since the ways a turn
+  -- is withheld leave nothing for CR 603.2 to fire on.
+  --
+  -- AFTER the fold, and the order is load-bearing: Parun.Engine.Card gives a
+  -- transforming permanent only the SHOWN face's abilities, so a trigger
+  -- printed on the face just turned to is among recordEvent's candidates only
+  -- because the write has already happened. Parun.TransformSpec's CR 701.27f
+  -- group is what proves it.
+  --
+  -- ONE fresh timestamp for the whole instruction (CR 701.27g), minted even
+  -- when nothing turns over, and ONE whole-board projection, CR 702.145b's
+  -- restriction being read off the layer fold. CR 613.7g's per-permanent stamp
+  -- is a second thing, minted inside Game.turnFaceOver.
+  --
+  -- LEFT fold, where this was a right one before the stamp: the fold hands out
+  -- CR 613.7g's timestamps, so it must run `ordered` forwards for the earlier
+  -- stamp to go to the permanent CR 613.7m put first.
+  let (now, g1) = Game.freshTimestamp gs
+      g2 = List.foldl' (flip (Game.turnFaceOver now)) g1 ordered
+  State.put g2
+  Event.transformed (Game.facesTurned (GameState.objects g1) (GameState.objects g2) ordered)
 
 -- CR 701.27a over ONE object, asked rather than performed: whether this
 -- instruction turns it over. The act itself is Game.turnFaceOver, shared with
@@ -1900,6 +1899,7 @@ referentsOfReplacement re = case re of
   ReplacementEffect.TokenR _ -> []
   ReplacementEffect.TurnUpR _ -> []
   ReplacementEffect.AttachR _ -> []
+  ReplacementEffect.TransformR _ -> []
   ReplacementEffect.UntapR _ -> []
   ReplacementEffect.LifeLossR _ -> []
   ReplacementEffect.LifeGainR _ -> []

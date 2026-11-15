@@ -72,6 +72,7 @@ import qualified Parun.Types.SkipWindow as SkipWindow
 import qualified Parun.Types.Subtype as Subtype
 import qualified Parun.Types.TokenPattern as TokenPattern
 import qualified Parun.Types.TokenR as TokenR
+import qualified Parun.Types.TransformR as TransformR
 import qualified Parun.Types.TurnKind as TurnKind
 import qualified Parun.Types.TurnUpProcedure as TurnUpProcedure
 import qualified Parun.Types.TurnUpR as TurnUpR
@@ -399,4 +400,11 @@ spec s =
             codec
             (ReplacementEffect.AttachR (AttachR.MkAttachR Filter.IsSource (AttachRewrite.AsCopy (AsCopy.MkAsCopy (Filter.HasCardType CardType.Creature) [] False Seq.empty (CopyDomain.InPile ExiledPile.CraftMaterials) Nothing CopyRecipient.ItsHost False))))
             " {\"type\":\"AttachR\",\"value\":{\"matching\":{\"type\":\"IsSource\"},\"rewrite\":{\"type\":\"AsCopy\",\"value\":{\"eligible\":{\"type\":\"HasCardType\",\"value\":\"Creature\"},\"among\":{\"type\":\"InPile\",\"value\":{\"type\":\"CraftMaterials\"}},\"recipient\":\"ItsHost\",\"optional\":false}}}} "
+        -- CR 701.27i: Sephiroth, One-Winged Angel's "as this creature transforms".
+        Spec.it s "TransformR (Sephiroth, One-Winged Angel)" $
+          Common.assertCodec
+            s
+            codec
+            (ReplacementEffect.TransformR (TransformR.MkTransformR Filter.IsSource (Seq.singleton (Effect.Type.Proliferate Nothing))))
+            " {\"type\":\"TransformR\",\"value\":{\"matching\":{\"type\":\"IsSource\"},\"effects\":[{\"type\":\"Proliferate\"}]}} "
         Spec.it s "has a schema" $ Common.assertHasSchema s codec

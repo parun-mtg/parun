@@ -134,6 +134,11 @@ data ProposedEvent
     -- Raised by Parun.Engine.Event.attach, the CR 701.3 move's one funnel, once
     -- the attachment is written; nothing replaces the move itself.
     WouldBecomeAttached ObjectId.ObjectId
+  | -- | CR 701.27i: a permanent is transforming. Raised by
+    -- Parun.Engine.Event.transformed, which every road that turns a permanent
+    -- over goes through, once the face is written; nothing replaces the turn
+    -- itself.
+    WouldTransform ObjectId.ObjectId
   | -- | CR 701.26b / 122.1d: a permanent would become untapped. Raised by
     -- Parun.Engine.Event.proposeUntap, the one funnel CR 502.3's turn-based
     -- action, Effect.Untap and CR 107.6's untap symbol in a cost all go through.

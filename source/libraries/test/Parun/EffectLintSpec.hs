@@ -459,6 +459,7 @@ idleTokenRowOffends replacement = case replacement of
   ReplacementEffect.DestructionR _ -> False
   ReplacementEffect.TurnUpR {} -> False
   ReplacementEffect.AttachR {} -> False
+  ReplacementEffect.TransformR {} -> False
   ReplacementEffect.UntapR _ -> False
   ReplacementEffect.LifeLossR {} -> False
   ReplacementEffect.LifeGainR {} -> False
@@ -527,6 +528,7 @@ phasePatternOffends replacement = case replacement of
   ReplacementEffect.TokenR {} -> False
   ReplacementEffect.TurnUpR {} -> False
   ReplacementEffect.AttachR {} -> False
+  ReplacementEffect.TransformR {} -> False
   ReplacementEffect.UntapR _ -> False
   ReplacementEffect.LifeLossR {} -> False
   ReplacementEffect.LifeGainR {} -> False
@@ -583,6 +585,7 @@ instructionRowOffends replacement = case replacement of
   ReplacementEffect.TokenR {} -> False
   ReplacementEffect.TurnUpR {} -> False
   ReplacementEffect.AttachR {} -> False
+  ReplacementEffect.TransformR {} -> False
   ReplacementEffect.UntapR _ -> False
   ReplacementEffect.LifeLossR {} -> False
   ReplacementEffect.LifeGainR {} -> False
@@ -685,6 +688,7 @@ engineOnlyArmOffends replacement = case replacement of
   ReplacementEffect.PlaneswalkR {} -> False
   ReplacementEffect.TurnUpR {} -> False
   ReplacementEffect.AttachR {} -> False
+  ReplacementEffect.TransformR {} -> False
 
 -- Is this damage rewrite one the ENGINE mints and no card may print? Three of
 -- them, for three rules:
@@ -788,6 +792,7 @@ turnUpRequiringOffends :: ReplacementEffect.ReplacementEffect Card.Type.Card (Gr
 turnUpRequiringOffends replacement = case replacement of
   ReplacementEffect.TurnUpR turnUpR -> Maybe.isJust (TurnUpR.requiring turnUpR) || Maybe.isJust (TurnUpR.paying turnUpR)
   ReplacementEffect.AttachR {} -> False
+  ReplacementEffect.TransformR {} -> False
   ReplacementEffect.CounterR {} -> False
   ReplacementEffect.CounterLossR {} -> False
   ReplacementEffect.ZoneChangeR {} -> False
@@ -850,6 +855,7 @@ riderWithoutPreventionOffends replacement = case replacement of
   ReplacementEffect.TokenR {} -> False
   ReplacementEffect.TurnUpR {} -> False
   ReplacementEffect.AttachR {} -> False
+  ReplacementEffect.TransformR {} -> False
   ReplacementEffect.UntapR _ -> False
   ReplacementEffect.LifeLossR {} -> False
   ReplacementEffect.LifeGainR {} -> False
@@ -906,6 +912,7 @@ shufflingOutsideLibraryOffends replacement = case replacement of
   ReplacementEffect.TokenR {} -> False
   ReplacementEffect.TurnUpR {} -> False
   ReplacementEffect.AttachR {} -> False
+  ReplacementEffect.TransformR {} -> False
   ReplacementEffect.UntapR _ -> False
   ReplacementEffect.LifeLossR {} -> False
   ReplacementEffect.LifeGainR {} -> False

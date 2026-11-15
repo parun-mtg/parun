@@ -161,7 +161,7 @@ dueToTurn gs = case GameState.daytime gs of
 -- CR 701.27a's event is recorded through the `record` argument rather than
 -- inline, and the argument is there because of the module graph rather than
 -- because two callers want two answers: Parun.Engine.Event owns recordEvent and
--- imports THIS module, so the modules above pass Event.recordTransformed down
+-- imports THIS module, so the modules above pass Event.transformed down
 -- instead.
 -- Every road this module has to a turn takes it, so the CR 702.145c/f sweep is
 -- not a second, silent way to turn a permanent over.
@@ -173,7 +173,7 @@ dueToTurn gs = case GameState.daytime gs of
 -- record here reddens that case's hand assertion and leaves every case in
 -- Parun.DaytimeSpec green, the one asserting the permanent turned over included:
 -- the record is what is lost, not the turn.
-turnDue :: ([ObjectId] -> GameState -> GameState) -> Game Bool
+turnDue :: ([ObjectId] -> Game ()) -> Game Bool
 turnDue record = do
   gs <- State.get
   case dueToTurn gs of
@@ -188,12 +188,11 @@ turnDue record = do
       -- LEFT fold, where this was a right one before CR 613.7g's stamp: the fold
       -- hands out timestamps, so it must run `ordered` forwards for the earlier
       -- stamp to go to the permanent CR 613.7m put first.
-      State.modify'
-        ( \gs1 ->
-            let (now, g1) = Game.freshTimestamp gs1
-                g2 = List.foldl' (flip (Game.turnFaceOver now)) g1 ordered
-             in record (Game.facesTurned (GameState.objects g1) (GameState.objects g2) ordered) g2
-        )
+      gs1 <- State.get
+      let (now, g1) = Game.freshTimestamp gs1
+          g2 = List.foldl' (flip (Game.turnFaceOver now)) g1 ordered
+      State.put g2
+      record (Game.facesTurned (GameState.objects g1) (GameState.objects g2) ordered)
       pure True
 
 -- | CR 732.1: "it becomes day" / "it becomes night" -- the game gains that
@@ -211,7 +210,7 @@ turnDue record = do
 -- 702.145f both say it "happens immediately and isn't a state-based action", so
 -- an effect that goes on to do something else after saying "it becomes night"
 -- (Tovolar, Dire Overlord's upkeep trigger) sees the turned permanent.
-becomes :: ([ObjectId] -> GameState -> GameState) -> Daytime -> Game Bool
+becomes :: ([ObjectId] -> Game ()) -> Daytime -> Game Bool
 becomes record designation = do
   gs <- State.get
   if GameState.daytime gs == Just designation
@@ -265,7 +264,7 @@ becomes record designation = do
 -- projecting only if one is found -- would be exact today only because nothing
 -- in the pool grants daybound, and that is a claim about the card pool rather
 -- than about the rules.
-settle :: ([ObjectId] -> GameState -> GameState) -> Game Bool
+settle :: ([ObjectId] -> Game ()) -> Game Bool
 settle record = do
   gs <- State.get
   case GameState.daytime gs of
@@ -300,7 +299,7 @@ settle record = do
 -- CR 502.2a's reading for the shared team turns option needs no arm here: the
 -- count is the most any one player on the previous active team cast, which
 -- answers "none of them" and "any of them two or more" alike.
-untapCheck :: ([ObjectId] -> GameState -> GameState) -> Game Bool
+untapCheck :: ([ObjectId] -> Game ()) -> Game Bool
 untapCheck record = do
   gs <- State.get
   case GameState.daytime gs of
