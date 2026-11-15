@@ -1,0 +1,276 @@
+1 Abandoned Campground
+1 Abhorrent Oculus
+1 Acrobatic Cheerleader
+1 Altanak, the Thrice-Called
+1 Anthropede
+1 Appendage Amalgam
+1 Arabella, Abandoned Doll
+1 Attack-in-the-Box
+1 Balemurk Leech
+1 Balustrade Wurm
+1 Baseball Bat
+1 Bashful Beastie
+1 Bear Trap
+1 Beastie Beatdown
+1 Bedhead Beastie
+1 Betrayer's Bargain
+1 Blazemire Verge
+1 Bleeding Woods
+1 Boilerbilges Ripper
+1 Bottomless Pool // Locker Room
+1 Break Down the Door
+1 Broodspinner
+1 Cackling Slasher
+1 Cathartic Parting
+1 Cautious Survivor
+1 Central Elevator // Promising Stairs
+1 Chainsaw
+1 Charred Foyer // Warped Space
+1 Clammy Prowler
+1 Clockwork Percussionist
+1 Come Back Wrong
+1 Commune with Evil
+1 Conductive Machete
+1 Coordinated Clobbering
+1 Cracked Skull
+1 Creeping Peeper
+1 Cryptid Inspector
+1 Cult Healer
+1 Cursed Recording
+1 Cursed Windbreaker
+1 Cynical Loner
+1 Daggermaw Megalodon
+1 Dashing Bloodsucker
+1 Dazzling Theater // Prop Room
+1 Defiant Survivor
+1 Defiled Crypt // Cadaver Lab
+1 Demonic Counsel
+1 Derelict Attic // Widow's Walk
+1 Dissection Tools
+1 Disturbing Mirth
+1 Diversion Specialist
+1 Dollmaker's Shop // Porcelain Gallery
+1 Don't Make a Sound
+1 Doomsday Excruciator
+1 Drag to the Roots
+1 Duskmourn's Domination
+1 Emerge from the Cocoon
+1 Enduring Courage
+1 Enduring Curiosity
+1 Enduring Innocence
+1 Enduring Tenacity
+1 Enduring Vitality
+1 Enter the Enigma
+1 Entity Tracker
+1 Erratic Apparition
+1 Etched Cornfield
+1 Ethereal Armor
+1 Exorcise
+1 Fanatic of the Harrowing
+1 Fear of Abduction
+1 Fear of Being Hunted
+1 Fear of Burning Alive
+1 Fear of Exposure
+1 Fear of Failed Tests
+1 Fear of Falling
+1 Fear of Immobility
+1 Fear of Impostors
+1 Fear of Infinity
+1 Fear of Isolation
+1 Fear of Lost Teeth
+1 Fear of Missing Out
+1 Fear of Surveillance
+1 Fear of the Dark
+1 Final Vengeance
+1 Flesh Burrower
+1 Floodfarm Verge
+1 Floodpits Drowner
+1 Forest
+1 Found Footage
+1 Frantic Strength
+1 Friendly Ghost
+1 Friendly Teddy
+1 Funeral Room // Awakening Hall
+1 Get Out
+1 Ghost Vacuum
+1 Ghostly Dancers
+1 Ghostly Keybearer
+1 Give In to Violence
+1 Glassworks // Shattered Yard
+1 Glimmer Seeker
+1 Glimmerburst
+1 Glimmerlight
+1 Gloomlake Verge
+1 Grab the Prize
+1 Grand Entryway // Elegant Rotunda
+1 Grasping Longneck
+1 Greenhouse // Rickety Gazebo
+1 Gremlin Tamer
+1 Grievous Wound
+1 Growing Dread
+1 Hand That Feeds
+1 Hardened Escort
+1 Haunted Screen
+1 Hauntwoods Shrieker
+1 Hedge Shredder
+1 Horrid Vigor
+1 House Cartographer
+1 Hushwood Verge
+1 Impossible Inferno
+1 Infernal Phantom
+1 Innocuous Rat
+1 Inquisitive Glimmer
+1 Insidious Fungus
+1 Intruding Soulrager
+1 Irreverent Gremlin
+1 Island
+1 Jump Scare
+1 Kaito, Bane of Nightmares
+1 Keys to the House
+1 Killer's Mask
+1 Kona, Rescue Beastie
+1 Lakeside Shack
+1 Let's Play a Game
+1 Leyline of Hope
+1 Leyline of Mutation
+1 Leyline of Resonance
+1 Leyline of Transformation
+1 Leyline of the Void
+1 Lionheart Glimmer
+1 Live or Die
+1 Living Phone
+1 Malevolent Chandelier
+1 Manifest Dread
+1 Marina Vendrell
+1 Marina Vendrell's Grimoire
+1 Marvin, Murderous Mimic
+1 Meat Locker // Drowned Diner
+1 Meathook Massacre II
+1 Miasma Demon
+1 Midnight Mayhem
+1 Mirror Room // Fractured Realm
+1 Moldering Gym // Weight Room
+1 Monstrous Emergence
+1 Most Valuable Slayer
+1 Mountain
+1 Murder
+1 Murky Sewer
+1 Nashi, Searcher in the Dark
+1 Neglected Manor
+1 Niko, Light of Hope
+1 Norin, Swift Survivalist
+1 Nowhere to Run
+1 Oblivious Bookworm
+1 Omnivorous Flytrap
+1 Optimistic Scavenger
+1 Orphans of the Wheat
+1 Osseous Sticktwister
+1 Overgrown Zealot
+1 Overlord of the Balemurk
+1 Overlord of the Boilerbilges
+1 Overlord of the Floodpits
+1 Overlord of the Hauntwoods
+1 Overlord of the Mistmoors
+1 Painter's Studio // Defaced Gallery
+1 Paranormal Analyst
+1 Patched Plaything
+1 Patchwork Beastie
+1 Peculiar Lighthouse
+1 Peer Past the Veil
+1 Piggy Bank
+1 Piranha Fly
+1 Plains
+1 Popular Egotist
+1 Possessed Goat
+1 Pyroclasm
+1 Ragged Playmate
+1 Rampaging Soulrager
+1 Raucous Carnival
+1 Razorkin Hordecaller
+1 Razorkin Needlehead
+1 Razortrap Gorge
+1 Reluctant Role Model
+1 Restricted Office // Lecture Hall
+1 Resurrected Cultist
+1 Rip, Spawn Hunter
+1 Ripchain Razorkin
+1 Rite of the Moth
+1 Roaring Furnace // Steaming Sauna
+1 Rootwise Survivor
+1 Savior of the Small
+1 Saw
+1 Sawblade Skinripper
+1 Say Its Name
+1 Scorching Dragonfire
+1 Scrabbling Skullcrab
+1 Screaming Nemesis
+1 Seized from Slumber
+1 Shardmage's Rescue
+1 Sheltered by Ghosts
+1 Shepherding Spirits
+1 Shrewd Storyteller
+1 Shroudstomper
+1 Silent Hallcreeper
+1 Skullsnap Nuisance
+1 Slavering Branchsnapper
+1 Smoky Lounge // Misty Salon
+1 Spectral Snatcher
+1 Spineseeker Centipede
+1 Split Up
+1 Splitskin Doll
+1 Sporogenic Infection
+1 Stalked Researcher
+1 Stay Hidden, Stay Silent
+1 Strangled Cemetery
+1 Surgical Suite // Hospital Room
+1 Swamp
+1 Terramorphic Expanse
+1 The Jolly Balloon Man
+1 The Mindskinner
+1 The Rollercrusher Ride
+1 The Swarmweaver
+1 The Tale of Tamiyo
+1 The Wandering Rescuer
+1 Thornspire Verge
+1 Threats Around Every Corner
+1 Ticket Booth // Tunnel of Hate
+1 Toby, Beastie Befriender
+1 Trapped in the Screen
+1 Trial of Agony
+1 Tunnel Surveyor
+1 Turn Inside Out
+1 Twist Reality
+1 Twitching Doll
+1 Tyvar, the Pummeler
+1 Unable to Scream
+1 Undead Sprinter
+1 Under the Skin
+1 Underwater Tunnel // Slimy Aquarium
+1 Unholy Annex // Ritual Chamber
+1 Unidentified Hovership
+1 Unnerving Grasp
+1 Unsettling Twins
+1 Unstoppable Slasher
+1 Untimely Malfunction
+1 Unwanted Remake
+1 Unwilling Vessel
+1 Valgavoth's Faithful
+1 Valgavoth's Lair
+1 Valgavoth's Onslaught
+1 Valgavoth, Terror Eater
+1 Vanish from Sight
+1 Vengeful Possession
+1 Veteran Survivor
+1 Vicious Clown
+1 Victor, Valgavoth's Seneschal
+1 Vile Mutilator
+1 Violent Urge
+1 Walk-In Closet // Forgotten Cellar
+1 Waltz of Rage
+1 Wary Watchdog
+1 Wickerfolk Thresher
+1 Wildfire Wickerfolk
+1 Winter's Intervention
+1 Winter, Misanthropic Guide
+1 Withering Torment
+1 Zimone, All-Questioning
