@@ -455,9 +455,9 @@ lifeChanged tally =
 -- Skullhunter) or not (Trynn, Champion of Freedom). Free for threshold:
 -- printed (Anurid Barkripper) or not (Illuminate History). Free for spell
 -- mastery: printed (Calculated Dismissal). Free for infusion: printed
--- (Foolish Fate).
+-- (Foolish Fate). Free for survival: printed (Cautious Survivor).
 abilityWord :: Text.Text -> [Text.Text]
-abilityWord words' = [Text.empty] <> [Text.pack "Hellbent \8212 " | words' == Text.pack "you have no cards in hand"] <> [Text.pack "Raid \8212 " | words' == Text.pack "you attacked this turn"] <> [Text.pack "Threshold \8212 " | words' == Text.pack "there are seven or more cards in your graveyard"] <> [Text.pack "Spell mastery \8212 " | words' == Text.pack "there are two or more instant and/or sorcery cards in your graveyard"] <> [Text.pack "Infusion \8212 " | words' == Text.pack "you gained life this turn"]
+abilityWord words' = [Text.empty] <> [Text.pack "Hellbent \8212 " | words' == Text.pack "you have no cards in hand"] <> [Text.pack "Raid \8212 " | words' == Text.pack "you attacked this turn"] <> [Text.pack "Threshold \8212 " | words' == Text.pack "there are seven or more cards in your graveyard"] <> [Text.pack "Spell mastery \8212 " | words' == Text.pack "there are two or more instant and/or sorcery cards in your graveyard"] <> [Text.pack "Infusion \8212 " | words' == Text.pack "you gained life this turn"] <> [Text.pack "Survival \8212 " | Text.isSuffixOf (Text.pack " is tapped") words']
 
 -- | The ability word (CR 207.2c) Oracle text may print before an ability
 -- this event opens. Free for alliance: printed (Raphael, Tough Turtle) or not
