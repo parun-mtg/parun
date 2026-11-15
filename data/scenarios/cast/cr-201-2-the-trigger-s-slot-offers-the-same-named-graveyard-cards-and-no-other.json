@@ -1,0 +1,49 @@
+{
+  "description": "CR 201.2 the trigger's slot offers the same-named graveyard cards and no other",
+  "note": "Harness the Storm's slot compares names against the spell cast (CR 201.2). The Lightning Bolt in the same graveyard is the decoy: also alice's, also red, also one mana, so only the name keeps it out of the offer. Two Firebolts rather than one because a one-candidate slot is bound unasked, and a one-member set cannot tell matched by name from matched everything. CR 601.3: the offer is the permission, and the cast it makes is from the graveyard, which the trigger does not watch, so exactly one cast is offered; a second offer would be an unscheduled prompt and fail the run.",
+  "board": {
+    "seats": [
+      {
+        "name": "alice",
+        "battlefield": [
+          { "card": "Harness the Storm", "label": "harness" },
+          { "card": "Mountain", "label": "mountain-1" },
+          { "card": "Mountain", "label": "mountain-2" },
+          { "card": "Mountain", "label": "mountain-3" },
+          { "card": "Mountain", "label": "mountain-4" },
+          { "card": "Mountain", "label": "mountain-5" },
+          { "card": "Mountain", "label": "mountain-6" }
+        ],
+        "hand": [{ "card": "Firebolt", "label": "firebolt" }],
+        "graveyard": [
+          { "card": "Firebolt", "label": "buried-1" },
+          { "card": "Firebolt", "label": "buried-2" },
+          { "card": "Lightning Bolt", "label": "decoy" }
+        ]
+      },
+      { "name": "bob" }
+    ],
+    "active": "alice",
+    "step": "PrecombatMain"
+  },
+  "timeline": [
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": { "Cast": { "object": "$firebolt" } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": { "Answer": { "prompt": "ChooseTargets", "with": [["target", [["Player", "bob"]]]] } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": { "Answer": { "prompt": "ChooseManaSource", "with": "$mountain-1" } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": { "Answer": { "prompt": "ChooseExtraManaSource", "with": null } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "View": { "of": "Prompt", "is": { "kind": "ChooseTargets", "offer": { "source": "trigger of $harness", "slots": [["twin", [1, [["Object", "$buried-1"], ["Object", "$buried-2"]]]]] } } } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": { "ChooseTargets": { "twin": ["$buried-1"] } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass" },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "View": { "of": "Prompt", "is": { "kind": "OfferedCast", "offer": { "source": "$buried-1", "name": "Firebolt", "options": ["Exercises", "Declines"] } } } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": { "Answer": { "prompt": "OfferedCast", "with": "Exercises" } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": { "Answer": { "prompt": "ChooseCost", "with": 1 } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": { "ChooseTargets": { "target": ["$bob"] } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": { "Answer": { "prompt": "ChooseManaSource", "with": "$mountain-2" } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": { "Answer": { "prompt": "ChooseExtraManaSource", "with": null } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "View": { "of": "Stack", "is": ["Firebolt#3", "Firebolt#2"] } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass" },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass" },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "Life": { "player": "bob", "life": 16 } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "Count": { "player": "alice", "zone": "Graveyard", "card": "Firebolt", "count": 3 } } }
+  ]
+}

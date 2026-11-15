@@ -1,0 +1,37 @@
+{
+  "description": "CR 702.119c an Ashnod's Altar that eats the chosen creature reverses the cast",
+  "note": "CR 702.119c fixes WHICH creature is sacrificed at CR 601.2b, and CR 601.2h sacrifices THAT one; the two part company when CR 601.2g's mana window lets Ashnod's Altar eat the chosen creature first. One board, run twice: four Islands, the Altar, a Hill Giant and Russet Wolves (both mana value 4), the Behemoth in hand. The ChooseCost prompt shows the two emerge candidates, the first naming the Giant. Here alice names the Giant and the Altar eats it, so nothing pays the sacrifice and CR 734.1 reverses the whole cast, the Altar's activation included: the Behemoth is back in hand and both creatures are back. The -control file names the Wolves on the same board, the Altar eating the same Giant, and the cast is paid. The mana never separates them: {7}{U} less four is {3}{U}, which the Altar and two Islands pay in both runs.",
+  "board": {
+    "seats": [
+      {
+        "name": "alice",
+        "battlefield": [
+          { "card": "Island", "label": "island-1" },
+          { "card": "Island", "label": "island-2" },
+          { "card": "Island", "label": "island-3" },
+          { "card": "Island", "label": "island-4" },
+          { "card": "Ashnod's Altar", "label": "altar" },
+          { "card": "Hill Giant", "label": "giant" },
+          { "card": "Russet Wolves", "label": "wolves" }
+        ],
+        "hand": [{ "card": "Drownyard Behemoth", "label": "behemoth" }]
+      },
+      { "name": "bob" }
+    ],
+    "active": "alice",
+    "step": "PrecombatMain"
+  },
+  "timeline": [
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "View": { "of": "Prompt", "is": { "kind": "ChooseCost", "offer": { "source": "Drownyard Behemoth", "costs": [{ "mana": [{ "type": "Generic", "value": 7 }, { "type": "OfType", "value": { "type": "Colored", "value": "Blue" } }], "components": [{ "type": "Sacrifice", "value": { "count": { "type": "Fixed", "value": 1 }, "whichPermanents": { "type": "IsObject", "value": 5 } } }] }, { "mana": [{ "type": "Generic", "value": 7 }, { "type": "OfType", "value": { "type": "Colored", "value": "Blue" } }], "components": [{ "type": "Sacrifice", "value": { "count": { "type": "Fixed", "value": 1 }, "whichPermanents": { "type": "IsObject", "value": 6 } } }] }], "keywords": [{ "type": "Emerge", "value": { "cost": { "mana": [{ "type": "Generic", "value": 7 }, { "type": "OfType", "value": { "type": "Colored", "value": "Blue" } }] }, "quality": null } }, { "type": "Emerge", "value": { "cost": { "mana": [{ "type": "Generic", "value": 7 }, { "type": "OfType", "value": { "type": "Colored", "value": "Blue" } }] }, "quality": null } }], "earlier": [] } } } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": { "Answer": { "prompt": "ChooseCost", "with": 0 } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": { "Answer": { "prompt": "ChooseSacrifices", "with": ["$giant"] } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "refuse": { "Cast": { "object": "$behemoth", "mana": ["$altar", "$island-1", "$island-2", null] } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": { "Answer": { "prompt": "ReverseManaAbilities", "with": "Exercises" } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": { "Answer": { "prompt": "ReverseManaAbilities", "with": "Exercises" } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": { "Answer": { "prompt": "ReverseManaAbilities", "with": "Exercises" } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "Count": { "player": "alice", "zone": "Hand", "card": "Drownyard Behemoth", "count": 1 } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "Count": { "player": "alice", "zone": "Battlefield", "card": "Drownyard Behemoth", "count": 0 } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "Count": { "player": "alice", "zone": "Battlefield", "card": "Hill Giant", "count": 1 } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "Count": { "player": "alice", "zone": "Battlefield", "card": "Russet Wolves", "count": 1 } } }
+  ]
+}
