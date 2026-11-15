@@ -24,6 +24,7 @@ import qualified Parun.Types.PlayerId as PlayerId
 import qualified Parun.Types.PlayerRelation as PlayerRelation
 import qualified Parun.Types.PreventionRider as PreventionRider
 import qualified Parun.Types.Quantity as Quantity
+import qualified Parun.Types.Recipient as Recipient
 import qualified Parun.Types.ReplacementEffect as ReplacementEffect
 import qualified Parun.Types.ReplacementOrigin as ReplacementOrigin
 import qualified Parun.Types.SlotName as SlotName
@@ -93,7 +94,8 @@ spec s = Spec.describe s "Parun.Codec.ActiveReplacement" $ do
   -- Every optional axis at once, each away from the case above: CR 614.1's
   -- printed "if", CR 615.5's rider, CR 614.3's used-up count, CR 614.15's
   -- self-replacement, CR 603.7c's snapshot, and CR 608.2h's baked choices. The snapshot's value is a SET of
-  -- two ids, so an encoder writing only one is caught.
+  -- two recipients, an object and a player, so an encoder writing only one is
+  -- caught.
   Spec.it s "a row carrying a clause, a rider and a slot snapshot" $
     Common.assertCodec
       s
@@ -119,7 +121,7 @@ spec s = Spec.describe s "Parun.Codec.ActiveReplacement" $ do
           ActiveReplacement.slots =
             Map.singleton
               (SlotName.MkSlotName (Text.pack "that spell"))
-              (Set.fromList [ObjectId.MkObjectId 8, ObjectId.MkObjectId 9]),
+              (Set.fromList [Recipient.ToObject (ObjectId.MkObjectId 8), Recipient.ToPlayer (PlayerId.MkPlayerId 9)]),
           ActiveReplacement.choices = SourceChoices.MkSourceChoices {SourceChoices.names = Map.empty, SourceChoices.colors = Set.singleton Color.White, SourceChoices.subtype = Nothing, SourceChoices.cardType = Nothing, SourceChoices.number = Nothing, SourceChoices.acquisition = Acquisition.Own}
         }
       ( " {\"effect\":"
@@ -128,7 +130,7 @@ spec s = Spec.describe s "Parun.Codec.ActiveReplacement" $ do
           <> ",\"uses\":\"Once\",\"origin\":\"SelfReplacement\""
           <> ",\"condition\":{\"type\":\"Compares\",\"value\":{\"measured\":{\"type\":\"Measure\",\"value\":\"Power\"},\"comparison\":\"AtLeast\",\"threshold\":{\"type\":\"Literal\",\"value\":7}}}"
           <> ",\"rider\":{\"effects\":[{\"type\":\"Proliferate\"}],\"targets\":{},\"controller\":5,\"source\":4}"
-          <> ",\"slots\":{\"that spell\":[8,9]},\"choices\":{\"colors\":[\"White\"]}} "
+          <> ",\"slots\":{\"that spell\":[{\"type\":\"ToPlayer\",\"value\":9},{\"type\":\"ToObject\",\"value\":8}]},\"choices\":{\"colors\":[\"White\"]}} "
       )
   Spec.it s "has a schema" $
     Common.assertHasSchema s ActiveReplacement.codec

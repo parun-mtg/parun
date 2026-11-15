@@ -81,8 +81,7 @@ data ActivePlayerEffect = MkActivePlayerEffect
     -- | The objects a Filter.IsBound in `effect` names: a slot the resolution
     -- bound, captured as the row begins (Vexing Shusher's "target spell"), or
     -- CR 611.2a's "that spell" beside a Duration.UntilUsed grant, bound later
-    -- by Parun.Engine.Cast.bindUser (Savage Summoning). ActiveReplacement.slots'
-    -- shape.
+    -- by Parun.Engine.Cast.bindUser (Savage Summoning).
     slots :: Map.Map SlotName.SlotName (Set.Set ObjectId.ObjectId)
   }
   deriving (Eq, Ord, Show)

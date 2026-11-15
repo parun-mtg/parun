@@ -1,0 +1,50 @@
+{
+  "description": "CR 614.1a Words of War deals damage to the player it targeted in place of its controller's draw",
+  "note": "alice activates Words of War in her upkeep targeting bob, the target chosen as the ability is activated (CR 115.1c, 602.2b). Her draw step's draw never happens (CR 614.6): Hill Giant stays on her library and bob takes 2.",
+  "board": {
+    "active": "alice",
+    "turn": 2,
+    "step": "Upkeep",
+    "seats": [
+      {
+        "name": "alice",
+        "battlefield": [
+          {
+            "card": "Words of War",
+            "label": "words"
+          },
+          {
+            "card": "Mountain",
+            "label": "mountain",
+            "ready": true
+          }
+        ],
+        "library": [
+          {
+            "card": "Hill Giant"
+          },
+          {
+            "card": "Mountain"
+          }
+        ]
+      },
+      {
+        "name": "bob",
+        "library": [
+          {
+            "card": "Mountain"
+          }
+        ]
+      }
+    ]
+  },
+  "timeline": [
+    {"turn": 2, "step": "Upkeep", "player": "alice", "do": {"Activate": {"object": "$words", "mana": ["$mountain"], "targets": ["$bob"]}}},
+    {"turn": 2, "step": "Upkeep", "player": "alice", "check": {"Life": {"player": "bob", "life": 20}}},
+    {"turn": 2, "step": "Upkeep", "player": "alice", "do": "Pass"},
+    {"turn": 2, "step": "DrawStep", "player": "alice", "check": {"Count": {"player": "alice", "zone": "Library", "card": "Hill Giant", "count": 1}}},
+    {"turn": 2, "step": "DrawStep", "player": "alice", "check": {"Count": {"player": "alice", "zone": "Hand", "card": "Hill Giant", "count": 0}}},
+    {"turn": 2, "step": "DrawStep", "player": "alice", "check": {"Life": {"player": "bob", "life": 18}}},
+    {"turn": 2, "step": "DrawStep", "player": "alice", "check": {"Life": {"player": "alice", "life": 20}}}
+  ]
+}

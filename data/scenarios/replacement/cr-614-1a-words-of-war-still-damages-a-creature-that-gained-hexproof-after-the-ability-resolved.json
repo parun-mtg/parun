@@ -1,0 +1,73 @@
+{
+  "description": "CR 614.1a Words of War still damages a creature that gained hexproof after the ability resolved",
+  "note": "alice's Words of War targets bob's Grizzly Bears and resolves. bob then gives the Bears hexproof with Ranger's Guile, which would make it an illegal target, but nothing resolving targets it any more: after the ability resolves its target is not checked again (Harm's Way ruling, 2009-10-01). alice's draw is replaced and the 3/3 Bears is dealt 2.",
+  "board": {
+    "active": "alice",
+    "turn": 2,
+    "step": "Upkeep",
+    "seats": [
+      {
+        "name": "alice",
+        "battlefield": [
+          {
+            "card": "Words of War",
+            "label": "words"
+          },
+          {
+            "card": "Mountain",
+            "label": "mountain",
+            "ready": true
+          }
+        ],
+        "library": [
+          {
+            "card": "Hill Giant"
+          },
+          {
+            "card": "Mountain"
+          }
+        ]
+      },
+      {
+        "name": "bob",
+        "battlefield": [
+          {
+            "card": "Grizzly Bears",
+            "label": "bears"
+          },
+          {
+            "card": "Forest",
+            "label": "forest",
+            "ready": true
+          }
+        ],
+        "hand": [
+          {
+            "card": "Ranger's Guile",
+            "label": "guile"
+          }
+        ],
+        "library": [
+          {
+            "card": "Mountain"
+          }
+        ]
+      }
+    ]
+  },
+  "timeline": [
+    {"turn": 2, "step": "Upkeep", "player": "alice", "do": {"Activate": {"object": "$words", "mana": ["$mountain"], "targets": ["$bears"]}}},
+    {"turn": 2, "step": "Upkeep", "player": "alice", "do": "Pass"},
+    {"turn": 2, "step": "Upkeep", "player": "bob", "do": "Pass"},
+    {"turn": 2, "step": "Upkeep", "player": "alice", "check": {"Damage": {"object": "$bears", "damage": 0}}},
+    {"turn": 2, "step": "Upkeep", "player": "alice", "do": "Pass"},
+    {"turn": 2, "step": "Upkeep", "player": "bob", "do": {"Cast": {"object": "$guile", "mana": ["$forest"]}}},
+    {"turn": 2, "step": "Upkeep", "player": "bob", "do": "Pass"},
+    {"turn": 2, "step": "Upkeep", "player": "alice", "do": "Pass"},
+    {"turn": 2, "step": "Upkeep", "player": "alice", "check": {"Keywords": {"object": "$bears", "keyword": {"type": "Hexproof"}, "count": 1}}},
+    {"turn": 2, "step": "Upkeep", "player": "alice", "do": "Pass"},
+    {"turn": 2, "step": "DrawStep", "player": "alice", "check": {"Count": {"player": "alice", "zone": "Library", "card": "Hill Giant", "count": 1}}},
+    {"turn": 2, "step": "DrawStep", "player": "alice", "check": {"Damage": {"object": "$bears", "damage": 2}}},
+    {"turn": 2, "step": "DrawStep", "player": "alice", "check": {"PowerToughness": {"object": "$bears", "power": 3, "toughness": 3}}}
+  ]
+}

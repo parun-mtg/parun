@@ -10,6 +10,7 @@ import qualified Parun.Types.GrantedAbility as GrantedAbility
 import qualified Parun.Types.ObjectId as ObjectId
 import qualified Parun.Types.PlayerId as PlayerId
 import qualified Parun.Types.PreventionRider as PreventionRider
+import qualified Parun.Types.Recipient as Recipient
 import qualified Parun.Types.ReplacementEffect as ReplacementEffect
 import qualified Parun.Types.ReplacementOrigin as ReplacementOrigin
 import qualified Parun.Types.SlotName as SlotName
@@ -106,10 +107,12 @@ data ActiveReplacement = MkActiveReplacement
     -- and its CR 109.5 "you" cannot be re-derived. A permanent's static ability
     -- keeps both live and needs no such field.
     rider :: Maybe PreventionRider.PreventionRider,
-    -- | The objects the INSTALLING resolution's slots named, captured as the row
-    -- is installed -- the same snapshot Parun.Types.DelayedTrigger takes for CR
-    -- 603.7c's "it", and taken for the same reason: the resolution ends, and with
-    -- it the object whose bindings these were. It is what lets a pattern's
+    -- | The objects and players the INSTALLING resolution's slots named,
+    -- captured as the row is installed -- the same snapshot
+    -- Parun.Types.DelayedTrigger takes for CR 603.7c's "it", and taken for the
+    -- same reason: the resolution ends, and with it the object whose bindings
+    -- these were. A player rides here as CR 115.4's "any target" (Words of
+    -- War's), which an object id cannot name. It is what lets a pattern's
     -- Filter.IsBound name one object rather than a class (Dire Fleet Daredevil's
     -- "that spell"), which a printed Filter cannot do.
     --
@@ -134,7 +137,7 @@ data ActiveReplacement = MkActiveReplacement
     -- row's is rewritten again as a spell it names resolves into a permanent
     -- (Parun.Engine.Event.reenter, CR 614.1 / 608.3a): Boreal Outrider's "that
     -- creature enters with".
-    slots :: Map.Map SlotName.SlotName (Set.Set ObjectId.ObjectId),
+    slots :: Map.Map SlotName.SlotName (Set.Set Recipient.Recipient),
     -- | CR 608.2h: the source's CR 607.2d choices, baked as the row is
     -- installed, so a later choice by the same source does not rewrite this
     -- row's. Proved by data/scenarios/avacyn-guardian-angel-keeps-each-creature-shields-own-colour.json.

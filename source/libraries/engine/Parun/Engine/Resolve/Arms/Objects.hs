@@ -1065,9 +1065,13 @@ replace resolving source controller legal (Replace.MkReplace duration uses origi
                       -- same resolution bound is not something this row refers
                       -- to. The CLAUSE's own reads join the row's, since it is
                       -- asked in a Context built from this very map.
+                      --
+                      -- Players too, which a rewrite's "any target" names (CR
+                      -- 115.4): Words of War's target is chosen as the ability is
+                      -- activated (CR 602.2b), so the queued damage reads it here.
                       ActiveReplacement.slots =
                         Map.restrictKeys
-                          (Filter.slotObjects context)
+                          (Map.unionWith (<>) (fmap (Set.map Recipient.ToObject) (Filter.slotObjects context)) (fmap (Set.map Recipient.ToPlayer) (Filter.slotPlayers context)))
                           (Map.keysSet (replacementRowSlots re) <> foldMap (Map.keysSet . conditionSlots) condition),
                       -- CR 608.2h, installDamageRow's bake.
                       ActiveReplacement.choices = SourceContext.choicesOf (Game.readingAcquisition resolving source gs source) source gs

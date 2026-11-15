@@ -872,7 +872,9 @@ runReplacementEffects runSubgame = do
 --
 -- `resolving` and `source` are both the row's own source (CR 113.7),
 -- runPreventionRider's posture. Every slot the row carries is treated as a LEGAL
--- target, CR 608.2b having been applied when the installing ability resolved.
+-- target, CR 608.2b having been applied when the installing ability resolved and
+-- never again (Harm's Way's 2009-10-01 ruling); Words of War's scenario
+-- "still-damages-a-creature-that-gained-hexproof" proves it.
 -- An effect (CR 609.1) even when drained inside CR 118.12's cost, so the
 -- paying flag is cleared (Event.resolvingDiscardCause).
 runDamageRewriteEffect :: Game Result -> PendingReplacementEffect.PendingReplacementEffect -> Game ()

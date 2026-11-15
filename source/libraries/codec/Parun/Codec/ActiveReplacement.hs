@@ -10,6 +10,7 @@ import qualified Parun.Codec.GrantedAbility as GrantedAbility
 import qualified Parun.Codec.ObjectId as ObjectId
 import qualified Parun.Codec.PlayerId as PlayerId
 import qualified Parun.Codec.PreventionRider as PreventionRider
+import qualified Parun.Codec.Recipient as Recipient
 import qualified Parun.Codec.ReplacementEffect as ReplacementEffect
 import qualified Parun.Codec.ReplacementOrigin as ReplacementOrigin
 import qualified Parun.Codec.SourceChoices as SourceChoices
@@ -27,8 +28,8 @@ import qualified Parun.Types.SlotName as SlotName
 --
 -- `slots` is keyed by a slot name, which is a Text newtype, so it takes
 -- 'Common.textMap' -- the wrap Parun.Codec.Binding and Parun.Codec.PreventionRider
--- pass. Its VALUE is a set of ids rather than one, because CR 603.7c's snapshot
--- can name several.
+-- pass. Its VALUE is a set of recipients rather than one, because CR 603.7c's
+-- snapshot can name several, and a recipient because a slot can name a player.
 codec :: Codec.Codec ActiveReplacement.ActiveReplacement
 codec = Fields.object $ do
   effect <- Fields.required "effect" (ReplacementEffect.codec Card.codec (GrantedAbility.codec Card.codec) (Effect.codec Card.codec (GrantedAbility.codec Card.codec))) ActiveReplacement.effect
@@ -43,7 +44,7 @@ codec = Fields.object $ do
   slots <-
     Fields.required
       "slots"
-      (Common.textMap SlotName.unwrap (Right . SlotName.MkSlotName) (Common.set ObjectId.codec))
+      (Common.textMap SlotName.unwrap (Right . SlotName.MkSlotName) (Common.set Recipient.codec))
       ActiveReplacement.slots
   choices <- Fields.required "choices" SourceChoices.codec ActiveReplacement.choices
   pure

@@ -297,7 +297,7 @@ collect sources floating =
             -- are CR 400.7d's: the cost record of the spell its source was
             -- (Binding.paidCostRecord), Scarlet Spider, Ben Reilly's "the
             -- returned creature". Empty for every other source.
-            ReplacementCandidate.slots = maybe Map.empty (costRecordObjects . Object.bindings) (Game.lookupObject src sources),
+            ReplacementCandidate.slots = maybe Map.empty (fmap (Set.map Recipient.ToObject) . costRecordObjects . Object.bindings) (Game.lookupObject src sources),
             -- A static ability's row reads its source's choices live (CR
             -- 611.3a).
             ReplacementCandidate.choices = Nothing
@@ -486,7 +486,7 @@ collect sources floating =
           Just condition ->
             Condition.holds
               (Projection.fullView sources)
-              (Projection.framedBySlots sources (fmap (Set.map Recipient.ToObject) (ActiveReplacement.slots active)) (Projection.framedWith (ActiveReplacement.choices active) (ActiveReplacement.source active) sources (Projection.sourceContext sources (Just (ActiveReplacement.controller active)) (ActiveReplacement.source active))))
+              (Projection.framedBySlots sources (ActiveReplacement.slots active) (Projection.framedWith (ActiveReplacement.choices active) (ActiveReplacement.source active) sources (Projection.sourceContext sources (Just (ActiveReplacement.controller active)) (ActiveReplacement.source active))))
               (Projection.boardAsEntering sources)
               (ActiveReplacement.source active)
               condition
@@ -2047,7 +2047,7 @@ candidateContext gs candidate =
       choices = Maybe.fromMaybe (SourceContext.choicesOf (Game.acquisitionOf source gs) source gs) (ReplacementCandidate.choices candidate)
    in Projection.framedBySlots
         gs
-        (fmap (Set.map Recipient.ToObject) (ReplacementCandidate.slots candidate))
+        (ReplacementCandidate.slots candidate)
         (Projection.framedWith choices source gs (Projection.sourceContext gs (ReplacementCandidate.controller candidate) source))
           { Filter.carrierChosenPlayer = Game.currentChoice Chosen.Players source gs >>= Map.lookup PlayerChoice.AsEntersOrTransforms
           }
