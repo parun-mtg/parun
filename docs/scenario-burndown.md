@@ -42,7 +42,7 @@ spec-local helper, the `other-*` tail and tags only one test carries are left
 out: grep for them.
 
 - `check:events`: event history: not state, so a test reading it stays in Haskell unless it can be re-expressed
-- `check:prompt-payload`: what a prompt offers, beyond its candidates
+- `check:prompt-payload`: what a prompt offers, beyond its candidates; the `Prompt` view reads it where the line protocol's offer carries it
 - `board:outside-the-game`: cards outside the game
 - `board:exile-linked`: an exiled card linked to what exiled it (CR 607.2a, hideaway, "until it leaves")
 - `board:combat`: combat already under way
@@ -237,11 +237,6 @@ out: grep for them.
 - CR 400.7 a casting game conserves its cards | `move:policy-answerer`
 - casting actually happens in a game | `move:policy-answerer`
 - resolving an empty stack is a no-op | `check:other-Stack.resolveTop`
-
-### `ClashSpec`
-
-- CR 101.4b the later clashing player knows the earlier one's decision | `check:prompt-payload`
-- CR 701.30d the controller's higher mana value wins the clash | `check:events` `check:prompt-payload`
 
 ### `ClassSpec`
 
@@ -528,13 +523,6 @@ out: grep for them.
 ### `DiceSpec`
 
 - CR 108.3 a creature reanimated under another player's control still makes its OWNER lose the game | `board:delayed-trigger` `board:entered-with` `board:graveyard` `board:object-bindings`
-- CR 614.5 a second Guide adds a second die and a second ignore | `check:prompt-payload`
-- CR 706.1 a modified roll is still one roll of the printed die | `check:prompt-payload`
-- CR 706.1 the Guide adds a die to the instruction | `check:prompt-payload`
-- CR 706.1 the count is how many dice the instruction offers | `check:prompt-payload`
-- CR 706.1 the engine offers the die and never rolls it | `check:prompt-payload`
-- CR 706.2 a rerolled die that repeats the number is offered again | `check:prompt-payload`
-- CR 706.2 an increase from another source is part of the result | `check:prompt-payload`
 - CR 706.2a the modifier is taken only once each turn | `board:battlefield` `board:objects-ids`
 - CR 706.2b Goblin Bookie rerolls another player's die | `check:events`
 - CR 706.2b a reroll is a roll by the player who throws it | `check:events`
@@ -857,8 +845,6 @@ out: grep for them.
 
 ### `ModalSpec`
 
-- CR 601.2b all four modes fillable: the prompt is issued and the chosen two resolve | `check:prompt-payload`
-- CR 601.2b the mode prompt offers all four and asks for exactly two | `check:prompt-payload`
 - CR 608.2b the damage mode fizzles when its only target leaves before resolution | `check:events`
 - casting the damage mode binds the 'damaged' slot, never 'wall' | `check:bindings`
 - no legal mode removes the trigger from the stack (CR 603.3c) | `check:helper-nothing`
@@ -1048,7 +1034,6 @@ out: grep for them.
 ### `ResolveSpec`
 
 - CR 101.4b Jungle Wayfinder's later seats know the earlier seats' answers | `check:prompt-payload`
-- CR 101.4b a later payer is told what the payers before it answered | `check:prompt-payload`
 - CR 101.4b a later seat knows what the seats before it answered for that land | `check:prompt-payload`
 - CR 110.5b whole card: Nature's Lore puts the Forest it finds onto the battlefield UNTAPPED | `check:events`
 - CR 118.12a Killing Wave asks each creature's controller, and a paid creature alone survives | `check:prompt-order`

@@ -71,6 +71,24 @@
       "step": "PrecombatMain",
       "player": "alice",
       "do": {
+        "Cast": {
+          "object": "$valiant-endeavor",
+          "mana": [
+            "$plains",
+            "$plains-2",
+            "$plains-3",
+            "$plains-4",
+            "$plains-5",
+            "$plains-6"
+          ]
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "do": {
         "Answer": {
           "prompt": "RollDie",
           "with": 2
@@ -85,6 +103,57 @@
         "Answer": {
           "prompt": "RollDie",
           "with": 5
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "check": {
+        "View": {
+          "of": "Prompt",
+          "is": {
+            "kind": "AdjustDieRoll",
+            "offer": {
+              "results": [
+                2,
+                5
+              ],
+              "amount": 1,
+              "cost": {
+                "mana": [],
+                "components": [
+                  {
+                    "type": "PayLife",
+                    "value": {
+                      "type": "Fixed",
+                      "value": 1
+                    }
+                  }
+                ]
+              },
+              "options": [
+                [
+                  0,
+                  "Increase"
+                ],
+                [
+                  0,
+                  "Decrease"
+                ],
+                [
+                  1,
+                  "Increase"
+                ],
+                [
+                  1,
+                  "Decrease"
+                ],
+                null
+              ]
+            }
+          }
         }
       }
     },
@@ -110,24 +179,6 @@
         "Answer": {
           "prompt": "ChooseDieResult",
           "with": 0
-        }
-      }
-    },
-    {
-      "turn": 1,
-      "step": "PrecombatMain",
-      "player": "alice",
-      "do": {
-        "Cast": {
-          "object": "$valiant-endeavor",
-          "mana": [
-            "$plains",
-            "$plains-2",
-            "$plains-3",
-            "$plains-4",
-            "$plains-5",
-            "$plains-6"
-          ]
         }
       }
     }

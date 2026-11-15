@@ -8,6 +8,8 @@ data View
     Step
   | -- | CR 117.1: the actions a player is offered at priority.
     Offered
+  | -- | The next prompt other than priority a player is asked, by kind, and what it offers.
+    Prompt
   | -- | CR 301.5 / 303.4: what an object is attached to.
     AttachedTo
   | -- | CR 108.4: an object's controller.

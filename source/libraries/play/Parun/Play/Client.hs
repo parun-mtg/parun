@@ -44,6 +44,7 @@ import qualified Parun.Oracle.Cost as Oracle.Cost
 import qualified Parun.Oracle.Keyword as Oracle.Keyword
 import qualified Parun.Play.Protocol as Protocol
 import qualified Parun.Play.Render as Render
+import qualified Parun.Scenario.PromptOffer as PromptOffer
 import qualified Parun.Types.AbilityFacts as AbilityFacts
 import qualified Parun.Types.AbilityKind as AbilityKind
 import qualified Parun.Types.AbilityWasActivated as AbilityWasActivated
@@ -568,7 +569,7 @@ choice view question = Maybe.fromMaybe generic $ case Text.unpack (Question.kind
   where
     offer = Question.offer question
     -- CR 608.2h: an option that has left the game, by the last known name the
-    -- offer gives it (Parun.Play.Protocol.departed).
+    -- offer gives it (Parun.Scenario.PromptOffer.departed).
     gone option = do
       key <- textOf option
       known <- Protocol.field "departed" offer >>= Protocol.field (Text.unpack key) >>= textOf
@@ -623,8 +624,8 @@ choice view question = Maybe.fromMaybe generic $ case Text.unpack (Question.kind
             let n = Natural.length picked
             if n >= least && all (n <=) most then Right (finish picked) else Left (Text.pack ("Choose " <> bound <> "."))
         )
-    -- One amount per item under "amounts" (Parun.Play.Protocol.amounts), in
-    -- the order listed, within the offer's bounds (Parun.Play.Protocol.amountsFit).
+    -- One amount per item under "amounts" (Parun.Scenario.PromptOffer.amounts), in
+    -- the order listed, within the offer's bounds (Parun.Scenario.PromptOffer.amountsFit).
     -- Enter is none of each. Sent back in the offer's shape, a
     -- map leaving out each key that takes none.
     amounted caps =
@@ -929,7 +930,7 @@ orderNote kind offer = case Text.unpack kind of
   "OrderManaActivations" -> Text.pack "the first is activated first"
   "OrderCombatTolls" -> Text.pack "the first is paid first"
   -- CR 713.8a.
-  "OrderComponentCards" -> Text.pack "the first goes into " <> maybe (Text.pack "the zone") Render.zone (Protocol.field "zone" offer >>= decoded Codec.Zone.codec) <> Text.pack " first"
+  "OrderComponentCards" -> Text.pack "the first goes into " <> maybe (Text.pack "the zone") PromptOffer.zoneName (Protocol.field "zone" offer >>= decoded Codec.Zone.codec) <> Text.pack " first"
   _ -> Text.pack "the first goes first"
 
 -- | A cost component as Oracle text prints it (Oracle.Cost.component), or the
@@ -953,7 +954,7 @@ sourcedName noun view entry =
    in maybe (source <> noun) (\text -> source <> Text.pack ": " <> text) (Protocol.field "text" entry >>= textOf) <> place
 
 -- | An entry of an offer naming what each option picks
--- (Parun.Play.Protocol.indexing): a cast as actionName names it, an entering
+-- (Parun.Scenario.PromptOffer.indexing): a cast as actionName names it, an entering
 -- shape (Parun.Types.EntryOption) by its power and toughness, keywords and
 -- subtypes, an event as the log tells it, an object stating something as
 -- sourcedName names it, an unwitnessed event (null) as unseen, and anything
@@ -1126,7 +1127,7 @@ optionName view reply = case reply of
     | otherwise -> tagName t
   R.Array [R.Text tag, _] | tag `elem` fmap Text.pack ["Player", "Planeswalker", "Battle"] -> recipientName view reply
   R.Array xs -> Text.intercalate (Text.pack ", ") (fmap (optionName view) xs)
-  -- A damage event (Parun.Play.Protocol.damageEvent).
+  -- A damage event (Parun.Play.PromptOffer.damageEvent Protocol.namer).
   R.Object _
     | Just source <- Protocol.field "source" reply,
       Just target <- Protocol.field "target" reply,

@@ -60,7 +60,9 @@ subdirectory named for that spec; `docs/scenario-burndown.md` lists the ones sti
   so a move that must follow the second occurrence sits at a step that occurs
   once after it. An unscheduled priority prompt passes; any other
   unscheduled prompt fails the scenario, as does an entry whose moment never
-  comes. A check runs when its player is next offered priority at its key, so
+  comes. A check runs when its player is next offered priority at its key (a
+  `Prompt` view, when its player, or the active player for a prompt nobody
+  decides, is next asked anything else there), so
   put a `"Pass"` between a check with a spell on the stack and one after it
   resolves. `source` picks among prompts sharing a key, such as one combat
   damage assignment per attacker; an `AssignDamage` that does not divide the
@@ -164,6 +166,10 @@ subdirectory named for that spec; `docs/scenario-burndown.md` lists the ones sti
   `View`, which renders part of the state as JSON and compares it whole:
   `{ "of": "Stack", "is": ["$bolt"] }`. Its views are `Stack` (top first),
   `Step`, `Offered` (a `player`'s actions at priority, as `"Cast $bolt"`),
+  `Prompt` (the next prompt other than priority at the check's key, as
+  `{ "kind": "RollDie", "offer": { "sides": 20 } }`: its offer is the line
+  protocol's (`Parun.Scenario.PromptOffer`), objects named as below; checks
+  behind it wait for that prompt, and it never reads `final`),
   `AttachedTo` and `Controller` (of an `object`), `Result`, `ActivePlayer`,
   `Priority`, `Zone` (a `player`'s `zone`, in order), `Colors`, `ManaPool`
   (a `player`'s), `Daytime` (`null` before either), and `Protector`,

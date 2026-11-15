@@ -12,23 +12,18 @@
 -- read straight into a count; Djinni Windseer ("Flying / When this creature
 -- enters, roll a d20. / 1-9 | Scry 1. / 10-19 | Scry 2. / 20 | Scry 3.") is CR
 -- 706.3's results table, where the result selects an effect instead; Diviner's
--- Portent ("Roll a d20 and add the number of cards in your hand. / 1-14 | Draw X
--- cards. / 15+ | Scry X, then draw X cards.") is CR 706.2's modifier, printed in
--- the instruction that ordered the roll. Between them that is the whole of CR
--- 706 this file can reach with ONE die; Valiant Endeavor ("Roll two d6 and
+-- Portent, CR 706.2's modifier printed in the instruction, is proved in
+-- data/scenarios/dice. Valiant Endeavor ("Roll two d6 and
 -- choose one result. Destroy each creature with power greater than or equal to
 -- that result. Then create a number of 2/2 white Knight creature tokens with
 -- vigilance equal to the other result") is the fourth fixture and CR 706.1's
 -- count, CR 706.4's choice among the results and the "other result" beside it.
 -- Neverwinter Hydra, after it, reads CR 706.4's total of the results instead.
--- CR 614.1a's replacement over the roll is the fifth fixture, Pixie Guide, at the
--- bottom of this file -- the ignore of CR 706.6 rides it; Berserker's Frenzy
--- prints one of its own, and data/scenarios/dice proves it.
--- CR 706.2b's first step is the SIXTH fixture, Clam-I-Am, at the bottom of this
--- file -- a reroll offered to the roller by a permanent the instruction knows
--- nothing about. CR 706.2a's cost on such a modifier is the SEVENTH, Wall of
--- Fortune, below it -- the only printing whose reroll charges anything and the
--- only one reaching a roll its own controller did not make.
+-- CR 614.1a's replacement over the roll (Pixie Guide, with CR 706.6's ignore)
+-- and CR 706.2b's first step (Clam-I-Am's reroll) are proved in
+-- data/scenarios/dice. CR 706.2a's cost on such a modifier is the fifth
+-- fixture, Wall of Fortune -- the only printing whose reroll charges anything
+-- and the only one reaching a roll its own controller did not make.
 -- CR 706.2b's second step is the EIGHTH, Night Shift of the Living Dead, at the
 -- very bottom -- a modifier from another source that increases or decreases the
 -- result, with a life cost and a once-each-turn budget.
@@ -74,12 +69,6 @@
 -- band's upper endpoint makes a roll of 20 scry 2 AND scry 3, which is five cards
 -- bottomed and card 6 on top.
 --
--- THE ASSERTED QUANTITY on the PORTENT's boards is the same top card, for the
--- same reason, over the same six-card library -- but reached by a CAST rather
--- than an enters trigger, since the Portent is an instant. Hand size is NOT the
--- reading: X is announced as 1 and both striations draw X, so the hand is one
--- larger under either implementation of the modifier. Only the scry the 15+ band
--- performs moves the library, so the top card is what separates the bands.
 module Parun.DiceSpec where
 
 import qualified Control.Monad as Monad
@@ -130,18 +119,12 @@ import qualified Parun.Types.Prompt as Prompt
 import qualified Parun.Types.Result as Result
 import qualified Parun.Types.RollAdjustment as RollAdjustment
 import qualified Parun.Types.TapState as TapState
-import qualified Parun.Types.ThrowResult as ThrowResult
 import qualified Parun.Types.TurnRegisters as TurnRegisters
 import qualified Parun.Types.Zone as Zone
 
 spec :: (Monad m, Monad n) => Spec.Spec m n -> Registry.Registry m -> n ()
 spec s registry = Spec.describe s "Parun.Engine.Resolve" $ do
-  rollDieSpec s registry
   resultsTableSpec s registry
-  modifierSpec s registry
-  severalDiceSpec s registry
-  dieRollRSpec s registry
-  rerollSpec s registry
   costedRerollSpec s registry
   activatedRerollSpec s registry
   nightShiftSpec s registry
@@ -151,47 +134,6 @@ spec s registry = Spec.describe s "Parun.Engine.Resolve" $ do
 knight :: CardName.CardName
 knight = CardName.MkCardName (Text.pack "Knight Token")
 
--- Pins BOTH questions this combat asks: alice attacks bob (CR 508.1), and the
--- d20 comes up `n`. The roll is answered by CONSTANT rather than by anything
--- derived from the prompt, so the engine cannot repair the answer after a
--- mutation, and never by 1, which is what Replay.defaultAnswer would supply
--- unasked.
-rollAnswer :: Natural.Natural -> Prompt.Prompt r -> r
-rollAnswer n p = case p of
-  Prompt.RollDie _ -> n
-  _ -> S.attackTo S.bob p
-
--- The same combat under an answerer that RECORDS what the roll prompt offered,
--- since the offer is not readable off the resulting board. S.runCombat's loop,
--- one monad up, because the trigger resolves in the combat damage step rather
--- than the step the fixture starts in.
-offeredSides :: GameState.GameState -> [Natural.Natural]
-offeredSides board =
-  let logging :: Prompt.Prompt r -> State.State [Natural.Natural] r
-      logging p = case p of
-        Prompt.RollDie sides -> do
-          State.modify' (sides :)
-          pure (rollAnswer 13 p)
-        _ -> pure (rollAnswer 13 p)
-      go n gs =
-        if n <= (0 :: Int) || Maybe.isJust (GameState.result gs) || not (S.inCombatPhase (TurnRegisters.phase (GameState.turn gs)))
-          then pure gs
-          else do
-            (_, next) <- Engine.runGame logging gs Engine.runStep
-            go (n - 1) next
-   in reverse (State.execState (go (24 :: Int) board) [])
-
-rollDieSpec :: (Monad m) => Spec.Spec m n -> Registry.Registry m -> n ()
-rollDieSpec s registry = Spec.describe s "RollDie" $ do
-  Spec.it s "CR 706.1 the engine offers the die and never rolls it" $ do
-    dragon <- S.printingOf s registry "Ancient Copper Dragon"
-    let (board, _, _) = S.combatBoardOf [dragon] []
-    -- Supporting, and in its own case so it cannot stand in for the counts
-    -- above: what the engine ASKED is the visible half of "offer and filter
-    -- back", and it asked once, for a twenty-sided die.
-    Spec.assertEqWith s "asked once, offering twenty sides" (offeredSides board) [20]
-
--- Six cards on alice's library from six DIFFERENT printings, top-first, with
 -- Djinni Windseer entering under her and its CR 603.6a trigger pending. The
 -- printings differ so that no two library positions can be confused for each
 -- other; the returned ids are the library reading top-first.
@@ -254,7 +196,7 @@ resultsTableSpec s registry = Spec.describe s "ResultsTable" $ do
         -- the IncreaseOrDecrease group's "a result shifted past the die's top
         -- face" case proves the exact form under Night Shift of the Living
         -- Dead's 21, and the single-endpoint form is proved on Diviner's Portent
-        -- below. What the assertion DOES prove is that 20 selects this striation
+        -- in data/scenarios/dice. What the assertion DOES prove is that 20 selects this striation
         -- and not the 10-19 band above it.
         Spec.assertEqWith s "CR 706.3a: a roll of 20 is the 20 striation, so scry 3" (Maybe.listToMaybe (tableLibrary (runTable 20 board))) (Just fourth)
       _ -> Spec.assertFailure s "expected six library cards"
@@ -287,61 +229,6 @@ resultsTableSpec s registry = Spec.describe s "ResultsTable" $ do
     Spec.assertEqWith s "six cards, top-first" (tableLibrary board) ids
     Spec.assertEqWith s "CR 701.22a: the library still holds all six" (length (tableLibrary (runTable 9 board))) 6
 
--- alice holds Diviner's Portent plus `others` cards of one filler printing, has
--- four untapped Islands, and a library of six cards from six DIFFERENT printings
--- so no two library positions can be confused. The returned ids are the library
--- reading top-first; the second component is the Portent in hand.
---
--- `others` IS the modifier: the Portent leaves the hand for the stack when it is
--- cast (CR 601.2a), so the hand at resolution holds exactly those. handOne
--- REPLACES the hand, so it runs before the filler is appended.
---
--- Four Islands, because X is announced as 1 on every leg and {X}{U}{U}{U} at
--- X=1 is four mana.
-portentBoard :: (Monad m) => Spec.Spec m n -> Registry.Registry m -> Int -> m ([ObjectId.ObjectId], ObjectId.ObjectId, GameState.GameState)
-portentBoard s registry others = do
-  portent <- S.printingOf s registry "Diviner's Portent"
-  island <- S.printingOf s registry "Island"
-  filler <- S.printingOf s registry "Lightning Bolt"
-  deck <- traverse (S.printingOf s registry) ["Goblin Piker", "Bird Maiden", "Mountain", "Forest", "Swamp", "Plains"]
-  let (held, spell) = S.handOne portent (S.landsInPlay island 4)
-      deal (acc, gs) printing = let (oid, gs2) = S.addLibraryCard printing S.alice gs in (oid : acc, gs2)
-      (ids, stocked) = List.foldl' deal ([], held) (reverse deck)
-      pad gs _ = snd (S.addHandCard filler S.alice gs)
-  pure (ids, spell, List.foldl' pad stocked [1 .. others])
-
--- Pins every question this cast asks: X is 1, the d20 comes up `n`, and every
--- scry bottoms its WHOLE look, so the number of cards leaving the top is the
--- scry's count and nothing else. ChooseX gets its own arm rather than falling
--- through to S.identityAnswer, which reaches Replay.defaultAnswer and would
--- announce a value the test never chose.
-portentAnswer :: Natural.Natural -> Prompt.Prompt r -> r
-portentAnswer n p = case p of
-  Prompt.RollDie _ -> n
-  Prompt.ChooseX {} -> 1
-  Prompt.ChooseScry _ _ looked -> (looked, [])
-  _ -> S.identityAnswer p
-
--- The same cast under an answerer that RECORDS what each roll prompt offered,
--- since the offer is not readable off the resulting board.
-portentOffers :: ObjectId.ObjectId -> GameState.GameState -> [Natural.Natural]
-portentOffers spell board =
-  let logging :: Prompt.Prompt r -> State.State [Natural.Natural] r
-      logging p = case p of
-        Prompt.RollDie sides -> do
-          State.modify' (sides :)
-          pure (portentAnswer 14 p)
-        _ -> pure (portentAnswer 14 p)
-   in reverse (State.execState (Engine.runGame logging board (S.cast S.alice spell >> Stack.resolveTop)) [])
-
-modifierSpec :: (Monad m) => Spec.Spec m n -> Registry.Registry m -> n ()
-modifierSpec s registry = Spec.describe s "RollDieModifier" $ do
-  -- Supporting, and in its own case: the modifier is the engine's arithmetic, so
-  -- it did not become a second roll or a bigger die.
-  Spec.it s "CR 706.1 a modified roll is still one roll of the printed die" $ do
-    (_, spell, board) <- portentBoard s registry 1
-    Spec.assertEqWith s "asked once, offering twenty sides" (portentOffers spell board) [20]
-
 -- alice holds Valiant Endeavor with six untapped Plains, and BOB controls the
 -- two creatures the destruction judges: Bird Maiden (power 1) and Barkhide
 -- Mauler (power 4). The two powers straddle every result the cases below choose,
@@ -361,210 +248,13 @@ endeavorBoard s registry = do
       (strong, withBoth) = S.addPermanent mauler S.bob withWeak
   pure (spell, weak, strong, withBoth)
 
--- Pins both questions the resolution asks: each die comes up the next number of
--- `rolls`, in the order they are rolled, and the roller chooses the result at
--- `index`.
---
--- STATEFUL, because the two roll prompts are structurally identical: a pure
--- @Prompt r -> r@ cannot tell them apart, so it answers both the same number and
--- the two results coincide whatever the engine did. Six for a roll the script
--- did not plan, which is the die's top face rather than CR 706.1a's floor, so a
--- third die shows up as a number no assertion here expects.
-endeavorAnswer :: Natural.Natural -> Prompt.Prompt r -> State.State [Natural.Natural] r
-endeavorAnswer index p = case p of
-  Prompt.RollDie _ -> do
-    rolls <- State.get
-    case rolls of
-      h : t -> do
-        State.put t
-        pure h
-      [] -> pure 6
-  Prompt.ChooseDieResult {} -> pure index
-  _ -> pure (S.identityAnswer p)
-
--- Cast the Endeavor and resolve it, one run under one answerer.
-runEndeavor :: [Natural.Natural] -> Natural.Natural -> ObjectId.ObjectId -> GameState.GameState -> GameState.GameState
-runEndeavor rolls index spell board =
-  snd (State.evalState (Engine.runGame (endeavorAnswer index) board (S.cast S.alice spell >> Stack.resolveTop)) rolls)
-
--- The same cast under an answerer that RECORDS what each roll prompt offered and
--- what each choice prompt was shown, neither being readable off the board.
-endeavorPrompts :: [Natural.Natural] -> ObjectId.ObjectId -> GameState.GameState -> ([Natural.Natural], [[Natural.Natural]])
-endeavorPrompts rolls spell board =
-  let logging :: Prompt.Prompt r -> State.State ([Natural.Natural], [[Natural.Natural]], [Natural.Natural]) r
-      logging p = case p of
-        Prompt.RollDie sides -> do
-          (seen, asked, scripted) <- State.get
-          case scripted of
-            h : t -> do
-              State.put (sides : seen, asked, t)
-              pure h
-            [] -> do
-              State.put (sides : seen, asked, [])
-              pure 6
-        Prompt.ChooseDieResult _ _ _ candidates -> do
-          State.modify' (\(seen, asked, scripted) -> (seen, NonEmpty.toList candidates : asked, scripted))
-          pure 0
-        _ -> pure (S.identityAnswer p)
-      (offers, choices, _) = State.execState (Engine.runGame logging board (S.cast S.alice spell >> Stack.resolveTop)) ([], [], rolls)
-   in (reverse offers, reverse choices)
-
-severalDiceSpec :: (Monad m) => Spec.Spec m n -> Registry.Registry m -> n ()
-severalDiceSpec s registry = Spec.describe s "RollSeveralDice" $ do
-  -- Supporting, and in its own case so it cannot stand in for a count above:
-  -- what the engine ASKED. Two dice of six sides, and one choice offering both
-  -- results in roll order.
-  Spec.it s "CR 706.1 the count is how many dice the instruction offers" $ do
-    (spell, _, _, board) <- endeavorBoard s registry
-    let (offers, choices) = endeavorPrompts [5, 2] spell board
-    Spec.assertEqWith s "asked twice, offering six sides each" offers [6, 6]
-    Spec.assertEqWith s "and offered both results, in roll order" choices [[5, 2]]
-
--- CR 614.1a over CR 706.1, and CR 706.6 behind it: Pixie Guide's "if you would
--- roll one or more dice, instead roll that many dice plus one and ignore the
--- lowest roll". The Thumb group in Parun.CoinSpec one rule over, and the same
--- shape -- the Guide is the ONE thing that differs between the legs, so every
--- reading that moves is the replacement's doing.
---
--- TWO FIXTURES, because the sentence says "one or more dice" and the two halves
--- of that are separately breakable. Ancient Copper Dragon rolls ONE d20 and reads
--- the result straight into a token count, which is where "plus one, ignore the
--- lowest" reads as "take the higher"; Valiant Endeavor rolls TWO d6 and reads
--- BOTH results, which is where an engine that added the die without ignoring one
--- is visible -- three results leave no "other result" to count, so it mints
--- nothing.
---
--- NOT LEGENDARY, unlike Krark's Thumb, so a board may carry two Guides -- which
--- is what puts CR 614.5's read-forward under a gameplay assertion rather than a
--- prompt tally: the second row applies to the modified event, so four dice are
--- thrown and the TWO lowest go.
---
--- STATE-THREADED answerers throughout: the dice of one instruction are
--- structurally identical Prompt.RollDie questions, and a pure answerer cannot
--- tell them apart -- it would answer every die the same number, which is exactly
--- the board on which ignoring the lowest changes nothing.
-dieRollRSpec :: (Monad m, Monad n) => Spec.Spec m n -> Registry.Registry m -> n ()
-dieRollRSpec s registry = Spec.describe s "DieRollR" $ do
-  Spec.it s "CR 706.1 the Guide adds a die to the instruction" $ do
-    dragon <- S.printingOf s registry "Ancient Copper Dragon"
-    guide <- S.printingOf s registry "Pixie Guide"
-    let (bare, _, _) = S.combatBoardOf [dragon] []
-        guarded = snd (S.addPermanent guide S.alice bare)
-    -- Supporting, and in its own case so it cannot stand in for the counts
-    -- above: what the engine ASKED. Two twenty-sided dice under the Guide, one
-    -- without -- and the SIZE is untouched, which is the half of rule 706.1 the
-    -- replacement says nothing about.
-    Spec.assertEqWith s "CR 706.1a: two d20 under the Guide" (snd (guideCombat [7, 13] guarded)) [20, 20]
-    Spec.assertEqWith s "CR 706.1a: one d20 without it" (snd (guideCombat [7, 13] bare)) [20]
-  Spec.it s "CR 614.5 a second Guide adds a second die and a second ignore" $ do
-    (spell, _, _, board) <- endeavorBoard s registry
-    guide <- S.printingOf s registry "Pixie Guide"
-    let one = snd (S.addPermanent guide S.alice board)
-        two = snd (S.addPermanent guide S.alice one)
-    -- THE GAMEPLAY ASSERTION: each row gets its own CR 614.5 opportunity, the
-    -- second on the event the first produced, so four dice are thrown and the two
-    -- lowest go -- leaving the 4 and the 6, the 4 chosen and the 6 counted. An
-    -- engine that spent both rows on the original event throws three, and one
-    -- that added two dice while ignoring one leaves three results and no "other".
-    Spec.assertEqWith
-      s
-      "CR 614.5: four dice, the 1 and the 2 ignored, so the other result is the 6"
-      (S.countOnBattlefieldByName knight S.alice (runEndeavor [1, 2, 4, 6] 0 spell two))
-      6
-    -- The paired board, one thing different: ONE Guide. Three dice, one ignore,
-    -- so the 2 is chosen and the 4 is counted.
-    Spec.assertEqWith
-      s
-      "CR 706.6: one Guide ignores only the 1"
-      (S.countOnBattlefieldByName knight S.alice (runEndeavor [1, 2, 4, 6] 0 spell one))
-      4
-    -- Supporting: the dice really were thrown, four of them.
-    Spec.assertEqWith s "CR 706.1: four dice under two Guides" (fst (endeavorPrompts [1, 2, 4, 6] spell two)) [6, 6, 6, 6]
-
--- The Dragon's combat under an answerer that hands out the given faces IN ORDER
--- to CR 706.1's rolls and RECORDS what each roll prompt offered. `offeredSides`
--- above one monad up, and for its reason: the roll happens in the combat damage
--- step rather than the step the fixture starts in.
---
--- Twenty for a roll the script did not plan, which is the die's TOP face: a
--- surplus die then shows up as the largest number on the board rather than as CR
--- 706.1a's floor, which is also what Replay.defaultAnswer would have supplied.
-guideCombat :: [Natural.Natural] -> GameState.GameState -> (GameState.GameState, [Natural.Natural])
-guideCombat rolls board =
-  let answering :: Prompt.Prompt r -> State.State ([Natural.Natural], [Natural.Natural]) r
-      answering p = case p of
-        Prompt.RollDie sides -> do
-          (pending, offers) <- State.get
-          case pending of
-            face : rest -> do
-              State.put (rest, sides : offers)
-              pure face
-            [] -> do
-              State.put ([], sides : offers)
-              pure 20
-        _ -> pure (S.attackTo S.bob p)
-      go n gs =
-        if n <= (0 :: Int) || Maybe.isJust (GameState.result gs) || not (S.inCombatPhase (TurnRegisters.phase (GameState.turn gs)))
-          then pure gs
-          else do
-            (_, next) <- Engine.runGame answering gs Engine.runStep
-            go (n - 1) next
-      (settled, (_, seen)) = State.runState (go (24 :: Int) board) (rolls, [])
-   in (settled, reverse seen)
-
--- CR 706.2 / 706.2b's first step: Clam-I-Am's "if you roll a 3 on a six-sided
--- die, you may reroll that die". The Pixie Guide group just above one clause of
--- rule 706 over, and the same shape -- the Clam is the ONE thing that differs
--- between the paired boards, so every reading that moves is the modifier's
--- doing.
---
--- VALIANT ENDEAVOR is the fixture, because the Clam names a SIX-sided die and
--- the Endeavor is the only d6 in data\/cards\/. Its "other result" is what the
--- assertions read: the die the reroll touched is the one the roller does NOT
--- choose, so the Knight count IS the number the second throw produced.
---
--- ONE SCRIPT ACROSS THE PAIR -- 3, then 6, then 2, in that order -- rather than a
--- script per board. Under the Clam the first die's 3 is rerolled into the 6 and
--- the second die is the 2; without it the 3 and the 6 are the two dice and the 2
--- is never reached. So the boards differ in the Clam alone, and an engine that
--- offered no reroll reads the same numbers in a different order.
---
--- THE ANCIENT COPPER DRAGON's d20 is the negative leg, and it has to be a
--- different card: rule 706.1a makes the die's size the whole description of a
--- die, and a d20 that comes up 3 is the board on which the Clam's "six-sided"
--- narrowing is visible.
-rerollSpec :: (Monad m) => Spec.Spec m n -> Registry.Registry m -> n ()
-rerollSpec s registry = Spec.describe s "Reroll" $ do
-  Spec.it s "CR 706.2 a rerolled die that repeats the number is offered again" $ do
-    (spell, _, _, board) <- endeavorBoard s registry
-    clam <- S.printingOf s registry "Clam-I-Am"
-    let clammed = snd (S.addPermanent clam S.alice board)
-    -- The Clam's gate is on the NATURAL result, and a reroll produces one: the
-    -- first die comes up 3, the reroll comes up 3 again, and the third throw is
-    -- the 5 the instruction keeps. An engine that offered the reroll once per die
-    -- stops at the second 3 and mints three Knights.
-    Spec.assertEqWith
-      s
-      "CR 706.2: a second 3 is a third throw, and the 5 is the other result"
-      (S.countOnBattlefieldByName knight S.alice (runReroll [3, 3, 5, 2] [OptionalDecision.Exercises, OptionalDecision.Exercises] 1 spell clammed))
-      5
-    -- Supporting, and in its own assertion: the offer really was raised twice,
-    -- and both times over a 3.
-    Spec.assertEqWith
-      s
-      "CR 706.2b: both offers carried the natural 3"
-      (snd (rerollPrompts [3, 3, 5, 2] [OptionalDecision.Exercises, OptionalDecision.Exercises] spell clammed))
-      [3, 3]
-
 -- Answers all three questions one Endeavor under a CR 706.2 reroll asks: each
 -- die comes up the next number of `rolls`, each reroll offer takes the next
--- answer of `decisions`, and the roller chooses the result at `index`. Shared by
--- the Clam-I-Am group above and the Wall of Fortune group below -- neither the
--- modifier nor its payer is anything this answerer reads.
+-- answer of `decisions`, and the roller chooses the result at `index`. Neither
+-- the modifier nor its payer is anything this answerer reads.
 --
--- STATEFUL for endeavorAnswer's reason, which the reroll sharpens: the first
--- die's two throws are the same Prompt.RollDie question, so a pure answerer
--- cannot tell a die from its own reroll.
+-- STATEFUL, because a die's two throws are the same Prompt.RollDie question,
+-- so a pure answerer cannot tell a die from its own reroll.
 --
 -- Six for a roll the script did not plan and Declines for an offer it did not
 -- plan: a surplus throw shows up as the die's top face rather than as CR
@@ -593,38 +283,13 @@ runReroll :: [Natural.Natural] -> [OptionalDecision.OptionalDecision] -> Natural
 runReroll rolls decisions index spell board =
   snd (State.evalState (Engine.runGame (rerollAnswer index) board (S.cast S.alice spell >> Stack.resolveTop)) (rolls, decisions))
 
--- The same cast under an answerer that RECORDS what each roll prompt offered and
--- what natural result each reroll offer carried, neither being readable off the
--- board.
-rerollPrompts :: [Natural.Natural] -> [OptionalDecision.OptionalDecision] -> ObjectId.ObjectId -> GameState.GameState -> ([Natural.Natural], [Natural.Natural])
-rerollPrompts rolls decisions spell board =
-  let logging :: Prompt.Prompt r -> State.State ([Natural.Natural], [Natural.Natural], ([Natural.Natural], [OptionalDecision.OptionalDecision])) r
-      logging p = case p of
-        Prompt.RollDie sides -> do
-          (seen, asked, scripted) <- State.get
-          let (answer, next) = State.runState (rerollAnswer 0 p) scripted
-          State.put (sides : seen, asked, next)
-          pure answer
-        Prompt.Rethrow _ _ (ThrowResult.DieCameUp natural) _ -> do
-          (seen, asked, scripted) <- State.get
-          let (answer, next) = State.runState (rerollAnswer 0 p) scripted
-          State.put (seen, natural : asked, next)
-          pure answer
-        _ -> do
-          scripted <- fmap (\(_, _, x) -> x) State.get
-          let (answer, next) = State.runState (rerollAnswer 0 p) scripted
-          State.modify' (\(seen, asked, _) -> (seen, asked, next))
-          pure answer
-      (offers, naturals, _) = State.execState (Engine.runGame logging board (S.cast S.alice spell >> Stack.resolveTop)) ([], [], (rolls, decisions))
-   in (reverse offers, reverse naturals)
-
 -- CR 706.2a's OTHER half: "Modifiers may be optional and\/or have associated
 -- costs." Wall of Fortune ("Defender \/ You may tap an untapped Wall you control
 -- to have any player reroll a die that player rolled") is the whole producer --
 -- the only printing whose reroll charges anything, and the only one whose
 -- modifier reaches a roll the modifier's own controller did not make.
 --
--- THE SAME ENDEAVOR FIXTURE and the same 3-6-2 script as the Clam group above,
+-- THE SAME ENDEAVOR FIXTURE and the same 3-6-2 script as Clam-I-Am's scenario,
 -- deliberately: the Wall states no die size and no natural result, so the two
 -- modifiers differ in the COST alone and the Clam's numbers carry over. Six
 -- Knights means the reroll happened, three means it did not.
@@ -705,9 +370,7 @@ pickRun rolls decisions wanted spell board =
    in snd (State.evalState (Engine.runGame answering board (S.cast S.alice spell >> Stack.resolveTop)) (rolls, decisions))
 
 -- The same cast under an answerer that records WHICH player each reroll offer
--- was put to. rerollPrompts' shape, and separate from it because the seat is a
--- different question from the natural result: the Clam group reads the number
--- and this one reads the player.
+-- was put to.
 rerollSeats :: [Natural.Natural] -> [OptionalDecision.OptionalDecision] -> ObjectId.ObjectId -> GameState.GameState -> [PlayerId.PlayerId]
 rerollSeats rolls decisions spell board =
   let logging :: Prompt.Prompt r -> State.State ([PlayerId.PlayerId], ([Natural.Natural], [OptionalDecision.OptionalDecision])) r
@@ -810,26 +473,6 @@ nightShiftSpec s registry = Spec.describe s "IncreaseOrDecrease" $ do
         (after, shown) = nightShiftRun [6, 17] [] [] 1 spell board
     Spec.assertEqWith s "CR 706.6: no ability triggers on the ignored 6" (S.countOnBattlefieldByName zombieEmployee S.alice after) 0
     Spec.assertEqWith s "CR 706.6: no effect applies to it, so only the 17 is shown" shown [[17]]
-  Spec.it s "CR 706.2 an increase from another source is part of the result" $ do
-    (spell, weak, strong, board) <- endeavorBoard s registry
-    shift <- S.printingOf s registry "Night Shift of the Living Dead"
-    let shifted = snd (S.addPermanent shift S.alice board)
-        (after, shown) = nightShiftRun [5, 2] [] [Just (0, RollAdjustment.Increase)] 1 spell shifted
-    -- THE GAMEPLAY ASSERTIONS, first so nothing ahead of them can absorb a
-    -- mutation: the first die's 5 was pushed to 6, so the other result is six
-    -- Knights and "whenever you roll a 6" mints a Zombie Employee. An engine that
-    -- never offered the modifier reads 5 and mints no Zombie.
-    Spec.assertEqWith s "CR 706.2: the shifted 6 is the other result" (S.countOnBattlefieldByName knight S.alice after) 6
-    Spec.assertEqWith s "CR 706.2: the result after the modifier is a 6, so the Zombie arrives" (S.countOnBattlefieldByName zombieEmployee S.alice after) 1
-    Spec.assertEqWith s "CR 706.2a: the modifier cost 1 life" (S.lifeOf S.alice after) (Just 19)
-    Spec.assertBool s (not (S.onBattlefield strong after)) "the chosen 2 still destroys power 4"
-    Spec.assertBool s (S.onBattlefield weak after) "and power 1 survives it"
-    -- Supporting: both results were shown before the choice (the printed
-    -- ruling), and only once.
-    Spec.assertEqWith s "CR 706.2b: one offer, showing both dice" shown [[5, 2]]
-    -- The paired board, one thing different: no Night Shift.
-    let (bare, _) = nightShiftRun [5, 2] [] [Just (0, RollAdjustment.Increase)] 1 spell board
-    Spec.assertEqWith s "CR 706.1: without it the 5 stands" (S.countOnBattlefieldByName knight S.alice bare) 5
   -- CR 701.67a reaches a waterbend cost wherever it is paid, so CR 118.13's
   -- announcement of a modifier's Phyrexian symbol weighs its taps as the gate
   -- did. A test-local Night Shift costing {1}{W/P} and waterbend {1}, which no

@@ -72,6 +72,45 @@
       "step": "PrecombatMain",
       "player": "alice",
       "do": {
+        "Cast": {
+          "object": "$diviner-s-portent",
+          "x": 1,
+          "mana": [
+            "$island",
+            "$island-2",
+            "$island-3",
+            "$island-4"
+          ]
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "do": "Pass"
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "check": {
+        "View": {
+          "of": "Prompt",
+          "is": {
+            "kind": "RollDie",
+            "offer": {
+              "sides": 20
+            }
+          }
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "do": {
         "Answer": {
           "prompt": "RollDie",
           "with": 14
@@ -90,23 +129,6 @@
               "$goblin-piker"
             ],
             []
-          ]
-        }
-      }
-    },
-    {
-      "turn": 1,
-      "step": "PrecombatMain",
-      "player": "alice",
-      "do": {
-        "Cast": {
-          "object": "$diviner-s-portent",
-          "x": 1,
-          "mana": [
-            "$island",
-            "$island-2",
-            "$island-3",
-            "$island-4"
           ]
         }
       }

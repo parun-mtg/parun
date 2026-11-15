@@ -61,7 +61,6 @@ import qualified Parun.Types.Recipient as Recipient
 import qualified Parun.Types.SlotName as SlotName
 import qualified Parun.Types.Source as Source
 import qualified Parun.Types.StackObjectKind as StackObjectKind
-import qualified Parun.Types.TapState as TapState
 import qualified Parun.Types.TargetSlot as TargetSlot
 import qualified Parun.Types.TriggeredAbility as TriggeredAbility
 import qualified Parun.Types.TurnRegisters as TurnRegisters
@@ -511,36 +510,6 @@ chooseTwoSpec s registry = Spec.describe s "ChooseTwo (CR 700.2)" $ do
       (Target.fillableModes StackObjectKind.Spell Nothing (Just S.alice) Map.empty S.noSource Map.empty modal (Setup.emptyGame S.bothPlayers))
       (Set.fromList (fmap ModeIndex.MkModeIndex [2, 3]))
 
-  -- The prompt itself, asserted rather than assumed: the answer below refuses to
-  -- name any mode unless ChooseModes really offers all four and asks for two, and
-  -- an empty answer is not a size-2 subset, so Cast.castProposed's
-  -- reject-not-repair rewinds the whole cast and every assertion here fails.
-  Spec.it s "CR 601.2b the mode prompt offers all four and asks for exactly two" $ do
-    island <- S.printingOf s registry "Island"
-    crypticCommand <- S.printingOf s registry "Cryptic Command"
-    piker <- S.printingOf s registry "Goblin Piker"
-    slaughterDrone <- S.printingOf s registry "Slaughter Drone"
-    let (board, spellId, pikerId) = crypticBoard island crypticCommand piker
-        -- A spell on the stack is what makes mode 0 fillable, so the prompt this
-        -- answer insists on -- all four modes -- is the one really issued.
-        (_, withSpell) = S.spellOnStack slaughterDrone S.bob board
-        (_, gs) = S.addLibraryCard piker S.alice withSpell
-        answer :: Prompt.Prompt r -> r
-        answer p = case p of
-          Prompt.ChooseModes _ _ _ legal selection ->
-            if legal == crypticModes && selection == ModeSelection.ChooseExactly 2
-              then Seq.fromList (fmap ModeIndex.MkModeIndex [2, 3])
-              else Seq.empty
-          _ -> S.identityAnswer p
-        cast = snd (Engine.runGamePure answer gs (S.cast S.alice spellId))
-        after = snd (Engine.runGamePure answer cast Stack.resolveTop)
-    -- Cryptic Command in the graveyard is what says the cast was NOT rewound:
-    -- a rejected proposal leaves it in hand, where the drawn-card count below
-    -- would pass for the wrong reason.
-    Spec.assertEqWith s "Cryptic Command resolved into alice's graveyard" (length (Game.zoneMembers Zone.Graveyard S.alice after)) 1
-    Spec.assertEqWith s "alice drew a card (mode 3)" (length (Game.zoneMembers Zone.Hand S.alice after)) 1
-    Spec.assertEqWith s "bob's Piker is tapped (mode 2)" (fmap Object.tapped (Game.lookupObject pikerId after)) (Just TapState.Tapped)
-
   -- The Gatherer ruling, verbatim: "if you choose the second and fourth modes,
   -- and the permanent is an illegal target when Cryptic Command tries to resolve,
   -- you won't draw a card." CR 608.2b counters the whole SPELL when all its
@@ -569,12 +538,6 @@ chooseTwoSpec s registry = Spec.describe s "ChooseTwo (CR 700.2)" $ do
 --   1. you gain 4 life                        -- no slot
 --   2. counter target creature spell          -- slot "spell"
 --   3. draw a card                            -- no slot
-ojutaiModes :: Set.Set ModeIndex.ModeIndex
-ojutaiModes = Set.fromList (fmap ModeIndex.MkModeIndex [0, 1, 2, 3])
-
-creatureSlot :: SlotName.SlotName
-creatureSlot = SlotName.MkSlotName (Text.pack "creature")
-
 -- alice has three Islands and a Plains ({2}{W}{U}) and Ojutai's Command in hand.
 -- Her graveyard and the stack are EMPTY, which is what makes modes 0 and 2
 -- unfillable: nothing to reanimate, no creature spell to counter.
@@ -645,32 +608,6 @@ forcedTwoSpec s registry = Spec.describe s "ForcedTwo (CR 700.2a)" $ do
       "a creature spell on the stack makes the counter mode choosable"
       (Target.fillableModes StackObjectKind.Spell Nothing (Just S.alice) Map.empty spellId Map.empty modal gs)
       (Set.fromList (fmap ModeIndex.MkModeIndex [1, 2, 3]))
-
-  -- All four at once, so the prompt has the widest choice this card can offer.
-  Spec.it s "CR 601.2b all four modes fillable: the prompt is issued and the chosen two resolve" $ do
-    island <- S.printingOf s registry "Island"
-    plains <- S.printingOf s registry "Plains"
-    ojutaisCommand <- S.printingOf s registry "Ojutai's Command"
-    piker <- S.printingOf s registry "Goblin Piker"
-    let (board, spellId) = ojutaiBoard island plains ojutaisCommand
-        (deadPiker, withGrave) = S.addGraveyardCard piker S.alice board
-        (castPiker, gs) = S.spellOnStack piker S.bob withGrave
-        answer :: Prompt.Prompt r -> r
-        answer p = case p of
-          Prompt.ChooseModes _ _ _ legal selection ->
-            if legal == ojutaiModes && selection == ModeSelection.ChooseExactly 2
-              then Seq.fromList (fmap ModeIndex.MkModeIndex [0, 2])
-              else Seq.empty
-          Prompt.ChooseTargets _ _ _ sets ->
-            Map.mapWithKey
-              (\slot _ -> Set.singleton (if slot == creatureSlot then Recipient.ToObject deadPiker else Recipient.ToObject castPiker))
-              sets
-          _ -> S.identityAnswer p
-        cast = snd (Engine.runGamePure answer gs (S.cast S.alice spellId))
-        after = snd (Engine.runGamePure answer cast Stack.resolveTop)
-    Spec.assertBool s (notElem castPiker (TurnRegisters.stack (GameState.turn after))) "bob's creature spell was countered"
-    Spec.assertEqWith s "the graveyard Piker is on the battlefield under alice" (S.countOnBattlefieldByName (CardName.MkCardName $ Text.pack "Goblin Piker") S.alice after) 1
-    Spec.assertEqWith s "alice is still at 20: mode 1 was not chosen" (S.lifeOf S.alice after) (Just 20)
 
 drawMode, bounceMode :: ModeIndex.ModeIndex
 drawMode = ModeIndex.MkModeIndex 2

@@ -83,6 +83,22 @@
       "turn": 1,
       "step": "PrecombatMain",
       "player": "alice",
+      "check": {
+        "View": {
+          "of": "Prompt",
+          "is": {
+            "kind": "RollDie",
+            "offer": {
+              "sides": 6
+            }
+          }
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
       "do": {
         "Answer": {
           "prompt": "RollDie",
@@ -94,10 +110,50 @@
       "turn": 1,
       "step": "PrecombatMain",
       "player": "alice",
+      "check": {
+        "View": {
+          "of": "Prompt",
+          "is": {
+            "kind": "RollDie",
+            "offer": {
+              "sides": 6
+            }
+          }
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
       "do": {
         "Answer": {
           "prompt": "RollDie",
           "with": 2
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "check": {
+        "View": {
+          "of": "Prompt",
+          "is": {
+            "kind": "ChooseDieResult",
+            "offer": {
+              "source": "Valiant Endeavor",
+              "entries": [
+                5,
+                2
+              ],
+              "options": [
+                0,
+                1
+              ]
+            }
+          }
         }
       }
     },
