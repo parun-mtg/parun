@@ -1335,12 +1335,14 @@ entryTriggerings pid entrant gs = moveTriggerings TriggeringMove.Entering pid en
 -- CR 603.6a / 603.2d / 700.4 / 613.11 / 101.2: how the effects applying to
 -- `pid` in `effects` change the triggering of `pid`'s abilities that `subject`
 -- making `move` causes to trigger, one entry per effect admitting it, with
--- `subject` read off `board`.
+-- `subject` read off `board`. CR 109.5's "you" in the entrant filter is `pid`,
+-- not the subject's controller (Traveling Chocobo's "a land or Bird you
+-- control").
 moveTriggerings :: TriggeringMove.TriggeringMove -> PlayerId -> ObjectId -> GameState -> GameState -> [EntryTriggering.EntryTriggering]
 moveTriggerings move pid subject effects board =
   let triggering (source, effect) = case effect of
         PlayerEffect.EntriesTrigger entries ->
-          if EntriesTrigger.move entries == move && matchesObjectFrom source (EntriesTrigger.entrants entries) subject board
+          if EntriesTrigger.move entries == move && matchesObjectFor pid source (EntriesTrigger.entrants entries) subject board
             then Just (EntriesTrigger.triggering entries)
             else Nothing
         PlayerEffect.AdditionalTriggers _ -> Nothing
