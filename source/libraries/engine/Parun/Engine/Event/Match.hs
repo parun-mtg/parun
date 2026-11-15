@@ -2450,9 +2450,8 @@ producedSpecified gs bearer specified produced = case specified of
   ManaSpecification.AnyMana -> True
   ManaSpecification.ChosenColor ->
     any (\color -> Set.member (ManaType.Colored color) produced) (Maybe.fromMaybe Set.empty (Game.currentChoice Chosen.Colors bearer gs))
-  -- A regression fence: no card in data/cards/ writes a printed colour in a
-  -- trigger, only in Crimson Hellkite's activation restriction.
-  ManaSpecification.OfColor color -> Set.member (ManaType.Colored color) produced
+  -- data/scenarios/ultima-origin-of-oblivion/ prove it for colorless.
+  ManaSpecification.OfType manaType -> Set.member manaType produced
 
 -- CR 609.1: the spell or ability whose effect made this
 -- event, on the two events that record one. Every other event records no

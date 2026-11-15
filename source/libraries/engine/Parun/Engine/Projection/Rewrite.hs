@@ -823,12 +823,14 @@ rewriteRestriction :: [(TextWord.TextWord, TextWord.TextWord)] -> ActivationRest
 rewriteRestriction pairs = Identity.runIdentity . Children.activationRestrictionChildren (permissionRewrites pairs)
 
 -- CR 612.2 over a printed colour of mana (Crimson Hellkite's "Spend only red
--- mana"); a regression fence, no test changing its text.
+-- mana"); a regression fence, no test changing its text. Colorless names no
+-- colour (CR 105.1), so it stays.
 rewriteManaSpecification :: [(TextWord.TextWord, TextWord.TextWord)] -> ManaSpecification.ManaSpecification -> ManaSpecification.ManaSpecification
 rewriteManaSpecification pairs specified = case specified of
   ManaSpecification.AnyMana -> specified
   ManaSpecification.ChosenColor -> specified
-  ManaSpecification.OfColor c -> ManaSpecification.OfColor (TextWord.Engine.colorAfter pairs c)
+  ManaSpecification.OfType (ManaType.Colored c) -> ManaSpecification.OfType (ManaType.Colored (TextWord.Engine.colorAfter pairs c))
+  ManaSpecification.OfType ManaType.Colorless -> specified
 
 -- CR 612.1 through a Duration, which Parun.Types.Duration holds as the card
 -- prints it: a CR 611.2b "for as long as ..." clause is rules text like any
