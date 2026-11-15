@@ -1,11 +1,8 @@
 {
   "board": {
     "active": "alice",
-    "step": "PrecombatMain",
     "seats": [
       {
-        "name": "alice",
-        "manaPool": "GGGG",
         "hand": [
           {
             "card": "Threats Around Every Corner",
@@ -37,10 +34,11 @@
             "card": "Swamp",
             "label": "s2"
           }
-        ]
+        ],
+        "manaPool": "GGGG",
+        "name": "alice"
       },
       {
-        "name": "bob",
         "battlefield": [
           {
             "card": "Island",
@@ -82,10 +80,10 @@
           {
             "card": "Island"
           }
-        ]
+        ],
+        "name": "bob"
       },
       {
-        "name": "carol",
         "library": [
           {
             "card": "Island"
@@ -99,11 +97,13 @@
           {
             "card": "Island"
           }
-        ]
+        ],
+        "name": "carol"
       }
-    ]
+    ],
+    "step": "PrecombatMain"
   },
-  "description": "CR 603.2, 603.6a, 701.62a, 708.2a, 701.23a: Threats Around Every Corner manifests dread on entering, and a face-down permanent its controller's entering fetches a tapped basic land; a face-up land or an opponent's face-down permanent entering does not",
+  "description": "CR 603.2, 603.6a, 701.62a, 701.40a, 701.23a: Threats Around Every Corner manifests dread on entering, and a face-down permanent its controller's entering fetches a tapped basic land; a face-up land or an opponent's face-down permanent entering does not",
   "note": "The manifested Grizzly Bears is the only face-down permanent alice's that enters; her Forest enters face up and bob's manifested Craw Wurm is his, and either one triggering would raise an unscheduled Search. Hill Giant is milled, Plains is the only basic land the search can find besides the Swamps.",
   "timeline": [
     {
@@ -281,12 +281,12 @@
     {
       "do": {
         "Cast": {
-          "object": "$twist",
           "mana": [
             "$bi1",
             "$bi2",
             "$bi3"
-          ]
+          ],
+          "object": "$twist"
         }
       },
       "player": "bob",

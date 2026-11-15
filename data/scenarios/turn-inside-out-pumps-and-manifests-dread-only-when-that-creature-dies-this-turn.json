@@ -1,11 +1,8 @@
 {
   "board": {
     "active": "alice",
-    "step": "PrecombatMain",
     "seats": [
       {
-        "name": "alice",
-        "manaPool": "RRR",
         "battlefield": [
           {
             "card": "Mountain",
@@ -48,10 +45,11 @@
           {
             "card": "Swamp"
           }
-        ]
+        ],
+        "manaPool": "RRR",
+        "name": "alice"
       },
       {
-        "name": "bob",
         "battlefield": [
           {
             "card": "Grizzly Bears",
@@ -78,10 +76,10 @@
           {
             "card": "Island"
           }
-        ]
+        ],
+        "name": "bob"
       },
       {
-        "name": "carol",
         "library": [
           {
             "card": "Island"
@@ -98,9 +96,11 @@
           {
             "card": "Island"
           }
-        ]
+        ],
+        "name": "carol"
       }
-    ]
+    ],
+    "step": "PrecombatMain"
   },
   "description": "CR 603.7a, 603.7c, 700.4, 611.2a, 701.62a: Turn Inside Out gives target creature +3/+0 until end of turn, and when that creature dies this turn its caster manifests dread; a death on a later turn does not",
   "note": "Both targets are bob's, so the manifest is the caster's and not the dying creature's controller's. The second Grizzly Bears is targeted on turn 1 and bolted in bob's turn-2 upkeep, when an armed delayed trigger would raise an unscheduled ChooseCardFromAmong.",
@@ -108,12 +108,12 @@
     {
       "do": {
         "Cast": {
+          "mana": [
+            null
+          ],
           "object": "$tio1",
           "targets": [
             "$bears"
-          ],
-          "mana": [
-            null
           ]
         }
       },
@@ -142,12 +142,12 @@
     {
       "do": {
         "Cast": {
+          "mana": [
+            null
+          ],
           "object": "$bolt1",
           "targets": [
             "$bears"
-          ],
-          "mana": [
-            null
           ]
         }
       },
@@ -259,12 +259,12 @@
     {
       "do": {
         "Cast": {
+          "mana": [
+            null
+          ],
           "object": "$tio2",
           "targets": [
             "$bears2"
-          ],
-          "mana": [
-            null
           ]
         }
       },
@@ -305,12 +305,12 @@
     {
       "do": {
         "Cast": {
+          "mana": [
+            "$m1"
+          ],
           "object": "$bolt2",
           "targets": [
             "$bears2"
-          ],
-          "mana": [
-            "$m1"
           ]
         }
       },
