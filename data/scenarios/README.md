@@ -24,7 +24,9 @@ subdirectory named for that spec; `docs/scenario-burndown.md` lists the ones sti
   `sideDecks`, each a supplementary deck of placements top first, face down
   in the command zone (CR 718.2, 904.3): `[{ "key": "Scheme", "value":
   [...] }]`, and a `startingDeck` counted by name (CR 103.2a, `[{ "key":
-  "Plains", "value": 199 }]`), which places nothing. A
+  "Plains", "value": 199 }]`), which places nothing, and the cards it has
+  `outsideTheGame`, counted likewise (CR 400.11a), which a wish, Learn or a
+  search outside the game reads. A
   placement names its `card` and may give a `label`, `tapped`, `ready` (CR
   302.6), `damage`, `counters`, `token` (CR 111.1, battlefield only), a
   `controller`, the label of the object or seat it is `attached` to, and
