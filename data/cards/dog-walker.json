@@ -70,9 +70,11 @@
           "condition": {
             "type": "TurnedFaceUp",
             "value": {
-              "type": "Matching",
-              "value": {
-                "type": "IsSource"
+              "permanent": {
+                "type": "Matching",
+                "value": {
+                  "type": "IsSource"
+                }
               }
             }
           },

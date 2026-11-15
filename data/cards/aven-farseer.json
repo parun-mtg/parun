@@ -34,10 +34,12 @@
           "condition": {
             "type": "TurnedFaceUp",
             "value": {
-              "type": "Matching",
-              "value": {
-                "type": "And",
-                "value": []
+              "permanent": {
+                "type": "Matching",
+                "value": {
+                  "type": "And",
+                  "value": []
+                }
               }
             }
           },

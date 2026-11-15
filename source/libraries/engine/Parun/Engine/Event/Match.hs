@@ -187,6 +187,7 @@ import qualified Parun.Types.TriggeringMove as TriggeringMove
 import qualified Parun.Types.TurnRegisters as TurnRegisters
 import qualified Parun.Types.TurnScope as TurnScope
 import qualified Parun.Types.TurnedFaceUp as TurnedFaceUp
+import qualified Parun.Types.TurnedFaceUpTrigger as TurnedFaceUpTrigger
 import qualified Parun.Types.TurnedUpOffDeck as TurnedUpOffDeck
 import qualified Parun.Types.VentureMarkerEntered as VentureMarkerEntered
 import qualified Parun.Types.WatchedAbility as WatchedAbility
@@ -1857,12 +1858,20 @@ armMatches bindings board atEvent beforeEvent groupEvents gs bearer you cond eve
   -- gone again before the CR 117.5 boundary is still read as it was on the
   -- battlefield (CR 608.2h) instead of vanishing from the match. Nothing is a permanent that is gone AND filed no last known
   -- information, about which no Filter can honestly answer.
-  TriggerCondition.TurnedFaceUp subject -> case event of
-    GameEvent.TurnedFaceUp t -> case subject of
-      ActingPermanent.Self -> TurnedFaceUp.object t == bearer
-      ActingPermanent.Matching f -> case Projection.viewWithLastKnown (TurnedFaceUp.object t) gs (TurnedFaceUp.object t) of
-        Nothing -> False
-        Just view -> Filter.matches bearerContext view f
+  --
+  -- The player who turned it is read against CR 109.5's "you" (Growing Dread's
+  -- "whenever you turn"), not the permanent's controller: an effect can turn
+  -- another player's permanent face up (Hauntwoods Shrieker). The scenarios
+  -- growing-dread-ignores-an-opponent-turning-your-permanent-face-up and
+  -- growing-dread-counts-you-turning-an-opponents-permanent-face-up prove it.
+  TriggerCondition.TurnedFaceUp trigger -> case event of
+    GameEvent.TurnedFaceUp t ->
+      PlayerRelation.holds (Game.teams gs) (TurnedFaceUpTrigger.player trigger) you (TurnedFaceUp.player t)
+        && case TurnedFaceUpTrigger.permanent trigger of
+          ActingPermanent.Self -> TurnedFaceUp.object t == bearer
+          ActingPermanent.Matching f -> case Projection.viewWithLastKnown (TurnedFaceUp.object t) gs (TurnedFaceUp.object t) of
+            Nothing -> False
+            Just view -> Filter.matches bearerContext view f
     _ -> False
   -- CR 701.27f through CR 603.2: a Self subject is the permanent that
   -- transformed, and the names the event carries are what it turned INTO, which

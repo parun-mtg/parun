@@ -3,6 +3,7 @@
 module Parun.Codec.TurnedFaceUp where
 
 import qualified Parun.Codec.ObjectId as ObjectId
+import qualified Parun.Codec.PlayerId as PlayerId
 import qualified Parun.JsonCodec.Codec as Codec
 import qualified Parun.JsonCodec.Common as Common
 import qualified Parun.JsonCodec.Fields as Fields
@@ -13,9 +14,11 @@ import qualified Parun.Types.TurnedFaceUp as TurnedFaceUp
 codec :: Codec.Codec TurnedFaceUp.TurnedFaceUp
 codec = Fields.object $ do
   object <- Fields.required "object" ObjectId.codec TurnedFaceUp.object
+  player <- Fields.required "player" PlayerId.codec TurnedFaceUp.player
   announcedX <- Fields.defaulted "announcedX" Nothing (Common.maybe Common.natural) TurnedFaceUp.announcedX
   pure
     TurnedFaceUp.MkTurnedFaceUp
       { TurnedFaceUp.object = object,
+        TurnedFaceUp.player = player,
         TurnedFaceUp.announcedX = announcedX
       }

@@ -1974,10 +1974,13 @@ turnFaceDown resolving source controller legal (TurnFaceDown.MkTurnFaceDown ref 
 -- Read as ObjectRef.InSlot reads it, so a slot an earlier clause CHOSE into
 -- (Bustle's "you may turn a creature you control face up", CR 608.2d) is
 -- reached as a target slot is; an illegal target (CR 608.2b) turns nothing.
+--
+-- The effect's controller is who turns it (Parun.Types.TurnedFaceUp), whoever
+-- controls the permanent: Hauntwoods Shrieker reaches an opponent's.
 turnFaceUp :: ObjectId -> ObjectId -> PlayerId -> Map.Map SlotName (Set Recipient) -> SlotName -> Game ()
 turnFaceUp resolving source controller legal slot = do
   gs <- State.get
-  Monad.mapM_ Event.turnFaceUpByEffect (objectRefObjects legal resolving controller source gs (ObjectRef.InSlot slot))
+  Monad.mapM_ (Event.turnFaceUpByEffect controller) (objectRefObjects legal resolving controller source gs (ObjectRef.InSlot slot))
 
 removeFromCombat :: ObjectId -> ObjectId -> PlayerId -> Map.Map SlotName (Set Recipient) -> RemoveFromCombat.RemoveFromCombat -> Game ()
 removeFromCombat resolving source controller legal (RemoveFromCombat.MkRemoveFromCombat ref unblocking) =

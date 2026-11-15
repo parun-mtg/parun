@@ -992,8 +992,8 @@ revealsInsteadOfTurningUp oid gs =
 -- being turned face up, NOT AFTERWARD". That is why the CR 616.1 loop runs
 -- between the two writes below rather than after both -- see the note at the
 -- call.
-performTurnFaceUp :: Maybe (TurnUpProcedure.TurnUpProcedure, Cost.Cost Keyword.Type.Keyword) -> Maybe Natural -> ObjectId -> Game ()
-performTurnFaceUp road announcedX oid = do
+performTurnFaceUp :: PlayerId -> Maybe (TurnUpProcedure.TurnUpProcedure, Cost.Cost Keyword.Type.Keyword) -> Maybe Natural -> ObjectId -> Game ()
+performTurnFaceUp pid road announcedX oid = do
   gs <- State.get
   if revealsInsteadOfTurningUp oid gs
     then
@@ -1058,8 +1058,9 @@ performTurnFaceUp road announcedX oid = do
       -- twice to prove it.
       --
       -- The X chosen for the cost rides the event for CR 702.37f and CR
-      -- 702.168e (Parun.Types.TurnedFaceUp).
-      State.modify' (recordEvent (GameEvent.TurnedFaceUp TurnedFaceUp.MkTurnedFaceUp {TurnedFaceUp.object = oid, TurnedFaceUp.announcedX = announcedX}))
+      -- 702.168e, and the player who turned it for Growing Dread's "whenever
+      -- you turn" (Parun.Types.TurnedFaceUp).
+      State.modify' (recordEvent (GameEvent.TurnedFaceUp TurnedFaceUp.MkTurnedFaceUp {TurnedFaceUp.object = oid, TurnedFaceUp.player = pid, TurnedFaceUp.announcedX = announcedX}))
 
 -- CR 708 by way of an Effect.TurnFaceUp: Showstopping Surprise's "turn it face
 -- up if it's face down", with no cost, no procedure and no CR 116.2b special
@@ -1074,17 +1075,25 @@ performTurnFaceUp road announcedX oid = do
 -- that survives, and it lives in performTurnFaceUp because it is about the
 -- turning-over rather than about the road.
 --
--- No controller argument: the effect's controller is who resolved it, and
--- CR 701.40g's reveal is the permanent's own controller's, which
--- performTurnFaceUp reads.
-turnFaceUpByEffect :: ObjectId -> Game ()
-turnFaceUpByEffect oid = do
+-- `pid` is the player who turns it (Parun.Types.TurnedFaceUp); CR 701.40g's
+-- reveal is the permanent's own controller's, which performTurnFaceUp reads.
+turnFaceUpByEffect :: PlayerId -> ObjectId -> Game ()
+turnFaceUpByEffect pid oid = do
   gs <- State.get
   Monad.when
     ( Set.member oid (GameState.battlefield gs)
         && maybe False (Facing.isFaceDown . Object.facing) (Game.lookupObject oid gs)
     )
-    (performTurnFaceUp Nothing Nothing oid)
+    (performTurnFaceUp pid Nothing Nothing oid)
+
+-- CR 614.1a / Illusionary Mask's "instead it's turned face up": a status the
+-- face-down permanent carries (FaceDownState.turnsUpBefore) names no player, so
+-- its controller turns it, CR 708.7's player. Per docs/decisions.md, "Who turns
+-- up a creature Illusionary Mask's effect turns face up".
+turnFaceUpByStatus :: ObjectId -> Game ()
+turnFaceUpByStatus oid = do
+  gs <- State.get
+  Monad.forM_ (Projection.controllerOf oid gs) (`turnFaceUpByEffect` oid)
 
 -- One damage event, with its deal-time riders read off the projection HERE
 -- rather than re-derived when they are consumed: each is a fact about the source
@@ -1205,7 +1214,7 @@ tap oid = do
   case Game.lookupObject oid before of
     Just obj
       | Object.tapped obj == TapState.Untapped -> do
-          Monad.when (turnsUpBefore TurnUpEvent.BecomesTapped oid before) (turnFaceUpByEffect oid)
+          Monad.when (turnsUpBefore TurnUpEvent.BecomesTapped oid before) (turnFaceUpByStatus oid)
           gs <- State.get
           State.put
             . recordEvent (GameEvent.BecameTapped oid)
@@ -4766,7 +4775,7 @@ apply settle batch applied batchPrevented candidate event =
       -- turned up needs nothing here: its protection and prevention are rows the
       -- loop's next pass collects (CR 616.2).
       DamageRewrite.TurnFaceUp -> do
-        turnFaceUpByEffect (ReplacementCandidate.source candidate)
+        turnFaceUpByStatus (ReplacementCandidate.source candidate)
         pure (Just event)
       -- CR 614.1a: the damage goes on as it was. Reached only out of range
       -- of the second damage's payer: chooseAndApply takes the rest.

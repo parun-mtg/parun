@@ -1826,6 +1826,8 @@ library codec
     Parun.Codec.TriggerSourceSpec
     Parun.Codec.TurnedFaceUp
     Parun.Codec.TurnedFaceUpSpec
+    Parun.Codec.TurnedFaceUpTrigger
+    Parun.Codec.TurnedFaceUpTriggerSpec
     Parun.Codec.TurnedUpOffDeck
     Parun.Codec.TurnedUpOffDeckSpec
     Parun.Codec.TurnFaceDown
@@ -3755,6 +3757,7 @@ library types
     Parun.Types.TriggerLimit
     Parun.Types.TriggerSource
     Parun.Types.TurnedFaceUp
+    Parun.Types.TurnedFaceUpTrigger
     Parun.Types.TurnedUpOffDeck
     Parun.Types.TurnFaceDown
     Parun.Types.TurnKind

@@ -164,6 +164,7 @@ import qualified Parun.Types.TurnKind as TurnKind
 import qualified Parun.Types.TurnMarker as TurnMarker
 import qualified Parun.Types.TurnRegisters as TurnRegisters
 import qualified Parun.Types.TurnResume as TurnResume
+import qualified Parun.Types.TurnedFaceUpTrigger as TurnedFaceUpTrigger
 import qualified Parun.Types.Undoing as Undoing
 import qualified Parun.Types.UntapHold as UntapHold
 import qualified Parun.Types.Zone as Zone
@@ -1035,7 +1036,7 @@ placeBorne srcId pending = do
       -- spell is still on the stack as the ability triggers.
       inheritedX = case TriggeredAbility.condition ability of
         TriggerCondition.Enters (EntersTrigger.MkEntersTrigger ActingPermanent.Self _) -> Game.announcedXOf srcId gs
-        TriggerCondition.TurnedFaceUp ActingPermanent.Self -> Maybe.fromMaybe 0 (Binding.amountOf Binding.variableX bound)
+        TriggerCondition.TurnedFaceUp (TurnedFaceUpTrigger.MkTurnedFaceUpTrigger ActingPermanent.Self _) -> Maybe.fromMaybe 0 (Binding.amountOf Binding.variableX bound)
         TriggerCondition.SpellCast (SpellCast.MkSpellCast ActingPermanent.Self _ _ _ _ _ _) -> Maybe.fromMaybe 0 (Game.lookupObject srcId gs >>= Binding.amountOf Binding.variableX . Object.bindings)
         _ -> 0
       -- CR 107.3m: an enters-the-battlefield triggered ability's effects read

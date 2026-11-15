@@ -486,6 +486,7 @@ import qualified Parun.Types.TurnOrdinal as TurnOrdinal
 import qualified Parun.Types.TurnScope as TurnScope
 import qualified Parun.Types.TurnUpR as TurnUpR
 import qualified Parun.Types.TurnUpRewrite as TurnUpRewrite
+import qualified Parun.Types.TurnedFaceUpTrigger as TurnedFaceUpTrigger
 import qualified Parun.Types.TypeLine as TypeLine
 import qualified Parun.Types.Undesignate as Undesignate
 import qualified Parun.Types.UntapR as UntapR
@@ -1653,7 +1654,7 @@ triggerConditionChildren c condition = case condition of
   TriggerCondition.RoomFullyUnlocked _ -> pure condition
   TriggerCondition.AnyOf conditions -> fmap TriggerCondition.AnyOf (traverse (triggerNested c) conditions)
   TriggerCondition.CausedBy (CausedBy.MkCausedBy controller sourceKeyword narrowed) -> fmap (TriggerCondition.CausedBy . CausedBy.MkCausedBy controller sourceKeyword) (triggerNested c narrowed)
-  TriggerCondition.TurnedFaceUp permanent -> fmap TriggerCondition.TurnedFaceUp (actingChildren c permanent)
+  TriggerCondition.TurnedFaceUp (TurnedFaceUpTrigger.MkTurnedFaceUpTrigger permanent turner) -> fmap (\renamed -> TriggerCondition.TurnedFaceUp (TurnedFaceUpTrigger.MkTurnedFaceUpTrigger renamed turner)) (actingChildren c permanent)
   TriggerCondition.Transforms (TransformTrigger.MkTransformTrigger permanent into) -> fmap (\renamed -> TriggerCondition.Transforms (TransformTrigger.MkTransformTrigger renamed into)) (actingChildren c permanent)
   TriggerCondition.FaceDownPermanentLeavesRevealed -> pure condition
   TriggerCondition.PermanentBecomesDesignated (PermanentBecomesDesignated.MkPermanentBecomesDesignated designation filter_) ->
