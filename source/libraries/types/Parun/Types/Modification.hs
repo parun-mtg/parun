@@ -18,6 +18,7 @@ import qualified Parun.Types.FullText as FullText
 import qualified Parun.Types.Keyword as Keyword
 import qualified Parun.Types.KeywordDesignator as KeywordDesignator
 import qualified Parun.Types.KeywordFamily as KeywordFamily
+import qualified Parun.Types.LentKeyword as LentKeyword
 import qualified Parun.Types.ModifyPowerToughness as ModifyPowerToughness
 import qualified Parun.Types.NameInsertion as NameInsertion
 import qualified Parun.Types.PlayerId as PlayerId
@@ -169,6 +170,9 @@ data Modification ability
     -- payload's extra restrictions, and each triggered ability where the
     -- payload says so (Koh, the Face Stealer).
     GainCardAbilities CardAbilities.CardAbilities
+  | -- | layer 6, CR 613.1f / 702.1d: this object has a keyword's activated
+    -- abilities, recorded as the keyword, that a resolving lend took.
+    GainLentKeyword LentKeyword.LentKeyword
   | -- | layer 6, CR 613.1f / 123.7a: this object has the abilities printed on
     -- the ability stickers on this effect's source, read off the stickers
     -- (Pin Collection).
