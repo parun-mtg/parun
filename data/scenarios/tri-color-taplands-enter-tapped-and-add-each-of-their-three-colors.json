@@ -1,5 +1,5 @@
 {
- "description": "CR 614.1c, 305.7, 605.1a, 605.3b, 106.4: each tri-colour tapland enters tapped, and its {T} mana ability adds the one colour its controller picks of its three; the mana lands in the pool at once, without the stack",
+ "description": "CR 614.1c, 605.1a, 605.3b, 106.4: each tri-colour tapland enters tapped, and its {T} mana ability adds the one colour its controller picks of its three; the mana lands in the pool at once, without the stack",
  "note": "Alice has all five taplands untapped on the battlefield and a second copy of each in hand, one played on each of her turns 1, 4, 7, 10 and 13, each tapped on arrival while its twin stays untapped. On turns 1, 4 and 7 each land is tapped for its first, second and third printed colour in turn, so the pool after each tap holds exactly the colours picked so far and never a colour of the land that was not picked: a land giving all three, or only its first, shows.",
  "board": {
   "active": "alice",
