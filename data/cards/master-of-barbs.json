@@ -37,7 +37,9 @@
               "batching": "OneOrMore",
               "dealt": {
                 "kind": "Noncombat",
-                "recipient": "Opponent"
+                "recipient": {
+                  "type": "Opponent"
+                }
               }
             }
           },

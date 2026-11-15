@@ -4,6 +4,7 @@ import qualified Parun.Types.Batching as Batching
 import qualified Parun.Types.DealtDamage as DealtDamage
 import qualified Parun.Types.PlayerRef as PlayerRef
 import qualified Parun.Types.PlayerRelation as PlayerRelation
+import qualified Parun.Types.PlayerScope as PlayerScope
 import qualified Parun.Types.TurnScope as TurnScope
 
 -- | CR 120.3 / 603.2c: which player's damage fires the batch ability, and
@@ -11,7 +12,9 @@ import qualified Parun.Types.TurnScope as TurnScope
 -- you're dealt damage", Vengeful Pharaoh's "whenever combat damage is dealt to
 -- you or a planeswalker you control".
 data PlayerIsDealtDamage = MkPlayerIsDealtDamage
-  { dealt :: DealtDamage.DealtDamage PlayerRelation.PlayerRelation,
+  { -- | The damaged players, read against CR 109.5's "you" and the bearer
+    -- (Grievous Wound's "enchanted player", CR 303.4b).
+    dealt :: DealtDamage.DealtDamage PlayerScope.PlayerScope,
     -- | "Or a planeswalker [that player] controls": damage to such a planeswalker
     -- (CR 120.3c's recipient) matches too, one occurrence per damaged
     -- planeswalker beside the player's own (Vengeful Pharaoh's ruling,
@@ -30,7 +33,7 @@ data PlayerIsDealtDamage = MkPlayerIsDealtDamage
 
 -- | "Whenever [a player] is dealt damage": each turn, once per damaged player.
 -- The codec's defaults but the required `dealt`.
-watching :: DealtDamage.DealtDamage PlayerRelation.PlayerRelation -> PlayerIsDealtDamage
+watching :: DealtDamage.DealtDamage PlayerScope.PlayerScope -> PlayerIsDealtDamage
 watching d =
   MkPlayerIsDealtDamage
     { dealt = d,

@@ -9,6 +9,7 @@ import qualified Parun.Types.DealtDamage as DealtDamage
 import qualified Parun.Types.PlayerIsDealtDamage as PlayerIsDealtDamage
 import qualified Parun.Types.PlayerRef as PlayerRef
 import qualified Parun.Types.PlayerRelation as PlayerRelation
+import qualified Parun.Types.PlayerScope as PlayerScope
 import qualified Parun.Types.TurnScope as TurnScope
 
 spec :: (Monad m, Monad n) => Spec.Spec m n -> n ()
@@ -17,18 +18,18 @@ spec s = Spec.describe s "Parun.Codec.PlayerIsDealtDamage" $ do
     Common.assertCodec
       s
       PlayerIsDealtDamage.codec
-      (PlayerIsDealtDamage.watching (DealtDamage.MkDealtDamage PlayerRelation.You Nothing Nothing))
-      " {\"dealt\":{\"recipient\":\"You\"}} "
+      (PlayerIsDealtDamage.watching (DealtDamage.MkDealtDamage (PlayerScope.Related PlayerRelation.You) Nothing Nothing))
+      " {\"dealt\":{\"recipient\":{\"type\":\"You\"}}} "
   Spec.it s "the player or their planeswalkers" $
     Common.assertCodec
       s
       PlayerIsDealtDamage.codec
-      ((PlayerIsDealtDamage.watching (DealtDamage.MkDealtDamage PlayerRelation.You (Just DamageKind.Combat) Nothing)) {PlayerIsDealtDamage.orTheirPlaneswalkers = True})
-      " {\"dealt\":{\"recipient\":\"You\",\"kind\":\"Combat\"},\"orTheirPlaneswalkers\":true} "
+      ((PlayerIsDealtDamage.watching (DealtDamage.MkDealtDamage (PlayerScope.Related PlayerRelation.You) (Just DamageKind.Combat) Nothing)) {PlayerIsDealtDamage.orTheirPlaneswalkers = True})
+      " {\"dealt\":{\"recipient\":{\"type\":\"You\"},\"kind\":\"Combat\"},\"orTheirPlaneswalkers\":true} "
   Spec.it s "one or more opponents during your turn" $
     Common.assertCodec
       s
       PlayerIsDealtDamage.codec
-      ((PlayerIsDealtDamage.watching (DealtDamage.MkDealtDamage PlayerRelation.Opponent (Just DamageKind.Combat) Nothing)) {PlayerIsDealtDamage.batching = Batching.OneOrMore, PlayerIsDealtDamage.scope = TurnScope.PlayersTurn (PlayerRef.Relative PlayerRelation.You)})
-      " {\"dealt\":{\"recipient\":\"Opponent\",\"kind\":\"Combat\"},\"batching\":\"OneOrMore\",\"scope\":{\"type\":\"PlayersTurn\",\"value\":{\"type\":\"Relative\",\"value\":\"You\"}}} "
+      ((PlayerIsDealtDamage.watching (DealtDamage.MkDealtDamage (PlayerScope.Related PlayerRelation.Opponent) (Just DamageKind.Combat) Nothing)) {PlayerIsDealtDamage.batching = Batching.OneOrMore, PlayerIsDealtDamage.scope = TurnScope.PlayersTurn (PlayerRef.Relative PlayerRelation.You)})
+      " {\"dealt\":{\"recipient\":{\"type\":\"Opponent\"},\"kind\":\"Combat\"},\"batching\":\"OneOrMore\",\"scope\":{\"type\":\"PlayersTurn\",\"value\":{\"type\":\"Relative\",\"value\":\"You\"}}} "
   Spec.it s "has a schema" $ Common.assertHasSchema s PlayerIsDealtDamage.codec

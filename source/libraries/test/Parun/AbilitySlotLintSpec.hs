@@ -1021,7 +1021,7 @@ abilitySlotLintSpec s registry corpus = Spec.describe s "Lint" $ do
           ability
             { TriggeredAbility.condition =
                 TriggerCondition.PlayerIsDealtDamage
-                  (PlayerIsDealtDamage.watching (DealtDamage.MkDealtDamage PlayerRelation.Opponent Nothing Nothing)) {PlayerIsDealtDamage.scope = TurnScope.PlayersTurn (PlayerRef.Relative relation)}
+                  (PlayerIsDealtDamage.watching (DealtDamage.MkDealtDamage (PlayerScope.Related PlayerRelation.Opponent) Nothing Nothing)) {PlayerIsDealtDamage.scope = TurnScope.PlayersTurn (PlayerRef.Relative relation)}
             }
         yourTurnDamage = face {Face.delayedAbilities = fmap (damagedDuring PlayerRelation.You) (Face.delayedAbilities face)}
         anyTurnDamage = face {Face.delayedAbilities = fmap (damagedDuring PlayerRelation.AnyPlayer) (Face.delayedAbilities face)}

@@ -36,7 +36,9 @@
             "value": {
               "dealt": {
                 "kind": "Noncombat",
-                "recipient": "Opponent"
+                "recipient": {
+                  "type": "Opponent"
+                }
               }
             }
           },

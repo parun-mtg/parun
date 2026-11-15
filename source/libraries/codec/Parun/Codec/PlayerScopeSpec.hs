@@ -64,5 +64,12 @@ spec s = Spec.describe s "Parun.Codec.PlayerScope" $ do
       PlayerScope.codec
       PlayerScope.SourceOwner
       " {\"type\":\"SourceOwner\"} "
+  -- Grievous Wound's "enchanted player" (CR 303.4b).
+  Spec.it s "EnchantedPlayer" $
+    Common.assertCodec
+      s
+      PlayerScope.codec
+      PlayerScope.EnchantedPlayer
+      " {\"type\":\"EnchantedPlayer\"} "
   Spec.it s "has a schema" $
     Common.assertHasSchema s PlayerScope.codec

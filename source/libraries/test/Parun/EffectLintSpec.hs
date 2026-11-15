@@ -2223,6 +2223,7 @@ effectLintSpec s registry corpus = Spec.describe s "Lint" $ do
           ZoneScope.Scoped (PlayerScope.InRole _) -> False
           ZoneScope.Scoped PlayerScope.ChosenPlayer -> True
           ZoneScope.Scoped PlayerScope.SourceOwner -> True
+          ZoneScope.Scoped PlayerScope.EnchantedPlayer -> True
           ZoneScope.InSlot _ -> True
           ZoneScope.ControllerOfBound _ -> True
           ZoneScope.BoundPlayer _ -> True

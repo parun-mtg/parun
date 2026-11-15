@@ -1,0 +1,108 @@
+{
+  "faces": [
+    {
+      "enchant": [
+        {
+          "pool": {
+            "type": "Players"
+          }
+        }
+      ],
+      "manaCost": [
+        {
+          "type": "Generic",
+          "value": 3
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "Black"
+          }
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "Black"
+          }
+        }
+      ],
+      "name": "Grievous Wound",
+      "oracleText": "Enchant player\nEnchanted player can't gain life.\nWhenever enchanted player is dealt damage, they lose half their life, rounded up.",
+      "playerAbilities": [
+        {
+          "effect": {
+            "type": "Cant",
+            "value": {
+              "type": "GainLife"
+            }
+          },
+          "scope": {
+            "type": "EnchantedPlayer"
+          }
+        }
+      ],
+      "triggeredAbilities": [
+        {
+          "condition": {
+            "type": "PlayerIsDealtDamage",
+            "value": {
+              "dealt": {
+                "recipient": {
+                  "type": "EnchantedPlayer"
+                }
+              }
+            }
+          },
+          "modal": {
+            "modes": [
+              {
+                "clauses": [
+                  {
+                    "effects": [
+                      {
+                        "type": "LoseLife",
+                        "value": {
+                          "player": {
+                            "type": "InSlot",
+                            "value": "thatPlayer"
+                          },
+                          "quantity": {
+                            "type": "Quotient",
+                            "value": {
+                              "divisor": {
+                                "type": "Literal",
+                                "value": 2
+                              },
+                              "quantity": {
+                                "type": "LifeTotal",
+                                "value": {
+                                  "type": "InSlot",
+                                  "value": "thatPlayer"
+                                }
+                              },
+                              "rounding": "Up"
+                            }
+                          }
+                        }
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      ],
+      "typeLine": {
+        "subtypes": [
+          "Aura"
+        ],
+        "types": [
+          "Enchantment"
+        ]
+      }
+    }
+  ]
+}
