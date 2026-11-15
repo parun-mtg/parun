@@ -2149,6 +2149,7 @@ departedAttackerSpec s registry =
                             -- CR 508.1a / 509.1a: this board is hand-built rather
                             -- than declared, so nothing was declared on it.
                             Combat.Type.declaredAttackers = Set.empty,
+                            Combat.Type.hadToAttack = Set.empty,
                             Combat.Type.declaredBlockers = Set.empty,
                             -- CR 506.8b: the fixture stands after CR 509.1's
                             -- declaration, which is what put the entry in
@@ -2205,6 +2206,7 @@ departedDefenderSpec s registry =
                             -- CR 508.1a / 509.1a: this board is hand-built rather
                             -- than declared, so nothing was declared on it.
                             Combat.Type.declaredAttackers = Set.empty,
+                            Combat.Type.hadToAttack = Set.empty,
                             Combat.Type.declaredBlockers = Set.empty,
                             -- CR 506.8b: attackers are declared and blockers are not,
                             -- which is the moment the comment above describes.

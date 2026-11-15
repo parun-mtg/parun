@@ -28,6 +28,7 @@ empty =
       Combat.declaredAttackedBy = Map.empty,
       Combat.declaredAttackedThisStep = Set.empty,
       Combat.declaredAttackers = Set.empty,
+      Combat.hadToAttack = Set.empty,
       Combat.declaredBlockers = Set.empty,
       Combat.blockersDeclared = False,
       Combat.attackingNothing = Set.empty,
@@ -85,6 +86,8 @@ spec s = Spec.describe s "Parun.Codec.Combat" $ do
           -- above are keyed by what was attacked, and distinct ids again so
           -- neither half can be read off the other.
           Combat.declaredAttackers = Set.singleton (ObjectId.MkObjectId 11),
+          -- CR 506.7, keyed by the creature, an id no other field holds.
+          Combat.hadToAttack = Set.singleton (ObjectId.MkObjectId 33),
           Combat.declaredBlockers = Set.singleton (ObjectId.MkObjectId 12),
           Combat.blockersDeclared = True,
           -- CR 506.4c, keyed by the ATTACKER, so a distinct id again -- this set
@@ -114,7 +117,7 @@ spec s = Spec.describe s "Parun.Codec.Combat" $ do
           <> ",\"declaredAttacked\":[{\"type\":\"OfPlaneswalker\",\"value\":8}]"
           <> ",\"declaredAttackedBy\":{\"18\":[{\"type\":\"OfPlaneswalker\",\"value\":8}]}"
           <> ",\"declaredAttackedThisStep\":[{\"type\":\"OfBattle\",\"value\":9}]"
-          <> ",\"declaredAttackers\":[11],\"declaredBlockers\":[12]"
+          <> ",\"declaredAttackers\":[11],\"declaredBlockers\":[12],\"hadToAttack\":[33]"
           <> ",\"blockersDeclared\":true,\"attackingNothing\":[13]"
           <> ",\"blockingNothing\":[21]"
           <> ",\"removedDefending\":{\"19\":20}"

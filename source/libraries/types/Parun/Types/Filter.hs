@@ -349,6 +349,10 @@ data Filter keyword
     -- 508.1k -- CR 509.1f pays while CR 509.1g has not run, so a fellow creature
     -- chosen in the same declaration is not blocking yet.
     DeclaredBlockerThisCombat
+  | -- | CR 506.7: the candidate "had to attack" this combat phase, read off
+    -- Combat.hadToAttack. The data/scenarios cases named for Firkraag, Cunning
+    -- Instigator prove it.
+    HadToAttackThisCombat
   | -- | CR 608.2i: the candidate ATTACKED (CR 508.1a) or BLOCKED (CR 509.3a)
     -- earlier this turn -- Relentless Assault's "all creatures that attacked
     -- this turn". A look-back read of the turn-scoped GameEvent log, which

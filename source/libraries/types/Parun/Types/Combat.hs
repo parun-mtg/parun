@@ -241,6 +241,16 @@ data Combat = MkCombat
     -- NOT written by putOntoBattlefieldBlocking, for CR 509.4's twin of the
     -- CR 508.4 reason above.
     declaredBlockers :: Set.Set ObjectId.ObjectId,
+    -- | CR 506.7: the creatures able to attack that some effect required to
+    -- attack (CR 508.1d) as this combat's attackers were declared, whether or
+    -- not they then attacked.
+    -- Per creature, so a requirement on a player (Trove of Temptation, a
+    -- RequirementArity.AnySubject group) adds nothing, per Firkraag, Cunning
+    -- Instigator's ruling. Written by Parun.Engine.Combat.attemptAttackDeclaration
+    -- beside `declaredAttackers`, so a goad applied later and a creature put
+    -- onto the battlefield attacking (CR 508.4c) never enter it. Read through
+    -- Filter.HadToAttackThisCombat.
+    hadToAttack :: Set.Set ObjectId.ObjectId,
     -- | CR 506.8b: has this combat phase's declare blockers step declared
     -- blockers? The boundary "only during combat after blockers are declared"
     -- names, and the sole reader is

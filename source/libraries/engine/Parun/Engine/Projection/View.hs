@@ -206,6 +206,7 @@ viewOfCardLapsed lapsed face =
           -- in no combat, so nothing was declared attacking it.
           Filter.declaredAttackedThisCombat = False,
           Filter.declaredBlockerThisCombat = False,
+          Filter.hadToAttackThisCombat = False,
           -- CR 701.17a mills an OBJECT; this builder describes a printed FACE.
           -- viewOfCharacteristics is the view that holds an id and answers.
           Filter.leftLibraryThisTurn = Set.empty,
@@ -743,6 +744,7 @@ viewOfCharacteristics peers oid pc controller counters gs =
       Filter.declaredAttackerThisCombat = Count.declaredAttackerThisCombat oid gs,
       Filter.declaredAttackedThisCombat = Count.declaredAttackedThisCombat oid gs,
       Filter.declaredBlockerThisCombat = Count.declaredBlockerThisCombat oid gs,
+      Filter.hadToAttackThisCombat = Count.hadToAttackThisCombat oid gs,
       Filter.leftLibraryThisTurn = Count.leftLibraryThisTurn oid gs,
       Filter.dealtDamageThisTurn = Count.dealtDamageThisTurn oid gs,
       -- CR 119.3: only a player loses life.

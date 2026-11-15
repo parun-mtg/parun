@@ -1,0 +1,35 @@
+{
+  "description": "Firkraag, Cunning Instigator rewards a required attacker sacrificed before its trigger resolves",
+  "note": "CR 603.4 rechecks the intervening if on resolution, after the Bloodrock Cyclops has left; CR 608.2h answers it off the creature as it last existed, which had to attack (CR 506.7).",
+  "board": {
+    "seats": [
+      {
+        "name": "alice",
+        "battlefield": [
+          {"card": "Bloodrock Cyclops", "label": "cyclops", "ready": true},
+          {"card": "Ashnod's Altar", "label": "altar", "ready": true}
+        ]
+      },
+      {
+        "name": "bob",
+        "battlefield": [
+          {"card": "Firkraag, Cunning Instigator", "label": "firkraag", "ready": true}
+        ],
+        "library": [{"card": "Grizzly Bears"}]
+      },
+      {"name": "carol"}
+    ],
+    "active": "alice",
+    "step": "BeginningOfCombat"
+  },
+  "timeline": [
+    {"turn": 1, "step": "DeclareAttackers", "player": "alice", "do": {"Attack": ["$cyclops"]}},
+    {"turn": 1, "step": "DeclareAttackers", "player": "alice", "source": "$cyclops", "do": {"ChooseAttackTarget": "$carol"}},
+    {"turn": 1, "step": "CombatDamage", "player": "alice", "do": {"Take": {"action": "ActivateManaAbility $altar"}}},
+    {"turn": 1, "step": "CombatDamage", "player": "alice", "check": {"Count": {"player": "alice", "zone": "Graveyard", "card": "Bloodrock Cyclops", "count": 1}}},
+    {"turn": 1, "step": "CombatDamage", "player": "alice", "check": {"Counters": {"object": "$firkraag", "kind": {"type": "PlusOnePlusOne"}, "count": 0}}},
+    {"turn": 1, "step": "EndOfCombat", "player": "alice", "check": {"Life": {"player": "carol", "life": 17}}},
+    {"turn": 1, "step": "EndOfCombat", "player": "alice", "check": {"Counters": {"object": "$firkraag", "kind": {"type": "PlusOnePlusOne"}, "count": 1}}},
+    {"turn": 1, "step": "EndOfCombat", "player": "alice", "check": {"Count": {"player": "bob", "zone": "Hand", "card": "Grizzly Bears", "count": 1}}}
+  ]
+}

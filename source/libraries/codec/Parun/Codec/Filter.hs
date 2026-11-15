@@ -146,6 +146,7 @@ codec keywordCodec =
       Arm.nullary "CouldAttackThisTurn" Filter.CouldAttackThisTurn,
       Arm.nullary "DeclaredAttackerThisCombat" Filter.DeclaredAttackerThisCombat,
       Arm.nullary "DeclaredBlockerThisCombat" Filter.DeclaredBlockerThisCombat,
+      Arm.nullary "HadToAttackThisCombat" Filter.HadToAttackThisCombat,
       Arm.payload "LeftLibraryThisTurn" LibraryDeparture.codec Filter.LeftLibraryThisTurn (\x -> case x of Filter.LeftLibraryThisTurn y -> Just y; _ -> Nothing),
       Arm.payload "CrewedThisTurn" Actor.codec Filter.CrewedThisTurn (\x -> case x of Filter.CrewedThisTurn y -> Just y; _ -> Nothing),
       Arm.nullary "ConvokedSourceThisTurn" Filter.ConvokedSourceThisTurn,
@@ -368,6 +369,7 @@ tagOf x = case x of
   Filter.CouldAttackThisTurn {} -> "CouldAttackThisTurn"
   Filter.DeclaredAttackerThisCombat {} -> "DeclaredAttackerThisCombat"
   Filter.DeclaredBlockerThisCombat {} -> "DeclaredBlockerThisCombat"
+  Filter.HadToAttackThisCombat {} -> "HadToAttackThisCombat"
   Filter.LeftLibraryThisTurn {} -> "LeftLibraryThisTurn"
   Filter.CrewedThisTurn {} -> "CrewedThisTurn"
   Filter.ConvokedSourceThisTurn {} -> "ConvokedSourceThisTurn"

@@ -938,6 +938,7 @@ combatLegalitySpec s registry = Spec.describe s "CombatLegality" $ do
                             -- CR 508.1a / 509.1a: this board is hand-built rather
                             -- than declared, so nothing was declared on it.
                             Combat.Type.declaredAttackers = Set.empty,
+                            Combat.Type.hadToAttack = Set.empty,
                             Combat.Type.declaredBlockers = Set.empty,
                             Combat.Type.blockersDeclared = True,
                             Combat.Type.attackingNothing = Set.empty,
