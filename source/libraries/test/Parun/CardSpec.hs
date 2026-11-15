@@ -2433,6 +2433,9 @@ namedTokens =
       -- with flying named Ornithopter".
       CardName.MkCardName (Text.pack "Ornithopter"),
       CardName.MkCardName (Text.pack "Rabid Sheep"),
+      -- Dragonbroods' Relic's "a 4/4 Dragon creature token named Reliquary
+      -- Dragon".
+      CardName.MkCardName (Text.pack "Reliquary Dragon"),
       -- Preston Garvey, Minuteman's "create a green Aura enchantment token named
       -- Settlement attached to up to one target land you control".
       CardName.MkCardName (Text.pack "Settlement"),

@@ -1,0 +1,49 @@
+{
+  "faces": [
+    {
+      "manaCost": [
+        {
+          "type": "Generic",
+          "value": 6
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "Red"
+          }
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "Red"
+          }
+        }
+      ],
+      "name": "Dracogenesis",
+      "oracleText": "You may cast Dragon spells without paying their mana costs.",
+      "playerAbilities": [
+        {
+          "effect": {
+            "type": "PayRatherThanManaCost",
+            "value": {
+              "spells": {
+                "type": "HasSubtype",
+                "value": "Dragon"
+              }
+            }
+          },
+          "scope": {
+            "type": "You"
+          }
+        }
+      ],
+      "typeLine": {
+        "types": [
+          "Enchantment"
+        ]
+      }
+    }
+  ]
+}
