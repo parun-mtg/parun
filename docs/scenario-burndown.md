@@ -814,24 +814,24 @@ out: grep for them.
 
 ### `MeldSpec`
 
-- CR 202.3c a copy of a melded permanent has mana value 0 | `board:source-ofmeld`
-- CR 202.3c a melded permanent's mana value is its components' front faces combined | `check:mana-value` `check:can-block`
-- CR 608.2f the pair leaves the battlefield in one event | `check:events`
+- ~~CR 202.3c a copy of a melded permanent has mana value 0 | `board:source-ofmeld`~~
+- ~~CR 202.3c a melded permanent's mana value is its components' front faces combined | `check:mana-value` `check:can-block`~~
+- ~~CR 608.2f the pair leaves the battlefield in one event | `check:events`~~
 - CR 612.7 / 701.42c a Spy Kit host is a Hanweir Garrison the game never saw, and both it and the land stay exiled
-- CR 701.42a a one-or-more-cards-leave-exile trigger counts both melded cards | `check:events` `check:other-Binding.eventAmount` `check:other-Binding.toAmount` `check:other-Event.eventBindings` `check:other-LoggedEvent.event` `check:other-Moved.change` `check:other-Moved.departures` `check:other-ZoneChange.from` `check:other-ZoneChange.object` `check:other-ZoneChange.to`
-- CR 701.42a the melding ability exiles the pair and puts one permanent onto the battlefield | `check:helper-componentPrintings` `check:helper-townshipName` `check:other-Game.printingOf` `check:other-Object.owner` `check:other-Object.source` `check:other-Printing.card`
+- ~~CR 701.42a a one-or-more-cards-leave-exile trigger counts both melded cards | `check:events` `check:other-Binding.eventAmount` `check:other-Binding.toAmount` `check:other-Event.eventBindings` `check:other-LoggedEvent.event` `check:other-Moved.change` `check:other-Moved.departures` `check:other-ZoneChange.from` `check:other-ZoneChange.object` `check:other-ZoneChange.to`~~
+- ~~CR 701.42a the melding ability exiles the pair and puts one permanent onto the battlefield | `check:helper-componentPrintings` `check:helper-townshipName` `check:other-Game.printingOf` `check:other-Object.owner` `check:other-Object.source` `check:other-Printing.card`~~
 - ~~CR 701.42b/701.42c a token counterpart melds nothing, and the land stays exiled~~
-- CR 713.8a the owner arranges the two cards her melded permanent becomes on top of her library | `board:source-ofmeld`
-- CR 713.8c a perpetual grant on a melded permanent follows both cards it becomes | `board:source-ofmeld`
-- CR 713.8e a melded permanent's death is two cards put into a graveyard and one object that moved | `board:source-ofmeld`
-- CR 713.8e each card of a melded permanent is counted as its own card type | `board:source-ofmeld`
-- CR 713.1c/712.7 the melded permanent ignores an instruction to transform | `check:helper-townshipName` `check:other-PC.subtypes` `check:other-Projection.namesOf` `check:other-Projection.project`
-- CR 903.10a a melded permanent's combat damage is tallied against its owner's commander | `board:source-ofmeld`
-- CR 903.9a a melded commander's own card goes to the command zone, whichever half melded first | `board:source-ofmeld`
-- CR 903.9c a melded commander sent to the command zone from a hand leaves its other half in the hand | `board:source-ofmeld`
-- CR 903.9c a melded commander sent to the command zone from a library leaves its other half in the library | `board:source-ofmeld`
-- CR 903.9c the component split into the command zone is not a card put into the library | `board:source-ofmeld`
-- a perpetual grant naming a meld component follows onto the permanent the pair melds into | `board:continuous-effect`
+- ~~CR 713.8a the owner arranges the two cards her melded permanent becomes on top of her library | `board:source-ofmeld`~~
+- ~~CR 713.8c a perpetual grant on a melded permanent follows both cards it becomes | `board:source-ofmeld`~~
+- ~~CR 713.8e a melded permanent's death is two cards put into a graveyard and one object that moved | `board:source-ofmeld`~~
+- ~~CR 713.8e each card of a melded permanent is counted as its own card type | `board:source-ofmeld`~~
+- ~~CR 713.1c/712.7 the melded permanent ignores an instruction to transform | `check:helper-townshipName` `check:other-PC.subtypes` `check:other-Projection.namesOf` `check:other-Projection.project`~~
+- ~~CR 903.10a a melded permanent's combat damage is tallied against its owner's commander | `board:source-ofmeld`~~
+- ~~CR 903.9a a melded commander's own card goes to the command zone, whichever half melded first | `board:source-ofmeld`~~
+- ~~CR 903.9c a melded commander sent to the command zone from a hand leaves its other half in the hand | `board:source-ofmeld`~~
+- ~~CR 903.9c a melded commander sent to the command zone from a library leaves its other half in the library | `board:source-ofmeld`~~
+- ~~CR 903.9c the component split into the command zone is not a card put into the library | `board:source-ofmeld`~~
+- ~~a perpetual grant naming a meld component follows onto the permanent the pair melds into | `board:continuous-effect`~~
 
 ### `ModalDoubleFacedSpec`
 

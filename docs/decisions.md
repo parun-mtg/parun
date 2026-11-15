@@ -1248,9 +1248,8 @@ Entries are ordered by the first rule each cites.
   Following only the leading card, as `carryOver` does, because a spell melds
   into nothing. A game-long object id: a second identity model.
 - **Site**: `Parun.Engine.Event.perpetuate` and its call in `meld`, proved by
-  `Parun.MeldSpec`'s "CR 713.8c a perpetual grant on a melded permanent
-  follows both cards it becomes" and "a perpetual grant naming a meld
-  component follows onto the permanent the pair melds into".
+  the scenarios `data/scenarios/meld/cr-713-8c-a-perpetual-grant-on-a-melded-permanent-follows-both-cards-it-becomes*.json`
+  and `data/scenarios/meld/a-perpetual-grant-naming-a-meld-component-follows-onto-the-permanent-the-pair-melds-into*.json`.
 - **Issue**: #2657.
 
 ## Whether an ineligible active player takes the crown

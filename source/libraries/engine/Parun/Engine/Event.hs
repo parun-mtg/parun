@@ -9551,7 +9551,7 @@ changeZoneWithCause settle discarded asOf batch oid requestedDest requestedPosit
                   -- needs the number of OBJECTS that changed zones folds the Moved
                   -- events one at a time and sees one, and one that needs the number
                   -- of CARDS folds this event and every CardArrived below and sees
-                  -- two (Parun.Engine.Count.snapshotView, Parun.MeldSpec).
+                  -- two (Parun.Engine.Count.snapshotView, data/scenarios/meld/'s CR 713.8e cases).
                   --
                   -- The OTHER arrivals ride along in Moved.otherArrivals as well as in the
                   -- CardArrived events below, which is CR 713.8c: "if an effect can
@@ -9844,7 +9844,7 @@ rewatch oldId newId row = case ActiveReplacement.effect row of
 -- arrangement's trailing card is named as well as its leading one. That is a
 -- THIRD difference from carryOver beside it, which names the head alone because
 -- CR 400.7a's exception is about the permanent a SPELL becomes and a spell melds
--- into nothing. Parun.MeldSpec's departure case is the proof.
+-- into nothing. data/scenarios/meld/'s CR 713.8c cases are the proof.
 -- docs/decisions.md, "How perpetual effects follow a meld".
 --
 -- meld calls this too, one component at a time -- the same shape read backwards,
@@ -11145,7 +11145,8 @@ meld settle controller victims resultCard = do
       -- EVERY component rather than the first, for perpetuate's own reason one
       -- direction over: CR 701.42a's permanent is represented by both cards, and
       -- CR 713.8e counts a melded permanent as two cards that moved.
-      -- Parun.MeldSpec's arrival case grants on each half in turn to prove it.
+      -- data/scenarios/meld/'s perpetual-grant-naming-a-meld-component cases
+      -- grant on each half in turn to prove it.
       --
       -- Before runEntry, which is changeZoneAttaching's ordering: CR 614.12 reads
       -- an entry replacement against the continuous effects that already apply to

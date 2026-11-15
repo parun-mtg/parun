@@ -1,0 +1,162 @@
+{
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "battlefield": [
+          {
+            "card": "Hanweir Battlements",
+            "label": "bat"
+          },
+          {
+            "card": "Hanweir Garrison",
+            "label": "gar"
+          },
+          {
+            "card": "Mountain",
+            "label": "m1"
+          },
+          {
+            "card": "Mountain",
+            "label": "m2"
+          },
+          {
+            "card": "Mountain",
+            "label": "m3"
+          },
+          {
+            "card": "Mountain",
+            "label": "m4"
+          },
+          {
+            "card": "Mountain",
+            "label": "m5"
+          },
+          {
+            "card": "Goblin Piker",
+            "label": "piker"
+          }
+        ],
+        "name": "alice"
+      },
+      {
+        "battlefield": [
+          {
+            "card": "Void Winnower",
+            "label": "winnower"
+          }
+        ],
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ],
+        "name": "bob"
+      }
+    ],
+    "step": "PrecombatMain"
+  },
+  "description": "CR 202.3c a melded permanent's mana value is its components' front faces combined",
+  "note": "Hanweir Garrison's {2}{R} and Hanweir Battlements' no cost make 3 (CR 202.3a exempts a melded permanent from the 0 of an object with no mana cost). Read by bob's Void Winnower: the Township's odd 3 may block, and alice's Goblin Piker's even 2 may not, which shows the Winnower live.",
+  "timeline": [
+    {
+      "do": {
+        "Activate": {
+          "ability": 2,
+          "mana": [
+            "$m1",
+            "$m2",
+            "$m3",
+            "$m4",
+            "$m5",
+            null
+          ],
+          "object": "$bat"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Hanweir, the Writhing Township",
+          "count": 1,
+          "player": "alice",
+          "zone": "Battlefield"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Attack": []
+      },
+      "player": "alice",
+      "step": "DeclareAttackers",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Attack": [
+          "$winnower"
+        ]
+      },
+      "player": "bob",
+      "step": "DeclareAttackers",
+      "turn": 2
+    },
+    {
+      "player": "alice",
+      "refuse": {
+        "Block": {
+          "$piker": [
+            "$winnower"
+          ]
+        }
+      },
+      "step": "DeclareBlockers",
+      "turn": 2
+    },
+    {
+      "do": {
+        "Block": {
+          "Hanweir, the Writhing Township": [
+            "$winnower"
+          ]
+        }
+      },
+      "player": "alice",
+      "step": "DeclareBlockers",
+      "turn": 2
+    },
+    {
+      "check": {
+        "Blockers": {
+          "attacker": "$winnower",
+          "blockers": [
+            "Hanweir, the Writhing Township"
+          ]
+        }
+      },
+      "player": "bob",
+      "step": "DeclareBlockers",
+      "turn": 2
+    }
+  ]
+}
