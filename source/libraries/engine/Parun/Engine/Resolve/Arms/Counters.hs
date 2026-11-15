@@ -2118,8 +2118,8 @@ exchangeControl resolving source controller legal sides =
      in case twoSides of
           [one, two] -> case (sideController one gs, sideController two gs) of
             -- CR 701.12b: controlled by the same player, the exchange effect
-            -- does nothing. Parun.BoardEffectSpec's Switcheroo group is the
-            -- proof.
+            -- does nothing. data/scenarios/board-effect's Switcheroo scenarios
+            -- are the proof.
             (Just first, Just second)
               | first /= second ->
                   let (ts, gs1) = Game.freshTimestamp gs

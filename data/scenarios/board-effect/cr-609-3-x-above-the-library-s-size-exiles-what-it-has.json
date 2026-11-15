@@ -1,0 +1,175 @@
+{
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "battlefield": [
+          {
+            "card": "Mountain",
+            "label": "m-1"
+          },
+          {
+            "card": "Mountain",
+            "label": "m-2"
+          },
+          {
+            "card": "Mountain",
+            "label": "m-3"
+          },
+          {
+            "card": "Mountain",
+            "label": "m-4"
+          },
+          {
+            "card": "Mountain",
+            "label": "m-5"
+          },
+          {
+            "card": "Mountain",
+            "label": "spare-1"
+          },
+          {
+            "card": "Mountain",
+            "label": "spare-2"
+          },
+          {
+            "card": "Mountain",
+            "label": "spare-3"
+          },
+          {
+            "card": "Mountain",
+            "label": "spare-4"
+          }
+        ],
+        "hand": [
+          {
+            "card": "Commune with Lava",
+            "label": "commune"
+          }
+        ],
+        "library": [
+          {
+            "card": "Bird Maiden"
+          },
+          {
+            "card": "Goblin Piker"
+          }
+        ],
+        "name": "alice"
+      },
+      {
+        "library": [
+          {
+            "card": "Ogre Sentry"
+          }
+        ],
+        "name": "bob"
+      }
+    ],
+    "step": "PrecombatMain"
+  },
+  "description": "CR 609.3 X above the library's size exiles what it has",
+  "note": "Four spare Mountains, beyond the five that pay X = 3, let alice afford both exiled cards, so the Offered view shows the play permission on each.",
+  "timeline": [
+    {
+      "do": {
+        "Cast": {
+          "mana": [
+            "$m-1",
+            "$m-2",
+            "$m-3",
+            "$m-4",
+            "$m-5",
+            null
+          ],
+          "object": "$commune",
+          "x": 3
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "View": {
+          "is": [
+            "Bird Maiden",
+            "Goblin Piker"
+          ],
+          "of": "Zone",
+          "player": "alice",
+          "zone": "Exile"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "View": {
+          "is": [],
+          "of": "Zone",
+          "player": "alice",
+          "zone": "Library"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "View": {
+          "is": [
+            "Ogre Sentry"
+          ],
+          "of": "Zone",
+          "player": "bob",
+          "zone": "Library"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "View": {
+          "is": [
+            "Pass",
+            "Cast Bird Maiden",
+            "Cast Goblin Piker",
+            "ActivateManaAbility $spare-1",
+            "ActivateManaAbility $spare-2",
+            "ActivateManaAbility $spare-3",
+            "ActivateManaAbility $spare-4"
+          ],
+          "of": "Offered",
+          "player": "alice"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "View": {
+          "is": null,
+          "of": "Result"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    }
+  ]
+}

@@ -510,70 +510,15 @@ auntieOolSpec s registry =
           -- The precondition the reading rests on: the Piker really is gone.
           Spec.assertEqWith s "the Piker left the battlefield" (Game.lookupObject pikerId after) Nothing
 
--- CR 601.2i's second sentence -- "any abilities that trigger when a spell is
--- cast or put onto the stack trigger at this time" -- which is the whole trigger
--- event TriggerCondition.SpellCast matches.
---
--- Young Pyromancer, {1}{R} Creature -- Human Shaman 2/1: "Whenever you cast an
--- instant or sorcery spell, create a 1/1 red Elemental creature token." Two
--- narrowings in one printed sentence, and the Filter carries both -- "you cast"
--- is Filter.HeldBy Holder.Controller You against CR 109.5's "you" (CR 603.3a), "an instant
--- or sorcery spell" a disjunction of Filter.HasCardType -- so a board that moved
--- only one of them at a time could not tell a working Filter from one that
--- always passes. Each case below moves exactly one.
---
--- Boil, {3}{R} Instant "Destroy all Islands", is the spell cast: it TARGETS
--- NOTHING, so no answerer choice enters the fixture, and no player here controls
--- an Island, so its resolution changes nothing that an assertion reads. The
--- Elemental token is therefore the only thing the cast can put on the
--- battlefield.
---
--- THREE seats. At two players every board has exactly one non-controller, so
--- "the caster is not you" and "the caster is that one opponent" are the same
--- sentence and a Filter that confused them would still answer right. carol is
--- the seat that is neither the caster nor the ability's controller, and the
--- opponent case below names all three players in its assertions.
-youngPyromancerSpec :: (Monad m) => Spec.Spec m n -> Registry.Registry m -> n ()
-youngPyromancerSpec s registry =
-  let elemental = CardName.MkCardName (Text.pack "Elemental Token")
-      elementalsOf = S.countOnBattlefieldByName elemental
-      -- alice has Young Pyromancer and four Mountains, bob four Mountains, carol
-      -- nothing at all. Four each is Boil's {3}{R}, and covers Goblin Piker's
-      -- {2}{R} with one to spare.
-      board mountain pyromancer =
-        let addLands pid n g = List.foldl' (\g2 _ -> snd (S.addPermanent mountain pid g2)) g [1 .. (n :: Int)]
-            withLands = addLands S.bob 4 (addLands S.alice 4 S.threePlayerGame)
-            (_, withPyromancer) = S.addPermanent pyromancer S.alice withLands
-         in withPyromancer
-              { GameState.turn =
-                  (GameState.turn withPyromancer)
-                    { TurnRegisters.phase = Phase.PrecombatMain,
-                      TurnRegisters.activePlayer = S.alice,
-                      TurnRegisters.priority = Just S.alice
-                    }
-              }
-      castAndResolve caster oid gs = S.runPure S.identityAnswer (S.runPure S.identityAnswer gs (S.cast caster oid)) Engine.priorityLoop
-   in Spec.describe s "SpellCast" $ do
-        -- THE case: the trigger fires at all, and the token it makes is the one
-        -- the ability names rather than merely something arriving on the stack.
-        Spec.it s "CR 601.2i casting an instant fires Young Pyromancer" $ do
-          mountain <- S.printingOf s registry "Mountain"
-          pyromancer <- S.printingOf s registry "Young Pyromancer"
-          boil <- S.printingOf s registry "Boil"
-          let (boilId, gs) = S.addHandCard boil S.alice (board mountain pyromancer)
-              after = castAndResolve S.alice boilId gs
-          Spec.assertEqWith s "no Elemental before the cast" (elementalsOf S.alice gs) 0
-          Spec.assertEqWith s "exactly one Elemental token afterwards" (elementalsOf S.alice after) 1
-
 -- The printed rider "This ability triggers only once each turn"
--- (Parun.Types.TriggerLimit), on top of the trigger event the group above covers.
+-- (Parun.Types.TriggerLimit), on top of CR 601.2i's cast trigger event.
 -- No comprehensive rule states the clause; CR 702.179d is where the rulebook
 -- prints it verbatim, and Parun.Engine.Event.withinTriggerLimit is what spends it.
 --
 -- Whispering Wizard, {3}{U} Creature -- Human Wizard 3/2: "Whenever you cast a
 -- noncreature spell, create a 1/1 white Spirit creature token with flying. This
 -- ability triggers only once each turn." Nothing of the card is omitted. It is
--- Young Pyromancer above with the rider and a wider filter, which is the point:
+-- Young Pyromancer with the rider and a wider filter, which is the point:
 -- the SAME three casts run past both creatures below, and the Pyromancer's three
 -- Elementals are what prove the board really offers three trigger events rather
 -- than one.
@@ -688,23 +633,6 @@ whisperingWizardSpec s registry =
           Spec.assertEqWith s "so exactly one Spirit token" (spiritsOf S.alice after) 1
           Spec.assertEqWith s "the unlimited twin saw three events in that batch" (fmap (`firedBy` twinAfter) twins) [3]
           Spec.assertEqWith s "and made three Elementals" (S.countOnBattlefieldByName elemental S.alice twinAfter) 3
-        -- A cast the Filter rejects spends nothing: the rider is spent by the
-        -- ability TRIGGERING, not by an event that merely looks like its own.
-        Spec.it s "a creature spell neither fires the ability nor spends its rider" $ do
-          island <- S.printingOf s registry "Island"
-          wizard <- S.printingOf s registry "Whispering Wizard"
-          homunculus <- S.printingOf s registry "Furtive Homunculus"
-          think <- S.printingOf s registry "Think Twice"
-          let (bearers, gs) = board island wizard 1
-              (creature, g1) = S.addHandCard homunculus S.alice gs
-              (spell, g2) = S.addHandCard think S.alice g1
-              creatureCast = castAndResolve S.alice creature g2
-              after = castAndResolve S.alice spell creatureCast
-          Spec.assertEqWith s "the Homunculus resolved onto the battlefield" (S.countOnBattlefieldByName (S.printingName homunculus) S.alice creatureCast) 1
-          Spec.assertEqWith s "and fired nothing" (fmap (`firedBy` creatureCast) bearers) [0]
-          Spec.assertEqWith s "with no Spirit token" (spiritsOf S.alice creatureCast) 0
-          Spec.assertEqWith s "the noncreature cast that follows still fires" (fmap (`firedBy` after) bearers) [1]
-          Spec.assertEqWith s "and makes its Spirit" (spiritsOf S.alice after) 1
 
 -- The other printed rider, "This ability triggers only once" -- once per GAME
 -- rather than once per turn (Parun.Types.TriggerLimit's OncePerGame). No
@@ -789,101 +717,6 @@ acrobaticCheerleaderSpec s registry =
           Spec.assertEqWith s "the first of the two is where it triggered" (Map.lookup Keyword.Flying (Projection.keywordsOf oid fired)) (Just 1)
           Spec.assertEqWith s "and the second really offered the trigger again, tapped as its second main phase began" (TurnRegisters.phase (GameState.turn secondMain), tapState oid secondMain, TurnRegisters.activePlayer (GameState.turn secondMain)) (Phase.PostcombatMain, Just TapState.Tapped, S.alice)
 
--- CR 505.1b: "second main phase" counts the main phases that have occurred this
--- turn, so an extra main phase moves which phase the card means -- it does not
--- give the card a second chance at one. CR 505.1a is the other half and the
--- reason this is not the phase's name: every main phase after the first is a
--- POSTCOMBAT main phase, so a turn with an extra one holds two of those and only
--- the ordinal tells the second main phase from the third.
---
--- Acrobatic Cheerleader, {1}{W} Creature -- Human Survivor 2/2: "Survival -- At
--- the beginning of your second main phase, if this creature is tapped, put a
--- flying counter on it. This ability triggers only once." Relentless Assault,
--- {2}{R}{R} Sorcery: "Untap all creatures that attacked this turn. After this
--- main phase, there is an additional combat phase followed by an additional main
--- phase." Nothing of either is omitted.
---
--- The line of play makes the two readings disagree in the counter, not merely in
--- the timing: alice casts the Assault in her precombat main and does NOT attack
--- in the extra combat, so at the SECOND main phase the Cheerleader is untapped
--- and CR 603.4's intervening "if" is false. She then attacks in the regular
--- combat, so at the THIRD main phase it IS tapped -- which is the one moment a
--- reading keyed to the phase's NAME would fire, and the printed card does not.
---
--- The pair is one board apart: the control never casts the Assault, and its
--- postcombat main really is the second main phase, so the same attack does put
--- the counter on. Both runs start from the same fixture and answer every prompt
--- the same way; only the cast differs.
---
--- The reading is Projection.keywordsOf, which counts CR 122.1b counter INSTANCES
--- -- Nothing where the ability never fired, against the control's Just 1 -- so a
--- bare "it does not fly" cannot stand in for it.
-secondMainPhaseSpec :: (Monad m) => Spec.Spec m n -> Registry.Registry m -> n ()
-secondMainPhaseSpec s registry =
-  let atPhase p g = TurnRegisters.phase (GameState.turn g) == p
-      -- Run whole steps until `phase` is the current one and has NOT yet run.
-      -- Bounded so a fixture that never reaches the step ends rather than hangs.
-      stepUntil :: (forall r. Prompt.Prompt r -> r) -> (GameState.GameState -> Bool) -> GameState.GameState -> GameState.GameState
-      stepUntil answer done gs0 =
-        let go n g =
-              if n <= (0 :: Int) || done g
-                then g
-                else go (n - 1) (snd (Engine.runGamePure answer g Engine.runStep))
-         in go 64 gs0
-      oneStep :: (forall r. Prompt.Prompt r -> r) -> GameState.GameState -> GameState.GameState
-      oneStep answer = snd . (\g -> Engine.runGamePure answer g Engine.runStep)
-      tapState oid g = fmap Object.tapped (Map.lookup oid (GameState.objects g))
-      flyingOn oid g = Map.lookup Keyword.Flying (Projection.keywordsOf oid g)
-      -- Four Mountains is exactly Relentless Assault's {2}{R}{R}. bob holds no
-      -- creature, so nothing blocks and the Cheerleader's attack is what taps it
-      -- (CR 508.1f); twelve library cards a seat so no draw step decks anybody
-      -- (CR 104.3c).
-      board cheerleader mountain island assault =
-        let (oid, withCheerleader) = S.addPermanent cheerleader S.alice (Setup.emptyGame S.bothPlayers)
-            withLands = List.foldl' (\g _ -> snd (S.addPermanent mountain S.alice g)) withCheerleader [1 .. (4 :: Int)]
-            stock g pid = List.foldl' (\g2 _ -> snd (S.addLibraryCard island pid g2)) g [1 .. (12 :: Int)]
-            stocked = List.foldl' stock withLands [S.alice, S.bob]
-            (spell, withSpell) = S.addHandCard assault S.alice stocked
-         in ( oid,
-              spell,
-              withSpell
-                { GameState.turn =
-                    (GameState.turn withSpell)
-                      { TurnRegisters.phase = Phase.PrecombatMain,
-                        -- The same agreement between phase and schedule
-                        -- `acrobaticCheerleaderSpec`'s board makes, and for the same
-                        -- reason: a precombat main begun twice miscounts every later
-                        -- main phase.
-                        TurnRegisters.remaining = Seq.drop 1 (Turn.dropRestOfPhase (Phase.Beginning BeginningStep.Upkeep) Turn.laterPhases),
-                        TurnRegisters.activePlayer = S.alice,
-                        TurnRegisters.priority = Just S.alice
-                      }
-                }
-            )
-      boardOf = do
-        cheerleader <- S.printingOf s registry "Acrobatic Cheerleader"
-        mountain <- S.printingOf s registry "Mountain"
-        island <- S.printingOf s registry "Island"
-        assault <- S.printingOf s registry "Relentless Assault"
-        pure (board cheerleader mountain island assault)
-   in Spec.describe s "SecondMainPhase" $ do
-        Spec.it s "CR 505.1b an extra main phase makes the postcombat main the third, and it does not trigger" $ do
-          (oid, spell, gs) <- boardOf
-          let cast = snd (Engine.runGamePure S.identityAnswer gs (S.cast S.alice spell))
-              resolved = snd (Engine.runGamePure S.identityAnswer cast Stack.resolveTop)
-              -- S.identityAnswer declares no attackers, so the extra combat
-              -- passes with the Cheerleader untapped.
-              secondMain = stepUntil S.identityAnswer (atPhase Phase.PostcombatMain) resolved
-              afterSecond = oneStep S.identityAnswer secondMain
-              -- S.aggressiveAnswer attacks with everything, so the regular combat
-              -- taps it before the turn's third main phase.
-              thirdMain = stepUntil S.aggressiveAnswer (atPhase Phase.PostcombatMain) afterSecond
-              after = oneStep S.aggressiveAnswer thirdMain
-          Spec.assertEqWith s "no flying counter: the third main phase is not the second" (flyingOn oid after) Nothing
-          Spec.assertEqWith s "the extra main phase really ran, with the Cheerleader untapped" (TurnRegisters.phase (GameState.turn secondMain), tapState oid secondMain) (Phase.PostcombatMain, Just TapState.Untapped)
-          Spec.assertEqWith s "and the third main phase really ran, with it tapped" (TurnRegisters.phase (GameState.turn thirdMain), tapState oid thirdMain) (Phase.PostcombatMain, Just TapState.Tapped)
-          Spec.assertEqWith s "the rider is unspent, so nothing but the ordinal held the trigger back" (length (History.triggeredThisGame (GameState.history after))) 0
-
 -- The same CR 601.2i cast, read for WHICH cast of the turn it was --
 -- SpellCast.ordinal. The cast-side twin of Erudite Wizard's draw ordinal
 -- (data/scenarios/event-trigger), and the two conditions answer the same question
@@ -898,18 +731,10 @@ secondMainPhaseSpec s registry =
 -- laviniaTurnRiderSpec) -- two more clauses, neither bearing on the ordinal
 -- either way.
 --
--- The spells cast are Boil, {3}{R} Instant "Destroy all Islands", for
--- youngPyromancerSpec's reasons: it targets nothing, so no answerer choice
--- enters the fixture, and nobody here controls an Island, so a resolution
--- changes nothing an assertion reads. The Spirit token is the only thing a cast
--- can add to the battlefield, and the count of them is the whole observable --
--- so "fired on the second" is told apart from "fired on any" (three tokens) and
--- from "fired on the first" (a token after the first cast) by reading it after
--- EACH cast rather than at the end.
---
--- THREE seats, for youngPyromancerSpec's reason, and the opponent case below
--- needs them: bob's cast between two of alice's is what separates a count of
--- the casts the Filter admits from a count of every cast in the log.
+-- The spells cast are Boil, {3}{R} Instant "Destroy all Islands": it targets
+-- nothing, so no answerer choice enters the fixture, and nobody here controls an
+-- Island, so a resolution changes nothing an assertion reads. The Spirit token is
+-- the only thing a cast can add to the battlefield.
 clarionSpiritSpec :: (Monad m, Monad n) => Spec.Spec m n -> Registry.Registry m -> n ()
 clarionSpiritSpec s registry =
   let spirit = CardName.MkCardName (Text.pack "Spirit Token")
@@ -936,22 +761,6 @@ clarionSpiritSpec s registry =
           ([], gs)
           [1 .. (n :: Int)]
    in Spec.describe s "SpellCast, an ordinal" $ do
-        -- THE case, and the one three casts are needed for: the ordinal is an
-        -- EQUALITY, so the third cast fires nothing either.
-        Spec.it s "CR 601.2i the turn's SECOND cast fires Clarion Spirit, and no other" $ do
-          mountain <- S.printingOf s registry "Mountain"
-          clarion <- S.printingOf s registry "Clarion Spirit"
-          boil <- S.printingOf s registry "Boil"
-          case handOf boil S.alice 3 (board mountain clarion) of
-            ([first, second, third], gs) -> do
-              let afterFirst = castAndResolve S.alice first gs
-                  afterSecond = castAndResolve S.alice second afterFirst
-                  afterThird = castAndResolve S.alice third afterSecond
-              Spec.assertEqWith s "no Spirit before any cast" (spiritsOf S.alice gs) 0
-              Spec.assertEqWith s "the FIRST cast makes none" (spiritsOf S.alice afterFirst) 0
-              Spec.assertEqWith s "the SECOND makes exactly one" (spiritsOf S.alice afterSecond) 1
-              Spec.assertEqWith s "and the THIRD makes no more" (spiritsOf S.alice afterThird) 1
-            _ -> Spec.assertFailure s "fixture should put three Boil in alice's hand"
         -- "EACH turn": the count restarts at the handoff, which is what tells a
         -- per-turn ordinal from a running total. A total would fire once, on the
         -- second cast of the four, and never again.
@@ -992,50 +801,6 @@ clarionSpiritSpec s registry =
                   Spec.assertEqWith s "while the cast one is the first" (ordinal (SpellWasCast.spell cast)) (Just 1)
                 other -> Spec.assertFailure s ("expected one logged cast, got " <> show (length other))
             _ -> Spec.assertFailure s "fixture should put two Boil in alice's hand"
-
--- CR 113.6k: the first ability in the pool that functions from the STACK. The
--- same rule that put Narcomoeba's in a graveyard, one zone over.
---
--- Desolation Twin, {10} Creature -- Eldrazi 10/10: "When you cast this spell,
--- create a 10/10 colorless Eldrazi creature token." Chosen from the cast-trigger
--- family because it is the one member whose WHOLE printed text parun can write:
--- every other printing in that family wants CR 707.10's copy-a-spell. Nothing of
--- this card is omitted.
---
--- The bearer is the SPELL, which is what makes this a zone test rather than
--- another SpellCast case: at CR 601.2i the Twin is on nobody's battlefield and in
--- nobody's graveyard, so every candidate source but Event.eventTriggers'
--- `spellCast` misses it entirely, and the token below never appears.
-desolationTwinSpec :: (Monad m) => Spec.Spec m n -> Registry.Registry m -> n ()
-desolationTwinSpec s registry =
-  let eldrazi = CardName.MkCardName (Text.pack "Eldrazi Token")
-      eldraziOf = S.countOnBattlefieldByName eldrazi
-      -- Ten Mountains, which is the Twin's {10} exactly and Goblin Piker's
-      -- {1}{R} with plenty to spare -- the negative case below casts on the same
-      -- board, so mana can never be what separates the two.
-      board mountain =
-        let withLands = List.foldl' (\g _ -> snd (S.addPermanent mountain S.alice g)) (Setup.emptyGame S.bothPlayers) [1 .. (10 :: Int)]
-         in withLands
-              { GameState.turn =
-                  (GameState.turn withLands)
-                    { TurnRegisters.phase = Phase.PrecombatMain,
-                      TurnRegisters.activePlayer = S.alice,
-                      TurnRegisters.priority = Just S.alice
-                    }
-              }
-      castAndResolve caster oid gs = S.runPure S.identityAnswer (S.runPure S.identityAnswer gs (S.cast caster oid)) Engine.priorityLoop
-   in Spec.describe s "SpellCast, a Self subject" $ do
-        -- THE case: an ability borne by an object on the stack fires at all.
-        Spec.it s "CR 113.6k Desolation Twin's cast trigger fires from the stack" $ do
-          mountain <- S.printingOf s registry "Mountain"
-          twin <- S.printingOf s registry "Desolation Twin"
-          let (twinId, gs) = S.addHandCard twin S.alice (board mountain)
-              after = castAndResolve S.alice twinId gs
-          Spec.assertEqWith s "no Eldrazi token before the cast" (eldraziOf S.alice gs) 0
-          -- Positive control: the spell really resolved, so the token below is
-          -- the trigger's and not a fixture that never cast anything.
-          Spec.assertEqWith s "the Twin itself resolved onto the battlefield" (S.countOnBattlefieldByName (S.printingName twin) S.alice after) 1
-          Spec.assertEqWith s "and its cast trigger made exactly one token" (eldraziOf S.alice after) 1
 
 -- CR 601.2i's trigger reading back the spell it watched: the reserved slot
 -- Event.eventBindings stamps for that condition (Binding.castSpell), and the
@@ -1131,20 +896,9 @@ presenceOfTheMasterSpec s registry =
 -- against CR 109.5's "you" (CR 603.3a). It is the PAYLOAD's "that player" that
 -- needs the slot.
 --
--- THREE SEATS, and this is the test that needs them most: at two players "that
--- player" and "each opponent" name the same person, so a two-handed board cannot
--- tell Kambal's PlayerRef.InSlot thatPlayer from a wrong PlayerRef.Relative
--- Opponent. carol is the opponent who is NOT the caster, and her life total is
--- what separates the two authorings.
---
--- ONE TUPLE, not three assertions: the card prints 2 for both halves, so alice's
--- +2 and bob's -2 are the same magnitude and separate checks could agree for the
--- wrong reason. CR 119.3 is what moves each total.
---
--- Boil, {3}{R} Instant "Destroy all Islands", is the noncreature spell: it
--- TARGETS NOTHING, so no answerer choice enters the fixture, and no player here
--- controls an Island, so its resolution moves nothing an assertion reads.
-kambalSpec :: (Monad m, Monad n) => Spec.Spec m n -> Registry.Registry m -> n ()
+-- THREE SEATS: the noncreature case is a scenario (data/scenarios/event-trigger),
+-- where carol's untouched total separates "that player" from "each opponent".
+kambalSpec :: (Monad m) => Spec.Spec m n -> Registry.Registry m -> n ()
 kambalSpec s registry =
   let -- alice bears Kambal and nothing else; bob gets four Mountains, which is
       -- Boil's {3}{R} and Goblin Piker's {2}{R}. carol gets nothing at all: she
@@ -1164,17 +918,6 @@ kambalSpec s registry =
       castAndResolve caster oid gs = S.runPure S.identityAnswer (S.runPure S.identityAnswer gs (S.cast caster oid)) Engine.priorityLoop
       lives gs = (S.lifeOf S.alice gs, S.lifeOf S.bob gs, S.lifeOf S.carol gs)
    in Spec.describe s "SpellCast binds the caster" $ do
-        -- THE case: the payload reaches the player the EVENT named, and not the
-        -- other opponent. A wrong PlayerRef.Relative Opponent authoring drops
-        -- carol to 18 as well, which this tuple sees.
-        Spec.it s "CR 112.2 Kambal's 'that player' is the opponent who cast it" $ do
-          mountain <- S.printingOf s registry "Mountain"
-          kambal <- S.printingOf s registry "Kambal, Consul of Allocation"
-          boil <- S.printingOf s registry "Boil"
-          let (boilId, gs) = S.addHandCard boil S.bob (board mountain kambal)
-              after = castAndResolve S.bob boilId gs
-          Spec.assertEqWith s "everyone starts at 20" (lives gs) (Just 20, Just 20, Just 20)
-          Spec.assertEqWith s "CR 119.3: bob loses 2, alice gains 2, carol is untouched" (lives after) (Just 22, Just 18, Just 20)
         -- The "noncreature" half of the Filter, moved on its own: the same
         -- caster, a spell of the wrong card type. Without it a condition that
         -- admitted every opponent's cast would be indistinguishable.
@@ -1572,12 +1315,9 @@ spec s registry = Spec.describe s "Parun.Engine.Trigger" $ do
   controllerAtTriggerSpec s registry
   counterTriggerSpec s registry
   auntieOolSpec s registry
-  youngPyromancerSpec s registry
   whisperingWizardSpec s registry
   acrobaticCheerleaderSpec s registry
-  secondMainPhaseSpec s registry
   clarionSpiritSpec s registry
-  desolationTwinSpec s registry
   presenceOfTheMasterSpec s registry
   kambalSpec s registry
   brinebornCutthroatSpec s registry

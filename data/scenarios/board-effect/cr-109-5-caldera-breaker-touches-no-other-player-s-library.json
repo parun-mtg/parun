@@ -1,0 +1,168 @@
+{
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "battlefield": [
+          {
+            "card": "Mountain",
+            "label": "m-1"
+          },
+          {
+            "card": "Mountain",
+            "label": "m-2"
+          },
+          {
+            "card": "Mountain",
+            "label": "m-3"
+          },
+          {
+            "card": "Mountain",
+            "label": "m-4"
+          },
+          {
+            "card": "Mountain",
+            "label": "m-5"
+          },
+          {
+            "card": "Mountain",
+            "label": "m-6"
+          }
+        ],
+        "hand": [
+          {
+            "card": "Mountain",
+            "label": "hand-mountain"
+          },
+          {
+            "card": "Caldera Breaker",
+            "label": "breaker"
+          }
+        ],
+        "library": [
+          {
+            "card": "Mountain"
+          },
+          {
+            "card": "Goblin Piker"
+          },
+          {
+            "card": "Mountain"
+          },
+          {
+            "card": "Bird Maiden"
+          },
+          {
+            "card": "Mountain"
+          },
+          {
+            "card": "Ogre Sentry"
+          }
+        ],
+        "name": "alice"
+      },
+      {
+        "battlefield": [
+          {
+            "card": "Angel of Finality",
+            "label": "angel"
+          },
+          {
+            "card": "Hill Giant",
+            "label": "giant"
+          }
+        ],
+        "library": [
+          {
+            "card": "Mountain",
+            "label": "bobs-1"
+          },
+          {
+            "card": "Mountain",
+            "label": "bobs-2"
+          }
+        ],
+        "name": "bob"
+      }
+    ],
+    "step": "PrecombatMain"
+  },
+  "description": "CR 109.5 no other player's library is touched",
+  "final": [
+    {
+      "View": {
+        "is": [
+          "Goblin Piker",
+          "Bird Maiden",
+          "Ogre Sentry"
+        ],
+        "of": "Zone",
+        "player": "alice",
+        "zone": "Library"
+      }
+    },
+    {
+      "View": {
+        "is": [
+          "$bobs-1",
+          "$bobs-2"
+        ],
+        "of": "Zone",
+        "player": "bob",
+        "zone": "Library"
+      }
+    },
+    {
+      "View": {
+        "is": [],
+        "of": "Zone",
+        "player": "bob",
+        "zone": "Exile"
+      }
+    }
+  ],
+  "timeline": [
+    {
+      "do": {
+        "Cast": {
+          "mana": [
+            "$m-1",
+            "$m-2",
+            "$m-3",
+            "$m-4",
+            "$m-5",
+            "$m-6"
+          ],
+          "object": "$breaker"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "ChooseTargets": {
+          "target": [
+            "$angel"
+          ]
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    }
+  ]
+}

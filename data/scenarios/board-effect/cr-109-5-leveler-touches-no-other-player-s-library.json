@@ -1,0 +1,118 @@
+{
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "battlefield": [
+          {
+            "card": "Plains",
+            "label": "plains-1"
+          },
+          {
+            "card": "Plains",
+            "label": "plains-2"
+          },
+          {
+            "card": "Plains",
+            "label": "plains-3"
+          },
+          {
+            "card": "Plains",
+            "label": "plains-4"
+          },
+          {
+            "card": "Plains",
+            "label": "plains-5"
+          }
+        ],
+        "hand": [
+          {
+            "card": "Plains",
+            "label": "hand-plains"
+          },
+          {
+            "card": "Leveler",
+            "label": "leveler"
+          }
+        ],
+        "library": [
+          {
+            "card": "Ogre Sentry"
+          },
+          {
+            "card": "Bird Maiden"
+          },
+          {
+            "card": "Goblin Piker"
+          }
+        ],
+        "name": "alice"
+      },
+      {
+        "library": [
+          {
+            "card": "Angel of Finality"
+          },
+          {
+            "card": "Hill Giant"
+          }
+        ],
+        "name": "bob"
+      }
+    ],
+    "step": "PrecombatMain"
+  },
+  "description": "CR 109.5 no other player's library is touched",
+  "final": [
+    {
+      "View": {
+        "is": [
+          "Ogre Sentry",
+          "Bird Maiden",
+          "Goblin Piker"
+        ],
+        "of": "Zone",
+        "player": "alice",
+        "zone": "Exile"
+      }
+    },
+    {
+      "View": {
+        "is": [
+          "Angel of Finality",
+          "Hill Giant"
+        ],
+        "of": "Zone",
+        "player": "bob",
+        "zone": "Library"
+      }
+    },
+    {
+      "View": {
+        "is": [],
+        "of": "Zone",
+        "player": "bob",
+        "zone": "Exile"
+      }
+    }
+  ],
+  "timeline": [
+    {
+      "do": {
+        "Cast": {
+          "mana": [
+            "$plains-1",
+            "$plains-2",
+            "$plains-3",
+            "$plains-4",
+            "$plains-5"
+          ],
+          "object": "$leveler"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    }
+  ]
+}

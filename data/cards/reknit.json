@@ -1,0 +1,71 @@
+{
+  "faces": [
+    {
+      "manaCost": [
+        {
+          "type": "Generic",
+          "value": 1
+        },
+        {
+          "type": "Hybrid",
+          "value": {
+            "left": {
+              "type": "Colored",
+              "value": "Green"
+            },
+            "right": {
+              "type": "Colored",
+              "value": "White"
+            }
+          }
+        }
+      ],
+      "name": "Reknit",
+      "oracleText": "Regenerate target permanent.",
+      "spell": {
+        "modes": [
+          {
+            "clauses": [
+              {
+                "effects": [
+                  {
+                    "type": "Replace",
+                    "value": {
+                      "duration": {
+                        "type": "UntilEndOfTurn"
+                      },
+                      "effect": {
+                        "type": "DestructionR",
+                        "value": {
+                          "matching": {
+                            "type": "IsBound",
+                            "value": "permanent"
+                          },
+                          "rewrite": "Regenerate"
+                        }
+                      },
+                      "origin": "Other",
+                      "uses": "Once"
+                    }
+                  }
+                ]
+              }
+            ],
+            "targetSlots": {
+              "permanent": {
+                "pool": {
+                  "type": "Permanents"
+                }
+              }
+            }
+          }
+        ]
+      },
+      "typeLine": {
+        "types": [
+          "Instant"
+        ]
+      }
+    }
+  ]
+}
