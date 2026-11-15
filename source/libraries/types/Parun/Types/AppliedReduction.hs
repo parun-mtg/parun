@@ -9,12 +9,12 @@ import qualified Parun.Types.ManaCost as ManaCost
 -- A record rather than a tuple because the restrictions are per-EFFECT and not
 -- per-pool: both fields below quote a sentence printed on one card, so two
 -- reductions applying to one cost can disagree about either.
--- Parun.Engine.Cost.applyAdjustments folds them one at a time for that reason.
+-- Parun.Engine.CostAdjustments.applyAdjustments folds them one at a time for that reason.
 --
 -- The card-facing payload of Parun.Types.CostChange's Reduce arm too, which is
 -- why it has a wire form; the element type of
 -- Parun.Types.CostAdjustments.reductions, where Parun.Engine.Cost.spellAdjustments
--- and Parun.Engine.Cost.plusReductions (CR 702.119a's amount) also build one.
+-- and Parun.Engine.CostAdjustments.plusReductions (CR 702.119a's amount) also build one.
 data AppliedReduction = MkAppliedReduction
   { -- | What comes off, as an amount of MANA rather than a number: CR 118.7
     -- reduces a cost by mana of a stated type, and Sapphire Medallion's {1} and

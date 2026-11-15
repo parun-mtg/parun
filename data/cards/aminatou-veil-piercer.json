@@ -1,0 +1,140 @@
+{
+  "faces": [
+    {
+      "manaCost": [
+        {
+          "type": "Generic",
+          "value": 1
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "White"
+          }
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "Blue"
+          }
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "Black"
+          }
+        }
+      ],
+      "name": "Aminatou, Veil Piercer",
+      "oracleText": "At the beginning of your upkeep, surveil 2. (Look at the top two cards of your library, then put any number of them into your graveyard and the rest on top of your library in any order.)\nEach enchantment card in your hand has miracle. Its miracle cost is equal to its mana cost reduced by {4}. (You may cast a card for its miracle cost when you draw it if it's the first card you drew this turn.)",
+      "power": {
+        "type": "Literal",
+        "value": 2
+      },
+      "staticAbilities": [
+        {
+          "affected": {
+            "type": "MatchingOffBattlefield",
+            "value": {
+              "type": "And",
+              "value": [
+                {
+                  "type": "HasCardType",
+                  "value": "Enchantment"
+                },
+                {
+                  "type": "IsInZone",
+                  "value": "Hand"
+                },
+                {
+                  "type": "HeldBy",
+                  "value": {
+                    "holder": "Owner",
+                    "relation": "You"
+                  }
+                }
+              ]
+            }
+          },
+          "modifications": [
+            {
+              "type": "GainKeywordAtManaCost",
+              "value": {
+                "Miracle": [
+                  {
+                    "type": "Generic",
+                    "value": 4
+                  }
+                ]
+              }
+            }
+          ]
+        }
+      ],
+      "toughness": {
+        "type": "Literal",
+        "value": 4
+      },
+      "triggeredAbilities": [
+        {
+          "condition": {
+            "type": "StepBegins",
+            "value": {
+              "phase": {
+                "type": "Beginning",
+                "value": "Upkeep"
+              },
+              "scope": {
+                "type": "PlayersTurn",
+                "value": {
+                  "type": "Relative",
+                  "value": "You"
+                }
+              }
+            }
+          },
+          "modal": {
+            "modes": [
+              {
+                "clauses": [
+                  {
+                    "effects": [
+                      {
+                        "type": "Surveil",
+                        "value": {
+                          "player": {
+                            "type": "Relative",
+                            "value": "You"
+                          },
+                          "quantity": {
+                            "type": "Literal",
+                            "value": 2
+                          }
+                        }
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      ],
+      "typeLine": {
+        "subtypes": [
+          "Human",
+          "Wizard"
+        ],
+        "supertypes": [
+          "Legendary"
+        ],
+        "types": [
+          "Creature"
+        ]
+      }
+    }
+  ]
+}

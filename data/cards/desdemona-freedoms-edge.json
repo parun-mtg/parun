@@ -1,0 +1,136 @@
+{
+  "faces": [
+    {
+      "keywords": [
+        {
+          "type": "Vigilance"
+        }
+      ],
+      "manaCost": [
+        {
+          "type": "Generic",
+          "value": 2
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "Red"
+          }
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "White"
+          }
+        }
+      ],
+      "name": "Desdemona, Freedom's Edge",
+      "oracleText": "Vigilance\nWhenever Desdemona attacks, target creature card in your graveyard that's an artifact or that has mana value 3 or less gains escape until end of turn. The escape cost is equal to its mana cost plus exile two other cards from your graveyard. (You may cast it from your graveyard for its escape cost this turn.)",
+      "power": {
+        "type": "Literal",
+        "value": 3
+      },
+      "toughness": {
+        "type": "Literal",
+        "value": 4
+      },
+      "triggeredAbilities": [
+        {
+          "condition": {
+            "type": "Attacks",
+            "value": {
+              "type": "Attacker",
+              "value": {}
+            }
+          },
+          "modal": {
+            "modes": [
+              {
+                "clauses": [
+                  {
+                    "effects": [
+                      {
+                        "type": "ModifyTarget",
+                        "value": {
+                          "duration": {
+                            "type": "UntilEndOfTurn"
+                          },
+                          "modification": {
+                            "type": "GainKeywordAtManaCost",
+                            "value": {
+                              "Escape": 2
+                            }
+                          },
+                          "ref": {
+                            "type": "InSlot",
+                            "value": "target"
+                          }
+                        }
+                      }
+                    ]
+                  }
+                ],
+                "targetSlots": {
+                  "target": {
+                    "filter": {
+                      "type": "And",
+                      "value": [
+                        {
+                          "type": "HasCardType",
+                          "value": "Creature"
+                        },
+                        {
+                          "type": "Or",
+                          "value": [
+                            {
+                              "type": "HasCardType",
+                              "value": "Artifact"
+                            },
+                            {
+                              "type": "Measures",
+                              "value": {
+                                "comparison": "AtMost",
+                                "measure": "ManaValue",
+                                "operand": {
+                                  "type": "Literal",
+                                  "value": 3
+                                }
+                              }
+                            }
+                          ]
+                        }
+                      ]
+                    },
+                    "pool": {
+                      "type": "CardsInGraveyard",
+                      "value": {
+                        "type": "Scoped",
+                        "value": {
+                          "type": "You"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            ]
+          }
+        }
+      ],
+      "typeLine": {
+        "subtypes": [
+          "Human",
+          "Rogue"
+        ],
+        "supertypes": [
+          "Legendary"
+        ],
+        "types": [
+          "Creature"
+        ]
+      }
+    }
+  ]
+}

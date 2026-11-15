@@ -100,7 +100,7 @@ data ManaSymbol
     -- adding mana represented by {S} -- is Parun.Types.ManaProduction.SnowSymbol,
     -- rewritten to colorless mana by Parun.Engine.Mana.produced. CR 118.7g --
     -- a reduction BY {S}, which the rule turns back into a plain generic
-    -- reduction -- is why Parun.Engine.Cost.applyAdjustments asks costGenericOf on
+    -- reduction -- is why Parun.Engine.CostAdjustments.applyAdjustments asks costGenericOf on
     -- the cost side and reducingGenericOf on the reduction side.
     Snow
   | -- | CR 107.3 / 601.2b: the {X} symbol in a cost. Contributes the chosen value

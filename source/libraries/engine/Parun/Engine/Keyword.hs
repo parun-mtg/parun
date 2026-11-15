@@ -11,6 +11,7 @@ import qualified Data.Set as Set
 import qualified Data.Text as Text
 import Numeric.Natural (Natural)
 import qualified Parun.Engine.Binding as Binding
+import qualified Parun.Engine.CostAdjustments as CostAdjustments.Engine
 import qualified Parun.Engine.Deploy as Deploy
 import qualified Parun.Engine.Earthbend as Earthbend
 import qualified Parun.Engine.Mint as Mint
@@ -144,6 +145,7 @@ import Parun.Types.ForetellCost (ForetellCost)
 import qualified Parun.Types.Gift as Gift
 import qualified Parun.Types.GrantLookAtExiled as GrantLookAtExiled
 import qualified Parun.Types.GrantedAbility as GrantedAbility
+import qualified Parun.Types.GraveyardCostDestination as GraveyardCostDestination
 import qualified Parun.Types.Holder as Holder
 import qualified Parun.Types.Hop as Hop
 import qualified Parun.Types.HowMany as HowMany
@@ -188,6 +190,7 @@ import qualified Parun.Types.ModifyPowerToughness as ModifyPowerToughness
 import qualified Parun.Types.ModifyTarget as ModifyTarget
 import qualified Parun.Types.Morph as Morph
 import qualified Parun.Types.MorphVariant as MorphVariant
+import qualified Parun.Types.MoveCardsFromGraveyard as MoveCardsFromGraveyard
 import qualified Parun.Types.MoveCounters as MoveCounters
 import qualified Parun.Types.MoveToZone as MoveToZone
 import qualified Parun.Types.MovedKinds as MovedKinds
@@ -3278,9 +3281,10 @@ madnessCostFor manaCost payload = case payload of
   MadnessCost.OwnManaCost -> Cost.MkCost {Cost.mana = manaCost, Cost.components = []}
 
 -- CR 702.34a / 702.97a / 702.84a / 702.128a / 702.141a / 702.168a / 702.152a /
--- 702.180a / 702.187b / 702.56a / 702.119a / 702.196a: the keyword a
--- Modification.GainKeywordAtManaCost names, carrying the [cost] it was priced
--- at. Parun.Engine.Projection supplies the receiving object's mana cost, and
+-- 702.180a / 702.187b / 702.56a / 702.119a / 702.94a / 702.138a / 702.196a: the
+-- keyword a Modification.GainKeywordAtManaCost names, carrying the [cost] it was
+-- priced at. Parun.Engine.Projection supplies the receiving object's mana cost,
+-- which a miracle's payload reduces (CR 118.7) and an escape's adds to, and
 -- grantedBy bakes a beam me up's unreturnable.
 withCost :: CostKeyword.CostKeyword -> Cost Keyword -> Keyword
 withCost keyword cost = case keyword of
@@ -3296,6 +3300,25 @@ withCost keyword cost = case keyword of
   CostKeyword.Replicate -> Keyword.Replicate cost
   -- CR 702.119a's plain emerge: the victim is any creature.
   CostKeyword.Emerge -> Keyword.Emerge (Emerge.MkEmerge cost Nothing)
+  -- Aminatou, Veil Piercer's "its mana cost reduced by {4}": a cost, never a
+  -- CR 601.2f reduction (Parun.Engine.CostAdjustments.reducedManaCost).
+  CostKeyword.Miracle reduction -> Keyword.Miracle cost {Cost.mana = fmap (CostAdjustments.Engine.reducedManaCost reduction) (Cost.mana cost)}
+  -- Confession Dial's "plus exile three other cards from your graveyard",
+  -- the component a printed escape cost states: the card itself is on the
+  -- stack from CR 601.2a, so "other" needs no clause.
+  CostKeyword.Escape count ->
+    Keyword.Escape
+      cost
+        { Cost.components =
+            Cost.components cost
+              <> [ CostComponent.MoveCardsFromGraveyard
+                     MoveCardsFromGraveyard.MkMoveCardsFromGraveyard
+                       { MoveCardsFromGraveyard.count = CostAmount.Fixed count,
+                         MoveCardsFromGraveyard.whichCards = Filter.And [],
+                         MoveCardsFromGraveyard.destination = GraveyardCostDestination.Exile
+                       }
+                 ]
+        }
   CostKeyword.BeamMeUp unreturnable -> Keyword.BeamMeUp (BeamMeUp.MkBeamMeUp cost unreturnable)
 
 -- CR 702.102a: does this card's keyword set let both halves be cast as one fused

@@ -12,6 +12,7 @@ import qualified Parun.Engine.ActivationRestriction as ActivationRestriction
 import qualified Parun.Engine.Binding as Binding
 import qualified Parun.Engine.Condition as Condition
 import qualified Parun.Engine.Cost as Cost
+import qualified Parun.Engine.CostAdjustments as CostAdjustments.Engine
 import qualified Parun.Engine.Decide as Decide
 import qualified Parun.Engine.Event as Event
 import qualified Parun.Engine.Filter as Filter
@@ -563,7 +564,7 @@ activateAbilityWith refused runSubgame pid srcId ability = Event.announcing $ do
                   -- (Object.manaSpentOnX), split off CR 601.2f's total the mana
                   -- was spent against, an increase's included.
                   xNow <- State.gets (Game.lookupObject abilId Monad.>=> (Binding.amountOf Binding.variableX . Object.bindings))
-                  Cost.recordXShares (PaymentSubject.Activating srcId (ActivatedAbility.name ability) stamp spendable) pid abilId (Slots.hasRead StaticRead.ReadsManaSpentOnX (Modal.allEffects (ActivatedAbility.modal ability))) ((\x paid -> Cost.splitX Nothing x Cost.noAdjustments paid paid) <$> xNow <*> Cost.Type.mana paidCost)
+                  Cost.recordXShares (PaymentSubject.Activating srcId (ActivatedAbility.name ability) stamp spendable) pid abilId (Slots.hasRead StaticRead.ReadsManaSpentOnX (Modal.allEffects (ActivatedAbility.modal ability))) ((\x paid -> Cost.splitX Nothing x CostAdjustments.Engine.noAdjustments paid paid) <$> xNow <*> Cost.Type.mana paidCost)
                   -- CR 602.5b: record that THIS ability of this permanent has now
                   -- been activated, which is the whole of both counted riders'
                   -- storage -- see ActivationRestriction.recordActivation, the

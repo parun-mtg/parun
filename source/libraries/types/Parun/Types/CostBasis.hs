@@ -21,7 +21,7 @@ import qualified Parun.Types.SlotName as SlotName
 -- Parun.Types.MakeForetold.manaCostReducedBy is the same derivation from the
 -- other provenance -- CR 702.143d's cost as Ethereal Valkyrie states it, "its
 -- foretell cost is its mana cost reduced by {2}" -- and
--- Parun.Engine.Cost.reducedManaCost is the one procedure both
+-- Parun.Engine.CostAdjustments.reducedManaCost is the one procedure both
 -- reach. What that one settles when the card is exiled, this one settles as the
 -- gate is offered, there being no earlier moment: CR 118.12 puts the payment at
 -- resolution.
@@ -40,7 +40,7 @@ data CostBasis = MkCostBasis
     -- a slot naming nothing.
     slot :: SlotName.SlotName,
     -- | CR 118.7's reduction applied to that mana cost -- Flash's {2}, taken off
-    -- by Parun.Engine.Cost.reducedManaCost exactly as every other reduction is
+    -- by Parun.Engine.CostAdjustments.reducedManaCost exactly as every other reduction is
     -- (CR 118.7a-g).
     --
     -- Not a Maybe: the empty ManaCost IS {0} (CR 118.5), so "its mana cost"

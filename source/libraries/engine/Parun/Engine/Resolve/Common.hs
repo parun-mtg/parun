@@ -28,6 +28,7 @@ import qualified Parun.Engine.Cast as Cast
 import qualified Parun.Engine.Children as Children
 import qualified Parun.Engine.Combat as Combat
 import qualified Parun.Engine.Cost as Cost
+import qualified Parun.Engine.CostAdjustments as CostAdjustments.Engine
 import qualified Parun.Engine.Count as Count
 import qualified Parun.Engine.CounterRestriction as CounterRestriction
 import qualified Parun.Engine.Damage as Damage
@@ -5438,7 +5439,7 @@ describedCosts resolving controller source legal gs gate = case PayGate.basis ga
         described = case objectRefObjects bound resolving controller source gs (ObjectRef.InSlot (CostBasis.slot basis)) of
           [oid] -> Filter.manaCost =<< effectViewOf resolving source bound gs oid
           _ -> Nothing
-     in fmap (\option -> option {Cost.Type.mana = fmap (Cost.reducedManaCost (CostBasis.reducedBy basis)) described}) (CostChoice.unwrap (PayGate.cost gate))
+     in fmap (\option -> option {Cost.Type.mana = fmap (CostAdjustments.Engine.reducedManaCost (CostBasis.reducedBy basis)) described}) (CostChoice.unwrap (PayGate.cost gate))
 
 -- CR 118.4 / CR 107.3a: the value of X in a cost paid during resolution. NOT a
 -- choice the payer makes -- CR 107.3a fixes it at the value the object's own
