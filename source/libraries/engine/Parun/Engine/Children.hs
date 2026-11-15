@@ -3646,7 +3646,7 @@ modificationChildren c modification = case modification of
   Modification.AssignCombatDamage _ -> pure modification
   Modification.AssignCombatDamageAs {} -> pure modification
   Modification.GrantsStationToughness -> pure modification
-  Modification.TapsAsThoughPowerGreater {} -> pure modification
+  Modification.TapsCounting {} -> pure modification
   Modification.LoyaltyIsToughness -> pure modification
   Modification.Intensify quantity -> Modification.Intensify <$> modificationQuantity c quantity
 

@@ -2938,11 +2938,17 @@ dividesMixedRemoval spread owed offered division =
 -- The power a candidate contributes to CR 702.122a's total. Zero for a permanent
 -- with no power at all, which after CR 208.3 is every noncreature one.
 --
--- Raised by the candidate's Modification.TapsAsThoughPowerGreater offsets for
--- the keyword whose cost this is (Deathless Pilot), and by none for a cost
--- printed outside a keyword. The scenario
+-- Raised by the candidate's Modification.TapsCounting offsets for the keyword
+-- whose cost this is (Deathless Pilot), and by none for a cost printed outside
+-- a keyword. The scenario
 -- `deathless-pilot-crews-a-crew-4-vehicle-alone-where-a-bear-of-its-power-cannot`
 -- proves it.
+--
+-- Replaced by its toughness where a TapsCounting substitution names that
+-- keyword (Interface Ace), proved by the scenario
+-- `interface-ace-crews-a-crew-3-vehicle-alone-where-a-bear-of-its-power-cannot`.
+-- The offsets then go unread (docs/decisions.md, "Whether a crew power offset
+-- raises a toughness crewer").
 tapPower :: Maybe KeywordFamily.KeywordFamily -> ObjectId -> GameState -> Integer
 tapPower keyword = tapPowerGiven keyword Map.empty
 
@@ -2950,8 +2956,12 @@ tapPower keyword = tapPowerGiven keyword Map.empty
 tapPowerGiven :: Maybe KeywordFamily.KeywordFamily -> Map.Map ObjectId PC.ProjectedCharacteristics -> ObjectId -> GameState -> Integer
 tapPowerGiven keyword pcs candidate gs =
   let pc = Projection.projectGiven pcs candidate gs
-      bonus = maybe 0 (\k -> Map.findWithDefault 0 k (PC.tapPowerBonus pc)) keyword
-   in maybe 0 (+ toInteger bonus) (PC.power pc)
+      counted = case keyword of
+        Just k
+          | Set.member k (PC.tapsUsingToughness pc) -> PC.toughness pc
+          | otherwise -> fmap (+ toInteger (Map.findWithDefault 0 k (PC.tapPowerBonus pc))) (PC.power pc)
+        Nothing -> PC.power pc
+   in Maybe.fromMaybe 0 counted
 
 -- CR 205.3m: a tap candidate's creature types, off its projection -- so a
 -- changeling holds every one (CR 702.73a) and a land type none.

@@ -121,6 +121,9 @@ testCharacteristics =
       PC.combatDamageOptions = Map.singleton CombatDamageOption.ToDefendingCreature CombatDamageObligation.Optional,
       PC.grantsStationToughness = True,
       PC.tapPowerBonus = Map.singleton KeywordFamily.Saddle 2,
+      -- A different keyword from `tapPowerBonus` above, `textChangedKeywords`'
+      -- reason.
+      PC.tapsUsingToughness = Set.singleton KeywordFamily.Crew,
       PC.loyaltyIsToughness = True,
       -- Parun.Codec.FaceSpec's own values for the four cost fields.
       PC.additionalCosts = [CostComponent.TapThis],
@@ -194,6 +197,7 @@ testCharacteristicsJson =
     <> "\"combatDamageOptions\":[{\"key\":\"ToDefendingCreature\",\"value\":\"Optional\"}],"
     <> "\"grantsStationToughness\":true,"
     <> "\"tapPowerBonus\":[{\"key\":\"Saddle\",\"value\":2}],"
+    <> "\"tapsUsingToughness\":[\"Crew\"],"
     <> "\"loyaltyIsToughness\":true,"
     <> "\"additionalCosts\":[{\"type\":\"TapThis\"}],"
     <> "\"additionalCostChoices\":[[{\"components\":[{\"type\":\"TapThis\"}],\"mana\":[]},{\"mana\":[{\"type\":\"Generic\",\"value\":1}]}]],"
@@ -258,6 +262,7 @@ minimalCharacteristics =
       PC.combatDamageOptions = Map.empty,
       PC.grantsStationToughness = False,
       PC.tapPowerBonus = Map.empty,
+      PC.tapsUsingToughness = Set.empty,
       PC.loyaltyIsToughness = False,
       PC.additionalCosts = [],
       PC.additionalCostChoices = [],

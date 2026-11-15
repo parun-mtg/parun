@@ -1945,6 +1945,7 @@ noCharacteristics =
       -- controller's station abilities of its own.
       PC.grantsStationToughness = False,
       PC.tapPowerBonus = Map.empty,
+      PC.tapsUsingToughness = Set.empty,
       PC.loyaltyIsToughness = False,
       -- CR 601.2b / 601.2f: no card, so no printed costs either.
       PC.additionalCosts = [],
@@ -2148,6 +2149,7 @@ baseCharacteristics oid gs = case Game.faceOf oid gs of
               -- applyModification's GrantsStationToughness arm is the only writer.
               PC.grantsStationToughness = False,
               PC.tapPowerBonus = Map.empty,
+              PC.tapsUsingToughness = Set.empty,
               PC.loyaltyIsToughness = False,
               -- CR 707.2: the cast-time costs printed in the rules text, copiable
               -- with it, so a card carrying a copy stamp or a conjured

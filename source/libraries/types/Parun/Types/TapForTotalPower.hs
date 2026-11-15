@@ -18,7 +18,7 @@ data TapForTotalPower keyword = MkTapForTotalPower
   { totalPower :: Natural.Natural,
     whichPermanents :: Filter.Filter keyword,
     -- | The rule-702 keyword whose cost this is (crew, saddle), which
-    -- Modification.TapsAsThoughPowerGreater names; Nothing when printed
+    -- Modification.TapsCounting names; Nothing when printed
     -- outside one (data/cards/synthetic-crewed-battery.json).
     keywordCost :: Maybe KeywordFamily.KeywordFamily
   }

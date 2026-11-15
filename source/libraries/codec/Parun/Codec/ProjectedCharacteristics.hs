@@ -97,6 +97,7 @@ codec = Fields.object $ do
   combatDamageOptions <- Fields.defaulted "combatDamageOptions" Map.empty (Common.keyedList (Common.keyValue CombatDamageOption.codec CombatDamageObligation.codec)) PC.combatDamageOptions
   grantsStationToughness <- Fields.defaulted "grantsStationToughness" False Common.boolean PC.grantsStationToughness
   tapPowerBonus <- Fields.defaulted "tapPowerBonus" Map.empty (Common.multiset KeywordFamily.codec) PC.tapPowerBonus
+  tapsUsingToughness <- Fields.defaulted "tapsUsingToughness" Set.empty (Common.set KeywordFamily.codec) PC.tapsUsingToughness
   loyaltyIsToughness <- Fields.defaulted "loyaltyIsToughness" False Common.boolean PC.loyaltyIsToughness
   additionalCosts <- Fields.defaulted "additionalCosts" [] (Common.list (CostComponent.codec Keyword.codec)) PC.additionalCosts
   additionalCostChoices <- Fields.defaulted "additionalCostChoices" [] (Common.list CostChoice.codec) PC.additionalCostChoices
@@ -158,6 +159,7 @@ codec = Fields.object $ do
         PC.combatDamageOptions = combatDamageOptions,
         PC.grantsStationToughness = grantsStationToughness,
         PC.tapPowerBonus = tapPowerBonus,
+        PC.tapsUsingToughness = tapsUsingToughness,
         PC.loyaltyIsToughness = loyaltyIsToughness,
         PC.additionalCosts = additionalCosts,
         PC.additionalCostChoices = additionalCostChoices,
