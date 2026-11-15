@@ -177,6 +177,7 @@ seat name =
       Seat.Type.team = Nothing,
       Seat.Type.range = Nothing,
       Seat.Type.emperor = False,
+      Seat.Type.speed = Nothing,
       Seat.Type.graveyardOrder = GraveyardOrder.Type.Indifferent,
       Seat.Type.manaPool = [],
       Seat.Type.battlefield = Seq.empty,

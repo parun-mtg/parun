@@ -26,6 +26,8 @@ data Seat = MkSeat
     range :: Maybe Natural,
     -- | CR 809.2: whether the player is their team's emperor.
     emperor :: Bool,
+    -- | CR 702.179b: the player's speed; Nothing for a player who has none.
+    speed :: Maybe Natural,
     -- | CR 404.3: whether the player arranges cards put into their graveyard
     -- at the same time.
     graveyardOrder :: GraveyardOrder.GraveyardOrder,

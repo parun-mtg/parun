@@ -1,0 +1,248 @@
+{
+  "description": "CR 604.1 the grant is re-asked, not latched",
+  "note": "CR 604.1 makes CR 702.178a's max speed clause true only while it holds. Alice starts at speed 4 with two Raceways, so the first she taps offers both yields; bob's Spikeshell Harrier then lowers her to 3, his own speed (none) reading as 0 (CR 702.179f), and the second Raceway's tap makes {C} alone, asking for no yield. Two Raceways because the first stays tapped. On bob's turn CR 702.179d raises nothing.",
+  "board": {
+    "seats": [
+      {
+        "name": "alice",
+        "speed": 4,
+        "battlefield": [
+          {
+            "card": "Muraganda Raceway",
+            "label": "raceway"
+          },
+          {
+            "card": "Muraganda Raceway",
+            "label": "raceway2"
+          },
+          {
+            "card": "Grizzly Bears",
+            "label": "bears"
+          }
+        ]
+      },
+      {
+        "name": "bob",
+        "battlefield": [
+          {
+            "card": "Island",
+            "label": "island1"
+          },
+          {
+            "card": "Island",
+            "label": "island2"
+          },
+          {
+            "card": "Island",
+            "label": "island3"
+          },
+          {
+            "card": "Island",
+            "label": "island4"
+          },
+          {
+            "card": "Island",
+            "label": "island5"
+          }
+        ],
+        "hand": [
+          {
+            "card": "Spikeshell Harrier",
+            "label": "harrier"
+          }
+        ]
+      }
+    ],
+    "active": "bob",
+    "step": "PrecombatMain"
+  },
+  "timeline": [
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "bob",
+      "do": {
+        "Cast": {
+          "object": "$harrier",
+          "mana": [
+            "$island1",
+            "$island2",
+            "$island3",
+            "$island4",
+            "$island5"
+          ]
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "check": {
+        "View": {
+          "of": "Speed",
+          "player": "alice",
+          "is": 4
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "check": {
+        "View": {
+          "of": "Prompt",
+          "is": {
+            "kind": "ChooseManaYield",
+            "offer": {
+              "source": "$raceway",
+              "yields": [
+                [
+                  {
+                    "type": "Colorless"
+                  }
+                ],
+                [
+                  {
+                    "type": "Colorless"
+                  },
+                  {
+                    "type": "Colorless"
+                  }
+                ]
+              ]
+            }
+          }
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "do": {
+        "Take": {
+          "action": "ActivateManaAbility $raceway",
+          "yields": [
+            [
+              {
+                "manaType": {
+                  "type": "Colorless"
+                },
+                "tags": [],
+                "retention": "Ordinary",
+                "restriction": null,
+                "rider": null,
+                "sourceChoices": null
+              },
+              {
+                "manaType": {
+                  "type": "Colorless"
+                },
+                "tags": [],
+                "retention": "Ordinary",
+                "restriction": null,
+                "rider": null,
+                "sourceChoices": null
+              }
+            ]
+          ]
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "check": {
+        "View": {
+          "of": "ManaPool",
+          "player": "alice",
+          "is": [
+            {
+              "manaType": {
+                "type": "Colorless"
+              },
+              "tags": [],
+              "retention": "Ordinary",
+              "restriction": null,
+              "rider": null,
+              "sourceChoices": null
+            },
+            {
+              "manaType": {
+                "type": "Colorless"
+              },
+              "tags": [],
+              "retention": "Ordinary",
+              "restriction": null,
+              "rider": null,
+              "sourceChoices": null
+            }
+          ]
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "BeginningOfCombat",
+      "player": "alice",
+      "check": {
+        "View": {
+          "of": "Speed",
+          "player": "alice",
+          "is": 3
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "BeginningOfCombat",
+      "player": "alice",
+      "do": {
+        "Take": {
+          "action": "ActivateManaAbility $raceway2"
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "BeginningOfCombat",
+      "player": "alice",
+      "check": {
+        "View": {
+          "of": "ManaPool",
+          "player": "alice",
+          "is": [
+            {
+              "manaType": {
+                "type": "Colorless"
+              },
+              "tags": [],
+              "retention": "Ordinary",
+              "restriction": null,
+              "rider": null,
+              "sourceChoices": null
+            }
+          ]
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "BeginningOfCombat",
+      "player": "alice",
+      "check": {
+        "View": {
+          "of": "Zone",
+          "player": "alice",
+          "zone": "Hand",
+          "is": [
+            "Grizzly Bears"
+          ]
+        }
+      }
+    }
+  ]
+}

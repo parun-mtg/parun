@@ -242,6 +242,7 @@ playerSetup pid =
       Seat.team = Nothing,
       Seat.range = Nothing,
       Seat.emperor = False,
+      Seat.speed = Nothing,
       Seat.graveyardOrder = GraveyardOrder.Indifferent,
       Seat.manaPool = [],
       Seat.battlefield = Seq.empty,

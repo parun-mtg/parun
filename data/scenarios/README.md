@@ -15,8 +15,9 @@ subdirectory named for that spec; `docs/scenario-burndown.md` lists the ones sti
 - **Board.** `seats` in turn order, each with a `name`, `life` (default 20),
   player `counters` (`[{ "key": "Energy", "value": 3 }]`), a
   `team` number (CR 808.1), a `range` of influence (CR 801.2a, default
-  unlimited), `emperor` (CR 809.2), a `manaPool` of unrestricted mana one
-  letter per unit (`"RRC"`, CR 106.4) and
+  unlimited), `emperor` (CR 809.2), a `speed` (CR 702.179b, none unless
+  given), a `manaPool` of unrestricted mana one letter per unit (`"RRC"`, CR
+  106.4) and
   `battlefield`, `hand`, `graveyard`, `library`, `exile`, `command` (CR
   408.1) and `ante` (CR 407) placements (a
   library top card first; an exiled card face up and linked to nothing), and
@@ -176,7 +177,8 @@ subdirectory named for that spec; `docs/scenario-burndown.md` lists the ones sti
   behind it wait for that prompt, and it never reads `final`),
   `AttachedTo` and `Controller` (of an `object`), `Result`, `ActivePlayer`,
   `Priority`, `Zone` (a `player`'s `zone`, in order), `Colors`, `ManaPool`
-  (a `player`'s), `Daytime` (`null` before either), and `Protector`,
+  (a `player`'s), `Daytime` (`null` before either), `Speed` (a `player`'s,
+  `null` for none, CR 702.179b), and `Protector`,
   `Designations`, `RingBearer` and `Supertypes` (of an `object`),
   `CommanderDamage` (a `player`'s, as `[name, amount]` pairs), `OwnershipChanges`
   (each card whose owner changed, as `[card, starting owner, owner]`, a merged

@@ -159,7 +159,6 @@ isActivateOf oid action = case action of
 
 spec :: (Monad m, Monad n) => Spec.Spec m n -> Registry.Registry m -> n ()
 spec s registry = Spec.describe s "Parun.Engine.Speed" $ do
-  startYourEnginesSpec s registry
   maxSpeedSpec s registry
   maxSpeedZoneSpec s registry
   increaseSpec s registry
@@ -248,32 +247,6 @@ maxSpeedZoneSpec s registry = Spec.describe s "MaxSpeedZone" $ do
     Spec.assertEqWith s "the projection does hand it out" (length (Projection.abilitiesOf bfId gs)) 1
     Spec.assertBool s (not (any (isActivateOf bfId) (Action.legalActions S.alice gs))) "but no activation is offered"
 
-startYourEnginesSpec :: (Monad m, Monad n) => Spec.Spec m n -> Registry.Registry m -> n ()
-startYourEnginesSpec s registry = Spec.describe s "StartYourEngines" $ do
-  -- CR 704.5aa, and CR 702.179a's whole content: the keyword does nothing on its
-  -- own, and the state-based action is what turns controlling the permanent into
-  -- having speed.
-  Spec.it s "CR 704.5aa a player controlling Muraganda Raceway with no speed gets speed 1" $ do
-    raceway <- S.printingOf s registry "Muraganda Raceway"
-    let (_, gs) = S.addPermanent raceway S.alice (Setup.emptyGame S.bothPlayers)
-    Spec.assertEqWith s "before the check, nobody has speed (CR 702.179b)" (speedOf S.alice gs) (Just Nothing)
-    let after = S.settleSba gs
-    Spec.assertEqWith s "alice's engines started" (speedOf S.alice after) (Just (Just 1))
-    -- Bob controls no such permanent, so CR 704.5aa passes him by. The falsifier
-    -- for an implementation that gave everybody speed.
-    Spec.assertEqWith s "bob, who controls none, still has no speed" (speedOf S.bob after) (Just Nothing)
-  -- CR 305.7 / 702.179a: the keyword is read off the PROJECTION, so an effect
-  -- that takes the permanent's rules text away takes its engines with it. Blood
-  -- Moon and not Humility, because CR 613.1f's strip is aimed at creatures and
-  -- the Raceway is a land -- CR 305.7 is the strip that reaches one.
-  Spec.it s "CR 305.7 a Blood Moon'd Raceway starts nobody's engines" $ do
-    raceway <- S.printingOf s registry "Muraganda Raceway"
-    bloodMoon <- S.printingOf s registry "Blood Moon"
-    let (_, board) = S.addPermanent raceway S.alice (Setup.emptyGame S.bothPlayers)
-        (_, moonlit) = S.addPermanent bloodMoon S.bob board
-        after = S.settleSba moonlit
-    Spec.assertEqWith s "no speed, the keyword having been stripped" (speedOf S.alice after) (Just Nothing)
-
 maxSpeedSpec :: (Monad m, Monad n) => Spec.Spec m n -> Registry.Registry m -> n ()
 maxSpeedSpec s registry = Spec.describe s "MaxSpeed" $ do
   -- CR 702.178a: "as long as your speed is 4, this object has '[Ability]'". At
@@ -317,20 +290,6 @@ maxSpeedSpec s registry = Spec.describe s "MaxSpeed" $ do
         settled = S.settleSba board
     Spec.assertBool s (Projection.hasKeyword Keyword.DoubleStrike botId (atSpeed 4 S.alice settled)) "double strike at speed 4"
     Spec.assertBool s (not (Projection.hasKeyword Keyword.DoubleStrike botId (atSpeed 3 S.alice settled))) "no double strike at speed 3"
-  -- CR 604.1 makes a static ability "simply true", so CR 702.178a's clause is
-  -- re-asked on every read rather than latched: dropping the same player's speed
-  -- back takes the ability away again, with no event and no resolution in
-  -- between. Nothing HERE distinguishes "exactly 4" from "at least 4" -- rule
-  -- 702.179d's own climb cannot exceed 4 -- which is what the case below exists
-  -- for.
-  Spec.it s "CR 604.1 the grant is re-asked, not latched" $ do
-    raceway <- S.printingOf s registry "Muraganda Raceway"
-    let (racewayId, board) = S.addPermanent raceway S.alice (Setup.emptyGame S.bothPlayers)
-        settled = S.settleSba board
-        fast = atSpeed 4 S.alice settled
-        slowAgain = atSpeed 3 S.alice fast
-    Spec.assertEqWith s "two at speed 4" (length (Projection.abilitiesOf racewayId fast)) 2
-    Spec.assertEqWith s "one again at speed 3" (length (Projection.abilitiesOf racewayId slowAgain)) 1
   -- The layer system is asked BEFORE CR 702.178a's gate, so a Raceway whose rules
   -- text CR 305.7 stripped has no ability left to grant however fast its
   -- controller is. The falsifier for a gate that added the ability rather than

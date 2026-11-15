@@ -36,6 +36,7 @@ spec s = Spec.describe s "Parun.Codec.Seat" $ do
           Seat.Type.team = Just (TeamId.Type.MkTeamId 1),
           Seat.Type.range = Just 2,
           Seat.Type.emperor = True,
+          Seat.Type.speed = Just 0,
           Seat.Type.graveyardOrder = GraveyardOrder.Type.Matters,
           Seat.Type.manaPool = [ManaType.Type.Colored Color.Type.Red, ManaType.Type.Colorless],
           Seat.Type.battlefield = Seq.singleton (card "Mountain"),
@@ -48,7 +49,7 @@ spec s = Spec.describe s "Parun.Codec.Seat" $ do
           Seat.Type.sideDecks = Map.fromList [(SideDeck.Type.Attraction, Seq.singleton (card "Bumper Cars")), (SideDeck.Type.Scheme, Seq.fromList [card "Look Skyward and Despair", card "All in Good Time"])],
           Seat.Type.startingDeck = Map.fromList [(CardName.Type.MkCardName (Text.pack "Plains"), 199)]
         }
-      " {\"name\":\"alice\",\"life\":7,\"counters\":[{\"key\":\"Energy\",\"value\":3}],\"team\":1,\"range\":2,\"emperor\":true,\"graveyardOrder\":\"Matters\",\"manaPool\":\"RC\",\"battlefield\":[{\"card\":\"Mountain\"}],\"hand\":[{\"card\":\"Lightning Bolt\"}],\"graveyard\":[{\"card\":\"Goblin Piker\"}],\"library\":[{\"card\":\"Island\"}],\"exile\":[{\"card\":\"Bad Moon\"}],\"command\":[{\"card\":\"Shimatsu the Bloodcloaked\"}],\"ante\":[{\"card\":\"Contract from Below\"}],\"sideDecks\":[{\"key\":\"Attraction\",\"value\":[{\"card\":\"Bumper Cars\"}]},{\"key\":\"Scheme\",\"value\":[{\"card\":\"Look Skyward and Despair\"},{\"card\":\"All in Good Time\"}]}],\"startingDeck\":[{\"key\":\"Plains\",\"value\":199}]} "
+      " {\"name\":\"alice\",\"life\":7,\"counters\":[{\"key\":\"Energy\",\"value\":3}],\"team\":1,\"range\":2,\"emperor\":true,\"speed\":0,\"graveyardOrder\":\"Matters\",\"manaPool\":\"RC\",\"battlefield\":[{\"card\":\"Mountain\"}],\"hand\":[{\"card\":\"Lightning Bolt\"}],\"graveyard\":[{\"card\":\"Goblin Piker\"}],\"library\":[{\"card\":\"Island\"}],\"exile\":[{\"card\":\"Bad Moon\"}],\"command\":[{\"card\":\"Shimatsu the Bloodcloaked\"}],\"ante\":[{\"card\":\"Contract from Below\"}],\"sideDecks\":[{\"key\":\"Attraction\",\"value\":[{\"card\":\"Bumper Cars\"}]},{\"key\":\"Scheme\",\"value\":[{\"card\":\"Look Skyward and Despair\"},{\"card\":\"All in Good Time\"}]}],\"startingDeck\":[{\"key\":\"Plains\",\"value\":199}]} "
   Spec.it s "an unknown mana symbol is refused" $
     Spec.assertBool
       s
@@ -66,6 +67,7 @@ empty name =
       Seat.Type.team = Nothing,
       Seat.Type.range = Nothing,
       Seat.Type.emperor = False,
+      Seat.Type.speed = Nothing,
       Seat.Type.graveyardOrder = GraveyardOrder.Type.Indifferent,
       Seat.Type.manaPool = [],
       Seat.Type.battlefield = Seq.empty,
