@@ -1,0 +1,257 @@
+{
+  "description": "CR 601.2c Bioshift's second slot cannot be a creature its first slot's controller does not control",
+  "note": "Bioshift's `to` slot is \"another target creature with the same controller\" as `from`: written without the controller atom the card would let counters cross between two players' creatures. Three Walls of Stone, two alice's and one bob's, so nothing but the controller separates the candidates; alice's giver bears three +1/+1 counters. Aimed from the giver at bob's Wall, the cast is reversed (CR 601.2e) and no counter moves; aimed at alice's other Wall, all three cross. The target prompt still offers every creature to both slots, bob's included: the offer is made before either target is chosen, and a narrowing offer would make the spell uncastable rather than restricted. The --control file steals the giver in response (CR 608.2b).",
+  "board": {
+    "seats": [
+      {
+        "name": "alice",
+        "battlefield": [
+          {
+            "card": "Forest",
+            "label": "forest"
+          },
+          {
+            "card": "Wall of Stone",
+            "label": "giver",
+            "counters": [
+              {
+                "key": {
+                  "type": "PlusOnePlusOne"
+                },
+                "value": 3
+              }
+            ]
+          },
+          {
+            "card": "Wall of Stone",
+            "label": "mine"
+          }
+        ],
+        "hand": [
+          {
+            "card": "Bioshift",
+            "label": "bioshift"
+          }
+        ]
+      },
+      {
+        "name": "bob",
+        "battlefield": [
+          {
+            "card": "Wall of Stone",
+            "label": "theirs"
+          }
+        ]
+      }
+    ],
+    "active": "alice",
+    "step": "PrecombatMain"
+  },
+  "timeline": [
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "refuse": {
+        "Cast": {
+          "object": "$bioshift",
+          "mana": [
+            "$forest"
+          ],
+          "targetsBySlot": {
+            "from": [
+              "$giver"
+            ],
+            "to": [
+              "$theirs"
+            ]
+          }
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "check": {
+        "Counters": {
+          "object": "$giver",
+          "kind": {
+            "type": "PlusOnePlusOne"
+          },
+          "count": 3
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "check": {
+        "Counters": {
+          "object": "$theirs",
+          "kind": {
+            "type": "PlusOnePlusOne"
+          },
+          "count": 0
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "do": {
+        "Cast": {
+          "object": "$bioshift",
+          "mana": [
+            "$forest"
+          ],
+          "targetsBySlot": {
+            "from": [
+              "$giver"
+            ],
+            "to": [
+              "$mine"
+            ]
+          }
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "check": {
+        "View": {
+          "of": "Prompt",
+          "is": {
+            "kind": "ChooseTargets",
+            "offer": {
+              "source": "Bioshift",
+              "slots": [
+                [
+                  "from",
+                  [
+                    1,
+                    [
+                      [
+                        "Creature",
+                        "$giver"
+                      ],
+                      [
+                        "Creature",
+                        "$mine"
+                      ],
+                      [
+                        "Creature",
+                        "$theirs"
+                      ]
+                    ]
+                  ]
+                ],
+                [
+                  "to",
+                  [
+                    1,
+                    [
+                      [
+                        "Creature",
+                        "$giver"
+                      ],
+                      [
+                        "Creature",
+                        "$mine"
+                      ],
+                      [
+                        "Creature",
+                        "$theirs"
+                      ]
+                    ]
+                  ]
+                ]
+              ]
+            }
+          }
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "do": "Pass"
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "do": {
+        "Answer": {
+          "prompt": "ChooseMovedCounters",
+          "with": [
+            [
+              {
+                "type": "PlusOnePlusOne"
+              },
+              3
+            ]
+          ]
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "check": {
+        "View": {
+          "of": "Stack",
+          "is": []
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "check": {
+        "Counters": {
+          "object": "$giver",
+          "kind": {
+            "type": "PlusOnePlusOne"
+          },
+          "count": 0
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "check": {
+        "Counters": {
+          "object": "$mine",
+          "kind": {
+            "type": "PlusOnePlusOne"
+          },
+          "count": 3
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "check": {
+        "Counters": {
+          "object": "$theirs",
+          "kind": {
+            "type": "PlusOnePlusOne"
+          },
+          "count": 0
+        }
+      }
+    }
+  ]
+}

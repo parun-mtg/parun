@@ -1113,20 +1113,20 @@ out: grep for them.
 
 ### `TargetSpec`
 
-- CR 115.7d / 702.21a an unchanged target already illegal may stay, and the new one draws ward | `check:bindings`
-- CR 115.7d a new target that makes an unchanged target illegal is refused | `check:spell-targets`
-- CR 601.2c Bioshift's second slot cannot be a creature its first slot's controller does not control | `check:prompt-payload`
-- CR 601.2c Dwell on the Past's card slot is scoped to the player its other slot targets | `check:other-Target.legalSets`
-- CR 601.2c Fall of the Hammer's victim slot cannot be the creature its dealer slot names | `check:legal-targets`
-- CR 601.2c the joint check re-derives a jointly judged slot against the announced X | `check:legal-targets`
-- CR 601.2c the slot admits exactly the creature with a counter on it | `check:helper-abolisherOf` `check:legal-targets`
-- CR 601.2c whole card: hexproof from black leaves alice's Doom Blade no legal target, hexproof from white leaves it one | `board:continuous-effect`
-- CR 602.2a/115.5 Adric's ability is not offered its own object among the abilities it may counter | `check:legal-targets` `check:events`
-- CR 608.2b Doom Blade fizzles when its target gains shroud in response | `board:continuous-effect`
-- CR 700.2d a repeated mode's computed bound measures its own occurrence's sibling slot | `check:legal-targets`
-- CR 700.2d a repeated mode's filter reads its own occurrence's sibling slot, not the first's | `check:legal-targets`
-- CR 701.24c Dwell on the Past shuffles the targeted player's library even when both targeted cards have left the graveyard | `move:other-changeZone`
-- CR 702.16k / 702.16b a Saltfield Recluse the chosen player steals in response no longer weakens the Nemesis | `board:object-chosenplayer`
+- ~~CR 115.7d / 702.21a an unchanged target already illegal may stay, and the new one draws ward | `check:bindings`~~
+- ~~CR 115.7d a new target that makes an unchanged target illegal is refused | `check:spell-targets`~~
+- ~~CR 601.2c Bioshift's second slot cannot be a creature its first slot's controller does not control | `check:prompt-payload`~~
+- ~~CR 601.2c Dwell on the Past's card slot is scoped to the player its other slot targets | `check:other-Target.legalSets`~~
+- ~~CR 601.2c Fall of the Hammer's victim slot cannot be the creature its dealer slot names | `check:legal-targets`~~
+- ~~CR 601.2c the joint check re-derives a jointly judged slot against the announced X | `check:legal-targets`~~
+- ~~CR 601.2c the slot admits exactly the creature with a counter on it | `check:helper-abolisherOf` `check:legal-targets`~~
+- ~~CR 601.2c whole card: hexproof from black leaves alice's Doom Blade no legal target, hexproof from white leaves it one | `board:continuous-effect`~~
+- ~~CR 602.2a/115.5 Adric's ability is not offered its own object among the abilities it may counter | `check:legal-targets` `check:events`~~
+- ~~CR 608.2b Doom Blade fizzles when its target gains shroud in response | `board:continuous-effect`~~
+- ~~CR 700.2d a repeated mode's computed bound measures its own occurrence's sibling slot | `check:legal-targets`~~
+- ~~CR 700.2d a repeated mode's filter reads its own occurrence's sibling slot, not the first's | `check:legal-targets`~~
+- ~~CR 701.24c Dwell on the Past shuffles the targeted player's library even when both targeted cards have left the graveyard | `move:other-changeZone`~~
+- ~~CR 702.16k / 702.16b a Saltfield Recluse the chosen player steals in response no longer weakens the Nemesis | `board:object-chosenplayer`~~
 
 ### `TeamSpec`
 
