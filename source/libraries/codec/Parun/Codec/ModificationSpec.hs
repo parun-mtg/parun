@@ -52,6 +52,7 @@ import qualified Parun.Types.SetBasePowerToughness as SetBasePowerToughness
 import qualified Parun.Types.Subtype as Subtype
 import qualified Parun.Types.SubtypeFamily as SubtypeFamily
 import qualified Parun.Types.Supertype as Supertype
+import qualified Parun.Types.TapCount as TapCount
 import qualified Parun.Types.TargetSlot as TargetSlot
 import qualified Parun.Types.TextWord as TextWord
 import qualified Parun.Types.Zone as Zone
@@ -432,12 +433,20 @@ spec s = Spec.describe s "Parun.Codec.Modification" $ do
       " {\"type\":\"GrantsStationToughness\"} "
   -- CR 702.122a / 702.171a: Deathless Pilot's "saddles Mounts and crews
   -- Vehicles as though its power were 2 greater".
-  Spec.it s "TapsAsThoughPowerGreater" $
+  Spec.it s "TapsCounting" $
     Common.assertCodec
       s
       codec
-      (Modification.TapsAsThoughPowerGreater (Set.fromList [KeywordFamily.Crew, KeywordFamily.Saddle]) 2)
-      " {\"type\":\"TapsAsThoughPowerGreater\",\"value\":{\"keywords\":[\"Crew\",\"Saddle\"],\"greaterBy\":2}} "
+      (Modification.TapsCounting (Set.fromList [KeywordFamily.Crew, KeywordFamily.Saddle]) (TapCount.GreaterBy 2))
+      " {\"type\":\"TapsCounting\",\"value\":{\"keywords\":[\"Crew\",\"Saddle\"],\"count\":{\"type\":\"GreaterBy\",\"value\":2}}} "
+  -- Interface Ace's "saddles Mounts and crews Vehicles using its toughness
+  -- rather than its power".
+  Spec.it s "TapsCounting using toughness" $
+    Common.assertCodec
+      s
+      codec
+      (Modification.TapsCounting (Set.fromList [KeywordFamily.Crew, KeywordFamily.Saddle]) TapCount.UsingToughness)
+      " {\"type\":\"TapsCounting\",\"value\":{\"keywords\":[\"Crew\",\"Saddle\"],\"count\":{\"type\":\"UsingToughness\"}}} "
   -- Alchemy's "intensifies by 1" (Static Discharge).
   Spec.it s "Intensify" $
     Common.assertCodec

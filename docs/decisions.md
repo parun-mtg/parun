@@ -2407,6 +2407,23 @@ Entries are ordered by the first rule each cites.
 - **Decision**: 4: each "as though" is its own effect, and the offsets add.
 - **Rejected**: 2, the largest offset only, which reads the two abilities as one
   marker the way CR 702.184c's toughness substitution is.
-- **Site**: `Parun.Engine.Projection`'s `TapsAsThoughPowerGreater` arm, a FENCE:
+- **Site**: `Parun.Engine.Projection`'s `TapsCounting` arm, a FENCE:
   no card in the pool grants the offset to another creature.
 - **Issue**: #7747.
+
+## Whether a crew power offset raises a toughness crewer
+
+- **Question**: Stoic Star-Captain makes each creature you control crew Vehicles
+  "as though its power were 2 greater", and Interface Ace crews "using its
+  toughness rather than its power". Does a 0/4 Ace count 4 or 6 toward Crew N?
+- **Rules**: CR 613.7, 613.11, 702.122a, 702.171a; no ruling on either card; CR
+  of 2026-11-06.
+- **Decision**: 4: the offset raises power, which a toughness crewer does not
+  count.
+- **Rejected**: 6, the offset added to whatever the creature counts, which
+  reads "its power" as "the number it crews with"; and timestamp order (CR
+  613.11), which makes the answer depend on which permanent arrived first when
+  neither order composes the two wordings any differently.
+- **Site**: `Parun.Engine.Cost.tapPowerGiven`, a FENCE: no card in the pool
+  grants the offset to another creature.
+- **Issue**: #7749.

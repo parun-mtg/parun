@@ -1736,6 +1736,8 @@ library codec
     Parun.Codec.Taking
     Parun.Codec.TakingSpec
     Parun.Codec.Tap
+    Parun.Codec.TapCount
+    Parun.Codec.TapCountSpec
     Parun.Codec.TapForMana
     Parun.Codec.TapForManaSpec
     Parun.Codec.TapForTotalPower
@@ -3695,6 +3697,7 @@ library types
     Parun.Types.Taking
     Parun.Types.Tally
     Parun.Types.Tap
+    Parun.Types.TapCount
     Parun.Types.TapForMana
     Parun.Types.TapForTotalPower
     Parun.Types.TappedForMana

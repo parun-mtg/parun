@@ -1,7 +1,6 @@
 module Parun.Types.Modification where
 
 import qualified Data.Set as Set
-import qualified Numeric.Natural as Natural
 import qualified Parun.Types.AbilityName as AbilityName
 import qualified Parun.Types.CardAbilities as CardAbilities
 import qualified Parun.Types.CardName as CardName
@@ -28,6 +27,7 @@ import qualified Parun.Types.SetBasePowerToughness as SetBasePowerToughness
 import qualified Parun.Types.Subtype as Subtype
 import qualified Parun.Types.SubtypeFamily as SubtypeFamily
 import qualified Parun.Types.Supertype as Supertype
+import qualified Parun.Types.TapCount as TapCount
 import qualified Parun.Types.TargetSlot as TargetSlot
 import qualified Parun.Types.Zone as Zone
 
@@ -473,9 +473,9 @@ data Modification ability
     -- its power (Tapestry Warden). Self-only, like DestructionR: a fact about the
     -- controller, not a set of affected permanents.
     GrantsStationToughness
-  | -- | CR 613.11: this creature pays the named keywords' tap-for-total-power
-    -- costs (CR 702.122a, 702.171a) as though its power were N greater.
-    TapsAsThoughPowerGreater (Set.Set KeywordFamily.KeywordFamily) Natural.Natural
+  | -- | CR 613.11: this creature counts toward the named keywords'
+    -- tap-for-total-power costs (CR 702.122a, 702.171a) as the TapCount says.
+    TapsCounting (Set.Set KeywordFamily.KeywordFamily) TapCount.TapCount
   | -- | Alchemy's "intensifies by N" (Static Discharge): add N to the object's
     -- intensity, which no CR rule names.
     Intensify Quantity.Quantity

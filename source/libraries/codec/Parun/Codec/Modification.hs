@@ -27,6 +27,7 @@ import qualified Parun.Codec.SetBasePowerToughness as SetBasePowerToughness
 import qualified Parun.Codec.Subtype as Subtype
 import qualified Parun.Codec.SubtypeFamily as SubtypeFamily
 import qualified Parun.Codec.Supertype as Supertype
+import qualified Parun.Codec.TapCount as TapCount
 import qualified Parun.Codec.TargetSlot as TargetSlot
 import qualified Parun.Codec.Zone as Zone
 import qualified Parun.JsonCodec.Arm as Arm
@@ -68,11 +69,11 @@ codec abilityCodec =
             <*> Fields.required "among" (Filter.codec Keyword.codec) (\(_, _, f) -> f)
       -- Optional is the unmarked value, every printed "you may", so a card says
       -- nothing unless it means Outmaneuver's forced form.
-      tapsAsThough =
+      tapsCounting =
         Fields.object $
           (,)
             <$> Fields.required "keywords" (Common.set KeywordFamily.codec) fst
-            <*> Fields.required "greaterBy" Common.natural snd
+            <*> Fields.required "count" TapCount.codec snd
       combatDamageAs =
         Fields.object $
           (,)
@@ -130,7 +131,7 @@ codec abilityCodec =
           Arm.payload "AssignCombatDamage" CombatDamageAmount.codec Modification.AssignCombatDamage (\x -> case x of Modification.AssignCombatDamage y -> Just y; _ -> Nothing),
           Arm.payload "AssignCombatDamageAs" combatDamageAs (uncurry Modification.AssignCombatDamageAs) (\x -> case x of Modification.AssignCombatDamageAs o y -> Just (o, y); _ -> Nothing),
           Arm.nullary "GrantsStationToughness" Modification.GrantsStationToughness,
-          Arm.payload "TapsAsThoughPowerGreater" tapsAsThough (uncurry Modification.TapsAsThoughPowerGreater) (\x -> case x of Modification.TapsAsThoughPowerGreater k n -> Just (k, n); _ -> Nothing),
+          Arm.payload "TapsCounting" tapsCounting (uncurry Modification.TapsCounting) (\x -> case x of Modification.TapsCounting k n -> Just (k, n); _ -> Nothing),
           Arm.payload "Intensify" Quantity.codec Modification.Intensify (\x -> case x of Modification.Intensify y -> Just y; _ -> Nothing),
           Arm.nullary "LoyaltyIsToughness" Modification.LoyaltyIsToughness
         ]
@@ -182,6 +183,6 @@ tagOf x = case x of
   Modification.AssignCombatDamage {} -> "AssignCombatDamage"
   Modification.AssignCombatDamageAs {} -> "AssignCombatDamageAs"
   Modification.GrantsStationToughness {} -> "GrantsStationToughness"
-  Modification.TapsAsThoughPowerGreater {} -> "TapsAsThoughPowerGreater"
+  Modification.TapsCounting {} -> "TapsCounting"
   Modification.Intensify {} -> "Intensify"
   Modification.LoyaltyIsToughness {} -> "LoyaltyIsToughness"
