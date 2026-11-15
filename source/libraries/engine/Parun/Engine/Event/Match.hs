@@ -113,6 +113,7 @@ import Parun.Types.GameState (GameState)
 import qualified Parun.Types.GameState as GameState
 import qualified Parun.Types.HalfUnlocked as HalfUnlocked
 import qualified Parun.Types.Keyword as Keyword.Type
+import qualified Parun.Types.KeywordFamily as KeywordFamily
 import qualified Parun.Types.LandPlayed as LandPlayed
 import qualified Parun.Types.LastKnown as LastKnown
 import qualified Parun.Types.LeavesTrigger as LeavesTrigger
@@ -160,6 +161,7 @@ import qualified Parun.Types.Recipient as Recipient
 import qualified Parun.Types.RevealCause as RevealCause
 import qualified Parun.Types.Revealed as Revealed
 import qualified Parun.Types.RevealedThisWay as RevealedThisWay
+import qualified Parun.Types.Saddling as Saddling
 import qualified Parun.Types.SlotName as SlotName
 import qualified Parun.Types.Snapshots as Snapshots
 import qualified Parun.Types.SpellCast as SpellCast
@@ -1017,7 +1019,7 @@ anyTriggerReads event = case event of
   GameEvent.Convoked {} -> False
   GameEvent.Crewed {} -> True
   GameEvent.BecameCrewed {} -> True
-  GameEvent.Saddled {} -> False
+  GameEvent.Saddled {} -> True
   GameEvent.PermanentSacrificed {} -> True
   GameEvent.AbilityTriggered {} -> True
   GameEvent.ControlChanged {} -> True
@@ -2013,6 +2015,8 @@ armMatches bindings board atEvent beforeEvent groupEvents gs bearer you cond eve
   -- CR 702.122b: a Crewer role is the BEARER crewing a Vehicle, which that rule
   -- makes true of a creature as it is tapped to pay a Vehicle's crew cost --
   -- GameEvent.Crewed, written at the payment, and not the Vehicle's resolution.
+  -- CR 702.171c's saddling likewise, off GameEvent.Saddled; the role's keyword
+  -- picks which, so a creature that saddled never reads as one that crewed.
   -- A bare membership test for the same reasons, read off the EVENT's set and
   -- not off the board: rule 702.122b is about what was tapped to pay, which
   -- nothing on the battlefield afterwards records -- a creature tapped for any
@@ -2027,7 +2031,8 @@ armMatches bindings board atEvent beforeEvent groupEvents gs bearer you cond eve
         -- "the first time" is "the only one so far", and Engine.handoffTurn
         -- clearing the log is what makes it "each turn".
         TriggerFrequency.FirstTimeEachTurn -> crewingsOf bearer gs <= 1
-    (CrewRole.Crewer, GameEvent.Crewed ev) -> Set.member bearer (Crewing.crewedBy ev)
+    (CrewRole.Crewer KeywordFamily.Crew, GameEvent.Crewed ev) -> Set.member bearer (Crewing.crewedBy ev)
+    (CrewRole.Crewer KeywordFamily.Saddle, GameEvent.Saddled ev) -> Set.member bearer (Saddling.saddledBy ev)
     _ -> False
   -- CR 702.112b: a permanent the Filter admits was given the renowned designation.
   -- A Matching TurnedFaceUp's arm above, line for line, and for its reasons: the

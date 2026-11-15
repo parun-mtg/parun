@@ -951,15 +951,16 @@ paidCostRecord bindings = Map.restrictKeys bindings (Set.fromList [collectedEvid
 triggeredCostRecord :: Map SlotName Binding -> Map SlotName Binding
 triggeredCostRecord = Map.delete returnedPermanent . paidCostRecord
 
--- CR 702.122b: the reserved slot under which the VEHICLE a creature just crewed
--- is bound -- the "that Vehicle" in Gearshift Ace's "whenever this creature crews
--- a Vehicle, that Vehicle gains first strike until end of turn". Stamped by
--- Parun.Engine.Event.Binding.eventBindings as the trigger is gathered, manaSource's
--- route rather than a payment's.
+-- CR 702.122b / 702.171c: the reserved slot under which the VEHICLE a creature
+-- just crewed, or the MOUNT it just saddled, is bound -- the "that Vehicle" in
+-- Gearshift Ace's "whenever this creature crews a Vehicle, that Vehicle gains
+-- first strike until end of turn", and Canyon Vaulter's "that Mount or
+-- Vehicle". Stamped by Parun.Engine.Event.Binding.eventBindings as the trigger
+-- is gathered, manaSource's route rather than a payment's.
 --
 -- Not `triggerSource` (CR 113.7): the bearer is the CREWER and the Vehicle is the
--- other side of rule 702.122c's relation, which is exactly the pair the
--- crewer-side wording keeps apart.
+-- other side of rule 702.122c's relation (the saddler and the Mount likewise),
+-- which is exactly the pair the crewer-side wording keeps apart.
 --
 -- Every read is CURRENT information (CR 608.2h's first clause), tappedPermanent's
 -- reason: the Vehicle is on the battlefield when it is crewed, and a
@@ -968,8 +969,8 @@ triggeredCostRecord = Map.delete returnedPermanent . paidCostRecord
 --
 -- Not a target (CR 115.10a), so the same CR 608.2b posture and the same "no
 -- card's targetSlots may name it" sweep as the slots above.
-crewedVehicle :: SlotName
-crewedVehicle = SlotName.MkSlotName (Text.pack "thatCrewedVehicle")
+crewedOrSaddled :: SlotName
+crewedOrSaddled = SlotName.MkSlotName (Text.pack "thatCrewedOrSaddled")
 
 -- CR 702.122e's rider: the reserved slot under which the creatures that paid
 -- THAT crew activation's cost are bound -- Mighty Servant of Leuk-o's "if it was
@@ -1694,9 +1695,9 @@ setMentoredCreature oid = Map.insert mentoredCreature (toObject oid)
 setExploitedCreature :: ObjectId -> Map SlotName Binding -> Map SlotName Binding
 setExploitedCreature oid = Map.insert exploitedCreature (toObject oid)
 
--- Bind an object under the reserved crewedVehicle slot (CR 702.122b).
-setCrewedVehicle :: ObjectId -> Map SlotName Binding -> Map SlotName Binding
-setCrewedVehicle oid = Map.insert crewedVehicle (toObject oid)
+-- Bind an object under the reserved crewedOrSaddled slot (CR 702.122b / 702.171c).
+setCrewedOrSaddled :: ObjectId -> Map SlotName Binding -> Map SlotName Binding
+setCrewedOrSaddled oid = Map.insert crewedOrSaddled (toObject oid)
 
 -- Bind the crewing creatures under the reserved crewers slot (CR 702.122e).
 setCrewers :: Set ObjectId -> Map SlotName Binding -> Map SlotName Binding

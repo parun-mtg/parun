@@ -1,5 +1,6 @@
 module Parun.Types.CrewRole where
 
+import qualified Parun.Types.KeywordFamily as KeywordFamily
 import qualified Parun.Types.TriggerFrequency as TriggerFrequency
 
 -- | CR 702.122: which side of a crewing the bearer of a trigger is.
@@ -8,7 +9,7 @@ data CrewRole
     -- Mech); the frequency is Mighty Servant of Leuk-o's "for the first time
     -- each turn".
     Vehicle TriggerFrequency.TriggerFrequency
-  | -- | CR 702.122b: a creature tapped to pay a Vehicle's crew cost (Gearshift
-    -- Ace).
-    Crewer
+  | -- | CR 702.122b / 702.171c: a creature tapped to pay the named keyword's
+    -- cost, crew (Gearshift Ace) or saddle (Canyon Vaulter).
+    Crewer KeywordFamily.KeywordFamily
   deriving (Eq, Ord, Show)

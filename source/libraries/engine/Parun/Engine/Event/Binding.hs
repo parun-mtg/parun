@@ -79,6 +79,7 @@ import qualified Parun.Types.GameEvent as GameEvent
 import Parun.Types.GameState (GameState)
 import qualified Parun.Types.GameState as GameState
 import qualified Parun.Types.Keyword as Keyword.Type
+import qualified Parun.Types.KeywordFamily as KeywordFamily
 import qualified Parun.Types.LastKnown as LastKnown
 import qualified Parun.Types.LeavesTrigger as LeavesTrigger
 import qualified Parun.Types.LeavesZoneTrigger as LeavesZoneTrigger
@@ -106,6 +107,7 @@ import qualified Parun.Types.ProjectedCharacteristics as PC
 import qualified Parun.Types.PutIntoZoneTrigger as PutIntoZoneTrigger
 import qualified Parun.Types.Recipient as Recipient
 import qualified Parun.Types.Revealed as Revealed
+import qualified Parun.Types.Saddling as Saddling
 import qualified Parun.Types.SlotName as SlotName
 import qualified Parun.Types.SpellCast as SpellCast
 import qualified Parun.Types.SpellWasCast as SpellWasCast
@@ -604,14 +606,19 @@ eventBindingsOver board gs bearerBecame becameInGraveyard bearer you cond event 
   (TriggerCondition.Exploits {}, GameEvent.Exploited (Exploited.MkExploited _ exploited)) ->
     Binding.setExploitedCreature exploited Map.empty
   -- CR 702.122b's "that Vehicle": the Vehicle the bearer just crewed, which
-  -- Gearshift Ace's "that Vehicle gains first strike until end of turn" reads.
+  -- Gearshift Ace's "that Vehicle gains first strike until end of turn" reads;
+  -- CR 702.171c's Mount likewise, Canyon Vaulter's "that Mount or Vehicle".
   -- The CREWERS get no slot -- matchesTrigger has just proved the bearer is one
   -- of them, and no printed payload points at the others.
   --
-  -- Unconditional given a match, which is what eventBindingSlots' per-condition
-  -- promise needs: every GameEvent.Crewed carries a vehicle.
-  (TriggerCondition.Crews CrewRole.Crewer, GameEvent.Crewed ev) ->
-    Binding.setCrewedVehicle (Crewing.vehicle ev) Map.empty
+  -- Gated on the watched keyword, so under CR 603.1b's AnyOf the other
+  -- keyword's event falls through and stamps nothing. Unconditional given a
+  -- match, which is what eventBindingSlots' per-condition promise needs: every
+  -- GameEvent.Crewed carries a vehicle and every GameEvent.Saddled a mount.
+  (TriggerCondition.Crews (CrewRole.Crewer KeywordFamily.Crew), GameEvent.Crewed ev) ->
+    Binding.setCrewedOrSaddled (Crewing.vehicle ev) Map.empty
+  (TriggerCondition.Crews (CrewRole.Crewer KeywordFamily.Saddle), GameEvent.Saddled ev) ->
+    Binding.setCrewedOrSaddled (Saddling.mount ev) Map.empty
   -- CR 702.122e's rider: the creatures that paid THAT activation's crew cost,
   -- which Mighty Servant of Leuk-o's intervening "if" counts. The event the
   -- rider is about is the one being matched, so taking the set off it is what
@@ -1750,11 +1757,12 @@ eventBindingSlots cond = case cond of
   -- GameEvent.BecameCrewed carrying the set.
   --
   -- CR 702.122b's crewer side DOES name somebody the bearer does not: the
-  -- Vehicle it crewed, Gearshift Ace's "that Vehicle". Guaranteed given a match,
-  -- every GameEvent.Crewed carrying a vehicle.
+  -- Vehicle it crewed, Gearshift Ace's "that Vehicle", or (CR 702.171c) the
+  -- Mount it saddled. Guaranteed given a match, every GameEvent.Crewed
+  -- carrying a vehicle and every GameEvent.Saddled a mount.
   TriggerCondition.Crews role -> case role of
     CrewRole.Vehicle _ -> Set.singleton Binding.crewers
-    CrewRole.Crewer -> Set.singleton Binding.crewedVehicle
+    CrewRole.Crewer _ -> Set.singleton Binding.crewedOrSaddled
   -- CR 701.21a's event names a player and a permanent, and this claims the
   -- PLAYER: Vengeful Tracker's "deals 2 damage to them" reads the seat that
   -- sacrificed, which the eventBindings arm stamps for every match.

@@ -2142,7 +2142,7 @@ reservedSlots =
       Binding.printedAlternativeCost,
       Binding.removedCounters,
       Binding.loyaltyRemoved,
-      Binding.crewedVehicle,
+      Binding.crewedOrSaddled,
       Binding.crewers,
       Binding.manaSource,
       Binding.castSpell,

@@ -34,7 +34,8 @@
           "condition": {
             "type": "Crews",
             "value": {
-              "type": "Crewer"
+              "type": "Crewer",
+              "value": "Crew"
             }
           },
           "modal": {
@@ -57,7 +58,7 @@
                           },
                           "ref": {
                             "type": "InSlot",
-                            "value": "thatCrewedVehicle"
+                            "value": "thatCrewedOrSaddled"
                           }
                         }
                       }
