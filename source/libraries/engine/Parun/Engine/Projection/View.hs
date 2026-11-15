@@ -1397,26 +1397,27 @@ applyCopyException this own snapshot exception = case exception of
   CopyException.SetName name ->
     snapshot {PC.names = Set.singleton name}
   -- CR 707.9b over CR 105.2 / 105.3: "except it's white" REPLACES the copied
-  -- colours, colour indicator included, which is CR 707.9d's second sentence;
-  -- "red ... in addition to its other colors" (The Jolly Balloon Man) is a
-  -- UNION. Either way CR 707.9d's first sentence strips the colour-defining
-  -- ability, since its carve-out names only card type, supertype and subtype
-  -- "in addition to its other types"; devoid (CR 702.114a) is the one
+  -- colours; "red ... in addition to its other colors" (The Jolly Balloon Man)
+  -- is a UNION over PC.strippedColors, since CR 707.9d strips the colour
+  -- indicator and colour-defining ability either way: its carve-out names only
+  -- card type, supertype and subtype "in addition to its other types". The
+  -- result is copiable (CR 707.9b), so it is a later strip's starting point
+  -- (the eternalized-token scenario beside the ones below proves it).
+  -- Devoid (CR 702.114a) is the one such ability
   -- Projection.applyColorDefining would read off the snapshot at layer 5.
   -- data/scenarios/the-jolly-balloon-man-copy-of-a-devoid-creature-is-red-and-black.json
-  -- proves the union and the strip.
-  --
-  -- Not implemented: under InAddition, CR 707.9d's colour indicator is not
-  -- stripped, since the snapshot keeps no indicator apart from the colours
-  -- (#7955).
+  -- proves the devoid strip, and the scenarios beside it the indicator's
+  -- (Hook-Haunt Drifter) and the "is all colors" ability's (Transguild Courier).
   CopyException.SetColors mode colors ->
-    snapshot
-      { PC.colors = case mode of
+    let set = case mode of
           ChangeMode.Replace -> colors
-          ChangeMode.InAddition -> Set.union (PC.colors snapshot) colors,
-        PC.keywords = Map.filterWithKey (\keyword _ -> not (definesColorless (Set.singleton keyword))) (PC.keywords snapshot),
-        PC.definesChosenColor = False
-      }
+          ChangeMode.InAddition -> Set.union (PC.strippedColors snapshot) colors
+     in snapshot
+          { PC.colors = set,
+            PC.strippedColors = set,
+            PC.keywords = Map.filterWithKey (\keyword _ -> not (definesColorless (Set.singleton keyword))) (PC.keywords snapshot),
+            PC.definesChosenColor = False
+          }
   -- CR 707.9b over CR 202.1: no mana cost, so CR 202.3a's mana value 0. The
   -- colours stay as copied, since the snapshot carries them apart from the cost;
   -- a printed clause changes them through SetColors above. No
@@ -1437,6 +1438,10 @@ applyCopyException this own snapshot exception = case exception of
   -- characteristic-defining ability defining it, and for colour the colour
   -- indicator too. Devoid (CR 702.114a) is the one such ability
   -- Projection.applyColorDefining would read out of the snapshot at layer 5.
+  -- The retained colours are copiable (CR 707.9b), so a later strip starts
+  -- from them:
+  -- data/scenarios/the-jolly-balloon-man-copy-of-a-vesuvan-doppelganger-keeps-its-blue.json
+  -- proves it.
   --
   -- The strip is a REGRESSION FENCE rather than a proven behaviour: no devoid
   -- creature is a Doppelganger target any test builds, and a board with one is
@@ -1451,6 +1456,7 @@ applyCopyException this own snapshot exception = case exception of
     Just mine ->
       snapshot
         { PC.colors = PC.colors mine,
+          PC.strippedColors = PC.colors mine,
           PC.keywords = Map.filterWithKey (\keyword _ -> not (definesColorless (Set.singleton keyword))) (PC.keywords snapshot),
           PC.definesChosenColor = False
         }
@@ -1924,6 +1930,7 @@ noCharacteristics =
       PC.supertypes = Set.empty,
       PC.keywords = Map.empty,
       PC.colors = Set.empty,
+      PC.strippedColors = Set.empty,
       -- CR 202.1 reads a mana cost off a card, and there is none to read.
       PC.manaCost = Nothing,
       -- CR 202.3a all the same: CR 109.1 makes an ability on the stack an
@@ -2089,6 +2096,7 @@ baseCharacteristics oid gs = case Game.faceOf oid gs of
               -- adds to it (Parun.KeywordTriggerSpec's Cascade group).
               PC.keywords = Face.keywords face,
               PC.colors = printedColorsOf face,
+              PC.strippedColors = strippedColorsWithCost (Game.isToken oid gs) face (Face.manaCost face),
               -- CR 202.1: the printed cost of the face the object is showing, so CR
               -- 708.2a's face-down substitution leaves a face-down object with none.
               -- `face` rather than Game.manaCostFacesOf below: CR 712.6d lends a
@@ -2281,6 +2289,7 @@ withPrototype oid gs face pc = case (maybe False Object.prototyped (Game.lookupO
         -- indicator is a separate characteristic (CR 204.2) that rule 719.3b does
         -- not name, so it survives.
         PC.colors = colorsWithCost face (Just (Prototype.cost frame)),
+        PC.strippedColors = strippedColorsWithCost (Game.isToken oid gs) face (Just (Prototype.cost frame)),
         PC.prototyped = True
       }
   _ -> pc
@@ -2393,6 +2402,17 @@ colorsWithCost face cost =
     (Set.union (Face.colorIndicator face) (manaCostColors cost))
     CharacteristicColors.colors
     (Face.characteristicColors face)
+
+-- CR 707.9d: colorsWithCost less the colour indicator and the colour-defining
+-- ability, which a copy exception setting colours does not copy. A token's
+-- indicator is kept: it holds the colours its creating effect stated (CR
+-- 111.3), which The Jolly Balloon Man's ruling says a copy of the token takes.
+-- data/scenarios/the-jolly-balloon-man-copy-of-a-white-token-is-white-and-red.json
+-- proves it.
+strippedColorsWithCost :: Bool -> Face.Face Card.Type.Card -> Maybe ManaCost.ManaCost -> Set Color.Color
+strippedColorsWithCost token face cost
+  | token = Set.union (Face.colorIndicator face) (manaCostColors cost)
+  | otherwise = manaCostColors cost
 
 -- CR 702.114a. The one place that decides what devoid means.
 definesColorless :: Set Keyword -> Bool

@@ -79,6 +79,7 @@ testCharacteristics =
       PC.supertypes = Set.singleton Supertype.Legendary,
       PC.keywords = Map.singleton Keyword.Flying 1,
       PC.colors = Set.singleton Color.Blue,
+      PC.strippedColors = Set.singleton Color.Red,
       PC.manaCost = Just (ManaCost.MkManaCost [ManaSymbol.Generic 2, ManaSymbol.OfType (ManaType.Colored Color.Blue)]),
       PC.manaValue = Just 3,
       PC.power = Just 1,
@@ -167,7 +168,7 @@ testCharacteristics =
 testCharacteristicsJson :: String
 testCharacteristicsJson =
   "{\"names\":[\"Test Creature\"],\"supertypes\":[\"Legendary\"],\"keywords\":[{\"key\":{\"type\":\"Flying\"},\"value\":1}],"
-    <> "\"colors\":[\"Blue\"],"
+    <> "\"colors\":[\"Blue\"],\"strippedColors\":[\"Red\"],"
     <> "\"manaCost\":[{\"type\":\"Generic\",\"value\":2},{\"type\":\"OfType\",\"value\":{\"type\":\"Colored\",\"value\":\"Blue\"}}],"
     <> "\"manaValue\":3,\"power\":1,\"toughness\":2,\"basePower\":1,\"baseToughness\":2,"
     <> "\"cardTypes\":[\"Creature\"],\"subtypes\":[\"Human\"],"
@@ -227,6 +228,7 @@ minimalCharacteristics =
       PC.supertypes = Set.empty,
       PC.keywords = Map.empty,
       PC.colors = Set.empty,
+      PC.strippedColors = Set.empty,
       PC.manaCost = Nothing,
       PC.manaValue = Nothing,
       PC.power = Nothing,

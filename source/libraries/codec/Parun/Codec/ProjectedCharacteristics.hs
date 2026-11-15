@@ -62,6 +62,7 @@ codec = Fields.object $ do
   supertypes <- Fields.defaulted "supertypes" Set.empty (Common.set Supertype.codec) PC.supertypes
   keywords <- Fields.defaulted "keywords" Map.empty (Common.multiset Keyword.codec) PC.keywords
   colors <- Fields.defaulted "colors" Set.empty (Common.set Color.codec) PC.colors
+  strippedColors <- Fields.defaulted "strippedColors" Set.empty (Common.set Color.codec) PC.strippedColors
   manaCost <- Fields.defaulted "manaCost" Nothing (Common.maybe ManaCost.codec) PC.manaCost
   manaValue <- Fields.defaulted "manaValue" Nothing (Common.maybe Common.integer) PC.manaValue
   power <- Fields.defaulted "power" Nothing (Common.maybe Common.integer) PC.power
@@ -124,6 +125,7 @@ codec = Fields.object $ do
         PC.supertypes = supertypes,
         PC.keywords = keywords,
         PC.colors = colors,
+        PC.strippedColors = strippedColors,
         PC.manaCost = manaCost,
         PC.manaValue = manaValue,
         PC.power = power,
