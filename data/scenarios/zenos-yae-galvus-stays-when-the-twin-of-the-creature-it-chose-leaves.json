@@ -99,7 +99,7 @@
     "step": "PrecombatMain"
   },
   "description": "Zenos yae Galvus chooses one of bob's two Hill Giants as it enters; on bob's turn, the -2/-2 gone, Diabolic Edict has bob sacrifice the other Giant, and Zenos does not transform.",
-  "note": "The two Giants match in every characteristic once the turn ends, so only Zenos's record of its choice (CR 607.2d) tells them apart: bob's sacrifice is a real choice, not one the engine may elide as between interchangeable permanents.",
+  "note": "The two Giants match in every characteristic once the turn ends, so only Zenos's record of its choice (CR 607.2d) tells them apart. That the engine keeps them two options for bob's sacrifice is Parun.LeavesTriggerSpec's case; this scenario proves only that the unchosen Giant leaving does not transform Zenos.",
   "timeline": [
     {
       "do": {

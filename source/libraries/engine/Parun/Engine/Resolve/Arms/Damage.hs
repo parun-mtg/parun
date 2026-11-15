@@ -1382,8 +1382,9 @@ choosePlayerAtRandom resolving source controller choice = do
 -- Common.takePile's to record.
 --
 -- CR 607.2d: a linked choice is also assigned to the source's record for the
--- acquisition the resolving ability came with (CR 607.5), an empty pick
--- clearing it. The Zenos yae Galvus scenarios prove it.
+-- acquisition the resolving ability came with (CR 607.5), replacing an earlier
+-- one and an empty pick clearing it: docs/decisions.md, "A linked choice made
+-- again replaces the earlier one". The Zenos yae Galvus scenarios prove it.
 choosePermanents :: ObjectId -> ObjectId -> PlayerId -> Map.Map SlotName (Set Recipient) -> ChoosePermanents.ChoosePermanents -> Game ()
 choosePermanents resolving source controller legal (ChoosePermanents.MkChoosePermanents choice slot pileChooser rest linked) = do
   candidates <- State.gets (\gs -> chosenCandidates legal resolving controller source gs choice)
