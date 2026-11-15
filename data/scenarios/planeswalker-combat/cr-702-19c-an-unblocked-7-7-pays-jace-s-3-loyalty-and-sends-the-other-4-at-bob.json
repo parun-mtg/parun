@@ -1,0 +1,141 @@
+{
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "battlefield": [
+          {
+            "card": "Thrasta, Tempest's Roar",
+            "label": "thrasta",
+            "ready": true
+          }
+        ],
+        "name": "alice"
+      },
+      {
+        "battlefield": [
+          {
+            "card": "Jace Beleren",
+            "counters": [
+              {
+                "key": {
+                  "type": "Loyalty"
+                },
+                "value": 3
+              }
+            ],
+            "label": "jace"
+          }
+        ],
+        "name": "bob"
+      }
+    ],
+    "step": "BeginningOfCombat"
+  },
+  "description": "CR 702.19c an unblocked 7/7 pays Jace's 3 loyalty and sends the other 4 at bob",
+  "note": "Thrasta, Tempest's Roar (7/7 trample) attacks bob's 3-loyalty Jace Beleren unblocked: power, loyalty and spill are all distinct. The offer puts Jace at his loyalty and bob behind him; alice assigns 3 + 4, bob takes 4 and Jace is buried (CR 704.5i).",
+  "timeline": [
+    {
+      "do": {
+        "Attack": [
+          "$thrasta"
+        ]
+      },
+      "player": "alice",
+      "step": "DeclareAttackers",
+      "turn": 1
+    },
+    {
+      "do": {
+        "ChooseAttackTarget": "$jace"
+      },
+      "player": "alice",
+      "source": "$thrasta",
+      "step": "DeclareAttackers",
+      "turn": 1
+    },
+    {
+      "check": {
+        "View": {
+          "is": {
+            "kind": "AssignCombatDamage",
+            "offer": {
+              "source": "$thrasta",
+              "lethal": [
+                [
+                  [
+                    "Planeswalker",
+                    "$jace"
+                  ],
+                  3
+                ],
+                [
+                  [
+                    "Player",
+                    "bob"
+                  ],
+                  0
+                ]
+              ],
+              "paid": [],
+              "total": 7
+            }
+          },
+          "of": "Prompt"
+        }
+      },
+      "player": "alice",
+      "step": "CombatDamage",
+      "turn": 1
+    },
+    {
+      "do": {
+        "AssignDamage": {
+          "$bob": 4,
+          "$jace": 3
+        }
+      },
+      "player": "alice",
+      "source": "$thrasta",
+      "step": "CombatDamage",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Life": {
+          "life": 16,
+          "player": "bob"
+        }
+      },
+      "player": "alice",
+      "step": "EndOfCombat",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Jace Beleren",
+          "count": 0,
+          "player": "bob",
+          "zone": "Battlefield"
+        }
+      },
+      "player": "alice",
+      "step": "EndOfCombat",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Jace Beleren",
+          "count": 1,
+          "player": "bob",
+          "zone": "Graveyard"
+        }
+      },
+      "player": "alice",
+      "step": "EndOfCombat",
+      "turn": 1
+    }
+  ]
+}

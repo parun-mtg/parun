@@ -268,8 +268,8 @@ resolveOneWith runSubgame = do
           -- the CR 603.4 check in Event.interveningHolds and this one only if an
           -- effect raises speed while the trigger waits: Synthetic Speed Boost
           -- under a flash grant (Leyline of Anticipation). Short of that board the
-          -- two are mutually redundant, not jointly redundant -- Parun.SpeedSpec's
-          -- "speed stops at 4" case fails when BOTH are removed.
+          -- two are mutually redundant, not jointly redundant -- the scenario
+          -- speed/cr-702-179d-speed-stops-at-4.json fails when BOTH are removed.
           --
           -- The view is the same unscoped one the arm above passes, so the rule
           -- cannot mean one thing for a borne trigger and another for an inherent
