@@ -1173,6 +1173,8 @@ library codec
     Parun.Codec.ManaTypeSpec
     Parun.Codec.ManaUnit
     Parun.Codec.ManaUnitSpec
+    Parun.Codec.ManaValueIs
+    Parun.Codec.ManaValueIsSpec
     Parun.Codec.ManifestDread
     Parun.Codec.ManifestedDread
     Parun.Codec.ManifestedDreadSpec
@@ -3363,6 +3365,7 @@ library types
     Parun.Types.ManaSymbolKind
     Parun.Types.ManaType
     Parun.Types.ManaUnit
+    Parun.Types.ManaValueIs
     Parun.Types.ManaWindow
     Parun.Types.ManifestDread
     Parun.Types.ManifestedDread

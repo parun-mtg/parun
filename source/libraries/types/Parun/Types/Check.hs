@@ -8,6 +8,7 @@ import qualified Parun.Types.DamageIs as DamageIs
 import qualified Parun.Types.DefendersAre as DefendersAre
 import qualified Parun.Types.KeywordsAre as KeywordsAre
 import qualified Parun.Types.LifeIs as LifeIs
+import qualified Parun.Types.ManaValueIs as ManaValueIs
 import qualified Parun.Types.MonarchIs as MonarchIs
 import qualified Parun.Types.NamesAre as NamesAre
 import qualified Parun.Types.PlayerCountersAre as PlayerCountersAre
@@ -36,4 +37,5 @@ data Check
   | Names NamesAre.NamesAre
   | View ViewIs.ViewIs
   | Keywords KeywordsAre.KeywordsAre
+  | ManaValue ManaValueIs.ManaValueIs
   deriving (Eq, Ord, Show)

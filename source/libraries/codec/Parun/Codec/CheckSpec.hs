@@ -20,6 +20,7 @@ import qualified Parun.Types.Keyword as Keyword.Type
 import qualified Parun.Types.KeywordsAre as KeywordsAre.Type
 import qualified Parun.Types.Label as Label.Type
 import qualified Parun.Types.LifeIs as LifeIs.Type
+import qualified Parun.Types.ManaValueIs as ManaValueIs.Type
 import qualified Parun.Types.MonarchIs as MonarchIs.Type
 import qualified Parun.Types.NamesAre as NamesAre.Type
 import qualified Parun.Types.PlayerCounterKind as PlayerCounterKind.Type
@@ -65,6 +66,8 @@ spec s = Spec.describe s "Parun.Codec.Check" $ do
     Common.assertCodec s Check.codec (Check.Type.Subtypes (SubtypesAre.Type.MkSubtypesAre (labelled "piker") (Set.singleton Subtype.Type.Goblin))) " {\"Subtypes\":{\"object\":\"$piker\",\"subtypes\":[\"Goblin\"]}} "
   Spec.it s "Keywords" $
     Common.assertCodec s Check.codec (Check.Type.Keywords (KeywordsAre.Type.MkKeywordsAre (labelled "bird") Keyword.Type.Flying 1)) " {\"Keywords\":{\"object\":\"$bird\",\"keyword\":{\"type\":\"Flying\"},\"count\":1}} "
+  Spec.it s "ManaValue" $
+    Common.assertCodec s Check.codec (Check.Type.ManaValue (ManaValueIs.Type.MkManaValueIs (labelled "akki") 4)) " {\"ManaValue\":{\"object\":\"$akki\",\"value\":4}} "
   Spec.it s "has a schema" $
     Common.assertHasSchema s Check.codec
 

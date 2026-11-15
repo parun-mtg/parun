@@ -2417,7 +2417,7 @@ flipPermanent oid gs
 -- Off the COPIABLE values and not the printed card, which is CR 707.3: a copy's
 -- values are the copied information "as modified by the copy's status", and CR
 -- 110.5c's Example flips a Dimir Doppelganger that became a copy of Jushi
--- Apprentice. Parun.FlipSpec's "CR 707.3 a Clone of Akki Lavarunner flips into
+-- Apprentice. The flip scenario "CR 707.3 a Clone of Akki Lavarunner flips into
 -- Tok-Tok, and a Clone of that is Akki" proves it. A merged permanent answers off
 -- the flipped reading its merge stamped, which folds every component's (CR
 -- 731.2h), so a flip card merged UNDER another component counts too -- proved by

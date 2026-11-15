@@ -167,7 +167,8 @@ subdirectory named for that spec; `docs/scenario-burndown.md` lists the ones sti
   projected `power` and `toughness`) and `PlayerCounters` (how many of one
   `kind` a `player` has), `Subtypes` (an object's projected subtypes, all of
   them, as bare names) and `Keywords` (how many instances of one `keyword` an
-  object has, 0 when it has none), `Names` (an object's projected names) and
+  object has, 0 when it has none), `ManaValue` (an object's projected mana
+  `value`), `Names` (an object's projected names) and
   `View`, which renders part of the state as JSON and compares it whole:
   `{ "of": "Stack", "is": ["$bolt"] }`. Its views are `Stack` (top first),
   `Step`, `Offered` (a `player`'s actions at priority, as `"Cast $bolt"`),

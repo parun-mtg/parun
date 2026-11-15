@@ -70,7 +70,6 @@ out: grep for them.
 - `board:graveyard`
 - `check:creature-count`: how many creatures a player controls
 - `check:combat`: combat state beyond attackers and blockers
-- `check:mana-value`: an object's mana value
 - `check:prompt-order`: the order priority was offered in
 - `board:objects-ids`
 - `board:object-classlevel`
@@ -636,8 +635,8 @@ out: grep for them.
 - ~~CR 603.2 Akki flips on the NONCOMBAT damage Soul's Fire makes it deal to bob | `check:events`~~
 - ~~CR 603.2 Harm's Way sends Akki's combat damage to alice, and Akki does not flip~~
 - ~~CR 603.2 the same noncombat damage aimed at alice does not flip Akki | `check:events`~~
-- CR 707.3 a Clone of Akki Lavarunner flips into Tok-Tok, and a Clone of that is Akki | `check:mana-value`
-- CR 710.2 Akki flips into Tok-Tok, keeping CR 710.1c's mana value and colour | `check:mana-value`
+- ~~CR 707.3 a Clone of Akki Lavarunner flips into Tok-Tok, and a Clone of that is Akki | `check:mana-value`~~
+- ~~CR 710.2 Akki flips into Tok-Tok, keeping CR 710.1c's mana value and colour | `check:mana-value`~~
 
 ### `ForageSpec`
 
@@ -815,7 +814,7 @@ out: grep for them.
 ### `MeldSpec`
 
 - CR 202.3c a copy of a melded permanent has mana value 0 | `board:source-ofmeld`
-- CR 202.3c a melded permanent's mana value is its components' front faces combined | `check:mana-value` `check:can-block`
+- ~~CR 202.3c a melded permanent's mana value is its components' front faces combined | `check:mana-value` `check:can-block`~~
 - CR 608.2f the pair leaves the battlefield in one event | `check:events`
 - CR 612.7 / 701.42c a Spy Kit host is a Hanweir Garrison the game never saw, and both it and the land stay exiled
 - CR 701.42a a one-or-more-cards-leave-exile trigger counts both melded cards | `check:events` `check:other-Binding.eventAmount` `check:other-Binding.toAmount` `check:other-Event.eventBindings` `check:other-LoggedEvent.event` `check:other-Moved.change` `check:other-Moved.departures` `check:other-ZoneChange.from` `check:other-ZoneChange.object` `check:other-ZoneChange.to`
@@ -1003,7 +1002,7 @@ out: grep for them.
 
 ### `PrototypeSpec`
 
-- CR 719.3b cast prototyped the Assembler is a white 2/2 with mana value 2; cast normally a colourless 4/5 with mana value 5 | `check:mana-value`
+- ~~CR 719.3b cast prototyped the Assembler is a white 2/2 with mana value 2; cast normally a colourless 4/5 with mana value 5 | `check:mana-value`~~
 - CR 719.5 the prototyped permanent keeps vigilance and its activated ability | `board:object-castusing` `board:object-prototyped`
 
 ### `RemoveCounterSpec`

@@ -126,6 +126,7 @@ import qualified Parun.Types.Mana as Mana.Type
 import qualified Parun.Types.ManaRetention as ManaRetention
 import qualified Parun.Types.ManaType as ManaType
 import qualified Parun.Types.ManaUnit as ManaUnit
+import qualified Parun.Types.ManaValueIs as ManaValueIs
 import qualified Parun.Types.MatchScope as MatchScope
 import qualified Parun.Types.MonarchIs as MonarchIs
 import qualified Parun.Types.Move as Move
@@ -1723,6 +1724,11 @@ observe gs asked check = case check of
     oid <- resolveObject ref gs
     let actual = Map.findWithDefault 0 keyword (Projection.keywordsOf oid gs)
     pure (if actual == count then Nothing else Just (Text.pack (show actual)))
+  -- The projected mana value (CR 202.3), never the printed card's.
+  Check.ManaValue (ManaValueIs.MkManaValueIs ref value) -> do
+    oid <- resolveObject ref gs
+    let actual = ProjectedCharacteristics.manaValue (Projection.project oid gs)
+    pure (if actual == Just value then Nothing else Just (maybe (Text.pack "no mana value") (Text.pack . show) actual))
   Check.Monarch (MonarchIs.MkMonarchIs expected) -> do
     actual <- traverse labelOf (GameState.monarch gs)
     pure (if actual == expected then Nothing else Just (maybe (Text.pack "nobody") Label.unwrap actual))

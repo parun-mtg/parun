@@ -611,36 +611,6 @@ spec s registry = Spec.describe s "Meld" $ do
         Spec.assertBool s (not (Map.member garrisonName (Game.referenceFaces board))) "no Hanweir Garrison card is anywhere in the game"
       _ -> Spec.assertFailure s "expected three activated abilities on Hanweir Battlements"
 
-  -- CR 202.3c: "the mana value of a melded permanent is calculated as though it
-  -- had the combined mana cost of the front faces of each card that represents
-  -- it" -- Hanweir Garrison's {2}{R} and Hanweir Battlements' none, which is 3.
-  -- CR 202.3a is what admits the second half: a melded permanent is exempted by
-  -- name from the 0 an object with no mana cost otherwise has.
-  --
-  -- Read by a CARD rather than off the projection: Void Winnower's "your
-  -- opponents can't block with creatures with even mana values" is CR 509.1b
-  -- narrowed by a mana value, so a melded permanent that answered 0 -- the number
-  -- its own combined face prints, and the number every reading but CR 202.3c's
-  -- gives it -- could not block. bob's Winnower and alice's Goblin Piker ({1}{R},
-  -- 2) are the pair that makes the parity readable in both directions.
-  Spec.it s "CR 202.3c a melded permanent's mana value is its components' front faces combined" $ do
-    battlements <- S.printingOf s registry "Hanweir Battlements"
-    garrison <- S.printingOf s registry "Hanweir Garrison"
-    mountain <- S.printingOf s registry "Mountain"
-    winnower <- S.printingOf s registry "Void Winnower"
-    piker <- S.printingOf s registry "Goblin Piker"
-    let (_, withWinnower) = S.addPermanent winnower S.bob (Setup.emptyGame S.bothPlayers)
-        (pikerId, base) = S.addPermanent piker S.alice withWinnower
-        (mMelded, after) = meldedThrough base battlements garrison mountain
-    case mMelded of
-      Just meldedId -> do
-        Spec.assertBool s (Combat.canBlock S.alice meldedId after) "CR 202.3c its mana value is 3, an odd one the Winnower does not stop"
-        -- The same restriction biting on the same board, which is what makes the
-        -- assertion above a parity read rather than a Winnower that never applied.
-        Spec.assertBool s (not (Combat.canBlock S.alice pikerId after)) "and the Piker's {1}{R} is even, so the Winnower is live here"
-        -- The number itself, after the behaviour that depends on it.
-        Spec.assertEqWith s "the projected mana value" (PC.manaValue (Projection.project meldedId after)) (Just 3)
-      Nothing -> Spec.assertFailure s "the pair should have melded"
   -- CR 202.3c's second sentence: "if a permanent is a copy of a melded permanent
   -- (even if that copy is represented by two other meld cards), the mana value of
   -- the copy is 0" -- CR 713.5c says it again. So the melded permanent and its
