@@ -1,0 +1,68 @@
+{
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "battlefield": [
+          {
+            "card": "Sarcomancy",
+            "ready": true
+          }
+        ],
+        "library": [
+          {
+            "card": "Island"
+          }
+        ],
+        "name": "alice"
+      },
+      {
+        "battlefield": [
+          {
+            "card": "Eon Hub"
+          }
+        ],
+        "name": "bob"
+      }
+    ],
+    "step": "Untap",
+    "turn": 2
+  },
+  "description": "CR 614.1b Eon Hub replaces the upkeep step with nothing",
+  "note": "Eon Hub is bob's and alice's upkeep is skipped: \"players skip their upkeep steps\" is not scoped to its controller. A step replaced with nothing never begins (CR 614.6), so Sarcomancy's upkeep trigger never reaches the stack, rather than resolving to nothing; CR 500.11 proceeds past the upkeep only, to the draw step. Turn 2, so CR 103.8a does not skip the draw step too. cr-500-6-without-a-skip-the-upkeep-step-begins-and-its-trigger-fires is the control.",
+  "timeline": [
+    {
+      "check": {
+        "View": {
+          "is": "DrawStep",
+          "of": "Step"
+        }
+      },
+      "player": "alice",
+      "step": "DrawStep",
+      "turn": 2
+    },
+    {
+      "check": {
+        "View": {
+          "is": [],
+          "of": "Stack"
+        }
+      },
+      "player": "alice",
+      "step": "DrawStep",
+      "turn": 2
+    },
+    {
+      "check": {
+        "Life": {
+          "life": 20,
+          "player": "alice"
+        }
+      },
+      "player": "alice",
+      "step": "DrawStep",
+      "turn": 2
+    }
+  ]
+}

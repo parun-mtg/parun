@@ -146,17 +146,17 @@ out: grep for them.
 
 ### `CardTriggerSpec`
 
-- CR 109.5 you control: an opponent's 2/1 entering gives alice nothing | `check:helper-experienceOf`
-- CR 508.3d a declare attackers step with no attackers adds nothing | `check:helper-bobsTurn` `check:helper-sentAt`
-- CR 508.3d a declare attackers step with no attackers is not attacking | `check:helper-answering` `check:helper-sentAt`
-- CR 508.3e a Seifer the defending player controls is silent | `check:other-Goad.goadedBy`
-- CR 508.3e attacking a planeswalker that player controls leaves it silent | `check:other-Goad.goadedBy`
-- CR 603.4 raid: an attack aimed at a planeswalker by a creature that then died still discards | `check:combat`
-- CR 603.4 the clause fails when the declaration went at a third player | `check:events`
-- CR 603.7 Ray of Command whole card: the borrowed creature is TAPPED when control reverts at cleanup, and Act of Treason's is not | `check:delayed-triggers`
-- CR 702.170a plotting another card does not fire an exiled Aloe Alchemist | `check:events`
-- CR 726.2/109.5 a crown stolen by carol does not fire alice's trigger | `check:creature-count` `check:events` `check:helper-combatDamageTo` `check:helper-targetsPlayer` `check:other-S.soleFaceName`
-- CR 726.3 a player who is ALREADY the monarch does not become the monarch, so the Lich's edict stays silent | `check:creature-count` `check:events` `check:helper-targetsPlayer`
+- ~~CR 109.5 you control: an opponent's 2/1 entering gives alice nothing | `check:helper-experienceOf`~~
+- ~~CR 508.3d a declare attackers step with no attackers adds nothing | `check:helper-bobsTurn` `check:helper-sentAt`~~
+- ~~CR 508.3d a declare attackers step with no attackers is not attacking | `check:helper-answering` `check:helper-sentAt`~~
+- ~~CR 508.3e a Seifer the defending player controls is silent | `check:other-Goad.goadedBy`~~
+- ~~CR 508.3e attacking a planeswalker that player controls leaves it silent | `check:other-Goad.goadedBy`~~
+- ~~CR 603.4 raid: an attack aimed at a planeswalker by a creature that then died still discards | `check:combat`~~
+- ~~CR 603.4 the clause fails when the declaration went at a third player | `check:events`~~
+- ~~CR 603.7 Ray of Command whole card: the borrowed creature is TAPPED when control reverts at cleanup, and Act of Treason's is not | `check:delayed-triggers`~~
+- ~~CR 702.170a plotting another card does not fire an exiled Aloe Alchemist | `check:events`~~
+- ~~CR 726.2/109.5 a crown stolen by carol does not fire alice's trigger | `check:creature-count` `check:events` `check:helper-combatDamageTo` `check:helper-targetsPlayer` `check:other-S.soleFaceName`~~
+- ~~CR 726.3 a player who is ALREADY the monarch does not become the monarch, so the Lich's edict stays silent | `check:creature-count` `check:events` `check:helper-targetsPlayer`~~
 
 ### `CastPermissionSpec`
 
@@ -787,17 +787,17 @@ out: grep for them.
 
 ### `ManaSpec`
 
-- CR 106.12a a basic land tapped for the CHOSEN colour adds the Gauntlet's additional mana | `board:object-chosencolor`
-- CR 106.13 the pool crosses whole, and its production tags with it
-- CR 106.13 the targeted player loses life for the mana Drain Power takes
-- CR 302.6 a stolen Llanowar Elves is not a mana source for the thief | `check:other-Cost.manaActivations` `check:other-Mana.manaSources` `check:other-Projection.controls`
-- CR 500.5/613.4c whole card: the green Omnath keeps is the green that keeps it big | `check:helper-poolSize`
-- CR 605.1b a land's ability adding the chosen colour with no tap adds Caged Sun's additional mana | `board:object-chosencolor`
-- CR 605.3a a mana ability whose cost holds mana may be activated inside the window | `move:nested-cost-order` `check:prompt-payload`
-- CR 605.3a the order the batch is activated in is the targeted player's | `check:mana-pool`
-- CR 605.5a mana a land's ability adds as it RESOLVES fires Caged Sun, whose trigger then uses the stack | `board:object-chosencolor`
-- CR 607.2d a Coldsteel Heart placed with no colour chosen produces nothing | `check:helper-tappedFor` `check:other-Cost.manaActivations` `check:other-Mana.canPay` `check:other-Mana.manaTypesOf` `check:other-Object.chosenColor`
-- CR 607.2d a Coldsteel Heart that chose blue offers blue and nothing else | `board:object-chosencolor`
+- ~~CR 106.12a a basic land tapped for the CHOSEN colour adds the Gauntlet's additional mana | `board:object-chosencolor`~~
+- ~~CR 106.13 the pool crosses whole, and its production tags with it~~
+- ~~CR 106.13 the targeted player loses life for the mana Drain Power takes~~
+- ~~CR 302.6 a stolen Llanowar Elves is not a mana source for the thief | `check:other-Cost.manaActivations` `check:other-Mana.manaSources` `check:other-Projection.controls`~~
+- ~~CR 500.5/613.4c whole card: the green Omnath keeps is the green that keeps it big | `check:helper-poolSize`~~
+- ~~CR 605.1b a land's ability adding the chosen colour with no tap adds Caged Sun's additional mana | `board:object-chosencolor`~~
+- ~~CR 605.3a a mana ability whose cost holds mana may be activated inside the window | `move:nested-cost-order` `check:prompt-payload`~~
+- ~~CR 605.3a the order the batch is activated in is the targeted player's | `check:mana-pool`~~
+- ~~CR 605.5a mana a land's ability adds as it RESOLVES fires Caged Sun, whose trigger then uses the stack | `board:object-chosencolor`~~
+- ~~CR 607.2d a Coldsteel Heart placed with no colour chosen produces nothing | `check:helper-tappedFor` `check:other-Cost.manaActivations` `check:other-Mana.canPay` `check:other-Mana.manaTypesOf` `check:other-Object.chosenColor`~~
+- ~~CR 607.2d a Coldsteel Heart that chose blue offers blue and nothing else | `board:object-chosencolor`~~
 
 ### `ManaSymbolSpec`
 
@@ -974,21 +974,21 @@ out: grep for them.
 
 ### `PreventionSpec`
 
-- CR 400.7c the shield follows the chosen permanent spell onto the battlefield | `check:prompt-offers`
-- CR 603.7 the creature the resolution named is exiled when it dies, and no other is | `board:delayed-trigger` `board:player-effect` `board:objectprohibitions`
-- CR 603.7b the entry is gone by the next turn, so the same death exiles nothing | `board:delayed-trigger` `board:player-effect` `board:objectprohibitions`
-- CR 609.7a a slot the installing resolution bound but the row never names is not offered
-- CR 609.7a a source only a waiting ability still refers to is offered, and shields the damage it deals
-- CR 609.7a a source only a waiting delayed trigger still refers to is offered | `board:delayed-trigger` `board:entered-with` `board:graveyard`
-- CR 609.7a a source only a waiting row's captured slot still names is offered
-- CR 609.7a a source only a waiting shield's baked field still names is offered
-- CR 609.7a an activated ability a waiting delayed trigger still names is not offered as a source | `board:delayed-trigger`
-- CR 609.7a an object bound by an unrelated clause of the row's own resolution is not offered | `check:prompt-payload`
-- CR 611.2c the shield covers whatever matches its description when the damage would happen | `board:combat` `board:replacement`
-- CR 614.1b Eon Hub replaces the upkeep step with nothing | `check:helper-began` `check:other-TurnRegisters.remaining`
-- CR 615.7 a shield naming NO source watches every source, and asks nothing | `check:helper-answersFor` `check:helper-chosenSourcesIn` `check:other-Stack.resolveTop`
-- CR 615.7 a shield that covers the whole batch asks nothing | `check:helper-amounts` `check:helper-answersFor` `check:helper-wasAskedToAllocateDamage` `check:other-Damage.applyDamage` `check:other-StoredEffects.replacements`
-- CR 700.4 the same creature exiled from the battlefield instead fires nothing | `board:delayed-trigger` `board:player-effect` `board:objectprohibitions`
+- ~~CR 400.7c the shield follows the chosen permanent spell onto the battlefield | `check:prompt-offers`~~
+- ~~CR 603.7 the creature the resolution named is exiled when it dies, and no other is | `board:delayed-trigger` `board:player-effect` `board:objectprohibitions`~~
+- ~~CR 603.7b the entry is gone by the next turn, so the same death exiles nothing | `board:delayed-trigger` `board:player-effect` `board:objectprohibitions`~~
+- ~~CR 609.7a a slot the installing resolution bound but the row never names is not offered~~
+- ~~CR 609.7a a source only a waiting ability still refers to is offered, and shields the damage it deals~~
+- ~~CR 609.7a a source only a waiting delayed trigger still refers to is offered | `board:delayed-trigger` `board:entered-with` `board:graveyard`~~
+- ~~CR 609.7a a source only a waiting row's captured slot still names is offered~~
+- ~~CR 609.7a a source only a waiting shield's baked field still names is offered~~
+- ~~CR 609.7a an activated ability a waiting delayed trigger still names is not offered as a source | `board:delayed-trigger`~~
+- ~~CR 609.7a an object bound by an unrelated clause of the row's own resolution is not offered | `check:prompt-payload`~~
+- ~~CR 611.2c the shield covers whatever matches its description when the damage would happen | `board:combat` `board:replacement`~~
+- ~~CR 614.1b Eon Hub replaces the upkeep step with nothing | `check:helper-began` `check:other-TurnRegisters.remaining`~~
+- ~~CR 615.7 a shield naming NO source watches every source, and asks nothing | `check:helper-answersFor` `check:helper-chosenSourcesIn` `check:other-Stack.resolveTop`~~
+- ~~CR 615.7 a shield that covers the whole batch asks nothing | `check:helper-amounts` `check:helper-answersFor` `check:helper-wasAskedToAllocateDamage` `check:other-Damage.applyDamage` `check:other-StoredEffects.replacements`~~
+- ~~CR 700.4 the same creature exiled from the battlefield instead fires nothing | `board:delayed-trigger` `board:player-effect` `board:objectprohibitions`~~
 
 ### `ProjectionSpec`
 
