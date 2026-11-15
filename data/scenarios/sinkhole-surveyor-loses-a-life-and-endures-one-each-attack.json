@@ -99,7 +99,7 @@
     ],
     "step": "PrecombatMain"
   },
-  "description": "CR 508.1m, 603.2, 702.170a: Sinkhole Surveyor's attack trigger makes you lose 1 life, then it endures 1: a +1/+1 counter on it or a 1/1 white Spirit",
+  "description": "CR 508.1m, 603.2, 701.63a: Sinkhole Surveyor's attack trigger makes you lose 1 life, then it endures 1: a +1/+1 counter on it or a 1/1 white Spirit",
   "note": "First attack (turn 1): alice takes the counter and loses 1; Surveyor deals 2. Second attack (turn 4): alice declines the counter for a 1/1 Spirit and loses 1 more; Surveyor deals 2 again.",
   "timeline": [
     {

@@ -144,7 +144,7 @@
     ],
     "step": "PrecombatMain"
   },
-  "description": "CR 107.3a, 613.4c, 702.21a, 702.21b: Exude Toxin gives each non-Dragon creature -X/-X until end of turn and shuffles itself away; Scavenger Regent's ward counters a spell unless its controller discards a card",
+  "description": "CR 107.3a, 613.4c, 702.21a: Exude Toxin gives each non-Dragon creature -X/-X until end of turn and shuffles itself away; Scavenger Regent's ward counters a spell unless its controller discards a card",
   "note": "X is 2: bob's Grizzly Bears die, alice's own Hill Giant and bob's Air Elemental shrink, the Dragons (Sagu Wildling, Scavenger Regent) are untouched, and the Omen card goes into alice's library. On bob's turn his Shock at the Regent is countered when he declines to discard.",
   "timeline": [
     {

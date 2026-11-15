@@ -134,7 +134,7 @@
     ],
     "step": "PrecombatMain"
   },
-  "description": "CR 702.41a, 601.2f, 702.170a: Salt Road Packbeast's affinity for creatures counts only the creatures you control and it draws on entering; Sandskitter Outrider endures 2 on entering, as a 2/2 white Spirit when declined",
+  "description": "CR 702.41a, 601.2f, 701.63a: Salt Road Packbeast's affinity for creatures counts only the creatures you control and it draws on entering; Sandskitter Outrider endures 2 on entering, as a 2/2 white Spirit when declined",
   "note": "Alice controls three creatures and bob one, so the Packbeast costs {2}{W}, paid with exactly her three Plains, and she draws the top Island. On turn 4 alice declines the Outrider's two counters and gets a 2/2 Spirit; the Outrider stays 2/1.",
   "timeline": [
     {

@@ -122,7 +122,7 @@
     ],
     "step": "PrecombatMain"
   },
-  "description": "CR 503.1a, 115.1b, 122.1a: Smile at Death returns up to two target creature cards with power 2 or less from your graveyard to the battlefield at your upkeep and puts a +1/+1 counter on each",
+  "description": "CR 503.1a, 603.3d, 122.1a: Smile at Death returns up to two target creature cards with power 2 or less from your graveyard to the battlefield at your upkeep and puts a +1/+1 counter on each",
   "note": "Nothing happens at bob's upkeep. At alice's, Hill Giant (power 3) and bob's graveyard Memnite are refused; her Grizzly Bears and Memnite return as 3/3 and 2/2, and her Llanowar Elves stays in the graveyard.",
   "timeline": [
     {

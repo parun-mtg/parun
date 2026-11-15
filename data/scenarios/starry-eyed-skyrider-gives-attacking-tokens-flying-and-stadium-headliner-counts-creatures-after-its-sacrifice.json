@@ -123,7 +123,7 @@
     ],
     "step": "PrecombatMain"
   },
-  "description": "CR 702.181a, 611.3a, 508.1m, 602.2c: Starry-Eyed Skyrider gives attacking tokens you control flying and another creature flying when it attacks; Stadium Headliner's mobilize token gets it, and sacrificing the Headliner deals damage equal to the creatures you control",
+  "description": "CR 702.181a, 611.3a, 508.1m, 602.2b, 601.2h: Starry-Eyed Skyrider gives attacking tokens you control flying and another creature flying when it attacks; Stadium Headliner's mobilize token gets it, and sacrificing the Headliner deals damage equal to the creatures you control",
   "note": "Skyrider's trigger refuses Skyrider itself and gives the non-attacking Bears flying. The mobilize Warrior is an attacking token and flies; the Headliner, attacking but not a token, does not. After combat the sacrificed Headliner deals 3 (Skyrider, Bears, Warrior) to bob's 4/4 Air Elemental, not the 4 it would count before the sacrifice.",
   "timeline": [
     {
