@@ -391,6 +391,7 @@ stage registry board =
               counters = Map.fromList (fmap (\(seat, pid) -> (pid, Seat.counters seat)) (NonEmpty.toList seated))
               orders = Map.fromList (fmap (\(seat, pid) -> (pid, Seat.graveyardOrder seat)) (NonEmpty.toList seated))
               notes = Map.fromList (fmap (\(seat, pid) -> (pid, Seat.draftNotes seat)) (NonEmpty.toList seated))
+              speeds = Map.fromList (fmap (\(seat, pid) -> (pid, Seat.speed seat)) (NonEmpty.toList seated))
               positioned =
                 base
                   { GameState.turn =
@@ -402,7 +403,7 @@ stage registry board =
                         },
                     GameState.turnsBegun = turnsBegunBy base active (Board.turn board),
                     GameState.manaPool = Map.fromList [(pid, Mana.Type.MkMana (fmap plainUnit (Seat.manaPool seat))) | (seat, pid) <- NonEmpty.toList seated, not (null (Seat.manaPool seat))],
-                    GameState.players = Map.mapWithKey (\pid p -> p {Player.life = Map.findWithDefault (Player.life p) pid lives, Player.counters = Map.findWithDefault (Player.counters p) pid counters, Player.graveyardOrder = Map.findWithDefault (Player.graveyardOrder p) pid orders, Player.draftNotes = Map.findWithDefault (Player.draftNotes p) pid notes}) (GameState.players base),
+                    GameState.players = Map.mapWithKey (\pid p -> p {Player.life = Map.findWithDefault (Player.life p) pid lives, Player.counters = Map.findWithDefault (Player.counters p) pid counters, Player.graveyardOrder = Map.findWithDefault (Player.graveyardOrder p) pid orders, Player.draftNotes = Map.findWithDefault (Player.draftNotes p) pid notes, Player.speed = Map.findWithDefault (Player.speed p) pid speeds}) (GameState.players base),
                     GameState.monarch = monarch
                   }
           case misseat of
@@ -2192,6 +2193,9 @@ renderView gs asked viewIs =
         View.ManaPool -> do
           pid <- needPlayer
           pure (encoded Codec.Mana.codec (Map.findWithDefault (Mana.Type.MkMana []) pid (GameState.manaPool gs)))
+        View.Speed -> do
+          pid <- needPlayer
+          pure (maybe ReplyType.Null (ReplyType.Number . toInteger) (Map.lookup pid (GameState.players gs) >>= Player.speed))
         View.Daytime -> pure (maybe ReplyType.Null (encoded Codec.Daytime.codec) (GameState.daytime gs))
         View.Protector -> do
           oid <- needObject

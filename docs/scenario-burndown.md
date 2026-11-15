@@ -1096,8 +1096,8 @@ out: grep for them.
 ### `SpeedSpec`
 
 - ~~CR 119.2 damage to an opponent raises your speed too | `check:helper-speedOf` `check:helper-subtract`~~
-- CR 305.7 a Blood Moon'd Raceway starts nobody's engines | `check:helper-speedOf`
-- CR 604.1 the grant is re-asked, not latched | `check:abilities`
+- ~~CR 305.7 a Blood Moon'd Raceway starts nobody's engines | `check:helper-speedOf`~~
+- ~~CR 604.1 the grant is re-asked, not latched | `check:abilities`~~
 - ~~CR 702.178a past 4 the Raceway keeps its max speed ability | `board:player-speed`~~
 - ~~CR 702.178b whole card: activating it exiles the Surveyor and draws | `board:player-speed`~~
 - ~~CR 702.179c a card's own text raises the speed a player already has | `check:speed` `check:inherent-triggers-spent`~~
@@ -1108,7 +1108,7 @@ out: grep for them.
 - ~~CR 702.179d speed stops at 4 | `board:player-speed`~~
 - ~~CR 702.179d the increase happens only once each turn | `board:player-speed`~~
 - ~~CR 702.179d your own life loss raises nothing | `check:helper-speedOf` `check:helper-subtract`~~
-- CR 704.5aa a player controlling Muraganda Raceway with no speed gets speed 1 | `check:helper-speedOf`
+- ~~CR 704.5aa a player controlling Muraganda Raceway with no speed gets speed 1 | `check:helper-speedOf`~~
 - ~~CR 704.5aa does not fire again once speed exists | `check:speed`~~
 
 ### `TargetSpec`
