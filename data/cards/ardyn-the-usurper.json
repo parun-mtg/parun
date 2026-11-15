@@ -129,9 +129,12 @@
                             },
                             {
                               "type": "SetColors",
-                              "value": [
-                                "Black"
-                              ]
+                              "value": {
+                                "colors": [
+                                  "Black"
+                                ],
+                                "mode": "Replace"
+                              }
                             },
                             {
                               "type": "SetCreatureSubtypes",

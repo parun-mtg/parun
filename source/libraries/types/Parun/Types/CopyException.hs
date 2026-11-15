@@ -178,8 +178,10 @@ data CopyException ability
     -- the characteristic-defining ability that DEFINES the excepted
     -- characteristic, and no parun characteristic-defining ability defines a name.
     SetName CardName.CardName
-  | -- | CR 707.9b over CR 105.2: the copy is exactly these colours ("it's white").
-    SetColors (Set.Set Color.Color)
+  | -- | CR 707.9b / 105.3: the copy is these colours instead of its own, or in
+    -- addition to them, as the mode says ("it's white"; The Jolly Balloon Man's
+    -- "red ... in addition to its other colors").
+    SetColors ChangeMode.ChangeMode (Set.Set Color.Color)
   | -- | CR 707.9b over CR 202.1: the copy has no mana cost (CR 202.3a's value 0).
     NoManaCost
   | -- | CR 707.9a: the copy gains this quoted ability ("except it has '{2}{U}{U}:

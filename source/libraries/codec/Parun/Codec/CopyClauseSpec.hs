@@ -4,6 +4,7 @@ import qualified Data.Set as Set
 import qualified Parun.Codec.CopyClause as CopyClause
 import qualified Parun.JsonCodec.Common as Common
 import qualified Parun.Spec as Spec
+import qualified Parun.Types.ChangeMode as ChangeMode
 import qualified Parun.Types.Color as Color
 import qualified Parun.Types.Compares as Compares
 import qualified Parun.Types.Comparison as Comparison
@@ -38,6 +39,6 @@ spec s = Spec.describe s "Parun.Codec.CopyClause" $ do
     Common.assertCodec
       s
       (CopyClause.codec Common.text)
-      (CopyClause.MkCopyClause (Just (Condition.Compares (Compares.MkCompares (Quantity.HasDesignation Designation.Embalmed) Comparison.AtLeast (Quantity.Literal 1)))) [CopyException.SetColors (Set.singleton Color.White)] Nothing)
-      " {\"condition\":{\"type\":\"Compares\",\"value\":{\"measured\":{\"type\":\"HasDesignation\",\"value\":\"Embalmed\"},\"comparison\":\"AtLeast\",\"threshold\":{\"type\":\"Literal\",\"value\":1}}},\"exceptions\":[{\"type\":\"SetColors\",\"value\":[\"White\"]}]} "
+      (CopyClause.MkCopyClause (Just (Condition.Compares (Compares.MkCompares (Quantity.HasDesignation Designation.Embalmed) Comparison.AtLeast (Quantity.Literal 1)))) [CopyException.SetColors ChangeMode.Replace (Set.singleton Color.White)] Nothing)
+      " {\"condition\":{\"type\":\"Compares\",\"value\":{\"measured\":{\"type\":\"HasDesignation\",\"value\":\"Embalmed\"},\"comparison\":\"AtLeast\",\"threshold\":{\"type\":\"Literal\",\"value\":1}}},\"exceptions\":[{\"type\":\"SetColors\",\"value\":{\"mode\":\"Replace\",\"colors\":[\"White\"]}}]} "
   Spec.it s "has a schema" $ Common.assertHasSchema s (CopyClause.codec Common.text)

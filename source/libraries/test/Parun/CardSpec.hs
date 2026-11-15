@@ -4168,7 +4168,7 @@ copyExceptionFilters exception = case exception of
   CopyException.AddSupertypes _ -> []
   CopyException.RemoveSupertypes _ -> []
   CopyException.SetName _ -> []
-  CopyException.SetColors _ -> []
+  CopyException.SetColors {} -> []
   CopyException.NoManaCost -> []
   -- CR 707.9c's clause names a characteristic and no keyword either.
   CopyException.DontCopyColors -> []

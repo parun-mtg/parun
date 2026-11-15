@@ -87,9 +87,12 @@
                         },
                         {
                           "type": "SetColors",
-                          "value": [
-                            "White"
-                          ]
+                          "value": {
+                            "colors": [
+                              "White"
+                            ],
+                            "mode": "Replace"
+                          }
                         },
                         {
                           "type": "AddSubtypes",

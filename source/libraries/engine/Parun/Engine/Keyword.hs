@@ -2317,7 +2317,7 @@ unearthExile =
 embalm :: Cost Keyword -> ActivatedAbility Card (GrantedAbility.GrantedAbility Card)
 embalm =
   graveyardTokenCopy
-    [ CopyException.SetColors (Set.singleton Color.White),
+    [ CopyException.SetColors ChangeMode.Replace (Set.singleton Color.White),
       CopyException.NoManaCost,
       CopyException.AddSubtypes (Set.singleton Subtype.Zombie)
     ]
@@ -2334,7 +2334,7 @@ createdMarks keyword = case keyword of
 eternalize :: Cost Keyword -> ActivatedAbility Card (GrantedAbility.GrantedAbility Card)
 eternalize =
   graveyardTokenCopy
-    [ CopyException.SetColors (Set.singleton Color.Black),
+    [ CopyException.SetColors ChangeMode.Replace (Set.singleton Color.Black),
       CopyException.SetPowerToughness (SetPowerToughness.MkSetPowerToughness 4 4),
       CopyException.NoManaCost,
       CopyException.AddSubtypes (Set.singleton Subtype.Zombie)

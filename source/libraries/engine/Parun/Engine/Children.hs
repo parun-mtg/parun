@@ -3939,7 +3939,7 @@ copyExceptionChildren c exception = case exception of
   CopyException.SetCreatureSubtypes subtypes -> CopyException.SetCreatureSubtypes <$> traverseSet (copySubtype c) subtypes
   CopyException.RemoveSupertypes _ -> pure exception
   CopyException.SetName _ -> pure exception
-  CopyException.SetColors colors -> CopyException.SetColors <$> traverseSet (copyColor c) colors
+  CopyException.SetColors mode colors -> CopyException.SetColors mode <$> traverseSet (copyColor c) colors
   CopyException.NoManaCost -> pure exception
   CopyException.GainAbility ability -> CopyException.GainAbility <$> copyAbility c ability
   CopyException.DontCopyColors -> pure exception

@@ -1118,7 +1118,7 @@ settleCopyException this own exception = case exception of
     Just (Source.OfAbility activated) -> [CopyException.GainAbility (GrantedAbility.Activated (keptActivated activated))]
     _ -> []
   CopyException.DontCopyColors -> case own of
-    Just mine -> [CopyException.SetColors (PC.colors mine)]
+    Just mine -> [CopyException.SetColors ChangeMode.Replace (PC.colors mine)]
     Nothing -> []
   CopyException.SetPowerToughness _ -> [exception]
   CopyException.GainKeywords _ -> [exception]
@@ -1128,7 +1128,7 @@ settleCopyException this own exception = case exception of
   CopyException.SetCreatureSubtypes _ -> [exception]
   CopyException.RemoveSupertypes _ -> [exception]
   CopyException.SetName _ -> [exception]
-  CopyException.SetColors _ -> [exception]
+  CopyException.SetColors {} -> [exception]
   CopyException.NoManaCost -> [exception]
   CopyException.GainAbility _ -> [exception]
 
@@ -1179,7 +1179,7 @@ withoutExceptedAbility pc exception = case exception of
   CopyException.SetCreatureSubtypes _ -> pc
   CopyException.RemoveSupertypes _ -> pc
   CopyException.SetName _ -> pc
-  CopyException.SetColors _ -> pc
+  CopyException.SetColors {} -> pc
   CopyException.NoManaCost -> pc
   CopyException.DontCopyColors -> pc
 
@@ -1396,16 +1396,24 @@ applyCopyException this own snapshot exception = case exception of
   -- strip: no parun characteristic-defining ability defines a name.
   CopyException.SetName name ->
     snapshot {PC.names = Set.singleton name}
-  -- CR 707.9b over CR 105.2: "except it's white" REPLACES the copied colours,
-  -- colour indicator included, which is CR 707.9d's second sentence. Its first
-  -- strips the colour-defining ability, and devoid (CR 702.114a) is the one
-  -- Projection.applyColorDefining would read off the snapshot at layer 5. That
-  -- strip is a regression fence: no embalm or eternalize card has devoid, and
-  -- Hour of Eternity's "4/4 black Zombie" copy of a devoid creature card is the
-  -- board that would prove it.
-  CopyException.SetColors colors ->
+  -- CR 707.9b over CR 105.2 / 105.3: "except it's white" REPLACES the copied
+  -- colours, colour indicator included, which is CR 707.9d's second sentence;
+  -- "red ... in addition to its other colors" (The Jolly Balloon Man) is a
+  -- UNION. Either way CR 707.9d's first sentence strips the colour-defining
+  -- ability, since its carve-out names only card type, supertype and subtype
+  -- "in addition to its other types"; devoid (CR 702.114a) is the one
+  -- Projection.applyColorDefining would read off the snapshot at layer 5.
+  -- data/scenarios/the-jolly-balloon-man-copy-of-a-devoid-creature-is-red-and-black.json
+  -- proves the union and the strip.
+  --
+  -- Not implemented: under InAddition, CR 707.9d's colour indicator is not
+  -- stripped, since the snapshot keeps no indicator apart from the colours
+  -- (#7955).
+  CopyException.SetColors mode colors ->
     snapshot
-      { PC.colors = colors,
+      { PC.colors = case mode of
+          ChangeMode.Replace -> colors
+          ChangeMode.InAddition -> Set.union (PC.colors snapshot) colors,
         PC.keywords = Map.filterWithKey (\keyword _ -> not (definesColorless (Set.singleton keyword))) (PC.keywords snapshot),
         PC.definesChosenColor = False
       }
@@ -1430,9 +1438,9 @@ applyCopyException this own snapshot exception = case exception of
   -- indicator too. Devoid (CR 702.114a) is the one such ability
   -- Projection.applyColorDefining would read out of the snapshot at layer 5.
   --
-  -- The strip is a REGRESSION FENCE rather than a proven behaviour, SetColors'
-  -- reason: no devoid creature is a Doppelganger target any test builds, and a
-  -- board with one is what would prove it.
+  -- The strip is a REGRESSION FENCE rather than a proven behaviour: no devoid
+  -- creature is a Doppelganger target any test builds, and a board with one is
+  -- what would prove it.
   --
   -- Nothing for `own` is the CR 707.1 token mint, where there is no earlier
   -- object to retain a value from and so nothing to do. No printed card reaches

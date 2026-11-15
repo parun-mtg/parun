@@ -106,8 +106,15 @@ spec s = Spec.describe s "Parun.Codec.CopyException" $ do
     Common.assertCodec
       s
       (CopyException.codec Common.text)
-      (CopyException.SetColors (Set.fromList [Color.Black, Color.White]))
-      " {\"type\":\"SetColors\",\"value\":[\"White\",\"Black\"]} "
+      (CopyException.SetColors ChangeMode.Replace (Set.fromList [Color.Black, Color.White]))
+      " {\"type\":\"SetColors\",\"value\":{\"mode\":\"Replace\",\"colors\":[\"White\",\"Black\"]}} "
+
+  Spec.it s "SetColors InAddition round-trips" $
+    Common.assertCodec
+      s
+      (CopyException.codec Common.text)
+      (CopyException.SetColors ChangeMode.InAddition (Set.singleton Color.Red))
+      " {\"type\":\"SetColors\",\"value\":{\"mode\":\"InAddition\",\"colors\":[\"Red\"]}} "
 
   Spec.it s "NoManaCost round-trips as a bare tag" $
     Common.assertCodec

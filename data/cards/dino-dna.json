@@ -89,9 +89,12 @@
                             },
                             {
                               "type": "SetColors",
-                              "value": [
-                                "Green"
-                              ]
+                              "value": {
+                                "colors": [
+                                  "Green"
+                                ],
+                                "mode": "Replace"
+                              }
                             },
                             {
                               "type": "CardTypes",
