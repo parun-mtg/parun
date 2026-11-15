@@ -2304,6 +2304,7 @@ filterPositionLintSpec s registry corpus = Spec.describe s "Lint" $ do
         ("Unstable Mutation", 1), -- a trigger putting a counter on it
         ("Enchanted River's Grasp", 2), -- its entering tap and counter removal
         ("Honest Work", 2), -- Enchanted River's Grasp's wording
+        ("Flood the Engine", 1), -- Enchanted River's Grasp's entering tap
         ("Super Speed", 1), -- a pump in the entering trigger, as Abduction's untap
         ("Uneasy Alliance", 1), -- an activated exile of it, the Aura sacrificed as Carapace's is
         ("Spiral into Solitude", 1), -- Uneasy Alliance's wording
