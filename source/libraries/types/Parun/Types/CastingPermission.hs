@@ -30,7 +30,9 @@ data CastingPermission
     -- alternative costs a keyword of the named family offers (Tenacious
     -- Underdog's "using its blitz ability"); Nothing where the keyword granting
     -- the permission prices the cast itself, as CR 702.34a's, 702.81a's,
-    -- 702.127a's, 702.133a's, 702.138a's and 702.187b's do. The list is what a
+    -- 702.127a's, 702.133a's, 702.138a's and 702.187b's do, and where a printed
+    -- or granted one admits the printed cost and its alternatives (Skaab
+    -- Ruinator, Parun.Engine.PlayerEffect.mayPlayFromOwnGraveyard). The list is what a
     -- cast made under this permission pays on top of its other costs (CR 118.8):
     -- Demonic Embrace's 3 life and a discard. Another permission to cast the card
     -- owes none of it, so Parun.Engine.Cast.castWays offers it as a way of its own.

@@ -32,6 +32,7 @@ import qualified Parun.Types.Facing as Facing
 import Parun.Types.GameState (GameState)
 import qualified Parun.Types.Object as Object
 import Parun.Types.ObjectId (ObjectId)
+import qualified Parun.Types.PermissionVerb as PermissionVerb
 import Parun.Types.PlayerId (PlayerId)
 import qualified Parun.Types.SpecialAction as SpecialAction
 import qualified Parun.Types.Zone as Zone
@@ -137,7 +138,7 @@ playableLands pid gs =
       -- (#6472).
       graveyard = Game.zoneMembers Zone.Graveyard pid gs
       buried = Projection.projectEach (Set.fromList graveyard) gs
-      fromGraveyard = filter (\oid -> PlayerEffect.mayPlayFromOwnGraveyard buried pid oid gs) graveyard
+      fromGraveyard = filter (\oid -> PlayerEffect.mayPlayFromOwnGraveyard buried PermissionVerb.Play pid oid gs) graveyard
       -- Every card here is open whichever land face it is played as.
       open = Set.fromList (fromHand <> fromGranted <> fromPermission <> fromMayhem <> fromGraveyard)
    in concatMap playable (ListUtils.nubOrd (fromHand <> fromGranted <> fromPermitted <> fromPermission <> fromMayhem <> fromGraveyard))
