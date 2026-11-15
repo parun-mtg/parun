@@ -1,42 +1,42 @@
 {
-  "description": "CR 305.7 a Blood Moon'd Raceway starts nobody's engines",
-  "note": "CR 702.179a's keyword is read off the projection, so Blood Moon's CR 305.7 strip takes the Raceway's engines with it: alice still has no speed at her first priority. Blood Moon and not Humility, because the Raceway is a land.",
   "board": {
+    "active": "alice",
     "seats": [
       {
-        "name": "alice",
         "battlefield": [
           {
             "card": "Muraganda Raceway",
             "label": "raceway"
           }
-        ]
+        ],
+        "name": "alice"
       },
       {
-        "name": "bob",
         "battlefield": [
           {
             "card": "Blood Moon",
             "label": "moon"
           }
-        ]
+        ],
+        "name": "bob"
       }
     ],
-    "active": "alice",
     "step": "PrecombatMain"
   },
+  "description": "CR 305.7 a Blood Moon'd Raceway starts nobody's engines",
+  "note": "CR 702.179a's keyword is read off the projection, so Blood Moon's CR 305.7 strip takes the Raceway's engines with it: alice still has no speed at her first priority. Blood Moon and not Humility, because the Raceway is a land.",
   "timeline": [
     {
-      "turn": 1,
-      "step": "PrecombatMain",
-      "player": "alice",
       "check": {
         "View": {
+          "is": null,
           "of": "Speed",
-          "player": "alice",
-          "is": null
+          "player": "alice"
         }
-      }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
     }
   ]
 }
