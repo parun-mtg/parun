@@ -1,0 +1,18 @@
+{
+  "description": "CR 615.8 / ruling 2008-08-01: Shadowbane does not prevent the chosen source's damage to another player, and gains no life for it",
+  "note": "Bob's Goblin Deathraiders (black) attacks carol unblocked after alice chooses it: carol takes 3 and alice stays at 20.",
+  "board": {"active": "bob", "step": "BeginningOfCombat", "seats": [
+    {"name": "bob", "battlefield": [{"card": "Goblin Deathraiders", "label": "raiders", "ready": true}], "library": [{"card": "Island"}, {"card": "Island"}, {"card": "Island"}]},
+    {"name": "alice", "battlefield": [{"card": "Plains", "label": "w"}, {"card": "Plains", "label": "p"}], "hand": [{"card": "Shadowbane", "label": "bane"}], "library": [{"card": "Island"}, {"card": "Island"}, {"card": "Island"}]},
+    {"name": "carol", "library": [{"card": "Island"}, {"card": "Island"}, {"card": "Island"}]}
+  ]},
+  "timeline": [
+    {"turn": 1, "step": "DeclareAttackers", "player": "bob", "do": {"Attack": ["$raiders"]}},
+    {"turn": 1, "step": "DeclareAttackers", "player": "bob", "do": {"ChooseAttackTarget": "$carol"}, "source": "$raiders"},
+    {"turn": 1, "step": "DeclareAttackers", "player": "alice", "do": {"Cast": {"object": "$bane", "mana": ["$w", "$p"]}}},
+    {"turn": 1, "step": "DeclareAttackers", "player": "alice", "do": "Pass"},
+    {"turn": 1, "step": "DeclareAttackers", "player": "alice", "do": {"Answer": {"prompt": "ChooseDamageSource", "with": "$raiders"}}},
+    {"turn": 1, "step": "EndOfCombat", "player": "bob", "check": {"Life": {"player": "carol", "life": 17}}},
+    {"turn": 1, "step": "EndOfCombat", "player": "bob", "check": {"Life": {"player": "alice", "life": 20}}}
+  ]
+}

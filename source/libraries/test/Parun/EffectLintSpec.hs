@@ -992,12 +992,14 @@ shieldNamingNothingOffends effect = case effect of
   -- Harm's Way describes it -- and one saying neither installs nothing.
   Effect.RedirectDamage (RedirectDamage.MkRedirectDamage _ _ _ from whatRecipient whoRecipient _ _ _ _) ->
     Maybe.isNothing from && Maybe.isNothing whatRecipient && Maybe.isNothing whoRecipient
-  -- CR 615.8's shield can never offend, and that is the type's doing rather than
-  -- this lint's: its ref and its chosen source are both required fields, so
-  -- there is no shape of it that names neither end. An arm rather than the
-  -- fallthrough below, so a card data change that made either optional lands
-  -- here.
-  Effect.NextDamageInstance {} -> False
+  -- CR 615.8's shield names its covered side or describes it beside DealtTo, as
+  -- the counted shield does; beside DealtBy the ref is the SOURCE and the
+  -- description is not read, so only the ref installs anything. Its chosen
+  -- source is required, so it is no substitute here.
+  Effect.NextDamageInstance (NextDamageInstance.MkNextDamageInstance _ _ ref whatRecipient whoRecipient direction _ _ _) ->
+    Maybe.isNothing ref && case direction of
+      DamageDirection.DealtBy -> True
+      DamageDirection.DealtTo -> Maybe.isNothing whatRecipient && Maybe.isNothing whoRecipient
   _ -> False
 
 -- The non-vacuity half of that lint, isPhaseR's shape.
@@ -1585,7 +1587,7 @@ effectObjectRefs effect =
         Effect.LaterPayment {} -> []
         Effect.PreventNextDamage (PreventNextDamage.MkPreventNextDamage _ _ ref _ _ _ _ _) -> read_ (Maybe.maybeToList ref)
         Effect.PreventAllDamage (PreventAllDamage.MkPreventAllDamage _ _ ref _ _ _ _ _ _) -> read_ (Maybe.maybeToList ref)
-        Effect.NextDamageInstance (NextDamageInstance.MkNextDamageInstance _ _ ref _ _ _ _) -> read_ [ref]
+        Effect.NextDamageInstance (NextDamageInstance.MkNextDamageInstance _ _ ref _ _ _ _ _ _) -> read_ (Maybe.maybeToList ref)
         Effect.RedirectDamage (RedirectDamage.MkRedirectDamage _ _ _ srcRef _ _ destRef _ _ _) -> read_ (Maybe.maybeToList srcRef <> [destRef])
         -- A READ and not an ask: CR 708.2's turning-over takes no choice of its own, and
         -- this arm never reaches the Game monad, so a ChosenPermanents ref written
@@ -3485,10 +3487,10 @@ effectLintSpec s registry corpus = Spec.describe s "Lint" $ do
           NextDamageOutcome.PreventedAllBut _ -> True
           NextDamageOutcome.AlsoToSourceController -> False
         offends effect = case effect of
-          Effect.NextDamageInstance (NextDamageInstance.MkNextDamageInstance _ _ _ _ _ riders outcome) -> not (null riders) && not (prevents outcome)
+          Effect.NextDamageInstance (NextDamageInstance.MkNextDamageInstance _ _ _ _ _ _ _ riders outcome) -> not (null riders) && not (prevents outcome)
           _ -> False
         reachesRiderless effect = case effect of
-          Effect.NextDamageInstance (NextDamageInstance.MkNextDamageInstance _ _ _ _ _ _ outcome) -> not (prevents outcome)
+          Effect.NextDamageInstance (NextDamageInstance.MkNextDamageInstance _ _ _ _ _ _ _ _ outcome) -> not (prevents outcome)
           _ -> False
     -- Guards against a vacuous sweep: Eye for an Eye is the card that lets the
     -- instance happen.
@@ -3571,6 +3573,8 @@ effectLintSpec s registry corpus = Spec.describe s "Lint" $ do
             Effect.PreventAllDamage shield {PreventAllDamage.ref = Nothing, PreventAllDamage.whatRecipient = Nothing, PreventAllDamage.whoRecipient = Nothing}
           Effect.RedirectDamage redirect ->
             Effect.RedirectDamage redirect {RedirectDamage.from = Nothing, RedirectDamage.whatRecipient = Nothing, RedirectDamage.whoRecipient = Nothing}
+          Effect.NextDamageInstance shield ->
+            Effect.NextDamageInstance shield {NextDamageInstance.ref = Nothing, NextDamageInstance.whatRecipient = Nothing, NextDamageInstance.whoRecipient = Nothing}
           other -> other
         shieldsOf = filter isPreventionShield . cardResolutionEffects . S.combinedFace
     Spec.assertBool s (not (any shieldNamingNothingOffends (shieldsOf hands))) "the real Mending Hands names its recipient"
@@ -3586,6 +3590,13 @@ effectLintSpec s registry corpus = Spec.describe s "Lint" $ do
     Spec.assertBool s (any (shieldNamingNothingOffends . strip) (shieldsOf carom)) "and the same redirection with that name removed is rejected"
     Spec.assertBool s (not (any shieldNamingNothingOffends (shieldsOf harmsWay))) "the real Harm's Way describes the recipients it covers"
     Spec.assertBool s (any (shieldNamingNothingOffends . strip) (shieldsOf harmsWay)) "and the same redirection with that description removed is rejected"
+    -- CR 615.8's one-instance shield, both spellings of its covered side.
+    palm <- S.printingOf s registry "Deflecting Palm"
+    shadowbane <- S.printingOf s registry "Shadowbane"
+    Spec.assertBool s (not (any shieldNamingNothingOffends (shieldsOf palm))) "the real Deflecting Palm names its recipient"
+    Spec.assertBool s (any (shieldNamingNothingOffends . strip) (shieldsOf palm)) "and the same one-instance shield with that name removed is rejected"
+    Spec.assertBool s (not (any shieldNamingNothingOffends (shieldsOf shadowbane))) "the real Shadowbane describes its recipients instead"
+    Spec.assertBool s (any (shieldNamingNothingOffends . strip) (shieldsOf shadowbane)) "and the same one-instance shield with that description removed is rejected"
     -- The by-direction shield names a SOURCE rather than a recipient, which the
     -- lint accepts: a shield covering everyone still says what it covers.
     Spec.assertBool s (any isByDirectionShield (shieldsOf dovin)) "setup: Dovin prints a by-direction shield"

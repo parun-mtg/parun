@@ -8,6 +8,7 @@ import qualified Parun.Types.Filter as Filter
 import qualified Parun.Types.Keyword as Keyword
 import qualified Parun.Types.NextDamageOutcome as NextDamageOutcome
 import qualified Parun.Types.ObjectRef as ObjectRef
+import qualified Parun.Types.PlayerRelation as PlayerRelation
 
 -- | CR 615.8's "the next time a specific source would deal damage": over whom,
 -- from which source, for how long, what it does to that one INSTANCE of damage,
@@ -23,14 +24,18 @@ data NextDamageInstance effect = MkNextDamageInstance
     -- | The objects or players this RESOLUTION names, on the side @direction@
     -- says: the recipients (Deflecting Palm's "to you", Honorable Passage's "to
     -- any target"), one CR 615.8 shield each, or the SOURCE (Awe Strike's
-    -- "target creature"), whose shield then covers every recipient.
-    --
-    -- Required, where the two shields beside this one make it optional: every
-    -- card in data/cards/ of this shape names one end outright. A card
-    -- describing its recipients by characteristic instead would want
-    -- Parun.Types.PreventNextDamage's @whatRecipient@ and @whoRecipient@ pair
-    -- here too.
-    ref :: ObjectRef.ObjectRef,
+    -- "target creature"), whose shield then covers every recipient. Nothing for
+    -- a shield describing its recipients instead, in the two fields below, read
+    -- as Parun.Types.PreventNextDamage reads its own.
+    ref :: Maybe ObjectRef.ObjectRef,
+    -- | CR 611.2c's LIVE description of the objects ONE shield covers --
+    -- Shadowbane's "creatures you control" -- as
+    -- Parun.Types.PreventNextDamage's field of the same name. Not read beside
+    -- DealtBy, which no card in data/cards/ narrows by recipient.
+    whatRecipient :: Maybe (Filter.Filter Keyword.Keyword),
+    -- | The player half of that description -- Shadowbane's "to you" --
+    -- disjoined with the field above on the one row installed.
+    whoRecipient :: Maybe PlayerRelation.PlayerRelation,
     -- | Which side of the damage event @ref@ names, as
     -- Parun.Types.PreventAllDamage's field of the same name. DealtTo for every
     -- shield but Awe Strike's, so the key is elided.

@@ -11,6 +11,7 @@ import qualified Parun.Codec.Filter as Filter
 import qualified Parun.Codec.Keyword as Keyword
 import qualified Parun.Codec.NextDamageOutcome as NextDamageOutcome
 import qualified Parun.Codec.ObjectRef as ObjectRef
+import qualified Parun.Codec.PlayerRelation as PlayerRelation
 import qualified Parun.JsonCodec.Codec as Codec
 import qualified Parun.JsonCodec.Common as Common
 import qualified Parun.JsonCodec.Fields as Fields
@@ -28,7 +29,8 @@ import qualified Parun.Types.NextDamageOutcome as NextDamageOutcome.Type
 -- @direction@ is 'Fields.defaulted' to DealtTo, as Parun.Codec.PreventAllDamage
 -- defaults it. @chosenSource@ is 'Fields.defaulted' to the trivial predicate, which is what
 -- "a source of your choice" says on every printing of this rule; @ref@ and
--- @duration@ are required, both being fields the type does not make optional.
+-- the recipient description are 'Fields.defaulted' to Nothing, as
+-- Parun.Codec.PreventNextDamage writes them. @duration@ is required.
 codec ::
   (Typeable.Typeable effect, Eq effect) =>
   Codec.Codec effect ->
@@ -36,7 +38,9 @@ codec ::
 codec effectCodec = Fields.object $ do
   duration <- Fields.required "duration" Duration.codec NextDamageInstance.duration
   kind <- Fields.defaulted "kind" Nothing (Common.maybe DamageKind.codec) NextDamageInstance.kind
-  ref <- Fields.required "ref" ObjectRef.codec NextDamageInstance.ref
+  ref <- Fields.defaulted "ref" Nothing (Common.maybe ObjectRef.codec) NextDamageInstance.ref
+  whatRecipient <- Fields.defaulted "whatRecipient" Nothing (Common.maybe (Filter.codec Keyword.codec)) NextDamageInstance.whatRecipient
+  whoRecipient <- Fields.defaulted "whoRecipient" Nothing (Common.maybe PlayerRelation.codec) NextDamageInstance.whoRecipient
   direction <- Fields.defaulted "direction" DamageDirection.Type.DealtTo DamageDirection.codec NextDamageInstance.direction
   chosenSource <- Fields.defaulted "chosenSource" (Filter.And []) (Filter.codec Keyword.codec) NextDamageInstance.chosenSource
   riders <- Fields.defaulted "riders" Seq.empty (Common.seq effectCodec) NextDamageInstance.riders
@@ -46,6 +50,8 @@ codec effectCodec = Fields.object $ do
       { NextDamageInstance.duration = duration,
         NextDamageInstance.kind = kind,
         NextDamageInstance.ref = ref,
+        NextDamageInstance.whatRecipient = whatRecipient,
+        NextDamageInstance.whoRecipient = whoRecipient,
         NextDamageInstance.direction = direction,
         NextDamageInstance.chosenSource = chosenSource,
         NextDamageInstance.riders = riders,
