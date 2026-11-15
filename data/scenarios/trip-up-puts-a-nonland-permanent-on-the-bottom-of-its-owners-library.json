@@ -1,0 +1,147 @@
+{
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "battlefield": [
+          {
+            "card": "Ornithopter",
+            "label": "thopter"
+          }
+        ],
+        "hand": [
+          {
+            "card": "Trip Up",
+            "label": "trip"
+          }
+        ],
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ],
+        "manaPool": "UUUUUUUU",
+        "name": "alice"
+      },
+      {
+        "battlefield": [
+          {
+            "card": "Grizzly Bears",
+            "label": "bears"
+          },
+          {
+            "card": "Forest",
+            "label": "forest"
+          }
+        ],
+        "library": [
+          {
+            "card": "Island",
+            "label": "l1"
+          },
+          {
+            "card": "Island",
+            "label": "l2"
+          },
+          {
+            "card": "Island",
+            "label": "l3"
+          },
+          {
+            "card": "Island",
+            "label": "l4"
+          }
+        ],
+        "name": "bob"
+      }
+    ],
+    "step": "PrecombatMain"
+  },
+  "description": "CR 115.1a: Trip Up's target is a nonland permanent, and its owner chooses the top or bottom of their library",
+  "note": "Bob's Forest is no target, beside alice's Ornithopter that is; his Grizzly Bears goes to the bottom, beneath his four library cards, by his choice.",
+  "timeline": [
+    {
+      "player": "alice",
+      "refuse": {
+        "Cast": {
+          "object": "$trip",
+          "targets": [
+            "$forest"
+          ]
+        }
+      },
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Cast": {
+          "object": "$trip",
+          "targets": [
+            "$bears"
+          ]
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Answer": {
+          "prompt": "ChooseLibraryEnd",
+          "with": "Bottom"
+        }
+      },
+      "player": "bob",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "View": {
+          "is": [
+            "$l1",
+            "$l2",
+            "$l3",
+            "$l4",
+            "Grizzly Bears"
+          ],
+          "of": "Zone",
+          "player": "bob",
+          "zone": "Library"
+        }
+      },
+      "player": "bob",
+      "step": "PrecombatMain",
+      "turn": 1
+    }
+  ]
+}
