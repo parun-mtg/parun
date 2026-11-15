@@ -203,8 +203,8 @@ cantBlock defending candidates gs =
 -- Parun.Engine.Combat.blockCeilingGiven's candidates are
 -- Parun.Engine.Combat.legalBlockersGiven, narrowed through `cantBlock`, and
 -- Parun.Engine.BlockRequirement.instances mints against that narrowed list.
--- Proved on both sides by Parun.CombatSpec's StoredAttackRestriction and
--- StoredBlockRestriction groups.
+-- Proved on both sides by Parun.CombatSpec's StoredAttackRestriction group and
+-- data/scenarios/combat/cr-509-1c-a-required-blocker-the-restriction-covers-may-decline-after-all.json.
 --
 -- No CR 508.1c "unless" gate, for blockProhibited's reason: every gate in the
 -- pool is printed beside the restriction it gates, and Parun.Types.ForbidAttack
@@ -227,7 +227,9 @@ attackProhibited candidates gs =
 --
 -- `attackProhibited` above and `cantAttackPlayer` below both go through this
 -- rather than the field, so the two roads CR 508.1c takes -- a blanket
--- restriction and CR 802.3a's aimed one -- share one answer. Parun.CombatSpec's WindowAttackRestriction group is the proof.
+-- restriction and CR 802.3a's aimed one -- share one answer.
+-- data/scenarios/combat/cr-611-2a-the-window-follows-the-giant-to-bob-so-it-cannot-attack-on-his-turn.json
+-- is the proof.
 liveAttackProhibitions :: GameState -> [ActiveAttackProhibition.ActiveAttackProhibition]
 liveAttackProhibitions gs =
   filter (Expiry.begun gs . ActiveAttackProhibition.expiry) (StoredEffects.attackProhibitions (GameState.stored gs))
@@ -236,8 +238,9 @@ liveAttackProhibitions gs =
 -- Parun.Types.RestrictedCreatures read the way CR 611.2c says: a Named row is the
 -- id the resolution froze, and a Matching row is a class re-read against the
 -- LIVE board at each declaration, so a creature that entered after the effect
--- began is inside it. Parun.CombatSpec's StoredClassAttackRestriction group is the
--- proof.
+-- began is inside it.
+-- data/scenarios/combat/cr-802-3a-the-announcement-not-the-creature-is-what-the-row-refuses.json
+-- is the proof.
 --
 -- CR 109.5's "you" in the Filter is the STORED controller, not the source's
 -- projected one: the source is a sorcery in a graveyard by now, with no
@@ -784,9 +787,9 @@ gathered gs =
       -- CR 122.1b's keyword counter is the fourth road a minting keyword takes
       -- onto a permanent, and it is on no base face and in neither of the two
       -- other-zone disjuncts: decayed is on rule 122.1b's list and mints rule
-      -- 702.147a's "can't block". Parun.CombatSpec's "CR 122.1b two decayed
-      -- counters, announced as X, stop both creatures blocking" proves it,
-      -- through Rot-Curse Rakshasa. The twin gate in Parun.Engine.Projection needs no such
+      -- 702.147a's "can't block".
+      -- data/scenarios/combat/cr-122-1b-two-decayed-counters-announced-as-x-stop-both-creatures-blocking.json
+      -- proves it, through Rot-Curse Rakshasa. The twin gate in Parun.Engine.Projection needs no such
       -- read: rule 122.1b's list and Keyword.mintsReplacement's set are disjoint.
       -- An ability sticker (CR 123.7) is the fifth road, Projection.stickerWrites.
       anyMinted =

@@ -100,8 +100,9 @@ data Keyword
     --
     -- Rule 702.16k's "protection from [a player]" is Filter.OfChosenPlayer, no
     -- variant constructor either: True-Name Nemesis writes it, and its four
-    -- prohibitions are proved by data/scenarios/damage/'s, Parun.TargetSpec's,
-    -- Parun.CombatSpec's and Parun.AuraSpec's "CR 702.16k" cases.
+    -- prohibitions are proved by data/scenarios/damage/'s and
+    -- data/scenarios/combat/'s, Parun.TargetSpec's and Parun.AuraSpec's "CR
+    -- 702.16k" cases.
     --
     -- Rule 702.16h's "protection from each [characteristic]" is one instance
     -- per quality, no variant constructor: Spectra Ward and Iridescent Angel
