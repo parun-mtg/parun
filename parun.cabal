@@ -1694,6 +1694,8 @@ library codec
     Parun.Codec.StackedAbilitySpec
     Parun.Codec.StackObjectKind
     Parun.Codec.StackObjectKindSpec
+    Parun.Codec.StackPlacement
+    Parun.Codec.StackPlacementSpec
     Parun.Codec.StateBasedAction
     Parun.Codec.StateBasedActionSpec
     Parun.Codec.StatedFlip
@@ -3667,6 +3669,7 @@ library types
     Parun.Types.Splice
     Parun.Types.StackedAbility
     Parun.Types.StackObjectKind
+    Parun.Types.StackPlacement
     Parun.Types.Staged
     Parun.Types.Start
     Parun.Types.StateBasedAction

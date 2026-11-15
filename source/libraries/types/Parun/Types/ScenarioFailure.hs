@@ -31,6 +31,8 @@ data ScenarioFailure
     MkUnreadableDeck Label.Label Text.Text
   | -- | A placement's protector names no seat (CR 310.9).
     MkUnknownProtector Label.Label
+  | -- | A spell on the board's stack whose owner names no seat.
+    MkUnknownOwner Label.Label
   | -- | A placement shows a face its card does not have (CR 712.6), card first.
     MkUnknownFace CardName.CardName CardName.CardName
   | -- | A placement attached to a label that names nothing on the board, or to

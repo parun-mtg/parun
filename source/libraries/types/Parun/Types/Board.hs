@@ -1,17 +1,21 @@
 module Parun.Types.Board where
 
 import qualified Data.List.NonEmpty as NonEmpty
+import qualified Data.Sequence as Seq
 import Numeric.Natural (Natural)
 import qualified Parun.Types.AttackOption as AttackOption
 import qualified Parun.Types.Label as Label
 import qualified Parun.Types.Phase as Phase
 import qualified Parun.Types.Seat as Seat
+import qualified Parun.Types.StackPlacement as StackPlacement
 
 -- | The observable state a scenario starts from, placed directly rather than
 -- played in. Seat order is turn order.
 data Board = MkBoard
   { seats :: NonEmpty.NonEmpty Seat.Seat,
     active :: Label.Label,
+    -- | CR 405.2: the spells on the stack, top first.
+    stack :: Seq.Seq StackPlacement.StackPlacement,
     -- | CR 500.1: which turn of the game it is.
     turn :: Natural,
     phase :: Phase.Phase,

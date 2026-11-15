@@ -68,6 +68,7 @@ import qualified Parun.Types.Scenario as Scenario.Type
 import qualified Parun.Types.ScenarioFailure as ScenarioFailure
 import qualified Parun.Types.Seat as Seat
 import qualified Parun.Types.SlotName as SlotName
+import qualified Parun.Types.StackPlacement as StackPlacement
 import qualified Parun.Types.Staged as Staged
 import qualified Parun.Types.TapState as TapState
 import qualified Parun.Types.TappedIs as TappedIs
@@ -156,6 +157,12 @@ spec s registry = Spec.describe s "Scenario" $ do
         setup = S.board (alice NonEmpty.:| [S.playerSetup S.bob]) S.alice S.precombatMain
     result <- Scenario.stage registry setup
     Spec.assertEqWith s "unknown protector" result (Left (ScenarioFailure.MkUnknownProtector (Label.MkLabel (Text.pack "carol"))))
+
+  Spec.it s "a spell on the stack whose owner names no seat is rejected" $ do
+    let spell = StackPlacement.MkStackPlacement {StackPlacement.owner = Label.MkLabel (Text.pack "carol"), StackPlacement.placement = S.permanent "Goblin Piker"}
+        setup = (S.duel S.precombatMain [] []) {Board.stack = Seq.singleton spell}
+    result <- Scenario.stage registry setup
+    Spec.assertEqWith s "unknown owner" result (Left (ScenarioFailure.MkUnknownOwner (Label.MkLabel (Text.pack "carol"))))
 
   Spec.it s "unreached scheduled entries fail" $ do
     let setup = S.duel S.precombatMain [] []

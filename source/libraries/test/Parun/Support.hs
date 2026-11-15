@@ -275,6 +275,7 @@ board seats active step =
           Board.MkBoard
             { Board.seats = seats,
               Board.active = seatLabel active,
+              Board.stack = Seq.empty,
               Board.turn = 1,
               Board.phase = step,
               Board.monarch = Nothing,

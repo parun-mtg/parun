@@ -5,6 +5,7 @@ import qualified Data.Map.Strict as Map
 import qualified Data.Sequence as Seq
 import qualified Data.Text as Text
 import qualified Parun.Codec.Board as Board
+import qualified Parun.Codec.PlacementSpec as PlacementSpec
 import qualified Parun.JsonCodec.Common as Common
 import qualified Parun.Spec as Spec
 import qualified Parun.Types.AttackOption as AttackOption.Type
@@ -14,6 +15,7 @@ import qualified Parun.Types.GraveyardOrder as GraveyardOrder.Type
 import qualified Parun.Types.Label as Label.Type
 import qualified Parun.Types.Phase as Phase.Type
 import qualified Parun.Types.Seat as Seat.Type
+import qualified Parun.Types.StackPlacement as StackPlacement.Type
 
 spec :: (Monad m, Monad n) => Spec.Spec m n -> n ()
 spec s = Spec.describe s "Parun.Codec.Board" $ do
@@ -24,6 +26,7 @@ spec s = Spec.describe s "Parun.Codec.Board" $ do
       Board.Type.MkBoard
         { Board.Type.seats = seat "alice" NonEmpty.:| [seat "bob"],
           Board.Type.active = Label.Type.MkLabel (Text.pack "alice"),
+          Board.Type.stack = Seq.empty,
           Board.Type.turn = 1,
           Board.Type.phase = Phase.Type.Combat CombatStep.Type.DeclareAttackers,
           Board.Type.monarch = Nothing,
@@ -44,6 +47,7 @@ spec s = Spec.describe s "Parun.Codec.Board" $ do
       Board.Type.MkBoard
         { Board.Type.seats = seat "alice" NonEmpty.:| [seat "bob"],
           Board.Type.active = Label.Type.MkLabel (Text.pack "alice"),
+          Board.Type.stack = Seq.empty,
           Board.Type.turn = 1,
           Board.Type.phase = Phase.Type.PrecombatMain,
           Board.Type.monarch = Just (Label.Type.MkLabel (Text.pack "bob")),
@@ -64,6 +68,7 @@ spec s = Spec.describe s "Parun.Codec.Board" $ do
       Board.Type.MkBoard
         { Board.Type.seats = seat "alice" NonEmpty.:| [seat "bob"],
           Board.Type.active = Label.Type.MkLabel (Text.pack "alice"),
+          Board.Type.stack = Seq.empty,
           Board.Type.turn = 1,
           Board.Type.phase = Phase.Type.PrecombatMain,
           Board.Type.monarch = Nothing,
@@ -83,6 +88,7 @@ spec s = Spec.describe s "Parun.Codec.Board" $ do
       Board.Type.MkBoard
         { Board.Type.seats = seat "alice" NonEmpty.:| [seat "bob"],
           Board.Type.active = Label.Type.MkLabel (Text.pack "alice"),
+          Board.Type.stack = Seq.empty,
           Board.Type.turn = 1,
           Board.Type.phase = Phase.Type.PrecombatMain,
           Board.Type.monarch = Nothing,
@@ -103,6 +109,7 @@ spec s = Spec.describe s "Parun.Codec.Board" $ do
       Board.Type.MkBoard
         { Board.Type.seats = seat "alice" NonEmpty.:| [seat "bob"],
           Board.Type.active = Label.Type.MkLabel (Text.pack "alice"),
+          Board.Type.stack = Seq.empty,
           Board.Type.turn = 1,
           Board.Type.phase = Phase.Type.PrecombatMain,
           Board.Type.monarch = Nothing,
@@ -123,6 +130,7 @@ spec s = Spec.describe s "Parun.Codec.Board" $ do
       Board.Type.MkBoard
         { Board.Type.seats = seat "alice" NonEmpty.:| [seat "bob"],
           Board.Type.active = Label.Type.MkLabel (Text.pack "bob"),
+          Board.Type.stack = Seq.empty,
           Board.Type.turn = 2,
           Board.Type.phase = Phase.Type.PrecombatMain,
           Board.Type.monarch = Nothing,
@@ -136,6 +144,27 @@ spec s = Spec.describe s "Parun.Codec.Board" $ do
           Board.Type.ante = False
         }
       " {\"seats\":[{\"name\":\"alice\"},{\"name\":\"bob\"}],\"active\":\"bob\",\"turn\":2,\"step\":\"PrecombatMain\"} "
+  Spec.it s "a stack, top first" $
+    Common.assertCodec
+      s
+      Board.codec
+      Board.Type.MkBoard
+        { Board.Type.seats = seat "alice" NonEmpty.:| [seat "bob"],
+          Board.Type.active = Label.Type.MkLabel (Text.pack "alice"),
+          Board.Type.stack = Seq.fromList [onStack "bob" "Goblin Piker", onStack "alice" "Divination"],
+          Board.Type.turn = 1,
+          Board.Type.phase = Phase.Type.PrecombatMain,
+          Board.Type.monarch = Nothing,
+          Board.Type.attackOption = Just AttackOption.Type.MultiplePlayers,
+          Board.Type.brawl = False,
+          Board.Type.sharedTeamTurns = False,
+          Board.Type.sharedTeamLife = False,
+          Board.Type.deployCreatures = False,
+          Board.Type.twoHeadedGiant = False,
+          Board.Type.alternatingTeams = False,
+          Board.Type.ante = False
+        }
+      " {\"seats\":[{\"name\":\"alice\"},{\"name\":\"bob\"}],\"active\":\"alice\",\"stack\":[{\"owner\":\"bob\",\"card\":\"Goblin Piker\"},{\"owner\":\"alice\",\"card\":\"Divination\"}],\"step\":\"PrecombatMain\"} "
   Spec.it s "has a schema" $
     Common.assertHasSchema s Board.codec
 
@@ -160,4 +189,11 @@ seat name =
       Seat.Type.sideDecks = Map.empty,
       Seat.Type.startingDeck = Map.empty,
       Seat.Type.draftNotes = Map.empty
+    }
+
+onStack :: String -> String -> StackPlacement.Type.StackPlacement
+onStack owner name =
+  StackPlacement.Type.MkStackPlacement
+    { StackPlacement.Type.owner = Label.Type.MkLabel (Text.pack owner),
+      StackPlacement.Type.placement = PlacementSpec.plain name
     }
