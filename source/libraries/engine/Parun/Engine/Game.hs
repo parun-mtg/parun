@@ -2195,7 +2195,8 @@ sourceOfWithLastKnown = liveOrLastKnown Object.source LastKnown.source
 
 -- CR 108.3's owner through CR 608.2h: the live object's, else the one its record
 -- kept. Read off the object rather than a projected view, since nothing moves
--- ownership. Parun.CountSpec's Daredevil pair drives both arms; PlayerRef.HolderOfBound
+-- ownership. The cr-108-3 Daredevil scenarios under data/scenarios/count drive
+-- both arms; PlayerRef.HolderOfBound
 -- (The Deck of Many Things' 20 band) is another reader.
 ownerWithLastKnown :: ObjectId -> GameState -> Maybe PlayerId
 ownerWithLastKnown = liveOrLastKnown Object.owner LastKnown.owner

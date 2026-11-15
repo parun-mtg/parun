@@ -1,0 +1,133 @@
+{
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "battlefield": [
+          {
+            "card": "Child of Night",
+            "label": "child",
+            "ready": true
+          },
+          {
+            "card": "Child of Night",
+            "label": "child2",
+            "ready": true
+          },
+          {
+            "card": "Synthetic Communal Vigil",
+            "label": "vigil"
+          },
+          {
+            "card": "Ajani's Pridemate",
+            "label": "pridemate",
+            "ready": true
+          }
+        ],
+        "library": [
+          {
+            "card": "Plains"
+          },
+          {
+            "card": "Plains"
+          },
+          {
+            "card": "Plains"
+          },
+          {
+            "card": "Plains"
+          },
+          {
+            "card": "Plains"
+          },
+          {
+            "card": "Plains"
+          }
+        ],
+        "name": "alice"
+      },
+      {
+        "name": "bob"
+      }
+    ],
+    "step": "DeclareAttackers"
+  },
+  "description": "CR 702.15e two lifelink attackers connecting at once are two life gain events",
+  "note": "Two Children of Night connect in one combat damage step: one damage event (CR 510.2) but two life gain events, one per lifelink source (CR 702.15e), so Synthetic Communal Vigil's 'one or more players gain life' fires twice and draws two Plains, where a gain fused into the damage bracket draws one. Ajani's Pridemate is the per-occurrence control, one counter per gain under either reading. The Pridemate attacks too and adds two to bob's loss. The Haskell test also read the event groups off the log; the two draws are their observable.",
+  "timeline": [
+    {
+      "do": {
+        "Attack": [
+          "$child",
+          "$child2",
+          "$pridemate"
+        ]
+      },
+      "player": "alice",
+      "step": "DeclareAttackers",
+      "turn": 1
+    },
+    {
+      "do": {
+        "OrderTriggers": [
+          "$vigil",
+          "$vigil",
+          "$pridemate",
+          "$pridemate"
+        ]
+      },
+      "player": "alice",
+      "step": "CombatDamage",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Plains",
+          "count": 2,
+          "player": "alice",
+          "zone": "Hand"
+        }
+      },
+      "player": "alice",
+      "step": "PostcombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Life": {
+          "life": 24,
+          "player": "alice"
+        }
+      },
+      "player": "alice",
+      "step": "PostcombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Life": {
+          "life": 14,
+          "player": "bob"
+        }
+      },
+      "player": "alice",
+      "step": "PostcombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Counters": {
+          "count": 2,
+          "kind": {
+            "type": "PlusOnePlusOne"
+          },
+          "object": "$pridemate"
+        }
+      },
+      "player": "alice",
+      "step": "PostcombatMain",
+      "turn": 1
+    }
+  ]
+}

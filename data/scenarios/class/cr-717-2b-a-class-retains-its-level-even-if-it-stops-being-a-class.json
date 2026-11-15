@@ -1,0 +1,307 @@
+{
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "battlefield": [
+          {
+            "card": "Plains",
+            "label": "pl1",
+            "ready": true
+          },
+          {
+            "card": "Plains",
+            "label": "pl2",
+            "ready": true
+          },
+          {
+            "card": "Plains",
+            "label": "pl3",
+            "ready": true
+          },
+          {
+            "card": "Plains",
+            "label": "pl4",
+            "ready": true
+          },
+          {
+            "card": "Plains",
+            "label": "pl5",
+            "ready": true
+          },
+          {
+            "card": "Plains",
+            "label": "pl6",
+            "ready": true
+          },
+          {
+            "card": "Plains",
+            "label": "pl7",
+            "ready": true
+          },
+          {
+            "card": "Plains",
+            "label": "pl8",
+            "ready": true
+          },
+          {
+            "card": "Forest",
+            "label": "fo1",
+            "ready": true
+          },
+          {
+            "card": "Forest",
+            "label": "fo2",
+            "ready": true
+          },
+          {
+            "card": "Forest",
+            "label": "fo3",
+            "ready": true
+          },
+          {
+            "card": "Paladin Class",
+            "label": "class",
+            "ready": true
+          },
+          {
+            "card": "Goblin Piker",
+            "label": "piker",
+            "ready": true
+          }
+        ],
+        "hand": [
+          {
+            "card": "Song of the Dryads",
+            "label": "song"
+          },
+          {
+            "card": "Disenchant",
+            "label": "disenchant"
+          }
+        ],
+        "name": "alice"
+      },
+      {
+        "name": "bob"
+      }
+    ],
+    "step": "PrecombatMain"
+  },
+  "description": "CR 717.2b a Class retains its level even if it stops being a Class",
+  "note": "Song of the Dryads makes the Class a Forest land: Land replaces Enchantment, and the Class subtype goes with the type it correlates with (CR 205.1a). Its land-subtype change also strips the permanent's abilities (CR 305.7), so while the Song is on it the Piker is 2/1 for that reason and not for a lost level. The Class is levelled to 2 before the Song arrives, so the readings differ once Disenchant takes the Song away: a level discarded while it was not a Class would leave it at CR 717.2d's default of 1, the Piker 2/1 and the level-2 bar offered; it is 3/2 and the bar is refused. The Haskell test moved the Song onto a Mountain rather than destroying it.",
+  "timeline": [
+    {
+      "do": {
+        "Activate": {
+          "ability": 0,
+          "mana": [
+            "$pl1",
+            "$pl2",
+            "$pl3",
+            null
+          ],
+          "object": "$class"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Types": {
+          "object": "$class",
+          "types": [
+            "Enchantment"
+          ]
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Subtypes": {
+          "object": "$class",
+          "subtypes": [
+            "Class"
+          ]
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "PowerToughness": {
+          "object": "$piker",
+          "power": 3,
+          "toughness": 2
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Cast": {
+          "mana": [
+            "$fo1",
+            "$fo2",
+            "$fo3",
+            null
+          ],
+          "object": "$song",
+          "targets": [
+            "$class"
+          ]
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Types": {
+          "object": "$class",
+          "types": [
+            "Land"
+          ]
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Subtypes": {
+          "object": "$class",
+          "subtypes": [
+            "Forest"
+          ]
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "PowerToughness": {
+          "object": "$piker",
+          "power": 2,
+          "toughness": 1
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Cast": {
+          "mana": [
+            "$pl4",
+            "$pl5",
+            null
+          ],
+          "object": "$disenchant"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Song of the Dryads",
+          "count": 1,
+          "player": "alice",
+          "zone": "Graveyard"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Types": {
+          "object": "$class",
+          "types": [
+            "Enchantment"
+          ]
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Subtypes": {
+          "object": "$class",
+          "subtypes": [
+            "Class"
+          ]
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "PowerToughness": {
+          "object": "$piker",
+          "power": 3,
+          "toughness": 2
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "player": "alice",
+      "refuse": {
+        "Activate": {
+          "ability": 0,
+          "mana": [
+            "$pl6",
+            "$pl7",
+            "$pl8"
+          ],
+          "object": "$class"
+        }
+      },
+      "step": "PrecombatMain",
+      "turn": 1
+    }
+  ]
+}

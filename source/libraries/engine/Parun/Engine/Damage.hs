@@ -1599,9 +1599,9 @@ tallyPrevention p gs = case Replacement.printedBy (Prevention.by p) of
 -- recorded inside that bracket shares it, which fused two attackers' gains into
 -- one trigger event for a OneOrMore TriggerCondition.LifeChanges. At depth 0 -- every
 -- caller today -- each record is a group of its own; a bracket an outer caller
--- left open would take them all, as it takes everything. Parun.EventTriggerSpec's
--- lifelinkGainEventsSpec is the proof, and its damage-group assertion pins that
--- the damage stayed bracketed.
+-- left open would take them all, as it takes everything.
+-- data/scenarios/life-trigger/cr-702-15e-two-lifelink-attackers-connecting-at-once-are-two-life-gain-events.json
+-- is the proof.
 --
 -- Logged after the damage, its loss and its counter results, which is the
 -- order a cause reads before its consequence. All of it lands inside one CR
@@ -1621,8 +1621,9 @@ tallyPrevention p gs = case Replacement.printedBy (Prevention.by p) of
 -- be two gains however few sources caused them.
 --
 -- First-appearance order, so the records read in the order the batch dealt its
--- damage. Parun.EventTriggerSpec's lifelinkGainEventsSpec is the proof of both
--- directions.
+-- damage. data/scenarios/life-trigger/cr-702-15e-*.json and
+-- cr-119-9-one-lifelink-source-damaging-two-blockers-at-once-is-one-life-gain-event.json
+-- are the proof of both directions.
 --
 -- Whom the damage was dealt to is none of this function's business, exactly as
 -- it is none of processDamage's gain pass's: CR 702.15b hangs the gain off the

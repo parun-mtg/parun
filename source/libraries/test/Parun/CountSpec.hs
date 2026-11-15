@@ -14,7 +14,6 @@ import qualified Data.List as List
 import qualified Data.Map.Strict as Map
 import qualified Data.Set as Set
 import qualified Data.Text as Text
-import qualified Parun.CastRestrictionSpec as CastSpec
 import qualified Parun.Engine.Activate as Activate
 import qualified Parun.Engine.Binding as Binding
 import qualified Parun.Engine.Count as Count
@@ -426,77 +425,13 @@ spec s registry = Spec.describe s "Parun.Engine.Count" $ do
         viewOf = S.stubView [(a1, Set.singleton CardType.Land, Set.singleton Subtype.Swamp, Just S.alice)]
     Spec.assertEqWith s "the Swamp's 0" (S.countOf viewOf (Filter.contextFor Teams.none (Just S.alice) Nothing) gs count) (Just 0)
 
-  approachSpec s registry
   tobiasSpec s registry
   charnelTallySpec s registry
-  tyranidInvasionSpec s registry
-  oreskosExplorerSpec s registry
   surveyorsScopeSpec s registry
   keeningStoneSpec s registry
   priceOfKnowledgeSpec s registry
   ebonyOwlNetsukeSpec s registry
   leftBattlefieldSpec s registry
-  ownershipLedgerSpec s registry
-
--- CR 608.2i's look-back over a whole GAME rather than a turn
--- (CastWindow.ThisGame). Approach of the Second Sun, {6}{W} Sorcery: "If
--- this spell was cast from your hand and you've cast another spell named
--- Approach of the Second Sun this game, you win the game. Otherwise, put
--- Approach of the Second Sun into its owner's library seventh from the top and
--- you gain 7 life." (Oracle text verified against Scryfall 2026-09-28.)
---
--- Every second cast happens on a LATER turn than the first, across real
--- handoffs, so a count that read only this turn's log answers 1 and loses the
--- win. Three seats, so bob's Approach is an opponent's and not "the other
--- player's". Future Sight sits under alice on every board, so the library-cast
--- case differs from the winning one only in where the second copy is.
-approachSpec :: (Monad m) => Spec.Spec m n -> Registry.Registry m -> n ()
-approachSpec s registry =
-  let -- alice: fourteen Plains (two casts, no untap step between them), eight
-      -- Plains in her library, Future Sight. bob: seven Plains. alice's main
-      -- phase.
-      board plains sight =
-        let withLands = S.landsFor plains S.bob 7 (S.landsFor plains S.alice 14 S.threePlayerGame)
-            stocked = List.foldl' (\g _ -> snd (S.addLibraryCard plains S.alice g)) withLands [1 .. (8 :: Int)]
-            (_, withSight) = S.addPermanent sight S.alice stocked
-         in mainOf S.alice withSight
-      mainOf pid gs =
-        gs
-          { GameState.turn =
-              (GameState.turn gs)
-                { TurnRegisters.phase = Phase.PrecombatMain,
-                  TurnRegisters.activePlayer = pid,
-                  TurnRegisters.priority = Just pid
-                }
-          }
-      castAndResolve pid oid gs = S.runPure S.identityAnswer (S.runPure S.identityAnswer gs (S.cast pid oid)) Engine.priorityLoop
-      -- One real turn handoff, then the main phase of whoever it reached.
-      nextTurn gs =
-        let handed = S.runPure S.identityAnswer gs Engine.handoffTurn
-         in mainOf (TurnRegisters.activePlayer (GameState.turn handed)) handed
-      -- 1-based, from the top: where each Approach sits in that library. By
-      -- name, since CR 400.7 gives the card a new id as it moves.
-      approachesIn pid gs =
-        fmap (+ 1) (List.findIndices (\oid -> fmap S.nameOf (Game.cardOf oid gs) == Just approachName) (Game.zoneMembers Zone.Library pid gs))
-      approachName = CardName.MkCardName (Text.pack "Approach of the Second Sun")
-      printings = do
-        plains <- S.printingOf s registry "Plains"
-        sight <- S.printingOf s registry "Future Sight"
-        approach <- S.printingOf s registry "Approach of the Second Sun"
-        pure (plains, sight, approach)
-   in Spec.describe s "Approach of the Second Sun" $ do
-        Spec.it s "CR 601.2a the second, cast from the LIBRARY, does not win" $ do
-          (plains, sight, approach) <- printings
-          let (first, g1) = S.addHandCard approach S.alice (board plains sight)
-              turnOne = castAndResolve S.alice first g1
-              (second, g2) = S.addLibraryCard approach S.alice turnOne
-              turnFour = nextTurn (nextTurn (nextTurn g2))
-              after = castAndResolve S.alice second turnFour
-          Spec.assertEqWith s "it is alice's turn again" (TurnRegisters.activePlayer (GameState.turn turnFour)) S.alice
-          Spec.assertBool s (S.castable S.alice second turnFour) "Future Sight offers the top card"
-          Spec.assertEqWith s "nobody has won" (GameState.result after) Nothing
-          Spec.assertEqWith s "it went seventh from the top, above the first at eighth" (approachesIn S.alice after) [7, 8 :: Int]
-          Spec.assertEqWith s "and alice gained a second 7" (S.lifeOf S.alice after) (Just 34)
 
 -- CR 608.2i read over CR 608.2h's record of a ZONE CHANGE: "for each nontoken
 -- creature you controlled that died this turn". GAMEPLAY LEVEL, because what it
@@ -677,147 +612,10 @@ isAbilityTriggered event = case event of
   GameEvent.AbilityTriggered {} -> True
   _ -> False
 
--- CR 102.1 read as a NUMBER: the first count whose scope folds players rather
--- than objects. GAMEPLAY LEVEL, because what it proves is that a printed card
--- reaches the fold and that the fold reaches the seats the engine actually has.
---
--- Tyranid Invasion, {3}{G} Sorcery: "Create a number of 3/3 green Tyranid
--- Warrior creature tokens with trample equal to the number of opponents you
--- have." The whole card is one Create whose count is the scope under test, so
--- nothing else can move the answer.
---
--- THREE SEATS, and the number is OBSERVABLE as a pile of tokens rather than
--- computed. Two seats would answer 1 for the reading under test, for the
--- reading that ignores CR 800.4a, and for a literal alike. Three seats plus a
--- departure separate all three, and no two of these columns agree on both
--- rows:
---
---                      opponents still playing   players in the game   every seat but yours
---   nobody departed              2                       3                     2
---   carol conceded               1                       2                     2
---
--- So the two cases below differ in exactly one thing -- carol's concession --
--- and only the still-playing reading of CR 800.4a gives 2 then 1. The second
--- row is what a literal fails on, which is the mutation this pair was checked
--- against.
-tyranidInvasionSpec :: (Monad m) => Spec.Spec m n -> Registry.Registry m -> n ()
-tyranidInvasionSpec s registry =
-  let -- alice has four Forests and nothing else; bob and carol have empty
-      -- boards, so every token on the battlefield afterwards is the spell's.
-      board forest =
-        let withLands = List.foldl' (\g _ -> snd (S.addPermanent forest S.alice g)) S.threePlayerGame [1 .. (4 :: Int)]
-         in withLands
-              { GameState.turn =
-                  (GameState.turn withLands)
-                    { TurnRegisters.phase = Phase.PrecombatMain,
-                      TurnRegisters.activePlayer = S.alice,
-                      TurnRegisters.priority = Just S.alice
-                    }
-              }
-      castInvasion invasion gs =
-        let (oid, gs1) = S.addHandCard invasion S.alice gs
-            cast = S.runPure S.identityAnswer gs1 (S.cast S.alice oid)
-         in S.runPure S.identityAnswer cast Engine.priorityLoop
-   in Spec.describe s "Tyranid Invasion" $ do
-        -- The discriminating case for CR 800.4a. The seating roster is still
-        -- three (CR 800.5) and carol's Status.Departed is the only difference
-        -- from the board above, so a count that named seats rather than players
-        -- would mint two again.
-        Spec.it s "CR 800.4a a player who has conceded is not one of alice's opponents" $ do
-          invasion <- S.printingOf s registry "Tyranid Invasion"
-          forest <- S.printingOf s registry "Forest"
-          let base = S.departs Departure.Type.Conceded S.carol (board forest)
-              after = castInvasion invasion base
-          Spec.assertEqWith s "one opponent left, so one token" (length (S.tokensOf after)) 1
-          Spec.assertEqWith s "the spell resolved" (TurnRegisters.stack (GameState.turn after)) []
-
--- CR 110.2 compared against CR 109.5's "you": the first Filter that RE-FRAMES the
--- perspective, asking a question about a candidate player's own board rather than
--- how that player stands to you. GAMEPLAY LEVEL for the Tyranid Invasion group's
--- reason and for one more of its own -- the atom is answered by a rewrite inside
--- Parun.Engine.Count.bakePerspective rather than by Parun.Engine.Filter.matches, so
--- a unit-level match would read the vacuous False and prove nothing.
---
--- Oreskos Explorer, {1}{W} Cat Scout: "When this creature enters, search your
--- library for up to X Plains cards, where X is the number of players who control
--- more lands than you. Reveal those cards, put them into your hand, then
--- shuffle."
---
--- THREE SEATS with DISTINCT land counts, one seat above alice and one below, and
--- the pair of boards differs in exactly one thing -- carol's third land. No two
--- readings agree on both rows:
---
---                              CR 110.2 (>)   non-strict (>=)   every opponent   nobody
---   alice 2, bob 4, carol 3          2               3                2             0
---   alice 2, bob 4, carol 2          1               3                2             0
---
--- The tied row is the one that tells strict from non-strict, which is invisible
--- on a board where no seat ties you; the first row is what tells either from a
--- count of opponents. Alice's own 2 is distinct from both other seats, so a
--- reading that folded the wrong seat's board would not land on the right number
--- by coincidence.
---
--- X is OBSERVED as the size of alice's hand afterwards: her library holds three
--- Plains and one Forest, so the search is never capped by what is there to find
--- (a fourth reading, "as many as the library holds", would answer 3), and the
--- Forest is what proves the filter still ran.
-oreskosExplorerSpec :: (Monad m, Monad n) => Spec.Spec m n -> Registry.Registry m -> n ()
-oreskosExplorerSpec s registry =
-  let board plains forest island carolLands =
-        let withLands = S.landsFor island S.carol carolLands (S.landsFor forest S.bob 4 (S.landsFor plains S.alice 2 S.threePlayerGame))
-            withLibrary = List.foldl' (\g p -> snd (S.addLibraryCard p S.alice g)) withLands [plains, plains, plains, forest]
-         in withLibrary
-              { GameState.turn =
-                  (GameState.turn withLibrary)
-                    { TurnRegisters.phase = Phase.PrecombatMain,
-                      TurnRegisters.activePlayer = S.alice,
-                      TurnRegisters.priority = Just S.alice
-                    }
-              }
-      castExplorer explorer gs =
-        let (oid, gs1) = S.addHandCard explorer S.alice gs
-            cast = S.runPure findsWhatItCan gs1 (S.cast S.alice oid)
-         in S.runPure findsWhatItCan cast Engine.priorityLoop
-      -- Alice cast the Explorer out of an otherwise empty hand, so what is in her
-      -- hand afterwards is exactly what the search found.
-      inHand gs = length (Game.zoneMembers Zone.Hand S.alice gs)
-      plainsName = Set.singleton (CardName.MkCardName (Text.pack "Plains"))
-   in Spec.describe s "Oreskos Explorer" $ do
-        Spec.it s "CR 110.2 X counts the one seat with more lands than alice and the one with fewer" $ do
-          explorer <- S.printingOf s registry "Oreskos Explorer"
-          plains <- S.printingOf s registry "Plains"
-          forest <- S.printingOf s registry "Forest"
-          island <- S.printingOf s registry "Island"
-          let after = castExplorer explorer (board plains forest island 3)
-          Spec.assertEqWith s "bob and carol are both ahead, so two cards found" (inHand after) 2
-          Spec.assertEqWith s "both were Plains, revealed" (S.revealsOf after) [(S.alice, plainsName), (S.alice, plainsName)]
-          Spec.assertEqWith s "and the Forest and the third Plains stayed behind" (length (Game.zoneMembers Zone.Library S.alice after)) 2
-          Spec.assertEqWith s "everything resolved" (TurnRegisters.stack (GameState.turn after)) []
-        -- The discriminating case. Carol's board is the only difference, and CR
-        -- 110.2's comparison is STRICT, so a seat level with alice is not one that
-        -- controls more lands than she does.
-        Spec.it s "CR 110.2 a seat TIED with alice controls no more lands than she does" $ do
-          explorer <- S.printingOf s registry "Oreskos Explorer"
-          plains <- S.printingOf s registry "Plains"
-          forest <- S.printingOf s registry "Forest"
-          island <- S.printingOf s registry "Island"
-          let after = castExplorer explorer (board plains forest island 2)
-          Spec.assertEqWith s "only bob is ahead, so one card found" (inHand after) 1
-          Spec.assertEqWith s "and it was a Plains, revealed" (S.revealsOf after) [(S.alice, plainsName)]
-          Spec.assertEqWith s "three cards left in the library" (length (Game.zoneMembers Zone.Library S.alice after)) 3
-          Spec.assertEqWith s "everything resolved" (TurnRegisters.stack (GameState.turn after)) []
-
--- Finds as many matching cards as the search allows, off the head of the offered
--- list. It reads the engine's own cap, which is the number under test, rather
--- than searching for a card by name -- an answerer that picked by name would find
--- the same Plains again after a mutation and repair the assertion.
-findsWhatItCan :: Prompt.Prompt r -> r
-findsWhatItCan p = case p of
-  Prompt.Search _ _ matches cap -> List.genericTake cap matches
-  _ -> S.identityAnswer p
-
--- CR 110.2 with a MARGIN: the Oreskos Explorer group's atom asked for "at least
--- two more" rather than "more". GAMEPLAY LEVEL for that group's reason.
+-- CR 110.2 with a MARGIN: the strict "more" Oreskos Explorer's scenarios
+-- (data/scenarios/count/cr-110-2-*) prove, asked for "at least two more".
+-- GAMEPLAY LEVEL, because the atom is answered by a rewrite inside
+-- Parun.Engine.Count.bakePerspective rather than by Parun.Engine.Filter.matches.
 --
 -- Surveyor's Scope, {2} Artifact: "{T}, Exile this artifact: Search your library
 -- for up to X basic land cards, where X is the number of players who control at
@@ -881,6 +679,15 @@ surveyorsScopeSpec s registry =
               let after = fire scopeId ability ready
               Spec.assertEqWith s "bob and carol are both two ahead, so two Forests found" (forests after) 2
               Spec.assertEqWith s "the Wilds and one Forest stayed behind" (inLibrary after) 2
+
+-- Finds as many matching cards as the search allows, off the head of the offered
+-- list. It reads the engine's own cap, which is the number under test, rather
+-- than searching for a card by name -- an answerer that picked by name would find
+-- the same Forest again after a mutation and repair the assertion.
+findsWhatItCan :: Prompt.Prompt r -> r
+findsWhatItCan p = case p of
+  Prompt.Search _ _ matches cap -> List.genericTake cap matches
+  _ -> S.identityAnswer p
 
 -- CR 113.7 / CR 608.2c: a count whose SCOPE names the player an ABILITY's slot
 -- bound. Parun.Engine.Resolve.Slots.effectContext frames the resolution on the
@@ -1088,71 +895,6 @@ ebonyOwlNetsukeSpec s registry =
           Spec.assertEqWith s "bob took 4: his own nine cards cleared the threshold, though alice's three do not" (lives after) (Just 20, Just 16, Just 20)
           Spec.assertEqWith s "bob still holds the nine the count read" (S.handSize S.bob after) 9
           Spec.assertEqWith s "and alice the three that would have answered the other way" (S.handSize S.alice after) 3
-
--- CR 108.3's owner over CR 608.2i's cast log, which is not CR 405.4's
--- controller.
---
--- Synthetic Ownership Ledger, {2}{B} Creature -- Zombie 1/3: "{T}: You gain 1
--- life for each spell you don't own that was cast this turn." SYNTHETIC because
--- no printing asks an owner question of a PAST cast: Scryfall's o:"spell you
--- don't own", 2026-09-14, returns seven cards and every one of them is a
--- "whenever you cast" TRIGGER, which Parun.Engine.Event.Match answers off the live
--- spell instead. Tasha, the Witch Queen is the card that would refute this if her
--- clause were a count.
---
--- Both cases run on Parun.CastRestrictionSpec's Dire Fleet Daredevil boards,
--- reused for the reason Parun.DepartureSpec reuses one: on them a spell's caster
--- and its owner are different players, and three seats keep the two apart.
---
--- The first board logs two casts and alice made both -- the Daredevil out of her
--- own hand, and bob's Renewed Faith out of bob's graveyard -- so the life the
--- Ledger gains reads:
---
---   owner, the rule            1   only the Faith is bob's
---   controller instead         0   alice cast both
---   no owner at all            0   Filter.HeldBy Holder.Owner vacuously False, the bug
---   neither conjunct           2   every cast counted
---
--- The second case is Game.ownerWithLastKnown's live road, and the board it needs is the one
--- with a second Renewed Faith in alice's OWN hand: a spell still on the stack has
--- no CR 608.2h record filed under its id, so a fold that reads only records
--- would answer Nothing for it and count a spell alice owns.
-ownershipLedgerSpec :: (Monad m) => Spec.Spec m n -> Registry.Registry m -> n ()
-ownershipLedgerSpec s registry =
-  let printings = do
-        mountain <- S.printingOf s registry "Mountain"
-        plains <- S.printingOf s registry "Plains"
-        daredevil <- S.printingOf s registry "Dire Fleet Daredevil"
-        faith <- S.printingOf s registry "Renewed Faith"
-        ledger <- S.printingOf s registry "Synthetic Ownership Ledger"
-        pure (mountain, plains, daredevil, faith, ledger)
-      -- The Ledger put onto alice's battlefield and tapped for its own ability,
-      -- which S.addPermanent settles so CR 302.6 does not refuse the cost.
-      tallied ledger gs =
-        let (ledgerId, withLedger) = S.addPermanent ledger S.alice gs
-         in case Projection.abilitiesOf ledgerId withLedger of
-              [ability] -> Right (S.lifeOf S.alice (S.runPure S.identityAnswer withLedger (do Activate.activateAbility S.alice ledgerId ability; Stack.resolveTop)))
-              other -> Left (length other)
-      owners gs = fmap (\oid -> fmap Object.owner (Game.lookupObject oid gs)) (TurnRegisters.stack (GameState.turn gs))
-   in Spec.describe s "Synthetic Ownership Ledger" $ do
-        -- The other road, on the board that adds a SECOND Renewed Faith to alice's
-        -- own hand: she casts bob's and lets it resolve, then casts hers and
-        -- leaves it on the stack. A spell still on the stack has no CR 608.2h
-        -- record filed under its id, so the one alice owns is excluded only by
-        -- the live read -- and the board would answer 28 without it.
-        Spec.it s "CR 108.3 a spell still on the stack is read off the object, not off a record" $ do
-          (mountain, plains, daredevil, faith, ledger) <- printings
-          let (handFaithId, board) = CastSpec.daredevilTwoFaiths mountain plains daredevil faith
-          case CastSpec.exiledNamed CastSpec.renewedFaithName board of
-            [exiledId] -> do
-              let resolved = S.runPure S.identityAnswer (S.runPure S.identityAnswer board (S.cast S.alice exiledId)) Stack.resolveTop
-                  pending = S.runPure S.identityAnswer resolved (S.cast S.alice handFaithId)
-              Spec.assertEqWith s "CR 108.3 alice's own spell on the stack is not one she doesn't own, so still 1" (tallied ledger pending) (Right (Just 27))
-              -- The proxies, after the behaviour: her Faith really is on the
-              -- stack unresolved, and bob's really did resolve.
-              Spec.assertEqWith s "setup: one spell on the stack, and alice owns it" (owners pending) [Just S.alice]
-              Spec.assertEqWith s "setup: alice is at 26 from bob's Faith alone" (S.lifeOf S.alice pending) (Just 26)
-            other -> Spec.assertFailure s ("expected exactly one exiled Faith, got " <> show (length other))
 
 -- CR 603.6c's origin with no destination: "left the battlefield this turn", read
 -- over EventShape.MovedFrom. Every victim here goes to its owner's HAND, so a

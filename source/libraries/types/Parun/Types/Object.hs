@@ -512,8 +512,8 @@ data Object = MkObject
     -- separation from rule 711's levelers.
     --
     -- NOT a copiable value (CR 717.2b), for ringBearerFor's reason.
-    -- Parun.ClassSpec's "levels are not a copiable characteristic" is what proves
-    -- it at gameplay level. Per-incarnation: cleared by newIncarnation, rule
+    -- data/scenarios/class/cr-717-2b-levels-are-not-a-copiable-characteristic.json
+    -- proves it at gameplay level. Per-incarnation: cleared by newIncarnation, rule
     -- 717.2b's retention clause being about a permanent that stops being a CLASS
     -- rather than one that changes zones.
     classLevel :: Maybe ClassLevel.ClassLevel,

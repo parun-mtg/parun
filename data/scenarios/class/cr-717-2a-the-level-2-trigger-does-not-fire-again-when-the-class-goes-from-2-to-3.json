@@ -1,0 +1,269 @@
+{
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "battlefield": [
+          {
+            "card": "Island",
+            "label": "is1",
+            "ready": true
+          },
+          {
+            "card": "Island",
+            "label": "is2",
+            "ready": true
+          },
+          {
+            "card": "Island",
+            "label": "is3",
+            "ready": true
+          },
+          {
+            "card": "Island",
+            "label": "is4",
+            "ready": true
+          },
+          {
+            "card": "Island",
+            "label": "is5",
+            "ready": true
+          },
+          {
+            "card": "Island",
+            "label": "is6",
+            "ready": true
+          },
+          {
+            "card": "Island",
+            "label": "is7",
+            "ready": true
+          },
+          {
+            "card": "Island",
+            "label": "is8",
+            "ready": true
+          },
+          {
+            "card": "Island",
+            "label": "is9",
+            "ready": true
+          },
+          {
+            "card": "Island",
+            "label": "is10",
+            "ready": true
+          },
+          {
+            "card": "Island",
+            "label": "is11",
+            "ready": true
+          },
+          {
+            "card": "Island",
+            "label": "is12",
+            "ready": true
+          },
+          {
+            "card": "Island",
+            "label": "is13",
+            "ready": true
+          },
+          {
+            "card": "Island",
+            "label": "is14",
+            "ready": true
+          },
+          {
+            "card": "Island",
+            "label": "is15",
+            "ready": true
+          },
+          {
+            "card": "Island",
+            "label": "is16",
+            "ready": true
+          },
+          {
+            "card": "Mountain",
+            "label": "mountain",
+            "ready": true
+          },
+          {
+            "card": "Stormchaser's Talent",
+            "label": "talent",
+            "ready": true
+          }
+        ],
+        "hand": [
+          {
+            "card": "Lightning Bolt",
+            "label": "bolt"
+          }
+        ],
+        "name": "alice"
+      },
+      {
+        "name": "bob"
+      }
+    ],
+    "step": "PrecombatMain"
+  },
+  "description": "CR 717.2a the level-2 trigger does not fire again when the Class goes from 2 to 3",
+  "note": "'Becomes level 2' asks whether the level was below 2 and reached 2, which an equality on the resulting level or a bare 'reached at least 2' gets wrong. The level-2 section is still on at level 3, so the granted trigger exists throughout. The Class reaches level 2 with alice's graveyard empty (the trigger has no target and is removed, CR 603.3d), then Lightning Bolt is cast so an instant sits in her graveyard when the level-3 bar resolves; a trigger would bind it, its only candidate, and return it. The closing refused level-3 bar, with six Islands untapped to pay it, says the level really moved on to 3. The Haskell test wrote level 2 straight onto the Class.",
+  "timeline": [
+    {
+      "do": {
+        "Activate": {
+          "ability": 0,
+          "mana": [
+            "$is1",
+            "$is2",
+            "$is3",
+            "$is4",
+            null
+          ],
+          "object": "$talent"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Cast": {
+          "mana": [
+            "$mountain",
+            null
+          ],
+          "object": "$bolt",
+          "targets": [
+            "$bob"
+          ]
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Lightning Bolt",
+          "count": 1,
+          "player": "alice",
+          "zone": "Graveyard"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Life": {
+          "life": 17,
+          "player": "bob"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Activate": {
+          "ability": 1,
+          "mana": [
+            "$is5",
+            "$is6",
+            "$is7",
+            "$is8",
+            "$is9",
+            "$is10",
+            null
+          ],
+          "object": "$talent"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Lightning Bolt",
+          "count": 1,
+          "player": "alice",
+          "zone": "Graveyard"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Lightning Bolt",
+          "count": 0,
+          "player": "alice",
+          "zone": "Hand"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "View": {
+          "is": [],
+          "of": "Stack"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "player": "alice",
+      "refuse": {
+        "Activate": {
+          "ability": 1,
+          "mana": [
+            "$is11",
+            "$is12",
+            "$is13",
+            "$is14",
+            "$is15",
+            "$is16"
+          ],
+          "object": "$talent"
+        }
+      },
+      "step": "PrecombatMain",
+      "turn": 1
+    }
+  ]
+}

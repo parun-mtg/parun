@@ -55,8 +55,8 @@ data Affected
     -- The set is every OBJECT, so what a card scoped to fewer kinds of thing
     -- says is said by its Filter instead: Painter's "all cards that aren't on
     -- the battlefield, spells, and permanents" writes CR 109.1's remaining two
-    -- kinds out with Not (Or [IsAbility, IsEmblem]), and Parun.ColorSpec's Koth
-    -- and Synthetic Prismatic Silence cases prove each exclusion.
+    -- kinds out with Not (Or [IsAbility, IsEmblem]), and the Koth and Synthetic
+    -- Prismatic Silence scenarios in data/scenarios/color prove each exclusion.
     MatchingAnywhere (Filter.Filter Keyword.Keyword)
   | -- | Matching with the battlefield gate INVERTED: any object matching the
     -- Filter that is not on the battlefield. Teferi, Mage of Zhalfir's "creature

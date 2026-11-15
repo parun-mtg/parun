@@ -2789,8 +2789,8 @@ anyConditional :: GameState -> Bool
 anyConditional gs =
   let -- A printed read here would leave a copy's "as long as" clause answered by
       -- alwaysFunctioning on a board whose only conditional static ability is
-      -- the copy's, which Parun.ClassSpec's "CR 604.2 a copy's own as-long-as
-      -- clause is still gated once the original is exiled" proves.
+      -- the copy's, which data/scenarios/class/cr-604-2-a-copy-s-own-as-long-as-
+      -- clause-is-still-gated-once-the-original-is-exil.json proves.
       -- The granted list too, which permanentParts gathers beside the copiable one.
       conditionalPermanent oid = any carriesCondition (staticAbilitiesOf oid gs <> fmap snd (grantedStaticAbilitiesOf oid gs))
       conditional oid = case abilityFaceOfId oid gs of

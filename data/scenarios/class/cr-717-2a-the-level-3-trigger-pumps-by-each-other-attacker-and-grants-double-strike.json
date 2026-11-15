@@ -1,0 +1,276 @@
+{
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "battlefield": [
+          {
+            "card": "Plains",
+            "label": "pl1",
+            "ready": true
+          },
+          {
+            "card": "Plains",
+            "label": "pl2",
+            "ready": true
+          },
+          {
+            "card": "Plains",
+            "label": "pl3",
+            "ready": true
+          },
+          {
+            "card": "Plains",
+            "label": "pl4",
+            "ready": true
+          },
+          {
+            "card": "Plains",
+            "label": "pl5",
+            "ready": true
+          },
+          {
+            "card": "Plains",
+            "label": "pl6",
+            "ready": true
+          },
+          {
+            "card": "Plains",
+            "label": "pl7",
+            "ready": true
+          },
+          {
+            "card": "Plains",
+            "label": "pl8",
+            "ready": true
+          },
+          {
+            "card": "Paladin Class",
+            "label": "class",
+            "ready": true
+          },
+          {
+            "card": "Goblin Piker",
+            "label": "piker1",
+            "ready": true
+          },
+          {
+            "card": "Goblin Piker",
+            "label": "piker2",
+            "ready": true
+          },
+          {
+            "card": "Goblin Piker",
+            "label": "piker3",
+            "ready": true
+          },
+          {
+            "card": "Goblin Piker",
+            "label": "piker4",
+            "ready": true
+          }
+        ],
+        "name": "alice"
+      },
+      {
+        "name": "bob"
+      }
+    ],
+    "step": "PrecombatMain"
+  },
+  "description": "CR 717.2a / CR 508.3d the level-3 trigger pumps by each OTHER attacker and grants double strike",
+  "note": "Paladin Class is climbed to level 3, then all four Goblin Pikers attack. CR 508.3d makes 'whenever you attack' one trigger for the declaration; 'each other attacking creature' counts three, so the target is 2/1 + the level-2 section's +1/+1 + 3/+3 = 6/5 (7/6 if the target counted itself). The three untargeted Pikers carry the level-2 section alone. bob defends with nothing, so no blocker kills a reading. The '--control' file is the same board at level 2.",
+  "timeline": [
+    {
+      "do": {
+        "Activate": {
+          "ability": 0,
+          "mana": [
+            "$pl1",
+            "$pl2",
+            "$pl3",
+            null
+          ],
+          "object": "$class"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Activate": {
+          "ability": 1,
+          "mana": [
+            "$pl4",
+            "$pl5",
+            "$pl6",
+            "$pl7",
+            "$pl8"
+          ],
+          "object": "$class"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Attack": [
+          "$piker1",
+          "$piker2",
+          "$piker3",
+          "$piker4"
+        ]
+      },
+      "player": "alice",
+      "step": "DeclareAttackers",
+      "turn": 1
+    },
+    {
+      "do": {
+        "ChooseTargets": {
+          "target": [
+            "$piker1"
+          ]
+        }
+      },
+      "player": "alice",
+      "step": "DeclareAttackers",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Attackers": {
+          "attackers": {
+            "$piker1": "$bob",
+            "$piker2": "$bob",
+            "$piker3": "$bob",
+            "$piker4": "$bob"
+          }
+        }
+      },
+      "player": "alice",
+      "step": "DeclareBlockers",
+      "turn": 1
+    },
+    {
+      "check": {
+        "PowerToughness": {
+          "object": "$piker1",
+          "power": 6,
+          "toughness": 5
+        }
+      },
+      "player": "alice",
+      "step": "DeclareBlockers",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Keywords": {
+          "count": 1,
+          "keyword": {
+            "type": "DoubleStrike"
+          },
+          "object": "$piker1"
+        }
+      },
+      "player": "alice",
+      "step": "DeclareBlockers",
+      "turn": 1
+    },
+    {
+      "check": {
+        "PowerToughness": {
+          "object": "$piker2",
+          "power": 3,
+          "toughness": 2
+        }
+      },
+      "player": "alice",
+      "step": "DeclareBlockers",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Keywords": {
+          "count": 0,
+          "keyword": {
+            "type": "DoubleStrike"
+          },
+          "object": "$piker2"
+        }
+      },
+      "player": "alice",
+      "step": "DeclareBlockers",
+      "turn": 1
+    },
+    {
+      "check": {
+        "PowerToughness": {
+          "object": "$piker3",
+          "power": 3,
+          "toughness": 2
+        }
+      },
+      "player": "alice",
+      "step": "DeclareBlockers",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Keywords": {
+          "count": 0,
+          "keyword": {
+            "type": "DoubleStrike"
+          },
+          "object": "$piker3"
+        }
+      },
+      "player": "alice",
+      "step": "DeclareBlockers",
+      "turn": 1
+    },
+    {
+      "check": {
+        "PowerToughness": {
+          "object": "$piker4",
+          "power": 3,
+          "toughness": 2
+        }
+      },
+      "player": "alice",
+      "step": "DeclareBlockers",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Keywords": {
+          "count": 0,
+          "keyword": {
+            "type": "DoubleStrike"
+          },
+          "object": "$piker4"
+        }
+      },
+      "player": "alice",
+      "step": "DeclareBlockers",
+      "turn": 1
+    }
+  ]
+}

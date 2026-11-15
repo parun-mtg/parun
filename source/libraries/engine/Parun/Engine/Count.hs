@@ -695,8 +695,9 @@ aggregate quantityOf aggregation members = case aggregation of
 -- caller's view, since CR 613.1b makes control a layer-2 question.
 --
 -- Observable through Scope.OverPlayers, which folds the players this returns
--- rather than their objects, and Parun.CountSpec's Tyranid Invasion group is
--- what proves CR 102.1's departed seat stays out. Through Scope.InZone it still
+-- rather than their objects, and data/scenarios/count/cr-800-4a-a-player-who-
+-- has-conceded-is-not-one-of-alice-s-opponents.json proves CR 102.1's departed
+-- seat stays out. Through Scope.InZone it still
 -- is not: CR 800.4a already emptied every zone a departing player owned.
 playersFor :: ViewOf -> Filter.Context -> GameState -> PlayerRef.PlayerRef -> Maybe [PlayerId]
 playersFor viewOf context gs =

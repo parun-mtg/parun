@@ -962,9 +962,9 @@ data Keyword
 -- timestamped colour effect -- stamped with the granting permanent when a static
 -- ability grants it (CR 613.7a), and at creation when a resolution does (CR
 -- 613.7b). Slivdrazi Monstrosity and Synthetic Colorless Blessing are the two
--- grants, and Parun.ColorSpec's "CR 613.7a a granted devoid clears an OLDER 'in
--- addition' colour" and "CR 702.114a devoid granted by a RESOLUTION makes the
--- creature colourless" are the proofs.
+-- grants, and data/scenarios/color's "CR 613.7a a granted devoid clears an
+-- OLDER 'in addition' colour" and "CR 702.114a devoid granted by a RESOLUTION
+-- makes the creature colourless" are the proofs.
 --
 -- CR 702.73a's changeling takes the same routes one layer down, through the
 -- same pair of functions -- plus a third, CR 604.3a's copy-effect clause, which

@@ -1902,8 +1902,8 @@ spec s registry = Spec.describe s "Parun.Engine.Projection" $ do
   -- recorded here because the card JSON carries no comment: the control half
   -- excludes an ability on the stack (CR 113.1c) and the ownership half excludes
   -- an emblem too (CR 114.5), both through Filter.IsAbility / Filter.IsEmblem.
-  -- Painter's Servant carries the same pair; Parun.ColorSpec's Koth and Synthetic
-  -- Prismatic Silence cases are what prove the exclusions bite.
+  -- Painter's Servant carries the same pair; the Koth and Synthetic Prismatic
+  -- Silence scenarios in data/scenarios/color are what prove the exclusions bite.
   --
   -- CR 305.7's gate reached by an affected set that asks who CONTROLS the
   -- candidate, which is the shape that used to make Projection.controllerOf

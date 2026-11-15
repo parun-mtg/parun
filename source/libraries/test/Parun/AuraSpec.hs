@@ -1745,7 +1745,7 @@ attachRestrictionSpec s registry = Spec.describe s "AttachRestriction" $ do
   -- differing only in that choice, with a white and a black Aura beside the
   -- white Blessing, so each choice buries exactly one of them and the white one
   -- also needs CR 702.16n's "this Aura". The stamp stands in for the entry
-  -- choice, whose road Parun.ColorSpec's Gauntlet of Power case proves.
+  -- choice, whose road data/scenarios/color's Gauntlet of Power scenario proves.
   Spec.it s "CR 702.16n whole cards: Cho-Manno's Blessing buries the Aura of the colour it chose, and spares itself" $ do
     piker <- S.printingOf s registry "Goblin Piker"
     blessing <- S.printingOf s registry "Cho-Manno's Blessing"

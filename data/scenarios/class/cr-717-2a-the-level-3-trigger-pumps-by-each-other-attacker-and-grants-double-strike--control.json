@@ -1,0 +1,240 @@
+{
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "battlefield": [
+          {
+            "card": "Plains",
+            "label": "pl1",
+            "ready": true
+          },
+          {
+            "card": "Plains",
+            "label": "pl2",
+            "ready": true
+          },
+          {
+            "card": "Plains",
+            "label": "pl3",
+            "ready": true
+          },
+          {
+            "card": "Plains",
+            "label": "pl4",
+            "ready": true
+          },
+          {
+            "card": "Plains",
+            "label": "pl5",
+            "ready": true
+          },
+          {
+            "card": "Plains",
+            "label": "pl6",
+            "ready": true
+          },
+          {
+            "card": "Plains",
+            "label": "pl7",
+            "ready": true
+          },
+          {
+            "card": "Plains",
+            "label": "pl8",
+            "ready": true
+          },
+          {
+            "card": "Paladin Class",
+            "label": "class",
+            "ready": true
+          },
+          {
+            "card": "Goblin Piker",
+            "label": "piker1",
+            "ready": true
+          },
+          {
+            "card": "Goblin Piker",
+            "label": "piker2",
+            "ready": true
+          },
+          {
+            "card": "Goblin Piker",
+            "label": "piker3",
+            "ready": true
+          },
+          {
+            "card": "Goblin Piker",
+            "label": "piker4",
+            "ready": true
+          }
+        ],
+        "name": "alice"
+      },
+      {
+        "name": "bob"
+      }
+    ],
+    "step": "PrecombatMain"
+  },
+  "description": "CR 717.2a the level-3 section is off while the Class is level 2",
+  "note": "The same board with the Class climbed only to level 2: CR 717.2a gates the section on 'level 3 or greater', so no trigger is asked for at all (an unscheduled target prompt would fail the run), and the level-2 section's own +1/+1 still lands on all four, which says the board is otherwise intact.",
+  "timeline": [
+    {
+      "do": {
+        "Activate": {
+          "ability": 0,
+          "mana": [
+            "$pl1",
+            "$pl2",
+            "$pl3",
+            null
+          ],
+          "object": "$class"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Attack": [
+          "$piker1",
+          "$piker2",
+          "$piker3",
+          "$piker4"
+        ]
+      },
+      "player": "alice",
+      "step": "DeclareAttackers",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Attackers": {
+          "attackers": {
+            "$piker1": "$bob",
+            "$piker2": "$bob",
+            "$piker3": "$bob",
+            "$piker4": "$bob"
+          }
+        }
+      },
+      "player": "alice",
+      "step": "DeclareBlockers",
+      "turn": 1
+    },
+    {
+      "check": {
+        "PowerToughness": {
+          "object": "$piker1",
+          "power": 3,
+          "toughness": 2
+        }
+      },
+      "player": "alice",
+      "step": "DeclareBlockers",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Keywords": {
+          "count": 0,
+          "keyword": {
+            "type": "DoubleStrike"
+          },
+          "object": "$piker1"
+        }
+      },
+      "player": "alice",
+      "step": "DeclareBlockers",
+      "turn": 1
+    },
+    {
+      "check": {
+        "PowerToughness": {
+          "object": "$piker2",
+          "power": 3,
+          "toughness": 2
+        }
+      },
+      "player": "alice",
+      "step": "DeclareBlockers",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Keywords": {
+          "count": 0,
+          "keyword": {
+            "type": "DoubleStrike"
+          },
+          "object": "$piker2"
+        }
+      },
+      "player": "alice",
+      "step": "DeclareBlockers",
+      "turn": 1
+    },
+    {
+      "check": {
+        "PowerToughness": {
+          "object": "$piker3",
+          "power": 3,
+          "toughness": 2
+        }
+      },
+      "player": "alice",
+      "step": "DeclareBlockers",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Keywords": {
+          "count": 0,
+          "keyword": {
+            "type": "DoubleStrike"
+          },
+          "object": "$piker3"
+        }
+      },
+      "player": "alice",
+      "step": "DeclareBlockers",
+      "turn": 1
+    },
+    {
+      "check": {
+        "PowerToughness": {
+          "object": "$piker4",
+          "power": 3,
+          "toughness": 2
+        }
+      },
+      "player": "alice",
+      "step": "DeclareBlockers",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Keywords": {
+          "count": 0,
+          "keyword": {
+            "type": "DoubleStrike"
+          },
+          "object": "$piker4"
+        }
+      },
+      "player": "alice",
+      "step": "DeclareBlockers",
+      "turn": 1
+    }
+  ]
+}

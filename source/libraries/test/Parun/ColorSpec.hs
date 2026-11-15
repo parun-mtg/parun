@@ -21,15 +21,12 @@
 -- projectUpTo can see one ("devoid applies at the START of layer 5").
 module Parun.ColorSpec where
 
-import qualified Data.List.NonEmpty as NonEmpty
 import qualified Data.Map.Strict as Map
 import qualified Data.Sequence as Seq
 import qualified Data.Set as Set
-import qualified Data.Text as Text
 import qualified Parun.Engine.Activate as Activate
 import qualified Parun.Engine.Card as Card
 import qualified Parun.Engine.Engine as Engine
-import qualified Parun.Engine.Game as Game
 import qualified Parun.Engine.Mint as Mint
 import qualified Parun.Engine.Projection as Projection
 import qualified Parun.Engine.Setup as Setup
@@ -41,12 +38,10 @@ import qualified Parun.Support as S
 import qualified Parun.Types.ActivatedAbility as ActivatedAbility
 import qualified Parun.Types.Activator as Activator
 import qualified Parun.Types.Card as Card.Type
-import qualified Parun.Types.CardName as CardName
 import qualified Parun.Types.ChangeMode as ChangeMode
 import qualified Parun.Types.Color as Color
 import qualified Parun.Types.Copyability as Copyability
 import qualified Parun.Types.Cost as Cost.Type
-import qualified Parun.Types.CounterKind as CounterKind
 import qualified Parun.Types.EndingStep as EndingStep
 import qualified Parun.Types.Face as Face
 import qualified Parun.Types.Filter as Filter.Type
@@ -56,7 +51,6 @@ import qualified Parun.Types.Layer as Layer
 import qualified Parun.Types.ManaCost as ManaCost
 import qualified Parun.Types.ModeIndex as ModeIndex
 import qualified Parun.Types.Modification as Modification
-import qualified Parun.Types.Object as Object
 import qualified Parun.Types.ObjectId as ObjectId
 import qualified Parun.Types.Phase as Phase
 import qualified Parun.Types.PlayerRelation as PlayerRelation
@@ -67,9 +61,7 @@ import qualified Parun.Types.Prompt as Prompt
 import qualified Parun.Types.Recipient as Recipient
 import qualified Parun.Types.StackObjectKind as StackObjectKind
 import qualified Parun.Types.StoredEffects as StoredEffects
-import qualified Parun.Types.Subtype as Subtype
 import qualified Parun.Types.TargetSlot as TargetSlot
-import qualified Parun.Types.TurnRegisters as TurnRegisters
 
 -- "target nonblack creature", the target slot Doom Blade and the CR 115.1a cases share.
 nonblackCreature :: TargetSlot.TargetSlot
@@ -97,18 +89,6 @@ theAbility p = case Face.activatedAbilities (S.combinedFace p) of
   ab : _ -> ab
   [] -> ActivatedAbility.MkActivatedAbility (Cost.Type.MkCost (Just (ManaCost.MkManaCost [])) []) [] [] Nothing (Mint.oneModeOf Map.empty Seq.empty) [] (Activator.Related PlayerRelation.You) Nothing Nothing Nothing Copyability.Copyable Nothing
 
--- Koth's loyalty abilities in printed order: +2, -3, -7.
-kothUltimate :: Int
-kothUltimate = 2
-
--- Prodigal Sorcerer prints exactly one activated ability.
-pingAbility :: Int
-pingAbility = 0
-
--- The only mode of a card that prints no "choose one".
-soleMode :: ModeIndex.ModeIndex
-soleMode = ModeIndex.MkModeIndex 0
-
 permanentAbility :: Int
 permanentAbility = 1
 
@@ -120,53 +100,6 @@ abilityAt :: Int -> Printing.Printing -> Maybe (ActivatedAbility.ActivatedAbilit
 abilityAt i p = case drop i (Face.activatedAbilities (S.combinedFace p)) of
   ab : _ -> Just ab
   [] -> Nothing
-
--- Answers CR 614.1c's as-enters colour choice with blue, deferring everything
--- else to S.identityAnswer -- whose own default for that prompt is WHITE, so a
--- test that reached this answer by accident would not see blue.
-choosingBlue :: Prompt.Prompt r -> r
-choosingBlue p = case p of
-  Prompt.ChooseColor {} -> Color.Blue
-  Prompt.ChooseCardName {} -> CardName.MkCardName mempty
-  Prompt.ChooseOpponent _ _ _ _ opponents -> NonEmpty.head opponents
-  _ -> S.identityAnswer p
-
--- choosingBlue for the Gauntlet of Power case below, whose two permanents must
--- choose two DIFFERENT colours to show that each reads its own.
-choosingBlack :: Prompt.Prompt r -> r
-choosingBlack p = case p of
-  Prompt.ChooseColor {} -> Color.Black
-  Prompt.ChooseCardName {} -> CardName.MkCardName mempty
-  Prompt.ChooseOpponent _ _ _ _ opponents -> NonEmpty.head opponents
-  _ -> S.identityAnswer p
-
--- choosingBlue for the two cases below that need RED -- the colour Burrenton
--- Forge-Tender's protection names, and the one Synthetic Prismatic Silence
--- looks for on an ability.
-choosingRed :: Prompt.Prompt r -> r
-choosingRed p = case p of
-  Prompt.ChooseColor {} -> Color.Red
-  Prompt.ChooseCardName {} -> CardName.MkCardName mempty
-  Prompt.ChooseOpponent _ _ _ _ opponents -> NonEmpty.head opponents
-  _ -> S.identityAnswer p
-
--- Aims every ChooseTargets slot at one recipient, FILTERING the offered set for
--- it rather than building it: whether the engine offers the recipient at all is
--- the question the Koth case below asks, and a hand-built ToCreature would
--- answer it by construction, CR 608.2b then dropping the illegal target
--- silently. Falls back to the offered set's first member where the wanted one is
--- absent, so the ability still resolves and the assertion is about what it hit.
-aimingAt :: Recipient.Recipient -> Prompt.Prompt r -> r
-aimingAt wanted p = case p of
-  Prompt.ChooseTargets _ _ _ sets ->
-    fmap
-      ( \(_, offered) ->
-          if Set.member wanted offered
-            then Set.singleton wanted
-            else Set.take 1 offered
-      )
-      sets
-  _ -> S.identityAnswer p
 
 -- Aims every ChooseTargets slot at one object, deferring the rest to
 -- S.identityAnswer -- ProjectionSpec.aimAtObject's shape, duplicated because
@@ -180,10 +113,10 @@ aimAtObject oid p = case p of
 -- aims every target slot at `oid` -- both of the card's pools (Pool.Spells and
 -- Pool.Permanents) answer with ToObject. ModalSpec.chooseModeAt's shape,
 -- duplicated per this suite's group-local-helper convention rather than
--- centralized. Deliberately does NOT answer ChooseColor: the Painter's Servant
--- cast that precedes it runs under choosingBlue, and the blast's own cast has no
--- colour to choose -- so a ChooseColor reaching here would be a real surprise
--- and falls to S.identityAnswer's white rather than being papered over.
+-- centralized. Deliberately does NOT answer ChooseColor: the blast's own cast
+-- has no colour to choose, so a ChooseColor reaching here would be a real
+-- surprise and falls to S.identityAnswer's white rather than being papered
+-- over.
 blasting :: ModeIndex.ModeIndex -> ObjectId.ObjectId -> Prompt.Prompt r -> r
 blasting idx oid p = case p of
   Prompt.ChooseModes {} -> Seq.singleton idx
@@ -278,44 +211,6 @@ spec s registry = Spec.describe s "Parun.Engine.Color" $ do
     Spec.assertEqWith s "the black Rats are 2/2" (Projection.powerOf ratsId gs) $ Just 2
     Spec.assertEqWith s "the red Piker is unchanged at 2" (Projection.powerOf pikerId gs) $ Just 2
     Spec.assertEqWith s "the red Piker's toughness is unchanged at 1" (Projection.toughnessOf pikerId gs) $ Just 1
-
-  -- Bad Moon's shape with the colour read off the SOURCE instead of the card (CR
-  -- 607.2d): Gauntlet of Power's "creatures of the chosen color get +1/+1",
-  -- Filter.HasChosenColor.
-  --
-  -- TWO Gauntlets, choosing two different colours, because one could not tell the
-  -- atom apart from "any chosen colour on the battlefield": each pumps the
-  -- creature of ITS colour and neither pumps the other's. Cast rather than
-  -- placed, so each colour is a player's answer travelling CR 614.1c's entry
-  -- rewrite; Object.chosenColors is per-incarnation and CR 707.6 does not copy it,
-  -- which is what makes the two answers survive on one board.
-  -- The colourless Myr is the third creature neither may reach.
-  Spec.it s "CR 607.2d two Gauntlets of Power each pump the creatures of their OWN chosen colour" $ do
-    plains <- S.printingOf s registry "Plains"
-    gauntlet <- S.printingOf s registry "Gauntlet of Power"
-    typhoidRats <- S.printingOf s registry "Typhoid Rats"
-    piker <- S.printingOf s registry "Goblin Piker"
-    darksteelMyr <- S.printingOf s registry "Darksteel Myr"
-    -- Ten Plains: {5} apiece, and white reaches neither chosen colour.
-    let base = S.landsInPlay plains 10
-        (firstInHand, firstId) = S.handOne gauntlet base
-        castBlack = snd (Engine.runGamePure choosingBlack firstInHand (S.cast S.alice firstId))
-        blackOut = snd (Engine.runGamePure choosingBlack castBlack Stack.resolveTop)
-        (secondInHand, secondId) = S.handOne gauntlet blackOut
-        castRed = snd (Engine.runGamePure choosingRed secondInHand (S.cast S.alice secondId))
-        bothOut = snd (Engine.runGamePure choosingRed castRed Stack.resolveTop)
-        (ratsId, withRats) = S.addPermanent typhoidRats S.alice bothOut
-        (pikerId, withPiker) = S.addPermanent piker S.alice withRats
-        (myrId, gs) = S.addPermanent darksteelMyr S.alice withPiker
-    Spec.assertEqWith s "the black Rats are 2/2: the Gauntlet that chose black, and not the one that chose red" (Projection.powerOf ratsId gs) $ Just 2
-    Spec.assertEqWith s "the black Rats' toughness is 2 for the same reason" (Projection.toughnessOf ratsId gs) $ Just 2
-    Spec.assertEqWith s "the red Piker is 3/2: the other Gauntlet's, and not both" (Projection.powerOf pikerId gs) $ Just 3
-    Spec.assertEqWith s "the red Piker's toughness is 2 for the same reason" (Projection.toughnessOf pikerId gs) $ Just 2
-    Spec.assertEqWith s "CR 105.2 the colourless Myr wears neither colour and stays 0/1" (Projection.powerOf myrId gs) $ Just 0
-    Spec.assertEqWith s "and its toughness stays 1" (Projection.toughnessOf myrId gs) $ Just 1
-    -- The fixture, LAST: an assertion ahead of the six above would absorb a
-    -- mutation to the atom and report itself instead.
-    Spec.assertEqWith s "the fixture: both Gauntlets resolved onto the battlefield" (S.countOnBattlefieldByName (CardName.MkCardName (Text.pack "Gauntlet of Power")) S.alice gs) 2
 
   Spec.it s "CR 702.114a Bad Moon does not pump a devoid creature with a black mana cost" $ do
     -- FALSIFIER, reader (b) half: a naive "colours are the mana cost's
@@ -496,125 +391,12 @@ spec s registry = Spec.describe s "Parun.Engine.Color" $ do
     Spec.assertEqWith s "power unchanged" (Projection.powerOf slivId gs) $ Just 8
     Spec.assertEqWith s "toughness unchanged" (Projection.toughnessOf slivId gs) $ Just 8
 
-  Spec.it s "CR 613.7a a granted devoid clears an OLDER 'in addition' colour" $ do
-    -- THE ROUTING GATE, and the falsifier for folding a granted devoid in as a
-    -- characteristic-defining ability. Painter's Servant is cast and resolves
-    -- first, naming blue as it enters (CR 614.1c), so its effect carries that
-    -- permanent's timestamp (CR 613.7a) and the drone is blue. Slivdrazi enters
-    -- afterwards, so its grant is NEWER: within layer 5 the blue applies first
-    -- and the grant clears it, leaving the drone COLOURLESS.
-    --
-    -- Fold the grant in as a CDA instead -- at the start of layer 5, the way
-    -- Slaughter Drone's own PRINTED devoid is folded -- and the blue lands on top
-    -- and the drone is blue, which is exactly what "CR 613.3 devoid beats an
-    -- OLDER layer-5 'in addition' effect" below asserts for the printed instance.
-    -- Grant nothing at all, which is what the engine did before this change, and
-    -- it is blue too.
-    --
-    -- Slivdrazi's FIRST ability is load-bearing here: Slaughter Drone is an
-    -- Eldrazi, not a Sliver, and only "Eldrazi you control are Slivers in
-    -- addition to their other types" (layer 4, CR 613.1d) puts it inside the
-    -- second ability's set at layer 5.
-    mountain <- S.printingOf s registry "Mountain"
-    paintersServant <- S.printingOf s registry "Painter's Servant"
-    slaughterDrone <- S.printingOf s registry "Slaughter Drone"
-    slivdrazi <- S.printingOf s registry "Slivdrazi Monstrosity"
-    -- Two Mountains for the Servant's {2}; nothing else is cast.
-    let base = S.landsInPlay mountain 2
-        (inHand, psId) = S.handOne paintersServant base
-        cast = snd (Engine.runGamePure choosingBlue inHand (S.cast S.alice psId))
-        withPainter = snd (Engine.runGamePure choosingBlue cast Stack.resolveTop)
-        (droneId, withDrone) = S.addPermanent slaughterDrone S.alice withPainter
-        (_, gs) = S.addPermanent slivdrazi S.alice withDrone
-    Spec.assertEqWith s "blue before Slivdrazi arrives" (Projection.colorsOf droneId withDrone) $ Set.singleton Color.Blue
-    Spec.assertBool
-      s
-      (Set.member Subtype.Sliver (PC.subtypes (Projection.project droneId gs)))
-      "the Eldrazi is a Sliver, so Slivdrazi's second ability reaches it"
-    Spec.assertEqWith s "and the newer granted devoid clears the blue" (Projection.colorsOf droneId gs) Set.empty
-
-  Spec.it s "CR 613.3 devoid beats an OLDER layer-5 'in addition' effect" $ do
-    -- THE GATE. Painter's Servant is cast and resolves FIRST, naming blue as it
-    -- enters (CR 614.1c), so the continuous effect its static ability generates
-    -- carries that permanent's timestamp (CR 613.7a). The drone's timestamp is
-    -- minted later, when IT enters (CR 613.7d) -- asserted below, so the fixture
-    -- cannot quietly stop discriminating. Pure CR 613.7 timestamp order would
-    -- therefore add blue FIRST and apply devoid SECOND, leaving the drone
-    -- COLOURLESS. CR 613.3 applies the characteristic-defining ability first
-    -- within layer 5 (devoid is one, CR 702.114a; colour is layer 5, CR 613.1e),
-    -- so devoid clears the colours and the older "in addition" blue lands on
-    -- top: the drone is BLUE. Blue rather than black, so nothing here can be
-    -- confused with the drone's printed {B}.
-    --
-    -- Red Elemental Blast's cast below has only ONE fillable mode -- nothing is
-    -- on the stack for "counter target blue spell" to name, so
-    -- Target.fillableModes reports only the destroy mode and Cast.castSpell
-    -- forces the mode without prompting. This test does not exercise the mode
-    -- choice; the ChooseModes prompt itself is exercised by the stack test
-    -- below ("CR 604.3 Red Elemental Blast counters a devoid SPELL...").
-    --
-    -- CAST rather than S.addPermanent, because the colour choice happens only on
-    -- the entry path (Event.runEntry): a Servant placed straight onto the
-    -- battlefield has chosenColors = Set.empty and its ChosenColor adds nothing.
-    mountain <- S.printingOf s registry "Mountain"
-    paintersServant <- S.printingOf s registry "Painter's Servant"
-    slaughterDrone <- S.printingOf s registry "Slaughter Drone"
-    redElementalBlast <- S.printingOf s registry "Red Elemental Blast"
-    -- Three Mountains: {2} for the Servant and {R} for the blast.
-    let base = S.landsInPlay mountain 3
-        (inHand, psId) = S.handOne paintersServant base
-        cast = snd (Engine.runGamePure choosingBlue inHand (S.cast S.alice psId))
-        withPainter = snd (Engine.runGamePure choosingBlue cast Stack.resolveTop)
-        (droneId, withDrone) = S.addPermanent slaughterDrone S.alice withPainter
-        (rebId, gs) = S.addHandCard redElementalBlast S.alice withDrone
-        entered = Set.difference (GameState.battlefield withPainter) (GameState.battlefield base)
-        answer :: Prompt.Prompt r -> r
-        answer = blasting destroyMode droneId
-        blasted = snd (Engine.runGamePure answer gs (S.cast S.alice rebId))
-        after = snd (Engine.runGamePure answer blasted Stack.resolveTop)
-    case Set.toList entered of
-      [painterId] -> case (Game.lookupObject painterId gs, Game.lookupObject droneId gs) of
-        (Just painter, Just drone) -> do
-          Spec.assertEqWith s "the Servant chose blue on entry and coloured itself" (Projection.colorsOf painterId withPainter) $ Set.singleton Color.Blue
-          Spec.assertBool s (Object.timestamp painter < Object.timestamp drone) "the Servant's effect is OLDER than the drone"
-          Spec.assertBool s (Set.member painterId (GameState.battlefield after)) "the blast hit the drone, not the equally blue Servant"
-        _ -> Spec.assertFailure s "the fixture lost the Servant or the drone"
-      _ -> Spec.assertFailure s "Painter's Servant did not reach the battlefield"
-    Spec.assertEqWith s "blue, not colourless" (Projection.colorsOf droneId gs) $ Set.singleton Color.Blue
-    -- THE READER, end to end: Red Elemental Blast's "destroy target blue
-    -- permanent" mode names the drone only because CR 613.3 left it blue.
-    Spec.assertBool s (not (Set.member droneId (GameState.battlefield after))) "Red Elemental Blast destroys the blue-ified drone"
-
-  Spec.it s "CR 611.2a Moonlace states no duration, so a permanent it made colourless stays colourless past cleanup" $ do
-    -- THE DURATION FALSIFIER, and the contrast with Ersatz Gnomes below: an
-    -- implementation that reads Moonlace as "until end of turn" passes every
-    -- assertion here except the last two. Bad Moon is the reader -- the Rats
-    -- leave its "black creatures" set in layer 5 and come back only if the
-    -- colour change wears off.
-    island <- S.printingOf s registry "Island"
-    badMoon <- S.printingOf s registry "Bad Moon"
-    typhoidRats <- S.printingOf s registry "Typhoid Rats"
-    moonlace <- S.printingOf s registry "Moonlace"
-    let base = S.landsInPlay island 1
-        (_, withMoon) = S.addPermanent badMoon S.alice base
-        (ratsId, board) = S.addPermanent typhoidRats S.alice withMoon
-        (gs, moonlaceId) = S.handOne moonlace board
-        answer :: Prompt.Prompt r -> r
-        answer = aimAtObject ratsId
-        cast = snd (Engine.runGamePure answer gs (S.cast S.alice moonlaceId))
-        after = snd (Engine.runGamePure answer cast Stack.resolveTop)
-        afterCleanup = snd (Engine.runGamePure S.identityAnswer after (Engine.runTurnBasedActions (Phase.Ending EndingStep.Cleanup)))
-    Spec.assertEqWith s "before: black, and 2/2 under Bad Moon" (Projection.colorsOf ratsId gs, Projection.powerOf ratsId gs) (Set.singleton Color.Black, Just 2)
-    Spec.assertEqWith s "after: colourless" (Projection.colorsOf ratsId after) Set.empty
-    Spec.assertEqWith s "after: out of Bad Moon's set, back to 1 power" (Projection.powerOf ratsId after) $ Just 1
-    Spec.assertEqWith s "CR 514.2 does not reach an Expiry.Never effect" (length (StoredEffects.continuousEffects (GameState.stored afterCleanup))) 1
-    Spec.assertEqWith s "still colourless next turn" (Projection.colorsOf ratsId afterCleanup) Set.empty
-
   Spec.it s "Ersatz Gnomes' second ability makes a permanent colourless only until end of turn" $ do
-    -- The same colour change as Moonlace's, with the OTHER duration, so the two
-    -- tests together pin Duration.Indefinite and Duration.UntilEndOfTurn to the
-    -- right cards. CR 514.2's cleanup sweep is what ends this one, and Bad Moon
-    -- reads the revert: the Rats are 2/2, then 1/1, then 2/2 again.
+    -- The same colour change as Moonlace's, with the OTHER duration, so this and
+    -- data/scenarios/color's CR 611.2a Moonlace scenario together pin
+    -- Duration.Indefinite and Duration.UntilEndOfTurn to the right cards. CR
+    -- 514.2's cleanup sweep is what ends this one, and Bad Moon reads the
+    -- revert: the Rats are 2/2, then 1/1, then 2/2 again.
     badMoon <- S.printingOf s registry "Bad Moon"
     typhoidRats <- S.printingOf s registry "Typhoid Rats"
     ersatzGnomes <- S.printingOf s registry "Ersatz Gnomes"
@@ -634,105 +416,3 @@ spec s registry = Spec.describe s "Parun.Engine.Color" $ do
         Spec.assertEqWith s "after: colourless, 1/1" (Projection.colorsOf ratsId after, Projection.powerOf ratsId after) (Set.empty, Just 1)
         Spec.assertEqWith s "CR 514.2 drops the effect at cleanup" (StoredEffects.continuousEffects (GameState.stored afterCleanup)) []
         Spec.assertEqWith s "black and 2/2 again" (Projection.colorsOf ratsId afterCleanup, Projection.powerOf ratsId afterCleanup) (Set.singleton Color.Black, Just 2)
-
-  -- THE PROVING TEST for #1551, CR 114.3 / 114.5 read through CR 702.16b.
-  --
-  -- Koth, Fire of Resistance {2}{R}{R} Legendary Planeswalker -- Koth, loyalty
-  -- 4: "+2: Search your library for a basic Mountain card, reveal it, put it
-  -- into your hand, then shuffle. -3: Koth deals damage to target creature equal
-  -- to the number of Mountains you control. -7: You get an emblem with 'Whenever
-  -- a Mountain you control enters, this emblem deals 4 damage to any target.'"
-  -- (Name, cost, type line, loyalty and all three loyalty abilities checked
-  -- against api.scryfall.com 2026-09-05.) The pool's first emblem that is a
-  -- DAMAGE SOURCE, which is what makes an emblem's colour observable at all.
-  --
-  -- Painter's Servant names RED and Burrenton Forge-Tender has protection from
-  -- red, so the emblem's 4 damage lands only if the emblem is still colourless.
-  -- Transcribe Painter's "all cards that aren't on the battlefield, spells, and
-  -- permanents" as And [] -- every object -- and the emblem is red, CR 702.16b
-  -- keeps it out of the offered target set, and the 1/1 lives.
-  --
-  -- The assertion is that the Forge-Tender DIED, not that the emblem reads
-  -- colourless: a fix that recoloured the emblem and left the protection reader
-  -- alone would agree about the colour. `aimingAt` filters the offered set, so
-  -- the answerer cannot repair a target the engine declined to offer.
-  --
-  -- The seat split is load-bearing twice over. The Forge-Tender is BOB's, so
-  -- Painter's Servant colouring it red as well changes nothing about whose
-  -- protection is read; and the Mountain that triggers the emblem enters under
-  -- ALICE, the emblem's condition naming a Mountain its controller controls.
-  Spec.it s "CR 114.3 a Koth emblem's damage lands through protection from the colour Painter's Servant named" $ do
-    mountain <- S.printingOf s registry "Mountain"
-    paintersServant <- S.printingOf s registry "Painter's Servant"
-    koth <- S.printingOf s registry "Koth, Fire of Resistance"
-    forgeTender <- S.printingOf s registry "Burrenton Forge-Tender"
-    let base = S.landsInPlay mountain 2
-        (inHand, psId) = S.handOne paintersServant base
-        cast = snd (Engine.runGamePure choosingRed inHand (S.cast S.alice psId))
-        withPainter = snd (Engine.runGamePure choosingRed cast Stack.resolveTop)
-        (kothId, withKoth) = S.addPermanent koth S.alice withPainter
-        armed = S.addCounter CounterKind.Loyalty 7 kothId withKoth
-        (tenderId, withTender) = S.addPermanent forgeTender S.bob armed
-    case abilityAt kothUltimate koth of
-      Nothing -> Spec.assertFailure s "Koth prints three loyalty abilities"
-      Just ultimate -> do
-        let emblemed = snd (Engine.runGamePure choosingRed withTender (do Activate.activateAbility S.alice kothId ultimate; Stack.resolveTop))
-            (_, landed) = S.entersWithTrigger mountain S.alice emblemed
-            answer :: Prompt.Prompt r -> r
-            answer = aimingAt (Recipient.ToCreature tenderId)
-            onStack = snd (Engine.runGamePure answer landed Engine.settleForPriority)
-            after = S.settleSba (snd (Engine.runGamePure answer onStack Stack.resolveTop))
-        Spec.assertEqWith s "Painter's Servant really did name red: the white Forge-Tender is red too" (Projection.colorsOf tenderId landed) $ Set.fromList [Color.Red, Color.White]
-        Spec.assertBool s (not (null (TurnRegisters.stack (GameState.turn onStack)))) "the emblem's landfall trigger really is on the stack"
-        Spec.assertEqWith s "and its 4 damage buried the 1/1 with protection from red" (Set.member tenderId (GameState.battlefield after)) False
-        Spec.assertEqWith s "the emblem itself is colourless (CR 114.3), which is why" (fmap (`Projection.colorsOf` after) (Set.toList (GameState.command after))) [Set.empty]
-
-  -- THE PROVING TEST for #3061, CR 113.1c. Synthetic Prismatic Silence {1}{U}
-  -- Instant, "Counter target red activated or triggered ability"
-  -- (data/cards/synthetic-prismatic-silence.json) -- Stifle plus a HasColor
-  -- filter on its Pool.Abilities slot. Synthetic because no printing narrows an
-  -- ability target by the ABILITY's own colour: every hit of Scryfall's
-  -- o:/counter target [a-z ]{0,30}abilit/ (2026-09-05) narrows by the ability's
-  -- SOURCE instead -- "from an artifact source", "that targets a creature".
-  --
-  -- Painter's Servant names red, and colours the Sorcerer whose ability is on
-  -- the stack. The ABILITY is not a card, a spell or a permanent (CR 113.1c), so
-  -- it stays colourless and is no legal target. Transcribe Painter's set as
-  -- And [] and it is red and the Silence may counter it.
-  --
-  -- Two Sorcerers, one per seat: alice's activates, bob's is what the ping aims
-  -- at, so the ability on the stack has a target and stays there.
-  Spec.it s "CR 113.1c Painter's Servant does not colour an ability on the stack" $ do
-    mountain <- S.printingOf s registry "Mountain"
-    paintersServant <- S.printingOf s registry "Painter's Servant"
-    sorcerer <- S.printingOf s registry "Prodigal Sorcerer"
-    silence <- S.printingOf s registry "Synthetic Prismatic Silence"
-    stifle <- S.printingOf s registry "Stifle"
-    let base = S.landsInPlay mountain 2
-        (inHand, psId) = S.handOne paintersServant base
-        cast = snd (Engine.runGamePure choosingRed inHand (S.cast S.alice psId))
-        withPainter = snd (Engine.runGamePure choosingRed cast Stack.resolveTop)
-        (sorcererId, withSorcerer) = S.addPermanent sorcerer S.alice withPainter
-        (victimId, withVictim) = S.addPermanent sorcerer S.bob withSorcerer
-    case abilityAt pingAbility sorcerer of
-      Nothing -> Spec.assertFailure s "Prodigal Sorcerer prints one activated ability"
-      Just ping -> do
-        let answer :: Prompt.Prompt r -> r
-            answer = aimingAt (Recipient.ToCreature victimId)
-            pinged = snd (Engine.runGamePure answer withVictim (Activate.activateAbility S.alice sorcererId ping))
-        Spec.assertEqWith s "Painter's Servant really did name red: the blue Sorcerer is red too" (Projection.colorsOf sorcererId pinged) $ Set.fromList [Color.Blue, Color.Red]
-        case (filter (`Game.isAbility` pinged) (TurnRegisters.stack (GameState.turn pinged)), modeTargetSlot silence soleMode, modeTargetSlot stifle soleMode) of
-          ([abilityId], Just filtered, Just unfiltered) -> do
-            -- The pair, differing in exactly one thing: Stifle's slot is the
-            -- same Pool.Abilities with no filter on it, so a vacuous negative --
-            -- the pool offering nothing at all -- fails here instead.
-            Spec.assertBool
-              s
-              (Set.member (Recipient.ToObject abilityId) (Target.legalRecipients StackObjectKind.Spell Nothing S.noSource unfiltered pinged))
-              "Stifle's unfiltered slot does offer the ability"
-            Spec.assertBool
-              s
-              (not (Set.member (Recipient.ToObject abilityId) (Target.legalRecipients StackObjectKind.Spell Nothing S.noSource filtered pinged)))
-              "and the ability on the stack is no legal 'target red activated or triggered ability'"
-            Spec.assertEqWith s "because CR 113.1c leaves it colourless" (Projection.colorsOf abilityId pinged) Set.empty
-          _ -> Spec.assertFailure s "expected exactly one ability on the stack and one target slot per card"

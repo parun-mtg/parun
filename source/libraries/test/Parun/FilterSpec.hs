@@ -821,8 +821,8 @@ spec s = Spec.describe s "Parun.Engine.Filter" $ do
   -- CR 110.2's board comparison is answered by Parun.Engine.Count.bakePerspective,
   -- which holds the game state; this module holds none, so the atom is vacuously
   -- False wherever it reaches a match unbaked. HeldByBound's posture, pinned
-  -- here for the same reason it is pinned there -- Parun.CountSpec's Oreskos
-  -- Explorer group is what proves the BAKED answer.
+  -- here for the same reason it is pinned there -- the cr-110-2 scenarios under
+  -- data/scenarios/count/ prove the BAKED answer.
   Spec.it s "Controls is False unbaked, for a player and for an object alike" $ do
     let lands = Filter.Type.Controls (ControlMargin.MoreThanYou 1) (Filter.Type.HasCardType CardType.Land)
     Spec.assertBool s (not (Filter.matches self aPlayer lands)) "player"

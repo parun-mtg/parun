@@ -286,7 +286,7 @@ tapStateIn gs oid = fmap Object.tapped (Game.lookupObject oid gs)
 -- chosen color" is linked to its "As this creature enters, choose a color", so
 -- the slot reads the colour the Paladin chose (Oracle checked against Scryfall
 -- on 2026-10-01). The choice is stamped rather than cast for; the entry road
--- that writes it is Painter's Servant's (Parun.ColorSpec).
+-- that writes it is Painter's Servant's (data/scenarios/color).
 --
 -- bob holds a red Goblin Piker and a green Llanowar Elves, alice the Paladin
 -- and two Plains, and the answerer PREFERS the Piker, falling back to whatever

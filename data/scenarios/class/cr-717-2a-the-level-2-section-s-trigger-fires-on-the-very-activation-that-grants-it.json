@@ -1,0 +1,241 @@
+{
+  "board": {
+    "active": "bob",
+    "seats": [
+      {
+        "battlefield": [
+          {
+            "card": "Island",
+            "label": "is1",
+            "ready": true
+          },
+          {
+            "card": "Island",
+            "label": "is2",
+            "ready": true
+          },
+          {
+            "card": "Island",
+            "label": "is3",
+            "ready": true
+          },
+          {
+            "card": "Island",
+            "label": "is4",
+            "ready": true
+          },
+          {
+            "card": "Stormchaser's Talent",
+            "label": "talent",
+            "ready": true
+          }
+        ],
+        "graveyard": [
+          {
+            "card": "Lightning Bolt",
+            "label": "bolt"
+          }
+        ],
+        "library": [
+          {
+            "card": "Island"
+          }
+        ],
+        "name": "alice"
+      },
+      {
+        "battlefield": [
+          {
+            "card": "Island",
+            "label": "bis1",
+            "ready": true
+          },
+          {
+            "card": "Island",
+            "label": "bis2",
+            "ready": true
+          },
+          {
+            "card": "Island",
+            "label": "bis3",
+            "ready": true
+          },
+          {
+            "card": "Island",
+            "label": "bis4",
+            "ready": true
+          },
+          {
+            "card": "Stormchaser's Talent",
+            "label": "theirs",
+            "ready": true
+          }
+        ],
+        "graveyard": [
+          {
+            "card": "Raise Dead",
+            "label": "raise"
+          },
+          {
+            "card": "Divination",
+            "label": "divination"
+          }
+        ],
+        "name": "bob"
+      }
+    ],
+    "step": "PrecombatMain"
+  },
+  "description": "CR 717.2a / CR 603.10 the level-2 section's trigger fires on the very activation that grants it",
+  "note": "'Becomes level 2' is on none of CR 603.10's look-back exceptions, so the abilities checked against the level change are those existing after it, when CR 717.2a's static half has granted the trigger. bob's own Stormchaser's Talent is climbed to level 2 first, on his turn, so it holds the granted trigger when alice's Talent levels: a condition matching any Class's level change would fire bob's copy too, whose only legal target, Raise Dead, would leave his graveyard. Lightning Bolt is likewise alice's only candidate, so her trigger's target is bound unasked. Raise Dead is admitted by the slot's filter and excluded only by 'your graveyard' (CR 400.1). Both Classes are placed, so neither enters trigger fires; alice holds a library card for her turn-2 draw.",
+  "timeline": [
+    {
+      "do": {
+        "Activate": {
+          "ability": 0,
+          "mana": [
+            "$bis1",
+            "$bis2",
+            "$bis3",
+            "$bis4"
+          ],
+          "object": "$theirs"
+        }
+      },
+      "player": "bob",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "bob",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "ChooseTargets": {
+          "target": [
+            "$divination"
+          ]
+        }
+      },
+      "player": "bob",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "bob",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Divination",
+          "count": 1,
+          "player": "bob",
+          "zone": "Hand"
+        }
+      },
+      "player": "bob",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Raise Dead",
+          "count": 1,
+          "player": "bob",
+          "zone": "Graveyard"
+        }
+      },
+      "player": "bob",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Activate": {
+          "ability": 0,
+          "mana": [
+            "$is1",
+            "$is2",
+            "$is3",
+            "$is4"
+          ],
+          "object": "$talent"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 2
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 2
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 2
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Lightning Bolt",
+          "count": 1,
+          "player": "alice",
+          "zone": "Hand"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 2
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Lightning Bolt",
+          "count": 0,
+          "player": "alice",
+          "zone": "Graveyard"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 2
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Raise Dead",
+          "count": 1,
+          "player": "bob",
+          "zone": "Graveyard"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 2
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Raise Dead",
+          "count": 0,
+          "player": "bob",
+          "zone": "Hand"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 2
+    }
+  ]
+}

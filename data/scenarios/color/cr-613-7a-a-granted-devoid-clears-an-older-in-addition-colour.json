@@ -1,0 +1,184 @@
+{
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "battlefield": [
+          {
+            "card": "Mountain",
+            "label": "m1",
+            "ready": true
+          },
+          {
+            "card": "Mountain",
+            "label": "m2",
+            "ready": true
+          },
+          {
+            "card": "Wastes",
+            "label": "w",
+            "ready": true
+          },
+          {
+            "card": "Plains",
+            "label": "p",
+            "ready": true
+          },
+          {
+            "card": "Island",
+            "label": "i",
+            "ready": true
+          },
+          {
+            "card": "Swamp",
+            "label": "s",
+            "ready": true
+          },
+          {
+            "card": "Mountain",
+            "label": "m3",
+            "ready": true
+          },
+          {
+            "card": "Forest",
+            "label": "f",
+            "ready": true
+          },
+          {
+            "card": "Slaughter Drone",
+            "label": "drone",
+            "ready": true
+          }
+        ],
+        "hand": [
+          {
+            "card": "Painter's Servant",
+            "label": "servant"
+          },
+          {
+            "card": "Slivdrazi Monstrosity",
+            "label": "slivdrazi"
+          }
+        ],
+        "name": "alice"
+      },
+      {
+        "name": "bob"
+      }
+    ],
+    "step": "PrecombatMain"
+  },
+  "description": "CR 613.7a a granted devoid clears an OLDER 'in addition' colour",
+  "note": "The routing gate, and the falsifier for folding a granted devoid in as a characteristic-defining ability. Painter's Servant resolves first, naming blue as it enters (CR 614.1c), so its effect carries that permanent's timestamp (CR 613.7a) and the Drone is blue. Slivdrazi enters afterwards, so its grant is newer: within layer 5 the blue applies first and the grant clears it, leaving the Drone colourless. Fold the grant in as a CDA, the way the Drone's own printed devoid is, and the blue lands on top (the CR 613.3 scenario beside this one); grant nothing and it is blue too. Slivdrazi's first ability is load-bearing: the Drone is an Eldrazi, and only 'Eldrazi you control are Slivers' (layer 4, CR 613.1d) puts it inside the second ability's set.",
+  "timeline": [
+    {
+      "check": {
+        "View": {
+          "is": [],
+          "object": "$drone",
+          "of": "Colors"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Cast": {
+          "mana": [
+            "$m1",
+            "$m2",
+            null
+          ],
+          "object": "$servant"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Answer": {
+          "prompt": "ChooseColor",
+          "with": "Blue"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "View": {
+          "is": [
+            "Blue"
+          ],
+          "object": "$drone",
+          "of": "Colors"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Cast": {
+          "mana": [
+            "$w",
+            "$p",
+            "$i",
+            "$s",
+            "$m3",
+            "$f"
+          ],
+          "object": "$slivdrazi"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Subtypes": {
+          "object": "$drone",
+          "subtypes": [
+            "Drone",
+            "Eldrazi",
+            "Sliver"
+          ]
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "View": {
+          "is": [],
+          "object": "$drone",
+          "of": "Colors"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    }
+  ]
+}

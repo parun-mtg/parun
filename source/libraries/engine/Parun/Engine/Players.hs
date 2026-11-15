@@ -237,7 +237,7 @@ namedUncut given gs ref =
         -- had. Parun.ResolveSpec's "bob, who controlled the bounced creature,
         -- went 20 -> 19" (Vapor Snag) proves the resolution's last-known road,
         -- Flunk's "that creature's controller's hand" (Parun.CountSpec) a
-        -- count's, and The Deck of Many Things' 20 band (Parun.DiceSpec) the
+        -- count's, and The Deck of Many Things' 20 band (data/scenarios/dice) the
         -- owner, which reanimating an opponent's creature parts from the
         -- controller.
         PlayerRef.HolderOfBound holder hop slot ->

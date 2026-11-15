@@ -1,0 +1,271 @@
+{
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "battlefield": [
+          {
+            "card": "Island",
+            "label": "is1",
+            "ready": true
+          },
+          {
+            "card": "Island",
+            "label": "is2",
+            "ready": true
+          },
+          {
+            "card": "Island",
+            "label": "is3",
+            "ready": true
+          },
+          {
+            "card": "Island",
+            "label": "is4",
+            "ready": true
+          },
+          {
+            "card": "Island",
+            "label": "is5",
+            "ready": true
+          },
+          {
+            "card": "Island",
+            "label": "is6",
+            "ready": true
+          },
+          {
+            "card": "Mountain",
+            "label": "mo1",
+            "ready": true
+          },
+          {
+            "card": "Mountain",
+            "label": "mo2",
+            "ready": true
+          },
+          {
+            "card": "Mountain",
+            "label": "mo3",
+            "ready": true
+          },
+          {
+            "card": "Mountain",
+            "label": "mo4",
+            "ready": true
+          },
+          {
+            "card": "Mountain",
+            "label": "mo5",
+            "ready": true
+          },
+          {
+            "card": "Mountain",
+            "label": "mo6",
+            "ready": true
+          },
+          {
+            "card": "Sorcerer Class",
+            "label": "class",
+            "ready": true
+          }
+        ],
+        "hand": [
+          {
+            "card": "Goblin Piker",
+            "label": "piker"
+          },
+          {
+            "card": "Divination",
+            "label": "divination"
+          }
+        ],
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ],
+        "name": "alice"
+      },
+      {
+        "name": "bob"
+      }
+    ],
+    "step": "PrecombatMain"
+  },
+  "description": "CR 717.2a / CR 120.1 the level-3 trigger has the spell deal damage by instants and sorceries cast",
+  "note": "Sorcerer Class is climbed to level 3; alice then casts Goblin Piker and Divination, two spells of which one is a sorcery, so the trigger's count is 1 and bob is dealt 1, not 2. The creature spell triggers nothing and changes no life. The Haskell test also read Divination off the damage event as its source (CR 120.1), which no check here observes.",
+  "timeline": [
+    {
+      "do": {
+        "Activate": {
+          "ability": 0,
+          "mana": [
+            "$is1",
+            "$mo1",
+            null
+          ],
+          "object": "$class"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Activate": {
+          "ability": 1,
+          "mana": [
+            "$is2",
+            "$is3",
+            "$is4",
+            "$mo2",
+            "$mo3",
+            null
+          ],
+          "object": "$class"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Cast": {
+          "mana": [
+            "$mo4",
+            "$mo5",
+            null
+          ],
+          "object": "$piker"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Goblin Piker",
+          "count": 1,
+          "player": "alice",
+          "zone": "Battlefield"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Life": {
+          "life": 20,
+          "player": "bob"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Cast": {
+          "mana": [
+            "$is5",
+            "$is6",
+            "$mo6"
+          ],
+          "object": "$divination"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "View": {
+          "is": [
+            "trigger of $class",
+            "Divination"
+          ],
+          "of": "Stack"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Life": {
+          "life": 19,
+          "player": "bob"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Divination",
+          "count": 1,
+          "player": "alice",
+          "zone": "Graveyard"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Life": {
+          "life": 19,
+          "player": "bob"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    }
+  ]
+}
