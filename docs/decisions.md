@@ -1718,7 +1718,7 @@ Entries are ordered by the first rule each cites.
   silenced dying. Reading the entry half by that mirror leaves no ground for
   sparing the departure half.
 - **Site**: `Parun.Engine.Event.Match.entryTriggers` and
-  `additionalEntryTriggers`. Proved by the scenarios "Hushwing Gryff silences
+  `additionalMoveTriggers`. Proved by the scenarios "Hushwing Gryff silences
   a leaves-your-graveyard trigger on a reanimated creature" (Spirit Mascot),
   "Hushwing Gryff silences a reanimated card's own leaves-your-graveyard
   trigger" (Oglor's grant) and
@@ -1746,7 +1746,7 @@ Entries are ordered by the first rule each cites.
   put, which CR 122.6 counts whether or not the Saga is entering, so the
   entry is at most its occasion.
 - **Site**: `Parun.Engine.Event.Match.entryTriggers` and
-  `additionalEntryTriggers`, which `Parun.Engine.Event.Trigger.eventTriggers`
+  `additionalMoveTriggers`, which `Parun.Engine.Event.Trigger.eventTriggers`
   asks only of a move onto the battlefield. Proved by the scenario
   yarok-the-desecrated-doesn-t-double-a-saga-s-chapter-i.
 - **Issue**: #5837.
