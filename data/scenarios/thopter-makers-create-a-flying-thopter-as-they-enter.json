@@ -15,6 +15,26 @@
           {
             "card": "Mountain",
             "label": "m3"
+          },
+          {
+            "card": "Plains",
+            "label": "p1"
+          },
+          {
+            "card": "Plains",
+            "label": "p2"
+          },
+          {
+            "card": "Plains",
+            "label": "p3"
+          },
+          {
+            "card": "Plains",
+            "label": "p4"
+          },
+          {
+            "card": "Plains",
+            "label": "p5"
           }
         ],
         "hand": [
@@ -25,6 +45,10 @@
           {
             "card": "Ghirapur Gearcrafter",
             "label": "gearcrafter"
+          },
+          {
+            "card": "Broadcast Rambler",
+            "label": "rambler"
           }
         ],
         "library": [
@@ -64,8 +88,8 @@
     ],
     "step": "PrecombatMain"
   },
-  "description": "CR 603.6a / 111.1: Aspiring Aeronaut and Ghirapur Gearcrafter each create a 1/1 colorless flying Thopter artifact token as they enter",
-  "note": "Two casts leave Alice two Thopters, each a colourless 1/1 artifact with flying.",
+  "description": "CR 603.6a / 111.1: Aspiring Aeronaut, Ghirapur Gearcrafter and Broadcast Rambler each create a 1/1 colorless flying Thopter artifact token as they enter",
+  "note": "Three casts leave Alice three Thopters, each a colourless 1/1 artifact with flying; the Rambler, a Vehicle, is no creature as it enters.",
   "timeline": [
     {
       "do": {
@@ -111,7 +135,8 @@
           "mana": [
             "$m1",
             "$m2",
-            "$m3"
+            "$m3",
+            null
           ],
           "object": "$gearcrafter"
         }
@@ -137,6 +162,48 @@
         "Count": {
           "card": "Thopter Token",
           "count": 2,
+          "player": "alice",
+          "zone": "Battlefield"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Cast": {
+          "mana": [
+            "$p1",
+            "$p2",
+            "$p3",
+            "$p4",
+            "$p5"
+          ],
+          "object": "$rambler"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Thopter Token",
+          "count": 3,
           "player": "alice",
           "zone": "Battlefield"
         }
