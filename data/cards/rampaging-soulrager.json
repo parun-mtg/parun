@@ -38,7 +38,8 @@
                   "aggregation": {
                     "type": "Total",
                     "value": {
-                      "type": "UnlockedDoors"
+                      "type": "Measure",
+                      "value": "UnlockedDoors"
                     }
                   },
                   "filter": {

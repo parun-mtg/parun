@@ -1473,7 +1473,7 @@ slotsOf effect = joinTwo (joinTwo (joinSlots (fmap objectRefSlots (effectObjectR
   Effect.Undesignate _ -> Map.empty
   -- A READ, Designate's: the slot names the permanent whose half is locked or
   -- unlocked. WHICH half is chosen at resolution and is no slot of any kind.
-  Effect.SetHalfLocked (SetHalfLocked.MkSetHalfLocked _ _ slot) -> oneSlot slot
+  Effect.SetHalfLocked _ -> Map.empty
   -- A READ, Designate's: the slot names where the counter goes.
   Effect.CounterAndMark (PermanentActed.MkPermanentActed _ slot) -> oneSlot slot
   Effect.BecomeProtector slot -> oneSlot slot

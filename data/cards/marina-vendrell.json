@@ -22,7 +22,10 @@
                         "value": {
                           "every": false,
                           "locked": true,
-                          "slot": "target"
+                          "ref": {
+                            "type": "InSlot",
+                            "value": "target"
+                          }
                         }
                       }
                     ],
@@ -39,7 +42,10 @@
                         "value": {
                           "every": false,
                           "locked": false,
-                          "slot": "target"
+                          "ref": {
+                            "type": "InSlot",
+                            "value": "target"
+                          }
                         }
                       }
                     ],

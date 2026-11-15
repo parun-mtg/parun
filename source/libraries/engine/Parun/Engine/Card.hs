@@ -1623,6 +1623,16 @@ withOpenness unlocked card =
     (NonEmpty.fromList (fmap Just [minBound .. maxBound] <> repeat Nothing))
     (Card.faces card)
 
+-- CR 709.5c: the positions of this card's halves NOT among `unlocked` -- the
+-- locked ones, withOpenness above's other answer read by position.
+lockedPositions :: Set.Set RoomHalf.RoomHalf -> Card.Card -> Set.Set RoomHalf.RoomHalf
+lockedPositions unlocked card =
+  Set.fromList
+    [ position
+    | (position, _) <- zip [minBound .. maxBound] (NonEmpty.toList (Card.faces card)),
+      not (Set.member position unlocked)
+    ]
+
 -- CR 709.5c: the name of the half at `position` on this card, halfPositionOf
 -- below's inverse. Nothing for a card with no face there.
 halfNameAt :: RoomHalf.RoomHalf -> Card.Card -> Maybe CardName.CardName

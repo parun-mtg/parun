@@ -22,4 +22,8 @@ data Measure
     CreatureTypeCount
   | -- | CR 306.5c: a planeswalker's loyalty, its loyalty counters.
     Loyalty
+  | -- | CR 709.5c / 709.5j: how many unlocked doors a permanent has.
+    UnlockedDoors
+  | -- | CR 709.5c / 709.5j: how many locked doors a permanent has.
+    LockedDoors
   deriving (Bounded, Enum, Eq, Ord, Show)

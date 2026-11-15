@@ -1753,6 +1753,7 @@ viewOfSnapshot deploy mController mOwner isToken counters zone home lapsed snaps
       -- CR 709.5c: a designation, so a past event records none -- `designations`
       -- above, same sentence.
       Filter.unlockedHalves = Set.empty,
+      Filter.lockedHalves = Set.empty,
       Filter.paidCosts = Map.empty,
       -- CR 702.104b's record is a field of an OBJECT, which a
       -- ProjectedCharacteristics does not carry -- `designations` above, same

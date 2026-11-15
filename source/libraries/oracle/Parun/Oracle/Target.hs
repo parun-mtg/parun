@@ -224,6 +224,8 @@ measure m = case m of
   Measure.ColorCount -> []
   Measure.CreatureTypeCount -> []
   Measure.Loyalty -> [Text.pack "loyalty"]
+  Measure.UnlockedDoors -> []
+  Measure.LockedDoors -> []
 
 -- | What a name or pronoun owns: "its", "Spark's".
 possessive :: Text.Text -> Text.Text

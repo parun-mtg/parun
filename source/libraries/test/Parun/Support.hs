@@ -2064,6 +2064,7 @@ stubView table oid =
                 Filter.storedResults = Map.empty,
                 Filter.classLevel = Nothing,
                 Filter.unlockedHalves = Set.empty,
+                Filter.lockedHalves = Set.empty,
                 Filter.paidCosts = Map.empty,
                 Filter.tributePaid = False,
                 Filter.castUsing = Nothing,
