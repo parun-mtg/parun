@@ -2332,7 +2332,9 @@ chooseCardsInHand resolving source controller legal (ChosenCardInHand.MkChosenCa
 -- perColor: the colors (CR 105.1) of the permanents that Filter matches, read
 -- here off the projection, each pick answering for one color of its own that no
 -- other pick answers for. A card of two of them answers for either (CR
--- 105.2b).
+-- 105.2b). And to picks sharing no value on a differentIn axis, read off the
+-- projection as a search's are (differing): Rip, Spawn Hunter's "with
+-- different powers".
 --
 -- AtRandom asks nobody: randomCards' question to the interpreter, over the
 -- matching members, naming that many distinct cards (all of them for an
@@ -2348,7 +2350,7 @@ chooseCardFromAmong ::
   Map.Map SlotName (Set Recipient) ->
   ChosenCardFromAmong.ChosenCardFromAmong ->
   Game [ObjectId]
-chooseCardFromAmong offered resolving source controller legal chosen (ChosenCardFromAmong.MkChosenCardFromAmong slot filter_ count total perColor chooser pileChooser faceUpPile selection) = do
+chooseCardFromAmong offered resolving source controller legal chosen (ChosenCardFromAmong.MkChosenCardFromAmong slot filter_ count total perColor differentIn chooser pileChooser faceUpPile selection) = do
   members <- fromAmongMembers legal resolving chosen slot
   gs <- State.get
   let viewOf = effectViewOf resolving source legal gs
@@ -2368,7 +2370,8 @@ chooseCardFromAmong offered resolving source controller legal chosen (ChosenCard
       oneEach among =
         let palette = foldMap colorsOf (battlefieldMatching legal resolving controller source gs among)
          in \taken oid -> distinctlyAssigned (fmap (Set.toList . Set.intersection palette . colorsOf) (oid : taken))
-      bounds = Foldable.toList (fmap (withinTotal weighs amount) total) <> Foldable.toList (fmap oneEach perColor)
+      apart taken oid = length (differing differentIn gs (oid : taken)) == length taken + 1
+      bounds = Foldable.toList (fmap (withinTotal weighs amount) total) <> Foldable.toList (fmap oneEach perColor) <> [apart | not (Set.null differentIn)]
       admits = if null bounds then Nothing else Just (\taken oid -> all (\bound -> bound taken oid) bounds)
       pick purpose = case selection of
         CardSelection.AtRandom -> \pool -> Game.drawDistinct Prompt.RandomObject (maybe (List.genericLength pool) amount (HowMany.quantity count)) pool
@@ -3959,7 +3962,7 @@ effectIsImpossible asked resolving source controller legal gs effect = case effe
             let scoped = Target.zoneScopePlayers (Plane.rangePerspective source controller gs) (Just controller) legal scope gs
              in not (null scoped) && all (\pid -> null (graveyardCardsOf context gs pid filter_)) scoped
           Chooser.BoundInSlot _ -> False
-      ObjectRef.ChosenCardFromAmong (ChosenCardFromAmong.MkChosenCardFromAmong slot filter_ count _ _ _ _ _ _) ->
+      ObjectRef.ChosenCardFromAmong (ChosenCardFromAmong.MkChosenCardFromAmong slot filter_ count _ _ _ _ _ _ _) ->
         mustPick count && maybe False (null . matchingFromAmong legal resolving controller source gs filter_ . stillPresent gs) (fromAmongBound slot)
       ObjectRef.ChosenPermanents choice -> mustPick (ChosenPermanents.count choice) && null (chosenCandidates legal resolving controller source gs choice)
       -- Only when no member names anything: a read always might.
@@ -4638,8 +4641,8 @@ shufflesAfter destination = case destination of
   SearchDestination.Top -> True
   SearchDestination.Hand -> True
 
--- Search.differentIn: the cards, in order, that keep the group apart --
--- Event.differingKept over the projection.
+-- Search.differentIn and ChosenCardFromAmong.differentIn: the cards, in order,
+-- that keep the group apart -- Event.differingKept over the projection.
 differing :: Set.Set DifferentIn.DifferentIn -> GameState -> [ObjectId] -> [ObjectId]
 differing axes gs = Event.differingKept (differingValues axes gs)
 

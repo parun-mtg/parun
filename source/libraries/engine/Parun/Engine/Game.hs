@@ -4627,7 +4627,7 @@ chooseUpTo ceiling_ candidates prompt = again Set.empty
 --
 --
 -- UpTo under `admits` (the picks so far, and whether a candidate may join
--- them: Parun.Types.ChosenCardFromAmong's total and perColor,
+-- them: Parun.Types.ChosenCardFromAmong's total, perColor and differentIn,
 -- Parun.Types.ChosenPermanents' total): one ask PER PICK, the sequence above,
 -- each offering only the candidates the earlier picks admit and each
 -- declinable, so no answer can break the bound and every set within it is
@@ -4635,8 +4635,9 @@ chooseUpTo ceiling_ candidates prompt = again Set.empty
 -- 107.1b) comes before the one it makes room for. A count other than UpTo
 -- reads none.
 -- Proved by the scenarios "Michelangelo's Technique offers a second card only
--- within the mana value left" and "Sanar, Innovative First-Year offers no
--- second card of a color already answered for".
+-- within the mana value left", "Sanar, Innovative First-Year offers no
+-- second card of a color already answered for" and "Rip, Spawn Hunter offers
+-- no second card of a power already taken".
 --
 -- Beside the picks, the seat that was asked: Nothing where nobody was.
 pickCounted ::

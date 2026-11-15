@@ -2158,7 +2158,7 @@ effectLintSpec s registry corpus = Spec.describe s "Lint" $ do
           -- PlayerRef above may name several hands. A COMPUTED count is plural
           -- here whatever the board would make it, TopOfLibrary's reading above
           -- and for its reason.
-          ObjectRef.ChosenCardFromAmong (ChosenCardFromAmong.MkChosenCardFromAmong _ _ count _ _ _ _ _ _) -> atMostOne count
+          ObjectRef.ChosenCardFromAmong (ChosenCardFromAmong.MkChosenCardFromAmong _ _ count _ _ _ _ _ _ _) -> atMostOne count
           -- FALSE where the arm above is True, which is the whole difference
           -- between them: "all" takes every member that matches, and nothing
           -- about the ref bounds how many a group holds.
@@ -2796,7 +2796,7 @@ effectLintSpec s registry corpus = Spec.describe s "Lint" $ do
         group = SlotName.MkSlotName (Text.pack "revealed")
         inGraveyard = ObjectRef.ChosenCardInGraveyard (ChosenCardInGraveyard.MkChosenCardInGraveyard Chooser.TheController (ZoneScope.Scoped (PlayerScope.Related PlayerRelation.You)) anyCard HowMany.one)
         inHand = ObjectRef.ChosenCardInHand (ChosenCardInHand.MkChosenCardInHand (PlayerRef.Relative PlayerRelation.You) anyCard HowMany.one)
-        fromAmong = ObjectRef.ChosenCardFromAmong (ChosenCardFromAmong.MkChosenCardFromAmong group anyCard HowMany.one Nothing Nothing (PlayerRef.Relative PlayerRelation.You) Nothing False CardSelection.ByChoice)
+        fromAmong = ObjectRef.ChosenCardFromAmong (ChosenCardFromAmong.MkChosenCardFromAmong group anyCard HowMany.one Nothing Nothing Set.empty (PlayerRef.Relative PlayerRelation.You) Nothing False CardSelection.ByChoice)
         atRandom = ObjectRef.RandomCard (RandomCard.MkRandomCard HiddenZone.Hand (PlayerRef.Relative PlayerRelation.You) anyCard (Quantity.Type.Literal 1))
         atRandomInGraveyard = ObjectRef.RandomCardInGraveyard (RandomCardInGraveyard.MkRandomCardInGraveyard (ZoneScope.Scoped (PlayerScope.Related PlayerRelation.You)) anyCard (Quantity.Type.Literal 1))
         sought = ObjectRef.RandomCard (RandomCard.MkRandomCard HiddenZone.Library (PlayerRef.Relative PlayerRelation.You) anyCard (Quantity.Type.Literal 1))
@@ -2849,7 +2849,7 @@ effectLintSpec s registry corpus = Spec.describe s "Lint" $ do
       [False, False, False, True, True]
     Spec.assertBool s (not (null (inertChoosers (Effect.Pair anyNumber)))) "a pair allows no plural choice"
     -- "Any number from among them" is tested under a reveal and a move.
-    let anyFromAmong = ObjectRef.ChosenCardFromAmong (ChosenCardFromAmong.MkChosenCardFromAmong group anyCard (HowMany.UpTo Nothing) Nothing Nothing (PlayerRef.Relative PlayerRelation.You) Nothing False CardSelection.ByChoice)
+    let anyFromAmong = ObjectRef.ChosenCardFromAmong (ChosenCardFromAmong.MkChosenCardFromAmong group anyCard (HowMany.UpTo Nothing) Nothing Nothing Set.empty (PlayerRef.Relative PlayerRelation.You) Nothing False CardSelection.ByChoice)
     Spec.assertEqWith s "any number from among them is allowed by a reveal and a move alone" (inert [reveals anyFromAmong, moves anyFromAmong, discardsThese anyFromAmong]) [False, False, True]
     -- Twilight Diviner's "a copy of one of them" is the one question a copy asks.
     let tokenCopies ref = Effect.CreateCopy (CreateCopy.MkCreateCopy (Quantity.Type.Literal 1) ref EntryRiders.defaultValue Nothing [] (PlayerRef.Relative PlayerRelation.You) False)
@@ -3002,7 +3002,8 @@ effectLintSpec s registry corpus = Spec.describe s "Lint" $ do
   -- player picks, Game.pickCounted's bounded arm, so beside an exact count or a
   -- random pick it is inert card data, and under a pile split no card proves it.
   -- Michelangelo's Technique keeps the sweep from being vacuous. Its perColor
-  -- is read there too, and Sanar, Innovative First-Year keeps that half honest.
+  -- is read there too, and Sanar, Innovative First-Year keeps that half honest;
+  -- so is its differentIn, and Rip, Spawn Hunter keeps that half honest.
   Spec.it s "no chosen card states a total its pick cannot read" $ do
     ps <- S.allPrintings s corpus
     let capped ref = case ref of
@@ -3011,9 +3012,12 @@ effectLintSpec s registry corpus = Spec.describe s "Lint" $ do
         perColored ref = case ref of
           ObjectRef.ChosenCardFromAmong chosen -> Maybe.isJust (ChosenCardFromAmong.perColor chosen)
           _ -> False
+        keptApart ref = case ref of
+          ObjectRef.ChosenCardFromAmong chosen -> not (Set.null (ChosenCardFromAmong.differentIn chosen))
+          _ -> False
         offends ref = case ref of
-          ObjectRef.ChosenCardFromAmong (ChosenCardFromAmong.MkChosenCardFromAmong _ _ count total perColor _ pileChooser _ selection)
-            | Maybe.isJust total || Maybe.isJust perColor ->
+          ObjectRef.ChosenCardFromAmong (ChosenCardFromAmong.MkChosenCardFromAmong _ _ count total perColor differentIn _ pileChooser _ selection)
+            | Maybe.isJust total || Maybe.isJust perColor || not (Set.null differentIn) ->
                 case count of
                   HowMany.UpTo _ -> Maybe.isJust pileChooser || selection /= CardSelection.ByChoice
                   HowMany.Exactly _ -> True
@@ -3034,6 +3038,7 @@ effectLintSpec s registry corpus = Spec.describe s "Lint" $ do
     Spec.assertBool s (any (anyFace (any (Maybe.isJust . ChosenPermanents.total) . choices) . Printing.card) ps) "the pool has a card capping a choice of permanents' total"
     Spec.assertBool s (any (anyFace (any capped . refs) . Printing.card) ps) "the pool has a card capping a choice's total"
     Spec.assertBool s (any (anyFace (any perColored . refs) . Printing.card) ps) "the pool has a card bounding a choice by color"
+    Spec.assertBool s (any (anyFace (any keptApart . refs) . Printing.card) ps) "the pool has a card keeping a choice's picks apart"
     Spec.assertEqWith s "a total beside a count that cannot read it" (fmap (S.nameOf . Printing.card) offenders) []
   -- Parun.Types.Repeat's otherChooser is read only when a gate fails, so without
   -- a gate it is inert card data. Game of Chaos keeps the sweep from being vacuous.
