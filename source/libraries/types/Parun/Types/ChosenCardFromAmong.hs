@@ -1,6 +1,8 @@
 module Parun.Types.ChosenCardFromAmong where
 
+import qualified Data.Set as Set
 import qualified Parun.Types.CardSelection as CardSelection
+import qualified Parun.Types.DifferentIn as DifferentIn
 import qualified Parun.Types.Filter as Filter
 import qualified Parun.Types.HowMany as HowMany
 import qualified Parun.Types.Keyword as Keyword
@@ -60,6 +62,10 @@ data ChosenCardFromAmong = MkChosenCardFromAmong
     -- such bound. Read where the total is. Proved by the Sanar, Innovative
     -- First-Year scenarios.
     perColor :: Maybe (Filter.Filter Keyword.Keyword),
+    -- | CR 608.2d: characteristics no two picks share, Rip, Spawn Hunter's
+    -- "with different powers"; empty is no such bound. Read where the total
+    -- is. Proved by the Rip, Spawn Hunter scenarios.
+    differentIn :: Set.Set DifferentIn.DifferentIn,
     chooser :: PlayerRef.PlayerRef,
     -- | CR 700.3: Nothing names the pick itself. Just names the player who then
     -- takes one of two piles -- the chooser's pick and the rest of the matching

@@ -1,5 +1,6 @@
 module Parun.Codec.ChosenCardFromAmongSpec where
 
+import qualified Data.Set as Set
 import qualified Data.Text as Text
 import qualified Parun.Codec.ChosenCardFromAmong as ChosenCardFromAmong
 import qualified Parun.JsonCodec.Common as Common
@@ -7,6 +8,7 @@ import qualified Parun.Spec as Spec
 import qualified Parun.Types.CardSelection as CardSelection
 import qualified Parun.Types.CardType as CardType
 import qualified Parun.Types.ChosenCardFromAmong as ChosenCardFromAmong
+import qualified Parun.Types.DifferentIn as DifferentIn
 import qualified Parun.Types.Filter as Filter
 import qualified Parun.Types.HowMany as HowMany
 import qualified Parun.Types.Measure as Measure
@@ -31,6 +33,7 @@ spec s = Spec.describe s "Parun.Codec.ChosenCardFromAmong" $ do
             ChosenCardFromAmong.count = HowMany.one,
             ChosenCardFromAmong.total = Nothing,
             ChosenCardFromAmong.perColor = Nothing,
+            ChosenCardFromAmong.differentIn = Set.empty,
             ChosenCardFromAmong.chooser = PlayerRef.Relative PlayerRelation.You,
             ChosenCardFromAmong.pileChooser = Nothing,
             ChosenCardFromAmong.faceUpPile = False,
@@ -50,6 +53,7 @@ spec s = Spec.describe s "Parun.Codec.ChosenCardFromAmong" $ do
             ChosenCardFromAmong.count = HowMany.UpTo (Just (Quantity.Literal 2)),
             ChosenCardFromAmong.total = Nothing,
             ChosenCardFromAmong.perColor = Nothing,
+            ChosenCardFromAmong.differentIn = Set.empty,
             ChosenCardFromAmong.chooser = PlayerRef.InSlot (SlotName.MkSlotName (Text.pack "opponent")),
             ChosenCardFromAmong.pileChooser = Nothing,
             ChosenCardFromAmong.faceUpPile = False,
@@ -68,6 +72,7 @@ spec s = Spec.describe s "Parun.Codec.ChosenCardFromAmong" $ do
             ChosenCardFromAmong.count = HowMany.UpTo Nothing,
             ChosenCardFromAmong.total = Nothing,
             ChosenCardFromAmong.perColor = Nothing,
+            ChosenCardFromAmong.differentIn = Set.empty,
             ChosenCardFromAmong.chooser = PlayerRef.Relative PlayerRelation.Opponent,
             ChosenCardFromAmong.pileChooser = Just (PlayerRef.Relative PlayerRelation.You),
             ChosenCardFromAmong.faceUpPile = False,
@@ -87,6 +92,7 @@ spec s = Spec.describe s "Parun.Codec.ChosenCardFromAmong" $ do
             ChosenCardFromAmong.count = HowMany.UpTo Nothing,
             ChosenCardFromAmong.total = Nothing,
             ChosenCardFromAmong.perColor = Nothing,
+            ChosenCardFromAmong.differentIn = Set.empty,
             ChosenCardFromAmong.chooser = PlayerRef.Relative PlayerRelation.You,
             ChosenCardFromAmong.pileChooser = Just (PlayerRef.Relative PlayerRelation.Opponent),
             ChosenCardFromAmong.faceUpPile = True,
@@ -105,6 +111,7 @@ spec s = Spec.describe s "Parun.Codec.ChosenCardFromAmong" $ do
             ChosenCardFromAmong.count = HowMany.one,
             ChosenCardFromAmong.total = Nothing,
             ChosenCardFromAmong.perColor = Nothing,
+            ChosenCardFromAmong.differentIn = Set.empty,
             ChosenCardFromAmong.chooser = PlayerRef.Relative PlayerRelation.You,
             ChosenCardFromAmong.pileChooser = Nothing,
             ChosenCardFromAmong.faceUpPile = False,
@@ -124,6 +131,7 @@ spec s = Spec.describe s "Parun.Codec.ChosenCardFromAmong" $ do
             ChosenCardFromAmong.count = HowMany.UpTo (Just (Quantity.Literal 2)),
             ChosenCardFromAmong.total = Just TotalCap.MkTotalCap {TotalCap.weight = Quantity.Measure Measure.ManaValue, TotalCap.most = Quantity.Literal 6},
             ChosenCardFromAmong.perColor = Nothing,
+            ChosenCardFromAmong.differentIn = Set.empty,
             ChosenCardFromAmong.chooser = PlayerRef.Relative PlayerRelation.You,
             ChosenCardFromAmong.pileChooser = Nothing,
             ChosenCardFromAmong.faceUpPile = False,
@@ -143,6 +151,7 @@ spec s = Spec.describe s "Parun.Codec.ChosenCardFromAmong" $ do
             ChosenCardFromAmong.count = HowMany.UpTo Nothing,
             ChosenCardFromAmong.total = Nothing,
             ChosenCardFromAmong.perColor = Just (Filter.HasCardType CardType.Creature),
+            ChosenCardFromAmong.differentIn = Set.empty,
             ChosenCardFromAmong.chooser = PlayerRef.Relative PlayerRelation.You,
             ChosenCardFromAmong.pileChooser = Nothing,
             ChosenCardFromAmong.faceUpPile = False,
@@ -150,4 +159,24 @@ spec s = Spec.describe s "Parun.Codec.ChosenCardFromAmong" $ do
           }
       )
       " {\"slot\":\"revealed\",\"filter\":{\"type\":\"And\",\"value\":[]},\"count\":{\"type\":\"UpTo\"},\"perColor\":{\"type\":\"HasCardType\",\"value\":\"Creature\"}} "
+  -- Rip, Spawn Hunter's "any number of creature and/or Vehicle cards with
+  -- different powers from among them".
+  Spec.it s "MkChosenCardFromAmong, picks kept apart" $
+    Common.assertCodec
+      s
+      ChosenCardFromAmong.codec
+      ( ChosenCardFromAmong.MkChosenCardFromAmong
+          { ChosenCardFromAmong.slot = SlotName.MkSlotName (Text.pack "revealed"),
+            ChosenCardFromAmong.filter = Filter.And [],
+            ChosenCardFromAmong.count = HowMany.UpTo Nothing,
+            ChosenCardFromAmong.total = Nothing,
+            ChosenCardFromAmong.perColor = Nothing,
+            ChosenCardFromAmong.differentIn = Set.singleton DifferentIn.Powers,
+            ChosenCardFromAmong.chooser = PlayerRef.Relative PlayerRelation.You,
+            ChosenCardFromAmong.pileChooser = Nothing,
+            ChosenCardFromAmong.faceUpPile = False,
+            ChosenCardFromAmong.selection = CardSelection.ByChoice
+          }
+      )
+      " {\"slot\":\"revealed\",\"filter\":{\"type\":\"And\",\"value\":[]},\"count\":{\"type\":\"UpTo\"},\"differentIn\":[\"Powers\"]} "
   Spec.it s "has a schema" $ Common.assertHasSchema s ChosenCardFromAmong.codec

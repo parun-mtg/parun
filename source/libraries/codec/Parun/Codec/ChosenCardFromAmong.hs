@@ -2,7 +2,9 @@
 
 module Parun.Codec.ChosenCardFromAmong where
 
+import qualified Data.Set as Set
 import qualified Parun.Codec.CardSelection as CardSelection
+import qualified Parun.Codec.DifferentIn as DifferentIn
 import qualified Parun.Codec.Filter as Filter
 import qualified Parun.Codec.HowMany as HowMany
 import qualified Parun.Codec.Keyword as Keyword
@@ -24,9 +26,9 @@ import qualified Parun.Types.PlayerRelation as PlayerRelation
 -- @count@ and @chooser@ are defaulted rather than required, so the printed
 -- singular addressed to the resolving controller -- which is every "from among
 -- them" but Ancestral Memories', Animal Magnetism's and the "up to" ones --
--- writes neither. @total@, @perColor@ and @pileChooser@ are elided rather than written
--- null, and @faceUpPile@ rather than written false, and @selection@ rather
--- than written ByChoice.
+-- writes neither. @total@, @perColor@ and @pileChooser@ are elided rather than
+-- written null, @differentIn@ rather than written empty, @faceUpPile@ rather
+-- than written false, and @selection@ rather than written ByChoice.
 codec :: Codec.Codec ChosenCardFromAmong.ChosenCardFromAmong
 codec = Fields.object $ do
   slot <- Fields.required "slot" SlotName.codec ChosenCardFromAmong.slot
@@ -34,6 +36,7 @@ codec = Fields.object $ do
   count <- Fields.defaulted "count" HowMany.one HowMany.codec ChosenCardFromAmong.count
   total <- Fields.defaulted "total" Nothing (Common.maybe TotalCap.codec) ChosenCardFromAmong.total
   perColor <- Fields.defaulted "perColor" Nothing (Common.maybe (Filter.codec Keyword.codec)) ChosenCardFromAmong.perColor
+  differentIn <- Fields.defaulted "differentIn" Set.empty (Common.set DifferentIn.codec) ChosenCardFromAmong.differentIn
   chooser <- Fields.defaulted "chooser" (PlayerRef.Relative PlayerRelation.You) PlayerRef.codec ChosenCardFromAmong.chooser
   pileChooser <- Fields.defaulted "pileChooser" Nothing (Common.maybe PlayerRef.codec) ChosenCardFromAmong.pileChooser
   faceUpPile <- Fields.defaulted "faceUpPile" False Common.boolean ChosenCardFromAmong.faceUpPile
@@ -45,6 +48,7 @@ codec = Fields.object $ do
         ChosenCardFromAmong.count = count,
         ChosenCardFromAmong.total = total,
         ChosenCardFromAmong.perColor = perColor,
+        ChosenCardFromAmong.differentIn = differentIn,
         ChosenCardFromAmong.chooser = chooser,
         ChosenCardFromAmong.pileChooser = pileChooser,
         ChosenCardFromAmong.faceUpPile = faceUpPile,
