@@ -36,8 +36,8 @@
 -- are the burn half: the first takes exactly the printed loyalty (CR 704.5i
 -- follows), the second takes less (it does not).
 --
--- Carth the Lion -- {2}{B}{G} Legendary Creature -- Human Warrior, 3/5 -- is the
--- CombinedLoyaltyCost group's alone: it is the one card in the pool that adds a
+-- Carth the Lion -- {2}{B}{G} Legendary Creature -- Human Warrior, 3/5 -- is
+-- CR 606.5's card, read in data/scenarios/planeswalker: it is the one card in the pool that adds a
 -- loyalty cost to somebody else's loyalty ability, which is what makes CR 606.5
 -- observable. Only the second sentence is read here; the first -- the
 -- enters-or-planeswalker-dies trigger -- is Parun.MassEffectSpec's CarthTheLion
@@ -48,7 +48,7 @@
 --
 -- A Realm Reborn -- {4}{G}{G} Enchantment, "Other permanents you control have
 -- '{T}: Add one mana of any color.'" (name, cost, type line and Oracle text
--- checked against api.scryfall.com, 2026-09-06) -- is that group's second card,
+-- checked against api.scryfall.com, 2026-09-06) -- is the second card there,
 -- and it is there to put a NON-loyalty activated ability on the very
 -- planeswalker Carth taxes. Scryfall
 -- `t:planeswalker (o:/^\{T\}:/ or o:/^\{[0-9WUBRGCXSP\/]+\}(, \{T\})?:/) include:extras`,
@@ -73,7 +73,6 @@ import qualified Parun.Engine.Action as Action
 import qualified Parun.Engine.Activatable as Activatable
 import qualified Parun.Engine.Activate as Activate
 import qualified Parun.Engine.Engine as Engine
-import qualified Parun.Engine.Event as Event
 import qualified Parun.Engine.Game as Game
 import qualified Parun.Engine.Projection as Projection
 import qualified Parun.Engine.Setup as Setup
@@ -96,10 +95,8 @@ import qualified Parun.Types.CostAmount as CostAmount
 import qualified Parun.Types.CostComponent as CostComponent
 import qualified Parun.Types.CounterKind as CounterKind
 import qualified Parun.Types.Face as Face
-import qualified Parun.Types.GameEvent as GameEvent
 import qualified Parun.Types.GameState as GameState
 import qualified Parun.Types.GrantedAbility as GrantedAbility
-import qualified Parun.Types.Keyword as Keyword
 import qualified Parun.Types.Label as Label
 import qualified Parun.Types.Move as Move
 import qualified Parun.Types.ObjectId as ObjectId
@@ -108,7 +105,6 @@ import qualified Parun.Types.Phase as Phase
 import qualified Parun.Types.Placement as Placement
 import qualified Parun.Types.PlayerId as PlayerId
 import qualified Parun.Types.Printing as Printing
-import qualified Parun.Types.ProjectedCharacteristics as PC
 import qualified Parun.Types.Prompt as Prompt
 import qualified Parun.Types.Recipient as Recipient
 import qualified Parun.Types.ScenarioFailure as ScenarioFailure
@@ -132,10 +128,9 @@ abilityAt i p = take 1 (drop i (Face.activatedAbilities (S.combinedFace p)))
 activation :: ObjectId.ObjectId -> Int -> Printing.Printing -> [A.Action]
 activation oid i p = fmap (A.Activate oid) (abilityAt i p)
 
-plusTwo, minusOne, minusTen :: Int
+plusTwo, minusOne :: Int
 plusTwo = 0
 minusOne = 1
-minusTen = 2
 
 -- Activate one of Jace's abilities and let it resolve.
 useAbility :: Int -> Printing.Printing -> ObjectId.ObjectId -> GameState.GameState -> GameState.GameState
@@ -188,12 +183,6 @@ alicesNextTurn gs =
                 TurnRegisters.priority = Just S.alice
               }
         }
-
--- How many cards of a given name are in alice's graveyard.
-graveyardCount :: String -> GameState.GameState -> Int
-graveyardCount name gs =
-  let named oid = fmap Face.name (Game.faceOf oid gs) == Just (CardName.MkCardName $ Text.pack name)
-   in length (filter named (Game.zoneMembers Zone.Graveyard S.alice gs))
 
 -- Nissa, Steward of Elements' abilities in printed order: +2, 0, -6. Indexed for
 -- the reason Jace's are.
@@ -401,53 +390,8 @@ countersRemovedSpec s registry = Spec.describe s "CountersRemoved" $ do
     Spec.assertEqWith s "CR 306.8: 6 - 4" (S.counterOf CounterKind.Loyalty chandraId dealt) 2
     Spec.assertEqWith s "CR 510.1b: none of it reached the defending player" (S.lifeOf S.bob after) (Just 20)
 
--- CR 606.5: "If the total cost to activate a loyalty ability contains multiple
--- costs to add or remove loyalty counters, those costs are combined into a single
--- cost to add or remove loyalty counters, as appropriate."
---
--- Every pair here is one board differing in exactly one permanent: Carth. The
--- numbers are deliberately distinct -- printed loyalty 3, six added counters, 9
--- on the permanent, a printed cost of -10, an added cost of +1, a combined -9 --
--- so no two readings of the rule answer alike on this board.
-combinedLoyaltyCostSpec :: (Monad m, Monad n) => Spec.Spec m n -> Registry.Registry m -> n ()
-combinedLoyaltyCostSpec s registry = Spec.describe s "CombinedLoyaltyCost" $ do
-  -- The direction that actually diverges: parun was STRICTER than the rules here.
-  -- The -10 and the +1 asked separately refuse at 9 loyalty, because CR 606.6's
-  -- check reads the counters present before any of the cost is paid; combined,
-  -- the cost is -9 and 9 pays it.
-  Spec.it s "CR 606.5 Carth's added +1 makes Jace's -10 activatable at 9 loyalty" $ do
-    island <- S.printingOf s registry "Island"
-    jace <- S.printingOf s registry "Jace Beleren"
-    carth <- S.printingOf s registry "Carth the Lion"
-    let (jaceId, board) = jaceOnBattlefield island jace
-        atNine = S.addCounter CounterKind.Loyalty 6 jaceId board
-        withCarth = snd (S.addPermanent carth S.alice atNine)
-    Spec.assertEqWith s "3 printed plus 6 is 9" (S.counterOf CounterKind.Loyalty jaceId withCarth) 9
-    Spec.assertBool s (not (null (activation jaceId minusTen jace))) "the -10 is a real ability"
-    Spec.assertBool
-      s
-      (all (`elem` Action.legalActions S.alice withCarth) (activation jaceId minusTen jace))
-      "the -10 is offered, because the total cost is -9"
-
-  -- The control, on the same fixture minus Carth alone. Without the addition the
-  -- cost is a bare -10 and CR 606.6 refuses it at 9 -- so the difference between
-  -- the two cases is Carth and nothing about mana, timing, seats or the log.
-  Spec.it s "CR 606.6 without Carth the same Jace at 9 loyalty is not offered its -10" $ do
-    island <- S.printingOf s registry "Island"
-    jace <- S.printingOf s registry "Jace Beleren"
-    let (jaceId, board) = jaceOnBattlefield island jace
-        atNine = S.addCounter CounterKind.Loyalty 6 jaceId board
-    Spec.assertEqWith s "the same 9 loyalty" (S.counterOf CounterKind.Loyalty jaceId atNine) 9
-    Spec.assertBool
-      s
-      (not (any (`elem` Action.legalActions S.alice atNine) (activation jaceId minusTen jace)))
-      "a bare -10 needs 10"
-    -- And the +2 still is, so the board's refusal is about this ability's cost
-    -- rather than about CR 606.3's window having closed.
-    Spec.assertBool
-      s
-      (all (`elem` Action.legalActions S.alice atNine) (activation jaceId plusTwo jace))
-      "while the +2 is offered on the very same board"
+-- CR 606.5's cases are scenarios: data/scenarios/planeswalker/cr-606-5-*.json and
+-- cr-606-6-without-carth-the-same-jace-at-9-loyalty-is-not-offered-its-10.json.
 
 -- CR 306.5a's printed loyalty is a number on every planeswalker but one. Nissa,
 -- Steward of Elements prints CR 107.3's X there, and CR 107.3m says what it is
@@ -473,20 +417,6 @@ variableLoyaltySpec s registry = Spec.describe s "VariableLoyalty" $ do
       s
       (S.counterOf CounterKind.Loyalty atFive five /= S.counterOf CounterKind.Loyalty atThree three)
       "the two boards disagree about the loyalty"
-
-  -- CR 107.1b forbids a negative X and nothing forbids zero, so {0}{G}{U} is a
-  -- legal announcement -- and CR 306.5b then puts no counters on at all.
-  Spec.it s "CR 107.1b / 704.5i announced at X=0 she enters with no loyalty and is buried" $ do
-    forest <- S.printingOf s registry "Forest"
-    island <- S.printingOf s registry "Island"
-    nissa <- S.printingOf s registry "Nissa, Steward of Elements"
-    let (nissaId, after) = nissaCastFor forest island nissa [] 0
-        settled = S.settleSba after
-    Spec.assertEqWith s "no loyalty counters" (S.counterOf CounterKind.Loyalty nissaId after) 0
-    Spec.assertBool s (Set.member nissaId (GameState.battlefield after)) "she did enter the battlefield"
-    Spec.assertBool s (not (Set.member nissaId (GameState.battlefield settled))) "CR 704.5i takes her off it"
-    -- By NAME, not by id: CR 400.7 mints a new object as the card moves.
-    Spec.assertEqWith s "CR 704.5i: in her owner's graveyard" (graveyardCount "Nissa, Steward of Elements" settled) 1
 
   -- The abilities read the loyalty back, which is what makes the number have to
   -- be right rather than merely present. CR 606.6 gates the -6 on the permanent
@@ -518,28 +448,6 @@ variableLoyaltySpec s registry = Spec.describe s "VariableLoyalty" $ do
     Spec.assertEqWith s "loyalty 1, below the Piker's mana value of 2" (S.counterOf CounterKind.Loyalty nissaId after) 1
     Spec.assertEqWith s "nothing entered the battlefield" (S.countOnBattlefieldByName (CardName.MkCardName (Text.pack "Goblin Piker")) S.alice after) 0
     Spec.assertEqWith s "both cards are still in the library" (length (Game.zoneMembers Zone.Library S.alice after)) 2
-
-  -- The -6, paid for out of the X-derived loyalty. CR 205.1b splits the card's
-  -- two sentences: "they're still lands" is why the CREATURE card type is added
-  -- rather than set, and the same rule's last clause is why the creature TYPE is
-  -- set rather than added.
-  Spec.it s "CR 205.1b the -6 untaps two lands and makes them 5/5 Elemental creature lands with flying and haste" $ do
-    forest <- S.printingOf s registry "Forest"
-    island <- S.printingOf s registry "Island"
-    nissa <- S.printingOf s registry "Nissa, Steward of Elements"
-    let (nissaId, board) = nissaCastFor forest island nissa [] 6
-        after = useNissaAbility minusSix nissa nissaId board
-        animated = filter (Set.member CardType.Creature . PC.cardTypes) (fmap (`Projection.project` after) (Set.toList (GameState.battlefield after)))
-    Spec.assertEqWith s "the -6 spent the six counters it cost" (S.counterOf CounterKind.Loyalty nissaId after) 0
-    -- Eight of the nine lands paid for {6}{G}{U}; two of those eight are untapped
-    -- again, and nothing else on this board taps or untaps.
-    Spec.assertEqWith s "eight lands were tapped to cast her" (S.tappedCount S.alice board) 8
-    Spec.assertEqWith s "and two of them are untapped again" (S.tappedCount S.alice after) 6
-    Spec.assertEqWith s "two lands were animated, not one and not every land" (length animated) 2
-    Spec.assertEqWith s "each is 5/5" (fmap (\pc -> (PC.power pc, PC.toughness pc)) animated) [(Just 5, Just 5), (Just 5, Just 5)]
-    Spec.assertBool s (all (Set.member CardType.Land . PC.cardTypes) animated) "they're still lands"
-    Spec.assertBool s (all (Set.member Subtype.Elemental . PC.subtypes) animated) "each is an Elemental"
-    Spec.assertBool s (all (\pc -> Map.member Keyword.Flying (PC.keywords pc) && Map.member Keyword.Haste (PC.keywords pc)) animated) "with flying and haste"
 
 -- Grist, the Hunger Tide's abilities in the order the card file carries them:
 -- the +1, the -2, then the -5. Indexed for the reason Jace's are; the +1 is
@@ -701,145 +609,24 @@ gristLoyaltySpec s registry = Spec.describe s "GristLoyalty" $ do
 --
 -- The -2's token clause reads EventShape.CardArrivedIn as an intervening "if":
 -- the printed sentence names only where the card ARRIVED, so its exclusion set is
--- empty and the origin is not part of the question. The trigger board below exiles from a HAND, never a
--- library, which is what separates "put into exile" from the library-to-exile
--- move Ashiok's own replacement makes.
+-- empty and the origin is not part of the question.
+-- data/scenarios/planeswalker/cr-603-4-a-card-put-into-exile-from-a-hand-satisfies-the-token-s-intervening-if.json
+-- exiles from a HAND, never a library, which is what separates "put into exile"
+-- from the library-to-exile move Ashiok's own replacement makes.
 --
 -- The count's filter is Not IsToken and not the empty one, because the printed
 -- word is "a CARD was put into exile" and CR 111.6 says a token is not one --
 -- data/cards/synthetic-grave-census.json's spelling of the same shape. The shape
 -- itself cannot say so: EventShape.CardArrivedIn tests the destination and, where
--- one is named, the origin, so the card-versus-token half is the filter's. The CR 111.6 pair below is what
--- proves it: two boards holding the same objects, differing only in whether the
--- one permanent exiled that turn was a card.
-ashiokMinusTwo :: Int
-ashiokMinusTwo = 1
-
--- Ashiok on the battlefield under alice's control at the printed loyalty 5, with
--- `stock` in her library BOTTOM FIRST (S.addLibraryCard puts each new card on
--- top). PLACED rather than cast, as gristWith is and for the same reason: no case
--- here is about CR 306.5b.
-ashiokBoard :: Printing.Printing -> [Printing.Printing] -> (ObjectId.ObjectId, GameState.GameState)
-ashiokBoard ashiok stock =
-  let stocked = List.foldl' (\g p -> snd (S.addLibraryCard p S.alice g)) S.threePlayerGame stock
-      (oid, placed) = S.addPermanent ashiok S.alice stocked
-   in (oid, S.addCounter CounterKind.Loyalty 5 oid placed)
-
--- Whether a logged event is CR 603.2's record that an ability triggered.
-isAbilityTriggered :: GameEvent.GameEvent -> Bool
-isAbilityTriggered event = case event of
-  GameEvent.AbilityTriggered {} -> True
-  _ -> False
+-- one is named, the origin, so the card-versus-token half is the filter's. The CR 111.6 pair
+-- data/scenarios/planeswalker/cr-111-6-*.json proves it: one board, differing
+-- only in whether the one permanent exiled that turn was a card.
+--
+-- Every -2 case is a scenario.
 
 -- The names of pid's cards in a zone, MassEffectSpec's reader of the same name.
 namesIn :: Zone.Zone -> PlayerId.PlayerId -> GameState.GameState -> [Maybe CardName.CardName]
 namesIn zone pid gs = fmap (\oid -> fmap S.nameOf (Game.cardOf oid gs)) (Game.zoneMembers zone pid gs)
-
--- Rule 507's beginning of combat step on alice's turn, staged and then RUN:
--- Engine.runStep writes the CR 603.2b StepBegan record the token's trigger
--- matches, and the priority loop resolves what it put on the stack.
-throughBeginningOfCombat :: GameState.GameState -> GameState.GameState
-throughBeginningOfCombat gs =
-  S.runPure
-    S.identityAnswer
-    ( S.runPure
-        S.identityAnswer
-        gs
-          { GameState.turn =
-              (GameState.turn gs)
-                { TurnRegisters.phase = Phase.Combat CombatStep.BeginningOfCombat,
-                  TurnRegisters.activePlayer = S.alice,
-                  TurnRegisters.priority = Just S.alice
-                }
-          }
-        Engine.runStep
-    )
-    Engine.priorityLoop
-
-ashiokLoyaltySpec :: (Monad m, Monad n) => Spec.Spec m n -> Registry.Registry m -> n ()
-ashiokLoyaltySpec s registry = Spec.describe s "AshiokLoyalty" $ do
-  -- The token's own trigger. The exile is out of alice's HAND, which is what makes
-  -- this a claim about "put into exile" rather than about the library-to-exile
-  -- move the rest of the card makes: a condition that pinned the ORIGIN would find
-  -- no match here.
-  Spec.it s "CR 603.4 a card put into exile from a hand satisfies the token's intervening if" $ do
-    ashiok <- S.printingOf s registry "Ashiok, Wicked Manipulator"
-    swamp <- S.printingOf s registry "Swamp"
-    maiden <- S.printingOf s registry "Bird Maiden"
-    let (ashiokId, board) = ashiokBoard ashiok [swamp]
-        (heldId, withHeld) = S.addHandCard maiden S.alice board
-        minted = useLoyaltyAbility S.identityAnswer ashiokMinusTwo ashiok ashiokId withHeld
-        exiled = S.runPure S.identityAnswer minted (Event.changeZone (pure ()) heldId Zone.Exile)
-        after = throughBeginningOfCombat exiled
-        tokens = S.tokensOf after
-    Spec.assertEqWith s "CR 603.4: the intervening if holds, so both tokens' abilities trigger" (length (filter isAbilityTriggered (S.eventsOf after))) 2
-    Spec.assertEqWith s "the held card left the hand for exile" (length (Game.zoneMembers Zone.Exile S.alice after)) 1
-    Spec.assertEqWith s "still two tokens" (length tokens) 2
-    mapM_ (\oid -> Spec.assertEqWith s "each token is 2/2" (S.powerToughnessOf oid after) (Just (2, 2))) tokens
-    mapM_ (\oid -> Spec.assertEqWith s "CR 122.6: one +1/+1 counter each" (S.counterOf CounterKind.PlusOnePlusOne oid after) 1) tokens
-
-  -- The pair, differing in exactly one thing: nothing was exiled. CR 603.4 says the
-  -- ability does not trigger at all, which is a stronger claim than "no counter
-  -- appeared" -- an ability that triggered and then did nothing would leave the
-  -- same counters.
-  Spec.it s "CR 603.4 with nothing exiled this turn the token's ability never triggers" $ do
-    ashiok <- S.printingOf s registry "Ashiok, Wicked Manipulator"
-    swamp <- S.printingOf s registry "Swamp"
-    maiden <- S.printingOf s registry "Bird Maiden"
-    let (ashiokId, board) = ashiokBoard ashiok [swamp]
-        (_, withHeld) = S.addHandCard maiden S.alice board
-        minted = useLoyaltyAbility S.identityAnswer ashiokMinusTwo ashiok ashiokId withHeld
-        after = throughBeginningOfCombat minted
-        tokens = S.tokensOf after
-    Spec.assertEqWith s "CR 603.4: the ability did not trigger at all" (length (filter isAbilityTriggered (S.eventsOf after))) 0
-    Spec.assertEqWith s "alice's exile is empty" (length (Game.zoneMembers Zone.Exile S.alice after)) 0
-    Spec.assertEqWith s "still two tokens" (length tokens) 2
-    mapM_ (\oid -> Spec.assertEqWith s "each token is still 1/1" (S.powerToughnessOf oid after) (Just (1, 1))) tokens
-    mapM_ (\oid -> Spec.assertEqWith s "no +1/+1 counter" (S.counterOf CounterKind.PlusOnePlusOne oid after) 0) tokens
-
-  -- CR 111.6's pair. Both boards hold the same objects -- Ashiok, its two
-  -- Nightmares, and a Goblin Piker card permanent -- and both exile exactly one
-  -- battlefield permanent this turn. The ONE thing that differs is whether that
-  -- permanent was a card, so an empty filter over the count agrees with the card
-  -- leg and contradicts the token leg. The Nightmare is the token victim rather
-  -- than a Piker token because a Nightmare is already on the board: nothing about
-  -- the victim but its tokenhood is read.
-  --
-  -- CR 111.7's parenthetical is what makes a token victim observable at all: the
-  -- token changes zones, applicable abilities trigger, and only then does it cease
-  -- to exist -- so the arrival IS in the log for the count to fold or refuse.
-  Spec.it s "CR 111.6 a card put into exile from the battlefield satisfies the token's intervening if" $ do
-    ashiok <- S.printingOf s registry "Ashiok, Wicked Manipulator"
-    swamp <- S.printingOf s registry "Swamp"
-    piker <- S.printingOf s registry "Goblin Piker"
-    let (ashiokId, board) = ashiokBoard ashiok [swamp]
-        (pikerId, withPiker) = S.addPermanent piker S.alice board
-        minted = useLoyaltyAbility S.identityAnswer ashiokMinusTwo ashiok ashiokId withPiker
-        exiled = S.runPure S.identityAnswer minted (Event.changeZone (pure ()) pikerId Zone.Exile)
-        after = throughBeginningOfCombat exiled
-        tokens = S.tokensOf after
-    Spec.assertEqWith s "CR 603.4: a card arrived in exile, so both tokens' abilities trigger" (length (filter isAbilityTriggered (S.eventsOf after))) 2
-    Spec.assertEqWith s "the Piker is the one thing in alice's exile" (namesIn Zone.Exile S.alice after) [Just (CardName.MkCardName (Text.pack "Goblin Piker"))]
-    Spec.assertEqWith s "still two tokens" (length tokens) 2
-    mapM_ (\oid -> Spec.assertEqWith s "each token is 2/2" (S.powerToughnessOf oid after) (Just (2, 2))) tokens
-
-  Spec.it s "CR 111.6 a TOKEN put into exile is not a card, so the intervening if fails" $ do
-    ashiok <- S.printingOf s registry "Ashiok, Wicked Manipulator"
-    swamp <- S.printingOf s registry "Swamp"
-    piker <- S.printingOf s registry "Goblin Piker"
-    let (ashiokId, board) = ashiokBoard ashiok [swamp]
-        (pikerId, withPiker) = S.addPermanent piker S.alice board
-        minted = useLoyaltyAbility S.identityAnswer ashiokMinusTwo ashiok ashiokId withPiker
-        victim = Maybe.listToMaybe (S.tokensOf minted)
-        exiled = S.runPure S.identityAnswer minted (mapM_ (\oid -> Event.changeZone (pure ()) oid Zone.Exile) victim)
-        after = throughBeginningOfCombat exiled
-        tokens = S.tokensOf after
-    Spec.assertEqWith s "CR 603.4: no CARD arrived in exile, so neither surviving ability triggers" (length (filter isAbilityTriggered (S.eventsOf after))) 0
-    Spec.assertBool s (Maybe.isJust victim) "a Nightmare was there to exile"
-    Spec.assertEqWith s "CR 111.7: the exiled token ceased to exist, and the Piker stayed put" (S.onBattlefield pikerId after, length (Game.zoneMembers Zone.Exile S.alice after)) (True, 0)
-    Spec.assertEqWith s "one Nightmare left" (length tokens) 1
-    mapM_ (\oid -> Spec.assertEqWith s "which is still 1/1" (S.powerToughnessOf oid after) (Just (1, 1))) tokens
-    mapM_ (\oid -> Spec.assertEqWith s "with no +1/+1 counter" (S.counterOf CounterKind.PlusOnePlusOne oid after) 0) tokens
 
 -- Tamiyo, Compleated Sage's -7: "Create Tamiyo's Notebook, a legendary colorless
 -- Book artifact token with 'Spells you cast cost {2} less to cast' and '{T}: Draw

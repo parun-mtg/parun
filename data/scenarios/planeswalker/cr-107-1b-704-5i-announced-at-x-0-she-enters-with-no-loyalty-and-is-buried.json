@@ -1,0 +1,98 @@
+{
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "battlefield": [
+          {
+            "card": "Forest",
+            "label": "forest"
+          },
+          {
+            "card": "Island",
+            "label": "island"
+          },
+          {
+            "card": "Carth the Lion",
+            "label": "carth"
+          }
+        ],
+        "hand": [
+          {
+            "card": "Nissa, Steward of Elements",
+            "label": "nissa"
+          }
+        ],
+        "name": "alice"
+      },
+      {
+        "name": "bob"
+      }
+    ],
+    "step": "PrecombatMain"
+  },
+  "description": "CR 107.1b / 704.5i announced at X=0 she enters with no loyalty and is buried",
+  "note": "CR 107.1b forbids a negative X, not zero, so {0}{G}{U} is a legal announcement, and CR 306.5b then puts no loyalty counters on Nissa. CR 704.5i buries her at alice's next priority. Carth the Lion's dies trigger on the stack is what shows she reached the battlefield (a planeswalker alice controls died) rather than going to the graveyard as a spell; alice's library is empty so Carth's look asks nothing. The Haskell test's read of zero counters before state-based actions is of a state no priority reaches.",
+  "timeline": [
+    {
+      "do": {
+        "Cast": {
+          "mana": [
+            "$forest",
+            "$island"
+          ],
+          "object": "$nissa",
+          "x": 0
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "View": {
+          "is": [
+            "trigger of $carth"
+          ],
+          "of": "Stack"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Nissa, Steward of Elements",
+          "count": 0,
+          "player": "alice",
+          "zone": "Battlefield"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Nissa, Steward of Elements",
+          "count": 1,
+          "player": "alice",
+          "zone": "Graveyard"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    }
+  ]
+}

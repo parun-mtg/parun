@@ -44,8 +44,8 @@ data Aggregation quantity
     -- same per-member Quantity, folded with (+) rather than max, and for the same
     -- reason parameterized rather than named concretely.
     --
-    -- Parun.PlaneswalkerSpec's AshiokLoyalty group is what proves the three
-    -- aggregations come apart: two exiled cards of unequal mana value read
-    -- differently under Members, Greatest and this.
+    -- The scenario planeswalker/cr-107-3-202-3-the-7-s-x-is-the-total-mana-value-of-the-cards
+    -- is what proves the three aggregations come apart: two exiled cards of
+    -- unequal mana value read differently under Members, Greatest and this.
     Total quantity
   deriving (Eq, Ord, Show)

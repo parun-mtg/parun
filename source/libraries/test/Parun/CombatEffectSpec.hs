@@ -62,12 +62,6 @@ import qualified Parun.Types.Zone as Zone
 -- The helpers below are duplicated from Parun.CombatSpec rather than hoisted into
 -- Parun.Support, which every spec in the tree imports and so rebuilds.
 
--- The ATTACKING creatures (CR 508.1k), which since #2024 is a different question
--- from Combat.declaredAttackers -- CR 506.4 removal ends one and leaves the
--- other standing.
-attackersOf :: GameState.GameState -> [ObjectId.ObjectId]
-attackersOf gs = Map.keys (Combat.Type.attackers (TurnRegisters.combat (GameState.turn gs)))
-
 tapStateOf :: ObjectId.ObjectId -> GameState.GameState -> Maybe TapState.TapState
 tapStateOf oid gs = fmap Object.tapped (Game.lookupObject oid gs)
 
@@ -817,14 +811,6 @@ exampleBoard s registry theirs = do
 
 vigilanceSpec :: (Monad m, Monad n) => Spec.Spec m n -> Registry.Registry m -> n ()
 vigilanceSpec s registry = Spec.describe s "Vigilance" $ do
-  Spec.it s "CR 702.20b vigilance still attacks" $ do
-    -- Vigilance is not a legality question: the creature is declared as an
-    -- attacker exactly as normal. It simply skips CR 508.1f's tap.
-    windseekerCentaur <- S.printingOf s registry "Windseeker Centaur"
-    piker <- S.printingOf s registry "Goblin Piker"
-    let (gs, mine, _) = S.combatBoardOf [windseekerCentaur] [piker]
-        after = snd (Engine.runGamePure S.aggressiveAnswer gs (Combat.declareAttackers S.manaPerformer S.alice))
-    Spec.assertEqWith s "attacking" (attackersOf after) mine
   Spec.it s "CR 702.20b an untapped vigilant attacker can still be blocked" $ do
     -- It is attacking, so it is in the Combat record, tapped or not.
     windseekerCentaur <- S.printingOf s registry "Windseeker Centaur"
@@ -1225,129 +1211,6 @@ effectRemovalSpec s registry = Spec.describe s "EffectRemoval" $ do
         Spec.assertEqWith s "and bob takes its 2" (S.lifeOf S.bob quiet) (Just 18)
       _ -> Spec.assertFailure s "fixture should give bob a Labyrinth with two abilities and alice one Piker"
 
--- alice attacks with one Goblin Piker and holds the Doom Blade and the two
--- Swamps that pay for it; bob defends with Opalescence, Living Plane and the
--- Forest that Living Plane has made a 1/1 creature. The mirror of unmakeBoard,
--- with the animator on the DEFENDING side so the creature that stops being one is
--- a blocker.
-unblockBoard ::
-  Printing.Printing ->
-  Printing.Printing ->
-  Printing.Printing ->
-  Printing.Printing ->
-  Printing.Printing ->
-  Printing.Printing ->
-  (GameState.GameState, [ObjectId.ObjectId], [ObjectId.ObjectId], ObjectId.ObjectId)
-unblockBoard opalescence livingPlane piker forest swamp doomBlade =
-  let (gs0, mine, theirs) = S.combatBoardOf [piker] [opalescence, livingPlane]
-      (land, gs1) = S.addPermanent forest S.bob gs0
-      addSwamps n g = if n <= (0 :: Int) then g else addSwamps (n - 1) (snd (S.addPermanent swamp S.alice g))
-   in (snd (S.addHandCard doomBlade S.alice (addSwamps 2 gs1)), mine, theirs, land)
-
--- Attack with `attacker` alone and cast nothing. The declare attackers step of
--- the blocker leg is played under this, so alice's Swamps -- 1/1 creatures while
--- Living Plane lives, and therefore legal attackers -- stay untapped to pay for
--- the Doom Blade she casts a step later.
-attackOnly :: ObjectId.ObjectId -> Prompt.Prompt r -> r
-attackOnly attacker p = case p of
-  Prompt.DeclareAttackers _ _ ids -> filter (== attacker) ids
-  _ -> S.aggressiveAnswer p
-
--- Block the first attacker with `blocker` alone and cast nothing: the control leg
--- of the blocker case, where Living Plane is left alone and the block resolves
--- into an ordinary trade.
-blockOnly :: ObjectId.ObjectId -> Prompt.Prompt r -> r
-blockOnly blocker p = case p of
-  Prompt.DeclareBlockers _ _ _ attackers -> case attackers of
-    a : _ -> Map.singleton blocker (Set.singleton a)
-    [] -> Map.empty
-  _ -> S.aggressiveAnswer p
-
--- Block the first attacker with `blocker` alone, cast whenever a cast is offered,
--- and aim every target at `victim`. Blocking with everything instead would put
--- Living Plane -- a 4/4 creature while Opalescence is out -- in front of the
--- attacker too, and killing it would then be a blocker LEAVING THE BATTLEFIELD,
--- which is a different clause of CR 506.4.
-unblock :: ObjectId.ObjectId -> ObjectId.ObjectId -> Prompt.Prompt r -> r
-unblock blocker victim p = case p of
-  Prompt.ChooseTargets _ _ _ sets -> fmap (const (Set.singleton (Recipient.ToCreature victim))) sets
-  Prompt.ChooseAction {} -> S.castAnswer p
-  Prompt.DeclareBlockers _ _ _ attackers -> case attackers of
-    a : _ -> Map.singleton blocker (Set.singleton a)
-    [] -> Map.empty
-  _ -> S.aggressiveAnswer p
-
--- CR 506.4: "A permanent is removed from combat if ... it's an attacking or
--- blocking creature that ... stops being a creature."
---
--- The clause has no one-card producer, and does not need one: the rule asks about
--- the permanent's creature-ness, not about how it was lost. Three pool cards make
--- it happen through the layer system alone, and every oracle text below was
--- checked against Scryfall.
---
---   * Living Plane ({2}{G}{G} World Enchantment, "All lands are 1/1 creatures
---     that are still lands") is what makes a Forest able to attack or block.
---   * Opalescence ({2}{W}{W} Enchantment, "Each other non-Aura enchantment is a
---     creature in addition to its other types and has base power and base
---     toughness each equal to its mana value") is what puts Living Plane itself
---     within reach of a creature-removal spell. Without it nothing in the pool
---     can touch an enchantment at instant speed, which is why this clause waited
---     on a producer rather than being built speculatively.
---   * Doom Blade ({1}{B} Instant, "Destroy target nonblack creature") kills the
---     green Living Plane in the priority round after the declaration.
---
--- CR 611.3b is what makes that enough: a static ability's continuous effect
--- "applies at all times that the permanent generating it is on the battlefield",
--- so Living Plane leaving takes the animation with it and the Forest stops being
--- a creature WITHOUT leaving the battlefield. That is what makes this the types
--- clause rather than CR 506.4's leaves-the-battlefield one, and each leg asserts
--- the Forest is still on the battlefield to pin it.
---
--- Every leg runs whole steps through Engine.runStep and stops at the end of
--- combat step, where CR 511.3 says the record still reads live.
-typeChangeRemovalSpec :: (Monad m) => Spec.Spec m n -> Registry.Registry m -> n ()
-typeChangeRemovalSpec s registry = Spec.describe s "TypeChangeRemoval" $ do
-  Spec.it s "CR 509.1h a BLOCKER that stops being a creature leaves the attacker blocked, so nothing is dealt combat damage" $ do
-    -- The blocker side of the same clause, through the same performer: the
-    -- Forest leaves the SET while the attacker's KEY survives, so the Piker
-    -- stays blocked and CR 510.1c gives it nobody to assign damage to.
-    --
-    -- This is the leg where the removal is observable as DAMAGE. An attacker
-    -- that stops being a creature loses its power along with its card type, so
-    -- Damage.attackerAssignment's Projection.powerOf already declines to
-    -- assign anything for it; a stale BLOCKER is screened only for liveness
-    -- (Damage's onBattlefield filter), so the unfixed engine marks the
-    -- attacker's 2 on a land that is no longer a creature at all.
-    --
-    -- The kill has to land after blocks are declared, so the declare attackers
-    -- step is played under an answerer that never casts and only the declare
-    -- blockers step onwards sees `unblock`.
-    forest <- S.printingOf s registry "Forest"
-    swamp <- S.printingOf s registry "Swamp"
-    piker <- S.printingOf s registry "Goblin Piker"
-    opalescence <- S.printingOf s registry "Opalescence"
-    livingPlane <- S.printingOf s registry "Living Plane"
-    doomBlade <- S.printingOf s registry "Doom Blade"
-    case unblockBoard opalescence livingPlane piker forest swamp doomBlade of
-      (gs, [attacker], [_, plane], land) -> do
-        let atBlockers = S.runToStep (Phase.Combat CombatStep.DeclareBlockers) (attackOnly attacker) gs
-            atEnd = runToEndOfCombat (unblock land plane) atBlockers
-            -- The control leg: the same board and the same block, with alice
-            -- never casting. The 2/1 Piker and the 1/1 Forest then trade.
-            traded = runToEndOfCombat (blockOnly land) atBlockers
-        Spec.assertEqWith s "the leg hands over at the declare blockers step, so the block is declared before the kill" (TurnRegisters.phase (GameState.turn atBlockers)) (Phase.Combat CombatStep.DeclareBlockers)
-        Spec.assertBool s (not (S.onBattlefield plane atEnd)) "the Doom Blade really did kill Living Plane"
-        Spec.assertBool s (not (Projection.isCreatureOf land atEnd)) "CR 611.3b: so the Forest stopped being a creature"
-        Spec.assertBool s (S.onBattlefield land atEnd) "and is still on the battlefield"
-        -- The discriminating assertion: the unfixed engine leaves the Forest
-        -- in the blocker set and marks the Piker's 2 on it.
-        Spec.assertEqWith s "CR 510.1c: nothing was dealt combat damage" (S.damageOf land atEnd) (Just 0)
-        Spec.assertEqWith s "CR 506.4: the Forest is blocking nothing" (Combat.blockersOf attacker atEnd) Set.empty
-        Spec.assertBool s (Combat.isBlocked attacker atEnd) "CR 509.1h: but the attacker remains blocked"
-        Spec.assertEqWith s "so bob takes nothing either" (S.lifeOf S.bob atEnd) (Just 20)
-        Spec.assertBool s (not (S.onBattlefield attacker traded) && not (S.onBattlefield land traded)) "control leg: with Living Plane left alone the Piker and the Forest trade"
-      _ -> Spec.assertFailure s "fixture should give alice a Piker and bob Opalescence, Living Plane and a Forest"
-
 -- Aims every target slot at one object. Liquimetal Coating's "target permanent"
 -- and Wane's "target enchantment" both draw from Pool.Permanents, so the offered
 -- recipients are Recipient.ToObject and the choice has to be answered rather than
@@ -1428,8 +1291,7 @@ creaturePlaneswalkerBoard jace elves coating march plains waxWane =
 
 -- Declare both attackers and announce CR 508.1b's targets by attacker: `atJace` at
 -- the planeswalker, `atBob` at the defending player. Casts nothing, so the declare
--- attackers step played under this leaves the Wane for a later step -- attackOnly's
--- reason above.
+-- attackers step played under this leaves the Wane for a later step.
 attackJaceAndBob :: ObjectId.ObjectId -> ObjectId.ObjectId -> Prompt.Prompt r -> r
 attackJaceAndBob atJace atBob p = case p of
   Prompt.DeclareAttackers _ _ ids -> filter (\oid -> oid == atJace || oid == atBob) ids
@@ -1617,6 +1479,5 @@ spec s registry = Spec.describe s "Parun.Engine.Combat" $ do
   vigilanceSpec s registry
   attacksAloneSpec s registry
   boundedDeclarationSpec s registry
-  typeChangeRemovalSpec s registry
   effectRemovalSpec s registry
   attackerCountSpec s registry

@@ -45,8 +45,9 @@ data EventShape
     -- CR 713.8e's "changed zones" puts no condition on where a card came from,
     -- and most of the pool's producers ask the same way -- "put into graveyards
     -- from anywhere", and Ashiok, Wicked Manipulator's Nightmare token's "if a
-    -- card was put into exile this turn" (Parun.PlaneswalkerSpec's AshiokLoyalty
-    -- group is what proves an empty exclusion does not read the origin: it exiles
+    -- card was put into exile this turn" (the scenario
+    -- planeswalker/cr-603-4-a-card-put-into-exile-from-a-hand-satisfies-the-token-s-intervening-if
+    -- is what proves an empty exclusion does not read the origin: it exiles
     -- out of a HAND). CR 903.9c is what makes the destination the load-bearing
     -- half: a melded commander's two cards can land in two different zones, and
     -- only the one that arrived in the named zone is counted.
