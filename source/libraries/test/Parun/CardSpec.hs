@@ -68,6 +68,7 @@ import qualified Parun.Types.ActivateManaAbilities as ActivateManaAbilities
 import qualified Parun.Types.ActivatedAbility as ActivatedAbility
 import qualified Parun.Types.ActivationProhibition as ActivationProhibition
 import qualified Parun.Types.ActivationRestriction as ActivationRestriction
+import qualified Parun.Types.ActivationScope as ActivationScope
 import qualified Parun.Types.ActivationsThisTurn as ActivationsThisTurn
 import qualified Parun.Types.Activator as Activator
 import qualified Parun.Types.AffectPlayers as AffectPlayers
@@ -4026,7 +4027,7 @@ playerEffectFilters playerEffect = case playerEffect of
   PlayerEffect.SpendManaAsThough clause -> case SpendManaAsThough.scope clause of
     SpendScope.EveryPayment -> []
     SpendScope.Casting spell -> [spell]
-    SpendScope.Activating source -> [source]
+    SpendScope.Activating (ActivationScope.MkActivationScope source lentBy) -> source : Maybe.maybeToList lentBy
   -- CR 702.18a / 702.11c's scope is a PlayerScope, not a Filter: the set it names
   -- is players. CR 702.11d's quality is a Filter over the aiming object.
   PlayerEffect.CantBeTargetedBy _ quality -> Maybe.maybeToList quality

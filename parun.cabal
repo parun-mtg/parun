@@ -137,6 +137,7 @@ library codec
     Parun.Codec.ActivationProhibitionSpec
     Parun.Codec.ActivationRestriction
     Parun.Codec.ActivationRestrictionSpec
+    Parun.Codec.ActivationScope
     Parun.Codec.ActivationSpec
     Parun.Codec.ActivationsThisTurn
     Parun.Codec.ActivationsThisTurnSpec
@@ -2756,6 +2757,7 @@ library types
     Parun.Types.ActivationProhibition
     Parun.Types.ActivationRestriction
     Parun.Types.Activations
+    Parun.Types.ActivationScope
     Parun.Types.ActivationsThisTurn
     Parun.Types.Activator
     Parun.Types.ActiveAttackProhibition

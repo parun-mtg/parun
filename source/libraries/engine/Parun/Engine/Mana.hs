@@ -1947,13 +1947,13 @@ admitsUnder subject pid gs =
   let paidFor = case subject of
         PaymentSubject.ForNeither -> Nothing
         PaymentSubject.Casting oid -> Just (ManaRestriction.casts, oid)
-        PaymentSubject.Activating oid _ _ -> Just (ManaRestriction.activations, oid)
+        PaymentSubject.Activating oid _ _ _ -> Just (ManaRestriction.activations, oid)
         PaymentSubject.Unlocking oid -> Just (ManaRestriction.unlocks, oid)
         PaymentSubject.TurningFaceUp oid -> Just (ManaRestriction.turnsFaceUp, oid)
       -- CR 717.2c: the one half asked of the ABILITY rather than of an object --
       -- its keyword stamp against the designator, no view needed.
       byKeyword restriction = case subject of
-        PaymentSubject.Activating _ stamp _ -> any (\designator -> any (Keyword.Engine.designates designator) stamp) (ManaRestriction.keywordActivations restriction)
+        PaymentSubject.Activating _ _ stamp _ -> any (\designator -> any (Keyword.Engine.designates designator) stamp) (ManaRestriction.keywordActivations restriction)
         _ -> False
       asked = fmap (\(half, oid) -> (half, Filter.contextIn gs (Just pid) Nothing, Projection.viewOfObject oid gs)) paidFor
    in \unit ->
@@ -1980,7 +1980,7 @@ subjectAllows subject manaType = maybe True (Set.member manaType) (narrowingOf s
 -- The types an activation's subject narrows its payment to, if any.
 narrowingOf :: PaymentSubject.PaymentSubject -> Maybe (Set.Set ManaType)
 narrowingOf subject = case subject of
-  PaymentSubject.Activating _ _ types -> types
+  PaymentSubject.Activating _ _ _ types -> types
   _ -> Nothing
 
 -- CR 601.2a before CR 601.2g: a source activated DURING this payment makes its
@@ -3603,7 +3603,9 @@ data Sources = MkSources
     sourceBorrowed :: ObjectId -> [Maybe ManaRestriction.ManaRestriction],
     sourceClauses :: [SpendManaAsThough.SpendManaAsThough],
     -- PlayerEffect.spendManaAsThoughActivating of the board: the clauses about
-    -- activating an ability of that source, past `sourceClauses`.
+    -- activating an ability of that source, past `sourceClauses`. Not
+    -- implemented: a clause about lent abilities (ActivationScope.lentBy),
+    -- since this knows the source and not the ability (#7687).
     sourceActivating :: ObjectId -> [SpendManaAsThough.SpendManaAsThough],
     sourceLifeForMana :: [(ObjectId, Natural, ManaType)],
     sourceLifePayable :: Natural -> Bool,
@@ -3637,7 +3639,7 @@ supplySourcesGiven capacity grants pcs pid gs =
           sourceSupplies = supplies,
           sourceBorrowed = borrowed,
           sourceClauses = clauses,
-          sourceActivating = \oid -> PlayerEffect.spendManaAsThoughActivating rows pid oid gs,
+          sourceActivating = \oid -> PlayerEffect.spendManaAsThoughActivating rows pid oid Nothing gs,
           sourcePlain = plain,
           sourcePlainTotal = Map.fromListWith (+) (concat (Map.elems plain)),
           sourceCeiling = ceilingOf clauses lifeForMana supplies [manaSuppliesGiven 1 capacity watch rewritesOf pcs pid (borrowed oid) oid gs | (oid, routes) <- zip ids supplies, any (\(_, yield, _, _) -> Maybe.isJust (yieldX yield)) routes],
@@ -3702,7 +3704,7 @@ payableResolutionsGiven subject spending swept pcs pid committed committedEnergy
       -- A nested source's subject carries no keyword stamp: Sorcerer Class's
       -- CR 717.2c clause names a class level bar, whose ability sets a level and
       -- so is no mana ability (CR 605.1a).
-      subjects = Set.toList (Set.fromList (subject : fmap (\oid -> PaymentSubject.Activating oid Nothing Nothing) sources))
+      subjects = Set.toList (Set.fromList (subject : fmap (\oid -> PaymentSubject.Activating oid Nothing Nothing Nothing) sources))
       admittedBy = fmap (\each -> (each, admitsUnder each pid gs)) subjects
       -- A unit carrying no CR 106.6 restriction is admitted by every payment
       -- whose ability does not narrow its types (subjectAllows), and those are
@@ -3737,7 +3739,7 @@ payableResolutionsGiven subject spending swept pcs pid committed committedEnergy
       -- is the proof, and its -ahead-of-a-doubling sibling CR 701.10f's walk's.
       activatingAt = Map.filter (not . null) (Map.fromList (fmap (\oid -> (oid, sourceActivating swept oid)) sources))
       servesAt subjectAt position = case Map.lookup position subjectAt of
-        Just (PaymentSubject.Activating oid _ _) | Just extra <- Map.lookup oid activatingAt -> serves . rewriteSupply (clauses <> extra)
+        Just (PaymentSubject.Activating oid _ _ _) | Just extra <- Map.lookup oid activatingAt -> serves . rewriteSupply (clauses <> extra)
         _ -> serves
       pooled = fmap (rewriteSupply clauses . supplyOf admitting) (unitsOf (Game.poolOf pid gs))
       suppliesAt limit oid = manaSuppliesGiven limit capacity (sourceWatch swept) (sourceRewrites swept) pcs pid (sourceBorrowed swept oid) oid gs
@@ -3859,7 +3861,7 @@ payableResolutionsGiven subject spending swept pcs pid committed committedEnergy
               <> concatMap (\(k, (_, option)) -> fmap ((,) k) (optionSupplies option)) ranked,
             concatMap (\(k, (_, option)) -> fmap ((,) k) (optionDemands option)) ranked,
             costPosition,
-            Map.fromList ((costPosition, subject) : fmap (\(k, (oid, _)) -> (k, PaymentSubject.Activating oid Nothing Nothing)) ranked),
+            Map.fromList ((costPosition, subject) : fmap (\(k, (oid, _)) -> (k, PaymentSubject.Activating oid Nothing Nothing Nothing)) ranked),
             sum (fmap (optionLife . snd) taken),
             concatMap (\(k, (_, option)) -> fmap ((,) k) (optionDoublings option)) ranked
           )

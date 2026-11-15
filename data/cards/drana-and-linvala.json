@@ -1,0 +1,186 @@
+{
+  "faces": [
+    {
+      "activationProhibitions": [
+        {
+          "affected": {
+            "type": "Matching",
+            "value": {
+              "type": "And",
+              "value": [
+                {
+                  "type": "HasCardType",
+                  "value": "Creature"
+                },
+                {
+                  "type": "HeldBy",
+                  "value": {
+                    "holder": "Controller",
+                    "relation": "Opponent"
+                  }
+                }
+              ]
+            }
+          }
+        }
+      ],
+      "keywords": [
+        {
+          "type": "Flying"
+        },
+        {
+          "type": "Vigilance"
+        }
+      ],
+      "manaCost": [
+        {
+          "type": "Generic",
+          "value": 1
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "White"
+          }
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "White"
+          }
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "Black"
+          }
+        }
+      ],
+      "name": "Drana and Linvala",
+      "oracleText": "Flying, vigilance\nActivated abilities of creatures your opponents control can't be activated.\nDrana and Linvala has all activated abilities of all creatures your opponents control. You may spend mana as though it were mana of any color to activate those abilities.",
+      "playerAbilities": [
+        {
+          "effect": {
+            "type": "SpendManaAsThough",
+            "value": {
+              "asThough": [
+                {
+                  "type": "Colored",
+                  "value": "White"
+                },
+                {
+                  "type": "Colored",
+                  "value": "Blue"
+                },
+                {
+                  "type": "Colored",
+                  "value": "Black"
+                },
+                {
+                  "type": "Colored",
+                  "value": "Red"
+                },
+                {
+                  "type": "Colored",
+                  "value": "Green"
+                }
+              ],
+              "only": false,
+              "scope": {
+                "type": "Activating",
+                "value": {
+                  "lentBy": {
+                    "type": "And",
+                    "value": [
+                      {
+                        "type": "IsInZone",
+                        "value": "Battlefield"
+                      },
+                      {
+                        "type": "HasCardType",
+                        "value": "Creature"
+                      },
+                      {
+                        "type": "HeldBy",
+                        "value": {
+                          "holder": "Controller",
+                          "relation": "Opponent"
+                        }
+                      }
+                    ]
+                  },
+                  "source": {
+                    "type": "IsSource"
+                  }
+                }
+              },
+              "which": {
+                "type": "Any"
+              }
+            }
+          },
+          "scope": {
+            "type": "You"
+          }
+        }
+      ],
+      "power": {
+        "type": "Literal",
+        "value": 3
+      },
+      "staticAbilities": [
+        {
+          "affected": {
+            "type": "Matching",
+            "value": {
+              "type": "IsSource"
+            }
+          },
+          "modifications": [
+            {
+              "type": "GainCardAbilities",
+              "value": {
+                "cards": {
+                  "type": "And",
+                  "value": [
+                    {
+                      "type": "HasCardType",
+                      "value": "Creature"
+                    },
+                    {
+                      "type": "HeldBy",
+                      "value": {
+                        "holder": "Controller",
+                        "relation": "Opponent"
+                      }
+                    }
+                  ]
+                },
+                "from": "OnTheBattlefield"
+              }
+            }
+          ]
+        }
+      ],
+      "toughness": {
+        "type": "Literal",
+        "value": 4
+      },
+      "typeLine": {
+        "subtypes": [
+          "Angel",
+          "Vampire"
+        ],
+        "supertypes": [
+          "Legendary"
+        ],
+        "types": [
+          "Creature"
+        ]
+      }
+    }
+  ]
+}

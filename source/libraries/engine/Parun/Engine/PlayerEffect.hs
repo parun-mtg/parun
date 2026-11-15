@@ -62,6 +62,7 @@ import qualified Parun.Types.AbilityFacts as AbilityFacts
 import qualified Parun.Types.AbilityKind as AbilityKind
 import qualified Parun.Types.AbilityName as AbilityName
 import qualified Parun.Types.ActivationCriteria as ActivationCriteria
+import qualified Parun.Types.ActivationScope as ActivationScope
 import qualified Parun.Types.ActivePlayerEffect as ActivePlayerEffect
 import qualified Parun.Types.AffectedPlayers as AffectedPlayers
 import qualified Parun.Types.AlternativeActivationCost as AlternativeActivationCost
@@ -4447,21 +4448,33 @@ spendManaAsThoughForGiven general pid subject gs = case subject of
           SpendScope.Activating _ -> False
      in [clause | (source, clause) <- spendManaAsThoughRows pid gs, namesSpell (contextFor (Just pid) source gs) clause]
           <> filter (namesSpell (Filter.contextIn gs (Just pid) Nothing)) (PC.grantedSpendManaAsThough (Projection.project oid gs))
-  PaymentSubject.Activating oid _ _ -> general <> spendManaAsThoughActivating (spendManaAsThoughRows pid gs) pid oid gs
+  PaymentSubject.Activating oid named _ _ -> general <> spendManaAsThoughActivating (spendManaAsThoughRows pid gs) pid oid named gs
   PaymentSubject.Unlocking {} -> general
   PaymentSubject.TurningFaceUp {} -> general
   PaymentSubject.ForNeither -> general
 
 -- CR 609.4b / 602.2b: the clauses among `rows` (spendManaAsThoughRows' own
--- answer) naming an activation of `oid`'s abilities. Lazy in the source's view,
--- so a board with no such clause reads nothing.
-spendManaAsThoughActivating :: [(RowSource.RowSource, SpendManaAsThough.SpendManaAsThough)] -> PlayerId -> ObjectId -> GameState -> [SpendManaAsThough.SpendManaAsThough]
-spendManaAsThoughActivating rows pid oid gs =
+-- answer) naming an activation of `oid`'s ability `named`. Lazy in the source's
+-- view, so a board with no such clause reads nothing.
+--
+-- CR 613.1f: a clause about lent abilities reads the card `named` was lent by
+-- (Binding.acquiredSource), so an ability `oid` has from anywhere else is no
+-- ability it names. data/scenarios'
+-- drana-and-linvala-pays-a-lent-ability-and-not-a-granted-one-as-any-color
+-- proves it.
+spendManaAsThoughActivating :: [(RowSource.RowSource, SpendManaAsThough.SpendManaAsThough)] -> PlayerId -> ObjectId -> Maybe AbilityName.AbilityName -> GameState -> [SpendManaAsThough.SpendManaAsThough]
+spendManaAsThoughActivating rows pid oid named gs =
   let view = Projection.viewOfObject oid gs
+      lender = named >>= Binding.acquiredSource
+      lentBy context filter' = case lender of
+        Just card -> Filter.matches context (Projection.viewOfObject card gs) filter'
+        Nothing -> False
       namesSource (source, clause) = case SpendManaAsThough.scope clause of
         SpendScope.EveryPayment -> False
         SpendScope.Casting _ -> False
-        SpendScope.Activating abilitySource -> Filter.matches (contextFor (Just pid) source gs) view abilitySource
+        SpendScope.Activating (ActivationScope.MkActivationScope abilitySource lent) ->
+          let context = contextFor (Just pid) source gs
+           in Filter.matches context view abilitySource && all (lentBy context) lent
    in fmap snd (filter namesSource rows)
 
 -- CR 701.6a / 613.11: can this spell or ability on the stack be countered

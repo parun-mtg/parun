@@ -81,7 +81,9 @@
               "scope": {
                 "type": "Activating",
                 "value": {
-                  "type": "IsSource"
+                  "source": {
+                    "type": "IsSource"
+                  }
                 }
               },
               "which": {

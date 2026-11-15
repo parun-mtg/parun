@@ -1,6 +1,7 @@
 module Parun.Types.PaymentSubject where
 
 import qualified Data.Set as Set
+import qualified Parun.Types.AbilityName as AbilityName
 import qualified Parun.Types.Keyword as Keyword
 import qualified Parun.Types.ManaType as ManaType
 import qualified Parun.Types.ObjectId as ObjectId
@@ -41,13 +42,17 @@ data PaymentSubject
     -- ability object is what the record belongs on, and Parun.Engine.Cost.pay takes
     -- it as its own argument.
     --
+    -- The name is the ability's own Parun.Types.ActivatedAbility.name, which
+    -- says which card lent it (Parun.Engine.Binding.acquiredSource), and which
+    -- Drana and Linvala's "to activate those abilities" asks about (CR 613.1f).
+    --
     -- The keyword is the ability's own Parun.Types.ActivatedAbility.keyword, which
     -- CR 717.2c's "to gain a Class level" asks about rather than the source.
     --
     -- The set is the mana types the payment may spend, Nothing for any: Throne
     -- of Eldraine's "Spend only mana of the chosen color to activate this
     -- ability" (Parun.Types.ActivationRestriction.SpendOnly).
-    Activating ObjectId.ObjectId (Maybe Keyword.Keyword) (Maybe (Set.Set ManaType.ManaType))
+    Activating ObjectId.ObjectId (Maybe AbilityName.AbilityName) (Maybe Keyword.Keyword) (Maybe (Set.Set ManaType.ManaType))
   | -- | CR 116.2m \/ 709.5e: the PERMANENT whose locked half's unlock cost is
     -- being paid.
     Unlocking ObjectId.ObjectId
