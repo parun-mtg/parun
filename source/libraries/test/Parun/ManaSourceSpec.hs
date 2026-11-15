@@ -646,7 +646,7 @@ offersCast printing board =
 -- Here rather than in ResolveSpec for the reason the mana window is: the
 -- subsystem is mana, and this is the second of the two places mana reaches a
 -- pool.
-burningTreeSpec :: (Monad m, Monad n) => Spec.Spec m n -> Registry.Registry m -> n ()
+burningTreeSpec :: (Monad m) => Spec.Spec m n -> Registry.Registry m -> n ()
 burningTreeSpec s registry = Spec.describe s "Burning-Tree Emissary" $ do
   -- CR 109.5: "add {R}{G}" says "you", which for a triggered ability is the
   -- controller of the object when it triggered -- not the same seat as the active
@@ -776,7 +776,7 @@ retainedGreen = plainGreen {ManaUnit.retention = ManaRetention.UntilEndOfTurn}
 -- alone, "that player" and "an opponent of the controller" name the same seat.
 -- carol takes the upkeep, alice controls Shizuko, and bob is the third seat that
 -- separates them.
-shizukoSpec :: (Monad m, Monad n) => Spec.Spec m n -> Registry.Registry m -> n ()
+shizukoSpec :: (Monad m) => Spec.Spec m n -> Registry.Registry m -> n ()
 shizukoSpec s registry = Spec.describe s "Shizuko, Caller of Autumn" $ do
   -- Gameplay level: the floated mana is ordinary mana, so carol can spend it. The
   -- two boards differ in ONE thing -- whose upkeep the trigger fired on -- and

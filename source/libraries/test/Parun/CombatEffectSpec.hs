@@ -62,6 +62,12 @@ import qualified Parun.Types.Zone as Zone
 -- The helpers below are duplicated from Parun.CombatSpec rather than hoisted into
 -- Parun.Support, which every spec in the tree imports and so rebuilds.
 
+-- The ATTACKING creatures (CR 508.1k), which since #2024 is a different question
+-- from Combat.declaredAttackers -- CR 506.4 removal ends one and leaves the
+-- other standing.
+attackersOf :: GameState.GameState -> [ObjectId.ObjectId]
+attackersOf gs = Map.keys (Combat.Type.attackers (TurnRegisters.combat (GameState.turn gs)))
+
 tapStateOf :: ObjectId.ObjectId -> GameState.GameState -> Maybe TapState.TapState
 tapStateOf oid gs = fmap Object.tapped (Game.lookupObject oid gs)
 
@@ -809,7 +815,7 @@ exampleBoard s registry theirs = do
     [_, swampId, pikerId] -> pure (gs1, swampId, pikerId)
     _ -> Spec.assertFailure s "fixture should have the Bell, the Swamp and the Piker"
 
-vigilanceSpec :: (Monad m, Monad n) => Spec.Spec m n -> Registry.Registry m -> n ()
+vigilanceSpec :: (Monad m) => Spec.Spec m n -> Registry.Registry m -> n ()
 vigilanceSpec s registry = Spec.describe s "Vigilance" $ do
   Spec.it s "CR 702.20b an untapped vigilant attacker can still be blocked" $ do
     -- It is attacking, so it is in the Combat record, tapped or not.

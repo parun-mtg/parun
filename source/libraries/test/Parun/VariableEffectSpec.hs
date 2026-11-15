@@ -773,7 +773,7 @@ perCreatureCountersSpec s registry =
 -- The SWEEPER needs no synthetic, which is why Soul Snuffers is the proving
 -- board's card: Scryfall oracle:/put a -1\/-1 counter on each creature/, same
 -- date, matches eight printings.
-sweptCountersSpec :: (Monad m, Monad n) => Spec.Spec m n -> Registry.Registry m -> n ()
+sweptCountersSpec :: (Monad m) => Spec.Spec m n -> Registry.Registry m -> n ()
 sweptCountersSpec s registry =
   let charge = CounterKind.Named (CounterName.UnsafeMkCounterName (Text.pack "charge"))
       -- The distinct EventGroups the log's -1/-1 placements carry,
