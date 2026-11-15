@@ -7,15 +7,12 @@
 -- Parun.KeywordTriggerSpec, which keeps the machinery.
 module Parun.CounterKeywordTriggerSpec where
 
-import qualified Control.Monad.Trans.State.Strict as State
-import qualified Data.Foldable as Foldable
 import qualified Data.List as List
 import qualified Data.Map.Strict as Map
 import qualified Data.Maybe as Maybe
 import qualified Data.Set as Set
 import qualified Data.Text as Text
 import Numeric.Natural (Natural)
-import Parun.CrewSpec (crewWith)
 import qualified Parun.Engine.Activatable as Activatable
 import qualified Parun.Engine.Activate as Activate
 import qualified Parun.Engine.Binding as Binding
@@ -38,7 +35,6 @@ import qualified Parun.Types.BlockRole as BlockRole
 import qualified Parun.Types.BlockTrigger as BlockTrigger
 import qualified Parun.Types.CardName as CardName
 import qualified Parun.Types.CardType as CardType
-import qualified Parun.Types.Combat as Combat.Type
 import qualified Parun.Types.CombatStep as CombatStep
 import qualified Parun.Types.Cost as Cost.Type
 import qualified Parun.Types.CounterGrouping as CounterGrouping
@@ -46,11 +42,8 @@ import qualified Parun.Types.CounterHolder as CounterHolder
 import qualified Parun.Types.CounterKind as CounterKind
 import qualified Parun.Types.CounterMotion as CounterMotion
 import qualified Parun.Types.CounterTrigger as CounterTrigger
-import qualified Parun.Types.DamageEvent as DamageEvent
-import qualified Parun.Types.DamageKind as DamageKind
 import qualified Parun.Types.Decider as Decider
 import qualified Parun.Types.Designation as Designation
-import qualified Parun.Types.EndingStep as EndingStep
 import qualified Parun.Types.EntryR as EntryR
 import qualified Parun.Types.EntryRewrite as EntryRewrite
 import qualified Parun.Types.Face as Face
@@ -61,7 +54,6 @@ import qualified Parun.Types.Keyword as Keyword.Type
 import qualified Parun.Types.LastKnown as LastKnown
 import qualified Parun.Types.LeavesTrigger as LeavesTrigger
 import qualified Parun.Types.LeavingPermanent as LeavingPermanent
-import qualified Parun.Types.LoggedEvent as LoggedEvent
 import qualified Parun.Types.ManaCost as ManaCost
 import qualified Parun.Types.ManaSymbol as ManaSymbol
 import qualified Parun.Types.Object as Object
@@ -69,7 +61,6 @@ import qualified Parun.Types.ObjectId as ObjectId
 import qualified Parun.Types.OptionalDecision as OptionalDecision
 import qualified Parun.Types.PaymentDecision as PaymentDecision
 import qualified Parun.Types.Phase as Phase
-import qualified Parun.Types.PlayerCounterKind as PlayerCounterKind
 import qualified Parun.Types.PlayerId as PlayerId
 import qualified Parun.Types.PlayerRef as PlayerRef
 import qualified Parun.Types.PlayerRelation as PlayerRelation
@@ -115,24 +106,6 @@ renownSpec s registry =
               Spec.assertEqWith s "damage is dealt" (S.lifeOf S.bob fought) (Just 16)
               Spec.assertEqWith s "but no counters until the trigger resolves" (countersOn maulers fought) Map.empty
               Spec.assertEqWith s "and no designation either" (renownedness maulers fought) (Just False)
-            _ -> Spec.assertFailure s "fixture should give alice a Rhox Maulers"
-        -- CR 702.112b's "it stays renowned UNTIL IT LEAVES THE BATTLEFIELD": the
-        -- designation is per-incarnation state, so CR 400.7's forgetting is what
-        -- ends it and a Maulers that dies and returns must connect again.
-        --
-        -- Asserted on Object.newIncarnation directly, as Parun.RoomSpec's unlocked
-        -- designations are: nothing writes this field on an entry, so a bounce
-        -- would read the same forgetting through more machinery. Parun.SetupSpec's
-        -- CR 400.7 case does NOT cover it -- `forgotten` asks whether the
-        -- forgetting is idempotent, which is blind to a field it never touches.
-        Spec.it s "CR 702.112b the designation does not survive CR 400.7" $ do
-          (gs, mine, _) <- board ["Rhox Maulers"] []
-          case mine of
-            [maulers] -> case Game.lookupObject maulers (S.runCombat S.aggressiveAnswer gs) of
-              Nothing -> Spec.assertFailure s "expected to find the Maulers"
-              Just obj -> do
-                Spec.assertEqWith s "the control: this incarnation is renowned" (Set.member Designation.Renowned (Object.designations obj)) True
-                Spec.assertEqWith s "the next one is not" (Set.member Designation.Renowned (Object.designations (Object.newIncarnation obj))) False
             _ -> Spec.assertFailure s "fixture should give alice a Rhox Maulers"
         -- CR 702.112c: "if a creature has multiple instances of renown, each
         -- triggers separately". Asserted of the MINT, as poisonous' multiplicity
@@ -214,22 +187,6 @@ arborColossusSpec s registry =
               Spec.assertEqWith s "and it is monstrous" (monstrousness colossus after) (Just True)
               Spec.assertBool s (not (S.onBattlefield maiden after)) "the targeted flier was destroyed"
               Spec.assertBool s (S.onBattlefield piker after) "and the ground creature was not"
-        -- CR 701.37a's "if this permanent isn't monstrous": the SECOND activation
-        -- on the same board does nothing, so the trigger never fires and bob's
-        -- second flier lives. The same mana, the same seats, the same creatures --
-        -- the one difference is that the Colossus is already monstrous.
-        Spec.it s "CR 701.37a a second monstrosity marks nothing, so nothing triggers" $ do
-          (colossus, maiden, _, gs) <- board pure
-          maidenPrinting <- S.printingOf s registry "Bird Maiden"
-          case monstrosity colossus maiden gs of
-            Left n -> Spec.assertFailure s ("expected one activatable monstrosity ability, got " <> show n)
-            Right once -> do
-              let (second, withSecond) = S.addPermanent maidenPrinting S.bob once
-              case monstrosity colossus second withSecond of
-                Left n -> Spec.assertFailure s ("expected the monstrous Colossus to stay activatable, got " <> show n)
-                Right twice -> do
-                  Spec.assertEqWith s "still three counters, not six" (plusOnes colossus twice) 3
-                  Spec.assertBool s (S.onBattlefield second twice) "the second flier survived, nothing having become monstrous"
         -- The designation is LOAD-BEARING in the match, not just the event's shape.
         -- Valeron Wardens {2}{G} 1/3 watches "whenever a creature you control
         -- becomes renowned" -- the same TriggerCondition constructor with Renowned
@@ -253,13 +210,12 @@ arborColossusSpec s registry =
 --
 -- Hydra Broodmaster {4}{G}{G} 7/7 -- "{X}{X}{G}: Monstrosity X" and "When this
 -- creature becomes monstrous, create X X/X green Hydra creature tokens" -- reads
--- the X back TWICE, for the token count and for the tokens' own box. Both are
--- asserted, since a reading that re-announced X or counted the +1/+1 counters
--- would get one of them right on its own.
-hydraBroodmasterSpec :: (Monad m, Monad n) => Spec.Spec m n -> Registry.Registry m -> n ()
+-- the X back TWICE, for the token count and for the tokens' own box:
+-- data/scenarios/counter-keyword-trigger/cr-701-37c-monstrosity-2-makes-two-2-2-hydras.json.
+-- Kept here is the second activation, whose recorded X no card reads back.
+hydraBroodmasterSpec :: (Monad m) => Spec.Spec m n -> Registry.Registry m -> n ()
 hydraBroodmasterSpec s registry =
   let hydraToken = CardName.MkCardName (Text.pack "Hydra Token")
-      monstrousness oid gs = fmap (Set.member Designation.Monstrous . Object.designations) (Game.lookupObject oid gs)
       -- CR 701.37c's record itself, read off the permanent rather than inferred
       -- from what the trigger made.
       recordedX oid gs = Game.lookupObject oid gs >>= Map.lookup Designation.Monstrous . Object.designationValues
@@ -295,18 +251,6 @@ hydraBroodmasterSpec s registry =
         forest <- S.printingOf s registry "Forest"
         pure (S.addPermanent broodmasterPrinting S.alice (S.landsInPlay forest 12))
    in Spec.describe s "Hydra Broodmaster" $ do
-        -- The proving test.
-        Spec.it s "CR 701.37c monstrosity 2 makes TWO 2/2 Hydras" $ do
-          (broodmaster, gs) <- board
-          Spec.assertEqWith s "no Hydra token to begin with" (tokenSizes gs) []
-          case monstrosity 2 broodmaster gs of
-            Left n -> Spec.assertFailure s ("expected one activatable monstrosity ability, got " <> show n)
-            Right after -> do
-              Spec.assertEqWith s "two tokens, each a 2/2: the announced X is both the count and the box" (tokenSizes after) [Just (2, 2), Just (2, 2)]
-              Spec.assertEqWith s "two +1/+1 counters, so the counters read the same X" (plusOnes broodmaster after) 2
-              Spec.assertEqWith s "which makes the Broodmaster a 9/9" (S.powerToughnessOf broodmaster after) (Just (9, 9))
-              Spec.assertEqWith s "and it is monstrous" (monstrousness broodmaster after) (Just True)
-              Spec.assertEqWith s "with 2 recorded as the X it became monstrous with" (recordedX broodmaster after) (Just 2)
         -- CR 701.37a's "if this permanent isn't monstrous" and CR 701.37b's "it
         -- stays monstrous": the second activation announces a DIFFERENT X, pays
         -- for it, and does nothing -- so no trigger, no tokens, and the recorded
@@ -334,63 +278,29 @@ hydraBroodmasterSpec s registry =
 -- Vanishing 2 rather than a larger printing (Calciderm's 4) because two is the
 -- smallest N that tells the two triggers apart: the first upkeep must remove one
 -- and NOT sacrifice, the second must do both.
-vanishingSpec :: (Monad m, Monad n) => Spec.Spec m n -> Registry.Registry m -> n ()
-vanishingSpec s registry =
-  let upkeep = Phase.Beginning BeginningStep.Upkeep
-      -- One upkeep for `pid`, run to the end of the priority loop, so the
-      -- trigger is gathered (CR 603.3) and resolved.
-      upkeepOf pid gs =
-        let began =
-              Event.recordEvent
-                (GameEvent.StepBegan (StepBegan.MkStepBegan upkeep pid))
-                ( gs
-                    { GameState.turn =
-                        (GameState.turn gs)
-                          { TurnRegisters.phase = upkeep,
-                            TurnRegisters.activePlayer = pid
-                          }
-                    }
-                )
-            settled = snd (Engine.runGamePure S.identityAnswer began Engine.settleForPriority)
-         in (settled, snd (Engine.runGamePure S.identityAnswer settled Engine.priorityLoop))
-      times = S.counterOf CounterKind.Time
-   in Spec.describe s "Vanishing" $ do
-        -- CR 603.4's intervening "if": rule 702.63a's second ability does not
-        -- trigger AT ALL on an upkeep where the permanent has no time counter, so
-        -- nothing reaches the stack. S.addPermanent is what reaches this board --
-        -- it places the wurm without running rule 702.63a's entry replacement, the
-        -- position a card that lost its counters some other way would be in.
-        --
-        -- It also pins rule 702.63a's THIRD ability to the REMOVAL rather than to
-        -- the count: a wurm sitting at zero is not sacrificed, because no last
-        -- counter came off.
-        Spec.it s "CR 603.4 a wurm with no time counters neither triggers nor is sacrificed" $ do
-          wurm <- S.printingOf s registry "Waning Wurm"
-          let (oid, gs) = S.addPermanent wurm S.alice (Setup.emptyGame S.bothPlayers)
-              (settled, resolved) = upkeepOf S.alice gs
-          Spec.assertEqWith s "it really has none" (times oid gs) 0
-          Spec.assertEqWith s "nothing on the stack" (TurnRegisters.stack (GameState.turn settled)) []
-          Spec.assertBool s (S.onBattlefield oid resolved) "and it survives its own upkeep"
-        -- CR 702.63c: "if a permanent has multiple instances of vanishing, each
-        -- works separately". Asserted of BOTH mints, as renown's multiplicity is
-        -- asserted of one, no card in the pool printing vanishing twice.
-        --
-        -- Spelled out rather than compared against Keyword.vanishing itself: an
-        -- assertion written that way says only that two copies are two copies,
-        -- and a mint that dropped one of the pair would repair it silently.
-        Spec.it s "CR 702.63c each instance is its own three abilities" $ do
-          let counted = TriggerCondition.StepBegins (StepBegins.MkStepBegins (Phase.Beginning BeginningStep.Upkeep) Nothing (TurnScope.PlayersTurn (PlayerRef.Relative PlayerRelation.You)))
-              emptied = TriggerCondition.CountersChange (CounterTrigger.MkCounterTrigger (WhichCounters.OfKind CounterKind.Time) CounterMotion.Removed CounterHolder.Self (Just 0) CounterGrouping.EachPermanent TriggerFrequency.EveryTime)
-          Spec.assertEqWith
-            s
-            "vanishing 2 held twice mints four triggers, two of each kind"
-            (fmap TriggeredAbility.condition (Keyword.triggeredAbilitiesOf (Map.singleton (Keyword.Type.Vanishing (Just 2)) 2)))
-            [counted, emptied, counted, emptied]
-          Spec.assertEqWith
-            s
-            "and two entry rewrites of two time counters each, which is what makes them add up"
-            (Keyword.mintedReplacementsFor (Keyword.Type.Vanishing (Just 2)) 2)
-            (replicate 2 (ReplacementEffect.EntryR (EntryR.MkEntryR Filter.Type.IsSource (EntryRewrite.WithCounters (WithCounters.one CounterKind.Time (Quantity.Type.Literal 2))))))
+vanishingSpec :: (Monad m) => Spec.Spec m n -> Registry.Registry m -> n ()
+vanishingSpec s _ =
+  Spec.describe s "Vanishing" $ do
+    -- CR 702.63c: "if a permanent has multiple instances of vanishing, each
+    -- works separately". Asserted of BOTH mints, as renown's multiplicity is
+    -- asserted of one, no card in the pool printing vanishing twice.
+    --
+    -- Spelled out rather than compared against Keyword.vanishing itself: an
+    -- assertion written that way says only that two copies are two copies,
+    -- and a mint that dropped one of the pair would repair it silently.
+    Spec.it s "CR 702.63c each instance is its own three abilities" $ do
+      let counted = TriggerCondition.StepBegins (StepBegins.MkStepBegins (Phase.Beginning BeginningStep.Upkeep) Nothing (TurnScope.PlayersTurn (PlayerRef.Relative PlayerRelation.You)))
+          emptied = TriggerCondition.CountersChange (CounterTrigger.MkCounterTrigger (WhichCounters.OfKind CounterKind.Time) CounterMotion.Removed CounterHolder.Self (Just 0) CounterGrouping.EachPermanent TriggerFrequency.EveryTime)
+      Spec.assertEqWith
+        s
+        "vanishing 2 held twice mints four triggers, two of each kind"
+        (fmap TriggeredAbility.condition (Keyword.triggeredAbilitiesOf (Map.singleton (Keyword.Type.Vanishing (Just 2)) 2)))
+        [counted, emptied, counted, emptied]
+      Spec.assertEqWith
+        s
+        "and two entry rewrites of two time counters each, which is what makes them add up"
+        (Keyword.mintedReplacementsFor (Keyword.Type.Vanishing (Just 2)) 2)
+        (replicate 2 (ReplacementEffect.EntryR (EntryR.MkEntryR Filter.Type.IsSource (EntryRewrite.WithCounters (WithCounters.one CounterKind.Time (Quantity.Type.Literal 2))))))
 
 -- CR 702.63b, vanishing printed with NO number: the two triggers and no entry
 -- replacement at all. Tidewalker {2}{U} Creature -- Elemental */* is the card --
@@ -887,239 +797,6 @@ modularSpec s registry =
             (Keyword.mintedReplacementsFor (Keyword.Type.Modular (Just 2)) 2)
             (replicate 2 (ReplacementEffect.EntryR (EntryR.MkEntryR Filter.Type.IsSource (EntryRewrite.WithCounters (WithCounters.one CounterKind.PlusOnePlusOne (Quantity.Type.Literal 2))))))
 
--- CR 603.2c's FIRST sentence on the same event: "whenever ONE OR MORE artifact
--- creatures you control deal combat damage to a player" fires once for the CR
--- 510.2 step however many connected --
--- TriggerCondition.PermanentsDealDamageToPlayer, the batch twin of the
--- condition data/scenarios/counter-keyword-trigger proves.
---
--- Pia Nalaar, Chief Mechanic {G}{U}{R} Legendary Creature -- Human Artificer 2/4
--- is the card (data/cards/pia-nalaar-chief-mechanic.json): "Whenever one or more
--- artifact creatures you control deal combat damage to a player, you get {E}{E}."
--- Name, cost, type line and Oracle text checked against Scryfall 2026-09-06.
--- Her second ability -- "at the beginning of your end step, you may pay one or
--- more {E}. If you do, create an X/X colorless Vehicle artifact token named
--- Nalaar Aetherjet with flying and crew 2, where X is the amount of {E} paid
--- this way" -- is the last group below, and is a token whose printed box reads
--- an amount an earlier effect of the same resolution bound (CR 111.3).
---
--- The discrimination is the energy count with two artifact creatures connecting:
--- {E}{E} is the batch reading, {E}{E}{E}{E} is the per-damager one Tovolar's
--- condition would give, and none is silence. Pia attacks too and is no artifact,
--- which is the Filter doing its work inside the same batch. The pool's artifact
--- creatures are Palladium Myr (2/2) and Spined Thopter (2/1 flying).
---
--- What makes the two connections ONE trigger event is Parun.Engine.Damage.dealWave
--- bracketing the step as one Parun.Types.EventGroup (CR 510.2), which the group
--- count pins as the precondition: were each DamageDealt its own group, "once per
--- group" and "once per damager" would coincide and the {E}{E} would prove nothing.
-piaNalaarSpec :: (Monad m, Monad n) => Spec.Spec m n -> Registry.Registry m -> n ()
-piaNalaarSpec s registry =
-  let board mine = do
-        ours <- mapM (S.printingOf s registry) mine
-        let (gs, _, _) = S.combatBoardOf ours []
-        pure (S.runCombat S.aggressiveAnswer gs)
-      energy = S.playerCounterOf PlayerCounterKind.Energy S.alice
-      -- The distinct EventGroups the log's combat damage carries.
-      combatDamageGroups gs =
-        Set.fromList
-          ( Maybe.mapMaybe
-              ( \logged -> case LoggedEvent.event logged of
-                  GameEvent.DamageDealt ev | DamageEvent.kind ev == DamageKind.Combat -> Just (LoggedEvent.group logged)
-                  _ -> Nothing
-              )
-              (Foldable.toList (TurnRegisters.events (GameState.turn gs)))
-          )
-   in Spec.describe s "Batched combat damage" $ do
-        -- The proving test: two artifact creatures and Pia connect in one step.
-        Spec.it s "CR 603.2c two artifact creatures connecting in one step give {E}{E}, not {E}{E}{E}{E}" $ do
-          after <- board ["Pia Nalaar, Chief Mechanic", "Palladium Myr", "Spined Thopter"]
-          Spec.assertEqWith s "alice got {E}{E} for the step, not {E}{E}{E}{E}" (energy after) 2
-          Spec.assertEqWith s "all three connected, for six" (S.lifeOf S.bob after) (Just 14)
-          Spec.assertEqWith s "CR 510.2: the three damage events were one event group" (Set.size (combatDamageGroups after)) 1
-        -- Her SECOND ability, which is CR 111.3's defined characteristic value
-        -- read off a binding: the token's printed box is a Quantity.InSlot
-        -- naming the amount Effect.PayAnyEnergy bound one clause earlier.
-        --
-        -- The board separates every other reading of "the amount of {E} paid
-        -- this way": alice banks five (two off the combat trigger and three
-        -- placed) and pays THREE, so 5 is what she had, 2 is what she has left,
-        -- 2/4 is Pia's own box, and only 3 is what she paid.
-        --
-        -- CREWED before the box is read, because CR 208.3 gives a noncreature
-        -- permanent no power or toughness however its printed box reads -- so an
-        -- uncrewed Vehicle answers Nothing under every value of X and could not
-        -- tell them apart. The Hill Giant is the crewer, placed untapped after
-        -- the combat that tapped everything else alice controls.
-        Spec.it s "CR 111.3 the Aetherjet's X/X is the energy PAID, not the energy held" $ do
-          after <- board ["Pia Nalaar, Chief Mechanic", "Palladium Myr", "Spined Thopter"]
-          giant <- S.printingOf s registry "Hill Giant"
-          let resolved = payAtEndStep 3 (S.addPlayerCounter PlayerCounterKind.Energy 3 S.alice after)
-              (_, withCrewer) = S.addPermanent giant S.alice resolved
-          case aetherjetIds resolved of
-            [jet] -> do
-              let crewed =
-                    crewWith
-                      S.identityAnswer
-                      jet
-                      ( withCrewer
-                          { GameState.turn =
-                              (GameState.turn withCrewer)
-                                { TurnRegisters.priority = Just S.alice
-                                }
-                          }
-                      )
-              Spec.assertEqWith s "crewed, a 3/3: three {E} were paid of the five she held" (S.powerToughnessOf jet crewed) (Just (3, 3))
-              Spec.assertEqWith s "CR 208.3 and uncrewed it had none, whatever its box said" (S.powerToughnessOf jet resolved) Nothing
-            other -> Spec.assertFailure s ("expected exactly one Aetherjet, got " <> show (length other))
-          Spec.assertEqWith s "and the three really left her pool" (energy resolved) 2
-        -- The twin, differing in the two {E} alone: the same trigger on the same
-        -- board is a real choice, so it IS raised, and the amount it binds is the
-        -- token's box. Whether the box reads the energy paid or the energy held
-        -- is the neighbouring case's discrimination, not this one's.
-        Spec.it s "CR 107.14 two {E} makes it a real choice, and the Aetherjet is a 2/2" $ do
-          after <- board ["Pia Nalaar, Chief Mechanic"]
-          giant <- S.printingOf s registry "Hill Giant"
-          let (resolved, asked) = payAtEndStepCounting 2 (S.addPlayerCounter PlayerCounterKind.Energy 2 S.alice after)
-              (_, withCrewer) = S.addPermanent giant S.alice resolved
-          case aetherjetIds resolved of
-            [jet] -> do
-              let crewed =
-                    crewWith
-                      S.identityAnswer
-                      jet
-                      ( withCrewer
-                          { GameState.turn =
-                              (GameState.turn withCrewer)
-                                { TurnRegisters.priority = Just S.alice
-                                }
-                          }
-                      )
-              Spec.assertEqWith s "crewed, a 2/2: both {E} were paid" (S.powerToughnessOf jet crewed) (Just (2, 2))
-            other -> Spec.assertFailure s ("expected exactly one Aetherjet, got " <> show (length other))
-          Spec.assertEqWith s "and the two really left her pool" (energy resolved) 0
-          Spec.assertEqWith s "she was asked exactly once" asked 1
-
--- Pia's end-step trigger, driven to its answer: alice's end step begins, the
--- trigger is put on the stack, and it resolves with `n` paid to
--- Prompt.ChoosePaidEnergy. The amount is PINNED rather than left to
--- S.identityAnswer, which answers the same way on both boards below and so
--- could not tell paying three from declining.
-payAtEndStep :: Natural -> GameState.GameState -> GameState.GameState
-payAtEndStep n = fst . payAtEndStepCounting n
-
--- The same drive, also reporting how many times Prompt.ChoosePaidEnergy was
--- raised. A pure answerer cannot say whether it was called, and two boards that
--- differ only in whether the question was worth asking look alike on the board
--- itself, so the count is threaded through State the way Parun.ManaSpec's
--- countingAnswer does.
-payAtEndStepCounting :: Natural -> GameState.GameState -> (GameState.GameState, Int)
-payAtEndStepCounting n gs =
-  let endStep = Phase.Ending EndingStep.EndStep
-      begun =
-        Event.recordEvent
-          (GameEvent.StepBegan (StepBegan.MkStepBegan endStep S.alice))
-          ( gs
-              { GameState.turn =
-                  (GameState.turn gs)
-                    { TurnRegisters.phase = endStep
-                    }
-              }
-          )
-      counting :: Prompt.Prompt r -> State.State Int r
-      counting p = case p of
-        Prompt.ChoosePaidEnergy {} -> do
-          State.modify' (+ 1)
-          pure n
-        _ -> pure (S.identityAnswer p)
-      driven = do
-        (_, settled) <- Engine.runGame counting begun Engine.settleForPriority
-        (_, resolved) <- Engine.runGame counting settled Stack.resolveTop
-        pure (S.settleSba resolved)
-   in State.runState driven 0
-
--- The tokens named for Pia's Vehicle. By NAME rather than by S.tokensOf alone,
--- so a token minted by anything else could not be mistaken for hers.
-aetherjetIds :: GameState.GameState -> [ObjectId.ObjectId]
-aetherjetIds gs =
-  filter
-    (\oid -> fmap Face.name (Game.faceOf oid gs) == Just (CardName.MkCardName (Text.pack "Nalaar Aetherjet")))
-    (S.tokensOf gs)
-
--- What the filtered condition is FOR: a payload that aims at the creature that
--- dealt the damage (Parun.Engine.Binding.combatDamager) rather than at the bearer
--- -- Aragorn, Hornburg Hero {1}{R}{G}{W} Legendary Creature -- Human Soldier 4/4,
--- "attacking creatures you control have first strike and renown 1" and "whenever
--- a renowned creature you control deals combat damage to a player, double the
--- number of +1/+1 counters on it".
---
--- Three capabilities meet here, and each has a way to fail that the counts below
--- tell apart: the slot naming the damager (aim it at the source and Aragorn takes
--- the counters), Quantity.AgainstSlot reading the damager's counters (read the
--- source's and the number is 0), and Filter.HasDesignation rejecting a candidate that
--- is not renowned yet (drop it and the Piker doubles too).
---
--- Aurelia, the Warleader supplies the second combat phase, as she does in
--- renownSpec: the doubling needs a creature that was ALREADY renowned when it
--- connected, and CR 603.2 checks this condition against the damage event itself,
--- where renown's own counters arrive only as ITS trigger resolves -- so one
--- connection can never both renown a creature and double it.
---
--- The doubling itself is CR 701.10e, and this group is what proves it: "as many
--- of those counters as that player or permanent already has" is the 2 -> 4 below.
--- The rule's sentence is about A kind, the one PutCounters carries. A card's
--- "each kind of counter" quantifies over kinds instead, which Parun.PutCounterSpec
--- proves with Vorel of the Hull Clade.
---
--- Aragorn arrives BETWEEN the two combats so the Maulers takes its two counters
--- from printed renown 2 alone: with him out on the first swing the Maulers would
--- hold renown 2 and a granted renown 1 at once, and CR 702.112c leaves which
--- resolves first to its controller.
-aragornSpec :: (Monad m) => Spec.Spec m n -> Registry.Registry m -> n ()
-aragornSpec s registry =
-  let board mine theirs = do
-        ours <- mapM (S.printingOf s registry) mine
-        yours <- mapM (S.printingOf s registry) theirs
-        pure (S.combatBoardOf ours yours)
-      plan :: [ObjectId.ObjectId] -> Prompt.Prompt r -> r
-      plan attackers p = case p of
-        Prompt.DeclareAttackers _ _ ids -> filter (`elem` attackers) ids
-        _ -> S.aggressiveAnswer p
-      countersOn oid gs = maybe Map.empty Object.counters (Game.lookupObject oid gs)
-      renownedness oid gs = fmap (Set.member Designation.Renowned . Object.designations) (Game.lookupObject oid gs)
-   in Spec.describe s "Doubling a damager's counters" $ do
-        -- The proving test. 2 -> 4 rather than 2 -> 3, which is what separates
-        -- "double" from "add one", and 4 rather than 2, which is what separates
-        -- reading the damager's counters from reading the bearer's.
-        Spec.it s "CR 702.112b whole card: a renowned creature's counters double when it connects" $ do
-          (gs, mine, _) <- board ["Rhox Maulers", "Aurelia, the Warleader", "Goblin Piker"] []
-          aragorn <- S.printingOf s registry "Aragorn, Hornburg Hero"
-          case mine of
-            [maulers, aurelia, piker] -> do
-              let first = S.runToStep (Phase.Combat CombatStep.EndOfCombat) (plan [maulers, aurelia]) gs
-                  (hero, staged) = S.addPermanent aragorn S.alice first
-                  loaded = S.addCounter CounterKind.PlusOnePlusOne 3 piker staged
-                  second = S.runToStep (Phase.Combat CombatStep.DeclareAttackers) (plan [maulers, piker]) loaded
-                  after = S.runToStep (Phase.Combat CombatStep.EndOfCombat) (plan [maulers, piker]) second
-              Spec.assertEqWith s "the first combat connected for seven" (S.lifeOf S.bob first) (Just 13)
-              Spec.assertEqWith s "renown 2 alone renowned the Maulers" (countersOn maulers first) (Map.singleton CounterKind.PlusOnePlusOne 2)
-              Spec.assertEqWith s "the second phase really ran a declaration" (TurnRegisters.phase (GameState.turn second)) (Phase.Combat CombatStep.DeclareAttackers)
-              Spec.assertEqWith s "and the second combat connected for eleven" (S.lifeOf S.bob after) (Just 2)
-              Spec.assertEqWith s "so the Maulers doubled to four, not three" (countersOn maulers after) (Map.singleton CounterKind.PlusOnePlusOne 4)
-              Spec.assertEqWith s "making it an 8/8" (S.powerToughnessOf maulers after) (Just (8, 8))
-              -- CR 702.112b's designation read of a CANDIDATE: the Piker carries
-              -- three counters from outside renown and was NOT renowned when it
-              -- dealt its damage, so Aragorn's ability never triggered for it. The
-              -- fourth counter is the renown 1 he granted it, which becomes
-              -- renowned only as that trigger resolves -- 4 rather than the 7 a
-              -- filter without the designation conjunct would leave.
-              Spec.assertEqWith s "the Piker was renowned by that same damage" (renownedness piker after) (Just True)
-              Spec.assertEqWith s "but took one counter rather than doubling" (countersOn piker after) (Map.singleton CounterKind.PlusOnePlusOne 4)
-              -- The slot: had the payload aimed at CR 113.7a's source, these
-              -- counters would be here instead.
-              Spec.assertEqWith s "and Aragorn himself took none" (countersOn hero after) Map.empty
-            _ -> Spec.assertFailure s "fixture should give alice a Maulers, an Aurelia and a Piker"
-
 -- CR 702.25a's flanking, which rule 702 states as a triggered
 -- ability, and with it CR 509.3d -- "becomes blocked by a creature", the one
 -- block-trigger form that fires once per BLOCKER and names it.
@@ -1298,38 +975,14 @@ afflictSpec s _ =
 -- permanents: a creature that attacked only a planeswalker attacked no opponent.
 -- The split declaration, where the bonus is 2, is
 -- data/scenarios/counter-keyword-trigger/cr-702-121a-attacking-both-opponents-makes-wings-of-the-guard-3-3.json.
-meleeSpec :: (Monad m, Monad n) => Spec.Spec m n -> Registry.Registry m -> n ()
-meleeSpec s registry =
-  let -- Attacks `who` with everything, aiming every attack at the player.
-      attacking :: PlayerId.PlayerId -> Prompt.Prompt r -> r
-      attacking who p = case p of
-        Prompt.ChooseDefender {} -> who
-        Prompt.ChooseAttackTarget {} -> S.attackTo who p
-        _ -> S.aggressiveAnswer p
-      -- alice fields the Bird (plus whatever else `mine` names); bob and carol
-      -- each field a Goblin Piker, so either is a legal defending player.
-      board mine = do
-        wings <- S.printingOf s registry "Wings of the Guard"
-        piker <- S.printingOf s registry "Goblin Piker"
-        pure (S.threePlayerCombat (wings : mine) [piker] [piker])
-   in Spec.describe s "Melee" $ do
-        -- CR 611.2d: the bonus is fixed as the ability resolves, and CR 511.3
-        -- clears the combat record at end of combat -- so a pump that re-read the
-        -- record live would shrink back to +0/+0 the moment combat ended, while
-        -- the printed duration runs to end of turn.
-        Spec.it s "CR 611.2d the +1/+1 outlives the combat record it was computed from" $ do
-          (gs, ours, _, _) <- board []
-          case ours of
-            [wings] -> do
-              let after = S.runToStep Phase.PostcombatMain (attacking S.bob) gs
-              Spec.assertEqWith s "CR 511.3 the record is cleared" (Combat.Type.declaredAttacked (TurnRegisters.combat (GameState.turn after))) Set.empty
-              Spec.assertEqWith s "and the Bird is still a 2/2" (S.powerToughnessOf wings after) (Just (2, 2))
-            _ -> Spec.assertFailure s "fixture should give alice one Bird"
-        -- CR 702.121b: two instances are two abilities, so two triggers and two
-        -- bonuses. Asserted at the mint, no card in the pool having melee twice.
-        Spec.it s "CR 702.121b each instance triggers separately" $ do
-          Spec.assertEqWith s "melee held twice is two abilities" (Keyword.triggeredAbilitiesOf (Map.singleton Keyword.Type.Melee 2)) [Keyword.melee, Keyword.melee]
-          Spec.assertEqWith s "and once is one" (Keyword.triggeredAbilitiesOf (Map.singleton Keyword.Type.Melee 1)) [Keyword.melee]
+meleeSpec :: (Monad m) => Spec.Spec m n -> Registry.Registry m -> n ()
+meleeSpec s _ =
+  Spec.describe s "Melee" $ do
+    -- CR 702.121b: two instances are two abilities, so two triggers and two
+    -- bonuses. Asserted at the mint, no card in the pool having melee twice.
+    Spec.it s "CR 702.121b each instance triggers separately" $ do
+      Spec.assertEqWith s "melee held twice is two abilities" (Keyword.triggeredAbilitiesOf (Map.singleton Keyword.Type.Melee 2)) [Keyword.melee, Keyword.melee]
+      Spec.assertEqWith s "and once is one" (Keyword.triggeredAbilitiesOf (Map.singleton Keyword.Type.Melee 1)) [Keyword.melee]
 
 -- CR 702.105 dethrone, whose CONDITION is the whole keyword -- the first minted
 -- trigger narrowed by a fact about the game rather than about the declaration --
@@ -1428,8 +1081,6 @@ spec s registry = Spec.describe s "Parun.Engine.Trigger" $ do
   fadingSpec s registry
   cumulativeUpkeepSpec s registry
   modularSpec s registry
-  piaNalaarSpec s registry
-  aragornSpec s registry
   afflictSpec s registry
   meleeSpec s registry
   dethroneSpec s registry
