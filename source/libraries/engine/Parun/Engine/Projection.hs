@@ -5220,6 +5220,7 @@ quantityReads q = case q of
   Quantity.Type.DesignationValue _ -> Set.empty
   Quantity.Type.StoredResultsOfSameValue -> Set.empty
   Quantity.Type.ClassLevel -> Set.empty
+  Quantity.Type.UnlockedDoors -> Set.empty
   Quantity.Type.WasForetold -> Set.empty
   Quantity.Type.TributeWasPaid -> Set.empty
   Quantity.Type.TimesPaid _ -> Set.empty
@@ -5284,6 +5285,8 @@ aggregationReads a = case a of
   Aggregation.Distinct DistinctOf.PlaneswalkerTypes -> Set.singleton Subtypes
   -- CR 109.3 lists no counters among the characteristics, HasCounters' reason.
   Aggregation.Distinct DistinctOf.CounterKinds -> Set.empty
+  -- CR 201.1's names have no Aspect, HasName's reason in filterReads.
+  Aggregation.Distinct DistinctOf.Names -> Set.empty
   Aggregation.MostSharing trait -> traitReads trait
   -- CR 201.1's names have no Aspect, HasName's reason in filterReads.
   Aggregation.DistinctNames -> Set.empty

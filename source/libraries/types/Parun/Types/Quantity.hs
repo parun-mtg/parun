@@ -173,6 +173,9 @@ data Quantity
   | -- | CR 717.2b: the level of the object this quantity is evaluated against;
     -- no level reads 1 (CR 717.2d, Parun.Types.ClassLevel.defaulted).
     ClassLevel
+  | -- | CR 709.5c / 709.5j: how many unlocked doors the object this quantity is
+    -- evaluated against has, 0 to 2.
+    UnlockedDoors
   | -- | CR 702.143c: 1 if the spell this quantity is evaluated against was a
     -- foretold card before it was cast, whatever cost it was cast for, else 0.
     WasForetold

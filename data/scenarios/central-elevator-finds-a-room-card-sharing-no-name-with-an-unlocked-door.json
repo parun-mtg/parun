@@ -1,0 +1,214 @@
+{
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "battlefield": [
+          {
+            "card": "Central Elevator",
+            "label": "elevator"
+          },
+          {
+            "card": "Smoky Lounge",
+            "label": "lounge"
+          },
+          {
+            "card": "Dazzling Theater",
+            "label": "theater"
+          },
+          {
+            "card": "Mountain",
+            "label": "m1"
+          },
+          {
+            "card": "Mountain",
+            "label": "m2"
+          },
+          {
+            "card": "Mountain",
+            "label": "m3"
+          },
+          {
+            "card": "Island",
+            "label": "i1"
+          },
+          {
+            "card": "Island",
+            "label": "i2"
+          },
+          {
+            "card": "Island",
+            "label": "i3"
+          },
+          {
+            "card": "Island",
+            "label": "i4"
+          }
+        ],
+        "library": [
+          {
+            "card": "Smoky Lounge",
+            "label": "lounge2"
+          },
+          {
+            "card": "Central Elevator",
+            "label": "elevator2"
+          },
+          {
+            "card": "Grizzly Bears",
+            "label": "bears2"
+          },
+          {
+            "card": "Dazzling Theater",
+            "label": "theater2"
+          }
+        ],
+        "name": "alice"
+      },
+      {
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ],
+        "name": "bob"
+      }
+    ],
+    "step": "PrecombatMain"
+  },
+  "description": "CR 709.5j / 201.2b: unlocking Central Elevator finds a Room card sharing no name with an unlocked door of a Room alice controls",
+  "final": [],
+  "note": "Smoky Lounge and the Elevator itself are open, so a Smoky Lounge // Misty Salon or a Central Elevator // Promising Stairs in the library shares a name and is refused. Dazzling Theater // Prop Room is on her battlefield with both doors locked, which leaves it nameless, so the library's copy is found. Grizzly Bears is no Room.",
+  "timeline": [
+    {
+      "do": {
+        "Take": {
+          "action": "Unlock $lounge Smoky Lounge",
+          "mana": [
+            "$m1",
+            "$m2",
+            "$m3",
+            null
+          ]
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Take": {
+          "action": "Unlock $elevator Central Elevator",
+          "mana": [
+            "$i1",
+            "$i2",
+            "$i3",
+            "$i4"
+          ]
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "player": "alice",
+      "refuse": {
+        "Answer": {
+          "prompt": "Search",
+          "with": [
+            "$lounge2"
+          ]
+        }
+      },
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "player": "alice",
+      "refuse": {
+        "Answer": {
+          "prompt": "Search",
+          "with": [
+            "$elevator2"
+          ]
+        }
+      },
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "player": "alice",
+      "refuse": {
+        "Answer": {
+          "prompt": "Search",
+          "with": [
+            "$bears2"
+          ]
+        }
+      },
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Answer": {
+          "prompt": "Search",
+          "with": [
+            "$theater2"
+          ]
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Answer": {
+          "prompt": "Shuffle",
+          "with": [
+            "$lounge2",
+            "$elevator2",
+            "$bears2"
+          ]
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Dazzling Theater",
+          "count": 1,
+          "player": "alice",
+          "zone": "Hand"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    }
+  ]
+}

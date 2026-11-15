@@ -316,6 +316,8 @@ viewOfCardLapsed lapsed face =
           -- CR 717.2b gives a level to a PERMANENT, and this builder describes a
           -- printed face.
           Filter.classLevel = Nothing,
+          -- CR 709.5c gives the unlocked designations to a PERMANENT.
+          Filter.unlockedHalves = Set.empty,
           Filter.paidCosts = Map.empty,
           -- CR 702.104a's ability functions as a PERMANENT enters, and this
           -- builder describes a printed face -- `designations` above, same
@@ -919,6 +921,8 @@ viewOfCharacteristics peers oid pc controller counters gs =
       -- a CR 608.2h asker would get 1 and not the level it left with; no printed card
       -- reads a departed permanent's level.
       Filter.classLevel = Game.lookupObject oid gs >>= Object.classLevel,
+      -- CR 709.5c: designations again, read live -- `designations`' posture.
+      Filter.unlockedHalves = foldMap Object.unlockedHalves (Game.lookupObject oid gs),
       -- CR 601.2b: read live off the object. For one that has left its zone,
       -- Count.lastKnownView overrides this with LastKnown.paidCosts, so the CR 608.2h
       -- path answers "kicked" for a kicked spell that has left the stack.

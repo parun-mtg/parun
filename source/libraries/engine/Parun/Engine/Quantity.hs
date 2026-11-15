@@ -690,6 +690,7 @@ evaluateAgainst viewOf context gs announcedOn mOid mView quantity =
         -- as level 1 for every rule and effect that asks, so the default belongs at the
         -- one read rather than in the field Filter.classLevel reports.
         Quantity.ClassLevel -> fmap (toInteger . ClassLevel.defaulted . Filter.classLevel) mView
+        Quantity.UnlockedDoors -> fmap (toInteger . Set.size . Filter.unlockedHalves) mView
         -- CR 702.143c's "if this spell was foretold" as a 0/1, off the view: the
         -- object it reads is the RESOLVING SPELL, which is still on the stack while
         -- its own clause conditions are gated (Parun.Engine.Resolve.gateHolds).
@@ -1771,6 +1772,7 @@ talliesWhatHappened quantity = case quantity of
   Quantity.DesignationValue _ -> False
   Quantity.StoredResultsOfSameValue -> False
   Quantity.ClassLevel -> False
+  Quantity.UnlockedDoors -> False
   Quantity.WasForetold -> False
   Quantity.TributeWasPaid -> False
   Quantity.TimesPaid _ -> False

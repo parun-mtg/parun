@@ -23,4 +23,7 @@ data DistinctOf
     PlaneswalkerTypes
   | -- | CR 122.1: kinds of counters, each keyword counter a kind of its own (CR 122.1b).
     CounterKinds
+  | -- | CR 201.2b: names, a member with two (a Room with both doors unlocked,
+    -- CR 709.5) adding both and a nameless one none.
+    Names
   deriving (Bounded, Enum, Eq, Ord, Show)

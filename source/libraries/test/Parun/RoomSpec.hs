@@ -80,6 +80,7 @@ import qualified Parun.Support as S
 import qualified Parun.Types.Action as A
 import qualified Parun.Types.ActivatedAbility as ActivatedAbility
 import qualified Parun.Types.Activator as Activator
+import qualified Parun.Types.BeginningStep as BeginningStep
 import qualified Parun.Types.Card as Card.Type
 import qualified Parun.Types.CardName as CardName
 import qualified Parun.Types.CardType as CardType
@@ -107,6 +108,7 @@ import qualified Parun.Types.PlayerRelation as PlayerRelation
 import qualified Parun.Types.Printing as Printing
 import qualified Parun.Types.Prompt as Prompt
 import qualified Parun.Types.Recipient as Recipient
+import qualified Parun.Types.Result as Result
 import qualified Parun.Types.RoomHalf as RoomHalf
 import qualified Parun.Types.StepBegan as StepBegan
 import qualified Parun.Types.Subtype as Subtype
@@ -1043,3 +1045,39 @@ spec s registry = Spec.describe s "Room" $ do
     Spec.assertEqWith s "as a copy of the second Room it is a 5/5 Spiked Corridor" (Projection.namesOf shapeId copiedCorridor, S.powerToughnessOf shapeId copiedCorridor) (Set.singleton corridorName, Just (5, 5))
     -- The control, after it: the Shapeshifter copied the first Room and opened its left door.
     Spec.assertEqWith s "setup: the Shapeshifter is a 3/3 Roaring Furnace" (Projection.namesOf shapeId opened, S.powerToughnessOf shapeId opened) (Set.singleton furnaceName, Just (3, 3))
+  -- Promising Stairs' win counts NAMES among unlocked doors, a fully unlocked
+  -- Room adding two (CR 201.2b, 709.5; its ruling 2024-09-20). Four Rooms with
+  -- both doors open show eight names, where a count of Rooms or of Rooms with
+  -- different names reads 4. Each negative differs from it in one Room: a shut
+  -- door leaves seven names, and a second Central Elevator // Promising Stairs in
+  -- place of Spiked Corridor // Torture Pit keeps eight doors but six names.
+  Spec.describe s "CR 201.2b Promising Stairs" $ do
+    let stairsWins rooms = do
+          printings <- traverse (S.printingOf s registry . fst) rooms
+          island <- S.printingOf s registry "Island"
+          let open g (printing, doors) =
+                let (oid, g') = S.addPermanent printing S.alice g
+                 in g' {GameState.objects = Map.adjust (\o -> o {Object.unlockedHalves = Set.fromList doors}) oid (GameState.objects g')}
+              stocked = List.foldl' (\g _ -> snd (S.addLibraryCard island S.alice g)) (Setup.emptyGame S.threePlayers) [1 .. 3 :: Int]
+              placed = List.foldl' open stocked (zip printings (fmap snd rooms))
+              board =
+                placed
+                  { GameState.turn =
+                      (GameState.turn placed)
+                        { TurnRegisters.phase = Phase.Beginning BeginningStep.Upkeep,
+                          TurnRegisters.activePlayer = S.alice,
+                          TurnRegisters.priority = Just S.alice
+                        }
+                  }
+          pure (GameState.result (S.runPure S.identityAnswer board Engine.runStep))
+        both = [RoomHalf.LeftHalf, RoomHalf.RightHalf]
+        eight = [("Central Elevator", both), ("Roaring Furnace", both), ("Spiked Corridor", both), ("Dazzling Theater", both)]
+    Spec.it s "eight names among four fully unlocked Rooms win the game at alice's upkeep" $ do
+      result <- stairsWins eight
+      Spec.assertEqWith s "alice won" result (Just (Result.Won S.alice))
+    Spec.it s "seven names do not" $ do
+      result <- stairsWins (take 3 eight <> [("Dazzling Theater", [RoomHalf.LeftHalf])])
+      Spec.assertEqWith s "nobody won" result Nothing
+    Spec.it s "eight doors sharing names do not" $ do
+      result <- stairsWins [("Central Elevator", both), ("Roaring Furnace", both), ("Central Elevator", both), ("Dazzling Theater", both)]
+      Spec.assertEqWith s "nobody won" result Nothing

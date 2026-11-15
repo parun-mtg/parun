@@ -814,6 +814,7 @@ quantityChildren children quantity = case quantity of
   Quantity.DesignationValue _ -> pure quantity
   Quantity.StoredResultsOfSameValue -> pure quantity
   Quantity.ClassLevel -> pure quantity
+  Quantity.UnlockedDoors -> pure quantity
   Quantity.WasForetold -> pure quantity
   Quantity.TributeWasPaid -> pure quantity
   Quantity.TimesPaid designator -> fmap Quantity.TimesPaid (designatorChildren children designator)

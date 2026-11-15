@@ -1,0 +1,253 @@
+{
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "battlefield": [
+          {
+            "card": "Rampaging Soulrager",
+            "label": "soul"
+          },
+          {
+            "card": "Dazzling Theater",
+            "label": "theater"
+          },
+          {
+            "card": "Smoky Lounge",
+            "label": "lounge"
+          },
+          {
+            "card": "Mountain",
+            "label": "m1"
+          },
+          {
+            "card": "Mountain",
+            "label": "m2"
+          },
+          {
+            "card": "Mountain",
+            "label": "m3"
+          },
+          {
+            "card": "Plains",
+            "label": "p1"
+          },
+          {
+            "card": "Plains",
+            "label": "p2"
+          },
+          {
+            "card": "Plains",
+            "label": "p3"
+          },
+          {
+            "card": "Island",
+            "label": "i1"
+          },
+          {
+            "card": "Island",
+            "label": "i2"
+          }
+        ],
+        "hand": [
+          {
+            "card": "Lightning Bolt",
+            "label": "bolt"
+          }
+        ],
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ],
+        "name": "alice"
+      },
+      {
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ],
+        "name": "bob"
+      }
+    ],
+    "step": "PrecombatMain"
+  },
+  "description": "CR 709.5c / 709.5j: Rampaging Soulrager and Misty Salon count unlocked doors among Rooms alice controls, and Smoky Lounge's {R}{R} pays an unlock",
+  "final": [],
+  "note": "Two Rooms throughout, so a count of Rooms reads 2 where the doors read 1 or 3. One door open leaves the Soulrager a 1/4; the second makes it a 4/4. On alice's next turn Smoky Lounge adds {R}{R}, which cannot cast Lightning Bolt but pays the generic part of Misty Salon's unlock beside two Islands; the Salon's third door makes a 3/3 flying Spirit.",
+  "timeline": [
+    {
+      "check": {
+        "PowerToughness": {
+          "object": "$soul",
+          "power": 1,
+          "toughness": 4
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Take": {
+          "action": "Unlock $lounge Smoky Lounge",
+          "mana": [
+            "$m1",
+            "$m2",
+            "$m3",
+            null
+          ]
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "PowerToughness": {
+          "object": "$soul",
+          "power": 1,
+          "toughness": 4
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Take": {
+          "action": "Unlock $theater Prop Room",
+          "mana": [
+            "$p1",
+            "$p2",
+            "$p3",
+            null
+          ]
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "PowerToughness": {
+          "object": "$soul",
+          "power": 4,
+          "toughness": 4
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 3
+    },
+    {
+      "player": "alice",
+      "refuse": {
+        "Cast": {
+          "mana": [
+            null
+          ],
+          "object": "$bolt",
+          "targets": [
+            "$bob"
+          ]
+        }
+      },
+      "step": "PrecombatMain",
+      "turn": 3
+    },
+    {
+      "do": {
+        "Take": {
+          "action": "Unlock $lounge",
+          "mana": [
+            "$i1",
+            "$i2",
+            null
+          ]
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 3
+    },
+    {
+      "check": {
+        "View": {
+          "is": [
+            "trigger of $lounge"
+          ],
+          "of": "Stack"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 3
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 3
+    },
+    {
+      "check": {
+        "PowerToughness": {
+          "object": "Spirit Token",
+          "power": 3,
+          "toughness": 3
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 3
+    },
+    {
+      "check": {
+        "PowerToughness": {
+          "object": "$soul",
+          "power": 4,
+          "toughness": 4
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 3
+    }
+  ]
+}
