@@ -2626,7 +2626,7 @@ spec s = Spec.describe s "Parun.Engine.Filter" $ do
 
   -- CR 701.27h. The atom itself is a bare field read; both of the rule's
   -- exclusions live in the BUILDER that fills the field, so the gameplay-level
-  -- proof is Parun.TransformSpec's TransformedPermanent group.
+  -- proof is the transform/cr-701-27h-* scenarios.
   Spec.describe s "Transformed" $ do
     Spec.it s "matches a view whose permanent has its back face up" $ do
       Spec.assertBool s (Filter.matches self (blackCreature {Filter.transformed = True}) Filter.Type.Transformed) "transformed"

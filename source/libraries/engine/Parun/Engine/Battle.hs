@@ -131,8 +131,8 @@ lastKnownProtectorOf oid gs = LastKnown.protector =<< Game.lastKnownOf oid gs
 -- CR 506.4e: a planeswalker announcement counts too, since a planeswalker that
 -- is also a battle is a battle being attacked. An attacker already recorded as
 -- attacking nothing (CR 506.4c) is not attacking it; that exclusion is a
--- regression fence, no test reaching it. Parun.PlaneswalkerCombatSpec's
--- PlaneswalkerBattleInCombat "becomes a battle mid-combat" case is the board.
+-- regression fence, no test reaching it. The planeswalker-combat scenarios
+-- "cr-506-4e-...-becoming-a-battle-mid-combat" are the board.
 --
 -- Reads Parun.Types.Combat directly rather than going through Parun.Engine.Combat,
 -- which imports THIS module for CR 310.5's attackable battles.

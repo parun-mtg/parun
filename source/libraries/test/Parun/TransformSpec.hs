@@ -58,7 +58,6 @@ import qualified Data.List as List
 import qualified Data.List.NonEmpty as NonEmpty
 import qualified Data.Map.Strict as Map
 import qualified Data.Maybe as Maybe
-import qualified Data.Sequence as Seq
 import qualified Data.Set as Set
 import qualified Data.Text as Text
 import qualified Numeric.Natural as Natural
@@ -67,7 +66,6 @@ import qualified Parun.Engine.Activatable as Activatable
 import qualified Parun.Engine.Activate as Activate
 import qualified Parun.Engine.Card as Card
 import qualified Parun.Engine.Cast as Cast
-import qualified Parun.Engine.Combat as Combat
 import qualified Parun.Engine.Engine as Engine
 import qualified Parun.Engine.Event as Event
 import qualified Parun.Engine.Event.Trigger as Trigger
@@ -91,8 +89,6 @@ import qualified Parun.Types.CastOffer as CastOffer
 import qualified Parun.Types.CastRepetition as CastRepetition
 import qualified Parun.Types.CounterKind as CounterKind
 import qualified Parun.Types.Daytime as Daytime
-import qualified Parun.Types.Designation as Designation
-import qualified Parun.Types.Destroy as Destroy
 import qualified Parun.Types.Effect as Effect
 import qualified Parun.Types.EntryRiders as EntryRiders
 import qualified Parun.Types.Face as Face
@@ -117,9 +113,7 @@ import qualified Parun.Types.Printing as Printing
 import qualified Parun.Types.ProjectedCharacteristics as PC
 import qualified Parun.Types.Prompt as Prompt
 import qualified Parun.Types.Recipient as Recipient
-import qualified Parun.Types.Regenerability as Regenerability
 import qualified Parun.Types.StepBegan as StepBegan
-import qualified Parun.Types.StoredEffects as StoredEffects
 import qualified Parun.Types.Subtype as Subtype
 import qualified Parun.Types.TransformTrigger as TransformTrigger
 import qualified Parun.Types.Transformed as Transformed

@@ -696,7 +696,7 @@ spec s registry = Spec.describe s "Meld" $ do
   -- merged permanent, is never considered a transformed permanent, even if it has
   -- components that are back face up." Mutagen Connoisseur's "for each
   -- transformed permanent you control" is the card that asks, as it does
-  -- throughout Parun.TransformSpec's TransformedPermanent group; the Thraben
+  -- throughout the transform/cr-701-27h-* scenarios; the Thraben
   -- Gargoyle beside it is turned over by the same instruction and IS one, so the
   -- Connoisseur's power separates a tally that counts the melded permanent (2)
   -- from the rule's answer (1).

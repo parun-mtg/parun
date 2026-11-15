@@ -225,8 +225,7 @@ aangBackName :: CardName.CardName
 aangBackName = CardName.MkCardName (Text.pack "Aang, Destined Savior")
 
 -- The beginning of combat on alice's turn arrives, the trigger goes on the stack
--- aimed at `target`, and it resolves. Parun.TransformSpec's atNextUpkeep, one step
--- over.
+-- aimed at `target`, and it resolves.
 atBeginningOfCombat :: ObjectId.ObjectId -> GameState.GameState -> GameState.GameState
 atBeginningOfCombat target gs =
   let step = Phase.Combat CombatStep.BeginningOfCombat

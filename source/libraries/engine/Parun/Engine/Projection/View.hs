@@ -709,7 +709,8 @@ viewOfCharacteristics peers oid pc controller counters gs =
         -- CR 506.4e: a planeswalker announcement whose permanent is a battle
         -- too, or stopped being a planeswalker but is still a battle, is a battle
         -- being attacked, whether or not its protector defends.
-        -- Parun.PlaneswalkerCombatSpec's PlaneswalkerBattleInCombat is the board.
+        -- data/scenarios/planeswalker-combat's "cr-506-4e-whole-card" scenarios
+        -- are the board.
         Just target@(AttackTarget.OfPlaneswalker battle)
           | Set.notMember oid (Combat.attackingNothing (TurnRegisters.combat (GameState.turn gs))),
             Set.member battle (GameState.battlefield gs),

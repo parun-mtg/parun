@@ -1140,16 +1140,16 @@ out: grep for them.
 
 ### `TransformSpec`
 
-- CR 613.7g transforming restamps the permanent past a removal that had wiped its grant | `board:object-designations`
-- CR 700.4 the same ability's other limb fires when it dies | `move:other-applyEffect`
-- CR 701.27a transforming twice returns the permanent to its front face | `check:helper-faceReadings`
-- CR 701.27g a delayed transform is measured from when the ability was created | `board:delayed-trigger` `board:object-turnedoverat` `board:replacement`
-- CR 701.27g a turn that was ignored triggers nothing | `board:hypothetical`
-- CR 701.27h a permanent with its back face up is a transformed permanent | `board:daytime`
-- CR 701.27h a permanent with its front face up is not one | `check:helper-faceNameOf` `check:other-GameState.daytime`
-- CR 701.27h not one even if it had its back face up previously | `board:daytime`
-- CR 702.161a the front face, which has no living metal, is a creature on either turn | `check:helper-faceNameOf`
-- CR 701.27j/701.27f the same trigger's enters limb fires on a Piper cast at night
+- ~~CR 613.7g transforming restamps the permanent past a removal that had wiped its grant | `board:object-designations`~~
+- ~~CR 700.4 the same ability's other limb fires when it dies | `move:other-applyEffect`~~
+- ~~CR 701.27a transforming twice returns the permanent to its front face | `check:helper-faceReadings`~~
+- ~~CR 701.27g a delayed transform is measured from when the ability was created | `board:delayed-trigger` `board:object-turnedoverat` `board:replacement`~~
+- ~~CR 701.27g a turn that was ignored triggers nothing | `board:hypothetical`~~
+- ~~CR 701.27h a permanent with its back face up is a transformed permanent | `board:daytime`~~
+- ~~CR 701.27h a permanent with its front face up is not one | `check:helper-faceNameOf` `check:other-GameState.daytime`~~
+- ~~CR 701.27h not one even if it had its back face up previously | `board:daytime`~~
+- ~~CR 702.161a the front face, which has no living metal, is a creature on either turn | `check:helper-faceNameOf`~~
+- ~~CR 701.27j/701.27f the same trigger's enters limb fires on a Piper cast at night~~
 
 ### `TurnSpec`
 
