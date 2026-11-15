@@ -36,12 +36,9 @@ import qualified Parun.Engine.Mint as Mint
 import qualified Parun.Engine.Modal as Modal
 import qualified Parun.Engine.Projection as Projection
 import qualified Parun.Engine.Projection.View as Projection
-import qualified Parun.Engine.Saga as Saga
 import qualified Parun.Engine.Setup as Setup
 import qualified Parun.Engine.Stack as Stack
-import qualified Parun.Extra.Natural as Natural
 import qualified Parun.Registry as Registry
-import qualified Parun.Scenario.Prompt as Scenario.Prompt
 import qualified Parun.Spec as Spec
 import qualified Parun.Support as S
 import qualified Parun.Types.Acquisition as Acquisition
@@ -99,7 +96,6 @@ import qualified Parun.Types.StepBegins as StepBegins
 import qualified Parun.Types.StoredEffects as StoredEffects
 import qualified Parun.Types.Subtype as Subtype
 import qualified Parun.Types.TapState as TapState
-import qualified Parun.Types.TextWord as TextWord
 import qualified Parun.Types.TriggerCondition as TriggerCondition
 import qualified Parun.Types.TriggerEntry as TriggerEntry
 import qualified Parun.Types.TriggerFrequency as TriggerFrequency
@@ -268,27 +264,6 @@ scanSpec s registry =
           cond = TriggerCondition.StepBegins (StepBegins.MkStepBegins (Phase.Beginning BeginningStep.Upkeep) Nothing (TurnScope.PlayersTurn (PlayerRef.Relative PlayerRelation.You)))
       Spec.assertBool s (Event.matchesTrigger (Setup.emptyGame S.bothPlayers) bearer S.alice cond (GameEvent.StepBegan (StepBegan.MkStepBegan (Phase.Beginning BeginningStep.Upkeep) S.alice))) "alice's upkeep matches for alice"
       Spec.assertBool s (not (Event.matchesTrigger (Setup.emptyGame S.bothPlayers) bearer S.alice cond (GameEvent.StepBegan (StepBegan.MkStepBegan (Phase.Beginning BeginningStep.Upkeep) S.bob)))) "bob's upkeep does not"
-    -- The widening falsifier: the scan now visits every battlefield permanent,
-    -- so Self Enters must ask whether the event is about THIS permanent. Rest in
-    -- Peace is on the battlefield and a DIFFERENT object entered.
-    Spec.it s "CR 603.6a a SelfEnters trigger does not fire on another object's entry" $ do
-      restInPeace <- S.printingOf s registry "Rest in Peace"
-      piker <- S.printingOf s registry "Goblin Piker"
-      let (_, gs0) = S.addPermanent restInPeace S.alice (Setup.emptyGame S.bothPlayers)
-          (pikerId, gs1) = S.addPermanent piker S.bob gs0
-          entered = ZoneChange.MkZoneChange pikerId pikerId Zone.Stack Zone.Battlefield
-          gs2 = S.withEvents [GameEvent.Moved (Moved.moved entered (Projection.project pikerId gs1))] gs1
-      Spec.assertEqWith s "no trigger" (length (gathered gs2)) 0
-    Spec.it s "CR 603.6a a SelfEnters trigger still fires on its own entry" $ do
-      restInPeace <- S.printingOf s registry "Rest in Peace"
-      let (ripId, gs0) = S.addPermanent restInPeace S.alice (Setup.emptyGame S.bothPlayers)
-          entered = ZoneChange.MkZoneChange ripId ripId Zone.Stack Zone.Battlefield
-          gs1 = S.withEvents [GameEvent.Moved (Moved.moved entered (Projection.project ripId gs0))] gs0
-      case gathered gs1 of
-        [pt] -> do
-          Spec.assertEqWith s "source is RiP" (PendingTrigger.source pt) (TriggerSource.OfObject ripId)
-          Spec.assertEqWith s "controller is alice" (PendingTrigger.controller pt) S.alice
-        other -> Spec.assertFailure s ("expected exactly one pending trigger, got " <> show (length other))
     Spec.it s "a graveyard-bound event yields no enters trigger" $ do
       restInPeace <- S.printingOf s registry "Rest in Peace"
       let (ripId, gs0) = S.addPermanent restInPeace S.alice (Setup.emptyGame S.bothPlayers)
@@ -728,40 +703,6 @@ stateTriggerSpec s registry =
         Nothing -> False
       settle gs = snd (Engine.runGamePure S.identityAnswer gs Engine.settleForPriority)
    in Spec.describe s "StateTrigger" $ do
-        -- THE flooding falsifier. CR 603.8's second sentence exists to prevent
-        -- exactly this: a state trigger that re-fires at every boundary.
-        --
-        -- What this test can and can't observe: it can only ever see 0 or 1
-        -- here, never 2+. If suppression were absent, placePendingTriggers
-        -- would keep reporting the same source as newly-triggered on every
-        -- iteration, and Engine.settleForPriority (which loops until
-        -- nothing new triggers) would recurse without terminating -- a
-        -- broken suppression HANGS the test suite rather than failing this
-        -- assertion with some higher count. This test still earns its keep
-        -- by discriminating 0 (no trigger at all) from 1 (correctly armed
-        -- once); it does not, and cannot, discriminate "one instance" from
-        -- "flooding". The two-source test below is a separate discriminator,
-        -- pinning that suppression is scoped per SOURCE rather than per
-        -- ability (a bug that would wrongly suppress a second source, not
-        -- flood -- so it fails this same 0/1 shape rather than hanging).
-        Spec.it s "CR 603.8 a true state condition puts EXACTLY ONE instance on the stack" $ do
-          barbarianOutcast <- S.printingOf s registry "Barbarian Outcast"
-          swamp <- S.printingOf s registry "Swamp"
-          let (_, gs) = outcastBoard barbarianOutcast swamp 0
-              settled = settle gs
-          Spec.assertEqWith s "one trigger, not one per boundary" (length (triggerIds settled)) 1
-        Spec.it s "CR 603.8 re-settling while the instance is on the stack adds no second copy" $ do
-          barbarianOutcast <- S.printingOf s registry "Barbarian Outcast"
-          swamp <- S.printingOf s registry "Swamp"
-          let (_, gs) = outcastBoard barbarianOutcast swamp 0
-              twice = settle (settle gs)
-          Spec.assertEqWith s "still exactly one" (length (triggerIds twice)) 1
-        Spec.it s "CR 603.8 the condition being FALSE means no trigger at all" $ do
-          barbarianOutcast <- S.printingOf s registry "Barbarian Outcast"
-          swamp <- S.printingOf s registry "Swamp"
-          let (_, gs) = outcastBoard barbarianOutcast swamp 1
-              settled = settle gs
-          Spec.assertEqWith s "no trigger while a Swamp is out" (length (triggerIds settled)) 0
         Spec.it s "CR 603.8 losing the last Swamp makes the condition true and fires it" $ do
           barbarianOutcast <- S.printingOf s registry "Barbarian Outcast"
           swamp <- S.printingOf s registry "Swamp"
@@ -902,79 +843,6 @@ stateTriggerSpec s registry =
               again = settle removed
           Spec.assertEqWith s "one of the two is gone" (length (triggerIds removed)) 1
           Spec.assertEqWith s "and the freed ability triggers again, alongside the survivor" (length (triggerIds again)) 2
-
--- Answers the Hack: it targets `oid` and swaps `from` for `to`. Everything else
--- falls through to the identity answer.
-answerHackAt :: ObjectId.ObjectId -> Subtype.Subtype -> Subtype.Subtype -> Prompt.Prompt r -> r
-answerHackAt oid from to p = case p of
-  Prompt.ChooseTargets _ _ _ sets -> fmap (const (Set.singleton (Recipient.ToObject oid))) sets
-  Prompt.ChooseWordSwap {} -> (TextWord.SubtypeWord from, TextWord.SubtypeWord to)
-  _ -> S.identityAnswer p
-
--- alice controls a Swamp and a Barbarian Outcast; BOB holds the Magical Hack and
--- the Island that pays for it. Whose Island it is decides the whole test: one on
--- ALICE's side would satisfy the swapped condition all by itself and the fired
--- trigger would prove nothing. bob casting it is legal for the same reason a
--- Hack can be aimed at any permanent -- CR 612.1's swap is a property of the
--- OBJECT, not of who changed its text.
---
--- With `hacked`, bob casts the Hack at the Outcast (Swamp -> Island) and it
--- resolves before the board is settled. Returns the Outcast's id and the state
--- at the CR 117.5 boundary, triggers placed and unresolved.
-outcastHackBoard :: (Monad m) => Spec.Spec m n -> Registry.Registry m -> Bool -> m (ObjectId.ObjectId, GameState.GameState)
-outcastHackBoard s registry hacked = do
-  barbarianOutcast <- S.printingOf s registry "Barbarian Outcast"
-  swamp <- S.printingOf s registry "Swamp"
-  island <- S.printingOf s registry "Island"
-  magicalHack <- S.printingOf s registry "Magical Hack"
-  let gs0 = Setup.emptyGame S.bothPlayers
-      (_, gs1) = S.addPermanent swamp S.alice gs0
-      (_, gs2) = S.addPermanent island S.bob gs1
-      (outcastId, gs3) = S.addPermanent barbarianOutcast S.alice gs2
-      (hackId, gs4) = S.addHandCard magicalHack S.bob gs3
-      gs5 =
-        gs4
-          { GameState.turn =
-              (GameState.turn gs4)
-                { TurnRegisters.priority = Just S.bob
-                }
-          }
-      hackIt g = S.runPure (answerHackAt outcastId Subtype.Swamp Subtype.Island) g (do S.cast S.bob hackId; Stack.resolveTop)
-      settle g = snd (Engine.runGamePure S.identityAnswer g Engine.settleForPriority)
-  pure (outcastId, settle (if hacked then hackIt gs5 else gs5))
-
--- CR 612.1 reaching a TRIGGERED ability, end to end through the real engine.
---
--- Barbarian Outcast {1}{R} Creature -- Human Barbarian Beast 2/2, "When you
--- control no Swamps, sacrifice this creature." (checked against Scryfall) and
--- Magical Hack are the whole board -- no card had to be added for this.
---
--- CR 612.1: a text-changing effect "can apply to any words or symbols printed on
--- that object, but generally affects only that object's rules text (which
--- appears in its text box)". A triggered ability is printed in that text box
--- exactly as an activated ability is, so a hacked Outcast asks about ISLANDS.
---
--- The reader this proves out is Parun.Engine.Event.Trigger.stateTriggers, which takes the
--- ability from Projection.triggeredAbilitiesOf (the projection's post-layer
--- list) and hands its CR 603.8 condition to Condition.holds -- so the swap has
--- to land in the projection, at CR 613.1c layer 3, to be seen here.
-textChangedTriggerSpec :: (Monad m) => Spec.Spec m n -> Registry.Registry m -> n ()
-textChangedTriggerSpec s registry =
-  let isTriggerObject gs oid = case Game.lookupObject oid gs of
-        Just obj -> case Object.source obj of
-          Source.OfTrigger _ -> True
-          _ -> False
-        Nothing -> False
-      triggerIds gs = filter (isTriggerObject gs) (TurnRegisters.stack (GameState.turn gs))
-      resolveTop gs = snd (Engine.runGamePure S.identityAnswer gs Stack.resolveTop)
-   in Spec.describe s "TextChangedTriggeredAbility" $ do
-        -- The control, and what keeps the case below from passing vacuously:
-        -- unhacked, the printed word stands, alice's Swamp answers it, and the
-        -- Outcast is never in any danger.
-        Spec.it s "CR 603.8 whole card: an unhacked Outcast asks about SWAMPS and stays" $ do
-          (outcastId, board) <- outcastHackBoard s registry False
-          Spec.assertEqWith s "alice controls a Swamp: no trigger" (length (triggerIds board)) 0
-          Spec.assertBool s (Set.member outcastId (GameState.battlefield (resolveTop board))) "the Outcast is still on the battlefield"
 
 -- Khabál Ghoul {2}{B} Creature -- Zombie 1/1: "At the beginning of each end step,
 -- put a +1/+1 counter on this creature for each creature that died this turn."
@@ -1273,19 +1141,6 @@ stampedeSpec s registry =
 delayedSpec :: (Monad m, Monad n) => Spec.Spec m n -> Registry.Registry m -> n ()
 delayedSpec s registry =
   let endStep = Phase.Ending EndingStep.EndStep
-      beginEndStep gs =
-        Event.recordEvent
-          (GameEvent.StepBegan (StepBegan.MkStepBegan endStep S.alice))
-          ( gs
-              { GameState.turn =
-                  (GameState.turn gs)
-                    { TurnRegisters.phase = endStep
-                    }
-              }
-          )
-      settle gs = snd (Engine.runGamePure S.identityAnswer gs Engine.settleForPriority)
-      resolveAll gs = snd (Engine.runGamePure S.identityAnswer gs Engine.priorityLoop)
-      walls gs = filter (\oid -> Set.member Subtype.Wall (Projection.subtypesOf oid gs)) (Set.toList (GameState.battlefield gs))
       -- Stamp an expiry onto every armed delayed ability, so the CR 603.7b
       -- stated-duration mechanism can be exercised on a real armed entry.
       withExpiry expiry gs =
@@ -1297,13 +1152,6 @@ delayedSpec s registry =
                 }
           }
    in Spec.describe s "DelayedTrigger" $ do
-        -- CR 603.7b: "only once, the next time its trigger event occurs".
-        Spec.it s "CR 603.7 the token is sacrificed at the beginning of the next end step" $ do
-          tidalWave <- S.printingOf s registry "Tidal Wave"
-          island <- S.printingOf s registry "Island"
-          let after = resolveAll (settle (beginEndStep (castWave tidalWave island)))
-          Spec.assertEqWith s "no Wall left" (walls after) []
-          Spec.assertEqWith s "the store is empty" (Seq.length (StoredEffects.delayedTriggers (GameState.stored after))) 0
         -- CR 603.7b's other half: "unless it has a stated duration, such as
         -- 'this turn.'" Tidal Wave's entry is reused with an expiry stamped on
         -- it, so the mechanism is tested without inventing a card; Full
@@ -1445,72 +1293,6 @@ delayedSpec s registry =
           Spec.assertEqWith s "nothing reached the stack, so placePendingTriggers honestly reports it placed nothing" placedAny False
           Spec.assertEqWith s "with bob still in the game, something genuinely got placed" controlAny True
 
--- Thatcher Revolt {2}{R} Sorcery: "Create three 1/1 red Human creature tokens
--- with haste. Sacrifice those tokens at the beginning of the next end step."
--- delayedSpec's plural sibling: the card refers back to EVERY token it made at
--- once, so the Create's slot holds a GROUP rather than one object, and the
--- delayed ability sacrifices all of it.
-tokenSetSpec :: (Monad m, Monad n) => Spec.Spec m n -> Registry.Registry m -> n ()
-tokenSetSpec s registry =
-  let endStep = Phase.Ending EndingStep.EndStep
-      beginEndStep gs =
-        Event.recordEvent
-          (GameEvent.StepBegan (StepBegan.MkStepBegan endStep S.alice))
-          ( gs
-              { GameState.turn =
-                  (GameState.turn gs)
-                    { TurnRegisters.phase = endStep
-                    }
-              }
-          )
-      settle gs = snd (Engine.runGamePure S.identityAnswer gs Engine.settleForPriority)
-      resolveAll gs = snd (Engine.runGamePure S.identityAnswer gs Engine.priorityLoop)
-      humans gs = filter (\oid -> Set.member Subtype.Human (Projection.subtypesOf oid gs)) (Set.toList (GameState.battlefield gs))
-      -- Records the CONSTRUCTOR of every prompt the resolution issues, so a
-      -- test can assert the plural binding asks NOTHING extra -- "them" names
-      -- every minted token, and where the rules leave nothing to ask, don't
-      -- prompt.
-      recordPrompts :: Prompt.Prompt r -> State.State [Text.Text] r
-      recordPrompts p = do
-        State.modify' (<> [Scenario.Prompt.kindOf p])
-        pure (S.identityAnswer p)
-      castUnderPrompts gs oid =
-        State.runState
-          ( Engine.runGame recordPrompts gs $ do
-              S.cast S.alice oid
-              Engine.priorityLoop
-          )
-          []
-      -- alice casts Thatcher Revolt from hand onto the given board and lets it
-      -- resolve, handing back the board alongside any prompts it issued.
-      castRevolt revolt base = uncurry castUnderPrompts (S.handOne revolt base)
-      boardOf mountain = S.landsInPlay mountain 3
-   in Spec.describe s "DelayedTrigger token set" $ do
-        -- Binding one of the three would be the engine choosing; binding all
-        -- three is what "those tokens" says.
-        Spec.it s "CR 111.1 \"those tokens\" names every minted token, so all three are sacrificed" $ do
-          revolt <- S.printingOf s registry "Thatcher Revolt"
-          mountain <- S.printingOf s registry "Mountain"
-          let ((_, armed), _) = castRevolt revolt (boardOf mountain)
-              after = resolveAll (settle (beginEndStep armed))
-          Spec.assertEqWith s "three were minted" (length (humans armed)) 3
-          Spec.assertEqWith s "and none is left" (humans after) []
-          Spec.assertEqWith s "the store is empty" (Seq.length (StoredEffects.delayedTriggers (GameState.stored after))) 0
-        -- CR 603.7c's "no longer in the zone it's expected to be in": one token
-        -- already gone does not spare the others, and the ability is still spent.
-        Spec.it s "CR 603.7c one token already gone leaves the rest sacrificed" $ do
-          revolt <- S.printingOf s registry "Thatcher Revolt"
-          mountain <- S.printingOf s registry "Mountain"
-          let ((_, armed), _) = castRevolt revolt (boardOf mountain)
-              killed = case humans armed of
-                token : _ -> S.settleSba (S.runPure S.identityAnswer armed (Event.destroy (pure ()) Regenerability.Regenerable [token]))
-                [] -> armed
-              after = resolveAll (settle (beginEndStep killed))
-          Spec.assertEqWith s "two were left to sacrifice" (length (humans killed)) 2
-          Spec.assertEqWith s "and both are gone" (humans after) []
-          Spec.assertEqWith s "the store is still emptied" (Seq.length (StoredEffects.delayedTriggers (GameState.stored after))) 0
-          Spec.assertEqWith s "nothing stuck on the stack" (TurnRegisters.stack (GameState.turn after)) []
-
 -- Salt Road Skirmish {3}{B} Sorcery: "Destroy target creature. Create two 1/1 red
 -- Warrior creature tokens. They gain haste until end of turn. Sacrifice them at
 -- the beginning of the next end step."
@@ -1552,66 +1334,6 @@ tokenGroupReadSpec s registry =
           -- Otherwise "no Warriors" would also be true of a spell still sitting
           -- on the stack, which is a different bug wearing the same result.
           Spec.assertEqWith s "the spell left the stack rather than stalling on it" (TurnRegisters.stack (GameState.turn after)) []
-
--- Feral Lightning {3}{R}{R}{R} Sorcery: "Create three 3/1 red Elemental creature
--- tokens with haste. Exile them at the beginning of the next end step."
---
--- tokenGroupReadSpec's third reader, and the one that is not an ObjectRef sweep:
--- Effect.MoveToZone's ObjectRef.InSlot arm branches by hand rather than going
--- through objectRefObjects (it has to -- an incarnation an earlier effect of the
--- same resolution bound is invisible to `chosen`), so the group read had to be
--- written there too. "Them" is all three tokens, moved as one batch.
---
--- THE OBSERVABLE IS THE BATTLEFIELD, not the exile zone: CR 111.7 makes a token
--- in any other zone cease to exist, so a token that reached exile is not there to
--- be counted. What discriminates is that all three leave and that nothing else
--- does.
-tokenGroupMoveSpec :: (Monad m) => Spec.Spec m n -> Registry.Registry m -> n ()
-tokenGroupMoveSpec s registry =
-  let endStep = Phase.Ending EndingStep.EndStep
-      beginEndStep gs =
-        Event.recordEvent
-          (GameEvent.StepBegan (StepBegan.MkStepBegan endStep S.alice))
-          ( gs
-              { GameState.turn =
-                  (GameState.turn gs)
-                    { TurnRegisters.phase = endStep
-                    }
-              }
-          )
-      settle gs = snd (Engine.runGamePure S.identityAnswer gs Engine.settleForPriority)
-      resolveAll gs = snd (Engine.runGamePure S.identityAnswer gs Engine.priorityLoop)
-      elementals gs = filter (\oid -> Set.member Subtype.Elemental (Projection.subtypesOf oid gs)) (Set.toList (GameState.battlefield gs))
-      -- Six Mountains for the {3}{R}{R}{R}, and TWO bystanders that are not
-      -- Elementals: one alice's own, so "them" is told from "every creature you
-      -- control", and one bob's, so it is told from "every creature".
-      board mountain piker rats =
-        let (pikerId, gs1) = S.addPermanent piker S.alice (S.landsInPlay mountain 6)
-            (ratsId, gs2) = S.addPermanent rats S.bob gs1
-         in (pikerId, ratsId, gs2)
-      castLightning lightning base =
-        let (gs, oid) = S.handOne lightning base
-         in resolveAll (snd (Engine.runGamePure S.identityAnswer gs (S.cast S.alice oid)))
-   in Spec.describe s "Group move through InSlot" $ do
-        -- THE PROVING CASE. Before Effect.MoveToZone's InSlot arm read a group
-        -- binding, the slot held no single object (Parun.Engine.Resolve.Common.slotOne
-        -- answers Nothing for a group) and "exile them" moved NOBODY, while the
-        -- three tokens were still minted and the ability was still spent -- so
-        -- only the after-count discriminates.
-        Spec.it s "CR 406.2 \"exile them\" moves all three, and only them" $ do
-          lightning <- S.printingOf s registry "Feral Lightning"
-          mountain <- S.printingOf s registry "Mountain"
-          piker <- S.printingOf s registry "Goblin Piker"
-          rats <- S.printingOf s registry "Typhoid Rats"
-          let (pikerId, ratsId, base) = board mountain piker rats
-              armed = castLightning lightning base
-              after = resolveAll (settle (beginEndStep armed))
-          Spec.assertEqWith s "three were minted" (length (elementals armed)) 3
-          Spec.assertEqWith s "and none is left" (elementals after) []
-          Spec.assertBool s (Set.member pikerId (GameState.battlefield after)) "alice's own non-token creature stayed"
-          Spec.assertBool s (Set.member ratsId (GameState.battlefield after)) "bob's creature stayed"
-          Spec.assertEqWith s "the store is empty" (Seq.length (StoredEffects.delayedTriggers (GameState.stored after))) 0
-          Spec.assertEqWith s "nothing stuck on the stack" (TurnRegisters.stack (GameState.turn after)) []
 
 -- Harried Dronesmith {3}{R} Creature -- Human Artificer 2/3: "At the beginning of
 -- combat on your turn, create a 1/1 colorless Thopter artifact creature token with
@@ -1673,15 +1395,6 @@ singleTokenSlotReadSpec s registry =
       -- writes the CR 603.2b StepBegan record this trigger matches, runs the
       -- priority round that resolves it, and advances the schedule.
       step gs = snd (Engine.runGamePure S.identityAnswer gs Engine.runStep)
-      -- Run steps until the cleanup step is scheduled, which is one step PAST the
-      -- end step -- so the delayed ability has fired and resolved. Bounded, so a
-      -- schedule bug cannot loop forever.
-      throughEndStep =
-        let go n gs =
-              if n <= (0 :: Int) || TurnRegisters.phase (GameState.turn gs) == Phase.Ending EndingStep.Cleanup
-                then gs
-                else go (n - 1) (step gs)
-         in go 10
       dronesmithBoard = do
         dronesmith <- S.printingOf s registry "Harried Dronesmith"
         piker <- S.printingOf s registry "Goblin Piker"
@@ -1728,194 +1441,58 @@ singleTokenSlotReadSpec s registry =
               Spec.assertBool s (List.elem token menu) "so CR 302.6 does not keep it out of the attackers menu"
               Spec.assertBool s (List.elem pikerId menu) "and the Piker that was already there is on the same menu"
             other -> Spec.assertFailure s ("expected exactly one Thopter token, got " <> show (length other))
-        -- The regression guard on the group reader's LIVE read, which the fix must
-        -- not disturb: the third sentence's delayed ability reads the same slot at
-        -- alice's own end step (CR 603.7 / 603.7b), and the onset is immediate, so
-        -- "your next end step" is this turn's.
-        Spec.it s "CR 603.7b the delayed ability sacrifices the token at alice's end step" $ do
-          (_, _, gs) <- dronesmithBoard
-          let armed = step gs
-              after = throughEndStep armed
-          Spec.assertEqWith s "one Thopter before the end step" (length (thopters armed)) 1
-          Spec.assertEqWith s "none after it" (thopters after) []
-          Spec.assertEqWith s "and the store is empty" (Seq.length (StoredEffects.delayedTriggers (GameState.stored after))) 0
-          Spec.assertEqWith s "with nothing stuck on the stack" (TurnRegisters.stack (GameState.turn after)) []
 
--- CR 603.3b: "puts each triggered ability they control ... on the stack in any
--- order they choose". The centerpiece: two triggers, one controller, and an
--- order that changes the answer.
+-- CR 603.3b: Game.permute's guard and the APNAP walk across seats. The
+-- two-trigger centerpiece, where the order changes the answer, is
+-- data/scenarios/trigger/cr-608-2h-sacrificing-first-makes-the-ghoul-count-the-token.json.
 orderingSpec :: (Monad m, Monad n) => Spec.Spec m n -> Registry.Registry m -> n ()
 orderingSpec s registry =
-  let endStep = Phase.Ending EndingStep.EndStep
-      beginEndStep gs =
-        Event.recordEvent
-          (GameEvent.StepBegan (StepBegan.MkStepBegan endStep S.alice))
-          ( gs
-              { GameState.turn =
-                  (GameState.turn gs)
-                    { TurnRegisters.phase = endStep
-                    }
-              }
-          )
-      resolveAll gs = snd (Engine.runGamePure S.identityAnswer gs Engine.priorityLoop)
-      countersOn oid gs = maybe 0 (Map.findWithDefault 0 CounterKind.PlusOnePlusOne . Object.counters) (Game.lookupObject oid gs)
-      -- alice has Khabál Ghoul out and casts Tidal Wave, so both a delayed
-      -- sacrifice and a step trigger are pending at the same end step.
-      boardOf tidalWave khabalGhoul island =
-        let (gs0, waveId) = S.handOne tidalWave (S.landsInPlay island 3)
-            (ghoul, gs1) = S.addPermanent khabalGhoul S.alice gs0
-            cast = resolveAll (snd (Engine.runGamePure S.identityAnswer gs1 (S.cast S.alice waveId)))
-         in (ghoul, beginEndStep cast)
-      -- The source of the OTHER pending trigger: Tidal Wave's delayed ability,
-      -- whose source is the resolved spell's id rather than any permanent.
-      otherThan ghoul gs =
-        let sources = fmap PendingTrigger.source (gathered gs)
-         in case filter (/= TriggerSource.OfObject ghoul) sources of
-              src : _ -> src
-              [] -> TriggerSource.OfObject ghoul
-      -- An answerer that puts a chosen source LAST on the stack, so it resolves
-      -- FIRST (CR 603.3b's answer is the order they are PUT on the stack). The
-      -- two triggers here come from two different sources, so the entry's SOURCE
-      -- is enough to name one of them; Parun.KeywordTriggerSpec's battleCrySpec
-      -- is where the ability half of the entry (#61) is what does the naming.
-      orderLast :: TriggerSource.TriggerSource -> Prompt.Prompt r -> r
-      orderLast wanted p = case p of
-        Prompt.OrderTriggers _ _ entries ->
-          let indexed = zip [0 ..] entries
-              pick keep = fmap fst (filter (\entry -> (TriggerEntry.source (snd entry) == wanted) == keep) indexed)
-           in pick False <> pick True
-        _ -> S.identityAnswer p
-      -- Counts how many times the ordering prompt was asked, answering canonically.
-      countingAnswer :: Prompt.Prompt r -> State.State Int r
-      countingAnswer p = case p of
-        Prompt.OrderTriggers _ _ entries -> do
-          State.modify' (+ 1)
-          pure (zipWith const [0 ..] entries)
-        _ -> pure (S.identityAnswer p)
-      -- alice has a permanent that watches creatures enter, plus lands and a
-      -- token-maker in hand. Casting and resolving the maker is one event, so CR
-      -- 603.6a fires the watcher once per entrant.
-      watcherBoard watcher land n maker =
-        let (gs0, makerId) = S.handOne maker (S.landsInPlay land n)
-            (_, gs1) = S.addPermanent watcher S.alice gs0
-         in (gs1, makerId)
-      -- Cast it, run priority out, and report how many times CR 603.3b's order
-      -- was asked for along the way.
-      castCounting gs makerId =
-        let ((_, after), asked) = State.runState (Engine.runGame countingAnswer gs (S.cast S.alice makerId >> Engine.priorityLoop)) 0
-         in (after, asked)
-   in Spec.describe s "TriggerOrdering" $ do
-        Spec.it s "CR 603.3b two triggers under one controller ask for an order, exactly once" $ do
-          tidalWave <- S.printingOf s registry "Tidal Wave"
-          island <- S.printingOf s registry "Island"
-          khabalGhoul <- S.printingOf s registry "Khabál Ghoul"
-          let (_, gs) = boardOf tidalWave khabalGhoul island
-              (_, asked) = State.runState (Engine.runGame countingAnswer gs Engine.settleForPriority) 0
-          Spec.assertEqWith s "asked once" asked 1
-        -- The control: one entrant, so one trigger, which the older `length mine
-        -- < 2` guard already elided. Without it, "Soul Warden asks nothing"
-        -- cannot be told apart from "the batch was never two".
-        Spec.it s "CR 603.3b one trigger is elided by count alone (Soul Warden, one token)" $ do
-          soulWarden <- S.printingOf s registry "Soul Warden"
-          island <- S.printingOf s registry "Island"
-          tidalWave <- S.printingOf s registry "Tidal Wave"
-          let (gs, waveId) = watcherBoard soulWarden island 3 tidalWave
-              (after, asked) = castCounting gs waveId
-          Spec.assertEqWith s "not asked" asked 0
-          Spec.assertEqWith s "and the one trigger resolved" (S.lifeOf S.alice after) (fmap (+ 1) (S.lifeOf S.alice gs))
-          Spec.assertEqWith s "off one token" (length (S.tokensOf after)) 1
-        -- Sacrifice resolves FIRST: the Wall token dies, and CR 608.2h has the
-        -- Ghoul count it when its own effect is applied. The token has NO printed
-        -- card (CR 111.1) and its death happened at a boundary the scan already
-        -- passed -- so a re-derived type line or a drained queue both read zero.
-        --
-        -- orderLast's argument is the source PUT LAST on the stack, i.e. the one
-        -- that RESOLVES FIRST (CR 603.3b, see orderLast's own comment above): for
-        -- the sacrifice to resolve first, the OTHER (non-Ghoul) trigger is the one
-        -- named -- not the Ghoul itself.
-        Spec.it s "CR 608.2h sacrificing first makes the Ghoul count the token" $ do
-          tidalWave <- S.printingOf s registry "Tidal Wave"
-          island <- S.printingOf s registry "Island"
-          khabalGhoul <- S.printingOf s registry "Khabál Ghoul"
-          let (ghoul, gs) = boardOf tidalWave khabalGhoul island
-              after = snd (Engine.runGamePure (orderLast (otherThan ghoul gs)) gs Engine.priorityLoop)
-          Spec.assertEqWith s "the token was counted" (countersOn ghoul after) 1
-        -- The Ghoul resolves FIRST: the token is still alive, so it is not
-        -- counted. Same board, same cards, opposite answer -- which is what makes
-        -- the ordering a genuine choice rather than a formality.
-        Spec.it s "CR 608.2h counting first means the token is still alive and is not counted" $ do
-          tidalWave <- S.printingOf s registry "Tidal Wave"
-          island <- S.printingOf s registry "Island"
-          khabalGhoul <- S.printingOf s registry "Khabál Ghoul"
-          let (ghoul, gs) = boardOf tidalWave khabalGhoul island
-              after = snd (Engine.runGamePure (orderLast (TriggerSource.OfObject ghoul)) gs Engine.priorityLoop)
-          Spec.assertEqWith s "nothing counted" (countersOn ghoul after) 0
-        -- M-1 (review): permute's reject-not-repair guard, pinned directly. The
-        -- centerpiece above only ever answers with a valid permutation (via
-        -- orderLast/countingAnswer), and the canonical-answer tests elsewhere use
-        -- the identity -- so nothing exercises the fallback branch. "Rejected"
-        -- means the input list comes back verbatim: nothing dropped, nothing
-        -- duplicated.
-        Spec.it s "permute applies a genuine permutation" $ do
-          Spec.assertEqWith s "reordered" (Game.permute "abc" [2, 1, 0]) "cba"
-        Spec.it s "permute rejects a short answer, keeping the canonical order" $ do
-          Spec.assertEqWith s "unchanged" (Game.permute "abc" [1, 0]) "abc"
-        Spec.it s "permute rejects a duplicate index, keeping the canonical order" $ do
-          Spec.assertEqWith s "unchanged" (Game.permute "abc" [0, 0, 1]) "abc"
-        Spec.it s "permute rejects an out-of-range index, keeping the canonical order" $ do
-          Spec.assertEqWith s "unchanged" (Game.permute "abc" [0, 1, 5]) "abc"
-        -- M-2 (review): apnapPlayers rotates the turn order to start at the active
-        -- player and filters to controllers with a pending trigger -- genuinely new
-        -- behaviour versus M3f's apnapOrder, which never consulted turn order at
-        -- all, and untested where two DIFFERENT players each control a trigger.
-        -- Barbarian Outcast's state trigger (CR 603.8) needs no event, so one
-        -- Outcast under EACH player, both controlling no Swamps, gives two
-        -- controllers with one trigger apiece -- fewer than two each, so no
-        -- ordering prompt is asked and the test isolates the cross-controller walk.
-        Spec.it s "CR 101.4/603.3b the active player's trigger is placed first (bottom of stack)" $ do
-          barbarianOutcast <- S.printingOf s registry "Barbarian Outcast"
-          let gs0 = Setup.emptyGame S.bothPlayers
-              (_, gs1) = S.addPermanent barbarianOutcast S.alice gs0
-              (_, gs2) = S.addPermanent barbarianOutcast S.bob gs1
-              placed = snd (Engine.runGamePure S.identityAnswer gs2 (Engine.placePendingTriggers []))
-              controllerOf oid = fmap Object.owner (Game.lookupObject oid placed)
-              stack = TurnRegisters.stack (GameState.turn placed)
-          case stack of
-            [top, bottom] -> do
-              Spec.assertEqWith s "the OTHER player's trigger is on top -- placed second" (controllerOf top) (Just S.bob)
-              Spec.assertEqWith s "the active player's (alice's) trigger is at the bottom -- placed first" (controllerOf bottom) (Just S.alice)
-            other -> Spec.assertFailure s ("expected exactly two triggers on the stack, got " <> show (length other))
-        -- The same walk with a third seat and a departure. Barbarian Outcast's
-        -- state trigger (CR 603.8) needs no event, so one Outcast under each of
-        -- alice, bob and carol -- none controlling a Swamp -- gives three
-        -- controllers with one trigger apiece. The two ordering assertions are
-        -- the APNAP rotation itself: it starts at the active player and takes the
-        -- seats still in the game, so carol's trigger is placed after alice's.
-        -- Unobservable at two players, where a departure ends the game before any
-        -- trigger is gathered.
-        --
-        -- Bob's trigger is absent for a different reason than it once was: CR
-        -- 800.4a's first clause removes his Outcast with him, so the trigger
-        -- never exists to be filtered. Engine.apnapPlayers still filters his seat
-        -- out of the rotation -- see the still-playing filter there -- and the
-        -- assertion on his Outcast below is what keeps this case honest about
-        -- which rule did what.
-        Spec.it s "CR 101.4/603.3b APNAP orders the two remaining players' triggers starting at the active player, and a departed seat's permanent is gone with it" $ do
-          barbarianOutcast <- S.printingOf s registry "Barbarian Outcast"
-          let gs0 = Setup.emptyGame S.threePlayers
-              (_, gs1) = S.addPermanent barbarianOutcast S.alice gs0
-              (bobsOutcast, gs2) = S.addPermanent barbarianOutcast S.bob gs1
-              (_, gs3) = S.addPermanent barbarianOutcast S.carol gs2
-              gone = S.departs Departure.Type.Conceded S.bob gs3
-              placed = snd (Engine.runGamePure S.identityAnswer gone (Engine.placePendingTriggers []))
-              controllerOf oid = fmap Object.owner (Game.lookupObject oid placed)
-          Spec.assertBool s (Maybe.isJust (Game.lookupObject bobsOutcast gs3)) "the fixture really gave bob one"
-          Spec.assertEqWith s "CR 800.4a: bob's Outcast left the game with him, so it has no trigger to place" (Game.lookupObject bobsOutcast gone) Nothing
-          case TurnRegisters.stack (GameState.turn placed) of
-            [top, bottom] -> do
-              Spec.assertEqWith s "carol's trigger is on top -- placed second" (controllerOf top) (Just S.carol)
-              Spec.assertEqWith s "the active player's (alice's) is at the bottom -- placed first" (controllerOf bottom) (Just S.alice)
-            other -> Spec.assertFailure s ("expected exactly two triggers on the stack, got " <> show (length other))
+  Spec.describe s "TriggerOrdering" $ do
+    -- M-1 (review): permute's reject-not-repair guard, pinned directly. A
+    -- scenario only ever answers with a valid permutation, and the
+    -- canonical-answer tests use the identity -- so nothing else exercises
+    -- the fallback branch. "Rejected"
+    -- means the input list comes back verbatim: nothing dropped, nothing
+    -- duplicated.
+    Spec.it s "permute applies a genuine permutation" $ do
+      Spec.assertEqWith s "reordered" (Game.permute "abc" [2, 1, 0]) "cba"
+    Spec.it s "permute rejects a short answer, keeping the canonical order" $ do
+      Spec.assertEqWith s "unchanged" (Game.permute "abc" [1, 0]) "abc"
+    Spec.it s "permute rejects a duplicate index, keeping the canonical order" $ do
+      Spec.assertEqWith s "unchanged" (Game.permute "abc" [0, 0, 1]) "abc"
+    Spec.it s "permute rejects an out-of-range index, keeping the canonical order" $ do
+      Spec.assertEqWith s "unchanged" (Game.permute "abc" [0, 1, 5]) "abc"
+    -- The same walk with a third seat and a departure. Barbarian Outcast's
+    -- state trigger (CR 603.8) needs no event, so one Outcast under each of
+    -- alice, bob and carol -- none controlling a Swamp -- gives three
+    -- controllers with one trigger apiece. The two ordering assertions are
+    -- the APNAP rotation itself: it starts at the active player and takes the
+    -- seats still in the game, so carol's trigger is placed after alice's.
+    -- Unobservable at two players, where a departure ends the game before any
+    -- trigger is gathered.
+    --
+    -- Bob's trigger is absent for a different reason than it once was: CR
+    -- 800.4a's first clause removes his Outcast with him, so the trigger
+    -- never exists to be filtered. Engine.apnapPlayers still filters his seat
+    -- out of the rotation -- see the still-playing filter there -- and the
+    -- assertion on his Outcast below is what keeps this case honest about
+    -- which rule did what.
+    Spec.it s "CR 101.4/603.3b APNAP orders the two remaining players' triggers starting at the active player, and a departed seat's permanent is gone with it" $ do
+      barbarianOutcast <- S.printingOf s registry "Barbarian Outcast"
+      let gs0 = Setup.emptyGame S.threePlayers
+          (_, gs1) = S.addPermanent barbarianOutcast S.alice gs0
+          (bobsOutcast, gs2) = S.addPermanent barbarianOutcast S.bob gs1
+          (_, gs3) = S.addPermanent barbarianOutcast S.carol gs2
+          gone = S.departs Departure.Type.Conceded S.bob gs3
+          placed = snd (Engine.runGamePure S.identityAnswer gone (Engine.placePendingTriggers []))
+          controllerOf oid = fmap Object.owner (Game.lookupObject oid placed)
+      Spec.assertBool s (Maybe.isJust (Game.lookupObject bobsOutcast gs3)) "the fixture really gave bob one"
+      Spec.assertEqWith s "CR 800.4a: bob's Outcast left the game with him, so it has no trigger to place" (Game.lookupObject bobsOutcast gone) Nothing
+      case TurnRegisters.stack (GameState.turn placed) of
+        [top, bottom] -> do
+          Spec.assertEqWith s "carol's trigger is on top -- placed second" (controllerOf top) (Just S.carol)
+          Spec.assertEqWith s "the active player's (alice's) is at the bottom -- placed first" (controllerOf bottom) (Just S.alice)
+        other -> Spec.assertFailure s ("expected exactly two triggers on the stack, got " <> show (length other))
 
 -- CR 726.2: the monarch's two inherent abilities "have no source and are
 -- controlled by the player who was the monarch at the time the abilities
@@ -2116,7 +1693,7 @@ interveningSpec s registry =
 -- Bird Maiden ({2}{R} Creature -- Human Bird 1/2) and Aven Squire ({1}{W} Creature
 -- -- Bird Soldier 1/1) are the two hosts, so the two boards differ in the host's
 -- COLOUR and in nothing else.
-enchantedHostTriggerSpec :: (Monad m, Monad n) => Spec.Spec m n -> Registry.Registry m -> n ()
+enchantedHostTriggerSpec :: (Monad m) => Spec.Spec m n -> Registry.Registry m -> n ()
 enchantedHostTriggerSpec s registry =
   let settle gs = snd (Engine.runGamePure S.identityAnswer gs Engine.settleForPriority)
       resolveAll gs = snd (Engine.runGamePure S.identityAnswer gs Engine.priorityLoop)
@@ -2138,30 +1715,6 @@ enchantedHostTriggerSpec s registry =
               after = resolveAll onStack
           Spec.assertEqWith s "the ability triggered" (length (TurnRegisters.stack (GameState.turn onStack))) 1
           Spec.assertEqWith s "and tapped the creature it enchants" (tapStateOf maidenId after) (Just TapState.Tapped)
-        -- THE NEGATIVE, asserted on the STACK rather than on the tap state: a
-        -- trigger that reached the stack and then found the host untappable would
-        -- leave the same board behind, and CR 608.2a's re-check would mask it.
-        Spec.it s "CR 603.4 the clause fails on a WHITE host, so nothing triggers" $ do
-          ray <- S.printingOf s registry "Ray of Frost"
-          squire <- S.printingOf s registry "Aven Squire"
-          let (squireId, board) = S.addPermanent squire S.alice (Setup.emptyGame S.bothPlayers)
-              onStack = settle (entering ray squireId board)
-              after = resolveAll onStack
-          Spec.assertEqWith s "nothing reached the stack" (length (TurnRegisters.stack (GameState.turn onStack))) 0
-          Spec.assertEqWith s "and the creature is untapped" (tapStateOf squireId after) (Just TapState.Untapped)
-        -- The atom rather than the colour: a red creature is on the board in BOTH
-        -- readings, and only the one the Aura enchants can decide the clause. An
-        -- IsHostOfSource that matched every candidate would tap here too.
-        Spec.it s "CR 303.4b a red creature the Aura does NOT enchant decides nothing" $ do
-          ray <- S.printingOf s registry "Ray of Frost"
-          maiden <- S.printingOf s registry "Bird Maiden"
-          squire <- S.printingOf s registry "Aven Squire"
-          let (maidenId, g1) = S.addPermanent maiden S.alice (Setup.emptyGame S.bothPlayers)
-              (squireId, board) = S.addPermanent squire S.alice g1
-              onStack = settle (entering ray squireId board)
-              after = resolveAll onStack
-          Spec.assertEqWith s "nothing reached the stack" (length (TurnRegisters.stack (GameState.turn onStack))) 0
-          Spec.assertEqWith s "neither creature is tapped" (tapStateOf squireId after, tapStateOf maidenId after) (Just TapState.Untapped, Just TapState.Untapped)
 
 -- The 2/2 black Zombie Sarcomancy's own ETB mints, read back out of the card data
 -- so the "in response" fixture makes the same object the card would.
@@ -2217,17 +1770,6 @@ tenRingsDrawSpec s registry =
           let atEnd = settle (beginEndStep (board tenRings plains 4))
           Spec.assertEqWith s "the ability triggered" (length (TurnRegisters.stack (GameState.turn atEnd))) 1
           Spec.assertEqWith s "and drew up to ten" (S.handSize S.alice (resolveAll atEnd)) 10
-        -- THE NEGATIVE, the same board with only the hand changed. Ten cards is
-        -- not "fewer than ten", so CR 603.4 keeps the ability off the stack
-        -- entirely. Asserted on the STACK rather than on the hand, because a
-        -- threshold read one too high would trigger and then draw a difference of
-        -- zero -- which no hand size can tell from not triggering at all.
-        Spec.it s "CR 603.4 ten cards in hand is not fewer than ten, so nothing triggers" $ do
-          tenRings <- S.printingOf s registry "The Ten Rings"
-          plains <- S.printingOf s registry "Plains"
-          let atEnd = settle (beginEndStep (board tenRings plains 10))
-          Spec.assertEqWith s "nothing on the stack" (length (TurnRegisters.stack (GameState.turn atEnd))) 0
-          Spec.assertEqWith s "and the hand is untouched" (S.handSize S.alice (resolveAll atEnd)) 10
         -- CR 608.2h: "the difference" is information the effect requires, so it is
         -- determined once, as the effect is APPLIED rather than as the ability
         -- triggered. Three cards arrive while it waits on the stack, so the draw is
@@ -2254,21 +1796,6 @@ permanentEntersSpec s registry =
       enters oid = GameEvent.Moved (Moved.moved (ZoneChange.MkZoneChange oid oid Zone.Stack Zone.Battlefield) S.emptyCharacteristics)
       sourcesOf gs = fmap PendingTrigger.source (gathered gs)
    in Spec.describe s "PermanentEnters" $ do
-        -- The gameplay-level proof, cast to resolution: alice's second Soul
-        -- Warden enters and the FIRST one's trigger resolves for exactly 1
-        -- life. Exactly one life, not two, is the "another" falsifier -- the
-        -- newcomer is checked against its own entry (the case below proves
-        -- the scan does check it) and its own Filter is what declines.
-        Spec.it s "CR 603.6a whole cards: a second Soul Warden entering gains alice exactly 1 life" $ do
-          plains <- S.printingOf s registry "Plains"
-          soulWarden <- S.printingOf s registry "Soul Warden"
-          let (_, base) = S.addPermanent soulWarden S.alice (S.landsInPlay plains 1)
-              (gs, spellId) = S.handOne soulWarden base
-              cast = snd (Engine.runGamePure S.identityAnswer gs (S.cast S.alice spellId))
-              settled = snd (Engine.runGamePure S.identityAnswer cast Engine.priorityLoop)
-          Spec.assertEqWith s "both Wardens are on the battlefield" (S.countOnBattlefieldByName (CardName.MkCardName $ Text.pack "Soul Warden") S.alice settled) 2
-          Spec.assertEqWith s "alice gained exactly 1" (S.lifeOf S.alice settled) (fmap (+ 1) (S.lifeOf S.alice gs))
-          Spec.assertEqWith s "bob gained nothing" (S.lifeOf S.bob settled) (S.lifeOf S.bob gs)
         -- CR 603.6a: "all permanents on the battlefield (INCLUDING THE
         -- NEWCOMERS) are checked for any enters-the-battlefield triggers that
         -- match the event." The newcomer really is offered its own entry; a
@@ -2315,16 +1842,6 @@ permanentEntersSpec s registry =
               Spec.assertEqWith s "the entrant is off the battlefield" (Game.lookupObject newId gone) Nothing
               Spec.assertEqWith s "the Warden still triggered, once" (sourcesOf gone) [TriggerSource.OfObject warden]
             other -> Spec.assertFailure s ("expected exactly one battlefield entry, got " <> show (length other))
-        -- The type half of the Filter: a LAND entering is not a creature
-        -- entering. Plains has no ability of its own, so nothing else can
-        -- stand in for the silence.
-        Spec.it s "CR 603.6a a noncreature permanent entering fires nothing" $ do
-          soulWarden <- S.printingOf s registry "Soul Warden"
-          plains <- S.printingOf s registry "Plains"
-          let (_, gs0) = S.addPermanent soulWarden S.alice (Setup.emptyGame S.bothPlayers)
-              (landId, gs1) = S.addPermanent plains S.alice gs0
-              gs2 = S.withEvents [GameEvent.Moved (Moved.moved (ZoneChange.MkZoneChange landId landId Zone.Stack Zone.Battlefield) (Projection.project landId gs1))] gs1
-          Spec.assertEqWith s "no trigger" (sourcesOf gs2) []
         -- The destination half: CR 603.6a is an ENTERS-THE-BATTLEFIELD
         -- ability, so a creature card moving to a graveyard is not it.
         Spec.it s "CR 603.6a only a battlefield destination fires it" $ do
@@ -2334,23 +1851,6 @@ permanentEntersSpec s registry =
               (pikerId, gs1) = S.addPermanent piker S.bob gs0
               toGrave = GameEvent.Moved (Moved.moved (ZoneChange.MkZoneChange pikerId pikerId Zone.Battlefield Zone.Graveyard) S.emptyCharacteristics)
           Spec.assertBool s (not (Event.matchesTrigger gs1 warden S.alice (TriggerCondition.Enters (EntersTrigger.matching anotherCreature)) toGrave)) "a graveyard-bound move does not match"
-        -- CR 603.6a: "EACH TIME an event puts one or more permanents onto the
-        -- battlefield" -- one bearer, two entering creatures, two triggers. A
-        -- count, not a boolean, so "fires once per entrant" is distinguishable
-        -- from "fires once per batch".
-        Spec.it s "CR 603.6a one Soul Warden fires once per entering creature" $ do
-          soulWarden <- S.printingOf s registry "Soul Warden"
-          piker <- S.printingOf s registry "Goblin Piker"
-          let (warden, gs0) = S.addPermanent soulWarden S.alice (Setup.emptyGame S.bothPlayers)
-              (first, gs1) = S.addPermanent piker S.bob gs0
-              (second, gs2) = S.addPermanent piker S.bob gs1
-              gs3 =
-                S.withEvents
-                  [ GameEvent.Moved (Moved.moved (ZoneChange.MkZoneChange first first Zone.Stack Zone.Battlefield) (Projection.project first gs2)),
-                    GameEvent.Moved (Moved.moved (ZoneChange.MkZoneChange second second Zone.Stack Zone.Battlefield) (Projection.project second gs2))
-                  ]
-                  gs2
-          Spec.assertEqWith s "twice, both from the one Warden" (sourcesOf gs3) (replicate 2 (TriggerSource.OfObject warden))
 
 -- CR 603.7a's last sentence -- "Other events that happen earlier may make the
 -- trigger event impossible" -- with both halves already in the pool: Meandering
@@ -2465,7 +1965,7 @@ runToTurnStep turn phase answer gs0 =
 -- one trigger in each and is asked nothing at all, so the answerer is inert. That
 -- is why the recorded prompt list is expected EMPTY rather than merely free of
 -- mixed batches: CR 603.3b's own-order choice is offered inside a pass.
-secondPlacementPassSpec :: (Monad m, Monad n) => Spec.Spec m n -> Registry.Registry m -> n ()
+secondPlacementPassSpec :: (Monad m) => Spec.Spec m n -> Registry.Registry m -> n ()
 secondPlacementPassSpec s registry =
   let boardOf benalia boon =
         let (sagaId, base) = S.addPermanent benalia S.alice (Setup.emptyGame S.bothPlayers)
@@ -2491,34 +1991,8 @@ secondPlacementPassSpec s registry =
           State.modify' (<> [entries])
           pure (reverse (zipWith const [0 ..] entries))
         _ -> pure (S.identityAnswer p)
-      -- The stack from the TOP down, named by each triggered ability's source (CR
-      -- 113.7). Anything on the stack that is not a triggered ability is dropped,
-      -- and nothing here puts one there.
-      triggerSourcesOnStack gs =
-        Maybe.mapMaybe
-          ( \sid -> case fmap Object.source (Game.lookupObject sid gs) of
-              Just (Source.OfTrigger triggered) -> Just (TriggeredAbilitySource.source triggered)
-              _ -> Nothing
-          )
-          (TurnRegisters.stack (GameState.turn gs))
       angelToken = CardName.MkCardName (Text.pack "Angel Token")
    in Spec.describe s "SecondPlacementPass" $ do
-        Spec.it s "CR 603.3b the ability triggered by another ability's triggering is placed SECOND, so it resolves first" $ do
-          benalia <- S.printingOf s registry "History of Benalia"
-          boon <- S.printingOf s registry "Historian's Boon"
-          let (sagaId, boonId, advanced) = boardOf benalia boon
-              ((_, settled), asked) = State.runState (Engine.runGame orderReversing advanced Engine.settleForPriority) []
-          Spec.assertEqWith s "the turn-based action put the third lore counter on" (S.counterOf CounterKind.Lore sagaId advanced) 3
-          -- Both triggered, and the Boon's is ABOVE chapter III -- the whole of CR
-          -- 603.3b's second pass, read off the stack the player sees.
-          Spec.assertEqWith s "the Boon's trigger sits on top of the Saga's chapter III" (triggerSourcesOnStack settled) [boonId, sagaId]
-          -- Not merely "an ability of the Saga": the one underneath must be the
-          -- FINAL chapter, since that is what the Boon's condition names.
-          Spec.assertEqWith s "and the one underneath is chapter III" (chaptersOnStackFrom sagaId settled) [3]
-          -- The secondary check, and secondary because it can hold vacuously: with
-          -- one trigger in each pass alice has nothing to order, so she is asked
-          -- nothing. Under a single pass she is asked once, with both entries.
-          Spec.assertEqWith s "alice was never offered the two abilities in one ordering" (fmap length asked) []
         Spec.it s "CR 603.3b the Boon's Angel really arrives, and CR 704.5s still takes the Saga" $ do
           benalia <- S.printingOf s registry "History of Benalia"
           boon <- S.printingOf s registry "Historian's Boon"
@@ -2659,105 +2133,6 @@ chronicleWardenSpec s registry =
           -- lore counter on, so chapter III really was the final chapter.
           Spec.assertEqWith s "the turn-based action put the third lore counter on" (S.counterOf CounterKind.Lore sagaId advanced) 3
 
--- CR 608.2h read by CR 603.3b's second class: the Saga whose final chapter fired
--- is already in the graveyard when CR 117.5 gathers the watcher's trigger.
---
--- CR 704.5s keeps a Saga on the battlefield while a chapter ability of its own is
--- on the stack, so the only way out of that window is a Saga that is ALSO a
--- creature -- CR 704.5g destroys it for lethal damage in the very state-based
--- action batch that runs before the placement.
---
--- Summon: Choco/Mog, {2}{W} Enchantment Creature -- Saga Bird Moogle 3/3, "I, II,
--- III, IV -- Stampede! -- Other creatures you control get +1/+0 until end of
--- turn", standing on three lore counters; Volt Charge, {2}{R} Instant, "Volt
--- Charge deals 3 damage to any target. Proliferate." One resolution marks lethal
--- damage on the 3/3 and then proliferates the fourth lore counter, which fires
--- chapter IV -- its final chapter (CR 715.2d). Historian's Boon watches that.
---
--- THE PAIR differs in exactly one thing, whom Volt Charge is aimed at. Aimed at
--- the Saga it is gone by the scan and the Boon can only answer from last known
--- information; aimed at bob the same proliferate fires the same chapter with the
--- Saga standing. Alice gets her Angel either way, and that is the assertion. A
--- third board runs the first one again with the dying Saga a Copy Enchantment,
--- which is what parts the projection the record holds from the printed card.
---
--- A test-local answerer rather than Parun.Support's Board: the harness has no
--- vocabulary for Prompt.ChooseProliferate. Both choices FILTER the offered set
--- rather than building a recipient, so a mutation cannot be repaired by an
--- answerer that goes looking for a legal option.
-sagaDiesBeforeScanSpec :: (Monad m) => Spec.Spec m n -> Registry.Registry m -> n ()
-sagaDiesBeforeScanSpec s registry =
-  let angelToken = CardName.MkCardName (Text.pack "Angel Token")
-      aiming :: Recipient.Recipient -> ObjectId.ObjectId -> Prompt.Prompt r -> r
-      aiming victim sagaId p = case p of
-        Prompt.ChooseTargets _ _ _ slots -> S.preferring (== victim) slots
-        Prompt.ChooseProliferate _ _ oids _ -> (Set.fromList (filter (== sagaId) oids), Set.empty)
-        _ -> S.identityAnswer p
-      -- CR 707.5's as-enters choice, pinned to one named permanent so that a
-      -- mutation cannot be repaired by an answerer that finds another legal one.
-      copying :: ObjectId.ObjectId -> Prompt.Prompt r -> r
-      copying wanted p = case p of
-        Prompt.ChooseCopyTarget {} -> Just wanted
-        _ -> S.identityAnswer p
-      -- The battlefield object whose PRINTED face carries this name -- which
-      -- copying never changes, so it is how a copy is found by the card it is not.
-      printedOnBattlefield name gs =
-        let isIt oid = fmap Face.name (Game.faceOf oid gs) == Just (CardName.MkCardName (Text.pack name))
-         in List.find isIt (Set.toList (GameState.battlefield gs))
-   in Spec.describe s "CR 603.3b a Saga that dies before its final chapter is gathered" $ do
-        -- The CLONE board: the dying Saga is a Copy Enchantment, whose PRINTED
-        -- card has no chapter ability at all. CR 707.2 puts Choco/Mog's four in
-        -- its copiable values, and Parun.Types.LastKnown.characteristics is the
-        -- projection taken as it ceased -- so a reader that fell back to the
-        -- printed card would find no final chapter and stay silent. The original
-        -- keeps no lore counters, so the Angel can only be the copy's.
-        Spec.it s "CR 707.2 a COPY of the Saga answers with the copy's chapters" $ do
-          choco <- S.printingOf s registry "Summon: Choco/Mog"
-          boon <- S.printingOf s registry "Historian's Boon"
-          volt <- S.printingOf s registry "Volt Charge"
-          mountain <- S.printingOf s registry "Mountain"
-          copyEnchantment <- S.printingOf s registry "Copy Enchantment"
-          let (originalId, base) = S.addPermanent choco S.alice (S.landsFor mountain S.alice 3 (Setup.emptyGame S.bothPlayers))
-              (_, withBoon) = S.addPermanent boon S.alice base
-              (voltId, withVolt) = S.addHandCard volt S.alice withBoon
-              (_, staged) = S.spellOnStack copyEnchantment S.alice withVolt
-              copied = S.runPure (copying originalId) staged (Stack.resolveTop >> Engine.settleForPriority)
-          case printedOnBattlefield "Copy Enchantment" copied of
-            Nothing -> Spec.assertFailure s "Copy Enchantment never reached the battlefield"
-            Just copyId -> do
-              let have = S.counterOf CounterKind.Lore copyId copied
-                  ready =
-                    Game.overTurn
-                      ( \registers ->
-                          registers
-                            { TurnRegisters.phase = Phase.PrecombatMain,
-                              TurnRegisters.activePlayer = S.alice,
-                              TurnRegisters.priority = Just S.alice
-                            }
-                      )
-                      (S.addCounter CounterKind.Lore (Natural.minusSaturating 3 have) copyId copied)
-
-                  onStack = S.runPure (aiming (Recipient.ToCreature copyId) copyId) ready (S.cast S.alice voltId)
-                  burned = S.runPure (aiming (Recipient.ToCreature copyId) copyId) onStack Stack.resolveTop
-                  scanned = S.runPure (aiming (Recipient.ToCreature copyId) copyId) burned Engine.settleForPriority
-                  finished = S.runPure (aiming (Recipient.ToCreature copyId) copyId) scanned Engine.priorityLoop
-              Spec.assertEqWith s "alice still gets the Boon's Angel" (S.countOnBattlefieldByName angelToken S.alice finished) 1
-              Spec.assertBool s (not (S.onBattlefield copyId scanned)) "CR 704.5g destroyed the copy before the trigger was placed"
-              -- The copy really is the Saga and the original really is idle, so
-              -- neither half of "the copy's chapters" can be the original's.
-              Spec.assertBool s (Set.member Subtype.Saga (Projection.subtypesOf copyId copied)) "the Copy Enchantment really became a Saga"
-              Spec.assertEqWith s "and proliferate put the copy's fourth lore counter on" (S.counterOf CounterKind.Lore copyId burned) 4
-              Spec.assertEqWith s "while the original never took one" (S.counterOf CounterKind.Lore originalId burned) 0
-
--- The chapter numbers of `oid`'s own chapter abilities currently on the stack (CR
--- 715.2, CR 704.5s).
-chaptersOnStackFrom :: ObjectId.ObjectId -> GameState.GameState -> [Natural]
-chaptersOnStackFrom oid gs =
-  let from sid = case fmap Object.source (Game.lookupObject sid gs) of
-        Just (Source.OfTrigger triggered) | TriggeredAbilitySource.source triggered == oid -> Saga.chapterOf (TriggeredAbilitySource.ability triggered)
-        _ -> Nothing
-   in Maybe.mapMaybe from (TurnRegisters.stack (GameState.turn gs))
-
 -- CR 118.12's gate answered by SEVERAL seats, and read back plurally. The
 -- answer is bound under Parun.Engine.Binding.gatePlayers, which holds every
 -- payer whose answer selected the clause's branch; PlayerRef.EachInSlot is the
@@ -2892,22 +2267,18 @@ spec s registry = Spec.describe s "Parun.Engine.Trigger" $ do
   mayhemDevilSpec s registry
   prowlingGeistcatcherSpec s registry
   stateTriggerSpec s registry
-  textChangedTriggerSpec s registry
   historySpec s registry
   spinesplitterSpec s registry
   tymnaSpec s registry
   stampedeSpec s registry
   delayedSpec s registry
-  tokenSetSpec s registry
   tokenGroupReadSpec s registry
-  tokenGroupMoveSpec s registry
   singleTokenSlotReadSpec s registry
   towershellSkipSpec s registry
   orderingSpec s registry
   secondPlacementPassSpec s registry
   matchedClausePassSpec s registry
   chronicleWardenSpec s registry
-  sagaDiesBeforeScanSpec s registry
   monarchOrderingSpec s registry
   interveningSpec s registry
   enchantedHostTriggerSpec s registry

@@ -1,0 +1,37 @@
+{
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "battlefield": [
+          {
+            "card": "Barbarian Outcast",
+            "label": "outcast"
+          }
+        ],
+        "name": "alice"
+      },
+      {
+        "name": "bob"
+      }
+    ],
+    "step": "PrecombatMain"
+  },
+  "description": "CR 603.8 a true state condition puts EXACTLY ONE instance on the stack",
+  "note": "Barbarian Outcast with no Swamps: 'When you control no Swamps, sacrifice this creature' is true, so it triggers once. Missing suppression would re-trigger at every boundary and hang the run rather than show two; this tells one instance from none.",
+  "timeline": [
+    {
+      "check": {
+        "View": {
+          "is": [
+            "trigger of $outcast"
+          ],
+          "of": "Stack"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    }
+  ]
+}

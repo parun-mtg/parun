@@ -1,0 +1,64 @@
+{
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "battlefield": [
+          {
+            "card": "History of Benalia",
+            "counters": [
+              {
+                "key": {
+                  "type": "Lore"
+                },
+                "value": 2
+              }
+            ],
+            "label": "benalia"
+          },
+          {
+            "card": "Historian's Boon",
+            "label": "boon"
+          }
+        ],
+        "name": "alice"
+      },
+      {
+        "name": "bob"
+      }
+    ],
+    "step": "Upkeep"
+  },
+  "description": "CR 603.3b the ability triggered by another ability's triggering is placed SECOND, so it resolves first",
+  "note": "History of Benalia on two lore counters gets its third in alice's precombat main phase (CR 715.3c), firing chapter III, and Historian's Boon's 'Whenever the final chapter ability of a Saga you control triggers' triggers off that triggering. CR 603.3b's second pass puts the Boon's above chapter III. With one trigger in each pass alice has nothing to order: an ordering prompt offering both would be unscheduled and fail the run. Chapter III is the one underneath because the Saga has three lore counters.",
+  "timeline": [
+    {
+      "check": {
+        "Counters": {
+          "count": 3,
+          "kind": {
+            "type": "Lore"
+          },
+          "object": "$benalia"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "View": {
+          "is": [
+            "trigger of $boon",
+            "trigger of $benalia"
+          ],
+          "of": "Stack"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    }
+  ]
+}

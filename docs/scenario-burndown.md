@@ -702,12 +702,6 @@ out: grep for them.
 
 - CR 702.186b the infinity ability exists only once CR 701.64a has harnessed the Stone | `board:object-designations`
 
-### `HealSpec`
-
-- CR 614.1a / 701.69a whole card: Pyramids' shield heals the land instead of letting it be destroyed
-- CR 701.19c can't be regenerated stops Death Ward's shield and not Pyramids'
-- CR 701.8a Pyramids' first mode destroys the Aura on a land
-
 ### `InitiativeSpec`
 
 - CR 727.2 a trampler that trades with its blocker still hands the initiative over | `board:combat` `board:dungeons` `board:initiative`
@@ -1171,42 +1165,6 @@ out: grep for them.
 - CR 701.27h not one even if it had its back face up previously | `board:daytime`
 - CR 702.161a the front face, which has no living metal, is a creature on either turn | `check:helper-faceNameOf`
 - CR 701.27j/701.27f the same trigger's enters limb fires on a Piper cast at night
-
-### `TriggerSpec`
-
-- CR 101.4/603.3b the active player's trigger is placed first (bottom of stack) | `check:other-Object.owner`
-- CR 111.1 "those tokens" names every minted token, so all three are sacrificed | `check:delayed-triggers`
-- CR 113.7 a placed trigger binds its source into the reserved self slot | `check:other-Binding.targetsOf` `check:other-Binding.triggerSource` `check:other-Object.bindings`
-- CR 303.4b a red creature the Aura does NOT enchant decides nothing | `check:helper-entering` `check:helper-tapStateOf`
-- CR 406.2 "exile them" moves all three, and only them | `check:delayed-triggers`
-- CR 514.2 cleanup drops a stated-duration delayed ability | `check:delayed-triggers` `board:hypothetical`
-- CR 603.2b running a step records that it began, on the active player's turn | `check:events`
-- CR 603.2b two StepBegins triggers from one event emit in ascending ObjectId order | `check:helper-gatheredIn` `check:other-EventGroup.first` `check:other-LoggedEvent.event` `check:other-LoggedEvent.group` `check:other-PendingTrigger.source`
-- CR 603.3b one trigger is elided by count alone (Soul Warden, one token) | `check:other-S.tokensOf`
-- CR 603.3b the ability triggered by another ability's triggering is placed SECOND, so it resolves first | `check:helper-chaptersOnStackFrom` `check:helper-triggerSourcesOnStack`
-- CR 603.3b two triggers under one controller ask for an order, exactly once
-- CR 603.4 ten cards in hand is not fewer than ten, so nothing triggers | `check:helper-beginEndStep` `check:helper-board` `check:helper-resolveAll`
-- CR 603.4 the clause fails on a WHITE host, so nothing triggers | `check:helper-entering` `check:helper-tapStateOf`
-- CR 603.6a a SelfEnters trigger does not fire on another object's entry | `check:helper-gathered`
-- CR 603.6a a SelfEnters trigger still fires on its own entry | `check:other-PendingTrigger.controller` `check:other-PendingTrigger.source`
-- CR 603.6a a noncreature permanent entering fires nothing | `check:helper-sourcesOf`
-- CR 603.6a one Soul Warden fires once per entering creature | `check:helper-sourcesOf`
-- CR 603.6a two SelfEnters triggers emit in ascending ObjectId order | `check:helper-gathered` `check:other-PendingTrigger.source`
-- CR 603.6a whole cards: a second Soul Warden entering gains alice exactly 1 life
-- CR 603.7 the token is sacrificed at the beginning of the next end step | `check:delayed-triggers`
-- CR 603.7b the delayed ability sacrifices the token at alice's end step | `check:helper-thopters` `check:other-StoredEffects.delayedTriggers`
-- CR 603.7c one token already gone leaves the rest sacrificed | `check:delayed-triggers`
-- CR 603.7c placement-time's own chosen mode wins a collision with the captured environment | `check:other-Binding.fromChoices` `check:other-Binding.modesOf` `check:other-Object.bindings`
-- CR 603.8 a true state condition puts EXACTLY ONE instance on the stack | `check:helper-triggerIds`
-- CR 603.8 re-settling while the instance is on the stack adds no second copy | `check:helper-settle` `check:helper-triggerIds`
-- CR 603.8 the condition being FALSE means no trigger at all | `check:helper-triggerIds`
-- CR 603.8 whole card: an unhacked Outcast asks about SWAMPS and stays | `check:helper-resolveTop` `check:helper-triggerIds`
-- CR 608.2h counting first means the token is still alive and is not counted
-- CR 608.2h sacrificing first makes the Ghoul count the token
-- CR 707.2 a COPY of the Saga answers with the copy's chapters
-- CR 800.4d a departed player's delayed ability triggers, is consumed, and is not put on the stack | `board:delayed-trigger` `board:graveyard` `board:player-status`
-- a graveyard-bound event yields no enters trigger | `check:helper-gathered`
-- advance settles before handing off, so no unscanned event is discarded | `check:events` `check:other-Object.source`
 
 ### `TurnSpec`
 

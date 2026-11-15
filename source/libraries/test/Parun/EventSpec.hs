@@ -60,8 +60,8 @@ counteringsOf gs =
 
 -- CR 513.1 / 603.7b: hand the board its end step, so a delayed ability armed
 -- "at the beginning of the next end step" has its trigger event. The three
--- helpers below are Parun.TriggerSpec's tokenSetSpec's, kept local because the
--- Protean Hydra cases are this module's only users.
+-- helpers below are kept local because the Protean Hydra cases are this
+-- module's only users.
 beginEndStep :: GameState.GameState -> GameState.GameState
 beginEndStep gs =
   let endStep = Phase.Ending EndingStep.EndStep
