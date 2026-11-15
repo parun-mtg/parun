@@ -1,0 +1,340 @@
+{
+  "description": "CR 603.12 / 701.9a / 702.180a: Glacial Dragonhunt draws, then its controller may discard; only a nonland discard arms its 3 damage, and its harmonize cast from the graveyard is exiled",
+  "note": "Cast from hand, alice discards Lightning Bolt and kills Hill Giant, Craw Wurm a second candidate. Harmonized from the graveyard, she discards the drawn Forest: no trigger asks for a target, and the card ends in exile.",
+  "board": {
+    "active": "alice",
+    "step": "PrecombatMain",
+    "seats": [
+      {
+        "name": "alice",
+        "battlefield": [
+          {
+            "card": "Island",
+            "label": "i1",
+            "ready": true
+          },
+          {
+            "card": "Island",
+            "label": "i2",
+            "ready": true
+          },
+          {
+            "card": "Island",
+            "label": "i3",
+            "ready": true
+          },
+          {
+            "card": "Island",
+            "label": "i4",
+            "ready": true
+          },
+          {
+            "card": "Mountain",
+            "label": "m1",
+            "ready": true
+          },
+          {
+            "card": "Mountain",
+            "label": "m2",
+            "ready": true
+          },
+          {
+            "card": "Mountain",
+            "label": "m3",
+            "ready": true
+          },
+          {
+            "card": "Mountain",
+            "label": "m4",
+            "ready": true
+          }
+        ],
+        "hand": [
+          {
+            "card": "Glacial Dragonhunt",
+            "label": "hunt"
+          },
+          {
+            "card": "Lightning Bolt",
+            "label": "bolt"
+          }
+        ],
+        "library": [
+          {
+            "card": "Forest"
+          },
+          {
+            "card": "Swamp"
+          },
+          {
+            "card": "Plains"
+          }
+        ]
+      },
+      {
+        "name": "bob",
+        "battlefield": [
+          {
+            "card": "Hill Giant",
+            "label": "giant"
+          },
+          {
+            "card": "Craw Wurm",
+            "label": "wurm"
+          }
+        ],
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ]
+      },
+      {
+        "name": "carol",
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ]
+      }
+    ]
+  },
+  "timeline": [
+    {
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1,
+      "do": {
+        "Cast": {
+          "object": "$hunt",
+          "mana": [
+            "$i1",
+            "$m1",
+            null
+          ]
+        }
+      }
+    },
+    {
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1,
+      "do": "Pass"
+    },
+    {
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1,
+      "do": {
+        "Answer": {
+          "prompt": "ChooseOptional",
+          "with": "Exercises"
+        }
+      }
+    },
+    {
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1,
+      "do": {
+        "Answer": {
+          "prompt": "ChooseDiscard",
+          "with": [
+            "$bolt"
+          ]
+        }
+      }
+    },
+    {
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1,
+      "do": {
+        "ChooseTargets": {
+          "target": [
+            "$giant"
+          ]
+        }
+      }
+    },
+    {
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1,
+      "check": {
+        "View": {
+          "of": "Stack",
+          "is": [
+            "trigger of Glacial Dragonhunt"
+          ]
+        }
+      }
+    },
+    {
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1,
+      "do": "Pass"
+    },
+    {
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1,
+      "check": {
+        "Count": {
+          "card": "Hill Giant",
+          "count": 1,
+          "player": "bob",
+          "zone": "Graveyard"
+        }
+      }
+    },
+    {
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1,
+      "check": {
+        "Count": {
+          "card": "Forest",
+          "count": 1,
+          "player": "alice",
+          "zone": "Hand"
+        }
+      }
+    },
+    {
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1,
+      "check": {
+        "Count": {
+          "card": "Glacial Dragonhunt",
+          "count": 1,
+          "player": "alice",
+          "zone": "Graveyard"
+        }
+      }
+    },
+    {
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1,
+      "do": {
+        "Cast": {
+          "object": "Glacial Dragonhunt",
+          "mana": [
+            "$i2",
+            "$i3",
+            "$i4",
+            "$m2",
+            "$m3",
+            "$m4"
+          ]
+        }
+      }
+    },
+    {
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1,
+      "do": "Pass"
+    },
+    {
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1,
+      "do": {
+        "Answer": {
+          "prompt": "ChooseOptional",
+          "with": "Exercises"
+        }
+      }
+    },
+    {
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1,
+      "do": {
+        "Answer": {
+          "prompt": "ChooseDiscard",
+          "with": [
+            "Forest"
+          ]
+        }
+      }
+    },
+    {
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1,
+      "check": {
+        "View": {
+          "of": "Stack",
+          "is": []
+        }
+      }
+    },
+    {
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1,
+      "check": {
+        "Damage": {
+          "object": "$wurm",
+          "damage": 0
+        }
+      }
+    },
+    {
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1,
+      "check": {
+        "Count": {
+          "card": "Forest",
+          "count": 1,
+          "player": "alice",
+          "zone": "Graveyard"
+        }
+      }
+    },
+    {
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1,
+      "check": {
+        "Count": {
+          "card": "Swamp",
+          "count": 1,
+          "player": "alice",
+          "zone": "Hand"
+        }
+      }
+    },
+    {
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1,
+      "check": {
+        "Count": {
+          "card": "Glacial Dragonhunt",
+          "count": 1,
+          "player": "alice",
+          "zone": "Exile"
+        }
+      }
+    }
+  ]
+}

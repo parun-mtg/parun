@@ -1,0 +1,174 @@
+{
+  "description": "CR 107.4e / 603.3 / 701.20e: Gurmag Nightwatch, its {2/U} paid with two generic, looks at the top three when it enters, keeps one on top and puts the rest into the graveyard",
+  "note": "alice keeps the Hill Giant on top above the untouched Forest; both Plains go to the graveyard.",
+  "board": {
+    "active": "alice",
+    "step": "PrecombatMain",
+    "seats": [
+      {
+        "name": "alice",
+        "battlefield": [
+          {
+            "card": "Swamp",
+            "label": "s1"
+          },
+          {
+            "card": "Forest",
+            "label": "f1"
+          },
+          {
+            "card": "Mountain",
+            "label": "m1"
+          },
+          {
+            "card": "Mountain",
+            "label": "m2"
+          }
+        ],
+        "hand": [
+          {
+            "card": "Gurmag Nightwatch",
+            "label": "nw"
+          }
+        ],
+        "library": [
+          {
+            "card": "Plains",
+            "label": "c1"
+          },
+          {
+            "card": "Hill Giant",
+            "label": "c2"
+          },
+          {
+            "card": "Plains",
+            "label": "c3"
+          },
+          {
+            "card": "Forest",
+            "label": "c4"
+          }
+        ]
+      },
+      {
+        "name": "bob",
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ]
+      }
+    ]
+  },
+  "timeline": [
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "do": {
+        "Cast": {
+          "object": "$nw",
+          "mana": [
+            "$s1",
+            "$f1",
+            "$m1",
+            "$m2"
+          ]
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "do": "Pass"
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "do": "Pass"
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "do": {
+        "Answer": {
+          "prompt": "ChooseCardsFromAmong",
+          "with": [
+            "$c2"
+          ]
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "check": {
+        "View": {
+          "of": "Zone",
+          "is": [
+            "Hill Giant",
+            "$c4"
+          ],
+          "player": "alice",
+          "zone": "Library"
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "check": {
+        "Count": {
+          "player": "alice",
+          "zone": "Graveyard",
+          "card": "Plains",
+          "count": 2
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "check": {
+        "PowerToughness": {
+          "object": "Gurmag Nightwatch",
+          "power": 3,
+          "toughness": 3
+        }
+      }
+    }
+  ]
+}

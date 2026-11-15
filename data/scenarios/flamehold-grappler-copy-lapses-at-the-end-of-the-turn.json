@@ -1,0 +1,164 @@
+{
+  "description": "CR 603.7b: Flamehold Grappler's copy lapses at the end of the turn it entered, so a spell cast on a later turn is not copied",
+  "note": "alice casts nothing else on turn 1; her Grizzly Bears on turn 3 resolves alone.",
+  "board": {
+    "active": "alice",
+    "step": "PrecombatMain",
+    "seats": [
+      {
+        "name": "alice",
+        "battlefield": [
+          {
+            "card": "Forest",
+            "label": "f1"
+          },
+          {
+            "card": "Forest",
+            "label": "f2"
+          },
+          {
+            "card": "Island",
+            "label": "i"
+          },
+          {
+            "card": "Plains",
+            "label": "p"
+          },
+          {
+            "card": "Mountain",
+            "label": "m"
+          }
+        ],
+        "hand": [
+          {
+            "card": "Flamehold Grappler",
+            "label": "grappler"
+          },
+          {
+            "card": "Grizzly Bears",
+            "label": "bears"
+          }
+        ],
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ]
+      },
+      {
+        "name": "bob",
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ]
+      }
+    ]
+  },
+  "timeline": [
+    {
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1,
+      "do": {
+        "Cast": {
+          "object": "$grappler",
+          "mana": [
+            "$i",
+            "$p",
+            "$m",
+            null
+          ]
+        }
+      }
+    },
+    {
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1,
+      "do": "Pass"
+    },
+    {
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1,
+      "do": "Pass"
+    },
+    {
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1,
+      "check": {
+        "View": {
+          "of": "Stack",
+          "is": []
+        }
+      }
+    },
+    {
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 3,
+      "do": {
+        "Cast": {
+          "object": "$bears",
+          "mana": [
+            "$f1",
+            "$f2",
+            null
+          ]
+        }
+      }
+    },
+    {
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 3,
+      "check": {
+        "View": {
+          "of": "Stack",
+          "is": [
+            "Grizzly Bears"
+          ]
+        }
+      }
+    },
+    {
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 3,
+      "do": "Pass"
+    },
+    {
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 3,
+      "check": {
+        "Count": {
+          "card": "Grizzly Bears",
+          "count": 1,
+          "player": "alice",
+          "zone": "Battlefield"
+        }
+      }
+    }
+  ]
+}

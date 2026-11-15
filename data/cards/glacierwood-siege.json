@@ -1,0 +1,190 @@
+{
+  "faces": [
+    {
+      "manaCost": [
+        {
+          "type": "Generic",
+          "value": 1
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "Green"
+          }
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "Blue"
+          }
+        }
+      ],
+      "name": "Glacierwood Siege",
+      "oracleText": "As this enchantment enters, choose Temur or Sultai.\n• Temur — Whenever you cast an instant or sorcery spell, target player mills four cards.\n• Sultai — You may play lands from your graveyard.",
+      "playerAbilities": [
+        {
+          "condition": {
+            "type": "Compares",
+            "value": {
+              "comparison": "Exactly",
+              "measured": {
+                "type": "ChosenNumber"
+              },
+              "threshold": {
+                "type": "Literal",
+                "value": 2
+              }
+            }
+          },
+          "effect": {
+            "type": "PlayLandsFrom",
+            "value": {
+              "player": {
+                "type": "Relative",
+                "value": "You"
+              },
+              "zone": "Graveyard"
+            }
+          },
+          "scope": {
+            "type": "You"
+          }
+        }
+      ],
+      "replacementEffects": [
+        {
+          "effect": {
+            "type": "EntryR",
+            "value": {
+              "matching": {
+                "type": "IsSource"
+              },
+              "rewrite": {
+                "type": "ChooseQuality",
+                "value": {
+                  "type": "Word",
+                  "value": [
+                    "Temur",
+                    "Sultai"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      ],
+      "staticAbilities": [
+        {
+          "affected": {
+            "type": "Matching",
+            "value": {
+              "type": "IsSource"
+            }
+          },
+          "condition": {
+            "type": "Compares",
+            "value": {
+              "comparison": "Exactly",
+              "measured": {
+                "type": "ChosenNumber"
+              },
+              "threshold": {
+                "type": "Literal",
+                "value": 1
+              }
+            }
+          },
+          "modifications": [
+            {
+              "type": "GainAbility",
+              "value": {
+                "type": "Triggered",
+                "value": {
+                  "condition": {
+                    "type": "SpellCast",
+                    "value": {
+                      "scope": {
+                        "type": "PlayersTurn",
+                        "value": {
+                          "type": "Relative",
+                          "value": "AnyPlayer"
+                        }
+                      },
+                      "spell": {
+                        "type": "Matching",
+                        "value": {
+                          "type": "And",
+                          "value": [
+                            {
+                              "type": "HeldBy",
+                              "value": {
+                                "holder": "Controller",
+                                "relation": "You"
+                              }
+                            },
+                            {
+                              "type": "Or",
+                              "value": [
+                                {
+                                  "type": "HasCardType",
+                                  "value": "Instant"
+                                },
+                                {
+                                  "type": "HasCardType",
+                                  "value": "Sorcery"
+                                }
+                              ]
+                            }
+                          ]
+                        }
+                      }
+                    }
+                  },
+                  "modal": {
+                    "modes": [
+                      {
+                        "clauses": [
+                          {
+                            "effects": [
+                              {
+                                "type": "Mill",
+                                "value": {
+                                  "player": {
+                                    "type": "InSlot",
+                                    "value": "target"
+                                  },
+                                  "quantity": {
+                                    "type": "Literal",
+                                    "value": 4
+                                  }
+                                }
+                              }
+                            ]
+                          }
+                        ],
+                        "targetSlots": {
+                          "target": {
+                            "pool": {
+                              "type": "Players"
+                            }
+                          }
+                        }
+                      }
+                    ]
+                  }
+                }
+              }
+            }
+          ]
+        }
+      ],
+      "typeLine": {
+        "types": [
+          "Enchantment"
+        ]
+      }
+    }
+  ]
+}
