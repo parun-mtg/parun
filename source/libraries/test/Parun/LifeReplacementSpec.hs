@@ -403,8 +403,8 @@ collectorBoard island piker collector recall collecting =
 -- just pay life as normal"; "Ashiok's first ability doesn't allow you to attempt
 -- to pay an amount of life greater than your current life total."
 --
--- All three loyalty abilities are Parun.PlaneswalkerSpec's AshiokLoyalty group,
--- which is where the loyalty half of this card is read.
+-- The loyalty half of this card is read by the data/scenarios/planeswalker/
+-- scenarios naming Ashiok.
 --
 -- Greed ({3}{B} Enchantment, "{B}, Pay 2 life: Draw a card" -- checked the same
 -- day) is the payer, ReplacementSpec's Bloodletter group's choice for the same

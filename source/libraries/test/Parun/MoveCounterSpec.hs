@@ -432,8 +432,9 @@ groupSourceSpec s registry = Spec.describe s "CR 122.5 moving counters off a gro
       -- alice's Island is the control leg -- a permanent that is not a creature,
       -- on the same board, differing from the three givers in card type alone.
       --
-      -- `stock` is what the case puts on those four, and is the ONLY difference
-      -- between the two boards below.
+      -- `stock` is what the case puts on those four. The board with no +1/+1
+      -- counter on any creature is data/scenarios/move-counter/'s
+      -- a-board-whose-creatures-bear-no-1-1-counter-moves-nothing-and-still-asks-nothing.json.
       board extras stock = do
         island <- S.printingOf s registry "Island"
         wall <- S.printingOf s registry "Wall of Stone"
@@ -491,20 +492,6 @@ groupSourceSpec s registry = Spec.describe s "CR 122.5 moving counters off a gro
     -- play whatever bore it.
     Spec.assertEqWith s "and alice's Island, which is no creature, keeps all six of its own" (pairOn aliceIsland after) (6, 0)
     Spec.assertEqWith s "and nothing was asked, the card settling the kind, the count and the givers" asked 0
-  -- The same board differing in exactly ONE thing, what the givers bear: with the
-  -- +1/+1 counters off the three creatures, "all +1/+1 counters" finds none on
-  -- any of them and the Cannibal is left with what it entered with. Without this
-  -- pair the case above would pass on a sweep that credited the destination a
-  -- number of its own rather than what it took.
-  Spec.it s "a board whose creatures bear no +1/+1 counter moves nothing and still asks nothing" $ do
-    (cannibalId, aliceWall, bobWall, bobPiker, aliceIsland, before) <- board [] (\_ _ bobPiker2 aliceIsland2 -> S.addCounter CounterKind.PlusOnePlusOne 6 aliceIsland2 . S.addCounter CounterKind.Shield 5 bobPiker2)
-    let (asked, after) = gathered (onStack before)
-    Spec.assertEqWith s "the Cannibal still bears the one counter it entered with" (pairOn cannibalId after) (1, 0)
-    Spec.assertEqWith s "alice's Wall bears none either way" (pairOn aliceWall after) (0, 0)
-    Spec.assertEqWith s "so does bob's" (pairOn bobWall after) (0, 0)
-    Spec.assertEqWith s "bob's Piker keeps the five shield counters the sentence never named" (pairOn bobPiker after) (0, 5)
-    Spec.assertEqWith s "and the Island keeps its six, as in the case above" (pairOn aliceIsland after) (6, 0)
-    Spec.assertEqWith s "and with nothing to move the player was not asked" asked 0
   -- CR 608.2f's FIRST branch, made observable. Hardened Scales grows each
   -- placement of one or more +1/+1 counters onto a creature alice controls by one
   -- (CR 614.16), so the number of PLACEMENTS the sentence makes is readable off

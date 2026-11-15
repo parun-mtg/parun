@@ -86,8 +86,7 @@ import qualified Parun.Types.TurnRegisters as TurnRegisters
 --     613.1d for card types being a layer-4 read) -- exactly CR 506.4d's "stops
 --     being one of those card types but continues to be the other".
 --
--- Every leg hands over at the declare blockers step, typeChangeRemovalSpec's
--- pattern, so the block is declared before the type change lands, and stops at the
+-- Every leg hands over at the declare blockers step, so the block is declared before the type change lands, and stops at the
 -- end of combat step where CR 511.3 leaves the record live.
 creaturePlaneswalkerCombatSpec :: (Monad m, Monad n) => Spec.Spec m n -> Registry.Registry m -> n ()
 creaturePlaneswalkerCombatSpec s registry = Spec.describe s "CreaturePlaneswalkerInCombat" $ do

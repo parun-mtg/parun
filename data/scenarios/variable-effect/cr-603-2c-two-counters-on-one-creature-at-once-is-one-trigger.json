@@ -1,0 +1,122 @@
+{
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "battlefield": [
+          {
+            "card": "Wickersmith's Tools",
+            "label": "tools"
+          },
+          {
+            "card": "Dawnhand Dissident",
+            "label": "dissident",
+            "ready": true
+          },
+          {
+            "card": "Wall of Stone",
+            "label": "wall"
+          }
+        ],
+        "name": "alice"
+      },
+      {
+        "graveyard": [
+          {
+            "card": "Swamp",
+            "label": "swamp"
+          }
+        ],
+        "name": "bob"
+      }
+    ],
+    "step": "PrecombatMain"
+  },
+  "description": "CR 603.2c two counters on one creature at once is one trigger",
+  "final": [
+    {
+      "Counters": {
+        "count": 1,
+        "kind": {
+          "type": "Named",
+          "value": "charge"
+        },
+        "object": "$tools"
+      }
+    },
+    {
+      "Counters": {
+        "count": 2,
+        "kind": {
+          "type": "MinusOneMinusOne"
+        },
+        "object": "$wall"
+      }
+    },
+    {
+      "Count": {
+        "card": "Swamp",
+        "count": 1,
+        "player": "bob",
+        "zone": "Exile"
+      }
+    }
+  ],
+  "note": "Dawnhand Dissident's \"{T}, Blight 2\" puts both -1/-1 counters on one creature in one placement (CR 701.68a), so Wickersmith's Tools' \"one or more -1/-1 counters are put on a creature\" fires once: one charge counter, where a per-counter reading gives two. The Wall is an 0/8, so it survives both.",
+  "timeline": [
+    {
+      "do": {
+        "Answer": {
+          "prompt": "ChooseBlight",
+          "with": "$wall"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Activate": {
+          "ability": 1,
+          "costOrder": [
+            0,
+            1
+          ],
+          "object": "$dissident"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Counters": {
+          "count": 2,
+          "kind": {
+            "type": "MinusOneMinusOne"
+          },
+          "object": "$wall"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Counters": {
+          "count": 0,
+          "kind": {
+            "type": "MinusOneMinusOne"
+          },
+          "object": "$dissident"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    }
+  ]
+}

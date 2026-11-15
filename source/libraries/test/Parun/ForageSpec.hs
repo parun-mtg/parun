@@ -178,17 +178,6 @@ spec s registry = Spec.describe s "Forage" $ do
     Spec.assertEqWith s "CR 701.61a and sacrificing leaves the graveyard alone" (namesIn Zone.Graveyard eating) (names [forest, spider, piker, bolt, cow, egg])
     Spec.assertEqWith s "CR 701.21a the sacrifice took the Food" (S.countOnBattlefieldByName (S.printingName egg) S.alice eating) 0
     Spec.assertEqWith s "CR 701.61a and the exile left it on the battlefield" (S.countOnBattlefieldByName (S.printingName egg) S.alice exiling) 1
-  Spec.it s "CR 608.2d a forager who can do neither half is not offered the forage" $ do
-    sentries <- S.printingOf s registry "Treetop Sentries"
-    egg <- S.printingOf s registry "Golden Egg"
-    mountain <- S.printingOf s registry "Mountain"
-    forest <- S.printingOf s registry "Forest"
-    spider <- S.printingOf s registry "Giant Spider"
-    let gs = sentriesBoard sentries egg mountain [forest, spider] 0
-        (asked, after) = foraged (takingExiles [0]) gs
-    Spec.assertEqWith s "CR 608.2d nothing was drawn, so the forage never happened" (S.handSize S.alice after) 0
-    Spec.assertEqWith s "and the graveyard is untouched" (namesIn Zone.Graveyard after) (names [forest, spider])
-    Spec.assertBool s (notElem (Text.pack "ChooseOptional") asked) "CR 608.2d an impossible option is not offered"
   -- Two Golden Eggs and no graveyard to exile, so the Food half is the only one
   -- and the forager chooses which Egg. Told apart by ObjectId: the Egg left on
   -- the battlefield keeps the id the board gave it.

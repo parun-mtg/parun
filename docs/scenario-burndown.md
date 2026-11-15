@@ -284,8 +284,8 @@ out: grep for them.
 
 ### `CombatEffectSpec`
 
-- CR 509.1h a BLOCKER that stops being a creature leaves the attacker blocked, so nothing is dealt combat damage | `board:combat` `board:object-worldsince`
-- CR 702.20b vigilance still attacks | `check:helper-attackersOf`
+- ~~CR 509.1h a BLOCKER that stops being a creature leaves the attacker blocked, so nothing is dealt combat damage~~
+- ~~CR 702.20b vigilance still attacks~~
 
 ### `CombatSpec`
 
@@ -509,12 +509,12 @@ out: grep for them.
 
 ### `DepartureSpec`
 
-- CR 104.3a a conceding player leaves immediately, with Conceded as the reason | `check:helper-statusOf`
-- CR 726.4 the monarch departs on someone else's turn: the active player takes the crown | `check:helper-crownings`
-- CR 726.4 the monarch departs on their own turn: the next seat in turn order takes the crown | `check:helper-crownings`
-- CR 800.1 two seats: the same concede leaves the Song on the battlefield, so nothing is handed over | `check:other-Departure.continuesAfterDeparture` `check:other-StoredEffects.continuousEffects`
-- CR 800.1/104.2a two seats: the same departure ends the game instead of running CR 800.4a | `check:other-Departure.continuesAfterDeparture`
-- CR 800.4a/800.4m seating is the SEATING roster: a departure does not shorten it | `check:other-GameState.turnOrder`
+- ~~CR 104.3a a conceding player leaves immediately, with Conceded as the reason~~
+- ~~CR 726.4 the monarch departs on someone else's turn: the active player takes the crown~~
+- ~~CR 726.4 the monarch departs on their own turn: the next seat in turn order takes the crown~~
+- ~~CR 800.1 two seats: the same concede leaves the Song on the battlefield, so nothing is handed over~~
+- ~~CR 800.1/104.2a two seats: the same departure ends the game instead of running CR 800.4a~~
+- ~~CR 800.4a/800.4m seating is the SEATING roster: a departure does not shorten it~~
 
 ### `DetainSpec`
 
@@ -641,7 +641,7 @@ out: grep for them.
 
 ### `ForageSpec`
 
-- CR 608.2d a forager who can do neither half is not offered the forage | `check:helper-names` `check:helper-namesIn`
+- ~~CR 608.2d a forager who can do neither half is not offered the forage~~
 
 ### `GameSpec`
 
@@ -779,10 +779,10 @@ out: grep for them.
 
 ### `ManaSourceSpec`
 
-- CR 106.4 the three green land in the UPKEEP player's pool, not the controller's | `check:helper-poolOf` `check:helper-retainedGreen`
-- CR 106.6 the mana pays an equip cost and casts no spell | `check:other-Object.manaSpent`
-- CR 603.2b on the controller's own upkeep the same trigger pays the controller | `check:helper-poolOf` `check:helper-retainedGreen`
-- CR 605.1b the enters trigger resolves off the stack and adds {R}{G} | `check:helper-plainGreen` `check:helper-plainRed` `check:helper-poolUnits`
+- ~~CR 106.4 the three green land in the UPKEEP player's pool, not the controller's~~
+- ~~CR 106.6 the mana pays an equip cost and casts no spell~~
+- ~~CR 603.2b on the controller's own upkeep the same trigger pays the controller~~
+- ~~CR 605.1b the enters trigger resolves off the stack and adds {R}{G}~~
 - ~~CR 725.1d ending the turn during combat takes the retained mana before cleanup~~
 
 ### `ManaSpec`
@@ -845,7 +845,7 @@ out: grep for them.
 
 ### `MoveCounterSpec`
 
-- a board whose creatures bear no +1/+1 counter moves nothing and still asks nothing | `check:helper-onStack` `check:helper-pairOn`
+- ~~a board whose creatures bear no +1/+1 counter moves nothing and still asks nothing~~
 
 ### `MulliganSpec`
 
@@ -928,16 +928,16 @@ out: grep for them.
 
 ### `PlaneswalkerSpec`
 
-- CR 107.1b / 704.5i announced at X=0 she enters with no loyalty and is buried | `check:helper-graveyardCount`
-- CR 111.6 a TOKEN put into exile is not a card, so the intervening if fails | `check:events`
-- CR 111.6 a card put into exile from the battlefield satisfies the token's intervening if | `check:events`
-- CR 205.1b the -6 untaps two lands and makes them 5/5 Elemental creature lands with flying and haste | `check:tapped-count`
+- ~~CR 107.1b / 704.5i announced at X=0 she enters with no loyalty and is buried~~
+- ~~CR 111.6 a TOKEN put into exile is not a card, so the intervening if fails~~
+- ~~CR 111.6 a card put into exile from the battlefield satisfies the token's intervening if~~
+- ~~CR 205.1b the -6 untaps two lands and makes them 5/5 Elemental creature lands with flying and haste~~
 - ~~CR 306.8 Lightning Bolt's 3 damage removes all three loyalty counters, and CR 704.5i buries Jace~~
-- CR 603.4 a card put into exile from a hand satisfies the token's intervening if | `check:events`
-- CR 603.4 with nothing exiled this turn the token's ability never triggers | `check:events`
+- ~~CR 603.4 a card put into exile from a hand satisfies the token's intervening if~~
+- ~~CR 603.4 with nothing exiled this turn the token's ability never triggers~~
 - ~~CR 606.5 / 704.5i paying the combined -9 spends all nine counters and buries Jace~~
-- CR 606.5 Carth's added +1 makes Jace's -10 activatable at 9 loyalty | `check:helper-activation`
-- CR 606.6 without Carth the same Jace at 9 loyalty is not offered its -10 | `check:helper-activation`
+- ~~CR 606.5 Carth's added +1 makes Jace's -10 activatable at 9 loyalty~~
+- ~~CR 606.6 without Carth the same Jace at 9 loyalty is not offered its -10~~
 
 ### `PlayerDesignationSpec`
 
@@ -1052,8 +1052,8 @@ out: grep for them.
 
 ### `RingSpec`
 
-- CR 701.54 Birthday Escape draws, mints the emblem, and designates the creature its controller chose | `check:helper-temptationsOf`
-- CR 701.54d a player with no creatures is still tempted | `check:helper-temptationsOf` `check:events`
+- ~~CR 701.54 Birthday Escape draws, mints the emblem, and designates the creature its controller chose~~
+- ~~CR 701.54d a player with no creatures is still tempted~~
 - ~~CR 701.54e a stolen Ring-bearer is not legendary while its mark survives~~
 
 ### `RoomSpec`
@@ -1075,7 +1075,7 @@ out: grep for them.
 ### `ShieldCounterSpec`
 
 - ~~CR 122.1c a rule's destruction is not replaced, though a counter is still there~~
-- CR 701.19c / 704.5g the prohibited creature's shield does not save it from lethal damage | `check:replacement-rows`
+- ~~CR 701.19c / 704.5g the prohibited creature's shield does not save it from lethal damage~~
 
 ### `SpecialActionSpec`
 
@@ -1181,16 +1181,16 @@ out: grep for them.
 ### `VariableEffectSpec`
 
 - ~~CR 115.6 Rat Out aimed at a creature shrinks it and still makes the Rat~~
-- CR 601.2c X=1 announcing three targets destroys only one | `move:out-of-range-answer`
-- CR 603.2c two counters on one creature at once is one trigger | `check:events`
-- CR 608.2c two clauses of one resolution are two trigger events | `check:helper-minusCountersOn` `check:helper-placementGroups`
-- CR 608.2f each victim takes the mana value of the card exiled FOR IT, in APNAP order | `check:playable-from-exile`
-- CR 701.41a support on a permanent cannot choose that permanent | `check:legal-targets`
-- CR 701.47a a lone Army raises no prompt
-- CR 701.47a amass counters the Army its controller chose
-- CR 701.47a the same board answered the other way counters the other Army
-- CR 701.47c a later clause reads the amassed Army she named
-- CR 701.47c the same board answered the other way mills the other Army's power
+- ~~CR 601.2c X=1 announcing three targets destroys only one~~
+- ~~CR 603.2c two counters on one creature at once is one trigger~~
+- ~~CR 608.2c two clauses of one resolution are two trigger events~~
+- ~~CR 608.2f each victim takes the mana value of the card exiled FOR IT, in APNAP order~~
+- ~~CR 701.41a support on a permanent cannot choose that permanent~~
+- ~~CR 701.47a a lone Army raises no prompt~~
+- ~~CR 701.47a amass counters the Army its controller chose~~
+- ~~CR 701.47a the same board answered the other way counters the other Army~~
+- ~~CR 701.47c a later clause reads the amassed Army she named~~
+- ~~CR 701.47c the same board answered the other way mills the other Army's power~~
 
 ### `VoteSpec`
 

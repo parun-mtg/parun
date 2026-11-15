@@ -2119,8 +2119,6 @@ spec s reference corpus = do
   Parun.PhasingSpec.spec s registry
   Parun.PlanechaseSpec.spec s registry
   Parun.PlaneswalkerCombatSpec.spec s registry
-  Parun.PlaneswalkerSpec.ashiokLoyaltySpec s registry
-  Parun.PlaneswalkerSpec.combinedLoyaltyCostSpec s registry
   Parun.PlaneswalkerSpec.countersRemovedSpec s registry
   Parun.PlaneswalkerSpec.gristLoyaltySpec s registry
   Parun.PlaneswalkerSpec.spec s registry

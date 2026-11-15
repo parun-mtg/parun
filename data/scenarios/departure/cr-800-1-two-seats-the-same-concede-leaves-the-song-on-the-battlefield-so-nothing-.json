@@ -1,0 +1,90 @@
+{
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "battlefield": [
+          {
+            "card": "Bonesplitter",
+            "label": "axe"
+          }
+        ],
+        "name": "alice"
+      },
+      {
+        "battlefield": [
+          {
+            "card": "Titania's Song",
+            "label": "song"
+          }
+        ],
+        "name": "bob"
+      }
+    ],
+    "step": "PrecombatMain"
+  },
+  "description": "CR 800.1 two seats: the same concede leaves the Song on the battlefield, so nothing is handed over",
+  "final": [
+    {
+      "View": {
+        "is": {
+          "won": "alice"
+        },
+        "of": "Result"
+      }
+    },
+    {
+      "Count": {
+        "card": "Titania's Song",
+        "count": 1,
+        "player": "bob",
+        "zone": "Battlefield"
+      }
+    },
+    {
+      "Types": {
+        "object": "$axe",
+        "types": [
+          "Artifact",
+          "Creature"
+        ]
+      }
+    },
+    {
+      "PowerToughness": {
+        "object": "$axe",
+        "power": 1,
+        "toughness": 1
+      }
+    }
+  ],
+  "note": "The two-seat control for the three-seat handover of Titania's Song's lingering effect (CR 611.2a): a game that began with two players is not multiplayer, so bob's concession ends it (CR 104.2a) and runs none of CR 800.4a. The Song stays on the battlefield, and the live static ability is what keeps alice's Bonesplitter a 1/1 artifact creature.",
+  "timeline": [
+    {
+      "check": {
+        "Types": {
+          "object": "$axe",
+          "types": [
+            "Artifact",
+            "Creature"
+          ]
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Concede",
+      "player": "bob",
+      "step": "PrecombatMain",
+      "turn": 1
+    }
+  ]
+}

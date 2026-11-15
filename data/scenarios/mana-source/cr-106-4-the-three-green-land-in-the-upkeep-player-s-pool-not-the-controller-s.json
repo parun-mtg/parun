@@ -1,0 +1,128 @@
+{
+  "description": "CR 106.4 the three green land in the UPKEEP player's pool, not the controller's",
+  "note": "alice controls Shizuko and carol takes the upkeep; bob is the third seat that tells \"that player\" from \"an opponent of the controller\". No mana source is anywhere, so the pools hold only what the trigger added.",
+  "board": {
+    "seats": [
+      {
+        "name": "alice",
+        "battlefield": [
+          {
+            "card": "Shizuko, Caller of Autumn",
+            "label": "shizuko"
+          }
+        ]
+      },
+      {
+        "name": "bob"
+      },
+      {
+        "name": "carol"
+      }
+    ],
+    "active": "carol",
+    "turn": 3,
+    "step": "Upkeep"
+  },
+  "timeline": [
+    {
+      "turn": 3,
+      "step": "Upkeep",
+      "player": "carol",
+      "check": {
+        "View": {
+          "of": "Stack",
+          "is": [
+            "trigger of $shizuko"
+          ]
+        }
+      }
+    },
+    {
+      "turn": 3,
+      "step": "Upkeep",
+      "player": "carol",
+      "do": "Pass"
+    },
+    {
+      "turn": 3,
+      "step": "Upkeep",
+      "player": "carol",
+      "check": {
+        "View": {
+          "of": "Stack",
+          "is": []
+        }
+      }
+    },
+    {
+      "turn": 3,
+      "step": "Upkeep",
+      "player": "carol",
+      "check": {
+        "View": {
+          "of": "ManaPool",
+          "player": "carol",
+          "is": [
+            {
+              "manaType": {
+                "type": "Colored",
+                "value": "Green"
+              },
+              "tags": [],
+              "retention": "UntilEndOfTurn",
+              "restriction": null,
+              "rider": null,
+              "sourceChoices": null
+            },
+            {
+              "manaType": {
+                "type": "Colored",
+                "value": "Green"
+              },
+              "tags": [],
+              "retention": "UntilEndOfTurn",
+              "restriction": null,
+              "rider": null,
+              "sourceChoices": null
+            },
+            {
+              "manaType": {
+                "type": "Colored",
+                "value": "Green"
+              },
+              "tags": [],
+              "retention": "UntilEndOfTurn",
+              "restriction": null,
+              "rider": null,
+              "sourceChoices": null
+            }
+          ]
+        }
+      }
+    },
+    {
+      "turn": 3,
+      "step": "Upkeep",
+      "player": "carol",
+      "check": {
+        "View": {
+          "of": "ManaPool",
+          "player": "alice",
+          "is": []
+        }
+      }
+    },
+    {
+      "turn": 3,
+      "step": "Upkeep",
+      "player": "carol",
+      "check": {
+        "View": {
+          "of": "ManaPool",
+          "player": "bob",
+          "is": []
+        }
+      }
+    }
+  ]
+}
