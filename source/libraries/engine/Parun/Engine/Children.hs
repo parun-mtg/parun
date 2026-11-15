@@ -414,6 +414,7 @@ import qualified Parun.Types.Replace as Replace
 import qualified Parun.Types.ReplacementEffect as ReplacementEffect
 import qualified Parun.Types.RequireAttack as RequireAttack
 import qualified Parun.Types.RequireBlock as RequireBlock
+import qualified Parun.Types.ReselectAttack as ReselectAttack
 import qualified Parun.Types.RestrictedCreatures as RestrictedCreatures
 import qualified Parun.Types.ReturnPermanents as ReturnPermanents
 import qualified Parun.Types.Reveal as Reveal
@@ -1191,7 +1192,7 @@ effectChildren c effect = case effect of
   Effect.RemoveFromCombat (RemoveFromCombat.MkRemoveFromCombat removed unblocking) -> fmap (\rewritten -> Effect.RemoveFromCombat (RemoveFromCombat.MkRemoveFromCombat rewritten unblocking)) (onObjectRef c removed)
   Effect.BecomesBlocked named -> fmap Effect.BecomesBlocked (onSlot c named)
   Effect.BlockAttacker ref -> fmap Effect.BlockAttacker (onObjectRef c ref)
-  Effect.ReselectAttack ref -> fmap Effect.ReselectAttack (onObjectRef c ref)
+  Effect.ReselectAttack (ReselectAttack.MkReselectAttack ref kinds) -> fmap (\r -> Effect.ReselectAttack (ReselectAttack.MkReselectAttack r kinds)) (onObjectRef c ref)
   Effect.JoinAttack (JoinAttack.MkJoinAttack creature alongside) -> fmap Effect.JoinAttack (JoinAttack.MkJoinAttack <$> onObjectRef c creature <*> onPlayer c alongside)
   Effect.SwitchBlockers named -> fmap Effect.SwitchBlockers (onSlot c named)
   Effect.ExchangeBlocks (ExchangeBlocks.MkExchangeBlocks first second) -> fmap Effect.ExchangeBlocks (ExchangeBlocks.MkExchangeBlocks <$> onSlot c first <*> onSlot c second)

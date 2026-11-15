@@ -121,6 +121,7 @@ import qualified Parun.Types.Prompt as Prompt
 import Parun.Types.Recipient (Recipient)
 import qualified Parun.Types.Recipient as Recipient
 import qualified Parun.Types.RemoveFromCombat as RemoveFromCombat
+import qualified Parun.Types.ReselectAttack as ReselectAttack
 import Parun.Types.Result (Result)
 import qualified Parun.Types.Result as Result
 import qualified Parun.Types.RollDie as RollDie
@@ -2024,12 +2025,13 @@ joinAttack resolving source controller legal (JoinAttack.MkJoinAttack ref alongs
     [attacking] -> Monad.mapM_ (Combat.joinAttack controller attacking) (objectRefObjects legal resolving controller source gs ref)
     _ -> pure ()
 
--- CR 508.7, through Combat.reselectAttack, which owns the choice and its
--- candidates. The resolving controller chooses (Capricopian's "you may").
-reselectAttack :: ObjectId -> ObjectId -> PlayerId -> Map.Map SlotName (Set Recipient) -> ObjectRef -> Game ()
-reselectAttack resolving source controller legal ref = do
+-- CR 508.7 for each named creature, through Combat.reselectAttack, which owns
+-- the candidates, the decline and the rewrite. The resolving controller
+-- chooses (Capricopian's and Portal Mage's "you may").
+reselectAttack :: ObjectId -> ObjectId -> PlayerId -> Map.Map SlotName (Set Recipient) -> ReselectAttack.ReselectAttack -> Game ()
+reselectAttack resolving source controller legal (ReselectAttack.MkReselectAttack ref kinds) = do
   gs <- State.get
-  Monad.mapM_ (Combat.reselectAttack controller) (objectRefObjects legal resolving controller source gs ref)
+  Monad.mapM_ (Combat.reselectAttack kinds controller) (objectRefObjects legal resolving controller source gs ref)
 
 -- CR 509.3b's third producer, through Combat.switchBlockers, which owns the
 -- whole reassignment: General Jarkeld's hypothetical legality test over CR

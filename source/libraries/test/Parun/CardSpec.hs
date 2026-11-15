@@ -102,6 +102,7 @@ import qualified Parun.Types.AttackCost as AttackCost
 import qualified Parun.Types.AttackCount as AttackCount
 import qualified Parun.Types.AttackLimitUnless as AttackLimitUnless
 import qualified Parun.Types.AttackRequirement as AttackRequirement
+import qualified Parun.Types.AttackTargetKind as AttackTargetKind
 import qualified Parun.Types.AttackTargetRef as AttackTargetRef
 import qualified Parun.Types.AttackTrigger as AttackTrigger
 import qualified Parun.Types.AttackedTrigger as AttackedTrigger
@@ -429,6 +430,7 @@ import qualified Parun.Types.ReplacementEffect as ReplacementEffect
 import qualified Parun.Types.RequireAttack as RequireAttack
 import qualified Parun.Types.RequireBlock as RequireBlock
 import qualified Parun.Types.RequirementArity as RequirementArity
+import qualified Parun.Types.ReselectAttack as ReselectAttack
 import qualified Parun.Types.RestrictedCreatures as RestrictedCreatures
 import qualified Parun.Types.ReturnPermanents as ReturnPermanents
 import qualified Parun.Types.Reveal as Reveal
@@ -831,7 +833,7 @@ objectRefPositions =
         ("turn-face-down", Effect.TurnFaceDown (TurnFaceDown.MkTurnFaceDown (plantedRef "tf") FaceDownCharacteristics.defaultValue), [plantedRef "tf"]),
         ("remove-from-combat", Effect.RemoveFromCombat (RemoveFromCombat.MkRemoveFromCombat (plantedRef "rc") Unblocking.StayBlocked), [plantedRef "rc"]),
         ("block-attacker", Effect.BlockAttacker (plantedRef "ba"), [plantedRef "ba"]),
-        ("reselect-attack", Effect.ReselectAttack (plantedRef "ra"), [plantedRef "ra"]),
+        ("reselect-attack", Effect.ReselectAttack (ReselectAttack.MkReselectAttack (plantedRef "ra") (Set.singleton AttackTargetKind.OfPlayer)), [plantedRef "ra"]),
         ("join-attack", Effect.JoinAttack (JoinAttack.MkJoinAttack (plantedRef "ja") (PlayerRef.Relative PlayerRelation.You)), [plantedRef "ja"]),
         ("gain-control", Effect.GainControl (GainControl.MkGainControl Duration.UntilEndOfTurn (plantedRef "gc") Nothing (PlayerRef.Relative PlayerRelation.You)), [plantedRef "gc"]),
         ("require-block", Effect.RequireBlock (RequireBlock.MkRequireBlock Duration.UntilEndOfTurn (RestrictedCreatures.Named (plantedRef "rb-blocker")) (Just (RestrictedCreatures.Named (plantedRef "rb-attacker"))) RequirementArity.EachSubject), [plantedRef "rb-blocker", plantedRef "rb-attacker"]),
@@ -5316,7 +5318,7 @@ effectFilters effect = case effect of
   Effect.Fight _ -> []
   Effect.RemoveFromCombat payload -> frame SourceHostFramed (objectRefFilters (RemoveFromCombat.removed payload))
   Effect.BlockAttacker ref -> frame SourceHostFramed (objectRefFilters ref)
-  Effect.ReselectAttack ref -> frame SourceHostFramed (objectRefFilters ref)
+  Effect.ReselectAttack payload -> frame SourceHostFramed (objectRefFilters (ReselectAttack.creature payload))
   Effect.JoinAttack payload -> frame SourceHostFramed (objectRefFilters (JoinAttack.creature payload))
   Effect.BecomesBlocked _ -> []
   Effect.SwitchBlockers _ -> []

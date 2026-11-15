@@ -120,6 +120,7 @@ import qualified Parun.Codec.RepeatIf as RepeatIf
 import qualified Parun.Codec.Replace as Replace
 import qualified Parun.Codec.RequireAttack as RequireAttack
 import qualified Parun.Codec.RequireBlock as RequireBlock
+import qualified Parun.Codec.ReselectAttack as ReselectAttack
 import qualified Parun.Codec.Reveal as Reveal
 import qualified Parun.Codec.RollDie as RollDie
 import qualified Parun.Codec.SacrificeEffect as SacrificeEffect
@@ -212,7 +213,7 @@ codec cardCodec abilityCodec =
           Arm.payload "RemoveFromCombat" RemoveFromCombat.codec Effect.RemoveFromCombat (\x -> case x of Effect.RemoveFromCombat y -> Just y; _ -> Nothing),
           Arm.payload "BecomesBlocked" SlotName.codec Effect.BecomesBlocked (\x -> case x of Effect.BecomesBlocked y -> Just y; _ -> Nothing),
           Arm.payload "BlockAttacker" ObjectRef.codec Effect.BlockAttacker (\x -> case x of Effect.BlockAttacker y -> Just y; _ -> Nothing),
-          Arm.payload "ReselectAttack" ObjectRef.codec Effect.ReselectAttack (\x -> case x of Effect.ReselectAttack y -> Just y; _ -> Nothing),
+          Arm.payload "ReselectAttack" ReselectAttack.codec Effect.ReselectAttack (\x -> case x of Effect.ReselectAttack y -> Just y; _ -> Nothing),
           Arm.payload "JoinAttack" JoinAttack.codec Effect.JoinAttack (\x -> case x of Effect.JoinAttack y -> Just y; _ -> Nothing),
           Arm.payload "SwitchBlockers" SlotName.codec Effect.SwitchBlockers (\x -> case x of Effect.SwitchBlockers y -> Just y; _ -> Nothing),
           Arm.payload "ExchangeBlocks" ExchangeBlocks.codec Effect.ExchangeBlocks (\x -> case x of Effect.ExchangeBlocks y -> Just y; _ -> Nothing),
@@ -406,8 +407,8 @@ tagOf x = case x of
   Effect.RemoveFromCombat {} -> "RemoveFromCombat"
   Effect.BecomesBlocked {} -> "BecomesBlocked"
   Effect.BlockAttacker {} -> "BlockAttacker"
-  Effect.ReselectAttack {} -> "ReselectAttack"
   Effect.JoinAttack {} -> "JoinAttack"
+  Effect.ReselectAttack {} -> "ReselectAttack"
   Effect.SwitchBlockers {} -> "SwitchBlockers"
   Effect.ExchangeBlocks {} -> "ExchangeBlocks"
   Effect.Counter {} -> "Counter"

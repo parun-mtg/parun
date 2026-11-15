@@ -58,6 +58,18 @@
           {
             "card": "Forest",
             "label": "c2"
+          },
+          {
+            "card": "Jace Beleren",
+            "counters": [
+              {
+                "key": {
+                  "type": "Loyalty"
+                },
+                "value": 3
+              }
+            ],
+            "label": "jace"
           }
         ],
         "name": "carol"
@@ -66,7 +78,7 @@
     "step": "BeginningOfCombat"
   },
   "description": "Capricopian's ability is activated by the player it attacks, who reselects it onto another player, and by nobody once blockers are declared",
-  "note": "CR 602.1b / 508.7: alice attacks bob; neither alice nor carol may activate, bob pays {2} and reselects carol, after which bob may not and the 3/3 deals carol 3. In declare blockers carol is refused (CR 602.5).",
+  "note": "CR 602.1b / 508.7: alice attacks bob; neither alice nor carol may activate, bob pays {2} and reselects carol, after which bob may not and the 3/3 deals carol 3. In declare blockers carol is refused (CR 602.5). Carol's Jace is never offered: Capricopian reselects only which player it attacks.",
   "timeline": [
     {
       "do": {
@@ -151,6 +163,15 @@
     {
       "do": "Pass",
       "player": "alice",
+      "step": "DeclareAttackers",
+      "turn": 1
+    },
+    {
+      "player": "bob",
+      "refuse": {
+        "ChooseAttackTarget": "$jace"
+      },
+      "source": "$goat",
       "step": "DeclareAttackers",
       "turn": 1
     },

@@ -726,6 +726,7 @@ import qualified Parun.Codec.RequireBlockSpec
 import qualified Parun.Codec.RequiredBlockersSpec
 import qualified Parun.Codec.RequiredDefenderSpec
 import qualified Parun.Codec.RequirementAritySpec
+import qualified Parun.Codec.ReselectAttackSpec
 import qualified Parun.Codec.RestartSignalSpec
 import qualified Parun.Codec.RestrictedCreaturesSpec
 import qualified Parun.Codec.ResultSpec
@@ -1803,6 +1804,7 @@ spec s reference corpus = do
   Parun.Codec.ReinforceSpec.spec s
   Parun.Codec.RemoveCountersSpec.spec s
   Parun.Codec.JoinAttackSpec.spec s
+  Parun.Codec.ReselectAttackSpec.spec s
   Parun.Codec.RemoveFromCombatSpec.spec s
   Parun.Codec.RemovePlayerCountersSpec.spec s
   Parun.Codec.RepeatIfSpec.spec s

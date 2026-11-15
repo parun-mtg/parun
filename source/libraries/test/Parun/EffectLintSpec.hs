@@ -219,6 +219,7 @@ import qualified Parun.Types.Repeat as Repeat
 import qualified Parun.Types.ReplacementEffect as ReplacementEffect
 import qualified Parun.Types.RequireAttack as RequireAttack
 import qualified Parun.Types.RequireBlock as RequireBlock
+import qualified Parun.Types.ReselectAttack as ReselectAttack
 import qualified Parun.Types.RestrictedCreatures as RestrictedCreatures
 import qualified Parun.Types.Reveal as Reveal
 import qualified Parun.Types.RollDie as RollDie
@@ -1593,7 +1594,7 @@ effectObjectRefs effect =
         Effect.Fight {} -> []
         Effect.RemoveFromCombat payload -> read_ [RemoveFromCombat.removed payload]
         Effect.BlockAttacker ref -> read_ [ref]
-        Effect.ReselectAttack ref -> read_ [ref]
+        Effect.ReselectAttack payload -> read_ [ReselectAttack.creature payload]
         Effect.JoinAttack payload -> read_ [JoinAttack.creature payload]
         Effect.BecomesBlocked {} -> []
         -- The pair comes out of a target slot, not an ObjectRef.

@@ -43,8 +43,13 @@
                       {
                         "type": "ReselectAttack",
                         "value": {
-                          "type": "InSlot",
-                          "value": "self"
+                          "creature": {
+                            "type": "InSlot",
+                            "value": "self"
+                          },
+                          "kinds": [
+                            "OfPlayer"
+                          ]
                         }
                       }
                     ]
