@@ -1315,6 +1315,7 @@ leavesSlots t
       LeavingPermanent.Self -> arrival
       LeavingPermanent.Matching _ -> bystander
       LeavingPermanent.Bound _ -> bystander
+      LeavingPermanent.Chosen -> bystander
   where
     destinations = LeavesTrigger.destinations t
     public = fmap (not . Game.isHiddenZone . OwnedZone.zone) (Set.toList destinations)

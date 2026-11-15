@@ -1380,8 +1380,12 @@ choosePlayerAtRandom resolving source controller choice = do
 -- picks" (Covetous Elegy) and "CR 101.4b the later opponent is told the earlier
 -- one's pick, asked or not" (Summon: Valefor). A pile chooser's take is
 -- Common.takePile's to record.
+--
+-- CR 607.2d: a linked choice is also assigned to the source's record for the
+-- acquisition the resolving ability came with (CR 607.5), an empty pick
+-- clearing it. The Zenos yae Galvus scenarios prove it.
 choosePermanents :: ObjectId -> ObjectId -> PlayerId -> Map.Map SlotName (Set Recipient) -> ChoosePermanents.ChoosePermanents -> Game ()
-choosePermanents resolving source controller legal (ChoosePermanents.MkChoosePermanents choice slot pileChooser rest) = do
+choosePermanents resolving source controller legal (ChoosePermanents.MkChoosePermanents choice slot pileChooser rest linked) = do
   candidates <- State.gets (\gs -> chosenCandidates legal resolving controller source gs choice)
   picked <- case pileChooser of
     Nothing -> do
@@ -1403,6 +1407,8 @@ choosePermanents resolving source controller legal (ChoosePermanents.MkChoosePer
         _ -> snd <$> Common.chosenPermanents AnyNumberOf.IntoPile legal resolving controller source choice
       Common.takePile resolving source controller legal chooserRef matching split
   Monad.unless (null picked) (State.modify' (Common.bindObjectsSlot resolving slot (Seq.fromList picked)))
+  let note g = Game.recordChoice Chosen.Objects (Game.readingAcquisition resolving source g source) (const (if null picked then Nothing else Just (Set.fromList picked))) source g
+  Monad.when linked (State.modify' note)
   Monad.forM_ rest $ \restSlot -> do
     let others = filter (`notElem` picked) candidates
     Monad.unless (null others) (State.modify' (Common.bindObjectsSlot resolving restSlot (Seq.fromList others)))

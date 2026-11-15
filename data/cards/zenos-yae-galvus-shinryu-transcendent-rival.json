@@ -46,6 +46,7 @@
                       {
                         "type": "ChoosePermanents",
                         "value": {
+                          "linked": true,
                           "permanents": {
                             "filter": {
                               "type": "And",
@@ -111,6 +112,35 @@
                               ]
                             }
                           }
+                        }
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "condition": {
+            "type": "Leaves",
+            "value": {
+              "permanent": {
+                "type": "Chosen"
+              }
+            }
+          },
+          "modal": {
+            "modes": [
+              {
+                "clauses": [
+                  {
+                    "effects": [
+                      {
+                        "type": "Transform",
+                        "value": {
+                          "type": "InSlot",
+                          "value": "self"
                         }
                       }
                     ]

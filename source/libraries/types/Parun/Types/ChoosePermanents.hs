@@ -23,6 +23,10 @@ data ChoosePermanents = MkChoosePermanents
     -- bound, the other pile: Raging River's "divides all creatures without
     -- flying they control into a "left" pile and a "right" pile". Elided
     -- rather than written null.
-    rest :: Maybe SlotName.SlotName
+    rest :: Maybe SlotName.SlotName,
+    -- | CR 607.2d: whether the pick is also recorded on the source
+    -- (Object.chosenObjects), for a linked ability's "the chosen creature"
+    -- (Zenos yae Galvus). Elided rather than written false.
+    linked :: Bool
   }
   deriving (Eq, Ord, Show)

@@ -118,6 +118,7 @@ codec = Fields.object $ do
   chosenSubtype <- Fields.defaulted "chosenSubtype" (Object.chosenSubtype defaults) (Common.keyedList (Common.keyValue Acquisition.codec Subtype.codec)) Object.chosenSubtype
   chosenCardType <- Fields.defaulted "chosenCardType" (Object.chosenCardType defaults) (Common.keyedList (Common.keyValue Acquisition.codec CardType.codec)) Object.chosenCardType
   chosenNumber <- Fields.defaulted "chosenNumber" (Object.chosenNumber defaults) (Common.keyedList (Common.keyValue Acquisition.codec Common.natural)) Object.chosenNumber
+  chosenObjects <- Fields.defaulted "chosenObjects" (Object.chosenObjects defaults) (Common.keyedList (Common.keyValue Acquisition.codec (Common.set ObjectId.codec))) Object.chosenObjects
   chosenNames <- Fields.defaulted "chosenNames" (Object.chosenNames defaults) (Common.keyedList (Common.keyValue Acquisition.codec (Common.naturalMap PlayerId.codec (Common.set CardName.codec)))) Object.chosenNames
   chosenPlayers <- Fields.defaulted "chosenPlayers" (Object.chosenPlayers defaults) (Common.keyedList (Common.keyValue Acquisition.codec (Common.keyedList (Common.keyValue PlayerChoice.codec PlayerId.codec)))) Object.chosenPlayers
   timestamp <- Fields.required "timestamp" Timestamp.codec Object.timestamp
@@ -192,6 +193,7 @@ codec = Fields.object $ do
         Object.chosenSubtype = chosenSubtype,
         Object.chosenCardType = chosenCardType,
         Object.chosenNumber = chosenNumber,
+        Object.chosenObjects = chosenObjects,
         Object.chosenNames = chosenNames,
         Object.chosenPlayers = chosenPlayers,
         Object.timestamp = timestamp,

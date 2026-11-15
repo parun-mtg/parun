@@ -1484,7 +1484,7 @@ slotsOf effect = joinTwo (joinTwo (joinSlots (fmap objectRefSlots (effectObjectR
   Effect.ChoosePlayerAtRandom _ -> Map.empty
   -- The slot is a DEFINITION; the reads are the ceiling's and the Filter's, and
   -- the chooser is a PlayerRef, reported at the head with every other one.
-  Effect.ChoosePermanents (ChoosePermanents.MkChoosePermanents choice _ _ _) ->
+  Effect.ChoosePermanents (ChoosePermanents.MkChoosePermanents choice _ _ _ _) ->
     joinSlots (filterSlotsOf (ChosenPermanents.filter choice) : fmap quantitySlots (chosenPermanentsQuantities choice))
   -- A DEFINITION for the result slot (boundSlots below), but CR 706.2's modifier
   -- is a READ: the instruction's own Quantity may name a slot an earlier effect

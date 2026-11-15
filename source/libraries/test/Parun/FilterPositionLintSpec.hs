@@ -1104,7 +1104,7 @@ framedNameCounts card =
 choiceCriteria :: Face.Face Card.Type.Card -> [Filter.Type.Filter Keyword.Keyword]
 choiceCriteria card =
   [ ChosenPermanents.filter choice
-  | Effect.ChoosePermanents (ChoosePermanents.MkChoosePermanents choice _ _ _) <- cardAuthoredEffects card
+  | Effect.ChoosePermanents (ChoosePermanents.MkChoosePermanents choice _ _ _ _) <- cardAuthoredEffects card
   ]
 
 -- The criteria of this face's activated abilities' CR 701.9a discard costs,

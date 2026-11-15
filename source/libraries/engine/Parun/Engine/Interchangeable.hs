@@ -797,6 +797,7 @@ namedByAnother oid gs =
           && ( (Object.attachedTo obj >>= Recipient.objectOf) == Just oid
                  || any (bindingNames oid) (Map.elems (Object.bindings obj))
                  || any (Monoid.getAny . Mentions.playerChoiceNames (unread oid)) (foldMap Map.keys (Object.chosenPlayers obj))
+                 || any (Set.member oid) (Object.chosenObjects obj)
              )
    in any names (Map.toList (GameState.objects gs))
         || any ((== Just oid) . LastKnown.host) (Snapshots.lastKnown (GameState.snapshots gs))

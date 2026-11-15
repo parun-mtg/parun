@@ -1037,7 +1037,7 @@ handChoices :: Acquisition.Acquisition -> ObjectId -> ObjectId -> GameState -> G
 handChoices acquisition from to gs =
   let hand :: Chosen.Chosen a -> GameState -> GameState
       hand field = recordChoice field (acquisitionOf to gs) (const (choiceWithLastKnown field acquisition from gs)) to
-   in (hand Chosen.Colors . hand Chosen.Subtype . hand Chosen.CardType . hand Chosen.Names . hand Chosen.Players . hand Chosen.Number) gs
+   in (hand Chosen.Colors . hand Chosen.Subtype . hand Chosen.CardType . hand Chosen.Names . hand Chosen.Players . hand Chosen.Number . hand Chosen.Objects) gs
 
 -- | The Object field `field` names.
 objectChoices :: Chosen.Chosen a -> Object -> Map.Map Acquisition.Acquisition a
@@ -1048,6 +1048,7 @@ objectChoices field = case field of
   Chosen.Names -> Object.chosenNames
   Chosen.Players -> Object.chosenPlayers
   Chosen.Number -> Object.chosenNumber
+  Chosen.Objects -> Object.chosenObjects
 
 -- | objectChoices' field, rewritten.
 overObjectChoices :: Chosen.Chosen a -> (Map.Map Acquisition.Acquisition a -> Map.Map Acquisition.Acquisition a) -> Object -> Object
@@ -1058,6 +1059,7 @@ overObjectChoices field f o = case field of
   Chosen.Names -> o {Object.chosenNames = f (Object.chosenNames o)}
   Chosen.Players -> o {Object.chosenPlayers = f (Object.chosenPlayers o)}
   Chosen.Number -> o {Object.chosenNumber = f (Object.chosenNumber o)}
+  Chosen.Objects -> o {Object.chosenObjects = f (Object.chosenObjects o)}
 
 -- | The LastKnown field `field` names: objectChoices' as the object left.
 lastKnownChoices :: Chosen.Chosen a -> LastKnown.LastKnown -> Map.Map Acquisition.Acquisition a
@@ -1068,6 +1070,7 @@ lastKnownChoices field = case field of
   Chosen.Names -> LastKnown.chosenNames
   Chosen.Players -> LastKnown.chosenPlayers
   Chosen.Number -> LastKnown.chosenNumber
+  Chosen.Objects -> LastKnown.chosenObjects
 
 -- | lastKnownChoices' field, rewritten.
 overLastKnownChoices :: Chosen.Chosen a -> (Map.Map Acquisition.Acquisition a -> Map.Map Acquisition.Acquisition a) -> LastKnown.LastKnown -> LastKnown.LastKnown
@@ -1078,6 +1081,7 @@ overLastKnownChoices field f lk = case field of
   Chosen.Names -> lk {LastKnown.chosenNames = f (LastKnown.chosenNames lk)}
   Chosen.Players -> lk {LastKnown.chosenPlayers = f (LastKnown.chosenPlayers lk)}
   Chosen.Number -> lk {LastKnown.chosenNumber = f (LastKnown.chosenNumber lk)}
+  Chosen.Objects -> lk {LastKnown.chosenObjects = f (LastKnown.chosenObjects lk)}
 
 -- CR 509.1g: is this creature blocking? Combat.blockers is keyed by ATTACKER, so
 -- the answer is membership in some attacker's set rather than a key lookup, or

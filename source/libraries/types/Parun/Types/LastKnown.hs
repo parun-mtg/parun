@@ -169,6 +169,10 @@ data LastKnown = MkLastKnown
     -- | The number last chosen for it, `chosenColors`'s sibling for
     -- Object.chosenNumber.
     chosenNumber :: !(Map.Map Acquisition.Acquisition Natural.Natural),
+    -- | The objects chosen for it, `chosenColors`'s sibling for
+    -- Object.chosenObjects: what a leave trigger of a bearer that left beside
+    -- the chosen object reads (CR 603.10a).
+    chosenObjects :: !(Map.Map Acquisition.Acquisition (Set.Set ObjectId.ObjectId)),
     -- | CR 607.5: the acquisition of the abilities it had as it left --
     -- Game.acquisitionOf, for what a leave trigger refers to.
     acquisition :: !Acquisition.Acquisition,
