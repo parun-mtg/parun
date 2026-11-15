@@ -677,8 +677,7 @@ resolveStackTakingTheMay gs = foldr (\_ g -> S.runPure takesTheMay g Stack.resol
 stockLibrary :: [Printing.Printing] -> GameState.GameState -> GameState.GameState
 stockLibrary printings gs = List.foldl' (\g printing -> snd (S.addLibraryCard printing S.alice g)) gs (reverse printings)
 
--- The nine cards Wildsong Howler's trigger reads, top down, shared by both of its
--- cases.
+-- The nine cards Wildsong Howler's trigger reads, top down.
 --
 -- NINE, not six: the top six are what the trigger looks at, and the three beneath
 -- them are what makes "on the BOTTOM" observable -- with a six-card library the

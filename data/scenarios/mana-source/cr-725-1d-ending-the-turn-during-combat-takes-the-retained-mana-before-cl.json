@@ -1,0 +1,344 @@
+{
+  "description": "CR 725.1d ending the turn during combat takes the retained mana before cleanup",
+  "note": "alice attacks with Roku (its trigger adds six {R} kept until end of combat) and bob blocks with the Piker. Bob, holding the only lands, casts Time Stop in the declare blockers step. alice holds eight cards, so the cleanup step has her discard, and bob's Megrim triggers on it, which gives that cleanup a priority round (CR 514.3a): the pool is read there, before the step's own end could sweep mana whose retention merely ended as cleanup began. It is already empty and Roku's ability is not offered.",
+  "board": {
+    "seats": [
+      {
+        "name": "alice",
+        "battlefield": [
+          {
+            "card": "Avatar Roku, Firebender",
+            "label": "roku",
+            "ready": true
+          }
+        ],
+        "hand": [
+          {
+            "card": "Island",
+            "label": "h1"
+          },
+          {
+            "card": "Island",
+            "label": "h2"
+          },
+          {
+            "card": "Island",
+            "label": "h3"
+          },
+          {
+            "card": "Island",
+            "label": "h4"
+          },
+          {
+            "card": "Island",
+            "label": "h5"
+          },
+          {
+            "card": "Island",
+            "label": "h6"
+          },
+          {
+            "card": "Island",
+            "label": "h7"
+          },
+          {
+            "card": "Island",
+            "label": "h8"
+          }
+        ]
+      },
+      {
+        "name": "bob",
+        "battlefield": [
+          {
+            "card": "Goblin Piker",
+            "label": "piker",
+            "ready": true
+          },
+          {
+            "card": "Island",
+            "label": "l1"
+          },
+          {
+            "card": "Island",
+            "label": "l2"
+          },
+          {
+            "card": "Island",
+            "label": "l3"
+          },
+          {
+            "card": "Island",
+            "label": "l4"
+          },
+          {
+            "card": "Island",
+            "label": "l5"
+          },
+          {
+            "card": "Island",
+            "label": "l6"
+          },
+          {
+            "card": "Megrim",
+            "label": "megrim"
+          }
+        ],
+        "hand": [
+          {
+            "card": "Time Stop",
+            "label": "spell"
+          }
+        ]
+      }
+    ],
+    "active": "alice",
+    "step": "BeginningOfCombat"
+  },
+  "timeline": [
+    {
+      "turn": 1,
+      "step": "DeclareAttackers",
+      "player": "alice",
+      "do": {
+        "Attack": [
+          "$roku"
+        ]
+      }
+    },
+    {
+      "turn": 1,
+      "step": "DeclareBlockers",
+      "player": "bob",
+      "do": {
+        "Block": {
+          "$piker": [
+            "$roku"
+          ]
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "DeclareBlockers",
+      "player": "alice",
+      "check": {
+        "View": {
+          "of": "Step",
+          "is": "DeclareBlockers"
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "DeclareBlockers",
+      "player": "alice",
+      "check": {
+        "View": {
+          "of": "ManaPool",
+          "player": "alice",
+          "is": [
+            {
+              "manaType": {
+                "type": "Colored",
+                "value": "Red"
+              },
+              "tags": [],
+              "retention": "UntilEndOfCombat",
+              "restriction": null,
+              "rider": null,
+              "sourceChoices": null
+            },
+            {
+              "manaType": {
+                "type": "Colored",
+                "value": "Red"
+              },
+              "tags": [],
+              "retention": "UntilEndOfCombat",
+              "restriction": null,
+              "rider": null,
+              "sourceChoices": null
+            },
+            {
+              "manaType": {
+                "type": "Colored",
+                "value": "Red"
+              },
+              "tags": [],
+              "retention": "UntilEndOfCombat",
+              "restriction": null,
+              "rider": null,
+              "sourceChoices": null
+            },
+            {
+              "manaType": {
+                "type": "Colored",
+                "value": "Red"
+              },
+              "tags": [],
+              "retention": "UntilEndOfCombat",
+              "restriction": null,
+              "rider": null,
+              "sourceChoices": null
+            },
+            {
+              "manaType": {
+                "type": "Colored",
+                "value": "Red"
+              },
+              "tags": [],
+              "retention": "UntilEndOfCombat",
+              "restriction": null,
+              "rider": null,
+              "sourceChoices": null
+            },
+            {
+              "manaType": {
+                "type": "Colored",
+                "value": "Red"
+              },
+              "tags": [],
+              "retention": "UntilEndOfCombat",
+              "restriction": null,
+              "rider": null,
+              "sourceChoices": null
+            }
+          ]
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "DeclareBlockers",
+      "player": "bob",
+      "do": {
+        "Cast": {
+          "object": "$spell",
+          "mana": [
+            "$l1",
+            "$l2",
+            "$l3",
+            "$l4",
+            "$l5",
+            "$l6"
+          ]
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "Cleanup",
+      "player": "alice",
+      "check": {
+        "View": {
+          "of": "Prompt",
+          "is": {
+            "kind": "ChooseDiscard",
+            "offer": {
+              "from": [
+                "$h1",
+                "$h2",
+                "$h3",
+                "$h4",
+                "$h5",
+                "$h6",
+                "$h7",
+                "$h8"
+              ],
+              "count": 1,
+              "earlier": []
+            }
+          }
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "Cleanup",
+      "player": "alice",
+      "do": {
+        "Answer": {
+          "prompt": "ChooseDiscard",
+          "with": [
+            "$h1"
+          ]
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "Cleanup",
+      "player": "alice",
+      "check": {
+        "View": {
+          "of": "Stack",
+          "is": [
+            "trigger of $megrim"
+          ]
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "Cleanup",
+      "player": "alice",
+      "check": {
+        "View": {
+          "of": "Step",
+          "is": "Cleanup"
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "Cleanup",
+      "player": "alice",
+      "check": {
+        "View": {
+          "of": "ManaPool",
+          "player": "alice",
+          "is": []
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "Cleanup",
+      "player": "alice",
+      "check": {
+        "Count": {
+          "player": "bob",
+          "zone": "Exile",
+          "card": "Time Stop",
+          "count": 1
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "Cleanup",
+      "player": "alice",
+      "check": {
+        "Damage": {
+          "object": "$roku",
+          "damage": 0
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "Cleanup",
+      "player": "alice",
+      "check": {
+        "View": {
+          "of": "Offered",
+          "player": "alice",
+          "is": [
+            "Pass"
+          ]
+        }
+      }
+    }
+  ]
+}

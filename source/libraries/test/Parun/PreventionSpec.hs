@@ -206,12 +206,6 @@ castAndResolve :: (forall r. Prompt.Prompt r -> r) -> GameState.GameState -> Obj
 castAndResolve answer gs spellId =
   S.runPure answer gs (S.cast S.alice spellId >> Stack.resolveTop)
 
--- Copy `wanted` when it is offered, decline otherwise.
-copyOf :: ObjectId.ObjectId -> Prompt.Prompt r -> r
-copyOf wanted p = case p of
-  Prompt.ChooseCopyTarget _ _ _ legal -> if List.elem wanted legal then Just wanted else Nothing
-  _ -> S.identityAnswer p
-
 -- alice controls `n` untapped Islands in a main phase with priority, holding one
 -- card of each printing in `hand`. Returns the state and the hand ids in order --
 -- unlike S.handOne, which replaces the whole hand.
