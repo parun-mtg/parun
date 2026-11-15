@@ -2434,6 +2434,9 @@ namedTokens =
       -- Castle Doom's "a 3/3 colorless Robot Villain artifact creature token
       -- named Doombot".
       CardName.MkCardName (Text.pack "Doombot"),
+      -- Overlord of the Hauntwoods's "a tapped colorless land token named
+      -- Everywhere that is every basic land type".
+      CardName.MkCardName (Text.pack "Everywhere"),
       -- Koma, World-Eater's "3/3 blue Serpent creature tokens named Koma's Coil".
       CardName.MkCardName (Text.pack "Koma's Coil"),
       -- Goblin Kaboomist's "a colorless artifact token named Land Mine".
