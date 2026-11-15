@@ -28,6 +28,7 @@ import qualified Parun.Codec.Designation as Codec.Designation
 import qualified Parun.Codec.Mana as Codec.Mana
 import qualified Parun.Codec.Move as Codec.Move
 import qualified Parun.Codec.Phase as Codec.Phase
+import qualified Parun.Codec.PlayerDesignation as Codec.PlayerDesignation
 import qualified Parun.Codec.Reference as Codec.Reference
 import qualified Parun.Codec.Reply as Codec.Reply
 import qualified Parun.Codec.Timed as Codec.Timed
@@ -2235,9 +2236,14 @@ renderView gs asked viewIs =
         View.Protector -> do
           oid <- needObject
           maybe (pure ReplyType.Null) (named . labelOf) (Game.lookupObject oid gs >>= Object.protector)
-        View.Designations -> do
-          oid <- needObject
-          pure (ReplyType.Array (foldMap (fmap (encoded Codec.Designation.codec) . Set.toList . Object.designations) (Game.lookupObject oid gs)))
+        View.Designations -> case (ViewIs.object viewIs, ViewIs.player viewIs) of
+          (Just _, Nothing) -> do
+            oid <- needObject
+            pure (ReplyType.Array (foldMap (fmap (encoded Codec.Designation.codec) . Set.toList . Object.designations) (Game.lookupObject oid gs)))
+          (Nothing, Just _) -> do
+            pid <- needPlayer
+            pure (ReplyType.Array (foldMap (fmap (encoded Codec.PlayerDesignation.codec) . Set.toList . Player.designations) (Map.lookup pid (GameState.players gs))))
+          _ -> failWith (Failure.MkCheckFailed Nothing (Check.View viewIs) (Text.pack "this view needs an object or a player") Seq.empty)
         View.Supertypes -> do
           oid <- needObject
           pure (ReplyType.Array (fmap (ReplyType.Text . Text.pack . show) (Set.toList (Projection.supertypesOf oid gs))))

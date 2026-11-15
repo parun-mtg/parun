@@ -1,0 +1,100 @@
+{
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "battlefield": [
+          {
+            "card": "Skymarcher Aspirant",
+            "label": "aspirant",
+            "ready": true
+          },
+          {
+            "card": "Swamp",
+            "ready": true
+          },
+          {
+            "card": "Swamp",
+            "ready": true
+          },
+          {
+            "card": "Swamp",
+            "ready": true
+          },
+          {
+            "card": "Swamp",
+            "ready": true
+          },
+          {
+            "card": "Swamp",
+            "ready": true
+          },
+          {
+            "card": "Swamp",
+            "ready": true
+          },
+          {
+            "card": "Swamp",
+            "ready": true
+          },
+          {
+            "card": "Swamp",
+            "ready": true
+          },
+          {
+            "card": "Swamp",
+            "ready": true
+          }
+        ],
+        "name": "alice"
+      },
+      {
+        "name": "bob"
+      }
+    ],
+    "step": "PrecombatMain"
+  },
+  "description": "CR 702.131b ten permanents grant the city's blessing and Skymarcher Aspirant flies",
+  "timeline": [
+    {
+      "check": {
+        "Keywords": {
+          "count": 1,
+          "keyword": {
+            "type": "Flying"
+          },
+          "object": "$aspirant"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "View": {
+          "is": [
+            "CitysBlessing"
+          ],
+          "of": "Designations",
+          "player": "alice"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "View": {
+          "is": [],
+          "of": "Designations",
+          "player": "bob"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    }
+  ]
+}

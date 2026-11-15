@@ -1,0 +1,72 @@
+{
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "battlefield": [
+          {
+            "card": "Ori, Keeper of Songs",
+            "label": "ori",
+            "ready": true
+          },
+          {
+            "card": "Ashnod's Altar",
+            "ready": true
+          },
+          {
+            "card": "History of Benalia",
+            "ready": true
+          }
+        ],
+        "name": "alice"
+      },
+      {
+        "name": "bob"
+      }
+    ],
+    "step": "PrecombatMain"
+  },
+  "description": "CR 702.195a an artifact, a Saga and a legend grant an enduring story",
+  "timeline": [
+    {
+      "check": {
+        "PowerToughness": {
+          "object": "$ori",
+          "power": 4,
+          "toughness": 3
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Keywords": {
+          "count": 1,
+          "keyword": {
+            "type": "Vigilance"
+          },
+          "object": "$ori"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "View": {
+          "is": [
+            "EnduringStory"
+          ],
+          "of": "Designations",
+          "player": "alice"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    }
+  ]
+}

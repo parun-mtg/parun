@@ -941,11 +941,11 @@ out: grep for them.
 
 ### `PlayerDesignationSpec`
 
-- CR 702.131a Secrets of the Golden City blesses its controller and then draws three | `check:helper-marksOf`
-- CR 702.131b nine permanents grant nothing | `check:helper-flies` `check:helper-marksOf`
-- CR 702.131b ten permanents grant the city's blessing and Skymarcher Aspirant flies | `check:helper-flies` `check:helper-marksOf`
-- CR 702.195a an artifact, a Saga and a legend grant an enduring story | `check:helper-hasKeyword` `check:helper-marksOf`
-- CR 702.195a two qualifying permanents grant nothing | `check:helper-hasKeyword` `check:helper-marksOf`
+- ~~CR 702.131a Secrets of the Golden City blesses its controller and then draws three | `check:helper-marksOf`~~
+- ~~CR 702.131b nine permanents grant nothing | `check:helper-flies` `check:helper-marksOf`~~
+- ~~CR 702.131b ten permanents grant the city's blessing and Skymarcher Aspirant flies | `check:helper-flies` `check:helper-marksOf`~~
+- ~~CR 702.195a an artifact, a Saga and a legend grant an enduring story | `check:helper-hasKeyword` `check:helper-marksOf`~~
+- ~~CR 702.195a two qualifying permanents grant nothing | `check:helper-hasKeyword` `check:helper-marksOf`~~
 
 ### `PlayerEffectSpec`
 
