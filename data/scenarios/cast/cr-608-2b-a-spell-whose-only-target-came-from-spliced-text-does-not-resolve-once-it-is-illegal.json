@@ -1,0 +1,42 @@
+{
+  "description": "CR 608.2b a spell whose only target came from spliced text does not resolve once it is illegal",
+  "note": "CR 702.47d's note and CR 608.2b: Glacial Ray's spliced text gives Desperate Ritual its ONLY target, so once alice's Lightning Bolt has killed the Piker every target is illegal and nothing resolves, not even the Ritual's untargeted mana. The Ritual still leaves the stack for alice's graveyard, and the spliced Ray stays in her hand (CR 702.47a).",
+  "board": {
+    "seats": [
+      {
+        "name": "alice",
+        "battlefield": [
+          { "card": "Mountain", "label": "mountain-1" },
+          { "card": "Mountain", "label": "mountain-2" },
+          { "card": "Mountain", "label": "mountain-3" },
+          { "card": "Mountain", "label": "mountain-4" },
+          { "card": "Mountain", "label": "mountain-5" }
+        ],
+        "hand": [
+          { "card": "Desperate Ritual", "label": "ritual" },
+          { "card": "Glacial Ray", "label": "ray" },
+          { "card": "Lightning Bolt", "label": "bolt" }
+        ]
+      },
+      {
+        "name": "bob",
+        "battlefield": [{ "card": "Goblin Piker", "label": "piker" }]
+      }
+    ],
+    "active": "alice",
+    "step": "PrecombatMain"
+  },
+  "timeline": [
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": { "Answer": { "prompt": "ChooseSplice", "with": ["$ray"] } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": { "Cast": { "object": "$ritual", "targets": ["$piker"], "mana": ["$mountain-1", "$mountain-2", "$mountain-3", "$mountain-4", null] } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": { "Cast": { "object": "$bolt", "targets": ["$piker"], "mana": ["$mountain-5"] } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass" },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "Count": { "player": "bob", "zone": "Graveyard", "card": "Goblin Piker", "count": 1 } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "View": { "of": "Stack", "is": ["Desperate Ritual"] } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass" },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "View": { "of": "Stack", "is": [] } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "View": { "of": "ManaPool", "player": "alice", "is": [] } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "Count": { "player": "alice", "zone": "Graveyard", "card": "Desperate Ritual", "count": 1 } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "Count": { "player": "alice", "zone": "Hand", "card": "Glacial Ray", "count": 1 } } }
+  ]
+}

@@ -1,0 +1,395 @@
+{
+  "description": "CR 702.180b tapping the chosen creature for mana reverses the cast",
+  "board": {
+    "seats": [
+      {
+        "name": "alice",
+        "battlefield": [
+          {
+            "card": "Island",
+            "label": "island-1"
+          },
+          {
+            "card": "Island",
+            "label": "island-2"
+          },
+          {
+            "card": "Island",
+            "label": "island-3"
+          },
+          {
+            "card": "Island",
+            "label": "island-4"
+          },
+          {
+            "card": "Island",
+            "label": "island-5"
+          },
+          {
+            "card": "Llanowar Elves",
+            "label": "elves",
+            "ready": true
+          },
+          {
+            "card": "Bird Maiden",
+            "label": "maiden",
+            "ready": true
+          }
+        ],
+        "graveyard": [
+          {
+            "card": "Unending Whisper",
+            "label": "whisper"
+          }
+        ],
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ]
+      },
+      {
+        "name": "bob"
+      }
+    ],
+    "active": "alice",
+    "step": "PrecombatMain"
+  },
+  "timeline": [
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "check": {
+        "View": {
+          "of": "Prompt",
+          "is": {
+            "kind": "ChooseCost",
+            "offer": {
+              "source": "Unending Whisper",
+              "costs": [
+                {
+                  "mana": [
+                    {
+                      "type": "Generic",
+                      "value": 5
+                    },
+                    {
+                      "type": "OfType",
+                      "value": {
+                        "type": "Colored",
+                        "value": "Blue"
+                      }
+                    }
+                  ]
+                },
+                {
+                  "mana": [
+                    {
+                      "type": "Generic",
+                      "value": 5
+                    },
+                    {
+                      "type": "OfType",
+                      "value": {
+                        "type": "Colored",
+                        "value": "Blue"
+                      }
+                    }
+                  ],
+                  "components": [
+                    {
+                      "type": "TapPermanents",
+                      "value": {
+                        "count": {
+                          "type": "Fixed",
+                          "value": 1
+                        },
+                        "whichPermanents": {
+                          "type": "And",
+                          "value": [
+                            {
+                              "type": "HasCardType",
+                              "value": "Creature"
+                            },
+                            {
+                              "type": "Not",
+                              "value": {
+                                "type": "IsTapped"
+                              }
+                            },
+                            {
+                              "type": "HeldBy",
+                              "value": {
+                                "holder": "Controller",
+                                "relation": "You"
+                              }
+                            },
+                            {
+                              "type": "IsObject",
+                              "value": 5
+                            }
+                          ]
+                        }
+                      }
+                    }
+                  ]
+                },
+                {
+                  "mana": [
+                    {
+                      "type": "Generic",
+                      "value": 5
+                    },
+                    {
+                      "type": "OfType",
+                      "value": {
+                        "type": "Colored",
+                        "value": "Blue"
+                      }
+                    }
+                  ],
+                  "components": [
+                    {
+                      "type": "TapPermanents",
+                      "value": {
+                        "count": {
+                          "type": "Fixed",
+                          "value": 1
+                        },
+                        "whichPermanents": {
+                          "type": "And",
+                          "value": [
+                            {
+                              "type": "HasCardType",
+                              "value": "Creature"
+                            },
+                            {
+                              "type": "Not",
+                              "value": {
+                                "type": "IsTapped"
+                              }
+                            },
+                            {
+                              "type": "HeldBy",
+                              "value": {
+                                "holder": "Controller",
+                                "relation": "You"
+                              }
+                            },
+                            {
+                              "type": "IsObject",
+                              "value": 6
+                            }
+                          ]
+                        }
+                      }
+                    }
+                  ]
+                }
+              ],
+              "keywords": [
+                {
+                  "type": "Harmonize",
+                  "value": {
+                    "mana": [
+                      {
+                        "type": "Generic",
+                        "value": 5
+                      },
+                      {
+                        "type": "OfType",
+                        "value": {
+                          "type": "Colored",
+                          "value": "Blue"
+                        }
+                      }
+                    ]
+                  }
+                },
+                {
+                  "type": "Harmonize",
+                  "value": {
+                    "mana": [
+                      {
+                        "type": "Generic",
+                        "value": 5
+                      },
+                      {
+                        "type": "OfType",
+                        "value": {
+                          "type": "Colored",
+                          "value": "Blue"
+                        }
+                      }
+                    ]
+                  }
+                },
+                {
+                  "type": "Harmonize",
+                  "value": {
+                    "mana": [
+                      {
+                        "type": "Generic",
+                        "value": 5
+                      },
+                      {
+                        "type": "OfType",
+                        "value": {
+                          "type": "Colored",
+                          "value": "Blue"
+                        }
+                      }
+                    ]
+                  }
+                }
+              ],
+              "earlier": []
+            }
+          }
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "do": {
+        "Answer": {
+          "prompt": "ChooseCost",
+          "with": 1
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "refuse": {
+        "Cast": {
+          "object": "$whisper",
+          "mana": [
+            "$elves",
+            "$island-1",
+            "$island-2",
+            "$island-3",
+            "$island-4",
+            null
+          ]
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "do": {
+        "Answer": {
+          "prompt": "ReverseManaAbilities",
+          "with": "Exercises"
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "do": {
+        "Answer": {
+          "prompt": "ReverseManaAbilities",
+          "with": "Exercises"
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "do": {
+        "Answer": {
+          "prompt": "ReverseManaAbilities",
+          "with": "Exercises"
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "do": {
+        "Answer": {
+          "prompt": "ReverseManaAbilities",
+          "with": "Exercises"
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "do": {
+        "Answer": {
+          "prompt": "ReverseManaAbilities",
+          "with": "Exercises"
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "check": {
+        "Count": {
+          "player": "alice",
+          "zone": "Hand",
+          "card": "Island",
+          "count": 0
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "check": {
+        "Count": {
+          "player": "alice",
+          "zone": "Graveyard",
+          "card": "Unending Whisper",
+          "count": 1
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "check": {
+        "Count": {
+          "player": "alice",
+          "zone": "Exile",
+          "card": "Unending Whisper",
+          "count": 0
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "check": {
+        "Tapped": {
+          "object": "$maiden",
+          "tapped": false
+        }
+      }
+    }
+  ],
+  "note": "CR 702.180b's creature is chosen at CR 601.2b and tapped as the cost is paid; the two part company when the chosen creature is tapped for mana in CR 601.2g's window instead. One board, run twice: five Islands, Llanowar Elves and Bird Maiden (both power 1), Unending Whisper in alice's graveyard. The ChooseCost prompt shows the unreduced cost, then the harmonize candidate naming the Elves, then the Maiden's. Here alice names the Elves and taps them for {G}, so the payment has no untapped creature to tap and CR 734.1 reverses the whole cast, the mana abilities included: no card drawn, the Whisper still in the graveyard, and the Maiden untapped, which a tap pinned to a power rather than an object would have taken. The -control file names the Maiden on the same board with the same Elves tapped for mana, and the cast is paid. The mana never separates them: {5}{U} less one is {4}{U}, which the Elves and four Islands pay in both runs."
+}

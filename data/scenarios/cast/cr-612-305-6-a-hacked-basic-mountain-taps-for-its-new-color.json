@@ -1,0 +1,56 @@
+{
+  "description": "CR 612/305.6 a hacked basic Mountain taps for its new color",
+  "note": "Magical Hack swaps Mountain for Island in alice's Mountain's text (CR 612.1), so its subtype is Island and CR 305.6's intrinsic ability adds {U} where it added {R}. The Island that paid the {U} is the control the target slot could have taken instead: untapped on her next turn, it still adds {U}.",
+  "board": {
+    "seats": [
+      {
+        "name": "alice",
+        "battlefield": [
+          { "card": "Mountain", "label": "mountain" },
+          { "card": "Island", "label": "island" }
+        ],
+        "hand": [{ "card": "Magical Hack", "label": "hack" }],
+        "library": [{ "card": "Plains" }, { "card": "Plains" }]
+      },
+      { "name": "bob", "library": [{ "card": "Plains" }, { "card": "Plains" }] }
+    ],
+    "active": "alice",
+    "step": "PrecombatMain"
+  },
+  "timeline": [
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": { "Cast": { "object": "$hack", "targets": ["$mountain"], "mana": ["$island", null] } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass" },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "source": "Magical Hack", "do": { "ChooseWordSwap": { "from": { "type": "Mountain" }, "to": { "type": "Island" } } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "Subtypes": { "object": "$mountain", "subtypes": ["Island"] } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": { "Take": { "action": "ActivateManaAbility $mountain" } } },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "check": {
+        "View": {
+          "of": "ManaPool",
+          "player": "alice",
+          "is": [
+            { "manaType": { "type": "Colored", "value": "Blue" }, "tags": [], "retention": "Ordinary", "restriction": null, "rider": null, "sourceChoices": null }
+          ]
+        }
+      }
+    },
+    { "turn": 3, "step": "Upkeep", "player": "alice", "do": { "Take": { "action": "ActivateManaAbility $island" } } },
+    {
+      "turn": 3,
+      "step": "Upkeep",
+      "player": "alice",
+      "check": {
+        "View": {
+          "of": "ManaPool",
+          "player": "alice",
+          "is": [
+            { "manaType": { "type": "Colored", "value": "Blue" }, "tags": [], "retention": "Ordinary", "restriction": null, "rider": null, "sourceChoices": null }
+          ]
+        }
+      }
+    }
+  ]
+}

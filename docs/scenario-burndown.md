@@ -206,37 +206,37 @@ out: grep for them.
 
 ### `CastSpec`
 
-- CR 107.3a a granted flashback {X}{R} announces X rather than treating it as 0 | `check:other-Cost.costsFor` `check:other-Cost.Type.mana` `check:helper-theRed`
-- CR 201.2 the trigger's slot offers the same-named graveyard cards and no other | `move:ChooseCost-offered-cast`
-- CR 302.6 settling does not touch the other player's permanents | `check:helper-sicknessOf` `check:other-GameState.objects` `check:other-Object.sickness`
-- CR 302.6 the untap step settles the active player's permanents | `check:helper-sicknessOf`
-- CR 400.7g/601.2h Altar of the Lost pays for a granted flashback and not for a hand cast | `board:continuous-effect`
-- CR 500.5 no mana floats from one turn of a game into the next | `move:policy-answerer`
-- CR 601.2a the spell is already on the stack when CR 601.2c announces its targets | `check:prompt-payload`
-- CR 601.2c casting a Bolt stamps the chosen target on the stack object | `check:other-Binding.targetsOf`
-- CR 601.2i casting a spell records a SpellCast event for the caster | `check:events`
-- CR 603.12/603.3d a reflexive ability's target is chosen as IT goes on the stack, after the payment | `check:delayed-triggers`
-- CR 608.2b a spell whose only target came from spliced text does not resolve once it is illegal | `move:other-changeZone` `check:mana-pool`
-- CR 612/305.6 a hacked basic Mountain taps for its new color | `check:mana-types`
-- CR 702.117a after alice's own Bolt the Salvo is cast for {1}{R}; after nobody's and after bob's, its {4}{R} is unpayable
-- CR 702.119c an Ashnod's Altar that eats the chosen creature reverses the cast
-- CR 702.152a blitzed, the Requisitioner attacks, is sacrificed at the next end step and draws a card; hard-cast and bolted it draws nothing
-- CR 702.180b tapping the chosen creature for mana reverses the cast
-- CR 702.185c a spell warped this turn makes Insatiable Skittermaw's end step trigger; the same Colossus cast for {9} does not
-- CR 702.34a a countered flashback spell is exiled too | `move:other-counter`
-- CR 702.34a a granted flashback priced at the card's own mana cost is payable for that cost | `check:helper-theRed` `check:other-Cost.Type.mana` `check:other-Cost.costsFor` `check:other-Game.cardOf`
-- CR 702.34a the exile replacement is scoped to the spell itself | `move:other-changeZone`
-- CR 702.34a the flashback cost exiles the card; the permission's printed cost does not | `board:player-effect`
-- CR 702.34a the granted cost, not the printed one, is what a graveyard cast pays | `board:continuous-effect`
-- CR 702.34a/113.6f the grant creates the cast-from-graveyard permission, not just a price | `check:other-Cost.costsFor` `board:second-board`
+- ~~CR 107.3a a granted flashback {X}{R} announces X rather than treating it as 0 | `check:other-Cost.costsFor` `check:other-Cost.Type.mana` `check:helper-theRed`~~
+- ~~CR 201.2 the trigger's slot offers the same-named graveyard cards and no other | `move:ChooseCost-offered-cast`~~
+- ~~CR 302.6 settling does not touch the other player's permanents | `check:helper-sicknessOf` `check:other-GameState.objects` `check:other-Object.sickness`~~
+- ~~CR 302.6 the untap step settles the active player's permanents | `check:helper-sicknessOf`~~
+- ~~CR 400.7g/601.2h Altar of the Lost pays for a granted flashback and not for a hand cast | `board:continuous-effect`~~
+- ~~CR 500.5 no mana floats from one turn of a game into the next | `move:policy-answerer`~~
+- ~~CR 601.2a the spell is already on the stack when CR 601.2c announces its targets | `check:prompt-payload`~~
+- ~~CR 601.2c casting a Bolt stamps the chosen target on the stack object | `check:other-Binding.targetsOf`~~
+- ~~CR 601.2i casting a spell records a SpellCast event for the caster | `check:events`~~
+- ~~CR 603.12/603.3d a reflexive ability's target is chosen as IT goes on the stack, after the payment | `check:delayed-triggers`~~
+- ~~CR 608.2b a spell whose only target came from spliced text does not resolve once it is illegal | `move:other-changeZone` `check:mana-pool`~~
+- ~~CR 612/305.6 a hacked basic Mountain taps for its new color | `check:mana-types`~~
+- ~~CR 702.117a after alice's own Bolt the Salvo is cast for {1}{R}; after nobody's and after bob's, its {4}{R} is unpayable~~
+- ~~CR 702.119c an Ashnod's Altar that eats the chosen creature reverses the cast~~
+- ~~CR 702.152a blitzed, the Requisitioner attacks, is sacrificed at the next end step and draws a card; hard-cast and bolted it draws nothing~~
+- ~~CR 702.180b tapping the chosen creature for mana reverses the cast~~
+- ~~CR 702.185c a spell warped this turn makes Insatiable Skittermaw's end step trigger; the same Colossus cast for {9} does not~~
+- ~~CR 702.34a a countered flashback spell is exiled too | `move:other-counter`~~
+- ~~CR 702.34a a granted flashback priced at the card's own mana cost is payable for that cost | `check:helper-theRed` `check:other-Cost.Type.mana` `check:other-Cost.costsFor` `check:other-Game.cardOf`~~
+- ~~CR 702.34a the exile replacement is scoped to the spell itself | `move:other-changeZone`~~
+- ~~CR 702.34a the flashback cost exiles the card; the permission's printed cost does not | `board:player-effect`~~
+- ~~CR 702.34a the granted cost, not the printed one, is what a graveyard cast pays | `board:continuous-effect`~~
+- ~~CR 702.34a/113.6f the grant creates the cast-from-graveyard permission, not just a price | `check:other-Cost.costsFor` `board:second-board`~~
 - ~~CR 702.35a declining the cast puts the exiled card into its owner's graveyard~~
-- CR 702.48a / 118.9d a Patron cast free by cascade is still offered the Goblin sacrifice | `move:ChooseCost-offered-cast`
-- CR 707.10 a Double Major copy of a dashed Scout attacks and is returned
-- CR 707.2 / 400.7 a Clone of a dashed Scout and the Scout flickered neither have haste nor return | `board:delayed-trigger` `board:object-castusing`
-- CR 707.2 a graveyard card that is a copy is priced at the copy's mana cost | `check:other-Cost.costsFor` `check:other-Cost.Type.mana`
-- CR 400.7 a casting game conserves its cards | `move:policy-answerer`
-- casting actually happens in a game | `move:policy-answerer`
-- resolving an empty stack is a no-op | `check:other-Stack.resolveTop`
+- ~~CR 702.48a / 118.9d a Patron cast free by cascade is still offered the Goblin sacrifice | `move:ChooseCost-offered-cast`~~
+- ~~CR 707.10 a Double Major copy of a dashed Scout attacks and is returned~~
+- ~~CR 707.2 / 400.7 a Clone of a dashed Scout and the Scout flickered neither have haste nor return | `board:delayed-trigger` `board:object-castusing`~~
+- ~~CR 707.2 a graveyard card that is a copy is priced at the copy's mana cost | `check:other-Cost.costsFor` `check:other-Cost.Type.mana`~~
+- ~~CR 400.7 a casting game conserves its cards | `move:policy-answerer`~~
+- ~~casting actually happens in a game | `move:policy-answerer`~~
+- ~~resolving an empty stack is a no-op | `check:other-Stack.resolveTop`~~
 
 ### `ClassSpec`
 
@@ -992,14 +992,14 @@ out: grep for them.
 
 ### `ProjectionSpec`
 
-- CR 113.6b a graveyard grant's protection still bars the artifact blocker | `check:other-StoredEffects.continuousEffects` `check:other-GameState.command`
-- CR 208.1/208.2b Imperial Recruiter's search offers the */* card and the 2-power creature, not the 3-power one | `check:prompt-offers` `check:shuffled-set`
-- CR 514.2 Turn to Frog wears off at cleanup and the Wraith is a Wraith again | `check:other-StoredEffects.continuousEffects`
-- CR 514.2 an until-end-of-turn effect wears off at cleanup | `check:other-StoredEffects.continuousEffects`
-- CR 607.2d two Obelisks of Urd each pump the creatures of their OWN chosen type | `board:object-chosensubtype`
-- CR 611 Giant Growth stores a +3/+3 effect; the Piker is 5/4 | `check:other-StoredEffects.continuousEffects`
-- CR 613.3 Turn to Frog beats a changeling's CDA: a Frog and nothing else
-- CR 702.73a changeling granted by a RESOLUTION makes the creature every creature type
+- ~~CR 113.6b a graveyard grant's protection still bars the artifact blocker | `check:other-StoredEffects.continuousEffects` `check:other-GameState.command`~~
+- ~~CR 208.1/208.2b Imperial Recruiter's search offers the */* card and the 2-power creature, not the 3-power one | `check:prompt-offers` `check:shuffled-set`~~
+- ~~CR 514.2 Turn to Frog wears off at cleanup and the Wraith is a Wraith again | `check:other-StoredEffects.continuousEffects`~~
+- ~~CR 514.2 an until-end-of-turn effect wears off at cleanup | `check:other-StoredEffects.continuousEffects`~~
+- ~~CR 607.2d two Obelisks of Urd each pump the creatures of their OWN chosen type | `board:object-chosensubtype`~~
+- ~~CR 611 Giant Growth stores a +3/+3 effect; the Piker is 5/4 | `check:other-StoredEffects.continuousEffects`~~
+- ~~CR 613.3 Turn to Frog beats a changeling's CDA: a Frog and nothing else~~
+- ~~CR 702.73a changeling granted by a RESOLUTION makes the creature every creature type~~
 
 ### `PrototypeSpec`
 
@@ -1058,10 +1058,10 @@ out: grep for them.
 
 ### `RoomSpec`
 
-- CR 709.5f the other branch unlocks a door instead
-- CR 709.5g locking a door takes its designation back away | `board:object-unlockedhalves`
-- CR 709.5g locking each door takes both designations back away | `board:object-unlockedhalves`
-- CR 709.5i 'you' is the player who unlocked, not the Room's controller | `board:object-unlockedhalves`
+- ~~CR 709.5f the other branch unlocks a door instead~~
+- ~~CR 709.5g locking a door takes its designation back away | `board:object-unlockedhalves`~~
+- ~~CR 709.5g locking each door takes both designations back away | `board:object-unlockedhalves`~~
+- ~~CR 709.5i 'you' is the player who unlocked, not the Room's controller | `board:object-unlockedhalves`~~
 
 ### `SetupSpec`
 

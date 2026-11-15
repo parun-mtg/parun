@@ -1,0 +1,135 @@
+{
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "battlefield": [
+          {
+            "card": "Cabal Evangel",
+            "label": "mine",
+            "ready": true
+          }
+        ],
+        "graveyard": [
+          {
+            "card": "Synthetic Grave Bulwark",
+            "label": "bulwark"
+          }
+        ],
+        "name": "alice"
+      },
+      {
+        "battlefield": [
+          {
+            "card": "Icehide Golem",
+            "label": "golem"
+          },
+          {
+            "card": "Cabal Evangel",
+            "label": "black"
+          }
+        ],
+        "name": "bob"
+      }
+    ],
+    "step": "PrecombatMain"
+  },
+  "description": "CR 113.6b a graveyard grant's protection still bars the artifact blocker",
+  "note": "Synthetic Grave Bulwark (\"Creatures you control have protection from artifacts\", functioning from the graveyard) sits in alice's graveyard: CR 113.6b's stated zone, so the ability functions from there and nowhere else. Synthetic because no printing grants protection, or any keyword, from a zone other than the battlefield and the command zone; Anger is the printed card of this shape with haste in protection's place. alice attacks with her Cabal Evangel: bob's Icehide Golem, an artifact, may not block it (CR 702.16e), and his Cabal Evangel beside it may, so nothing else refused the declaration. Nothing is cast or activated and both command zones are empty, so the graveyard card is the only grantor. The --control file empties alice's graveyard, and the Golem blocks.",
+  "timeline": [
+    {
+      "check": {
+        "Keywords": {
+          "count": 1,
+          "keyword": {
+            "type": "Protection",
+            "value": {
+              "quality": {
+                "type": "HasCardType",
+                "value": "Artifact"
+              },
+              "spares": null
+            }
+          },
+          "object": "$mine"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "View": {
+          "is": [],
+          "of": "Zone",
+          "player": "alice",
+          "zone": "Command"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "View": {
+          "is": [],
+          "of": "Zone",
+          "player": "bob",
+          "zone": "Command"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Attack": [
+          "$mine"
+        ]
+      },
+      "player": "alice",
+      "step": "DeclareAttackers",
+      "turn": 1
+    },
+    {
+      "player": "bob",
+      "refuse": {
+        "Block": {
+          "$golem": [
+            "$mine"
+          ]
+        }
+      },
+      "step": "DeclareBlockers",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Block": {
+          "$black": [
+            "$mine"
+          ]
+        }
+      },
+      "player": "bob",
+      "step": "DeclareBlockers",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Blockers": {
+          "attacker": "$mine",
+          "blockers": [
+            "$black"
+          ]
+        }
+      },
+      "player": "alice",
+      "step": "DeclareBlockers",
+      "turn": 1
+    }
+  ]
+}

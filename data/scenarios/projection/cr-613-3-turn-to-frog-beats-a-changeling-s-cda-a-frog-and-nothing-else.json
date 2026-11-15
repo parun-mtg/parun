@@ -1,0 +1,107 @@
+{
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "battlefield": [
+          {
+            "card": "Woodland Changeling",
+            "label": "changeling"
+          },
+          {
+            "card": "Lord of Atlantis",
+            "label": "lord"
+          },
+          {
+            "card": "Island",
+            "label": "i1"
+          },
+          {
+            "card": "Island",
+            "label": "i2"
+          },
+          {
+            "card": "Island",
+            "label": "i3"
+          }
+        ],
+        "hand": [
+          {
+            "card": "Turn to Frog",
+            "label": "frog"
+          }
+        ],
+        "name": "alice"
+      },
+      {
+        "name": "bob"
+      }
+    ],
+    "step": "PrecombatMain"
+  },
+  "description": "CR 613.3 Turn to Frog beats a changeling's CDA: a Frog and nothing else",
+  "note": "Turn to Frog sets the creature types (CR 205.1b) as an ordinary timestamped layer-4 effect. CR 613.3 applies the changeling CDA first, so the set wipes every type it defined and Frog alone survives; applying changeling after layer 4's effects would leave all of them. Lord of Atlantis reads the Merfolk type: before the spell the 2/2 Woodland Changeling is a pumped 3/3 Merfolk, after it an unpumped 1/1 Frog.",
+  "timeline": [
+    {
+      "check": {
+        "PowerToughness": {
+          "object": "$changeling",
+          "power": 3,
+          "toughness": 3
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Cast": {
+          "mana": [
+            "$i1",
+            "$i2",
+            null
+          ],
+          "object": "$frog",
+          "targets": [
+            "$changeling"
+          ]
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Subtypes": {
+          "object": "$changeling",
+          "subtypes": [
+            "Frog"
+          ]
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "PowerToughness": {
+          "object": "$changeling",
+          "power": 1,
+          "toughness": 1
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    }
+  ]
+}

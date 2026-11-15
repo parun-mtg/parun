@@ -1883,10 +1883,9 @@ handNames pid gs = Maybe.mapMaybe (fmap S.nameOf . flip Game.cardOf gs) (Game.zo
 -- other five at that tier each print a second keyword, a "can't block", a
 -- control change or prowess).
 --
--- ONE board and two answerers, graveRecitalSpec's shape in Parun.CastSpec: mana,
--- seats, timing and stock cannot be the difference, only which candidate CR
--- 601.2b's announcement settles on. Both costs are payable off the same four
--- Mountains.
+-- ONE board and two answerers, so mana, seats, timing and stock cannot be the
+-- difference, only which candidate CR 601.2b's announcement settles on. Both
+-- costs are payable off the same four Mountains.
 --
 -- TWO creatures to enchant, so CR 601.2c's target choice is a real one -- a board
 -- with one collapses it, and then nothing separates "the granted enchant slot was

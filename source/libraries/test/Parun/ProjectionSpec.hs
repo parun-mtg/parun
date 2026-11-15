@@ -13,7 +13,6 @@
 module Parun.ProjectionSpec where
 
 import qualified Control.Monad as Monad
-import qualified Control.Monad.Trans.State.Strict as State
 import qualified Data.Foldable as Foldable
 import qualified Data.List as List
 import qualified Data.Map.Strict as Map
@@ -75,7 +74,6 @@ import qualified Parun.Types.CounterName as CounterName
 import qualified Parun.Types.DamageEvent as DamageEvent
 import qualified Parun.Types.DamageKind as DamageKind
 import qualified Parun.Types.Effect as Effect
-import qualified Parun.Types.EndingStep as EndingStep
 import qualified Parun.Types.Existence as Existence
 import qualified Parun.Types.Expiry as Expiry
 import qualified Parun.Types.Face as Face
@@ -130,18 +128,6 @@ import qualified Parun.Types.Zone as Zone
 import qualified Parun.Types.ZoneChangePattern as ZoneChangePattern
 import qualified Parun.Types.ZoneChangeR as ZoneChangeR
 
--- alice has a Forest for mana, a Piker on the battlefield, and Giant Growth in
--- hand, in her main phase. Cast Giant Growth (identityAnswer targets the only
--- creature), then resolve it.
-giantGrowthOnPiker :: Printing.Printing -> Printing.Printing -> Printing.Printing -> (ObjectId.ObjectId, GameState.GameState)
-giantGrowthOnPiker forest piker giantGrowth =
-  let base = S.landsInPlay forest 1
-      (pikerId, withPiker) = S.addPermanent piker S.alice base
-      (gs, ggId) = S.handOne giantGrowth withPiker
-      cast = snd (Engine.runGamePure S.identityAnswer gs (S.cast S.alice ggId))
-      resolved = snd (Engine.runGamePure S.identityAnswer cast Stack.resolveTop)
-   in (pikerId, resolved)
-
 -- Append a stored continuous effect over a dynamic set, at timestamp `ts`.
 withDynamicEffect :: Affected.Affected -> Timestamp.Timestamp -> Projection.Modification -> GameState.GameState -> GameState.GameState
 withDynamicEffect aff ts m gs =
@@ -164,21 +150,6 @@ aimAtObject oid p = case p of
   Prompt.ChooseTargets _ _ _ sets -> fmap (const (Set.singleton (Recipient.ToObject oid))) sets
   _ -> S.identityAnswer p
 
--- Records every library-search candidate list and every shuffled library, and
--- finds `wanted`. The recording is the point: what a search FINDS cannot tell a
--- candidate set that was computed correctly from one that admitted everything,
--- so the set itself has to be observed.
-searchRecordingAnswer :: ObjectId.ObjectId -> Prompt.Prompt r -> State.State ([[ObjectId.ObjectId]], [[ObjectId.ObjectId]]) r
-searchRecordingAnswer wanted p = case p of
-  Prompt.Search _ _ matches _ -> do
-    State.modify' (\(searches, shuffles) -> (searches <> [matches], shuffles))
-    pure [wanted]
-  Prompt.Shuffle library -> do
-    State.modify' (\(searches, shuffles) -> (searches, shuffles <> [library]))
-    -- An identity permutation: what was shuffled is the assertion, not the order.
-    pure library
-  _ -> pure (S.identityAnswer p)
-
 -- The card names behind a set of object ids, as a Set so an assertion reads as
 -- "exactly these cards" without depending on library order.
 namesOf :: GameState.GameState -> [ObjectId.ObjectId] -> Set.Set Text.Text
@@ -189,16 +160,6 @@ aimAtCreature :: ObjectId.ObjectId -> Prompt.Prompt r -> r
 aimAtCreature oid p = case p of
   Prompt.ChooseTargets _ _ _ sets -> fmap (const (Set.singleton (Recipient.ToCreature oid))) sets
   _ -> S.identityAnswer p
-
--- Put a one-target creature spell into alice's hand, cast it AT `victimId`, and
--- resolve it. `board` must already hold enough untapped lands for the cost. The
--- target is answered rather than forced by construction, because the boards below
--- hold more than one creature.
-castAtCreature :: ObjectId.ObjectId -> Printing.Printing -> GameState.GameState -> GameState.GameState
-castAtCreature victimId printing board =
-  let (gs, spellId) = S.handOne printing board
-      cast = snd (Engine.runGamePure (aimAtCreature victimId) gs (S.cast S.alice spellId))
-   in snd (Engine.runGamePure (aimAtCreature victimId) cast Stack.resolveTop)
 
 -- The object timestamp of the (single) Humility on the battlefield.
 humilityTimestamp :: Printing.Printing -> GameState.GameState -> Timestamp.Timestamp
@@ -908,13 +869,6 @@ bulwarkBoard s registry gs = do
   bulwark <- S.printingOf s registry "Synthetic Grave Bulwark"
   pure (snd (S.addGraveyardCard bulwark S.alice gs))
 
--- CR 614.1c's as-enters creature type, and nothing else: the Obelisk of Urd case
--- below needs two answers on one board, so the type is a parameter.
-choosingCreatureType :: Subtype.Type.Subtype -> Prompt.Prompt r -> r
-choosingCreatureType subtype p = case p of
-  Prompt.ChooseSubtype {} -> subtype
-  _ -> S.identityAnswer p
-
 spec :: (Monad m, Monad n) => Spec.Spec m n -> Registry.Registry m -> n ()
 spec s registry = Spec.describe s "Parun.Engine.Projection" $ do
   Spec.it s "layer classification matches CR 613.1" $ do
@@ -1084,15 +1038,6 @@ spec s registry = Spec.describe s "Parun.Engine.Projection" $ do
         gs = S.withEffectAt landId (Timestamp.MkTimestamp 100) (Modification.ModifyPowerToughness (ModifyPowerToughness.MkModifyPowerToughness (Quantity.Literal 3) (Quantity.Literal 3))) gs0
     Spec.assertEqWith s "still no power" (Projection.powerOf landId gs) Nothing
 
-  Spec.it s "CR 611 Giant Growth stores a +3/+3 effect; the Piker is 5/4" $ do
-    forest <- S.printingOf s registry "Forest"
-    piker <- S.printingOf s registry "Goblin Piker"
-    giantGrowth <- S.printingOf s registry "Giant Growth"
-    let (pikerId, gs) = giantGrowthOnPiker forest piker giantGrowth
-    Spec.assertEqWith s "one stored effect" (length (StoredEffects.continuousEffects (GameState.stored gs))) 1
-    Spec.assertEqWith s "power" (Projection.powerOf pikerId gs) (Just 5)
-    Spec.assertEqWith s "toughness" (Projection.toughnessOf pikerId gs) (Just 4)
-
   -- The freeze's own contract, read off the function rather than the board.
   -- CR 608.2h gives the effect ONE moment to determine its answer, so a
   -- quantity with no answer at that moment has none to defer to: the whole
@@ -1134,17 +1079,6 @@ spec s registry = Spec.describe s "Parun.Engine.Projection" $ do
     giantGrowth <- S.printingOf s registry "Giant Growth"
     let (gs, ggId) = S.handOne giantGrowth (S.landsInPlay forest 1)
     Spec.assertBool s (not (S.castable S.alice ggId gs)) "no legal target, not castable"
-
-  Spec.it s "CR 514.2 an until-end-of-turn effect wears off at cleanup" $ do
-    forest <- S.printingOf s registry "Forest"
-    piker <- S.printingOf s registry "Goblin Piker"
-    giantGrowth <- S.printingOf s registry "Giant Growth"
-    let (pikerId, cast) = giantGrowthOnPiker forest piker giantGrowth
-        -- Run the cleanup step's turn-based actions; the +3/+3 must be gone.
-        afterCleanup = snd (Engine.runGamePure S.identityAnswer cast (Engine.runTurnBasedActions (Phase.Ending EndingStep.Cleanup)))
-    Spec.assertEqWith s "effect dropped" (StoredEffects.continuousEffects (GameState.stored afterCleanup)) []
-    Spec.assertEqWith s "Piker back to base power" (Projection.powerOf pikerId afterCleanup) (Just 2)
-    Spec.assertEqWith s "Piker back to base toughness" (Projection.toughnessOf pikerId afterCleanup) (Just 1)
 
   Spec.it s "CR 613 Humility makes every creature 1/1 with no abilities" $ do
     birdMaiden <- S.printingOf s registry "Bird Maiden"
@@ -1737,66 +1671,6 @@ spec s registry = Spec.describe s "Parun.Engine.Projection" $ do
             S.withEffectFromAt srcA landA (Timestamp.MkTimestamp 100) (Modification.ChosenSubtype ChangeMode.Replace SubtypeFamily.BasicLandType) withChoices
     Spec.assertEqWith s "the Island source's land is only an Island" (Projection.subtypesOf landA gs) (Set.singleton Subtype.Type.Island)
     Spec.assertEqWith s "the Swamp source's land is only a Swamp" (Projection.subtypesOf landB gs) (Set.singleton Subtype.Type.Swamp)
-
-  -- The same entry choice read from the OTHER side: not by a Modification off the
-  -- effect's source, but by the AFFECTED SET that decides which permanents the
-  -- modification reaches (Filter.HasChosenSubtype, answered off
-  -- Projection.affectedContext). Obelisk of Urd ({6} Artifact with convoke, "As
-  -- this artifact enters, choose a creature type. Creatures you control of the
-  -- chosen type get +2/+2") is the printing, and the whole card is those two
-  -- sentences plus the keyword. Nothing is omitted, so parun's Obelisk is neither
-  -- stricter nor weaker than printed.
-  --
-  -- Gauntlet of Power's arrangement one characteristic over (Parun.ColorSpec), and
-  -- for its reason: TWO Obelisks choosing two DIFFERENT creature types, because
-  -- one could not tell the atom apart from "any chosen type on the battlefield".
-  -- Cast rather than placed, so each type is a player's answer travelling CR
-  -- 614.1c's entry rewrite; Object.chosenSubtype is per-incarnation and CR 707.6
-  -- does not copy it, which is what makes the two answers survive on one board.
-  --
-  -- Distinct base power and toughness throughout -- 2/1, 1/2, 0/1 -- so no pair of
-  -- readings coincides: a Piker pumped by both Obelisks would be 6/5, by the wrong
-  -- one 2/1, and by its own 4/3.
-  Spec.it s "CR 607.2d two Obelisks of Urd each pump the creatures of their OWN chosen type" $ do
-    plains <- S.printingOf s registry "Plains"
-    obelisk <- S.printingOf s registry "Obelisk of Urd"
-    piker <- S.printingOf s registry "Goblin Piker"
-    dissident <- S.printingOf s registry "Dawnhand Dissident"
-    myr <- S.printingOf s registry "Darksteel Myr"
-    -- Twelve Plains: {6} apiece, and no creature is on the battlefield while
-    -- either is cast, so convoke has nothing to offer and taps nothing.
-    let base = S.landsInPlay plains 12
-        (firstInHand, firstId) = S.handOne obelisk base
-        castGoblin = snd (Engine.runGamePure (choosingCreatureType Subtype.Type.Goblin) firstInHand (S.cast S.alice firstId))
-        goblinOut = snd (Engine.runGamePure (choosingCreatureType Subtype.Type.Goblin) castGoblin Stack.resolveTop)
-        (secondInHand, secondId) = S.handOne obelisk goblinOut
-        castElf = snd (Engine.runGamePure (choosingCreatureType Subtype.Type.Elf) secondInHand (S.cast S.alice secondId))
-        bothOut = snd (Engine.runGamePure (choosingCreatureType Subtype.Type.Elf) castElf Stack.resolveTop)
-        (pikerId, withPiker) = S.addPermanent piker S.alice bothOut
-        (dissidentId, withDissident) = S.addPermanent dissident S.alice withPiker
-        (myrId, gs) = S.addPermanent myr S.alice withDissident
-    Spec.assertEqWith s "the Goblin Piker is 4/3: the Obelisk that chose Goblin, and not the one that chose Elf" (Projection.powerOf pikerId gs) (Just 4)
-    Spec.assertEqWith s "the Piker's toughness is 3 for the same reason" (Projection.toughnessOf pikerId gs) (Just 3)
-    Spec.assertEqWith s "the Elf Dissident is 3/4: the other Obelisk's, and not both" (Projection.powerOf dissidentId gs) (Just 3)
-    Spec.assertEqWith s "the Dissident's toughness is 4 for the same reason" (Projection.toughnessOf dissidentId gs) (Just 4)
-    Spec.assertEqWith s "CR 205.3m the Myr is neither type and stays 0/1" (Projection.powerOf myrId gs) (Just 0)
-    Spec.assertEqWith s "and its toughness stays 1" (Projection.toughnessOf myrId gs) (Just 1)
-    -- The fixture, LAST: an assertion ahead of the six above would absorb a
-    -- mutation to the atom and report itself instead.
-    Spec.assertEqWith s "the fixture: both Obelisks resolved onto the battlefield" (S.countOnBattlefieldByName (CardName.MkCardName (Text.pack "Obelisk of Urd")) S.alice gs) 2
-
-  Spec.it s "CR 514.2 Turn to Frog wears off at cleanup and the Wraith is a Wraith again" $ do
-    island <- S.printingOf s registry "Island"
-    bogWraith <- S.printingOf s registry "Bog Wraith"
-    turnToFrog <- S.printingOf s registry "Turn to Frog"
-    let (wraithId, board) = S.addPermanent bogWraith S.alice (S.landsInPlay island 3)
-        after = castAtCreature wraithId turnToFrog board
-        afterCleanup = snd (Engine.runGamePure S.identityAnswer after (Engine.runTurnBasedActions (Phase.Ending EndingStep.Cleanup)))
-    Spec.assertEqWith s "all four effects dropped" (StoredEffects.continuousEffects (GameState.stored afterCleanup)) []
-    Spec.assertEqWith s "Creature -- Wraith again" (Projection.subtypesOf wraithId afterCleanup) (Set.singleton Subtype.Type.Wraith)
-    Spec.assertEqWith s "black again" (Projection.colorsOf wraithId afterCleanup) (Set.singleton Color.Black)
-    Spec.assertBool s (Projection.hasKeyword (Keyword.Landwalk (Filter.Type.HasSubtype Subtype.Type.Swamp)) wraithId afterCleanup) "swampwalk again"
-    Spec.assertEqWith s "3/3 again" (Projection.powerOf wraithId afterCleanup, Projection.toughnessOf wraithId afterCleanup) (Just 3, Just 3)
 
   Spec.it s "CR 613.1d CardType InAddition makes a land a creature" $ do
     forest <- S.printingOf s registry "Forest"
@@ -2838,19 +2712,6 @@ spec s registry = Spec.describe s "Parun.Engine.Projection" $ do
     -- lord on the same board leaves it alone.
     Spec.assertEqWith s "the Piker is untouched" (Projection.powerOf pikerId gs) (Just 2)
 
-  -- THE ORDERING FALSIFIER. Turn to Frog sets the creature types (CR 205.1b),
-  -- and it is an ordinary timestamped layer-4 effect. CR 613.3 puts the CDA
-  -- first, so the set wipes every type changeling defined and Frog alone
-  -- survives; applying changeling after layer 4's effects leaves all of them.
-  Spec.it s "CR 613.3 Turn to Frog beats a changeling's CDA: a Frog and nothing else" $ do
-    island <- S.printingOf s registry "Island"
-    changeling <- S.printingOf s registry "Woodland Changeling"
-    turnToFrog <- S.printingOf s registry "Turn to Frog"
-    let (oid, board) = S.addPermanent changeling S.alice (S.landsInPlay island 3)
-        after = castAtCreature oid turnToFrog board
-    Spec.assertBool s (Set.member Subtype.Type.Merfolk (Projection.subtypesOf oid board)) "before: a Merfolk among the rest"
-    Spec.assertEqWith s "after: Creature -- Frog alone" (Projection.subtypesOf oid after) (Set.singleton Subtype.Type.Frog)
-
   -- CR 702.73a says the ability "works everywhere". OFF the battlefield that is
   -- the SAME route as on it -- the projection fold, whose layer 4 seeds
   -- applySubtypeDefining for any live id in any zone -- so the graveyard leg
@@ -2871,40 +2732,6 @@ spec s registry = Spec.describe s "Parun.Engine.Projection" $ do
     -- The printed-face builder, which answers the same way for its own reason.
     Spec.assertBool s (Set.member Subtype.Type.Merfolk (Filter.subtypes view)) "a Merfolk off viewOfCard too"
     Spec.assertBool s (not (Set.member Subtype.Type.Island (Filter.subtypes view))) "and no land type there either"
-
-  -- THE THIRD ROUTE INTO CHANGELING, the twin of ColorSpec's "devoid granted by a
-  -- RESOLUTION". A keyword a resolution hands out is stored as a continuous
-  -- effect over a set CR 611.2c locked at resolution, and the creature-type half
-  -- has to come with it: CR 604.3a(2) denies the granted instance CDA status, so
-  -- it is an ordinary layer-4 effect (CR 613.1d) stamped at creation (CR 613.7b)
-  -- rather than one applied at the start of the layer (CR 613.3).
-  --
-  -- Synthetic Protean Blessing ("target creature gains changeling until end of
-  -- turn") is the producer. No printing reaches this arm: Scryfall
-  -- `o:changeling -keyword:changeling include:extras`, 2026-08-31, is exhaustive
-  -- and every hit either creates a TOKEN with changeling -- CR 604.3a(2) makes
-  -- that a CDA, since the creating effect granted it -- or writes the subtype
-  -- sentence instead (Maskwood Nexus, Stalactite Dagger). Oddric, Lunar Marquis
-  -- does grant it by a triggered ability's resolution, alongside eleven keywords
-  -- Parun.Types.Keyword mostly cannot name.
-  --
-  -- Lord of Atlantis is the READER, as it is for the printed changeling above:
-  -- its affected set is "other Merfolk", asked at layer 7c against a projection
-  -- that has already applied layer 4. 2 and 3 are distinct on purpose; a grant
-  -- that adds no creature type leaves the Piker at 2.
-  Spec.it s "CR 702.73a changeling granted by a RESOLUTION makes the creature every creature type" $ do
-    island <- S.printingOf s registry "Island"
-    lord <- S.printingOf s registry "Lord of Atlantis"
-    piker <- S.printingOf s registry "Goblin Piker"
-    blessing <- S.printingOf s registry "Synthetic Protean Blessing"
-    let (_, withLord) = S.addPermanent lord S.alice (S.landsInPlay island 2)
-        (pikerId, before) = S.addPermanent piker S.alice withLord
-        after = castAtCreature pikerId blessing before
-    Spec.assertEqWith s "the lord leaves the Goblin alone before the spell resolves" (Projection.powerOf pikerId before) (Just 2)
-    Spec.assertEqWith s "and pumps it once the granted changeling has made it a Merfolk" (Projection.powerOf pikerId after) (Just 3)
-    Spec.assertBool s (Set.member Subtype.Type.Merfolk (Projection.subtypesOf pikerId after)) "a Merfolk"
-    Spec.assertBool s (Set.member Subtype.Type.Goblin (Projection.subtypesOf pikerId after)) "and still the printed Goblin (CR 205.1b: the add keeps the rest)"
-    Spec.assertBool s (Projection.hasKeyword Keyword.Changeling pikerId after) "and the keyword itself is there (CR 613.1f layer 6)"
 
   -- CR 613.8b's loop clause reached by two PRINTED cards, and the proving pair
   -- for deciding CR 613.8a over the whole board rather than per projected object.
@@ -3858,55 +3685,6 @@ spec s registry = Spec.describe s "Parun.Engine.Projection" $ do
     Spec.assertEqWith s "no power off battlefield -- a land has no printed power box" (Filter.power view) Nothing
     Spec.assertEqWith s "no controller off battlefield" (Filter.controller view) Nothing
 
-  -- The gameplay-level proof of Projection.printedPower. Imperial Recruiter's
-  -- entry trigger searches alice's library for "a creature card with power 2 or
-  -- less", and the candidates come from Projection.viewOfObject -- the card's own
-  -- CR 613 projection, whose layer 7a is where CR 208.2a's number is filled in.
-  --
-  -- THE CANDIDATE SET IS THE ASSERTION, not what was found: with Filter.power
-  -- Nothing for every card off the battlefield, CR 208.1's AtMost answered
-  -- False for all three creature cards and the set was EMPTY, which "the search
-  -- found a card" cannot tell from a set that admitted everything. So the set has
-  -- one card in for CR 208.2b's 0 (Primal Plasma, a printed */* with no CDA), one
-  -- in for its printed 2 (Goblin Piker), and the Hill Giant out at 3. The Mountain
-  -- is out on the creature clause rather than on power, and is in the library so
-  -- the search has a non-candidate to shuffle back.
-  Spec.it s "CR 208.1/208.2b Imperial Recruiter's search offers the */* card and the 2-power creature, not the 3-power one" $ do
-    mountain <- S.printingOf s registry "Mountain"
-    recruiter <- S.printingOf s registry "Imperial Recruiter"
-    plasma <- S.printingOf s registry "Primal Plasma"
-    piker <- S.printingOf s registry "Goblin Piker"
-    giant <- S.printingOf s registry "Hill Giant"
-    let base0 = S.landsInPlay mountain 3
-        (_, base1) = S.addLibraryCard mountain S.alice base0
-        (_, base2) = S.addLibraryCard giant S.alice base1
-        (_, base3) = S.addLibraryCard piker S.alice base2
-        (plasmaId, base4) = S.addLibraryCard plasma S.alice base3
-        (gs, spellId) = S.handOne recruiter base4
-        ((_, settled), (searches, shuffles)) =
-          State.runState
-            (Engine.runGame (searchRecordingAnswer plasmaId) gs (do S.cast S.alice spellId; Engine.priorityLoop))
-            ([], [])
-    Spec.assertEqWith s "the Recruiter resolved onto the battlefield" (S.countOnBattlefieldByName (CardName.MkCardName $ Text.pack "Imperial Recruiter") S.alice settled) 1
-    Spec.assertEqWith
-      s
-      "exactly the */* card and the 2-power creature are candidates"
-      -- Named against `gs`, the state the library was built in: the found card
-      -- gets a FRESH object id when it moves (CR 400.7), so its library
-      -- incarnation names nothing in `settled`.
-      (fmap (namesOf gs) searches)
-      [Set.fromList (fmap Text.pack ["Primal Plasma", "Goblin Piker"])]
-    Spec.assertEqWith
-      s
-      "the Primal Plasma named is the one that reached alice's hand"
-      (namesOf settled (Game.zoneMembers Zone.Hand S.alice settled))
-      (Set.singleton (Text.pack "Primal Plasma"))
-    Spec.assertEqWith
-      s
-      "the library was shuffled once, after the found card left it"
-      (fmap (namesOf gs) shuffles)
-      [Set.fromList (fmap Text.pack ["Mountain", "Hill Giant", "Goblin Piker"])]
-
   -- CR 604.3's "in all zones" as an equality: one Tarmogoyf on the battlefield
   -- and one in the library over the same graveyards must read the same power.
   -- One path serves both -- layer 7a of each object's own CR 613 fold, since
@@ -4139,19 +3917,6 @@ spec s registry = Spec.describe s "Parun.Engine.Projection" $ do
     Spec.assertEqWith s "CR 113.6b no stored effect and nothing in the command zone: the graveyard is the only grantor" (length (StoredEffects.continuousEffects (GameState.stored board)), Set.size (GameState.command board)) (0, 0)
     Spec.assertBool s (Projection.hasKeyword fromArtifacts mineId board) "and the layer fold gave alice's creature the protection"
     Spec.assertBool s (not (Projection.hasKeyword fromArtifacts artifactId board)) "which bob's Golem does not have"
-  Spec.it s "CR 113.6b a graveyard grant's protection still bars the artifact blocker" $ do
-    evangel <- S.printingOf s registry "Cabal Evangel"
-    golem <- S.printingOf s registry "Icehide Golem"
-    let (gs, mine, theirs) = S.combatBoardOf [evangel] [golem, evangel]
-    case (mine, theirs) of
-      ([attacker], [artifact, black]) -> do
-        warded <- bulwarkBoard s registry gs
-        let board = snd (Engine.runGamePure S.aggressiveAnswer warded (Combat.declareAttackers S.manaPerformer S.alice))
-        Spec.assertBool s (not (Combat.legalBlockDeclaration S.bob (Map.singleton artifact (Set.singleton attacker)) board)) "the Icehide Golem may not block it"
-        Spec.assertBool s (Combat.legalBlockDeclaration S.bob (Map.singleton black (Set.singleton attacker)) board) "the Cabal Evangel beside it may, so nothing else refused the declaration"
-        Spec.assertEqWith s "CR 113.6b no stored effect and nothing in the command zone: the graveyard is the only grantor" (length (StoredEffects.continuousEffects (GameState.stored board)), Set.size (GameState.command board)) (0, 0)
-        Spec.assertBool s (Projection.hasKeyword fromArtifacts attacker board) "and the attacker really holds the protection"
-      _ -> Spec.assertFailure s "fixture should have one attacker and two blockers"
 
   Spec.it s "CR 613.1 projectUpTo stops before the bound layer" $ do
     -- A layer-7c modification is invisible to a projection bounded at
