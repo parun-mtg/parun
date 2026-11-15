@@ -1,0 +1,96 @@
+{
+  "faces": [
+    {
+      "manaCost": [
+        {
+          "type": "Generic",
+          "value": 1
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "White"
+          }
+        }
+      ],
+      "name": "Shadowbane",
+      "oracleText": "The next time a source of your choice would deal damage to you and/or creatures you control this turn, prevent that damage. If damage from a black source is prevented this way, you gain that much life.",
+      "spell": {
+        "modes": [
+          {
+            "clauses": [
+              {
+                "effects": [
+                  {
+                    "type": "NextDamageInstance",
+                    "value": {
+                      "duration": {
+                        "type": "UntilEndOfTurn"
+                      },
+                      "riders": [
+                        {
+                          "type": "ForEach",
+                          "value": {
+                            "body": [
+                              {
+                                "type": "GainLife",
+                                "value": {
+                                  "player": {
+                                    "type": "Relative",
+                                    "value": "You"
+                                  },
+                                  "quantity": {
+                                    "type": "InSlot",
+                                    "value": "thatMuch"
+                                  }
+                                }
+                              }
+                            ],
+                            "ref": {
+                              "type": "EachCardFromAmong",
+                              "value": {
+                                "filter": {
+                                  "type": "HasColor",
+                                  "value": "Black"
+                                },
+                                "slot": "thatDamageSource"
+                              }
+                            },
+                            "slot": "blackSource"
+                          }
+                        }
+                      ],
+                      "whatRecipient": {
+                        "type": "And",
+                        "value": [
+                          {
+                            "type": "HasCardType",
+                            "value": "Creature"
+                          },
+                          {
+                            "type": "HeldBy",
+                            "value": {
+                              "holder": "Controller",
+                              "relation": "You"
+                            }
+                          }
+                        ]
+                      },
+                      "whoRecipient": "You"
+                    }
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "typeLine": {
+        "types": [
+          "Instant"
+        ]
+      }
+    }
+  ]
+}

@@ -1270,7 +1270,7 @@ preventAllDamage resolving source controller legal chosen (PreventAllDamage.MkPr
           _ -> State.modify' $ \g0 -> List.foldl' (Common.installDamageRow resolving legal (Filter.slotObjects context) controller source duration kind DamageRewrite.PreventAll Uses.Unlimited rider printedSource (whatRecipient, whoRecipient)) g0 (fmap (\recipient -> (recipient, sourceChoice)) rows)
 
 nextDamageInstance :: ObjectId -> ObjectId -> PlayerId -> Map.Map SlotName (Set Recipient) -> Map.Map SlotName (Set Recipient) -> NextDamageInstance.NextDamageInstance (Effect Card.Type.Card (GrantedAbility.GrantedAbility Card.Type.Card)) -> Game ()
-nextDamageInstance resolving source controller legal chosen (NextDamageInstance.MkNextDamageInstance duration kind ref direction sourceFilter riderEffects outcome) = do
+nextDamageInstance resolving source controller legal chosen (NextDamageInstance.MkNextDamageInstance duration kind ref whatRecipient whoRecipient direction sourceFilter riderEffects outcome) = do
   -- CR 615.8: install a shield over ONE instance of damage from one source,
   -- chosen or targeted. Preventing it, the rewrite is PreventAll -- "regardless
   -- of how much damage that is", which is the whole event and never CR 615.7's
@@ -1288,13 +1288,19 @@ nextDamageInstance resolving source controller legal chosen (NextDamageInstance.
   -- forcefield-is-not-used-up-by-a-hit-it-prevents-none-of.
   --
   -- ONE ROW PER NAMED OBJECT, PreventNextDamage's split, and a fold rather
-  -- than a single row because an ObjectRef may name several. Every printing of
-  -- this rule names exactly one -- Deflecting Palm's "to you", Awe Strike's
-  -- "target creature" -- so one row is what is installed today.
+  -- than a single row because an ObjectRef may name several. ONE ROW
+  -- ALTOGETHER for a card describing its recipients instead (Shadowbane's "to
+  -- you and/or creatures you control"), read live at the damage event (CR
+  -- 611.2c), so its one use is spent by the first instance to either. A card
+  -- writing both spellings is read as the description alone, PreventNextDamage's
+  -- posture.
   gs <- State.get
   let context = effectContext gs resolving controller source legal (slotBindings resolving gs)
-      named = Common.objectRefRecipients legal resolving controller source gs ref
-      recipients = Maybe.mapMaybe (Damage.damageRecipient gs) named
+      named = foldMap (Common.objectRefRecipients legal resolving controller source gs) ref
+      describedRecipient = (whatRecipient, whoRecipient)
+      described = Maybe.isJust whatRecipient || Maybe.isJust whoRecipient
+      -- The recipient each DealtTo row bakes: nobody for a described shield.
+      rows = if described then [Nothing] else fmap Just (Maybe.mapMaybe (Damage.damageRecipient gs) named)
       -- CR 615.5's additional effect, run as part of the prevention rather
       -- than put on the stack: Reverse Damage's life, Deflecting Palm's damage
       -- back.
@@ -1306,21 +1312,23 @@ nextDamageInstance resolving source controller legal chosen (NextDamageInstance.
         -- instance.
         NextDamageOutcome.PreventedAllBut surviving -> DamageRewrite.PreventAllBut surviving
         NextDamageOutcome.AlsoToSourceController -> DamageRewrite.AlsoToSourceController
-      install rows = State.modify' (\g0 -> List.foldl' (Common.installDamageRow resolving legal (Filter.slotObjects context) controller source duration kind rewrite Uses.Once rider (Filter.Type.And []) (Nothing, Nothing)) g0 rows)
+      install recipientSide shields = State.modify' (\g0 -> List.foldl' (Common.installDamageRow resolving legal (Filter.slotObjects context) controller source duration kind rewrite Uses.Once rider (Filter.Type.And []) recipientSide) g0 shields)
   case direction of
     -- Awe Strike's "the next time target creature would deal damage": the ref
     -- names CR 120.1's source, always an object, and the row names no
     -- recipient, so it watches that source's damage to anyone. The source is
     -- CR 601.2c's target, so CR 609.7a's choice is not asked and the id gets
     -- the trivial predicate, PreventAllDamage's DealtBy branch exactly. A gone
-    -- target names nothing, so nothing is installed (CR 608.2b).
+    -- target names nothing, so nothing is installed (CR 608.2b). The recipient
+    -- description is not read on this side (Parun.Types.NextDamageInstance).
     DamageDirection.DealtBy ->
-      install (fmap (\oid -> (Nothing, Just (Filter.Type.And [], oid))) (Maybe.mapMaybe Recipient.objectOf named))
-    -- No recipient is CR 608.2b's gone target, so there is nothing to shield and
-    -- CR 609.7a's choice -- a choice existing only to be baked into a row -- is
-    -- not raised either. The sibling shields' posture.
+      install (Nothing, Nothing) (fmap (\oid -> (Nothing, Just (Filter.Type.And [], oid))) (Maybe.mapMaybe Recipient.objectOf named))
+    -- No row is CR 608.2b's gone target, so there is nothing to shield and CR
+    -- 609.7a's choice -- a choice existing only to be baked into a row -- is
+    -- not raised either. The sibling shields' posture. A described shield
+    -- always has its one row.
     DamageDirection.DealtTo ->
-      Monad.unless (null recipients) $ do
+      Monad.unless (null rows) $ do
         -- CR 609.7a: "the source is chosen when the effect is created", so the
         -- choice is made ONCE here.
         sourceChoice <- Common.chooseDamageSource controller resolving context gs (Just sourceFilter)
@@ -1329,7 +1337,7 @@ nextDamageInstance resolving source controller legal chosen (NextDamageInstance.
           -- is installed -- stricter than printed rather than weaker, which a
           -- row watching every source would be.
           Nothing -> pure ()
-          Just _ -> install (fmap (\recipient -> (Just recipient, sourceChoice)) recipients)
+          Just _ -> install describedRecipient (fmap (\recipient -> (recipient, sourceChoice)) rows)
 
 redirectDamage :: ObjectId -> ObjectId -> PlayerId -> Map.Map SlotName (Set Recipient) -> RedirectDamage.RedirectDamage -> Game ()
 redirectDamage resolving source controller legal (RedirectDamage.MkRedirectDamage duration kind amount srcRef whatRecipient whoRecipient destRef sourceFilter uses whatSource) = do
