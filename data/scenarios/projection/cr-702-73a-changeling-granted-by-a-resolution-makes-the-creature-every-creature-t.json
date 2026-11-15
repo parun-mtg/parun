@@ -1,0 +1,107 @@
+{
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "battlefield": [
+          {
+            "card": "Goblin Piker",
+            "label": "piker"
+          },
+          {
+            "card": "Lord of Atlantis",
+            "label": "lord"
+          },
+          {
+            "card": "Goblin King",
+            "label": "king"
+          },
+          {
+            "card": "Island",
+            "label": "i1"
+          },
+          {
+            "card": "Island",
+            "label": "i2"
+          }
+        ],
+        "hand": [
+          {
+            "card": "Synthetic Protean Blessing",
+            "label": "blessing"
+          }
+        ],
+        "name": "alice"
+      },
+      {
+        "name": "bob"
+      }
+    ],
+    "step": "PrecombatMain"
+  },
+  "description": "CR 702.73a changeling granted by a RESOLUTION makes the creature every creature type",
+  "note": "A keyword a resolution hands out is stored as a continuous effect over a set CR 611.2c locked at resolution, and its creature-type half has to come with it: CR 604.3a(2) denies the granted instance CDA status, so it is an ordinary layer-4 effect (CR 613.1d) stamped at creation (CR 613.7b). Synthetic Protean Blessing (\"target creature gains changeling until end of turn\") is the producer: every printing that says changeling without having it either creates a token with it, which CR 604.3a(2) makes a CDA, or writes the subtype sentence instead. Lord of Atlantis and Goblin King are the readers, the one of the Merfolk type the grant adds and the other of the printed Goblin type it keeps (CR 205.1b): the 2/1 Goblin Piker is a 3/2 under the King alone before the spell and a 4/3 under both after; a grant adding no creature type leaves it 3/2. Every creature type is read by its two witnesses rather than a Subtypes check, whose whole list would change with every creature type a CR update adds.",
+  "timeline": [
+    {
+      "check": {
+        "PowerToughness": {
+          "object": "$piker",
+          "power": 3,
+          "toughness": 2
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Cast": {
+          "mana": [
+            "$i1",
+            null
+          ],
+          "object": "$blessing",
+          "targets": [
+            "$piker"
+          ]
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "PowerToughness": {
+          "object": "$piker",
+          "power": 4,
+          "toughness": 3
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Keywords": {
+          "count": 1,
+          "keyword": {
+            "type": "Changeling"
+          },
+          "object": "$piker"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    }
+  ]
+}
