@@ -125,6 +125,7 @@ import qualified Parun.Types.TriggerCondition as TriggerCondition
 import qualified Parun.Types.TriggerSource as TriggerSource
 import qualified Parun.Types.TurnRegisters as TurnRegisters
 import qualified Parun.Types.TurnedFaceUp as TurnedFaceUp
+import qualified Parun.Types.TurnedFaceUpTrigger as TurnedFaceUpTrigger
 import qualified Parun.Types.TurnedUpOffDeck as TurnedUpOffDeck
 import qualified Parun.Types.WatchedAbility as WatchedAbility
 import qualified Parun.Types.Zone as Zone
@@ -344,7 +345,7 @@ eventBindingsOver board gs bearerBecame becameInGraveyard bearer you cond event 
   -- read it alike. Off the event and never off the permanent, which state-based
   -- actions may already have taken away (Parun.Types.TurnedFaceUp). Nothing when
   -- no X was chosen.
-  (TriggerCondition.TurnedFaceUp subject, GameEvent.TurnedFaceUp t) -> case subject of
+  (TriggerCondition.TurnedFaceUp trigger, GameEvent.TurnedFaceUp t) -> case TurnedFaceUpTrigger.permanent trigger of
     ActingPermanent.Self -> maybe Map.empty (\x -> Binding.fromChoices Map.empty (Just x) Seq.empty) (TurnedFaceUp.announcedX t)
     ActingPermanent.Matching _ -> Binding.setBecame (TurnedFaceUp.object t) Map.empty
   -- Foe-Razer Regent's "put two +1/+1 counters on it": the actor, CR 400.7e's
@@ -1706,7 +1707,7 @@ eventBindingSlots cond = case cond of
     [] -> Set.empty
     slots : rest -> List.foldl' Set.intersection slots rest
   TriggerCondition.CausedBy narrowed -> eventBindingSlots (CausedBy.condition narrowed)
-  TriggerCondition.TurnedFaceUp subject -> fst (turnedFaceUpSlots subject)
+  TriggerCondition.TurnedFaceUp trigger -> fst (turnedFaceUpSlots (TurnedFaceUpTrigger.permanent trigger))
   -- A deliberate empty under either subject. A Self one for a Self
   -- TurnedFaceUp's reason one step further on: CR 701.27f's event names the
   -- permanent that transformed, which CR 113.7a's source slot already names,
@@ -1922,7 +1923,7 @@ eventBindingSlotsSometimes cond = case cond of
       (Set.unions (fmap (\c -> Set.union (eventBindingSlots c) (eventBindingSlotsSometimes c)) conditions))
       (eventBindingSlots cond)
   TriggerCondition.CausedBy narrowed -> eventBindingSlotsSometimes (CausedBy.condition narrowed)
-  TriggerCondition.TurnedFaceUp subject -> snd (turnedFaceUpSlots subject)
+  TriggerCondition.TurnedFaceUp trigger -> snd (turnedFaceUpSlots (TurnedFaceUpTrigger.permanent trigger))
   -- CR 107.3e's X, which only a discard paying an X ability's cost binds
   -- (eventBindings' Discards arm).
   TriggerCondition.Discards (DiscardTrigger.MkDiscardTrigger DiscardSubject.Self _ Batching.EachOccurrence) -> Set.singleton Binding.variableX

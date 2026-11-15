@@ -773,7 +773,7 @@ turnUpToAssign entry = do
   let creature = either fst fst entry
   Monad.when
     (Event.turnsUpBefore TurnUpEvent.AssignsCombatDamage creature gs && wouldAssign gs entry)
-    (Event.turnFaceUpByEffect creature)
+    (Event.turnFaceUpByStatus creature)
 
 -- Would this creature assign any combat damage on this board? CR 510.1a's power
 -- above 0, and a recipient: what attackerAssignment and blockerAssignment would

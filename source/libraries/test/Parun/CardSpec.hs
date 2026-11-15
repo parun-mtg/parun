@@ -499,6 +499,7 @@ import qualified Parun.Types.TriggeredAbility as TriggeredAbility
 import qualified Parun.Types.TurnFaceDown as TurnFaceDown
 import qualified Parun.Types.TurnUpR as TurnUpR
 import qualified Parun.Types.TurnUpRewrite as TurnUpRewrite
+import qualified Parun.Types.TurnedFaceUpTrigger as TurnedFaceUpTrigger
 import qualified Parun.Types.TypeLine as TypeLine
 import qualified Parun.Types.Unblocking as Unblocking
 import qualified Parun.Types.Undesignate as Undesignate
@@ -1301,7 +1302,7 @@ turnUpCostsOf face =
 -- A turned-face-up triggered ability, the one CR 702.37f and CR 702.168e give
 -- the X chosen for the cost.
 turnedUpTriggers :: Face.Face Card.Type.Card -> [TriggeredAbility.TriggeredAbility Card.Type.Card (GrantedAbility.GrantedAbility Card.Type.Card)]
-turnedUpTriggers = filter ((== TriggerCondition.TurnedFaceUp ActingPermanent.Self) . TriggeredAbility.condition) . Face.triggeredAbilities
+turnedUpTriggers = filter ((== TriggerCondition.TurnedFaceUp TurnedFaceUpTrigger.defaultValue) . TriggeredAbility.condition) . Face.triggeredAbilities
 
 -- Every CR 118.12 cost this payload offers at resolution, over every mode and
 -- every clause, and every CR 608.2f loop's per-member offer. A READER of X
@@ -3767,7 +3768,7 @@ triggerConditionFilters triggerCondition = case triggerCondition of
   -- CR 708.7's carries one under a Matching subject, and Aven Farseer's is the
   -- trivial `And []` -- which this sweep must still see, an empty Filter being a
   -- Filter.
-  TriggerCondition.TurnedFaceUp subject -> case subject of
+  TriggerCondition.TurnedFaceUp t -> case TurnedFaceUpTrigger.permanent t of
     ActingPermanent.Matching f -> unframed [f]
     ActingPermanent.Self -> []
   -- CR 701.27f's face is a name and no Filter; a bystander subject carries one
@@ -7010,7 +7011,7 @@ lintSpec s registry corpus = Spec.describe s "Lint" $ do
   -- an X its cost does not print is naming nothing.
   Spec.it s "CR 107.3f every triggered ability's resolution-time {X} is chosen, or inherited" $ do
     ps <- S.allPrintings s corpus
-    let inheritsX ability = TriggeredAbility.condition ability `elem` [TriggerCondition.Enters EntersTrigger.defaultValue, TriggerCondition.TurnedFaceUp ActingPermanent.Self]
+    let inheritsX ability = TriggeredAbility.condition ability `elem` [TriggerCondition.Enters EntersTrigger.defaultValue, TriggerCondition.TurnedFaceUp TurnedFaceUpTrigger.defaultValue]
         triggers f = Face.triggeredAbilities f <> delayedDeclarations f <> grantedTriggeredAbilities f
         unchosen ability = not (inheritsX ability) && any declaresVariable (announcedGateCostsOf (TriggeredAbility.modal ability))
         idle gate = Maybe.isJust (PayGate.x gate) && not (any declaresVariable (gateCosts gate))
@@ -7043,7 +7044,7 @@ lintSpec s registry corpus = Spec.describe s "Lint" $ do
   -- cost (Aurelia's Vindicator's "up to X other target creatures").
   Spec.it s "CR 603.3d only an enters-the-battlefield or turned-face-up triggered ability's target count reads an announced X" $ do
     ps <- S.allPrintings s corpus
-    let inheritsX ability = TriggeredAbility.condition ability `elem` [TriggerCondition.Enters EntersTrigger.defaultValue, TriggerCondition.TurnedFaceUp ActingPermanent.Self]
+    let inheritsX ability = TriggeredAbility.condition ability `elem` [TriggerCondition.Enters EntersTrigger.defaultValue, TriggerCondition.TurnedFaceUp TurnedFaceUpTrigger.defaultValue]
         triggers f = Face.triggeredAbilities f <> delayedDeclarations f <> grantedTriggeredAbilities f
         countsByX :: [Modal.Modal Card.Type.Card (GrantedAbility.GrantedAbility Card.Type.Card)] -> Bool
         countsByX = any (any (countReadsX . TargetSlot.count) . Modal.allTargetSlots)

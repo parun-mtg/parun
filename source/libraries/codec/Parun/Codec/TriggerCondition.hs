@@ -47,6 +47,7 @@ import qualified Parun.Codec.SpellCast as SpellCast
 import qualified Parun.Codec.StepBegins as StepBegins
 import qualified Parun.Codec.TappedForManaTrigger as TappedForManaTrigger
 import qualified Parun.Codec.TransformTrigger as TransformTrigger
+import qualified Parun.Codec.TurnedFaceUpTrigger as TurnedFaceUpTrigger
 import qualified Parun.JsonCodec.Arm as Arm
 import qualified Parun.JsonCodec.Codec as Codec
 import qualified Parun.JsonCodec.Common as Common
@@ -101,7 +102,7 @@ codec =
           Arm.payload "RoomFullyUnlocked" PlayerRelation.codec TriggerCondition.RoomFullyUnlocked (\x -> case x of TriggerCondition.RoomFullyUnlocked y -> Just y; _ -> Nothing),
           Arm.payload "AnyOf" (Common.list codec) TriggerCondition.AnyOf (\x -> case x of TriggerCondition.AnyOf y -> Just y; _ -> Nothing),
           Arm.payload "CausedBy" (CausedBy.codec codec) TriggerCondition.CausedBy (\x -> case x of TriggerCondition.CausedBy y -> Just y; _ -> Nothing),
-          Arm.payload "TurnedFaceUp" ActingPermanent.codec TriggerCondition.TurnedFaceUp (\x -> case x of TriggerCondition.TurnedFaceUp y -> Just y; _ -> Nothing),
+          Arm.payload "TurnedFaceUp" TurnedFaceUpTrigger.codec TriggerCondition.TurnedFaceUp (\x -> case x of TriggerCondition.TurnedFaceUp y -> Just y; _ -> Nothing),
           Arm.payload "Transforms" TransformTrigger.codec TriggerCondition.Transforms (\x -> case x of TriggerCondition.Transforms y -> Just y; _ -> Nothing),
           Arm.payload "PermanentActs" PermanentActsTrigger.codec TriggerCondition.PermanentActs (\x -> case x of TriggerCondition.PermanentActs y -> Just y; _ -> Nothing),
           Arm.nullary "FaceDownPermanentLeavesRevealed" TriggerCondition.FaceDownPermanentLeavesRevealed,

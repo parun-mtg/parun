@@ -870,6 +870,7 @@ import qualified Parun.Codec.TurnUpRSpec
 import qualified Parun.Codec.TurnUpRewriteSpec
 import qualified Parun.Codec.TurnWindowSpec
 import qualified Parun.Codec.TurnedFaceUpSpec
+import qualified Parun.Codec.TurnedFaceUpTriggerSpec
 import qualified Parun.Codec.TurnedUpOffDeckSpec
 import qualified Parun.Codec.TypeLineSpec
 import qualified Parun.Codec.TypesAreSpec
@@ -1959,6 +1960,7 @@ spec s reference corpus = do
   Parun.Codec.WatchedAbilitySpec.spec s
   Parun.Codec.TriggerSourceSpec.spec s
   Parun.Codec.TurnedFaceUpSpec.spec s
+  Parun.Codec.TurnedFaceUpTriggerSpec.spec s
   Parun.Codec.TurnFaceDownSpec.spec s
   Parun.Codec.TurnMarkerSpec.spec s
   Parun.Codec.TurnRegistersSpec.spec s

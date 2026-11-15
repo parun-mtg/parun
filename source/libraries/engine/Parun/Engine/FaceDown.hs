@@ -264,4 +264,4 @@ turnFaceUp perform pid procedure oid = do
         -- megamorph row compares it against the card's; the X rides beside it,
         -- and nothing where the cost has no X.
         Monad.forM_ paid $ \announcedX ->
-          Event.performTurnFaceUp (Just (procedure, cost)) (if Cost.hasVariable cost then Just announcedX else Nothing) oid
+          Event.performTurnFaceUp pid (Just (procedure, cost)) (if Cost.hasVariable cost then Just announcedX else Nothing) oid

@@ -47,6 +47,7 @@ import qualified Parun.Types.SpellCast as SpellCast
 import qualified Parun.Types.StepBegins as StepBegins
 import qualified Parun.Types.TappedForManaTrigger as TappedForManaTrigger
 import qualified Parun.Types.TransformTrigger as TransformTrigger
+import qualified Parun.Types.TurnedFaceUpTrigger as TurnedFaceUpTrigger
 
 -- | CR 603.2: the pattern that fires a triggered ability. Only
 -- Parun.Engine.Event may case on it for RULES purposes; Parun.Codec also cases on
@@ -199,8 +200,9 @@ data TriggerCondition
     -- Discarded, the events that record a cause.
     CausedBy (CausedBy.CausedBy TriggerCondition)
   | -- | CR 708.7 through CR 603.2: a face-down permanent is turned face up, the
-    -- bearer itself (Skirk Marauder) or one the Filter admits (Aven Farseer).
-    TurnedFaceUp ActingPermanent.ActingPermanent
+    -- bearer itself (Skirk Marauder) or one the Filter admits (Aven Farseer), by
+    -- a player in the relation (Growing Dread).
+    TurnedFaceUp TurnedFaceUpTrigger.TurnedFaceUpTrigger
   | -- | CR 701.27f: a permanent transformed, the bearer (Howlpack Piper) or one
     -- the Filter admits (Cult of the Waxing Moon), into a face of a name or any.
     Transforms TransformTrigger.TransformTrigger

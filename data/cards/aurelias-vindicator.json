@@ -77,9 +77,7 @@
         {
           "condition": {
             "type": "TurnedFaceUp",
-            "value": {
-              "type": "Self"
-            }
+            "value": {}
           },
           "modal": {
             "modes": [

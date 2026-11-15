@@ -1,0 +1,45 @@
+{
+  "description": "CR 614.1a Growing Dread puts a +1/+1 counter on a Craw Wurm Illusionary Mask turns face up instead of being dealt a Lightning Bolt's damage",
+  "note": "The masked Craw Wurm scenario beside it, with Growing Dread on alice's side: the Mask's replacement names no player, and alice, the Wurm's controller, turns it face up (docs/decisions.md, \"Who turns up a creature Illusionary Mask's effect turns face up\").",
+  "board": {
+    "seats": [
+      {
+        "name": "alice",
+        "battlefield": [
+          { "card": "Illusionary Mask", "label": "mask" },
+          { "card": "Growing Dread", "label": "dread" },
+          { "card": "Forest", "label": "f1" },
+          { "card": "Forest", "label": "f2" },
+          { "card": "Forest", "label": "f3" },
+          { "card": "Forest", "label": "f4" },
+          { "card": "Forest", "label": "f5" },
+          { "card": "Forest", "label": "f6" },
+          { "card": "Mountain", "label": "mountain" }
+        ],
+        "hand": [
+          { "card": "Craw Wurm", "label": "wurm" },
+          { "card": "Lightning Bolt", "label": "bolt" }
+        ],
+        "library": [{ "card": "Forest" }, { "card": "Forest" }]
+      },
+      { "name": "bob", "library": [{ "card": "Forest" }, { "card": "Forest" }] }
+    ],
+    "active": "alice",
+    "step": "PrecombatMain"
+  },
+  "timeline": [
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": { "Activate": { "object": "$mask", "x": 6, "mana": ["$f1", "$f2", "$f3", "$f4", "$f5", "$f6", null] } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass" },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": { "Answer": { "prompt": "OfferedCast", "with": "Exercises" } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass" },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "PowerToughness": { "object": "Craw Wurm", "power": 2, "toughness": 2 } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": { "Cast": { "object": "$bolt", "targets": ["Craw Wurm"], "mana": ["$mountain"] } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass" },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "Names": { "object": "Craw Wurm", "names": ["Craw Wurm"] } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "View": { "of": "Stack", "is": ["trigger of $dread"] } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass" },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "View": { "of": "Stack", "is": [] } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "Counters": { "object": "Craw Wurm", "kind": { "type": "PlusOnePlusOne" }, "count": 1 } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "PowerToughness": { "object": "Craw Wurm", "power": 7, "toughness": 5 } } }
+  ]
+}

@@ -379,8 +379,8 @@ spec s = Spec.describe s "Parun.Codec.GameEvent" $ do
     Common.assertCodec
       s
       GameEvent.codec
-      (GameEvent.TurnedFaceUp TurnedFaceUp.MkTurnedFaceUp {TurnedFaceUp.object = ObjectId.MkObjectId 5, TurnedFaceUp.announcedX = Just 2})
-      " {\"type\":\"TurnedFaceUp\",\"value\":{\"object\":5,\"announcedX\":2}} "
+      (GameEvent.TurnedFaceUp TurnedFaceUp.MkTurnedFaceUp {TurnedFaceUp.object = ObjectId.MkObjectId 5, TurnedFaceUp.player = PlayerId.MkPlayerId 1, TurnedFaceUp.announcedX = Just 2})
+      " {\"type\":\"TurnedFaceUp\",\"value\":{\"object\":5,\"player\":1,\"announcedX\":2}} "
   -- CR 603.2. The action and the acting permanent alone: CR 701.44c and CR
   -- 701.50b make last known information answer who controlled it, so no seat
   -- rides along. The ACTION is all that separates a connive from an explore of

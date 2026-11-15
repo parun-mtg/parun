@@ -97,6 +97,7 @@ import qualified Parun.Types.TransformTrigger as TransformTrigger
 import qualified Parun.Types.TriggerCondition as TriggerCondition
 import qualified Parun.Types.TriggerFrequency as TriggerFrequency
 import qualified Parun.Types.TurnScope as TurnScope
+import qualified Parun.Types.TurnedFaceUpTrigger as TurnedFaceUpTrigger
 import qualified Parun.Types.WatchedAbility as WatchedAbility
 import qualified Parun.Types.WhichCounters as WhichCounters
 import qualified Parun.Types.Zone as Zone
@@ -522,22 +523,22 @@ spec s = Spec.describe s "Parun.Codec.TriggerCondition" $ do
     Common.assertCodec
       s
       TriggerCondition.codec
-      (TriggerCondition.TurnedFaceUp ActingPermanent.Self)
-      " {\"type\":\"TurnedFaceUp\",\"value\":{\"type\":\"Self\"}} "
+      (TriggerCondition.TurnedFaceUp TurnedFaceUpTrigger.defaultValue)
+      " {\"type\":\"TurnedFaceUp\",\"value\":{}} "
   -- Aven Farseer's "a permanent", the trivial Filter.
   Spec.it s "TurnedFaceUp round-trips a Matching subject with the trivial Filter" $
     Common.assertCodec
       s
       TriggerCondition.codec
-      (TriggerCondition.TurnedFaceUp (ActingPermanent.Matching (Filter.And [])))
-      " {\"type\":\"TurnedFaceUp\",\"value\":{\"type\":\"Matching\",\"value\":{\"type\":\"And\",\"value\":[]}}} "
+      (TriggerCondition.TurnedFaceUp (TurnedFaceUpTrigger.matching (Filter.And [])))
+      " {\"type\":\"TurnedFaceUp\",\"value\":{\"permanent\":{\"type\":\"Matching\",\"value\":{\"type\":\"And\",\"value\":[]}}}} "
   -- Deathmist Raptor's "a permanent you control": the Filter survives the trip.
   Spec.it s "TurnedFaceUp round-trips a Matching subject with a narrowing Filter" $
     Common.assertCodec
       s
       TriggerCondition.codec
-      (TriggerCondition.TurnedFaceUp (ActingPermanent.Matching (Filter.HeldBy Holder.Controller PlayerRelation.You)))
-      " {\"type\":\"TurnedFaceUp\",\"value\":{\"type\":\"Matching\",\"value\":{\"type\":\"HeldBy\",\"value\":{\"holder\":\"Controller\",\"relation\":\"You\"}}}} "
+      (TriggerCondition.TurnedFaceUp (TurnedFaceUpTrigger.matching (Filter.HeldBy Holder.Controller PlayerRelation.You)))
+      " {\"type\":\"TurnedFaceUp\",\"value\":{\"permanent\":{\"type\":\"Matching\",\"value\":{\"type\":\"HeldBy\",\"value\":{\"holder\":\"Controller\",\"relation\":\"You\"}}}}} "
   -- CR 603.2: both fields ride on the wire. Renegade Krasis' self-scoped
   -- "whenever this creature evolves", and Wildgrowth Walker's bystander "whenever
   -- a creature you control explores", whose Filter must survive the trip.

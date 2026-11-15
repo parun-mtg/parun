@@ -261,7 +261,7 @@ spec s registry = Spec.describe s "Transform" $ do
                     }
               }
             (S.cast S.alice moonmistId *> Stack.resolveTop)
-        turnedUp = S.runPure S.identityAnswer misted (Event.performTurnFaceUp Nothing Nothing faceDownId)
+        turnedUp = S.runPure S.identityAnswer misted (Event.performTurnFaceUp S.alice Nothing Nothing faceDownId)
         blightreaper = CardName.MkCardName (Text.pack "Blightreaper Thallid")
         blightsower = CardName.MkCardName (Text.pack "Blightsower Thallid")
     Spec.assertEqWith s "CR 712.12a turned face up, it shows its front face: Blightreaper Thallid, a 2/2" (Projection.namesOf faceDownId turnedUp, S.powerToughnessOf faceDownId turnedUp) (Set.singleton blightreaper, Just (2, 2))

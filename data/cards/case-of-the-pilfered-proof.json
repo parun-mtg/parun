@@ -136,22 +136,24 @@
               {
                 "type": "TurnedFaceUp",
                 "value": {
-                  "type": "Matching",
-                  "value": {
-                    "type": "And",
-                    "value": [
-                      {
-                        "type": "HeldBy",
-                        "value": {
-                          "holder": "Controller",
-                          "relation": "You"
+                  "permanent": {
+                    "type": "Matching",
+                    "value": {
+                      "type": "And",
+                      "value": [
+                        {
+                          "type": "HeldBy",
+                          "value": {
+                            "holder": "Controller",
+                            "relation": "You"
+                          }
+                        },
+                        {
+                          "type": "HasSubtype",
+                          "value": "Detective"
                         }
-                      },
-                      {
-                        "type": "HasSubtype",
-                        "value": "Detective"
-                      }
-                    ]
+                      ]
+                    }
                   }
                 }
               }

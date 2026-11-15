@@ -62,9 +62,7 @@
               },
               {
                 "type": "TurnedFaceUp",
-                "value": {
-                  "type": "Self"
-                }
+                "value": {}
               }
             ]
           },

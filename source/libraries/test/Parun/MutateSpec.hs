@@ -371,7 +371,7 @@ spec s registry = Spec.describe s "Mutate" $ do
         manifested = withHost {GameState.objects = Map.adjust (\o -> o {Object.facing = Facing.faceDown FaceDownReason.Manifested}) host (GameState.objects withHost)}
         (board, spellId) = S.handOne graftling manifested
         merged = merging MutateSide.Under host board spellId
-        turnedUp = S.runPure S.identityAnswer merged (Event.performTurnFaceUp Nothing Nothing host)
+        turnedUp = S.runPure S.identityAnswer merged (Event.performTurnFaceUp S.alice Nothing Nothing host)
         reading gs = (Projection.namesOf host gs, S.powerToughnessOf host gs, Projection.hasKeyword Keyword.Trample host gs)
     case transformedBy forest host turnedUp of
       Nothing -> Spec.assertFailure s "expected the pile to offer the Graftling's activated ability"
@@ -397,7 +397,7 @@ spec s registry = Spec.describe s "Mutate" $ do
         (withFirst, first) = S.handOne cubwarden manifested
         (board, second) = S.handOne cubwarden withFirst
         merged = merging MutateSide.Under host (merging MutateSide.Under host board first) second
-        turnedUp = S.runPure S.identityAnswer merged (Event.performTurnFaceUp Nothing Nothing host)
+        turnedUp = S.runPure S.identityAnswer merged (Event.performTurnFaceUp S.alice Nothing Nothing host)
         armed =
           (S.landsFor forest S.alice 4 turnedUp)
             { GameState.turn =

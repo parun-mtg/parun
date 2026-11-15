@@ -1,0 +1,28 @@
+{
+  "description": "Growing Dread puts no counter on alice's manifested Hill Giant when bob's Hauntwoods Shrieker turns it face up",
+  "note": "bob turned it, so alice's \"whenever you turn\" does not trigger although she controls the permanent. Its pair is the scenario where alice's Shrieker turns carol's permanent face up.",
+  "board": {
+    "seats": [
+      { "name": "alice",
+        "battlefield": [
+          { "card": "Growing Dread", "label": "dread" },
+          { "card": "Hill Giant", "label": "giant", "faceDown": "Manifested" } ] },
+      { "name": "bob",
+        "battlefield": [
+          { "card": "Hauntwoods Shrieker", "label": "shrieker" },
+          { "card": "Forest", "label": "f1" },
+          { "card": "Forest", "label": "f2" } ] },
+      { "name": "carol" }
+    ],
+    "active": "bob",
+    "step": "PrecombatMain"
+  },
+  "timeline": [
+    { "turn": 1, "step": "PrecombatMain", "player": "bob", "do": { "ChooseOptional": "Exercises" } },
+    { "turn": 1, "step": "PrecombatMain", "player": "bob", "do": { "Activate": { "object": "$shrieker", "mana": ["$f1", "$f2"] } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "bob", "do": "Pass" },
+    { "turn": 1, "step": "PrecombatMain", "player": "bob", "check": { "Names": { "object": "$giant", "names": ["Hill Giant"] } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "bob", "check": { "View": { "of": "Stack", "is": [] } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "bob", "check": { "Counters": { "object": "$giant", "kind": { "type": "PlusOnePlusOne" }, "count": 0 } } }
+  ]
+}

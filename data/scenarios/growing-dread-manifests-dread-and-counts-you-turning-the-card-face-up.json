@@ -1,0 +1,37 @@
+{
+  "description": "Growing Dread manifests dread as it enters, and alice turning the manifested Hill Giant face up puts a +1/+1 counter on it",
+  "note": "CR 701.40b's special action: alice turns her own manifested card face up for its mana cost, so she is who turned it.",
+  "board": {
+    "seats": [
+      { "name": "alice",
+        "battlefield": [
+          { "card": "Forest", "label": "f1" },
+          { "card": "Island", "label": "i1" },
+          { "card": "Mountain", "label": "m1" },
+          { "card": "Mountain", "label": "m2" },
+          { "card": "Mountain", "label": "m3" },
+          { "card": "Mountain", "label": "m4" } ],
+        "hand": [ { "card": "Growing Dread", "label": "dread" } ],
+        "library": [ { "card": "Grizzly Bears" }, { "card": "Hill Giant", "label": "giant" }, { "card": "Island" }, { "card": "Island" } ] },
+      { "name": "bob", "library": [ { "card": "Island" }, { "card": "Island" } ] },
+      { "name": "carol", "library": [ { "card": "Island" }, { "card": "Island" } ] }
+    ],
+    "active": "alice",
+    "step": "PrecombatMain"
+  },
+  "timeline": [
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": { "Cast": { "object": "$dread", "mana": ["$f1", "$i1", null] } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass" },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": { "Answer": { "prompt": "ChooseCardFromAmong", "with": "$giant" } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass" },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "View": { "of": "Stack", "is": [] } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "Names": { "object": "Hill Giant", "names": [] } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": { "Take": { "action": "TurnFaceUp Hill Giant", "mana": ["$m1", "$m2", "$m3", "$m4"] } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "Names": { "object": "Hill Giant", "names": ["Hill Giant"] } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "View": { "of": "Stack", "is": ["trigger of Growing Dread"] } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass" },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "View": { "of": "Stack", "is": [] } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "Counters": { "object": "Hill Giant", "kind": { "type": "PlusOnePlusOne" }, "count": 1 } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "PowerToughness": { "object": "Hill Giant", "power": 4, "toughness": 4 } } }
+  ]
+}

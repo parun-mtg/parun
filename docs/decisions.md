@@ -1052,6 +1052,23 @@ Entries are ordered by the first rule each cites.
   `two-plots-that-span-centuries-set-five-schemes-in-motion`.
 - **Issue**: #6206.
 
+## Who turns up a creature Illusionary Mask's effect turns face up
+
+- **Question**: Illusionary Mask's "instead it's turned face up" names no
+  player. Growing Dread asks who turned a permanent face up. When the face-down
+  creature's controller is not the player who activated the Mask, who turned it?
+- **Rules**: CR 614.1a, 708.7; CR of 2026-11-06. CR 708.7 lets the ability
+  that made a permanent face down allow "the permanent's controller" to turn it
+  face up.
+- **Decision**: The creature's controller as it turns, CR 708.7's player.
+- **Rejected**: The Mask ability's controller, as the effect's: the
+  replacement is a status the face-down creature carries, and nothing records
+  who granted it once the spell has resolved.
+- **Site**: `Parun.Engine.Event.turnFaceUpByStatus`, proved by the scenario
+  `cr-614-1a-growing-dread-counts-a-masked-craw-wurm-alice-s-mask-turns-face-up`;
+  no scenario changes the creature's control.
+- **Issue**: #7904.
+
 ## How many times a prevention's additional effect runs
 
 - **Question**: One application of a shield stops damage from two sources at once.

@@ -229,6 +229,7 @@ import qualified Parun.Types.TriggeredAbility as TriggeredAbility
 import qualified Parun.Types.TurnRegisters as TurnRegisters
 import qualified Parun.Types.TurnScope as TurnScope
 import qualified Parun.Types.TurnedFaceUp as TurnedFaceUp
+import qualified Parun.Types.TurnedFaceUpTrigger as TurnedFaceUpTrigger
 import qualified Parun.Types.TurnedUpOffDeck as TurnedUpOffDeck
 import qualified Parun.Types.VentureMarkerEntered as VentureMarkerEntered
 import qualified Parun.Types.WatchedAbility as WatchedAbility
@@ -1936,11 +1937,11 @@ representativeEvents cond =
         -- admits whatever the id resolves to. A Self subject's twice: with CR
         -- 107.3d's X chosen for the cost and without, the one key eventBindings
         -- stamps only sometimes.
-        TriggerCondition.TurnedFaceUp subject -> case subject of
+        TriggerCondition.TurnedFaceUp trigger -> case TurnedFaceUpTrigger.permanent trigger of
           ActingPermanent.Self ->
-            noTable (GameEvent.TurnedFaceUp TurnedFaceUp.MkTurnedFaceUp {TurnedFaceUp.object = departed, TurnedFaceUp.announcedX = Just 3})
-              NonEmpty.:| [noTable (GameEvent.TurnedFaceUp TurnedFaceUp.MkTurnedFaceUp {TurnedFaceUp.object = departed, TurnedFaceUp.announcedX = Nothing})]
-          ActingPermanent.Matching _ -> one (GameEvent.TurnedFaceUp TurnedFaceUp.MkTurnedFaceUp {TurnedFaceUp.object = departed, TurnedFaceUp.announcedX = Just 3})
+            noTable (GameEvent.TurnedFaceUp TurnedFaceUp.MkTurnedFaceUp {TurnedFaceUp.object = departed, TurnedFaceUp.player = S.alice, TurnedFaceUp.announcedX = Just 3})
+              NonEmpty.:| [noTable (GameEvent.TurnedFaceUp TurnedFaceUp.MkTurnedFaceUp {TurnedFaceUp.object = departed, TurnedFaceUp.player = S.alice, TurnedFaceUp.announcedX = Nothing})]
+          ActingPermanent.Matching _ -> one (GameEvent.TurnedFaceUp TurnedFaceUp.MkTurnedFaceUp {TurnedFaceUp.object = departed, TurnedFaceUp.player = S.alice, TurnedFaceUp.announcedX = Just 3})
         -- CR 701.27a's own event, and the only one this condition admits, on
         -- `departed`, the BEARER, naming the face the condition names if it names
         -- one -- so the pair really matches under either subject, the Matching
@@ -2339,13 +2340,13 @@ everyTriggerCondition =
     -- both branches bind `became`, so the intersection is NON-EMPTY and the pin
     -- below is what says eventBindings fills it for each branch's event in turn.
     -- The empty pair alone would leave the AnyOf arm free to stamp nothing.
-    TriggerCondition.AnyOf [TriggerCondition.Enters (EntersTrigger.matching (Filter.Type.And [])), TriggerCondition.TurnedFaceUp (ActingPermanent.Matching (Filter.Type.And []))],
+    TriggerCondition.AnyOf [TriggerCondition.Enters (EntersTrigger.matching (Filter.Type.And [])), TriggerCondition.TurnedFaceUp (TurnedFaceUpTrigger.matching (Filter.Type.And []))],
     -- Sacred Ground's narrowing, over the condition whose bindings it keeps.
     TriggerCondition.CausedBy CausedBy.MkCausedBy {CausedBy.controller = PlayerRelation.Opponent, CausedBy.sourceKeyword = Nothing, CausedBy.condition = TriggerCondition.Leaves (LeavesTrigger.dies (LeavingPermanent.Matching (Filter.Type.And [])))},
-    TriggerCondition.TurnedFaceUp ActingPermanent.Self,
+    TriggerCondition.TurnedFaceUp TurnedFaceUpTrigger.defaultValue,
     TriggerCondition.Transforms TransformTrigger.defaultValue {TransformTrigger.into = Just (CardName.MkCardName (Text.pack "Blightsower Thallid"))},
     TriggerCondition.Transforms TransformTrigger.defaultValue {TransformTrigger.permanent = ActingPermanent.Matching (Filter.Type.And [])},
-    TriggerCondition.TurnedFaceUp (ActingPermanent.Matching (Filter.Type.And [])),
+    TriggerCondition.TurnedFaceUp (TurnedFaceUpTrigger.matching (Filter.Type.And [])),
     TriggerCondition.FaceDownPermanentLeavesRevealed,
     TriggerCondition.PermanentBecomesDesignated (PermanentBecomesDesignated.MkPermanentBecomesDesignated Designation.Renowned (Filter.Type.And [])),
     TriggerCondition.AttachedCreatureMentors,
