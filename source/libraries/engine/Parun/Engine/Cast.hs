@@ -447,8 +447,10 @@ flashOn oid face gs =
 targetable :: Maybe Keyword -> PlayerId -> ObjectId -> CardName.CardName -> GameState -> Bool
 targetable castFor pid oid name gs = case proposedFace oid name gs of
   Nothing -> False
-  Just face ->
-    let -- CR 702.33g/702.113b generalized (CR 702.96b's overload is the
+  Just printed ->
+    let -- CR 612.1: the spell text castProposed's announcement will read.
+        face = textChangedSpell oid (asOnStack pid oid gs) printed
+        -- CR 702.33g/702.113b generalized (CR 702.96b's overload is the
         -- special case this subsumes): a candidate's own clauses decide which
         -- of its declared targets it needs, trimModalForCandidate's doc has
         -- the worked examples. The overload candidate's spell requires no
@@ -3691,11 +3693,20 @@ trimModal pid sid gs = trimModalBy (clauseAppliesAt pid sid gs)
 trimModalForCandidate :: Maybe Keyword -> Integer -> Modal.Type.Modal Card.Type.Card (GrantedAbility.GrantedAbility Card.Type.Card) -> Modal.Type.Modal Card.Type.Card (GrantedAbility.GrantedAbility Card.Type.Card)
 trimModalForCandidate castFor paid = trimModalBy (clauseAppliesForCandidate castFor paid)
 
+-- CR 601.2a: the board as the move would leave the card `oid` that `pid`
+-- proposes to cast -- on the stack, under its caster -- so a gate asked before
+-- the move judges the statics that will reach the spell (textChangedSpell).
+asOnStack :: PlayerId -> ObjectId -> GameState -> GameState
+asOnStack pid oid gs =
+  gs
+    { GameState.objects = Map.adjust (\o -> o {Object.zone = Zone.Stack, Object.enteredUnder = Just pid}) oid (GameState.objects gs),
+      GameState.outsideCopies = Set.delete oid (GameState.outsideCopies gs)
+    }
+
 -- CR 612.1: the face a spell's announcement reads, its spell text rewritten by
 -- the text changes reaching `oid` -- after CR 601.2a's move, where a static
--- text change reaches the spell (Swirl the Mists). Not implemented: the gate,
--- asked before the move, reads the card in its zone, which no such change
--- reaches (gap #7546).
+-- text change reaches the spell (Swirl the Mists). The gate (targetable) asks
+-- it of asOnStack's board, before the move.
 textChangedSpell :: ObjectId -> GameState -> Face.Face Card.Type.Card -> Face.Face Card.Type.Card
 textChangedSpell oid gs face = case Projection.textChangesAffecting oid gs of
   [] -> face
