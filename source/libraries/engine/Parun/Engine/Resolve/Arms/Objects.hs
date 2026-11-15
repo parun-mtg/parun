@@ -2035,7 +2035,7 @@ giveGift controller = State.modify' (Event.recordEvent (GameEvent.PlayerActed (P
 -- Parun.Engine.Daytime's. Nobody is named and nothing is prompted.
 itBecomes :: Daytime.Daytime -> Game ()
 itBecomes designation = do
-  _ <- Daytime.becomes Event.recordTransformed designation
+  _ <- Daytime.becomes Event.transformed designation
   pure ()
 
 -- CR 701.3a / 702.6a: the SOURCE moves, relocating it if it is already

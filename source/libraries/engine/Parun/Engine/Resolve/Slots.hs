@@ -283,6 +283,7 @@ import qualified Parun.Types.TopOfLibrary as TopOfLibrary
 import qualified Parun.Types.TopOfLibraryUntil as TopOfLibraryUntil
 import qualified Parun.Types.TotalCap as TotalCap
 import qualified Parun.Types.Toughness as Toughness
+import qualified Parun.Types.TransformR as TransformR
 import qualified Parun.Types.TriggeredAbility as TriggeredAbility
 import qualified Parun.Types.TurnRegisters as TurnRegisters
 import qualified Parun.Types.TurnUpR as TurnUpR
@@ -1662,6 +1663,8 @@ replacementRowReads re = case re of
   ReplacementEffect.TurnUpR (TurnUpR.MkTurnUpR pat _ _ rewrite) -> addFilter pat (turnUpRewriteReads rewrite)
   ReplacementEffect.AttachR (AttachR.MkAttachR pat (AttachRewrite.AsCopy asCopy)) -> addFilter pat (asCopyReads asCopy)
   ReplacementEffect.AttachR (AttachR.MkAttachR pat (AttachRewrite.ChooseQuality _)) -> ([pat], [])
+  -- The effects are replacementRowEffects' answer.
+  ReplacementEffect.TransformR (TransformR.MkTransformR pat _) -> ([pat], [])
   ReplacementEffect.UntapR _ -> ([], [])
   -- A LifeLossPattern is one ControllerRelation and one LifeLossCause, and no arm
   -- of LifeLossRewrite carries a Filter or a Quantity: no read at all.
@@ -1894,6 +1897,7 @@ overRelations f re = case re of
   ReplacementEffect.DestructionR _ -> pure re
   ReplacementEffect.TurnUpR _ -> pure re
   ReplacementEffect.AttachR _ -> pure re
+  ReplacementEffect.TransformR _ -> pure re
   ReplacementEffect.UntapR _ -> pure re
   where
     overSubject subject = case subject of
@@ -1934,6 +1938,8 @@ replacementRowEffects re = case re of
   ReplacementEffect.TokenR _ -> []
   ReplacementEffect.TurnUpR _ -> []
   ReplacementEffect.AttachR _ -> []
+  -- CR 701.27i's "as [this permanent] transforms, [do something]".
+  ReplacementEffect.TransformR (TransformR.MkTransformR _ effects) -> Foldable.toList effects
   ReplacementEffect.UntapR _ -> []
   ReplacementEffect.LifeLossR _ -> []
   ReplacementEffect.LifeGainR _ -> []

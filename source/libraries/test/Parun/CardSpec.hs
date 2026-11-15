@@ -485,6 +485,7 @@ import qualified Parun.Types.TokenR as TokenR
 import qualified Parun.Types.TopOfLibrary as TopOfLibrary
 import qualified Parun.Types.TopOfLibraryUntil as TopOfLibraryUntil
 import qualified Parun.Types.Toughness as Toughness
+import qualified Parun.Types.TransformR as TransformR
 import qualified Parun.Types.TransformTrigger as TransformTrigger
 import qualified Parun.Types.TriggerCondition as TriggerCondition
 import qualified Parun.Types.TriggerLimit as TriggerLimit
@@ -1715,6 +1716,8 @@ replacementRewriteEffects replacement = case replacement of
   ReplacementEffect.TurnUpR {} -> []
   ReplacementEffect.AttachR (AttachR.MkAttachR _ (AttachRewrite.AsCopy asCopy)) -> Foldable.toList (AsCopy.whenYouDo asCopy)
   ReplacementEffect.AttachR (AttachR.MkAttachR _ (AttachRewrite.ChooseQuality _)) -> []
+  -- CR 701.27i's as-transforms effects (Sephiroth, One-Winged Angel's emblem).
+  ReplacementEffect.TransformR (TransformR.MkTransformR _ effects) -> Foldable.toList effects
   ReplacementEffect.UntapR _ -> []
   ReplacementEffect.LifeLossR {} -> []
   ReplacementEffect.LifeGainR {} -> []
@@ -1750,6 +1753,7 @@ replacementEffectRiders replacement = case replacement of
   ReplacementEffect.TokenR {} -> []
   ReplacementEffect.TurnUpR {} -> []
   ReplacementEffect.AttachR {} -> []
+  ReplacementEffect.TransformR {} -> []
   ReplacementEffect.UntapR _ -> []
   ReplacementEffect.LifeLossR {} -> []
   ReplacementEffect.LifeGainR {} -> []
@@ -4338,6 +4342,7 @@ replacementEffectFilters replacementEffect = case replacementEffect of
   ReplacementEffect.TurnUpR (TurnUpR.MkTurnUpR turnUpPattern _ _ turnUpRewrite) -> unframed [turnUpPattern] <> turnUpRewriteFilters turnUpRewrite
   ReplacementEffect.AttachR (AttachR.MkAttachR attachPattern (AttachRewrite.AsCopy asCopy)) -> unframed [attachPattern] <> asCopyFilters asCopy
   ReplacementEffect.AttachR (AttachR.MkAttachR attachPattern (AttachRewrite.ChooseQuality quality)) -> unframed [attachPattern] <> chosenQualityFilters quality
+  ReplacementEffect.TransformR (TransformR.MkTransformR transformPattern _) -> unframed [transformPattern]
   ReplacementEffect.UntapR _ -> []
   -- A computed scaling's Quantity is the one Filter a life row can hold.
   ReplacementEffect.LifeLossR (LifeLossR.MkLifeLossR _ (LifeLossRewrite.Scaled scaling)) -> scalingFilters scaling

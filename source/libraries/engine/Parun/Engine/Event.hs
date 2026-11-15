@@ -317,6 +317,7 @@ import qualified Parun.Types.TokenLot as TokenLot
 import qualified Parun.Types.TokenPattern as TokenPattern
 import qualified Parun.Types.TokenPlus as TokenPlus
 import qualified Parun.Types.TokenR as TokenR
+import qualified Parun.Types.TransformR as TransformR
 import qualified Parun.Types.Transformed as Transformed
 import Parun.Types.TriggerCondition (TriggerCondition)
 import qualified Parun.Types.TriggerCondition as TriggerCondition
@@ -733,6 +734,8 @@ simultaneouslyPure body = closeEventGroup . body . openEventGroup
 --
 -- ONE event group for the whole set (CR 608.2f): Moonmist transforms every Human
 -- at once, and CR 603.10a must not be able to tell two of them apart.
+-- CR 701.27i: the as-transforms abilities of what turned are applied first
+-- (`transformed`), so this record is the event's last step.
 recordTransformed :: [ObjectId] -> GameState -> GameState
 recordTransformed oids gs = case oids of
   [] -> gs
@@ -745,6 +748,16 @@ recordTransformed oids gs = case oids of
             oids
       )
       gs
+
+-- | CR 701.27a / 701.27i: the tail of every road that turns a permanent over,
+-- called once the faces are written with the ids that ACTUALLY turned. Each
+-- permanent's "as [this permanent] transforms" abilities are applied while it
+-- transforms -- off the face it now shows, which is the one CR 701.27i asks
+-- about -- and then recordTransformed writes CR 701.27b's event.
+transformed :: [ObjectId] -> Game ()
+transformed oids = do
+  Monad.mapM_ (applyReplacements . ProposedEvent.WouldTransform) oids
+  State.modify' (recordTransformed oids)
 
 -- CR 603.10's "what the objects involved in the event look like", sampled off
 -- the board the turn has just been written to: the projected characteristics, and
@@ -2940,6 +2953,7 @@ arrivalCounters candidate = case ReplacementCandidate.effect candidate of
   ReplacementEffect.TokenR {} -> Nothing
   ReplacementEffect.TurnUpR {} -> Nothing
   ReplacementEffect.AttachR {} -> Nothing
+  ReplacementEffect.TransformR {} -> Nothing
   ReplacementEffect.UntapR _ -> Nothing
   ReplacementEffect.LifeLossR {} -> Nothing
   ReplacementEffect.LifeGainR {} -> Nothing
@@ -2976,6 +2990,7 @@ shufflesAfter candidate = case ReplacementCandidate.effect candidate of
   ReplacementEffect.TokenR {} -> False
   ReplacementEffect.TurnUpR {} -> False
   ReplacementEffect.AttachR {} -> False
+  ReplacementEffect.TransformR {} -> False
   ReplacementEffect.UntapR _ -> False
   ReplacementEffect.LifeLossR {} -> False
   ReplacementEffect.LifeGainR {} -> False
@@ -5849,6 +5864,37 @@ apply settle batch applied batchPrevented candidate event =
         pure (Just event)
     -- Unreachable: `applies` admits AttachR only against WouldBecomeAttached.
     (ReplacementEffect.AttachR {}, _) -> pure (Just event)
+    -- CR 701.27i: "as this creature transforms, [do something]", applied while
+    -- the permanent transforms because `transformed` raises this event there and
+    -- nowhere else. QUEUED for EntryRewrite.RunEffects' reason -- this module
+    -- cannot run a card's effects -- and drained before the next instruction
+    -- reads the board (Parun.Engine.Resolve.Effect.applyEffectWith) or, off a
+    -- resolution, by the settle loop. Both the performer and CR 113.7's source are
+    -- the transforming permanent, the entry arm's posture. The event survives:
+    -- the face is already turned.
+    (ReplacementEffect.TransformR (TransformR.MkTransformR _ effects), ProposedEvent.WouldTransform oid) -> do
+      Replacement.consume (ReplacementCandidate.identity candidate)
+      gs <- State.get
+      -- Nothing is unreachable: the permanent is on the battlefield, so
+      -- controllerOf falls back to its owner. Runs nothing rather than guessing.
+      Monad.forM_ (Projection.controllerOf oid gs) $ \controller ->
+        State.modify' $ \g ->
+          g
+            { GameState.stored =
+                (GameState.stored g)
+                  { StoredEffects.pendingReplacementEffects =
+                      StoredEffects.pendingReplacementEffects (GameState.stored g)
+                        Seq.|> PendingReplacementEffect.MkPendingReplacementEffect
+                          { PendingReplacementEffect.effects = effects,
+                            PendingReplacementEffect.targets = Map.empty,
+                            PendingReplacementEffect.controller = controller,
+                            PendingReplacementEffect.source = oid
+                          }
+                  }
+            }
+      pure (Just event)
+    -- Unreachable: `applies` admits TransformR only against WouldTransform.
+    (ReplacementEffect.TransformR {}, _) -> pure (Just event)
 
 -- CR 607.2i / 607.5: a permanent spell entering as a copy keeps its own
 -- instances' payments, and their gift promises, only for the own instances it

@@ -16,8 +16,9 @@ import qualified Parun.Types.SlotName as SlotName
 -- (DamageRewrite.RunEffects), Kalitas, Traitor of Ghet's Zombie
 -- (ZoneChangeR.riders), Lich's Mirror's reset (GameLossR), Forbidden
 -- Crypt's loss of the game (DrawRewrite.FromGraveyardOrLose) and Island
--- Sanctuary's restriction (DrawRewrite.RunEffects), and Time Vault's untap
--- (PhaseRewrite.MaySkipFor, StoredEffects.pendingSkipEffects).
+-- Sanctuary's restriction (DrawRewrite.RunEffects), Time Vault's untap
+-- (PhaseRewrite.MaySkipFor, StoredEffects.pendingSkipEffects), and Sephiroth,
+-- One-Winged Angel's emblem (TransformR.effects, CR 701.27i).
 -- Parun.Types.PendingEntryEffect's twin one event class over, and queued for the
 -- same reason: the module that applies a replacement (Parun.Engine.Event) is
 -- below the module that can run a card's effects.

@@ -839,6 +839,7 @@ import qualified Parun.Codec.TopOfLibraryUntilSpec
 import qualified Parun.Codec.TotalCapSpec
 import qualified Parun.Codec.ToughnessSpec
 import qualified Parun.Codec.TraitSpec
+import qualified Parun.Codec.TransformRSpec
 import qualified Parun.Codec.TransformTriggerSpec
 import qualified Parun.Codec.TransformedSpec
 import qualified Parun.Codec.TriggerConditionSpec
@@ -1322,6 +1323,7 @@ spec s reference corpus = do
   Parun.Codec.CopyDomainSpec.spec s
   Parun.Codec.AttachRewriteSpec.spec s
   Parun.Codec.AttachRSpec.spec s
+  Parun.Codec.TransformRSpec.spec s
   Parun.Codec.CopyStackObjectSpec.spec s
   Parun.Codec.CopyTargetsSpec.spec s
   Parun.Codec.CopyabilitySpec.spec s
