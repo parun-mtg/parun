@@ -544,6 +544,10 @@ data Filter keyword
     -- lets
     -- Parun.Engine.Projection.filterReads declare it as reading nothing.
     IsToken
+  | -- | CR 108.2: the candidate is a card, which a token, a copy and an ability
+    -- are not (CR 108.2b, 707.10). Uncharacteristic and immutable for IsToken's
+    -- reason.
+    IsCard
   | -- | CR 903.3: the candidate is one of the cards its OWNER designated as a
     -- commander -- Raised by Giants' "commander creatures you own".
     -- Uncharacteristic and immutable for IsToken's reason, and more strongly: CR

@@ -881,7 +881,7 @@ snapshotView viewOf gs shape event = case event of
       -- is, the snapshot recording no zone -- Spider-Man 2099's "cast a spell this
       -- turn from anywhere other than your hand"
       -- (data/scenarios/spider-man-2099-deals-damage-after-a-land-played-from-the-graveyard.json).
-      castView = (viewOfSnapshot False (Just caster) (Game.ownerWithLastKnown spell gs) False Map.empty Zone.Stack Zone.Battlefield lapsed snapshot) {Filter.castFrom = from}
+      castView = (viewOfSnapshot False (Just caster) (Game.ownerWithLastKnown spell gs) False Map.empty Zone.Stack Zone.Battlefield lapsed snapshot) {Filter.castFrom = from, Filter.isCard = maybe False Game.sourceIsCard (Game.sourceOfWithLastKnown spell gs)}
   GameEvent.BecameMonarch _ -> Nothing
   GameEvent.TookInitiative _ -> Nothing
   GameEvent.MulliganDeclared _ -> Nothing
@@ -1129,7 +1129,7 @@ arrivalMatches arrival zc =
 departedView :: ViewOf -> GameState -> ZoneChange.ZoneChange -> PC.ProjectedCharacteristics -> Filter.View
 departedView viewOf gs zc snapshot = case Map.lookup (ZoneChange.departed zc) (Snapshots.lastKnown (GameState.snapshots gs)) of
   Just lastKnown -> lastKnownView viewOf (ZoneChange.departed zc) gs lastKnown {LastKnown.characteristics = snapshot}
-  Nothing -> viewOfSnapshot (deployIn gs (ZoneChange.from zc)) Nothing Nothing (Game.isToken (ZoneChange.object zc) gs) Map.empty (ZoneChange.from zc) Zone.Battlefield Set.empty snapshot
+  Nothing -> (viewOfSnapshot (deployIn gs (ZoneChange.from zc)) Nothing Nothing (Game.isToken (ZoneChange.object zc) gs) Map.empty (ZoneChange.from zc) Zone.Battlefield Set.empty snapshot) {Filter.isCard = Game.isCardObject (ZoneChange.object zc) gs}
 
 -- CR 113.7a / 608.2h: `live`'s view of an object that exists, else the view of
 -- the record filed under its id once it has left (lastKnownView), else Nothing.
@@ -1202,6 +1202,7 @@ lastKnownView peers oid gs lastKnown =
           (LastKnown.characteristics lastKnown)
       )
         { Filter.identity = Just oid,
+          Filter.isCard = Game.sourceIsCard (LastKnown.source lastKnown),
           Filter.tapped = LastKnown.tapped lastKnown,
           Filter.faceDown = LastKnown.faceDown lastKnown,
           Filter.attacking = LastKnown.attacking lastKnown,
@@ -1653,6 +1654,9 @@ viewOfSnapshot deploy mController mOwner isToken counters zone home lapsed snaps
       -- CR 111.6: "A token isn't a card", which is a fact about the OBJECT and
       -- not a characteristic, so the arm supplies it above.
       Filter.token = isToken,
+      -- CR 108.2: a fact about the OBJECT, which a snapshot does not hold; the
+      -- callers that know the object fill it over this.
+      Filter.isCard = False,
       -- CR 903.3's designation is recoverable only from an OBJECT, which a
       -- ProjectedCharacteristics is not -- `owner` above's situation one rule
       -- over, and no arm passes one. So IsCommander is vacuously false of a

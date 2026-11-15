@@ -598,6 +598,11 @@ data View = MkView
     -- characteristic axis distinguishes the two and no CR 613 layer can change the
     -- answer. False for every candidate with no object behind it.
     token :: Bool,
+    -- CR 108.2: is this candidate a card? Read from Object.source
+    -- (Parun.Engine.Game.isCardObject) for `token` above's reason. False for a
+    -- token, a copy, an ability, an emblem and every candidate with no object
+    -- behind it.
+    isCard :: Bool,
     -- CR 903.3: is this candidate a card designated as a commander? Read from
     -- Parun.Engine.Commander.isCommander, never from a projection -- rule
     -- 903.3's designation is an attribute of the card fixed before the game
@@ -1137,6 +1142,8 @@ nobodyView =
       hasEntryHost = False,
       -- CR 111.1: a token represents a PERMANENT, and a player is not one.
       token = False,
+      -- CR 108.2: nor is a player a card.
+      isCard = False,
       activatedAbility = Nothing,
       activationCost = Nothing,
       -- CR 113.1c again, one kind wider: a player is not an object at all (CR
@@ -2835,6 +2842,9 @@ matches context view predicate = case predicate of
   -- represented by (Object.source), never a stamp on the candidate, because CR
   -- 731.2d can change the answer as a permanent merges.
   Filter.IsToken -> token view
+  -- CR 108.2, read off Object.source for `token`'s reason: a CR 707.12 copy
+  -- cast from exile is a spell and no card (CR 707.10).
+  Filter.IsCard -> isCard view
   -- CR 903.3's designation, read off the owner's deck rather than off the
   -- candidate: `token` above's posture, and immutable for the same kind of
   -- reason -- the designation is made before the game begins (CR 702.124a).
@@ -3366,6 +3376,7 @@ manaValueThresholds predicate = case predicate of
   Filter.HostOfSubjectHasCardType _ -> []
   Filter.IsCommander -> []
   Filter.IsToken -> []
+  Filter.IsCard -> []
   Filter.IsActivatedAbility _ -> []
   Filter.IsAbility -> []
   Filter.IsEmblem -> []
@@ -3554,6 +3565,7 @@ statesAQuality predicate = case predicate of
   Filter.HostOfSubjectHasCardType _ -> True
   Filter.IsCommander -> True
   Filter.IsToken -> True
+  Filter.IsCard -> True
   Filter.IsActivatedAbility _ -> True
   Filter.IsAbility -> True
   Filter.IsEmblem -> True
@@ -3730,6 +3742,7 @@ readsSourceValues predicate = case predicate of
   Filter.HostOfSubjectHasCardType _ -> False
   Filter.IsCommander -> False
   Filter.IsToken -> False
+  Filter.IsCard -> False
   Filter.IsActivatedAbility _ -> False
   Filter.IsAbility -> False
   Filter.IsEmblem -> False

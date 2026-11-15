@@ -649,6 +649,7 @@ filterChildren children predicate = case predicate of
   Filter.HasEntryHost -> pure predicate
   Filter.HostOfSubjectHasCardType _ -> pure predicate
   Filter.IsToken -> pure predicate
+  Filter.IsCard -> pure predicate
   Filter.IsCommander -> pure predicate
   Filter.IsActivatedAbility criteria -> fmap Filter.IsActivatedAbility (activationCriteriaChildren children criteria)
   Filter.IsAbility -> pure predicate

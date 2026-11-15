@@ -4541,6 +4541,7 @@ filterReads f = case f of
   Filter.Type.HostOfSubjectHasCardType _ -> Set.singleton Types
   -- Reads nothing: no Modification writes Object.source.
   Filter.Type.IsToken -> Set.empty
+  Filter.Type.IsCard -> Set.empty
   -- Reads nothing either: no Modification writes CR 903.3's designation.
   Filter.Type.IsCommander -> Set.empty
   -- Reads nothing, for the atom above's reason and off the same record: CR
@@ -4823,6 +4824,7 @@ filterReadsPeers f = case f of
   Filter.Type.CounterLinkedToSource _ -> False
   Filter.Type.AttachedNoLaterThanSource -> False
   Filter.Type.IsToken -> False
+  Filter.Type.IsCard -> False
   Filter.Type.IsCommander -> False
   Filter.Type.IsActivatedAbility _ -> False
   Filter.Type.IsAbility -> False

@@ -177,6 +177,7 @@ codec keywordCodec =
       Arm.payload "HostOfSubjectHasCardType" CardType.codec Filter.HostOfSubjectHasCardType (\x -> case x of Filter.HostOfSubjectHasCardType y -> Just y; _ -> Nothing),
       Arm.nullary "IsCommander" Filter.IsCommander,
       Arm.nullary "IsToken" Filter.IsToken,
+      Arm.nullary "IsCard" Filter.IsCard,
       -- No payload is every activated ability, the criteria all Nothing, which
       -- is what Squelch prints.
       Arm.optionalPayload "IsActivatedAbility" (ActivationCriteria.codec keywordCodec) (Filter.IsActivatedAbility . Maybe.fromMaybe everyActivation) (\x -> case x of Filter.IsActivatedAbility y -> Just (if y == everyActivation then Nothing else Just y); _ -> Nothing),
@@ -395,6 +396,7 @@ tagOf x = case x of
   Filter.HostOfSubjectHasCardType {} -> "HostOfSubjectHasCardType"
   Filter.IsCommander {} -> "IsCommander"
   Filter.IsToken {} -> "IsToken"
+  Filter.IsCard {} -> "IsCard"
   Filter.IsActivatedAbility {} -> "IsActivatedAbility"
   Filter.IsAbility {} -> "IsAbility"
   Filter.IsEmblem {} -> "IsEmblem"

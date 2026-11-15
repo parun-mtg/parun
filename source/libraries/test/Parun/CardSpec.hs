@@ -4673,6 +4673,9 @@ data Framing
     -- positions framed by their source outside a resolution. See the overview
     -- above for the evaluators and for what the split buys.
     StandingHostFramed
+  | -- | CR 603.4's intervening "if": StandingHostFramed's frame, plus the
+    -- trigger's own slots (Projection.framedByBindings), at both checks.
+    InterveningFramed
   | -- | A printed or granted PLAYER ability's own effect Filters, read through
     -- Parun.Engine.PlayerEffect.contextFor off the row `applying` returns: the
     -- source's host and its CR 607.2d choices (Parun.Engine.SourceContext) are
@@ -4879,6 +4882,7 @@ sweptForSingularSlots framing = case framing of
   -- (Projection.framedByBindings), and where the other two read none the sweep can
   -- only reject more, SlotlessCostFramed's argument.
   StandingHostFramed -> True
+  InterveningFramed -> True
   -- SWEPT, as both were before they were split off: the split is about CR
   -- 607.2d's chosen values, not about slots.
   PlayerEffectFramed -> True
@@ -5702,7 +5706,7 @@ triggeredAbilityFilters ability =
     -- Parun.Engine.Stack's CR 608.2a re-check both supply the source's host here,
     -- and the trigger CONDITION above them is matched by Event.matchesTrigger,
     -- which does not.
-    <> frame StandingHostFramed (concatMap conditionFilters (Maybe.maybeToList (TriggeredAbility.intervening ability)))
+    <> frame InterveningFramed (concatMap conditionFilters (Maybe.maybeToList (TriggeredAbility.intervening ability)))
     <> modalFilters (TriggeredAbility.modal ability)
 
 -- | Every cost an activation may announce off its printed cost, one per way of
