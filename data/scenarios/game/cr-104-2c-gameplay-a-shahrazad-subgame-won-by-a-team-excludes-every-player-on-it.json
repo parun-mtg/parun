@@ -1,0 +1,327 @@
+{
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "battlefield": [
+          {
+            "card": "Plains",
+            "label": "plains",
+            "ready": true
+          },
+          {
+            "card": "Plains",
+            "label": "plains-2",
+            "ready": true
+          }
+        ],
+        "hand": [
+          {
+            "card": "Shahrazad",
+            "label": "shahrazad"
+          }
+        ],
+        "library": [
+          {
+            "card": "Mountain"
+          },
+          {
+            "card": "Mountain"
+          },
+          {
+            "card": "Mountain"
+          },
+          {
+            "card": "Mountain"
+          },
+          {
+            "card": "Mountain"
+          },
+          {
+            "card": "Mountain"
+          },
+          {
+            "card": "Mountain"
+          },
+          {
+            "card": "Mountain"
+          }
+        ],
+        "life": 20,
+        "name": "alice",
+        "team": 0
+      },
+      {
+        "library": [
+          {
+            "card": "Mountain"
+          },
+          {
+            "card": "Mountain"
+          },
+          {
+            "card": "Mountain"
+          },
+          {
+            "card": "Mountain"
+          },
+          {
+            "card": "Mountain"
+          },
+          {
+            "card": "Mountain"
+          }
+        ],
+        "life": 13,
+        "name": "bob",
+        "team": 0
+      },
+      {
+        "library": [
+          {
+            "card": "Mountain"
+          },
+          {
+            "card": "Mountain"
+          },
+          {
+            "card": "Mountain"
+          },
+          {
+            "card": "Mountain"
+          }
+        ],
+        "life": 9,
+        "name": "carol",
+        "team": 1
+      }
+    ],
+    "step": "PrecombatMain"
+  },
+  "description": "CR 104.2c gameplay: a Shahrazad subgame won by a team excludes every player on it",
+  "note": "The non-winners board with alice and bob on one team: bob decks in the subgame, but alice's survival is their team's win, so only carol pays.",
+  "timeline": [
+    {
+      "do": {
+        "Cast": {
+          "mana": [
+            "$plains",
+            "$plains-2"
+          ],
+          "object": "$shahrazad"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Answer": {
+          "prompt": "RandomFirstPlayer",
+          "with": "alice"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "depth": 1,
+      "do": {
+        "Answer": {
+          "prompt": "Shuffle",
+          "with": [
+            "Mountain",
+            "Mountain#2",
+            "Mountain#3",
+            "Mountain#4",
+            "Mountain#5",
+            "Mountain#6",
+            "Mountain#7",
+            "Mountain#8"
+          ]
+        }
+      },
+      "player": "alice",
+      "step": "Untap",
+      "turn": 1
+    },
+    {
+      "depth": 1,
+      "do": {
+        "Answer": {
+          "prompt": "Shuffle",
+          "with": [
+            "Mountain#9",
+            "Mountain#10",
+            "Mountain#11",
+            "Mountain#12",
+            "Mountain#13",
+            "Mountain#14"
+          ]
+        }
+      },
+      "player": "alice",
+      "step": "Untap",
+      "turn": 1
+    },
+    {
+      "depth": 1,
+      "do": {
+        "Answer": {
+          "prompt": "Shuffle",
+          "with": [
+            "Mountain#15",
+            "Mountain#16",
+            "Mountain#17",
+            "Mountain#18"
+          ]
+        }
+      },
+      "player": "alice",
+      "step": "Untap",
+      "turn": 1
+    },
+    {
+      "depth": 1,
+      "do": {
+        "Answer": {
+          "prompt": "DeclareMulligan",
+          "with": "Keep"
+        }
+      },
+      "player": "alice",
+      "step": "Untap",
+      "turn": 1
+    },
+    {
+      "depth": 1,
+      "do": {
+        "Answer": {
+          "prompt": "DeclareMulligan",
+          "with": "Keep"
+        }
+      },
+      "player": "bob",
+      "step": "Untap",
+      "turn": 1
+    },
+    {
+      "depth": 1,
+      "do": {
+        "Answer": {
+          "prompt": "DeclareMulligan",
+          "with": "Keep"
+        }
+      },
+      "player": "carol",
+      "step": "Untap",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Answer": {
+          "prompt": "Shuffle",
+          "with": [
+            "Mountain",
+            "Mountain#12",
+            "Mountain#13",
+            "Mountain#14",
+            "Mountain#15",
+            "Mountain#16",
+            "Mountain#17",
+            "Mountain#18"
+          ]
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Answer": {
+          "prompt": "Shuffle",
+          "with": [
+            "Mountain#2",
+            "Mountain#3",
+            "Mountain#4",
+            "Mountain#5",
+            "Mountain#6",
+            "Mountain#7"
+          ]
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Answer": {
+          "prompt": "Shuffle",
+          "with": [
+            "Mountain#8",
+            "Mountain#9",
+            "Mountain#10",
+            "Mountain#11"
+          ]
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Life": {
+          "life": 13,
+          "player": "bob"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Life": {
+          "life": 20,
+          "player": "alice"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Life": {
+          "life": 4,
+          "player": "carol"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "View": {
+          "is": null,
+          "of": "Result"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    }
+  ]
+}

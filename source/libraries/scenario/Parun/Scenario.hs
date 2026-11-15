@@ -201,10 +201,15 @@ data Rehearsal = MkRehearsal
     -- | A move taken at priority and the state it was taken on, until the next
     -- priority prompt shows the engine made it. The engine's priority loop asks
     -- again after reversing one; a run ending first had no engine acting on it.
-    awaiting :: Maybe (When.When, Move.Move, GameState.GameState),
+    -- Kept per depth (When.depth), so a subgame's prompts (CR 730.1a) leave the
+    -- game they interrupt waiting for its own.
+    awaiting :: Map.Map Natural (When.When, Move.Move, GameState.GameState),
     -- | The state the last priority prompt was asked in, which the next one's
-    -- log must account for (Parun.Engine.Ledger).
-    audited :: Maybe GameState.GameState,
+    -- log must account for (Parun.Engine.Ledger), per depth like `awaiting`.
+    audited :: Map.Map Natural GameState.GameState,
+    -- | How many games enclose the one asking the current prompt (CR 730.1a),
+    -- which every key the run builds carries.
+    depth :: Natural,
     -- | CR 108.1: the Oracle card reference, as far as the run has asked it:
     -- each name's card, and the face it answers to when chosen
     -- (Interpreter.chosenFace), a name it lacks mapped to neither; Nothing for
@@ -216,9 +221,9 @@ data Rehearsal = MkRehearsal
     -- | Where a replayed recording stopped: the state the first prompt past
     -- its last entry was asked in.
     ended :: Maybe GameState.GameState,
-    -- | Each prompt other than priority asked so far, oldest first, by turn,
-    -- decider and kind: what the Asked view reads.
-    promptsAsked :: Seq.Seq (Natural, Maybe Label.Label, Text.Text)
+    -- | Each prompt other than priority asked so far, oldest first, by depth,
+    -- turn, decider and kind: what the Asked view reads.
+    promptsAsked :: Seq.Seq (Natural, Natural, Maybe Label.Label, Text.Text)
   }
 
 type Run = State.StateT Rehearsal (Either Halt)
@@ -255,7 +260,7 @@ run registry scenario = do
         (reached, rehearsal) <- State.runStateT playing ((rehearsalOf (Scenario.timeline scenario) board) {reference = Just known, replaying = fromDecks})
         let final = Maybe.fromMaybe reached (ended rehearsal)
         Bifunctor.first Failed (settle rehearsal final)
-        State.evalStateT (mapM_ (expect Nothing final Nothing) (Scenario.final scenario)) rehearsal
+        State.evalStateT (mapM_ (expect Nothing final Nothing) (Scenario.final scenario)) rehearsal {depth = 0}
         pure final
       fetching known = case attempt known of
         Left (Fetching name) -> do
@@ -296,12 +301,13 @@ stepBudget :: Natural
 stepBudget = 1000
 
 -- | Whether the timeline is spent, or the game has passed the last turn it
--- names.
+-- names. A subgame's turns are its own (CR 730.1a), so only the main game's
+-- count.
 finished :: GameState.GameState -> Run Bool
 finished gs = do
   rehearsal <- State.get
   let remaining = queues rehearsal
-      lastTurn = maybe 0 (When.turn . fst) (Map.lookupMax remaining)
+      lastTurn = maybe 0 (When.turn . fst) (Map.lookupMax (Map.filterWithKey (\key _ -> When.depth key == 0) remaining))
   pure $
     if replaying rehearsal
       then Maybe.isJust (ended rehearsal)
@@ -329,8 +335,9 @@ rehearsalOf timeline board =
           pending = Nothing,
           refusing = Nothing,
           reversing = Nothing,
-          awaiting = Nothing,
-          audited = Nothing,
+          awaiting = Map.empty,
+          audited = Map.empty,
+          depth = 0,
           reference = Nothing,
           replaying = False,
           ended = Nothing,
@@ -710,67 +717,67 @@ answerScheduled asked = do
   let prompt = Asked.prompt asked
       gs = Asked.game asked
       kind = Prompt.kindOf prompt
+      nesting = Natural.length (Asked.enclosing asked)
+  -- CR 730.1a: the asking game's moment keys every entry from here on. A
+  -- game deeper than this one has ended, so what it left waiting goes too.
+  State.modify' (\rehearsal -> rehearsal {depth = nesting, awaiting = fst (Map.split (nesting + 1) (awaiting rehearsal)), audited = fst (Map.split (nesting + 1) (audited rehearsal))})
   decider <- traverse labelOf (Driver.deciderOf prompt)
-  -- Hoisted above every arm: a nested game (CR 730.1) is out of scope for every
-  -- prompt alike, a pending action's sub-choices included.
-  if not (null (Asked.enclosing asked))
-    then failWith (Failure.MkNestedGamePrompt (TurnRegisters.turnNumber (GameState.turn gs)) (TurnRegisters.phase (GameState.turn gs)) decider kind)
-    else do
-      Monad.when (recorded prompt && kind /= Text.pack "ChooseAction") $ do
-        runPromptChecks gs decider prompt
-        State.modify' (\rehearsal -> rehearsal {promptsAsked = promptsAsked rehearsal Seq.|> (TurnRegisters.turnNumber (GameState.turn gs), decider, kind)})
-      -- CR 734.1: a refused move is reversed, so the engine's next prompt is
-      -- the one it answered, asked again. A prompt the move raises on its way
-      -- there -- a payment's own choices, an Answer the timeline schedules,
-      -- CR 734.1's ReverseManaAbilities -- leaves the refusal waiting.
-      -- A triggered ability's refused targets are asked again from CR 601.2c's
-      -- announcement (CR 603.3d), so AnnounceTargets re-asks a ChooseTargets.
-      refusal <- State.gets refusing
-      underway <- State.gets pending
-      queued <- takeAnswer gs decider kind
-      let raised = case underway of
-            Just (pendingKey, _, choices) -> subChoiceFor pendingKey prompt decider choices || Maybe.isJust queued
-            Nothing -> Maybe.isJust queued
-      case refusal of
-        Just (key, verb, answered)
-          | not (asksAgain answered kind) || decider /= Just (When.player key) || TurnRegisters.turnNumber (GameState.turn gs) /= When.turn key || TurnRegisters.phase (GameState.turn gs) /= When.phase key ->
-              Monad.unless raised (failWith (Failure.MkUnrefusedMove key verb (Just kind)))
-        _ -> State.modify' (\rehearsal -> rehearsal {refusing = Nothing})
-      waiting <- State.gets pending
-      undoing <- State.gets reversing
-      case waiting of
-        Just (key, verb, choices)
-          | subChoiceFor key prompt decider choices -> answerActionChoice key verb choices asked
-          -- CR 734.1: a refused action ends either reversed, the state back
-          -- where it was taken, or standing, which fails the scenario.
-          | Just (_, _, actor, before) <- undoing ->
-              if reversed actor before gs
-                then do
-                  State.modify' (\rehearsal -> rehearsal {pending = Nothing, reversing = Nothing})
-                  answerTopPrompt decider asked
-                else do
-                  -- A prompt the refused action raises on its way to being
-                  -- reversed (a kicker, CR 734.1's ReverseManaAbilities) is
-                  -- answered by an Answer and leaves the refusal pending.
-                  found <- takeAnswer gs decider kind
-                  case found of
-                    Just (answerKey, index, timed) -> answerGeneric gs answerKey kind index timed prompt
-                    Nothing -> failWith (Failure.MkUnrefusedMove key verb (Just kind))
-          -- Any other prompt means the action has finished. A choice it never
-          -- asked for is a scenario error, reported here rather than at the
-          -- next prompt that happens to want an answer.
-          | choices /= Choices.none -> do
-              -- A prompt another rule raises mid-action (a kicker, a
-              -- shuffle) is answered by an Answer and leaves the action
-              -- pending.
+  Monad.when (recorded prompt && kind /= Text.pack "ChooseAction") $ do
+    runPromptChecks gs decider prompt
+    State.modify' (\rehearsal -> rehearsal {promptsAsked = promptsAsked rehearsal Seq.|> (nesting, TurnRegisters.turnNumber (GameState.turn gs), decider, kind)})
+  -- CR 734.1: a refused move is reversed, so the engine's next prompt is
+  -- the one it answered, asked again. A prompt the move raises on its way
+  -- there -- a payment's own choices, an Answer the timeline schedules,
+  -- CR 734.1's ReverseManaAbilities -- leaves the refusal waiting.
+  -- A triggered ability's refused targets are asked again from CR 601.2c's
+  -- announcement (CR 603.3d), so AnnounceTargets re-asks a ChooseTargets.
+  refusal <- State.gets refusing
+  underway <- State.gets pending
+  queued <- takeAnswer gs decider kind
+  here <- traverse (keyAt gs) decider
+  let raised = case underway of
+        Just (pendingKey, _, choices) -> subChoiceFor pendingKey prompt decider choices || Maybe.isJust queued
+        Nothing -> Maybe.isJust queued
+  case refusal of
+    Just (key, verb, answered)
+      | not (asksAgain answered kind) || here /= Just key ->
+          Monad.unless raised (failWith (Failure.MkUnrefusedMove key verb (Just kind)))
+    _ -> State.modify' (\rehearsal -> rehearsal {refusing = Nothing})
+  waiting <- State.gets pending
+  undoing <- State.gets reversing
+  case waiting of
+    Just (key, verb, choices)
+      | subChoiceFor key prompt decider choices -> answerActionChoice key verb choices asked
+      -- CR 734.1: a refused action ends either reversed, the state back
+      -- where it was taken, or standing, which fails the scenario.
+      | Just (_, _, actor, before) <- undoing ->
+          if reversed actor before gs
+            then do
+              State.modify' (\rehearsal -> rehearsal {pending = Nothing, reversing = Nothing})
+              answerTopPrompt decider asked
+            else do
+              -- A prompt the refused action raises on its way to being
+              -- reversed (a kicker, CR 734.1's ReverseManaAbilities) is
+              -- answered by an Answer and leaves the refusal pending.
               found <- takeAnswer gs decider kind
               case found of
                 Just (answerKey, index, timed) -> answerGeneric gs answerKey kind index timed prompt
-                Nothing -> failWith (Failure.MkUnusedActionChoices key verb choices)
-        Just {} -> do
-          State.modify' (\rehearsal -> rehearsal {pending = Nothing})
-          answerTopPrompt decider asked
-        Nothing -> answerTopPrompt decider asked
+                Nothing -> failWith (Failure.MkUnrefusedMove key verb (Just kind))
+      -- Any other prompt means the action has finished. A choice it never
+      -- asked for is a scenario error, reported here rather than at the
+      -- next prompt that happens to want an answer.
+      | choices /= Choices.none -> do
+          -- A prompt another rule raises mid-action (a kicker, a
+          -- shuffle) is answered by an Answer and leaves the action
+          -- pending.
+          found <- takeAnswer gs decider kind
+          case found of
+            Just (answerKey, index, timed) -> answerGeneric gs answerKey kind index timed prompt
+            Nothing -> failWith (Failure.MkUnusedActionChoices key verb choices)
+    Just {} -> do
+      State.modify' (\rehearsal -> rehearsal {pending = Nothing})
+      answerTopPrompt decider asked
+    Nothing -> answerTopPrompt decider asked
 
 -- | Whether a prompt of kind `kind` asks again what one of kind `answered`
 -- asked: the same prompt, or a target choice's announcement (CR 603.3d).
@@ -817,7 +824,9 @@ answerDedicated decider asked =
   let prompt = Asked.prompt asked
       gs = Asked.game asked
       kind = Prompt.kindOf prompt
-      unscheduled offers = failWith (Failure.MkUnscheduledPrompt (TurnRegisters.turnNumber (GameState.turn gs)) (TurnRegisters.phase (GameState.turn gs)) decider kind offers)
+      unscheduled offers = do
+        nesting <- State.gets depth
+        failWith (Failure.MkUnscheduledPrompt nesting (TurnRegisters.turnNumber (GameState.turn gs)) (TurnRegisters.phase (GameState.turn gs)) decider kind offers)
    in case prompt of
         Prompt.Type.ChooseAction who _ actions -> answerActionPrompt gs (Decider.unwrap who) actions prompt
         -- CR 108.1: the interpreter's question, answered from the reference.
@@ -1026,9 +1035,12 @@ takeAnswer gs decider kind = do
 -- | The key a prompt's entries carry: its decider's, or the active player's
 -- for a prompt nobody decides.
 deciderKey :: GameState.GameState -> Maybe Label.Label -> Run When.When
-deciderKey gs decider = do
-  label <- maybe (labelOf (TurnRegisters.activePlayer (GameState.turn gs))) pure decider
-  pure (When.MkWhen (TurnRegisters.turnNumber (GameState.turn gs)) (TurnRegisters.phase (GameState.turn gs)) label)
+deciderKey gs decider = keyAt gs =<< maybe (labelOf (TurnRegisters.activePlayer (GameState.turn gs))) pure decider
+
+-- | The key an entry for `label` carries now: the asking game's turn and step,
+-- at its depth (CR 730.1a).
+keyAt :: GameState.GameState -> Label.Label -> Run When.When
+keyAt gs label = fmap (When.MkWhen (TurnRegisters.turnNumber (GameState.turn gs)) (TurnRegisters.phase (GameState.turn gs)) label) (State.gets depth)
 
 answerGeneric :: GameState.GameState -> When.When -> Text.Text -> Int -> Timed.Timed -> Prompt.Type.Prompt r -> Run r
 answerGeneric gs key kind index timed prompt = case Timed.entry timed of
@@ -1061,7 +1073,7 @@ answerGeneric gs key kind index timed prompt = case Timed.entry timed of
         found <- takeAnswer gs (Just (When.player key)) kind
         case found of
           Just (answerKey, next, nextTimed) -> answerGeneric gs answerKey kind next nextTimed prompt
-          Nothing -> failWith (Failure.MkUnscheduledPrompt (TurnRegisters.turnNumber (GameState.turn gs)) (TurnRegisters.phase (GameState.turn gs)) (Just (When.player key)) kind [])
+          Nothing -> failWith (Failure.MkUnscheduledPrompt (When.depth key) (When.turn key) (When.phase key) (Just (When.player key)) kind [])
   entry -> failWith (Failure.MkUnexpectedPrompt key entry kind [])
   where
     decodeAnswer verb answer =
@@ -1329,7 +1341,7 @@ answerActionPrompt gs pid actions prompt = do
           [action] -> pure action
           _ -> failWith (Failure.MkAmbiguousAction key verb offered)
         popAt key index
-        State.modify' (\rehearsal -> rehearsal {pending = Just (key, verb, choicesOf verb), awaiting = Just (key, verb, gs)})
+        State.modify' (\rehearsal -> rehearsal {pending = Just (key, verb, choicesOf verb), awaiting = Map.insert (When.depth key) (key, verb, gs) (awaiting rehearsal)})
         pure chosen
       -- A refused move the engine does not offer is refused already; one it
       -- does offer is taken, and must be reversed (CR 734.1).
@@ -1355,14 +1367,15 @@ answerActionPrompt gs pid actions prompt = do
 -- (Parun.Engine.Ledger), whatever was taken.
 made :: GameState.GameState -> Run ()
 made gs = do
-  previous <- State.gets awaiting
-  earlier <- State.gets audited
-  State.modify' (\rehearsal -> rehearsal {awaiting = Nothing, audited = Just gs})
+  nesting <- State.gets depth
+  previous <- State.gets (Map.lookup nesting . awaiting)
+  earlier <- State.gets (Map.lookup nesting . audited)
+  State.modify' (\rehearsal -> rehearsal {awaiting = Map.delete nesting (awaiting rehearsal), audited = Map.insert nesting gs (audited rehearsal)})
   case previous of
     Just (key, verb, before) | not (happened verb before gs) -> failWith (Failure.MkUnmadeMove key verb)
     _ -> pure ()
   case NonEmpty.nonEmpty (foldMap (`Ledger.discrepancies` gs) earlier) of
-    Just found -> failWith (Failure.MkUnloggedChanges (TurnRegisters.turnNumber (GameState.turn gs)) (TurnRegisters.phase (GameState.turn gs)) found)
+    Just found -> failWith (Failure.MkUnloggedChanges nesting (TurnRegisters.turnNumber (GameState.turn gs)) (TurnRegisters.phase (GameState.turn gs)) found)
     Nothing -> pure ()
 
 -- | Whether a move taken on one state shows in another.
@@ -1665,7 +1678,7 @@ expect key gs asked check = do
     Just actual -> do
       remaining <- State.gets queues
       let step moment = (When.turn moment, When.phase moment)
-          earlier moment = any (\now -> step moment < step now) key
+          earlier moment = any (\now -> When.depth moment == When.depth now && step moment < step now) key
           skipped = foldMap snd (filter (earlier . fst) (Map.toAscList remaining))
       failWith (Failure.MkCheckFailed key check actual skipped)
 
@@ -1771,7 +1784,7 @@ observe gs asked check = case check of
 
 -- | The key an entry answered by `pid` would carry now. `pid` is the DECIDER.
 whenOf :: GameState.GameState -> PlayerId.PlayerId -> Run When.When
-whenOf gs pid = fmap (When.MkWhen (TurnRegisters.turnNumber (GameState.turn gs)) (TurnRegisters.phase (GameState.turn gs))) (labelOf pid)
+whenOf gs pid = keyAt gs =<< labelOf pid
 
 queueAt :: When.When -> Run (Seq.Seq Timed.Timed)
 queueAt key = State.gets (Map.findWithDefault Seq.empty key . queues)
@@ -2276,9 +2289,10 @@ renderView gs asked viewIs =
           labels <- mapM labelOf seers
           pure (ReplyType.Array (fmap (ReplyType.Text . Label.unwrap) labels))
         View.Asked -> do
+          nesting <- State.gets depth
           let turn = TurnRegisters.turnNumber (GameState.turn gs)
-              row (_, decider, kind) = ReplyType.Array [maybe ReplyType.Null (ReplyType.Text . Label.unwrap) decider, ReplyType.Text kind]
-          pure . ReplyType.Array . fmap row . filter (\(at, _, _) -> at == turn) . Foldable.toList =<< State.gets promptsAsked
+              row (_, _, decider, kind) = ReplyType.Array [maybe ReplyType.Null (ReplyType.Text . Label.unwrap) decider, ReplyType.Text kind]
+          pure . ReplyType.Array . fmap row . filter (\(within, at, _, _) -> within == nesting && at == turn) . Foldable.toList =<< State.gets promptsAsked
         View.Witnessed -> do
           pid <- needPlayer
           let nameOf snapshot = Text.intercalate (Text.pack " // ") (fmap CardName.unwrap (Set.toAscList (ProjectedCharacteristics.names snapshot)))
@@ -2345,10 +2359,8 @@ render failure = case failure of
     renderWhen key <> Text.pack ": " <> renderMove verb <> Text.pack " names a slot " <> slot <> Text.pack " its ability does not have; it has " <> Text.intercalate (Text.pack ", ") slots
   Failure.MkUnexpectedQualifier key kind ref ->
     renderWhen key <> Text.pack ": " <> kind <> Text.pack " has no source, so the source " <> Codec.Reference.toText ref <> Text.pack " matches nothing"
-  Failure.MkNestedGamePrompt turn step decider kind ->
-    renderLocation turn step decider <> Text.pack ": " <> kind <> Text.pack " was asked inside a nested game"
-  Failure.MkUnscheduledPrompt turn step decider kind offers ->
-    renderLocation turn step decider <> Text.pack ": nothing is scheduled for the " <> kind <> Text.pack " prompt" <> renderOffers offers
+  Failure.MkUnscheduledPrompt nesting turn step decider kind offers ->
+    renderLocation nesting turn step decider <> Text.pack ": nothing is scheduled for the " <> kind <> Text.pack " prompt" <> renderOffers offers
   Failure.MkUnexpectedPrompt key entry kind offers ->
     renderWhen key <> Text.pack ": " <> renderEntry entry <> Text.pack " does not answer the " <> kind <> Text.pack " prompt" <> renderOffers offers
   Failure.MkActionNotOffered key verb offers ->
@@ -2367,12 +2379,12 @@ render failure = case failure of
     renderWhen key <> Text.pack ": " <> renderMove verb <> Text.pack " was taken, but the engine reversed it"
   Failure.MkUnrefusedMove key verb next ->
     renderWhen key <> Text.pack ": " <> renderMove verb <> Text.pack " stood; " <> maybe (Text.pack "nothing was asked again") (\k -> Text.pack "the next prompt was " <> k) next
-  Failure.MkUnloggedChanges turn step found ->
-    renderLocation turn step Nothing <> Text.pack ": the event log does not account for the board: " <> Text.intercalate (Text.pack "; ") (fmap renderDiscrepancy (NonEmpty.toList found))
+  Failure.MkUnloggedChanges nesting turn step found ->
+    renderLocation nesting turn step Nothing <> Text.pack ": the event log does not account for the board: " <> Text.intercalate (Text.pack "; ") (fmap renderDiscrepancy (NonEmpty.toList found))
   Failure.MkUnreachedEntries turn step timed ->
-    renderTimeds timed <> Text.pack " never came; the game stopped at " <> renderLocation turn step Nothing
+    renderTimeds timed <> Text.pack " never came; the game stopped at " <> renderLocation 0 turn step Nothing
   Failure.MkUnrunChecks turn step timed ->
-    renderTimeds timed <> Text.pack " never ran; the game stopped at " <> renderLocation turn step Nothing
+    renderTimeds timed <> Text.pack " never ran; the game stopped at " <> renderLocation 0 turn step Nothing
   Failure.MkCheckFailed key check observed skipped ->
     maybe (Text.pack "at the end") renderWhen key
       <> Text.pack ": "
@@ -2390,11 +2402,13 @@ renderDiscrepancy discrepancy = case discrepancy of
   Discrepancy.MkAttachment oid expected actual -> Text.pack ("object " <> show (ObjectId.unwrap oid) <> " is attached to " <> show actual <> ", the log says " <> show expected)
 
 renderWhen :: When.When -> Text.Text
-renderWhen key = renderLocation (When.turn key) (When.phase key) (Just (When.player key))
+renderWhen key = renderLocation (When.depth key) (When.turn key) (When.phase key) (Just (When.player key))
 
-renderLocation :: Natural -> Phase.Phase -> Maybe Label.Label -> Text.Text
-renderLocation turn step decider =
-  Text.intercalate (Text.pack ", ") ([Text.pack ("turn " <> show turn), Text.pack (Codec.Phase.flatName step)] <> foldMap (pure . Label.unwrap) decider)
+-- | A moment as a scenario names it, its depth only when it is a subgame's
+-- (CR 730.1a).
+renderLocation :: Natural -> Natural -> Phase.Phase -> Maybe Label.Label -> Text.Text
+renderLocation nesting turn step decider =
+  Text.intercalate (Text.pack ", ") ([Text.pack ("depth " <> show nesting) | nesting > 0] <> [Text.pack ("turn " <> show turn), Text.pack (Codec.Phase.flatName step)] <> foldMap (pure . Label.unwrap) decider)
 
 renderMove :: Move.Move -> Text.Text
 renderMove = Common.render . Codec.encode Codec.Move.codec

@@ -59,7 +59,6 @@ out: grep for them.
 - `check:tapped-count`: how many permanents a player has tapped
 - `board:player-effect`: a player effect already in force
 - `check:face-down`: whether an exiled card is face down
-- `move:nested`: the `nested` prompt
 - `board:replacement`: a replacement effect already in force
 - `board:object-bindings`
 - `board:stack`: something on the stack
@@ -91,6 +90,7 @@ out: grep for them.
 - `move:pile-target`: a target naming a face-down pile
 - `move:ReferenceCards`
 - `move:out-of-range-answer`: an answer outside what the prompt offers, which the engine clamps or ignores and the runner refuses up front
+- `move:another-game`: an answer naming an object in another game (CR 730.4), which no reference names
 - `board:object-goadedby`
 - `board:zone-phasedout`
 - `board:object-unlockedhalves`
@@ -644,7 +644,7 @@ out: grep for them.
 
 ### `GameSpec`
 
-- CR 104.2c gameplay: a Shahrazad subgame won by a team excludes every player on it | `move:nested`
+- ~~CR 104.2c gameplay: a Shahrazad subgame won by a team excludes every player on it | `move:nested`~~
 - ~~CR 400.7/728.2 gameplay: a restart puts Painter's Servant into a library with its chosen colour forgotten | `board:object-chosencolor`~~
 - ~~CR 514.3 a cleanup step with nothing waiting grants no priority | `check:helper-runCountingActions`~~
 - ~~CR 514.3a the exception grants a real priority round | `check:prompt-count`~~
@@ -660,11 +660,11 @@ out: grep for them.
 - ~~CR 724.6 a controlled player concedes themselves; their controller cannot do it for them~~
 - ~~CR 728.5/728.4 gameplay: Karn's ultimate leaves its own exiles in exile and then plays them | `board:exile-linked`~~
 - ~~CR 730.1a #153: a question names the game it came from, so a subgame's is not a main-game one | `move:nested`~~
-- CR 730.1a/730.1b #137 gameplay: a TRIGGERED ability plays the subgame, and CR 730.1b's winner is bound | `move:nested` `check:other-GameState.subgamesThisMatch`
-- CR 730.1b gameplay: Shahrazad's non-winners each lose half their own life, rounded up | `move:nested`
-- CR 730.1b gameplay: a DRAWN Shahrazad subgame is won by nobody, so every player pays | `move:nested`
-- CR 730.1b/730.3 gameplay: alice casts a subgame spell, bob decks, bob loses 3 | `move:nested`
-- CR 730.5/730.4b gameplay: cards funnel back, main-game board survives, main-game counters untouched | `move:nested`
+- CR 730.1a/730.1b #137 gameplay: a TRIGGERED ability plays the subgame, and CR 730.1b's winner is bound | `check:other-GameState.subgamesThisMatch`
+- ~~CR 730.1b gameplay: Shahrazad's non-winners each lose half their own life, rounded up | `move:nested`~~
+- ~~CR 730.1b gameplay: a DRAWN Shahrazad subgame is won by nobody, so every player pays | `move:nested`~~
+- ~~CR 730.1b/730.3 gameplay: alice casts a subgame spell, bob decks, bob loses 3 | `move:nested`~~
+- ~~CR 730.5/730.4b gameplay: cards funnel back, main-game board survives, main-game counters untouched | `move:nested`~~
 - ~~CR 800.4a a player who departs paying a cost is not asked again | `check:prompt-count` `check:other-Player.status`~~
 - ~~CR 800.4a/117.4 priority after a concede goes to the next seat, and the pass cycle restarts | `check:other-GameState.players` `check:other-Player.status`~~
 - ~~CR 800.4j after a resolution, priority returns to the next seat, not the departed active player | `board:stack`~~
@@ -885,15 +885,15 @@ out: grep for them.
 - CR 400.11c a pool holding no sorcery yields nothing | `board:outside-the-game`
 - CR 400.11c two eligible cards are a choice, and the answer decides which arrives | `board:outside-the-game`
 - CR 400.2 declining outside the game too, the graveyard's match is found | `board:outside-the-game`
-- CR 604.2/730.4a gameplay: Death Wish takes Titania's Song out of the main game and its effect goes on applying there | `move:nested`
+- CR 604.2/730.4a gameplay: Death Wish takes Titania's Song out of the main game and its effect goes on applying there | `move:another-game`
 - CR 701.20a Death Wish brings the card in without revealing it, where Burning Wish reveals | `board:outside-the-game`
 - CR 701.23a/701.23j a library find fills the one count, and the library is shuffled | `board:outside-the-game`
 - CR 701.23j Invasion of Arcavios brings an instant in from outside the game, and a search that skipped her library shuffles nothing | `board:outside-the-game`
 - CR 701.23j a card taken from outside the game fills the count, sparing the graveyard's match | `board:outside-the-game`
 - CR 701.23j outside the game alone may find nothing | `board:outside-the-game`
 - CR 708.2/730.4 a manifested main-game sorcery is offered to a subgame's wish as a creature and not as a sorcery | `board:objects-ids` `board:outsideobjects`
-- CR 730.4/730.4a/730.5 gameplay: Living Wish takes two main-game creatures out of a Shahrazad subgame, and the triggers wait for the main game | `move:nested`
-- CR 730.5 gameplay: a wish that takes the resolving Shahrazad itself still finishes resolving with the winner it bound | `move:nested`
+- CR 730.4/730.4a/730.5 gameplay: Living Wish takes two main-game creatures out of a Shahrazad subgame, and the triggers wait for the main game | `move:another-game`
+- CR 730.5 gameplay: a wish that takes the resolving Shahrazad itself still finishes resolving with the winner it bound | `move:another-game`
 
 ### `PhasingSpec`
 
