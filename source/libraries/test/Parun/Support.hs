@@ -356,7 +356,7 @@ on :: Phase.Phase -> PlayerId.PlayerId -> Move.Move -> Untimed
 on step pid verb =
   MkUntimed $ \number ->
     Timed.MkTimed
-      { Timed.when = When.MkWhen number step (seatLabel pid),
+      { Timed.when = When.MkWhen number step (seatLabel pid) 0,
         Timed.source = Nothing,
         Timed.entry = Entry.Do verb
       }

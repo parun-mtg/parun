@@ -18,4 +18,5 @@ fields = do
   turn <- Fields.required "turn" Common.natural When.turn
   phase <- Fields.required "step" Phase.flat When.phase
   player <- Fields.required "player" Label.codec When.player
-  pure When.MkWhen {When.turn = turn, When.phase = phase, When.player = player}
+  depth <- Fields.defaulted "depth" 0 Common.natural When.depth
+  pure When.MkWhen {When.turn = turn, When.phase = phase, When.player = player, When.depth = depth}
