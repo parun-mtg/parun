@@ -3807,8 +3807,9 @@ enclosingReads = Const.getConst . reads_
       Filter.Measures measures | Measures.operand measures == Operand.EnclosingAmount -> Const.Const [measures]
       _ -> Children.filterChildren (Children.descending reads_) predicate
 
--- The slots a Filter READS. Parun.Engine.Resolve.Slots.modeSlots folds this over a
--- mode's target slots, which is what makes the card dataflow lint see a slot
+-- The slots a Filter READS: `slotArities`' keys, which
+-- Parun.Engine.Resolve.Slots.modeSlots folds over a mode's target slots, which
+-- is what makes the card dataflow lint see a slot
 -- named in a FILTER rather than in an effect: a card reading "that player" under
 -- a condition that never binds one is then a failing test rather than a slot that
 -- silently admits nothing. Parun.Engine.Resolve.Slots.replacementRowReads is the second,
