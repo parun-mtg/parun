@@ -61,8 +61,11 @@
             {
               "type": "SpendOnly",
               "value": {
-                "type": "OfColor",
-                "value": "Black"
+                "type": "OfType",
+                "value": {
+                  "type": "Colored",
+                  "value": "Black"
+                }
               }
             }
           ]

@@ -2625,11 +2625,13 @@ everyTriggerCondition =
     TriggerCondition.TappedForMana (TappedForManaTrigger.MkTappedForManaTrigger (TappedPermanent.Matching (Filter.Type.And [])) PlayerRelation.You ManaSpecification.AnyMana),
     TriggerCondition.TappedForMana (TappedForManaTrigger.MkTappedForManaTrigger (TappedPermanent.Matching (Filter.Type.And [])) PlayerRelation.Opponent ManaSpecification.AnyMana),
     TriggerCondition.TappedForMana (TappedForManaTrigger.MkTappedForManaTrigger (TappedPermanent.Matching (Filter.Type.And [])) PlayerRelation.AnyPlayer ManaSpecification.AnyMana),
-    -- CR 106.12a's narrowed form beside the three above, listed for their
+    -- CR 106.12a's narrowed forms beside the three above, listed for their
     -- reason applied to the other field: an eventBindings arm that had cased on
     -- the specification and stamped nothing under this one would go unseen.
-    -- Gauntlet of Power prints it.
+    -- Gauntlet of Power prints the ChosenColor form, Ultima, Origin of
+    -- Oblivion the OfType one.
     TriggerCondition.TappedForMana (TappedForManaTrigger.MkTappedForManaTrigger (TappedPermanent.Matching (Filter.Type.And [])) PlayerRelation.AnyPlayer ManaSpecification.ChosenColor),
+    TriggerCondition.TappedForMana (TappedForManaTrigger.MkTappedForManaTrigger (TappedPermanent.Matching (Filter.Type.And [])) PlayerRelation.You (ManaSpecification.OfType ManaType.Colorless)),
     -- CR 605.1b's mana-added condition under each relation and both
     -- specifications, for the TappedForMana rows' reason. Caged Sun
     -- prints the You, ChosenColor form.

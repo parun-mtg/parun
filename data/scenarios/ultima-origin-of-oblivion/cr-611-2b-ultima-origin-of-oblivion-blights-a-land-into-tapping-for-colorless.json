@@ -1,0 +1,178 @@
+{
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "name": "alice",
+        "battlefield": [
+          {
+            "card": "Ultima, Origin of Oblivion",
+            "label": "ultima",
+            "ready": true
+          },
+          {
+            "card": "Selesnya Guildgate",
+            "label": "gate"
+          }
+        ],
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ]
+      },
+      {
+        "name": "bob",
+        "battlefield": [
+          {
+            "card": "Forest",
+            "label": "bobforest"
+          }
+        ],
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ]
+      }
+    ],
+    "step": "PrecombatMain"
+  },
+  "description": "CR 611.2b: Ultima, Origin of Oblivion's attack trigger blights a Gate, which loses its subtype and its printed mana ability and taps for {C}, which Ultima's mana trigger doubles",
+  "timeline": [
+    {
+      "do": {
+        "Attack": [
+          "$ultima"
+        ]
+      },
+      "player": "alice",
+      "step": "DeclareAttackers",
+      "turn": 1
+    },
+    {
+      "do": {
+        "ChooseTargets": {
+          "target": [
+            "$gate"
+          ]
+        }
+      },
+      "player": "alice",
+      "step": "DeclareAttackers",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "DeclareAttackers",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Counters": {
+          "object": "$gate",
+          "kind": {
+            "type": "Named",
+            "value": "blight"
+          },
+          "count": 1
+        }
+      },
+      "player": "alice",
+      "step": "DeclareAttackers",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Subtypes": {
+          "object": "$gate",
+          "subtypes": []
+        }
+      },
+      "player": "alice",
+      "step": "DeclareAttackers",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Subtypes": {
+          "object": "$bobforest",
+          "subtypes": [
+            "Forest"
+          ]
+        }
+      },
+      "player": "alice",
+      "step": "DeclareAttackers",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Take": {
+          "action": "ActivateManaAbility $gate"
+        }
+      },
+      "player": "alice",
+      "step": "DeclareAttackers",
+      "turn": 1
+    },
+    {
+      "check": {
+        "View": {
+          "of": "ManaPool",
+          "player": "alice",
+          "is": [
+            {
+              "manaType": {
+                "type": "Colorless"
+              },
+              "tags": [],
+              "retention": "Ordinary",
+              "restriction": null,
+              "rider": null,
+              "sourceChoices": null
+            },
+            {
+              "manaType": {
+                "type": "Colorless"
+              },
+              "tags": [],
+              "retention": "Ordinary",
+              "restriction": null,
+              "rider": null,
+              "sourceChoices": null
+            }
+          ]
+        }
+      },
+      "player": "alice",
+      "step": "DeclareAttackers",
+      "turn": 1
+    }
+  ]
+}

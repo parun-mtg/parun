@@ -1,0 +1,353 @@
+{
+  "faces": [
+    {
+      "keywords": [
+        {
+          "type": "Flying"
+        }
+      ],
+      "manaCost": [
+        {
+          "type": "Generic",
+          "value": 5
+        }
+      ],
+      "name": "Ultima, Origin of Oblivion",
+      "oracleText": "Flying\nWhenever Ultima attacks, put a blight counter on target land. For as long as that land has a blight counter on it, it loses all land types and abilities and has \"{T}: Add {C}.\"\nWhenever you tap a land for {C}, add an additional {C}.",
+      "power": {
+        "type": "Literal",
+        "value": 4
+      },
+      "toughness": {
+        "type": "Literal",
+        "value": 4
+      },
+      "triggeredAbilities": [
+        {
+          "condition": {
+            "type": "Attacks",
+            "value": {
+              "type": "Attacker",
+              "value": {}
+            }
+          },
+          "modal": {
+            "modes": [
+              {
+                "clauses": [
+                  {
+                    "effects": [
+                      {
+                        "type": "PutCounters",
+                        "value": {
+                          "kind": {
+                            "type": "Named",
+                            "value": "blight"
+                          },
+                          "quantity": {
+                            "type": "Literal",
+                            "value": 1
+                          },
+                          "ref": {
+                            "type": "InSlot",
+                            "value": "target"
+                          }
+                        }
+                      },
+                      {
+                        "type": "ModifyTarget",
+                        "value": {
+                          "duration": {
+                            "type": "ForAsLongAs",
+                            "value": {
+                              "type": "Compares",
+                              "value": {
+                                "comparison": "AtLeast",
+                                "measured": {
+                                  "type": "Count",
+                                  "value": {
+                                    "aggregation": {
+                                      "type": "Members"
+                                    },
+                                    "filter": {
+                                      "type": "And",
+                                      "value": [
+                                        {
+                                          "type": "IsBound",
+                                          "value": "target"
+                                        },
+                                        {
+                                          "type": "HasCounters",
+                                          "value": {
+                                            "kind": {
+                                              "type": "Named",
+                                              "value": "blight"
+                                            }
+                                          }
+                                        }
+                                      ]
+                                    },
+                                    "scope": {
+                                      "type": "InZone",
+                                      "value": {
+                                        "player": {
+                                          "type": "Relative",
+                                          "value": "AnyPlayer"
+                                        },
+                                        "zone": "Battlefield"
+                                      }
+                                    }
+                                  }
+                                },
+                                "threshold": {
+                                  "type": "Literal",
+                                  "value": 1
+                                }
+                              }
+                            }
+                          },
+                          "modification": {
+                            "type": "LoseEverySubtype",
+                            "value": "Land"
+                          },
+                          "ref": {
+                            "type": "InSlot",
+                            "value": "target"
+                          }
+                        }
+                      },
+                      {
+                        "type": "ModifyTarget",
+                        "value": {
+                          "duration": {
+                            "type": "ForAsLongAs",
+                            "value": {
+                              "type": "Compares",
+                              "value": {
+                                "comparison": "AtLeast",
+                                "measured": {
+                                  "type": "Count",
+                                  "value": {
+                                    "aggregation": {
+                                      "type": "Members"
+                                    },
+                                    "filter": {
+                                      "type": "And",
+                                      "value": [
+                                        {
+                                          "type": "IsBound",
+                                          "value": "target"
+                                        },
+                                        {
+                                          "type": "HasCounters",
+                                          "value": {
+                                            "kind": {
+                                              "type": "Named",
+                                              "value": "blight"
+                                            }
+                                          }
+                                        }
+                                      ]
+                                    },
+                                    "scope": {
+                                      "type": "InZone",
+                                      "value": {
+                                        "player": {
+                                          "type": "Relative",
+                                          "value": "AnyPlayer"
+                                        },
+                                        "zone": "Battlefield"
+                                      }
+                                    }
+                                  }
+                                },
+                                "threshold": {
+                                  "type": "Literal",
+                                  "value": 1
+                                }
+                              }
+                            }
+                          },
+                          "modification": {
+                            "type": "LoseAllAbilities"
+                          },
+                          "ref": {
+                            "type": "InSlot",
+                            "value": "target"
+                          }
+                        }
+                      },
+                      {
+                        "type": "ModifyTarget",
+                        "value": {
+                          "duration": {
+                            "type": "ForAsLongAs",
+                            "value": {
+                              "type": "Compares",
+                              "value": {
+                                "comparison": "AtLeast",
+                                "measured": {
+                                  "type": "Count",
+                                  "value": {
+                                    "aggregation": {
+                                      "type": "Members"
+                                    },
+                                    "filter": {
+                                      "type": "And",
+                                      "value": [
+                                        {
+                                          "type": "IsBound",
+                                          "value": "target"
+                                        },
+                                        {
+                                          "type": "HasCounters",
+                                          "value": {
+                                            "kind": {
+                                              "type": "Named",
+                                              "value": "blight"
+                                            }
+                                          }
+                                        }
+                                      ]
+                                    },
+                                    "scope": {
+                                      "type": "InZone",
+                                      "value": {
+                                        "player": {
+                                          "type": "Relative",
+                                          "value": "AnyPlayer"
+                                        },
+                                        "zone": "Battlefield"
+                                      }
+                                    }
+                                  }
+                                },
+                                "threshold": {
+                                  "type": "Literal",
+                                  "value": 1
+                                }
+                              }
+                            }
+                          },
+                          "modification": {
+                            "type": "GainAbility",
+                            "value": {
+                              "type": "Activated",
+                              "value": {
+                                "cost": {
+                                  "components": [
+                                    {
+                                      "type": "TapThis"
+                                    }
+                                  ],
+                                  "mana": []
+                                },
+                                "modal": {
+                                  "modes": [
+                                    {
+                                      "clauses": [
+                                        {
+                                          "effects": [
+                                            {
+                                              "type": "AddMana",
+                                              "value": {
+                                                "production": {
+                                                  "type": "OfType",
+                                                  "value": {
+                                                    "type": "Colorless"
+                                                  }
+                                                }
+                                              }
+                                            }
+                                          ]
+                                        }
+                                      ]
+                                    }
+                                  ]
+                                }
+                              }
+                            }
+                          },
+                          "ref": {
+                            "type": "InSlot",
+                            "value": "target"
+                          }
+                        }
+                      }
+                    ]
+                  }
+                ],
+                "targetSlots": {
+                  "target": {
+                    "filter": {
+                      "type": "HasCardType",
+                      "value": "Land"
+                    },
+                    "pool": {
+                      "type": "Permanents"
+                    }
+                  }
+                }
+              }
+            ]
+          }
+        },
+        {
+          "condition": {
+            "type": "TappedForMana",
+            "value": {
+              "mana": {
+                "type": "OfType",
+                "value": {
+                  "type": "Colorless"
+                }
+              },
+              "permanent": {
+                "type": "Matching",
+                "value": {
+                  "type": "HasCardType",
+                  "value": "Land"
+                }
+              },
+              "player": "You"
+            }
+          },
+          "modal": {
+            "modes": [
+              {
+                "clauses": [
+                  {
+                    "effects": [
+                      {
+                        "type": "AddMana",
+                        "value": {
+                          "production": {
+                            "type": "OfType",
+                            "value": {
+                              "type": "Colorless"
+                            }
+                          }
+                        }
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      ],
+      "typeLine": {
+        "subtypes": [
+          "God"
+        ],
+        "supertypes": [
+          "Legendary"
+        ],
+        "types": [
+          "Creature"
+        ]
+      }
+    }
+  ]
+}

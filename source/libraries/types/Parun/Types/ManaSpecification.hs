@@ -1,6 +1,6 @@
 module Parun.Types.ManaSpecification where
 
-import qualified Parun.Types.Color as Color
+import qualified Parun.Types.ManaType as ManaType
 
 -- | CR 106.12a's "or is tapped for mana of a specified type": which mana a tap
 -- has to have produced for the ability to trigger. The narrowing half of
@@ -25,7 +25,7 @@ data ManaSpecification
     -- and for its reason: inventing one would be the engine making a player's
     -- choice.
     ChosenColor
-  | -- | CR 106.1a: mana of this printed colour -- Crimson Hellkite's "Spend
-    -- only red mana on X".
-    OfColor Color.Color
+  | -- | CR 106.1b: mana of this printed type -- Crimson Hellkite's "red mana",
+    -- Ultima, Origin of Oblivion's "for {C}".
+    OfType ManaType.ManaType
   deriving (Eq, Ord, Show)
