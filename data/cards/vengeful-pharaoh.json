@@ -50,7 +50,9 @@
             "value": {
               "dealt": {
                 "kind": "Combat",
-                "recipient": "You"
+                "recipient": {
+                  "type": "You"
+                }
               },
               "orTheirPlaneswalkers": true
             }

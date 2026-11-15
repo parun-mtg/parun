@@ -15,7 +15,8 @@ codec =
         <> [ Arm.payload "Superlative" Superlative.codec PlayerScope.Superlative (\x -> case x of PlayerScope.Superlative y -> Just y; _ -> Nothing),
              Arm.payload "InRole" TurnRole.codec PlayerScope.InRole (\x -> case x of PlayerScope.InRole y -> Just y; _ -> Nothing),
              Arm.nullary "ChosenPlayer" PlayerScope.ChosenPlayer,
-             Arm.nullary "SourceOwner" PlayerScope.SourceOwner
+             Arm.nullary "SourceOwner" PlayerScope.SourceOwner,
+             Arm.nullary "EnchantedPlayer" PlayerScope.EnchantedPlayer
            ]
     )
 
@@ -26,3 +27,4 @@ tagOf x = case x of
   PlayerScope.InRole {} -> "InRole"
   PlayerScope.ChosenPlayer {} -> "ChosenPlayer"
   PlayerScope.SourceOwner {} -> "SourceOwner"
+  PlayerScope.EnchantedPlayer {} -> "EnchantedPlayer"

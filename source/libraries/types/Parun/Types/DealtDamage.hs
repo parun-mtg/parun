@@ -4,7 +4,7 @@ import qualified Parun.Types.CardType as CardType
 import qualified Parun.Types.DamageKind as DamageKind
 
 -- | What was dealt damage, and which damage counts (CR 120.1). PARAMETRIC in
--- how the recipient is named: a Parun.Types.PlayerRelation in
+-- how the recipient is named: a Parun.Types.PlayerScope in
 -- Parun.Types.PlayerIsDealtDamage's dealt, a Parun.Types.PlayerRef in
 -- Parun.Types.DamageTally's dealt and Parun.Types.Quantity's
 -- DamageDealtToPlayersThisTurn, a

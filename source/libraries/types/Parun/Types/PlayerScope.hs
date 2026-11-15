@@ -29,8 +29,9 @@ import qualified Parun.Types.TurnRole as TurnRole
 --   * Parun.Types.ChoosePlayer -- which players a resolving "choose a player"
 --     offers (Stadium Vendors), against the resolving controller; the one
 --     carrier that is an offer rather than an axis of application.
---   * Parun.Types.PlayerEffect.CantSearchLibraries, Parun.Types.AimedPlayers and
---     Parun.Types.CantAttackPlayer carry it too, each against its own perspective.
+--   * Parun.Types.PlayerEffect.CantSearchLibraries, Parun.Types.AimedPlayers,
+--     Parun.Types.CantAttackPlayer and Parun.Types.PlayerIsDealtDamage carry it
+--     too, each against its own perspective.
 --
 -- The scope is always resolved DYNAMICALLY on both PlayerEffect carriers. CR
 -- 611.2c freezes a stored effect's OBJECT set -- which is what every stored
@@ -62,4 +63,7 @@ data PlayerScope
     ChosenPlayer
   | -- | CR 108.3: the source's owner, nobody where the carrier has no source.
     SourceOwner
+  | -- | CR 303.4b: the player the source enchants, nobody where the carrier has
+    -- no source or the source enchants no player.
+    EnchantedPlayer
   deriving (Eq, Ord, Show)

@@ -197,6 +197,7 @@ inScopeWithin source reach pid controller gs scope = case scope of
   PlayerScope.InRole role -> List.elem pid (Turn.roleHolders role gs)
   PlayerScope.ChosenPlayer -> (source >>= \oid -> Game.currentChoice Chosen.Players oid gs >>= Map.lookup PlayerChoice.AsEntersOrTransforms) == Just pid
   PlayerScope.SourceOwner -> (source >>= \oid -> fmap Object.owner (Game.lookupObject oid gs)) == Just pid
+  PlayerScope.EnchantedPlayer -> (source >>= \oid -> Projection.enchantedPlayerOf oid gs) == Just pid
 
 -- The same question over a CARRIER's affected set rather than over a bare scope:
 -- is `pid` one of the players this row applies to? inScope for the Scoped arm,
@@ -252,6 +253,7 @@ playersInScope reach perspective gs scope = case scope of
   -- PlayerRef.Candidate's posture.
   PlayerScope.ChosenPlayer -> Nothing
   PlayerScope.SourceOwner -> Nothing
+  PlayerScope.EnchantedPlayer -> Nothing
 
 -- CR 707.2a: the player abilities this permanent's copiable rules text gives it
 -- -- its copy snapshot's when it has one, its printed face's otherwise. The
@@ -3190,6 +3192,8 @@ protectedFromTargeting rows pastHexproof caster source sourceView pid gs =
             PlayerScope.ChosenPlayer -> False
             -- Nor owns one.
             PlayerScope.SourceOwner -> False
+            -- Nor enchants one.
+            PlayerScope.EnchantedPlayer -> False
         PlayerEffect.CantCastSpells -> False
         PlayerEffect.CantActivateAbilities {} -> False
         PlayerEffect.CantCastMoreThan _ -> False

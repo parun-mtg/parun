@@ -1162,7 +1162,8 @@ armMatches bindings board atEvent beforeEvent groupEvents gs bearer you cond eve
         && (not excess || DamageEvent.excess ev > 0)
         && maybe False (damageBy (DealtDamage.recipient dealt)) (Recipient.objectOf (DamageEvent.target ev))
     _ -> False
-  -- CR 120.3: a player the relation admits was DEALT damage of the kind and from
+  -- CR 120.3: a player the scope admits, read against the bearer (PlayerLosesGame's
+  -- reading), was DEALT damage of the kind and from
   -- the source asked for (Game.damageCounts) -- the arm above with the recipient a player rather
   -- than the bearer. CR 120.2b's noncombat damage is every damage event that is
   -- not CR 510.2's, which DamageEvent.kind already records.
@@ -1174,7 +1175,7 @@ armMatches bindings board atEvent beforeEvent groupEvents gs bearer you cond eve
       let dealt = PlayerIsDealtDamage.dealt watched
        in admitsTurn (PlayerIsDealtDamage.scope watched)
             && Game.damageCounts (DealtDamage.kind dealt) (DealtDamage.by dealt) ev
-            && dealtToRelated board gs (PlayerRelation.holds (Game.teams gs) (DealtDamage.recipient dealt) you) (PlayerIsDealtDamage.orTheirPlaneswalkers watched) (DamageEvent.target ev)
+            && dealtToRelated board gs (\pid -> PlayerEffect.inScopeWithin (Just bearer) (Just you) pid you gs (DealtDamage.recipient dealt)) (PlayerIsDealtDamage.orTheirPlaneswalkers watched) (DamageEvent.target ev)
     _ -> False
   -- CR 726.2: a creature dealt combat damage to the monarch, who is "you" --
   -- the ability's controller (Event.Trigger.inherentTriggers). The damager is

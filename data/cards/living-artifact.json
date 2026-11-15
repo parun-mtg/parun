@@ -29,7 +29,9 @@
             "type": "PlayerIsDealtDamage",
             "value": {
               "dealt": {
-                "recipient": "You"
+                "recipient": {
+                  "type": "You"
+                }
               }
             }
           },

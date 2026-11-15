@@ -32,7 +32,9 @@
               "batching": "OneOrMore",
               "dealt": {
                 "kind": "Combat",
-                "recipient": "Opponent"
+                "recipient": {
+                  "type": "Opponent"
+                }
               },
               "scope": {
                 "type": "PlayersTurn",
