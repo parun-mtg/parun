@@ -101,6 +101,7 @@ namesSelf :: CostComponent.CostComponent k -> Bool
 namesSelf c = case c of
   CostComponent.SacrificeThis -> True
   CostComponent.ReturnThis -> True
+  CostComponent.ExertThis -> True
   CostComponent.ExileThis -> True
   CostComponent.ExileThisFrom _ -> True
   CostComponent.RemoveCountersFromThis _ -> True
@@ -117,6 +118,7 @@ component :: Text.Text -> (k -> [Text.Text]) -> CostComponent.CostComponent k ->
 component self named c = case c of
   CostComponent.TapThis -> [braced (Text.pack "T")]
   CostComponent.UntapThis -> [braced (Text.pack "Q")]
+  CostComponent.ExertThis -> [Text.pack "Exert " <> self]
   CostComponent.SacrificeThis -> [Text.pack "Sacrifice " <> self]
   CostComponent.PayLife (CostAmount.Fixed n) -> [Text.pack ("Pay " <> show n <> " life")]
   CostComponent.PayLife (CostAmount.Announced _) -> [Text.pack "Pay X life"]

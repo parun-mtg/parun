@@ -1999,6 +1999,7 @@ componentDemandGrowsWith slot component = case component of
   CostComponent.PayComputedLife _ -> False
   CostComponent.TapThis -> False
   CostComponent.UntapThis -> False
+  CostComponent.ExertThis -> False
   CostComponent.SacrificeThis -> False
   CostComponent.ReturnThis -> False
   -- CR 701.21a: one permanent per sacrifice, so an X past the matching
@@ -2395,6 +2396,7 @@ componentStatesHiddenQuality component = case component of
   -- No cards at all, so there is no "action involving cards" to classify.
   CostComponent.TapThis -> False
   CostComponent.UntapThis -> False
+  CostComponent.ExertThis -> False
   CostComponent.SacrificeThis -> False
   CostComponent.ExileThis -> False
   -- CR 118.8c: the hand is a hidden zone, but this names the object the cost is
@@ -3117,6 +3119,9 @@ claimOfGiven board slots pid oid component gs =
         -- twice or from two mana abilities of one permanent that a board takes
         -- together (Mana.sourceOptions). data/cards/ prints neither.
         CostComponent.UntapThis -> Nothing
+        -- Nothing: CR 701.43b lets an exerted permanent be exerted again, so the
+        -- exert spends nothing another claim could run short of.
+        CostComponent.ExertThis -> Nothing
         -- ONE selection of candidates whose powers reach the threshold, and
         -- deliberately not the Natural as a count: that number is a THRESHOLD on an
         -- aggregate rather than a count of objects, so which permanents a payment
@@ -3654,6 +3659,9 @@ uncountedCeiling pid oid claims gs component = case component of
   CostComponent.PayComputedLife _ -> Nothing
   CostComponent.TapThis -> Just 1
   CostComponent.UntapThis -> Just 1
+  -- 1, an UNDERSTATEMENT and the header's safe direction: CR 701.43b lets one
+  -- permanent pay any number of exerts.
+  CostComponent.ExertThis -> Just 1
   -- A THRESHOLD on an aggregate, so NOT `objectCeiling`'s division: four 1/1s
   -- pay a total power of 3 once, not four times. `thresholdRepeats` over the
   -- candidates' powers, `canPayComponent`'s pool and reading -- six 1/1s are two
@@ -4042,6 +4050,7 @@ targetComputed component = case component of
   CostComponent.ExileCardsTotalling _ -> False
   CostComponent.TapThis -> False
   CostComponent.UntapThis -> False
+  CostComponent.ExertThis -> False
   CostComponent.SacrificeThis -> False
   CostComponent.ReturnThis -> False
   CostComponent.PayLife _ -> False
@@ -4099,6 +4108,7 @@ announcedRecord component = case component of
   CostComponent.ExileCardsTotalling _ -> Nothing
   CostComponent.TapThis -> Nothing
   CostComponent.UntapThis -> Nothing
+  CostComponent.ExertThis -> Nothing
   CostComponent.SacrificeThis -> Nothing
   CostComponent.ReturnThis -> Nothing
   CostComponent.PayLife _ -> Nothing
@@ -4165,6 +4175,7 @@ lifeOwedByComponent pid gs component = case component of
   CostComponent.PayComputedLife computed -> Maybe.fromMaybe 0 (computedLifeOf computed pid gs)
   CostComponent.TapThis -> 0
   CostComponent.UntapThis -> 0
+  CostComponent.ExertThis -> 0
   CostComponent.SacrificeThis -> 0
   CostComponent.ReturnThis -> 0
   CostComponent.Sacrifice {} -> 0
@@ -4224,6 +4235,7 @@ energyOwedByComponent component = case component of
   CostComponent.PayComputedLife _ -> 0
   CostComponent.TapThis -> 0
   CostComponent.UntapThis -> 0
+  CostComponent.ExertThis -> 0
   CostComponent.SacrificeThis -> 0
   CostComponent.ReturnThis -> 0
   CostComponent.Sacrifice {} -> 0
@@ -4295,6 +4307,7 @@ countersOwedByComponent component = case component of
   CostComponent.PayComputedLife _ -> []
   CostComponent.TapThis -> []
   CostComponent.UntapThis -> []
+  CostComponent.ExertThis -> []
   CostComponent.SacrificeThis -> []
   CostComponent.ReturnThis -> []
   CostComponent.Sacrifice {} -> []
@@ -4356,6 +4369,8 @@ canPayComponentGiven board slots pid oid component gs = case component of
       Set.member oid (GameState.battlefield gs)
         && Object.tapped obj == TapState.Tapped
         && not (UntapRestriction.cantBecomeUntapped oid gs)
+  -- CR 701.43c: only a permanent; CR 701.43b asks nothing else of it.
+  CostComponent.ExertThis -> Set.member oid (GameState.battlefield gs)
   -- CR 701.21a: only a permanent, and only one this player controls -- and CR
   -- 101.2, only one no effect says can't be sacrificed. Read here and not left to
   -- the funnel, a cost announced as payable and then unpayable spending an
@@ -4879,6 +4894,7 @@ criteriaOf component = case component of
   -- a bare amount.
   CostComponent.TapThis -> []
   CostComponent.UntapThis -> []
+  CostComponent.ExertThis -> []
   CostComponent.SacrificeThis -> []
   CostComponent.ReturnThis -> []
   CostComponent.PayLife _ -> []
@@ -5977,6 +5993,7 @@ paidInSecondPass slots pid oid gs component = case component of
   -- These move no object at all.
   CostComponent.TapThis -> False
   CostComponent.UntapThis -> False
+  CostComponent.ExertThis -> False
   CostComponent.TapForTotalPower {} -> False
   CostComponent.TapPermanents {} -> False
   CostComponent.PayLife _ -> False
@@ -6095,6 +6112,7 @@ sourceOnly component = case component of
   CostComponent.DiscardThis _ -> Just True
   CostComponent.TapThis -> Just False
   CostComponent.UntapThis -> Just False
+  CostComponent.ExertThis -> Just False
   CostComponent.AddLoyaltyToThis _ -> Just False
   CostComponent.RemoveLoyaltyFromThis _ -> Just False
   CostComponent.RemoveCountersFromThis _ -> Just False
@@ -6183,6 +6201,9 @@ orderSensitive component = case component of
   CostComponent.ExileThis -> True
   CostComponent.TapThis -> True
   CostComponent.UntapThis -> True
+  -- False: CR 701.43a changes only the permanent's next untap step, which no
+  -- other part pays with.
+  CostComponent.ExertThis -> False
   CostComponent.TapForTotalPower {} -> True
   CostComponent.TapPermanents {} -> True
   CostComponent.AddLoyaltyToThis _ -> True
@@ -7257,6 +7278,10 @@ payPayable perform moment paidFor slots pid oid component = case component of
   -- which `canPayComponent` calls payable.
   CostComponent.UntapThis -> do
     Event.untap oid
+    pure bindsNothing
+  -- Through Event.exert, the CR 701.43a write CR 508.1g's exert also makes.
+  CostComponent.ExertThis -> do
+    State.modify' (Event.exert pid oid)
     pure bindsNothing
   -- Through Event.sacrifice, the CR 701.21 funnel, and never a direct zone poke:
   -- a cost payment is a game event, so dies-triggers, replacement effects and the

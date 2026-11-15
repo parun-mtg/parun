@@ -273,6 +273,7 @@ costMovesLibraryCard component = case component of
   CostComponent.Behold _ -> False
   CostComponent.TapThis -> False
   CostComponent.UntapThis -> False
+  CostComponent.ExertThis -> False
   CostComponent.TapForTotalPower {} -> False
   CostComponent.TapPermanents {} -> False
   CostComponent.PayLife _ -> False

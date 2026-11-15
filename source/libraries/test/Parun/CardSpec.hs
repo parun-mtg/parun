@@ -3186,6 +3186,7 @@ costComponentFilters component = case component of
   CostComponent.BeholdAndExile f -> [f]
   CostComponent.TapThis -> []
   CostComponent.UntapThis -> []
+  CostComponent.ExertThis -> []
   CostComponent.SacrificeThis -> []
   CostComponent.ReturnThis -> []
   CostComponent.PayLife _ -> []

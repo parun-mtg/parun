@@ -64,6 +64,12 @@ spec s = Spec.describe s "Parun.Codec.CostComponent" $ do
       codec
       CostComponent.UntapThis
       " {\"type\":\"UntapThis\"} "
+  Spec.it s "ExertThis" $
+    Common.assertCodec
+      s
+      codec
+      CostComponent.ExertThis
+      " {\"type\":\"ExertThis\"} "
   Spec.it s "SacrificeThis" $
     Common.assertCodec
       s

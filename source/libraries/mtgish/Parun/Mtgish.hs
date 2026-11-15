@@ -726,6 +726,7 @@ costPart n = case Node.tag n of
   "PayMana" -> fmap Left (Node.argument n >>= manaCost)
   "TapPermanent" -> itself CostComponent.TapThis
   "UntapPermanent" -> itself CostComponent.UntapThis
+  "ExertPermanent" -> itself CostComponent.ExertThis
   "SacrificePermanent" -> itself CostComponent.SacrificeThis
   "SacrificeAPermanent" -> do
     f <- Node.argument n >>= permanents outermost

@@ -47,6 +47,8 @@ data CostComponent keyword
   | -- | CR 107.6: {Q}, untap this permanent; one already untapped can't pay the
     -- cost, and CR 302.6 gates it as it gates TapThis.
     UntapThis
+  | -- | CR 701.43a as a cost / Basri, Tomorrow's Champion: exert this permanent.
+    ExertThis
   | -- | CR 701.21a / Mindslaver: sacrifice the object the cost is on.
     SacrificeThis
   | -- | CR 118.1 as a cost / Grinning Ignus: return the permanent the cost is on
