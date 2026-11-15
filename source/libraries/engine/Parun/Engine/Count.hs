@@ -212,12 +212,11 @@ evaluate viewOf quantityOf talliesWhatHappened candidateCounters context gs coun
           -- comparison is answered here, where the board is, and the match below is the
           -- same pure one every other scope makes.
           --
-          -- playerView rather than Filter.playerView is a REGRESSION FENCE on this road
-          -- and a proof on the other: routing the fold through the board-aware builder
-          -- leaves the suite green, no card spelling Filter.DealtDamageThisTurn under a
-          -- count over players -- Quantity.PlayersDealtDamage is how a card asks
-          -- that (#1577). The target road, which Parun.DamageSpec's Needle Drop case
-          -- covers, is what pays for the builder.
+          -- playerView rather than Filter.playerView, which leaves
+          -- Filter.dealtDamageThisTurn empty: Blitzball's source-filtered
+          -- Filter.DealtDamageThisTurn under a count over players is the proof
+          -- (Quantity.PlayersDealtDamage asks the unfiltered question, #1577), and
+          -- Parun.DamageSpec's Needle Drop case covers the target road.
           let matching = Maybe.mapMaybe (\pid -> fmap ((,) pid) (keep (bakePerspective viewOf context gs pid predicate) context (Just (playerView gs pid)))) pids
               -- CR 810.10a: a sum of the counters "your opponents have" counts what
               -- opposing TEAMS have, and every member holds the team's count

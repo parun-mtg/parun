@@ -8,6 +8,7 @@ import qualified Parun.Types.ObjectId as ObjectId
 import qualified Parun.Types.PlayerId as PlayerId
 import qualified Parun.Types.Recipient as Recipient
 import qualified Parun.Types.Subtype as Subtype
+import qualified Parun.Types.Supertype as Supertype
 import qualified Parun.Types.Zone as Zone
 
 -- | One instance of damage: a source dealt `amount` to `target`. The first reader
@@ -89,6 +90,9 @@ data DamageEvent = MkDamageEvent
     -- in the turn" (Admiral Beckett Brass's ruling, 2017-09-29). CR 608.2h's last
     -- known information for a source already gone.
     dealtByCardTypes :: Set.Set CardType.CardType,
+    -- | CR 205.4: the source's SUPERTYPES when this damage was dealt, for
+    -- dealtByCardTypes's reason (Blitzball's "by a legendary creature").
+    dealtBySupertypes :: Set.Set Supertype.Supertype,
     -- | CR 400.1: the zone the source was in when this damage was dealt, so a
     -- source on the stack was a spell (CR 112.1, Aegar, the Freezing Flame's
     -- "a ... spell you controlled dealt damage"). Nothing for a source already

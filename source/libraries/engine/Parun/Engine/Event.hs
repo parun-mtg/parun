@@ -1128,6 +1128,7 @@ damageEvent gs kind source target amount =
             DamageEvent.dealtByCreatureTypes = Set.filter Subtype.Engine.isCreatureType (PC.subtypes characteristics),
             DamageEvent.dealtByCommander = Commander.isCommander source gs,
             DamageEvent.dealtByCardTypes = PC.cardTypes characteristics,
+            DamageEvent.dealtBySupertypes = PC.supertypes characteristics,
             DamageEvent.dealtFromZone = Game.zoneOf source gs,
             -- The batch's to stamp, with the excess.
             DamageEvent.recipientCardTypes = Set.empty,

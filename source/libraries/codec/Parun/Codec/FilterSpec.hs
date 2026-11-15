@@ -22,6 +22,7 @@ import qualified Parun.Types.Comparison as Comparison
 import qualified Parun.Types.ControlMargin as ControlMargin
 import qualified Parun.Types.CounterKind as CounterKind
 import qualified Parun.Types.CounterLinked as CounterLinked
+import qualified Parun.Types.DamageKind as DamageKind
 import qualified Parun.Types.DamagedParty as DamagedParty
 import qualified Parun.Types.DealtDamageTo as DealtDamageTo
 import qualified Parun.Types.Designation as Designation
@@ -475,14 +476,20 @@ spec s = Spec.describe s "Parun.Codec.Filter" $ do
     Common.assertCodec
       s
       codec
-      (Filter.DealtDamageThisTurn Nothing)
+      (Filter.DealtDamageThisTurn Nothing Nothing)
       " {\"type\":\"DealtDamageThisTurn\"} "
   Spec.it s "DealtDamageThisTurn, by a source" $
     Common.assertCodec
       s
       codec
-      (Filter.DealtDamageThisTurn (Just (Filter.IsInZone Zone.Stack)))
-      " {\"type\":\"DealtDamageThisTurn\",\"value\":{\"type\":\"IsInZone\",\"value\":\"Stack\"}} "
+      (Filter.DealtDamageThisTurn Nothing (Just (Filter.IsInZone Zone.Stack)))
+      " {\"type\":\"DealtDamageThisTurn\",\"value\":{\"by\":{\"type\":\"IsInZone\",\"value\":\"Stack\"}}} "
+  Spec.it s "DealtDamageThisTurn, combat damage by a source" $
+    Common.assertCodec
+      s
+      codec
+      (Filter.DealtDamageThisTurn (Just DamageKind.Combat) (Just (Filter.HasSupertype Supertype.Legendary)))
+      " {\"type\":\"DealtDamageThisTurn\",\"value\":{\"kind\":\"Combat\",\"by\":{\"type\":\"HasSupertype\",\"value\":\"Legendary\"}}} "
   Spec.it s "LostLifeThisTurn" $
     Common.assertCodec
       s
