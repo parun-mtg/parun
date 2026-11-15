@@ -1,0 +1,129 @@
+{
+  "faces": [
+    {
+      "manaCost": [
+        {
+          "type": "Generic",
+          "value": 2
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "Blue"
+          }
+        }
+      ],
+      "name": "Mirror Room",
+      "oracleText": "When you unlock this door, create a token that's a copy of target creature you control, except it's a Reflection in addition to its other creature types.\n(You may cast either half. That door unlocks on the battlefield. As a sorcery, you may pay the mana cost of a locked door to unlock it.)",
+      "triggeredAbilities": [
+        {
+          "condition": {
+            "type": "SelfHalfUnlocked",
+            "value": "Mirror Room"
+          },
+          "modal": {
+            "modes": [
+              {
+                "clauses": [
+                  {
+                    "effects": [
+                      {
+                        "type": "CreateCopy",
+                        "value": {
+                          "exceptions": [
+                            {
+                              "type": "AddSubtypes",
+                              "value": [
+                                "Reflection"
+                              ]
+                            }
+                          ],
+                          "ref": {
+                            "type": "InSlot",
+                            "value": "target"
+                          }
+                        }
+                      }
+                    ]
+                  }
+                ],
+                "targetSlots": {
+                  "target": {
+                    "filter": {
+                      "type": "HeldBy",
+                      "value": {
+                        "holder": "Controller",
+                        "relation": "You"
+                      }
+                    },
+                    "pool": {
+                      "type": "Creatures"
+                    }
+                  }
+                }
+              }
+            ]
+          }
+        }
+      ],
+      "typeLine": {
+        "subtypes": [
+          "Room"
+        ],
+        "types": [
+          "Enchantment"
+        ]
+      }
+    },
+    {
+      "manaCost": [
+        {
+          "type": "Generic",
+          "value": 5
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "Blue"
+          }
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "Blue"
+          }
+        }
+      ],
+      "name": "Fractured Realm",
+      "oracleText": "If a triggered ability of a permanent you control triggers, that ability triggers an additional time.\n(You may cast either half. That door unlocks on the battlefield. As a sorcery, you may pay the mana cost of a locked door to unlock it.)",
+      "playerAbilities": [
+        {
+          "effect": {
+            "type": "AdditionalTriggers",
+            "value": {
+              "type": "And",
+              "value": []
+            }
+          },
+          "scope": {
+            "type": "You"
+          }
+        }
+      ],
+      "typeLine": {
+        "subtypes": [
+          "Room"
+        ],
+        "types": [
+          "Enchantment"
+        ]
+      }
+    }
+  ],
+  "layout": {
+    "type": "Room"
+  }
+}
