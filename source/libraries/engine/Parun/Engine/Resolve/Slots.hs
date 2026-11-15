@@ -481,6 +481,8 @@ playerRefSlots ref = case ref of
   PlayerRef.HolderOfBound _ _ slot -> Map.singleton slot SlotArity.One
   -- Read at arity one for that arm's reason.
   PlayerRef.PlayerHostOfBound slot -> Map.singleton slot SlotArity.One
+  -- Read at arity one for that arm's reason.
+  PlayerRef.AttackedByBound slot -> Map.singleton slot SlotArity.One
   -- Read at arity one for that arm's reason: a slot naming several objects names
   -- no one chooser.
   PlayerRef.ChosenPlayerOfBound slot _ -> Map.singleton slot SlotArity.One
@@ -909,6 +911,7 @@ effectPlayerRefs effect = case effect of
   Effect.TurnFaceUp {} -> []
   Effect.RemoveFromCombat {} -> []
   Effect.BlockAttacker {} -> []
+  Effect.ReselectAttack {} -> []
   Effect.JoinAttack payload -> [JoinAttack.alongside payload]
   Effect.BecomesBlocked {} -> []
   Effect.SwitchBlockers {} -> []
@@ -1239,6 +1242,7 @@ slotsOf effect = joinTwo (joinTwo (joinSlots (fmap objectRefSlots (effectObjectR
   Effect.TurnFaceUp slot -> oneSlot slot
   Effect.RemoveFromCombat _ -> Map.empty
   Effect.BlockAttacker _ -> Map.empty
+  Effect.ReselectAttack _ -> Map.empty
   Effect.JoinAttack _ -> Map.empty
   Effect.BecomesBlocked slot -> oneSlot slot
   -- SlotArity.Many, unlike the arm above: CR 601.2c gives this one instance of
@@ -2162,6 +2166,7 @@ ownSlotsAreExhaustive effect = case effect of
   Effect.TurnFaceUp _ -> True
   Effect.RemoveFromCombat _ -> True
   Effect.BlockAttacker _ -> True
+  Effect.ReselectAttack _ -> True
   Effect.JoinAttack _ -> True
   Effect.BecomesBlocked _ -> True
   Effect.SwitchBlockers _ -> True
@@ -2476,6 +2481,7 @@ hasRead wanted =
         Effect.TurnFaceUp _ -> False
         Effect.RemoveFromCombat _ -> False
         Effect.BlockAttacker _ -> False
+        Effect.ReselectAttack _ -> False
         Effect.JoinAttack _ -> False
         Effect.BecomesBlocked _ -> False
         Effect.SwitchBlockers _ -> False
@@ -2795,6 +2801,7 @@ boundSlots effect = case effect of
   Effect.TurnFaceUp _ -> Set.empty
   Effect.RemoveFromCombat _ -> Set.empty
   Effect.BlockAttacker _ -> Set.empty
+  Effect.ReselectAttack _ -> Set.empty
   Effect.JoinAttack _ -> Set.empty
   Effect.BecomesBlocked _ -> Set.empty
   Effect.SwitchBlockers _ -> Set.empty

@@ -250,6 +250,14 @@ namedUncut given gs ref =
         -- only. Unanswered where the slot names no one object or its host is
         -- not a player. Paradox Haze's scenarios prove it.
         PlayerRef.PlayerHostOfBound slot -> fmap pure (slotObject given slot >>= \oid -> Game.lookupObject oid gs >>= Object.attachedTo >>= Recipient.playerOf)
+        -- CR 508.1b / 508.7: the player the attacker a slot names is attacking,
+        -- read live off Combat.attackers. Unanswered while it attacks a
+        -- planeswalker or battle, or nothing (Capricopian's ruling).
+        PlayerRef.AttackedByBound slot ->
+          let attacked target = case target of
+                AttackTarget.OfPlayer pid -> Just pid
+                _ -> Nothing
+           in fmap pure (slotObject given slot >>= (`Map.lookup` Combat.attackers (TurnRegisters.combat (GameState.turn gs))) >>= attacked)
         -- CR 611.2b: the arm above, BAKED -- the object named outright, so a
         -- stored duration asks who controls or owns it NOW. Unanswered while the
         -- object is phased out, which CR 702.26b treats as not existing. Proved

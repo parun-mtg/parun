@@ -159,6 +159,8 @@ data PlayerRef
   | -- | CR 303.4b / 303.4m: the player the object a slot names is attached
     -- to, Paradox Haze's "enchanted player".
     PlayerHostOfBound SlotName.SlotName
+  | -- | CR 508.1b / 508.7: the player the attacking creature a slot names is attacking, Capricopian's "the player this creature is attacking".
+    AttackedByBound SlotName.SlotName
   | -- | HolderOfBound's BAKED half, and runtime-only: the controller or owner of
     -- one particular object, read at each check (CR 611.2b, 108.3, 108.4).
     -- Written by Parun.Engine.Quantity.bakePlayerRef; no card may write it.

@@ -1,0 +1,102 @@
+{
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "battlefield": [
+          {
+            "card": "Capricopian",
+            "counters": [
+              {
+                "key": {
+                  "type": "PlusOnePlusOne"
+                },
+                "value": 2
+              }
+            ],
+            "label": "goat",
+            "ready": true
+          }
+        ],
+        "name": "alice"
+      },
+      {
+        "battlefield": [
+          {
+            "card": "Forest",
+            "label": "b1"
+          },
+          {
+            "card": "Forest",
+            "label": "b2"
+          },
+          {
+            "card": "Ajani Goldmane",
+            "counters": [
+              {
+                "key": {
+                  "type": "Loyalty"
+                },
+                "value": 4
+              }
+            ],
+            "label": "ajani"
+          }
+        ],
+        "name": "bob"
+      }
+    ],
+    "step": "BeginningOfCombat"
+  },
+  "description": "Capricopian attacking a planeswalker may not be activated by the planeswalker's controller",
+  "note": "Capricopian's ruling: attacking Ajani it attacks no player, so bob, who could activate it were it attacking him, is refused; Ajani takes 2.",
+  "timeline": [
+    {
+      "do": {
+        "Attack": [
+          "$goat"
+        ]
+      },
+      "player": "alice",
+      "step": "DeclareAttackers",
+      "turn": 1
+    },
+    {
+      "do": {
+        "ChooseAttackTarget": "$ajani"
+      },
+      "player": "alice",
+      "source": "$goat",
+      "step": "DeclareAttackers",
+      "turn": 1
+    },
+    {
+      "player": "bob",
+      "refuse": {
+        "Activate": {
+          "mana": [
+            "$b1",
+            "$b2"
+          ],
+          "object": "$goat"
+        }
+      },
+      "step": "DeclareAttackers",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Counters": {
+          "count": 2,
+          "kind": {
+            "type": "Loyalty"
+          },
+          "object": "$ajani"
+        }
+      },
+      "player": "alice",
+      "step": "EndOfCombat",
+      "turn": 1
+    }
+  ]
+}

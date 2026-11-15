@@ -1946,6 +1946,13 @@ spec s = Spec.describe s "Parun.Codec.Effect" $ do
       fromJson
       (Effect.BlockAttacker (ObjectRef.InSlot (SlotName.MkSlotName (Text.pack "target"))))
       " {\"type\":\"BlockAttacker\",\"value\":{\"type\":\"InSlot\",\"value\":\"target\"}} "
+  Spec.it s "ReselectAttack" $
+    Common.assertJsonCodec
+      s
+      toJson
+      fromJson
+      (Effect.ReselectAttack (ObjectRef.InSlot (SlotName.MkSlotName (Text.pack "self"))))
+      " {\"type\":\"ReselectAttack\",\"value\":{\"type\":\"InSlot\",\"value\":\"self\"}} "
   Spec.it s "JoinAttack" $
     Common.assertJsonCodec
       s

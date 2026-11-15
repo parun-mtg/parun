@@ -37,7 +37,7 @@ Finished 2026-11-04.
   (the client can't arrange a graveyard batch), #6047 (a counted redirect skips
   a shield's division), #6055 (a host-watching block trigger reads at the
   scan), #6060 (a cost payable only with triggered mana), #6062 (a granted
-  "can't be blocked by" under Humility), #6064 (other named activators), #6070
+  "can't be blocked by" under Humility), #6064 (other named activators; closed by #7686), #6070
   (Panic's siblings), #6072 (the next turn's upkeep; closed by #6074), #6079
   (a target-bound attack waiver), #6080 (the {T} half of "as though it had
   haste"), #6094 (Dream Halls).

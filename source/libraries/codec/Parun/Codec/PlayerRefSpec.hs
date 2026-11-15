@@ -98,6 +98,12 @@ spec s = Spec.describe s "Parun.Codec.PlayerRef" $ do
       PlayerRef.codec
       (PlayerRef.PlayerHostOfBound (SlotName.MkSlotName (Text.pack "self")))
       " {\"type\":\"PlayerHostOfBound\",\"value\":\"self\"} "
+  Spec.it s "AttackedByBound" $
+    Common.assertCodec
+      s
+      PlayerRef.codec
+      (PlayerRef.AttackedByBound (SlotName.MkSlotName (Text.pack "self")))
+      " {\"type\":\"AttackedByBound\",\"value\":\"self\"} "
   -- CR 614.1c / CR 702.174b: HolderOfBound's shape one record over.
   Spec.it s "ChosenPlayerOfBound" $
     Common.assertCodec
