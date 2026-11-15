@@ -296,6 +296,8 @@ library codec
     Parun.Codec.BattlefieldCandidate
     Parun.Codec.BattlefieldCandidateSpec
     Parun.Codec.BeamMeUp
+    Parun.Codec.BearersTrigger
+    Parun.Codec.BearersTriggerSpec
     Parun.Codec.BecameAttached
     Parun.Codec.BecameAttacked
     Parun.Codec.BecameAttackedSpec
@@ -2862,6 +2864,7 @@ library types
     Parun.Types.Batching
     Parun.Types.BattlefieldCandidate
     Parun.Types.BeamMeUp
+    Parun.Types.BearersTrigger
     Parun.Types.BecameAttached
     Parun.Types.BecameAttacked
     Parun.Types.BecameBlocking

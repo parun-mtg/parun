@@ -183,6 +183,7 @@ import Parun.Types.TriggerCondition (TriggerCondition)
 import qualified Parun.Types.TriggerCondition as TriggerCondition
 import qualified Parun.Types.TriggerFrequency as TriggerFrequency
 import qualified Parun.Types.TriggerSource as TriggerSource
+import qualified Parun.Types.TriggeredAbility as TriggeredAbility
 import qualified Parun.Types.TriggeringMove as TriggeringMove
 import qualified Parun.Types.TurnRegisters as TurnRegisters
 import qualified Parun.Types.TurnScope as TurnScope
@@ -942,8 +943,16 @@ additionalMoveTriggers gs you bearer group looksBack zc
 -- event, whether the ability's permanent stays or leaves). A look-back ability's event with
 -- no such board left the battlefield as it was: CR 701.6a's countering and CR
 -- 701.31's planeswalking move no permanent, so the after board answers.
-additionalTriggers :: GameState -> PlayerId -> ObjectId -> EventGroup.EventGroup -> Bool -> Natural
-additionalTriggers gs you bearer group looksBack = maybe 0 (PlayerEffect.additionalTriggers you bearer) (bearerBoard gs bearer group looksBack)
+additionalTriggers :: GameState -> PlayerId -> ObjectId -> TriggeredAbility.TriggeredAbility card ability -> EventGroup.EventGroup -> Bool -> Natural
+additionalTriggers gs you bearer ability group looksBack = maybe 0 (PlayerEffect.additionalTriggers you bearer ability) (bearerBoard gs bearer group looksBack)
+
+-- CR 613.11 / 101.2: may `ability`, `you`'s triggered ability of `bearer`,
+-- trigger on the event of `group`, or does an effect silence it whatever its
+-- event (Nowhere to Run's "ward abilities of those creatures don't trigger")?
+-- Read off `additionalTriggers`' board, so the silencer must stand on it; a
+-- bearer that was no permanent then answers True.
+bearerTriggers :: GameState -> PlayerId -> ObjectId -> TriggeredAbility.TriggeredAbility card ability -> EventGroup.EventGroup -> Bool -> Bool
+bearerTriggers gs you bearer ability group looksBack = maybe True (not . PlayerEffect.silencesTriggers you bearer ability) (bearerBoard gs bearer group looksBack)
 
 -- CR 603.2d / 508.3: how many additional times an ability of `you`'s that
 -- `causers` attacking caused `bearer` to trigger triggers (Windcrag Siege), one

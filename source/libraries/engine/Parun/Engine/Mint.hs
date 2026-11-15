@@ -110,7 +110,8 @@ triggerOf condition intervening modal =
       TriggeredAbility.intervening = intervening,
       TriggeredAbility.name = Nothing,
       TriggeredAbility.limit = TriggerLimit.Unlimited,
-      TriggeredAbility.functionsFrom = Set.empty
+      TriggeredAbility.functionsFrom = Set.empty,
+      TriggeredAbility.keyword = Nothing
     }
 
 -- | "At the beginning of your upkeep" (CR 503.1): @Relative You@ with the

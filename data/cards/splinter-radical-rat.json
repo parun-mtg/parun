@@ -96,19 +96,22 @@
       "playerAbilities": [
         {
           "effect": {
-            "type": "AdditionalTriggers",
+            "type": "BearersTrigger",
             "value": {
-              "type": "And",
-              "value": [
-                {
-                  "type": "HasCardType",
-                  "value": "Creature"
-                },
-                {
-                  "type": "HasSubtype",
-                  "value": "Ninja"
-                }
-              ]
+              "bearers": {
+                "type": "And",
+                "value": [
+                  {
+                    "type": "HasCardType",
+                    "value": "Creature"
+                  },
+                  {
+                    "type": "HasSubtype",
+                    "value": "Ninja"
+                  }
+                ]
+              },
+              "triggering": "AnAdditionalTime"
             }
           },
           "scope": {

@@ -22,7 +22,7 @@ import qualified Parun.Engine.Condition as Condition
 import qualified Parun.Engine.Decide as Decide
 import qualified Parun.Engine.EffectZone as EffectZone
 import Parun.Engine.Event.Binding (attackCausers, batchBindings, batchPartition, countersMovedOn, eventBindingsOver)
-import Parun.Engine.Event.Match (additionalAttackTriggers, additionalMoveTriggers, additionalTriggers, gameAfter, leavesZoneLooksBack, matchesTriggerGiven, putIntoZoneLooksBack, stepPlayers)
+import Parun.Engine.Event.Match (additionalAttackTriggers, additionalMoveTriggers, additionalTriggers, bearerTriggers, gameAfter, leavesZoneLooksBack, matchesTriggerGiven, putIntoZoneLooksBack, stepPlayers)
 import qualified Parun.Engine.Expiry as Expiry
 import qualified Parun.Engine.Filter as Filter
 import qualified Parun.Engine.Game as Game
@@ -2379,7 +2379,12 @@ eventTriggersGiven scope standing events gs =
             -- pending trigger carries.
             -- CR 801.7: and the event happened within the controller's range,
             -- or anywhere for a planar bearer (CR 801.18).
-            fires (cond, _) = matchesTriggerGiven bindings board (LoggedEvent.group logged) gs oid (controllerFor cond) cond event && eventWithinRange board gs (Plane.rangePerspective oid (controllerFor cond) gs) event
+            -- CR 613.11: and no effect silences the ability whatever its
+            -- event (Match.bearerTriggers, Nowhere to Run).
+            fires (cond, ab) =
+              matchesTriggerGiven bindings board (LoggedEvent.group logged) gs oid (controllerFor cond) cond event
+                && eventWithinRange board gs (Plane.rangePerspective oid (controllerFor cond) gs) event
+                && bearerTriggers gs (controllerFor cond) oid ab (LoggedEvent.group logged) (looksBack cond)
             -- CR 400.7d: an ability of a permanent may read what costs were
             -- paid for the spell it was, so the bearer's record rides on every
             -- ability it triggers (Binding.triggeredCostRecord).
@@ -2407,8 +2412,8 @@ eventTriggersGiven scope standing events gs =
             -- attacking (Windcrag Siege), counted over the creatures whose
             -- attacking was the event (Binding.attackCausers, Firebender
             -- Ascension's reading).
-            additional cond =
-              additionalTriggers gs (controllerFor cond) oid (LoggedEvent.group logged) (looksBack cond)
+            additional (cond, ab) =
+              additionalTriggers gs (controllerFor cond) oid ab (LoggedEvent.group logged) (looksBack cond)
                 + additionalAttackTriggers gs (controllerFor cond) oid (LoggedEvent.group logged) (looksBack cond) (attackCausers gs oid (controllerFor cond) cond event)
                 + case Game.enteredBattlefieldChange event of
                   Just zc -> additionalMoveTriggers gs (controllerFor cond) oid (LoggedEvent.group logged) (looksBack cond) zc
@@ -2418,7 +2423,7 @@ eventTriggersGiven scope standing events gs =
             pends (cond, ab) =
               let perPlayer = stepCopies gs oid (controllerFor cond) cond event ab (pend (cond, ab))
                   occurrences = maybe perPlayer (\n -> concat (List.genericReplicate n perPlayer)) (counterOccurrences (\c -> matchesTriggerGiven bindings board (LoggedEvent.group logged) gs oid (controllerFor cond) c event) cond event)
-               in [(extra, trigger) | extra <- [0 .. additional cond], trigger <- occurrences]
+               in [(extra, trigger) | extra <- [0 .. additional (cond, ab)], trigger <- occurrences]
             -- CR 603.2c's key, for `oncePerBatch` below: which ability of which
             -- bearer this pending trigger came from, or Nothing when the condition
             -- is per-occurrence and every member of the batch is its own trigger
@@ -3417,8 +3422,8 @@ stateTriggersOn gs
           pend ab = PendingTrigger.MkPendingTrigger (TriggerSource.OfObject oid) ctrl ab (maybe Map.empty (Binding.triggeredCostRecord . Object.bindings) (Game.lookupObject oid gs)) Nothing Nothing (copiesIn abilities ab) (Projection.delayedSnapshotOf oid gs) Nothing
           -- CR 603.2d: a state trigger triggers additional times like any other,
           -- on a permanent; CR 603.8 holds each back while any is on the stack.
-          instances = if Set.member oid (GameState.battlefield gs) then 1 + PlayerEffect.additionalTriggers ctrl oid gs else 1
-       in concatMap (List.genericReplicate instances . pend . snd) (filter armed (zip (List.inits lives) lives))
+          instances ab = if Set.member oid (GameState.battlefield gs) then 1 + PlayerEffect.additionalTriggers ctrl oid ab gs else 1
+       in concatMap ((\ab -> List.genericReplicate (instances ab) (pend ab)) . snd) (filter armed (zip (List.inits lives) lives))
 
 -- CR 603.8 across one settle: a state trigger triggers "as soon as the game
 -- state matches", so one armed on any of `boards` (Engine.settlePasses') has

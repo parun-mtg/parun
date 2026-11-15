@@ -2,6 +2,7 @@ module Parun.Codec.PlayerEffect where
 
 import qualified Parun.Codec.AbilityKind as AbilityKind
 import qualified Parun.Codec.AlternativeActivationCost as AlternativeActivationCost
+import qualified Parun.Codec.BearersTrigger as BearersTrigger
 import qualified Parun.Codec.CantSearchLibraries as CantSearchLibraries
 import qualified Parun.Codec.CastFromZone as CastFromZone
 import qualified Parun.Codec.CombatDeclaration as CombatDeclaration
@@ -132,7 +133,7 @@ codec =
           Arm.payload "StateBasedActionDoesntApply" sbaExemption (uncurry PlayerEffect.StateBasedActionDoesntApply) (\x -> case x of PlayerEffect.StateBasedActionDoesntApply y z -> Just (y, z); _ -> Nothing),
           Arm.nullary "CantSetSchemesInMotion" PlayerEffect.CantSetSchemesInMotion,
           Arm.payload "EntriesTrigger" EntriesTrigger.codec PlayerEffect.EntriesTrigger (\x -> case x of PlayerEffect.EntriesTrigger y -> Just y; _ -> Nothing),
-          Arm.payload "AdditionalTriggers" filterCodec PlayerEffect.AdditionalTriggers (\x -> case x of PlayerEffect.AdditionalTriggers y -> Just y; _ -> Nothing),
+          Arm.payload "BearersTrigger" BearersTrigger.codec PlayerEffect.BearersTrigger (\x -> case x of PlayerEffect.BearersTrigger y -> Just y; _ -> Nothing),
           Arm.nullary "ControlledWhileSearching" PlayerEffect.ControlledWhileSearching,
           Arm.nullary "BlocksFromPiles" PlayerEffect.BlocksFromPiles,
           Arm.payload "YouChoose" CombatDeclaration.codec PlayerEffect.YouChoose (\x -> case x of PlayerEffect.YouChoose y -> Just y; _ -> Nothing),
@@ -193,7 +194,7 @@ tagOf x = case x of
   PlayerEffect.StateBasedActionDoesntApply {} -> "StateBasedActionDoesntApply"
   PlayerEffect.CantSetSchemesInMotion {} -> "CantSetSchemesInMotion"
   PlayerEffect.EntriesTrigger {} -> "EntriesTrigger"
-  PlayerEffect.AdditionalTriggers {} -> "AdditionalTriggers"
+  PlayerEffect.BearersTrigger {} -> "BearersTrigger"
   PlayerEffect.ControlledWhileSearching {} -> "ControlledWhileSearching"
   PlayerEffect.BlocksFromPiles {} -> "BlocksFromPiles"
   PlayerEffect.YouChoose {} -> "YouChoose"

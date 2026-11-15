@@ -4,6 +4,7 @@ import qualified Data.Map.Strict as Map
 import qualified Data.Set as Set
 import qualified Parun.Types.AbilityName as AbilityName
 import qualified Parun.Types.ObjectId as ObjectId
+import qualified Parun.Types.PlayerId as PlayerId
 import qualified Parun.Types.SlotName as SlotName
 import qualified Parun.Types.SourceChoices as SourceChoices
 
@@ -25,6 +26,11 @@ data RowSource = MkRowSource
     ability :: Maybe AbilityName.AbilityName,
     -- | A stored row's bound slots (Parun.Types.ActivePlayerEffect.slots),
     -- which a Filter.IsBound in the row reads. Empty for a printed row.
-    slots :: Map.Map SlotName.SlotName (Set.Set ObjectId.ObjectId)
+    slots :: Map.Map SlotName.SlotName (Set.Set ObjectId.ObjectId),
+    -- | CR 611.2a / 109.5: a stored row's controller
+    -- (Parun.Types.ActivePlayerEffect.controller). Nothing for a printed row,
+    -- whose controller is its object's, read live
+    -- (Parun.Engine.PlayerEffect.rowController).
+    controller :: Maybe PlayerId.PlayerId
   }
   deriving (Eq, Ord, Show)

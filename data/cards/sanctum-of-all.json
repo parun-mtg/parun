@@ -87,21 +87,24 @@
             }
           },
           "effect": {
-            "type": "AdditionalTriggers",
+            "type": "BearersTrigger",
             "value": {
-              "type": "And",
-              "value": [
-                {
-                  "type": "Not",
-                  "value": {
-                    "type": "IsSource"
+              "bearers": {
+                "type": "And",
+                "value": [
+                  {
+                    "type": "Not",
+                    "value": {
+                      "type": "IsSource"
+                    }
+                  },
+                  {
+                    "type": "HasSubtype",
+                    "value": "Shrine"
                   }
-                },
-                {
-                  "type": "HasSubtype",
-                  "value": "Shrine"
-                }
-              ]
+                ]
+              },
+              "triggering": "AnAdditionalTime"
             }
           },
           "scope": {

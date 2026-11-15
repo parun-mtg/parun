@@ -113,8 +113,8 @@ renownSpec s registry =
         -- happens NEXT -- the second resolving to nothing -- is the intervening
         -- "if" the gameplay cases above read.
         Spec.it s "CR 702.112c each instance of renown is its own ability" $ do
-          Spec.assertEqWith s "renown 2 held twice is two abilities" (Keyword.triggeredAbilitiesOf (Map.singleton (Keyword.Type.Renown 2) 2)) [Keyword.renown 2, Keyword.renown 2]
-          Spec.assertEqWith s "and renown 6 once is one" (Keyword.triggeredAbilitiesOf (Map.singleton (Keyword.Type.Renown 6) 1)) [Keyword.renown 6]
+          Spec.assertEqWith s "renown 2 held twice is two abilities" (Keyword.triggeredAbilitiesOf (Map.singleton (Keyword.Type.Renown 2) 2)) (fmap (Keyword.mintedTriggerBy (Keyword.Type.Renown 2)) [Keyword.renown 2, Keyword.renown 2])
+          Spec.assertEqWith s "and renown 6 once is one" (Keyword.triggeredAbilitiesOf (Map.singleton (Keyword.Type.Renown 6) 1)) (fmap (Keyword.mintedTriggerBy (Keyword.Type.Renown 6)) [Keyword.renown 6])
 
 -- CR 701.37b's designation watched from outside the monstrosity action that sets
 -- it: "monstrous is a designation ... that the monstrosity action and OTHER SPELLS
@@ -551,7 +551,7 @@ cumulativeUpkeepSpec s registry =
             s
             "cumulative upkeep {1} held twice mints two upkeep triggers"
             (Keyword.triggeredAbilitiesOf (Map.singleton (Keyword.Type.CumulativeUpkeep (cost 1)) 2))
-            [Keyword.cumulativeUpkeep (cost 1), Keyword.cumulativeUpkeep (cost 1)]
+            (fmap (Keyword.mintedTriggerBy (Keyword.Type.CumulativeUpkeep (cost 1))) [Keyword.cumulativeUpkeep (cost 1), Keyword.cumulativeUpkeep (cost 1)])
           Spec.assertBool s (Keyword.cumulativeUpkeep (cost 1) /= Keyword.cumulativeUpkeep (cost 2)) "and the cost reaches the minted ability"
 
 -- CR 702.43 modular, whose rule text also spans BOTH of
@@ -919,7 +919,7 @@ bushidoSpec s registry =
         -- one instance is already two abilities -- rule 702.45a's one sentence,
         -- CR 509.3a's event and CR 509.3c's.
         Spec.it s "CR 702.45b each instance of bushido is its own ability" $ do
-          Spec.assertEqWith s "bushido 2 held once is its two halves" (Keyword.triggeredAbilitiesOf (Map.singleton (Keyword.Type.Bushido 2) 1)) (Keyword.bushido 2)
+          Spec.assertEqWith s "bushido 2 held once is its two halves" (Keyword.triggeredAbilitiesOf (Map.singleton (Keyword.Type.Bushido 2) 1)) (fmap (Keyword.mintedTriggerBy (Keyword.Type.Bushido 2)) (Keyword.bushido 2))
           Spec.assertEqWith s "and held twice is four abilities" (length (Keyword.triggeredAbilitiesOf (Map.singleton (Keyword.Type.Bushido 2) 2))) 4
 
 -- CR 702.130a: "'Afflict N' means 'Whenever this creature becomes blocked,
@@ -956,8 +956,8 @@ afflictSpec s _ =
     -- this pool can show, so nothing above would go red if the mint hardcoded
     -- its 1.
     Spec.it s "CR 702.130b each instance of afflict is its own ability, and N reaches it" $ do
-      Spec.assertEqWith s "afflict 1 held twice is two abilities" (Keyword.triggeredAbilitiesOf (Map.singleton (Keyword.Type.Afflict 1) 2)) [Keyword.afflict 1, Keyword.afflict 1]
-      Spec.assertEqWith s "and afflict 3 once is one" (Keyword.triggeredAbilitiesOf (Map.singleton (Keyword.Type.Afflict 3) 1)) [Keyword.afflict 3]
+      Spec.assertEqWith s "afflict 1 held twice is two abilities" (Keyword.triggeredAbilitiesOf (Map.singleton (Keyword.Type.Afflict 1) 2)) (fmap (Keyword.mintedTriggerBy (Keyword.Type.Afflict 1)) [Keyword.afflict 1, Keyword.afflict 1])
+      Spec.assertEqWith s "and afflict 3 once is one" (Keyword.triggeredAbilitiesOf (Map.singleton (Keyword.Type.Afflict 3) 1)) (fmap (Keyword.mintedTriggerBy (Keyword.Type.Afflict 3)) [Keyword.afflict 3])
       Spec.assertBool s (Keyword.afflict 1 /= Keyword.afflict 3) "and the two differ, so N is in the ability"
 
 -- CR 702.121 melee, whose rule text is a triggered ability,
@@ -981,8 +981,8 @@ meleeSpec s _ =
     -- CR 702.121b: two instances are two abilities, so two triggers and two
     -- bonuses. Asserted at the mint, no card in the pool having melee twice.
     Spec.it s "CR 702.121b each instance triggers separately" $ do
-      Spec.assertEqWith s "melee held twice is two abilities" (Keyword.triggeredAbilitiesOf (Map.singleton Keyword.Type.Melee 2)) [Keyword.melee, Keyword.melee]
-      Spec.assertEqWith s "and once is one" (Keyword.triggeredAbilitiesOf (Map.singleton Keyword.Type.Melee 1)) [Keyword.melee]
+      Spec.assertEqWith s "melee held twice is two abilities" (Keyword.triggeredAbilitiesOf (Map.singleton Keyword.Type.Melee 2)) (fmap (Keyword.mintedTriggerBy Keyword.Type.Melee) [Keyword.melee, Keyword.melee])
+      Spec.assertEqWith s "and once is one" (Keyword.triggeredAbilitiesOf (Map.singleton Keyword.Type.Melee 1)) (fmap (Keyword.mintedTriggerBy Keyword.Type.Melee) [Keyword.melee])
 
 -- CR 702.105 dethrone, whose CONDITION is the whole keyword -- the first minted
 -- trigger narrowed by a fact about the game rather than about the declaration --
@@ -1002,8 +1002,8 @@ dethroneSpec s _ =
     -- CR 702.105b: two instances are two abilities, so two triggers and two
     -- counters. Asserted at the mint, no card in the pool having dethrone twice.
     Spec.it s "CR 702.105b each instance triggers separately" $ do
-      Spec.assertEqWith s "dethrone held twice is two abilities" (Keyword.triggeredAbilitiesOf (Map.singleton Keyword.Type.Dethrone 2)) [Keyword.dethrone, Keyword.dethrone]
-      Spec.assertEqWith s "and once is one" (Keyword.triggeredAbilitiesOf (Map.singleton Keyword.Type.Dethrone 1)) [Keyword.dethrone]
+      Spec.assertEqWith s "dethrone held twice is two abilities" (Keyword.triggeredAbilitiesOf (Map.singleton Keyword.Type.Dethrone 2)) (fmap (Keyword.mintedTriggerBy Keyword.Type.Dethrone) [Keyword.dethrone, Keyword.dethrone])
+      Spec.assertEqWith s "and once is one" (Keyword.triggeredAbilitiesOf (Map.singleton Keyword.Type.Dethrone 1)) (fmap (Keyword.mintedTriggerBy Keyword.Type.Dethrone) [Keyword.dethrone])
 
 -- CR 702.23 rampage, whose rule text is a triggered ability,
 -- and the first whose bonus multiplies a printed N by a number read off the
@@ -1065,8 +1065,8 @@ rampageSpec s registry =
         -- printing in the pool carrying rampage twice, and the second assertion is
         -- what puts N inside the ability rather than beside it.
         Spec.it s "CR 702.23c each instance triggers separately" $ do
-          Spec.assertEqWith s "rampage 2 held twice is two abilities" (Keyword.triggeredAbilitiesOf (Map.singleton (Keyword.Type.Rampage 2) 2)) [Keyword.rampage 2, Keyword.rampage 2]
-          Spec.assertEqWith s "and once is one" (Keyword.triggeredAbilitiesOf (Map.singleton (Keyword.Type.Rampage 2) 1)) [Keyword.rampage 2]
+          Spec.assertEqWith s "rampage 2 held twice is two abilities" (Keyword.triggeredAbilitiesOf (Map.singleton (Keyword.Type.Rampage 2) 2)) (fmap (Keyword.mintedTriggerBy (Keyword.Type.Rampage 2)) [Keyword.rampage 2, Keyword.rampage 2])
+          Spec.assertEqWith s "and once is one" (Keyword.triggeredAbilitiesOf (Map.singleton (Keyword.Type.Rampage 2) 1)) (fmap (Keyword.mintedTriggerBy (Keyword.Type.Rampage 2)) [Keyword.rampage 2])
           Spec.assertBool s (Keyword.rampage 1 /= Keyword.rampage 2) "and the two differ, so N is in the ability"
 
 spec :: (Monad m, Monad n) => Spec.Spec m n -> Registry.Registry m -> n ()

@@ -3,6 +3,7 @@ module Parun.Types.TriggeredAbility where
 import qualified Data.Set as Set
 import qualified Parun.Types.AbilityName as AbilityName
 import qualified Parun.Types.Condition as Condition
+import qualified Parun.Types.Keyword as Keyword
 import qualified Parun.Types.Modal as Modal
 import qualified Parun.Types.TriggerCondition as TriggerCondition
 import qualified Parun.Types.TriggerLimit as TriggerLimit
@@ -42,6 +43,12 @@ data TriggeredAbility card ability = MkTriggeredAbility
     -- covercast). Empty for an ability that states none, which leaves CR 113.6's
     -- default and CR 113.6k / 113.6m to decide; Parun.Types.StaticAbility's
     -- field of the same name is the static twin.
-    functionsFrom :: Set.Set Zone.Zone
+    functionsFrom :: Set.Set Zone.Zone,
+    -- | CR 702: the keyword whose rules minted this ability, Nothing for one a
+    -- card prints; Parun.Types.ActivatedAbility.keyword's twin, stamped by
+    -- Parun.Engine.Keyword.abilitiesFor and linted likewise. Read through
+    -- Parun.Engine.Keyword.designates by Parun.Types.BearersTrigger.abilities
+    -- (Nowhere to Run's "ward abilities").
+    keyword :: Maybe Keyword.Keyword
   }
   deriving (Eq, Ord, Show)

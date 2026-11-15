@@ -7,6 +7,7 @@ import qualified Parun.JsonCodec.Common as Common
 import qualified Parun.Spec as Spec
 import qualified Parun.Types.AbilityKind as AbilityKind
 import qualified Parun.Types.Audience as Audience
+import qualified Parun.Types.BearersTrigger as BearersTrigger
 import qualified Parun.Types.CantSearchLibraries as CantSearchLibraries
 import qualified Parun.Types.CardName as CardName
 import qualified Parun.Types.CardType as CardType
@@ -453,12 +454,12 @@ spec s = Spec.describe s "Parun.Codec.PlayerEffect" $ do
       PlayerEffect.CantSetSchemesInMotion
       " {\"type\":\"CantSetSchemesInMotion\"} "
   -- CR 603.2d / Sanctum of All.
-  Spec.it s "AdditionalTriggers" $
+  Spec.it s "BearersTrigger" $
     Common.assertCodec
       s
       PlayerEffect.codec
-      (PlayerEffect.AdditionalTriggers (Filter.And []))
-      " {\"type\":\"AdditionalTriggers\",\"value\":{\"type\":\"And\",\"value\":[]}} "
+      (PlayerEffect.BearersTrigger (BearersTrigger.MkBearersTrigger (Filter.And []) Nothing EntryTriggering.AnAdditionalTime))
+      " {\"type\":\"BearersTrigger\",\"value\":{\"bearers\":{\"type\":\"And\",\"value\":[]},\"triggering\":\"AnAdditionalTime\"}} "
   -- CR 603.2d / Yarok, the Desecrated.
   Spec.it s "EntriesTrigger" $
     Common.assertCodec

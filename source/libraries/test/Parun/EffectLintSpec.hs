@@ -1089,7 +1089,7 @@ unpreventableScopeOffends scope playerEffect = case playerEffect of
   PlayerEffect.StateBasedActionDoesntApply _ _ -> False
   PlayerEffect.CantSetSchemesInMotion -> False
   PlayerEffect.EntriesTrigger _ -> False
-  PlayerEffect.AdditionalTriggers _ -> False
+  PlayerEffect.BearersTrigger _ -> False
   PlayerEffect.ControlledWhileSearching -> False
   PlayerEffect.BlocksFromPiles -> False
   PlayerEffect.YouChoose _ -> False
@@ -1177,7 +1177,7 @@ unpreventablePatternOffends playerEffect = case playerEffect of
   PlayerEffect.StateBasedActionDoesntApply _ _ -> False
   PlayerEffect.CantSetSchemesInMotion -> False
   PlayerEffect.EntriesTrigger _ -> False
-  PlayerEffect.AdditionalTriggers _ -> False
+  PlayerEffect.BearersTrigger _ -> False
   PlayerEffect.ControlledWhileSearching -> False
   PlayerEffect.BlocksFromPiles -> False
   PlayerEffect.YouChoose _ -> False

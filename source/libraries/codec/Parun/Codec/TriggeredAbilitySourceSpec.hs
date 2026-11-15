@@ -39,7 +39,8 @@ ability =
       TriggeredAbility.intervening = Nothing,
       TriggeredAbility.name = Nothing,
       TriggeredAbility.limit = TriggerLimit.Unlimited,
-      TriggeredAbility.functionsFrom = Set.empty
+      TriggeredAbility.functionsFrom = Set.empty,
+      TriggeredAbility.keyword = Nothing
     }
 
 spec :: (Monad m, Monad n) => Spec.Spec m n -> n ()

@@ -20,10 +20,13 @@
       "playerAbilities": [
         {
           "effect": {
-            "type": "AdditionalTriggers",
+            "type": "BearersTrigger",
             "value": {
-              "type": "HasSubtype",
-              "value": "Doctor"
+              "bearers": {
+                "type": "HasSubtype",
+                "value": "Doctor"
+              },
+              "triggering": "AnAdditionalTime"
             }
           },
           "scope": {
