@@ -1,8 +1,12 @@
 {
+  "description": "CR 101.4b Jungle Wayfinder's later seats know the earlier seats' answers",
+  "note": "CR 101.4b over one \"may\" each player answers in turn: bob and carol each give the answer the seat before them gave, which their prompt carries, and the pair differs only in alice's. Each library holds three of one basic and a Goblin Piker the filter rejects.",
   "board": {
     "active": "alice",
+    "step": "PrecombatMain",
     "seats": [
       {
+        "name": "alice",
         "battlefield": [
           {
             "card": "Forest",
@@ -40,10 +44,10 @@
             "card": "Island",
             "label": "island-3"
           }
-        ],
-        "name": "alice"
+        ]
       },
       {
+        "name": "bob",
         "library": [
           {
             "card": "Goblin Piker",
@@ -61,10 +65,10 @@
             "card": "Mountain",
             "label": "mountain-3"
           }
-        ],
-        "name": "bob"
+        ]
       },
       {
+        "name": "carol",
         "library": [
           {
             "card": "Goblin Piker",
@@ -82,141 +86,110 @@
             "card": "Plains",
             "label": "plains-3"
           }
-        ],
-        "name": "carol"
+        ]
       }
-    ],
-    "step": "PrecombatMain"
+    ]
   },
-  "description": "CR 101.4b Jungle Wayfinder's later seats know the earlier seats' answers",
-  "final": [
-    {
-      "View": {
-        "is": [
-          "Island"
-        ],
-        "of": "Zone",
-        "player": "alice",
-        "zone": "Hand"
-      }
-    },
-    {
-      "View": {
-        "is": [
-          "Mountain"
-        ],
-        "of": "Zone",
-        "player": "bob",
-        "zone": "Hand"
-      }
-    },
-    {
-      "View": {
-        "is": [
-          "Plains"
-        ],
-        "of": "Zone",
-        "player": "carol",
-        "zone": "Hand"
-      }
-    }
-  ],
-  "note": "CR 101.4b over one \"may\" each player answers in turn: bob and carol each give the answer the seat before them gave, which their prompt carries, and the pair differs only in alice's. Each library holds three of one basic and a Goblin Piker the filter rejects.",
   "timeline": [
     {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
       "do": {
         "Cast": {
+          "object": "$wayfinder",
           "mana": [
             "$forest-1",
             "$forest-2",
             "$forest-3"
-          ],
-          "object": "$wayfinder"
+          ]
         }
-      },
-      "player": "alice",
-      "step": "PrecombatMain",
-      "turn": 1
+      }
     },
     {
-      "do": "Pass",
-      "player": "alice",
+      "turn": 1,
       "step": "PrecombatMain",
-      "turn": 1
+      "player": "alice",
+      "do": "Pass"
     },
     {
-      "do": "Pass",
-      "player": "alice",
+      "turn": 1,
       "step": "PrecombatMain",
-      "turn": 1
+      "player": "alice",
+      "do": "Pass"
     },
     {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
       "check": {
         "View": {
+          "of": "Prompt",
           "is": {
             "kind": "ChooseOptional",
             "offer": {
-              "earlier": [],
-              "source": "trigger of Jungle Wayfinder"
+              "source": "trigger of Jungle Wayfinder",
+              "earlier": []
             }
-          },
-          "of": "Prompt"
+          }
         }
-      },
-      "player": "alice",
-      "step": "PrecombatMain",
-      "turn": 1
+      }
     },
     {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
       "do": {
         "Answer": {
           "prompt": "ChooseOptional",
           "with": "Exercises"
         }
-      },
-      "player": "alice",
-      "step": "PrecombatMain",
-      "turn": 1
+      }
     },
     {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "bob",
       "check": {
         "View": {
+          "of": "Prompt",
           "is": {
             "kind": "ChooseOptional",
             "offer": {
+              "source": "trigger of Jungle Wayfinder",
               "earlier": [
                 [
                   "alice",
                   "Exercises"
                 ]
-              ],
-              "source": "trigger of Jungle Wayfinder"
+              ]
             }
-          },
-          "of": "Prompt"
+          }
         }
-      },
-      "player": "bob",
-      "step": "PrecombatMain",
-      "turn": 1
+      }
     },
     {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "bob",
       "do": {
         "Answer": {
           "prompt": "ChooseOptional",
           "with": "Exercises"
         }
-      },
-      "player": "bob",
-      "step": "PrecombatMain",
-      "turn": 1
+      }
     },
     {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "carol",
       "check": {
         "View": {
+          "of": "Prompt",
           "is": {
             "kind": "ChooseOptional",
             "offer": {
+              "source": "trigger of Jungle Wayfinder",
               "earlier": [
                 [
                   "alice",
@@ -226,29 +199,27 @@
                   "bob",
                   "Exercises"
                 ]
-              ],
-              "source": "trigger of Jungle Wayfinder"
+              ]
             }
-          },
-          "of": "Prompt"
+          }
         }
-      },
-      "player": "carol",
-      "step": "PrecombatMain",
-      "turn": 1
+      }
     },
     {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "carol",
       "do": {
         "Answer": {
           "prompt": "ChooseOptional",
           "with": "Exercises"
         }
-      },
-      "player": "carol",
-      "step": "PrecombatMain",
-      "turn": 1
+      }
     },
     {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
       "do": {
         "Answer": {
           "prompt": "Search",
@@ -256,12 +227,12 @@
             "$island-1"
           ]
         }
-      },
-      "player": "alice",
-      "step": "PrecombatMain",
-      "turn": 1
+      }
     },
     {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "bob",
       "do": {
         "Answer": {
           "prompt": "Search",
@@ -269,12 +240,12 @@
             "$mountain-1"
           ]
         }
-      },
-      "player": "bob",
-      "step": "PrecombatMain",
-      "turn": 1
+      }
     },
     {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "carol",
       "do": {
         "Answer": {
           "prompt": "Search",
@@ -282,12 +253,12 @@
             "$plains-1"
           ]
         }
-      },
-      "player": "carol",
-      "step": "PrecombatMain",
-      "turn": 1
+      }
     },
     {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
       "do": {
         "Answer": {
           "prompt": "Shuffle",
@@ -297,12 +268,12 @@
             "$island-3"
           ]
         }
-      },
-      "player": "alice",
-      "step": "PrecombatMain",
-      "turn": 1
+      }
     },
     {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
       "do": {
         "Answer": {
           "prompt": "Shuffle",
@@ -312,12 +283,12 @@
             "$mountain-3"
           ]
         }
-      },
-      "player": "alice",
-      "step": "PrecombatMain",
-      "turn": 1
+      }
     },
     {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
       "do": {
         "Answer": {
           "prompt": "Shuffle",
@@ -327,10 +298,39 @@
             "$plains-3"
           ]
         }
-      },
-      "player": "alice",
-      "step": "PrecombatMain",
-      "turn": 1
+      }
+    }
+  ],
+  "final": [
+    {
+      "View": {
+        "of": "Zone",
+        "player": "alice",
+        "zone": "Hand",
+        "is": [
+          "Island"
+        ]
+      }
+    },
+    {
+      "View": {
+        "of": "Zone",
+        "player": "bob",
+        "zone": "Hand",
+        "is": [
+          "Mountain"
+        ]
+      }
+    },
+    {
+      "View": {
+        "of": "Zone",
+        "player": "carol",
+        "zone": "Hand",
+        "is": [
+          "Plains"
+        ]
+      }
     }
   ]
 }

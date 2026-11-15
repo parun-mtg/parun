@@ -1,8 +1,12 @@
 {
+  "description": "CR 101.4b Cleansing tells a later seat what the seats before it answered for that land",
+  "note": "The pair differs only in whether bob pays for Island A, and carol pays for Island A exactly when her offer says bob did (CR 101.4b); every other offer is declined, so with nobody paying every land is destroyed.",
   "board": {
     "active": "alice",
+    "step": "PrecombatMain",
     "seats": [
       {
+        "name": "alice",
         "battlefield": [
           {
             "card": "Plains",
@@ -22,10 +26,10 @@
             "card": "Cleansing",
             "label": "cleansing"
           }
-        ],
-        "name": "alice"
+        ]
       },
       {
+        "name": "bob",
         "battlefield": [
           {
             "card": "Island",
@@ -35,10 +39,10 @@
             "card": "Island",
             "label": "island-b"
           }
-        ],
-        "name": "bob"
+        ]
       },
       {
+        "name": "carol",
         "battlefield": [
           {
             "card": "Forest",
@@ -48,83 +52,36 @@
             "card": "Forest",
             "label": "forest-d"
           }
-        ],
-        "name": "carol"
+        ]
       }
-    ],
-    "step": "PrecombatMain"
+    ]
   },
-  "description": "CR 101.4b Cleansing tells a later seat what the seats before it answered for that land",
-  "final": [
-    {
-      "View": {
-        "is": [],
-        "of": "Zone",
-        "player": "alice",
-        "zone": "Battlefield"
-      }
-    },
-    {
-      "View": {
-        "is": [
-          "$island-a"
-        ],
-        "of": "Zone",
-        "player": "bob",
-        "zone": "Battlefield"
-      }
-    },
-    {
-      "View": {
-        "is": [],
-        "of": "Zone",
-        "player": "carol",
-        "zone": "Battlefield"
-      }
-    },
-    {
-      "Life": {
-        "life": 20,
-        "player": "alice"
-      }
-    },
-    {
-      "Life": {
-        "life": 19,
-        "player": "bob"
-      }
-    },
-    {
-      "Life": {
-        "life": 19,
-        "player": "carol"
-      }
-    }
-  ],
-  "note": "The pair differs only in whether bob pays for Island A, and carol pays for Island A exactly when her offer says bob did (CR 101.4b); every other offer is declined, so with nobody paying every land is destroyed.",
   "timeline": [
     {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
       "do": {
         "Cast": {
+          "object": "$cleansing",
           "mana": [
             "$plains-1",
             "$plains-2",
             "$plains-3"
-          ],
-          "object": "$cleansing"
+          ]
         }
-      },
-      "player": "alice",
-      "step": "PrecombatMain",
-      "turn": 1
+      }
     },
     {
-      "do": "Pass",
-      "player": "alice",
+      "turn": 1,
       "step": "PrecombatMain",
-      "turn": 1
+      "player": "alice",
+      "do": "Pass"
     },
     {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
       "do": {
         "Answer": {
           "prompt": "OrderForEach",
@@ -134,12 +91,12 @@
             2
           ]
         }
-      },
-      "player": "alice",
-      "step": "PrecombatMain",
-      "turn": 1
+      }
     },
     {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
       "do": {
         "Answer": {
           "prompt": "OrderForEach",
@@ -148,12 +105,12 @@
             1
           ]
         }
-      },
-      "player": "alice",
-      "step": "PrecombatMain",
-      "turn": 1
+      }
     },
     {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
       "do": {
         "Answer": {
           "prompt": "OrderForEach",
@@ -162,205 +119,208 @@
             1
           ]
         }
-      },
-      "player": "alice",
-      "step": "PrecombatMain",
-      "turn": 1
+      }
     },
     {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
       "do": {
         "Answer": {
           "prompt": "ChooseToPay",
           "with": "Declines"
         }
-      },
-      "player": "alice",
-      "step": "PrecombatMain",
-      "turn": 1
+      }
     },
     {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
       "do": {
         "Answer": {
           "prompt": "ChooseToPay",
           "with": "Declines"
         }
-      },
-      "player": "alice",
-      "step": "PrecombatMain",
-      "turn": 1
+      }
     },
     {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
       "do": {
         "Answer": {
           "prompt": "ChooseToPay",
           "with": "Declines"
         }
-      },
-      "player": "alice",
-      "step": "PrecombatMain",
-      "turn": 1
+      }
     },
     {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
       "do": {
         "Answer": {
           "prompt": "ChooseToPay",
           "with": "Declines"
         }
-      },
-      "player": "alice",
-      "step": "PrecombatMain",
-      "turn": 1
+      }
     },
     {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
       "do": {
         "Answer": {
           "prompt": "ChooseToPay",
           "with": "Declines"
         }
-      },
-      "player": "alice",
-      "step": "PrecombatMain",
-      "turn": 1
+      }
     },
     {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
       "do": {
         "Answer": {
           "prompt": "ChooseToPay",
           "with": "Declines"
         }
-      },
-      "player": "alice",
-      "step": "PrecombatMain",
-      "turn": 1
+      }
     },
     {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
       "do": {
         "Answer": {
           "prompt": "ChooseToPay",
           "with": "Declines"
         }
-      },
-      "player": "alice",
-      "step": "PrecombatMain",
-      "turn": 1
+      }
     },
     {
-      "do": {
-        "Answer": {
-          "prompt": "ChooseToPay",
-          "with": "Declines"
-        }
-      },
+      "turn": 1,
+      "step": "PrecombatMain",
       "player": "bob",
-      "step": "PrecombatMain",
-      "turn": 1
-    },
-    {
       "do": {
         "Answer": {
           "prompt": "ChooseToPay",
           "with": "Declines"
         }
-      },
-      "player": "bob",
-      "step": "PrecombatMain",
-      "turn": 1
+      }
     },
     {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "bob",
       "do": {
         "Answer": {
           "prompt": "ChooseToPay",
           "with": "Declines"
         }
-      },
-      "player": "bob",
-      "step": "PrecombatMain",
-      "turn": 1
+      }
     },
     {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "bob",
+      "do": {
+        "Answer": {
+          "prompt": "ChooseToPay",
+          "with": "Declines"
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "bob",
       "do": {
         "Answer": {
           "prompt": "ChooseToPay",
           "with": "Pays"
         }
-      },
-      "player": "bob",
-      "step": "PrecombatMain",
-      "turn": 1
+      }
     },
     {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "bob",
       "do": {
         "Answer": {
           "prompt": "ChooseToPay",
           "with": "Declines"
         }
-      },
-      "player": "bob",
-      "step": "PrecombatMain",
-      "turn": 1
+      }
     },
     {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "bob",
       "do": {
         "Answer": {
           "prompt": "ChooseToPay",
           "with": "Declines"
         }
-      },
-      "player": "bob",
-      "step": "PrecombatMain",
-      "turn": 1
+      }
     },
     {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "bob",
       "do": {
         "Answer": {
           "prompt": "ChooseToPay",
           "with": "Declines"
         }
-      },
-      "player": "bob",
-      "step": "PrecombatMain",
-      "turn": 1
+      }
     },
     {
-      "do": {
-        "Answer": {
-          "prompt": "ChooseToPay",
-          "with": "Declines"
-        }
-      },
+      "turn": 1,
+      "step": "PrecombatMain",
       "player": "carol",
-      "step": "PrecombatMain",
-      "turn": 1
-    },
-    {
       "do": {
         "Answer": {
           "prompt": "ChooseToPay",
           "with": "Declines"
         }
-      },
-      "player": "carol",
-      "step": "PrecombatMain",
-      "turn": 1
+      }
     },
     {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "carol",
       "do": {
         "Answer": {
           "prompt": "ChooseToPay",
           "with": "Declines"
         }
-      },
-      "player": "carol",
-      "step": "PrecombatMain",
-      "turn": 1
+      }
     },
     {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "carol",
+      "do": {
+        "Answer": {
+          "prompt": "ChooseToPay",
+          "with": "Declines"
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "carol",
       "check": {
         "View": {
+          "of": "Prompt",
           "is": {
             "kind": "ChooseToPay",
             "offer": {
+              "source": "Cleansing",
               "cost": {
+                "mana": [],
                 "components": [
                   {
                     "type": "PayLife",
@@ -369,8 +329,7 @@
                       "value": 1
                     }
                   }
-                ],
-                "mana": []
+                ]
               },
               "earlier": [
                 [
@@ -381,6 +340,7 @@
                   "bob",
                   [
                     {
+                      "mana": [],
                       "components": [
                         {
                           "type": "PayLife",
@@ -389,8 +349,7 @@
                             "value": 1
                           }
                         }
-                      ],
-                      "mana": []
+                      ]
                     },
                     []
                   ]
@@ -399,60 +358,101 @@
               "member": [
                 "Object",
                 "$island-a"
-              ],
-              "source": "Cleansing"
+              ]
             }
-          },
-          "of": "Prompt"
+          }
         }
-      },
-      "player": "carol",
-      "step": "PrecombatMain",
-      "turn": 1
+      }
     },
     {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "carol",
       "do": {
         "Answer": {
           "prompt": "ChooseToPay",
           "with": "Pays"
         }
-      },
-      "player": "carol",
-      "step": "PrecombatMain",
-      "turn": 1
+      }
     },
     {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "carol",
       "do": {
         "Answer": {
           "prompt": "ChooseToPay",
           "with": "Declines"
         }
-      },
-      "player": "carol",
-      "step": "PrecombatMain",
-      "turn": 1
+      }
     },
     {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "carol",
       "do": {
         "Answer": {
           "prompt": "ChooseToPay",
           "with": "Declines"
         }
-      },
-      "player": "carol",
-      "step": "PrecombatMain",
-      "turn": 1
+      }
     },
     {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "carol",
       "do": {
         "Answer": {
           "prompt": "ChooseToPay",
           "with": "Declines"
         }
-      },
-      "player": "carol",
-      "step": "PrecombatMain",
-      "turn": 1
+      }
+    }
+  ],
+  "final": [
+    {
+      "View": {
+        "of": "Zone",
+        "player": "alice",
+        "zone": "Battlefield",
+        "is": []
+      }
+    },
+    {
+      "View": {
+        "of": "Zone",
+        "player": "bob",
+        "zone": "Battlefield",
+        "is": [
+          "$island-a"
+        ]
+      }
+    },
+    {
+      "View": {
+        "of": "Zone",
+        "player": "carol",
+        "zone": "Battlefield",
+        "is": []
+      }
+    },
+    {
+      "Life": {
+        "player": "alice",
+        "life": 20
+      }
+    },
+    {
+      "Life": {
+        "player": "bob",
+        "life": 19
+      }
+    },
+    {
+      "Life": {
+        "player": "carol",
+        "life": 19
+      }
     }
   ]
 }
