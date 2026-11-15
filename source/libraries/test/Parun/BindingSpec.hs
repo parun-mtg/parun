@@ -28,6 +28,7 @@ sampleSnapshot =
       PC.supertypes = Set.empty,
       PC.keywords = Map.empty,
       PC.colors = Set.empty,
+      PC.strippedColors = Set.empty,
       PC.manaCost = Nothing,
       PC.manaValue = Just 0,
       PC.power = Just 2,

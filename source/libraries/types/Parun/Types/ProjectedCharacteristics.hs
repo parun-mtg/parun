@@ -95,6 +95,10 @@ data ProjectedCharacteristics = MkProjectedCharacteristics
     -- A Set, not a sum with a Colorless arm: CR 105.2c says a colourless object
     -- has NO colour, and CR 105.4 denies that colourless is a colour at all.
     colors :: Set.Set Color.Color,
+    -- | CR 707.9d: the copiable colours left once the colour indicator and
+    -- colour-defining ability go, which a copy exception setting colours
+    -- starts from. Read only at layer 1.
+    strippedColors :: Set.Set Color.Color,
     -- | CR 202.1: the object's mana cost, copiable (CR 707.2 names it outright)
     -- -- so a card that is a copy of something else is priced off what it
     -- copies. Read for a granted keyword's "[cost] equal to its mana cost"
