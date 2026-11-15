@@ -1,0 +1,85 @@
+{
+  "description": "CR 508.3d a declare attackers step with no attackers adds nothing",
+  "note": "bob declares no attackers, and alice's Avatar Roku, Firebender's \"whenever a player attacks\" needs one or more declared (CR 508.3d). Roku's trigger targets nothing, so a spurious firing would show: six {R} in alice's pool, kept until end of combat. Parun.CardTriggerSpec's Avatar Roku group covers the declarations that do fire it.",
+  "board": {
+    "seats": [
+      {
+        "name": "alice",
+        "battlefield": [
+          {
+            "card": "Avatar Roku, Firebender",
+            "label": "roku",
+            "ready": true
+          }
+        ]
+      },
+      {
+        "name": "bob",
+        "battlefield": [
+          {
+            "card": "Goblin Piker",
+            "label": "piker",
+            "ready": true
+          }
+        ]
+      }
+    ],
+    "active": "bob",
+    "step": "PrecombatMain"
+  },
+  "timeline": [
+    {
+      "turn": 1,
+      "step": "DeclareAttackers",
+      "player": "bob",
+      "do": {
+        "Attack": []
+      }
+    },
+    {
+      "turn": 1,
+      "step": "DeclareAttackers",
+      "player": "bob",
+      "check": {
+        "Attackers": {
+          "attackers": {}
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "DeclareAttackers",
+      "player": "bob",
+      "check": {
+        "View": {
+          "of": "Stack",
+          "is": []
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "DeclareAttackers",
+      "player": "alice",
+      "check": {
+        "View": {
+          "of": "ManaPool",
+          "player": "alice",
+          "is": []
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "EndOfCombat",
+      "player": "alice",
+      "check": {
+        "PowerToughness": {
+          "object": "$roku",
+          "power": 6,
+          "toughness": 6
+        }
+      }
+    }
+  ]
+}

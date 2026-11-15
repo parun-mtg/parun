@@ -1,0 +1,82 @@
+{
+  "description": "CR 607.2d a Coldsteel Heart placed with no colour chosen produces nothing",
+  "note": "A Coldsteel Heart placed on the battlefield never entered, so no colour was chosen (in play, a permanent becoming a copy of one without entering, CR 707.2). Its mana ability then adds nothing rather than a fallback colour (CR 106.5): activated, it leaves alice's pool empty, and it pays for nothing, so her Merfolk of the Pearl Trident is never offered as a cast.",
+  "board": {
+    "seats": [
+      {
+        "name": "alice",
+        "battlefield": [
+          {
+            "card": "Coldsteel Heart",
+            "label": "heart",
+            "ready": true
+          }
+        ],
+        "hand": [
+          {
+            "card": "Merfolk of the Pearl Trident",
+            "label": "merfolk"
+          }
+        ]
+      },
+      {
+        "name": "bob"
+      }
+    ],
+    "active": "alice",
+    "step": "PrecombatMain"
+  },
+  "timeline": [
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "check": {
+        "View": {
+          "of": "Offered",
+          "player": "alice",
+          "is": [
+            "Pass",
+            "ActivateManaAbility $heart"
+          ]
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "do": {
+        "Take": {
+          "action": "ActivateManaAbility $heart"
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "check": {
+        "View": {
+          "of": "ManaPool",
+          "player": "alice",
+          "is": []
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "check": {
+        "View": {
+          "of": "Offered",
+          "player": "alice",
+          "is": [
+            "Pass"
+          ]
+        }
+      }
+    }
+  ]
+}
