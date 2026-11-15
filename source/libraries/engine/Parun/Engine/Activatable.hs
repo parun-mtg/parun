@@ -26,6 +26,7 @@ import qualified Parun.Engine.PlayerEffect as PlayerEffect
 import qualified Parun.Engine.Players as Players
 import qualified Parun.Engine.Projection as Projection
 import qualified Parun.Engine.Projection.View as Projection
+import qualified Parun.Engine.QuantitySlot as QuantitySlot
 import qualified Parun.Engine.Snapshot as Snapshot
 import qualified Parun.Engine.SplitSecond as SplitSecond
 import qualified Parun.Engine.Target as Target
@@ -38,6 +39,7 @@ import qualified Parun.Types.AbilityName as AbilityName
 import qualified Parun.Types.AbilityWasActivated as AbilityWasActivated
 import qualified Parun.Types.ActivatedAbility as ActivatedAbility
 import qualified Parun.Types.Activator as Activator
+import qualified Parun.Types.Binding as Binding.Type
 import qualified Parun.Types.Card as Card
 import Parun.Types.Cost (Cost)
 import qualified Parun.Types.Cost as Cost.Type
@@ -52,8 +54,10 @@ import qualified Parun.Types.LoyaltyClause as LoyaltyClause
 import qualified Parun.Types.LoyaltyKind as LoyaltyKind
 import qualified Parun.Types.ManaSpending as ManaSpending
 import qualified Parun.Types.ManaType as ManaType
+import qualified Parun.Types.Measure as Measure
 import qualified Parun.Types.Measures as Measures
 import qualified Parun.Types.Modal as Modal.Type
+import qualified Parun.Types.Mode as Mode
 import qualified Parun.Types.ModeIndex as ModeIndex
 import qualified Parun.Types.Object as Object
 import Parun.Types.ObjectId (ObjectId)
@@ -69,6 +73,7 @@ import Parun.Types.RowSource (RowSource)
 import Parun.Types.SlotName (SlotName)
 import qualified Parun.Types.StackObjectKind as StackObjectKind
 import qualified Parun.Types.StackedAbility as StackedAbility
+import qualified Parun.Types.TargetSlot as TargetSlot
 import qualified Parun.Types.TurnRegisters as TurnRegisters
 import qualified Parun.Types.Zone as Zone
 
@@ -583,8 +588,11 @@ recipientObjects = Set.fromList . Maybe.mapMaybe Recipient.objectOf . Set.toList
 -- Only the FILLABLE modes (CR 700.2a), which is the set activatableGiven's mode
 -- conjunct measures: a slot belonging to a mode this board cannot choose is not
 -- a target this activation could name.
-candidateSlotsGiven :: Maybe AbilityName.AbilityName -> Target.Pools -> PlayerId -> ObjectId -> Modal.Type.Modal Card.Card (GrantedAbility.GrantedAbility Card.Card) -> Set.Set ModeIndex.ModeIndex -> GameState -> [(Map.Map SlotName (Natural, Natural), Map.Map SlotName (Set.Set ObjectId))]
-candidateSlotsGiven reader pools pid srcId modal fillable gs =
+--
+-- `seed` is empty, or CR 601.2b's X alone where activatableGiven asks at an X
+-- (boundReadsX): a bound reading it then narrows as at CR 601.2c.
+candidateSlotsGiven :: Maybe AbilityName.AbilityName -> Target.Pools -> PlayerId -> ObjectId -> Map.Map SlotName Binding.Type.Binding -> Modal.Type.Modal Card.Card (GrantedAbility.GrantedAbility Card.Card) -> Set.Set ModeIndex.ModeIndex -> GameState -> [(Map.Map SlotName (Natural, Natural), Map.Map SlotName (Set.Set ObjectId))]
+candidateSlotsGiven reader pools pid srcId seed modal fillable gs =
   let -- CR 601.2c's per-player copies, as the announcement will offer them. A
       -- REGRESSION FENCE: no card pairs a per-player slot with a target-reading cost.
       slotsOf chosen = Target.announcedSlots pid srcId gs (Modal.modesTargetSlots chosen modal)
@@ -592,13 +600,14 @@ candidateSlotsGiven reader pools pid srcId modal fillable gs =
       -- `unannounced` says: a slot's CR 202.3 computed bound reading the X states
       -- no bound here rather than an unmeetable one, so the gate is measured
       -- against every recipient the announcement could still reach (Blighted
-      -- Nightmare's graveyard slot). This call and activateAbility's PRE-X one
-      -- agree, which they must: one is the offer gate and the other is what
-      -- affordableX measures the cost against, and a gate and an announcement may
-      -- not disagree about what a cost is.
-      setsOf slots = Target.legalSetsGiven StackObjectKind.ActivatedAbility reader pools (Just pid) True Map.empty srcId slots gs
-      -- Before CR 601.2b, so a count reading the X admits every count.
-      aimableOf slots = let sets = setsOf slots in (Target.aimingRanges reader (Just pid) srcId Nothing slots sets gs, fmap recipientObjects sets)
+      -- Nightmare's graveyard slot). This call under the empty seed and
+      -- activateAbility's PRE-X one agree, which they must: one is the offer
+      -- gate and the other is what affordableX measures the cost against, and
+      -- a gate and an announcement may not disagree about what a cost is.
+      setsOf slots = Target.legalSetsGiven StackObjectKind.ActivatedAbility reader pools (Just pid) True seed srcId slots gs
+      -- Before CR 601.2b, so a count reading the X admits every count, unless
+      -- the seed carries one.
+      aimableOf slots = let sets = setsOf slots in (Target.aimingRanges reader (Just pid) srcId (Binding.amountOf Binding.variableX seed) slots sets gs, fmap recipientObjects sets)
    in fmap (aimableOf . slotsOf) (Modal.selections fillable (Modal.Type.selection modal))
 
 -- | CR 101.1 / 107.3c: the least X this ability's activator may announce --
@@ -648,10 +657,35 @@ criterionReadsX = not . all (null . CostAmount.Engine.criterionReadsOfX) . Cost.
 gateXs :: Maybe Natural -> Natural -> GameState -> Cost Keyword -> [Natural]
 gateXs mCeiling floorX gs cost =
   let compared = fmap Measures.measure (concatMap CostAmount.Engine.criterionReadsOfX (Cost.Type.components cost))
-      viewOf = Projection.viewsOf gs
+   in floorX : Set.toAscList (Set.fromList (breakpointXs [0, 1] mCeiling floorX gs compared))
+
+-- The values of X, past the floor and up to CR 101.1's ceiling, lying at one of
+-- `offsets` from a compared measure of some object: where an X-reading
+-- comparison can change its answer. gateXs' and boundXs' one enumeration.
+breakpointXs :: [Integer] -> Maybe Natural -> Natural -> GameState -> [Measure.Measure] -> [Natural]
+breakpointXs offsets mCeiling floorX gs compared =
+  let viewOf = Projection.viewsOf gs
       values = [v | measure <- compared, oid <- Map.keys (GameState.objects gs), Just v <- [Filter.measureOf measure (viewOf oid)]]
-      breakpoints = [n | v <- values, i <- [v, v + 1], Just n <- [Integer.toNatural i], n > floorX]
-   in floorX : filter (\x -> all (x <=) mCeiling) (Set.toAscList (Set.fromList breakpoints))
+   in [n | v <- values, offset <- offsets, Just n <- [Integer.toNatural (v + offset)], n > floorX, all (n <=) mCeiling]
+
+-- Does a target slot's computed bound (TargetSlot.amount) read CR 601.2b's X
+-- (Sidisi, Regent of the Mire's "mana value X plus 1", Blighted Nightmare's
+-- "mana value X or less")?
+boundReadsX :: Modal.Type.Modal card ability -> Bool
+boundReadsX = any (any (maybe False (Set.member Binding.variableX . QuantitySlot.allSlots) . TargetSlot.amount) . Mode.targetSlots) . Modal.Type.modes
+
+-- The values of X activatableGiven asks an activation at: the cost's own
+-- (`costXs`, gateXs), and where a target's bound reads the X (boundReadsX),
+-- also every X at which that bound meets a compared measure of some object
+-- (Filter.enclosingReads): each such value, the one before it and the one
+-- after it, which reach the pool's bounds of X, X plus 1 and less than X. In
+-- ascending order; costXs holds the floor.
+boundXs :: Maybe Natural -> Natural -> Modal.Type.Modal Card.Card (GrantedAbility.GrantedAbility Card.Card) -> GameState -> [Natural] -> [Natural]
+boundXs mCeiling floorX modal gs costXs
+  | boundReadsX modal =
+      let compared = fmap Measures.measure (concatMap (foldMap Filter.enclosingReads . TargetSlot.filter) (concatMap (Map.elems . Mode.targetSlots) (Modal.Type.modes modal)))
+       in Set.toAscList (Set.fromList (costXs <> breakpointXs [-1, 0, 1] mCeiling floorX gs compared))
+  | otherwise = costXs
 
 -- CR 601.2b / 118.9 through CR 602.2b: the costs a player may announce for this
 -- activation -- its printed activation cost, once per way of paying the choices
@@ -722,12 +756,36 @@ activatableGiven :: Target.Pools -> Mana.Sources -> PlayerId -> ObjectId -> Acti
 activatableGiven pools sources pid srcId ability gs =
   let Snapshot.MkSnapshot {Snapshot.projected = pcs, Snapshot.offBoard = offBoard, Snapshot.grants = grants} = Target.board pools
       modal = ActivatedAbility.modal ability
-      fillable = Target.fillableModesGiven StackObjectKind.ActivatedAbility (ActivatedAbility.name ability) pools (Just pid) Map.empty srcId Map.empty modal gs
-      -- CR 601.2c's targets do not exist at an offer, so the cost conjunct is
-      -- handed the ones this activation could still name -- see
-      -- aimingSomewhere. Shared with the mode conjunct's own `fillable` rather
-      -- than taken twice: they are the same question (CR 700.2a).
-      aimable = candidateSlotsGiven (ActivatedAbility.name ability) pools pid srcId modal fillable gs
+      -- CR 700.2a's fillable modes and CR 601.2c's candidate targets under a
+      -- seed: empty, or one X (see `legalAt`). The cost conjunct is handed the
+      -- targets this activation could still name -- see aimingSomewhere --
+      -- shared with the mode conjunct's own fillable modes rather than taken
+      -- twice: they are the same question.
+      announcement seed =
+        let fillableUnder = Target.fillableModesGiven StackObjectKind.ActivatedAbility (ActivatedAbility.name ability) pools (Just pid) seed srcId Map.empty modal gs
+         in (fillableUnder, candidateSlotsGiven (ActivatedAbility.name ability) pools pid srcId seed modal fillableUnder gs)
+      (fillable, aimable) = announcement Map.empty
+      -- CR 700.2a: a mode the modal remembers choosing can't be chosen, so
+      -- an ability with too few left is not offered (Activate's `legal`).
+      remembered = Target.rememberedModes (StackedAbility.Activated (Projection.printedActivatedAbility srcId gs ability)) modal srcId gs
+      selectable fillableUnder = Modal.selectionPossible (Set.difference fillableUnder remembered) (Modal.Type.selection modal)
+      mCeiling = Cost.ceilingOf (ActivatedAbility.name ability) pid srcId (ActivatedAbility.maximumX ability) gs
+      floorX = leastX pid srcId ability gs
+      payableAt aimableUnder x = payableCostAtGiven rows aimableUnder sources (Target.board pools) x (ActivatedAbility.keyword ability) (ActivatedAbility.name ability) (ActivationRestriction.spendableTypes srcId (ActivatedAbility.restrictions ability) gs) pid srcId
+      -- CR 602.2b / 601.2c: where a target's bound reads the X (Sidisi,
+      -- Regent of the Mire's "mana value X plus 1"), the unseeded targets
+      -- above admit every recipient some X could reach, and the cost some
+      -- other X may pay, so the activation is legal only at an X where both
+      -- hold: each is asked at that X. The activate scenarios "Sidisi is not
+      -- offered where no X pays the sacrifice and names a target" and
+      -- "Blighted Nightmare is not offered where every target is past the X
+      -- bound" prove it.
+      legalAt cost x
+        | boundReadsX modal =
+            let (fillableUnder, aimableUnder) = announcement (Map.singleton Binding.variableX (Binding.toAmount x))
+             in selectable fillableUnder && payableAt aimableUnder x gs cost
+        | otherwise = payableAt aimable x gs cost
+      xsFor cost = boundXs mCeiling floorX modal gs (gateXs mCeiling floorX gs cost)
       -- The player rows and CR 602.5's prohibitions out of the enumeration's
       -- pools, each a walk of the board that does not depend on this ability.
       rows = Target.playerRowsOf pools pid gs
@@ -774,9 +832,7 @@ activatableGiven pools sources pid srcId ability gs =
         && sicknessOkGiven grants pcs pid srcId ability gs
         && riderOk pid srcId ability gs
         && loyaltyOk pid srcId ability gs
-        -- CR 700.2a: a mode the modal remembers choosing can't be chosen, so
-        -- an ability with too few left is not offered (Activate's `legal`).
-        && Modal.selectionPossible (Set.difference fillable (Target.rememberedModes (StackedAbility.Activated (Projection.printedActivatedAbility srcId gs ability)) modal srcId gs)) (Modal.Type.selection modal)
+        && selectable fillable
         -- CR 107.3c: an X its text defines off no card is undefined.
         && not (Cost.undefinedX pid srcId ability gs)
-        && any (\cost -> any (\x -> payableCostAtGiven rows aimable sources (Target.board pools) x (ActivatedAbility.keyword ability) (ActivatedAbility.name ability) (ActivationRestriction.spendableTypes srcId (ActivatedAbility.restrictions ability) gs) pid srcId gs cost) (gateXs (Cost.ceilingOf (ActivatedAbility.name ability) pid srcId (ActivatedAbility.maximumX ability) gs) (leastX pid srcId ability gs) gs cost)) (costsFor rows pid srcId ability gs)
+        && any (\cost -> any (legalAt cost) (xsFor cost)) (costsFor rows pid srcId ability gs)

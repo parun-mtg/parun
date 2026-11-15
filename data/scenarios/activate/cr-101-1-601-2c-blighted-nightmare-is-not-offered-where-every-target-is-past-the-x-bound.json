@@ -1,0 +1,73 @@
+{
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "battlefield": [
+          {
+            "card": "Blighted Nightmare",
+            "label": "nightmare"
+          },
+          {
+            "card": "Benthic Behemoth",
+            "label": "behemoth"
+          }
+        ],
+        "graveyard": [
+          {
+            "card": "Agent of Treachery",
+            "label": "agent"
+          }
+        ],
+        "hand": [],
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ],
+        "name": "alice"
+      },
+      {
+        "battlefield": [],
+        "hand": [],
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ],
+        "name": "bob"
+      }
+    ],
+    "step": "PrecombatMain"
+  },
+  "description": "CR 101.1 / 601.2c Blighted Nightmare is not offered where every target is past the X bound",
+  "note": "Benthic Behemoth's toughness 6 bounds X at 6, and the graveyard's only creature card, Agent of Treachery, has mana value 7, so no X names a target. The control swaps it for Craw Wurm, mana value 6: X = 6 is then the only X naming a target, and no other object's mana value is within one of 6.",
+  "timeline": [
+    {
+      "check": {
+        "View": {
+          "is": [
+            "Pass"
+          ],
+          "of": "Offered",
+          "player": "alice"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    }
+  ]
+}
