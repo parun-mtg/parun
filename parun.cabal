@@ -3097,6 +3097,7 @@ library types
     Parun.Types.DieRollR
     Parun.Types.DieRollRewrite
     Parun.Types.DifferentIn
+    Parun.Types.DifferingValue
     Parun.Types.Discard
     Parun.Types.DiscardCards
     Parun.Types.DiscardCause

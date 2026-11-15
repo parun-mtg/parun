@@ -118,6 +118,7 @@ import qualified Parun.Types.DelayedTrigger as DelayedTrigger
 import qualified Parun.Types.Designation as Designation
 import qualified Parun.Types.DieResult as DieResult
 import qualified Parun.Types.DifferentIn as DifferentIn
+import qualified Parun.Types.DifferingValue as DifferingValue
 import qualified Parun.Types.Discard as Discard
 import qualified Parun.Types.Dividing as Dividing
 import qualified Parun.Types.Draw as Draw
@@ -4660,7 +4661,7 @@ distinctlyAssigned = go Set.empty
 -- the CR 613 projection, so a split card's two names count (CR 201.2a) and a
 -- star's power is its characteristic-defining ability's number (CR 208.2a,
 -- 604.3).
-differingValues :: Set.Set DifferentIn.DifferentIn -> GameState -> ObjectId -> Maybe (Set.Set (DifferentIn.DifferentIn, Either CardName.CardName (Either Integer CardType.CardType)))
+differingValues :: Set.Set DifferentIn.DifferentIn -> GameState -> ObjectId -> Maybe (Set.Set (DifferentIn.DifferentIn, DifferingValue.DifferingValue))
 differingValues axes gs oid = Filter.differingOf axes (Projection.viewOfObject oid gs)
 
 -- One found card's move, a member of the search's batch whose board is `asOf`

@@ -47,6 +47,7 @@ import qualified Parun.Types.DamagedParty as DamagedParty
 import qualified Parun.Types.DealtDamageTo as DealtDamageTo
 import qualified Parun.Types.Designation as Designation
 import qualified Parun.Types.DifferentIn as DifferentIn
+import qualified Parun.Types.DifferingValue as DifferingValue
 import qualified Parun.Types.DraftNote as DraftNote
 import qualified Parun.Types.EnteredZone as EnteredZone
 import qualified Parun.Types.EntryWindow as EntryWindow
@@ -3888,17 +3889,19 @@ ofPlayer named aimer view =
 
 -- One card's values on a group's DifferentIn axes, keyed by axis so a power never
 -- meets a toughness, or Nothing for a card no group admits. CR 201.2b demands
--- each card HAVE a name; a card with no power or toughness shares none.
-differingOf :: Set.Set DifferentIn.DifferentIn -> View -> Maybe (Set.Set (DifferentIn.DifferentIn, Either CardName.CardName (Either Integer CardType.CardType)))
+-- each card HAVE a name; a card with no power, toughness or controller shares
+-- none.
+differingOf :: Set.Set DifferentIn.DifferentIn -> View -> Maybe (Set.Set (DifferentIn.DifferentIn, DifferingValue.DifferingValue))
 differingOf axes view =
   if Set.member DifferentIn.Names axes && Set.null (names view)
     then Nothing
     else Just (foldMap valuesOf axes)
   where
-    number axis = foldMap (Set.singleton . (,) axis . Right . Left)
+    number axis = foldMap (Set.singleton . (,) axis . DifferingValue.MkNumber)
     valuesOf axis = case axis of
-      DifferentIn.Names -> Set.map ((,) axis . Left) (names view)
+      DifferentIn.Names -> Set.map ((,) axis . DifferingValue.MkName) (names view)
       DifferentIn.Powers -> number axis (power view)
       DifferentIn.ManaValues -> number axis (manaValue view)
       DifferentIn.Toughnesses -> number axis (toughness view)
-      DifferentIn.CardTypes -> Set.map ((,) axis . Right . Right) (cardTypes view)
+      DifferentIn.CardTypes -> Set.map ((,) axis . DifferingValue.MkCardType) (cardTypes view)
+      DifferentIn.Controllers -> foldMap (Set.singleton . (,) axis . DifferingValue.MkPlayer) (controller view)

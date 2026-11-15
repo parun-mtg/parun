@@ -152,6 +152,7 @@ import qualified Parun.Types.DestructionRewrite as DestructionRewrite
 import qualified Parun.Types.DieRollR as DieRollR
 import qualified Parun.Types.DieRollRewrite as DieRollRewrite
 import qualified Parun.Types.DifferentIn as DifferentIn
+import qualified Parun.Types.DifferingValue as DifferingValue
 import qualified Parun.Types.DiscardCause as DiscardCause
 import qualified Parun.Types.Discarded as Discarded
 import qualified Parun.Types.DrawCountR as DrawCountR
@@ -1966,7 +1967,7 @@ pickOutside source pid revealed (OutsidePick.MkOutsidePick relation count) = do
 -- off the printed face for a card in the pool, or the face it shows out there for
 -- one in a game on hold -- `eligible`'s reading, since CR 604.3 leaves nothing
 -- else out there to read.
-outsideDiffering :: Set DifferentIn.DifferentIn -> OutsideCard.OutsideCard -> GameState.GameState -> Maybe (Set (DifferentIn.DifferentIn, Either CardName.CardName (Either Integer CardType.CardType)))
+outsideDiffering :: Set DifferentIn.DifferentIn -> OutsideCard.OutsideCard -> GameState.GameState -> Maybe (Set (DifferentIn.DifferentIn, DifferingValue.DifferingValue))
 outsideDiffering axes card gs
   | Set.null axes = Just Set.empty
   | otherwise = Filter.differingOf axes . Projection.viewOfCard =<< face

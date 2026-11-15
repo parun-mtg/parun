@@ -558,6 +558,10 @@ described context slot =
           from <- graveyard scope (TargetSlot.together slot)
           apart <- differing (TargetSlot.together slot)
           both card (Filter.merge p (Filter.MkPhrase [] [card] (apart <> [from])))
+        (Pool.Creatures, _) | Just (Together.Differing _) <- TargetSlot.together slot -> do
+          p <- filtered
+          apart <- differing (TargetSlot.together slot)
+          creature (Filter.merge p (Filter.MkPhrase [] [] apart)) >>= both (noun "creature")
         _ | Maybe.isJust (TargetSlot.together slot) -> []
         (Pool.AnyTarget, Just _) -> filtered >>= both (Filter.MkNoun Text.empty Nothing)
         (Pool.Creatures, _) -> filtered >>= creature >>= both (noun "creature")
@@ -632,13 +636,23 @@ graveyard scope together = case scope of
   ZoneScope.Scoped (PlayerScope.Related PlayerRelation.Opponent) -> [Filter.MkQualifier (Text.pack "from an opponent's graveyard") (Text.pack "from an opponent's graveyard")]
   _ -> []
 
--- | What keeps a slot's cards apart, as words after their noun: "with
--- different names" (CR 201.2b, Behold the Sinister Six!).
+-- | What keeps a slot's targets apart, as words after their noun: "with
+-- different names" (CR 201.2b, Behold the Sinister Six!), "with different mana
+-- values" (Long Rest), "with different controllers" (Cloud's Limit Break).
 differing :: Maybe Together.Together -> [[Filter.Qualifier]]
 differing together = case together of
-  Just (Together.Differing DifferentIn.Names) -> [[Filter.MkQualifier (Text.pack "with different names") (Text.pack "with different names")]]
-  Just (Together.Differing _) -> []
+  Just (Together.Differing axis) ->
+    let words_ = Text.pack ("with different " <> axisWords axis)
+     in [[Filter.MkQualifier words_ words_]]
   _ -> [[]]
+  where
+    axisWords axis = case axis of
+      DifferentIn.Names -> "names"
+      DifferentIn.Powers -> "powers"
+      DifferentIn.ManaValues -> "mana values"
+      DifferentIn.Toughnesses -> "toughnesses"
+      DifferentIn.CardTypes -> "card types"
+      DifferentIn.Controllers -> "controllers"
 
 -- | The noun a description of cards ends in.
 card :: Filter.Noun
