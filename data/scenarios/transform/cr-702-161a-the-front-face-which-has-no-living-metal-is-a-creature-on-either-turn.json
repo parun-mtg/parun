@@ -1,0 +1,56 @@
+{
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "battlefield": [
+          {
+            "card": "Ratchet, Field Medic",
+            "label": "ratchet"
+          }
+        ],
+        "name": "alice"
+      },
+      {
+        "library": [
+          {
+            "card": "Plains"
+          }
+        ],
+        "name": "bob"
+      }
+    ],
+    "step": "PrecombatMain"
+  },
+  "description": "CR 702.161a the front face, which has no living metal, is a creature on either turn",
+  "note": "The control for living metal's \"during your turn\": Ratchet's front face is a printed artifact creature with no living metal, so it is still a creature on bob's turn. Without it, \"not a creature during an opponent's turn\" could be an answer about the card rather than about the back face's living metal.",
+  "timeline": [
+    {
+      "check": {
+        "Types": {
+          "object": "$ratchet",
+          "types": [
+            "Artifact",
+            "Creature"
+          ]
+        }
+      },
+      "player": "bob",
+      "step": "PrecombatMain",
+      "turn": 2
+    },
+    {
+      "check": {
+        "Names": {
+          "names": [
+            "Ratchet, Field Medic"
+          ],
+          "object": "$ratchet"
+        }
+      },
+      "player": "bob",
+      "step": "PrecombatMain",
+      "turn": 2
+    }
+  ]
+}

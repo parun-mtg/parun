@@ -1136,10 +1136,10 @@ Entries are ordered by the first rule each cites.
   max speed ability at 5. Capping speed at 4: no rule states it, and CR
   702.179d's "less than 4" limits only its own climb, though Gomif's need to
   grant the excess implies a cap otherwise.
-- **Site**: `Parun.Engine.Speed.maxSpeed`, proved by `Parun.SpeedSpec`'s "CR
-  702.178a past 4 the Raceway keeps its max speed ability" and "CR 702.178a
-  past max speed the Surveyor's ability is still offered", both through
-  Synthetic Speed Boost. On regular printings speed never passes 4; Gomif is the
+- **Site**: `Parun.Engine.Speed.maxSpeed`, proved by the scenario
+  `speed/cr-702-178a-past-4-the-raceway-keeps-its-max-speed-ability.json`,
+  through Synthetic Speed Boost, and `Parun.SpeedSpec`'s "CR 702.178a past max
+  speed the Surveyor's ability is still offered". On regular printings speed never passes 4; Gomif is the
   only printed producer.
 - **Issue**: #809.
 

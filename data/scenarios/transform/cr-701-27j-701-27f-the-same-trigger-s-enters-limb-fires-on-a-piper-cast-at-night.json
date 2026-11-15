@@ -1,0 +1,241 @@
+{
+  "board": {
+    "active": "bob",
+    "seats": [
+      {
+        "battlefield": [
+          {
+            "card": "Tovolar, Dire Overlord",
+            "label": "tovolar"
+          },
+          {
+            "card": "Cult of the Waxing Moon",
+            "label": "cult"
+          },
+          {
+            "card": "Forest",
+            "label": "f1"
+          },
+          {
+            "card": "Forest",
+            "label": "f2"
+          },
+          {
+            "card": "Forest",
+            "label": "f3"
+          },
+          {
+            "card": "Forest",
+            "label": "f4"
+          }
+        ],
+        "hand": [
+          {
+            "card": "Howlpack Piper",
+            "label": "piper"
+          }
+        ],
+        "library": [
+          {
+            "card": "Opt"
+          },
+          {
+            "card": "Forest",
+            "label": "lib-forest"
+          },
+          {
+            "card": "Mountain",
+            "label": "lib-mountain"
+          },
+          {
+            "card": "Goblin Piker"
+          },
+          {
+            "card": "Island",
+            "label": "lib-island"
+          },
+          {
+            "card": "Swamp",
+            "label": "lib-swamp"
+          },
+          {
+            "card": "Plains",
+            "label": "lib-plains"
+          },
+          {
+            "card": "Lightning Bolt"
+          },
+          {
+            "card": "Ancestral Recall"
+          },
+          {
+            "card": "Giant Growth"
+          }
+        ],
+        "name": "alice"
+      },
+      {
+        "name": "bob"
+      }
+    ],
+    "step": "PrecombatMain"
+  },
+  "description": "CR 701.27j/701.27f the same trigger's enters limb fires on a Piper cast at night",
+  "note": "Wildsong Howler's trigger is an \"or\"; this is its enters limb. Tovolar makes it day on bob's turn (CR 702.145d) and alice's untap step makes it night (CR 502.2), so the Piper is cast at night and enters as Wildsong Howler (CR 701.27j through CR 702.145b) without transforming. Cult of the Waxing Moon is the observable restatement of \"never its front face\": it makes a Wolf when Tovolar turns at nightfall, and none for the Piper, where an engine putting the Piper in front face up would turn it over in the next settle (CR 702.145c), fire the same trigger on its transform limb, and make a second Wolf. Exactly one creature card lies among the top six of the library below the drawn Opt, and alice orders the five put on the bottom.",
+  "timeline": [
+    {
+      "check": {
+        "View": {
+          "is": "Night",
+          "of": "Daytime"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 2
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Wolf Token",
+          "count": 1,
+          "player": "alice",
+          "zone": "Battlefield"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 2
+    },
+    {
+      "do": {
+        "Cast": {
+          "mana": [
+            "$f1",
+            "$f2",
+            "$f3",
+            "$f4"
+          ],
+          "object": "$piper"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 2
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 2
+    },
+    {
+      "check": {
+        "View": {
+          "is": [
+            "trigger of Howlpack Piper"
+          ],
+          "of": "Stack"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 2
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 2
+    },
+    {
+      "do": {
+        "ChooseOptional": "Exercises"
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 2
+    },
+    {
+      "do": {
+        "Answer": {
+          "prompt": "Shuffle",
+          "with": [
+            "$lib-forest",
+            "$lib-mountain",
+            "$lib-island",
+            "$lib-swamp",
+            "$lib-plains"
+          ]
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 2
+    },
+    {
+      "check": {
+        "Names": {
+          "names": [
+            "Wildsong Howler"
+          ],
+          "object": "Howlpack Piper"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 2
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Wolf Token",
+          "count": 1,
+          "player": "alice",
+          "zone": "Battlefield"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 2
+    },
+    {
+      "check": {
+        "View": {
+          "is": [
+            "Opt",
+            "Goblin Piker"
+          ],
+          "of": "Zone",
+          "player": "alice",
+          "zone": "Hand"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 2
+    },
+    {
+      "check": {
+        "View": {
+          "is": [
+            "Lightning Bolt",
+            "Ancestral Recall",
+            "Giant Growth",
+            "Plains",
+            "Swamp",
+            "Island",
+            "Mountain",
+            "Forest#5"
+          ],
+          "of": "Zone",
+          "player": "alice",
+          "zone": "Library"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 2
+    }
+  ]
+}

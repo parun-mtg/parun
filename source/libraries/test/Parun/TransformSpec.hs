@@ -41,18 +41,6 @@
 -- sample. See equippedTransformSpec, whose fixture is Neglected Heirloom //
 -- Ashmouth Blade on that same Ratchet.
 --
--- Also CR 701.27h's "transformed permanent", the phrase a CARD asks rather than
--- the engine: Parun.Types.Filter's Transformed atom, filled by
--- Parun.Engine.Projection.View.viewOfCharacteristics. See transformedPermanentSpec,
--- whose fixture is Tovolar and Mutagen Connoisseur rather than the Gargoyle.
---
--- Also CR 701.27g's SECOND sentence, which measures a DELAYED triggered
--- ability's transform from when that ability was created rather than from when
--- it reached the stack. Its pair of cases needs a permanent whose own delayed
--- ability turns it over and something else able to turn it over in between, so
--- they add Aang, at the Crossroads // Aang, Destined Savior and Moonmist. See
--- aangBoard.
---
 -- Every case but those groups runs against the printed Thraben Gargoyle //
 -- Stonewing Antagonizer, a nonmodal double-faced card (CR 712.2) whose front
 -- face is a {1} 2/2 Artifact Creature -- Gargoyle with defender and "{6}:
@@ -70,7 +58,6 @@ import qualified Data.List as List
 import qualified Data.List.NonEmpty as NonEmpty
 import qualified Data.Map.Strict as Map
 import qualified Data.Maybe as Maybe
-import qualified Data.Sequence as Seq
 import qualified Data.Set as Set
 import qualified Data.Text as Text
 import qualified Numeric.Natural as Natural
@@ -79,7 +66,6 @@ import qualified Parun.Engine.Activatable as Activatable
 import qualified Parun.Engine.Activate as Activate
 import qualified Parun.Engine.Card as Card
 import qualified Parun.Engine.Cast as Cast
-import qualified Parun.Engine.Combat as Combat
 import qualified Parun.Engine.Engine as Engine
 import qualified Parun.Engine.Event as Event
 import qualified Parun.Engine.Event.Trigger as Trigger
@@ -103,8 +89,6 @@ import qualified Parun.Types.CastOffer as CastOffer
 import qualified Parun.Types.CastRepetition as CastRepetition
 import qualified Parun.Types.CounterKind as CounterKind
 import qualified Parun.Types.Daytime as Daytime
-import qualified Parun.Types.Designation as Designation
-import qualified Parun.Types.Destroy as Destroy
 import qualified Parun.Types.Effect as Effect
 import qualified Parun.Types.EntryRiders as EntryRiders
 import qualified Parun.Types.Face as Face
@@ -129,9 +113,7 @@ import qualified Parun.Types.Printing as Printing
 import qualified Parun.Types.ProjectedCharacteristics as PC
 import qualified Parun.Types.Prompt as Prompt
 import qualified Parun.Types.Recipient as Recipient
-import qualified Parun.Types.Regenerability as Regenerability
 import qualified Parun.Types.StepBegan as StepBegan
-import qualified Parun.Types.StoredEffects as StoredEffects
 import qualified Parun.Types.Subtype as Subtype
 import qualified Parun.Types.TransformTrigger as TransformTrigger
 import qualified Parun.Types.Transformed as Transformed
@@ -140,13 +122,6 @@ import qualified Parun.Types.TriggerSource as TriggerSource
 import qualified Parun.Types.TurnRegisters as TurnRegisters
 import qualified Parun.Types.WhichTurn as WhichTurn
 import qualified Parun.Types.Zone as Zone
-
--- CR 701.27h's fixture, which is not the Gargoyle's: Tovolar, Dire Overlord //
--- Tovolar, the Midnight Scourge and Mutagen Connoisseur. See
--- transformedPermanentSpec.
-tovolarFront, tovolarBack :: CardName.CardName
-tovolarFront = CardName.MkCardName (Text.pack "Tovolar, Dire Overlord")
-tovolarBack = CardName.MkCardName (Text.pack "Tovolar, the Midnight Scourge")
 
 -- The two names the card prints. CR 712.6a gives the card only its front face's
 -- characteristics off the battlefield, so the second names a face rather than
@@ -177,94 +152,16 @@ frontFace, backFace :: (Set.Set CardName.CardName, Maybe (Integer, Integer), Set
 frontFace = (Set.singleton gargoyleName, Just (2, 2), Set.singleton Subtype.Gargoyle, True, False, 1)
 backFace = (Set.singleton antagonizerName, Just (4, 2), Set.fromList [Subtype.Gargoyle, Subtype.Horror], False, True, 0)
 
--- CR 701.27g's SECOND sentence needs a permanent whose own DELAYED ability turns
--- it over, and something else able to turn it over in between. Aang, at the
--- Crossroads // Aang, Destined Savior is that permanent, and Moonmist is that
--- something else: of the Transform opcodes in `data/cards/`, Moonmist's is the
--- only one whose ObjectRef is not `InSlot "self"`, so it is what can turn a
--- permanent over without being an ability of it -- and it names Humans, which
--- Aang's front face is. A second such card in the corpus would give this
--- fixture a choice; today there is none.
---
--- WHY Aang and not Archangel Avacyn, which prints the same shape: Avacyn is an
--- Angel, and nothing in `data/cards/` can turn an Angel over, so a board built
--- on it agrees under both clocks. Scryfall
--- `o:transform o:"beginning of the next" include:extras`, 2026-08-24, returns
--- eight cards; of the four whose front face is a Human, Liliana, Heretical
--- Healer and Loyal Cathar return transformed from another zone rather than
--- transforming a permanent, and Sun-Blessed Guardian transforms through an
--- activated ability with no delayed one. A printing whose delayed ability
--- transforms it and whose front face shares a subtype with a corpus
--- transformer would refute the choice, not the rule.
---
--- Aang's back face also prints "at the beginning of combat on your turn,
--- earthbend 2"; it is transcribed, and Parun.EarthbendSpec is what proves it. No
--- case here reads the back face for anything but its name and its
--- power/toughness, so nothing below can be that trigger's doing.
+-- Aang, at the Crossroads // Aang, Destined Savior: a Human on its front face
+-- and not on its back, which is what the bystander cases below turn over.
 aangFront, aangBack :: CardName.CardName
 aangFront = CardName.MkCardName (Text.pack "Aang, at the Crossroads")
 aangBack = CardName.MkCardName (Text.pack "Aang, Destined Savior")
 
--- Which face of Aang is up: the name and the power/toughness, which are 3/3 on
--- the front and 4/4 on the back. Two readers rather than one, so a case that
--- reads the right face for its name and the wrong one for its size fails here.
-aangReadings :: ObjectId.ObjectId -> GameState.GameState -> (Set.Set CardName.CardName, Maybe (Integer, Integer))
-aangReadings oid gs = (Projection.namesOf oid gs, S.powerToughnessOf oid gs)
-
-aangFrontUp, aangBackUp :: (Set.Set CardName.CardName, Maybe (Integer, Integer))
-aangFrontUp = (Set.singleton aangFront, Just (3, 3))
-aangBackUp = (Set.singleton aangBack, Just (4, 4))
-
--- alice's Aang with a Goblin Piker beside it, Moonmist in hand and two Forests
--- to cast it with. The Piker is the "another creature you control" whose
--- departure arms Aang's delayed ability; it is a Goblin rather than a Human, so
--- Moonmist reaches Aang and nothing else on the board.
-aangBoard :: Printing.Printing -> Printing.Printing -> Printing.Printing -> Printing.Printing -> (ObjectId.ObjectId, ObjectId.ObjectId, ObjectId.ObjectId, GameState.GameState)
-aangBoard aang piker moonmist forest =
-  let (aangId, g0) = S.addPermanent aang S.alice (S.landsInPlay forest 2)
-      (pikerId, g1) = S.addPermanent piker S.alice g0
-      (moonmistId, g2) = S.addHandCard moonmist S.alice g1
-   in ( aangId,
-        pikerId,
-        moonmistId,
-        g2
-          { GameState.turn =
-              (GameState.turn g2)
-                { TurnRegisters.phase = Phase.PrecombatMain,
-                  TurnRegisters.priority = Just S.alice
-                }
-          }
-      )
-
--- The Piker takes lethal damage and CR 704.5g destroys it, Aang's
--- leaves-the-battlefield trigger reaches the stack and resolves, and CR 603.7a
--- creates the delayed ability. Everything before the clock this unit is about.
-armAangsDelayedAbility :: ObjectId.ObjectId -> GameState.GameState -> GameState.GameState
-armAangsDelayedAbility pikerId board =
-  S.runPure S.identityAnswer (S.settleSba (S.markDamage pikerId 5 board)) (Engine.placePendingTriggers [] *> Stack.resolveTop)
-
--- The next upkeep arrives, the delayed ability triggers, and it resolves. The
--- ability object gets its CR 613.7d timestamp HERE, which is what the rule's
--- first sentence would measure from and its second sentence does not.
-atNextUpkeep :: GameState.GameState -> GameState.GameState
-atNextUpkeep gs =
-  let upkeep = Phase.Beginning BeginningStep.Upkeep
-      began =
-        Event.recordEvent
-          (GameEvent.StepBegan (StepBegan.MkStepBegan upkeep S.alice))
-          ( gs
-              { GameState.turn =
-                  (GameState.turn gs)
-                    { TurnRegisters.phase = upkeep
-                    }
-              }
-          )
-   in S.runPure S.identityAnswer began (Engine.placePendingTriggers [] *> Stack.resolveTop)
-
 -- "Transform all creatures", the shape CR 701.27a takes when a spell rather than
 -- the permanent's own ability asks -- Moonmist's "transform all Humans" with a
--- wider filter. The two cases below that need a permanent turned over without
--- its own ability use this, because Stonewing Antagonizer prints no way back.
+-- wider filter, for the cases below that turn a permanent over without its own
+-- ability.
 transformEveryCreature :: Effect.Effect card ability
 transformEveryCreature = Effect.Transform (ObjectRef.EachMatching (Filter.Type.HasCardType CardType.Creature))
 
@@ -331,7 +228,6 @@ spec :: (Monad m, Monad n) => Spec.Spec m n -> Registry.Registry m -> n ()
 spec s registry = Spec.describe s "Transform" $ do
   masterOfElementsCloneSpec s registry
   enterTransformedSpec s registry
-  transformedPermanentSpec s registry
   transformTriggerSpec s registry
   bystanderTransformSpec s registry
   equippedTransformSpec s registry
@@ -339,7 +235,6 @@ spec s registry = Spec.describe s "Transform" $ do
   moreThanMeetsTheEyeSpec s registry
   disturbSpec s registry
   spellsCastLastTurnSpec s registry
-  restampSpec s registry
   -- CR 712.12a: "while face down, a double-faced permanent can't transform".
   -- Maskwood Nexus makes every creature alice controls a Human, a face-down 2/2
   -- included, so Moonmist's "transform all Humans" names both of her Blightreaper
@@ -525,62 +420,6 @@ spec s registry = Spec.describe s "Transform" $ do
         Spec.assertEqWith s "its own {6} turned it over" (faceReadings oid byItsOwnAbility) backFace
         Spec.assertEqWith s "and a spell turns it straight back, same turn" (faceReadings oid thenBySomethingElse) frontFace
       abilities -> Spec.assertFailure s ("expected one activated ability, got " <> show (length abilities))
-  -- CR 701.27g's SECOND sentence: "If a delayed triggered ability of a permanent
-  -- tries to transform that permanent, the permanent does so only if it hasn't
-  -- transformed or converted since that delayed triggered ability was created."
-  --
-  -- Three moments, in order. The Piker dies and Aang's trigger CREATES the
-  -- delayed ability. Moonmist then turns Aang over, so Object.turnedOverAt is
-  -- later than that creation. Only at the next upkeep does the delayed ability
-  -- reach the stack and take its own CR 613.7d timestamp, which is later still.
-  --
-  -- The two clocks therefore disagree, and this is the case that says which one
-  -- the rule means: measured from the PLACEMENT stamp the turn-over is earlier
-  -- and the instruction runs, flipping Aang back to the 3/3 front face;
-  -- measured from CREATION it is later and the instruction is ignored, leaving
-  -- the 4/4 back face up. The case below is its pair -- same board, no Moonmist
-  -- -- and shows the delayed transform is not simply refused.
-  Spec.it s "CR 701.27g a delayed transform is measured from when the ability was created" $ do
-    aang <- S.printingOf s registry "Aang, at the Crossroads"
-    piker <- S.printingOf s registry "Goblin Piker"
-    moonmist <- S.printingOf s registry "Moonmist"
-    forest <- S.printingOf s registry "Forest"
-    let (aangId, pikerId, moonmistId, board) = aangBoard aang piker moonmist forest
-        armed = armAangsDelayedAbility pikerId board
-        turned = S.runPure S.identityAnswer armed (S.cast S.alice moonmistId *> Stack.resolveTop)
-        fired = atNextUpkeep turned
-    Spec.assertEqWith s "the Piker's death armed exactly one delayed ability" (Seq.length (StoredEffects.delayedTriggers (GameState.stored armed))) 1
-    Spec.assertEqWith s "which left Aang on its front face" (aangReadings aangId armed) aangFrontUp
-    Spec.assertEqWith s "and Moonmist then turned it over, Aang being a Human" (aangReadings aangId turned) aangBackUp
-    Spec.assertEqWith
-      s
-      "CR 701.27g: Aang turned over since the delayed ability was created, so the instruction is ignored and the back face stays up"
-      (aangReadings aangId fired)
-      aangBackUp
-    Spec.assertEqWith s "with the delayed ability spent and nothing left on the stack" (Seq.length (StoredEffects.delayedTriggers (GameState.stored fired)), length (TurnRegisters.stack (GameState.turn fired))) (0, 0)
-  -- The pair to the case above, differing in exactly one thing: no Moonmist, so
-  -- nothing turns Aang over between the delayed ability's creation and its
-  -- resolution. CR 701.27g then has nothing to ignore and the delayed ability
-  -- does transform the permanent.
-  --
-  -- Without this, a gate that refused EVERY delayed transform would pass the
-  -- case above.
-  Spec.it s "CR 701.27g a delayed transform of a permanent that has not turned over still happens" $ do
-    aang <- S.printingOf s registry "Aang, at the Crossroads"
-    piker <- S.printingOf s registry "Goblin Piker"
-    moonmist <- S.printingOf s registry "Moonmist"
-    forest <- S.printingOf s registry "Forest"
-    let (aangId, pikerId, _, board) = aangBoard aang piker moonmist forest
-        armed = armAangsDelayedAbility pikerId board
-        fired = atNextUpkeep armed
-    Spec.assertEqWith s "the Piker's death armed exactly one delayed ability" (Seq.length (StoredEffects.delayedTriggers (GameState.stored armed))) 1
-    Spec.assertEqWith s "and nothing turned Aang over in the meantime" (Maybe.isNothing (Game.lookupObject aangId armed >>= Object.turnedOverAt)) True
-    Spec.assertEqWith
-      s
-      "CR 701.27g: the delayed ability turns Aang over, so the 4/4 back face is up"
-      (aangReadings aangId fired)
-      aangBackUp
-    Spec.assertEqWith s "with the delayed ability spent and nothing left on the stack" (Seq.length (StoredEffects.delayedTriggers (GameState.stored fired)), length (TurnRegisters.stack (GameState.turn fired))) (0, 0)
   -- CR 712.6d: "While a nonmodal double-faced permanent has its back face up, it
   -- has only the characteristics of its back face. However, its mana value is
   -- calculated using the mana cost of its front face." CR 202.3a exempts that
@@ -620,22 +459,6 @@ spec s registry = Spec.describe s "Transform" $ do
       "and nothing was written on it: a one-faced card shows no face"
       (Game.lookupObject pikerId after >>= Object.face)
       Nothing
-  -- CR 701.27a's "its other face" over the two faces CR 712.1 gives a
-  -- double-faced card: a second transform turns the permanent back. Nothing
-  -- remembers that it was ever the Gargoyle -- CR 701.27h is explicit that a
-  -- permanent with its front face up is never a transformed permanent "even if
-  -- it had its back face up previously" -- which transformedPermanentSpec below
-  -- proves through a card that asks the question.
-  --
-  -- It takes an outside effect, because Stonewing Antagonizer prints no ability
-  -- at all: the case above proves the {6} is gone with the front face.
-  Spec.it s "CR 701.27a transforming twice returns the permanent to its front face" $ do
-    gargoyle <- S.printingOf s registry "Thraben Gargoyle"
-    let (oid, before) = S.addPermanent gargoyle S.alice emptyBoard
-        once = sweep before
-        twice = sweep once
-    Spec.assertEqWith s "once: the back face" (faceReadings oid once) backFace
-    Spec.assertEqWith s "twice: the front face again, {6} and all" (faceReadings oid twice) frontFace
   -- CR 712.15 states it positively -- "when a double-faced permanent transforms
   -- or converts, it doesn't become a new object. Any effects that applied to that
   -- permanent will continue to apply to it" -- and CR 400.7 is the negative half:
@@ -764,118 +587,11 @@ faceNameOf oid gs = fmap Face.name (Game.faceOf oid gs)
 settleDaytime :: GameState.GameState -> GameState.GameState
 settleDaytime gs = S.runPure S.identityAnswer gs Engine.settleForPriority
 
--- The upkeep step of alice's turn, Parun.DaytimeSpec's `upkeep` exactly: the
--- schedule loses its head so runStep advances OUT of the upkeep rather than back
--- into it.
-aliceUpkeep :: GameState.GameState -> GameState.GameState
-aliceUpkeep gs =
-  gs
-    { GameState.turn =
-        (GameState.turn gs)
-          { TurnRegisters.activePlayer = S.alice,
-            TurnRegisters.phase = Phase.Beginning BeginningStep.Upkeep,
-            TurnRegisters.priority = Just S.alice,
-            TurnRegisters.remaining = Seq.drop 1 (TurnRegisters.remaining (GameState.turn gs))
-          }
-    }
-
 -- CR 502.2's day/night check, run as the untap step's turn-based actions with
 -- `n` spells on the previous turn's books.
 untapStepAfter :: Natural.Natural -> GameState.GameState -> GameState.GameState
 untapStepAfter n gs =
   S.runPure S.identityAnswer (S.afterCasting n gs) (Engine.runTurnBasedActions (Phase.Beginning BeginningStep.Untap))
-
--- alice's board for CR 701.27h: Tovolar, two Russet Wolves, Mutagen Connoisseur
--- and a Thraben Gargoyle, settled so CR 702.145d has made it day.
---
--- Two Wolves and no more because CR 603.4's intervening "if" wants three Wolves
--- and/or Werewolves and Tovolar is himself the third; the Connoisseur and the
--- Gargoyle are neither, so they do not stand in for one.
-transformedBoard ::
-  Printing.Printing ->
-  Printing.Printing ->
-  Printing.Printing ->
-  Printing.Printing ->
-  (ObjectId.ObjectId, ObjectId.ObjectId, GameState.GameState)
-transformedBoard tovolar wolf connoisseur gargoyle =
-  let (tovolarId, withTovolar) = S.addPermanent tovolar S.alice emptyBoard
-      withWolves = foldr (\_ g -> snd (S.addPermanent wolf S.alice g)) withTovolar [1 :: Int, 2]
-      (connoisseurId, withConnoisseur) = S.addPermanent connoisseur S.alice withWolves
-      (_, withGargoyle) = S.addPermanent gargoyle S.alice withConnoisseur
-   in (tovolarId, connoisseurId, settleDaytime withGargoyle)
-
--- CR 701.27h, "transformed permanent", asked by a CARD rather than by the
--- engine: Mutagen Connoisseur's "this creature gets +1/+0 for each transformed
--- permanent you control" is `Filter.Transformed` conjoined with `HeldBy Controller
--- You` under a Count over the battlefield, so its power IS the tally and every
--- case here reads it.
---
--- Tovolar, Dire Overlord // Tovolar, the Midnight Scourge is the permanent that
--- moves. CR 702.145c/f turn him over and back through the rules alone, which is
--- the pool's only road to a permanent that is front face up AND has been back
--- face up before -- the one board on which CR 701.27h's first exclusion is
--- distinguishable from a reading off Object.turnedOverAt.
---
--- Thraben Gargoyle is on the board and never turns, so a reading of "transformed
--- permanent" as "double-faced permanent" answers 2 where the rule answers 0. The
--- two Russet Wolves are single-faced and contribute nothing under any reading;
--- they are there to reach Tovolar's trigger.
---
--- CR 701.27h's SECOND exclusion -- an object represented by more than one card
--- is never a transformed permanent -- is asserted in Parun.MeldSpec instead, on
--- the board that reaches one: "CR 701.27h a melded permanent is not a
--- transformed permanent" puts this same Connoisseur beside a melded Hanweir and
--- a Thraben Gargoyle, and counts the Gargoyle alone. The rule's other half, a
--- MERGED permanent, takes the same Game.componentsOf read, and no case builds
--- that board: Cubwarden over a transformed Blightreaper Thallid would.
-transformedPermanentSpec :: (Monad m, Monad n) => Spec.Spec m n -> Registry.Registry m -> n ()
-transformedPermanentSpec s registry = Spec.describe s "TransformedPermanent" $ do
-  -- CR 701.27h's positive: a double-faced permanent on the battlefield with its
-  -- BACK face up is a transformed permanent, and the Connoisseur counts exactly
-  -- one of them although two double-faced permanents are on the board.
-  Spec.it s "CR 701.27h a permanent with its back face up is a transformed permanent" $ do
-    tovolar <- S.printingOf s registry "Tovolar, Dire Overlord"
-    wolf <- S.printingOf s registry "Russet Wolves"
-    connoisseur <- S.printingOf s registry "Mutagen Connoisseur"
-    gargoyle <- S.printingOf s registry "Thraben Gargoyle"
-    let (tovolarId, connoisseurId, day) = transformedBoard tovolar wolf connoisseur gargoyle
-        night = S.runPure S.identityAnswer (aliceUpkeep day) Engine.runStep
-    Spec.assertEqWith s "the Connoisseur counts the one transformed permanent" (S.powerToughnessOf connoisseurId night) (Just (1, 5))
-    Spec.assertEqWith s "it is night" (GameState.daytime night) (Just Daytime.Night)
-    Spec.assertEqWith s "and Tovolar is the permanent showing a back face" (faceNameOf tovolarId night) (Just tovolarBack)
-  -- CR 701.27h's first sentence read the other way: with every double-faced
-  -- permanent front face up the tally is zero, although the board holds two of
-  -- them. The falsifier for "a double-faced permanent is a transformed
-  -- permanent", which would answer 2 here.
-  Spec.it s "CR 701.27h a permanent with its front face up is not one" $ do
-    tovolar <- S.printingOf s registry "Tovolar, Dire Overlord"
-    wolf <- S.printingOf s registry "Russet Wolves"
-    connoisseur <- S.printingOf s registry "Mutagen Connoisseur"
-    gargoyle <- S.printingOf s registry "Thraben Gargoyle"
-    let (tovolarId, connoisseurId, day) = transformedBoard tovolar wolf connoisseur gargoyle
-    Spec.assertEqWith s "the Connoisseur counts none" (S.powerToughnessOf connoisseurId day) (Just (0, 5))
-    Spec.assertEqWith s "it is day" (GameState.daytime day) (Just Daytime.Day)
-    Spec.assertEqWith s "and Tovolar shows his front face" (faceNameOf tovolarId day) (Just tovolarFront)
-  -- CR 701.27h's second sentence: "even if it had its back face up previously".
-  -- Tovolar goes day -> night -> day, so at the read he is front face up with
-  -- Object.turnedOverAt set twice over. The falsifier for an answer read off
-  -- that field instead of off Object.face, which would count him here.
-  --
-  -- The turnedOverAt assertion is the case's PRECONDITION and is read straight
-  -- off the object, so no change to the atom can move it -- without it this case
-  -- is the one above with extra steps.
-  Spec.it s "CR 701.27h not one even if it had its back face up previously" $ do
-    tovolar <- S.printingOf s registry "Tovolar, Dire Overlord"
-    wolf <- S.printingOf s registry "Russet Wolves"
-    connoisseur <- S.printingOf s registry "Mutagen Connoisseur"
-    gargoyle <- S.printingOf s registry "Thraben Gargoyle"
-    let (tovolarId, connoisseurId, day) = transformedBoard tovolar wolf connoisseur gargoyle
-        night = S.runPure S.identityAnswer (aliceUpkeep day) Engine.runStep
-        again = untapStepAfter 2 night
-    Spec.assertEqWith s "Tovolar has turned over before" (fmap (Maybe.isJust . Object.turnedOverAt) (Game.lookupObject tovolarId again)) (Just True)
-    Spec.assertEqWith s "yet the Connoisseur counts none" (S.powerToughnessOf connoisseurId again) (Just (0, 5))
-    Spec.assertEqWith s "it is day again" (GameState.daytime again) (Just Daytime.Day)
-    Spec.assertEqWith s "and Tovolar is back on his front face" (faceNameOf tovolarId again) (Just tovolarFront)
 
 -- The two names Blightreaper Thallid // Blightsower Thallid prints, and the
 -- token its back face makes. CR 701.27f's group reads all three.
@@ -947,12 +663,6 @@ takesTheMay p = case p of
   Prompt.ChooseOptional {} -> OptionalDecision.Exercises
   _ -> S.identityAnswer p
 
--- The same decision over S.castAnswer, for the case that CASTS the Piper.
-castsAndTakesTheMay :: Prompt.Prompt r -> r
-castsAndTakesTheMay p = case p of
-  Prompt.ChooseOptional {} -> OptionalDecision.Exercises
-  _ -> S.castAnswer p
-
 -- `gather` and `resolveStack` under that answerer. Separate functions rather than
 -- a parameter on those two: the answerer is a rank-2 argument, and this module
 -- takes no language pragma to say so.
@@ -1007,8 +717,9 @@ zoneNames zone gs =
 -- duplicated.
 --
 -- The printed condition is an "or", so both limbs are exercised: the transform
--- one here, CR 700.4's ordinary self death in the last case. Without that pair a
--- condition that fired on the wrong limb would pass.
+-- one here, CR 700.4's ordinary self death in the data/scenarios/transform
+-- case "CR 700.4 the same ability's other limb fires when it dies". Without that
+-- pair a condition that fired on the wrong limb would pass.
 --
 -- The CR 702.145c/f road to the same event -- Parun.Engine.Daytime's sweep, which
 -- records through the same Event.recordTransformed -- reaches it too, on its own
@@ -1072,27 +783,6 @@ transformTriggerSpec s registry = Spec.describe s "TransformsInto" $ do
         matches into = Event.matchesTrigger board bearer S.alice (TriggerCondition.Transforms TransformTrigger.defaultValue {TransformTrigger.into = Just thallidBack}) (event into)
     Spec.assertBool s (matches thallidBack) "the face it names matches"
     Spec.assertBool s (not (matches thallidFront)) "and the other face of the same card does not"
-  -- The printed condition's OTHER limb, so the AnyOf is not proved by one side
-  -- alone: CR 700.4's "or dies", against the same board with the same card. The
-  -- Thallid transforms (one Saproling), then a destruction reaches it on its back
-  -- face (a second).
-  --
-  -- The destruction names Fungus rather than every creature, so it cannot reach
-  -- the Saproling the first limb made -- which would leave the count reading the
-  -- same under an engine that fired neither limb.
-  Spec.it s "CR 700.4 the same ability's other limb fires when it dies" $ do
-    thallid <- S.printingOf s registry "Blightreaper Thallid"
-    forest <- S.printingOf s registry "Forest"
-    let (oid, gs) = thallidBoard thallid forest 4
-    case activateThallid oid gs of
-      Left n -> Spec.assertFailure s ("expected one activated ability, got " <> show n)
-      Right activated -> do
-        let fromTransform = resolveStack (gather (resolveTop activated))
-            destroyed = S.runPure S.identityAnswer fromTransform (Resolve.applyEffect S.noSource S.noSource S.alice Map.empty Map.empty destroyEveryFungus)
-            fromDeath = resolveStack (gather destroyed)
-        Spec.assertEqWith s "the transform limb made one" (S.countOnBattlefieldByName saprolingToken S.alice fromTransform) 1
-        Spec.assertEqWith s "and the death limb makes a second" (S.countOnBattlefieldByName saprolingToken S.alice fromDeath) 2
-        Spec.assertEqWith s "the Thallid itself is gone" (faceNameOf oid fromDeath) Nothing
   -- CR 702.145c's road to the same event, and the reason this group needs a
   -- second fixture: no spell and no activated ability turns this permanent over.
   -- NIGHTFALL does, through Parun.Engine.Daytime's sweep, which reaches
@@ -1131,48 +821,6 @@ transformTriggerSpec s registry = Spec.describe s "TransformsInto" $ do
     Spec.assertEqWith s "the permanent really did turn over" (faceNameOf piperId after) (Just howlerName)
     Spec.assertEqWith s "it really is night" (GameState.daytime after) (Just Daytime.Night)
     Spec.assertEqWith s "and it was day before the untap step, so CR 502.2 had a designation to change" (GameState.daytime day) (Just Daytime.Day)
-  -- The printed condition's OTHER limb, so the AnyOf is not proved by one side
-  -- alone -- the pair the Thallid cases above make with CR 700.4's "or dies".
-  -- CR 701.27j through CR 702.145b's first static ability gets there on the same
-  -- card: the Piper is CAST at night, so it ENTERS as Wildsong Howler and the
-  -- Self Enters limb fires without the Piper ever transforming.
-  --
-  -- Tovolar is what gives the game a designation at all before the Piper is cast
-  -- (CR 702.145d wants a daybound permanent on the battlefield, and the Piper is
-  -- in hand), Parun.DaytimeSpec's expertBoard exactly. He DOES transform at
-  -- nightfall, so this board is not free of CR 701.27a events -- his names
-  -- "Tovolar, the Midnight Scourge" and the condition is self-scoped besides, so
-  -- it cannot reach the Piper. He triggers nothing else on the way either: his
-  -- back face's abilities are an upkeep trigger and a combat-damage trigger.
-  --
-  -- The face assertion comes FIRST because the payload assertions cannot tell the
-  -- limbs apart on their own: an engine that skipped CR 701.27j would put the
-  -- Piper on the battlefield front face up, and the settle's CR 702.145c sweep
-  -- would then turn it over and fire the SAME trigger on its transform limb.
-  -- `entered` is read before that settle, and stripping the record from
-  -- Daytime.turnDue leaves this case green, which is the other half of the
-  -- separation.
-  Spec.it s "CR 701.27j/701.27f the same trigger's enters limb fires on a Piper cast at night" $ do
-    tovolar <- S.printingOf s registry "Tovolar, Dire Overlord"
-    forest <- S.printingOf s registry "Forest"
-    piper <- S.printingOf s registry "Howlpack Piper"
-    deck <- mapM (S.printingOf s registry) howlerDeck
-    let (_, withTovolar) = S.addPermanent tovolar S.alice (S.landsInPlay forest 4)
-        (inHand, piperSpell) = S.handOne piper (stockLibrary deck withTovolar)
-        night = untapStepAfter 0 (settleDaytime inHand)
-        cast = S.runPure castsAndTakesTheMay night (S.cast S.alice piperSpell)
-        entered = S.runPure castsAndTakesTheMay cast Stack.resolveTop
-        after = resolveStackTakingTheMay (gatherTakingTheMay entered)
-    -- Read on `entered`, the board the spell's resolution leaves, which is BEFORE
-    -- the settle the CR 702.145c sweep runs in. The FACES, not
-    -- S.countOnBattlefieldByName: that helper reads the card's name (CR 712.6a's
-    -- front face), which cannot tell the two faces apart. The whole battlefield,
-    -- so "Howlpack Piper" is asserted absent as well as "Wildsong Howler"
-    -- present.
-    Spec.assertEqWith s "the permanent was showing Wildsong Howler the moment it entered, and never its front face" (List.sort (zoneNames Zone.Battlefield entered)) ["Forest", "Forest", "Forest", "Forest", "Tovolar, the Midnight Scourge", "Wildsong Howler"]
-    Spec.assertEqWith s "the one creature card among the top six is in alice's hand" (zoneNames Zone.Hand after) ["Goblin Piker"]
-    Spec.assertEqWith s "the three cards under the looked-at six are now the top three" (take 3 (zoneNames Zone.Library after)) ["Lightning Bolt", "Ancestral Recall", "Giant Growth"]
-    Spec.assertEqWith s "it was night when the spell resolved" (GameState.daytime night) (Just Daytime.Night)
 
 -- CR 701.27f read by a BYSTANDER, which is the other half of that rule: "Some
 -- triggered abilities trigger when an object 'transforms into' an object with a
@@ -1351,19 +999,6 @@ heirloomBoard heirloom ratchet equipped =
 hostOf :: ObjectId.ObjectId -> GameState.GameState -> Maybe Recipient.Recipient
 hostOf oid gs = Game.lookupObject oid gs >>= Object.attachedTo
 
--- "Destroy each Fungus", which on this board is the Thallid alone -- the
--- Saproling the transform limb made is a Phyrexian Saproling and not one.
-destroyEveryFungus :: Effect.Effect card ability
-destroyEveryFungus =
-  Effect.Destroy
-    Destroy.MkDestroy
-      { Destroy.ref = ObjectRef.EachMatching (Filter.Type.HasSubtype Subtype.Fungus),
-        Destroy.regenerability = Regenerability.Regenerable,
-        Destroy.slot = Nothing,
-        Destroy.buried = Nothing,
-        Destroy.permanents = Nothing
-      }
-
 -- `pid` casts that spell and it resolves. CR 601.2i files the SpellWasCast the
 -- last-turn tally is folded from; resolving keeps the stack empty so the upkeep
 -- step below has only the trigger on it.
@@ -1528,20 +1163,6 @@ convertSpec s registry = Spec.describe s "Convert" $ do
     Spec.assertEqWith s "it is a Vehicle on both, the types being ADDED" (Projection.subtypesOf ratchetId bobsTurn) (Set.singleton Subtype.Vehicle)
     Spec.assertEqWith s "bob's turn began" (TurnRegisters.activePlayer (GameState.turn bobsTurn)) S.bob
     Spec.assertEqWith s "and nothing turned the permanent over" (faceNameOf ratchetId bobsTurn) (Just ratchetBack)
-  -- The control the case above cannot supply on its own: the FRONT face is a
-  -- printed artifact creature, so it stays one on bob's turn. Without this leg
-  -- "not a creature during an opponent's turn" could be an answer about the card
-  -- rather than about living metal, which only the back face has.
-  Spec.it s "CR 702.161a the front face, which has no living metal, is a creature on either turn" $ do
-    ratchet <- S.printingOf s registry "Ratchet, Field Medic"
-    let (ratchetId, board) = S.addPermanent ratchet S.alice emptyBoard
-        bobsTurn = S.runPure S.identityAnswer board Engine.handoffTurn
-    Spec.assertEqWith
-      s
-      "the front face is an artifact creature during bob's turn"
-      (Projection.cardTypesOf ratchetId bobsTurn)
-      (Set.fromList [CardType.Artifact, CardType.Creature])
-    Spec.assertEqWith s "and it is the front face that is up" (faceNameOf ratchetId bobsTurn) (Just ratchetFront)
 
 -- The two readings ratchetReadings answers with, one per face. The back face's
 -- card types are alice's-turn ones: CR 702.161a is why a Vehicle reads as an
@@ -1782,101 +1403,3 @@ moreThanMeetsTheEyeSpec s registry = Spec.describe s "MoreThanMeetsTheEye" $ do
     Spec.assertEqWith s "a free offer reaches the front face, though the back was asked for" (readingsIn (resolvedUnder free)) [ratchetFrontReadings]
     Spec.assertEqWith s "rule 702.162a's {1}{W} was paid for the converted cast" (S.tappedCount S.alice (under offered)) 2
     Spec.assertEqWith s "and the free cast paid nothing" (S.tappedCount S.alice (under free)) 0
-
--- CR 613.7g: "a double-faced permanent receives a new timestamp each time it
--- transforms or converts". Rule 712.15 says the permanent is not a new object,
--- which settles the id and not the stamp.
---
--- WHAT READS THE STAMP. CR 701.60c's suspected grant is the rulebook's rather
--- than a card's, and Parun.Engine.Projection.designationGathered gives it the
--- PERMANENT's own timestamp (CR 613.7a), so it is the one layer-6 effect on this
--- board whose order against an ability removal a transform can move. CR 701.60b
--- makes the designation neither an ability nor part of the copiable values, so it
--- rides through the turning-over untouched and only its ORDER changes.
---
--- Daybreak Ranger // Nightfall Predator is the permanent: its front face is a
--- Human, which is what Moonmist's "transform all Humans" reaches, and of the
--- Transform opcodes in `data/cards/` Moonmist's is the only one whose ObjectRef
--- is not `InSlot "self"` -- the only one, that is, that can turn a permanent over
--- without being an ability OF it. That matters here because the removal this case
--- needs has already taken the permanent's own abilities away.
---
--- Humility is the REMOVER, and it has to be a removal that spares SUBTYPES:
--- Parun.FaceDownSpec's sibling pair uses Turn to Frog, whose "becomes a blue Frog"
--- would leave Moonmist nothing named Human to reach. Humility's "all creatures
--- lose all abilities" is layer 6 like the grant, timestamped when it entered (CR
--- 613.7a), and it enters AFTER the suspect, so before the transform the grant is
--- the older effect and is wiped.
---
--- THE PAIR IS TWO MOMENTS OF ONE BOARD rather than two boards: the suspect loses
--- rule 701.60c's ability to a Humility younger than it, and gets it back when the
--- transform restamps it past that Humility. Nothing else differs, so the flip is
--- the stamp's doing alone. The cr-613-7 Humility scenario pair in
--- data/scenarios/combat is where the "before" reading is proved on its own.
---
--- The second Goblin Piker is the anti-vacuity leg: it stands beside the suspect,
--- was never suspected, and is no Human for Moonmist to turn over, so a board on
--- which nothing can block fails at it rather than passing.
-restampSpec :: (Monad m) => Spec.Spec m n -> Registry.Registry m -> n ()
-restampSpec s registry = Spec.describe s "Timestamps (CR 613.7g)" $ do
-  Spec.it s "CR 613.7g transforming restamps the permanent past a removal that had wiped its grant" $ do
-    piker <- S.printingOf s registry "Goblin Piker"
-    ranger <- S.printingOf s registry "Daybreak Ranger"
-    humility <- S.printingOf s registry "Humility"
-    moonmist <- S.printingOf s registry "Moonmist"
-    forest <- S.printingOf s registry "Forest"
-    let (before, suspect, other, attacker) = suspectedRangerBoard piker ranger humility forest
-        after = moonmisting moonmist before
-    -- THE BEFORE moment, and the fixture's own control: Humility entered after the
-    -- suspect, so CR 613.1f wipes the grant and both halves of rule 701.60c go.
-    Spec.assertBool s (not (Projection.hasKeyword Keyword.Menace suspect before)) "CR 613.1f before: the removal is younger than the suspect, so the menace half is gone"
-    Spec.assertBool s (Combat.legalBlockDeclaration S.bob (Map.singleton suspect (Set.singleton attacker)) before) "CR 613.1f before: and the can't-block half with it"
-    -- THE assertion, gameplay level and ahead of every reading of the projection:
-    -- the transform restamped the suspect past Humility, so rule 701.60c's "this
-    -- creature can't block" applies again.
-    Spec.assertBool s (not (Combat.legalBlockDeclaration S.bob (Map.singleton suspect (Set.singleton attacker)) after)) "CR 613.7g the permanent it transformed is stamped after the removal, so it can't block again"
-    Spec.assertBool s (Projection.hasKeyword Keyword.Menace suspect after) "CR 613.7g and the menace half is back with it"
-    Spec.assertEqWith s "CR 701.27a Moonmist turned the Human over, so the back face is up" (Projection.namesOf suspect after) (Set.singleton nightfallName)
-    Spec.assertBool s (Combat.legalBlockDeclaration S.bob (Map.singleton other (Set.singleton attacker)) after) "while the Goblin Piker beside it, suspected of nothing, blocks"
-
-nightfallName :: CardName.CardName
-nightfallName = CardName.MkCardName (Text.pack "Nightfall Predator")
-
--- alice attacks with one Goblin Piker into bob's suspected Daybreak Ranger, a
--- second Piker beside it, two Forests to pay for the Moonmist and a Humility
--- younger than all of them. Returns the board with attackers declared, the
--- suspect, the Piker beside it and alice's attacker.
-suspectedRangerBoard :: Printing.Printing -> Printing.Printing -> Printing.Printing -> Printing.Printing -> (GameState.GameState, ObjectId.ObjectId, ObjectId.ObjectId, ObjectId.ObjectId)
-suspectedRangerBoard piker ranger humility forest =
-  let (gs0, mine, _) = S.combatBoardOf [piker] []
-      (suspect, gs1) = S.addPermanent ranger S.bob gs0
-      (other, gs2) = S.addPermanent piker S.bob gs1
-      gs3 = List.foldl' (\g p -> snd (S.addPermanent p S.bob g)) gs2 [forest, forest]
-      gs4 = S.withHumility humility (suspecting suspect gs3)
-      declared = S.runPure S.aggressiveAnswer gs4 (Combat.declareAttackers S.manaPerformer S.alice)
-      attacker = case mine of
-        a : _ -> a
-        [] -> S.noSource
-   in (declared, suspect, other, attacker)
-
--- CR 701.60b's designation, written straight onto the permanent -- a FIXTURE.
--- The road that sets it is Reasonable Doubt's, and the cr-613-7
--- Humility scenario pair in data/scenarios/combat proves it; what this file
--- needs is only that the designation outlives a transform and carries the
--- permanent's own timestamp into layer 6.
-suspecting :: ObjectId.ObjectId -> GameState.GameState -> GameState.GameState
-suspecting oid gs =
-  gs
-    { GameState.objects =
-        Map.adjust (\o -> o {Object.designations = Set.insert Designation.Suspected (Object.designations o)}) oid (GameState.objects gs)
-    }
-
--- bob casts one Moonmist, it resolves, and the board settles. CAST rather than
--- put straight onto the stack: Moonmist's text is a MODE, and a spell placed by
--- hand carries no chosen mode for the resolution to run, so its transform would
--- never happen. bob is the caster, since it is his creature the case is about;
--- the two Forests behind it are his.
-moonmisting :: Printing.Printing -> GameState.GameState -> GameState.GameState
-moonmisting moonmist gs =
-  let (oid, withCard) = S.addHandCard moonmist S.bob gs
-   in S.runPure S.identityAnswer withCard (S.cast S.bob oid >> Stack.resolveTop >> Engine.settleForPriority)

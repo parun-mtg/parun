@@ -1,0 +1,106 @@
+{
+  "board": {
+    "active": "bob",
+    "seats": [
+      {
+        "battlefield": [
+          {
+            "card": "Tovolar, Dire Overlord",
+            "label": "tovolar"
+          },
+          {
+            "card": "Russet Wolves",
+            "label": "w1"
+          },
+          {
+            "card": "Russet Wolves",
+            "label": "w2"
+          },
+          {
+            "card": "Mutagen Connoisseur",
+            "label": "connoisseur"
+          },
+          {
+            "card": "Thraben Gargoyle",
+            "label": "gargoyle"
+          }
+        ],
+        "hand": [],
+        "library": [
+          {
+            "card": "Plains"
+          },
+          {
+            "card": "Plains"
+          }
+        ],
+        "name": "alice"
+      },
+      {
+        "library": [
+          {
+            "card": "Plains"
+          },
+          {
+            "card": "Plains"
+          }
+        ],
+        "name": "bob"
+      }
+    ],
+    "step": "PrecombatMain"
+  },
+  "description": "CR 701.27h a permanent with its back face up is a transformed permanent",
+  "note": "CR 701.27h's positive: at night Tovolar shows his back face and the Connoisseur counts exactly one transformed permanent, though two double-faced permanents are on the board. Mutagen Connoisseur's power counts the transformed permanents alice controls, so its power is the tally. Tovolar is the double-faced permanent that turns, through day and night alone (CR 702.145c/f); Thraben Gargoyle is a second double-faced permanent that never turns, so reading \"transformed permanent\" as \"double-faced permanent\" counts 2. The Wolves are single-faced and count under no reading. Day comes from Tovolar at the first settle (CR 702.145d) on bob's turn; bob casts nothing, so alice's untap step makes it night (CR 502.2).",
+  "timeline": [
+    {
+      "check": {
+        "PowerToughness": {
+          "object": "$connoisseur",
+          "power": 1,
+          "toughness": 5
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 2
+    },
+    {
+      "check": {
+        "View": {
+          "is": "Night",
+          "of": "Daytime"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 2
+    },
+    {
+      "check": {
+        "Names": {
+          "names": [
+            "Tovolar, the Midnight Scourge"
+          ],
+          "object": "$tovolar"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 2
+    },
+    {
+      "check": {
+        "Names": {
+          "names": [
+            "Thraben Gargoyle"
+          ],
+          "object": "$gargoyle"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 2
+    }
+  ]
+}
