@@ -817,6 +817,7 @@ lastKnownRiderSpec s registry =
                     LastKnown.chosenSubtype = Map.empty,
                     LastKnown.chosenCardType = Map.empty,
                     LastKnown.chosenNumber = Map.empty,
+                    LastKnown.chosenObjects = Map.empty,
                     LastKnown.acquisition = Acquisition.Own,
                     -- CR 508.1k / 509.1g: this board declares no combat at all.
                     LastKnown.attacking = False,

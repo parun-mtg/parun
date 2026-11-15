@@ -28,6 +28,7 @@ import qualified Parun.Engine.Event.Match as Event
 import qualified Parun.Engine.Event.Trigger as Event
 import qualified Parun.Engine.Foretell as Foretell
 import qualified Parun.Engine.Game as Game
+import qualified Parun.Engine.Interchangeable as Interchangeable
 import qualified Parun.Engine.Keyword as Keyword
 import qualified Parun.Engine.Mana as Mana
 import qualified Parun.Engine.Projection as Projection
@@ -48,6 +49,7 @@ import qualified Parun.Types.BeginningStep as BeginningStep
 import qualified Parun.Types.CandidateCost as CandidateCost
 import qualified Parun.Types.CardName as CardName
 import qualified Parun.Types.CardType as CardType
+import qualified Parun.Types.Chosen as Chosen
 import qualified Parun.Types.Clause as Clause
 import qualified Parun.Types.Color as Color
 import qualified Parun.Types.ControllerRelation as ControllerRelation
@@ -614,6 +616,27 @@ exiledWatcherSpec s registry =
           settled <- exiledOnAlicesTurn "Ketramose, the New Dawn"
           Spec.assertEqWith s "setup: Ketramose is in exile" (length (Game.zoneMembers Zone.Exile S.alice settled)) 1
           Spec.assertEqWith s "CR 603.10a its trigger reached the stack" (length (TurnRegisters.stack (GameState.turn settled))) 1
+
+-- CR 607.2d: Zenos yae Galvus's record of the creature it chose
+-- (Object.chosenObjects) is what its leave trigger reads, so the chosen
+-- creature and a twin matching it in every characteristic are two options
+-- (Parun.Engine.Interchangeable's namedByAnother). No prompt in the pool's
+-- scenarios elides between such a pair, so this asks the classifier directly;
+-- the gameplay cases are data/scenarios' Zenos yae Galvus scenarios.
+chosenTwinSpec :: (Monad m) => Spec.Spec m n -> Registry.Registry m -> n ()
+chosenTwinSpec s registry =
+  Spec.it s "CR 607.2d the creature Zenos yae Galvus chose is not interchangeable with its twin" $ do
+    zenos <- S.printingOf s registry "Zenos yae Galvus"
+    giant <- S.printingOf s registry "Hill Giant"
+    let (zenosId, g1) = S.addPermanent zenos S.alice (Setup.emptyGame S.bothPlayers)
+        (chosen, g2) = S.addPermanent giant S.bob g1
+        (twin, g3) = S.addPermanent giant S.bob g2
+        (third, g4) = S.addPermanent giant S.bob g3
+        recorded = Game.recordChoice Chosen.Objects Acquisition.Own (const (Just (Set.singleton chosen))) zenosId g4
+        alike g = Interchangeable.objects (Projection.projectAll g) g
+    Spec.assertBool s (alike g4 chosen twin) "setup: before any choice the Giants are alike"
+    Spec.assertBool s (not (alike recorded chosen twin)) "CR 607.2d the chosen Giant is its own option"
+    Spec.assertBool s (alike recorded twin third) "the two Giants Zenos did not choose stay alike"
 
 -- CR 603.10a's fourth family: Dutiful Knowledge Seeker {2}{U} Creature -- Fox
 -- Spirit 2/2, "Whenever one or more cards are put into a library from anywhere,
@@ -4041,6 +4064,7 @@ spec s registry = Spec.describe s "Parun.Engine.Trigger" $ do
   rakshasaVizierSpec s registry
   dutifulKnowledgeSeekerSpec s registry
   exiledWatcherSpec s registry
+  chosenTwinSpec s registry
   handArrivalSpec s registry
   warpedDevotionSpec s registry
   becameSlotSpec s registry

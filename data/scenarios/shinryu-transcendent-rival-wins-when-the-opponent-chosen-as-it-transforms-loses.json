@@ -193,7 +193,7 @@
       }
     }
   ],
-  "note": "Four seats, so CR 104.2a's last player standing cannot answer for the trigger: dave is still in the game when alice wins. Moonmist transforms Zenos because the front face's \"When the chosen creature leaves the battlefield, transform\" is not implemented (#7666).",
+  "note": "Four seats, so CR 104.2a's last player standing cannot answer for the trigger: dave is still in the game when alice wins. Moonmist transforms Zenos outright, so no creature has to leave first.",
   "timeline": [
     {
       "do": {

@@ -8,6 +8,7 @@ import qualified Numeric.Natural as Natural
 import qualified Parun.Types.CardName as CardName
 import qualified Parun.Types.CardType as CardType
 import qualified Parun.Types.Color as Color
+import qualified Parun.Types.ObjectId as ObjectId
 import qualified Parun.Types.PlayerChoice as PlayerChoice
 import qualified Parun.Types.PlayerId as PlayerId
 import qualified Parun.Types.Subtype as Subtype
@@ -28,3 +29,5 @@ data Chosen a where
   Players :: Chosen (Map.Map PlayerChoice.PlayerChoice PlayerId.PlayerId)
   -- | CR 607.2d / 607.2g: the last chosen number, or the life paid as it entered (Object.chosenNumber).
   Number :: Chosen Natural.Natural
+  -- | CR 607.2d: the last chosen objects (Object.chosenObjects).
+  Objects :: Chosen (Set.Set ObjectId.ObjectId)

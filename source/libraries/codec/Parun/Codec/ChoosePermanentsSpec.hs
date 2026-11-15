@@ -26,7 +26,8 @@ spec s = Spec.describe s "Parun.Codec.ChoosePermanents" $ do
           { ChoosePermanents.permanents = ChosenPermanents.MkChosenPermanents (Filter.HasCardType CardType.Creature) (PlayerRef.Relative PlayerRelation.You) (HowMany.UpTo Nothing) Nothing Zone.Battlefield Set.empty,
             ChoosePermanents.slot = SlotName.MkSlotName (Text.pack "chosen"),
             ChoosePermanents.pileChooser = Nothing,
-            ChoosePermanents.rest = Nothing
+            ChoosePermanents.rest = Nothing,
+            ChoosePermanents.linked = False
           }
       )
       " {\"permanents\":{\"filter\":{\"type\":\"HasCardType\",\"value\":\"Creature\"},\"count\":{\"type\":\"UpTo\"}},\"slot\":\"chosen\"} "
@@ -38,7 +39,8 @@ spec s = Spec.describe s "Parun.Codec.ChoosePermanents" $ do
           { ChoosePermanents.permanents = ChosenPermanents.MkChosenPermanents (Filter.HasCardType CardType.Creature) (PlayerRef.InSlot (SlotName.MkSlotName (Text.pack "thatPlayer"))) (HowMany.UpTo (Just (Quantity.Literal 2))) Nothing Zone.Battlefield Set.empty,
             ChoosePermanents.slot = SlotName.MkSlotName (Text.pack "chosen"),
             ChoosePermanents.pileChooser = Nothing,
-            ChoosePermanents.rest = Nothing
+            ChoosePermanents.rest = Nothing,
+            ChoosePermanents.linked = False
           }
       )
       " {\"permanents\":{\"filter\":{\"type\":\"HasCardType\",\"value\":\"Creature\"},\"chooser\":{\"type\":\"InSlot\",\"value\":\"thatPlayer\"},\"count\":{\"type\":\"UpTo\",\"value\":{\"type\":\"Literal\",\"value\":2}}},\"slot\":\"chosen\"} "
@@ -50,7 +52,8 @@ spec s = Spec.describe s "Parun.Codec.ChoosePermanents" $ do
           { ChoosePermanents.permanents = ChosenPermanents.MkChosenPermanents (Filter.HasCardType CardType.Creature) (PlayerRef.Relative PlayerRelation.You) (HowMany.UpTo Nothing) Nothing Zone.Battlefield Set.empty,
             ChoosePermanents.slot = SlotName.MkSlotName (Text.pack "chosen"),
             ChoosePermanents.pileChooser = Just (PlayerRef.InSlot (SlotName.MkSlotName (Text.pack "defender"))),
-            ChoosePermanents.rest = Nothing
+            ChoosePermanents.rest = Nothing,
+            ChoosePermanents.linked = False
           }
       )
       " {\"permanents\":{\"filter\":{\"type\":\"HasCardType\",\"value\":\"Creature\"},\"count\":{\"type\":\"UpTo\"}},\"slot\":\"chosen\",\"pileChooser\":{\"type\":\"InSlot\",\"value\":\"defender\"}} "
@@ -62,8 +65,22 @@ spec s = Spec.describe s "Parun.Codec.ChoosePermanents" $ do
           { ChoosePermanents.permanents = ChosenPermanents.MkChosenPermanents (Filter.HasCardType CardType.Creature) (PlayerRef.InSlot (SlotName.MkSlotName (Text.pack "defender"))) (HowMany.UpTo Nothing) Nothing Zone.Battlefield Set.empty,
             ChoosePermanents.slot = SlotName.MkSlotName (Text.pack "left"),
             ChoosePermanents.pileChooser = Nothing,
-            ChoosePermanents.rest = Just (SlotName.MkSlotName (Text.pack "right"))
+            ChoosePermanents.rest = Just (SlotName.MkSlotName (Text.pack "right")),
+            ChoosePermanents.linked = False
           }
       )
       " {\"permanents\":{\"filter\":{\"type\":\"HasCardType\",\"value\":\"Creature\"},\"chooser\":{\"type\":\"InSlot\",\"value\":\"defender\"},\"count\":{\"type\":\"UpTo\"}},\"slot\":\"left\",\"rest\":\"right\"} "
+  Spec.it s "MkChoosePermanents, a choice a linked ability reads back (CR 607.2d)" $
+    Common.assertCodec
+      s
+      ChoosePermanents.codec
+      ( ChoosePermanents.MkChoosePermanents
+          { ChoosePermanents.permanents = ChosenPermanents.MkChosenPermanents (Filter.HasCardType CardType.Creature) (PlayerRef.Relative PlayerRelation.You) HowMany.one Nothing Zone.Battlefield Set.empty,
+            ChoosePermanents.slot = SlotName.MkSlotName (Text.pack "chosen"),
+            ChoosePermanents.pileChooser = Nothing,
+            ChoosePermanents.rest = Nothing,
+            ChoosePermanents.linked = True
+          }
+      )
+      " {\"permanents\":{\"filter\":{\"type\":\"HasCardType\",\"value\":\"Creature\"}},\"slot\":\"chosen\",\"linked\":true} "
   Spec.it s "has a schema" $ Common.assertHasSchema s ChoosePermanents.codec

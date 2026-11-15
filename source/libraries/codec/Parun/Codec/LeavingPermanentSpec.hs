@@ -28,4 +28,6 @@ spec s = Spec.describe s "Parun.Codec.LeavingPermanent" $ do
       LeavingPermanent.codec
       (LeavingPermanent.Bound (SlotName.MkSlotName (Text.pack "target")))
       " {\"type\":\"Bound\",\"value\":\"target\"} "
+  Spec.it s "Chosen" $
+    Common.assertCodec s LeavingPermanent.codec LeavingPermanent.Chosen " {\"type\":\"Chosen\"} "
   Spec.it s "has a schema" $ Common.assertHasSchema s LeavingPermanent.codec
