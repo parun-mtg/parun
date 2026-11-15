@@ -1,0 +1,28 @@
+{
+  "description": "CR 702.179d each active teammate's speed rises once",
+  "note": "Under shared team turns alice and bob are both active players (CR 805.4), so one opponent's life loss raises both their speeds: each spends their OWN once-each-turn limit (Engine.limitKey's controller component keeps them apart). Alice starts at speed 1 and bob at 2, so a rise is visible on each and a single shared limit would leave one of them behind. The control drops the option and only alice's rises.",
+  "board": {
+    "seats": [
+      {
+        "name": "alice",
+        "team": 1,
+        "speed": 1,
+        "battlefield": [{ "card": "Mountain", "label": "mountain", "ready": true }],
+        "hand": [{ "card": "Lightning Bolt", "label": "bolt" }]
+      },
+      { "name": "bob", "team": 1, "speed": 2 },
+      { "name": "carol", "team": 2 },
+      { "name": "dave", "team": 2 }
+    ],
+    "active": "alice",
+    "step": "PrecombatMain",
+    "sharedTeamTurns": true
+  },
+  "timeline": [
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": { "Cast": { "object": "$bolt", "mana": ["$mountain"], "targets": ["$carol"] } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass" },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "Life": { "player": "carol", "life": 17 } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "View": { "of": "Speed", "player": "alice", "is": 2 } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "View": { "of": "Speed", "player": "bob", "is": 3 } } }
+  ]
+}
