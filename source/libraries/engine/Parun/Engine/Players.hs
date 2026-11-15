@@ -310,7 +310,9 @@ superlative controllerOf' roster' gs leading =
 --
 -- A reference is read as zoneOwners reads a stored permission's
 -- (Parun.Engine.PlayerEffect): over no bindings, every player still in the
--- game, so a slot-reading arm names nobody and admits nobody. A grant bakes
+-- game, so a slot-reading arm names nobody and admits nobody -- but for CR
+-- 113.7's source slot (Binding.triggerSource), which holds the ability's own
+-- source: Merseine's "the controller of the enchanted creature". A grant bakes
 -- its reference as it resolves (Parun.Engine.Resolve.Arms.Damage.modifyTarget).
 activatorPermits :: (ObjectId -> Maybe PlayerId) -> Activator.Activator -> PlayerId -> ObjectId -> PlayerId -> GameState -> Bool
 activatorPermits controllerOf' activator usual oid pid gs = case activator of
@@ -323,7 +325,7 @@ activatorPermits controllerOf' activator usual oid pid gs = case activator of
         { perspective = Just usual,
           bound = False,
           slotPlayers = const Nothing,
-          slotObject = const Nothing,
+          slotObject = \slot -> if slot == Binding.triggerSource then Just oid else Nothing,
           controllerOf = controllerOf',
           ownerOf = fmap Object.owner . (`Game.lookupObject` gs),
           acquisitionOf = (`Game.acquisitionOf` gs),

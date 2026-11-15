@@ -23,6 +23,7 @@ import qualified Parun.Types.CountersOnThis as CountersOnThis
 import qualified Parun.Types.DiscardCards as DiscardCards
 import qualified Parun.Types.Filter as Filter.Type
 import qualified Parun.Types.GraveyardCostDestination as GraveyardCostDestination
+import qualified Parun.Types.Hop as Hop
 import qualified Parun.Types.Hybrid as Hybrid
 import qualified Parun.Types.HybridPhyrexian as HybridPhyrexian
 import qualified Parun.Types.ManaCost as ManaCost
@@ -147,6 +148,8 @@ component self named c = case c of
   CostComponent.ReturnThis -> [Text.pack "Return " <> self <> Text.pack " to its owner's hand"]
   CostComponent.ExileThis -> [Text.pack "Exile " <> self]
   CostComponent.FlipCoin -> [Text.pack "Flip a coin"]
+  CostComponent.PayManaCostOf Hop.Itself -> [Text.pack "Pay " <> self <> Text.pack "'s mana cost"]
+  CostComponent.PayManaCostOf Hop.Host -> [Text.pack "Pay enchanted " <> Text.pack noun <> Text.pack "'s mana cost" | noun <- ["creature", "artifact", "enchantment", "land", "permanent"]]
   CostComponent.ExileThisFrom zone -> case zone of
     Zone.Graveyard -> [Text.pack "Exile " <> self <> Text.pack " from your graveyard"]
     Zone.Hand -> [Text.pack "Exile " <> self <> Text.pack " from your hand"]

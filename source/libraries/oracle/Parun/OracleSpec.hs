@@ -853,6 +853,8 @@ spec s = Spec.describe s "Parun.Oracle" $ do
     Spec.assertEq s (Just (Text.pack "Exile Spark from your graveyard: Draw a card.")) (costed [CostComponent.ExileThisFrom Zone.Graveyard])
     Spec.assertEq s (Just (Text.pack "Exile Spark from your hand: Draw a card.")) (costed [CostComponent.ExileThisFrom Zone.Hand])
     Spec.assertEq s (Just (Text.pack "Pay {E}{E}: Draw a card.")) (costed [CostComponent.PayEnergy (CostAmount.Fixed 2)])
+    Spec.assertEq s (Just (Text.pack "Pay Spark's mana cost: Draw a card.")) (costed [CostComponent.PayManaCostOf Hop.Itself])
+    Spec.assertEq s (Just (Text.pack "Pay enchanted creature's mana cost: Draw a card.")) (costed [CostComponent.PayManaCostOf Hop.Host])
     Spec.assertEq s (Just (Text.pack "Pay X {E}: Draw a card.")) (costed [CostComponent.PayEnergy (CostAmount.Announced (SlotName.MkSlotName (Text.pack "X")))])
     Spec.assertEq s (Just (Text.pack "Get five poison counters: Draw a card.")) (costed [CostComponent.PutCountersOnPayer (CountersOnPayer.MkCountersOnPayer PlayerCounterKind.Poison 5)])
     Spec.assertEq s (Just (Text.pack "Get an experience counter: Draw a card.")) (costed [CostComponent.PutCountersOnPayer (CountersOnPayer.MkCountersOnPayer PlayerCounterKind.Experience 1)])

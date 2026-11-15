@@ -29,6 +29,7 @@ import qualified Parun.Types.ExilePermanents as ExilePermanents
 import qualified Parun.Types.Filter as Filter
 import qualified Parun.Types.Gift as Gift
 import qualified Parun.Types.GraveyardCostDestination as GraveyardCostDestination
+import qualified Parun.Types.Hop as Hop
 import qualified Parun.Types.Keyword as Keyword
 import qualified Parun.Types.MoveCardsFromGraveyard as MoveCardsFromGraveyard
 import qualified Parun.Types.ObjectCount as ObjectCount
@@ -413,6 +414,13 @@ spec s = Spec.describe s "Parun.Codec.CostComponent" $ do
       codec
       (CostComponent.VariableAtLeast 1)
       " {\"type\":\"VariableAtLeast\",\"value\":1} "
+  -- CR 118.6: Merseine's "Pay enchanted creature's mana cost".
+  Spec.it s "PayManaCostOf" $
+    Common.assertCodec
+      s
+      codec
+      (CostComponent.PayManaCostOf Hop.Host)
+      " {\"type\":\"PayManaCostOf\",\"value\":\"Host\"} "
   -- CR 107.3a's variable of the same cost: the amount arrives with the
   -- announcement rather than off the card (Parun.Engine.Cost.substituteX).
   Spec.it s "Waterbend of an announced X" $

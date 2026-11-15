@@ -142,6 +142,7 @@ import qualified Parun.Types.GameState as GameState
 import qualified Parun.Types.Gift as Gift
 import qualified Parun.Types.GraveyardCostDestination as GraveyardCostDestination
 import qualified Parun.Types.Holder as Holder
+import qualified Parun.Types.Hop as Hop
 import qualified Parun.Types.Keyword as Keyword.Type
 import qualified Parun.Types.KeywordCostPart as KeywordCostPart
 import qualified Parun.Types.KeywordInstance as KeywordInstance
@@ -1833,6 +1834,20 @@ plus base extra =
           Cost.components = Cost.components base <> Cost.components extra
         }
 
+-- CR 601.2f / 118.6: each CostComponent.PayManaCostOf folded into the mana
+-- part, as the total cost is determined: the named object's mana cost through
+-- the projection (CR 707.2), any {X} in it 0 (CR 107.3h). An object with no
+-- mana cost (CR 202.1b), or no host to name, leaves the cost unpayable.
+withManaCostsOf :: ObjectId -> GameState -> Cost Keyword.Type.Keyword -> Cost Keyword.Type.Keyword
+withManaCostsOf srcId gs cost =
+  let named = [hop | CostComponent.PayManaCostOf hop <- Cost.components cost]
+      objectOf hop = case hop of
+        Hop.Itself -> Just srcId
+        Hop.Host -> Game.hostOf srcId gs
+      manaOf hop = fmap (Mana.substituteX 0) (objectOf hop >>= \oid -> Filter.manaCost (Projection.viewOfObject oid gs))
+      folded = cost {Cost.components = filter (\component -> case component of CostComponent.PayManaCostOf _ -> False; _ -> True) (Cost.components cost)}
+   in List.foldl' (\summed hop -> plus summed Cost.MkCost {Cost.mana = manaOf hop, Cost.components = []}) folded named
+
 -- CR 101.4's "Then the actions happen simultaneously" for one player's several
 -- CR 118.12 payments: `plus` over them, with every fixed life payment summed
 -- into ONE PayLife, so the life is paid as one event rather than one per offer
@@ -2036,6 +2051,7 @@ componentDemandGrowsWith slot component = case component of
   CostComponent.WaterbendInstead _ -> False
   CostComponent.TapInsteadOfMana _ -> False
   CostComponent.VariableAtLeast _ -> False
+  CostComponent.PayManaCostOf _ -> False
   CostComponent.ExileThisFrom _ -> False
   CostComponent.ExileThis -> False
   -- One card per exile out of a finite graveyard, Sacrifice's reason.
@@ -2419,6 +2435,7 @@ componentStatesHiddenQuality component = case component of
   CostComponent.WaterbendInstead _ -> False
   CostComponent.TapInsteadOfMana _ -> False
   CostComponent.VariableAtLeast _ -> False
+  CostComponent.PayManaCostOf _ -> False
   -- The other hidden zone (CR 400.2), and the FIRST conjunct is satisfied where
   -- no other arm's is -- but the second is not: CR 701.17a takes the cards off
   -- the top, so "mill a card" describes no quality for a player to fail to find.
@@ -3194,6 +3211,7 @@ claimOfGiven board slots pid oid component gs =
         CostComponent.WaterbendInstead _ -> Nothing
         CostComponent.TapInsteadOfMana _ -> Nothing
         CostComponent.VariableAtLeast _ -> Nothing
+        CostComponent.PayManaCostOf _ -> Nothing
         -- Nothing, Blight's arm above and for its reason one rule over: CR 701.20b
         -- leaves the revealed card in the hand, so nothing leaves any pool. CR
         -- 701.20c is what makes the shared-choice half right here too -- a card
@@ -3732,6 +3750,7 @@ uncountedCeiling pid oid claims gs component = case component of
   CostComponent.TapInsteadOfMana _ -> Just 1
   -- Nothing: a limit on the announcement spends nothing that runs out.
   CostComponent.VariableAtLeast _ -> Nothing
+  CostComponent.PayManaCostOf _ -> Nothing
   where
     -- `thresholdRepeats` where this is the ONLY claim on its axis, and 1 where
     -- another component of the cost draws on it too: the selections would then
@@ -4067,6 +4086,7 @@ targetComputed component = case component of
   CostComponent.WaterbendInstead _ -> False
   CostComponent.TapInsteadOfMana _ -> False
   CostComponent.VariableAtLeast _ -> False
+  CostComponent.PayManaCostOf _ -> False
 
 -- | CR 601.2b: the reserved slot a payment of this component binds for a later
 -- "if" to read through Quantity.WasBound, known from the announcement alone --
@@ -4123,6 +4143,7 @@ announcedRecord component = case component of
   CostComponent.WaterbendInstead _ -> Nothing
   CostComponent.TapInsteadOfMana _ -> Nothing
   CostComponent.VariableAtLeast _ -> Nothing
+  CostComponent.PayManaCostOf _ -> Nothing
 
 -- | `announcedRecord` over a whole cost.
 announcedRecords :: Cost Keyword.Type.Keyword -> Set.Set SlotName.SlotName
@@ -4174,6 +4195,7 @@ lifeOwedByComponent pid gs component = case component of
   CostComponent.WaterbendInstead _ -> 0
   CostComponent.TapInsteadOfMana _ -> 0
   CostComponent.VariableAtLeast _ -> 0
+  CostComponent.PayManaCostOf _ -> 0
   CostComponent.ExileThisFrom _ -> 0
   CostComponent.ExileThis -> 0
   CostComponent.MoveCardsFromGraveyard {} -> 0
@@ -4231,6 +4253,7 @@ energyOwedByComponent component = case component of
   CostComponent.WaterbendInstead _ -> 0
   CostComponent.TapInsteadOfMana _ -> 0
   CostComponent.VariableAtLeast _ -> 0
+  CostComponent.PayManaCostOf _ -> 0
   CostComponent.ExileThisFrom _ -> 0
   CostComponent.ExileThis -> 0
   CostComponent.MoveCardsFromGraveyard {} -> 0
@@ -4298,6 +4321,7 @@ countersOwedByComponent component = case component of
   CostComponent.WaterbendInstead _ -> []
   CostComponent.TapInsteadOfMana _ -> []
   CostComponent.VariableAtLeast _ -> []
+  CostComponent.PayManaCostOf _ -> []
   CostComponent.ExileThisFrom _ -> []
   CostComponent.ExileThis -> []
   CostComponent.MoveCardsFromGraveyard {} -> []
@@ -4635,6 +4659,9 @@ canPayComponentGiven board slots pid oid component gs = case component of
   CostComponent.WaterbendInstead _ -> True
   CostComponent.TapInsteadOfMana _ -> True
   CostComponent.VariableAtLeast _ -> True
+  -- CR 118.6: withManaCostsOf folds it into the mana part before any gate; one
+  -- left unfolded names no mana cost, so it is unpayable.
+  CostComponent.PayManaCostOf _ -> False
   -- CR 701.17b's last sentence, stated of costs in as many words: "the player
   -- can't pay a cost that includes milling a number of cards greater than the
   -- number of cards in their library". Not the general "as many as possible" of
@@ -4882,6 +4909,7 @@ criteriaOf component = case component of
   -- PRINTED, unlike the two above, so CR 612.2 has a word to swap in it.
   CostComponent.TapInsteadOfMana criterion -> [criterion]
   CostComponent.VariableAtLeast _ -> []
+  CostComponent.PayManaCostOf _ -> []
   CostComponent.ExileThisFrom _ -> []
   CostComponent.ExileThis -> []
   CostComponent.MillCards _ -> []
@@ -5980,6 +6008,7 @@ paidInSecondPass slots pid oid gs component = case component of
   CostComponent.WaterbendInstead _ -> False
   CostComponent.TapInsteadOfMana _ -> False
   CostComponent.VariableAtLeast _ -> False
+  CostComponent.PayManaCostOf _ -> False
   -- CR 701.20b moves nothing out of any zone, so rule 601.2h's library half has
   -- nothing to ask of it.
   CostComponent.RevealCardsFromHand _ -> False
@@ -6103,6 +6132,7 @@ sourceOnly component = case component of
   CostComponent.WaterbendInstead _ -> Nothing
   CostComponent.TapInsteadOfMana _ -> Nothing
   CostComponent.VariableAtLeast _ -> Nothing
+  CostComponent.PayManaCostOf _ -> Nothing
   CostComponent.MillCards _ -> Nothing
   CostComponent.RevealTopOfLibrary _ -> Nothing
   CostComponent.PayLife _ -> Nothing
@@ -6195,6 +6225,7 @@ orderSensitive component = case component of
   CostComponent.WaterbendInstead _ -> False
   CostComponent.TapInsteadOfMana _ -> False
   CostComponent.VariableAtLeast _ -> False
+  CostComponent.PayManaCostOf _ -> False
   -- CR 701.17a puts a card into a graveyard, which a graveyard-reading part of
   -- the same cost could then spend (Circling Vultures' "the top creature card of
   -- your graveyard"). Alone in CR 601.2h's second pass on this pool, but a combat
@@ -7931,6 +7962,7 @@ payPayable perform moment paidFor slots pid oid component = case component of
   -- already cashed into a TapPermanents component. No rule gives it an event.
   CostComponent.TapInsteadOfMana _ -> pure bindsNothing
   CostComponent.VariableAtLeast _ -> pure bindsNothing
+  CostComponent.PayManaCostOf _ -> pure bindsNothing
   -- CR 406.2's move, through the Event.changeZone funnel, so the card gets a CR
   -- 400.7 incarnation and anything watching a graveyard- or hand-to-exile move
   -- sees it. No prompt: the cost names this card.

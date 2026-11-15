@@ -630,9 +630,11 @@ affordableX mCeiling aimable stamp named spendable pid srcId gs cost = Cost.grea
 -- dropped. The gate offers the activation if any is payable, and
 -- Parun.Engine.Activate.activateAbility asks which one when two are. `effects`
 -- is the player's rows (PlayerEffect.applying), taken once per enumeration.
-costsFor :: [(RowSource, PlayerEffect.Type.PlayerEffect)] -> PlayerId -> ActivatedAbility.ActivatedAbility Card.Card (GrantedAbility.GrantedAbility Card.Card) -> GameState -> [Cost Keyword]
-costsFor effects pid ability gs =
-  let printed = Cost.withChoices (ActivatedAbility.costChoices ability) (ActivatedAbility.cost ability)
+-- A printed cost naming another object's mana cost names it here, off `srcId`
+-- (Cost.withManaCostsOf).
+costsFor :: [(RowSource, PlayerEffect.Type.PlayerEffect)] -> PlayerId -> ObjectId -> ActivatedAbility.ActivatedAbility Card.Card (GrantedAbility.GrantedAbility Card.Card) -> GameState -> [Cost Keyword]
+costsFor effects pid srcId ability gs =
+  let printed = fmap (Cost.withManaCostsOf srcId gs) (Cost.withChoices (ActivatedAbility.costChoices ability) (ActivatedAbility.cost ability))
       alternatives = fmap (\m -> Cost.Type.MkCost (Just m) []) (PlayerEffect.alternativeActivationCosts effects pid (ActivatedAbility.keyword ability) gs)
    in ListUtils.nubOrd (printed <> alternatives)
 
@@ -747,4 +749,4 @@ activatableGiven pools sources pid srcId ability gs =
         && Modal.selectionPossible (Set.difference fillable (Target.rememberedModes (StackedAbility.Activated (Projection.printedActivatedAbility srcId gs ability)) modal srcId gs)) (Modal.Type.selection modal)
         -- CR 107.3c: an X its text defines off no card is undefined.
         && not (Cost.undefinedX pid srcId ability gs)
-        && any (payableCostAtGiven rows aimable sources (Target.board pools) (leastX pid srcId ability gs) (ActivatedAbility.keyword ability) (ActivatedAbility.name ability) (ActivationRestriction.spendableTypes srcId (ActivatedAbility.restrictions ability) gs) pid srcId gs) (costsFor rows pid ability gs)
+        && any (payableCostAtGiven rows aimable sources (Target.board pools) (leastX pid srcId ability gs) (ActivatedAbility.keyword ability) (ActivatedAbility.name ability) (ActivationRestriction.spendableTypes srcId (ActivatedAbility.restrictions ability) gs) pid srcId gs) (costsFor rows pid srcId ability gs)
