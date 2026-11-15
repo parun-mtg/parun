@@ -877,7 +877,7 @@ out: grep for them.
 ### `OutsideTheGameSpec`
 
 - CR 100.4a two copies of one printing are two cards: the second wish finds the second copy | `board:outside-the-game`
-- CR 103.2a a deck's sideboard is recorded on its player and minted into no zone | `check:helper-poolOf` `check:other-Game.printingOf` `check:other-GameState.objects`
+- ~~CR 103.2a a deck's sideboard is recorded on its player and minted into no zone | `check:helper-poolOf` `check:other-Game.printingOf` `check:other-GameState.objects`~~
 - CR 307.1 with a spell on the stack the cycle's instant is castable and its sorcery is not | `board:outside-the-game`
 - CR 315.3 a conspiracy outside the game cannot be brought in | `board:outside-the-game`
 - CR 400.11b the pool is spent: a second Burning Wish finds nothing | `board:outside-the-game`
@@ -892,7 +892,7 @@ out: grep for them.
 - CR 701.23j Invasion of Arcavios brings an instant in from outside the game, and a search that skipped her library shuffles nothing | `board:outside-the-game`
 - CR 701.23j a card taken from outside the game fills the count, sparing the graveyard's match | `board:outside-the-game`
 - CR 701.23j outside the game alone may find nothing | `board:outside-the-game`
-- CR 708.2/730.4 a manifested main-game sorcery is offered to a subgame's wish as a creature and not as a sorcery | `board:objects-ids` `board:outsideobjects`
+- ~~CR 708.2/730.4 a manifested main-game sorcery is offered to a subgame's wish as a creature and not as a sorcery | `board:objects-ids` `board:outsideobjects`~~
 - CR 730.4/730.4a/730.5 gameplay: Living Wish takes two main-game creatures out of a Shahrazad subgame, and the triggers wait for the main game | `move:nested`
 - CR 730.5 gameplay: a wish that takes the resolving Shahrazad itself still finishes resolving with the winner it bound | `move:nested`
 
@@ -1027,19 +1027,19 @@ out: grep for them.
 
 ### `ResolveSpec`
 
-- CR 101.4b Jungle Wayfinder's later seats know the earlier seats' answers | `check:prompt-payload`
-- CR 101.4b a later seat knows what the seats before it answered for that land | `check:prompt-payload`
-- CR 110.5b whole card: Nature's Lore puts the Forest it finds onto the battlefield UNTAPPED | `check:events`
-- CR 118.12a Killing Wave asks each creature's controller, and a paid creature alone survives
-- CR 118.12a each land is its own offer, and any player's payment saves only that land | `check:prompt-payload`
-- CR 607.2a: killing the OTHER Dragon returns the OTHER card | `board:exile-linked`
-- CR 607.2a: the dead Dragon returns the card IT exiled, not the other Dragon's | `board:exile-linked`
-- CR 608.2b a Bolt whose only target died fizzles | `check:events`
-- CR 608.2h a modification that cannot be frozen is not stored at all | `check:other-StoredEffects.continuousEffects`
-- CR 608.2h/611.2d Rush of Blood's X is the power of the creature in its own target slot | `check:continuous-effects`
-- CR 701.23a/701.23e whole card: Hoarding Dragon exiles the artifact it finds, unrevealed | `check:events`
-- a departed player is not a legal target | `check:legal-targets` `check:other-TargetSlot.required`
-- an opponent's creature: that opponent loses the life | `check:creature-count`
+- ~~CR 101.4b Jungle Wayfinder's later seats know the earlier seats' answers | `check:prompt-payload`~~
+- ~~CR 101.4b a later seat knows what the seats before it answered for that land | `check:prompt-payload`~~
+- ~~CR 110.5b whole card: Nature's Lore puts the Forest it finds onto the battlefield UNTAPPED | `check:events`~~
+- ~~CR 118.12a Killing Wave asks each creature's controller, and a paid creature alone survives~~
+- ~~CR 118.12a each land is its own offer, and any player's payment saves only that land | `check:prompt-payload`~~
+- ~~CR 607.2a: killing the OTHER Dragon returns the OTHER card | `board:exile-linked`~~
+- ~~CR 607.2a: the dead Dragon returns the card IT exiled, not the other Dragon's | `board:exile-linked`~~
+- ~~CR 608.2b a Bolt whose only target died fizzles | `check:events`~~
+- ~~CR 608.2h a modification that cannot be frozen is not stored at all | `check:other-StoredEffects.continuousEffects`~~
+- ~~CR 608.2h/611.2d Rush of Blood's X is the power of the creature in its own target slot | `check:continuous-effects`~~
+- ~~CR 701.23a/701.23e whole card: Hoarding Dragon exiles the artifact it finds, unrevealed | `check:events`~~
+- ~~a departed player is not a legal target | `check:legal-targets` `check:other-TargetSlot.required`~~
+- ~~an opponent's creature: that opponent loses the life | `check:creature-count`~~
 
 ### `RestampSpec`
 
