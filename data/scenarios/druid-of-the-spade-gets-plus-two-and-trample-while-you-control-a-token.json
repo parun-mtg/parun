@@ -1,0 +1,162 @@
+{
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "battlefield": [
+          {
+            "card": "Druid of the Spade",
+            "label": "druid"
+          },
+          {
+            "card": "Plains",
+            "label": "p1"
+          },
+          {
+            "card": "Plains",
+            "label": "p2"
+          },
+          {
+            "card": "Plains",
+            "label": "p3"
+          }
+        ],
+        "hand": [
+          {
+            "card": "Hop to It",
+            "label": "hop"
+          }
+        ],
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ],
+        "name": "alice"
+      },
+      {
+        "battlefield": [
+          {
+            "card": "Grizzly Bears",
+            "label": "btoken",
+            "token": true
+          }
+        ],
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ],
+        "name": "bob"
+      }
+    ],
+    "step": "PrecombatMain"
+  },
+  "description": "CR 611.3a, 111.1, 702.19a: Druid of the Spade gets +2/+0 and has trample only while its controller controls a token; an opponent's token does not count",
+  "note": "Bob controls a Rabbit token from the start, and the Druid is a 2/3 without trample. Hop to It gives alice three Rabbit tokens: the Druid is a 4/3 with trample.",
+  "timeline": [
+    {
+      "check": {
+        "PowerToughness": {
+          "object": "$druid",
+          "power": 2,
+          "toughness": 3
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Keywords": {
+          "count": 0,
+          "keyword": {
+            "type": "Trample"
+          },
+          "object": "$druid"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Cast": {
+          "mana": [
+            "$p1",
+            "$p2",
+            "$p3"
+          ],
+          "object": "$hop"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "PowerToughness": {
+          "object": "$druid",
+          "power": 2,
+          "toughness": 3
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "PowerToughness": {
+          "object": "$druid",
+          "power": 4,
+          "toughness": 3
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Keywords": {
+          "count": 1,
+          "keyword": {
+            "type": "Trample"
+          },
+          "object": "$druid"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    }
+  ]
+}

@@ -1,0 +1,314 @@
+{
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "battlefield": [
+          {
+            "card": "Island",
+            "label": "i1"
+          },
+          {
+            "card": "Island",
+            "label": "i2"
+          },
+          {
+            "card": "Island",
+            "label": "i3"
+          },
+          {
+            "card": "Island",
+            "label": "i4"
+          },
+          {
+            "card": "Island",
+            "label": "i5"
+          },
+          {
+            "card": "Island",
+            "label": "i6"
+          },
+          {
+            "card": "Island",
+            "label": "i7"
+          },
+          {
+            "card": "Island",
+            "label": "i8"
+          }
+        ],
+        "graveyard": [
+          {
+            "card": "Opt"
+          },
+          {
+            "card": "Shock"
+          },
+          {
+            "card": "Divination"
+          },
+          {
+            "card": "Grizzly Bears"
+          },
+          {
+            "card": "Forest"
+          }
+        ],
+        "hand": [
+          {
+            "card": "Eddymurk Crab",
+            "label": "c1"
+          },
+          {
+            "card": "Eddymurk Crab",
+            "label": "c2"
+          }
+        ],
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ],
+        "name": "alice"
+      },
+      {
+        "battlefield": [
+          {
+            "card": "Hill Giant",
+            "label": "giant"
+          },
+          {
+            "card": "Grizzly Bears",
+            "label": "bears"
+          },
+          {
+            "card": "Elvish Mystic",
+            "label": "mystic"
+          }
+        ],
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ],
+        "name": "bob"
+      }
+    ],
+    "step": "PrecombatMain"
+  },
+  "description": "CR 601.2f, 702.8a, 614.1c, 603.3d, 701.26a: Eddymurk Crab costs {1} less per instant and sorcery card in its controller's graveyard, enters tapped only if it's not its controller's turn, and taps up to two target creatures as it enters",
+  "note": "Alice's graveyard holds two instants and a sorcery beside a creature and a land, so each Crab costs {2}{U}{U}, paid with exactly four Islands. On her own turn the first Crab enters untapped and taps bob's Hill Giant and Grizzly Bears. On bob's turn, at flash speed in his upkeep, the second enters tapped and taps only his Elvish Mystic, leaving the untapped Giant alone.",
+  "timeline": [
+    {
+      "do": {
+        "Cast": {
+          "mana": [
+            "$i1",
+            "$i2",
+            "$i3",
+            "$i4",
+            null
+          ],
+          "object": "$c1"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "ChooseTargets": {
+          "creatures": [
+            "$giant",
+            "$bears"
+          ]
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Tapped": {
+          "object": "Eddymurk Crab#2",
+          "tapped": false
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Tapped": {
+          "object": "$giant",
+          "tapped": true
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Tapped": {
+          "object": "$bears",
+          "tapped": true
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Tapped": {
+          "object": "$mystic",
+          "tapped": false
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Tapped": {
+          "object": "$i5",
+          "tapped": false
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Cast": {
+          "mana": [
+            "$i5",
+            "$i6",
+            "$i7",
+            "$i8"
+          ],
+          "object": "$c2"
+        }
+      },
+      "player": "alice",
+      "step": "Upkeep",
+      "turn": 2
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "Upkeep",
+      "turn": 2
+    },
+    {
+      "do": {
+        "ChooseTargets": {
+          "creatures": [
+            "$mystic"
+          ]
+        }
+      },
+      "player": "alice",
+      "step": "Upkeep",
+      "turn": 2
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "Upkeep",
+      "turn": 2
+    },
+    {
+      "check": {
+        "Tapped": {
+          "object": "Eddymurk Crab#2",
+          "tapped": true
+        }
+      },
+      "player": "alice",
+      "step": "Upkeep",
+      "turn": 2
+    },
+    {
+      "check": {
+        "Tapped": {
+          "object": "$mystic",
+          "tapped": true
+        }
+      },
+      "player": "alice",
+      "step": "Upkeep",
+      "turn": 2
+    },
+    {
+      "check": {
+        "Tapped": {
+          "object": "$giant",
+          "tapped": false
+        }
+      },
+      "player": "alice",
+      "step": "Upkeep",
+      "turn": 2
+    },
+    {
+      "check": {
+        "Tapped": {
+          "object": "Eddymurk Crab",
+          "tapped": false
+        }
+      },
+      "player": "alice",
+      "step": "Upkeep",
+      "turn": 2
+    }
+  ]
+}

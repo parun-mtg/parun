@@ -1,0 +1,273 @@
+{
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "battlefield": [
+          {
+            "card": "Plains",
+            "label": "p1"
+          },
+          {
+            "card": "Plains",
+            "label": "p2"
+          },
+          {
+            "card": "Plains",
+            "label": "p3"
+          },
+          {
+            "card": "Plains",
+            "label": "p4"
+          },
+          {
+            "card": "Plains",
+            "label": "p5"
+          },
+          {
+            "card": "Plains",
+            "label": "p6"
+          },
+          {
+            "card": "Plains",
+            "label": "p7"
+          },
+          {
+            "card": "Plains",
+            "label": "p8"
+          },
+          {
+            "card": "Plains",
+            "label": "p9"
+          },
+          {
+            "card": "Plains",
+            "label": "p10"
+          },
+          {
+            "card": "Elvish Mystic",
+            "label": "mystic"
+          }
+        ],
+        "hand": [
+          {
+            "card": "Driftgloom Coyote",
+            "label": "c1"
+          },
+          {
+            "card": "Driftgloom Coyote",
+            "label": "c2"
+          }
+        ],
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ],
+        "name": "alice"
+      },
+      {
+        "battlefield": [
+          {
+            "card": "Hill Giant",
+            "label": "giant"
+          },
+          {
+            "card": "Grizzly Bears",
+            "label": "bears"
+          }
+        ],
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ],
+        "name": "bob"
+      }
+    ],
+    "step": "PrecombatMain"
+  },
+  "description": "CR 603.3d, 610.3, 608.2h, 122.1: Driftgloom Coyote's entering trigger exiles target creature an opponent controls until the Coyote leaves, then puts a +1/+1 counter on the Coyote only if the exiled creature's power was 2 or less",
+  "note": "Alice's own Elvish Mystic is refused as a target. The first Coyote exiles bob's 3-power Hill Giant and gets no counter; the second exiles bob's 2-power Grizzly Bears, its only legal target, and gets one, its power read after the Bears left.",
+  "timeline": [
+    {
+      "do": {
+        "Cast": {
+          "mana": [
+            "$p1",
+            "$p2",
+            "$p3",
+            "$p4",
+            "$p5",
+            null
+          ],
+          "object": "$c1"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "player": "alice",
+      "refuse": {
+        "ChooseTargets": {
+          "target": [
+            "$mystic"
+          ]
+        }
+      },
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "ChooseTargets": {
+          "target": [
+            "$giant"
+          ]
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Hill Giant",
+          "count": 1,
+          "player": "bob",
+          "zone": "Exile"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Cast": {
+          "mana": [
+            "$p6",
+            "$p7",
+            "$p8",
+            "$p9",
+            "$p10"
+          ],
+          "object": "$c2"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Grizzly Bears",
+          "count": 1,
+          "player": "bob",
+          "zone": "Exile"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Counters": {
+          "count": 1,
+          "kind": {
+            "type": "PlusOnePlusOne"
+          },
+          "object": "Driftgloom Coyote#2"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "PowerToughness": {
+          "object": "Driftgloom Coyote#2",
+          "power": 4,
+          "toughness": 5
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Counters": {
+          "count": 0,
+          "kind": {
+            "type": "PlusOnePlusOne"
+          },
+          "object": "Driftgloom Coyote"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "PowerToughness": {
+          "object": "Driftgloom Coyote",
+          "power": 3,
+          "toughness": 4
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    }
+  ]
+}

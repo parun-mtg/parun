@@ -1,0 +1,301 @@
+{
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "battlefield": [
+          {
+            "card": "Forest",
+            "label": "f1"
+          },
+          {
+            "card": "Forest",
+            "label": "f2"
+          },
+          {
+            "card": "Forest",
+            "label": "f3"
+          },
+          {
+            "card": "Forest",
+            "label": "f4"
+          },
+          {
+            "card": "Island",
+            "label": "i1"
+          },
+          {
+            "card": "Island",
+            "label": "i2"
+          },
+          {
+            "card": "Island",
+            "label": "i3"
+          },
+          {
+            "card": "Island",
+            "label": "i4"
+          },
+          {
+            "card": "Grizzly Bears",
+            "label": "bears"
+          }
+        ],
+        "hand": [
+          {
+            "card": "Dreamdew Entrancer",
+            "label": "e1"
+          },
+          {
+            "card": "Dreamdew Entrancer",
+            "label": "e2"
+          }
+        ],
+        "library": [
+          {
+            "card": "Opt"
+          },
+          {
+            "card": "Shock"
+          },
+          {
+            "card": "Forest"
+          },
+          {
+            "card": "Island"
+          }
+        ],
+        "name": "alice"
+      },
+      {
+        "battlefield": [
+          {
+            "card": "Hill Giant",
+            "label": "giant"
+          }
+        ],
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ],
+        "name": "bob"
+      }
+    ],
+    "step": "PrecombatMain"
+  },
+  "description": "CR 603.3d, 701.26a, 122.1g, 608.2c: Dreamdew Entrancer's entering trigger taps up to one target creature and puts three stun counters on it, then draws two only if its controller controls that creature",
+  "note": "The first Entrancer targets bob's Hill Giant: it is tapped with three stun counters and alice draws nothing. The second targets alice's own Grizzly Bears: tapped, three stun counters, and alice draws Opt and Shock, leaving Forest on top.",
+  "timeline": [
+    {
+      "do": {
+        "Cast": {
+          "mana": [
+            "$f1",
+            "$f2",
+            "$f3",
+            "$i1",
+            null
+          ],
+          "object": "$e1"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "ChooseTargets": {
+          "target": [
+            "$giant"
+          ]
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Tapped": {
+          "object": "$giant",
+          "tapped": true
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Counters": {
+          "count": 3,
+          "kind": {
+            "type": "Stun"
+          },
+          "object": "$giant"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "View": {
+          "is": [
+            "$e2"
+          ],
+          "of": "Zone",
+          "player": "alice",
+          "zone": "Hand"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Cast": {
+          "mana": [
+            "$f4",
+            "$i2",
+            "$i3",
+            "$i4"
+          ],
+          "object": "$e2"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "ChooseTargets": {
+          "target": [
+            "$bears"
+          ]
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Tapped": {
+          "object": "$bears",
+          "tapped": true
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Counters": {
+          "count": 3,
+          "kind": {
+            "type": "Stun"
+          },
+          "object": "$bears"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Opt",
+          "count": 1,
+          "player": "alice",
+          "zone": "Hand"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Shock",
+          "count": 1,
+          "player": "alice",
+          "zone": "Hand"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "View": {
+          "is": [
+            "Forest#5",
+            "Island#5"
+          ],
+          "of": "Zone",
+          "player": "alice",
+          "zone": "Library"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "View": {
+          "is": [],
+          "of": "Zone",
+          "player": "bob",
+          "zone": "Hand"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    }
+  ]
+}

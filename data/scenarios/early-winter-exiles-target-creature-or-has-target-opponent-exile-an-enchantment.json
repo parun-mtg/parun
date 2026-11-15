@@ -1,0 +1,336 @@
+{
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "battlefield": [
+          {
+            "card": "Swamp",
+            "label": "s1"
+          },
+          {
+            "card": "Swamp",
+            "label": "s2"
+          },
+          {
+            "card": "Swamp",
+            "label": "s3"
+          },
+          {
+            "card": "Swamp",
+            "label": "s4"
+          },
+          {
+            "card": "Swamp",
+            "label": "s5"
+          },
+          {
+            "card": "Swamp",
+            "label": "s6"
+          },
+          {
+            "card": "Swamp",
+            "label": "s7"
+          },
+          {
+            "card": "Swamp",
+            "label": "s8"
+          },
+          {
+            "card": "Swamp",
+            "label": "s9"
+          },
+          {
+            "card": "Swamp",
+            "label": "s10"
+          },
+          {
+            "card": "Glorious Anthem",
+            "label": "aanthem"
+          }
+        ],
+        "hand": [
+          {
+            "card": "Early Winter",
+            "label": "w1"
+          },
+          {
+            "card": "Early Winter",
+            "label": "w2"
+          }
+        ],
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ],
+        "name": "alice"
+      },
+      {
+        "battlefield": [
+          {
+            "card": "Hill Giant",
+            "label": "giant"
+          },
+          {
+            "card": "Glorious Anthem",
+            "label": "banthem"
+          },
+          {
+            "card": "Ornithopter",
+            "label": "thopter"
+          },
+          {
+            "card": "Leyline of the Void",
+            "label": "bleyline"
+          }
+        ],
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ],
+        "name": "bob"
+      },
+      {
+        "battlefield": [
+          {
+            "card": "Glorious Anthem",
+            "label": "canthem"
+          }
+        ],
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ],
+        "name": "carol"
+      }
+    ],
+    "step": "PrecombatMain"
+  },
+  "description": "CR 700.2a, 115.1, 701.13a, 109.4: Early Winter's first mode exiles target creature; its second has target opponent exile an enchantment of their choice they control",
+  "note": "The first Early Winter exiles bob's Hill Giant. The second targets bob (alice is refused): bob is refused carol's Glorious Anthem and his own Ornithopter, then exiles his Glorious Anthem over his Leyline of the Void; alice's and carol's Anthems and bob's Ornithopter and Leyline stay.",
+  "timeline": [
+    {
+      "do": {
+        "Cast": {
+          "mana": [
+            "$s1",
+            "$s2",
+            "$s3",
+            "$s4",
+            "$s5",
+            null
+          ],
+          "modes": [
+            0
+          ],
+          "object": "$w1",
+          "targets": [
+            "$giant"
+          ]
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Hill Giant",
+          "count": 1,
+          "player": "bob",
+          "zone": "Exile"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "player": "alice",
+      "refuse": {
+        "Cast": {
+          "mana": [
+            "$s6",
+            "$s7",
+            "$s8",
+            "$s9",
+            "$s10"
+          ],
+          "modes": [
+            1
+          ],
+          "object": "$w2",
+          "targets": [
+            "$alice"
+          ]
+        }
+      },
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Cast": {
+          "mana": [
+            "$s6",
+            "$s7",
+            "$s8",
+            "$s9",
+            "$s10"
+          ],
+          "modes": [
+            1
+          ],
+          "object": "$w2",
+          "targets": [
+            "$bob"
+          ]
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "player": "bob",
+      "refuse": {
+        "Answer": {
+          "prompt": "ChoosePermanent",
+          "with": "$canthem"
+        }
+      },
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "player": "bob",
+      "refuse": {
+        "Answer": {
+          "prompt": "ChoosePermanent",
+          "with": "$thopter"
+        }
+      },
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Answer": {
+          "prompt": "ChoosePermanent",
+          "with": "$banthem"
+        }
+      },
+      "player": "bob",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Glorious Anthem",
+          "count": 1,
+          "player": "bob",
+          "zone": "Exile"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Leyline of the Void",
+          "count": 1,
+          "player": "bob",
+          "zone": "Battlefield"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Glorious Anthem",
+          "count": 1,
+          "player": "carol",
+          "zone": "Battlefield"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Glorious Anthem",
+          "count": 1,
+          "player": "alice",
+          "zone": "Battlefield"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Ornithopter",
+          "count": 1,
+          "player": "bob",
+          "zone": "Battlefield"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    }
+  ]
+}
