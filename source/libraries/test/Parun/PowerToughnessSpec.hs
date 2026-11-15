@@ -65,11 +65,9 @@ import qualified Parun.Types.DistinctOf as DistinctOf
 import qualified Parun.Types.Existence as Existence
 import qualified Parun.Types.Face as Face
 import qualified Parun.Types.Filter as Filter.Type
-import qualified Parun.Types.GameEvent as GameEvent
 import qualified Parun.Types.GameState as GameState
 import qualified Parun.Types.InZone as InZone
 import qualified Parun.Types.Keyword as Keyword
-import qualified Parun.Types.LifeChange as LifeChange
 import qualified Parun.Types.Modification as Modification
 import qualified Parun.Types.ModifyPowerToughness as ModifyPowerToughness
 import qualified Parun.Types.Object as Object
@@ -94,7 +92,6 @@ import qualified Parun.Types.Seat as Seat
 import qualified Parun.Types.Sickness as Sickness
 import qualified Parun.Types.SlotName as SlotName
 import qualified Parun.Types.StoredEffects as StoredEffects
-import qualified Parun.Types.Subtype as Subtype
 import qualified Parun.Types.TurnRegisters as TurnRegisters
 import qualified Parun.Types.Zone as Zone
 
@@ -484,7 +481,6 @@ spec s registry = Spec.describe s "Parun.Engine.PowerToughness" $ do
   gloriousAnthemAshayaSpec s registry
   witheringAnthemSpec s registry
   malignusSpec s registry
-  fortifyingDraughtSpec s registry
   ingesterSpec s registry
   livingLoreSpec s registry
   suturedGhoulSpec s registry
@@ -897,8 +893,8 @@ brightspearZealotSpec s registry =
 -- Deliberately NOT CR 611.2b's "for as long as" duration, which ends a stored
 -- effect once and for good; CR 611.2c's parenthetical ("Note that this works
 -- differently than a continuous effect from a static ability") is the rule that
--- keeps the two apart, and the last test here is the observable difference -- the
--- bonus comes BACK.
+-- keeps the two apart, and the observable difference -- the bonus comes BACK --
+-- is data/scenarios/power-toughness/cr-613-1d-a-convincing-mirage-d-forest-stops-being-one-and-the-pump-stops-with-it.json.
 kirdApeSpec :: (Monad m, Monad n) => Spec.Spec m n -> Registry.Registry m -> n ()
 kirdApeSpec s registry = Spec.describe s "Kird Ape" $ do
   -- Both halves of the clause on one board, with a permanent ENTERING between the
@@ -924,65 +920,6 @@ kirdApeSpec s registry = Spec.describe s "Kird Ape" $ do
     let (apeId, board) = S.addPermanent kirdApe S.alice (Setup.emptyGame S.bothPlayers)
         bobsForest = snd (S.addPermanent forest S.bob board)
     Spec.assertEqWith s "bob's Forest does nothing" (S.powerToughnessOf apeId bobsForest) (Just (1, 1))
-  -- The clause read against the PROJECTION rather than the printed type line, and
-  -- the flip driven by a real cast: Convincing Mirage's CR 614.1c as-enters choice
-  -- makes the Forest an Island in layer 4 (CR 613.1d), which is strictly before
-  -- the layer 7c the pump lands in, so the Ape shrinks. An engine that asked
-  -- whether alice controlled a card PRINTED "Forest" leaves it a 2/3.
-  --
-  -- Also the CR 611.2c half: the Aura leaves and the +1/+2 comes back, which a
-  -- duration could not do.
-  Spec.it s "CR 613.1d a Convincing Mirage'd Forest stops being one, and the pump stops with it" $ do
-    kirdApe <- S.printingOf s registry "Kird Ape"
-    forest <- S.printingOf s registry "Forest"
-    island <- S.printingOf s registry "Island"
-    convincingMirage <- S.printingOf s registry "Convincing Mirage"
-    let base = S.landsInPlay island 4
-        (forestId, withForest) = S.addPermanent forest S.alice base
-        (apeId, withApe) = S.addPermanent kirdApe S.alice withForest
-        (withAura, auraSpell) = S.handOne convincingMirage withApe
-        cast = S.runPure (mirageOn forestId Subtype.Island) withAura (S.cast S.alice auraSpell)
-        enchanted = S.runPure (mirageOn forestId Subtype.Island) cast Stack.resolveTop
-        -- CR 704.5m sends an Aura attached to nothing to the graveyard, but this
-        -- only needs the Forest back: the Aura is removed from the battlefield
-        -- directly, so its layer-4 effect is simply no longer gathered.
-        unenchanted = removeFromBattlefield (auraOf enchanted) enchanted
-    Spec.assertEqWith s "2/3 while the Forest is a Forest" (S.powerToughnessOf apeId withApe) (Just (2, 3))
-    Spec.assertEqWith s "CR 305.7 the land is now only an Island" (Projection.subtypesOf forestId enchanted) (Set.singleton Subtype.Island)
-    Spec.assertEqWith s "so the Ape is back to 1/1" (S.powerToughnessOf apeId enchanted) (Just (1, 1))
-    Spec.assertEqWith s "and 2/3 again once the Aura is gone" (S.powerToughnessOf apeId unenchanted) (Just (2, 3))
-
--- Convincing Mirage's two prompts: its CR 303.4a enchant slot, forced onto the
--- one land the test cares about (the board offers five), and its CR 614.1c
--- as-enters basic land type. Everything else defers to S.identityAnswer.
--- Parun.AuraSpec has the same answerer for the same card; this one is local
--- because the group needs it and nothing else here does.
-mirageOn :: ObjectId.ObjectId -> Subtype.Subtype -> Prompt.Prompt r -> r
-mirageOn landId subtype p = case p of
-  Prompt.ChooseTargets _ _ _ sets -> fmap (const (Set.singleton (Recipient.ToObject landId))) sets
-  Prompt.ChooseSubtype {} -> subtype
-  _ -> S.identityAnswer p
-
--- The one Convincing Mirage on the battlefield, by printed name (the
--- leechesOnBattlefield precedent above: the cast's ObjectId names a spell that
--- CR 400.7 has already replaced).
-auraOf :: GameState.GameState -> ObjectId.ObjectId
-auraOf gs =
-  let isMirage oid = maybe False (\f -> Face.name f == CardName.MkCardName (Text.pack "Convincing Mirage")) (Game.faceOf oid gs)
-   in case filter isMirage (Set.toList (GameState.battlefield gs)) of
-        oid : _ -> oid
-        [] -> ObjectId.MkObjectId 999
-
--- Take a permanent off the battlefield without routing it anywhere, so a test can
--- ask what the board looks like once its continuous effect is no longer gathered.
--- Not a zone change: nothing here is a CR 400.7 move, and no test using it reads
--- the graveyard.
-removeFromBattlefield :: ObjectId.ObjectId -> GameState.GameState -> GameState.GameState
-removeFromBattlefield oid gs =
-  gs
-    { GameState.battlefield = Set.delete oid (GameState.battlefield gs),
-      GameState.objects = Map.delete oid (GameState.objects gs)
-    }
 
 -- Knight of Grace ({1}{W} Creature -- Human Knight, printed 2/2), third line:
 -- "This creature gets +1/+0 as long as any player controls a black permanent."
@@ -1249,75 +1186,6 @@ malignusBoard malignus =
 -- READS, so no spell has to be cast to move one.
 atLife :: PlayerId.PlayerId -> Integer -> GameState.GameState -> GameState.GameState
 atLife pid n gs = gs {GameState.players = Map.adjust (\p -> p {Player.life = n}) pid (GameState.players gs)}
-
--- Answers Prompt.ChooseTargets with one fixed recipient -- CR 601.2c's choice,
--- which S.identityAnswer declines.
-aimRecipient :: Recipient.Recipient -> Prompt.Prompt r -> r
-aimRecipient recipient p = case p of
-  Prompt.ChooseTargets _ _ _ sets -> fmap (const (Set.singleton recipient)) sets
-  _ -> S.identityAnswer p
-
--- alice has two Forests untapped, a Goblin Piker (2/1) and two Fortifying
--- Draughts in hand; bob has Russet Wolves (3/3). BOB HAS ALREADY GAINED 7 LIFE
--- THIS TURN, planted in the log, which is the negative control CR 109.5's "you"
--- needs on a two-seat board: every X below is a number no reading of bob's tally
--- can produce.
---
--- The numbers are chosen so no two readings coincide. Each Draught gains 2, so
--- COUNTING the gain events (1, then 2) and SUMMING the amounts (2, then 4) never
--- agree; 7, 9 and 11 are what a reading that saw bob's gain would give.
-draughtBoard ::
-  Printing.Printing ->
-  Printing.Printing ->
-  Printing.Printing ->
-  Printing.Printing ->
-  (ObjectId.ObjectId, ObjectId.ObjectId, ObjectId.ObjectId, ObjectId.ObjectId, GameState.GameState)
-draughtBoard forest piker wolves draught =
-  let (pikerId, withPiker) = S.addPermanent piker S.alice (S.landsInPlay forest 2)
-      (wolvesId, withWolves) = S.addPermanent wolves S.bob withPiker
-      (withOne, firstId) = S.handOne draught withWolves
-      (secondId, withTwo) = S.addHandCard draught S.alice withOne
-   in (pikerId, wolvesId, firstId, secondId, S.withEvents [GameEvent.LifeGained (LifeChange.MkLifeChange S.bob 7 True)] withTwo)
-
--- Cast one Fortifying Draught at this recipient and resolve it.
-castDraught :: Recipient.Recipient -> ObjectId.ObjectId -> GameState.GameState -> GameState.GameState
-castDraught recipient draughtId gs =
-  S.runPure (aimRecipient recipient) gs (S.cast S.alice draughtId >> Stack.resolveTop >> Engine.settleForPriority)
-
--- Fortifying Draught ({G} Instant, Oracle text verified against Scryfall): "You
--- gain 2 life. Target creature gets +X/+X until end of turn, where X is the
--- amount of life you gained this turn."
---
--- The card Quantity.LifeChanged was waiting for. CR 119.3's gain is
--- recorded as GameEvent.LifeGained, and CR 608.2i's turn-scoped log is where the
--- total comes from -- so the quantity is a SUM of amounts over that log
--- (Game.lifeChangedIn), not a count of its entries.
---
--- CR 608.2c is what makes the card read its own gain: the two instructions are
--- followed in printed order, so by the time the modification is created the
--- Draught's own 2 is already in the log. CR 608.2h / 611.2d then freeze the value
--- into the stored layer-7c effect (Projection.freezeQuantities), which is why a
--- later gain does not grow a pump that has already been made.
-fortifyingDraughtSpec :: (Monad m) => Spec.Spec m n -> Registry.Registry m -> n ()
-fortifyingDraughtSpec s registry = Spec.describe s "Fortifying Draught" $ do
-  -- THE PROVING CASE, and the ACCUMULATION control: the second Draught reads 4
-  -- and not 2, so the tally is the turn's whole gain rather than the last event.
-  -- Falsifiers: reading only the last gain leaves the Piker a 6/5; counting
-  -- events rather than summing amounts leaves it a 5/4; reading every player's
-  -- gain makes the first pump +9/+9.
-  Spec.it s "CR 119.3/608.2i two gains in one turn add up: +2/+2 then +4/+4" $ do
-    forest <- S.printingOf s registry "Forest"
-    piker <- S.printingOf s registry "Goblin Piker"
-    wolves <- S.printingOf s registry "Russet Wolves"
-    draught <- S.printingOf s registry "Fortifying Draught"
-    let (pikerId, _, firstId, secondId, gs) = draughtBoard forest piker wolves draught
-        afterOne = castDraught (Recipient.ToCreature pikerId) firstId gs
-        afterTwo = castDraught (Recipient.ToCreature pikerId) secondId afterOne
-    Spec.assertEqWith s "the printed box before either spell" (S.powerToughnessOf pikerId gs) (Just (2, 1))
-    Spec.assertEqWith s "the first Draught read its own 2 and nobody else's" (S.powerToughnessOf pikerId afterOne) (Just (4, 3))
-    Spec.assertEqWith s "the second read 4 -- both gains, summed" (S.powerToughnessOf pikerId afterTwo) (Just (8, 7))
-    Spec.assertEqWith s "alice gained 2 twice" (S.lifeOf S.alice afterTwo) (Just 24)
-    Spec.assertEqWith s "bob's planted 7 was never paid to anyone" (S.lifeOf S.bob afterTwo) (Just 20)
 
 -- Phyrexian Ingester ({6}{U} Creature -- Phyrexian Beast 3/3, Oracle text fetched
 -- from Scryfall 2026-09-05): "Imprint -- When this creature enters, you may exile

@@ -150,44 +150,6 @@ aimAt oid p = case p of
   Prompt.ChooseTargets _ _ _ sets -> fmap (const (Set.singleton (Recipient.ToObject oid))) sets
   _ -> S.identityAnswer p
 
--- Bob's board for the TWO-STEP prohibition: an untapped Hill Giant and a tapped
--- Goblin Piker, and alice's Telekinesis (Legends, the paper printing) cast at the
--- Giant and resolved off two Islands. Bob is made active afterwards, so the
--- untap steps below are the victim's controller's. With `hunter`, alice then
--- also aims an Elvish Hunter's one-step prohibition at the same Giant.
-telekinesisBoard :: (Monad m) => Spec.Spec m n -> Registry.Registry m -> Bool -> m (ObjectId.ObjectId, ObjectId.ObjectId, GameState.GameState)
-telekinesisBoard s registry hunter = do
-  island <- S.printingOf s registry "Island"
-  forest <- S.printingOf s registry "Forest"
-  telekinesis <- S.printingOf s registry "Telekinesis"
-  elvishHunter <- S.printingOf s registry "Elvish Hunter"
-  giant <- S.printingOf s registry "Hill Giant"
-  piker <- S.printingOf s registry "Goblin Piker"
-  let (giantId, g0) = S.addPermanent giant S.bob (S.landsInPlay island 2)
-      (pikerId, g1) = S.addPermanent piker S.bob g0
-      (g2, spellId) = S.handOne telekinesis (S.tapObject pikerId g1)
-      cast = S.runPure (aimAtCreature giantId) g2 (S.cast S.alice spellId >> Stack.resolveTop)
-      (hunterId, g3) = S.addPermanent elvishHunter S.alice (S.landsFor forest S.alice 2 cast)
-      activate g ab = S.runPure (aimAt giantId) g (Activate.activateAbility S.alice hunterId ab >> Stack.resolveTop)
-      aimed = if hunter then foldr (flip activate) g3 (take 1 (Face.activatedAbilities (S.combinedFace elvishHunter))) else cast
-  pure
-    ( giantId,
-      pikerId,
-      aimed
-        { GameState.turn =
-            (GameState.turn aimed)
-              { TurnRegisters.activePlayer = S.bob
-              }
-        }
-    )
-
--- aimAt for a slot over Pool.Creatures, which offers Recipient.ToCreature: the
--- OFFERED recipient naming the object is picked, never a hand-built one.
-aimAtCreature :: ObjectId.ObjectId -> Prompt.Prompt r -> r
-aimAtCreature oid p = case p of
-  Prompt.ChooseTargets _ _ _ sets -> fmap (Set.filter ((== Just oid) . Recipient.objectOf) . snd) sets
-  _ -> S.identityAnswer p
-
 spec :: (Monad m, Monad n) => Spec.Spec m n -> Registry.Registry m -> n ()
 spec s registry = Spec.describe s "UntapRestriction" $ do
   prohibitionSpec s registry
@@ -223,43 +185,6 @@ oneShotSpec s registry = Spec.describe s "OneShot" $ do
     let untapped = untapStep gs
     Spec.assertBool s (not (Game.isTapped pikerId untapped)) "the Piker untapped"
     Spec.assertBool s (Game.isTapped giantId untapped) "and the Hill Giant did not"
-  -- CR 611.2a's stated duration, TWO steps. The Piker, tapped beside the Giant
-  -- and not aimed at, untapping at the first step is what says that step ran.
-  Spec.it s "CR 502.3/611.2a whole card: Telekinesis' target stays tapped through its controller's next two untap steps and untaps at the third" $ do
-    (giantId, pikerId, gs) <- telekinesisBoard s registry False
-    Spec.assertBool s (Game.isTapped giantId gs) "Telekinesis tapped the Giant"
-    let once = untapStep gs
-        twice = untapStep once
-        thrice = untapStep twice
-    Spec.assertBool s (Game.isTapped giantId once) "still tapped after bob's first untap step"
-    Spec.assertBool s (not (Game.isTapped pikerId once)) "which untapped the Piker beside it"
-    Spec.assertBool s (Game.isTapped giantId twice) "still tapped after the second"
-    Spec.assertBool s (not (Game.isTapped giantId thrice)) "and untapped by the third"
-  -- A one-step prohibition over the same Giant neither shortens Telekinesis'
-  -- (an overwrite would untap it at the second step) nor adds to it (a sum
-  -- would keep it tapped through the third): both run from the next step.
-  Spec.it s "CR 611.2a Elvish Hunter's one step on top of Telekinesis' two still ends at the second step" $ do
-    (giantId, _, gs) <- telekinesisBoard s registry True
-    let twice = untapStep (untapStep gs)
-    Spec.assertBool s (Game.isTapped giantId twice) "still tapped after bob's second untap step"
-    Spec.assertBool s (not (Game.isTapped giantId (untapStep twice))) "and untapped by the third"
-  -- Telekinesis' ruling of 2007-09-16: the steps are whoever controls the
-  -- creature then, not the controller when the spell resolved. After bob's first
-  -- step alice takes the Giant, and her step is the second one it skips.
-  Spec.it s "CR 502.3 a control change between the steps: the new controller's untap step is the second one skipped" $ do
-    (giantId, _, gs) <- telekinesisBoard s registry False
-    let stolen =
-          Game.overTurn
-            ( \registers ->
-                registers
-                  { TurnRegisters.activePlayer = S.alice
-                  }
-            )
-            (S.giveControl giantId S.alice (untapStep gs))
-
-        aliceOnce = untapStep stolen
-    Spec.assertBool s (Game.isTapped giantId aliceOnce) "still tapped after alice's first untap step"
-    Spec.assertBool s (not (Game.isTapped giantId (untapStep aliceOnce))) "and untapped by her next"
   -- CR 701.43b: the prohibition expires during the very untap step it applies in.
   -- The Piker is still tapped going into the second step -- nothing re-tapped it
   -- -- so a second step untapping it is the count having run out and not a

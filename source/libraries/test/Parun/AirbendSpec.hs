@@ -79,7 +79,7 @@ airbent victim spell gs =
   let cast = S.runPure (aimedAt victim) gs (S.cast S.alice spell)
    in S.runPure (aimedAt victim) cast Stack.resolveTop
 
--- Hand this player the turn, so CR 302.1's timing lets them cast a creature. STATED rather than run, Parun.EarthbendSpec's combat posture: nothing
+-- Hand this player the turn, so CR 302.1's timing lets them cast a creature. STATED rather than run, Parun.DetainSpec's combat posture: nothing
 -- here is about the turn-based actions in between.
 --
 -- LOAD-BEARING and not tidiness: Parun.Engine.Setup's board opens in the untap

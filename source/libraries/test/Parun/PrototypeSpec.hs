@@ -19,16 +19,13 @@
 -- numbers are non-degenerate too -- 4\/5 against 2\/2, mana value 5 against 2 --
 -- so no reading coincides with another.
 --
--- CR 719.3b's characteristics, cast prototyped and cast normally, are
--- data/scenarios/prototype/'s.
+-- CR 719.3b's characteristics, cast prototyped and cast normally, and CR 719.5's
+-- kept abilities are data/scenarios/prototype/'s.
 module Parun.PrototypeSpec where
 
 import qualified Data.List as List
-import qualified Data.Map as Map
 import qualified Data.Maybe as Maybe
 import qualified Data.Set as Set
-import qualified Parun.Engine.Activatable as Activatable
-import qualified Parun.Engine.Activate as Activate
 import qualified Parun.Engine.Cost as Cost
 import qualified Parun.Engine.Event as Event
 import qualified Parun.Engine.Game as Game
@@ -40,18 +37,14 @@ import qualified Parun.Support as S
 import qualified Parun.Types.CandidateCost as CandidateCost
 import qualified Parun.Types.Color as Color
 import qualified Parun.Types.Cost as Cost.Type
-import qualified Parun.Types.CounterKind as CounterKind
 import qualified Parun.Types.GameState as GameState
-import qualified Parun.Types.Keyword as Keyword
 import qualified Parun.Types.ManaCost as ManaCost
 import qualified Parun.Types.ManaSymbol as ManaSymbol
 import qualified Parun.Types.ManaType as ManaType
-import qualified Parun.Types.Object as Object
 import qualified Parun.Types.ObjectId as ObjectId
 import qualified Parun.Types.Printing as Printing
 import qualified Parun.Types.Prompt as Prompt
 import qualified Parun.Types.Regenerability as Regenerability
-import qualified Parun.Types.Sickness as Sickness
 import qualified Parun.Types.Zone as Zone
 
 -- The inset cost (CR 719.3), written out so every board names the same symbols
@@ -81,67 +74,8 @@ assemblerOn printing gs =
     (\oid -> fmap S.nameOf (Game.cardOf oid gs) == Just (S.printingName printing))
     (Game.zoneMembers Zone.Battlefield S.alice gs)
 
--- CR 302.6: the permanent a resolved spell became is summoning sick, and the
--- Assembler's ability costs {T}. Named here rather than hidden in a fixture,
--- because the ability case below rests on it: the behaviour under test is CR
--- 719.5's "keeps its abilities", not rule 302.6.
-settleUnderAlice :: ObjectId.ObjectId -> GameState.GameState -> GameState.GameState
-settleUnderAlice oid gs =
-  gs
-    { GameState.objects =
-        Map.adjust (\o -> o {Object.sickness = Sickness.Settled S.alice}) oid (GameState.objects gs)
-    }
-
-plusOnePlusOne :: CounterKind.CounterKind Keyword.Keyword
-plusOnePlusOne = CounterKind.PlusOnePlusOne
-
-spec :: (Monad m, Monad n) => Spec.Spec m n -> Registry.Registry m -> n ()
+spec :: (Monad m) => Spec.Spec m n -> Registry.Registry m -> n ()
 spec s registry = Spec.describe s "Prototype" $ do
-  -- CR 719.5: "a prototype card's characteristics other than its power,
-  -- toughness, and mana cost (and other than color) remain the same whether it
-  -- was cast as a prototyped spell or cast normally." Vigilance and the printed
-  -- activated ability are what the card has to show for it, and the ability is
-  -- driven to RESOLUTION rather than merely offered -- a permanent that lost its
-  -- ability and a permanent whose ability did nothing are two different bugs.
-  Spec.it s "CR 719.5 the prototyped permanent keeps vigilance and its activated ability" $ do
-    assembler <- S.printingOf s registry "Autonomous Assembler"
-    plains <- S.printingOf s registry "Plains"
-    let (board, spellId) = S.handOne assembler (S.landsInPlay plains 5)
-        cast = S.runPure prototyping board (S.cast S.alice spellId)
-        resolved = S.settleSba (S.runPure prototyping cast Stack.resolveTop)
-    case assemblerOn assembler resolved of
-      Nothing -> Spec.assertFailure s "the prototyped spell did not resolve onto the battlefield"
-      Just oid -> do
-        Spec.assertBool
-          s
-          (Map.member Keyword.Vigilance (Projection.keywordsOf oid resolved))
-          "CR 719.5: the prototyped permanent still has vigilance"
-        -- CR 302.6 is the fixture's, not the rule's: the ability costs {T}, so the
-        -- permanent has to have been under its controller since the turn began
-        -- before rule 719.5's question can be asked at all.
-        let settled = settleUnderAlice oid resolved
-        case Projection.abilitiesOf oid settled of
-          [] -> Spec.assertFailure s "the prototyped permanent offers no activated ability"
-          ability : _ -> do
-            Spec.assertBool
-              s
-              (Activatable.activatable S.alice oid ability settled)
-              "CR 719.5: its printed activated ability is activatable"
-            let activated = S.runPure prototyping settled (Activate.activateAbility S.alice oid ability)
-                counted = S.settleSba (S.runPure prototyping activated Stack.resolveTop)
-            -- The gameplay reading: 2/2 plus one +1/+1 counter is 3/3, which is
-            -- neither the prototyped 2/2 nor the printed 4/5 nor the printed box
-            -- plus a counter (5/6).
-            Spec.assertEqWith
-              s
-              "CR 719.5 with CR 122.1a: the resolved ability makes the prototyped 2/2 a 3/3"
-              (S.powerToughnessOf oid counted)
-              (Just (3, 3))
-            Spec.assertEqWith
-              s
-              "and the counter is on it"
-              (fmap (Map.lookup plusOnePlusOne . Object.counters) (Game.lookupObject oid counted))
-              (Just (Just 1))
   -- CR 719.4: "in every zone except the stack or the battlefield, and while on the
   -- stack or the battlefield when not cast as a prototyped spell, a prototype card
   -- has only its normal characteristics."
