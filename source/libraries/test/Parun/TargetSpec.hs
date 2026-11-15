@@ -3033,16 +3033,17 @@ stirTheGraveSpec s registry =
         pure (stirId, ids, gs1)
    in Spec.describe s "EnclosingAmount (CR 202.3)" $ do
         -- CR 700.2a asked before CR 601.2b exists, as a pair of boards differing in
-        -- their one graveyard card: the same three Swamps either way, a mana value
-        -- 4 CREATURE card on one and an instant on the other. A gate that read the
+        -- their one graveyard card: the same five Swamps either way, enough for X =
+        -- 4 (CR 601.2e: a gate also asks the cost at that X), a mana value 4
+        -- CREATURE card on one and an instant on the other. A gate that read the
         -- unannounced bound as a bound would refuse BOTH -- mana value 4 is not "4
         -- or less" of an X nobody has named -- and a gate that had stopped narrowing
         -- altogether would offer both. The negative half is carried by the slot's
         -- card-type conjunct rather than by the bound, which is the point: the
         -- permissive floor drops the bound and leaves everything else standing.
         Spec.it s "CR 601.2b the castability gate states no bound the announcement has not made" $ do
-          (creatureBoard, _, withCreature) <- boardOf ["Russet Wolves"] 3
-          (instantBoard, _, withInstant) <- boardOf ["Lightning Bolt"] 3
+          (creatureBoard, _, withCreature) <- boardOf ["Russet Wolves"] 5
+          (instantBoard, _, withInstant) <- boardOf ["Lightning Bolt"] 5
           Spec.assertBool s (S.castable S.alice creatureBoard withCreature) "the mana value 4 creature card is reachable by some X, so the cast is offered"
           Spec.assertBool s (not (S.castable S.alice instantBoard withInstant)) "and no X reaches an instant, so it is not"
 
