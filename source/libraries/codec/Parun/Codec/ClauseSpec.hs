@@ -24,6 +24,7 @@ import qualified Parun.Types.Hop as Hop
 import qualified Parun.Types.IfTaken as IfTaken
 import qualified Parun.Types.ManaCost as ManaCost
 import qualified Parun.Types.ManaSymbol as ManaSymbol
+import qualified Parun.Types.MayPass as MayPass
 import qualified Parun.Types.ObjectRef as ObjectRef
 import qualified Parun.Types.Optionality as Optionality
 import qualified Parun.Types.OrElse as OrElse
@@ -76,7 +77,7 @@ spec s = Spec.describe s "Parun.Codec.Clause" $ do
       s
       toJson
       fromJson
-      (Clause.MkClause Nothing Nothing Nothing (Optionality.Optional (PlayerRef.Relative PlayerRelation.You)) Nothing Seq.empty)
+      (Clause.MkClause Nothing Nothing Nothing (Optionality.Optional (PlayerRef.Relative PlayerRelation.You) MayPass.AllSeatsFirst) Nothing Seq.empty)
       " {\"optionality\":{\"type\":\"Optional\"}} "
   -- CR 118.12: Tweeze's "If you do" names the ordinal of the clause it hangs
   -- off, and the key is emitted only when there is one.

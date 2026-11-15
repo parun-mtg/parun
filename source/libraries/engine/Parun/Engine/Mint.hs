@@ -28,6 +28,7 @@ import qualified Parun.Types.ManaCost as ManaCost
 import qualified Parun.Types.ManaProduction as ManaProduction
 import qualified Parun.Types.ManaRetention as ManaRetention
 import Parun.Types.ManaType (ManaType)
+import qualified Parun.Types.MayPass as MayPass
 import qualified Parun.Types.Modal as Modal
 import qualified Parun.Types.Mode as Mode
 import qualified Parun.Types.ModeMemory as ModeMemory
@@ -71,7 +72,7 @@ mandatoryPaying gate = Clause.MkClause Nothing Nothing Nothing Optionality.Manda
 
 -- | A `clause` its controller may decline as it resolves: "you may" (CR 603.5).
 youMay :: Seq.Seq (Effect card ability) -> Clause.Clause card ability
-youMay = clause (Optionality.Optional (PlayerRef.Relative PlayerRelation.You))
+youMay = clause (Optionality.Optional (PlayerRef.Relative PlayerRelation.You) MayPass.AllSeatsFirst)
 
 -- | One mode, selected outright, of one mandatory clause holding these effects
 -- in order (CR 608.2c): an ability that is not modal (CR 700.2) and chooses

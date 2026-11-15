@@ -66,6 +66,7 @@ import qualified Parun.Types.IfTaken as IfTaken
 import qualified Parun.Types.InherentTriggerSource as InherentTriggerSource
 import qualified Parun.Types.Keyword as Keyword
 import qualified Parun.Types.ManaAddition as ManaAddition
+import qualified Parun.Types.MayPass as MayPass
 import qualified Parun.Types.Mode as Mode
 import Parun.Types.ModeIndex (ModeIndex)
 import Parun.Types.ModeInstance (ModeInstance)
@@ -157,7 +158,7 @@ mayDefinedSlots mode
   where
     isOptional o = case o of
       Optionality.Mandatory -> False
-      Optionality.Optional _ -> True
+      Optionality.Optional _ _ -> True
 
 -- The same for CR 701.55d's villainous pass: the seat whose option is being
 -- performed (Binding.facingPlayers, stamped by villainousPass). A mode printing
@@ -389,7 +390,7 @@ resolveSpellWith runSubgame oid = do
                               legalHere = instanceView (Map.mapWithKey legalSlot (Binding.targetsOf gateBindings))
                               boundHere = Map.keysSet (instanceView (Set.empty <$ gateBindings))
                           gated <- gateHolds effectController oid oid (instanceView (Binding.targetsOf gateBindings)) gateBindings limb
-                          taken <- if gated then exercises (namedByCouldnt indexedClauses limbIdx) oid oid effectController idx limbIdx boundHere legalHere (Just facing) Set.empty limb else pure False
+                          (taken, _) <- if gated then exercises (namedByCouldnt indexedClauses limbIdx) oid oid effectController idx limbIdx boundHere legalHere (Just facing) Set.empty Seq.empty limb else pure (False, Seq.empty)
                           before <- State.get
                           (admitted, answers2) <-
                             if taken
@@ -447,33 +448,36 @@ resolveSpellWith runSubgame oid = do
                           _ -> do
                             (announced, committed, picked2) <- if gated then chosenBranch oid oid effectController idx cIdx legalNowForMay eligible (`lookup` indexedClauses) picked clause else pure (Just Set.empty, Set.empty, picked)
                             let branch = maybe True (not . Set.null) announced
-                            taken <- if branch then exercises (namedByCouldnt indexedClauses cIdx) oid oid effectController idx cIdx boundNowForMay legalNowForMay announced committed clause else pure False
-                            -- CR 118.12: then the cost paid on resolution, against the
-                            -- START-of-resolution targets to match CR 608.2b's single
-                            -- re-validation. Both maps are projected into THIS
-                            -- instance's view (CR 700.2d) after legality is decided,
-                            -- since deciding it after the rename would miss in `slots`.
-                            before <- State.get
-                            (admitted, answers2) <-
-                              if taken
-                                then
-                                  let chosenAtStart = Binding.targetsOf (Object.bindings obj)
-                                   in payGateAdmits
-                                        runSubgame
-                                        oid
-                                        oid
-                                        effectController
-                                        idx
-                                        cIdx
-                                        (Modal.instanceView modeOwnedSlots mi (Mode.targetSlots mode) (Map.mapWithKey legalSlot chosenAtStart))
-                                        announced
-                                        committed
-                                        answers
-                                        clause
-                                else pure (False, answers)
-                            Monad.when admitted (asCostWhenNamed indexedClauses cIdx (Common.applyClauseEffects oid oid applyOne (Foldable.toList (Clause.effects clause))))
-                            after <- State.get
-                            pure (answers2, picked2, recordTaken clause admitted before after cIdx ran)
+                                attempt seats prior (answersIn, ranIn) = do
+                                  (taken, made) <- if branch then exercises (namedByCouldnt indexedClauses cIdx) oid oid effectController idx cIdx boundNowForMay legalNowForMay seats committed prior clause else pure (False, prior)
+                                  -- CR 118.12: then the cost paid on resolution, against the
+                                  -- START-of-resolution targets to match CR 608.2b's single
+                                  -- re-validation. Both maps are projected into THIS
+                                  -- instance's view (CR 700.2d) after legality is decided,
+                                  -- since deciding it after the rename would miss in `slots`.
+                                  before <- State.get
+                                  (admitted, answers2) <-
+                                    if taken
+                                      then
+                                        let chosenAtStart = Binding.targetsOf (Object.bindings obj)
+                                         in payGateAdmits
+                                              runSubgame
+                                              oid
+                                              oid
+                                              effectController
+                                              idx
+                                              cIdx
+                                              (Modal.instanceView modeOwnedSlots mi (Mode.targetSlots mode) (Map.mapWithKey legalSlot chosenAtStart))
+                                              seats
+                                              committed
+                                              answersIn
+                                              clause
+                                      else pure (False, answersIn)
+                                  Monad.when admitted (asCostWhenNamed indexedClauses cIdx (Common.applyClauseEffects oid oid applyOne (Foldable.toList (Clause.effects clause))))
+                                  after <- State.get
+                                  pure ((answers2, recordTaken clause admitted before after cIdx ranIn), made, taken)
+                            (answers2, ran2) <- mayPass oid oid effectController legalNowForMay announced clause attempt (answers, ran)
+                            pure (answers2, picked2, ran2)
                     )
                     (Map.empty, Map.empty, Set.empty)
                     indexedClauses
@@ -888,7 +892,7 @@ resolveChosenModes runSubgame stackId srcId modes = do
                       let legalHere = instanceView (Map.mapWithKey legalSlot (Binding.targetsOf gateBindings))
                           boundHere = Map.keysSet (instanceView (Set.empty <$ gateBindings))
                       gated <- gateHolds effectController stackId srcId (instanceView (Binding.targetsOf gateBindings)) gateBindings limb
-                      taken <- if gated then exercises (namedByCouldnt indexedClauses limbIdx) stackId srcId effectController idx limbIdx boundHere legalHere (Just facing) Set.empty limb else pure False
+                      (taken, _) <- if gated then exercises (namedByCouldnt indexedClauses limbIdx) stackId srcId effectController idx limbIdx boundHere legalHere (Just facing) Set.empty Seq.empty limb else pure (False, Seq.empty)
                       before <- State.get
                       (admitted, answers2) <- if taken then payGateAdmits runSubgame stackId srcId effectController idx limbIdx (instanceView legal) (Just facing) Set.empty answers limb else pure (False, answers)
                       Monad.when admitted (asCostWhenNamed indexedClauses limbIdx (Common.applyClauseEffects stackId srcId applyOne (Foldable.toList (Clause.effects limb))))
@@ -948,14 +952,17 @@ resolveChosenModes runSubgame stackId srcId modes = do
                           _ -> do
                             (announced, committed, picked2) <- if gated then chosenBranch stackId srcId effectController idx cIdx legalNowForMay eligible (`lookup` indexedClauses) picked clause else pure (Just Set.empty, Set.empty, picked)
                             let branch = maybe True (not . Set.null) announced
-                            taken <- if branch then exercises (namedByCouldnt indexedClauses cIdx) stackId srcId effectController idx cIdx boundNowForMay legalNowForMay announced committed clause else pure False
-                            -- CR 118.12: then the cost paid on resolution, against the
-                            -- START-of-resolution slots.
-                            before <- State.get
-                            (admitted, answers2) <- if taken then payGateAdmits runSubgame stackId srcId effectController idx cIdx (instanceView legal) announced committed answers clause else pure (False, answers)
-                            Monad.when admitted (asCostWhenNamed indexedClauses cIdx (Common.applyClauseEffects stackId srcId applyOne (Foldable.toList (Clause.effects clause))))
-                            after <- State.get
-                            pure (answers2, picked2, recordTaken clause admitted before after cIdx ran)
+                                attempt seats prior (answersIn, ranIn) = do
+                                  (taken, made) <- if branch then exercises (namedByCouldnt indexedClauses cIdx) stackId srcId effectController idx cIdx boundNowForMay legalNowForMay seats committed prior clause else pure (False, prior)
+                                  -- CR 118.12: then the cost paid on resolution, against the
+                                  -- START-of-resolution slots.
+                                  before <- State.get
+                                  (admitted, answers2) <- if taken then payGateAdmits runSubgame stackId srcId effectController idx cIdx (instanceView legal) seats committed answersIn clause else pure (False, answersIn)
+                                  Monad.when admitted (asCostWhenNamed indexedClauses cIdx (Common.applyClauseEffects stackId srcId applyOne (Foldable.toList (Clause.effects clause))))
+                                  after <- State.get
+                                  pure ((answers2, recordTaken clause admitted before after cIdx ranIn), made, taken)
+                            (answers2, ran2) <- mayPass stackId srcId effectController legalNowForMay announced clause attempt (answers, ran)
+                            pure (answers2, picked2, ran2)
                     )
                     (Map.empty, Map.empty, Set.empty)
                     indexedClauses
@@ -1095,7 +1102,7 @@ recordTaken :: Clause.Clause Card.Type.Card (GrantedAbility.GrantedAbility Card.
 recordTaken clause admitted before after cIdx ran =
   let happened = case Clause.optionality clause of
         Optionality.Mandatory -> Common.happenedBetween before after
-        Optionality.Optional _ -> True
+        Optionality.Optional _ _ -> True
    in if admitted && happened then Set.insert cIdx ran else ran
 
 -- CR 701.46a: does this clause's printed "if" hold? CR 701.37a prints the same
@@ -1241,7 +1248,7 @@ chosenBranch resolving source controller idx cIdx legal eligible limbOf picked c
 -- not this branch's to decline.
 declinesAlone :: PlayerRef.PlayerRef -> Clause.Clause Card.Type.Card (GrantedAbility.GrantedAbility Card.Type.Card) -> Bool
 declinesAlone chooser limb = case Clause.optionality limb of
-  Optionality.Optional asker | asker == chooser -> True
+  Optionality.Optional asker _ | asker == chooser -> True
   _ -> case Clause.payGate limb of
     Just gate -> gatesOnPayment chooser gate && PayGate.obligation gate == PayObligation.Optional
     Nothing -> False
@@ -1363,8 +1370,10 @@ villainousPass resolving source controller idx legal orElse limbs performLimb ac
 --
 -- ALL the asks BEFORE any effect runs, which is CR 608.2e: the choices for an
 -- action are made in APNAP order and then the action is taken. That is what
--- forbids the ask-and-act-per-seat shape, and rule 101.4b is why each seat is
--- asked against the live board rather than a snapshot.
+-- forbids the ask-and-act-per-seat shape outside MayPass.SeatBySeat (mayPass),
+-- and rule 101.4b is why each seat is asked against the live board rather than
+-- a snapshot. `prior` is the answers seats asked earlier gave (CR 101.4b), and
+-- the result carries them with this call's appended.
 --
 -- The seats that ACCEPTED are bound under Binding.mayPlayers, which is how the
 -- clause's own instructions say "they" (PlayerRef.EachInSlot), and the clause
@@ -1406,14 +1415,14 @@ villainousPass resolving source controller idx legal orElse limbs performLimb ac
 -- impossible -- Egon, God of Death's ruling of 2021-02-05. The scenario "CR
 -- 118.3 Lich short of permanents under Platinum Angel sacrifices none and plays
 -- on" proves it.
-exercises :: Bool -> ObjectId -> ObjectId -> PlayerId -> ModeIndex -> ClauseIndex -> Set SlotName -> Map.Map SlotName (Set Recipient) -> Maybe (Set PlayerId) -> Set PlayerId -> Clause.Clause Card.Type.Card (GrantedAbility.GrantedAbility Card.Type.Card) -> Game Bool
-exercises couldnt resolving source controller idx cIdx bound legal announced committed clause = do
+exercises :: Bool -> ObjectId -> ObjectId -> PlayerId -> ModeIndex -> ClauseIndex -> Set SlotName -> Map.Map SlotName (Set Recipient) -> Maybe (Set PlayerId) -> Set PlayerId -> Seq.Seq (PlayerId, OptionalDecision.OptionalDecision) -> Clause.Clause Card.Type.Card (GrantedAbility.GrantedAbility Card.Type.Card) -> Game (Bool, Seq.Seq (PlayerId, OptionalDecision.OptionalDecision))
+exercises couldnt resolving source controller idx cIdx bound legal announced committed prior clause = do
   let asked = if couldnt then Feasibility.AsCost else Feasibility.AsOption
   impossible <- State.gets (\gs -> Common.clauseIsImpossible asked resolving source controller legal gs clause)
   case Clause.optionality clause of
-    Optionality.Mandatory -> pure (not (couldnt && impossible))
-    Optionality.Optional asker
-      | impossible || clauseIsInert (Set.insert Binding.mayPlayers bound) legal clause -> pure False
+    Optionality.Mandatory -> pure (not (couldnt && impossible), prior)
+    Optionality.Optional asker _
+      | impossible || clauseIsInert (Set.insert Binding.mayPlayers bound) legal clause -> pure (False, prior)
       | otherwise -> do
           gs <- State.get
           let -- CR 608.2d, per seat: a seat for whom this clause, read with that
@@ -1433,11 +1442,39 @@ exercises couldnt resolving source controller idx cIdx bound legal announced com
                       else Game.choose (Prompt.ChooseOptional (Decide.deciderFor pid gs1) pid resolving idx cIdx made)
                   pure (made Seq.|> (pid, decision))
               )
-              Seq.empty
+              prior
               (filter able (Common.announcedOnly announced (Common.apnapDecidersOf asker legal resolving source controller gs)))
-          let accepted = Set.fromList [pid | (pid, OptionalDecision.Exercises) <- Foldable.toList answers]
+          let accepted = Set.fromList [pid | (pid, OptionalDecision.Exercises) <- Foldable.toList (Seq.drop (Seq.length prior) answers)]
           State.modify' (bindPlayersSlot resolving Binding.mayPlayers accepted)
-          pure (not (Set.null accepted))
+          pure (not (Set.null accepted), answers)
+
+-- CR 101.4 / 608.2e: put a clause's "may" to its seats and carry the clause
+-- out. Under MayPass.AllSeatsFirst that is `attempt` once, over `announced`.
+-- Under MayPass.SeatBySeat a ruling sets CR 608.2e's order aside and each seat
+-- answers and acts before the next is asked (Círdan the Shipwright's of
+-- 2023-06-16), so `attempt` runs once per seat, `thoseWhoMay` holding that seat
+-- alone while it runs, and the union of the accepting seats afterwards. The
+-- seats are named once, as villainousPass's are. Parun.VoteSpec's "CR 101.4b
+-- each seat with no votes decides and puts its card before the next seat is
+-- asked" proves it; no card reads the union.
+mayPass :: ObjectId -> ObjectId -> PlayerId -> Map.Map SlotName (Set Recipient) -> Maybe (Set PlayerId) -> Clause.Clause Card.Type.Card (GrantedAbility.GrantedAbility Card.Type.Card) -> (Maybe (Set PlayerId) -> Seq.Seq (PlayerId, OptionalDecision.OptionalDecision) -> acc -> Game (acc, Seq.Seq (PlayerId, OptionalDecision.OptionalDecision), Bool)) -> acc -> Game acc
+mayPass resolving source controller legal announced clause attempt acc0 = case Clause.optionality clause of
+  Optionality.Optional asker MayPass.SeatBySeat -> do
+    gs <- State.get
+    let seats = Common.announcedOnly announced (Common.apnapDecidersOf asker legal resolving source controller gs)
+    (acc, _, accepted) <-
+      Monad.foldM
+        ( \(accIn, made, acceptedIn) pid -> do
+            (accOut, made2, took) <- attempt (Just (Set.singleton pid)) made accIn
+            pure (accOut, made2, if took then Set.insert pid acceptedIn else acceptedIn)
+        )
+        (acc0, Seq.empty, Set.empty)
+        seats
+    State.modify' (bindPlayersSlot resolving Binding.mayPlayers accepted)
+    pure acc
+  _ -> do
+    (acc, _, _) <- attempt announced Seq.empty acc0
+    pure acc
 
 -- CR 608.2b / 603.5: can this clause's answer not matter? Only when every one of
 -- its effects reads a slot and every slot it reads is illegal or unfilled, since

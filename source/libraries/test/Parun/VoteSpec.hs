@@ -35,6 +35,7 @@ module Parun.VoteSpec where
 import qualified Control.Monad.Trans.State.Strict as State
 import qualified Data.Foldable as Foldable
 import qualified Data.List as List
+import qualified Data.List.NonEmpty as NonEmpty
 import qualified Data.Map.Strict as Map
 import qualified Data.Text as Text
 import Numeric.Natural (Natural)
@@ -73,6 +74,7 @@ spec s registry = Spec.describe s "Parun.Engine.Vote" $ do
   councilsJudgmentSpec s registry
   pleaForPowerSpec s registry
   playerVoteSpec s registry
+  cirdanSpec s registry
 
 -- Alice's Wall of Stone, a Mountain and a Goblin Piker under bob, Typhoid Rats
 -- under carol, three Plains for alice to cast with, and Council's Judgment in her
@@ -391,3 +393,51 @@ playerVoteSpec s registry = Spec.describe s "player vote" $ do
     Spec.assertEqWith s "VotesReceived, read through the resolving object, answers each seat's tally" (fmap (received resolving source after) [S.alice, S.bob, S.carol]) [Just 1, Just 0, Just 2]
     Spec.assertEqWith s "the resolving object holds the tally" (boundTally resolving after) (Just (Map.fromList [(S.alice, 1), (S.bob, 0), (S.carol, 2)]))
     Spec.assertEqWith s "and the source holds none" (boundTally source after) Nothing
+
+-- Círdan the Shipwright {3}{G}{U}, cast by alice and resolved, every seat voting
+-- for her. Its ruling of 2023-06-16 has each player who received no votes decide
+-- AND put in turn order, setting aside CR 608.2e's all-choices-first order
+-- (MayPass.SeatBySeat). Two permanent cards in each of bob's and carol's hands,
+-- so each card choice is a prompt of its own and the prompts' order is what
+-- tells the two passes apart: all-seats-first asks both "may"s before either
+-- card is chosen.
+cirdanSpec :: (Monad m) => Spec.Spec m n -> Registry.Registry m -> n ()
+cirdanSpec s registry = Spec.describe s "Círdan the Shipwright" $ do
+  Spec.it s "CR 101.4b each seat with no votes decides and puts its card before the next seat is asked" $ do
+    cirdan <- S.printingOf s registry "Círdan the Shipwright"
+    forest <- S.printingOf s registry "Forest"
+    island <- S.printingOf s registry "Island"
+    giant <- S.printingOf s registry "Hill Giant"
+    ogre <- S.printingOf s registry "Gray Ogre"
+    let stock pid g = List.foldl' (\h _ -> snd (S.addLibraryCard island pid h)) g [1 :: Int .. 3]
+        hand pid g = snd (S.addHandCard ogre pid (snd (S.addHandCard giant pid g)))
+        lands = S.landsFor island S.alice 1 (S.landsFor forest S.alice 4 S.threePlayerGame)
+        seated = hand S.carol (hand S.bob (stock S.carol (stock S.bob (stock S.alice lands))))
+        (gs, spell) = S.handOne cirdan seated
+        cast = snd (Engine.runGamePure S.identityAnswer gs (S.cast S.alice spell))
+        onStack = snd (Engine.runGamePure S.identityAnswer cast (Stack.resolveTop >> Engine.settleForPriority))
+        ((_, after), asked) = State.runState (Engine.runGame cirdanAnswer onStack Stack.resolveTop) []
+        creatures pid = length (Game.zoneMembers Zone.Battlefield pid after)
+    Spec.assertEqWith
+      s
+      "CR 101.4b bob decides and chooses his card, then carol is asked"
+      asked
+      [(S.bob, CirdanMay), (S.bob, CirdanCard), (S.carol, CirdanMay), (S.carol, CirdanCard)]
+    Spec.assertEqWith s "and each put one creature onto the battlefield" (fmap creatures [S.bob, S.carol]) [1, 1]
+
+-- Which of Círdan's per-seat questions a prompt was.
+data CirdanAsk = CirdanMay | CirdanCard
+  deriving (Eq, Show)
+
+-- Every ballot goes to alice, every "may" is taken and every card choice takes
+-- the first card offered; the "may"s and card choices are recorded in order.
+cirdanAnswer :: Prompt.Prompt r -> State.State [(PlayerId.PlayerId, CirdanAsk)] r
+cirdanAnswer p = case p of
+  Prompt.ChooseVote {} -> pure (Just (BallotChoice.ForPlayer S.alice))
+  Prompt.ChooseOptional _ pid _ _ _ _ -> do
+    State.modify' (<> [(pid, CirdanMay)])
+    pure OptionalDecision.Exercises
+  Prompt.ChooseCardInHand _ pid _ offered -> do
+    State.modify' (<> [(pid, CirdanCard)])
+    pure (NonEmpty.head offered)
+  _ -> pure (S.identityAnswer p)

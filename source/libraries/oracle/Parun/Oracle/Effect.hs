@@ -284,7 +284,7 @@ steps context cs = case cs of
         (body, ns) <- clause (noted context [c]) d {Clause.ifTaken = Nothing}
         fmap ((first <> Text.pack " If you do, " <> lowered context body, ms <> ns) :) (steps (noted context [c, d]) rest)
     | Clause.ifTaken d == Just (IfTaken.NoneTaken (NonEmpty.singleton i)),
-      Clause.optionality c == Optionality.Optional (PlayerRef.Relative PlayerRelation.You),
+      Optionality.Optional (PlayerRef.Relative PlayerRelation.You) _ <- Clause.optionality c,
       c == (unridden c) {Clause.optionality = Clause.optionality c},
       d == (unridden d) {Clause.ifTaken = Clause.ifTaken d} -> do
         p <- predicate context c
@@ -309,7 +309,7 @@ steps context cs = case cs of
         let either' = one <> Text.pack " or " <> other <> object
         text <- case Clause.optionality c of
           Optionality.Mandatory -> [Prose.sentence either']
-          Optionality.Optional (PlayerRef.Relative PlayerRelation.You) -> [Prose.sentence (Text.pack "you may " <> either')]
+          Optionality.Optional (PlayerRef.Relative PlayerRelation.You) _ -> [Prose.sentence (Text.pack "you may " <> either')]
           _ -> []
         fmap ((text, mentions p) :) (steps (noted context [c, d]) rest)
   (_, c) : rest -> do
@@ -380,7 +380,7 @@ clause context c
         -- A continuous change names its objects, never "you", so its
         -- duration-first reading is no imperative to follow "you may"
         -- (Blightcaster's "you may have target creature get -2/-2").
-        (Nothing, Optionality.Optional (PlayerRef.Relative PlayerRelation.You), [p])
+        (Nothing, Optionality.Optional (PlayerRef.Relative PlayerRelation.You) _, [p])
           | maybe True ((== Text.pack "you") . Target.wording) (subject p),
             not (any (Maybe.isJust . modifyTarget) (Clause.effects c)) ->
               [(Prose.sentence (Text.pack "you may " <> verb p) <> trailing p, mentions p)]

@@ -121,6 +121,7 @@ import qualified Parun.Types.ManaCost as ManaCost
 import qualified Parun.Types.ManaProduction as ManaProduction
 import qualified Parun.Types.ManaRetention as ManaRetention
 import qualified Parun.Types.ManaSymbol as ManaSymbol
+import qualified Parun.Types.MayPass as MayPass
 import qualified Parun.Types.Measure as Measure
 import qualified Parun.Types.Mill as Mill
 import qualified Parun.Types.Modal as Modal
@@ -1122,7 +1123,7 @@ clauses context actions = do
     step n = case Node.tag n of
       "MayAction" -> do
         inner <- Node.child n
-        fmap (clause (Optionality.Optional (PlayerRef.Relative PlayerRelation.You))) (effects context inner)
+        fmap (clause (Optionality.Optional (PlayerRef.Relative PlayerRelation.You) MayPass.AllSeatsFirst)) (effects context inner)
       _ -> fmap (clause Optionality.Mandatory) (effects context n)
     plain c = Clause.optionality c == Optionality.Mandatory && Maybe.isNothing (Clause.payGate c)
     gather c rest = case rest of

@@ -179,6 +179,7 @@ import qualified Parun.Types.ManaSpending as ManaSpending
 import qualified Parun.Types.ManaSpent as ManaSpent
 import qualified Parun.Types.ManaSymbol as ManaSymbol
 import qualified Parun.Types.ManaType as ManaType
+import qualified Parun.Types.MayPass as MayPass
 import qualified Parun.Types.Measure as Measure
 import qualified Parun.Types.Measures as Measures
 import qualified Parun.Types.Modal as Modal
@@ -7566,7 +7567,7 @@ partnerWith name =
    in Mint.triggerOf
         (TriggerCondition.Enters EntersTrigger.defaultValue)
         Nothing
-        (Mint.oneModeOf (Map.singleton partnerWithTarget slot) (Seq.singleton (Mint.clause (Optionality.Optional (PlayerRef.InSlot partnerWithTarget)) (Seq.singleton effect))))
+        (Mint.oneModeOf (Map.singleton partnerWithTarget slot) (Seq.singleton (Mint.clause (Optionality.Optional (PlayerRef.InSlot partnerWithTarget) MayPass.AllSeatsFirst) (Seq.singleton effect))))
 
 -- The slot rule 702.124j's one target is chosen into, soulshiftTarget's position.
 partnerWithTarget :: SlotName.SlotName
@@ -8201,7 +8202,7 @@ ripple n =
         ( Mint.oneModeOf
             Map.empty
             ( Seq.fromList
-                [ clause (Optionality.Optional (PlayerRef.Relative PlayerRelation.You)) show_,
+                [ clause (Optionality.Optional (PlayerRef.Relative PlayerRelation.You) MayPass.AllSeatsFirst) show_,
                   clause Optionality.Mandatory offer,
                   clause Optionality.Mandatory rest
                 ]
