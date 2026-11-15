@@ -35,9 +35,11 @@ data ManaProduction
     --
     -- Read off Object.chosenColors, which is where CR 614.1c's entry rewrite
     -- writes -- the same field Modification.ChosenColor reads for Painter's
-    -- Servant, and the same link CR 607.2d describes. NOT A CHOICE: the colour is
-    -- already settled, so Mana.produced offers one option and nothing prompts,
-    -- which is what separates this from AnyColor.
+    -- Servant, and the same link CR 607.2d describes -- and where a
+    -- ChooseQuality earlier in the same resolution writes (CR 608.2d; Radiant
+    -- Lotus's "Choose a color"), last known information included (CR 608.2h).
+    -- NOT A CHOICE: the colour is already settled, so Mana.produced offers one
+    -- option and nothing prompts, which is what separates this from AnyColor.
     --
     -- No colour chosen yields NO option rather than a fallback colour. A
     -- permanent whose entry rewrite ran is never in that state (CR 614.1c makes
