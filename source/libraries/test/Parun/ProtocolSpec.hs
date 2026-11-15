@@ -21,6 +21,7 @@ import qualified Parun.Codec.EntryOption as Codec.EntryOption
 import qualified Parun.Codec.Filter as Codec.Filter
 import qualified Parun.Codec.GameEvent as Codec.GameEvent
 import qualified Parun.Codec.Keyword as Codec.Keyword
+import qualified Parun.Codec.OptionalDecision as Codec.OptionalDecision
 import qualified Parun.Codec.Reply as Codec.Reply
 import qualified Parun.Codec.Request as Codec.Request
 import qualified Parun.Codec.SlotName as Codec.SlotName
@@ -238,6 +239,19 @@ spec s registry = Spec.describe s "Protocol" $ do
         arming = PromptOffer.offerOf Protocol.namer gs (Prompt.ChooseCost (Decider.MkDecider S.alice) S.alice oid [CandidateCost.plain Nothing cost, (CandidateCost.plain Nothing cost) {CandidateCost.arms = Just named}] Seq.empty)
     Spec.assertEqWith s "CR 603.7g the delayed abilities" (field "arming" arming) (Just (R.Array [R.Null, R.Text (Text.pack "sacrifice it")]))
     Spec.assertEqWith s "and none where no candidate creates one" (field "arming" choosing) Nothing
+
+  Spec.it s "CR 101.4b / 608.2f a may offers what earlier seats answered, and a loop's offer to pay names its member" $ do
+    let oid = ObjectId.MkObjectId 7
+        land = ObjectId.MkObjectId 9
+        gs = Setup.emptyGame S.bothPlayers
+        cost = Cost.Type.MkCost (Just (ManaCost.MkManaCost [ManaSymbol.Generic 1])) []
+        player p = R.Text (Text.pack (show (PlayerId.unwrap p)))
+        decision = Reply.encode (Reply.viaCodec Codec.OptionalDecision.codec) Protocol.namer
+        optional = PromptOffer.offerOf Protocol.namer gs (Prompt.ChooseOptional (Decider.MkDecider S.bob) S.bob oid (ModeIndex.MkModeIndex 0) (ClauseIndex.MkClauseIndex 0) (Seq.singleton (S.alice, OptionalDecision.Declines)))
+        paying offer = PromptOffer.offerOf Protocol.namer gs (Prompt.ChooseToPay (Decider.MkDecider S.bob) S.bob oid offer cost Seq.empty)
+    Spec.assertEqWith s "CR 101.4b earlier answers to a may" (field "earlier" optional) (Just (R.Array [R.Array [player S.alice, decision OptionalDecision.Declines]]))
+    Spec.assertEqWith s "CR 608.2f the member a loop's offer is for" (field "member" (paying (PayOffer.ForMember (Recipient.ToObject land)))) (Just (Reply.encode Reply.recipient Protocol.namer (Recipient.ToObject land)))
+    Spec.assertEqWith s "and no member for a clause's own offer" (field "member" (paying (PayOffer.AtClause (ModeIndex.MkModeIndex 0) (ClauseIndex.MkClauseIndex 0)))) Nothing
 
   Spec.it s "CR 510.1 a combat damage assignment offers each recipient's lethal damage and what is already paid in the answer's vocabulary" $ do
     let o7 = ObjectId.MkObjectId 7

@@ -1,0 +1,1333 @@
+{
+  "description": "CR 118.12a Cleansing makes each land its own offer, and any player's payment saves only that land",
+  "note": "Cleansing's \"for each land, destroy that land unless any player pays 1 life\" is one offer per land (CR 608.2f), asked of each seat in APNAP order (CR 101.4), each naming its land and what the seats before answered for it (CR 101.4b). bob pays for Island A; carol pays for bob's Island B and her own Forest C; nobody pays for Forest D or any Plains. The three lands somebody paid for stand, and carol's Forest D goes though she paid for Forest C.",
+  "board": {
+    "active": "alice",
+    "step": "PrecombatMain",
+    "seats": [
+      {
+        "name": "alice",
+        "battlefield": [
+          {
+            "card": "Plains",
+            "label": "plains-1"
+          },
+          {
+            "card": "Plains",
+            "label": "plains-2"
+          },
+          {
+            "card": "Plains",
+            "label": "plains-3"
+          }
+        ],
+        "hand": [
+          {
+            "card": "Cleansing",
+            "label": "cleansing"
+          }
+        ]
+      },
+      {
+        "name": "bob",
+        "battlefield": [
+          {
+            "card": "Island",
+            "label": "island-a"
+          },
+          {
+            "card": "Island",
+            "label": "island-b"
+          }
+        ]
+      },
+      {
+        "name": "carol",
+        "battlefield": [
+          {
+            "card": "Forest",
+            "label": "forest-c"
+          },
+          {
+            "card": "Forest",
+            "label": "forest-d"
+          }
+        ]
+      }
+    ]
+  },
+  "timeline": [
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "do": {
+        "Cast": {
+          "object": "$cleansing",
+          "mana": [
+            "$plains-1",
+            "$plains-2",
+            "$plains-3"
+          ]
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "do": "Pass"
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "do": {
+        "Answer": {
+          "prompt": "OrderForEach",
+          "with": [
+            0,
+            1,
+            2
+          ]
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "do": {
+        "Answer": {
+          "prompt": "OrderForEach",
+          "with": [
+            0,
+            1
+          ]
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "do": {
+        "Answer": {
+          "prompt": "OrderForEach",
+          "with": [
+            0,
+            1
+          ]
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "check": {
+        "View": {
+          "of": "Prompt",
+          "is": {
+            "kind": "ChooseToPay",
+            "offer": {
+              "source": "Cleansing",
+              "cost": {
+                "mana": [],
+                "components": [
+                  {
+                    "type": "PayLife",
+                    "value": {
+                      "type": "Fixed",
+                      "value": 1
+                    }
+                  }
+                ]
+              },
+              "earlier": [],
+              "member": [
+                "Object",
+                "$plains-1"
+              ]
+            }
+          }
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "do": {
+        "Answer": {
+          "prompt": "ChooseToPay",
+          "with": "Declines"
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "check": {
+        "View": {
+          "of": "Prompt",
+          "is": {
+            "kind": "ChooseToPay",
+            "offer": {
+              "source": "Cleansing",
+              "cost": {
+                "mana": [],
+                "components": [
+                  {
+                    "type": "PayLife",
+                    "value": {
+                      "type": "Fixed",
+                      "value": 1
+                    }
+                  }
+                ]
+              },
+              "earlier": [],
+              "member": [
+                "Object",
+                "$plains-2"
+              ]
+            }
+          }
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "do": {
+        "Answer": {
+          "prompt": "ChooseToPay",
+          "with": "Declines"
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "check": {
+        "View": {
+          "of": "Prompt",
+          "is": {
+            "kind": "ChooseToPay",
+            "offer": {
+              "source": "Cleansing",
+              "cost": {
+                "mana": [],
+                "components": [
+                  {
+                    "type": "PayLife",
+                    "value": {
+                      "type": "Fixed",
+                      "value": 1
+                    }
+                  }
+                ]
+              },
+              "earlier": [],
+              "member": [
+                "Object",
+                "$plains-3"
+              ]
+            }
+          }
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "do": {
+        "Answer": {
+          "prompt": "ChooseToPay",
+          "with": "Declines"
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "check": {
+        "View": {
+          "of": "Prompt",
+          "is": {
+            "kind": "ChooseToPay",
+            "offer": {
+              "source": "Cleansing",
+              "cost": {
+                "mana": [],
+                "components": [
+                  {
+                    "type": "PayLife",
+                    "value": {
+                      "type": "Fixed",
+                      "value": 1
+                    }
+                  }
+                ]
+              },
+              "earlier": [],
+              "member": [
+                "Object",
+                "$island-a"
+              ]
+            }
+          }
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "do": {
+        "Answer": {
+          "prompt": "ChooseToPay",
+          "with": "Declines"
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "check": {
+        "View": {
+          "of": "Prompt",
+          "is": {
+            "kind": "ChooseToPay",
+            "offer": {
+              "source": "Cleansing",
+              "cost": {
+                "mana": [],
+                "components": [
+                  {
+                    "type": "PayLife",
+                    "value": {
+                      "type": "Fixed",
+                      "value": 1
+                    }
+                  }
+                ]
+              },
+              "earlier": [],
+              "member": [
+                "Object",
+                "$island-b"
+              ]
+            }
+          }
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "do": {
+        "Answer": {
+          "prompt": "ChooseToPay",
+          "with": "Declines"
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "check": {
+        "View": {
+          "of": "Prompt",
+          "is": {
+            "kind": "ChooseToPay",
+            "offer": {
+              "source": "Cleansing",
+              "cost": {
+                "mana": [],
+                "components": [
+                  {
+                    "type": "PayLife",
+                    "value": {
+                      "type": "Fixed",
+                      "value": 1
+                    }
+                  }
+                ]
+              },
+              "earlier": [],
+              "member": [
+                "Object",
+                "$forest-c"
+              ]
+            }
+          }
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "do": {
+        "Answer": {
+          "prompt": "ChooseToPay",
+          "with": "Declines"
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "check": {
+        "View": {
+          "of": "Prompt",
+          "is": {
+            "kind": "ChooseToPay",
+            "offer": {
+              "source": "Cleansing",
+              "cost": {
+                "mana": [],
+                "components": [
+                  {
+                    "type": "PayLife",
+                    "value": {
+                      "type": "Fixed",
+                      "value": 1
+                    }
+                  }
+                ]
+              },
+              "earlier": [],
+              "member": [
+                "Object",
+                "$forest-d"
+              ]
+            }
+          }
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "do": {
+        "Answer": {
+          "prompt": "ChooseToPay",
+          "with": "Declines"
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "bob",
+      "check": {
+        "View": {
+          "of": "Prompt",
+          "is": {
+            "kind": "ChooseToPay",
+            "offer": {
+              "source": "Cleansing",
+              "cost": {
+                "mana": [],
+                "components": [
+                  {
+                    "type": "PayLife",
+                    "value": {
+                      "type": "Fixed",
+                      "value": 1
+                    }
+                  }
+                ]
+              },
+              "earlier": [
+                [
+                  "alice",
+                  null
+                ]
+              ],
+              "member": [
+                "Object",
+                "$plains-1"
+              ]
+            }
+          }
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "bob",
+      "do": {
+        "Answer": {
+          "prompt": "ChooseToPay",
+          "with": "Declines"
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "bob",
+      "check": {
+        "View": {
+          "of": "Prompt",
+          "is": {
+            "kind": "ChooseToPay",
+            "offer": {
+              "source": "Cleansing",
+              "cost": {
+                "mana": [],
+                "components": [
+                  {
+                    "type": "PayLife",
+                    "value": {
+                      "type": "Fixed",
+                      "value": 1
+                    }
+                  }
+                ]
+              },
+              "earlier": [
+                [
+                  "alice",
+                  null
+                ]
+              ],
+              "member": [
+                "Object",
+                "$plains-2"
+              ]
+            }
+          }
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "bob",
+      "do": {
+        "Answer": {
+          "prompt": "ChooseToPay",
+          "with": "Declines"
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "bob",
+      "check": {
+        "View": {
+          "of": "Prompt",
+          "is": {
+            "kind": "ChooseToPay",
+            "offer": {
+              "source": "Cleansing",
+              "cost": {
+                "mana": [],
+                "components": [
+                  {
+                    "type": "PayLife",
+                    "value": {
+                      "type": "Fixed",
+                      "value": 1
+                    }
+                  }
+                ]
+              },
+              "earlier": [
+                [
+                  "alice",
+                  null
+                ]
+              ],
+              "member": [
+                "Object",
+                "$plains-3"
+              ]
+            }
+          }
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "bob",
+      "do": {
+        "Answer": {
+          "prompt": "ChooseToPay",
+          "with": "Declines"
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "bob",
+      "check": {
+        "View": {
+          "of": "Prompt",
+          "is": {
+            "kind": "ChooseToPay",
+            "offer": {
+              "source": "Cleansing",
+              "cost": {
+                "mana": [],
+                "components": [
+                  {
+                    "type": "PayLife",
+                    "value": {
+                      "type": "Fixed",
+                      "value": 1
+                    }
+                  }
+                ]
+              },
+              "earlier": [
+                [
+                  "alice",
+                  null
+                ]
+              ],
+              "member": [
+                "Object",
+                "$island-a"
+              ]
+            }
+          }
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "bob",
+      "do": {
+        "Answer": {
+          "prompt": "ChooseToPay",
+          "with": "Pays"
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "bob",
+      "check": {
+        "View": {
+          "of": "Prompt",
+          "is": {
+            "kind": "ChooseToPay",
+            "offer": {
+              "source": "Cleansing",
+              "cost": {
+                "mana": [],
+                "components": [
+                  {
+                    "type": "PayLife",
+                    "value": {
+                      "type": "Fixed",
+                      "value": 1
+                    }
+                  }
+                ]
+              },
+              "earlier": [
+                [
+                  "alice",
+                  null
+                ]
+              ],
+              "member": [
+                "Object",
+                "$island-b"
+              ]
+            }
+          }
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "bob",
+      "do": {
+        "Answer": {
+          "prompt": "ChooseToPay",
+          "with": "Declines"
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "bob",
+      "check": {
+        "View": {
+          "of": "Prompt",
+          "is": {
+            "kind": "ChooseToPay",
+            "offer": {
+              "source": "Cleansing",
+              "cost": {
+                "mana": [],
+                "components": [
+                  {
+                    "type": "PayLife",
+                    "value": {
+                      "type": "Fixed",
+                      "value": 1
+                    }
+                  }
+                ]
+              },
+              "earlier": [
+                [
+                  "alice",
+                  null
+                ]
+              ],
+              "member": [
+                "Object",
+                "$forest-c"
+              ]
+            }
+          }
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "bob",
+      "do": {
+        "Answer": {
+          "prompt": "ChooseToPay",
+          "with": "Declines"
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "bob",
+      "check": {
+        "View": {
+          "of": "Prompt",
+          "is": {
+            "kind": "ChooseToPay",
+            "offer": {
+              "source": "Cleansing",
+              "cost": {
+                "mana": [],
+                "components": [
+                  {
+                    "type": "PayLife",
+                    "value": {
+                      "type": "Fixed",
+                      "value": 1
+                    }
+                  }
+                ]
+              },
+              "earlier": [
+                [
+                  "alice",
+                  null
+                ]
+              ],
+              "member": [
+                "Object",
+                "$forest-d"
+              ]
+            }
+          }
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "bob",
+      "do": {
+        "Answer": {
+          "prompt": "ChooseToPay",
+          "with": "Declines"
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "carol",
+      "check": {
+        "View": {
+          "of": "Prompt",
+          "is": {
+            "kind": "ChooseToPay",
+            "offer": {
+              "source": "Cleansing",
+              "cost": {
+                "mana": [],
+                "components": [
+                  {
+                    "type": "PayLife",
+                    "value": {
+                      "type": "Fixed",
+                      "value": 1
+                    }
+                  }
+                ]
+              },
+              "earlier": [
+                [
+                  "alice",
+                  null
+                ],
+                [
+                  "bob",
+                  null
+                ]
+              ],
+              "member": [
+                "Object",
+                "$plains-1"
+              ]
+            }
+          }
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "carol",
+      "do": {
+        "Answer": {
+          "prompt": "ChooseToPay",
+          "with": "Declines"
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "carol",
+      "check": {
+        "View": {
+          "of": "Prompt",
+          "is": {
+            "kind": "ChooseToPay",
+            "offer": {
+              "source": "Cleansing",
+              "cost": {
+                "mana": [],
+                "components": [
+                  {
+                    "type": "PayLife",
+                    "value": {
+                      "type": "Fixed",
+                      "value": 1
+                    }
+                  }
+                ]
+              },
+              "earlier": [
+                [
+                  "alice",
+                  null
+                ],
+                [
+                  "bob",
+                  null
+                ]
+              ],
+              "member": [
+                "Object",
+                "$plains-2"
+              ]
+            }
+          }
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "carol",
+      "do": {
+        "Answer": {
+          "prompt": "ChooseToPay",
+          "with": "Declines"
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "carol",
+      "check": {
+        "View": {
+          "of": "Prompt",
+          "is": {
+            "kind": "ChooseToPay",
+            "offer": {
+              "source": "Cleansing",
+              "cost": {
+                "mana": [],
+                "components": [
+                  {
+                    "type": "PayLife",
+                    "value": {
+                      "type": "Fixed",
+                      "value": 1
+                    }
+                  }
+                ]
+              },
+              "earlier": [
+                [
+                  "alice",
+                  null
+                ],
+                [
+                  "bob",
+                  null
+                ]
+              ],
+              "member": [
+                "Object",
+                "$plains-3"
+              ]
+            }
+          }
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "carol",
+      "do": {
+        "Answer": {
+          "prompt": "ChooseToPay",
+          "with": "Declines"
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "carol",
+      "check": {
+        "View": {
+          "of": "Prompt",
+          "is": {
+            "kind": "ChooseToPay",
+            "offer": {
+              "source": "Cleansing",
+              "cost": {
+                "mana": [],
+                "components": [
+                  {
+                    "type": "PayLife",
+                    "value": {
+                      "type": "Fixed",
+                      "value": 1
+                    }
+                  }
+                ]
+              },
+              "earlier": [
+                [
+                  "alice",
+                  null
+                ],
+                [
+                  "bob",
+                  [
+                    {
+                      "mana": [],
+                      "components": [
+                        {
+                          "type": "PayLife",
+                          "value": {
+                            "type": "Fixed",
+                            "value": 1
+                          }
+                        }
+                      ]
+                    },
+                    []
+                  ]
+                ]
+              ],
+              "member": [
+                "Object",
+                "$island-a"
+              ]
+            }
+          }
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "carol",
+      "do": {
+        "Answer": {
+          "prompt": "ChooseToPay",
+          "with": "Declines"
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "carol",
+      "check": {
+        "View": {
+          "of": "Prompt",
+          "is": {
+            "kind": "ChooseToPay",
+            "offer": {
+              "source": "Cleansing",
+              "cost": {
+                "mana": [],
+                "components": [
+                  {
+                    "type": "PayLife",
+                    "value": {
+                      "type": "Fixed",
+                      "value": 1
+                    }
+                  }
+                ]
+              },
+              "earlier": [
+                [
+                  "alice",
+                  null
+                ],
+                [
+                  "bob",
+                  null
+                ]
+              ],
+              "member": [
+                "Object",
+                "$island-b"
+              ]
+            }
+          }
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "carol",
+      "do": {
+        "Answer": {
+          "prompt": "ChooseToPay",
+          "with": "Pays"
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "carol",
+      "check": {
+        "View": {
+          "of": "Prompt",
+          "is": {
+            "kind": "ChooseToPay",
+            "offer": {
+              "source": "Cleansing",
+              "cost": {
+                "mana": [],
+                "components": [
+                  {
+                    "type": "PayLife",
+                    "value": {
+                      "type": "Fixed",
+                      "value": 1
+                    }
+                  }
+                ]
+              },
+              "earlier": [
+                [
+                  "alice",
+                  null
+                ],
+                [
+                  "bob",
+                  null
+                ]
+              ],
+              "member": [
+                "Object",
+                "$forest-c"
+              ]
+            }
+          }
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "carol",
+      "do": {
+        "Answer": {
+          "prompt": "ChooseToPay",
+          "with": "Pays"
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "carol",
+      "check": {
+        "View": {
+          "of": "Prompt",
+          "is": {
+            "kind": "ChooseToPay",
+            "offer": {
+              "source": "Cleansing",
+              "cost": {
+                "mana": [],
+                "components": [
+                  {
+                    "type": "PayLife",
+                    "value": {
+                      "type": "Fixed",
+                      "value": 1
+                    }
+                  }
+                ]
+              },
+              "earlier": [
+                [
+                  "alice",
+                  null
+                ],
+                [
+                  "bob",
+                  null
+                ]
+              ],
+              "member": [
+                "Object",
+                "$forest-d"
+              ]
+            }
+          }
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "carol",
+      "do": {
+        "Answer": {
+          "prompt": "ChooseToPay",
+          "with": "Declines"
+        }
+      }
+    }
+  ],
+  "final": [
+    {
+      "View": {
+        "of": "Zone",
+        "player": "alice",
+        "zone": "Battlefield",
+        "is": []
+      }
+    },
+    {
+      "View": {
+        "of": "Zone",
+        "player": "bob",
+        "zone": "Battlefield",
+        "is": [
+          "$island-a",
+          "$island-b"
+        ]
+      }
+    },
+    {
+      "View": {
+        "of": "Zone",
+        "player": "carol",
+        "zone": "Battlefield",
+        "is": [
+          "$forest-c"
+        ]
+      }
+    },
+    {
+      "Life": {
+        "player": "alice",
+        "life": 20
+      }
+    },
+    {
+      "Life": {
+        "player": "bob",
+        "life": 19
+      }
+    },
+    {
+      "Life": {
+        "player": "carol",
+        "life": 18
+      }
+    },
+    {
+      "Count": {
+        "player": "carol",
+        "zone": "Graveyard",
+        "card": "Forest",
+        "count": 1
+      }
+    },
+    {
+      "View": {
+        "of": "Asked",
+        "is": [
+          [
+            "alice",
+            "ChooseManaSource"
+          ],
+          [
+            "alice",
+            "ChooseManaSource"
+          ],
+          [
+            "alice",
+            "ChooseManaSource"
+          ],
+          [
+            "alice",
+            "OrderForEach"
+          ],
+          [
+            "alice",
+            "OrderForEach"
+          ],
+          [
+            "alice",
+            "OrderForEach"
+          ],
+          [
+            "alice",
+            "ChooseToPay"
+          ],
+          [
+            "alice",
+            "ChooseToPay"
+          ],
+          [
+            "alice",
+            "ChooseToPay"
+          ],
+          [
+            "alice",
+            "ChooseToPay"
+          ],
+          [
+            "alice",
+            "ChooseToPay"
+          ],
+          [
+            "alice",
+            "ChooseToPay"
+          ],
+          [
+            "alice",
+            "ChooseToPay"
+          ],
+          [
+            "bob",
+            "ChooseToPay"
+          ],
+          [
+            "bob",
+            "ChooseToPay"
+          ],
+          [
+            "bob",
+            "ChooseToPay"
+          ],
+          [
+            "bob",
+            "ChooseToPay"
+          ],
+          [
+            "bob",
+            "ChooseToPay"
+          ],
+          [
+            "bob",
+            "ChooseToPay"
+          ],
+          [
+            "bob",
+            "ChooseToPay"
+          ],
+          [
+            "carol",
+            "ChooseToPay"
+          ],
+          [
+            "carol",
+            "ChooseToPay"
+          ],
+          [
+            "carol",
+            "ChooseToPay"
+          ],
+          [
+            "carol",
+            "ChooseToPay"
+          ],
+          [
+            "carol",
+            "ChooseToPay"
+          ],
+          [
+            "carol",
+            "ChooseToPay"
+          ],
+          [
+            "carol",
+            "ChooseToPay"
+          ]
+        ]
+      }
+    }
+  ]
+}

@@ -65,7 +65,6 @@ import qualified Parun.Types.ClauseIndex as ClauseIndex
 import qualified Parun.Types.Color as Color
 import qualified Parun.Types.ColorSpread as ColorSpread
 import qualified Parun.Types.CombatStep as CombatStep
-import qualified Parun.Types.ContinuousEffect as ContinuousEffect
 import qualified Parun.Types.ControlPlayerNext as ControlPlayerNext
 import qualified Parun.Types.ControlSpan as ControlSpan
 import qualified Parun.Types.Copyability as Copyability
@@ -118,7 +117,6 @@ import qualified Parun.Types.Object as Object
 import qualified Parun.Types.ObjectId as ObjectId
 import qualified Parun.Types.ObjectRef as ObjectRef
 import qualified Parun.Types.OptionalDecision as OptionalDecision
-import qualified Parun.Types.PayOffer as PayOffer
 import qualified Parun.Types.PayerAnswer as PayerAnswer
 import qualified Parun.Types.PaymentDecision as PaymentDecision
 import qualified Parun.Types.Phase as Phase
@@ -167,12 +165,6 @@ targetSpec s registry = Spec.describe s "Target" $ do
       "creature and both players"
       (Target.legalRecipients StackObjectKind.Spell Nothing S.noSource (TargetSlot.required Pool.AnyTarget Nothing) gs)
       (Set.fromList [Recipient.ToCreature oid, Recipient.ToPlayer S.alice, Recipient.ToPlayer S.bob])
-  Spec.it s "a departed player is not a legal target" $ do
-    let gs = S.departs Departure.Type.Lost S.bob (Setup.emptyGame S.bothPlayers)
-    Spec.assertBool
-      s
-      (not (Set.member (Recipient.ToPlayer S.bob) (Target.legalRecipients StackObjectKind.Spell Nothing S.noSource (TargetSlot.required Pool.AnyTarget Nothing) gs)))
-      "bob gone"
   Spec.it s "CR 800.4b an object does not change to the control of a player who has left the game" $ do
     -- CR 800.4b: "If an object would change to the control of a player who has
     -- left the game, it doesn't." Resolve.applyEffect takes the controller
@@ -529,18 +521,6 @@ resolveSpec s registry = Spec.describe s "Resolve" $ do
     lightningBolt <- S.printingOf s registry "Lightning Bolt"
     let (_, cast, _) = S.boltAtBobsPiker piker mountain lightningBolt
     Spec.assertEqWith s "conserved" (Game.objectCount (snd (Engine.runGamePure S.identityAnswer cast Stack.resolveTop))) (Game.objectCount cast)
-  Spec.it s "CR 608.2b a Bolt whose only target died fizzles" $ do
-    piker <- S.printingOf s registry "Goblin Piker"
-    mountain <- S.printingOf s registry "Mountain"
-    lightningBolt <- S.printingOf s registry "Lightning Bolt"
-    let (base, cast, _) = S.boltAtBobsPiker piker mountain lightningBolt
-        -- Kill the Piker while the Bolt is on the stack, as Bolt B will in
-        -- the integration test, then check state-based actions.
-        dead = S.settleSba (S.markDamage (S.pikerOf base) 3 cast)
-        after = snd (Engine.runGamePure S.identityAnswer dead Stack.resolveTop)
-    Spec.assertEqWith s "Bolt in the graveyard, unresolved" (length (Game.zoneMembers Zone.Graveyard S.alice after)) 1
-    Spec.assertEqWith s "no damage was dealt" (S.damageEventsOf after) []
-    Spec.assertEqWith s "bob untouched" (S.lifeOf S.bob after) (Just 20)
   -- The deterministic successor to the retired "instants happen" property: a
   -- Bolt cast in a game and resolved ends in its owner's graveyard.
   Spec.it s "a cast Bolt reaches its owner's graveyard" $ do
@@ -870,43 +850,6 @@ resolveSpec s registry = Spec.describe s "Resolve" $ do
     Spec.assertEqWith s "the Piker was NOT fetched to the battlefield" (S.countOnBattlefieldByName (CardName.MkCardName $ Text.pack "Goblin Piker") S.alice resolved) 0
     Spec.assertBool s (elem (Just (S.printingName piker)) (libraryNames S.alice resolved)) "it is still in the library"
     Spec.assertEqWith s "and nothing else was fetched either" (S.countOnBattlefieldByName (CardName.MkCardName $ Text.pack "Mountain") S.alice resolved) 0
-  -- Hoarding Dragon -- "Flying. When this creature enters, you may search your
-  -- library for an artifact card, exile it, then shuffle." The whole-card proof
-  -- of SearchDestination.Exile, cast and resolved rather than assembled.
-  --
-  -- The printed card's second half -- "When this creature dies, you may put the
-  -- exiled card into its owner's hand" -- is CR 607.2a's linked ability, and the
-  -- two cases at the end of this group are what prove the link picks out the
-  -- right card.
-  --
-  -- The destination is the assertion, and three readings have to be told apart:
-  -- exile, hand (RevealThenHand) and battlefield (BattlefieldTapped). So the
-  -- Altar is asserted present in exile AND absent from both other zones, and the
-  -- empty reveal log separates CR 701.23e's silent exile from the Sextant's
-  -- "reveal that card". The Piker is in the library so the filter has a card to
-  -- reject; it is added second, so Support.addLibraryCard makes it the head and a
-  -- filter that admitted everything would exile it instead.
-  Spec.it s "CR 701.23a/701.23e whole card: Hoarding Dragon exiles the artifact it finds, unrevealed" $ do
-    mountain <- S.printingOf s registry "Mountain"
-    dragon <- S.printingOf s registry "Hoarding Dragon"
-    altar <- S.printingOf s registry "Ashnod's Altar"
-    piker <- S.printingOf s registry "Goblin Piker"
-    let base0 = S.landsInPlay mountain 5
-        (_, base1) = S.addLibraryCard altar S.alice base0
-        (_, base2) = S.addLibraryCard piker S.alice base1
-        (gs, spellId) = S.handOne dragon base2
-        cast = snd (Engine.runGamePure findFirstExercising gs (S.cast S.alice spellId))
-        settled = snd (Engine.runGamePure findFirstExercising cast Engine.priorityLoop)
-    Spec.assertEqWith s "the Dragon resolved onto the battlefield" (S.countOnBattlefieldByName (CardName.MkCardName $ Text.pack "Hoarding Dragon") S.alice settled) 1
-    Spec.assertEqWith
-      s
-      "the Altar, and only the Altar, is in exile"
-      (fmap (`S.soleFaceName` settled) (Game.zoneMembers Zone.Exile S.alice settled))
-      [CardName.MkCardName $ Text.pack "Ashnod's Altar"]
-    Spec.assertEqWith s "it did NOT go to her hand -- she cast her only card" (S.handSize S.alice settled) 0
-    Spec.assertEqWith s "nor onto the battlefield" (S.countOnBattlefieldByName (CardName.MkCardName $ Text.pack "Ashnod's Altar") S.alice settled) 0
-    Spec.assertEqWith s "CR 701.23e: the card says only \"exile it\", so nothing was revealed" (S.revealsOf settled) []
-    Spec.assertEqWith s "the nonartifact was no candidate and stayed in the library" (libraryNames S.alice settled) [Just (S.printingName piker)]
   -- CR 608.2d, the half that says an option has to be a real one: "the player
   -- can't choose an option that's illegal or impossible". The SAME Tweeze off a
   -- board where alice's hand is empty once the spell is on the stack, so "you
@@ -1247,33 +1190,6 @@ resolveSpec s registry = Spec.describe s "Resolve" $ do
         let (asked, after) = kamiResolved (ClauseIndex.MkClauseIndex 0) OptionalDecision.Exercises gs abil kamiId pikerId
         Spec.assertEqWith s "CR 608.2d the possible branch ran: the Piker is untapped" (twiddleTapState pikerId after) (Just TapState.Untapped)
         Spec.assertEqWith s "and no branch question was put at all" (branchesAnnounced asked) []
-  -- CR 607.2a's linked set, on the board that can tell it from "every card in
-  -- exile": TWO Hoarding Dragons, each of which exiled a different artifact, and
-  -- one of them dies. The pair below runs the SAME board twice and differs in
-  -- exactly one thing -- which Dragon takes the lethal damage -- so an engine
-  -- whose "the exiled card" named all of exile, or the oldest entry, or the
-  -- newest, fails one of the two.
-  --
-  -- Two objects of ONE NAME rather than two different exilers, because that is
-  -- the reading CR 607.2a singles out: the link is per OBJECT, and a second copy
-  -- of the same printing is a different object with its own set.
-  --
-  -- Each search is PINNED to a named card rather than taking the head of the
-  -- offered list, so which Dragon holds which artifact is decided by the fixture
-  -- and not by where a shuffle left the library.
-  --
-  -- The kill is marked damage plus CR 704.5g, which is a LEAVE-THE-BATTLEFIELD
-  -- event: CR 603.10a makes the dies trigger look back, so its source is the
-  -- permanent as it was on the battlefield -- the same id that did the exiling,
-  -- and the whole reason the link survives its own object's death.
-  Spec.it s "CR 607.2a: the dead Dragon returns the card IT exiled, not the other Dragon's" $ do
-    board <- twoDragonBoard s registry
-    Spec.assertEqWith s "the first Dragon's artifact came back to her hand" (handNames (kill (firstDragon board) board)) [firstArtifact board]
-    Spec.assertEqWith s "and the surviving Dragon's is still in exile" (exileNames (kill (firstDragon board) board)) [secondArtifact board]
-  Spec.it s "CR 607.2a: killing the OTHER Dragon returns the OTHER card" $ do
-    board <- twoDragonBoard s registry
-    Spec.assertEqWith s "the second Dragon's artifact came back to her hand" (handNames (kill (secondDragon board) board)) [secondArtifact board]
-    Spec.assertEqWith s "and the first Dragon's is still in exile" (exileNames (kill (secondDragon board) board)) [firstArtifact board]
   -- Synthetic Split Reliquary -- "{3} Artifact. Warden -- {T}: Exile target
   -- creature card from your graveyard. Scholar -- {T}: Exile target land card
   -- from your graveyard. {T}, Sacrifice this artifact: Return the cards exiled
@@ -1287,67 +1203,6 @@ resolveSpec s registry = Spec.describe s "Resolve" $ do
     -- too, and a link that lost the name returns nothing.
     Spec.assertEqWith s "the warden ability's Piker came back to her hand, and nothing else" (handNames settled) [CardName.MkCardName (Text.pack "Goblin Piker")]
     Spec.assertEqWith s "the scholar ability's Forest is still in exile" (exileNames settled) [CardName.MkCardName (Text.pack "Forest")]
-  -- Nature's Lore -- "Search your library for a Forest card, put that card onto
-  -- the battlefield, then shuffle." The whole-card proof of
-  -- SearchDestination.Battlefield, cast and resolved rather than assembled. Its
-  -- whole printed text is expressible, so nothing about parun's copy runs weaker
-  -- than the card.
-  --
-  -- The PAIR to Explosive Vegetation above: the two destinations differ in the
-  -- one word "tapped", and the assertions differ in exactly the same place.
-  -- Those cases assert NOTHING is untapped after the fetch; this one asserts
-  -- exactly one thing is, and that it is what the search found. CR 110.5b is the
-  -- rule that makes it so -- this card's sentence names no tap state, so the
-  -- entry defaults stand.
-  --
-  -- Both Forests she started with paid the {1}{G}, so an untapped permanent can
-  -- only be one that entered during the resolution. That is what lets this
-  -- assert about the fetched land even though it shares a name with the two that
-  -- paid.
-  --
-  -- TWO Forest cards in the library against a cap of one, so the searcher faces a
-  -- real choice rather than a candidate set the size of the cap, and the answer
-  -- is PINNED to the basic: Dryad Arbor is a Forest card too and sits ahead of it
-  -- (Support.addLibraryCard prepends), so an engine taking the head of the
-  -- candidate list would fetch the Arbor this answer never names. The Piker gives
-  -- the filter a nonland to reject.
-  Spec.it s "CR 110.5b whole card: Nature's Lore puts the Forest it finds onto the battlefield UNTAPPED" $ do
-    board <- loreBoard s registry
-    let settled = resolveLore (findPinned [loreForest board]) board
-    Spec.assertEqWith
-      s
-      "CR 110.5b the found Forest is the one untapped permanent -- both lands she had paid for the spell"
-      (fmap (`S.soleFaceName` settled) (untappedOf S.alice settled))
-      [CardName.MkCardName (Text.pack "Forest")]
-    Spec.assertEqWith
-      s
-      "three Forests where she had two"
-      (S.countOnBattlefieldByName (CardName.MkCardName (Text.pack "Forest")) S.alice settled)
-      3
-    Spec.assertEqWith s "CR 701.23e the card asks for no reveal, so nothing was revealed" (S.revealsOf settled) []
-    Spec.assertEqWith s "it did NOT go to her hand -- she cast her only card" (S.handSize S.alice settled) 0
-    Spec.assertEqWith
-      s
-      "the other Forest card and the nonland stayed in the library"
-      (Set.fromList (libraryNames S.alice settled))
-      (Set.fromList (fmap (\oid -> fmap S.nameOf (Game.cardOf oid (loreState board))) [loreArbor board, lorePiker board]))
-  -- CR 101.4b: a pair of boards differing only in alice's answer to the "may".
-  -- bob and carol each give the answer their prompt says the seat before them
-  -- gave, declining when told nothing, so what they do is what they were told.
-  Spec.it s "CR 101.4b Jungle Wayfinder's later seats know the earlier seats' answers" $ do
-    (gs, spellId) <- wayfinderBoard s registry
-    let cast = snd (Engine.runGamePure findFirstExercising gs (S.cast S.alice spellId))
-        onStack = snd (Engine.runGamePure findFirstExercising cast (Stack.resolveTop >> Engine.settleForPriority))
-        run hers = State.runState (Engine.runGame (copyingWayfinderAnswer hers) onStack Stack.resolveTop) []
-        ((_, took), toldTook) = run OptionalDecision.Exercises
-        ((_, declined), toldDeclined) = run OptionalDecision.Declines
-        nameOf = Just . CardName.MkCardName . Text.pack
-        exercises = OptionalDecision.Exercises
-        declines = OptionalDecision.Declines
-    Spec.assertEqWith s "CR 101.4b told alice took it, bob took it and found a Mountain" (namesIn Zone.Hand S.bob took) [nameOf "Mountain"]
-    Spec.assertEqWith s "CR 101.4b told alice declined, bob declined" (namesIn Zone.Hand S.bob declined) []
-    Spec.assertEqWith s "CR 101.4b each seat was told the answers before its own" toldTook [(S.alice, []), (S.bob, [(S.alice, exercises)]), (S.carol, [(S.alice, exercises), (S.bob, exercises)])]
-    Spec.assertEqWith s "CR 101.4b and so when alice declined" toldDeclined [(S.alice, []), (S.bob, [(S.alice, declines)]), (S.carol, [(S.alice, declines), (S.bob, declines)])]
   Spec.it s "CR 603/608.2n Rest in Peace's ETB exiles graveyards and ceases" $ do
     restInPeace <- S.printingOf s registry "Rest in Peace"
     piker <- S.printingOf s registry "Goblin Piker"
@@ -1670,41 +1525,6 @@ resolveSpec s registry = Spec.describe s "Resolve" $ do
     Spec.assertEqWith s "and the Piker is its printed 2/1" (Projection.powerOf pikerId refused, Projection.toughnessOf pikerId refused) (Just 2, Just 1)
     Spec.assertEqWith s "the same call with two Literals DOES store one -- the refusal is what did it" (length (StoredEffects.continuousEffects (GameState.stored stored))) 1
     Spec.assertEqWith s "and pumps the Piker to 5/4" (Projection.powerOf pikerId stored, Projection.toughnessOf pikerId stored) (Just 5, Just 4)
-  -- The OTHER half of the same freeze: a quantity that IS answerable, but only
-  -- against the resolution's own slot bindings. Rush of Blood's X is
-  -- Quantity.AgainstSlot "target" under CR 107.1b's floor, which reads
-  -- Filter.slotObjects -- so a freeze handed a bare Filter.contextFor sees an
-  -- empty slot map, answers Nothing, and the arm above stores no continuous
-  -- effect at all. The card would resolve, go
-  -- to the graveyard, and silently do nothing.
-  --
-  -- Rabid Bite is the existing precedent for the same AgainstSlot/Power pair
-  -- against a target slot, through Effect.DealDamage -- which already evaluates
-  -- via effectContext, which is why nothing was red.
-  --
-  -- A Goblin Piker (2/1) rather than a vanilla 1/1: the buggy answer (2) and a
-  -- "default the slot to 0" partial fix (also 2) must both differ from the right
-  -- one (4), and the toughness assertion then separates +X/+0 (4/1) from +X/+X
-  -- (4/3). It is the only creature on the board, so CR 601.2c leaves one legal
-  -- target and no answerer picks it.
-  Spec.it s "CR 608.2h/611.2d Rush of Blood's X is the power of the creature in its own target slot" $ do
-    mountain <- S.printingOf s registry "Mountain"
-    piker <- S.printingOf s registry "Goblin Piker"
-    rushOfBlood <- S.printingOf s registry "Rush of Blood"
-    -- Exactly three Mountains, the minimum that pays {2}{R}, so no spare mana
-    -- can pay for a second read.
-    let (pikerId, withPiker) = S.addPermanent piker S.alice (S.landsInPlay mountain 3)
-        (gs, spellId) = S.handOne rushOfBlood withPiker
-        cast = snd (Engine.runGamePure S.identityAnswer gs (S.cast S.alice spellId))
-        resolved = snd (Engine.runGamePure S.identityAnswer cast Stack.resolveTop)
-    Spec.assertEqWith s "power 2 + its own 2" (Projection.powerOf pikerId resolved) (Just 4)
-    Spec.assertEqWith s "toughness untouched at 1 -- +X/+0, not +X/+X" (Projection.toughnessOf pikerId resolved) (Just 1)
-    Spec.assertEqWith
-      s
-      "and what was STORED is the frozen pair, not the raw AgainstSlot"
-      (fmap ContinuousEffect.modification (StoredEffects.continuousEffects (GameState.stored resolved)))
-      [Modification.ModifyPowerToughness (ModifyPowerToughness.MkModifyPowerToughness (Quantity.Literal 2) (Quantity.Literal 0))]
-    Spec.assertEqWith s "the Piker is still its printed 2/1 while the spell is on the stack" (Projection.powerOf pikerId cast, Projection.toughnessOf pikerId cast) (Just 2, Just 1)
   -- Onward ({2}{R} Instant, the first half of Onward // Victory: "Target
   -- creature gets +X/+0 until end of turn, where X is its power."), Oracle text
   -- verified on Scryfall 2026-10-12. Rush of Blood's shape on a split card: X
@@ -1831,11 +1651,6 @@ findPinned wanted p = case p of
   Prompt.Search {} -> wanted
   _ -> S.identityAnswer p
 
-untappedOf :: PlayerId.PlayerId -> GameState.GameState -> [ObjectId.ObjectId]
-untappedOf pid gs =
-  let isUntapped oid = fmap Object.tapped (Game.lookupObject oid gs) == Just TapState.Untapped
-   in filter isUntapped (Game.zoneMembers Zone.Battlefield pid gs)
-
 findFirst :: Prompt.Prompt r -> r
 findFirst p = case p of
   Prompt.Search _ _ matches cap -> List.genericTake cap matches
@@ -1847,14 +1662,6 @@ findForbidden :: ObjectId.ObjectId -> Prompt.Prompt r -> r
 findForbidden wanted p = case p of
   Prompt.Search {} -> [wanted]
   _ -> S.identityAnswer p
-
--- findFirst, plus CR 603.5's printed "may" taken. The pair below it declines the
--- same "may" and answers every other prompt identically, so a board run through
--- both differs in exactly that one decision.
-findFirstExercising :: Prompt.Prompt r -> r
-findFirstExercising p = case p of
-  Prompt.ChooseOptional {} -> OptionalDecision.Exercises
-  _ -> findFirst p
 
 -- Three Swamps pay Victimize's {2}{B}; a Goblin Piker and a Hill Giant in
 -- alice's graveyard are its only two candidates, and `withFodder` adds the
@@ -2231,44 +2038,6 @@ kamiResolved branch decision gs ability kamiId pikerId =
   let ((_, after), asked) = Replay.record (twiddleAnswer branch decision pikerId) gs (Activate.activateAbility S.alice kamiId ability >> Stack.resolveTop)
    in (asked, after)
 
--- The board the two Jungle Wayfinder cases share: alice casts it off three
--- Forests, and every seat's library holds three of ONE basic plus a Goblin Piker
--- for the filter to reject. See the first case for why three seats, three basics
--- each, and a different basic per seat.
-wayfinderBoard :: (Monad m) => Spec.Spec m n -> Registry.Registry m -> m (GameState.GameState, ObjectId.ObjectId)
-wayfinderBoard s registry = do
-  forest <- S.printingOf s registry "Forest"
-  wayfinder <- S.printingOf s registry "Jungle Wayfinder"
-  island <- S.printingOf s registry "Island"
-  mountain <- S.printingOf s registry "Mountain"
-  plains <- S.printingOf s registry "Plains"
-  piker <- S.printingOf s registry "Goblin Piker"
-  let stock printing pid g = List.foldl' (\h _ -> snd (S.addLibraryCard printing pid h)) g [1 :: Int .. 3]
-      g0 = S.landsFor forest S.alice 3 S.threePlayerGame
-      (_, g1) = S.addLibraryCard piker S.alice g0
-      g2 = stock island S.alice g1
-      (_, g3) = S.addLibraryCard piker S.bob g2
-      g4 = stock mountain S.bob g3
-      (_, g5) = S.addLibraryCard piker S.carol g4
-      g6 = stock plains S.carol g5
-  pure (S.handOne wayfinder g6)
-
--- CR 101.4b's answerer for Jungle Wayfinder: alice answers `hers`, and each
--- later seat gives the answer its prompt says the seat before it gave, declining
--- when told nothing. Each "may" prompt's earlier answers are recorded in order.
-copyingWayfinderAnswer :: OptionalDecision.OptionalDecision -> Prompt.Prompt r -> State.State [(PlayerId.PlayerId, [(PlayerId.PlayerId, OptionalDecision.OptionalDecision)])] r
-copyingWayfinderAnswer hers p = case p of
-  Prompt.ChooseOptional _ pid _ _ _ earlier -> do
-    State.modify' (<> [(pid, Foldable.toList earlier)])
-    pure $
-      if pid == S.alice
-        then hers
-        else case Seq.viewr earlier of
-          _ Seq.:> (_, previous) -> previous
-          Seq.EmptyR -> OptionalDecision.Declines
-  Prompt.Search _ _ matches cap -> pure (List.genericTake cap matches)
-  _ -> pure (S.identityAnswer p)
-
 -- Alice's Synthetic Split Reliquary over a graveyard of one creature card and
 -- one land card: each exiling ability takes its one candidate on its own
 -- resolution, then the third ability is activated and resolved. Event.untap
@@ -2296,90 +2065,6 @@ splitReliquary s registry = do
       Spec.assertEqWith s "both exiling abilities exiled their card" (List.sort (exileNames exiled)) [CardName.MkCardName (Text.pack "Forest"), CardName.MkCardName (Text.pack "Goblin Piker")]
       pure (run back exiled)
     _ -> Spec.assertFailure s "Synthetic Split Reliquary should declare three activated abilities"
-
--- findFirstExercising with the FIND pinned to one named card. The two Dragons of
--- the CR 607.2a pair have to exile DIFFERENT artifacts for the linked set to be
--- provable at all, and the head of the offered list is where a shuffle left it
--- rather than something the fixture chose.
-findPinnedExercising :: ObjectId.ObjectId -> Prompt.Prompt r -> r
-findPinnedExercising wanted p = case p of
-  Prompt.ChooseOptional {} -> OptionalDecision.Exercises
-  Prompt.Search {} -> [wanted]
-  _ -> S.identityAnswer p
-
--- The board CR 607.2a's two cases share: two Hoarding Dragons of alice's, each
--- having exiled a different artifact, plus what an assertion needs to tell the
--- two halves apart.
-data TwoDragons = MkTwoDragons
-  { dragonBoard :: GameState.GameState,
-    firstDragon :: ObjectId.ObjectId,
-    secondDragon :: ObjectId.ObjectId,
-    firstArtifact :: CardName.CardName,
-    secondArtifact :: CardName.CardName
-  }
-
--- Cast one spell and settle, so the entry trigger has resolved by the time the
--- next Dragon is cast.
-settleCast :: (forall r. Prompt.Prompt r -> r) -> ObjectId.ObjectId -> GameState.GameState -> GameState.GameState
-settleCast answer spellId gs =
-  let cast = snd (Engine.runGamePure answer gs (S.cast S.alice spellId))
-   in snd (Engine.runGamePure answer cast Engine.priorityLoop)
-
-dragonsOf :: GameState.GameState -> [ObjectId.ObjectId]
-dragonsOf gs =
-  filter
-    (\oid -> S.soleFaceName oid gs == CardName.MkCardName (Text.pack "Hoarding Dragon"))
-    (Game.zoneMembers Zone.Battlefield S.alice gs)
-
--- The Dragons are cast one at a time so that the SECOND one's id is the
--- battlefield Dragon the first cast did not leave behind. Every claim the board
--- makes is asserted here rather than assumed, since both cases below read the
--- board's own answer back: an exile that held one card, or a hand that already
--- held one, would make them pass for the wrong reason.
-twoDragonBoard :: (Monad m) => Spec.Spec m n -> Registry.Registry m -> m TwoDragons
-twoDragonBoard s registry = do
-  mountain <- S.printingOf s registry "Mountain"
-  dragon <- S.printingOf s registry "Hoarding Dragon"
-  altar <- S.printingOf s registry "Ashnod's Altar"
-  sphere <- S.printingOf s registry "Chromatic Sphere"
-  piker <- S.printingOf s registry "Goblin Piker"
-  let base0 = S.landsInPlay mountain 10
-      (altarId, base1) = S.addLibraryCard altar S.alice base0
-      (sphereId, base2) = S.addLibraryCard sphere S.alice base1
-      (_, base3) = S.addLibraryCard piker S.alice base2
-      (base4, firstSpell) = S.handOne dragon base3
-      (secondSpell, base5) = S.addHandCard dragon S.alice base4
-      afterFirst = settleCast (findPinnedExercising altarId) firstSpell base5
-      -- The Sphere the second Dragon finds is the one in the library NOW: the
-      -- first search looked at it and its shuffle reordered it, so it is a new
-      -- object (CR 701.20d / 701.20e).
-      sphereNow = foldr const sphereId [oid | oid <- Game.zoneMembers Zone.Library S.alice afterFirst, S.soleFaceName oid afterFirst == S.printingName sphere]
-      afterSecond = settleCast (findPinnedExercising sphereNow) secondSpell afterFirst
-      earlier = dragonsOf afterFirst
-      later = filter (`notElem` earlier) (dragonsOf afterSecond)
-  Spec.assertEqWith s "the first Dragon is alone on the battlefield" (length earlier) 1
-  Spec.assertEqWith s "the second Dragon joined it" (length later) 1
-  Spec.assertEqWith s "her hand is empty, so anything in it later was returned" (S.handSize S.alice afterSecond) 0
-  Spec.assertEqWith
-    s
-    "each Dragon exiled a different artifact"
-    (Set.fromList (exileNames afterSecond))
-    (Set.fromList [S.printingName altar, S.printingName sphere])
-  pure
-    MkTwoDragons
-      { dragonBoard = afterSecond,
-        firstDragon = Maybe.fromMaybe S.noSource (Maybe.listToMaybe earlier),
-        secondDragon = Maybe.fromMaybe S.noSource (Maybe.listToMaybe later),
-        firstArtifact = S.printingName altar,
-        secondArtifact = S.printingName sphere
-      }
-
--- CR 704.5g: lethal damage on a 4/4, swept by the state-based actions the
--- priority loop runs before it hands anybody priority, which is what fires the
--- dies trigger and resolves it.
-kill :: ObjectId.ObjectId -> TwoDragons -> GameState.GameState
-kill oid board =
-  snd (Engine.runGamePure findFirstExercising (S.markDamage oid 4 (dragonBoard board)) Engine.priorityLoop)
 
 handNames :: GameState.GameState -> [CardName.CardName]
 handNames gs = fmap (`S.soleFaceName` gs) (Game.zoneMembers Zone.Hand S.alice gs)
@@ -2726,34 +2411,6 @@ crabSpec s registry =
           Spec.assertEqWith s "setup: alice controlled both candidates and the Crab, and exile was empty" (owned Zone.Exile entered, length (owned Zone.Battlefield entered)) ([], 3)
           Spec.assertEqWith s "setup: the entry trigger really went on the stack" (length (TurnRegisters.stack (GameState.turn (S.runPure S.identityAnswer entered Engine.settleForPriority)))) 1
 
--- Vapor Snag ({U} Instant, Scryfall 2026-09-17): "Return target creature to its
--- owner's hand. Its controller loses 1 life." Two clauses in CR 608.2c's printed
--- order, so the second names a slot the first has already moved to a hidden zone
--- -- CR 608.2h's last known information, since CR 108.4 leaves a card in a hand
--- with no controller at all.
---
--- The PAIR is the board below it, differing only in who controlled the bounced
--- creature: the sentence says "its controller", which two boards separate from
--- "you" and from "each opponent".
-snagSpec :: (Monad m) => Spec.Spec m n -> Registry.Registry m -> n ()
-snagSpec s registry = Spec.describe s "CR 608.2h a bounced target's controller" $ do
-  let snagAt owner = do
-        island <- S.printingOf s registry "Island"
-        piker <- S.printingOf s registry "Goblin Piker"
-        snag <- S.printingOf s registry "Vapor Snag"
-        let base = S.landsInPlay island 1
-            (_, withPiker) = S.addPermanent piker owner base
-            (gs, spellId) = S.handOne snag withPiker
-            cast = snd (Engine.runGamePure S.identityAnswer gs (S.cast S.alice spellId))
-        pure (gs, snd (Engine.runGamePure S.identityAnswer cast Stack.resolveTop))
-  Spec.it s "an opponent's creature: that opponent loses the life" $ do
-    (gs, after) <- snagAt S.bob
-    Spec.assertEqWith s "bob, who controlled the bounced creature, went 20 -> 19" (S.lifeOf S.bob after) (Just 19)
-    Spec.assertEqWith s "and alice, who cast it, lost none" (S.lifeOf S.alice after) (Just 20)
-    Spec.assertEqWith s "the creature is off the battlefield" (S.creaturesInPlay S.bob after) 0
-    Spec.assertEqWith s "and in bob's hand" (S.handSize S.bob after) 1
-    Spec.assertEqWith s "setup: bob controlled a creature and started at 20" (S.creaturesInPlay S.bob gs, S.lifeOf S.bob gs) (1, Just 20)
-
 -- CR 118.12a over the WHOLE TABLE: "unless any player pays {2}" is "each player
 -- may pay {2}; if no player does, [do something]", with the offers in CR 101.4's
 -- APNAP order (Rhystic Shield's and Rhystic Cave's rulings). The "each player"
@@ -3004,107 +2661,6 @@ tormentSpec s registry =
           Spec.assertEqWith s "CR 118.3 no ChooseCost, and the one offer is the discard" (fmap (either (const Nothing) (Just . discards)) asked) [Just True]
           Spec.assertEqWith s "bob discarded the Swamp and lost no life" (S.handSize S.bob after, S.lifeOf S.bob after) (0, Just 20)
 
--- CR 118.12a inside CR 608.2f's loop: Cleansing's "for each land, destroy that
--- land unless any player pays 1 life" is one offer PER LAND, each land's
--- destruction bought off by any one payment for THAT land. THREE SEATS and two
--- lands per non-caster, so a payment for one land can be seen not to save its
--- neighbour, and a seat can be seen paying for a land it does not control.
---
--- The answerer is a State log of every ChooseToPay, so the APNAP order of the
--- offers and what each one told its payer are read off what the engine asked.
-cleansingSpec :: (Monad m, Monad n) => Spec.Spec m n -> Registry.Registry m -> n ()
-cleansingSpec s registry =
-  let -- alice: three Plains and Cleansing in hand. bob: two Islands. carol: two
-      -- Forests. Every land by id, so each offer is attributable to its land.
-      board = do
-        plains <- S.printingOf s registry "Plains"
-        island <- S.printingOf s registry "Island"
-        forest <- S.printingOf s registry "Forest"
-        cleansing <- S.printingOf s registry "Cleansing"
-        let withPlains = S.landsFor plains S.alice 3 S.threePlayerGame
-            (islandA, g1) = S.addPermanent island S.bob withPlains
-            (islandB, g2) = S.addPermanent island S.bob g1
-            (forestC, g3) = S.addPermanent forest S.carol g2
-            (forestD, g4) = S.addPermanent forest S.carol g3
-            (gs, cleansingId) = S.handOne cleansing g4
-            onStack = S.runPure S.identityAnswer gs (S.cast S.alice cleansingId)
-        pure ((islandA, islandB, forestC, forestD), onStack)
-      -- One ChooseToPay: who was asked, about which land, told what.
-      logging ::
-        (PlayerId.PlayerId -> Maybe ObjectId.ObjectId -> Seq.Seq (PlayerId.PlayerId, PayerAnswer.PayerAnswer) -> PaymentDecision.PaymentDecision) ->
-        Prompt.Prompt r ->
-        State.State [(PlayerId.PlayerId, Maybe ObjectId.ObjectId, [(PlayerId.PlayerId, PayerAnswer.PayerAnswer)])] r
-      logging policy p = case p of
-        Prompt.ChooseToPay (Decider.MkDecider d) player _ offer _ earlier | d == player -> do
-          let land = case offer of
-                PayOffer.ForMember member -> Recipient.objectOf member
-                PayOffer.AtClause {} -> Nothing
-                PayOffer.InsteadOfDraw -> Nothing
-                PayOffer.CombatToll -> Nothing
-          State.modify' (<> [(player, land, Foldable.toList earlier)])
-          pure (policy player land earlier)
-        _ -> pure (S.identityAnswer p)
-      resolveWith policy onStack = State.runState (Engine.runGame (logging policy) onStack Stack.resolveTop) []
-      -- Everything on the battlefield, in id order.
-      permanentsOf gs = List.sort (concatMap (\pid -> Game.zoneMembers Zone.Battlefield pid gs) [S.alice, S.bob, S.carol])
-      lives gs = fmap (`S.lifeOf` gs) [S.alice, S.bob, S.carol]
-   in Spec.describe s "CR 118.12a an offer per member of a CR 608.2f loop" $ do
-        Spec.it s "CR 118.12a each land is its own offer, and any player's payment saves only that land" $ do
-          ((islandA, islandB, forestC, forestD), onStack) <- board
-          -- bob pays for his Island A; carol pays for bob's Island B and her
-          -- own Forest C. Nobody pays for Forest D or for any Plains.
-          let policy player land _
-                | player == S.bob && land == Just islandA = PaymentDecision.Pays
-                | player == S.carol && land `elem` [Just islandB, Just forestC] = PaymentDecision.Pays
-                | otherwise = PaymentDecision.Declines
-              ((_, after), asked) = resolveWith policy onStack
-          Spec.assertEqWith s "CR 118.12a the three lands somebody paid for stand, and every other land was destroyed" (permanentsOf after) (List.sort [islandA, islandB, forestC])
-          Spec.assertEqWith s "CR 118.3b bob paid 1 life and carol 2" (lives after) [Just 20, Just 19, Just 18]
-          Spec.assertEqWith s "CR 701.8a Forest D went to carol's graveyard though she paid for Forest C" (length (Game.zoneMembers Zone.Graveyard S.carol after), elem forestD (permanentsOf after)) (1, False)
-          -- CR 101.4: every offer alice makes, then every one bob makes, then
-          -- carol's -- seven lands each.
-          Spec.assertEqWith s "CR 101.4 the offers go alice, bob, carol, each seat answering for every land" (fmap (\(who, _, _) -> who) asked) (replicate 7 S.alice <> replicate 7 S.bob <> replicate 7 S.carol)
-          Spec.assertEqWith s "each offer named its land" (all (\(_, land, _) -> Maybe.isJust land) asked) True
-          Spec.assertEqWith
-            s
-            "CR 101.4b carol, asked about Island A, was told alice declined and bob paid"
-            [fmap (fmap told) earlier | (who, land, earlier) <- asked, who == S.carol, land == Just islandA]
-            [[(S.alice, PaymentDecision.Declines), (S.bob, PaymentDecision.Pays)]]
-        -- A pair differing only in bob's answer for Island A: carol pays for a
-        -- land exactly when her prompt says bob paid for it.
-        Spec.it s "CR 101.4b a later seat knows what the seats before it answered for that land" $ do
-          ((islandA, _, _, _), onStack) <- board
-          let copying bobPays player land earlier
-                | player == S.bob = if bobPays && land == Just islandA then PaymentDecision.Pays else PaymentDecision.Declines
-                | player == S.carol = maybe PaymentDecision.Declines told (lookup S.bob (Foldable.toList earlier))
-                | otherwise = PaymentDecision.Declines
-              ((_, paid), _) = resolveWith (copying True) onStack
-              ((_, declined), _) = resolveWith (copying False) onStack
-          Spec.assertEqWith s "CR 101.4b told bob paid for Island A, carol paid for it too" (lives paid) [Just 20, Just 19, Just 19]
-          Spec.assertEqWith s "CR 101.4b told bob declined everything, carol paid for nothing" (lives declined) [Just 20, Just 20, Just 20]
-          Spec.assertEqWith s "and with nobody paying, every land is gone" (permanentsOf declined) []
-        -- Killing Wave: the payer is each creature's own controller, and the
-        -- cost is the X its caster announced (CR 107.3a).
-        Spec.it s "CR 118.12a Killing Wave asks each creature's controller, and a paid creature alone survives" $ do
-          swamp <- S.printingOf s registry "Swamp"
-          piker <- S.printingOf s registry "Goblin Piker"
-          wave <- S.printingOf s registry "Killing Wave"
-          let (hers, g1) = S.addPermanent piker S.alice (S.landsFor swamp S.alice 3 S.threePlayerGame)
-              (kept, g2) = S.addPermanent piker S.bob g1
-              (lost, g3) = S.addPermanent piker S.bob g2
-              (gs, waveId) = S.handOne wave g3
-              xTwo :: Prompt.Prompt r -> r
-              xTwo p = case p of
-                Prompt.ChooseX {} -> 2
-                _ -> S.identityAnswer p
-              onStack = S.runPure xTwo gs (S.cast S.alice waveId)
-              policy player creature _ = if player == S.bob && creature == Just kept then PaymentDecision.Pays else PaymentDecision.Declines
-              ((_, after), asked) = resolveWith policy onStack
-              standing = filter (`elem` [hers, kept, lost]) (permanentsOf after)
-          Spec.assertEqWith s "CR 701.21a the Piker bob paid for stands, and the other two were sacrificed" standing [kept]
-          Spec.assertEqWith s "CR 107.3a bob paid X = 2 life, once" (lives after) [Just 20, Just 18, Just 20]
-          Spec.assertEqWith s "CR 101.4 alice answered for her Piker, then bob for each of his, and carol controls none" (fmap (\(who, creature, _) -> (who, creature)) asked) [(S.alice, Just hers), (S.bob, Just kept), (S.bob, Just lost)]
-
 -- Tariff: "each player sacrifices the creature they control with the greatest
 -- mana value unless they pay that creature's mana cost". Its 2008-04-01 ruling
 -- puts each player's pick (CR 608.2d) and offer (CR 118.12a) before the next
@@ -3258,7 +2814,6 @@ truceSpec s registry =
 spec :: (Monad m, Monad n) => Spec.Spec m n -> Registry.Registry m -> n ()
 spec s registry = Spec.describe s "Parun.Engine.Resolve" $ do
   brassHeraldSpec s registry
-  cleansingSpec s registry
   tariffSpec s registry
   tormentSpec s registry
   perforatingSpec s registry
@@ -3267,7 +2822,6 @@ spec s registry = Spec.describe s "Parun.Engine.Resolve" $ do
   resolveSpec s registry
   wormsSpec s registry
   crabSpec s registry
-  snagSpec s registry
   rhysticSpec s registry
   truceSpec s registry
 

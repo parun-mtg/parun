@@ -32,6 +32,7 @@ import qualified Parun.Codec.ManaSymbol as Codec.ManaSymbol
 import qualified Parun.Codec.ManaType as Codec.ManaType
 import qualified Parun.Codec.ManaUnit as Codec.ManaUnit
 import qualified Parun.Codec.NumberFloor as Codec.NumberFloor
+import qualified Parun.Codec.OptionalDecision as Codec.OptionalDecision
 import qualified Parun.Codec.OutsideCard as Codec.OutsideCard
 import qualified Parun.Codec.PlayerEffect as Codec.PlayerEffect
 import qualified Parun.Codec.Reference as Codec.Reference
@@ -98,6 +99,7 @@ import qualified Parun.Types.OptionalDecision as OptionalDecision
 import qualified Parun.Types.OutsideCard as OutsideCard
 import qualified Parun.Types.OutsideObject as OutsideObject
 import qualified Parun.Types.Parity as Parity
+import qualified Parun.Types.PayOffer as PayOffer
 import qualified Parun.Types.PayerAnswer as PayerAnswer
 import qualified Parun.Types.PlayerId as PlayerId
 import qualified Parun.Types.PrintedReplacement as PrintedReplacement
@@ -180,13 +182,15 @@ offerOf namer gs prompt = case prompt of
   -- either way, then none.
   Prompt.AdjustDieRoll _ _ results amount cost ->
     choosing namer prompt "options" Nothing ([("results", R.Array (fmap R.Number (NonEmpty.toList results))), ("amount", natural amount)] <> [("cost", payment namer c) | Just c <- [cost]]) (fmap Just [(index, adjustment) | index <- zipWith const [0 ..] (NonEmpty.toList results), adjustment <- [RollAdjustment.Increase, RollAdjustment.Decrease]] <> [Nothing])
-  Prompt.ChooseOptional _ _ source _ _ _ -> fields [("source", object namer source)]
+  -- CR 101.4b: what earlier seats answered to the same "may".
+  Prompt.ChooseOptional _ _ source _ _ earlier -> fields [("source", object namer source), ("earlier", Reply.encode (Reply.seqOf (Reply.pairOf Reply.player (Reply.viaCodec Codec.OptionalDecision.codec))) namer earlier)]
   Prompt.ChooseGuess _ _ source proposition -> fields [("source", object namer source), ("proposition", Reply.encode (Reply.viaCodec (Codec.Filter.codec Codec.Keyword.codec)) namer proposition)]
   Prompt.AssignCombatDamage _ _ source lethal paid total ->
     fields [("source", object namer source), ("lethal", Reply.encode (Reply.mapOf Reply.recipient Reply.natural) namer lethal), ("paid", Reply.encode (Reply.mapOf Reply.recipient Reply.natural) namer paid), ("total", natural total)]
   Prompt.ChooseCombatDamageOption _ _ source option -> fields [("source", object namer source), ("option", Reply.encode (Reply.viaCodec Codec.CombatDamageOption.codec) namer option)]
-  -- CR 118.12 / 101.4b: the cost, and what earlier payers answered.
-  Prompt.ChooseToPay _ _ source _ cost earlier -> fields [("source", object namer source), ("cost", payment namer cost), ("earlier", payerAnswers namer earlier)]
+  -- CR 118.12 / 101.4b: the cost, and what earlier payers answered; CR
+  -- 608.2f: the member a loop's offer is for, where it is one.
+  Prompt.ChooseToPay _ _ source offer cost earlier -> fields ([("source", object namer source), ("cost", payment namer cost), ("earlier", payerAnswers namer earlier)] <> [("member", Reply.encode Reply.recipient namer member) | PayOffer.ForMember member <- [offer]])
   Prompt.ChooseDivision _ _ source dividing targets ->
     fields
       ( [("source", object namer source), ("targets", Reply.encode (Reply.list Reply.recipient) namer (NonEmpty.toList targets))]
