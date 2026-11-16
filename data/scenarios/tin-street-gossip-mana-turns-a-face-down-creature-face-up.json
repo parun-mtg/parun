@@ -1,0 +1,97 @@
+{
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "battlefield": [
+          {
+            "card": "Tin Street Gossip",
+            "label": "gossip",
+            "ready": true
+          },
+          {
+            "card": "Pyrotechnic Performer",
+            "faceDown": "Disguised",
+            "label": "perf",
+            "ready": true
+          }
+        ],
+        "hand": [],
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ],
+        "name": "alice"
+      },
+      {
+        "battlefield": [],
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ],
+        "name": "bob"
+      }
+    ],
+    "step": "PrecombatMain"
+  },
+  "description": "CR 106.6 / 116.2b Tin Street Gossip's mana turns a face-down creature face up",
+  "note": "Gossip is alice's only mana, so TurnFaceUp is offered only if its restricted mana may pay the disguise cost {R}; paying it turns Pyrotechnic Performer up.",
+  "timeline": [
+    {
+      "check": {
+        "View": {
+          "is": [
+            "Pass",
+            "TurnFaceUp $perf",
+            "ActivateManaAbility $gossip"
+          ],
+          "of": "Offered",
+          "player": "alice"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Take": {
+          "action": "TurnFaceUp $perf",
+          "mana": [
+            "$gossip"
+          ]
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Names": {
+          "names": [
+            "Pyrotechnic Performer"
+          ],
+          "object": "$perf"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    }
+  ]
+}

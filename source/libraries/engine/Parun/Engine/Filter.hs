@@ -668,13 +668,13 @@ data View = MkView
     -- Parun.Engine.Projection.View.viewOfCharacteristics reads Object.facing straight
     -- off the object.
     --
-    -- Scoped to the BATTLEFIELD there, unlike `tapped` and like `transformed`
-    -- below: CR 110.5d gives status to permanents alone, and Parun.Types.Facing is
-    -- deliberately not so scoped -- CR 708.4 has a face-down SPELL carrying the
-    -- same value while it waits on the stack. Never Object.exiledFaceDown, which
-    -- CR 110.5d says has no correlation to this.
+    -- Scoped to NO zone there: CR 708.4 has a face-down SPELL carrying the same
+    -- value as it is cast and while it waits on the stack (Goblin Maskmaker's
+    -- "face-down spells"); Parun.Types.Facing says what else writes it.
+    -- Never Object.exiledFaceDown, which CR 110.5d says has no correlation to
+    -- this.
     --
-    -- False for every candidate with no permanent behind it: a printed face, a
+    -- False for every candidate with no object behind it: a printed face, a
     -- player, an event snapshot. Each says so at its own site.
     faceDown :: Bool,
     -- | CR 708.12's "the characteristics of that object ignoring any continuous
@@ -2945,9 +2945,8 @@ matches context view predicate = case predicate of
   -- ability on the stack, since rule 113.7 has nothing to read there.
   Filter.FromSource f -> maybe False (\src -> matches context src f) (abilitySource view)
   Filter.IsTapped -> tapped view
-  -- CR 110.5, the same status one category over, and the battlefield scoping is
-  -- inside the field for Transformed's reason: see the atom's own comment in
-  -- Parun.Types.Filter.
+  -- CR 110.5 / 708.4, the same status one category over, which a face-down
+  -- spell carries too: see the atom's own comment in Parun.Types.Filter.
   Filter.IsFaceDown -> faceDown view
   -- CR 708.12: the nest is matched against the PRINTED CARD's view and the SAME
   -- context, AttachedTo's arm's posture -- CR 109.5's "you" stays the ability's
