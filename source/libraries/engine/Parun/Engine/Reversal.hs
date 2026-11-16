@@ -53,20 +53,21 @@ import qualified Parun.Types.TurnRegisters as TurnRegisters
 -- leaves the activation standing, or reverses the whole action unasked, so the
 -- worst it can cost is the question.
 --
--- Not implemented: summing any other leaf two sides wrote (#7445).
+-- Not implemented: summing any other leaf two sides wrote (#8008).
 --
 -- A TOTAL record construction, one bind per field, never a record update: a new
 -- GameState field is then a `-Wmissing-fields` error here rather than a leaf
 -- that silently keeps the announcement's value.
 --
--- `objects` descends into each Object's fields (`objectWith`). `combat` is a
--- whole-value leaf: a declaration writes it (Combat.declaredAttackers,
--- Combat.declaredBlockers), and a window that wrote it too answers Nothing, the
--- conservative fallback above.
+-- `objects` descends into each Object's fields, an id the window deleted
+-- staying deleted (`objectsWith`). `combat` is a whole-value leaf: a
+-- declaration writes it (Combat.declaredAttackers, Combat.declaredBlockers),
+-- and a window that wrote it too answers Nothing, the conservative fallback
+-- above.
 withoutAnnouncement :: GameState -> GameState -> GameState -> Maybe GameState
 withoutAnnouncement before entry closed = do
   settings <- one (MatchScope.settings . GameState.match)
-  objects <- mapWith objectWith (GameState.objects before) (GameState.objects entry) (GameState.objects closed)
+  objects <- objectsWith (GameState.objects before) (GameState.objects entry) (GameState.objects closed)
   library <- libraries GameState.library
   hand <- zoneOf GameState.hand
   graveyard <- zoneOf GameState.graveyard
@@ -441,6 +442,19 @@ withoutAnnouncement before entry closed = do
     eventsOf :: (GameState -> Seq.Seq a) -> Maybe (Seq.Seq a)
     eventsOf field = Just (Seq.take (Seq.length (field before)) (field closed) <> Seq.drop (Seq.length (field entry)) (field closed))
 
+-- `objectWith` reached through `GameState.objects`' ids, with an id the window
+-- deleted staying deleted whatever the announcement wrote to it: CR 400.7 made
+-- the moved card a new object, and the announcement's write is to one that no
+-- longer exists. Glory-Bound Initiate exerted by CR 508.1g and sacrificed to
+-- Ashnod's Altar in the toll's window; the scenario
+-- combat-cost/cr-508-1i-the-exerted-attacker-sacrificed-for-the-toll-reverses-the-attack
+-- is the proof.
+objectsWith :: (Ord k) => Map.Map k Object -> Map.Map k Object -> Map.Map k Object -> Maybe (Map.Map k Object)
+objectsWith = keysWith $ \b e c -> case (b, e, c) of
+  (Just held, Just opened, Just shut) -> fmap Just (objectWith held opened shut)
+  (Just _, Just _, Nothing) -> Just Nothing
+  _ -> leaf b e c
+
 -- `leaf` reached through an Object's fields, so a permanent both sides wrote
 -- keeps each side's own field: CR 508.1f taps or CR 508.1g exerts an attacker,
 -- and the toll's window may tap that same creature for mana (Springleaf Drum's
@@ -707,13 +721,18 @@ putBackAt = Foldable.foldl' (\held (i, x) -> let (above, below) = splitAt i held
 -- own so that an inserted key and a deleted one take the same rule as a changed
 -- one. `combine` is the rule for a key all three hold.
 mapWith :: (Ord k, Eq v) => (v -> v -> v -> Maybe v) -> Map.Map k v -> Map.Map k v -> Map.Map k v -> Maybe (Map.Map k v)
-mapWith combine before entry closed =
-  let at key = case (Map.lookup key before, Map.lookup key entry, Map.lookup key closed) of
-        (Just b, Just e, Just c) -> fmap (\v -> (key, Just v)) (combine b e c)
-        (b, e, c) -> fmap (\v -> (key, v)) (leaf b e c)
+mapWith combine = keysWith $ \b e c -> case (b, e, c) of
+  (Just held, Just opened, Just shut) -> fmap Just (combine held opened shut)
+  _ -> leaf b e c
+
+-- Each key's three values, a missing one Nothing, combined by `at` into the
+-- key's value, Nothing dropping the key.
+keysWith :: (Ord k) => (Maybe v -> Maybe v -> Maybe v -> Maybe (Maybe v)) -> Map.Map k v -> Map.Map k v -> Map.Map k v -> Maybe (Map.Map k v)
+keysWith at before entry closed =
+  let atKey key = fmap ((,) key) (at (Map.lookup key before) (Map.lookup key entry) (Map.lookup key closed))
       keys = Set.unions [Map.keysSet before, Map.keysSet entry, Map.keysSet closed]
       held (key, value) = fmap ((,) key) value
-   in fmap (Map.fromList . Maybe.mapMaybe held) (traverse at (Set.toList keys))
+   in fmap (Map.fromList . Maybe.mapMaybe held) (traverse atKey (Set.toList keys))
 
 -- `leaf` reached through a set's members, each one's membership its own leaf.
 members :: (Ord a) => Set.Set a -> Set.Set a -> Set.Set a -> Maybe (Set.Set a)

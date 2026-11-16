@@ -34,7 +34,7 @@
     "step": "BeginningOfCombat"
   },
   "description": "CR 508.1i the enlisted creature sacrificed for the toll's mana reverses the attack",
-  "note": "The {2} window sacrifices the enlisted Giant to the Altar, so enlist's tap can no longer be paid (CR 118.3); the declaration is reversed with the Giant back, and the Skyknight attacks again unenlisted, paying with the Giant now, at 2/2.",
+  "note": "The {2} window sacrifices the enlisted Giant to the Altar, so enlist's tap can no longer be paid (CR 118.3); alice reverses the Altar too (CR 734.1), the declaration is reversed with the Giant back, and the Skyknight attacks again unenlisted, paying with the Giant now, at 2/2.",
   "timeline": [
     {
       "do": {
@@ -86,6 +86,17 @@
         "Answer": {
           "prompt": "ChooseExtraManaSource",
           "with": null
+        }
+      },
+      "player": "alice",
+      "step": "DeclareAttackers",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Answer": {
+          "prompt": "ReverseManaAbilities",
+          "with": "Exercises"
         }
       },
       "player": "alice",
