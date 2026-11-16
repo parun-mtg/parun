@@ -1,0 +1,122 @@
+{
+  "faces": [
+    {
+      "manaCost": [
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "Red"
+          }
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "Red"
+          }
+        }
+      ],
+      "name": "Expedited Inheritance",
+      "oracleText": "Whenever a creature is dealt damage, its controller may exile that many cards from the top of their library. They may play those cards until the end of their next turn.",
+      "triggeredAbilities": [
+        {
+          "condition": {
+            "type": "IsDealtDamage",
+            "value": {
+              "dealt": {
+                "recipient": {
+                  "type": "Matching",
+                  "value": {
+                    "type": "HasCardType",
+                    "value": "Creature"
+                  }
+                }
+              }
+            }
+          },
+          "modal": {
+            "modes": [
+              {
+                "clauses": [
+                  {
+                    "effects": [
+                      {
+                        "type": "MoveToZone",
+                        "value": {
+                          "ref": {
+                            "type": "TopOfLibrary",
+                            "value": {
+                              "count": {
+                                "type": "InSlot",
+                                "value": "thatMuch"
+                              },
+                              "player": {
+                                "type": "HolderOfBound",
+                                "value": {
+                                  "holder": "Controller",
+                                  "hop": "Itself",
+                                  "slot": "became"
+                                }
+                              }
+                            }
+                          },
+                          "slot": "exiled",
+                          "zone": "Exile"
+                        }
+                      },
+                      {
+                        "type": "GrantPlayFromExile",
+                        "value": {
+                          "duration": {
+                            "type": "UntilEndOfNextTurnOf",
+                            "value": {
+                              "type": "HolderOfBound",
+                              "value": {
+                                "holder": "Controller",
+                                "hop": "Itself",
+                                "slot": "became"
+                              }
+                            }
+                          },
+                          "player": {
+                            "type": "HolderOfBound",
+                            "value": {
+                              "holder": "Controller",
+                              "hop": "Itself",
+                              "slot": "became"
+                            }
+                          },
+                          "ref": {
+                            "type": "InSlot",
+                            "value": "exiled"
+                          }
+                        }
+                      }
+                    ],
+                    "optionality": {
+                      "type": "Optional",
+                      "value": {
+                        "type": "HolderOfBound",
+                        "value": {
+                          "holder": "Controller",
+                          "hop": "Itself",
+                          "slot": "became"
+                        }
+                      }
+                    }
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      ],
+      "typeLine": {
+        "types": [
+          "Enchantment"
+        ]
+      }
+    }
+  ]
+}

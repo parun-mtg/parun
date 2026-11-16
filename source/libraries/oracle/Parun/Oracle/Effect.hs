@@ -1006,7 +1006,16 @@ effect context e = case e of
     | Maybe.isNothing (Mill.tally m),
       Maybe.isNothing (Mill.slot m) -> do
         n <- Target.cards (Mill.quantity m)
-        imperative context (Mill.player m) (Text.pack "mill " <> n) (Text.pack "mills " <> n)
+        let mill = Text.pack "mill " <> n
+            mills = Text.pack "mills " <> n
+            -- "You mill" too, where a trigger names the miller (Festerleech).
+            spoken = do
+              (_, person) <- Target.player context (Mill.player m)
+              case person of
+                Target.Second -> declarative context (Mill.player m) mill mills
+                Target.Third -> []
+                Target.ThirdPlural -> []
+        imperative context (Mill.player m) mill mills <> spoken
   -- "Empower Jace 2" (CR 701.71a).
   Effect.Amass (Amass.MkAmass who q AmassKind.EmpowerJace Nothing) -> do
     n <- Target.amount q
