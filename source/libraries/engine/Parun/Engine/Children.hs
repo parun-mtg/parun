@@ -3372,8 +3372,8 @@ objectRefChildren c ref = case ref of
   ObjectRef.TopOfLibrary (TopOfLibrary.MkTopOfLibrary seat count deck) -> fmap ObjectRef.TopOfLibrary (TopOfLibrary.MkTopOfLibrary <$> refPlayer c seat <*> refQuantity c count <*> pure deck)
   ObjectRef.TopOfLibraryUntil (TopOfLibraryUntil.MkTopOfLibraryUntil seat filter_ weight count deck) -> fmap ObjectRef.TopOfLibraryUntil (TopOfLibraryUntil.MkTopOfLibraryUntil <$> refPlayer c seat <*> refFilter c filter_ <*> refQuantity c weight <*> refQuantity c count <*> pure deck)
   ObjectRef.TopOfGraveyard seat -> ObjectRef.TopOfGraveyard <$> refPlayer c seat
-  ObjectRef.ChosenCardInGraveyard (ChosenCardInGraveyard.MkChosenCardInGraveyard chooser players filter_ count) ->
-    fmap ObjectRef.ChosenCardInGraveyard (ChosenCardInGraveyard.MkChosenCardInGraveyard <$> refChooser c chooser <*> refZones c players <*> refFilter c filter_ <*> howManyChildren (refQuantity c) count)
+  ObjectRef.ChosenCardInGraveyard (ChosenCardInGraveyard.MkChosenCardInGraveyard chooser players filter_ count total) ->
+    fmap ObjectRef.ChosenCardInGraveyard (ChosenCardInGraveyard.MkChosenCardInGraveyard <$> refChooser c chooser <*> refZones c players <*> refFilter c filter_ <*> howManyChildren (refQuantity c) count <*> traverse (\(TotalCap.MkTotalCap weight most) -> TotalCap.MkTotalCap <$> refQuantity c weight <*> refQuantity c most) total)
   ObjectRef.ChosenCardInHand (ChosenCardInHand.MkChosenCardInHand seat filter_ count) -> fmap ObjectRef.ChosenCardInHand (ChosenCardInHand.MkChosenCardInHand <$> refPlayer c seat <*> refFilter c filter_ <*> howManyChildren (refQuantity c) count)
   ObjectRef.ChosenCardFromAmong (ChosenCardFromAmong.MkChosenCardFromAmong bound filter_ count total onePer differentIn chooser pileChooser faceUpPile selection) ->
     fmap

@@ -3418,7 +3418,7 @@ objectRefFilters ref = case ref of
   -- its Chooser name players, so the Filter is linted as for the graveyard
   -- sweep above, and Fall of the Thran's count goes through refFilters beside
   -- it, TopOfLibrary's route above.
-  ObjectRef.ChosenCardInGraveyard (ChosenCardInGraveyard.MkChosenCardInGraveyard _ _ f _) -> unframed [f] <> refFilters ref
+  ObjectRef.ChosenCardInGraveyard (ChosenCardInGraveyard.MkChosenCardInGraveyard _ _ f _ _) -> unframed [f] <> refFilters ref
   -- Elvish Piper's "a creature card from your hand"; its PlayerRef names the
   -- choosers, who are also the hands' owners (CR 402.3), so the Filter and
   -- Aquatic Subtlety's count are what there is to lint -- the chosen graveyard
