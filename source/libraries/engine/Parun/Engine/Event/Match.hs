@@ -652,8 +652,10 @@ enters context board gs bearer you t event = case Game.enteredBattlefieldChange 
 -- CR 603.6c: a permanent left the battlefield for a destination the trigger
 -- admits, and it is the permanent the trigger watches. An empty destination set
 -- admits any zone and CR 603.6c's leaving-the-game form too (CR 800.4a, 730.4a);
--- a named one admits neither, since leaving the game reaches no zone. The `/=
--- Battlefield` guard is against recordMintedArrival's pseudo-move.
+-- a named one admits neither, since leaving the game reaches no zone. An
+-- excluded destination refuses a move into it alone, so "without dying" admits
+-- leaving the game. The `/= Battlefield` guard is against recordMintedArrival's
+-- pseudo-move.
 --
 -- Matched on ZoneChange.departed, never the CR 400.7 incarnation the card
 -- became: CR 603.10a makes leaves-the-battlefield abilities look back in time,
@@ -702,6 +704,7 @@ leaves bindings context before gs bearer you t event = case event of
     ZoneChange.from zc == Zone.Battlefield
       && ZoneChange.to zc /= Zone.Battlefield
       && (Set.null destinations || any (reaches (ZoneChange.to zc) (ZoneChange.departed zc)) destinations)
+      && not (any (reaches (ZoneChange.to zc) (ZoneChange.departed zc)) (LeavesTrigger.excluded t))
       && deathTriggers before before you bearer zc
       && watched (ZoneChange.departed zc)
   GameEvent.LeftTheGame l -> Set.null destinations && LeftTheGame.from l == Zone.Battlefield && watched (LeftTheGame.object l)

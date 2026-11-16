@@ -123,12 +123,12 @@ event context creature c = case c of
   -- spells CR 700.4's event out, Oracle text having no land "die": "another
   -- creature you control or a land you control is put into a graveyard from
   -- the battlefield" (Long Feng, Grand Secretariat).
-  TriggerCondition.Leaves t@(LeavesTrigger.MkLeavesTrigger (LeavingPermanent.Matching f@(Filter.Type.And (Filter.Type.Or gs : common))) _ _)
+  TriggerCondition.Leaves t@(LeavesTrigger.MkLeavesTrigger (LeavingPermanent.Matching f@(Filter.Type.And (Filter.Type.Or gs : common))) _ _ _)
     | t == LeavesTrigger.dies (LeavingPermanent.Matching f),
       any (\g -> case g of Filter.Type.And (_ : _ : _) -> True; _ -> False) gs -> do
         ones <- traverse (\g -> fmap fst (described context (Filter.Type.And (g : common)))) gs
         [other ("Whenever " <> List.intercalate " or " ones <> " is put into a graveyard from the battlefield") [(becameSlot, "it"), (departedPermanent, "it")]]
-  TriggerCondition.Leaves t@(LeavesTrigger.MkLeavesTrigger (LeavingPermanent.Matching f) _ _) | t == LeavesTrigger.dies (LeavingPermanent.Matching f) -> do
+  TriggerCondition.Leaves t@(LeavesTrigger.MkLeavesTrigger (LeavingPermanent.Matching f) _ _ _) | t == LeavesTrigger.dies (LeavingPermanent.Matching f) -> do
     (one, that) <- described context f
     word <- ["it", that]
     subject <- also one

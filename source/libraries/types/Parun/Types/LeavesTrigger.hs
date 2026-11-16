@@ -14,6 +14,9 @@ data LeavesTrigger = MkLeavesTrigger
     -- | The destinations admitted, any one sufficing; empty for any departure,
     -- CR 603.6c's leaving the game included.
     destinations :: Set.Set OwnedZone.OwnedZone,
+    -- | The destinations refused, whatever `destinations` admits; CR 700.4's
+    -- graveyard for "without dying", where leaving the game still counts.
+    excluded :: Set.Set OwnedZone.OwnedZone,
     batching :: Batching.Batching
   }
   deriving (Eq, Ord, Show)
@@ -25,9 +28,15 @@ defaultValue =
   MkLeavesTrigger
     { permanent = LeavingPermanent.Self,
       destinations = Set.empty,
+      excluded = Set.empty,
       batching = Batching.EachOccurrence
     }
 
 -- | CR 700.4's "dies": the permanent is put into a graveyard, anyone's.
 dies :: LeavingPermanent.LeavingPermanent -> LeavesTrigger
 dies subject = defaultValue {permanent = subject, destinations = Set.singleton (OwnedZone.MkOwnedZone Zone.Graveyard PlayerRelation.AnyPlayer)}
+
+-- | "Leaves the battlefield without dying": CR 603.6c's every departure but
+-- CR 700.4's, leaving the game (CR 800.4a) included.
+withoutDying :: LeavingPermanent.LeavingPermanent -> LeavesTrigger
+withoutDying subject = defaultValue {permanent = subject, excluded = Set.singleton (OwnedZone.MkOwnedZone Zone.Graveyard PlayerRelation.AnyPlayer)}

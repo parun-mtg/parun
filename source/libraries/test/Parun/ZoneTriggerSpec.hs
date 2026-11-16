@@ -1818,17 +1818,18 @@ representativeEvents cond =
                   to = PutIntoZoneTrigger.to t
                in noTable (moved origin to) NonEmpty.:| [noTable (GameEvent.CardArrived (ZoneChange.MkZoneChange departed arrived Zone.Battlefield to))]
         -- CR 603.6c: one departure for each destination the trigger names, the
-        -- floor having to hold for every one. With none named, a public and a
-        -- hidden destination and CR 800.4a's departure from the game, the three
-        -- roads it has to survive: CR 400.7e withholds the arrival for the last
-        -- two. The two ids are distinct, so an arm binding the arrival where the
+        -- floor having to hold for every one. With none named, two public and a
+        -- hidden destination and CR 800.4a's departure from the game, the roads
+        -- it has to survive: CR 400.7e withholds the arrival for the last two. The two ids are distinct, so an arm binding the arrival where the
         -- departed permanent was meant (or, for an Attached subject, the
         -- bearer's own CR 400.7f arrival) would not agree by coincidence. The
         -- same events for a OneOrMore batch: Event.matchesTrigger answers alike,
-        -- CR 603.2c's scoping living in Event.eventTriggers instead.
+        -- CR 603.2c's scoping living in Event.eventTriggers instead. An
+        -- excluded zone's departure is dropped, the trigger refusing it, so a
+        -- second public destination stands in for a refused graveyard.
         TriggerCondition.Leaves t -> case NonEmpty.nonEmpty [noTable (moved Zone.Battlefield (OwnedZone.zone z)) | z <- Set.toList (LeavesTrigger.destinations t)] of
           Just events -> events
-          Nothing -> noTable (moved Zone.Battlefield Zone.Graveyard) NonEmpty.:| [noTable (moved Zone.Battlefield Zone.Hand), noTable (leftTheGameFrom Zone.Battlefield)]
+          Nothing -> noTable (leftTheGameFrom Zone.Battlefield) NonEmpty.:| [noTable (moved Zone.Battlefield zone) | zone <- [Zone.Graveyard, Zone.Exile, Zone.Hand], zone `notElem` Set.map OwnedZone.zone (LeavesTrigger.excluded t)]
         -- The zone read on the DEPARTURE side instead: every destination the
         -- trigger admits has the same floor, so one event out of the zone it
         -- names says as much as a list would. With none named, a move reaching
@@ -2260,6 +2261,9 @@ everyTriggerCondition =
     TriggerCondition.Leaves LeavesTrigger.defaultValue {LeavesTrigger.permanent = LeavingPermanent.Chosen},
     TriggerCondition.Leaves LeavesTrigger.defaultValue {LeavesTrigger.permanent = LeavingPermanent.Matching Filter.Type.IsSource, LeavesTrigger.batching = Batching.OneOrMore},
     TriggerCondition.Leaves LeavesTrigger.defaultValue {LeavesTrigger.permanent = LeavingPermanent.Haunted},
+    -- "Without dying": a refused graveyard, for the source and for a batch.
+    TriggerCondition.Leaves (LeavesTrigger.withoutDying LeavingPermanent.Self),
+    TriggerCondition.Leaves (LeavesTrigger.withoutDying (LeavingPermanent.Matching Filter.Type.IsSource)) {LeavesTrigger.batching = Batching.OneOrMore},
     TriggerCondition.Countered (CounteringTrigger.MkCounteringTrigger CounteredKind.Spell PlayerRelation.You PlayerRelation.You),
     TriggerCondition.Countered (CounteringTrigger.MkCounteringTrigger CounteredKind.Ability PlayerRelation.AnyPlayer PlayerRelation.AnyPlayer),
     TriggerCondition.DamageToPlayerPrevented PlayerRelation.You,
