@@ -454,6 +454,9 @@ spec s = Spec.describe s "Parun.Codec.ObjectRef" $ do
   -- CR 508.1b: the attacker's slot, a bare string.
   Spec.it s "AttackedBy" $
     Common.assertCodec s ObjectRef.codec (ObjectRef.AttackedBy (SlotName.MkSlotName (Text.pack "self"))) " {\"type\":\"AttackedBy\",\"value\":\"self\"} "
+  -- CR 120.1: the damage source's Filter, bare under the tag.
+  Spec.it s "LastDamagerController" $
+    Common.assertCodec s ObjectRef.codec (ObjectRef.LastDamagerController (Filter.Not Filter.IsSource)) " {\"type\":\"LastDamagerController\",\"value\":{\"type\":\"Not\",\"value\":{\"type\":\"IsSource\"}}} "
   -- CR 400.7j: the slot whose object is followed, a bare string.
   Spec.it s "FromAnywhere" $
     Common.assertCodec s ObjectRef.codec (ObjectRef.FromAnywhere (FromAnywhere.MkFromAnywhere {FromAnywhere.slot = SlotName.MkSlotName (Text.pack "self"), FromAnywhere.among = Nothing, FromAnywhere.reach = Reach.PublicZone})) " {\"type\":\"FromAnywhere\",\"value\":{\"slot\":\"self\"}} "

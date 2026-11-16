@@ -1396,6 +1396,7 @@ questionOf ref = case ref of
     HowMany.UpTo _ -> Just PermanentsUpTo
   ObjectRef.AttachedToBound {} -> Nothing
   ObjectRef.AttackedBy {} -> Nothing
+  ObjectRef.LastDamagerController {} -> Nothing
   ObjectRef.FromAnywhere {} -> Nothing
   -- The first question a member puts, so a member that asks is fenced as it would be alone.
   ObjectRef.AllOf refs -> Foldable.asum (fmap questionOf refs)
@@ -2190,6 +2191,8 @@ effectLintSpec s registry corpus = Spec.describe s "Lint" $ do
           ObjectRef.AttachedToBound _ -> False
           -- TRUE, InSlot's answer: what the slot's creature attacks.
           ObjectRef.AttackedBy _ -> True
+          -- One player, the latest damage's.
+          ObjectRef.LastDamagerController _ -> True
           -- TRUE, InSlot's answer: the slot's object, followed.
           ObjectRef.FromAnywhere _ -> True
           -- TRUE: one draw or pick names one object, however many the pool holds.

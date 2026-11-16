@@ -3,6 +3,7 @@ module Parun.Types.DamageEvent where
 import qualified Data.Set as Set
 import qualified Numeric.Natural as Natural
 import qualified Parun.Types.CardType as CardType
+import qualified Parun.Types.Color as Color
 import qualified Parun.Types.DamageKind as DamageKind
 import qualified Parun.Types.ObjectId as ObjectId
 import qualified Parun.Types.PlayerId as PlayerId
@@ -93,6 +94,10 @@ data DamageEvent = MkDamageEvent
     -- | CR 205.4: the source's SUPERTYPES when this damage was dealt, for
     -- dealtByCardTypes's reason (Blitzball's "by a legendary creature").
     dealtBySupertypes :: Set.Set Supertype.Supertype,
+    -- | CR 105.2: the source's COLORS when this damage was dealt, for
+    -- dealtByCardTypes's reason (Suffocation's "by a red instant or sorcery
+    -- spell").
+    dealtByColors :: Set.Set Color.Color,
     -- | CR 400.1: the zone the source was in when this damage was dealt, so a
     -- source on the stack was a spell (CR 112.1, Aegar, the Freezing Flame's
     -- "a ... spell you controlled dealt damage"). Nothing for a source already

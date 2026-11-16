@@ -1004,9 +1004,9 @@ playerView pid = nobodyView {playerIdentity = Just pid}
 
 -- CR 120.1 / 608.2h: a damage event's source as it was when it dealt the
 -- damage, off the event's deal-time riders: its controller, card types,
--- creature types, commander status and zone (a spell is on the stack, CR
--- 112.1). Not implemented: any other characteristic of the source, which reads
--- as nobodyView's empty answer (#7519).
+-- supertypes, colors, creature types, commander status and zone (a spell is on
+-- the stack, CR 112.1). Not implemented: any other characteristic of the
+-- source, which reads as nobodyView's empty answer (#8032).
 dealtByView :: DamageEvent.DamageEvent -> View
 dealtByView ev =
   nobodyView
@@ -1014,6 +1014,7 @@ dealtByView ev =
       controller = DamageEvent.dealtByController ev,
       cardTypes = DamageEvent.dealtByCardTypes ev,
       supertypes = DamageEvent.dealtBySupertypes ev,
+      colors = DamageEvent.dealtByColors ev,
       subtypes = DamageEvent.dealtByCreatureTypes ev,
       commander = DamageEvent.dealtByCommander ev,
       zone = DamageEvent.dealtFromZone ev

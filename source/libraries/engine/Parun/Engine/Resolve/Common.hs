@@ -114,6 +114,7 @@ import qualified Parun.Types.CounterKind as CounterKind
 import qualified Parun.Types.CounterLink as CounterLink
 import qualified Parun.Types.CounterLinked as CounterLinked
 import qualified Parun.Types.CountersPlaced as CountersPlaced
+import qualified Parun.Types.DamageEvent as DamageEvent
 import qualified Parun.Types.DamageKind as DamageKind
 import qualified Parun.Types.DamagePattern as DamagePattern
 import qualified Parun.Types.DamageR as DamageR
@@ -906,6 +907,7 @@ askingObjects offered resolving source controller legal chosen ref = case ref of
   ObjectRef.EachCardFromAmong _ -> swept
   ObjectRef.AttachedToBound _ -> swept
   ObjectRef.AttackedBy _ -> swept
+  ObjectRef.LastDamagerController _ -> swept
   ObjectRef.FromAnywhere _ -> swept
   where
     swept :: Game [ObjectId]
@@ -1315,6 +1317,17 @@ objectRefRecipients legal resolving controller source gs ref = case ref of
           AttackTarget.OfPlaneswalker oid -> Recipient.ToPlaneswalker oid
           AttackTarget.OfBattle oid -> Recipient.ToBattle oid
      in fmap attacked (attackedBy legal resolving controller source gs slot)
+  -- CR 120.1 / 608.2h: the latest of this turn's damage to the resolving
+  -- controller whose source the Filter admits as it dealt the damage
+  -- (Filter.dealtByView), and who controlled that source then: a spell's last
+  -- known information once it has left the stack. Cut to the controller's
+  -- table (CR 801.10) like every player a resolution names.
+  ObjectRef.LastDamagerController by ->
+    let context = effectContext gs resolving controller source legal (slotBindings resolving gs)
+        admitted dealt = Filter.matches context (Filter.dealtByView dealt) by
+        latest = Maybe.listToMaybe (reverse (filter admitted (Count.damageThisTurn ((== Just controller) . Game.damagedPlayer) gs)))
+        reached = Players.reaches (resolutionReads legal resolving source controller gs)
+     in fmap Recipient.ToPlayer (filter reached (Maybe.maybeToList (latest >>= DamageEvent.dealtByController)))
   -- A read, so the sweep answers it.
   ObjectRef.FromAnywhere _ -> fmap Recipient.ToObject (objectRefObjects legal resolving controller source gs ref)
   -- Each ref's recipients in the order written, one named twice named once.

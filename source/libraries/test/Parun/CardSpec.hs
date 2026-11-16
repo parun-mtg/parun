@@ -3448,6 +3448,9 @@ objectRefFilters ref = case ref of
   -- Rhuk's "all Equipment attached to that creature".
   ObjectRef.AttachedToBound (AttachedToBound.MkAttachedToBound _ f _) -> unframed [f]
   ObjectRef.AttackedBy _ -> []
+  -- Suffocation's "red instant or sorcery spell", matched against the damage
+  -- source as it dealt the damage.
+  ObjectRef.LastDamagerController f -> unframed [f]
   ObjectRef.FromAnywhere _ -> []
   ObjectRef.OneAmong _ inner -> objectRefFilters inner
   ObjectRef.AllOf refs -> foldMap objectRefFilters refs

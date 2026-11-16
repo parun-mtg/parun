@@ -121,7 +121,7 @@ board island piker undercity =
 -- monarch group's posture one rule over.
 combatDamageTo :: PlayerId -> ObjectId -> GameEvent.GameEvent
 combatDamageTo holder damager =
-  GameEvent.DamageDealt (DamageEvent.MkDamageEvent damager (Recipient.ToPlayer holder) 2 0 False False False 0 Nothing Nothing mempty False mempty mempty Nothing mempty DamageKind.Combat)
+  GameEvent.DamageDealt (DamageEvent.MkDamageEvent damager (Recipient.ToPlayer holder) 2 0 False False False 0 Nothing Nothing mempty False mempty mempty mempty Nothing mempty DamageKind.Combat)
 
 spec :: (Monad m, Monad n) => Spec.Spec m n -> Registry.Registry m -> n ()
 spec s registry = Spec.describe s "Initiative" $ do

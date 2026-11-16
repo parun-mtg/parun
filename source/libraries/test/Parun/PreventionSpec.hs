@@ -362,7 +362,7 @@ mendingHandsSpec :: (Monad m, Monad n) => Spec.Spec m n -> Registry.Registry m -
 mendingHandsSpec s registry = Spec.describe s "Mending Hands (CR 615.7)" $ do
   let -- One noncombat damage event, from `src`, at `n`.
       hit src recipient n =
-        DamageEvent.MkDamageEvent src recipient n 0 False False False 0 Nothing Nothing mempty False mempty mempty Nothing mempty DamageKind.Noncombat
+        DamageEvent.MkDamageEvent src recipient n 0 False False False 0 Nothing Nothing mempty False mempty mempty mempty Nothing mempty DamageKind.Noncombat
       amounts gs = fmap DamageEvent.amount (S.damageEventsOf gs)
       -- Order a contested batch by preferring the event from `src`, by SOURCE id
       -- rather than by position, so the assertion does not depend on the order
@@ -605,7 +605,7 @@ packLeaderSpec s registry = Spec.describe s "Pack Leader (CR 611.2c)" $ do
         -- set could not.
         (latecomer, board) = S.addPermanent kinGuard S.alice atBlockers
         hit src recipient n =
-          DamageEvent.MkDamageEvent src recipient n 0 False False False 0 Nothing Nothing mempty False mempty mempty Nothing mempty DamageKind.Combat
+          DamageEvent.MkDamageEvent src recipient n 0 False False False 0 Nothing Nothing mempty False mempty mempty mempty Nothing mempty DamageKind.Combat
         -- ONE source for every case, so each pair below differs in the recipient
         -- alone: the shield says nothing about its source, and a case that
         -- swapped sources would not be a twin of the one beside it.

@@ -4,6 +4,7 @@ module Parun.Codec.DamageEvent where
 
 import qualified Data.Set as Set
 import qualified Parun.Codec.CardType as CardType
+import qualified Parun.Codec.Color as Color
 import qualified Parun.Codec.DamageKind as DamageKind
 import qualified Parun.Codec.ObjectId as ObjectId
 import qualified Parun.Codec.PlayerId as PlayerId
@@ -39,6 +40,7 @@ codec = Fields.object $ do
   dealtByCommander <- Fields.defaulted "dealtByCommander" False Common.boolean DamageEvent.dealtByCommander
   dealtByCardTypes <- Fields.defaulted "dealtByCardTypes" Set.empty (Common.set CardType.codec) DamageEvent.dealtByCardTypes
   dealtBySupertypes <- Fields.defaulted "dealtBySupertypes" Set.empty (Common.set Supertype.codec) DamageEvent.dealtBySupertypes
+  dealtByColors <- Fields.defaulted "dealtByColors" Set.empty (Common.set Color.codec) DamageEvent.dealtByColors
   dealtFromZone <- Fields.defaulted "dealtFromZone" Nothing (Common.maybe Zone.codec) DamageEvent.dealtFromZone
   recipientCardTypes <- Fields.defaulted "recipientCardTypes" Set.empty (Common.set CardType.codec) DamageEvent.recipientCardTypes
   kind <- Fields.required "kind" DamageKind.codec DamageEvent.kind
@@ -58,6 +60,7 @@ codec = Fields.object $ do
         DamageEvent.dealtByCommander = dealtByCommander,
         DamageEvent.dealtByCardTypes = dealtByCardTypes,
         DamageEvent.dealtBySupertypes = dealtBySupertypes,
+        DamageEvent.dealtByColors = dealtByColors,
         DamageEvent.dealtFromZone = dealtFromZone,
         DamageEvent.recipientCardTypes = recipientCardTypes,
         DamageEvent.kind = kind
