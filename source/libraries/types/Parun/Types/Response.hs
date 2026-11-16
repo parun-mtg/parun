@@ -731,8 +731,8 @@ data Response
     -- none of the offered ones).
     ChosePlayPermission (Maybe (ObjectId.ObjectId, CastFromZone.CastFromZone))
   | -- | CR 601.3 / 305.1: the permission the card itself held that a player
-    -- made a play under.
-    ChoseHeldPermission ExilePlayPermission.ExilePlayPermission
+    -- made a play under (Nothing = the card's own ability).
+    ChoseHeldPermission (Maybe ExilePlayPermission.ExilePlayPermission)
   | -- | CR 315.5a: the index of the hand a player kept of those they drew as
     -- the game began.
     KeptHand Natural.Natural
