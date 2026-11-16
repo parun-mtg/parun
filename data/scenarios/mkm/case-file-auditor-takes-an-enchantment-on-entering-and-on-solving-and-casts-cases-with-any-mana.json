@@ -1,6 +1,6 @@
 {
   "description": "CR 603.2, 720.3a, 609.4b: Case File Auditor looks at six and takes an enchantment when it enters and again when alice solves a Case, and lets Islands pay for a white Case spell but not for Savannah Lions",
-  "note": "The entry trigger refuses Lightning Bolt and takes Case of the Pilfered Proof, which two Islands then cast; two Islands-worth of white is refused for Savannah Lions. With the two Vengeful Trackers alice controls three Detectives, so the Case solves at the end step and the Auditor's second trigger reaches the next six cards, taking the second Pacifism.",
+  "note": "The entry trigger refuses Lightning Bolt and takes Case of the Pilfered Proof, which two Islands then cast; an Island paying for Savannah Lions' {W} is refused. With the two Vengeful Trackers alice controls three Detectives, so the Case solves at the end step and the Auditor's second trigger reaches the next six cards, taking the second Pacifism.",
   "board": {"active": "alice", "step": "PrecombatMain", "seats": [
     {"name": "alice",
      "battlefield": [{"card": "Plains", "label": "p1"}, {"card": "Island", "label": "i1"}, {"card": "Island", "label": "i2"}, {"card": "Island", "label": "i3"}, {"card": "Island", "label": "i4"}, {"card": "Island", "label": "i5"}, {"card": "Vengeful Tracker", "label": "vt1"}, {"card": "Vengeful Tracker", "label": "vt2"}],
