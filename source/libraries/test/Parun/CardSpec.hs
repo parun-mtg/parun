@@ -5115,11 +5115,12 @@ manaProductionFilters production = case production of
   ManaProduction.EachColorAmong among -> [among]
   ManaProduction.ManaCostOf among -> [among]
 
--- AddMana's and Firebend's shared payload: CR 106.7's group, CR 106.6's
--- restriction, rider and spend trigger.
+-- AddMana's and Firebend's shared payload: CR 106.7's group, CR 106.3's
+-- count, CR 106.6's restriction, rider and spend trigger.
 manaAdditionFilters :: ManaAddition.ManaAddition -> [(Framing, Filter.Type.Filter Keyword.Keyword)]
 manaAdditionFilters addition =
   unframed (manaProductionFilters (ManaAddition.production addition))
+    <> quantityFilters (ManaAddition.count addition)
     <> fmap ((,) ManaRestrictionFramed) (concatMap restrictionFilters (Maybe.maybeToList (ManaAddition.restriction addition)))
     <> fmap ((,) SpentOnFramed) (concatMap manaRiderFilters (Maybe.maybeToList (ManaAddition.rider addition)))
     <> foldMap (manaRiderEffectFilters . ManaRider.effect) (ManaAddition.rider addition)
