@@ -1,0 +1,84 @@
+{
+  "faces": [
+    {
+      "manaCost": [
+        {
+          "type": "Generic",
+          "value": 1
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "Black"
+          }
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "Red"
+          }
+        }
+      ],
+      "name": "Pain Magnification",
+      "oracleText": "Whenever an opponent is dealt 3 or more damage by a single source, that player discards a card.",
+      "triggeredAbilities": [
+        {
+          "condition": {
+            "type": "DealsDamage",
+            "value": {
+              "actor": {
+                "type": "Matching",
+                "value": {
+                  "type": "And",
+                  "value": []
+                }
+              },
+              "atLeast": 3,
+              "recipients": [
+                {
+                  "type": "Player",
+                  "value": "Opponent"
+                }
+              ]
+            }
+          },
+          "modal": {
+            "modes": [
+              {
+                "clauses": [
+                  {
+                    "effects": [
+                      {
+                        "type": "Discard",
+                        "value": {
+                          "type": "Counted",
+                          "value": {
+                            "player": {
+                              "type": "InSlot",
+                              "value": "thatPlayer"
+                            },
+                            "quantity": {
+                              "type": "Literal",
+                              "value": 1
+                            }
+                          }
+                        }
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      ],
+      "typeLine": {
+        "types": [
+          "Enchantment"
+        ]
+      }
+    }
+  ]
+}

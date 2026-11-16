@@ -3885,7 +3885,9 @@ interveningHolds live pending =
 -- `interveningHolds` is the one gate every gatherer runs after that; it is no
 -- intervening "if", so Stack's CR 608.2a re-check does not repeat it.
 -- data/scenarios/spinneret-and-spiderling-exiles-for-4-damage-not-3-and-grows-attacking-with-two-spiders.json
--- proves it.
+-- proves it, and
+-- data/scenarios/innocent-bystander-investigates-for-3-damage-not-2-and-sums-two-blockers.json
+-- the recipient's floor.
 dealtEnough :: PendingTrigger -> Bool
 dealtEnough pending = Maybe.fromMaybe 0 (Binding.amountOf Binding.eventAmount (PendingTrigger.bindings pending)) >= damageFloor (TriggeredAbility.condition (PendingTrigger.ability pending))
 
@@ -3894,6 +3896,7 @@ dealtEnough pending = Maybe.fromMaybe 0 (Binding.amountOf Binding.eventAmount (P
 damageFloor :: TriggerCondition -> Natural
 damageFloor cond = case cond of
   TriggerCondition.DealsDamage watched -> DamageTrigger.atLeast watched
+  TriggerCondition.IsDealtDamage watched -> PermanentIsDealtDamage.atLeast watched
   TriggerCondition.CausedBy narrowed -> damageFloor (CausedBy.condition narrowed)
   TriggerCondition.AnyOf conditions -> maybe 0 minimum (NonEmpty.nonEmpty (fmap damageFloor conditions))
   _ -> 0

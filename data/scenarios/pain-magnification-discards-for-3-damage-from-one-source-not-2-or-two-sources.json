@@ -1,0 +1,23 @@
+{
+  "description": "CR 603.2, 603.2c, 120.1: Pain Magnification makes bob discard when Lightning Bolt deals him 3, not when Shock deals him 2 or two Grizzly Bears deal him 2 each at once",
+  "board": {"active": "alice", "step": "PrecombatMain", "seats": [
+    {"name": "alice", "library": [{"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}], "hand": [{"card": "Shock", "label": "shock"}, {"card": "Lightning Bolt", "label": "bolt"}], "battlefield": [{"card": "Pain Magnification"}, {"card": "Mountain", "label": "m1"}, {"card": "Mountain", "label": "m2"}, {"card": "Grizzly Bears", "label": "b1", "ready": true}, {"card": "Grizzly Bears", "label": "b2", "ready": true}]},
+    {"name": "bob", "library": [{"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}], "hand": [{"card": "Forest", "label": "f1"}, {"card": "Forest"}]}
+  ]},
+  "timeline": [
+    {"turn": 1, "step": "DeclareAttackers", "player": "alice", "do": {"Attack": ["$b1", "$b2"]}},
+    {"turn": 1, "step": "EndOfCombat", "player": "alice", "check": {"Life": {"player": "bob", "life": 16}}},
+    {"turn": 1, "step": "EndOfCombat", "player": "alice", "check": {"Count": {"player": "bob", "zone": "Hand", "card": "Forest", "count": 2}}},
+    {"turn": 1, "step": "PostcombatMain", "player": "alice", "do": {"Cast": {"object": "$shock", "targets": ["$bob"], "mana": ["$m1", null]}}},
+    {"turn": 1, "step": "PostcombatMain", "player": "alice", "do": "Pass"},
+    {"turn": 1, "step": "PostcombatMain", "player": "alice", "check": {"Life": {"player": "bob", "life": 14}}},
+    {"turn": 1, "step": "PostcombatMain", "player": "alice", "check": {"Count": {"player": "bob", "zone": "Hand", "card": "Forest", "count": 2}}},
+    {"turn": 1, "step": "PostcombatMain", "player": "alice", "do": {"Cast": {"object": "$bolt", "targets": ["$bob"], "mana": ["$m2"]}}},
+    {"turn": 1, "step": "PostcombatMain", "player": "alice", "do": "Pass"},
+    {"turn": 1, "step": "PostcombatMain", "player": "alice", "do": "Pass"},
+    {"turn": 1, "step": "PostcombatMain", "player": "bob", "do": {"Answer": {"prompt": "ChooseDiscard", "with": ["$f1"]}}},
+    {"turn": 1, "step": "PostcombatMain", "player": "alice", "check": {"Life": {"player": "bob", "life": 11}}},
+    {"turn": 1, "step": "PostcombatMain", "player": "alice", "check": {"Count": {"player": "bob", "zone": "Graveyard", "card": "Forest", "count": 1}}},
+    {"turn": 1, "step": "EndStep", "player": "alice", "check": {"Count": {"player": "bob", "zone": "Hand", "card": "Forest", "count": 1}}}
+  ]
+}

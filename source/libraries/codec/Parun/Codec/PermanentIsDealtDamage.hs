@@ -18,4 +18,5 @@ codec = Fields.object $ do
   dealt <- Fields.required "dealt" (DealtDamage.codec ActingPermanent.codec) PermanentIsDealtDamage.dealt
   batching <- Fields.defaulted "batching" BatchingType.OneOrMore Batching.codec PermanentIsDealtDamage.batching
   excess <- Fields.defaulted "excess" False Common.boolean PermanentIsDealtDamage.excess
-  pure PermanentIsDealtDamage.MkPermanentIsDealtDamage {PermanentIsDealtDamage.dealt = dealt, PermanentIsDealtDamage.batching = batching, PermanentIsDealtDamage.excess = excess}
+  atLeast <- Fields.defaulted "atLeast" 0 Common.natural PermanentIsDealtDamage.atLeast
+  pure PermanentIsDealtDamage.MkPermanentIsDealtDamage {PermanentIsDealtDamage.dealt = dealt, PermanentIsDealtDamage.batching = batching, PermanentIsDealtDamage.excess = excess, PermanentIsDealtDamage.atLeast = atLeast}
