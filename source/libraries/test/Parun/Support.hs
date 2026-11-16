@@ -2012,6 +2012,7 @@ stubView table oid =
                 Filter.dealtDamageThisTurn = [],
                 Filter.lostLifeThisTurn = False,
                 Filter.activatedThisTurn = False,
+                Filter.actedThisTurn = Set.empty,
                 Filter.arrivalThisTurn = Nothing,
                 Filter.arrivalSinceOwnLastTurn = Map.empty,
                 -- CR 702.122c: the table registers no crewing, and no Count in

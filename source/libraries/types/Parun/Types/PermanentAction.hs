@@ -2,8 +2,9 @@ module Parun.Types.PermanentAction where
 
 -- | Something a permanent does that a "whenever [a permanent] <acts>" trigger
 -- (CR 603.2) watches, with no payload the trigger reads. Recorded by
--- Parun.Types.GameEvent's PermanentActed and matched by
--- Parun.Types.TriggerCondition's PermanentActs. Each constructor's comment names
+-- Parun.Types.GameEvent's PermanentActed, matched by
+-- Parun.Types.TriggerCondition's PermanentActs and looked back on by
+-- Parun.Types.Filter's ActedThisTurn. Each constructor's comment names
 -- the rule that places the moment.
 data PermanentAction
   = -- | CR 702.100b: only when the evolve ability put one or more counters.

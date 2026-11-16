@@ -90,6 +90,8 @@ import qualified Parun.Types.Object as Object
 import Parun.Types.ObjectId (ObjectId)
 import qualified Parun.Types.ObjectSnapshot as ObjectSnapshot
 import qualified Parun.Types.PastActivation as PastActivation
+import qualified Parun.Types.PermanentActed as PermanentActed
+import qualified Parun.Types.PermanentAction as PermanentAction
 import qualified Parun.Types.PermanentWasSacrificed as PermanentWasSacrificed
 import qualified Parun.Types.PlayerCounterKind as PlayerCounterKind
 import Parun.Types.PlayerId (PlayerId)
@@ -1322,6 +1324,7 @@ lastKnownView peers oid gs lastKnown =
           -- CR 119.3: only a player loses life.
           Filter.lostLifeThisTurn = False,
           Filter.activatedThisTurn = activatedThisTurn oid gs,
+          Filter.actedThisTurn = actedThisTurn oid gs,
           Filter.arrivalThisTurn = Game.arrivalThisTurn oid gs,
           Filter.arrivalSinceOwnLastTurn = Game.arrivalSinceOwnLastTurn oid gs,
           Filter.beforeMoveView = departedAs gs oid >>= orLastKnown peers gs,
@@ -1424,6 +1427,15 @@ damageThisTurn admits gs =
 -- whether or not the object still has the ability.
 activatedThisTurn :: ObjectId -> GameState -> Bool
 activatedThisTurn oid gs = any ((== oid) . ObjectSnapshot.object . PastActivation.source) (TurnRegisters.activationsThisTurn (GameState.turn gs))
+
+-- CR 603.2 / 608.2i: what this object did this turn, off the log's
+-- GameEvent.PermanentActed entries naming its id.
+actedThisTurn :: ObjectId -> GameState -> Set.Set PermanentAction.PermanentAction
+actedThisTurn oid gs =
+  let actOf event = case event of
+        GameEvent.PermanentActed (PermanentActed.MkPermanentActed action actor) | actor == oid -> Just action
+        _ -> Nothing
+   in Set.fromList (Maybe.mapMaybe (actOf . LoggedEvent.event) (Foldable.toList (TurnRegisters.events (GameState.turn gs))))
 
 -- CR 702.122c / 608.2i: the Vehicles this object crewed this turn -- the half of
 -- the relation one object can answer; Parun.Engine.Filter's CrewedThisTurn
@@ -1703,6 +1715,8 @@ viewOfSnapshot deploy mController mOwner isToken counters zone home lapsed snaps
       -- CR 700.10 names an OBJECT as a source, and this view describes a
       -- snapshot rather than one -- `dealtDamageThisTurn` above's reason.
       Filter.activatedThisTurn = False,
+      -- CR 603.2: an OBJECT acts -- `dealtDamageThisTurn` above's reason.
+      Filter.actedThisTurn = Set.empty,
       -- CR 400.7 enters an OBJECT, and this view describes a snapshot rather
       -- than one -- `leftLibraryThisTurn` above's reason again.
       Filter.arrivalThisTurn = Nothing,

@@ -66,6 +66,8 @@ import qualified Parun.Types.ModeSelection as ModeSelection
 import qualified Parun.Types.Modification as Modification
 import qualified Parun.Types.Object as Object
 import qualified Parun.Types.ObjectId as ObjectId
+import qualified Parun.Types.PermanentActed as PermanentActed
+import qualified Parun.Types.PermanentAction as PermanentAction
 import qualified Parun.Types.Player as Player
 import qualified Parun.Types.PlayerActed as PlayerActed
 import qualified Parun.Types.PlayerAction as PlayerAction
@@ -440,6 +442,7 @@ records reading event = case reading of
   HistoryRead.Planeswalks -> MoveDuration.isPlaneswalk event
   HistoryRead.Resolutions -> Maybe.isJust (Game.abilityResolved event)
   HistoryRead.Sacrifices -> sacrificed event
+  HistoryRead.PermanentActs action -> permanentActed action event
   HistoryRead.Saddles -> saddled event
   HistoryRead.StepBegins -> stepBegan event
   HistoryRead.Targetings -> becameTarget event
@@ -483,6 +486,11 @@ dealtDamage event = case event of
 
 actedAmong :: Set.Set PlayerAction.PlayerAction -> GameEvent -> Bool
 actedAmong acts event = any (\acted -> Set.member (PlayerActed.action acted) acts) (Game.actOf event)
+
+permanentActed :: PermanentAction.PermanentAction -> GameEvent -> Bool
+permanentActed action event = case event of
+  GameEvent.PermanentActed acted -> PermanentActed.action acted == action
+  _ -> False
 
 countersPut :: GameEvent -> Bool
 countersPut event = case event of
