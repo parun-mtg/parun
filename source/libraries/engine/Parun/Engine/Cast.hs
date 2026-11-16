@@ -2799,7 +2799,9 @@ castSpellWith perform timed offered applied widened pid oid name facing = Event.
   -- narrowed to it, while a rejection still rewinds to `before`. The
   -- scenario cr-601-3-a-card-holding-two-soul-jar-grants-asks-which-it-is-cast-under
   -- proves the choice.
-  chosen <- if offered then pure Nothing else chooseHeldPermission pid oid (\board -> not timed || castableUnderHeld Nothing pid oid name facing board) (\permission -> let board = asProposed oid name facing before in maybe False (\face -> heldAdmits oid face board permission) (proposedFace oid name board)) before
+  let playable board = not timed || castableUnderHeld Nothing pid oid name facing board
+      bare board = PlayerEffect.mayPlayFromOwnGraveyard Map.empty PermissionVerb.Cast pid oid board && playable board
+  chosen <- if offered then pure Nothing else chooseHeldPermission pid oid playable bare castUnderDiffers (\permission -> let board = asProposed oid name facing before in maybe False (\face -> heldAdmits oid face board permission) (proposedFace oid name board)) before
   let held = maybe before (\permission -> underHeld oid permission before) chosen
       -- The state the GATE measured, which is `held` with CR 709.3's half and
       -- CR 708.4's facing stamped on. Read from rather than written to the
@@ -3053,7 +3055,7 @@ playLand settle offered pid oid mName = do
   -- CR 601.3: and, made under the card's own permissions, which of them, where
   -- it holds several Play-verb ones that differ; `held` is the board narrowed
   -- to it, which every read of the permission below takes.
-  chosen <- if offered || Maybe.isJust permission then pure Nothing else chooseHeldPermission pid oid (const True) ((== PermissionVerb.Play) . ExilePlayPermission.verb) before
+  chosen <- if offered || Maybe.isJust permission then pure Nothing else chooseHeldPermission pid oid (const True) (const False) (const True) ((== PermissionVerb.Play) . ExilePlayPermission.verb) before
   let held = maybe before (\p -> underHeld oid p before) chosen
       riders played = foldMap (\(src, _) -> Event.permissionRiders src before played) permission
   entryRow <- if Maybe.isNothing permission && not offered then installLandEntry pid oid held else pure Nothing
@@ -3119,17 +3121,18 @@ heldOptions pid oid gs =
   let unstamped permission = permission {ExilePlayPermission.budget = fmap (\budget -> budget {PlayBudget.granted = Timestamp.MkTimestamp 0}) (ExilePlayPermission.budget permission)}
    in ListUtils.nubOrdOn unstamped (Expiry.openPermissions pid oid gs)
 
--- CR 601.3: the board on which `oid` holds `permission` alone, so every reader
--- of a held permission's terms reads the one a play is made under.
-underHeld :: ObjectId -> ExilePlayPermission.ExilePlayPermission -> GameState -> GameState
-underHeld oid permission gs = gs {GameState.objects = Map.adjust (\o -> o {Object.playPermissions = [permission]}) oid (GameState.objects gs)}
+-- CR 601.3: the board on which `oid` holds `permission` alone, or none where a
+-- play is made under the card's own ability instead, so every reader of a held
+-- permission's terms reads the one a play is made under.
+underHeld :: ObjectId -> Maybe ExilePlayPermission.ExilePlayPermission -> GameState -> GameState
+underHeld oid permission gs = gs {GameState.objects = Map.adjust (\o -> o {Object.playPermissions = Maybe.maybeToList permission}) oid (GameState.objects gs)}
 
 -- CR 601.3: one board per heldOptions entry, underHeld; the board itself where
 -- `pid` may use none.
 heldBoards :: PlayerId -> ObjectId -> GameState -> [GameState]
 heldBoards pid oid gs = case heldOptions pid oid gs of
   [] -> [gs]
-  options -> fmap (\permission -> underHeld oid permission gs) options
+  options -> fmap (\permission -> underHeld oid (Just permission) gs) options
 
 -- The first permission `oid` holds, open or not: on a board underHeld narrowed,
 -- the one a play is made under.
@@ -3139,9 +3142,29 @@ heldPermission oid gs = Game.lookupObject oid gs >>= Maybe.listToMaybe . Object.
 -- CR 601.3 / 305.1: which heldOptions entry a play of `oid` by `pid` is made
 -- under, among those `admits` and on whose narrowed board `playable` holds,
 -- asked through Game.chooseAmong. Nothing where `pid` may use none.
-chooseHeldPermission :: PlayerId -> ObjectId -> (GameState -> Bool) -> (ExilePlayPermission.ExilePlayPermission -> Bool) -> GameState -> Game (Maybe ExilePlayPermission.ExilePlayPermission)
-chooseHeldPermission pid oid playable admits gs =
-  Game.chooseAmong (\decider asked -> Prompt.ChooseHeldPermission decider asked oid) pid (filter (\permission -> admits permission && playable (underHeld oid permission gs)) (heldOptions pid oid gs))
+--
+-- Just Nothing is the card's own ability instead (Kethis, the Hidden Hand's
+-- "you may play this card from your graveyard"), offered where `bare` holds on
+-- the board holding none and every entry `differs` from it: an entry that does
+-- not is that same play. kaldring-the-rimestaff-under-kethis-casts-jorn-untapped
+-- proves it.
+chooseHeldPermission :: PlayerId -> ObjectId -> (GameState -> Bool) -> (GameState -> Bool) -> (ExilePlayPermission.ExilePlayPermission -> Bool) -> (ExilePlayPermission.ExilePlayPermission -> Bool) -> GameState -> Game (Maybe (Maybe ExilePlayPermission.ExilePlayPermission))
+chooseHeldPermission pid oid playable bare differs admits gs =
+  let options = filter (\permission -> admits permission && playable (underHeld oid (Just permission) gs)) (heldOptions pid oid gs)
+      own = not (null options) && all differs options && bare (underHeld oid Nothing gs)
+   in Game.chooseAmong (\decider asked -> Prompt.ChooseHeldPermission decider asked oid) pid ([Nothing | own] <> fmap Just options)
+
+-- CR 601.3: whether a cast made under `permission` differs from one made under
+-- the card's own ability: an entry rider (CR 400.7h), keywords (CR 613.1f), a
+-- cost (CR 118.9, 601.2f), a spending rider (CR 118.14) or a budget spent.
+castUnderDiffers :: ExilePlayPermission.ExilePlayPermission -> Bool
+castUnderDiffers permission =
+  ExilePlayPermission.spellEnters permission == TapState.Tapped
+    || not (null (ExilePlayPermission.keywords permission))
+    || Maybe.isJust (ExilePlayPermission.alternativeCost permission)
+    || ExilePlayPermission.increase permission > 0
+    || ExilePlayPermission.spending permission /= ManaSpending.AsProduced
+    || Maybe.isJust (ExilePlayPermission.budget permission)
 
 -- CR 601.3: one play spent from the budget a played card's exile permission
 -- shares with the other cards its grant covered (Parun.Types.PlayBudget), and
@@ -3188,8 +3211,8 @@ spendPlayBudget pid played permission = Monad.forM_ (permission >>= ExilePlayPer
 -- kaldring-the-rimestaff-plays-a-snow-land-from-the-graveyard-that-enters-tapped
 -- the graveyard.
 --
--- Not implemented: choosing a graveyard card's PlayFromGraveyard ability over
--- this permission, which would skip the row (#7623).
+-- Not implemented: choosing a graveyard land's own PlayFromGraveyard ability
+-- over this permission, which would skip the row (#8102).
 installLandEntry :: PlayerId -> ObjectId -> GameState -> Game (Maybe Timestamp.Timestamp)
 installLandEntry pid oid gs = case Game.lookupObject oid gs of
   Just obj
@@ -3211,9 +3234,6 @@ installLandEntry pid oid gs = case Game.lookupObject oid gs of
 -- installLandEntry's "you", and installPermissionEntry's uses and expiry.
 -- kaldring-the-rimestaff-casts-a-snow-creature-from-the-graveyard-that-enters-tapped
 -- proves it.
---
--- Not implemented: choosing a graveyard card's PlayFromGraveyard ability over
--- this permission, which would skip the row (#7623).
 installSpellEntry :: PlayerId -> Maybe ExilePlayPermission.ExilePlayPermission -> ObjectId -> GameState -> GameState
 installSpellEntry pid permission spell gs = case permission of
   Just held
