@@ -1,0 +1,40 @@
+{
+  "description": "CR 500.8 / 702.172a Great Train Heist's first two modes, cast in the combat phase, untap the attacker, give it +1/+0 and first strike, and add a combat phase it attacks in again",
+  "note": "Alice's Grizzly Bears hits bob for two. In the end of combat step she pays {R}+{2}{R}+{2} for the first two modes: the Bears untap as a 3/2 first striker, and the additional combat lets them hit bob for three more.",
+  "board": {
+    "seats": [
+      {
+        "name": "alice",
+        "battlefield": [
+          { "card": "Mountain", "label": "m1", "ready": true },
+          { "card": "Mountain", "label": "m2", "ready": true },
+          { "card": "Mountain", "label": "m3", "ready": true },
+          { "card": "Mountain", "label": "m4", "ready": true },
+          { "card": "Mountain", "label": "m5", "ready": true },
+          { "card": "Mountain", "label": "m6", "ready": true },
+          { "card": "Grizzly Bears", "label": "bears", "ready": true }
+        ],
+        "hand": [{ "card": "Great Train Heist", "label": "heist" }],
+        "library": [{ "card": "Island" }, { "card": "Island" }]
+      },
+      {
+        "name": "bob",
+        "library": [{ "card": "Swamp" }, { "card": "Swamp" }]
+      }
+    ],
+    "active": "alice",
+    "step": "PrecombatMain"
+  },
+  "timeline": [
+    { "turn": 1, "step": "DeclareAttackers", "player": "alice", "do": { "Attack": ["$bears"] } },
+    { "turn": 1, "step": "EndOfCombat", "player": "alice", "check": { "Life": { "player": "bob", "life": 18 } } },
+    { "turn": 1, "step": "EndOfCombat", "player": "alice", "check": { "Tapped": { "object": "$bears", "tapped": true } } },
+    { "turn": 1, "step": "EndOfCombat", "player": "alice", "do": { "Cast": { "object": "$heist", "modes": [0, 1], "mana": ["$m1", "$m2", "$m3", "$m4", "$m5", "$m6"] } } },
+    { "turn": 1, "step": "EndOfCombat", "player": "alice", "do": "Pass" },
+    { "turn": 1, "step": "EndOfCombat", "player": "alice", "check": { "Tapped": { "object": "$bears", "tapped": false } } },
+    { "turn": 1, "step": "EndOfCombat", "player": "alice", "check": { "PowerToughness": { "object": "$bears", "power": 3, "toughness": 2 } } },
+    { "turn": 1, "step": "EndOfCombat", "player": "alice", "check": { "Keywords": { "object": "$bears", "keyword": { "type": "FirstStrike" }, "count": 1 } } },
+    { "turn": 1, "step": "DeclareAttackers", "player": "alice", "do": { "Attack": ["$bears"] } },
+    { "turn": 1, "step": "PostcombatMain", "player": "alice", "check": { "Life": { "player": "bob", "life": 15 } } }
+  ]
+}

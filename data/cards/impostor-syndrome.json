@@ -57,7 +57,10 @@
               "recipients": [
                 {
                   "type": "Player",
-                  "value": "AnyPlayer"
+                  "value": {
+                    "type": "Relative",
+                    "value": "AnyPlayer"
+                  }
                 }
               ]
             }

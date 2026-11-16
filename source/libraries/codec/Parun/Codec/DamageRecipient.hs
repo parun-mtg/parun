@@ -3,7 +3,7 @@ module Parun.Codec.DamageRecipient where
 import qualified Parun.Codec.CardType as CardType
 import qualified Parun.Codec.Filter as Filter
 import qualified Parun.Codec.Keyword as Keyword
-import qualified Parun.Codec.PlayerRelation as PlayerRelation
+import qualified Parun.Codec.PlayerRef as PlayerRef
 import qualified Parun.JsonCodec.Arm as Arm
 import qualified Parun.JsonCodec.Codec as Codec
 import qualified Parun.JsonCodec.Fields as Fields
@@ -16,7 +16,7 @@ codec :: Codec.Codec DamageRecipient.DamageRecipient
 codec =
   Arm.tagged
     tagOf
-    [ Arm.payload "Player" PlayerRelation.codec DamageRecipient.Player (\x -> case x of DamageRecipient.Player y -> Just y; _ -> Nothing),
+    [ Arm.payload "Player" PlayerRef.codec DamageRecipient.Player (\x -> case x of DamageRecipient.Player y -> Just y; _ -> Nothing),
       Arm.payload "Permanent" permanent (uncurry DamageRecipient.Permanent) (\x -> case x of DamageRecipient.Permanent t f -> Just (t, f); _ -> Nothing)
     ]
 

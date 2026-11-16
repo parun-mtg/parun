@@ -153,6 +153,7 @@ import qualified Parun.Types.PlayerDrawsNthCard as PlayerDrawsNthCard
 import qualified Parun.Types.PlayerExpends as PlayerExpends
 import Parun.Types.PlayerId (PlayerId)
 import qualified Parun.Types.PlayerIsDealtDamage as PlayerIsDealtDamage
+import qualified Parun.Types.PlayerRef as PlayerRef
 import qualified Parun.Types.PlayerRelation as PlayerRelation
 import qualified Parun.Types.PlaysLand as PlaysLand
 import qualified Parun.Types.ProjectedCharacteristics as PC
@@ -1359,7 +1360,7 @@ armMatches bindings board atEvent beforeEvent groupEvents gs bearer you cond eve
           DamageTrigger.MkDamageTrigger
             { DamageTrigger.actor = ActingPermanent.Matching (PermanentsDealDamageToPlayer.filter p),
               DamageTrigger.kind = PermanentsDealDamageToPlayer.kind p,
-              DamageTrigger.recipients = Set.singleton (DamageRecipient.Player (PermanentsDealDamageToPlayer.recipient p)),
+              DamageTrigger.recipients = Set.singleton (DamageRecipient.Player (PlayerRef.Relative (PermanentsDealDamageToPlayer.recipient p))),
               DamageTrigger.atLeast = 0
             }
       )
@@ -2545,7 +2546,14 @@ armMatches bindings board atEvent beforeEvent groupEvents gs bearer you cond eve
     -- that same sample. Scenario
     -- taii-wakeen-draws-for-damage-equal-to-toughness-not-less-or-more.
     damagedIs amount target recipient = case recipient of
-      DamageRecipient.Player relation -> maybe False (PlayerRelation.holds (Game.teams gs) relation you) (Recipient.playerOf target)
+      -- A relation is read off the damaged player alone, never through
+      -- Players.table's roster. Any other reference reads the creating
+      -- effect's slots (CR 603.7), Great Train Heist's "that player". Scenario
+      -- cr-603-7-great-train-heist-makes-treasure-only-for-damage-to-the-target-opponent.
+      DamageRecipient.Player ref -> case (ref, Recipient.playerOf target) of
+        (_, Nothing) -> False
+        (PlayerRef.Relative relation, Just damaged) -> PlayerRelation.holds (Game.teams gs) relation you damaged
+        (_, Just damaged) -> maybe False (elem damaged) (scopeNamed ref)
       DamageRecipient.Permanent cardType qualifier ->
         let dealt = bearerContext {Filter.boundAmounts = Map.insert Binding.eventAmount amount (Filter.boundAmounts bearerContext)}
          in Set.member cardType (Projection.damagedCardTypes gs target)

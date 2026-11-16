@@ -1536,7 +1536,9 @@ data TriggerChildren f = MkTriggerChildren
     -- | Which counters a counter trigger watches (CR 122.6), whole.
     triggerCounters :: WhichCounters.WhichCounters Keyword.Keyword -> f (WhichCounters.WhichCounters Keyword.Keyword),
     -- | Which mana a mana trigger watches (CR 106.12a), whole.
-    triggerMana :: ManaSpecification.ManaSpecification -> f ManaSpecification.ManaSpecification
+    triggerMana :: ManaSpecification.ManaSpecification -> f ManaSpecification.ManaSpecification,
+    -- | A player a damage recipient names (CR 120.1), whole.
+    triggerPlayer :: PlayerRef.PlayerRef -> f PlayerRef.PlayerRef
   }
 
 -- | Every child of a trigger condition left as it is: the base a walk
@@ -1552,7 +1554,8 @@ triggerLeaves =
       triggerOrdinal = const pure,
       triggerFrequency = const pure,
       triggerCounters = pure,
-      triggerMana = pure
+      triggerMana = pure,
+      triggerPlayer = pure
     }
 
 -- | A TriggerCondition's immediate children, each through its visitor. A
@@ -1750,10 +1753,11 @@ attackTriggerChildren c trigger = case trigger of
 attackCountChildren :: (Applicative f) => TriggerChildren f -> AttackCount.AttackCount -> f AttackCount.AttackCount
 attackCountChildren c (AttackCount.MkAttackCount measure floor_ filter_) = AttackCount.MkAttackCount measure floor_ <$> triggerFilter c filter_
 
--- CR 120.1: a permanent recipient's qualifier, read as actingChildren reads an actor's.
+-- CR 120.1: a player recipient's reference, and a permanent recipient's
+-- qualifier, read as actingChildren reads an actor's.
 damageRecipientChildren :: (Applicative f) => TriggerChildren f -> DamageRecipient.DamageRecipient -> f DamageRecipient.DamageRecipient
 damageRecipientChildren c recipient = case recipient of
-  DamageRecipient.Player _ -> pure recipient
+  DamageRecipient.Player ref -> DamageRecipient.Player <$> triggerPlayer c ref
   DamageRecipient.Permanent cardType qualifier -> DamageRecipient.Permanent cardType <$> triggerFilter c qualifier
 
 actingChildren :: (Applicative f) => TriggerChildren f -> ActingPermanent.ActingPermanent -> f ActingPermanent.ActingPermanent

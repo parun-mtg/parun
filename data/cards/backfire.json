@@ -36,7 +36,10 @@
               "recipients": [
                 {
                   "type": "Player",
-                  "value": "You"
+                  "value": {
+                    "type": "Relative",
+                    "value": "You"
+                  }
                 }
               ]
             }

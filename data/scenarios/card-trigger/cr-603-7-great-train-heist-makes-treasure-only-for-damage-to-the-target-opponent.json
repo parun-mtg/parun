@@ -1,0 +1,40 @@
+{
+  "description": "CR 603.7 Great Train Heist's third mode makes a tapped Treasure for combat damage to the target opponent, and none for damage to another opponent",
+  "note": "Alice pays {R}{R} for the third mode alone, targeting bob, then attacks bob with one Grizzly Bears and carol with another. Both connect; only the Bears hitting bob makes a Treasure, and it enters tapped.",
+  "board": {
+    "seats": [
+      {
+        "name": "alice",
+        "battlefield": [
+          { "card": "Mountain", "label": "m1", "ready": true },
+          { "card": "Mountain", "label": "m2", "ready": true },
+          { "card": "Grizzly Bears", "label": "tobob", "ready": true },
+          { "card": "Grizzly Bears", "label": "tocarol", "ready": true }
+        ],
+        "hand": [{ "card": "Great Train Heist", "label": "heist" }],
+        "library": [{ "card": "Island" }, { "card": "Island" }]
+      },
+      {
+        "name": "bob",
+        "library": [{ "card": "Swamp" }, { "card": "Swamp" }]
+      },
+      {
+        "name": "carol",
+        "library": [{ "card": "Swamp" }, { "card": "Swamp" }]
+      }
+    ],
+    "active": "alice",
+    "step": "PrecombatMain"
+  },
+  "timeline": [
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": { "Cast": { "object": "$heist", "modes": [2], "targetsBySlot": { "opponent": ["$bob"] }, "mana": ["$m1", "$m2"] } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass" },
+    { "turn": 1, "step": "DeclareAttackers", "player": "alice", "do": { "Attack": ["$tobob", "$tocarol"] } },
+    { "turn": 1, "step": "DeclareAttackers", "player": "alice", "source": "$tobob", "do": { "ChooseAttackTarget": "$bob" } },
+    { "turn": 1, "step": "DeclareAttackers", "player": "alice", "source": "$tocarol", "do": { "ChooseAttackTarget": "$carol" } },
+    { "turn": 1, "step": "EndOfCombat", "player": "alice", "check": { "Life": { "player": "bob", "life": 18 } } },
+    { "turn": 1, "step": "EndOfCombat", "player": "alice", "check": { "Life": { "player": "carol", "life": 18 } } },
+    { "turn": 1, "step": "EndOfCombat", "player": "alice", "check": { "Count": { "player": "alice", "zone": "Battlefield", "card": "Treasure Token", "count": 1 } } },
+    { "turn": 1, "step": "EndOfCombat", "player": "alice", "check": { "Tapped": { "object": "Treasure Token", "tapped": true } } }
+  ]
+}
