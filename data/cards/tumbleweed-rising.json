@@ -1,0 +1,161 @@
+{
+  "faces": [
+    {
+      "keywords": [
+        {
+          "type": "Plot",
+          "value": {
+            "mana": [
+              {
+                "type": "Generic",
+                "value": 2
+              },
+              {
+                "type": "OfType",
+                "value": {
+                  "type": "Colored",
+                  "value": "Green"
+                }
+              }
+            ]
+          }
+        }
+      ],
+      "manaCost": [
+        {
+          "type": "Generic",
+          "value": 1
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "Green"
+          }
+        }
+      ],
+      "name": "Tumbleweed Rising",
+      "oracleText": "Create an X/X green Elemental creature token, where X is the greatest power among creatures you control.\nPlot {2}{G} (You may pay {2}{G} and exile this card from your hand. Cast it as a sorcery on a later turn without paying its mana cost. Plot only as a sorcery.)",
+      "spell": {
+        "modes": [
+          {
+            "clauses": [
+              {
+                "effects": [
+                  {
+                    "type": "Create",
+                    "value": {
+                      "card": {
+                        "faces": [
+                          {
+                            "colorIndicator": [
+                              "Green"
+                            ],
+                            "name": "Elemental Token",
+                            "power": {
+                              "type": "Count",
+                              "value": {
+                                "aggregation": {
+                                  "type": "Greatest",
+                                  "value": {
+                                    "type": "Measure",
+                                    "value": "Power"
+                                  }
+                                },
+                                "filter": {
+                                  "type": "And",
+                                  "value": [
+                                    {
+                                      "type": "HasCardType",
+                                      "value": "Creature"
+                                    },
+                                    {
+                                      "type": "HeldBy",
+                                      "value": {
+                                        "holder": "Controller",
+                                        "relation": "You"
+                                      }
+                                    }
+                                  ]
+                                },
+                                "scope": {
+                                  "type": "InZone",
+                                  "value": {
+                                    "player": {
+                                      "type": "Relative",
+                                      "value": "AnyPlayer"
+                                    },
+                                    "zone": "Battlefield"
+                                  }
+                                }
+                              }
+                            },
+                            "toughness": {
+                              "type": "Count",
+                              "value": {
+                                "aggregation": {
+                                  "type": "Greatest",
+                                  "value": {
+                                    "type": "Measure",
+                                    "value": "Power"
+                                  }
+                                },
+                                "filter": {
+                                  "type": "And",
+                                  "value": [
+                                    {
+                                      "type": "HasCardType",
+                                      "value": "Creature"
+                                    },
+                                    {
+                                      "type": "HeldBy",
+                                      "value": {
+                                        "holder": "Controller",
+                                        "relation": "You"
+                                      }
+                                    }
+                                  ]
+                                },
+                                "scope": {
+                                  "type": "InZone",
+                                  "value": {
+                                    "player": {
+                                      "type": "Relative",
+                                      "value": "AnyPlayer"
+                                    },
+                                    "zone": "Battlefield"
+                                  }
+                                }
+                              }
+                            },
+                            "typeLine": {
+                              "subtypes": [
+                                "Elemental"
+                              ],
+                              "types": [
+                                "Creature"
+                              ]
+                            }
+                          }
+                        ]
+                      },
+                      "quantity": {
+                        "type": "Literal",
+                        "value": 1
+                      }
+                    }
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "typeLine": {
+        "types": [
+          "Sorcery"
+        ]
+      }
+    }
+  ]
+}
