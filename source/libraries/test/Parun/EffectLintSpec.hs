@@ -3065,6 +3065,19 @@ effectLintSpec s registry corpus = Spec.describe s "Lint" $ do
         offenders = filter (anyFace (any offends . cardResolutionEffects) . Printing.card) ps
     Spec.assertBool s (any (anyFace (any names . cardResolutionEffects) . Printing.card) ps) "the pool has a Repeat naming another chooser"
     Spec.assertEqWith s "otherChooser is read only when the gate fails" (fmap (S.nameOf . Printing.card) offenders) []
+  -- A counted Repeat asks nobody, so a gate or another chooser beside its count
+  -- is inert card data. Another Round keeps the sweep from being vacuous.
+  Spec.it s "no counted Repeat carries a gate or another chooser" $ do
+    ps <- S.allPrintings s corpus
+    let counted effect = case effect of
+          Effect.Repeat loop -> Maybe.isJust (Resolve.moreTimes (Repeat.again loop))
+          _ -> False
+        offends effect = case effect of
+          Effect.Repeat loop -> counted effect && (Maybe.isJust (Repeat.gate loop) || Maybe.isJust (Repeat.otherChooser loop))
+          _ -> False
+        offenders = filter (anyFace (any offends . cardResolutionEffects) . Printing.card) ps
+    Spec.assertBool s (any (anyFace (any counted . cardResolutionEffects) . Printing.card) ps) "the pool has a counted Repeat"
+    Spec.assertEqWith s "a counted Repeat asks nobody" (fmap (S.nameOf . Printing.card) offenders) []
   -- CR 509.4's rider is a rule about entering the BATTLEFIELD, so on any other
   -- destination it is inert card data. Both opcodes read it and both apply it --
   -- Parun.Engine.Resolve's Create arm hands its tokens to

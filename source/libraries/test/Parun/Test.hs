@@ -66,6 +66,7 @@ import qualified Parun.Codec.AffectedSpec
 import qualified Parun.Codec.AffectedUnlessSpec
 import qualified Parun.Codec.AfterObjectTurnSpec
 import qualified Parun.Codec.AfterTurnSpec
+import qualified Parun.Codec.AgainSpec
 import qualified Parun.Codec.AgainstExiledPileSpec
 import qualified Parun.Codec.AgainstLastCardExiledWithSpec
 import qualified Parun.Codec.AgainstSlotSpec
@@ -1168,6 +1169,7 @@ spec s reference corpus = do
   Parun.Codec.AffectPlayersSpec.spec s
   Parun.Codec.AfterObjectTurnSpec.spec s
   Parun.Codec.AfterTurnSpec.spec s
+  Parun.Codec.AgainSpec.spec s
   Parun.Codec.AgainstExiledPileSpec.spec s
   Parun.Codec.AtMostSpec.spec s
   Parun.Codec.ManaSpentSpec.spec s

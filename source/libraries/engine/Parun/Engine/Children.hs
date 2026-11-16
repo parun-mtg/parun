@@ -23,6 +23,7 @@ import qualified Parun.Types.Affected as Affected
 import qualified Parun.Types.AffectedPlayers as AffectedPlayers
 import qualified Parun.Types.AffectedUnless as AffectedUnless
 import qualified Parun.Types.AfterObjectTurn as AfterObjectTurn
+import qualified Parun.Types.Again as Again
 import qualified Parun.Types.AgainstExiledPile as AgainstExiledPile
 import qualified Parun.Types.AgainstLastCardExiledWith as AgainstLastCardExiledWith
 import qualified Parun.Types.AgainstSlot as AgainstSlot
@@ -1362,8 +1363,8 @@ effectChildren c effect = case effect of
   Effect.ForEach (ForEach.MkForEach ref members named body individually payGate startingWith) ->
     fmap Effect.ForEach (ForEach.MkForEach <$> onObjectRef c ref <*> pure members <*> onSlot c named <*> traverse (onEffect c) body <*> pure individually <*> traverse (onPayGate c) payGate <*> traverse (onPlayer c) startingWith)
   Effect.ForEachNumber (ForEachNumber.MkForEachNumber upTo named body) -> fmap Effect.ForEachNumber (ForEachNumber.MkForEachNumber <$> onQuantity c upTo <*> onSlot c named <*> traverse (onEffect c) body)
-  Effect.Repeat (Repeat.MkRepeat chooser body gate otherChooser ifAgain) ->
-    fmap Effect.Repeat (Repeat.MkRepeat <$> onPlayer c chooser <*> traverse (onEffect c) body <*> traverse (onCondition c) gate <*> traverse (onPlayer c) otherChooser <*> traverse (onEffect c) ifAgain)
+  Effect.Repeat (Repeat.MkRepeat again body gate otherChooser ifAgain) ->
+    fmap Effect.Repeat (Repeat.MkRepeat <$> againChildren c again <*> traverse (onEffect c) body <*> traverse (onCondition c) gate <*> traverse (onPlayer c) otherChooser <*> traverse (onEffect c) ifAgain)
   Effect.RepeatIf (RepeatIf.MkRepeatIf process condition ifHolds) -> fmap Effect.RepeatIf (RepeatIf.MkRepeatIf <$> traverse (onEffect c) process <*> onCondition c condition <*> traverse (onEffect c) ifHolds)
   Effect.Heal ref -> fmap Effect.Heal (onObjectRef c ref)
   Effect.ChooseNewTargets ref -> fmap Effect.ChooseNewTargets (onObjectRef c ref)
@@ -1383,6 +1384,12 @@ attachTargetChildren c attach = case attach of
 millTallyChildren :: (Applicative f) => EffectChildren card ability f -> MillTally.MillTally -> f MillTally.MillTally
 millTallyChildren c tally = case tally of
   MillTally.MkMillTally named filter_ -> MillTally.MkMillTally <$> onSlot c named <*> onFilter c filter_
+
+-- | What runs a Repeat again: the player asked, or the count.
+againChildren :: (Applicative f) => EffectChildren card ability f -> Again.Again -> f Again.Again
+againChildren c x = case x of
+  Again.AskPlayer who -> Again.AskPlayer <$> onPlayer c who
+  Again.MoreTimes quantity -> Again.MoreTimes <$> onQuantity c quantity
 
 -- | A player and a count: whose, and how many.
 playerQuantityChildren :: (Applicative f) => EffectChildren card ability f -> PlayerQuantity.PlayerQuantity -> f PlayerQuantity.PlayerQuantity

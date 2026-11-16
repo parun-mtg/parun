@@ -17,6 +17,7 @@ import qualified Parun.Types.AbilityName as AbilityName
 import qualified Parun.Types.ActivateManaAbilities as ActivateManaAbilities
 import qualified Parun.Types.AffectPlayers as AffectPlayers
 import qualified Parun.Types.AffectedPlayers as AffectedPlayers
+import qualified Parun.Types.Again as Again
 import qualified Parun.Types.AgainstSlot as AgainstSlot
 import qualified Parun.Types.Aggregation as Aggregation
 import qualified Parun.Types.Amass as Amass
@@ -1247,8 +1248,8 @@ spec s = Spec.describe s "Parun.Codec.Effect" $ do
       s
       toJson
       fromJson
-      (Effect.Repeat (Repeat.MkRepeat (PlayerRef.Relative PlayerRelation.You) (Seq.singleton (Effect.Draw (Draw.MkDraw (PlayerRef.Relative PlayerRelation.You) (Quantity.Literal 1) Nothing))) Nothing Nothing Seq.empty))
-      " {\"type\":\"Repeat\",\"value\":{\"chooser\":{\"type\":\"Relative\",\"value\":\"You\"},\"body\":[{\"type\":\"Draw\",\"value\":{\"player\":{\"type\":\"Relative\",\"value\":\"You\"},\"quantity\":{\"type\":\"Literal\",\"value\":1}}}]}} "
+      (Effect.Repeat (Repeat.MkRepeat (Again.AskPlayer (PlayerRef.Relative PlayerRelation.You)) (Seq.singleton (Effect.Draw (Draw.MkDraw (PlayerRef.Relative PlayerRelation.You) (Quantity.Literal 1) Nothing))) Nothing Nothing Seq.empty))
+      " {\"type\":\"Repeat\",\"value\":{\"again\":{\"type\":\"AskPlayer\",\"value\":{\"type\":\"Relative\",\"value\":\"You\"}},\"body\":[{\"type\":\"Draw\",\"value\":{\"player\":{\"type\":\"Relative\",\"value\":\"You\"},\"quantity\":{\"type\":\"Literal\",\"value\":1}}}]}} "
   -- Grist, the Hunger Tide's +1: go again only while the process's tally says so.
   Spec.it s "RepeatIf" $
     Common.assertJsonCodec

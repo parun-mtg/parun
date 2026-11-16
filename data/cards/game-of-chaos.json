@@ -45,6 +45,13 @@
                   {
                     "type": "Repeat",
                     "value": {
+                      "again": {
+                        "type": "AskPlayer",
+                        "value": {
+                          "type": "Relative",
+                          "value": "You"
+                        }
+                      },
                       "body": [
                         {
                           "type": "FlipCoin",
@@ -154,10 +161,6 @@
                           }
                         }
                       ],
-                      "chooser": {
-                        "type": "Relative",
-                        "value": "You"
-                      },
                       "gate": {
                         "type": "Compares",
                         "value": {

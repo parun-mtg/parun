@@ -43,13 +43,14 @@ import qualified Parun.Engine.Projection.View as Projection
 import qualified Parun.Engine.Quantity as Quantity
 import qualified Parun.Engine.Replacement as Replacement
 import qualified Parun.Engine.Resolve.Common as Common
-import Parun.Engine.Resolve.Slots (battlefieldMatching, boundSlots, effectContext, effectViewOf, handCardsOf, legalMany, legalOne, matchingFromAmong, objectRefObjects, playerRefPlayers, slotBindings)
+import Parun.Engine.Resolve.Slots (battlefieldMatching, boundSlots, effectContext, effectViewOf, handCardsOf, legalMany, legalOne, matchingFromAmong, moreTimes, objectRefObjects, playerRefPlayers, slotBindings)
 import qualified Parun.Engine.Restamp as Restamp
 import qualified Parun.Engine.Sticker as Sticker
 import qualified Parun.Engine.Warp as Warp
 import qualified Parun.Extra.Integer as Integer
 import qualified Parun.Extra.Natural as Natural
 import qualified Parun.Types.Affected as Affected
+import qualified Parun.Types.Again as Again
 import qualified Parun.Types.Ante as Ante
 import qualified Parun.Types.AnyNumberDiscard as AnyNumberDiscard
 import qualified Parun.Types.AnyNumberMatching as AnyNumberMatching
@@ -1180,23 +1181,34 @@ forEachNumber applyLoopBody runSubgame resolving source controller legal chosen 
 -- other chooser, or with none ends the loop unasked. Parun.DiceSpec's Delina,
 -- Wild Mage group proves the ending, Game of Chaos's scenarios
 -- the other chooser and the instructions run before each further run.
+--
+-- The counted form (Again.MoreTimes, CR 608.2c's "repeat this process X more
+-- times") reads its count once, before the first run, and asks nobody; the
+-- scenarios named another-round prove it.
 repeatArm :: (Game Result -> ObjectId -> ObjectId -> PlayerId -> Map.Map SlotName (Set Recipient) -> Map.Map SlotName (Set Recipient) -> Set SlotName -> Seq.Seq (Effect Card.Type.Card (GrantedAbility.GrantedAbility Card.Type.Card)) -> Game ()) -> Game Result -> ObjectId -> ObjectId -> PlayerId -> Map.Map SlotName (Set Recipient) -> Map.Map SlotName (Set Recipient) -> Repeat.Repeat (Effect Card.Type.Card (GrantedAbility.GrantedAbility Card.Type.Card)) -> Game ()
-repeatArm applyLoopBody runSubgame resolving source controller legal chosen (Repeat.MkRepeat chooser body gate otherChooser ifAgain) = do
-  rescope <- State.gets (Common.rescopeRun resolving (foldMap boundSlots body))
-  let apply = applyLoopBody runSubgame resolving source controller legal chosen (foldMap boundSlots (body <> ifAgain))
+repeatArm applyLoopBody runSubgame resolving source controller legal chosen (Repeat.MkRepeat again body gate otherChooser ifAgain) = do
+  gs0 <- State.get
+  let rescope = Common.rescopeRun resolving (foldMap boundSlots body) gs0
+      apply = applyLoopBody runSubgame resolving source controller legal chosen (foldMap boundSlots (body <> ifAgain))
+      -- Read once, before the first run.
+      moreRuns = maybe 0 Integer.toNaturalSaturating (moreTimes again >>= Common.evaluateForRecipient (effectViewOf resolving source legal gs0) (effectContext gs0 resolving controller source legal (slotBindings resolving gs0)) gs0 resolving source controller)
+      goAgain runs = do
+        apply ifAgain
+        run (runs + 1)
       run runs = do
         State.modify' rescope
         apply body
-        gs0 <- State.get
-        let context = effectContext gs0 resolving controller source legal (slotBindings resolving gs0)
-            open = all (Condition.holds (effectViewOf resolving source legal gs0) context gs0 source) gate
-        asked <- maybe (pure Nothing) (Common.askedChooser resolving source controller legal) (if open then Just chooser else otherChooser)
-        Monad.forM_ asked $ \who -> do
-          gs <- State.get
-          again <- Game.choose (Prompt.ChooseRepeat (Decide.deciderFor who gs) who resolving runs)
-          Monad.when (again == OptionalDecision.Exercises) $ do
-            apply ifAgain
-            run (runs + 1)
+        case again of
+          Again.MoreTimes _ -> Monad.when (runs <= moreRuns) (goAgain runs)
+          Again.AskPlayer chooser -> do
+            gs <- State.get
+            let context = effectContext gs resolving controller source legal (slotBindings resolving gs)
+                open = all (Condition.holds (effectViewOf resolving source legal gs) context gs source) gate
+            asked <- maybe (pure Nothing) (Common.askedChooser resolving source controller legal) (if open then Just chooser else otherChooser)
+            Monad.forM_ asked $ \who -> do
+              gs' <- State.get
+              decision <- Game.choose (Prompt.ChooseRepeat (Decide.deciderFor who gs') who resolving runs)
+              Monad.when (decision == OptionalDecision.Exercises) (goAgain runs)
   run 1
 
 -- CR 701.57a: N read once, then Parun.Engine.Discover.process run as a loop

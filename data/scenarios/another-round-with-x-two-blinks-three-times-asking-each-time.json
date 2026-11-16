@@ -1,0 +1,52 @@
+{
+  "description": "CR 608.2c / 608.2d Another Round with X=2 runs its process three times, asking for the creatures each run",
+  "note": "alice exiles and returns her Inspiring Overseer in the first and third runs and picks nothing in the second, so two entering triggers each gain 1 life and draw a card.",
+  "board": {
+    "active": "alice",
+    "step": "PrecombatMain",
+    "seats": [
+      {
+        "name": "alice",
+        "battlefield": [
+          { "card": "Inspiring Overseer", "label": "overseer", "ready": true }
+        ],
+        "hand": [
+          { "card": "Another Round", "label": "round" }
+        ],
+        "library": [
+          { "card": "Island" },
+          { "card": "Island" },
+          { "card": "Island" },
+          { "card": "Island" },
+          { "card": "Island" }
+        ],
+        "manaPool": "CCCCCCW"
+      },
+      {
+        "name": "bob",
+        "library": [
+          { "card": "Island" },
+          { "card": "Island" },
+          { "card": "Island" }
+        ]
+      }
+    ]
+  },
+  "timeline": [
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": { "Cast": { "object": "$round", "x": 2 } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass" },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": { "Answer": { "prompt": "ChooseAnyNumberOfPermanents", "with": ["$overseer"] } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": { "Answer": { "prompt": "ChooseAnyNumberOfPermanents", "with": [] } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": { "Answer": { "prompt": "ChooseAnyNumberOfPermanents", "with": ["Inspiring Overseer"] } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": { "Answer": { "prompt": "OrderTriggers", "with": [0, 1] } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "Life": { "player": "alice", "life": 20 } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass" },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass" }
+  ],
+  "final": [
+    { "Life": { "player": "alice", "life": 22 } },
+    { "Count": { "player": "alice", "zone": "Hand", "card": "Island", "count": 2 } },
+    { "Count": { "player": "alice", "zone": "Battlefield", "card": "Inspiring Overseer", "count": 1 } },
+    { "View": { "of": "Stack", "is": [] } }
+  ]
+}

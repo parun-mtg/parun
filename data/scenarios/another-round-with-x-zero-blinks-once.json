@@ -1,0 +1,46 @@
+{
+  "description": "CR 608.2c / 107.3a Another Round with X=0 runs its process once and repeats it no more",
+  "note": "One run exiles and returns the Inspiring Overseer, so its single entering trigger gains 1 life and draws a card; a second run would ask for the creatures again before the trigger.",
+  "board": {
+    "active": "alice",
+    "step": "PrecombatMain",
+    "seats": [
+      {
+        "name": "alice",
+        "battlefield": [
+          { "card": "Inspiring Overseer", "label": "overseer", "ready": true }
+        ],
+        "hand": [
+          { "card": "Another Round", "label": "round" }
+        ],
+        "library": [
+          { "card": "Island" },
+          { "card": "Island" },
+          { "card": "Island" }
+        ],
+        "manaPool": "CCW"
+      },
+      {
+        "name": "bob",
+        "library": [
+          { "card": "Island" },
+          { "card": "Island" },
+          { "card": "Island" }
+        ]
+      }
+    ]
+  },
+  "timeline": [
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": { "Cast": { "object": "$round", "x": 0 } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass" },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": { "Answer": { "prompt": "ChooseAnyNumberOfPermanents", "with": ["$overseer"] } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "View": { "of": "Stack", "is": ["trigger of Inspiring Overseer"] } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass" }
+  ],
+  "final": [
+    { "Life": { "player": "alice", "life": 21 } },
+    { "Count": { "player": "alice", "zone": "Hand", "card": "Island", "count": 1 } },
+    { "Count": { "player": "alice", "zone": "Battlefield", "card": "Inspiring Overseer", "count": 1 } },
+    { "View": { "of": "Stack", "is": [] } }
+  ]
+}

@@ -75,6 +75,7 @@ import qualified Parun.Types.AffectPlayers as AffectPlayers
 import qualified Parun.Types.Affected as Affected
 import qualified Parun.Types.AffectedPlayers as AffectedPlayers
 import qualified Parun.Types.AffectedUnless as AffectedUnless
+import qualified Parun.Types.Again as Again
 import qualified Parun.Types.AgainstExiledPile as AgainstExiledPile
 import qualified Parun.Types.AgainstLastCardExiledWith as AgainstLastCardExiledWith
 import qualified Parun.Types.AgainstSlot as AgainstSlot
@@ -935,7 +936,7 @@ playerRefPositions =
         ("flip-coin", Effect.FlipCoin FlipCoin.MkFlipCoin {FlipCoin.count = one, FlipCoin.reading = CoinReading.Heads, FlipCoin.slot = SlotName.MkSlotName (Text.pack "fc"), FlipCoin.misses = Nothing, FlipCoin.flipper = plantedPlayer "fc"}, [plantedPlayer "fc"]),
         ("choose-card-name", Effect.ChooseCardName (ChooseCardName.MkChooseCardName (plantedPlayer "cn") (Filter.Type.And []) Nothing), [plantedPlayer "cn"]),
         ("for-each-starting-with", Effect.ForEach (ForEach.MkForEach (ObjectRef.Players (PlayersWho.MkPlayersWho (PlayerRef.Relative PlayerRelation.AnyPlayer) Nothing Nothing)) LoopMembers.Every (SlotName.MkSlotName (Text.pack "each")) Seq.empty False Nothing (Just (plantedPlayer "fe-start"))), [plantedPlayer "fe-start"]),
-        ("repeat", Effect.Repeat (Repeat.MkRepeat (plantedPlayer "rp-chooser") Seq.empty Nothing (Just (plantedPlayer "rp-other")) Seq.empty), [plantedPlayer "rp-chooser", plantedPlayer "rp-other"]),
+        ("repeat", Effect.Repeat (Repeat.MkRepeat (Again.AskPlayer (plantedPlayer "rp-chooser")) Seq.empty Nothing (Just (plantedPlayer "rp-other")) Seq.empty), [plantedPlayer "rp-chooser", plantedPlayer "rp-other"]),
         ("choose-number", Effect.ChooseNumber (ChooseNumber.MkChooseNumber (SlotName.MkSlotName (Text.pack "number")) Nothing (plantedPlayer "cn-chooser")), [plantedPlayer "cn-chooser"]),
         ("offer-cast", Effect.OfferCast (OfferCast.MkOfferCast (plantedRef "oc-ref") (plantedPlayer "oc-caster") CastObligation.Optional PermissionVerb.Cast CastOffer.defaultValue CastRepetition.Once False False Nothing), [plantedPlayer "oc-caster"]),
         ("grant-play-from-exile", Effect.GrantPlayFromExile (GrantPlayFromExile.MkGrantPlayFromExile Duration.UntilEndOfTurn (plantedPlayer "gp-player") (plantedRef "gp-ref") ManaSpending.AsProduced Nothing Nothing PermissionVerb.Play 0 TapState.Untapped TapState.Untapped Nothing [] GrantZone.Exile), [plantedPlayer "gp-player"]),
@@ -5551,7 +5552,7 @@ effectFilters effect = case effect of
   -- list is exactly what this traversal must not stop at.
   Effect.ForEach (ForEach.MkForEach ref _ _ body _ gate _) -> frame SourceHostFramed (objectRefFilters ref) <> concatMap effectFilters body <> concatMap payGateFilters (Maybe.maybeToList gate)
   Effect.ForEachNumber (ForEachNumber.MkForEachNumber _ _ body) -> concatMap effectFilters body
-  Effect.Repeat (Repeat.MkRepeat _ body gate _ ifAgain) -> foldMap (frame Unframed . conditionFilters) gate <> concatMap effectFilters (body <> ifAgain)
+  Effect.Repeat (Repeat.MkRepeat again body gate _ ifAgain) -> concatMap quantityFilters (Resolve.moreTimes again) <> foldMap (frame Unframed . conditionFilters) gate <> concatMap effectFilters (body <> ifAgain)
   Effect.RepeatIf (RepeatIf.MkRepeatIf process condition ifHolds) -> frame RepeatGateFramed (conditionFilters condition) <> concatMap effectFilters (process <> ifHolds)
   Effect.Heal ref -> frame SourceHostFramed (objectRefFilters ref)
   Effect.ChooseNewTargets ref -> frame SourceHostFramed (objectRefFilters ref)

@@ -175,6 +175,8 @@ library codec
     Parun.Codec.AfterObjectTurnSpec
     Parun.Codec.AfterTurn
     Parun.Codec.AfterTurnSpec
+    Parun.Codec.Again
+    Parun.Codec.AgainSpec
     Parun.Codec.AgainstExiledPile
     Parun.Codec.AgainstExiledPileSpec
     Parun.Codec.AgainstLastCardExiledWith
@@ -2809,6 +2811,7 @@ library types
     Parun.Types.AffectPlayers
     Parun.Types.AfterObjectTurn
     Parun.Types.AfterTurn
+    Parun.Types.Again
     Parun.Types.AgainstExiledPile
     Parun.Types.AgainstLastCardExiledWith
     Parun.Types.AgainstSlot
