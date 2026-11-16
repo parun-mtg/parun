@@ -1,0 +1,25 @@
+{
+  "description": "CR 603.2, 603.2c, 120.1: Innocent Bystander dealt 2 by Shock investigates nothing, dealt 3 by Lightning Bolt investigates, and dealt 2 by each of two blockers at once investigates",
+  "note": "Each of bob's Bystanders dies to its burn, the trigger reading the damage dealt as it stood. Neither Grizzly Bears deals 3 alone, so a per-source reading would trigger nothing.",
+  "board": {"active": "alice", "step": "PrecombatMain", "seats": [
+    {"name": "alice", "manaPool": "RR", "library": [{"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}], "hand": [{"card": "Shock", "label": "shock"}, {"card": "Lightning Bolt", "label": "bolt"}], "battlefield": [{"card": "Innocent Bystander", "label": "ib", "ready": true}]},
+    {"name": "bob", "library": [{"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}], "battlefield": [{"card": "Innocent Bystander", "label": "by1"}, {"card": "Innocent Bystander", "label": "by2"}, {"card": "Grizzly Bears", "label": "b1", "ready": true}, {"card": "Grizzly Bears", "label": "b2", "ready": true}]}
+  ]},
+  "timeline": [
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": {"Cast": {"object": "$shock", "targets": ["$by1"]}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass"},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Count": {"player": "bob", "zone": "Graveyard", "card": "Innocent Bystander", "count": 1}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Count": {"player": "bob", "zone": "Battlefield", "card": "Clue Token", "count": 0}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": {"Cast": {"object": "$bolt", "targets": ["$by2"]}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass"},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass"},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Count": {"player": "bob", "zone": "Graveyard", "card": "Innocent Bystander", "count": 2}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Count": {"player": "bob", "zone": "Battlefield", "card": "Clue Token", "count": 1}}},
+    {"turn": 1, "step": "DeclareAttackers", "player": "alice", "do": {"Attack": ["$ib"]}},
+    {"turn": 1, "step": "DeclareBlockers", "player": "bob", "do": {"Block": {"$b1": ["$ib"], "$b2": ["$ib"]}}},
+    {"turn": 1, "step": "CombatDamage", "player": "alice", "do": {"Answer": {"prompt": "AssignCombatDamage", "with": [[["Creature", "$b1"], 2]]}}},
+    {"turn": 1, "step": "EndOfCombat", "player": "alice", "check": {"Count": {"player": "alice", "zone": "Graveyard", "card": "Innocent Bystander", "count": 1}}},
+    {"turn": 1, "step": "EndOfCombat", "player": "alice", "check": {"Count": {"player": "alice", "zone": "Battlefield", "card": "Clue Token", "count": 1}}},
+    {"turn": 1, "step": "EndOfCombat", "player": "alice", "check": {"Count": {"player": "bob", "zone": "Battlefield", "card": "Clue Token", "count": 1}}}
+  ]
+}

@@ -1,5 +1,6 @@
 module Parun.Types.PermanentIsDealtDamage where
 
+import Numeric.Natural (Natural)
 import qualified Parun.Types.ActingPermanent as ActingPermanent
 import qualified Parun.Types.Batching as Batching
 import qualified Parun.Types.DealtDamage as DealtDamage
@@ -15,6 +16,10 @@ data PermanentIsDealtDamage = MkPermanentIsDealtDamage
     batching :: Batching.Batching,
     -- | CR 120.10: only damage over the permanent's bar, "is dealt excess
     -- damage" (Fall of Cair Andros); its amount is the excess.
-    excess :: Bool
+    excess :: Bool,
+    -- | The least damage the trigger event deals, summed over its batch (CR
+    -- 603.2c); 0 for any amount (Innocent Bystander's "is dealt 3 or more
+    -- damage").
+    atLeast :: Natural
   }
   deriving (Eq, Ord, Show)
