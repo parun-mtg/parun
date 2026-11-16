@@ -16,7 +16,8 @@ codec =
              Arm.payload "InRole" TurnRole.codec PlayerScope.InRole (\x -> case x of PlayerScope.InRole y -> Just y; _ -> Nothing),
              Arm.nullary "ChosenPlayer" PlayerScope.ChosenPlayer,
              Arm.nullary "SourceOwner" PlayerScope.SourceOwner,
-             Arm.nullary "EnchantedPlayer" PlayerScope.EnchantedPlayer
+             Arm.nullary "EnchantedPlayer" PlayerScope.EnchantedPlayer,
+             Arm.nullary "AttackedYouLastTurn" PlayerScope.AttackedYouLastTurn
            ]
     )
 
@@ -28,3 +29,4 @@ tagOf x = case x of
   PlayerScope.ChosenPlayer {} -> "ChosenPlayer"
   PlayerScope.SourceOwner {} -> "SourceOwner"
   PlayerScope.EnchantedPlayer {} -> "EnchantedPlayer"
+  PlayerScope.AttackedYouLastTurn {} -> "AttackedYouLastTurn"

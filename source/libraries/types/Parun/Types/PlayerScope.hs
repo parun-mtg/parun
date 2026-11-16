@@ -66,4 +66,6 @@ data PlayerScope
   | -- | CR 303.4b: the player the source enchants, nobody where the carrier has
     -- no source or the source enchants no player.
     EnchantedPlayer
+  | -- | CR 508.1b / 800.4i: the players who attacked the perspective during their own last turn.
+    AttackedYouLastTurn
   deriving (Eq, Ord, Show)

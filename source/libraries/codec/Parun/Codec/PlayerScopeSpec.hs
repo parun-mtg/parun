@@ -71,5 +71,12 @@ spec s = Spec.describe s "Parun.Codec.PlayerScope" $ do
       PlayerScope.codec
       PlayerScope.EnchantedPlayer
       " {\"type\":\"EnchantedPlayer\"} "
+  -- Weathered Sentinels' "players who attacked you during their last turn" (CR 508.1b).
+  Spec.it s "AttackedYouLastTurn" $
+    Common.assertCodec
+      s
+      PlayerScope.codec
+      PlayerScope.AttackedYouLastTurn
+      " {\"type\":\"AttackedYouLastTurn\"} "
   Spec.it s "has a schema" $
     Common.assertHasSchema s PlayerScope.codec
