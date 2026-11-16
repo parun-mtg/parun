@@ -8,6 +8,8 @@ data SubtypeFamily
     BasicLandType
   | -- | CR 205.3i: any land type, basic or not (Shimmer).
     LandType
+  | -- | CR 205.3i: a land type other than a basic one (March from Velis Vel).
+    NonbasicLandType
   | -- | CR 205.3m: a creature type (Adaptive Automaton).
     CreatureType
   | -- | CR 205.3j: a planeswalker type (Deification).

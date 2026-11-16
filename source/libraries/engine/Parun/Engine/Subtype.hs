@@ -87,6 +87,7 @@ inFamily :: SubtypeFamily.SubtypeFamily -> Subtype.Subtype -> Bool
 inFamily family = case family of
   SubtypeFamily.BasicLandType -> isBasicLandType
   SubtypeFamily.LandType -> isLandType
+  SubtypeFamily.NonbasicLandType -> \subtype -> isLandType subtype && not (isBasicLandType subtype)
   SubtypeFamily.CreatureType -> isCreatureType
   SubtypeFamily.PlaneswalkerType -> isPlaneswalkerType
 

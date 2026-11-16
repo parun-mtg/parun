@@ -2234,6 +2234,7 @@ chosenSubtypeAs :: ChangeMode.ChangeMode -> SubtypeFamily.SubtypeFamily -> Subty
 chosenSubtypeAs mode family s = case family of
   SubtypeFamily.BasicLandType -> Modification.LandSubtype mode s
   SubtypeFamily.LandType -> Modification.LandSubtype mode s
+  SubtypeFamily.NonbasicLandType -> Modification.LandSubtype mode s
   SubtypeFamily.CreatureType -> Modification.CreatureSubtype mode s
   SubtypeFamily.PlaneswalkerType -> Modification.Subtype mode s
 
@@ -2253,6 +2254,7 @@ setsLandSubtype m = case m of
   Modification.ChosenSubtype mode family -> case family of
     SubtypeFamily.BasicLandType -> setsLandSubtype (Modification.LandSubtype mode Subtype.Type.Forest)
     SubtypeFamily.LandType -> setsLandSubtype (Modification.LandSubtype mode Subtype.Type.Forest)
+    SubtypeFamily.NonbasicLandType -> setsLandSubtype (Modification.LandSubtype mode Subtype.Type.Desert)
     SubtypeFamily.CreatureType -> False
     SubtypeFamily.PlaneswalkerType -> False
   -- An ability grant is layer 6 and sets no subtype at all.

@@ -19,6 +19,12 @@ spec s = Spec.describe s "Parun.Codec.SubtypeFamily" $ do
       SubtypeFamily.codec
       SubtypeFamily.LandType
       " \"LandType\" "
+  Spec.it s "NonbasicLandType" $
+    Common.assertCodec
+      s
+      SubtypeFamily.codec
+      SubtypeFamily.NonbasicLandType
+      " \"NonbasicLandType\" "
   Spec.it s "CreatureType" $
     Common.assertCodec
       s

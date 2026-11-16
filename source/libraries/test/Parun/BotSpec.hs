@@ -304,11 +304,15 @@ spec s registry = Spec.describe s "Bot" $ do
   -- CR 205.3m / 305.6: Adaptive Automaton names any creature type, of more
   -- than 256 seeds can draw; Convincing Mirage any of the five basic land
   -- types.
-  Spec.it s "chooses any creature type or basic land type" $ do
+  Spec.it s "chooses any subtype of the family" $ do
     let creatureTypes = drawn (Prompt.ChooseSubtype decider S.alice oid SubtypeFamily.CreatureType Nothing)
     Spec.assertBool s (all Engine.Subtype.isCreatureType creatureTypes) "every creature type drawn is one"
     Spec.assertGtWith s "creature types" (Set.size creatureTypes) 100
     Spec.assertEqWith s "basic land types" (drawn (Prompt.ChooseSubtype decider S.alice oid SubtypeFamily.BasicLandType Nothing)) (Set.fromList [Subtype.Plains, Subtype.Island, Subtype.Swamp, Subtype.Mountain, Subtype.Forest])
+    -- CR 205.3i: March from Velis Vel names a land type that is not basic.
+    let nonbasicLandTypes = drawn (Prompt.ChooseSubtype decider S.alice oid SubtypeFamily.NonbasicLandType Nothing)
+    Spec.assertBool s (all (\t -> Engine.Subtype.isLandType t && not (Engine.Subtype.isBasicLandType t)) nonbasicLandTypes) "every nonbasic land type drawn is one"
+    Spec.assertGtWith s "nonbasic land types" (Set.size nonbasicLandTypes) 1
     -- CR 614.12a: Eclipsed Realms lists its types, and only those are drawn.
     Spec.assertEqWith s "listed creature types" (drawn (Prompt.ChooseSubtype decider S.alice oid SubtypeFamily.CreatureType (Just (Subtype.Kithkin NonEmpty.:| [Subtype.Treefolk])))) (Set.fromList [Subtype.Kithkin, Subtype.Treefolk])
 
