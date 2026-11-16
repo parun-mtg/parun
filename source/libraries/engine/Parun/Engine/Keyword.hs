@@ -6165,7 +6165,7 @@ rampage n =
               (ObjectRef.EachMatching Filter.IsSource)
               Nothing
           )
-   in Mint.trigger (TriggerCondition.Blocks (BlockTrigger.MkBlockTrigger BlockRole.Attacker Filter.IsSource BlockCount.Once)) (Seq.singleton effect)
+   in Mint.trigger (TriggerCondition.Blocks (BlockTrigger.MkBlockTrigger BlockRole.Attacker Filter.IsSource BlockCount.Once Batching.EachOccurrence)) (Seq.singleton effect)
 
 -- CR 702.25a. CR 509.3d is the event -- "becomes blocked by a creature", once for
 -- each creature that blocks -- and NOT CR 509.3c's "becomes blocked", which fires
@@ -6186,7 +6186,8 @@ flanking =
         BlockTrigger.MkBlockTrigger
           { BlockTrigger.role = BlockRole.Attacker,
             BlockTrigger.creature = Filter.IsSource,
-            BlockTrigger.count = BlockCount.EachCreature (Filter.And [Filter.HasCardType CardType.Creature, Filter.Not (Filter.HasKeyword Keyword.Flanking)])
+            BlockTrigger.count = BlockCount.EachCreature (Filter.And [Filter.HasCardType CardType.Creature, Filter.Not (Filter.HasKeyword Keyword.Flanking)]),
+            BlockTrigger.batching = Batching.EachOccurrence
           }
     )
     (Seq.singleton flankingEffect)
@@ -6250,11 +6251,11 @@ bushido n = [bushidoBlocks n, bushidoBecomesBlocked n]
 
 -- CR 509.3a's half of rule 702.45a.
 bushidoBlocks :: Natural -> TriggeredAbility Card (GrantedAbility.GrantedAbility Card)
-bushidoBlocks = bushidoHalf (TriggerCondition.Blocks (BlockTrigger.MkBlockTrigger BlockRole.Blocker Filter.IsSource BlockCount.Once))
+bushidoBlocks = bushidoHalf (TriggerCondition.Blocks (BlockTrigger.MkBlockTrigger BlockRole.Blocker Filter.IsSource BlockCount.Once Batching.EachOccurrence))
 
 -- CR 509.3c's half of rule 702.45a.
 bushidoBecomesBlocked :: Natural -> TriggeredAbility Card (GrantedAbility.GrantedAbility Card)
-bushidoBecomesBlocked = bushidoHalf (TriggerCondition.Blocks (BlockTrigger.MkBlockTrigger BlockRole.Attacker Filter.IsSource BlockCount.Once))
+bushidoBecomesBlocked = bushidoHalf (TriggerCondition.Blocks (BlockTrigger.MkBlockTrigger BlockRole.Attacker Filter.IsSource BlockCount.Once Batching.EachOccurrence))
 
 -- The +N/+N the two halves share.
 bushidoHalf :: TriggerCondition.TriggerCondition -> Natural -> TriggeredAbility Card (GrantedAbility.GrantedAbility Card)
@@ -6336,7 +6337,7 @@ afflict n =
               LifeLossCause.ByEffect
               Nothing
           )
-   in Mint.trigger (TriggerCondition.Blocks (BlockTrigger.MkBlockTrigger BlockRole.Attacker Filter.IsSource BlockCount.Once)) (Seq.singleton effect)
+   in Mint.trigger (TriggerCondition.Blocks (BlockTrigger.MkBlockTrigger BlockRole.Attacker Filter.IsSource BlockCount.Once Batching.EachOccurrence)) (Seq.singleton effect)
 
 -- CR 702.134a, the first minted ability that TARGETS. A REAL choice, since with
 -- two smaller attackers the rules leave which one open.

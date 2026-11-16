@@ -420,7 +420,7 @@ answersEffectCrossing blocker before after = Set.lookupMin (Set.difference after
 -- player would receive priority, and CR 614.16 can double one token-making
 -- effect into several arrivals at once.
 blocks :: Filter.Context -> Map.Map ObjectId (BattlefieldCandidate.BattlefieldCandidate PC.ProjectedCharacteristics) -> GameState -> BlockTrigger.BlockTrigger -> GameEvent -> Bool
-blocks context board gs (BlockTrigger.MkBlockTrigger role creature count) event =
+blocks context board gs (BlockTrigger.MkBlockTrigger role creature count _) event =
   let admits = admittedAt context board gs
       tally others = Natural.length . Set.filter (`admits` others)
    in case (role, count, event) of

@@ -3932,6 +3932,11 @@ attemptBlockDeclaration perform pid asked attacking rejected = do
                         { TurnRegisters.combat = (TurnRegisters.combat (GameState.turn g)) {Combat.declaredBlockers = Set.difference (Combat.declaredBlockers (TurnRegisters.combat (GameState.turn g))) gone}
                         }
                   }
+              -- CR 509.1: the declaration is one turn-based action, so its events
+              -- are one Parun.Types.EventGroup, which CR 603.2c's batch reading
+              -- needs: Neyith of the Dire Hunt's "one or more creatures you
+              -- control ... become blocked" fires once for several attackers.
+              State.modify' Event.openEventGroup
               -- CR 509.1i: the declaration is a trigger event, and CR 509.2a puts what
               -- it fires onto the stack before the active player gets priority.
               -- Recorded AFTER the state is written, and over `declaration` rather
@@ -3995,3 +4000,4 @@ attemptBlockDeclaration perform pid asked attacking rejected = do
                     let defendingFor oid = Maybe.fromMaybe pid (Defender.playerOfAttacker Projection.viewWithLastKnownAnywhere oid g)
                      in List.foldl' (\h attacker -> Event.recordEvent (GameEvent.AttackerBlocked (AttackerBlocked.MkAttackerBlocked attacker (defendingFor attacker) (Map.findWithDefault Set.empty attacker merged))) h) g (Set.toList becameBlocked)
                 )
+              State.modify' Event.closeEventGroup

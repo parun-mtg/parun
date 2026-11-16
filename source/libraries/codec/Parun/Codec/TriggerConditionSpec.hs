@@ -244,7 +244,7 @@ spec s = Spec.describe s "Parun.Codec.TriggerCondition" $ do
     Common.assertCodec
       s
       TriggerCondition.codec
-      (TriggerCondition.Blocks (BlockTrigger.MkBlockTrigger BlockRole.Attacker (Filter.IsAttackingPlayer PlayerRelation.Opponent) (BlockCount.AtLeast 2 (Filter.And []))))
+      (TriggerCondition.Blocks (BlockTrigger.MkBlockTrigger BlockRole.Attacker (Filter.IsAttackingPlayer PlayerRelation.Opponent) (BlockCount.AtLeast 2 (Filter.And [])) Batching.EachOccurrence))
       " {\"type\":\"Blocks\",\"value\":{\"role\":\"Attacker\",\"creature\":{\"type\":\"IsAttackingPlayer\",\"value\":\"Opponent\"},\"count\":{\"type\":\"AtLeast\",\"value\":{\"floor\":2}}}} "
   Spec.it s "Leaves" $
     Common.assertCodec

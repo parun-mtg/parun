@@ -1571,7 +1571,7 @@ triggerConditionChildren c condition = case condition of
       )
   TriggerCondition.PlayerDrawsNthCard (PlayerDrawsNthCard.MkPlayerDrawsNthCard _ _) -> pure condition
   TriggerCondition.Attacks trigger -> fmap TriggerCondition.Attacks (attackTriggerChildren c trigger)
-  TriggerCondition.Blocks (BlockTrigger.MkBlockTrigger role creature count) ->
+  TriggerCondition.Blocks (BlockTrigger.MkBlockTrigger role creature count batching) ->
     fmap
       TriggerCondition.Blocks
       ( BlockTrigger.MkBlockTrigger role
@@ -1581,6 +1581,7 @@ triggerConditionChildren c condition = case condition of
                   BlockCount.EachCreature others -> fmap BlockCount.EachCreature (triggerFilter c others)
                   BlockCount.AtLeast floor_ others -> fmap (BlockCount.AtLeast floor_) (triggerFilter c others)
               )
+          <*> pure batching
       )
   TriggerCondition.Leaves (LeavesTrigger.MkLeavesTrigger permanent destinations excluded batching) ->
     fmap

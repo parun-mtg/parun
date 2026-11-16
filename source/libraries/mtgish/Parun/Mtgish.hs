@@ -45,6 +45,7 @@ import qualified Parun.Types.AmassKind as AmassKind
 import qualified Parun.Types.Arithmetic as Arithmetic
 import qualified Parun.Types.AttackTrigger as AttackTrigger
 import qualified Parun.Types.AttackerTrigger as AttackerTrigger
+import qualified Parun.Types.Batching as Batching
 import qualified Parun.Types.BeginningStep as BeginningStep
 import qualified Parun.Types.BlockCount as BlockCount
 import qualified Parun.Types.BlockRole as BlockRole
@@ -817,7 +818,7 @@ trigger n = case Node.tag n of
   where
     bound pairs = outermost {bindings = Map.fromList pairs}
     -- CR 509.3's one condition, from its three fields.
-    blocks role creature count = TriggerCondition.Blocks (BlockTrigger.MkBlockTrigger role creature count)
+    blocks role creature count = TriggerCondition.Blocks (BlockTrigger.MkBlockTrigger role creature count Batching.EachOccurrence)
     -- The source's own event, which calls the source "that creature" too.
     itself condition = do
       who <- Node.argument n

@@ -728,7 +728,7 @@ creatureBecomesBlockedByAtLeastSpec s registry =
                   GameEvent.AbilityTriggered record ->
                     AbilityTriggered.source record == TriggerSource.OfObject oid
                       && case TriggeredAbility.condition (AbilityTriggered.ability record) of
-                        TriggerCondition.Blocks (BlockTrigger.MkBlockTrigger BlockRole.Attacker _ (BlockCount.AtLeast {})) -> True
+                        TriggerCondition.Blocks (BlockTrigger.MkBlockTrigger BlockRole.Attacker _ (BlockCount.AtLeast {}) _) -> True
                         _ -> False
                   _ -> False
               )
