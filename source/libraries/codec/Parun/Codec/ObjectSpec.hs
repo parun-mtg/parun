@@ -50,6 +50,7 @@ import qualified Parun.Types.PlayPermissionOrigin as PlayPermissionOrigin
 import qualified Parun.Types.PlayerChoice as PlayerChoice
 import qualified Parun.Types.PlayerId as PlayerId
 import qualified Parun.Types.PrintingId as PrintingId
+import qualified Parun.Types.Quantity as Quantity
 import qualified Parun.Types.Recipient as Recipient
 import qualified Parun.Types.RevealWindow as RevealWindow
 import qualified Parun.Types.RoomHalf as RoomHalf
@@ -192,6 +193,7 @@ spec s = Spec.describe s "Parun.Codec.Object" $ do
           Object.mutating = True,
           Object.prototyped = True,
           Object.castPrepared = True,
+          Object.castQuantities = Map.singleton (Quantity.Literal 7) 2,
           Object.boughtBack = True,
           Object.unannounced = True,
           Object.spliced = Seq.fromList [PrintingId.MkPrintingId 31, PrintingId.MkPrintingId 30],
@@ -261,6 +263,7 @@ spec s = Spec.describe s "Parun.Codec.Object" $ do
           <> ",\"mutating\":true"
           <> ",\"prototyped\":true"
           <> ",\"castPrepared\":true"
+          <> ",\"castQuantities\":[{\"key\":{\"type\":\"Literal\",\"value\":7},\"value\":2}]"
           <> ",\"boughtBack\":true"
           <> ",\"unannounced\":true"
           <> ",\"spliced\":[31,30]"

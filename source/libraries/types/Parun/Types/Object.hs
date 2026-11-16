@@ -32,6 +32,7 @@ import qualified Parun.Types.PlayerChoice as PlayerChoice
 import qualified Parun.Types.PlayerId as PlayerId
 import qualified Parun.Types.PrintingId as PrintingId
 import qualified Parun.Types.ProjectedCharacteristics as ProjectedCharacteristics
+import qualified Parun.Types.Quantity as Quantity
 import qualified Parun.Types.Recipient as Recipient
 import qualified Parun.Types.RevealWindow as RevealWindow
 import qualified Parun.Types.RoomHalf as RoomHalf
@@ -707,6 +708,12 @@ data Object = MkObject
     -- rule 723.3d's "the copy is also a prepare spell". Filter.IsPreparedSpell
     -- reads it. Per-incarnation (CR 400.7).
     castPrepared :: Bool,
+    -- | CR 601.2i: what each Quantity.AsCast in this SPELL's text wraps read as
+    -- it became cast, keyed by the wrapped quantity as printed. Stamped by
+    -- Parun.Engine.Cast.stampCastQuantities and read by Parun.Engine.Quantity.
+    -- Per-incarnation (CR 400.7), and empty on a spell copy, which was not cast
+    -- (CR 707.10; Draconic Roar's ruling of 2015-02-25).
+    castQuantities :: Map.Map Quantity.Quantity Integer,
     -- | CR 702.27a: was this SPELL's buyback cost paid? Stamped by
     -- Parun.Engine.Cast at CR 601.2b onto the stack incarnation, and read by
     -- Parun.Engine.Resolve.finishSpell, which is rule 702.27a's "as it resolves"
@@ -1080,6 +1087,7 @@ new o s z t =
       -- keeps it across, `bestowed` above's route.
       prototyped = False,
       castPrepared = False,
+      castQuantities = Map.empty,
       -- CR 702.27a's record is written back by nothing: the move it replaces ENDS
       -- in the hand, so the card that arrives there is a new object that was
       -- never bought back.

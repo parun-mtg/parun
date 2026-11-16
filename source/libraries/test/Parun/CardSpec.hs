@@ -3588,6 +3588,7 @@ quantityKindFilters quantity = case quantity of
   Quantity.Type.BlockersBeyond _ -> []
   -- Carries no CounterKind at all, Power's shape.
   Quantity.Type.StationMeasure -> []
+  Quantity.Type.AsCast inner -> quantityKindFilters inner
   -- quantityCounts' descent: aiming the evaluation at another object does not
   -- stop the payload from naming a kind.
   Quantity.Type.AgainstSlot (AgainstSlot.MkAgainstSlot _ inner) -> quantityKindFilters inner

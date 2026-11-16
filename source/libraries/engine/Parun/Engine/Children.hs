@@ -871,6 +871,7 @@ quantityChildren children quantity = case quantity of
   Quantity.AgainstExiledPile (AgainstExiledPile.MkAgainstExiledPile pile inner) -> fmap (Quantity.AgainstExiledPile . AgainstExiledPile.MkAgainstExiledPile pile) (redirected children inner)
   Quantity.AgainstLastCardExiledWith (AgainstLastCardExiledWith.MkAgainstLastCardExiledWith criterion inner) -> fmap Quantity.AgainstLastCardExiledWith (AgainstLastCardExiledWith.MkAgainstLastCardExiledWith <$> nest children criterion <*> redirected children inner)
   Quantity.StationMeasure -> pure quantity
+  Quantity.AsCast inner -> Quantity.AsCast <$> term children inner
 
 -- | A count's children: its scope, the Filter its members are judged by, and
 -- the per-member quantity a Greatest or a Total folds.
