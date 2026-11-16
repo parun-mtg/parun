@@ -75,7 +75,9 @@
             "type": "AttachmentChanges",
             "value": {
               "direction": "Attaches",
-              "end": "Attachment",
+              "end": {
+                "type": "Attachment"
+              },
               "other": {
                 "type": "HasCardType",
                 "value": "Creature"

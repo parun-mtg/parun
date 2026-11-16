@@ -37,7 +37,9 @@
             "type": "AttachmentChanges",
             "value": {
               "direction": "Attaches",
-              "end": "Host",
+              "end": {
+                "type": "Host"
+              },
               "other": {
                 "type": "HasSubtype",
                 "value": "Aura"

@@ -2116,10 +2116,13 @@ representativeEvents cond =
         -- An Attachment end reads the same event from the other end: there
         -- `departed` is the ATTACHMENT, the bearer position, and `arrived` is the
         -- host the slot names. CR 701.3d's own event is the mirror for Unattaches.
+        -- A Neither end compares no id, so the Host end's pair serves, both
+        -- trivial Filters admitting it.
         TriggerCondition.AttachmentChanges (AttachmentTrigger.MkAttachmentTrigger end direction _) ->
           let (attachment, host) = case end of
                 AttachmentEnd.Host -> (arrived, departed)
                 AttachmentEnd.Attachment -> (departed, arrived)
+                AttachmentEnd.Neither _ -> (arrived, departed)
            in one $ case direction of
                 AttachDirection.Attaches -> GameEvent.BecameAttached (BecameAttached.MkBecameAttached attachment (Recipient.ToCreature host))
                 AttachDirection.Unattaches -> GameEvent.BecameUnattached (BecameUnattached.MkBecameUnattached attachment (Recipient.ToCreature host))
@@ -2449,6 +2452,8 @@ everyTriggerCondition =
     TriggerCondition.AttachmentChanges (AttachmentTrigger.MkAttachmentTrigger AttachmentEnd.Host AttachDirection.Attaches (Filter.Type.And [])),
     TriggerCondition.AttachmentChanges (AttachmentTrigger.MkAttachmentTrigger AttachmentEnd.Attachment AttachDirection.Attaches (Filter.Type.And [])),
     TriggerCondition.AttachmentChanges (AttachmentTrigger.MkAttachmentTrigger AttachmentEnd.Attachment AttachDirection.Unattaches (Filter.Type.And [])),
+    TriggerCondition.AttachmentChanges (AttachmentTrigger.MkAttachmentTrigger (AttachmentEnd.Neither (Filter.Type.And [])) AttachDirection.Attaches (Filter.Type.And [])),
+    TriggerCondition.AttachmentChanges (AttachmentTrigger.MkAttachmentTrigger (AttachmentEnd.Neither (Filter.Type.And [])) AttachDirection.Unattaches (Filter.Type.And [])),
     TriggerCondition.Reflexive,
     TriggerCondition.PlacesSticker (PlacesSticker.MkPlacesSticker PlayerRelation.You (Set.singleton StickerKind.Art) (Filter.Type.And []))
   ]
