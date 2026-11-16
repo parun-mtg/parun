@@ -1,0 +1,38 @@
+{
+  "board": {
+    "active": "bob",
+    "seats": [
+      {
+        "battlefield": [{ "card": "Mountain", "label": "bm" }],
+        "hand": [{ "card": "Forest", "label": "forest" }],
+        "library": [{ "card": "Island" }, { "card": "Island" }, { "card": "Island" }, { "card": "Island" }, { "card": "Island" }],
+        "name": "bob"
+      },
+      {
+        "battlefield": [
+          { "card": "Descent into Madness", "counters": [{ "key": { "type": "Named", "value": "despair" }, "value": 2 }], "label": "descent" },
+          { "card": "Grizzly Bears", "label": "bears" },
+          { "card": "Swamp", "label": "sw" },
+          { "card": "Swamp", "label": "sw2" }
+        ],
+        "library": [{ "card": "Island" }, { "card": "Island" }, { "card": "Island" }, { "card": "Island" }, { "card": "Island" }],
+        "name": "alice"
+      }
+    ],
+    "step": "PrecombatMain"
+  },
+  "description": "Descent into Madness exiles everything a player has when it is fewer than X, without asking them",
+  "note": "X is 3. Bob has only a Mountain and a Forest in hand, so both are exiled and bob is never asked; alice picks three of her four permanents.",
+  "timeline": [
+    { "turn": 2, "step": "Upkeep", "player": "alice", "do": "Pass" },
+    { "turn": 2, "step": "Upkeep", "player": "bob", "do": "Pass" },
+    { "turn": 2, "step": "Upkeep", "player": "alice", "do": { "Answer": { "prompt": "ChoosePermanent", "with": "$bears" } } },
+    { "turn": 2, "step": "Upkeep", "player": "alice", "do": { "Answer": { "prompt": "ChoosePermanent", "with": "$sw" } } },
+    { "turn": 2, "step": "Upkeep", "player": "alice", "do": { "Answer": { "prompt": "ChoosePermanent", "with": "$sw2" } } },
+    { "turn": 2, "step": "Upkeep", "player": "alice", "check": { "Count": { "player": "bob", "zone": "Exile", "card": "Mountain", "count": 1 } } },
+    { "turn": 2, "step": "Upkeep", "player": "alice", "check": { "Count": { "player": "bob", "zone": "Exile", "card": "Forest", "count": 1 } } },
+    { "turn": 2, "step": "Upkeep", "player": "alice", "check": { "Count": { "player": "alice", "zone": "Exile", "card": "Grizzly Bears", "count": 1 } } },
+    { "turn": 2, "step": "Upkeep", "player": "alice", "check": { "Count": { "player": "alice", "zone": "Exile", "card": "Swamp", "count": 2 } } },
+    { "turn": 2, "step": "Upkeep", "player": "alice", "check": { "Count": { "player": "alice", "zone": "Battlefield", "card": "Descent into Madness", "count": 1 } } }
+  ]
+}
