@@ -414,6 +414,10 @@ activatedAbilityOffendsGiven armed ability =
         if discardsAsCost (ActivatedAbility.cost ability)
           then Set.singleton Binding.discardedCard
           else Set.empty
+      graveyarded =
+        if graveyardsExiledAsCost (ActivatedAbility.cost ability)
+          then Set.singleton Binding.graveyardedCard
+          else Set.empty
       removed =
         if removesCountersAsCost (ActivatedAbility.cost ability)
           then Set.singleton Binding.removedCounters
@@ -429,7 +433,7 @@ activatedAbilityOffendsGiven armed ability =
           else Set.empty
       -- CR 115.10a: the player the activation announced (Lodestone Bauble).
       chosen = foldMap (Set.singleton . PlayerSlot.slot) (ActivatedAbility.chosenPlayer ability)
-   in modalSlotsOffend armed (Set.unions [Set.fromList [Binding.triggerSource, Binding.you, Binding.thisAbility], announcedX, defining, granter, chosen, sacrificed, tapped, tappedForTotal, exiled, exiledPermanents, totalled, discarded, removed, payGateBound (ActivatedAbility.modal ability)]) (ActivatedAbility.modal ability)
+   in modalSlotsOffend armed (Set.unions [Set.fromList [Binding.triggerSource, Binding.you, Binding.thisAbility], announcedX, defining, granter, chosen, sacrificed, tapped, tappedForTotal, exiled, exiledPermanents, totalled, discarded, graveyarded, removed, payGateBound (ActivatedAbility.modal ability)]) (ActivatedAbility.modal ability)
 
 -- The slots this cost's taps or untaps of permanents the payer CHOOSES bind:
 -- CR 601.2h's payment binds Binding.tappedPermanent, or
@@ -485,6 +489,18 @@ exilesSelfAsCost =
         CostComponent.ExileThisFrom _ -> True
         _ -> False
    in any isExile . Cost.Type.components
+
+-- Does this cost put an exiled card into a graveyard? exilesSelfAsCost's shape:
+-- CR 601.2h's payment binds Binding.graveyardedCard (Cost.payComponent's
+-- PutExiledIntoGraveyard arm, folded on by Activate), so Jester's Scepter's
+-- "that card" is an ordinary slot read. Not offered on the CAST side: no
+-- printing carries this component as an additional cost to cast.
+graveyardsExiledAsCost :: Cost.Type.Cost Keyword.Keyword -> Bool
+graveyardsExiledAsCost =
+  let isGraveyarding component = case component of
+        CostComponent.PutExiledIntoGraveyard _ -> True
+        _ -> False
+   in any isGraveyarding . Cost.Type.components
 
 -- Does this cost EXILE permanents the payer CHOOSES? sacrificesAsCost's shape:
 -- CR 601.2h's payment binds Binding.exiledPermanent (Cost.payComponent's

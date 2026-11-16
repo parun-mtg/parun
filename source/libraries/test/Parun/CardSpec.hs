@@ -2148,6 +2148,7 @@ reservedSlots =
       Binding.craftMaterials,
       Binding.totalledExiles,
       Binding.discardedCard,
+      Binding.graveyardedCard,
       Binding.tappedPermanent,
       Binding.grantingPermanent,
       Binding.untappedPermanent,

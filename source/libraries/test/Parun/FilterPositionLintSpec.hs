@@ -1091,8 +1091,9 @@ framedNameAtoms = decodedAtoms "Shares" (\atom -> case atom of Filter.Type.Share
 -- -- a MODE's target slot filter (Harness the Storm), a CR 701.23 search filter
 -- (Bifurcate), a CR 608.2c hand sweep's (Hour of Glory), a CR 119.3 life
 -- loss amount's Count filter (Grim Reminder), an effect's own object
--- (Legion's End) or a CR 603.4 intervening "if" (Spellweaver Helix) -- and how
--- many anywhere else. The second number is the offence.
+-- (Legion's End), a CR 603.4 intervening "if" (Spellweaver Helix) or a mode
+-- clause's own "if" (Jester's Scepter, read by Parun.Engine.Resolve.gateHolds
+-- through effectContext) -- and how many anywhere else. The second number is the offence.
 --
 -- An ALLOWLIST rather than "wherever Filter.Context.slotNames is filled",
 -- which is the wider set: every position a resolution
@@ -1111,7 +1112,7 @@ framedNameAtoms = decodedAtoms "Shares" (\atom -> case atom of Filter.Type.Share
 -- not, since Cost.xValue and Cost.tapForManaWith read a bare source context.
 framedNameCounts :: Surveyed -> (Int, Int)
 framedNameCounts card =
-  let total wanted = sum (fmap (\(_, f) -> framedNameAtoms (atomJson f)) (filter (\(framing, _) -> elem framing [InTargetSlot, SearchFramed, HandSweepFramed, LifeLossAmountFramed, SourceHostFramed, InterveningFramed] == wanted) (surveyedFilters card)))
+  let total wanted = sum (fmap (\(_, f) -> framedNameAtoms (atomJson f)) (filter (\(framing, _) -> elem framing [InTargetSlot, SearchFramed, HandSweepFramed, LifeLossAmountFramed, SourceHostFramed, InterveningFramed, ClauseGateFramed] == wanted) (surveyedFilters card)))
       inside = sum (fmap (framedNameAtoms . atomJson) (discardCostCriteria (surveyedFace card) <> choiceCriteria (surveyedFace card)))
    in (total True + inside, total False - inside)
 
@@ -1792,8 +1793,9 @@ filterPositionLintSpec s registry corpus = Spec.describe s "Lint" $ do
   -- battlefieldViews are filled (Projection.framedBySlots), and unanswerable --
   -- a silent False -- everywhere else. The positions ADMITTED here are a MODE's
   -- target slot, a CR 701.23 search filter, a CR 608.2c hand sweep's own filter,
-  -- a CR 119.3 life loss amount, an effect's own object and a CR 603.4
-  -- intervening "if" (framedByBindings, Spellweaver Helix), the four before it since
+  -- a CR 119.3 life loss amount, an effect's own object, a mode clause's own
+  -- "if" (Jester's Scepter's scenarios) and a CR 603.4
+  -- intervening "if" (framedByBindings, Spellweaver Helix), the five before it since
   -- their arms take their context from the resolution (Parun.ResolveSpec's
   -- Bifurcate, Hour of Glory and Grim Reminder cases; Legion's End's scenario),
   -- and an activated ability's discard cost criterion (framedNameCounts; Key to
@@ -1802,10 +1804,10 @@ filterPositionLintSpec s registry corpus = Spec.describe s "Lint" $ do
   -- -- so this rejects in the safe direction only. See framedNameOffends
   -- for the two offences and Framing for why CR 303.4a's enchant slot is not one
   -- of the safe positions.
-  Spec.it s "CR 709.4a no card asks a framed Shares Name outside a mode's target slot, a search filter, a hand sweep, a life loss amount, an effect's object or a discard cost" $ do
+  Spec.it s "CR 709.4a no card asks a framed Shares Name outside a mode's target slot, a search filter, a hand sweep, a life loss amount, an effect's object, a clause's if or a discard cost" $ do
     ps <- S.allPrintings s corpus
     let offenders = fmap fst (filter (any framedNameOffends . snd) pool)
-    Spec.assertEqWith s "the atom sits only in a target slot's, a search's, a hand sweep's, a life loss amount's, an effect object's or a discard cost's filter" (fmap (S.nameOf . Printing.card) offenders) []
+    Spec.assertEqWith s "the atom sits only in a target slot's, a search's, a hand sweep's, a life loss amount's, an effect object's, a clause if's or a discard cost's filter" (fmap (S.nameOf . Printing.card) offenders) []
     -- NOT vacuous, the way the sibling sweeps would be alone: the pool authors the
     -- atom, and the cards that do are ACCEPTED here rather than skipped -- one in
     -- each admitted position, so no member of the set is unwitnessed.
@@ -1832,7 +1834,8 @@ filterPositionLintSpec s registry corpus = Spec.describe s "Lint" $ do
         ("Central Elevator", 1), -- its search's filter, negated, at AnyPermanent
         ("Seasinger", 1), -- its ability's target slot, Controller at AnyPermanent
         ("Key to the Side-Door", 1), -- its ability's discard cost, at AnyPermanent
-        ("Spellweaver Helix", 2) -- its intervening "if"'s Count filter and its choice's filter
+        ("Spellweaver Helix", 2), -- its intervening "if"'s Count filter and its choice's filter
+        ("Jester's Scepter", 1) -- its counter clause's "if"'s Count filter
       ]
     -- Both sides of the split, with room to spare under the pool's real figures:
     -- a traversal that had stopped walking, or a Framing that had stopped marking
@@ -3589,7 +3592,7 @@ filterPositionLintSpec s registry corpus = Spec.describe s "Lint" $ do
   -- each is asserted through framedNameCounts as well as the predicate -- the
   -- counts say the TRAVERSAL put it in that position, where the predicate alone is
   -- also satisfied by the codec half noticing an atom the traversal missed.
-  Spec.it s "the lint itself catches a framed Shares Name outside a mode's target slot, a search filter, a hand sweep, a life loss amount, an effect's object or a discard cost" $ do
+  Spec.it s "the lint itself catches a framed Shares Name outside a mode's target slot, a search filter, a hand sweep, a life loss amount, an effect's object, a clause's if or a discard cost" $ do
     piker <- S.printingOf s registry "Goblin Piker"
     sorcerer <- S.printingOf s registry "Prodigal Sorcerer"
     harness <- S.printingOf s registry "Harness the Storm"
