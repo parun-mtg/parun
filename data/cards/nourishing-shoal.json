@@ -1,0 +1,98 @@
+{
+  "faces": [
+    {
+      "alternativeCosts": [
+        {
+          "cost": {
+            "components": [
+              {
+                "type": "ExileCardsFromHand",
+                "value": {
+                  "count": {
+                    "type": "Fixed",
+                    "value": 1
+                  },
+                  "whichCards": {
+                    "type": "And",
+                    "value": [
+                      {
+                        "type": "HasColor",
+                        "value": "Green"
+                      },
+                      {
+                        "type": "Measures",
+                        "value": {
+                          "comparison": "Exactly",
+                          "measure": "ManaValue",
+                          "operand": {
+                            "type": "AmountInSlot",
+                            "value": "X"
+                          }
+                        }
+                      }
+                    ]
+                  }
+                }
+              }
+            ],
+            "mana": []
+          }
+        }
+      ],
+      "manaCost": [
+        {
+          "type": "Variable"
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "Green"
+          }
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "Green"
+          }
+        }
+      ],
+      "name": "Nourishing Shoal",
+      "oracleText": "You may exile a green card with mana value X from your hand rather than pay this spell's mana cost.\nYou gain X life.",
+      "spell": {
+        "modes": [
+          {
+            "clauses": [
+              {
+                "effects": [
+                  {
+                    "type": "GainLife",
+                    "value": {
+                      "player": {
+                        "type": "Relative",
+                        "value": "You"
+                      },
+                      "quantity": {
+                        "type": "InSlot",
+                        "value": "X"
+                      }
+                    }
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "typeLine": {
+        "subtypes": [
+          "Arcane"
+        ],
+        "types": [
+          "Instant"
+        ]
+      }
+    }
+  ]
+}

@@ -653,7 +653,7 @@ criterionReadsX = not . all (null . CostAmount.Engine.criterionReadsOfX) . Cost.
 -- value X"): payability is then not monotone in X, and changes only where X
 -- meets a compared measure of some object, so each such value past the floor,
 -- and the one after it, is asked too, up to CR 101.1's ceiling.
--- Cast.gateXs is the spell's counterpart.
+-- Cast.gateXs extends it with a spell's own climb.
 gateXs :: Maybe Natural -> Natural -> GameState -> Cost Keyword -> [Natural]
 gateXs mCeiling floorX gs cost =
   let compared = fmap Measures.measure (concatMap CostAmount.Engine.criterionReadsOfX (Cost.Type.components cost))
