@@ -2376,7 +2376,8 @@ filterPositionLintSpec s registry corpus = Spec.describe s "Lint" $ do
         ("Kitnap", 2), -- Claustrophobia's entering tap and the stun counters the gift gates
         ("Fae Flight", 1), -- Aquitect's Defenses' entering hexproof
         ("Convenient Target", 1), -- a loop over its host, suspecting it in the entering trigger
-        ("Dramatic Accusation", 2) -- Stay Hidden, Stay Silent's tap and shuffle
+        ("Dramatic Accusation", 2), -- Stay Hidden, Stay Silent's tap and shuffle
+        ("Airtight Alibi", 3) -- Abduction's entering untap, Fae Flight's hexproof and an unsuspecting
       ]
     -- The rejected side, which the sweep above cannot show while the pool has no
     -- offender: the same atom planted in a SPELL's target slot -- the position a

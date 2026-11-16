@@ -90,7 +90,9 @@
                 "value": {
                   "objectRestrictions": [
                     {
-                      "action": "Sacrifice",
+                      "action": {
+                        "type": "Sacrifice"
+                      },
                       "affected": {
                         "type": "Matching",
                         "value": {

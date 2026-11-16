@@ -84,7 +84,7 @@ testRuleAbilitiesJson =
     <> "\"counterRestrictions\":[{\"affected\":{\"type\":\"Attached\"},\"kind\":{\"type\":\"MinusOneMinusOne\"}}],"
     <> "\"keywordCostRestrictions\":[{\"affected\":{\"type\":\"Attached\"},\"part\":\"Crew\"}],"
     <> "\"entryRestrictions\":[{\"affected\":{\"type\":\"Attached\"},\"origins\":[\"Graveyard\"]}],"
-    <> "\"objectRestrictions\":[{\"action\":\"Sacrifice\",\"affected\":{\"type\":\"Attached\"}}],"
+    <> "\"objectRestrictions\":[{\"action\":{\"type\":\"Sacrifice\"},\"affected\":{\"type\":\"Attached\"}}],"
     <> "\"targetRestrictions\":[{\"affected\":{\"type\":\"Attached\"},\"kind\":\"Spell\"}],"
     <> "\"untapRestrictions\":[{\"affected\":{\"type\":\"Attached\"}}],"
     <> "\"counterLimits\":[{\"atMost\":7,\"kind\":{\"type\":\"Age\"}}]}"

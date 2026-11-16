@@ -58,7 +58,9 @@
                 "value": {
                   "objectRestrictions": [
                     {
-                      "action": "TurnFaceUp",
+                      "action": {
+                        "type": "TurnFaceUp"
+                      },
                       "affected": {
                         "type": "Matching",
                         "value": {

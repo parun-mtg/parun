@@ -20,7 +20,9 @@
       "name": "Unable to Scream",
       "objectRestrictions": [
         {
-          "action": "TurnFaceUp",
+          "action": {
+            "type": "TurnFaceUp"
+          },
           "affected": {
             "type": "Attached"
           }
