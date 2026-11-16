@@ -63,7 +63,9 @@
             "type": "AttachmentChanges",
             "value": {
               "direction": "Unattaches",
-              "end": "Attachment",
+              "end": {
+                "type": "Attachment"
+              },
               "other": {
                 "type": "And",
                 "value": []

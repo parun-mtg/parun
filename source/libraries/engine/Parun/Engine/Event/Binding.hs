@@ -590,6 +590,13 @@ eventBindingsOver board gs bearerBecame becameInGraveyard bearer you cond event 
   -- for the same reason.
   (TriggerCondition.AttachmentChanges (AttachmentTrigger.MkAttachmentTrigger AttachmentEnd.Attachment AttachDirection.Unattaches _), GameEvent.BecameUnattached (BecameUnattached.MkBecameUnattached {BecameUnattached.host = host})) ->
     maybe Map.empty (`Binding.setUnattachedHost` Map.empty) (Recipient.objectOf host)
+  -- CR 603.2 read by a bystander: both ends earn a name, Eriette, the
+  -- Beguiler's "that permanent" and "that Aura". Guaranteed given a match for
+  -- the arms above' reason: matchesTrigger declines a player host here too.
+  (TriggerCondition.AttachmentChanges (AttachmentTrigger.MkAttachmentTrigger (AttachmentEnd.Neither _) AttachDirection.Attaches _), GameEvent.BecameAttached (BecameAttached.MkBecameAttached {BecameAttached.attachment = attachment, BecameAttached.host = host})) ->
+    Binding.setAttachingObject attachment (maybe Map.empty (`Binding.setAttachedHost` Map.empty) (Recipient.objectOf host))
+  (TriggerCondition.AttachmentChanges (AttachmentTrigger.MkAttachmentTrigger (AttachmentEnd.Neither _) AttachDirection.Unattaches _), GameEvent.BecameUnattached (BecameUnattached.MkBecameUnattached {BecameUnattached.attachment = attachment, BecameUnattached.host = host})) ->
+    Binding.setAttachingObject attachment (maybe Map.empty (`Binding.setUnattachedHost` Map.empty) (Recipient.objectOf host))
   -- CR 702.134c's "that creature": the creature that was mentored, the event's
   -- second id -- Aegis of the Legion's shield counter goes on it. The MENTOR gets no
   -- slot: matchesTrigger has just proved it is the bearer's host, and no printed
@@ -1563,10 +1570,14 @@ eventBindingSlots cond = case cond of
   -- 113.7a's source slot names it and the host is a second object. Guaranteed
   -- given a match -- matchesTrigger declines a player host outright. CR 701.3d's
   -- mirror is on its own slot for Parun.Engine.Binding.unattachedHost's reason.
+  --
+  -- A Neither end's bearer is neither object, so both earn a slot.
   TriggerCondition.AttachmentChanges (AttachmentTrigger.MkAttachmentTrigger end direction _) -> case (end, direction) of
     (AttachmentEnd.Host, _) -> Set.empty
     (AttachmentEnd.Attachment, AttachDirection.Attaches) -> Set.singleton Binding.attachedHost
     (AttachmentEnd.Attachment, AttachDirection.Unattaches) -> Set.singleton Binding.unattachedHost
+    (AttachmentEnd.Neither _, AttachDirection.Attaches) -> Set.fromList [Binding.attachingObject, Binding.attachedHost]
+    (AttachmentEnd.Neither _, AttachDirection.Unattaches) -> Set.fromList [Binding.attachingObject, Binding.unattachedHost]
   -- CR 603.6a: entersSlots has the whole of it.
   TriggerCondition.Enters t -> fst (entersSlots t)
   -- CR 603.2b's step beginning names no OBJECT -- but it names the active player,

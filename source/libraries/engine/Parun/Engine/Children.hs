@@ -48,6 +48,7 @@ import qualified Parun.Types.AttachRestriction as AttachRestriction
 import qualified Parun.Types.AttachRewrite as AttachRewrite
 import qualified Parun.Types.AttachTarget as AttachTarget
 import qualified Parun.Types.AttachedToBound as AttachedToBound
+import qualified Parun.Types.AttachmentEnd as AttachmentEnd
 import qualified Parun.Types.AttachmentTrigger as AttachmentTrigger
 import qualified Parun.Types.AttackCompany as AttackCompany
 import qualified Parun.Types.AttackCost as AttackCost
@@ -1692,7 +1693,7 @@ triggerConditionChildren c condition = case condition of
   TriggerCondition.Visit -> pure condition
   TriggerCondition.FlipsCoin (CoinFlipTrigger.MkCoinFlipTrigger _ _) -> pure condition
   TriggerCondition.SelfBecomesPlotted -> pure condition
-  TriggerCondition.AttachmentChanges (AttachmentTrigger.MkAttachmentTrigger end direction other) -> fmap (TriggerCondition.AttachmentChanges . AttachmentTrigger.MkAttachmentTrigger end direction) (triggerFilter c other)
+  TriggerCondition.AttachmentChanges (AttachmentTrigger.MkAttachmentTrigger end direction other) -> (\renamed qualified -> TriggerCondition.AttachmentChanges (AttachmentTrigger.MkAttachmentTrigger renamed direction qualified)) <$> attachmentEndChildren c end <*> triggerFilter c other
   TriggerCondition.Reflexive -> pure condition
   TriggerCondition.PermanentActs (PermanentActsTrigger.MkPermanentActsTrigger (PermanentActed.MkPermanentActed action permanent) batching) -> fmap (\p -> TriggerCondition.PermanentActs (PermanentActsTrigger.MkPermanentActsTrigger (PermanentActed.MkPermanentActed action p) batching)) (actingChildren c permanent)
   TriggerCondition.PlayerActs (PlayerActed.MkPlayerActed _ _) -> pure condition
@@ -1748,6 +1749,12 @@ actingChildren :: (Applicative f) => TriggerChildren f -> ActingPermanent.Acting
 actingChildren c permanent = case permanent of
   ActingPermanent.Self -> pure permanent
   ActingPermanent.Matching filter_ -> fmap ActingPermanent.Matching (triggerFilter c filter_)
+
+attachmentEndChildren :: (Applicative f) => TriggerChildren f -> AttachmentEnd.AttachmentEnd -> f AttachmentEnd.AttachmentEnd
+attachmentEndChildren c end = case end of
+  AttachmentEnd.Host -> pure end
+  AttachmentEnd.Attachment -> pure end
+  AttachmentEnd.Neither filter_ -> fmap AttachmentEnd.Neither (triggerFilter c filter_)
 
 playerActsOnChildren :: (Applicative f) => TriggerChildren f -> PlayerActsOn.PlayerActsOn -> f PlayerActsOn.PlayerActsOn
 playerActsOnChildren c (PlayerActsOn.MkPlayerActsOn who filter_) = fmap (PlayerActsOn.MkPlayerActsOn who) (triggerFilter c filter_)

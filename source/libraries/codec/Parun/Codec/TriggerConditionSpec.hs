@@ -810,7 +810,7 @@ spec s = Spec.describe s "Parun.Codec.TriggerCondition" $ do
       s
       TriggerCondition.codec
       (TriggerCondition.AttachmentChanges (AttachmentTrigger.MkAttachmentTrigger AttachmentEnd.Host AttachDirection.Attaches (Filter.HasSubtype Subtype.Aura)))
-      " {\"type\":\"AttachmentChanges\",\"value\":{\"end\":\"Host\",\"direction\":\"Attaches\",\"other\":{\"type\":\"HasSubtype\",\"value\":\"Aura\"}}} "
+      " {\"type\":\"AttachmentChanges\",\"value\":{\"end\":{\"type\":\"Host\"},\"direction\":\"Attaches\",\"other\":{\"type\":\"HasSubtype\",\"value\":\"Aura\"}}} "
   -- CR 701.3a read from the ATTACHMENT, Enormous Energy Blade's: the Filter is
   -- over the host.
   Spec.it s "AttachmentChanges round-trips an attachment's attach" $
@@ -818,14 +818,14 @@ spec s = Spec.describe s "Parun.Codec.TriggerCondition" $ do
       s
       TriggerCondition.codec
       (TriggerCondition.AttachmentChanges (AttachmentTrigger.MkAttachmentTrigger AttachmentEnd.Attachment AttachDirection.Attaches (Filter.HasCardType CardType.Creature)))
-      " {\"type\":\"AttachmentChanges\",\"value\":{\"end\":\"Attachment\",\"direction\":\"Attaches\",\"other\":{\"type\":\"HasCardType\",\"value\":\"Creature\"}}} "
+      " {\"type\":\"AttachmentChanges\",\"value\":{\"end\":{\"type\":\"Attachment\"},\"direction\":\"Attaches\",\"other\":{\"type\":\"HasCardType\",\"value\":\"Creature\"}}} "
   -- CR 701.3d, Grafted Wargear's "from a permanent": the trivial `And []`.
   Spec.it s "AttachmentChanges round-trips an attachment's unattach" $
     Common.assertCodec
       s
       TriggerCondition.codec
       (TriggerCondition.AttachmentChanges (AttachmentTrigger.MkAttachmentTrigger AttachmentEnd.Attachment AttachDirection.Unattaches (Filter.And [])))
-      " {\"type\":\"AttachmentChanges\",\"value\":{\"end\":\"Attachment\",\"direction\":\"Unattaches\",\"other\":{\"type\":\"And\",\"value\":[]}}} "
+      " {\"type\":\"AttachmentChanges\",\"value\":{\"end\":{\"type\":\"Attachment\"},\"direction\":\"Unattaches\",\"other\":{\"type\":\"And\",\"value\":[]}}} "
   Spec.it s "PlacesSticker round-trips" $
     Common.assertCodec
       s

@@ -2469,17 +2469,26 @@ armMatches bindings board atEvent beforeEvent groupEvents gs bearer you cond eve
   --
   -- A Host bearer becoming UNattached (CR 701.3d read from the host) is the
   -- same comparison over the other event; no card prints it.
+  --
+  -- CR 603.2 read by a bystander (Neither): no id comparison, a Filter at each
+  -- end. The host's reads the attachment at Binding.attachingObject, Eriette,
+  -- the Beguiler's "less than or equal to that Aura's mana value"; a player
+  -- host declines, the Attachment end's reason.
   TriggerCondition.AttachmentChanges (AttachmentTrigger.MkAttachmentTrigger end direction f) ->
     let link = case (direction, event) of
           (AttachDirection.Attaches, GameEvent.BecameAttached a) -> Just (BecameAttached.attachment a, BecameAttached.host a)
           (AttachDirection.Unattaches, GameEvent.BecameUnattached a) -> Just (BecameUnattached.attachment a, BecameUnattached.host a)
           _ -> Nothing
-        admits oid = maybe False (\view -> Filter.matches bearerContext view f) (Projection.viewWithLastKnown oid gs oid)
+        admitsIn context g oid = maybe False (\view -> Filter.matches context view g) (Projection.viewWithLastKnown oid gs oid)
+        admits = admitsIn bearerContext f
      in case link of
           Nothing -> False
           Just (attachment, host) -> case end of
             AttachmentEnd.Host -> Recipient.objectOf host == Just bearer && admits attachment
             AttachmentEnd.Attachment -> attachment == bearer && maybe False admits (Recipient.objectOf host)
+            AttachmentEnd.Neither attaching ->
+              let hostContext = Projection.framedByBindings gs (Binding.setAttachingObject attachment bindings) (Projection.sourceContext gs (Just you) bearer)
+               in admitsIn bearerContext attaching attachment && maybe False (admitsIn hostContext f) (Recipient.objectOf host)
   -- CR 123.3: a player the relation names put a sticker of one of these kinds
   -- on an object the filter admits, read as it is or as it last was.
   TriggerCondition.PlacesSticker (PlacesSticker.MkPlacesSticker relation kinds onto) -> case event of

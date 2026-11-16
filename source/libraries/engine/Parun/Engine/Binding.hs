@@ -1530,6 +1530,13 @@ attachedHost = SlotName.MkSlotName (Text.pack "thatHost")
 unattachedHost :: SlotName
 unattachedHost = SlotName.MkSlotName (Text.pack "thatFormerHost")
 
+-- CR 701.3a / 701.3d's "that Aura" read by a bystander (AttachmentEnd.Neither):
+-- the attachment, which Eriette, the Beguiler's duration and mana value
+-- comparison read. The host is `attachedHost` or `unattachedHost` as ever.
+-- Reserved and not a target, `attachedHost`'s posture.
+attachingObject :: SlotName
+attachingObject = SlotName.MkSlotName (Text.pack "thatAttachment")
+
 -- A binding that names one object and nothing else -- what a token bound by a
 -- Create (CR 603.7c) or a trigger's source slot holds.
 toObject :: ObjectId -> Binding
@@ -1719,6 +1726,10 @@ setCrewers oids = Map.insert crewers (toObjects (Seq.fromList (Set.toList oids))
 -- Bind an object under the reserved attachedHost slot (CR 701.3a).
 setAttachedHost :: ObjectId -> Map SlotName Binding -> Map SlotName Binding
 setAttachedHost oid = Map.insert attachedHost (toObject oid)
+
+-- Bind an object under the reserved attachingObject slot (CR 701.3a).
+setAttachingObject :: ObjectId -> Map SlotName Binding -> Map SlotName Binding
+setAttachingObject oid = Map.insert attachingObject (toObject oid)
 
 -- Bind an object under the reserved unattachedHost slot (CR 701.3d).
 setUnattachedHost :: ObjectId -> Map SlotName Binding -> Map SlotName Binding

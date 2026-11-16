@@ -96,6 +96,7 @@ import qualified Parun.Types.AttachRestriction as AttachRestriction
 import qualified Parun.Types.AttachRewrite as AttachRewrite
 import qualified Parun.Types.AttachTarget as AttachTarget
 import qualified Parun.Types.AttachedToBound as AttachedToBound
+import qualified Parun.Types.AttachmentEnd as AttachmentEnd
 import qualified Parun.Types.AttachmentTrigger as AttachmentTrigger
 import qualified Parun.Types.AttackCompany as AttackCompany
 import qualified Parun.Types.AttackCost as AttackCost
@@ -2184,7 +2185,8 @@ reservedSlots =
       Binding.mentoredCreature,
       Binding.exploitedCreature,
       Binding.attachedHost,
-      Binding.unattachedHost
+      Binding.unattachedHost,
+      Binding.attachingObject
     ]
 
 -- The binding slots a card's power, toughness and characteristic-defining P/T
@@ -3941,8 +3943,12 @@ triggerConditionFilters triggerCondition = case triggerCondition of
   TriggerCondition.PlacesSticker placesSticker -> unframed [PlacesSticker.object placesSticker]
   -- CR 701.3a's carries one over the other end -- Bramble Elemental's "an
   -- Aura", Enormous Energy Blade's "a creature" -- which this sweep must see for
-  -- a Matching TurnedFaceUp's reason.
-  TriggerCondition.AttachmentChanges t -> unframed [AttachmentTrigger.other t]
+  -- a Matching TurnedFaceUp's reason. A Neither end carries a second, over the
+  -- attachment (Eriette, the Beguiler's "an Aura you control").
+  TriggerCondition.AttachmentChanges t -> case AttachmentTrigger.end t of
+    AttachmentEnd.Neither f -> [(Unframed, f), (AttachingHostFramed, AttachmentTrigger.other t)]
+    AttachmentEnd.Host -> unframed [AttachmentTrigger.other t]
+    AttachmentEnd.Attachment -> unframed [AttachmentTrigger.other t]
   -- CR 603.12's carries nothing, so no Filter either.
   TriggerCondition.Reflexive -> []
   TriggerCondition.Countered _ -> []
@@ -4689,6 +4695,10 @@ blockPermissionFilters permission =
 --     condition, matched by Parun.Engine.Event.Match against the bearer through
 --     Parun.Engine.SourceContext, which fills the bearer's CR 607.2d choices
 --     (Kindred Discovery). Unframed's answer for every other atom.
+--   * AttachingHostFramed -- the host Filter of an AttachmentEnd.Neither
+--     trigger condition, which Parun.Engine.Event.Match frames with the
+--     attachment bound at Binding.attachingObject (Eriette, the Beguiler's
+--     "that Aura's mana value").
 --   * StoredClassFramed -- a combat restriction's class a resolution stores
 --     (RestrictedCreatures.Matching, ForbidBeingBlocked's pair), baked by
 --     Parun.Engine.Resolve.Common.storedClass and then matched through a bare
@@ -4880,6 +4890,9 @@ data Framing
     SpentOnFramed
   | -- | A triggered ability's own trigger condition. See the overview above.
     TriggerConditionFramed
+  | -- | The host Filter of a bystander's attachment trigger. See the overview
+    -- above.
+    AttachingHostFramed
   | -- | A resolution's stored CR 611.2c combat restriction class. See the
     -- overview above.
     StoredClassFramed
@@ -4971,6 +4984,8 @@ sweptForSingularSlots framing = case framing of
   -- commanders, not about slots.
   SpentOnFramed -> True
   TriggerConditionFramed -> True
+  -- SWEPT: the framing fills one slot, Binding.attachingObject.
+  AttachingHostFramed -> True
   -- SWEPT, as it was while Unframed: the split is about CR 110.2's bake.
   StoredClassFramed -> True
   -- SWEPT, as it was while Unframed: the split is about CR 607.2d's chosen

@@ -15,7 +15,7 @@ import qualified Data.Monoid as Monoid
 import qualified Data.Sequence as Seq
 import qualified Data.Set as Set
 import qualified Data.Text as Text
-import Parun.CardSpec (Framing (ActivationCostFramed, AffectedSetFramed, AttachDestination, ChosenSourceFramed, ClauseGateFramed, EntryAttachDestination, HandSweepFramed, InTargetSlot, InterveningFramed, KeywordFramed, LifeLossAmountFramed, ManaRestrictionFramed, MillTallyFramed, MintedTargetSlot, OutsideTheGameFramed, PlayerEffectFramed, RepeatGateFramed, ReplacementRowFramed, SearchFramed, SlotlessCostFramed, SourceHostFramed, SpentOnFramed, StandingHostFramed, StoredClassFramed, StoredPlayerEffectFramed, TriggerConditionFramed, Unframed), Surveyed, anyFace, cardAuthoredEffects, cardCounts, cardFilters, cardResolutionEffects, conditionFilters, costComponentFilters, counterKindFilters, durationFilters, effectFilters, entryRewriteFilters, filterSlotsReadSingly, framedSlotsReadSingly, keywordFilters, modalFilters, objectRefFilters, oneEffectTrigger, oneFaced, payGateFilters, quantityFilters, replacementEffectFilters, riderFilters, survey, surveyedFace, surveyedFilters, surveyedPool, triggerConditionFilters, turnUpRewriteFilters)
+import Parun.CardSpec (Framing (ActivationCostFramed, AffectedSetFramed, AttachDestination, AttachingHostFramed, ChosenSourceFramed, ClauseGateFramed, EntryAttachDestination, HandSweepFramed, InTargetSlot, InterveningFramed, KeywordFramed, LifeLossAmountFramed, ManaRestrictionFramed, MillTallyFramed, MintedTargetSlot, OutsideTheGameFramed, PlayerEffectFramed, RepeatGateFramed, ReplacementRowFramed, SearchFramed, SlotlessCostFramed, SourceHostFramed, SpentOnFramed, StandingHostFramed, StoredClassFramed, StoredPlayerEffectFramed, TriggerConditionFramed, Unframed), Surveyed, anyFace, cardAuthoredEffects, cardCounts, cardFilters, cardResolutionEffects, conditionFilters, costComponentFilters, counterKindFilters, durationFilters, effectFilters, entryRewriteFilters, filterSlotsReadSingly, framedSlotsReadSingly, keywordFilters, modalFilters, objectRefFilters, oneEffectTrigger, oneFaced, payGateFilters, quantityFilters, replacementEffectFilters, riderFilters, survey, surveyedFace, surveyedFilters, surveyedPool, triggerConditionFilters, turnUpRewriteFilters)
 import qualified Parun.Codec.Card as Card
 import qualified Parun.Codec.Face as Face.Codec
 import qualified Parun.Codec.Filter as Filter.Codec
@@ -286,6 +286,7 @@ sourceFramed framing = case framing of
   AffectedSetFramed -> True
   ActivationCostFramed -> True
   TriggerConditionFramed -> True
+  AttachingHostFramed -> True
   ChosenSourceFramed -> True
   AttachDestination -> True
   EntryAttachDestination -> True
@@ -1218,12 +1219,13 @@ ofBoundTag = Text.pack "OfBound"
 
 -- How many bound-object operands this card carries in a resolution's own
 -- positions and how many anywhere else, boundCreatureTypeCounts' shape one
--- Filter.Context field over: Parun.Engine.Resolve.Slots.effectContext is the one
--- filler of Filter.Context.slotMeasures too, so the operand is a silent False
--- elsewhere. The second number is the offence.
+-- Filter.Context field over: Parun.Engine.Resolve.Slots.effectContext fills
+-- Filter.Context.slotMeasures too, as does Parun.Engine.Event.Match for an
+-- AttachingHostFramed Filter, so the operand is a silent False elsewhere. The
+-- second number is the offence.
 ofBoundCounts :: Surveyed -> (Int, Int)
 ofBoundCounts card =
-  let total wanted = sum (fmap (\(_, f) -> filterAtoms ofBoundTag f) (filter (\(framing, _) -> elem framing [SourceHostFramed, ClauseGateFramed, SearchFramed, MillTallyFramed, HandSweepFramed] == wanted) (surveyedFilters card)))
+  let total wanted = sum (fmap (\(_, f) -> filterAtoms ofBoundTag f) (filter (\(framing, _) -> elem framing [SourceHostFramed, ClauseGateFramed, SearchFramed, MillTallyFramed, HandSweepFramed, AttachingHostFramed] == wanted) (surveyedFilters card)))
    in (total True, total False)
 
 -- The atom outside those positions, or the traversal and the codec disagreeing
@@ -2968,6 +2970,7 @@ filterPositionLintSpec s registry corpus = Spec.describe s "Lint" $ do
         (ManaRestrictionFramed, [bound]),
         (SpentOnFramed, [bound]),
         (TriggerConditionFramed, [bound]),
+        (AttachingHostFramed, [bound]),
         (StoredClassFramed, [bound]),
         (ChosenSourceFramed, [bound])
       ]
