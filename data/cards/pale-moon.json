@@ -48,7 +48,10 @@
                             ]
                           },
                           "produces": {
-                            "type": "Colorless"
+                            "type": "OfType",
+                            "value": {
+                              "type": "Colorless"
+                            }
                           }
                         }
                       },

@@ -535,6 +535,7 @@ import qualified Parun.Codec.ManaAmongSpec
 import qualified Parun.Codec.ManaCostSpec
 import qualified Parun.Codec.ManaCountSpec
 import qualified Parun.Codec.ManaFilterSpec
+import qualified Parun.Codec.ManaInsteadSpec
 import qualified Parun.Codec.ManaProductionSpec
 import qualified Parun.Codec.ManaRSpec
 import qualified Parun.Codec.ManaRestrictionSpec
@@ -1450,6 +1451,7 @@ spec s reference corpus = do
   Parun.Codec.DiceReadingSpec.spec s
   Parun.Codec.DieRollRewriteSpec.spec s
   Parun.Codec.DieRollRSpec.spec s
+  Parun.Codec.ManaInsteadSpec.spec s
   Parun.Codec.ManaRSpec.spec s
   Parun.Codec.DifferentInSpec.spec s
   Parun.Codec.DiscardCardsSpec.spec s

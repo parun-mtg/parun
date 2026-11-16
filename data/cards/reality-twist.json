@@ -63,8 +63,11 @@
                 "value": "Plains"
               },
               "produces": {
-                "type": "Colored",
-                "value": "Red"
+                "type": "OfType",
+                "value": {
+                  "type": "Colored",
+                  "value": "Red"
+                }
               }
             }
           }
@@ -78,8 +81,11 @@
                 "value": "Swamp"
               },
               "produces": {
-                "type": "Colored",
-                "value": "Green"
+                "type": "OfType",
+                "value": {
+                  "type": "Colored",
+                  "value": "Green"
+                }
               }
             }
           }
@@ -93,8 +99,11 @@
                 "value": "Mountain"
               },
               "produces": {
-                "type": "Colored",
-                "value": "White"
+                "type": "OfType",
+                "value": {
+                  "type": "Colored",
+                  "value": "White"
+                }
               }
             }
           }
@@ -108,8 +117,11 @@
                 "value": "Forest"
               },
               "produces": {
-                "type": "Colored",
-                "value": "Black"
+                "type": "OfType",
+                "value": {
+                  "type": "Colored",
+                  "value": "Black"
+                }
               }
             }
           }

@@ -27,8 +27,11 @@
                 "value": "Land"
               },
               "produces": {
-                "type": "Colored",
-                "value": "Black"
+                "type": "OfType",
+                "value": {
+                  "type": "Colored",
+                  "value": "Black"
+                }
               }
             }
           }

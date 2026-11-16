@@ -52,6 +52,7 @@ import qualified Parun.Types.LifeLossCause as LifeLossCause
 import qualified Parun.Types.LifeLossPattern as LifeLossPattern
 import qualified Parun.Types.LifeLossR as LifeLossR
 import qualified Parun.Types.LifeLossRewrite as LifeLossRewrite
+import qualified Parun.Types.ManaInstead as ManaInstead
 import qualified Parun.Types.ManaR as ManaR
 import qualified Parun.Types.ManaType as ManaType
 import qualified Parun.Types.PerformerR as PerformerR
@@ -291,8 +292,8 @@ spec s =
           Common.assertCodec
             s
             codec
-            (ReplacementEffect.ManaR (ManaR.MkManaR (Filter.HasSubtype Subtype.Plains) (ManaType.Colored Color.Red) Nothing Nothing))
-            " {\"type\":\"ManaR\",\"value\":{\"matching\":{\"type\":\"HasSubtype\",\"value\":\"Plains\"},\"produces\":{\"type\":\"Colored\",\"value\":\"Red\"}}} "
+            (ReplacementEffect.ManaR (ManaR.MkManaR (Filter.HasSubtype Subtype.Plains) (ManaInstead.OfType (ManaType.Colored Color.Red)) Nothing Nothing))
+            " {\"type\":\"ManaR\",\"value\":{\"matching\":{\"type\":\"HasSubtype\",\"value\":\"Plains\"},\"produces\":{\"type\":\"OfType\",\"value\":{\"type\":\"Colored\",\"value\":\"Red\"}}}} "
         -- CR 701.31 / 614.1a: Susan Foreman.
         Spec.it s "PlaneswalkR (Susan Foreman)" $
           Common.assertCodec

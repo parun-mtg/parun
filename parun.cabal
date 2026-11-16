@@ -1150,6 +1150,8 @@ library codec
     Parun.Codec.ManaCountSpec
     Parun.Codec.ManaFilter
     Parun.Codec.ManaFilterSpec
+    Parun.Codec.ManaInstead
+    Parun.Codec.ManaInsteadSpec
     Parun.Codec.ManaProduction
     Parun.Codec.ManaProductionSpec
     Parun.Codec.ManaR
@@ -3365,6 +3367,7 @@ library types
     Parun.Types.ManaCost
     Parun.Types.ManaCount
     Parun.Types.ManaFilter
+    Parun.Types.ManaInstead
     Parun.Types.ManaOption
     Parun.Types.ManaProduction
     Parun.Types.ManaR
