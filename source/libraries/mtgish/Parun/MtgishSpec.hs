@@ -261,6 +261,11 @@ spec s = Spec.describe s "Parun.Mtgish" $ do
     Spec.assertEq s (Right ()) (accepts bonesplitter)
     Spec.assertEq s [Affected.Matching (Filter.And [Filter.HasCardType CardType.Creature, Filter.HasAttached Filter.IsSource])] (fmap StaticAbility.affected (Face.staticAbilities (translated bonesplitter)))
 
+  -- CR 113.1a: "with no abilities" is the negated ability atom.
+  Spec.it s "reads a creature with no abilities" $ do
+    Spec.assertEq s (Right ()) (accepts muragandaPetroglyphs)
+    Spec.assertEq s [Affected.Matching (Filter.And [Filter.HasCardType CardType.Creature, Filter.Not Filter.HasAbility])] (fmap StaticAbility.affected (Face.staticAbilities (translated muragandaPetroglyphs)))
+
   -- CR 500.12: a count of the board as the turn began, and the trigger's player it names.
   Spec.it s "translates Power Surge" $ do
     Spec.assertEq s (Right ()) (accepts powerSurge)
@@ -524,6 +529,12 @@ sarcomancy =
   )
 
 -- | Power Surge's AST, and its Oracle text.
+muragandaPetroglyphs :: (String, String)
+muragandaPetroglyphs =
+  ( "{\"_OracleCard\":\"Card\",\"Name\":\"Muraganda Petroglyphs\",\"Typeline\":{\"Supertypes\":[],\"Cardtypes\":[\"Enchantment\"],\"Subtypes\":[]},\"ManaCost\":[{\"_ManaSymbol\":\"ManaCostGeneric\",\"args\":3},{\"_ManaSymbol\":\"ManaCostG\"}],\"Rules\":[{\"_Rule\":\"EachPermanentLayerEffect\",\"args\":[{\"_Permanents\":\"And\",\"args\":[{\"_Permanents\":\"IsCardtype\",\"args\":\"Creature\"},{\"_Permanents\":\"HasNoAbilities\"}]},[{\"_StaticLayerEffect\":\"AdjustPT\",\"args\":[2,2]}]]}]}",
+    "Creatures with no abilities get +2/+2."
+  )
+
 powerSurge :: (String, String)
 powerSurge =
   ( "{\"_OracleCard\":\"Card\",\"Name\":\"Power Surge\",\"Typeline\":{\"Supertypes\":[],\"Cardtypes\":[\"Enchantment\"],\"Subtypes\":[]},\"ManaCost\":[{\"_ManaSymbol\":\"ManaCostR\"},{\"_ManaSymbol\":\"ManaCostR\"}],\"Rules\":[{\"_Rule\":\"TriggerA\",\"args\":[{\"_Trigger\":\"AtTheBeginningOfAPlayersUpkeep\",\"args\":{\"_Players\":\"AnyPlayer\"}},{\"_Actions\":\"ActionList\",\"args\":[{\"_Action\":\"PermanentDealsDamage\",\"args\":[{\"_Permanent\":\"ThisPermanent\"},{\"_GameNumber\":\"TheNumberOfPermanentsOnTheBattlefieldAtBeginningOfTurn\",\"args\":{\"_Permanents\":\"And\",\"args\":[{\"_Permanents\":\"IsUntapped\"},{\"_Permanents\":\"IsCardtype\",\"args\":\"Land\"},{\"_Permanents\":\"ControlledByAPlayer\",\"args\":{\"_Players\":\"SinglePlayer\",\"args\":{\"_Player\":\"Trigger_ThatPlayer\"}}}]}},{\"_DamageRecipient\":\"Player\",\"args\":{\"_Player\":\"Trigger_ThatPlayer\"}}]}]}]}]}",
