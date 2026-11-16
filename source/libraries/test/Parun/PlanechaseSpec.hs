@@ -987,6 +987,20 @@ spatialMerging s registry = do
         _ -> rolling 6 p
   pure (S.runPure answer (inMain S.alice board) (Planechase.roll S.manaPerformer S.alice >> Engine.priorityLoop))
 
+-- Interplanar Tunnel's board: alice on Tazeem rolls the Planeswalker symbol
+-- and encounters Interplanar Tunnel, choosing Panopticon from among the
+-- revealed planes and answering the random order reversed.
+interplanarTunnel :: (Monad m) => Spec.Spec m n -> Registry.Registry m -> m GameState.GameState
+interplanarTunnel s registry = do
+  board <- planarBoard s registry ["Tazeem", "Interplanar Tunnel", "Orzhova", "Mutual Epiphany", "Grixis", "Panopticon", "Fixed Point in Time", "Naya", "Akoum", "Unyaro"]
+  let nameOf oid = fmap Face.name (Game.faceOf oid board)
+      answer :: Prompt.Prompt r -> r
+      answer p = case p of
+        Prompt.ChooseCardFromAmong _ _ _ candidates -> Maybe.fromMaybe (NonEmpty.head candidates) (List.find ((== cardName "Panopticon") . nameOf) (NonEmpty.toList candidates))
+        Prompt.Shuffle batch -> reverse batch
+        _ -> rolling 6 p
+  pure (S.runPure answer (inMain S.alice board) (Planechase.roll S.manaPerformer S.alice >> Engine.priorityLoop))
+
 -- Answer a bottom arrangement with the card named on `gs` bottommost, the rest
 -- as given, and everything else by identity.
 bottomFirst :: GameState.GameState -> String -> Prompt.Prompt r -> r
@@ -1296,6 +1310,18 @@ planeswalkSpec s registry = Spec.describe s "CR 901.11" $ do
     Spec.assertEqWith s "the walk reaches Orzhova" (faceUpNames (leaving "Panopticon")) [cardName "Orzhova"]
     Spec.assertEqWith s "Panopticon bottommost when alice says so" (deckNames S.alice (leaving "Panopticon")) (fmap cardName ["Tazeem", "Spatial Merging", "Fixed Point in Time", "Mutual Epiphany", "The Dining Car", "Panopticon"])
     Spec.assertEqWith s "The Dining Car bottommost when alice says so" (deckNames S.alice (leaving "The Dining Car")) (fmap cardName ["Tazeem", "Spatial Merging", "Fixed Point in Time", "Mutual Epiphany", "Panopticon", "The Dining Car"])
+
+  -- Interplanar Tunnel's encounter (Oracle text checked on Scryfall,
+  -- 2026-11-16): alice reveals down to her fifth plane, keeping Panopticon
+  -- ("When you planeswalk to Panopticon, draw a card.") rather than the first
+  -- one, Orzhova, and the rest go under Unyaro and Tazeem in the order the
+  -- randomness answered (reversed here), nobody arranging them. Planeswalking
+  -- away from the phenomenon (CR 312.7) turns up Panopticon.
+  Spec.it s "CR 608.2d Interplanar Tunnel puts the plane chosen on top and the rest on the bottom at random" $ do
+    tunnelled <- interplanarTunnel s registry
+    Spec.assertEqWith s "the walk away reaches Panopticon" (faceUpNames tunnelled) [cardName "Panopticon"]
+    Spec.assertEqWith s "whose trigger drew alice a card" (S.handSize S.alice tunnelled) 1
+    Spec.assertEqWith s "the rest are on the bottom in the random order, beneath the unrevealed cards" (deckNames S.alice tunnelled) (fmap cardName ["Unyaro", "Tazeem", "Akoum", "Naya", "Fixed Point in Time", "Grixis", "Mutual Epiphany", "Orzhova", "Interplanar Tunnel"])
 
   -- Sanctum of Serra on the planar die's road: alice planeswalks away and every
   -- nonland permanent is destroyed, whoever controls it; the Forest stays. Its

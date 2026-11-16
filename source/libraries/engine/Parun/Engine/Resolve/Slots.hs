@@ -863,7 +863,7 @@ effectPlayerRefs effect = case effect of
   Effect.AsYouCascade {} -> []
   Effect.Explore {} -> []
   Effect.Assemble {} -> []
-  Effect.ArrangeInLibrary (ArrangeInLibrary.MkArrangeInLibrary _ chooser _) -> [chooser]
+  Effect.ArrangeInLibrary (ArrangeInLibrary.MkArrangeInLibrary _ chooser _ _ _) -> [chooser]
   Effect.Connive {} -> []
   Effect.Discard subject -> case subject of
     Discard.Counted (CountedDiscard.MkCountedDiscard ref _ _) -> [ref]
@@ -2747,7 +2747,8 @@ boundSlots effect = case effect of
   Effect.AsYouCascade {} -> Set.empty
   Effect.Explore {} -> Set.empty
   Effect.Assemble {} -> Set.empty
-  Effect.ArrangeInLibrary {} -> Set.empty
+  -- CR 608.2c: the cards arranged, for a later "the rest" to exclude.
+  Effect.ArrangeInLibrary payload -> foldMap Set.singleton (ArrangeInLibrary.slot payload)
   Effect.Connive {} -> Set.empty
   -- CR 120.4b's damage actually dealt, summed over every recipient, for Syphon
   -- Soul's "the damage dealt this way" (Parun.Types.DealDamage.tally), and the
