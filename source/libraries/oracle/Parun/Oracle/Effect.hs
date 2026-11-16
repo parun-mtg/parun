@@ -483,11 +483,17 @@ paid context g predicates
               payment' = Target.wording who <> Text.pack " " <> pays <> each'
           -- Free: "unless" after the instruction (Soul Strings) or before it
           -- (Rhystic Tutor), and "unless they" where the instruction opens with
-          -- the payer (Painful Quandary) or closes on it (Soul Barrier).
-          text <-
-            [instruction <> Text.pack " unless " <> payment', Text.pack "unless " <> payment' <> Text.pack ", " <> instruction]
-              <> [instruction <> Text.pack " unless they " <> second <> each' | Target.wording who `Text.isPrefixOf` instruction || Target.wording who `Text.isSuffixOf` instruction]
-          [(Prose.sentence text, allMentions p <> Target.mentions who <> counted)]
+          -- the payer (Painful Quandary) or closes on it (Soul Barrier); or
+          -- the payer's "may" first, the instruction naming its subject after
+          -- "If they don't" (Rakdos, Patron of Chaos).
+          let mentioned = allMentions p <> Target.mentions who <> counted
+              unless' = do
+                text <-
+                  [instruction <> Text.pack " unless " <> payment', Text.pack "unless " <> payment' <> Text.pack ", " <> instruction]
+                    <> [instruction <> Text.pack " unless they " <> second <> each' | Target.wording who `Text.isPrefixOf` instruction || Target.wording who `Text.isSuffixOf` instruction]
+                [(Prose.sentence text, mentioned)]
+              mayNot = [(Prose.sentence (Target.wording who <> Text.pack " may " <> second <> each') <> Text.pack " If they don't, " <> clauseText p <> Text.pack ".", mentioned) | branch == PayBranch.IfNotPaid, person == Target.Third]
+          unless' <> mayNot
 
 -- | A clause's instructions as predicates, consecutive changes to the same
 -- objects for the same duration as one: "gets +2/+2 and gains flying until
