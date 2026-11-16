@@ -12382,6 +12382,8 @@
       "182": {"card":"Fellwar Stone"},
       "212": {"card":"Frontier Bivouac"},
       "150": {"card":"Fusion Elemental"},
+      "17": {"card":"Gerrard's Hourglass Pendant"},
+      "93": {"card":"Gerrard's Hourglass Pendant"},
       "184": {"card":"Hedron Archive"},
       "112": {"card":"Hero's Downfall"},
       "21": {"card":"Historian's Boon"},
@@ -26083,6 +26085,8 @@
       "188": {"card":"Thelonite Hermit"},
       "189": {"card":"Three Visits"},
       "142": {"card":"Toxic Deluge"},
+      "15": {"card":"Trouble in Pairs"},
+      "326": {"card":"Trouble in Pairs"},
       "123": {"card":"Vizier of Many Faces"},
       "310": {"card":"War Room"},
       "124": {"card":"Whirler Rogue"},
@@ -37429,7 +37433,8 @@
       "4": {"card":"Brainstorm"},
       "11": {"card":"Doubling Season"},
       "12": {"card":"Rhythm of the Wild"},
-      "17": {"card":"Shadowspear"}
+      "17": {"card":"Shadowspear"},
+      "3": {"card":"Trouble in Pairs"}
     },
     "PZEN": {
       "9★": {"card":"Day of Judgment"},
