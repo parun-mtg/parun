@@ -1,0 +1,93 @@
+{
+  "faces": [
+    {
+      "manaCost": [
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "Red"
+          }
+        }
+      ],
+      "name": "Goblin Maskmaker",
+      "oracleText": "Whenever this creature attacks, face-down spells you cast this turn cost {1} less to cast.",
+      "power": {
+        "type": "Literal",
+        "value": 1
+      },
+      "toughness": {
+        "type": "Literal",
+        "value": 2
+      },
+      "triggeredAbilities": [
+        {
+          "condition": {
+            "type": "Attacks",
+            "value": {
+              "type": "Attacker",
+              "value": {}
+            }
+          },
+          "modal": {
+            "modes": [
+              {
+                "clauses": [
+                  {
+                    "effects": [
+                      {
+                        "type": "AffectPlayers",
+                        "value": {
+                          "duration": {
+                            "type": "UntilEndOfTurn"
+                          },
+                          "effect": {
+                            "type": "ModifyCost",
+                            "value": {
+                              "change": {
+                                "type": "Reduce",
+                                "value": {
+                                  "amount": [
+                                    {
+                                      "type": "Generic",
+                                      "value": 1
+                                    }
+                                  ]
+                                }
+                              },
+                              "matching": {
+                                "type": "IsFaceDown"
+                              },
+                              "subject": {
+                                "type": "Spells"
+                              }
+                            }
+                          },
+                          "players": {
+                            "type": "Scoped",
+                            "value": {
+                              "type": "You"
+                            }
+                          }
+                        }
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      ],
+      "typeLine": {
+        "subtypes": [
+          "Citizen",
+          "Goblin"
+        ],
+        "types": [
+          "Creature"
+        ]
+      }
+    }
+  ]
+}

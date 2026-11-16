@@ -586,12 +586,11 @@ data Filter keyword
   | -- | CR 110.5: the candidate is tapped; "untapped" is @Not IsTapped@ (#163). A
     -- STATUS rather than a characteristic, so nothing in CR 613 projects it.
     IsTapped
-  | -- | CR 110.5: the candidate is a FACE-DOWN permanent -- the other value of
-    -- the same status category IsTapped reads one of, and "face up" is @Not
-    -- IsFaceDown@ (#163). Narrowed to the battlefield by the atom, since CR
-    -- 110.5d gives only permanents status and CR 708.4 turns an object face down
-    -- before it reaches the stack. Never CR 110.5d's face-down EXILED card, which
-    -- IsExiledFaceDown below reads.
+  | -- | CR 110.5 / 708.4: the candidate is a FACE-DOWN permanent or spell --
+    -- the other value of the same status category IsTapped reads one of, and
+    -- "face up" is @Not IsFaceDown@ (#163). Zone-free like HasCardType, so "a
+    -- face-down creature" confines itself by its pool or scope. Never CR
+    -- 110.5d's face-down EXILED card, which IsExiledFaceDown below reads.
     IsFaceDown
   | -- | CR 708.12: the CARD REPRESENTING the candidate matches the nested filter,
     -- read off that card's printed face with nothing in CR 613 applied

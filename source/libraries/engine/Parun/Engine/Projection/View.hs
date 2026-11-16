@@ -837,24 +837,20 @@ viewOfCharacteristics peers oid pc controller counters gs =
       -- own draw and not the card Soul of New Phyrexia exiles from a graveyard.
       Filter.abilitySource = Game.abilitySourceOf oid gs >>= Count.orLastZoned peers gs,
       Filter.tapped = Game.isTapped oid gs,
-      -- CR 110.5's other status, through Game.isFaceDownPermanent, which
-      -- Parun.Engine.Event.lastKnownFrom files for a departed permanent too.
-      --
-      -- Its battlefield conjunct is CR 110.5d's own -- only permanents have
-      -- status -- and is a REGRESSION FENCE rather than a proved behaviour, for
-      -- `transformed` below's reason: the object it excludes is a face-down SPELL
-      -- on the stack (CR 708.4), which is reachable, but every pool that reaches
-      -- the atom today is already scoped to the battlefield, so dropping the
-      -- conjunct leaves the suite green.
-      Filter.faceDown = Game.isFaceDownPermanent oid gs,
+      -- CR 110.5's other status, and CR 708.4's face-down SPELL, off
+      -- Object.facing in every zone: Parun.Engine.Cast.asProposed stamps the
+      -- facing on the card before the move, so the cast gate prices the cast
+      -- the stack incarnation is paid for. Proved by the Goblin Maskmaker and
+      -- Tin Street Gossip scenarios in data/scenarios.
+      Filter.faceDown = maybe False (Facing.isFaceDown . Object.facing) (Game.lookupObject oid gs),
       -- CR 708.12's "ignoring any continuous effects", and the only site that
       -- fills the field: the card representing this object, read off
       -- Game.faceUpFaceOf so that CR 708.2a's substitution in Game.faceOf does not
       -- reach it. Nothing where no card is behind the object -- a token, an
       -- ability on the stack -- and Filter.RepresentedByCard is False there.
       --
-      -- NOT scoped to the battlefield, unlike `faceDown` above: CR 708.12's read
-      -- is of a card, which an object in any zone either has or has not.
+      -- NOT scoped to the battlefield: CR 708.12's read is of a card, which an
+      -- object in any zone either has or has not.
       Filter.representedCard = fmap viewOfCard (Game.faceUpFaceOf oid gs),
       -- CR 406.3's rider, and the only site that fills the field. NO zone
       -- conjunct beside it, unlike the line above: Object.exiledFaceDown is
