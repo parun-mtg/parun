@@ -1,0 +1,202 @@
+{
+  "faces": [
+    {
+      "keywords": [
+        {
+          "type": "Flying"
+        },
+        {
+          "type": "Vigilance"
+        }
+      ],
+      "manaCost": [
+        {
+          "type": "Generic",
+          "value": 3
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "White"
+          }
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "Black"
+          }
+        }
+      ],
+      "name": "Starseer Mentor",
+      "oracleText": "Flying, vigilance\nAt the beginning of your end step, if you gained or lost life this turn, target opponent loses 3 life unless they sacrifice a nonland permanent of their choice or discard a card.",
+      "power": {
+        "type": "Literal",
+        "value": 3
+      },
+      "toughness": {
+        "type": "Literal",
+        "value": 5
+      },
+      "triggeredAbilities": [
+        {
+          "condition": {
+            "type": "StepBegins",
+            "value": {
+              "phase": {
+                "type": "Ending",
+                "value": "EndStep"
+              },
+              "scope": {
+                "type": "PlayersTurn",
+                "value": {
+                  "type": "Relative",
+                  "value": "You"
+                }
+              }
+            }
+          },
+          "intervening": {
+            "type": "Any",
+            "value": [
+              {
+                "type": "Compares",
+                "value": {
+                  "comparison": "AtLeast",
+                  "measured": {
+                    "type": "LifeChanged",
+                    "value": {
+                      "direction": "Gained",
+                      "player": {
+                        "type": "Relative",
+                        "value": "You"
+                      }
+                    }
+                  },
+                  "threshold": {
+                    "type": "Literal",
+                    "value": 1
+                  }
+                }
+              },
+              {
+                "type": "Compares",
+                "value": {
+                  "comparison": "AtLeast",
+                  "measured": {
+                    "type": "LifeChanged",
+                    "value": {
+                      "direction": "Lost",
+                      "player": {
+                        "type": "Relative",
+                        "value": "You"
+                      }
+                    }
+                  },
+                  "threshold": {
+                    "type": "Literal",
+                    "value": 1
+                  }
+                }
+              }
+            ]
+          },
+          "modal": {
+            "modes": [
+              {
+                "clauses": [
+                  {
+                    "effects": [
+                      {
+                        "type": "LoseLife",
+                        "value": {
+                          "player": {
+                            "type": "InSlot",
+                            "value": "target"
+                          },
+                          "quantity": {
+                            "type": "Literal",
+                            "value": 3
+                          }
+                        }
+                      }
+                    ],
+                    "payGate": {
+                      "branch": "IfNotPaid",
+                      "cost": {
+                        "components": [
+                          {
+                            "type": "Sacrifice",
+                            "value": {
+                              "count": {
+                                "type": "Fixed",
+                                "value": 1
+                              },
+                              "whichPermanents": {
+                                "type": "Not",
+                                "value": {
+                                  "type": "HasCardType",
+                                  "value": "Land"
+                                }
+                              }
+                            }
+                          }
+                        ],
+                        "mana": []
+                      },
+                      "orCosts": [
+                        {
+                          "components": [
+                            {
+                              "type": "DiscardCards",
+                              "value": {
+                                "count": {
+                                  "type": "Fixed",
+                                  "value": 1
+                                },
+                                "whichCards": {
+                                  "type": "And",
+                                  "value": []
+                                }
+                              }
+                            }
+                          ],
+                          "mana": []
+                        }
+                      ],
+                      "payer": {
+                        "type": "InSlot",
+                        "value": "target"
+                      }
+                    }
+                  }
+                ],
+                "targetSlots": {
+                  "target": {
+                    "filter": {
+                      "type": "IsPlayer",
+                      "value": "Opponent"
+                    },
+                    "pool": {
+                      "type": "Players"
+                    }
+                  }
+                }
+              }
+            ]
+          }
+        }
+      ],
+      "typeLine": {
+        "subtypes": [
+          "Bat",
+          "Warlock"
+        ],
+        "types": [
+          "Creature"
+        ]
+      }
+    }
+  ]
+}

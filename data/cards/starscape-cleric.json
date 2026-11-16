@@ -1,0 +1,110 @@
+{
+  "faces": [
+    {
+      "combatRestrictions": [
+        {
+          "type": "CantBlock",
+          "value": {
+            "affected": {
+              "type": "Matching",
+              "value": {
+                "type": "IsSource"
+              }
+            }
+          }
+        }
+      ],
+      "keywords": [
+        {
+          "type": "Flying"
+        },
+        {
+          "type": "Offspring",
+          "value": {
+            "mana": [
+              {
+                "type": "Generic",
+                "value": 2
+              },
+              {
+                "type": "OfType",
+                "value": {
+                  "type": "Colored",
+                  "value": "Black"
+                }
+              }
+            ]
+          }
+        }
+      ],
+      "manaCost": [
+        {
+          "type": "Generic",
+          "value": 1
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "Black"
+          }
+        }
+      ],
+      "name": "Starscape Cleric",
+      "oracleText": "Offspring {2}{B} (You may pay an additional {2}{B} as you cast this spell. If you do, when this creature enters, create a 1/1 token copy of it.)\nFlying\nThis creature can't block.\nWhenever you gain life, each opponent loses 1 life.",
+      "power": {
+        "type": "Literal",
+        "value": 2
+      },
+      "toughness": {
+        "type": "Literal",
+        "value": 1
+      },
+      "triggeredAbilities": [
+        {
+          "condition": {
+            "type": "LifeChanges",
+            "value": {
+              "direction": "Gained",
+              "player": "You"
+            }
+          },
+          "modal": {
+            "modes": [
+              {
+                "clauses": [
+                  {
+                    "effects": [
+                      {
+                        "type": "LoseLife",
+                        "value": {
+                          "player": {
+                            "type": "Relative",
+                            "value": "Opponent"
+                          },
+                          "quantity": {
+                            "type": "Literal",
+                            "value": 1
+                          }
+                        }
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      ],
+      "typeLine": {
+        "subtypes": [
+          "Bat",
+          "Cleric"
+        ],
+        "types": [
+          "Creature"
+        ]
+      }
+    }
+  ]
+}

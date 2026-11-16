@@ -1,0 +1,220 @@
+{
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "battlefield": [
+          {
+            "card": "Star Charter",
+            "label": "charter"
+          },
+          {
+            "card": "Plains",
+            "label": "p1"
+          },
+          {
+            "card": "Plains",
+            "label": "p2"
+          }
+        ],
+        "hand": [
+          {
+            "card": "Sacred Nectar",
+            "label": "nectar"
+          }
+        ],
+        "library": [
+          {
+            "card": "Island",
+            "label": "drawn"
+          },
+          {
+            "card": "Craw Wurm",
+            "label": "wurm"
+          },
+          {
+            "card": "Hill Giant",
+            "label": "giant"
+          },
+          {
+            "card": "Gray Ogre",
+            "label": "ogre"
+          },
+          {
+            "card": "Swamp",
+            "label": "sw"
+          },
+          {
+            "card": "Forest",
+            "label": "fifth"
+          }
+        ],
+        "name": "alice"
+      },
+      {
+        "library": [
+          {
+            "card": "Swamp"
+          },
+          {
+            "card": "Swamp"
+          },
+          {
+            "card": "Swamp"
+          }
+        ],
+        "name": "bob"
+      }
+    ],
+    "step": "PrecombatMain"
+  },
+  "description": "CR 603.4: Star Charter's end-step trigger needs you to have gained or lost life this turn; it then finds a creature card with power 3 or less among the top four",
+  "note": "Turn 1 changes no life and the end step stacks nothing. Turn 3 alice gains 4: the trigger looks at the top four, refuses the 6-power Craw Wurm and takes the Hill Giant (power 3, the boundary), and puts the rest on the bottom.",
+  "timeline": [
+    {
+      "check": {
+        "View": {
+          "is": [],
+          "of": "Stack"
+        }
+      },
+      "player": "alice",
+      "step": "EndStep",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Cast": {
+          "mana": [
+            "$p1",
+            "$p2"
+          ],
+          "object": "$nectar"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 3
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 3
+    },
+    {
+      "check": {
+        "Life": {
+          "life": 24,
+          "player": "alice"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 3
+    },
+    {
+      "do": {
+        "Attack": []
+      },
+      "player": "alice",
+      "step": "DeclareAttackers",
+      "turn": 3
+    },
+    {
+      "check": {
+        "View": {
+          "is": [
+            "trigger of $charter"
+          ],
+          "of": "Stack"
+        }
+      },
+      "player": "alice",
+      "step": "EndStep",
+      "turn": 3
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "EndStep",
+      "turn": 3
+    },
+    {
+      "do": {
+        "ChooseOptional": "Exercises"
+      },
+      "player": "alice",
+      "step": "EndStep",
+      "turn": 3
+    },
+    {
+      "player": "alice",
+      "refuse": {
+        "Answer": {
+          "prompt": "ChooseCardFromAmong",
+          "with": "$wurm"
+        }
+      },
+      "step": "EndStep",
+      "turn": 3
+    },
+    {
+      "do": {
+        "Answer": {
+          "prompt": "ChooseCardFromAmong",
+          "with": "$giant"
+        }
+      },
+      "player": "alice",
+      "step": "EndStep",
+      "turn": 3
+    },
+    {
+      "do": {
+        "Answer": {
+          "prompt": "Shuffle",
+          "with": [
+            "$sw",
+            "$wurm",
+            "$ogre"
+          ]
+        }
+      },
+      "player": "alice",
+      "step": "EndStep",
+      "turn": 3
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Hill Giant",
+          "count": 1,
+          "player": "alice",
+          "zone": "Hand"
+        }
+      },
+      "player": "alice",
+      "step": "EndStep",
+      "turn": 3
+    },
+    {
+      "check": {
+        "View": {
+          "is": [
+            "$fifth",
+            "Gray Ogre",
+            "Craw Wurm",
+            "Swamp#4"
+          ],
+          "of": "Zone",
+          "player": "alice",
+          "zone": "Library"
+        }
+      },
+      "player": "alice",
+      "step": "EndStep",
+      "turn": 3
+    }
+  ]
+}
