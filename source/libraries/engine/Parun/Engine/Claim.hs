@@ -184,7 +184,7 @@ selections selection candidates = case selection of
   -- One type at a time; two types can admit the same group, counted once.
   Selection.SharingOne n _ ->
     let typed = [(index, types, held) | (index, Sharing types, held) <- candidates]
-     in Set.toList (Set.fromList [chosen | subtype <- Set.toList (Set.unions [types | (_, types, _) <- typed]), chosen <- filling n [(index, held) | (index, types, held) <- typed, Set.member subtype types]])
+     in Set.toList (Set.fromList [chosen | subtype <- Set.toList (Set.unions [types | (_, types, _) <- typed]), chosen <- apart n [(index, Set.empty :: Set.Set (), held) | (index, types, held) <- typed, Set.member subtype types]])
 
 -- Every way to take `need` objects out of these classes, no two sharing a
 -- value (CR 201.2b). A class holding a value gives at most one, since its
@@ -198,14 +198,6 @@ apart need candidates
         let most = min need (if Set.null values then held else min held 1)
             compatible = filter (\(_, others, _) -> Set.disjoint values others) rest
          in [(index, k) : more | k <- reverse [1 .. most], more <- apart (need - k) compatible] <> apart need rest
-
--- Every way to take `need` objects out of these classes.
-filling :: Natural -> [(Int, Natural)] -> [[(Int, Natural)]]
-filling need candidates
-  | need == 0 = [[]]
-  | otherwise = case candidates of
-      [] -> []
-      (index, held) : rest -> [(index, k) : more | k <- reverse [1 .. min held need], more <- filling (need - k) rest] <> filling need rest
 
 -- Every MINIMAL way to reach `need` out of these classes, each an index, its
 -- amount and how many it holds, the largest amount first: as a number per
