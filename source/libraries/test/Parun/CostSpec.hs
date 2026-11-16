@@ -2729,6 +2729,7 @@ spec s registry = Spec.describe s "Parun.Engine.Cost" $ do
   morcantSpec s registry
   kopalaSpec s registry
   humOfTheRadixSpec s registry
+  locketOfYesterdaysSpec s registry
   battlefieldThaumaturgeSpec s registry
   animarSpec s registry
   magnusSpec s registry
@@ -6321,6 +6322,40 @@ humOfTheRadixSpec s registry = Spec.describe s "Hum of the Radix" $ do
     Spec.assertEqWith s "alice's own one: {1}" (S.tappedCount S.alice alices) 1
     Spec.assertEqWith s "carol controls none: {0}" (S.tappedCount S.carol carols) 0
     Spec.assertEqWith s "and all three casts were made" (fmap (length . (TurnRegisters.stack . GameState.turn)) [bobs, alices, carols]) [1, 1, 1]
+
+-- Locket of Yesterdays {1} Artifact (Oracle text checked against Scryfall
+-- 2026-11-16): "Spells you cast cost {1} less to cast for each card with the
+-- same name as that spell in your graveyard." CostModifier's PaidFor with
+-- Shares Name at Evaluated: the count compares each card with the spell paid
+-- for, not with the Locket.
+--
+-- alice controls the Locket and seven Mountains, two Hill Giants in her
+-- graveyard, one in exile, and bob one in his graveyard; she casts a Hill
+-- Giant ({3}{R}) and a Gray Ogre ({2}{R}). Every cost is read off her tapped
+-- Mountains.
+locketOfYesterdaysSpec :: (Monad m) => Spec.Spec m n -> Registry.Registry m -> n ()
+locketOfYesterdaysSpec s registry = Spec.describe s "Locket of Yesterdays" $ do
+  let board = do
+        locket <- S.printingOf s registry "Locket of Yesterdays"
+        giant <- S.printingOf s registry "Hill Giant"
+        ogre <- S.printingOf s registry "Gray Ogre"
+        mountain <- S.printingOf s registry "Mountain"
+        let (_, g1) = S.addPermanent locket S.alice (S.landsFor mountain S.alice 7 (Setup.emptyGame S.threePlayers))
+            (_, g2) = S.addGraveyardCard giant S.alice g1
+            (_, g3) = S.addGraveyardCard giant S.alice g2
+            (_, g4) = S.addExiledCard giant S.alice g3
+            (_, g5) = S.addGraveyardCard giant S.bob g4
+            (giantId, g6) = S.addHandCard giant S.alice g5
+            (ogreId, g7) = S.addHandCard ogre S.alice g6
+        pure (giantId, ogreId, g7)
+  Spec.it s "CR 601.2f a spell costs {1} less for each card in your graveyard with ITS name" $ do
+    (giantId, ogreId, gs) <- board
+    let castOf oid = S.runPure S.identityAnswer gs (S.cast S.alice oid)
+        giants = castOf giantId
+        ogres = castOf ogreId
+    Spec.assertEqWith s "her two Hill Giants, not the exiled one or bob's: {1}{R}" (S.tappedCount S.alice giants) 2
+    Spec.assertEqWith s "no Gray Ogre in her graveyard: {2}{R}" (S.tappedCount S.alice ogres) 3
+    Spec.assertEqWith s "and both casts were made" (fmap (length . (TurnRegisters.stack . GameState.turn)) [giants, ogres]) [1, 1]
 
 -- Kopala, Warden of Waves {1}{U}{U} Legendary Creature -- Merfolk Wizard 2/2
 -- (Oracle text checked against Scryfall 2026-10-10): "Spells your opponents cast

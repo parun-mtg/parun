@@ -1686,12 +1686,13 @@ data Context = MkContext
     -- "CR 613.4c no card asks an evaluated-object atom outside a Count" keeps a
     -- card to the filled position.
     evaluated :: Maybe ObjectId.ObjectId,
-    -- CR 205.3m: the CREATURE TYPES of that object, for Shares CreatureType
-    -- Evaluated (Coat of Arms' "shares at least one creature type with
-    -- it"). `evaluated` above's filler, position and lint; read off the view the
-    -- Count arm was handed, so the CR 613 projection's types and not the printed
-    -- ones. Nothing where unfilled, and the atom then answers False.
-    evaluatedCreatureTypes :: Maybe (Set.Set Subtype.Subtype),
+    -- That object's view, for Shares at Evaluated (Coat of Arms' "shares at
+    -- least one creature type with it", Locket of Yesterdays' "with the same
+    -- name as that spell"). `evaluated` above's filler, position and lint; the
+    -- view the Count arm was handed, so the CR 613 projection's and not the
+    -- printed characteristics. Nothing where unfilled, and the atom then answers
+    -- False.
+    evaluatedView :: Maybe View,
     -- CR 903.3e: the creature types of the perspective player's commanders, at
     -- their current characteristics in any zone, for Shares CreatureType
     -- YourCommander (Path of Ancestry). Filled by
@@ -1982,7 +1983,7 @@ data Context = MkContext
 -- here owes both halves of the same pair: which way its unfilled read answers,
 -- and what holds a card to the positions that fill it.
 contextFor :: Teams.Teams -> Maybe PlayerId.PlayerId -> Maybe ObjectId.ObjectId -> Context
-contextFor t p s = MkContext {teams = t, perspective = p, source = s, sourceMeasures = Map.empty, sourceColors = Set.empty, sourceSectors = Set.empty, sourceNames = Set.empty, sourceDealtDamage = Set.empty, sourceDealtDamageEarlier = Set.empty, sourceCrewed = Set.empty, sourceBefore = Nothing, slotAmount = Nothing, defendingPlayers = [], activePlayers = [], recipient = Nothing, shares = Map.empty, slotObjects = Map.empty, cantPayKeywordCost = Map.empty, slotNames = Map.empty, slotControllers = Map.empty, slotHostControllers = Map.empty, subjectHostCardTypes = Set.empty, slotCreatureTypes = Map.empty, slotCardTypes = Map.empty, slotColors = Map.empty, slotMeasures = Map.empty, slotPlayers = Map.empty, boundAmounts = Map.empty, slotStickers = Map.empty, slotVotes = Map.empty, boundUnannounced = False, sourceAttachedTo = Nothing, evaluated = Nothing, evaluatedCreatureTypes = Nothing, commanderCreatureTypes = Set.empty, sourceEntrants = Set.empty, sourceCountered = Map.empty, sourceOwner = Nothing, sourceChosenNames = Map.empty, carrierChosenPlayer = Nothing, aimingController = Nothing, sourceChosenColors = Set.empty, draftNotes = Map.empty, exiledBeforeGame = Map.empty, playerCounters = Map.empty, sourceChosenSubtype = Nothing, sourceChosenCardType = Nothing, sourceChosenNumber = Nothing, sourceLastExiled = Nothing, sourceExiled = Map.empty, sourceAcquisition = Nothing, reader = Nothing, candidateMeasures = Nothing, battlefieldViews = Seq.empty, zeroMissingPowerToughness = False}
+contextFor t p s = MkContext {teams = t, perspective = p, source = s, sourceMeasures = Map.empty, sourceColors = Set.empty, sourceSectors = Set.empty, sourceNames = Set.empty, sourceDealtDamage = Set.empty, sourceDealtDamageEarlier = Set.empty, sourceCrewed = Set.empty, sourceBefore = Nothing, slotAmount = Nothing, defendingPlayers = [], activePlayers = [], recipient = Nothing, shares = Map.empty, slotObjects = Map.empty, cantPayKeywordCost = Map.empty, slotNames = Map.empty, slotControllers = Map.empty, slotHostControllers = Map.empty, subjectHostCardTypes = Set.empty, slotCreatureTypes = Map.empty, slotCardTypes = Map.empty, slotColors = Map.empty, slotMeasures = Map.empty, slotPlayers = Map.empty, boundAmounts = Map.empty, slotStickers = Map.empty, slotVotes = Map.empty, boundUnannounced = False, sourceAttachedTo = Nothing, evaluated = Nothing, evaluatedView = Nothing, commanderCreatureTypes = Set.empty, sourceEntrants = Set.empty, sourceCountered = Map.empty, sourceOwner = Nothing, sourceChosenNames = Map.empty, carrierChosenPlayer = Nothing, aimingController = Nothing, sourceChosenColors = Set.empty, draftNotes = Map.empty, exiledBeforeGame = Map.empty, playerCounters = Map.empty, sourceChosenSubtype = Nothing, sourceChosenCardType = Nothing, sourceChosenNumber = Nothing, sourceLastExiled = Nothing, sourceExiled = Map.empty, sourceAcquisition = Nothing, reader = Nothing, candidateMeasures = Nothing, battlefieldViews = Seq.empty, zeroMissingPowerToughness = False}
 
 -- contextFor over a game: its teams (CR 102.4), its active players (CR 102.1,
 -- 805.4a), its draft notes (CR 905.2b), what was exiled before it (CR
@@ -2184,9 +2185,9 @@ sharesAnchored trait anchor = case anchor of
     -- The object the surrounding quantity is aimed at (CR 613.4c), and vacuously
     -- FALSE where nothing aims one: no CR 601.2c offer stands behind a Count to
     -- narrow a widened answer afterwards.
-    Trait.CreatureType -> Just (\context view -> maybe False (meets (subtypes view)) (evaluatedCreatureTypes context))
+    Trait.CreatureType -> Just (\context view -> maybe False (meets (creatureTypes view) . creatureTypes) (evaluatedView context))
+    Trait.Name -> Just (\context view -> maybe False (meets (names view) . names) (evaluatedView context))
     Trait.Color -> Nothing
-    Trait.Name -> Nothing
     Trait.Owner -> Nothing
     Trait.Controller -> Nothing
     Trait.Sector -> Nothing
@@ -2233,6 +2234,7 @@ sharesAnchored trait anchor = case anchor of
     meets a b = not (Set.disjoint a b)
     held = foldMap Set.singleton . controller
     landTypes = Set.filter Subtype.Engine.isLandType . subtypes
+    creatureTypes = Set.filter Subtype.Engine.isCreatureType . subtypes
 
 -- CR 701.3a / 301.5a: does a candidate attached to this object relate to the
 -- anchor -- the match's source, or under CR 613.4c the object the surrounding

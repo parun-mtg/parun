@@ -1378,7 +1378,7 @@ evaluatedCounts card =
     evaluatedAtoms (Codec.encode (Face.Codec.codec Card.codec) card)
   )
 
--- Filter.Context.evaluated and evaluatedCreatureTypes are filled by
+-- Filter.Context.evaluated and evaluatedView are filled by
 -- Parun.Engine.Quantity's Count arm, the only caller of
 -- Parun.Engine.Count.evaluate, and by nothing else, so the atoms anywhere but a
 -- Count's filter are a silent False. An atom the codec finds and
