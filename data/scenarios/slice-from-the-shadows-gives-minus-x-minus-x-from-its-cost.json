@@ -1,0 +1,27 @@
+{
+  "description": "CR 107.3a, 613.4c: Slice from the Shadows gives target creature -X/-X until end of turn, X the value chosen for its cost",
+  "note": "X=2 on a 6/4 Craw Wurm leaves it 4/2: a fixed amount or a toughness-only change would read otherwise. The can't-be-countered line is caught-red-handed's wording and scenario.",
+  "board": {
+    "active": "alice",
+    "step": "PrecombatMain",
+    "seats": [
+      {
+        "name": "alice",
+        "manaPool": "BCC",
+        "hand": [{ "card": "Slice from the Shadows", "label": "slice" }],
+        "library": [{ "card": "Island" }, { "card": "Island" }, { "card": "Island" }]
+      },
+      {
+        "name": "bob",
+        "battlefield": [{ "card": "Craw Wurm", "label": "wurm" }, { "card": "Hill Giant", "label": "giant" }],
+        "library": [{ "card": "Island" }, { "card": "Island" }, { "card": "Island" }]
+      }
+    ]
+  },
+  "timeline": [
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": { "Cast": { "object": "$slice", "x": 2, "targets": ["$wurm"] } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass" },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "PowerToughness": { "object": "$wurm", "power": 4, "toughness": 2 } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "PowerToughness": { "object": "$giant", "power": 3, "toughness": 3 } } }
+  ]
+}

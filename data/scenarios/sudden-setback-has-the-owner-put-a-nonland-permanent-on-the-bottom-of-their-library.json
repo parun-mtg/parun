@@ -1,0 +1,45 @@
+{
+  "description": "CR 108.3, 115.1, 608.2c: Sudden Setback has the owner of target spell or nonland permanent put it on their choice of the top or bottom of their library",
+  "note": "carol controls bob's Grizzly Bears: bob, its owner, is asked and it goes under bob's library, so neither the controller nor the caster decides. A Forest is refused as a target (nonland). bob picks Bottom, which is not the first end offered.",
+  "board": {
+    "active": "alice",
+    "step": "PrecombatMain",
+    "seats": [
+      {
+        "name": "alice",
+        "manaPool": "UUCC",
+        "hand": [{ "card": "Sudden Setback", "label": "setback" }],
+        "library": [{ "card": "Plains" }, { "card": "Plains" }, { "card": "Plains" }]
+      },
+      {
+        "name": "bob",
+        "battlefield": [
+          { "card": "Grizzly Bears", "label": "bears", "controller": "carol" }
+        ],
+        "library": [
+          { "card": "Island", "label": "l1" },
+          { "card": "Island", "label": "l2" },
+          { "card": "Island", "label": "l3" }
+        ]
+      },
+      {
+        "name": "carol",
+        "battlefield": [
+          { "card": "Forest", "label": "forest" },
+          { "card": "Hill Giant", "label": "giant" }
+        ],
+        "library": [{ "card": "Swamp" }, { "card": "Swamp" }, { "card": "Swamp" }]
+      }
+    ]
+  },
+  "timeline": [
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "refuse": { "Cast": { "object": "$setback", "targets": ["$forest"] } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": { "Cast": { "object": "$setback", "targets": ["$bears"] } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass" },
+    { "turn": 1, "step": "PrecombatMain", "player": "bob", "do": { "Answer": { "prompt": "ChooseLibraryEnd", "with": "Bottom" } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "View": { "of": "Zone", "player": "bob", "zone": "Library", "is": ["$l1", "$l2", "$l3", "Grizzly Bears"] } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "Count": { "player": "carol", "zone": "Library", "card": "Grizzly Bears", "count": 0 } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "Count": { "player": "carol", "zone": "Battlefield", "card": "Grizzly Bears", "count": 0 } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "Count": { "player": "carol", "zone": "Battlefield", "card": "Hill Giant", "count": 1 } } }
+  ]
+}

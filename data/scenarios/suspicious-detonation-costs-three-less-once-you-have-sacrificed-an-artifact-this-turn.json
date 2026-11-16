@@ -1,0 +1,54 @@
+{
+  "description": "CR 601.2f, 701.21a, 120.3e: Suspicious Detonation costs {3} less to cast if you've sacrificed an artifact this turn, and deals 4 damage to target creature",
+  "note": "alice holds two Mountains for it. Blood Pet is sacrificed in upkeep so its mana empties before the main phase. Sacrificing a creature (Blood Pet) or bob sacrificing his artifact (Mind Stone) leaves the cost {4}{R}, so the cast is refused; once alice sacrifices her own Mind Stone it is cast for exactly the two Mountains ({1}{R}), so the reduction is {3} and no more. The can't-be-countered line is caught-red-handed's wording and scenario.",
+  "board": {
+    "active": "alice",
+    "step": "Upkeep",
+    "seats": [
+      {
+        "name": "alice",
+        "battlefield": [
+          { "card": "Blood Pet", "label": "pet" },
+          { "card": "Mind Stone", "label": "stone" },
+          { "card": "Mountain", "label": "m1" },
+          { "card": "Mountain", "label": "m2" },
+          { "card": "Mountain", "label": "m3" }
+        ],
+        "hand": [{ "card": "Suspicious Detonation", "label": "detonation" }],
+        "library": [{ "card": "Plains" }, { "card": "Plains" }, { "card": "Plains" }]
+      },
+      {
+        "name": "bob",
+        "battlefield": [
+          { "card": "Colossal Dreadmaw", "label": "maw" },
+          { "card": "Grizzly Bears", "label": "bears" },
+          { "card": "Mind Stone", "label": "bobstone" },
+          { "card": "Swamp", "label": "sw" }
+        ],
+        "library": [{ "card": "Island" }, { "card": "Island" }, { "card": "Island" }]
+      }
+    ]
+  },
+  "timeline": [
+    { "turn": 1, "step": "Upkeep", "player": "alice", "do": { "Take": { "action": "ActivateManaAbility $pet" } } },
+    { "turn": 1, "step": "Upkeep", "player": "alice", "check": { "Count": { "player": "alice", "zone": "Graveyard", "card": "Blood Pet", "count": 1 } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "refuse": { "Cast": { "object": "$detonation", "targets": ["$maw"], "mana": ["$m1", "$m2", null] } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "Count": { "player": "alice", "zone": "Hand", "card": "Suspicious Detonation", "count": 1 } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass" },
+    { "turn": 1, "step": "PrecombatMain", "player": "bob", "do": { "Activate": { "object": "$bobstone", "ability": 1, "mana": ["$sw", null] } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass" },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "Count": { "player": "bob", "zone": "Graveyard", "card": "Mind Stone", "count": 1 } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "View": { "of": "Stack", "is": [] } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "refuse": { "Cast": { "object": "$detonation", "targets": ["$maw"], "mana": ["$m1", "$m2", null] } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "Count": { "player": "alice", "zone": "Hand", "card": "Suspicious Detonation", "count": 1 } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": { "Activate": { "object": "$stone", "ability": 1, "mana": ["$m1", null] } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass" },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "Count": { "player": "alice", "zone": "Graveyard", "card": "Mind Stone", "count": 1 } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": { "Cast": { "object": "$detonation", "targets": ["$maw"], "mana": ["$m2", "$m3"] } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "Tapped": { "object": "$m3", "tapped": true } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "View": { "of": "ManaPool", "player": "alice", "is": [] } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass" },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "Damage": { "object": "$maw", "damage": 4 } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "Count": { "player": "alice", "zone": "Graveyard", "card": "Suspicious Detonation", "count": 1 } } }
+  ]
+}
