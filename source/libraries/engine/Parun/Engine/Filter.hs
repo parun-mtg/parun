@@ -866,8 +866,9 @@ data View = MkView
     -- copy of one? Read off Object.castPrepared, and False where there is no live
     -- object, as `tributePaid` above. Filter.IsPreparedSpell is the reader.
     preparedSpell :: Bool,
-    -- CR 700.2 / 700.2d: for a modal spell, how many times a mode was chosen
-    -- for it, repeats counted; Nothing for every other candidate.
+    -- CR 700.2 / 700.2d / 700.2e: for a modal spell, how many times its
+    -- controller chose a mode for it, repeats counted, 0 when another player
+    -- chose; Nothing for every other candidate.
     -- Filter.IsModal and Measure.ModesChosen are the readers.
     modesChosen :: Maybe Natural.Natural,
     -- CR 716.2a / 721.2a / 723.2a: the layouts whose inset frame this candidate

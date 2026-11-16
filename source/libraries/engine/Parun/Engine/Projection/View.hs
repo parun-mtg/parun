@@ -947,7 +947,7 @@ viewOfCharacteristics peers oid pc controller counters gs =
       Filter.preparedSpell = any Object.castPrepared (Game.lookupObject oid gs),
       -- CR 700.2 / 700.2d: the modes the projection prints, the chosen ones
       -- off the object's bindings, live.
-      Filter.modesChosen = modesChosenOf oid pc gs,
+      Filter.modesChosen = modesChosenOf oid pc controller gs,
       -- CR 716.2b / 721.2b / 723.2b: copiable values, which `pc` carries.
       Filter.insetFrames = Count.insetFramesOf pc,
       -- CR 400.7d / CR 107.4h: read live off the object like `tributePaid`, and
@@ -1048,14 +1048,20 @@ countersOf :: ObjectId -> GameState -> Map (CounterKind.CounterKind Keyword.Type
 countersOf oid gs = maybe Map.empty Object.counters (Game.lookupObject oid gs)
 
 -- CR 700.2 / 700.2d: for a spell on the stack printing two or more modes, how
--- many times a mode was chosen for it, repeats counted; Nothing otherwise.
-modesChosenOf :: ObjectId -> ProjectedCharacteristics -> GameState -> Maybe Natural
-modesChosenOf oid pc gs = case Game.lookupObject oid gs of
+-- many times its controller chose a mode for it, repeats counted; Nothing
+-- otherwise. CR 700.2e: none when another player chose them (Binding.modeChooser),
+-- so Riku of Many Paths' "you chose" reads 0 for Fatal Lore.
+modesChosenOf :: ObjectId -> ProjectedCharacteristics -> Maybe PlayerId.PlayerId -> GameState -> Maybe Natural
+modesChosenOf oid pc controller gs = case Game.lookupObject oid gs of
   Just o
     | Game.zoneOf oid gs == Just Zone.Stack,
       not (Game.isAbility oid gs),
       Modal.modeCount (PC.spell pc) >= 2 ->
-        Just (Natural.length (Binding.modesOf (Object.bindings o)))
+        Just
+          ( if any ((/= controller) . Just) (Map.lookup Binding.modeChooser (Binding.playerSlots (Object.bindings o)))
+              then 0
+              else Natural.length (Binding.modesOf (Object.bindings o))
+          )
   _ -> Nothing
 
 -- CR 707.2 / 613.1a: an object's layer-1 (copy) result -- its stamped copy
