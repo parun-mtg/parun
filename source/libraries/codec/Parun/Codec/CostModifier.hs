@@ -63,15 +63,15 @@ codec = Fields.objectWith check $ do
       (Nothing, CountedAgainst.Type.PaidFor) -> Left (Text.pack "CostModifier: countedAgainst without perEach counts nothing")
       _ -> onlyNthCheck modifier
     onlyNthCheck modifier = case (CostModifier.subject modifier, CostModifier.onlyNth modifier) of
-      (CostSubject.Type.Unlocks, _) -> unlockCheck modifier
+      (CostSubject.Type.SpecialActions _, _) -> specialActionCheck modifier
       (_, Nothing) -> additionCheck modifier
       (CostSubject.Type.Spells, Just _) -> additionCheck modifier
       (CostSubject.Type.Activations criteria, Just nth)
         | Just _ <- ActivationCriteria.whichLoyalty criteria -> Left (Text.pack "CostModifier: onlyNth beside whichLoyalty has no printing")
         | TurnOrdinal.Type.ordinal nth /= 1 -> Left (Text.pack "CostModifier: an activation past the first has no printing")
         | otherwise -> additionCheck modifier
-    unlockCheck modifier
-      | Maybe.isJust (CostModifier.onlyNth modifier) || Maybe.isJust (CostModifier.whichTargets modifier) || Maybe.isJust (CostModifier.perTarget modifier) = Left (Text.pack "CostModifier: an unlock has no targets and no ordinal")
+    specialActionCheck modifier
+      | Maybe.isJust (CostModifier.onlyNth modifier) || Maybe.isJust (CostModifier.whichTargets modifier) || Maybe.isJust (CostModifier.perTarget modifier) = Left (Text.pack "CostModifier: a special action has no targets and no ordinal")
       | otherwise = additionCheck modifier
     additionCheck modifier = case (CostModifier.subject modifier, CostModifier.change modifier) of
       (CostSubject.Type.Activations _, CostChange.Type.Add _)

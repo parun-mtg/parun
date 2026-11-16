@@ -2295,20 +2295,20 @@ costModifierChildren c (CostModifier.MkCostModifier subject matching whichTarget
     <*> costChangeChildren c change
 
 -- | The turn's history a cost modifier's "only the nth" reads: CR 601.2i's
--- casts for a spell, CR 602.2's activations for an ability. None for an
--- unlock, which Parun.Codec.CostModifier refuses an ordinal.
+-- casts for a spell, CR 602.2's activations for an ability. None for a
+-- special action, which Parun.Codec.CostModifier refuses an ordinal.
 costSubjectHistory :: CostSubject.CostSubject -> Maybe HistoryRead.HistoryRead
 costSubjectHistory subject = case subject of
   CostSubject.Spells -> Just HistoryRead.Casts
   CostSubject.Activations _ -> Just HistoryRead.Activations
-  CostSubject.Unlocks -> Nothing
+  CostSubject.SpecialActions _ -> Nothing
 
 -- | What a cost modifier applies to: only abilities hold a child.
 costSubjectChildren :: (Applicative f) => PlayerEffectChildren f -> CostSubject.CostSubject -> f CostSubject.CostSubject
 costSubjectChildren c subject = case subject of
   CostSubject.Spells -> pure subject
   CostSubject.Activations criteria -> CostSubject.Activations <$> playerActivations c criteria
-  CostSubject.Unlocks -> pure subject
+  CostSubject.SpecialActions _ -> pure subject
 
 -- | How a cost modifier counts targets (CR 601.2f).
 perTargetChildren :: (Applicative f) => PlayerEffectChildren f -> PerTarget.PerTarget -> f PerTarget.PerTarget

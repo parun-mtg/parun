@@ -35,6 +35,8 @@ import qualified Parun.Engine.Projection as Projection
 import qualified Parun.Engine.Turn as Turn
 import Parun.Types.Cost (Cost)
 import qualified Parun.Types.Cost as Cost.Type
+import qualified Parun.Types.CostAdjustments as CostAdjustments
+import qualified Parun.Types.CostedSpecialAction as CostedSpecialAction
 import qualified Parun.Types.Face as Face
 import Parun.Types.Game (Game)
 import qualified Parun.Types.GameEvent as GameEvent
@@ -99,15 +101,34 @@ plotCostsOf pid oid gs = case Game.cardOfHandMember oid gs of
 -- The payability check is Cost.canPay and NOT Cost.total's CR 601.2f adjustments,
 -- for the reason FaceDown.canTurnFaceUp gives: that rule totals the cost of a
 -- spell being cast or an ability being activated, and a special action is
--- neither (#90).
+-- neither (#90). What an effect changes about plotting (CR 118.7) is asked
+-- instead, `plotCost`'s adjustments, any total they reach sufficing.
 --
 -- The PRIORITY clause has no conjunct, for the reason CR 116.2a's land play has
 -- none: legalActions is asked only of the priority holder.
 canPlot :: PlayerId -> ObjectId -> Cost Keyword -> GameState -> Bool
-canPlot pid oid cost gs =
-  elem cost (plotCostsOf pid oid gs)
+canPlot pid oid printed gs =
+  elem printed (plotCostsOf pid oid gs)
     && Turn.sorcerySpeedWindow pid gs
-    && Cost.actionPayableAt PaymentSubject.ForNeither 0 pid oid cost gs
+    && let (adjustments, cost) = plotCost pid oid printed gs
+           payableWith manaCost = Cost.actionPayableAt PaymentSubject.ForNeither 0 pid oid cost {Cost.Type.mana = manaCost} gs
+        in case Cost.Type.mana cost of
+             Nothing -> payableWith Nothing
+             Just manaCost -> any (payableWith . Just) (Cost.totalManas adjustments manaCost)
+
+-- CR 118.7 / 702.170e: what an effect changes about plotting this card (Doc
+-- Aurlock, Grizzled Genius's "Plotting cards from your hand costs {2} less"),
+-- gathered over the rows whose subject is CostSubject.SpecialActions Plot, and
+-- the cost with their added components -- Room.unlockCost's shape. Asked of the
+-- card where it stands BEFORE the exile, so "from your hand" reads the hand.
+-- The mana part is left unadjusted: the reductions hold CR 118.7e's choice,
+-- which the payer makes (Cost.announceReductions).
+-- data/scenarios/doc-aurlock-takes-two-off-plotting-from-hand-and-casting-from-the-graveyard
+-- proves it.
+plotCost :: PlayerId -> ObjectId -> Cost Keyword -> GameState -> (CostAdjustments.CostAdjustments, Cost Keyword)
+plotCost pid oid printed gs =
+  let adjustments = PlayerEffect.specialActionCostAdjustments CostedSpecialAction.Plot pid oid gs
+   in (adjustments, Cost.plusComponents adjustments printed)
 
 -- Every (card, cost) this player may plot right now -- what Action.Plot is built
 -- from, and the shape Room.unlockable and FaceDown.turnableFaceUp have. The
@@ -159,10 +180,12 @@ plot :: ManaAbilityPerformer.ManaAbilityPerformer -> PlayerId -> ObjectId -> Cos
 plot perform pid oid printed = do
   before <- State.get
   Monad.when (canPlot pid oid printed before) $ do
+    let (adjustments, cost) = plotCost pid oid printed before
     exiled <- Event.changeZoneReturning (ManaAbilityPerformer.settle perform) oid Zone.Exile
     -- The payment names the card by `oid`, as `before` -- the board its X and
     -- its gates are read against -- knows it.
-    paid <- Cost.payAction perform before PaymentSubject.ForNeither 0 pid oid printed
+    announced <- Cost.announceReductions pid oid before cost adjustments
+    paid <- Cost.payAction perform before PaymentSubject.ForNeither 0 pid oid (Cost.totalWith announced cost)
     case paid of
       Nothing -> State.put before
       -- One stamp per arrival: the funnel answers with more than one only for a

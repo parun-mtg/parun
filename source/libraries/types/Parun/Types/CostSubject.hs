@@ -1,6 +1,7 @@
 module Parun.Types.CostSubject where
 
 import qualified Parun.Types.ActivationCriteria as ActivationCriteria
+import qualified Parun.Types.CostedSpecialAction as CostedSpecialAction
 import qualified Parun.Types.Keyword as Keyword
 
 -- | Which payments a Parun.Types.CostModifier reaches. The constructor and not
@@ -11,6 +12,6 @@ data CostSubject
     Spells
   | -- | CR 602.2b: activating an ability, narrowed by what only an ability has.
     Activations (ActivationCriteria.ActivationCriteria Keyword.Keyword)
-  | -- | CR 709.5e: paying an unlock cost, matched against the Room permanent.
-    Unlocks
+  | -- | CR 116.2: paying the cost of this special action.
+    SpecialActions CostedSpecialAction.CostedSpecialAction
   deriving (Eq, Ord, Show)
