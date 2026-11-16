@@ -10,9 +10,12 @@ import qualified Parun.Types.ManaType as ManaType
 -- type" (Naked Singularity's "Plains produce {R}"), and the amount where the
 -- row replaces that too (Contamination's "{B} instead of any other type and
 -- amount"). Nothing keeps the amount, which Ritual of Subdual's ruling states.
+-- `atLeast` is the least amount the row applies to (Damping Sphere's "tapped
+-- for two or more mana"); Nothing applies whatever the amount.
 data ManaR = MkManaR
   { matching :: Filter.Filter Keyword.Keyword,
     produces :: ManaType.ManaType,
-    amount :: Maybe Natural
+    amount :: Maybe Natural,
+    atLeast :: Maybe Natural
   }
   deriving (Eq, Ord, Show)

@@ -16,13 +16,20 @@ spec s = Spec.describe s "Parun.Codec.ManaR" $ do
     Common.assertCodec
       s
       ManaR.codec
-      (ManaR.MkManaR (Filter.HasCardType CardType.Land) ManaType.Colorless Nothing)
+      (ManaR.MkManaR (Filter.HasCardType CardType.Land) ManaType.Colorless Nothing Nothing)
       " {\"matching\":{\"type\":\"HasCardType\",\"value\":\"Land\"},\"produces\":{\"type\":\"Colorless\"}} "
   -- CR 106.12b's "and/or amount": Contamination.
   Spec.it s "MkManaR with an amount" $
     Common.assertCodec
       s
       ManaR.codec
-      (ManaR.MkManaR (Filter.HasCardType CardType.Land) (ManaType.Colored Color.Black) (Just 1))
+      (ManaR.MkManaR (Filter.HasCardType CardType.Land) (ManaType.Colored Color.Black) (Just 1) Nothing)
       " {\"amount\":1,\"matching\":{\"type\":\"HasCardType\",\"value\":\"Land\"},\"produces\":{\"type\":\"Colored\",\"value\":\"Black\"}} "
+  -- CR 106.12b's "tapped for mana of a specific ... amount": Damping Sphere.
+  Spec.it s "MkManaR with a least amount" $
+    Common.assertCodec
+      s
+      ManaR.codec
+      (ManaR.MkManaR (Filter.HasCardType CardType.Land) ManaType.Colorless (Just 1) (Just 2))
+      " {\"amount\":1,\"atLeast\":2,\"matching\":{\"type\":\"HasCardType\",\"value\":\"Land\"},\"produces\":{\"type\":\"Colorless\"}} "
   Spec.it s "has a schema" $ Common.assertHasSchema s ManaR.codec

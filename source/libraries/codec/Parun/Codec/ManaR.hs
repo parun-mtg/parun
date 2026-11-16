@@ -15,9 +15,11 @@ codec = Fields.object $ do
   matching <- Fields.required "matching" (Filter.codec Keyword.codec) ManaR.matching
   produces <- Fields.required "produces" ManaType.codec ManaR.produces
   amount <- Fields.defaulted "amount" Nothing (Common.maybe Common.natural) ManaR.amount
+  atLeast <- Fields.defaulted "atLeast" Nothing (Common.maybe Common.natural) ManaR.atLeast
   pure
     ManaR.MkManaR
       { ManaR.matching = matching,
         ManaR.produces = produces,
-        ManaR.amount = amount
+        ManaR.amount = amount,
+        ManaR.atLeast = atLeast
       }
