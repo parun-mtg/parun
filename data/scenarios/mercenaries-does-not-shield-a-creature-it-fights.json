@@ -1,0 +1,16 @@
+{
+  "description": "CR 615.8 / 615.1: Mercenaries' shield covers only its damage to the activating player, so its damage to her blocker is dealt",
+  "note": "Alice pays {3}, then blocks Mercenaries with Grizzly Bears: the Bears take 3 and die. A shield over every recipient would save them.",
+  "board": {"active": "bob", "step": "BeginningOfCombat", "seats": [
+    {"name": "bob", "battlefield": [{"card": "Mercenaries", "label": "merc", "ready": true}], "library": [{"card": "Island"}, {"card": "Island"}, {"card": "Island"}]},
+    {"name": "alice", "battlefield": [{"card": "Grizzly Bears", "label": "bears"}, {"card": "Plains", "label": "p1"}, {"card": "Plains", "label": "p2"}, {"card": "Plains", "label": "p3"}], "library": [{"card": "Island"}, {"card": "Island"}, {"card": "Island"}]}
+  ]},
+  "timeline": [
+    {"turn": 1, "step": "DeclareAttackers", "player": "bob", "do": {"Attack": ["$merc"]}},
+    {"turn": 1, "step": "DeclareAttackers", "player": "alice", "do": {"Activate": {"object": "$merc", "ability": 0, "mana": ["$p1", "$p2", "$p3"]}}},
+    {"turn": 1, "step": "DeclareAttackers", "player": "alice", "do": "Pass"},
+    {"turn": 1, "step": "DeclareBlockers", "player": "alice", "do": {"Block": {"$bears": ["$merc"]}}},
+    {"turn": 1, "step": "PostcombatMain", "player": "bob", "check": {"Count": {"player": "alice", "zone": "Graveyard", "card": "Grizzly Bears", "count": 1}}},
+    {"turn": 1, "step": "PostcombatMain", "player": "bob", "check": {"Damage": {"object": "$merc", "damage": 2}}}
+  ]
+}

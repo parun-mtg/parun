@@ -32,6 +32,10 @@
                   {
                     "type": "NextDamageInstance",
                     "value": {
+                      "chosenSource": {
+                        "type": "And",
+                        "value": []
+                      },
                       "duration": {
                         "type": "UntilEndOfTurn"
                       },

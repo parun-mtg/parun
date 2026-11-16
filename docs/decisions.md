@@ -2450,3 +2450,19 @@ Entries are ordered by the first rule each cites.
 - **Site**: `Parun.Engine.Cost.tapPowerGiven`, a FENCE: no card in the pool
   grants the offset to another creature.
 - **Issue**: #7749.
+
+## Whether a described one-hit shield covers two sources at once
+
+- **Question**: Circle of Solace prevents "the next time a creature of the
+  chosen type would deal damage to you". Two such creatures deal combat damage
+  at once. Is all of it prevented, or one source's?
+- **Rules**: CR 510.2, 609.7b, 615.8; no ruling on the card; CR of
+  2026-11-06.
+- **Decision**: All of it. Simultaneous damage is one "next time", so the
+  shield is spent once the batch is settled.
+- **Rejected**: One source's, chosen by the shielded player. CR 615.8's
+  instance is per source because its shield names a specific source, and this
+  one names none.
+- **Site**: `Parun.Engine.Replacement.spendPrevented`, proved by the scenario
+  "circle-of-solace-prevents-the-chosen-types-next-damage-without-a-choice".
+- **Issue**: #7439.

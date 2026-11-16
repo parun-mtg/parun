@@ -1362,11 +1362,10 @@ slotsOf effect = joinTwo (joinTwo (joinSlots (fmap objectRefSlots (effectObjectR
         joinSlots (fmap filterSlotsOf (Maybe.maybeToList whatRecipient <> Maybe.maybeToList chosenSource <> [whatSource])),
         riderSlotsOf rider
       ]
-  -- The two arms above's reads, minus the shield size this opcode does not
-  -- carry: a duration, the recipient description, CR 609.7a's chosen-source
-  -- predicate, and the rider.
-  Effect.NextDamageInstance (NextDamageInstance.MkNextDamageInstance duration _ _ whatRecipient _ _ chosenSource rider _) ->
-    joinSlots [durationSlots duration, joinSlots (fmap filterSlotsOf (Maybe.maybeToList whatRecipient <> [chosenSource])), riderSlotsOf rider]
+  -- The arm above's reads: a duration, the recipient description, CR
+  -- 609.7a's chosen-source predicate, CR 609.7b's printed one, and the rider.
+  Effect.NextDamageInstance (NextDamageInstance.MkNextDamageInstance duration _ _ whatRecipient _ _ chosenSource whatSource rider _) ->
+    joinSlots [durationSlots duration, joinSlots (fmap filterSlotsOf (Maybe.maybeToList whatRecipient <> Maybe.maybeToList chosenSource <> [whatSource])), riderSlotsOf rider]
   -- CR 614.9's redirection reads what PreventNextDamage reads, minus a rider it
   -- cannot carry: the recipient and source descriptions ride the row, CR
   -- 609.7a's chosen-source predicate is asked once here, and the counted amount
@@ -2255,7 +2254,7 @@ ownSlotsAreExhaustive effect = case effect of
     durationSlotsAreExhaustive duration && Quantity.slotsAreExhaustive quantity && all slotsAreExhaustive rider
   Effect.PreventAllDamage (PreventAllDamage.MkPreventAllDamage duration _ _ _ _ _ _ _ rider) ->
     durationSlotsAreExhaustive duration && all slotsAreExhaustive rider
-  Effect.NextDamageInstance (NextDamageInstance.MkNextDamageInstance duration _ _ _ _ _ _ rider _) ->
+  Effect.NextDamageInstance (NextDamageInstance.MkNextDamageInstance duration _ _ _ _ _ _ _ rider _) ->
     durationSlotsAreExhaustive duration && all slotsAreExhaustive rider
   Effect.RedirectDamage (RedirectDamage.MkRedirectDamage duration _ amount _ _ _ _ _ _ _) -> durationSlotsAreExhaustive duration && all Quantity.slotsAreExhaustive amount
   Effect.Counter {} -> True
@@ -2556,7 +2555,7 @@ hasRead wanted =
         Effect.PreventNextDamage (PreventNextDamage.MkPreventNextDamage _ _ _ _ _ _ quantity rider) -> Quantity.hasRead wanted quantity || hasRead wanted (Foldable.toList rider)
         Effect.LaterPayment (LaterPayment.MkLaterPayment _ _ effects) -> hasRead wanted (Foldable.toList effects)
         Effect.PreventAllDamage (PreventAllDamage.MkPreventAllDamage _ _ _ _ _ _ _ _ rider) -> hasRead wanted (Foldable.toList rider)
-        Effect.NextDamageInstance (NextDamageInstance.MkNextDamageInstance _ _ _ _ _ _ _ rider _) -> hasRead wanted (Foldable.toList rider)
+        Effect.NextDamageInstance (NextDamageInstance.MkNextDamageInstance _ _ _ _ _ _ _ _ rider _) -> hasRead wanted (Foldable.toList rider)
         Effect.RedirectDamage (RedirectDamage.MkRedirectDamage _ _ amount _ _ _ _ _ _ _) -> any (Quantity.hasRead wanted) amount
         Effect.Counter {} -> False
         Effect.PutCounters (PutCounters.MkPutCounters _ quantity _ _ _) -> Quantity.hasRead wanted quantity
@@ -2865,7 +2864,7 @@ boundSlots effect = case effect of
   Effect.PreventNextDamage (PreventNextDamage.MkPreventNextDamage _ _ _ _ _ _ _ rider) -> foldMap boundSlots rider
   Effect.LaterPayment (LaterPayment.MkLaterPayment _ _ effects) -> foldMap boundSlots effects
   Effect.PreventAllDamage (PreventAllDamage.MkPreventAllDamage _ _ _ _ _ _ _ _ rider) -> foldMap boundSlots rider
-  Effect.NextDamageInstance (NextDamageInstance.MkNextDamageInstance _ _ _ _ _ _ _ rider _) -> foldMap boundSlots rider
+  Effect.NextDamageInstance (NextDamageInstance.MkNextDamageInstance _ _ _ _ _ _ _ _ rider _) -> foldMap boundSlots rider
   Effect.RedirectDamage {} -> Set.empty
   -- How many spells this countering ACTUALLY countered, for a "for each spell
   -- countered this way", and which (Psychic Rebuttal's "copy the spell countered

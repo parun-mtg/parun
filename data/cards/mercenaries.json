@@ -1,0 +1,79 @@
+{
+  "faces": [
+    {
+      "activatedAbilities": [
+        {
+          "activator": {
+            "type": "AnyPlayer"
+          },
+          "cost": {
+            "mana": [
+              {
+                "type": "Generic",
+                "value": 3
+              }
+            ]
+          },
+          "modal": {
+            "modes": [
+              {
+                "clauses": [
+                  {
+                    "effects": [
+                      {
+                        "type": "NextDamageInstance",
+                        "value": {
+                          "direction": "DealtBy",
+                          "duration": {
+                            "type": "UntilEndOfTurn"
+                          },
+                          "ref": {
+                            "type": "InSlot",
+                            "value": "self"
+                          },
+                          "whoRecipient": "You"
+                        }
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      ],
+      "manaCost": [
+        {
+          "type": "Generic",
+          "value": 3
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "White"
+          }
+        }
+      ],
+      "name": "Mercenaries",
+      "oracleText": "{3}: The next time this creature would deal damage to you this turn, prevent that damage. Any player may activate this ability.",
+      "power": {
+        "type": "Literal",
+        "value": 3
+      },
+      "toughness": {
+        "type": "Literal",
+        "value": 3
+      },
+      "typeLine": {
+        "subtypes": [
+          "Human",
+          "Mercenary"
+        ],
+        "types": [
+          "Creature"
+        ]
+      }
+    }
+  ]
+}
