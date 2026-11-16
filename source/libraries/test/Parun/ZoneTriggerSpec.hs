@@ -202,6 +202,7 @@ import qualified Parun.Types.RevealTiming as RevealTiming
 import qualified Parun.Types.Revealed as Revealed
 import qualified Parun.Types.RevealedThisWay as RevealedThisWay
 import qualified Parun.Types.RoomIndex as RoomIndex
+import qualified Parun.Types.SacrificeTrigger as SacrificeTrigger
 import qualified Parun.Types.Saddling as Saddling
 import qualified Parun.Types.SideDeck as SideDeck
 import qualified Parun.Types.SlotName as SlotName
@@ -2390,10 +2391,12 @@ everyTriggerCondition =
     -- ALL THREE relations, on the Declaration rows' reasoning above: an
     -- eventBindings arm that had cased on the relation and stamped nothing under
     -- one of them would go unseen if only one were listed. Vengeful Tracker
-    -- prints the Opponent form and Mayhem Devil the AnyPlayer one.
-    TriggerCondition.PermanentSacrificed (PlayerActsOn.MkPlayerActsOn PlayerRelation.You (Filter.Type.And [])),
-    TriggerCondition.PermanentSacrificed (PlayerActsOn.MkPlayerActsOn PlayerRelation.Opponent (Filter.Type.And [])),
-    TriggerCondition.PermanentSacrificed (PlayerActsOn.MkPlayerActsOn PlayerRelation.AnyPlayer (Filter.Type.And [])),
+    -- prints the Opponent form and Mayhem Devil the AnyPlayer one. The
+    -- OneOrMore row (Camellia, the Seedmiser) stamps a different set.
+    TriggerCondition.PermanentSacrificed (SacrificeTrigger.MkSacrificeTrigger (PlayerActsOn.MkPlayerActsOn PlayerRelation.You (Filter.Type.And [])) Batching.EachOccurrence),
+    TriggerCondition.PermanentSacrificed (SacrificeTrigger.MkSacrificeTrigger (PlayerActsOn.MkPlayerActsOn PlayerRelation.Opponent (Filter.Type.And [])) Batching.EachOccurrence),
+    TriggerCondition.PermanentSacrificed (SacrificeTrigger.MkSacrificeTrigger (PlayerActsOn.MkPlayerActsOn PlayerRelation.AnyPlayer (Filter.Type.And [])) Batching.EachOccurrence),
+    TriggerCondition.PermanentSacrificed (SacrificeTrigger.MkSacrificeTrigger (PlayerActsOn.MkPlayerActsOn PlayerRelation.You (Filter.Type.And [])) Batching.OneOrMore),
     TriggerCondition.AbilityWatch (AbilityWatch.MkAbilityWatch (WatchedAbility.SagaFinalChapter ChapterMoment.Triggers) PlayerRelation.You),
     TriggerCondition.AbilityWatch (AbilityWatch.MkAbilityWatch (WatchedAbility.SagaFinalChapter ChapterMoment.Resolves) PlayerRelation.You),
     TriggerCondition.AbilityWatch (AbilityWatch.MkAbilityWatch WatchedAbility.CausedByOwnAttack PlayerRelation.You),

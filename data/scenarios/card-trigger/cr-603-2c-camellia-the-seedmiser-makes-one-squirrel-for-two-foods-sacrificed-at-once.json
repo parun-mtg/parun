@@ -1,0 +1,128 @@
+{
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "battlefield": [
+          {
+            "card": "Camellia, the Seedmiser",
+            "label": "camellia",
+            "ready": true
+          },
+          {
+            "card": "Asmoranomardicadaistinaculdacar",
+            "label": "asmor",
+            "ready": true
+          },
+          {
+            "card": "Golden Egg",
+            "label": "egg1"
+          },
+          {
+            "card": "Golden Egg",
+            "label": "egg2"
+          },
+          {
+            "card": "Golden Egg",
+            "label": "egg3"
+          }
+        ],
+        "name": "alice"
+      },
+      {
+        "battlefield": [
+          {
+            "card": "Child of Night",
+            "label": "child"
+          }
+        ],
+        "name": "bob"
+      }
+    ],
+    "step": "PrecombatMain"
+  },
+  "description": "CR 603.2c Camellia, the Seedmiser: two Foods sacrificed at once make one Squirrel",
+  "note": "Asmoranomardicadaistinaculdacar's cost sacrifices two Golden Eggs in one CR 701.21a action; a per-permanent trigger would put two triggers on the stack and make two Squirrels. The third Egg makes the pair a real choice.",
+  "timeline": [
+    {
+      "do": {
+        "Answer": {
+          "prompt": "ChooseSacrifices",
+          "with": [
+            "$egg1",
+            "$egg2"
+          ]
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Activate": {
+          "ability": 0,
+          "object": "$asmor",
+          "targets": [
+            "$child"
+          ]
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "View": {
+          "is": [
+            "trigger of $camellia",
+            "ability of $asmor"
+          ],
+          "of": "Stack"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Squirrel Token",
+          "count": 1,
+          "player": "alice",
+          "zone": "Battlefield"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Golden Egg",
+          "count": 1,
+          "player": "alice",
+          "zone": "Battlefield"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    }
+  ]
+}
