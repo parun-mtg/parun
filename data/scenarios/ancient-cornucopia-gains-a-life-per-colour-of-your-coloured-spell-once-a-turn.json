@@ -1,0 +1,27 @@
+{
+  "description": "Ancient Cornucopia: casting a spell of one or more colours lets its controller gain 1 life for each of that spell's colours, once each turn",
+  "note": "Ornithopter is colourless and gains nothing; Watchwolf is green and white, so its gain is 2 (not 1); the Grizzly Bears cast after it in the same turn gains nothing, since the gain was taken. Bob's Watchwolf on turn 2 gains alice nothing: the spell must be hers.",
+  "board": {"active": "alice", "step": "PrecombatMain", "seats": [
+    {"name": "alice", "manaPool": "GGWG", "battlefield": [{"card": "Ancient Cornucopia", "label": "cornucopia"}], "hand": [{"card": "Ornithopter", "label": "thopter"}, {"card": "Watchwolf", "label": "wolf"}, {"card": "Grizzly Bears", "label": "bears"}], "library": [{"card": "Island"}, {"card": "Island"}, {"card": "Island"}]},
+    {"name": "bob", "hand": [{"card": "Watchwolf", "label": "bobwolf"}], "battlefield": [{"card": "Forest", "label": "bf"}, {"card": "Plains", "label": "bp"}], "library": [{"card": "Island"}, {"card": "Island"}, {"card": "Island"}]}
+  ]},
+  "timeline": [
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": {"Cast": {"object": "$thopter"}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"View": {"of": "Stack", "is": ["Ornithopter"]}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass"},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": {"Cast": {"object": "$wolf", "mana": [null]}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass"},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "source": "$cornucopia", "do": {"ChooseOptional": "Exercises"}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Life": {"player": "alice", "life": 22}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass"},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": {"Cast": {"object": "$bears", "mana": [null]}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"View": {"of": "Stack", "is": ["Grizzly Bears"]}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass"},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Count": {"player": "alice", "zone": "Battlefield", "card": "Grizzly Bears", "count": 1}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Life": {"player": "alice", "life": 22}}},
+    {"turn": 2, "step": "PrecombatMain", "player": "bob", "do": {"Cast": {"object": "$bobwolf", "mana": ["$bf", "$bp"]}}},
+    {"turn": 2, "step": "PrecombatMain", "player": "bob", "do": "Pass"},
+    {"turn": 2, "step": "PrecombatMain", "player": "bob", "check": {"Count": {"player": "bob", "zone": "Battlefield", "card": "Watchwolf", "count": 1}}},
+    {"turn": 2, "step": "PrecombatMain", "player": "bob", "check": {"Life": {"player": "alice", "life": 22}}}
+  ]
+}

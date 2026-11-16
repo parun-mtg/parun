@@ -1,0 +1,26 @@
+{
+  "description": "Greed's Gambit: as it enters its controller draws three, gains 6 life and creates three 2/1 flying Bats; at the beginning of their end step they discard a card, lose 2 life and sacrifice a creature",
+  "note": "Alice's hand is empty after the cast, so the three cards in it at the end step are the three drawn. She discards the Hill Giant and sacrifices one Bat, choosing among the Bats and her Grizzly Bears. Life 20 to 26 to 24.",
+  "board": {"active": "alice", "step": "PrecombatMain", "seats": [
+    {"name": "alice", "manaPool": "BBBB", "battlefield": [{"card": "Grizzly Bears", "label": "bears"}], "hand": [{"card": "Greed's Gambit", "label": "gambit"}], "library": [{"card": "Hill Giant", "label": "giant"}, {"card": "Island", "label": "i1"}, {"card": "Forest", "label": "f1"}, {"card": "Swamp"}, {"card": "Swamp"}]},
+    {"name": "bob", "library": [{"card": "Island"}, {"card": "Island"}, {"card": "Island"}]}
+  ]},
+  "timeline": [
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": {"Cast": {"object": "$gambit"}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass"},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass"},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"View": {"of": "Zone", "player": "alice", "zone": "Hand", "is": ["Hill Giant", "Island#4", "Forest"]}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Life": {"player": "alice", "life": 26}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Count": {"player": "alice", "zone": "Battlefield", "card": "Bat Token", "count": 3}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"PowerToughness": {"object": "Bat Token", "power": 2, "toughness": 1}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Keywords": {"object": "Bat Token", "keyword": {"type": "Flying"}, "count": 1}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"View": {"of": "Colors", "object": "Bat Token", "is": ["Black"]}}},
+    {"turn": 1, "step": "EndStep", "player": "alice", "do": "Pass"},
+    {"turn": 1, "step": "EndStep", "player": "alice", "do": {"Answer": {"prompt": "ChooseDiscard", "with": ["Hill Giant"]}}},
+    {"turn": 1, "step": "EndStep", "player": "alice", "do": {"Answer": {"prompt": "ChooseSacrifices", "with": ["Bat Token"]}}},
+    {"turn": 1, "step": "EndStep", "player": "alice", "check": {"Life": {"player": "alice", "life": 24}}},
+    {"turn": 1, "step": "EndStep", "player": "alice", "check": {"Count": {"player": "alice", "zone": "Graveyard", "card": "Hill Giant", "count": 1}}},
+    {"turn": 1, "step": "EndStep", "player": "alice", "check": {"Count": {"player": "alice", "zone": "Battlefield", "card": "Bat Token", "count": 2}}},
+    {"turn": 1, "step": "EndStep", "player": "alice", "check": {"Count": {"player": "alice", "zone": "Battlefield", "card": "Grizzly Bears", "count": 1}}}
+  ]
+}

@@ -1,0 +1,18 @@
+{
+  "description": "Loot, the Key to Everything: at its controller's upkeep it exiles their top X cards, X the card types among other nonland permanents they control, and they may play those cards this turn",
+  "note": "Alice's other nonland permanents are Memnite (artifact creature) and Glorious Anthem (enchantment): three types. Her Forest is a land and adds none, so Hill Giant, fourth from the top, stays. She plays the exiled Mountain as her land and casts the exiled Grizzly Bears with it and the Forest.",
+  "board": {"active": "alice", "step": "Untap", "seats": [
+    {"name": "alice", "battlefield": [{"card": "Loot, the Key to Everything", "label": "loot"}, {"card": "Memnite"}, {"card": "Glorious Anthem"}, {"card": "Forest", "label": "forest"}], "library": [{"card": "Mountain", "label": "mountain"}, {"card": "Grizzly Bears", "label": "bears"}, {"card": "Swamp", "label": "swamp"}, {"card": "Hill Giant", "label": "giant"}, {"card": "Island"}, {"card": "Island"}]},
+    {"name": "bob", "battlefield": [{"card": "Ornithopter"}, {"card": "Plains"}], "library": [{"card": "Island"}, {"card": "Island"}, {"card": "Island"}]}
+  ]},
+  "timeline": [
+    {"turn": 1, "step": "Upkeep", "player": "alice", "do": "Pass"},
+    {"turn": 1, "step": "Upkeep", "player": "alice", "check": {"View": {"of": "Zone", "player": "alice", "zone": "Exile", "is": ["Mountain", "Grizzly Bears", "Swamp"]}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": {"PlayLand": "Mountain"}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": {"Cast": {"object": "Grizzly Bears", "mana": ["$forest", "Mountain"]}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass"},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Count": {"player": "alice", "zone": "Battlefield", "card": "Grizzly Bears", "count": 1}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Count": {"player": "alice", "zone": "Library", "card": "Hill Giant", "count": 1}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Count": {"player": "alice", "zone": "Exile", "card": "Swamp", "count": 1}}}
+  ]
+}

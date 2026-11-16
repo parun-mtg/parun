@@ -1,0 +1,29 @@
+{
+  "description": "CR 702.75a: Collector's Cage hides one of its top five, and its {1}, {T} puts a +1/+1 counter on target creature you control, then plays the hidden card free only if its controller controls three or more creatures with different powers",
+  "note": "Alice's creatures have powers 1, 1 and 3. Turn 1: the counter goes on Hill Giant (1, 1, 4: two different powers), so nothing is offered and the Bolt stays exiled. Turn 3: the counter goes on Memnite (2, 1, 4), and only that counter makes three, so the Bolt is cast free at Bob (20 to 17). Bob's Grizzly Bears (power 2) never counts.",
+  "board": {"active": "alice", "step": "PrecombatMain", "seats": [
+    {"name": "alice", "battlefield": [{"card": "Memnite", "label": "memnite"}, {"card": "Memnite", "label": "memnite2"}, {"card": "Hill Giant", "label": "giant"}, {"card": "Plains", "label": "plains"}, {"card": "Wastes", "label": "w1"}, {"card": "Wastes", "label": "w2"}], "hand": [{"card": "Collector's Cage", "label": "cage"}], "library": [{"card": "Lightning Bolt", "label": "bolt"}, {"card": "Island", "label": "i1"}, {"card": "Forest", "label": "f1"}, {"card": "Mountain", "label": "m1"}, {"card": "Swamp", "label": "s1"}, {"card": "Swamp"}, {"card": "Swamp"}]},
+    {"name": "bob", "battlefield": [{"card": "Grizzly Bears"}], "library": [{"card": "Island"}, {"card": "Island"}, {"card": "Island"}]}
+  ]},
+  "timeline": [
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": {"Cast": {"object": "$cage", "mana": ["$plains", "$w1", null]}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass"},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass"},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": {"Answer": {"prompt": "ChooseCardFromAmong", "with": "$bolt"}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": {"Answer": {"prompt": "Shuffle", "with": ["$i1", "$f1", "$m1", "$s1"]}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"View": {"of": "Zone", "player": "alice", "zone": "Exile", "is": ["Lightning Bolt"]}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": {"Activate": {"object": "Collector's Cage", "targets": ["$giant"], "mana": ["$w2"]}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass"},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"PowerToughness": {"object": "$giant", "power": 4, "toughness": 4}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Count": {"player": "alice", "zone": "Exile", "card": "Lightning Bolt", "count": 1}}},
+    {"turn": 2, "step": "DeclareAttackers", "player": "bob", "do": {"Attack": []}},
+    {"turn": 3, "step": "PrecombatMain", "player": "alice", "do": {"Activate": {"object": "Collector's Cage", "targets": ["$memnite"], "mana": ["$w1", null]}}},
+    {"turn": 3, "step": "PrecombatMain", "player": "alice", "do": "Pass"},
+    {"turn": 3, "step": "PrecombatMain", "player": "alice", "do": {"Answer": {"prompt": "OfferedCast", "with": "Exercises"}}},
+    {"turn": 3, "step": "PrecombatMain", "player": "alice", "do": {"ChooseTargets": {"target": ["$bob"]}}},
+    {"turn": 3, "step": "PrecombatMain", "player": "alice", "check": {"View": {"of": "Stack", "is": ["Lightning Bolt"]}}},
+    {"turn": 3, "step": "PrecombatMain", "player": "alice", "do": "Pass"},
+    {"turn": 3, "step": "PrecombatMain", "player": "alice", "check": {"Life": {"player": "bob", "life": 17}}},
+    {"turn": 3, "step": "PrecombatMain", "player": "alice", "check": {"PowerToughness": {"object": "$memnite", "power": 2, "toughness": 2}}}
+  ]
+}
