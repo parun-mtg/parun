@@ -259,6 +259,7 @@ import qualified Parun.Types.RollDie as RollDie
 import qualified Parun.Types.SacrificeAnyNumber as SacrificeAnyNumber
 import qualified Parun.Types.SacrificeEffect as SacrificeEffect
 import qualified Parun.Types.SacrificeToEnter as SacrificeToEnter
+import qualified Parun.Types.Scaling as Scaling
 import qualified Parun.Types.Scratch as Scratch
 import qualified Parun.Types.Search as Search
 import qualified Parun.Types.SetClassLevel as SetClassLevel
@@ -1870,7 +1871,7 @@ playerEffectFilterSlots = joinSlots . Functor.getConst . Children.playerEffectCh
 -- Filter.IsBound being a membership test rather than a target slot; the QUANTITY
 -- half is quantitySlots' answer, so a Quantity.InSlot reports SlotArity.Amount --
 -- CR 614.1c's WithCounters, CR 702.37b's and DrawRewrite.KeepOneOfTopThenDraw's
--- count can carry one. The two capture sites take Map.keysSet, so the arity reaches only slotsOf's
+-- count can carry one, as can a damage Scale's AddMore. The two capture sites take Map.keysSet, so the arity reaches only slotsOf's
 -- Replace arm.
 replacementRowSlots :: ReplacementEffect.ReplacementEffect Card.Type.Card (GrantedAbility.GrantedAbility Card.Type.Card) (Effect Card.Type.Card (GrantedAbility.GrantedAbility Card.Type.Card)) -> Map.Map SlotName SlotArity
 replacementRowSlots re =
@@ -2078,7 +2079,11 @@ damageRewriteReads rewrite = case rewrite of
   DamageRewrite.PreventAllBut _ -> ([], [])
   DamageRewrite.PreventUpTo quantity -> ([], [quantity])
   DamageRewrite.SetAmount _ -> ([], [])
-  DamageRewrite.Scale _ -> ([], [])
+  -- Taii Wakeen, Perfect Shot's "plus X".
+  DamageRewrite.Scale (Scaling.AddMore quantity) -> ([], [quantity])
+  DamageRewrite.Scale (Scaling.Multiply _) -> ([], [])
+  DamageRewrite.Scale (Scaling.Subtract _) -> ([], [])
+  DamageRewrite.Scale Scaling.Halve -> ([], [])
   -- The nested effects are replacementRowEffects' answer above, not a read of
   -- the rewrite's own.
   DamageRewrite.RunEffects _ -> ([], [])

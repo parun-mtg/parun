@@ -11,7 +11,8 @@ import qualified Parun.Types.Quantity as Quantity
 data Scaling
   = Multiply Natural.Natural
   | -- | CR 107.1b: "that much plus" the quantity, read as the replacement
-    -- applies (Hawkeye, Young Avenger's power), the total floored at zero.
+    -- applies (Hawkeye, Young Avenger's power), or as installed where it reads
+    -- a slot (Taii Wakeen, Perfect Shot's X), the total floored at zero.
     AddMore Quantity.Quantity
   | -- | CR 122.1: Vizier of Remedies' "that many -1\/-1 counters minus one".
     -- SATURATING at zero, because a counter count is a Natural and rule 122.1

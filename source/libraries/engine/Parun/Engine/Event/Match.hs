@@ -1158,7 +1158,7 @@ armMatches bindings board atEvent beforeEvent groupEvents gs bearer you cond eve
     GameEvent.DamageDealt ev ->
       damageBy (DamageTrigger.actor watched) (DamageEvent.source ev)
         && all (== DamageEvent.kind ev) (DamageTrigger.kind watched)
-        && (Set.null (DamageTrigger.recipients watched) || any (damagedIs (DamageEvent.target ev)) (DamageTrigger.recipients watched))
+        && (Set.null (DamageTrigger.recipients watched) || any (damagedIs (DamageEvent.amount ev) (DamageEvent.target ev)) (DamageTrigger.recipients watched))
     _ -> False
   -- CR 120.3: the watched permanent was DEALT damage -- enrage's event, and
   -- Death Pits of Rath's. DealsDamage's arm with the check moved from the
@@ -2540,11 +2540,16 @@ armMatches bindings board atEvent beforeEvent groupEvents gs bearer you cond eve
     -- permanent's qualifier reads it as damageBy reads the source, off CR
     -- 603.10's sample, so a recipient the damage killed still answers. Scenario
     -- acidic-dagger-triggers-for-a-non-wall-creature-the-damage-killed.
-    damagedIs target recipient = case recipient of
+    -- The qualifier reads the damage dealt TO IT at Binding.eventAmount, so
+    -- Taii Wakeen's "equal to that creature's toughness" compares the two on
+    -- that same sample. Scenario
+    -- taii-wakeen-draws-for-damage-equal-to-toughness-not-less-or-more.
+    damagedIs amount target recipient = case recipient of
       DamageRecipient.Player relation -> maybe False (PlayerRelation.holds (Game.teams gs) relation you) (Recipient.playerOf target)
       DamageRecipient.Permanent cardType qualifier ->
-        Set.member cardType (Projection.damagedCardTypes gs target)
-          && maybe False (\oid -> maybe False (\view -> Filter.matches bearerContext (ProjectionView.lastZoned gs oid view) qualifier) (postEventView board gs oid)) (Recipient.objectOf target)
+        let dealt = bearerContext {Filter.boundAmounts = Map.insert Binding.eventAmount amount (Filter.boundAmounts bearerContext)}
+         in Set.member cardType (Projection.damagedCardTypes gs target)
+              && maybe False (\oid -> maybe False (\view -> Filter.matches dealt (ProjectionView.lastZoned gs oid view) qualifier) (postEventView board gs oid)) (Recipient.objectOf target)
 
 -- CR 106.12a's second half: did an activation that produced @produced@ produce
 -- the mana this condition specified? The narrowing half of the
