@@ -75,7 +75,9 @@ import qualified Parun.Types.AnyNumberMatching as AnyNumberMatching
 import qualified Parun.Types.AnyNumberOf as AnyNumberOf
 import qualified Parun.Types.ArmDelayedTrigger as ArmDelayedTrigger
 import qualified Parun.Types.ArrangedArrival as ArrangedArrival
+import qualified Parun.Types.AttachAll as AttachAll
 import qualified Parun.Types.AttachBound as AttachBound
+import qualified Parun.Types.AttachTarget as AttachTarget
 import qualified Parun.Types.AttackTarget as AttackTarget
 import qualified Parun.Types.Ballot as Ballot
 import qualified Parun.Types.Binding as Binding.Type
@@ -3550,13 +3552,30 @@ effectIsImpossible asked resolving source controller legal gs effect = case effe
           _ -> Maybe.maybeToList (legalOne slot legal)
      in movesNothing Attach.attachmentFor [source] destinations
   Effect.AttachAsThoughCreature slot -> movesNothing Attach.attachmentAsThoughCreature [source] (Maybe.maybeToList (legalOne slot legal))
-  -- The three that choose a destination on resolution are not answered here
-  -- (gap #7541).
-  Effect.AttachTarget {} -> False
-  Effect.AttachTargetToEach {} -> False
+  -- CR 701.3b with the destination chosen on resolution: the subject named and
+  -- no candidate the executing arm offers (Attach.hostsFor) moves it, none at
+  -- all being CR 609.3's nothing. data/scenarios/aura's "CR 608.2d Ajani's
+  -- Chosen offers no attach for an Aura that can't enchant the Cat" proves
+  -- AttachTarget; AttachTargetToEach is a regression fence, no printed "may"
+  -- in data/cards reaching it.
+  Effect.AttachTarget attach -> hostsMoveNothing attach
+  Effect.AttachTargetToEach attach -> hostsMoveNothing attach
   Effect.AttachBound (AttachBound.MkAttachBound subject destination) ->
     movesNothing Attach.attachmentFor (objectRefObjects legal resolving controller source gs (ObjectRef.InSlot subject)) (Maybe.maybeToList (legalOne destination legal))
-  Effect.AttachAll {} -> False
+  -- The group's twin, over Objects.attachAll's movers and destinations. A
+  -- chosen group is weighed one candidate at a time: Filter.CanHostSubject
+  -- admits at least as much for a part as for the whole, so a lone candidate
+  -- reaches every destination any choice could. data/scenarios/aura's "CR
+  -- 608.2d Battlefield Improvisation offers no attach with every Equipment
+  -- already on the target" proves it.
+  Effect.AttachAll (AttachAll.MkAttachAll ref filter_) ->
+    let groups = case ref of
+          ObjectRef.ChosenPermanents choice -> fmap pure (chosenCandidates legal resolving controller source gs choice)
+          _ -> [objectRefObjects legal resolving controller source gs ref]
+        grants = Projection.controlGrants gs
+        inReach oid = all (\you -> Projection.objectInRangeGiven grants you oid gs) (Plane.rangePerspective source controller gs)
+        groupMovesNothing movers = and [Maybe.isNothing (Attach.moveFor Attach.attachmentFor mover (Recipient.ToObject host) gs) | host <- filter inReach (Attach.groupHostsFor context movers filter_ gs), mover <- movers]
+     in not (all null groups) && all groupMovesNothing groups
   -- CR 701.3d: the sweep names at least one permanent and none of them is
   -- attached to anything, so there is nothing to move away (Akiri, Fearless
   -- Voyager's "you may unattach"). A regression fence: no printed "may" in
@@ -3972,6 +3991,10 @@ effectIsImpossible asked resolving source controller legal gs effect = case effe
       -- Only when no member names anything: a read always might.
       ObjectRef.AllOf refs -> all choosesFromNothing refs
       _ -> False
+    -- The subject named, and no host Objects.attachTarget could choose moves it.
+    hostsMoveNothing (AttachTarget.MkAttachTarget slot filter_) = case legalOne slot legal >>= Recipient.objectOf of
+      Just subject -> all (\host -> Maybe.isNothing (Attach.moveFor Attach.attachmentFor subject (Recipient.ToObject host) gs)) (Attach.hostsFor context subject filter_ gs)
+      Nothing -> False
     -- Movers and destinations both named, and no pairing moves anything.
     movesNothing legality movers destinations =
       not (null movers) && not (null destinations) && and [Maybe.isNothing (Attach.moveFor legality mover destination gs) | mover <- movers, destination <- destinations]

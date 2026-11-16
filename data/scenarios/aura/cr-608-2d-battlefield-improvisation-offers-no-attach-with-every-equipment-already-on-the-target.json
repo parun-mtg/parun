@@ -1,0 +1,19 @@
+{
+  "description": "CR 608.2d Battlefield Improvisation offers no attach with every Equipment already on the target",
+  "note": "Alice's only Equipment, Bonesplitter, is already on the attacking Hill Giant, so no choice of Equipment moves anything (CR 701.3b) and the \"you may\" is not offered (an unscheduled prompt would fail this run). cr-608-2c-battlefield-improvisation-attaches-the-chosen-equipment-only-to-an-att is the twin that is offered.",
+  "board": {
+    "active": "alice",
+    "step": "PrecombatMain",
+    "seats": [
+      {"name": "alice", "battlefield": [{"card": "Plains", "label": "p1"}, {"card": "Plains", "label": "p2"}, {"card": "Hill Giant", "label": "hitter", "ready": true}, {"card": "Bonesplitter", "label": "split", "attached": "hitter"}], "hand": [{"card": "Battlefield Improvisation", "label": "spell"}]},
+      {"name": "bob"}
+    ]
+  },
+  "timeline": [
+    {"turn": 1, "step": "DeclareAttackers", "player": "alice", "do": {"Attack": ["$hitter"]}},
+    {"turn": 1, "step": "DeclareAttackers", "player": "alice", "do": {"Cast": {"object": "$spell", "targets": ["$hitter"], "mana": ["$p1", "$p2"]}}},
+    {"turn": 1, "step": "DeclareAttackers", "player": "alice", "do": "Pass"},
+    {"turn": 1, "step": "DeclareAttackers", "player": "alice", "check": {"PowerToughness": {"object": "$hitter", "power": 7, "toughness": 5}}},
+    {"turn": 1, "step": "DeclareAttackers", "player": "alice", "check": {"View": {"of": "AttachedTo", "object": "$split", "is": "$hitter"}}}
+  ]
+}

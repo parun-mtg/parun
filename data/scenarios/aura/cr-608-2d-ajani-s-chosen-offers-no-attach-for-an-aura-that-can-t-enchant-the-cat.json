@@ -1,0 +1,19 @@
+{
+  "description": "CR 608.2d Ajani's Chosen offers no attach for an Aura that can't enchant the Cat",
+  "note": "Wild Growth enters on alice's Forest and Ajani's Chosen makes a Cat. An enchant-land Aura can't legally enchant a creature (CR 303.4j), so no host the instruction could choose moves it (CR 701.3b) and the \"you may\" is not offered (an unscheduled prompt would fail this run). ajanis-chosen-makes-a-cat-and-moves-an-aura-onto-it is the twin that is offered.",
+  "board": {
+    "active": "alice",
+    "step": "PrecombatMain",
+    "seats": [
+      {"name": "alice", "battlefield": [{"card": "Ajani's Chosen"}, {"card": "Forest", "label": "pay"}, {"card": "Forest", "label": "land"}], "hand": [{"card": "Wild Growth", "label": "growth"}]},
+      {"name": "bob"}
+    ]
+  },
+  "timeline": [
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": {"Cast": {"object": "$growth", "targets": ["$land"], "mana": ["$pay"]}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass"},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass"},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"PowerToughness": {"object": "Cat Token", "power": 2, "toughness": 2}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"View": {"of": "AttachedTo", "object": "$growth", "is": "$land"}}}
+  ]
+}
