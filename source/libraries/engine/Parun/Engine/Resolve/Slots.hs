@@ -2747,8 +2747,9 @@ boundSlots effect = case effect of
   -- incarnations); and the PERMANENTS it destroyed, for a later clause that
   -- walks them one at a time.
   Effect.Destroy (Destroy.MkDestroy _ _ mSlot mBuried mPermanents) -> foldMap Set.singleton mSlot <> foldMap Set.singleton mBuried <> foldMap Set.singleton mPermanents
-  -- How many permanents CR 701.21a actually sacrificed, Destroy's `slot`.
-  Effect.Sacrifice (SacrificeEffect.MkSacrificeEffect _ _ mSacrificed) -> foldMap Set.singleton mSacrificed
+  -- How many permanents CR 701.21a actually sacrificed, Destroy's `slot`, and
+  -- WHICH, Destroy's `permanents`.
+  Effect.Sacrifice (SacrificeEffect.MkSacrificeEffect _ _ mSacrificed mPermanents) -> foldMap Set.singleton mSacrificed <> foldMap Set.singleton mPermanents
   -- The PERMANENTS an edict sacrificed, Destroy's `permanents`.
   Effect.PlayerSacrifices playerSacrifices -> foldMap Set.singleton (PlayerSacrifices.permanents playerSacrifices)
   -- How many milled cards matched the tally's filter (CR 729.1), and WHICH cards

@@ -1521,7 +1521,7 @@ effectObjectRefs effect =
         -- The scenario capricious-efreet-destroys-one-of-its-still-legal-targets-at-random
         -- reaches RandomAmong.
         Effect.Destroy (Destroy.MkDestroy ref _ _ _ _) -> [([RandomAmong], ref)]
-        Effect.Sacrifice (SacrificeEffect.MkSacrificeEffect ref _ _) -> [(permanentQuestions, ref)]
+        Effect.Sacrifice (SacrificeEffect.MkSacrificeEffect ref _ _ _) -> [(permanentQuestions, ref)]
         -- Exhume, Elvish Piper, Commune with the Gods, Elkin Lair, Ghoulraiser,
         -- the Gates' seek, Glorious Protector and Hanweir Battlements ask here.
         Effect.MoveToZone (MoveToZone.MkMoveToZone ref _ _ _ _ _ _) -> [(movedQuestions, ref)]

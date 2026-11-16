@@ -2599,7 +2599,7 @@ filterPositionLintSpec s registry corpus = Spec.describe s "Lint" $ do
                                   PayGate.marks = Nothing
                                 }
                           )
-                          (Seq.singleton (Effect.Sacrifice SacrificeEffect.MkSacrificeEffect {SacrificeEffect.ref = ObjectRef.InSlot slot, SacrificeEffect.sacrificer = Sacrificer.EffectController, SacrificeEffect.sacrificed = Nothing}))
+                          (Seq.singleton (Effect.Sacrifice SacrificeEffect.MkSacrificeEffect {SacrificeEffect.ref = ObjectRef.InSlot slot, SacrificeEffect.sacrificer = Sacrificer.EffectController, SacrificeEffect.sacrificed = Nothing, SacrificeEffect.permanents = Nothing}))
                       )
                   )
             }

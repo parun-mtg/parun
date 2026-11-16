@@ -975,8 +975,8 @@ abilitySlotLintSpec s registry corpus = Spec.describe s "Lint" $ do
   -- DECLARING one is the mistake.
   Spec.it s "the shadowing lint accepts a delayed ability that only reads the slot" $ do
     let tokens = SlotName.MkSlotName (Text.pack "tokens")
-        reads_ = modalTrigger (TriggerCondition.Enters EntersTrigger.defaultValue) [lintMode [Effect.Sacrifice SacrificeEffect.MkSacrificeEffect {SacrificeEffect.ref = ObjectRef.InSlot tokens, SacrificeEffect.sacrificer = Sacrificer.EffectController, SacrificeEffect.sacrificed = Nothing}] []]
-        declares = modalTrigger (TriggerCondition.Enters EntersTrigger.defaultValue) [lintMode [Effect.Sacrifice SacrificeEffect.MkSacrificeEffect {SacrificeEffect.ref = ObjectRef.InSlot tokens, SacrificeEffect.sacrificer = Sacrificer.EffectController, SacrificeEffect.sacrificed = Nothing}] [tokens]]
+        reads_ = modalTrigger (TriggerCondition.Enters EntersTrigger.defaultValue) [lintMode [Effect.Sacrifice SacrificeEffect.MkSacrificeEffect {SacrificeEffect.ref = ObjectRef.InSlot tokens, SacrificeEffect.sacrificer = Sacrificer.EffectController, SacrificeEffect.sacrificed = Nothing, SacrificeEffect.permanents = Nothing}] []]
+        declares = modalTrigger (TriggerCondition.Enters EntersTrigger.defaultValue) [lintMode [Effect.Sacrifice SacrificeEffect.MkSacrificeEffect {SacrificeEffect.ref = ObjectRef.InSlot tokens, SacrificeEffect.sacrificer = Sacrificer.EffectController, SacrificeEffect.sacrificed = Nothing, SacrificeEffect.permanents = Nothing}] [tokens]]
     Spec.assertBool s (not (shadowsSlots (Set.singleton tokens) [reads_])) "reading a Create's slot is legal"
     Spec.assertBool s (shadowsSlots (Set.singleton tokens) [declares]) "declaring a target slot under the same name is not"
   -- The pairing Parun.Types.Onset.FromNextTurnOf depends on and cannot enforce

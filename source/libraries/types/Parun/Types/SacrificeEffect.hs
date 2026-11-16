@@ -22,6 +22,11 @@ data SacrificeEffect = MkSacrificeEffect
     -- | Where the count of what CR 701.21a actually sacrificed is written, for a
     -- later effect of the same resolution to read as Quantity.InSlot -- God-Eternal
     -- Bontu's "then draw that many cards". Parun.Types.Destroy's `slot`.
-    sacrificed :: Maybe SlotName.SlotName
+    sacrificed :: Maybe SlotName.SlotName,
+    -- | Where the PERMANENTS CR 701.21a sacrificed are written as a group, under
+    -- the ids they held on the battlefield, so a later effect reads them off CR
+    -- 608.2h's last known information -- Kylox, Visionary Inventor's "their
+    -- total power". Parun.Types.Destroy's `permanents`.
+    permanents :: Maybe SlotName.SlotName
   }
   deriving (Eq, Ord, Show)
