@@ -1,0 +1,35 @@
+{
+  "description": "CR 603.2c, 603.10a, 608.2f: The Spot exiles bob's creature and a creature card from bob's graveyard in one event; neither is a creature alice controls or a card in her graveyard, so Kaya, Spirits' Justice does not trigger",
+  "note": "The board of kaya-spirits-justice-turns-a-token-into-a-flying-copy-of-a-creature-card-exiled-from-battlefield-and-graveyard-at-once with the two targets moved to bob.",
+  "board": {
+    "active": "alice",
+    "step": "PrecombatMain",
+    "seats": [
+      {
+        "name": "alice",
+        "battlefield": [
+          { "card": "Kaya, Spirits' Justice", "label": "kaya", "counters": [{ "key": { "type": "Loyalty" }, "value": 3 }] },
+          { "card": "Goblin Piker", "label": "tok", "token": true }
+        ],
+        "hand": [{ "card": "The Spot, Living Portal", "label": "spot" }],
+        "library": [{ "card": "Island" }, { "card": "Island" }, { "card": "Island" }],
+        "manaPool": "CCCWB"
+      },
+      {
+        "name": "bob",
+        "battlefield": [{ "card": "Grizzly Bears", "label": "bear" }],
+        "graveyard": [{ "card": "Hill Giant", "label": "giant" }],
+        "library": [{ "card": "Island" }, { "card": "Island" }, { "card": "Island" }]
+      }
+    ]
+  },
+  "timeline": [
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": { "Cast": { "object": "$spot" } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass" },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": { "ChooseTargets": { "permanent": ["$bear"], "card": ["$giant"] } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass" },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "View": { "of": "Stack", "is": [] } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "Count": { "player": "bob", "zone": "Exile", "card": "Hill Giant", "count": 1 } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "Names": { "object": "$tok", "names": ["Goblin Piker"] } } }
+  ]
+}

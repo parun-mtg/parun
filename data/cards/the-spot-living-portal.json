@@ -47,18 +47,17 @@
                         "type": "MoveToZone",
                         "value": {
                           "ref": {
-                            "type": "InSlot",
-                            "value": "permanent"
-                          },
-                          "zone": "Exile"
-                        }
-                      },
-                      {
-                        "type": "MoveToZone",
-                        "value": {
-                          "ref": {
-                            "type": "InSlot",
-                            "value": "card"
+                            "type": "AllOf",
+                            "value": [
+                              {
+                                "type": "InSlot",
+                                "value": "permanent"
+                              },
+                              {
+                                "type": "InSlot",
+                                "value": "card"
+                              }
+                            ]
                           },
                           "zone": "Exile"
                         }

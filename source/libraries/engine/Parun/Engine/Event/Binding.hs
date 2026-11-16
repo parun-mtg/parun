@@ -14,6 +14,7 @@ import qualified Data.Sequence as Seq
 import qualified Data.Set as Set
 import qualified Numeric.Natural
 import qualified Parun.Engine.Binding as Binding
+import qualified Parun.Engine.Count as Count
 import qualified Parun.Engine.Filter as Filter
 import qualified Parun.Engine.Game as Game
 import qualified Parun.Engine.Projection as Projection
@@ -1087,7 +1088,7 @@ admittedPreventedSources :: Filter.Context -> GameState -> Filter.Type.Filter Ke
 admittedPreventedSources context gs f = Map.filterWithKey admits . DamagePrevented.amounts
   where
     admits damager share =
-      sum share > 0 && maybe False (\view -> Filter.matches context (ProjectionView.lastZoned gs damager view) f) (Projection.viewWithLastKnown damager gs damager)
+      sum share > 0 && maybe False (\view -> Filter.matches context (Count.lastZoned gs damager view) f) (Projection.viewWithLastKnown damager gs damager)
 
 -- The attackers `attacker` declared that the Filter admits, CR 508.3c's "a
 -- creature that player controls" read through Combat.joinedUnder (CR 506.4)

@@ -1746,7 +1746,7 @@ matchesDamageSource viewOf gs context filter_ de =
       -- included, so a dead permanent's record answers a battlefield filter
       -- (CR 109.2) and a cycled creature card, in the graveyard or exiled from
       -- it since, does not.
-      located = Projection.lastZoned gs oid view
+      located = Count.lastZoned gs oid view
    in Filter.matches context located filter_
 
 -- CR 615.1 / 614.1a: does this damage event have the qualities the pattern

@@ -1219,6 +1219,21 @@ departedView viewOf gs zc snapshot = case Map.lookup (ZoneChange.departed zc) (S
 orLastKnown :: ViewOf -> GameState -> ViewOf
 orLastKnown live gs oid = Monad.join (Game.liveOrLastKnown (const (live oid)) (Just . lastKnownView live oid gs) oid gs)
 
+-- CR 113.7a / 608.2h: orLastKnown with a departed object's view placed in the
+-- zone its record says it last existed in, so IsInZone can ask where it was:
+-- Kaya, Spirits' Justice's "creatures you control and/or creature cards in
+-- your graveyard", through Filter.BeforeMove.
+orLastZoned :: ViewOf -> GameState -> ViewOf
+orLastZoned live gs oid = fmap (lastZoned gs oid) (orLastKnown live gs oid)
+
+-- CR 113.7a / 608.2h: a departed object's view placed in the zone its record
+-- says it last existed in, which lastKnownView leaves Nothing; the view
+-- unchanged while the object exists.
+lastZoned :: GameState -> ObjectId -> Filter.View -> Filter.View
+lastZoned gs oid view = case Game.lastKnownOf oid gs of
+  Just lastKnown -> view {Filter.zone = Just (LastKnown.zone lastKnown)}
+  Nothing -> view
+
 -- CR 608.2h: an object that has ceased, as its record shows it -- the one view
 -- of a LastKnown, read by a trigger or an intervening "if" asking about the
 -- object an event named (Parun.Engine.Projection.viewWithLastKnownAnywhere), by
@@ -1327,7 +1342,9 @@ lastKnownView peers oid gs lastKnown =
           Filter.actedThisTurn = actedThisTurn oid gs,
           Filter.arrivalThisTurn = Game.arrivalThisTurn oid gs,
           Filter.arrivalSinceOwnLastTurn = Game.arrivalSinceOwnLastTurn oid gs,
-          Filter.beforeMoveView = departedAs gs oid >>= orLastKnown peers gs,
+          -- Zoned as Projection.View.viewOfCharacteristics' is. A regression
+          -- fence: no card asks it of an arrival that has left again.
+          Filter.beforeMoveView = departedAs gs oid >>= orLastZoned peers gs,
           Filter.crewedThisTurn = crewedThisTurn oid gs,
           Filter.convokedThisTurn = convokedThisTurn oid gs,
           Filter.saddledThisTurn = saddledThisTurn oid gs,
