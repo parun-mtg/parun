@@ -47,7 +47,10 @@
                           "effect": {
                             "type": "ManaR",
                             "value": {
-                              "amount": 1,
+                              "amount": {
+                                "type": "Exactly",
+                                "value": 1
+                              },
                               "matching": {
                                 "type": "And",
                                 "value": [

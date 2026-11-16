@@ -1164,6 +1164,8 @@ library codec
     Parun.Codec.ManaRiderEffectSpec
     Parun.Codec.ManaRiderSpec
     Parun.Codec.ManaRSpec
+    Parun.Codec.ManaScale
+    Parun.Codec.ManaScaleSpec
     Parun.Codec.ManaSpec
     Parun.Codec.ManaSpecification
     Parun.Codec.ManaSpecificationSpec
@@ -3375,6 +3377,7 @@ library types
     Parun.Types.ManaRetention
     Parun.Types.ManaRider
     Parun.Types.ManaRiderEffect
+    Parun.Types.ManaScale
     Parun.Types.ManaSegment
     Parun.Types.ManaSpecification
     Parun.Types.ManaSpending
