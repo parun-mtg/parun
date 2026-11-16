@@ -292,7 +292,7 @@ contextNames = context
 --   * The turn's EVENT LOG: the look-back atoms (DeclaredThisTurn,
 --     LeftLibraryThisTurn, DealtDamageThisTurn, ActivatedThisTurn,
 --     EnteredThisTurn, TappedForManaThisTurn, the
---     crewed/convoked/saddled-the-source atoms), EnteredWithSource
+--     crewed/convoked/saddled-the-source atoms, BecameSource), EnteredWithSource
 --     (GameState.enteredWith), CounterLinkedToSource
 --     (GameState.counteredWith) and CouldAttackThisTurn
 --     (TurnRegisters.couldAttackThisTurn) read a record kept per object id,
@@ -328,6 +328,7 @@ filterNames asking criterion = case criterion of
   Filter.BeforeMove nested -> keyed asking <> history asking HistoryRead.Moves <> filterNames asking nested
   Filter.TappedForManaThisTurn nested -> keyed asking <> history asking HistoryRead.TapsForMana <> filterNames asking nested
   Filter.CountersPutThisTurn _ _ -> keyed asking <> history asking HistoryRead.CounterPlacements
+  Filter.BecameSource -> keyed asking <> history asking HistoryRead.Moves
   Filter.EnteredWithSource -> keyed asking
   Filter.CounterLinkedToSource _moved -> keyed asking <> counterLinks asking
   Filter.AttachedNoLaterThanSource -> contextNames asking

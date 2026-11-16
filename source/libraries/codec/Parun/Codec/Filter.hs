@@ -113,6 +113,7 @@ codec keywordCodec =
       Arm.payload "OwnsBoundAtLeast" (ownsBound keywordCodec) (\(n, y, f) -> Filter.OwnsBoundAtLeast n y f) (\x -> case x of Filter.OwnsBoundAtLeast n y f -> Just (n, y, f); _ -> Nothing),
       Arm.payload "TappedForManaThisTurn" (codec keywordCodec) Filter.TappedForManaThisTurn (\x -> case x of Filter.TappedForManaThisTurn y -> Just y; _ -> Nothing),
       Arm.nullary "IsSource" Filter.IsSource,
+      Arm.nullary "BecameSource" Filter.BecameSource,
       Arm.payload "IsObject" ObjectId.codec Filter.IsObject (\x -> case x of Filter.IsObject y -> Just y; _ -> Nothing),
       Arm.nullary "TargetsSource" Filter.TargetsSource,
       Arm.nullary "HasSingleTarget" Filter.HasSingleTarget,
@@ -341,6 +342,7 @@ tagOf x = case x of
   Filter.OwnsBoundAtLeast {} -> "OwnsBoundAtLeast"
   Filter.TappedForManaThisTurn {} -> "TappedForManaThisTurn"
   Filter.IsSource {} -> "IsSource"
+  Filter.BecameSource {} -> "BecameSource"
   Filter.IsObject {} -> "IsObject"
   Filter.TargetsSource {} -> "TargetsSource"
   Filter.HasSingleTarget {} -> "HasSingleTarget"
