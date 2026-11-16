@@ -44,7 +44,7 @@ data Scope
     -- 120.1, 119.3).
     -- Filter.Controls (Oreskos Explorer's "players who control more
     -- lands than you"), Filter.IsControllerOfBound (Spikeshell Harrier's "each
-    -- other player"), Filter.CardsInGraveyardAtLeast (The Master of
+    -- other player"), Filter.CardsInZoneAtLeast (The Master of
     -- Lake-town's "each graveyard with seven or more cards in it") and
     -- Filter.OwnsBoundAtLeast (Garruk, Veiled Butcher's "each opponent who
     -- didn't discard two nonland cards this way") are instead

@@ -4481,7 +4481,7 @@ filterReads f = case f of
   Filter.Type.Controls _ g -> Set.insert Controller (filterReads g)
   -- Reads a ZONE's size, which is no object's characteristic (CR 109.3) and no
   -- Modification writes; every zone change happens between projections.
-  Filter.Type.CardsInGraveyardAtLeast _ -> Set.empty
+  Filter.Type.CardsInZoneAtLeast _ _ -> Set.empty
   -- Over-declared for Controls' reason: each bound object's owner plus whatever
   -- the nest reads of it.
   Filter.Type.OwnsBoundAtLeast _ _ g -> holderReads Holder.Owner <> filterReads g
@@ -4851,7 +4851,7 @@ filterReadsPeers f = case f of
   Filter.Type.OfSpecificPlayer _ -> False
   Filter.Type.IsPlayer _ -> False
   Filter.Type.IsControllerOfBound _ -> False
-  Filter.Type.CardsInGraveyardAtLeast _ -> False
+  Filter.Type.CardsInZoneAtLeast _ _ -> False
   -- DESCENT for Controls' reason.
   Filter.Type.OwnsBoundAtLeast _ _ g -> filterReadsPeers g
   Filter.Type.IsAttacking _ -> False

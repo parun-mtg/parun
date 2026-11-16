@@ -988,7 +988,7 @@ spentTagColors spent =
 -- a player is not an object (CR 109.1) and has none of those. The player's own
 -- identity is the only thing THIS VIEW can answer, which is exactly what
 -- IsPlayer asks. The other player-shaped atoms are answered elsewhere on
--- purpose: Controls, IsControllerOfBound, CardsInGraveyardAtLeast,
+-- purpose: Controls, IsControllerOfBound, CardsInZoneAtLeast,
 -- OwnsBoundAtLeast and TappedForManaThisTurn each ask about the board, a zone
 -- or the turn's log, which a function taking nothing but a PlayerId cannot see,
 -- so Parun.Engine.Count.bakePerspective bakes them against the game state
@@ -2628,7 +2628,7 @@ matches context view predicate = case predicate of
   -- state to size a zone with, and CR 109.3 counts no zone among an OBJECT's
   -- characteristics, so a candidate that is not a player has nothing to answer
   -- with either. Parun.Engine.Count.bakePerspective answers it for a player.
-  Filter.CardsInGraveyardAtLeast _ -> False
+  Filter.CardsInZoneAtLeast _ _ -> False
   -- False wherever it is reached, for the atom above's reason: this module holds
   -- no game state to ask CR 400.7j's question of the slot's objects with.
   Filter.OwnsBoundAtLeast {} -> False
@@ -3375,7 +3375,7 @@ manaValueThresholds predicate = case predicate of
   Filter.IsControllerOfBound _ -> []
   -- No threshold: the literal bounds a COUNT OF CARDS in a zone, not a mana
   -- value, so CR 601.3a's sample has nothing to learn from it.
-  Filter.CardsInGraveyardAtLeast _ -> []
+  Filter.CardsInZoneAtLeast _ _ -> []
   Filter.OwnsBoundAtLeast _ _ f -> manaValueThresholds f
   Filter.TappedForManaThisTurn f -> manaValueThresholds f
   Filter.IsAttacking _ -> []
@@ -3565,7 +3565,7 @@ statesAQuality predicate = case predicate of
   Filter.OfSpecificPlayer _ -> True
   Filter.IsPlayer _ -> True
   Filter.IsControllerOfBound _ -> True
-  Filter.CardsInGraveyardAtLeast _ -> True
+  Filter.CardsInZoneAtLeast _ _ -> True
   Filter.OwnsBoundAtLeast {} -> True
   Filter.TappedForManaThisTurn _ -> True
   Filter.IsAttacking _ -> True
@@ -3757,7 +3757,7 @@ readsSourceValues predicate = case predicate of
   Filter.OfSpecificPlayer _ -> False
   Filter.IsPlayer _ -> False
   Filter.IsControllerOfBound _ -> False
-  Filter.CardsInGraveyardAtLeast _ -> False
+  Filter.CardsInZoneAtLeast _ _ -> False
   Filter.OwnsBoundAtLeast _ _ f -> readsSourceValues f
   Filter.TappedForManaThisTurn f -> readsSourceValues f
   Filter.IsAttacking _ -> False

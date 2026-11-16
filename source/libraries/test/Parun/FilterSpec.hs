@@ -832,13 +832,14 @@ spec s = Spec.describe s "Parun.Engine.Filter" $ do
     Spec.assertBool s (not (Filter.matches self aPlayer lands)) "player"
     Spec.assertBool s (not (Filter.matches self blackCreature lands)) "object"
 
-  -- CR 400.1's per-player graveyard, Controls' posture one atom over
-  -- and for its reason plus one: an OBJECT has no graveyard to size at all (CR
-  -- 109.3 counts no zone among its characteristics), so False is the answer for
-  -- both candidates rather than only for the unbaked position. Parun.TriggerSpec's
-  -- The Master of Lake-town death group proves the BAKED answer.
-  Spec.it s "CardsInGraveyardAtLeast is False unbaked, for a player and for an object alike" $ do
-    let bin = Filter.Type.CardsInGraveyardAtLeast 7
+  -- CR 400.1's per-player zones, Controls' posture one atom over
+  -- and for its reason plus one: an OBJECT has no hand or graveyard to size at
+  -- all (CR 109.3 counts no zone among its characteristics), so False is the
+  -- answer for both candidates rather than only for the unbaked position.
+  -- Parun.TriggerSpec's The Master of Lake-town death group and the Bandit's
+  -- Talent scenarios prove the BAKED answer.
+  Spec.it s "CardsInZoneAtLeast is False unbaked, for a player and for an object alike" $ do
+    let bin = Filter.Type.CardsInZoneAtLeast Zone.Graveyard 7
     Spec.assertBool s (not (Filter.matches self aPlayer bin)) "player"
     Spec.assertBool s (not (Filter.matches self blackCreature bin)) "object"
 
