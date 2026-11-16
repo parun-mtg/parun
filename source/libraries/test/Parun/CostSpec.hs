@@ -6362,39 +6362,32 @@ locketOfYesterdaysSpec s registry = Spec.describe s "Locket of Yesterdays" $ do
 -- 2026-11-16): "As this artifact enters, choose two colors. / Each spell you
 -- cast costs {1} less to cast for each of the chosen colors it is."
 -- CostModifier's PaidFor with ChosenColorsItIs: the spell paid for is
--- counted, against the Seal's chosen colours (CR 607.2d), not the spell's.
+-- counted against the Seal's chosen colours (CR 607.2d), not the spell's.
 --
--- alice controls the Seal, having chosen white and blue, and four each of
--- Plains, Islands and Mountains; she casts a Jedit Ojanen ({4}{W}{W}{U}), a
--- Serra Angel ({3}{W}{W}) and a Gray Ogre ({2}{R}). Every cost is read off
--- her tapped lands.
+-- alice controls the Seal, having chosen white and blue. She casts a Jedit
+-- Ojanen ({4}{W}{W}{U}) from exactly three Plains and two Islands, a Serra
+-- Angel ({3}{W}{W}) from seven Plains, and a Gray Ogre ({2}{R}) from seven
+-- Mountains. Every cost is read off her tapped lands.
 sealOfTheGuildpactSpec :: (Monad m) => Spec.Spec m n -> Registry.Registry m -> n ()
 sealOfTheGuildpactSpec s registry = Spec.describe s "Seal of the Guildpact" $ do
-  let board = do
+  let castWith spell lands = do
         seal <- S.printingOf s registry "Seal of the Guildpact"
-        jedit <- S.printingOf s registry "Jedit Ojanen"
-        angel <- S.printingOf s registry "Serra Angel"
-        ogre <- S.printingOf s registry "Gray Ogre"
-        plains <- S.printingOf s registry "Plains"
-        island <- S.printingOf s registry "Island"
-        mountain <- S.printingOf s registry "Mountain"
-        let lands = S.landsFor plains S.alice 4 (S.landsFor island S.alice 4 (S.landsFor mountain S.alice 4 (Setup.emptyGame S.threePlayers)))
-            (sealId, g1) = S.addPermanent seal S.alice lands
+        card <- S.printingOf s registry spell
+        let (sealId, g1) = S.addPermanent seal S.alice (lands (Setup.emptyGame S.threePlayers))
             g2 = g1 {GameState.objects = Map.adjust (\o -> o {Object.chosenColors = Map.singleton Acquisition.Own (Set.fromList [Color.White, Color.Blue])}) sealId (GameState.objects g1)}
-            (jeditId, g3) = S.addHandCard jedit S.alice g2
-            (angelId, g4) = S.addHandCard angel S.alice g3
-            (ogreId, g5) = S.addHandCard ogre S.alice g4
-        pure (jeditId, angelId, ogreId, g5)
+            (cardId, g3) = S.addHandCard card S.alice g2
+        pure (S.runPure S.identityAnswer g3 (S.cast S.alice cardId))
+      cast gs = (S.tappedCount S.alice gs, length (TurnRegisters.stack (GameState.turn gs)))
   Spec.it s "CR 601.2f / 607.2d a spell costs {1} less for each of the Seal's chosen colours it is" $ do
-    (jeditId, angelId, ogreId, gs) <- board
-    let castOf oid = S.runPure S.identityAnswer gs (S.cast S.alice oid)
-        jedits = castOf jeditId
-        angels = castOf angelId
-        ogres = castOf ogreId
-    Spec.assertEqWith s "white and blue, both chosen: {2}{W}{W}{U}" (S.tappedCount S.alice jedits) 5
-    Spec.assertEqWith s "white alone: {2}{W}{W}" (S.tappedCount S.alice angels) 4
-    Spec.assertEqWith s "red, not chosen: {2}{R}" (S.tappedCount S.alice ogres) 3
-    Spec.assertEqWith s "and all three casts were made" (fmap (length . (TurnRegisters.stack . GameState.turn)) [jedits, angels, ogres]) [1, 1, 1]
+    plains <- S.printingOf s registry "Plains"
+    island <- S.printingOf s registry "Island"
+    mountain <- S.printingOf s registry "Mountain"
+    jedits <- castWith "Jedit Ojanen" (S.landsFor plains S.alice 3 . S.landsFor island S.alice 2)
+    angels <- castWith "Serra Angel" (S.landsFor plains S.alice 7)
+    ogres <- castWith "Gray Ogre" (S.landsFor mountain S.alice 7)
+    Spec.assertEqWith s "white and blue, both chosen: {2}{W}{W}{U}, cast from five lands" (cast jedits) (5, 1)
+    Spec.assertEqWith s "white alone: {2}{W}{W}" (cast angels) (4, 1)
+    Spec.assertEqWith s "red, not chosen: {2}{R}" (cast ogres) (3, 1)
 
 -- Kopala, Warden of Waves {1}{U}{U} Legendary Creature -- Merfolk Wizard 2/2
 -- (Oracle text checked against Scryfall 2026-10-10): "Spells your opponents cast
