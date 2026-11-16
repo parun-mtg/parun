@@ -2815,9 +2815,9 @@ exileTotalling perform slots pid oid (ExileCardsTotalling.MkExileCardsTotalling 
 -- activated ability's links under that ability's name and the acquisition it
 -- froze going on the stack (Game.readingAcquisition's reason), unless another
 -- object lent it unnamed (Projection.ownsActivatedAbility), which would file it
--- as `oid`'s own. A new link ends a DurationEvent.SourceExiledCard duration, as
--- Resolve.Common.recordExiledWith's does. Kylox's Voltstrider's scenario proves
--- the activated road, Skyway Robber's and Fear of Abduction's the spell's, and
+-- as `oid`'s own. A keyword's substitute links on its own road
+-- (linkSubstitutedExiles). Kylox's Voltstrider's scenario proves the activated
+-- road, Skyway Robber's and Fear of Abduction's the spell's, and
 -- data/scenarios/cost's cr-607-2a and cr-607-2q files what neither links.
 --
 -- Not implemented: a mana ability's cost, which has no stack object to name its
@@ -2826,27 +2826,55 @@ exileTotalling perform slots pid oid (ExileCardsTotalling.MkExileCardsTotalling 
 linkPaidExiles :: Maybe ObjectId -> ObjectId -> CostComponent.CostComponent Keyword.Type.Keyword -> [ObjectId] -> Game ()
 linkPaidExiles paidFor oid component arrived = do
   gs <- State.get
-  let linked ability acquisition = ExileLink.MkExileLink {ExileLink.source = oid, ExileLink.ability = ability, ExileLink.acquisition = acquisition, ExileLink.chosen = False}
-      link = case paidFor of
+  let link = case paidFor of
         Just paying
-          | paying == oid -> if printedCastCost oid component gs then Just (linked Nothing Acquisition.Own) else Nothing
+          | paying == oid -> if printedCastCost oid component gs then Just (printedLink oid) else Nothing
           | Just (Source.OfAbility activated) <- fmap Object.source (Game.lookupObject paying gs),
             let ability = ActivatedAbilitySource.ability activated
                 name = ActivatedAbility.name ability,
             any Binding.isAcquired name || Projection.ownsActivatedAbility oid gs ability ->
-              Just (linked name (ActivatedAbilitySource.acquisition activated))
+              Just (exileLink oid name (ActivatedAbilitySource.acquisition activated))
         _ -> Nothing
-      exiled = filter (`Set.member` GameState.exile gs) arrived
-  Foldable.for_ link $ \l ->
-    Monad.unless (null exiled) (State.put (Expiry.sweep (Expiry.ExiledWith oid) gs {GameState.exiledWith = foldr (`Map.insert` l) (GameState.exiledWith gs) exiled}))
+  Foldable.for_ link (\l -> linkExiles oid l arrived)
+
+-- CR 607.2q: link the cards a keyword's substitutes exiled while casting the
+-- spell `oid` to it, as printed, when every substitute that exiles is one a
+-- keyword printed on the face cast states (Soulflayer's delve) and not one
+-- another object grants (Teval, Arbiter of Virtue's). Told by the keyword that
+-- produced the exile, never by the component's shape, which a printed exile cost
+-- shares (Skyway Robber's escape); data/scenarios/cast's "the escaped Skyway
+-- Robber offers nothing Teval's delve exiled" proves it.
+linkSubstitutedExiles :: Maybe ObjectId -> ObjectId -> [Keyword.Substitute] -> [ObjectId] -> Game ()
+linkSubstitutedExiles paidFor oid substitutes arrived = do
+  gs <- State.get
+  let exiling = [s | s@(Keyword.ExileFromGraveyard _) <- substitutes]
+      printed = foldMap (Keyword.manaSubstitutesFor (ManaSymbol.Generic 0) . Map.keysSet . Face.keywords) (faceCast oid gs)
+  Monad.when (paidFor == Just oid && not (null exiling) && all (`elem` printed) exiling) (linkExiles oid (printedLink oid) arrived)
+
+-- The link an ability printed on the spell `oid` makes (CR 607.2q).
+printedLink :: ObjectId -> ExileLink.ExileLink
+printedLink oid = exileLink oid Nothing Acquisition.Own
+
+-- The link `oid` keeps to a card a cost exiled under `ability` (CR 607.2a).
+exileLink :: ObjectId -> Maybe AbilityName.AbilityName -> Acquisition.Acquisition -> ExileLink.ExileLink
+exileLink oid ability acquisition = ExileLink.MkExileLink {ExileLink.source = oid, ExileLink.ability = ability, ExileLink.acquisition = acquisition, ExileLink.chosen = False}
+
+-- File `link` for each of `arrived` still in exile. A new link ends a
+-- DurationEvent.SourceExiledCard duration, as Resolve.Common.recordExiledWith's
+-- does.
+linkExiles :: ObjectId -> ExileLink.ExileLink -> [ObjectId] -> Game ()
+linkExiles oid link arrived = do
+  gs <- State.get
+  let exiled = filter (`Set.member` GameState.exile gs) arrived
+  Monad.unless (null exiled) (State.put (Expiry.sweep (Expiry.ExiledWith oid) gs {GameState.exiledWith = foldr (`Map.insert` link) (GameState.exiledWith gs) exiled}))
 
 -- CR 607.2q: whether a cost component paid for the spell `oid` is one an ability
 -- printed on its card states -- an additional cost, a choice, an alternative
--- cost, a keyword's cost or a delve exile (Soulflayer's scenario) on the face
--- cast, with its copiable values (Game.castingFaceOf) -- and not one another
+-- cost or a keyword's cost on the face cast (faceCast) -- and not one another
 -- object's ability offered (Conspiracy Unraveler's, an evoke Aquatic Subtlety
--- grants). Compared with every amount blanked, since CR 601.2b's announced counts
--- and X are substituted into the component paid; Gorex, the Tombshell's scenario
+-- grants). A keyword's substitute is never one: linkSubstitutedExiles decides
+-- it. Compared with every amount blanked, since CR 601.2b's announced counts and
+-- X are substituted into the component paid; Gorex, the Tombshell's scenario
 -- proves it.
 printedCastCost :: ObjectId -> CostComponent.CostComponent Keyword.Type.Keyword -> GameState -> Bool
 printedCastCost oid component gs =
@@ -2857,12 +2885,15 @@ printedCastCost oid component gs =
           <> foldMap (foldMap Cost.components . CostChoice.unwrap) (Face.additionalCostChoices face)
           <> foldMap (Cost.components . AlternativeCost.cost) (Face.alternativeCosts face)
           <> foldMap (foldMap Cost.components . keywordCosts) (Map.keys (Face.keywords face))
-          <> fmap (`substituteComponent` 0) (Keyword.manaSubstitutesFor (ManaSymbol.Generic 0) (Map.keysSet (Face.keywords face)))
-      faceCast = do
-        obj <- Game.lookupObject oid gs
-        card <- Game.cardOf oid gs
-        Game.castingFaceOf obj card <$> Game.faceOf oid gs
-   in any (elem (blank component) . fmap blank . printed) faceCast
+   in any (elem (blank component) . fmap blank . printed) (faceCast oid gs)
+
+-- The face the spell `oid` was cast as, with its copiable values
+-- (Game.castingFaceOf).
+faceCast :: ObjectId -> GameState -> Maybe (Face.Face Card.Type.Card)
+faceCast oid gs = do
+  obj <- Game.lookupObject oid gs
+  card <- Game.cardOf oid gs
+  Game.castingFaceOf obj card <$> Game.faceOf oid gs
 
 -- The permanents this player may tap to pay a TapForTotalPower or TapPermanents
 -- component on `oid`: every battlefield object matching the criterion, ascending.
@@ -5720,6 +5751,17 @@ paySubstitutingReadingThen refuses slots perform began earlier moment subject an
       let announceMana mc = do
             (chosen, extra) <- substituting cost {Cost.mana = Just mc}
             pure (Maybe.fromMaybe mc (Cost.mana chosen), extra)
+          -- Paid with no `paidFor`, so linkPaidExiles never reads a
+          -- substitute's exile by its shape, and linked by the keyword that
+          -- stated it instead (linkSubstitutedExiles). What arrived is what
+          -- exile gained: a tap or an exile from a graveyard is the only move
+          -- a substitute makes.
+          paySubstitutes substitutes = do
+            before <- State.gets GameState.exile
+            paid <- payComponents perform moment Nothing slots pid oid (substituteComponents substitutes)
+            arrived <- State.gets (Set.toAscList . (`Set.difference` before) . GameState.exile)
+            linkSubstitutedExiles announced oid (fmap fst substitutes) arrived
+            pure paid
       -- CR 601.2g / 605.3a: no window where the total cost holds no mana payment
       -- (docs/decisions.md, "Whether a total cost of {0} opens a mana window").
       entry <- State.get
@@ -5741,11 +5783,11 @@ paySubstitutingReadingThen refuses slots perform began earlier moment subject an
         (outcome, substituted) <- case paidOwn of
           Payment.Unpaid -> pure (Payment.Unpaid, Map.empty)
           Payment.Paid bound -> do
-            paidOthers <- payComponents perform moment announced slots pid oid (substituteComponents others)
+            paidOthers <- paySubstitutes others
             case paidOthers of
               Payment.Unpaid -> pure (Payment.Unpaid, Map.empty)
               Payment.Paid _ -> do
-                paidConvoking <- payComponents perform moment announced slots pid oid (substituteComponents convoking)
+                paidConvoking <- paySubstitutes convoking
                 pure $ case paidConvoking of
                   Payment.Unpaid -> (Payment.Unpaid, Map.empty)
                   Payment.Paid convoked -> (mergeBound bound (mergeBound convoked paidOthers), convoked)

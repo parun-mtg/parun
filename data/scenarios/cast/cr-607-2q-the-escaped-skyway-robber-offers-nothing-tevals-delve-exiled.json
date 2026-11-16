@@ -1,0 +1,209 @@
+{
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "battlefield": [
+          {
+            "card": "Island",
+            "label": "i0",
+            "ready": true
+          },
+          {
+            "card": "Teval, Arbiter of Virtue",
+            "label": "teval"
+          }
+        ],
+        "exile": [],
+        "graveyard": [
+          {
+            "card": "Skyway Robber",
+            "label": "robber"
+          },
+          {
+            "card": "Lightning Bolt",
+            "label": "bolt"
+          },
+          {
+            "card": "Goblin Piker",
+            "label": "p0"
+          },
+          {
+            "card": "Goblin Piker",
+            "label": "p1"
+          },
+          {
+            "card": "Goblin Piker",
+            "label": "p2"
+          },
+          {
+            "card": "Goblin Piker",
+            "label": "p3"
+          },
+          {
+            "card": "Opt",
+            "label": "opt"
+          },
+          {
+            "card": "Shock",
+            "label": "shock"
+          },
+          {
+            "card": "Duress",
+            "label": "duress"
+          },
+          {
+            "card": "Island",
+            "label": "spare"
+          }
+        ],
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ],
+        "name": "alice"
+      },
+      {
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ],
+        "name": "bob"
+      }
+    ],
+    "step": "PrecombatMain"
+  },
+  "description": "CR 607.2q the escaped Skyway Robber offers only the cards its escape exiled, not those Teval's delve exiled",
+  "final": [
+    {
+      "Life": {
+        "life": 14,
+        "player": "bob"
+      }
+    },
+    {
+      "View": {
+        "is": [
+          "Goblin Piker",
+          "Goblin Piker#2",
+          "Goblin Piker#3",
+          "Goblin Piker#4",
+          "Opt",
+          "Shock",
+          "Duress"
+        ],
+        "of": "Zone",
+        "player": "alice",
+        "zone": "Exile"
+      }
+    },
+    {
+      "Count": {
+        "card": "Lightning Bolt",
+        "count": 1,
+        "player": "alice",
+        "zone": "Graveyard"
+      }
+    }
+  ],
+  "note": "Opt, Shock and Duress were exiled by a delve Teval grants, which CR 607.2q links to nothing; were any offered beside the Lightning Bolt the escape exiled, an unscheduled ChooseOfferedCastSpell would fail the run.",
+  "timeline": [
+    {
+      "do": {
+        "Cast": {
+          "mana": [
+            "$i0"
+          ],
+          "object": "$robber"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Answer": {
+          "prompt": "ChooseCost",
+          "with": 3
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Answer": {
+          "prompt": "ChooseExilesFromGraveyard",
+          "with": [
+            "$bolt",
+            "$p0",
+            "$p1",
+            "$p2",
+            "$p3"
+          ]
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Answer": {
+          "prompt": "ChooseExilesFromGraveyard",
+          "with": [
+            "$opt",
+            "$shock",
+            "$duress"
+          ]
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Attack": [
+          "Skyway Robber"
+        ]
+      },
+      "player": "alice",
+      "step": "DeclareAttackers",
+      "turn": 3
+    },
+    {
+      "do": {
+        "Answer": {
+          "prompt": "OfferedCast",
+          "with": "Exercises"
+        }
+      },
+      "player": "alice",
+      "step": "CombatDamage",
+      "turn": 3
+    },
+    {
+      "do": {
+        "ChooseTargets": {
+          "target": [
+            "$bob"
+          ]
+        }
+      },
+      "player": "alice",
+      "step": "CombatDamage",
+      "turn": 3
+    }
+  ]
+}
