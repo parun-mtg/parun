@@ -2094,11 +2094,12 @@ countIs n admits earlier = Natural.length (filter admits earlier) + 1 == n
 -- its caster as CR 109.5's "you".
 nthCast :: PlayerId -> RowSource -> Filter Keyword -> ObjectId -> GameState -> TurnOrdinal.TurnOrdinal -> Bool
 nthCast pid source criterion oid gs (TurnOrdinal.MkTurnOrdinal scope n) =
-  let earlier = Maybe.fromMaybe (Foldable.toList (Game.castsInLog (TurnRegisters.events (GameState.turn gs)))) (Game.castsBefore oid gs)
+  let context = contextFor (Just pid) source gs
+      earlier = Maybe.fromMaybe (Foldable.toList (Game.castsInLog (TurnRegisters.events (GameState.turn gs)))) (Game.castsBefore oid gs)
       admits cast =
         SpellWasCast.player cast == pid
-          && maybe False (\view -> Filter.matches (contextFor (Just pid) source gs) view criterion) (Count.snapshotView (Projection.viewWithLastKnownAnywhere gs) gs (EventShape.SpellCast CastWindow.ThisTurn) (GameEvent.SpellCast cast))
-   in Turn.turnScopeAdmits (Count.scopePlayers (Projection.viewWithLastKnownAnywhere gs) (contextFor (Just pid) source gs) gs) gs scope (TurnRegisters.activePlayer (GameState.turn gs)) pid
+          && maybe False (\view -> Filter.matches context view criterion) (Count.snapshotView (Projection.viewWithLastKnownAnywhere gs) context gs (EventShape.SpellCast CastWindow.ThisTurn) (GameEvent.SpellCast cast))
+   in Turn.turnScopeAdmits (Count.scopePlayers (Projection.viewWithLastKnownAnywhere gs) context gs) gs scope (TurnRegisters.activePlayer (GameState.turn gs)) pid
         && countIs n admits earlier
 
 -- CR 118.9 through CR 602.2b: the costs `pid` may pay RATHER THAN the

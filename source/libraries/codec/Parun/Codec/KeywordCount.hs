@@ -11,7 +11,7 @@ import qualified Parun.Types.KeywordCount as KeywordCount
 -- | Tagged rather than a bare number, Parun.Codec.DevourCount's reason: a
 -- restated N carries no number at all. The keyword codec is a PARAMETER; see
 -- Parun.Codec.Filter's header.
-codec :: (Typeable.Typeable keyword, Eq keyword) => Codec.Codec keyword -> Codec.Codec (KeywordCount.KeywordCount keyword)
+codec :: (Typeable.Typeable keyword, Ord keyword) => Codec.Codec keyword -> Codec.Codec (KeywordCount.KeywordCount keyword)
 codec keywordCodec =
   Arm.tagged
     tagOf

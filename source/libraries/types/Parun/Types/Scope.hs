@@ -21,10 +21,10 @@ import qualified Parun.Types.ZonePosition as ZonePosition
 -- zones (CR 106.4 attaches it to a player instead), and a Count's Filter and
 -- Aggregation have nothing to say about a mana unit. Parun.Types.ManaCount is the
 -- parallel axis, and its haddock carries the argument in full.
-data Scope
+data Scope keyword
   = InZone InZone.InZone
   | -- | CR 608.2i: effects that look back in time.
-    InHistory EventShape.EventShape
+    InHistory (EventShape.EventShape keyword)
   | -- | CR 102.1: the PLAYERS the reference names -- Tyranid Invasion's "the
     -- number of opponents you have". The one arm whose candidates are not
     -- objects (CR 109.1), so each is seen through Parun.Engine.Count.playerView

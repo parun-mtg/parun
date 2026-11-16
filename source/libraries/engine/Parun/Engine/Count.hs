@@ -59,6 +59,7 @@ import qualified Parun.Types.CountersPlaced as CountersPlaced
 import qualified Parun.Types.Crewing as Crewing
 import qualified Parun.Types.DamageEvent as DamageEvent
 import qualified Parun.Types.DamageKind as DamageKind
+import qualified Parun.Types.DamageRecipient as DamageRecipient
 import qualified Parun.Types.Discarded as Discarded
 import qualified Parun.Types.DistinctOf as DistinctOf
 import qualified Parun.Types.EventShape as EventShape
@@ -96,9 +97,9 @@ import qualified Parun.Types.PermanentWasSacrificed as PermanentWasSacrificed
 import qualified Parun.Types.PlayerCounterKind as PlayerCounterKind
 import Parun.Types.PlayerId (PlayerId)
 import qualified Parun.Types.PlayerRef as PlayerRef
+import qualified Parun.Types.PlayerRelation as PlayerRelation
 import qualified Parun.Types.ProjectedCharacteristics as PC
 import qualified Parun.Types.Recipient as Recipient
-import qualified Parun.Types.RecipientKind as RecipientKind
 import qualified Parun.Types.Revealed as Revealed
 import qualified Parun.Types.Saddling as Saddling
 import qualified Parun.Types.Scope as Scope
@@ -192,7 +193,7 @@ evaluate viewOf quantityOf talliesWhatHappened candidateCounters context gs coun
                 _ -> Nothing
               thisTurn = fmap LoggedEvent.event (Foldable.toList (TurnRegisters.events (GameState.turn gs)))
               isEvaluatedCast event = Maybe.isJust (Filter.evaluated context) && fmap SpellWasCast.spell (Game.castOf event) == Filter.evaluated context
-              views = Maybe.mapMaybe (snapshotView viewOf gs shape) logged
+              views = Maybe.mapMaybe (snapshotView viewOf context gs shape) logged
               matched = Maybe.mapMaybe (keep predicate context . Just) views
               kept = fmap ((,) Nothing) (if oncePerObject shape then ListUtils.nubOrdOn Filter.identity matched else matched)
            in pure (aggregate quantityOf aggregation kept)
@@ -802,9 +803,10 @@ slotPlayers context gs name = case Map.lookup name (Filter.slotPlayers context) 
 -- object that ARRIVED a new object of its own, so "a creature card was put into
 -- a graveyard" is a question about the card lying there and not about the
 -- permanent that left. Injected rather than imported, for the reason ViewOf
--- itself is: Parun.Engine.Projection imports this module.
-snapshotView :: ViewOf -> GameState -> EventShape.EventShape -> GameEvent.GameEvent -> Maybe Filter.View
-snapshotView viewOf gs shape event = case event of
+-- itself is: Parun.Engine.Projection imports this module. `context` is the
+-- count's own, which a damage recipient is judged in (CR 109.5's "you").
+snapshotView :: ViewOf -> Filter.Context -> GameState -> EventShape.EventShape Keyword.Type.Keyword -> GameEvent.GameEvent -> Maybe Filter.View
+snapshotView viewOf context gs shape event = case event of
   GameEvent.Moved (Moved.MkMoved zc snapshot _ _ _ _ seenArriving _ arrivedAs) -> case shape of
     EventShape.MovedBetween (MovedBetween.MkMovedBetween from to) ->
       if ZoneChange.from zc == from && ZoneChange.to zc == to then Just (departedView viewOf gs zc snapshot) else Nothing
@@ -851,13 +853,25 @@ snapshotView viewOf gs shape event = case event of
   -- counts under the player who controlled it then (Excess's ruling,
   -- 2022-04-29). damageRecipient drops an event of 0 (CR 120.8).
   GameEvent.DamageDealt dealt -> case shape of
-    EventShape.SourceDealtDamage (SourceDealtDamage.MkSourceDealtDamage kind recipient)
-      | all (== DamageEvent.kind dealt) kind && any (admits recipient) (Game.damageRecipient event) -> Just (Filter.dealtByView dealt)
+    EventShape.SourceDealtDamage (SourceDealtDamage.MkSourceDealtDamage kind recipients)
+      | all (== DamageEvent.kind dealt) kind && any admitted (Game.damageRecipient event) -> Just (Filter.dealtByView dealt)
       | otherwise -> Nothing
       where
-        admits r to = case r of
-          RecipientKind.AnyRecipient -> True
-          RecipientKind.PlayerRecipient -> Maybe.isJust (Recipient.playerOf to)
+        admitted to = Set.null recipients || any (damagedIs to) recipients
+        -- CR 120.1: Parun.Engine.Event.Match's damagedIs, read off the log. A
+        -- relation is read off the damaged player alone, never the roster, so
+        -- a player who has since left was still dealt the damage; a permanent
+        -- is seen as it was dealt it (dealtToView), with the damage dealt to
+        -- it at Binding.eventAmount.
+        damagedIs to recipient = case recipient of
+          DamageRecipient.Player ref -> case (ref, Recipient.playerOf to, Filter.perspective context) of
+            (_, Nothing, _) -> False
+            (PlayerRef.Relative relation, Just damaged, Just you) -> PlayerRelation.holds (Game.teams gs) relation you damaged
+            (_, Just damaged, _) -> maybe False (elem damaged) (playersFor viewOf context gs ref)
+          DamageRecipient.Permanent cardType qualifier ->
+            let dealtContext = context {Filter.boundAmounts = Map.insert Binding.eventAmount (DamageEvent.amount dealt) (Filter.boundAmounts context)}
+                admits view = Set.member cardType (Filter.cardTypes view) && Filter.matches dealtContext view qualifier
+             in any (admits . dealtToView dealt) (Game.damagedObject event >>= orLastKnown viewOf gs)
     -- CR 120.3 / 608.2i: the permanent as it is or last was, seen as it was
     -- dealt the damage (dealtToView). damagedObject drops an event of 0 (CR 120.8).
     EventShape.PermanentDealtDamage -> fmap (dealtToView dealt) (Game.damagedObject event >>= orLastKnown viewOf gs)
@@ -1156,7 +1170,7 @@ damageableCardTypes = Set.fromList [CardType.Battle, CardType.Creature, CardType
 -- (Excess's "for each creature"), and one source dealing damage three times
 -- is one of Case of the Burning Masks' sources; every other shape's unit is the
 -- event.
-oncePerObject :: EventShape.EventShape -> Bool
+oncePerObject :: EventShape.EventShape keyword -> Bool
 oncePerObject shape = case shape of
   EventShape.SourceDealtDamage {} -> True
   EventShape.PermanentDealtDamage -> True

@@ -86,6 +86,7 @@ import qualified Parun.Types.CostSubject as CostSubject
 import qualified Parun.Types.Count as Count.Type
 import qualified Parun.Types.CountedDiscard as CountedDiscard
 import qualified Parun.Types.CounterKind as CounterKind
+import qualified Parun.Types.DamageRecipient as DamageRecipient
 import qualified Parun.Types.DealtDamage as DealtDamage
 import qualified Parun.Types.DeclarationTrigger as DeclarationTrigger
 import qualified Parun.Types.DefinedX as DefinedX
@@ -95,6 +96,7 @@ import qualified Parun.Types.Duration as Duration
 import qualified Parun.Types.Effect as Effect
 import qualified Parun.Types.EntersTrigger as EntersTrigger
 import qualified Parun.Types.EntryRiders as EntryRiders
+import qualified Parun.Types.EventShape as EventShape
 import qualified Parun.Types.ExiledPile as ExiledPile
 import qualified Parun.Types.Face as Face
 import qualified Parun.Types.Filter as Filter.Type
@@ -155,6 +157,7 @@ import qualified Parun.Types.Scope as Scope
 import qualified Parun.Types.SlotArity as SlotArity
 import qualified Parun.Types.SlotCount as SlotCount
 import qualified Parun.Types.SlotName as SlotName
+import qualified Parun.Types.SourceDealtDamage as SourceDealtDamage
 import qualified Parun.Types.SpecialAction as SpecialAction
 import qualified Parun.Types.SpellCast as SpellCast
 import qualified Parun.Types.StaticAbility as StaticAbility
@@ -193,7 +196,7 @@ isSharedZone zone = case zone of
 -- this, at the decoder, so a card file carrying the pairing never reaches a
 -- registry; this restates the rule over the loaded pool rather than calling
 -- that predicate, so the two have to agree independently, see #161.
-scopeOffends :: Scope.Scope -> Bool
+scopeOffends :: Scope.Scope keyword -> Bool
 scopeOffends scope = case scope of
   Scope.InZone (InZone.MkInZone zone ref) -> isSharedZone zone && ref /= PlayerRef.Relative PlayerRelation.AnyPlayer
   Scope.InHistory _ -> False
@@ -1278,6 +1281,22 @@ abilitySlotLintSpec s registry corpus = Spec.describe s "Lint" $ do
       s
       (not (triggeredAbilityOffends (modalTrigger (TriggerCondition.Enters EntersTrigger.defaultValue) [drawsTally (PlayerRef.Relative PlayerRelation.You)])))
       "where a number naming no slot at all is accepted"
+  -- The same equality on a slot read only from a damage look-back's recipient,
+  -- which Children.scopeChildren hands to the player visitor: no Count names one
+  -- without it, since the Scope visitor answers nothing for a look-back.
+  Spec.it s "the lint itself catches a slot read only from a damage look-back's recipient" $ do
+    let drawsSources ref =
+          Mode.MkMode
+            (Seq.singleton (Mint.mandatory (Seq.singleton (Effect.Draw (Draw.MkDraw (PlayerRef.Relative PlayerRelation.You) (Quantity.Type.Count (Count.Type.MkCount (Scope.InHistory (EventShape.SourceDealtDamage (SourceDealtDamage.MkSourceDealtDamage Nothing (Set.singleton (DamageRecipient.Player ref))))) (Filter.Type.And []) Aggregation.Members)) Nothing)))))
+            Map.empty
+    Spec.assertBool
+      s
+      (triggeredAbilityOffends (modalTrigger (TriggerCondition.Enters EntersTrigger.defaultValue) [drawsSources (PlayerRef.InSlot Binding.triggerPlayer)]))
+      "CR 608.2h thatPlayer as a look-back's recipient under an enters trigger is rejected"
+    Spec.assertBool
+      s
+      (not (triggeredAbilityOffends (modalTrigger (TriggerCondition.Enters EntersTrigger.defaultValue) [drawsSources (PlayerRef.Relative PlayerRelation.Opponent)])))
+      "where a recipient naming no slot at all is accepted"
   -- The same equality one field further out: CR 118.12's gate multiplier
   -- (Parun.Types.PayGate.perEach), which is a Quantity a clause carries outside
   -- its effects, so neither Resolve.slotsOf nor the payer field reaches it. A

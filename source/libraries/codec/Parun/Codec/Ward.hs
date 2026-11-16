@@ -16,7 +16,7 @@ import qualified Parun.Types.Ward as Ward
 -- printed number still writes nothing but its cost. `cost` is the first option
 -- and `orCosts` the rest, Parun.Codec.PayGate's spelling. The keyword codec is a
 -- PARAMETER; see Parun.Codec.Filter's header.
-codec :: (Typeable.Typeable keyword, Eq keyword) => Codec.Codec keyword -> Codec.Codec (Ward.Ward keyword)
+codec :: (Typeable.Typeable keyword, Ord keyword) => Codec.Codec keyword -> Codec.Codec (Ward.Ward keyword)
 codec keywordCodec = Fields.object $ do
   cost <- Fields.required "cost" (Cost.codec keywordCodec) (NonEmpty.head . Ward.cost)
   orCosts <- Fields.defaulted "orCosts" [] (Common.list (Cost.codec keywordCodec)) (NonEmpty.tail . Ward.cost)

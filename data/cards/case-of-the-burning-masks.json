@@ -207,9 +207,7 @@
                         "type": "InHistory",
                         "value": {
                           "type": "SourceDealtDamage",
-                          "value": {
-                            "recipient": "AnyRecipient"
-                          }
+                          "value": {}
                         }
                       }
                     }

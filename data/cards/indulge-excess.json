@@ -233,7 +233,15 @@
                               "type": "SourceDealtDamage",
                               "value": {
                                 "kind": "Combat",
-                                "recipient": "PlayerRecipient"
+                                "recipients": [
+                                  {
+                                    "type": "Player",
+                                    "value": {
+                                      "type": "Relative",
+                                      "value": "AnyPlayer"
+                                    }
+                                  }
+                                ]
                               }
                             }
                           }

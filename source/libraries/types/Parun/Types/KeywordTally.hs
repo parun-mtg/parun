@@ -11,7 +11,7 @@ import qualified Parun.Types.Scope as Scope
 --
 -- `filter` shadows the Prelude's, as Count's does.
 data KeywordTally keyword = MkKeywordTally
-  { scope :: Scope.Scope,
+  { scope :: Scope.Scope keyword,
     filter :: Filter.Filter keyword
   }
   deriving (Eq, Ord, Show)
