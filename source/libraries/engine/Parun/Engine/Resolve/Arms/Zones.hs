@@ -274,8 +274,10 @@ moveToZone settle resolving source controller legal chosen (MoveToZone.MkMoveToZ
         pure (foldr Set.insert sofar mNew, mNew : acc)
       -- CR 303.4f's choice for an Aura the effect puts onto the battlefield
       -- "attached to" a host it describes (EntryHost.Chosen, Nomad
-      -- Mythmaker's "a creature you control"): the rule's "any other
-      -- applicable effects", so the offer is the Aura's own entryHostsFor
+      -- Mythmaker's "a creature you control"), and CR 301.5b's for an
+      -- Equipment (One Last Job's "attached to a creature you control"): the
+      -- rule's "any other applicable effects", so the offer is the
+      -- permanent's own entryHostsFor
       -- narrowed by the effect's filter, made by the player it enters under
       -- or the one the effect names instead (Takklemaggot's "that creature's
       -- controller chooses", through askedChooser and so CR 800.4g, and asked
@@ -303,15 +305,23 @@ moveToZone settle resolving source controller legal chosen (MoveToZone.MkMoveToZ
                     asked <- maybe (pure (Just mover)) (Common.askedChooser resolving source controller legal) chooser
                     maybe (pure Nothing) (\who -> Attach.chooseEntryHost who target hosts) asked
               CardSelection.AtRandom -> fmap (fmap Recipient.ToObject) (Game.drawAmong Prompt.RandomObject (Maybe.mapMaybe Recipient.objectOf hosts))
+            isAura = Set.member Subtype.Aura (Projection.subtypesOf target now)
+            isEquipment = Set.member Subtype.Equipment (Projection.subtypesOf target now)
             narrowed selection chooser admits
               | zone == Zone.Battlefield,
                 Maybe.isNothing (EntryRiders.faceDown riders),
-                Set.member Subtype.Aura (Projection.subtypesOf target now) = do
+                isAura || isEquipment = do
                   let offered = Attach.entryHostsFor mover target now
                   admitted <- admits (filter (`Set.notMember` sofar) (Maybe.mapMaybe Recipient.objectOf offered))
                   let hosts = filter (maybe False (`Set.member` admitted) . Recipient.objectOf) offered
                   chosenOne <- pick selection chooser hosts
-                  pure (fmap Just (chosenOne >>= \h -> Attach.entryAttachmentFor mover target h now))
+                  pure $ case chosenOne >>= \h -> Attach.entryAttachmentFor mover target h now of
+                    Just attachment -> Just (Just attachment)
+                    -- CR 301.5e: an Equipment with no legal host enters
+                    -- unattached; an Aura stays put (CR 303.4g, 303.4i).
+                    Nothing
+                      | isAura -> Nothing
+                      | otherwise -> Just Nothing
               | otherwise = pure (Just Nothing)
         case EntryRiders.attachedTo riders of
           Just (EntryHost.Chosen selection chooser filter_) -> narrowed selection chooser (pure . Set.fromList . matchingFromAmong legal resolving controller source now filter_)
