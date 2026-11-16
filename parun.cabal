@@ -572,6 +572,8 @@ library codec
     Parun.Codec.CostComponentSpec
     Parun.Codec.CostDirection
     Parun.Codec.CostDirectionSpec
+    Parun.Codec.CostedSpecialAction
+    Parun.Codec.CostedSpecialActionSpec
     Parun.Codec.CostKeyword
     Parun.Codec.CostKeywordSpec
     Parun.Codec.CostModifier
@@ -3033,6 +3035,7 @@ library types
     Parun.Types.CostChoice
     Parun.Types.CostComponent
     Parun.Types.CostDirection
+    Parun.Types.CostedSpecialAction
     Parun.Types.CostKeyword
     Parun.Types.CostModifier
     Parun.Types.CostOffer

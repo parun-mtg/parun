@@ -68,7 +68,8 @@
                 "value": []
               },
               "subject": {
-                "type": "Unlocks"
+                "type": "SpecialActions",
+                "value": "Unlock"
               }
             }
           },

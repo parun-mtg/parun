@@ -261,6 +261,7 @@ import qualified Parun.Codec.CostReductionSpec
 import qualified Parun.Codec.CostScaleSpec
 import qualified Parun.Codec.CostSpec
 import qualified Parun.Codec.CostSubjectSpec
+import qualified Parun.Codec.CostedSpecialActionSpec
 import qualified Parun.Codec.CouldProduceSpec
 import qualified Parun.Codec.CountIsSpec
 import qualified Parun.Codec.CountSpec
@@ -1358,6 +1359,7 @@ spec s reference corpus = do
   Parun.Codec.CostPortionSpec.spec s
   Parun.Codec.CostSpec.spec s
   Parun.Codec.CostSubjectSpec.spec s
+  Parun.Codec.CostedSpecialActionSpec.spec s
   Parun.Codec.CouldProduceSpec.spec s
   Parun.Codec.CountedDiscardSpec.spec s
   Parun.Codec.CounterabilitySpec.spec s

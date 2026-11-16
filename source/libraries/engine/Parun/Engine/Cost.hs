@@ -5453,8 +5453,9 @@ pay perform began moment subject announced spending pid oid cost = fmap fst (pay
 -- cast or an ability being activated, and a special action is neither, so the
 -- announced cost IS the cost paid and the announcement offers exactly what the
 -- gate measured (see #90). A cost an effect changes (CR 118.7) arrives changed
--- from the caller, as Room.unlock's does. The announcement's Phyrexian count is
--- discarded: rule 702.150a asks about the player who CAST the object.
+-- from the caller, as Room.unlock's and Plot.plot's do. The announcement's
+-- Phyrexian count is discarded: rule 702.150a asks about the player who CAST
+-- the object.
 payAction :: ManaAbilityPerformer.ManaAbilityPerformer -> GameState -> PaymentSubject.PaymentSubject -> Natural -> PlayerId -> ObjectId -> Cost Keyword.Type.Keyword -> Game (Maybe Natural)
 payAction perform before subject leastX pid oid printed
   | not (payableAt leastX) = pure Nothing

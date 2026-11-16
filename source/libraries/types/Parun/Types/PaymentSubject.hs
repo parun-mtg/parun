@@ -15,7 +15,7 @@ import qualified Parun.Types.ObjectId as ObjectId
 -- admit any of them, under a predicate each (Parun.Types.ManaRestriction).
 --
 -- FOUR named payments and not one per special action: CR 116.2 lists twelve, and
--- what earns an arm is a PRINTED rider naming that payment. Nothing printed names
+-- what earns an arm is a PRINTED rider naming that payment. No mana rider names
 -- foretelling or plotting, so those share ForNeither with CR 508.1j \/ 509.1f's
 -- combat toll and CR 118.12's resolution-time payment, which are no special
 -- action at all -- an arm of their own rather than an absent one.

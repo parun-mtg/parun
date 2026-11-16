@@ -37,6 +37,7 @@ import Parun.Types.CardName (CardName)
 import Parun.Types.Cost (Cost)
 import qualified Parun.Types.Cost as Cost.Type
 import qualified Parun.Types.CostAdjustments as CostAdjustments
+import qualified Parun.Types.CostedSpecialAction as CostedSpecialAction
 import qualified Parun.Types.Face as Face
 import Parun.Types.Game (Game)
 import Parun.Types.GameState (GameState)
@@ -145,14 +146,15 @@ canUnlock pid oid half gs =
 
 -- CR 118.7: what an effect changes about one half's unlock cost (Inquisitive
 -- Glimmer's "Unlock costs you pay cost {1} less"), gathered over the rows whose
--- subject is CostSubject.Unlocks, and the cost with their added components.
+-- subject is CostSubject.SpecialActions Unlock, and the cost with their added
+-- components.
 -- The mana part is left unadjusted: the reductions hold CR 118.7e's choice,
 -- which the payer makes (Cost.announceReductions).
 -- data/scenarios/inquisitive-glimmer-takes-one-off-the-unlock-costs-its-controller-pays
 -- proves it.
 unlockCost :: PlayerId -> ObjectId -> Face.Face Card.Type.Card -> GameState -> (CostAdjustments.CostAdjustments, Cost Keyword)
 unlockCost pid oid face gs =
-  let adjustments = PlayerEffect.unlockCostAdjustments pid oid gs
+  let adjustments = PlayerEffect.specialActionCostAdjustments CostedSpecialAction.Unlock pid oid gs
    in (adjustments, Cost.plusComponents adjustments (unlockCostOf face))
 
 -- Every door this player may unlock right now, in battlefield order and then
