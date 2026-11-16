@@ -78,6 +78,7 @@ phraseJoining joining f named = case f of
     parts <- traverse (\g -> phraseJoining joining g named) fs
     pure (List.foldl' merge empty parts)
   Filter.Or fs
+    | outlaw fs -> [noun (Text.pack "outlaw") (Just (Text.pack "outlaws"))]
     | Just ts <- traverse cardTypeOf fs, Just p <- permanentCard (Set.fromList ts) -> [p]
     | otherwise -> disjunction joining =<< traverse (\g -> phraseJoining joining g named) fs
   Filter.HasCardType t -> [noun (cardType Singular t) (Just (cardType Plural t))]
@@ -91,6 +92,7 @@ phraseJoining joining f named = case f of
   -- Free: "nonlegendary" (Cytoshape) or "that aren't legendary" (Urza's
   -- Ruinous Blast).
   Filter.Not (Filter.HasSupertype s) -> [adjective (Text.pack "non" <> supertype s), qualifier (Text.pack "that isn't " <> supertype s) (Text.pack "that aren't " <> supertype s)]
+  Filter.Not (Filter.Or fs) | outlaw fs -> [adjective (Text.pack "non-outlaw")]
   Filter.Not (Filter.HasSubtype s) -> do
     name <- subtype s
     [adjective (Text.pack "non-" <> name)]
@@ -185,6 +187,17 @@ qualifier o m = MkPhrase [] [] [MkQualifier o m]
 cardTypeOf :: Filter.Filter k -> Maybe CardType.CardType
 cardTypeOf f = case f of
   Filter.HasCardType t -> Just t
+  _ -> Nothing
+
+-- | Whether a disjunction names every outlaw creature type, CR 700.12's
+-- "outlaw".
+outlaw :: [Filter.Filter k] -> Bool
+outlaw fs = fmap Set.fromList (traverse subtypeOf fs) == Just (Set.fromList [Subtype.Assassin, Subtype.Mercenary, Subtype.Pirate, Subtype.Rogue, Subtype.Warlock])
+
+-- | The subtype a filter names, if that is all it names.
+subtypeOf :: Filter.Filter k -> Maybe Subtype.Subtype
+subtypeOf f = case f of
+  Filter.HasSubtype s -> Just s
   _ -> Nothing
 
 -- | A disjunction of every permanent type as CR 110.4a names it,

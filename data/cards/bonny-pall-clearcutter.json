@@ -1,0 +1,255 @@
+{
+  "faces": [
+    {
+      "keywords": [
+        {
+          "type": "Reach"
+        }
+      ],
+      "manaCost": [
+        {
+          "type": "Generic",
+          "value": 3
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "Green"
+          }
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "Blue"
+          }
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "Blue"
+          }
+        }
+      ],
+      "name": "Bonny Pall, Clearcutter",
+      "oracleText": "Reach\nWhen Bonny Pall enters, create Beau, a legendary blue Ox creature token with \"Beau's power and toughness are each equal to the number of lands you control.\"\nWhenever you attack, draw a card, then you may put a land card from your hand or graveyard onto the battlefield.",
+      "power": {
+        "type": "Literal",
+        "value": 6
+      },
+      "toughness": {
+        "type": "Literal",
+        "value": 5
+      },
+      "triggeredAbilities": [
+        {
+          "condition": {
+            "type": "Enters",
+            "value": {}
+          },
+          "modal": {
+            "modes": [
+              {
+                "clauses": [
+                  {
+                    "effects": [
+                      {
+                        "type": "Create",
+                        "value": {
+                          "card": {
+                            "faces": [
+                              {
+                                "characteristicPT": {
+                                  "power": {
+                                    "type": "Count",
+                                    "value": {
+                                      "aggregation": {
+                                        "type": "Members"
+                                      },
+                                      "filter": {
+                                        "type": "And",
+                                        "value": [
+                                          {
+                                            "type": "HasCardType",
+                                            "value": "Land"
+                                          },
+                                          {
+                                            "type": "HeldBy",
+                                            "value": {
+                                              "holder": "Controller",
+                                              "relation": "You"
+                                            }
+                                          }
+                                        ]
+                                      },
+                                      "scope": {
+                                        "type": "InZone",
+                                        "value": {
+                                          "player": {
+                                            "type": "Relative",
+                                            "value": "AnyPlayer"
+                                          },
+                                          "zone": "Battlefield"
+                                        }
+                                      }
+                                    }
+                                  },
+                                  "toughness": {
+                                    "type": "Count",
+                                    "value": {
+                                      "aggregation": {
+                                        "type": "Members"
+                                      },
+                                      "filter": {
+                                        "type": "And",
+                                        "value": [
+                                          {
+                                            "type": "HasCardType",
+                                            "value": "Land"
+                                          },
+                                          {
+                                            "type": "HeldBy",
+                                            "value": {
+                                              "holder": "Controller",
+                                              "relation": "You"
+                                            }
+                                          }
+                                        ]
+                                      },
+                                      "scope": {
+                                        "type": "InZone",
+                                        "value": {
+                                          "player": {
+                                            "type": "Relative",
+                                            "value": "AnyPlayer"
+                                          },
+                                          "zone": "Battlefield"
+                                        }
+                                      }
+                                    }
+                                  }
+                                },
+                                "colorIndicator": [
+                                  "Blue"
+                                ],
+                                "name": "Beau",
+                                "power": {
+                                  "type": "Star"
+                                },
+                                "toughness": {
+                                  "type": "Star"
+                                },
+                                "typeLine": {
+                                  "subtypes": [
+                                    "Ox"
+                                  ],
+                                  "supertypes": [
+                                    "Legendary"
+                                  ],
+                                  "types": [
+                                    "Creature"
+                                  ]
+                                }
+                              }
+                            ]
+                          },
+                          "quantity": {
+                            "type": "Literal",
+                            "value": 1
+                          }
+                        }
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "condition": {
+            "type": "Attacks",
+            "value": {
+              "type": "Declaration",
+              "value": {
+                "player": "You"
+              }
+            }
+          },
+          "modal": {
+            "modes": [
+              {
+                "clauses": [
+                  {
+                    "effects": [
+                      {
+                        "type": "Draw",
+                        "value": {
+                          "player": {
+                            "type": "Relative",
+                            "value": "You"
+                          },
+                          "quantity": {
+                            "type": "Literal",
+                            "value": 1
+                          }
+                        }
+                      }
+                    ]
+                  },
+                  {
+                    "effects": [
+                      {
+                        "type": "Search",
+                        "value": {
+                          "destination": "Battlefield",
+                          "filter": {
+                            "type": "HasCardType",
+                            "value": "Land"
+                          },
+                          "owner": {
+                            "type": "Relative",
+                            "value": "You"
+                          },
+                          "quantity": {
+                            "type": "Literal",
+                            "value": 1
+                          },
+                          "searcher": {
+                            "type": "Relative",
+                            "value": "You"
+                          },
+                          "zones": [
+                            "Hand",
+                            "Graveyard"
+                          ]
+                        }
+                      }
+                    ],
+                    "optionality": {
+                      "type": "Optional"
+                    }
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      ],
+      "typeLine": {
+        "subtypes": [
+          "Giant",
+          "Scout"
+        ],
+        "supertypes": [
+          "Legendary"
+        ],
+        "types": [
+          "Creature"
+        ]
+      }
+    }
+  ]
+}
