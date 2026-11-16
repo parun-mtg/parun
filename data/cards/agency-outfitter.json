@@ -1,0 +1,120 @@
+{
+  "faces": [
+    {
+      "keywords": [
+        {
+          "type": "Flying"
+        }
+      ],
+      "manaCost": [
+        {
+          "type": "Generic",
+          "value": 4
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "Blue"
+          }
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "Blue"
+          }
+        }
+      ],
+      "name": "Agency Outfitter",
+      "oracleText": "Flying\nWhen this creature enters, you may search your graveyard, hand and/or library for a card named Magnifying Glass and/or a card named Thinking Cap and put them onto the battlefield. If you search your library this way, shuffle.",
+      "power": {
+        "type": "Literal",
+        "value": 4
+      },
+      "toughness": {
+        "type": "Literal",
+        "value": 3
+      },
+      "triggeredAbilities": [
+        {
+          "condition": {
+            "type": "Enters",
+            "value": {}
+          },
+          "modal": {
+            "modes": [
+              {
+                "clauses": [
+                  {
+                    "effects": [
+                      {
+                        "type": "Search",
+                        "value": {
+                          "andOr": true,
+                          "descriptions": [
+                            {
+                              "type": "HasName",
+                              "value": "Magnifying Glass"
+                            },
+                            {
+                              "type": "HasName",
+                              "value": "Thinking Cap"
+                            }
+                          ],
+                          "destination": "Battlefield",
+                          "filter": {
+                            "type": "Or",
+                            "value": [
+                              {
+                                "type": "HasName",
+                                "value": "Magnifying Glass"
+                              },
+                              {
+                                "type": "HasName",
+                                "value": "Thinking Cap"
+                              }
+                            ]
+                          },
+                          "owner": {
+                            "type": "Relative",
+                            "value": "You"
+                          },
+                          "quantity": {
+                            "type": "Literal",
+                            "value": 2
+                          },
+                          "searcher": {
+                            "type": "Relative",
+                            "value": "You"
+                          },
+                          "zones": [
+                            "Library",
+                            "Hand",
+                            "Graveyard"
+                          ]
+                        }
+                      }
+                    ],
+                    "optionality": {
+                      "type": "Optional"
+                    }
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      ],
+      "typeLine": {
+        "subtypes": [
+          "Detective",
+          "Sphinx"
+        ],
+        "types": [
+          "Creature"
+        ]
+      }
+    }
+  ]
+}
