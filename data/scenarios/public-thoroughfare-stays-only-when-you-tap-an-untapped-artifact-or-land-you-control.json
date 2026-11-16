@@ -1,6 +1,6 @@
 {
   "description": "Public Thoroughfare enters tapped and is kept by tapping an untapped artifact or land its controller controls, else sacrificed.",
-  "note": "Turn 1 refuses alice's enchantment and bob's artifact and land, then taps her Forest; turn 4 taps her Mind Stone; turn 7 declines and the third copy is sacrificed.",
+  "note": "Turn 1 refuses alice's enchantment, her already tapped Mountain, and bob's artifact and land, then taps her Forest; turn 4 taps her Mind Stone; turn 7 declines and the third copy is sacrificed.",
   "board": {
     "active": "alice",
     "step": "PrecombatMain",
@@ -19,6 +19,11 @@
           {
             "card": "Glorious Anthem",
             "label": "anthem"
+          },
+          {
+            "card": "Mountain",
+            "label": "tland",
+            "tapped": true
           }
         ],
         "hand": [
@@ -197,6 +202,19 @@
           "prompt": "ChooseTaps",
           "with": [
             "$anthem"
+          ]
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "refuse": {
+        "Answer": {
+          "prompt": "ChooseTaps",
+          "with": [
+            "$tland"
           ]
         }
       }

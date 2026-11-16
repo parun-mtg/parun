@@ -26,7 +26,7 @@
                     "type": "ModifyTarget",
                     "value": {
                       "duration": {
-                        "type": "Indefinite"
+                        "type": "UntilEndOfTurn"
                       },
                       "modification": {
                         "type": "ModifyPowerToughness",

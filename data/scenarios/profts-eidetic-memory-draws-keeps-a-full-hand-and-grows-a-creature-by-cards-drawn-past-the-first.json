@@ -1,6 +1,6 @@
 {
-  "description": "Proft's Eidetic Memory draws on entering, lifts alice's maximum hand size (CR 402.2), and at beginning of combat after more than one draw puts draws-minus-one +1/+1 counters on a creature she controls.",
-  "note": "Turn 1: one draw, so the intervening if (CR 603.4) keeps the trigger off the stack, and nine cards survive cleanup. Turn 4: the draw step and Divination make three draws, so the Bears get two counters; bob's Hill Giant is refused as a target, and Llanowar Elves makes the target a real choice.",
+  "description": "Proft's Eidetic Memory draws on entering, lifts alice's maximum hand size (CR 402.2), and at beginning of combat on her turn after more than one draw puts draws-minus-one +1/+1 counters on a creature she controls.",
+  "note": "Turn 1: one draw, so the intervening if (CR 603.4) keeps the trigger off the stack, and nine cards survive cleanup. Turn 2: Quick Study draws alice two on bob's turn, and nothing triggers at bob's beginning of combat. Turn 3: the draw step and Think Twice make exactly two draws, so the Bears get one counter; bob's Hill Giant is refused as a target, and Llanowar Elves makes the target a real choice.",
   "board": {
     "active": "alice",
     "step": "PrecombatMain",
@@ -45,8 +45,12 @@
             "label": "pem"
           },
           {
-            "card": "Divination",
+            "card": "Think Twice",
             "label": "div"
+          },
+          {
+            "card": "Quick Study",
+            "label": "qs"
           },
           {
             "card": "Plains"
@@ -241,7 +245,7 @@
         "Count": {
           "player": "alice",
           "zone": "Hand",
-          "card": "Divination",
+          "card": "Think Twice",
           "count": 1
         }
       }
@@ -256,6 +260,66 @@
           "zone": "Hand",
           "card": "Swamp",
           "count": 1
+        }
+      }
+    },
+    {
+      "turn": 2,
+      "step": "Upkeep",
+      "player": "alice",
+      "do": {
+        "Cast": {
+          "object": "$qs",
+          "mana": [
+            "$i2",
+            "$i3",
+            "$i4",
+            null
+          ]
+        }
+      }
+    },
+    {
+      "turn": 2,
+      "step": "Upkeep",
+      "player": "alice",
+      "do": "Pass"
+    },
+    {
+      "turn": 2,
+      "step": "DrawStep",
+      "player": "bob",
+      "check": {
+        "Count": {
+          "player": "alice",
+          "zone": "Hand",
+          "card": "Swamp",
+          "count": 3
+        }
+      }
+    },
+    {
+      "turn": 2,
+      "step": "BeginningOfCombat",
+      "player": "alice",
+      "check": {
+        "View": {
+          "of": "Stack",
+          "is": []
+        }
+      }
+    },
+    {
+      "turn": 2,
+      "step": "BeginningOfCombat",
+      "player": "alice",
+      "check": {
+        "Counters": {
+          "object": "$bears",
+          "kind": {
+            "type": "PlusOnePlusOne"
+          },
+          "count": 0
         }
       }
     },
@@ -277,7 +341,6 @@
           "mana": [
             "$i0",
             "$i1",
-            "$i2",
             null
           ]
         }
@@ -298,7 +361,7 @@
           "player": "alice",
           "zone": "Hand",
           "card": "Swamp",
-          "count": 4
+          "count": 5
         }
       }
     },
@@ -342,7 +405,7 @@
           "kind": {
             "type": "PlusOnePlusOne"
           },
-          "count": 2
+          "count": 1
         }
       }
     },
