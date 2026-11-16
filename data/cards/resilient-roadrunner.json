@@ -1,0 +1,96 @@
+{
+  "faces": [
+    {
+      "activatedAbilities": [
+        {
+          "cost": {
+            "mana": [
+              {
+                "type": "Generic",
+                "value": 3
+              }
+            ]
+          },
+          "modal": {
+            "modes": [
+              {
+                "clauses": [
+                  {
+                    "effects": [
+                      {
+                        "type": "ForbidBeingBlocked",
+                        "value": {
+                          "affected": {
+                            "type": "IsSource"
+                          },
+                          "blockers": {
+                            "type": "Not",
+                            "value": {
+                              "type": "HasKeyword",
+                              "value": {
+                                "type": "Haste"
+                              }
+                            }
+                          },
+                          "duration": {
+                            "type": "UntilEndOfTurn"
+                          }
+                        }
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      ],
+      "keywords": [
+        {
+          "type": "Haste"
+        },
+        {
+          "type": "Protection",
+          "value": {
+            "quality": {
+              "type": "HasSubtype",
+              "value": "Coyote"
+            },
+            "spares": null
+          }
+        }
+      ],
+      "manaCost": [
+        {
+          "type": "Generic",
+          "value": 1
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "Red"
+          }
+        }
+      ],
+      "name": "Resilient Roadrunner",
+      "oracleText": "Haste, protection from Coyotes\n{3}: This creature can't be blocked this turn except by creatures with haste.",
+      "power": {
+        "type": "Literal",
+        "value": 2
+      },
+      "toughness": {
+        "type": "Literal",
+        "value": 2
+      },
+      "typeLine": {
+        "subtypes": [
+          "Bird"
+        ],
+        "types": [
+          "Creature"
+        ]
+      }
+    }
+  ]
+}
