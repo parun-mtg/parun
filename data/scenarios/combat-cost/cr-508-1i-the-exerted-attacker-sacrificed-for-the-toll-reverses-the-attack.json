@@ -42,7 +42,7 @@
     "step": "BeginningOfCombat"
   },
   "description": "CR 508.1i the exerted attacker sacrificed for the toll's mana reverses the attack",
-  "note": "The {4} window sacrifices the exerted Initiate to the Altar; its exert is now unpayable, so the declaration is reversed (the Initiate back, untapped) and the Piker attacks alone for {2}.",
+  "note": "The {4} window sacrifices the exerted Initiate to the Altar and taps both Forests; the exert is now unpayable, so the declaration is reversed. Alice reverses the Forests and keeps the Altar's activation (CR 734.1): the Initiate stays in the graveyard, and its {C}{C} pays the Piker-only {2}.",
   "timeline": [
     {
       "do": {
@@ -125,31 +125,42 @@
     },
     {
       "do": {
+        "Answer": {
+          "prompt": "ReverseManaAbilities",
+          "with": "Exercises"
+        }
+      },
+      "player": "alice",
+      "step": "DeclareAttackers",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Answer": {
+          "prompt": "ReverseManaAbilities",
+          "with": "Exercises"
+        }
+      },
+      "player": "alice",
+      "step": "DeclareAttackers",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Answer": {
+          "prompt": "ReverseManaAbilities",
+          "with": "Declines"
+        }
+      },
+      "player": "alice",
+      "step": "DeclareAttackers",
+      "turn": 1
+    },
+    {
+      "do": {
         "Attack": [
           "$piker"
         ]
-      },
-      "player": "alice",
-      "step": "DeclareAttackers",
-      "turn": 1
-    },
-    {
-      "do": {
-        "Answer": {
-          "prompt": "ChooseManaSource",
-          "with": "$f1"
-        }
-      },
-      "player": "alice",
-      "step": "DeclareAttackers",
-      "turn": 1
-    },
-    {
-      "do": {
-        "Answer": {
-          "prompt": "ChooseManaSource",
-          "with": "$f2"
-        }
       },
       "player": "alice",
       "step": "DeclareAttackers",
@@ -170,7 +181,7 @@
       "check": {
         "Count": {
           "card": "Glory-Bound Initiate",
-          "count": 1,
+          "count": 0,
           "player": "alice",
           "zone": "Battlefield"
         }
@@ -181,8 +192,32 @@
     },
     {
       "check": {
+        "Count": {
+          "card": "Glory-Bound Initiate",
+          "count": 1,
+          "player": "alice",
+          "zone": "Graveyard"
+        }
+      },
+      "player": "alice",
+      "step": "DeclareBlockers",
+      "turn": 1
+    },
+    {
+      "check": {
         "Tapped": {
-          "object": "$initiate",
+          "object": "$f1",
+          "tapped": false
+        }
+      },
+      "player": "alice",
+      "step": "DeclareBlockers",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Tapped": {
+          "object": "$f2",
           "tapped": false
         }
       },
