@@ -482,24 +482,24 @@ bakePerspective viewOf context gs candidate predicate =
         -- admitting every one.
         Filter.Type.IsControllerOfBound slot ->
           truth (Just candidate == (Filter.slotOneObject slot context >>= viewOf >>= Filter.controller))
-        -- CR 400.1 / 404.1: how big is THIS candidate's graveyard? Baked here for the
-        -- two atoms above's reason, one rule further out -- the question is about a
-        -- ZONE rather than about the candidate's characteristics, and
-        -- Parun.Engine.Filter holds no game state to size one with.
+        -- CR 400.1 / 402.1 / 404.1: how big is THIS candidate's hand or graveyard?
+        -- Baked here for the two atoms above's reason, one rule further out -- the
+        -- question is about a ZONE rather than about the candidate's
+        -- characteristics, and Parun.Engine.Filter holds no game state to size one
+        -- with.
         --
         -- OWNER-SLICED, which is right here where it is wrong for the battlefield
-        -- (see #161): rule 400.1 gives each player their own graveyard and CR 404.1 puts
-        -- an object on top of its OWNER's, so Game.zoneMembers asks exactly the rule's
-        -- question rather than approximating it, and the projected control
-        -- controlledMatching below reads has nothing to say about a card in a
-        -- graveyard. CR 608.2h fixes the moment: the answer is determined once, as the
-        -- effect is applied, which is when this fold runs.
-        Filter.Type.CardsInGraveyardAtLeast n ->
-          truth (toInteger (length (Game.cardsIn Zone.Graveyard candidate gs)) >= toInteger n)
+        -- (see #161): rule 400.1 gives each player their own hand and graveyard, and
+        -- CR 404.1 puts an object on top of its OWNER's, so Game.cardsIn asks exactly
+        -- the rule's question rather than approximating it. CR 608.2h fixes the
+        -- moment: the answer is determined once, as the effect is applied, which is
+        -- when this fold runs.
+        Filter.Type.CardsInZoneAtLeast zone n ->
+          truth (toInteger (length (Game.cardsIn zone candidate gs)) >= toInteger n)
         -- CR 400.3 / 701.9a: how many of the slot's objects does THIS candidate
         -- own? A card leaves only its owner's hand, so a discard's arrivals owned by
         -- the candidate are the ones the candidate discarded. Baked here for
-        -- CardsInGraveyardAtLeast's reason, and gated by CR 400.7j exactly as
+        -- CardsInZoneAtLeast's reason, and gated by CR 400.7j exactly as
         -- Scope.OverBound's members are (boundMember).
         Filter.Type.OwnsBoundAtLeast n slot inner ->
           let owned oid =
@@ -508,7 +508,7 @@ bakePerspective viewOf context gs candidate predicate =
               bound = Set.toList (Map.findWithDefault Set.empty slot (Filter.slotObjects context))
            in truth (toInteger (length (Prelude.filter owned bound)) >= toInteger n)
         -- CR 303.4b / 301.5a: something the nested Filter admits is attached TO this
-        -- PLAYER candidate. Baked here for CardsInGraveyardAtLeast's reason -- CR
+        -- PLAYER candidate. Baked here for CardsInZoneAtLeast's reason -- CR
         -- 109.3 keeps attachment off the characteristics, so this is a board
         -- question rather than one `viewOf` can answer -- and swept the same way
         -- Parun.Engine.Projection's attachedViews sweeps for an object: parun stores
@@ -517,7 +517,7 @@ bakePerspective viewOf context gs candidate predicate =
         Filter.Type.HasAttached f ->
           truth (any (\view -> Filter.matches context view f) (Maybe.mapMaybe viewOf (attachersOfPlayer gs candidate)))
         -- CR 106.12: a question about the turn's log rather than about the
-        -- candidate's characteristics, so baked for CardsInGraveyardAtLeast's
+        -- candidate's characteristics, so baked for CardsInZoneAtLeast's
         -- reason; tappedForManaThisTurn below answers it.
         Filter.Type.TappedForManaThisTurn f -> truth (tappedForManaThisTurn viewOf context gs f candidate)
         -- Descended into through the connectives alone. Every nest describes

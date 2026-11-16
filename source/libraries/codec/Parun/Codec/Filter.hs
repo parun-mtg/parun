@@ -60,6 +60,7 @@ import qualified Parun.Types.PlayerId as PlayerId
 import qualified Parun.Types.PlayerRelation as PlayerRelation
 import qualified Parun.Types.SlotName as SlotName
 import qualified Parun.Types.Trait as Trait
+import qualified Parun.Types.Zone as ZoneType
 
 -- | Recursive, mirroring Quantity's toJson/fromJson: And/Or carry their
 -- operands as a JSON Array, Not as a single nested object, and each atom
@@ -109,7 +110,7 @@ codec keywordCodec =
       -- Natural rather than Common.integer above, so a negative literal is
       -- rejected at decode instead of decoding into a vacuously true filter: a
       -- zone holds no negative number of cards.
-      Arm.payload "CardsInGraveyardAtLeast" Common.natural Filter.CardsInGraveyardAtLeast (\x -> case x of Filter.CardsInGraveyardAtLeast y -> Just y; _ -> Nothing),
+      Arm.payload "CardsInZoneAtLeast" cardsInZone (uncurry Filter.CardsInZoneAtLeast) (\x -> case x of Filter.CardsInZoneAtLeast z n -> Just (z, n); _ -> Nothing),
       Arm.payload "OwnsBoundAtLeast" (ownsBound keywordCodec) (\(n, y, f) -> Filter.OwnsBoundAtLeast n y f) (\x -> case x of Filter.OwnsBoundAtLeast n y f -> Just (n, y, f); _ -> Nothing),
       Arm.payload "TappedForManaThisTurn" (codec keywordCodec) Filter.TappedForManaThisTurn (\x -> case x of Filter.TappedForManaThisTurn y -> Just y; _ -> Nothing),
       Arm.nullary "IsSource" Filter.IsSource,
@@ -251,6 +252,14 @@ ownsBound keywordCodec =
       <*> Fields.required "slot" SlotName.codec (\(_, y, _) -> y)
       <*> Fields.required "filter" (codec keywordCodec) (\(_, _, f) -> f)
 
+-- | The zone, and how many cards at least.
+cardsInZone :: Codec.Codec (ZoneType.Zone, Natural.Natural)
+cardsInZone =
+  Fields.object $
+    (,)
+      <$> Fields.required "zone" Zone.codec fst
+      <*> Fields.required "atLeast" Common.natural snd
+
 -- | The counters' kind, and how many at least; one when unsaid.
 hasCounters :: (Typeable.Typeable keyword, Eq keyword) => Codec.Codec keyword -> Codec.Codec (Natural.Natural, CounterKind.CounterKind keyword)
 hasCounters keywordCodec =
@@ -337,7 +346,7 @@ tagOf x = case x of
   Filter.IsPlayer {} -> "IsPlayer"
   Filter.IsControllerOfBound {} -> "IsControllerOfBound"
   Filter.Controls {} -> "Controls"
-  Filter.CardsInGraveyardAtLeast {} -> "CardsInGraveyardAtLeast"
+  Filter.CardsInZoneAtLeast {} -> "CardsInZoneAtLeast"
   Filter.OwnsBoundAtLeast {} -> "OwnsBoundAtLeast"
   Filter.TappedForManaThisTurn {} -> "TappedForManaThisTurn"
   Filter.IsSource {} -> "IsSource"

@@ -284,12 +284,10 @@ data Filter keyword
     -- Parun.Engine.Count.bakePerspective, and vacuously False where no player
     -- filter is baked.
     Controls ControlMargin.ControlMargin (Filter keyword)
-  | -- | CR 400.1: the candidate PLAYER's own graveyard holds at least this many
-    -- cards -- The Master of Lake-town's "each graveyard with seven or more cards
-    -- in it". A player atom like the two above, answered by
-    -- Parun.Engine.Count.bakePerspective and vacuously False if it survives to
-    -- Parun.Engine.Filter.matches.
-    CardsInGraveyardAtLeast Natural.Natural
+  | -- | CR 400.1: the candidate PLAYER's own zone of this kind holds at least
+    -- this many cards; baked like the two above, and vacuously False if it
+    -- survives to Parun.Engine.Filter.matches.
+    CardsInZoneAtLeast Zone.Zone Natural.Natural
   | -- | CR 400.3 / 701.9a: the candidate PLAYER owns at least this many of the
     -- slot's objects the filter admits; baked like the three above.
     OwnsBoundAtLeast Natural.Natural SlotName.SlotName (Filter keyword)

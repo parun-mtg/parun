@@ -617,7 +617,7 @@ filterChildren children predicate = case predicate of
   -- through Parun.Engine.Filter.slotOneObject.
   Filter.IsControllerOfBound name -> fmap Filter.IsControllerOfBound (slot children SlotArity.One name)
   Filter.Controls margin f -> fmap (Filter.Controls margin) (nest children f)
-  Filter.CardsInGraveyardAtLeast _ -> pure predicate
+  Filter.CardsInZoneAtLeast _ _ -> pure predicate
   Filter.OwnsBoundAtLeast n name f -> liftA2 (Filter.OwnsBoundAtLeast n) (slot children SlotArity.Many name) (nest children f)
   Filter.TappedForManaThisTurn f -> fmap Filter.TappedForManaThisTurn (nest children f)
   Filter.IsAttacking _ -> pure predicate

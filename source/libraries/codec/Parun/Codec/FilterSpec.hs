@@ -218,12 +218,12 @@ spec s = Spec.describe s "Parun.Codec.Filter" $ do
       codec
       (Filter.Controls (ControlMargin.MoreThanYou 2) (Filter.HasCardType CardType.Land))
       " {\"type\":\"Controls\",\"value\":{\"filter\":{\"type\":\"HasCardType\",\"value\":\"Land\"},\"margin\":{\"type\":\"MoreThanYou\",\"value\":2}}} "
-  Spec.it s "CardsInGraveyardAtLeast" $
+  Spec.it s "CardsInZoneAtLeast" $
     Common.assertCodec
       s
       codec
-      (Filter.CardsInGraveyardAtLeast 7)
-      " {\"type\":\"CardsInGraveyardAtLeast\",\"value\":7} "
+      (Filter.CardsInZoneAtLeast Zone.Hand 2)
+      " {\"type\":\"CardsInZoneAtLeast\",\"value\":{\"atLeast\":2,\"zone\":\"Hand\"}} "
   Spec.it s "OwnsBoundAtLeast" $
     Common.assertCodec
       s

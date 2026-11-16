@@ -102,8 +102,11 @@
                                 "type": "Members"
                               },
                               "filter": {
-                                "type": "CardsInGraveyardAtLeast",
-                                "value": 7
+                                "type": "CardsInZoneAtLeast",
+                                "value": {
+                                  "atLeast": 7,
+                                  "zone": "Graveyard"
+                                }
                               },
                               "scope": {
                                 "type": "OverPlayers",
