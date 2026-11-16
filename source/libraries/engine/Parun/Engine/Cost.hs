@@ -198,11 +198,11 @@ import qualified Parun.Types.RestrictedAction as RestrictedAction
 import qualified Parun.Types.ReturnPermanents as ReturnPermanents
 import qualified Parun.Types.RevealCause as RevealCause
 import qualified Parun.Types.RevealWindow as RevealWindow
-import qualified Parun.Types.RevealedChoice as RevealedChoice
 import Parun.Types.RowSource (RowSource)
 import qualified Parun.Types.RuleWaiver as RuleWaiver
 import qualified Parun.Types.Sacrifice as Sacrifice
 import qualified Parun.Types.Scratch as Scratch
+import qualified Parun.Types.SecretChoice as SecretChoice
 import qualified Parun.Types.Selection as Selection
 import qualified Parun.Types.SlotName as SlotName
 import qualified Parun.Types.Source as Source
@@ -2622,9 +2622,9 @@ revealPaying paidFor pid card = do
     Just sid -> Event.stampReveal (RevealWindow.WhileOnStack sid) card
     Nothing -> pure ()
 
--- CR 702.106b: the subtype `pid` secretly chose for `oid`, through its last
--- known information (CR 608.2h) for a source the same cost sacrificed; Nothing
--- where another player chose or no secret choice was made.
+-- A Killer Among Us's ruling: the subtype `pid` secretly chose for `oid`,
+-- through its last known information (CR 608.2h) for a source the same cost
+-- sacrificed; Nothing where another player chose or no secret choice was made.
 secretChoiceOf :: PlayerId -> ObjectId -> GameState -> Maybe Subtype.Type.Subtype
 secretChoiceOf pid oid gs = do
   let acquisition = Game.acquisitionOf oid gs
@@ -7469,14 +7469,14 @@ payPayable perform moment paidFor slots pid oid component = case component of
     gs <- State.get
     Monad.mapM_ (revealPaying paidFor pid) (List.genericTake n (Game.zoneMembers Zone.Library pid gs))
     pure bindsNothing
-  -- CR 702.106b's note, shown to every player. Binds no slot: the reading
-  -- ability asks Object.chosenSubtype itself.
+  -- A Killer Among Us's ruling: the secret choice, shown to every player.
+  -- Binds no slot: the reading ability asks Object.chosenSubtype itself.
   CostComponent.RevealSecretChoice -> do
     gs <- State.get
     case secretChoiceOf pid oid gs of
       Nothing -> pure Payment.Unpaid
       Just subtype -> do
-        State.modify' (Event.recordEvent (GameEvent.ChoiceRevealed (RevealedChoice.MkRevealedChoice pid oid subtype)))
+        State.modify' (Event.recordEvent (GameEvent.ChoiceRevealed (SecretChoice.MkSecretChoice pid oid subtype)))
         pure bindsNothing
   -- CR 701.21a: the player chooses which of their permanents dies, so this is a
   -- prompt. Elided only when forced -- exactly as many candidates as the count,

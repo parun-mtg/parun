@@ -15,6 +15,7 @@ import qualified Parun.Types.BecameDesignated as BecameDesignated
 import qualified Parun.Types.BecameTarget as BecameTarget
 import qualified Parun.Types.BecameUnattached as BecameUnattached
 import qualified Parun.Types.BlocksDeclared as BlocksDeclared
+import qualified Parun.Types.ChoseSecretly as ChoseSecretly
 import qualified Parun.Types.ClassLevelChange as ClassLevelChange
 import qualified Parun.Types.CoinFlipped as CoinFlipped
 import qualified Parun.Types.CommittedCrime as CommittedCrime
@@ -52,8 +53,8 @@ import qualified Parun.Types.PlanarDieRolled as PlanarDieRolled
 import qualified Parun.Types.PlayerActed as PlayerActed
 import qualified Parun.Types.PlayerId as PlayerId
 import qualified Parun.Types.Revealed as Revealed
-import qualified Parun.Types.RevealedChoice as RevealedChoice
 import qualified Parun.Types.Saddling as Saddling
+import qualified Parun.Types.SecretChoice as SecretChoice
 import qualified Parun.Types.SpellWasCast as SpellWasCast
 import qualified Parun.Types.SpellWasCopied as SpellWasCopied
 import qualified Parun.Types.StepBegan as StepBegan
@@ -248,8 +249,12 @@ data GameEvent
   | -- | Every ballot of a secret vote, revealed at once in voting order: secret
     -- council's card text; the ability word has no rules meaning (CR 207.2c).
     VotesRevealed (Seq Ballot.Ballot)
-  | -- | CR 702.106b: a secret choice was revealed (CostComponent.RevealSecretChoice).
-    ChoiceRevealed RevealedChoice.RevealedChoice
+  | -- | A secret choice was made, shown to its audience alone: A Killer Among
+    -- Us's ruling (2024-02-02).
+    ChoseSecretly ChoseSecretly.ChoseSecretly
+  | -- | A secret choice was revealed (CostComponent.RevealSecretChoice): A
+    -- Killer Among Us's ruling (2024-02-02).
+    ChoiceRevealed SecretChoice.SecretChoice
   | -- | CR 701.6a: a spell was COUNTERED. Emitted by Parun.Engine.Event.counter,
     -- the one funnel every countering goes through, and distinct from the Moved
     -- event the same removal records: CR 608.2n sends a resolved spell to the

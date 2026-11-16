@@ -90,6 +90,7 @@ import qualified Parun.Types.Casting as Casting
 import qualified Parun.Types.ChangeWord as ChangeWord
 import qualified Parun.Types.Check as Check
 import qualified Parun.Types.Choices as Choices
+import qualified Parun.Types.ChoseSecretly as ChoseSecretly
 import qualified Parun.Types.Combat as Combat.Type
 import qualified Parun.Types.CombatStep as CombatStep
 import qualified Parun.Types.Concession as Concession
@@ -156,10 +157,10 @@ import qualified Parun.Types.Reference as Reference
 import qualified Parun.Types.Reply as ReplyType
 import qualified Parun.Types.Result as Result
 import qualified Parun.Types.Revealed as Revealed
-import qualified Parun.Types.RevealedChoice as RevealedChoice
 import qualified Parun.Types.Scenario as Scenario
 import qualified Parun.Types.ScenarioFailure as Failure
 import qualified Parun.Types.Seat as Seat
+import qualified Parun.Types.SecretChoice as SecretChoice
 import qualified Parun.Types.Sickness as Sickness
 import qualified Parun.Types.SideDeck as SideDeck
 import qualified Parun.Types.SlotName as SlotName
@@ -2337,15 +2338,18 @@ renderView gs asked viewIs =
                   BallotChoice.ForWord word -> pure (SlotName.unwrap word)
                   BallotChoice.ForPlayer candidate -> Label.unwrap <$> labelOf candidate
                 pure (Label.unwrap voter <> Text.pack " voted " <> choice)
+              secretly verb c = do
+                chooser <- labelOf (SecretChoice.player c)
+                pure [Label.unwrap chooser <> Text.pack verb <> Text.pack (show (SecretChoice.subtype c))]
               shown logged = case LoggedEvent.event logged of
                 GameEvent.Revealed revealed -> pure [nameOf (Revealed.characteristics revealed)]
                 GameEvent.Looked looked -> pure [nameOf (Looked.characteristics looked)]
                 GameEvent.Voted vote -> fmap pure (voted (Voted.ballot vote))
                 GameEvent.VotesRevealed ballots -> mapM voted (Foldable.toList ballots)
-                -- CR 702.106b: "<player> revealed <subtype>".
-                GameEvent.ChoiceRevealed c -> do
-                  revealer <- labelOf (RevealedChoice.player c)
-                  pure [Label.unwrap revealer <> Text.pack " revealed " <> Text.pack (show (RevealedChoice.subtype c))]
+                -- A Killer Among Us's ruling: "<player> secretly chose
+                -- <subtype>", then "<player> revealed <subtype>".
+                GameEvent.ChoseSecretly c -> secretly " secretly chose " (ChoseSecretly.choice c)
+                GameEvent.ChoiceRevealed c -> secretly " revealed " c
                 _ -> pure []
           texts (concat <$> mapM shown [logged | logged <- Foldable.toList (TurnRegisters.events (GameState.turn gs)), Visibility.witnessed pid logged == Visibility.Type.Visible])
 

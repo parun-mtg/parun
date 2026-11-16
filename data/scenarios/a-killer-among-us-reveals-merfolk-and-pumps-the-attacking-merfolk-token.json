@@ -52,8 +52,8 @@
     ],
     "step": "PrecombatMain"
   },
-  "description": "CR 702.106b: A Killer Among Us secretly chooses Merfolk; revealing it as a cost gives the attacking Merfolk token three +1/+1 counters and deathtouch",
-  "note": "Bob witnesses nothing until the cost reveals the type; the Human and Goblin tokens are untouched.",
+  "description": "The card's ruling: A Killer Among Us secretly chooses Merfolk; revealing it as a cost gives the attacking Merfolk token three +1/+1 counters and deathtouch",
+  "note": "Alice alone witnesses her choice, and Bob nothing until the cost reveals the type; the Human and Goblin tokens are untouched.",
   "timeline": [
     {
       "do": {
@@ -93,6 +93,20 @@
         "Answer": {
           "prompt": "ChooseCreatureType",
           "with": "Merfolk"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "View": {
+          "is": [
+            "alice secretly chose Merfolk"
+          ],
+          "of": "Witnessed",
+          "player": "alice"
         }
       },
       "player": "alice",

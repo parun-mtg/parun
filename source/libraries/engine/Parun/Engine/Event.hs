@@ -1324,6 +1324,7 @@ damageOf event = case event of
   GameEvent.Looked {} -> Nothing
   GameEvent.Voted {} -> Nothing
   GameEvent.VotesRevealed {} -> Nothing
+  GameEvent.ChoseSecretly {} -> Nothing
   GameEvent.ChoiceRevealed {} -> Nothing
   GameEvent.AttackerDeclared {} -> Nothing
   GameEvent.BecameBlocking {} -> Nothing
@@ -1395,6 +1396,7 @@ revealOf event = case event of
   GameEvent.Looked {} -> Nothing
   GameEvent.Voted {} -> Nothing
   GameEvent.VotesRevealed {} -> Nothing
+  GameEvent.ChoseSecretly {} -> Nothing
   GameEvent.ChoiceRevealed {} -> Nothing
   GameEvent.Moved {} -> Nothing
   GameEvent.DamageDealt _ -> Nothing
@@ -13052,6 +13054,7 @@ abilityTriggeredOf event = case event of
   GameEvent.Looked {} -> Nothing
   GameEvent.Voted {} -> Nothing
   GameEvent.VotesRevealed {} -> Nothing
+  GameEvent.ChoseSecretly {} -> Nothing
   GameEvent.ChoiceRevealed {} -> Nothing
   GameEvent.AttackerDeclared {} -> Nothing
   GameEvent.BecameBlocking {} -> Nothing

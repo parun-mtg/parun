@@ -70,6 +70,7 @@ import qualified Parun.Types.Card as Card.Type
 import qualified Parun.Types.ChooseCardName as ChooseCardName
 import qualified Parun.Types.ChooseNumber as ChooseNumber
 import qualified Parun.Types.ChooseQuality as ChooseQuality
+import qualified Parun.Types.ChoseSecretly as ChoseSecretly
 import qualified Parun.Types.Chosen as Chosen
 import qualified Parun.Types.Cloak as Cloak.Type
 import qualified Parun.Types.ContinuousEffect as ContinuousEffect
@@ -137,6 +138,7 @@ import qualified Parun.Types.RemoveCountersAmong as RemoveCountersAmong
 import qualified Parun.Types.RemovePlayerCounters as RemovePlayerCounters
 import Parun.Types.Result (Result)
 import qualified Parun.Types.Scratch as Scratch
+import qualified Parun.Types.SecretChoice as SecretChoice
 import qualified Parun.Types.Sickness as Sickness
 import Parun.Types.SlotName (SlotName)
 import qualified Parun.Types.Snapshots as Snapshots
@@ -475,10 +477,14 @@ chooseQuality resolving source controller choice = do
   gs <- State.get
   let acquisition = Game.readingAcquisition resolving source gs source
   Event.chooseQuality (ChooseQuality.quality choice) controller (resolvingAbilityName resolving gs) acquisition source
-  -- CR 702.106b: a secret choice remembers its chooser, the one player who may
-  -- reveal it (CostComponent.RevealSecretChoice).
-  Monad.when (ChooseQuality.secret choice) $
+  -- A Killer Among Us's ruling: a secret choice remembers its chooser, the one
+  -- player who may reveal it (CostComponent.RevealSecretChoice), and is shown
+  -- to them and whoever controls them (CR 724.4) alone.
+  Monad.when (ChooseQuality.secret choice) $ do
     State.modify' (Game.recordChoice Chosen.Players acquisition (Just . Map.insert PlayerChoice.SecretChooser controller . Maybe.fromMaybe Map.empty) source)
+    chosen <- State.get
+    Foldable.for_ (Game.choiceWithLastKnown Chosen.Subtype acquisition source chosen) $ \subtype ->
+      State.modify' (Event.recordEvent (GameEvent.ChoseSecretly (ChoseSecretly.MkChoseSecretly (SecretChoice.MkSecretChoice controller source subtype) (Decide.privyTo controller chosen))))
 
 -- CR 400.11c: the resolving controller reveals a card they own from outside the
 -- game matching the filter and puts it into their hand -- Burning Wish.
