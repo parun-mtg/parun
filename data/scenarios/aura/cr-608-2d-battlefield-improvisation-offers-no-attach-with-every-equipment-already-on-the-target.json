@@ -11,7 +11,7 @@
   },
   "timeline": [
     {"turn": 1, "step": "DeclareAttackers", "player": "alice", "do": {"Attack": ["$hitter"]}},
-    {"turn": 1, "step": "DeclareAttackers", "player": "alice", "do": {"Cast": {"object": "$spell", "targets": ["$hitter"], "mana": ["$p1", "$p2"]}}},
+    {"turn": 1, "step": "DeclareAttackers", "player": "alice", "do": {"Cast": {"object": "$spell", "mana": ["$p1", "$p2"]}}},
     {"turn": 1, "step": "DeclareAttackers", "player": "alice", "do": "Pass"},
     {"turn": 1, "step": "DeclareAttackers", "player": "alice", "check": {"PowerToughness": {"object": "$hitter", "power": 7, "toughness": 5}}},
     {"turn": 1, "step": "DeclareAttackers", "player": "alice", "check": {"View": {"of": "AttachedTo", "object": "$split", "is": "$hitter"}}}

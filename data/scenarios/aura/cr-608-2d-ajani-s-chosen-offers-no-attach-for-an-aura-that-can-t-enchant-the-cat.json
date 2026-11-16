@@ -5,7 +5,7 @@
     "active": "alice",
     "step": "PrecombatMain",
     "seats": [
-      {"name": "alice", "battlefield": [{"card": "Ajani's Chosen"}, {"card": "Forest", "label": "pay"}, {"card": "Forest", "label": "land"}], "hand": [{"card": "Wild Growth", "label": "growth"}]},
+      {"name": "alice", "battlefield": [{"card": "Ajani's Chosen"}, {"card": "Forest", "label": "pay"}, {"card": "Forest", "label": "land", "tapped": true}], "hand": [{"card": "Wild Growth", "label": "growth"}]},
       {"name": "bob"}
     ]
   },
@@ -14,6 +14,6 @@
     {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass"},
     {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass"},
     {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"PowerToughness": {"object": "Cat Token", "power": 2, "toughness": 2}}},
-    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"View": {"of": "AttachedTo", "object": "$growth", "is": "$land"}}}
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"View": {"of": "AttachedTo", "object": "Wild Growth", "is": "$land"}}}
   ]
 }
