@@ -1681,6 +1681,7 @@ atom context n = case Node.tag n of
   "IsNonToken" -> Right (Filter.Not Filter.IsToken)
   "HasAbility" -> fmap Filter.HasKeyword (Node.child n >>= keywordRule)
   "DoesntHaveAbility" -> fmap (Filter.Not . Filter.HasKeyword) (Node.child n >>= keywordRule)
+  "HasNoAbilities" -> Right (Filter.Not Filter.HasAbility)
   "Or" -> do
     disjuncts <- Node.arguments n >>= traverse (permanents context)
     Right (Filter.Or disjuncts)
