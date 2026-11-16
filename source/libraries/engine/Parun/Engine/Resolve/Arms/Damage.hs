@@ -425,9 +425,11 @@ modifyTarget resolving source controller legal chosen (ModifyTarget.MkModifyTarg
                           ContinuousEffect.affected = maybe (Affected.TheseObjects (Set.fromList objs)) (Affected.Matching . Common.liveClass legal resolving controller source gs) live
                         }
                  in g1 {GameState.stored = (GameState.stored g1) {StoredEffects.continuousEffects = eff : StoredEffects.continuousEffects (GameState.stored g1)}}
+              -- CR 608.2h: a granted ability's AtGrant seats are fixed now,
+              -- Hellish Rebuke's caster among them; its scenarios prove it.
               storeSet g (objs, frozen) = case frozen of
                 Nothing -> g
-                Just m -> List.foldl' (store objs) g (fmap bakeActivator (Common.expandGrant legal resolving controller source gs m))
+                Just m -> List.foldl' (store objs) g (fmap (Common.bakeAtGrant (Common.oneSeat legal resolving source controller gs) . bakeActivator) (Common.expandGrant legal resolving controller source gs m))
               -- CR 109.5 / 602.1b: a reference to who may activate a granted
               -- ability, written outside its quotes, is the grant's own text,
               -- so its "you" is this resolution's controller (Martyrdom's

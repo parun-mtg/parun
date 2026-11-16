@@ -192,7 +192,7 @@ namedUncut given gs ref =
       holderOf holder = case holder of
         Holder.Controller -> controllerOf given
         Holder.Owner -> ownerOf given
-        Holder.Caster -> \oid -> Object.castBy =<< Game.lookupObject oid gs
+        Holder.Caster -> (`Game.casterOf` gs)
    in case ref of
         PlayerRef.Relative relation -> related' relation
         -- Every player minus every player the slot names (CR 104.2c's winning

@@ -2124,12 +2124,13 @@ freezeCounters viewOf context gs resolving source =
 -- CR 113.10 / 608.2h: an ability a resolution grants with its
 -- PlayerRef.AtGrant references baked, each to the one seat `seat` reads it as
 -- naming as the grant applies -- Takklemaggot's "that player", whose
--- creature's controller the dies trigger's slot names. One naming no one seat
--- is left standing and names nobody. Every other modification passes whole.
+-- creature's controller the dies trigger's slot names, and Hellish Rebuke's
+-- "the player who cast Hellish Rebuke". One naming no one seat is left
+-- standing and names nobody. Every other modification passes whole.
 --
 -- Not implemented: an AtGrant anywhere but a granted triggered ability's
 -- trigger, its "may" and either-or askers and its effects' player and object
--- references (#7776).
+-- references (#8143).
 bakeAtGrant :: (PlayerRef -> Maybe PlayerId) -> Modification.Modification (GrantedAbility.GrantedAbility Card.Type.Card) -> Modification.Modification (GrantedAbility.GrantedAbility Card.Type.Card)
 bakeAtGrant seat modification = case modification of
   Modification.GainAbility ability -> Modification.GainAbility (granted ability)

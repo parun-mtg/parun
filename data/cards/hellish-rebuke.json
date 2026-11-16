@@ -1,0 +1,122 @@
+{
+  "faces": [
+    {
+      "manaCost": [
+        {
+          "type": "Generic",
+          "value": 2
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "Black"
+          }
+        }
+      ],
+      "name": "Hellish Rebuke",
+      "oracleText": "Until end of turn, permanents your opponents control gain \"When this permanent deals damage to the player who cast Hellish Rebuke, sacrifice this permanent. You lose 2 life.\"",
+      "spell": {
+        "modes": [
+          {
+            "clauses": [
+              {
+                "effects": [
+                  {
+                    "type": "ModifyTarget",
+                    "value": {
+                      "duration": {
+                        "type": "UntilEndOfTurn"
+                      },
+                      "modification": {
+                        "type": "GainAbility",
+                        "value": {
+                          "type": "Triggered",
+                          "value": {
+                            "condition": {
+                              "type": "DealsDamage",
+                              "value": {
+                                "actor": {
+                                  "type": "Self"
+                                },
+                                "recipients": [
+                                  {
+                                    "type": "Player",
+                                    "value": {
+                                      "type": "AtGrant",
+                                      "value": {
+                                        "type": "HolderOfBound",
+                                        "value": {
+                                          "holder": "Caster",
+                                          "hop": "Itself",
+                                          "slot": "self"
+                                        }
+                                      }
+                                    }
+                                  }
+                                ]
+                              }
+                            },
+                            "modal": {
+                              "modes": [
+                                {
+                                  "clauses": [
+                                    {
+                                      "effects": [
+                                        {
+                                          "type": "Sacrifice",
+                                          "value": {
+                                            "ref": {
+                                              "type": "InSlot",
+                                              "value": "self"
+                                            }
+                                          }
+                                        },
+                                        {
+                                          "type": "LoseLife",
+                                          "value": {
+                                            "player": {
+                                              "type": "Relative",
+                                              "value": "You"
+                                            },
+                                            "quantity": {
+                                              "type": "Literal",
+                                              "value": 2
+                                            }
+                                          }
+                                        }
+                                      ]
+                                    }
+                                  ]
+                                }
+                              ]
+                            }
+                          }
+                        }
+                      },
+                      "ref": {
+                        "type": "EachMatching",
+                        "value": {
+                          "type": "HeldBy",
+                          "value": {
+                            "holder": "Controller",
+                            "relation": "Opponent"
+                          }
+                        }
+                      }
+                    }
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "typeLine": {
+        "types": [
+          "Instant"
+        ]
+      }
+    }
+  ]
+}
