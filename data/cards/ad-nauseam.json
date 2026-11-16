@@ -32,6 +32,13 @@
                   {
                     "type": "Repeat",
                     "value": {
+                      "again": {
+                        "type": "AskPlayer",
+                        "value": {
+                          "type": "Relative",
+                          "value": "You"
+                        }
+                      },
                       "body": [
                         {
                           "type": "Reveal",
@@ -92,11 +99,7 @@
                             }
                           }
                         }
-                      ],
-                      "chooser": {
-                        "type": "Relative",
-                        "value": "You"
-                      }
+                      ]
                     }
                   }
                 ]

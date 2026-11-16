@@ -1,0 +1,104 @@
+{
+  "faces": [
+    {
+      "manaCost": [
+        {
+          "type": "Variable"
+        },
+        {
+          "type": "Variable"
+        },
+        {
+          "type": "Generic",
+          "value": 2
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "White"
+          }
+        }
+      ],
+      "name": "Another Round",
+      "oracleText": "Exile any number of creatures you control, then return them to the battlefield under their owner's control. Then repeat this process X more times.",
+      "spell": {
+        "modes": [
+          {
+            "clauses": [
+              {
+                "effects": [
+                  {
+                    "type": "Repeat",
+                    "value": {
+                      "again": {
+                        "type": "MoreTimes",
+                        "value": {
+                          "type": "InSlot",
+                          "value": "X"
+                        }
+                      },
+                      "body": [
+                        {
+                          "type": "MoveToZone",
+                          "value": {
+                            "ref": {
+                              "type": "ChosenPermanents",
+                              "value": {
+                                "count": {
+                                  "type": "UpTo"
+                                },
+                                "filter": {
+                                  "type": "And",
+                                  "value": [
+                                    {
+                                      "type": "HasCardType",
+                                      "value": "Creature"
+                                    },
+                                    {
+                                      "type": "HeldBy",
+                                      "value": {
+                                        "holder": "Controller",
+                                        "relation": "You"
+                                      }
+                                    }
+                                  ]
+                                }
+                              }
+                            },
+                            "slot": "exiled",
+                            "zone": "Exile"
+                          }
+                        },
+                        {
+                          "type": "MoveToZone",
+                          "value": {
+                            "ref": {
+                              "type": "InSlot",
+                              "value": "exiled"
+                            },
+                            "riders": {
+                              "under": {
+                                "type": "Owner"
+                              }
+                            },
+                            "zone": "Battlefield"
+                          }
+                        }
+                      ]
+                    }
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "typeLine": {
+        "types": [
+          "Sorcery"
+        ]
+      }
+    }
+  ]
+}

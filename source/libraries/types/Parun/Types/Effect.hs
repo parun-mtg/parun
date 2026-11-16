@@ -136,9 +136,10 @@ import qualified Parun.Types.Vote as Vote
 --
 -- ForEach and ForEachNumber iterate over a set or a number fixed before the
 -- first pass (CR 608.2h), so their count is data an analysis can read off the
--- instruction. Repeat and RepeatIf are the loops whose count is not: each run
--- ends in a question -- a player's choice (CR 608.2d) or a printed condition (CR
--- 608.2c) -- and the body stays first-order either way.
+-- instruction, as a counted Repeat's is. An asking Repeat and RepeatIf are the
+-- loops whose count is not: each run ends in a question -- a player's choice
+-- (CR 608.2d) or a printed condition (CR 608.2c) -- and the body stays
+-- first-order either way.
 --
 -- The `card` parameter lets an opcode embed a card's characteristics WITHOUT a
 -- module cycle: Card embeds [Effect Card], and ties the knot by instantiating
@@ -942,8 +943,8 @@ data Effect card ability
   | -- | CR 608.2c: run the body once for each number from 1 up to the payload's
     -- quantity, that number bound under the payload's slot.
     ForEachNumber (ForEachNumber.ForEachNumber (Effect card ability))
-  | -- | CR 608.2d: run the body, then ask the payload's chooser whether to run
-    -- it again, until they decline.
+  | -- | CR 608.2c / 608.2d: run the body, then again until the payload's
+    -- chooser declines or its count of further runs is spent.
     Repeat (Repeat.Repeat (Effect card ability))
   | -- | CR 608.2c: run the process, then run it again for as long as the
     -- payload's condition holds after a run -- Grist, the Hunger Tide's "if an

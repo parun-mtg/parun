@@ -36,6 +36,7 @@ import qualified Parun.Types.ActivatedAbility as ActivatedAbility
 import qualified Parun.Types.ActivatedAbilitySource as ActivatedAbilitySource
 import qualified Parun.Types.AffectPlayers as AffectPlayers
 import qualified Parun.Types.AffectedPlayers as AffectedPlayers
+import qualified Parun.Types.Again as Again
 import qualified Parun.Types.AimedAt as AimedAt
 import qualified Parun.Types.AimedPlayers as AimedPlayers
 import qualified Parun.Types.Amass as Amass.Type
@@ -321,6 +322,13 @@ oneSlot slot = Map.singleton slot SlotArity.One
 
 insertOne :: SlotName -> Map.Map SlotName SlotArity -> Map.Map SlotName SlotArity
 insertOne slot = joinTwo (oneSlot slot)
+
+-- | The count a Repeat reads before its first run, if it runs a counted
+-- number of times.
+moreTimes :: Again.Again -> Maybe Quantity.Type.Quantity
+moreTimes again = case again of
+  Again.AskPlayer _ -> Nothing
+  Again.MoreTimes quantity -> Just quantity
 
 -- The slots a Quantity reads, on both halves of Parun.Types.SlotName's one flat
 -- namespace. Quantity.objectSlots names an OBJECT and evaluates against it, so a
@@ -1043,7 +1051,9 @@ effectPlayerRefs effect = case effect of
   Effect.MakeWarped {} -> []
   Effect.ForEach loop -> Maybe.maybeToList (ForEach.startingWith loop)
   Effect.ForEachNumber {} -> []
-  Effect.Repeat (Repeat.MkRepeat chooser _ _ otherChooser _) -> chooser : Maybe.maybeToList otherChooser
+  Effect.Repeat (Repeat.MkRepeat again _ _ otherChooser _) -> case again of
+    Again.AskPlayer chooser -> chooser : Maybe.maybeToList otherChooser
+    Again.MoreTimes _ -> Maybe.maybeToList otherChooser
   Effect.RepeatIf {} -> []
   Effect.Heal {} -> []
   Effect.ChooseNewTargets {} -> []
@@ -1550,7 +1560,7 @@ slotsOf effect = joinTwo (joinTwo (joinSlots (fmap objectRefSlots (effectObjectR
   -- Binding.chosenForOthers is the loop's definition as its member is.
   Effect.ForEach (ForEach.MkForEach _ _ slot body _ gate _) -> joinTwo (maybe Map.empty payGateSlots gate) (sequenceSlots (Set.fromList [slot, Binding.chosenForOthers]) (Foldable.toList body))
   Effect.ForEachNumber (ForEachNumber.MkForEachNumber upTo slot body) -> joinTwo (quantitySlots upTo) (sequenceSlots (Set.singleton slot) (Foldable.toList body))
-  Effect.Repeat (Repeat.MkRepeat _ body gate _ ifAgain) -> joinSlots (maybe Map.empty conditionSlots gate : fmap slotsOf (Foldable.toList (body <> ifAgain)))
+  Effect.Repeat (Repeat.MkRepeat again body gate _ ifAgain) -> joinSlots (foldMap quantitySlots (moreTimes again) : maybe Map.empty conditionSlots gate : fmap slotsOf (Foldable.toList (body <> ifAgain)))
   -- What the process and the "if" read, and the condition itself: a read of
   -- what the process bound, which boundSlots below defines.
   Effect.RepeatIf (RepeatIf.MkRepeatIf process condition ifHolds) -> joinSlots (conditionSlots condition : fmap slotsOf (Foldable.toList (process <> ifHolds)))
@@ -2380,7 +2390,7 @@ ownSlotsAreExhaustive effect = case effect of
   -- nested in the DEPTH is one slotsOf cannot see.
   Effect.ForEach (ForEach.MkForEach _ _ _ body _ gate _) -> all slotsAreExhaustive body && all (\g -> all Quantity.slotsAreExhaustive (PayGate.perEach g) && all Quantity.slotsAreExhaustive (PayGate.x g)) gate
   Effect.ForEachNumber (ForEachNumber.MkForEachNumber upTo _ body) -> Quantity.slotsAreExhaustive upTo && all slotsAreExhaustive body
-  Effect.Repeat (Repeat.MkRepeat _ body gate _ ifAgain) -> all conditionSlotsAreExhaustive gate && all slotsAreExhaustive (body <> ifAgain)
+  Effect.Repeat (Repeat.MkRepeat again body gate _ ifAgain) -> all Quantity.slotsAreExhaustive (moreTimes again) && all conditionSlotsAreExhaustive gate && all slotsAreExhaustive (body <> ifAgain)
   Effect.RepeatIf (RepeatIf.MkRepeatIf process condition ifHolds) -> conditionSlotsAreExhaustive condition && all slotsAreExhaustive (process <> ifHolds)
   Effect.Heal _ -> True
   Effect.ChooseNewTargets _ -> True
@@ -2666,7 +2676,7 @@ hasRead wanted =
         -- CR 608.2f's body is an effect list like any other, so an X inside it counts.
         Effect.ForEach (ForEach.MkForEach _ _ _ body _ _ _) -> hasRead wanted (Foldable.toList body)
         Effect.ForEachNumber (ForEachNumber.MkForEachNumber upTo _ body) -> Quantity.hasRead wanted upTo || hasRead wanted (Foldable.toList body)
-        Effect.Repeat (Repeat.MkRepeat _ body gate _ ifAgain) -> any (conditionHasRead wanted) gate || hasRead wanted (Foldable.toList (body <> ifAgain))
+        Effect.Repeat (Repeat.MkRepeat again body gate _ ifAgain) -> any (Quantity.hasRead wanted) (moreTimes again) || any (conditionHasRead wanted) gate || hasRead wanted (Foldable.toList (body <> ifAgain))
         Effect.RepeatIf (RepeatIf.MkRepeatIf process condition ifHolds) -> conditionHasRead wanted condition || hasRead wanted (Foldable.toList (process <> ifHolds))
         Effect.Heal _ -> False
         Effect.ChooseNewTargets _ -> False

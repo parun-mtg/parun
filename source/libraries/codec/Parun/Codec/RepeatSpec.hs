@@ -6,6 +6,7 @@ import qualified Parun.Codec.Repeat as Repeat
 import qualified Parun.JsonCodec.Codec as Codec
 import qualified Parun.JsonCodec.Common as Common
 import qualified Parun.Spec as Spec
+import qualified Parun.Types.Again as Again
 import qualified Parun.Types.Compares as Compares
 import qualified Parun.Types.Comparison as Comparison
 import qualified Parun.Types.Condition as Condition
@@ -27,28 +28,28 @@ spec s = Spec.describe s "Parun.Codec.Repeat" $ do
       s
       codec
       ( Repeat.MkRepeat
-          { Repeat.chooser = PlayerRef.InSlot (SlotName.MkSlotName (Text.pack "target")),
+          { Repeat.again = Again.AskPlayer (PlayerRef.InSlot (SlotName.MkSlotName (Text.pack "target"))),
             Repeat.body = Seq.fromList [Text.pack "they draw", Text.pack "you draw"],
             Repeat.gate = Nothing,
             Repeat.otherChooser = Nothing,
             Repeat.ifAgain = Seq.empty
           }
       )
-      " {\"chooser\":{\"type\":\"InSlot\",\"value\":\"target\"},\"body\":[\"they draw\",\"you draw\"]} "
+      " {\"again\":{\"type\":\"AskPlayer\",\"value\":{\"type\":\"InSlot\",\"value\":\"target\"}},\"body\":[\"they draw\",\"you draw\"]} "
   -- Delina, Wild Mage's shape: asked only on a roll of 15 or more.
   Spec.it s "MkRepeat with a gate" $
     Common.assertCodec
       s
       codec
       ( Repeat.MkRepeat
-          { Repeat.chooser = PlayerRef.Relative PlayerRelation.You,
+          { Repeat.again = Again.AskPlayer (PlayerRef.Relative PlayerRelation.You),
             Repeat.body = Seq.fromList [Text.pack "roll", Text.pack "copy"],
             Repeat.gate = Just (Condition.Compares (Compares.MkCompares (Quantity.InSlot (SlotName.MkSlotName (Text.pack "result"))) Comparison.AtLeast (Quantity.Literal 15))),
             Repeat.otherChooser = Nothing,
             Repeat.ifAgain = Seq.empty
           }
       )
-      " {\"chooser\":{\"type\":\"Relative\",\"value\":\"You\"},\"body\":[\"roll\",\"copy\"],\"gate\":{\"type\":\"Compares\",\"value\":{\"measured\":{\"type\":\"InSlot\",\"value\":\"result\"},\"comparison\":\"AtLeast\",\"threshold\":{\"type\":\"Literal\",\"value\":15}}}} "
+      " {\"again\":{\"type\":\"AskPlayer\",\"value\":{\"type\":\"Relative\",\"value\":\"You\"}},\"body\":[\"roll\",\"copy\"],\"gate\":{\"type\":\"Compares\",\"value\":{\"measured\":{\"type\":\"InSlot\",\"value\":\"result\"},\"comparison\":\"AtLeast\",\"threshold\":{\"type\":\"Literal\",\"value\":15}}}} "
   -- Game of Chaos's shape: the gate picks who is asked, and going again first
   -- doubles the stakes.
   Spec.it s "MkRepeat with another chooser and instructions before each further run" $
@@ -56,12 +57,26 @@ spec s = Spec.describe s "Parun.Codec.Repeat" $ do
       s
       codec
       ( Repeat.MkRepeat
-          { Repeat.chooser = PlayerRef.Relative PlayerRelation.You,
+          { Repeat.again = Again.AskPlayer (PlayerRef.Relative PlayerRelation.You),
             Repeat.body = Seq.singleton (Text.pack "flip"),
             Repeat.gate = Just (Condition.Compares (Compares.MkCompares (Quantity.InSlot (SlotName.MkSlotName (Text.pack "won"))) Comparison.AtLeast (Quantity.Literal 1))),
             Repeat.otherChooser = Just (PlayerRef.InSlot (SlotName.MkSlotName (Text.pack "target"))),
             Repeat.ifAgain = Seq.singleton (Text.pack "double")
           }
       )
-      " {\"chooser\":{\"type\":\"Relative\",\"value\":\"You\"},\"body\":[\"flip\"],\"gate\":{\"type\":\"Compares\",\"value\":{\"measured\":{\"type\":\"InSlot\",\"value\":\"won\"},\"comparison\":\"AtLeast\",\"threshold\":{\"type\":\"Literal\",\"value\":1}}},\"otherChooser\":{\"type\":\"InSlot\",\"value\":\"target\"},\"ifAgain\":[\"double\"]} "
+      " {\"again\":{\"type\":\"AskPlayer\",\"value\":{\"type\":\"Relative\",\"value\":\"You\"}},\"body\":[\"flip\"],\"gate\":{\"type\":\"Compares\",\"value\":{\"measured\":{\"type\":\"InSlot\",\"value\":\"won\"},\"comparison\":\"AtLeast\",\"threshold\":{\"type\":\"Literal\",\"value\":1}}},\"otherChooser\":{\"type\":\"InSlot\",\"value\":\"target\"},\"ifAgain\":[\"double\"]} "
+  -- Another Round's shape: X more runs, nobody asked.
+  Spec.it s "MkRepeat with a count" $
+    Common.assertCodec
+      s
+      codec
+      ( Repeat.MkRepeat
+          { Repeat.again = Again.MoreTimes (Quantity.InSlot (SlotName.MkSlotName (Text.pack "X"))),
+            Repeat.body = Seq.fromList [Text.pack "exile", Text.pack "return"],
+            Repeat.gate = Nothing,
+            Repeat.otherChooser = Nothing,
+            Repeat.ifAgain = Seq.empty
+          }
+      )
+      " {\"again\":{\"type\":\"MoreTimes\",\"value\":{\"type\":\"InSlot\",\"value\":\"X\"}},\"body\":[\"exile\",\"return\"]} "
   Spec.it s "has a schema" $ Common.assertHasSchema s codec

@@ -4,6 +4,7 @@ module Parun.Codec.Repeat where
 
 import qualified Data.Sequence as Seq
 import qualified Data.Typeable as Typeable
+import qualified Parun.Codec.Again as Again
 import qualified Parun.Codec.Condition as Condition
 import qualified Parun.Codec.PlayerRef as PlayerRef
 import qualified Parun.JsonCodec.Codec as Codec
@@ -19,14 +20,14 @@ codec ::
   Codec.Codec effect ->
   Codec.Codec (Repeat.Repeat effect)
 codec effectCodec = Fields.object $ do
-  chooser <- Fields.required "chooser" PlayerRef.codec Repeat.chooser
+  again <- Fields.required "again" Again.codec Repeat.again
   body <- Fields.required "body" (Common.seq effectCodec) Repeat.body
   gate <- Fields.defaulted "gate" Nothing (Common.maybe Condition.codec) Repeat.gate
   otherChooser <- Fields.defaulted "otherChooser" Nothing (Common.maybe PlayerRef.codec) Repeat.otherChooser
   ifAgain <- Fields.defaulted "ifAgain" Seq.empty (Common.seq effectCodec) Repeat.ifAgain
   pure
     Repeat.MkRepeat
-      { Repeat.chooser = chooser,
+      { Repeat.again = again,
         Repeat.body = body,
         Repeat.gate = gate,
         Repeat.otherChooser = otherChooser,

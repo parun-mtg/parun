@@ -32,6 +32,13 @@
                   {
                     "type": "Repeat",
                     "value": {
+                      "again": {
+                        "type": "AskPlayer",
+                        "value": {
+                          "type": "Relative",
+                          "value": "You"
+                        }
+                      },
                       "body": [
                         {
                           "type": "PlayerSacrifices",
@@ -123,11 +130,7 @@
                             "slot": "offering"
                           }
                         }
-                      ],
-                      "chooser": {
-                        "type": "Relative",
-                        "value": "You"
-                      }
+                      ]
                     }
                   }
                 ]
