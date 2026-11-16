@@ -243,6 +243,7 @@ costMovesLibraryCard component = case component of
   CostComponent.MillCards _ -> True
   -- CR 701.20a shows the cards and CR 701.20b leaves them in the library.
   CostComponent.RevealTopOfLibrary _ -> False
+  CostComponent.RevealSecretChoice -> False
   -- A hand, a graveyard, the battlefield and the stack -- CR 605.1a names a
   -- LIBRARY and none of these is one.
   CostComponent.DiscardCards {} -> False

@@ -12,10 +12,12 @@ codec =
   Arm.tagged
     tagOf
     [ Arm.nullary "AsEntersOrTransforms" PlayerChoice.AsEntersOrTransforms,
-      Arm.payload "Promised" (Common.tuple Gift.codec KeywordInstance.codec) (uncurry PlayerChoice.Promised) (\x -> case x of PlayerChoice.Promised g n -> Just (g, n); _ -> Nothing)
+      Arm.payload "Promised" (Common.tuple Gift.codec KeywordInstance.codec) (uncurry PlayerChoice.Promised) (\x -> case x of PlayerChoice.Promised g n -> Just (g, n); _ -> Nothing),
+      Arm.nullary "SecretChooser" PlayerChoice.SecretChooser
     ]
 
 tagOf :: PlayerChoice.PlayerChoice -> String
 tagOf x = case x of
   PlayerChoice.AsEntersOrTransforms {} -> "AsEntersOrTransforms"
   PlayerChoice.Promised {} -> "Promised"
+  PlayerChoice.SecretChooser {} -> "SecretChooser"

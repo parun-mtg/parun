@@ -94,6 +94,7 @@ import qualified Parun.Types.ProjectedCharacteristics as ProjectedCharacteristic
 import qualified Parun.Types.Recipient as Recipient
 import qualified Parun.Types.Result as Result
 import qualified Parun.Types.Revealed as Revealed
+import qualified Parun.Types.RevealedChoice as RevealedChoice
 import qualified Parun.Types.Saddling as Saddling
 import qualified Parun.Types.SeatView as SeatView
 import qualified Parun.Types.SideDeck as SideDeck
@@ -479,6 +480,7 @@ event view logged = case LoggedEvent.event logged of
   GameEvent.TookInitiative pid -> said [player pid, Text.pack "takes the initiative"]
   GameEvent.Voted v -> said [ballot (Voted.ballot v)]
   GameEvent.VotesRevealed ballots -> said [Text.pack "The votes are revealed:", listing (fmap ballot (Foldable.toList ballots))]
+  GameEvent.ChoiceRevealed c -> said [player (RevealedChoice.player c), Text.pack "reveals the chosen", Maybe.fromMaybe (Text.pack (show (RevealedChoice.subtype c))) (Subtype.creatureTypeWord (RevealedChoice.subtype c))]
   GameEvent.AbilityCountered c -> said [name (Countering.countered c), Text.pack "is countered"]
   GameEvent.CountersPut c -> said [player (CountersPlaced.putter c), Text.pack "puts", counters (CountersPlaced.after c `less` CountersPlaced.before c) (CountersPlaced.kind c), Text.pack "on", name (CountersPlaced.object c)]
   GameEvent.CountersRemoved c ->

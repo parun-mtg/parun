@@ -156,6 +156,7 @@ import qualified Parun.Types.Reference as Reference
 import qualified Parun.Types.Reply as ReplyType
 import qualified Parun.Types.Result as Result
 import qualified Parun.Types.Revealed as Revealed
+import qualified Parun.Types.RevealedChoice as RevealedChoice
 import qualified Parun.Types.Scenario as Scenario
 import qualified Parun.Types.ScenarioFailure as Failure
 import qualified Parun.Types.Seat as Seat
@@ -2341,6 +2342,10 @@ renderView gs asked viewIs =
                 GameEvent.Looked looked -> pure [nameOf (Looked.characteristics looked)]
                 GameEvent.Voted vote -> fmap pure (voted (Voted.ballot vote))
                 GameEvent.VotesRevealed ballots -> mapM voted (Foldable.toList ballots)
+                -- CR 702.106b: "<player> revealed <subtype>".
+                GameEvent.ChoiceRevealed c -> do
+                  revealer <- labelOf (RevealedChoice.player c)
+                  pure [Label.unwrap revealer <> Text.pack " revealed " <> Text.pack (show (RevealedChoice.subtype c))]
                 _ -> pure []
           texts (concat <$> mapM shown [logged | logged <- Foldable.toList (TurnRegisters.events (GameState.turn gs)), Visibility.witnessed pid logged == Visibility.Type.Visible])
 

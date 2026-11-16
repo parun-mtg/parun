@@ -120,6 +120,7 @@ import qualified Parun.Types.PhaseSelector as PhaseSelector
 import qualified Parun.Types.PlaneswalkCause as PlaneswalkCause
 import qualified Parun.Types.PlayerActed as PlayerActed
 import qualified Parun.Types.PlayerAction as PlayerAction
+import qualified Parun.Types.PlayerChoice as PlayerChoice
 import qualified Parun.Types.PlayerCounters as PlayerCounters
 import Parun.Types.PlayerId (PlayerId)
 import qualified Parun.Types.PlayerInstruction as PlayerInstruction
@@ -472,7 +473,12 @@ chooseCardName resolving source controller legal (ChooseCardName.MkChooseCardNam
 chooseQuality :: ObjectId -> ObjectId -> PlayerId -> ChooseQuality.ChooseQuality -> Game ()
 chooseQuality resolving source controller choice = do
   gs <- State.get
-  Event.chooseQuality (ChooseQuality.quality choice) controller (resolvingAbilityName resolving gs) (Game.readingAcquisition resolving source gs source) source
+  let acquisition = Game.readingAcquisition resolving source gs source
+  Event.chooseQuality (ChooseQuality.quality choice) controller (resolvingAbilityName resolving gs) acquisition source
+  -- CR 702.106b: a secret choice remembers its chooser, the one player who may
+  -- reveal it (CostComponent.RevealSecretChoice).
+  Monad.when (ChooseQuality.secret choice) $
+    State.modify' (Game.recordChoice Chosen.Players acquisition (Just . Map.insert PlayerChoice.SecretChooser controller . Maybe.fromMaybe Map.empty) source)
 
 -- CR 400.11c: the resolving controller reveals a card they own from outside the
 -- game matching the filter and puts it into their hand -- Burning Wish.

@@ -57,6 +57,7 @@ import qualified Parun.Codec.PlanarDieRolled as PlanarDieRolled
 import qualified Parun.Codec.PlayerActed as PlayerActed
 import qualified Parun.Codec.PlayerId as PlayerId
 import qualified Parun.Codec.Revealed as Revealed
+import qualified Parun.Codec.RevealedChoice as RevealedChoice
 import qualified Parun.Codec.Saddling as Saddling
 import qualified Parun.Codec.SpellWasCast as SpellWasCast
 import qualified Parun.Codec.SpellWasCopied as SpellWasCopied
@@ -106,6 +107,7 @@ codec =
       Arm.payload "Looked" Looked.codec GameEvent.Looked (\x -> case x of GameEvent.Looked y -> Just y; _ -> Nothing),
       Arm.payload "Voted" Voted.codec GameEvent.Voted (\x -> case x of GameEvent.Voted y -> Just y; _ -> Nothing),
       Arm.payload "VotesRevealed" (Common.seq Ballot.codec) GameEvent.VotesRevealed (\x -> case x of GameEvent.VotesRevealed y -> Just y; _ -> Nothing),
+      Arm.payload "ChoiceRevealed" RevealedChoice.codec GameEvent.ChoiceRevealed (\x -> case x of GameEvent.ChoiceRevealed y -> Just y; _ -> Nothing),
       Arm.payload "SpellCountered" Countering.codec GameEvent.SpellCountered (\x -> case x of GameEvent.SpellCountered y -> Just y; _ -> Nothing),
       Arm.payload "AbilityCountered" Countering.codec GameEvent.AbilityCountered (\x -> case x of GameEvent.AbilityCountered y -> Just y; _ -> Nothing),
       Arm.payload "LifeLost" LifeChange.codec GameEvent.LifeLost (\x -> case x of GameEvent.LifeLost y -> Just y; _ -> Nothing),
@@ -189,6 +191,7 @@ tagOf x = case x of
   GameEvent.Revealed {} -> "Revealed"
   GameEvent.Looked {} -> "Looked"
   GameEvent.Voted {} -> "Voted"
+  GameEvent.ChoiceRevealed {} -> "ChoiceRevealed"
   GameEvent.VotesRevealed {} -> "VotesRevealed"
   GameEvent.SpellCountered {} -> "SpellCountered"
   GameEvent.AbilityCountered {} -> "AbilityCountered"

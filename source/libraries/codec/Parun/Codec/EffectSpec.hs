@@ -2601,7 +2601,7 @@ spec s = Spec.describe s "Parun.Codec.Effect" $ do
       s
       toJson
       fromJson
-      (Effect.ChooseQuality (ChooseQuality.MkChooseQuality (ChosenQuality.Colors (ChooseBetween.MkChooseBetween 1 1)) False))
+      (Effect.ChooseQuality (ChooseQuality.MkChooseQuality (ChosenQuality.Colors (ChooseBetween.MkChooseBetween 1 1)) False False))
       " {\"type\":\"ChooseQuality\",\"value\":{\"quality\":{\"type\":\"Colors\",\"value\":{\"least\":1,\"most\":1}}}} "
   -- Shapeshifter: a choice its static ability reads.
   Spec.it s "ChooseQuality linked" $
@@ -2609,8 +2609,16 @@ spec s = Spec.describe s "Parun.Codec.Effect" $ do
       s
       toJson
       fromJson
-      (Effect.ChooseQuality (ChooseQuality.MkChooseQuality (ChosenQuality.Number 0 (Just 7)) True))
+      (Effect.ChooseQuality (ChooseQuality.MkChooseQuality (ChosenQuality.Number 0 (Just 7)) True False))
       " {\"type\":\"ChooseQuality\",\"value\":{\"linked\":true,\"quality\":{\"type\":\"Number\",\"value\":{\"least\":0,\"most\":7}}}} "
+  -- A Killer Among Us: a secret choice.
+  Spec.it s "ChooseQuality secret" $
+    Common.assertJsonCodec
+      s
+      toJson
+      fromJson
+      (Effect.ChooseQuality (ChooseQuality.MkChooseQuality (ChosenQuality.Number 0 (Just 7)) True True))
+      " {\"type\":\"ChooseQuality\",\"value\":{\"linked\":true,\"quality\":{\"type\":\"Number\",\"value\":{\"least\":0,\"most\":7}},\"secret\":true}} "
   -- CR 400.11c: the filter and CR 701.20a's reveal, Burning Wish's "reveal a
   -- sorcery card". Everything else about the sentence is the rule's -- the pool is
   -- the resolving controller's own (CR 108.3b) and the destination their hand.

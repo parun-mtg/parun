@@ -197,6 +197,7 @@ import qualified Parun.Types.RestrictedAction as RestrictedAction
 import qualified Parun.Types.ReturnPermanents as ReturnPermanents
 import qualified Parun.Types.RevealCause as RevealCause
 import qualified Parun.Types.RevealWindow as RevealWindow
+import qualified Parun.Types.RevealedChoice as RevealedChoice
 import Parun.Types.RowSource (RowSource)
 import qualified Parun.Types.RuleWaiver as RuleWaiver
 import qualified Parun.Types.Sacrifice as Sacrifice
@@ -2072,6 +2073,7 @@ componentDemandGrowsWith slot component = case component of
   CostComponent.BeholdAndExile _ -> False
   CostComponent.MillCards _ -> False
   CostComponent.RevealTopOfLibrary _ -> False
+  CostComponent.RevealSecretChoice -> False
   where
     announced = CostAmount.Announced slot
     -- A criterion requiring a measure to reach the variable, which past every
@@ -2449,6 +2451,7 @@ componentStatesHiddenQuality component = case component of
   -- zone", and this component can never state one, having no Filter at all.
   CostComponent.MillCards _ -> False
   CostComponent.RevealTopOfLibrary _ -> False
+  CostComponent.RevealSecretChoice -> False
 
 -- CR 701.9a's discards of a DiscardCards cost, as ONE event group, binding
 -- Binding.discardedCard off what ARRIVED in a public zone (CR 400.7j),
@@ -2617,6 +2620,16 @@ revealPaying paidFor pid card = do
   case paidFor of
     Just sid -> Event.stampReveal (RevealWindow.WhileOnStack sid) card
     Nothing -> pure ()
+
+-- CR 702.106b: the subtype `pid` secretly chose for `oid`, through its last
+-- known information (CR 608.2h) for a source the same cost sacrificed; Nothing
+-- where another player chose or no secret choice was made.
+secretChoiceOf :: PlayerId -> ObjectId -> GameState -> Maybe Subtype.Type.Subtype
+secretChoiceOf pid oid gs = do
+  let acquisition = Game.acquisitionOf oid gs
+  chooser <- Map.lookup PlayerChoice.SecretChooser =<< Game.choiceWithLastKnown Chosen.Players acquisition oid gs
+  Monad.guard (chooser == pid)
+  Game.choiceWithLastKnown Chosen.Subtype acquisition oid gs
 
 -- The cards this player may move to pay a MoveCardsFromGraveyard component:
 -- their OWN graveyard, in its own order, narrowed by the criterion. Per-owner by
@@ -3166,6 +3179,7 @@ claimOfGiven board slots pid oid component gs =
           claim (ClaimAxis.Removal Zone.Library) (Set.fromList (Game.zoneMembers Zone.Library pid gs)) n
         -- CR 701.20b removes nothing: the cards stay where they were.
         CostComponent.RevealTopOfLibrary _ -> Nothing
+        CostComponent.RevealSecretChoice -> Nothing
         -- CR 107.5: {T} spends exactly the untapped-ness the TapPermanents arm below
         -- claims, so it is the same axis, on a pool of one.
         CostComponent.TapThis -> claim ClaimAxis.Tapping itself 1
@@ -3718,6 +3732,7 @@ uncountedCeiling pid oid claims gs component = case component of
   -- Counted by `objectCeiling` too, the library being this claim's pool.
   CostComponent.MillCards _ -> Nothing
   CostComponent.RevealTopOfLibrary _ -> Nothing
+  CostComponent.RevealSecretChoice -> Nothing
   -- Counted by `lifeCeiling`, CR 119.4.
   CostComponent.PayLife _ -> Nothing
   CostComponent.PayComputedLife _ -> Nothing
@@ -4151,6 +4166,7 @@ targetComputed component = case component of
   CostComponent.BeholdAndExile _ -> False
   CostComponent.MillCards _ -> False
   CostComponent.RevealTopOfLibrary _ -> False
+  CostComponent.RevealSecretChoice -> False
   CostComponent.ChooseOpponent _ -> False
   CostComponent.ChooseSubtype _ -> False
   CostComponent.Waterbend _ -> False
@@ -4209,6 +4225,7 @@ announcedRecord component = case component of
   CostComponent.BeholdAndExile _ -> Nothing
   CostComponent.MillCards _ -> Nothing
   CostComponent.RevealTopOfLibrary _ -> Nothing
+  CostComponent.RevealSecretChoice -> Nothing
   CostComponent.ChooseOpponent _ -> Nothing
   CostComponent.ChooseSubtype _ -> Nothing
   CostComponent.Waterbend _ -> Just Binding.waterbendCost
@@ -4284,6 +4301,7 @@ lifeOwedByComponent pid gs component = case component of
   CostComponent.BeholdAndExile _ -> 0
   CostComponent.MillCards _ -> 0
   CostComponent.RevealTopOfLibrary _ -> 0
+  CostComponent.RevealSecretChoice -> 0
 
 -- CR 107.14's payments a cost owes outside its mana part, added up --
 -- `lifeOwedBy`'s energy sibling, and what `repeatsOf`'s energyCeiling divides
@@ -4343,6 +4361,7 @@ energyOwedByComponent component = case component of
   CostComponent.BeholdAndExile _ -> 0
   CostComponent.MillCards _ -> 0
   CostComponent.RevealTopOfLibrary _ -> 0
+  CostComponent.RevealSecretChoice -> 0
 
 -- The counters a cost takes OFF the object it is on, added up per kind --
 -- `lifeOwedBy`'s counter sibling, and `repeatsOf`'s counterCeiling is what
@@ -4412,6 +4431,7 @@ countersOwedByComponent component = case component of
   CostComponent.BeholdAndExile _ -> []
   CostComponent.MillCards _ -> []
   CostComponent.RevealTopOfLibrary _ -> []
+  CostComponent.RevealSecretChoice -> []
 
 -- CR 118.3 for ONE component. `slots` is what CR 601.2c has bound, or would bind
 -- under the announcement the caller is measuring; every criterion below is read
@@ -4753,6 +4773,9 @@ canPayComponentGiven board slots pid oid component gs = case component of
   CostComponent.MillCards n -> Natural.length (Game.zoneMembers Zone.Library pid gs) >= n
   -- CR 118.3: there must be that many cards to show.
   CostComponent.RevealTopOfLibrary n -> Natural.length (Game.zoneMembers Zone.Library pid gs) >= n
+  -- The card's ruling: only the player who secretly chose can reveal the
+  -- choice, so a new controller can't pay, nor anyone where none was made.
+  CostComponent.RevealSecretChoice -> Maybe.isJust (secretChoiceOf pid oid gs)
 
 -- CR 601.2b: a component BEFORE X is announced names no amount to measure, so
 -- it is unpayable -- CR 601.2 reverses a casting a player cannot comply with
@@ -5000,6 +5023,7 @@ criteriaOf component = case component of
   CostComponent.ExileThis -> []
   CostComponent.MillCards _ -> []
   CostComponent.RevealTopOfLibrary _ -> []
+  CostComponent.RevealSecretChoice -> []
 
 -- CR 734.1: put back what an action the player could not legally complete did.
 --
@@ -6036,6 +6060,7 @@ paidInSecondPass slots pid oid gs component = case component of
   CostComponent.MillCards _ -> True
   -- CR 701.20a shows the cards and CR 701.20b moves none, so the first pass holds it.
   CostComponent.RevealTopOfLibrary _ -> False
+  CostComponent.RevealSecretChoice -> False
   -- CR 601.2h's RANDOM half reaches a discard only at random; Parun.CostSpec's
   -- "a random discard is paid after a chosen one" proves it, and the scenario
   -- cr-601-2h-sonic-burst-under-dream-halls-discards-the-chosen-card-before-the-random-one
@@ -6232,6 +6257,7 @@ sourceOnly component = case component of
   CostComponent.PayManaCostOf _ -> Nothing
   CostComponent.MillCards _ -> Nothing
   CostComponent.RevealTopOfLibrary _ -> Nothing
+  CostComponent.RevealSecretChoice -> Just False -- the source alone, left where it is
   CostComponent.PayLife _ -> Nothing
   CostComponent.PayComputedLife _ -> Nothing
   CostComponent.PayEnergy _ -> Nothing
@@ -6336,6 +6362,7 @@ orderSensitive component = case component of
   CostComponent.MillCards _ -> True
   -- CR 701.20b leaves the cards where they were, so no other part's pool changes.
   CostComponent.RevealTopOfLibrary _ -> False
+  CostComponent.RevealSecretChoice -> False
   CostComponent.PayLife _ -> False
   CostComponent.PayComputedLife _ -> False
   CostComponent.PayEnergy _ -> False
@@ -7416,6 +7443,15 @@ payPayable perform moment paidFor slots pid oid component = case component of
     gs <- State.get
     Monad.mapM_ (revealPaying paidFor pid) (List.genericTake n (Game.zoneMembers Zone.Library pid gs))
     pure bindsNothing
+  -- CR 702.106b's note, shown to every player. Binds no slot: the reading
+  -- ability asks Object.chosenSubtype itself.
+  CostComponent.RevealSecretChoice -> do
+    gs <- State.get
+    case secretChoiceOf pid oid gs of
+      Nothing -> pure Payment.Unpaid
+      Just subtype -> do
+        State.modify' (Event.recordEvent (GameEvent.ChoiceRevealed (RevealedChoice.MkRevealedChoice pid oid subtype)))
+        pure bindsNothing
   -- CR 701.21a: the player chooses which of their permanents dies, so this is a
   -- prompt. Elided only when forced -- exactly as many candidates as the count,
   -- or a count of 0, which an X announced at 0 leaves.

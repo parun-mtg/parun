@@ -94,6 +94,7 @@ import qualified Parun.Types.PlayerId as PlayerId
 import qualified Parun.Types.Recipient as Recipient
 import qualified Parun.Types.RevealCause as RevealCause
 import qualified Parun.Types.Revealed as Revealed
+import qualified Parun.Types.RevealedChoice as RevealedChoice
 import qualified Parun.Types.RoomIndex as RoomIndex
 import qualified Parun.Types.Saddling as Saddling
 import qualified Parun.Types.SideDeck as SideDeck
@@ -104,6 +105,7 @@ import qualified Parun.Types.StackObjectKind as StackObjectKind
 import qualified Parun.Types.StepBegan as StepBegan
 import qualified Parun.Types.StickerKind as StickerKind
 import qualified Parun.Types.StickerPut as StickerPut
+import qualified Parun.Types.Subtype as Subtype
 import qualified Parun.Types.TappedForMana as TappedForMana
 import qualified Parun.Types.TappedToPay as TappedToPay
 import qualified Parun.Types.Timestamp as Timestamp
@@ -230,6 +232,12 @@ spec s = Spec.describe s "Parun.Codec.GameEvent" $ do
       GameEvent.codec
       (GameEvent.Voted (Voted.MkVoted (Ballot.MkBallot (PlayerId.MkPlayerId 1) (BallotChoice.ForWord (SlotName.MkSlotName (Text.pack "truth")))) (Set.fromList [PlayerId.MkPlayerId 1, PlayerId.MkPlayerId 2])))
       " {\"type\":\"Voted\",\"value\":{\"ballot\":{\"voter\":1,\"choice\":{\"type\":\"ForWord\",\"value\":\"truth\"}},\"audience\":[1,2]}} "
+  Spec.it s "ChoiceRevealed" $
+    Common.assertCodec
+      s
+      GameEvent.codec
+      (GameEvent.ChoiceRevealed (RevealedChoice.MkRevealedChoice (PlayerId.MkPlayerId 0) (ObjectId.MkObjectId 7) Subtype.Merfolk))
+      " {\"type\":\"ChoiceRevealed\",\"value\":{\"player\":0,\"object\":7,\"subtype\":\"Merfolk\"}} "
   -- Two ballots, so a codec that reordered them would fail.
   Spec.it s "VotesRevealed" $
     Common.assertCodec

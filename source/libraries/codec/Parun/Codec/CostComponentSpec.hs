@@ -252,6 +252,13 @@ spec s = Spec.describe s "Parun.Codec.CostComponent" $ do
       " {\"type\":\"Blight\",\"value\":{\"type\":\"Announced\",\"value\":\"X\"}} "
   -- CR 701.61a as a cost, nullary on the wire because the rule states no number:
   -- Thornvault Forager's "{T}, Forage".
+  -- A Killer Among Us's "Reveal the creature type you chose".
+  Spec.it s "RevealSecretChoice" $
+    Common.assertCodec
+      s
+      codec
+      CostComponent.RevealSecretChoice
+      " {\"type\":\"RevealSecretChoice\"} "
   Spec.it s "Forage" $
     Common.assertCodec
       s

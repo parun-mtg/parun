@@ -287,7 +287,8 @@ data Object = MkObject
     -- by which choice -- the one its controller made as it entered (Stuffy Doll)
     -- or transformed (Shinryu, Transcendent Rival), and the
     -- opponent each gift instance's cost promised (Scrapshooter), one per paid
-    -- instance (CR 118.8a). Read by PlayerRef.ChosenPlayerOfBound off the
+    -- instance (CR 118.8a), and the player who secretly made the object's choice
+    -- (PlayerChoice.SecretChooser, A Killer Among Us). Read by PlayerRef.ChosenPlayerOfBound off the
     -- effect's SOURCE -- a triggered ability's payload rather than a
     -- Modification, which is what makes the family's shared property "read off
     -- the effect's source" rather than "read by a Modification".

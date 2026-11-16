@@ -1598,6 +1598,7 @@ library codec
     Parun.Codec.RevealCause
     Parun.Codec.RevealCauseSpec
     Parun.Codec.Revealed
+    Parun.Codec.RevealedChoice
     Parun.Codec.RevealedSpec
     Parun.Codec.RevealedThisWay
     Parun.Codec.RevealedThisWaySpec
@@ -3639,6 +3640,7 @@ library types
     Parun.Types.Reveal
     Parun.Types.RevealCause
     Parun.Types.Revealed
+    Parun.Types.RevealedChoice
     Parun.Types.RevealedThisWay
     Parun.Types.RevealObligation
     Parun.Types.RevealTiming

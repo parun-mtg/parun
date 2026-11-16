@@ -182,6 +182,7 @@ zoneOfComponent component = case component of
   -- library it mills.
   CostComponent.MillCards _ -> Nothing
   CostComponent.RevealTopOfLibrary _ -> Nothing
+  CostComponent.RevealSecretChoice -> Nothing
   CostComponent.PayEnergy _ -> Nothing
   CostComponent.AddLoyaltyToThis _ -> Nothing
   CostComponent.RemoveLoyaltyFromThis _ -> Nothing

@@ -239,6 +239,10 @@ data CostComponent keyword
   | -- | CR 701.20a as a cost / Synthetic Tithe of Omens: the paying player
     -- reveals the top this-many cards of their library, which stay there.
     RevealTopOfLibrary Natural.Natural
+  | -- | CR 702.106b as a cost / A Killer Among Us: the paying player reveals the
+    -- choice they secretly made for the object the cost is on; unpayable by
+    -- anyone else, or where no secret choice was made (the card's ruling).
+    RevealSecretChoice
   | -- | CR 702.174a as a cost / Scrapshooter: the paying player chooses an
     -- opponent to promise this gift to, recorded on the object the cost is on in
     -- Object.chosenPlayers so that CR 400.7d's exception carries it to the
