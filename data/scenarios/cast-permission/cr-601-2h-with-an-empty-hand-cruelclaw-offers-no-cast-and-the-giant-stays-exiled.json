@@ -1,0 +1,25 @@
+{
+  "description": "CR 601.2h / 118.9 with an empty hand, The Infamous Cruelclaw's hit exiles Hill Giant and offers no cast, and the Giant stays in exile",
+  "note": "The positive scenario's board less its hand: no discard can pay, so no OfferedCast prompt comes, and an unscheduled one would fail the run.",
+  "board": {
+    "active": "alice",
+    "step": "DeclareAttackers",
+    "seats": [
+      {
+        "name": "alice",
+        "battlefield": [{ "card": "The Infamous Cruelclaw", "label": "cruelclaw", "ready": true }],
+        "library": [{ "card": "Forest" }, { "card": "Hill Giant" }, { "card": "Plains" }]
+      },
+      { "name": "bob" }
+    ]
+  },
+  "timeline": [
+    { "turn": 1, "step": "DeclareAttackers", "player": "alice", "do": { "Attack": ["$cruelclaw"] } },
+    { "turn": 1, "step": "PostcombatMain", "player": "alice", "check": { "Life": { "player": "bob", "life": 17 } } }
+  ],
+  "final": [
+    { "Count": { "player": "alice", "zone": "Exile", "card": "Hill Giant", "count": 1 } },
+    { "Count": { "player": "alice", "zone": "Battlefield", "card": "Hill Giant", "count": 0 } },
+    { "Count": { "player": "alice", "zone": "Exile", "card": "Forest", "count": 1 } }
+  ]
+}
