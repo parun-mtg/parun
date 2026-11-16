@@ -1,0 +1,232 @@
+{
+  "faces": [
+    {
+      "manaCost": [
+        {
+          "type": "Generic",
+          "value": 3
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "White"
+          }
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "White"
+          }
+        }
+      ],
+      "name": "Season of the Burrow",
+      "oracleText": "Choose up to five {P} worth of modes. You may choose the same mode more than once.\n{P} — Create a 1/1 white Rabbit creature token.\n{P}{P} — Exile target nonland permanent. Its controller draws a card.\n{P}{P}{P} — Return target permanent card with mana value 3 or less from your graveyard to the battlefield with an indestructible counter on it.",
+      "spell": {
+        "modes": [
+          {
+            "clauses": [
+              {
+                "effects": [
+                  {
+                    "type": "Create",
+                    "value": {
+                      "card": {
+                        "faces": [
+                          {
+                            "colorIndicator": [
+                              "White"
+                            ],
+                            "name": "Rabbit Token",
+                            "power": {
+                              "type": "Literal",
+                              "value": 1
+                            },
+                            "toughness": {
+                              "type": "Literal",
+                              "value": 1
+                            },
+                            "typeLine": {
+                              "subtypes": [
+                                "Rabbit"
+                              ],
+                              "types": [
+                                "Creature"
+                              ]
+                            }
+                          }
+                        ]
+                      },
+                      "quantity": {
+                        "type": "Literal",
+                        "value": 1
+                      }
+                    }
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "clauses": [
+              {
+                "effects": [
+                  {
+                    "type": "MoveToZone",
+                    "value": {
+                      "ref": {
+                        "type": "InSlot",
+                        "value": "permanent"
+                      },
+                      "zone": "Exile"
+                    }
+                  },
+                  {
+                    "type": "Draw",
+                    "value": {
+                      "player": {
+                        "type": "HolderOfBound",
+                        "value": {
+                          "holder": "Controller",
+                          "hop": "Itself",
+                          "slot": "permanent"
+                        }
+                      },
+                      "quantity": {
+                        "type": "Literal",
+                        "value": 1
+                      }
+                    }
+                  }
+                ]
+              }
+            ],
+            "targetSlots": {
+              "permanent": {
+                "filter": {
+                  "type": "Not",
+                  "value": {
+                    "type": "HasCardType",
+                    "value": "Land"
+                  }
+                },
+                "pool": {
+                  "type": "Permanents"
+                }
+              }
+            }
+          },
+          {
+            "clauses": [
+              {
+                "effects": [
+                  {
+                    "type": "MoveToZone",
+                    "value": {
+                      "ref": {
+                        "type": "InSlot",
+                        "value": "card"
+                      },
+                      "riders": {
+                        "counters": [
+                          {
+                            "count": {
+                              "type": "Literal",
+                              "value": 1
+                            },
+                            "kind": {
+                              "type": "Keyword",
+                              "value": {
+                                "type": "Indestructible"
+                              }
+                            }
+                          }
+                        ]
+                      },
+                      "zone": "Battlefield"
+                    }
+                  }
+                ]
+              }
+            ],
+            "targetSlots": {
+              "card": {
+                "filter": {
+                  "type": "And",
+                  "value": [
+                    {
+                      "type": "Or",
+                      "value": [
+                        {
+                          "type": "HasCardType",
+                          "value": "Artifact"
+                        },
+                        {
+                          "type": "HasCardType",
+                          "value": "Battle"
+                        },
+                        {
+                          "type": "HasCardType",
+                          "value": "Creature"
+                        },
+                        {
+                          "type": "HasCardType",
+                          "value": "Enchantment"
+                        },
+                        {
+                          "type": "HasCardType",
+                          "value": "Land"
+                        },
+                        {
+                          "type": "HasCardType",
+                          "value": "Planeswalker"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "Measures",
+                      "value": {
+                        "comparison": "AtMost",
+                        "measure": "ManaValue",
+                        "operand": {
+                          "type": "Literal",
+                          "value": 3
+                        }
+                      }
+                    }
+                  ]
+                },
+                "pool": {
+                  "type": "CardsInGraveyard",
+                  "value": {
+                    "type": "Scoped",
+                    "value": {
+                      "type": "You"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        ],
+        "selection": {
+          "type": "ChoosePawprintsWithRepeats",
+          "value": {
+            "most": 5,
+            "pawprints": [
+              1,
+              2,
+              3
+            ]
+          }
+        }
+      },
+      "typeLine": {
+        "types": [
+          "Sorcery"
+        ]
+      }
+    }
+  ]
+}

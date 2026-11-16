@@ -1,0 +1,445 @@
+{
+  "faces": [
+    {
+      "activatedAbilities": [
+        {
+          "cost": {
+            "mana": [
+              {
+                "type": "Generic",
+                "value": 1
+              },
+              {
+                "type": "OfType",
+                "value": {
+                  "type": "Colored",
+                  "value": "Black"
+                }
+              }
+            ]
+          },
+          "keyword": {
+            "type": "ClassLevel",
+            "value": 2
+          },
+          "modal": {
+            "modes": [
+              {
+                "clauses": [
+                  {
+                    "effects": [
+                      {
+                        "type": "SetClassLevel",
+                        "value": {
+                          "level": 2,
+                          "slot": "self"
+                        }
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "cost": {
+            "mana": [
+              {
+                "type": "Generic",
+                "value": 2
+              },
+              {
+                "type": "OfType",
+                "value": {
+                  "type": "Colored",
+                  "value": "Black"
+                }
+              }
+            ]
+          },
+          "keyword": {
+            "type": "ClassLevel",
+            "value": 3
+          },
+          "modal": {
+            "modes": [
+              {
+                "clauses": [
+                  {
+                    "effects": [
+                      {
+                        "type": "SetClassLevel",
+                        "value": {
+                          "level": 3,
+                          "slot": "self"
+                        }
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      ],
+      "keywords": [
+        {
+          "type": "ClassLevel",
+          "value": 2
+        },
+        {
+          "type": "ClassLevel",
+          "value": 3
+        }
+      ],
+      "manaCost": [
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "Black"
+          }
+        }
+      ],
+      "name": "Scavenger's Talent",
+      "oracleText": "(Gain the next level as a sorcery to add its ability.)\nWhenever one or more creatures you control die, create a Food token. This ability triggers only once each turn.\n{1}{B}: Level 2\nWhenever you sacrifice a permanent, target player mills two cards.\n{2}{B}: Level 3\nAt the beginning of your end step, you may sacrifice three other nonland permanents. If you do, return a creature card from your graveyard to the battlefield with a finality counter on it.",
+      "staticAbilities": [
+        {
+          "affected": {
+            "type": "Matching",
+            "value": {
+              "type": "IsSource"
+            }
+          },
+          "condition": {
+            "type": "Compares",
+            "value": {
+              "comparison": "AtLeast",
+              "measured": {
+                "type": "ClassLevel"
+              },
+              "threshold": {
+                "type": "Literal",
+                "value": 2
+              }
+            }
+          },
+          "modifications": [
+            {
+              "type": "GainAbility",
+              "value": {
+                "type": "Triggered",
+                "value": {
+                  "condition": {
+                    "type": "PermanentSacrificed",
+                    "value": {
+                      "filter": {
+                        "type": "And",
+                        "value": []
+                      },
+                      "player": "You"
+                    }
+                  },
+                  "modal": {
+                    "modes": [
+                      {
+                        "clauses": [
+                          {
+                            "effects": [
+                              {
+                                "type": "Mill",
+                                "value": {
+                                  "player": {
+                                    "type": "InSlot",
+                                    "value": "target"
+                                  },
+                                  "quantity": {
+                                    "type": "Literal",
+                                    "value": 2
+                                  }
+                                }
+                              }
+                            ]
+                          }
+                        ],
+                        "targetSlots": {
+                          "target": {
+                            "pool": {
+                              "type": "Players"
+                            }
+                          }
+                        }
+                      }
+                    ]
+                  }
+                }
+              }
+            }
+          ]
+        },
+        {
+          "affected": {
+            "type": "Matching",
+            "value": {
+              "type": "IsSource"
+            }
+          },
+          "condition": {
+            "type": "Compares",
+            "value": {
+              "comparison": "AtLeast",
+              "measured": {
+                "type": "ClassLevel"
+              },
+              "threshold": {
+                "type": "Literal",
+                "value": 3
+              }
+            }
+          },
+          "modifications": [
+            {
+              "type": "GainAbility",
+              "value": {
+                "type": "Triggered",
+                "value": {
+                  "condition": {
+                    "type": "StepBegins",
+                    "value": {
+                      "phase": {
+                        "type": "Ending",
+                        "value": "EndStep"
+                      },
+                      "scope": {
+                        "type": "PlayersTurn",
+                        "value": {
+                          "type": "Relative",
+                          "value": "You"
+                        }
+                      }
+                    }
+                  },
+                  "modal": {
+                    "modes": [
+                      {
+                        "clauses": [
+                          {
+                            "effects": [
+                              {
+                                "type": "MoveToZone",
+                                "value": {
+                                  "ref": {
+                                    "type": "ChosenCardInGraveyard",
+                                    "value": {
+                                      "chooser": {
+                                        "type": "TheController"
+                                      },
+                                      "filter": {
+                                        "type": "HasCardType",
+                                        "value": "Creature"
+                                      },
+                                      "players": {
+                                        "type": "Scoped",
+                                        "value": {
+                                          "type": "You"
+                                        }
+                                      }
+                                    }
+                                  },
+                                  "riders": {
+                                    "counters": [
+                                      {
+                                        "count": {
+                                          "type": "Literal",
+                                          "value": 1
+                                        },
+                                        "kind": {
+                                          "type": "Finality"
+                                        }
+                                      }
+                                    ]
+                                  },
+                                  "zone": "Battlefield"
+                                }
+                              }
+                            ],
+                            "payGate": {
+                              "branch": "IfPaid",
+                              "cost": {
+                                "components": [
+                                  {
+                                    "type": "Sacrifice",
+                                    "value": {
+                                      "count": {
+                                        "type": "Fixed",
+                                        "value": 3
+                                      },
+                                      "whichPermanents": {
+                                        "type": "And",
+                                        "value": [
+                                          {
+                                            "type": "Not",
+                                            "value": {
+                                              "type": "IsSource"
+                                            }
+                                          },
+                                          {
+                                            "type": "Not",
+                                            "value": {
+                                              "type": "HasCardType",
+                                              "value": "Land"
+                                            }
+                                          }
+                                        ]
+                                      }
+                                    }
+                                  }
+                                ],
+                                "mana": []
+                              },
+                              "payer": {
+                                "type": "InSlot",
+                                "value": "you"
+                              }
+                            }
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                }
+              }
+            }
+          ]
+        }
+      ],
+      "triggeredAbilities": [
+        {
+          "condition": {
+            "type": "Leaves",
+            "value": {
+              "batching": "OneOrMore",
+              "destinations": [
+                {
+                  "zone": "Graveyard"
+                }
+              ],
+              "permanent": {
+                "type": "Matching",
+                "value": {
+                  "type": "And",
+                  "value": [
+                    {
+                      "type": "HasCardType",
+                      "value": "Creature"
+                    },
+                    {
+                      "type": "HeldBy",
+                      "value": {
+                        "holder": "Controller",
+                        "relation": "You"
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "limit": {
+            "type": "OncePerTurn"
+          },
+          "modal": {
+            "modes": [
+              {
+                "clauses": [
+                  {
+                    "effects": [
+                      {
+                        "type": "Create",
+                        "value": {
+                          "card": {
+                            "faces": [
+                              {
+                                "activatedAbilities": [
+                                  {
+                                    "cost": {
+                                      "components": [
+                                        {
+                                          "type": "TapThis"
+                                        },
+                                        {
+                                          "type": "SacrificeThis"
+                                        }
+                                      ],
+                                      "mana": [
+                                        {
+                                          "type": "Generic",
+                                          "value": 2
+                                        }
+                                      ]
+                                    },
+                                    "modal": {
+                                      "modes": [
+                                        {
+                                          "clauses": [
+                                            {
+                                              "effects": [
+                                                {
+                                                  "type": "GainLife",
+                                                  "value": {
+                                                    "player": {
+                                                      "type": "Relative",
+                                                      "value": "You"
+                                                    },
+                                                    "quantity": {
+                                                      "type": "Literal",
+                                                      "value": 3
+                                                    }
+                                                  }
+                                                }
+                                              ]
+                                            }
+                                          ]
+                                        }
+                                      ]
+                                    }
+                                  }
+                                ],
+                                "name": "Food Token",
+                                "typeLine": {
+                                  "subtypes": [
+                                    "Food"
+                                  ],
+                                  "types": [
+                                    "Artifact"
+                                  ]
+                                }
+                              }
+                            ]
+                          },
+                          "quantity": {
+                            "type": "Literal",
+                            "value": 1
+                          }
+                        }
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      ],
+      "typeLine": {
+        "subtypes": [
+          "Class"
+        ],
+        "types": [
+          "Enchantment"
+        ]
+      }
+    }
+  ]
+}

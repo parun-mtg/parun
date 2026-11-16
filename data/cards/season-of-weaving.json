@@ -1,0 +1,154 @@
+{
+  "faces": [
+    {
+      "manaCost": [
+        {
+          "type": "Generic",
+          "value": 4
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "Blue"
+          }
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "Blue"
+          }
+        }
+      ],
+      "name": "Season of Weaving",
+      "oracleText": "Choose up to five {P} worth of modes. You may choose the same mode more than once.\n{P} — Draw a card.\n{P}{P} — Choose an artifact or creature you control. Create a token that's a copy of it.\n{P}{P}{P} — Return each nonland, nontoken permanent to its owner's hand.",
+      "spell": {
+        "modes": [
+          {
+            "clauses": [
+              {
+                "effects": [
+                  {
+                    "type": "Draw",
+                    "value": {
+                      "player": {
+                        "type": "Relative",
+                        "value": "You"
+                      },
+                      "quantity": {
+                        "type": "Literal",
+                        "value": 1
+                      }
+                    }
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "clauses": [
+              {
+                "effects": [
+                  {
+                    "type": "ChoosePermanents",
+                    "value": {
+                      "permanents": {
+                        "filter": {
+                          "type": "And",
+                          "value": [
+                            {
+                              "type": "Or",
+                              "value": [
+                                {
+                                  "type": "HasCardType",
+                                  "value": "Artifact"
+                                },
+                                {
+                                  "type": "HasCardType",
+                                  "value": "Creature"
+                                }
+                              ]
+                            },
+                            {
+                              "type": "HeldBy",
+                              "value": {
+                                "holder": "Controller",
+                                "relation": "You"
+                              }
+                            }
+                          ]
+                        }
+                      },
+                      "slot": "chosen"
+                    }
+                  },
+                  {
+                    "type": "CreateCopy",
+                    "value": {
+                      "ref": {
+                        "type": "InSlot",
+                        "value": "chosen"
+                      }
+                    }
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "clauses": [
+              {
+                "effects": [
+                  {
+                    "type": "MoveToZone",
+                    "value": {
+                      "ref": {
+                        "type": "EachMatching",
+                        "value": {
+                          "type": "And",
+                          "value": [
+                            {
+                              "type": "Not",
+                              "value": {
+                                "type": "HasCardType",
+                                "value": "Land"
+                              }
+                            },
+                            {
+                              "type": "Not",
+                              "value": {
+                                "type": "IsToken"
+                              }
+                            }
+                          ]
+                        }
+                      },
+                      "zone": "Hand"
+                    }
+                  }
+                ]
+              }
+            ]
+          }
+        ],
+        "selection": {
+          "type": "ChoosePawprintsWithRepeats",
+          "value": {
+            "most": 5,
+            "pawprints": [
+              1,
+              2,
+              3
+            ]
+          }
+        }
+      },
+      "typeLine": {
+        "types": [
+          "Sorcery"
+        ]
+      }
+    }
+  ]
+}

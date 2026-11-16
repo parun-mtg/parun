@@ -1,0 +1,217 @@
+{
+  "faces": [
+    {
+      "keywords": [
+        {
+          "type": "Trample"
+        }
+      ],
+      "manaCost": [
+        {
+          "type": "Generic",
+          "value": 3
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "Red"
+          }
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "Red"
+          }
+        }
+      ],
+      "name": "Reptilian Recruiter",
+      "oracleText": "Trample\nWhen this creature enters, choose target creature. If that creature's power is 2 or less or if you control another Lizard, gain control of that creature until end of turn, untap it, and it gains haste until end of turn.",
+      "power": {
+        "type": "Literal",
+        "value": 4
+      },
+      "toughness": {
+        "type": "Literal",
+        "value": 2
+      },
+      "triggeredAbilities": [
+        {
+          "condition": {
+            "type": "Enters",
+            "value": {}
+          },
+          "modal": {
+            "modes": [
+              {
+                "clauses": [
+                  {
+                    "condition": {
+                      "type": "Any",
+                      "value": [
+                        {
+                          "type": "Compares",
+                          "value": {
+                            "comparison": "AtLeast",
+                            "measured": {
+                              "type": "Count",
+                              "value": {
+                                "aggregation": {
+                                  "type": "Members"
+                                },
+                                "filter": {
+                                  "type": "And",
+                                  "value": [
+                                    {
+                                      "type": "IsBound",
+                                      "value": "target"
+                                    },
+                                    {
+                                      "type": "Measures",
+                                      "value": {
+                                        "comparison": "AtMost",
+                                        "measure": "Power",
+                                        "operand": {
+                                          "type": "Literal",
+                                          "value": 2
+                                        }
+                                      }
+                                    }
+                                  ]
+                                },
+                                "scope": {
+                                  "type": "InZone",
+                                  "value": {
+                                    "player": {
+                                      "type": "Relative",
+                                      "value": "AnyPlayer"
+                                    },
+                                    "zone": "Battlefield"
+                                  }
+                                }
+                              }
+                            },
+                            "threshold": {
+                              "type": "Literal",
+                              "value": 1
+                            }
+                          }
+                        },
+                        {
+                          "type": "Compares",
+                          "value": {
+                            "comparison": "AtLeast",
+                            "measured": {
+                              "type": "Count",
+                              "value": {
+                                "aggregation": {
+                                  "type": "Members"
+                                },
+                                "filter": {
+                                  "type": "And",
+                                  "value": [
+                                    {
+                                      "type": "HasSubtype",
+                                      "value": "Lizard"
+                                    },
+                                    {
+                                      "type": "HeldBy",
+                                      "value": {
+                                        "holder": "Controller",
+                                        "relation": "You"
+                                      }
+                                    },
+                                    {
+                                      "type": "Not",
+                                      "value": {
+                                        "type": "IsSource"
+                                      }
+                                    }
+                                  ]
+                                },
+                                "scope": {
+                                  "type": "InZone",
+                                  "value": {
+                                    "player": {
+                                      "type": "Relative",
+                                      "value": "AnyPlayer"
+                                    },
+                                    "zone": "Battlefield"
+                                  }
+                                }
+                              }
+                            },
+                            "threshold": {
+                              "type": "Literal",
+                              "value": 1
+                            }
+                          }
+                        }
+                      ]
+                    },
+                    "effects": [
+                      {
+                        "type": "GainControl",
+                        "value": {
+                          "duration": {
+                            "type": "UntilEndOfTurn"
+                          },
+                          "ref": {
+                            "type": "InSlot",
+                            "value": "target"
+                          }
+                        }
+                      },
+                      {
+                        "type": "Untap",
+                        "value": {
+                          "type": "InSlot",
+                          "value": "target"
+                        }
+                      },
+                      {
+                        "type": "ModifyTarget",
+                        "value": {
+                          "duration": {
+                            "type": "UntilEndOfTurn"
+                          },
+                          "modification": {
+                            "type": "GainKeyword",
+                            "value": {
+                              "type": "Haste"
+                            }
+                          },
+                          "ref": {
+                            "type": "InSlot",
+                            "value": "target"
+                          }
+                        }
+                      }
+                    ]
+                  }
+                ],
+                "targetSlots": {
+                  "target": {
+                    "pool": {
+                      "type": "Creatures"
+                    }
+                  }
+                }
+              }
+            ]
+          }
+        }
+      ],
+      "typeLine": {
+        "subtypes": [
+          "Lizard",
+          "Warrior"
+        ],
+        "types": [
+          "Creature"
+        ]
+      }
+    }
+  ]
+}

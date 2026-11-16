@@ -1,0 +1,82 @@
+{
+  "faces": [
+    {
+      "manaCost": [
+        {
+          "type": "Generic",
+          "value": 1
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "White"
+          }
+        }
+      ],
+      "name": "Repel Calamity",
+      "oracleText": "Destroy target creature with power or toughness 4 or greater.",
+      "spell": {
+        "modes": [
+          {
+            "clauses": [
+              {
+                "effects": [
+                  {
+                    "type": "Destroy",
+                    "value": {
+                      "ref": {
+                        "type": "InSlot",
+                        "value": "target"
+                      },
+                      "regenerability": "Regenerable"
+                    }
+                  }
+                ]
+              }
+            ],
+            "targetSlots": {
+              "target": {
+                "filter": {
+                  "type": "Or",
+                  "value": [
+                    {
+                      "type": "Measures",
+                      "value": {
+                        "comparison": "AtLeast",
+                        "measure": "Power",
+                        "operand": {
+                          "type": "Literal",
+                          "value": 4
+                        }
+                      }
+                    },
+                    {
+                      "type": "Measures",
+                      "value": {
+                        "comparison": "AtLeast",
+                        "measure": "Toughness",
+                        "operand": {
+                          "type": "Literal",
+                          "value": 4
+                        }
+                      }
+                    }
+                  ]
+                },
+                "pool": {
+                  "type": "Creatures"
+                }
+              }
+            }
+          }
+        ]
+      },
+      "typeLine": {
+        "types": [
+          "Instant"
+        ]
+      }
+    }
+  ]
+}
