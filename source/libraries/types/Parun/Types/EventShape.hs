@@ -27,7 +27,7 @@ import qualified Parun.Types.Zone as Zone
 -- PlayersDealtDamage, EnteredThisTurn, EnteredFrom and WasCastFrom among
 -- them -- each of which reads TurnRegisters.events directly through a
 -- Parun.Engine.Game accessor.
-data EventShape
+data EventShape keyword
   = -- | CR 700.4: "dies" is MovedBetween Battlefield Graveyard.
     MovedBetween MovedBetween.MovedBetween
   | -- | CR 603.6c: an object left this zone, for anywhere -- "left the
@@ -90,11 +90,11 @@ data EventShape
     -- the permanent as it is or last was, its controller the player who turned
     -- it (Oblivious Bookworm's "you turned a permanent face up this turn").
     TurnedFaceUp
-  | -- | CR 120.1 / 608.2i: a source dealt damage of this kind to this kind of
-    -- recipient, each member the source as it dealt it
+  | -- | CR 120.1 / 608.2i: a source dealt damage of this kind to a recipient it
+    -- admits, each member the source as it dealt it
     -- (Parun.Engine.Filter.dealtByView), and each source a member once however
     -- often it dealt damage (Indulge // Excess, Case of the Burning Masks).
-    SourceDealtDamage SourceDealtDamage.SourceDealtDamage
+    SourceDealtDamage (SourceDealtDamage.SourceDealtDamage keyword)
   | -- | CR 120.3 / 608.2i: a source dealt damage to a permanent, each member the
     -- permanent as it was dealt it (Parun.Engine.Count.dealtToView), and each
     -- permanent a member once (Rith, Liberated Primeval's "a creature or

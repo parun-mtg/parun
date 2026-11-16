@@ -2,15 +2,18 @@ module Parun.Codec.EventShapeSpec where
 
 import qualified Data.Set as Set
 import qualified Parun.Codec.EventShape as EventShape
+import qualified Parun.Codec.Keyword as Keyword
 import qualified Parun.JsonCodec.Common as Common
 import qualified Parun.Spec as Spec
 import qualified Parun.Types.AttackWindow as AttackWindow
 import qualified Parun.Types.CardArrivedIn as CardArrivedIn
 import qualified Parun.Types.CastWindow as CastWindow
 import qualified Parun.Types.DamageKind as DamageKind
+import qualified Parun.Types.DamageRecipient as DamageRecipient
 import qualified Parun.Types.EventShape as EventShape
 import qualified Parun.Types.MovedBetween as MovedBetween
-import qualified Parun.Types.RecipientKind as RecipientKind
+import qualified Parun.Types.PlayerRef as PlayerRef
+import qualified Parun.Types.PlayerRelation as PlayerRelation
 import qualified Parun.Types.SourceDealtDamage as SourceDealtDamage
 import qualified Parun.Types.Zone as Zone
 
@@ -20,14 +23,14 @@ spec s = Spec.describe s "Parun.Codec.EventShape" $ do
     -- CR 700.4's "dies": moved from the battlefield to a graveyard.
     Common.assertCodec
       s
-      EventShape.codec
+      (EventShape.codec Keyword.codec)
       (EventShape.MovedBetween (MovedBetween.MkMovedBetween Zone.Battlefield Zone.Graveyard))
       " {\"type\":\"MovedBetween\",\"value\":{\"from\":\"Battlefield\",\"to\":\"Graveyard\"}} "
   -- CR 603.6c's origin with no destination: a bare Zone.
   Spec.it s "MovedFrom" $
     Common.assertCodec
       s
-      EventShape.codec
+      (EventShape.codec Keyword.codec)
       (EventShape.MovedFrom Zone.Battlefield)
       " {\"type\":\"MovedFrom\",\"value\":\"Battlefield\"} "
   -- CR 713.8e's second half: the destination, and the origins that do not
@@ -36,7 +39,7 @@ spec s = Spec.describe s "Parun.Codec.EventShape" $ do
   Spec.it s "CardArrivedIn" $
     Common.assertCodec
       s
-      EventShape.codec
+      (EventShape.codec Keyword.codec)
       (EventShape.CardArrivedIn (CardArrivedIn.MkCardArrivedIn {CardArrivedIn.to = Zone.Graveyard, CardArrivedIn.excluding = Set.singleton Zone.Battlefield}))
       " {\"type\":\"CardArrivedIn\",\"value\":{\"excluding\":[\"Battlefield\"],\"to\":\"Graveyard\"}} "
   -- CR 601.2i's cast: PAYLOADLESS, so the encoded form is the bare tag and a
@@ -44,48 +47,48 @@ spec s = Spec.describe s "Parun.Codec.EventShape" $ do
   Spec.it s "SpellCast names its window" $
     Common.assertCodec
       s
-      EventShape.codec
+      (EventShape.codec Keyword.codec)
       (EventShape.SpellCast CastWindow.BeforeEvaluated)
       " {\"type\":\"SpellCast\",\"value\":\"BeforeEvaluated\"} "
   Spec.it s "AttackerDeclared names its window" $
     Common.assertCodec
       s
-      EventShape.codec
+      (EventShape.codec Keyword.codec)
       (EventShape.AttackerDeclared AttackWindow.ThisCombat)
       " {\"type\":\"AttackerDeclared\",\"value\":\"ThisCombat\"} "
   -- CR 122.6: payloadless.
   Spec.it s "CountersPut" $
     Common.assertCodec
       s
-      EventShape.codec
+      (EventShape.codec Keyword.codec)
       EventShape.CountersPut
       " {\"type\":\"CountersPut\"} "
   -- CR 701.21a: payloadless too.
   Spec.it s "Sacrificed" $
     Common.assertCodec
       s
-      EventShape.codec
+      (EventShape.codec Keyword.codec)
       EventShape.Sacrificed
       " {\"type\":\"Sacrificed\"} "
   -- CR 708.7: payloadless too.
   Spec.it s "TurnedFaceUp" $
     Common.assertCodec
       s
-      EventShape.codec
+      (EventShape.codec Keyword.codec)
       EventShape.TurnedFaceUp
       " {\"type\":\"TurnedFaceUp\"} "
   -- CR 510.2: Indulge // Excess's combat damage to a player.
   Spec.it s "SourceDealtDamage" $
     Common.assertCodec
       s
-      EventShape.codec
-      (EventShape.SourceDealtDamage SourceDealtDamage.MkSourceDealtDamage {SourceDealtDamage.kind = Just DamageKind.Combat, SourceDealtDamage.recipient = RecipientKind.PlayerRecipient})
-      " {\"type\":\"SourceDealtDamage\",\"value\":{\"kind\":\"Combat\",\"recipient\":\"PlayerRecipient\"}} "
+      (EventShape.codec Keyword.codec)
+      (EventShape.SourceDealtDamage SourceDealtDamage.MkSourceDealtDamage {SourceDealtDamage.kind = Just DamageKind.Combat, SourceDealtDamage.recipients = Set.singleton (DamageRecipient.Player (PlayerRef.Relative PlayerRelation.AnyPlayer))})
+      " {\"type\":\"SourceDealtDamage\",\"value\":{\"kind\":\"Combat\",\"recipients\":[{\"type\":\"Player\",\"value\":{\"type\":\"Relative\",\"value\":\"AnyPlayer\"}}]}} "
   -- CR 120.3: payloadless.
   Spec.it s "PermanentDealtDamage" $
     Common.assertCodec
       s
-      EventShape.codec
+      (EventShape.codec Keyword.codec)
       EventShape.PermanentDealtDamage
       " {\"type\":\"PermanentDealtDamage\"} "
-  Spec.it s "has a schema" $ Common.assertHasSchema s EventShape.codec
+  Spec.it s "has a schema" $ Common.assertHasSchema s (EventShape.codec Keyword.codec)

@@ -24,7 +24,7 @@ import qualified Parun.Types.Scope as Scope
 -- `filter` shadows the Prelude's, keeping the three fields named after their
 -- types.
 data Count quantity = MkCount
-  { scope :: Scope.Scope,
+  { scope :: Scope.Scope Keyword.Keyword,
     filter :: Filter.Filter Keyword.Keyword,
     aggregation :: Aggregation.Aggregation quantity
   }

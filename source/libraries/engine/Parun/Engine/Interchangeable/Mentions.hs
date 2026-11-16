@@ -730,7 +730,7 @@ storedVisitors asking =
       Children.storedObject = \oid -> Const.Const (names asking (== oid))
     }
 
-eventShapeNames :: Asking r -> EventShape.EventShape -> r
+eventShapeNames :: Asking r -> EventShape.EventShape keyword -> r
 eventShapeNames asking x = case x of
   EventShape.MovedBetween _movedBetween -> history asking HistoryRead.Moves
   EventShape.MovedFrom _zone -> history asking HistoryRead.Moves
@@ -1165,7 +1165,7 @@ ruleAbilitiesNames asking = Const.getConst . Children.ruleAbilitiesChildren (rul
 objectRestrictionNames :: (Monoid r) => Asking r -> ObjectRestriction.ObjectRestriction -> r
 objectRestrictionNames asking = Const.getConst . Children.objectRestrictionChildren (ruleVisitors asking)
 
-scopeNames :: (Monoid r) => Asking r -> Scope.Scope -> r
+scopeNames :: (Monoid r) => Asking r -> Scope.Scope keyword -> r
 scopeNames asking x = case x of
   Scope.InZone inZone -> inZoneNames asking inZone
   Scope.InHistory eventShape -> eventShapeNames asking eventShape

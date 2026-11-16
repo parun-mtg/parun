@@ -1534,8 +1534,6 @@ library codec
     Parun.Codec.Readiness
     Parun.Codec.ReadinessSpec
     Parun.Codec.Recipient
-    Parun.Codec.RecipientKind
-    Parun.Codec.RecipientKindSpec
     Parun.Codec.RecipientSpec
     Parun.Codec.RedirectDamage
     Parun.Codec.RedirectDamageSpec
@@ -3605,7 +3603,6 @@ library types
     Parun.Types.Reach
     Parun.Types.Readiness
     Parun.Types.Recipient
-    Parun.Types.RecipientKind
     Parun.Types.RedirectDamage
     Parun.Types.Reference
     Parun.Types.Regenerability

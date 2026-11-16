@@ -5915,7 +5915,7 @@ soulbondSelfEligible =
 
 -- "At least one candidate", as CR 603.4 wants it: a Count of the scope's members
 -- the Filter keeps, against 1.
-atLeastOneMatching :: Scope.Scope -> Filter Keyword -> Condition.Condition
+atLeastOneMatching :: Scope.Scope Keyword -> Filter Keyword -> Condition.Condition
 atLeastOneMatching scope quality =
   Condition.Compares
     ( Compares.MkCompares

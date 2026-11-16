@@ -717,7 +717,6 @@ import qualified Parun.Codec.QuotientSpec
 import qualified Parun.Codec.RangeOfInfluenceSpec
 import qualified Parun.Codec.ReachSpec
 import qualified Parun.Codec.ReadinessSpec
-import qualified Parun.Codec.RecipientKindSpec
 import qualified Parun.Codec.RecipientSpec
 import qualified Parun.Codec.RedirectDamageSpec
 import qualified Parun.Codec.ReferenceSpec
@@ -1828,7 +1827,6 @@ spec s reference corpus = do
   Parun.Codec.ReachSpec.spec s
   Parun.Codec.ReadinessSpec.spec s
   Parun.Codec.RecipientSpec.spec s
-  Parun.Codec.RecipientKindSpec.spec s
   Parun.Codec.RedirectDamageSpec.spec s
   Parun.Codec.ReferenceSpec.spec s
   Parun.Codec.RegenerabilitySpec.spec s

@@ -233,6 +233,7 @@ import qualified Parun.Types.EntryRewrite as EntryRewrite
 import qualified Parun.Types.EntryRiders as EntryRiders
 import qualified Parun.Types.Equip as Equip
 import qualified Parun.Types.EventExpiry as EventExpiry
+import qualified Parun.Types.EventShape as EventShape
 import qualified Parun.Types.ExchangeBlocks as ExchangeBlocks
 import qualified Parun.Types.ExchangeCardZones as ExchangeCardZones
 import qualified Parun.Types.ExchangeOwnership as ExchangeOwnership
@@ -447,6 +448,7 @@ import qualified Parun.Types.SkipPhase as SkipPhase
 import qualified Parun.Types.SlotArity as SlotArity
 import qualified Parun.Types.SlotCount as SlotCount
 import qualified Parun.Types.SlotName as SlotName
+import qualified Parun.Types.SourceDealtDamage as SourceDealtDamage
 import qualified Parun.Types.SpecialAction as SpecialAction
 import qualified Parun.Types.SpeedDecrease as SpeedDecrease
 import qualified Parun.Types.SpellCast as SpellCast
@@ -536,8 +538,9 @@ data Children keyword f = MkChildren
     member :: Quantity.Quantity -> f Quantity.Quantity,
     -- | A quantity read against some other object: a slot's, a linked card's.
     redirected :: Quantity.Quantity -> f Quantity.Quantity,
-    -- | A count's scope, whole.
-    scope :: Scope.Scope -> f Scope.Scope,
+    -- | A count's scope, whole; scopeChildren visits a damage look-back's
+    -- recipients through player and nest.
+    scope :: Scope.Scope keyword -> f (Scope.Scope keyword),
     -- | A player reference, whole.
     player :: PlayerRef.PlayerRef -> f PlayerRef.PlayerRef
   }
@@ -882,7 +885,19 @@ quantityChildren children quantity = case quantity of
 -- the per-member quantity a Greatest or a Total folds.
 countChildren :: (Applicative f) => Children Keyword.Keyword f -> Count.Count Quantity.Quantity -> f (Count.Count Quantity.Quantity)
 countChildren children c = case c of
-  Count.MkCount over criterion aggregation -> Count.MkCount <$> scope children over <*> nest children criterion <*> aggregationChildren children aggregation
+  Count.MkCount over criterion aggregation -> Count.MkCount <$> scopeChildren (scope children) (player children) (nest children) over <*> nest children criterion <*> aggregationChildren children aggregation
+
+-- | A scope, whole through visitScope, and a damage look-back's recipients
+-- through visitPlayer and visitFilter, as a damage trigger's are;
+-- visitScope's result keeps the recipients' visited values.
+scopeChildren :: (Applicative f, Ord keyword) => (Scope.Scope keyword -> f (Scope.Scope keyword)) -> (PlayerRef.PlayerRef -> f PlayerRef.PlayerRef) -> (Filter.Filter keyword -> f (Filter.Filter keyword)) -> Scope.Scope keyword -> f (Scope.Scope keyword)
+scopeChildren visitScope visitPlayer visitFilter over = case over of
+  Scope.InHistory (EventShape.SourceDealtDamage dealt) ->
+    let keep whole visited = case whole of
+          Scope.InHistory (EventShape.SourceDealtDamage d) -> Scope.InHistory (EventShape.SourceDealtDamage d {SourceDealtDamage.recipients = visited})
+          _ -> whole
+     in keep <$> visitScope over <*> traverseSet (damageRecipientChildren visitPlayer visitFilter) (SourceDealtDamage.recipients dealt)
+  _ -> visitScope over
 
 -- | An aggregation's children: the per-member quantity, where it has one.
 aggregationChildren :: (Applicative f) => Children keyword f -> Aggregation.Aggregation Quantity.Quantity -> f (Aggregation.Aggregation Quantity.Quantity)
@@ -1566,7 +1581,7 @@ triggerConditionChildren c condition = case condition of
   TriggerCondition.Enters (EntersTrigger.MkEntersTrigger permanent batching) -> fmap TriggerCondition.Enters (EntersTrigger.MkEntersTrigger <$> actingChildren c permanent <*> pure batching)
   TriggerCondition.StepBegins (StepBegins.MkStepBegins phase ordinal turn) -> fmap TriggerCondition.StepBegins (StepBegins.MkStepBegins phase <$> traverse (triggerOrdinal c HistoryRead.StepBegins) ordinal <*> triggerTurn c turn)
   TriggerCondition.StateIs state -> fmap TriggerCondition.StateIs (triggerState c state)
-  TriggerCondition.DealsDamage (DamageTrigger.MkDamageTrigger actor kind recipients atLeast) -> (\renamed qualified -> TriggerCondition.DealsDamage (DamageTrigger.MkDamageTrigger renamed kind qualified atLeast)) <$> actingChildren c actor <*> traverseSet (damageRecipientChildren c) recipients
+  TriggerCondition.DealsDamage (DamageTrigger.MkDamageTrigger actor kind recipients atLeast) -> (\renamed qualified -> TriggerCondition.DealsDamage (DamageTrigger.MkDamageTrigger renamed kind qualified atLeast)) <$> actingChildren c actor <*> traverseSet (damageRecipientChildren (triggerPlayer c) (triggerFilter c)) recipients
   TriggerCondition.IsDealtDamage (PermanentIsDealtDamage.MkPermanentIsDealtDamage (DealtDamage.MkDealtDamage recipient kind by) batching excess atLeast) ->
     fmap (\renamed -> TriggerCondition.IsDealtDamage (PermanentIsDealtDamage.MkPermanentIsDealtDamage (DealtDamage.MkDealtDamage renamed kind by) batching excess atLeast)) (actingChildren c recipient)
   TriggerCondition.PlayerIsDealtDamage (PlayerIsDealtDamage.MkPlayerIsDealtDamage dealt orTheirPlaneswalkers batching turn) -> fmap (TriggerCondition.PlayerIsDealtDamage . PlayerIsDealtDamage.MkPlayerIsDealtDamage dealt orTheirPlaneswalkers batching) (triggerTurn c turn)
@@ -1755,11 +1770,11 @@ attackCountChildren :: (Applicative f) => TriggerChildren f -> AttackCount.Attac
 attackCountChildren c (AttackCount.MkAttackCount measure floor_ filter_) = AttackCount.MkAttackCount measure floor_ <$> triggerFilter c filter_
 
 -- CR 120.1: a player recipient's reference, and a permanent recipient's
--- qualifier, read as actingChildren reads an actor's.
-damageRecipientChildren :: (Applicative f) => TriggerChildren f -> DamageRecipient.DamageRecipient -> f DamageRecipient.DamageRecipient
-damageRecipientChildren c recipient = case recipient of
-  DamageRecipient.Player ref -> DamageRecipient.Player <$> triggerPlayer c ref
-  DamageRecipient.Permanent cardType qualifier -> DamageRecipient.Permanent cardType <$> triggerFilter c qualifier
+-- qualifier, each through its visitor.
+damageRecipientChildren :: (Applicative f) => (PlayerRef.PlayerRef -> f PlayerRef.PlayerRef) -> (Filter.Filter keyword -> f (Filter.Filter keyword)) -> DamageRecipient.DamageRecipient keyword -> f (DamageRecipient.DamageRecipient keyword)
+damageRecipientChildren visitPlayer visitFilter recipient = case recipient of
+  DamageRecipient.Player ref -> DamageRecipient.Player <$> visitPlayer ref
+  DamageRecipient.Permanent cardType qualifier -> DamageRecipient.Permanent cardType <$> visitFilter qualifier
 
 actingChildren :: (Applicative f) => TriggerChildren f -> ActingPermanent.ActingPermanent -> f ActingPermanent.ActingPermanent
 actingChildren c permanent = case permanent of
@@ -1787,8 +1802,9 @@ data KeywordChildren f = MkKeywordChildren
     keywordNested :: Keyword.Keyword -> f Keyword.Keyword,
     -- | The creature type a gift's token prints (CR 702.174f, 702.174i).
     keywordSubtype :: Subtype.Subtype -> f Subtype.Subtype,
-    -- | Where a count's tally looks, whole.
-    keywordScope :: Scope.Scope -> f Scope.Scope,
+    -- | Where a count's tally looks, whole; scopeChildren visits a damage
+    -- look-back's recipients through keywordPlayer and keywordFilter.
+    keywordScope :: Scope.Scope Keyword.Keyword -> f (Scope.Scope Keyword.Keyword),
     -- | The player whose counters a count reads (CR 122.1).
     keywordPlayer :: PlayerRef.PlayerRef -> f PlayerRef.PlayerRef,
     -- | The events the engine looks back over to expand or pay the keyword.
@@ -2031,7 +2047,7 @@ keywordCountChildren :: (Applicative f) => KeywordChildren f -> KeywordCount.Key
 keywordCountChildren c n = case n of
   KeywordCount.Fixed _ -> pure n
   KeywordCount.Power -> pure n
-  KeywordCount.Tally (KeywordTally.MkKeywordTally within filter_) -> fmap KeywordCount.Tally (KeywordTally.MkKeywordTally <$> keywordScope c within <*> keywordFilter c filter_)
+  KeywordCount.Tally (KeywordTally.MkKeywordTally within filter_) -> fmap KeywordCount.Tally (KeywordTally.MkKeywordTally <$> scopeChildren (keywordScope c) (keywordPlayer c) (keywordFilter c) within <*> keywordFilter c filter_)
   KeywordCount.PlayerCounters (PlayerCounterTally.MkPlayerCounterTally whose kind) -> fmap (\counted -> KeywordCount.PlayerCounters (PlayerCounterTally.MkPlayerCounterTally counted kind)) (keywordPlayer c whose)
 
 -- | One visitor per kind of child a Cost holds (CR 118.1). Its own record:

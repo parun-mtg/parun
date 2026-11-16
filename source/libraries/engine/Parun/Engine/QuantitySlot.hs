@@ -112,13 +112,15 @@ nestedCounts quantity =
    in own <> Const.getConst (Children.quantityChildren (Children.descendingQuantities (Const.Const . nestedCounts)) quantity)
 
 -- A scope's own read. Every scope that names players takes a PlayerRef and CR
--- 608.2i's look-back names nothing, so the same question as the arms above --
--- except CR 400.7j's fold, which names a slot rather than a reference.
+-- 608.2i's look-back names none of its own (a damage look-back's recipients
+-- reach the player visitor through Children.scopeChildren), so the same
+-- question as the arms above -- except CR 400.7j's fold, which names a slot
+-- rather than a reference.
 --
 -- The OverBound arm's read is PROVEN rather than fenced: Parun.CardSpec's "the
 -- lint itself catches a computed bound naming a slot through a player" plants a
 -- bound scoped this way and asserts the slot is reported.
-scopeRefs :: Scope.Scope -> Set (Either PlayerRef.PlayerRef SlotName)
+scopeRefs :: Scope.Scope keyword -> Set (Either PlayerRef.PlayerRef SlotName)
 scopeRefs scope = case scope of
   Scope.InZone (InZone.MkInZone _ ref) -> Set.singleton (Left ref)
   Scope.InHistory _ -> Set.empty
@@ -191,7 +193,7 @@ overPlayerRefSlots f ref = case ref of
 -- with it arm for arm. Only CR 400.7j's fold names a slot outright; the players
 -- the other arms name are PlayerRefs, which renameSlots rewrites through
 -- mapScope instead.
-renameScope :: (SlotName -> SlotName) -> Scope.Scope -> Scope.Scope
+renameScope :: (SlotName -> SlotName) -> Scope.Scope keyword -> Scope.Scope keyword
 renameScope rename scope = case scope of
   Scope.OverBound reading slot -> Scope.OverBound reading (rename slot)
   Scope.InZone _ -> scope
@@ -201,10 +203,10 @@ renameScope rename scope = case scope of
   Scope.AsTurnBegan -> scope
 
 -- A scope's reference, rewritten. Every scope that names players takes one; CR
--- 608.2i's look-back names none. Shared by bakeBound, forCandidate and
+-- 608.2i's look-back names none of its own, scopeRefs' reason. Shared by bakeBound, forCandidate and
 -- renameSlots, so a new scope carrying a reference fails to compile here rather
 -- than keep an old one in any of them.
-mapScope :: (PlayerRef.PlayerRef -> PlayerRef.PlayerRef) -> Scope.Scope -> Scope.Scope
+mapScope :: (PlayerRef.PlayerRef -> PlayerRef.PlayerRef) -> Scope.Scope keyword -> Scope.Scope keyword
 mapScope f scope = case scope of
   Scope.InZone (InZone.MkInZone zone ref) -> Scope.InZone (InZone.MkInZone zone (f ref))
   Scope.OverPlayers ref -> Scope.OverPlayers (f ref)

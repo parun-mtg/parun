@@ -19,7 +19,7 @@ import qualified Parun.Types.Count as Count
 -- Parametric for 'Parun.Codec.Aggregation''s reason, and converts with it.
 codec :: (Typeable.Typeable q, Eq q) => Codec.Codec q -> Codec.Codec (Count.Count q)
 codec quantityCodec = Fields.object $ do
-  scope <- Fields.required "scope" Scope.codec Count.scope
+  scope <- Fields.required "scope" (Scope.codec Keyword.codec) Count.scope
   filter_ <- Fields.required "filter" (Filter.codec Keyword.codec) Count.filter
   aggregation <- Fields.required "aggregation" (Aggregation.codec quantityCodec) Count.aggregation
   pure

@@ -1,5 +1,6 @@
 module Parun.Codec.Scope where
 
+import qualified Data.Typeable as Typeable
 import qualified Parun.Codec.EventShape as EventShape
 import qualified Parun.Codec.InZone as InZone
 import qualified Parun.Codec.PlayerRef as PlayerRef
@@ -12,12 +13,12 @@ import qualified Parun.Types.ZonePosition as ZonePosition
 
 -- | The wire format is unchanged by the conversion to a bundle; what it adds is
 -- the schema. OverBound's reading is its tag, so a slot stays a bare string.
-codec :: Codec.Codec Scope.Scope
-codec =
+codec :: (Typeable.Typeable keyword, Ord keyword) => Codec.Codec keyword -> Codec.Codec (Scope.Scope keyword)
+codec keywordCodec =
   Arm.tagged
     tagOf
     [ Arm.payload "InZone" InZone.codec Scope.InZone (\x -> case x of Scope.InZone y -> Just y; _ -> Nothing),
-      Arm.payload "InHistory" EventShape.codec Scope.InHistory (\x -> case x of Scope.InHistory y -> Just y; _ -> Nothing),
+      Arm.payload "InHistory" (EventShape.codec keywordCodec) Scope.InHistory (\x -> case x of Scope.InHistory y -> Just y; _ -> Nothing),
       Arm.payload "OverPlayers" PlayerRef.codec Scope.OverPlayers (\x -> case x of Scope.OverPlayers y -> Just y; _ -> Nothing),
       Arm.payload "OverBound" SlotName.codec (Scope.OverBound BoundReading.AsBound) (\x -> case x of Scope.OverBound BoundReading.AsBound y -> Just y; _ -> Nothing),
       Arm.payload "OverBoundBeforeMove" SlotName.codec (Scope.OverBound BoundReading.BeforeMove) (\x -> case x of Scope.OverBound BoundReading.BeforeMove y -> Just y; _ -> Nothing),
@@ -26,7 +27,7 @@ codec =
       Arm.nullary "AsTurnBegan" Scope.AsTurnBegan
     ]
 
-tagOf :: Scope.Scope -> String
+tagOf :: Scope.Scope keyword -> String
 tagOf x = case x of
   Scope.InZone {} -> "InZone"
   Scope.InHistory {} -> "InHistory"

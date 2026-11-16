@@ -1,6 +1,7 @@
 module Parun.Codec.ScopeSpec where
 
 import qualified Data.Text as Text
+import qualified Parun.Codec.Keyword as Keyword
 import qualified Parun.Codec.Scope as Scope
 import qualified Parun.JsonCodec.Common as Common
 import qualified Parun.Spec as Spec
@@ -20,21 +21,21 @@ spec s = Spec.describe s "Parun.Codec.Scope" $ do
   Spec.it s "InZone" $
     Common.assertCodec
       s
-      Scope.codec
+      (Scope.codec Keyword.codec)
       (Scope.InZone (InZone.MkInZone Zone.Battlefield (PlayerRef.Relative PlayerRelation.AnyPlayer)))
       " {\"type\":\"InZone\",\"value\":{\"zone\":\"Battlefield\",\"player\":{\"type\":\"Relative\",\"value\":\"AnyPlayer\"}}} "
   -- CR 608.2i's look-back-in-time domain.
   Spec.it s "InHistory" $
     Common.assertCodec
       s
-      Scope.codec
+      (Scope.codec Keyword.codec)
       (Scope.InHistory (EventShape.MovedBetween (MovedBetween.MkMovedBetween Zone.Battlefield Zone.Graveyard)))
       " {\"type\":\"InHistory\",\"value\":{\"type\":\"MovedBetween\",\"value\":{\"from\":\"Battlefield\",\"to\":\"Graveyard\"}}} "
   -- CR 102.1's domain: the players a reference names, rather than their zones.
   Spec.it s "OverPlayers" $
     Common.assertCodec
       s
-      Scope.codec
+      (Scope.codec Keyword.codec)
       (Scope.OverPlayers (PlayerRef.Relative PlayerRelation.Opponent))
       " {\"type\":\"OverPlayers\",\"value\":{\"type\":\"Relative\",\"value\":\"Opponent\"}} "
   -- CR 400.7j's domain: the objects a slot of the surrounding announcement
@@ -42,14 +43,14 @@ spec s = Spec.describe s "Parun.Codec.Scope" $ do
   Spec.it s "OverBound" $
     Common.assertCodec
       s
-      Scope.codec
+      (Scope.codec Keyword.codec)
       (Scope.OverBound BoundReading.AsBound (SlotName.MkSlotName (Text.pack "discarded")))
       " {\"type\":\"OverBound\",\"value\":\"discarded\"} "
   -- CR 608.2h: the same slot, read as what its arrivals were before the move.
   Spec.it s "OverBoundBeforeMove" $
     Common.assertCodec
       s
-      Scope.codec
+      (Scope.codec Keyword.codec)
       (Scope.OverBound BoundReading.BeforeMove (SlotName.MkSlotName (Text.pack "returned")))
       " {\"type\":\"OverBoundBeforeMove\",\"value\":\"returned\"} "
   -- CR 401.2 / 404.1's domain: one POSITION in each named library or
@@ -57,21 +58,21 @@ spec s = Spec.describe s "Parun.Codec.Scope" $ do
   Spec.it s "TopOf" $
     Common.assertCodec
       s
-      Scope.codec
+      (Scope.codec Keyword.codec)
       (Scope.InPosition ZonePosition.Top (InZone.MkInZone Zone.Library (PlayerRef.InSlot (SlotName.MkSlotName (Text.pack "player")))))
       " {\"type\":\"TopOf\",\"value\":{\"zone\":\"Library\",\"player\":{\"type\":\"InSlot\",\"value\":\"player\"}}} "
   -- CR 404.1: the same pile, read from the source up.
   Spec.it s "AboveSource" $
     Common.assertCodec
       s
-      Scope.codec
+      (Scope.codec Keyword.codec)
       (Scope.InPosition ZonePosition.AboveSource (InZone.MkInZone Zone.Graveyard (PlayerRef.Relative PlayerRelation.You)))
       " {\"type\":\"AboveSource\",\"value\":{\"zone\":\"Graveyard\",\"player\":{\"type\":\"Relative\",\"value\":\"You\"}}} "
   -- CR 500.12: the permanents as the turn began.
   Spec.it s "AsTurnBegan" $
     Common.assertCodec
       s
-      Scope.codec
+      (Scope.codec Keyword.codec)
       Scope.AsTurnBegan
       " {\"type\":\"AsTurnBegan\"} "
-  Spec.it s "has a schema" $ Common.assertHasSchema s Scope.codec
+  Spec.it s "has a schema" $ Common.assertHasSchema s (Scope.codec Keyword.codec)

@@ -1,5 +1,6 @@
 module Parun.Codec.EventShape where
 
+import qualified Data.Typeable as Typeable
 import qualified Parun.Codec.AttackWindow as AttackWindow
 import qualified Parun.Codec.CardArrivedIn as CardArrivedIn
 import qualified Parun.Codec.CastWindow as CastWindow
@@ -13,8 +14,8 @@ import qualified Parun.Types.EventShape as EventShape
 -- | Every arm is tagged, and each payload's own codec says what its value looks
 -- like: CardArrivedIn's is an object rather than the bare Zone it once was,
 -- since the shape now carries an origin exclusion beside the destination.
-codec :: Codec.Codec EventShape.EventShape
-codec =
+codec :: (Typeable.Typeable keyword, Ord keyword) => Codec.Codec keyword -> Codec.Codec (EventShape.EventShape keyword)
+codec keywordCodec =
   Arm.tagged
     tagOf
     [ Arm.payload "MovedBetween" MovedBetween.codec EventShape.MovedBetween (\x -> case x of EventShape.MovedBetween y -> Just y; _ -> Nothing),
@@ -25,11 +26,11 @@ codec =
       Arm.nullary "CountersPut" EventShape.CountersPut,
       Arm.nullary "Sacrificed" EventShape.Sacrificed,
       Arm.nullary "TurnedFaceUp" EventShape.TurnedFaceUp,
-      Arm.payload "SourceDealtDamage" SourceDealtDamage.codec EventShape.SourceDealtDamage (\x -> case x of EventShape.SourceDealtDamage y -> Just y; _ -> Nothing),
+      Arm.payload "SourceDealtDamage" (SourceDealtDamage.codec keywordCodec) EventShape.SourceDealtDamage (\x -> case x of EventShape.SourceDealtDamage y -> Just y; _ -> Nothing),
       Arm.nullary "PermanentDealtDamage" EventShape.PermanentDealtDamage
     ]
 
-tagOf :: EventShape.EventShape -> String
+tagOf :: EventShape.EventShape keyword -> String
 tagOf x = case x of
   EventShape.MovedBetween {} -> "MovedBetween"
   EventShape.MovedFrom {} -> "MovedFrom"
