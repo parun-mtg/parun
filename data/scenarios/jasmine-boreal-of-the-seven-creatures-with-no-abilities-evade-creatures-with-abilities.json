@@ -1,0 +1,33 @@
+{
+  "description": "CR 509.1b / 113.1a: under Jasmine Boreal of the Seven, alice's Grizzly Bears can't be blocked by bob's Giant Spider or Llanowar Elves, which have abilities, but can be by his vanilla Barbarian Horde; her Desert Cerodon, which has cycling, can be blocked by the Spider",
+  "board": {
+    "active": "alice",
+    "step": "BeginningOfCombat",
+    "seats": [
+      {
+        "name": "alice",
+        "battlefield": [
+          { "card": "Jasmine Boreal of the Seven", "label": "jasmine", "ready": true },
+          { "card": "Grizzly Bears", "label": "bears", "ready": true },
+          { "card": "Desert Cerodon", "label": "cerodon", "ready": true }
+        ]
+      },
+      {
+        "name": "bob",
+        "battlefield": [
+          { "card": "Barbarian Horde", "label": "horde", "ready": true },
+          { "card": "Giant Spider", "label": "spider", "ready": true },
+          { "card": "Llanowar Elves", "label": "elves", "ready": true }
+        ]
+      }
+    ]
+  },
+  "timeline": [
+    { "turn": 1, "step": "DeclareAttackers", "player": "alice", "do": { "Attack": ["$bears", "$cerodon"] } },
+    { "turn": 1, "step": "DeclareBlockers", "player": "bob", "refuse": { "Block": { "$spider": ["$bears"] } } },
+    { "turn": 1, "step": "DeclareBlockers", "player": "bob", "refuse": { "Block": { "$elves": ["$bears"] } } },
+    { "turn": 1, "step": "DeclareBlockers", "player": "bob", "do": { "Block": { "$horde": ["$bears"], "$spider": ["$cerodon"] } } },
+    { "turn": 1, "step": "DeclareBlockers", "player": "alice", "check": { "Blockers": { "attacker": "$bears", "blockers": ["$horde"] } } },
+    { "turn": 1, "step": "DeclareBlockers", "player": "alice", "check": { "Blockers": { "attacker": "$cerodon", "blockers": ["$spider"] } } }
+  ]
+}
