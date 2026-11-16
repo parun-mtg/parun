@@ -62,6 +62,7 @@ import qualified Parun.Types.BecameTarget as BecameTarget
 import qualified Parun.Types.BecameUnattached as BecameUnattached
 import qualified Parun.Types.BecomesTapState as BecomesTapState
 import qualified Parun.Types.BecomesTargetedTrigger as BecomesTargetedTrigger
+import qualified Parun.Types.BlockTrigger as BlockTrigger
 import qualified Parun.Types.BlocksDeclared as BlocksDeclared
 import qualified Parun.Types.Bookkeeping as Bookkeeping
 import Parun.Types.Card (Card)
@@ -1274,16 +1275,15 @@ batchScoped condition = case condition of
   -- "CR 508.3b a player two teammates attack is attacked once" is the proof.
   TriggerCondition.Attacks (AttackTrigger.Attacked t) -> Maybe.isNothing (AttackedTrigger.attacker t)
   TriggerCondition.Attacks _ -> False
-  -- FALSE despite naming batches in the RULES, which is the one group of answers
-  -- here that is not what it looks like. Rule 509.3e's "one or more" is already
-  -- once-per-declaration, structurally: its events
-  -- (GameEvent.BlocksDeclared, GameEvent.AttackerBlocked)
-  -- are minted at that arity by Parun.Engine.Combat, the one emitter that sees a
-  -- whole declaration, so there is nothing left for this predicate to dedup and
-  -- True would be a second dedup over an already-unique trigger. Deaths get the
-  -- other treatment because they reach a graveyard from four places and no event
-  -- carries the arity.
-  TriggerCondition.Blocks _ -> False
+  -- Rule 509.3e's "one or more" is once-per-declaration already, structurally:
+  -- its events (GameEvent.BlocksDeclared, GameEvent.AttackerBlocked) are minted
+  -- at that arity by Parun.Engine.Combat, so EachOccurrence leaves it alone.
+  -- OneOrMore is CR 603.2c's batch over CREATURES, "one or more creatures you
+  -- control become blocked" (Neyith of the Dire Hunt): one trigger for the
+  -- declaration's whole Parun.Types.EventGroup, which Combat.declareBlockers
+  -- brackets. data/scenarios/card-trigger/'s
+  -- neyith-of-the-dire-hunt-draws-once-for-two-blocked-attackers is the proof.
+  TriggerCondition.Blocks t -> BlockTrigger.batching t == Batching.OneOrMore
   -- CR 603.2c: OneOrMore names a whole CR 608.2f / 704.3 batch, which
   -- Parun.Engine.Resolve brackets as one Parun.Types.EventGroup -- "whenever one
   -- or more other creatures you control die" (Vengeful Townsfolk), "one or more

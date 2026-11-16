@@ -52,6 +52,7 @@ import qualified Parun.Types.AbilityName as AbilityName
 import qualified Parun.Types.Action as Action.Type
 import qualified Parun.Types.ActivatedAbility as ActivatedAbility
 import qualified Parun.Types.Affected as Affected
+import qualified Parun.Types.Batching as Batching
 import qualified Parun.Types.BlockCount as BlockCount
 import qualified Parun.Types.BlockRole as BlockRole
 import qualified Parun.Types.BlockTrigger as BlockTrigger
@@ -1499,18 +1500,18 @@ spec s registry = Spec.describe s "Parun.Engine.Projection" $ do
     Spec.assertEqWith
       s
       "CR 509.3b's Filter over the attacker blocked takes the swap"
-      (rewrite (TriggerCondition.Blocks (BlockTrigger.MkBlockTrigger BlockRole.Blocker Filter.Type.IsSource (BlockCount.EachCreature (Filter.Type.HasSubtype Subtype.Type.Wraith)))))
-      (TriggerCondition.Blocks (BlockTrigger.MkBlockTrigger BlockRole.Blocker Filter.Type.IsSource (BlockCount.EachCreature (Filter.Type.HasSubtype Subtype.Type.Elf))))
+      (rewrite (TriggerCondition.Blocks (BlockTrigger.MkBlockTrigger BlockRole.Blocker Filter.Type.IsSource (BlockCount.EachCreature (Filter.Type.HasSubtype Subtype.Type.Wraith)) Batching.EachOccurrence)))
+      (TriggerCondition.Blocks (BlockTrigger.MkBlockTrigger BlockRole.Blocker Filter.Type.IsSource (BlockCount.EachCreature (Filter.Type.HasSubtype Subtype.Type.Elf)) Batching.EachOccurrence))
     Spec.assertEqWith
       s
       "CR 509.3d's, read from the other side, takes it too"
-      (rewrite (TriggerCondition.Blocks (BlockTrigger.MkBlockTrigger BlockRole.Attacker Filter.Type.IsSource (BlockCount.EachCreature (Filter.Type.HasSubtype Subtype.Type.Wraith)))))
-      (TriggerCondition.Blocks (BlockTrigger.MkBlockTrigger BlockRole.Attacker Filter.Type.IsSource (BlockCount.EachCreature (Filter.Type.HasSubtype Subtype.Type.Elf))))
+      (rewrite (TriggerCondition.Blocks (BlockTrigger.MkBlockTrigger BlockRole.Attacker Filter.Type.IsSource (BlockCount.EachCreature (Filter.Type.HasSubtype Subtype.Type.Wraith)) Batching.EachOccurrence)))
+      (TriggerCondition.Blocks (BlockTrigger.MkBlockTrigger BlockRole.Attacker Filter.Type.IsSource (BlockCount.EachCreature (Filter.Type.HasSubtype Subtype.Type.Elf)) Batching.EachOccurrence))
     Spec.assertEqWith
       s
       "and CR 509.3a's source-only form holds no word to swap"
-      (rewrite (TriggerCondition.Blocks (BlockTrigger.MkBlockTrigger BlockRole.Blocker Filter.Type.IsSource BlockCount.Once)))
-      (TriggerCondition.Blocks (BlockTrigger.MkBlockTrigger BlockRole.Blocker Filter.Type.IsSource BlockCount.Once))
+      (rewrite (TriggerCondition.Blocks (BlockTrigger.MkBlockTrigger BlockRole.Blocker Filter.Type.IsSource BlockCount.Once Batching.EachOccurrence)))
+      (TriggerCondition.Blocks (BlockTrigger.MkBlockTrigger BlockRole.Blocker Filter.Type.IsSource BlockCount.Once Batching.EachOccurrence))
 
   -- A CREATURE type word in a type line, swapped -- the half CR 612.2 names
   -- second, and the half no pair could reach before Artificial Evolution. Bog

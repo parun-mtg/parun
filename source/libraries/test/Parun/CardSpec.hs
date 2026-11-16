@@ -3885,7 +3885,7 @@ triggerConditionFilters triggerCondition = case triggerCondition of
   -- (Venom's "enchanted creature", CR 701.54c's "your Ring-bearer") and of the
   -- creatures on the other side (Netcaster Spider's "with flying", rule
   -- 702.25a's "without flanking", Serra Inquisitors' "black").
-  TriggerCondition.Blocks (BlockTrigger.MkBlockTrigger _ creature count) ->
+  TriggerCondition.Blocks (BlockTrigger.MkBlockTrigger _ creature count _) ->
     unframed
       ( creature : case count of
           BlockCount.Once -> []
