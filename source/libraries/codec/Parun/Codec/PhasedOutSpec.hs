@@ -8,6 +8,7 @@ import qualified Parun.Types.ObjectId as ObjectId
 import qualified Parun.Types.PhasedOut as PhasedOut
 import qualified Parun.Types.PlayerId as PlayerId
 import qualified Parun.Types.ReturnEnding as ReturnEnding
+import qualified Parun.Types.TapState as TapState
 
 -- | Each arm under a DIFFERENT seat, so an encoder that wrote a constant tag
 -- with the right payload, or the right tag with a constant payload, fails.
@@ -42,20 +43,27 @@ spec s = Spec.describe s "Parun.Codec.PhasedOut" $ do
     Common.assertCodec
       s
       PhasedOut.codec
-      (PhasedOut.Until (PlayerId.MkPlayerId 4) (Just (ReturnEnding.Planeswalked (Just (EventGroup.MkEventGroup 5)))))
+      (PhasedOut.Until (PlayerId.MkPlayerId 4) (Just (ReturnEnding.Planeswalked (Just (EventGroup.MkEventGroup 5)))) Nothing)
       " {\"type\":\"Until\",\"value\":{\"ending\":{\"type\":\"Planeswalked\",\"value\":5},\"under\":4}} "
   -- CR 610.4 / 101.2: the phase-in was held, so no ending is left.
   Spec.it s "Until with its ending spent" $
     Common.assertCodec
       s
       PhasedOut.codec
-      (PhasedOut.Until (PlayerId.MkPlayerId 1) Nothing)
+      (PhasedOut.Until (PlayerId.MkPlayerId 1) Nothing Nothing)
       " {\"type\":\"Until\",\"value\":{\"under\":1}} "
   Spec.it s "Until against a source leaving" $
     Common.assertCodec
       s
       PhasedOut.codec
-      (PhasedOut.Until (PlayerId.MkPlayerId 2) (Just (ReturnEnding.SourceLeaves (ObjectId.MkObjectId 6))))
+      (PhasedOut.Until (PlayerId.MkPlayerId 2) (Just (ReturnEnding.SourceLeaves (ObjectId.MkObjectId 6))) Nothing)
       " {\"type\":\"Until\",\"value\":{\"ending\":{\"type\":\"SourceLeaves\",\"value\":6},\"under\":2}} "
+  -- Oubliette: the permanent phases in tapped.
+  Spec.it s "Until with a phase-in status" $
+    Common.assertCodec
+      s
+      PhasedOut.codec
+      (PhasedOut.Until (PlayerId.MkPlayerId 5) (Just (ReturnEnding.SourceLeaves (ObjectId.MkObjectId 7))) (Just TapState.Tapped))
+      " {\"type\":\"Until\",\"value\":{\"ending\":{\"type\":\"SourceLeaves\",\"value\":7},\"phasesIn\":\"Tapped\",\"under\":5}} "
   Spec.it s "has a schema" $
     Common.assertHasSchema s PhasedOut.codec

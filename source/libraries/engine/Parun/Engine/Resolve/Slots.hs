@@ -213,6 +213,7 @@ import qualified Parun.Types.OrElse as OrElse
 import qualified Parun.Types.PayGate as PayGate
 import qualified Parun.Types.PerformerR as PerformerR
 import qualified Parun.Types.PermanentActed as PermanentActed
+import qualified Parun.Types.PhaseOut as PhaseOut
 import qualified Parun.Types.PhasePattern as PhasePattern
 import qualified Parun.Types.PhaseR as PhaseR
 import qualified Parun.Types.PhaseRewrite as PhaseRewrite
@@ -2919,7 +2920,8 @@ boundSlots effect = case effect of
   -- CR 701.42a's melded permanent is bound to nothing: no printing names it later
   -- in its own instruction list.
   Effect.Meld _ -> Set.empty
-  Effect.PhaseOut _ -> Set.empty
+  -- How many named permanents actually phased out, Destroy's `slot`.
+  Effect.PhaseOut phaseOut -> foldMap Set.singleton (PhaseOut.slot phaseOut)
   Effect.AddPhases _ -> Set.empty
   Effect.AddStep _ -> Set.empty
   Effect.EndTurn -> Set.empty

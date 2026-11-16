@@ -1210,8 +1210,8 @@ planeswalkSpec s registry = Spec.describe s "CR 901.11" $ do
     Spec.assertEqWith s "bob walked to Panopticon" (faceUpNames walked) [cardName "Panopticon"]
     Spec.assertEqWith s "CR 610.4 once bob planeswalks, all three phase in" (present walked) [True, True, True]
     Spec.assertEqWith s "CR 702.26g the Pacifism still enchanting the Lions" (Game.lookupObject aura walked >>= Object.attachedTo) (Just (Recipient.ToCreature lion))
-    Spec.assertEqWith s "CR 610.4 the Bears phased out until a planeswalk, under alice" (Phasing.phasedOutStatus bear ended) (Just (PhasedOut.Until S.alice (Just (ReturnEnding.Planeswalked Nothing))))
-    Spec.assertEqWith s "and the Lions under bob" (Phasing.phasedOutStatus lion ended) (Just (PhasedOut.Until S.bob (Just (ReturnEnding.Planeswalked Nothing))))
+    Spec.assertEqWith s "CR 610.4 the Bears phased out until a planeswalk, under alice" (Phasing.phasedOutStatus bear ended) (Just (PhasedOut.Until S.alice (Just (ReturnEnding.Planeswalked Nothing)) Nothing))
+    Spec.assertEqWith s "and the Lions under bob" (Phasing.phasedOutStatus lion ended) (Just (PhasedOut.Until S.bob (Just (ReturnEnding.Planeswalked Nothing)) Nothing))
     Spec.assertEqWith s "CR 702.26g the Pacifism phased out indirectly" (Phasing.phasedOutStatus aura ended) (Just (PhasedOut.Indirectly S.alice))
 
   -- CR 603.4: starting on Unyaro (CR 901.5) is not planeswalking to it, which

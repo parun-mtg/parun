@@ -130,7 +130,7 @@ markPlaneswalked gs =
         ReturnEnding.Planeswalked Nothing -> ReturnEnding.Planeswalked (Just group)
         _ -> ending
       markRow row = case row of
-        PhasedOut.Until under ending -> PhasedOut.Until under (fmap mark ending)
+        PhasedOut.Until under ending phasesIn -> PhasedOut.Until under (fmap mark ending) phasesIn
         _ -> row
    in gs
         { GameState.movedUntil = fmap (\watch -> watch {ReturnWatch.ending = mark (ReturnWatch.ending watch)}) (GameState.movedUntil gs),

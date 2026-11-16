@@ -31,6 +31,8 @@ import qualified Parun.Types.LoggedEvent as LoggedEvent
 import qualified Parun.Types.MatchScope as MatchScope
 import qualified Parun.Types.Object as Object
 import qualified Parun.Types.ObjectId as ObjectId
+import qualified Parun.Types.PermanentActed as PermanentActed
+import qualified Parun.Types.PermanentAction as PermanentAction
 import qualified Parun.Types.Player as Player
 import qualified Parun.Types.Recipient as Recipient
 import qualified Parun.Types.TapState as TapState
@@ -64,7 +66,9 @@ logBetween before after
 
 -- | CR 701.26a, 701.26b: tapped status, over the objects in both states. An
 -- object in only one is a new object (CR 400.7), which may enter in either
--- status unlogged (CR 603.2e).
+-- status unlogged (CR 603.2e). A permanent that phases in may likewise take a
+-- status as it does, unlogged (Oubliette's "tap that creature as it phases in
+-- this way", no tap by its 2020-08-07 ruling), so its replay stops there.
 tapping :: GameState.GameState -> GameState.GameState -> Seq.Seq LoggedEvent.LoggedEvent -> [Discrepancy.Discrepancy]
 tapping before after logged =
   let turn (held, idle) entry =
@@ -77,6 +81,7 @@ tapping before after logged =
          in case event of
               GameEvent.BecameTapped oid -> to TapState.Tapped oid
               GameEvent.BecameUntapped oid -> to TapState.Untapped oid
+              GameEvent.PermanentActed (PermanentActed.MkPermanentActed PermanentAction.PhaseIn oid) -> (Map.delete oid held, idle)
               _ -> (held, idle)
       (replayed, idles) = Foldable.foldl' turn (statuses before, Seq.empty) logged
       differing = Map.intersectionWith (,) replayed (statuses after)

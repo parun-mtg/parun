@@ -121,6 +121,7 @@ import qualified Parun.Types.Prohibition as Prohibition
 import qualified Parun.Types.Recipient as Recipient
 import qualified Parun.Types.ReturnEnding as ReturnEnding
 import qualified Parun.Types.Subtype as Subtype
+import qualified Parun.Types.TapState as TapState
 import qualified Parun.Types.Zone as Zone
 
 -- | CR 502.1 / 703.4a / 702.26a: the untap step's first turn-based action, for
@@ -161,7 +162,7 @@ phasingEvent pid gs =
       -- Guarded so a step where nothing phases opens no event group.
       phased
         | null returning && null leaving = gs
-        | otherwise = Event.simultaneouslyPure (\g -> recordActs PermanentAction.PhaseIn returning (foldr phaseIn (phaseOutSet pid Nothing (Set.fromList leaving) g) returning)) gs
+        | otherwise = Event.simultaneouslyPure (\g -> recordActs PermanentAction.PhaseIn returning (foldr phaseIn (phaseOutSet pid Nothing Nothing (Set.fromList leaving) g) returning)) gs
    in foldr Prepare.mintOnPhasedIn phased returning
 
 -- | CR 702.26b: `hosts` phase out, and -- CR 702.26g -- so does everything
@@ -187,9 +188,11 @@ phasingEvent pid gs =
 --
 -- `ending` is CR 610.4's "until": Nothing puts the direct rows on CR 702.26a's
 -- untap-step schedule, Just an ending on PhasedOut.Until's. The indirect rows
--- are CR 702.26g's either way, riding back with their host.
-phaseOutSet :: PlayerId -> Maybe ReturnEnding.ReturnEnding -> Set.Set ObjectId -> GameState -> GameState
-phaseOutSet fallback ending hosts gs =
+-- are CR 702.26g's either way, riding back with their host. `phasesIn` is the
+-- status an Until row's permanent takes as it phases in, so it rides only on
+-- the direct rows of an ending.
+phaseOutSet :: PlayerId -> Maybe ReturnEnding.ReturnEnding -> Maybe TapState.TapState -> Set.Set ObjectId -> GameState -> GameState
+phaseOutSet fallback ending phasesIn hosts gs =
   let leaving = draggedAlong hosts gs
       -- CR 702.26h: an object that would phase out both ways just phases out
       -- indirectly, which is exactly "its host is leaving too" -- so this is
@@ -207,7 +210,7 @@ phaseOutSet fallback ending hosts gs =
         -- an opponent's creature phases it back in at THAT player's untap step.
         -- For the turn-based action the two coincide, phasingOut having filtered
         -- on control.
-        | otherwise = maybe PhasedOut.Directly (\e under -> PhasedOut.Until under (Just e)) ending (heldBy fallback oid gs)
+        | otherwise = maybe PhasedOut.Directly (\e under -> PhasedOut.Until under (Just e) phasesIn) ending (heldBy fallback oid gs)
       gone = foldr (\oid -> phaseOut (status oid) oid) gs (Set.toAscList leaving)
    in if Set.null leaving
         then gs
@@ -325,7 +328,7 @@ isIndirect status = case status of
   PhasedOut.Indirectly _ -> True
   -- CR 702.26n reschedules a DIRECT row and changes nothing else about it.
   PhasedOut.Orphaned _ -> False
-  PhasedOut.Until _ _ -> False
+  PhasedOut.Until {} -> False
 
 -- CR 610.4a: an Until row is off the untap step's schedule, so it is never
 -- orphaned either -- CR 702.26n reschedules rule 702.26a's.
@@ -334,7 +337,7 @@ isOrphaned status = case status of
   PhasedOut.Directly _ -> False
   PhasedOut.Indirectly _ -> False
   PhasedOut.Orphaned _ -> True
-  PhasedOut.Until _ _ -> False
+  PhasedOut.Until {} -> False
 
 -- | CR 610.4: the second one-shot effect, for every Until row whose stated
 -- event has happened -- each permanent phases in, and CR 702.26g's indirect
@@ -358,12 +361,12 @@ phaseInDue gs =
         Map.fromListWith
           (flip (<>))
           [ (maybe (Right ()) Left group, [oid])
-          | (oid, PhasedOut.Until _ (Just ending)) <- Map.toList rows,
+          | (oid, PhasedOut.Until _ (Just ending) _) <- Map.toList rows,
             Just group <- [MoveDuration.dueIn ending gs]
           ]
       indirect = Map.keysSet (Map.filter isIndirect rows)
       spent row = case row of
-        PhasedOut.Until under _ -> PhasedOut.Until under Nothing
+        PhasedOut.Until under _ _ -> PhasedOut.Until under Nothing Nothing
         _ -> row
       spend g oid = g {GameState.phasedOut = Map.adjust spent oid (GameState.phasedOut g)}
       batch g due =
@@ -372,9 +375,18 @@ phaseInDue gs =
             heldSpent = List.foldl' spend g (Set.toList held)
             phased
               | null returning = heldSpent
-              | otherwise = Event.simultaneouslyPure (\g' -> recordActs PermanentAction.PhaseIn returning (foldr phaseIn g' returning)) heldSpent
+              | otherwise = Event.simultaneouslyPure (\g' -> recordActs PermanentAction.PhaseIn returning (foldr phaseIn (foldr phasesInAs g' returning) returning)) heldSpent
          in foldr Prepare.mintOnPhasedIn phased returning
    in if Map.null batches then (False, gs) else (True, List.foldl' batch gs (Map.elems batches))
+
+-- Oubliette's "tap that creature as it phases in this way": the status an Until
+-- row names, written before the phase-in and as no tap or untap event, so
+-- nothing triggers on its becoming tapped (Oubliette's 2020-08-07 ruling). An
+-- indirect rider (CR 702.26g) names none.
+phasesInAs :: ObjectId -> GameState -> GameState
+phasesInAs oid gs = case phasedOutStatus oid gs of
+  Just (PhasedOut.Until _ _ (Just status)) -> gs {GameState.objects = Map.adjust (\o -> o {Object.tapped = status}) oid (GameState.objects gs)}
+  _ -> gs
 
 -- | CR 702.26n's second sentence, at the moment CR 800.4k decides `pid`'s turn
 -- does not begin: every row on rule 702.26a's schedule for a player who has left
@@ -443,7 +455,7 @@ phaseIn oid gs =
         Just (PhasedOut.Orphaned _) -> not (hostRemains oid gs)
         -- CR 610.4's phase-in is a direct row's too: rule 702.26i names any
         -- attachment that phased out directly.
-        Just (PhasedOut.Until _ _) -> not (hostRemains oid gs)
+        Just PhasedOut.Until {} -> not (hostRemains oid gs)
         Nothing -> False
       detach o = o {Object.attachedTo = Nothing}
    in gs
@@ -526,4 +538,4 @@ storedPlayer row = case row of
   PhasedOut.Directly pid -> pid
   PhasedOut.Indirectly pid -> pid
   PhasedOut.Orphaned pid -> pid
-  PhasedOut.Until pid _ -> pid
+  PhasedOut.Until pid _ _ -> pid
