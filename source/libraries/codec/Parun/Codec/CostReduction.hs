@@ -20,7 +20,8 @@ import qualified Parun.Types.CostReduction as CostReduction
 -- 'amount' and 'perEach' are REQUIRED: Ertai's Scorn's fixed reduction spells
 -- its Literal 1 'perEach' out rather than leaning on a default. An absent
 -- 'condition' is Nothing, the unconditional reduction Thrasta prints; an absent
--- 'whichTargets' names no target, and an absent 'direction' is Less, the
+-- 'whichTargets' names no target, an absent 'noneTargeted' asks that one
+-- target match it, and an absent 'direction' is Less, the
 -- sentence every card but a "costs more" one prints.
 codec :: Codec.Codec CostReduction.CostReduction
 codec = Fields.object $ do
@@ -28,6 +29,7 @@ codec = Fields.object $ do
   perEach <- Fields.required "perEach" Quantity.codec CostReduction.perEach
   condition <- Fields.defaulted "condition" Nothing (Common.maybe Condition.codec) CostReduction.condition
   whichTargets <- Fields.defaulted "whichTargets" Nothing (Common.maybe (Filter.codec Keyword.codec)) CostReduction.whichTargets
+  noneTargeted <- Fields.defaulted "noneTargeted" False Common.boolean CostReduction.noneTargeted
   direction <- Fields.defaulted "direction" CostDirection.Type.Less CostDirection.codec CostReduction.direction
   pure
     CostReduction.MkCostReduction
@@ -35,5 +37,6 @@ codec = Fields.object $ do
         CostReduction.perEach = perEach,
         CostReduction.condition = condition,
         CostReduction.whichTargets = whichTargets,
+        CostReduction.noneTargeted = noneTargeted,
         CostReduction.direction = direction
       }

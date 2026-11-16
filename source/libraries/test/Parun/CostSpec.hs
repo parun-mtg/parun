@@ -3232,6 +3232,7 @@ thrastaSpec s registry =
             (Quantity.Type.Count (Count.Type.MkCount (Scope.InHistory (EventShape.SpellCast CastWindow.ThisTurn)) (Filter.Type.And []) Aggregation.Members))
             Nothing
             Nothing
+            False
             CostDirection.Less
         ]
     -- Nine Forests. Two Elves tap two of them and leave seven, so an UNREDUCED

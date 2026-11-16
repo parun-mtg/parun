@@ -3736,6 +3736,7 @@ oneLessPerEach count =
       CostReduction.perEach = Quantity.Count count,
       CostReduction.condition = Nothing,
       CostReduction.whichTargets = Nothing,
+      CostReduction.noneTargeted = False,
       CostReduction.direction = CostDirection.Less
     }
 

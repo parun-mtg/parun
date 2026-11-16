@@ -5,10 +5,12 @@ import qualified Parun.Codec.GrantPlayFromExile as GrantPlayFromExile
 import qualified Parun.JsonCodec.Codec as Codec
 import qualified Parun.JsonCodec.Common as Common
 import qualified Parun.Spec as Spec
+import qualified Parun.Types.CardType as CardType
 import qualified Parun.Types.Compares as Compares
 import qualified Parun.Types.Comparison as Comparison
 import qualified Parun.Types.Condition as Condition
 import qualified Parun.Types.Duration as Duration
+import qualified Parun.Types.Filter as Filter
 import qualified Parun.Types.GrantPlayFromExile as GrantPlayFromExile
 import qualified Parun.Types.GrantZone as GrantZone
 import qualified Parun.Types.Keyword as Keyword
@@ -41,6 +43,7 @@ spec s = Spec.describe s "Parun.Codec.GrantPlayFromExile" $ do
             GrantPlayFromExile.condition = Nothing,
             GrantPlayFromExile.verb = PermissionVerb.Play,
             GrantPlayFromExile.increase = 0,
+            GrantPlayFromExile.increaseUnless = Nothing,
             GrantPlayFromExile.landEnters = TapState.Untapped,
             GrantPlayFromExile.spellEnters = TapState.Untapped,
             GrantPlayFromExile.upTo = Nothing,
@@ -63,6 +66,7 @@ spec s = Spec.describe s "Parun.Codec.GrantPlayFromExile" $ do
             GrantPlayFromExile.condition = Nothing,
             GrantPlayFromExile.verb = PermissionVerb.Play,
             GrantPlayFromExile.increase = 0,
+            GrantPlayFromExile.increaseUnless = Nothing,
             GrantPlayFromExile.landEnters = TapState.Untapped,
             GrantPlayFromExile.spellEnters = TapState.Untapped,
             GrantPlayFromExile.upTo = Nothing,
@@ -86,6 +90,7 @@ spec s = Spec.describe s "Parun.Codec.GrantPlayFromExile" $ do
             GrantPlayFromExile.condition = Nothing,
             GrantPlayFromExile.verb = PermissionVerb.Play,
             GrantPlayFromExile.increase = 0,
+            GrantPlayFromExile.increaseUnless = Nothing,
             GrantPlayFromExile.landEnters = TapState.Untapped,
             GrantPlayFromExile.spellEnters = TapState.Untapped,
             GrantPlayFromExile.upTo = Nothing,
@@ -109,6 +114,7 @@ spec s = Spec.describe s "Parun.Codec.GrantPlayFromExile" $ do
             GrantPlayFromExile.condition = Nothing,
             GrantPlayFromExile.verb = PermissionVerb.Play,
             GrantPlayFromExile.increase = 0,
+            GrantPlayFromExile.increaseUnless = Nothing,
             GrantPlayFromExile.landEnters = TapState.Untapped,
             GrantPlayFromExile.spellEnters = TapState.Untapped,
             GrantPlayFromExile.upTo = Nothing,
@@ -132,6 +138,7 @@ spec s = Spec.describe s "Parun.Codec.GrantPlayFromExile" $ do
             GrantPlayFromExile.condition = Nothing,
             GrantPlayFromExile.verb = PermissionVerb.Cast,
             GrantPlayFromExile.increase = 0,
+            GrantPlayFromExile.increaseUnless = Nothing,
             GrantPlayFromExile.landEnters = TapState.Untapped,
             GrantPlayFromExile.spellEnters = TapState.Untapped,
             GrantPlayFromExile.upTo = Nothing,
@@ -154,6 +161,7 @@ spec s = Spec.describe s "Parun.Codec.GrantPlayFromExile" $ do
             GrantPlayFromExile.condition = Nothing,
             GrantPlayFromExile.verb = PermissionVerb.Play,
             GrantPlayFromExile.increase = 0,
+            GrantPlayFromExile.increaseUnless = Nothing,
             GrantPlayFromExile.landEnters = TapState.Untapped,
             GrantPlayFromExile.spellEnters = TapState.Untapped,
             GrantPlayFromExile.upTo = Nothing,
@@ -176,6 +184,7 @@ spec s = Spec.describe s "Parun.Codec.GrantPlayFromExile" $ do
             GrantPlayFromExile.condition = Just (Condition.Compares (Compares.MkCompares (Quantity.IsActivePlayer (PlayerRef.Relative PlayerRelation.You)) Comparison.Exactly (Quantity.Literal 1))),
             GrantPlayFromExile.verb = PermissionVerb.Cast,
             GrantPlayFromExile.increase = 0,
+            GrantPlayFromExile.increaseUnless = Nothing,
             GrantPlayFromExile.landEnters = TapState.Untapped,
             GrantPlayFromExile.spellEnters = TapState.Untapped,
             GrantPlayFromExile.upTo = Nothing,
@@ -199,6 +208,7 @@ spec s = Spec.describe s "Parun.Codec.GrantPlayFromExile" $ do
             GrantPlayFromExile.condition = Nothing,
             GrantPlayFromExile.verb = PermissionVerb.Play,
             GrantPlayFromExile.increase = 1,
+            GrantPlayFromExile.increaseUnless = Nothing,
             GrantPlayFromExile.landEnters = TapState.Tapped,
             GrantPlayFromExile.spellEnters = TapState.Untapped,
             GrantPlayFromExile.upTo = Nothing,
@@ -208,6 +218,29 @@ spec s = Spec.describe s "Parun.Codec.GrantPlayFromExile" $ do
       )
       " {\"duration\":{\"type\":\"Indefinite\"},\"player\":{\"type\":\"InSlot\",\"value\":\"opponent\"},\"ref\":{\"type\":\"InSlot\",\"value\":\"exiled\"},\"increase\":1,\"landEnters\":\"Tapped\"} "
   -- March of Reckless Joy's: CR 601.3's "up to two of those cards" written out.
+  -- Mavinda, Students' Advocate's: CR 601.2f's increase, waived by a target.
+  Spec.it s "MkGrantPlayFromExile, Mavinda, Students' Advocate's waivable increase" $
+    Common.assertCodec
+      s
+      GrantPlayFromExile.codec
+      ( GrantPlayFromExile.MkGrantPlayFromExile
+          { GrantPlayFromExile.duration = Duration.UntilEndOfTurn,
+            GrantPlayFromExile.player = PlayerRef.Relative PlayerRelation.You,
+            GrantPlayFromExile.ref = ObjectRef.InSlot (SlotName.MkSlotName (Text.pack "target")),
+            GrantPlayFromExile.spending = ManaSpending.AsProduced,
+            GrantPlayFromExile.alternativeCost = Nothing,
+            GrantPlayFromExile.condition = Nothing,
+            GrantPlayFromExile.verb = PermissionVerb.Cast,
+            GrantPlayFromExile.increase = 8,
+            GrantPlayFromExile.increaseUnless = Just (Filter.HasCardType CardType.Creature),
+            GrantPlayFromExile.landEnters = TapState.Untapped,
+            GrantPlayFromExile.spellEnters = TapState.Untapped,
+            GrantPlayFromExile.upTo = Nothing,
+            GrantPlayFromExile.keywords = [],
+            GrantPlayFromExile.zone = GrantZone.Graveyard
+          }
+      )
+      " {\"duration\":{\"type\":\"UntilEndOfTurn\"},\"ref\":{\"type\":\"InSlot\",\"value\":\"target\"},\"verb\":\"Cast\",\"increase\":8,\"increaseUnless\":{\"type\":\"HasCardType\",\"value\":\"Creature\"},\"zone\":\"Graveyard\"} "
   Spec.it s "MkGrantPlayFromExile, March of Reckless Joy's limit" $
     Common.assertCodec
       s
@@ -221,6 +254,7 @@ spec s = Spec.describe s "Parun.Codec.GrantPlayFromExile" $ do
             GrantPlayFromExile.condition = Nothing,
             GrantPlayFromExile.verb = PermissionVerb.Play,
             GrantPlayFromExile.increase = 0,
+            GrantPlayFromExile.increaseUnless = Nothing,
             GrantPlayFromExile.landEnters = TapState.Untapped,
             GrantPlayFromExile.spellEnters = TapState.Untapped,
             GrantPlayFromExile.upTo = Just (PlayAllowance.Plays 2),
@@ -243,6 +277,7 @@ spec s = Spec.describe s "Parun.Codec.GrantPlayFromExile" $ do
             GrantPlayFromExile.condition = Nothing,
             GrantPlayFromExile.verb = PermissionVerb.Cast,
             GrantPlayFromExile.increase = 0,
+            GrantPlayFromExile.increaseUnless = Nothing,
             GrantPlayFromExile.landEnters = TapState.Untapped,
             GrantPlayFromExile.spellEnters = TapState.Untapped,
             GrantPlayFromExile.upTo = Nothing,
@@ -265,6 +300,7 @@ spec s = Spec.describe s "Parun.Codec.GrantPlayFromExile" $ do
             GrantPlayFromExile.condition = Nothing,
             GrantPlayFromExile.verb = PermissionVerb.Cast,
             GrantPlayFromExile.increase = 0,
+            GrantPlayFromExile.increaseUnless = Nothing,
             GrantPlayFromExile.landEnters = TapState.Untapped,
             GrantPlayFromExile.spellEnters = TapState.Untapped,
             GrantPlayFromExile.upTo = Nothing,
@@ -287,6 +323,7 @@ spec s = Spec.describe s "Parun.Codec.GrantPlayFromExile" $ do
             GrantPlayFromExile.condition = Nothing,
             GrantPlayFromExile.verb = PermissionVerb.Play,
             GrantPlayFromExile.increase = 0,
+            GrantPlayFromExile.increaseUnless = Nothing,
             GrantPlayFromExile.landEnters = TapState.Tapped,
             GrantPlayFromExile.spellEnters = TapState.Tapped,
             GrantPlayFromExile.upTo = Nothing,

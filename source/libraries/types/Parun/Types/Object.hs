@@ -15,6 +15,7 @@ import qualified Parun.Types.CastOrigin as CastOrigin
 import qualified Parun.Types.ClassLevel as ClassLevel
 import qualified Parun.Types.Color as Color
 import qualified Parun.Types.ControlClock as ControlClock
+import qualified Parun.Types.CostReduction as CostReduction
 import qualified Parun.Types.CounterKind as CounterKind
 import qualified Parun.Types.Designation as Designation
 import qualified Parun.Types.ExileLooker as ExileLooker
@@ -873,6 +874,13 @@ data Object = MkObject
     -- carries the ability onto the STACK object, so newIncarnation below clears
     -- it and Parun.Engine.Event.changeZoneAttaching does not write it back.
     castGrants :: [Keyword.Keyword],
+    -- | CR 400.7h / 601.2f: the cost changes the CR 601.3 permission this SPELL
+    -- was cast under applies to its total once its targets are announced -- Mavinda,
+    -- Students\' Advocate\'s "it costs {8} more to cast this way" unless it
+    -- targets a creature you control. Stamped by Parun.Engine.Cast and read by
+    -- Parun.Engine.Cost.selfSentences; not an ability of the spell, so a
+    -- layer-6 wipe leaves it. Per-incarnation like castGrants above.
+    castCostChanges :: [CostReduction.CostReduction],
     -- | CR 701.35a: this permanent is DETAINED -- it "can't attack or block and
     -- its activated abilities can't be activated" -- until the next turn of each
     -- player named here.
@@ -1111,6 +1119,7 @@ new o s z t =
       -- CR 400.7g's carry ends with the spell: the rule names the object the
       -- card became ON THE STACK, and nothing writes it back.
       castGrants = [],
+      castCostChanges = [],
       -- CR 701.35a: the detained permanent that comes back is a new object, and
       -- nothing detained that one.
       detainedUntil = Set.empty,

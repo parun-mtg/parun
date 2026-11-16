@@ -14,6 +14,7 @@ import qualified Parun.Codec.CastOrigin as CastOrigin
 import qualified Parun.Codec.ClassLevel as ClassLevel
 import qualified Parun.Codec.Color as Color
 import qualified Parun.Codec.ControlClock as ControlClock
+import qualified Parun.Codec.CostReduction as CostReduction
 import qualified Parun.Codec.CounterKind as CounterKind
 import qualified Parun.Codec.Designation as Designation
 import qualified Parun.Codec.ExileLooker as ExileLooker
@@ -161,6 +162,7 @@ codec = Fields.object $ do
   castBy <- Fields.defaulted "castBy" (Object.castBy defaults) (Common.maybe PlayerId.codec) Object.castBy
   castUsing <- Fields.defaulted "castUsing" (Object.castUsing defaults) (Common.maybe Keyword.codec) Object.castUsing
   castGrants <- Fields.defaulted "castGrants" (Object.castGrants defaults) (Common.list Keyword.codec) Object.castGrants
+  castCostChanges <- Fields.defaulted "castCostChanges" (Object.castCostChanges defaults) (Common.list CostReduction.codec) Object.castCostChanges
   exileLookers <- Fields.defaulted "exileLookers" (Object.exileLookers defaults) (Common.set ExileLooker.codec) Object.exileLookers
   revealed <- Fields.defaulted "revealed" (Object.revealed defaults) (Common.set RevealWindow.codec) Object.revealed
   exposed <- Fields.defaulted "exposed" (Object.exposed defaults) Common.boolean Object.exposed
@@ -236,6 +238,7 @@ codec = Fields.object $ do
         Object.castBy = castBy,
         Object.castUsing = castUsing,
         Object.castGrants = castGrants,
+        Object.castCostChanges = castCostChanges,
         Object.exileLookers = exileLookers,
         Object.revealed = revealed,
         Object.exposed = exposed,

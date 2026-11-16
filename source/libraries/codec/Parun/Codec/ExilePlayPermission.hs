@@ -4,6 +4,7 @@ module Parun.Codec.ExilePlayPermission where
 
 import qualified Parun.Codec.Condition as Condition
 import qualified Parun.Codec.Expiry as Expiry
+import qualified Parun.Codec.Filter as Filter
 import qualified Parun.Codec.Keyword as Keyword
 import qualified Parun.Codec.ManaSpending as ManaSpending
 import qualified Parun.Codec.ObjectId as ObjectId
@@ -39,6 +40,7 @@ codec = Fields.object $ do
   origin <- Fields.required "origin" PlayPermissionOrigin.codec ExilePlayPermission.origin
   verb <- Fields.required "verb" PermissionVerb.codec ExilePlayPermission.verb
   increase <- Fields.required "increase" Common.natural ExilePlayPermission.increase
+  increaseUnless <- Fields.required "increaseUnless" (Common.maybe (Filter.codec Keyword.codec)) ExilePlayPermission.increaseUnless
   landEnters <- Fields.required "landEnters" TapState.codec ExilePlayPermission.landEnters
   spellEnters <- Fields.required "spellEnters" TapState.codec ExilePlayPermission.spellEnters
   budget <- Fields.required "budget" (Common.maybe PlayBudget.codec) ExilePlayPermission.budget
@@ -54,6 +56,7 @@ codec = Fields.object $ do
         ExilePlayPermission.origin = origin,
         ExilePlayPermission.verb = verb,
         ExilePlayPermission.increase = increase,
+        ExilePlayPermission.increaseUnless = increaseUnless,
         ExilePlayPermission.landEnters = landEnters,
         ExilePlayPermission.spellEnters = spellEnters,
         ExilePlayPermission.budget = budget,

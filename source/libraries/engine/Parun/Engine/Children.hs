@@ -1339,7 +1339,7 @@ effectChildren c effect = case effect of
       )
   Effect.OfferNamedCopy _ -> pure effect
   Effect.OfferNotedCopy offer -> fmap Effect.OfferNotedCopy (castOfferChildren c offer)
-  Effect.GrantPlayFromExile (GrantPlayFromExile.MkGrantPlayFromExile duration who ref spending alternativeCost condition verb increase landEnters spellEnters upTo keywords zone) ->
+  Effect.GrantPlayFromExile (GrantPlayFromExile.MkGrantPlayFromExile duration who ref spending alternativeCost condition verb increase increaseUnless landEnters spellEnters upTo keywords zone) ->
     fmap
       Effect.GrantPlayFromExile
       ( GrantPlayFromExile.MkGrantPlayFromExile
@@ -1351,6 +1351,7 @@ effectChildren c effect = case effect of
           <*> traverse (onCondition c) condition
           <*> pure verb
           <*> pure increase
+          <*> traverse (onFilter c) increaseUnless
           <*> pure landEnters
           <*> pure spellEnters
           <*> pure upTo
@@ -2849,11 +2850,12 @@ printedReplacementChildren c (PrintedReplacement.MkPrintedReplacement condition 
 
 -- | A self cost reduction's children.
 costReductionChildren :: (Applicative f) => AbilityChildren card ability effect f -> CostReduction.CostReduction -> f CostReduction.CostReduction
-costReductionChildren c (CostReduction.MkCostReduction amount perEach condition whichTargets direction) =
+costReductionChildren c (CostReduction.MkCostReduction amount perEach condition whichTargets noneTargeted direction) =
   CostReduction.MkCostReduction amount
     <$> abilityQuantity c perEach
     <*> traverse (abilityCondition c) condition
     <*> traverse (abilityFilter c) whichTargets
+    <*> pure noneTargeted
     <*> pure direction
 
 -- | An alternative cost's children.

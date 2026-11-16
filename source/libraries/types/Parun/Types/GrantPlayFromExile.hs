@@ -3,6 +3,7 @@ module Parun.Types.GrantPlayFromExile where
 import qualified Numeric.Natural as Natural
 import qualified Parun.Types.Condition as Condition
 import qualified Parun.Types.Duration as Duration
+import qualified Parun.Types.Filter as Filter
 import qualified Parun.Types.GrantZone as GrantZone
 import qualified Parun.Types.Keyword as Keyword
 import qualified Parun.Types.ManaSpending as ManaSpending
@@ -58,6 +59,10 @@ data GrantPlayFromExile = MkGrantPlayFromExile
     -- | CR 601.2f: the generic mana each spell cast under it costs more --
     -- Lightstall Inquisitor\'s "each spell cast this way costs {1} more".
     increase :: Natural.Natural,
+    -- | CR 601.2c / 601.2f: 'increase' is waived where the spell targets
+    -- something this matches -- Mavinda, Students\' Advocate\'s "if that spell
+    -- doesn\'t target a creature you control". Nothing never waives it.
+    increaseUnless :: Maybe (Filter.Filter Keyword.Keyword),
     -- | CR 400.7i / 614.1d: how a land played under it enters -- Lightstall
     -- Inquisitor\'s "each land played this way enters tapped".
     landEnters :: TapState.TapState,

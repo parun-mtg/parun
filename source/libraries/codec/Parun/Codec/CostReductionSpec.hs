@@ -38,6 +38,7 @@ spec s = Spec.describe s "Parun.Codec.CostReduction" $ do
                   },
             CostReduction.condition = Nothing,
             CostReduction.whichTargets = Nothing,
+            CostReduction.noneTargeted = False,
             CostReduction.direction = CostDirection.Less
           }
       )
@@ -53,6 +54,7 @@ spec s = Spec.describe s "Parun.Codec.CostReduction" $ do
             CostReduction.perEach = Quantity.Literal 1,
             CostReduction.condition = Just (Condition.Compares (Compares.MkCompares (Quantity.Literal 2) Comparison.AtLeast (Quantity.Literal 3))),
             CostReduction.whichTargets = Nothing,
+            CostReduction.noneTargeted = False,
             CostReduction.direction = CostDirection.Less
           }
       )
@@ -68,6 +70,7 @@ spec s = Spec.describe s "Parun.Codec.CostReduction" $ do
             CostReduction.perEach = Quantity.Literal 1,
             CostReduction.condition = Nothing,
             CostReduction.whichTargets = Just (Filter.IsAttacking Nothing),
+            CostReduction.noneTargeted = False,
             CostReduction.direction = CostDirection.Less
           }
       )
@@ -82,8 +85,25 @@ spec s = Spec.describe s "Parun.Codec.CostReduction" $ do
             CostReduction.perEach = Quantity.Literal 1,
             CostReduction.condition = Nothing,
             CostReduction.whichTargets = Just (Filter.HasSubtype Subtype.Dragon),
+            CostReduction.noneTargeted = False,
             CostReduction.direction = CostDirection.More
           }
       )
       " {\"amount\":[{\"type\":\"Generic\",\"value\":2}],\"perEach\":{\"type\":\"Literal\",\"value\":1},\"whichTargets\":{\"type\":\"HasSubtype\",\"value\":\"Dragon\"},\"direction\":\"More\"} "
+  -- CR 601.2c / 601.2f, a sentence costing {8} more unless the spell targets a
+  -- Dragon, Mavinda, Students' Advocate's shape.
+  Spec.it s "unless it targets" $
+    Common.assertCodec
+      s
+      CostReduction.codec
+      ( CostReduction.MkCostReduction
+          { CostReduction.amount = ManaCost.MkManaCost [ManaSymbol.Generic 8],
+            CostReduction.perEach = Quantity.Literal 1,
+            CostReduction.condition = Nothing,
+            CostReduction.whichTargets = Just (Filter.HasSubtype Subtype.Dragon),
+            CostReduction.noneTargeted = True,
+            CostReduction.direction = CostDirection.More
+          }
+      )
+      " {\"amount\":[{\"type\":\"Generic\",\"value\":8}],\"perEach\":{\"type\":\"Literal\",\"value\":1},\"whichTargets\":{\"type\":\"HasSubtype\",\"value\":\"Dragon\"},\"noneTargeted\":true,\"direction\":\"More\"} "
   Spec.it s "has a schema" $ Common.assertHasSchema s CostReduction.codec

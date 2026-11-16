@@ -1208,6 +1208,15 @@ stampCastGrants granted sid gs =
         Map.adjust (\o -> o {Object.castGrants = granted}) sid (GameState.objects gs)
     }
 
+-- CR 601.2f: Object.castCostChanges, the cost changes of the permission the
+-- spell `sid` is cast under.
+stampCastCostChanges :: [CostReduction.CostReduction] -> ObjectId -> GameState -> GameState
+stampCastCostChanges changes sid gs =
+  gs
+    { GameState.objects =
+        Map.adjust (\o -> o {Object.castCostChanges = changes}) sid (GameState.objects gs)
+    }
+
 -- What stampCastGrants writes: the granted keyword that allowed the cast (CR
 -- 400.7g), then each keyword the one-shot rows the cast spends give the spell
 -- (CR 611.2f), in the rows' order, then `held`, the keywords the exile
@@ -2472,8 +2481,8 @@ isFlashPermission permission = case permission of
 -- about this one card for one player (Jace, Telepath Unbound's -3), read
 -- exactly as exile reads it (permitsPlayUnderPermission).
 --
--- Not implemented: that permission's target-dependent cost increase (#8117), and
--- its keywords and budget (#8118), on a graveyard card.
+-- Not implemented: that permission's keywords, budget and an increase no target
+-- waives (#8118), on a graveyard card.
 --
 -- Folding the second into the first would say the effect printed flashback onto
 -- every card in the graveyard, which is neither CR 702.34a's meaning nor a thing
@@ -3840,6 +3849,11 @@ castProposed perform baseSpending pid oid sid printedFace castFrom preparedFor k
       -- The card's own permission where the card lay in exile. Its keywords
       -- and budget on a graveyard card are not implemented (#8118).
       exilePermission = if castFrom == Just Zone.Exile then ownHeld else Nothing
+  -- CR 601.2f: the cost change the card's own permission makes once CR
+  -- 601.2c's targets are announced, stamped on the spell for every pricing
+  -- below and taken off again at the stamp under castGrantsOf for a cast made
+  -- under another permission.
+  State.modify' (stampCastCostChanges (foldMap Cost.permissionCostChanges ownHeld) sid)
   -- CR 700.2e: who chooses the modes, settled first -- the caster where
   -- several players could (Players.chooseOne, elided at one) -- and bound on the
   -- spell, so every step below reads the face as that player's "that player"
@@ -4240,6 +4254,7 @@ castProposed perform baseSpending pid oid sid printedFace castFrom preparedFor k
               -- CR 400.7h / 613.1f: and so do the keywords the card's own exile
               -- permission gives the spell, where the cast is made under it.
               State.modify' (stampCastGrants (castGrantsOf (if not ownPermission && Maybe.isNothing permissionUsed then held else []) castFor sid (spent castFor) gsChosen) sid)
+              Monad.unless (not ownPermission && Maybe.isNothing permissionUsed) (State.modify' (stampCastCostChanges [] sid))
               -- CR 601.2b: a count the cost announces beside X -- March of
               -- Wretched Sorrow's "exile any number of black cards" -- is named
               -- here, ahead of X, and bound on the spell under its own slot, so
