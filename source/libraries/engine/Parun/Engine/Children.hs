@@ -3253,12 +3253,13 @@ pendingEntryEffectChildren c (PendingEntryEffect.MkPendingEntryEffect entering c
 
 -- | A pending replacement effect's children: what it runs, in its environment (CR 608.2c).
 pendingReplacementEffectChildren :: (Applicative f) => StoredChildren f -> PendingReplacementEffect.PendingReplacementEffect -> f PendingReplacementEffect.PendingReplacementEffect
-pendingReplacementEffectChildren c (PendingReplacementEffect.MkPendingReplacementEffect effects targets controller source) =
+pendingReplacementEffectChildren c (PendingReplacementEffect.MkPendingReplacementEffect effects targets controller source bindsArrival) =
   PendingReplacementEffect.MkPendingReplacementEffect
     <$> traverse (storedEffect c) effects
     <*> traverseSlots c (traverseSet (storedRecipient c)) targets
     <*> pure controller
     <*> storedObject c source
+    <*> pure bindsArrival
 
 -- | An expiry's children (CR 611.2a), its payload matched positionally.
 expiryChildren :: (Applicative f) => StoredChildren f -> Expiry.Expiry -> f Expiry.Expiry

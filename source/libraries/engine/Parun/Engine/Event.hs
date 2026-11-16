@@ -3218,7 +3218,8 @@ apply settle batch applied batchPrevented candidate event =
                                 PendingReplacementEffect.targets =
                                   Map.insert Binding.departedPermanent (Set.singleton (Recipient.ToObject (ZoneChange.departed zc))) (ReplacementCandidate.slots candidate),
                                 PendingReplacementEffect.controller = controller,
-                                PendingReplacementEffect.source = ReplacementCandidate.source candidate
+                                PendingReplacementEffect.source = ReplacementCandidate.source candidate,
+                                PendingReplacementEffect.bindsArrival = True
                               }
                       }
                 }
@@ -4768,7 +4769,8 @@ apply settle batch applied batchPrevented candidate event =
                               { PendingReplacementEffect.effects = effects,
                                 PendingReplacementEffect.targets = ReplacementCandidate.slots candidate,
                                 PendingReplacementEffect.controller = controller,
-                                PendingReplacementEffect.source = ReplacementCandidate.source candidate
+                                PendingReplacementEffect.source = ReplacementCandidate.source candidate,
+                                PendingReplacementEffect.bindsArrival = False
                               }
                       }
                 }
@@ -5202,7 +5204,8 @@ apply settle batch applied batchPrevented candidate event =
                 { PendingReplacementEffect.effects = Seq.singleton (Effect.Type.LoseGame (PlayerRef.Relative PlayerRelation.You)),
                   PendingReplacementEffect.targets = Map.empty,
                   PendingReplacementEffect.controller = pid,
-                  PendingReplacementEffect.source = ReplacementCandidate.source candidate
+                  PendingReplacementEffect.source = ReplacementCandidate.source candidate,
+                  PendingReplacementEffect.bindsArrival = False
                 }
             queue g = g {GameState.stored = (GameState.stored g) {StoredEffects.pendingReplacementEffects = StoredEffects.pendingReplacementEffects (GameState.stored g) Seq.|> loss}}
         Monad.unless (any (`elem` Game.zoneMembers Zone.Hand pid after) arrived) (State.modify' queue)
@@ -5346,7 +5349,8 @@ apply settle batch applied batchPrevented candidate event =
                                 { PendingReplacementEffect.effects = effects,
                                   PendingReplacementEffect.targets = ReplacementCandidate.slots candidate,
                                   PendingReplacementEffect.controller = controller,
-                                  PendingReplacementEffect.source = ReplacementCandidate.source candidate
+                                  PendingReplacementEffect.source = ReplacementCandidate.source candidate,
+                                  PendingReplacementEffect.bindsArrival = False
                                 }
                         }
                   }
@@ -5511,7 +5515,8 @@ apply settle batch applied batchPrevented candidate event =
                           { PendingReplacementEffect.effects = effects,
                             PendingReplacementEffect.targets = ReplacementCandidate.slots candidate,
                             PendingReplacementEffect.controller = controller,
-                            PendingReplacementEffect.source = ReplacementCandidate.source candidate
+                            PendingReplacementEffect.source = ReplacementCandidate.source candidate,
+                            PendingReplacementEffect.bindsArrival = False
                           }
                   }
             }
@@ -5542,7 +5547,8 @@ apply settle batch applied batchPrevented candidate event =
                               { PendingReplacementEffect.effects = effects,
                                 PendingReplacementEffect.targets = ReplacementCandidate.slots candidate,
                                 PendingReplacementEffect.controller = controller,
-                                PendingReplacementEffect.source = ReplacementCandidate.source candidate
+                                PendingReplacementEffect.source = ReplacementCandidate.source candidate,
+                                PendingReplacementEffect.bindsArrival = False
                               }
                       }
                 }
@@ -5763,7 +5769,8 @@ apply settle batch applied batchPrevented candidate event =
                                     -- "this artifact" (Time Vault), Replacement.printedRider's binding.
                                     PendingReplacementEffect.targets = Map.insert Binding.triggerSource (Set.singleton (Recipient.ToObject (ReplacementCandidate.source candidate))) (ReplacementCandidate.slots candidate),
                                     PendingReplacementEffect.controller = decider,
-                                    PendingReplacementEffect.source = ReplacementCandidate.source candidate
+                                    PendingReplacementEffect.source = ReplacementCandidate.source candidate,
+                                    PendingReplacementEffect.bindsArrival = False
                                   },
                               PendingSkipEffect.extraTurns = GameState.extraTurns gs,
                               PendingSkipEffect.turnMarkers = GameState.turnMarkers gs,
@@ -5905,7 +5912,8 @@ apply settle batch applied batchPrevented candidate event =
                           { PendingReplacementEffect.effects = effects,
                             PendingReplacementEffect.targets = Map.empty,
                             PendingReplacementEffect.controller = controller,
-                            PendingReplacementEffect.source = oid
+                            PendingReplacementEffect.source = oid,
+                            PendingReplacementEffect.bindsArrival = False
                           }
                   }
             }

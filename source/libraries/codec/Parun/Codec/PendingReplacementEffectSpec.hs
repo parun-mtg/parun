@@ -27,8 +27,22 @@ spec s = Spec.describe s "Parun.Codec.PendingReplacementEffect" $ do
         { PendingReplacementEffect.effects = Seq.fromList [Effect.Proliferate Nothing],
           PendingReplacementEffect.targets = Map.singleton (SlotName.MkSlotName (Text.pack "creature")) (Set.singleton (Recipient.ToObject (ObjectId.MkObjectId 5))),
           PendingReplacementEffect.controller = PlayerId.MkPlayerId 1,
-          PendingReplacementEffect.source = ObjectId.MkObjectId 3
+          PendingReplacementEffect.source = ObjectId.MkObjectId 3,
+          PendingReplacementEffect.bindsArrival = False
         }
       " {\"effects\":[{\"type\":\"Proliferate\"}],\"targets\":{\"creature\":[{\"type\":\"ToObject\",\"value\":5}]},\"controller\":1,\"source\":3} "
+  -- CR 400.7: a ZoneChangeR rider's flag, written only when set.
+  Spec.it s "a queued zone-change rider binding the arrival" $
+    Common.assertCodec
+      s
+      PendingReplacementEffect.codec
+      PendingReplacementEffect.MkPendingReplacementEffect
+        { PendingReplacementEffect.effects = Seq.fromList [Effect.Proliferate Nothing],
+          PendingReplacementEffect.targets = Map.empty,
+          PendingReplacementEffect.controller = PlayerId.MkPlayerId 1,
+          PendingReplacementEffect.source = ObjectId.MkObjectId 3,
+          PendingReplacementEffect.bindsArrival = True
+        }
+      " {\"effects\":[{\"type\":\"Proliferate\"}],\"targets\":{},\"controller\":1,\"source\":3,\"bindsArrival\":true} "
   Spec.it s "has a schema" $
     Common.assertHasSchema s PendingReplacementEffect.codec

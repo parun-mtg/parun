@@ -37,6 +37,11 @@ data PendingReplacementEffect = MkPendingReplacementEffect
   { effects :: Seq.Seq (Effect.Effect Card.Card (GrantedAbility.GrantedAbility Card.Card)),
     targets :: Map.Map SlotName.SlotName (Set.Set Recipient.Recipient),
     controller :: PlayerId.PlayerId,
-    source :: ObjectId.ObjectId
+    source :: ObjectId.ObjectId,
+    -- | CR 400.7 / 614.6: the drain binds what the Binding.departedPermanent
+    -- target arrived as under Binding.became, so a ZoneChangeR rider names the
+    -- card it moved (Ravenloft Adventurer's "instead exile it and put a hit
+    -- counter on it"). False for every other queuer.
+    bindsArrival :: Bool
   }
   deriving (Eq, Ord, Show)

@@ -1,0 +1,124 @@
+{
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "battlefield": [
+          {
+            "card": "Ravenloft Adventurer",
+            "label": "adventurer",
+            "ready": true
+          }
+        ],
+        "exile": [
+          {
+            "card": "Llanowar Elves",
+            "counters": [
+              {
+                "key": {
+                  "type": "Named",
+                  "value": "hit"
+                },
+                "value": 1
+              }
+            ]
+          }
+        ],
+        "library": [
+          {
+            "card": "Island",
+            "label": "top"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ],
+        "name": "alice"
+      },
+      {
+        "exile": [
+          {
+            "card": "Grizzly Bears",
+            "counters": [
+              {
+                "key": {
+                  "type": "Named",
+                  "value": "hit"
+                },
+                "value": 1
+              }
+            ]
+          },
+          {
+            "card": "Savannah Lions",
+            "counters": [
+              {
+                "key": {
+                  "type": "Named",
+                  "value": "hit"
+                },
+                "value": 1
+              }
+            ]
+          },
+          {
+            "card": "Hill Giant"
+          }
+        ],
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ],
+        "name": "bob"
+      }
+    ],
+    "step": "PrecombatMain"
+  },
+  "description": "Ravenloft Adventurer's attack drains nobody while its controller has completed no dungeon",
+  "note": "CR 603.4: the intervening if is false, so the ability does not trigger; bob loses only the 3 combat damage.",
+  "timeline": [
+    {
+      "do": {
+        "Attack": [
+          "$adventurer"
+        ]
+      },
+      "player": "alice",
+      "step": "DeclareAttackers",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Life": {
+          "life": 17,
+          "player": "bob"
+        }
+      },
+      "player": "alice",
+      "step": "PostcombatMain",
+      "turn": 1
+    }
+  ]
+}
