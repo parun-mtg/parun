@@ -2103,6 +2103,8 @@ filterPositionLintSpec s registry corpus = Spec.describe s "Lint" $ do
     --
     -- Less than, against the mana value, in a dies trigger's slot whose amount
     -- totals the creature that died (the trigger's "became"): Jackdaw Savior.
+    -- The same in an enters trigger's slot, totalling the creature that
+    -- entered: Clement, the Worrywort.
     assertAuthors
       s
       registry
@@ -2148,7 +2150,8 @@ filterPositionLintSpec s registry corpus = Spec.describe s "Lint" $ do
         ("Isareth the Awakener", 1),
         ("Wishing Well", 1),
         ("Sidisi, Regent of the Mire", 1),
-        ("Jackdaw Savior", 1)
+        ("Jackdaw Savior", 1),
+        ("Clement, the Worrywort", 1)
       ]
     -- The rejected side, which the sweep above cannot show while the pool has no
     -- offender: the SAME atom, buried under all three combinators, in a target
