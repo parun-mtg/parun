@@ -406,8 +406,8 @@ offerOf namer gs prompt = case prompt of
   Prompt.ChooseTaps _ _ source _ candidates count -> subset namer (Just source) [] (exactly count candidates) (fmap (object namer) candidates)
   -- CR 702.167a: "one or more" makes the count a least.
   Prompt.ChooseMaterials _ _ source candidates count orMore -> subset namer (Just source) [] (if orMore then (Just count, Nothing) else exactly count candidates) (fmap (object namer) candidates)
-  -- CR 702.122a: any of them, whose total power the engine judges, and under
-  -- @"counts"@ the power each counts as (CR 702.122a's "as though").
+  -- CR 702.122a / 702.171a: any of them, whose total power the engine judges,
+  -- and under @"counts"@ the power each counts as, a Pilot's "as though" raised.
   Prompt.ChooseTapsForTotalPower _ _ source candidates power -> subset namer (Just source) [("power", natural power), counts candidates] (Nothing, Nothing) (fmap (object namer . fst) candidates)
   -- CR 701.59a / 406.2: any of them, whose total tally the engine judges, and
   -- under @"counts"@ each one's tally.
