@@ -564,16 +564,20 @@ manaYieldsOfGiven pcs oid gs = ListUtils.nubOrd (fmap (Mana.MkMana . yieldUnits)
 -- each unit of a type already in the pool becomes. The doubling is empty for
 -- every other yield. `yieldX` is the X its activation announces (CR 601.2b by
 -- way of CR 602.2b), for a route whose yield reads it, and Nothing elsewhere.
+-- `yieldLender` is the card that lent the activated ability (CR 613.1f,
+-- Binding.acquiredSource), which a CR 609.4b clause about lent abilities reads
+-- (payableResolutionsGiven's `activatingAt`), and Nothing for any other.
 data Yield = MkYield
   { yieldMana :: Mana,
     yieldDoubling :: Map.Map ManaType [ManaUnit],
-    yieldX :: Maybe Natural
+    yieldX :: Maybe Natural,
+    yieldLender :: Maybe ObjectId
   }
   deriving (Eq, Ord, Show)
 
 -- A yield of this mana that doubles nothing and announces no X.
 plainYield :: Mana -> Yield
-plainYield mana = MkYield {yieldMana = mana, yieldDoubling = Map.empty, yieldX = Nothing}
+plainYield mana = MkYield {yieldMana = mana, yieldDoubling = Map.empty, yieldX = Nothing, yieldLender = Nothing}
 
 -- The same yields narrowed to the ones this player could actually get, each with
 -- HOW MANY TIMES they could get it, WHAT ONE of those activations spends, and
@@ -676,7 +680,8 @@ manaSuppliesGiven xCeiling capacity watch rewritesOf pcs pid borrowed oid gs =
              in MkYield
                   { yieldMana = fixed,
                     yieldDoubling = Map.fromListWith (flip (<>)) [(ManaUnit.manaType unit, [unit]) | unit <- unitsOf probed List.\\ unitsOf fixed],
-                    yieldX = Nothing
+                    yieldX = Nothing,
+                    yieldLender = Nothing
                   }
           else plainYield (shareOf option)
       shareOf option = Mana.MkMana (concatMap (\(ref, mana) -> if List.elem pid (recipientsOf pid (choosable option) gs ref) then unitsOf mana else []) (Map.toList (ManaOption.yield option)))
@@ -833,7 +838,10 @@ manaSuppliesGiven xCeiling capacity watch rewritesOf pcs pid borrowed oid gs =
         [ (activations, yield {yieldMana = Mana.MkMana (unitsOf (yieldMana yield) <> unitsOf bonus)}, manaCost, own)
         | bonus <- triggeredYields watch pid (choosable option) oid option (yieldMana yield) gs
         ]
-      counted = concatMap (\option -> foldMap (\extra -> concatMap (triggered option . restricted extra) (perCandidate option)) (routeAccess (mayTakeRoute controls pid oid gs) borrowed (ManaOption.cost option) (ManaOption.ability option))) options
+      -- CR 613.1f: each yield says which card lent its ability, so the
+      -- collapse below never merges a lent ability's yield with another's.
+      lent option (activations, yield, manaCost, own) = (activations, yield {yieldLender = Binding.acquiredSource =<< ActivatedAbility.name =<< ManaOption.ability option}, manaCost, own)
+      counted = concatMap (\option -> foldMap (\extra -> concatMap (fmap (lent option) . triggered option . restricted extra) (perCandidate option)) (routeAccess (mayTakeRoute controls pid oid gs) borrowed (ManaOption.cost option) (ManaOption.ability option))) options
       available = filter (\(activations, _, _, _) -> Activations.times activations > 0) counted
       yieldOf (_, yield, _, _) = yield
       -- Ordered so `maximumBy` prefers the larger count, and a mana-free route
@@ -3026,7 +3034,7 @@ data Ceiling = MkCeiling
 -- ceilingGroups sums `times` over, beside what its CR 701.10f doubling makes of
 -- each type. A group announcing an X is ceilingConverters', not this.
 ceilingProfile :: [SpendManaAsThough.SpendManaAsThough] -> (GroupKey, [([ManaUnit], Activations.Activations, Maybe Natural)]) -> ([[Supply]], Natural, Map.Map ManaType [Supply])
-ceilingProfile clauses ((activations, _, doubling, _), entries) =
+ceilingProfile clauses ((activations, _, doubling, _, _), entries) =
   (ListUtils.nubOrd [List.sort (fmap (ceilingSupply clauses) units) | (units, _, _) <- entries, not (null units)], Activations.times activations, fmap (fmap (ceilingSupply clauses)) doubling)
 
 -- One unit as the ceiling counts it: a supply admitting no payment.
@@ -3040,7 +3048,7 @@ ceilingSupply clauses unit = rewriteSupply clauses (supplyOf (const Set.empty) u
 -- assumes.
 ceilingOf :: [SpendManaAsThough.SpendManaAsThough] -> [(ObjectId, Natural, ManaType)] -> [[(Activations.Activations, Yield, ManaCost, Activations.Activations)]] -> [[(Activations.Activations, Yield, ManaCost, Activations.Activations)]] -> Maybe Ceiling
 ceilingOf clauses lifeForMana supplies atOne = do
-  let announces (_, _, _, announcing) = announcing
+  let announces (_, _, _, announcing, _) = announcing
       profiles = fmap (ceilingProfile clauses) (concatMap (filter (not . announces . fst) . groupsOf) supplies)
       converting = [unitsOf (yieldMana yield) | (activations, yield, _, _) <- concat atOne, yieldX yield == Just 1, Activations.times activations > 0]
   Monad.guard (all ((<= 1) . length) converting)
@@ -3228,7 +3236,7 @@ data SourceOption = MkSourceOption
 -- many mana every payment on the board could ask for at most, and for each type
 -- some typed demand names, how many typed demands on the board could take it
 -- (payableResolutionsGiven's `demandBound` and `typedNeeds`).
-sourceOptions :: [SpendManaAsThough.SpendManaAsThough] -> (ManaUnit -> Set.Set PaymentSubject.PaymentSubject) -> ([Claim] -> Bool) -> [(Maybe GroupShape, [Claim])] -> Natural -> Map.Map ManaType Natural -> [(Activations.Activations, Yield, ManaCost, Activations.Activations)] -> [[SourceOption]]
+sourceOptions :: [SpendManaAsThough.SpendManaAsThough] -> (ManaUnit -> Set.Set PaymentSubject.PaymentSubject) -> ([Claim] -> Bool) -> [(Maybe GroupShape, [Claim])] -> Natural -> Map.Map ManaType Natural -> [(Activations.Activations, Yield, ManaCost, Activations.Activations)] -> [(Maybe ObjectId, [SourceOption])]
 sourceOptions clauses admitting contends board demanded needs supplies =
   let relevant = Map.keysSet needs
       groups = groupsOf supplies
@@ -3268,7 +3276,7 @@ sourceOptions clauses admitting contends board demanded needs supplies =
          in case ListUtils.nubOrd (filter (not . null) (unions <> fmap spread (Map.toList spreads) <> apart)) of
               [] -> [[]]
               some -> some
-      optionsFor group@((activations, manaCost, doubling, announcing), xEntries) =
+      optionsFor group@((activations, manaCost, doubling, announcing, _), xEntries) =
         let twin = Just (shapeOf group)
             rivals = concat [held | (shape, held) <- board, shape /= twin]
             entries = fmap (\(units, own, _) -> (units, own)) xEntries
@@ -3503,7 +3511,7 @@ sourceOptions clauses admitting contends board demanded needs supplies =
       -- enumeration leaves empty offers that rather than ending every board. A
       -- FENCE: `resolutions` answers at least one way to pay every cost.
       none = MkSourceOption {optionSupplies = [], optionDemands = [], optionClaims = [], optionLife = 0, optionEnergy = 0, optionDoublings = []}
-   in fmap (\group -> case ListUtils.nubOrd (optionsFor group) of [] -> [none]; some -> some) groups
+   in fmap (\group@((_, _, _, _, lender), _) -> (lender, case ListUtils.nubOrd (optionsFor group) of [] -> [none]; some -> some)) groups
 
 -- A source's routes in sourceOptions' GROUPS: grouped by what ONE activation
 -- costs, which is what lets k activations of the group take k alternatives
@@ -3515,12 +3523,12 @@ groupsOf supplies =
   Map.toList
     ( Map.fromListWith
         (flip (<>))
-        (fmap (\(activations, yield, manaCost, own) -> ((activations, manaCost, yieldDoubling yield, Maybe.isJust (yieldX yield)), [(unitsOf (yieldMana yield), own, yieldX yield)])) supplies)
+        (fmap (\(activations, yield, manaCost, own) -> ((activations, manaCost, yieldDoubling yield, Maybe.isJust (yieldX yield), yieldLender yield), [(unitsOf (yieldMana yield), own, yieldX yield)])) supplies)
     )
 
--- What one activation of a group costs and doubles, and whether it announces an
--- X (groupsOf).
-type GroupKey = (Activations.Activations, ManaCost, Map.Map ManaType [ManaUnit], Bool)
+-- What one activation of a group costs and doubles, whether it announces an
+-- X, and the card that lent its ability (groupsOf).
+type GroupKey = (Activations.Activations, ManaCost, Map.Map ManaType [ManaUnit], Bool, Maybe ObjectId)
 
 -- Everything a group offers a board, its yields sorted: two groups of one
 -- shape, two Food Chains', are TWINS, either's activations the other's.
@@ -3533,7 +3541,7 @@ shapeOf (key, entries) = (key, List.sort entries)
 -- and the cost's own `claimed` under none: the route's claims and each yield's.
 boardClaims :: [Claim] -> [[(Activations.Activations, Yield, ManaCost, Activations.Activations)]] -> [(Maybe GroupShape, [Claim])]
 boardClaims claimed suppliesPer =
-  (Nothing, claimed) : [(Just (shapeOf group), Activations.claims activations <> concatMap (\(_, own, _) -> Activations.claims own) entries) | supplies <- suppliesPer, group@((activations, _, _, _), entries) <- groupsOf supplies]
+  (Nothing, claimed) : [(Just (shapeOf group), Activations.claims activations <> concatMap (\(_, own, _) -> Activations.claims own) entries) | supplies <- suppliesPer, group@((activations, _, _, _, _), entries) <- groupsOf supplies]
 
 -- How many multisets of `n` elements a set of `types` elements has: C(n +
 -- types - 1, n).
@@ -3660,10 +3668,9 @@ data Sources = MkSources
     sourceBorrowed :: ObjectId -> [Maybe ManaRestriction.ManaRestriction],
     sourceClauses :: [SpendManaAsThough.SpendManaAsThough],
     -- PlayerEffect.spendManaAsThoughActivating of the board: the clauses about
-    -- activating an ability of that source, past `sourceClauses`. Not
-    -- implemented: a clause about lent abilities (ActivationScope.lentBy),
-    -- since this knows the source and not the ability (#7687).
-    sourceActivating :: ObjectId -> [SpendManaAsThough.SpendManaAsThough],
+    -- activating an ability of that source lent by that card, or by none, past
+    -- `sourceClauses`.
+    sourceActivating :: ObjectId -> Maybe ObjectId -> [SpendManaAsThough.SpendManaAsThough],
     sourceLifeForMana :: [(ObjectId, Natural, ManaType)],
     sourceLifePayable :: Natural -> Bool,
     -- The PLAIN sources among `sourceIds` (plainSupplies), each with the
@@ -3696,7 +3703,7 @@ supplySourcesGiven capacity grants pcs pid gs =
           sourceSupplies = supplies,
           sourceBorrowed = borrowed,
           sourceClauses = clauses,
-          sourceActivating = \oid -> PlayerEffect.spendManaAsThoughActivating rows pid oid Nothing gs,
+          sourceActivating = \oid lender -> PlayerEffect.spendManaAsThoughActivating rows pid oid lender gs,
           sourcePlain = plain,
           sourcePlainTotal = Map.fromListWith (+) (concat (Map.elems plain)),
           sourceCeiling = ceilingOf clauses lifeForMana supplies [manaSuppliesGiven 1 capacity watch rewritesOf pcs pid (borrowed oid) oid gs | (oid, routes) <- zip ids supplies, any (\(_, yield, _, _) -> Maybe.isJust (yieldX yield)) routes],
@@ -3794,9 +3801,13 @@ payableResolutionsGiven subject spending swept pcs pid committed committedEnergy
       -- its own as above, and no other position. data/scenarios'
       -- agatha-s-soul-cauldron-pays-a-creature-s-mana-ability-s-own-cost-as-any-color
       -- is the proof, and its -ahead-of-a-doubling sibling CR 701.10f's walk's.
-      activatingAt = Map.filter (not . null) (Map.fromList (fmap (\oid -> (oid, sourceActivating swept oid)) sources))
+      -- Keyed by the source and the card that lent the ability (CR 613.1f), so
+      -- a clause about lent abilities serves only theirs: data/scenarios'
+      -- drana-and-linvala-pays-a-lent-mana-ability-s-own-cost-as-any-color is
+      -- the proof.
+      activatingAt = Map.filter (not . null) (Map.fromList [(key, sourceActivating swept oid lender) | key@(oid, lender) <- ListUtils.nubOrd (fmap fst (concat options))])
       servesAt subjectAt position = case Map.lookup position subjectAt of
-        Just (PaymentSubject.Activating oid _ _ _) | Just extra <- Map.lookup oid activatingAt -> serves . rewriteSupply (clauses <> extra)
+        Just (PaymentSubject.Activating oid _ _ _, lender) | Just extra <- Map.lookup (oid, lender) activatingAt -> serves . rewriteSupply (clauses <> extra)
         _ -> serves
       pooled = fmap (rewriteSupply clauses . supplyOf admitting) (unitsOf (Game.poolOf pid gs))
       suppliesAt limit oid = manaSuppliesGiven limit capacity (sourceWatch swept) (sourceRewrites swept) pcs pid (sourceBorrowed swept oid) oid gs
@@ -3862,12 +3873,12 @@ payableResolutionsGiven subject spending swept pcs pid committed committedEnergy
       -- Cost.greatestPayableX's climb, demandBound growing with X, so lifting
       -- both loops it; lifting one takeWhile changes nothing.
       lifeForManaOptions =
-        [ [ (oid, MkSourceOption {optionSupplies = List.genericReplicate k (rewriteSupply clauses (supplyOf admitting (lifeForManaUnit mana))), optionDemands = [], optionClaims = [], optionLife = k * life, optionEnergy = 0, optionDoublings = []})
+        [ [ ((oid, Nothing), MkSourceOption {optionSupplies = List.genericReplicate k (rewriteSupply clauses (supplyOf admitting (lifeForManaUnit mana))), optionDemands = [], optionClaims = [], optionLife = k * life, optionEnergy = 0, optionDoublings = []})
           | k <- takeWhile (affordable . (* life)) [0 .. demandBound]
           ]
         | (oid, life, mana) <- sourceLifeForMana swept
         ]
-      options = lifeForManaOptions <> concat (zipWith (\oid supplies -> fmap (fmap ((,) oid)) (sourceOptions clauses (admitting . producedDuring subject) (Claim.contends contested) board demandBound typedNeeds supplies)) sources suppliesPer)
+      options = lifeForManaOptions <> concat (zipWith (\oid supplies -> fmap (\(lender, each) -> fmap ((,) (oid, lender)) each) (sourceOptions clauses (admitting . producedDuring subject) (Claim.contends contested) board demandBound typedNeeds supplies)) sources suppliesPer)
       -- One option taken from each group, appended to the pool: `sequenceA` over
       -- the list applicative is that product, and it is [[]] -- one board, the
       -- pool alone -- when the player controls no source at all. Each board
@@ -3900,7 +3911,8 @@ payableResolutionsGiven subject spending swept pcs pid committed committedEnergy
       -- k-th eating option's source activating (CR 602.2b), and `costPosition`
       -- is the payment this walk was asked about. That map is CR 106.6's other
       -- half -- `admits` pairs a demand with the payment it belongs to before
-      -- asking whether the mana admits it.
+      -- asking whether the mana admits it. Each payment carries the card that
+      -- lent its ability (CR 613.1f), which `servesAt` reads.
       boards = do
         taken <- sequenceA options
         Monad.guard (Claim.satisfiable (claimed <> concatMap (optionClaims . snd) taken))
@@ -3918,7 +3930,7 @@ payableResolutionsGiven subject spending swept pcs pid committed committedEnergy
               <> concatMap (\(k, (_, option)) -> fmap ((,) k) (optionSupplies option)) ranked,
             concatMap (\(k, (_, option)) -> fmap ((,) k) (optionDemands option)) ranked,
             costPosition,
-            Map.fromList ((costPosition, subject) : fmap (\(k, (oid, _)) -> (k, PaymentSubject.Activating oid Nothing Nothing Nothing)) ranked),
+            Map.fromList ((costPosition, (subject, Nothing)) : fmap (\(k, ((oid, lender), _)) -> (k, (PaymentSubject.Activating oid Nothing Nothing Nothing, lender))) ranked),
             sum (fmap (optionLife . snd) taken),
             concatMap (\(k, (_, option)) -> fmap ((,) k) (optionDoublings option)) ranked
           )
@@ -3973,7 +3985,7 @@ payableResolutionsGiven subject spending swept pcs pid committed committedEnergy
                   admits (from, supply) (wantedAt, demand) =
                     (if wantedAt == costPosition then servesCost else servesAt subjectAt wantedAt) supply demand
                       && from < wantedAt
-                      && maybe False (`Set.member` supplyAdmits supply) (Map.lookup wantedAt subjectAt)
+                      && maybe False ((`Set.member` supplyAdmits supply) . fst) (Map.lookup wantedAt subjectAt)
                   -- "The supplies that could serve this set of demands" and "the
                   -- demands in it", the two sides of Hall's condition for one
                   -- subset.
@@ -4047,7 +4059,7 @@ payableResolutionsGiven subject spending swept pcs pid committed committedEnergy
             walked supplies eaten costPosition subjectAt doublings =
               let wanted_ = demands <> List.genericReplicate generic anyTypeDemand
                   named = Set.unions (fmap demandTypes (filter (/= anyTypeDemand) (wanted_ <> fmap snd eaten)))
-                  admitsAt k supply = maybe False (`Set.member` supplyAdmits supply) (Map.lookup k subjectAt)
+                  admitsAt k supply = maybe False ((`Set.member` supplyAdmits supply) . fst) (Map.lookup k subjectAt)
                   serve k pools demand = Set.fromList [List.delete supply pool | pool <- Set.toList pools, supply <- ListUtils.nubOrd pool, admitsAt k supply, servesAt subjectAt k supply demand]
                   settle doubling supply =
                     let (naming, unnamed) = List.partition (not . Set.disjoint named . spendableAs clauses) (Set.toList (supplyMade supply))
