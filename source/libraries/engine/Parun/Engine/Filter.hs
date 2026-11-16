@@ -2060,9 +2060,8 @@ comparesCandidates predicate = case predicate of
   Filter.Measures (Measures.MkMeasures _ _ (Operand.OfEachOtherCandidate _)) -> True
   _ -> Monoid.getAny (Const.getConst (Children.filterChildren (Children.descending (Const.Const . Monoid.Any . comparesCandidates)) predicate))
 
--- Does the Filter carry Filter.PaidWithManaFromSource anywhere, so that the
--- object whose ability holds it must stamp its mana with itself
--- (Parun.Engine.Mana.producerOf)?
+-- Does the Filter carry Filter.PaidWithManaFromSource anywhere, so that mana
+-- must name its producer (Parun.Engine.Mana.producerOf)?
 readsProducer :: Filter.Filter keyword -> Bool
 readsProducer predicate = case predicate of
   Filter.PaidWithManaFromSource -> True

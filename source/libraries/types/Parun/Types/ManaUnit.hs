@@ -134,10 +134,11 @@ data ManaUnit = MkManaUnit
     -- Tecutlan, the Searing Rift's "using mana produced by Tecutlan". Stamped
     -- by both producers off Parun.Engine.Mana.producerOf.
     --
-    -- Nothing unless the producer, as it makes the mana, has an ability asking
-    -- that question in its projection or its copiable values, so a plain unit
-    -- stays equal to every other of its type and CR 601.2h's choice of which to
-    -- spend is asked only where it is observable.
+    -- Nothing unless, as the mana is made, the producer's projection or any
+    -- object's copiable values (a later copy effect's, CR 707.2) hold an ability
+    -- asking that question, so a plain unit stays equal to every other of its
+    -- type and CR 601.2h's choice of which to spend is asked only where it is
+    -- observable.
     -- The id dangles by design: a source that changed zones is a new object (CR
     -- 400.7) that produced none of it.
     producer :: Maybe ObjectId.ObjectId

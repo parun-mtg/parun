@@ -96,6 +96,29 @@
               "type": "Colored",
               "value": "White"
             },
+            "producer": 1,
+            "restriction": null,
+            "retention": "Ordinary",
+            "rider": null,
+            "sourceChoices": null,
+            "tags": []
+          }
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Answer": {
+          "prompt": "ChooseManaToSpend",
+          "with": {
+            "manaType": {
+              "type": "Colored",
+              "value": "White"
+            },
+            "producer": 2,
             "restriction": null,
             "retention": "Ordinary",
             "rider": null,
