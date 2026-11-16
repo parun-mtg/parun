@@ -1,0 +1,233 @@
+{
+  "board": {
+    "active": "alice",
+    "step": "Upkeep",
+    "seats": [
+      {
+        "name": "alice",
+        "battlefield": [
+          {
+            "card": "Pompous Gadabout",
+            "label": "gadabout",
+            "ready": true
+          }
+        ],
+        "library": [
+          {
+            "card": "Forest"
+          },
+          {
+            "card": "Forest"
+          },
+          {
+            "card": "Forest"
+          },
+          {
+            "card": "Forest"
+          },
+          {
+            "card": "Forest"
+          },
+          {
+            "card": "Forest"
+          },
+          {
+            "card": "Forest"
+          },
+          {
+            "card": "Forest"
+          }
+        ]
+      },
+      {
+        "name": "bob",
+        "battlefield": [
+          {
+            "card": "Basilica Stalker",
+            "label": "hidden",
+            "faceDown": "Disguised"
+          },
+          {
+            "card": "Ornithopter",
+            "label": "thopter"
+          },
+          {
+            "card": "Mountain",
+            "label": "m1"
+          },
+          {
+            "card": "Mountain",
+            "label": "m2"
+          }
+        ],
+        "hand": [
+          {
+            "card": "Shock",
+            "label": "shock1"
+          },
+          {
+            "card": "Shock",
+            "label": "shock2"
+          }
+        ],
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ]
+      }
+    ]
+  },
+  "description": "Pompous Gadabout has hexproof only during its controller's turn and can't be blocked by creatures that don't have a name",
+  "note": "On alice's turn bob's Shock can't target the Gadabout; on bob's turn it can and kills it. The face-down Basilica Stalker has no name (CR 708.2a) and can't block it; the named Ornithopter can, and its 0 power leaves the Gadabout alive for bob's turn.",
+  "timeline": [
+    {
+      "check": {
+        "Keywords": {
+          "object": "$gadabout",
+          "keyword": {
+            "type": "Hexproof"
+          },
+          "count": 1
+        }
+      },
+      "player": "bob",
+      "step": "Upkeep",
+      "turn": 1
+    },
+    {
+      "refuse": {
+        "Cast": {
+          "object": "$shock1",
+          "targets": [
+            "$gadabout"
+          ],
+          "mana": [
+            "$m1"
+          ]
+        }
+      },
+      "player": "bob",
+      "step": "Upkeep",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Attack": [
+          "$gadabout"
+        ]
+      },
+      "player": "alice",
+      "step": "DeclareAttackers",
+      "turn": 1
+    },
+    {
+      "refuse": {
+        "Block": {
+          "$hidden": [
+            "$gadabout"
+          ]
+        }
+      },
+      "player": "bob",
+      "step": "DeclareBlockers",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Block": {
+          "$thopter": [
+            "$gadabout"
+          ]
+        }
+      },
+      "player": "bob",
+      "step": "DeclareBlockers",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Blockers": {
+          "attacker": "$gadabout",
+          "blockers": [
+            "$thopter"
+          ]
+        }
+      },
+      "player": "alice",
+      "step": "DeclareBlockers",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Keywords": {
+          "object": "$gadabout",
+          "keyword": {
+            "type": "Hexproof"
+          },
+          "count": 0
+        }
+      },
+      "player": "bob",
+      "step": "Upkeep",
+      "turn": 2
+    },
+    {
+      "do": {
+        "Cast": {
+          "object": "$shock2",
+          "targets": [
+            "$gadabout"
+          ],
+          "mana": [
+            "$m1",
+            null
+          ]
+        }
+      },
+      "player": "bob",
+      "step": "PrecombatMain",
+      "turn": 2
+    },
+    {
+      "do": "Pass",
+      "player": "bob",
+      "step": "PrecombatMain",
+      "turn": 2
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Pompous Gadabout",
+          "count": 1,
+          "player": "alice",
+          "zone": "Graveyard"
+        }
+      },
+      "player": "bob",
+      "step": "PrecombatMain",
+      "turn": 2
+    }
+  ]
+}
