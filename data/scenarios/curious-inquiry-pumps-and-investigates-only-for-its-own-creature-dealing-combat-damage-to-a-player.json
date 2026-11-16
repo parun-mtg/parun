@@ -1,0 +1,50 @@
+{
+  "description": "Curious Inquiry pumps and investigates only for its own creature dealing combat damage to a player",
+  "note": "Three attackers: the Bears wear the Inquiry alice casts and connect (one trigger, one Clue); the Giant wears a second Inquiry but is blocked by the Wall, so its combat damage goes to a creature and does not trigger; the Lions connect wearing nothing. Before combat the enchanted Sorcerer pings bob: noncombat damage to a player, so nothing triggers. The stack at combat damage holds exactly the Bears' trigger, and alice ends with one Clue. Both enchanted creatures show the +1/+1.",
+  "board": {
+    "seats": [
+      {
+        "name": "alice",
+        "manaPool": "U",
+        "battlefield": [
+          {"card": "Grizzly Bears", "label": "bears", "ready": true},
+          {"card": "Hill Giant", "label": "giant", "ready": true},
+          {"card": "Savannah Lions", "label": "lions", "ready": true},
+          {"card": "Prodigal Sorcerer", "label": "tim", "ready": true},
+          {"card": "Curious Inquiry", "label": "placed", "attached": "giant"},
+          {"card": "Curious Inquiry", "label": "placed2", "attached": "tim"}
+        ],
+        "hand": [
+          {"card": "Curious Inquiry", "label": "inquiry"}
+        ]
+      },
+      {
+        "name": "bob",
+        "battlefield": [
+          {"card": "Wall of Stone", "label": "wall"}
+        ]
+      }
+    ],
+    "active": "alice",
+    "step": "PrecombatMain"
+  },
+  "timeline": [
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": {"Cast": {"object": "$inquiry", "targets": ["$bears"]}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass"},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"PowerToughness": {"object": "$bears", "power": 3, "toughness": 3}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"PowerToughness": {"object": "$giant", "power": 4, "toughness": 4}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"PowerToughness": {"object": "$lions", "power": 2, "toughness": 1}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": {"Activate": {"object": "$tim", "ability": 0, "targets": ["$bob"]}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass"},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"View": {"of": "Stack", "is": []}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Life": {"player": "bob", "life": 19}}},
+    {"turn": 1, "step": "DeclareAttackers", "player": "alice", "do": {"Attack": ["$bears", "$giant", "$lions"]}},
+    {"turn": 1, "step": "DeclareBlockers", "player": "bob", "do": {"Block": {"$wall": ["$giant"]}}},
+    {"turn": 1, "step": "CombatDamage", "player": "alice", "check": {"View": {"of": "Stack", "is": ["trigger of $bears"]}}},
+    {"turn": 1, "step": "CombatDamage", "player": "alice", "do": "Pass"},
+    {"turn": 1, "step": "CombatDamage", "player": "alice", "check": {"Count": {"player": "alice", "zone": "Battlefield", "card": "Clue Token", "count": 1}}},
+    {"turn": 1, "step": "CombatDamage", "player": "alice", "check": {"Count": {"player": "bob", "zone": "Battlefield", "card": "Clue Token", "count": 0}}},
+    {"turn": 1, "step": "CombatDamage", "player": "alice", "check": {"Life": {"player": "bob", "life": 14}}},
+    {"turn": 1, "step": "CombatDamage", "player": "alice", "check": {"Damage": {"object": "$wall", "damage": 4}}}
+  ]
+}

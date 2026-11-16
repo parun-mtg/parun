@@ -1,0 +1,45 @@
+{
+  "description": "Deduce draws a card, then makes a Clue that draws another",
+  "note": "Alice's library is stocked with distinct cards, so the hand view pins that Deduce drew exactly the top card (not zero, not two) and that the Clue it made is alice's and draws the next one when sacrificed. Bob gets no Clue.",
+  "board": {
+    "seats": [
+      {
+        "name": "alice",
+        "manaPool": "UCCC",
+        "hand": [
+          {"card": "Deduce", "label": "deduce"}
+        ],
+        "library": [
+          {"card": "Hill Giant"},
+          {"card": "Grizzly Bears"},
+          {"card": "Forest"},
+          {"card": "Island"},
+          {"card": "Mountain"},
+          {"card": "Plains"},
+          {"card": "Swamp"},
+          {"card": "Wastes"}
+        ]
+      },
+      {
+        "name": "bob",
+        "library": [
+          {"card": "Forest"}, {"card": "Forest"}, {"card": "Forest"}, {"card": "Forest"},
+          {"card": "Forest"}, {"card": "Forest"}, {"card": "Forest"}, {"card": "Forest"}
+        ]
+      }
+    ],
+    "active": "alice",
+    "step": "PrecombatMain"
+  },
+  "timeline": [
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": {"Cast": {"object": "$deduce"}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass"},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"View": {"of": "Zone", "player": "alice", "zone": "Hand", "is": ["Hill Giant"]}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Count": {"player": "alice", "zone": "Battlefield", "card": "Clue Token", "count": 1}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Count": {"player": "bob", "zone": "Battlefield", "card": "Clue Token", "count": 0}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": {"Activate": {"object": "Clue Token", "ability": 0}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass"},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"View": {"of": "Zone", "player": "alice", "zone": "Hand", "is": ["Hill Giant", "Grizzly Bears"]}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Count": {"player": "alice", "zone": "Battlefield", "card": "Clue Token", "count": 0}}}
+  ]
+}

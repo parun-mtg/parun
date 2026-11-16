@@ -1,0 +1,174 @@
+{
+  "faces": [
+    {
+      "additionalCostChoices": [
+        [
+          {
+            "components": [
+              {
+                "type": "CollectEvidence",
+                "value": 6
+              }
+            ],
+            "mana": []
+          },
+          {
+            "mana": []
+          }
+        ]
+      ],
+      "manaCost": [
+        {
+          "type": "Generic",
+          "value": 3
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "Black"
+          }
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "Black"
+          }
+        }
+      ],
+      "name": "Deadly Cover-Up",
+      "oracleText": "As an additional cost to cast this spell, you may collect evidence 6.\nDestroy all creatures. If evidence was collected, exile a card from an opponent's graveyard. Then search its owner's graveyard, hand, and library for any number of cards with that name and exile them. That player shuffles, then draws a card for each card exiled from their hand this way.",
+      "spell": {
+        "modes": [
+          {
+            "clauses": [
+              {
+                "effects": [
+                  {
+                    "type": "Destroy",
+                    "value": {
+                      "ref": {
+                        "type": "EachMatching",
+                        "value": {
+                          "type": "HasCardType",
+                          "value": "Creature"
+                        }
+                      },
+                      "regenerability": "Regenerable"
+                    }
+                  }
+                ]
+              },
+              {
+                "condition": {
+                  "type": "Compares",
+                  "value": {
+                    "comparison": "AtLeast",
+                    "measured": {
+                      "type": "WasBound",
+                      "value": "thatCollectedEvidence"
+                    },
+                    "threshold": {
+                      "type": "Literal",
+                      "value": 1
+                    }
+                  }
+                },
+                "effects": [
+                  {
+                    "type": "MoveToZone",
+                    "value": {
+                      "ref": {
+                        "type": "ChosenCardInGraveyard",
+                        "value": {
+                          "chooser": {
+                            "type": "TheController"
+                          },
+                          "filter": {
+                            "type": "And",
+                            "value": []
+                          },
+                          "players": {
+                            "type": "Scoped",
+                            "value": {
+                              "type": "Opponent"
+                            }
+                          }
+                        }
+                      },
+                      "slot": "exiled",
+                      "zone": "Exile"
+                    }
+                  },
+                  {
+                    "type": "Search",
+                    "value": {
+                      "destination": "Exile",
+                      "filter": {
+                        "type": "Shares",
+                        "value": {
+                          "anchor": {
+                            "type": "Bound",
+                            "value": {
+                              "slot": "exiled"
+                            }
+                          },
+                          "trait": {
+                            "type": "Name"
+                          }
+                        }
+                      },
+                      "handSlot": "fromHand",
+                      "owner": {
+                        "type": "HolderOfBound",
+                        "value": {
+                          "holder": "Owner",
+                          "hop": "Itself",
+                          "slot": "exiled"
+                        }
+                      },
+                      "quantity": null,
+                      "searcher": {
+                        "type": "Relative",
+                        "value": "You"
+                      },
+                      "upTo": true,
+                      "zones": [
+                        "Library",
+                        "Hand",
+                        "Graveyard"
+                      ]
+                    }
+                  },
+                  {
+                    "type": "Draw",
+                    "value": {
+                      "player": {
+                        "type": "HolderOfBound",
+                        "value": {
+                          "holder": "Owner",
+                          "hop": "Itself",
+                          "slot": "exiled"
+                        }
+                      },
+                      "quantity": {
+                        "type": "BoundCount",
+                        "value": "fromHand"
+                      }
+                    }
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "typeLine": {
+        "types": [
+          "Sorcery"
+        ]
+      }
+    }
+  ]
+}
