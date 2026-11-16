@@ -1,0 +1,44 @@
+{
+  "description": "CR 603.2c, 603.10a, 608.2f, 707.9a: The Spot exiles a creature alice controls and a creature card from her graveyard in one event; Kaya, Spirits' Justice triggers once, offers both exiled creature cards, and alice's token becomes a flying copy of the one chosen until end of turn",
+  "note": "The prompt offering both cards pins each half of the trigger's filter: the battlefield half binds the Bears, the graveyard half the Giant.",
+  "board": {
+    "active": "alice",
+    "step": "PrecombatMain",
+    "seats": [
+      {
+        "name": "alice",
+        "battlefield": [
+          { "card": "Kaya, Spirits' Justice", "label": "kaya", "counters": [{ "key": { "type": "Loyalty" }, "value": 3 }] },
+          { "card": "Grizzly Bears", "label": "bear" },
+          { "card": "Goblin Piker", "label": "tok", "token": true }
+        ],
+        "graveyard": [{ "card": "Hill Giant", "label": "giant" }],
+        "hand": [{ "card": "The Spot, Living Portal", "label": "spot" }],
+        "library": [{ "card": "Island" }, { "card": "Island" }, { "card": "Island" }],
+        "manaPool": "CCCWB"
+      },
+      {
+        "name": "bob",
+        "library": [{ "card": "Island" }, { "card": "Island" }, { "card": "Island" }]
+      }
+    ]
+  },
+  "timeline": [
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": { "Cast": { "object": "$spot" } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass" },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": { "ChooseTargets": { "permanent": ["$bear"], "card": ["$giant"] } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass" },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "View": { "of": "Stack", "is": ["trigger of $kaya"] } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass" },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "View": { "of": "Prompt", "is": {"kind":"ChooseAnyNumberOfPermanents","offer":{"source":"$kaya","purpose":"Permanents","earlier":[],"least":0,"most":1,"among":["Grizzly Bears","Hill Giant"]}} } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": { "Answer": { "prompt": "ChooseAnyNumberOfPermanents", "with": ["Hill Giant"] } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "Names": { "object": "$tok", "names": ["Hill Giant"] } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "PowerToughness": { "object": "$tok", "power": 3, "toughness": 3 } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "Keywords": { "object": "$tok", "keyword": { "type": "Flying" }, "count": 1 } } },
+    { "turn": 2, "step": "Upkeep", "player": "bob", "check": { "Names": { "object": "$tok", "names": ["Goblin Piker"] } } },
+    { "turn": 2, "step": "Upkeep", "player": "bob", "check": { "Keywords": { "object": "$tok", "keyword": { "type": "Flying" }, "count": 0 } } }
+  ],
+  "final": [
+    { "Count": { "player": "alice", "zone": "Exile", "card": "Grizzly Bears", "count": 1 } }
+  ]
+}

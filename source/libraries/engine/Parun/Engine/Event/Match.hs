@@ -2541,7 +2541,7 @@ armMatches bindings frozen board atEvent beforeEvent groupEvents gs bearer you c
     -- admits it. Scenario hooded-blightfang-destroys-for-noncombat-damage-from-a-pinger-gone-in-response.
     damageBy watched oid = case watched of
       ActingPermanent.Self -> oid == bearer
-      ActingPermanent.Matching f -> maybe False (\view -> Filter.matches bearerContext (ProjectionView.lastZoned gs oid view) f) (postEventView board gs oid)
+      ActingPermanent.Matching f -> maybe False (\view -> Filter.matches bearerContext (Count.lastZoned gs oid view) f) (postEventView board gs oid)
     -- CR 120.1: is the damage's recipient one this DamageRecipient admits? A
     -- permanent's qualifier reads it as damageBy reads the source, off CR
     -- 603.10's sample, so a recipient the damage killed still answers. Scenario
@@ -2562,7 +2562,7 @@ armMatches bindings frozen board atEvent beforeEvent groupEvents gs bearer you c
       DamageRecipient.Permanent cardType qualifier ->
         let dealt = bearerContext {Filter.boundAmounts = Map.insert Binding.eventAmount amount (Filter.boundAmounts bearerContext)}
          in Set.member cardType (Projection.damagedCardTypes gs target)
-              && maybe False (\oid -> maybe False (\view -> Filter.matches dealt (ProjectionView.lastZoned gs oid view) qualifier) (postEventView board gs oid)) (Recipient.objectOf target)
+              && maybe False (\oid -> maybe False (\view -> Filter.matches dealt (Count.lastZoned gs oid view) qualifier) (postEventView board gs oid)) (Recipient.objectOf target)
 
 -- CR 106.12a's second half: did an activation that produced @produced@ produce
 -- the mana this condition specified? The narrowing half of the

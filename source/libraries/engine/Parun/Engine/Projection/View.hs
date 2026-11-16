@@ -468,14 +468,6 @@ settledUnder oid controller gs = case (Game.lookupObject oid gs, controller) of
   (Just object, Just pid) -> Object.sickness object == Sickness.Settled pid
   _ -> False
 
--- CR 113.7a / 608.2h: a departed object's view placed in the zone its record
--- says it last existed in, which Count.lastKnownView leaves Nothing; the view
--- unchanged while the object exists.
-lastZoned :: GameState -> ObjectId -> Filter.View -> Filter.View
-lastZoned gs oid view = case Game.lastKnownOf oid gs of
-  Just lastKnown -> view {Filter.zone = Just (LastKnown.zone lastKnown)}
-  Nothing -> view
-
 -- Shared assembly: fill a View from a projection's characteristics, a supplied
 -- controller and supplied counters.
 --
@@ -763,7 +755,7 @@ viewOfCharacteristics peers oid pc controller counters gs =
       Filter.actedThisTurn = Count.actedThisTurn oid gs,
       Filter.arrivalThisTurn = Game.arrivalThisTurn oid gs,
       Filter.arrivalSinceOwnLastTurn = Game.arrivalSinceOwnLastTurn oid gs,
-      Filter.beforeMoveView = Count.departedAs gs oid >>= Count.orLastKnown peers gs,
+      Filter.beforeMoveView = Count.departedAs gs oid >>= Count.orLastZoned peers gs,
       Filter.crewedThisTurn = Count.crewedThisTurn oid gs,
       Filter.convokedThisTurn = Count.convokedThisTurn oid gs,
       Filter.saddledThisTurn = Count.saddledThisTurn oid gs,
@@ -843,7 +835,7 @@ viewOfCharacteristics peers oid pc controller counters gs =
       -- which the record keeps: CR 109.2's "an artifact" is a permanent, so
       -- Kurkesh, Onakke Ancient sees the Mind Stone sacrificed to pay for its
       -- own draw and not the card Soul of New Phyrexia exiles from a graveyard.
-      Filter.abilitySource = Game.abilitySourceOf oid gs >>= \src -> fmap (lastZoned gs src) (Count.orLastKnown peers gs src),
+      Filter.abilitySource = Game.abilitySourceOf oid gs >>= Count.orLastZoned peers gs,
       Filter.tapped = Game.isTapped oid gs,
       -- CR 110.5's other status, through Game.isFaceDownPermanent, which
       -- Parun.Engine.Event.lastKnownFrom files for a departed permanent too.
