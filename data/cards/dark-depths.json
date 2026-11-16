@@ -1,0 +1,180 @@
+{
+  "faces": [
+    {
+      "activatedAbilities": [
+        {
+          "cost": {
+            "mana": [
+              {
+                "type": "Generic",
+                "value": 3
+              }
+            ]
+          },
+          "modal": {
+            "modes": [
+              {
+                "clauses": [
+                  {
+                    "effects": [
+                      {
+                        "type": "RemoveCounters",
+                        "value": {
+                          "kind": {
+                            "type": "Named",
+                            "value": "ice"
+                          },
+                          "quantity": {
+                            "type": "Literal",
+                            "value": 1
+                          },
+                          "slot": "self"
+                        }
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      ],
+      "name": "Dark Depths",
+      "oracleText": "Dark Depths enters with ten ice counters on it.\n{3}: Remove an ice counter from Dark Depths.\nWhen Dark Depths has no ice counters on it, sacrifice it. If you do, create Marit Lage, a legendary 20/20 black Avatar creature token with flying and indestructible.",
+      "replacementEffects": [
+        {
+          "effect": {
+            "type": "EntryR",
+            "value": {
+              "matching": {
+                "type": "IsSource"
+              },
+              "rewrite": {
+                "type": "WithCounters",
+                "value": [
+                  {
+                    "count": {
+                      "type": "Literal",
+                      "value": 10
+                    },
+                    "kind": {
+                      "type": "Named",
+                      "value": "ice"
+                    }
+                  }
+                ]
+              }
+            }
+          }
+        }
+      ],
+      "triggeredAbilities": [
+        {
+          "condition": {
+            "type": "StateIs",
+            "value": {
+              "type": "Compares",
+              "value": {
+                "comparison": "Exactly",
+                "measured": {
+                  "type": "ObjectCounters",
+                  "value": {
+                    "type": "Named",
+                    "value": "ice"
+                  }
+                },
+                "threshold": {
+                  "type": "Literal",
+                  "value": 0
+                }
+              }
+            }
+          },
+          "modal": {
+            "modes": [
+              {
+                "clauses": [
+                  {
+                    "effects": [
+                      {
+                        "type": "Create",
+                        "value": {
+                          "card": {
+                            "faces": [
+                              {
+                                "colorIndicator": [
+                                  "Black"
+                                ],
+                                "keywords": [
+                                  {
+                                    "type": "Flying"
+                                  },
+                                  {
+                                    "type": "Indestructible"
+                                  }
+                                ],
+                                "name": "Marit Lage",
+                                "power": {
+                                  "type": "Literal",
+                                  "value": 20
+                                },
+                                "toughness": {
+                                  "type": "Literal",
+                                  "value": 20
+                                },
+                                "typeLine": {
+                                  "subtypes": [
+                                    "Avatar"
+                                  ],
+                                  "supertypes": [
+                                    "Legendary"
+                                  ],
+                                  "types": [
+                                    "Creature"
+                                  ]
+                                }
+                              }
+                            ]
+                          },
+                          "quantity": {
+                            "type": "Literal",
+                            "value": 1
+                          }
+                        }
+                      }
+                    ],
+                    "payGate": {
+                      "branch": "IfPaid",
+                      "cost": {
+                        "components": [
+                          {
+                            "type": "SacrificeThis"
+                          }
+                        ],
+                        "mana": []
+                      },
+                      "obligation": "Mandatory",
+                      "payer": {
+                        "type": "InSlot",
+                        "value": "you"
+                      }
+                    }
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      ],
+      "typeLine": {
+        "supertypes": [
+          "Legendary",
+          "Snow"
+        ],
+        "types": [
+          "Land"
+        ]
+      }
+    }
+  ]
+}

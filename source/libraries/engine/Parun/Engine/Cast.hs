@@ -3062,9 +3062,12 @@ playLand settle offered pid oid mName = do
       then pure Nothing
       else choosePlayPermission pid oid (PlayerEffect.landPermissionOptions (\src -> not (null (Event.permissionRiders src before oid))) pid oid (asPlayed oid mName before))
   -- CR 601.3: and, made under the card's own permissions, which of them, where
-  -- it holds several Play-verb ones that differ; `held` is the board narrowed
-  -- to it, which every read of the permission below takes.
-  chosen <- if offered || Maybe.isJust permission then pure Nothing else chooseHeldPermission pid oid (const True) (const False) (const True) ((== PermissionVerb.Play) . ExilePlayPermission.verb) before
+  -- it holds several Play-verb ones that differ, or a graveyard land's own
+  -- "you may play this card from your graveyard" (CR 305.1) instead; `held` is
+  -- the board narrowed to it, which every read of the permission below takes.
+  -- dark-depths-under-kaldring-and-kethis-is-played-untapped proves the choice.
+  let bare board = PlayerEffect.mayPlayFromOwnGraveyard Map.empty PermissionVerb.Play pid oid board || PlayerEffect.mayPlayByMayhem pid oid board
+  chosen <- if offered || Maybe.isJust permission then pure Nothing else chooseHeldPermission pid oid (const True) bare landUnderDiffers ((== PermissionVerb.Play) . ExilePlayPermission.verb) before
   let held = maybe before (\p -> underHeld oid p before) chosen
       riders played = foldMap (\(src, _) -> Event.permissionRiders src before played) permission
   entryRow <- if Maybe.isNothing permission && not offered then installLandEntry pid oid held else pure Nothing
@@ -3175,6 +3178,13 @@ castUnderDiffers permission =
     || ExilePlayPermission.spending permission /= ManaSpending.AsProduced
     || Maybe.isJust (ExilePlayPermission.budget permission)
 
+-- CR 601.3: whether a land played under `permission` differs from one played
+-- under the card's own ability: an entry rider (CR 400.7i) or a budget spent.
+landUnderDiffers :: ExilePlayPermission.ExilePlayPermission -> Bool
+landUnderDiffers permission =
+  ExilePlayPermission.landEnters permission == TapState.Tapped
+    || Maybe.isJust (ExilePlayPermission.budget permission)
+
 -- CR 601.3: one play spent from the budget a played card's exile permission
 -- shares with the other cards its grant covered (Parun.Types.PlayBudget), and
 -- every one of their permissions closed once none is left. Only a permission
@@ -3219,9 +3229,6 @@ spendPlayBudget pid played permission = Monad.forM_ (permission >>= ExilePlayPer
 -- choice both ways, and
 -- kaldring-the-rimestaff-plays-a-snow-land-from-the-graveyard-that-enters-tapped
 -- the graveyard.
---
--- Not implemented: choosing a graveyard land's own PlayFromGraveyard ability
--- over this permission, which would skip the row (#8102).
 installLandEntry :: PlayerId -> ObjectId -> GameState -> Game (Maybe Timestamp.Timestamp)
 installLandEntry pid oid gs = case Game.lookupObject oid gs of
   Just obj
