@@ -1,0 +1,71 @@
+{
+  "faces": [
+    {
+      "keywords": [
+        {
+          "type": "Affinity",
+          "value": {
+            "type": "Or",
+            "value": [
+              {
+                "type": "HasSubtype",
+                "value": "Assassin"
+              },
+              {
+                "type": "HasSubtype",
+                "value": "Mercenary"
+              },
+              {
+                "type": "HasSubtype",
+                "value": "Pirate"
+              },
+              {
+                "type": "HasSubtype",
+                "value": "Rogue"
+              },
+              {
+                "type": "HasSubtype",
+                "value": "Warlock"
+              }
+            ]
+          }
+        },
+        {
+          "type": "Trample"
+        }
+      ],
+      "manaCost": [
+        {
+          "type": "Generic",
+          "value": 4
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "Red"
+          }
+        }
+      ],
+      "name": "Hellspur Brute",
+      "oracleText": "Affinity for outlaws (This spell costs {1} less to cast for each Assassin, Mercenary, Pirate, Rogue, and/or Warlock you control.)\nTrample",
+      "power": {
+        "type": "Literal",
+        "value": 5
+      },
+      "toughness": {
+        "type": "Literal",
+        "value": 4
+      },
+      "typeLine": {
+        "subtypes": [
+          "Mercenary",
+          "Minotaur"
+        ],
+        "types": [
+          "Creature"
+        ]
+      }
+    }
+  ]
+}
