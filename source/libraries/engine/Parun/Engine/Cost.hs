@@ -201,6 +201,7 @@ import Parun.Types.RowSource (RowSource)
 import qualified Parun.Types.RuleWaiver as RuleWaiver
 import qualified Parun.Types.Sacrifice as Sacrifice
 import qualified Parun.Types.Scratch as Scratch
+import qualified Parun.Types.Selection as Selection
 import qualified Parun.Types.SlotName as SlotName
 import qualified Parun.Types.Source as Source
 import qualified Parun.Types.SpendTrigger as SpendTrigger
@@ -3049,7 +3050,12 @@ claimOf slots pid oid component gs = claimOfGiven (Snapshot.onDemand gs) slots p
 -- The same claim read off a snapshot of `gs` the caller already took.
 claimOfGiven :: Snapshot.Snapshot -> Map.Map SlotName.SlotName (Set.Set Recipient.Recipient) -> PlayerId -> ObjectId -> CostComponent.CostComponent Keyword.Type.Keyword -> GameState -> Maybe Claim
 claimOfGiven board slots pid oid component gs =
-  let claim a p n = Just (Claim.Type.MkClaim {Claim.Type.axis = a, Claim.Type.pool = p, Claim.Type.count = n, Claim.Type.threshold = Nothing})
+  let claim a p n = Just (Claim.Type.MkClaim {Claim.Type.axis = a, Claim.Type.pool = p, Claim.Type.count = n, Claim.Type.selection = Nothing})
+      -- One selection of `n` candidates kept together by `selection`, out of
+      -- the candidates holding values; the values read once each.
+      grouped a selection n valuesOf candidates =
+        let values = Map.fromList (Maybe.mapMaybe (\candidate -> fmap ((,) candidate) (valuesOf candidate)) candidates)
+         in Just (Claim.Type.MkClaim {Claim.Type.axis = a, Claim.Type.pool = Map.keysSet values, Claim.Type.count = 1, Claim.Type.selection = Just (selection n values)})
       -- One selection of `candidates` whose amounts reach `needed`.
       reaching a needed amountOf candidates =
         Just
@@ -3057,7 +3063,7 @@ claimOfGiven board slots pid oid component gs =
               { Claim.Type.axis = a,
                 Claim.Type.pool = Set.fromList candidates,
                 Claim.Type.count = 1,
-                Claim.Type.threshold = Just (Threshold.MkThreshold {Threshold.total = needed, Threshold.amounts = Map.fromList (fmap (\candidate -> (candidate, amountOf candidate)) candidates)})
+                Claim.Type.selection = Just (Selection.Reaching (Threshold.MkThreshold {Threshold.total = needed, Threshold.amounts = Map.fromList (fmap (\candidate -> (candidate, amountOf candidate)) candidates)}))
               }
           )
       -- A `*This` arm's pool: the object itself where `canPayComponent` pays the
@@ -3065,10 +3071,14 @@ claimOfGiven board slots pid oid component gs =
       itself = if canPayComponentGiven board slots pid oid component gs then Set.singleton oid else Set.empty
    in case component of
         -- CR 701.21a: the permanents this player controls that match the criterion.
-        -- A SUPERSET where they must have different names, TapPermanents' shared
-        -- creature type below: `payable`'s arm narrows to a group kept apart.
-        CostComponent.Sacrifice (Sacrifice.MkSacrifice (ObjectCount.Exactly (CostAmount.Fixed n)) criterion _) ->
-          claim (ClaimAxis.Removal Zone.Battlefield) (Set.fromList (Replacement.sacrificeCandidatesGiven board (Just pid) slots pid (Just oid) criterion gs)) n
+        -- Where they must have different names (CR 201.2b), one selection of
+        -- `n` kept apart, so a mana source sacrificed for the mana cannot also
+        -- be the group's third name (CR 118.3).
+        CostComponent.Sacrifice (Sacrifice.MkSacrifice (ObjectCount.Exactly (CostAmount.Fixed n)) criterion axes)
+          | Set.null axes -> claim (ClaimAxis.Removal Zone.Battlefield) (Set.fromList candidates) n
+          | otherwise -> grouped (ClaimAxis.Removal Zone.Battlefield) Selection.KeptApart n (Target.objectDiffering axes gs) candidates
+          where
+            candidates = Replacement.sacrificeCandidatesGiven board (Just pid) slots pid (Just oid) criterion gs
         -- Nothing until CR 601.2b fixes the count.
         CostComponent.Sacrifice (Sacrifice.MkSacrifice (ObjectCount.Exactly (CostAmount.Announced _)) _ _) -> Nothing
         -- Nothing, the whole-hand discard's reason below: every matching
@@ -3198,14 +3208,17 @@ claimOfGiven board slots pid oid component gs =
         -- (Parun.Engine.Keyword's conspire and station), so the division is exact
         -- for all of them.
         --
-        -- A SUPERSET where the component asks for a shared creature type: the
-        -- claim pools every candidate, and `payable`'s arm is what narrows to a
-        -- group holding one type (Weight of Conscience states no other claim).
+        -- Where the component asks for a shared creature type (CR 205.3m), one
+        -- selection of `n` holding one, so a mana creature tapped for the mana
+        -- cannot also be one of the group (CR 118.3).
         --
         -- An untap spends TAPPED-ness instead, on ClaimAxis.Untapping, out of a
         -- pool `turnCandidatesGiven` confines to tapped permanents.
-        CostComponent.TapPermanents tap@(TapPermanents.MkTapPermanents (CostAmount.Fixed n) _ _ becoming) ->
-          claim (turnAxis becoming) (Set.fromList (turnCandidatesGiven board slots pid oid tap gs)) n
+        CostComponent.TapPermanents tap@(TapPermanents.MkTapPermanents (CostAmount.Fixed n) _ sharing becoming)
+          | sharing -> grouped (turnAxis becoming) Selection.SharingOne n (\candidate -> Just (tapCreatureTypes candidate gs)) candidates
+          | otherwise -> claim (turnAxis becoming) (Set.fromList candidates) n
+          where
+            candidates = turnCandidatesGiven board slots pid oid tap gs
         -- Nothing until CR 601.2b fixes the count, Sacrifice's arm.
         CostComponent.TapPermanents (TapPermanents.MkTapPermanents (CostAmount.Announced _) _ _ _) -> Nothing
         -- The battlefield pool SacrificeThis and ReturnThis draw on, on their axis
@@ -3680,6 +3693,9 @@ uncountedCeiling :: PlayerId -> ObjectId -> [Claim] -> GameState -> CostComponen
 -- asks canPayComponent of every component before reaching `repeatsOf`.
 uncountedCeiling _ _ _ _ component | componentUnannounced component = Just 0
 uncountedCeiling pid oid claims gs component = case component of
+  -- 1 for a group kept apart, whose repeats `objectCeiling` overstates
+  -- (Claim.repeats): an UNDERSTATEMENT and the header's safe direction.
+  CostComponent.Sacrifice sacrifice | not (Set.null (Sacrifice.differentIn sacrifice)) -> Just 1
   -- Counted by `objectCeiling`.
   CostComponent.Sacrifice {} -> Nothing
   CostComponent.SacrificeThis -> Nothing
@@ -3744,7 +3760,9 @@ uncountedCeiling pid oid claims gs component = case component of
   -- Counted by `objectCeiling`, on `turnAxis`: the count is exact, so the
   -- pool of candidates divided by it is how many times in a row the
   -- component can be paid. Heritage Druid's nine Elves are three activations
-  -- (Parun.ManaSpec).
+  -- (Parun.ManaSpec). 1 where they must share a creature type, Sacrifice's
+  -- different names above and for its reason.
+  CostComponent.TapPermanents tap | TapPermanents.sharingACreatureType tap -> Just 1
   CostComponent.TapPermanents {} -> Nothing
   -- Counted by `energyCeiling`, CR 107.14.
   CostComponent.PayEnergy _ -> Nothing
@@ -4808,7 +4826,8 @@ readsBoundSlot = any (\component -> targetComputed component || not (Set.null (S
 -- The readers, each answered here: a cost change's per-target questions
 -- (PlayerEffect.targetQuestions), the spell's own whichTargets sentences
 -- (selfReductions), every claim the cost's components make with nothing bound
--- -- membership, and what the object adds towards a threshold -- and, beside a
+-- -- membership, and what the object adds towards a threshold; no signature
+-- beside a claim reading values (Claim.readsValues) -- and, beside a
 -- targetComputed component, whether a permanent is there and its mana value
 -- (fixComputed).
 --
@@ -4841,7 +4860,7 @@ aimingSignature pid oid gs cost
           computed = any targetComputed (Cost.components cost)
           ofObject r f = maybe 0 f (Recipient.objectOf r)
           self r = fmap (\w -> ofObject r (\o -> toInteger (fromEnum (Filter.matches context (Projection.viewOfObject o gs) w)))) wanted
-          claimed r = concatMap (\c -> [ofObject r (toInteger . fromEnum . (`Set.member` Claim.Type.pool c)), maybe 0 (\t -> ofObject r (\o -> Map.findWithDefault 0 o (Threshold.amounts t))) (Claim.Type.threshold c)]) claims
+          claimed r = concatMap (\c -> [ofObject r (toInteger . fromEnum . (`Set.member` Claim.Type.pool c)), maybe 0 (\t -> ofObject r (\o -> Map.findWithDefault 0 o (Threshold.amounts t))) (Claim.thresholdOf c)]) claims
           evidence r = if computed then [ofObject r (\o -> toInteger (fromEnum (Game.zoneOf o gs == Just Zone.Battlefield))), ofObject r (`evidenceValue` gs)] else []
           axes = Set.fromList (fmap Claim.Type.axis claims)
           capacity = Mana.supplyCapacity (midPayment (manaActivationsGiven (PlayerEffect.applying pid gs)))
@@ -4867,13 +4886,16 @@ aimingSignature pid oid gs cost
           -- The target's own routes, itself written out of every pool.
           selfless o c =
             ( Set.member o (Claim.Type.pool c),
-              fmap (Map.lookup o . Threshold.amounts) (Claim.Type.threshold c),
-              c {Claim.Type.pool = Set.delete o (Claim.Type.pool c), Claim.Type.threshold = fmap (\t -> t {Threshold.amounts = Map.delete o (Threshold.amounts t)}) (Claim.Type.threshold c)}
+              fmap (Map.lookup o . Threshold.amounts) (Claim.thresholdOf c),
+              Claim.without o c
             )
           routes r = case Recipient.objectOf r of
             Nothing -> []
             Just o -> [(activations {Activations.claims = []}, fmap (selfless o) (relevant supply), mana, cost') | (source, supply@(_, mana, cost', activations)) <- supplies, source == o, not (null (relevant supply))]
-       in Just (\r -> (PlayerEffect.targetQuestions pid gs r <> self r <> claimed r <> evidence r <> pooled r, routes r))
+          -- A claim reading its objects' values tells targets apart by what
+          -- no Integer here carries: every subset instead.
+          grouping = any Claim.readsValues (claims <> concatMap (relevant . snd) supplies)
+       in if grouping then Nothing else Just (\r -> (PlayerEffect.targetQuestions pid gs r <> self r <> claimed r <> evidence r <> pooled r, routes r))
   where
     criteria = concatMap criteriaOf (Cost.components cost)
 

@@ -1,0 +1,71 @@
+{
+  "description": "CR 205.3m a mana creature tapped for the mana is not also one of the creatures sharing a type",
+  "note": "Suppression Field makes Weight of Conscience's ability cost {2}; the Forest and one Elf pay it only if the other Elf and the Grizzly Bears share a type, which they don't (CR 118.3, 601.2h). A second Forest is the control.",
+  "board": {
+    "seats": [
+      {
+        "name": "alice",
+        "battlefield": [
+          {
+            "card": "Weight of Conscience",
+            "label": "weight",
+            "attached": "mammoth"
+          },
+          {
+            "card": "Suppression Field",
+            "label": "field"
+          },
+          {
+            "card": "Llanowar Elves",
+            "label": "elves",
+            "ready": true
+          },
+          {
+            "card": "Elvish Mystic",
+            "label": "mystic",
+            "ready": true
+          },
+          {
+            "card": "Grizzly Bears",
+            "label": "bears",
+            "ready": true
+          },
+          {
+            "card": "Forest",
+            "label": "forest-a"
+          }
+        ]
+      },
+      {
+        "name": "bob",
+        "battlefield": [
+          {
+            "card": "War Mammoth",
+            "label": "mammoth"
+          }
+        ]
+      }
+    ],
+    "active": "alice",
+    "step": "PrecombatMain"
+  },
+  "timeline": [
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "check": {
+        "View": {
+          "of": "Offered",
+          "player": "alice",
+          "is": [
+            "Pass",
+            "ActivateManaAbility $elves",
+            "ActivateManaAbility $mystic",
+            "ActivateManaAbility $forest-a"
+          ]
+        }
+      }
+    }
+  ]
+}

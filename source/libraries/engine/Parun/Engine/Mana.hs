@@ -730,7 +730,7 @@ manaSuppliesGiven xCeiling capacity watch rewritesOf pcs pid borrowed oid gs =
             onAxis axis = filter ((==) axis . Claim.Type.axis) (Activations.claims activations)
          in case fmap (Bifunctor.second onAxis) (Maybe.mapMaybe chosenSlot (Cost.components (ManaOption.cost option))) of
               [(slot, [claim])]
-                | readsSlot slot && Claim.Type.count claim == 1 && Maybe.isNothing (Claim.Type.threshold claim) ->
+                | readsSlot slot && Claim.Type.count claim == 1 && Maybe.isNothing (Claim.Type.selection claim) ->
                     let pricedFor candidate = [shareOf priced | (offered, priced) <- manaRepricingsGiven (Binding.paidObjects slot (Set.singleton (Recipient.ToObject candidate))) gs pcs oid gs, offered == option]
                         byYield = Map.fromListWith Set.union [(yield, Set.singleton candidate) | candidate <- Set.toList (Claim.Type.pool claim), yield <- pricedFor candidate]
                         narrowed candidates = activations {Activations.claims = fmap (\other -> if other == claim then other {Claim.Type.pool = candidates} else other) (Activations.claims activations)}
@@ -2975,7 +2975,7 @@ plainSupplies clauses oid routes = case ListUtils.nubOrd [activations | (activat
     yields = [unitsOf (yieldMana yield) | (_, yield, _, _) <- routes]
     units = concat yields
     typesIn = Set.fromList . fmap ManaUnit.manaType
-    ownClaim claim = Claim.Type.pool claim == Set.singleton oid && Maybe.isNothing (Claim.Type.threshold claim)
+    ownClaim claim = Claim.Type.pool claim == Set.singleton oid && Maybe.isNothing (Claim.Type.selection claim)
     plainRoute (activations, yield, manaCost, own) =
       own == activations
         && null (ManaCost.unwrap manaCost)
@@ -3398,11 +3398,11 @@ sourceOptions clauses admitting contends board demanded needs supplies =
             -- The candidates an activation takes one of, each told by its
             -- signature.
             candidatesOf own = case own of
-              [claim] | Claim.Type.count claim == 1, Maybe.isNothing (Claim.Type.threshold claim) -> Just (Map.fromListWith Set.union [(signature (Claim.Type.axis claim, oid), Set.singleton oid) | oid <- Set.toList (Claim.Type.pool claim)])
+              [claim] | Claim.Type.count claim == 1, Maybe.isNothing (Claim.Type.selection claim) -> Just (Map.fromListWith Set.union [(signature (Claim.Type.axis claim, oid), Set.singleton oid) | oid <- Set.toList (Claim.Type.pool claim)])
               _ -> Nothing
-            -- The other claims that could hold this object; one counting a
-            -- threshold tells its objects apart, so it names this one.
-            signature (axis, oid) = Set.fromList [(i, if Maybe.isJust (Claim.Type.threshold rival) then Just oid else Nothing) | (i, rival) <- zip [0 :: Int ..] rivals, Claim.Type.axis rival == axis, Set.member oid (Claim.Type.pool rival)]
+            -- The other claims that could hold this object; one with a
+            -- selection tells its objects apart, so it names this one.
+            signature (axis, oid) = Set.fromList [(i, if Maybe.isJust (Claim.Type.selection rival) then Just oid else Nothing) | (i, rival) <- zip [0 :: Int ..] rivals, Claim.Type.axis rival == axis, Set.member oid (Claim.Type.pool rival)]
             widened = zipWith (\x y -> x {Claim.Type.pool = Set.union (Claim.Type.pool x) (Claim.Type.pool y)})
          in do
               described <- traverse (\(units, own) -> fmap (\(amount, rest, types) candidates -> ((amount, rest), (own, Map.singleton types units, candidates))) (single units) <*> candidatesOf own) raw
