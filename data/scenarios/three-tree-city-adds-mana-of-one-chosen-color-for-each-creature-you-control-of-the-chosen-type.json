@@ -1,0 +1,203 @@
+{
+  "description": "CR 614.1c / 607.2d: Three Tree City's chosen type counts in its mana ability, which adds two mana of one chosen color for two Bears among its controller's three creatures, an opponent's Bear not counting",
+  "note": "Three creatures, two of them Bears: a count of creatures would add three, and bob's Bear with alice's two would make three. Blue is no color any permanent here produces. The Elves start tapped so they pay none of the {2}.",
+  "board": {
+    "active": "alice",
+    "step": "PrecombatMain",
+    "seats": [
+      {
+        "name": "alice",
+        "hand": [
+          {
+            "card": "Three Tree City",
+            "label": "city"
+          }
+        ],
+        "battlefield": [
+          {
+            "card": "Mountain",
+            "label": "m1"
+          },
+          {
+            "card": "Mountain",
+            "label": "m2"
+          },
+          {
+            "card": "Grizzly Bears"
+          },
+          {
+            "card": "Grizzly Bears"
+          },
+          {
+            "card": "Llanowar Elves",
+            "tapped": true
+          }
+        ],
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ]
+      },
+      {
+        "name": "bob",
+        "battlefield": [
+          {
+            "card": "Grizzly Bears"
+          }
+        ],
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ]
+      }
+    ]
+  },
+  "timeline": [
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "do": {
+        "PlayLand": "$city"
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "do": {
+        "Answer": {
+          "prompt": "ChooseCreatureType",
+          "with": "Bear"
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "do": {
+        "Take": {
+          "action": "ActivateManaAbility Three Tree City",
+          "mana": [
+            "$m1",
+            "$m2",
+            null
+          ],
+          "yields": [
+            [
+              {
+                "manaType": {
+                  "type": "Colored",
+                  "value": "Blue"
+                },
+                "tags": [],
+                "retention": "Ordinary",
+                "restriction": null,
+                "rider": null,
+                "sourceChoices": {
+                  "subtype": "Bear"
+                }
+              },
+              {
+                "manaType": {
+                  "type": "Colored",
+                  "value": "Blue"
+                },
+                "tags": [],
+                "retention": "Ordinary",
+                "restriction": null,
+                "rider": null,
+                "sourceChoices": {
+                  "subtype": "Bear"
+                }
+              }
+            ]
+          ]
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "check": {
+        "View": {
+          "of": "ManaPool",
+          "player": "alice",
+          "is": [
+            {
+              "manaType": {
+                "type": "Colored",
+                "value": "Blue"
+              },
+              "tags": [],
+              "retention": "Ordinary",
+              "restriction": null,
+              "rider": null,
+              "sourceChoices": {
+                "subtype": "Bear"
+              }
+            },
+            {
+              "manaType": {
+                "type": "Colored",
+                "value": "Blue"
+              },
+              "tags": [],
+              "retention": "Ordinary",
+              "restriction": null,
+              "rider": null,
+              "sourceChoices": {
+                "subtype": "Bear"
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "check": {
+        "Tapped": {
+          "object": "Three Tree City",
+          "tapped": true
+        }
+      }
+    }
+  ]
+}

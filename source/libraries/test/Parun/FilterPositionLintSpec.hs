@@ -834,7 +834,10 @@ hasChosenCardTypeTag = Text.pack "HasChosenCardType"
 -- choice is admitted after it in EVERY position, unframed ones included:
 -- Parun.Engine.Resolve.Slots.effectContext frames the resolution's reads by the
 -- source's live choices, so a Create quantity's Count reads the type the
--- clause before it chose (Orcrist, Goblin-cleaver's scenario).
+-- clause before it chose (Orcrist, Goblin-cleaver's scenario). So is every
+-- such ability of a permanent that made the choice as it entered (CR 614.1c's
+-- EntryRewrite.ChooseQuality): the same live choice, whoever made it, so a
+-- mana ability's AddMana count reads it (Three Tree City's scenario).
 chosenValueCounts :: (Framing -> Bool) -> (ChosenQuality.ChosenQuality -> Bool) -> Text.Text -> Surveyed -> (Int, Int)
 chosenValueCounts admitted answers tag card =
   let total keep pairs = sum (fmap (\(_, f) -> filterAtoms tag f) (filter (keep . fst) pairs))
@@ -851,12 +854,21 @@ chosenValueCounts admitted answers tag card =
       -- A keyword's own filter is read off the keyword long after the
       -- resolution, so the choice answers it only where it is baked
       -- (grantedChosen).
-      inAbility = total (\framing -> not (admitted framing) && framing /= KeywordFramed) (concatMap (afterChoice answers) abilityModals)
+      enteredChoosing = any (enteringChoice answers . PrintedReplacement.effect) (Face.replacementEffects (surveyedFace card))
+      abilityAnswered = if enteredChoosing then modalFilters else afterChoice answers
+      inAbility = total (\framing -> not (admitted framing) && framing /= KeywordFramed) (concatMap abilityAnswered abilityModals)
       -- Unframed alone, where an ability admits more: a spell that has
       -- resolved leaves no source for a stored position to read later.
       unframedInSpell = total (\framing -> not (admitted framing) && framing == Unframed) (afterChoice answers (Face.spell (surveyedFace card)))
       answerable = inAbility + unframedInSpell
    in (total admitted (surveyedFilters card) - inSpell + answerable, total (not . admitted) (surveyedFilters card) + inSpell - answerable)
+
+-- Whether this replacement is CR 614.1c's "as this enters, choose" whose
+-- choice answers the atom.
+enteringChoice :: (ChosenQuality.ChosenQuality -> Bool) -> ReplacementEffect.ReplacementEffect card ability effect -> Bool
+enteringChoice answers replacement = case replacement of
+  ReplacementEffect.EntryR (EntryR.MkEntryR Filter.Type.IsSource (EntryRewrite.ChooseQuality quality)) -> answers quality
+  _ -> False
 
 -- The Behold components of a face's additional costs, mandatory and optional.
 castBeholds :: Face.Face Card.Type.Card -> [Behold.Behold Keyword.Keyword]
@@ -3897,7 +3909,8 @@ filterPositionLintSpec s registry corpus = Spec.describe s "Lint" $ do
         ("Celestial Reunion", hasChosenSubtypeCounts, "a spell's behold cost and its resolution after the cost's own choice", (3, 0)),
         ("Caller of the Hunt", hasChosenSubtypeCounts, "a characteristic-defining ability's two Counts", (2, 0)),
         ("Story Circle", hasChosenColorCounts, "an activated ability's chosen damage source", (1, 0)),
-        ("Avacyn, Guardian Angel", hasChosenColorCounts, "two activated abilities' damage shields", (2, 0))
+        ("Avacyn, Guardian Angel", hasChosenColorCounts, "two activated abilities' damage shields", (2, 0)),
+        ("Three Tree City", hasChosenSubtypeCounts, "a mana ability's AddMana count after its entry choice", (1, 0))
       ]
       $ \(name, counts, position, expected) -> do
         printing <- S.printingOf s registry name
@@ -3942,6 +3955,7 @@ filterPositionLintSpec s registry corpus = Spec.describe s "Lint" $ do
             ("a spell's own filter before its own choice", base {Face.spell = spellOf [destroying f, Effect.ChooseQuality (ChooseQuality.MkChooseQuality quality False)] Map.empty}),
             ("a spell's draw count with no choice", base {Face.spell = spellOf [drawing f] Map.empty}),
             ("a spell's draw count before its own choice", base {Face.spell = spellOf [drawing f, Effect.ChooseQuality (ChooseQuality.MkChooseQuality quality False)] Map.empty}),
+            ("an activated ability's draw count with no entry choice", withAbility (\a -> a {ActivatedAbility.modal = spellOf [drawing f] Map.empty})),
             ( "a spell's own filter in another mode than its choice",
               base {Face.spell = (spellOf [Effect.ChooseQuality (ChooseQuality.MkChooseQuality quality False)] Map.empty) {Modal.modes = Modal.modes (spellOf [Effect.ChooseQuality (ChooseQuality.MkChooseQuality quality False)] Map.empty) <> Modal.modes (spellOf [destroying f] Map.empty)}}
             )
@@ -3951,6 +3965,7 @@ filterPositionLintSpec s registry corpus = Spec.describe s "Lint" $ do
             ("a spell's own filter after its own choice", base {Face.spell = spellOf [Effect.ChooseQuality (ChooseQuality.MkChooseQuality quality False), destroying f] Map.empty}),
             ("a spell's draw count after its own choice", base {Face.spell = spellOf [Effect.ChooseQuality (ChooseQuality.MkChooseQuality quality False), drawing f] Map.empty}),
             ("an activated ability's target slot", withAbility (\a -> a {ActivatedAbility.modal = spellOf [] (aimed f)})),
+            ("an activated ability's draw count after CR 614.1c's entry choice", (withAbility (\a -> a {ActivatedAbility.modal = spellOf [drawing f] Map.empty})) {Face.replacementEffects = choosingAsItEnters quality}),
             ("an activated ability's sacrifice cost", withAbility (\a -> a {ActivatedAbility.cost = (ActivatedAbility.cost a) {Cost.Type.components = [CostComponent.Sacrifice (Sacrifice.MkSacrifice (ObjectCount.Exactly (CostAmount.Fixed 1)) f)]}})),
             ("CR 603.6a's trigger condition", base {Face.triggeredAbilities = [oneEffectTrigger (TriggerCondition.Enters (EntersTrigger.matching f)) draw]}),
             ("a triggered ability's own filter", base {Face.triggeredAbilities = [oneEffectTrigger (TriggerCondition.Enters EntersTrigger.defaultValue) (Effect.Destroy (Destroy.MkDestroy (ObjectRef.EachMatching f) Regenerability.Regenerable Nothing Nothing Nothing))]}),
@@ -3959,6 +3974,7 @@ filterPositionLintSpec s registry corpus = Spec.describe s "Lint" $ do
             )
           ]
         draw = Effect.Draw (Draw.MkDraw (PlayerRef.InSlot Binding.you) (Quantity.Type.Literal 1) Nothing)
+        choosingAsItEnters quality = [PrintedReplacement.MkPrintedReplacement Nothing (ReplacementEffect.EntryR (EntryR.MkEntryR Filter.Type.IsSource (EntryRewrite.ChooseQuality quality))) Set.empty Nothing]
         drawing f = Effect.Draw (Draw.MkDraw (PlayerRef.InSlot Binding.you) (Quantity.Type.Count (Count.Type.MkCount (Scope.InZone (InZone.MkInZone Zone.Battlefield (PlayerRef.Relative PlayerRelation.AnyPlayer))) f Aggregation.Members)) Nothing)
     Monad.forM_
       [ (Filter.Type.HasChosenColor, ChosenQuality.Colors (ChooseBetween.MkChooseBetween 1 1), hasChosenColorCounts, hasChosenColorTag),
