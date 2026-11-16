@@ -589,6 +589,7 @@ filterChildren children predicate = case predicate of
   Filter.HeldByPlayer _ _ -> pure predicate
   Filter.HeldByRecipient _ -> pure predicate
   Filter.IsSource -> pure predicate
+  Filter.BecameSource -> pure predicate
   Filter.PaidWithManaFromSource -> pure predicate
   Filter.IsObject oid -> fmap Filter.IsObject (object children oid)
   Filter.TargetsSource -> pure predicate

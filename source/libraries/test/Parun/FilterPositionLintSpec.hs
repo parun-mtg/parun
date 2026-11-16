@@ -3092,6 +3092,30 @@ filterPositionLintSpec s registry corpus = Spec.describe s "Lint" $ do
                 ]
             }
     Spec.assertEqWith s "a planted atom in an affected set is seen" (outside planted) 1
+  -- CR 400.7: what the SOURCE was before its move is filled where what it
+  -- crewed is (Projection.withCharacteristicsOf), so the same positions admit it.
+  Spec.it s "CR 400.7 no card asks what its source was before its move outside the positions that fill it" $ do
+    ps <- S.allPrintings s corpus
+    let atoms = jsonAtoms (Text.pack "BecameSource")
+        admitted c = sum [atoms (atomJson f) | (framing, f) <- cardFilters c, elem framing [SourceHostFramed, InTargetSlot, TriggerConditionFramed]]
+        outside c = atoms (Codec.encode (Face.Codec.codec Card.codec) c) - admitted c
+        offenders = filter (anyFace (\c -> outside c /= 0) . Printing.card) ps
+    Spec.assertEqWith s "the atom sits only where the source's earlier incarnation is filled" (fmap (S.nameOf . Printing.card) offenders) []
+    alania <- S.printingOf s registry "Alania, Divergent Storm"
+    Spec.assertEqWith s "NOT vacuous: Alania, Divergent Storm's is accepted" (admitted (S.combinedFace alania), outside (S.combinedFace alania)) (1, 0)
+    let planted =
+          (S.combinedFace alania)
+            { Face.staticAbilities =
+                [ StaticAbility.MkStaticAbility
+                    (Affected.Matching (Filter.Type.And [Filter.Type.HasCardType CardType.Creature, Filter.Type.Not Filter.Type.BecameSource]))
+                    Nothing
+                    Set.empty
+                    Nothing
+                    Nothing
+                    (NonEmpty.singleton Modification.LoseAllAbilities)
+                ]
+            }
+    Spec.assertEqWith s "a planted atom in an affected set is seen" (outside planted) 1
   -- CR 702.140a's comparison is the source-comparison atom's owner trait, and
   -- its one filler is Parun.Engine.Target.slotContext -- so it is answerable
   -- only inside a TARGET SLOT's own filter and would be a silent False in an

@@ -593,6 +593,12 @@ spec s = Spec.describe s "Parun.Codec.Filter" $ do
       codec
       (Filter.IsAttachedTo Anchor.Evaluated)
       " {\"type\":\"IsAttachedTo\",\"value\":{\"type\":\"Evaluated\"}} "
+  Spec.it s "BecameSource" $
+    Common.assertCodec
+      s
+      codec
+      Filter.BecameSource
+      " {\"type\":\"BecameSource\"} "
   Spec.it s "IsEvaluated" $
     Common.assertCodec
       s

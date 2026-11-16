@@ -153,6 +153,10 @@ data Filter keyword
     -- a printed "another" and a continuous effect's own "each other" card text
     -- are both written -- one relation, one spelling (#163).
     IsSource
+  | -- | CR 400.7 / 201.5: the candidate IS the object the evaluation's source
+    -- was before the move this turn that made it -- Alania, Divergent Storm's
+    -- "other than Alania" asked of the spell that resolved into it.
+    BecameSource
   | -- | The candidate IS this object, named outright rather than related to the
     -- evaluation's source. Runtime-only, HeldByPlayer's posture --
     -- Parun.Engine.Cost.candidateCostsGiven bakes CR 702.119c's chosen victim into

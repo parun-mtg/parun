@@ -1711,7 +1711,8 @@ withCharacteristicsOf object gs context =
           Filter.sourceNames = foldMap Filter.names view,
           Filter.sourceDealtDamage = Count.dealtDamageTo object gs,
           Filter.sourceDealtDamageEarlier = Count.dealtDamageEarlier object gs,
-          Filter.sourceCrewed = Count.crewedThisTurn object gs
+          Filter.sourceCrewed = Count.crewedThisTurn object gs,
+          Filter.sourceBefore = Count.departedAs gs object
         }
 
 -- CR 509.1b: the context a pairwise blocking restriction or cost is matched
@@ -4429,6 +4430,7 @@ filterReads f = case f of
   Filter.Type.HeldByPlayer holder _ -> holderReads holder
   Filter.Type.HeldByRecipient holder -> holderReads holder
   Filter.Type.IsSource -> Set.empty
+  Filter.Type.BecameSource -> Set.empty
   Filter.Type.PaidWithManaFromSource -> Set.empty
   -- Reads an IDENTITY, IsBound's answer below.
   Filter.Type.IsObject _ -> Set.empty
@@ -4817,6 +4819,7 @@ filterReadsPeers f = case f of
   Filter.Type.HeldByPlayer _ _ -> False
   Filter.Type.HeldByRecipient _ -> False
   Filter.Type.IsSource -> False
+  Filter.Type.BecameSource -> False
   Filter.Type.PaidWithManaFromSource -> False
   Filter.Type.IsObject _ -> False
   Filter.Type.TargetsSource -> False

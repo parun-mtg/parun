@@ -871,10 +871,10 @@ snapshotView viewOf gs shape event = case event of
   GameEvent.SpellCast (SpellWasCast.MkSpellWasCast caster spell snapshot from _ lapsed) -> case shape of
     -- CR 601.2a: "that player becomes its controller", so the caster the event
     -- recorded IS the view's controller and Filter.HeldBy Holder.Controller You answers "a
-    -- spell you've cast". The spell's id is deliberately left out of the view
-    -- for the reason the Moved arm leaves its own out: a look-back view is of a
-    -- past event rather than of an object, and Filter.IsSource asking about one
-    -- would be asking about an incarnation that no longer exists.
+    -- spell you've cast". The view is OF the stack object the cast made, so
+    -- Filter.BecameSource can tell the spell that resolved into its source
+    -- (Alania, Divergent Storm's "other than Alania"). A spell still on the
+    -- stack is that same object, and CR 400.7 gives every later one a new id.
     -- CR 111.1 / 111.7: a token represents a PERMANENT and ceases to exist
     -- anywhere else, so nothing on the stack to be cast was ever one.
     -- CR 122.1 places a counter on an OBJECT, and CR 122.2 makes the card that
@@ -904,7 +904,7 @@ snapshotView viewOf gs shape event = case event of
       -- is, the snapshot recording no zone -- Spider-Man 2099's "cast a spell this
       -- turn from anywhere other than your hand"
       -- (data/scenarios/spider-man-2099-deals-damage-after-a-land-played-from-the-graveyard.json).
-      castView = (viewOfSnapshot False (Just caster) (Game.ownerWithLastKnown spell gs) False Map.empty Zone.Stack Zone.Battlefield lapsed snapshot) {Filter.castFrom = from, Filter.isCard = maybe False Game.sourceIsCard (Game.sourceOfWithLastKnown spell gs)}
+      castView = (viewOfSnapshot False (Just caster) (Game.ownerWithLastKnown spell gs) False Map.empty Zone.Stack Zone.Battlefield lapsed snapshot) {Filter.castFrom = from, Filter.isCard = maybe False Game.sourceIsCard (Game.sourceOfWithLastKnown spell gs), Filter.identity = Just spell}
   GameEvent.BecameMonarch _ -> Nothing
   GameEvent.TookInitiative _ -> Nothing
   GameEvent.MulliganDeclared _ -> Nothing

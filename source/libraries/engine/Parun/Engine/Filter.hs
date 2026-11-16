@@ -1301,6 +1301,10 @@ data Context = MkContext
     -- Source crewer. View.crewedThisTurn's answer for the source. Filled with
     -- sourceMeasures, and lazy for its reason.
     sourceCrewed :: Set.Set ObjectId.ObjectId,
+    -- CR 400.7: the object the SOURCE was before the move this turn that made
+    -- it (Count.departedAs), for BecameSource. Filled with sourceMeasures, and
+    -- lazy for its reason.
+    sourceBefore :: Maybe ObjectId.ObjectId,
     -- CR 202.3, the computed half: the number the TARGET SLOT being matched
     -- names as its bound, for the Measures atom's EnclosingAmount operand --
     -- Celestine, the Living Saint's "where X is the amount of life you gained
@@ -1978,7 +1982,7 @@ data Context = MkContext
 -- here owes both halves of the same pair: which way its unfilled read answers,
 -- and what holds a card to the positions that fill it.
 contextFor :: Teams.Teams -> Maybe PlayerId.PlayerId -> Maybe ObjectId.ObjectId -> Context
-contextFor t p s = MkContext {teams = t, perspective = p, source = s, sourceMeasures = Map.empty, sourceColors = Set.empty, sourceSectors = Set.empty, sourceNames = Set.empty, sourceDealtDamage = Set.empty, sourceDealtDamageEarlier = Set.empty, sourceCrewed = Set.empty, slotAmount = Nothing, defendingPlayers = [], activePlayers = [], recipient = Nothing, shares = Map.empty, slotObjects = Map.empty, cantPayKeywordCost = Map.empty, slotNames = Map.empty, slotControllers = Map.empty, slotHostControllers = Map.empty, subjectHostCardTypes = Set.empty, slotCreatureTypes = Map.empty, slotCardTypes = Map.empty, slotColors = Map.empty, slotMeasures = Map.empty, slotPlayers = Map.empty, boundAmounts = Map.empty, slotStickers = Map.empty, slotVotes = Map.empty, boundUnannounced = False, sourceAttachedTo = Nothing, evaluated = Nothing, evaluatedCreatureTypes = Nothing, commanderCreatureTypes = Set.empty, sourceEntrants = Set.empty, sourceCountered = Map.empty, sourceOwner = Nothing, sourceChosenNames = Map.empty, carrierChosenPlayer = Nothing, aimingController = Nothing, sourceChosenColors = Set.empty, draftNotes = Map.empty, exiledBeforeGame = Map.empty, playerCounters = Map.empty, sourceChosenSubtype = Nothing, sourceChosenCardType = Nothing, sourceChosenNumber = Nothing, sourceLastExiled = Nothing, sourceExiled = Map.empty, sourceAcquisition = Nothing, reader = Nothing, candidateMeasures = Nothing, battlefieldViews = Seq.empty, zeroMissingPowerToughness = False}
+contextFor t p s = MkContext {teams = t, perspective = p, source = s, sourceMeasures = Map.empty, sourceColors = Set.empty, sourceSectors = Set.empty, sourceNames = Set.empty, sourceDealtDamage = Set.empty, sourceDealtDamageEarlier = Set.empty, sourceCrewed = Set.empty, sourceBefore = Nothing, slotAmount = Nothing, defendingPlayers = [], activePlayers = [], recipient = Nothing, shares = Map.empty, slotObjects = Map.empty, cantPayKeywordCost = Map.empty, slotNames = Map.empty, slotControllers = Map.empty, slotHostControllers = Map.empty, subjectHostCardTypes = Set.empty, slotCreatureTypes = Map.empty, slotCardTypes = Map.empty, slotColors = Map.empty, slotMeasures = Map.empty, slotPlayers = Map.empty, boundAmounts = Map.empty, slotStickers = Map.empty, slotVotes = Map.empty, boundUnannounced = False, sourceAttachedTo = Nothing, evaluated = Nothing, evaluatedCreatureTypes = Nothing, commanderCreatureTypes = Set.empty, sourceEntrants = Set.empty, sourceCountered = Map.empty, sourceOwner = Nothing, sourceChosenNames = Map.empty, carrierChosenPlayer = Nothing, aimingController = Nothing, sourceChosenColors = Set.empty, draftNotes = Map.empty, exiledBeforeGame = Map.empty, playerCounters = Map.empty, sourceChosenSubtype = Nothing, sourceChosenCardType = Nothing, sourceChosenNumber = Nothing, sourceLastExiled = Nothing, sourceExiled = Map.empty, sourceAcquisition = Nothing, reader = Nothing, candidateMeasures = Nothing, battlefieldViews = Seq.empty, zeroMissingPowerToughness = False}
 
 -- contextFor over a game: its teams (CR 102.4), its active players (CR 102.1,
 -- 805.4a), its draft notes (CR 905.2b), what was exiled before it (CR
@@ -2424,6 +2428,12 @@ matches context view predicate = case predicate of
     _ -> False
   Filter.IsSource -> case (identity view, source context) of
     (Just oid, Just src) -> oid == src
+    _ -> False
+  -- IsSource one move back. A past cast's snapshot keeps its stack id (CR
+  -- 400.7), so the spell that resolved into the source answers here and not
+  -- there. False where the source made no move this turn.
+  Filter.BecameSource -> case (identity view, sourceBefore context) of
+    (Just oid, Just before) -> oid == before
     _ -> False
   -- CR 106.3: a unit names its producer only where that producer asks
   -- (Parun.Types.ManaUnit.producer), so every other unit is Nothing here.
@@ -3338,6 +3348,7 @@ manaValueThresholds predicate = case predicate of
   Filter.HeldByPlayer _ _ -> []
   Filter.HeldByRecipient _ -> []
   Filter.IsSource -> []
+  Filter.BecameSource -> []
   Filter.PaidWithManaFromSource -> []
   Filter.IsObject _ -> []
   Filter.TargetsSource -> []
@@ -3515,6 +3526,7 @@ statesAQuality predicate = case predicate of
   Filter.HeldByPlayer _ _ -> True
   Filter.HeldByRecipient _ -> True
   Filter.IsSource -> True
+  Filter.BecameSource -> True
   Filter.PaidWithManaFromSource -> True
   Filter.IsObject _ -> True
   -- CR 701.23b for IsSource's reason, and unreachable from a search besides: a
@@ -3720,6 +3732,7 @@ readsSourceValues predicate = case predicate of
   Filter.HeldByPlayer _ _ -> False
   Filter.HeldByRecipient _ -> False
   Filter.IsSource -> False
+  Filter.BecameSource -> False
   Filter.PaidWithManaFromSource -> False
   Filter.IsObject _ -> False
   Filter.TargetsSource -> False
