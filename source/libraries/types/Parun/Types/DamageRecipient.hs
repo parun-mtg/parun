@@ -11,7 +11,8 @@ data DamageRecipient
     Player PlayerRelation.PlayerRelation
   | -- | A permanent of the card type (CR 120.1a), its recipient tag unioned
     -- with its types (Parun.Engine.Projection.damagedCardTypes), that the
-    -- Filter admits as it stood immediately after the damage (CR 603.10);
-    -- @Filter.And []@ qualifies nothing.
+    -- Filter admits as it stood immediately after the damage (CR 603.10),
+    -- Binding.eventAmount holding the damage dealt to it; @Filter.And []@
+    -- qualifies nothing.
     Permanent CardType.CardType (Filter.Filter Keyword.Keyword)
   deriving (Eq, Ord, Show)

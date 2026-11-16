@@ -160,6 +160,7 @@ import qualified Parun.Types.ReplacementOrigin as ReplacementOrigin
 import qualified Parun.Types.RequireAttack as RequireAttack
 import qualified Parun.Types.RequireBlock as RequireBlock
 import qualified Parun.Types.RestrictedCreatures as RestrictedCreatures
+import qualified Parun.Types.Scaling as Scaling
 import qualified Parun.Types.SetClassLevel as SetClassLevel
 import qualified Parun.Types.SetHalfLocked as SetHalfLocked
 import qualified Parun.Types.SetX as SetX
@@ -1083,9 +1084,11 @@ replace resolving source controller legal (Replace.MkReplace duration uses origi
 -- written down as the row is installed: the slot dies with the resolution, and
 -- a source that already left never held it (CR 113.7a, Common.bindAmountSlot).
 -- CR 608.2h: Power Leak's ceiling, "where X is the amount of mana that player
--- paid this way". CR 107.3a: Aladdin's Lamp's look count. The scenarios
--- power-leak-still-prevents-when-the-aura-has-left and
--- aladdins-lamp-keeps-its-x-after-it-has-left prove them. An entry row's
+-- paid this way". CR 107.3a: Aladdin's Lamp's look count, and Taii Wakeen,
+-- Perfect Shot's "plus X". The scenarios
+-- power-leak-still-prevents-when-the-aura-has-left,
+-- aladdins-lamp-keeps-its-x-after-it-has-left and
+-- taii-wakeen-adds-x-to-noncombat-damage-after-it-has-left prove them. An entry row's
 -- counter count is settled likewise, reading the spell rather than the
 -- permanent: docs/decisions.md, "Whose mana value Runadi's X reads".
 bakeAmount :: (Quantity.Type.Quantity -> Maybe Integer) -> ReplacementEffect.ReplacementEffect card ability effect -> ReplacementEffect.ReplacementEffect card ability effect
@@ -1093,6 +1096,9 @@ bakeAmount evaluate re = case re of
   ReplacementEffect.DamageR damage@DamageR.MkDamageR {DamageR.rewrite = DamageRewrite.PreventUpTo quantity}
     | Just literal <- settled quantity ->
         ReplacementEffect.DamageR damage {DamageR.rewrite = DamageRewrite.PreventUpTo literal}
+  ReplacementEffect.DamageR damage@DamageR.MkDamageR {DamageR.rewrite = DamageRewrite.Scale (Scaling.AddMore quantity)}
+    | Just literal <- settled quantity ->
+        ReplacementEffect.DamageR damage {DamageR.rewrite = DamageRewrite.Scale (Scaling.AddMore literal)}
   ReplacementEffect.DrawR draw@DrawR.MkDrawR {DrawR.rewrite = DrawRewrite.KeepOneOfTopThenDraw quantity}
     | Just literal <- settled quantity ->
         ReplacementEffect.DrawR draw {DrawR.rewrite = DrawRewrite.KeepOneOfTopThenDraw literal}
