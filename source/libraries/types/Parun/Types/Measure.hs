@@ -26,4 +26,7 @@ data Measure
     UnlockedDoors
   | -- | CR 709.5c / 709.5j: how many locked doors a permanent has.
     LockedDoors
+  | -- | CR 700.2d: how many times a mode was chosen for a modal spell, a
+    -- repeated mode counting each time.
+    ModesChosen
   deriving (Bounded, Enum, Eq, Ord, Show)

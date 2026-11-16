@@ -4370,6 +4370,8 @@ measureReads measure = case measure of
   -- copiable values (CR 709.5), layer 1's -- ManaValue's reason.
   Measure.UnlockedDoors -> Set.empty
   Measure.LockedDoors -> Set.empty
+  -- CR 601.2b: a choice made as the spell was cast, no layer's.
+  Measure.ModesChosen -> Set.empty
 
 -- Which aspects a Trait's values read, for Filter.Shares and
 -- Aggregation.MostSharing alike.
@@ -4697,6 +4699,8 @@ filterReads f = case f of
   -- CR 723.3c / 109.3: how a spell was cast is no characteristic, WasCastFrom's
   -- reason.
   Filter.Type.IsPreparedSpell -> Set.empty
+  -- CR 700.2: the modes a spell prints and was cast with, no layer's Aspect.
+  Filter.Type.IsModal -> Set.empty
   -- CR 716.2b / 721.2b / 723.2b: a copiable value, IsPrototyped's reason.
   Filter.Type.HasInsetFrame _ -> Set.empty
   -- Reads nothing: CR 701.54b keeps the ring-bearer designation off the copiable
@@ -4916,6 +4920,7 @@ filterReadsPeers f = case f of
   Filter.Type.Paid _ -> False
   Filter.Type.IsPrototyped -> False
   Filter.Type.IsPreparedSpell -> False
+  Filter.Type.IsModal -> False
   Filter.Type.HasInsetFrame _ -> False
   Filter.Type.IsRingBearer -> False
   Filter.Type.IsPaired -> False

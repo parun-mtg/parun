@@ -720,6 +720,8 @@ data Filter keyword
   | -- | CR 723.3c / 723.3d: the candidate is a spell cast as a prepare spell, a
     -- copy of one included -- Codie, Ravenous Codex's "a prepared spell".
     IsPreparedSpell
+  | -- | CR 700.2: the candidate is a modal spell (Riku of Many Paths).
+    IsModal
   | -- | CR 716.2a / 721.2a / 723.2a: the candidate has the alternative
     -- characteristics this layout's inset frame prints, whether or not it uses them.
     HasInsetFrame Layout.Layout

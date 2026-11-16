@@ -1826,6 +1826,8 @@ viewOfSnapshot deploy mController mOwner isToken counters zone home lapsed snaps
       Filter.prototyped = PC.prototyped snapshot,
       -- CR 723.3c's record is a field of an OBJECT -- `tributePaid` above.
       Filter.preparedSpell = False,
+      -- CR 601.2b's chosen modes are an OBJECT's bindings -- `tributePaid` above.
+      Filter.modesChosen = Nothing,
       -- CR 716.2b / 721.2b / 723.2b: copiable values, which the snapshot carries.
       Filter.insetFrames = insetFramesOf snapshot,
       -- CR 400.7d's mana record is a field of an OBJECT, which a

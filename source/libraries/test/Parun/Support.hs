@@ -2071,6 +2071,7 @@ stubView table oid =
                 Filter.foretold = False,
                 Filter.prototyped = False,
                 Filter.preparedSpell = False,
+                Filter.modesChosen = Nothing,
                 Filter.insetFrames = Set.empty,
                 Filter.manaSpentTagColors = Map.empty,
                 Filter.manaSpent = Mana.MkMana [],

@@ -874,6 +874,13 @@ spec s = Spec.describe s "Parun.Codec.Filter" $ do
       codec
       Filter.IsPreparedSpell
       " {\"type\":\"IsPreparedSpell\"} "
+  -- Riku of Many Paths's "a modal spell".
+  Spec.it s "IsModal" $
+    Common.assertCodec
+      s
+      codec
+      Filter.IsModal
+      " {\"type\":\"IsModal\"} "
   -- Edgewall Innkeeper's "has an Adventure".
   Spec.it s "HasInsetFrame" $
     Common.assertCodec

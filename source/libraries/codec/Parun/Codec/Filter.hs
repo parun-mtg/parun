@@ -215,6 +215,7 @@ codec keywordCodec =
       Arm.payload "Paid" (KeywordDesignator.codec keywordCodec) Filter.Paid (\x -> case x of Filter.Paid y -> Just y; _ -> Nothing),
       Arm.nullary "IsPrototyped" Filter.IsPrototyped,
       Arm.nullary "IsPreparedSpell" Filter.IsPreparedSpell,
+      Arm.nullary "IsModal" Filter.IsModal,
       Arm.payload "HasInsetFrame" Layout.codec Filter.HasInsetFrame (\x -> case x of Filter.HasInsetFrame y -> Just y; _ -> Nothing),
       Arm.payload "And" (Common.list (codec keywordCodec)) Filter.And (\x -> case x of Filter.And y -> Just y; _ -> Nothing),
       Arm.payload "Or" (Common.list (codec keywordCodec)) Filter.Or (\x -> case x of Filter.Or y -> Just y; _ -> Nothing),
@@ -441,6 +442,7 @@ tagOf x = case x of
   Filter.Paid {} -> "Paid"
   Filter.IsPrototyped {} -> "IsPrototyped"
   Filter.IsPreparedSpell {} -> "IsPreparedSpell"
+  Filter.IsModal {} -> "IsModal"
   Filter.HasInsetFrame {} -> "HasInsetFrame"
   Filter.And {} -> "And"
   Filter.Or {} -> "Or"
