@@ -2264,6 +2264,8 @@ effectLintSpec s registry corpus = Spec.describe s "Lint" $ do
           -- One seat -- InSlot's answer, one indirection out, whichever player
           -- of the object or its host it reads.
           PlayerRef.HolderOfBound {} -> True
+          -- A SET -- the arm above's plural, EachInSlot's answer.
+          PlayerRef.HoldersOfBound {} -> False
           -- One seat -- the arm above's answer, the host itself a player.
           PlayerRef.PlayerHostOfBound _ -> True
           -- One seat -- the arm above's answer, the attacked player.

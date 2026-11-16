@@ -1521,6 +1521,8 @@ playerRefIsSlotless ref = case ref of
   -- InSlot's answer, and for its reason: the slot is a TARGET slot, which
   -- Resolve.Slots.quantitySlots reports by folding nestedRefs.
   PlayerRef.HolderOfBound {} -> False
+  -- The arm above's answer, for its reason.
+  PlayerRef.HoldersOfBound {} -> False
   -- The arm above's answer: the object is named by a slot.
   PlayerRef.PlayerHostOfBound _ -> False
   -- The arm above's answer: the attacker is named by a slot.
@@ -1604,6 +1606,7 @@ forCandidate pid =
         PlayerRef.EachInSlot _ -> ref
         PlayerRef.Specific _ -> ref
         PlayerRef.HolderOfBound {} -> ref
+        PlayerRef.HoldersOfBound {} -> ref
         PlayerRef.PlayerHostOfBound _ -> ref
         PlayerRef.AttackedByBound _ -> ref
         PlayerRef.HolderOfObject _ _ -> ref
@@ -1657,6 +1660,9 @@ bakePlayerRef players objects ref = case ref of
   -- stored reference names nobody. Scryfall o:"enchanted creature's
   -- controller's", 2026-10-25, no hit: no printing yet counts through it.
   PlayerRef.HolderOfBound _ Hop.Host _ -> ref
+  -- LEFT STANDING, EachInSlot's posture and for its reason: a set has no one
+  -- object to bake to.
+  PlayerRef.HoldersOfBound {} -> ref
   -- LEFT STANDING, the arm above's posture and for its reason.
   PlayerRef.PlayerHostOfBound _ -> ref
   -- LEFT STANDING, the arm above's posture: what an attacker attacks is a board

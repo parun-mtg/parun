@@ -1,0 +1,256 @@
+{
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "battlefield": [
+          {
+            "card": "Mountain",
+            "label": "m1",
+            "ready": true
+          },
+          {
+            "card": "Mountain",
+            "label": "m2",
+            "ready": true
+          },
+          {
+            "card": "Mountain",
+            "label": "m3",
+            "ready": true
+          },
+          {
+            "card": "Mountain",
+            "label": "m4",
+            "ready": true
+          },
+          {
+            "card": "Evolving Wilds",
+            "label": "alice-wilds"
+          }
+        ],
+        "hand": [
+          {
+            "card": "Krenko's Buzzcrusher",
+            "label": "buzzcrusher"
+          }
+        ],
+        "library": [
+          {
+            "card": "Goblin Piker",
+            "label": "alice-piker"
+          },
+          {
+            "card": "Mountain",
+            "label": "alice-mountain"
+          }
+        ],
+        "name": "alice"
+      },
+      {
+        "library": [
+          {
+            "card": "Goblin Piker",
+            "label": "bob-piker"
+          },
+          {
+            "card": "Island",
+            "label": "bob-island"
+          }
+        ],
+        "name": "bob"
+      },
+      {
+        "battlefield": [
+          {
+            "card": "Evolving Wilds",
+            "controller": "bob",
+            "label": "carol-wilds"
+          }
+        ],
+        "library": [
+          {
+            "card": "Goblin Piker",
+            "label": "carol-piker"
+          },
+          {
+            "card": "Plains",
+            "label": "carol-plains"
+          }
+        ],
+        "name": "carol"
+      }
+    ],
+    "step": "PrecombatMain"
+  },
+  "description": "CR 608.2h Krenko's Buzzcrusher asks the last controller of a destroyed stolen land to search, not its owner",
+  "final": [
+    {
+      "View": {
+        "is": [
+          "$m1",
+          "$m2",
+          "$m3",
+          "$m4",
+          "$alice-wilds",
+          "Krenko's Buzzcrusher"
+        ],
+        "of": "Zone",
+        "player": "alice",
+        "zone": "Battlefield"
+      }
+    },
+    {
+      "View": {
+        "is": [
+          "Island"
+        ],
+        "of": "Zone",
+        "player": "bob",
+        "zone": "Battlefield"
+      }
+    },
+    {
+      "Tapped": {
+        "object": "Island",
+        "tapped": true
+      }
+    },
+    {
+      "View": {
+        "is": [
+          "Evolving Wilds#2"
+        ],
+        "of": "Zone",
+        "player": "carol",
+        "zone": "Graveyard"
+      }
+    },
+    {
+      "View": {
+        "is": [
+          "$alice-piker",
+          "$alice-mountain"
+        ],
+        "of": "Zone",
+        "player": "alice",
+        "zone": "Library"
+      }
+    },
+    {
+      "View": {
+        "is": [
+          "$carol-piker",
+          "$carol-plains"
+        ],
+        "of": "Zone",
+        "player": "carol",
+        "zone": "Library"
+      }
+    }
+  ],
+  "timeline": [
+    {
+      "do": {
+        "Cast": {
+          "mana": [
+            "$m1",
+            "$m2",
+            "$m3",
+            "$m4"
+          ],
+          "object": "$buzzcrusher"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "View": {
+          "is": [
+            "trigger of Krenko's Buzzcrusher"
+          ],
+          "of": "Stack"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Answer": {
+          "prompt": "ChooseAnyNumberOfPermanents",
+          "with": []
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Answer": {
+          "prompt": "ChooseAnyNumberOfPermanents",
+          "with": [
+            "$carol-wilds"
+          ]
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Answer": {
+          "prompt": "ChooseOptional",
+          "with": "Exercises"
+        }
+      },
+      "player": "bob",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Answer": {
+          "prompt": "Search",
+          "with": [
+            "$bob-island"
+          ]
+        }
+      },
+      "player": "bob",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Answer": {
+          "prompt": "Shuffle",
+          "with": [
+            "$bob-piker"
+          ]
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    }
+  ]
+}

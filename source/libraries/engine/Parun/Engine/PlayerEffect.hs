@@ -2529,6 +2529,7 @@ zoneOwners pid ref gs =
           Players.bound = False,
           Players.slotPlayers = const Nothing,
           Players.slotObject = const Nothing,
+          Players.slotObjects = const Nothing,
           Players.controllerOf = (`Projection.controllerOf` gs),
           Players.ownerOf = fmap Object.owner . (`Game.lookupObject` gs),
           Players.acquisitionOf = (`Game.acquisitionOf` gs),

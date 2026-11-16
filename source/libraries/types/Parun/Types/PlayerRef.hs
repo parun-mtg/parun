@@ -156,6 +156,8 @@ data PlayerRef
     -- slot naming no object, naming several, or naming one the projection cannot
     -- describe leaves the count unanswered rather than aimed at some other seat.
     HolderOfBound Holder.Holder Hop.Hop SlotName.SlotName
+  | -- | CR 608.2h: HolderOfBound's plural, the holders of every object a slot names, groups included.
+    HoldersOfBound Holder.Holder Hop.Hop SlotName.SlotName
   | -- | CR 303.4b / 303.4m: the player the object a slot names is attached
     -- to, Paradox Haze's "enchanted player".
     PlayerHostOfBound SlotName.SlotName

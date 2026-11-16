@@ -477,9 +477,10 @@ riderSlots riders =
    in joinSlots [attacked, blocked, hosted]
 
 -- The slots a PlayerRef reads. InSlot, HolderOfBound, ChosenPlayerOfBound and
--- Attacking name one at arity One, and EachInSlot, EachPlayerExcept and
--- EachOpponentExcept one at arity Many; the rest name none, and the arms below
--- carry the reason for each arity that is not self-evident.
+-- Attacking name one at arity One, and EachInSlot, HoldersOfBound,
+-- EachPlayerExcept and EachOpponentExcept one at arity Many; the rest name
+-- none, and the arms below carry the reason for each arity that is not
+-- self-evident.
 playerRefSlots :: PlayerRef -> Map.Map SlotName SlotArity
 playerRefSlots ref = case ref of
   -- Every player the slot names is excluded -- CR 104.2c's winning team is
@@ -500,6 +501,8 @@ playerRefSlots ref = case ref of
   -- Read at arity one: a slot naming several objects names no one controller,
   -- owner or host.
   PlayerRef.HolderOfBound _ _ slot -> Map.singleton slot SlotArity.One
+  -- Read at arity MANY: the plural of the arm above.
+  PlayerRef.HoldersOfBound _ _ slot -> Map.singleton slot SlotArity.Many
   -- Read at arity one for that arm's reason.
   PlayerRef.PlayerHostOfBound slot -> Map.singleton slot SlotArity.One
   -- Read at arity one for that arm's reason.
@@ -3025,10 +3028,15 @@ playerRefPlayers legal resolving source controller gs =
 -- What a resolution of `resolving`, an ability of @source@, reads
 -- (Players.resolution), off CR 608.2h's last known controller and owner and
 -- the choices of the abilities it came with (Game.readingAcquisition), cut to
--- the range Plane.rangePerspective gives it.
+-- the range Plane.rangePerspective gives it. A plural object read also sees
+-- the groups this resolution bound (Binding.objectsBySlot), Destroy's
+-- `permanents` among them; the singular one keeps to `legal`.
 resolutionReads :: Map.Map SlotName (Set Recipient) -> ObjectId -> ObjectId -> PlayerId -> GameState -> Players.Reads
 resolutionReads legal resolving source controller gs =
-  Players.resolution (`Projection.controllerWithLastKnown` gs) (`Game.ownerWithLastKnown` gs) (Game.readingAcquisition resolving source gs) legal (Plane.rangePerspective source controller gs) controller gs
+  let groups = Binding.objectsBySlot legal (slotBindings resolving gs)
+   in (Players.resolution (`Projection.controllerWithLastKnown` gs) (`Game.ownerWithLastKnown` gs) (Game.readingAcquisition resolving source gs) legal (Plane.rangePerspective source controller gs) controller gs)
+        { Players.slotObjects = \slot -> fmap Set.toList (Map.lookup slot groups)
+        }
 
 -- CR 608.2d: the CANDIDATES an ObjectRef.ChosenPermanents offers, out of its
 -- zone. The battlefield's are battlefieldMatching's below; any other zone's are
