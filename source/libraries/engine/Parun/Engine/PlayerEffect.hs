@@ -1996,13 +1996,15 @@ amountFramed pid source amount oid gs context = case amount of
 -- PaidFor reads it against the spell or activation source `oid`, with the
 -- paying player `pid` as "you" (CR 109.5): Hum of the Radix's "for each artifact
 -- its controller controls", which Parun.CostSpec proves on a board where the
--- two perspectives part. A negative or undeterminable count applies the change
--- no times, Cost.selfReductions' floor.
+-- two perspectives part. Still framed by the row's source, so its choices
+-- reach the count (CR 607.2d): Seal of the Guildpact's "for each of the chosen
+-- colors it is", which Parun.CostSpec proves. A negative or undeterminable
+-- count applies the change no times, Cost.selfReductions' floor.
 perEachCount :: PlayerId -> ObjectId -> GameState -> RowSource -> CountedAgainst.CountedAgainst -> Quantity.Type.Quantity -> Natural
 perEachCount pid oid gs source countedAgainst quantity =
   let (context, against) = case countedAgainst of
         CountedAgainst.ChangeSource -> (contextFor (Just (targetPerspective pid source gs)) source gs, Maybe.fromMaybe oid (RowSource.object source))
-        CountedAgainst.PaidFor -> (contextFor (Just pid) (liveSource (Just oid)) gs, oid)
+        CountedAgainst.PaidFor -> (contextFor (Just pid) source gs, oid)
    in maybe 0 Integer.toNaturalSaturating (Quantity.evaluate (Projection.fullView gs) context gs against quantity)
 
 -- Does one announced target count towards a per-target change? perTargetCount's

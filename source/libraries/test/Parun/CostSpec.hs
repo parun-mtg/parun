@@ -2730,6 +2730,7 @@ spec s registry = Spec.describe s "Parun.Engine.Cost" $ do
   kopalaSpec s registry
   humOfTheRadixSpec s registry
   locketOfYesterdaysSpec s registry
+  sealOfTheGuildpactSpec s registry
   battlefieldThaumaturgeSpec s registry
   animarSpec s registry
   magnusSpec s registry
@@ -6356,6 +6357,37 @@ locketOfYesterdaysSpec s registry = Spec.describe s "Locket of Yesterdays" $ do
     Spec.assertEqWith s "her two Hill Giants, not the exiled one or bob's: {1}{R}" (S.tappedCount S.alice giants) 2
     Spec.assertEqWith s "no Gray Ogre in her graveyard: {2}{R}" (S.tappedCount S.alice ogres) 3
     Spec.assertEqWith s "and both casts were made" (fmap (length . (TurnRegisters.stack . GameState.turn)) [giants, ogres]) [1, 1]
+
+-- Seal of the Guildpact {5} Artifact (Oracle text checked against Scryfall
+-- 2026-11-16): "As this artifact enters, choose two colors. / Each spell you
+-- cast costs {1} less to cast for each of the chosen colors it is."
+-- CostModifier's PaidFor with ChosenColorsItIs: the spell paid for is
+-- counted against the Seal's chosen colours (CR 607.2d), not the spell's.
+--
+-- alice controls the Seal, having chosen white and blue. She casts a Jedit
+-- Ojanen ({4}{W}{W}{U}) from exactly three Plains and two Islands, a Serra
+-- Angel ({3}{W}{W}) from seven Plains, and a Gray Ogre ({2}{R}) from seven
+-- Mountains. Every cost is read off her tapped lands.
+sealOfTheGuildpactSpec :: (Monad m) => Spec.Spec m n -> Registry.Registry m -> n ()
+sealOfTheGuildpactSpec s registry = Spec.describe s "Seal of the Guildpact" $ do
+  let castWith spell lands = do
+        seal <- S.printingOf s registry "Seal of the Guildpact"
+        card <- S.printingOf s registry spell
+        let (sealId, g1) = S.addPermanent seal S.alice (lands (Setup.emptyGame S.threePlayers))
+            g2 = g1 {GameState.objects = Map.adjust (\o -> o {Object.chosenColors = Map.singleton Acquisition.Own (Set.fromList [Color.White, Color.Blue])}) sealId (GameState.objects g1)}
+            (cardId, g3) = S.addHandCard card S.alice g2
+        pure (S.runPure S.identityAnswer g3 (S.cast S.alice cardId))
+      cast gs = (S.tappedCount S.alice gs, length (TurnRegisters.stack (GameState.turn gs)))
+  Spec.it s "CR 601.2f / 607.2d a spell costs {1} less for each of the Seal's chosen colours it is" $ do
+    plains <- S.printingOf s registry "Plains"
+    island <- S.printingOf s registry "Island"
+    mountain <- S.printingOf s registry "Mountain"
+    jedits <- castWith "Jedit Ojanen" (S.landsFor plains S.alice 3 . S.landsFor island S.alice 2)
+    angels <- castWith "Serra Angel" (S.landsFor plains S.alice 7)
+    ogres <- castWith "Gray Ogre" (S.landsFor mountain S.alice 7)
+    Spec.assertEqWith s "white and blue, both chosen: {2}{W}{W}{U}, cast from five lands" (cast jedits) (5, 1)
+    Spec.assertEqWith s "white alone: {2}{W}{W}" (cast angels) (4, 1)
+    Spec.assertEqWith s "red, not chosen: {2}{R}" (cast ogres) (3, 1)
 
 -- Kopala, Warden of Waves {1}{U}{U} Legendary Creature -- Merfolk Wizard 2/2
 -- (Oracle text checked against Scryfall 2026-10-10): "Spells your opponents cast
