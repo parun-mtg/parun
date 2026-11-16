@@ -1,0 +1,17 @@
+{
+  "description": "CR 205.3i / 707.2 / 611.2c: March from Velis Vel names Desert; each Desert alice controls becomes a hasty copy of her Grizzly Bears until end of turn",
+  "note": "Alice's Desert entered this turn, so only haste lets it attack. Her Urza's Mine is of another type and bob's Desert is not hers; both stay as they are. Her Grizzly Bears is the only creature she controls, so it is targeted unasked. The copy ends with the turn.",
+  "board": {"active": "alice", "step": "PrecombatMain", "seats": [{"name": "alice", "manaPool": "UUU", "hand": [{"card": "March from Velis Vel", "label": "march"}], "battlefield": [{"card": "Grizzly Bears", "label": "bears", "ready": true}, {"card": "Desert", "label": "desert"}, {"card": "Urza's Mine", "label": "mine"}], "library": [{"card": "Island"}, {"card": "Island"}, {"card": "Island"}]}, {"name": "bob", "battlefield": [{"card": "Desert", "label": "bobdesert"}], "library": [{"card": "Island"}, {"card": "Island"}, {"card": "Island"}]}]},
+  "timeline": [
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": {"Cast": {"object": "$march", "mana": [null]}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass"},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": {"Answer": {"prompt": "ChooseNonbasicLandType", "with": "Desert"}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Names": {"object": "$desert", "names": ["Grizzly Bears"]}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Keywords": {"object": "$desert", "count": 1, "keyword": {"type": "Haste"}}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Names": {"object": "$mine", "names": ["Urza's Mine"]}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Names": {"object": "$bobdesert", "names": ["Desert"]}}},
+    {"turn": 1, "step": "DeclareAttackers", "player": "alice", "do": {"Attack": ["$desert"]}},
+    {"turn": 1, "step": "PostcombatMain", "player": "alice", "check": {"Life": {"player": "bob", "life": 18}}},
+    {"turn": 2, "step": "Upkeep", "player": "bob", "check": {"Names": {"object": "$desert", "names": ["Desert"]}}}
+  ]
+}

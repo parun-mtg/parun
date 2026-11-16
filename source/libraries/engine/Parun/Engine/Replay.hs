@@ -1258,6 +1258,7 @@ defaultAnswer p = case p of
   Prompt.ChooseSubtype _ _ _ family Nothing -> case family of
     SubtypeFamily.BasicLandType -> Subtype.Mountain
     SubtypeFamily.LandType -> Subtype.Mountain
+    SubtypeFamily.NonbasicLandType -> Subtype.Desert
     SubtypeFamily.CreatureType -> Subtype.Goblin
     SubtypeFamily.PlaneswalkerType -> Subtype.Gideon
   -- A printed list (Eclipsed Realms) admits only its own; the first is legal.

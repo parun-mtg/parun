@@ -1,0 +1,15 @@
+{
+  "description": "CR 702.14a / 702.14c: Barbarian Guides gives a creature snow islandwalk, so bob's Snow-Covered Island makes it unblockable, and returns it at the next end step",
+  "note": "Alice names Island. The baked criterion is snow AND Island; bob is not asked to block with his Hill Giant (an unscheduled block prompt would fail the run).",
+  "board": {"active": "alice", "step": "PrecombatMain", "seats": [{"name": "alice", "manaPool": "RRR", "battlefield": [{"card": "Barbarian Guides", "label": "guides", "ready": true}, {"card": "Grizzly Bears", "label": "bears", "ready": true}], "library": [{"card": "Island"}, {"card": "Island"}, {"card": "Island"}]}, {"name": "bob", "battlefield": [{"card": "Hill Giant", "label": "giant", "ready": true}, {"card": "Snow-Covered Island", "label": "snowisland"}], "library": [{"card": "Island"}, {"card": "Island"}, {"card": "Island"}]}]},
+  "timeline": [
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": {"Activate": {"object": "$guides", "ability": 0, "targets": ["$bears"]}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass"},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": {"Answer": {"prompt": "ChooseLandType", "with": "Island"}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Keywords": {"object": "$bears", "count": 1, "keyword": {"type": "Landwalk", "value": {"type": "And", "value": [{"type": "HasSupertype", "value": "Snow"}, {"type": "HasSubtype", "value": "Island"}]}}}}},
+    {"turn": 1, "step": "DeclareAttackers", "player": "alice", "do": {"Attack": ["$bears"]}},
+    {"turn": 1, "step": "DeclareBlockers", "player": "alice", "check": {"Blockers": {"attacker": "$bears", "blockers": null}}},
+    {"turn": 1, "step": "PostcombatMain", "player": "alice", "check": {"Life": {"player": "bob", "life": 18}}},
+    {"turn": 2, "step": "Upkeep", "player": "bob", "check": {"Count": {"player": "alice", "zone": "Hand", "card": "Grizzly Bears", "count": 1}}}
+  ]
+}

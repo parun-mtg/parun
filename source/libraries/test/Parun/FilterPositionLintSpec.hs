@@ -951,7 +951,7 @@ hasChosenColorCounts card =
 -- (Cho-Manno's Blessing), and as freezeQuantities stores a resolution's (CR
 -- 608.2h, Stave Off). The atom buried in a quality stays an offence.
 -- CR 702.14a's "landwalk of the chosen type" likewise (Traveler's Cloak), the
--- bare criterion its subtype twin.
+-- criterion its subtype twin, bare or a conjunct (Barbarian Guides).
 grantedChosen :: (Keyword.Keyword -> Bool) -> Face.Face Card.Type.Card -> Int
 grantedChosen bareKeyword card =
   let bare m = case m of
@@ -969,11 +969,16 @@ bareColor k = case k of
   Keyword.Hexproof quality -> quality == Just Filter.Type.HasChosenColor
   _ -> False
 
--- grantedChosen's subtype atom: a bare landwalk criterion.
+-- grantedChosen's subtype atom: a landwalk criterion, bare or a conjunct.
 bareSubtype :: Keyword.Keyword -> Bool
 bareSubtype k = case k of
-  Keyword.Landwalk criterion -> criterion == Filter.Type.HasChosenSubtype
+  Keyword.Landwalk criterion -> baked criterion
   _ -> False
+  where
+    baked criterion = case criterion of
+      Filter.Type.HasChosenSubtype -> True
+      Filter.Type.And filters -> any baked filters
+      _ -> False
 
 -- CR 205.3's chosen subtype in the same positions, plus CR 106.6's restriction,
 -- which Parun.Engine.Mana.admitsUnder answers off the mana unit (Pillar of

@@ -4814,8 +4814,9 @@ grantedBy granter chosen subtype you already keyword = case withChoices chosen s
 -- the chosen colours written in -- Filter.HasColor, an Or of them where several
 -- were chosen, and the empty Or, protection from nothing, where none was.
 -- CR 702.11d's "hexproof from that color" (Mondo Gecko) likewise. CR 702.14a's
--- bare Filter.HasChosenSubtype landwalk criterion with the chosen subtype
--- written in, and the empty Or, no land at all, where none was chosen.
+-- Filter.HasChosenSubtype landwalk criterion, bare or a conjunct (Barbarian
+-- Guides' "snow landwalk of the chosen type"), with the chosen subtype written
+-- in, and the empty Or, no land at all, where none was chosen.
 -- grantedBy's first half, and Parun.Engine.Projection.freezeQuantities' whole
 -- answer for a resolution's grant (Stave Off), whose source has left the stack
 -- by the time the grant is projected.
@@ -4828,9 +4829,13 @@ withChoices chosen subtype keyword = case keyword of
             { Protection.quality = baked
             }
   Keyword.Hexproof (Just Filter.HasChosenColor) -> Keyword.Hexproof (Just baked)
-  Keyword.Landwalk Filter.HasChosenSubtype -> Keyword.Landwalk (maybe (Filter.Or []) Filter.HasSubtype subtype)
+  Keyword.Landwalk criterion -> Keyword.Landwalk (landOf criterion)
   _ -> keyword
   where
+    landOf criterion = case criterion of
+      Filter.HasChosenSubtype -> maybe (Filter.Or []) Filter.HasSubtype subtype
+      Filter.And filters -> Filter.And (fmap landOf filters)
+      _ -> criterion
     baked = case Set.toList chosen of
       [color] -> Filter.HasColor color
       colors -> Filter.Or (fmap Filter.HasColor colors)

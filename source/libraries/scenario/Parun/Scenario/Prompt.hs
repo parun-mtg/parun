@@ -117,6 +117,7 @@ kindOf prompt = Text.pack $ case prompt of
   Prompt.ChooseSubtype _ _ _ family _ -> case family of
     SubtypeFamily.BasicLandType -> "ChooseBasicLandType"
     SubtypeFamily.LandType -> "ChooseLandType"
+    SubtypeFamily.NonbasicLandType -> "ChooseNonbasicLandType"
     SubtypeFamily.CreatureType -> "ChooseCreatureType"
     SubtypeFamily.PlaneswalkerType -> "ChoosePlaneswalkerType"
   Prompt.ChooseParity {} -> "ChooseParity"
