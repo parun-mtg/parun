@@ -1,0 +1,54 @@
+{
+  "board": {
+    "active": "bob",
+    "seats": [
+      {
+        "battlefield": [
+          { "card": "Mountain", "label": "bm" },
+          { "card": "Llanowar Elves", "label": "elves" }
+        ],
+        "hand": [
+          { "card": "Forest", "label": "forest" },
+          { "card": "Lightning Bolt", "label": "bolt" }
+        ],
+        "library": [{ "card": "Island" }, { "card": "Island" }, { "card": "Island" }, { "card": "Island" }, { "card": "Island" }],
+        "name": "bob"
+      },
+      {
+        "battlefield": [
+          { "card": "Descent into Madness", "counters": [{ "key": { "type": "Named", "value": "despair" }, "value": 2 }], "label": "descent" },
+          { "card": "Grizzly Bears", "label": "bears" },
+          { "card": "Swamp", "label": "sw" }
+        ],
+        "hand": [{ "card": "Island", "label": "isl" }],
+        "library": [{ "card": "Island" }, { "card": "Island" }, { "card": "Island" }, { "card": "Island" }, { "card": "Island" }],
+        "name": "alice"
+      }
+    ],
+    "step": "PrecombatMain"
+  },
+  "description": "CR 101.4: Descent into Madness has each player choose their own permanents and hand cards in turn order, then exiles every pick at once",
+  "note": "A third despair counter makes X 3. Alice, the active player, picks first among her own permanents and hand, never bob's; bob is told her picks before choosing. Each keeps one thing.",
+  "timeline": [
+    { "turn": 2, "step": "Upkeep", "player": "alice", "do": "Pass" },
+    { "turn": 2, "step": "Upkeep", "player": "bob", "do": "Pass" },
+    { "turn": 2, "step": "Upkeep", "player": "alice", "refuse": { "Answer": { "prompt": "ChoosePermanent", "with": "$elves" } } },
+    { "turn": 2, "step": "Upkeep", "player": "alice", "refuse": { "Answer": { "prompt": "ChoosePermanent", "with": "$forest" } } },
+    { "turn": 2, "step": "Upkeep", "player": "alice", "do": { "Answer": { "prompt": "ChoosePermanent", "with": "$bears" } } },
+    { "turn": 2, "step": "Upkeep", "player": "alice", "do": { "Answer": { "prompt": "ChoosePermanent", "with": "$isl" } } },
+    { "turn": 2, "step": "Upkeep", "player": "alice", "do": { "Answer": { "prompt": "ChoosePermanent", "with": "$sw" } } },
+    { "turn": 2, "step": "Upkeep", "player": "bob", "check": { "View": { "of": "Prompt", "is": { "kind": "ChoosePermanent", "offer": { "source": "$descent", "earlier": [["alice", ["$bears", "$sw", "$isl"]]], "options": ["$bm", "$elves", "$forest", "$bolt"] } } } } },
+    { "turn": 2, "step": "Upkeep", "player": "bob", "do": { "Answer": { "prompt": "ChoosePermanent", "with": "$elves" } } },
+    { "turn": 2, "step": "Upkeep", "player": "bob", "do": { "Answer": { "prompt": "ChoosePermanent", "with": "$forest" } } },
+    { "turn": 2, "step": "Upkeep", "player": "bob", "do": { "Answer": { "prompt": "ChoosePermanent", "with": "$bm" } } },
+    { "turn": 2, "step": "Upkeep", "player": "alice", "check": { "Count": { "player": "alice", "zone": "Exile", "card": "Grizzly Bears", "count": 1 } } },
+    { "turn": 2, "step": "Upkeep", "player": "alice", "check": { "Count": { "player": "alice", "zone": "Exile", "card": "Island", "count": 1 } } },
+    { "turn": 2, "step": "Upkeep", "player": "alice", "check": { "Count": { "player": "alice", "zone": "Exile", "card": "Swamp", "count": 1 } } },
+    { "turn": 2, "step": "Upkeep", "player": "alice", "check": { "Count": { "player": "alice", "zone": "Battlefield", "card": "Descent into Madness", "count": 1 } } },
+    { "turn": 2, "step": "Upkeep", "player": "alice", "check": { "Count": { "player": "bob", "zone": "Exile", "card": "Llanowar Elves", "count": 1 } } },
+    { "turn": 2, "step": "Upkeep", "player": "alice", "check": { "Count": { "player": "bob", "zone": "Exile", "card": "Forest", "count": 1 } } },
+    { "turn": 2, "step": "Upkeep", "player": "alice", "check": { "Count": { "player": "bob", "zone": "Exile", "card": "Mountain", "count": 1 } } },
+    { "turn": 2, "step": "Upkeep", "player": "alice", "check": { "Count": { "player": "bob", "zone": "Hand", "card": "Lightning Bolt", "count": 1 } } },
+    { "turn": 2, "step": "Upkeep", "player": "alice", "check": { "Counters": { "object": "$descent", "kind": { "type": "Named", "value": "despair" }, "count": 3 } } }
+  ]
+}
