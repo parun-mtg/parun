@@ -1,0 +1,31 @@
+{
+  "description": "CR 611.3a / 612.1 a static text change behind an 'as long as' clause rewrites Kird Ape only while that clause holds",
+  "note": "alice controls Synthetic Conditional Rewording (Forest -> Island in creatures' text as long as she controls an Island); bob controls Kird Ape and a Forest. With no Island the change is off and the Ape, asking after a Forest, is 2/3: an engine ignoring the clause reads 1/1. alice plays an Island, the change turns on, and the Ape asks bob for an Island he lacks: 1/1, where an engine dropping the change reads 2/3.",
+  "board": {
+    "seats": [
+      {
+        "name": "alice",
+        "battlefield": [
+          { "card": "Synthetic Conditional Rewording", "label": "rewording" }
+        ],
+        "hand": [
+          { "card": "Island", "label": "island" }
+        ]
+      },
+      {
+        "name": "bob",
+        "battlefield": [
+          { "card": "Forest", "label": "forest" },
+          { "card": "Kird Ape", "label": "ape" }
+        ]
+      }
+    ],
+    "active": "alice",
+    "step": "PrecombatMain"
+  },
+  "timeline": [
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "PowerToughness": { "object": "$ape", "power": 2, "toughness": 3 } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": { "PlayLand": "$island" } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "PowerToughness": { "object": "$ape", "power": 1, "toughness": 1 } } }
+  ]
+}

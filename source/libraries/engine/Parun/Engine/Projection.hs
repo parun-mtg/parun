@@ -2327,6 +2327,7 @@ setLandSubtypeEffects gs =
 setLandSubtypeEffectsGiven :: (ObjectId -> Layer -> Condition.Type.Condition -> Bool) -> GameState -> [SetEffect]
 setLandSubtypeEffectsGiven functioning gs =
   let isSet = setsLandSubtype
+      statics = textChangeStaticsGiven functioning gs
       fromStored eff =
         if isSet (ContinuousEffect.modification eff)
           then [(ContinuousEffect.source eff, Nothing, ContinuousEffect.affected eff)]
@@ -2339,7 +2340,7 @@ setLandSubtypeEffectsGiven functioning gs =
       -- which is sound because a word swap cannot change whether an arm is a set
       -- arm.
       fromPerm permId =
-        let changes = textChangesAffecting permId gs
+        let changes = textChangesGiven statics permId gs
             -- The "as long as" clause (CR 611.3a), asked exactly as
             -- gatherStatic asks it. Free for an unconditional ability, since
             -- staticLives answers first.
@@ -2396,7 +2397,8 @@ setLandSubtypeEffectsGiven functioning gs =
 liveGiven :: (ObjectId -> Layer -> Condition.Type.Condition -> Bool) -> [SetEffect] -> ObjectId -> GameState -> Natural -> Bool
 liveGiven functioning setEffs oid gs = \n -> not (any (notElem (oid, Just n)) strippers)
   where
-    applied = appliedSetEffects setEffs gs
+    statics = textChangeStaticsGiven functioning gs
+    applied = appliedSetEffects statics setEffs gs
     changers = typeChangersGiven functioning gs
     -- Each applied setter that strips `oid`, as the setters applied up to and
     -- including it, and the abilities of `oid`'s own it spares.
@@ -2425,8 +2427,8 @@ liveGiven functioning setEffs oid gs = \n -> not (any (notElem (oid, Just n)) st
     reaches parts src aff =
       let landWith ps = hasLandType (copiableCharacteristics oid gs) || hasLandType (projectWith (<= Layer.Type) ps oid gs)
        in if null parts
-            then affectsBase src oid aff gs && landWith (setterPartsOf src aff gs)
-            else affectsGiven (baseView gs) src oid aff (projectWith (<= Layer.Type) parts oid gs) gs && landWith (parts <> setterPartsOf src aff gs)
+            then affectsBase src oid aff gs && landWith (setterPartsOf statics src aff gs)
+            else affectsGiven (baseView gs) src oid aff (projectWith (<= Layer.Type) parts oid gs) gs && landWith (parts <> setterPartsOf statics src aff gs)
     -- CR 613.6: an ability of `oid`'s own that applied first because the setter
     -- depends on it for what it applies to (CR 613.8a) had started applying, so
     -- the strip does not stop it. Ashaya's own ability is the one, which is what
@@ -2446,7 +2448,8 @@ liveGiven functioning setEffs oid gs = \n -> not (any (notElem (oid, Just n)) st
 -- kind CR 305.7 can strip, numbered as permanentParts numbers it.
 typeChangersGiven :: (ObjectId -> Layer -> Condition.Type.Condition -> Bool) -> GameState -> [(Gathered, Maybe Natural)]
 typeChangersGiven functioning gs =
-  let part src ts aff m =
+  let statics = textChangeStaticsGiven functioning gs
+      part src ts aff m =
         MkGathered
           { gEffect = Nothing,
             gSource = src,
@@ -2464,7 +2467,7 @@ typeChangersGiven functioning gs =
       fromPerm permId = case Game.lookupObject permId gs of
         Nothing -> []
         Just obj ->
-          let changes = textChangesAffecting permId gs
+          let changes = textChangesGiven statics permId gs
               ts = staticTimestampOf permId obj gs
               printedOf n sa =
                 let parts = staticParts changes sa
@@ -2501,7 +2504,7 @@ liveAfterLayers setEffs oid gs =
   let view = project oid gs
    in not
         ( hasLandType view
-            && any (\(src, _, aff) -> affects src oid aff view gs) (appliedSetEffects setEffs gs)
+            && any (\(src, _, aff) -> affects src oid aff view gs) (appliedSetEffects (textChangeStatics gs) setEffs gs)
         )
 
 -- CR 305.7's strip, asked of ONE ability rather than of the whole permanent: does
@@ -2519,8 +2522,8 @@ liveAfterLayers setEffs oid gs =
 -- ability gate wired open, so the projection behind this gate never re-enters it.
 -- The seed can only over-project (gather says why), and here that can only widen
 -- the set a setter reaches.
-setSubtypeStripped :: [Gathered] -> [SetEffect] -> GameState -> ObjectId -> Bool
-setSubtypeStripped cands setEffs gs = case appliedSetEffects setEffs gs of
+setSubtypeStripped :: [Gathered] -> [Gathered] -> [SetEffect] -> GameState -> ObjectId -> Bool
+setSubtypeStripped statics cands setEffs gs = case appliedSetEffects statics setEffs gs of
   -- Almost every board sets no land's subtype, and then no projection is spent on
   -- the question.
   [] -> const False
@@ -2555,8 +2558,8 @@ setSubtypeStripped cands setEffs gs = case appliedSetEffects setEffs gs of
 -- a nonland no land type, so CR 305.7 takes nothing from it. Parun.ProjectionSpec's
 -- Synthetic Muddled Veil pair proves it for the drop; for the existence limb it
 -- is a regression fence, since no board orders two setters differently by it.
-appliedSetEffects :: [SetEffect] -> GameState -> [SetEffect]
-appliedSetEffects setEffs gs =
+appliedSetEffects :: [Gathered] -> [SetEffect] -> GameState -> [SetEffect]
+appliedSetEffects statics setEffs gs =
   let indexed = zip [0 :: Int ..] setEffs
       stampOf (_, (src, _, _)) = fmap Object.timestamp (Game.lookupObject src gs)
       -- CR 613.8a, for these effects: does `other` strip `e`'s source, or move
@@ -2565,9 +2568,9 @@ appliedSetEffects setEffs gs =
       strips osrc oaff src =
         affectsBase osrc src oaff gs
           && ( hasLandType (copiableCharacteristics src gs)
-                 || hasLandType (projectWith (<= Layer.Type) (setterPartsOf osrc oaff gs) src gs)
+                 || hasLandType (projectWith (<= Layer.Type) (setterPartsOf statics osrc oaff gs) src gs)
              )
-      movesSet osrc oaff src aff = movesSetBy (setterPartsOf osrc oaff gs) osrc oaff src aff gs
+      movesSet osrc oaff src aff = movesSetBy (setterPartsOf statics osrc oaff gs) osrc oaff src aff gs
       earliest :: [(Int, SetEffect)] -> (Int, SetEffect)
       earliest = List.minimumBy (Ord.comparing (\e -> (stampOf e, fst e)))
       go remaining applied = case remaining of
@@ -2598,8 +2601,8 @@ movesSetBy parts osrc oaff src aff gs =
 -- test. Matched on the affected set, which setLandSubtypeEffectsGiven stores
 -- rewritten. Every layer-4 part of a setting ability, not only the set: the
 -- Grove's "are Forest lands" makes its Aura a land in the same effect.
-setterPartsOf :: ObjectId -> Affected.Affected -> GameState -> [Gathered]
-setterPartsOf src aff gs =
+setterPartsOf :: [Gathered] -> ObjectId -> Affected.Affected -> GameState -> [Gathered]
+setterPartsOf statics src aff gs =
   let part m =
         MkGathered
           { gEffect = Nothing,
@@ -2610,7 +2613,7 @@ setterPartsOf src aff gs =
             gTimestamp = MkTimestamp 0,
             gModification = m
           }
-      changes = textChangesAffecting src gs
+      changes = textChangesGiven statics src gs
       stored = [ContinuousEffect.modification eff | eff <- StoredEffects.continuousEffects (GameState.stored gs), ContinuousEffect.source eff == src, ContinuousEffect.affected eff == aff]
       setting sa = any setsLandSubtype (StaticAbility.modifications sa)
       typeParts sa = filter ((== Layer.Type) . layer) (NonEmpty.toList (StaticAbility.modifications sa))
@@ -2704,32 +2707,43 @@ storedTextCandidates gs =
    in Maybe.mapMaybe candidate (StoredEffects.continuousEffects (GameState.stored gs))
 
 -- CR 612.1 / 613.1c: the word swaps permanents' static abilities make (Swirl
--- the Mists), each at CR 613.7a's timestamp. Projection-free, controlGrants'
--- walk: the abilities are read as printed, before any text change rewrites
--- them, and no layer-6 removal is asked, which applies after layer 3 (CR
--- 613.1c, 613.1f).
---
--- Not implemented: a static text change's "as long as" clause is not read
--- here, and a granted static ability is not walked (gap #7547).
+-- the Mists), each at CR 613.7a's timestamp, for a reader OUTSIDE the layer
+-- fold. The "as long as" clause (CR 611.3a) is judged against gather's seed
+-- list, as setLandSubtypeEffects judges its own, and forced only for a
+-- word-swapping ability that carries one.
 textChangeStatics :: GameState -> [Gathered]
-textChangeStatics gs =
+textChangeStatics gs = textChangeStaticsGiven (conditionHolds (gatherUngated gs) gs) gs
+
+-- textChangeStatics with the clause answered by `functioning`, for a caller
+-- inside the fold, which passes its own pass's gate: the seed pass's open one
+-- never re-enters gather. Projection-free otherwise, controlGrants' walk: the
+-- abilities are read as printed, and no layer-6 removal is asked, which applies
+-- after layer 3 (CR 613.1c, 613.1f). The clause is rewritten by stored text
+-- changes only, since a static one's would ask this list. data/scenarios'
+-- cr-611-3a-a-conditional-text-change-rewrites-kird-ape-* proves the gate.
+--
+-- Not implemented: a granted static ability is not walked (gap #8083).
+textChangeStaticsGiven :: (ObjectId -> Layer -> Condition.Type.Condition -> Bool) -> GameState -> [Gathered]
+textChangeStaticsGiven functioning gs =
   let partsOf permId = case Game.lookupObject permId gs of
         Nothing -> []
         Just permObj ->
-          [ MkGathered
-              { gEffect = Nothing,
-                gSource = permId,
-                gAffected = StaticAbility.affected sa,
-                gLayer = Layer.Text,
-                gLowest = Layer.Text,
-                gTimestamp = staticTimestampOf permId permObj gs,
-                gModification = m
-              }
-          | sa <- staticAbilitiesOf permId gs,
-            functionsFromZone Zone.Battlefield sa,
-            m <- NonEmpty.toList (StaticAbility.modifications sa),
-            not (null (wordSwapsOf permId gs m))
-          ]
+          let lives sa = staticLives (functioning permId) (textChangesGiven [] permId gs) (minimum (fmap layer (StaticAbility.modifications sa))) sa
+           in [ MkGathered
+                  { gEffect = Nothing,
+                    gSource = permId,
+                    gAffected = StaticAbility.affected sa,
+                    gLayer = Layer.Text,
+                    gLowest = Layer.Text,
+                    gTimestamp = staticTimestampOf permId permObj gs,
+                    gModification = m
+                  }
+              | sa <- staticAbilitiesOf permId gs,
+                functionsFromZone Zone.Battlefield sa,
+                m <- NonEmpty.toList (StaticAbility.modifications sa),
+                not (null (wordSwapsOf permId gs m)),
+                lives sa
+              ]
    in concatMap partsOf (abilitySources gs)
 
 -- The CR 612 word swap a modification makes, for CR 613.8a's exact test between
@@ -2927,7 +2941,7 @@ gatherGiven stripped waited functioning seed gs =
       -- `stripped` is: the list this gate projects against is the seed itself.
       setStripped = case seed of
         Nothing -> const False
-        Just cands -> setSubtypeStripped cands setEffs gs
+        Just cands -> setSubtypeStripped statics cands setEffs gs
       -- A stored effect carries exactly one modification, and its set is CR
       -- 611.2c's TheseObjects, locked when the effect began -- every writer of
       -- StoredEffects.continuousEffects stores that arm, the CR 611.2c freeze in
@@ -2965,7 +2979,7 @@ gatherGiven stripped waited functioning seed gs =
          in fmap one (NonEmpty.toList (grantedDefiningParts (ContinuousEffect.modification eff)))
       stored = concatMap fromStored (StoredEffects.continuousEffects (GameState.stored gs))
       -- Walked once here rather than once per permanent (textChangesGiven).
-      statics = textChangeStatics gs
+      statics = textChangeStaticsGiven functioning gs
       static = concatMap (fmap snd . permanentParts statics stripped waited functioning setEffs setStripped gs) (abilitySources gs)
       fromCommandZone commandId = case Game.lookupObject commandId gs of
         Nothing -> []
@@ -3401,7 +3415,8 @@ frozenStaticParts src gs =
       functioning = conditionHolds ungated gs
       setEffs = setLandSubtypeEffectsGiven functioning gs
       (stripped, waited) = layerSixGate ungated gs
-      parts = permanentParts (textChangeStatics gs) stripped waited functioning setEffs (setSubtypeStripped ungated setEffs gs) gs src
+      statics = textChangeStaticsGiven functioning gs
+      parts = permanentParts statics stripped waited functioning setEffs (setSubtypeStripped statics ungated setEffs gs) gs src
       grants = controlGrants gs
       applies c oid =
         let lyr = gLowest c
