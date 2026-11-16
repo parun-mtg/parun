@@ -6026,8 +6026,9 @@ chooseQuality quality chooser reader acquisition oid = case quality of
       -- CR 612.1: a text change can leave the list naming one type twice, which is one option.
       Just listed -> Game.chooseAmong (\decider who offered -> Prompt.ChooseSubtype decider who oid family (Just offered)) chooser (ListUtils.nubOrd (NonEmpty.toList listed))
     Foldable.for_ picked $ \subtype -> State.modify' (Game.recordChoice Chosen.Subtype acquisition (const (Just subtype)) oid)
-  ChosenQuality.CardType except -> do
-    picked <- Game.chooseAmong (\decider who offered -> Prompt.ChooseCardType decider who oid offered) chooser (filter (`notElem` except) [minBound .. maxBound])
+  ChosenQuality.CardType except among -> do
+    let listed = maybe [minBound .. maxBound] NonEmpty.toList among
+    picked <- Game.chooseAmong (\decider who offered -> Prompt.ChooseCardType decider who oid offered) chooser (filter (`notElem` except) listed)
     Foldable.for_ picked $ \cardType -> State.modify' (Game.recordChoice Chosen.CardType acquisition (const (Just cardType)) oid)
   ChosenQuality.Number least most -> do
     gs <- State.get
@@ -6060,7 +6061,7 @@ restoreQuality :: ChosenQuality.ChosenQuality -> Acquisition.Acquisition -> Obje
 restoreQuality quality acquisition oid before = case quality of
   ChosenQuality.Colors _ -> Game.restoreChoice Chosen.Colors acquisition oid before
   ChosenQuality.Subtype _ _ -> Game.restoreChoice Chosen.Subtype acquisition oid before
-  ChosenQuality.CardType _ -> Game.restoreChoice Chosen.CardType acquisition oid before
+  ChosenQuality.CardType _ _ -> Game.restoreChoice Chosen.CardType acquisition oid before
   ChosenQuality.Number _ _ -> Game.restoreChoice Chosen.Number acquisition oid before
   ChosenQuality.Parity -> Game.restoreChoice Chosen.Number acquisition oid before
   ChosenQuality.Word _ -> Game.restoreChoice Chosen.Number acquisition oid before

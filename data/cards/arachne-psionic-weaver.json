@@ -103,9 +103,11 @@
                     "value": {
                       "quality": {
                         "type": "CardType",
-                        "value": [
-                          "Creature"
-                        ]
+                        "value": {
+                          "except": [
+                            "Creature"
+                          ]
+                        }
                       }
                     }
                   }

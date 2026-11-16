@@ -1,0 +1,45 @@
+{
+  "description": "CR 700.2i Season of Gathering's one-pawprint mode twice counters a creature alice chooses each time, granting it vigilance and trample, then draws for the greatest power",
+  "note": "Modes 1, 1 and 3 spend five pawprints. alice picks Grizzly Bears, then Hill Giant: 3/3 and 4/4, each with vigilance and trample, while Ornithopter gains neither. The greatest power is then 4, so alice draws four. bob's Gray Ogre is not offered: it is not alice's.",
+  "board": {
+    "seats": [
+      {
+        "name": "alice",
+        "manaPool": "GGCCCC",
+        "battlefield": [
+          { "card": "Grizzly Bears", "label": "bears" },
+          { "card": "Hill Giant", "label": "giant" },
+          { "card": "Ornithopter", "label": "thopter" }
+        ],
+        "hand": [{ "card": "Season of Gathering", "label": "season" }],
+        "library": [
+          { "card": "Island", "label": "alib1" },
+          { "card": "Island", "label": "alib2" },
+          { "card": "Island", "label": "alib3" },
+          { "card": "Island", "label": "alib4" },
+          { "card": "Island", "label": "alib5" },
+          { "card": "Island", "label": "alib6" }
+        ]
+      },
+      {
+        "name": "bob",
+        "battlefield": [{ "card": "Gray Ogre", "label": "ogre" }]
+      }
+    ],
+    "active": "alice",
+    "step": "PrecombatMain"
+  },
+  "timeline": [
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": { "Cast": { "object": "$season", "modes": [0, 0, 2] } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass" },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "View": { "of": "Prompt", "is": { "kind": "ChoosePermanent", "offer": { "source": "Season of Gathering", "earlier": [], "options": ["$bears", "$giant", "$thopter"] } } } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": { "Answer": { "prompt": "ChoosePermanent", "with": "$bears" } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": { "Answer": { "prompt": "ChoosePermanent", "with": "$giant" } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "PowerToughness": { "object": "$bears", "power": 3, "toughness": 3 } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "PowerToughness": { "object": "$giant", "power": 4, "toughness": 4 } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "Keywords": { "object": "$bears", "keyword": { "type": "Vigilance" }, "count": 1 } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "Keywords": { "object": "$giant", "keyword": { "type": "Trample" }, "count": 1 } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "Keywords": { "object": "$thopter", "keyword": { "type": "Vigilance" }, "count": 0 } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "Count": { "player": "alice", "zone": "Hand", "card": "Island", "count": 4 } } }
+  ]
+}
