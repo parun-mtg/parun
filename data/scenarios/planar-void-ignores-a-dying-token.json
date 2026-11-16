@@ -1,0 +1,32 @@
+{
+  "description": "CR 108.2b, 704.5d: Pyroclasm kills alice's creature token, which ceases in the graveyard; Planar Void triggers for Pyroclasm, a card, but not for the token, which is not one",
+  "board": {
+    "active": "alice",
+    "step": "PrecombatMain",
+    "seats": [
+      {
+        "name": "alice",
+        "battlefield": [
+          { "card": "Planar Void", "label": "void" },
+          { "card": "Grizzly Bears", "label": "tok", "token": true },
+          { "card": "Mountain", "label": "m1" },
+          { "card": "Mountain", "label": "m2" }
+        ],
+        "hand": [{ "card": "Pyroclasm", "label": "sweep" }],
+        "library": [{ "card": "Island" }, { "card": "Island" }, { "card": "Island" }]
+      },
+      {
+        "name": "bob",
+        "library": [{ "card": "Island" }, { "card": "Island" }, { "card": "Island" }]
+      }
+    ]
+  },
+  "timeline": [
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": { "Cast": { "object": "$sweep", "mana": ["$m1", "$m2"] } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass" },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "View": { "of": "Stack", "is": ["trigger of $void"] } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass" },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "View": { "of": "Stack", "is": [] } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "Count": { "player": "alice", "zone": "Exile", "card": "Pyroclasm", "count": 1 } } }
+  ]
+}

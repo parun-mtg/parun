@@ -1147,7 +1147,10 @@ checkOnce instead boards = do
             | otherwise -> Object.zone obj `notElem` [Zone.Stack, Zone.Battlefield]
           _ -> False
       vanishing = filter isVanishing (Map.keys (GameState.objects departed))
-      vanished = List.foldl' (flip Game.deleteObject) departed vanishing
+      -- CR 603.10a / 608.2h: each files its record as it ceases, so a trigger
+      -- looking back at the move that took it there still finds the arrival:
+      -- Kaya, Spirits' Justice's scenario for a lone exiled token is the proof.
+      vanished = List.foldl' Event.forgetObject departed vanishing
       outcome = Departure.outcomeAfterLeaving leaving departed
       drained =
         vanished
