@@ -2089,8 +2089,8 @@ filterPositionLintSpec s registry corpus = Spec.describe s "Lint" $ do
     -- cast its source (CR 601.2h); and Astelli Reclaimer, whose bound is the
     -- amount of it.
     --
-    -- Exactly, against the mana value: Chthonian Nightmare, Rydia, Summoner of
-    -- Mist, Tamiyo, Compleated Sage, Synthetic Counted, Announced, Wide, Paired, Total and Divided
+    -- Exactly, against the mana value: Chthonian Nightmare, Shelob, Dread
+    -- Weaver, Rydia, Summoner of Mist, Tamiyo, Compleated Sage, Synthetic Counted, Announced, Wide, Paired, Total and Divided
     -- Verdict, Synthetic Wide Muster on a modal trigger, Spell Blast and Detonate in a slot, and Fear of Change and Ornate Imitations in a reference
     -- pick, at the top level and
     -- inside a ForEachNumber body; Isareth the Awakener in a reflexive delayed
@@ -2139,6 +2139,7 @@ filterPositionLintSpec s registry corpus = Spec.describe s "Lint" $ do
         ("Astelli Reclaimer", 1),
         ("Tameshi, Reality Architect", 1),
         ("Chthonian Nightmare", 1),
+        ("Shelob, Dread Weaver", 1),
         ("Rydia, Summoner of Mist", 1),
         ("Tamiyo, Compleated Sage", 1),
         ("Liliana, Heretical Healer", 1),
