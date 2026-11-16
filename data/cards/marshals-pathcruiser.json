@@ -116,7 +116,9 @@
       "keywords": [
         {
           "type": "Crew",
-          "value": 5
+          "value": {
+            "power": 5
+          }
         },
         {
           "type": "Exhaust"

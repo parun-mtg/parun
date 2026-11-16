@@ -101,6 +101,7 @@ import qualified Parun.Types.CountersOnThis as CountersOnThis
 import qualified Parun.Types.Craft as Craft
 import qualified Parun.Types.Create as Create
 import qualified Parun.Types.CreateCopy as CreateCopy
+import qualified Parun.Types.Crew as Crew
 import qualified Parun.Types.Cycling as Cycling
 import qualified Parun.Types.DamagePattern as DamagePattern
 import qualified Parun.Types.DamageR as DamageR
@@ -1072,9 +1073,9 @@ expansionOf keyword = case keyword of
   Keyword.Emerge _ -> mempty
   Keyword.Escalate _ -> mempty
   Keyword.Melee -> mempty {KeywordExpansion.triggered = perInstance [melee]}
-  Keyword.Crew n ->
+  Keyword.Crew payload ->
     mempty
-      { KeywordExpansion.onBattlefield = perInstance [crew n],
+      { KeywordExpansion.onBattlefield = perInstance [crew payload],
         -- CR 702.29a is an ACTIVATED ability, not a casting permission: cycling discards
         -- the card, it never casts it. Rule 702.122a is one too, one zone over.
         KeywordExpansion.permissions = const []
@@ -2668,8 +2669,8 @@ battlefieldAbilitiesFor keyword count = fmap (mintedBy keyword) (KeywordExpansio
 -- (data/cards/synthetic-crewed-battery.json). Parun.Engine.Cost.tapCandidates is
 -- what supplies the set it reads, and Parun.CrewSpec's "CR 702.122d a creature
 -- Revoke Privileges enchants is not offered to pay" is the proving test.
-crew :: Natural -> ActivatedAbility Card (GrantedAbility.GrantedAbility Card)
-crew n =
+crew :: Crew.Crew -> ActivatedAbility Card (GrantedAbility.GrantedAbility Card)
+crew payload =
   let criterion =
         Filter.And
           [ Filter.HasCardType CardType.Creature,
@@ -2693,13 +2694,14 @@ crew n =
               { -- CR 118.5: rule 702.122a's cost has no mana part, which is
                 -- `Just` an empty one and not the Nothing that means unpayable.
                 Cost.mana = Just (ManaCost.MkManaCost []),
-                Cost.components = [CostComponent.TapForTotalPower (TapForTotalPower.MkTapForTotalPower n criterion (Just KeywordFamily.Crew))]
+                Cost.components = [CostComponent.TapForTotalPower (TapForTotalPower.MkTapForTotalPower (Crew.power payload) criterion (Just KeywordFamily.Crew))]
               },
           ActivatedAbility.modal =
             Mint.oneMode (Seq.fromList [becomes CardType.Artifact, becomes CardType.Creature]),
           ActivatedAbility.maximumX = [],
           ActivatedAbility.definedX = Nothing,
-          ActivatedAbility.restrictions = [],
+          -- CR 602.5b: the rider the card prints after the keyword, equip's answer.
+          ActivatedAbility.restrictions = fmap ActivationRestriction.TimesEachTurn (Maybe.maybeToList (Crew.timesEachTurn payload)),
           ActivatedAbility.activator = Activator.Related PlayerRelation.You,
           -- CR 702.122a gives the permanent this ability outright, with no "as long
           -- as", cycling's answer.

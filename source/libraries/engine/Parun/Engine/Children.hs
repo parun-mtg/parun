@@ -1930,7 +1930,7 @@ keywordChildren c keyword_ = case keyword_ of
   Keyword.Emerge (Emerge.MkEmerge cost quality) -> fmap Keyword.Emerge (Emerge.MkEmerge <$> keywordCost c cost <*> traverse (keywordFilter c) quality)
   Keyword.Escalate cost -> fmap Keyword.Escalate (keywordCost c cost)
   Keyword.Melee -> pure keyword_
-  Keyword.Crew _natural -> pure keyword_
+  Keyword.Crew _crew -> pure keyword_
   Keyword.Fabricate _natural -> pure keyword_
   Keyword.Partner -> pure keyword_
   Keyword.PartnerText _partnerText -> pure keyword_

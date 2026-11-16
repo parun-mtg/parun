@@ -8,6 +8,7 @@ import qualified Parun.Types.ClassLevel as ClassLevel
 import qualified Parun.Types.CompanionCondition as CompanionCondition
 import qualified Parun.Types.Cost as Cost
 import qualified Parun.Types.Craft as Craft
+import qualified Parun.Types.Crew as Crew
 import qualified Parun.Types.Cycling as Cycling
 import qualified Parun.Types.Devour as Devour
 import qualified Parun.Types.Emerge as Emerge
@@ -568,7 +569,7 @@ data Keyword
   | -- | 702.122a: "Tap any number of other untapped creatures you control with
     -- total power N or greater: This permanent becomes an artifact creature until
     -- end of turn."
-    Crew Natural.Natural
+    Crew Crew.Crew
   | -- | 702.123a: fabricate N -- when this permanent enters, you may put N +1/+1
     -- counters on it, and if you don't, create N 1/1 Servo tokens.
     Fabricate Natural.Natural

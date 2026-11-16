@@ -16,6 +16,7 @@ import qualified Parun.Types.BeamMeUp as BeamMeUp
 import qualified Parun.Types.CardName as CardName
 import qualified Parun.Types.Cost as Cost.Type
 import qualified Parun.Types.CostComponent as CostComponent
+import qualified Parun.Types.Crew as Crew
 import qualified Parun.Types.Cycling as Cycling
 import qualified Parun.Types.Devour as Devour
 import qualified Parun.Types.DevourCount as DevourCount
@@ -232,7 +233,12 @@ printed self keyword = case keyword of
   Keyword.Emerge {} -> []
   Keyword.Escalate c -> Cost.keyworded self (keywordWord self) (Text.pack "Escalate") c
   Keyword.Melee -> [Text.pack "Melee"]
-  Keyword.Crew n -> [numbered "Crew" n]
+  Keyword.Crew c -> case Crew.timesEachTurn c of
+    Nothing -> [numbered "Crew" (Crew.power c)]
+    -- CR 602.5b: its own sentence, Luxurious Locomotive's "Crew 1. Activate
+    -- only once each turn."
+    Just 1 -> [numbered "Crew" (Crew.power c) <> Text.pack ". Activate only once each turn."]
+    Just _ -> []
   Keyword.Fabricate n -> [numbered "Fabricate" n]
   Keyword.Partner -> [Text.pack "Partner"]
   Keyword.PartnerText {} -> []
@@ -509,7 +515,7 @@ numberedKeywords =
     Keyword.Annihilator,
     Keyword.Tribute,
     Keyword.Renown,
-    Keyword.Crew,
+    \n -> Keyword.Crew Crew.MkCrew {Crew.power = n, Crew.timesEachTurn = Nothing},
     Keyword.Fabricate,
     Keyword.Afflict,
     Keyword.Afterlife,

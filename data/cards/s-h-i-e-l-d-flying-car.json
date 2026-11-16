@@ -58,7 +58,9 @@
         },
         {
           "type": "Crew",
-          "value": 1
+          "value": {
+            "power": 1
+          }
         }
       ],
       "manaCost": [

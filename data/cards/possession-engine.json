@@ -4,7 +4,9 @@
       "keywords": [
         {
           "type": "Crew",
-          "value": 3
+          "value": {
+            "power": 3
+          }
         }
       ],
       "manaCost": [
