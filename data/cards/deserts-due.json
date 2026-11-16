@@ -1,0 +1,154 @@
+{
+  "faces": [
+    {
+      "manaCost": [
+        {
+          "type": "Generic",
+          "value": 1
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "Black"
+          }
+        }
+      ],
+      "name": "Desert's Due",
+      "oracleText": "Target creature gets -2/-2 until end of turn. It gets an additional -1/-1 until end of turn for each Desert you control.",
+      "spell": {
+        "modes": [
+          {
+            "clauses": [
+              {
+                "effects": [
+                  {
+                    "type": "ModifyTarget",
+                    "value": {
+                      "duration": {
+                        "type": "UntilEndOfTurn"
+                      },
+                      "modification": {
+                        "type": "ModifyPowerToughness",
+                        "value": {
+                          "power": {
+                            "type": "Negate",
+                            "value": {
+                              "type": "Plus",
+                              "value": {
+                                "left": {
+                                  "type": "Literal",
+                                  "value": 2
+                                },
+                                "right": {
+                                  "type": "Count",
+                                  "value": {
+                                    "aggregation": {
+                                      "type": "Members"
+                                    },
+                                    "filter": {
+                                      "type": "And",
+                                      "value": [
+                                        {
+                                          "type": "HasSubtype",
+                                          "value": "Desert"
+                                        },
+                                        {
+                                          "type": "HeldBy",
+                                          "value": {
+                                            "holder": "Controller",
+                                            "relation": "You"
+                                          }
+                                        }
+                                      ]
+                                    },
+                                    "scope": {
+                                      "type": "InZone",
+                                      "value": {
+                                        "player": {
+                                          "type": "Relative",
+                                          "value": "AnyPlayer"
+                                        },
+                                        "zone": "Battlefield"
+                                      }
+                                    }
+                                  }
+                                }
+                              }
+                            }
+                          },
+                          "toughness": {
+                            "type": "Negate",
+                            "value": {
+                              "type": "Plus",
+                              "value": {
+                                "left": {
+                                  "type": "Literal",
+                                  "value": 2
+                                },
+                                "right": {
+                                  "type": "Count",
+                                  "value": {
+                                    "aggregation": {
+                                      "type": "Members"
+                                    },
+                                    "filter": {
+                                      "type": "And",
+                                      "value": [
+                                        {
+                                          "type": "HasSubtype",
+                                          "value": "Desert"
+                                        },
+                                        {
+                                          "type": "HeldBy",
+                                          "value": {
+                                            "holder": "Controller",
+                                            "relation": "You"
+                                          }
+                                        }
+                                      ]
+                                    },
+                                    "scope": {
+                                      "type": "InZone",
+                                      "value": {
+                                        "player": {
+                                          "type": "Relative",
+                                          "value": "AnyPlayer"
+                                        },
+                                        "zone": "Battlefield"
+                                      }
+                                    }
+                                  }
+                                }
+                              }
+                            }
+                          }
+                        }
+                      },
+                      "ref": {
+                        "type": "InSlot",
+                        "value": "target"
+                      }
+                    }
+                  }
+                ]
+              }
+            ],
+            "targetSlots": {
+              "target": {
+                "pool": {
+                  "type": "Creatures"
+                }
+              }
+            }
+          }
+        ]
+      },
+      "typeLine": {
+        "types": [
+          "Instant"
+        ]
+      }
+    }
+  ]
+}

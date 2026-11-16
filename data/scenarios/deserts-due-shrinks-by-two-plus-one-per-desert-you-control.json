@@ -1,0 +1,142 @@
+{
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "battlefield": [
+          {
+            "card": "Desert",
+            "label": "d1",
+            "tapped": true
+          },
+          {
+            "card": "Desert",
+            "label": "d2",
+            "tapped": true
+          }
+        ],
+        "graveyard": [],
+        "hand": [
+          {
+            "card": "Desert's Due",
+            "label": "due"
+          }
+        ],
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ],
+        "manaPool": "BB",
+        "name": "alice"
+      },
+      {
+        "battlefield": [
+          {
+            "card": "Desert",
+            "label": "d3"
+          },
+          {
+            "card": "Colossal Dreadmaw",
+            "label": "dreadmaw"
+          }
+        ],
+        "graveyard": [],
+        "hand": [],
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ],
+        "name": "bob"
+      }
+    ],
+    "step": "PrecombatMain"
+  },
+  "description": "Desert's Due gives -2/-2 and an additional -1/-1 for each Desert its caster controls, not an opponent's",
+  "note": "Two Deserts of alice's and one of bob's: -4/-4 leaves the 6/6 at 2/2, where an 'if you control a Desert' reading gives 3/3 and counting bob's gives 1/1.",
+  "timeline": [
+    {
+      "do": {
+        "Cast": {
+          "object": "$due"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "PowerToughness": {
+          "object": "$dreadmaw",
+          "power": 2,
+          "toughness": 2
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    }
+  ]
+}
