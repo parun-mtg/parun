@@ -81,6 +81,7 @@ import qualified Parun.Types.AbilityName as AbilityName
 import qualified Parun.Types.AbilityWasActivated as AbilityWasActivated
 import qualified Parun.Types.Acquisition as Acquisition
 import qualified Parun.Types.ActivatedAbility as ActivatedAbility
+import qualified Parun.Types.ActivatedAbilitySource as ActivatedAbilitySource
 import qualified Parun.Types.ActivationProhibition as ActivationProhibition.Type
 import qualified Parun.Types.Activations as Activations
 import qualified Parun.Types.AlternativeCost as AlternativeCost
@@ -2762,6 +2763,31 @@ exileTotalling perform slots pid oid (ExileCardsTotalling.MkExileCardsTotalling 
       arrived <- Event.changeZonesTogether (ManaAbilityPerformer.settle perform) (fmap (\c -> (c, Zone.Exile)) (Set.toAscList chosen))
       pure (Just (chosen, foldMap Foldable.toList arrived))
     else pure Nothing
+
+-- CR 607.2a / 607.2q: link the cards a cost put into exile to `oid`, the object
+-- whose spell or ability it paid for. A spell's (`paidFor` is `oid` only on the
+-- casting road) links as printed, and Event.carryOver hands the link to the
+-- permanent the spell becomes; an activated ability's links under that ability's
+-- name and the acquisition it froze going on the stack (Game.readingAcquisition's
+-- reason). A new link ends a DurationEvent.SourceExiledCard duration, as
+-- Resolve.Common.recordExiledWith's does. Kylox's Voltstrider's scenario proves
+-- the activated road, Skyway Robber's and Fear of Abduction's the spell's.
+--
+-- Not implemented: a mana ability's cost, which has no stack object to name its
+-- ability, links nothing (#8188).
+linkPaidExiles :: Maybe ObjectId -> ObjectId -> [ObjectId] -> Game ()
+linkPaidExiles paidFor oid arrived = do
+  gs <- State.get
+  let linked ability acquisition = ExileLink.MkExileLink {ExileLink.source = oid, ExileLink.ability = ability, ExileLink.acquisition = acquisition, ExileLink.chosen = False}
+      link = case paidFor of
+        Just paying
+          | paying == oid -> Just (linked Nothing Acquisition.Own)
+          | Just (Source.OfAbility activated) <- fmap Object.source (Game.lookupObject paying gs) ->
+              Just (linked (ActivatedAbility.name (ActivatedAbilitySource.ability activated)) (ActivatedAbilitySource.acquisition activated))
+        _ -> Nothing
+      exiled = filter (`Set.member` GameState.exile gs) arrived
+  Foldable.for_ link $ \l ->
+    Monad.unless (null exiled) (State.put (Expiry.sweep (Expiry.ExiledWith oid) gs {GameState.exiledWith = foldr (`Map.insert` l) (GameState.exiledWith gs) exiled}))
 
 -- The permanents this player may tap to pay a TapForTotalPower or TapPermanents
 -- component on `oid`: every battlefield object matching the criterion, ascending.
@@ -7577,7 +7603,8 @@ payPayable perform moment paidFor slots pid oid component = case component of
         else Game.choose (Prompt.ChooseExiles decider pid oid candidates n)
     if Set.isSubsetOf chosen (Set.fromList candidates) && Natural.length chosen == n
       then do
-        Monad.void (Event.changeZonesTogether (ManaAbilityPerformer.settle perform) (fmap (\exiled -> (exiled, Zone.Exile)) (Set.toAscList chosen)))
+        arrived <- Event.changeZonesTogether (ManaAbilityPerformer.settle perform) (fmap (\exiled -> (exiled, Zone.Exile)) (Set.toAscList chosen))
+        linkPaidExiles paidFor oid (foldMap Foldable.toList arrived)
         pure (Payment.Paid (Binding.paidObjects Binding.exiledPermanent (Set.map Recipient.ToObject chosen)))
       else pure Payment.Unpaid
   -- CR 701.9b: the discarding player chooses which cards, so this is a prompt.
@@ -7702,7 +7729,8 @@ payPayable perform moment paidFor slots pid oid component = case component of
                 else Game.choose (Prompt.ChooseExiles decider pid oid candidates n)
     if Set.isSubsetOf chosen (Set.fromList candidates) && Natural.length chosen == n
       then do
-        Monad.void (Event.changeZonesTogether (ManaAbilityPerformer.settle perform) (fmap (\c -> (c, Zone.Exile)) (Set.toAscList chosen)))
+        arrived <- Event.changeZonesTogether (ManaAbilityPerformer.settle perform) (fmap (\c -> (c, Zone.Exile)) (Set.toAscList chosen))
+        linkPaidExiles paidFor oid (foldMap Foldable.toList arrived)
         pure bindsNothing
       else pure Payment.Unpaid
   -- CR 701.20a's reveal as a cost, the arm above's pool and prompt with no zone
@@ -7771,8 +7799,7 @@ payPayable perform moment paidFor slots pid oid component = case component of
     case beheld of
       Just [chosen] -> do
         arrived <- Event.changeZoneReturning (ManaAbilityPerformer.settle perform) chosen Zone.Exile
-        let link = ExileLink.MkExileLink {ExileLink.source = oid, ExileLink.ability = Nothing, ExileLink.acquisition = Acquisition.Own, ExileLink.chosen = False}
-        State.modify' (\g -> g {GameState.exiledWith = foldr (`Map.insert` link) (GameState.exiledWith g) arrived})
+        linkPaidExiles paidFor oid (Foldable.toList arrived)
         pure bindsNothing
       _ -> pure Payment.Unpaid
   -- CR 107.14: paying energy removes that many energy counters from the player.
@@ -8122,10 +8149,7 @@ payPayable perform moment paidFor slots pid oid component = case component of
   -- for three counters" proves it; ExileMaterials and CollectEvidence below
   -- follow.
   --
-  -- LINKS the cards to `oid` when the cost is a spell's (`paidFor` is `oid`
-  -- only on the casting road), BeholdAndExile's CR 607.2q link. An activated
-  -- ability's `oid` is its source, which CR 607.2q links nothing to. Skyway
-  -- Robber's scenarios are the proof; no test observes the gate.
+  -- LINKS the exiled cards to `oid` (linkPaidExiles).
   --
   -- A count of 0 (Gorex, the Tombshell announcing none) has the empty set as
   -- its one answer, so nothing is asked.
@@ -8153,9 +8177,7 @@ payPayable perform moment paidFor slots pid oid component = case component of
               batch -> pure batch
             pure (fmap (\c -> (c, Zone.Library)) (reverse ordered))
         arrived <- Event.changeZonesTogether (ManaAbilityPerformer.settle perform) moves
-        Monad.when (paidFor == Just oid && destination == GraveyardCostDestination.Exile) $ do
-          let link = ExileLink.MkExileLink {ExileLink.source = oid, ExileLink.ability = Nothing, ExileLink.acquisition = Acquisition.Own, ExileLink.chosen = False}
-          State.modify' (\g -> g {GameState.exiledWith = foldr (`Map.insert` link) (GameState.exiledWith g) (foldMap Foldable.toList arrived)})
+        Monad.when (destination == GraveyardCostDestination.Exile) (linkPaidExiles paidFor oid (foldMap Foldable.toList arrived))
         pure bindsNothing
       else pure Payment.Unpaid
   -- CR 702.167a's [materials]: the arm above over the battlefield and the
@@ -8193,12 +8215,14 @@ payPayable perform moment paidFor slots pid oid component = case component of
   -- 701.59c's linked "if evidence was collected" is read off, through
   -- Quantity.WasBound -- Behold's route above. The scenario
   -- cr-701-59c-vitu-ghazi-inspector-s-enters-ability-reads-the-evidence-its-spell-collected
-  -- is the proof.
+  -- is the proof. LINKS what arrived to `oid` (linkPaidExiles), Kylox's
+  -- Voltstrider's "cards exiled with it".
   CostComponent.CollectEvidence n -> do
     exiled <- exileTotalling perform slots pid oid (evidenceExile n)
     case exiled of
       Nothing -> pure Payment.Unpaid
-      Just (chosen, _) -> do
+      Just (chosen, arrived) -> do
+        linkPaidExiles paidFor oid arrived
         -- Evidence Examiner's "Whenever you collect evidence" reads this.
         State.modify' (Event.recordEvent (GameEvent.PlayerActed (PlayerActed.MkPlayerActed PlayerAction.CollectEvidence pid)))
         pure (Payment.Paid (Binding.paidObjects Binding.collectedEvidence (Set.map Recipient.ToObject chosen)))
@@ -8207,9 +8231,11 @@ payPayable perform moment paidFor slots pid oid component = case component of
   -- craftMaterials' reason: "copy those exiled cards" copies the cards in exile.
   CostComponent.ExileCardsTotalling exile -> do
     exiled <- exileTotalling perform slots pid oid exile
-    pure $ case exiled of
-      Nothing -> Payment.Unpaid
-      Just (_, arrived) -> Payment.Paid (Binding.paidObjects Binding.totalledExiles (Set.fromList (fmap Recipient.ToObject arrived)))
+    case exiled of
+      Nothing -> pure Payment.Unpaid
+      Just (_, arrived) -> do
+        linkPaidExiles paidFor oid arrived
+        pure (Payment.Paid (Binding.paidObjects Binding.totalledExiles (Set.fromList (fmap Recipient.ToObject arrived))))
   -- The arm above at the amount these slots fix (fixComputed). A REGRESSION
   -- FENCE: Cast.castProposed fixes the amount before CR 601.2h pays, per Urgent
   -- Necropsy's ruling, so a payment reaching here unfixed has no caller.
@@ -8223,7 +8249,8 @@ payPayable perform moment paidFor slots pid oid component = case component of
     case topExileCandidate slots pid oid criterion gs of
       Nothing -> pure Payment.Unpaid
       Just candidate -> do
-        Event.changeZone (ManaAbilityPerformer.settle perform) candidate Zone.Exile
+        arrived <- Event.changeZoneReturning (ManaAbilityPerformer.settle perform) candidate Zone.Exile
+        linkPaidExiles paidFor oid (Foldable.toList arrived)
         pure bindsNothing
 
   -- CR 406.4: the payer picks a card they may look at, or a face-down pile, out

@@ -140,8 +140,8 @@
     ],
     "step": "PrecombatMain"
   },
-  "description": "CR 601.2f, 601.2h, 607.2a: Fear of Abduction exiles a creature you control as it is cast, exiles target creature an opponent controls on entering, and on leaving returns only the card its own ability exiled, to its owner's hand",
-  "note": "Three seats. Alice exiles her Savannah Lions to cast the Fear (bob's Hill Giant is refused as that cost); her Grizzly Bears is refused as its target, and bob's Hill Giant is exiled rather than carol's Wall of Stone. On bob's turn his Doom Blade destroys the Fear: the Giant goes to bob's hand, while the Lions, exiled to pay the cost and not by the Fear, stays in exile.",
+  "description": "CR 601.2f, 601.2h, 607.2a, 607.2q: Fear of Abduction exiles a creature you control as it is cast, exiles target creature an opponent controls on entering, and on leaving returns both cards exiled with it, each to its owner's hand",
+  "note": "Three seats. Alice exiles her Savannah Lions to cast the Fear (bob's Hill Giant is refused as that cost); her Grizzly Bears is refused as its target, and bob's Hill Giant is exiled rather than carol's Wall of Stone. On bob's turn his Doom Blade destroys the Fear: the Giant goes to bob's hand, and the Lions, exiled to pay the cost of the spell that became the Fear, to alice's.",
   "timeline": [
     {
       "do": {
@@ -323,7 +323,7 @@
           "card": "Savannah Lions",
           "count": 1,
           "player": "alice",
-          "zone": "Exile"
+          "zone": "Hand"
         }
       },
       "player": "bob",
