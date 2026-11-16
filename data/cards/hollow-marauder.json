@@ -166,8 +166,8 @@
       ],
       "typeLine": {
         "subtypes": [
-          "Specter",
-          "Rogue"
+          "Rogue",
+          "Specter"
         ],
         "types": [
           "Creature"

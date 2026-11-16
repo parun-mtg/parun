@@ -1,0 +1,144 @@
+{
+  "faces": [
+    {
+      "keywords": [
+        {
+          "type": "Spree"
+        }
+      ],
+      "manaCost": [
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "Blue"
+          }
+        }
+      ],
+      "modeCosts": {
+        "0": {
+          "mana": [
+            {
+              "type": "Generic",
+              "value": 3
+            }
+          ]
+        },
+        "1": {
+          "mana": [
+            {
+              "type": "Generic",
+              "value": 2
+            }
+          ]
+        }
+      },
+      "name": "Jailbreak Scheme",
+      "oracleText": "Spree (Choose one or more additional costs.)\n+ {3} — Put a +1/+1 counter on target creature. It can't be blocked this turn.\n+ {2} — Target artifact or creature's owner puts it on their choice of the top or bottom of their library.",
+      "spell": {
+        "modes": [
+          {
+            "clauses": [
+              {
+                "effects": [
+                  {
+                    "type": "PutCounters",
+                    "value": {
+                      "kind": {
+                        "type": "PlusOnePlusOne"
+                      },
+                      "quantity": {
+                        "type": "Literal",
+                        "value": 1
+                      },
+                      "ref": {
+                        "type": "InSlot",
+                        "value": "creature"
+                      }
+                    }
+                  },
+                  {
+                    "type": "ForbidBeingBlocked",
+                    "value": {
+                      "affected": {
+                        "type": "IsBound",
+                        "value": "creature"
+                      },
+                      "blockers": {
+                        "type": "And",
+                        "value": []
+                      },
+                      "duration": {
+                        "type": "UntilEndOfTurn"
+                      }
+                    }
+                  }
+                ]
+              }
+            ],
+            "targetSlots": {
+              "creature": {
+                "pool": {
+                  "type": "Creatures"
+                }
+              }
+            }
+          },
+          {
+            "clauses": [
+              {
+                "effects": [
+                  {
+                    "type": "MoveToZone",
+                    "value": {
+                      "placement": {
+                        "type": "OwnerChooses"
+                      },
+                      "ref": {
+                        "type": "InSlot",
+                        "value": "permanent"
+                      },
+                      "zone": "Library"
+                    }
+                  }
+                ]
+              }
+            ],
+            "targetSlots": {
+              "permanent": {
+                "filter": {
+                  "type": "Or",
+                  "value": [
+                    {
+                      "type": "HasCardType",
+                      "value": "Artifact"
+                    },
+                    {
+                      "type": "HasCardType",
+                      "value": "Creature"
+                    }
+                  ]
+                },
+                "pool": {
+                  "type": "Permanents"
+                }
+              }
+            }
+          }
+        ],
+        "selection": {
+          "type": "ChooseBetween",
+          "value": {
+            "least": 1,
+            "most": 2
+          }
+        }
+      },
+      "typeLine": {
+        "types": [
+          "Sorcery"
+        ]
+      }
+    }
+  ]
+}

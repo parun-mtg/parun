@@ -1,0 +1,390 @@
+{
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "battlefield": [
+          {
+            "card": "Intrepid Stablemaster",
+            "label": "s1",
+            "ready": true
+          },
+          {
+            "card": "Intrepid Stablemaster",
+            "label": "s2",
+            "ready": true
+          }
+        ],
+        "hand": [
+          {
+            "card": "Mind Stone",
+            "label": "stone"
+          },
+          {
+            "card": "Funeral Longboat",
+            "label": "boat"
+          },
+          {
+            "card": "Bulwark Ox",
+            "label": "ox"
+          }
+        ],
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ],
+        "name": "alice"
+      },
+      {
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ],
+        "name": "bob"
+      }
+    ],
+    "step": "PrecombatMain"
+  },
+  "description": "Intrepid Stablemaster's two mana of one colour pay for a Vehicle (Funeral Longboat) and a Mount (Bulwark Ox), and not for Mind Stone, an artifact that is neither (CR 106.6)",
+  "timeline": [
+    {
+      "player": "alice",
+      "refuse": {
+        "Cast": {
+          "mana": [
+            "$s1",
+            "$s2"
+          ],
+          "object": "$stone",
+          "yields": [
+            [
+              {
+                "manaType": {
+                  "type": "Colored",
+                  "value": "Red"
+                },
+                "restriction": {
+                  "casts": {
+                    "type": "Or",
+                    "value": [
+                      {
+                        "type": "HasSubtype",
+                        "value": "Mount"
+                      },
+                      {
+                        "type": "HasSubtype",
+                        "value": "Vehicle"
+                      }
+                    ]
+                  }
+                },
+                "retention": "Ordinary",
+                "rider": null,
+                "sourceChoices": null,
+                "tags": []
+              },
+              {
+                "manaType": {
+                  "type": "Colored",
+                  "value": "Red"
+                },
+                "restriction": {
+                  "casts": {
+                    "type": "Or",
+                    "value": [
+                      {
+                        "type": "HasSubtype",
+                        "value": "Mount"
+                      },
+                      {
+                        "type": "HasSubtype",
+                        "value": "Vehicle"
+                      }
+                    ]
+                  }
+                },
+                "retention": "Ordinary",
+                "rider": null,
+                "sourceChoices": null,
+                "tags": []
+              }
+            ],
+            [
+              {
+                "manaType": {
+                  "type": "Colored",
+                  "value": "Green"
+                },
+                "restriction": null,
+                "retention": "Ordinary",
+                "rider": null,
+                "sourceChoices": null,
+                "tags": []
+              }
+            ]
+          ]
+        }
+      },
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "ChooseOptional": "Exercises"
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "ChooseOptional": "Exercises"
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Cast": {
+          "mana": [
+            "$s1",
+            null
+          ],
+          "object": "$boat",
+          "yields": [
+            [
+              {
+                "manaType": {
+                  "type": "Colored",
+                  "value": "Blue"
+                },
+                "restriction": {
+                  "casts": {
+                    "type": "Or",
+                    "value": [
+                      {
+                        "type": "HasSubtype",
+                        "value": "Mount"
+                      },
+                      {
+                        "type": "HasSubtype",
+                        "value": "Vehicle"
+                      }
+                    ]
+                  }
+                },
+                "retention": "Ordinary",
+                "rider": null,
+                "sourceChoices": null,
+                "tags": []
+              },
+              {
+                "manaType": {
+                  "type": "Colored",
+                  "value": "Blue"
+                },
+                "restriction": {
+                  "casts": {
+                    "type": "Or",
+                    "value": [
+                      {
+                        "type": "HasSubtype",
+                        "value": "Mount"
+                      },
+                      {
+                        "type": "HasSubtype",
+                        "value": "Vehicle"
+                      }
+                    ]
+                  }
+                },
+                "retention": "Ordinary",
+                "rider": null,
+                "sourceChoices": null,
+                "tags": []
+              }
+            ]
+          ]
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Funeral Longboat",
+          "count": 1,
+          "player": "alice",
+          "zone": "Battlefield"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Cast": {
+          "mana": [
+            "$s2"
+          ],
+          "object": "$ox",
+          "yields": [
+            [
+              {
+                "manaType": {
+                  "type": "Colored",
+                  "value": "White"
+                },
+                "restriction": {
+                  "casts": {
+                    "type": "Or",
+                    "value": [
+                      {
+                        "type": "HasSubtype",
+                        "value": "Mount"
+                      },
+                      {
+                        "type": "HasSubtype",
+                        "value": "Vehicle"
+                      }
+                    ]
+                  }
+                },
+                "retention": "Ordinary",
+                "rider": null,
+                "sourceChoices": null,
+                "tags": []
+              },
+              {
+                "manaType": {
+                  "type": "Colored",
+                  "value": "White"
+                },
+                "restriction": {
+                  "casts": {
+                    "type": "Or",
+                    "value": [
+                      {
+                        "type": "HasSubtype",
+                        "value": "Mount"
+                      },
+                      {
+                        "type": "HasSubtype",
+                        "value": "Vehicle"
+                      }
+                    ]
+                  }
+                },
+                "retention": "Ordinary",
+                "rider": null,
+                "sourceChoices": null,
+                "tags": []
+              }
+            ]
+          ]
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Bulwark Ox",
+          "count": 1,
+          "player": "alice",
+          "zone": "Battlefield"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Mind Stone",
+          "count": 1,
+          "player": "alice",
+          "zone": "Hand"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    }
+  ]
+}

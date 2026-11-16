@@ -3,13 +3,13 @@
     {
       "keywords": [
         {
-          "type": "Vigilance"
+          "type": "Haste"
         },
         {
           "type": "Trample"
         },
         {
-          "type": "Haste"
+          "type": "Vigilance"
         }
       ],
       "manaCost": [

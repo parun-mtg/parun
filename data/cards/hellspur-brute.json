@@ -3,6 +3,9 @@
     {
       "keywords": [
         {
+          "type": "Trample"
+        },
+        {
           "type": "Affinity",
           "value": {
             "type": "Or",
@@ -29,9 +32,6 @@
               }
             ]
           }
-        },
-        {
-          "type": "Trample"
         }
       ],
       "manaCost": [
