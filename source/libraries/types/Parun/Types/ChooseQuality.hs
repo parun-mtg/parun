@@ -10,6 +10,10 @@ data ChooseQuality = MkChooseQuality
     -- (Shapeshifter's "the last chosen number"), which then stands until the
     -- next one. Otherwise it is the resolving ability's own "of your choice"
     -- and ends with the resolution (Distorting Lens).
-    linked :: Bool
+    linked :: Bool,
+    -- | CR 702.106b's secret choice, here of the card's own: the chooser is
+    -- recorded on the source (PlayerChoice.SecretChooser), so that only they
+    -- can reveal it (CostComponent.RevealSecretChoice; A Killer Among Us).
+    secret :: Bool
   }
   deriving (Eq, Ord, Show)

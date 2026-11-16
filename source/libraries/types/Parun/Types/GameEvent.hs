@@ -52,6 +52,7 @@ import qualified Parun.Types.PlanarDieRolled as PlanarDieRolled
 import qualified Parun.Types.PlayerActed as PlayerActed
 import qualified Parun.Types.PlayerId as PlayerId
 import qualified Parun.Types.Revealed as Revealed
+import qualified Parun.Types.RevealedChoice as RevealedChoice
 import qualified Parun.Types.Saddling as Saddling
 import qualified Parun.Types.SpellWasCast as SpellWasCast
 import qualified Parun.Types.SpellWasCopied as SpellWasCopied
@@ -247,6 +248,8 @@ data GameEvent
   | -- | Every ballot of a secret vote, revealed at once in voting order: secret
     -- council's card text; the ability word has no rules meaning (CR 207.2c).
     VotesRevealed (Seq Ballot.Ballot)
+  | -- | CR 702.106b: a secret choice was revealed (CostComponent.RevealSecretChoice).
+    ChoiceRevealed RevealedChoice.RevealedChoice
   | -- | CR 701.6a: a spell was COUNTERED. Emitted by Parun.Engine.Event.counter,
     -- the one funnel every countering goes through, and distinct from the Moved
     -- event the same removal records: CR 608.2n sends a resolved spell to the

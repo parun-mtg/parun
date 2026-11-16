@@ -1020,6 +1020,7 @@ playerChoiceNames :: (Monoid r) => Asking r -> PlayerChoice.PlayerChoice -> r
 playerChoiceNames asking x = case x of
   PlayerChoice.AsEntersOrTransforms -> mempty
   PlayerChoice.Promised _gift instance_ -> keywordInstanceNames asking instance_
+  PlayerChoice.SecretChooser -> mempty
 
 keywordInstanceNames :: (Monoid r) => Asking r -> KeywordInstance.KeywordInstance -> r
 keywordInstanceNames asking x = case x of

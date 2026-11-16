@@ -90,6 +90,7 @@ codec keywordCodec =
       Arm.payload "BeholdAndExile" (Filter.codec keywordCodec) CostComponent.BeholdAndExile (\x -> case x of CostComponent.BeholdAndExile y -> Just y; _ -> Nothing),
       Arm.payload "MillCards" Common.natural CostComponent.MillCards (\x -> case x of CostComponent.MillCards y -> Just y; _ -> Nothing),
       Arm.payload "RevealTopOfLibrary" Common.natural CostComponent.RevealTopOfLibrary (\x -> case x of CostComponent.RevealTopOfLibrary y -> Just y; _ -> Nothing),
+      Arm.nullary "RevealSecretChoice" CostComponent.RevealSecretChoice,
       Arm.payload "ChooseOpponent" Gift.codec CostComponent.ChooseOpponent (\x -> case x of CostComponent.ChooseOpponent y -> Just y; _ -> Nothing),
       Arm.payload "ChooseSubtype" SubtypeFamily.codec CostComponent.ChooseSubtype (\x -> case x of CostComponent.ChooseSubtype y -> Just y; _ -> Nothing),
       Arm.payload "Waterbend" CostAmount.codec CostComponent.Waterbend (\x -> case x of CostComponent.Waterbend y -> Just y; _ -> Nothing),
@@ -141,6 +142,7 @@ tagOf x = case x of
   CostComponent.BeholdAndExile {} -> "BeholdAndExile"
   CostComponent.MillCards {} -> "MillCards"
   CostComponent.RevealTopOfLibrary {} -> "RevealTopOfLibrary"
+  CostComponent.RevealSecretChoice {} -> "RevealSecretChoice"
   CostComponent.ChooseOpponent {} -> "ChooseOpponent"
   CostComponent.ChooseSubtype {} -> "ChooseSubtype"
   CostComponent.Waterbend {} -> "Waterbend"

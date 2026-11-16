@@ -707,6 +707,7 @@ settlePromises oid gs = case Game.lookupObject oid gs of
         isPromiseOf something key = case key of
           PlayerChoice.Promised g _ -> g == something
           PlayerChoice.AsEntersOrTransforms -> False
+          PlayerChoice.SecretChooser -> False
         (paid', promises') = List.foldl' settle (Object.paidCosts obj, promises) gifts
         settledObject = obj {Object.paidCosts = paid'}
      in if null gifts then gs else Game.recordChoice Chosen.Players acquisition (const (Just promises')) oid (gs {GameState.objects = Map.insert oid settledObject (GameState.objects gs)})

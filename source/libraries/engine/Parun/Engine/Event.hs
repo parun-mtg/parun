@@ -1324,6 +1324,7 @@ damageOf event = case event of
   GameEvent.Looked {} -> Nothing
   GameEvent.Voted {} -> Nothing
   GameEvent.VotesRevealed {} -> Nothing
+  GameEvent.ChoiceRevealed {} -> Nothing
   GameEvent.AttackerDeclared {} -> Nothing
   GameEvent.BecameBlocking {} -> Nothing
   GameEvent.BlocksDeclared {} -> Nothing
@@ -1394,6 +1395,7 @@ revealOf event = case event of
   GameEvent.Looked {} -> Nothing
   GameEvent.Voted {} -> Nothing
   GameEvent.VotesRevealed {} -> Nothing
+  GameEvent.ChoiceRevealed {} -> Nothing
   GameEvent.Moved {} -> Nothing
   GameEvent.DamageDealt _ -> Nothing
   GameEvent.DamagePrevented {} -> Nothing
@@ -5947,6 +5949,7 @@ unlinkLostPayments oid gs = case Game.lookupObject oid gs of
         promise choice = case choice of
           PlayerChoice.Promised something which -> kept (Keyword.Type.Gift something) which
           PlayerChoice.AsEntersOrTransforms -> True
+          PlayerChoice.SecretChooser -> True
         promises = fmap (Map.filterWithKey (\choice _ -> promise choice)) (Object.chosenPlayers obj)
         settled = obj {Object.paidCosts = paid, Object.chosenPlayers = promises}
      in gs {GameState.objects = Map.insert oid settled (GameState.objects gs)}
@@ -13049,6 +13052,7 @@ abilityTriggeredOf event = case event of
   GameEvent.Looked {} -> Nothing
   GameEvent.Voted {} -> Nothing
   GameEvent.VotesRevealed {} -> Nothing
+  GameEvent.ChoiceRevealed {} -> Nothing
   GameEvent.AttackerDeclared {} -> Nothing
   GameEvent.BecameBlocking {} -> Nothing
   GameEvent.BlocksDeclared {} -> Nothing

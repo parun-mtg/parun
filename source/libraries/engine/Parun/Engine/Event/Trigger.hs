@@ -147,6 +147,7 @@ import qualified Parun.Types.RangeOfInfluence as RangeOfInfluence
 import qualified Parun.Types.Recipient as Recipient
 import qualified Parun.Types.RevealCause as RevealCause
 import qualified Parun.Types.Revealed as Revealed
+import qualified Parun.Types.RevealedChoice as RevealedChoice
 import qualified Parun.Types.SacrificeTrigger as SacrificeTrigger
 import qualified Parun.Types.Saddling as Saddling
 import qualified Parun.Types.SlotName as SlotName
@@ -644,6 +645,7 @@ movedOf event = case event of
   GameEvent.Looked {} -> Nothing
   GameEvent.Voted {} -> Nothing
   GameEvent.VotesRevealed {} -> Nothing
+  GameEvent.ChoiceRevealed {} -> Nothing
   GameEvent.AttackerDeclared {} -> Nothing
   GameEvent.BecameBlocking {} -> Nothing
   GameEvent.BlocksDeclared {} -> Nothing
@@ -814,6 +816,7 @@ participants event =
         GameEvent.Looked l -> ([Looked.card l], Set.toList (Looked.audience l))
         GameEvent.Voted v -> ballotParticipants (Voted.ballot v)
         GameEvent.VotesRevealed ballots -> foldMap ballotParticipants ballots
+        GameEvent.ChoiceRevealed c -> ([RevealedChoice.object c], [RevealedChoice.player c])
         GameEvent.SpellCountered c -> ([Countering.countered c, Countering.source c], [])
         GameEvent.AbilityCountered c -> ([Countering.countered c, Countering.source c], [])
         GameEvent.LifeLost c -> player (LifeChange.player c)
@@ -1643,6 +1646,7 @@ eventTriggersGiven scope standing events gs =
         GameEvent.Looked {} -> Map.empty
         GameEvent.Voted {} -> Map.empty
         GameEvent.VotesRevealed {} -> Map.empty
+        GameEvent.ChoiceRevealed {} -> Map.empty
         GameEvent.AttackerDeclared {} -> Map.empty
         GameEvent.BecameBlocking {} -> Map.empty
         GameEvent.BlocksDeclared {} -> Map.empty
@@ -1952,6 +1956,7 @@ eventTriggersGiven scope standing events gs =
         GameEvent.Looked {} -> Map.empty
         GameEvent.Voted {} -> Map.empty
         GameEvent.VotesRevealed {} -> Map.empty
+        GameEvent.ChoiceRevealed {} -> Map.empty
         GameEvent.AttackerDeclared {} -> Map.empty
         GameEvent.BecameBlocking {} -> Map.empty
         GameEvent.BlocksDeclared {} -> Map.empty
@@ -2180,6 +2185,7 @@ eventTriggersGiven scope standing events gs =
         GameEvent.Looked {} -> Map.empty
         GameEvent.Voted {} -> Map.empty
         GameEvent.VotesRevealed {} -> Map.empty
+        GameEvent.ChoiceRevealed {} -> Map.empty
         GameEvent.AttackerDeclared {} -> Map.empty
         GameEvent.BecameBlocking {} -> Map.empty
         GameEvent.BlocksDeclared {} -> Map.empty
@@ -2288,6 +2294,7 @@ eventTriggersGiven scope standing events gs =
         GameEvent.Looked {} -> Map.empty
         GameEvent.Voted {} -> Map.empty
         GameEvent.VotesRevealed {} -> Map.empty
+        GameEvent.ChoiceRevealed {} -> Map.empty
         GameEvent.Discarded {} -> Map.empty
         GameEvent.Drew {} -> Map.empty
         GameEvent.Moved {} -> Map.empty
@@ -4081,6 +4088,7 @@ resnapshot gs without event =
         GameEvent.Looked l -> fmap (\pc -> GameEvent.Looked l {Looked.characteristics = pc}) (rereadBy Projection.projectShown (Looked.card l) (Looked.characteristics l))
         GameEvent.Voted v -> fmap (\b -> GameEvent.Voted v {Voted.ballot = b}) (rereadBallot (Voted.ballot v))
         GameEvent.VotesRevealed ballots -> fmap GameEvent.VotesRevealed (traverse rereadBallot ballots)
+        GameEvent.ChoiceRevealed {} -> Just event
         GameEvent.Transformed t -> fmap (\(pc, lapsed) -> GameEvent.Transformed t {Transformed.characteristics = pc, Transformed.lapsedGrants = lapsed}) (resample (Transformed.object t) (Transformed.characteristics t) (Transformed.lapsedGrants t))
         GameEvent.CardArrived {} -> Just event
         GameEvent.SpellCopied {} -> Just event

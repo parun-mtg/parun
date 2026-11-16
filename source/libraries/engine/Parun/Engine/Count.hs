@@ -934,6 +934,7 @@ snapshotView viewOf gs shape event = case event of
   GameEvent.Looked {} -> Nothing
   GameEvent.Voted {} -> Nothing
   GameEvent.VotesRevealed {} -> Nothing
+  GameEvent.ChoiceRevealed {} -> Nothing
   -- CR 508.1a / 608.2i: the attacker as it was declared, off the event's
   -- snapshot, so a Hero that has since stopped being one still attacked (the
   -- scenario avengers-assemble-draws-at-the-end-step-after-a-hero-attacked-and-stopped-being-one),

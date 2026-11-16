@@ -108,3 +108,4 @@ loyaltyAmountOf component = case component of
   CostComponent.BeholdAndExile _ -> Nothing
   CostComponent.MillCards _ -> Nothing
   CostComponent.RevealTopOfLibrary _ -> Nothing
+  CostComponent.RevealSecretChoice -> Nothing

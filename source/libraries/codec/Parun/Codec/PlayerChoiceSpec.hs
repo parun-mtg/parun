@@ -21,5 +21,11 @@ spec s = Spec.describe s "Parun.Codec.PlayerChoice" $ do
       PlayerChoice.codec
       (PlayerChoice.Promised Gift.Card (KeywordInstance.Own 2))
       " {\"type\":\"Promised\",\"value\":[{\"type\":\"Card\"},{\"type\":\"Own\",\"value\":2}]} "
+  Spec.it s "SecretChooser" $
+    Common.assertCodec
+      s
+      PlayerChoice.codec
+      PlayerChoice.SecretChooser
+      " {\"type\":\"SecretChooser\"} "
   Spec.it s "has a schema" $
     Common.assertHasSchema s PlayerChoice.codec

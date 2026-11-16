@@ -3244,6 +3244,7 @@ costComponentFilters component = case component of
   -- to narrow -- ExileThisFrom's answer above and for its reason.
   CostComponent.MillCards _ -> []
   CostComponent.RevealTopOfLibrary _ -> []
+  CostComponent.RevealSecretChoice -> []
   -- CR 702.174a names an opponent rather than an object, so this component
   -- carries no Filter either.
   CostComponent.ChooseOpponent _ -> []

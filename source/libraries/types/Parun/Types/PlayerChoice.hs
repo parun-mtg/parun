@@ -11,4 +11,6 @@ data PlayerChoice
     AsEntersOrTransforms
   | -- | CR 702.174a: the opponent this instance of this gift was promised to.
     Promised Gift.Gift KeywordInstance.KeywordInstance
+  | -- | CR 702.106b: the player who secretly made the object's choice (ChooseQuality.secret).
+    SecretChooser
   deriving (Eq, Ord, Show)

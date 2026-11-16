@@ -4000,18 +4000,18 @@ filterPositionLintSpec s registry corpus = Spec.describe s "Lint" $ do
         rejected quality f =
           [ ("a spell's target slot", base {Face.spell = spellOf [] (aimed f)}),
             ("a spell's own filter", base {Face.spell = spellOf [destroying f] Map.empty}),
-            ("a spell's own filter before its own choice", base {Face.spell = spellOf [destroying f, Effect.ChooseQuality (ChooseQuality.MkChooseQuality quality False)] Map.empty}),
+            ("a spell's own filter before its own choice", base {Face.spell = spellOf [destroying f, Effect.ChooseQuality (ChooseQuality.MkChooseQuality quality False False)] Map.empty}),
             ("a spell's draw count with no choice", base {Face.spell = spellOf [drawing f] Map.empty}),
-            ("a spell's draw count before its own choice", base {Face.spell = spellOf [drawing f, Effect.ChooseQuality (ChooseQuality.MkChooseQuality quality False)] Map.empty}),
+            ("a spell's draw count before its own choice", base {Face.spell = spellOf [drawing f, Effect.ChooseQuality (ChooseQuality.MkChooseQuality quality False False)] Map.empty}),
             ("an activated ability's draw count with no entry choice", withAbility (\a -> a {ActivatedAbility.modal = spellOf [drawing f] Map.empty})),
             ( "a spell's own filter in another mode than its choice",
-              base {Face.spell = (spellOf [Effect.ChooseQuality (ChooseQuality.MkChooseQuality quality False)] Map.empty) {Modal.modes = Modal.modes (spellOf [Effect.ChooseQuality (ChooseQuality.MkChooseQuality quality False)] Map.empty) <> Modal.modes (spellOf [destroying f] Map.empty)}}
+              base {Face.spell = (spellOf [Effect.ChooseQuality (ChooseQuality.MkChooseQuality quality False False)] Map.empty) {Modal.modes = Modal.modes (spellOf [Effect.ChooseQuality (ChooseQuality.MkChooseQuality quality False False)] Map.empty) <> Modal.modes (spellOf [destroying f] Map.empty)}}
             )
           ]
         accepted quality f =
           [ ("a static ability's affected set", affecting f),
-            ("a spell's own filter after its own choice", base {Face.spell = spellOf [Effect.ChooseQuality (ChooseQuality.MkChooseQuality quality False), destroying f] Map.empty}),
-            ("a spell's draw count after its own choice", base {Face.spell = spellOf [Effect.ChooseQuality (ChooseQuality.MkChooseQuality quality False), drawing f] Map.empty}),
+            ("a spell's own filter after its own choice", base {Face.spell = spellOf [Effect.ChooseQuality (ChooseQuality.MkChooseQuality quality False False), destroying f] Map.empty}),
+            ("a spell's draw count after its own choice", base {Face.spell = spellOf [Effect.ChooseQuality (ChooseQuality.MkChooseQuality quality False False), drawing f] Map.empty}),
             ("an activated ability's target slot", withAbility (\a -> a {ActivatedAbility.modal = spellOf [] (aimed f)})),
             ("an activated ability's draw count after CR 614.1c's entry choice", (withAbility (\a -> a {ActivatedAbility.modal = spellOf [drawing f] Map.empty})) {Face.replacementEffects = choosingAsItEnters quality}),
             ("an activated ability's sacrifice cost", withAbility (\a -> a {ActivatedAbility.cost = (ActivatedAbility.cost a) {Cost.Type.components = [CostComponent.Sacrifice (Sacrifice.MkSacrifice (ObjectCount.Exactly (CostAmount.Fixed 1)) f Set.empty)]}})),

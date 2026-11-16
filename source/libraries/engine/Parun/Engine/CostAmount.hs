@@ -120,6 +120,7 @@ traverseAmount f component = case component of
   CostComponent.BeholdAndExile _ -> pure component
   CostComponent.MillCards _ -> pure component
   CostComponent.RevealTopOfLibrary _ -> pure component
+  CostComponent.RevealSecretChoice -> pure component
 
 -- `traverseAmount` into an ObjectCount: Every names no amount to announce.
 traverseCount :: (Applicative f) => (CostAmount.CostAmount -> f CostAmount.CostAmount) -> ObjectCount.ObjectCount -> f ObjectCount.ObjectCount
