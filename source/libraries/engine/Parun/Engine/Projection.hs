@@ -2705,6 +2705,15 @@ printedTriggeredAbility = printedAbility rewriteTriggeredAbility PC.triggeredAbi
 printedActivatedAbility :: ObjectId -> GameState -> ActivatedAbility.ActivatedAbility Card.Type.Card (GrantedAbility.GrantedAbility Card.Type.Card) -> ActivatedAbility.ActivatedAbility Card.Type.Card (GrantedAbility.GrantedAbility Card.Type.Card)
 printedActivatedAbility = printedAbility rewriteActivatedAbility PC.activatedAbilities
 
+-- | CR 607.1a: whether `oid` has this activated ability of its own -- printed,
+-- or granted by an ability of its own -- rather than lent by a layer-6 grant
+-- whose source is another object. Asked of `oid` projected without those
+-- grants. data/scenarios/cost's Dominion Bracelet file proves a lent one.
+ownsActivatedAbility :: ObjectId -> GameState -> ActivatedAbility.ActivatedAbility Card.Type.Card (GrantedAbility.GrantedAbility Card.Type.Card) -> Bool
+ownsActivatedAbility oid gs ability =
+  let lent c = gLayer c == Layer.Ability && gSource c /= oid
+   in elem ability (PC.activatedAbilities (projectFrom (filter (not . lent) (gather gs)) oid gs))
+
 -- CR 613.1c: the stored resolution effects' layer-3 parts, gathered WITHOUT
 -- gather, which asks textChangesAffecting.
 storedTextCandidates :: GameState -> [Gathered]
