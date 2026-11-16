@@ -67,7 +67,7 @@ data Filter keyword
     -- Not implemented: a pair the Context carries no anchored values for (Owner,
     -- Controller or Sector at Bound, anything but CreatureType at a Bound
     -- narrowed to the candidate's controller, anything at one narrowed to its
-    -- owner, anything but CreatureType at Evaluated,
+    -- owner, anything but CreatureType or Name at Evaluated,
     -- CreatureType or Controller at Source, anything but Name, Controller or
     -- LandType at AnyPermanent, anything but Controller at Host), which answers False and
     -- Parun.FilterPositionLintSpec keeps out of card data (#7557).
