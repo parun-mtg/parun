@@ -182,7 +182,7 @@ turnOrder gs = (if GameState.turnOrderReversed gs then reverse else id) (GameSta
 -- included (CR 800.4j); a caller that must not name one filters them.
 --
 -- Not implemented: CR 805.6's "in whatever order they like" -- the active team
--- does not choose the order its members act in (#7293).
+-- does not choose the order its members act in (#8002).
 activePlayers :: GameState -> [PlayerId]
 activePlayers gs =
   let (before, from) = break (== TurnRegisters.activePlayer (GameState.turn gs)) (turnOrder gs)

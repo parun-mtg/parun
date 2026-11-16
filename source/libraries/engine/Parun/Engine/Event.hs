@@ -11894,20 +11894,29 @@ drawForTurn settle pid = drawInstruction settle (DrawKind.TurnBased pid) Set.emp
 --
 -- Not implemented: the question where no replacement effect applies to any of
 -- the team's draws -- `proposals` names each drawer's -- and seat order is
--- taken (#7293).
+-- taken (#8000).
 inDrawOrder :: (PlayerId -> [ProposedEvent]) -> [PlayerId] -> (PlayerId -> Game a) -> Game [a]
-inDrawOrder proposals drawers act = do
+inDrawOrder proposals drawers act =
+  let replaced gs pid = not (PlayerEffect.prohibitsDrawing pid gs || all (null . Replacement.applicable Nothing gs) (proposals pid))
+   in reverse <$> inActiveTeamOrder (any . replaced) drawers (\pid results -> (: results) <$> act pid) []
+
+-- CR 805.6 / 805.2: fold `act` over these players, the active team's first in
+-- the order that team likes, the rest in the order given, which the caller
+-- makes turn order. The team's primary player names the next teammate after
+-- each one acts, while `asked` holds of the teammates left: docs/decisions.md,
+-- "When a team sharing a turn settles the order its players draw in". Seat
+-- order otherwise, and without the shared team turns option, where the active
+-- team is one seat.
+inActiveTeamOrder :: (GameState -> [PlayerId] -> Bool) -> [PlayerId] -> (PlayerId -> b -> Game b) -> b -> Game b
+inActiveTeamOrder asked players act acc = do
   gs <- State.get
-  let (team, rest) = List.partition (Turn.isActive gs) drawers
-      replaced pid = not (PlayerEffect.prohibitsDrawing pid gs || all (null . Replacement.applicable Nothing gs) (proposals pid))
+  let (team, rest) = List.partition (Turn.isActive gs) players
   next <- case team of
-    _ : _ : _ | any replaced team -> Game.chooseAmong Prompt.ChooseActivePlayer (Game.primaryOf gs (TurnRegisters.activePlayer (GameState.turn gs))) team
+    _ : _ : _ | asked gs team -> Game.chooseAmong Prompt.ChooseActivePlayer (Game.primaryOf gs (TurnRegisters.activePlayer (GameState.turn gs))) team
     _ -> pure (Maybe.listToMaybe team)
   case next of
-    Nothing -> traverse act rest
-    Just pid -> do
-      result <- act pid
-      (result :) <$> inDrawOrder proposals (filter (/= pid) drawers) act
+    Nothing -> Monad.foldM (flip act) acc rest
+    Just pid -> act pid acc >>= inActiveTeamOrder asked (filter (/= pid) players) act
 
 -- CR 614.5: the rows a replacement's own new events are not offered to -- those
 -- already applied to the event it replaced, and itself.

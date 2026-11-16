@@ -3267,9 +3267,12 @@ opponentsOf you gs = filter (areOpponents gs you) (stillPlaying gs)
 -- CR 805.6: under the shared team turns option the whole active team comes
 -- first, then each nonactive team in turn order, each team's players together.
 --
--- Not implemented: CR 805.6's "in whatever order they like" -- a team's players
--- come in seat order from the active player's, not an order the team chooses
--- (#7293).
+-- A loop's choices (Parun.Engine.Resolve.Arms.Zones.forEach) and draws
+-- (Event.inDrawOrder) ask the team its order instead.
+--
+-- Not implemented: CR 805.6's "in whatever order they like" at every other
+-- caller -- a team's players come in seat order from the active player's
+-- (#8002).
 apnapOrder :: GameState -> [PlayerId]
 apnapOrder gs =
   let rotated = turnOrderFrom (TurnRegisters.activePlayer (GameState.turn gs)) gs

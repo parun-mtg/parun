@@ -1079,10 +1079,20 @@ forEach applyEffectWith loopOffers runSubgame resolving source controller legal 
             effect
         bound <- State.gets produced
         pure (Map.insert member bound made, Map.insert member answer asked)
-      overMembers run state = Monad.foldM (flip run) state members
+      -- CR 805.6: a pass making choices (`chooses`) takes the active team's
+      -- seats in the order that team likes, each seat's members together
+      -- (Event.inActiveTeamOrder). APNAP order only: a card naming the seat to
+      -- start with (`startingWith`) sets its own.
+      overMembers chooses run state
+        | chooses && Maybe.isNothing startingWith = do
+            let seatOf = Common.recipientSeat gs0
+                ofSeat pid = filter ((== Just pid) . seatOf) members
+            seated <- Event.inActiveTeamOrder (\_ _ -> True) (ListUtils.nubOrd (Maybe.mapMaybe seatOf members)) (\pid state' -> Monad.foldM (flip run) state' (ofSeat pid)) state
+            Monad.foldM (flip run) seated (filter (Maybe.isNothing . seatOf) members)
+        | otherwise = Monad.foldM (flip run) state members
       -- CR 608.2f's THIRD sentence: each member considered individually, its
       -- whole body before the next member's, and no event shared between them.
-      memberMajor = overMembers (\member state -> Monad.foldM (step member) state body)
+      memberMajor = overMembers (any Common.choosesOnly body) (\member state -> Monad.foldM (step member) state body)
       -- CR 608.2e / 608.2f's second sentence: the body's actions in written
       -- order, each one's choices made for every member and then the action
       -- processed for every member at once, before the next action's choices.
@@ -1098,8 +1108,8 @@ forEach applyEffectWith loopOffers runSubgame resolving source controller legal 
       -- A member makes all of one action's choices before the next member
       -- makes any (CR 101.4), Liliana, Dreadhorde General's six.
       --
-      -- Nothing here reorders the members: rule 608.2f's APNAP ordering holds
-      -- within each pass.
+      -- Rule 608.2f's APNAP ordering holds within each pass, but for the order
+      -- an active team likes in a choice pass (overMembers).
       --
       -- The same unit is CR 613.7m's: what one action put onto the battlefield
       -- entered simultaneously, so Event.together orders every arrival of the
@@ -1110,8 +1120,8 @@ forEach applyEffectWith loopOffers runSubgame resolving source controller legal 
       actionMajor state0 =
         Monad.foldM
           ( \state (choices, action) -> do
-              chosenFor <- overMembers (\member state' -> Monad.foldM (step member) state' choices) state
-              maybe (pure chosenFor) (\effect -> Event.simultaneously (Event.together (overMembers (\member state' -> step member state' effect) chosenFor))) action
+              chosenFor <- overMembers (not (null choices)) (\member state' -> Monad.foldM (step member) state' choices) state
+              maybe (pure chosenFor) (\effect -> Event.simultaneously (Event.together (overMembers False (\member state' -> step member state' effect) chosenFor))) action
           )
           state0
           (Common.loopActions (Foldable.toList body))
