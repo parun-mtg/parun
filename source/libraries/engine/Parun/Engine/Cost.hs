@@ -2020,8 +2020,7 @@ componentDemandGrowsWith slot component = case component of
   -- criterion requires to reach it (Sidisi, Regent of the Mire's "with mana
   -- value X"), there being finitely many permanents.
   CostComponent.Sacrifice sacrifice ->
-    Sacrifice.count sacrifice == ObjectCount.Exactly announced
-      || any ((`elem` [Comparison.Exactly, Comparison.AtLeast, Comparison.GreaterThan]) . Measures.comparison) (CostAmount.Engine.criterionReads slot component)
+    Sacrifice.count sacrifice == ObjectCount.Exactly announced || criterionBounds
   CostComponent.TapForTotalPower {} -> False
   -- One permanent per tap, Sacrifice's reason.
   CostComponent.TapPermanents tap -> TapPermanents.count tap == announced
@@ -2063,8 +2062,9 @@ componentDemandGrowsWith slot component = case component of
   CostComponent.CollectEvidence _ -> False
   CostComponent.CollectEvidenceOfTargets -> False
   CostComponent.ExileCardsTotalling _ -> False
-  -- One card per exile out of a finite hand, Sacrifice's reason.
-  CostComponent.ExileCardsFromHand exile -> CardsFromHand.count exile == announced
+  -- One card per exile out of a finite hand, Sacrifice's reason, criterion
+  -- included (Sickening Shoal's "a black card with mana value X").
+  CostComponent.ExileCardsFromHand exile -> CardsFromHand.count exile == announced || criterionBounds
   -- One distinct card per reveal out of a finite hand, the arm above's reason.
   CostComponent.RevealCardsFromHand reveal -> CardsFromHand.count reveal == announced
   CostComponent.Behold _ -> False
@@ -2073,6 +2073,9 @@ componentDemandGrowsWith slot component = case component of
   CostComponent.RevealTopOfLibrary _ -> False
   where
     announced = CostAmount.Announced slot
+    -- A criterion requiring a measure to reach the variable, which past every
+    -- object's measure no choice meets.
+    criterionBounds = any ((`elem` [Comparison.Exactly, Comparison.AtLeast, Comparison.GreaterThan]) . Measures.comparison) (CostAmount.Engine.criterionReads slot component)
 
 -- CR 101.1: the ceiling this face's own words put on CR 601.2b's announced X --
 -- Soul Immolation's "X can't be greater than the greatest toughness among

@@ -527,10 +527,10 @@ chosenBy chooser face = case Face.modeChooser face of
 -- board would answer this cast's question about the wrong object. `spendingWith`
 -- is what the pre-move callers derive it with.
 --
--- A spell whose own reduction reads the X (readsAnnouncedX) is asked at every X
--- `gateXs` names rather than the least alone: the cast is legal if SOME
--- announcement can be complied with (CR 601.2), and that spell's least X is
--- its dearest.
+-- A spell whose own reduction reads the X (readsAnnouncedX), or whose cost's
+-- criterion compares against it, is asked at every X `gateXs` names rather than
+-- the least alone: the cast is legal if SOME announcement can be complied with
+-- (CR 601.2), and that spell's least X is its dearest, or unpayable.
 --
 -- `among` narrows those values to the ones the rest of the announcement
 -- admits: `const id` once the targets are not in question, fillableXs at an
@@ -538,24 +538,28 @@ chosenBy chooser face = case Face.modeChooser face of
 payableCost :: (Cost Keyword -> [Natural] -> [Natural]) -> Maybe (Seq.Seq ModeIndex.ModeIndex) -> [ManaCost.ManaCost] -> ManaSpending -> PlayerId -> ObjectId -> GameState -> Cost Keyword -> Bool
 payableCost among modes extra spending pid oid gs cost = any (\x -> payableCostAt modes x extra spending pid oid gs cost) (among cost (gateXs pid oid gs cost))
 
--- The values of X a gate asks a cost at. CR 601.2b's least X alone, unless the
--- spell's own reduction reads the X (readsAnnouncedX): then payability is no longer
--- monotone in X -- Torgaar, Famine Incarnate's "costs {2} less for each
--- creature sacrificed this way" makes its least X its dearest -- so every X up
--- to the first whose COMPONENTS alone cannot be paid. That climb is monotone
--- for Cost.greatestPayableX's reason, and it stops when a component's demand
--- grows with X (Cost.componentDemandGrowsWith, an announced sacrifice's past
--- the matching permanents) or at CR 101.1's ceiling. A cost with neither keeps
--- the least X, the only value the climb could not overrun.
+-- The values of X a gate asks a cost at, in ascending order: Activatable.gateXs',
+-- the least X and, where a component's criterion compares against X (Nahiri's
+-- Sacrifice's "an artifact or creature with mana value X"), each value at
+-- which that comparison can change its answer. Where the spell's own reduction
+-- reads the X (readsAnnouncedX), payability is not monotone in X either --
+-- Torgaar, Famine Incarnate's "costs {2} less for each creature sacrificed this
+-- way" makes its least X its dearest -- so also every X up to the first whose
+-- COMPONENTS alone cannot be paid. That climb is monotone for
+-- Cost.greatestPayableX's reason, and it stops when a component's demand grows
+-- with X (Cost.componentDemandGrowsWith, an announced sacrifice's past the
+-- matching permanents) or at CR 101.1's ceiling. A cost with neither keeps the
+-- least X, the only value the climb could not overrun.
 gateXs :: PlayerId -> ObjectId -> GameState -> Cost Keyword -> [Natural]
 gateXs pid oid gs cost =
   let least = leastX (Game.faceOf oid gs) cost
       ceiling_ = (\face -> Cost.maximumX pid oid face gs) =<< Game.faceOf oid gs
       componentsAt x = Cost.componentsPayable Map.empty pid oid (Cost.Type.components (Cost.substituteCounts (Map.fromSet (const 0) (Set.fromList (Cost.announcedCounts cost))) (Cost.substituteX x cost))) gs
       bounded = Maybe.isJust ceiling_ || any (Cost.componentDemandGrowsWith Binding.variableX) (Cost.Type.components cost)
-   in if readsAnnouncedX pid oid cost gs && bounded
-        then least : takeWhile (\x -> all (x <=) ceiling_ && componentsAt x) [least + 1 ..]
-        else [least]
+      climbed
+        | readsAnnouncedX pid oid cost gs && bounded = takeWhile (\x -> all (x <=) ceiling_ && componentsAt x) [least + 1 ..]
+        | otherwise = []
+   in Set.toAscList (Set.fromList (Activatable.gateXs ceiling_ least gs cost <> climbed))
 
 -- CR 101.1: the least X a cast for this cost may announce -- the face's
 -- printed floor (Face.minimumX) or the cost's own (Cost.variableFloor, Light
@@ -892,12 +896,14 @@ castAimable key announced x pid oid gs = case Game.faceOf oid gs of
 -- why. Neither is reachable from castSpell, which asks only about a candidate
 -- that already passed payableCost and only when Cost.hasVariable holds.
 --
--- The one predicate that is NOT monotone is a spell whose own reduction reads
--- the X (readsAnnouncedX): Torgaar's least X is its dearest. That one is the
--- greatest payable X among `gateXs`, whose climb is over the components alone.
+-- The predicates that are NOT monotone are a spell whose own reduction reads
+-- the X (readsAnnouncedX), Torgaar's least X being its dearest, and a cost whose
+-- criterion compares against it (Activatable.criterionReadsX), Nahiri's
+-- Sacrifice's being payable only at the mana values on the board. Those are the
+-- greatest payable X among `gateXs`.
 affordableX :: Seq.Seq ModeIndex.ModeIndex -> Maybe Natural -> [ManaCost.ManaCost] -> ManaSpending -> PlayerId -> ObjectId -> GameState -> Cost Keyword -> Natural
 affordableX modes mCeiling extra spending pid oid gs cost
-  | readsAnnouncedX pid oid cost gs = Maybe.fromMaybe 0 (Maybe.listToMaybe (reverse (filter payableAt (gateXs pid oid gs cost))))
+  | readsAnnouncedX pid oid cost gs || Activatable.criterionReadsX cost = Maybe.fromMaybe 0 (Maybe.listToMaybe (reverse (filter payableAt (gateXs pid oid gs cost))))
   | otherwise = Cost.greatestPayableX mCeiling payableAt cost
   where
     payableAt x = payableCostAt (Just modes) x extra spending pid oid gs cost
