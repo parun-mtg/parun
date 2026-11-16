@@ -1,0 +1,37 @@
+{
+  "description": "Massacre Girl, Known Killer gives creatures you control wither, and draws whenever a creature an opponent controls dies with toughness less than 1",
+  "note": "Three seats. carol's Grizzly Bears dies to Murder at toughness 2, and alice's own Grizzly Bears dies to Disfigure at toughness 0: neither draws. bob double-blocks the menace attacker with Grizzly Bears and Ornithopter; two -1/-1 counters each kill his Bears at toughness 0 and his Ornithopter at toughness -2, with no damage marked: two draws.",
+  "board": {
+    "seats": [
+      {"name": "alice", "manaPool": "BBBB", "hand": [{"card": "Murder", "label": "murder"}, {"card": "Disfigure", "label": "disfigure"}], "battlefield": [{"card": "Massacre Girl, Known Killer", "label": "mg", "ready": true}, {"card": "Grizzly Bears", "label": "mine"}], "library": [{"card": "Island"}, {"card": "Island"}, {"card": "Island"}]},
+      {"name": "bob", "battlefield": [{"card": "Grizzly Bears", "label": "bbears"}, {"card": "Ornithopter", "label": "thopter"}], "library": [{"card": "Island"}, {"card": "Island"}, {"card": "Island"}]},
+      {"name": "carol", "battlefield": [{"card": "Grizzly Bears", "label": "cbears"}], "library": [{"card": "Island"}, {"card": "Island"}, {"card": "Island"}]}
+    ],
+    "active": "alice",
+    "step": "PrecombatMain"
+  },
+  "timeline": [
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Keywords": {"object": "$cbears", "keyword": {"type": "Wither"}, "count": 0}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": {"Cast": {"object": "$murder", "targets": ["$cbears"]}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass"},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"View": {"of": "Stack", "is": []}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Count": {"player": "carol", "zone": "Graveyard", "card": "Grizzly Bears", "count": 1}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": {"Cast": {"object": "$disfigure", "targets": ["$mine"]}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass"},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"View": {"of": "Stack", "is": []}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Count": {"player": "alice", "zone": "Graveyard", "card": "Grizzly Bears", "count": 1}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Count": {"player": "alice", "zone": "Hand", "card": "Island", "count": 0}}},
+    {"turn": 1, "step": "DeclareAttackers", "player": "alice", "do": {"Attack": ["$mg"]}},
+    {"turn": 1, "step": "DeclareAttackers", "player": "alice", "do": {"Answer": {"prompt": "ChooseAttackTarget", "with": ["Player", "bob"]}}},
+    {"turn": 1, "step": "DeclareBlockers", "player": "bob", "do": {"Block": {"$bbears": ["$mg"], "$thopter": ["$mg"]}}},
+    {"turn": 1, "step": "CombatDamage", "player": "alice", "source": "$mg", "do": {"AssignDamage": {"$bbears": 2, "$thopter": 2}}},
+    {"turn": 1, "step": "CombatDamage", "player": "alice", "do": {"OrderTriggers": ["$mg", "$mg"]}},
+    {"turn": 1, "step": "CombatDamage", "player": "alice", "check": {"View": {"of": "Stack", "is": ["trigger of $mg", "trigger of $mg"]}}},
+    {"turn": 1, "step": "CombatDamage", "player": "alice", "do": "Pass"},
+    {"turn": 1, "step": "CombatDamage", "player": "alice", "do": "Pass"},
+    {"turn": 1, "step": "CombatDamage", "player": "alice", "check": {"View": {"of": "Stack", "is": []}}},
+    {"turn": 1, "step": "CombatDamage", "player": "alice", "check": {"Count": {"player": "alice", "zone": "Hand", "card": "Island", "count": 2}}},
+    {"turn": 1, "step": "CombatDamage", "player": "alice", "check": {"Count": {"player": "bob", "zone": "Graveyard", "card": "Ornithopter", "count": 1}}},
+    {"turn": 1, "step": "CombatDamage", "player": "alice", "check": {"Count": {"player": "bob", "zone": "Graveyard", "card": "Grizzly Bears", "count": 1}}}
+  ]
+}

@@ -1,0 +1,37 @@
+{
+  "description": "Magnetic Snuffler returns an Equipment card from your graveyard attached to itself, and gets a +1/+1 counter whenever you sacrifice an artifact",
+  "note": "alice's graveyard holds Bonesplitter and the non-Equipment Ornithopter, so the target is Bonesplitter alone, and her Grizzly Bears is a second creature it could attach to. alice's Atog sacrifices an Ornithopter (a counter); bob's Atog sacrificing his Ornithopter adds none.",
+  "board": {
+    "seats": [
+      {"name": "alice", "manaPool": "CCCCC", "hand": [{"card": "Magnetic Snuffler", "label": "snuffler"}], "battlefield": [{"card": "Atog", "label": "atog"}, {"card": "Ornithopter", "label": "thopter"}, {"card": "Grizzly Bears", "label": "bears"}], "graveyard": [{"card": "Bonesplitter"}, {"card": "Ornithopter"}], "library": [{"card": "Island"}, {"card": "Island"}, {"card": "Island"}]},
+      {"name": "bob", "battlefield": [{"card": "Atog", "label": "batog"}, {"card": "Ornithopter", "label": "bthopter"}, {"card": "Ornithopter", "label": "bthopter2"}], "library": [{"card": "Island"}, {"card": "Island"}, {"card": "Island"}]}
+    ],
+    "active": "alice",
+    "step": "PrecombatMain"
+  },
+  "timeline": [
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": {"Cast": {"object": "$snuffler"}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass"},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"View": {"of": "Stack", "is": ["trigger of Magnetic Snuffler"]}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass"},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"View": {"of": "AttachedTo", "object": "Bonesplitter", "is": "Magnetic Snuffler"}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"PowerToughness": {"object": "Magnetic Snuffler", "power": 6, "toughness": 4}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Count": {"player": "alice", "zone": "Graveyard", "card": "Ornithopter", "count": 1}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": {"Activate": {"object": "$atog"}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": {"Answer": {"prompt": "ChooseSacrifices", "with": ["$thopter"]}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"View": {"of": "Stack", "is": ["trigger of Magnetic Snuffler", "ability of $atog"]}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass"},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Counters": {"object": "Magnetic Snuffler", "kind": {"type": "PlusOnePlusOne"}, "count": 1}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass"},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"View": {"of": "Stack", "is": []}}},
+    {"turn": 1, "step": "PostcombatMain", "player": "alice", "do": "Pass"},
+    {"turn": 1, "step": "PostcombatMain", "player": "bob", "do": {"Activate": {"object": "$batog"}}},
+    {"turn": 1, "step": "PostcombatMain", "player": "bob", "do": {"Answer": {"prompt": "ChooseSacrifices", "with": ["$bthopter"]}}},
+    {"turn": 1, "step": "PostcombatMain", "player": "bob", "check": {"View": {"of": "Stack", "is": ["ability of $batog"]}}},
+    {"turn": 1, "step": "PostcombatMain", "player": "bob", "do": "Pass"},
+    {"turn": 1, "step": "PostcombatMain", "player": "alice", "check": {"View": {"of": "Stack", "is": ["ability of $batog"]}}},
+    {"turn": 1, "step": "PostcombatMain", "player": "alice", "do": "Pass"},
+    {"turn": 1, "step": "PostcombatMain", "player": "alice", "check": {"View": {"of": "Stack", "is": []}}},
+    {"turn": 1, "step": "PostcombatMain", "player": "alice", "check": {"Counters": {"object": "Magnetic Snuffler", "kind": {"type": "PlusOnePlusOne"}, "count": 1}}}
+  ]
+}
