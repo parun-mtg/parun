@@ -153,6 +153,8 @@ data ObjectRef
   | -- | CR 508.1b / 608.2h: the player, planeswalker or battle the creature a slot
     -- holds is attacking, or was attacking as it left (Scorch Spitter).
     AttackedBy SlotName.SlotName
+  | -- | CR 120.1 / 608.2h: who controlled the latest source the Filter admits to damage you this turn, as it dealt it.
+    LastDamagerController (Filter.Filter Keyword.Keyword)
   | -- | CR 400.7j with the printed "from anywhere": the object a slot holds,
     -- followed to wherever it is now.
     FromAnywhere FromAnywhere.FromAnywhere

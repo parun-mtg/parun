@@ -642,6 +642,8 @@ objectRefSlots ref = joinTwo (joinSlots (fmap playerRefSlots (objectRefPlayerRef
   ObjectRef.AttachedToBound (AttachedToBound.MkAttachedToBound slot filter_ _) -> joinTwo (Map.singleton slot SlotArity.Many) (filterSlotsOf filter_)
   -- The attacker is read out of the slot.
   ObjectRef.AttackedBy slot -> Map.singleton slot SlotArity.Many
+  -- The Filter over the damage source may name slots of its own.
+  ObjectRef.LastDamagerController filter_ -> filterSlotsOf filter_
   -- Every ref's own reads; the PlayerRefs are objectRefPlayerRefs', which recurses.
   ObjectRef.AllOf refs -> joinSlots (fmap objectRefSlots (NonEmpty.toList refs))
 
@@ -709,6 +711,7 @@ objectRefQuantities ref = case ref of
   ObjectRef.ChosenPermanents choice -> chosenPermanentsQuantities choice
   ObjectRef.AttachedToBound _ -> []
   ObjectRef.AttackedBy _ -> []
+  ObjectRef.LastDamagerController _ -> []
   ObjectRef.FromAnywhere _ -> []
   ObjectRef.AllOf refs -> concatMap objectRefQuantities refs
 
@@ -761,6 +764,7 @@ objectRefPlayerRefs ref = case ref of
   ObjectRef.ChosenPermanents choice -> [ChosenPermanents.chooser choice]
   ObjectRef.AttachedToBound _ -> []
   ObjectRef.AttackedBy _ -> []
+  ObjectRef.LastDamagerController _ -> []
   ObjectRef.FromAnywhere _ -> []
   ObjectRef.AllOf refs -> concatMap objectRefPlayerRefs refs
 
@@ -3164,6 +3168,8 @@ objectRefObjects legal resolving controller source gs ref = case ref of
           AttackTarget.OfPlaneswalker oid -> Just oid
           AttackTarget.OfBattle oid -> Just oid
      in Maybe.mapMaybe attackedObject (attackedBy legal resolving controller source gs slot)
+  -- Names a player and so no object; objectRefRecipients names them.
+  ObjectRef.LastDamagerController _ -> []
   -- CR 400.7j's finding, read back: each object the slot holds, followed through
   -- this turn's logged zone changes to the objects it is now -- and, given an
   -- `among`, kept only where that slot holds the incarnation too (CR 400.7j).

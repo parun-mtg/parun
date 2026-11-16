@@ -359,7 +359,7 @@ onHost host = blackCreature {Filter.attachedToView = Just host}
 -- One damage event dealt by player 0's creature: 2 noncombat damage from
 -- object 31.
 aDamage :: DamageEvent.DamageEvent
-aDamage = DamageEvent.MkDamageEvent (ObjectId.MkObjectId 31) (Recipient.ToCreature (ObjectId.MkObjectId 32)) 2 0 False False False 0 Nothing (Just (PlayerId.MkPlayerId 0)) Set.empty False (Set.singleton CardType.Creature) mempty (Just Zone.Battlefield) Set.empty DamageKind.Noncombat
+aDamage = DamageEvent.MkDamageEvent (ObjectId.MkObjectId 31) (Recipient.ToCreature (ObjectId.MkObjectId 32)) 2 0 False False False 0 Nothing (Just (PlayerId.MkPlayerId 0)) Set.empty False (Set.singleton CardType.Creature) mempty mempty (Just Zone.Battlefield) Set.empty DamageKind.Noncombat
 
 self :: Filter.Context
 self = Filter.contextFor Teams.none (Just (PlayerId.MkPlayerId 0)) Nothing
