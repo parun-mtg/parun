@@ -1,5 +1,6 @@
 module Parun.Codec.CostChangeSpec where
 
+import qualified Data.Set as Set
 import qualified Parun.Codec.CostChange as CostChange
 import qualified Parun.JsonCodec.Common as Common
 import qualified Parun.Spec as Spec
@@ -56,7 +57,7 @@ spec s = Spec.describe s "Parun.Codec.CostChange" $ do
     Common.assertCodec
       s
       CostChange.codec
-      (CostChange.Type.Add (CostAddition.MkCostAddition [CostComponent.Sacrifice (Sacrifice.MkSacrifice (ObjectCount.Exactly (CostAmount.Fixed 1)) (Filter.HasCardType CardType.Land))] CostScale.Once))
+      (CostChange.Type.Add (CostAddition.MkCostAddition [CostComponent.Sacrifice (Sacrifice.MkSacrifice (ObjectCount.Exactly (CostAmount.Fixed 1)) (Filter.HasCardType CardType.Land) Set.empty)] CostScale.Once))
       " {\"type\":\"Add\",\"value\":{\"components\":[{\"type\":\"Sacrifice\",\"value\":{\"count\":{\"type\":\"Fixed\",\"value\":1},\"whichPermanents\":{\"type\":\"HasCardType\",\"value\":\"Land\"}}}]}} "
   Spec.it s "Add, Drought's scale" $
     Common.assertCodec

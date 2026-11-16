@@ -6,6 +6,7 @@ import qualified Control.Monad as Monad
 import qualified Data.Char as Char
 import qualified Data.Containers.ListUtils as ListUtils
 import qualified Data.List.NonEmpty as NonEmpty
+import qualified Data.Set as Set
 import qualified Data.Text as Text
 import qualified Parun.Oracle.Filter as Filter
 import qualified Parun.Oracle.Prose as Prose
@@ -123,9 +124,9 @@ component self named c = case c of
   CostComponent.SacrificeThis -> [Text.pack "Sacrifice " <> self]
   CostComponent.PayLife (CostAmount.Fixed n) -> [Text.pack ("Pay " <> show n <> " life")]
   CostComponent.PayLife (CostAmount.Announced _) -> [Text.pack "Pay X life"]
-  CostComponent.Sacrifice (Sacrifice.MkSacrifice (ObjectCount.Exactly (CostAmount.Fixed n)) f) -> do
+  CostComponent.Sacrifice (Sacrifice.MkSacrifice (ObjectCount.Exactly (CostAmount.Fixed n)) f axes) -> do
     p <- Filter.phrase f named
-    fmap (Text.pack "Sacrifice " <>) (some (toInteger n) (Filter.MkNoun (Text.pack "permanent") (Just (Text.pack "permanents"))) p)
+    fmap (Text.pack "Sacrifice " <>) (some (toInteger n) (Filter.MkNoun (Text.pack "permanent") (Just (Text.pack "permanents"))) (Filter.merge p (Filter.MkPhrase [] [] (fmap Filter.apart (Set.toList axes)))))
   CostComponent.DiscardCards (DiscardCards.MkDiscardCards ObjectCount.Every (Filter.Type.And []) _) -> [Text.pack "Discard your hand"]
   CostComponent.DiscardCards (DiscardCards.MkDiscardCards (ObjectCount.Exactly (CostAmount.Fixed n)) f CardSelection.AtRandom) -> do
     p <- Filter.phrase f named

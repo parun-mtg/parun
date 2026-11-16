@@ -3182,7 +3182,7 @@ specialActionFilters specialAction = case specialAction of
 costComponentFilters :: CostComponent.CostComponent Keyword.Keyword -> [Filter.Type.Filter Keyword.Keyword]
 costComponentFilters component = case component of
   -- CR 601.2f's "sacrificing permanents": Village Rites' "a creature".
-  CostComponent.Sacrifice (Sacrifice.MkSacrifice _ f) -> [f]
+  CostComponent.Sacrifice (Sacrifice.MkSacrifice _ f _) -> [f]
   -- CR 702.122a's "other untapped creatures you control".
   CostComponent.TapForTotalPower (TapForTotalPower.MkTapForTotalPower _ f _) -> [f]
   -- CR 601.2f's "tapping permanents": Springleaf Drum's "an untapped creature

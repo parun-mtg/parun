@@ -1,5 +1,7 @@
 module Parun.Types.Sacrifice where
 
+import qualified Data.Set as Set
+import qualified Parun.Types.DifferentIn as DifferentIn
 import qualified Parun.Types.Filter as Filter
 import qualified Parun.Types.ObjectCount as ObjectCount
 
@@ -15,6 +17,10 @@ import qualified Parun.Types.ObjectCount as ObjectCount
 -- distinction the CostComponent arm spends a paragraph drawing.
 data Sacrifice keyword = MkSacrifice
   { count :: ObjectCount.ObjectCount,
-    whichPermanents :: Filter.Filter keyword
+    whichPermanents :: Filter.Filter keyword,
+    -- | What no two sacrificed permanents may share -- Transmutation Font's
+    -- "three artifact tokens with different names" (CR 201.2b). A joint
+    -- condition on the chosen set, which no per-candidate Filter can state.
+    differentIn :: Set.Set DifferentIn.DifferentIn
   }
   deriving (Eq, Ord, Show)

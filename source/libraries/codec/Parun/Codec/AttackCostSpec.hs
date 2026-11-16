@@ -5,6 +5,7 @@
 -- what a card can say.
 module Parun.Codec.AttackCostSpec where
 
+import qualified Data.Set as Set
 import qualified Parun.Codec.AttackCost as AttackCost
 import qualified Parun.Codec.AttackCostScope as AttackCostScope
 import qualified Parun.Codec.PerCreature as PerCreature
@@ -83,7 +84,7 @@ spec s = Spec.describe s "Parun.Codec.AttackCost" $ do
           ( PerCreature.Fixed
               ( Cost.MkCost
                   (Just (ManaCost.MkManaCost []))
-                  [CostComponent.Sacrifice (Sacrifice.MkSacrifice (ObjectCount.Exactly (CostAmount.Fixed 1)) (Filter.HasCardType CardType.Land))]
+                  [CostComponent.Sacrifice (Sacrifice.MkSacrifice (ObjectCount.Exactly (CostAmount.Fixed 1)) (Filter.HasCardType CardType.Land) Set.empty)]
               )
           )
           AttackCostScope.EveryAttack

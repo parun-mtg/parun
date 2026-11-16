@@ -44,6 +44,7 @@ import Parun.Engine.Resolve.Slots (battlefieldMatching, chosenCandidates, effect
 import qualified Parun.Engine.Restamp as Restamp
 import qualified Parun.Engine.Sector as Sector
 import qualified Parun.Engine.Setup as Setup
+import qualified Parun.Engine.Target as Target
 import qualified Parun.Engine.TextWord as TextWord
 import qualified Parun.Extra.Integer as Integer
 import qualified Parun.Extra.Natural as Natural
@@ -986,7 +987,7 @@ search settle performManaAbility runSubgame resolving source controller legal (S
                     -- one candidate per copy (Right). Turtles Forever's
                     -- cases in Parun.OutsideTheGameSpec are the proof.
                     outsideCandidates = fmap Right (concatMap (\(card, n) -> List.genericReplicate n card) (Map.toAscList outsideAvailable))
-                    valuesOf = either (Common.differingValues differentIn gs) (\card -> Event.outsideDiffering differentIn card gs)
+                    valuesOf = either (Target.objectDiffering differentIn gs) (\card -> Event.outsideDiffering differentIn card gs)
                     fitsEither = either (fits searcher gs) (\card d -> Map.member card (Event.outsideOffer d source searcher gs))
                     keptTogether = Common.matchDescriptions fitsEither descriptions . Event.differingKept valuesOf
                     -- Search.exactly: the answer must be a group of as many

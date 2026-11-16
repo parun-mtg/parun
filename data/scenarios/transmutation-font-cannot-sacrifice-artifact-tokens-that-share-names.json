@@ -1,0 +1,145 @@
+{
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "battlefield": [
+          {
+            "card": "Transmutation Font",
+            "label": "font"
+          },
+          {
+            "card": "Ornithopter",
+            "label": "orn-a",
+            "token": true
+          },
+          {
+            "card": "Ornithopter",
+            "label": "orn-b",
+            "token": true
+          },
+          {
+            "card": "Memnite",
+            "label": "mem",
+            "token": true
+          },
+          {
+            "card": "Ornithopter",
+            "label": "orn-c",
+            "token": true
+          },
+          {
+            "card": "Millstone",
+            "label": "mill"
+          }
+        ],
+        "library": [
+          {
+            "card": "Sol Ring",
+            "label": "ring"
+          },
+          {
+            "card": "Island",
+            "label": "isl"
+          }
+        ],
+        "manaPool": "CCC",
+        "name": "alice"
+      },
+      {
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ],
+        "name": "bob"
+      }
+    ],
+    "step": "PrecombatMain"
+  },
+  "description": "Transmutation Font cannot sacrifice artifact tokens sharing names when no three have different names",
+  "note": "Control: the Darksteel Relic token is a third Ornithopter token, so the four tokens hold two names and, with the same mana, the ability is not offered (CR 118.3).",
+  "timeline": [
+    {
+      "player": "alice",
+      "refuse": {
+        "Activate": {
+          "ability": 1,
+          "object": "$font"
+        }
+      },
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Ornithopter",
+          "count": 3,
+          "player": "alice",
+          "zone": "Battlefield"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Memnite",
+          "count": 1,
+          "player": "alice",
+          "zone": "Battlefield"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "View": {
+          "is": [],
+          "of": "Stack"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    }
+  ]
+}

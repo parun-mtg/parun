@@ -9,6 +9,7 @@ import qualified Data.Functor as Functor
 import qualified Data.List.NonEmpty as NonEmpty
 import qualified Data.Map.Strict as Map
 import qualified Data.Maybe as Maybe
+import qualified Data.Set as Set
 import qualified Data.Text as Text
 import qualified Parun.JsonCodec.Common as Common
 import qualified Parun.Mtgish as Mtgish
@@ -223,7 +224,7 @@ spec s = Spec.describe s "Parun.Mtgish" $ do
   -- CR 602.1a / 701.21a: "Sacrifice a creature" as a cost.
   Spec.it s "reads sacrificing a permanent of a description as a cost" $ do
     Spec.assertEq s (Right ()) (accepts fallenAngel)
-    Spec.assertEq s [[CostComponent.Sacrifice (Sacrifice.MkSacrifice (ObjectCount.Exactly (CostAmount.Fixed 1)) (Filter.HasCardType CardType.Creature))]] (fmap (Cost.components . ActivatedAbility.cost) (Face.activatedAbilities (translated fallenAngel)))
+    Spec.assertEq s [[CostComponent.Sacrifice (Sacrifice.MkSacrifice (ObjectCount.Exactly (CostAmount.Fixed 1)) (Filter.HasCardType CardType.Creature) Set.empty)]] (fmap (Cost.components . ActivatedAbility.cost) (Face.activatedAbilities (translated fallenAngel)))
 
   -- CR 701.9b: "Discard a card at random" as a cost.
   Spec.it s "reads discarding a card at random as a cost" $ do

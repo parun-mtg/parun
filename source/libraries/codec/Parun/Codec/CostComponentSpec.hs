@@ -1,5 +1,6 @@
 module Parun.Codec.CostComponentSpec where
 
+import qualified Data.Set as Set
 import qualified Data.Text as Text
 import qualified Parun.Codec.CostComponent as CostComponent
 import qualified Parun.Codec.Keyword as Keyword
@@ -107,7 +108,7 @@ spec s = Spec.describe s "Parun.Codec.CostComponent" $ do
     Common.assertCodec
       s
       codec
-      (CostComponent.Sacrifice (Sacrifice.MkSacrifice (ObjectCount.Exactly (CostAmount.Fixed 2)) (Filter.HasSubtype Subtype.Mountain)))
+      (CostComponent.Sacrifice (Sacrifice.MkSacrifice (ObjectCount.Exactly (CostAmount.Fixed 2)) (Filter.HasSubtype Subtype.Mountain) Set.empty))
       " {\"type\":\"Sacrifice\",\"value\":{\"count\":{\"type\":\"Fixed\",\"value\":2},\"whichPermanents\":{\"type\":\"HasSubtype\",\"value\":\"Mountain\"}}} "
   -- The THRESHOLD and the Filter ride the payload positionally, Sacrifice's
   -- shape -- but the Natural means something else here (CR 702.122a's total
@@ -212,7 +213,7 @@ spec s = Spec.describe s "Parun.Codec.CostComponent" $ do
     Common.assertCodec
       s
       codec
-      (CostComponent.Sacrifice (Sacrifice.MkSacrifice (ObjectCount.Exactly (CostAmount.Announced (SlotName.MkSlotName (Text.pack "X")))) (Filter.HasCardType CardType.Creature)))
+      (CostComponent.Sacrifice (Sacrifice.MkSacrifice (ObjectCount.Exactly (CostAmount.Announced (SlotName.MkSlotName (Text.pack "X")))) (Filter.HasCardType CardType.Creature) Set.empty))
       " {\"type\":\"Sacrifice\",\"value\":{\"count\":{\"type\":\"Announced\",\"value\":\"X\"},\"whichPermanents\":{\"type\":\"HasCardType\",\"value\":\"Creature\"}}} "
   -- CR 118.12's counter-placing cost, CR 701.63a's endure.
   Spec.it s "PutCountersOnThis" $

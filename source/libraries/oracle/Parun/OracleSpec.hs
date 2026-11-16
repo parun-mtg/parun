@@ -256,7 +256,7 @@ spec s = Spec.describe s "Parun.Oracle" $ do
     Spec.assertEq
       s
       (Just (Text.pack "Equip\8212Sacrifice another nonland permanent. Activate only once each turn."))
-      (Oracle.render (card Layout.Normal [[equip (Cost.MkCost (Just (ManaCost.MkManaCost [])) [CostComponent.Sacrifice (Sacrifice.MkSacrifice (ObjectCount.Exactly (CostAmount.Fixed 1)) another)])]]))
+      (Oracle.render (card Layout.Normal [[equip (Cost.MkCost (Just (ManaCost.MkManaCost [])) [CostComponent.Sacrifice (Sacrifice.MkSacrifice (ObjectCount.Exactly (CostAmount.Fixed 1)) another Set.empty)])]]))
 
   -- CR 602.5b: crew's rider, Luxurious Locomotive's, likewise.
   Spec.it s "render prints a crew ability's once-each-turn rider" $ do
@@ -849,7 +849,7 @@ spec s = Spec.describe s "Parun.Oracle" $ do
     Spec.assertEq s Nothing (Oracle.render (choosing (mana [ManaSymbol.Generic 1] NonEmpty.:| [life, discards])))
     let seer = triggered (TriggerCondition.Leaves (LeavesTrigger.dies LeavingPermanent.Self)) [(clause [draw (PlayerRef.Relative PlayerRelation.You) 1]) {Clause.payGate = Just (gate PayBranch.IfPaid (PlayerRef.InSlot you) (mana [ManaSymbol.Generic 1, ManaSymbol.OfType (ManaType.Colored Color.Blue)]))}] []
     Spec.assertEq s [[Text.pack "When Spark dies, you may pay {1}{U}. If you do, draw a card."]] (Oracle.abilities (withFace (\f -> (typed [CardType.Creature] [] f) {Face.triggeredAbilities = [seer]})))
-    let mountain = Cost.MkCost (Just (ManaCost.MkManaCost [])) [CostComponent.Sacrifice (Sacrifice.MkSacrifice (ObjectCount.Exactly (CostAmount.Fixed 1)) (Filter.HasSubtype Subtype.Mountain))]
+    let mountain = Cost.MkCost (Just (ManaCost.MkManaCost [])) [CostComponent.Sacrifice (Sacrifice.MkSacrifice (ObjectCount.Exactly (CostAmount.Fixed 1)) (Filter.HasSubtype Subtype.Mountain) Set.empty)]
         upkeep = TriggerCondition.StepBegins (StepBegins.MkStepBegins (Phase.Beginning BeginningStep.Upkeep) Nothing (TurnScope.PlayersTurn (PlayerRef.Relative PlayerRelation.You)))
         lithophage = triggered upkeep [(clause [sacrifice]) {Clause.payGate = Just (gate PayBranch.IfNotPaid (PlayerRef.InSlot you) mountain)}] []
     Spec.assertEq s (Just (Text.pack "At the beginning of your upkeep, sacrifice Spark unless you sacrifice a Mountain.")) (Oracle.render (withFace (\f -> f {Face.triggeredAbilities = [lithophage]})))
@@ -860,6 +860,8 @@ spec s = Spec.describe s "Parun.Oracle" $ do
     Spec.assertEq s (Just (Text.pack "When Spark enters, you may blight 1. If you do, draw a card.")) (Oracle.render (withFace (\f -> (typed [CardType.Enchantment] [] f) {Face.triggeredAbilities = [blight]})))
     let goblin = activated (Cost.MkCost (Just (ManaCost.MkManaCost [])) [CostComponent.DiscardCards (DiscardCards.MkDiscardCards (ObjectCount.Exactly (CostAmount.Fixed 2)) (Filter.HasCardType CardType.Creature) CardSelection.ByChoice)]) (draw (PlayerRef.Relative PlayerRelation.You) 1)
     Spec.assertEq s (Just (Text.pack "Discard two creature cards: Draw a card.")) (Oracle.render (withFace (\f -> f {Face.activatedAbilities = [goblin]})))
+    let font = activated (Cost.MkCost (Just (ManaCost.MkManaCost [])) [CostComponent.Sacrifice (Sacrifice.MkSacrifice (ObjectCount.Exactly (CostAmount.Fixed 3)) (Filter.And [Filter.HasCardType CardType.Artifact, Filter.IsToken]) (Set.singleton DifferentIn.Names))]) (draw (PlayerRef.Relative PlayerRelation.You) 1)
+    Spec.assertEq s (Just (Text.pack "Sacrifice three artifact tokens with different names: Draw a card.")) (Oracle.render (withFace (\f -> f {Face.activatedAbilities = [font]})))
     let helm = activated (Cost.MkCost (Just (ManaCost.MkManaCost [ManaSymbol.Generic 3])) [CostComponent.DiscardCards (DiscardCards.MkDiscardCards (ObjectCount.Exactly (CostAmount.Fixed 1)) (Filter.And []) CardSelection.AtRandom)]) (draw (PlayerRef.Relative PlayerRelation.You) 1)
     Spec.assertEq s (Just (Text.pack "{3}, Discard a card at random: Draw a card.")) (Oracle.render (withFace (\f -> f {Face.activatedAbilities = [helm]})))
     let slate = activated (Cost.MkCost (Just (ManaCost.MkManaCost [])) [CostComponent.DiscardCards (DiscardCards.MkDiscardCards ObjectCount.Every (Filter.And []) CardSelection.ByChoice)]) (draw (PlayerRef.Relative PlayerRelation.You) 1)
@@ -977,7 +979,7 @@ spec s = Spec.describe s "Parun.Oracle" $ do
     let cloak = spell [clause [modify (ObjectRef.InSlot target) Duration.UntilEndOfTurn (pt 2 0)], clause [damage [(target, 2)]]] creature
     Spec.assertEq s (Just (Text.pack "Target creature gets +2/+0 until end of turn. Spark deals 2 damage to it.")) (Oracle.render cloak)
     Spec.assertBool s (Oracle.says cloak spark (Text.pack "Target creature gets +2/+0 until end of turn. Spark deals 2 damage to that creature.")) "that creature unsaid"
-    let silvar = activated (Cost.MkCost (Just (ManaCost.MkManaCost [])) [CostComponent.Sacrifice (Sacrifice.MkSacrifice (ObjectCount.Exactly (CostAmount.Fixed 1)) (Filter.HasSubtype Subtype.Human))]) (counters CounterKind.PlusOnePlusOne 1 (ObjectRef.InSlot self))
+    let silvar = activated (Cost.MkCost (Just (ManaCost.MkManaCost [])) [CostComponent.Sacrifice (Sacrifice.MkSacrifice (ObjectCount.Exactly (CostAmount.Fixed 1)) (Filter.HasSubtype Subtype.Human) Set.empty)]) (counters CounterKind.PlusOnePlusOne 1 (ObjectRef.InSlot self))
         indestructible = silvar {ActivatedAbility.modal = payload [clause [counters CounterKind.PlusOnePlusOne 1 (ObjectRef.InSlot self)], clause [modify (ObjectRef.InSlot self) Duration.UntilEndOfTurn (Modification.GainKeyword Keyword.Indestructible)]] []}
     Spec.assertEq s (Just (Text.pack "Sacrifice a Human: Put a +1/+1 counter on Spark. It gains indestructible until end of turn.")) (Oracle.render (withFace (\f -> f {Face.activatedAbilities = [indestructible]})))
     let mine = ObjectRef.EachMatching (Filter.And [Filter.HasCardType CardType.Creature, Filter.HeldBy Holder.Controller PlayerRelation.You])

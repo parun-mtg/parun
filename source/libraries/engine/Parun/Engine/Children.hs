@@ -2076,7 +2076,7 @@ costComponentChildren c component = case component of
   CostComponent.ReturnThis -> pure component
   CostComponent.PayLife amount -> CostComponent.PayLife <$> costAmountChildren c amount
   CostComponent.PayComputedLife _ -> pure component
-  CostComponent.Sacrifice (Sacrifice.MkSacrifice n criterion) -> fmap CostComponent.Sacrifice (Sacrifice.MkSacrifice <$> objectCountChildren c n <*> costFilter c criterion)
+  CostComponent.Sacrifice (Sacrifice.MkSacrifice n criterion apart) -> fmap CostComponent.Sacrifice (Sacrifice.MkSacrifice <$> objectCountChildren c n <*> costFilter c criterion <*> pure apart)
   CostComponent.TapForTotalPower (TapForTotalPower.MkTapForTotalPower power criterion family) -> fmap CostComponent.TapForTotalPower (TapForTotalPower.MkTapForTotalPower power <$> costFilter c criterion <*> pure family)
   CostComponent.TapPermanents (TapPermanents.MkTapPermanents n criterion sharing becoming) -> fmap CostComponent.TapPermanents (TapPermanents.MkTapPermanents <$> costAmountChildren c n <*> costFilter c criterion <*> pure sharing <*> pure becoming)
   CostComponent.ReturnPermanents (ReturnPermanents.MkReturnPermanents n criterion) -> fmap CostComponent.ReturnPermanents (ReturnPermanents.MkReturnPermanents n <$> costFilter c criterion)

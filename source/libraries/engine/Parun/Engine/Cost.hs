@@ -480,7 +480,7 @@ withOffering :: PlayerId -> ObjectId -> GameState -> CandidateCost.CandidateCost
 withOffering pid oid gs candidate =
   candidate
     : [ candidate
-          { CandidateCost.cost = (CandidateCost.cost candidate) {Cost.components = Cost.components (CandidateCost.cost candidate) <> [CostComponent.Sacrifice (Sacrifice.MkSacrifice (ObjectCount.Exactly (CostAmount.Fixed 1)) (Filter.Type.IsObject vid))]},
+          { CandidateCost.cost = (CandidateCost.cost candidate) {Cost.components = Cost.components (CandidateCost.cost candidate) <> [CostComponent.Sacrifice (Sacrifice.MkSacrifice (ObjectCount.Exactly (CostAmount.Fixed 1)) (Filter.Type.IsObject vid) Set.empty)]},
             CandidateCost.reductions = CandidateCost.reductions candidate <> [Maybe.fromMaybe (ManaCost.MkManaCost []) (Filter.manaCost (Projection.viewOfObject vid gs))],
             CandidateCost.instantSpeed = True
           }
@@ -747,7 +747,7 @@ candidateCostsGiven permitted pid name oid gs =
                     offer emerge (vid, n) =
                       CandidateCost.MkCandidateCost
                         (Just (Keyword.Type.Emerge emerge))
-                        (withAdditional (Emerge.cost emerge) {Cost.components = Cost.components (Emerge.cost emerge) <> [CostComponent.Sacrifice (Sacrifice.MkSacrifice (ObjectCount.Exactly (CostAmount.Fixed 1)) (Filter.Type.IsObject vid))]})
+                        (withAdditional (Emerge.cost emerge) {Cost.components = Cost.components (Emerge.cost emerge) <> [CostComponent.Sacrifice (Sacrifice.MkSacrifice (ObjectCount.Exactly (CostAmount.Fixed 1)) (Filter.Type.IsObject vid) Set.empty)]})
                         [ManaCost.MkManaCost [ManaSymbol.Generic (Integer.toNaturalSaturating n)]]
                         False
                         Nothing
@@ -3065,15 +3065,17 @@ claimOfGiven board slots pid oid component gs =
       itself = if canPayComponentGiven board slots pid oid component gs then Set.singleton oid else Set.empty
    in case component of
         -- CR 701.21a: the permanents this player controls that match the criterion.
-        CostComponent.Sacrifice (Sacrifice.MkSacrifice (ObjectCount.Exactly (CostAmount.Fixed n)) criterion) ->
+        -- A SUPERSET where they must have different names, TapPermanents' shared
+        -- creature type below: `payable`'s arm narrows to a group kept apart.
+        CostComponent.Sacrifice (Sacrifice.MkSacrifice (ObjectCount.Exactly (CostAmount.Fixed n)) criterion _) ->
           claim (ClaimAxis.Removal Zone.Battlefield) (Set.fromList (Replacement.sacrificeCandidatesGiven board (Just pid) slots pid (Just oid) criterion gs)) n
         -- Nothing until CR 601.2b fixes the count.
-        CostComponent.Sacrifice (Sacrifice.MkSacrifice (ObjectCount.Exactly (CostAmount.Announced _)) _) -> Nothing
+        CostComponent.Sacrifice (Sacrifice.MkSacrifice (ObjectCount.Exactly (CostAmount.Announced _)) _ _) -> Nothing
         -- Nothing, the whole-hand discard's reason below: every matching
         -- permanent, none included, so it spends nothing another component
         -- could run short of. A FENCE: Soulblast states no other component
         -- drawing on the battlefield.
-        CostComponent.Sacrifice (Sacrifice.MkSacrifice ObjectCount.Every _) -> Nothing
+        CostComponent.Sacrifice (Sacrifice.MkSacrifice ObjectCount.Every _ _) -> Nothing
         CostComponent.SacrificeThis -> claim (ClaimAxis.Removal Zone.Battlefield) itself 1
         -- The same battlefield pool SacrificeThis draws on -- a permanent returned to
         -- hand is as gone from the battlefield as one sacrificed.
@@ -4461,9 +4463,13 @@ canPayComponentGiven board slots pid oid component gs = case component of
   -- Every matching permanent, Soulblast's "sacrifice all creatures you
   -- control", is paid by however many there are, none included: the
   -- whole-hand discard's reading below.
-  CostComponent.Sacrifice (Sacrifice.MkSacrifice count criterion) -> case count of
+  --
+  -- CR 201.2b where the permanents must have different names (Transmutation
+  -- Font): payable iff `n` candidates keep apart, Target.mostApart's largest
+  -- such group. With no axis to keep apart that is every candidate.
+  CostComponent.Sacrifice (Sacrifice.MkSacrifice count criterion axes) -> case count of
     ObjectCount.Exactly amount -> payableAnnounced amount $ \n ->
-      Natural.length (Replacement.sacrificeCandidatesGiven board (Just pid) slots pid (Just oid) criterion gs) >= n
+      Target.mostApart (Maybe.mapMaybe (Target.objectDiffering axes gs) (Replacement.sacrificeCandidatesGiven board (Just pid) slots pid (Just oid) criterion gs)) >= n
     ObjectCount.Every -> True
   -- CR 702.122a: payable iff SOME subset of the candidates reaches the
   -- threshold, decided without enumerating one -- the greatest total any subset
@@ -7405,7 +7411,10 @@ payPayable perform moment paidFor slots pid oid component = case component of
   --
   -- Every matching permanent counts the candidates there are, so the elision
   -- above takes them all and asks nothing: CR 701.21a leaves no choice.
-  CostComponent.Sacrifice (Sacrifice.MkSacrifice count criterion) -> do
+  --
+  -- Different names (CR 201.2b) are asked of the CHOSEN set, reject-not-repair:
+  -- TapPermanents' shared creature type below.
+  CostComponent.Sacrifice (Sacrifice.MkSacrifice count criterion axes) -> do
     every <- State.gets (Natural.length . Replacement.sacrificeCandidates (Just pid) slots pid (Just oid) criterion)
     paidCount count every $ \n -> do
       gs <- State.get
@@ -7415,7 +7424,7 @@ payPayable perform moment paidFor slots pid oid component = case component of
         if n == 0 || Natural.length candidates <= n
           then pure (Set.fromList (List.genericTake n candidates))
           else Game.choose (Prompt.ChooseSacrifices decider pid oid candidates n (earlierPayers moment))
-      if Set.isSubsetOf chosen (Set.fromList candidates) && Natural.length chosen == n
+      if Set.isSubsetOf chosen (Set.fromList candidates) && Natural.length chosen == n && maybe False Target.keptApart (traverse (Target.objectDiffering axes gs) (Set.toList chosen))
         then do
           Event.sacrificeAll (ManaAbilityPerformer.settle perform) (fmap ((,) pid) (Set.toAscList chosen))
           -- CR 608.2h: the permanents are gone by the time anything this cost paid

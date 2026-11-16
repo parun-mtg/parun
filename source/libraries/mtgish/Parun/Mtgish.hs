@@ -732,7 +732,7 @@ costPart n = case Node.tag n of
   "SacrificePermanent" -> itself CostComponent.SacrificeThis
   "SacrificeAPermanent" -> do
     f <- Node.argument n >>= permanents outermost
-    Right (Right (CostComponent.Sacrifice Sacrifice.MkSacrifice {Sacrifice.count = ObjectCount.Exactly (CostAmount.Fixed 1), Sacrifice.whichPermanents = f}))
+    Right (Right (CostComponent.Sacrifice Sacrifice.MkSacrifice {Sacrifice.count = ObjectCount.Exactly (CostAmount.Fixed 1), Sacrifice.whichPermanents = f, Sacrifice.differentIn = Set.empty}))
   "PayLife" -> do
     k <- Node.child n >>= integer
     m <- natural n k

@@ -4004,7 +4004,7 @@ casualtyCost :: Natural -> Cost Keyword
 casualtyCost n =
   Cost.MkCost
     { Cost.mana = Just (ManaCost.MkManaCost []),
-      Cost.components = [CostComponent.Sacrifice (Sacrifice.MkSacrifice (ObjectCount.Exactly (CostAmount.Fixed 1)) (Filter.And [Filter.HasCardType CardType.Creature, Filter.Measures (Measures.MkMeasures Measure.Power Comparison.AtLeast (Operand.Literal (toInteger n)))]))]
+      Cost.components = [CostComponent.Sacrifice (Sacrifice.MkSacrifice (ObjectCount.Exactly (CostAmount.Fixed 1)) (Filter.And [Filter.HasCardType CardType.Creature, Filter.Measures (Measures.MkMeasures Measure.Power Comparison.AtLeast (Operand.Literal (toInteger n)))]) Set.empty)]
     }
 
 -- CR 702.166a's additional cost: "you may sacrifice an artifact, enchantment, or
@@ -4022,7 +4022,7 @@ bargainCost :: Cost Keyword
 bargainCost =
   Cost.MkCost
     { Cost.mana = Just (ManaCost.MkManaCost []),
-      Cost.components = [CostComponent.Sacrifice (Sacrifice.MkSacrifice (ObjectCount.Exactly (CostAmount.Fixed 1)) (Filter.Or [Filter.HasCardType CardType.Artifact, Filter.HasCardType CardType.Enchantment, Filter.IsToken]))]
+      Cost.components = [CostComponent.Sacrifice (Sacrifice.MkSacrifice (ObjectCount.Exactly (CostAmount.Fixed 1)) (Filter.Or [Filter.HasCardType CardType.Artifact, Filter.HasCardType CardType.Enchantment, Filter.IsToken]) Set.empty)]
     }
 
 -- CR 702.174a's additional cost: "you may choose an opponent". No mana and one
