@@ -2466,7 +2466,8 @@ isFlashPermission permission = case permission of
 -- about this one card for one player (Jace, Telepath Unbound's -3), read
 -- exactly as exile reads it (permitsPlayUnderPermission).
 --
--- Not implemented: that permission's cost riders on a graveyard card (#7622).
+-- Not implemented: that permission's target-dependent cost increase (#8117), and
+-- its keywords and budget (#8118), on a graveyard card.
 --
 -- Folding the second into the first would say the effect printed flashback onto
 -- every card in the graveyard, which is neither CR 702.34a's meaning nor a thing
@@ -3831,7 +3832,7 @@ castProposed perform baseSpending pid oid sid printedFace castFrom preparedFor k
       -- made under that permission.
       held = foldMap ExilePlayPermission.keywords exilePermission
       -- The card's own permission where the card lay in exile. Its keywords
-      -- and budget on a graveyard card are not implemented (#7622).
+      -- and budget on a graveyard card are not implemented (#8118).
       exilePermission = if castFrom == Just Zone.Exile then ownHeld else Nothing
   -- CR 700.2e: who chooses the modes, settled first -- the caster where
   -- several players could (Players.chooseOne, elided at one) -- and bound on the
