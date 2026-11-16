@@ -1,0 +1,327 @@
+{
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "battlefield": [
+          {
+            "card": "Unyielding Gatekeeper",
+            "faceDown": "Disguised",
+            "label": "gate"
+          },
+          {
+            "card": "Grizzly Bears",
+            "label": "bears"
+          },
+          {
+            "card": "Plains",
+            "label": "p1"
+          },
+          {
+            "card": "Plains",
+            "label": "p2"
+          }
+        ],
+        "library": [
+          {
+            "card": "Wastes",
+            "label": "alib1"
+          },
+          {
+            "card": "Wastes",
+            "label": "alib2"
+          },
+          {
+            "card": "Wastes",
+            "label": "alib3"
+          },
+          {
+            "card": "Wastes",
+            "label": "alib4"
+          },
+          {
+            "card": "Wastes",
+            "label": "alib5"
+          },
+          {
+            "card": "Wastes",
+            "label": "alib6"
+          },
+          {
+            "card": "Wastes",
+            "label": "alib7"
+          },
+          {
+            "card": "Wastes",
+            "label": "alib8"
+          },
+          {
+            "card": "Wastes",
+            "label": "alib9"
+          },
+          {
+            "card": "Wastes",
+            "label": "alib10"
+          }
+        ],
+        "name": "alice"
+      },
+      {
+        "battlefield": [
+          {
+            "card": "Hill Giant",
+            "label": "giant"
+          },
+          {
+            "card": "Forest",
+            "label": "forest"
+          }
+        ],
+        "library": [
+          {
+            "card": "Wastes",
+            "label": "blib1"
+          },
+          {
+            "card": "Wastes",
+            "label": "blib2"
+          },
+          {
+            "card": "Wastes",
+            "label": "blib3"
+          },
+          {
+            "card": "Wastes",
+            "label": "blib4"
+          },
+          {
+            "card": "Wastes",
+            "label": "blib5"
+          },
+          {
+            "card": "Wastes",
+            "label": "blib6"
+          },
+          {
+            "card": "Wastes",
+            "label": "blib7"
+          },
+          {
+            "card": "Wastes",
+            "label": "blib8"
+          },
+          {
+            "card": "Wastes",
+            "label": "blib9"
+          },
+          {
+            "card": "Wastes",
+            "label": "blib10"
+          }
+        ],
+        "name": "bob"
+      },
+      {
+        "battlefield": [
+          {
+            "card": "Gray Ogre",
+            "label": "ogre"
+          }
+        ],
+        "library": [
+          {
+            "card": "Wastes",
+            "label": "clib1"
+          },
+          {
+            "card": "Wastes",
+            "label": "clib2"
+          },
+          {
+            "card": "Wastes",
+            "label": "clib3"
+          },
+          {
+            "card": "Wastes",
+            "label": "clib4"
+          },
+          {
+            "card": "Wastes",
+            "label": "clib5"
+          },
+          {
+            "card": "Wastes",
+            "label": "clib6"
+          },
+          {
+            "card": "Wastes",
+            "label": "clib7"
+          },
+          {
+            "card": "Wastes",
+            "label": "clib8"
+          },
+          {
+            "card": "Wastes",
+            "label": "clib9"
+          },
+          {
+            "card": "Wastes",
+            "label": "clib10"
+          }
+        ],
+        "name": "carol"
+      }
+    ],
+    "step": "PrecombatMain"
+  },
+  "description": "CR 702.168, 708.8, 608.2c: Unyielding Gatekeeper turned face up exiles another nonland permanent it does not control, and that permanent's controller creates a 2/2 Detective",
+  "note": "Three seats, so the token goes to the exiled Giant's controller and not to carol; the trigger refuses Gatekeeper itself and bob's land.",
+  "timeline": [
+    {
+      "do": {
+        "Take": {
+          "action": "TurnFaceUp $gate",
+          "mana": [
+            "$p1",
+            "$p2"
+          ]
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "player": "alice",
+      "refuse": {
+        "ChooseTargets": {
+          "target": [
+            "$gate"
+          ]
+        }
+      },
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "player": "alice",
+      "refuse": {
+        "ChooseTargets": {
+          "target": [
+            "$forest"
+          ]
+        }
+      },
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "ChooseTargets": {
+          "target": [
+            "$giant"
+          ]
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Hill Giant",
+          "count": 1,
+          "player": "bob",
+          "zone": "Exile"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Hill Giant",
+          "count": 0,
+          "player": "bob",
+          "zone": "Battlefield"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Detective Token",
+          "count": 1,
+          "player": "bob",
+          "zone": "Battlefield"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Detective Token",
+          "count": 0,
+          "player": "alice",
+          "zone": "Battlefield"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Detective Token",
+          "count": 0,
+          "player": "carol",
+          "zone": "Battlefield"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "PowerToughness": {
+          "object": "Detective Token",
+          "power": 2,
+          "toughness": 2
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "PowerToughness": {
+          "object": "$gate",
+          "power": 3,
+          "toughness": 2
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    }
+  ]
+}
