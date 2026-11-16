@@ -43,6 +43,7 @@ import qualified Parun.Types.Modification as Modification
 import qualified Parun.Types.Operand as Operand
 import qualified Parun.Types.PairwiseFrame as PairwiseFrame
 import qualified Parun.Types.PlayerEffect as PlayerEffect
+import qualified Parun.Types.PlayerRef as PlayerRef
 import qualified Parun.Types.PlayerRelation as PlayerRelation
 import qualified Parun.Types.PlayerScope as PlayerScope
 import qualified Parun.Types.PlayerStaticAbility as PlayerStaticAbility
@@ -97,7 +98,7 @@ spec s = Spec.describe s "Parun.Codec.GrantedAbility" $ do
       codec
       ( GrantedAbility.Triggered
           ( TriggeredAbility.MkTriggeredAbility
-              (TriggerCondition.DealsDamage (DamageTrigger.MkDamageTrigger ActingPermanent.Self (Just DamageKind.Combat) (Set.singleton (DamageRecipient.Player PlayerRelation.AnyPlayer)) 0))
+              (TriggerCondition.DealsDamage (DamageTrigger.MkDamageTrigger ActingPermanent.Self (Just DamageKind.Combat) (Set.singleton (DamageRecipient.Player (PlayerRef.Relative PlayerRelation.AnyPlayer))) 0))
               emptyModal
               Nothing
               Nothing
@@ -106,7 +107,7 @@ spec s = Spec.describe s "Parun.Codec.GrantedAbility" $ do
               Nothing
           )
       )
-      " {\"type\":\"Triggered\",\"value\":{\"condition\":{\"type\":\"DealsDamage\",\"value\":{\"actor\":{\"type\":\"Self\"},\"kind\":\"Combat\",\"recipients\":[{\"type\":\"Player\",\"value\":\"AnyPlayer\"}]}},\"modal\":{\"modes\":[{}]}}} "
+      " {\"type\":\"Triggered\",\"value\":{\"condition\":{\"type\":\"DealsDamage\",\"value\":{\"actor\":{\"type\":\"Self\"},\"kind\":\"Combat\",\"recipients\":[{\"type\":\"Player\",\"value\":{\"type\":\"Relative\",\"value\":\"AnyPlayer\"}}]}},\"modal\":{\"modes\":[{}]}}} "
   -- Streetwise Negotiator's "This creature assigns combat damage equal to its
   -- toughness rather than its power", as backup hands it over.
   Spec.it s "Static" $

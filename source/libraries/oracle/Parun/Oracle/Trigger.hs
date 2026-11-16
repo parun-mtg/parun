@@ -319,11 +319,11 @@ described context f = do
 -- | A player an event names, and what the rest calls them. Free for an
 -- opponent: "that player" (Wei Night Raiders) or "that opponent" (Zhang Liao,
 -- Hero of Hefei).
-player :: PlayerRelation.PlayerRelation -> [(String, String)]
-player relation = case relation of
-  PlayerRelation.AnyPlayer -> [("a player", "that player")]
-  PlayerRelation.Opponent -> [("an opponent", "that player"), ("an opponent", "that opponent")]
-  PlayerRelation.You -> [("you", "that player")]
+player :: PlayerRef.PlayerRef -> [(String, String)]
+player ref = case ref of
+  PlayerRef.Relative PlayerRelation.AnyPlayer -> [("a player", "that player")]
+  PlayerRef.Relative PlayerRelation.Opponent -> [("an opponent", "that player"), ("an opponent", "that opponent")]
+  PlayerRef.Relative PlayerRelation.You -> [("you", "that player")]
   _ -> []
 
 -- | Whether the event is a draw step beginning, whose ability's draw comes

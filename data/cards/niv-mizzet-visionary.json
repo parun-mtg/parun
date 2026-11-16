@@ -65,7 +65,10 @@
               "recipients": [
                 {
                   "type": "Player",
-                  "value": "Opponent"
+                  "value": {
+                    "type": "Relative",
+                    "value": "Opponent"
+                  }
                 }
               ]
             }

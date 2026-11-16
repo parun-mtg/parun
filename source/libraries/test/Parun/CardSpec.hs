@@ -460,6 +460,7 @@ import qualified Parun.Types.SetX as SetX
 import qualified Parun.Types.ShuffleIntoLibrary as ShuffleIntoLibrary
 import qualified Parun.Types.SkipPhase as SkipPhase
 import qualified Parun.Types.SkipWindow as SkipWindow
+import qualified Parun.Types.SlotArity as SlotArity
 import qualified Parun.Types.SlotCount as SlotCount
 import qualified Parun.Types.SlotName as SlotName
 import qualified Parun.Types.SpecialAction as SpecialAction
@@ -3985,7 +3986,8 @@ triggerConditionFilters triggerCondition = case triggerCondition of
       ActingPermanent.Matching f -> unframed [f]
 
 -- Every SlotName a TriggerCondition names OUTRIGHT: Parun.Engine.Children's
--- triggerSlot, nested conditions' included.
+-- triggerSlot, and the slots a damage recipient's PlayerRef reads at arity One
+-- (Resolve.playerRefSlots), nested conditions' included.
 --
 -- What makes the answer worth having is that the reader is SINGULAR.
 -- Parun.Engine.Event matches CR 603.7's slot-named condition through
@@ -4003,6 +4005,7 @@ triggerConditionSlots =
     . Children.triggerConditionChildren
       Children.triggerLeaves
         { Children.triggerSlot = \slot -> Const.Const [slot],
+          Children.triggerPlayer = Const.Const . Map.keys . Map.filter (== SlotArity.One) . Resolve.playerRefSlots,
           Children.triggerNested = Const.Const . triggerConditionSlots
         }
 

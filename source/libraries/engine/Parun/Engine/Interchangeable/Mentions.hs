@@ -1235,7 +1235,8 @@ triggerConditionNames asking x = case x of
               Children.triggerFrequency = \events -> Const.Const . triggerFrequencyNames asking events,
               Children.triggerCounters = Const.Const . whichCountersNames asking (keywordNames asking),
               -- A colour of mana names no object and reads no history.
-              Children.triggerMana = const (Const.Const mempty)
+              Children.triggerMana = const (Const.Const mempty),
+              Children.triggerPlayer = Const.Const . playerRefNames asking
             }
           x
       )
