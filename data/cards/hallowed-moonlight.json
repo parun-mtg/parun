@@ -43,29 +43,7 @@
                                 {
                                   "type": "Not",
                                   "value": {
-                                    "type": "Or",
-                                    "value": [
-                                      {
-                                        "type": "WasCastFrom",
-                                        "value": "Hand"
-                                      },
-                                      {
-                                        "type": "WasCastFrom",
-                                        "value": "Library"
-                                      },
-                                      {
-                                        "type": "WasCastFrom",
-                                        "value": "Graveyard"
-                                      },
-                                      {
-                                        "type": "WasCastFrom",
-                                        "value": "Exile"
-                                      },
-                                      {
-                                        "type": "WasCastFrom",
-                                        "value": "Command"
-                                      }
-                                    ]
+                                    "type": "WasCastFrom"
                                   }
                                 }
                               ]

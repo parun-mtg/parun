@@ -50,6 +50,7 @@ import qualified Parun.Types.CardIdentity as CardIdentity
 import qualified Parun.Types.CardName as CardName
 import qualified Parun.Types.CardSelection as CardSelection
 import qualified Parun.Types.CardType as CardType
+import qualified Parun.Types.CastOrigin as CastOrigin
 import qualified Parun.Types.CastingPermission as CastingPermission
 import qualified Parun.Types.Color as Color
 import qualified Parun.Types.Cost as Cost.Type
@@ -3391,7 +3392,7 @@ cleaveSpec s registry = Spec.describe s "Cleave" $ do
 spellCastFrom :: Printing.Printing -> Zone.Zone -> GameState.GameState -> (ObjectId.ObjectId, GameState.GameState)
 spellCastFrom printing zone gs =
   let (oid, placed) = S.spellOnStack printing S.bob gs
-   in (oid, placed {GameState.objects = Map.adjust (\o -> o {Object.castFrom = Just zone}) oid (GameState.objects placed)})
+   in (oid, placed {GameState.objects = Map.adjust (\o -> o {Object.castFrom = Just (CastOrigin.FromZone zone)}) oid (GameState.objects placed)})
 
 -- alice casts `oid` for `cost` with every slot aimed at `victim`, and the top
 -- object resolves: what CR 601.2c offered, slot by slot, and the board after.

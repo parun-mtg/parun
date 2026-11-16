@@ -11,6 +11,7 @@ import qualified Parun.Types.Card as Card
 import qualified Parun.Types.CardIdentity as CardIdentity
 import qualified Parun.Types.CardName as CardName
 import qualified Parun.Types.CardType as CardType
+import qualified Parun.Types.CastOrigin as CastOrigin
 import qualified Parun.Types.ClassLevel as ClassLevel
 import qualified Parun.Types.Color as Color
 import qualified Parun.Types.ControlClock as ControlClock
@@ -815,10 +816,10 @@ data Object = MkObject
     -- incarnation by `stampCastFrom`. The two must agree or a card's gate and its
     -- payment price the same spell differently.
     --
-    -- Nothing for every object that was not cast or was cast from outside the
-    -- game (CR 400.11, Parun.Engine.Game.zoneOf), and forgotten by
-    -- newIncarnation but for CR 400.7d's move, Parun.Engine.Event's carry.
-    castFrom :: Maybe Zone.Zone,
+    -- Nothing for every object that was not cast, OutsideTheGame for one cast
+    -- from outside the game (CR 400.11, Parun.Engine.Game.zoneOf), and forgotten
+    -- by newIncarnation but for CR 400.7d's move, Parun.Engine.Event's carry.
+    castFrom :: Maybe CastOrigin.CastOrigin,
     -- | CR 400.7d / 601.2a: who cast the spell this permanent was, written by
     -- that same carry. Nothing for every other object, a spell's caster being
     -- its enteredUnder. Read by Parun.Engine.Filter's Holder.Caster.

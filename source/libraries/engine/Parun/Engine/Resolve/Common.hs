@@ -88,6 +88,7 @@ import qualified Parun.Types.CardSelection as CardSelection
 import qualified Parun.Types.CardType as CardType
 import qualified Parun.Types.CarryOver as CarryOver
 import qualified Parun.Types.CastOffer as CastOffer
+import qualified Parun.Types.CastOrigin as CastOrigin
 import qualified Parun.Types.Cause as Cause
 import qualified Parun.Types.ChoosePermanents as ChoosePermanents
 import qualified Parun.Types.ChooseQuality as ChooseQuality
@@ -3403,7 +3404,7 @@ rearmStackExile :: ObjectId -> PC.ProjectedCharacteristics -> Object.Object -> G
 rearmStackExile subject copied obj gs =
   let armed r = ActiveReplacement.source r == subject && ActiveReplacement.effect r == Keyword.castFromGraveyardExile
       keywords = Map.keysSet (PC.keywords copied)
-      eligible = if Object.castFrom obj == Just Zone.Graveyard then keywords else Set.delete Keyword.Type.Aftermath keywords
+      eligible = if Object.castFrom obj == Just (CastOrigin.FromZone Zone.Graveyard) then keywords else Set.delete Keyword.Type.Aftermath keywords
    in Cast.installCastFromGraveyard (Projection.defaultControllerOf obj) eligible (Object.castUsing obj) subject gs {GameState.stored = (GameState.stored gs) {StoredEffects.replacements = filter (not . armed) (StoredEffects.replacements (GameState.stored gs))}}
 
 -- CR 702.128b: the marks a token has from being created by this resolving

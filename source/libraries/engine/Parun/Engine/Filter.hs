@@ -34,6 +34,7 @@ import qualified Parun.Types.BoundMeasure as BoundMeasure
 import qualified Parun.Types.CandidateScope as CandidateScope
 import qualified Parun.Types.CardName as CardName
 import qualified Parun.Types.CardType as CardType
+import qualified Parun.Types.CastOrigin as CastOrigin
 import qualified Parun.Types.ClassLevel as ClassLevel
 import qualified Parun.Types.Color as Color
 import qualified Parun.Types.Comparison as Comparison
@@ -226,7 +227,7 @@ data View = MkView
     -- Nothing for everything that was never cast -- a card at rest, a token, an
     -- ability on the stack -- and for everything with no OBJECT behind it at all,
     -- so WasCastFrom is vacuously False there, `zone` above's posture.
-    castFrom :: Maybe Zone.Zone,
+    castFrom :: Maybe CastOrigin.CastOrigin,
     -- CR 400.7d / 601.2a: who cast the spell the candidate permanent was -- what
     -- Holder.Caster reads, off Parun.Types.Object.castBy. Nothing wherever
     -- `castFrom` above is, and for a spell still on the stack.
@@ -2942,7 +2943,7 @@ matches context view predicate = case predicate of
   -- spell it describes has already left the zone named here, so unlike IsInZone
   -- above this atom goes on answering the same way for as long as the spell is on
   -- the stack -- which is what lets CR 601.2f price it; see #2363.
-  Filter.WasCastFrom z -> castFrom view == Just z
+  Filter.WasCastFrom from -> maybe (Maybe.isJust (castFrom view)) (\z -> castFrom view == Just (CastOrigin.FromZone z)) from
   -- CR 601.2h off Object.manaSpent, WasCastFrom's posture one record over: a
   -- STAMP written once the payment settled, so it goes on answering the same way
   -- for as long as the object lasts. Vacuously False for a player and for

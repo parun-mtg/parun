@@ -814,15 +814,22 @@ spec s = Spec.describe s "Parun.Codec.Filter" $ do
     Common.assertCodec
       s
       codec
-      (Filter.WasCastFrom Zone.Graveyard)
+      (Filter.WasCastFrom (Just Zone.Graveyard))
       " {\"type\":\"WasCastFrom\",\"value\":\"Graveyard\"} "
+  -- Nine-Lives Familiar's bare "if you cast it" writes the bare tag.
+  Spec.it s "WasCastFrom Nothing" $
+    Common.assertCodec
+      s
+      codec
+      (Filter.WasCastFrom Nothing)
+      " {\"type\":\"WasCastFrom\"} "
   -- Aven Interrupter's own spelling: "from graveyards or from exile" is two of
   -- these under an Or, where the atom above stands alone on Patrician Geist.
   Spec.it s "Or [WasCastFrom Graveyard, WasCastFrom Exile]" $
     Common.assertCodec
       s
       codec
-      (Filter.Or [Filter.WasCastFrom Zone.Graveyard, Filter.WasCastFrom Zone.Exile])
+      (Filter.Or [Filter.WasCastFrom (Just Zone.Graveyard), Filter.WasCastFrom (Just Zone.Exile)])
       " {\"type\":\"Or\",\"value\":[{\"type\":\"WasCastFrom\",\"value\":\"Graveyard\"},{\"type\":\"WasCastFrom\",\"value\":\"Exile\"}]} "
   -- Shadow the Hedgehog's "if mana from an artifact was spent to cast it". No
   -- Arm.tagged codec forces a constructor's ARM, only its tag, so a constructor

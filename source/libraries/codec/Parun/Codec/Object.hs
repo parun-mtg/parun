@@ -10,6 +10,7 @@ import qualified Parun.Codec.Card as Card
 import qualified Parun.Codec.CardIdentity as CardIdentity
 import qualified Parun.Codec.CardName as CardName
 import qualified Parun.Codec.CardType as CardType
+import qualified Parun.Codec.CastOrigin as CastOrigin
 import qualified Parun.Codec.ClassLevel as ClassLevel
 import qualified Parun.Codec.Color as Color
 import qualified Parun.Codec.ControlClock as ControlClock
@@ -156,7 +157,7 @@ codec = Fields.object $ do
   manaSpent <- Fields.defaulted "manaSpent" (Object.manaSpent defaults) Mana.codec Object.manaSpent
   announcedX <- Fields.defaulted "announcedX" (Object.announcedX defaults) (Common.maybe Common.natural) Object.announcedX
   manaSpentOnX <- Fields.defaulted "manaSpentOnX" (Object.manaSpentOnX defaults) (Common.maybe Mana.codec) Object.manaSpentOnX
-  castFrom <- Fields.defaulted "castFrom" (Object.castFrom defaults) (Common.maybe Zone.codec) Object.castFrom
+  castFrom <- Fields.defaulted "castFrom" (Object.castFrom defaults) (Common.maybe CastOrigin.codec) Object.castFrom
   castBy <- Fields.defaulted "castBy" (Object.castBy defaults) (Common.maybe PlayerId.codec) Object.castBy
   castUsing <- Fields.defaulted "castUsing" (Object.castUsing defaults) (Common.maybe Keyword.codec) Object.castUsing
   castGrants <- Fields.defaulted "castGrants" (Object.castGrants defaults) (Common.list Keyword.codec) Object.castGrants

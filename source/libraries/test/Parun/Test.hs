@@ -167,6 +167,7 @@ import qualified Parun.Codec.CastFromSpec
 import qualified Parun.Codec.CastFromZoneSpec
 import qualified Parun.Codec.CastObligationSpec
 import qualified Parun.Codec.CastOfferSpec
+import qualified Parun.Codec.CastOriginSpec
 import qualified Parun.Codec.CastRepetitionSpec
 import qualified Parun.Codec.CastWindowSpec
 import qualified Parun.Codec.CastingPermissionSpec
@@ -1260,6 +1261,7 @@ spec s reference corpus = do
   Parun.Codec.CardTypeSpec.spec s
   Parun.Codec.CastFromSpec.spec s
   Parun.Codec.CastFromZoneSpec.spec s
+  Parun.Codec.CastOriginSpec.spec s
   Parun.Codec.CastingPermissionSpec.spec s
   Parun.Codec.CastingRestrictionSpec.spec s
   Parun.Codec.CastingSpec.spec s

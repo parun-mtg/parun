@@ -41,6 +41,7 @@ import qualified Parun.Types.Card as Card.Type
 import qualified Parun.Types.CardIdentity as CardIdentity
 import qualified Parun.Types.CardName as CardName
 import qualified Parun.Types.CardType as CardType
+import qualified Parun.Types.CastOrigin as CastOrigin
 import qualified Parun.Types.Chosen as Chosen
 import qualified Parun.Types.Color as Color
 import qualified Parun.Types.Combat as Combat
@@ -232,6 +233,11 @@ zoneOf oid gs
   | Set.member oid (GameState.outsideCopies gs) = Nothing
   | otherwise = fmap Object.zone (lookupObject oid gs)
 
+-- CR 601.2a / 400.11: the origin of a cast out of what `zoneOf` answered for
+-- the card being cast, no zone being outside the game.
+castOrigin :: Maybe Zone -> CastOrigin.CastOrigin
+castOrigin = maybe CastOrigin.OutsideTheGame CastOrigin.FromZone
+
 -- CR 601.2a: is this object the card whose cast is being PROPOSED right now? The
 -- card is put onto the stack before CR 601.2f determines the total cost and CR
 -- 601.2h pays it, so no pool a payability gate reads may count it -- neither the
@@ -259,7 +265,7 @@ zoneOf oid gs
 beingCast :: GameState -> ObjectId -> Bool
 beingCast gs candidate = case lookupObject candidate gs of
   Nothing -> False
-  Just object -> Object.castFrom object == Just (Object.zone object)
+  Just object -> Object.castFrom object == Just (CastOrigin.FromZone (Object.zone object))
 
 -- CR 121.8: a card drawn while a spell is being cast or an ability activated,
 -- still in the hand it was drawn into, and so kept face down there with no
@@ -285,7 +291,7 @@ keptFaceDown oid gs =
 withoutBeingCast :: GameState -> GameState
 withoutBeingCast gs =
   Map.foldrWithKey
-    (\oid object acc -> if Object.castFrom object == Just (Object.zone object) then removeFromZones oid acc else acc)
+    (\oid object acc -> if Object.castFrom object == Just (CastOrigin.FromZone (Object.zone object)) then removeFromZones oid acc else acc)
     gs
     (GameState.objects gs)
 
