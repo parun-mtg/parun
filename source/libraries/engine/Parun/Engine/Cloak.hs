@@ -19,8 +19,8 @@
 -- returns no card; a printing worded that way is what would need one.
 module Parun.Engine.Cloak where
 
-import qualified Control.Monad as Monad
 import qualified Control.Monad.Trans.State.Strict as State
+import qualified Data.Foldable as Foldable
 import qualified Data.Set as Set
 import Numeric.Natural (Natural)
 import qualified Parun.Engine.Event as Event
@@ -31,6 +31,8 @@ import qualified Parun.Types.FaceDownReason as FaceDownReason
 import qualified Parun.Types.FaceDownState as FaceDownState
 import Parun.Types.Game (Game)
 import qualified Parun.Types.LibraryPosition as LibraryPosition
+import qualified Parun.Types.Object as Object
+import Parun.Types.ObjectId (ObjectId)
 import Parun.Types.PlayerId (PlayerId)
 import qualified Parun.Types.Zone as Zone
 
@@ -76,9 +78,16 @@ riders =
 --
 -- An EMPTY LIBRARY cloaks nothing. CR 701.58a names a card, and CR 609.3 leaves
 -- the rest of the effect to do as much as it can.
-cloak :: Game () -> PlayerId -> PlayerId -> Game ()
+--
+-- The result is the permanent the cloak put onto the battlefield, none when the
+-- move was cancelled or replaced elsewhere, for the arm's slot.
+cloak :: Game () -> PlayerId -> PlayerId -> Game [ObjectId]
 cloak settle cloaker library = do
   gs <- State.get
   case Game.cardsIn Zone.Library library gs of
-    [] -> pure ()
-    top : _ -> Monad.void (Event.changeZoneEntering settle top Zone.Battlefield LibraryPosition.defaultValue riders (Just cloaker))
+    [] -> pure []
+    top : _ -> do
+      entered <- Event.changeZoneEntering settle top Zone.Battlefield LibraryPosition.defaultValue riders (Just cloaker)
+      after <- State.get
+      let onBattlefield oid = fmap Object.zone (Game.lookupObject oid after) == Just Zone.Battlefield
+      pure (filter onBattlefield (Foldable.toList entered))

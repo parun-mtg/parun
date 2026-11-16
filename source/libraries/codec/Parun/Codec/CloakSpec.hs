@@ -17,13 +17,21 @@ spec s = Spec.describe s "Parun.Codec.Cloak" $ do
     Common.assertCodec
       s
       Cloak.codec
-      (Cloak.MkCloak (PlayerRef.Relative PlayerRelation.You) Nothing)
+      (Cloak.MkCloak (PlayerRef.Relative PlayerRelation.You) Nothing Nothing)
       " {\"player\":{\"type\":\"Relative\",\"value\":\"You\"}} "
   -- Etrata, Deadly Fugitive's "cloak the top card of that player's library".
   Spec.it s "MkCloak from another player's library" $
     Common.assertCodec
       s
       Cloak.codec
-      (Cloak.MkCloak (PlayerRef.Relative PlayerRelation.You) (Just (PlayerRef.InSlot (SlotName.MkSlotName (Text.pack "thatPlayer")))))
+      (Cloak.MkCloak (PlayerRef.Relative PlayerRelation.You) (Just (PlayerRef.InSlot (SlotName.MkSlotName (Text.pack "thatPlayer")))) Nothing)
       " {\"library\":{\"type\":\"InSlot\",\"value\":\"thatPlayer\"},\"player\":{\"type\":\"Relative\",\"value\":\"You\"}} "
+  -- Cryptic Coat's "cloak the top card of your library, then attach this
+  -- Equipment to it".
+  Spec.it s "MkCloak binding the cloaked permanent" $
+    Common.assertCodec
+      s
+      Cloak.codec
+      (Cloak.MkCloak (PlayerRef.Relative PlayerRelation.You) Nothing (Just (SlotName.MkSlotName (Text.pack "cloaked"))))
+      " {\"player\":{\"type\":\"Relative\",\"value\":\"You\"},\"slot\":\"cloaked\"} "
   Spec.it s "has a schema" $ Common.assertHasSchema s Cloak.codec

@@ -1309,7 +1309,7 @@ effectChildren c effect = case effect of
   Effect.TimeTravel -> pure effect
   Effect.Recruit -> pure effect
   Effect.Discover quantity -> fmap Effect.Discover (onQuantity c quantity)
-  Effect.Cloak (Cloak.MkCloak who library) -> fmap Effect.Cloak (Cloak.MkCloak <$> onPlayer c who <*> traverse (onPlayer c) library)
+  Effect.Cloak (Cloak.MkCloak who library named) -> fmap Effect.Cloak (Cloak.MkCloak <$> onPlayer c who <*> traverse (onPlayer c) library <*> traverse (onSlot c) named)
   Effect.ManifestDread (ManifestDread.MkManifestDread who quantity named) -> fmap Effect.ManifestDread (ManifestDread.MkManifestDread <$> onPlayer c who <*> onQuantity c quantity <*> traverse (onSlot c) named)
   Effect.Venture _ -> pure effect
   Effect.PlayerSacrifices (PlayerSacrifices.MkPlayerSacrifices players who filter_ quantity permanents) ->
