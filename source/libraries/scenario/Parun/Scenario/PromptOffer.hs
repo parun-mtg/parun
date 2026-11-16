@@ -406,10 +406,12 @@ offerOf namer gs prompt = case prompt of
   Prompt.ChooseTaps _ _ source _ candidates count -> subset namer (Just source) [] (exactly count candidates) (fmap (object namer) candidates)
   -- CR 702.167a: "one or more" makes the count a least.
   Prompt.ChooseMaterials _ _ source candidates count orMore -> subset namer (Just source) [] (if orMore then (Just count, Nothing) else exactly count candidates) (fmap (object namer) candidates)
-  -- CR 702.122a: any of them, whose total power the engine judges.
-  Prompt.ChooseTapsForTotalPower _ _ source candidates power -> subset namer (Just source) [("power", natural power)] (Nothing, Nothing) (fmap (object namer . fst) candidates)
-  -- CR 701.59a / 406.2: any of them, whose total tally the engine judges.
-  Prompt.ChooseExilesTotalling _ _ source tally candidates total -> subset namer (Just source) [(tallyKey tally, natural total)] (Nothing, Nothing) (fmap (object namer . fst) candidates)
+  -- CR 702.122a: any of them, whose total power the engine judges, and under
+  -- @"counts"@ the power each counts as (CR 702.122a's "as though").
+  Prompt.ChooseTapsForTotalPower _ _ source candidates power -> subset namer (Just source) [("power", natural power), counts candidates] (Nothing, Nothing) (fmap (object namer . fst) candidates)
+  -- CR 701.59a / 406.2: any of them, whose total tally the engine judges, and
+  -- under @"counts"@ each one's tally.
+  Prompt.ChooseExilesTotalling _ _ source tally candidates total -> subset namer (Just source) [(tallyKey tally, natural total), counts candidates] (Nothing, Nothing) (fmap (object namer . fst) candidates)
   -- CR 608.2d: up to the most where there is one; CR 101.4b: what earlier
   -- choosers picked.
   Prompt.ChooseAnyNumber _ _ source purpose candidates most earlier ->
@@ -683,6 +685,11 @@ objects = Reply.encode (Reply.list Reply.object)
 
 natural :: Natural -> R.Reply
 natural = R.Number . toInteger
+
+-- | What each candidate of a threshold prompt adds toward its total, in the
+-- order @"among"@ lists them.
+counts :: [(ObjectId.ObjectId, Integer)] -> (String, R.Reply)
+counts candidates = ("counts", R.Array (fmap (R.Number . snd) candidates))
 
 -- | The field a threshold exile's total is told under: "manaValue", or
 -- "blackManaSymbols" for Baron Helmut Zemo's boast.

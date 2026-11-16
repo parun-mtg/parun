@@ -553,8 +553,12 @@ choice view question = Maybe.fromMaybe generic $ case Text.unpack (Question.kind
         pure (ordered (orderHeading (foldMap (\source -> Text.pack " for " <> objectName view source) (Protocol.field "source" offer)) (orderNote (Question.kind question) offer)) (fmap (optionName view) items))
   -- An amount per item the offer lists, each within its range.
   _ | Just caps <- Protocol.field "amounts" offer -> pure (amounted caps)
-  -- A set of what the offer lists, within its least and most.
-  _ | Maybe.isJust (Protocol.field "among" offer) -> subset (optionName view) Text.empty R.Array
+  -- A set of what the offer lists, within its least and most, each beside
+  -- what it counts toward a threshold where the offer says.
+  _ | Just among <- Protocol.field "among" offer >>= Protocol.arrayOf -> do
+    let tallies = Maybe.fromMaybe [] (Protocol.field "counts" offer >>= Protocol.arrayOf)
+        tallied candidate = optionName view candidate <> foldMap (\n -> Text.pack " (counts as " <> optionName view n <> Text.pack ")") (lookup candidate (zip among tallies))
+    subset tallied Text.empty R.Array
   -- One of what the offer lists, sent back as the answer it already is, and
   -- named by its entry where the offer lists one.
   _ -> do
@@ -1158,7 +1162,7 @@ told view self offer = case offer of
   R.Object pairs ->
     [ label key <> Text.pack ": " <> value key reply
     | (key, reply) <- pairs,
-      key `notElem` fmap Text.pack ["source", "options", "entries", "players", "among", "departed", "least", "most", "names", "costs", "repeats", "amounts", "floors", "recipients", "counters", "fromOne", "oneKind"],
+      key `notElem` fmap Text.pack ["source", "options", "entries", "players", "among", "departed", "least", "most", "names", "costs", "counts", "repeats", "amounts", "floors", "recipients", "counters", "fromOne", "oneKind"],
       reply /= R.Array []
     ]
   _ -> []
