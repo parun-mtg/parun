@@ -68,6 +68,7 @@ import qualified Parun.Engine.Replacement as Replacement
 import qualified Parun.Engine.Restamp as Restamp
 import qualified Parun.Engine.RestrictedCreatures as RestrictedCreatures
 import qualified Parun.Engine.Saga as Saga
+import qualified Parun.Engine.SourceContext as SourceContext
 import qualified Parun.Engine.SpaceSculptor as SpaceSculptor
 import qualified Parun.Engine.Subtype as Subtype.Engine
 import qualified Parun.Engine.Turn as Turn
@@ -12497,7 +12498,7 @@ revealedObjects revealed gs =
 -- Event.Match.matchesTriggerGiven is the same act with CR 603.7c's captured
 -- environment and the event's group in hand.
 matchesTrigger :: GameState -> ObjectId -> PlayerId -> TriggerCondition -> GameEvent -> Bool
-matchesTrigger gs = matchesAt Map.empty (battlefieldCandidates gs) gs Nothing [] gs
+matchesTrigger gs = matchesAt Map.empty Nothing (battlefieldCandidates gs) gs Nothing [] gs
 
 -- CR 603.2b / 109.5: does this condition restrict the turn its event may occur
 -- on to the ABILITY'S CONTROLLER's turn? True for "at the beginning of YOUR
@@ -12730,6 +12731,9 @@ armDelayed ability declared source controller captured armed expiry gs = case ar
               DelayedTrigger.source = source,
               DelayedTrigger.controller = controller,
               DelayedTrigger.bindings = captured,
+              -- CR 608.2h: read once, as the entry is created, so a later choice
+              -- the source makes reaches no entry already armed.
+              DelayedTrigger.choices = SourceContext.choicesOf (Game.acquisitionOf source gs) source gs,
               DelayedTrigger.delayed = declared,
               DelayedTrigger.window = window,
               DelayedTrigger.expiry = expiry,

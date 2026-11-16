@@ -166,6 +166,7 @@ import qualified Parun.Types.SacrificeTrigger as SacrificeTrigger
 import qualified Parun.Types.Saddling as Saddling
 import qualified Parun.Types.SlotName as SlotName
 import qualified Parun.Types.Snapshots as Snapshots
+import qualified Parun.Types.SourceChoices as SourceChoices
 import qualified Parun.Types.SpellCast as SpellCast
 import qualified Parun.Types.SpellWasCast as SpellWasCast
 import qualified Parun.Types.SpellWasCopied as SpellWasCopied
@@ -1107,21 +1108,21 @@ anyTriggerReads event = case event of
 -- too late; the one filed before it (Snapshots.boardBeforeEvent) is a
 -- look-back's (CR 603.10a). The group's logged events are the whole CR 608.2f
 -- batch, for an arm that totals over it.
-matchesTriggerGiven :: Map.Map SlotName.SlotName Binding -> Map.Map ObjectId (BattlefieldCandidate.BattlefieldCandidate PC.ProjectedCharacteristics) -> EventGroup.EventGroup -> GameState -> ObjectId -> PlayerId -> TriggerCondition -> GameEvent -> Bool
-matchesTriggerGiven bindings board group gs =
+matchesTriggerGiven :: Map.Map SlotName.SlotName Binding -> Maybe SourceChoices.SourceChoices -> Map.Map ObjectId (BattlefieldCandidate.BattlefieldCandidate PC.ProjectedCharacteristics) -> EventGroup.EventGroup -> GameState -> ObjectId -> PlayerId -> TriggerCondition -> GameEvent -> Bool
+matchesTriggerGiven bindings frozen board group gs =
   let groupEvents = [LoggedEvent.event logged | logged <- Foldable.toList (TurnRegisters.events (GameState.turn gs)), LoggedEvent.group logged == group]
-   in matchesAt bindings board (gameAfter group gs) (Map.lookup group (Snapshots.boardBeforeEvent (GameState.snapshots gs))) groupEvents gs
+   in matchesAt bindings frozen board (gameAfter group gs) (Map.lookup group (Snapshots.boardBeforeEvent (GameState.snapshots gs))) groupEvents gs
 
 -- matchesTriggerGiven with the two filed games and the group's events in hand,
 -- which an arm asking it again of an inner condition passes on.
-matchesAt :: Map.Map SlotName.SlotName Binding -> Map.Map ObjectId (BattlefieldCandidate.BattlefieldCandidate PC.ProjectedCharacteristics) -> GameState -> Maybe GameState -> [GameEvent] -> GameState -> ObjectId -> PlayerId -> TriggerCondition -> GameEvent -> Bool
-matchesAt bindings board atEvent beforeEvent groupEvents gs bearer you cond event =
-  anyTriggerReads event && armMatches bindings board atEvent beforeEvent groupEvents gs bearer you cond event
+matchesAt :: Map.Map SlotName.SlotName Binding -> Maybe SourceChoices.SourceChoices -> Map.Map ObjectId (BattlefieldCandidate.BattlefieldCandidate PC.ProjectedCharacteristics) -> GameState -> Maybe GameState -> [GameEvent] -> GameState -> ObjectId -> PlayerId -> TriggerCondition -> GameEvent -> Bool
+matchesAt bindings frozen board atEvent beforeEvent groupEvents gs bearer you cond event =
+  anyTriggerReads event && armMatches bindings frozen board atEvent beforeEvent groupEvents gs bearer you cond event
 
 -- The arm for this condition, which reads the event it watches and falls through
 -- on the rest. Past anyTriggerReads, so only matchesAt calls it.
-armMatches :: Map.Map SlotName.SlotName Binding -> Map.Map ObjectId (BattlefieldCandidate.BattlefieldCandidate PC.ProjectedCharacteristics) -> GameState -> Maybe GameState -> [GameEvent] -> GameState -> ObjectId -> PlayerId -> TriggerCondition -> GameEvent -> Bool
-armMatches bindings board atEvent beforeEvent groupEvents gs bearer you cond event = case cond of
+armMatches :: Map.Map SlotName.SlotName Binding -> Maybe SourceChoices.SourceChoices -> Map.Map ObjectId (BattlefieldCandidate.BattlefieldCandidate PC.ProjectedCharacteristics) -> GameState -> Maybe GameState -> [GameEvent] -> GameState -> ObjectId -> PlayerId -> TriggerCondition -> GameEvent -> Bool
+armMatches bindings frozen board atEvent beforeEvent groupEvents gs bearer you cond event = case cond of
   TriggerCondition.Enters t -> enters bearerContext board gs bearer you t event
   -- CR 603.2b: this step began, on a turn the scope admits, and -- for a card
   -- that counts its occurrences, "your second main phase" (CR 505.1b) or
@@ -1349,6 +1350,7 @@ armMatches bindings board atEvent beforeEvent groupEvents gs bearer you cond eve
   TriggerCondition.PermanentsDealDamageToPlayer p ->
     matchesAt
       bindings
+      frozen
       board
       atEvent
       beforeEvent
@@ -2169,7 +2171,7 @@ armMatches bindings board atEvent beforeEvent groupEvents gs bearer you cond eve
   -- the SAME event fire the ability once here, which is also the right answer --
   -- CR 603.2 matches an event against "a triggered ability's trigger event", and
   -- the ability is one ability.
-  TriggerCondition.AnyOf conditions -> any (\c -> matchesAt bindings board atEvent beforeEvent groupEvents gs bearer you c event) conditions
+  TriggerCondition.AnyOf conditions -> any (\c -> matchesAt bindings frozen board atEvent beforeEvent groupEvents gs bearer you c event) conditions
   -- CR 609.1: the narrowed condition, on an event a spell or ability's effect
   -- caused, that spell or ability's controller related to CR 109.5's "you" the
   -- way a Discarder discard relates the discarder. The controller is the one the
@@ -2177,7 +2179,7 @@ armMatches bindings board atEvent beforeEvent groupEvents gs bearer you cond eve
   -- control cannot reach back.
   TriggerCondition.CausedBy narrowed ->
     maybe False (causeAdmitted gs bearer you narrowed) (causeOf event)
-      && matchesAt bindings board atEvent beforeEvent groupEvents gs bearer you (CausedBy.condition narrowed) event
+      && matchesAt bindings frozen board atEvent beforeEvent groupEvents gs bearer you (CausedBy.condition narrowed) event
   -- CR 715.2d's watcher. At ChapterMoment.Triggers it is CR 603.3b's second
   -- class, the one condition in this type whose event is another ability
   -- triggering: "whenever the final chapter ability of a Saga you control
@@ -2518,7 +2520,10 @@ armMatches bindings board atEvent beforeEvent groupEvents gs bearer you cond eve
     -- and its last known information for one the event itself removed, CR
     -- 603.10a's look back. Parun.ZoneTriggerSpec's "CR 113.6m a Kami of
     -- Mourning grant returns the card when a greater creature dies" proves it.
-    bearerContext = Projection.framedByBindings gs bindings (Projection.sourceContext gs (Just you) bearer)
+    --
+    -- A delayed ability's choices are `frozen`, the source's as it was created
+    -- (DelayedTrigger.choices); every other trigger reads the source's live.
+    bearerContext = Projection.framedByBindings gs bindings (maybe (Projection.framedBy bearer gs) (\choices -> Projection.framedWith choices bearer gs) frozen (Filter.contextIn gs (Just you) (Just bearer)))
     -- CR 102.1: the seats a TurnScope.PlayersTurn names, read from the bearer.
     scopeNamed = Count.scopePlayers (Projection.viewWithLastKnownAnywhere gs) bearerContext gs
     admitsTurn scope = Turn.duringRunningTurn scopeNamed gs Nothing scope you

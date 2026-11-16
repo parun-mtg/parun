@@ -1,6 +1,7 @@
 module Parun.Codec.DelayedTriggerSpec where
 
 import qualified Data.Map.Strict as Map
+import qualified Data.Set as Set
 import qualified Data.Text as Text
 import qualified Parun.Codec.DelayedTrigger as DelayedTrigger
 import qualified Parun.Codec.FaceSpec as FaceSpec
@@ -8,12 +9,15 @@ import qualified Parun.JsonCodec.Codec as Codec
 import qualified Parun.JsonCodec.Common as Common
 import qualified Parun.Spec as Spec
 import qualified Parun.Types.AbilityName as AbilityName
+import qualified Parun.Types.Acquisition as Acquisition
 import qualified Parun.Types.Binding as Binding
 import qualified Parun.Types.DelayedTrigger as DelayedTrigger
 import qualified Parun.Types.Expiry as Expiry
 import qualified Parun.Types.ObjectId as ObjectId
 import qualified Parun.Types.PlayerId as PlayerId
 import qualified Parun.Types.SlotName as SlotName
+import qualified Parun.Types.SourceChoices as SourceChoices
+import qualified Parun.Types.Subtype as Subtype
 import qualified Parun.Types.Timestamp as Timestamp
 import qualified Parun.Types.TurnWindow as TurnWindow
 
@@ -27,16 +31,21 @@ entry =
       DelayedTrigger.source = ObjectId.MkObjectId 4,
       DelayedTrigger.controller = PlayerId.MkPlayerId 0,
       DelayedTrigger.bindings = Map.singleton (SlotName.MkSlotName (Text.pack "token")) (Binding.empty {Binding.amount = Just 9}),
+      DelayedTrigger.choices = noChoices {SourceChoices.subtype = Just Subtype.Goblin},
       DelayedTrigger.delayed = Map.empty,
       DelayedTrigger.window = TurnWindow.AnyTurn,
       DelayedTrigger.expiry = Nothing,
       DelayedTrigger.createdAt = Timestamp.MkTimestamp 7
     }
 
+-- | A source that had chosen nothing (CR 607.2d).
+noChoices :: SourceChoices.SourceChoices
+noChoices = SourceChoices.MkSourceChoices Map.empty Set.empty Nothing Nothing Nothing Acquisition.Own
+
 entryJson :: String
 entryJson =
   "{\"ability\":{\"condition\":{\"type\":\"Enters\",\"value\":{}},\"modal\":{\"modes\":[{}]}},\"source\":4,\"controller\":0,"
-    <> "\"bindings\":{\"token\":{\"amount\":9}},"
+    <> "\"bindings\":{\"token\":{\"amount\":9}},\"choices\":{\"subtype\":\"Goblin\"},"
     <> "\"window\":{\"type\":\"AnyTurn\"},\"createdAt\":7}"
 
 spec :: (Monad m, Monad n) => Spec.Spec m n -> n ()
@@ -51,7 +60,7 @@ spec s = Spec.describe s "Parun.Codec.DelayedTrigger" $ do
       DelayedTrigger.codec
       entry {DelayedTrigger.expiry = Just Expiry.AtCleanup}
       ( "{\"ability\":{\"condition\":{\"type\":\"Enters\",\"value\":{}},\"modal\":{\"modes\":[{}]}},\"source\":4,\"controller\":0,"
-          <> "\"bindings\":{\"token\":{\"amount\":9}},"
+          <> "\"bindings\":{\"token\":{\"amount\":9}},\"choices\":{\"subtype\":\"Goblin\"},"
           <> "\"window\":{\"type\":\"AnyTurn\"},\"expiry\":{\"type\":\"AtCleanup\"},\"createdAt\":7}"
       )
   -- CR 113.7a: the declarations the entry can arm by name.
@@ -61,7 +70,7 @@ spec s = Spec.describe s "Parun.Codec.DelayedTrigger" $ do
       DelayedTrigger.codec
       entry {DelayedTrigger.delayed = Map.singleton (AbilityName.MkAbilityName (Text.pack "sacrifice it")) FaceSpec.minimalTriggeredAbility}
       ( "{\"ability\":{\"condition\":{\"type\":\"Enters\",\"value\":{}},\"modal\":{\"modes\":[{}]}},\"source\":4,\"controller\":0,"
-          <> "\"bindings\":{\"token\":{\"amount\":9}},"
+          <> "\"bindings\":{\"token\":{\"amount\":9}},\"choices\":{\"subtype\":\"Goblin\"},"
           <> "\"delayed\":{\"sacrifice it\":{\"condition\":{\"type\":\"Enters\",\"value\":{}},\"modal\":{\"modes\":[{}]}}},"
           <> "\"window\":{\"type\":\"AnyTurn\"},\"createdAt\":7}"
       )
@@ -72,7 +81,7 @@ spec s = Spec.describe s "Parun.Codec.DelayedTrigger" $ do
       DelayedTrigger.codec
       entry {DelayedTrigger.window = TurnWindow.NextTurnOf (Just (PlayerId.MkPlayerId 2))}
       ( "{\"ability\":{\"condition\":{\"type\":\"Enters\",\"value\":{}},\"modal\":{\"modes\":[{}]}},\"source\":4,\"controller\":0,"
-          <> "\"bindings\":{\"token\":{\"amount\":9}},"
+          <> "\"bindings\":{\"token\":{\"amount\":9}},\"choices\":{\"subtype\":\"Goblin\"},"
           <> "\"window\":{\"type\":\"NextTurnOf\",\"value\":2},\"createdAt\":7}"
       )
   -- 'bindings' at its default and no stated 'expiry'. 'window' stays a required
@@ -87,9 +96,10 @@ spec s = Spec.describe s "Parun.Codec.DelayedTrigger" $ do
           DelayedTrigger.source = ObjectId.MkObjectId 4,
           DelayedTrigger.controller = PlayerId.MkPlayerId 0,
           DelayedTrigger.bindings = Map.empty,
+          DelayedTrigger.choices = noChoices,
           DelayedTrigger.delayed = Map.empty,
           DelayedTrigger.window = TurnWindow.AnyTurn,
           DelayedTrigger.expiry = Nothing,
           DelayedTrigger.createdAt = Timestamp.MkTimestamp 7
         }
-      "{\"ability\":{\"condition\":{\"type\":\"Enters\",\"value\":{}},\"modal\":{\"modes\":[{}]}},\"source\":4,\"controller\":0,\"window\":{\"type\":\"AnyTurn\"},\"createdAt\":7}"
+      "{\"ability\":{\"condition\":{\"type\":\"Enters\",\"value\":{}},\"modal\":{\"modes\":[{}]}},\"source\":4,\"controller\":0,\"choices\":{},\"window\":{\"type\":\"AnyTurn\"},\"createdAt\":7}"

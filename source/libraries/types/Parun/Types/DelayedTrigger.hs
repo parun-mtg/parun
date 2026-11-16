@@ -9,6 +9,7 @@ import qualified Parun.Types.GrantedAbility as GrantedAbility
 import qualified Parun.Types.ObjectId as ObjectId
 import qualified Parun.Types.PlayerId as PlayerId
 import qualified Parun.Types.SlotName as SlotName
+import qualified Parun.Types.SourceChoices as SourceChoices
 import qualified Parun.Types.Timestamp as Timestamp
 import qualified Parun.Types.TriggeredAbility as TriggeredAbility
 import qualified Parun.Types.TurnWindow as TurnWindow
@@ -52,6 +53,10 @@ data DelayedTrigger = MkDelayedTrigger
     source :: ObjectId.ObjectId,
     controller :: PlayerId.PlayerId,
     bindings :: Map.Map SlotName.SlotName Binding.Binding,
+    -- | CR 607.2d / 608.2h: what the source had chosen as this was created, which
+    -- its trigger condition reads in place of the source's later choices
+    -- (Leori, Sparktouched Hunter's "that type").
+    choices :: SourceChoices.SourceChoices,
     -- | CR 603.7 / 113.7a: the delayed abilities this one can arm by name,
     -- frozen as it was created, so it reads its own text whatever its source
     -- has since become.

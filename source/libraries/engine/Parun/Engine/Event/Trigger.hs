@@ -2391,7 +2391,7 @@ eventTriggersGiven scope standing events gs =
             -- CR 613.11: and no effect silences the ability whatever its
             -- event (Match.bearerTriggers, Nowhere to Run).
             fires (cond, ab) =
-              matchesTriggerGiven bindings board (LoggedEvent.group logged) gs oid (controllerFor cond) cond event
+              matchesTriggerGiven bindings Nothing board (LoggedEvent.group logged) gs oid (controllerFor cond) cond event
                 && eventWithinRange board gs (Plane.rangePerspective oid (controllerFor cond) gs) event
                 && bearerTriggers gs (controllerFor cond) oid ab (LoggedEvent.group logged) (looksBack cond)
             -- CR 400.7d: an ability of a permanent may read what costs were
@@ -2431,7 +2431,7 @@ eventTriggersGiven scope standing events gs =
             -- Each paired with which of CR 603.2d's instances it is.
             pends (cond, ab) =
               let perPlayer = stepCopies gs oid (controllerFor cond) cond event ab (pend (cond, ab))
-                  occurrences = maybe perPlayer (\n -> concat (List.genericReplicate n perPlayer)) (counterOccurrences (\c -> matchesTriggerGiven bindings board (LoggedEvent.group logged) gs oid (controllerFor cond) c event) cond event)
+                  occurrences = maybe perPlayer (\n -> concat (List.genericReplicate n perPlayer)) (counterOccurrences (\c -> matchesTriggerGiven bindings Nothing board (LoggedEvent.group logged) gs oid (controllerFor cond) c event) cond event)
                in [(extra, trigger) | extra <- [0 .. additional (cond, ab)], trigger <- occurrences]
             -- CR 603.2c's key, for `oncePerBatch` below: which ability of which
             -- bearer this pending trigger came from, or Nothing when the condition
@@ -2585,7 +2585,7 @@ inherentTriggers held events gs =
             perspective = case source of
               TriggerSource.OfObject oid -> Plane.rangePerspective oid you gs
               TriggerSource.Sourceless -> Just you
-            fires event = matchesTriggerGiven Map.empty board (LoggedEvent.group (NonEmpty.head block)) gs bearer you cond event && eventWithinRange board gs perspective event
+            fires event = matchesTriggerGiven Map.empty Nothing board (LoggedEvent.group (NonEmpty.head block)) gs bearer you cond event && eventWithinRange board gs perspective event
             frozen = case source of
               TriggerSource.OfObject oid -> delayedAsTriggered board oid gs
               TriggerSource.Sourceless -> Map.empty
@@ -3566,7 +3566,7 @@ delayedMatches grouped gs =
                   ( \logged ->
                       let board = battlefieldAt (LoggedEvent.group logged) gs
                        in delayedSees entry logged
-                            && matchesTriggerGiven (DelayedTrigger.bindings entry) board (LoggedEvent.group logged) gs (DelayedTrigger.source entry) (DelayedTrigger.controller entry) cond (LoggedEvent.event logged)
+                            && matchesTriggerGiven (DelayedTrigger.bindings entry) (Just (DelayedTrigger.choices entry)) board (LoggedEvent.group logged) gs (DelayedTrigger.source entry) (DelayedTrigger.controller entry) cond (LoggedEvent.event logged)
                             -- CR 801.7, as eventTriggers asks it; a fence for a planar source,
                             -- since no plane in `data/cards/` arms a delayed trigger.
                             && eventWithinRange board gs (Plane.rangePerspective (DelayedTrigger.source entry) (DelayedTrigger.controller entry) gs) (LoggedEvent.event logged)
