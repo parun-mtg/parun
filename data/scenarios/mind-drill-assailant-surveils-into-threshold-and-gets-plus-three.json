@@ -1,0 +1,211 @@
+{
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "battlefield": [
+          {
+            "card": "Mind Drill Assailant",
+            "label": "drill"
+          },
+          {
+            "card": "Island",
+            "label": "i"
+          },
+          {
+            "card": "Swamp",
+            "label": "w1"
+          },
+          {
+            "card": "Swamp",
+            "label": "w2"
+          }
+        ],
+        "graveyard": [
+          {
+            "card": "Plains",
+            "label": "g1"
+          },
+          {
+            "card": "Plains",
+            "label": "g2"
+          },
+          {
+            "card": "Plains",
+            "label": "g3"
+          },
+          {
+            "card": "Plains",
+            "label": "g4"
+          },
+          {
+            "card": "Plains",
+            "label": "g5"
+          },
+          {
+            "card": "Plains",
+            "label": "g6"
+          }
+        ],
+        "library": [
+          {
+            "card": "Mountain",
+            "label": "top"
+          },
+          {
+            "card": "Island",
+            "label": "next"
+          }
+        ],
+        "name": "alice"
+      },
+      {
+        "graveyard": [
+          {
+            "card": "Forest",
+            "label": "bg1"
+          },
+          {
+            "card": "Forest",
+            "label": "bg2"
+          },
+          {
+            "card": "Forest",
+            "label": "bg3"
+          },
+          {
+            "card": "Forest",
+            "label": "bg4"
+          },
+          {
+            "card": "Forest",
+            "label": "bg5"
+          },
+          {
+            "card": "Forest",
+            "label": "bg6"
+          },
+          {
+            "card": "Forest",
+            "label": "bg7"
+          }
+        ],
+        "library": [
+          {
+            "card": "Swamp",
+            "label": "s1"
+          },
+          {
+            "card": "Swamp",
+            "label": "s2"
+          },
+          {
+            "card": "Swamp",
+            "label": "s3"
+          }
+        ],
+        "name": "bob"
+      }
+    ],
+    "step": "PrecombatMain"
+  },
+  "description": "CR 207.2c / 701.25a: Mind Drill Assailant surveils into threshold and gets +3/+0",
+  "note": "With six cards in alice's graveyard the Assailant is 2/5. Its {2}{U/B} surveil puts the top card into the graveyard, making seven, and it becomes 5/5. Bob's seven-card graveyard never counted.",
+  "timeline": [
+    {
+      "check": {
+        "PowerToughness": {
+          "object": "$drill",
+          "power": 2,
+          "toughness": 5
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Activate": {
+          "ability": 0,
+          "mana": [
+            "$w1",
+            "$w2",
+            "$i"
+          ],
+          "object": "$drill"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Answer": {
+          "prompt": "AnnounceHybridHalf",
+          "with": {
+            "type": "Colored",
+            "value": "Black"
+          }
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "bob",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Answer": {
+          "prompt": "ChooseSurveil",
+          "with": [
+            [
+              "$top"
+            ],
+            []
+          ]
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Mountain",
+          "count": 1,
+          "player": "alice",
+          "zone": "Graveyard"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "PowerToughness": {
+          "object": "$drill",
+          "power": 5,
+          "toughness": 5
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    }
+  ]
+}
