@@ -4578,24 +4578,24 @@ spendManaAsThoughForGiven general pid subject gs = case subject of
           SpendScope.Activating _ -> False
      in [clause | (source, clause) <- spendManaAsThoughRows pid gs, namesSpell (contextFor (Just pid) source gs) clause]
           <> filter (namesSpell (Filter.contextIn gs (Just pid) Nothing)) (PC.grantedSpendManaAsThough (Projection.project oid gs))
-  PaymentSubject.Activating oid named _ _ -> general <> spendManaAsThoughActivating (spendManaAsThoughRows pid gs) pid oid named gs
+  PaymentSubject.Activating oid named _ _ -> general <> spendManaAsThoughActivating (spendManaAsThoughRows pid gs) pid oid (Binding.acquiredSource =<< named) gs
   PaymentSubject.Unlocking {} -> general
   PaymentSubject.TurningFaceUp {} -> general
   PaymentSubject.ForNeither -> general
 
 -- CR 609.4b / 602.2b: the clauses among `rows` (spendManaAsThoughRows' own
--- answer) naming an activation of `oid`'s ability `named`. Lazy in the source's
+-- answer) naming an activation of an ability of `oid` lent by `lender`
+-- (Binding.acquiredSource of its name), or by nothing. Lazy in the source's
 -- view, so a board with no such clause reads nothing.
 --
--- CR 613.1f: a clause about lent abilities reads the card `named` was lent by
--- (Binding.acquiredSource), so an ability `oid` has from anywhere else is no
--- ability it names. data/scenarios'
+-- CR 613.1f: a clause about lent abilities reads the card that lent the
+-- ability, so an ability `oid` has from anywhere else is no ability it names.
+-- data/scenarios'
 -- drana-and-linvala-pays-a-lent-ability-and-not-a-granted-one-as-any-color
 -- proves it.
-spendManaAsThoughActivating :: [(RowSource.RowSource, SpendManaAsThough.SpendManaAsThough)] -> PlayerId -> ObjectId -> Maybe AbilityName.AbilityName -> GameState -> [SpendManaAsThough.SpendManaAsThough]
-spendManaAsThoughActivating rows pid oid named gs =
+spendManaAsThoughActivating :: [(RowSource.RowSource, SpendManaAsThough.SpendManaAsThough)] -> PlayerId -> ObjectId -> Maybe ObjectId -> GameState -> [SpendManaAsThough.SpendManaAsThough]
+spendManaAsThoughActivating rows pid oid lender gs =
   let view = Projection.viewOfObject oid gs
-      lender = named >>= Binding.acquiredSource
       lentBy context filter' = case lender of
         Just card -> Filter.matches context (Projection.viewOfObject card gs) filter'
         Nothing -> False
