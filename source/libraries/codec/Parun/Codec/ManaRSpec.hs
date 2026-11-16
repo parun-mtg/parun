@@ -6,6 +6,7 @@ import qualified Parun.Spec as Spec
 import qualified Parun.Types.CardType as CardType
 import qualified Parun.Types.Color as Color
 import qualified Parun.Types.Filter as Filter
+import qualified Parun.Types.ManaInstead as ManaInstead
 import qualified Parun.Types.ManaR as ManaR
 import qualified Parun.Types.ManaType as ManaType
 
@@ -16,20 +17,20 @@ spec s = Spec.describe s "Parun.Codec.ManaR" $ do
     Common.assertCodec
       s
       ManaR.codec
-      (ManaR.MkManaR (Filter.HasCardType CardType.Land) ManaType.Colorless Nothing Nothing)
-      " {\"matching\":{\"type\":\"HasCardType\",\"value\":\"Land\"},\"produces\":{\"type\":\"Colorless\"}} "
+      (ManaR.MkManaR (Filter.HasCardType CardType.Land) (ManaInstead.OfType ManaType.Colorless) Nothing Nothing)
+      " {\"matching\":{\"type\":\"HasCardType\",\"value\":\"Land\"},\"produces\":{\"type\":\"OfType\",\"value\":{\"type\":\"Colorless\"}}} "
   -- CR 106.12b's "and/or amount": Contamination.
   Spec.it s "MkManaR with an amount" $
     Common.assertCodec
       s
       ManaR.codec
-      (ManaR.MkManaR (Filter.HasCardType CardType.Land) (ManaType.Colored Color.Black) (Just 1) Nothing)
-      " {\"amount\":1,\"matching\":{\"type\":\"HasCardType\",\"value\":\"Land\"},\"produces\":{\"type\":\"Colored\",\"value\":\"Black\"}} "
+      (ManaR.MkManaR (Filter.HasCardType CardType.Land) (ManaInstead.OfType (ManaType.Colored Color.Black)) (Just 1) Nothing)
+      " {\"amount\":1,\"matching\":{\"type\":\"HasCardType\",\"value\":\"Land\"},\"produces\":{\"type\":\"OfType\",\"value\":{\"type\":\"Colored\",\"value\":\"Black\"}}} "
   -- CR 106.12b's "tapped for mana of a specific ... amount": Damping Sphere.
   Spec.it s "MkManaR with a least amount" $
     Common.assertCodec
       s
       ManaR.codec
-      (ManaR.MkManaR (Filter.HasCardType CardType.Land) ManaType.Colorless (Just 1) (Just 2))
-      " {\"amount\":1,\"atLeast\":2,\"matching\":{\"type\":\"HasCardType\",\"value\":\"Land\"},\"produces\":{\"type\":\"Colorless\"}} "
+      (ManaR.MkManaR (Filter.HasCardType CardType.Land) (ManaInstead.OfType ManaType.Colorless) (Just 1) (Just 2))
+      " {\"amount\":1,\"atLeast\":2,\"matching\":{\"type\":\"HasCardType\",\"value\":\"Land\"},\"produces\":{\"type\":\"OfType\",\"value\":{\"type\":\"Colorless\"}}} "
   Spec.it s "has a schema" $ Common.assertHasSchema s ManaR.codec

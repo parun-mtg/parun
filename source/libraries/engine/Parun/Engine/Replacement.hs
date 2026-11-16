@@ -130,6 +130,7 @@ import qualified Parun.Types.LifeGainRewrite as LifeGainRewrite
 import qualified Parun.Types.LifeLossPattern as LifeLossPattern
 import qualified Parun.Types.LifeLossR as LifeLossR
 import qualified Parun.Types.LifeLossRewrite as LifeLossRewrite
+import qualified Parun.Types.ManaInstead as ManaInstead
 import qualified Parun.Types.ManaR as ManaR
 import qualified Parun.Types.ManaType as ManaType
 import qualified Parun.Types.Object as Object
@@ -600,9 +601,10 @@ changesLoss gs event candidate = case (ReplacementCandidate.effect candidate, ev
 -- produces under the ManaR rows applying to it, one entry per outcome CR
 -- 616.1's ordering can reach: the type and, where it is replaced too, the
 -- amount (Nothing keeps it). Empty when no row applies. Every row replaces the
--- whole type, so the row applied last decides it; the amount is that of the
--- last row applied that fixes one. CR 616.1f drops a row whose `atLeast` the
--- amount so far no longer reaches: Damping Sphere after Contamination.
+-- whole type, so the row applied last decides it, one outcome per type it
+-- offers; the amount is that of the last row applied that fixes one. CR
+-- 616.1f drops a row whose `atLeast` the amount so far no longer reaches:
+-- Damping Sphere after Contamination.
 -- Parun.Engine.Mana offers these as a choice, the player tapping it choosing
 -- per Naked Singularity's ruling of 2013-04-15.
 --
@@ -619,7 +621,11 @@ manaRewrites gs =
       outcomes applying n =
         let indexed = zip [0 :: Int ..] applying
             open (applied, _, amount) = [(i, row) | (i, row) <- indexed, Set.notMember i applied, all (<= Maybe.fromMaybe n amount) (ManaR.atLeast row)]
-            step state@(applied, _, amount) = [(Set.insert i applied, Just (ManaR.produces row), ManaR.amount row Applicative.<|> amount) | (i, row) <- open state]
+            step state@(applied, _, amount) = [(Set.insert i applied, Just manaType, ManaR.amount row Applicative.<|> amount) | (i, row) <- open state, manaType <- instead (ManaR.produces row)]
+            -- CR 105.4: one outcome per color, the player tapping choosing.
+            instead produces = case produces of
+              ManaInstead.OfType manaType -> [manaType]
+              ManaInstead.AnyColor -> fmap ManaType.Colored [minBound .. maxBound]
             settle states =
               let (done, going) = List.partition (null . open) states
                in done <> if null going then [] else settle (ListUtils.nubOrd (concatMap step going))
