@@ -58,7 +58,7 @@
     ],
     "step": "PrecombatMain"
   },
-  "description": "CR 602.2. / 118.3. / 115.1. / 701.26a: Sterling Keykeeper's {2}, {T} taps target non-Mount creature",
+  "description": "CR 602.2 / 118.3 / 115.1 / 701.26a: Sterling Keykeeper's {2}, {T} taps target non-Mount creature",
   "note": "Bob's Bridled Bighorn is a Mount and is not a legal target; his Grizzly Bears is, and is tapped while the Bighorn stays untapped. Both Plains pay the {2} and the Keykeeper taps itself.",
   "timeline": [
     {

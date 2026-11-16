@@ -53,7 +53,7 @@
     ],
     "step": "PrecombatMain"
   },
-  "description": "CR 305.1. / 614.1d / 603.6a / 115.1. / 102.3. / 120.3a: Abraded Bluffs enters tapped, and when it enters it deals 1 damage to target opponent",
+  "description": "CR 305.1 / 614.1d / 603.6a / 115.1 / 102.3 / 120.3a: Abraded Bluffs enters tapped, and when it enters it deals 1 damage to target opponent",
   "note": "Three players, so the trigger's target is a real choice: alice may not target herself, carol takes the damage, and bob, the other opponent, and alice keep 20 life. The played land is tapped while the trigger waits on the stack.",
   "timeline": [
     {

@@ -62,7 +62,7 @@
     ],
     "step": "PrecombatMain"
   },
-  "description": "CR 602.2. / 118.3. / 115.1. / 102.3. / 120.3a: Deadeye Duelist's {1}, {T} deals 1 damage to target opponent",
+  "description": "CR 602.2 / 118.3 / 115.1 / 102.3 / 120.3a: Deadeye Duelist's {1}, {T} deals 1 damage to target opponent",
   "note": "Three players, so the target is a real choice: alice may not target herself, bob takes the damage, and carol, the other opponent, and alice keep 20 life. The Mountain pays the {1} and the Duelist taps, so it cannot be activated again with the second Mountain untapped.",
   "timeline": [
     {
