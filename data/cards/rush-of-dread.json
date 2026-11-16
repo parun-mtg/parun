@@ -1,0 +1,259 @@
+{
+  "faces": [
+    {
+      "keywords": [
+        {
+          "type": "Spree"
+        }
+      ],
+      "manaCost": [
+        {
+          "type": "Generic",
+          "value": 1
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "Black"
+          }
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "Black"
+          }
+        }
+      ],
+      "modeCosts": {
+        "0": {
+          "mana": [
+            {
+              "type": "Generic",
+              "value": 1
+            }
+          ]
+        },
+        "1": {
+          "mana": [
+            {
+              "type": "Generic",
+              "value": 2
+            }
+          ]
+        },
+        "2": {
+          "mana": [
+            {
+              "type": "Generic",
+              "value": 2
+            }
+          ]
+        }
+      },
+      "name": "Rush of Dread",
+      "oracleText": "Spree (Choose one or more additional costs.)\n+ {1} — Target opponent sacrifices half the creatures they control of their choice, rounded up.\n+ {2} — Target opponent discards half the cards in their hand, rounded up.\n+ {2} — Target opponent loses half their life, rounded up.",
+      "spell": {
+        "modes": [
+          {
+            "clauses": [
+              {
+                "effects": [
+                  {
+                    "type": "PlayerSacrifices",
+                    "value": {
+                      "filter": {
+                        "type": "HasCardType",
+                        "value": "Creature"
+                      },
+                      "players": {
+                        "type": "EachInSlot",
+                        "value": "sacrificer"
+                      },
+                      "quantity": {
+                        "type": "Quotient",
+                        "value": {
+                          "divisor": {
+                            "type": "Literal",
+                            "value": 2
+                          },
+                          "quantity": {
+                            "type": "Count",
+                            "value": {
+                              "aggregation": {
+                                "type": "Members"
+                              },
+                              "filter": {
+                                "type": "And",
+                                "value": [
+                                  {
+                                    "type": "HasCardType",
+                                    "value": "Creature"
+                                  },
+                                  {
+                                    "type": "HeldByBound",
+                                    "value": {
+                                      "holder": "Controller",
+                                      "slot": "sacrificer"
+                                    }
+                                  }
+                                ]
+                              },
+                              "scope": {
+                                "type": "InZone",
+                                "value": {
+                                  "player": {
+                                    "type": "Relative",
+                                    "value": "AnyPlayer"
+                                  },
+                                  "zone": "Battlefield"
+                                }
+                              }
+                            }
+                          },
+                          "rounding": "Up"
+                        }
+                      }
+                    }
+                  }
+                ]
+              }
+            ],
+            "targetSlots": {
+              "sacrificer": {
+                "filter": {
+                  "type": "IsPlayer",
+                  "value": "Opponent"
+                },
+                "pool": {
+                  "type": "Players"
+                }
+              }
+            }
+          },
+          {
+            "clauses": [
+              {
+                "effects": [
+                  {
+                    "type": "Discard",
+                    "value": {
+                      "type": "Counted",
+                      "value": {
+                        "player": {
+                          "type": "InSlot",
+                          "value": "discarder"
+                        },
+                        "quantity": {
+                          "type": "Quotient",
+                          "value": {
+                            "divisor": {
+                              "type": "Literal",
+                              "value": 2
+                            },
+                            "quantity": {
+                              "type": "Count",
+                              "value": {
+                                "aggregation": {
+                                  "type": "Members"
+                                },
+                                "filter": {
+                                  "type": "And",
+                                  "value": []
+                                },
+                                "scope": {
+                                  "type": "InZone",
+                                  "value": {
+                                    "player": {
+                                      "type": "InSlot",
+                                      "value": "discarder"
+                                    },
+                                    "zone": "Hand"
+                                  }
+                                }
+                              }
+                            },
+                            "rounding": "Up"
+                          }
+                        }
+                      }
+                    }
+                  }
+                ]
+              }
+            ],
+            "targetSlots": {
+              "discarder": {
+                "filter": {
+                  "type": "IsPlayer",
+                  "value": "Opponent"
+                },
+                "pool": {
+                  "type": "Players"
+                }
+              }
+            }
+          },
+          {
+            "clauses": [
+              {
+                "effects": [
+                  {
+                    "type": "LoseLife",
+                    "value": {
+                      "player": {
+                        "type": "InSlot",
+                        "value": "loser"
+                      },
+                      "quantity": {
+                        "type": "Quotient",
+                        "value": {
+                          "divisor": {
+                            "type": "Literal",
+                            "value": 2
+                          },
+                          "quantity": {
+                            "type": "LifeTotal",
+                            "value": {
+                              "type": "InSlot",
+                              "value": "loser"
+                            }
+                          },
+                          "rounding": "Up"
+                        }
+                      }
+                    }
+                  }
+                ]
+              }
+            ],
+            "targetSlots": {
+              "loser": {
+                "filter": {
+                  "type": "IsPlayer",
+                  "value": "Opponent"
+                },
+                "pool": {
+                  "type": "Players"
+                }
+              }
+            }
+          }
+        ],
+        "selection": {
+          "type": "ChooseBetween",
+          "value": {
+            "least": 1,
+            "most": 3
+          }
+        }
+      },
+      "typeLine": {
+        "types": [
+          "Sorcery"
+        ]
+      }
+    }
+  ]
+}

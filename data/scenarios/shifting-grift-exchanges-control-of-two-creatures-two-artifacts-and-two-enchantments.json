@@ -1,0 +1,218 @@
+{
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "battlefield": [
+          {
+            "card": "Grizzly Bears",
+            "label": "bears"
+          },
+          {
+            "card": "Ornithopter",
+            "label": "thopter"
+          },
+          {
+            "card": "Glorious Anthem",
+            "label": "anthem"
+          }
+        ],
+        "hand": [
+          {
+            "card": "Shifting Grift",
+            "label": "grift"
+          }
+        ],
+        "library": [
+          {
+            "card": "Island",
+            "label": "a0"
+          },
+          {
+            "card": "Island",
+            "label": "a1"
+          },
+          {
+            "card": "Island",
+            "label": "a2"
+          }
+        ],
+        "manaPool": "UUUUUU",
+        "name": "alice"
+      },
+      {
+        "battlefield": [
+          {
+            "card": "Hill Giant",
+            "label": "giant"
+          },
+          {
+            "card": "Millstone",
+            "label": "millstone"
+          },
+          {
+            "attached": "bears",
+            "card": "Pacifism",
+            "label": "pacifism"
+          }
+        ],
+        "library": [
+          {
+            "card": "Island",
+            "label": "b0"
+          },
+          {
+            "card": "Island",
+            "label": "b1"
+          },
+          {
+            "card": "Island",
+            "label": "b2"
+          }
+        ],
+        "name": "bob"
+      }
+    ],
+    "step": "PrecombatMain"
+  },
+  "description": "CR 702.172a / 701.12b: Shifting Grift with all three modes exchanges control of alice's and bob's creatures, artifacts and enchantments pairwise; an artifact slot naming a creature is refused.",
+  "note": "Each pair is one of alice's and one of bob's, so each exchange is observable on its own Controller view.",
+  "timeline": [
+    {
+      "player": "alice",
+      "refuse": {
+        "Cast": {
+          "modes": [
+            0,
+            1,
+            2
+          ],
+          "object": "$grift",
+          "targetsBySlot": {
+            "artifacts": [
+              "$thopter",
+              "$giant"
+            ],
+            "creatures": [
+              "$bears",
+              "$giant"
+            ],
+            "enchantments": [
+              "$anthem",
+              "$pacifism"
+            ]
+          }
+        }
+      },
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Cast": {
+          "modes": [
+            0,
+            1,
+            2
+          ],
+          "object": "$grift",
+          "targetsBySlot": {
+            "artifacts": [
+              "$thopter",
+              "$millstone"
+            ],
+            "creatures": [
+              "$bears",
+              "$giant"
+            ],
+            "enchantments": [
+              "$anthem",
+              "$pacifism"
+            ]
+          }
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "View": {
+          "is": "alice",
+          "object": "$giant",
+          "of": "Controller"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "View": {
+          "is": "bob",
+          "object": "$bears",
+          "of": "Controller"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "View": {
+          "is": "alice",
+          "object": "$millstone",
+          "of": "Controller"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "View": {
+          "is": "bob",
+          "object": "$thopter",
+          "of": "Controller"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "View": {
+          "is": "alice",
+          "object": "$pacifism",
+          "of": "Controller"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "View": {
+          "is": "bob",
+          "object": "$anthem",
+          "of": "Controller"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    }
+  ]
+}

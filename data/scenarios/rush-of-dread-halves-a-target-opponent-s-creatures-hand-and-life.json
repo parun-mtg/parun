@@ -1,0 +1,365 @@
+{
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "battlefield": [
+          {
+            "card": "Grizzly Bears",
+            "label": "abears"
+          }
+        ],
+        "hand": [
+          {
+            "card": "Rush of Dread",
+            "label": "rush"
+          },
+          {
+            "card": "Forest",
+            "label": "aforest"
+          }
+        ],
+        "library": [
+          {
+            "card": "Island",
+            "label": "a0"
+          },
+          {
+            "card": "Island",
+            "label": "a1"
+          },
+          {
+            "card": "Island",
+            "label": "a2"
+          }
+        ],
+        "manaPool": "BBBBBBBB",
+        "name": "alice"
+      },
+      {
+        "battlefield": [
+          {
+            "card": "Grizzly Bears",
+            "label": "bears"
+          },
+          {
+            "card": "Gray Ogre",
+            "label": "ogre"
+          },
+          {
+            "card": "Hill Giant",
+            "label": "giant"
+          }
+        ],
+        "hand": [
+          {
+            "card": "Plains",
+            "label": "bplains"
+          },
+          {
+            "card": "Swamp",
+            "label": "bswamp"
+          }
+        ],
+        "library": [
+          {
+            "card": "Island",
+            "label": "b0"
+          },
+          {
+            "card": "Island",
+            "label": "b1"
+          },
+          {
+            "card": "Island",
+            "label": "b2"
+          }
+        ],
+        "name": "bob"
+      },
+      {
+        "battlefield": [
+          {
+            "card": "Craw Wurm",
+            "label": "wurm"
+          }
+        ],
+        "hand": [
+          {
+            "card": "Forest",
+            "label": "c1"
+          },
+          {
+            "card": "Plains",
+            "label": "c2"
+          },
+          {
+            "card": "Swamp",
+            "label": "c3"
+          },
+          {
+            "card": "Mountain",
+            "label": "c4"
+          },
+          {
+            "card": "Island",
+            "label": "c5"
+          }
+        ],
+        "library": [
+          {
+            "card": "Island",
+            "label": "cl0"
+          },
+          {
+            "card": "Island",
+            "label": "cl1"
+          },
+          {
+            "card": "Island",
+            "label": "cl2"
+          }
+        ],
+        "life": 15,
+        "name": "carol"
+      }
+    ],
+    "step": "PrecombatMain"
+  },
+  "description": "CR 702.172a / 115.1: Rush of Dread with all three modes makes bob sacrifice two of his three creatures and carol discard three of her five cards and lose eight of her fifteen life; alice, the untargeted halves, and a target of alice herself are left alone.",
+  "note": "Three seats, each mode aimed at one opponent, so a mode reading each player or each opponent would touch the other. Odd counts make rounding up observable; alice targeting herself is refused by the opponent filter.",
+  "timeline": [
+    {
+      "player": "alice",
+      "refuse": {
+        "Cast": {
+          "modes": [
+            0,
+            1,
+            2
+          ],
+          "object": "$rush",
+          "targetsBySlot": {
+            "discarder": [
+              "$carol"
+            ],
+            "loser": [
+              "$alice"
+            ],
+            "sacrificer": [
+              "$bob"
+            ]
+          }
+        }
+      },
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Cast": {
+          "modes": [
+            0,
+            1,
+            2
+          ],
+          "object": "$rush",
+          "targetsBySlot": {
+            "discarder": [
+              "$carol"
+            ],
+            "loser": [
+              "$carol"
+            ],
+            "sacrificer": [
+              "$bob"
+            ]
+          }
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Answer": {
+          "prompt": "ChooseSacrifices",
+          "with": [
+            "$bears",
+            "$ogre"
+          ]
+        }
+      },
+      "player": "bob",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Answer": {
+          "prompt": "ChooseDiscard",
+          "with": [
+            "$c1",
+            "$c2",
+            "$c3"
+          ]
+        }
+      },
+      "player": "carol",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Life": {
+          "life": 7,
+          "player": "carol"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Life": {
+          "life": 20,
+          "player": "bob"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Life": {
+          "life": 20,
+          "player": "alice"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "View": {
+          "is": [
+            "$c4",
+            "$c5"
+          ],
+          "of": "Zone",
+          "player": "carol",
+          "zone": "Hand"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "View": {
+          "is": [
+            "$bplains",
+            "$bswamp"
+          ],
+          "of": "Zone",
+          "player": "bob",
+          "zone": "Hand"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "View": {
+          "is": [
+            "$aforest"
+          ],
+          "of": "Zone",
+          "player": "alice",
+          "zone": "Hand"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Hill Giant",
+          "count": 1,
+          "player": "bob",
+          "zone": "Battlefield"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Grizzly Bears",
+          "count": 1,
+          "player": "bob",
+          "zone": "Graveyard"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Gray Ogre",
+          "count": 1,
+          "player": "bob",
+          "zone": "Graveyard"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Craw Wurm",
+          "count": 1,
+          "player": "carol",
+          "zone": "Battlefield"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Grizzly Bears",
+          "count": 1,
+          "player": "alice",
+          "zone": "Battlefield"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    }
+  ]
+}

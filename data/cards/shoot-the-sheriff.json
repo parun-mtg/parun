@@ -1,0 +1,83 @@
+{
+  "faces": [
+    {
+      "manaCost": [
+        {
+          "type": "Generic",
+          "value": 1
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "Black"
+          }
+        }
+      ],
+      "name": "Shoot the Sheriff",
+      "oracleText": "Destroy target non-outlaw creature. (Assassins, Mercenaries, Pirates, Rogues, and Warlocks are outlaws. Everyone else is fair game.)",
+      "spell": {
+        "modes": [
+          {
+            "clauses": [
+              {
+                "effects": [
+                  {
+                    "type": "Destroy",
+                    "value": {
+                      "ref": {
+                        "type": "InSlot",
+                        "value": "target"
+                      },
+                      "regenerability": "Regenerable"
+                    }
+                  }
+                ]
+              }
+            ],
+            "targetSlots": {
+              "target": {
+                "filter": {
+                  "type": "Not",
+                  "value": {
+                    "type": "Or",
+                    "value": [
+                      {
+                        "type": "HasSubtype",
+                        "value": "Assassin"
+                      },
+                      {
+                        "type": "HasSubtype",
+                        "value": "Mercenary"
+                      },
+                      {
+                        "type": "HasSubtype",
+                        "value": "Pirate"
+                      },
+                      {
+                        "type": "HasSubtype",
+                        "value": "Rogue"
+                      },
+                      {
+                        "type": "HasSubtype",
+                        "value": "Warlock"
+                      }
+                    ]
+                  }
+                },
+                "pool": {
+                  "type": "Creatures"
+                }
+              }
+            }
+          }
+        ]
+      },
+      "typeLine": {
+        "types": [
+          "Instant"
+        ]
+      }
+    }
+  ]
+}

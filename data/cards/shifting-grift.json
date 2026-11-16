@@ -1,0 +1,166 @@
+{
+  "faces": [
+    {
+      "keywords": [
+        {
+          "type": "Spree"
+        }
+      ],
+      "manaCost": [
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "Blue"
+          }
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "Blue"
+          }
+        }
+      ],
+      "modeCosts": {
+        "0": {
+          "mana": [
+            {
+              "type": "Generic",
+              "value": 2
+            }
+          ]
+        },
+        "1": {
+          "mana": [
+            {
+              "type": "Generic",
+              "value": 1
+            }
+          ]
+        },
+        "2": {
+          "mana": [
+            {
+              "type": "Generic",
+              "value": 1
+            }
+          ]
+        }
+      },
+      "name": "Shifting Grift",
+      "oracleText": "Spree (Choose one or more additional costs.)\n+ {2} — Exchange control of two target creatures.\n+ {1} — Exchange control of two target artifacts.\n+ {1} — Exchange control of two target enchantments.",
+      "spell": {
+        "modes": [
+          {
+            "clauses": [
+              {
+                "effects": [
+                  {
+                    "type": "ExchangeControl",
+                    "value": {
+                      "type": "WithinSlot",
+                      "value": "creatures"
+                    }
+                  }
+                ]
+              }
+            ],
+            "targetSlots": {
+              "creatures": {
+                "count": {
+                  "type": "Printed",
+                  "value": {
+                    "least": 2,
+                    "most": 2
+                  }
+                },
+                "pool": {
+                  "type": "Creatures"
+                }
+              }
+            }
+          },
+          {
+            "clauses": [
+              {
+                "effects": [
+                  {
+                    "type": "ExchangeControl",
+                    "value": {
+                      "type": "WithinSlot",
+                      "value": "artifacts"
+                    }
+                  }
+                ]
+              }
+            ],
+            "targetSlots": {
+              "artifacts": {
+                "count": {
+                  "type": "Printed",
+                  "value": {
+                    "least": 2,
+                    "most": 2
+                  }
+                },
+                "filter": {
+                  "type": "HasCardType",
+                  "value": "Artifact"
+                },
+                "pool": {
+                  "type": "Permanents"
+                }
+              }
+            }
+          },
+          {
+            "clauses": [
+              {
+                "effects": [
+                  {
+                    "type": "ExchangeControl",
+                    "value": {
+                      "type": "WithinSlot",
+                      "value": "enchantments"
+                    }
+                  }
+                ]
+              }
+            ],
+            "targetSlots": {
+              "enchantments": {
+                "count": {
+                  "type": "Printed",
+                  "value": {
+                    "least": 2,
+                    "most": 2
+                  }
+                },
+                "filter": {
+                  "type": "HasCardType",
+                  "value": "Enchantment"
+                },
+                "pool": {
+                  "type": "Permanents"
+                }
+              }
+            }
+          }
+        ],
+        "selection": {
+          "type": "ChooseBetween",
+          "value": {
+            "least": 1,
+            "most": 3
+          }
+        }
+      },
+      "typeLine": {
+        "types": [
+          "Sorcery"
+        ]
+      }
+    }
+  ]
+}
