@@ -718,6 +718,15 @@ keptPrefix = Text.pack "keptByCopy"
 discardedCard :: SlotName
 discardedCard = SlotName.MkSlotName (Text.pack "thatDiscardedCard")
 
+-- CR 400.7j: the reserved slot under which the card a PutExiledIntoGraveyard
+-- COST payment put into a graveyard is bound, as the object it became there --
+-- Jester's Scepter's "that card". discardedCard's route and posture.
+--
+-- Not a target, so the same CR 608.2b posture and the same "no card's
+-- targetSlots may name it" sweep as sacrificedPermanent above.
+graveyardedCard :: SlotName
+graveyardedCard = SlotName.MkSlotName (Text.pack "thatGraveyardedCard")
+
 -- CR 601.2f: the reserved slot under which the permanents a COST payment TAPPED
 -- are bound -- "the tapped creature" in Unerring Sling's "deals damage equal to
 -- the tapped creature's power". Stamped by Parun.Engine.Activate off the payment

@@ -2442,10 +2442,7 @@ componentStatesHiddenQuality component = case component of
 discardsBound :: Game () -> PlayerId -> [ObjectId] -> Game Payment.Payment
 discardsBound settle pid cards = do
   arrived <- Event.simultaneously (fmap Foldable.fold (Monad.mapM (Event.discardReturning settle DiscardCause.Ordinary Nothing pid) cards))
-  after <- State.get
-  pure $ case filter (\a -> maybe False (not . Game.isHiddenZone . Object.zone) (Game.lookupObject a after)) (Foldable.toList arrived) of
-    [] -> bindsNothing
-    ids -> Payment.Paid (Binding.paidObjects Binding.discardedCard (Set.fromList (fmap Recipient.ToObject ids)))
+  State.gets (\after -> bindFindable Binding.discardedCard after arrived)
 
 -- The cards this player may discard to pay a cost on `oid`: their hand, in its
 -- own order, narrowed by the criterion and minus `oid` itself -- see
@@ -6104,6 +6101,13 @@ bindExiled arrived = case Foldable.toList arrived of
   [] -> bindsNothing
   ids -> Payment.Paid (Binding.paidObjects Binding.exiledCard (Set.fromList (fmap Recipient.ToObject ids)))
 
+-- CR 400.7j: the payment binding `slot` to the arrivals a later instruction can
+-- still find, those in a PUBLIC zone, and bindExiled's empty arrival otherwise.
+bindFindable :: (Foldable.Foldable t) => SlotName.SlotName -> GameState -> t ObjectId -> Payment.Payment
+bindFindable slot gs arrived = case filter (\a -> maybe False (not . Game.isHiddenZone . Object.zone) (Game.lookupObject a gs)) (Foldable.toList arrived) of
+  [] -> bindsNothing
+  ids -> Payment.Paid (Binding.paidObjects slot (Set.fromList (fmap Recipient.ToObject ids)))
+
 -- CR 601.2h: can this cost's payer tell one order from another? Two conditions,
 -- and the prompt above is asked only when both hold.
 --
@@ -7596,11 +7600,7 @@ payPayable perform moment paidFor slots pid oid component = case component of
   CostComponent.DiscardThis cause -> do
     announcedX <- State.gets (\g -> paidFor >>= (`Game.lookupObject` g) >>= Binding.amountOf Binding.variableX . Object.bindings)
     arrived <- Event.discardReturning (ManaAbilityPerformer.settle perform) cause announcedX pid oid
-    gs <- State.get
-    let findable = Seq.filter (\a -> maybe False (not . Game.isHiddenZone . Object.zone) (Game.lookupObject a gs)) arrived
-    pure $ case Foldable.toList findable of
-      [] -> bindsNothing
-      ids -> Payment.Paid (Binding.paidObjects Binding.discardedCard (Set.fromList (fmap Recipient.ToObject ids)))
+    State.gets (\gs -> bindFindable Binding.discardedCard gs arrived)
   -- CR 118.12's hand-to-battlefield cost. The candidates are re-read HERE rather
   -- than carried from `canPayComponent`'s check: CR 118.12 pays as the ability
   -- resolves, and an earlier component of the same cost may have emptied the
@@ -8187,8 +8187,12 @@ payPayable perform moment paidFor slots pid oid component = case component of
   -- pile", so the drawn card is judged by the criterion afterwards, Target's
   -- drawFromPiles posture: a card it refuses leaves the cost unpaid.
   --
-  -- CR 400.3 sends the card to its OWNER's graveyard, which Event.changeZone's
-  -- graveyard is, so Oracle of Dust's "that player's graveyard" needs no slot.
+  -- CR 400.3 sends the card to its OWNER's graveyard, which
+  -- Event.changeZoneReturning's graveyard is, so Oracle of Dust's "that
+  -- player's graveyard" needs no slot.
+  --
+  -- Binds Binding.graveyardedCard off what ARRIVED, DiscardThis's posture:
+  -- Jester's Scepter's "that card".
   CostComponent.PutExiledIntoGraveyard criterion -> do
     gs <- State.get
     let candidates = exiledCandidatesGiven (Snapshot.onDemand gs) slots pid oid criterion gs
@@ -8196,8 +8200,8 @@ payPayable perform moment paidFor slots pid oid component = case component of
     drawn <- traverse (Game.drawAmong Prompt.RandomObject . Set.toAscList) picked
     case Monad.join drawn of
       Just card | elem card candidates -> do
-        Event.changeZone (ManaAbilityPerformer.settle perform) card Zone.Graveyard
-        pure bindsNothing
+        arrived <- Event.changeZoneReturning (ManaAbilityPerformer.settle perform) card Zone.Graveyard
+        State.gets (\after -> bindFindable Binding.graveyardedCard after arrived)
       _ -> pure Payment.Unpaid
 
 -- CR 107.14: pay this much {E} -- remove that many energy counters from the
