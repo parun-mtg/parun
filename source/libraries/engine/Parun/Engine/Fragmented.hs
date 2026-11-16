@@ -442,6 +442,7 @@ records reading event = case reading of
   HistoryRead.Sacrifices -> sacrificed event
   HistoryRead.Saddles -> saddled event
   HistoryRead.StepBegins -> stepBegan event
+  HistoryRead.Targetings -> becameTarget event
   HistoryRead.Taps -> Maybe.isJust (Game.tappedOf event)
   HistoryRead.TapsForMana -> Maybe.isJust (Game.tappedForManaOf event)
   HistoryRead.Triggers -> abilityTriggered event
@@ -494,6 +495,11 @@ milled event = case event of
   _ -> False
 
 -- A creature crewing a vehicle, and a vehicle becoming crewed.
+becameTarget :: GameEvent -> Bool
+becameTarget event = case event of
+  GameEvent.BecameTarget {} -> True
+  _ -> False
+
 crewed :: GameEvent -> Bool
 crewed event = case event of
   GameEvent.Crewed {} -> True

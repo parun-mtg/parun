@@ -68,6 +68,8 @@ data HistoryRead
     Saddles
   | -- | Steps and phases that began (CR 500.1).
     StepBegins
+  | -- | Objects and players that became targets (CR 601.2c).
+    Targetings
   | -- | Permanents that became tapped (CR 701.26a).
     Taps
   | -- | Permanents tapped for mana (CR 106.12a).
