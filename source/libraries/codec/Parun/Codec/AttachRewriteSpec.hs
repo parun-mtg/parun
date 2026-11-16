@@ -20,7 +20,7 @@ spec s = Spec.describe s "Parun.Codec.AttachRewrite" $ do
     Common.assertCodec
       s
       (AttachRewrite.codec Common.text Common.text)
-      (AttachRewrite.AsCopy (AsCopy.MkAsCopy (Filter.HasCardType CardType.Creature) [] False Seq.empty (CopyDomain.InPile ExiledPile.CraftMaterials) Nothing CopyRecipient.ItsHost False))
+      (AttachRewrite.AsCopy (AsCopy.MkAsCopy (Filter.HasCardType CardType.Creature) Nothing [] False Seq.empty (CopyDomain.InPile ExiledPile.CraftMaterials) Nothing CopyRecipient.ItsHost False))
       " {\"type\":\"AsCopy\",\"value\":{\"eligible\":{\"type\":\"HasCardType\",\"value\":\"Creature\"},\"among\":{\"type\":\"InPile\",\"value\":{\"type\":\"CraftMaterials\"}},\"recipient\":\"ItsHost\",\"optional\":false}} "
   Spec.it s "ChooseQuality (Sanctuary Blade)" $
     Common.assertCodec s (AttachRewrite.codec Common.text Common.text) (AttachRewrite.ChooseQuality (ChosenQuality.Colors (ChooseBetween.MkChooseBetween 1 1))) " {\"type\":\"ChooseQuality\",\"value\":{\"type\":\"Colors\",\"value\":{\"least\":1,\"most\":1}}} "

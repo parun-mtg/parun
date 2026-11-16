@@ -23,7 +23,7 @@ spec s = Spec.describe s "Parun.Codec.AttachR" $ do
       (AttachR.codec Common.text Common.text)
       ( AttachR.MkAttachR
           { AttachR.matching = Filter.IsSource,
-            AttachR.rewrite = AttachRewrite.AsCopy (AsCopy.MkAsCopy (Filter.HasCardType CardType.Creature) [] False Seq.empty (CopyDomain.InPile ExiledPile.CraftMaterials) Nothing CopyRecipient.ItsHost False)
+            AttachR.rewrite = AttachRewrite.AsCopy (AsCopy.MkAsCopy (Filter.HasCardType CardType.Creature) Nothing [] False Seq.empty (CopyDomain.InPile ExiledPile.CraftMaterials) Nothing CopyRecipient.ItsHost False)
           }
       )
       " {\"matching\":{\"type\":\"IsSource\"},\"rewrite\":{\"type\":\"AsCopy\",\"value\":{\"eligible\":{\"type\":\"HasCardType\",\"value\":\"Creature\"},\"among\":{\"type\":\"InPile\",\"value\":{\"type\":\"CraftMaterials\"}},\"recipient\":\"ItsHost\",\"optional\":false}}} "

@@ -22,10 +22,11 @@ data Operand
   | -- | CR 608.2c: a number an earlier clause bound at a slot.
     AmountInSlot SlotName.SlotName
   | -- | CR 202.3 / 601.2c: the amount the enclosing target slot, conjure
-    -- reference, combat restriction, free-cast grant or cast permission names
-    -- (Parun.Types.TargetSlot's, Parun.Types.FromReference's,
-    -- Parun.Types.AffectedUnless's, Parun.Types.FreeCast's and
-    -- Parun.Types.CastFromZone's @amount@).
+    -- reference, combat restriction, free-cast grant, cast permission or
+    -- enter-as-copy offer names (Parun.Types.TargetSlot's,
+    -- Parun.Types.FromReference's, Parun.Types.AffectedUnless's,
+    -- Parun.Types.FreeCast's, Parun.Types.CastFromZone's and
+    -- Parun.Types.AsCopy's @amount@).
     EnclosingAmount
   | -- | CR 608.2d: a measure of every other candidate the enclosing position offers, within a scope (Crackling Doom).
     OfEachOtherCandidate OtherCandidates.OtherCandidates

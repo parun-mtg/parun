@@ -20,6 +20,10 @@ import qualified Parun.Types.Duration as Duration
 import qualified Parun.Types.DurationEvent as DurationEvent
 import qualified Parun.Types.ExiledPile as ExiledPile
 import qualified Parun.Types.Filter as Filter
+import qualified Parun.Types.ManaSpent as ManaSpent
+import qualified Parun.Types.Measure as Measure
+import qualified Parun.Types.Measures as Measures
+import qualified Parun.Types.Operand as Operand
 import qualified Parun.Types.Quantity as Quantity
 import qualified Parun.Types.SetPowerToughness as SetPowerToughness
 import qualified Parun.Types.SlotName as SlotName
@@ -35,7 +39,7 @@ spec s = Spec.describe s "Parun.Codec.AsCopy" $ do
     Common.assertCodec
       s
       (AsCopy.codec Common.text Common.text)
-      (AsCopy.MkAsCopy (Filter.HasCardType CardType.Creature) [] False Seq.empty (CopyDomain.InZone Zone.Battlefield) Nothing CopyRecipient.ThisObject True)
+      (AsCopy.MkAsCopy (Filter.HasCardType CardType.Creature) Nothing [] False Seq.empty (CopyDomain.InZone Zone.Battlefield) Nothing CopyRecipient.ThisObject True)
       " {\"eligible\":{\"type\":\"HasCardType\",\"value\":\"Creature\"}} "
   -- CR 707.9d: Quicksilver Gargantuan's "except it's 7/7", beside the same
   -- eligible set.
@@ -43,14 +47,14 @@ spec s = Spec.describe s "Parun.Codec.AsCopy" $ do
     Common.assertCodec
       s
       (AsCopy.codec Common.text Common.text)
-      (AsCopy.MkAsCopy (Filter.HasCardType CardType.Creature) [CopyClause.MkCopyClause Nothing [CopyException.SetPowerToughness (SetPowerToughness.MkSetPowerToughness 7 7)] Nothing] False Seq.empty (CopyDomain.InZone Zone.Battlefield) Nothing CopyRecipient.ThisObject True)
+      (AsCopy.MkAsCopy (Filter.HasCardType CardType.Creature) Nothing [CopyClause.MkCopyClause Nothing [CopyException.SetPowerToughness (SetPowerToughness.MkSetPowerToughness 7 7)] Nothing] False Seq.empty (CopyDomain.InZone Zone.Battlefield) Nothing CopyRecipient.ThisObject True)
       " {\"eligible\":{\"type\":\"HasCardType\",\"value\":\"Creature\"},\"clauses\":[{\"exceptions\":[{\"type\":\"SetPowerToughness\",\"value\":{\"power\":7,\"toughness\":7}}]}]} "
   -- CR 614.1d inside CR 614.1c: Vesuva's "enter tapped as a copy".
   Spec.it s "MkAsCopy, entering tapped (Vesuva)" $
     Common.assertCodec
       s
       (AsCopy.codec Common.text Common.text)
-      (AsCopy.MkAsCopy (Filter.HasCardType CardType.Land) [] True Seq.empty (CopyDomain.InZone Zone.Battlefield) Nothing CopyRecipient.ThisObject True)
+      (AsCopy.MkAsCopy (Filter.HasCardType CardType.Land) Nothing [] True Seq.empty (CopyDomain.InZone Zone.Battlefield) Nothing CopyRecipient.ThisObject True)
       " {\"eligible\":{\"type\":\"HasCardType\",\"value\":\"Land\"},\"tapped\":true} "
   -- CR 707.9e: Altered Ego's "except it enters with X additional +1/+1 counters
   -- on it", the exception that is an additional effect. CR 107.3m's X is the
@@ -60,7 +64,7 @@ spec s = Spec.describe s "Parun.Codec.AsCopy" $ do
     Common.assertCodec
       s
       (AsCopy.codec Common.text Common.text)
-      (AsCopy.MkAsCopy (Filter.HasCardType CardType.Creature) [CopyClause.MkCopyClause Nothing [] (Just (WithCounters.one CounterKind.PlusOnePlusOne (Quantity.InSlot (SlotName.MkSlotName (Text.pack "X")))))] False Seq.empty (CopyDomain.InZone Zone.Battlefield) Nothing CopyRecipient.ThisObject True)
+      (AsCopy.MkAsCopy (Filter.HasCardType CardType.Creature) Nothing [CopyClause.MkCopyClause Nothing [] (Just (WithCounters.one CounterKind.PlusOnePlusOne (Quantity.InSlot (SlotName.MkSlotName (Text.pack "X")))))] False Seq.empty (CopyDomain.InZone Zone.Battlefield) Nothing CopyRecipient.ThisObject True)
       " {\"eligible\":{\"type\":\"HasCardType\",\"value\":\"Creature\"},\"clauses\":[{\"counters\":[{\"kind\":{\"type\":\"PlusOnePlusOne\"},\"count\":{\"type\":\"InSlot\",\"value\":\"X\"}}]}]} "
   -- CR 707.9g: the linked "when you do" trigger's effects, Wall of Stolen
   -- Identity's; the effect codec is a parameter, so text stands in for it.
@@ -68,7 +72,7 @@ spec s = Spec.describe s "Parun.Codec.AsCopy" $ do
     Common.assertCodec
       s
       (AsCopy.codec Common.text Common.text)
-      (AsCopy.MkAsCopy (Filter.HasCardType CardType.Creature) [] False (Seq.fromList [Text.pack "tap", Text.pack "forbid"]) (CopyDomain.InZone Zone.Battlefield) Nothing CopyRecipient.ThisObject True)
+      (AsCopy.MkAsCopy (Filter.HasCardType CardType.Creature) Nothing [] False (Seq.fromList [Text.pack "tap", Text.pack "forbid"]) (CopyDomain.InZone Zone.Battlefield) Nothing CopyRecipient.ThisObject True)
       " {\"eligible\":{\"type\":\"HasCardType\",\"value\":\"Creature\"},\"whenYouDo\":[\"tap\",\"forbid\"]} "
   -- CR 707.5 over a graveyard: Superior Spider-Man's "any creature card in a
   -- graveyard".
@@ -77,25 +81,25 @@ spec s = Spec.describe s "Parun.Codec.AsCopy" $ do
     Common.assertCodec
       s
       (AsCopy.codec Common.text Common.text)
-      (AsCopy.MkAsCopy (Filter.HasCardType CardType.Creature) [] False Seq.empty (CopyDomain.InZone Zone.Battlefield) (Just (Duration.UntilEvent DurationEvent.SourceTurnedFaceDown)) CopyRecipient.ThisObject True)
+      (AsCopy.MkAsCopy (Filter.HasCardType CardType.Creature) Nothing [] False Seq.empty (CopyDomain.InZone Zone.Battlefield) (Just (Duration.UntilEvent DurationEvent.SourceTurnedFaceDown)) CopyRecipient.ThisObject True)
       " {\"eligible\":{\"type\":\"HasCardType\",\"value\":\"Creature\"},\"duration\":{\"type\":\"UntilEvent\",\"value\":{\"type\":\"SourceTurnedFaceDown\"}}} "
   Spec.it s "MkAsCopy, from a graveyard (Superior Spider-Man)" $
     Common.assertCodec
       s
       (AsCopy.codec Common.text Common.text)
-      (AsCopy.MkAsCopy (Filter.HasCardType CardType.Creature) [] False Seq.empty (CopyDomain.InZone Zone.Graveyard) Nothing CopyRecipient.ThisObject True)
+      (AsCopy.MkAsCopy (Filter.HasCardType CardType.Creature) Nothing [] False Seq.empty (CopyDomain.InZone Zone.Graveyard) Nothing CopyRecipient.ThisObject True)
       " {\"eligible\":{\"type\":\"HasCardType\",\"value\":\"Creature\"},\"among\":{\"type\":\"InZone\",\"value\":\"Graveyard\"}} "
   Spec.it s "MkAsCopy, from the craft materials onto its host (Dinosaur Headdress)" $
     Common.assertCodec
       s
       (AsCopy.codec Common.text Common.text)
-      (AsCopy.MkAsCopy (Filter.HasCardType CardType.Creature) [] False Seq.empty (CopyDomain.InPile ExiledPile.CraftMaterials) Nothing CopyRecipient.ItsHost False)
+      (AsCopy.MkAsCopy (Filter.HasCardType CardType.Creature) Nothing [] False Seq.empty (CopyDomain.InPile ExiledPile.CraftMaterials) Nothing CopyRecipient.ItsHost False)
       " {\"eligible\":{\"type\":\"HasCardType\",\"value\":\"Creature\"},\"among\":{\"type\":\"InPile\",\"value\":{\"type\":\"CraftMaterials\"}},\"recipient\":\"ItsHost\",\"optional\":false} "
   Spec.it s "MkAsCopy, onto its host and chosen (Metamorphic Alteration)" $
     Common.assertCodec
       s
       (AsCopy.codec Common.text Common.text)
-      (AsCopy.MkAsCopy (Filter.HasCardType CardType.Creature) [] False Seq.empty (CopyDomain.InZone Zone.Battlefield) Nothing CopyRecipient.ItsHost False)
+      (AsCopy.MkAsCopy (Filter.HasCardType CardType.Creature) Nothing [] False Seq.empty (CopyDomain.InZone Zone.Battlefield) Nothing CopyRecipient.ItsHost False)
       " {\"eligible\":{\"type\":\"HasCardType\",\"value\":\"Creature\"},\"recipient\":\"ItsHost\",\"optional\":false} "
   -- CR 707.9f: Spark Double's "it enters with an additional +1/+1 counter on it
   -- if it's a creature" beside its unconditional "it isn't legendary".
@@ -105,6 +109,7 @@ spec s = Spec.describe s "Parun.Codec.AsCopy" $ do
       (AsCopy.codec Common.text Common.text)
       ( AsCopy.MkAsCopy
           (Filter.HasCardType CardType.Creature)
+          Nothing
           [ CopyClause.MkCopyClause Nothing [CopyException.RemoveSupertypes (Set.singleton Supertype.Legendary)] Nothing,
             CopyClause.MkCopyClause (Just (Condition.Compares (Compares.MkCompares (Quantity.Literal 1) Comparison.AtLeast (Quantity.Literal 1)))) [] (Just (WithCounters.one CounterKind.PlusOnePlusOne (Quantity.Literal 1)))
           ]
@@ -116,4 +121,12 @@ spec s = Spec.describe s "Parun.Codec.AsCopy" $ do
           True
       )
       " {\"eligible\":{\"type\":\"HasCardType\",\"value\":\"Creature\"},\"clauses\":[{\"exceptions\":[{\"type\":\"RemoveSupertypes\",\"value\":[\"Legendary\"]}]},{\"condition\":{\"type\":\"Compares\",\"value\":{\"measured\":{\"type\":\"Literal\",\"value\":1},\"comparison\":\"AtLeast\",\"threshold\":{\"type\":\"Literal\",\"value\":1}}},\"counters\":[{\"kind\":{\"type\":\"PlusOnePlusOne\"},\"count\":{\"type\":\"Literal\",\"value\":1}}]}]} "
+  -- CR 202.3 / 601.2h: Mockingbird's "with mana value less than or equal to
+  -- the amount of mana spent to cast this creature".
+  Spec.it s "MkAsCopy, with an amount (Mockingbird)" $
+    Common.assertCodec
+      s
+      (AsCopy.codec Common.text Common.text)
+      (AsCopy.MkAsCopy (Filter.Measures (Measures.MkMeasures Measure.ManaValue Comparison.AtMost Operand.EnclosingAmount)) (Just (Quantity.ManaSpent ManaSpent.Total)) [] False Seq.empty (CopyDomain.InZone Zone.Battlefield) Nothing CopyRecipient.ThisObject True)
+      " {\"eligible\":{\"type\":\"Measures\",\"value\":{\"measure\":\"ManaValue\",\"comparison\":\"AtMost\",\"operand\":{\"type\":\"EnclosingAmount\"}}},\"amount\":{\"type\":\"ManaSpent\",\"value\":{\"type\":\"Total\"}}} "
   Spec.it s "has a schema" $ Common.assertHasSchema s (AsCopy.codec Common.text Common.text)

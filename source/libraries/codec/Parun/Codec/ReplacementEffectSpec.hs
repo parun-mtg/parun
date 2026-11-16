@@ -149,7 +149,7 @@ spec s =
           Common.assertCodec
             s
             codec
-            (ReplacementEffect.EntryR (EntryR.MkEntryR Filter.IsSource (EntryRewrite.AsCopy (AsCopy.MkAsCopy (Filter.HasCardType CardType.Creature) [] False Seq.empty (CopyDomain.InZone Zone.Battlefield) Nothing CopyRecipient.ThisObject True))))
+            (ReplacementEffect.EntryR (EntryR.MkEntryR Filter.IsSource (EntryRewrite.AsCopy (AsCopy.MkAsCopy (Filter.HasCardType CardType.Creature) Nothing [] False Seq.empty (CopyDomain.InZone Zone.Battlefield) Nothing CopyRecipient.ThisObject True))))
             " {\"type\":\"EntryR\",\"value\":{\"matching\":{\"type\":\"IsSource\"},\"rewrite\":{\"type\":\"AsCopy\",\"value\":{\"eligible\":{\"type\":\"HasCardType\",\"value\":\"Creature\"}}}}} "
         -- CR 208.2b: Primal Plasma's ChoiceOf, carrying P/T and keywords.
         Spec.it s "EntryR (Primal Plasma, ChoiceOf)" $
@@ -399,7 +399,7 @@ spec s =
           Common.assertCodec
             s
             codec
-            (ReplacementEffect.AttachR (AttachR.MkAttachR Filter.IsSource (AttachRewrite.AsCopy (AsCopy.MkAsCopy (Filter.HasCardType CardType.Creature) [] False Seq.empty (CopyDomain.InPile ExiledPile.CraftMaterials) Nothing CopyRecipient.ItsHost False))))
+            (ReplacementEffect.AttachR (AttachR.MkAttachR Filter.IsSource (AttachRewrite.AsCopy (AsCopy.MkAsCopy (Filter.HasCardType CardType.Creature) Nothing [] False Seq.empty (CopyDomain.InPile ExiledPile.CraftMaterials) Nothing CopyRecipient.ItsHost False))))
             " {\"type\":\"AttachR\",\"value\":{\"matching\":{\"type\":\"IsSource\"},\"rewrite\":{\"type\":\"AsCopy\",\"value\":{\"eligible\":{\"type\":\"HasCardType\",\"value\":\"Creature\"},\"among\":{\"type\":\"InPile\",\"value\":{\"type\":\"CraftMaterials\"}},\"recipient\":\"ItsHost\",\"optional\":false}}}} "
         -- CR 701.27i: Sephiroth, One-Winged Angel's "as this creature transforms".
         Spec.it s "TransformR (Sephiroth, One-Winged Angel)" $

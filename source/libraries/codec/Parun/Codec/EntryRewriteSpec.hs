@@ -52,14 +52,14 @@ spec s = Spec.describe s "Parun.Codec.EntryRewrite" $ do
     Common.assertCodec
       s
       (EntryRewrite.codec (GrantedAbility.codec Card.codec) (Effect.codec Card.codec (GrantedAbility.codec Card.codec)))
-      (EntryRewrite.AsCopy (AsCopy.MkAsCopy (Filter.HasCardType CardType.Creature) [] False Seq.empty (CopyDomain.InZone Zone.Battlefield) Nothing CopyRecipient.ThisObject True))
+      (EntryRewrite.AsCopy (AsCopy.MkAsCopy (Filter.HasCardType CardType.Creature) Nothing [] False Seq.empty (CopyDomain.InZone Zone.Battlefield) Nothing CopyRecipient.ThisObject True))
       " {\"type\":\"AsCopy\",\"value\":{\"eligible\":{\"type\":\"HasCardType\",\"value\":\"Creature\"}}} "
   -- CR 707.9b / 707.9d: Quicksilver Gargantuan's "except it's 7/7".
   Spec.it s "AsCopy with an exception (Quicksilver Gargantuan)" $
     Common.assertCodec
       s
       (EntryRewrite.codec (GrantedAbility.codec Card.codec) (Effect.codec Card.codec (GrantedAbility.codec Card.codec)))
-      (EntryRewrite.AsCopy (AsCopy.MkAsCopy (Filter.HasCardType CardType.Creature) [CopyClause.MkCopyClause Nothing [CopyException.SetPowerToughness (SetPowerToughness.MkSetPowerToughness 7 7)] Nothing] False Seq.empty (CopyDomain.InZone Zone.Battlefield) Nothing CopyRecipient.ThisObject True))
+      (EntryRewrite.AsCopy (AsCopy.MkAsCopy (Filter.HasCardType CardType.Creature) Nothing [CopyClause.MkCopyClause Nothing [CopyException.SetPowerToughness (SetPowerToughness.MkSetPowerToughness 7 7)] Nothing] False Seq.empty (CopyDomain.InZone Zone.Battlefield) Nothing CopyRecipient.ThisObject True))
       " {\"type\":\"AsCopy\",\"value\":{\"eligible\":{\"type\":\"HasCardType\",\"value\":\"Creature\"},\"clauses\":[{\"exceptions\":[{\"type\":\"SetPowerToughness\",\"value\":{\"power\":7,\"toughness\":7}}]}]}} "
   -- The narrowed set the widening exists for (#1512): Copy Enchantment's "any
   -- enchantment", where Clone's is "any creature".
@@ -67,7 +67,7 @@ spec s = Spec.describe s "Parun.Codec.EntryRewrite" $ do
     Common.assertCodec
       s
       (EntryRewrite.codec (GrantedAbility.codec Card.codec) (Effect.codec Card.codec (GrantedAbility.codec Card.codec)))
-      (EntryRewrite.AsCopy (AsCopy.MkAsCopy (Filter.HasCardType CardType.Enchantment) [] False Seq.empty (CopyDomain.InZone Zone.Battlefield) Nothing CopyRecipient.ThisObject True))
+      (EntryRewrite.AsCopy (AsCopy.MkAsCopy (Filter.HasCardType CardType.Enchantment) Nothing [] False Seq.empty (CopyDomain.InZone Zone.Battlefield) Nothing CopyRecipient.ThisObject True))
       " {\"type\":\"AsCopy\",\"value\":{\"eligible\":{\"type\":\"HasCardType\",\"value\":\"Enchantment\"}}} "
   -- CR 208.2b: two P/T-and-keyword choices, enough to show the keyword union
   -- isn't lost on the wire.

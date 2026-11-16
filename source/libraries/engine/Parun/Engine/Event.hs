@@ -6096,7 +6096,14 @@ becomeCopyAs batch candidate asCopy oid = do
       -- battlefield walk that supplies "on the battlefield" is
       -- legalCopyTargets'. Read in the replacement's own context, so Essence of
       -- the Wild's "this creature" names Essence rather than what enters.
-      let legal = Replacement.legalCopyTargets (Replacement.candidateContext gs candidate) batch (AsCopy.eligible asCopy) (AsCopy.among asCopy) oid gs
+      --
+      -- CR 202.3 / 601.2h: the offer's own amount, evaluated against the
+      -- replacement's source and handed to the Measures atom's EnclosingAmount
+      -- operand (Mockingbird's "the amount of mana spent to cast this
+      -- creature", read off the entering object, CR 400.7d).
+      let context = Replacement.candidateContext gs candidate
+          bounded = context {Filter.slotAmount = AsCopy.amount asCopy >>= Quantity.evaluate (Projection.fullView gs) context gs (ReplacementCandidate.source candidate)}
+          legal = Replacement.legalCopyTargets bounded batch (AsCopy.eligible asCopy) (AsCopy.among asCopy) oid gs
           -- A permanent is asked as one, a card as one from among the rest.
           pick = case AsCopy.among asCopy of
             CopyDomain.InZone Zone.Battlefield -> \chooser who source pool -> Prompt.ChoosePermanent chooser who source pool Seq.empty

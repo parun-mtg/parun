@@ -3911,9 +3911,10 @@ copyLeaves =
 -- copies among, who receives it and whether it is optional are left as they
 -- are.
 asCopyChildren :: (Applicative f) => CopyChildren ability effect f -> AsCopy.AsCopy ability effect -> f (AsCopy.AsCopy ability effect)
-asCopyChildren c (AsCopy.MkAsCopy eligible clauses tapped whenYouDo among duration recipient optional) =
+asCopyChildren c (AsCopy.MkAsCopy eligible amount clauses tapped whenYouDo among duration recipient optional) =
   AsCopy.MkAsCopy
     <$> copyFilter c eligible
+    <*> traverse (copyQuantity c) amount
     <*> traverse (copyClauseChildren c) clauses
     <*> pure tapped
     <*> traverse (copyEffect c) whenYouDo

@@ -1,0 +1,104 @@
+{
+  "faces": [
+    {
+      "keywords": [
+        {
+          "type": "Flying"
+        }
+      ],
+      "manaCost": [
+        {
+          "type": "Variable"
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "Blue"
+          }
+        }
+      ],
+      "name": "Mockingbird",
+      "oracleText": "Flying\nYou may have this creature enter as a copy of any creature on the battlefield with mana value less than or equal to the amount of mana spent to cast this creature, except it's a Bird in addition to its other types and it has flying.",
+      "power": {
+        "type": "Literal",
+        "value": 1
+      },
+      "replacementEffects": [
+        {
+          "effect": {
+            "type": "EntryR",
+            "value": {
+              "matching": {
+                "type": "IsSource"
+              },
+              "rewrite": {
+                "type": "AsCopy",
+                "value": {
+                  "amount": {
+                    "type": "ManaSpent",
+                    "value": {
+                      "type": "Total"
+                    }
+                  },
+                  "clauses": [
+                    {
+                      "exceptions": [
+                        {
+                          "type": "AddSubtypes",
+                          "value": [
+                            "Bird"
+                          ]
+                        },
+                        {
+                          "type": "GainKeywords",
+                          "value": [
+                            {
+                              "type": "Flying"
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ],
+                  "eligible": {
+                    "type": "And",
+                    "value": [
+                      {
+                        "type": "HasCardType",
+                        "value": "Creature"
+                      },
+                      {
+                        "type": "Measures",
+                        "value": {
+                          "comparison": "AtMost",
+                          "measure": "ManaValue",
+                          "operand": {
+                            "type": "EnclosingAmount"
+                          }
+                        }
+                      }
+                    ]
+                  }
+                }
+              }
+            }
+          }
+        }
+      ],
+      "toughness": {
+        "type": "Literal",
+        "value": 1
+      },
+      "typeLine": {
+        "subtypes": [
+          "Bard",
+          "Bird"
+        ],
+        "types": [
+          "Creature"
+        ]
+      }
+    }
+  ]
+}

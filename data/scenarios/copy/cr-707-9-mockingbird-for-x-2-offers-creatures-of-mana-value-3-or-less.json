@@ -1,0 +1,38 @@
+{
+  "description": "CR 707.9 Mockingbird for X=2 offers creatures of mana value 3 or less",
+  "note": "Three mana spent (CR 601.2h): bob's Grizzly Bears and Gray Ogre are offered, his Hill Giant (mana value 4) is not. Mockingbird copies the Ogre, a Bird in addition with flying (CR 707.9a, 707.9b).",
+  "board": {
+    "seats": [
+      {
+        "name": "alice",
+        "battlefield": [
+          { "card": "Island", "label": "i1", "ready": true },
+          { "card": "Island", "label": "i2", "ready": true },
+          { "card": "Island", "label": "i3", "ready": true }
+        ],
+        "hand": [
+          { "card": "Mockingbird", "label": "mockingbird" }
+        ]
+      },
+      {
+        "name": "bob",
+        "battlefield": [
+          { "card": "Grizzly Bears", "label": "bears" },
+          { "card": "Gray Ogre", "label": "ogre" },
+          { "card": "Hill Giant", "label": "giant" }
+        ]
+      }
+    ],
+    "active": "alice",
+    "step": "PrecombatMain"
+  },
+  "timeline": [
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": { "Cast": { "object": "$mockingbird", "x": 2, "mana": ["$i1", "$i2", "$i3"] } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass" },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "View": { "of": "Prompt", "is": {"kind":"ChooseCopyTarget","offer":{"source":"Mockingbird","options":["$bears","$ogre",null]}} } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": { "ChooseCopyTarget": "$ogre" } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "PowerToughness": { "object": "Mockingbird", "power": 2, "toughness": 2 } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "Subtypes": { "object": "Mockingbird", "subtypes": ["Ogre", "Bird"] } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "Keywords": { "object": "Mockingbird", "keyword": { "type": "Flying" }, "count": 1 } } }
+  ]
+}
