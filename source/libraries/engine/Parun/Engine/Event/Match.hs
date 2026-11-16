@@ -161,6 +161,7 @@ import qualified Parun.Types.Recipient as Recipient
 import qualified Parun.Types.RevealCause as RevealCause
 import qualified Parun.Types.Revealed as Revealed
 import qualified Parun.Types.RevealedThisWay as RevealedThisWay
+import qualified Parun.Types.SacrificeTrigger as SacrificeTrigger
 import qualified Parun.Types.Saddling as Saddling
 import qualified Parun.Types.SlotName as SlotName
 import qualified Parun.Types.Snapshots as Snapshots
@@ -2140,7 +2141,7 @@ armMatches bindings board atEvent beforeEvent groupEvents gs bearer you cond eve
   --
   -- Nothing is a permanent that is gone AND filed no last known information, about
   -- which no Filter can honestly answer.
-  TriggerCondition.PermanentSacrificed (PlayerActsOn.MkPlayerActsOn relation f) -> case event of
+  TriggerCondition.PermanentSacrificed (SacrificeTrigger.MkSacrificeTrigger (PlayerActsOn.MkPlayerActsOn relation f) _) -> case event of
     GameEvent.PermanentSacrificed ev
       | PlayerRelation.holds (Game.teams gs) relation you (PermanentWasSacrificed.player ev) ->
           let victim = PermanentWasSacrificed.permanent ev

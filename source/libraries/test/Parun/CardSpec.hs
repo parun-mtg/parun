@@ -446,6 +446,7 @@ import qualified Parun.Types.Sacrifice as Sacrifice
 import qualified Parun.Types.SacrificeAnyNumber as SacrificeAnyNumber
 import qualified Parun.Types.SacrificeEffect as SacrificeEffect
 import qualified Parun.Types.SacrificeToEnter as SacrificeToEnter
+import qualified Parun.Types.SacrificeTrigger as SacrificeTrigger
 import qualified Parun.Types.Scaling as Scaling
 import qualified Parun.Types.Scope as Scope
 import qualified Parun.Types.Search as Search
@@ -3830,7 +3831,7 @@ triggerConditionFilters triggerCondition = case triggerCondition of
   TriggerCondition.SelfManaAbilityResolves -> []
   -- CR 701.21a's Filter narrows the sacrificed permanent -- Vengeful Tracker's
   -- "an artifact" -- and is swept like Leaves' below.
-  TriggerCondition.PermanentSacrificed payload -> unframed [PlayerActsOn.filter payload]
+  TriggerCondition.PermanentSacrificed payload -> unframed [PlayerActsOn.filter (SacrificeTrigger.acts payload)]
   -- CR 715.2d's watcher names a PlayerRelation; the Saga is found through its
   -- final chapter number rather than through a Filter.
   TriggerCondition.AbilityWatch _ -> []

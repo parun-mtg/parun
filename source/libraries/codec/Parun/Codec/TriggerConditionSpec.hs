@@ -83,6 +83,7 @@ import qualified Parun.Types.PutIntoZoneTrigger as PutIntoZoneTrigger
 import qualified Parun.Types.Quantity as Quantity
 import qualified Parun.Types.RevealedThisWay as RevealedThisWay
 import qualified Parun.Types.RoomIndex as RoomIndex
+import qualified Parun.Types.SacrificeTrigger as SacrificeTrigger
 import qualified Parun.Types.SlotName as SlotName
 import qualified Parun.Types.SpellCast as SpellCast
 import qualified Parun.Types.StackObjectKind as StackObjectKind
@@ -615,7 +616,7 @@ spec s = Spec.describe s "Parun.Codec.TriggerCondition" $ do
     Common.assertCodec
       s
       TriggerCondition.codec
-      (TriggerCondition.PermanentSacrificed (PlayerActsOn.MkPlayerActsOn PlayerRelation.Opponent (Filter.HasCardType CardType.Artifact)))
+      (TriggerCondition.PermanentSacrificed (SacrificeTrigger.MkSacrificeTrigger (PlayerActsOn.MkPlayerActsOn PlayerRelation.Opponent (Filter.HasCardType CardType.Artifact)) Batching.EachOccurrence))
       " {\"type\":\"PermanentSacrificed\",\"value\":{\"player\":\"Opponent\",\"filter\":{\"type\":\"HasCardType\",\"value\":\"Artifact\"}}} "
   -- CR 715.2d's watcher: which Saga and which chapter are read off the event
   -- and the source's projection.

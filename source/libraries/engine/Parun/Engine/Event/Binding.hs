@@ -107,6 +107,7 @@ import qualified Parun.Types.ProjectedCharacteristics as PC
 import qualified Parun.Types.PutIntoZoneTrigger as PutIntoZoneTrigger
 import qualified Parun.Types.Recipient as Recipient
 import qualified Parun.Types.Revealed as Revealed
+import qualified Parun.Types.SacrificeTrigger as SacrificeTrigger
 import qualified Parun.Types.Saddling as Saddling
 import qualified Parun.Types.SlotName as SlotName
 import qualified Parun.Types.SpellCast as SpellCast
@@ -743,7 +744,11 @@ eventBindingsOver board gs bearerBecame becameInGraveyard bearer you cond event 
   -- about the graveyard card. Unconditional, unlike the arrival above:
   -- GameEvent.PermanentSacrificed carries the pre-move id outright, so no shape
   -- of the event withholds it.
-  (TriggerCondition.PermanentSacrificed {}, GameEvent.PermanentSacrificed ev) ->
+  -- A OneOrMore batch counts its sacrifices beside the sacrificer, as a
+  -- OneOrMore Discards counts its cards: no one permanent is "it".
+  (TriggerCondition.PermanentSacrificed (SacrificeTrigger.MkSacrificeTrigger _ Batching.OneOrMore), GameEvent.PermanentSacrificed ev) ->
+    Binding.setEventAmount 1 (Binding.setTriggerPlayer (PermanentWasSacrificed.player ev) Map.empty)
+  (TriggerCondition.PermanentSacrificed (SacrificeTrigger.MkSacrificeTrigger _ Batching.EachOccurrence), GameEvent.PermanentSacrificed ev) ->
     let arrival = case Map.lookup (PermanentWasSacrificed.permanent ev) becameInGraveyard of
           Nothing -> Map.empty
           Just arrived -> Binding.setBecame arrived Map.empty
@@ -1786,7 +1791,10 @@ eventBindingSlots cond = case cond of
   -- CR 603.10a's departed permanent beside it, guaranteed the same way: the event
   -- carries the pre-move id outright, which is what lets Prowling Geistcatcher's
   -- "if that creature was a token" read a permanent CR 111.7 has already ended.
-  TriggerCondition.PermanentSacrificed {} -> Set.fromList [Binding.departedPermanent, Binding.triggerPlayer]
+  -- A OneOrMore batch names no one permanent: its count beside its sacrificer.
+  TriggerCondition.PermanentSacrificed t -> case SacrificeTrigger.batching t of
+    Batching.EachOccurrence -> Set.fromList [Binding.departedPermanent, Binding.triggerPlayer]
+    Batching.OneOrMore -> Set.fromList [Binding.eventAmount, Binding.triggerPlayer]
   -- CR 601.2i's spell, the object the event names and nobody the bearer already
   -- does. Guaranteed given a match for the reason CR 615.13's amount is:
   -- GameEvent.SpellCast carries an ObjectId unconditionally, so no shape of the
@@ -1897,7 +1905,9 @@ eventBindingSlotsSometimes cond = case cond of
   -- replacement that redirects the sacrifice leaves the table without the row,
   -- and delayedPending scans no batch at all. data/cards/prowling-geistcatcher.json
   -- is the reader.
-  TriggerCondition.PermanentSacrificed {} -> Set.singleton Binding.became
+  TriggerCondition.PermanentSacrificed t -> case SacrificeTrigger.batching t of
+    Batching.EachOccurrence -> Set.singleton Binding.became
+    Batching.OneOrMore -> Set.empty
   -- The damaged player for damage to them, the damaged planeswalker for damage
   -- to one: eventBindings' arm binds whichever the event's recipient is. Nothing
   -- in data/cards/ names either under it.

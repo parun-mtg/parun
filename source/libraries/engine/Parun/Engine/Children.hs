@@ -431,6 +431,7 @@ import qualified Parun.Types.Sacrifice as Sacrifice
 import qualified Parun.Types.SacrificeAnyNumber as SacrificeAnyNumber
 import qualified Parun.Types.SacrificeEffect as SacrificeEffect
 import qualified Parun.Types.SacrificeToEnter as SacrificeToEnter
+import qualified Parun.Types.SacrificeTrigger as SacrificeTrigger
 import qualified Parun.Types.Scaling as Scaling
 import qualified Parun.Types.Scope as Scope
 import qualified Parun.Types.Search as Search
@@ -1668,7 +1669,7 @@ triggerConditionChildren c condition = case condition of
   TriggerCondition.Crews role -> case role of
     CrewRole.Vehicle frequency -> fmap (TriggerCondition.Crews . CrewRole.Vehicle) (triggerFrequency c HistoryRead.Crews frequency)
     CrewRole.Crewer _ -> pure condition
-  TriggerCondition.PermanentSacrificed acts -> fmap TriggerCondition.PermanentSacrificed (playerActsOnChildren c acts)
+  TriggerCondition.PermanentSacrificed (SacrificeTrigger.MkSacrificeTrigger acts batching) -> fmap (\renamed -> TriggerCondition.PermanentSacrificed (SacrificeTrigger.MkSacrificeTrigger renamed batching)) (playerActsOnChildren c acts)
   TriggerCondition.AbilityWatch _ -> pure condition
   TriggerCondition.PlayerBecomesMonarch _ -> pure condition
   TriggerCondition.LosesControl subject -> case subject of

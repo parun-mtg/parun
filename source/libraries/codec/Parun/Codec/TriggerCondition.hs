@@ -33,7 +33,6 @@ import qualified Parun.Codec.PermanentIsDealtDamage as PermanentIsDealtDamage
 import qualified Parun.Codec.PermanentsDealDamageToPlayer as PermanentsDealDamageToPlayer
 import qualified Parun.Codec.PlacesSticker as PlacesSticker
 import qualified Parun.Codec.PlayerActed as PlayerActed
-import qualified Parun.Codec.PlayerActsOn as PlayerActsOn
 import qualified Parun.Codec.PlayerDrawsNthCard as PlayerDrawsNthCard
 import qualified Parun.Codec.PlayerExpends as PlayerExpends
 import qualified Parun.Codec.PlayerIsDealtDamage as PlayerIsDealtDamage
@@ -43,6 +42,7 @@ import qualified Parun.Codec.PlaysLand as PlaysLand
 import qualified Parun.Codec.PutIntoZoneTrigger as PutIntoZoneTrigger
 import qualified Parun.Codec.RevealedThisWay as RevealedThisWay
 import qualified Parun.Codec.RoomIndex as RoomIndex
+import qualified Parun.Codec.SacrificeTrigger as SacrificeTrigger
 import qualified Parun.Codec.SpellCast as SpellCast
 import qualified Parun.Codec.StepBegins as StepBegins
 import qualified Parun.Codec.TappedForManaTrigger as TappedForManaTrigger
@@ -110,7 +110,7 @@ codec =
           Arm.nullary "AttachedCreatureMentors" TriggerCondition.AttachedCreatureMentors,
           Arm.payload "Exploits" ExploitTrigger.codec TriggerCondition.Exploits (\x -> case x of TriggerCondition.Exploits y -> Just y; _ -> Nothing),
           Arm.payload "Crews" CrewRole.codec TriggerCondition.Crews (\x -> case x of TriggerCondition.Crews y -> Just y; _ -> Nothing),
-          Arm.payload "PermanentSacrificed" PlayerActsOn.codec TriggerCondition.PermanentSacrificed (\x -> case x of TriggerCondition.PermanentSacrificed y -> Just y; _ -> Nothing),
+          Arm.payload "PermanentSacrificed" SacrificeTrigger.codec TriggerCondition.PermanentSacrificed (\x -> case x of TriggerCondition.PermanentSacrificed y -> Just y; _ -> Nothing),
           Arm.payload "AbilityWatch" AbilityWatch.codec TriggerCondition.AbilityWatch (\x -> case x of TriggerCondition.AbilityWatch y -> Just y; _ -> Nothing),
           Arm.payload "PlayerBecomesMonarch" PlayerRelation.codec TriggerCondition.PlayerBecomesMonarch (\x -> case x of TriggerCondition.PlayerBecomesMonarch y -> Just y; _ -> Nothing),
           Arm.payload "LosesControl" LostPermanent.codec TriggerCondition.LosesControl (\x -> case x of TriggerCondition.LosesControl y -> Just y; _ -> Nothing),

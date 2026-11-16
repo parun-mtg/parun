@@ -1626,6 +1626,8 @@ library codec
     Parun.Codec.SacrificeSpec
     Parun.Codec.SacrificeToEnter
     Parun.Codec.SacrificeToEnterSpec
+    Parun.Codec.SacrificeTrigger
+    Parun.Codec.SacrificeTriggerSpec
     Parun.Codec.Saddling
     Parun.Codec.SaddlingSpec
     Parun.Codec.Scaling
@@ -3640,6 +3642,7 @@ library types
     Parun.Types.SacrificeEffect
     Parun.Types.Sacrificer
     Parun.Types.SacrificeToEnter
+    Parun.Types.SacrificeTrigger
     Parun.Types.Saddling
     Parun.Types.Scaling
     Parun.Types.Scenario

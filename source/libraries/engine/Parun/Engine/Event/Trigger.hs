@@ -146,6 +146,7 @@ import qualified Parun.Types.RangeOfInfluence as RangeOfInfluence
 import qualified Parun.Types.Recipient as Recipient
 import qualified Parun.Types.RevealCause as RevealCause
 import qualified Parun.Types.Revealed as Revealed
+import qualified Parun.Types.SacrificeTrigger as SacrificeTrigger
 import qualified Parun.Types.Saddling as Saddling
 import qualified Parun.Types.SlotName as SlotName
 import qualified Parun.Types.Snapshots as Snapshots
@@ -1194,7 +1195,15 @@ batchScoped condition = case condition of
   -- One resolution, one occurrence -- CR 605.3b resolves one activation at a
   -- time, and Tyvar the Bellicose's rider counts triggerings and not events.
   TriggerCondition.SelfManaAbilityResolves -> False
-  TriggerCondition.PermanentSacrificed {} -> False
+  -- OneOrMore beside a OneOrMore Discards: "whenever you sacrifice one or more
+  -- Foods" (Camellia, the Seedmiser) names a whole Event.sacrificeIn bracket --
+  -- a cost's sacrifices, or one Effect.Sacrifice's -- as one trigger event,
+  -- unsplit by batchPartition since "one or more players sacrifice" (Evin,
+  -- Waterdeep Opportunist) names every sacrificer together, and no printing
+  -- reads "a player sacrifices one or more" (MTGJSON AtomicCards, `sacrifices?
+  -- one or more`, 2026-11-16). EachOccurrence (Mayhem Devil) is CR 603.2c's
+  -- second sentence.
+  TriggerCondition.PermanentSacrificed t -> SacrificeTrigger.batching t == Batching.OneOrMore
   TriggerCondition.AnyOf conditions -> any batchScoped conditions
   TriggerCondition.CausedBy narrowed -> batchScoped (CausedBy.condition narrowed)
   TriggerCondition.TurnedFaceUp _ -> False
