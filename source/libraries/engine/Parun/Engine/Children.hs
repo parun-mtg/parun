@@ -347,6 +347,7 @@ import qualified Parun.Types.ObjectId as ObjectId
 import qualified Parun.Types.ObjectRef as ObjectRef
 import qualified Parun.Types.ObjectRestriction as ObjectRestriction
 import qualified Parun.Types.OfferCast as OfferCast
+import qualified Parun.Types.OnePer as OnePer
 import qualified Parun.Types.Onset as Onset
 import qualified Parun.Types.Operand as Operand
 import qualified Parun.Types.Optionality as Optionality
@@ -3347,7 +3348,7 @@ objectRefChildren c ref = case ref of
   ObjectRef.ChosenCardInGraveyard (ChosenCardInGraveyard.MkChosenCardInGraveyard chooser players filter_ count) ->
     fmap ObjectRef.ChosenCardInGraveyard (ChosenCardInGraveyard.MkChosenCardInGraveyard <$> refChooser c chooser <*> refZones c players <*> refFilter c filter_ <*> howManyChildren (refQuantity c) count)
   ObjectRef.ChosenCardInHand (ChosenCardInHand.MkChosenCardInHand seat filter_ count) -> fmap ObjectRef.ChosenCardInHand (ChosenCardInHand.MkChosenCardInHand <$> refPlayer c seat <*> refFilter c filter_ <*> howManyChildren (refQuantity c) count)
-  ObjectRef.ChosenCardFromAmong (ChosenCardFromAmong.MkChosenCardFromAmong bound filter_ count total perColor differentIn chooser pileChooser faceUpPile selection) ->
+  ObjectRef.ChosenCardFromAmong (ChosenCardFromAmong.MkChosenCardFromAmong bound filter_ count total onePer differentIn chooser pileChooser faceUpPile selection) ->
     fmap
       ObjectRef.ChosenCardFromAmong
       ( ChosenCardFromAmong.MkChosenCardFromAmong
@@ -3355,7 +3356,7 @@ objectRefChildren c ref = case ref of
           <*> refFilter c filter_
           <*> howManyChildren (refQuantity c) count
           <*> traverse (\(TotalCap.MkTotalCap weight most) -> TotalCap.MkTotalCap <$> refQuantity c weight <*> refQuantity c most) total
-          <*> traverse (refFilter c) perColor
+          <*> traverse (onePerChildren c) onePer
           <*> pure differentIn
           <*> refPlayer c chooser
           <*> traverse (refPlayer c) pileChooser
@@ -3372,6 +3373,12 @@ objectRefChildren c ref = case ref of
   -- CR 400.7j: which object the slot's card became is read off the zone moves.
   ObjectRef.FromAnywhere (FromAnywhere.MkFromAnywhere bound among reach) -> refLooksBack c HistoryRead.Moves *> fmap ObjectRef.FromAnywhere (FromAnywhere.MkFromAnywhere <$> refSlot c bound <*> traverse (refSlot c) among <*> pure reach)
   ObjectRef.AllOf refs -> ObjectRef.AllOf <$> traverse (refNested c) refs
+
+-- | A per-quality bound's children: the Filter whose permanents give the colors.
+onePerChildren :: (Applicative f) => ObjectRefChildren f -> OnePer.OnePer -> f OnePer.OnePer
+onePerChildren c per = case per of
+  OnePer.ColorAmong among -> OnePer.ColorAmong <$> refFilter c among
+  OnePer.CardType -> pure OnePer.CardType
 
 -- | A battlefield choice's children (CR 608.2d): what it picks among, who
 -- picks, how many and within what total.

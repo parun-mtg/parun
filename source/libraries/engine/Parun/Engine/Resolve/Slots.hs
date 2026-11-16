@@ -206,6 +206,7 @@ import Parun.Types.ObjectId (ObjectId)
 import Parun.Types.ObjectRef (ObjectRef)
 import qualified Parun.Types.ObjectRef as ObjectRef
 import qualified Parun.Types.OfferCast as OfferCast
+import qualified Parun.Types.OnePer as OnePer
 import qualified Parun.Types.Onset as Onset
 import qualified Parun.Types.Optionality as Optionality
 import qualified Parun.Types.OrElse as OrElse
@@ -616,7 +617,7 @@ objectRefSlots ref = joinTwo (joinSlots (fmap playerRefSlots (objectRefPlayerRef
   -- reason; the CHOOSER's are the generic playerRefSlots fold this case is joined
   -- into, which is what makes Intuition's target opponent a read. The Filter
   -- narrowing the candidates is a read like a sweep's.
-  ObjectRef.ChosenCardFromAmong (ChosenCardFromAmong.MkChosenCardFromAmong slot filter_ count total perColor _ _ _ _ _) -> joinSlots (Map.singleton slot SlotArity.Many : filterSlotsOf filter_ : foldMap filterSlotsOf perColor : fmap quantitySlots (Foldable.toList (HowMany.quantity count) <> totalCapQuantities total))
+  ObjectRef.ChosenCardFromAmong (ChosenCardFromAmong.MkChosenCardFromAmong slot filter_ count total onePer _ _ _ _ _) -> joinSlots (Map.singleton slot SlotArity.Many : filterSlotsOf filter_ : foldMap onePerSlotsOf onePer : fmap quantitySlots (Foldable.toList (HowMany.quantity count) <> totalCapQuantities total))
   -- The arm above's read, for its reasons: the candidates come from a slot, and
   -- the ref reads every member of the group to match them.
   ObjectRef.EachCardFromAmong (EachCardFromAmong.MkEachCardFromAmong slot filter_) -> joinTwo (Map.singleton slot SlotArity.Many) (filterSlotsOf filter_)
@@ -2085,6 +2086,12 @@ damageRewriteReads rewrite = case rewrite of
 -- Binding.objectsBySlot is every target of a multi-target slot at resolution too.
 filterSlotsOf :: Filter.Type.Filter Keyword.Type.Keyword -> Map.Map SlotName SlotArity
 filterSlotsOf = Filter.slotArities
+
+-- filterSlotsOf over a per-quality bound's Filter: a card type names no slot.
+onePerSlotsOf :: OnePer.OnePer -> Map.Map SlotName SlotArity
+onePerSlotsOf per = case per of
+  OnePer.ColorAmong among -> filterSlotsOf among
+  OnePer.CardType -> Map.empty
 
 -- filterSlotsOf over a sweep's optional Filter: none names no slot.
 maybeFilterSlots :: Maybe (Filter.Type.Filter Keyword.Type.Keyword) -> Map.Map SlotName SlotArity

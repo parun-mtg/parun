@@ -8,6 +8,7 @@ import qualified Parun.Codec.DifferentIn as DifferentIn
 import qualified Parun.Codec.Filter as Filter
 import qualified Parun.Codec.HowMany as HowMany
 import qualified Parun.Codec.Keyword as Keyword
+import qualified Parun.Codec.OnePer as OnePer
 import qualified Parun.Codec.PlayerRef as PlayerRef
 import qualified Parun.Codec.SlotName as SlotName
 import qualified Parun.Codec.TotalCap as TotalCap
@@ -26,7 +27,7 @@ import qualified Parun.Types.PlayerRelation as PlayerRelation
 -- @count@ and @chooser@ are defaulted rather than required, so the printed
 -- singular addressed to the resolving controller -- which is every "from among
 -- them" but Ancestral Memories', Animal Magnetism's and the "up to" ones --
--- writes neither. @total@, @perColor@ and @pileChooser@ are elided rather than
+-- writes neither. @total@, @onePer@ and @pileChooser@ are elided rather than
 -- written null, @differentIn@ rather than written empty, @faceUpPile@ rather
 -- than written false, and @selection@ rather than written ByChoice.
 codec :: Codec.Codec ChosenCardFromAmong.ChosenCardFromAmong
@@ -35,7 +36,7 @@ codec = Fields.object $ do
   filter_ <- Fields.required "filter" (Filter.codec Keyword.codec) ChosenCardFromAmong.filter
   count <- Fields.defaulted "count" HowMany.one HowMany.codec ChosenCardFromAmong.count
   total <- Fields.defaulted "total" Nothing (Common.maybe TotalCap.codec) ChosenCardFromAmong.total
-  perColor <- Fields.defaulted "perColor" Nothing (Common.maybe (Filter.codec Keyword.codec)) ChosenCardFromAmong.perColor
+  onePer <- Fields.defaulted "onePer" Nothing (Common.maybe OnePer.codec) ChosenCardFromAmong.onePer
   differentIn <- Fields.defaulted "differentIn" Set.empty (Common.set DifferentIn.codec) ChosenCardFromAmong.differentIn
   chooser <- Fields.defaulted "chooser" (PlayerRef.Relative PlayerRelation.You) PlayerRef.codec ChosenCardFromAmong.chooser
   pileChooser <- Fields.defaulted "pileChooser" Nothing (Common.maybe PlayerRef.codec) ChosenCardFromAmong.pileChooser
@@ -47,7 +48,7 @@ codec = Fields.object $ do
         ChosenCardFromAmong.filter = filter_,
         ChosenCardFromAmong.count = count,
         ChosenCardFromAmong.total = total,
-        ChosenCardFromAmong.perColor = perColor,
+        ChosenCardFromAmong.onePer = onePer,
         ChosenCardFromAmong.differentIn = differentIn,
         ChosenCardFromAmong.chooser = chooser,
         ChosenCardFromAmong.pileChooser = pileChooser,

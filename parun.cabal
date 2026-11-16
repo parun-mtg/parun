@@ -1283,6 +1283,8 @@ library codec
     Parun.Codec.ObjectViewSpec
     Parun.Codec.OfferCast
     Parun.Codec.OfferCastSpec
+    Parun.Codec.OnePer
+    Parun.Codec.OnePerSpec
     Parun.Codec.Onset
     Parun.Codec.OnsetSpec
     Parun.Codec.Operand
@@ -3439,6 +3441,7 @@ library types
     Parun.Types.ObjectView
     Parun.Types.Observer
     Parun.Types.OfferCast
+    Parun.Types.OnePer
     Parun.Types.Onset
     Parun.Types.Operand
     Parun.Types.OptionalDecision
