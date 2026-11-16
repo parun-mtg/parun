@@ -1,0 +1,23 @@
+{
+  "description": "CR 614.1d, 701.25a, 305.6: Commercial District enters tapped, surveils 1 as it enters, and later taps for green as a Forest",
+  "note": "The District enters tapped, so it stays tapped for the rest of turn 1; the surveil puts the top Wind Drake into the graveyard, leaving seven cards. On turn 3 the untapped District is alice's only source and pays Llanowar Elves' green.",
+  "board": {"active": "alice", "step": "PrecombatMain", "seats": [
+    {"name": "alice", "hand": [{"card": "Commercial District", "label": "district"}, {"card": "Llanowar Elves", "label": "elves"}],
+     "library": [{"card": "Wind Drake", "label": "top"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}]},
+    {"name": "bob", "library": [{"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}]}]},
+  "timeline": [
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": {"PlayLand": "$district"}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"View": {"of": "Stack", "is": ["trigger of Commercial District"]}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass"},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"View": {"of": "Prompt", "is": {"kind": "ChooseSurveil", "offer": {"from": ["$top"], "names": ["Wind Drake"]}}}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": {"Answer": {"prompt": "ChooseSurveil", "with": [["$top"], []]}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Tapped": {"object": "Commercial District", "tapped": true}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Count": {"player": "alice", "zone": "Graveyard", "card": "Wind Drake", "count": 1}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Count": {"player": "alice", "zone": "Library", "card": "Island", "count": 7}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Subtypes": {"object": "Commercial District", "subtypes": ["Forest", "Mountain"]}}},
+    {"turn": 3, "step": "PrecombatMain", "player": "alice", "do": {"Cast": {"object": "$elves", "mana": ["Commercial District"], "yields": [[{"manaType": {"type": "Colored", "value": "Green"}, "tags": [], "retention": "Ordinary", "restriction": null, "rider": null, "sourceChoices": null}]]}}},
+    {"turn": 3, "step": "PrecombatMain", "player": "alice", "do": "Pass"},
+    {"turn": 3, "step": "PrecombatMain", "player": "alice", "check": {"Count": {"player": "alice", "zone": "Battlefield", "card": "Llanowar Elves", "count": 1}}},
+    {"turn": 3, "step": "PrecombatMain", "player": "alice", "check": {"Tapped": {"object": "Commercial District", "tapped": true}}}
+  ]
+}

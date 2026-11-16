@@ -1,0 +1,103 @@
+{
+  "description": "Deadly Cover-Up destroys all creatures, and with evidence exiles a name from an opponent who draws for each hand card lost",
+  "note": "The first Cover-Up, cast without collecting evidence, only destroys every creature (alice's, bob's and carol's): no graveyard choice is asked and bob keeps all his Hill Giants. The second collects evidence with the Craw Wurm, then alice chooses (no target) the Hill Giant that was already in bob's graveyard, among cards in both opponents' graveyards (not her own Lions), including the Giant the first Cover-Up destroyed. Her search is offered exactly bob's five Hill Giants (none of carol's, no Ogre) and takes two of bob's three hand Giants and his library Giant but leaves the destroyed Giant in his graveyard (any number). Bob then draws two, the hand count, not three (hand Giants) or four (all exiled). Carol's Hill Giant in hand, same name, other owner, stays.",
+  "board": {
+    "seats": [
+      {
+        "name": "alice",
+        "manaPool": "BBBBBBBBBB",
+        "battlefield": [
+          {"card": "Grizzly Bears", "label": "abears"}
+        ],
+        "hand": [
+          {"card": "Deadly Cover-Up", "label": "c1"},
+          {"card": "Deadly Cover-Up", "label": "c2"}
+        ],
+        "graveyard": [
+          {"card": "Craw Wurm", "label": "wurm"},
+          {"card": "Savannah Lions", "label": "alions"}
+        ],
+        "library": [
+          {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"},
+          {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}
+        ]
+      },
+      {
+        "name": "bob",
+        "battlefield": [
+          {"card": "Hill Giant", "label": "bgiant"},
+          {"card": "Gray Ogre", "label": "bogre"}
+        ],
+        "hand": [
+          {"card": "Hill Giant", "label": "h1"},
+          {"card": "Hill Giant", "label": "h2"},
+          {"card": "Hill Giant", "label": "h3"},
+          {"card": "Lightning Bolt", "label": "hbolt"}
+        ],
+        "graveyard": [
+          {"card": "Hill Giant", "label": "g1"}
+        ],
+        "library": [
+          {"card": "Swamp", "label": "s1"},
+          {"card": "Swamp", "label": "s2"},
+          {"card": "Hill Giant", "label": "lgiant"},
+          {"card": "Swamp", "label": "s3"},
+          {"card": "Swamp", "label": "s4"},
+          {"card": "Swamp", "label": "s5"},
+          {"card": "Swamp", "label": "s6"},
+          {"card": "Swamp", "label": "s7"}
+        ]
+      },
+      {
+        "name": "carol",
+        "battlefield": [
+          {"card": "Wall of Stone", "label": "wall"}
+        ],
+        "hand": [
+          {"card": "Hill Giant", "label": "chand"}
+        ],
+        "graveyard": [
+          {"card": "Gray Ogre", "label": "cogre"}
+        ],
+        "library": [
+          {"card": "Forest"}, {"card": "Forest"}, {"card": "Forest"}, {"card": "Forest"},
+          {"card": "Forest"}, {"card": "Forest"}, {"card": "Forest"}, {"card": "Forest"}
+        ]
+      }
+    ],
+    "active": "alice",
+    "step": "PrecombatMain"
+  },
+  "timeline": [
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": {"Answer": {"prompt": "ChooseCost", "with": 1}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": {"Cast": {"object": "$c1"}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass"},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"View": {"of": "Stack", "is": []}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Count": {"player": "alice", "zone": "Graveyard", "card": "Grizzly Bears", "count": 1}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Count": {"player": "bob", "zone": "Graveyard", "card": "Hill Giant", "count": 2}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Count": {"player": "bob", "zone": "Graveyard", "card": "Gray Ogre", "count": 1}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Count": {"player": "carol", "zone": "Graveyard", "card": "Wall of Stone", "count": 1}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Count": {"player": "bob", "zone": "Hand", "card": "Hill Giant", "count": 3}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Count": {"player": "bob", "zone": "Exile", "card": "Hill Giant", "count": 0}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Count": {"player": "alice", "zone": "Graveyard", "card": "Craw Wurm", "count": 1}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": {"Answer": {"prompt": "ChooseCost", "with": 0}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": {"Cast": {"object": "$c2"}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": {"Answer": {"prompt": "ChooseExilesTotalling", "with": ["$wurm"]}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Count": {"player": "alice", "zone": "Exile", "card": "Craw Wurm", "count": 1}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass"},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "refuse": {"Answer": {"prompt": "ChooseCardInGraveyard", "with": "$alions"}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": {"Answer": {"prompt": "ChooseCardInGraveyard", "with": "$g1"}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"View": {"of": "Prompt", "is": {"kind": "Search", "offer": {"from": ["$lgiant", "$h1", "$h2", "$h3", "Hill Giant#6"], "names": ["Hill Giant", "Hill Giant", "Hill Giant", "Hill Giant", "Hill Giant"], "count": 5}}}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": {"Answer": {"prompt": "Search", "with": ["$lgiant", "$h1", "$h3"]}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": {"Answer": {"prompt": "Shuffle", "with": ["$s1", "$s2", "$s3", "$s4", "$s5", "$s6", "$s7"]}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Count": {"player": "bob", "zone": "Exile", "card": "Hill Giant", "count": 4}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Count": {"player": "bob", "zone": "Graveyard", "card": "Hill Giant", "count": 1}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Count": {"player": "bob", "zone": "Hand", "card": "Swamp", "count": 2}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Count": {"player": "bob", "zone": "Hand", "card": "Hill Giant", "count": 1}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Count": {"player": "bob", "zone": "Hand", "card": "Lightning Bolt", "count": 1}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Count": {"player": "bob", "zone": "Library", "card": "Swamp", "count": 5}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Count": {"player": "carol", "zone": "Hand", "card": "Hill Giant", "count": 1}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Count": {"player": "carol", "zone": "Library", "card": "Forest", "count": 8}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Count": {"player": "carol", "zone": "Exile", "card": "Gray Ogre", "count": 0}}}
+  ]
+}
