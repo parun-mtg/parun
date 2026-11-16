@@ -1,0 +1,30 @@
+{
+  "description": "CR 106.6 / 113.1a: Jasmine Boreal of the Seven's {G}{W} can be spent only to cast creature spells with no abilities",
+  "note": "With the GW in pool, Grizzly Bears and Savannah Lions are castable; Llanowar Elves, a creature spell with an ability, and Giant Growth, a noncreature spell, are not.",
+  "board": {
+    "active": "alice",
+    "step": "PrecombatMain",
+    "seats": [
+      {
+        "name": "alice",
+        "battlefield": [
+          { "card": "Jasmine Boreal of the Seven", "label": "jasmine", "ready": true }
+        ],
+        "hand": [
+          { "card": "Grizzly Bears", "label": "bears" },
+          { "card": "Savannah Lions", "label": "lions" },
+          { "card": "Llanowar Elves", "label": "elves" },
+          { "card": "Giant Growth", "label": "growth" }
+        ]
+      },
+      { "name": "bob" }
+    ]
+  },
+  "timeline": [
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": { "Take": { "action": "ActivateManaAbility $jasmine" } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "View": { "of": "Offered", "player": "alice", "is": ["Pass", "Cast $bears", "Cast $lions"] } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": { "Cast": { "object": "$bears" } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass" },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "Count": { "player": "alice", "zone": "Battlefield", "card": "Grizzly Bears", "count": 1 } } }
+  ]
+}
