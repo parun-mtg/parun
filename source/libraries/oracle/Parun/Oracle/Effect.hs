@@ -1191,8 +1191,8 @@ acted context word r = do
 -- unless the card stays (Parun.Types.SearchDestination). Free: "that card"
 -- or "it" for the card put into your hand (Diabolic Tutor, Rune-Scarred
 -- Demon) or onto the battlefield (Nature's Lore, Three Visits), "it" or "that card" for the card revealed (Summoner's Pact,
--- Goblin Matron), and "that card" or "the card" for the card put on top
--- (Sylvan Tutor, Worldly Tutor). Several descriptions searched for at once
+-- Goblin Matron), and "that card", "the card" or "it" for the card put on
+-- top (Sylvan Tutor, Worldly Tutor, Silver Deputy). Several descriptions searched for at once
 -- (CR 701.23h) are listed, one card each, and "them" put into your hand or
 -- onto the battlefield tapped: Gem of Becoming, Krosan Verge. Any other search
 -- is not spelled out here.
@@ -1204,7 +1204,7 @@ searched context s
       one <- card (Search.filter s)
       let onto = [Text.pack "put that card onto the battlefield", Text.pack "put it onto the battlefield"]
           revealed = [Text.pack "reveal it", Text.pack "reveal that card"]
-          onTop = [Text.pack "that card", Text.pack "the card"]
+          onTop = [Text.pack "that card", Text.pack "the card", Text.pack "it"]
       gone <- case Search.destination s of
         SearchDestination.Hand -> [Text.pack ", put that card into your hand, then shuffle", Text.pack ", put it into your hand, then shuffle"]
         SearchDestination.RevealThenHand -> fmap (\r -> Text.pack ", " <> r <> Text.pack ", put it into your hand, then shuffle") revealed
