@@ -7,6 +7,9 @@ data DistinctOf
     CardTypes
   | -- | CR 105.1: colors, a colorless member adding nothing (CR 105.2c).
     Colors
+  | -- | CR 105.2 / 105.5: color combinations, each member's whole set of
+    -- colors one value (Niv-Mizzet, Guildpact's color pairs).
+    ColorSets
   | -- | CR 205.3i / 305.6: Forest, Island, Mountain, Plains and Swamp, the
     -- domain count ("the number of basic land types among lands you control").
     BasicLandTypes
