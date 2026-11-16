@@ -1,45 +1,427 @@
 {
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "battlefield": [
+          {
+            "card": "Case of the Uneaten Feast",
+            "label": "case"
+          },
+          {
+            "card": "Plains",
+            "label": "p1"
+          },
+          {
+            "card": "Plains",
+            "label": "p2"
+          },
+          {
+            "card": "Plains",
+            "label": "p3"
+          },
+          {
+            "card": "Forest",
+            "label": "f1"
+          }
+        ],
+        "graveyard": [
+          {
+            "card": "Grizzly Bears",
+            "label": "gb"
+          }
+        ],
+        "hand": [
+          {
+            "card": "Savannah Lions",
+            "label": "lions1"
+          },
+          {
+            "card": "Savannah Lions",
+            "label": "lions2"
+          },
+          {
+            "card": "Sacred Nectar",
+            "label": "nectar1"
+          },
+          {
+            "card": "Sacred Nectar",
+            "label": "nectar2"
+          }
+        ],
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ],
+        "name": "alice"
+      },
+      {
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ],
+        "name": "bob"
+      }
+    ],
+    "step": "PrecombatMain"
+  },
   "description": "CR 720.3a, 702.169d, 601.3: Case of the Uneaten Feast gains 1 per creature entering, solves only on 5 life gained in one turn, and once solved sacrifices so creature cards in alice's graveyard can be cast from it",
   "note": "Turn 1 Savannah Lions gains 1 and the sacrifice is refused while unsolved. Turn 3 Sacred Nectar brings the game's total to 5 but the turn's to 4, so nothing solves. Turn 5 Nectar and a second Lions gain 5 and the Case solves. Turn 7 the sacrifice lets Grizzly Bears be cast from the graveyard, while Sacred Nectar there is refused.",
-  "board": {"active": "alice", "step": "PrecombatMain", "seats": [
-    {"name": "alice",
-     "battlefield": [{"card": "Case of the Uneaten Feast", "label": "case"}, {"card": "Plains", "label": "p1"}, {"card": "Plains", "label": "p2"}, {"card": "Plains", "label": "p3"}, {"card": "Forest", "label": "f1"}],
-     "hand": [{"card": "Savannah Lions", "label": "lions1"}, {"card": "Savannah Lions", "label": "lions2"}, {"card": "Sacred Nectar", "label": "nectar1"}, {"card": "Sacred Nectar", "label": "nectar2"}],
-     "graveyard": [{"card": "Grizzly Bears", "label": "gb"}],
-     "library": [{"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}]},
-    {"name": "bob", "library": [{"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}]}
-  ]},
   "timeline": [
-    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": {"Cast": {"object": "$lions1", "mana": ["$p1", null]}}},
-    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass"},
-    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass"},
-    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Life": {"player": "alice", "life": 21}}},
-    {"turn": 1, "step": "PrecombatMain", "player": "alice", "refuse": {"Activate": {"object": "$case", "ability": 0}}},
-    {"turn": 1, "step": "EndStep", "player": "alice", "check": {"View": {"of": "Stack", "is": []}}},
-    {"turn": 3, "step": "DeclareAttackers", "player": "alice", "do": {"Attack": []}},
-    {"turn": 3, "step": "PrecombatMain", "player": "alice", "do": {"Cast": {"object": "$nectar1", "mana": ["$p1", "$p2", null]}}},
-    {"turn": 3, "step": "PrecombatMain", "player": "alice", "do": "Pass"},
-    {"turn": 3, "step": "PrecombatMain", "player": "alice", "check": {"Life": {"player": "alice", "life": 25}}},
-    {"turn": 3, "step": "EndStep", "player": "alice", "check": {"View": {"of": "Stack", "is": []}}},
-    {"turn": 3, "step": "EndStep", "player": "alice", "check": {"View": {"of": "Designations", "object": "$case", "is": []}}},
-    {"turn": 5, "step": "DeclareAttackers", "player": "alice", "do": {"Attack": []}},
-    {"turn": 5, "step": "PrecombatMain", "player": "alice", "do": {"Cast": {"object": "$nectar2", "mana": ["$p1", "$p2", null]}}},
-    {"turn": 5, "step": "PrecombatMain", "player": "alice", "do": "Pass"},
-    {"turn": 5, "step": "PrecombatMain", "player": "alice", "do": {"Cast": {"object": "$lions2", "mana": ["$p3", null]}}},
-    {"turn": 5, "step": "PrecombatMain", "player": "alice", "do": "Pass"},
-    {"turn": 5, "step": "PrecombatMain", "player": "alice", "do": "Pass"},
-    {"turn": 5, "step": "PrecombatMain", "player": "alice", "check": {"Life": {"player": "alice", "life": 30}}},
-    {"turn": 5, "step": "EndStep", "player": "alice", "check": {"View": {"of": "Stack", "is": ["trigger of $case"]}}},
-    {"turn": 5, "step": "EndStep", "player": "alice", "do": "Pass"},
-    {"turn": 5, "step": "EndStep", "player": "alice", "check": {"View": {"of": "Designations", "object": "$case", "is": ["Solved"]}}},
-    {"turn": 7, "step": "DeclareAttackers", "player": "alice", "do": {"Attack": []}},
-    {"turn": 7, "step": "PrecombatMain", "player": "alice", "refuse": {"Cast": {"object": "$gb", "mana": ["$f1", "$p1", null]}}},
-    {"turn": 7, "step": "PrecombatMain", "player": "alice", "do": {"Activate": {"object": "$case", "ability": 0}}},
-    {"turn": 7, "step": "PrecombatMain", "player": "alice", "do": "Pass"},
-    {"turn": 7, "step": "PrecombatMain", "player": "alice", "check": {"Count": {"player": "alice", "zone": "Graveyard", "card": "Case of the Uneaten Feast", "count": 1}}},
-    {"turn": 7, "step": "PrecombatMain", "player": "alice", "refuse": {"Cast": {"object": "Sacred Nectar", "mana": ["$p1", "$p2", null]}}},
-    {"turn": 7, "step": "PrecombatMain", "player": "alice", "do": {"Cast": {"object": "$gb", "mana": ["$f1", "$p1", null]}}},
-    {"turn": 7, "step": "PrecombatMain", "player": "alice", "do": "Pass"},
-    {"turn": 7, "step": "PrecombatMain", "player": "alice", "check": {"Count": {"player": "alice", "zone": "Battlefield", "card": "Grizzly Bears", "count": 1}}}
+    {
+      "do": {
+        "Cast": {
+          "mana": [
+            "$p1",
+            null
+          ],
+          "object": "$lions1"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Life": {
+          "life": 21,
+          "player": "alice"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "player": "alice",
+      "refuse": {
+        "Activate": {
+          "ability": 0,
+          "object": "$case"
+        }
+      },
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "View": {
+          "is": [],
+          "of": "Stack"
+        }
+      },
+      "player": "alice",
+      "step": "EndStep",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Attack": []
+      },
+      "player": "alice",
+      "step": "DeclareAttackers",
+      "turn": 3
+    },
+    {
+      "do": {
+        "Cast": {
+          "mana": [
+            "$p1",
+            "$p2",
+            null
+          ],
+          "object": "$nectar1"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 3
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 3
+    },
+    {
+      "check": {
+        "Life": {
+          "life": 25,
+          "player": "alice"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 3
+    },
+    {
+      "check": {
+        "View": {
+          "is": [],
+          "of": "Stack"
+        }
+      },
+      "player": "alice",
+      "step": "EndStep",
+      "turn": 3
+    },
+    {
+      "check": {
+        "View": {
+          "is": [],
+          "object": "$case",
+          "of": "Designations"
+        }
+      },
+      "player": "alice",
+      "step": "EndStep",
+      "turn": 3
+    },
+    {
+      "do": {
+        "Attack": []
+      },
+      "player": "alice",
+      "step": "DeclareAttackers",
+      "turn": 5
+    },
+    {
+      "do": {
+        "Cast": {
+          "mana": [
+            "$p1",
+            "$p2",
+            null
+          ],
+          "object": "$nectar2"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 5
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 5
+    },
+    {
+      "do": {
+        "Cast": {
+          "mana": [
+            "$p3",
+            null
+          ],
+          "object": "$lions2"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 5
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 5
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 5
+    },
+    {
+      "check": {
+        "Life": {
+          "life": 30,
+          "player": "alice"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 5
+    },
+    {
+      "check": {
+        "View": {
+          "is": [
+            "trigger of $case"
+          ],
+          "of": "Stack"
+        }
+      },
+      "player": "alice",
+      "step": "EndStep",
+      "turn": 5
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "EndStep",
+      "turn": 5
+    },
+    {
+      "check": {
+        "View": {
+          "is": [
+            "Solved"
+          ],
+          "object": "$case",
+          "of": "Designations"
+        }
+      },
+      "player": "alice",
+      "step": "EndStep",
+      "turn": 5
+    },
+    {
+      "do": {
+        "Attack": []
+      },
+      "player": "alice",
+      "step": "DeclareAttackers",
+      "turn": 7
+    },
+    {
+      "player": "alice",
+      "refuse": {
+        "Cast": {
+          "mana": [
+            "$f1",
+            "$p1",
+            null
+          ],
+          "object": "$gb"
+        }
+      },
+      "step": "PrecombatMain",
+      "turn": 7
+    },
+    {
+      "do": {
+        "Activate": {
+          "ability": 0,
+          "object": "$case"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 7
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 7
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Case of the Uneaten Feast",
+          "count": 1,
+          "player": "alice",
+          "zone": "Graveyard"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 7
+    },
+    {
+      "player": "alice",
+      "refuse": {
+        "Cast": {
+          "mana": [
+            "$p1",
+            "$p2",
+            null
+          ],
+          "object": "Sacred Nectar"
+        }
+      },
+      "step": "PrecombatMain",
+      "turn": 7
+    },
+    {
+      "do": {
+        "Cast": {
+          "mana": [
+            "$f1",
+            "$p1",
+            null
+          ],
+          "object": "$gb"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 7
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 7
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Grizzly Bears",
+          "count": 1,
+          "player": "alice",
+          "zone": "Battlefield"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 7
+    }
   ]
 }

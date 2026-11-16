@@ -1,9 +1,8 @@
 {
-  "description": "Case of the Locked Hothouse grants an additional land, solves at seven lands, and once solved shows the top card and plays lands and casts creature and enchantment spells from it",
   "board": {
+    "active": "alice",
     "seats": [
       {
-        "name": "alice",
         "battlefield": [
           {
             "card": "Forest",
@@ -84,10 +83,10 @@
           {
             "card": "Plains"
           }
-        ]
+        ],
+        "name": "alice"
       },
       {
-        "name": "bob",
         "library": [
           {
             "card": "Plains"
@@ -107,241 +106,242 @@
           {
             "card": "Plains"
           }
-        ]
+        ],
+        "name": "bob"
       }
     ],
-    "active": "alice",
     "step": "PrecombatMain"
   },
+  "description": "Case of the Locked Hothouse grants an additional land, solves at seven lands, and once solved shows the top card and plays lands and casts creature and enchantment spells from it",
+  "note": "Unsolved, alice cannot see or play the top Forest but plays two Forests from hand, the second by the Case's additional land. Seven lands solve it; then she sees the top card, plays a Forest from the top, casts Grizzly Bears and Exploration from it, and is refused the instant Giant Growth, though an untapped Forest could pay for it.",
   "timeline": [
     {
-      "turn": 1,
-      "step": "PrecombatMain",
-      "player": "alice",
       "check": {
         "View": {
-          "of": "Seers",
+          "is": [],
           "object": "$lib1",
-          "is": []
+          "of": "Seers"
         }
-      }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PrecombatMain",
       "player": "alice",
       "refuse": {
         "PlayLand": "$lib1"
-      }
+      },
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PrecombatMain",
-      "player": "alice",
       "do": {
         "PlayLand": "$h1"
-      }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PrecombatMain",
-      "player": "alice",
       "do": {
         "PlayLand": "$h2"
-      }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PrecombatMain",
-      "player": "alice",
       "check": {
         "Count": {
-          "player": "alice",
-          "zone": "Battlefield",
           "card": "Forest",
-          "count": 7
+          "count": 7,
+          "player": "alice",
+          "zone": "Battlefield"
         }
-      }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "EndStep",
-      "player": "alice",
       "check": {
         "View": {
-          "of": "Stack",
           "is": [
             "trigger of $case"
-          ]
+          ],
+          "of": "Stack"
         }
-      }
+      },
+      "player": "alice",
+      "step": "EndStep",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "EndStep",
+      "do": "Pass",
       "player": "alice",
-      "do": "Pass"
+      "step": "EndStep",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "EndStep",
-      "player": "alice",
       "check": {
         "View": {
-          "of": "Designations",
-          "object": "$case",
           "is": [
             "Solved"
-          ]
+          ],
+          "object": "$case",
+          "of": "Designations"
         }
-      }
-    },
-    {
-      "turn": 1,
+      },
+      "player": "alice",
       "step": "EndStep",
-      "player": "alice",
+      "turn": 1
+    },
+    {
       "check": {
         "View": {
-          "of": "Seers",
+          "is": [
+            "alice"
+          ],
           "object": "$lib1",
-          "is": [
-            "alice"
-          ]
+          "of": "Seers"
         }
-      }
+      },
+      "player": "alice",
+      "step": "EndStep",
+      "turn": 1
     },
     {
-      "turn": 3,
-      "step": "PrecombatMain",
-      "player": "alice",
       "check": {
         "View": {
-          "of": "Seers",
-          "object": "$lib2",
           "is": [
             "alice"
-          ]
+          ],
+          "object": "$lib2",
+          "of": "Seers"
         }
-      }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 3
     },
     {
-      "turn": 3,
-      "step": "PrecombatMain",
-      "player": "alice",
       "do": {
         "PlayLand": "$lib2"
-      }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 3
     },
     {
-      "turn": 3,
-      "step": "PrecombatMain",
-      "player": "alice",
       "check": {
         "Count": {
-          "player": "alice",
-          "zone": "Battlefield",
           "card": "Forest",
-          "count": 8
+          "count": 8,
+          "player": "alice",
+          "zone": "Battlefield"
         }
-      }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 3
     },
     {
-      "turn": 3,
-      "step": "PrecombatMain",
-      "player": "alice",
       "do": {
         "Cast": {
-          "object": "$bears",
           "mana": [
             "$f1",
             "$f2",
             null
-          ]
+          ],
+          "object": "$bears"
         }
-      }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 3
     },
     {
-      "turn": 3,
-      "step": "PrecombatMain",
+      "do": "Pass",
       "player": "alice",
-      "do": "Pass"
+      "step": "PrecombatMain",
+      "turn": 3
     },
     {
-      "turn": 3,
-      "step": "PrecombatMain",
-      "player": "alice",
       "check": {
         "Count": {
-          "player": "alice",
-          "zone": "Battlefield",
           "card": "Grizzly Bears",
-          "count": 1
+          "count": 1,
+          "player": "alice",
+          "zone": "Battlefield"
         }
-      }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 3
     },
     {
-      "turn": 3,
-      "step": "PrecombatMain",
-      "player": "alice",
       "do": {
         "Cast": {
-          "object": "$expl",
           "mana": [
             "$f3",
             null
-          ]
+          ],
+          "object": "$expl"
         }
-      }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 3
     },
     {
-      "turn": 3,
-      "step": "PrecombatMain",
+      "do": "Pass",
       "player": "alice",
-      "do": "Pass"
+      "step": "PrecombatMain",
+      "turn": 3
     },
     {
-      "turn": 3,
-      "step": "PrecombatMain",
-      "player": "alice",
       "check": {
         "Count": {
-          "player": "alice",
-          "zone": "Battlefield",
           "card": "Exploration",
-          "count": 1
+          "count": 1,
+          "player": "alice",
+          "zone": "Battlefield"
         }
-      }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 3
     },
     {
-      "turn": 3,
-      "step": "PrecombatMain",
       "player": "alice",
       "refuse": {
         "Cast": {
-          "object": "$growth",
-          "targets": [
-            "Grizzly Bears"
-          ],
           "mana": [
             "$f4",
             null
+          ],
+          "object": "$growth",
+          "targets": [
+            "Grizzly Bears"
           ]
         }
-      }
+      },
+      "step": "PrecombatMain",
+      "turn": 3
     },
     {
-      "turn": 3,
-      "step": "PrecombatMain",
-      "player": "alice",
       "check": {
         "Count": {
-          "player": "alice",
-          "zone": "Library",
           "card": "Giant Growth",
-          "count": 1
+          "count": 1,
+          "player": "alice",
+          "zone": "Library"
         }
-      }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 3
     }
-  ],
-  "note": "Unsolved, alice cannot see or play the top Forest but plays two Forests from hand, the second by the Case's additional land. Seven lands solve it; then she sees the top card, plays a Forest from the top, casts Grizzly Bears and Exploration from it, and is refused the instant Giant Growth, though an untapped Forest could pay for it."
+  ]
 }

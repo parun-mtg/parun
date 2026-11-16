@@ -1,9 +1,8 @@
 {
-  "description": "Case of the Shattered Pact fetches a basic land on entering, solves with five colors among your permanents, and once solved gives a creature flying, double strike and vigilance at the beginning of combat",
   "board": {
+    "active": "alice",
     "seats": [
       {
-        "name": "alice",
         "battlefield": [
           {
             "card": "Wastes",
@@ -60,10 +59,10 @@
             "card": "Island",
             "label": "island"
           }
-        ]
+        ],
+        "name": "alice"
       },
       {
-        "name": "bob",
         "library": [
           {
             "card": "Plains"
@@ -77,42 +76,42 @@
           {
             "card": "Plains"
           }
-        ]
+        ],
+        "name": "bob"
       }
     ],
-    "active": "alice",
     "step": "PrecombatMain"
   },
+  "description": "Case of the Shattered Pact fetches a basic land on entering, solves with five colors among your permanents, and once solved gives a creature flying, double strike and vigilance at the beginning of combat",
+  "note": "White, blue, black, red and green creatures solve the Case at the end step; the colorless Case and Wastes add nothing. Unsolved, the first beginning of combat triggers nothing. Solved, the targeted Hill Giant alone gains flying, double strike and vigilance: it deals 3 twice and stays untapped, and the grant ends with the turn.",
   "timeline": [
     {
-      "turn": 1,
-      "step": "PrecombatMain",
-      "player": "alice",
       "do": {
         "Cast": {
-          "object": "$case",
           "mana": [
             "$w1",
             "$w2"
-          ]
+          ],
+          "object": "$case"
         }
-      }
-    },
-    {
-      "turn": 1,
-      "step": "PrecombatMain",
+      },
       "player": "alice",
-      "do": "Pass"
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PrecombatMain",
+      "do": "Pass",
       "player": "alice",
-      "do": "Pass"
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
+      "do": "Pass",
+      "player": "alice",
       "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
       "player": "alice",
       "refuse": {
         "Answer": {
@@ -121,12 +120,11 @@
             "$lbears"
           ]
         }
-      }
+      },
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PrecombatMain",
-      "player": "alice",
       "do": {
         "Answer": {
           "prompt": "Search",
@@ -134,12 +132,12 @@
             "$forest"
           ]
         }
-      }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PrecombatMain",
-      "player": "alice",
       "do": {
         "Answer": {
           "prompt": "Shuffle",
@@ -148,220 +146,222 @@
             "$island"
           ]
         }
-      }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PrecombatMain",
-      "player": "alice",
       "check": {
         "Count": {
-          "player": "alice",
-          "zone": "Hand",
           "card": "Forest",
-          "count": 1
+          "count": 1,
+          "player": "alice",
+          "zone": "Hand"
         }
-      }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PrecombatMain",
-      "player": "alice",
       "check": {
         "View": {
-          "of": "Witnessed",
-          "player": "bob",
           "is": [
             "Forest"
-          ]
+          ],
+          "of": "Witnessed",
+          "player": "bob"
         }
-      }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "BeginningOfCombat",
-      "player": "alice",
       "check": {
         "View": {
-          "of": "Stack",
-          "is": []
+          "is": [],
+          "of": "Stack"
         }
-      }
+      },
+      "player": "alice",
+      "step": "BeginningOfCombat",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "DeclareAttackers",
-      "player": "alice",
       "do": {
         "Attack": []
-      }
+      },
+      "player": "alice",
+      "step": "DeclareAttackers",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "EndStep",
-      "player": "alice",
       "check": {
         "View": {
-          "of": "Stack",
           "is": [
             "trigger of Case of the Shattered Pact"
-          ]
+          ],
+          "of": "Stack"
         }
-      }
+      },
+      "player": "alice",
+      "step": "EndStep",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "EndStep",
+      "do": "Pass",
       "player": "alice",
-      "do": "Pass"
+      "step": "EndStep",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "EndStep",
-      "player": "alice",
       "check": {
         "View": {
-          "of": "Designations",
-          "object": "Case of the Shattered Pact",
           "is": [
             "Solved"
-          ]
+          ],
+          "object": "Case of the Shattered Pact",
+          "of": "Designations"
         }
-      }
+      },
+      "player": "alice",
+      "step": "EndStep",
+      "turn": 1
     },
     {
-      "turn": 3,
-      "step": "BeginningOfCombat",
-      "player": "alice",
       "check": {
         "View": {
-          "of": "Stack",
           "is": [
             "trigger of Case of the Shattered Pact"
-          ]
+          ],
+          "of": "Stack"
         }
-      }
+      },
+      "player": "alice",
+      "step": "BeginningOfCombat",
+      "turn": 3
     },
     {
-      "turn": 3,
-      "step": "BeginningOfCombat",
-      "player": "alice",
       "do": {
         "ChooseTargets": {
           "target": [
             "$giant"
           ]
         }
-      }
+      },
+      "player": "alice",
+      "step": "BeginningOfCombat",
+      "turn": 3
     },
     {
-      "turn": 3,
-      "step": "BeginningOfCombat",
+      "do": "Pass",
       "player": "alice",
-      "do": "Pass"
+      "step": "BeginningOfCombat",
+      "turn": 3
     },
     {
-      "turn": 3,
-      "step": "BeginningOfCombat",
-      "player": "alice",
       "check": {
         "Keywords": {
-          "object": "$giant",
+          "count": 1,
           "keyword": {
             "type": "Flying"
           },
-          "count": 1
+          "object": "$giant"
         }
-      }
+      },
+      "player": "alice",
+      "step": "BeginningOfCombat",
+      "turn": 3
     },
     {
-      "turn": 3,
-      "step": "BeginningOfCombat",
-      "player": "alice",
       "check": {
         "Keywords": {
-          "object": "$giant",
+          "count": 1,
           "keyword": {
             "type": "DoubleStrike"
           },
-          "count": 1
+          "object": "$giant"
         }
-      }
+      },
+      "player": "alice",
+      "step": "BeginningOfCombat",
+      "turn": 3
     },
     {
-      "turn": 3,
-      "step": "BeginningOfCombat",
-      "player": "alice",
       "check": {
         "Keywords": {
-          "object": "$giant",
+          "count": 1,
           "keyword": {
             "type": "Vigilance"
           },
-          "count": 1
+          "object": "$giant"
         }
-      }
+      },
+      "player": "alice",
+      "step": "BeginningOfCombat",
+      "turn": 3
     },
     {
-      "turn": 3,
-      "step": "BeginningOfCombat",
-      "player": "alice",
       "check": {
         "Keywords": {
-          "object": "$bears",
+          "count": 0,
           "keyword": {
             "type": "Flying"
           },
-          "count": 0
+          "object": "$bears"
         }
-      }
+      },
+      "player": "alice",
+      "step": "BeginningOfCombat",
+      "turn": 3
     },
     {
-      "turn": 3,
-      "step": "DeclareAttackers",
-      "player": "alice",
       "do": {
         "Attack": [
           "$giant"
         ]
-      }
+      },
+      "player": "alice",
+      "step": "DeclareAttackers",
+      "turn": 3
     },
     {
-      "turn": 3,
-      "step": "EndOfCombat",
-      "player": "alice",
       "check": {
         "Life": {
-          "player": "bob",
-          "life": 14
+          "life": 14,
+          "player": "bob"
         }
-      }
+      },
+      "player": "alice",
+      "step": "EndOfCombat",
+      "turn": 3
     },
     {
-      "turn": 3,
-      "step": "EndOfCombat",
-      "player": "alice",
       "check": {
         "Tapped": {
           "object": "$giant",
           "tapped": false
         }
-      }
+      },
+      "player": "alice",
+      "step": "EndOfCombat",
+      "turn": 3
     },
     {
-      "turn": 4,
-      "step": "Upkeep",
-      "player": "bob",
       "check": {
         "Keywords": {
-          "object": "$giant",
+          "count": 0,
           "keyword": {
             "type": "Flying"
           },
-          "count": 0
+          "object": "$giant"
         }
-      }
+      },
+      "player": "bob",
+      "step": "Upkeep",
+      "turn": 4
     }
-  ],
-  "note": "White, blue, black, red and green creatures solve the Case at the end step; the colorless Case and Wastes add nothing. Unsolved, the first beginning of combat triggers nothing. Solved, the targeted Hill Giant alone gains flying, double strike and vigilance: it deals 3 twice and stays untapped, and the grant ends with the turn."
+  ]
 }

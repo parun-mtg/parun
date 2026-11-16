@@ -1,35 +1,368 @@
 {
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "battlefield": [
+          {
+            "card": "Plains",
+            "label": "p1"
+          },
+          {
+            "card": "Island",
+            "label": "i1"
+          },
+          {
+            "card": "Island",
+            "label": "i2"
+          },
+          {
+            "card": "Island",
+            "label": "i3"
+          },
+          {
+            "card": "Island",
+            "label": "i4"
+          },
+          {
+            "card": "Island",
+            "label": "i5"
+          },
+          {
+            "card": "Vengeful Tracker",
+            "label": "vt1"
+          },
+          {
+            "card": "Vengeful Tracker",
+            "label": "vt2"
+          }
+        ],
+        "hand": [
+          {
+            "card": "Case File Auditor",
+            "label": "auditor"
+          },
+          {
+            "card": "Savannah Lions",
+            "label": "lions"
+          }
+        ],
+        "library": [
+          {
+            "card": "Lightning Bolt",
+            "label": "bolt"
+          },
+          {
+            "card": "Case of the Pilfered Proof",
+            "label": "proof"
+          },
+          {
+            "card": "Pacifism",
+            "label": "pac1"
+          },
+          {
+            "card": "Island",
+            "label": "a1"
+          },
+          {
+            "card": "Island",
+            "label": "a2"
+          },
+          {
+            "card": "Island",
+            "label": "a3"
+          },
+          {
+            "card": "Lightning Bolt",
+            "label": "bolt2"
+          },
+          {
+            "card": "Pacifism",
+            "label": "pac2"
+          },
+          {
+            "card": "Case of the Ransacked Lab",
+            "label": "lab"
+          },
+          {
+            "card": "Island",
+            "label": "b1"
+          },
+          {
+            "card": "Island",
+            "label": "b2"
+          },
+          {
+            "card": "Island",
+            "label": "b3"
+          }
+        ],
+        "name": "alice"
+      },
+      {
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ],
+        "name": "bob"
+      }
+    ],
+    "step": "PrecombatMain"
+  },
   "description": "CR 603.2, 720.3a, 609.4b: Case File Auditor looks at six and takes an enchantment when it enters and again when alice solves a Case, and lets Islands pay for a white Case spell but not for Savannah Lions",
   "note": "The entry trigger refuses Lightning Bolt and takes Case of the Pilfered Proof, which two Islands then cast; an Island paying for Savannah Lions' {W} is refused. With the two Vengeful Trackers alice controls three Detectives, so the Case solves at the end step and the Auditor's second trigger reaches the next six cards, taking the second Pacifism.",
-  "board": {"active": "alice", "step": "PrecombatMain", "seats": [
-    {"name": "alice",
-     "battlefield": [{"card": "Plains", "label": "p1"}, {"card": "Island", "label": "i1"}, {"card": "Island", "label": "i2"}, {"card": "Island", "label": "i3"}, {"card": "Island", "label": "i4"}, {"card": "Island", "label": "i5"}, {"card": "Vengeful Tracker", "label": "vt1"}, {"card": "Vengeful Tracker", "label": "vt2"}],
-     "hand": [{"card": "Case File Auditor", "label": "auditor"}, {"card": "Savannah Lions", "label": "lions"}],
-     "library": [{"card": "Lightning Bolt", "label": "bolt"}, {"card": "Case of the Pilfered Proof", "label": "proof"}, {"card": "Pacifism", "label": "pac1"}, {"card": "Island", "label": "a1"}, {"card": "Island", "label": "a2"}, {"card": "Island", "label": "a3"},
-                 {"card": "Lightning Bolt", "label": "bolt2"}, {"card": "Pacifism", "label": "pac2"}, {"card": "Case of the Ransacked Lab", "label": "lab"}, {"card": "Island", "label": "b1"}, {"card": "Island", "label": "b2"}, {"card": "Island", "label": "b3"}]},
-    {"name": "bob", "library": [{"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}]}
-  ]},
   "timeline": [
-    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": {"Cast": {"object": "$auditor", "mana": ["$p1", "$i1", "$i2", null]}}},
-    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass"},
-    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass"},
-    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": {"ChooseOptional": "Exercises"}},
-    {"turn": 1, "step": "PrecombatMain", "player": "alice", "refuse": {"Answer": {"prompt": "ChooseCardFromAmong", "with": "$bolt"}}},
-    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": {"Answer": {"prompt": "ChooseCardFromAmong", "with": "$proof"}}},
-    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": {"Answer": {"prompt": "Shuffle", "with": ["$bolt", "$pac1", "$a1", "$a2", "$a3"]}}},
-    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Count": {"player": "alice", "zone": "Hand", "card": "Case of the Pilfered Proof", "count": 1}}},
-    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Count": {"player": "alice", "zone": "Library", "card": "Island", "count": 6}}},
-    {"turn": 1, "step": "PrecombatMain", "player": "alice", "refuse": {"Cast": {"object": "$lions", "mana": ["$i5", null]}}},
-    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": {"Cast": {"object": "Case of the Pilfered Proof", "mana": ["$i3", "$i4", null]}}},
-    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass"},
-    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Count": {"player": "alice", "zone": "Battlefield", "card": "Case of the Pilfered Proof", "count": 1}}},
-    {"turn": 1, "step": "EndStep", "player": "alice", "check": {"View": {"of": "Stack", "is": ["trigger of Case of the Pilfered Proof"]}}},
-    {"turn": 1, "step": "EndStep", "player": "alice", "do": "Pass"},
-    {"turn": 1, "step": "EndStep", "player": "alice", "check": {"View": {"of": "Stack", "is": ["trigger of Case File Auditor"]}}},
-    {"turn": 1, "step": "EndStep", "player": "alice", "do": "Pass"},
-    {"turn": 1, "step": "EndStep", "player": "alice", "do": {"ChooseOptional": "Exercises"}},
-    {"turn": 1, "step": "EndStep", "player": "alice", "do": {"Answer": {"prompt": "ChooseCardFromAmong", "with": "$pac2"}}},
-    {"turn": 1, "step": "EndStep", "player": "alice", "do": {"Answer": {"prompt": "Shuffle", "with": ["$bolt2", "$lab", "$b1", "$b2", "$b3"]}}},
-    {"turn": 1, "step": "EndStep", "player": "alice", "check": {"Count": {"player": "alice", "zone": "Hand", "card": "Pacifism", "count": 1}}}
+    {
+      "do": {
+        "Cast": {
+          "mana": [
+            "$p1",
+            "$i1",
+            "$i2",
+            null
+          ],
+          "object": "$auditor"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "ChooseOptional": "Exercises"
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "player": "alice",
+      "refuse": {
+        "Answer": {
+          "prompt": "ChooseCardFromAmong",
+          "with": "$bolt"
+        }
+      },
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Answer": {
+          "prompt": "ChooseCardFromAmong",
+          "with": "$proof"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Answer": {
+          "prompt": "Shuffle",
+          "with": [
+            "$bolt",
+            "$pac1",
+            "$a1",
+            "$a2",
+            "$a3"
+          ]
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Case of the Pilfered Proof",
+          "count": 1,
+          "player": "alice",
+          "zone": "Hand"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Island",
+          "count": 6,
+          "player": "alice",
+          "zone": "Library"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "player": "alice",
+      "refuse": {
+        "Cast": {
+          "mana": [
+            "$i5",
+            null
+          ],
+          "object": "$lions"
+        }
+      },
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Cast": {
+          "mana": [
+            "$i3",
+            "$i4",
+            null
+          ],
+          "object": "Case of the Pilfered Proof"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Case of the Pilfered Proof",
+          "count": 1,
+          "player": "alice",
+          "zone": "Battlefield"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "View": {
+          "is": [
+            "trigger of Case of the Pilfered Proof"
+          ],
+          "of": "Stack"
+        }
+      },
+      "player": "alice",
+      "step": "EndStep",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "EndStep",
+      "turn": 1
+    },
+    {
+      "check": {
+        "View": {
+          "is": [
+            "trigger of Case File Auditor"
+          ],
+          "of": "Stack"
+        }
+      },
+      "player": "alice",
+      "step": "EndStep",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "EndStep",
+      "turn": 1
+    },
+    {
+      "do": {
+        "ChooseOptional": "Exercises"
+      },
+      "player": "alice",
+      "step": "EndStep",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Answer": {
+          "prompt": "ChooseCardFromAmong",
+          "with": "$pac2"
+        }
+      },
+      "player": "alice",
+      "step": "EndStep",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Answer": {
+          "prompt": "Shuffle",
+          "with": [
+            "$bolt2",
+            "$lab",
+            "$b1",
+            "$b2",
+            "$b3"
+          ]
+        }
+      },
+      "player": "alice",
+      "step": "EndStep",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Pacifism",
+          "count": 1,
+          "player": "alice",
+          "zone": "Hand"
+        }
+      },
+      "player": "alice",
+      "step": "EndStep",
+      "turn": 1
+    }
   ]
 }
