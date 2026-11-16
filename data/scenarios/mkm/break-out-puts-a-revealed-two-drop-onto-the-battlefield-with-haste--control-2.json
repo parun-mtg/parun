@@ -1,0 +1,15 @@
+{
+  "description": "Break Out puts a revealed two-drop its caster declines to put onto the battlefield into hand",
+  "note": "The second control for the main case: Grizzly Bears passes the mana value check, but declining the may leaves it not put onto the battlefield, so it goes to hand.",
+  "board": {"active": "alice", "step": "PrecombatMain", "seats": [{"name": "alice", "hand": [{"card": "Break Out", "label": "bo"}], "battlefield": [{"card": "Mountain", "label": "m"}, {"card": "Forest", "label": "f"}], "library": [{"card": "Island", "label": "i1"}, {"card": "Grizzly Bears", "label": "bears"}, {"card": "Hill Giant", "label": "giant"}, {"card": "Island", "label": "i2"}, {"card": "Island", "label": "i3"}, {"card": "Island", "label": "i4"}, {"card": "Plains", "label": "seventh"}]}, {"name": "bob"}]},
+  "timeline": [
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": {"Cast": {"object": "$bo", "mana": ["$m", "$f"]}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass"},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": {"ChooseOptional": "Exercises"}, "source": "Break Out"},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": {"Answer": {"prompt": "ChooseCardFromAmong", "with": "$bears"}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": {"ChooseOptional": "Declines"}, "source": "Break Out"},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": {"Answer": {"prompt": "Shuffle", "with": ["$i1", "$giant", "$i2", "$i3", "$i4"]}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Count": {"player": "alice", "zone": "Hand", "card": "Grizzly Bears", "count": 1}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Count": {"player": "alice", "zone": "Battlefield", "card": "Grizzly Bears", "count": 0}}}
+  ]
+}

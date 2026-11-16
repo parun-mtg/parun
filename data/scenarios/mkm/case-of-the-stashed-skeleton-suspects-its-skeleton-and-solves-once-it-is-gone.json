@@ -1,0 +1,36 @@
+{
+  "description": "CR 701.60a, 720.3a, 702.169d: Case of the Stashed Skeleton creates a suspected 2/1 Skeleton, stays unsolved while alice controls it, solves the end step after it dies, and only then sacrifices to search for a card",
+  "note": "Turn 1 the Skeleton is suspected with menace and the solved ability is refused with {1}{B} open; the end step puts no trigger on the stack. Turn 3 Lightning Bolt kills the Skeleton and the end step solves the Case. Turn 5 it sacrifices to fetch Shivan Dragon.",
+  "board": {"active": "alice", "step": "PrecombatMain", "seats": [
+    {"name": "alice",
+     "battlefield": [{"card": "Swamp", "label": "s1"}, {"card": "Swamp", "label": "s2"}, {"card": "Swamp", "label": "s3"}, {"card": "Swamp", "label": "s4"}, {"card": "Mountain", "label": "m"}],
+     "hand": [{"card": "Case of the Stashed Skeleton", "label": "case"}, {"card": "Lightning Bolt", "label": "bolt"}],
+     "library": [{"card": "Island", "label": "i1"}, {"card": "Island", "label": "i2"}, {"card": "Shivan Dragon", "label": "dragon"}, {"card": "Island", "label": "i3"}, {"card": "Island", "label": "i4"}]},
+    {"name": "bob", "library": [{"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}]}
+  ]},
+  "timeline": [
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": {"Cast": {"object": "$case", "mana": ["$s1", "$s2", null]}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass"},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass"},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"View": {"of": "Stack", "is": []}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"PowerToughness": {"object": "Skeleton Token", "power": 2, "toughness": 1}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"View": {"of": "Designations", "object": "Skeleton Token", "is": ["Suspected"]}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Keywords": {"object": "Skeleton Token", "keyword": {"type": "Menace"}, "count": 1}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "refuse": {"Activate": {"object": "Case of the Stashed Skeleton", "ability": 0, "mana": ["$s3", "$s4", null]}}},
+    {"turn": 1, "step": "EndStep", "player": "alice", "check": {"View": {"of": "Stack", "is": []}}},
+    {"turn": 1, "step": "EndStep", "player": "alice", "check": {"View": {"of": "Designations", "object": "Case of the Stashed Skeleton", "is": []}}},
+    {"turn": 3, "step": "PrecombatMain", "player": "alice", "do": {"Cast": {"object": "$bolt", "mana": ["$m", null], "targets": ["Skeleton Token"]}}},
+    {"turn": 3, "step": "PrecombatMain", "player": "alice", "do": "Pass"},
+    {"turn": 3, "step": "PrecombatMain", "player": "alice", "check": {"Count": {"player": "alice", "zone": "Battlefield", "card": "Skeleton Token", "count": 0}}},
+    {"turn": 3, "step": "EndStep", "player": "alice", "check": {"View": {"of": "Stack", "is": ["trigger of Case of the Stashed Skeleton"]}}},
+    {"turn": 3, "step": "EndStep", "player": "alice", "do": "Pass"},
+    {"turn": 3, "step": "EndStep", "player": "alice", "check": {"View": {"of": "Designations", "object": "Case of the Stashed Skeleton", "is": ["Solved"]}}},
+    {"turn": 5, "step": "PrecombatMain", "player": "alice", "do": {"Activate": {"object": "Case of the Stashed Skeleton", "ability": 0, "mana": ["$s1", "$s2", null]}}},
+    {"turn": 5, "step": "PrecombatMain", "player": "alice", "check": {"Count": {"player": "alice", "zone": "Graveyard", "card": "Case of the Stashed Skeleton", "count": 1}}},
+    {"turn": 5, "step": "PrecombatMain", "player": "alice", "do": "Pass"},
+    {"turn": 5, "step": "PrecombatMain", "player": "alice", "do": {"Answer": {"prompt": "Search", "with": ["$dragon"]}}},
+    {"turn": 5, "step": "PrecombatMain", "player": "alice", "do": {"Answer": {"prompt": "Shuffle", "with": ["$i3", "$i4"]}}},
+    {"turn": 5, "step": "PrecombatMain", "player": "alice", "check": {"Count": {"player": "alice", "zone": "Hand", "card": "Shivan Dragon", "count": 1}}},
+    {"turn": 5, "step": "PrecombatMain", "player": "alice", "check": {"Count": {"player": "alice", "zone": "Library", "card": "Shivan Dragon", "count": 0}}}
+  ]
+}

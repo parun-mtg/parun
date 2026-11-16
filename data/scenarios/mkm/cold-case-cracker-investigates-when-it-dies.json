@@ -1,6 +1,6 @@
 {
   "description": "CR 700.4, 701.16a: Cold Case Cracker dealt lethal damage by Lightning Bolt dies and its controller investigates",
-  "note": "Alice bolts her own Cracker, so the dies trigger's Clue lands on her side; sacrificing it draws one card.",
+  "note": "Alice bolts her own Cracker, so the dies trigger's Clue lands on her side, not bob's.",
   "board": {"active": "alice", "step": "PrecombatMain", "seats": [
     {"name": "alice", "manaPool": "R", "library": [{"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}], "hand": [{"card": "Lightning Bolt", "label": "bolt"}], "battlefield": [{"card": "Cold Case Cracker", "label": "ccc"}]},
     {"name": "bob", "library": [{"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}]}

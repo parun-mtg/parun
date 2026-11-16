@@ -1,0 +1,17 @@
+{
+  "description": "Branch of Vitu-Ghazi is cast face down as a land card and turned face up adds two mana of one color that outlasts the phase",
+  "note": "Disguise casts the land card face down for {3} as a nameless 2/2 (CR 702.168a, 708.4). Turned face up for {3}, its trigger adds two mana of the one color chosen (Green), and both survive the end of the precombat main phase into the postcombat main (CR 106.4, 500.5).",
+  "board": {"active": "alice", "step": "PrecombatMain", "seats": [{"name": "alice", "hand": [{"card": "Branch of Vitu-Ghazi", "label": "branch"}], "battlefield": [{"card": "Wastes", "label": "w1"}, {"card": "Wastes", "label": "w2"}, {"card": "Wastes", "label": "w3"}, {"card": "Wastes", "label": "w4"}, {"card": "Wastes", "label": "w5"}, {"card": "Wastes", "label": "w6"}]}, {"name": "bob"}]},
+  "timeline": [
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": {"Cast": {"object": "$branch", "faceDown": true, "mana": ["$w1", "$w2", "$w3", null]}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass"},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"PowerToughness": {"object": "Branch of Vitu-Ghazi", "power": 2, "toughness": 2}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Names": {"object": "Branch of Vitu-Ghazi", "names": []}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": {"Take": {"action": "TurnFaceUp Branch of Vitu-Ghazi", "mana": ["$w4", "$w5", "$w6"]}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"View": {"of": "Stack", "is": ["trigger of Branch of Vitu-Ghazi"]}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass"},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": {"Answer": {"prompt": "ChooseManaType", "with": {"type": "Colored", "value": "Green"}}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Names": {"object": "Branch of Vitu-Ghazi", "names": ["Branch of Vitu-Ghazi"]}}},
+    {"turn": 1, "step": "PostcombatMain", "player": "alice", "check": {"View": {"of": "ManaPool", "player": "alice", "is": [{"manaType": {"type": "Colored", "value": "Green"}, "tags": [], "retention": "UntilEndOfTurn", "restriction": null, "rider": null, "sourceChoices": null}, {"manaType": {"type": "Colored", "value": "Green"}, "tags": [], "retention": "UntilEndOfTurn", "restriction": null, "rider": null, "sourceChoices": null}]}}}
+  ]
+}

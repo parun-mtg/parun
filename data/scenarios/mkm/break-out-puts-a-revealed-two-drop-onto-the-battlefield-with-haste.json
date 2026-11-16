@@ -1,0 +1,18 @@
+{
+  "description": "Break Out puts a revealed creature card with mana value 2 or less onto the battlefield with haste",
+  "note": "Of the top six, Grizzly Bears (mana value 2) is revealed and put onto the battlefield, and attacks the turn it arrived (CR 702.10b). The control reveals Hill Giant (mana value 4): it is not offered to the battlefield and goes to hand.",
+  "board": {"active": "alice", "step": "PrecombatMain", "seats": [{"name": "alice", "hand": [{"card": "Break Out", "label": "bo"}], "battlefield": [{"card": "Mountain", "label": "m"}, {"card": "Forest", "label": "f"}], "library": [{"card": "Island", "label": "i1"}, {"card": "Grizzly Bears", "label": "bears"}, {"card": "Hill Giant", "label": "giant"}, {"card": "Island", "label": "i2"}, {"card": "Island", "label": "i3"}, {"card": "Island", "label": "i4"}, {"card": "Plains", "label": "seventh"}]}, {"name": "bob"}]},
+  "timeline": [
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": {"Cast": {"object": "$bo", "mana": ["$m", "$f"]}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass"},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": {"ChooseOptional": "Exercises"}, "source": "Break Out"},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": {"Answer": {"prompt": "ChooseCardFromAmong", "with": "$bears"}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": {"ChooseOptional": "Exercises"}, "source": "Break Out"},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": {"Answer": {"prompt": "Shuffle", "with": ["$i1", "$giant", "$i2", "$i3", "$i4"]}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Count": {"player": "alice", "zone": "Battlefield", "card": "Grizzly Bears", "count": 1}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Count": {"player": "alice", "zone": "Hand", "card": "Grizzly Bears", "count": 0}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Count": {"player": "alice", "zone": "Library", "card": "Hill Giant", "count": 1}}},
+    {"turn": 1, "step": "DeclareAttackers", "player": "alice", "do": {"Attack": ["Grizzly Bears"]}},
+    {"turn": 1, "step": "PostcombatMain", "player": "alice", "check": {"Life": {"player": "bob", "life": 18}}}
+  ]
+}
