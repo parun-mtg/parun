@@ -11690,6 +11690,9 @@ lastKnownFrom gs oid obj =
     (Projection.lapsedGrantsOf (Projection.fullView gs) characteristics oid gs)
     (Game.isTapped oid gs)
     (Game.isFaceDownPermanent oid gs)
+    -- CR 701.60b's marks and their kin, per-incarnation (CR 400.7).
+    (Object.designations obj)
+    (Object.designationValues obj)
   where
     characteristics = Projection.project oid gs
 

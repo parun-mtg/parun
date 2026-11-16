@@ -20,6 +20,7 @@ import qualified Parun.Types.Condition as Condition
 import qualified Parun.Types.ControlClock as ControlClock
 import qualified Parun.Types.Cost as Cost
 import qualified Parun.Types.CounterKind as CounterKind
+import qualified Parun.Types.Designation as Designation
 import qualified Parun.Types.Gift as Gift
 import qualified Parun.Types.Keyword as Keyword
 import qualified Parun.Types.KeywordInstance as KeywordInstance
@@ -114,7 +115,9 @@ spec s = Spec.describe s "Parun.Codec.LastKnown" $ do
           LastKnown.pile = Just (PlayerId.MkPlayerId 6),
           LastKnown.lapsedGrants = Set.singleton (Condition.Compares (Compares.MkCompares (Quantity.Literal 3) Comparison.AtLeast (Quantity.Literal 5))),
           LastKnown.tapped = True,
-          LastKnown.faceDown = True
+          LastKnown.faceDown = True,
+          LastKnown.designations = Set.fromList [Designation.Monstrous, Designation.Suspected],
+          LastKnown.designationValues = Map.singleton Designation.Monstrous 3
         }
       ( " {\"characteristics\":"
           <> ProjectedCharacteristicsSpec.testCharacteristicsJson
@@ -137,7 +140,7 @@ spec s = Spec.describe s "Parun.Codec.LastKnown" $ do
           <> ",\"chosenModes\":[{\"key\":{\"type\":\"Triggered\",\"value\":{\"condition\":{\"type\":\"Enters\",\"value\":{}},\"modal\":{\"modes\":[{}]}}},\"value\":{\"2\":3}}]"
           <> ",\"controlClock\":[{\"player\":1,\"clock\":\"SinceLastUpkeep\"}]"
           <> ",\"zone\":\"Battlefield\",\"home\":\"Command\",\"pile\":6"
-          <> ",\"lapsedGrants\":[{\"type\":\"Compares\",\"value\":{\"measured\":{\"type\":\"Literal\",\"value\":3},\"comparison\":\"AtLeast\",\"threshold\":{\"type\":\"Literal\",\"value\":5}}}],\"tapped\":true,\"faceDown\":true} "
+          <> ",\"lapsedGrants\":[{\"type\":\"Compares\",\"value\":{\"measured\":{\"type\":\"Literal\",\"value\":3},\"comparison\":\"AtLeast\",\"threshold\":{\"type\":\"Literal\",\"value\":5}}}],\"tapped\":true,\"faceDown\":true,\"designations\":[\"Monstrous\",\"Suspected\"],\"designationValues\":[{\"designation\":\"Monstrous\",\"value\":3}]} "
       )
   -- CR 109.3: neither an attachment nor a chosen name is a characteristic, and
   -- most objects have neither, so the absent case is written out rather than left
@@ -181,7 +184,9 @@ spec s = Spec.describe s "Parun.Codec.LastKnown" $ do
           LastKnown.pile = Nothing,
           LastKnown.lapsedGrants = Set.empty,
           LastKnown.tapped = False,
-          LastKnown.faceDown = False
+          LastKnown.faceDown = False,
+          LastKnown.designations = Set.empty,
+          LastKnown.designationValues = Map.empty
         }
       ( " {\"characteristics\":"
           <> minimalJson

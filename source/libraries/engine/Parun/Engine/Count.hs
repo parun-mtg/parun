@@ -1280,6 +1280,10 @@ lastKnownView peers oid gs lastKnown =
           Filter.isCard = Game.sourceIsCard (LastKnown.source lastKnown),
           Filter.tapped = LastKnown.tapped lastKnown,
           Filter.faceDown = LastKnown.faceDown lastKnown,
+          -- CR 608.2h: the designations it had as it left, and their values.
+          -- Agency Coroner's and Hydra Broodmaster's scenarios prove them.
+          Filter.designations = LastKnown.designations lastKnown,
+          Filter.designationValues = LastKnown.designationValues lastKnown,
           Filter.attacking = LastKnown.attacking lastKnown,
           -- `attackingAlone` keeps the snapshot's empty set: LastKnown records no
           -- fellow attackers, and no card asks CR 506.5 or 506.6 of a departed
@@ -1813,9 +1817,10 @@ viewOfSnapshot deploy mController mOwner isToken counters zone home lapsed snaps
       -- the moment of an event.
       Filter.ringBearerFor = Nothing,
       Filter.paired = Nothing,
+      -- CR 701.60b et al.: designations, which a ProjectedCharacteristics does not
+      -- carry -- `ringBearerFor` above's sentence -- so a snapshot records none;
+      -- lastKnownView fills both from CR 608.2h's record.
       Filter.designations = Set.empty,
-      -- CR 701.37c's X rides the designation, so a past event records none --
-      -- `designations` above, same sentence.
       Filter.designationValues = Map.empty,
       Filter.storedResults = Map.empty,
       -- CR 717.2b: a designation too, which a ProjectedCharacteristics does not
