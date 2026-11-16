@@ -928,7 +928,7 @@ playerRefPositions =
         ("set-owner", Effect.SetOwner (SetOwner.MkSetOwner (plantedPlayer "sp") (plantedRef "sp")), [plantedPlayer "sp"]),
         ("shuffle", Effect.Shuffle (plantedPlayer "sh"), [plantedPlayer "sh"]),
         ("divide", Effect.Divide (Divide.MkDivide one (plantedRef "dv") (plantedPlayer "dv") (SlotName.MkSlotName (Text.pack "split"))), [plantedPlayer "dv"]),
-        ("cloak", Effect.Cloak (Cloak.MkCloak (plantedPlayer "ck") (Just (plantedPlayer "ck-library"))), [plantedPlayer "ck", plantedPlayer "ck-library"]),
+        ("cloak", Effect.Cloak (Cloak.MkCloak (plantedPlayer "ck") (Just (plantedPlayer "ck-library")) Nothing), [plantedPlayer "ck", plantedPlayer "ck-library"]),
         ("manifestDread", Effect.ManifestDread (ManifestDread.MkManifestDread (plantedPlayer "md") one Nothing), [plantedPlayer "md"]),
         ("choose-permanents", Effect.ChoosePermanents (ChoosePermanents.MkChoosePermanents (ChosenPermanents.MkChosenPermanents (Filter.Type.And []) (plantedPlayer "cp") (HowMany.UpTo Nothing) Nothing Zone.Battlefield Set.empty) (SlotName.MkSlotName (Text.pack "cp")) (Just (plantedPlayer "cp-piles")) Nothing False), [plantedPlayer "cp", plantedPlayer "cp-piles"]),
         ("discard-counted", Effect.Discard (Discard.Counted (CountedDiscard.MkCountedDiscard (plantedPlayer "dc") one Nothing)), [plantedPlayer "dc"]),

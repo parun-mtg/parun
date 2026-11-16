@@ -1513,15 +1513,17 @@ learn settle resolving source controller = Learn.learn settle controller resolvi
 -- library, or of each library the payload names; the keyword action is
 -- Parun.Engine.Cloak.cloak's, listing and all. APNAP (CR 608.2f) orders the
 -- several, which is Effect.Shuffle's posture and for its reason: the order is a
--- fact about the rules rather than about PlayerId's Ord.
+-- fact about the rules rather than about PlayerId's Ord. The slot gathers every
+-- permanent cloaked, ManifestDread's.
 cloak :: Game () -> ObjectId -> ObjectId -> PlayerId -> Map.Map SlotName (Set Recipient) -> Cloak.Type.Cloak -> Game ()
-cloak settle resolving source controller legal (Cloak.Type.MkCloak who library) = do
+cloak settle resolving source controller legal (Cloak.Type.MkCloak who library mSlot) = do
   gs <- State.get
   let inApnapOrder ref =
         let named = Set.fromList (playerRefPlayers legal resolving source controller gs ref)
          in filter (`Set.member` named) (Game.apnapOrder gs)
-  Monad.forM_ (inApnapOrder who) $ \cloaker ->
-    Monad.mapM_ (Cloak.cloak settle cloaker) (maybe [cloaker] inApnapOrder library)
+  cloaked <- Monad.forM (inApnapOrder who) $ \cloaker ->
+    concat <$> Monad.mapM (Cloak.cloak settle cloaker) (maybe [cloaker] inApnapOrder library)
+  Common.bindObjects resolving mSlot (concat cloaked)
 
 -- CR 701.62a: the named players each manifest dread this many times, the
 -- keyword action being Parun.Engine.ManifestDread.manifestDread's, choice and
