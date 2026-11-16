@@ -31,6 +31,7 @@ import qualified Parun.Engine.Game as Game
 import qualified Parun.Engine.Initiative as Initiative
 import qualified Parun.Engine.Keyword as Keyword
 import qualified Parun.Engine.Monarch as Monarch
+import qualified Parun.Engine.ObjectRestriction as ObjectRestriction
 import qualified Parun.Engine.Plane as Plane
 import qualified Parun.Engine.PlayerEffect as PlayerEffect
 import qualified Parun.Engine.Prepare as Prepare
@@ -159,6 +160,7 @@ import qualified Parun.Types.ReplacementEffect as ReplacementEffect
 import qualified Parun.Types.ReplacementOrigin as ReplacementOrigin
 import qualified Parun.Types.RequireAttack as RequireAttack
 import qualified Parun.Types.RequireBlock as RequireBlock
+import qualified Parun.Types.RestrictedAction as RestrictedAction
 import qualified Parun.Types.RestrictedCreatures as RestrictedCreatures
 import qualified Parun.Types.Scaling as Scaling
 import qualified Parun.Types.SetClassLevel as SetClassLevel
@@ -1837,8 +1839,10 @@ takeTheInitiative resolving source controller legal target = do
 --
 -- GameEvent.BecameDesignated is emitted only on a TRANSITION (CR 701.60d); a
 -- player recipient, an illegal slot (CR 608.2b) and an id naming no object all
--- write nothing. CR 701.60c's menace and can't-block are read off
--- Object.designations live.
+-- write nothing, and so does a permanent an effect says can't gain the mark
+-- (CR 101.2: Airtight Alibi's "can't become suspected", proved by
+-- airtight-alibi-keeps-the-enchanted-creature-from-becoming-suspected). CR
+-- 701.60c's menace and can't-block are read off Object.designations live.
 --
 -- Parun.Engine.Prepare.mayGain is CR 723.3a's own precondition beside the
 -- transition guard -- "a permanent can't gain this designation unless it has a
@@ -1861,11 +1865,16 @@ designate resolving source controller legal (Designate.MkDesignate designation s
             =<< mValue
         mark o = o {Object.designations = Set.insert designation (Object.designations o)}
         recordValue o = maybe o (\n -> o {Object.designationValues = Map.insert designation (Integer.toNaturalSaturating n) (Object.designationValues o)}) value
-    Monad.when (maybe False (not . Set.member designation . Object.designations) (Game.lookupObject target gs) && Prepare.mayGain designation target gs) $ do
-      State.modify'
-        (\g -> g {GameState.objects = Map.adjust (recordValue . mark) target (GameState.objects g)})
-      State.modify' (Event.recordEvent (GameEvent.BecameDesignated (BecameDesignated.MkBecameDesignated designation target)))
-      Prepare.mintOnDesignated designation target
+    Monad.when
+      ( maybe False (not . Set.member designation . Object.designations) (Game.lookupObject target gs)
+          && Prepare.mayGain designation target gs
+          && not (ObjectRestriction.prohibited (RestrictedAction.BecomeDesignated designation) target gs)
+      )
+      $ do
+        State.modify'
+          (\g -> g {GameState.objects = Map.adjust (recordValue . mark) target (GameState.objects g)})
+        State.modify' (Event.recordEvent (GameEvent.BecameDesignated (BecameDesignated.MkBecameDesignated designation target)))
+        Prepare.mintOnDesignated designation target
 
 -- CR 717.2a: "This Class's level becomes N." A state write on the slot's
 -- permanent, not a CR 613 modification -- CR 717.2b makes a level a designation,

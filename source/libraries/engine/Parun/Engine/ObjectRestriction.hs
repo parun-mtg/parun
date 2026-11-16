@@ -1,5 +1,6 @@
 -- CR 101.2 / 613.11: the continuous effects that FORBID a permanent one game
--- action -- a sacrifice (CR 701.21a) or being turned face up (CR 708).
+-- action -- a sacrifice (CR 701.21a), being turned face up (CR 708) or gaining
+-- a designation (CR 701.60a).
 -- One of the modules on the axis CR 613.11 reaches past the layer system
 -- (alongside Parun.Engine.PlayerEffect, Parun.Engine.BlockRequirement,
 -- Parun.Engine.AttackRequirement, Parun.Engine.CombatRestriction and
@@ -20,7 +21,9 @@
 -- would leave every targeted sacrifice in the pool going through. For turning
 -- face up, likewise: CR 116.2b's special action must not be offered
 -- (Parun.Engine.FaceDown.canTurnFaceUp) and an effect must not turn the
--- permanent over (Parun.Engine.Event.turnFaceUpByEffect).
+-- permanent over (Parun.Engine.Event.turnFaceUpByEffect). Gaining a designation
+-- is never offered, so its one place is the Effect.Designate arm
+-- (Parun.Engine.Resolve.Arms.Objects.designate).
 module Parun.Engine.ObjectRestriction where
 
 import Data.Set (Set)
@@ -37,7 +40,8 @@ import qualified Parun.Types.RuleAbilities as RuleAbilities
 
 -- CR 101.2: which of `candidates` an effect in force right now says can't
 -- undergo `action` -- Garland, Royal Kidnapper's "can't be sacrificed", Unable
--- to Scream's "can't be turned face up".
+-- to Scream's "can't be turned face up", Airtight Alibi's "can't become
+-- suspected".
 --
 -- A set of ids and not a per-candidate predicate, for the reason
 -- Parun.Engine.CombatRestriction.restricted gives: a caller narrowing a whole
@@ -100,8 +104,8 @@ restricted action candidates gs =
 
 -- The same question about ONE permanent, for the callers that hold a victim
 -- rather than a candidate list: the CR 701.21 funnel itself, the two cost
--- components that name the permanent paying with itself, and both roads that
--- turn a permanent face up.
+-- components that name the permanent paying with itself, both roads that
+-- turn a permanent face up, and the designate arm.
 --
 -- Not a cheaper computation, just a narrower one -- the walk above is over the
 -- battlefield either way, and the candidate list it filters is the singleton.

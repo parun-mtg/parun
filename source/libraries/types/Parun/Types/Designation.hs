@@ -73,8 +73,9 @@ module Parun.Types.Designation where
 -- harnessed or saddled away, the last of those ending on the clock instead.
 -- `Prepared` also ends by rule: CR 723.3c's last sentence, which
 -- Parun.Engine.Cast writes at CR 601.2i. What it adds that no other mark has is a
--- precondition on GAINING it and an object minted as it is gained, both
--- Parun.Engine.Prepare's.
+-- RULE's precondition on GAINING it and an object minted as it is gained, both
+-- Parun.Engine.Prepare's; an EFFECT's "can't become" on any mark is
+-- Parun.Types.RestrictedAction's BecomeDesignated.
 data Designation
   = -- | CR 702.112b: renowned, the marker rule 702.112a's renown ability sets.
     Renowned

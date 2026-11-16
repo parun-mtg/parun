@@ -24,7 +24,9 @@
       "name": "Garland, Royal Kidnapper",
       "objectRestrictions": [
         {
-          "action": "Sacrifice",
+          "action": {
+            "type": "Sacrifice"
+          },
           "affected": {
             "type": "Matching",
             "value": {

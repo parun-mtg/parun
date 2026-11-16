@@ -6,8 +6,9 @@ import qualified Parun.Types.RestrictedAction as RestrictedAction
 -- | CR 101.2: one printed OBJECT PROHIBITION -- an effect saying a permanent
 -- can't undergo one game action. Garland, Royal Kidnapper's third clause
 -- ("creatures you control but don't own get +2/+2 and can't be sacrificed",
--- CR 701.21a) and Unable to Scream's last ("it can't be turned face up", CR
--- 708) are the pool's printings.
+-- CR 701.21a), Unable to Scream's last ("it can't be turned face up", CR
+-- 708) and Airtight Alibi's last ("can't become suspected", CR 701.60a) are
+-- the pool's printings.
 --
 -- The NINTH carrier of a printed static ability, alongside
 -- Parun.Types.StaticAbility, Parun.Types.PlayerStaticAbility,

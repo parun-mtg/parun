@@ -373,7 +373,7 @@ populatedFaceJson =
     <> "\"blockPermissions\":[{\"affected\":{\"type\":\"Attached\"},\"additional\":{\"type\":\"Literal\",\"value\":1}}],"
     <> "\"attackRequirements\":[{\"subject\":{\"type\":\"Attached\"}}],"
     <> "\"combatRestrictions\":[{\"type\":\"CantAttack\",\"value\":{\"affected\":{\"type\":\"Attached\"}}}],"
-    <> "\"objectRestrictions\":[{\"action\":\"Sacrifice\",\"affected\":{\"type\":\"Attached\"}}],"
+    <> "\"objectRestrictions\":[{\"action\":{\"type\":\"Sacrifice\"},\"affected\":{\"type\":\"Attached\"}}],"
     <> "\"untapRestrictions\":[{\"affected\":{\"type\":\"Attached\"}}],"
     <> "\"attachRestrictions\":[{\"affected\":{\"type\":\"Attached\"},\"attachers\":{\"type\":\"HasSubtype\",\"value\":\"Aura\"}}],"
     <> "\"counterRestrictions\":[{\"affected\":{\"type\":\"Attached\"},\"kind\":{\"type\":\"MinusOneMinusOne\"}}],"
@@ -607,7 +607,7 @@ spec s = Spec.describe s "Parun.Codec.Face" $ do
         encodeFace
         decodeFace
         baseFace {Face.objectRestrictions = [ObjectRestriction.MkObjectRestriction RestrictedAction.Sacrifice Affected.Attached]}
-        (init baseFaceJson <> ",\"objectRestrictions\":[{\"action\":\"Sacrifice\",\"affected\":{\"type\":\"Attached\"}}]}")
+        (init baseFaceJson <> ",\"objectRestrictions\":[{\"action\":{\"type\":\"Sacrifice\"},\"affected\":{\"type\":\"Attached\"}}]}")
     Spec.it s "untapRestrictions" $
       Common.assertJsonCodec
         s
