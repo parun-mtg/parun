@@ -12,6 +12,7 @@ import qualified Parun.Types.Backup as Backup
 import qualified Parun.Types.BeamMeUp as BeamMeUp
 import qualified Parun.Types.CardName as CardName
 import qualified Parun.Types.CardType as CardType
+import qualified Parun.Types.Casualty as Casualty
 import qualified Parun.Types.ClassLevel as ClassLevel
 import qualified Parun.Types.Color as Color
 import qualified Parun.Types.Cost as Cost
@@ -465,7 +466,7 @@ spec s = Spec.describe s "Parun.Codec.Keyword" $ do
   -- creature it names being written in the rulebook rather than on the card.
   Spec.it s "Replicate carries its cost and Casualty its N" $ do
     Common.assertCodec s Keyword.codec (Keyword.Replicate (Cost.MkCost (Just (ManaCost.MkManaCost [ManaSymbol.Generic 3])) [])) " {\"type\":\"Replicate\",\"value\":{\"mana\":[{\"type\":\"Generic\",\"value\":3}]}} "
-    Common.assertCodec s Keyword.codec (Keyword.Casualty 2) " {\"type\":\"Casualty\",\"value\":2} "
+    Common.assertCodec s Keyword.codec (Keyword.Casualty (Casualty.MkCasualty (Just 2) Set.empty Nothing)) " {\"type\":\"Casualty\",\"value\":{\"amount\":2}} "
   -- CR 702.59a writes its cost on the card, replicate's shape.
   Spec.it s "Recover carries its cost" $
     Common.assertCodec s Keyword.codec (Keyword.Recover (Cost.MkCost (Just (ManaCost.MkManaCost [ManaSymbol.Generic 4])) [])) " {\"type\":\"Recover\",\"value\":{\"mana\":[{\"type\":\"Generic\",\"value\":4}]}} "

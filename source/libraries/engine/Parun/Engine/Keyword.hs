@@ -59,6 +59,7 @@ import qualified Parun.Types.CastRepetition as CastRepetition
 import qualified Parun.Types.CastWindow as CastWindow
 import Parun.Types.CastingPermission (CastingPermission)
 import qualified Parun.Types.CastingPermission as CastingPermission
+import qualified Parun.Types.Casualty as Casualty
 import qualified Parun.Types.ChangeMode as ChangeMode
 import qualified Parun.Types.ChoosePlayer as ChoosePlayer
 import qualified Parun.Types.ChosenCardFromAmong as ChosenCardFromAmong
@@ -3936,7 +3937,7 @@ optionalCost keyword = case keyword of
   Keyword.Replicate cost -> Just (cost, Nothing)
   -- The one arm whose cost is MINTED rather than printed: rule 702.153a writes
   -- the sacrifice out in the rulebook and the card prints only the N.
-  Keyword.Casualty n -> Just (casualtyCost n, Just 1)
+  Keyword.Casualty casualty -> Just (casualtyCost (Casualty.amount casualty), Just 1)
   -- Minted rather than printed too: rules 702.166a and 702.194a write out what
   -- is sacrificed and what is tapped, and the card prints bargain bare and
   -- teamwork with its N alone.
@@ -4001,11 +4002,14 @@ perPayment mint count = fmap mint [1 .. count]
 -- An EMPTY mana part rather than Nothing: rule 702.153a levies no mana, and
 -- Parun.Engine.Cost.plus reads a Nothing as CR 118.6a's unpayable cost, which
 -- would make every casualty offer unpayable rather than free.
-casualtyCost :: Natural -> Cost Keyword
-casualtyCost n =
+--
+-- Nothing is casualty X: the power is compared against the X announced at CR
+-- 601.2b (Binding.variableX), which Parun.Engine.Cast.gateXs asks the cost at.
+casualtyCost :: Maybe Natural -> Cost Keyword
+casualtyCost amount =
   Cost.MkCost
     { Cost.mana = Just (ManaCost.MkManaCost []),
-      Cost.components = [CostComponent.Sacrifice (Sacrifice.MkSacrifice (ObjectCount.Exactly (CostAmount.Fixed 1)) (Filter.And [Filter.HasCardType CardType.Creature, Filter.Measures (Measures.MkMeasures Measure.Power Comparison.AtLeast (Operand.Literal (toInteger n)))]) Set.empty)]
+      Cost.components = [CostComponent.Sacrifice (Sacrifice.MkSacrifice (ObjectCount.Exactly (CostAmount.Fixed 1)) (Filter.And [Filter.HasCardType CardType.Creature, Filter.Measures (Measures.MkMeasures Measure.Power Comparison.AtLeast (maybe (Operand.AmountInSlot Binding.variableX) (Operand.Literal . toInteger) amount))]) Set.empty)]
     }
 
 -- CR 702.166a's additional cost: "you may sacrifice an artifact, enchantment, or
@@ -7892,11 +7896,11 @@ stackAbilitiesFor keyword count = case keyword of
 -- A wildcard rather than an exhaustive case, entwineCosts' reason.
 stackCopyTrigger :: Keyword -> Maybe (Natural -> TriggeredAbility Card (GrantedAbility.GrantedAbility Card))
 stackCopyTrigger keyword = case keyword of
-  Keyword.Replicate _ -> Just (\ordinal -> paidSpellCopies keyword (Quantity.TimesPaid (KeywordDesignator.OfInstance keyword ordinal)) ordinal)
-  Keyword.Casualty _ -> Just (paidSpellCopies keyword (Quantity.Literal 1))
+  Keyword.Replicate _ -> Just (\ordinal -> paidSpellCopies keyword (Quantity.TimesPaid (KeywordDesignator.OfInstance keyword ordinal)) [] ordinal)
+  Keyword.Casualty casualty -> Just (paidSpellCopies keyword (Quantity.Literal 1) (casualtyExceptions casualty))
   -- CR 702.78a's second ability, casualty's above in shape: one copy, gated on
   -- this very conspire cost having been paid.
-  Keyword.Conspire -> Just (paidSpellCopies keyword (Quantity.Literal 1))
+  Keyword.Conspire -> Just (paidSpellCopies keyword (Quantity.Literal 1) [])
   _ -> Nothing
 
 -- CR 707.10's copy instruction as the one mode the cast triggers of rules
@@ -7913,8 +7917,8 @@ stackCopyTrigger keyword = case keyword of
 -- its last known information (CR 608.2h) and through CR 113.7a's ability that
 -- exists independently of its source. Proved by Parun.KeywordTriggerSpec's "CR
 -- 608.2h a Grapeshot countered under its own storm trigger is still copied".
-copiesOf :: Quantity.Quantity -> Modal.Modal Card (GrantedAbility.GrantedAbility Card)
-copiesOf quantity =
+copiesOf :: Quantity.Quantity -> [CopyException.CopyException (GrantedAbility.GrantedAbility Card)] -> Modal.Modal Card (GrantedAbility.GrantedAbility Card)
+copiesOf quantity exceptions =
   Mint.oneMode
     ( Seq.singleton
         ( Effect.CopyStackObject
@@ -7923,7 +7927,7 @@ copiesOf quantity =
                 CopyStackObject.targets = CopyTargets.ChosenByController,
                 CopyStackObject.quantity = quantity,
                 CopyStackObject.copier = CopyStackObject.defaultCopier,
-                CopyStackObject.exceptions = [],
+                CopyStackObject.exceptions = exceptions,
                 CopyStackObject.slot = Nothing
               }
         )
@@ -7944,12 +7948,20 @@ copiesOf quantity =
 -- so a spell nobody paid the cost for never puts the ability on the stack.
 --
 -- `ordinal` is perPayment's, paidTokenCopies' reading.
-paidSpellCopies :: Keyword -> Quantity.Quantity -> Natural -> TriggeredAbility Card (GrantedAbility.GrantedAbility Card)
-paidSpellCopies keyword quantity ordinal =
+paidSpellCopies :: Keyword -> Quantity.Quantity -> [CopyException.CopyException (GrantedAbility.GrantedAbility Card)] -> Natural -> TriggeredAbility Card (GrantedAbility.GrantedAbility Card)
+paidSpellCopies keyword quantity exceptions ordinal =
   Mint.triggerOf
     Mint.selfCast
     (Just (Condition.Compares (Compares.MkCompares (Quantity.TimesPaid (KeywordDesignator.OfInstance keyword ordinal)) Comparison.AtLeast (Quantity.Literal 1))))
-    (copiesOf quantity)
+    (copiesOf quantity exceptions)
+
+-- CR 707.9b: the exceptions a card prints after its casualty keyword, made the
+-- copy's (Ob Nixilis, the Adversary's "The copy isn't legendary and has
+-- starting loyalty X").
+casualtyExceptions :: Casualty.Casualty -> [CopyException.CopyException (GrantedAbility.GrantedAbility Card)]
+casualtyExceptions casualty =
+  [CopyException.RemoveSupertypes (Casualty.copyLoses casualty) | not (Set.null (Casualty.copyLoses casualty))]
+    <> foldMap (pure . CopyException.SetLoyalty) (Casualty.copyLoyalty casualty)
 
 -- CR 702.40a: "When you cast this spell, copy it for each other spell that was
 -- cast before it this turn. If the spell has any targets, you may choose new
@@ -7962,7 +7974,7 @@ storm =
   Mint.triggerOf
     Mint.selfCast
     Nothing
-    (copiesOf (Quantity.Count (Count.MkCount (Scope.InHistory (EventShape.SpellCast CastWindow.BeforeEvaluated)) (Filter.And []) Aggregation.Members)))
+    (copiesOf (Quantity.Count (Count.MkCount (Scope.InHistory (EventShape.SpellCast CastWindow.BeforeEvaluated)) (Filter.And []) Aggregation.Members)) [])
 
 -- CR 702.69a: "When you cast this spell, copy it for each permanent that was put
 -- into a graveyard from the battlefield this turn. If the spell has any targets,
@@ -7977,7 +7989,7 @@ gravestorm =
   Mint.triggerOf
     Mint.selfCast
     Nothing
-    (copiesOf Quantity.PermanentsDiedThisTurn)
+    (copiesOf Quantity.PermanentsDiedThisTurn [])
 
 -- CR 702.144a: "When you cast this spell, you may copy it and you may choose new
 -- targets for the copy. If you copy the spell, choose an opponent. That player

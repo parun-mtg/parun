@@ -6,6 +6,7 @@ import qualified Data.List as List
 import qualified Data.List.NonEmpty as NonEmpty
 import qualified Data.Map.Strict as Map
 import qualified Data.Maybe as Maybe
+import qualified Data.Set as Set
 import qualified Data.Text as Text
 import qualified Numeric.Natural as Natural
 import qualified Parun.Oracle.Cost as Cost
@@ -14,6 +15,7 @@ import qualified Parun.Oracle.Prose as Prose
 import qualified Parun.Types.Backup as Backup
 import qualified Parun.Types.BeamMeUp as BeamMeUp
 import qualified Parun.Types.CardName as CardName
+import qualified Parun.Types.Casualty as Casualty
 import qualified Parun.Types.Cost as Cost.Type
 import qualified Parun.Types.CostComponent as CostComponent
 import qualified Parun.Types.Crew as Crew
@@ -27,6 +29,7 @@ import qualified Parun.Types.ForetellCost as ForetellCost
 import qualified Parun.Types.Keyword as Keyword
 import qualified Parun.Types.KeywordCount as KeywordCount
 import qualified Parun.Types.KeywordFamily as KeywordFamily
+import qualified Parun.Types.Loyalty as Loyalty
 import qualified Parun.Types.MadnessCost as MadnessCost
 import qualified Parun.Types.Morph as Morph
 import qualified Parun.Types.MorphVariant as MorphVariant
@@ -35,6 +38,7 @@ import qualified Parun.Types.Protection as Protection
 import qualified Parun.Types.Reinforce as Reinforce
 import qualified Parun.Types.Splice as Splice
 import qualified Parun.Types.Subtype as Subtype
+import qualified Parun.Types.Supertype as Supertype
 import qualified Parun.Types.Suspend as Suspend
 import qualified Parun.Types.SuspendCounters as SuspendCounters
 import qualified Parun.Types.Ward as Ward
@@ -274,7 +278,17 @@ printed self keyword = case keyword of
   Keyword.Compleated -> [Text.pack "Compleated"]
   Keyword.Reconfigure c -> Cost.keyworded self (keywordWord self) (Text.pack "Reconfigure") c
   Keyword.Blitz c -> Cost.keyworded self (keywordWord self) (Text.pack "Blitz") c
-  Keyword.Casualty n -> [numbered "Casualty" n]
+  Keyword.Casualty c -> do
+    -- CR 707.9b: the copy's exceptions, its own sentence after the keyword (Ob
+    -- Nixilis, the Adversary).
+    rider <- case (Set.toList (Casualty.copyLoses c), Casualty.copyLoyalty c) of
+      ([], Nothing) -> [[]]
+      ([], Just loyalty) -> [[startingLoyalty loyalty]]
+      ([Supertype.Legendary], Nothing) -> [[Text.pack "isn't legendary"]]
+      ([Supertype.Legendary], Just loyalty) -> [[Text.pack "isn't legendary", startingLoyalty loyalty]]
+      _ -> []
+    let amount = maybe (Text.pack "Casualty X") (numbered "Casualty") (Casualty.amount c)
+    [if null rider then amount else amount <> Text.pack ". The copy " <> Text.intercalate (Text.pack " and ") rider <> Text.pack "."]
   Keyword.ReadAhead -> [Text.pack "Read ahead"]
   Keyword.Ravenous -> [Text.pack "Ravenous"]
   Keyword.Squad c -> Cost.keyworded self (keywordWord self) (Text.pack "Squad") c
@@ -352,6 +366,13 @@ counted name c = case c of
 -- | A keyword and its number: "Rampage 2".
 numbered :: String -> Natural.Natural -> Text.Text
 numbered name n = Text.pack (name <> " " <> show n)
+
+-- | CR 306.5a's loyalty as a copy exception states it: "has starting loyalty X".
+startingLoyalty :: Loyalty.Loyalty -> Text.Text
+startingLoyalty loyalty =
+  Text.pack "has starting loyalty " <> case loyalty of
+    Loyalty.Literal n -> Text.pack (show n)
+    Loyalty.Variable -> Text.pack "X"
 
 -- | What a keyword is "from" or "for": a colour as its name ("protection from
 -- red"), anything else as the plural it describes ("affinity for artifacts").
@@ -519,7 +540,7 @@ numberedKeywords =
     Keyword.Fabricate,
     Keyword.Afflict,
     Keyword.Afterlife,
-    Keyword.Casualty,
+    \n -> Keyword.Casualty Casualty.MkCasualty {Casualty.amount = Just n, Casualty.copyLoses = Set.empty, Casualty.copyLoyalty = Nothing},
     Keyword.Toxic,
     Keyword.Saddle,
     Keyword.Mobilize . KeywordCount.Fixed,

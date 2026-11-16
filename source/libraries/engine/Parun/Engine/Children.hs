@@ -1984,7 +1984,7 @@ keywordChildren c keyword_ = case keyword_ of
   Keyword.Compleated -> pure keyword_
   Keyword.Reconfigure cost -> fmap Keyword.Reconfigure (keywordCost c cost)
   Keyword.Blitz cost -> fmap Keyword.Blitz (keywordCost c cost)
-  Keyword.Casualty _natural -> pure keyword_
+  Keyword.Casualty _casualty -> pure keyword_
   Keyword.ReadAhead -> keyword_ <$ keywordLooksBack c HistoryRead.Entries
   Keyword.Ravenous -> pure keyword_
   Keyword.Squad cost -> fmap Keyword.Squad (keywordCost c cost)
@@ -4002,6 +4002,7 @@ copyExceptionChildren c exception = case exception of
   CopyException.SetCreatureSubtypes subtypes -> CopyException.SetCreatureSubtypes <$> traverseSet (copySubtype c) subtypes
   CopyException.RemoveSupertypes _ -> pure exception
   CopyException.SetName _ -> pure exception
+  CopyException.SetLoyalty _ -> pure exception
   CopyException.SetColors mode colors -> CopyException.SetColors mode <$> traverseSet (copyColor c) colors
   CopyException.NoManaCost -> pure exception
   CopyException.GainAbility ability -> CopyException.GainAbility <$> copyAbility c ability

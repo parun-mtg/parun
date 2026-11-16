@@ -4,7 +4,9 @@
       "keywords": [
         {
           "type": "Casualty",
-          "value": 2
+          "value": {
+            "amount": 2
+          }
         }
       ],
       "manaCost": [

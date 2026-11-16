@@ -6,6 +6,7 @@ import qualified Parun.Codec.CardType as CardType
 import qualified Parun.Codec.ChangeMode as ChangeMode
 import qualified Parun.Codec.Color as Color
 import qualified Parun.Codec.Keyword as Keyword
+import qualified Parun.Codec.Loyalty as Loyalty
 import qualified Parun.Codec.SetPowerToughness as SetPowerToughness
 import qualified Parun.Codec.Subtype as Subtype
 import qualified Parun.Codec.Supertype as Supertype
@@ -56,6 +57,9 @@ codec abilityCodec =
           Arm.payload "SetName" CardName.codec CopyException.SetName $ \x -> case x of
             CopyException.SetName y -> Just y
             _ -> Nothing,
+          Arm.payload "SetLoyalty" Loyalty.codec CopyException.SetLoyalty $ \x -> case x of
+            CopyException.SetLoyalty y -> Just y
+            _ -> Nothing,
           Arm.payload "SetColors" colors (uncurry CopyException.SetColors) $ \x -> case x of
             CopyException.SetColors mode y -> Just (mode, y)
             _ -> Nothing,
@@ -77,6 +81,7 @@ tagOf x = case x of
   CopyException.SetCreatureSubtypes {} -> "SetCreatureSubtypes"
   CopyException.RemoveSupertypes {} -> "RemoveSupertypes"
   CopyException.SetName {} -> "SetName"
+  CopyException.SetLoyalty {} -> "SetLoyalty"
   CopyException.SetColors {} -> "SetColors"
   CopyException.NoManaCost {} -> "NoManaCost"
   CopyException.DontCopyColors {} -> "DontCopyColors"

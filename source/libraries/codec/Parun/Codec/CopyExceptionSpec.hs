@@ -13,6 +13,7 @@ import qualified Parun.Types.ChangeMode as ChangeMode
 import qualified Parun.Types.Color as Color
 import qualified Parun.Types.CopyException as CopyException
 import qualified Parun.Types.Keyword as Keyword
+import qualified Parun.Types.Loyalty as Loyalty
 import qualified Parun.Types.SetPowerToughness as SetPowerToughness
 import qualified Parun.Types.Subtype as Subtype
 import qualified Parun.Types.Supertype as Supertype
@@ -122,6 +123,14 @@ spec s = Spec.describe s "Parun.Codec.CopyException" $ do
       (CopyException.codec Common.text)
       CopyException.NoManaCost
       " {\"type\":\"NoManaCost\"} "
+
+  -- CR 707.9b over CR 306.5a's loyalty rides the Loyalty codec.
+  Spec.it s "SetLoyalty carries its loyalty" $
+    Common.assertCodec
+      s
+      (CopyException.codec Common.text)
+      (CopyException.SetLoyalty Loyalty.Variable)
+      " {\"type\":\"SetLoyalty\",\"value\":{\"type\":\"Variable\"}} "
 
   -- CR 707.9c's decline-to-copy arm is NULLARY too, so the tag alone is the
   -- whole value.

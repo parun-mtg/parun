@@ -4,6 +4,7 @@ import qualified Numeric.Natural as Natural
 import qualified Parun.Types.Backup as Backup
 import qualified Parun.Types.BeamMeUp as BeamMeUp
 import qualified Parun.Types.CardName as CardName
+import qualified Parun.Types.Casualty as Casualty
 import qualified Parun.Types.ClassLevel as ClassLevel
 import qualified Parun.Types.CompanionCondition as CompanionCondition
 import qualified Parun.Types.Cost as Cost
@@ -701,7 +702,7 @@ data Keyword
   | -- | 702.153a: casualty N -- an optional additional cost of sacrificing a
     -- creature with power N or greater, and a cast trigger copying the spell
     -- once if it was paid, both minted by Parun.Engine.Keyword.
-    Casualty Natural.Natural
+    Casualty Casualty.Casualty
   | -- | 702.155a: chapter abilities of this Saga can't trigger the turn it
     -- entered unless it has exactly that chapter's number of lore counters; rule
     -- 715.3b REPLACES rule 715.3a's ability rather than adding to it.

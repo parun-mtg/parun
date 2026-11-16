@@ -73,7 +73,9 @@
               "type": "GainKeyword",
               "value": {
                 "type": "Casualty",
-                "value": 1
+                "value": {
+                  "amount": 1
+                }
               }
             }
           ]

@@ -1144,6 +1144,7 @@ settleCopyException this own exception = case exception of
   CopyException.SetCreatureSubtypes _ -> [exception]
   CopyException.RemoveSupertypes _ -> [exception]
   CopyException.SetName _ -> [exception]
+  CopyException.SetLoyalty _ -> [exception]
   CopyException.SetColors {} -> [exception]
   CopyException.NoManaCost -> [exception]
   CopyException.GainAbility _ -> [exception]
@@ -1195,6 +1196,7 @@ withoutExceptedAbility pc exception = case exception of
   CopyException.SetCreatureSubtypes _ -> pc
   CopyException.RemoveSupertypes _ -> pc
   CopyException.SetName _ -> pc
+  CopyException.SetLoyalty _ -> pc
   CopyException.SetColors {} -> pc
   CopyException.NoManaCost -> pc
   CopyException.DontCopyColors -> pc
@@ -1412,6 +1414,11 @@ applyCopyException this own snapshot exception = case exception of
   -- strip: no parun characteristic-defining ability defines a name.
   CopyException.SetName name ->
     snapshot {PC.names = Set.singleton name}
+  -- CR 707.9b over CR 306.5a: the clause's loyalty replaces the copied one. A
+  -- Loyalty.Variable is then CR 107.3m's X, read as the copy enters.
+  -- data/scenarios/ob-nixilis-the-adversary/ proves it.
+  CopyException.SetLoyalty loyalty ->
+    snapshot {PC.loyalty = Just loyalty}
   -- CR 707.9b over CR 105.2 / 105.3: "except it's white" REPLACES the copied
   -- colours; "red ... in addition to its other colors" (The Jolly Balloon Man)
   -- is a UNION over PC.strippedColors, since CR 707.9d strips the colour

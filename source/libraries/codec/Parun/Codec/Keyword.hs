@@ -3,6 +3,7 @@ module Parun.Codec.Keyword where
 import qualified Parun.Codec.Backup as Backup
 import qualified Parun.Codec.BeamMeUp as BeamMeUp
 import qualified Parun.Codec.CardName as CardName
+import qualified Parun.Codec.Casualty as Casualty
 import qualified Parun.Codec.ClassLevel as ClassLevel
 import qualified Parun.Codec.CompanionCondition as CompanionCondition
 import qualified Parun.Codec.Cost as Cost
@@ -157,7 +158,7 @@ codec =
       Arm.payload "AuraSwap" (Cost.codec codec) Keyword.AuraSwap (\x -> case x of Keyword.AuraSwap y -> Just y; _ -> Nothing),
       Arm.payload "Recover" (Cost.codec codec) Keyword.Recover (\x -> case x of Keyword.Recover y -> Just y; _ -> Nothing),
       Arm.payload "Ripple" Common.natural Keyword.Ripple (\x -> case x of Keyword.Ripple y -> Just y; _ -> Nothing),
-      Arm.payload "Casualty" Common.natural Keyword.Casualty (\x -> case x of Keyword.Casualty y -> Just y; _ -> Nothing),
+      Arm.payload "Casualty" Casualty.codec Keyword.Casualty (\x -> case x of Keyword.Casualty y -> Just y; _ -> Nothing),
       Arm.payload "Teamwork" Common.natural Keyword.Teamwork (\x -> case x of Keyword.Teamwork y -> Just y; _ -> Nothing),
       Arm.payload "WebSlinging" (Cost.codec codec) Keyword.WebSlinging (\x -> case x of Keyword.WebSlinging y -> Just y; _ -> Nothing),
       Arm.payload "Sneak" (Cost.codec codec) Keyword.Sneak (\x -> case x of Keyword.Sneak y -> Just y; _ -> Nothing),
