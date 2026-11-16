@@ -334,6 +334,7 @@ viewOfCardLapsed lapsed face =
           Filter.prototyped = False,
           -- CR 723.3c casts a SPELL, and this builder describes a printed face.
           Filter.preparedSpell = False,
+          Filter.modesChosen = Nothing,
           -- A Face is one set of characteristics, so the card's inset frame is
           -- not in it; no printed card asks for one outside the game.
           Filter.insetFrames = Set.empty,
@@ -944,6 +945,9 @@ viewOfCharacteristics peers oid pc controller counters gs =
       Filter.prototyped = PC.prototyped pc || any Object.prototyped (Game.lookupObject oid gs),
       -- CR 723.3c / 723.3d: read live off the object, `tributePaid`'s posture.
       Filter.preparedSpell = any Object.castPrepared (Game.lookupObject oid gs),
+      -- CR 700.2 / 700.2d: the modes the projection prints, the chosen ones
+      -- off the object's bindings, live.
+      Filter.modesChosen = modesChosenOf oid pc gs,
       -- CR 716.2b / 721.2b / 723.2b: copiable values, which `pc` carries.
       Filter.insetFrames = Count.insetFramesOf pc,
       -- CR 400.7d / CR 107.4h: read live off the object like `tributePaid`, and
@@ -1042,6 +1046,17 @@ attackedProtectorHeld attacker target gs =
 -- CR 122.1: the counters on an object right now, and none for an id naming nothing.
 countersOf :: ObjectId -> GameState -> Map (CounterKind.CounterKind Keyword.Type.Keyword) Natural
 countersOf oid gs = maybe Map.empty Object.counters (Game.lookupObject oid gs)
+
+-- CR 700.2 / 700.2d: for a spell on the stack printing two or more modes, how
+-- many times a mode was chosen for it, repeats counted; Nothing otherwise.
+modesChosenOf :: ObjectId -> ProjectedCharacteristics -> GameState -> Maybe Natural
+modesChosenOf oid pc gs = case Game.lookupObject oid gs of
+  Just o
+    | Game.zoneOf oid gs == Just Zone.Stack,
+      not (Game.isAbility oid gs),
+      Modal.modeCount (PC.spell pc) >= 2 ->
+        Just (Natural.length (Binding.modesOf (Object.bindings o)))
+  _ -> Nothing
 
 -- CR 707.2 / 613.1a: an object's layer-1 (copy) result -- its stamped copy
 -- snapshot when it has one, the printed base otherwise. Base-or-snapshot only, so

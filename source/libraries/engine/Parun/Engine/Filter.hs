@@ -866,6 +866,10 @@ data View = MkView
     -- copy of one? Read off Object.castPrepared, and False where there is no live
     -- object, as `tributePaid` above. Filter.IsPreparedSpell is the reader.
     preparedSpell :: Bool,
+    -- CR 700.2 / 700.2d: for a modal spell, how many times a mode was chosen
+    -- for it, repeats counted; Nothing for every other candidate.
+    -- Filter.IsModal and Measure.ModesChosen are the readers.
+    modesChosen :: Maybe Natural.Natural,
     -- CR 716.2a / 721.2a / 723.2a: the layouts whose inset frame this candidate
     -- has, used or not -- a spell cast as its Adventure included, CR 716.3b
     -- leaving it those characteristics. A copiable value (CR 716.2b), so a Clone
@@ -1218,6 +1222,7 @@ nobodyView =
       foretold = False,
       prototyped = False,
       preparedSpell = False,
+      modesChosen = Nothing,
       -- CR 109.1: a player is no object to have characteristics.
       insetFrames = Set.empty,
       -- CR 202.1a's mana cost is spent to cast a CARD, and CR 109.1's list of
@@ -2071,6 +2076,7 @@ measureOf measure = case measure of
       else Nothing
   Measure.UnlockedDoors -> Just . toInteger . Set.size . unlockedHalves
   Measure.LockedDoors -> Just . toInteger . Set.size . lockedHalves
+  Measure.ModesChosen -> fmap toInteger . modesChosen
 
 -- CR 306.5a: the printed loyalty a view carries for an object in zone `at`, Nothing
 -- on the battlefield (CR 306.5c). A printed X is 0 (CR 107.2) unless the stack
@@ -2961,6 +2967,7 @@ matches context view predicate = case predicate of
   Filter.Paid designator -> Keyword.timesPaid designator (paidCosts view) > 0 || any (Keyword.designates designator) (castUsing view)
   Filter.IsPrototyped -> prototyped view
   Filter.IsPreparedSpell -> preparedSpell view
+  Filter.IsModal -> Maybe.isJust (modesChosen view)
   Filter.HasInsetFrame layout -> Set.member layout (insetFrames view)
   -- CR 701.54e's designation conjunct, asked of the perspective (CR 109.5's
   -- "you"). A live read of Object.ringBearerFor, never a stamp on the candidate:
@@ -3301,6 +3308,7 @@ manaValueThresholds predicate = case predicate of
       Measure.Loyalty -> []
       Measure.UnlockedDoors -> []
       Measure.LockedDoors -> []
+      Measure.ModesChosen -> []
       -- Reads power or toughness against the literal, so it bounds nothing.
       Measure.Power -> []
       Measure.Toughness -> []
@@ -3461,6 +3469,7 @@ manaValueThresholds predicate = case predicate of
   Filter.Paid _ -> []
   Filter.IsPrototyped -> []
   Filter.IsPreparedSpell -> []
+  Filter.IsModal -> []
   Filter.HasInsetFrame _ -> []
 
 -- CR 701.23b vs CR 701.23d: does this predicate state a QUALITY? A search whose
@@ -3667,6 +3676,7 @@ statesAQuality predicate = case predicate of
   Filter.Paid _ -> True
   Filter.IsPrototyped -> True
   Filter.IsPreparedSpell -> True
+  Filter.IsModal -> True
   Filter.HasInsetFrame _ -> True
 
 -- Does the Filter compare a candidate against anything Context holds about
@@ -3834,6 +3844,7 @@ readsSourceValues predicate = case predicate of
   Filter.Paid _ -> False
   Filter.IsPrototyped -> False
   Filter.IsPreparedSpell -> False
+  Filter.IsModal -> False
   Filter.HasInsetFrame _ -> False
 
 -- The comparisons a target slot's Filter makes against its computed bound

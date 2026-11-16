@@ -228,6 +228,7 @@ measure m = case m of
   Measure.Loyalty -> [Text.pack "loyalty"]
   Measure.UnlockedDoors -> []
   Measure.LockedDoors -> []
+  Measure.ModesChosen -> []
 
 -- | What a name or pronoun owns: "its", "Spark's".
 possessive :: Text.Text -> Text.Text
