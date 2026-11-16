@@ -105,7 +105,7 @@
     ],
     "step": "PrecombatMain"
   },
-  "description": "CR 716.2a / 701.25a / 509.1b / 510.2: Gossip's Talent surveils 1 when a creature you control enters, at level 2 makes target attacking creature with power 3 or less unblockable, and at level 3 may flicker a creature that dealt combat damage to a player",
+  "description": "CR 717.2a / 701.25a / 509.1b / 510.2: Gossip's Talent surveils 1 when a creature you control enters, at level 2 makes target attacking creature with power 3 or less unblockable, and at level 3 may flicker a creature that dealt combat damage to a player",
   "note": "Grizzly Bears entering surveils the Swamp into the graveyard. Alice levels the Class to 3 and attacks with Hill Giant (power 3), Goblin Piker (power 2) and Craw Wurm (power 6); the Wurm is refused as the level 2 target and the Giant chosen. Bob's Centaur Courser cannot block the Giant and blocks the Piker, his Trained Armodon blocks the Wurm, so only the Giant deals combat damage to bob (20 to 17); alice exiles and returns it, leaving a new untapped Giant no longer attacking while the Wurm stays tapped; the returned Giant's entry surveils again, putting a Plains into the graveyard.",
   "timeline": [
     {

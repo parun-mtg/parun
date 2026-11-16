@@ -93,7 +93,7 @@
     ],
     "step": "PrecombatMain"
   },
-  "description": "CR 603.3d, 701.26a, 122.1g, 608.2c: Dreamdew Entrancer's entering trigger taps up to one target creature and puts three stun counters on it, then draws two only if its controller controls that creature",
+  "description": "CR 603.3d, 701.26a, 122.1d, 608.2c: Dreamdew Entrancer's entering trigger taps up to one target creature and puts three stun counters on it, then draws two only if its controller controls that creature",
   "note": "The first Entrancer targets bob's Hill Giant: it is tapped with three stun counters and alice draws nothing. The second targets alice's own Grizzly Bears: tapped, three stun counters, and alice draws Opt and Shock, leaving Forest on top.",
   "timeline": [
     {
