@@ -2468,6 +2468,9 @@ namedTokens =
       -- U.S.Agent, John Walker's "a colorless Equipment artifact token named
       -- Sturdy Shield".
       CardName.MkCardName (Text.pack "Sturdy Shield"),
+      -- Blacksmith's Talent's "a colorless Equipment artifact token named
+      -- Sword".
+      CardName.MkCardName (Text.pack "Sword"),
       -- The Hive's "a 1/1 colorless Insect artifact creature token with flying
       -- named Wasp".
       CardName.MkCardName (Text.pack "Wasp"),
