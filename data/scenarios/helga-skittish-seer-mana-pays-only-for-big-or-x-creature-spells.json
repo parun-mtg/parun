@@ -1,0 +1,463 @@
+{
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "battlefield": [
+          {
+            "card": "Helga, Skittish Seer",
+            "counters": [
+              {
+                "key": {
+                  "type": "PlusOnePlusOne"
+                },
+                "value": 1
+              }
+            ],
+            "label": "helga",
+            "ready": true
+          },
+          {
+            "card": "Forest",
+            "label": "f1",
+            "tapped": true
+          },
+          {
+            "card": "Forest",
+            "label": "f2",
+            "tapped": true
+          }
+        ],
+        "hand": [
+          {
+            "card": "Grizzly Bears",
+            "label": "gb"
+          },
+          {
+            "card": "Hungering Hydra",
+            "label": "hh"
+          },
+          {
+            "card": "Centaur Courser",
+            "label": "cc"
+          },
+          {
+            "card": "Explosive Vegetation",
+            "label": "ev"
+          },
+          {
+            "card": "Hill Giant",
+            "label": "hg"
+          }
+        ],
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ],
+        "name": "alice"
+      },
+      {
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ],
+        "name": "bob"
+      }
+    ],
+    "step": "PrecombatMain"
+  },
+  "description": "CR 605.1a, 106.6, 202.3, 202.3e, 107.3: Helga, Skittish Seer taps for mana of one color equal to its power, spendable only on a creature spell of mana value 4 or greater or a creature spell with {X} in its mana cost.",
+  "note": "Helga is 2/4 and the Forests start tapped, so on turn 1 Helga is the only source: her two mana pay Hungering Hydra with X=1 (mana value 2, {X} in its cost) but not Grizzly Bears (mana value 2, no {X}). On turn 3 her two plus two Forests pay Hill Giant (mana value 4) but not Explosive Vegetation (mana value 4, a sorcery), and her two plus one Forest do not pay Centaur Courser (mana value 3).",
+  "timeline": [
+    {
+      "player": "alice",
+      "refuse": {
+        "Cast": {
+          "mana": [
+            "$helga"
+          ],
+          "object": "$gb"
+        }
+      },
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Cast": {
+          "mana": [
+            "$helga"
+          ],
+          "object": "$hh",
+          "x": 1,
+          "yields": [
+            [
+              {
+                "manaType": {
+                  "type": "Colored",
+                  "value": "Green"
+                },
+                "restriction": {
+                  "casts": {
+                    "type": "And",
+                    "value": [
+                      {
+                        "type": "HasCardType",
+                        "value": "Creature"
+                      },
+                      {
+                        "type": "Or",
+                        "value": [
+                          {
+                            "type": "Measures",
+                            "value": {
+                              "comparison": "AtLeast",
+                              "measure": "ManaValue",
+                              "operand": {
+                                "type": "Literal",
+                                "value": 4
+                              }
+                            }
+                          },
+                          {
+                            "type": "ManaCostHasSymbol",
+                            "value": {
+                              "type": "VariableSymbol"
+                            }
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                },
+                "retention": "Ordinary",
+                "rider": null,
+                "sourceChoices": null,
+                "tags": []
+              },
+              {
+                "manaType": {
+                  "type": "Colored",
+                  "value": "Green"
+                },
+                "restriction": {
+                  "casts": {
+                    "type": "And",
+                    "value": [
+                      {
+                        "type": "HasCardType",
+                        "value": "Creature"
+                      },
+                      {
+                        "type": "Or",
+                        "value": [
+                          {
+                            "type": "Measures",
+                            "value": {
+                              "comparison": "AtLeast",
+                              "measure": "ManaValue",
+                              "operand": {
+                                "type": "Literal",
+                                "value": 4
+                              }
+                            }
+                          },
+                          {
+                            "type": "ManaCostHasSymbol",
+                            "value": {
+                              "type": "VariableSymbol"
+                            }
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                },
+                "retention": "Ordinary",
+                "rider": null,
+                "sourceChoices": null,
+                "tags": []
+              }
+            ]
+          ]
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Counters": {
+          "count": 1,
+          "kind": {
+            "type": "PlusOnePlusOne"
+          },
+          "object": "Hungering Hydra"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Tapped": {
+          "object": "$helga",
+          "tapped": true
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "player": "alice",
+      "refuse": {
+        "Cast": {
+          "mana": [
+            "$helga",
+            "$f1"
+          ],
+          "object": "$cc"
+        }
+      },
+      "step": "PrecombatMain",
+      "turn": 3
+    },
+    {
+      "player": "alice",
+      "refuse": {
+        "Cast": {
+          "mana": [
+            "$helga",
+            "$f1",
+            "$f2"
+          ],
+          "object": "$ev"
+        }
+      },
+      "step": "PrecombatMain",
+      "turn": 3
+    },
+    {
+      "do": {
+        "Cast": {
+          "mana": [
+            "$helga",
+            "$f1",
+            "$f2"
+          ],
+          "object": "$hg",
+          "yields": [
+            [
+              {
+                "manaType": {
+                  "type": "Colored",
+                  "value": "Red"
+                },
+                "restriction": {
+                  "casts": {
+                    "type": "And",
+                    "value": [
+                      {
+                        "type": "HasCardType",
+                        "value": "Creature"
+                      },
+                      {
+                        "type": "Or",
+                        "value": [
+                          {
+                            "type": "Measures",
+                            "value": {
+                              "comparison": "AtLeast",
+                              "measure": "ManaValue",
+                              "operand": {
+                                "type": "Literal",
+                                "value": 4
+                              }
+                            }
+                          },
+                          {
+                            "type": "ManaCostHasSymbol",
+                            "value": {
+                              "type": "VariableSymbol"
+                            }
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                },
+                "retention": "Ordinary",
+                "rider": null,
+                "sourceChoices": null,
+                "tags": []
+              },
+              {
+                "manaType": {
+                  "type": "Colored",
+                  "value": "Red"
+                },
+                "restriction": {
+                  "casts": {
+                    "type": "And",
+                    "value": [
+                      {
+                        "type": "HasCardType",
+                        "value": "Creature"
+                      },
+                      {
+                        "type": "Or",
+                        "value": [
+                          {
+                            "type": "Measures",
+                            "value": {
+                              "comparison": "AtLeast",
+                              "measure": "ManaValue",
+                              "operand": {
+                                "type": "Literal",
+                                "value": 4
+                              }
+                            }
+                          },
+                          {
+                            "type": "ManaCostHasSymbol",
+                            "value": {
+                              "type": "VariableSymbol"
+                            }
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                },
+                "retention": "Ordinary",
+                "rider": null,
+                "sourceChoices": null,
+                "tags": []
+              }
+            ]
+          ]
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 3
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 3
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 3
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Hill Giant",
+          "count": 1,
+          "player": "alice",
+          "zone": "Battlefield"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 3
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Centaur Courser",
+          "count": 1,
+          "player": "alice",
+          "zone": "Hand"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 3
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Explosive Vegetation",
+          "count": 1,
+          "player": "alice",
+          "zone": "Hand"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 3
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Grizzly Bears",
+          "count": 1,
+          "player": "alice",
+          "zone": "Hand"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 3
+    }
+  ]
+}
