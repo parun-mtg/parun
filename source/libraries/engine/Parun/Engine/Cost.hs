@@ -1266,28 +1266,54 @@ spellAdjustments aiming pid oid gs =
 -- `pid`'s cast of it -- Lightstall Inquisitor's "each spell cast this way costs
 -- {1} more". Zero for a card anywhere else, or one whose permission is not
 -- `pid`'s or not open (Expiry.permissionOpen), candidateCostsGiven's exile arm's
--- scoping.
+-- scoping, and zero for one a target can waive, which permissionCostChanges
+-- applies once the targets are announced. On a graveyard card it is not
+-- implemented (#8118).
 --
 -- Asked of the PRE-MOVE card, Commander.tax's reason: the permission is on the
 -- card in exile and CR 400.7's spell on the stack has none, so this answers the
 -- gate here and Parun.Engine.Cast.castSpellWith folds it into the candidates
 -- before CR 601.2a's move (raiseCandidate).
 permissionIncrease :: PlayerId -> ObjectId -> GameState -> Natural
-permissionIncrease pid oid gs = maybe 0 ExilePlayPermission.increase (castPermission pid oid gs)
+permissionIncrease pid oid gs = case castPermission [Zone.Exile] pid oid gs of
+  Just permission | Maybe.isNothing (ExilePlayPermission.increaseUnless permission) -> ExilePlayPermission.increase permission
+  _ -> 0
+
+-- CR 601.2c / 601.2f: the increase a target can waive, as the sentence
+-- selfReductions asks of the announced targets -- Mavinda, Students' Advocate's
+-- "If that spell doesn't target a creature you control, it costs {8} more to
+-- cast this way". Read off the pre-move card by selfSentences and stamped on
+-- the spell by Parun.Engine.Cast (Object.castCostChanges), since CR 601.2c's
+-- targets come after CR 601.2a's move.
+permissionCostChanges :: ExilePlayPermission.ExilePlayPermission -> [CostReduction.CostReduction]
+permissionCostChanges permission = case ExilePlayPermission.increaseUnless permission of
+  Just waiver
+    | ExilePlayPermission.increase permission > 0 ->
+        [ CostReduction.MkCostReduction
+            { CostReduction.amount = ManaCost.MkManaCost [ManaSymbol.Generic (ExilePlayPermission.increase permission)],
+              CostReduction.perEach = Quantity.Type.Literal 1,
+              CostReduction.condition = Nothing,
+              CostReduction.whichTargets = Just waiver,
+              CostReduction.noneTargeted = True,
+              CostReduction.direction = CostDirection.More
+            }
+        ]
+  _ -> []
 
 -- CR 400.7h: the keywords the CR 601.3 permission an exiled `oid` carries gives
 -- `pid`'s spell of it -- Durnan of the Yawning Portal's "that spell has
 -- undaunted". Scoped and asked of the pre-move card for permissionIncrease's
--- reasons; Parun.Engine.Cast.castGrantsOf stamps them on the spell.
+-- reasons; Parun.Engine.Cast.castGrantsOf stamps them on the spell. On a
+-- graveyard card they are not implemented (#8118).
 permissionKeywords :: PlayerId -> ObjectId -> GameState -> [Keyword.Type.Keyword]
-permissionKeywords pid oid gs = foldMap ExilePlayPermission.keywords (castPermission pid oid gs)
+permissionKeywords pid oid gs = foldMap ExilePlayPermission.keywords (castPermission [Zone.Exile] pid oid gs)
 
--- The open CR 601.3 permission `pid`'s cast of an exiled `oid` is priced under,
--- the first of them; Nothing for a card anywhere else.
-castPermission :: PlayerId -> ObjectId -> GameState -> Maybe ExilePlayPermission.ExilePlayPermission
-castPermission pid oid gs = case Game.lookupObject oid gs of
+-- The open CR 601.3 permission `pid`'s cast of `oid` lying in one of `zones` is
+-- priced under, the first of them; Nothing for a card anywhere else.
+castPermission :: [Zone.Zone] -> PlayerId -> ObjectId -> GameState -> Maybe ExilePlayPermission.ExilePlayPermission
+castPermission zones pid oid gs = case Game.lookupObject oid gs of
   Just obj
-    | Object.zone obj == Zone.Exile,
+    | Object.zone obj `elem` zones,
       permission : _ <- Expiry.openPermissions pid oid gs ->
         Just permission
   _ -> Nothing
@@ -1339,7 +1365,7 @@ selfReductions aiming pid oid gs =
       -- determined, against the same perspective as its count.
       applies reduction =
         all (Condition.holds (Projection.fullView gs) context gs oid) (CostReduction.condition reduction)
-          && all (\wanted -> any (\target -> Filter.matches context (Projection.viewOfObject target gs) wanted) (Set.toList targets)) (CostReduction.whichTargets reduction)
+          && all (\wanted -> CostReduction.noneTargeted reduction /= any (\target -> Filter.matches context (Projection.viewOfObject target gs) wanted) (Set.toList targets)) (CostReduction.whichTargets reduction)
       scaled reduction =
         let copies = Quantity.evaluate (Projection.fullView gs) context gs oid (CostReduction.perEach reduction)
             -- Saturating rather than partial: an Int cannot hold every Integer.
@@ -1357,7 +1383,9 @@ selfSentences pid oid gs = case (Game.lookupObject oid gs, Game.cardOf oid gs, G
     let face = Game.castingFaceOf obj card printedFace
         projected = asSpellProjected pid oid gs
         printed = if PC.lostAllAbilities projected then [] else Face.costReductions face
-     in printed <> PC.grantedCostReductions projected <> Keyword.selfCostReductionsOf (PC.keywords projected)
+        -- The permission's own, off the card before the move or the spell after it.
+        permitted = Object.castCostChanges obj <> foldMap permissionCostChanges (castPermission [Zone.Exile, Zone.Graveyard] pid oid gs)
+     in printed <> PC.grantedCostReductions projected <> Keyword.selfCostReductionsOf (PC.keywords projected) <> permitted
   _ -> []
 
 -- CR 601.2a / 613.1f: the keywords of the spell `pid` is casting, printed and

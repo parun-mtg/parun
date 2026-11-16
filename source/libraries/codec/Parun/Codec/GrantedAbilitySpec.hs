@@ -150,7 +150,7 @@ spec s = Spec.describe s "Parun.Codec.GrantedAbility" $ do
     Common.assertCodec
       s
       codec
-      (GrantedAbility.SelfCostReduction (CostReduction.MkCostReduction (ManaCost.MkManaCost [ManaSymbol.Generic 1]) (Quantity.Literal 1) Nothing Nothing CostDirection.Less))
+      (GrantedAbility.SelfCostReduction (CostReduction.MkCostReduction (ManaCost.MkManaCost [ManaSymbol.Generic 1]) (Quantity.Literal 1) Nothing Nothing False CostDirection.Less))
       " {\"type\":\"SelfCostReduction\",\"value\":{\"amount\":[{\"type\":\"Generic\",\"value\":1}],\"perEach\":{\"type\":\"Literal\",\"value\":1}}} "
   -- CR 118.9: Mine Security's "You may pay {0} rather than pay this spell's
   -- mana cost".

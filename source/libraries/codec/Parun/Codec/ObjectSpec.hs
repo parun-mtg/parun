@@ -20,6 +20,8 @@ import qualified Parun.Types.ClassLevel as ClassLevel
 import qualified Parun.Types.Color as Color
 import qualified Parun.Types.ControlClock as ControlClock
 import qualified Parun.Types.Cost as Cost
+import qualified Parun.Types.CostDirection as CostDirection
+import qualified Parun.Types.CostReduction as CostReduction
 import qualified Parun.Types.CounterKind as CounterKind
 import qualified Parun.Types.Designation as Designation
 import qualified Parun.Types.ExileLooker as ExileLooker
@@ -50,6 +52,7 @@ import qualified Parun.Types.PlayPermissionOrigin as PlayPermissionOrigin
 import qualified Parun.Types.PlayerChoice as PlayerChoice
 import qualified Parun.Types.PlayerId as PlayerId
 import qualified Parun.Types.PrintingId as PrintingId
+import qualified Parun.Types.Quantity as Quantity
 import qualified Parun.Types.Recipient as Recipient
 import qualified Parun.Types.RevealWindow as RevealWindow
 import qualified Parun.Types.RoomHalf as RoomHalf
@@ -160,6 +163,7 @@ spec s = Spec.describe s "Parun.Codec.Object" $ do
                   ExilePlayPermission.origin = PlayPermissionOrigin.Granted,
                   ExilePlayPermission.verb = PermissionVerb.Cast,
                   ExilePlayPermission.increase = 1,
+                  ExilePlayPermission.increaseUnless = Nothing,
                   ExilePlayPermission.landEnters = TapState.Tapped,
                   ExilePlayPermission.spellEnters = TapState.Tapped,
                   ExilePlayPermission.budget = Just (PlayBudget.MkPlayBudget (PlayAllowance.Plays 2) (Set.fromList [ObjectId.MkObjectId 30, ObjectId.MkObjectId 31]) (Timestamp.MkTimestamp 32)),
@@ -216,6 +220,7 @@ spec s = Spec.describe s "Parun.Codec.Object" $ do
           Object.castBy = Just (PlayerId.MkPlayerId 2),
           Object.castUsing = Just Keyword.JumpStart,
           Object.castGrants = [Keyword.Retrace, Keyword.Convoke],
+          Object.castCostChanges = [CostReduction.MkCostReduction (ManaCost.MkManaCost [ManaSymbol.Generic 8]) (Quantity.Literal 1) Nothing Nothing True CostDirection.More],
           Object.exileLookers = Set.singleton (ExileLooker.ThePlayer (PlayerId.MkPlayerId 27)),
           Object.revealed = Set.fromList [RevealWindow.WhileOnStack (ObjectId.MkObjectId 32), RevealWindow.UntilFirstTurn],
           Object.exposed = True,
@@ -242,7 +247,7 @@ spec s = Spec.describe s "Parun.Codec.Object" $ do
           <> ",\"timestamp\":10,\"face\":\"Delver of Secrets\",\"turnedOverAt\":11"
           <> ",\"worldSince\":12"
           <> ",\"playPermissions\":[{\"player\":13,\"source\":14,\"expiry\":{\"type\":\"AtCleanup\"}"
-          <> ",\"spending\":\"AnyType\",\"alternativeCost\":{\"type\":\"InsteadOfManaCost\",\"value\":[]},\"condition\":null,\"origin\":\"Granted\",\"verb\":\"Cast\",\"increase\":1,\"landEnters\":\"Tapped\",\"spellEnters\":\"Tapped\",\"budget\":{\"remaining\":{\"type\":\"Plays\",\"value\":2},\"covers\":[30,31],\"granted\":32},\"keywords\":[{\"type\":\"Undaunted\"}]}]"
+          <> ",\"spending\":\"AnyType\",\"alternativeCost\":{\"type\":\"InsteadOfManaCost\",\"value\":[]},\"condition\":null,\"origin\":\"Granted\",\"verb\":\"Cast\",\"increase\":1,\"increaseUnless\":null,\"landEnters\":\"Tapped\",\"spellEnters\":\"Tapped\",\"budget\":{\"remaining\":{\"type\":\"Plays\",\"value\":2},\"covers\":[30,31],\"granted\":32},\"keywords\":[{\"type\":\"Undaunted\"}]}]"
           <> ",\"plotted\":0,\"foretold\":15"
           <> ",\"foretellCostReduction\":[{\"type\":\"Generic\",\"value\":29}]"
           <> ",\"warped\":28,\"preparedCopyOf\":26"
@@ -271,6 +276,7 @@ spec s = Spec.describe s "Parun.Codec.Object" $ do
           <> ",\"castBy\":2"
           <> ",\"castUsing\":{\"type\":\"JumpStart\"}"
           <> ",\"castGrants\":[{\"type\":\"Retrace\"},{\"type\":\"Convoke\"}]"
+          <> ",\"castCostChanges\":[{\"amount\":[{\"type\":\"Generic\",\"value\":8}],\"perEach\":{\"type\":\"Literal\",\"value\":1},\"noneTargeted\":true,\"direction\":\"More\"}]"
           <> ",\"exileLookers\":[{\"type\":\"ThePlayer\",\"value\":27}]"
           <> ",\"revealed\":[{\"type\":\"WhileOnStack\",\"value\":32},{\"type\":\"UntilFirstTurn\"}]"
           <> ",\"exposed\":true"

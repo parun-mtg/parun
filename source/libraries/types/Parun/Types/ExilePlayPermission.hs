@@ -3,6 +3,7 @@ module Parun.Types.ExilePlayPermission where
 import qualified Numeric.Natural as Natural
 import qualified Parun.Types.Condition as Condition
 import qualified Parun.Types.Expiry as Expiry
+import qualified Parun.Types.Filter as Filter
 import qualified Parun.Types.Keyword as Keyword
 import qualified Parun.Types.ManaSpending as ManaSpending
 import qualified Parun.Types.ObjectId as ObjectId
@@ -105,6 +106,11 @@ data ExilePlayPermission = MkExilePlayPermission
     -- | CR 601.2f: the generic mana each spell cast under it costs more --
     -- Lightstall Inquisitor\'s "each spell cast this way costs {1} more".
     increase :: Natural.Natural,
+    -- | CR 601.2c / 601.2f: 'increase' is waived where the spell targets
+    -- something this matches -- Mavinda, Students\' Advocate\'s "if that spell
+    -- doesn\'t target a creature you control". Nothing never waives it. Read
+    -- by Parun.Engine.Cost.permissionCostChanges.
+    increaseUnless :: Maybe (Filter.Filter Keyword.Keyword),
     -- | CR 400.7i / 614.1d: how a land played under it enters -- Lightstall
     -- Inquisitor\'s "each land played this way enters tapped".
     landEnters :: TapState.TapState,
@@ -139,6 +145,7 @@ defaultValue p s =
       origin = PlayPermissionOrigin.Granted,
       verb = PermissionVerb.Play,
       increase = 0,
+      increaseUnless = Nothing,
       landEnters = TapState.Untapped,
       spellEnters = TapState.Untapped,
       budget = Nothing,

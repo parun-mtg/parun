@@ -1,0 +1,136 @@
+{
+  "description": "Mavinda, Students' Advocate lets you cast a graveyard instant that targets a creature you control at its printed cost, and the spell is exiled instead of going back",
+  "note": "One Forest pays Giant Growth's printed {G}: the {8} more is waived because the spell targets Mavinda rather than Bob's Grizzly Bears. The refused cast before the activation is the same card with the same mana and target.",
+  "board": {
+    "seats": [
+      {
+        "name": "alice",
+        "battlefield": [
+          {
+            "card": "Mavinda, Students' Advocate",
+            "label": "mavinda"
+          },
+          {
+            "card": "Forest",
+            "label": "forest"
+          }
+        ],
+        "graveyard": [
+          {
+            "card": "Giant Growth",
+            "label": "growth"
+          }
+        ],
+        "library": [
+          {
+            "card": "Plains"
+          },
+          {
+            "card": "Plains"
+          }
+        ]
+      },
+      {
+        "name": "bob",
+        "library": [
+          {
+            "card": "Plains"
+          },
+          {
+            "card": "Plains"
+          }
+        ],
+        "battlefield": [
+          {
+            "card": "Grizzly Bears",
+            "label": "bears"
+          }
+        ]
+      }
+    ],
+    "active": "alice",
+    "step": "PrecombatMain"
+  },
+  "timeline": [
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "refuse": {
+        "Cast": {
+          "object": "$growth",
+          "mana": [
+            "$forest"
+          ],
+          "targets": [
+            "$mavinda"
+          ]
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "do": {
+        "Activate": {
+          "object": "$mavinda",
+          "ability": 0
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "do": "Pass"
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "do": {
+        "Cast": {
+          "object": "Giant Growth",
+          "mana": [
+            "$forest"
+          ],
+          "targets": [
+            "$mavinda"
+          ]
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "do": "Pass"
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "check": {
+        "PowerToughness": {
+          "object": "$mavinda",
+          "power": 5,
+          "toughness": 6
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "check": {
+        "Count": {
+          "player": "alice",
+          "zone": "Exile",
+          "card": "Giant Growth",
+          "count": 1
+        }
+      }
+    }
+  ]
+}

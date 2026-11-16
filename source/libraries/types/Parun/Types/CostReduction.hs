@@ -71,6 +71,11 @@ data CostReduction = MkCostReduction
     -- Parun.Types.CostModifier's @whichTargets@ is the same question asked by
     -- another permanent's effect, of a spell or an activation.
     whichTargets :: Maybe (Filter.Filter Keyword.Keyword),
+    -- | CR 601.2c / 601.2f: whether 'whichTargets' asks that NO announced
+    -- target match it rather than one -- Mavinda, Students\' Advocate\'s "if
+    -- that spell doesn\'t target a creature you control", which a spell with no
+    -- target at all satisfies.
+    noneTargeted :: Bool,
     -- | Whether 'amount' comes off the total or goes onto it -- Dragon's Prey's
     -- "costs {2} more", which joins Parun.Types.CostAdjustments.increases whole.
     direction :: CostDirection.CostDirection
