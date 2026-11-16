@@ -13,10 +13,12 @@ import qualified Parun.Codec.Color as Color
 import qualified Parun.Codec.Condition as Condition
 import qualified Parun.Codec.ControlClock as ControlClock
 import qualified Parun.Codec.CounterKind as CounterKind
+import qualified Parun.Codec.Designation as Designation
 import qualified Parun.Codec.Keyword as Keyword
 import qualified Parun.Codec.KeywordInstance as KeywordInstance
 import qualified Parun.Codec.Mana as Mana
 import qualified Parun.Codec.ModeIndex as ModeIndex
+import qualified Parun.Codec.Object as Object
 import qualified Parun.Codec.ObjectId as ObjectId
 import qualified Parun.Codec.PlayerChoice as PlayerChoice
 import qualified Parun.Codec.PlayerId as PlayerId
@@ -73,6 +75,8 @@ codec = Fields.object $ do
   lapsedGrants <- Fields.defaulted "lapsedGrants" Set.empty (Common.set Condition.codec) LastKnown.lapsedGrants
   tapped <- Fields.defaulted "tapped" False Common.boolean LastKnown.tapped
   faceDown <- Fields.defaulted "faceDown" False Common.boolean LastKnown.faceDown
+  designations <- Fields.defaulted "designations" Set.empty (Common.set Designation.codec) LastKnown.designations
+  designationValues <- Fields.defaulted "designationValues" Map.empty (Common.keyedList Object.designationValue) LastKnown.designationValues
   pure
     LastKnown.MkLastKnown
       { LastKnown.characteristics = characteristics,
@@ -109,5 +113,7 @@ codec = Fields.object $ do
         LastKnown.pile = pile,
         LastKnown.lapsedGrants = lapsedGrants,
         LastKnown.tapped = tapped,
-        LastKnown.faceDown = faceDown
+        LastKnown.faceDown = faceDown,
+        LastKnown.designations = designations,
+        LastKnown.designationValues = designationValues
       }

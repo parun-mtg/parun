@@ -772,7 +772,8 @@ data View = MkView
     --
     -- Empty for every candidate with no object to read it off: a printed card off
     -- the battlefield, a player, an event snapshot -- the vacuous posture `tapped`
-    -- and `token` already take.
+    -- and `token` already take. A departed permanent's are CR 608.2h's record's
+    -- (Count.lastKnownView).
     --
     -- Read by this module's own Filter.HasDesignation arm (Aragorn, Hornburg
     -- Hero's trigger, Rune-Brand Juggler's sacrifice cost) and by

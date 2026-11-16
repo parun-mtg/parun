@@ -12,6 +12,7 @@ import qualified Parun.Types.Color as Color
 import qualified Parun.Types.Condition as Condition
 import qualified Parun.Types.ControlClock as ControlClock
 import qualified Parun.Types.CounterKind as CounterKind
+import qualified Parun.Types.Designation as Designation
 import qualified Parun.Types.Keyword as Keyword
 import qualified Parun.Types.KeywordInstance as KeywordInstance
 import qualified Parun.Types.Mana as Mana
@@ -292,6 +293,16 @@ data LastKnown = MkLastKnown
     -- Game.isFaceDownPermanent as it left. A status, `tapped`'s sibling; what
     -- Cryptic Pursuit's "whenever a face-down creature you control dies" asks
     -- (data/scenarios/cryptic-pursuit).
-    faceDown :: !Bool
+    faceDown :: !Bool,
+    -- | CR 608.2h / 701.60b: the designations it had -- Object.designations as
+    -- it left. Not a characteristic, and per-incarnation (CR 400.7); what Agency
+    -- Coroner's "if the sacrificed creature was suspected" asks
+    -- (data/scenarios/agency-coroner-draws-two-for-a-suspected-sacrifice-and-one-otherwise.json).
+    designations :: !(Set.Set Designation.Designation),
+    -- | CR 701.37c / 608.2h: the value each designation was set with --
+    -- Object.designationValues as it left, `designations`' sibling. What Hydra
+    -- Broodmaster's trigger reads once the Broodmaster is gone
+    -- (data/scenarios/counter-keyword-trigger/cr-608-2h-hydra-broodmaster-destroyed-in-response-still-makes-two-2-2-hydras.json).
+    designationValues :: !(Map.Map Designation.Designation Natural.Natural)
   }
   deriving (Eq, Ord, Show)
