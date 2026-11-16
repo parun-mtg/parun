@@ -4544,9 +4544,16 @@ attackedInLastTurnOf gs pid oid = any ((== oid) . AttackerDeclared.attacker) (at
 -- Every seat counts, a departed player's among them, CR 800.4i's limb on
 -- actions of a player who left the game, until attacksInOwnLastTurn expires it.
 attackersInTheirLastTurn :: GameState -> PlayerId -> Natural
-attackersInTheirLastTurn gs victim =
-  let attackedVictim attacking row = AttackerDeclared.attackingPlayer row == attacking && AttackerDeclared.target row == AttackTarget.OfPlayer victim
-   in Natural.length (filter (\attacking -> any (attackedVictim attacking) (attacksInOwnLastTurn gs attacking)) (GameState.seating gs))
+attackersInTheirLastTurn gs victim = Natural.length (filter (\attacking -> attackedInTheirLastTurn gs attacking victim) (GameState.seating gs))
+
+-- CR 508.1b / 800.4i: did @attacking@ attack @victim@ during @attacking@'s own
+-- most recent turn? Weathered Sentinels' "players who attacked you during their
+-- last turn", and attackersInTheirLastTurn's per-seat question.
+attackedInTheirLastTurn :: GameState -> PlayerId -> PlayerId -> Bool
+attackedInTheirLastTurn gs attacking victim =
+  any
+    (\row -> AttackerDeclared.attackingPlayer row == attacking && AttackerDeclared.target row == AttackTarget.OfPlayer victim)
+    (attacksInOwnLastTurn gs attacking)
 
 -- CR 509.1h / 608.2i: did this OBJECT become a blocked creature this turn?
 -- attackersDeclaredThisTurn's footing over the other combat log, and its extent
