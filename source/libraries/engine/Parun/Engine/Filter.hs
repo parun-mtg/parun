@@ -2730,7 +2730,7 @@ matches context view predicate = case predicate of
   -- A source filter admits only damage from a source it matches as it dealt the
   -- damage (dealtByView), under the same context, so "you controlled" is still
   -- the perspective's.
-  Filter.DealtDamageThisTurn kind by -> any (\ev -> all (== DamageEvent.kind ev) kind && all (matches context (dealtByView ev)) by) (dealtDamageThisTurn view)
+  Filter.DealtDamageThisTurn kind by excess -> any (\ev -> all (== DamageEvent.kind ev) kind && all (matches context (dealtByView ev)) by && (not excess || DamageEvent.excess ev > 0)) (dealtDamageThisTurn view)
   -- CR 119.3 / 608.2i: the same look-back asked of a player's life total,
   -- filled by Parun.Engine.Count.playerView and False for every object.
   Filter.LostLifeThisTurn -> lostLifeThisTurn view
@@ -3396,7 +3396,7 @@ manaValueThresholds predicate = case predicate of
   Filter.HadToAttackThisCombat -> []
   Filter.LeftLibraryThisTurn _ -> []
   Filter.CantPayKeywordCost _ -> []
-  Filter.DealtDamageThisTurn _ by -> foldMap manaValueThresholds by
+  Filter.DealtDamageThisTurn _ by _ -> foldMap manaValueThresholds by
   Filter.LostLifeThisTurn -> []
   Filter.ActivatedThisTurn -> []
   Filter.DealtDamageTo _ -> []
@@ -3586,7 +3586,7 @@ statesAQuality predicate = case predicate of
   Filter.HadToAttackThisCombat -> True
   Filter.LeftLibraryThisTurn _ -> True
   Filter.CantPayKeywordCost _ -> True
-  Filter.DealtDamageThisTurn _ _ -> True
+  Filter.DealtDamageThisTurn {} -> True
   Filter.LostLifeThisTurn -> True
   Filter.ActivatedThisTurn -> True
   Filter.DealtDamageTo _ -> True
@@ -3778,7 +3778,7 @@ readsSourceValues predicate = case predicate of
   Filter.HadToAttackThisCombat -> False
   Filter.LeftLibraryThisTurn _ -> False
   Filter.CantPayKeywordCost _ -> False
-  Filter.DealtDamageThisTurn _ by -> any readsSourceValues by
+  Filter.DealtDamageThisTurn _ by _ -> any readsSourceValues by
   Filter.LostLifeThisTurn -> False
   Filter.ActivatedThisTurn -> False
   Filter.DealtDamageTo _ -> False

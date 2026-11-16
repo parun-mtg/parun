@@ -1172,6 +1172,7 @@ damageEvent gs kind source target amount =
             DamageEvent.dealtFromZone = Game.zoneOf source gs,
             -- The batch's to stamp, with the excess.
             DamageEvent.recipientCardTypes = Set.empty,
+            DamageEvent.recipientController = Nothing,
             DamageEvent.kind = kind
           }
 

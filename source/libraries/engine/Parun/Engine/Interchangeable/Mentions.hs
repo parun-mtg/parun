@@ -321,7 +321,7 @@ filterNames asking criterion = case criterion of
   Filter.CrewedThisTurn _ -> keyed asking <> history asking HistoryRead.Crews
   Filter.ConvokedSourceThisTurn -> keyed asking <> history asking HistoryRead.Convokes <> history asking HistoryRead.Moves
   Filter.SaddledSourceThisTurn -> keyed asking <> history asking HistoryRead.Saddles
-  Filter.DealtDamageThisTurn _ nested -> keyed asking <> history asking HistoryRead.Damage <> foldMap (filterNames asking) nested
+  Filter.DealtDamageThisTurn _ nested _ -> keyed asking <> history asking HistoryRead.Damage <> foldMap (filterNames asking) nested
   Filter.ActivatedThisTurn -> keyed asking <> history asking HistoryRead.Activations
   Filter.DealtDamageTo _ -> keyed asking <> history asking HistoryRead.Damage
   Filter.EnteredThisTurn (EnteredZone.MkEnteredZone to _from _window) -> keyed asking <> history asking (if to == Zone.Battlefield then HistoryRead.Entries else HistoryRead.Moves)
@@ -740,6 +740,7 @@ eventShapeNames asking x = case x of
   EventShape.Sacrificed -> history asking HistoryRead.Sacrifices
   EventShape.TurnedFaceUp -> history asking HistoryRead.FaceUpTurns
   EventShape.DealtCombatDamageToPlayer -> history asking HistoryRead.Damage
+  EventShape.PermanentDealtDamage -> history asking HistoryRead.Damage
 
 faceNames :: (Monoid r) => Asking r -> (card -> r) -> Face.Face card -> r
 faceNames asking onCard =

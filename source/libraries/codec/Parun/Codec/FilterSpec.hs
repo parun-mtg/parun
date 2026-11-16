@@ -482,20 +482,26 @@ spec s = Spec.describe s "Parun.Codec.Filter" $ do
     Common.assertCodec
       s
       codec
-      (Filter.DealtDamageThisTurn Nothing Nothing)
+      (Filter.DealtDamageThisTurn Nothing Nothing False)
       " {\"type\":\"DealtDamageThisTurn\"} "
   Spec.it s "DealtDamageThisTurn, by a source" $
     Common.assertCodec
       s
       codec
-      (Filter.DealtDamageThisTurn Nothing (Just (Filter.IsInZone Zone.Stack)))
+      (Filter.DealtDamageThisTurn Nothing (Just (Filter.IsInZone Zone.Stack)) False)
       " {\"type\":\"DealtDamageThisTurn\",\"value\":{\"by\":{\"type\":\"IsInZone\",\"value\":\"Stack\"}}} "
   Spec.it s "DealtDamageThisTurn, combat damage by a source" $
     Common.assertCodec
       s
       codec
-      (Filter.DealtDamageThisTurn (Just DamageKind.Combat) (Just (Filter.HasSupertype Supertype.Legendary)))
+      (Filter.DealtDamageThisTurn (Just DamageKind.Combat) (Just (Filter.HasSupertype Supertype.Legendary)) False)
       " {\"type\":\"DealtDamageThisTurn\",\"value\":{\"kind\":\"Combat\",\"by\":{\"type\":\"HasSupertype\",\"value\":\"Legendary\"}}} "
+  Spec.it s "DealtDamageThisTurn, excess damage" $
+    Common.assertCodec
+      s
+      codec
+      (Filter.DealtDamageThisTurn Nothing Nothing True)
+      " {\"type\":\"DealtDamageThisTurn\",\"value\":{\"excess\":true}} "
   Spec.it s "LostLifeThisTurn" $
     Common.assertCodec
       s

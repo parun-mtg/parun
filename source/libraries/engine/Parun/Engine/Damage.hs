@@ -1116,9 +1116,10 @@ processDamage settle events = do
   -- event in the batch may disturb for the next.
   board <- State.get
   let -- The events CR 120.4b deals, each carrying its CR 120.10 excess.
-      -- CR 120.3's recipient card types stamped too, read off the same board,
-      -- so a later "dealt damage to another creature" reads what it was.
-      survivors = fmap (\ev -> ev {DamageEvent.recipientCardTypes = Projection.damagedCardTypes board (DamageEvent.target ev)}) (settleExcess board resolved)
+      -- CR 120.3's recipient card types and controller stamped too, read off
+      -- the same board, so a later "dealt damage to another creature" or "an
+      -- opponent controlled" reads what it was.
+      survivors = fmap (\ev -> ev {DamageEvent.recipientCardTypes = Projection.damagedCardTypes board (DamageEvent.target ev), DamageEvent.recipientController = Recipient.objectOf (DamageEvent.target ev) >>= (`Projection.controllerOf` board)}) (settleExcess board resolved)
       -- CR 120.3e: mark the damage. CR 120.3d's alternative -- the -1/-1 counters
       -- a wither and/or infect source's damage causes instead -- is in
       -- `counterResults` below rather than here, since it goes through

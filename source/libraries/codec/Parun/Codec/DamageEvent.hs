@@ -43,6 +43,7 @@ codec = Fields.object $ do
   dealtByColors <- Fields.defaulted "dealtByColors" Set.empty (Common.set Color.codec) DamageEvent.dealtByColors
   dealtFromZone <- Fields.defaulted "dealtFromZone" Nothing (Common.maybe Zone.codec) DamageEvent.dealtFromZone
   recipientCardTypes <- Fields.defaulted "recipientCardTypes" Set.empty (Common.set CardType.codec) DamageEvent.recipientCardTypes
+  recipientController <- Fields.defaulted "recipientController" Nothing (Common.maybe PlayerId.codec) DamageEvent.recipientController
   kind <- Fields.required "kind" DamageKind.codec DamageEvent.kind
   pure
     DamageEvent.MkDamageEvent
@@ -63,5 +64,6 @@ codec = Fields.object $ do
         DamageEvent.dealtByColors = dealtByColors,
         DamageEvent.dealtFromZone = dealtFromZone,
         DamageEvent.recipientCardTypes = recipientCardTypes,
+        DamageEvent.recipientController = recipientController,
         DamageEvent.kind = kind
       }
