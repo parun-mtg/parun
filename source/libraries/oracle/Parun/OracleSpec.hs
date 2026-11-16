@@ -666,6 +666,13 @@ spec s = Spec.describe s "Parun.Oracle" $ do
     Spec.assertEq s (Just (Text.pack "Exile all nonlegendary creatures.")) (Oracle.render blast)
     Spec.assertBool s (Oracle.says blast (CardName.MkCardName (Text.pack "Spark")) (Text.pack "Exile all creatures that aren't legendary.")) "no \"that aren't legendary\""
 
+  -- CR 700.12: the five outlaw creature types, in any order, are "outlaw".
+  Spec.it s "render names outlaws and non-outlaws" $ do
+    let outlaws = Filter.Or (fmap Filter.HasSubtype [Subtype.Warlock, Subtype.Assassin, Subtype.Mercenary, Subtype.Pirate, Subtype.Rogue])
+        exile f = spell [clause [Effect.MoveToZone (move (ObjectRef.EachMatching f) Zone.Exile)]] []
+    Spec.assertEq s (Just (Text.pack "Exile all outlaws.")) (Oracle.render (exile outlaws))
+    Spec.assertEq s (Just (Text.pack "Exile all non-outlaw creatures.")) (Oracle.render (exile (Filter.And [Filter.HasCardType CardType.Creature, Filter.Not outlaws])))
+
   -- CR 701.7a / 111.4: a token by its size, colours, subtypes in its name's
   -- order, card types and keywords; one named otherwise is not spelled out.
   Spec.it s "render prints a token by its characteristics" $ do
