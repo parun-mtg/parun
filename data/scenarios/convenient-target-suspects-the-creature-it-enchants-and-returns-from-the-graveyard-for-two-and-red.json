@@ -1,0 +1,32 @@
+{
+  "description": "CR 303.4m, 701.60a, 701.60c, 602.2: Convenient Target suspects the creature it enchants as it enters, gives it +1/+1, and its {2}{R} ability returns it from its owner's graveyard to hand",
+  "note": "Alice enchants bob's Hill Giant: it becomes a suspected 4/4 with menace, while bob's unenchanted Grizzly Bears stay unsuspected 2/2s without menace. Attacked by alice's Goblin Piker, the Giant's block is refused and the Bears block. A second Convenient Target in alice's graveyard is the only one offering the return ability (the one on the battlefield offers none); paying {2}{R} puts it into her hand.",
+  "board": {"active": "alice", "step": "PrecombatMain", "seats": [
+    {"name": "alice", "hand": [{"card": "Convenient Target", "label": "aura"}],
+     "graveyard": [{"card": "Convenient Target", "label": "spare"}],
+     "battlefield": [{"card": "Goblin Piker", "label": "piker", "ready": true}, {"card": "Mountain", "label": "m1"}, {"card": "Mountain", "label": "m2"}, {"card": "Mountain", "label": "m3"}, {"card": "Mountain", "label": "m4"}],
+     "library": [{"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}]},
+    {"name": "bob", "battlefield": [{"card": "Hill Giant", "label": "giant"}, {"card": "Grizzly Bears", "label": "bbears"}],
+     "library": [{"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}]}]},
+  "timeline": [
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": {"Cast": {"object": "$aura", "targets": ["$giant"], "mana": ["$m1", null]}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass"},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"View": {"of": "Stack", "is": ["trigger of Convenient Target"]}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass"},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"View": {"of": "Designations", "object": "$giant", "is": ["Suspected"]}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"View": {"of": "Designations", "object": "$bbears", "is": []}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Keywords": {"object": "$giant", "keyword": {"type": "Menace"}, "count": 1}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Keywords": {"object": "$bbears", "keyword": {"type": "Menace"}, "count": 0}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"PowerToughness": {"object": "$giant", "power": 4, "toughness": 4}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"PowerToughness": {"object": "$bbears", "power": 2, "toughness": 2}}},
+    {"turn": 1, "step": "DeclareAttackers", "player": "alice", "do": {"Attack": ["$piker"]}},
+    {"turn": 1, "step": "DeclareBlockers", "player": "bob", "refuse": {"Block": {"$giant": ["$piker"]}}},
+    {"turn": 1, "step": "DeclareBlockers", "player": "bob", "do": {"Block": {"$bbears": ["$piker"]}}},
+    {"turn": 1, "step": "DeclareBlockers", "player": "alice", "check": {"Blockers": {"attacker": "$piker", "blockers": ["$bbears"]}}},
+    {"turn": 1, "step": "PostcombatMain", "player": "alice", "check": {"View": {"of": "Offered", "player": "alice", "is": ["Pass", "Activate $spare", "ActivateManaAbility $m2", "ActivateManaAbility $m3", "ActivateManaAbility $m4"]}}},
+    {"turn": 1, "step": "PostcombatMain", "player": "alice", "do": {"Activate": {"object": "$spare", "ability": 0, "mana": ["$m2", "$m3", "$m4"]}}},
+    {"turn": 1, "step": "PostcombatMain", "player": "alice", "do": "Pass"},
+    {"turn": 1, "step": "PostcombatMain", "player": "alice", "check": {"View": {"of": "Zone", "player": "alice", "zone": "Hand", "is": ["Convenient Target#2"]}}},
+    {"turn": 1, "step": "PostcombatMain", "player": "alice", "check": {"View": {"of": "Zone", "player": "alice", "zone": "Graveyard", "is": ["Goblin Piker"]}}}
+  ]
+}

@@ -1,0 +1,72 @@
+{
+  "faces": [
+    {
+      "keywords": [
+        {
+          "type": "Flying"
+        }
+      ],
+      "manaCost": [
+        {
+          "type": "Generic",
+          "value": 5
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "Blue"
+          }
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "Blue"
+          }
+        }
+      ],
+      "name": "Conspiracy Unraveler",
+      "oracleText": "Flying\nYou may collect evidence 10 rather than pay the mana cost for spells you cast. (To collect evidence 10, exile cards with total mana value 10 or greater from your graveyard.)",
+      "playerAbilities": [
+        {
+          "effect": {
+            "type": "PayRatherThanManaCost",
+            "value": {
+              "instead": [
+                {
+                  "type": "CollectEvidence",
+                  "value": 10
+                }
+              ],
+              "spells": {
+                "type": "And",
+                "value": []
+              }
+            }
+          },
+          "scope": {
+            "type": "You"
+          }
+        }
+      ],
+      "power": {
+        "type": "Literal",
+        "value": 6
+      },
+      "toughness": {
+        "type": "Literal",
+        "value": 6
+      },
+      "typeLine": {
+        "subtypes": [
+          "Detective",
+          "Sphinx"
+        ],
+        "types": [
+          "Creature"
+        ]
+      }
+    }
+  ]
+}
