@@ -1,0 +1,239 @@
+{
+  "faces": [
+    {
+      "manaCost": [
+        {
+          "type": "Generic",
+          "value": 2
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "Black"
+          }
+        }
+      ],
+      "name": "Rakish Crew",
+      "oracleText": "When this enchantment enters, create a 1/1 red Mercenary creature token with \"{T}: Target creature you control gets +1/+0 until end of turn. Activate only as a sorcery.\"\nWhenever an outlaw you control dies, each opponent loses 1 life and you gain 1 life. (Assassins, Mercenaries, Pirates, Rogues, and Warlocks are outlaws.)",
+      "triggeredAbilities": [
+        {
+          "condition": {
+            "type": "Enters",
+            "value": {}
+          },
+          "modal": {
+            "modes": [
+              {
+                "clauses": [
+                  {
+                    "effects": [
+                      {
+                        "type": "Create",
+                        "value": {
+                          "card": {
+                            "faces": [
+                              {
+                                "activatedAbilities": [
+                                  {
+                                    "cost": {
+                                      "components": [
+                                        {
+                                          "type": "TapThis"
+                                        }
+                                      ],
+                                      "mana": []
+                                    },
+                                    "modal": {
+                                      "modes": [
+                                        {
+                                          "clauses": [
+                                            {
+                                              "effects": [
+                                                {
+                                                  "type": "ModifyTarget",
+                                                  "value": {
+                                                    "duration": {
+                                                      "type": "UntilEndOfTurn"
+                                                    },
+                                                    "modification": {
+                                                      "type": "ModifyPowerToughness",
+                                                      "value": {
+                                                        "power": {
+                                                          "type": "Literal",
+                                                          "value": 1
+                                                        },
+                                                        "toughness": {
+                                                          "type": "Literal",
+                                                          "value": 0
+                                                        }
+                                                      }
+                                                    },
+                                                    "ref": {
+                                                      "type": "InSlot",
+                                                      "value": "target"
+                                                    }
+                                                  }
+                                                }
+                                              ]
+                                            }
+                                          ],
+                                          "targetSlots": {
+                                            "target": {
+                                              "filter": {
+                                                "type": "HeldBy",
+                                                "value": {
+                                                  "holder": "Controller",
+                                                  "relation": "You"
+                                                }
+                                              },
+                                              "pool": {
+                                                "type": "Creatures"
+                                              }
+                                            }
+                                          }
+                                        }
+                                      ]
+                                    },
+                                    "restrictions": [
+                                      {
+                                        "type": "SorcerySpeed"
+                                      }
+                                    ]
+                                  }
+                                ],
+                                "colorIndicator": [
+                                  "Red"
+                                ],
+                                "name": "Mercenary Token",
+                                "power": {
+                                  "type": "Literal",
+                                  "value": 1
+                                },
+                                "toughness": {
+                                  "type": "Literal",
+                                  "value": 1
+                                },
+                                "typeLine": {
+                                  "subtypes": [
+                                    "Mercenary"
+                                  ],
+                                  "types": [
+                                    "Creature"
+                                  ]
+                                }
+                              }
+                            ]
+                          },
+                          "quantity": {
+                            "type": "Literal",
+                            "value": 1
+                          }
+                        }
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "condition": {
+            "type": "Leaves",
+            "value": {
+              "destinations": [
+                {
+                  "zone": "Graveyard"
+                }
+              ],
+              "permanent": {
+                "type": "Matching",
+                "value": {
+                  "type": "And",
+                  "value": [
+                    {
+                      "type": "Or",
+                      "value": [
+                        {
+                          "type": "HasSubtype",
+                          "value": "Assassin"
+                        },
+                        {
+                          "type": "HasSubtype",
+                          "value": "Mercenary"
+                        },
+                        {
+                          "type": "HasSubtype",
+                          "value": "Pirate"
+                        },
+                        {
+                          "type": "HasSubtype",
+                          "value": "Rogue"
+                        },
+                        {
+                          "type": "HasSubtype",
+                          "value": "Warlock"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "HeldBy",
+                      "value": {
+                        "holder": "Controller",
+                        "relation": "You"
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "modal": {
+            "modes": [
+              {
+                "clauses": [
+                  {
+                    "effects": [
+                      {
+                        "type": "LoseLife",
+                        "value": {
+                          "player": {
+                            "type": "Relative",
+                            "value": "Opponent"
+                          },
+                          "quantity": {
+                            "type": "Literal",
+                            "value": 1
+                          }
+                        }
+                      },
+                      {
+                        "type": "GainLife",
+                        "value": {
+                          "player": {
+                            "type": "Relative",
+                            "value": "You"
+                          },
+                          "quantity": {
+                            "type": "Literal",
+                            "value": 1
+                          }
+                        }
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      ],
+      "typeLine": {
+        "types": [
+          "Enchantment"
+        ]
+      }
+    }
+  ]
+}
