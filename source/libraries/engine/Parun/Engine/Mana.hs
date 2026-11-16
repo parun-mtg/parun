@@ -1322,14 +1322,22 @@ sourceChoicesOf oid gs = case Game.lookupObject oid gs of
 -- CR 106.3: what this object's mana names as its producer
 -- (Parun.Types.ManaUnit.producer) -- the object itself where one of its
 -- triggered abilities asks after mana it produced (Filter.PaidWithManaFromSource),
--- read off the projection as the mana is made, and Nothing otherwise.
+-- and Nothing otherwise.
 --
--- Not implemented: a producer that lacks the ability as it makes the mana and
--- regains it before the mana is spent never names itself (#7773).
+-- Asked of the projection as the mana is made AND of the copiable values (CR
+-- 707.2), since the source is the mana's whatever abilities it has (CR 106.3):
+-- a layer-4 or layer-6 removal (Blood Moon's CR 305.7) can end before the mana
+-- is spent. data/scenarios/tecutlan-discovers-with-mana-it-made-while-blood-moon-had-taken-its-trigger.json
+-- is the proof.
+--
+-- Not implemented: a producer that has the ability in neither, and gains it
+-- before the mana is spent (a later copy effect), never names itself (#8127).
 producerOf :: Map.Map ObjectId PC.ProjectedCharacteristics -> ObjectId -> GameState -> Maybe ObjectId
 producerOf pcs oid gs = case Game.lookupObject oid gs of
-  Just _ | any (triggerReadsProducer . TriggeredAbility.condition) (PC.triggeredAbilities (Projection.projectGiven pcs oid gs)) -> Just oid
+  Just _ | any readsOwnMana [Projection.projectGiven pcs oid gs, Projection.copiableCharacteristics oid gs] -> Just oid
   _ -> Nothing
+  where
+    readsOwnMana = any (triggerReadsProducer . TriggeredAbility.condition) . PC.triggeredAbilities
 
 -- Does a trigger condition, nested ones included, carry
 -- Filter.PaidWithManaFromSource?
