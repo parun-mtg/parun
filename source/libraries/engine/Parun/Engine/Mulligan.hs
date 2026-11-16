@@ -73,7 +73,7 @@ startingHandSize = Vanguard.handSize openingHand
 -- regrouped by team.
 --
 -- Not implemented: CR 103.5d's order within a team under the shared team turns
--- option, which that team chooses (#7293).
+-- option, which that team chooses (#8002).
 openingHands :: HandActionPerformer -> [PlayerId] -> Game ()
 openingHands perform seated = do
   owners <- State.gets (\gs -> List.sortOn (\pid -> List.findIndex (Turn.sharesTurn gs pid) seated) seated)
