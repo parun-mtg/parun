@@ -1074,6 +1074,11 @@ candidateCostsGiven permitted pid name oid gs =
                       namesNoFamily permission = case permission of
                         CastingPermission.CastFromGraveyard _ Nothing _ _ -> True
                         _ -> False
+                      (heldStatesNoCost, heldCost) = case Expiry.openPermissions pid oid gs of
+                        [] -> (False, [])
+                        permission : _ -> case ExilePlayPermission.alternativeCost permission of
+                          Nothing -> (True, [])
+                          Just alternative -> (False, [untagged (permissionCost alternative face)])
                    in fmap flashback (filter (stated Keyword.Type.Flashback) (Keyword.flashbackCosts keywords))
                         <> fmap beamedUp (filter (stated Keyword.Type.BeamMeUp) (Keyword.beamMeUpCosts keywords))
                         <> fmap escape (Keyword.escapeCosts keywords)
@@ -1114,10 +1119,15 @@ candidateCostsGiven permitted pid name oid gs =
                         -- CastingPermission.PlayFromGraveyard (Kethis, the
                         -- Hidden Hand's granted ability) and a bare
                         -- CastFromGraveyard (Skaab Ruinator).
-                        <> ( if permitted || PlayerEffect.couldCastFrom pid Zone.Graveyard oid gs || PlayerEffect.mayPlayByMayhem pid oid gs || not (null (Expiry.openPermissions pid oid gs)) || PlayerEffect.mayPlayFromOwnGraveyard Map.empty PermissionVerb.Cast pid oid gs || payingPermitted
+                        <> ( if permitted || PlayerEffect.couldCastFrom pid Zone.Graveyard oid gs || PlayerEffect.mayPlayByMayhem pid oid gs || heldStatesNoCost || PlayerEffect.mayPlayFromOwnGraveyard Map.empty PermissionVerb.Cast pid oid gs || payingPermitted
                                then ordinary
                                else filter usingPermitted ordinary
                            )
+                        -- CR 118.9b: one stating an alternative cost (Sins of
+                        -- the Past's "without paying its mana cost") offers that
+                        -- cost instead, the exile arm's reason below; the first
+                        -- open one, as there.
+                        <> heldCost
                         -- CR 601.3: rule 702.185a's cost names the hand, so only a
                         -- permission naming warp (Timeline Culler's "using its warp
                         -- ability") offers it here.
