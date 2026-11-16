@@ -1118,6 +1118,7 @@
     "Bounding Wolf": {"brawl":"Legal","commander":"Legal","competitivebrawl":"Legal","duel":"Legal","gladiator":"Legal","historic":"Legal","legacy":"Legal","modern":"Legal","oathbreaker":"Legal","pauper":"Legal","paupercommander":"Legal","pioneer":"Legal","timeless":"Legal","vintage":"Legal"},
     "Boundless Realms": {"commander":"Legal","duel":"Legal","legacy":"Legal","modern":"Legal","oathbreaker":"Legal","penny":"Legal","vintage":"Legal"},
     "Bountiful Harvest": {"commander":"Legal","duel":"Legal","legacy":"Legal","modern":"Legal","oathbreaker":"Legal","pauper":"Legal","paupercommander":"Legal","penny":"Legal","predh":"Legal","vintage":"Legal"},
+    "Boxing Ring": {"commander":"Legal","duel":"Legal","legacy":"Legal","oathbreaker":"Legal","vintage":"Legal"},
     "Brace for Impact": {"commander":"Legal","duel":"Legal","legacy":"Legal","modern":"Legal","oathbreaker":"Legal","penny":"Legal","predh":"Legal","vintage":"Legal"},
     "Brago's Representative": {"commander":"Legal","duel":"Legal","legacy":"Legal","oathbreaker":"Legal","pauper":"Legal","paupercommander":"Legal","vintage":"Legal"},
     "Braidwood Sextant": {"commander":"Legal","duel":"Legal","legacy":"Legal","oathbreaker":"Legal","predh":"Legal","premodern":"Legal","vintage":"Legal"},

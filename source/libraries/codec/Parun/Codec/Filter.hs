@@ -34,6 +34,7 @@ import qualified Parun.Codec.Measures as Measures
 import qualified Parun.Codec.NameChooser as NameChooser
 import qualified Parun.Codec.ObjectId as ObjectId
 import qualified Parun.Codec.ParityOperand as ParityOperand
+import qualified Parun.Codec.PermanentAction as PermanentAction
 import qualified Parun.Codec.PlayerId as PlayerId
 import qualified Parun.Codec.PlayerRelation as PlayerRelation
 import qualified Parun.Codec.ProductionTag as ProductionTag
@@ -157,6 +158,7 @@ codec keywordCodec =
       Arm.optionalPayload "DealtDamageThisTurn" (dealtDamageThisTurn keywordCodec) (maybe (Filter.DealtDamageThisTurn Nothing Nothing False) (\(k, b, e) -> Filter.DealtDamageThisTurn k b e)) (\x -> case x of Filter.DealtDamageThisTurn Nothing Nothing False -> Just Nothing; Filter.DealtDamageThisTurn k b e -> Just (Just (k, b, e)); _ -> Nothing),
       Arm.nullary "LostLifeThisTurn" Filter.LostLifeThisTurn,
       Arm.nullary "ActivatedThisTurn" Filter.ActivatedThisTurn,
+      Arm.payload "ActedThisTurn" PermanentAction.codec Filter.ActedThisTurn (\x -> case x of Filter.ActedThisTurn y -> Just y; _ -> Nothing),
       Arm.payload "DealtDamageTo" DealtDamageTo.codec Filter.DealtDamageTo (\x -> case x of Filter.DealtDamageTo y -> Just y; _ -> Nothing),
       Arm.payload "EnteredThisTurn" EnteredZone.codec Filter.EnteredThisTurn (\x -> case x of Filter.EnteredThisTurn y -> Just y; _ -> Nothing),
       Arm.payload "CountersPutThisTurn" (countersPutThisTurn keywordCodec) (uncurry Filter.CountersPutThisTurn) (\x -> case x of Filter.CountersPutThisTurn r k -> Just (r, k); _ -> Nothing),
@@ -394,6 +396,7 @@ tagOf x = case x of
   Filter.DealtDamageThisTurn {} -> "DealtDamageThisTurn"
   Filter.LostLifeThisTurn {} -> "LostLifeThisTurn"
   Filter.ActivatedThisTurn {} -> "ActivatedThisTurn"
+  Filter.ActedThisTurn {} -> "ActedThisTurn"
   Filter.DealtDamageTo {} -> "DealtDamageTo"
   Filter.EnteredThisTurn {} -> "EnteredThisTurn"
   Filter.CountersPutThisTurn {} -> "CountersPutThisTurn"

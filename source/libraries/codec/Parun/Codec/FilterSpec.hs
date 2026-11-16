@@ -48,6 +48,7 @@ import qualified Parun.Types.NameChooser as NameChooser
 import qualified Parun.Types.ObjectId as ObjectId
 import qualified Parun.Types.Operand as Operand
 import qualified Parun.Types.ParityOperand as ParityOperand
+import qualified Parun.Types.PermanentAction as PermanentAction
 import qualified Parun.Types.PlayerId as PlayerId
 import qualified Parun.Types.PlayerRelation as PlayerRelation
 import qualified Parun.Types.ProductionTag as ProductionTag
@@ -514,6 +515,12 @@ spec s = Spec.describe s "Parun.Codec.Filter" $ do
       codec
       Filter.ActivatedThisTurn
       " {\"type\":\"ActivatedThisTurn\"} "
+  Spec.it s "ActedThisTurn" $
+    Common.assertCodec
+      s
+      codec
+      (Filter.ActedThisTurn PermanentAction.Fight)
+      " {\"type\":\"ActedThisTurn\",\"value\":\"Fight\"} "
   Spec.it s "CountersPutThisTurn" $
     Common.assertCodec
       s

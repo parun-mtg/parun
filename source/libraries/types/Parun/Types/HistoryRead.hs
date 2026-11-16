@@ -1,6 +1,7 @@
 module Parun.Types.HistoryRead where
 
 import qualified Data.Set as Set
+import qualified Parun.Types.PermanentAction as PermanentAction
 import qualified Parun.Types.PlayerAction as PlayerAction
 
 -- | CR 733.3: which part of the turn's history -- TurnRegisters.events, or
@@ -64,6 +65,9 @@ data HistoryRead
     Resolutions
   | -- | Permanents sacrificed (CR 701.21a).
     Sacrifices
+  | -- | Acts of this kind a permanent performed (CR 603.2),
+    -- Parun.Types.PermanentAction.
+    PermanentActs PermanentAction.PermanentAction
   | -- | Mounts saddled, and creatures saddling them (CR 702.171a).
     Saddles
   | -- | Steps and phases that began (CR 500.1).

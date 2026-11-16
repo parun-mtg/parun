@@ -184,6 +184,7 @@ objects pcs gs a b =
           fmap (\ev -> ev {DamageEvent.target = Recipient.ToObject (DamageEvent.source ev)}) (Filter.Engine.dealtDamageThisTurn view),
           Filter.Engine.lostLifeThisTurn view,
           Filter.Engine.activatedThisTurn view,
+          Filter.Engine.actedThisTurn view,
           Filter.Engine.arrivalThisTurn view,
           Filter.Engine.arrivalSinceOwnLastTurn view,
           Filter.Engine.crewedThisTurn view,

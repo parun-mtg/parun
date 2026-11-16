@@ -82,6 +82,7 @@ import qualified Parun.Types.OtherCandidates as OtherCandidates
 import qualified Parun.Types.Pairing as Pairing
 import qualified Parun.Types.Parity as Parity
 import qualified Parun.Types.ParityOperand as ParityOperand
+import qualified Parun.Types.PermanentAction as PermanentAction
 import qualified Parun.Types.Player as Player
 import qualified Parun.Types.PlayerCounterKind as PlayerCounterKind
 import qualified Parun.Types.PlayerId as PlayerId
@@ -404,6 +405,10 @@ data View = MkView
     -- `declaredThisTurn`'s reason -- nothing forces it unless a Filter contains
     -- ActivatedThisTurn.
     activatedThisTurn :: Bool,
+    -- CR 603.2 / 608.2i: what this candidate did earlier this turn, as the object
+    -- it is now, read off GameEvent.PermanentActed in the turn's log; LAZY for
+    -- `declaredThisTurn`'s reason.
+    actedThisTurn :: Set.Set PermanentAction.PermanentAction,
     -- CR 400.7 / 608.2i: the zone change earlier this turn that made this
     -- candidate the object it is now, if there was one (Game.arrivalThisTurn).
     -- The same log again, and LAZY for its reason -- nothing forces it unless a
@@ -1117,6 +1122,8 @@ nobodyView =
       -- CR 400.7 moves an OBJECT between zones, and a player is not one.
       -- CR 700.10 asks after a PERMANENT, and a player is not one.
       activatedThisTurn = False,
+      -- CR 603.2: a PermanentAction is a permanent's, and a player is not one.
+      actedThisTurn = Set.empty,
       arrivalThisTurn = Nothing,
       arrivalSinceOwnLastTurn = Map.empty,
       -- CR 702.122b crews with a CREATURE, and a player is not one -- CR 506.3
@@ -2746,6 +2753,10 @@ matches context view predicate = case predicate of
   -- CR 700.10: the same look-back over CR 602.2's activation log, so the
   -- answer holds once the ability is gone or its activator has left the game.
   Filter.ActivatedThisTurn -> activatedThisTurn view
+  -- CR 603.2 / 608.2i: the same look-back over GameEvent.PermanentActed. The
+  -- field holds the candidate's own id's acts, so CR 400.7's new object has
+  -- done nothing yet. The Boxing Ring scenarios prove it.
+  Filter.ActedThisTurn action -> Set.member action (actedThisTurn view)
   -- CR 120.1 / 608.2i: the same look-back asked of a RELATION, CrewedThisTurn's
   -- split -- the candidate's own field says whom it dealt damage to, and the
   -- party says which of them the card names. The source is the id it had, so a
@@ -3410,6 +3421,7 @@ manaValueThresholds predicate = case predicate of
   Filter.DealtDamageThisTurn _ by _ -> foldMap manaValueThresholds by
   Filter.LostLifeThisTurn -> []
   Filter.ActivatedThisTurn -> []
+  Filter.ActedThisTurn _ -> []
   Filter.DealtDamageTo _ -> []
   Filter.EnteredThisTurn _ -> []
   Filter.CountersPutThisTurn _ _ -> []
@@ -3601,6 +3613,7 @@ statesAQuality predicate = case predicate of
   Filter.DealtDamageThisTurn {} -> True
   Filter.LostLifeThisTurn -> True
   Filter.ActivatedThisTurn -> True
+  Filter.ActedThisTurn _ -> True
   Filter.DealtDamageTo _ -> True
   Filter.EnteredThisTurn _ -> True
   Filter.CountersPutThisTurn _ _ -> True
@@ -3794,6 +3807,7 @@ readsSourceValues predicate = case predicate of
   Filter.DealtDamageThisTurn _ by _ -> any readsSourceValues by
   Filter.LostLifeThisTurn -> False
   Filter.ActivatedThisTurn -> False
+  Filter.ActedThisTurn _ -> False
   Filter.DealtDamageTo _ -> False
   Filter.EnteredThisTurn _ -> False
   Filter.CountersPutThisTurn _ _ -> False

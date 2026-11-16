@@ -32,6 +32,7 @@ import qualified Parun.Types.Measures as Measures
 import qualified Parun.Types.NameChooser as NameChooser
 import qualified Parun.Types.ObjectId as ObjectId
 import qualified Parun.Types.ParityOperand as ParityOperand
+import qualified Parun.Types.PermanentAction as PermanentAction
 import qualified Parun.Types.PlayerId as PlayerId
 import qualified Parun.Types.PlayerRelation as PlayerRelation
 import qualified Parun.Types.ProductionTag as ProductionTag
@@ -420,6 +421,8 @@ data Filter keyword
   | -- | CR 700.10: the candidate was the source of an ability activated this
     -- turn, read off TurnRegisters.activationsThisTurn.
     ActivatedThisTurn
+  | -- | CR 603.2 / 400.7: the candidate, as the object it is now, performed this action earlier this turn.
+    ActedThisTurn PermanentAction.PermanentAction
   | -- | CR 120.1 / 608.2i: the candidate, or the source, DEALT damage to this
     -- party earlier this turn, or ever as this object -- Brine Hag's "each creature
     -- that dealt damage to it this turn".

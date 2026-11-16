@@ -221,6 +221,8 @@ viewOfCardLapsed lapsed face =
           -- CR 700.10 asks after an OBJECT; this builder describes a printed
           -- FACE -- `leftLibraryThisTurn` above's reason.
           Filter.activatedThisTurn = False,
+          -- CR 603.2: an OBJECT acts; this builder describes a printed FACE.
+          Filter.actedThisTurn = Set.empty,
           -- CR 400.7 enters an OBJECT; this builder describes a printed FACE --
           -- `leftLibraryThisTurn` above's reason.
           Filter.arrivalThisTurn = Nothing,
@@ -758,6 +760,7 @@ viewOfCharacteristics peers oid pc controller counters gs =
       -- CR 119.3: only a player loses life.
       Filter.lostLifeThisTurn = False,
       Filter.activatedThisTurn = Count.activatedThisTurn oid gs,
+      Filter.actedThisTurn = Count.actedThisTurn oid gs,
       Filter.arrivalThisTurn = Game.arrivalThisTurn oid gs,
       Filter.arrivalSinceOwnLastTurn = Game.arrivalSinceOwnLastTurn oid gs,
       Filter.beforeMoveView = Count.departedAs gs oid >>= Count.orLastKnown peers gs,

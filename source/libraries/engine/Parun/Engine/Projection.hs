@@ -4562,6 +4562,8 @@ filterReads f = case f of
   Filter.Type.LostLifeThisTurn -> Set.empty
   -- Reads nothing: no Modification writes TurnRegisters.activationsThisTurn.
   Filter.Type.ActivatedThisTurn -> Set.empty
+  -- Reads nothing: no Modification writes the turn's log.
+  Filter.Type.ActedThisTurn _ -> Set.empty
   Filter.Type.DealtDamageTo asked -> case DealtDamageTo.party asked of
     DamagedParty.HolderOfCandidate holder -> holderReads holder
     _ -> Set.empty
@@ -4890,6 +4892,7 @@ filterReadsPeers f = case f of
   Filter.Type.DealtDamageThisTurn {} -> False
   Filter.Type.LostLifeThisTurn -> False
   Filter.Type.ActivatedThisTurn -> False
+  Filter.Type.ActedThisTurn _ -> False
   Filter.Type.DealtDamageTo _ -> False
   Filter.Type.EnteredThisTurn _ -> False
   Filter.Type.CountersPutThisTurn _ _ -> False

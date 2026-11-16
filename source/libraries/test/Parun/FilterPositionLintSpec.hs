@@ -1218,14 +1218,14 @@ ofBoundTag :: Text.Text
 ofBoundTag = Text.pack "OfBound"
 
 -- How many bound-object operands this card carries in a resolution's own
--- positions and how many anywhere else, boundCreatureTypeCounts' shape one
--- Filter.Context field over: Parun.Engine.Resolve.Slots.effectContext fills
--- Filter.Context.slotMeasures too, as does Parun.Engine.Event.Match for an
--- AttachingHostFramed Filter, so the operand is a silent False elsewhere. The
--- second number is the offence.
+-- positions or a target slot and how many anywhere else, boundCreatureTypeCounts'
+-- shape one Filter.Context field over: Parun.Engine.Resolve.Slots.effectContext
+-- and Parun.Engine.Target.slotContext fill Filter.Context.slotMeasures too, as
+-- does Parun.Engine.Event.Match for an AttachingHostFramed Filter, so the operand
+-- is a silent False elsewhere. The second number is the offence.
 ofBoundCounts :: Surveyed -> (Int, Int)
 ofBoundCounts card =
-  let total wanted = sum (fmap (\(_, f) -> filterAtoms ofBoundTag f) (filter (\(framing, _) -> elem framing [SourceHostFramed, ClauseGateFramed, SearchFramed, MillTallyFramed, HandSweepFramed, AttachingHostFramed] == wanted) (surveyedFilters card)))
+  let total wanted = sum (fmap (\(_, f) -> filterAtoms ofBoundTag f) (filter (\(framing, _) -> elem framing [SourceHostFramed, ClauseGateFramed, SearchFramed, MillTallyFramed, HandSweepFramed, AttachingHostFramed, InTargetSlot] == wanted) (surveyedFilters card)))
    in (total True, total False)
 
 -- The atom outside those positions, or the traversal and the codec disagreeing
@@ -1893,17 +1893,19 @@ filterPositionLintSpec s registry corpus = Spec.describe s "Lint" $ do
     Spec.assertEqWith s "Path of Ancestry's one atom is in its spend trigger" (yourCommanderCounts (survey face)) (1, 0)
     Spec.assertBool s (yourCommanderOffends (survey restricted)) "the atom in an affected set offends"
   -- CR 208.1's bound comparison in the arm above's frame, one Filter.Context field
-  -- over: answerable only where effectContext fills Filter.Context.slotMeasures.
-  -- See ofBoundOffends for the two offences.
-  Spec.it s "CR 208.1 no card compares against a bound object outside a resolution's own positions" $ do
+  -- over: answerable only where effectContext or Target.slotContext fills
+  -- Filter.Context.slotMeasures. See ofBoundOffends for the two offences.
+  Spec.it s "CR 208.1 no card compares against a bound object outside a resolution's own positions or a target slot" $ do
     let offenders = fmap fst (filter (any ofBoundOffends . snd) pool)
-    Spec.assertEqWith s "the operand sits only where the resolution fills the bound measures" (fmap (S.nameOf . Printing.card) offenders) []
-    -- NOT vacuous: the pool authors the atom, and the card that does is ACCEPTED.
+    Spec.assertEqWith s "the operand sits only where a resolution or a target slot fills the bound measures" (fmap (S.nameOf . Printing.card) offenders) []
+    -- NOT vacuous: one card per admitted position the pool uses is ACCEPTED.
     profaner <- S.printingOf s registry "Profaner of the Dead"
     let face = S.combinedFace profaner
         atom = Filter.Type.Measures (Measures.MkMeasures Measure.Toughness Comparison.LessThan (Operand.OfBound (BoundMeasure.MkBoundMeasure (SlotName.MkSlotName (Text.pack "thatExploitedCreature")) Measure.Toughness)))
         restricted = face {Face.counterRestrictions = [CounterRestriction.MkCounterRestriction (Affected.Matching atom) Nothing]}
     Spec.assertEqWith s "Profaner of the Dead's one atom is in its ObjectRef" (ofBoundCounts (survey face)) (1, 0)
+    ring <- S.printingOf s registry "Boxing Ring"
+    Spec.assertEqWith s "Boxing Ring's one atom is in its target slot, framed by its CR 603.2 binding" (ofBoundCounts (survey (S.combinedFace ring))) (1, 0)
     -- The lint's own proof, the pair differing in one position: the same atom in
     -- a static restriction's affected set, read through a bare contextFor.
     Spec.assertBool s (ofBoundOffends (survey restricted)) "the atom in an affected set offends"
