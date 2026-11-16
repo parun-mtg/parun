@@ -2584,7 +2584,7 @@ filterPositionLintSpec s registry corpus = Spec.describe s "Lint" $ do
                           ( Just
                               PayGate.MkPayGate
                                 { PayGate.payer = PlayerRef.Relative PlayerRelation.You,
-                                  PayGate.cost = CostChoice.MkCostChoice (Cost.Type.MkCost (Just (ManaCost.MkManaCost [])) [CostComponent.Sacrifice (Sacrifice.MkSacrifice (ObjectCount.Exactly (CostAmount.Fixed 1)) buried)] NonEmpty.:| []),
+                                  PayGate.cost = CostChoice.MkCostChoice (Cost.Type.MkCost (Just (ManaCost.MkManaCost [])) [CostComponent.Sacrifice (Sacrifice.MkSacrifice (ObjectCount.Exactly (CostAmount.Fixed 1)) buried Set.empty)] NonEmpty.:| []),
                                   PayGate.basis = Nothing,
                                   PayGate.branch = PayBranch.IfNotPaid,
                                   PayGate.obligation = PayObligation.Optional,
@@ -2605,7 +2605,7 @@ filterPositionLintSpec s registry corpus = Spec.describe s "Lint" $ do
     -- Built over the SAME `base` face and the SAME `buried` filter as every leg
     -- above, so they differ from the accepted leg in position and in nothing
     -- else.
-    let sacrificing = [CostComponent.Sacrifice (Sacrifice.MkSacrifice (ObjectCount.Exactly (CostAmount.Fixed 1)) buried)]
+    let sacrificing = [CostComponent.Sacrifice (Sacrifice.MkSacrifice (ObjectCount.Exactly (CostAmount.Fixed 1)) buried Set.empty)]
         sacrificeCost = Cost.Type.MkCost (Just (ManaCost.MkManaCost [])) sacrificing
         -- CR 601.2f, paid as the cast is announced -- after CR 601.2c.
         added = base {Face.additionalCosts = sacrificing}
@@ -3436,7 +3436,7 @@ filterPositionLintSpec s registry corpus = Spec.describe s "Lint" $ do
               (S.combinedFace sorcerer)
                 { Face.activatedAbilities =
                     fmap
-                      (\a -> a {ActivatedAbility.cost = (ActivatedAbility.cost a) {Cost.Type.components = [CostComponent.Sacrifice (Sacrifice.MkSacrifice (ObjectCount.Exactly (CostAmount.Fixed 1)) buried)]}})
+                      (\a -> a {ActivatedAbility.cost = (ActivatedAbility.cost a) {Cost.Type.components = [CostComponent.Sacrifice (Sacrifice.MkSacrifice (ObjectCount.Exactly (CostAmount.Fixed 1)) buried Set.empty)]}})
                       (Face.activatedAbilities (S.combinedFace sorcerer))
                 }
             ),
@@ -3669,7 +3669,7 @@ filterPositionLintSpec s registry corpus = Spec.describe s "Lint" $ do
               (S.combinedFace sorcerer)
                 { Face.activatedAbilities =
                     fmap
-                      (\a -> a {ActivatedAbility.cost = (ActivatedAbility.cost a) {Cost.Type.components = [CostComponent.Sacrifice (Sacrifice.MkSacrifice (ObjectCount.Exactly (CostAmount.Fixed 1)) buried)]}})
+                      (\a -> a {ActivatedAbility.cost = (ActivatedAbility.cost a) {Cost.Type.components = [CostComponent.Sacrifice (Sacrifice.MkSacrifice (ObjectCount.Exactly (CostAmount.Fixed 1)) buried Set.empty)]}})
                       (Face.activatedAbilities (S.combinedFace sorcerer))
                 }
             ),
@@ -3819,7 +3819,7 @@ filterPositionLintSpec s registry corpus = Spec.describe s "Lint" $ do
               (S.combinedFace sorcerer)
                 { Face.activatedAbilities =
                     fmap
-                      (\a -> a {ActivatedAbility.cost = (ActivatedAbility.cost a) {Cost.Type.components = [CostComponent.Sacrifice (Sacrifice.MkSacrifice (ObjectCount.Exactly (CostAmount.Fixed 1)) buried)]}})
+                      (\a -> a {ActivatedAbility.cost = (ActivatedAbility.cost a) {Cost.Type.components = [CostComponent.Sacrifice (Sacrifice.MkSacrifice (ObjectCount.Exactly (CostAmount.Fixed 1)) buried Set.empty)]}})
                       (Face.activatedAbilities (S.combinedFace sorcerer))
                 }
             ),
@@ -4010,7 +4010,7 @@ filterPositionLintSpec s registry corpus = Spec.describe s "Lint" $ do
             ("a spell's draw count after its own choice", base {Face.spell = spellOf [Effect.ChooseQuality (ChooseQuality.MkChooseQuality quality False), drawing f] Map.empty}),
             ("an activated ability's target slot", withAbility (\a -> a {ActivatedAbility.modal = spellOf [] (aimed f)})),
             ("an activated ability's draw count after CR 614.1c's entry choice", (withAbility (\a -> a {ActivatedAbility.modal = spellOf [drawing f] Map.empty})) {Face.replacementEffects = choosingAsItEnters quality}),
-            ("an activated ability's sacrifice cost", withAbility (\a -> a {ActivatedAbility.cost = (ActivatedAbility.cost a) {Cost.Type.components = [CostComponent.Sacrifice (Sacrifice.MkSacrifice (ObjectCount.Exactly (CostAmount.Fixed 1)) f)]}})),
+            ("an activated ability's sacrifice cost", withAbility (\a -> a {ActivatedAbility.cost = (ActivatedAbility.cost a) {Cost.Type.components = [CostComponent.Sacrifice (Sacrifice.MkSacrifice (ObjectCount.Exactly (CostAmount.Fixed 1)) f Set.empty)]}})),
             ("CR 603.6a's trigger condition", base {Face.triggeredAbilities = [oneEffectTrigger (TriggerCondition.Enters (EntersTrigger.matching f)) draw]}),
             ("a triggered ability's own filter", base {Face.triggeredAbilities = [oneEffectTrigger (TriggerCondition.Enters EntersTrigger.defaultValue) (Effect.Destroy (Destroy.MkDestroy (ObjectRef.EachMatching f) Regenerability.Regenerable Nothing Nothing Nothing))]}),
             ( "CR 603.4's intervening clause",

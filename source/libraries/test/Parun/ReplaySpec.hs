@@ -165,8 +165,8 @@ combatReplaySpec s =
       -- CR 601.2h: Jarad, Golgari Lich Lord's two halves, the printed cost whose
       -- payment order is the payer's.
       orderComponents =
-        [ CostComponent.Sacrifice (Sacrifice.MkSacrifice (ObjectCount.Exactly (CostAmount.Fixed 1)) (Filter.Type.HasSubtype Subtype.Swamp)),
-          CostComponent.Sacrifice (Sacrifice.MkSacrifice (ObjectCount.Exactly (CostAmount.Fixed 1)) (Filter.Type.HasSubtype Subtype.Forest))
+        [ CostComponent.Sacrifice (Sacrifice.MkSacrifice (ObjectCount.Exactly (CostAmount.Fixed 1)) (Filter.Type.HasSubtype Subtype.Swamp) Set.empty),
+          CostComponent.Sacrifice (Sacrifice.MkSacrifice (ObjectCount.Exactly (CostAmount.Fixed 1)) (Filter.Type.HasSubtype Subtype.Forest) Set.empty)
         ]
    in Spec.describe s "CombatReplay" $ do
         Spec.it s "attackers round-trip through the transcript" $

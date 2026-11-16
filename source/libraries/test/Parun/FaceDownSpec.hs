@@ -372,7 +372,7 @@ turnUpAttachSpec s registry = Spec.describe s "Turning an Aura face up" $ do
       Just (before, fodder, mine, _, aura) ->
         case FaceDown.morphCostsOf aura before of
           [cost] -> case Cost.components cost of
-            [CostComponent.Sacrifice (Sacrifice.MkSacrifice _ criterion)] ->
+            [CostComponent.Sacrifice (Sacrifice.MkSacrifice _ criterion _)] ->
               Spec.assertEqWith
                 s
                 "CR 701.21a every creature alice controls except the Aura itself"

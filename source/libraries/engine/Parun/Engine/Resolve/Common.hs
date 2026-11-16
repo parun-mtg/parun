@@ -124,7 +124,6 @@ import qualified Parun.Types.DelayedTrigger as DelayedTrigger
 import qualified Parun.Types.Designation as Designation
 import qualified Parun.Types.DieResult as DieResult
 import qualified Parun.Types.DifferentIn as DifferentIn
-import qualified Parun.Types.DifferingValue as DifferingValue
 import qualified Parun.Types.Discard as Discard
 import qualified Parun.Types.Dividing as Dividing
 import qualified Parun.Types.Draw as Draw
@@ -4690,7 +4689,7 @@ shufflesAfter destination = case destination of
 -- Search.differentIn and ChosenCardFromAmong.differentIn: the cards, in order,
 -- that keep the group apart -- Event.differingKept over the projection.
 differing :: Set.Set DifferentIn.DifferentIn -> GameState -> [ObjectId] -> [ObjectId]
-differing axes gs = Event.differingKept (differingValues axes gs)
+differing axes gs = Event.differingKept (Target.objectDiffering axes gs)
 
 -- Search.descriptions (CR 701.23h): the cards, in order, that can each answer
 -- for a distinct description together with every card kept ahead of them. No
@@ -4718,13 +4717,6 @@ distinctlyAssigned = go Set.empty
   where
     go _ [] = True
     go used (options : more) = any (\v -> not (Set.member v used) && go (Set.insert v used) more) options
-
--- One card's values on Search.differentIn's axes (Filter.differingOf), read off
--- the CR 613 projection, so a split card's two names count (CR 201.2a) and a
--- star's power is its characteristic-defining ability's number (CR 208.2a,
--- 604.3).
-differingValues :: Set.Set DifferentIn.DifferentIn -> GameState -> ObjectId -> Maybe (Set.Set (DifferentIn.DifferentIn, DifferingValue.DifferingValue))
-differingValues axes gs oid = Filter.differingOf axes (Projection.viewOfObject oid gs)
 
 -- One found card's move, a member of the search's batch whose board is `asOf`
 -- (Event.changeZoneInBatch). `counters` is Search.counters, frozen: what a card

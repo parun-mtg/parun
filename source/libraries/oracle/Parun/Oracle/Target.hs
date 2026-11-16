@@ -17,7 +17,6 @@ import qualified Parun.Types.Aggregation as Aggregation
 import qualified Parun.Types.Arithmetic as Arithmetic
 import qualified Parun.Types.ChosenPermanents as ChosenPermanents
 import qualified Parun.Types.Count as Count
-import qualified Parun.Types.DifferentIn as DifferentIn
 import qualified Parun.Types.EachCardInGraveyard as EachCardInGraveyard
 import qualified Parun.Types.Exponentiation as Exponentiation
 import qualified Parun.Types.Filter as Filter.Type
@@ -641,23 +640,11 @@ graveyard scope together = case scope of
   ZoneScope.Scoped (PlayerScope.Related PlayerRelation.Opponent) -> [Filter.MkQualifier (Text.pack "from an opponent's graveyard") (Text.pack "from an opponent's graveyard")]
   _ -> []
 
--- | What keeps a slot's targets apart, as words after their noun: "with
--- different names" (CR 201.2b, Behold the Sinister Six!), "with different mana
--- values" (Long Rest), "with different controllers" (Cloud's Limit Break).
+-- | What keeps a slot's targets apart (Filter.apart).
 differing :: Maybe Together.Together -> [[Filter.Qualifier]]
 differing together = case together of
-  Just (Together.Differing axis) ->
-    let words_ = Text.pack ("with different " <> axisWords axis)
-     in [[Filter.MkQualifier words_ words_]]
+  Just (Together.Differing axis) -> [[Filter.apart axis]]
   _ -> [[]]
-  where
-    axisWords axis = case axis of
-      DifferentIn.Names -> "names"
-      DifferentIn.Powers -> "powers"
-      DifferentIn.ManaValues -> "mana values"
-      DifferentIn.Toughnesses -> "toughnesses"
-      DifferentIn.CardTypes -> "card types"
-      DifferentIn.Controllers -> "controllers"
 
 -- | The noun a description of cards ends in.
 card :: Filter.Noun

@@ -2375,18 +2375,27 @@ togetherRefused slot picked gs = case TargetSlot.together slot of
     | Set.size (Set.fromList (Maybe.mapMaybe (zoneHolding gs) (Set.toList picked))) > 1 -> picked
     | otherwise -> Set.empty
   Just (Together.Differing axis)
-    | maybe False apart (traverse (differingValues axis gs) (Set.toList picked)) -> Set.empty
+    | maybe False keptApart (traverse (differingValues axis gs) (Set.toList picked)) -> Set.empty
     | otherwise -> picked
-  where
-    apart sets = sum (fmap Set.size sets) == Set.size (Set.unions sets)
+
+-- Whether no two of these value sets share a value: a group's members kept
+-- apart on its Filter.differingOf axes.
+keptApart :: (Ord v) => [Set v] -> Bool
+keptApart sets = sum (fmap Set.size sets) == Set.size (Set.unions sets)
 
 -- One target's values on a `Differing` axis (Filter.differingOf), off its CR
 -- 613 projection, so a split card's two names count (CR 201.2a). Nothing for a
 -- target with no name where names are kept apart (CR 201.2b), or a player.
 differingValues :: DifferentIn.DifferentIn -> GameState -> Recipient -> Maybe (Set (DifferentIn.DifferentIn, DifferingValue.DifferingValue))
-differingValues axis gs recipient = do
-  oid <- Recipient.objectOf recipient
-  Filter.differingOf (Set.singleton axis) (Projection.viewOfObject oid gs)
+differingValues axis gs recipient = Recipient.objectOf recipient >>= objectDiffering (Set.singleton axis) gs
+
+-- One object's values on a group's DifferentIn axes (Filter.differingOf), read
+-- off the CR 613 projection, so a split card's two names count (CR 201.2a) and
+-- a star's power is its characteristic-defining ability's number (CR 208.2a,
+-- 604.3): Search.differentIn, ChosenCardFromAmong.differentIn and
+-- Sacrifice.differentIn.
+objectDiffering :: Set DifferentIn.DifferentIn -> GameState -> ObjectId -> Maybe (Set (DifferentIn.DifferentIn, DifferingValue.DifferingValue))
+objectDiffering axes gs oid = Filter.differingOf axes (Projection.viewOfObject oid gs)
 
 -- The most of these value sets no two of which share a value. Exact: some
 -- largest answer takes one member per value a member holds alone (swap any

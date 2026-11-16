@@ -13,6 +13,7 @@ import qualified Parun.Oracle.Prose as Prose
 import qualified Parun.Types.AloneAmong as AloneAmong
 import qualified Parun.Types.CardType as CardType
 import qualified Parun.Types.Color as Color
+import qualified Parun.Types.DifferentIn as DifferentIn
 import qualified Parun.Types.Filter as Filter
 import qualified Parun.Types.Holder as Holder
 import qualified Parun.Types.PlayerRelation as PlayerRelation
@@ -109,6 +110,8 @@ phraseJoining joining f named = case f of
   -- Hammer).
   Filter.Not (Filter.IsBound _) -> [adjective (Text.pack "other")]
   Filter.Not Filter.IsToken -> [adjective (Text.pack "nontoken")]
+  -- After any card type: "artifact tokens", "target creature token" (CR 111.1).
+  Filter.IsToken -> [noun (Text.pack "token") (Just (Text.pack "tokens"))]
   Filter.HasAttached (Filter.HasSubtype Subtype.Aura) -> [adjective (Text.pack "enchanted")]
   Filter.HasAttached (Filter.HasSubtype Subtype.Equipment) -> [adjective (Text.pack "equipped")]
   Filter.IsTapped -> [adjective (Text.pack "tapped")]
@@ -126,15 +129,17 @@ phraseJoining joining f named = case f of
 -- | The phrase in the given number, with the noun the context supplies when
 -- the filter names none: a filter over permanents that says only "nonblack"
 -- describes a nonblack permanent. Of several nouns the kinds of object (card
--- types, "spell") stand last and only the last is plural: "Sliver creatures",
--- "artifact creatures", "creature spells".
+-- types, "spell") stand last, then "token", and only the last is plural:
+-- "Sliver creatures", "artifact creatures", "creature spells", "artifact
+-- tokens".
 describe :: Number -> Noun -> Phrase -> [Text.Text]
 describe number fallback p = do
   let chosen = case nouns p of
         [] -> [fallback]
         ns -> ns
-      (typed, named) = List.partition kind chosen
-  headword <- case (number, named <> typed) of
+      (tokens, others) = List.partition ((== Text.pack "token") . singular) chosen
+      (typed, named) = List.partition kind others
+  headword <- case (number, named <> typed <> tokens) of
     (Singular, ns) -> [Text.unwords (fmap singular ns)]
     (Plural, ns) -> case List.unsnoc ns of
       Just (front, final) -> Maybe.maybeToList (fmap (\many' -> Text.unwords (fmap singular front <> [many'])) (plural final))
@@ -182,6 +187,22 @@ adjective a = MkPhrase [MkQualifier a a] [] []
 
 qualifier :: Text.Text -> Text.Text -> Phrase
 qualifier o m = MkPhrase [] [] [MkQualifier o m]
+
+-- | What keeps a group apart, as words after its noun: "with different names"
+-- (CR 201.2b, Behold the Sinister Six!, Transmutation Font), "with different
+-- mana values" (Long Rest), "with different controllers" (Cloud's Limit Break).
+apart :: DifferentIn.DifferentIn -> Qualifier
+apart axis =
+  let words_ = Text.pack ("with different " <> axisWords)
+   in MkQualifier words_ words_
+  where
+    axisWords = case axis of
+      DifferentIn.Names -> "names"
+      DifferentIn.Powers -> "powers"
+      DifferentIn.ManaValues -> "mana values"
+      DifferentIn.Toughnesses -> "toughnesses"
+      DifferentIn.CardTypes -> "card types"
+      DifferentIn.Controllers -> "controllers"
 
 -- | The card type a filter names, if that is all it names.
 cardTypeOf :: Filter.Filter k -> Maybe CardType.CardType
