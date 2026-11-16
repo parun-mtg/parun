@@ -98,11 +98,13 @@ import Parun.Types.PlayerId (PlayerId)
 import qualified Parun.Types.PlayerRef as PlayerRef
 import qualified Parun.Types.ProjectedCharacteristics as PC
 import qualified Parun.Types.Recipient as Recipient
+import qualified Parun.Types.RecipientKind as RecipientKind
 import qualified Parun.Types.Revealed as Revealed
 import qualified Parun.Types.Saddling as Saddling
 import qualified Parun.Types.Scope as Scope
 import qualified Parun.Types.SlotName as SlotName
 import qualified Parun.Types.Snapshots as Snapshots
+import qualified Parun.Types.SourceDealtDamage as SourceDealtDamage
 import qualified Parun.Types.SpellWasCast as SpellWasCast
 import qualified Parun.Types.Subtype as Subtype.Type
 import qualified Parun.Types.TappedForMana as TappedForMana
@@ -842,16 +844,20 @@ snapshotView viewOf gs shape event = case event of
     EventShape.CountersPut -> Nothing
     EventShape.Sacrificed -> Nothing
     EventShape.TurnedFaceUp -> Nothing
-    EventShape.DealtCombatDamageToPlayer -> Nothing
+    EventShape.SourceDealtDamage {} -> Nothing
     EventShape.PermanentDealtDamage -> Nothing
-  -- CR 510.2 / 608.2i: the source as it dealt the damage, off the event's
+  -- CR 120.1 / 608.2i: the source as it dealt the damage, off the event's
   -- deal-time riders, so a creature that has since died or changed hands still
   -- counts under the player who controlled it then (Excess's ruling,
-  -- 2022-04-29). damagedPlayer drops an event of 0 (CR 120.8).
+  -- 2022-04-29). damageRecipient drops an event of 0 (CR 120.8).
   GameEvent.DamageDealt dealt -> case shape of
-    EventShape.DealtCombatDamageToPlayer
-      | DamageEvent.kind dealt == DamageKind.Combat && Maybe.isJust (Game.damagedPlayer event) -> Just (Filter.dealtByView dealt)
+    EventShape.SourceDealtDamage (SourceDealtDamage.MkSourceDealtDamage kind recipient)
+      | all (== DamageEvent.kind dealt) kind && any (admits recipient) (Game.damageRecipient event) -> Just (Filter.dealtByView dealt)
       | otherwise -> Nothing
+      where
+        admits r to = case r of
+          RecipientKind.AnyRecipient -> True
+          RecipientKind.PlayerRecipient -> Maybe.isJust (Recipient.playerOf to)
     -- CR 120.3 / 608.2i: the permanent as it is or last was, seen as it was
     -- dealt the damage (dealtToView). damagedObject drops an event of 0 (CR 120.8).
     EventShape.PermanentDealtDamage -> fmap (dealtToView dealt) (Game.damagedObject event >>= orLastKnown viewOf gs)
@@ -901,7 +907,7 @@ snapshotView viewOf gs shape event = case event of
     EventShape.CountersPut -> Nothing
     EventShape.Sacrificed -> Nothing
     EventShape.TurnedFaceUp -> Nothing
-    EventShape.DealtCombatDamageToPlayer -> Nothing
+    EventShape.SourceDealtDamage {} -> Nothing
     EventShape.PermanentDealtDamage -> Nothing
     where
       -- CR 113.6 / 604.2: on the stack. A regression fence: nothing in
@@ -945,7 +951,7 @@ snapshotView viewOf gs shape event = case event of
     EventShape.CountersPut -> Nothing
     EventShape.Sacrificed -> Nothing
     EventShape.TurnedFaceUp -> Nothing
-    EventShape.DealtCombatDamageToPlayer -> Nothing
+    EventShape.SourceDealtDamage {} -> Nothing
     EventShape.PermanentDealtDamage -> Nothing
   GameEvent.BecameBlocking {} -> Nothing
   GameEvent.BlocksDeclared {} -> Nothing
@@ -976,7 +982,7 @@ snapshotView viewOf gs shape event = case event of
     EventShape.AttackerDeclared _ -> Nothing
     EventShape.CountersPut -> Nothing
     EventShape.Sacrificed -> Nothing
-    EventShape.DealtCombatDamageToPlayer -> Nothing
+    EventShape.SourceDealtDamage {} -> Nothing
     EventShape.PermanentDealtDamage -> Nothing
   GameEvent.PermanentActed _ -> Nothing
   GameEvent.Transformed {} -> Nothing
@@ -1000,7 +1006,7 @@ snapshotView viewOf gs shape event = case event of
     EventShape.AttackerDeclared _ -> Nothing
     EventShape.CountersPut -> Nothing
     EventShape.TurnedFaceUp -> Nothing
-    EventShape.DealtCombatDamageToPlayer -> Nothing
+    EventShape.SourceDealtDamage {} -> Nothing
     EventShape.PermanentDealtDamage -> Nothing
   GameEvent.AbilityTriggered {} -> Nothing
   GameEvent.AbilityActivated _ -> Nothing
@@ -1032,7 +1038,7 @@ snapshotView viewOf gs shape event = case event of
     EventShape.AttackerDeclared _ -> Nothing
     EventShape.Sacrificed -> Nothing
     EventShape.TurnedFaceUp -> Nothing
-    EventShape.DealtCombatDamageToPlayer -> Nothing
+    EventShape.SourceDealtDamage {} -> Nothing
     EventShape.PermanentDealtDamage -> Nothing
   -- CR 122.1's removal names an object by id and snapshots no characteristics,
   -- and no EventShape names it.
@@ -1123,7 +1129,7 @@ snapshotView viewOf gs shape event = case event of
     EventShape.CountersPut -> Nothing
     EventShape.Sacrificed -> Nothing
     EventShape.TurnedFaceUp -> Nothing
-    EventShape.DealtCombatDamageToPlayer -> Nothing
+    EventShape.SourceDealtDamage {} -> Nothing
     EventShape.PermanentDealtDamage -> Nothing
 
 -- CR 120.3 / 608.2i: a damaged permanent as it was dealt this damage, over
@@ -1145,10 +1151,12 @@ damageableCardTypes = Set.fromList [CardType.Battle, CardType.Creature, CardType
 
 -- Does a fold over this shape count each object once, however many of its
 -- events matched? CR 510.2's double striker connects twice and is one creature
--- (Excess's "for each creature"); every other shape's unit is the event.
+-- (Excess's "for each creature"), and one source dealing damage three times
+-- is one of Case of the Burning Masks' sources; every other shape's unit is the
+-- event.
 oncePerObject :: EventShape.EventShape -> Bool
 oncePerObject shape = case shape of
-  EventShape.DealtCombatDamageToPlayer -> True
+  EventShape.SourceDealtDamage {} -> True
   EventShape.PermanentDealtDamage -> True
   EventShape.MovedBetween {} -> False
   EventShape.MovedFrom {} -> False

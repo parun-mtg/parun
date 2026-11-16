@@ -7,8 +7,11 @@ import qualified Parun.Spec as Spec
 import qualified Parun.Types.AttackWindow as AttackWindow
 import qualified Parun.Types.CardArrivedIn as CardArrivedIn
 import qualified Parun.Types.CastWindow as CastWindow
+import qualified Parun.Types.DamageKind as DamageKind
 import qualified Parun.Types.EventShape as EventShape
 import qualified Parun.Types.MovedBetween as MovedBetween
+import qualified Parun.Types.RecipientKind as RecipientKind
+import qualified Parun.Types.SourceDealtDamage as SourceDealtDamage
 import qualified Parun.Types.Zone as Zone
 
 spec :: (Monad m, Monad n) => Spec.Spec m n -> n ()
@@ -71,14 +74,14 @@ spec s = Spec.describe s "Parun.Codec.EventShape" $ do
       EventShape.codec
       EventShape.TurnedFaceUp
       " {\"type\":\"TurnedFaceUp\"} "
-  -- CR 510.2: payloadless too.
-  Spec.it s "DealtCombatDamageToPlayer" $
+  -- CR 510.2: Indulge // Excess's combat damage to a player.
+  Spec.it s "SourceDealtDamage" $
     Common.assertCodec
       s
       EventShape.codec
-      EventShape.DealtCombatDamageToPlayer
-      " {\"type\":\"DealtCombatDamageToPlayer\"} "
-  -- CR 120.3: payloadless too.
+      (EventShape.SourceDealtDamage SourceDealtDamage.MkSourceDealtDamage {SourceDealtDamage.kind = Just DamageKind.Combat, SourceDealtDamage.recipient = RecipientKind.PlayerRecipient})
+      " {\"type\":\"SourceDealtDamage\",\"value\":{\"kind\":\"Combat\",\"recipient\":\"PlayerRecipient\"}} "
+  -- CR 120.3: payloadless.
   Spec.it s "PermanentDealtDamage" $
     Common.assertCodec
       s
