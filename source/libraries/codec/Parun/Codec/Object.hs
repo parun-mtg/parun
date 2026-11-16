@@ -31,7 +31,6 @@ import qualified Parun.Codec.PlayerChoice as PlayerChoice
 import qualified Parun.Codec.PlayerId as PlayerId
 import qualified Parun.Codec.PrintingId as PrintingId
 import qualified Parun.Codec.ProjectedCharacteristics as ProjectedCharacteristics
-import qualified Parun.Codec.Quantity as Quantity
 import qualified Parun.Codec.Recipient as Recipient
 import qualified Parun.Codec.RevealWindow as RevealWindow
 import qualified Parun.Codec.RoomHalf as RoomHalf
@@ -151,7 +150,6 @@ codec = Fields.object $ do
   mutating <- Fields.defaulted "mutating" (Object.mutating defaults) Common.boolean Object.mutating
   prototyped <- Fields.defaulted "prototyped" (Object.prototyped defaults) Common.boolean Object.prototyped
   castPrepared <- Fields.defaulted "castPrepared" (Object.castPrepared defaults) Common.boolean Object.castPrepared
-  castQuantities <- Fields.defaulted "castQuantities" (Object.castQuantities defaults) (Common.keyedList (Common.keyValue Quantity.codec Common.integer)) Object.castQuantities
   boughtBack <- Fields.defaulted "boughtBack" (Object.boughtBack defaults) Common.boolean Object.boughtBack
   unannounced <- Fields.defaulted "unannounced" (Object.unannounced defaults) Common.boolean Object.unannounced
   spliced <- Fields.defaulted "spliced" (Object.spliced defaults) (Common.seq PrintingId.codec) Object.spliced
@@ -227,7 +225,6 @@ codec = Fields.object $ do
         Object.mutating = mutating,
         Object.prototyped = prototyped,
         Object.castPrepared = castPrepared,
-        Object.castQuantities = castQuantities,
         Object.boughtBack = boughtBack,
         Object.unannounced = unannounced,
         Object.spliced = spliced,

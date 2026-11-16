@@ -399,7 +399,7 @@ data Quantity
     -- Modification.GrantsStationToughness. Engine-only, a leaf like Measure:
     -- Parun.Engine.Keyword.station mints it and no card should author it.
     StationMeasure
-  | -- | CR 601.2i: the inner quantity as this spell became cast, read off
-    -- Parun.Types.Object.castQuantities; 0 for an object never cast.
+  | -- | CR 601.2i: the inner quantity as this spell became cast, read on
+    -- GameState.snapshots' boardAsCast; 0 for an object never cast.
     AsCast Quantity
   deriving (Eq, Ord, Show)

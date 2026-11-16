@@ -153,6 +153,7 @@ codec resolve = Fields.object $ do
   controlSample <- Fields.defaulted "controlSample" Map.empty (Common.naturalMap ObjectId.codec PlayerId.codec) (Snapshots.controlSample . GameState.snapshots)
   boardAtControlSample <- Fields.defaulted "boardAtControlSample" Nothing (Common.maybe (codec resolve)) (Snapshots.boardAtControlSample . GameState.snapshots)
   heldBoards <- Fields.defaulted "heldBoards" [] (Common.list (codec resolve)) (Snapshots.heldBoards . GameState.snapshots)
+  boardAsCast <- Fields.defaulted "boardAsCast" Map.empty (Common.naturalMap ObjectId.codec (codec resolve)) (Snapshots.boardAsCast . GameState.snapshots)
   delayedTriggers <- Fields.defaulted "delayedTriggers" Seq.empty (Common.seq DelayedTrigger.codec) (StoredEffects.delayedTriggers . GameState.stored)
   continuousEffects <- Fields.defaulted "continuousEffects" [] (Common.list (ContinuousEffect.codec Card.codec)) (StoredEffects.continuousEffects . GameState.stored)
   copyEffects <- Fields.defaulted "copyEffects" [] (Common.list ActiveCopy.codec) (StoredEffects.copyEffects . GameState.stored)
@@ -311,7 +312,8 @@ codec resolve = Fields.object $ do
               Snapshots.boardBeforeEvent = boardBeforeEvent,
               Snapshots.controlSample = controlSample,
               Snapshots.boardAtControlSample = boardAtControlSample,
-              Snapshots.heldBoards = heldBoards
+              Snapshots.heldBoards = heldBoards,
+              Snapshots.boardAsCast = boardAsCast
             },
         GameState.stored =
           StoredEffects.MkStoredEffects

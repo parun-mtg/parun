@@ -1270,11 +1270,11 @@ evaluateAgainst viewOf context gs announcedOn mOid mView quantity =
         -- Nothing, `spells` coming up empty: a permanent put there by an effect was not
         -- cast at all, which is an answered question and the disjunct's other half
         -- (EnteredFrom) is what covers it.
-        -- CR 601.2i: read off the resolving spell, which stamped it as it
-        -- became cast (Cast.stampCastQuantities). An object never cast, a spell
+        -- CR 601.2i: read on the board the source spell became cast on
+        -- (Projection.withCastBoard frames it). An object never cast, a spell
         -- copy included, answers 0: Draconic Roar's ruling of 2015-02-25 has a
         -- copy's caster get no bonus for controlling a Dragon.
-        Quantity.AsCast inner -> Just (maybe 0 (Map.findWithDefault 0 inner . Object.castQuantities) (Game.lookupObject announcedOn gs))
+        Quantity.AsCast inner -> Filter.asCast context inner
         Quantity.WasCastFrom castFrom -> do
           oid <- mOid
           -- An absent zone constrains neither the zone nor its owner (CR 603.4).
