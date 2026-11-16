@@ -1341,7 +1341,7 @@ defaultAnswer p = case p of
   -- The first `count` candidates, ChooseSacrifices' fallback: the count is exact
   -- here, so the maximal subset the arm above takes would be rejected outright
   -- wherever there are more candidates than the cost wants.
-  Prompt.ChooseTaps _ _ _ candidates count -> Set.fromList (List.genericTake count candidates)
+  Prompt.ChooseTaps _ _ _ _ candidates count -> Set.fromList (List.genericTake count candidates)
   -- The first `count` candidates, the arm above\'s fallback over a return to
   -- hand: the count is exact here too.
   Prompt.ChooseReturns _ _ _ candidates count -> Set.fromList (List.genericTake count candidates)

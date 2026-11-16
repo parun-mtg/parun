@@ -759,7 +759,9 @@ grantingPermanent = SlotName.MkSlotName (Text.pack "thatGrantingPermanent")
 
 -- CR 701.26b: the permanent that became untapped, stamped for a
 -- TriggerCondition.BecomesTapState watching that direction -- Mesmeric Orb's
--- "that permanent's controller". tappedPermanent's posture.
+-- "that permanent's controller" -- or untapped to pay a
+-- CostComponent.TapPermanents, Benthic Explorers' "that land".
+-- tappedPermanent's posture.
 untappedPermanent :: SlotName
 untappedPermanent = SlotName.MkSlotName (Text.pack "thatUntappedPermanent")
 

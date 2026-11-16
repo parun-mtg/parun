@@ -3657,7 +3657,7 @@ springleafBoard drum first second =
 -- engine's own candidates.
 tapping :: ObjectId.ObjectId -> Prompt.Prompt r -> r
 tapping wanted p = case p of
-  Prompt.ChooseTaps _ _ _ candidates _ -> Set.fromList (filter (== wanted) candidates)
+  Prompt.ChooseTaps _ _ _ _ candidates _ -> Set.fromList (filter (== wanted) candidates)
   _ -> S.identityAnswer p
 
 -- How many mana this source put in alice's pool. The observable that says the
@@ -4959,7 +4959,7 @@ convokeBoard piker spider card reds greens =
 convoking :: ManaCost.ManaCost -> [ObjectId.ObjectId] -> Prompt.Prompt r -> r
 convoking wanted tapped p = case p of
   Prompt.ChooseCost _ _ _ candidates _ -> Cost.firstOffered (filter ((== Just wanted) . Cost.Type.mana . CandidateCost.cost) candidates)
-  Prompt.ChooseTaps _ _ _ candidates _ -> Set.fromList (filter (`elem` tapped) candidates)
+  Prompt.ChooseTaps _ _ _ _ candidates _ -> Set.fromList (filter (`elem` tapped) candidates)
   _ -> S.identityAnswer p
 
 -- Siege Wurm {5}{G}{G} Creature -- Wurm 5/5: "Convoke. Trample."
@@ -5058,7 +5058,7 @@ convokeWindowSpec s registry = Spec.describe s "Siege Wurm" $ do
           Prompt.ChooseCost _ _ _ candidates _ -> do
             note "substitution"
             pure (Cost.firstOffered (filter ((== Just residual) . Cost.Type.mana . CandidateCost.cost) candidates))
-          Prompt.ChooseTaps _ _ _ candidates n -> pure (Set.fromList (filter (`elem` (if n == 1 then [spiderId] else pikerIds)) candidates))
+          Prompt.ChooseTaps _ _ _ _ candidates n -> pure (Set.fromList (filter (`elem` (if n == 1 then [spiderId] else pikerIds)) candidates))
           _ -> pure (S.identityAnswer p)
         ((_, after), asked) = State.runState (Engine.runGame answer gs (S.cast S.alice spell)) []
     -- THE ORDER. Both decisions are made -- the list holds both tags -- and the
@@ -5112,11 +5112,11 @@ veneratedLoxodonSpec s registry = Spec.describe s "Venerated Loxodon" $ do
             }
         -- The entry naming one colored tap and two generic taps per keyword;
         -- the improvise prompt is the one offering no Piker.
-        tapCounts candidate = List.sort [n | CostComponent.TapPermanents (TapPermanents.MkTapPermanents (CostAmount.Fixed n) _ _) <- Cost.Type.components candidate]
+        tapCounts candidate = List.sort [n | CostComponent.TapPermanents (TapPermanents.MkTapPermanents (CostAmount.Fixed n) _ _ _) <- Cost.Type.components candidate]
         answer :: Prompt.Prompt r -> r
         answer p = case p of
           Prompt.ChooseCost _ _ _ candidates _ -> Cost.firstOffered (filter ((\c -> Cost.Type.mana c == Just (ManaCost.MkManaCost []) && tapCounts c == [1, 2, 2]) . CandidateCost.cost) candidates)
-          Prompt.ChooseTaps _ _ _ candidates n
+          Prompt.ChooseTaps _ _ _ _ candidates n
             | n == 1 -> Set.fromList (filter (== guardId) candidates)
             | any (`elem` pikerIds) candidates -> Set.fromList (filter (`elem` pikerIds) candidates)
             | otherwise -> Set.fromList (filter (`elem` [statuaryId, assemblerId]) candidates)
@@ -5189,7 +5189,7 @@ waterbendingGreedily p = case p of
   -- An unpayable mana part (CR 118.6) sorts last rather than first, which is
   -- what Ord would do with it.
   Prompt.ChooseCost _ _ _ candidates _ -> Cost.firstOffered (List.sortOn (maybe (1 :: Int, 0) ((,) 0 . manaOwed) . Cost.Type.mana . CandidateCost.cost) candidates)
-  Prompt.ChooseTaps _ _ _ candidates wanted -> Set.fromList (take (Natural.Extra.toIntSaturating wanted) candidates)
+  Prompt.ChooseTaps _ _ _ _ candidates wanted -> Set.fromList (take (Natural.Extra.toIntSaturating wanted) candidates)
   _ -> S.identityAnswer p
 
 -- How much mana a residual cost still asks for, CR 107.4b counting a generic
@@ -5763,7 +5763,7 @@ hamaBoard s registry milled taxed spare = do
 optionalWaterbending :: Bool -> Prompt.Prompt r -> r
 optionalWaterbending paid p = case p of
   Prompt.ChooseCost _ _ _ candidates _ -> Cost.firstOffered (List.sortOn (maybe 0 manaOwed . Cost.Type.mana . CandidateCost.cost) (filter ((== paid) . any isWaterbend . Cost.Type.components . CandidateCost.cost) candidates))
-  Prompt.ChooseTaps _ _ _ candidates wanted -> Set.fromList (take (Natural.Extra.toIntSaturating wanted) candidates)
+  Prompt.ChooseTaps _ _ _ _ candidates wanted -> Set.fromList (take (Natural.Extra.toIntSaturating wanted) candidates)
   _ -> S.identityAnswer p
   where
     isWaterbend component = case component of

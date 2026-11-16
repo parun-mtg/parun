@@ -16,6 +16,7 @@
 -- test is this one, and the three entry points are how the rule is reached.
 module Parun.ManaSpec where
 
+import qualified Control.Monad as Monad
 import qualified Control.Monad.Trans.State.Strict as State
 import qualified Data.Foldable as Foldable
 import qualified Data.List as List
@@ -47,6 +48,7 @@ import qualified Parun.Engine.Setup as Setup
 import qualified Parun.Engine.Stack as Stack
 import qualified Parun.Engine.Subtype as SubtypeEngine
 import qualified Parun.Registry as Registry
+import qualified Parun.Scenario.Prompt as Scenario.Prompt
 import qualified Parun.Spec as Spec
 import qualified Parun.Support as S
 import qualified Parun.Types.Action as Action.Type
@@ -2174,6 +2176,90 @@ squanderedResourcesSpec s registry = Spec.describe s "Squandered Resources" $ do
     Spec.assertEqWith s "the Merfolk resolved" (countOf "Merfolk of the Pearl Trident" resolved) 1
     Spec.assertEqWith s "the Island paid for it" (countOf "Island" resolved) 0
 
+-- CR 106.7 / 701.26b: Benthic Explorers' "{T}, Untap a tapped land an opponent
+-- controls: Add one mana of any type that land could produce." The type is read
+-- off the land the cost untapped, which stays on the battlefield.
+benthicExplorersSpec :: (Monad m, Monad n) => Spec.Spec m n -> Registry.Registry m -> n ()
+benthicExplorersSpec s registry = Spec.describe s "Benthic Explorers" $ do
+  let board lands = do
+        explorers <- S.printingOf s registry "Benthic Explorers"
+        let (explorersId, g0) = S.addPermanent explorers S.alice (Setup.emptyGame S.bothPlayers)
+            place (ids, g) (name, owner, tapped) = do
+              printing <- S.printingOf s registry name
+              let (oid, g') = S.addPermanent printing owner g
+              pure (ids <> [oid], if tapped then S.tapObject oid g' else g')
+        (ids, gs) <- Monad.foldM place ([], g0) lands
+        -- The i-th land placed; 999 names nothing, so a short list fails the
+        -- assertion that reads it.
+        let nth i = Maybe.fromMaybe (ObjectId.MkObjectId 999) (Maybe.listToMaybe (drop i ids))
+        pure (explorersId, nth, gs)
+      tapOf oid g = fmap Object.tapped (Game.lookupObject oid g)
+      -- Untaps `land`, recording each prompt's kind and candidates.
+      untapping :: ObjectId.ObjectId -> Prompt.Prompt r -> State.State [(Text.Text, [ObjectId.ObjectId])] r
+      untapping land p = case p of
+        Prompt.ChooseTaps _ _ _ _ candidates _ -> do
+          State.modify' (<> [(Scenario.Prompt.kindOf p, candidates)])
+          pure (Set.filter (== land) (Set.fromList candidates))
+        _ -> pure (S.identityAnswer p)
+      holding printing gs =
+        let (held, oid) =
+              S.handOne
+                printing
+                ( gs
+                    { GameState.turn =
+                        (GameState.turn gs)
+                          { TurnRegisters.phase = Phase.PrecombatMain,
+                            TurnRegisters.remaining = Seq.empty
+                          }
+                    }
+                )
+         in S.castable S.alice oid held
+
+  Spec.it s "CR 106.7 untapping Bob's tapped Island adds {U}, and the Island is untapped" $ do
+    (explorers, nth, gs) <- board [("Island", S.bob, True)]
+    let island = nth 0
+        after = S.runPure S.identityAnswer gs (S.tapForMana explorers)
+    Spec.assertEqWith s "{U}" (poolTypes S.alice after) [ManaType.Colored Color.Blue]
+    Spec.assertEqWith s "the Island was untapped" (tapOf island after) (Just TapState.Untapped)
+    Spec.assertEqWith s "the Explorers were tapped" (tapOf explorers after) (Just TapState.Tapped)
+
+  -- CR 601.2h: the payer picks which land, out of the tapped lands an opponent
+  -- controls alone, and that land's type is the one added.
+  Spec.it s "CR 601.2h the land untapped is chosen among Bob's tapped lands, and the Swamp adds {B}" $ do
+    (explorers, nth, gs) <- board [("Island", S.bob, True), ("Swamp", S.bob, True), ("Forest", S.bob, False), ("Plains", S.alice, True)]
+    let (island, swamp) = (nth 0, nth 1)
+        ((_, after), asked) = State.runState (Engine.runGame (untapping swamp) gs (S.tapForMana explorers)) []
+    Spec.assertEqWith s "asked to untap one of the two" asked [(Text.pack "ChooseUntaps", List.sort [island, swamp])]
+    Spec.assertEqWith s "{B}" (poolTypes S.alice after) [ManaType.Colored Color.Black]
+    Spec.assertEqWith s "the Swamp was untapped" (tapOf swamp after) (Just TapState.Untapped)
+    Spec.assertEqWith s "and the Island was not" (tapOf island after) (Just TapState.Tapped)
+
+  -- CR 118.3 and the card's ruling: no tapped land an opponent controls, no
+  -- activation. Alice's own lands are tapped, so the Explorers are the only
+  -- source on every board.
+  Spec.it s "CR 601.2g Merfolk of the Pearl Trident is cast off Bob's tapped Island, and not off an untapped one or Alice's own" $ do
+    merfolk <- S.printingOf s registry "Merfolk of the Pearl Trident"
+    (_, _, tappedBoard) <- board [("Island", S.bob, True)]
+    (_, _, untappedBoard) <- board [("Island", S.bob, False)]
+    (_, _, ownBoard) <- board [("Island", S.alice, True)]
+    let resolved = castFrom S.identityAnswer tappedBoard merfolk
+    Spec.assertBool s (holding merfolk tappedBoard) "{U} is offered beside Bob's tapped Island"
+    Spec.assertBool s (not (holding merfolk untappedBoard)) "and not beside an untapped one"
+    Spec.assertBool s (not (holding merfolk ownBoard)) "nor beside Alice's own"
+    Spec.assertEqWith s "the Merfolk resolved" (S.countOnBattlefieldByName (CardName.MkCardName (Text.pack "Merfolk of the Pearl Trident")) S.alice resolved) 1
+
+  -- CR 614.17b: a land that can't become untapped can't pay the cost.
+  -- Blossombind on Bob's tapped Dryad Arbor, and nothing else under him.
+  Spec.it s "CR 614.17b Bob's tapped Dryad Arbor under Blossombind can't be untapped to pay the cost" $ do
+    blossombind <- S.printingOf s registry "Blossombind"
+    (explorers, nth, gs) <- board [("Dryad Arbor", S.bob, True)]
+    let (auraId, withAura) = S.addPermanent blossombind S.alice gs
+        bound = S.attach auraId (nth 0) withAura
+        after = S.runPure S.identityAnswer bound (S.tapForMana explorers)
+    Spec.assertEqWith s "{G} off the Arbor without Blossombind" (poolTypes S.alice (S.runPure S.identityAnswer gs (S.tapForMana explorers))) [ManaType.Colored Color.Green]
+    Spec.assertEqWith s "no mana with it" (poolTypes S.alice after) []
+    Spec.assertEqWith s "and the Arbor stays tapped" (tapOf (nth 0) after) (Just TapState.Tapped)
+
 sacrificing :: ObjectId.ObjectId -> Prompt.Prompt r -> r
 sacrificing victim p = case p of
   Prompt.ChooseSacrifices _ _ _ candidates _ _ -> Set.filter (== victim) (Set.fromList candidates)
@@ -4028,6 +4114,7 @@ spec s registry = Spec.describe s "Parun.Engine.Mana" $ do
   priestOfYawgmothSpec s registry
   foodChainSpec s registry
   squanderedResourcesSpec s registry
+  benthicExplorersSpec s registry
   bloodPetSpec s registry
   ashnodsAltarSpec s registry
   workhorseSpec s registry

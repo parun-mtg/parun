@@ -1185,7 +1185,7 @@ withinOffer prompt chosen = case prompt of
   Prompt.Type.ChooseExilesTotalling _ _ _ _ cards _ -> all (`elem` fmap fst cards) chosen
   Prompt.Type.ChoosePermanent _ _ _ objects _ -> chosen `elem` objects
   Prompt.Type.ChooseTapsForTotalPower _ _ _ objects _ -> all (`elem` fmap fst objects) chosen
-  Prompt.Type.ChooseTaps _ _ _ objects _ -> all (`elem` objects) chosen
+  Prompt.Type.ChooseTaps _ _ _ _ objects _ -> all (`elem` objects) chosen
   Prompt.Type.ChooseReturns _ _ _ objects _ -> all (`elem` objects) chosen
   Prompt.Type.ChooseExiles _ _ _ objects _ -> all (`elem` objects) chosen
   Prompt.Type.ChooseCounterRemoval _ _ _ objects -> chosen `elem` objects

@@ -33,6 +33,7 @@ import qualified Parun.Types.MoveCardsFromGraveyard as MoveCardsFromGraveyard
 import qualified Parun.Types.ObjectCount as ObjectCount
 import qualified Parun.Types.Sacrifice as Sacrifice
 import qualified Parun.Types.TapPermanents as TapPermanents
+import qualified Parun.Types.TapState as TapState
 import qualified Parun.Types.WhichCounters as WhichCounters
 import qualified Parun.Types.Zone as Zone
 
@@ -158,11 +159,14 @@ component self named c = case c of
     _ -> []
   CostComponent.PayEnergy (CostAmount.Fixed n) | n > 0 -> [Text.pack "Pay " <> foldMap (const energy) [1 .. n]]
   CostComponent.PayEnergy (CostAmount.Announced _) -> [Text.pack "Pay X " <> energy]
-  CostComponent.TapPermanents (TapPermanents.MkTapPermanents (CostAmount.Fixed n) f sharing) | not sharing || n > 1 -> do
+  CostComponent.TapPermanents (TapPermanents.MkTapPermanents (CostAmount.Fixed n) f sharing becoming) | not sharing || n > 1 -> do
     -- Free: "two artifacts and/or creatures" (Adaptive Gemguard).
     p <- ListUtils.nubOrd (Filter.phrase f named <> Filter.phraseJoining Filter.Inclusive f named)
-    tapped <- some (toInteger n) permanent p
-    [Text.pack "Tap " <> tapped <> (if sharing then Text.pack " that share a creature type" else Text.empty)]
+    turned <- some (toInteger n) permanent p
+    let verb = case becoming of
+          TapState.Tapped -> Text.pack "Tap "
+          TapState.Untapped -> Text.pack "Untap "
+    [verb <> turned <> (if sharing then Text.pack " that share a creature type" else Text.empty)]
   CostComponent.MoveCardsFromGraveyard (MoveCardsFromGraveyard.MkMoveCardsFromGraveyard (CostAmount.Fixed n) f destination) -> do
     p <- Filter.phrase f named
     moved <- some (toInteger n) card (Filter.merge p (Filter.MkPhrase [] [card] []))

@@ -19,4 +19,8 @@ data ClaimAxis
     -- payment is not there to be tapped by the next (CR 118.3's own example), and
     -- it is on nobody's removal axis, since it never left the battlefield.
     Tapping
+  | -- | The TAPPED permanents on the battlefield, which an untap as a cost
+    -- spends without moving anything (CR 701.26b): Benthic Explorers' land
+    -- untapped by one payment is not there to be untapped by the next.
+    Untapping
   deriving (Eq, Ord, Show)

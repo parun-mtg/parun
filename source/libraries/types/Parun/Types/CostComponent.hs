@@ -66,9 +66,9 @@ data CostComponent keyword
   | -- | CR 702.122a's cost half / crew: tap any number of untapped permanents
     -- matching the Filter, chosen so that their TOTAL power reaches totalPower.
     TapForTotalPower (TapForTotalPower.TapForTotalPower keyword)
-  | -- | CR 601.2f / Springleaf Drum: tap exactly this many permanents matching the
-    -- Filter, chosen by the payer. CR 302.6 does not reach it -- see
-    -- Parun.Engine.Cost.requiresSicknessCheck.
+  | -- | CR 601.2f / Springleaf Drum, Benthic Explorers: tap, or untap, exactly
+    -- this many permanents matching the Filter, chosen by the payer. CR 302.6
+    -- does not reach it -- see Parun.Engine.Cost.requiresSicknessCheck.
     TapPermanents (TapPermanents.TapPermanents keyword)
   | -- | CR 118.1 as a cost / Meloku the Clouded Mirror: return exactly this many
     -- permanents matching the Filter to their owners' hands, chosen by the payer.

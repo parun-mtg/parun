@@ -110,6 +110,7 @@ import qualified Parun.Types.StickerKind as StickerKind
 import qualified Parun.Types.StickerRef as StickerRef
 import qualified Parun.Types.Subtype as Subtype
 import qualified Parun.Types.SubtypeFamily as SubtypeFamily
+import qualified Parun.Types.TapState as TapState
 import qualified Parun.Types.TextWord as TextWord
 import qualified Parun.Types.TimeTravelChoice as TimeTravelChoice
 import qualified Parun.Types.TriggerEntry as TriggerEntry
@@ -824,7 +825,7 @@ combatReplaySpec s =
           Spec.assertEqWith
             s
             "a ChooseTaps transcript entry does not answer it"
-            (Replay.decode p (Replay.encode (Prompt.ChooseTaps decider S.alice oid [oid, ObjectId.MkObjectId 8] 1) answer))
+            (Replay.decode p (Replay.encode (Prompt.ChooseTaps decider S.alice oid TapState.Tapped [oid, ObjectId.MkObjectId 8] 1) answer))
             Nothing
         -- The same payload once more, over an exile: a return entry must not
         -- answer it.
