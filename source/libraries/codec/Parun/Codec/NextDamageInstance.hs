@@ -27,9 +27,8 @@ import qualified Parun.Types.NextDamageOutcome as NextDamageOutcome.Type
 -- Parun.Codec.PreventNextDamage's reason.
 --
 -- @direction@ is 'Fields.defaulted' to DealtTo, as Parun.Codec.PreventAllDamage
--- defaults it. @chosenSource@ is 'Fields.defaulted' to the trivial predicate, which is what
--- "a source of your choice" says on every printing of this rule; @ref@ and
--- the recipient description are 'Fields.defaulted' to Nothing, as
+-- defaults it, and @chosenSource@ and @whatSource@ as it defaults them; @ref@
+-- and the recipient description are 'Fields.defaulted' to Nothing, as
 -- Parun.Codec.PreventNextDamage writes them. @duration@ is required.
 codec ::
   (Typeable.Typeable effect, Eq effect) =>
@@ -42,7 +41,8 @@ codec effectCodec = Fields.object $ do
   whatRecipient <- Fields.defaulted "whatRecipient" Nothing (Common.maybe (Filter.codec Keyword.codec)) NextDamageInstance.whatRecipient
   whoRecipient <- Fields.defaulted "whoRecipient" Nothing (Common.maybe PlayerRelation.codec) NextDamageInstance.whoRecipient
   direction <- Fields.defaulted "direction" DamageDirection.Type.DealtTo DamageDirection.codec NextDamageInstance.direction
-  chosenSource <- Fields.defaulted "chosenSource" (Filter.And []) (Filter.codec Keyword.codec) NextDamageInstance.chosenSource
+  chosenSource <- Fields.defaulted "chosenSource" Nothing (Common.maybe (Filter.codec Keyword.codec)) NextDamageInstance.chosenSource
+  whatSource <- Fields.defaulted "whatSource" (Filter.And []) (Filter.codec Keyword.codec) NextDamageInstance.whatSource
   riders <- Fields.defaulted "riders" Seq.empty (Common.seq effectCodec) NextDamageInstance.riders
   outcome <- Fields.defaulted "outcome" NextDamageOutcome.Type.Prevented NextDamageOutcome.codec NextDamageInstance.outcome
   pure
@@ -54,6 +54,7 @@ codec effectCodec = Fields.object $ do
         NextDamageInstance.whoRecipient = whoRecipient,
         NextDamageInstance.direction = direction,
         NextDamageInstance.chosenSource = chosenSource,
+        NextDamageInstance.whatSource = whatSource,
         NextDamageInstance.riders = riders,
         NextDamageInstance.outcome = outcome
       }

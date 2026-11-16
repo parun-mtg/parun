@@ -1,0 +1,14 @@
+{
+  "description": "CR 615.8 / 113.8 whole card: alice activates bob's Mercenaries, and its next damage to her, the ability's \"you\", is prevented",
+  "note": "Bob's Mercenaries attacks alice unblocked after she pays {3}: she stays at 20. Were \"you\" bob, the controller, she would take 3.",
+  "board": {"active": "bob", "step": "BeginningOfCombat", "seats": [
+    {"name": "bob", "battlefield": [{"card": "Mercenaries", "label": "merc", "ready": true}], "library": [{"card": "Island"}, {"card": "Island"}, {"card": "Island"}]},
+    {"name": "alice", "battlefield": [{"card": "Plains", "label": "p1"}, {"card": "Plains", "label": "p2"}, {"card": "Plains", "label": "p3"}], "library": [{"card": "Island"}, {"card": "Island"}, {"card": "Island"}]}
+  ]},
+  "timeline": [
+    {"turn": 1, "step": "DeclareAttackers", "player": "bob", "do": {"Attack": ["$merc"]}},
+    {"turn": 1, "step": "DeclareAttackers", "player": "alice", "do": {"Activate": {"object": "$merc", "ability": 0, "mana": ["$p1", "$p2", "$p3"]}}},
+    {"turn": 1, "step": "DeclareAttackers", "player": "alice", "do": "Pass"},
+    {"turn": 1, "step": "PostcombatMain", "player": "bob", "check": {"Life": {"player": "alice", "life": 20}}}
+  ]
+}

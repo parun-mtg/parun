@@ -994,9 +994,10 @@ shieldNamingNothingOffends effect = case effect of
     Maybe.isNothing from && Maybe.isNothing whatRecipient && Maybe.isNothing whoRecipient
   -- CR 615.8's shield names its covered side or describes it beside DealtTo, as
   -- the counted shield does; beside DealtBy the ref is the SOURCE and the
-  -- description is not read, so only the ref installs anything. Its chosen
-  -- source is required, so it is no substitute here.
-  Effect.NextDamageInstance (NextDamageInstance.MkNextDamageInstance _ _ ref whatRecipient whoRecipient direction _ _ _) ->
+  -- description only narrows its rows, so only the ref installs anything. No
+  -- printing of this rule shields only a source, so a chosen one is no
+  -- substitute here.
+  Effect.NextDamageInstance (NextDamageInstance.MkNextDamageInstance _ _ ref whatRecipient whoRecipient direction _ _ _ _) ->
     Maybe.isNothing ref && case direction of
       DamageDirection.DealtBy -> True
       DamageDirection.DealtTo -> Maybe.isNothing whatRecipient && Maybe.isNothing whoRecipient
@@ -1587,7 +1588,7 @@ effectObjectRefs effect =
         Effect.LaterPayment {} -> []
         Effect.PreventNextDamage (PreventNextDamage.MkPreventNextDamage _ _ ref _ _ _ _ _) -> read_ (Maybe.maybeToList ref)
         Effect.PreventAllDamage (PreventAllDamage.MkPreventAllDamage _ _ ref _ _ _ _ _ _) -> read_ (Maybe.maybeToList ref)
-        Effect.NextDamageInstance (NextDamageInstance.MkNextDamageInstance _ _ ref _ _ _ _ _ _) -> read_ (Maybe.maybeToList ref)
+        Effect.NextDamageInstance (NextDamageInstance.MkNextDamageInstance _ _ ref _ _ _ _ _ _ _) -> read_ (Maybe.maybeToList ref)
         Effect.RedirectDamage (RedirectDamage.MkRedirectDamage _ _ _ srcRef _ _ destRef _ _ _) -> read_ (Maybe.maybeToList srcRef <> [destRef])
         -- A READ and not an ask: CR 708.2's turning-over takes no choice of its own, and
         -- this arm never reaches the Game monad, so a ChosenPermanents ref written
@@ -3494,10 +3495,10 @@ effectLintSpec s registry corpus = Spec.describe s "Lint" $ do
           NextDamageOutcome.PreventedAllBut _ -> True
           NextDamageOutcome.AlsoToSourceController -> False
         offends effect = case effect of
-          Effect.NextDamageInstance (NextDamageInstance.MkNextDamageInstance _ _ _ _ _ _ _ riders outcome) -> not (null riders) && not (prevents outcome)
+          Effect.NextDamageInstance (NextDamageInstance.MkNextDamageInstance _ _ _ _ _ _ _ _ riders outcome) -> not (null riders) && not (prevents outcome)
           _ -> False
         reachesRiderless effect = case effect of
-          Effect.NextDamageInstance (NextDamageInstance.MkNextDamageInstance _ _ _ _ _ _ _ _ outcome) -> not (prevents outcome)
+          Effect.NextDamageInstance (NextDamageInstance.MkNextDamageInstance _ _ _ _ _ _ _ _ _ outcome) -> not (prevents outcome)
           _ -> False
     -- Guards against a vacuous sweep: Eye for an Eye is the card that lets the
     -- instance happen.

@@ -3401,7 +3401,10 @@ consume identity_ = case identity_ of
 -- event -- so the row stays standing for the whole batch and is spent here,
 -- after it, rather than by its first event: a trampler's damage to its blocker
 -- and to the player is one instance. Proved by the scenario
--- awe-strike-prevents-a-tramplers-damage-to-its-blocker-and-the-player.
+-- awe-strike-prevents-a-tramplers-damage-to-its-blocker-and-the-player. A
+-- shield describing its source (Circle of Solace) is spent the same way, over
+-- every source it covered: docs/decisions.md, "Whether a described one-hit
+-- shield covers two sources at once".
 --
 -- Only a prevention that prevented some damage spends the row: CR 609.7b /
 -- 615.12's shield preventing none is not used up, and `preventionBy` records

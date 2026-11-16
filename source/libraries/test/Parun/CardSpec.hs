@@ -5339,9 +5339,9 @@ effectFilters effect = case effect of
   -- 607.2d choices as the row baked them (Avacyn, Guardian Angel).
   Effect.PreventAllDamage (PreventAllDamage.MkPreventAllDamage duration _ ref whatRecipient _ _ chosenSource whatSource rider) ->
     frame Unframed (durationFilters duration) <> fmap ((,) ChosenSourceFramed) (Maybe.maybeToList chosenSource) <> unframed (Maybe.maybeToList whatRecipient) <> [(ReplacementRowFramed, whatSource)] <> frame SourceHostFramed (foldMap objectRefFilters ref) <> concatMap effectFilters rider
-  -- The two arms above's reads over the fields CR 615.8's shield carries.
-  Effect.NextDamageInstance (NextDamageInstance.MkNextDamageInstance duration _ ref whatRecipient _ _ chosenSource rider _) ->
-    frame Unframed (durationFilters duration) <> [(ChosenSourceFramed, chosenSource)] <> unframed (Maybe.maybeToList whatRecipient) <> frame SourceHostFramed (foldMap objectRefFilters ref) <> concatMap effectFilters rider
+  -- The arm above's reads over the fields CR 615.8's shield carries.
+  Effect.NextDamageInstance (NextDamageInstance.MkNextDamageInstance duration _ ref whatRecipient _ _ chosenSource whatSource rider _) ->
+    frame Unframed (durationFilters duration) <> fmap ((,) ChosenSourceFramed) (Maybe.maybeToList chosenSource) <> unframed (Maybe.maybeToList whatRecipient) <> [(ReplacementRowFramed, whatSource)] <> frame SourceHostFramed (foldMap objectRefFilters ref) <> concatMap effectFilters rider
   -- BOTH refs, or a Filter inside a redirect's destination escapes this lint.
   -- The chosen source, the recipient description and the property-named source
   -- are framed as the two prevention arms above frame them.
