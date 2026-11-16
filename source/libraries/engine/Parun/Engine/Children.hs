@@ -1597,7 +1597,7 @@ triggerConditionChildren c condition = case condition of
     fmap TriggerCondition.LeavesZone (LeavesZoneTrigger.MkLeavesZoneTrigger <$> actingChildren c card <*> pure from <*> pure to <*> pure whose <*> triggerTurn c turn <*> pure batching)
   TriggerCondition.PutIntoZone (PutIntoZoneTrigger.MkPutIntoZoneTrigger card from to turn duringResolution batching) ->
     fmap TriggerCondition.PutIntoZone (PutIntoZoneTrigger.MkPutIntoZoneTrigger <$> actingChildren c card <*> pure from <*> pure to <*> triggerTurn c turn <*> pure duringResolution <*> pure batching)
-  TriggerCondition.BecomesTapState (BecomesTapState.MkBecomesTapState status actor batching paying) -> fmap (\renamed -> TriggerCondition.BecomesTapState (BecomesTapState.MkBecomesTapState status renamed batching paying)) (actingChildren c actor)
+  TriggerCondition.BecomesTapState (BecomesTapState.MkBecomesTapState status actor batching paying while_) -> fmap TriggerCondition.BecomesTapState (BecomesTapState.MkBecomesTapState status <$> actingChildren c actor <*> pure batching <*> pure paying <*> traverse (triggerState c) while_)
   TriggerCondition.TappedForMana (TappedForManaTrigger.MkTappedForManaTrigger permanent who mana) ->
     fmap
       TriggerCondition.TappedForMana
