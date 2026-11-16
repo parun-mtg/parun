@@ -1,0 +1,152 @@
+{
+  "faces": [
+    {
+      "keywords": [
+        {
+          "type": "Plot",
+          "value": {
+            "mana": [
+              {
+                "type": "Generic",
+                "value": 4
+              },
+              {
+                "type": "OfType",
+                "value": {
+                  "type": "Colored",
+                  "value": "Blue"
+                }
+              },
+              {
+                "type": "OfType",
+                "value": {
+                  "type": "Colored",
+                  "value": "Blue"
+                }
+              }
+            ]
+          }
+        }
+      ],
+      "manaCost": [
+        {
+          "type": "Generic",
+          "value": 3
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "Blue"
+          }
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "Blue"
+          }
+        }
+      ],
+      "name": "Step Between Worlds",
+      "oracleText": "Each player may shuffle their hand and graveyard into their library. Each player who does draws seven cards. Exile Step Between Worlds.\nPlot {4}{U}{U} (You may pay {4}{U}{U} and exile this card from your hand. Cast it as a sorcery on a later turn without paying its mana cost. Plot only as a sorcery.)",
+      "spell": {
+        "modes": [
+          {
+            "clauses": [
+              {
+                "effects": [
+                  {
+                    "type": "ShuffleIntoLibrary",
+                    "value": {
+                      "library": {
+                        "type": "EachInSlot",
+                        "value": "thoseWhoMay"
+                      },
+                      "ref": {
+                        "type": "AllOf",
+                        "value": [
+                          {
+                            "type": "EachCardInHand",
+                            "value": {
+                              "hands": {
+                                "type": "InSlot",
+                                "value": "thoseWhoMay"
+                              }
+                            }
+                          },
+                          {
+                            "type": "EachCardInGraveyard",
+                            "value": {
+                              "filter": {
+                                "type": "And",
+                                "value": []
+                              },
+                              "graveyards": {
+                                "type": "InSlot",
+                                "value": "thoseWhoMay"
+                              }
+                            }
+                          }
+                        ]
+                      }
+                    }
+                  }
+                ],
+                "optionality": {
+                  "type": "Optional",
+                  "value": {
+                    "type": "Relative",
+                    "value": "AnyPlayer"
+                  }
+                }
+              },
+              {
+                "effects": [
+                  {
+                    "type": "Draw",
+                    "value": {
+                      "player": {
+                        "type": "EachInSlot",
+                        "value": "thoseWhoMay"
+                      },
+                      "quantity": {
+                        "type": "Literal",
+                        "value": 7
+                      }
+                    }
+                  }
+                ],
+                "ifTaken": {
+                  "type": "AnyTaken",
+                  "value": [
+                    0
+                  ]
+                }
+              },
+              {
+                "effects": [
+                  {
+                    "type": "MoveToZone",
+                    "value": {
+                      "ref": {
+                        "type": "InSlot",
+                        "value": "self"
+                      },
+                      "zone": "Exile"
+                    }
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "typeLine": {
+        "types": [
+          "Sorcery"
+        ]
+      }
+    }
+  ]
+}

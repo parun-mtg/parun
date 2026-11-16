@@ -284,7 +284,8 @@ mode context m = named' <> chosen
 -- unless you discard a card at random" (Pillaging Horde), and a pair of which
 -- you choose one (CR 608.2d) as "You may tap or untap target permanent."
 -- (Twiddle). A pair gated on a count at most N and at least N + 1 reads as
--- the first, then "If ..., ... instead." (Leafkin Druid).
+-- the first, then "If ..., ... instead." (Leafkin Druid) or "... instead if
+-- ...." (Take the Fall).
 steps :: Target.Context -> [(ClauseIndex.ClauseIndex, Clause.Clause Card.Card Continuous.Ability)] -> [[(Text.Text, [SlotName.SlotName])]]
 steps context cs = case cs of
   [] -> [[]]
@@ -294,9 +295,21 @@ steps context cs = case cs of
         (first, ms) <- clause context c {Clause.condition = Nothing}
         -- The second replaces the first, so its pump is not "an additional"
         -- one (You're Not Alone).
-        (body, ns) <- clause (noted context [c]) {Target.pumped = Target.pumped context} d
-        body' <- Foldable.toList (Text.stripSuffix (Text.pack ".") body)
-        fmap ([(first, ms), (body' <> Text.pack " instead.", ns)] <>) (steps (noted context [c, d]) rest)
+        let replacing = (noted context [c]) {Target.pumped = Target.pumped context}
+            led = do
+              (body, ns) <- clause replacing d
+              body' <- Foldable.toList (Text.stripSuffix (Text.pack ".") body)
+              [(body' <> Text.pack " instead.", ns)]
+            -- Free: "instead if" and the condition trail the instructions
+            -- (Take the Fall).
+            trailed = do
+              gate <- Foldable.toList (Clause.condition d)
+              (words', itself) <- condition replacing gate
+              (body, ns) <- clause (if itself then replacing {Target.self = Text.pack "it"} else replacing) d {Clause.condition = Nothing}
+              body' <- Foldable.toList (Text.stripSuffix (Text.pack ".") body)
+              [(body' <> Text.pack " instead if " <> words' <> Text.pack ".", ns)]
+        second <- led <> trailed
+        fmap ([(first, ms), second] <>) (steps (noted context [c, d]) rest)
   (i, c) : (j, d) : rest
     | Clause.ifTaken d == Just (IfTaken.AnyTaken (NonEmpty.singleton i)) -> do
         (first, ms) <- clause context c
