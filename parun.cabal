@@ -3672,6 +3672,7 @@ library types
     Parun.Types.SearchPlace
     Parun.Types.Seat
     Parun.Types.SeatView
+    Parun.Types.Selection
     Parun.Types.SetBasePowerToughness
     Parun.Types.SetClassLevel
     Parun.Types.SetHalfLocked

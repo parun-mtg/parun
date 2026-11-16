@@ -10,7 +10,11 @@ import qualified Parun.Extra.Natural as Natural
 import Parun.Types.Claim (Claim)
 import qualified Parun.Types.Claim as Claim
 import qualified Parun.Types.ClaimAxis as ClaimAxis
+import qualified Parun.Types.DifferentIn as DifferentIn
+import qualified Parun.Types.DifferingValue as DifferingValue
 import Parun.Types.ObjectId (ObjectId)
+import qualified Parun.Types.Selection as Selection
+import qualified Parun.Types.Subtype as Subtype
 import qualified Parun.Types.Threshold as Threshold
 
 -- CR 118.3's "fully", asked of several claims TOGETHER: is there some
@@ -25,23 +29,25 @@ import qualified Parun.Types.Threshold as Threshold
 --
 -- HALL'S CONDITION over the subsets of one axis's claims, asked as a matching
 -- (`countable`), which is exactly necessary and sufficient where no claim
--- carries a threshold. Every object such a claim will take is interchangeable
+-- carries a selection. Every object such a claim will take is interchangeable
 -- with every other object that claim will take, so all its slots share a
 -- neighbourhood. A greedy pass would not do: a claim with the wider pool can eat
 -- the only object a narrower one could have used, which an augmenting path
 -- gives back.
 --
--- A THRESHOLD claim breaks that premise: only the selections reaching its total
--- serve it, so another claim can take exactly the objects it needed and leave a
--- count that still fits. Hall's condition over its fewest (`objectsOf`) stays
+-- A claim with a SELECTION breaks that premise: only the groups it admits serve
+-- it, so another claim can take exactly the objects it needed and leave a count
+-- that still fits. Hall's condition over its fewest (`objectsOf`) stays
 -- NECESSARY, and is asked first; `assignable` then settles it exactly. Heritage
 -- Druid tapping the only Elf whose power reaches 3 is Parun.ManaSpec's Synthetic
--- Muster Dynamo board, and Headless Skaab exiling the only card whose mana value
--- reaches 3 its Cryptex one.
+-- Muster Dynamo board, Headless Skaab exiling the only card whose mana value
+-- reaches 3 its Cryptex one, and Transmutation Font beside the only third name
+-- being a Black Lotus scenario
+-- transmutation-font-cannot-sacrifice-the-token-that-pays-its-mana.
 satisfiable :: [Claim] -> Bool
 satisfiable claims =
   all
-    (\axisClaims -> countable (merged axisClaims) && (all (Maybe.isNothing . Claim.threshold) axisClaims || assignable axisClaims))
+    (\axisClaims -> countable (merged axisClaims) && (all (Maybe.isNothing . Claim.selection) axisClaims || assignable axisClaims))
     (byAxis claims)
 
 -- Hall's condition over one axis's merged entries, asked as the matching it is
@@ -98,23 +104,23 @@ fillable capacity entries =
    in sum (fmap snd entries) <= sum (fmap capacity (Set.toList everything))
         && go Map.empty [(index, count) | (index, (_, count)) <- indexed]
 
--- The exact question for one axis holding a threshold claim: pick each of its
--- selections, a set of objects reaching the total, and ask Hall's condition of
+-- The exact question for one axis holding a claim with a selection: pick each
+-- of its selections, a group of objects it admits, and ask Hall's condition of
 -- the counted claims over what the selections leave.
 --
--- Over CLASSES of objects rather than the objects: two objects with the same
--- amount for every threshold and in the same counted pools are interchangeable
+-- Over CLASSES of objects rather than the objects: two objects alike to every
+-- selection here (`Feature`) and in the same counted pools are interchangeable
 -- to every claim here, so a selection is a number per class. Only MINIMAL
--- selections are tried -- dropping any member falls short -- since a selection
--- holding more leaves the other claims less. One claim's selections are taken
--- in non-increasing order, its repeats being interchangeable too.
+-- selections are tried -- dropping any member no longer serves -- since a
+-- selection holding more leaves the other claims less. One claim's selections
+-- are taken in non-increasing order, its repeats being interchangeable too.
 --
 -- A counted claim meeting no other pool is left to `countable`, which has
 -- already asked it, for that function's reason.
 assignable :: [Claim] -> Bool
 assignable claims =
   let shared = objectsWantedTwice (fmap Claim.pool claims)
-      thresholds = [(threshold, Claim.pool claim, Claim.count claim) | claim <- claims, Just threshold <- [Claim.threshold claim]]
+      selective = [(selection, Claim.pool claim, Claim.count claim) | claim <- claims, Just selection <- [Claim.selection claim]]
       counted =
         zip [0 :: Int ..]
           . Map.toList
@@ -122,20 +128,24 @@ assignable claims =
             (+)
             [ (Claim.pool claim, Claim.count claim)
             | claim <- claims,
-              Maybe.isNothing (Claim.threshold claim),
+              Maybe.isNothing (Claim.selection claim),
               not (Set.disjoint (Claim.pool claim) shared)
             ]
-      amountFor oid (threshold, pool, _) =
-        if Set.member oid pool then Just (Maybe.fromMaybe 0 (Map.lookup oid (Threshold.amounts threshold))) else Nothing
-      keyOf oid = (fmap (amountFor oid) thresholds, Set.fromList [position | (position, (pool, _)) <- counted, Set.member oid pool])
-      objects = Set.unions (fmap (\(_, pool, _) -> pool) thresholds <> fmap (fst . snd) counted)
+      featureFor oid (selection, pool, _) = if Set.member oid pool then Just (featureOf oid selection) else Nothing
+      keyOf oid = (fmap (featureFor oid) selective, Set.fromList [position | (position, (pool, _)) <- counted, Set.member oid pool])
+      objects = Set.unions (fmap (\(_, pool, _) -> pool) selective <> fmap (fst . snd) counted)
       classes = zip [0 :: Int ..] (Map.toList (Map.fromListWith (+) [(keyOf oid, 1 :: Natural) | oid <- Set.toList objects]))
       initial = Map.fromList [(index, n) | (index, (_, n)) <- classes]
-      -- Each threshold's candidate classes, the largest amount first.
-      candidatesOf position =
-        List.sortOn
-          (\(_, amount) -> negate amount)
-          [(index, amount) | (index, ((amounts, _), _)) <- classes, (at, Just amount) <- zip [0 :: Int ..] amounts, at == position, amount > 0]
+      -- Each class a selection could draw on, with its feature there and how
+      -- many of it remain.
+      candidatesOf position remaining =
+        [ (index, feature, held)
+        | (index, ((features, _), _)) <- classes,
+          (at, Just feature) <- zip [0 :: Int ..] features,
+          at == position,
+          let held = Map.findWithDefault 0 index remaining,
+          held > 0
+        ]
       countedFits remaining =
         fillable
           (\index -> Map.findWithDefault 0 index remaining)
@@ -143,11 +153,59 @@ assignable claims =
       go owed bound remaining = case owed of
         [] -> countedFits remaining
         (_, _, 0) : rest -> go rest Nothing remaining
-        (position, total, k) : rest ->
+        (position, selection, k) : rest ->
           any
-            (\selection -> go ((position, total, k - 1) : rest) (Just selection) (Map.unionWith (-) remaining (Map.fromList selection)))
-            (filter (\selection -> maybe True (selection <=) bound) (reaching total [(index, amount, Map.findWithDefault 0 index remaining) | (index, amount) <- candidatesOf position]))
-   in go [(position, Threshold.total threshold, n) | (position, (threshold, _, n)) <- zip [0 ..] thresholds] Nothing initial
+            (\chosen -> go ((position, selection, k - 1) : rest) (Just chosen) (Map.unionWith (-) remaining (Map.fromList chosen)))
+            (filter (\chosen -> maybe True (chosen <=) bound) (selections selection (candidatesOf position remaining)))
+   in go [(position, selection, n) | (position, (selection, _, n)) <- zip [0 ..] selective] Nothing initial
+
+-- What one object is to one selection: what it adds towards a total, or the
+-- values it holds.
+data Feature
+  = Amount Integer
+  | Apart (Set.Set (DifferentIn.DifferentIn, DifferingValue.DifferingValue))
+  | Sharing (Set.Set Subtype.Subtype)
+  deriving (Eq, Ord)
+
+-- One pool object's feature to this selection.
+featureOf :: ObjectId -> Selection.Selection -> Feature
+featureOf oid selection = case selection of
+  Selection.Reaching threshold -> Amount (Map.findWithDefault 0 oid (Threshold.amounts threshold))
+  Selection.KeptApart _ values -> Apart (Map.findWithDefault Set.empty oid values)
+  Selection.SharingOne _ types -> Sharing (Map.findWithDefault Set.empty oid types)
+
+-- Every minimal selection out of these classes, each an index, its feature and
+-- how many it holds, as a number per class.
+selections :: Selection.Selection -> [(Int, Feature, Natural)] -> [[(Int, Natural)]]
+selections selection candidates = case selection of
+  Selection.Reaching threshold ->
+    reaching (Threshold.total threshold) (List.sortOn (\(_, amount, _) -> negate amount) [(index, amount, held) | (index, Amount amount, held) <- candidates, amount > 0])
+  Selection.KeptApart n _ -> apart n [(index, values, held) | (index, Apart values, held) <- candidates]
+  -- One type at a time; two types can admit the same group, counted once.
+  Selection.SharingOne n _ ->
+    let typed = [(index, types, held) | (index, Sharing types, held) <- candidates]
+     in Set.toList (Set.fromList [chosen | subtype <- Set.toList (Set.unions [types | (_, types, _) <- typed]), chosen <- filling n [(index, held) | (index, types, held) <- typed, Set.member subtype types]])
+
+-- Every way to take `need` objects out of these classes, no two sharing a
+-- value (CR 201.2b). A class holding a value gives at most one, since its
+-- members share it; a class holding none, any number.
+apart :: (Ord v) => Natural -> [(Int, Set.Set v, Natural)] -> [[(Int, Natural)]]
+apart need candidates
+  | need == 0 = [[]]
+  | otherwise = case candidates of
+      [] -> []
+      (index, values, held) : rest ->
+        let most = min need (if Set.null values then held else min held 1)
+            compatible = filter (\(_, others, _) -> Set.disjoint values others) rest
+         in [(index, k) : more | k <- reverse [1 .. most], more <- apart (need - k) compatible] <> apart need rest
+
+-- Every way to take `need` objects out of these classes.
+filling :: Natural -> [(Int, Natural)] -> [[(Int, Natural)]]
+filling need candidates
+  | need == 0 = [[]]
+  | otherwise = case candidates of
+      [] -> []
+      (index, held) : rest -> [(index, k) : more | k <- reverse [1 .. min held need], more <- filling (need - k) rest] <> filling need rest
 
 -- Every MINIMAL way to reach `need` out of these classes, each an index, its
 -- amount and how many it holds, the largest amount first: as a number per
@@ -239,8 +297,8 @@ contends marked = any (\claim -> any (\oid -> Set.member (Claim.axis claim, oid)
 -- time, so the answer is the largest n for which `countable` holds of every
 -- axis's entries taken n times over -- and 1 when nothing is claimed at all,
 -- since a claimless payment is limited by something this module cannot see. A
--- threshold claim is counted at its fewest (`objectsOf`), which OVERSTATES its
--- repeats; Parun.Engine.Cost.uncountedCeiling caps them.
+-- claim with a selection is counted at its fewest (`objectsOf`), which
+-- OVERSTATES its repeats; Parun.Engine.Cost.uncountedCeiling caps them.
 repeats :: [Claim] -> Natural
 repeats claims =
   let axes = filter (any ((> 0) . snd)) (fmap merged (byAxis claims))
@@ -256,19 +314,21 @@ repeats claims =
 -- The same claims made `n` times over, which is what one source activated `n`
 -- times contends for. Exact rather than an approximation: `merged` adds the
 -- counts of claims sharing a pool, so n copies of a claim and one claim of n
--- times the count are the same question, and `assignable` takes a threshold
+-- times the count are the same question, and `assignable` takes a selective
 -- claim's count as that many selections.
 scale :: Natural -> [Claim] -> [Claim]
 scale n = fmap (\claim -> claim {Claim.count = n * Claim.count claim})
 
--- How many objects a claim takes at the least: its count, or for a threshold
--- claim that many selections of the fewest objects reaching its total.
+-- How many objects a claim takes at the least: its count, or with a selection
+-- that many selections of the fewest objects one can hold.
 objectsOf :: Claim -> Natural
-objectsOf claim = case Claim.threshold claim of
+objectsOf claim = case Claim.selection claim of
   Nothing -> Claim.count claim
-  Just threshold ->
+  Just (Selection.Reaching threshold) ->
     Claim.count claim
       * max 1 (fewestReaching (Threshold.total threshold) (fmap (\oid -> Map.findWithDefault 0 oid (Threshold.amounts threshold)) (Set.toList (Claim.pool claim))))
+  Just (Selection.KeptApart n _) -> Claim.count claim * n
+  Just (Selection.SharingOne n _) -> Claim.count claim * n
 
 -- The fewest of these amounts reaching `threshold` together: the largest first,
 -- until they do. Every amount, where they never do.
@@ -280,6 +340,34 @@ fewestReaching threshold amounts =
           | reached >= threshold -> 0
           | otherwise -> 1 + go (reached + amount) rest
    in go 0 (List.sortBy (flip compare) (filter (> 0) amounts))
+
+-- A claim's threshold, where its selection is one.
+thresholdOf :: Claim -> Maybe Threshold.Threshold
+thresholdOf claim = case Claim.selection claim of
+  Just (Selection.Reaching threshold) -> Just threshold
+  _ -> Nothing
+
+-- Whether a claim's selection reads its objects' values (CR 201.2b, 205.3m)
+-- rather than an amount.
+readsValues :: Claim -> Bool
+readsValues claim = case Claim.selection claim of
+  Just (Selection.KeptApart _ _) -> True
+  Just (Selection.SharingOne _ _) -> True
+  Just (Selection.Reaching _) -> False
+  Nothing -> False
+
+-- The claim with one object written out of its pool and its selection.
+without :: ObjectId -> Claim -> Claim
+without oid claim =
+  claim
+    { Claim.pool = Set.delete oid (Claim.pool claim),
+      Claim.selection = fmap dropping (Claim.selection claim)
+    }
+  where
+    dropping selection = case selection of
+      Selection.Reaching threshold -> Selection.Reaching threshold {Threshold.amounts = Map.delete oid (Threshold.amounts threshold)}
+      Selection.KeptApart n values -> Selection.KeptApart n (Map.delete oid values)
+      Selection.SharingOne n types -> Selection.SharingOne n (Map.delete oid types)
 
 -- The claims grouped by the axis they draw on.
 byAxis :: [Claim] -> [[Claim]]

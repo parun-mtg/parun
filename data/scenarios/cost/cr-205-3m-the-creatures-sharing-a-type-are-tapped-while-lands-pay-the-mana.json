@@ -1,0 +1,136 @@
+{
+  "description": "CR 205.3m the creatures sharing a type are tapped while lands pay the mana",
+  "board": {
+    "seats": [
+      {
+        "name": "alice",
+        "battlefield": [
+          {
+            "card": "Weight of Conscience",
+            "label": "weight",
+            "attached": "mammoth"
+          },
+          {
+            "card": "Suppression Field",
+            "label": "field"
+          },
+          {
+            "card": "Llanowar Elves",
+            "label": "elves",
+            "ready": true
+          },
+          {
+            "card": "Elvish Mystic",
+            "label": "mystic",
+            "ready": true
+          },
+          {
+            "card": "Grizzly Bears",
+            "label": "bears",
+            "ready": true
+          },
+          {
+            "card": "Forest",
+            "label": "forest-a"
+          },
+          {
+            "card": "Forest",
+            "label": "forest-b"
+          }
+        ]
+      },
+      {
+        "name": "bob",
+        "battlefield": [
+          {
+            "card": "War Mammoth",
+            "label": "mammoth"
+          }
+        ]
+      }
+    ],
+    "active": "alice",
+    "step": "PrecombatMain"
+  },
+  "timeline": [
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "check": {
+        "View": {
+          "of": "Offered",
+          "player": "alice",
+          "is": [
+            "Pass",
+            "Activate $weight",
+            "ActivateManaAbility $elves",
+            "ActivateManaAbility $mystic",
+            "ActivateManaAbility $forest-a",
+            "ActivateManaAbility $forest-b"
+          ]
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "do": {
+        "Answer": {
+          "prompt": "ChooseTaps",
+          "with": [
+            "$elves",
+            "$mystic"
+          ]
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "do": {
+        "Activate": {
+          "object": "$weight",
+          "ability": 0,
+          "mana": [
+            "$forest-a",
+            "$forest-b",
+            null
+          ]
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "do": "Pass"
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "check": {
+        "Count": {
+          "player": "bob",
+          "zone": "Exile",
+          "card": "War Mammoth",
+          "count": 1
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "check": {
+        "Tapped": {
+          "object": "$bears",
+          "tapped": false
+        }
+      }
+    }
+  ]
+}

@@ -1,0 +1,112 @@
+{
+  "description": "Transmutation Font cannot sacrifice the token that pays its mana",
+  "note": "Black Lotus is the only third name, and {3} needs its mana beside the two Wastes (CR 118.3, 601.2h); a third Wastes is the control.",
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "name": "alice",
+        "battlefield": [
+          {
+            "card": "Transmutation Font",
+            "label": "font"
+          },
+          {
+            "card": "Ornithopter",
+            "label": "orn-a",
+            "token": true
+          },
+          {
+            "card": "Ornithopter",
+            "label": "orn-b",
+            "token": true
+          },
+          {
+            "card": "Memnite",
+            "label": "mem",
+            "token": true
+          },
+          {
+            "card": "Black Lotus",
+            "label": "lotus",
+            "token": true
+          },
+          {
+            "card": "Wastes",
+            "label": "wastes-a"
+          },
+          {
+            "card": "Wastes",
+            "label": "wastes-b"
+          }
+        ],
+        "library": [
+          {
+            "card": "Sol Ring",
+            "label": "ring"
+          },
+          {
+            "card": "Island",
+            "label": "isl"
+          }
+        ]
+      },
+      {
+        "name": "bob",
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ]
+      }
+    ],
+    "step": "PrecombatMain"
+  },
+  "timeline": [
+    {
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1,
+      "check": {
+        "View": {
+          "of": "Offered",
+          "player": "alice",
+          "is": [
+            "Pass",
+            "Activate $font",
+            "ActivateManaAbility $lotus",
+            "ActivateManaAbility $wastes-a",
+            "ActivateManaAbility $wastes-b"
+          ]
+        }
+      }
+    }
+  ]
+}

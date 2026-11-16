@@ -1,0 +1,211 @@
+{
+  "description": "Transmutation Font sacrifices the token that would pay its mana when lands pay it",
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "name": "alice",
+        "battlefield": [
+          {
+            "card": "Transmutation Font",
+            "label": "font"
+          },
+          {
+            "card": "Ornithopter",
+            "label": "orn-a",
+            "token": true
+          },
+          {
+            "card": "Ornithopter",
+            "label": "orn-b",
+            "token": true
+          },
+          {
+            "card": "Memnite",
+            "label": "mem",
+            "token": true
+          },
+          {
+            "card": "Black Lotus",
+            "label": "lotus",
+            "token": true
+          },
+          {
+            "card": "Wastes",
+            "label": "wastes-a"
+          },
+          {
+            "card": "Wastes",
+            "label": "wastes-b"
+          },
+          {
+            "card": "Wastes",
+            "label": "wastes-c"
+          }
+        ],
+        "library": [
+          {
+            "card": "Sol Ring",
+            "label": "ring"
+          },
+          {
+            "card": "Island",
+            "label": "isl"
+          }
+        ]
+      },
+      {
+        "name": "bob",
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ]
+      }
+    ],
+    "step": "PrecombatMain"
+  },
+  "timeline": [
+    {
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1,
+      "check": {
+        "View": {
+          "of": "Offered",
+          "player": "alice",
+          "is": [
+            "Pass",
+            "Activate $font 0",
+            "Activate $font 1",
+            "ActivateManaAbility $lotus",
+            "ActivateManaAbility $wastes-a",
+            "ActivateManaAbility $wastes-b",
+            "ActivateManaAbility $wastes-c"
+          ]
+        }
+      }
+    },
+    {
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1,
+      "do": {
+        "Answer": {
+          "prompt": "ChooseSacrifices",
+          "with": [
+            "$orn-a",
+            "$mem",
+            "$lotus"
+          ]
+        }
+      }
+    },
+    {
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1,
+      "do": {
+        "Activate": {
+          "ability": 1,
+          "costOrder": [
+            0,
+            1
+          ],
+          "object": "$font",
+          "mana": [
+            "$wastes-a",
+            "$wastes-b",
+            "$wastes-c",
+            null
+          ]
+        }
+      }
+    },
+    {
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1,
+      "do": "Pass"
+    },
+    {
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1,
+      "do": {
+        "Answer": {
+          "prompt": "Search",
+          "with": [
+            "$ring"
+          ]
+        }
+      }
+    },
+    {
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1,
+      "do": {
+        "Answer": {
+          "prompt": "Shuffle",
+          "with": [
+            "$isl"
+          ]
+        }
+      }
+    },
+    {
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1,
+      "check": {
+        "Count": {
+          "card": "Sol Ring",
+          "count": 1,
+          "player": "alice",
+          "zone": "Battlefield"
+        }
+      }
+    },
+    {
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1,
+      "check": {
+        "Count": {
+          "card": "Black Lotus",
+          "count": 0,
+          "player": "alice",
+          "zone": "Battlefield"
+        }
+      }
+    }
+  ]
+}

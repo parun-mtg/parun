@@ -2955,7 +2955,7 @@ pluralBoardSpec s registry = Spec.describe s "plural sources" $ do
 -- needs, so only an augmenting path finds the assignment; see #6413.
 claimMatchingSpec :: (Monad m, Monad n) => Spec.Spec m n -> n ()
 claimMatchingSpec s = Spec.describe s "claim matching" $ do
-  let claimOf count oids = Claim.Type.MkClaim {Claim.Type.axis = ClaimAxis.Tapping, Claim.Type.pool = Set.fromList (fmap ObjectId.MkObjectId oids), Claim.Type.count = count, Claim.Type.threshold = Nothing}
+  let claimOf count oids = Claim.Type.MkClaim {Claim.Type.axis = ClaimAxis.Tapping, Claim.Type.pool = Set.fromList (fmap ObjectId.MkObjectId oids), Claim.Type.count = count, Claim.Type.selection = Nothing}
   Spec.it s "CR 118.3 a claim gives back the object a narrower one needs" $ do
     Spec.assertBool s (Claim.satisfiable [claimOf 1 [1, 2], claimOf 1 [1, 3], claimOf 1 [3]]) "the three take 2, 1 and 3"
     Spec.assertBool s (not (Claim.satisfiable [claimOf 1 [1, 2], claimOf 1 [1, 3], claimOf 2 [3]])) "but three objects cannot meet four"
@@ -2983,7 +2983,7 @@ demandsNoManaSpec s registry = Spec.describe s "a cost demanding no mana" $ do
         gs = Foldable.foldl' (\board printing -> snd (S.addPermanent printing S.alice board)) g1 ([ogre, ogre, drum, altar, star] <> replicate 3 elves)
         pcs = Projection.projectAll gs
         sources = Mana.supplySourcesGiven Cost.manaActivations (Projection.controlGrants gs) pcs S.alice gs
-        tapping = Claim.Type.MkClaim {Claim.Type.axis = ClaimAxis.Tapping, Claim.Type.pool = Set.singleton elfId, Claim.Type.count = 1, Claim.Type.threshold = Nothing}
+        tapping = Claim.Type.MkClaim {Claim.Type.axis = ClaimAxis.Tapping, Claim.Type.pool = Set.singleton elfId, Claim.Type.count = 1, Claim.Type.selection = Nothing}
         ask life energy claims symbols =
           let cost = ManaCost.MkManaCost symbols
            in ( Mana.canPayCommittingGiven PaymentSubject.ForNeither ManaSpending.AsProduced sources pcs S.alice life energy claims cost gs,
@@ -3023,7 +3023,7 @@ plainSourcesSpec s registry = Spec.describe s "plain sources" $ do
         (ogreId, gs) = S.addPermanent ogre S.alice g6
         pcs = Projection.projectAll gs
         sources = Mana.supplySourcesGiven Cost.manaActivations (Projection.controlGrants gs) pcs S.alice gs
-        tapping oid = Claim.Type.MkClaim {Claim.Type.axis = ClaimAxis.Tapping, Claim.Type.pool = Set.singleton oid, Claim.Type.count = 1, Claim.Type.threshold = Nothing}
+        tapping oid = Claim.Type.MkClaim {Claim.Type.axis = ClaimAxis.Tapping, Claim.Type.pool = Set.singleton oid, Claim.Type.count = 1, Claim.Type.selection = Nothing}
         ask life energy claims symbols =
           let cost = ManaCost.MkManaCost symbols
            in ( Mana.plainPayable PaymentSubject.ForNeither ManaSpending.AsProduced sources S.alice life energy claims cost gs,
