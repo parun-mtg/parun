@@ -939,6 +939,13 @@ spec s = Spec.describe s "Parun.Codec.Quantity" $ do
       Quantity.codec
       Quantity.StationMeasure
       " {\"type\":\"StationMeasure\"} "
+  -- CR 601.2i: the wrapped quantity whole, recursing on the codec itself.
+  Spec.it s "AsCast wraps a quantity" $
+    Common.assertCodec
+      s
+      Quantity.codec
+      (Quantity.AsCast (Quantity.Literal 3))
+      " {\"type\":\"AsCast\",\"value\":{\"type\":\"Literal\",\"value\":3}} "
   -- A slot and a payload on the wire. Nested once, since a recursive decoder is
   -- where a payload gets lost -- and the inner arm is one whose OWN answer the
   -- slot moves, which is the whole point of the constructor.

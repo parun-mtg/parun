@@ -5294,6 +5294,8 @@ quantityReads q = case q of
   Quantity.Type.PlaneswalkedTo _ -> Set.empty
   Quantity.Type.EnteredFrom _ -> Set.empty
   Quantity.Type.WasCastFrom _ -> Set.empty
+  -- CR 601.2i: frozen as the spell became cast, so no projection changes it.
+  Quantity.Type.AsCast _ -> Set.empty
   Quantity.Type.BlockersBeyond _ -> Set.empty
 
 -- What an Aggregation reads off each member the Filter kept. Distinct card types

@@ -258,6 +258,7 @@ codec =
       -- reference of its own; Parun.Codec.CastFrom defaults it to CR 109.5's
       -- "you", so a card writing this arm states the zone alone unless its
       -- clause is agentless.
+      Arm.payload "AsCast" codec Quantity.AsCast (\x -> case x of Quantity.AsCast y -> Just y; _ -> Nothing),
       Arm.payload "WasCastFrom" CastFrom.codec Quantity.WasCastFrom (\x -> case x of Quantity.WasCastFrom y -> Just y; _ -> Nothing),
       -- CR 509.1g's declaration read against the object the quantity is aimed at,
       -- so only the number of blockers skipped is on the wire.
@@ -392,3 +393,4 @@ tagOf x = case x of
   Quantity.AgainstExiledPile {} -> "AgainstExiledPile"
   Quantity.AgainstLastCardExiledWith {} -> "AgainstLastCardExiledWith"
   Quantity.StationMeasure {} -> "StationMeasure"
+  Quantity.AsCast {} -> "AsCast"

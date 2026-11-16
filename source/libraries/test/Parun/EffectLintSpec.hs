@@ -414,6 +414,7 @@ printedBoxQuantity quantity = case quantity of
   -- ENGINE-ONLY (Parun.Types.Quantity's own header): no printed box may
   -- contain it, which this lint is what enforces.
   Quantity.Type.StationMeasure -> False
+  Quantity.Type.AsCast {} -> False
   Quantity.Type.AgainstSlot {} -> False
   -- AgainstSlot's answer: CR 607.2a's linked pile is read off the board, which
   -- a printed box (CR 208.2) cannot name.
