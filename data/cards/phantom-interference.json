@@ -1,0 +1,147 @@
+{
+  "faces": [
+    {
+      "keywords": [
+        {
+          "type": "Spree"
+        }
+      ],
+      "manaCost": [
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "Blue"
+          }
+        }
+      ],
+      "modeCosts": {
+        "0": {
+          "mana": [
+            {
+              "type": "Generic",
+              "value": 3
+            }
+          ]
+        },
+        "1": {
+          "mana": [
+            {
+              "type": "Generic",
+              "value": 1
+            }
+          ]
+        }
+      },
+      "name": "Phantom Interference",
+      "oracleText": "Spree (Choose one or more additional costs.)\n+ {3} — Create a 2/2 white Spirit creature token with flying.\n+ {1} — Counter target spell unless its controller pays {2}.",
+      "spell": {
+        "modes": [
+          {
+            "clauses": [
+              {
+                "effects": [
+                  {
+                    "type": "Create",
+                    "value": {
+                      "card": {
+                        "faces": [
+                          {
+                            "colorIndicator": [
+                              "White"
+                            ],
+                            "keywords": [
+                              {
+                                "type": "Flying"
+                              }
+                            ],
+                            "name": "Spirit Token",
+                            "power": {
+                              "type": "Literal",
+                              "value": 2
+                            },
+                            "toughness": {
+                              "type": "Literal",
+                              "value": 2
+                            },
+                            "typeLine": {
+                              "subtypes": [
+                                "Spirit"
+                              ],
+                              "types": [
+                                "Creature"
+                              ]
+                            }
+                          }
+                        ]
+                      },
+                      "quantity": {
+                        "type": "Literal",
+                        "value": 1
+                      }
+                    }
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "clauses": [
+              {
+                "effects": [
+                  {
+                    "type": "Counter",
+                    "value": {
+                      "ref": {
+                        "type": "InSlot",
+                        "value": "spell"
+                      }
+                    }
+                  }
+                ],
+                "payGate": {
+                  "branch": "IfNotPaid",
+                  "cost": {
+                    "mana": [
+                      {
+                        "type": "Generic",
+                        "value": 2
+                      }
+                    ]
+                  },
+                  "payer": {
+                    "type": "HolderOfBound",
+                    "value": {
+                      "holder": "Controller",
+                      "hop": "Itself",
+                      "slot": "spell"
+                    }
+                  }
+                }
+              }
+            ],
+            "targetSlots": {
+              "spell": {
+                "pool": {
+                  "type": "Spells"
+                }
+              }
+            }
+          }
+        ],
+        "selection": {
+          "type": "ChooseBetween",
+          "value": {
+            "least": 1,
+            "most": 2
+          }
+        }
+      },
+      "typeLine": {
+        "types": [
+          "Instant"
+        ]
+      }
+    }
+  ]
+}
