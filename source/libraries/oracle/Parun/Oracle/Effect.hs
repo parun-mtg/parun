@@ -1192,8 +1192,8 @@ acted context word r = do
 -- or "it" for the card put into your hand (Diabolic Tutor, Rune-Scarred
 -- Demon) or onto the battlefield (Nature's Lore, Three Visits), "it" or "that card" for the card revealed (Summoner's Pact,
 -- Goblin Matron), and "that card", "the card" or "it" for the card put on
--- top (Sylvan Tutor, Worldly Tutor, Silver Deputy). Several descriptions searched for at once
--- (CR 701.23h) are listed, one card each, and "them" put into your hand or
+-- top (Sylvan Tutor, Worldly Tutor, Silver Deputy). Several descriptions
+-- searched for at once (CR 701.23h) are listed, one card each, and "them" put into your hand or
 -- onto the battlefield tapped: Gem of Becoming, Krosan Verge. Any other search
 -- is not spelled out here.
 searched :: Target.Context -> Search.Search -> [Predicate]
