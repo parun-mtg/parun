@@ -7,6 +7,7 @@ import qualified Parun.Codec.ClassLevel as ClassLevel
 import qualified Parun.Codec.CompanionCondition as CompanionCondition
 import qualified Parun.Codec.Cost as Cost
 import qualified Parun.Codec.Craft as Craft
+import qualified Parun.Codec.Crew as Crew
 import qualified Parun.Codec.Cycling as Cycling
 import qualified Parun.Codec.Devour as Devour
 import qualified Parun.Codec.Emerge as Emerge
@@ -198,7 +199,7 @@ codec =
       Arm.nullary "SpaceSculptor" Keyword.SpaceSculptor,
       Arm.payload "Escalate" (Cost.codec codec) Keyword.Escalate (\x -> case x of Keyword.Escalate y -> Just y; _ -> Nothing),
       Arm.nullary "Melee" Keyword.Melee,
-      Arm.payload "Crew" Common.natural Keyword.Crew (\x -> case x of Keyword.Crew y -> Just y; _ -> Nothing),
+      Arm.payload "Crew" Crew.codec Keyword.Crew (\x -> case x of Keyword.Crew y -> Just y; _ -> Nothing),
       Arm.payload "Saddle" Common.natural Keyword.Saddle (\x -> case x of Keyword.Saddle y -> Just y; _ -> Nothing),
       Arm.payload "Fabricate" Common.natural Keyword.Fabricate (\x -> case x of Keyword.Fabricate y -> Just y; _ -> Nothing),
       Arm.nullary "Partner" Keyword.Partner,

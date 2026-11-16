@@ -3,6 +3,7 @@ module Parun.Codec.KeywordSpec where
 import qualified Data.List.NonEmpty as NonEmpty
 import qualified Data.Set as Set
 import qualified Data.Text as Text
+import qualified Numeric.Natural as Natural
 import qualified Parun.Codec.Keyword as Keyword
 import qualified Parun.JsonCodec.Codec as Codec
 import qualified Parun.JsonCodec.Common as Common
@@ -15,6 +16,7 @@ import qualified Parun.Types.ClassLevel as ClassLevel
 import qualified Parun.Types.Color as Color
 import qualified Parun.Types.Cost as Cost
 import qualified Parun.Types.Craft as Craft
+import qualified Parun.Types.Crew as Crew
 import qualified Parun.Types.Cycling as Cycling
 import qualified Parun.Types.Devour as Devour
 import qualified Parun.Types.DevourCount as DevourCount
@@ -1324,9 +1326,9 @@ spec s = Spec.describe s "Parun.Codec.Keyword" $ do
     Common.assertCodec
       s
       Keyword.codec
-      (Keyword.Crew 6)
-      " {\"type\":\"Crew\",\"value\":6} "
-    Spec.assertBool s (Codec.encode Keyword.codec (Keyword.Crew 1) /= Codec.encode Keyword.codec (Keyword.Crew 6)) "crew 1 and crew 6 encode differently"
+      (Keyword.Crew (crew 6))
+      " {\"type\":\"Crew\",\"value\":{\"power\":6}} "
+    Spec.assertBool s (Codec.encode Keyword.codec (Keyword.Crew (crew 1)) /= Codec.encode Keyword.codec (Keyword.Crew (crew 6))) "crew 1 and crew 6 encode differently"
   -- CR 702.171a's N is crew's, one rule over, and is distinguishable for the
   -- same reason.
   Spec.it s "Saddle carries its N" $ do
@@ -1848,3 +1850,7 @@ assemblerFrame =
       Prototype.power = 2,
       Prototype.toughness = 2
     }
+
+-- | CR 702.122a's plain "Crew N", with no rider.
+crew :: Natural.Natural -> Crew.Crew
+crew n = Crew.MkCrew {Crew.power = n, Crew.timesEachTurn = Nothing}

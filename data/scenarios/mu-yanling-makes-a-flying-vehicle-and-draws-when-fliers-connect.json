@@ -172,7 +172,9 @@
           "count": 1,
           "keyword": {
             "type": "Crew",
-            "value": 1
+            "value": {
+              "power": 1
+            }
           },
           "object": "Vehicle Token"
         }

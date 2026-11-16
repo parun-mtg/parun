@@ -67,6 +67,7 @@ import qualified Parun.Types.CountersFromPermanents as CountersFromPermanents
 import qualified Parun.Types.CountersOnPayer as CountersOnPayer
 import qualified Parun.Types.CountersOnThis as CountersOnThis
 import qualified Parun.Types.Create as Create
+import qualified Parun.Types.Crew as Crew
 import qualified Parun.Types.DamageKind as DamageKind
 import qualified Parun.Types.DamagePart as DamagePart
 import qualified Parun.Types.DamageRecipient as DamageRecipient
@@ -256,6 +257,11 @@ spec s = Spec.describe s "Parun.Oracle" $ do
       s
       (Just (Text.pack "Equip\8212Sacrifice another nonland permanent. Activate only once each turn."))
       (Oracle.render (card Layout.Normal [[equip (Cost.MkCost (Just (ManaCost.MkManaCost [])) [CostComponent.Sacrifice (Sacrifice.MkSacrifice (ObjectCount.Exactly (CostAmount.Fixed 1)) another)])]]))
+
+  -- CR 602.5b: crew's rider, Luxurious Locomotive's, likewise.
+  Spec.it s "render prints a crew ability's once-each-turn rider" $ do
+    Spec.assertEq s (Just (Text.pack "Crew 1. Activate only once each turn.")) (Oracle.render (card Layout.Normal [[Keyword.Crew (Crew.MkCrew 1 (Just 1))]]))
+    Spec.assertEq s (Just (Text.pack "Crew 3")) (Oracle.render (card Layout.Normal [[Keyword.Crew (Crew.MkCrew 3 Nothing)]]))
 
   -- CR 100.2a: a card's own deck limit, named by the card itself.
   Spec.it s "render prints a deck limit" $ do

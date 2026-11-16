@@ -300,6 +300,7 @@ import qualified Parun.Codec.CreateCopySpec
 import qualified Parun.Codec.CreateEmblemSpec
 import qualified Parun.Codec.CreateSpec
 import qualified Parun.Codec.CrewRoleSpec
+import qualified Parun.Codec.CrewSpec
 import qualified Parun.Codec.CrewingSpec
 import qualified Parun.Codec.CyclingSpec
 import qualified Parun.Codec.DamageDirectionSpec
@@ -1504,6 +1505,7 @@ spec s reference corpus = do
   Parun.Codec.EntryRidersSpec.spec s
   Parun.Codec.EntryRSpec.spec s
   Parun.Codec.EntrySpec.spec s
+  Parun.Codec.CrewSpec.spec s
   Parun.Codec.EquipSpec.spec s
   Parun.Codec.EventGroupSpec.spec s
   Parun.Codec.EventExpirySpec.spec s

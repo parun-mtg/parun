@@ -664,10 +664,12 @@ library codec
     Parun.Codec.CreateEmblem
     Parun.Codec.CreateEmblemSpec
     Parun.Codec.CreateSpec
+    Parun.Codec.Crew
     Parun.Codec.Crewing
     Parun.Codec.CrewingSpec
     Parun.Codec.CrewRole
     Parun.Codec.CrewRoleSpec
+    Parun.Codec.CrewSpec
     Parun.Codec.Cycling
     Parun.Codec.CyclingSpec
     Parun.Codec.DamageDirection
@@ -3086,6 +3088,7 @@ library types
     Parun.Types.Create
     Parun.Types.CreateCopy
     Parun.Types.CreateEmblem
+    Parun.Types.Crew
     Parun.Types.Crewing
     Parun.Types.CrewRole
     Parun.Types.Cycling

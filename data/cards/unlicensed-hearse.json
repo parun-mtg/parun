@@ -111,7 +111,9 @@
       "keywords": [
         {
           "type": "Crew",
-          "value": 2
+          "value": {
+            "power": 2
+          }
         }
       ],
       "manaCost": [
