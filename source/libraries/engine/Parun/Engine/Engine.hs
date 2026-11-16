@@ -352,6 +352,11 @@ untapAll actives = do
                   else untapped
             }
     Monad.forM_ survivors (State.modify' . Event.recordEvent . GameEvent.BecameUntapped)
+  -- CR 603.10's board just after the untap, filed while the game still stands
+  -- in the untap step: no priority comes until the upkeep (CR 502.4), whose
+  -- settle would otherwise file it, and a BecomesTapState's `while` reads the
+  -- step off it (The Ninth Doctor).
+  State.modify' Trigger.fileBoards
 
 -- One active player's half of `untapAll`: the permanents `pid` determines will
 -- untap, and the ones whose Object.doesNotUntapFor this step spends.

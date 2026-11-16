@@ -1382,15 +1382,22 @@ armMatches bindings board atEvent beforeEvent groupEvents gs bearer you cond eve
   -- rather than here: a
   -- permanent that entered tapped or untapped never transitioned, and rules
   -- 701.26a and 701.26b make a repeat tap or untap no event at all. So this arm
-  -- asks only whose transition it was. The batching is not asked here: firing
-  -- once for a OneOrMore batch is `batchScoped` plus eventTriggers' dedup.
+  -- asks only whose transition it was, and in what state. The batching is not
+  -- asked here: firing once for a OneOrMore batch is `batchScoped` plus
+  -- eventTriggers' dedup.
   TriggerCondition.BecomesTapState watched ->
     let watches oid = case BecomesTapState.actor watched of
           ActingPermanent.Self -> oid == bearer
           ActingPermanent.Matching f -> case Map.lookup oid board of
             Nothing -> False
             Just candidate -> Filter.matches bearerContext (Projection.sampledView board oid candidate gs) f
-     in case event of
+        -- The Ninth Doctor's "during your untap step", asked of the game the
+        -- transition left and never re-checked, as SpellCast's `while` is.
+        -- Engine.untapAll's events are filed in the untap step, so that game
+        -- stands in it though they are scanned in the upkeep (CR 502.4).
+        -- data/scenarios's the-ninth-doctor pair proves it.
+        holdsThen = maybe True (Condition.holds (Projection.viewWithLastKnownAnywhere atEvent) bearerContext atEvent bearer) (BecomesTapState.while watched)
+     in holdsThen && case event of
           -- CR 601.2h: a cause narrows the tap to TappedToPay's for that keyword
           -- (Agent Maria Hill), and a causeless condition reads only
           -- BecameTapped, which the same tap also wrote.

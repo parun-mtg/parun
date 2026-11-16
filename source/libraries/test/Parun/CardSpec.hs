@@ -3819,7 +3819,7 @@ triggerConditionFilters triggerCondition = case triggerCondition of
   TriggerCondition.AttachedCreatureMentors -> []
   -- Thoughtleech's "an Island an opponent controls" and Deeproot Pilgrimage's
   -- "nontoken Merfolk you control" are card text, swept like Leaves'.
-  TriggerCondition.BecomesTapState watched -> actingFilters (BecomesTapState.actor watched)
+  TriggerCondition.BecomesTapState watched -> actingFilters (BecomesTapState.actor watched) <> foldMap (frame Unframed . conditionFilters) (BecomesTapState.while watched)
   -- Skull Skaab's two, both card text.
   TriggerCondition.Exploits (ExploitTrigger.MkExploitTrigger exploiter exploited) -> actingFilters exploiter <> unframed [exploited]
   -- CR 702.122e's carries none either: it names "this Vehicle" and nothing about

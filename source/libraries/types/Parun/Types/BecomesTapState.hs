@@ -2,6 +2,7 @@ module Parun.Types.BecomesTapState where
 
 import qualified Parun.Types.ActingPermanent as ActingPermanent
 import qualified Parun.Types.Batching as Batching
+import qualified Parun.Types.Condition as Condition
 import qualified Parun.Types.KeywordFamily as KeywordFamily
 import qualified Parun.Types.TapState as TapState
 
@@ -17,6 +18,10 @@ data BecomesTapState = MkBecomesTapState
     -- | CR 601.2h: Just the keyword whose cost the tap paid, Agent Maria Hill's
     -- "becomes tapped to pay a teamwork cost"; Nothing for any tap. Read only
     -- with TapState.Tapped, an untap paying no cost.
-    paying :: Maybe KeywordFamily.KeywordFamily
+    paying :: Maybe KeywordFamily.KeywordFamily,
+    -- | The Ninth Doctor's "DURING YOUR UNTAP STEP": a state asked of the game
+    -- the transition left (CR 603.2) and never re-checked, as
+    -- Parun.Types.SpellCast.while is. Nothing for a transition at any time.
+    while :: Maybe Condition.Condition
   }
   deriving (Eq, Ord, Show)
