@@ -11,6 +11,7 @@
         }
       ],
       "name": "Toxin Analysis",
+      "oracleText": "Target creature gains deathtouch and lifelink until end of turn. Investigate. (Create a Clue token. It's an artifact with \"{2}, Sacrifice this token: Draw a card.\")",
       "spell": {
         "modes": [
           {

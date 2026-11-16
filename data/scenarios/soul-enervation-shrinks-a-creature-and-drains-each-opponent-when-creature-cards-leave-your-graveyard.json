@@ -1,12 +1,8 @@
 {
-  "description": "CR 702.8a, 603.6a, 611.2a, 603.10a, 119.3: Soul Enervation, flashed in, gives target creature -4/-4 until end of turn, and drains each opponent 1 once whenever one or more creature cards leave its controller's graveyard",
-  "note": "Three seats at distinct life totals, so 'each opponent' and 'you' are told apart. Cast in alice's upkeep (flash), its trigger shrinks bob's Colossal Dreadmaw to 2/2 for the turn only, carol's Grizzly Bears a second candidate. Tormod's Crypt exiling bob's graveyard (a creature card, not alice's) and Reclaim taking alice's Forest (not a creature card) drain nothing in her main phase; a second Crypt exiling alice's Grizzly Bears and Savannah Lions together drains once.",
   "board": {
     "active": "alice",
-    "step": "Upkeep",
     "seats": [
       {
-        "name": "alice",
         "battlefield": [
           {
             "card": "Tormod's Crypt",
@@ -37,16 +33,6 @@
             "label": "f1"
           }
         ],
-        "hand": [
-          {
-            "card": "Soul Enervation",
-            "label": "enervation"
-          },
-          {
-            "card": "Reclaim",
-            "label": "reclaim"
-          }
-        ],
         "graveyard": [
           {
             "card": "Forest",
@@ -59,6 +45,16 @@
           {
             "card": "Savannah Lions",
             "label": "glions"
+          }
+        ],
+        "hand": [
+          {
+            "card": "Soul Enervation",
+            "label": "enervation"
+          },
+          {
+            "card": "Reclaim",
+            "label": "reclaim"
           }
         ],
         "library": [
@@ -80,11 +76,10 @@
           {
             "card": "Wastes"
           }
-        ]
+        ],
+        "name": "alice"
       },
       {
-        "name": "bob",
-        "life": 18,
         "battlefield": [
           {
             "card": "Colossal Dreadmaw",
@@ -116,11 +111,11 @@
           {
             "card": "Wastes"
           }
-        ]
+        ],
+        "life": 18,
+        "name": "bob"
       },
       {
-        "name": "carol",
-        "life": 16,
         "battlefield": [
           {
             "card": "Grizzly Bears",
@@ -146,15 +141,17 @@
           {
             "card": "Wastes"
           }
-        ]
+        ],
+        "life": 16,
+        "name": "carol"
       }
-    ]
+    ],
+    "step": "Upkeep"
   },
+  "description": "CR 702.8a, 603.6a, 611.2a, 603.10a, 119.3: Soul Enervation, flashed in, gives target creature -4/-4 until end of turn, and drains each opponent 1 once whenever one or more creature cards leave its controller's graveyard",
+  "note": "Three seats at distinct life totals, so 'each opponent' and 'you' are told apart. Cast in alice's upkeep (flash), its trigger shrinks bob's Colossal Dreadmaw to 2/2 for the turn only, carol's Grizzly Bears a second candidate. Tormod's Crypt exiling bob's graveyard (a creature card, not alice's) and Reclaim taking alice's Forest (not a creature card) drain nothing in her main phase; a second Crypt exiling alice's Grizzly Bears and Savannah Lions together drains once.",
   "timeline": [
     {
-      "turn": 1,
-      "step": "PrecombatMain",
-      "player": "alice",
       "do": {
         "Activate": {
           "object": "$crypt1",
@@ -162,164 +159,164 @@
             "$bob"
           ]
         }
-      }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PrecombatMain",
+      "do": "Pass",
       "player": "alice",
-      "do": "Pass"
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PrecombatMain",
-      "player": "alice",
       "check": {
         "Count": {
-          "player": "bob",
-          "zone": "Exile",
           "card": "Hill Giant",
-          "count": 1
+          "count": 1,
+          "player": "bob",
+          "zone": "Exile"
         }
-      }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PrecombatMain",
-      "player": "alice",
       "check": {
         "View": {
-          "of": "Stack",
-          "is": []
+          "is": [],
+          "of": "Stack"
         }
-      }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PrecombatMain",
-      "player": "alice",
       "do": {
         "Cast": {
+          "mana": [
+            "$f1"
+          ],
           "object": "$reclaim",
           "targets": [
             "$gforest"
-          ],
-          "mana": [
-            "$f1"
           ]
         }
-      }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PrecombatMain",
+      "do": "Pass",
       "player": "alice",
-      "do": "Pass"
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PrecombatMain",
-      "player": "alice",
       "check": {
         "Count": {
-          "player": "alice",
-          "zone": "Library",
           "card": "Forest",
-          "count": 1
+          "count": 1,
+          "player": "alice",
+          "zone": "Library"
         }
-      }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PrecombatMain",
-      "player": "alice",
       "check": {
         "View": {
-          "of": "Stack",
-          "is": []
+          "is": [],
+          "of": "Stack"
         }
-      }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PrecombatMain",
-      "player": "alice",
       "check": {
         "Life": {
-          "player": "bob",
-          "life": 18
+          "life": 18,
+          "player": "bob"
         }
-      }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "Upkeep",
-      "player": "alice",
       "do": {
         "Cast": {
-          "object": "$enervation",
           "mana": [
             "$s1",
             "$s2",
             "$s3",
             "$s4",
             null
-          ]
+          ],
+          "object": "$enervation"
         }
-      }
+      },
+      "player": "alice",
+      "step": "Upkeep",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "Upkeep",
+      "do": "Pass",
       "player": "alice",
-      "do": "Pass"
+      "step": "Upkeep",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "Upkeep",
-      "player": "alice",
       "do": {
         "ChooseTargets": {
           "target": [
             "$dreadmaw"
           ]
         }
-      }
+      },
+      "player": "alice",
+      "step": "Upkeep",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "Upkeep",
+      "do": "Pass",
       "player": "alice",
-      "do": "Pass"
+      "step": "Upkeep",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "Upkeep",
-      "player": "alice",
       "check": {
         "PowerToughness": {
           "object": "$dreadmaw",
           "power": 2,
           "toughness": 2
         }
-      }
+      },
+      "player": "alice",
+      "step": "Upkeep",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "Upkeep",
-      "player": "alice",
       "check": {
         "PowerToughness": {
           "object": "$cbears",
           "power": 2,
           "toughness": 2
         }
-      }
+      },
+      "player": "alice",
+      "step": "Upkeep",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "BeginningOfCombat",
-      "player": "alice",
       "do": {
         "Activate": {
           "object": "$crypt2",
@@ -327,88 +324,91 @@
             "$alice"
           ]
         }
-      }
+      },
+      "player": "alice",
+      "step": "BeginningOfCombat",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "BeginningOfCombat",
+      "do": "Pass",
       "player": "alice",
-      "do": "Pass"
+      "step": "BeginningOfCombat",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "BeginningOfCombat",
-      "player": "alice",
       "check": {
         "View": {
-          "of": "Stack",
           "is": [
             "trigger of Soul Enervation"
-          ]
+          ],
+          "of": "Stack"
         }
-      }
+      },
+      "player": "alice",
+      "step": "BeginningOfCombat",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "BeginningOfCombat",
+      "do": "Pass",
       "player": "alice",
-      "do": "Pass"
+      "step": "BeginningOfCombat",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "BeginningOfCombat",
-      "player": "alice",
       "check": {
         "View": {
-          "of": "Stack",
-          "is": []
+          "is": [],
+          "of": "Stack"
         }
-      }
+      },
+      "player": "alice",
+      "step": "BeginningOfCombat",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "BeginningOfCombat",
-      "player": "alice",
       "check": {
         "Life": {
-          "player": "bob",
-          "life": 17
+          "life": 17,
+          "player": "bob"
         }
-      }
+      },
+      "player": "alice",
+      "step": "BeginningOfCombat",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "BeginningOfCombat",
-      "player": "alice",
       "check": {
         "Life": {
-          "player": "carol",
-          "life": 15
+          "life": 15,
+          "player": "carol"
         }
-      }
+      },
+      "player": "alice",
+      "step": "BeginningOfCombat",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "BeginningOfCombat",
-      "player": "alice",
       "check": {
         "Life": {
-          "player": "alice",
-          "life": 21
+          "life": 21,
+          "player": "alice"
         }
-      }
+      },
+      "player": "alice",
+      "step": "BeginningOfCombat",
+      "turn": 1
     },
     {
-      "turn": 2,
-      "step": "Upkeep",
-      "player": "bob",
       "check": {
         "PowerToughness": {
           "object": "$dreadmaw",
           "power": 6,
           "toughness": 6
         }
-      }
+      },
+      "player": "bob",
+      "step": "Upkeep",
+      "turn": 2
     }
   ]
 }

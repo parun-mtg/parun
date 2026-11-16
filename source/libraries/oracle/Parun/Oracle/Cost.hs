@@ -134,11 +134,13 @@ component self named c = case c of
   CostComponent.DiscardCards (DiscardCards.MkDiscardCards (ObjectCount.Exactly (CostAmount.Fixed n)) f CardSelection.ByChoice) -> do
     p <- Filter.phrase f named
     fmap (Text.pack "Discard " <>) (some (toInteger n) card (Filter.merge p (Filter.MkPhrase [] [card] [])))
-      <> [ Text.pack "Discard " <> Prose.article one <> Text.pack " " <> one <> Text.pack " or " <> other
+      <> [ Text.pack "Discard " <> Prose.article one <> Text.pack " " <> one <> Text.pack " or " <> others
          | n == 1,
            Filter.Type.Or [left, right] <- [f],
            one <- singular named card left,
-           other <- singular named card right
+           other <- singular named card right,
+           -- Free: an article on the second too (Steamcore Scholar).
+           others <- [other, Prose.article other <> Text.pack " " <> other]
          ]
   CostComponent.Blight (CostAmount.Fixed n) -> [Text.pack ("Blight " <> show n)]
   -- Each PlayerCounterKind constructor is named for its counter's word.

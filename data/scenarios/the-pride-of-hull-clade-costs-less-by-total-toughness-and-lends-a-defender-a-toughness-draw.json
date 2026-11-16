@@ -33,6 +33,7 @@
     {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": {"Cast": {"object": "$pride", "mana": ["$forest", "$p1", "$p2", "$p3", "$i1", "$i2", null]}}},
     {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass"},
     {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Count": {"player": "alice", "zone": "Battlefield", "card": "The Pride of Hull Clade", "count": 1}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"View": {"of": "ManaPool", "player": "alice", "is": []}}},
     {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Tapped": {"object": "$i3", "tapped": false}}},
     {"turn": 3, "step": "DeclareAttackers", "player": "alice", "refuse": {"Attack": ["The Pride of Hull Clade"]}},
     {"turn": 3, "step": "DeclareAttackers", "player": "alice", "do": {"Attack": []}},

@@ -1,47 +1,209 @@
 {
-  "description": "CR 107.3a, 120.10, 701.16a: Torch the Witness deals twice X damage to target creature and investigates only if some of it was excess",
-  "note": "X=2 deals 4 to a 3/3 (1 excess: a Clue); X=3 then deals 6 to a 6/6, exactly lethal (no excess: still one Clue). Once-X damage would leave the 3/3 alive, and a Clue on any damage would make two.",
   "board": {
     "active": "alice",
-    "step": "PrecombatMain",
     "seats": [
       {
-        "name": "alice",
         "battlefield": [
-          { "card": "Mountain", "label": "m1" },
-          { "card": "Mountain", "label": "m2" },
-          { "card": "Mountain", "label": "m3" },
-          { "card": "Mountain", "label": "m4" },
-          { "card": "Mountain", "label": "m5" },
-          { "card": "Mountain", "label": "m6" },
-          { "card": "Mountain", "label": "m7" }
+          {
+            "card": "Mountain",
+            "label": "m1"
+          },
+          {
+            "card": "Mountain",
+            "label": "m2"
+          },
+          {
+            "card": "Mountain",
+            "label": "m3"
+          },
+          {
+            "card": "Mountain",
+            "label": "m4"
+          },
+          {
+            "card": "Mountain",
+            "label": "m5"
+          },
+          {
+            "card": "Mountain",
+            "label": "m6"
+          },
+          {
+            "card": "Mountain",
+            "label": "m7"
+          }
         ],
         "hand": [
-          { "card": "Torch the Witness", "label": "torch1" },
-          { "card": "Torch the Witness", "label": "torch2" }
+          {
+            "card": "Torch the Witness",
+            "label": "torch1"
+          },
+          {
+            "card": "Torch the Witness",
+            "label": "torch2"
+          }
         ],
-        "library": [{ "card": "Island" }, { "card": "Island" }, { "card": "Island" }]
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ],
+        "name": "alice"
       },
       {
-        "name": "bob",
         "battlefield": [
-          { "card": "Hill Giant", "label": "giant" },
-          { "card": "Colossal Dreadmaw", "label": "maw" },
-          { "card": "Grizzly Bears", "label": "bears" }
+          {
+            "card": "Hill Giant",
+            "label": "giant"
+          },
+          {
+            "card": "Colossal Dreadmaw",
+            "label": "maw"
+          },
+          {
+            "card": "Grizzly Bears",
+            "label": "bears"
+          }
         ],
-        "library": [{ "card": "Island" }, { "card": "Island" }, { "card": "Island" }]
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ],
+        "name": "bob"
       }
-    ]
+    ],
+    "step": "PrecombatMain"
   },
+  "description": "CR 107.3a, 120.10, 701.16a: Torch the Witness deals twice X damage to target creature and investigates only if some of it was excess",
+  "note": "X=2 deals 4 to a 3/3 (1 excess: a Clue); X=3 then deals 6 to a 6/6, exactly lethal (no excess: still one Clue). Once-X damage would leave the 3/3 alive, and a Clue on any damage would make two.",
   "timeline": [
-    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": { "Cast": { "object": "$torch1", "x": 2, "targets": ["$giant"], "mana": ["$m1", "$m2", "$m3", null] } } },
-    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass" },
-    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "Count": { "player": "bob", "zone": "Graveyard", "card": "Hill Giant", "count": 1 } } },
-    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "Count": { "player": "alice", "zone": "Battlefield", "card": "Clue Token", "count": 1 } } },
-    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": { "Cast": { "object": "$torch2", "x": 3, "targets": ["$maw"], "mana": ["$m4", "$m5", "$m6", "$m7"] } } },
-    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass" },
-    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "Count": { "player": "bob", "zone": "Graveyard", "card": "Colossal Dreadmaw", "count": 1 } } },
-    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "Count": { "player": "alice", "zone": "Battlefield", "card": "Clue Token", "count": 1 } } },
-    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "Damage": { "object": "$bears", "damage": 0 } } }
+    {
+      "do": {
+        "Cast": {
+          "mana": [
+            "$m1",
+            "$m2",
+            "$m3",
+            null
+          ],
+          "object": "$torch1",
+          "targets": [
+            "$giant"
+          ],
+          "x": 2
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Hill Giant",
+          "count": 1,
+          "player": "bob",
+          "zone": "Graveyard"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Clue Token",
+          "count": 1,
+          "player": "alice",
+          "zone": "Battlefield"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Cast": {
+          "mana": [
+            "$m4",
+            "$m5",
+            "$m6",
+            "$m7"
+          ],
+          "object": "$torch2",
+          "targets": [
+            "$maw"
+          ],
+          "x": 3
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Colossal Dreadmaw",
+          "count": 1,
+          "player": "bob",
+          "zone": "Graveyard"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Clue Token",
+          "count": 1,
+          "player": "alice",
+          "zone": "Battlefield"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Damage": {
+          "damage": 0,
+          "object": "$bears"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    }
   ]
 }

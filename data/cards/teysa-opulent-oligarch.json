@@ -27,6 +27,7 @@
         }
       ],
       "name": "Teysa, Opulent Oligarch",
+      "oracleText": "Deathtouch\nAt the beginning of your end step, investigate for each opponent who lost life this turn.\nWhenever a Clue you control is put into a graveyard from the battlefield, create a 1/1 white and black Spirit creature token with flying. This ability triggers only once each turn.",
       "power": {
         "type": "Literal",
         "value": 2
@@ -236,8 +237,8 @@
       ],
       "typeLine": {
         "subtypes": [
-          "Human",
-          "Advisor"
+          "Advisor",
+          "Human"
         ],
         "supertypes": [
           "Legendary"

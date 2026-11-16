@@ -1,1 +1,138 @@
-{"faces":[{"keywords":[{"type":"Flash"}],"manaCost":[{"type":"Generic","value":3},{"type":"OfType","value":{"type":"Colored","value":"Black"}}],"name":"Soul Enervation","triggeredAbilities":[{"condition":{"type":"Enters","value":{}},"modal":{"modes":[{"clauses":[{"effects":[{"type":"ModifyTarget","value":{"duration":{"type":"UntilEndOfTurn"},"modification":{"type":"ModifyPowerToughness","value":{"power":{"type":"Literal","value":-4},"toughness":{"type":"Literal","value":-4}}},"ref":{"type":"InSlot","value":"target"}}}]}],"targetSlots":{"target":{"pool":{"type":"Creatures"}}}}]}},{"condition":{"type":"LeavesZone","value":{"batching":"OneOrMore","card":{"type":"Matching","value":{"type":"HasCardType","value":"Creature"}},"from":"Graveyard","whose":"You"}},"modal":{"modes":[{"clauses":[{"effects":[{"type":"LoseLife","value":{"player":{"type":"Relative","value":"Opponent"},"quantity":{"type":"Literal","value":1}}},{"type":"GainLife","value":{"player":{"type":"Relative","value":"You"},"quantity":{"type":"Literal","value":1}}}]}]}]}}],"typeLine":{"types":["Enchantment"]}}]}
+{
+  "faces": [
+    {
+      "keywords": [
+        {
+          "type": "Flash"
+        }
+      ],
+      "manaCost": [
+        {
+          "type": "Generic",
+          "value": 3
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "Black"
+          }
+        }
+      ],
+      "name": "Soul Enervation",
+      "oracleText": "Flash\nWhen this enchantment enters, target creature gets -4/-4 until end of turn.\nWhenever one or more creature cards leave your graveyard, each opponent loses 1 life and you gain 1 life.",
+      "triggeredAbilities": [
+        {
+          "condition": {
+            "type": "Enters",
+            "value": {}
+          },
+          "modal": {
+            "modes": [
+              {
+                "clauses": [
+                  {
+                    "effects": [
+                      {
+                        "type": "ModifyTarget",
+                        "value": {
+                          "duration": {
+                            "type": "UntilEndOfTurn"
+                          },
+                          "modification": {
+                            "type": "ModifyPowerToughness",
+                            "value": {
+                              "power": {
+                                "type": "Literal",
+                                "value": -4
+                              },
+                              "toughness": {
+                                "type": "Literal",
+                                "value": -4
+                              }
+                            }
+                          },
+                          "ref": {
+                            "type": "InSlot",
+                            "value": "target"
+                          }
+                        }
+                      }
+                    ]
+                  }
+                ],
+                "targetSlots": {
+                  "target": {
+                    "pool": {
+                      "type": "Creatures"
+                    }
+                  }
+                }
+              }
+            ]
+          }
+        },
+        {
+          "condition": {
+            "type": "LeavesZone",
+            "value": {
+              "batching": "OneOrMore",
+              "card": {
+                "type": "Matching",
+                "value": {
+                  "type": "HasCardType",
+                  "value": "Creature"
+                }
+              },
+              "from": "Graveyard",
+              "whose": "You"
+            }
+          },
+          "modal": {
+            "modes": [
+              {
+                "clauses": [
+                  {
+                    "effects": [
+                      {
+                        "type": "LoseLife",
+                        "value": {
+                          "player": {
+                            "type": "Relative",
+                            "value": "Opponent"
+                          },
+                          "quantity": {
+                            "type": "Literal",
+                            "value": 1
+                          }
+                        }
+                      },
+                      {
+                        "type": "GainLife",
+                        "value": {
+                          "player": {
+                            "type": "Relative",
+                            "value": "You"
+                          },
+                          "quantity": {
+                            "type": "Literal",
+                            "value": 1
+                          }
+                        }
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      ],
+      "typeLine": {
+        "types": [
+          "Enchantment"
+        ]
+      }
+    }
+  ]
+}

@@ -1,12 +1,8 @@
 {
-  "description": "CR 701.40b, 708.8, 603.2, 122.1a: Sumala Sentry puts a +1/+1 counter on a face-down permanent its controller controls as it is turned face up, and one on itself",
-  "note": "bob's manifested Grizzly Bears turned face up triggers nothing (not alice's); alice's manifested Hill Giant turned face up gets one counter and the Sentry one, so the Giant ends 4/4 and the Sentry 2/4, the counter on 'it' landing on the turned permanent and not on the Sentry twice.",
   "board": {
     "active": "alice",
-    "step": "PrecombatMain",
     "seats": [
       {
-        "name": "alice",
         "battlefield": [
           {
             "card": "Sumala Sentry",
@@ -53,10 +49,10 @@
           {
             "card": "Wastes"
           }
-        ]
+        ],
+        "name": "alice"
       },
       {
-        "name": "bob",
         "battlefield": [
           {
             "card": "Grizzly Bears",
@@ -91,15 +87,16 @@
           {
             "card": "Wastes"
           }
-        ]
+        ],
+        "name": "bob"
       }
-    ]
+    ],
+    "step": "PrecombatMain"
   },
+  "description": "CR 701.40b, 708.8, 603.2, 122.1a: Sumala Sentry puts a +1/+1 counter on a face-down permanent its controller controls as it is turned face up, and one on itself",
+  "note": "bob's manifested Grizzly Bears turned face up triggers nothing (not alice's); alice's manifested Hill Giant turned face up gets one counter and the Sentry one, so the Giant ends 4/4 and the Sentry 2/4, the counter on 'it' landing on the turned permanent and not on the Sentry twice.",
   "timeline": [
     {
-      "turn": 1,
-      "step": "BeginningOfCombat",
-      "player": "bob",
       "do": {
         "Take": {
           "action": "TurnFaceUp $bdown",
@@ -108,64 +105,64 @@
             "$bf2"
           ]
         }
-      }
+      },
+      "player": "bob",
+      "step": "BeginningOfCombat",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "BeginningOfCombat",
-      "player": "bob",
       "check": {
         "Names": {
-          "object": "$bdown",
           "names": [
             "Grizzly Bears"
-          ]
+          ],
+          "object": "$bdown"
         }
-      }
+      },
+      "player": "bob",
+      "step": "BeginningOfCombat",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "BeginningOfCombat",
-      "player": "bob",
       "check": {
         "View": {
-          "of": "Stack",
-          "is": []
+          "is": [],
+          "of": "Stack"
         }
-      }
+      },
+      "player": "bob",
+      "step": "BeginningOfCombat",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "BeginningOfCombat",
-      "player": "bob",
       "check": {
         "Counters": {
-          "object": "$bdown",
+          "count": 0,
           "kind": {
             "type": "PlusOnePlusOne"
           },
-          "count": 0
+          "object": "$bdown"
         }
-      }
+      },
+      "player": "bob",
+      "step": "BeginningOfCombat",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "BeginningOfCombat",
-      "player": "bob",
       "check": {
         "Counters": {
-          "object": "$sentry",
+          "count": 0,
           "kind": {
             "type": "PlusOnePlusOne"
           },
-          "count": 0
+          "object": "$sentry"
         }
-      }
+      },
+      "player": "bob",
+      "step": "BeginningOfCombat",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PostcombatMain",
-      "player": "alice",
       "do": {
         "Take": {
           "action": "TurnFaceUp $down",
@@ -176,78 +173,81 @@
             "$m4"
           ]
         }
-      }
+      },
+      "player": "alice",
+      "step": "PostcombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PostcombatMain",
-      "player": "alice",
       "check": {
         "View": {
-          "of": "Stack",
           "is": [
             "trigger of $sentry"
-          ]
+          ],
+          "of": "Stack"
         }
-      }
+      },
+      "player": "alice",
+      "step": "PostcombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PostcombatMain",
+      "do": "Pass",
       "player": "alice",
-      "do": "Pass"
+      "step": "PostcombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PostcombatMain",
-      "player": "alice",
       "check": {
         "Counters": {
-          "object": "$down",
+          "count": 1,
           "kind": {
             "type": "PlusOnePlusOne"
           },
-          "count": 1
+          "object": "$down"
         }
-      }
+      },
+      "player": "alice",
+      "step": "PostcombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PostcombatMain",
-      "player": "alice",
       "check": {
         "Counters": {
-          "object": "$sentry",
+          "count": 1,
           "kind": {
             "type": "PlusOnePlusOne"
           },
-          "count": 1
+          "object": "$sentry"
         }
-      }
+      },
+      "player": "alice",
+      "step": "PostcombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PostcombatMain",
-      "player": "alice",
       "check": {
         "PowerToughness": {
           "object": "$down",
           "power": 4,
           "toughness": 4
         }
-      }
+      },
+      "player": "alice",
+      "step": "PostcombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PostcombatMain",
-      "player": "alice",
       "check": {
         "PowerToughness": {
           "object": "$sentry",
           "power": 2,
           "toughness": 4
         }
-      }
+      },
+      "player": "alice",
+      "step": "PostcombatMain",
+      "turn": 1
     }
   ]
 }

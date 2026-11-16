@@ -1,12 +1,8 @@
 {
-  "description": "CR 603.2, 603.6a, 701.25a: Snarling Gorehound surveils 1 whenever another creature its controller controls with power 2 or less enters",
-  "note": "alice's Grizzly Bears (power 2, the boundary) and a second Gorehound each trigger the first Gorehound once, the entering Gorehound not triggering itself (one trigger on the stack); her Hill Giant (power 3) and bob's flashed-in Ambush Viper (power 2, but his) trigger nothing. Each surveil puts a differently named top card into the graveyard, so a count per name tells the surveils apart.",
   "board": {
     "active": "alice",
-    "step": "PrecombatMain",
     "seats": [
       {
-        "name": "alice",
         "battlefield": [
           {
             "card": "Snarling Gorehound",
@@ -86,10 +82,10 @@
           {
             "card": "Wastes"
           }
-        ]
+        ],
+        "name": "alice"
       },
       {
-        "name": "bob",
         "battlefield": [
           {
             "card": "Forest",
@@ -125,55 +121,56 @@
           {
             "card": "Wastes"
           }
-        ]
+        ],
+        "name": "bob"
       }
-    ]
+    ],
+    "step": "PrecombatMain"
   },
+  "description": "CR 603.2, 603.6a, 701.25a: Snarling Gorehound surveils 1 whenever another creature its controller controls with power 2 or less enters",
+  "note": "alice's Grizzly Bears (power 2, the boundary) and a second Gorehound each trigger the first Gorehound once, the entering Gorehound not triggering itself (one trigger on the stack); her Hill Giant (power 3) and bob's flashed-in Ambush Viper (power 2, but his) trigger nothing. Each surveil puts a differently named top card into the graveyard, so a count per name tells the surveils apart.",
   "timeline": [
     {
-      "turn": 1,
-      "step": "PrecombatMain",
-      "player": "alice",
       "do": {
         "Cast": {
-          "object": "$bears",
           "mana": [
             "$f1",
             "$s1",
             null
-          ]
+          ],
+          "object": "$bears"
         }
-      }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PrecombatMain",
+      "do": "Pass",
       "player": "alice",
-      "do": "Pass"
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PrecombatMain",
-      "player": "alice",
       "check": {
         "View": {
-          "of": "Stack",
           "is": [
             "trigger of $hound"
-          ]
+          ],
+          "of": "Stack"
         }
-      }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PrecombatMain",
+      "do": "Pass",
       "player": "alice",
-      "do": "Pass"
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PrecombatMain",
-      "player": "alice",
       "do": {
         "Answer": {
           "prompt": "ChooseSurveil",
@@ -184,64 +181,64 @@
             []
           ]
         }
-      }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PrecombatMain",
-      "player": "alice",
       "check": {
         "Count": {
-          "player": "alice",
-          "zone": "Graveyard",
           "card": "Island",
-          "count": 1
+          "count": 1,
+          "player": "alice",
+          "zone": "Graveyard"
         }
-      }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PrecombatMain",
-      "player": "alice",
       "do": {
         "Cast": {
-          "object": "$hound2",
           "mana": [
             "$s2",
             null
-          ]
+          ],
+          "object": "$hound2"
         }
-      }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PrecombatMain",
+      "do": "Pass",
       "player": "alice",
-      "do": "Pass"
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PrecombatMain",
-      "player": "alice",
       "check": {
         "View": {
-          "of": "Stack",
           "is": [
             "trigger of $hound"
-          ]
+          ],
+          "of": "Stack"
         }
-      }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PrecombatMain",
+      "do": "Pass",
       "player": "alice",
-      "do": "Pass"
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PrecombatMain",
-      "player": "alice",
       "do": {
         "Answer": {
           "prompt": "ChooseSurveil",
@@ -252,136 +249,139 @@
             []
           ]
         }
-      }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PrecombatMain",
-      "player": "alice",
       "check": {
         "Count": {
-          "player": "alice",
-          "zone": "Graveyard",
           "card": "Plains",
-          "count": 1
+          "count": 1,
+          "player": "alice",
+          "zone": "Graveyard"
         }
-      }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PostcombatMain",
-      "player": "alice",
       "do": {
         "Cast": {
-          "object": "$giant",
           "mana": [
             "$m1",
             "$m2",
             "$m3",
             "$m4"
-          ]
+          ],
+          "object": "$giant"
         }
-      }
+      },
+      "player": "alice",
+      "step": "PostcombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PostcombatMain",
+      "do": "Pass",
       "player": "alice",
-      "do": "Pass"
+      "step": "PostcombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PostcombatMain",
-      "player": "alice",
       "check": {
         "Count": {
-          "player": "alice",
-          "zone": "Battlefield",
           "card": "Hill Giant",
-          "count": 1
+          "count": 1,
+          "player": "alice",
+          "zone": "Battlefield"
         }
-      }
+      },
+      "player": "alice",
+      "step": "PostcombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PostcombatMain",
-      "player": "alice",
       "check": {
         "View": {
-          "of": "Stack",
-          "is": []
+          "is": [],
+          "of": "Stack"
         }
-      }
+      },
+      "player": "alice",
+      "step": "PostcombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "EndStep",
-      "player": "bob",
       "do": {
         "Cast": {
-          "object": "$viper",
           "mana": [
             "$bf1",
             "$bf2"
-          ]
+          ],
+          "object": "$viper"
         }
-      }
-    },
-    {
-      "turn": 1,
+      },
+      "player": "bob",
       "step": "EndStep",
-      "player": "bob",
-      "do": "Pass"
+      "turn": 1
     },
     {
-      "turn": 2,
-      "step": "Upkeep",
+      "do": "Pass",
       "player": "bob",
+      "step": "EndStep",
+      "turn": 1
+    },
+    {
       "check": {
         "Count": {
-          "player": "bob",
-          "zone": "Battlefield",
           "card": "Ambush Viper",
-          "count": 1
+          "count": 1,
+          "player": "bob",
+          "zone": "Battlefield"
         }
-      }
+      },
+      "player": "bob",
+      "step": "Upkeep",
+      "turn": 2
     },
     {
-      "turn": 2,
-      "step": "Upkeep",
-      "player": "bob",
       "check": {
         "View": {
-          "of": "Stack",
-          "is": []
+          "is": [],
+          "of": "Stack"
         }
-      }
+      },
+      "player": "bob",
+      "step": "Upkeep",
+      "turn": 2
     },
     {
-      "turn": 2,
-      "step": "Upkeep",
-      "player": "bob",
       "check": {
         "Count": {
-          "player": "alice",
-          "zone": "Graveyard",
           "card": "Island",
-          "count": 1
+          "count": 1,
+          "player": "alice",
+          "zone": "Graveyard"
         }
-      }
+      },
+      "player": "bob",
+      "step": "Upkeep",
+      "turn": 2
     },
     {
-      "turn": 2,
-      "step": "Upkeep",
-      "player": "bob",
       "check": {
         "Count": {
-          "player": "alice",
-          "zone": "Library",
           "card": "Island",
-          "count": 1
+          "count": 1,
+          "player": "alice",
+          "zone": "Library"
         }
-      }
+      },
+      "player": "bob",
+      "step": "Upkeep",
+      "turn": 2
     }
   ]
 }

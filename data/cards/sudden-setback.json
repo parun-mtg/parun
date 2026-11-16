@@ -22,6 +22,7 @@
         }
       ],
       "name": "Sudden Setback",
+      "oracleText": "The owner of target spell or nonland permanent puts it on their choice of the top or bottom of their library.",
       "spell": {
         "modes": [
           {
