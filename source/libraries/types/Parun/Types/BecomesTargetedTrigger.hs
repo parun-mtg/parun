@@ -8,10 +8,12 @@ import qualified Parun.Types.Keyword as Keyword
 import qualified Parun.Types.PlayerRelation as PlayerRelation
 import qualified Parun.Types.StackObjectKind as StackObjectKind
 import qualified Parun.Types.TargetedSubject as TargetedSubject
+import qualified Parun.Types.TriggerFrequency as TriggerFrequency
 import qualified Parun.Types.Zone as Zone
 
 -- | CR 601.2c: which targets becoming targets fire the ability, by which
--- announcement road, and per target or per batch (CR 603.2c).
+-- announcement road, per target or per batch (CR 603.2c), and whether only
+-- the first such targeting this turn counts.
 --
 -- Fields rather than constructors: every one narrows one rule 601.2c
 -- announcement and they differ only in how far.
@@ -39,7 +41,11 @@ data BecomesTargetedTrigger = MkBecomesTargetedTrigger
     -- | Where a Matching subject's object target is read (CR 115.1): the
     -- battlefield, or the stack too for Surrak, Elusive Hunter's "or a
     -- creature spell you control". A Self subject compares ids and ignores it.
-    zones :: Set.Set Zone.Zone
+    zones :: Set.Set Zone.Zone,
+    -- | FirstTimeEachTurn: only the first time this turn the target became the
+    -- target of a spell or ability the other fields admit, counted per object
+    -- (valiant, CR 207.2c).
+    frequency :: TriggerFrequency.TriggerFrequency
   }
   deriving (Eq, Ord, Show)
 
@@ -53,7 +59,8 @@ defaultValue =
       relation = PlayerRelation.AnyPlayer,
       kinds = Set.fromList [minBound .. maxBound],
       batching = Batching.EachOccurrence,
-      zones = Set.singleton Zone.Battlefield
+      zones = Set.singleton Zone.Battlefield,
+      frequency = TriggerFrequency.EveryTime
     }
 
 -- | "Whenever a [permanent] becomes the target of a spell or ability": a

@@ -606,6 +606,21 @@ firstPlacementOn oid gs =
         _ -> False
    in Foldable.find placedOnIt (fmap LoggedEvent.event (TurnRegisters.events (GameState.turn gs)))
 
+-- CR 601.2c: whether the condition's road and relation admit this targeting,
+-- the relation read of the targeting object's controller against `you`.
+targetingAdmitted :: GameState -> PlayerId -> BecomesTargetedTrigger.BecomesTargetedTrigger -> BecameTarget.BecameTarget -> Bool
+targetingAdmitted gs you c t =
+  Set.member (BecameTarget.kind t) (BecomesTargetedTrigger.kinds c)
+    && PlayerRelation.holds (Game.teams gs) (BecomesTargetedTrigger.relation c) you (BecameTarget.controller t)
+
+-- CR 601.2c: the first event this turn that made this recipient a target of a
+-- spell or ability the condition admits; Nothing for none.
+firstTargetingOf :: GameState -> PlayerId -> BecomesTargetedTrigger.BecomesTargetedTrigger -> Recipient.Recipient -> Maybe BecameTarget.BecameTarget
+firstTargetingOf gs you c targeted =
+  Foldable.find
+    (\t -> BecameTarget.targeted t == targeted && targetingAdmitted gs you c t)
+    [t | GameEvent.BecameTarget t <- Foldable.toList (fmap LoggedEvent.event (TurnRegisters.events (GameState.turn gs)))]
+
 -- CR 603.6a: a permanent entered the battlefield, an entry that may trigger
 -- `you`'s abilities (`entryTriggers`), and it is the permanent the trigger
 -- watches. The subject, by ActingPermanent:
@@ -1801,10 +1816,20 @@ armMatches bindings board atEvent beforeEvent groupEvents gs bearer you cond eve
   -- the target of a spell" alone, Leyline of Combustion's "you and/or at least
   -- one permanent you control" beside a permanent, and Loki, God of Mischief's
   -- "a player or permanent" any player beside any permanent.
+  --
+  -- Valiant's "for the first time each turn" (rulings 2024-07-26: "hasn't yet
+  -- been the target of a spell or ability you control this turn") narrows the
+  -- event, not the ability: the first targeting of this target this turn by a
+  -- road and controller the condition admits is the matched one. Event.becameTarget
+  -- records one event per target per announcement, and an id names one object
+  -- (CR 400.7), so a creature that left and returned is targeted for the first
+  -- time again.
   TriggerCondition.BecomesTargeted c -> case event of
     GameEvent.BecameTarget t ->
-      Set.member (BecameTarget.kind t) (BecomesTargetedTrigger.kinds c)
-        && PlayerRelation.holds (Game.teams gs) (BecomesTargetedTrigger.relation c) you (BecameTarget.controller t)
+      targetingAdmitted gs you c t
+        && case BecomesTargetedTrigger.frequency c of
+          TriggerFrequency.EveryTime -> True
+          TriggerFrequency.FirstTimeEachTurn -> maybe True (== t) (firstTargetingOf gs you c (BecameTarget.targeted t))
         && case (Recipient.playerOf (BecameTarget.targeted t), Recipient.objectOf (BecameTarget.targeted t)) of
           (Just player, _) -> maybe False (\relation -> PlayerRelation.holds (Game.teams gs) relation you player) (TargetedSubject.playerOf (BecomesTargetedTrigger.subject c))
           (Nothing, Nothing) -> False
