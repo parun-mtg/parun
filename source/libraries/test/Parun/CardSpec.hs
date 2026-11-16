@@ -2446,6 +2446,9 @@ namedTokens =
       CardName.MkCardName (Text.pack "Land Mine"),
       -- Kwia Vigorbloom's "a colorless artifact token named Lotus".
       CardName.MkCardName (Text.pack "Lotus"),
+      -- Roxanne, Starfall Savant's "a tapped colorless artifact token named
+      -- Meteorite".
+      CardName.MkCardName (Text.pack "Meteorite"),
       -- Mole Man, Moloid Master's "a 1/1 green Minion creature token named
       -- Moloid".
       CardName.MkCardName (Text.pack "Moloid"),
