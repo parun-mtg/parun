@@ -9,6 +9,7 @@ import qualified Parun.Codec.Expiry as Expiry
 import qualified Parun.Codec.GrantedAbility as GrantedAbility
 import qualified Parun.Codec.ObjectId as ObjectId
 import qualified Parun.Codec.PlayerId as PlayerId
+import qualified Parun.Codec.SourceChoices as SourceChoices
 import qualified Parun.Codec.Timestamp as Timestamp
 import qualified Parun.Codec.TriggeredAbility as TriggeredAbility
 import qualified Parun.Codec.TurnWindow as TurnWindow
@@ -25,6 +26,7 @@ codec = Fields.object $ do
   source <- Fields.required "source" ObjectId.codec DelayedTrigger.source
   controller <- Fields.required "controller" PlayerId.codec DelayedTrigger.controller
   bindings <- Fields.defaulted "bindings" Map.empty Binding.codecMap DelayedTrigger.bindings
+  choices <- Fields.required "choices" SourceChoices.codec DelayedTrigger.choices
   -- CR 113.7a: absent for an ability that can arm no other by name.
   delayed <- Fields.defaulted "delayed" Map.empty (TriggeredAbility.codecDelayed Card.codec (GrantedAbility.codec Card.codec)) DelayedTrigger.delayed
   -- CR 603.7a: TurnWindow.AnyTurn for an ability armed with no onset gate.
@@ -41,6 +43,7 @@ codec = Fields.object $ do
         DelayedTrigger.source = source,
         DelayedTrigger.controller = controller,
         DelayedTrigger.bindings = bindings,
+        DelayedTrigger.choices = choices,
         DelayedTrigger.delayed = delayed,
         DelayedTrigger.window = window,
         DelayedTrigger.expiry = expiry,
