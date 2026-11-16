@@ -22,10 +22,12 @@ codec = Fields.object $ do
   targets <- Fields.required "targets" (Common.textMap SlotName.unwrap (Right . SlotName.MkSlotName) (Common.set Recipient.codec)) PendingReplacementEffect.targets
   controller <- Fields.required "controller" PlayerId.codec PendingReplacementEffect.controller
   source <- Fields.required "source" ObjectId.codec PendingReplacementEffect.source
+  bindsArrival <- Fields.defaulted "bindsArrival" False Common.boolean PendingReplacementEffect.bindsArrival
   pure
     PendingReplacementEffect.MkPendingReplacementEffect
       { PendingReplacementEffect.effects = effects,
         PendingReplacementEffect.targets = targets,
         PendingReplacementEffect.controller = controller,
-        PendingReplacementEffect.source = source
+        PendingReplacementEffect.source = source,
+        PendingReplacementEffect.bindsArrival = bindsArrival
       }

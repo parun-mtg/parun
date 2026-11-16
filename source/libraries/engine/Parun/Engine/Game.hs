@@ -3911,7 +3911,12 @@ currentIncarnations oid gs
 publicIncarnations :: ObjectId -> GameState -> [ObjectId]
 publicIncarnations oid gs
   | Map.member oid (GameState.objects gs) = [oid]
-  | otherwise = filter public (arrivalsOf oid gs)
+  | otherwise = publicArrivalsOf oid gs
+
+-- CR 400.7 / 400.2: the ids this one's logged zone change made of it in a
+-- public zone; none while it has not moved.
+publicArrivalsOf :: ObjectId -> GameState -> [ObjectId]
+publicArrivalsOf oid gs = filter public (arrivalsOf oid gs)
   where
     public arrival = case zoneOf arrival gs of
       Just zone -> not (isHiddenZone zone)

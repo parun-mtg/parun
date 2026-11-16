@@ -26,7 +26,8 @@ spec s = Spec.describe s "Parun.Codec.PendingSkipEffect" $ do
               { PendingReplacementEffect.effects = Seq.fromList [Effect.Proliferate Nothing],
                 PendingReplacementEffect.targets = Map.empty,
                 PendingReplacementEffect.controller = PlayerId.MkPlayerId 1,
-                PendingReplacementEffect.source = ObjectId.MkObjectId 3
+                PendingReplacementEffect.source = ObjectId.MkObjectId 3,
+                PendingReplacementEffect.bindsArrival = False
               },
           PendingSkipEffect.extraTurns = [],
           PendingSkipEffect.turnMarkers = [],
@@ -44,7 +45,8 @@ spec s = Spec.describe s "Parun.Codec.PendingSkipEffect" $ do
               { PendingReplacementEffect.effects = Seq.fromList [Effect.Proliferate Nothing],
                 PendingReplacementEffect.targets = Map.empty,
                 PendingReplacementEffect.controller = PlayerId.MkPlayerId 1,
-                PendingReplacementEffect.source = ObjectId.MkObjectId 3
+                PendingReplacementEffect.source = ObjectId.MkObjectId 3,
+                PendingReplacementEffect.bindsArrival = False
               },
           PendingSkipEffect.extraTurns = [],
           PendingSkipEffect.turnMarkers = [],

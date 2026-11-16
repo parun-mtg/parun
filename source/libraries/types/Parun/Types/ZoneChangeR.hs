@@ -47,7 +47,9 @@ data ZoneChangeR effect = MkZoneChangeR
     -- | CR 614.1a / 614.6: what the modified event does beside the move --
     -- Kalitas, Traitor of Ghet's "instead exile that card and create a 2/2
     -- black Zombie creature token". The moved object is bound under
-    -- Parun.Engine.Binding.departedPermanent as it last existed (CR 608.2h).
+    -- Parun.Engine.Binding.departedPermanent as it last existed (CR 608.2h),
+    -- and what it arrived as in a public zone under Binding.became (CR 400.7):
+    -- Ravenloft Adventurer's "exile it and put a hit counter on it".
     riders :: Seq.Seq effect
   }
   deriving (Eq, Ord, Show)

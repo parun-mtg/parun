@@ -877,11 +877,22 @@ runReplacementEffects runSubgame = do
 -- "still-damages-a-creature-that-gained-hexproof" proves it.
 -- An effect (CR 609.1) even when drained inside CR 118.12's cost, so the
 -- paying flag is cleared (Event.resolvingDiscardCause).
+--
+-- A ZoneChangeR rider's (PendingReplacementEffect.bindsArrival) also gets CR
+-- 400.7's new object under Binding.became, found off the turn's log now that
+-- the move has happened: what the departed permanent became in a public zone,
+-- none where it went to a hidden one (CR 400.7e's posture).
 runDamageRewriteEffect :: Game Result -> PendingReplacementEffect.PendingReplacementEffect -> Game ()
-runDamageRewriteEffect runSubgame pending =
-  let targets = PendingReplacementEffect.targets pending
+runDamageRewriteEffect runSubgame pending = do
+  gs <- State.get
+  let carried = PendingReplacementEffect.targets pending
+      departed = [oid | Recipient.ToObject oid <- Foldable.toList (Map.findWithDefault Set.empty Binding.departedPermanent carried)]
+      arrivals = Set.fromList (Recipient.ToObject <$> concatMap (`Game.publicArrivalsOf` gs) departed)
+      targets
+        | PendingReplacementEffect.bindsArrival pending && not (Set.null arrivals) = Map.insert Binding.became arrivals carried
+        | otherwise = carried
       src = PendingReplacementEffect.source pending
-   in Monad.void (Event.payingOnResolution False (runCarrying runSubgame src (PendingReplacementEffect.controller pending) Map.empty targets (PendingReplacementEffect.effects pending)))
+  Monad.void (Event.payingOnResolution False (runCarrying runSubgame src (PendingReplacementEffect.controller pending) Map.empty targets (PendingReplacementEffect.effects pending)))
 
 -- CR 103.5b / CR 103.6: perform the effects of an action a card grants from a
 -- player's hand. Parun.Engine.Mulligan's window loops reach this through the
