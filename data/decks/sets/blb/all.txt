@@ -1,0 +1,279 @@
+1 Agate Assault
+1 Agate-Blade Assassin
+1 Alania's Pathmaker
+1 Alania, Divergent Storm
+1 Artist's Talent
+1 Azure Beastbinder
+1 Bakersbane Duo
+1 Bandit's Talent
+1 Banishing Light
+1 Bark-Knuckle Boxer
+1 Barkform Harvester
+1 Baylen, the Haymaker
+1 Bellowing Crier
+1 Beza, the Bounding Spring
+1 Blacksmith's Talent
+1 Blooming Blast
+1 Blossoming Sands
+1 Bonebind Orator
+1 Bonecache Overseer
+1 Brambleguard Captain
+1 Brambleguard Veteran
+1 Brave-Kin Duo
+1 Brazen Collector
+1 Bria, Riptide Rogue
+1 Brightblade Stoat
+1 Builder's Talent
+1 Bumbleflower's Sharepot
+1 Burrowguard Mentor
+1 Bushy Bodyguard
+1 Byrke, Long Ear of the Law
+1 Byway Barterer
+1 Cache Grab
+1 Calamitous Tide
+1 Camellia, the Seedmiser
+1 Caretaker's Talent
+1 Carrot Cake
+1 Charmed Sleep
+1 Cindering Cutthroat
+1 Clement, the Worrywort
+1 Clifftop Lookout
+1 Coiling Rebirth
+1 Colossification
+1 Conduct Electricity
+1 Consumed by Greed
+1 Corpseberry Cultivator
+1 Coruscation Mage
+1 Cruelclaw's Heist
+1 Crumb and Get It
+1 Curious Forager
+1 Daggerfang Duo
+1 Daring Waverider
+1 Darkstar Augur
+1 Dawn's Truce
+1 Dazzling Denial
+1 Dewdrop Cure
+1 Dire Downdraft
+1 Diresight
+1 Dour Port-Mage
+1 Downwind Ambusher
+1 Dragonhawk, Fate's Tempest
+1 Dreamdew Entrancer
+1 Driftgloom Coyote
+1 Druid of the Spade
+1 Early Winter
+1 Eddymurk Crab
+1 Eluge, the Shoreless Sea
+1 Emberheart Challenger
+1 Essence Channeler
+1 Fabled Passage
+1 Feather of Flight
+1 Fecund Greenshell
+1 Feed the Cycle
+1 Fell
+1 Festival of Embers
+1 Finch Formation
+1 Finneas, Ace Archer
+1 Fireglass Mentor
+1 Flame Lash
+1 Flamecache Gecko
+1 Flowerfoot Swordmaster
+1 For the Common Good
+1 Forest
+1 Fountainport
+1 Fountainport Bell
+1 Frilled Sparkshooter
+1 Galewind Moose
+1 Gev, Scaled Scorch
+1 Giant Growth
+1 Glarb, Calamity's Augur
+1 Glidedive Duo
+1 Gossip's Talent
+1 Harnesser of Storms
+1 Harvestrite Host
+1 Hazardroot Herbalist
+1 Hazel's Nocturne
+1 Head of the Homestead
+1 Heaped Harvest
+1 Heartfire Hero
+1 Hearthborn Battler
+1 Heirloom Epic
+1 Helga, Skittish Seer
+1 Hidden Grotto
+1 High Stride
+1 Hired Claw
+1 Hivespine Wolverine
+1 Hoarder's Overflow
+1 Honored Dreyleader
+1 Hop to It
+1 Hugs, Grisly Guardian
+1 Hunter's Talent
+1 Huskburster Swarm
+1 Innkeeper's Talent
+1 Into the Flood Maw
+1 Intrepid Rabbit
+1 Iridescent Vinelasher
+1 Island
+1 Jackdaw Savior
+1 Jolly Gerbils
+1 Junkblade Bruiser
+1 Kastral, the Windcrested
+1 Keen-Eyed Curator
+1 Kindlespark Duo
+1 Kitnap
+1 Kitsa, Otterball Elite
+1 Knightfisher
+1 Lifecreed Duo
+1 Lightshell Duo
+1 Lilypad Village
+1 Lilysplash Mentor
+1 Long River Lurker
+1 Long River's Pull
+1 Longstalk Brawl
+1 Lumra, Bellow of the Woods
+1 Lunar Convocation
+1 Lupinflower Village
+1 Mabel's Mettle
+1 Mabel, Heir to Cragflame
+1 Maha, Its Feathers Night
+1 Manifold Mouse
+1 Might of the Meek
+1 Mind Drill Assailant
+1 Mind Spiral
+1 Mind Spring
+1 Mindwhisker
+1 Mistbreath Elder
+1 Mockingbird
+1 Moonrise Cleric
+1 Moonstone Harbinger
+1 Mountain
+1 Mouse Trapper
+1 Mudflat Village
+1 Muerra, Trash Tactician
+1 Nettle Guard
+1 Nightwhorl Hermit
+1 Nocturnal Hunger
+1 Oakhollow Village
+1 Osteomancer Adept
+1 Otterball Antics
+1 Overprotect
+1 Parting Gust
+1 Patchwork Banner
+1 Pawpatch Formation
+1 Pawpatch Recruit
+1 Pearl of Wisdom
+1 Peerless Recycling
+1 Persistent Marshstalker
+1 Pileated Provisioner
+1 Plains
+1 Playful Shove
+1 Plumecreed Escort
+1 Plumecreed Mentor
+1 Polliwallop
+1 Pond Prophet
+1 Portent of Calamity
+1 Psychic Whorl
+1 Quaketusk Boar
+1 Rabbit Response
+1 Rabid Bite
+1 Rabid Gnaw
+1 Raccoon Rallier
+1 Ral, Crackling Wit
+1 Ravine Raider
+1 Repel Calamity
+1 Reptilian Recruiter
+1 Rockface Village
+1 Rottenmouth Viper
+1 Roughshod Duo
+1 Run Away Together
+1 Rust-Shield Rampager
+1 Ruthless Negotiation
+1 Salvation Swan
+1 Savor
+1 Sazacap's Brew
+1 Scales of Shale
+1 Scavenger's Talent
+1 Scrapshooter
+1 Season of Gathering
+1 Season of Loss
+1 Season of Weaving
+1 Season of the Bold
+1 Season of the Burrow
+1 Seasoned Warrenguard
+1 Seedglaive Mentor
+1 Seedpod Squire
+1 Serra Redeemer
+1 Shore Up
+1 Shoreline Looter
+1 Short Bow
+1 Shrike Force
+1 Sinister Monolith
+1 Skyskipper Duo
+1 Sonar Strike
+1 Spellgyre
+1 Splash Lasher
+1 Splash Portal
+1 Star Charter
+1 Starfall Invocation
+1 Starforged Sword
+1 Stargaze
+1 Starlit Soothsayer
+1 Starscape Cleric
+1 Starseer Mentor
+1 Steampath Charger
+1 Stickytongue Sentinel
+1 Stocking the Pantry
+1 Stormcatch Mentor
+1 Stormchaser's Talent
+1 Stormsplitter
+1 Sugar Coat
+1 Sunshower Druid
+1 Sunspine Lynx
+1 Swamp
+1 Swiftwater Cliffs
+1 Sword of Vengeance
+1 Take Out the Trash
+1 Tangle Tumbler
+1 Teapot Slinger
+1 Tempest Angler
+1 Tender Wildguide
+1 The Infamous Cruelclaw
+1 Thieving Otter
+1 Thistledown Players
+1 Thornplate Intimidator
+1 Thornvault Forager
+1 Thought Shucker
+1 Thought-Stalker Warlock
+1 Three Tree City
+1 Three Tree Mascot
+1 Three Tree Rootweaver
+1 Three Tree Scribe
+1 Thundertrap Trainer
+1 Tidecaller Mentor
+1 Treeguard Duo
+1 Treetop Sentries
+1 Uncharted Haven
+1 Valley Flamecaller
+1 Valley Floodcaller
+1 Valley Mightcaller
+1 Valley Questcaller
+1 Valley Rally
+1 Valley Rotcaller
+1 Veteran Guardmouse
+1 Vinereap Mentor
+1 Vren, the Relentless
+1 Wandertale Mentor
+1 War Squeak
+1 Warren Elder
+1 Warren Warleader
+1 Waterspout Warden
+1 Wax-Wane Witness
+1 Wear Down
+1 Whiskerquill Scribe
+1 Whiskervale Forerunner
+1 Wick's Patrol
+1 Wick, the Whorled Mind
+1 Wildfire Howl
+1 Wishing Well
+1 Ygra, Eater of All
+1 Zoraline, Cosmos Caller
