@@ -11,9 +11,9 @@ data ChooseQuality = MkChooseQuality
     -- next one. Otherwise it is the resolving ability's own "of your choice"
     -- and ends with the resolution (Distorting Lens).
     linked :: Bool,
-    -- | CR 702.106b's secret choice, here of the card's own: the chooser is
+    -- | A secret choice (A Killer Among Us's ruling): the chooser is
     -- recorded on the source (PlayerChoice.SecretChooser), so that only they
-    -- can reveal it (CostComponent.RevealSecretChoice; A Killer Among Us).
+    -- can reveal it (CostComponent.RevealSecretChoice).
     secret :: Bool
   }
   deriving (Eq, Ord, Show)

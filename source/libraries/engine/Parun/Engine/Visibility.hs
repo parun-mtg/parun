@@ -14,6 +14,7 @@ import qualified Parun.Engine.Projection as Projection
 import qualified Parun.Engine.Projection.View as View
 import qualified Parun.Types.Audience as Audience
 import qualified Parun.Types.BeginningStep as BeginningStep
+import qualified Parun.Types.ChoseSecretly as ChoseSecretly
 import qualified Parun.Types.Decider as Decider
 import qualified Parun.Types.Facing as Facing
 import qualified Parun.Types.GameEvent as GameEvent
@@ -63,8 +64,8 @@ revealedNow oid gs =
 
 -- | Whether a player saw what a logged event showed: everyone sees a reveal
 -- (CR 701.20a), only its audience a look (CR 701.20e, 724.4) or a ballot (CR
--- 701.38a), and everyone a secret vote's ballots or a secret choice (CR
--- 702.106b) once revealed. An event in
+-- 701.38a) or a secret choice (A Killer Among Us's ruling), and everyone a
+-- secret vote's ballots or a secret choice once revealed. An event in
 -- the open (CR 400.2) is seen by everyone: a draw as the act alone (CR 121.1),
 -- and a move only when everyone saw the card leave (CR 603.10a) or arrive.
 witnessed :: PlayerId -> LoggedEvent.LoggedEvent -> Visibility.Visibility
@@ -73,6 +74,7 @@ witnessed pid logged = case LoggedEvent.event logged of
   GameEvent.Looked looked -> visibleIf (Set.member pid (Looked.audience looked))
   GameEvent.Voted voted -> visibleIf (Set.member pid (Voted.audience voted))
   GameEvent.VotesRevealed _ -> Visibility.Visible
+  GameEvent.ChoseSecretly chose -> visibleIf (Set.member pid (ChoseSecretly.audience chose))
   GameEvent.ChoiceRevealed _ -> Visibility.Visible
   GameEvent.Moved moved -> visibleIf (Moved.revealed moved || Moved.seenArriving moved)
   GameEvent.CardArrived change -> visibleIf (not (Game.isHiddenZone (ZoneChange.to change)))

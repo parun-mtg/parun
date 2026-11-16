@@ -34,6 +34,7 @@ import qualified Parun.Types.BlockProducer as BlockProducer
 import qualified Parun.Types.BlocksDeclared as BlocksDeclared
 import qualified Parun.Types.CandidateId as CandidateId
 import qualified Parun.Types.CardName as CardName
+import qualified Parun.Types.ChoseSecretly as ChoseSecretly
 import qualified Parun.Types.ClassLevel as ClassLevel
 import qualified Parun.Types.ClassLevelChange as ClassLevelChange
 import qualified Parun.Types.CoinFlipped as CoinFlipped
@@ -94,9 +95,9 @@ import qualified Parun.Types.PlayerId as PlayerId
 import qualified Parun.Types.Recipient as Recipient
 import qualified Parun.Types.RevealCause as RevealCause
 import qualified Parun.Types.Revealed as Revealed
-import qualified Parun.Types.RevealedChoice as RevealedChoice
 import qualified Parun.Types.RoomIndex as RoomIndex
 import qualified Parun.Types.Saddling as Saddling
+import qualified Parun.Types.SecretChoice as SecretChoice
 import qualified Parun.Types.SideDeck as SideDeck
 import qualified Parun.Types.SlotName as SlotName
 import qualified Parun.Types.SpellWasCast as SpellWasCast
@@ -232,11 +233,17 @@ spec s = Spec.describe s "Parun.Codec.GameEvent" $ do
       GameEvent.codec
       (GameEvent.Voted (Voted.MkVoted (Ballot.MkBallot (PlayerId.MkPlayerId 1) (BallotChoice.ForWord (SlotName.MkSlotName (Text.pack "truth")))) (Set.fromList [PlayerId.MkPlayerId 1, PlayerId.MkPlayerId 2])))
       " {\"type\":\"Voted\",\"value\":{\"ballot\":{\"voter\":1,\"choice\":{\"type\":\"ForWord\",\"value\":\"truth\"}},\"audience\":[1,2]}} "
+  Spec.it s "ChoseSecretly" $
+    Common.assertCodec
+      s
+      GameEvent.codec
+      (GameEvent.ChoseSecretly (ChoseSecretly.MkChoseSecretly (SecretChoice.MkSecretChoice (PlayerId.MkPlayerId 0) (ObjectId.MkObjectId 7) Subtype.Merfolk) (Set.fromList [PlayerId.MkPlayerId 0, PlayerId.MkPlayerId 2])))
+      " {\"type\":\"ChoseSecretly\",\"value\":{\"choice\":{\"player\":0,\"object\":7,\"subtype\":\"Merfolk\"},\"audience\":[0,2]}} "
   Spec.it s "ChoiceRevealed" $
     Common.assertCodec
       s
       GameEvent.codec
-      (GameEvent.ChoiceRevealed (RevealedChoice.MkRevealedChoice (PlayerId.MkPlayerId 0) (ObjectId.MkObjectId 7) Subtype.Merfolk))
+      (GameEvent.ChoiceRevealed (SecretChoice.MkSecretChoice (PlayerId.MkPlayerId 0) (ObjectId.MkObjectId 7) Subtype.Merfolk))
       " {\"type\":\"ChoiceRevealed\",\"value\":{\"player\":0,\"object\":7,\"subtype\":\"Merfolk\"}} "
   -- Two ballots, so a codec that reordered them would fail.
   Spec.it s "VotesRevealed" $
