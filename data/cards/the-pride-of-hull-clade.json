@@ -1,0 +1,264 @@
+{
+  "faces": [
+    {
+      "activatedAbilities": [
+        {
+          "cost": {
+            "mana": [
+              {
+                "type": "Generic",
+                "value": 2
+              },
+              {
+                "type": "OfType",
+                "value": {
+                  "type": "Colored",
+                  "value": "Blue"
+                }
+              },
+              {
+                "type": "OfType",
+                "value": {
+                  "type": "Colored",
+                  "value": "Blue"
+                }
+              }
+            ]
+          },
+          "modal": {
+            "modes": [
+              {
+                "clauses": [
+                  {
+                    "effects": [
+                      {
+                        "type": "ModifyTarget",
+                        "value": {
+                          "duration": {
+                            "type": "UntilEndOfTurn"
+                          },
+                          "modification": {
+                            "type": "ModifyPowerToughness",
+                            "value": {
+                              "power": {
+                                "type": "Literal",
+                                "value": 1
+                              },
+                              "toughness": {
+                                "type": "Literal",
+                                "value": 0
+                              }
+                            }
+                          },
+                          "ref": {
+                            "type": "InSlot",
+                            "value": "target"
+                          }
+                        }
+                      },
+                      {
+                        "type": "ModifyTarget",
+                        "value": {
+                          "duration": {
+                            "type": "UntilEndOfTurn"
+                          },
+                          "modification": {
+                            "type": "GainAbility",
+                            "value": {
+                              "type": "Triggered",
+                              "value": {
+                                "condition": {
+                                  "type": "DealsDamage",
+                                  "value": {
+                                    "actor": {
+                                      "type": "Self"
+                                    },
+                                    "kind": "Combat",
+                                    "recipients": [
+                                      {
+                                        "type": "Player",
+                                        "value": {
+                                          "type": "Relative",
+                                          "value": "AnyPlayer"
+                                        }
+                                      }
+                                    ]
+                                  }
+                                },
+                                "modal": {
+                                  "modes": [
+                                    {
+                                      "clauses": [
+                                        {
+                                          "effects": [
+                                            {
+                                              "type": "Draw",
+                                              "value": {
+                                                "player": {
+                                                  "type": "Relative",
+                                                  "value": "You"
+                                                },
+                                                "quantity": {
+                                                  "type": "Measure",
+                                                  "value": "Toughness"
+                                                }
+                                              }
+                                            }
+                                          ]
+                                        }
+                                      ]
+                                    }
+                                  ]
+                                }
+                              }
+                            }
+                          },
+                          "ref": {
+                            "type": "InSlot",
+                            "value": "target"
+                          }
+                        }
+                      },
+                      {
+                        "type": "ModifyTarget",
+                        "value": {
+                          "duration": {
+                            "type": "UntilEndOfTurn"
+                          },
+                          "modification": {
+                            "type": "GainAbility",
+                            "value": {
+                              "type": "Rules",
+                              "value": {
+                                "rulePermissions": [
+                                  {
+                                    "affected": {
+                                      "type": "Matching",
+                                      "value": {
+                                        "type": "IsSource"
+                                      }
+                                    }
+                                  }
+                                ]
+                              }
+                            }
+                          },
+                          "ref": {
+                            "type": "InSlot",
+                            "value": "target"
+                          }
+                        }
+                      }
+                    ]
+                  }
+                ],
+                "targetSlots": {
+                  "target": {
+                    "filter": {
+                      "type": "HeldBy",
+                      "value": {
+                        "holder": "Controller",
+                        "relation": "You"
+                      }
+                    },
+                    "pool": {
+                      "type": "Creatures"
+                    }
+                  }
+                }
+              }
+            ]
+          }
+        }
+      ],
+      "costReductions": [
+        {
+          "amount": [
+            {
+              "type": "Generic",
+              "value": 1
+            }
+          ],
+          "perEach": {
+            "type": "Count",
+            "value": {
+              "aggregation": {
+                "type": "Total",
+                "value": {
+                  "type": "Measure",
+                  "value": "Toughness"
+                }
+              },
+              "filter": {
+                "type": "And",
+                "value": [
+                  {
+                    "type": "HasCardType",
+                    "value": "Creature"
+                  },
+                  {
+                    "type": "HeldBy",
+                    "value": {
+                      "holder": "Controller",
+                      "relation": "AnyPlayer"
+                    }
+                  }
+                ]
+              },
+              "scope": {
+                "type": "InZone",
+                "value": {
+                  "player": {
+                    "type": "Relative",
+                    "value": "AnyPlayer"
+                  },
+                  "zone": "Battlefield"
+                }
+              }
+            }
+          }
+        }
+      ],
+      "keywords": [
+        {
+          "type": "Defender"
+        }
+      ],
+      "manaCost": [
+        {
+          "type": "Generic",
+          "value": 10
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "Green"
+          }
+        }
+      ],
+      "name": "The Pride of Hull Clade",
+      "power": {
+        "type": "Literal",
+        "value": 2
+      },
+      "toughness": {
+        "type": "Literal",
+        "value": 15
+      },
+      "typeLine": {
+        "subtypes": [
+          "Crocodile",
+          "Elk",
+          "Turtle"
+        ],
+        "supertypes": [
+          "Legendary"
+        ],
+        "types": [
+          "Creature"
+        ]
+      }
+    }
+  ]
+}

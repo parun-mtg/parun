@@ -1,0 +1,46 @@
+{
+  "description": "CR 111.1, 122.1a, 205.3m, 702.73a, 108.3: Slime Against Humanity puts two plus the number of Ooze or Slime Against Humanity cards you own in exile and in your graveyard +1/+1 counters on a 0/0 Ooze token with trample",
+  "note": "alice's graveyard holds an Ooze, a Slime Against Humanity, a changeling (an Ooze in every zone) and a non-Ooze; her exile one Ooze and one non-Ooze. bob owns an Ooze in his graveyard and two in exile: none is hers, so X is 2 + 3 + 1 = 6, not 7 (his graveyard, or an exile owned by the opponent instead), 8 (every exile) or 9. Slime itself is on the stack while it resolves and counts nothing.",
+  "board": {
+    "active": "alice",
+    "step": "PrecombatMain",
+    "seats": [
+      {
+        "name": "alice",
+        "battlefield": [
+          {"card": "Forest", "label": "f1"},
+          {"card": "Forest", "label": "f2"},
+          {"card": "Forest", "label": "f3"}
+        ],
+        "hand": [{"card": "Slime Against Humanity", "label": "slime"}],
+        "graveyard": [
+          {"card": "Acidic Slime"},
+          {"card": "Slime Against Humanity", "label": "oldslime"},
+          {"card": "Avian Changeling"},
+          {"card": "Grizzly Bears"}
+        ],
+        "exile": [
+          {"card": "Green Slime"},
+          {"card": "Hill Giant"}
+        ],
+        "library": [{"card": "Island"}, {"card": "Island"}, {"card": "Island"}]
+      },
+      {
+        "name": "bob",
+        "graveyard": [{"card": "Acidic Slime"}],
+        "exile": [{"card": "Bioplasm"}, {"card": "Gluttonous Slime"}],
+        "library": [{"card": "Island"}, {"card": "Island"}, {"card": "Island"}]
+      }
+    ]
+  },
+  "timeline": [
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": {"Cast": {"object": "$slime", "mana": ["$f1", "$f2", "$f3"]}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass"},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Counters": {"object": "Ooze Token", "kind": {"type": "PlusOnePlusOne"}, "count": 6}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"PowerToughness": {"object": "Ooze Token", "power": 6, "toughness": 6}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Keywords": {"object": "Ooze Token", "keyword": {"type": "Trample"}, "count": 1}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Subtypes": {"object": "Ooze Token", "subtypes": ["Ooze"]}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"View": {"of": "Colors", "object": "Ooze Token", "is": ["Green"]}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Count": {"player": "alice", "zone": "Graveyard", "card": "Slime Against Humanity", "count": 2}}}
+  ]
+}

@@ -1,0 +1,64 @@
+{
+  "description": "CR 701.59a, 205.1a, 612.8, 613.1d, 613.4b, 608.2c, 611.2c, 702.12b: Tenth District Hero's second ability does nothing unless it is a Detective as it resolves; its first makes it a 4/4 Human Detective with vigilance, after which the second makes it a legendary 5/5 named Mileva, the Stalwart that gives the other creatures its controller controls indestructible",
+  "note": "The second ability is activated first, while the Hero is a plain Human: its evidence is collected but nothing changes. After the first ability, the same activation renames it, makes it legendary and 5/5, and keeps the first ability's vigilance and types. Indestructible reaches alice's Lions only: not the Hero itself (other) and not bob's Giant (you control).",
+  "board": {
+    "active": "alice",
+    "step": "PrecombatMain",
+    "seats": [
+      {
+        "name": "alice",
+        "battlefield": [
+          {"card": "Tenth District Hero", "label": "hero", "ready": true},
+          {"card": "Savannah Lions", "label": "lions"},
+          {"card": "Plains", "label": "p1"},
+          {"card": "Plains", "label": "p2"},
+          {"card": "Plains", "label": "p3"},
+          {"card": "Plains", "label": "p4"},
+          {"card": "Plains", "label": "p5"},
+          {"card": "Plains", "label": "p6"},
+          {"card": "Plains", "label": "p7"},
+          {"card": "Plains", "label": "p8"}
+        ],
+        "graveyard": [
+          {"card": "Hill Giant", "label": "giant1"},
+          {"card": "Grizzly Bears", "label": "bears"},
+          {"card": "Hill Giant", "label": "giant2"}
+        ],
+        "library": [{"card": "Island"}, {"card": "Island"}, {"card": "Island"}]
+      },
+      {
+        "name": "bob",
+        "battlefield": [{"card": "Hill Giant", "label": "bobgiant"}],
+        "library": [{"card": "Island"}, {"card": "Island"}, {"card": "Island"}]
+      }
+    ]
+  },
+  "timeline": [
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": {"Activate": {"object": "$hero", "ability": 1, "mana": ["$p1", "$p2", "$p3", null]}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": {"Answer": {"prompt": "ChooseExilesTotalling", "with": ["$giant1"]}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass"},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Count": {"player": "alice", "zone": "Exile", "card": "Hill Giant", "count": 1}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Names": {"object": "$hero", "names": ["Tenth District Hero"]}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"PowerToughness": {"object": "$hero", "power": 2, "toughness": 3}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"View": {"of": "Supertypes", "object": "$hero", "is": []}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Keywords": {"object": "$lions", "keyword": {"type": "Indestructible"}, "count": 0}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": {"Activate": {"object": "$hero", "ability": 0, "mana": ["$p4", "$p5", null]}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": {"Answer": {"prompt": "ChooseExilesTotalling", "with": ["$bears"]}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass"},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Subtypes": {"object": "$hero", "subtypes": ["Detective", "Human"]}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"PowerToughness": {"object": "$hero", "power": 4, "toughness": 4}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Keywords": {"object": "$hero", "keyword": {"type": "Vigilance"}, "count": 1}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Names": {"object": "$hero", "names": ["Tenth District Hero"]}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": {"Activate": {"object": "$hero", "ability": 1, "mana": ["$p6", "$p7", "$p8"]}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": {"Answer": {"prompt": "ChooseExilesTotalling", "with": ["$giant2"]}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass"},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Names": {"object": "$hero", "names": ["Mileva, the Stalwart"]}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"View": {"of": "Supertypes", "object": "$hero", "is": ["Legendary"]}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"PowerToughness": {"object": "$hero", "power": 5, "toughness": 5}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Subtypes": {"object": "$hero", "subtypes": ["Detective", "Human"]}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Keywords": {"object": "$hero", "keyword": {"type": "Vigilance"}, "count": 1}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Keywords": {"object": "$lions", "keyword": {"type": "Indestructible"}, "count": 1}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Keywords": {"object": "$hero", "keyword": {"type": "Indestructible"}, "count": 0}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Keywords": {"object": "$bobgiant", "keyword": {"type": "Indestructible"}, "count": 0}}}
+  ]
+}
