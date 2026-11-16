@@ -78,7 +78,9 @@
               },
               "subject": {
                 "type": "SpecialActions",
-                "value": "Plot"
+                "value": {
+                  "type": "Plot"
+                }
               }
             }
           },
