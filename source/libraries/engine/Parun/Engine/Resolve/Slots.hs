@@ -1873,9 +1873,15 @@ drawRewriteReads rewrite = case rewrite of
 -- The slots a player effect's own Filters read (a Filter.IsBound), through
 -- Parun.Engine.Children's walk: what slotsOf reports for Effect.AffectPlayers and
 -- what Parun.Engine.Resolve.Arms.Objects.affectPlayers captures into the stored
--- row, replacementRowSlots' posture (Vexing Shusher's "target spell").
+-- row, replacementRowSlots' posture (Vexing Shusher's "target spell"). A
+-- spend-as-though clause's Filters too, which the player walk passes whole: Grell
+-- Philosopher's "those abilities" is IsBound Binding.thisAbility.
 playerEffectFilterSlots :: PlayerEffect.Type.PlayerEffect -> Map.Map SlotName SlotArity
-playerEffectFilterSlots = joinSlots . Functor.getConst . Children.playerEffectChildren Children.playerEffectLeaves {Children.playerFilter = Functor.Const . pure . filterSlotsOf}
+playerEffectFilterSlots =
+  let filters :: Filter.Type.Filter Keyword.Type.Keyword -> Functor.Const [Map.Map SlotName SlotArity] (Filter.Type.Filter Keyword.Type.Keyword)
+      filters = Functor.Const . pure . filterSlotsOf
+      spending = Children.spendManaAsThoughChildren Children.manaLeaves {Children.manaCriterion = filters}
+   in joinSlots . Functor.getConst . Children.playerEffectChildren Children.playerEffectLeaves {Children.playerFilter = filters, Children.playerSpending = spending}
 
 -- replacementRowReads as a slot map. Arity One for every FILTER read, a
 -- Filter.IsBound being a membership test rather than a target slot; the QUANTITY
@@ -3037,8 +3043,11 @@ chosenCandidates legal resolving controller source gs choice =
     [pid] -> concatMap (`inZoneOf` pid) (Set.toList (ChosenPermanents.ownZones choice))
     _ -> []
   where
+    -- CR 614.12a: an as-enters choice is made before the permanent enters, so
+    -- it can't name the entering subject (Scratch.enteringSubjects; Scheming
+    -- Fence's scenario).
     shared = case ChosenPermanents.zone choice of
-      Zone.Battlefield -> battlefieldMatching legal resolving controller source gs (ChosenPermanents.filter choice)
+      Zone.Battlefield -> filter (`Map.notMember` Scratch.enteringSubjects (GameState.scratch gs)) (battlefieldMatching legal resolving controller source gs (ChosenPermanents.filter choice))
       zone -> concatMap (inZoneOf zone) (Game.apnapOrder gs)
     context = effectContext gs resolving controller source legal (slotBindings resolving gs)
     viewOf = Projection.viewsOf gs

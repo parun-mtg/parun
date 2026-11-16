@@ -613,6 +613,7 @@ filterChildren children predicate = case predicate of
   Filter.HasChosenCardType -> pure predicate
   Filter.IsExiledWithSource _ -> pure predicate
   Filter.IsLastExiledWithSource -> pure predicate
+  Filter.IsChosenObject -> pure predicate
   Filter.OfChosenPlayer -> pure predicate
   Filter.OfRelatedPlayer _ -> pure predicate
   Filter.OfSpecificPlayer _ -> pure predicate
@@ -3653,8 +3654,8 @@ modificationChildren c modification = case modification of
   Modification.GainAbilitiesOfSource keywords -> Modification.GainAbilitiesOfSource . Set.fromList <$> traverse (modificationStampedKeyword c) (Set.toList keywords)
   Modification.GainKeywordsAmong designator zone among ->
     (\d -> Modification.GainKeywordsAmong d zone) <$> modificationDesignator c designator <*> modificationFilter c among
-  Modification.GainCardAbilities (CardAbilities.MkCardAbilities from cards triggered only restrictions) ->
-    fmap Modification.GainCardAbilities (CardAbilities.MkCardAbilities from <$> modificationFilter c cards <*> pure triggered <*> pure only <*> traverse (modificationRestriction c) restrictions)
+  Modification.GainCardAbilities (CardAbilities.MkCardAbilities from cards triggered only loyalty restrictions) ->
+    fmap Modification.GainCardAbilities (CardAbilities.MkCardAbilities from <$> modificationFilter c cards <*> pure triggered <*> pure only <*> pure loyalty <*> traverse (modificationRestriction c) restrictions)
   -- The lender is a reserved name (Binding.acquiredFrom), never a card's.
   Modification.GainLentKeyword (LentKeyword.MkLentKeyword held instances lender triggered restrictions) ->
     fmap Modification.GainLentKeyword ((\k -> LentKeyword.MkLentKeyword k instances lender triggered) <$> modificationKeyword c held <*> traverse (modificationRestriction c) restrictions)

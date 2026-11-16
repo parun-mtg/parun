@@ -836,12 +836,15 @@ runEntryEffect runSubgame pending = do
       before = entering >>= Map.lookup Binding.variableX . Object.bindings
   Foldable.for_ announced $ \n -> State.modify' (setX (Just (Binding.toAmount n)))
   -- CR 614.12: what entered in the same event is held off the battlefield while
-  -- the effects run, as it was when the rewrite applied (enteredBeside).
+  -- the effects run, as it was when the rewrite applied (enteredBeside). CR
+  -- 614.12a: the permanent itself is a subject with no origin to restore, so a
+  -- choice among permanents can't name it (Slots.chosenCandidates).
   outer <- State.gets (Scratch.enteringBeside . GameState.scratch)
+  outerSubjects <- State.gets (Scratch.enteringSubjects . GameState.scratch)
   beside <- State.gets (Common.enteredBeside oid)
-  State.modify' (\gs -> gs {GameState.scratch = (GameState.scratch gs) {Scratch.enteringBeside = Set.union outer beside}})
+  State.modify' (\gs -> gs {GameState.scratch = (GameState.scratch gs) {Scratch.enteringBeside = Set.union outer beside, Scratch.enteringSubjects = Map.insert oid Nothing outerSubjects}})
   Monad.void (runCarrying runSubgame oid (PendingEntryEffect.controller pending) Map.empty Map.empty (PendingEntryEffect.effects pending))
-  State.modify' (\gs -> gs {GameState.scratch = (GameState.scratch gs) {Scratch.enteringBeside = outer}})
+  State.modify' (\gs -> gs {GameState.scratch = (GameState.scratch gs) {Scratch.enteringBeside = outer, Scratch.enteringSubjects = outerSubjects}})
   Foldable.for_ announced $ \_ -> State.modify' (setX before)
   State.modify' (Trigger.resampleEntry oid)
 

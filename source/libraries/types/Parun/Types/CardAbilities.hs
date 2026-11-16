@@ -5,10 +5,11 @@ import qualified Parun.Types.ActivationRestriction as ActivationRestriction
 import qualified Parun.Types.Filter as Filter
 import qualified Parun.Types.Keyword as Keyword
 import qualified Parun.Types.LentCards as LentCards
+import qualified Parun.Types.LoyaltyKind as LoyaltyKind
 
 -- | The payload of Parun.Types.Modification's GainCardAbilities arm: where to
 -- walk, which cards there lend the object their activated abilities, whether
--- they lend their triggered ones too, which kind of activated one, and the restrictions each activated one
+-- they lend their triggered ones too, which kinds of activated one, and the restrictions each activated one
 -- gains.
 data CardAbilities = MkCardAbilities
   { from :: LentCards.LentCards,
@@ -23,6 +24,9 @@ data CardAbilities = MkCardAbilities
     -- | CR 605.1a: the one kind of activated ability each lends, or Nothing
     -- for both (Sharkey, Tyrant of the Shire's "except mana abilities").
     only :: Maybe AbilityKind.AbilityKind,
+    -- | CR 606.2: the one loyalty kind of activated ability each lends, or
+    -- Nothing for both (Scheming Fence's "except for loyalty abilities").
+    loyalty :: Maybe LoyaltyKind.LoyaltyKind,
     restrictions :: [ActivationRestriction.ActivationRestriction]
   }
   deriving (Eq, Ord, Show)

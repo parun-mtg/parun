@@ -9,9 +9,10 @@ data ActivationScope = MkActivationScope
   { -- | Matched against the source of the ability being activated (Agatha's
     -- Soul Cauldron's "abilities of creatures you control").
     source :: Filter.Filter Keyword.Keyword,
-    -- | CR 613.1f: matched against the card that lent the ability, or Nothing
-    -- for any of the source's abilities (Drana and Linvala's "those
-    -- abilities").
+    -- | CR 613.1f: matched against what lent the ability, or Nothing for any
+    -- of the source's abilities: a card (Drana and Linvala's "those
+    -- abilities") or a resolving lend's own ability (Grell Philosopher's,
+    -- Binding.thisAbility).
     lentBy :: Maybe (Filter.Filter Keyword.Keyword)
   }
   deriving (Eq, Ord, Show)

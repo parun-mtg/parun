@@ -4282,14 +4282,14 @@ expandGrant legal resolving controller source gs modification = case modificatio
           <> fmap (Modification.GainAbility . GrantedAbility.Replacement) (PC.replacementEffects pc)
           <> fmap (Modification.GainAbility . GrantedAbility.Player) (PC.playerAbilities pc)
           <> fmap (Modification.GainAbility . GrantedAbility.SelfCostReduction) (PC.costReductions pc)
-  Modification.GainCardAbilities (CardAbilities.MkCardAbilities LentCards.OnTheBattlefield among _ only extra) ->
+  Modification.GainCardAbilities (CardAbilities.MkCardAbilities LentCards.OnTheBattlefield among _ only loyalty extra) ->
     let lenders = battlefieldMatching legal resolving controller source gs among
         named a = a {ActivatedAbility.name = Just (Binding.acquiredFrom resolving (ActivatedAbility.name a)), ActivatedAbility.restrictions = ActivatedAbility.restrictions a <> extra}
         withDelayed oid a = a {ActivatedAbility.modal = Identity.runIdentity (Children.modalChildren Children.modalLeaves {Children.modalEffect = Identity.Identity . Projection.carryingDelayed (ActivatedAbility.name a) oid gs} (ActivatedAbility.modal a))}
         recorded keyword count restrictions = [LentKeyword.MkLentKeyword keyword count (Binding.acquiredFrom resolving Nothing) False (restrictions <> extra) | Keyword.lends False keyword count]
         lent oid =
           let pc = Projection.project oid gs
-              abilities = filter (Projection.lendsKind only) (Projection.intrinsicManaAbilitiesOf pc <> PC.activatedAbilities pc)
+              abilities = filter (Projection.lendsKind only loyalty) (Projection.intrinsicManaAbilitiesOf pc <> PC.activatedAbilities pc)
               keywords = foldMap (\(k, n) -> recorded k n []) (Map.toAscList (PC.keywords pc)) <> foldMap (\l -> recorded (LentKeyword.keyword l) (LentKeyword.instances l) (LentKeyword.restrictions l)) (PC.lentKeywords pc)
            in fmap (Modification.GainAbility . GrantedAbility.Activated . named . withDelayed oid) abilities <> fmap Modification.GainLentKeyword keywords
      in foldMap lent lenders

@@ -352,6 +352,12 @@ spec s = Spec.describe s "Parun.Codec.Filter" $ do
       codec
       Filter.IsLastExiledWithSource
       " {\"type\":\"IsLastExiledWithSource\"} "
+  Spec.it s "IsChosenObject" $
+    Common.assertCodec
+      s
+      codec
+      Filter.IsChosenObject
+      " {\"type\":\"IsChosenObject\"} "
   Spec.it s "OfChosenPlayer" $
     Common.assertCodec
       s

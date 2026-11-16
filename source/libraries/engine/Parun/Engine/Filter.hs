@@ -1886,6 +1886,9 @@ data Context = MkContext
     -- CR 607.2d: the number the SOURCE last chose, for Quantity.ChosenNumber.
     -- Filled where sourceChosenColors above is.
     sourceChosenNumber :: Maybe Natural.Natural,
+    -- CR 607.2d: the objects the SOURCE last chose (Object.chosenObjects), for
+    -- IsChosenObject. Filled where sourceExiled is, and empty everywhere else.
+    sourceChosenObjects :: Set.Set ObjectId.ObjectId,
     -- CR 607.2a: the last card exiled with the source, for IsLastExiledWithSource.
     -- Filled by one caller only, Parun.Engine.Mana.admitsUnder, off the MANA UNIT
     -- (Parun.Types.ManaUnit.sourceLastExiled, Ice Cauldron) for sourceChosenSubtype's
@@ -2004,7 +2007,7 @@ data Context = MkContext
 -- here owes both halves of the same pair: which way its unfilled read answers,
 -- and what holds a card to the positions that fill it.
 contextFor :: Teams.Teams -> Maybe PlayerId.PlayerId -> Maybe ObjectId.ObjectId -> Context
-contextFor t p s = MkContext {teams = t, perspective = p, source = s, sourceMeasures = Map.empty, sourceColors = Set.empty, sourceSectors = Set.empty, sourceNames = Set.empty, sourceDealtDamage = Set.empty, sourceDealtDamageEarlier = Set.empty, sourceCrewed = Set.empty, sourceBefore = Nothing, slotAmount = Nothing, defendingPlayers = [], activePlayers = [], recipient = Nothing, shares = Map.empty, slotObjects = Map.empty, cantPayKeywordCost = Map.empty, slotNames = Map.empty, slotControllers = Map.empty, slotHostControllers = Map.empty, subjectHostCardTypes = Set.empty, slotCreatureTypes = Map.empty, slotCardTypes = Map.empty, slotColors = Map.empty, slotMeasures = Map.empty, slotPlayers = Map.empty, boundAmounts = Map.empty, slotStickers = Map.empty, slotVotes = Map.empty, boundUnannounced = False, sourceAttachedTo = Nothing, evaluated = Nothing, evaluatedView = Nothing, commanderCreatureTypes = Set.empty, sourceEntrants = Set.empty, sourceCountered = Map.empty, sourceOwner = Nothing, sourceChosenNames = Map.empty, carrierChosenPlayer = Nothing, aimingController = Nothing, sourceChosenColors = Set.empty, draftNotes = Map.empty, exiledBeforeGame = Map.empty, playerCounters = Map.empty, sourceChosenSubtype = Nothing, sourceChosenCardType = Nothing, sourceChosenNumber = Nothing, sourceLastExiled = Nothing, sourceExiled = Map.empty, sourceAcquisition = Nothing, reader = Nothing, candidateMeasures = Nothing, battlefieldViews = Seq.empty, zeroMissingPowerToughness = False, asCast = const (Just 0)}
+contextFor t p s = MkContext {teams = t, perspective = p, source = s, sourceMeasures = Map.empty, sourceColors = Set.empty, sourceSectors = Set.empty, sourceNames = Set.empty, sourceDealtDamage = Set.empty, sourceDealtDamageEarlier = Set.empty, sourceCrewed = Set.empty, sourceBefore = Nothing, slotAmount = Nothing, defendingPlayers = [], activePlayers = [], recipient = Nothing, shares = Map.empty, slotObjects = Map.empty, cantPayKeywordCost = Map.empty, slotNames = Map.empty, slotControllers = Map.empty, slotHostControllers = Map.empty, subjectHostCardTypes = Set.empty, slotCreatureTypes = Map.empty, slotCardTypes = Map.empty, slotColors = Map.empty, slotMeasures = Map.empty, slotPlayers = Map.empty, boundAmounts = Map.empty, slotStickers = Map.empty, slotVotes = Map.empty, boundUnannounced = False, sourceAttachedTo = Nothing, evaluated = Nothing, evaluatedView = Nothing, commanderCreatureTypes = Set.empty, sourceEntrants = Set.empty, sourceCountered = Map.empty, sourceOwner = Nothing, sourceChosenNames = Map.empty, carrierChosenPlayer = Nothing, aimingController = Nothing, sourceChosenColors = Set.empty, draftNotes = Map.empty, exiledBeforeGame = Map.empty, playerCounters = Map.empty, sourceChosenSubtype = Nothing, sourceChosenCardType = Nothing, sourceChosenNumber = Nothing, sourceChosenObjects = Set.empty, sourceLastExiled = Nothing, sourceExiled = Map.empty, sourceAcquisition = Nothing, reader = Nothing, candidateMeasures = Nothing, battlefieldViews = Seq.empty, zeroMissingPowerToughness = False, asCast = const (Just 0)}
 
 -- contextFor over a game: its teams (CR 102.4), its active players (CR 102.1,
 -- 805.4a), its draft notes (CR 905.2b), what was exiled before it (CR
@@ -2592,6 +2595,8 @@ matches context view predicate = case predicate of
   Filter.HasChosenSubtype -> maybe False (`Set.member` subtypes view) (sourceChosenSubtype context)
   -- CR 205.2a, HasChosenSubtype's arm one characteristic over.
   Filter.HasChosenCardType -> maybe False (`Set.member` cardTypes view) (sourceChosenCardType context)
+  -- CR 607.2d by identity: what the source chose names an object, not a quality.
+  Filter.IsChosenObject -> maybe False (`Set.member` sourceChosenObjects context) (identity view)
   -- CR 607.2n's pile is the candidate's own row and no link to the source:
   -- the perspective player's cards (CR 108.3) exiled with cards of the name.
   Filter.IsExiledWithSource (ExiledPile.WithCardsNamed name) -> Maybe.isJust (perspective context) && owner view == perspective context && (identity view >>= (`Map.lookup` exiledBeforeGame context)) == Just name
@@ -3401,6 +3406,7 @@ manaValueThresholds predicate = case predicate of
   Filter.HasChosenCardType -> []
   Filter.IsExiledWithSource _ -> []
   Filter.IsLastExiledWithSource -> []
+  Filter.IsChosenObject -> []
   Filter.OfChosenPlayer -> []
   Filter.OfRelatedPlayer _ -> []
   Filter.OfSpecificPlayer _ -> []
@@ -3590,6 +3596,7 @@ statesAQuality predicate = case predicate of
   -- IsObject's posture: the candidate is named by identity.
   Filter.IsExiledWithSource _ -> True
   Filter.IsLastExiledWithSource -> True
+  Filter.IsChosenObject -> True
   -- CR 701.23b's "stated quality" too, and rule 702.16k's own "regardless of
   -- that object's characteristic values" is not a counter-argument: the rule
   -- excuses the PROTECTION from reading characteristics, where this predicate
@@ -3789,6 +3796,7 @@ readsSourceValues predicate = case predicate of
   Filter.Noted _ -> False
   Filter.IsExiledWithSource _ -> False
   Filter.IsLastExiledWithSource -> False
+  Filter.IsChosenObject -> False
   Filter.OfChosenPlayer -> False
   Filter.OfRelatedPlayer _ -> False
   Filter.OfSpecificPlayer _ -> False
