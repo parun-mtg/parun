@@ -1,0 +1,22 @@
+{
+  "description": "Lost Jitte gets a charge counter whenever equipped creature deals combat damage, to a creature as much as a player; removing one puts a +1/+1 counter on equipped creature",
+  "note": "The equipped Grizzly Bears is blocked by Bob's Ornithopter and deals its damage only to that creature; the unequipped Memnite's damage to Bob charges nothing, so Jitte holds exactly one counter. Alice spends it on the third mode: the Bears become 3/3 and the Jitte holds none.",
+  "board": {"active": "alice", "step": "BeginningOfCombat", "seats": [
+    {"name": "alice", "battlefield": [{"card": "Grizzly Bears", "label": "bears", "ready": true}, {"card": "Lost Jitte", "label": "jitte", "attached": "bears"}, {"card": "Memnite", "label": "memnite", "ready": true}], "library": [{"card": "Island"}, {"card": "Island"}, {"card": "Island"}]},
+    {"name": "bob", "battlefield": [{"card": "Ornithopter", "label": "thopter", "ready": true}], "library": [{"card": "Island"}, {"card": "Island"}, {"card": "Island"}]}
+  ]},
+  "timeline": [
+    {"turn": 1, "step": "DeclareAttackers", "player": "alice", "do": {"Attack": ["$bears", "$memnite"]}},
+    {"turn": 1, "step": "DeclareBlockers", "player": "bob", "do": {"Block": {"$thopter": ["$bears"]}}},
+    {"turn": 1, "step": "CombatDamage", "player": "alice", "check": {"View": {"of": "Stack", "is": ["trigger of $jitte"]}}},
+    {"turn": 1, "step": "CombatDamage", "player": "alice", "do": "Pass"},
+    {"turn": 1, "step": "CombatDamage", "player": "alice", "check": {"Counters": {"object": "$jitte", "kind": {"type": "Named", "value": "charge"}, "count": 1}}},
+    {"turn": 1, "step": "CombatDamage", "player": "alice", "check": {"Life": {"player": "bob", "life": 19}}},
+    {"turn": 1, "step": "CombatDamage", "player": "alice", "check": {"Count": {"player": "bob", "zone": "Graveyard", "card": "Ornithopter", "count": 1}}},
+    {"turn": 1, "step": "PostcombatMain", "player": "alice", "do": {"Activate": {"object": "$jitte", "modes": [2]}}},
+    {"turn": 1, "step": "PostcombatMain", "player": "alice", "check": {"Counters": {"object": "$jitte", "kind": {"type": "Named", "value": "charge"}, "count": 0}}},
+    {"turn": 1, "step": "PostcombatMain", "player": "alice", "do": "Pass"},
+    {"turn": 1, "step": "PostcombatMain", "player": "alice", "check": {"PowerToughness": {"object": "$bears", "power": 3, "toughness": 3}}},
+    {"turn": 1, "step": "PostcombatMain", "player": "alice", "check": {"PowerToughness": {"object": "$memnite", "power": 1, "toughness": 1}}}
+  ]
+}

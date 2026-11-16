@@ -1,0 +1,25 @@
+{
+  "description": "Bristlebud Farmer creates two Foods as it enters; as it attacks, sacrificing a Food mills three and lets a permanent card from among them go to hand",
+  "note": "The newly cast Farmer makes two Foods (alice holds none before). The ready Farmer attacks: alice sacrifices one Food, mills Lightning Bolt, Grizzly Bears and Island, and the choice offers only the Bears and the Island, not the Bolt (an instant is no permanent card); she takes the Bears. Two Foods minus the one sacrificed leaves one.",
+  "board": {"active": "alice", "step": "PrecombatMain", "seats": [
+    {"name": "alice", "manaPool": "GGGG", "battlefield": [{"card": "Bristlebud Farmer", "label": "attacker", "ready": true}], "hand": [{"card": "Bristlebud Farmer", "label": "fresh"}], "library": [{"card": "Lightning Bolt", "label": "bolt"}, {"card": "Grizzly Bears", "label": "bears"}, {"card": "Island", "label": "island"}, {"card": "Swamp"}, {"card": "Swamp"}]},
+    {"name": "bob", "library": [{"card": "Island"}, {"card": "Island"}, {"card": "Island"}]}
+  ]},
+  "timeline": [
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": {"Cast": {"object": "$fresh"}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass"},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"View": {"of": "Stack", "is": ["trigger of Bristlebud Farmer"]}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass"},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Count": {"player": "alice", "zone": "Battlefield", "card": "Food Token", "count": 2}}},
+    {"turn": 1, "step": "DeclareAttackers", "player": "alice", "do": {"Attack": ["$attacker"]}},
+    {"turn": 1, "step": "DeclareAttackers", "player": "alice", "do": "Pass"},
+    {"turn": 1, "step": "DeclareAttackers", "player": "alice", "source": "$attacker", "do": {"ChooseToPay": {"decision": "Pays"}}},
+    {"turn": 1, "step": "DeclareAttackers", "player": "alice", "do": {"Answer": {"prompt": "ChooseSacrifices", "with": ["Food Token"]}}},
+    {"turn": 1, "step": "DeclareAttackers", "player": "alice", "source": "$attacker", "do": {"ChooseOptional": "Exercises"}},
+    {"turn": 1, "step": "DeclareAttackers", "player": "alice", "check": {"View": {"of": "Prompt", "is": {"kind": "ChooseCardFromAmong", "offer": {"source": "$attacker", "options": ["Grizzly Bears", "Island#4"]}}}}},
+    {"turn": 1, "step": "DeclareAttackers", "player": "alice", "do": {"Answer": {"prompt": "ChooseCardFromAmong", "with": "Grizzly Bears"}}},
+    {"turn": 1, "step": "DeclareAttackers", "player": "alice", "check": {"Count": {"player": "alice", "zone": "Hand", "card": "Grizzly Bears", "count": 1}}},
+    {"turn": 1, "step": "DeclareAttackers", "player": "alice", "check": {"View": {"of": "Zone", "player": "alice", "zone": "Graveyard", "is": ["Lightning Bolt", "Island#4"]}}},
+    {"turn": 1, "step": "DeclareAttackers", "player": "alice", "check": {"Count": {"player": "alice", "zone": "Battlefield", "card": "Food Token", "count": 1}}}
+  ]
+}

@@ -1,0 +1,26 @@
+{
+  "description": "Generous Plunderer: at its controller's upkeep they may create a Treasure, and when they do target opponent creates a tapped Treasure; as it attacks it deals damage to defending player equal to the artifacts that player controls",
+  "note": "Three seats so the target opponent and the defending player are not simply 'the opponent'. Alice creates a Treasure and targets Bob, who creates a tapped one; Carol creates none. Plunderer then attacks Bob, who controls that Treasure and an Ornithopter: 2 damage before blocks (20 to 18), not Carol's three artifacts and not Alice's one.",
+  "board": {"active": "alice", "step": "Untap", "seats": [
+    {"name": "alice", "battlefield": [{"card": "Generous Plunderer", "label": "plunderer", "ready": true}], "library": [{"card": "Island"}, {"card": "Island"}, {"card": "Island"}]},
+    {"name": "bob", "battlefield": [{"card": "Ornithopter"}], "library": [{"card": "Island"}, {"card": "Island"}, {"card": "Island"}]},
+    {"name": "carol", "battlefield": [{"card": "Ornithopter"}, {"card": "Ornithopter"}, {"card": "Memnite"}], "library": [{"card": "Island"}, {"card": "Island"}, {"card": "Island"}]}
+  ]},
+  "timeline": [
+    {"turn": 1, "step": "Upkeep", "player": "alice", "source": "$plunderer", "do": {"ChooseOptional": "Exercises"}},
+    {"turn": 1, "step": "Upkeep", "player": "alice", "do": {"ChooseTargets": {"target": ["$bob"]}}},
+    {"turn": 1, "step": "Upkeep", "player": "alice", "do": "Pass"},
+    {"turn": 1, "step": "Upkeep", "player": "alice", "check": {"View": {"of": "Stack", "is": ["trigger of $plunderer"]}}},
+    {"turn": 1, "step": "Upkeep", "player": "alice", "do": "Pass"},
+    {"turn": 1, "step": "Upkeep", "player": "alice", "check": {"Count": {"player": "alice", "zone": "Battlefield", "card": "Treasure Token", "count": 1}}},
+    {"turn": 1, "step": "Upkeep", "player": "alice", "check": {"Count": {"player": "bob", "zone": "Battlefield", "card": "Treasure Token", "count": 1}}},
+    {"turn": 1, "step": "Upkeep", "player": "alice", "check": {"Count": {"player": "carol", "zone": "Battlefield", "card": "Treasure Token", "count": 0}}},
+    {"turn": 1, "step": "Upkeep", "player": "alice", "check": {"Tapped": {"object": "Treasure Token#2", "tapped": true}}},
+    {"turn": 1, "step": "Upkeep", "player": "alice", "check": {"Tapped": {"object": "Treasure Token", "tapped": false}}},
+    {"turn": 1, "step": "DeclareAttackers", "player": "alice", "do": {"Attack": ["$plunderer"]}},
+    {"turn": 1, "step": "DeclareAttackers", "player": "alice", "source": "$plunderer", "do": {"ChooseAttackTarget": "$bob"}},
+    {"turn": 1, "step": "DeclareAttackers", "player": "alice", "do": "Pass"},
+    {"turn": 1, "step": "DeclareAttackers", "player": "alice", "check": {"Life": {"player": "bob", "life": 18}}},
+    {"turn": 1, "step": "DeclareAttackers", "player": "alice", "check": {"Life": {"player": "carol", "life": 20}}}
+  ]
+}

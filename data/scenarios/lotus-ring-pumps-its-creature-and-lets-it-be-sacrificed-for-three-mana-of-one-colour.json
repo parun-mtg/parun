@@ -1,0 +1,19 @@
+{
+  "description": "Lotus Ring: equipped creature gets +3/+3, has vigilance and has '{T}, Sacrifice this creature: Add three mana of any one color.'",
+  "note": "The equipped Grizzly Bears attacks as a 5/5 without tapping (Bob takes 5). After combat its granted ability sacrifices it for RRR, which pays all of Ball Lightning's {R}{R}{R}; alice controls no other mana source. The Ring stays behind, unattached. The unequipped Memnite stays 1/1.",
+  "board": {"active": "alice", "step": "BeginningOfCombat", "seats": [
+    {"name": "alice", "battlefield": [{"card": "Grizzly Bears", "label": "bears", "ready": true}, {"card": "Lotus Ring", "label": "ring", "attached": "bears"}, {"card": "Memnite", "label": "memnite", "ready": true}], "hand": [{"card": "Ball Lightning", "label": "ball"}], "library": [{"card": "Island"}, {"card": "Island"}, {"card": "Island"}]},
+    {"name": "bob", "library": [{"card": "Island"}, {"card": "Island"}, {"card": "Island"}]}
+  ]},
+  "timeline": [
+    {"turn": 1, "step": "BeginningOfCombat", "player": "alice", "check": {"PowerToughness": {"object": "$bears", "power": 5, "toughness": 5}}},
+    {"turn": 1, "step": "BeginningOfCombat", "player": "alice", "check": {"PowerToughness": {"object": "$memnite", "power": 1, "toughness": 1}}},
+    {"turn": 1, "step": "DeclareAttackers", "player": "alice", "do": {"Attack": ["$bears"]}},
+    {"turn": 1, "step": "DeclareAttackers", "player": "alice", "check": {"Tapped": {"object": "$bears", "tapped": false}}},
+    {"turn": 1, "step": "EndOfCombat", "player": "alice", "check": {"Life": {"player": "bob", "life": 15}}},
+    {"turn": 1, "step": "PostcombatMain", "player": "alice", "do": {"Cast": {"object": "$ball", "mana": ["$bears"], "yields": [[{"manaType": {"type": "Colored", "value": "Red"}, "tags": [], "retention": "Ordinary", "restriction": null, "rider": null, "sourceChoices": null}, {"manaType": {"type": "Colored", "value": "Red"}, "tags": [], "retention": "Ordinary", "restriction": null, "rider": null, "sourceChoices": null}, {"manaType": {"type": "Colored", "value": "Red"}, "tags": [], "retention": "Ordinary", "restriction": null, "rider": null, "sourceChoices": null}]]}}},
+    {"turn": 1, "step": "PostcombatMain", "player": "alice", "check": {"View": {"of": "Stack", "is": ["Ball Lightning"]}}},
+    {"turn": 1, "step": "PostcombatMain", "player": "alice", "check": {"Count": {"player": "alice", "zone": "Graveyard", "card": "Grizzly Bears", "count": 1}}},
+    {"turn": 1, "step": "PostcombatMain", "player": "alice", "check": {"View": {"of": "AttachedTo", "object": "$ring", "is": null}}}
+  ]
+}
