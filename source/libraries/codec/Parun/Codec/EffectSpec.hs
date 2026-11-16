@@ -2887,15 +2887,15 @@ spec s = Spec.describe s "Parun.Codec.Effect" $ do
       fromJson
       Effect.Learn
       " {\"type\":\"Learn\"} "
-  -- CR 701.58a fixes the listing and the opcode's printings say the top card, so
-  -- the payload is who cloaks, where it is not their own whose library, and
-  -- the slot a later effect reads the cloaked permanent under.
+  -- CR 701.58a fixes the listing, so the payload is who cloaks, which cards
+  -- where not the top of their own library, whether in a random order, and the
+  -- slot a later effect reads the cloaked permanent under.
   Spec.it s "Cloak" $
     Common.assertJsonCodec
       s
       toJson
       fromJson
-      (Effect.Cloak (Cloak.MkCloak (PlayerRef.Relative PlayerRelation.You) Nothing Nothing))
+      (Effect.Cloak (Cloak.MkCloak (PlayerRef.Relative PlayerRelation.You) Nothing False Nothing))
       " {\"type\":\"Cloak\",\"value\":{\"player\":{\"type\":\"Relative\",\"value\":\"You\"}}} "
   -- CR 701.62a: Manifest Dread's "manifest dread", the instructed player its
   -- payload (Unwanted Remake's "its controller manifests dread").

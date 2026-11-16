@@ -35,6 +35,7 @@ import qualified Parun.Types.ActivatedAbility as ActivatedAbility
 import qualified Parun.Types.Ante as Ante
 import qualified Parun.Types.Card as Card.Type
 import qualified Parun.Types.ChoosePlayer as ChoosePlayer
+import qualified Parun.Types.Cloak as Cloak
 import qualified Parun.Types.Conjure as Conjure
 import qualified Parun.Types.ConjureDestination as ConjureDestination
 import qualified Parun.Types.Cost as Cost
@@ -857,10 +858,9 @@ movesLibraryCard effect = case effect of
   -- CR 701.48a's middle sentence is a draw, which Effect.Draw's arm above
   -- already makes a library move; an ability that learns is no mana ability.
   Effect.Learn -> True
-  -- Cloaking puts a card onto the battlefield (CR 701.58a), and the printing
-  -- takes it off the top of a library, so an ability that cloaks is no mana
-  -- ability.
-  Effect.Cloak {} -> True
+  -- Cloaking puts a card onto the battlefield (CR 701.58a): off the top of a
+  -- library when no cards are named, else from wherever the ref reaches.
+  Effect.Cloak cloak -> maybe True refReachesLibrary (Cloak.cards cloak)
   -- CR 701.62a manifests a library card and bins the rest.
   Effect.ManifestDread {} -> True
   Effect.Venture {} -> False

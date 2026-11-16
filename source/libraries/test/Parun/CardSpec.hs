@@ -798,6 +798,7 @@ objectRefPositions =
         ("choose-group", Effect.ChooseGroup (ChooseGroup.MkChooseGroup (Grouping.Piles (SlotName.MkSlotName (Text.pack "cg1") NonEmpty.:| [SlotName.MkSlotName (Text.pack "cg2")])) (SlotName.MkSlotName (Text.pack "cg")) (Just (plantedRef "cg-about"))), [plantedRef "cg1", plantedRef "cg2", plantedRef "cg-about"]),
         ("destroy", Effect.Destroy (Destroy.MkDestroy (plantedRef "de") Regenerability.Regenerable Nothing Nothing Nothing), [plantedRef "de"]),
         ("attach-all", Effect.AttachAll (AttachAll.MkAttachAll (plantedRef "aa") Filter.Type.IsSource), [plantedRef "aa"]),
+        ("cloak", Effect.Cloak (Cloak.MkCloak (plantedPlayer "ck") (Just (plantedRef "ck")) False Nothing), [plantedRef "ck"]),
         ("move-to-zone", Effect.MoveToZone (MoveToZone.MkMoveToZone (plantedRef "mz") Zone.Exile plainRiders Nothing Nothing LibraryPlacement.OwnerChooses Nothing), [plantedRef "mz"]),
         ("reveal", Effect.Reveal (Reveal.MkReveal (plantedRef "rv") Nothing Nothing), [plantedRef "rv"]),
         ("look-at", Effect.LookAt (LookAt.MkLookAt (plantedRef "la") (SlotName.MkSlotName (Text.pack "seen")) (PlayerRef.Relative PlayerRelation.You)), [plantedRef "la"]),
@@ -928,7 +929,7 @@ playerRefPositions =
         ("set-owner", Effect.SetOwner (SetOwner.MkSetOwner (plantedPlayer "sp") (plantedRef "sp")), [plantedPlayer "sp"]),
         ("shuffle", Effect.Shuffle (plantedPlayer "sh"), [plantedPlayer "sh"]),
         ("divide", Effect.Divide (Divide.MkDivide one (plantedRef "dv") (plantedPlayer "dv") (SlotName.MkSlotName (Text.pack "split"))), [plantedPlayer "dv"]),
-        ("cloak", Effect.Cloak (Cloak.MkCloak (plantedPlayer "ck") (Just (plantedPlayer "ck-library")) Nothing), [plantedPlayer "ck", plantedPlayer "ck-library"]),
+        ("cloak", Effect.Cloak (Cloak.MkCloak (plantedPlayer "ck") (Just (plantedRef "ck-cards")) False Nothing), [plantedPlayer "ck"]),
         ("manifestDread", Effect.ManifestDread (ManifestDread.MkManifestDread (plantedPlayer "md") one Nothing), [plantedPlayer "md"]),
         ("choose-permanents", Effect.ChoosePermanents (ChoosePermanents.MkChoosePermanents (ChosenPermanents.MkChosenPermanents (Filter.Type.And []) (plantedPlayer "cp") (HowMany.UpTo Nothing) Nothing Zone.Battlefield Set.empty) (SlotName.MkSlotName (Text.pack "cp")) (Just (plantedPlayer "cp-piles")) Nothing False), [plantedPlayer "cp", plantedPlayer "cp-piles"]),
         ("discard-counted", Effect.Discard (Discard.Counted (CountedDiscard.MkCountedDiscard (plantedPlayer "dc") one Nothing)), [plantedPlayer "dc"]),
@@ -5254,7 +5255,8 @@ effectFilters effect = case effect of
   Effect.Recruit -> []
   Effect.Discover quantity -> frame Unframed (quantityFilters quantity)
   Effect.Learn -> []
-  Effect.Cloak {} -> []
+  -- The move's answer: the cards' ref is read where the move's is.
+  Effect.Cloak (Cloak.MkCloak _ cards _ _) -> frame SourceHostFramed (foldMap objectRefFilters cards)
   -- Blight's answer: the count's Filters only.
   Effect.ManifestDread (ManifestDread.MkManifestDread _ quantity _) -> frame Unframed (quantityFilters quantity)
   Effect.Venture {} -> []

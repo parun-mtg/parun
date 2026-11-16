@@ -710,7 +710,7 @@ applyOneEffect runSubgame resolving source controller legal chosen effect = case
   Effect.TimeTravel -> Counters.timeTravel resolving controller
   Effect.Recruit -> Counters.recruit (runReplacementEffects runSubgame) controller
   Effect.Learn -> Counters.learn (runReplacementEffects runSubgame) resolving source controller
-  Effect.Cloak payload -> Counters.cloak (runReplacementEffects runSubgame) resolving source controller legal payload
+  Effect.Cloak payload -> Counters.cloak (runReplacementEffects runSubgame) resolving source controller legal chosen payload
   Effect.ManifestDread payload -> Counters.manifestDread (runReplacementEffects runSubgame) resolving source controller legal payload
   Effect.Venture payload -> Counters.venture controller payload
   Effect.GainPlayerCounters payload -> Counters.gainPlayerCounters resolving source controller legal payload

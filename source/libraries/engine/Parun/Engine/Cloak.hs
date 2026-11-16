@@ -56,19 +56,19 @@ riders =
             }
     }
 
--- | CR 701.58a performed by the first player on the top card of the second's
--- library, which is what the printings that reach it say ("cloak the top card
--- of your library", "its controller cloaks the top card of their library",
--- Etrata, Deadly Fugitive's "cloak the top card of that player's library").
+-- | CR 701.58a performed by the player on the card: the top card of a library
+-- ("cloak the top card of your library", Etrata, Deadly Fugitive's "of that
+-- player's library"), a card from a hand (Vannifar, Evolved Enigma), one of a
+-- looked-at group (Hide in Plain Sight) or an exiled one (Expose the Culprit).
 --
 -- NO PROMPT, because the rule leaves nothing to ask: which card is cloaked is
--- fixed by the library's order, and the listing is the rule's.
+-- the caller's, and the listing is the rule's.
 --
 -- Through Event.changeZoneEntering, the door the faceDown rider is read from, so
 -- CR 708.3 turns the card over BEFORE the move and no reader ever sees it face
 -- up on the battlefield. That door is also CR 701.58f: a rule or effect that
 -- prohibits the face-down object from entering leaves the move cancelled, and
--- the card is then still the library card it was.
+-- the card is then still the card it was, where it was.
 --
 -- The permanent enters under the player who cloaked, which is CR 110.2a: that
 -- player is the one the effect instructed, whoever's library the card came
@@ -76,18 +76,11 @@ riders =
 -- etrata-deadly-fugitive-cloaks-the-top-card-of-the-damaged-opponent-s-library-under-her-controller
 -- proves it.
 --
--- An EMPTY LIBRARY cloaks nothing. CR 701.58a names a card, and CR 609.3 leaves
--- the rest of the effect to do as much as it can.
---
 -- The result is the permanent the cloak put onto the battlefield, none when the
 -- move was cancelled or replaced elsewhere, for the arm's slot.
-cloak :: Game () -> PlayerId -> PlayerId -> Game [ObjectId]
-cloak settle cloaker library = do
-  gs <- State.get
-  case Game.cardsIn Zone.Library library gs of
-    [] -> pure []
-    top : _ -> do
-      entered <- Event.changeZoneEntering settle top Zone.Battlefield LibraryPosition.defaultValue riders (Just cloaker)
-      after <- State.get
-      let onBattlefield oid = fmap Object.zone (Game.lookupObject oid after) == Just Zone.Battlefield
-      pure (filter onBattlefield (Foldable.toList entered))
+cloak :: Game () -> PlayerId -> ObjectId -> Game [ObjectId]
+cloak settle cloaker card = do
+  entered <- Event.changeZoneEntering settle card Zone.Battlefield LibraryPosition.defaultValue riders (Just cloaker)
+  after <- State.get
+  let onBattlefield oid = fmap Object.zone (Game.lookupObject oid after) == Just Zone.Battlefield
+  pure (filter onBattlefield (Foldable.toList entered))
