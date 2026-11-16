@@ -1,0 +1,263 @@
+{
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "battlefield": [
+          {
+            "card": "Vengeful Creeper",
+            "faceDown": "Disguised",
+            "label": "creeper"
+          },
+          {
+            "card": "Ornithopter",
+            "label": "mythop"
+          },
+          {
+            "card": "Forest",
+            "label": "f1"
+          },
+          {
+            "card": "Forest",
+            "label": "f2"
+          },
+          {
+            "card": "Forest",
+            "label": "f3"
+          },
+          {
+            "card": "Forest",
+            "label": "f4"
+          },
+          {
+            "card": "Forest",
+            "label": "f5"
+          },
+          {
+            "card": "Forest",
+            "label": "f6"
+          }
+        ],
+        "library": [
+          {
+            "card": "Wastes",
+            "label": "alib1"
+          },
+          {
+            "card": "Wastes",
+            "label": "alib2"
+          },
+          {
+            "card": "Wastes",
+            "label": "alib3"
+          },
+          {
+            "card": "Wastes",
+            "label": "alib4"
+          },
+          {
+            "card": "Wastes",
+            "label": "alib5"
+          },
+          {
+            "card": "Wastes",
+            "label": "alib6"
+          },
+          {
+            "card": "Wastes",
+            "label": "alib7"
+          },
+          {
+            "card": "Wastes",
+            "label": "alib8"
+          },
+          {
+            "card": "Wastes",
+            "label": "alib9"
+          },
+          {
+            "card": "Wastes",
+            "label": "alib10"
+          }
+        ],
+        "name": "alice"
+      },
+      {
+        "battlefield": [
+          {
+            "card": "Ornithopter",
+            "label": "thop"
+          },
+          {
+            "attached": "mythop",
+            "card": "Pacifism",
+            "label": "pac"
+          },
+          {
+            "card": "Grizzly Bears",
+            "label": "bears"
+          }
+        ],
+        "library": [
+          {
+            "card": "Wastes",
+            "label": "blib1"
+          },
+          {
+            "card": "Wastes",
+            "label": "blib2"
+          },
+          {
+            "card": "Wastes",
+            "label": "blib3"
+          },
+          {
+            "card": "Wastes",
+            "label": "blib4"
+          },
+          {
+            "card": "Wastes",
+            "label": "blib5"
+          },
+          {
+            "card": "Wastes",
+            "label": "blib6"
+          },
+          {
+            "card": "Wastes",
+            "label": "blib7"
+          },
+          {
+            "card": "Wastes",
+            "label": "blib8"
+          },
+          {
+            "card": "Wastes",
+            "label": "blib9"
+          },
+          {
+            "card": "Wastes",
+            "label": "blib10"
+          }
+        ],
+        "name": "bob"
+      }
+    ],
+    "step": "PrecombatMain"
+  },
+  "description": "CR 702.168, 708.8, 701.8a: Vengeful Creeper turned face up destroys target artifact or enchantment an opponent controls",
+  "note": "The trigger refuses alice's own artifact and bob's creature; bob's Pacifism on alice's Ornithopter is an enchantment bob controls.",
+  "timeline": [
+    {
+      "do": {
+        "Take": {
+          "action": "TurnFaceUp $creeper",
+          "mana": [
+            "$f1",
+            "$f2",
+            "$f3",
+            "$f4",
+            "$f5",
+            "$f6"
+          ]
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "player": "alice",
+      "refuse": {
+        "ChooseTargets": {
+          "target": [
+            "$mythop"
+          ]
+        }
+      },
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "player": "alice",
+      "refuse": {
+        "ChooseTargets": {
+          "target": [
+            "$bears"
+          ]
+        }
+      },
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "ChooseTargets": {
+          "target": [
+            "$pac"
+          ]
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Pacifism",
+          "count": 1,
+          "player": "bob",
+          "zone": "Graveyard"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Ornithopter",
+          "count": 1,
+          "player": "bob",
+          "zone": "Battlefield"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Ornithopter",
+          "count": 1,
+          "player": "alice",
+          "zone": "Battlefield"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "PowerToughness": {
+          "object": "$creeper",
+          "power": 5,
+          "toughness": 5
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    }
+  ]
+}
