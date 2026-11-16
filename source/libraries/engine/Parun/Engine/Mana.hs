@@ -1328,21 +1328,21 @@ sourceChoicesOf oid gs = case Game.lookupObject oid gs of
      in if Map.null (SourceChoices.names choices) && Set.null (SourceChoices.colors choices) && Maybe.isNothing (SourceChoices.subtype choices) then Nothing else Just choices {SourceChoices.acquisition = Acquisition.Own}
 
 -- CR 106.3: what this object's mana names as its producer
--- (Parun.Types.ManaUnit.producer) -- the object itself where one of its
--- triggered abilities asks after mana it produced (Filter.PaidWithManaFromSource),
--- and Nothing otherwise.
+-- (Parun.Types.ManaUnit.producer) -- the object itself wherever any object
+-- could ask after mana it produced (Filter.PaidWithManaFromSource), and Nothing
+-- otherwise.
 --
--- Asked of the projection as the mana is made AND of the copiable values (CR
--- 707.2), since the source is the mana's whatever abilities it has (CR 106.3):
--- a layer-4 or layer-6 removal (Blood Moon's CR 305.7) can end before the mana
--- is spent. data/scenarios/tecutlan-discovers-with-mana-it-made-while-blood-moon-had-taken-its-trigger.json
--- is the proof.
---
--- Not implemented: a producer that has the ability in neither, and gains it
--- before the mana is spent (a later copy effect), never names itself (#8127).
+-- Asked of the producer's projection as the mana is made, and of EVERY object's
+-- copiable values (CR 707.2), since the source is the mana's whatever abilities
+-- it has when the question is asked (CR 106.3): a layer-4 or layer-6 removal
+-- (Blood Moon's CR 305.7) can end before the mana is spent, and the producer can
+-- become a copy of any object holding the ability before then.
+-- data/scenarios/tecutlan-discovers-with-mana-it-made-while-blood-moon-had-taken-its-trigger.json
+-- and data/scenarios/thespian-s-stage-copying-tecutlan-discovers-with-mana-it-made-before.json
+-- are the proofs.
 producerOf :: Map.Map ObjectId PC.ProjectedCharacteristics -> ObjectId -> GameState -> Maybe ObjectId
 producerOf pcs oid gs = case Game.lookupObject oid gs of
-  Just _ | any readsOwnMana [Projection.projectGiven pcs oid gs, Projection.copiableCharacteristics oid gs] -> Just oid
+  Just _ | readsOwnMana (Projection.projectGiven pcs oid gs) || any (readsOwnMana . (`Projection.copiableCharacteristics` gs)) (Map.keys (GameState.objects gs)) -> Just oid
   _ -> Nothing
   where
     readsOwnMana = any (triggerReadsProducer . TriggeredAbility.condition) . PC.triggeredAbilities
