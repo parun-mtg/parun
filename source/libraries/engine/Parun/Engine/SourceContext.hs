@@ -64,6 +64,9 @@ framedWith viewOf choices source gs context =
       Filter.sourceCountered = Map.filter (not . Set.null) (fmap (Set.map CounterLink.moved . Set.filter (\link -> CounterLink.source link == source && CounterLink.acquisition link == SourceChoices.acquisition choices)) (GameState.counteredWith gs)),
       -- CR 607.2a: the cards in exile now (CR 400.7) linked to the source.
       Filter.sourceExiled = Map.filter ((== source) . ExileLink.source) (Map.restrictKeys (GameState.exiledWith gs) (GameState.exile gs)),
+      -- CR 607.2d: the objects the source last chose under the choices'
+      -- acquisition, read off the board as sourceExiled is.
+      Filter.sourceChosenObjects = Maybe.fromMaybe Set.empty (Game.choiceWithLastKnown Chosen.Objects (SourceChoices.acquisition choices) source gs),
       -- CR 508.5, for a source that is attacking or was removed from combat,
       -- and CR 506.4e's protector for a planeswalker that became only a
       -- battle, whose card types `viewOf` answers. data/scenarios/

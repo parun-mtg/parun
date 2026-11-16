@@ -134,6 +134,7 @@ codec keywordCodec =
       Arm.nullary "HasChosenCardType" Filter.HasChosenCardType,
       Arm.payload "IsExiledWithSource" ExiledPile.codec Filter.IsExiledWithSource (\x -> case x of Filter.IsExiledWithSource y -> Just y; _ -> Nothing),
       Arm.nullary "IsLastExiledWithSource" Filter.IsLastExiledWithSource,
+      Arm.nullary "IsChosenObject" Filter.IsChosenObject,
       Arm.nullary "OfChosenPlayer" Filter.OfChosenPlayer,
       Arm.payload "OfRelatedPlayer" PlayerRelation.codec Filter.OfRelatedPlayer (\x -> case x of Filter.OfRelatedPlayer y -> Just y; _ -> Nothing),
       -- Runtime-only, HeldByPlayer's treatment above.
@@ -373,6 +374,7 @@ tagOf x = case x of
   Filter.HasChosenCardType {} -> "HasChosenCardType"
   Filter.IsExiledWithSource {} -> "IsExiledWithSource"
   Filter.IsLastExiledWithSource -> "IsLastExiledWithSource"
+  Filter.IsChosenObject -> "IsChosenObject"
   Filter.OfChosenPlayer {} -> "OfChosenPlayer"
   Filter.OfRelatedPlayer {} -> "OfRelatedPlayer"
   Filter.OfSpecificPlayer {} -> "OfSpecificPlayer"

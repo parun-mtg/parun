@@ -3718,7 +3718,7 @@ modificationFilters modification = case modification of
     (Unframed, among) : designatorFilters designator
   -- The rider's CR 602.5 conditions, as a printed ability's are swept, and the
   -- Filter naming the exiled cards.
-  Modification.GainCardAbilities (CardAbilities.MkCardAbilities _ cards _ _ extra) -> (Unframed, cards) : frame Unframed (concatMap conditionFilters (concatMap restrictionConditions extra))
+  Modification.GainCardAbilities (CardAbilities.MkCardAbilities _ cards _ _ _ extra) -> (Unframed, cards) : frame Unframed (concatMap conditionFilters (concatMap restrictionConditions extra))
   Modification.GainLentKeyword lent -> frame Unframed (concatMap conditionFilters (concatMap restrictionConditions (LentKeyword.restrictions lent)))
   Modification.GainAbilitiesOfStickers -> []
   Modification.SetBasePowerToughness (SetBasePowerToughness.MkSetBasePowerToughness p t) -> foldMap quantityFilters p <> foldMap quantityFilters t

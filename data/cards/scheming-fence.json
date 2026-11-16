@@ -1,0 +1,162 @@
+{
+  "faces": [
+    {
+      "activationProhibitions": [
+        {
+          "affected": {
+            "type": "Matching",
+            "value": {
+              "type": "IsChosenObject"
+            }
+          }
+        }
+      ],
+      "manaCost": [
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "White"
+          }
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "Blue"
+          }
+        }
+      ],
+      "name": "Scheming Fence",
+      "oracleText": "As this creature enters, you may choose a nonland permanent.\nActivated abilities of the chosen permanent can't be activated.\nThis creature has all activated abilities of the chosen permanent except for loyalty abilities. You may spend mana as though it were mana of any color to activate those abilities.",
+      "playerAbilities": [
+        {
+          "effect": {
+            "type": "SpendManaAsThough",
+            "value": {
+              "asThough": [
+                {
+                  "type": "Colored",
+                  "value": "White"
+                },
+                {
+                  "type": "Colored",
+                  "value": "Blue"
+                },
+                {
+                  "type": "Colored",
+                  "value": "Black"
+                },
+                {
+                  "type": "Colored",
+                  "value": "Red"
+                },
+                {
+                  "type": "Colored",
+                  "value": "Green"
+                }
+              ],
+              "only": false,
+              "scope": {
+                "type": "Activating",
+                "value": {
+                  "lentBy": {
+                    "type": "IsChosenObject"
+                  },
+                  "source": {
+                    "type": "IsSource"
+                  }
+                }
+              },
+              "which": {
+                "type": "Any"
+              }
+            }
+          },
+          "scope": {
+            "type": "You"
+          }
+        }
+      ],
+      "power": {
+        "type": "Literal",
+        "value": 2
+      },
+      "replacementEffects": [
+        {
+          "effect": {
+            "type": "EntryR",
+            "value": {
+              "matching": {
+                "type": "IsSource"
+              },
+              "rewrite": {
+                "type": "RunEffects",
+                "value": [
+                  {
+                    "type": "ChoosePermanents",
+                    "value": {
+                      "linked": true,
+                      "permanents": {
+                        "count": {
+                          "type": "UpTo",
+                          "value": {
+                            "type": "Literal",
+                            "value": 1
+                          }
+                        },
+                        "filter": {
+                          "type": "Not",
+                          "value": {
+                            "type": "HasCardType",
+                            "value": "Land"
+                          }
+                        }
+                      },
+                      "slot": "chosen"
+                    }
+                  }
+                ]
+              }
+            }
+          }
+        }
+      ],
+      "staticAbilities": [
+        {
+          "affected": {
+            "type": "Matching",
+            "value": {
+              "type": "IsSource"
+            }
+          },
+          "modifications": [
+            {
+              "type": "GainCardAbilities",
+              "value": {
+                "cards": {
+                  "type": "IsChosenObject"
+                },
+                "from": "OnTheBattlefield",
+                "loyalty": "NonLoyaltyAbility"
+              }
+            }
+          ]
+        }
+      ],
+      "toughness": {
+        "type": "Literal",
+        "value": 3
+      },
+      "typeLine": {
+        "subtypes": [
+          "Citizen",
+          "Human"
+        ],
+        "types": [
+          "Creature"
+        ]
+      }
+    }
+  ]
+}

@@ -262,6 +262,8 @@ data Filter keyword
     -- baked onto a mana unit at production (ManaUnit.sourceLastExiled; Ice
     -- Cauldron's "only to cast the last card exiled with this artifact").
     IsLastExiledWithSource
+  | -- | CR 607.2d: the candidate is an object the SOURCE last chose (Object.chosenObjects; Scheming Fence's "the chosen permanent").
+    IsChosenObject
   | -- | CR 702.16k: the candidate is an object the protection carrier's chosen
     -- player controls, or one they own that no other player controls.
     OfChosenPlayer

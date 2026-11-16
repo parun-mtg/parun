@@ -33,6 +33,7 @@ import qualified Parun.Engine.Count as Count
 import qualified Parun.Engine.Filter as Filter
 import qualified Parun.Engine.Game as Game
 import qualified Parun.Engine.Keyword as Keyword
+import qualified Parun.Engine.Loyalty as LoyaltyAbility
 import qualified Parun.Engine.ManaAbility as ManaAbility
 import qualified Parun.Engine.ManaSymbolText as ManaSymbolText
 import qualified Parun.Engine.Mint as Mint
@@ -120,6 +121,7 @@ import qualified Parun.Types.LentCards as LentCards
 import qualified Parun.Types.LentKeyword as LentKeyword
 import qualified Parun.Types.LibraryPosition as LibraryPosition
 import qualified Parun.Types.Loyalty as Loyalty
+import qualified Parun.Types.LoyaltyKind as LoyaltyKind
 import qualified Parun.Types.ManaCost as ManaCost
 import qualified Parun.Types.Measure as Measure
 import qualified Parun.Types.Measures as Measures
@@ -595,7 +597,7 @@ applyModification textBoxOf viewOf src stamp gs oid unitTypes affected m pc =
         -- prove the triggered and the activated reader, and
         -- koh-the-face-stealer-s-borrowed-delayed-trigger-arms-a-second the
         -- title.
-        Modification.GainCardAbilities (CardAbilities.MkCardAbilities from criterion triggered only extra) ->
+        Modification.GainCardAbilities (CardAbilities.MkCardAbilities from criterion triggered only loyalty extra) ->
           let (zone, lenders) = case from of
                 LentCards.InExile -> (Zone.Exile, Set.toAscList (GameState.exile gs))
                 LentCards.TopOfYourLibrary -> (Zone.Library, foldMap (\you -> Maybe.maybeToList (Game.shownTop you gs)) (controllerOf src gs))
@@ -612,7 +614,7 @@ applyModification textBoxOf viewOf src stamp gs oid unitTypes affected m pc =
               named card a = a {ActivatedAbility.name = Just (Binding.acquiredFrom card (ActivatedAbility.name a))}
               -- CR 113.6 / 702.178b: a card has, where it is, only the "as long
               -- as" grants that function there (AbilityZone.grantFunctionsIn).
-              lent card = let copied = lenderOf card in filter (lendsKind only) (intrinsicManaAbilitiesOf copied <> filter (AbilityZone.grantFunctionsIn Zone.Battlefield (PC.delayedAbilities copied) zone) (PC.activatedAbilities copied))
+              lent card = let copied = lenderOf card in filter (lendsKind only loyalty) (intrinsicManaAbilitiesOf copied <> filter (AbilityZone.grantFunctionsIn Zone.Battlefield (PC.delayedAbilities copied) zone) (PC.activatedAbilities copied))
               gained = foldMap (\card -> fmap (named card) (lent card)) cards
               restricted a = a {ActivatedAbility.restrictions = ActivatedAbility.restrictions a <> extra}
               titled card t = t {TriggeredAbility.name = Just (Binding.acquiredFrom card (TriggeredAbility.name t))}
@@ -1024,10 +1026,10 @@ intrinsicManaAbilitiesOf pc =
     then fmap Mint.intrinsicManaAbility (Maybe.mapMaybe Subtype.subtypeMana (Set.toAscList (PC.subtypes pc)))
     else []
 
--- | CR 605.1a: whether a lend naming this kind of activated ability, or
--- Nothing for both, takes this one.
-lendsKind :: Maybe AbilityKind.AbilityKind -> ActivatedAbility.ActivatedAbility Card.Type.Card (GrantedAbility.GrantedAbility Card.Type.Card) -> Bool
-lendsKind only a = all (== (if ManaAbility.isManaAbility a then AbilityKind.ManaAbility else AbilityKind.NonManaAbility)) only
+-- | CR 605.1a / 606.2: whether a lend naming these kinds of activated ability,
+-- Nothing for both of a division, takes this one.
+lendsKind :: Maybe AbilityKind.AbilityKind -> Maybe LoyaltyKind.LoyaltyKind -> ActivatedAbility.ActivatedAbility Card.Type.Card (GrantedAbility.GrantedAbility Card.Type.Card) -> Bool
+lendsKind only loyalty a = all (== (if ManaAbility.isManaAbility a then AbilityKind.ManaAbility else AbilityKind.NonManaAbility)) only && all (== LoyaltyAbility.loyaltyKindOf (ActivatedAbility.cost a)) loyalty
 
 -- CR 113.2c / 201.5a: a granted activated ability, named for its granter
 -- (Binding.acquiredFrom) where a rider counts its activations or a quantity of
@@ -4503,6 +4505,7 @@ filterReads f = case f of
   Filter.Type.HasChosenCardType -> Set.singleton Types
   Filter.Type.IsExiledWithSource _ -> Set.empty
   Filter.Type.IsLastExiledWithSource -> Set.empty
+  Filter.Type.IsChosenObject -> Set.empty
   -- Reads the candidate's CONTROLLER, ControllerRelatesToBound's answer above: rule
   -- 702.16k's other half is an owner, which CR 108.3 never projects.
   Filter.Type.OfChosenPlayer -> Set.singleton Controller
@@ -4883,6 +4886,7 @@ filterReadsPeers f = case f of
   Filter.Type.HasChosenCardType -> False
   Filter.Type.IsExiledWithSource _ -> False
   Filter.Type.IsLastExiledWithSource -> False
+  Filter.Type.IsChosenObject -> False
   -- The carrier's chosen player arrives on the Context; the candidate's own
   -- controller and owner are read off its view, so no PEER is projected.
   Filter.Type.OfChosenPlayer -> False

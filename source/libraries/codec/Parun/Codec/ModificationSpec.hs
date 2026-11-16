@@ -354,7 +354,7 @@ spec s = Spec.describe s "Parun.Codec.Modification" $ do
     Common.assertCodec
       s
       codec
-      (Modification.GainCardAbilities CardAbilities.MkCardAbilities {CardAbilities.from = LentCards.InExile, CardAbilities.cards = Filter.IsExiledWithSource ExiledPile.CraftMaterials, CardAbilities.triggered = False, CardAbilities.only = Nothing, CardAbilities.restrictions = [ActivationRestriction.TimesEachTurn 1]})
+      (Modification.GainCardAbilities CardAbilities.MkCardAbilities {CardAbilities.from = LentCards.InExile, CardAbilities.cards = Filter.IsExiledWithSource ExiledPile.CraftMaterials, CardAbilities.triggered = False, CardAbilities.only = Nothing, CardAbilities.loyalty = Nothing, CardAbilities.restrictions = [ActivationRestriction.TimesEachTurn 1]})
       " {\"type\":\"GainCardAbilities\",\"value\":{\"cards\":{\"type\":\"IsExiledWithSource\",\"value\":{\"type\":\"CraftMaterials\"}},\"restrictions\":[{\"type\":\"TimesEachTurn\",\"value\":1}]}} "
   -- layer 6, CR 702.1d: the keyword a resolving lend recorded.
   Spec.it s "GainLentKeyword" $
