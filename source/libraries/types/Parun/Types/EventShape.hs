@@ -4,6 +4,7 @@ import qualified Parun.Types.AttackWindow as AttackWindow
 import qualified Parun.Types.CardArrivedIn as CardArrivedIn
 import qualified Parun.Types.CastWindow as CastWindow
 import qualified Parun.Types.MovedBetween as MovedBetween
+import qualified Parun.Types.SourceDealtDamage as SourceDealtDamage
 import qualified Parun.Types.Zone as Zone
 
 -- | Which recorded events a history count folds over. TurnRegisters.events is cleared
@@ -13,7 +14,7 @@ import qualified Parun.Types.Zone as Zone
 --
 -- Only the zone changes, GameEvent.LeftTheGame, the cast, the attacker
 -- declaration, the counter placement, the sacrifice, the turn face up, combat
--- damage to a player and damage to a permanent have a shape: every other
+-- damage dealt by a source and damage to a permanent have a shape: every other
 -- GameEvent constructor is recorded in the log with no EventShape arm, so a
 -- count cannot fold over any of them (#162).
 --
@@ -89,10 +90,11 @@ data EventShape
     -- the permanent as it is or last was, its controller the player who turned
     -- it (Oblivious Bookworm's "you turned a permanent face up this turn").
     TurnedFaceUp
-  | -- | CR 510.2 / 608.2i: a source dealt combat damage to a player, each member
-    -- the source as it dealt it (Parun.Engine.Filter.dealtByView), and each
-    -- source a member once however often it connected (Indulge // Excess).
-    DealtCombatDamageToPlayer
+  | -- | CR 120.1 / 608.2i: a source dealt damage of this kind to this kind of
+    -- recipient, each member the source as it dealt it
+    -- (Parun.Engine.Filter.dealtByView), and each source a member once however
+    -- often it dealt damage (Indulge // Excess, Case of the Burning Masks).
+    SourceDealtDamage SourceDealtDamage.SourceDealtDamage
   | -- | CR 120.3 / 608.2i: a source dealt damage to a permanent, each member the
     -- permanent as it was dealt it (Parun.Engine.Count.dealtToView), and each
     -- permanent a member once (Rith, Liberated Primeval's "a creature or

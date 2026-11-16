@@ -717,6 +717,7 @@ import qualified Parun.Codec.QuotientSpec
 import qualified Parun.Codec.RangeOfInfluenceSpec
 import qualified Parun.Codec.ReachSpec
 import qualified Parun.Codec.ReadinessSpec
+import qualified Parun.Codec.RecipientKindSpec
 import qualified Parun.Codec.RecipientSpec
 import qualified Parun.Codec.RedirectDamageSpec
 import qualified Parun.Codec.ReferenceSpec
@@ -792,6 +793,7 @@ import qualified Parun.Codec.SkipWindowSpec
 import qualified Parun.Codec.SlotCountSpec
 import qualified Parun.Codec.SlotNameSpec
 import qualified Parun.Codec.SourceChoicesSpec
+import qualified Parun.Codec.SourceDealtDamageSpec
 import qualified Parun.Codec.SourceSpec
 import qualified Parun.Codec.SpecialActionSpec
 import qualified Parun.Codec.SpeedDecreaseSpec
@@ -1826,6 +1828,7 @@ spec s reference corpus = do
   Parun.Codec.ReachSpec.spec s
   Parun.Codec.ReadinessSpec.spec s
   Parun.Codec.RecipientSpec.spec s
+  Parun.Codec.RecipientKindSpec.spec s
   Parun.Codec.RedirectDamageSpec.spec s
   Parun.Codec.ReferenceSpec.spec s
   Parun.Codec.RegenerabilitySpec.spec s
@@ -1903,6 +1906,7 @@ spec s reference corpus = do
   Parun.Codec.SlotNameSpec.spec s
   Parun.Codec.PlayerSlotSpec.spec s
   Parun.Codec.SourceChoicesSpec.spec s
+  Parun.Codec.SourceDealtDamageSpec.spec s
   Parun.Codec.SourceSpec.spec s
   Parun.Codec.SpecialActionSpec.spec s
   Parun.Codec.SpeedDecreaseSpec.spec s
