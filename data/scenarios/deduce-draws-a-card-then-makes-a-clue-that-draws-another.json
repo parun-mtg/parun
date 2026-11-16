@@ -1,45 +1,180 @@
 {
-  "description": "Deduce draws a card, then makes a Clue that draws another",
-  "note": "Alice's library is stocked with distinct cards, so the hand view pins that Deduce drew exactly the top card (not zero, not two) and that the Clue it made is alice's and draws the next one when sacrificed. Bob gets no Clue.",
   "board": {
+    "active": "alice",
     "seats": [
       {
-        "name": "alice",
-        "manaPool": "UCCC",
         "hand": [
-          {"card": "Deduce", "label": "deduce"}
+          {
+            "card": "Deduce",
+            "label": "deduce"
+          }
         ],
         "library": [
-          {"card": "Hill Giant"},
-          {"card": "Grizzly Bears"},
-          {"card": "Forest"},
-          {"card": "Island"},
-          {"card": "Mountain"},
-          {"card": "Plains"},
-          {"card": "Swamp"},
-          {"card": "Wastes"}
-        ]
+          {
+            "card": "Hill Giant"
+          },
+          {
+            "card": "Grizzly Bears"
+          },
+          {
+            "card": "Forest"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Mountain"
+          },
+          {
+            "card": "Plains"
+          },
+          {
+            "card": "Swamp"
+          },
+          {
+            "card": "Wastes"
+          }
+        ],
+        "manaPool": "UCCC",
+        "name": "alice"
       },
       {
-        "name": "bob",
         "library": [
-          {"card": "Forest"}, {"card": "Forest"}, {"card": "Forest"}, {"card": "Forest"},
-          {"card": "Forest"}, {"card": "Forest"}, {"card": "Forest"}, {"card": "Forest"}
-        ]
+          {
+            "card": "Forest"
+          },
+          {
+            "card": "Forest"
+          },
+          {
+            "card": "Forest"
+          },
+          {
+            "card": "Forest"
+          },
+          {
+            "card": "Forest"
+          },
+          {
+            "card": "Forest"
+          },
+          {
+            "card": "Forest"
+          },
+          {
+            "card": "Forest"
+          }
+        ],
+        "name": "bob"
       }
     ],
-    "active": "alice",
     "step": "PrecombatMain"
   },
+  "description": "Deduce draws a card, then makes a Clue that draws another",
+  "note": "Alice's library is stocked with distinct cards, so the hand view pins that Deduce drew exactly the top card (not zero, not two) and that the Clue it made is alice's and draws the next one when sacrificed. Bob gets no Clue.",
   "timeline": [
-    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": {"Cast": {"object": "$deduce"}}},
-    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass"},
-    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"View": {"of": "Zone", "player": "alice", "zone": "Hand", "is": ["Hill Giant"]}}},
-    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Count": {"player": "alice", "zone": "Battlefield", "card": "Clue Token", "count": 1}}},
-    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Count": {"player": "bob", "zone": "Battlefield", "card": "Clue Token", "count": 0}}},
-    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": {"Activate": {"object": "Clue Token", "ability": 0}}},
-    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass"},
-    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"View": {"of": "Zone", "player": "alice", "zone": "Hand", "is": ["Hill Giant", "Grizzly Bears"]}}},
-    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Count": {"player": "alice", "zone": "Battlefield", "card": "Clue Token", "count": 0}}}
+    {
+      "do": {
+        "Cast": {
+          "object": "$deduce"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "View": {
+          "is": [
+            "Hill Giant"
+          ],
+          "of": "Zone",
+          "player": "alice",
+          "zone": "Hand"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Clue Token",
+          "count": 1,
+          "player": "alice",
+          "zone": "Battlefield"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Clue Token",
+          "count": 0,
+          "player": "bob",
+          "zone": "Battlefield"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Activate": {
+          "ability": 0,
+          "object": "Clue Token"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "View": {
+          "is": [
+            "Hill Giant",
+            "Grizzly Bears"
+          ],
+          "of": "Zone",
+          "player": "alice",
+          "zone": "Hand"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Clue Token",
+          "count": 0,
+          "player": "alice",
+          "zone": "Battlefield"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    }
   ]
 }

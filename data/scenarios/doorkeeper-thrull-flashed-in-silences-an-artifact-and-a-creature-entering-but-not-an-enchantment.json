@@ -1,11 +1,8 @@
 {
   "board": {
     "active": "alice",
-    "step": "PrecombatMain",
     "seats": [
       {
-        "name": "alice",
-        "manaPool": "GGGGGG",
         "battlefield": [
           {
             "card": "Soul Warden",
@@ -51,10 +48,11 @@
           {
             "card": "Island"
           }
-        ]
+        ],
+        "manaPool": "GGGGGG",
+        "name": "alice"
       },
       {
-        "name": "bob",
         "battlefield": [
           {
             "card": "Plains",
@@ -96,9 +94,11 @@
           {
             "card": "Island"
           }
-        ]
+        ],
+        "name": "bob"
       }
-    ]
+    ],
+    "step": "PrecombatMain"
   },
   "description": "CR 702.8a, 603.6a, 613.11: Doorkeeper Thrull, flashed in on an opponent's turn, stops artifacts and creatures entering from triggering abilities, for every player, and leaves an enchantment's alone",
   "note": "bob flashes the Thrull in response to alice's Golden Egg. alice's Soul Warden does not see the Thrull itself enter (life stays 20); the Egg (noncreature artifact) and Elvish Visionary (nonartifact creature) enter with neither their own draw triggers nor Soul Warden's; Ground Seal (neither type) still triggers and draws exactly one Island.",
@@ -122,11 +122,11 @@
     {
       "do": {
         "Cast": {
-          "object": "$thrull",
           "mana": [
             "$p1",
             "$p2"
-          ]
+          ],
+          "object": "$thrull"
         }
       },
       "player": "bob",
@@ -136,11 +136,11 @@
     {
       "check": {
         "View": {
-          "of": "Stack",
           "is": [
             "Doorkeeper Thrull",
             "Golden Egg"
-          ]
+          ],
+          "of": "Stack"
         }
       },
       "player": "alice",
@@ -156,10 +156,10 @@
     {
       "check": {
         "View": {
-          "of": "Stack",
           "is": [
             "Golden Egg"
-          ]
+          ],
+          "of": "Stack"
         }
       },
       "player": "alice",
@@ -169,8 +169,8 @@
     {
       "check": {
         "Life": {
-          "player": "alice",
-          "life": 20
+          "life": 20,
+          "player": "alice"
         }
       },
       "player": "alice",
@@ -186,8 +186,8 @@
     {
       "check": {
         "View": {
-          "of": "Stack",
-          "is": []
+          "is": [],
+          "of": "Stack"
         }
       },
       "player": "alice",
@@ -210,10 +210,10 @@
     {
       "do": {
         "Cast": {
-          "object": "$visionary",
           "mana": [
             null
-          ]
+          ],
+          "object": "$visionary"
         }
       },
       "player": "alice",
@@ -229,8 +229,8 @@
     {
       "check": {
         "View": {
-          "of": "Stack",
-          "is": []
+          "is": [],
+          "of": "Stack"
         }
       },
       "player": "alice",
@@ -253,10 +253,10 @@
     {
       "do": {
         "Cast": {
-          "object": "$seal",
           "mana": [
             null
-          ]
+          ],
+          "object": "$seal"
         }
       },
       "player": "alice",
@@ -272,10 +272,10 @@
     {
       "check": {
         "View": {
-          "of": "Stack",
           "is": [
             "trigger of Ground Seal"
-          ]
+          ],
+          "of": "Stack"
         }
       },
       "player": "alice",
@@ -304,8 +304,8 @@
     {
       "check": {
         "Life": {
-          "player": "alice",
-          "life": 20
+          "life": 20,
+          "player": "alice"
         }
       },
       "player": "alice",

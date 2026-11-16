@@ -1,10 +1,8 @@
 {
   "board": {
     "active": "alice",
-    "step": "PrecombatMain",
     "seats": [
       {
-        "name": "alice",
         "battlefield": [
           {
             "card": "Blood Pet",
@@ -66,10 +64,10 @@
           {
             "card": "Plains"
           }
-        ]
+        ],
+        "name": "alice"
       },
       {
-        "name": "bob",
         "battlefield": [
           {
             "card": "Mind Stone",
@@ -105,9 +103,11 @@
           {
             "card": "Island"
           }
-        ]
+        ],
+        "name": "bob"
       }
-    ]
+    ],
+    "step": "PrecombatMain"
   },
   "description": "CR 701.16a, 701.21a: Detective's Satchel investigates twice as it enters, and its Thopter ability is offered only once you have sacrificed an artifact this turn",
   "note": "Turn 1 alice sacrifices Blood Pet, a non-artifact creature: the ability stays unoffered. Turn 2 bob sacrifices his Mind Stone, an artifact: still unoffered, since bob is not you. Only alice cracking one of her Clues offers it. The Satchel is a noncreature artifact, so summoning sickness is no factor.",
@@ -157,8 +157,6 @@
     {
       "check": {
         "View": {
-          "of": "Offered",
-          "player": "alice",
           "is": [
             "Pass",
             "Activate Clue Token",
@@ -166,7 +164,9 @@
             "ActivateManaAbility $pet",
             "ActivateManaAbility $i2",
             "ActivateManaAbility $m4"
-          ]
+          ],
+          "of": "Offered",
+          "player": "alice"
         }
       },
       "player": "alice",
@@ -199,15 +199,15 @@
     {
       "check": {
         "View": {
-          "of": "Offered",
-          "player": "alice",
           "is": [
             "Pass",
             "Activate Clue Token",
             "Activate Clue Token#2",
             "ActivateManaAbility $i2",
             "ActivateManaAbility $m4"
-          ]
+          ],
+          "of": "Offered",
+          "player": "alice"
         }
       },
       "player": "alice",
@@ -217,12 +217,12 @@
     {
       "do": {
         "Activate": {
-          "object": "$stone",
           "ability": 1,
           "mana": [
             "$sw",
             null
-          ]
+          ],
+          "object": "$stone"
         }
       },
       "player": "bob",
@@ -232,15 +232,15 @@
     {
       "check": {
         "View": {
-          "of": "Offered",
-          "player": "alice",
           "is": [
             "Pass",
             "Activate Clue Token",
             "Activate Clue Token#2",
             "ActivateManaAbility $i2",
             "ActivateManaAbility $m4"
-          ]
+          ],
+          "of": "Offered",
+          "player": "alice"
         }
       },
       "player": "alice",
@@ -250,12 +250,12 @@
     {
       "do": {
         "Activate": {
-          "object": "Clue Token",
           "ability": 0,
           "mana": [
             "$i2",
             "$m4"
-          ]
+          ],
+          "object": "Clue Token"
         }
       },
       "player": "alice",
@@ -265,12 +265,12 @@
     {
       "check": {
         "View": {
-          "of": "Offered",
-          "player": "alice",
           "is": [
             "Pass",
             "Activate Detective's Satchel"
-          ]
+          ],
+          "of": "Offered",
+          "player": "alice"
         }
       },
       "player": "alice",
@@ -280,8 +280,8 @@
     {
       "do": {
         "Activate": {
-          "object": "Detective's Satchel",
-          "ability": 0
+          "ability": 0,
+          "object": "Detective's Satchel"
         }
       },
       "player": "alice",
@@ -333,11 +333,11 @@
     {
       "check": {
         "Keywords": {
-          "object": "Thopter Token",
+          "count": 1,
           "keyword": {
             "type": "Flying"
           },
-          "count": 1
+          "object": "Thopter Token"
         }
       },
       "player": "alice",
@@ -361,9 +361,9 @@
     {
       "check": {
         "View": {
-          "of": "Colors",
+          "is": [],
           "object": "Thopter Token",
-          "is": []
+          "of": "Colors"
         }
       },
       "player": "alice",

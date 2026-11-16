@@ -1,10 +1,8 @@
 {
   "board": {
     "active": "alice",
-    "step": "PrecombatMain",
     "seats": [
       {
-        "name": "alice",
         "battlefield": [
           {
             "card": "Mind Stone",
@@ -79,10 +77,10 @@
           {
             "card": "Island"
           }
-        ]
+        ],
+        "name": "alice"
       },
       {
-        "name": "bob",
         "battlefield": [
           {
             "card": "Grizzly Bears",
@@ -114,9 +112,11 @@
           {
             "card": "Island"
           }
-        ]
+        ],
+        "name": "bob"
       }
-    ]
+    ],
+    "step": "PrecombatMain"
   },
   "description": "CR 700.4, 701.25a, 701.16a: Drag the Canal always makes a Detective, and gains 2, surveils 2 and investigates only if a creature died this turn",
   "note": "The first cast follows alice sacrificing Mind Stone, a noncreature artifact going battlefield to graveyard: Detective only, no life, no surveil prompt, no Clue. Then alice bolts bob's Grizzly Bears, so the creature that died is an opponent's; the second cast does everything. The surveil puts the top card (Forest) in the graveyard and keeps the second (Mountain), two distinct cards, so surveil 2 is not 1.",
@@ -124,12 +124,12 @@
     {
       "do": {
         "Activate": {
-          "object": "$stone",
           "ability": 1,
           "mana": [
             "$p1",
             null
-          ]
+          ],
+          "object": "$stone"
         }
       },
       "player": "alice",
@@ -171,12 +171,12 @@
     {
       "do": {
         "Cast": {
-          "object": "$d1",
           "mana": [
             "$i1",
             "$s1",
             null
-          ]
+          ],
+          "object": "$d1"
         }
       },
       "player": "alice",
@@ -205,8 +205,8 @@
     {
       "check": {
         "Life": {
-          "player": "alice",
-          "life": 20
+          "life": 20,
+          "player": "alice"
         }
       },
       "player": "alice",
@@ -242,11 +242,11 @@
     {
       "do": {
         "Cast": {
-          "object": "$bolt",
           "mana": [
             "$m1",
             null
           ],
+          "object": "$bolt",
           "targets": [
             "$bears"
           ]
@@ -278,11 +278,11 @@
     {
       "do": {
         "Cast": {
-          "object": "$d2",
           "mana": [
             "$i2",
             "$s2"
-          ]
+          ],
+          "object": "$d2"
         }
       },
       "player": "alice",
@@ -329,8 +329,8 @@
     {
       "check": {
         "Life": {
-          "player": "alice",
-          "life": 22
+          "life": 22,
+          "player": "alice"
         }
       },
       "player": "alice",
@@ -404,12 +404,12 @@
     {
       "check": {
         "View": {
-          "of": "Colors",
-          "object": "Detective Token",
           "is": [
             "White",
             "Blue"
-          ]
+          ],
+          "object": "Detective Token",
+          "of": "Colors"
         }
       },
       "player": "alice",

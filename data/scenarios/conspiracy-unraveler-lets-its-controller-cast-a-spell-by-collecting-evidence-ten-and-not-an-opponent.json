@@ -1,24 +1,240 @@
 {
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "battlefield": [
+          {
+            "card": "Conspiracy Unraveler",
+            "label": "sphinx"
+          }
+        ],
+        "graveyard": [
+          {
+            "card": "Craw Wurm",
+            "label": "wurm"
+          },
+          {
+            "card": "Hill Giant",
+            "label": "hgiant"
+          },
+          {
+            "card": "Wind Drake",
+            "label": "drake"
+          },
+          {
+            "card": "Grizzly Bears",
+            "label": "bears"
+          }
+        ],
+        "hand": [
+          {
+            "card": "Colossal Dreadmaw",
+            "label": "maw"
+          }
+        ],
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ],
+        "name": "alice"
+      },
+      {
+        "graveyard": [
+          {
+            "card": "Craw Wurm"
+          },
+          {
+            "card": "Hill Giant"
+          },
+          {
+            "card": "Serra Angel"
+          }
+        ],
+        "hand": [
+          {
+            "card": "Air Elemental",
+            "label": "air"
+          }
+        ],
+        "library": [
+          {
+            "card": "Grizzly Bears"
+          },
+          {
+            "card": "Grizzly Bears"
+          },
+          {
+            "card": "Grizzly Bears"
+          },
+          {
+            "card": "Grizzly Bears"
+          },
+          {
+            "card": "Grizzly Bears"
+          },
+          {
+            "card": "Grizzly Bears"
+          },
+          {
+            "card": "Grizzly Bears"
+          },
+          {
+            "card": "Grizzly Bears"
+          }
+        ],
+        "name": "bob"
+      }
+    ],
+    "step": "PrecombatMain"
+  },
   "description": "CR 118.9, 701.59a: Conspiracy Unraveler lets its controller cast a spell by collecting evidence 10 instead of paying its mana cost, and gives an opponent no such option",
   "note": "Alice has no mana, so her Colossal Dreadmaw is castable only by the Unraveler's alternative cost. Her graveyard offers four cards; a first cast collecting only 9 mana value (Craw Wurm and Wind Drake) is reversed, and Craw Wurm plus Hill Giant (exactly 10) is taken, leaving the Drake and the Bears. On turn 2 bob, also without mana but with 15 mana value in his graveyard, is not offered his Air Elemental: the permission is alice's alone.",
-  "board": {"active": "alice", "step": "PrecombatMain", "seats": [
-    {"name": "alice", "hand": [{"card": "Colossal Dreadmaw", "label": "maw"}],
-     "battlefield": [{"card": "Conspiracy Unraveler", "label": "sphinx"}],
-     "graveyard": [{"card": "Craw Wurm", "label": "wurm"}, {"card": "Hill Giant", "label": "hgiant"}, {"card": "Wind Drake", "label": "drake"}, {"card": "Grizzly Bears", "label": "bears"}],
-     "library": [{"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}]},
-    {"name": "bob", "hand": [{"card": "Air Elemental", "label": "air"}],
-     "graveyard": [{"card": "Craw Wurm"}, {"card": "Hill Giant"}, {"card": "Serra Angel"}],
-     "library": [{"card": "Grizzly Bears"}, {"card": "Grizzly Bears"}, {"card": "Grizzly Bears"}, {"card": "Grizzly Bears"}, {"card": "Grizzly Bears"}, {"card": "Grizzly Bears"}, {"card": "Grizzly Bears"}, {"card": "Grizzly Bears"}]}]},
   "timeline": [
-    {"turn": 1, "step": "PrecombatMain", "player": "alice", "refuse": {"Cast": {"object": "$maw"}}},
-    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": {"Answer": {"prompt": "ChooseExilesTotalling", "with": ["$wurm", "$drake"]}}},
-    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": {"Cast": {"object": "$maw"}}},
-    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": {"Answer": {"prompt": "ChooseExilesTotalling", "with": ["$wurm", "$hgiant"]}}},
-    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"View": {"of": "Zone", "player": "alice", "zone": "Exile", "is": ["Craw Wurm#2", "Hill Giant#2"]}}},
-    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"View": {"of": "Zone", "player": "alice", "zone": "Graveyard", "is": ["$drake", "$bears"]}}},
-    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass"},
-    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Count": {"player": "alice", "zone": "Battlefield", "card": "Colossal Dreadmaw", "count": 1}}},
-    {"turn": 2, "step": "PrecombatMain", "player": "bob", "check": {"View": {"of": "Offered", "player": "bob", "is": ["Pass"]}}},
-    {"turn": 2, "step": "PrecombatMain", "player": "bob", "refuse": {"Cast": {"object": "$air"}}}
+    {
+      "player": "alice",
+      "refuse": {
+        "Cast": {
+          "object": "$maw"
+        }
+      },
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Answer": {
+          "prompt": "ChooseExilesTotalling",
+          "with": [
+            "$wurm",
+            "$drake"
+          ]
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Cast": {
+          "object": "$maw"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Answer": {
+          "prompt": "ChooseExilesTotalling",
+          "with": [
+            "$wurm",
+            "$hgiant"
+          ]
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "View": {
+          "is": [
+            "Craw Wurm#2",
+            "Hill Giant#2"
+          ],
+          "of": "Zone",
+          "player": "alice",
+          "zone": "Exile"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "View": {
+          "is": [
+            "$drake",
+            "$bears"
+          ],
+          "of": "Zone",
+          "player": "alice",
+          "zone": "Graveyard"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Colossal Dreadmaw",
+          "count": 1,
+          "player": "alice",
+          "zone": "Battlefield"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "View": {
+          "is": [
+            "Pass"
+          ],
+          "of": "Offered",
+          "player": "bob"
+        }
+      },
+      "player": "bob",
+      "step": "PrecombatMain",
+      "turn": 2
+    },
+    {
+      "player": "bob",
+      "refuse": {
+        "Cast": {
+          "object": "$air"
+        }
+      },
+      "step": "PrecombatMain",
+      "turn": 2
+    }
   ]
 }

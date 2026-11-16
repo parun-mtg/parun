@@ -3,24 +3,6 @@
     {
       "keywords": [
         {
-          "type": "Disguise",
-          "value": {
-            "mana": [
-              {
-                "type": "Generic",
-                "value": 2
-              },
-              {
-                "type": "OfType",
-                "value": {
-                  "type": "Colored",
-                  "value": "Red"
-                }
-              }
-            ]
-          }
-        },
-        {
           "type": "Equip",
           "value": {
             "cost": {
@@ -39,6 +21,24 @@
               ]
             },
             "quality": null
+          }
+        },
+        {
+          "type": "Disguise",
+          "value": {
+            "mana": [
+              {
+                "type": "Generic",
+                "value": 2
+              },
+              {
+                "type": "OfType",
+                "value": {
+                  "type": "Colored",
+                  "value": "Red"
+                }
+              }
+            ]
           }
         }
       ],

@@ -1,10 +1,8 @@
 {
   "board": {
     "active": "alice",
-    "step": "PrecombatMain",
     "seats": [
       {
-        "name": "alice",
         "battlefield": [
           {
             "card": "Island",
@@ -58,10 +56,10 @@
           {
             "card": "Plains"
           }
-        ]
+        ],
+        "name": "alice"
       },
       {
-        "name": "bob",
         "battlefield": [
           {
             "card": "Grizzly Bears",
@@ -94,15 +92,15 @@
           {
             "card": "Island"
           }
-        ]
+        ],
+        "name": "bob"
       },
       {
-        "name": "carol",
         "battlefield": [
           {
             "card": "Hill Giant",
-            "label": "giant",
-            "controller": "bob"
+            "controller": "bob",
+            "label": "giant"
           }
         ],
         "library": [
@@ -138,9 +136,11 @@
             "card": "Swamp",
             "label": "c8"
           }
-        ]
+        ],
+        "name": "carol"
       }
-    ]
+    ],
+    "step": "PrecombatMain"
   },
   "description": "CR 702.5a, 502.3, 701.24a: Dramatic Accusation taps the creature it enters on, keeps it tapped through its controller's untap step, and {U}{U} at instant speed shuffles it into its owner's library",
   "note": "carol owns the Hill Giant and bob controls it: the lock is read in bob's untap step (turn 2), where his tapped Grizzly Bears untaps beside it, and the shuffle lands in carol's library, not bob's (controller) or alice's (the Aura's). Two creatures make the Aura's target a choice. The activation is on bob's turn, so the ability is not sorcery-limited.",
@@ -148,13 +148,13 @@
     {
       "do": {
         "Cast": {
-          "object": "$aura",
           "mana": [
             "$i1",
             "$i2",
             "$i3",
             null
           ],
+          "object": "$aura",
           "targets": [
             "$giant"
           ]
@@ -173,10 +173,10 @@
     {
       "check": {
         "View": {
-          "of": "Stack",
           "is": [
             "trigger of Dramatic Accusation"
-          ]
+          ],
+          "of": "Stack"
         }
       },
       "player": "alice",
@@ -197,9 +197,9 @@
     {
       "check": {
         "View": {
-          "of": "Controller",
+          "is": "bob",
           "object": "$giant",
-          "is": "bob"
+          "of": "Controller"
         }
       },
       "player": "alice",
@@ -226,9 +226,9 @@
     {
       "check": {
         "View": {
-          "of": "AttachedTo",
+          "is": "$giant",
           "object": "Dramatic Accusation",
-          "is": "$giant"
+          "of": "AttachedTo"
         }
       },
       "player": "alice",
@@ -260,12 +260,12 @@
     {
       "do": {
         "Activate": {
-          "object": "Dramatic Accusation",
           "ability": 0,
           "mana": [
             "$i4",
             "$i5"
-          ]
+          ],
+          "object": "Dramatic Accusation"
         }
       },
       "player": "alice",
@@ -275,10 +275,10 @@
     {
       "check": {
         "View": {
-          "of": "Stack",
           "is": [
             "ability of Dramatic Accusation"
-          ]
+          ],
+          "of": "Stack"
         }
       },
       "player": "alice",

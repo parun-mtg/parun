@@ -1845,7 +1845,8 @@ filterPositionLintSpec s registry corpus = Spec.describe s "Lint" $ do
         ("Jaded Response", 1), -- its counter clause's "if"'s Count filter, Color at AnyPermanent
         ("Radagast the Brown", 1), -- its from-among choice's filter, negated, CreatureType at AnyPermanent
         ("Spellweaver Helix", 2), -- its intervening "if"'s Count filter and its choice's filter
-        ("Jester's Scepter", 1) -- its counter clause's "if"'s Count filter
+        ("Jester's Scepter", 1), -- its counter clause's "if"'s Count filter
+        ("Deadly Cover-Up", 1) -- its search's filter, against its exiled card
       ]
     -- Both sides of the split, with room to spare under the pool's real figures:
     -- a traversal that had stopped walking, or a Framing that had stopped marking
@@ -2373,7 +2374,9 @@ filterPositionLintSpec s registry corpus = Spec.describe s "Lint" $ do
         ("Fire-Rim Form", 1), -- Super Speed's wording
         ("Colossification", 1), -- Claustrophobia's entering tap
         ("Kitnap", 2), -- Claustrophobia's entering tap and the stun counters the gift gates
-        ("Fae Flight", 1) -- Aquitect's Defenses' entering hexproof
+        ("Fae Flight", 1), -- Aquitect's Defenses' entering hexproof
+        ("Convenient Target", 1), -- a loop over its host, suspecting it in the entering trigger
+        ("Dramatic Accusation", 2) -- Stay Hidden, Stay Silent's tap and shuffle
       ]
     -- The rejected side, which the sweep above cannot show while the pool has no
     -- offender: the same atom planted in a SPELL's target slot -- the position a
