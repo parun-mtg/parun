@@ -132,11 +132,14 @@
                                 "type": "And",
                                 "value": []
                               },
-                              "perColor": {
-                                "type": "HeldBy",
+                              "onePer": {
+                                "type": "ColorAmong",
                                 "value": {
-                                  "holder": "Controller",
-                                  "relation": "You"
+                                  "type": "HeldBy",
+                                  "value": {
+                                    "holder": "Controller",
+                                    "relation": "You"
+                                  }
                                 }
                               },
                               "slot": "revealed"

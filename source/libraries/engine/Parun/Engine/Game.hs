@@ -4630,7 +4630,7 @@ chooseUpTo ceiling_ candidates prompt = again Set.empty
 --
 --
 -- UpTo under `admits` (the picks so far, and whether a candidate may join
--- them: Parun.Types.ChosenCardFromAmong's total, perColor and differentIn,
+-- them: Parun.Types.ChosenCardFromAmong's total, onePer and differentIn,
 -- Parun.Types.ChosenPermanents' total): one ask PER PICK, the sequence above,
 -- each offering only the candidates the earlier picks admit and each
 -- declinable, so no answer can break the bound and every set within it is

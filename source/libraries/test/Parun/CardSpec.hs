@@ -365,6 +365,7 @@ import qualified Parun.Types.ObjectId as ObjectId
 import qualified Parun.Types.ObjectRef as ObjectRef
 import qualified Parun.Types.ObjectRestriction as ObjectRestriction
 import qualified Parun.Types.OfferCast as OfferCast
+import qualified Parun.Types.OnePer as OnePer
 import qualified Parun.Types.Onset as Onset
 import qualified Parun.Types.OrElse as OrElse
 import qualified Parun.Types.PayGate as PayGate
@@ -3418,9 +3419,9 @@ objectRefFilters ref = case ref of
   -- slot names the group and holds no characteristic, so the Filter is what there
   -- is to lint -- the two chosen arms above's answer -- beside the count's and
   -- the total's Quantities, through refFilters as theirs go. Sanar, Innovative
-  -- First-Year's perColor is a second Filter, over the permanents whose colors
+  -- First-Year's onePer is a second Filter, over the permanents whose colors
   -- bound the picks.
-  ObjectRef.ChosenCardFromAmong (ChosenCardFromAmong.MkChosenCardFromAmong _ f _ _ perColor _ _ _ _ _) -> unframed (f : Foldable.toList perColor) <> refFilters ref
+  ObjectRef.ChosenCardFromAmong (ChosenCardFromAmong.MkChosenCardFromAmong _ f _ _ onePer _ _ _ _ _) -> unframed (f : foldMap onePerFilters onePer) <> refFilters ref
   -- The arm above's plural: the same Filter position, saying which members are
   -- taken rather than which may be picked, and linted the same way.
   ObjectRef.EachCardFromAmong (EachCardFromAmong.MkEachCardFromAmong _ f) -> unframed [f]
@@ -4978,6 +4979,13 @@ framedSlotsReadSingly (framing, predicate)
 
 -- Tag a Filter position as UNFRAMED -- one none of the framings above applies
 -- to, which is every position in the type except the ones they name.
+-- The Filter a per-quality bound holds: Sanar, Innovative First-Year's
+-- permanents whose colors bound the picks.
+onePerFilters :: OnePer.OnePer -> [Filter.Type.Filter Keyword.Keyword]
+onePerFilters per = case per of
+  OnePer.ColorAmong among -> [among]
+  OnePer.CardType -> []
+
 unframed :: [Filter.Type.Filter Keyword.Keyword] -> [(Framing, Filter.Type.Filter Keyword.Keyword)]
 unframed = fmap ((,) Unframed)
 

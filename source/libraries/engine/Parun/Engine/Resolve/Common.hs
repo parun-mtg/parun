@@ -179,6 +179,7 @@ import qualified Parun.Types.Object as Object
 import Parun.Types.ObjectId (ObjectId)
 import Parun.Types.ObjectRef (ObjectRef)
 import qualified Parun.Types.ObjectRef as ObjectRef
+import qualified Parun.Types.OnePer as OnePer
 import qualified Parun.Types.OptionalDecision as OptionalDecision
 import qualified Parun.Types.OutsideDestination as OutsideDestination
 import qualified Parun.Types.PayBranch as PayBranch
@@ -2328,11 +2329,12 @@ chooseCardsInHand resolving source controller legal (ChosenCardInHand.MkChosenCa
 -- 601.2b left on the resolving object -- TopOfLibrary's reading, and its clamp: a
 -- count that will not evaluate, or evaluates negative, is zero cards (CR
 -- 107.2, 107.1b). pickCounted asks it, and holds the picks within the ref's
--- total where it states one, and to a card for each color where it states a
--- perColor: the colors (CR 105.1) of the permanents that Filter matches, read
--- here off the projection, each pick answering for one color of its own that no
--- other pick answers for. A card of two of them answers for either (CR
--- 105.2b). And to picks sharing no value on a differentIn axis, read off the
+-- total where it states one, and to a card for each value where it states a
+-- onePer: the colors (CR 105.1) of the permanents a ColorAmong's Filter
+-- matches, read here off the projection, or every card type (CR 205.2a), each
+-- pick answering for one value of its own that no other pick answers for. A
+-- card of two of them answers for either (CR 105.2b, 205.2a): an artifact
+-- creature beside a creature, Portent of Calamity's. And to picks sharing no value on a differentIn axis, read off the
 -- projection as a search's are (differing): Rip, Spawn Hunter's "with
 -- different powers".
 --
@@ -2350,7 +2352,7 @@ chooseCardFromAmong ::
   Map.Map SlotName (Set Recipient) ->
   ChosenCardFromAmong.ChosenCardFromAmong ->
   Game [ObjectId]
-chooseCardFromAmong offered resolving source controller legal chosen (ChosenCardFromAmong.MkChosenCardFromAmong slot filter_ count total perColor differentIn chooser pileChooser faceUpPile selection) = do
+chooseCardFromAmong offered resolving source controller legal chosen (ChosenCardFromAmong.MkChosenCardFromAmong slot filter_ count total onePer differentIn chooser pileChooser faceUpPile selection) = do
   members <- fromAmongMembers legal resolving chosen slot
   gs <- State.get
   let viewOf = effectViewOf resolving source legal gs
@@ -2367,11 +2369,13 @@ chooseCardFromAmong offered resolving source controller legal chosen (ChosenCard
       matching = matchingFromAmong legal resolving controller source gs filter_ candidates
       weighs = Quantity.evaluateFor viewOf context gs resolving
       colorsOf = foldMap Filter.colors . viewOf
-      oneEach among =
-        let palette = foldMap colorsOf (battlefieldMatching legal resolving controller source gs among)
-         in \taken oid -> distinctlyAssigned (fmap (Set.toList . Set.intersection palette . colorsOf) (oid : taken))
+      oneEach per = case per of
+        OnePer.ColorAmong among ->
+          let palette = foldMap colorsOf (battlefieldMatching legal resolving controller source gs among)
+           in \taken oid -> distinctlyAssigned (fmap (Set.toList . Set.intersection palette . colorsOf) (oid : taken))
+        OnePer.CardType -> \taken oid -> distinctlyAssigned (fmap (Set.toList . foldMap Filter.cardTypes . viewOf) (oid : taken))
       apart taken oid = length (differing differentIn gs (oid : taken)) == length taken + 1
-      bounds = Foldable.toList (fmap (withinTotal weighs amount) total) <> Foldable.toList (fmap oneEach perColor) <> [apart | not (Set.null differentIn)]
+      bounds = Foldable.toList (fmap (withinTotal weighs amount) total) <> Foldable.toList (fmap oneEach onePer) <> [apart | not (Set.null differentIn)]
       admits = if null bounds then Nothing else Just (\taken oid -> all (\bound -> bound taken oid) bounds)
       pick purpose = case selection of
         CardSelection.AtRandom -> \pool -> Game.drawDistinct Prompt.RandomObject (maybe (List.genericLength pool) amount (HowMany.quantity count)) pool

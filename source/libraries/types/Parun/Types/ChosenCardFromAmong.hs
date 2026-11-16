@@ -6,6 +6,7 @@ import qualified Parun.Types.DifferentIn as DifferentIn
 import qualified Parun.Types.Filter as Filter
 import qualified Parun.Types.HowMany as HowMany
 import qualified Parun.Types.Keyword as Keyword
+import qualified Parun.Types.OnePer as OnePer
 import qualified Parun.Types.PlayerRef as PlayerRef
 import qualified Parun.Types.SlotName as SlotName
 import qualified Parun.Types.TotalCap as TotalCap
@@ -57,11 +58,11 @@ data ChosenCardFromAmong = MkChosenCardFromAmong
     -- only shape Parun.EffectLintSpec admits it on. Proved by the Michelangelo's
     -- Technique scenarios.
     total :: Maybe TotalCap.TotalCap,
-    -- | CR 608.2d: at most one pick for each color (CR 105.1) among the
-    -- permanents this matches, each pick a card of its own color; Nothing is no
-    -- such bound. Read where the total is. Proved by the Sanar, Innovative
-    -- First-Year scenarios.
-    perColor :: Maybe (Filter.Filter Keyword.Keyword),
+    -- | CR 608.2d: at most one pick for each value of that quality, each pick
+    -- answering for a value of its own; Nothing is no such bound. Read where
+    -- the total is. Proved by the Sanar, Innovative First-Year and Portent of
+    -- Calamity scenarios.
+    onePer :: Maybe OnePer.OnePer,
     -- | CR 608.2d: characteristics no two picks share, Rip, Spawn Hunter's
     -- "with different powers"; empty is no such bound. Read where the total
     -- is. Proved by the Rip, Spawn Hunter scenarios.

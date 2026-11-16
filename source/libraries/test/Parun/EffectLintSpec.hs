@@ -174,6 +174,7 @@ import qualified Parun.Types.NextDamageOutcome as NextDamageOutcome
 import qualified Parun.Types.ObjectId as ObjectId
 import qualified Parun.Types.ObjectRef as ObjectRef
 import qualified Parun.Types.OfferCast as OfferCast
+import qualified Parun.Types.OnePer as OnePer
 import qualified Parun.Types.Optionality as Optionality
 import qualified Parun.Types.OrElse as OrElse
 import qualified Parun.Types.PayBranch as PayBranch
@@ -3002,23 +3003,27 @@ effectLintSpec s registry corpus = Spec.describe s "Lint" $ do
   -- Parun.Types.ChosenCardFromAmong's total is read only by an "up to" count a
   -- player picks, Game.pickCounted's bounded arm, so beside an exact count or a
   -- random pick it is inert card data, and under a pile split no card proves it.
-  -- Michelangelo's Technique keeps the sweep from being vacuous. Its perColor
-  -- is read there too, and Sanar, Innovative First-Year keeps that half honest;
+  -- Michelangelo's Technique keeps the sweep from being vacuous. Its onePer
+  -- is read there too, and Sanar, Innovative First-Year and Portent of
+  -- Calamity keep that half honest;
   -- so is its differentIn, and Rip, Spawn Hunter keeps that half honest.
   Spec.it s "no chosen card states a total its pick cannot read" $ do
     ps <- S.allPrintings s corpus
     let capped ref = case ref of
           ObjectRef.ChosenCardFromAmong chosen -> Maybe.isJust (ChosenCardFromAmong.total chosen)
           _ -> False
-        perColored ref = case ref of
-          ObjectRef.ChosenCardFromAmong chosen -> Maybe.isJust (ChosenCardFromAmong.perColor chosen)
+        bounded per ref = case ref of
+          ObjectRef.ChosenCardFromAmong chosen -> fmap per (ChosenCardFromAmong.onePer chosen) == Just True
           _ -> False
+        byColor per = case per of
+          OnePer.ColorAmong _ -> True
+          OnePer.CardType -> False
         keptApart ref = case ref of
           ObjectRef.ChosenCardFromAmong chosen -> not (Set.null (ChosenCardFromAmong.differentIn chosen))
           _ -> False
         offends ref = case ref of
-          ObjectRef.ChosenCardFromAmong (ChosenCardFromAmong.MkChosenCardFromAmong _ _ count total perColor differentIn _ pileChooser _ selection)
-            | Maybe.isJust total || Maybe.isJust perColor || not (Set.null differentIn) ->
+          ObjectRef.ChosenCardFromAmong (ChosenCardFromAmong.MkChosenCardFromAmong _ _ count total onePer differentIn _ pileChooser _ selection)
+            | Maybe.isJust total || Maybe.isJust onePer || not (Set.null differentIn) ->
                 case count of
                   HowMany.UpTo _ -> Maybe.isJust pileChooser || selection /= CardSelection.ByChoice
                   HowMany.Exactly _ -> True
@@ -3038,7 +3043,8 @@ effectLintSpec s registry corpus = Spec.describe s "Lint" $ do
         offenders = filter (anyFace (\face -> any offends (refs face) || any misreads (choices face)) . Printing.card) ps
     Spec.assertBool s (any (anyFace (any (Maybe.isJust . ChosenPermanents.total) . choices) . Printing.card) ps) "the pool has a card capping a choice of permanents' total"
     Spec.assertBool s (any (anyFace (any capped . refs) . Printing.card) ps) "the pool has a card capping a choice's total"
-    Spec.assertBool s (any (anyFace (any perColored . refs) . Printing.card) ps) "the pool has a card bounding a choice by color"
+    Spec.assertBool s (any (anyFace (any (bounded byColor) . refs) . Printing.card) ps) "the pool has a card bounding a choice by color"
+    Spec.assertBool s (any (anyFace (any (bounded (not . byColor)) . refs) . Printing.card) ps) "the pool has a card bounding a choice by card type"
     Spec.assertBool s (any (anyFace (any keptApart . refs) . Printing.card) ps) "the pool has a card keeping a choice's picks apart"
     Spec.assertEqWith s "a total beside a count that cannot read it" (fmap (S.nameOf . Printing.card) offenders) []
   -- Parun.Types.Repeat's otherChooser is read only when a gate fails, so without
