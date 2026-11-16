@@ -20,10 +20,18 @@
               "card": {
                 "type": "Matching",
                 "value": {
-                  "type": "Not",
-                  "value": {
-                    "type": "IsSource"
-                  }
+                  "type": "And",
+                  "value": [
+                    {
+                      "type": "IsCard"
+                    },
+                    {
+                      "type": "Not",
+                      "value": {
+                        "type": "IsSource"
+                      }
+                    }
+                  ]
                 }
               },
               "to": "Graveyard"
