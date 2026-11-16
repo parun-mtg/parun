@@ -186,9 +186,11 @@ amounts :: Context -> Quantity.Quantity -> [Amount]
 amounts context q = case q of
   Quantity.Count c -> do
     (one, many, ms) <- counting context c
-    -- Free: card kinds disjoined read "and/or" (Aatchik, Emerald Radian's
-    -- "for each artifact and/or creature card in your graveyard").
-    let inclusive = [Text.replace orWord (Text.pack " and/or ") one | Text.isInfixOf orWord one, Text.isInfixOf (Text.pack " card") one]
+    -- Free: kinds disjoined read "and/or", of cards (Aatchik, Emerald Radian's
+    -- "for each artifact and/or creature card in your graveyard") or of
+    -- permanents (Honored Dreyleader's "for each other Squirrel and/or Food you
+    -- control").
+    let inclusive = [Text.replace orWord (Text.pack " and/or ") one | Text.isInfixOf orWord one]
         orWord = Text.pack " or "
     fmap (\o -> MkAmount (ForEach 1 o) ms) (one : inclusive) <> [MkAmount (EqualTo (Text.pack "the number of " <> many)) ms]
   Quantity.Arithmetic (Arithmetic.Times (Times.MkTimes (Quantity.Literal f) (Quantity.Count c)))
