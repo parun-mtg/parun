@@ -224,11 +224,20 @@ triggered context creature t
   | otherwise = []
 
 -- | The ability words that may head a triggered ability whose effect ends in
--- "if [condition].", none among them when it does not.
+-- "if [condition]." or "unless [condition]." (Shoreline Looter's threshold),
+-- none among them when it does not.
 trailingWord :: Text.Text -> [Text.Text]
-trailingWord effect = case Text.breakOnEnd (Text.pack " if ") effect of
-  (before, condition) | not (Text.null before), Just c <- Text.stripSuffix (Text.pack ".") condition -> Trigger.abilityWord c
-  _ -> [Text.empty]
+trailingWord effect = case conditions of
+  [] -> [Text.empty]
+  _ -> concatMap Trigger.abilityWord conditions
+  where
+    conditions =
+      [ c
+      | joint <- [Text.pack " if ", Text.pack " unless "],
+        let (before, condition) = Text.breakOnEnd joint effect,
+        not (Text.null before),
+        Just c <- [Text.stripSuffix (Text.pack ".") condition]
+      ]
 
 -- | An activated ability: "[Cost]: [Effect.]" (CR 602.1a), and after it the
 -- restrictions on activating it (CR 602.5), "Activate only as a sorcery." An
