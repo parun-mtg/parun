@@ -1821,8 +1821,12 @@ takeTheInitiative resolving source controller legal target = do
     -- states no "can't take the initiative" effect.
     Just p -> State.modify' (Initiative.takeInitiative p)
 
--- The slot's permanent gains the designation (CR 702.112a, CR 701.37a, CR
--- 701.60a) -- a state write, not a CR 613 modification.
+-- Each permanent the slot names gains the designation (CR 702.112a, CR
+-- 701.37a, CR 701.60a) -- a state write, not a CR 613 modification. Read as
+-- ObjectRef.InSlot, so a group an earlier instruction of the resolution bound
+-- counts: Frantic Scapegoat's "suspect one of the other creatures" after its
+-- ChoosePermanents, proved by
+-- frantic-scapegoat-triggers-once-per-manifest-of-valgavoths-onslaught.
 --
 -- GameEvent.BecameDesignated is emitted only on a TRANSITION (CR 701.60d); a
 -- player recipient, an illegal slot (CR 608.2b) and an id naming no object all
@@ -1836,28 +1840,25 @@ takeTheInitiative resolving source controller legal target = do
 -- prepared designation". Both are keyed on WHICH designation and neither asks
 -- which card; see that module.
 designate :: ObjectId -> ObjectId -> PlayerId -> Map.Map SlotName (Set Recipient) -> Designate.Designate -> Game ()
-designate resolving source controller legal (Designate.MkDesignate designation slot mValue) =
-  case legalOne slot legal of
-    Just recipient -> case Recipient.objectOf recipient of
-      Nothing -> pure ()
-      Just target -> do
-        gs <- State.get
-        -- CR 701.37c's X, settled against the RESOLUTION -- the ability's own
-        -- source and slots, `Effect.Create`'s reading of its count -- so a
-        -- "Monstrosity X" reads the X its activation announced (CR 601.2b) and
-        -- not a live board. Written on the TRANSITION alone, with the mark, so
-        -- CR 701.37a's second monstrosity leaves the first value standing.
-        let value =
-              Quantity.evaluateFor (effectViewOf resolving source legal gs) (effectContext gs resolving controller source legal (slotBindings resolving gs)) gs resolving source
-                =<< mValue
-            mark o = o {Object.designations = Set.insert designation (Object.designations o)}
-            recordValue o = maybe o (\n -> o {Object.designationValues = Map.insert designation (Integer.toNaturalSaturating n) (Object.designationValues o)}) value
-        Monad.when (maybe False (not . Set.member designation . Object.designations) (Game.lookupObject target gs) && Prepare.mayGain designation target gs) $ do
-          State.modify'
-            (\g -> g {GameState.objects = Map.adjust (recordValue . mark) target (GameState.objects g)})
-          State.modify' (Event.recordEvent (GameEvent.BecameDesignated (BecameDesignated.MkBecameDesignated designation target)))
-          Prepare.mintOnDesignated designation target
-    _ -> pure ()
+designate resolving source controller legal (Designate.MkDesignate designation slot mValue) = do
+  targets <- State.gets (\gs -> objectRefObjects legal resolving controller source gs (ObjectRef.InSlot slot))
+  Foldable.for_ targets $ \target -> do
+    gs <- State.get
+    -- CR 701.37c's X, settled against the RESOLUTION -- the ability's own
+    -- source and slots, `Effect.Create`'s reading of its count -- so a
+    -- "Monstrosity X" reads the X its activation announced (CR 601.2b) and
+    -- not a live board. Written on the TRANSITION alone, with the mark, so
+    -- CR 701.37a's second monstrosity leaves the first value standing.
+    let value =
+          Quantity.evaluateFor (effectViewOf resolving source legal gs) (effectContext gs resolving controller source legal (slotBindings resolving gs)) gs resolving source
+            =<< mValue
+        mark o = o {Object.designations = Set.insert designation (Object.designations o)}
+        recordValue o = maybe o (\n -> o {Object.designationValues = Map.insert designation (Integer.toNaturalSaturating n) (Object.designationValues o)}) value
+    Monad.when (maybe False (not . Set.member designation . Object.designations) (Game.lookupObject target gs) && Prepare.mayGain designation target gs) $ do
+      State.modify'
+        (\g -> g {GameState.objects = Map.adjust (recordValue . mark) target (GameState.objects g)})
+      State.modify' (Event.recordEvent (GameEvent.BecameDesignated (BecameDesignated.MkBecameDesignated designation target)))
+      Prepare.mintOnDesignated designation target
 
 -- CR 717.2a: "This Class's level becomes N." A state write on the slot's
 -- permanent, not a CR 613 modification -- CR 717.2b makes a level a designation,
