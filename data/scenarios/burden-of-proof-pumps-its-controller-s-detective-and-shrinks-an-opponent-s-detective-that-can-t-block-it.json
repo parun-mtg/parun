@@ -1,0 +1,18 @@
+{
+  "description": "Burden of Proof pumps a Detective its controller controls and shrinks an opponent's Detective that then can't block Detectives",
+  "note": "On alice's Forensic Researcher (a Detective she controls) the Aura gives +2/+2: a 3/5 that hits for 3. On bob's Disguise Agent, a Detective alice does not control, the otherwise branch applies: base 1/1 (CR 613.4b) and it can't block the attacking Detective (CR 509.1b), so the refused block is asked again.",
+  "board": {"active": "alice", "step": "PrecombatMain", "seats": [{"name": "alice", "hand": [{"card": "Burden of Proof", "label": "b1"}, {"card": "Burden of Proof", "label": "b2"}], "battlefield": [{"card": "Forensic Researcher", "label": "det", "ready": true}, {"card": "Island", "label": "i1"}, {"card": "Island", "label": "i2"}, {"card": "Island", "label": "i3"}, {"card": "Island", "label": "i4"}]}, {"name": "bob", "battlefield": [{"card": "Disguise Agent", "label": "bobdet"}, {"card": "Hill Giant", "label": "giant"}]}]},
+  "timeline": [
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": {"Cast": {"object": "$b1", "targets": ["$det"], "mana": ["$i1", "$i2", null]}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass"},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": {"Cast": {"object": "$b2", "targets": ["$bobdet"], "mana": ["$i3", "$i4"]}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass"},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"PowerToughness": {"object": "$det", "power": 3, "toughness": 5}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"PowerToughness": {"object": "$bobdet", "power": 1, "toughness": 1}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"PowerToughness": {"object": "$giant", "power": 3, "toughness": 3}}},
+    {"turn": 1, "step": "DeclareAttackers", "player": "alice", "do": {"Attack": ["$det"]}},
+    {"turn": 1, "step": "DeclareBlockers", "player": "bob", "refuse": {"Block": {"$bobdet": ["$det"]}}},
+    {"turn": 1, "step": "DeclareBlockers", "player": "bob", "do": {"Block": {}}},
+    {"turn": 1, "step": "EndOfCombat", "player": "alice", "check": {"Life": {"player": "bob", "life": 17}}}
+  ]
+}
