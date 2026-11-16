@@ -1,0 +1,30 @@
+{
+  "description": "CR 118.9 / 601.2h The Infamous Cruelclaw's hit exiles down to Hill Giant; alice, with no mana, casts it by discarding the Island she picks, keeping Raging Goblin",
+  "note": "Alice has no lands, so the Giant is castable only through the discard. Two cards in hand make the discard a real choice. The Forest above the Giant stays exiled.",
+  "board": {
+    "active": "alice",
+    "step": "DeclareAttackers",
+    "seats": [
+      {
+        "name": "alice",
+        "battlefield": [{ "card": "The Infamous Cruelclaw", "label": "cruelclaw", "ready": true }],
+        "hand": [{ "card": "Raging Goblin", "label": "goblin" }, { "card": "Island", "label": "island" }],
+        "library": [{ "card": "Forest" }, { "card": "Hill Giant" }, { "card": "Plains" }]
+      },
+      { "name": "bob" }
+    ]
+  },
+  "timeline": [
+    { "turn": 1, "step": "DeclareAttackers", "player": "alice", "do": { "Attack": ["$cruelclaw"] } },
+    { "turn": 1, "step": "CombatDamage", "player": "alice", "do": { "Answer": { "prompt": "OfferedCast", "with": "Exercises" } } },
+    { "turn": 1, "step": "CombatDamage", "player": "alice", "do": { "Answer": { "prompt": "ChooseDiscard", "with": ["$island"] } } },
+    { "turn": 1, "step": "PostcombatMain", "player": "alice", "check": { "Life": { "player": "bob", "life": 17 } } }
+  ],
+  "final": [
+    { "Count": { "player": "alice", "zone": "Battlefield", "card": "Hill Giant", "count": 1 } },
+    { "Count": { "player": "alice", "zone": "Graveyard", "card": "Island", "count": 1 } },
+    { "Count": { "player": "alice", "zone": "Hand", "card": "Raging Goblin", "count": 1 } },
+    { "Count": { "player": "alice", "zone": "Exile", "card": "Forest", "count": 1 } },
+    { "Count": { "player": "alice", "zone": "Library", "card": "Plains", "count": 1 } }
+  ]
+}
