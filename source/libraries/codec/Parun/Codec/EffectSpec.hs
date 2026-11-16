@@ -37,6 +37,7 @@ import qualified Parun.Types.BindLeaders as BindLeaders
 import qualified Parun.Types.BindPlayers as BindPlayers
 import qualified Parun.Types.Blight as Blight
 import qualified Parun.Types.CardName as CardName
+import qualified Parun.Types.CardSelection as CardSelection
 import qualified Parun.Types.CardType as CardType
 import qualified Parun.Types.CastObligation as CastObligation
 import qualified Parun.Types.CastOffer as CastOffer.Type
@@ -804,7 +805,7 @@ spec s = Spec.describe s "Parun.Codec.Effect" $ do
       s
       toJson
       fromJson
-      (Effect.ArrangeInLibrary (ArrangeInLibrary.MkArrangeInLibrary (ObjectRef.InSlot (SlotName.MkSlotName (Text.pack "looked"))) (PlayerRef.Relative PlayerRelation.You) Nothing))
+      (Effect.ArrangeInLibrary (ArrangeInLibrary.MkArrangeInLibrary (ObjectRef.InSlot (SlotName.MkSlotName (Text.pack "looked"))) (PlayerRef.Relative PlayerRelation.You) Nothing Nothing CardSelection.ByChoice))
       " {\"type\":\"ArrangeInLibrary\",\"value\":{\"ref\":{\"type\":\"InSlot\",\"value\":\"looked\"}}} "
   -- Raffine's Informant's "it connives", against the trigger-source slot.
   Spec.it s "Connive" $

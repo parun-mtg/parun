@@ -4863,7 +4863,7 @@ reorderLibrary pid placed order gs =
 -- library, or their side deck of a kind -- in an order they state: at the
 -- positions those cards already occupy, or moved to a stated end. CR 401.4's
 -- owner for a search's find, the instruction's player (CR 608.2c) for
--- Effect.ArrangeInLibrary.
+-- Effect.ArrangeInLibrary; Nothing for a random order nobody states.
 --
 -- The pile is REWRITTEN rather than funnelled through Event.changeZone, for
 -- decideScry's reason one rule over: nothing crosses a zone boundary, so CR 400.7
@@ -4882,17 +4882,22 @@ reorderLibrary pid placed order gs =
 -- Prompt.ArrangeLibraryCards says they mean; Prompt.ArrangeLibraryArrivals
 -- reads from the stated end inward. A card the reference named that has left
 -- the pile since (CR 603.7c) is simply not among them.
-arrangeInLibrary :: PlayerId -> [ObjectId] -> Maybe LibraryPosition.LibraryPosition -> (Maybe SideDeck.SideDeck, PlayerId) -> Game ()
+arrangeInLibrary :: Maybe PlayerId -> [ObjectId] -> Maybe LibraryPosition.LibraryPosition -> (Maybe SideDeck.SideDeck, PlayerId) -> Game ()
 arrangeInLibrary arranger cards end (deck, holder) = do
   gs <- State.get
   let whole = maybe (Game.zoneMembers Zone.Library holder gs) (\kind -> Game.sideDeckOf kind holder gs) deck
       moving = filter (\oid -> List.elem oid cards) whole
       rest = filter (\oid -> List.notElem oid moving) whole
       batch = if end == Just LibraryPosition.Bottom then reverse moving else moving
-      prompt = case end of
-        Nothing -> Prompt.ArrangeLibraryCards (Decide.deciderFor arranger gs) arranger batch
-        Just position -> Prompt.ArrangeLibraryArrivals (Decide.deciderFor arranger gs) arranger position batch
-  arranged <- if length moving > 1 then Game.permute batch <$> Game.choose prompt else pure batch
+      prompt pid = case end of
+        Nothing -> Prompt.ArrangeLibraryCards (Decide.deciderFor pid gs) pid batch
+        Just position -> Prompt.ArrangeLibraryArrivals (Decide.deciderFor pid gs) pid position batch
+      -- No arranger is text stating a random order: Prompt.Shuffle, the
+      -- channel LibraryPlacement.RandomOrder's move takes.
+      ask = case arranger of
+        Just pid -> Game.permute batch <$> Game.choose (prompt pid)
+        Nothing -> Game.honourShuffle batch <$> Game.ask (Prompt.Shuffle batch)
+  arranged <- if length moving > 1 then ask else pure batch
   let order = case end of
         Nothing -> refill whole moving arranged
         Just LibraryPosition.Top -> arranged <> rest

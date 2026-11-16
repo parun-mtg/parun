@@ -1519,23 +1519,28 @@ guess resolving source controller legal chosen (Guess.MkGuess subject slot guess
       let clear obj = obj {Object.bindings = Map.delete right (Object.bindings obj)}
        in State.modify' (\gs -> gs {GameState.objects = Map.adjust clear resolving (Map.adjust clear source (GameState.objects gs))})
 
-arrangeInLibrary :: ObjectId -> ObjectId -> PlayerId -> Map.Map SlotName (Set Recipient) -> ArrangeInLibrary.ArrangeInLibrary -> Game ()
-arrangeInLibrary resolving source controller legal (ArrangeInLibrary.MkArrangeInLibrary ref chooser end) = do
+arrangeInLibrary :: ObjectId -> ObjectId -> PlayerId -> Map.Map SlotName (Set Recipient) -> Map.Map SlotName (Set Recipient) -> ArrangeInLibrary.ArrangeInLibrary -> Game ()
+arrangeInLibrary resolving source controller legal chosen (ArrangeInLibrary.MkArrangeInLibrary ref chooser end slot selection) = do
   -- CR 608.2c / 608.2d: the instruction's player states the order, not the
   -- library's owner -- Cruel Fate's caster orders an opponent's cards. A
-  -- chooser naming nobody leaves the cards where they are (CR 101.3).
-  asked <- Common.askedChooser resolving source controller legal chooser
-  gs <- State.get
+  -- chooser naming nobody leaves the cards where they are (CR 101.3). A random
+  -- order asks nobody.
+  arrangers <- case selection of
+    CardSelection.ByChoice -> fmap Just <$> Common.askedChooser resolving source controller legal chooser
+    CardSelection.AtRandom -> pure (Just Nothing)
   -- CR 608.2c: the cards are named as this instruction is reached, which for
-  -- Ponder is the slot the look bound one clause earlier.
-  let named = objectRefObjects legal resolving controller source gs ref
-      -- CR 400.3 makes every library its owner's, so the owner is the seat
-      -- whose library is rewritten; a side deck's is the seat holding it.
-      piles = ListUtils.nubOrd (Maybe.mapMaybe (`Common.pileOf` gs) named)
+  -- Ponder is the slot the look bound one clause earlier; Interplanar Tunnel's
+  -- "a plane card from among them" is the CR 608.2d question askingObjects asks.
+  named <- Common.askingObjects Common.Present resolving source controller legal chosen ref
+  gs <- State.get
+  -- CR 400.3 makes every library its owner's, so the owner is the seat whose
+  -- library is rewritten; a side deck's is the seat holding it.
+  let piles = ListUtils.nubOrd (Maybe.mapMaybe (`Common.pileOf` gs) named)
   -- APNAP (CR 101.4) for a reference that could name two seats' cards at once;
   -- each pile is rewritten before the next is asked.
-  Monad.forM_ asked $ \arranger ->
+  Monad.forM_ arrangers $ \arranger ->
     Monad.mapM_ (Common.arrangeInLibrary arranger named end) (List.sortOn (\(_, holder) -> List.elemIndex holder (Game.apnapOrder gs)) piles)
+  Common.bindObjects resolving slot named
 
 scry :: Game () -> ObjectId -> ObjectId -> PlayerId -> Map.Map SlotName (Set Recipient) -> PlayerQuantity.PlayerQuantity -> Game ()
 scry settle resolving source controller legal (PlayerQuantity.MkPlayerQuantity ref quantity) = do

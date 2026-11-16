@@ -1541,7 +1541,8 @@ effectObjectRefs effect =
         Effect.AsYouCascade slot -> read_ [ObjectRef.InSlot slot]
         Effect.Explore ref -> read_ [ref]
         Effect.Assemble ref -> read_ (Maybe.maybeToList ref)
-        Effect.ArrangeInLibrary (ArrangeInLibrary.MkArrangeInLibrary ref _ _) -> read_ [ref]
+        -- Interplanar Tunnel's "a plane card from among them" asks here.
+        Effect.ArrangeInLibrary (ArrangeInLibrary.MkArrangeInLibrary ref _ _ _ _) -> [([CardFromAmong], ref)]
         Effect.Connive (Connive.MkConnive _ ref) -> read_ [ref]
         Effect.Discard subject -> case subject of
           Discard.Counted {} -> []

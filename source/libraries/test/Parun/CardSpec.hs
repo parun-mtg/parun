@@ -802,7 +802,7 @@ objectRefPositions =
         ("explore", Effect.Explore (plantedRef "ex"), [plantedRef "ex"]),
         ("assemble", Effect.Assemble (Just (plantedRef "as")), [plantedRef "as"]),
         ("planeswalk", Effect.Planeswalk (Just (plantedRef "pw")), [plantedRef "pw"]),
-        ("arrange-in-library", Effect.ArrangeInLibrary (ArrangeInLibrary.MkArrangeInLibrary (plantedRef "al") (PlayerRef.Relative PlayerRelation.You) Nothing), [plantedRef "al"]),
+        ("arrange-in-library", Effect.ArrangeInLibrary (ArrangeInLibrary.MkArrangeInLibrary (plantedRef "al") (PlayerRef.Relative PlayerRelation.You) Nothing Nothing CardSelection.ByChoice), [plantedRef "al"]),
         ("connive", Effect.Connive (Connive.MkConnive (Quantity.Type.Literal 1) (plantedRef "cn")), [plantedRef "cn"]),
         ("set-x", Effect.SetX (SetX.MkSetX (NewX.Becomes (Quantity.Type.Literal 5)) (plantedRef "sx")), [plantedRef "sx"]),
         ("discard-these", Effect.Discard (Discard.These (TheseDiscard.MkTheseDiscard (plantedRef "di") Nothing)), [plantedRef "di"]),
@@ -897,7 +897,7 @@ playerRefPositions =
         ("reveal", Effect.Reveal (Reveal.MkReveal (plantedRef "rv") Nothing (Just (plantedPlayer "rv"))), [plantedPlayer "rv"]),
         ("look-at", Effect.LookAt (LookAt.MkLookAt (plantedRef "la") (SlotName.MkSlotName (Text.pack "seen")) (plantedPlayer "lk")), [plantedPlayer "lk"]),
         ("guess", Effect.Guess Guess.MkGuess {Guess.subject = plantedRef "gu", Guess.slot = SlotName.MkSlotName (Text.pack "gs"), Guess.guesser = plantedPlayer "gu", Guess.proposition = Filter.Type.And [], Guess.right = SlotName.MkSlotName (Text.pack "gr")}, [plantedPlayer "gu"]),
-        ("arrange-in-library", Effect.ArrangeInLibrary (ArrangeInLibrary.MkArrangeInLibrary (plantedRef "al") (plantedPlayer "ac") Nothing), [plantedPlayer "ac"]),
+        ("arrange-in-library", Effect.ArrangeInLibrary (ArrangeInLibrary.MkArrangeInLibrary (plantedRef "al") (plantedPlayer "ac") Nothing Nothing CardSelection.ByChoice), [plantedPlayer "ac"]),
         ("move-to-zone-arranged", Effect.MoveToZone (MoveToZone.MkMoveToZone (plantedRef "ma") Zone.Library EntryRiders.defaultValue {EntryRiders.under = EntryController.Instructed (plantedPlayer "mu")} Nothing Nothing (LibraryPlacement.ArrangedBy (ArrangedArrival.MkArrangedArrival LibraryPosition.Top (plantedPlayer "mc"))) Nothing), [plantedPlayer "mu", plantedPlayer "mc"]),
         ("lose-life", Effect.LoseLife (LifeLoss.MkLifeLoss (plantedPlayer "ll") one LifeLossCause.ByEffect Nothing), [plantedPlayer "ll"]),
         ("gain-life", Effect.GainLife (playerQuantity "gl"), [plantedPlayer "gl"]),
@@ -5287,7 +5287,7 @@ effectFilters effect = case effect of
   -- reaches it, as PutCounters' does.
   Effect.Explore ref -> frame SourceHostFramed (objectRefFilters ref)
   Effect.Assemble ref -> foldMap (frame SourceHostFramed . objectRefFilters) ref
-  Effect.ArrangeInLibrary (ArrangeInLibrary.MkArrangeInLibrary ref _ _) -> frame SourceHostFramed (objectRefFilters ref)
+  Effect.ArrangeInLibrary (ArrangeInLibrary.MkArrangeInLibrary ref _ _ _ _) -> frame SourceHostFramed (objectRefFilters ref)
   Effect.Connive (Connive.MkConnive quantity ref) -> frame Unframed (quantityFilters quantity) <> frame SourceHostFramed (objectRefFilters ref)
   -- The These arm's ref carries a Filter a card author writes -- Amnesia's
   -- "nonland" -- so the lint reaches it, as Reveal's does.

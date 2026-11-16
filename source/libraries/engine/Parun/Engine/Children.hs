@@ -1075,7 +1075,7 @@ effectChildren c effect = case effect of
     fmap (\rewritten -> Effect.FromOutsideTheGame (FromOutsideTheGame.MkFromOutsideTheGame count upTo destination rewritten reveal differentIn pick)) (onFilter c filter_)
   Effect.ExileThisSpell -> pure effect
   Effect.LookAt (LookAt.MkLookAt ref named looker) -> fmap Effect.LookAt (LookAt.MkLookAt <$> onObjectRef c ref <*> onSlot c named <*> onPlayer c looker)
-  Effect.ArrangeInLibrary (ArrangeInLibrary.MkArrangeInLibrary ref chooser end) -> fmap Effect.ArrangeInLibrary (ArrangeInLibrary.MkArrangeInLibrary <$> onObjectRef c ref <*> onPlayer c chooser <*> pure end)
+  Effect.ArrangeInLibrary (ArrangeInLibrary.MkArrangeInLibrary ref chooser end named selection) -> fmap Effect.ArrangeInLibrary (ArrangeInLibrary.MkArrangeInLibrary <$> onObjectRef c ref <*> onPlayer c chooser <*> pure end <*> traverse (onSlot c) named <*> pure selection)
   Effect.Scry x -> fmap Effect.Scry (playerQuantityChildren c x)
   Effect.Surveil (Surveil.MkSurveil who quantity named) -> fmap Effect.Surveil (Surveil.MkSurveil <$> onPlayer c who <*> onQuantity c quantity <*> traverse (onSlot c) named)
   Effect.Fateseal x -> fmap Effect.Fateseal (playerQuantityChildren c x)
