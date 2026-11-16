@@ -72,6 +72,14 @@ data Snapshots state = MkSnapshots
     -- pass of it that performed a state-based action, oldest first, which the
     -- next settle opens with (Parun.Engine.Engine.performSettle). Each entry's
     -- own copy of this field is empty.
-    heldBoards :: ![state]
+    heldBoards :: ![state],
+    -- | CR 601.2i: the whole game as each spell whose text holds a
+    -- Quantity.AsCast became cast, keyed by the spell's id, so that reading
+    -- answers what its text says when it is read (CR 612.1) of the board its
+    -- caster cast it on. Written by Parun.Engine.Cast.fileCastBoard and read
+    -- through Parun.Engine.Projection's framing; each entry's own copy of this
+    -- field and of the other filed boards is empty. Grows for the whole game,
+    -- as `lastKnown` does.
+    boardAsCast :: !(Map.Map ObjectId.ObjectId state)
   }
   deriving (Eq, Ord, Show)

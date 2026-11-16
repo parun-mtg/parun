@@ -150,6 +150,7 @@ import qualified Parun.Types.RuleAbilities as RuleAbilities
 import qualified Parun.Types.Scratch as Scratch
 import qualified Parun.Types.SetBasePowerToughness as SetBasePowerToughness
 import Parun.Types.SlotName (SlotName)
+import qualified Parun.Types.Snapshots as Snapshots
 import qualified Parun.Types.Source as Source
 import qualified Parun.Types.SourceChoices as SourceChoices
 import qualified Parun.Types.SpecialAction as SpecialAction
@@ -1687,8 +1688,23 @@ framedBy source gs = framedWith (SourceContext.choicesOf (Game.acquisitionOf sou
 -- everything else read off the board.
 framedWith :: SourceChoices.SourceChoices -> ObjectId -> GameState -> Filter.Context -> Filter.Context
 framedWith choices source gs =
-  withCharacteristicsOf source gs
+  withCastBoard source gs
+    . withCharacteristicsOf source gs
     . SourceContext.framedWith (viewWithLastKnownAnywhere gs) choices source gs
+
+-- CR 601.2i: `context` reading a Quantity.AsCast off the board `source` became
+-- cast on (Snapshots.boardAsCast), as its text now words it (CR 612.1). 0 for
+-- an object never cast, a spell copy included (CR 707.10), and for a reader
+-- who did not cast it: CR 109.5 makes "you" the spell's controller now, who
+-- did not cast it once a control change moved it (Aethersnatch).
+-- data/scenarios' Steer Clear cases prove each.
+withCastBoard :: ObjectId -> GameState -> Filter.Context -> Filter.Context
+withCastBoard source gs context =
+  context
+    { Filter.asCast = \inner -> case Map.lookup source (Snapshots.boardAsCast (GameState.snapshots gs)) of
+        Just board | Maybe.isJust (Filter.perspective context), Filter.perspective context == controllerOf source board -> Quantity.evaluate (fullView board) (sourceContext board (Filter.perspective context) source) board source inner
+        _ -> Just 0
+    }
 
 -- `context` with `object`'s projected power, toughness, mana value, colours and
 -- names as the source's (CR 613), through its last known information once it

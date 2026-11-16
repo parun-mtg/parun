@@ -457,6 +457,12 @@ gameStateRoundTripSpec s registry corpus = do
     let board = S.oneMountainState mountain Phase.PrecombatMain
     roundTrips "a held board" board {GameState.snapshots = (GameState.snapshots board) {Snapshots.heldBoards = [board]}}
 
+  -- Snapshots.boardAsCast, CR 601.2i's board a spell became cast on, likewise.
+  Spec.it s "a board as cast round trips" $ do
+    mountain <- S.printingOf s registry "Mountain"
+    let board = S.oneMountainState mountain Phase.PrecombatMain
+    roundTrips "a board as cast" board {GameState.snapshots = (GameState.snapshots board) {Snapshots.boardAsCast = Map.singleton (ObjectId.MkObjectId 7) board}}
+
   -- TurnRegisters.permanentsAsTurnBegan, CR 500.12's record.
   Spec.it s "the permanents as the turn began round trip" $ do
     mountain <- S.printingOf s registry "Mountain"

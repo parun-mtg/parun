@@ -8,6 +8,7 @@ import qualified Data.Functor.Const as Const
 import qualified Data.List as List
 import qualified Data.Map.Strict as Map
 import qualified Data.Maybe as Maybe
+import qualified Data.Monoid as Monoid
 import qualified Data.Sequence as Seq
 import Data.Set (Set)
 import qualified Data.Set as Set
@@ -137,6 +138,7 @@ import qualified Parun.Types.RevealCause as RevealCause
 import qualified Parun.Types.Scratch as Scratch
 import qualified Parun.Types.SlotCount as SlotCount
 import qualified Parun.Types.SlotName as SlotName
+import qualified Parun.Types.Snapshots as Snapshots
 import qualified Parun.Types.SpellWasCast as SpellWasCast
 import qualified Parun.Types.Splice as Splice
 import qualified Parun.Types.StackObjectKind as StackObjectKind
@@ -3549,26 +3551,27 @@ clauseAppliesAt pid sid gs clause = case Clause.condition clause of
     | isCastAnnouncementCondition condition -> Condition.holds (Projection.fullView gs) (Projection.sourceContext gs (Just pid) sid) gs sid condition
     | otherwise -> True
 
--- CR 601.2i: stamps onto the spell what each Quantity.AsCast in its clauses'
--- conditions and effects wraps reads now, as it becomes cast -- after CR
--- 601.2g's mana abilities, so a Dragon sacrificed for mana is gone (Draconic
--- Roar's ruling of 2015-02-25). "You" is the caster. Parun.Engine.Quantity's
--- AsCast arm reads the stamp back.
-stampCastQuantities :: PlayerId -> ObjectId -> GameState -> GameState
-stampCastQuantities pid sid gs =
+-- CR 601.2i: files the game as the spell becomes cast, if a Quantity.AsCast
+-- in its clauses' conditions or effects will read it -- after CR 601.2g's mana
+-- abilities, so a Dragon sacrificed for mana is gone (Draconic Roar's ruling of
+-- 2015-02-25). The whole board rather than the wrapped quantity's value, since
+-- a text change (CR 612.1) can reword that quantity before it is read.
+-- Projection.withCastBoard reads it back.
+fileCastBoard :: ObjectId -> GameState -> GameState
+fileCastBoard sid gs =
   let modal = PC.spell (Projection.project sid gs)
       clauses = foldMap (Foldable.toList . Mode.clauses) (Modal.Type.modes modal) <> Foldable.toList (Modal.Type.shared modal)
       inQuantity q =
         let own = case q of
-              Quantity.AsCast inner -> Set.singleton inner
-              _ -> Set.empty
+              Quantity.AsCast _ -> Monoid.Any True
+              _ -> Monoid.Any False
          in own <> Const.getConst (Children.quantityChildren (Children.descendingQuantities (Const.Const . inQuantity)) q)
       inCondition = Const.getConst . Children.conditionChildren Children.conditionLeaves {Children.conditionQuantity = Const.Const . inQuantity, Children.conditionNested = Const.Const . inCondition}
       inEffect = Const.getConst . Children.effectChildren Children.effectLeaves {Children.onQuantity = Const.Const . inQuantity, Children.onCondition = Const.Const . inCondition, Children.onEffect = Const.Const . inEffect}
-      wrapped = foldMap (\clause -> foldMap inCondition (Clause.condition clause) <> foldMap inEffect (Clause.effects clause)) clauses
-      context = Projection.sourceContext gs (Just pid) sid
-      stamped = Map.fromList [(inner, n) | inner <- Set.toList wrapped, Just n <- [Quantity.evaluate (Projection.fullView gs) context gs sid inner]]
-   in if Map.null stamped then gs else gs {GameState.objects = Map.adjust (\o -> o {Object.castQuantities = stamped}) sid (GameState.objects gs)}
+      wraps = Monoid.getAny (foldMap (\clause -> foldMap inCondition (Clause.condition clause) <> foldMap inEffect (Clause.effects clause)) clauses)
+      snapshots = GameState.snapshots gs
+      board = gs {GameState.snapshots = snapshots {Snapshots.boardAfterEvent = Map.empty, Snapshots.boardBeforeEvent = Map.empty, Snapshots.boardAtControlSample = Nothing, Snapshots.heldBoards = [], Snapshots.boardAsCast = Map.empty}}
+   in if wraps then gs {GameState.snapshots = snapshots {Snapshots.boardAsCast = Map.insert sid board (Snapshots.boardAsCast snapshots)}} else gs
 
 -- CR 702.33g/702.113b judged BEFORE CR 601.2b's cost is even announced, which is
 -- what Cast.targetable and Cast.castProposed's own CR 700.2a mode gate need: no
@@ -4707,9 +4710,10 @@ castProposed perform baseSpending pid oid sid printedFace castFrom preparedFor k
                           -- binding above gives; a "whenever you cast ... from
                           -- your hand" trigger reads it off the event, since CR
                           -- 400.7 left `sid` no memory of it.
-                          -- CR 601.2i: what the spell's "as you cast this
-                          -- spell" quantities read, once the cast is finished.
-                          State.modify' (stampCastQuantities pid sid)
+                          -- CR 601.2i: the board the spell's "as you cast
+                          -- this spell" quantities read, once the cast is
+                          -- finished.
+                          State.modify' (fileCastBoard sid)
                           State.modify' (\g -> let pc = Projection.project sid g in Event.recordEvent (GameEvent.SpellCast (SpellWasCast.MkSpellWasCast pid sid pc castFrom (Object.castUsing =<< Game.lookupObject sid g) (Projection.lapsedGrantsOf (Projection.fullView g) pc sid g))) g)
                           -- CR 611.2a: the durations this cast ends (Soul
                           -- Sculptor's), off the spell as it became cast.

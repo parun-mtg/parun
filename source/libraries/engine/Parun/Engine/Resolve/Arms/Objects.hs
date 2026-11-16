@@ -834,10 +834,6 @@ copyStackObject resolving source controller legal (CopyStackObject.MkCopyStackOb
                     -- (Filter.WasCastFrom). Parun.PlanechaseSpec's Double Major
                     -- case is the proof.
                     Object.castFrom = Nothing,
-                    -- CR 707.10: nor does it read what the original's caster
-                    -- controlled as they cast it (Draconic Roar's ruling of
-                    -- 2015-02-25). The Steer Clear Twincast scenario proves it.
-                    Object.castQuantities = Map.empty,
                     -- CR 702.143c's foretold spell is one that "was a foretold
                     -- card before it was cast", and a copy was neither a card
                     -- nor cast (CR 707.10), so it was not foretold.

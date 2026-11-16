@@ -102,6 +102,7 @@ withoutAnnouncement before entry closed = do
   -- A sample, retaken at every check either side ran.
   boardAtControlSample <- newest (Snapshots.boardAtControlSample . GameState.snapshots)
   heldBoards <- one (Snapshots.heldBoards . GameState.snapshots)
+  boardAsCast <- mapOf (Snapshots.boardAsCast . GameState.snapshots)
   damageScannedThrough <- one (TurnRegisters.damageScannedThrough . GameState.turn)
   delayedTriggers <- seqOf (StoredEffects.delayedTriggers . GameState.stored)
   continuousEffects <- listOf (StoredEffects.continuousEffects . GameState.stored)
@@ -322,7 +323,8 @@ withoutAnnouncement before entry closed = do
               Snapshots.boardBeforeEvent = boardBeforeEvent,
               Snapshots.controlSample = controlSample,
               Snapshots.boardAtControlSample = boardAtControlSample,
-              Snapshots.heldBoards = heldBoards
+              Snapshots.heldBoards = heldBoards,
+              Snapshots.boardAsCast = boardAsCast
             },
         GameState.stored =
           StoredEffects.MkStoredEffects
@@ -516,7 +518,6 @@ objectWith before entry closed = do
   mutating <- field Object.mutating
   prototyped <- field Object.prototyped
   castPrepared <- field Object.castPrepared
-  castQuantities <- field Object.castQuantities
   boughtBack <- field Object.boughtBack
   unannounced <- field Object.unannounced
   spliced <- field Object.spliced
@@ -590,7 +591,6 @@ objectWith before entry closed = do
         Object.mutating = mutating,
         Object.prototyped = prototyped,
         Object.castPrepared = castPrepared,
-        Object.castQuantities = castQuantities,
         Object.boughtBack = boughtBack,
         Object.unannounced = unannounced,
         Object.spliced = spliced,
