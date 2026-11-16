@@ -2792,7 +2792,7 @@ conditionPutsSelfInto condition zone = case condition of
   -- an ability of that shape whose effect names its graveyard functions only
   -- there, where a leaves-the-battlefield condition can never be met. No
   -- printing writes it; the printed shape is "dies".
-  TriggerCondition.Leaves (LeavesTrigger.MkLeavesTrigger LeavingPermanent.Self destinations _) -> any ((== zone) . OwnedZone.zone) destinations
+  TriggerCondition.Leaves (LeavesTrigger.MkLeavesTrigger LeavingPermanent.Self destinations _ _) -> any ((== zone) . OwnedZone.zone) destinations
   -- CR 701.9a: discarding puts the object in the graveyard, cycling's included
   -- (CR 702.29c). ExiledForMadness falls to the `_`: its keyword-minted
   -- ability is scanned in exile without asking `functionsIn` (`exileCandidate`).

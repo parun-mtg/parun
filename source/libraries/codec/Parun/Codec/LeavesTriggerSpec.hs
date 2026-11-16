@@ -29,10 +29,16 @@ spec s = Spec.describe s "Parun.Codec.LeavesTrigger" $ do
       LeavesTrigger.codec
       LeavesTrigger.defaultValue {LeavesTrigger.destinations = Set.singleton (OwnedZone.MkOwnedZone Zone.Graveyard PlayerRelation.You)}
       " {\"destinations\":[{\"owner\":\"You\",\"zone\":\"Graveyard\"}]} "
+  Spec.it s "round-trips an exclusion" $
+    Common.assertCodec
+      s
+      LeavesTrigger.codec
+      (LeavesTrigger.withoutDying LeavingPermanent.Self)
+      " {\"excluded\":[{\"zone\":\"Graveyard\"}]} "
   Spec.it s "round-trips every field" $
     Common.assertCodec
       s
       LeavesTrigger.codec
-      (LeavesTrigger.MkLeavesTrigger (LeavingPermanent.Matching (Filter.Not (Filter.HasCardType CardType.Creature))) (Set.singleton (OwnedZone.MkOwnedZone Zone.Hand PlayerRelation.AnyPlayer)) Batching.OneOrMore)
-      " {\"batching\":\"OneOrMore\",\"destinations\":[{\"zone\":\"Hand\"}],\"permanent\":{\"type\":\"Matching\",\"value\":{\"type\":\"Not\",\"value\":{\"type\":\"HasCardType\",\"value\":\"Creature\"}}}} "
+      (LeavesTrigger.MkLeavesTrigger (LeavingPermanent.Matching (Filter.Not (Filter.HasCardType CardType.Creature))) (Set.singleton (OwnedZone.MkOwnedZone Zone.Hand PlayerRelation.AnyPlayer)) (Set.singleton (OwnedZone.MkOwnedZone Zone.Graveyard PlayerRelation.AnyPlayer)) Batching.OneOrMore)
+      " {\"batching\":\"OneOrMore\",\"destinations\":[{\"zone\":\"Hand\"}],\"excluded\":[{\"zone\":\"Graveyard\"}],\"permanent\":{\"type\":\"Matching\",\"value\":{\"type\":\"Not\",\"value\":{\"type\":\"HasCardType\",\"value\":\"Creature\"}}}} "
   Spec.it s "has a schema" $ Common.assertHasSchema s LeavesTrigger.codec

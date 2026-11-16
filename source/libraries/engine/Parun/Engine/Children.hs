@@ -1582,9 +1582,9 @@ triggerConditionChildren c condition = case condition of
                   BlockCount.AtLeast floor_ others -> fmap (BlockCount.AtLeast floor_) (triggerFilter c others)
               )
       )
-  TriggerCondition.Leaves (LeavesTrigger.MkLeavesTrigger permanent destinations batching) ->
+  TriggerCondition.Leaves (LeavesTrigger.MkLeavesTrigger permanent destinations excluded batching) ->
     fmap
-      (\renamed -> TriggerCondition.Leaves (LeavesTrigger.MkLeavesTrigger renamed destinations batching))
+      (\renamed -> TriggerCondition.Leaves (LeavesTrigger.MkLeavesTrigger renamed destinations excluded batching))
       ( case permanent of
           LeavingPermanent.Self -> pure permanent
           LeavingPermanent.Matching filter_ -> fmap LeavingPermanent.Matching (triggerFilter c filter_)

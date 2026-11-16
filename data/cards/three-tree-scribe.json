@@ -32,24 +32,9 @@
               {
                 "type": "Leaves",
                 "value": {
-                  "destinations": [
+                  "excluded": [
                     {
-                      "zone": "Library"
-                    },
-                    {
-                      "zone": "Hand"
-                    },
-                    {
-                      "zone": "Stack"
-                    },
-                    {
-                      "zone": "Exile"
-                    },
-                    {
-                      "zone": "Command"
-                    },
-                    {
-                      "zone": "Ante"
+                      "zone": "Graveyard"
                     }
                   ]
                 }
@@ -57,24 +42,9 @@
               {
                 "type": "Leaves",
                 "value": {
-                  "destinations": [
+                  "excluded": [
                     {
-                      "zone": "Library"
-                    },
-                    {
-                      "zone": "Hand"
-                    },
-                    {
-                      "zone": "Stack"
-                    },
-                    {
-                      "zone": "Exile"
-                    },
-                    {
-                      "zone": "Command"
-                    },
-                    {
-                      "zone": "Ante"
+                      "zone": "Graveyard"
                     }
                   ],
                   "permanent": {
