@@ -230,9 +230,9 @@ data View = MkView
     -- ability on the stack -- and for everything with no OBJECT behind it at all,
     -- so WasCastFrom is vacuously False there, `zone` above's posture.
     castFrom :: Maybe CastOrigin.CastOrigin,
-    -- CR 400.7d / 601.2a: who cast the spell the candidate permanent was -- what
-    -- Holder.Caster reads, off Parun.Types.Object.castBy. Nothing wherever
-    -- `castFrom` above is, and for a spell still on the stack.
+    -- CR 400.7d / 601.2a: who cast the candidate spell, or the spell the
+    -- candidate permanent was -- what Holder.Caster reads, off
+    -- Parun.Engine.Game.casterOf. Nothing wherever `castFrom` above is.
     castBy :: Maybe PlayerId.PlayerId,
     -- CR 115.1: what the candidate TARGETS, for a spell or ability on the stack
     -- -- the recipients CR 601.2c (602.2b, 603.3d) chose, read live off the

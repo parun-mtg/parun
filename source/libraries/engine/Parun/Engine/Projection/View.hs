@@ -537,7 +537,7 @@ viewOfCharacteristics peers oid pc controller counters gs =
       Filter.castFrom = Object.castFrom =<< Game.lookupObject oid gs,
       -- CR 400.7d off the OBJECT beside it: the caster is a second stamp, which
       -- a controller CR 616.1 rewrote on entry does not move (Gather Specimens).
-      Filter.castBy = Object.castBy =<< Game.lookupObject oid gs,
+      Filter.castBy = Game.casterOf oid gs,
       -- CR 115.1 off the OBJECT's bindings, live: CR 601.2c fixed the targets and
       -- CR 115.7 can move them, so nothing here is a stamp. Empty for an id
       -- naming nothing and for everything off the stack.

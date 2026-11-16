@@ -3509,22 +3509,27 @@ castsBefore spell gs =
     (_, []) -> Nothing
     (before, _) -> Just before
 
--- CR 601.2i: who cast `spell`, off the turn's log, which outlives the spell's
--- leaving the stack -- what CR 603.10e's look-back needs once the countered
--- spell's id is dead (Parun.Engine.Event.counter's caller, Multani's Presence).
+-- CR 601.2i / 400.7d: who cast `spell`, or the spell a permanent was --
+-- Object.castBy's stamp on the permanent, else the turn's log, which outlives
+-- the spell's leaving the stack -- what CR 603.10e's look-back needs once the
+-- countered spell's id is dead (Parun.Engine.Event.counter's caller, Multani's
+-- Presence). Holder.Caster's one reading.
 --
 -- Nothing for a spell that was never cast (CR 707.10's copy), and for one cast
 -- before this turn, which no countering can see: CR 500.2 ends a step only with
 -- the stack empty, so a spell still on the stack was cast during the turn whose
 -- log this is. castsBefore above shares the scope for that reason.
 casterOf :: ObjectId -> GameState -> Maybe PlayerId
-casterOf spell =
-  fmap SpellWasCast.player
-    . List.find ((== spell) . SpellWasCast.spell)
-    . Maybe.mapMaybe (castOf . LoggedEvent.event)
-    . Foldable.toList
-    . TurnRegisters.events
-    . GameState.turn
+casterOf spell gs =
+  (Object.castBy =<< lookupObject spell gs) Applicative.<|> logged
+  where
+    logged =
+      fmap SpellWasCast.player
+        . List.find ((== spell) . SpellWasCast.spell)
+        . Maybe.mapMaybe (castOf . LoggedEvent.event)
+        . Foldable.toList
+        . TurnRegisters.events
+        $ GameState.turn gs
 
 -- CR 601.2i: how many spells each player cast during the turn this log holds
 -- (turnLog's). Parun.Engine.PlayerEffect.castsThisTurn, Parun.Engine.Quantity's
