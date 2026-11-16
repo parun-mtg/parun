@@ -2134,7 +2134,7 @@ heldBy holder view = case holder of
 -- of its own, but for one posture below.
 --
 -- Not implemented: a pair the Context carries no anchored values for, answered
--- Nothing (#7557).
+-- Nothing (#8071).
 sharesAnchored :: Trait.Trait -> Anchor.Anchor (Filter.Filter Keyword.Type.Keyword) -> Maybe (Context -> View -> Bool)
 sharesAnchored trait anchor = case anchor of
   Anchor.Source -> case trait of
@@ -2204,10 +2204,13 @@ sharesAnchored trait anchor = case anchor of
     -- CR 205.3i: every land type, not the basic ones alone, off each side's
     -- subtypes, a permanent's projected (Hiveheart Shaman).
     Trait.LandType -> Just (\context view -> any (\permanent -> matches context permanent group && meets (landTypes view) (landTypes permanent)) (battlefieldViews context))
-    Trait.Color -> Nothing
+    -- CR 105.2. The scenario named for Jaded Response proves it.
+    Trait.Color -> Just (\context view -> any (\permanent -> matches context permanent group && meets (colors view) (colors permanent)) (battlefieldViews context))
+    -- CR 205.3m, off each side's subtypes as LandType reads them. The scenario
+    -- named for Radagast the Brown proves it.
+    Trait.CreatureType -> Just (\context view -> any (\permanent -> matches context permanent group && meets (creatureTypes view) (creatureTypes permanent)) (battlefieldViews context))
     Trait.Owner -> Nothing
     Trait.Sector -> Nothing
-    Trait.CreatureType -> Nothing
     Trait.CardType _ -> Nothing
   -- A commander with no creature type shares none, and neither does a player
   -- with no commander: both leave the set empty.
@@ -2258,7 +2261,7 @@ attachedAnchored anchor = case anchor of
             || Set.member host (Map.findWithDefault Set.empty slot (slotObjects context))
       )
   -- Not implemented: a slot narrowed to the members the candidate's holder
-  -- holds (#7557).
+  -- holds (#8071).
   Anchor.Bound (Just _) _ -> Nothing
   -- A group names no one host: Filter.AttachedTo is that reading.
   Anchor.AnyPermanent _ -> Nothing

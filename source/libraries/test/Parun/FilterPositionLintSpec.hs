@@ -1083,9 +1083,10 @@ decodedAtoms tag wanted value =
 
 -- The CR 709.4a atoms Parun.Engine.Projection.framedBySlots answers, in an
 -- encoding: Filter.Shares Name at a Bound anchor (Filter.Context.slotNames) or
--- Name or Controller at AnyPermanent (Filter.Context.battlefieldViews).
+-- Name, Controller, Color or CreatureType at AnyPermanent
+-- (Filter.Context.battlefieldViews).
 framedNameAtoms :: Value.Value -> Int
-framedNameAtoms = decodedAtoms "Shares" (\atom -> case atom of Filter.Type.Shares Trait.Name (Anchor.Bound _ _) -> True; Filter.Type.Shares Trait.Name (Anchor.AnyPermanent _) -> True; Filter.Type.Shares Trait.Controller (Anchor.AnyPermanent _) -> True; _ -> False)
+framedNameAtoms = decodedAtoms "Shares" (\atom -> case atom of Filter.Type.Shares Trait.Name (Anchor.Bound _ _) -> True; Filter.Type.Shares Trait.Name (Anchor.AnyPermanent _) -> True; Filter.Type.Shares Trait.Controller (Anchor.AnyPermanent _) -> True; Filter.Type.Shares Trait.Color (Anchor.AnyPermanent _) -> True; Filter.Type.Shares Trait.CreatureType (Anchor.AnyPermanent _) -> True; _ -> False)
 
 -- How many CR 709.4a atoms this card carries in one of the ADMITTED positions
 -- -- a MODE's target slot filter (Harness the Storm), a CR 701.23 search filter
@@ -1360,7 +1361,7 @@ evaluatedAtoms value =
 
 -- How many Filter.Shares and Filter.IsAttachedTo atoms in an encoding pair an
 -- anchor with a reading Parun.Engine.Filter has none for -- sharesAnchored's
--- Nothing (#7557) and attachedAnchored's, which Filter.matches answers False --
+-- Nothing (#8071) and attachedAnchored's, which Filter.matches answers False --
 -- and how many it carries in all.
 unreadAnchorCounts :: Value.Value -> (Int, Int)
 unreadAnchorCounts value =
@@ -1834,6 +1835,8 @@ filterPositionLintSpec s registry corpus = Spec.describe s "Lint" $ do
         ("Central Elevator", 1), -- its search's filter, negated, at AnyPermanent
         ("Seasinger", 1), -- its ability's target slot, Controller at AnyPermanent
         ("Key to the Side-Door", 1), -- its ability's discard cost, at AnyPermanent
+        ("Jaded Response", 1), -- its counter clause's "if"'s Count filter, Color at AnyPermanent
+        ("Radagast the Brown", 1), -- its from-among choice's filter, negated, CreatureType at AnyPermanent
         ("Spellweaver Helix", 2), -- its intervening "if"'s Count filter and its choice's filter
         ("Jester's Scepter", 1) -- its counter clause's "if"'s Count filter
       ]
@@ -2411,7 +2414,7 @@ filterPositionLintSpec s registry corpus = Spec.describe s "Lint" $ do
             }
     Spec.assertEqWith s "Coat of Arms' two atoms planted are outside every Count" (evaluatedCounts plantedOthers) (0, 2)
   -- A pair Filter.matches has no reading for answers False wherever it sits,
-  -- so it is rejected outright rather than by position (#7557).
+  -- so it is rejected outright rather than by position (#8071).
   Spec.it s "no card writes a Shares or IsAttachedTo anchor the filter context carries no values for" $ do
     ps <- S.allPrintings s corpus
     let encodedFace = Codec.encode (Face.Codec.codec Card.codec)
@@ -2419,9 +2422,8 @@ filterPositionLintSpec s registry corpus = Spec.describe s "Lint" $ do
     Spec.assertEqWith s "every anchored atom has a reading" (fmap (S.nameOf . Printing.card) offenders) []
     -- NOT vacuous: the pool writes the atoms the sweep is about.
     Spec.assertBool s (sum (fmap (snd . unreadAnchorCounts . encodedFace . S.combinedFace) ps) > 10) "the pool writes anchored atoms"
-    -- The rejected side: Jaded Response's "shares a color with a creature you
-    -- control" and a group anchor, planted in a target slot, beside a read pair
-    -- that is not counted.
+    -- The rejected side: an owner shared with a group anchor, planted in a
+    -- target slot, beside a read pair that is not counted.
     piker <- S.printingOf s registry "Goblin Piker"
     let slot = SlotName.MkSlotName (Text.pack "target")
         plantedWith atom =
@@ -2429,7 +2431,7 @@ filterPositionLintSpec s registry corpus = Spec.describe s "Lint" $ do
             { Face.spell =
                 Mint.oneModeTargeting (Map.singleton slot (TargetSlot.required Pool.Creatures (Just (Filter.Type.And [Filter.Type.Not atom])))) Seq.empty
             }
-    Spec.assertEqWith s "a planted Shares Color AnyPermanent is unread" (unreadAnchorCounts (encodedFace (plantedWith (Filter.Type.Shares Trait.Color (Anchor.AnyPermanent (Filter.Type.And [])))))) (1, 1)
+    Spec.assertEqWith s "a planted Shares Owner AnyPermanent is unread" (unreadAnchorCounts (encodedFace (plantedWith (Filter.Type.Shares Trait.Owner (Anchor.AnyPermanent (Filter.Type.And [])))))) (1, 1)
     Spec.assertEqWith s "a planted Shares Color Bound is read" (unreadAnchorCounts (encodedFace (plantedWith (Filter.Type.Shares Trait.Color (Anchor.Bound Nothing slot))))) (0, 1)
     Spec.assertEqWith s "a planted IsAttachedTo AnyPermanent is unread" (unreadAnchorCounts (encodedFace (plantedWith (Filter.Type.IsAttachedTo (Anchor.AnyPermanent (Filter.Type.And [])))))) (1, 1)
     Spec.assertEqWith s "a planted IsAttachedTo Bound is read" (unreadAnchorCounts (encodedFace (plantedWith (Filter.Type.IsAttachedTo (Anchor.Bound Nothing slot))))) (0, 1)
