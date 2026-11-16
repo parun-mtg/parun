@@ -2092,6 +2092,9 @@ filterPositionLintSpec s registry corpus = Spec.describe s "Lint" $ do
     --
     -- At most, against the mana value, in a cast permission's criterion:
     -- Maralen, Fae Ascendant.
+    --
+    -- Less than, against the mana value, in a dies trigger's slot whose amount
+    -- totals the creature that died (the trigger's "became"): Jackdaw Savior.
     assertAuthors
       s
       registry
@@ -2134,7 +2137,8 @@ filterPositionLintSpec s registry corpus = Spec.describe s "Lint" $ do
         ("Omnipresence", 1),
         ("Maralen, Fae Ascendant", 1),
         ("Isareth the Awakener", 1),
-        ("Sidisi, Regent of the Mire", 1)
+        ("Sidisi, Regent of the Mire", 1),
+        ("Jackdaw Savior", 1)
       ]
     -- The rejected side, which the sweep above cannot show while the pool has no
     -- offender: the SAME atom, buried under all three combinators, in a target
