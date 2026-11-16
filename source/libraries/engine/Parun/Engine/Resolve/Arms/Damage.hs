@@ -1882,7 +1882,7 @@ destroy settle resolving source controller legal chosen (Destroy.MkDestroy ref r
     Monad.unless (null destroyed) (State.modify' (Common.bindObjectsSlot resolving slot (Seq.fromList (fmap fst destroyed))))
 
 sacrifice :: Game () -> ObjectId -> ObjectId -> PlayerId -> Map.Map SlotName (Set Recipient) -> Map.Map SlotName (Set Recipient) -> SacrificeEffect.SacrificeEffect -> Game ()
-sacrifice settle resolving source controller legal chosen (SacrificeEffect.MkSacrificeEffect ref sacrificer mSacrificed) = do
+sacrifice settle resolving source controller legal chosen (SacrificeEffect.MkSacrificeEffect ref sacrificer mSacrificed mPermanents) = do
   -- CR 701.21 through the single funnel, which is NOT Event.destroy (CR
   -- 701.21a): a sacrifice is not a destruction, so indestructible (CR 702.12b)
   -- and a regeneration shield leave it alone.
@@ -1911,6 +1911,13 @@ sacrifice settle resolving source controller legal chosen (SacrificeEffect.MkSac
   Monad.forM_ mSacrificed $ \slot -> do
     after <- State.get
     State.modify' (Common.bindAmountSlot resolving source slot (Natural.length (Common.sacrificedBetween gs after)))
+  -- WHICH permanents the funnel sacrificed, under their battlefield ids so a
+  -- later reader takes CR 608.2h's last known information. A group, and
+  -- unbound when nothing was sacrificed, the Destroy arm's `permanents`.
+  Monad.forM_ mPermanents $ \slot -> do
+    after <- State.get
+    let sacrificed = Common.sacrificedBetween gs after
+    Monad.unless (null sacrificed) (State.modify' (Common.bindObjectsSlot resolving slot (Seq.fromList sacrificed)))
 
 turnFaceDown :: ObjectId -> ObjectId -> PlayerId -> Map.Map SlotName (Set Recipient) -> TurnFaceDown.TurnFaceDown (GrantedAbility.GrantedAbility Card.Type.Card) -> Game ()
 turnFaceDown resolving source controller legal (TurnFaceDown.MkTurnFaceDown ref listed) = do

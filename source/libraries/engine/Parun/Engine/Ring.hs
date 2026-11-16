@@ -392,7 +392,7 @@ theRingBlockerSacrifice =
             StepBegins.scope = TurnScope.PlayersTurn (PlayerRef.Relative PlayerRelation.AnyPlayer)
           }
     )
-    (Seq.singleton (Effect.Sacrifice SacrificeEffect.MkSacrificeEffect {SacrificeEffect.ref = ObjectRef.InSlot Binding.blockingCreature, SacrificeEffect.sacrificer = Sacrificer.PermanentController, SacrificeEffect.sacrificed = Nothing}))
+    (Seq.singleton (Effect.Sacrifice SacrificeEffect.MkSacrificeEffect {SacrificeEffect.ref = ObjectRef.InSlot Binding.blockingCreature, SacrificeEffect.sacrificer = Sacrificer.PermanentController, SacrificeEffect.sacrificed = Nothing, SacrificeEffect.permanents = Nothing}))
 
 -- | CR 701.54c's four-temptation sentence: "Whenever your Ring-bearer deals combat
 -- damage to a player, each opponent loses 3 life." Minted here rather than carried

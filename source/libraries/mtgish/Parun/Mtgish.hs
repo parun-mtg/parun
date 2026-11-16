@@ -1235,7 +1235,7 @@ effects context n = case Node.tag n of
   "SacrificePermanent" -> do
     ref <- Node.argument n >>= permanent context
     Monad.unless (ref == ObjectRef.InSlot Oracle.Target.selfSlot) (Node.untranslated n)
-    pure [Effect.Sacrifice (SacrificeEffect.MkSacrificeEffect ref Sacrificer.EffectController Nothing)]
+    pure [Effect.Sacrifice (SacrificeEffect.MkSacrificeEffect ref Sacrificer.EffectController Nothing Nothing)]
   -- A shield used up by the next destruction it replaces this turn (CR
   -- 701.19a), of the source or of the object a slot holds. Any other
   -- permanent -- Regeneration's "enchanted creature" -- is bound by a loop as

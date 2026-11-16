@@ -971,7 +971,7 @@ effect context e = case e of
   Effect.Tap (Tap.MkTap r Nothing) -> acted context (Text.pack "tap ") r
   -- "Sacrifice this creature" (CR 701.21a): one object, which the
   -- instruction's controller sacrifices. A sweep is not spelled out here.
-  Effect.Sacrifice (SacrificeEffect.MkSacrificeEffect r@(ObjectRef.InSlot _) Sacrificer.EffectController Nothing) -> acted context (Text.pack "sacrifice ") r
+  Effect.Sacrifice (SacrificeEffect.MkSacrificeEffect r@(ObjectRef.InSlot _) Sacrificer.EffectController Nothing Nothing) -> acted context (Text.pack "sacrifice ") r
   -- Free over several: "all" or "each" (Rally the Troops, Veteran Beastrider).
   Effect.Untap r -> do
     determiner <- [Target.All, Target.Each]

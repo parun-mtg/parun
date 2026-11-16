@@ -1079,7 +1079,7 @@ effectChildren c effect = case effect of
   Effect.ControlPlayerThisResolution (ControlPlayer.MkControlPlayer named landsOnly) -> fmap (\renamed -> Effect.ControlPlayerThisResolution (ControlPlayer.MkControlPlayer renamed landsOnly)) (onSlot c named)
   Effect.Destroy (Destroy.MkDestroy ref regenerability named buried permanents) ->
     fmap Effect.Destroy (Destroy.MkDestroy <$> onObjectRef c ref <*> pure regenerability <*> traverse (onSlot c) named <*> traverse (onSlot c) buried <*> traverse (onSlot c) permanents)
-  Effect.Sacrifice (SacrificeEffect.MkSacrificeEffect ref sacrificer sacrificed) -> fmap Effect.Sacrifice (SacrificeEffect.MkSacrificeEffect <$> onObjectRef c ref <*> pure sacrificer <*> traverse (onSlot c) sacrificed)
+  Effect.Sacrifice (SacrificeEffect.MkSacrificeEffect ref sacrificer sacrificed permanents) -> fmap Effect.Sacrifice (SacrificeEffect.MkSacrificeEffect <$> onObjectRef c ref <*> pure sacrificer <*> traverse (onSlot c) sacrificed <*> traverse (onSlot c) permanents)
   Effect.Attach named -> fmap Effect.Attach (onSlot c named)
   Effect.AttachAsThoughCreature named -> fmap Effect.AttachAsThoughCreature (onSlot c named)
   Effect.AttachTarget attach -> fmap Effect.AttachTarget (attachTargetChildren c attach)

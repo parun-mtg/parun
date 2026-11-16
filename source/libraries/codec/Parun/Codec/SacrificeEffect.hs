@@ -21,9 +21,11 @@ codec = Fields.object $ do
   ref <- Fields.required "ref" ObjectRef.codec SacrificeEffect.ref
   sacrificer <- Fields.defaulted "sacrificer" Sacrificer.EffectController Sacrificer.codec SacrificeEffect.sacrificer
   sacrificed <- Fields.defaulted "sacrificed" Nothing (Common.maybe SlotName.codec) SacrificeEffect.sacrificed
+  permanents <- Fields.defaulted "permanents" Nothing (Common.maybe SlotName.codec) SacrificeEffect.permanents
   pure
     SacrificeEffect.MkSacrificeEffect
       { SacrificeEffect.ref = ref,
         SacrificeEffect.sacrificer = sacrificer,
-        SacrificeEffect.sacrificed = sacrificed
+        SacrificeEffect.sacrificed = sacrificed,
+        SacrificeEffect.permanents = permanents
       }

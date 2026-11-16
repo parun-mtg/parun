@@ -518,7 +518,7 @@ spec s = Spec.describe s "Parun.Codec.Effect" $ do
       s
       toJson
       fromJson
-      (Effect.Sacrifice SacrificeEffect.MkSacrificeEffect {SacrificeEffect.ref = ObjectRef.InSlot (SlotName.MkSlotName (Text.pack "self")), SacrificeEffect.sacrificer = Sacrificer.EffectController, SacrificeEffect.sacrificed = Nothing})
+      (Effect.Sacrifice SacrificeEffect.MkSacrificeEffect {SacrificeEffect.ref = ObjectRef.InSlot (SlotName.MkSlotName (Text.pack "self")), SacrificeEffect.sacrificer = Sacrificer.EffectController, SacrificeEffect.sacrificed = Nothing, SacrificeEffect.permanents = Nothing})
       " {\"type\":\"Sacrifice\",\"value\":{\"ref\":{\"type\":\"InSlot\",\"value\":\"self\"}}} "
   Spec.it s "Attach" $
     Common.assertJsonCodec

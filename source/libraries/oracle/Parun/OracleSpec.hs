@@ -1244,7 +1244,7 @@ spark = CardName.MkCardName (Text.pack "Spark")
 
 -- The instruction to sacrifice the source.
 sacrifice :: Effect.Effect Card.Card (GrantedAbility.GrantedAbility Card.Card)
-sacrifice = Effect.Sacrifice (SacrificeEffect.MkSacrificeEffect (ObjectRef.InSlot self) Sacrificer.EffectController Nothing)
+sacrifice = Effect.Sacrifice (SacrificeEffect.MkSacrificeEffect (ObjectRef.InSlot self) Sacrificer.EffectController Nothing Nothing)
 
 -- The name the normalisation cases give their card.
 x :: CardName.CardName
