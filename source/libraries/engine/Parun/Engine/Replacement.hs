@@ -596,13 +596,13 @@ changesLoss gs event candidate = case (ReplacementCandidate.effect candidate, ev
     breaches gs candidate rewrite pid n
   _ -> True
 
--- CR 106.12b: what this permanent being tapped for mana produces under the
--- ManaR rows applying to it, one entry per outcome CR 616.1's ordering can
--- reach: the type and, where it is replaced too, the amount (Nothing keeps
--- it). Every row replaces the whole type, so the row applied last decides it;
--- the amount is that row's if it fixes one, else that of whichever other
--- fixing row the player applies last before it. CR 616.1f never drops a row
--- here, as each row's filter reads the permanent and not the mana.
+-- CR 106.12b: what this permanent being tapped for mana, producing `n` mana,
+-- produces under the ManaR rows applying to it, one entry per outcome CR
+-- 616.1's ordering can reach: the type and, where it is replaced too, the
+-- amount (Nothing keeps it). Empty when no row applies. Every row replaces the
+-- whole type, so the row applied last decides it; the amount is that of the
+-- last row applied that fixes one. CR 616.1f drops a row whose `atLeast` the
+-- amount so far no longer reaches: Damping Sphere after Contamination.
 -- Parun.Engine.Mana offers these as a choice, the player tapping it choosing
 -- per Naked Singularity's ruling of 2013-04-15.
 --
@@ -611,20 +611,19 @@ changesLoss gs event candidate = case (ReplacementCandidate.effect candidate, ev
 --
 -- The rows are gathered before `oid` is taken, so a caller asking of every
 -- source binds `manaRewrites gs` once and gathers once.
-manaRewrites :: GameState -> ObjectId -> [(ManaType.ManaType, Maybe Natural)]
+manaRewrites :: GameState -> ObjectId -> Natural -> [(ManaType.ManaType, Maybe Natural)]
 manaRewrites gs =
   let viewOf = Projection.viewsOf gs
       rows = [(candidate, row) | candidate <- collect gs (StoredEffects.replacements (GameState.stored gs)), ReplacementEffect.ManaR row <- [ReplacementCandidate.effect candidate]]
-      outcomes applying =
+      -- Each state is the rows applied so far, the type and the fixed amount.
+      outcomes applying n =
         let indexed = zip [0 :: Int ..] applying
-            fixedBefore i = [n | (j, row) <- indexed, j /= i, Just n <- [ManaR.amount row]]
-         in ListUtils.nubOrd
-              [ (ManaR.produces row, amount)
-              | (i, row) <- indexed,
-                amount <- case ManaR.amount row of
-                  Just n -> [Just n]
-                  Nothing -> if null (fixedBefore i) then [Nothing] else fmap Just (fixedBefore i)
-              ]
+            open (applied, _, amount) = [(i, row) | (i, row) <- indexed, Set.notMember i applied, all (<= Maybe.fromMaybe n amount) (ManaR.atLeast row)]
+            step state@(applied, _, amount) = [(Set.insert i applied, Just (ManaR.produces row), ManaR.amount row Applicative.<|> amount) | (i, row) <- open state]
+            settle states =
+              let (done, going) = List.partition (null . open) states
+               in done <> if null going then [] else settle (ListUtils.nubOrd (concatMap step going))
+         in ListUtils.nubOrd [(manaType, amount) | (_, Just manaType, amount) <- settle [(Set.empty, Nothing, Nothing)]]
    in \oid -> outcomes [row | (candidate, row) <- rows, matchesFiltered viewOf gs candidate (ManaR.matching row) oid]
 
 -- CR 614.1: does this instance apply to this proposed event? The arms must agree

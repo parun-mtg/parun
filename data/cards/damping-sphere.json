@@ -1,0 +1,75 @@
+{
+  "faces": [
+    {
+      "manaCost": [
+        {
+          "type": "Generic",
+          "value": 2
+        }
+      ],
+      "name": "Damping Sphere",
+      "oracleText": "If a land is tapped for two or more mana, it produces {C} instead of any other type and amount.\nEach spell a player casts costs {1} more to cast for each other spell that player has cast this turn.",
+      "playerAbilities": [
+        {
+          "effect": {
+            "type": "ModifyCost",
+            "value": {
+              "change": {
+                "type": "Increase",
+                "value": [
+                  {
+                    "type": "Generic",
+                    "value": 1
+                  }
+                ]
+              },
+              "countedAgainst": "PaidFor",
+              "matching": {
+                "type": "And",
+                "value": []
+              },
+              "perEach": {
+                "type": "SpellsCast",
+                "value": {
+                  "player": {
+                    "type": "Relative",
+                    "value": "You"
+                  }
+                }
+              },
+              "subject": {
+                "type": "Spells"
+              }
+            }
+          },
+          "scope": {
+            "type": "AnyPlayer"
+          }
+        }
+      ],
+      "replacementEffects": [
+        {
+          "effect": {
+            "type": "ManaR",
+            "value": {
+              "amount": 1,
+              "atLeast": 2,
+              "matching": {
+                "type": "HasCardType",
+                "value": "Land"
+              },
+              "produces": {
+                "type": "Colorless"
+              }
+            }
+          }
+        }
+      ],
+      "typeLine": {
+        "types": [
+          "Artifact"
+        ]
+      }
+    }
+  ]
+}
