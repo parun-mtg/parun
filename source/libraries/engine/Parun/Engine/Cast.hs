@@ -1566,7 +1566,7 @@ permitsCastFromExile pid oid face gs =
 -- grant's additional costs (castWays).
 exileOpen :: PlayerId -> ObjectId -> Face.Face Card.Type.Card -> GameState -> Bool
 exileOpen pid oid face gs =
-  any (heldAdmits face) (Expiry.openPermissions pid oid gs)
+  any (heldAdmits oid face gs) (Expiry.openPermissions pid oid gs)
     || permitsCastPlotted pid oid gs
     || permitsCastForetold pid oid gs
     || permitsCastPrepared pid oid gs
@@ -1597,16 +1597,19 @@ permitsCastPrepared pid oid gs = case Game.lookupObject oid gs of
 -- CR 716.3d's "it can't be cast as an Adventure this way": may `face` be cast
 -- under this held permission? Not the Adventure face under a permission rule
 -- 716.3d itself wrote, rather than an Effect.GrantPlayFromExile a card states.
--- Nor, CR 601.3, a face none of whose card types (CR 205.2b) the permission's
--- per-type budget has left (unspentTypes). Reading the projected types rather
--- than the face's printed ones is not implemented (#7517).
+-- Nor, CR 601.3, a spell none of whose card types (CR 205.2b) the permission's
+-- per-type budget has left (unspentTypes): the types projected on `board`, the
+-- proposal's stamp of `oid`, so an effect on cards outside the battlefield
+-- widens them as spendPlayBudget's spend does. The scenario
+-- cr-601-3-aminatous-augury-casts-hill-giant-as-the-artifact-encroaching-mycosynth-made-it
+-- proves it.
 --
 -- A classification of the PERMISSION, never of the effect that wrote one --
 -- ExilePlayPermission.origin has two arms and neither names a card.
-heldAdmits :: Face.Face Card.Type.Card -> ExilePlayPermission.ExilePlayPermission -> Bool
-heldAdmits face permission =
+heldAdmits :: ObjectId -> Face.Face Card.Type.Card -> GameState -> ExilePlayPermission.ExilePlayPermission -> Bool
+heldAdmits oid face board permission =
   not (Card.isAdventure face && ExilePlayPermission.origin permission == PlayPermissionOrigin.Adventure)
-    && maybe True (not . Set.null) (unspentTypes (TypeLine.types (Face.typeLine face)) permission)
+    && maybe True (not . Set.null) (unspentTypes (PC.cardTypes (Projection.project oid board)) permission)
 
 -- CR 601.3 / 205.2b: which of `types` a spell may still be cast as under this
 -- permission's per-type budget (PlayAllowance.EachCardTypeBut); Nothing for a
@@ -2794,7 +2797,7 @@ castSpellWith perform timed offered applied widened pid oid name facing = Event.
   -- narrowed to it, while a rejection still rewinds to `before`. The
   -- scenario cr-601-3-a-card-holding-two-soul-jar-grants-asks-which-it-is-cast-under
   -- proves the choice.
-  chosen <- if offered then pure Nothing else chooseHeldPermission pid oid (\board -> not timed || castableUnderHeld Nothing pid oid name facing board) (\permission -> maybe False (`heldAdmits` permission) (proposedFace oid name (asProposed oid name facing before))) before
+  chosen <- if offered then pure Nothing else chooseHeldPermission pid oid (\board -> not timed || castableUnderHeld Nothing pid oid name facing board) (\permission -> let board = asProposed oid name facing before in maybe False (\face -> heldAdmits oid face board permission) (proposedFace oid name board)) before
   let held = maybe before (\permission -> underHeld oid permission before) chosen
       -- The state the GATE measured, which is `held` with CR 709.3's half and
       -- CR 708.4's facing stamped on. Read from rather than written to the
