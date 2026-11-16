@@ -1,0 +1,28 @@
+{
+  "description": "Makeshift Binding exiles target creature an opponent controls until it leaves the battlefield, and its controller gains 2 life",
+  "note": "Three seats: bob's Bonesplitter is no creature and alice's Grizzly Bears is hers, so neither is a legal target; carol's Hill Giant is. Disenchanting the Binding returns the Giant to carol.",
+  "board": {
+    "seats": [
+      {"name": "alice", "manaPool": "WWWWW", "hand": [{"card": "Makeshift Binding", "label": "binding"}, {"card": "Disenchant", "label": "dis"}], "battlefield": [{"card": "Grizzly Bears", "label": "mine"}], "library": [{"card": "Island"}, {"card": "Island"}, {"card": "Island"}]},
+      {"name": "bob", "battlefield": [{"card": "Bonesplitter", "label": "splitter"}, {"card": "Ornithopter", "label": "thopter"}], "library": [{"card": "Island"}, {"card": "Island"}, {"card": "Island"}]},
+      {"name": "carol", "battlefield": [{"card": "Hill Giant", "label": "giant"}], "library": [{"card": "Island"}, {"card": "Island"}, {"card": "Island"}]}
+    ],
+    "active": "alice",
+    "step": "PrecombatMain"
+  },
+  "timeline": [
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": {"Cast": {"object": "$binding"}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass"},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "refuse": {"ChooseTargets": {"target": ["$splitter"]}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "refuse": {"ChooseTargets": {"target": ["$mine"]}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": {"ChooseTargets": {"target": ["$giant"]}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass"},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Count": {"player": "carol", "zone": "Exile", "card": "Hill Giant", "count": 1}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Life": {"player": "alice", "life": 22}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": {"Cast": {"object": "$dis", "targets": ["Makeshift Binding"]}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass"},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"View": {"of": "Stack", "is": []}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Count": {"player": "carol", "zone": "Battlefield", "card": "Hill Giant", "count": 1}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Count": {"player": "carol", "zone": "Exile", "card": "Hill Giant", "count": 0}}}
+  ]
+}

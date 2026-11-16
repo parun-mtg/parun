@@ -1,0 +1,24 @@
+{
+  "description": "Magnifying Glass taps for {C}, or for {4} and a tap investigates",
+  "note": "On turn 1 the Glass's {C} pays for Bonesplitter, so its investigate ability can't be activated while it is tapped; on turn 3 four Islands and its tap make one Clue.",
+  "board": {
+    "seats": [
+      {"name": "alice", "hand": [{"card": "Bonesplitter", "label": "splitter"}], "battlefield": [{"card": "Magnifying Glass", "label": "glass"}, {"card": "Island", "label": "i1"}, {"card": "Island", "label": "i2"}, {"card": "Island", "label": "i3"}, {"card": "Island", "label": "i4"}], "library": [{"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}]},
+      {"name": "bob", "library": [{"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}]}
+    ],
+    "active": "alice",
+    "step": "PrecombatMain"
+  },
+  "timeline": [
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": {"Cast": {"object": "$splitter", "mana": ["$glass", null]}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass"},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Count": {"player": "alice", "zone": "Battlefield", "card": "Bonesplitter", "count": 1}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Tapped": {"object": "$glass", "tapped": true}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "refuse": {"Activate": {"object": "$glass", "ability": 1, "mana": ["$i1", "$i2", "$i3", "$i4", null]}}},
+    {"turn": 3, "step": "PrecombatMain", "player": "alice", "do": {"Activate": {"object": "$glass", "ability": 1, "mana": ["$i1", "$i2", "$i3", "$i4", null]}}},
+    {"turn": 3, "step": "PrecombatMain", "player": "alice", "check": {"Tapped": {"object": "$glass", "tapped": true}}},
+    {"turn": 3, "step": "PrecombatMain", "player": "alice", "do": "Pass"},
+    {"turn": 3, "step": "PrecombatMain", "player": "alice", "check": {"View": {"of": "Stack", "is": []}}},
+    {"turn": 3, "step": "PrecombatMain", "player": "alice", "check": {"Count": {"player": "alice", "zone": "Battlefield", "card": "Clue Token", "count": 1}}}
+  ]
+}
