@@ -1,0 +1,71 @@
+{
+  "faces": [
+    {
+      "keywords": [
+        {
+          "type": "Flash"
+        },
+        {
+          "type": "Flying"
+        }
+      ],
+      "manaCost": [
+        {
+          "type": "Generic",
+          "value": 1
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "White"
+          }
+        }
+      ],
+      "name": "Doorkeeper Thrull",
+      "oracleText": "Flash\nFlying\nArtifacts and creatures entering don't cause abilities to trigger.",
+      "playerAbilities": [
+        {
+          "effect": {
+            "type": "EntriesTrigger",
+            "value": {
+              "entrants": {
+                "type": "Or",
+                "value": [
+                  {
+                    "type": "HasCardType",
+                    "value": "Artifact"
+                  },
+                  {
+                    "type": "HasCardType",
+                    "value": "Creature"
+                  }
+                ]
+              },
+              "triggering": "NoTrigger"
+            }
+          },
+          "scope": {
+            "type": "AnyPlayer"
+          }
+        }
+      ],
+      "power": {
+        "type": "Literal",
+        "value": 1
+      },
+      "toughness": {
+        "type": "Literal",
+        "value": 2
+      },
+      "typeLine": {
+        "subtypes": [
+          "Thrull"
+        ],
+        "types": [
+          "Creature"
+        ]
+      }
+    }
+  ]
+}

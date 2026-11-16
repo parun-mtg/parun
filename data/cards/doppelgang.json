@@ -1,0 +1,86 @@
+{
+  "faces": [
+    {
+      "manaCost": [
+        {
+          "type": "Variable"
+        },
+        {
+          "type": "Variable"
+        },
+        {
+          "type": "Variable"
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "Green"
+          }
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "Blue"
+          }
+        }
+      ],
+      "name": "Doppelgang",
+      "oracleText": "For each of X target permanents, create X tokens that are copies of that permanent.",
+      "spell": {
+        "modes": [
+          {
+            "clauses": [
+              {
+                "effects": [
+                  {
+                    "type": "ForEach",
+                    "value": {
+                      "body": [
+                        {
+                          "type": "CreateCopy",
+                          "value": {
+                            "quantity": {
+                              "type": "InSlot",
+                              "value": "X"
+                            },
+                            "ref": {
+                              "type": "InSlot",
+                              "value": "permanent"
+                            },
+                            "slot": "token"
+                          }
+                        }
+                      ],
+                      "ref": {
+                        "type": "InSlot",
+                        "value": "permanents"
+                      },
+                      "slot": "permanent"
+                    }
+                  }
+                ]
+              }
+            ],
+            "targetSlots": {
+              "permanents": {
+                "count": {
+                  "type": "AnnouncedX"
+                },
+                "pool": {
+                  "type": "Permanents"
+                }
+              }
+            }
+          }
+        ]
+      },
+      "typeLine": {
+        "types": [
+          "Sorcery"
+        ]
+      }
+    }
+  ]
+}
