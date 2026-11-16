@@ -624,7 +624,7 @@ data Effect card ability
     TakeTheInitiative InitiativeTarget.InitiativeTarget
   | -- | CR 310.9f: the resolving controller becomes the protector of the slot's battle.
     BecomeProtector SlotName.SlotName
-  | -- | The permanent in the slot gains this designation -- CR 702.112a's
+  | -- | The permanents in the slot gain this designation -- CR 702.112a's
     -- renown, CR 701.37a's monstrous, CR 701.60a's suspect and CR 720.3a's
     -- solved. Writes Object.designations, which CR 613 could not carry, and is
     -- idempotent (CR 702.112c, CR 701.60d). CR 701.37c's X rides along in the
