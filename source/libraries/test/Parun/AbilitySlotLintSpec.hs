@@ -160,6 +160,7 @@ import qualified Parun.Types.SpellCast as SpellCast
 import qualified Parun.Types.StaticAbility as StaticAbility
 import qualified Parun.Types.StepBegins as StepBegins
 import qualified Parun.Types.Tap as Tap
+import qualified Parun.Types.TapPermanents as TapPermanents
 import qualified Parun.Types.TargetSlot as TargetSlot
 import qualified Parun.Types.TopOfLibrary as TopOfLibrary
 import qualified Parun.Types.TriggerCondition as TriggerCondition
@@ -392,10 +393,7 @@ activatedAbilityOffendsGiven armed ability =
         if sacrificesAsCost (ActivatedAbility.cost ability)
           then Set.singleton Binding.sacrificedPermanent
           else Set.empty
-      tapped =
-        if tapsAsCost (ActivatedAbility.cost ability)
-          then Set.singleton Binding.tappedPermanent
-          else Set.empty
+      tapped = turnedAsCost (ActivatedAbility.cost ability)
       tappedForTotal =
         if tapsForTotalPowerAsCost (ActivatedAbility.cost ability)
           then Set.singleton Binding.tappedForTotalPower
@@ -433,10 +431,11 @@ activatedAbilityOffendsGiven armed ability =
       chosen = foldMap (Set.singleton . PlayerSlot.slot) (ActivatedAbility.chosenPlayer ability)
    in modalSlotsOffend armed (Set.unions [Set.fromList [Binding.triggerSource, Binding.you, Binding.thisAbility], announcedX, defining, granter, chosen, sacrificed, tapped, tappedForTotal, exiled, exiledPermanents, totalled, discarded, removed, payGateBound (ActivatedAbility.modal ability)]) (ActivatedAbility.modal ability)
 
--- Does this cost tap permanents the payer CHOOSES? sacrificesAsCost's shape, and
--- the same reason: CR 601.2h's payment binds Binding.tappedPermanent
--- (Cost.payComponent's TapPermanents arm, folded on by Activate), so Unerring
--- Sling's "the tapped creature's power" is an ordinary slot read.
+-- The slots this cost's taps or untaps of permanents the payer CHOOSES bind:
+-- CR 601.2h's payment binds Binding.tappedPermanent, or
+-- Binding.untappedPermanent for an untap (Cost.payComponent's TapPermanents arm,
+-- folded on by Activate), so Unerring Sling's "the tapped creature's power" and
+-- Benthic Explorers' "that land" are ordinary slot reads.
 --
 -- CostComponent.TapThis is deliberately not counted: CR 107.5 taps the SOURCE,
 -- which CR 113.7's `triggerSource` already names.
@@ -449,19 +448,15 @@ activatedAbilityOffendsGiven armed ability =
 -- additional cost to cast, so the exemption would fence nothing. Living Destiny's
 -- reveal, Fling's sacrifice and Grab the Prize's discard are among the cast-side
 -- payment slots that lint admits.
-tapsAsCost :: Cost.Type.Cost Keyword.Keyword -> Bool
-tapsAsCost =
-  let isTap component = case component of
-        CostComponent.TapPermanents {} -> True
-        _ -> False
-   in any isTap . Cost.Type.components
+turnedAsCost :: Cost.Type.Cost Keyword.Keyword -> Set.Set SlotName.SlotName
+turnedAsCost cost = Set.fromList [Binding.tapStatePermanent (TapPermanents.becoming turned) | CostComponent.TapPermanents turned <- Cost.Type.components cost]
 
--- Does this cost tap permanents to reach a THRESHOLD? tapsAsCost's shape, and the
+-- Does this cost tap permanents to reach a THRESHOLD? turnedAsCost's shape, and the
 -- same reason one rule over: CR 601.2h's payment binds
 -- Binding.tappedForTotalPower (Cost.payComponent's TapForTotalPower arm, folded on
 -- by Activate), which is CR 702.122b's "crews a Vehicle" relation.
 --
--- Its own question and not a second answer to tapsAsCost's: a cost carrying both
+-- Its own question and not a second answer to turnedAsCost's: a cost carrying both
 -- components (data/cards/synthetic-crewed-battery.json) binds both slots, and one
 -- carrying either binds only that one.
 tapsForTotalPowerAsCost :: Cost.Type.Cost Keyword.Keyword -> Bool

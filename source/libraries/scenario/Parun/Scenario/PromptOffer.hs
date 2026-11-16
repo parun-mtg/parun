@@ -403,7 +403,7 @@ offerOf namer gs prompt = case prompt of
   -- CR 118.1.
   Prompt.ChooseReturns _ _ source candidates count -> subset namer (Just source) [] (exactly count candidates) (fmap (object namer) candidates)
   -- CR 601.2f.
-  Prompt.ChooseTaps _ _ source candidates count -> subset namer (Just source) [] (exactly count candidates) (fmap (object namer) candidates)
+  Prompt.ChooseTaps _ _ source _ candidates count -> subset namer (Just source) [] (exactly count candidates) (fmap (object namer) candidates)
   -- CR 702.167a: "one or more" makes the count a least.
   Prompt.ChooseMaterials _ _ source candidates count orMore -> subset namer (Just source) [] (if orMore then (Just count, Nothing) else exactly count candidates) (fmap (object namer) candidates)
   -- CR 702.122a: any of them, whose total power the engine judges.

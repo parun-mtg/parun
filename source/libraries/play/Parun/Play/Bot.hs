@@ -118,7 +118,7 @@ bot names = Answerer.MkAnswerer $ \asked -> case Asked.prompt asked of
   -- CR 615.7: every share of the shield, each event taking at most its own
   -- damage (Parun.Engine.Replacement.askAllocation's gate).
   Prompt.AllocateDamage _ _ events share -> pickOr (Replay.defaultAnswer (Asked.prompt asked)) (allocations (fmap DamageEvent.amount events) share)
-  Prompt.ChooseTaps _ _ _ candidates count -> fmap (Set.fromList . List.genericTake count) (Generator.shuffle candidates)
+  Prompt.ChooseTaps _ _ _ _ candidates count -> fmap (Set.fromList . List.genericTake count) (Generator.shuffle candidates)
   Prompt.ChooseReturns _ _ _ candidates count -> fmap (Set.fromList . List.genericTake count) (Generator.shuffle candidates)
   Prompt.ChooseExiles _ _ _ candidates count -> fmap (Set.fromList . List.genericTake count) (Generator.shuffle candidates)
   Prompt.ChooseExilesFromGraveyard _ _ _ candidates count -> fmap (Set.fromList . List.genericTake count) (Generator.shuffle candidates)

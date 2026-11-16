@@ -9,6 +9,7 @@ import qualified Parun.Types.AnyNumberOf as AnyNumberOf
 import qualified Parun.Types.CounterKindFor as CounterKindFor
 import qualified Parun.Types.Prompt as Prompt
 import qualified Parun.Types.SubtypeFamily as SubtypeFamily
+import qualified Parun.Types.TapState as TapState
 
 -- The prompt's constructor name, for failure messages. Total for
 -- Parun.Engine.Driver.deciderOf's reason.
@@ -176,7 +177,10 @@ kindOf prompt = Text.pack $ case prompt of
   Prompt.ChooseExilesTotalling {} -> "ChooseExilesTotalling"
   Prompt.ChoosePermanent {} -> "ChoosePermanent"
   Prompt.ChooseTapsForTotalPower {} -> "ChooseTapsForTotalPower"
-  Prompt.ChooseTaps {} -> "ChooseTaps"
+  -- The names scenario files answer these by, one per TapState.
+  Prompt.ChooseTaps _ _ _ becoming _ _ -> case becoming of
+    TapState.Tapped -> "ChooseTaps"
+    TapState.Untapped -> "ChooseUntaps"
   Prompt.ChooseReturns {} -> "ChooseReturns"
   Prompt.ChooseExiles {} -> "ChooseExiles"
   Prompt.ChooseAttachment {} -> "ChooseAttachment"

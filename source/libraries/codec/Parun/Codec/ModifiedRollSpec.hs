@@ -13,6 +13,7 @@ import qualified Parun.Types.PermissionLimit as PermissionLimit
 import qualified Parun.Types.RollModifier as RollModifier
 import qualified Parun.Types.Subtype as Subtype
 import qualified Parun.Types.TapPermanents as TapPermanents
+import qualified Parun.Types.TapState as TapState
 
 spec :: (Monad m, Monad n) => Spec.Spec m n -> n ()
 spec s = Spec.describe s "Parun.Codec.ModifiedRoll" $ do
@@ -63,7 +64,8 @@ spec s = Spec.describe s "Parun.Codec.ModifiedRoll" $ do
                         TapPermanents.MkTapPermanents
                           { TapPermanents.count = CostAmount.Fixed 1,
                             TapPermanents.whichPermanents = Filter.HasSubtype Subtype.Wall,
-                            TapPermanents.sharingACreatureType = False
+                            TapPermanents.sharingACreatureType = False,
+                            TapPermanents.becoming = TapState.Tapped
                           }
                     ]
                 },

@@ -1047,7 +1047,7 @@ candidateCostsGiven permitted pid name oid gs =
                             tappingOne cost (vid, n) =
                               CandidateCost.MkCandidateCost
                                 (Just (Keyword.Type.Harmonize cost))
-                                (withAdditional cost {Cost.components = Cost.components cost <> [CostComponent.TapPermanents (TapPermanents.MkTapPermanents (CostAmount.Fixed 1) (criterion vid) False)]})
+                                (withAdditional cost {Cost.components = Cost.components cost <> [CostComponent.TapPermanents (TapPermanents.MkTapPermanents (CostAmount.Fixed 1) (criterion vid) False TapState.Tapped)]})
                                 [ManaCost.MkManaCost [ManaSymbol.Generic (Integer.toNaturalSaturating n)]]
                                 False
                                 Nothing
@@ -1731,8 +1731,8 @@ substituteCandidates slots pid oid substitute gs = case substitute of
 -- Prompt.ChooseExilesFromGraveyard for the other.
 substituteComponent :: Keyword.Substitute -> Natural -> CostComponent.CostComponent Keyword.Type.Keyword
 substituteComponent substitute n = case substitute of
-  Keyword.TapUntapped criterion -> CostComponent.TapPermanents (TapPermanents.MkTapPermanents (CostAmount.Fixed n) criterion False)
-  Keyword.TapToConvoke criterion -> CostComponent.TapPermanents (TapPermanents.MkTapPermanents (CostAmount.Fixed n) criterion False)
+  Keyword.TapUntapped criterion -> CostComponent.TapPermanents (TapPermanents.MkTapPermanents (CostAmount.Fixed n) criterion False TapState.Tapped)
+  Keyword.TapToConvoke criterion -> CostComponent.TapPermanents (TapPermanents.MkTapPermanents (CostAmount.Fixed n) criterion False TapState.Tapped)
   Keyword.ExileFromGraveyard criterion -> CostComponent.MoveCardsFromGraveyard (MoveCardsFromGraveyard.MkMoveCardsFromGraveyard (CostAmount.Fixed n) criterion GraveyardCostDestination.Exile)
 
 -- The components an offer's substitutes are paid as, `substituteComponent` over
@@ -2790,6 +2790,26 @@ tapCandidatesGiven board slots pid oid criterion gs =
         Filter.matches context (Snapshot.views board candidate) criterion
    in List.sort (filter matches (Set.toList (GameState.battlefield gs)))
 
+-- The permanents a TapPermanents component on `oid` may turn: `tapCandidates`'
+-- pool for a tap, and for an untap only the tapped ones (CR 701.26b) no effect
+-- says can't become untapped (CR 614.17b), UntapThis' two conjuncts read over
+-- another permanent.
+turnCandidatesGiven :: Snapshot.Snapshot -> Map.Map SlotName.SlotName (Set.Set Recipient.Recipient) -> PlayerId -> ObjectId -> TapPermanents.TapPermanents Keyword.Type.Keyword -> GameState -> [ObjectId]
+turnCandidatesGiven board slots pid oid tap gs =
+  let pool = tapCandidatesGiven board slots pid oid (TapPermanents.whichPermanents tap) gs
+      untappable candidate =
+        fmap Object.tapped (Game.lookupObject candidate gs) == Just TapState.Tapped
+          && not (UntapRestriction.cantBecomeUntapped candidate gs)
+   in case TapPermanents.becoming tap of
+        TapState.Tapped -> pool
+        TapState.Untapped -> filter untappable pool
+
+-- The axis a TapPermanents component's turning spends.
+turnAxis :: TapState.TapState -> ClaimAxis.ClaimAxis
+turnAxis becoming = case becoming of
+  TapState.Tapped -> ClaimAxis.Tapping
+  TapState.Untapped -> ClaimAxis.Untapping
+
 -- The permanents this player may return to hand to pay a ReturnPermanents
 -- component on `oid`: `tapCandidates`' pool exactly, which is what an alias
 -- rather than a second walk says -- both ask which battlefield objects the
@@ -3169,10 +3189,13 @@ claimOfGiven board slots pid oid component gs =
         -- A SUPERSET where the component asks for a shared creature type: the
         -- claim pools every candidate, and `payable`'s arm is what narrows to a
         -- group holding one type (Weight of Conscience states no other claim).
-        CostComponent.TapPermanents (TapPermanents.MkTapPermanents (CostAmount.Fixed n) criterion _) ->
-          claim ClaimAxis.Tapping (Set.fromList (tapCandidatesGiven board slots pid oid criterion gs)) n
+        --
+        -- An untap spends TAPPED-ness instead, on ClaimAxis.Untapping, out of a
+        -- pool `turnCandidatesGiven` confines to tapped permanents.
+        CostComponent.TapPermanents tap@(TapPermanents.MkTapPermanents (CostAmount.Fixed n) _ _ becoming) ->
+          claim (turnAxis becoming) (Set.fromList (turnCandidatesGiven board slots pid oid tap gs)) n
         -- Nothing until CR 601.2b fixes the count, Sacrifice's arm.
-        CostComponent.TapPermanents (TapPermanents.MkTapPermanents (CostAmount.Announced _) _ _) -> Nothing
+        CostComponent.TapPermanents (TapPermanents.MkTapPermanents (CostAmount.Announced _) _ _ _) -> Nothing
         -- The battlefield pool SacrificeThis and ReturnThis draw on, on their axis
         -- and not the tapping one: a permanent returned to hand is as gone from the
         -- battlefield as one sacrificed, so a cost that returns and a cost that
@@ -3706,8 +3729,8 @@ uncountedCeiling pid oid claims gs component = case component of
   -- The arm above at the amount no targets fix: CR 605.3b's mana ability has no
   -- CR 601.2c step (fixComputed).
   CostComponent.CollectEvidenceOfTargets -> uncountedCeiling pid oid claims gs (fixComputed Map.empty gs component)
-  -- Counted by `objectCeiling`, on ClaimAxis.Tapping: the count is exact, so the
-  -- pool of untapped candidates divided by it is how many times in a row the
+  -- Counted by `objectCeiling`, on `turnAxis`: the count is exact, so the
+  -- pool of candidates divided by it is how many times in a row the
   -- component can be paid. Heritage Druid's nine Elves are three activations
   -- (Parun.ManaSpec).
   CostComponent.TapPermanents {} -> Nothing
@@ -4449,8 +4472,8 @@ canPayComponentGiven board slots pid oid component gs = case component of
   --
   -- CR 205.3m where the permanents must share a creature type: payable iff n
   -- candidates hold ONE type in common, the largest such group.
-  CostComponent.TapPermanents (TapPermanents.MkTapPermanents amount criterion sharing) -> payableAnnounced amount $ \n ->
-    let candidates = tapCandidatesGiven board slots pid oid criterion gs
+  CostComponent.TapPermanents tap@(TapPermanents.MkTapPermanents amount _ sharing _) -> payableAnnounced amount $ \n ->
+    let candidates = turnCandidatesGiven board slots pid oid tap gs
      in if sharing then largestSharingGroup candidates gs >= n else Natural.length candidates >= n
   -- CR 118.3: this player must have at least `n` permanents the criterion
   -- admits to return. TapPermanents' arm above over a different action, and
@@ -7444,18 +7467,24 @@ payPayable perform moment paidFor slots pid oid component = case component of
   --
   -- A shared creature type (CR 205.3m) is asked of the CHOSEN set, reject-not-
   -- repair: a set holding no type in common is unpaid.
-  CostComponent.TapPermanents (TapPermanents.MkTapPermanents amount criterion sharing) -> paidAnnounced amount $ \n -> do
+  --
+  -- An untap is the same choice, through Event.untap, binding
+  -- Binding.untappedPermanent: Benthic Explorers' "that land".
+  CostComponent.TapPermanents tap@(TapPermanents.MkTapPermanents amount _ sharing becoming) -> paidAnnounced amount $ \n -> do
     gs <- State.get
-    let candidates = tapCandidates slots pid oid criterion gs
+    let candidates = turnCandidatesGiven (Snapshot.onDemand gs) slots pid oid tap gs
+        turn = case becoming of
+          TapState.Tapped -> tapObject
+          TapState.Untapped -> Event.untap
         decider = Decide.deciderFor pid gs
     chosen <-
       if n == 0 || Natural.length candidates <= n
         then pure (Set.fromList (List.genericTake n candidates))
-        else Game.choose (Prompt.ChooseTaps decider pid oid candidates n)
+        else Game.choose (Prompt.ChooseTaps decider pid oid becoming candidates n)
     if Set.isSubsetOf chosen (Set.fromList candidates) && Natural.length chosen == n && (not sharing || shareACreatureType (Set.toList chosen) gs)
       then do
-        Event.simultaneously (Monad.mapM_ tapObject (Set.toAscList chosen))
-        pure (Payment.Paid (Binding.paidObjects Binding.tappedPermanent (Set.map Recipient.ToObject chosen)))
+        Event.simultaneously (Monad.mapM_ turn (Set.toAscList chosen))
+        pure (Payment.Paid (Binding.paidObjects (Binding.tapStatePermanent becoming) (Set.map Recipient.ToObject chosen)))
       else pure Payment.Unpaid
   -- CR 118.1 as a cost: the payer chooses WHICH permanents go back, so this is a
   -- prompt. TapPermanents' posture above -- the count is exact, so as many

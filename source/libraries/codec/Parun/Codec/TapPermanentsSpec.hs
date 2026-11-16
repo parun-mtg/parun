@@ -12,6 +12,7 @@ import qualified Parun.Types.Filter as Filter
 import qualified Parun.Types.Keyword as Keyword
 import qualified Parun.Types.SlotName as SlotName
 import qualified Parun.Types.TapPermanents as TapPermanents
+import qualified Parun.Types.TapState as TapState
 
 -- | Instantiated at 'Keyword.Keyword', the only concrete instantiation anywhere
 -- in the pool.
@@ -29,7 +30,8 @@ spec s = Spec.describe s "Parun.Codec.TapPermanents" $ do
       ( TapPermanents.MkTapPermanents
           { TapPermanents.count = CostAmount.Fixed 1,
             TapPermanents.whichPermanents = Filter.HasCardType CardType.Creature,
-            TapPermanents.sharingACreatureType = False
+            TapPermanents.sharingACreatureType = False,
+            TapPermanents.becoming = TapState.Tapped
           }
       )
       " {\"count\":{\"type\":\"Fixed\",\"value\":1},\"whichPermanents\":{\"type\":\"HasCardType\",\"value\":\"Creature\"}} "
@@ -41,7 +43,8 @@ spec s = Spec.describe s "Parun.Codec.TapPermanents" $ do
       ( TapPermanents.MkTapPermanents
           { TapPermanents.count = CostAmount.Fixed 2,
             TapPermanents.whichPermanents = Filter.HasCardType CardType.Creature,
-            TapPermanents.sharingACreatureType = True
+            TapPermanents.sharingACreatureType = True,
+            TapPermanents.becoming = TapState.Tapped
           }
       )
       " {\"count\":{\"type\":\"Fixed\",\"value\":2},\"whichPermanents\":{\"type\":\"HasCardType\",\"value\":\"Creature\"},\"sharingACreatureType\":true} "
@@ -53,8 +56,22 @@ spec s = Spec.describe s "Parun.Codec.TapPermanents" $ do
       ( TapPermanents.MkTapPermanents
           { TapPermanents.count = CostAmount.Announced (SlotName.MkSlotName (Text.pack "X")),
             TapPermanents.whichPermanents = Filter.HasCardType CardType.Creature,
-            TapPermanents.sharingACreatureType = False
+            TapPermanents.sharingACreatureType = False,
+            TapPermanents.becoming = TapState.Tapped
           }
       )
       " {\"count\":{\"type\":\"Announced\",\"value\":\"X\"},\"whichPermanents\":{\"type\":\"HasCardType\",\"value\":\"Creature\"}} "
+  -- Benthic Explorers' "Untap a tapped land an opponent controls" (CR 701.26b).
+  Spec.it s "becoming" $
+    Common.assertCodec
+      s
+      codec
+      ( TapPermanents.MkTapPermanents
+          { TapPermanents.count = CostAmount.Fixed 1,
+            TapPermanents.whichPermanents = Filter.HasCardType CardType.Land,
+            TapPermanents.sharingACreatureType = False,
+            TapPermanents.becoming = TapState.Untapped
+          }
+      )
+      " {\"count\":{\"type\":\"Fixed\",\"value\":1},\"whichPermanents\":{\"type\":\"HasCardType\",\"value\":\"Land\"},\"becoming\":\"Untapped\"} "
   Spec.it s "has a schema" $ Common.assertHasSchema s codec

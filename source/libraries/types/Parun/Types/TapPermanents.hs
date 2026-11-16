@@ -2,10 +2,11 @@ module Parun.Types.TapPermanents where
 
 import qualified Parun.Types.CostAmount as CostAmount
 import qualified Parun.Types.Filter as Filter
+import qualified Parun.Types.TapState as TapState
 
 -- | The payload of Parun.Types.CostComponent's TapPermanents arm: CR 601.2f's
--- "tapping permanents" as a cost, spent by tapping exactly this many permanents
--- the payer chooses out of the ones the Filter admits. Springleaf Drum's "Tap
+-- "tapping permanents" as a cost, spent by tapping (or untapping) exactly this
+-- many permanents the payer chooses out of the ones the Filter admits. Springleaf Drum's "Tap
 -- an untapped creature you control" is the printing, and Explosive
 -- Singularity's "tap any number" the announced count (CR 601.2b).
 --
@@ -30,6 +31,10 @@ data TapPermanents keyword = MkTapPermanents
     -- -- Weight of Conscience's "two untapped creatures you control that share
     -- a creature type". A joint condition on the chosen set, which no
     -- per-candidate Filter can state.
-    sharingACreatureType :: Bool
+    sharingACreatureType :: Bool,
+    -- | The state each chosen permanent is put in: Tapped taps it (CR
+    -- 701.26a), Untapped untaps it (CR 701.26b) -- Benthic Explorers' "Untap
+    -- a tapped land an opponent controls".
+    becoming :: TapState.TapState
   }
   deriving (Eq, Ord, Show)

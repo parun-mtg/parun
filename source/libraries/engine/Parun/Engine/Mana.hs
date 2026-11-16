@@ -141,6 +141,8 @@ import qualified Parun.Types.SpendTrigger as SpendTrigger
 import qualified Parun.Types.StoredEffects as StoredEffects
 import qualified Parun.Types.Subtype as Subtype
 import qualified Parun.Types.Supertype as Supertype
+import qualified Parun.Types.TapPermanents as TapPermanents
+import qualified Parun.Types.TapState as TapState
 import qualified Parun.Types.TappedForMana as TappedForMana
 import qualified Parun.Types.TriggerCondition as TriggerCondition
 import qualified Parun.Types.TriggerSource as TriggerSource
@@ -692,10 +694,11 @@ manaSuppliesGiven xCeiling capacity watch rewritesOf pcs pid borrowed oid gs =
             ManaUnit.producer = Nothing
           }
       -- CR 601.2h / 608.2h on the supply side: a yield reading the permanent
-      -- its cost sacrifices or exiles -- Priest of Yawgmoth's "equal to the
+      -- its cost sacrifices, exiles or untaps -- Priest of Yawgmoth's "equal to the
       -- sacrificed artifact's mana value", Food Chain's "1 plus the exiled
       -- creature's mana value", Squandered Resources' "any type the sacrificed
-      -- land could produce" -- is one supply per yield some candidate gives,
+      -- land could produce", Benthic Explorers' "any type that land could
+      -- produce" off the land it untaps -- is one supply per yield some candidate gives,
       -- each claiming only the candidates that give it, so the walk can count
       -- the artifact a cast actually needs and cannot count it twice. Offered,
       -- it reads none, which would supply nothing at all. Parun.ManaSpec's
@@ -711,15 +714,17 @@ manaSuppliesGiven xCeiling capacity watch rewritesOf pcs pid borrowed oid gs =
         let (activations, share, manaCost) = measured option
             addsReading slot addition = Set.member slot (Quantity.objectSlots (ManaAddition.count addition)) || Map.member slot (Slots.productionSlots (ManaAddition.production addition))
             readsSlot slot = any (\(clause, _) -> any (addsReading slot) (Maybe.mapMaybe ManaAbility.manaProduced (Foldable.toList (Clause.effects clause)))) (ManaOption.steps option)
-            -- The slot each one-object removal of the cost binds its object
-            -- under (Parun.Engine.Cost.payComponent's arms).
-            removalSlot component = case component of
-              CostComponent.Sacrifice sacrifice | Sacrifice.count sacrifice == ObjectCount.Exactly (CostAmount.Fixed 1) -> Just Binding.sacrificedPermanent
-              CostComponent.ExilePermanents exiled | ExilePermanents.count exiled == 1 -> Just Binding.exiledPermanent
+            -- The slot each one-object choice of the cost binds its object
+            -- under (Parun.Engine.Cost.payComponent's arms), and the axis its
+            -- claim spends: a removal, or Benthic Explorers' untap.
+            chosenSlot component = case component of
+              CostComponent.Sacrifice sacrifice | Sacrifice.count sacrifice == ObjectCount.Exactly (CostAmount.Fixed 1) -> Just (Binding.sacrificedPermanent, ClaimAxis.Removal Zone.Battlefield)
+              CostComponent.ExilePermanents exiled | ExilePermanents.count exiled == 1 -> Just (Binding.exiledPermanent, ClaimAxis.Removal Zone.Battlefield)
+              CostComponent.TapPermanents turned | TapPermanents.count turned == CostAmount.Fixed 1, TapPermanents.becoming turned == TapState.Untapped -> Just (Binding.untappedPermanent, ClaimAxis.Untapping)
               _ -> Nothing
-            onBattlefield = filter ((==) (ClaimAxis.Removal Zone.Battlefield) . Claim.Type.axis) (Activations.claims activations)
-         in case (Maybe.mapMaybe removalSlot (Cost.components (ManaOption.cost option)), onBattlefield) of
-              ([slot], [claim])
+            onAxis axis = filter ((==) axis . Claim.Type.axis) (Activations.claims activations)
+         in case fmap (Bifunctor.second onAxis) (Maybe.mapMaybe chosenSlot (Cost.components (ManaOption.cost option))) of
+              [(slot, [claim])]
                 | readsSlot slot && Claim.Type.count claim == 1 && Maybe.isNothing (Claim.Type.threshold claim) ->
                     let pricedFor candidate = [shareOf priced | (offered, priced) <- manaRepricingsGiven (Binding.paidObjects slot (Set.singleton (Recipient.ToObject candidate))) gs pcs oid gs, offered == option]
                         byYield = Map.fromListWith Set.union [(yield, Set.singleton candidate) | candidate <- Set.toList (Claim.Type.pool claim), yield <- pricedFor candidate]

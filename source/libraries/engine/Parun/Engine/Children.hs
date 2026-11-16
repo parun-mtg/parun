@@ -2053,7 +2053,7 @@ costComponentChildren c component = case component of
   CostComponent.PayComputedLife _ -> pure component
   CostComponent.Sacrifice (Sacrifice.MkSacrifice n criterion) -> fmap CostComponent.Sacrifice (Sacrifice.MkSacrifice <$> objectCountChildren c n <*> costFilter c criterion)
   CostComponent.TapForTotalPower (TapForTotalPower.MkTapForTotalPower power criterion family) -> fmap CostComponent.TapForTotalPower (TapForTotalPower.MkTapForTotalPower power <$> costFilter c criterion <*> pure family)
-  CostComponent.TapPermanents (TapPermanents.MkTapPermanents n criterion sharing) -> fmap CostComponent.TapPermanents (TapPermanents.MkTapPermanents <$> costAmountChildren c n <*> costFilter c criterion <*> pure sharing)
+  CostComponent.TapPermanents (TapPermanents.MkTapPermanents n criterion sharing becoming) -> fmap CostComponent.TapPermanents (TapPermanents.MkTapPermanents <$> costAmountChildren c n <*> costFilter c criterion <*> pure sharing <*> pure becoming)
   CostComponent.ReturnPermanents (ReturnPermanents.MkReturnPermanents n criterion) -> fmap CostComponent.ReturnPermanents (ReturnPermanents.MkReturnPermanents n <$> costFilter c criterion)
   CostComponent.ExilePermanents (ExilePermanents.MkExilePermanents n criterion) -> fmap CostComponent.ExilePermanents (ExilePermanents.MkExilePermanents n <$> costFilter c criterion)
   CostComponent.DiscardCards (DiscardCards.MkDiscardCards n criterion selection) -> fmap CostComponent.DiscardCards (DiscardCards.MkDiscardCards <$> objectCountChildren c n <*> costFilter c criterion <*> pure selection)

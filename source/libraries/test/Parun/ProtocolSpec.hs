@@ -416,7 +416,7 @@ spec s registry = Spec.describe s "Protocol" $ do
     Spec.assertEqWith s "candidates read back as the answer" (fmap (Protocol.decodeAnswer sacrifices . R.Array) (field "among" (PromptOffer.offerOf Protocol.namer gs sacrifices) >>= arrayOf)) (Just (Right (Set.fromList [o9, o11])))
     Spec.assertEqWith s "exactly the count" (bounds sacrifices) [Just (PromptOffer.object Protocol.namer o7), Just (R.Number 1), Just (R.Number 1)]
     Spec.assertEqWith s "CR 101.4b what earlier choosers picked" (field "earlier" (PromptOffer.offerOf Protocol.namer gs sacrifices)) (Just (R.Array [R.Array [R.Text (Text.pack "1"), R.Array [PromptOffer.object Protocol.namer o7]]]))
-    Spec.assertEqWith s "no more than there are" (bounds (Prompt.ChooseTaps alice S.alice o7 [o9] 2)) [Just (PromptOffer.object Protocol.namer o7), Just (R.Number 1), Just (R.Number 1)]
+    Spec.assertEqWith s "no more than there are" (bounds (Prompt.ChooseTaps alice S.alice o7 TapState.Tapped [o9] 2)) [Just (PromptOffer.object Protocol.namer o7), Just (R.Number 1), Just (R.Number 1)]
     Spec.assertEqWith s "CR 702.167a one or more is a least" (bounds (Prompt.ChooseMaterials alice S.alice o7 [o9, o11] 1 True)) [Just (PromptOffer.object Protocol.namer o7), Just (R.Number 1), Nothing]
     Spec.assertEqWith s "CR 702.122a a power threshold, unbounded" (fmap (\key -> field key (PromptOffer.offerOf Protocol.namer gs (Prompt.ChooseTapsForTotalPower alice S.alice o7 [(o9, 2)] 3))) ["power", "least", "most"]) [Just (R.Number 3), Nothing, Nothing]
     Spec.assertEqWith s "any number up to the most" (bounds (Prompt.ChooseAnyNumber alice S.alice o7 AnyNumberOf.ToExile [o9, o11] (Just 1) Seq.empty)) [Just (PromptOffer.object Protocol.namer o7), Just (R.Number 0), Just (R.Number 1)]

@@ -128,6 +128,7 @@ import qualified Parun.Types.StickerRef as StickerRef
 import qualified Parun.Types.StoredResult as StoredResult
 import qualified Parun.Types.Subtype as Subtype
 import qualified Parun.Types.SubtypeFamily as SubtypeFamily
+import qualified Parun.Types.TapState as TapState
 import qualified Parun.Types.TargetCount as TargetCount
 import qualified Parun.Types.TextWord as TextWord
 import qualified Parun.Types.ThrowResult as ThrowResult
@@ -487,7 +488,7 @@ spec s registry = Spec.describe s "Bot" $ do
   Spec.it s "taps any group of the count and takes any number up to the bound" $ do
     let candidates = fmap ObjectId.MkObjectId [8, 9, 10]
         groups p = Set.fromList (fmap Set.fromList (filter (p . length) (List.subsequences candidates)))
-    Spec.assertEqWith s "taps" (drawn (Prompt.ChooseTaps decider S.alice oid candidates 2)) (groups (== 2))
+    Spec.assertEqWith s "taps" (drawn (Prompt.ChooseTaps decider S.alice oid TapState.Tapped candidates 2)) (groups (== 2))
     Spec.assertEqWith s "bounded" (drawn (Prompt.ChooseAnyNumber decider S.alice oid AnyNumberOf.CardsFromAmong candidates (Just 2) Seq.empty)) (groups (<= 2))
     Spec.assertEqWith s "unbounded" (drawn (Prompt.ChooseAnyNumber decider S.alice oid AnyNumberOf.Permanents candidates Nothing Seq.empty)) (groups (const True))
 

@@ -87,6 +87,7 @@ import qualified Parun.Types.StickerRef as StickerRef
 import qualified Parun.Types.StoredResult as StoredResult
 import qualified Parun.Types.Subtype as Subtype
 import qualified Parun.Types.SubtypeFamily as SubtypeFamily
+import qualified Parun.Types.TapState as TapState
 import qualified Parun.Types.TargetCount as TargetCount
 import qualified Parun.Types.TextWord as TextWord
 import qualified Parun.Types.ThrowResult as ThrowResult
@@ -855,9 +856,10 @@ data Prompt r where
   -- Response.ChoseTaps. Each candidate carries its power, ChooseExilesTotalling\'s
   -- reason.
   ChooseTapsForTotalPower :: Decider.Decider -> PlayerId.PlayerId -> ObjectId.ObjectId -> [(ObjectId.ObjectId, Integer)] -> Natural.Natural -> Prompt (Set.Set ObjectId.ObjectId)
-  -- | Which permanents are tapped to pay a cost naming how many (CR 601.2f);
-  -- ChooseSacrifices' shape and elision. Answers as Response.ChoseTaps.
-  ChooseTaps :: Decider.Decider -> PlayerId.PlayerId -> ObjectId.ObjectId -> [ObjectId.ObjectId] -> Natural.Natural -> Prompt (Set.Set ObjectId.ObjectId)
+  -- | Which permanents are tapped, or untapped where the TapState says so, to
+  -- pay a cost naming how many (CR 601.2f, 701.26); ChooseSacrifices' shape and
+  -- elision. Answers as Response.ChoseTaps.
+  ChooseTaps :: Decider.Decider -> PlayerId.PlayerId -> ObjectId.ObjectId -> TapState.TapState -> [ObjectId.ObjectId] -> Natural.Natural -> Prompt (Set.Set ObjectId.ObjectId)
   -- | Which permanents are returned to their owners\' hands to pay a cost naming
   -- how many (CR 118.1); ChooseTaps\' shape, answering as Response.ChoseReturns
   -- so a replay cannot tap what it should have returned.
