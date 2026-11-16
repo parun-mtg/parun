@@ -132,6 +132,7 @@ import qualified Parun.Types.LifeLossR as LifeLossR
 import qualified Parun.Types.LifeLossRewrite as LifeLossRewrite
 import qualified Parun.Types.ManaInstead as ManaInstead
 import qualified Parun.Types.ManaR as ManaR
+import qualified Parun.Types.ManaScale as ManaScale
 import qualified Parun.Types.ManaType as ManaType
 import qualified Parun.Types.Object as Object
 import Parun.Types.ObjectId (ObjectId)
@@ -599,12 +600,12 @@ changesLoss gs event candidate = case (ReplacementCandidate.effect candidate, ev
 
 -- CR 106.12b: what this permanent being tapped for mana, producing `n` mana,
 -- produces under the ManaR rows applying to it, one entry per outcome CR
--- 616.1's ordering can reach: the type and, where it is replaced too, the
--- amount (Nothing keeps it). Empty when no row applies. Every row replaces the
--- whole type, so the row applied last decides it, one outcome per type it
--- offers; the amount is that of the last row applied that fixes one. CR
--- 616.1f drops a row whose `atLeast` the amount so far no longer reaches:
--- Damping Sphere after Contamination.
+-- 616.1's ordering can reach: the type (Nothing keeps it), the amount fixed
+-- by the last row applied that fixes one (Nothing keeps it), and the factor
+-- the rows applied after that multiply it by. Empty when no row applies. The
+-- row applied last that replaces the type decides it, one outcome per type it
+-- offers. CR 616.1f drops a row whose `atLeast` the amount so far no longer
+-- reaches: Damping Sphere after Contamination, or after Mana Reflection.
 -- Parun.Engine.Mana offers these as a choice, the player tapping it choosing
 -- per Naked Singularity's ruling of 2013-04-15.
 --
@@ -613,23 +614,34 @@ changesLoss gs event candidate = case (ReplacementCandidate.effect candidate, ev
 --
 -- The rows are gathered before `oid` is taken, so a caller asking of every
 -- source binds `manaRewrites gs` once and gathers once.
-manaRewrites :: GameState -> ObjectId -> Natural -> [(ManaType.ManaType, Maybe Natural)]
+manaRewrites :: GameState -> ObjectId -> Natural -> [(Maybe ManaType.ManaType, Maybe Natural, Natural)]
 manaRewrites gs =
   let viewOf = Projection.viewsOf gs
       rows = [(candidate, row) | candidate <- collect gs (StoredEffects.replacements (GameState.stored gs)), ReplacementEffect.ManaR row <- [ReplacementCandidate.effect candidate]]
-      -- Each state is the rows applied so far, the type and the fixed amount.
+      -- Each state is the rows applied so far, the type, the fixed amount and
+      -- the factor since.
       outcomes applying n =
         let indexed = zip [0 :: Int ..] applying
-            open (applied, _, amount) = [(i, row) | (i, row) <- indexed, Set.notMember i applied, all (<= Maybe.fromMaybe n amount) (ManaR.atLeast row)]
-            step state@(applied, _, amount) = [(Set.insert i applied, Just manaType, ManaR.amount row Applicative.<|> amount) | (i, row) <- open state, manaType <- instead (ManaR.produces row)]
+            current amount factor = Maybe.fromMaybe n amount * factor
+            open (applied, _, amount, factor) = [(i, row) | (i, row) <- indexed, Set.notMember i applied, all (<= current amount factor) (ManaR.atLeast row)]
+            step state@(applied, manaType, amount, factor) =
+              [ (Set.insert i applied, manaType', amount', factor')
+              | (i, row) <- open state,
+                let (amount', factor') = scaled (ManaR.amount row) amount factor,
+                manaType' <- maybe [manaType] (fmap Just . instead) (ManaR.produces row)
+              ]
             -- CR 105.4: one outcome per color, the player tapping choosing.
             instead produces = case produces of
               ManaInstead.OfType manaType -> [manaType]
               ManaInstead.AnyColor -> fmap ManaType.Colored [minBound .. maxBound]
+            scaled by amount factor = case by of
+              ManaScale.Keeps -> (amount, factor)
+              ManaScale.Exactly m -> (Just m, 1)
+              ManaScale.Times k -> (amount, factor * k)
             settle states =
               let (done, going) = List.partition (null . open) states
                in done <> if null going then [] else settle (ListUtils.nubOrd (concatMap step going))
-         in ListUtils.nubOrd [(manaType, amount) | (_, Just manaType, amount) <- settle [(Set.empty, Nothing, Nothing)]]
+         in ListUtils.nubOrd [(manaType, amount, factor) | (applied, manaType, amount, factor) <- settle [(Set.empty, Nothing, Nothing, 1)], not (Set.null applied)]
    in \oid -> outcomes [row | (candidate, row) <- rows, matchesFiltered viewOf gs candidate (ManaR.matching row) oid]
 
 -- CR 614.1: does this instance apply to this proposed event? The arms must agree

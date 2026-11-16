@@ -1,0 +1,53 @@
+{
+  "faces": [
+    {
+      "manaCost": [
+        {
+          "type": "Generic",
+          "value": 4
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "Green"
+          }
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "Green"
+          }
+        }
+      ],
+      "name": "Mana Reflection",
+      "oracleText": "If you tap a permanent for mana, it produces twice as much of that mana instead.",
+      "replacementEffects": [
+        {
+          "effect": {
+            "type": "ManaR",
+            "value": {
+              "amount": {
+                "type": "Times",
+                "value": 2
+              },
+              "matching": {
+                "type": "HeldBy",
+                "value": {
+                  "holder": "Controller",
+                  "relation": "You"
+                }
+              }
+            }
+          }
+        }
+      ],
+      "typeLine": {
+        "types": [
+          "Enchantment"
+        ]
+      }
+    }
+  ]
+}

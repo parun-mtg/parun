@@ -1,0 +1,171 @@
+{
+  "description": "CR 106.12b / 616.1f: under two Mana Reflections Sol Ring produces eight {C}, each doubling what the other already doubled",
+  "note": "Each Mana Reflection applies once to the production event, the second to the amount the first left, so the effects are cumulative. Sol Ring is a nonland permanent, which \"a permanent\" reaches, and each doubled unit keeps its Artifact tag (CR 106.6a).",
+  "board": {
+    "active": "alice",
+    "step": "PrecombatMain",
+    "seats": [
+      {
+        "name": "alice",
+        "battlefield": [
+          {
+            "card": "Mana Reflection"
+          },
+          {
+            "card": "Mana Reflection"
+          },
+          {
+            "card": "Sol Ring",
+            "label": "sol-ring"
+          }
+        ],
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ]
+      },
+      {
+        "name": "bob",
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ]
+      }
+    ]
+  },
+  "timeline": [
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "do": {
+        "Take": {
+          "action": "ActivateManaAbility $sol-ring"
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "check": {
+        "View": {
+          "of": "ManaPool",
+          "player": "alice",
+          "is": [
+            {
+              "manaType": {
+                "type": "Colorless"
+              },
+              "tags": [
+                "Artifact"
+              ],
+              "retention": "Ordinary",
+              "restriction": null,
+              "rider": null,
+              "sourceChoices": null
+            },
+            {
+              "manaType": {
+                "type": "Colorless"
+              },
+              "tags": [
+                "Artifact"
+              ],
+              "retention": "Ordinary",
+              "restriction": null,
+              "rider": null,
+              "sourceChoices": null
+            },
+            {
+              "manaType": {
+                "type": "Colorless"
+              },
+              "tags": [
+                "Artifact"
+              ],
+              "retention": "Ordinary",
+              "restriction": null,
+              "rider": null,
+              "sourceChoices": null
+            },
+            {
+              "manaType": {
+                "type": "Colorless"
+              },
+              "tags": [
+                "Artifact"
+              ],
+              "retention": "Ordinary",
+              "restriction": null,
+              "rider": null,
+              "sourceChoices": null
+            },
+            {
+              "manaType": {
+                "type": "Colorless"
+              },
+              "tags": [
+                "Artifact"
+              ],
+              "retention": "Ordinary",
+              "restriction": null,
+              "rider": null,
+              "sourceChoices": null
+            },
+            {
+              "manaType": {
+                "type": "Colorless"
+              },
+              "tags": [
+                "Artifact"
+              ],
+              "retention": "Ordinary",
+              "restriction": null,
+              "rider": null,
+              "sourceChoices": null
+            },
+            {
+              "manaType": {
+                "type": "Colorless"
+              },
+              "tags": [
+                "Artifact"
+              ],
+              "retention": "Ordinary",
+              "restriction": null,
+              "rider": null,
+              "sourceChoices": null
+            },
+            {
+              "manaType": {
+                "type": "Colorless"
+              },
+              "tags": [
+                "Artifact"
+              ],
+              "retention": "Ordinary",
+              "restriction": null,
+              "rider": null,
+              "sourceChoices": null
+            }
+          ]
+        }
+      }
+    }
+  ]
+}

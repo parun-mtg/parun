@@ -544,6 +544,7 @@ import qualified Parun.Codec.ManaRestrictionSpec
 import qualified Parun.Codec.ManaRetentionSpec
 import qualified Parun.Codec.ManaRiderEffectSpec
 import qualified Parun.Codec.ManaRiderSpec
+import qualified Parun.Codec.ManaScaleSpec
 import qualified Parun.Codec.ManaSpec
 import qualified Parun.Codec.ManaSpecificationSpec
 import qualified Parun.Codec.ManaSpendingSpec
@@ -1456,6 +1457,7 @@ spec s reference corpus = do
   Parun.Codec.DieRollRewriteSpec.spec s
   Parun.Codec.DieRollRSpec.spec s
   Parun.Codec.ManaInsteadSpec.spec s
+  Parun.Codec.ManaScaleSpec.spec s
   Parun.Codec.ManaRSpec.spec s
   Parun.Codec.DifferentInSpec.spec s
   Parun.Codec.DiscardCardsSpec.spec s
