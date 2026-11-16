@@ -24,7 +24,8 @@ codec =
       Arm.nullary "CountersPut" EventShape.CountersPut,
       Arm.nullary "Sacrificed" EventShape.Sacrificed,
       Arm.nullary "TurnedFaceUp" EventShape.TurnedFaceUp,
-      Arm.nullary "DealtCombatDamageToPlayer" EventShape.DealtCombatDamageToPlayer
+      Arm.nullary "DealtCombatDamageToPlayer" EventShape.DealtCombatDamageToPlayer,
+      Arm.nullary "PermanentDealtDamage" EventShape.PermanentDealtDamage
     ]
 
 tagOf :: EventShape.EventShape -> String
@@ -38,3 +39,4 @@ tagOf x = case x of
   EventShape.Sacrificed -> "Sacrificed"
   EventShape.TurnedFaceUp -> "TurnedFaceUp"
   EventShape.DealtCombatDamageToPlayer -> "DealtCombatDamageToPlayer"
+  EventShape.PermanentDealtDamage -> "PermanentDealtDamage"

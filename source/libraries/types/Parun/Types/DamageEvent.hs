@@ -108,6 +108,10 @@ data DamageEvent = MkDamageEvent
     -- creature" reads the creature it was. Stamped with `excess` by
     -- Parun.Engine.Damage.processDamage; empty until then and for a player.
     recipientCardTypes :: Set.Set CardType.CardType,
+    -- | CR 120.3: who controlled the recipient as this damage was dealt, stamped
+    -- with recipientCardTypes; Nothing for a player (Rith, Liberated
+    -- Primeval's "an opponent controlled").
+    recipientController :: Maybe PlayerId.PlayerId,
     -- | CR 510 vs CR 608: combat damage or not. Set at deal time -- Damage tags
     -- Combat, Resolve's DealDamage tags Noncombat. Read by Replacement.applies's
     -- DamageR arm (CR 615.1's damage pattern).

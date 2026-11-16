@@ -1120,7 +1120,7 @@ moonmistShieldChain s registry swap = do
             S.cast S.alice evolutionId
             Stack.resolveTop
       shielded = S.runPure S.identityAnswer evolved Stack.resolveTop
-      hit src n = DamageEvent.MkDamageEvent src (Recipient.ToPlayer S.alice) n 0 False False False 0 Nothing Nothing mempty False mempty mempty mempty Nothing mempty DamageKind.Combat
+      hit src n = DamageEvent.MkDamageEvent src (Recipient.ToPlayer S.alice) n 0 False False False 0 Nothing Nothing mempty False mempty mempty mempty Nothing mempty Nothing DamageKind.Combat
       after = S.runPure S.identityAnswer shielded (Damage.applyDamage (pure ()) [hit wolf 3, hit werewolf 3, hit piker 2])
   pure (wolf, werewolf, piker, shielded, after)
 

@@ -639,7 +639,7 @@ filterChildren children predicate = case predicate of
   Filter.CrewedThisTurn _ -> pure predicate
   Filter.ConvokedSourceThisTurn -> pure predicate
   Filter.SaddledSourceThisTurn -> pure predicate
-  Filter.DealtDamageThisTurn kind by -> fmap (Filter.DealtDamageThisTurn kind) (traverse (nest children) by)
+  Filter.DealtDamageThisTurn kind by excess -> fmap (\by' -> Filter.DealtDamageThisTurn kind by' excess) (traverse (nest children) by)
   Filter.LostLifeThisTurn -> pure predicate
   Filter.ActivatedThisTurn -> pure predicate
   Filter.DealtDamageTo asked -> fmap Filter.DealtDamageTo (dealtDamageToChildren children asked)

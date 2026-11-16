@@ -360,7 +360,7 @@ onHost host = blackCreature {Filter.attachedToView = Just host}
 -- One damage event dealt by player 0's creature: 2 noncombat damage from
 -- object 31.
 aDamage :: DamageEvent.DamageEvent
-aDamage = DamageEvent.MkDamageEvent (ObjectId.MkObjectId 31) (Recipient.ToCreature (ObjectId.MkObjectId 32)) 2 0 False False False 0 Nothing (Just (PlayerId.MkPlayerId 0)) Set.empty False (Set.singleton CardType.Creature) mempty mempty (Just Zone.Battlefield) Set.empty DamageKind.Noncombat
+aDamage = DamageEvent.MkDamageEvent (ObjectId.MkObjectId 31) (Recipient.ToCreature (ObjectId.MkObjectId 32)) 2 0 False False False 0 Nothing (Just (PlayerId.MkPlayerId 0)) Set.empty False (Set.singleton CardType.Creature) mempty mempty (Just Zone.Battlefield) Set.empty Nothing DamageKind.Noncombat
 
 self :: Filter.Context
 self = Filter.contextFor Teams.none (Just (PlayerId.MkPlayerId 0)) Nothing
@@ -2006,16 +2006,16 @@ spec s = Spec.describe s "Parun.Engine.Filter" $ do
 
   Spec.describe s "DealtDamageThisTurn" $ do
     Spec.it s "matches a view whose history says so" $ do
-      Spec.assertBool s (Filter.matches self (blackCreature {Filter.dealtDamageThisTurn = [aDamage]}) (Filter.Type.DealtDamageThisTurn Nothing Nothing)) "damaged"
+      Spec.assertBool s (Filter.matches self (blackCreature {Filter.dealtDamageThisTurn = [aDamage]}) (Filter.Type.DealtDamageThisTurn Nothing Nothing False)) "damaged"
 
     Spec.it s "does not match a creature nothing has damaged" $ do
-      Spec.assertBool s (not (Filter.matches self blackCreature (Filter.Type.DealtDamageThisTurn Nothing Nothing))) "not damaged"
+      Spec.assertBool s (not (Filter.matches self blackCreature (Filter.Type.DealtDamageThisTurn Nothing Nothing False))) "not damaged"
 
     -- Independent of the two other look-back atoms, which read the same log for
     -- different entries: CR 510.1a has an attacker deal combat damage, but being
     -- declared as one is not being dealt any.
     Spec.it s "is not implied by having attacked" $ do
-      Spec.assertBool s (not (Filter.matches self (blackCreature {Filter.declaredThisTurn = Set.singleton BlockRole.Attacker}) (Filter.Type.DealtDamageThisTurn Nothing Nothing))) "attacked does not imply damaged"
+      Spec.assertBool s (not (Filter.matches self (blackCreature {Filter.declaredThisTurn = Set.singleton BlockRole.Attacker}) (Filter.Type.DealtDamageThisTurn Nothing Nothing False))) "attacked does not imply damaged"
 
     -- CR 120.1 lets a player be dealt damage, so this atom is not vacuous for a
     -- player the way the two above are: the fold reads the same field for either
@@ -2026,8 +2026,8 @@ spec s = Spec.describe s "Parun.Engine.Filter" $ do
     -- each source as it dealt the damage, off the event's riders, and "you"
     -- the perspective's.
     Spec.it s "a source filter reads the source as it dealt the damage" $ do
-      let byYourSpell = Filter.Type.DealtDamageThisTurn Nothing (Just (Filter.Type.And [Filter.Type.IsInZone Zone.Stack, Filter.Type.HeldBy Holder.Controller PlayerRelation.You]))
-          byWizard = Filter.Type.DealtDamageThisTurn Nothing (Just (Filter.Type.HasSubtype Subtype.Wizard))
+      let byYourSpell = Filter.Type.DealtDamageThisTurn Nothing (Just (Filter.Type.And [Filter.Type.IsInZone Zone.Stack, Filter.Type.HeldBy Holder.Controller PlayerRelation.You])) False
+          byWizard = Filter.Type.DealtDamageThisTurn Nothing (Just (Filter.Type.HasSubtype Subtype.Wizard)) False
           dealt ev = blackCreature {Filter.dealtDamageThisTurn = [ev]}
       Spec.assertBool s (Filter.matches self (dealt aDamage {DamageEvent.dealtFromZone = Just Zone.Stack}) byYourSpell) "your spell"
       Spec.assertBool s (not (Filter.matches other (dealt aDamage {DamageEvent.dealtFromZone = Just Zone.Stack}) byYourSpell)) "someone else's spell"
@@ -2035,9 +2035,15 @@ spec s = Spec.describe s "Parun.Engine.Filter" $ do
       Spec.assertBool s (Filter.matches self (dealt aDamage {DamageEvent.dealtByCreatureTypes = Set.singleton Subtype.Wizard}) byWizard) "a Wizard"
       Spec.assertBool s (not (Filter.matches self (dealt aDamage) byWizard)) "not a Wizard"
 
+    -- CR 120.10: Maarika, Brutal Gladiator's "was dealt excess damage this turn".
+    Spec.it s "an excess flag admits only damage with an excess" $ do
+      let excess = Filter.Type.DealtDamageThisTurn Nothing Nothing True
+      Spec.assertBool s (Filter.matches self (blackCreature {Filter.dealtDamageThisTurn = [aDamage {DamageEvent.excess = 1}]}) excess) "excess"
+      Spec.assertBool s (not (Filter.matches self (blackCreature {Filter.dealtDamageThisTurn = [aDamage]}) excess)) "no excess"
+
     Spec.it s "reads the same field for a player candidate" $ do
-      Spec.assertBool s (Filter.matches self (aPlayer {Filter.dealtDamageThisTurn = [aDamage]}) (Filter.Type.DealtDamageThisTurn Nothing Nothing)) "a damaged player"
-      Spec.assertBool s (not (Filter.matches self aPlayer (Filter.Type.DealtDamageThisTurn Nothing Nothing))) "and an undamaged one"
+      Spec.assertBool s (Filter.matches self (aPlayer {Filter.dealtDamageThisTurn = [aDamage]}) (Filter.Type.DealtDamageThisTurn Nothing Nothing False)) "a damaged player"
+      Spec.assertBool s (not (Filter.matches self aPlayer (Filter.Type.DealtDamageThisTurn Nothing Nothing False))) "and an undamaged one"
 
   -- CR 119.3: the field Parun.Engine.Count.playerView fills; the Rix Maadi
   -- Guildmage and Papalymo Totolymo scenarios are where a real board fills it.

@@ -410,9 +410,10 @@ data Filter keyword
     -- DeclaredThisTurn's look-back read one event arm over
     -- (GameEvent.DamageDealt), and not Object.damage being positive: a wither or
     -- infect source marks nothing at all (CR 120.3d). Just a kind admits only
-    -- that damage (CR 510.2's combat damage, Blitzball), and Just a filter only
-    -- damage from a source it matched as it dealt the damage.
-    DealtDamageThisTurn (Maybe DamageKind.DamageKind) (Maybe (Filter keyword))
+    -- that damage (CR 510.2's combat damage, Blitzball), Just a filter only
+    -- damage from a source it matched as it dealt the damage, and True only
+    -- damage with a CR 120.10 excess (Maarika, Brutal Gladiator).
+    DealtDamageThisTurn (Maybe DamageKind.DamageKind) (Maybe (Filter keyword)) Bool
   | -- | CR 119.3 / 608.2i: the candidate PLAYER lost life earlier this turn --
     -- Rix Maadi Guildmage's "target player who lost life this turn".
     LostLifeThisTurn

@@ -841,6 +841,7 @@ snapshotView viewOf gs shape event = case event of
     EventShape.Sacrificed -> Nothing
     EventShape.TurnedFaceUp -> Nothing
     EventShape.DealtCombatDamageToPlayer -> Nothing
+    EventShape.PermanentDealtDamage -> Nothing
   -- CR 510.2 / 608.2i: the source as it dealt the damage, off the event's
   -- deal-time riders, so a creature that has since died or changed hands still
   -- counts under the player who controlled it then (Excess's ruling,
@@ -849,6 +850,9 @@ snapshotView viewOf gs shape event = case event of
     EventShape.DealtCombatDamageToPlayer
       | DamageEvent.kind dealt == DamageKind.Combat && Maybe.isJust (Game.damagedPlayer event) -> Just (Filter.dealtByView dealt)
       | otherwise -> Nothing
+    -- CR 120.3 / 608.2i: the permanent as it is or last was, seen as it was
+    -- dealt the damage (dealtToView). damagedObject drops an event of 0 (CR 120.8).
+    EventShape.PermanentDealtDamage -> fmap (dealtToView dealt) (Game.damagedObject event >>= orLastKnown viewOf gs)
     EventShape.MovedBetween {} -> Nothing
     EventShape.MovedFrom {} -> Nothing
     EventShape.CardArrivedIn {} -> Nothing
@@ -896,6 +900,7 @@ snapshotView viewOf gs shape event = case event of
     EventShape.Sacrificed -> Nothing
     EventShape.TurnedFaceUp -> Nothing
     EventShape.DealtCombatDamageToPlayer -> Nothing
+    EventShape.PermanentDealtDamage -> Nothing
     where
       -- CR 113.6 / 604.2: on the stack. A regression fence: nothing in
       -- data/cards/ asks a cast whether it had an activated ability.
@@ -939,6 +944,7 @@ snapshotView viewOf gs shape event = case event of
     EventShape.Sacrificed -> Nothing
     EventShape.TurnedFaceUp -> Nothing
     EventShape.DealtCombatDamageToPlayer -> Nothing
+    EventShape.PermanentDealtDamage -> Nothing
   GameEvent.BecameBlocking {} -> Nothing
   GameEvent.BlocksDeclared {} -> Nothing
   GameEvent.AttackerBlocked {} -> Nothing
@@ -969,6 +975,7 @@ snapshotView viewOf gs shape event = case event of
     EventShape.CountersPut -> Nothing
     EventShape.Sacrificed -> Nothing
     EventShape.DealtCombatDamageToPlayer -> Nothing
+    EventShape.PermanentDealtDamage -> Nothing
   GameEvent.PermanentActed _ -> Nothing
   GameEvent.Transformed {} -> Nothing
   GameEvent.BecameDesignated {} -> Nothing
@@ -992,6 +999,7 @@ snapshotView viewOf gs shape event = case event of
     EventShape.CountersPut -> Nothing
     EventShape.TurnedFaceUp -> Nothing
     EventShape.DealtCombatDamageToPlayer -> Nothing
+    EventShape.PermanentDealtDamage -> Nothing
   GameEvent.AbilityTriggered {} -> Nothing
   GameEvent.AbilityActivated _ -> Nothing
   GameEvent.LifeLost {} -> Nothing
@@ -1023,6 +1031,7 @@ snapshotView viewOf gs shape event = case event of
     EventShape.Sacrificed -> Nothing
     EventShape.TurnedFaceUp -> Nothing
     EventShape.DealtCombatDamageToPlayer -> Nothing
+    EventShape.PermanentDealtDamage -> Nothing
   -- CR 122.1's removal names an object by id and snapshots no characteristics,
   -- and no EventShape names it.
   GameEvent.CountersRemoved {} -> Nothing
@@ -1113,6 +1122,24 @@ snapshotView viewOf gs shape event = case event of
     EventShape.Sacrificed -> Nothing
     EventShape.TurnedFaceUp -> Nothing
     EventShape.DealtCombatDamageToPlayer -> Nothing
+    EventShape.PermanentDealtDamage -> Nothing
+
+-- CR 120.3 / 608.2i: a damaged permanent as it was dealt this damage, over
+-- `view`, its view as it is or last was: the damageable card types and the
+-- controller the event stamped (Rith, Liberated Primeval's "an opponent
+-- controlled"), and this one event as its turn's damage, so
+-- Filter.DealtDamageThisTurn asks about it alone.
+dealtToView :: DamageEvent.DamageEvent -> Filter.View -> Filter.View
+dealtToView ev view =
+  view
+    { Filter.cardTypes = Set.union (DamageEvent.recipientCardTypes ev) (Set.difference (Filter.cardTypes view) damageableCardTypes),
+      Filter.controller = DamageEvent.recipientController ev,
+      Filter.dealtDamageThisTurn = [ev]
+    }
+
+-- CR 120.1a: the card types a permanent can be dealt damage as.
+damageableCardTypes :: Set.Set CardType.CardType
+damageableCardTypes = Set.fromList [CardType.Battle, CardType.Creature, CardType.Planeswalker]
 
 -- Does a fold over this shape count each object once, however many of its
 -- events matched? CR 510.2's double striker connects twice and is one creature
@@ -1120,6 +1147,7 @@ snapshotView viewOf gs shape event = case event of
 oncePerObject :: EventShape.EventShape -> Bool
 oncePerObject shape = case shape of
   EventShape.DealtCombatDamageToPlayer -> True
+  EventShape.PermanentDealtDamage -> True
   EventShape.MovedBetween {} -> False
   EventShape.MovedFrom {} -> False
   EventShape.CardArrivedIn {} -> False

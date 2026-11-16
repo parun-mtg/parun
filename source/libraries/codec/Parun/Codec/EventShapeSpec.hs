@@ -78,4 +78,11 @@ spec s = Spec.describe s "Parun.Codec.EventShape" $ do
       EventShape.codec
       EventShape.DealtCombatDamageToPlayer
       " {\"type\":\"DealtCombatDamageToPlayer\"} "
+  -- CR 120.3: payloadless too.
+  Spec.it s "PermanentDealtDamage" $
+    Common.assertCodec
+      s
+      EventShape.codec
+      EventShape.PermanentDealtDamage
+      " {\"type\":\"PermanentDealtDamage\"} "
   Spec.it s "has a schema" $ Common.assertHasSchema s EventShape.codec
