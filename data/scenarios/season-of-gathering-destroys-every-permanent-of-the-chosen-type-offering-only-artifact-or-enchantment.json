@@ -1,0 +1,54 @@
+{
+  "description": "CR 205.2a / 700.2i Season of Gathering offers only artifact or enchantment, destroys every enchantment once alice chooses it, then draws for the greatest power left",
+  "note": "Modes 2 and 3 spend five pawprints. alice chooses Enchantment: her Glorious Anthem, bob's enchantment creature Nyxborn Courser and carol's Bad Moon die; Millstone, Ornithopter and Jayemdae Tome survive. Hill Giant is 3/3 once the Anthem is gone, so alice draws three; choosing Artifact would leave it 4/4.",
+  "board": {
+    "seats": [
+      {
+        "name": "alice",
+        "manaPool": "GGCCCC",
+        "battlefield": [
+          { "card": "Glorious Anthem", "label": "anthem" },
+          { "card": "Millstone", "label": "millstone" },
+          { "card": "Hill Giant", "label": "giant" }
+        ],
+        "hand": [{ "card": "Season of Gathering", "label": "season" }],
+        "library": [
+          { "card": "Island", "label": "alib1" },
+          { "card": "Island", "label": "alib2" },
+          { "card": "Island", "label": "alib3" },
+          { "card": "Island", "label": "alib4" },
+          { "card": "Island", "label": "alib5" }
+        ]
+      },
+      {
+        "name": "bob",
+        "battlefield": [
+          { "card": "Nyxborn Courser", "label": "courser" },
+          { "card": "Ornithopter", "label": "thopter" }
+        ]
+      },
+      {
+        "name": "carol",
+        "battlefield": [
+          { "card": "Bad Moon", "label": "moon" },
+          { "card": "Jayemdae Tome", "label": "tome" }
+        ]
+      }
+    ],
+    "active": "alice",
+    "step": "PrecombatMain"
+  },
+  "timeline": [
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": { "Cast": { "object": "$season", "modes": [1, 2] } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass" },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "View": { "of": "Prompt", "is": { "kind": "ChooseCardType", "offer": { "source": "Season of Gathering", "options": ["Artifact", "Enchantment"] } } } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": { "Answer": { "prompt": "ChooseCardType", "with": "Enchantment" } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "Count": { "player": "alice", "zone": "Graveyard", "card": "Glorious Anthem", "count": 1 } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "Count": { "player": "bob", "zone": "Graveyard", "card": "Nyxborn Courser", "count": 1 } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "Count": { "player": "carol", "zone": "Graveyard", "card": "Bad Moon", "count": 1 } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "Count": { "player": "alice", "zone": "Battlefield", "card": "Millstone", "count": 1 } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "Count": { "player": "bob", "zone": "Battlefield", "card": "Ornithopter", "count": 1 } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "Count": { "player": "carol", "zone": "Battlefield", "card": "Jayemdae Tome", "count": 1 } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "Count": { "player": "alice", "zone": "Hand", "card": "Island", "count": 3 } } }
+  ]
+}

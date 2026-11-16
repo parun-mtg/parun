@@ -21,8 +21,8 @@ data ChosenQuality
     Colors ChooseBetween.ChooseBetween
   | -- | CR 205.3: one subtype of the family, of the listed ones where the card lists them, written to Object.chosenSubtype (Convincing Mirage, Deification, Eclipsed Realms).
     Subtype SubtypeFamily.SubtypeFamily (Maybe (NonEmpty.NonEmpty Subtype.Subtype))
-  | -- | CR 205.2a: one card type other than the listed ones, written to Object.chosenCardType (Umori, the Collector; Arachne, Psionic Weaver).
-    CardType [CardType.CardType]
+  | -- | CR 205.2a: one card type other than the first list's, of the second's where the card lists them, written to Object.chosenCardType (Umori, the Collector; Arachne, Psionic Weaver; Season of Gathering).
+    CardType [CardType.CardType] (Maybe (NonEmpty.NonEmpty CardType.CardType))
   | -- | CR 607.2d: one number from the least through the most, unbounded above where Nothing, replacing the last, written to Object.chosenNumber (Shapeshifter; Fluros of Myra's Marvels).
     Number Natural.Natural (Maybe Natural.Natural)
   | -- | CR 607.2d: odd or even, written to Object.chosenNumber as 0 or 1 for Filter.ManaValueParity to read (Gollum, Riddle Master).

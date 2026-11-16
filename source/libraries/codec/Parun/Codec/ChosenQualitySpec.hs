@@ -55,14 +55,20 @@ spec s = Spec.describe s "Parun.Codec.ChosenQuality" $ do
     Common.assertCodec
       s
       ChosenQuality.codec
-      (ChosenQuality.CardType [])
+      (ChosenQuality.CardType [] Nothing)
       " {\"type\":\"CardType\"} "
   Spec.it s "CardType other than the listed ones (Arachne, Psionic Weaver)" $
     Common.assertCodec
       s
       ChosenQuality.codec
-      (ChosenQuality.CardType [CardType.Creature])
-      " {\"type\":\"CardType\",\"value\":[\"Creature\"]} "
+      (ChosenQuality.CardType [CardType.Creature] Nothing)
+      " {\"type\":\"CardType\",\"value\":{\"except\":[\"Creature\"]}} "
+  Spec.it s "CardType among a printed list (Season of Gathering)" $
+    Common.assertCodec
+      s
+      ChosenQuality.codec
+      (ChosenQuality.CardType [] (Just (CardType.Artifact NonEmpty.:| [CardType.Enchantment])))
+      " {\"type\":\"CardType\",\"value\":{\"among\":[\"Artifact\",\"Enchantment\"]}} "
   Spec.it s "Parity (Gollum, Riddle Master)" $
     Common.assertCodec
       s

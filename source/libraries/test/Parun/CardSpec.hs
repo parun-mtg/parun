@@ -5009,7 +5009,7 @@ chosenQualityFilters :: ChosenQuality.ChosenQuality -> [(Framing, Filter.Type.Fi
 chosenQualityFilters quality = case quality of
   ChosenQuality.Colors _ -> []
   ChosenQuality.Subtype _ _ -> []
-  ChosenQuality.CardType _ -> []
+  ChosenQuality.CardType _ _ -> []
   ChosenQuality.Number _ _ -> []
   ChosenQuality.Parity -> []
   ChosenQuality.Word _ -> []

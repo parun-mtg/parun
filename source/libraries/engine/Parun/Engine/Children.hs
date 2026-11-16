@@ -2454,7 +2454,7 @@ chosenQualityChildren :: (Applicative f) => (Subtype.Subtype -> f Subtype.Subtyp
 chosenQualityChildren onListed onCards quality = case quality of
   ChosenQuality.Colors _ -> pure quality
   ChosenQuality.Subtype family among -> ChosenQuality.Subtype family <$> traverse (traverse onListed) among
-  ChosenQuality.CardType _ -> pure quality
+  ChosenQuality.CardType _ _ -> pure quality
   ChosenQuality.Number _ _ -> pure quality
   ChosenQuality.Parity -> pure quality
   ChosenQuality.Word _ -> pure quality
