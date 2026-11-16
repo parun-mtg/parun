@@ -396,6 +396,8 @@ library codec
     Parun.Codec.CastObligationSpec
     Parun.Codec.CastOffer
     Parun.Codec.CastOfferSpec
+    Parun.Codec.CastOrigin
+    Parun.Codec.CastOriginSpec
     Parun.Codec.CastRepetition
     Parun.Codec.CastRepetitionSpec
     Parun.Codec.CastWindow
@@ -2930,6 +2932,7 @@ library types
     Parun.Types.CastingRestriction
     Parun.Types.CastObligation
     Parun.Types.CastOffer
+    Parun.Types.CastOrigin
     Parun.Types.CastRepetition
     Parun.Types.CastWindow
     Parun.Types.Cause

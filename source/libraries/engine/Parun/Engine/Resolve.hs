@@ -45,6 +45,7 @@ import qualified Parun.Types.ArmDelayedTrigger as ArmDelayedTrigger
 import qualified Parun.Types.Binding as Binding.Type
 import qualified Parun.Types.Card as Card.Type
 import qualified Parun.Types.CardType as CardType
+import qualified Parun.Types.CastOrigin as CastOrigin
 import qualified Parun.Types.Chosen as Chosen
 import qualified Parun.Types.Clause as Clause
 import Parun.Types.ClauseIndex (ClauseIndex)
@@ -776,7 +777,7 @@ finishSpell settle oid face controller = do
     reboundApplies gs =
       Keyword.Engine.hasRebound (Map.keysSet (Projection.keywordsOf oid gs))
         && maybe False fromOwnHand (Game.lookupObject oid gs)
-    fromOwnHand obj = Object.castFrom obj == Just Zone.Hand && Object.owner obj == controller
+    fromOwnHand obj = Object.castFrom obj == Just (CastOrigin.FromZone Zone.Hand) && Object.owner obj == controller
     -- Never for CR 716.3d's duration, as long as the card stays exiled: what ends
     -- it is CR 400.7 -- leaving exile mints a new incarnation, and newIncarnation clears
     -- the field.

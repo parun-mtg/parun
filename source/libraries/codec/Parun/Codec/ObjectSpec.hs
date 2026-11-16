@@ -15,6 +15,7 @@ import qualified Parun.Types.Binding as Binding
 import qualified Parun.Types.CardIdentity as CardIdentity
 import qualified Parun.Types.CardName as CardName
 import qualified Parun.Types.CardType as CardType
+import qualified Parun.Types.CastOrigin as CastOrigin
 import qualified Parun.Types.ClassLevel as ClassLevel
 import qualified Parun.Types.Color as Color
 import qualified Parun.Types.ControlClock as ControlClock
@@ -211,7 +212,7 @@ spec s = Spec.describe s "Parun.Codec.Object" $ do
               ],
           Object.announcedX = Just 20,
           Object.manaSpentOnX = Nothing,
-          Object.castFrom = Just Zone.Graveyard,
+          Object.castFrom = Just (CastOrigin.FromZone Zone.Graveyard),
           Object.castBy = Just (PlayerId.MkPlayerId 2),
           Object.castUsing = Just Keyword.JumpStart,
           Object.castGrants = [Keyword.Retrace, Keyword.Convoke],
@@ -266,7 +267,7 @@ spec s = Spec.describe s "Parun.Codec.Object" $ do
           <> ",\"phyrexianLifePaid\":19"
           <> ",\"manaSpent\":[{\"manaType\":{\"type\":\"Colored\",\"value\":\"Green\"}"
           <> ",\"tags\":[],\"retention\":\"Ordinary\",\"restriction\":null,\"rider\":null,\"sourceChoices\":null}]"
-          <> ",\"announcedX\":20,\"castFrom\":\"Graveyard\""
+          <> ",\"announcedX\":20,\"castFrom\":{\"type\":\"FromZone\",\"value\":\"Graveyard\"}"
           <> ",\"castBy\":2"
           <> ",\"castUsing\":{\"type\":\"JumpStart\"}"
           <> ",\"castGrants\":[{\"type\":\"Retrace\"},{\"type\":\"Convoke\"}]"

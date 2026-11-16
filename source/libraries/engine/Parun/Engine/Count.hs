@@ -904,7 +904,7 @@ snapshotView viewOf gs shape event = case event of
       -- is, the snapshot recording no zone -- Spider-Man 2099's "cast a spell this
       -- turn from anywhere other than your hand"
       -- (data/scenarios/spider-man-2099-deals-damage-after-a-land-played-from-the-graveyard.json).
-      castView = (viewOfSnapshot False (Just caster) (Game.ownerWithLastKnown spell gs) False Map.empty Zone.Stack Zone.Battlefield lapsed snapshot) {Filter.castFrom = from, Filter.isCard = maybe False Game.sourceIsCard (Game.sourceOfWithLastKnown spell gs), Filter.identity = Just spell}
+      castView = (viewOfSnapshot False (Just caster) (Game.ownerWithLastKnown spell gs) False Map.empty Zone.Stack Zone.Battlefield lapsed snapshot) {Filter.castFrom = Just (Game.castOrigin from), Filter.isCard = maybe False Game.sourceIsCard (Game.sourceOfWithLastKnown spell gs), Filter.identity = Just spell}
   GameEvent.BecameMonarch _ -> Nothing
   GameEvent.TookInitiative _ -> Nothing
   GameEvent.MulliganDeclared _ -> Nothing

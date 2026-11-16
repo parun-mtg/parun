@@ -686,12 +686,13 @@ data Filter keyword
     -- Patrician Geist's "spells you cast from your graveyard". Remembered in
     -- Parun.Types.Object.castFrom precisely because CR 400.7 leaves the spell no
     -- memory of it, so it is never IsInZone above, which reads where the object
-    -- is now. Vacuously False for everything that was never cast, and for a
-    -- copy cast from outside the game (CR 400.11). Names no caster: "you cast it
-    -- from" is a HeldBy Caster conjunct beside this atom. The scenario
-    -- twilight-diviner-copies-a-creature-an-opponent-cast-from-a-graveyard proves
-    -- it.
-    WasCastFrom Zone.Zone
+    -- is now. Nothing is a bare "if you cast it": cast from anywhere,
+    -- outside the game included (CR 400.11). Vacuously False for everything that
+    -- was never cast. Names no caster: "you cast it from" is a HeldBy Caster
+    -- conjunct beside this atom. The scenarios
+    -- twilight-diviner-copies-a-creature-an-opponent-cast-from-a-graveyard and
+    -- witherbloom-the-balancer-gives-garth-one-eyes-cast-copy-affinity prove it.
+    WasCastFrom (Maybe Zone.Zone)
   | -- | CR 601.2h read RETROSPECTIVELY off the candidate: mana carrying this
     -- production tag (CR 106.3) was among what paid the candidate's cost --
     -- Shadow the Hedgehog's "if mana from an artifact was spent to cast it".

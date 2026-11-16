@@ -1251,7 +1251,7 @@ stampCastFrom :: ObjectId -> Maybe Zone.Zone -> GameState -> GameState
 stampCastFrom sid castFrom gs =
   gs
     { GameState.objects =
-        Map.adjust (\o -> o {Object.castFrom = castFrom}) sid (GameState.objects gs)
+        Map.adjust (\o -> o {Object.castFrom = Just (Game.castOrigin castFrom)}) sid (GameState.objects gs)
     }
 
 -- CR 723.3d: record on the spell that it was cast as a prepare spell -- cast
@@ -2063,7 +2063,7 @@ restrictionMet pid oid gs restriction = case restriction of
 -- come back for both at once.
 asProposed :: ObjectId -> CardName.CardName -> Facing.Facing -> GameState -> GameState
 asProposed oid name facing gs =
-  turnedUpForPlay oid facing gs {GameState.objects = Map.adjust (\o -> o {Object.face = Just name, Object.facing = facing, Object.castFrom = Game.zoneOf oid gs}) oid (GameState.objects gs)}
+  turnedUpForPlay oid facing gs {GameState.objects = Map.adjust (\o -> o {Object.face = Just name, Object.facing = facing, Object.castFrom = Just (Game.castOrigin (Game.zoneOf oid gs))}) oid (GameState.objects gs)}
 
 -- CR 712.9: `asProposed` for a land play, the board a permission is judged on:
 -- the land face the player chose where the card has one to choose, and per

@@ -209,7 +209,7 @@ codec keywordCodec =
       Arm.optionalPayload "HasActivatedAbility" AbilityKind.codec Filter.HasActivatedAbility (\x -> case x of Filter.HasActivatedAbility y -> Just y; _ -> Nothing),
       Arm.nullary "HasAbility" Filter.HasAbility,
       Arm.payload "IsInZone" Zone.codec Filter.IsInZone (\x -> case x of Filter.IsInZone y -> Just y; _ -> Nothing),
-      Arm.payload "WasCastFrom" Zone.codec Filter.WasCastFrom (\x -> case x of Filter.WasCastFrom y -> Just y; _ -> Nothing),
+      Arm.optionalPayload "WasCastFrom" Zone.codec Filter.WasCastFrom (\x -> case x of Filter.WasCastFrom y -> Just y; _ -> Nothing),
       Arm.payload "TagWasSpent" ProductionTag.codec Filter.TagWasSpent (\x -> case x of Filter.TagWasSpent y -> Just y; _ -> Nothing),
       Arm.nullary "PaidWithManaFromSource" Filter.PaidWithManaFromSource,
       Arm.payload "Paid" (KeywordDesignator.codec keywordCodec) Filter.Paid (\x -> case x of Filter.Paid y -> Just y; _ -> Nothing),

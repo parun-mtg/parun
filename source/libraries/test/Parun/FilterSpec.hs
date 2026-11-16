@@ -19,6 +19,7 @@ import qualified Parun.Types.CandidateScope as CandidateScope
 import qualified Parun.Types.CardName as CardName
 import qualified Parun.Types.CardTally as CardTally
 import qualified Parun.Types.CardType as CardType
+import qualified Parun.Types.CastOrigin as CastOrigin
 import qualified Parun.Types.Color as Color
 import qualified Parun.Types.Comparison as Comparison
 import qualified Parun.Types.ControlMargin as ControlMargin
@@ -374,7 +375,7 @@ noPerspective = Filter.contextFor Teams.none Nothing Nothing
 -- the two zone axes pulled apart, which is the whole of what the WasCastFrom
 -- cases need and what no other view here can show.
 castFromGraveyard :: Filter.View
-castFromGraveyard = blackCreature {Filter.zone = Just Zone.Stack, Filter.castFrom = Just Zone.Graveyard}
+castFromGraveyard = blackCreature {Filter.zone = Just Zone.Stack, Filter.castFrom = Just (CastOrigin.FromZone Zone.Graveyard)}
 
 -- A spell on the stack whose payment carried CR 106.3's artifact tag and nothing
 -- else -- Shadow the Hedgehog's condition, and the one axis the TagWasSpent cases
@@ -2485,8 +2486,8 @@ spec s = Spec.describe s "Parun.Engine.Filter" $ do
   -- itself.
   Spec.describe s "WasCastFrom" $ do
     Spec.it s "matches the zone the candidate was cast from and no other" $ do
-      Spec.assertBool s (Filter.matches self castFromGraveyard (Filter.Type.WasCastFrom Zone.Graveyard)) "the view's own cast-from zone"
-      Spec.assertBool s (not (Filter.matches self castFromGraveyard (Filter.Type.WasCastFrom Zone.Exile))) "and not a different one"
+      Spec.assertBool s (Filter.matches self castFromGraveyard (Filter.Type.WasCastFrom (Just Zone.Graveyard))) "the view's own cast-from zone"
+      Spec.assertBool s (not (Filter.matches self castFromGraveyard (Filter.Type.WasCastFrom (Just Zone.Exile)))) "and not a different one"
 
     -- The whole reason the atom exists, on one view: the spell IS on the stack
     -- (CR 601.2a has moved it) and was cast FROM a graveyard, so IsInZone and
@@ -2495,22 +2496,30 @@ spec s = Spec.describe s "Parun.Engine.Filter" $ do
     Spec.it s "reads a different axis from IsInZone" $ do
       Spec.assertBool s (not (Filter.matches self castFromGraveyard (Filter.Type.IsInZone Zone.Graveyard))) "the spell is not in the graveyard it came from"
       Spec.assertBool s (Filter.matches self castFromGraveyard (Filter.Type.IsInZone Zone.Stack)) "it is on the stack"
-      Spec.assertBool s (not (Filter.matches self blackCreature (Filter.Type.WasCastFrom Zone.Battlefield))) "and a permanent sitting in a zone was cast from none"
+      Spec.assertBool s (not (Filter.matches self blackCreature (Filter.Type.WasCastFrom (Just Zone.Battlefield)))) "and a permanent sitting in a zone was cast from none"
 
     -- Aven Interrupter's own spelling, and the pair is what makes it
     -- discriminating: the Or must be true of the exile view and false of a hand
     -- one, off views differing in the cast-from zone alone.
     Spec.it s "an Or is how 'from graveyards or from exile' is written" $ do
-      let orFilter = Filter.Type.Or [Filter.Type.WasCastFrom Zone.Graveyard, Filter.Type.WasCastFrom Zone.Exile]
-      Spec.assertBool s (Filter.matches self (castFromGraveyard {Filter.castFrom = Just Zone.Exile}) orFilter) "a spell cast from exile"
-      Spec.assertBool s (not (Filter.matches self (castFromGraveyard {Filter.castFrom = Just Zone.Hand}) orFilter)) "and not one cast from a hand"
+      let orFilter = Filter.Type.Or [Filter.Type.WasCastFrom (Just Zone.Graveyard), Filter.Type.WasCastFrom (Just Zone.Exile)]
+      Spec.assertBool s (Filter.matches self (castFromGraveyard {Filter.castFrom = Just (CastOrigin.FromZone Zone.Exile)}) orFilter) "a spell cast from exile"
+      Spec.assertBool s (not (Filter.matches self (castFromGraveyard {Filter.castFrom = Just (CastOrigin.FromZone Zone.Hand)}) orFilter)) "and not one cast from a hand"
+
+    -- A bare "if you cast it": any zone, and outside the game (CR
+    -- 400.11), which no Or over zones can name; still nothing for an uncast object.
+    Spec.it s "Nothing asks whether the candidate was cast at all" $ do
+      Spec.assertBool s (Filter.matches self castFromGraveyard (Filter.Type.WasCastFrom Nothing)) "cast from a zone"
+      Spec.assertBool s (Filter.matches self (castFromGraveyard {Filter.castFrom = Just CastOrigin.OutsideTheGame}) (Filter.Type.WasCastFrom Nothing)) "cast from outside the game"
+      Spec.assertBool s (not (Filter.matches self (castFromGraveyard {Filter.castFrom = Just CastOrigin.OutsideTheGame}) (Filter.Type.WasCastFrom (Just Zone.Graveyard)))) "which names no zone"
+      Spec.assertBool s (not (Filter.matches self blackCreature (Filter.Type.WasCastFrom Nothing))) "and not an object nothing cast"
 
     -- Vacuously False with nothing to ask: a player is not an object (CR 109.1)
     -- and an object that was never cast carries no answer (CR 400.7 leaves the
     -- field Nothing), so `Not` is vacuously TRUE for both.
     Spec.it s "a player candidate and an uncast object are vacuously false" $ do
-      Spec.assertBool s (not (Filter.matches self aPlayer (Filter.Type.WasCastFrom Zone.Graveyard))) "player"
-      Spec.assertBool s (not (Filter.matches self blackCreature (Filter.Type.WasCastFrom Zone.Graveyard))) "and a permanent nothing cast"
+      Spec.assertBool s (not (Filter.matches self aPlayer (Filter.Type.WasCastFrom (Just Zone.Graveyard)))) "player"
+      Spec.assertBool s (not (Filter.matches self blackCreature (Filter.Type.WasCastFrom (Just Zone.Graveyard)))) "and a permanent nothing cast"
 
   -- CR 601.2h. The gameplay-level proof is Parun.SplitSecondSpec's Shadow the
   -- Hedgehog group -- a spell that stops an opponent's cast when artifact mana
