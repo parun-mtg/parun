@@ -2075,7 +2075,8 @@ filterPositionLintSpec s registry corpus = Spec.describe s "Lint" $ do
     -- Verdict, Synthetic Wide Muster on a modal trigger, Spell Blast and Detonate in a slot, and Fear of Change and Ornate Imitations in a reference
     -- pick, at the top level and
     -- inside a ForEachNumber body; Isareth the Awakener in a reflexive delayed
-    -- ability's slot, whose amount the arming resolution's chosen X binds; Sidisi,
+    -- ability's slot, whose amount the arming resolution's chosen X binds; Wishing
+    -- Well in one, whose amount is its source's coin counters; Sidisi,
     -- Regent of the Mire, whose bound is X plus 1.
     --
     -- At most and less than, against the mana value on a SPELL whose X shares the
@@ -2134,6 +2135,7 @@ filterPositionLintSpec s registry corpus = Spec.describe s "Lint" $ do
         ("Omnipresence", 1),
         ("Maralen, Fae Ascendant", 1),
         ("Isareth the Awakener", 1),
+        ("Wishing Well", 1),
         ("Sidisi, Regent of the Mire", 1)
       ]
     -- The rejected side, which the sweep above cannot show while the pool has no

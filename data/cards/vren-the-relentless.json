@@ -1,0 +1,290 @@
+{
+  "faces": [
+    {
+      "keywords": [
+        {
+          "type": "Ward",
+          "value": {
+            "cost": {
+              "mana": [
+                {
+                  "type": "Generic",
+                  "value": 2
+                }
+              ]
+            }
+          }
+        }
+      ],
+      "manaCost": [
+        {
+          "type": "Generic",
+          "value": 2
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "Blue"
+          }
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "Black"
+          }
+        }
+      ],
+      "name": "Vren, the Relentless",
+      "oracleText": "Ward {2}\nIf a creature an opponent controls would die, exile it instead.\nAt the beginning of each end step, create X 1/1 black Rat creature tokens with \"This token gets +1/+1 for each other Rat you control,\" where X is the number of creatures that were exiled under your opponents' control this turn.",
+      "power": {
+        "type": "Literal",
+        "value": 3
+      },
+      "replacementEffects": [
+        {
+          "effect": {
+            "type": "ZoneChangeR",
+            "value": {
+              "destination": "Exile",
+              "matching": {
+                "whatObject": {
+                  "type": "And",
+                  "value": [
+                    {
+                      "type": "HasCardType",
+                      "value": "Creature"
+                    },
+                    {
+                      "type": "IsInZone",
+                      "value": "Battlefield"
+                    },
+                    {
+                      "type": "HeldBy",
+                      "value": {
+                        "holder": "Controller",
+                        "relation": "Opponent"
+                      }
+                    }
+                  ]
+                },
+                "whenDestination": "Graveyard"
+              }
+            }
+          }
+        }
+      ],
+      "toughness": {
+        "type": "Literal",
+        "value": 4
+      },
+      "triggeredAbilities": [
+        {
+          "condition": {
+            "type": "StepBegins",
+            "value": {
+              "phase": {
+                "type": "Ending",
+                "value": "EndStep"
+              },
+              "scope": {
+                "type": "PlayersTurn",
+                "value": {
+                  "type": "Relative",
+                  "value": "AnyPlayer"
+                }
+              }
+            }
+          },
+          "modal": {
+            "modes": [
+              {
+                "clauses": [
+                  {
+                    "effects": [
+                      {
+                        "type": "Create",
+                        "value": {
+                          "card": {
+                            "faces": [
+                              {
+                                "colorIndicator": [
+                                  "Black"
+                                ],
+                                "name": "Rat Token",
+                                "power": {
+                                  "type": "Literal",
+                                  "value": 1
+                                },
+                                "staticAbilities": [
+                                  {
+                                    "affected": {
+                                      "type": "Matching",
+                                      "value": {
+                                        "type": "IsSource"
+                                      }
+                                    },
+                                    "modifications": [
+                                      {
+                                        "type": "ModifyPowerToughness",
+                                        "value": {
+                                          "power": {
+                                            "type": "Count",
+                                            "value": {
+                                              "aggregation": {
+                                                "type": "Members"
+                                              },
+                                              "filter": {
+                                                "type": "And",
+                                                "value": [
+                                                  {
+                                                    "type": "HasSubtype",
+                                                    "value": "Rat"
+                                                  },
+                                                  {
+                                                    "type": "HeldBy",
+                                                    "value": {
+                                                      "holder": "Controller",
+                                                      "relation": "You"
+                                                    }
+                                                  },
+                                                  {
+                                                    "type": "Not",
+                                                    "value": {
+                                                      "type": "IsSource"
+                                                    }
+                                                  }
+                                                ]
+                                              },
+                                              "scope": {
+                                                "type": "InZone",
+                                                "value": {
+                                                  "player": {
+                                                    "type": "Relative",
+                                                    "value": "AnyPlayer"
+                                                  },
+                                                  "zone": "Battlefield"
+                                                }
+                                              }
+                                            }
+                                          },
+                                          "toughness": {
+                                            "type": "Count",
+                                            "value": {
+                                              "aggregation": {
+                                                "type": "Members"
+                                              },
+                                              "filter": {
+                                                "type": "And",
+                                                "value": [
+                                                  {
+                                                    "type": "HasSubtype",
+                                                    "value": "Rat"
+                                                  },
+                                                  {
+                                                    "type": "HeldBy",
+                                                    "value": {
+                                                      "holder": "Controller",
+                                                      "relation": "You"
+                                                    }
+                                                  },
+                                                  {
+                                                    "type": "Not",
+                                                    "value": {
+                                                      "type": "IsSource"
+                                                    }
+                                                  }
+                                                ]
+                                              },
+                                              "scope": {
+                                                "type": "InZone",
+                                                "value": {
+                                                  "player": {
+                                                    "type": "Relative",
+                                                    "value": "AnyPlayer"
+                                                  },
+                                                  "zone": "Battlefield"
+                                                }
+                                              }
+                                            }
+                                          }
+                                        }
+                                      }
+                                    ]
+                                  }
+                                ],
+                                "toughness": {
+                                  "type": "Literal",
+                                  "value": 1
+                                },
+                                "typeLine": {
+                                  "subtypes": [
+                                    "Rat"
+                                  ],
+                                  "types": [
+                                    "Creature"
+                                  ]
+                                }
+                              }
+                            ]
+                          },
+                          "quantity": {
+                            "type": "Count",
+                            "value": {
+                              "aggregation": {
+                                "type": "Members"
+                              },
+                              "filter": {
+                                "type": "And",
+                                "value": [
+                                  {
+                                    "type": "HasCardType",
+                                    "value": "Creature"
+                                  },
+                                  {
+                                    "type": "HeldBy",
+                                    "value": {
+                                      "holder": "Controller",
+                                      "relation": "Opponent"
+                                    }
+                                  }
+                                ]
+                              },
+                              "scope": {
+                                "type": "InHistory",
+                                "value": {
+                                  "type": "MovedBetween",
+                                  "value": {
+                                    "from": "Battlefield",
+                                    "to": "Exile"
+                                  }
+                                }
+                              }
+                            }
+                          }
+                        }
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      ],
+      "typeLine": {
+        "subtypes": [
+          "Rat",
+          "Rogue"
+        ],
+        "supertypes": [
+          "Legendary"
+        ],
+        "types": [
+          "Creature"
+        ]
+      }
+    }
+  ]
+}

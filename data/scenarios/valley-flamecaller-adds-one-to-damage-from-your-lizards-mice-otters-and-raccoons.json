@@ -1,0 +1,166 @@
+{
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "battlefield": [
+          {
+            "card": "Valley Flamecaller",
+            "label": "vf",
+            "ready": true
+          },
+          {
+            "card": "Hill Giant",
+            "label": "giant",
+            "ready": true
+          },
+          {
+            "card": "Mountain",
+            "label": "m"
+          }
+        ],
+        "hand": [
+          {
+            "card": "Shock",
+            "label": "shock"
+          }
+        ],
+        "library": [
+          {
+            "card": "Wastes",
+            "label": "al1"
+          },
+          {
+            "card": "Wastes",
+            "label": "al2"
+          },
+          {
+            "card": "Wastes",
+            "label": "al3"
+          },
+          {
+            "card": "Wastes",
+            "label": "al4"
+          }
+        ],
+        "name": "alice"
+      },
+      {
+        "battlefield": [
+          {
+            "card": "Thought-Stalker Warlock",
+            "label": "tsw"
+          }
+        ],
+        "library": [
+          {
+            "card": "Wastes",
+            "label": "bl1"
+          },
+          {
+            "card": "Wastes",
+            "label": "bl2"
+          },
+          {
+            "card": "Wastes",
+            "label": "bl3"
+          },
+          {
+            "card": "Wastes",
+            "label": "bl4"
+          }
+        ],
+        "name": "bob"
+      }
+    ],
+    "step": "PrecombatMain"
+  },
+  "description": "CR 614.1a: Valley Flamecaller adds 1 to damage a Lizard, Mouse, Otter or Raccoon you control would deal, and to nothing else's",
+  "note": "Alice's Shock deals bob 2 (a spell, no creature type). Flamecaller (a Lizard) and Hill Giant (a Giant) attack: the unblocked Flamecaller deals 4. Bob's own Lizard, Thought-Stalker Warlock, blocks the Giant and deals it 2, not 3.",
+  "timeline": [
+    {
+      "do": {
+        "Cast": {
+          "mana": [
+            "$m"
+          ],
+          "object": "$shock",
+          "targets": [
+            "$bob"
+          ]
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "bob",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Life": {
+          "life": 18,
+          "player": "bob"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Attack": [
+          "$vf",
+          "$giant"
+        ]
+      },
+      "player": "alice",
+      "step": "DeclareAttackers",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Block": {
+          "$tsw": [
+            "$giant"
+          ]
+        }
+      },
+      "player": "bob",
+      "step": "DeclareBlockers",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Life": {
+          "life": 14,
+          "player": "bob"
+        }
+      },
+      "player": "alice",
+      "step": "EndOfCombat",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Damage": {
+          "damage": 2,
+          "object": "$giant"
+        }
+      },
+      "player": "alice",
+      "step": "EndOfCombat",
+      "turn": 1
+    }
+  ]
+}

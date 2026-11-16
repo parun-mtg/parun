@@ -1,0 +1,164 @@
+{
+  "faces": [
+    {
+      "manaCost": [
+        {
+          "type": "Generic",
+          "value": 1
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "Green"
+          }
+        }
+      ],
+      "name": "Three Tree Scribe",
+      "oracleText": "Whenever this creature or another creature you control leaves the battlefield without dying, put a +1/+1 counter on target creature you control.",
+      "power": {
+        "type": "Literal",
+        "value": 2
+      },
+      "toughness": {
+        "type": "Literal",
+        "value": 3
+      },
+      "triggeredAbilities": [
+        {
+          "condition": {
+            "type": "AnyOf",
+            "value": [
+              {
+                "type": "Leaves",
+                "value": {
+                  "destinations": [
+                    {
+                      "zone": "Library"
+                    },
+                    {
+                      "zone": "Hand"
+                    },
+                    {
+                      "zone": "Stack"
+                    },
+                    {
+                      "zone": "Exile"
+                    },
+                    {
+                      "zone": "Command"
+                    },
+                    {
+                      "zone": "Ante"
+                    }
+                  ]
+                }
+              },
+              {
+                "type": "Leaves",
+                "value": {
+                  "destinations": [
+                    {
+                      "zone": "Library"
+                    },
+                    {
+                      "zone": "Hand"
+                    },
+                    {
+                      "zone": "Stack"
+                    },
+                    {
+                      "zone": "Exile"
+                    },
+                    {
+                      "zone": "Command"
+                    },
+                    {
+                      "zone": "Ante"
+                    }
+                  ],
+                  "permanent": {
+                    "type": "Matching",
+                    "value": {
+                      "type": "And",
+                      "value": [
+                        {
+                          "type": "HasCardType",
+                          "value": "Creature"
+                        },
+                        {
+                          "type": "HeldBy",
+                          "value": {
+                            "holder": "Controller",
+                            "relation": "You"
+                          }
+                        },
+                        {
+                          "type": "Not",
+                          "value": {
+                            "type": "IsSource"
+                          }
+                        }
+                      ]
+                    }
+                  }
+                }
+              }
+            ]
+          },
+          "modal": {
+            "modes": [
+              {
+                "clauses": [
+                  {
+                    "effects": [
+                      {
+                        "type": "PutCounters",
+                        "value": {
+                          "kind": {
+                            "type": "PlusOnePlusOne"
+                          },
+                          "quantity": {
+                            "type": "Literal",
+                            "value": 1
+                          },
+                          "ref": {
+                            "type": "InSlot",
+                            "value": "target"
+                          }
+                        }
+                      }
+                    ]
+                  }
+                ],
+                "targetSlots": {
+                  "target": {
+                    "filter": {
+                      "type": "HeldBy",
+                      "value": {
+                        "holder": "Controller",
+                        "relation": "You"
+                      }
+                    },
+                    "pool": {
+                      "type": "Creatures"
+                    }
+                  }
+                }
+              }
+            ]
+          }
+        }
+      ],
+      "typeLine": {
+        "subtypes": [
+          "Druid",
+          "Frog"
+        ],
+        "types": [
+          "Creature"
+        ]
+      }
+    }
+  ]
+}
