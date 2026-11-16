@@ -5344,6 +5344,7 @@ aggregationReads a = case a of
   Aggregation.Members -> Set.empty
   Aggregation.Distinct DistinctOf.CardTypes -> Set.singleton Types
   Aggregation.Distinct DistinctOf.Colors -> Set.singleton Colors
+  Aggregation.Distinct DistinctOf.ColorSets -> Set.singleton Colors
   Aggregation.Distinct DistinctOf.BasicLandTypes -> Set.singleton Subtypes
   Aggregation.Distinct DistinctOf.NonbasicLandTypes -> Set.singleton Subtypes
   -- measureReads' reason: no Modification writes a mana cost.

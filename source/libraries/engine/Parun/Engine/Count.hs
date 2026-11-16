@@ -624,6 +624,8 @@ aggregate quantityOf aggregation members = case aggregation of
   Aggregation.Distinct DistinctOf.CardTypes -> toInteger (Set.size (Set.unions (fmap (Filter.cardTypes . snd) members)))
   -- CR 105.2c: a colorless member adds nothing.
   Aggregation.Distinct DistinctOf.Colors -> toInteger (Set.size (Set.unions (fmap (Filter.colors . snd) members)))
+  -- CR 105.5: two members of one color pair count once.
+  Aggregation.Distinct DistinctOf.ColorSets -> toInteger (Set.size (Set.fromList (fmap (Filter.colors . snd) members)))
   -- CR 305.6: a land's other subtypes (Gate, Desert, Urza's) add nothing, and a
   -- land with two basic land types (Tundra) adds both.
   Aggregation.Distinct DistinctOf.BasicLandTypes -> toInteger (Set.size (Set.filter Subtype.isBasicLandType (Set.unions (fmap (Filter.subtypes . snd) members))))
