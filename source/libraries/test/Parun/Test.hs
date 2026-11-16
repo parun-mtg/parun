@@ -174,6 +174,7 @@ import qualified Parun.Codec.CastWindowSpec
 import qualified Parun.Codec.CastingPermissionSpec
 import qualified Parun.Codec.CastingRestrictionSpec
 import qualified Parun.Codec.CastingSpec
+import qualified Parun.Codec.CasualtySpec
 import qualified Parun.Codec.ChangeModeSpec
 import qualified Parun.Codec.ChangeTextSpec
 import qualified Parun.Codec.ChangeWordSpec
@@ -1513,6 +1514,7 @@ spec s reference corpus = do
   Parun.Codec.EntrySpec.spec s
   Parun.Codec.CrewSpec.spec s
   Parun.Codec.EquipSpec.spec s
+  Parun.Codec.CasualtySpec.spec s
   Parun.Codec.EventGroupSpec.spec s
   Parun.Codec.EventExpirySpec.spec s
   Parun.Codec.EventShapeSpec.spec s

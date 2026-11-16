@@ -6,6 +6,7 @@ import qualified Parun.Types.CardType as CardType
 import qualified Parun.Types.ChangeMode as ChangeMode
 import qualified Parun.Types.Color as Color
 import qualified Parun.Types.Keyword as Keyword
+import qualified Parun.Types.Loyalty as Loyalty
 import qualified Parun.Types.SetPowerToughness as SetPowerToughness
 import qualified Parun.Types.Subtype as Subtype
 import qualified Parun.Types.Supertype as Supertype
@@ -178,6 +179,9 @@ data CopyException ability
     -- the characteristic-defining ability that DEFINES the excepted
     -- characteristic, and no parun characteristic-defining ability defines a name.
     SetName CardName.CardName
+  | -- | CR 707.9b / 306.5a: the copy's printed loyalty is this one rather than
+    -- the copied object's ("has starting loyalty X", Ob Nixilis, the Adversary).
+    SetLoyalty Loyalty.Loyalty
   | -- | CR 707.9b / 105.3: the copy is these colours instead of its own, or in
     -- addition to them, as the mode says ("it's white"; The Jolly Balloon Man's
     -- "red ... in addition to its other colors").

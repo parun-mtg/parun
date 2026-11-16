@@ -34,6 +34,7 @@ import qualified Parun.Types.Card as Card
 import qualified Parun.Types.CardName as CardName
 import qualified Parun.Types.CardSelection as CardSelection
 import qualified Parun.Types.CardType as CardType
+import qualified Parun.Types.Casualty as Casualty
 import qualified Parun.Types.CharacteristicPT as CharacteristicPT
 import qualified Parun.Types.ChooseBetween as ChooseBetween
 import qualified Parun.Types.ChooseInstead as ChooseInstead
@@ -262,6 +263,15 @@ spec s = Spec.describe s "Parun.Oracle" $ do
   Spec.it s "render prints a crew ability's once-each-turn rider" $ do
     Spec.assertEq s (Just (Text.pack "Crew 1. Activate only once each turn.")) (Oracle.render (card Layout.Normal [[Keyword.Crew (Crew.MkCrew 1 (Just 1))]]))
     Spec.assertEq s (Just (Text.pack "Crew 3")) (Oracle.render (card Layout.Normal [[Keyword.Crew (Crew.MkCrew 3 Nothing)]]))
+
+  -- CR 702.153a / 707.9b: casualty's N or X, and the copy's exceptions as a
+  -- sentence of their own (Ob Nixilis, the Adversary).
+  Spec.it s "render prints casualty X and its copy's exceptions" $ do
+    Spec.assertEq s (Just (Text.pack "Casualty 2")) (Oracle.render (card Layout.Normal [[Keyword.Casualty (Casualty.MkCasualty (Just 2) Set.empty Nothing)]]))
+    Spec.assertEq
+      s
+      (Just (Text.pack "Casualty X. The copy isn't legendary and has starting loyalty X."))
+      (Oracle.render (card Layout.Normal [[Keyword.Casualty (Casualty.MkCasualty Nothing (Set.singleton Supertype.Legendary) (Just Loyalty.Variable))]]))
 
   -- CR 100.2a: a card's own deck limit, named by the card itself.
   Spec.it s "render prints a deck limit" $ do

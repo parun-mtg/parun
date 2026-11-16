@@ -404,6 +404,8 @@ library codec
     Parun.Codec.CastRepetitionSpec
     Parun.Codec.CastWindow
     Parun.Codec.CastWindowSpec
+    Parun.Codec.Casualty
+    Parun.Codec.CasualtySpec
     Parun.Codec.Cause
     Parun.Codec.CausedBy
     Parun.Codec.ChangeMode
@@ -2951,6 +2953,7 @@ library types
     Parun.Types.CastOrigin
     Parun.Types.CastRepetition
     Parun.Types.CastWindow
+    Parun.Types.Casualty
     Parun.Types.Cause
     Parun.Types.CausedBy
     Parun.Types.ChangeMode

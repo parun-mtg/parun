@@ -43,6 +43,7 @@ import qualified Parun.Types.BlockCount as BlockCount
 import qualified Parun.Types.BlockRole as BlockRole
 import qualified Parun.Types.BlockTrigger as BlockTrigger
 import qualified Parun.Types.CardName as CardName
+import qualified Parun.Types.Casualty as Casualty
 import qualified Parun.Types.CombatStep as CombatStep
 import qualified Parun.Types.Cost as Cost
 import qualified Parun.Types.CounterKind as CounterKind
@@ -1258,7 +1259,7 @@ replicateSpec s registry = Spec.describe s "Replicate" $ do
 casualtySpec :: (Monad m, Monad n) => Spec.Spec m n -> Registry.Registry m -> n ()
 casualtySpec s registry = Spec.describe s "Casualty" $ do
   Spec.it s "CR 702.153a casualty's trigger is minted for a spell on the stack and nowhere else" $ do
-    let keyword = Keyword.Type.Casualty 2
+    let keyword = Keyword.Type.Casualty (Casualty.MkCasualty (Just 2) Set.empty Nothing)
     Spec.assertEqWith s "the stack roster mints one" (length (Keyword.stackTriggeredAbilitiesOf (Map.singleton keyword 1))) 1
     Spec.assertEqWith s "and the battlefield roster mints none" (Keyword.triggeredAbilitiesOf (Map.singleton keyword 1)) []
 
