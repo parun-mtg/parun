@@ -7,6 +7,7 @@ import qualified Parun.Types.CopyRecipient as CopyRecipient
 import qualified Parun.Types.Duration as Duration
 import qualified Parun.Types.Filter as Filter
 import qualified Parun.Types.Keyword as Keyword
+import qualified Parun.Types.Quantity as Quantity
 
 -- | CR 707.5 / 614.1c: the payload of Parun.Types.EntryRewrite's @AsCopy@ arm --
 -- "you may have this permanent enter as a copy of [any enchantment on the
@@ -36,6 +37,11 @@ import qualified Parun.Types.Keyword as Keyword
 -- self and no exception applies.
 data AsCopy ability effect = MkAsCopy
   { eligible :: Filter.Filter Keyword.Keyword,
+    -- | CR 202.3 / 601.2h: the number `eligible`'s Filter.Measures
+    -- EnclosingAmount operand compares against, read against the replacement's
+    -- source as the offer is made (Mockingbird's "the amount of mana spent to
+    -- cast this creature"). Nothing for a printing stating none.
+    amount :: Maybe Quantity.Quantity,
     -- | CR 707.9: the parts of the "except ..." clause, each applying always
     -- or under a CR 707.9f condition (Parun.Types.CopyClause). Empty for a plain
     -- Clone.

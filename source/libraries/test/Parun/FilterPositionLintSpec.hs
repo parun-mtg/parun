@@ -503,7 +503,8 @@ cantPayKeywordCostTag = Text.pack "CantPayKeywordCost"
 -- reference pick (Parun.Types.FromReference), the "Reference" arm of
 -- Parun.Codec.ConjureCards, whose value carries the same two keys, and a combat
 -- restriction's affected set beside its "amount" (Parun.Types.AffectedUnless,
--- Ensnaring Bridge). Only that position's own "filter" or "affected" subtree is
+-- Ensnaring Bridge), and an enter-as-copy offer's eligible filter beside its
+-- (Parun.Types.AsCopy, Mockingbird). Only that position's own subtree is
 -- counted, which is sound because neither holds a target slot, a reference pick
 -- or a restriction: nothing nests below it to be double-counted.
 amountedSlotAtoms :: Value.Value -> Int
@@ -519,9 +520,10 @@ amountedSlotAtoms value = case value of
         -- A CastFrom value writes "pool" and "amount" too, so the descent below
         -- takes it for a slot and reads its absent "filter": counted here alone.
         castFromAtoms = sum (fmap (amountedAtoms "matching") (if tagged ["CastFrom"] then keyed "value" else []))
+        asCopyAtoms = sum (fmap (amountedAtoms "eligible") (if tagged ["AsCopy"] then keyed "value" else []))
         here =
           if null (keyed "pool") || null (keyed "amount")
-            then referenceAtoms + restrictionAtoms + freeCastAtoms + castFromAtoms
+            then referenceAtoms + restrictionAtoms + freeCastAtoms + castFromAtoms + asCopyAtoms
             else sum (fmap (jsonAtoms enclosingAmountTag) (keyed "filter"))
      in here + sum (fmap (amountedSlotAtoms . Pair.value) pairs)
   Value.String _ -> 0
@@ -530,8 +532,9 @@ amountedSlotAtoms value = case value of
   Value.Number _ -> 0
 
 -- A conjure reference pick's value, a combat restriction's
--- (Parun.Types.AffectedUnless), a free-cast grant's (Parun.Types.FreeCast) or
--- a cast permission's (Parun.Types.CastFromZone): the atoms of its subtree at `key` where an
+-- (Parun.Types.AffectedUnless), a free-cast grant's (Parun.Types.FreeCast),
+-- a cast permission's (Parun.Types.CastFromZone) or an enter-as-copy offer's
+-- (Parun.Types.AsCopy): the atoms of its subtree at `key` where an
 -- "amount" sits beside it, and none where it does not.
 amountedAtoms :: String -> Value.Value -> Int
 amountedAtoms key value = case value of
@@ -542,7 +545,7 @@ amountedAtoms key value = case value of
   _ -> 0
 
 -- How many CR 202.3 computed-bound operands this card carries in a target slot,
--- reference pick, combat restriction, free-cast grant or cast permission that names an amount, and how many
+-- reference pick, combat restriction, free-cast grant, cast permission or enter-as-copy offer that names an amount, and how many
 -- anywhere else. The second
 -- number is the offence; the first is what Celestine, the Living Saint
 -- legitimately has one of.
@@ -550,7 +553,7 @@ amountedAtoms key value = case value of
 -- Parun.Engine.Target.slotContext fills Filter.Context.slotAmount off the SLOT's
 -- own Quantity (Parun.Engine.CombatRestriction.amountFrame off a restriction's,
 -- Parun.Engine.PlayerEffect.amountFramed off a free-cast grant's or a cast
--- permission's),
+-- permission's, Parun.Engine.Event.becomeCopyAs off an enter-as-copy offer's),
 -- so the operand in a slot that names none -- or in a Count filter, a static
 -- ability's affected set, a search filter, a cost criterion -- is a silent False
 -- rather than a rejected card. This is where that is made loud.
@@ -2044,7 +2047,8 @@ filterPositionLintSpec s registry corpus = Spec.describe s "Lint" $ do
   -- Filter.Context.slotAmount off the target slot's own Quantity, so an
   -- EnclosingAmount operand in a slot naming no amount -- or anywhere that is not
   -- a target slot, a conjure's reference pick, a combat restriction's affected
-  -- set, a free-cast grant's spells or a cast permission's criterion at all --
+  -- set, a free-cast grant's spells, a cast permission's criterion or an
+  -- enter-as-copy offer's eligible filter at all --
   -- is a silent False. See enclosingAmountCounts.
   Spec.it s "CR 202.3 no card compares against an enclosing amount outside a slot that names one" $ do
     ps <- S.allPrintings s corpus
@@ -2094,6 +2098,9 @@ filterPositionLintSpec s registry corpus = Spec.describe s "Lint" $ do
     -- At most, against the mana value, in a cast permission's criterion:
     -- Maralen, Fae Ascendant.
     --
+    -- At most, against the mana value, in an enter-as-copy offer's eligible
+    -- filter: Mockingbird.
+    --
     -- Less than, against the mana value, in a dies trigger's slot whose amount
     -- totals the creature that died (the trigger's "became"): Jackdaw Savior.
     assertAuthors
@@ -2137,6 +2144,7 @@ filterPositionLintSpec s registry corpus = Spec.describe s "Lint" $ do
         ("Ensnaring Bridge", 1),
         ("Omnipresence", 1),
         ("Maralen, Fae Ascendant", 1),
+        ("Mockingbird", 1),
         ("Isareth the Awakener", 1),
         ("Wishing Well", 1),
         ("Sidisi, Regent of the Mire", 1),

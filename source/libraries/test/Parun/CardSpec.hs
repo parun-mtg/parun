@@ -6856,6 +6856,7 @@ lintSpec s registry corpus = Spec.describe s "Lint" $ do
             || entryCountersReadX (concatMap (entryMembers . PrintedReplacement.effect) (Face.replacementEffects c))
             || entryEffectsReadX (concatMap (entryMembers . PrintedReplacement.effect) (Face.replacementEffects c))
             || entryExileReadsX (concatMap (entryMembers . PrintedReplacement.effect) (Face.replacementEffects c))
+            || asCopyAmountRead (Quantity.hasRead StaticRead.ReadsX) (concatMap (entryMembers . PrintedReplacement.effect) (Face.replacementEffects c))
             || mintedCountersReadX c
             || any declaresVariable (announcedGateCostsOf (Face.spell c))
             || modalReadsAnnouncedX (Face.spell c)
@@ -6884,11 +6885,19 @@ lintSpec s registry corpus = Spec.describe s "Lint" $ do
         -- CR 601.2h's reader of a declared X: the spell's own "amount of mana
         -- spent to cast this spell", which X's mana is part of (Molten Note),
         -- or the CR 614.1c counters the permanent enters with read off that
-        -- total (Dyadrine, Synthesis Amalgam). It answers only for a spell
-        -- declaring X, since the total is read whether or not there is one.
+        -- total (Dyadrine, Synthesis Amalgam), or the bound of the copy it
+        -- may enter as (Mockingbird). It answers only for a spell declaring X,
+        -- since the total is read whether or not there is one.
         spellReadsSpent c =
           Resolve.hasRead StaticRead.ReadsManaSpent (Modal.allEffects (Face.spell c))
             || entryCountersRead (Quantity.hasRead StaticRead.ReadsManaSpent) (concatMap (entryMembers . PrintedReplacement.effect) (Face.replacementEffects c))
+            || asCopyAmountRead (Quantity.hasRead StaticRead.ReadsManaSpent) (concatMap (entryMembers . PrintedReplacement.effect) (Face.replacementEffects c))
+        -- CR 707.5's offer bounded by an amount (Parun.Types.AsCopy's), read
+        -- at the entry like entryCountersRead's counters.
+        asCopyAmountRead readsOff rows =
+          or $ do
+            ReplacementEffect.EntryR (EntryR.MkEntryR _ (EntryRewrite.AsCopy asCopy)) <- rows
+            fmap readsOff (Maybe.maybeToList (AsCopy.amount asCopy))
         offends f =
           let spellDeclaresX = any declaresVariable (spellCostsOf f)
            in ((readsX f || (spellDeclaresX && spellReadsSpent f)) /= (spellDeclaresX || turnUpDeclaresX f))

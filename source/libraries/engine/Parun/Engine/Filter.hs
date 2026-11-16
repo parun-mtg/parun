@@ -1315,7 +1315,9 @@ data Context = MkContext
     -- affected set (Parun.Types.AffectedUnless's), and
     -- Parun.Engine.PlayerEffect.amountFramed for a free-cast grant's spells
     -- (Parun.Types.FreeCast's) and a cast permission's criterion
-    -- (Parun.Types.CastFromZone's). It is Nothing at every other
+    -- (Parun.Types.CastFromZone's), and Parun.Engine.Event.becomeCopyAs for an
+    -- enter-as-copy offer's eligible filter (Parun.Types.AsCopy's). It is
+    -- Nothing at every other
     -- position, and Parun.FilterPositionLintSpec's lint is what keeps a card out of
     -- them.
     --
