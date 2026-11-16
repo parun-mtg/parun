@@ -63,8 +63,8 @@
             "label": "expl"
           },
           {
-            "card": "Lightning Bolt",
-            "label": "bolt"
+            "card": "Giant Growth",
+            "label": "growth"
           },
           {
             "card": "Plains"
@@ -318,9 +318,9 @@
       "player": "alice",
       "refuse": {
         "Cast": {
-          "object": "$bolt",
+          "object": "$growth",
           "targets": [
-            "$bob"
+            "Grizzly Bears"
           ],
           "mana": [
             "$f4",
@@ -337,11 +337,11 @@
         "Count": {
           "player": "alice",
           "zone": "Library",
-          "card": "Lightning Bolt",
+          "card": "Giant Growth",
           "count": 1
         }
       }
     }
   ],
-  "note": "Unsolved, alice cannot see or play the top Forest but plays two Forests from hand, the second by the Case's additional land. Seven lands solve it; then she sees the top card, plays a Forest from the top, casts Grizzly Bears and Exploration from it, and is refused the instant Lightning Bolt."
+  "note": "Unsolved, alice cannot see or play the top Forest but plays two Forests from hand, the second by the Case's additional land. Seven lands solve it; then she sees the top card, plays a Forest from the top, casts Grizzly Bears and Exploration from it, and is refused the instant Giant Growth, though an untapped Forest could pay for it."
 }
