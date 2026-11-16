@@ -4,6 +4,7 @@ import qualified Parun.Types.Chooser as Chooser
 import qualified Parun.Types.Filter as Filter
 import qualified Parun.Types.HowMany as HowMany
 import qualified Parun.Types.Keyword as Keyword
+import qualified Parun.Types.TotalCap as TotalCap
 import qualified Parun.Types.ZoneScope as ZoneScope
 
 -- | CR 404.1 with a choice: who picks, whose graveyards are looked at, what
@@ -23,6 +24,9 @@ data ChosenCardInGraveyard = MkChosenCardInGraveyard
   { chooser :: Chooser.Chooser,
     players :: ZoneScope.ZoneScope,
     filter :: Filter.Filter Keyword.Keyword,
-    count :: HowMany.HowMany
+    count :: HowMany.HowMany,
+    -- | CR 608.2d: the most each chooser's picks may sum to -- Lively Dirge's
+    -- "with total mana value 4 or less". Read only beside a count of UpTo.
+    total :: Maybe TotalCap.TotalCap
   }
   deriving (Eq, Ord, Show)

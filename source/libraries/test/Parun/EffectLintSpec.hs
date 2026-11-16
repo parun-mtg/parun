@@ -2142,7 +2142,7 @@ effectLintSpec s registry corpus = Spec.describe s "Lint" $ do
           -- -- Fall of the Thran's printed two -- is plural under either
           -- chooser, and a COMPUTED count is plural whatever the board would
           -- make it, TopOfLibrary's reading above and for its reason.
-          ObjectRef.ChosenCardInGraveyard (ChosenCardInGraveyard.MkChosenCardInGraveyard chooser _ _ count) ->
+          ObjectRef.ChosenCardInGraveyard (ChosenCardInGraveyard.MkChosenCardInGraveyard chooser _ _ count _) ->
             atMostOne count && case chooser of
               Chooser.TheController -> True
               Chooser.EachInScope -> False
@@ -2801,7 +2801,7 @@ effectLintSpec s registry corpus = Spec.describe s "Lint" $ do
     exhume <- S.printingOf s registry "Exhume"
     let anyCard = Filter.Type.HasCardType CardType.Creature
         group = SlotName.MkSlotName (Text.pack "revealed")
-        inGraveyard = ObjectRef.ChosenCardInGraveyard (ChosenCardInGraveyard.MkChosenCardInGraveyard Chooser.TheController (ZoneScope.Scoped (PlayerScope.Related PlayerRelation.You)) anyCard HowMany.one)
+        inGraveyard = ObjectRef.ChosenCardInGraveyard (ChosenCardInGraveyard.MkChosenCardInGraveyard Chooser.TheController (ZoneScope.Scoped (PlayerScope.Related PlayerRelation.You)) anyCard HowMany.one Nothing)
         inHand = ObjectRef.ChosenCardInHand (ChosenCardInHand.MkChosenCardInHand (PlayerRef.Relative PlayerRelation.You) anyCard HowMany.one)
         fromAmong = ObjectRef.ChosenCardFromAmong (ChosenCardFromAmong.MkChosenCardFromAmong group anyCard HowMany.one Nothing Nothing Set.empty (PlayerRef.Relative PlayerRelation.You) Nothing False CardSelection.ByChoice)
         atRandom = ObjectRef.RandomCard (RandomCard.MkRandomCard HiddenZone.Hand (PlayerRef.Relative PlayerRelation.You) anyCard (Quantity.Type.Literal 1))
@@ -3012,10 +3012,15 @@ effectLintSpec s registry corpus = Spec.describe s "Lint" $ do
   -- is read there too, and Sanar, Innovative First-Year and Portent of
   -- Calamity keep that half honest;
   -- so is its differentIn, and Rip, Spawn Hunter keeps that half honest.
+  -- Parun.Types.ChosenCardInGraveyard's total is read the same way, and Lively
+  -- Dirge keeps that half honest.
   Spec.it s "no chosen card states a total its pick cannot read" $ do
     ps <- S.allPrintings s corpus
     let capped ref = case ref of
           ObjectRef.ChosenCardFromAmong chosen -> Maybe.isJust (ChosenCardFromAmong.total chosen)
+          _ -> False
+        cappedInGraveyard ref = case ref of
+          ObjectRef.ChosenCardInGraveyard chosen -> Maybe.isJust (ChosenCardInGraveyard.total chosen)
           _ -> False
         bounded per ref = case ref of
           ObjectRef.ChosenCardFromAmong chosen -> fmap per (ChosenCardFromAmong.onePer chosen) == Just True
@@ -3032,6 +3037,10 @@ effectLintSpec s registry corpus = Spec.describe s "Lint" $ do
                 case count of
                   HowMany.UpTo _ -> Maybe.isJust pileChooser || selection /= CardSelection.ByChoice
                   HowMany.Exactly _ -> True
+          ObjectRef.ChosenCardInGraveyard chosen
+            | Maybe.isJust (ChosenCardInGraveyard.total chosen) -> case ChosenCardInGraveyard.count chosen of
+                HowMany.UpTo _ -> False
+                HowMany.Exactly _ -> True
           ObjectRef.ChosenPermanents chosen -> misreads chosen
           _ -> False
         -- Parun.Types.ChosenPermanents' total, read the same way; Destined
@@ -3048,6 +3057,7 @@ effectLintSpec s registry corpus = Spec.describe s "Lint" $ do
         offenders = filter (anyFace (\face -> any offends (refs face) || any misreads (choices face)) . Printing.card) ps
     Spec.assertBool s (any (anyFace (any (Maybe.isJust . ChosenPermanents.total) . choices) . Printing.card) ps) "the pool has a card capping a choice of permanents' total"
     Spec.assertBool s (any (anyFace (any capped . refs) . Printing.card) ps) "the pool has a card capping a choice's total"
+    Spec.assertBool s (any (anyFace (any cappedInGraveyard . refs) . Printing.card) ps) "the pool has a card capping a graveyard choice's total"
     Spec.assertBool s (any (anyFace (any (bounded byColor) . refs) . Printing.card) ps) "the pool has a card bounding a choice by color"
     Spec.assertBool s (any (anyFace (any (bounded (not . byColor)) . refs) . Printing.card) ps) "the pool has a card bounding a choice by card type"
     Spec.assertBool s (any (anyFace (any keptApart . refs) . Printing.card) ps) "the pool has a card keeping a choice's picks apart"

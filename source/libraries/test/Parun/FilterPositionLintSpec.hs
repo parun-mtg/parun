@@ -2286,7 +2286,7 @@ filterPositionLintSpec s registry corpus = Spec.describe s "Lint" $ do
     let fromGraveyard chooser =
           (S.combinedFace piker)
             { Face.spell =
-                Mint.oneMode (Seq.singleton (Effect.Destroy (Destroy.MkDestroy (ObjectRef.ChosenCardInGraveyard (ChosenCardInGraveyard.MkChosenCardInGraveyard chooser (ZoneScope.Scoped (PlayerScope.Related PlayerRelation.You)) atom HowMany.one)) Regenerability.Regenerable Nothing Nothing Nothing)))
+                Mint.oneMode (Seq.singleton (Effect.Destroy (Destroy.MkDestroy (ObjectRef.ChosenCardInGraveyard (ChosenCardInGraveyard.MkChosenCardInGraveyard chooser (ZoneScope.Scoped (PlayerScope.Related PlayerRelation.You)) atom HowMany.one Nothing)) Regenerability.Regenerable Nothing Nothing Nothing)))
             }
     Spec.assertEqWith s "the atom in the controller's graveyard choice is accepted" (otherCandidateCounts (fromGraveyard Chooser.TheController)) (1, 0)
     Spec.assertEqWith s "and in each scoped player's is an offence" (otherCandidateCounts (fromGraveyard Chooser.EachInScope)) (0, 1)

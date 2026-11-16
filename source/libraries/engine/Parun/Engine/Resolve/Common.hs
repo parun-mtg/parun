@@ -1109,11 +1109,16 @@ byChooser = Foldable.foldl' join Seq.empty
 
 -- askingObjects' ChosenCardInGraveyard arm.
 chosenCardsInGraveyard :: Map.Map SlotName (Set Recipient) -> ObjectId -> PlayerId -> ObjectId -> ChosenCardInGraveyard.ChosenCardInGraveyard -> Game [ObjectId]
-chosenCardsInGraveyard legal resolving controller source (ChosenCardInGraveyard.MkChosenCardInGraveyard chooser scope filter_ count) = do
+chosenCardsInGraveyard legal resolving controller source (ChosenCardInGraveyard.MkChosenCardInGraveyard chooser scope filter_ count total) = do
   gs <- State.get
   let viewOf = effectViewOf resolving source legal gs
       context = effectContext gs resolving controller source legal (slotBindings resolving gs)
       amount = maybe 0 Integer.toNaturalSaturating . Quantity.evaluateFor viewOf context gs resolving source
+      -- An up-to count's total weighs each chooser's own picks (withinTotal),
+      -- as Game.pickCounted applies it. Proved by the scenarios "Lively Dirge
+      -- returns two creature cards within total mana value 4" and "Lively
+      -- Dirge offers no second creature card past total mana value 4".
+      admits = fmap (withinTotal (Quantity.evaluateFor viewOf context gs resolving) amount) total
       -- `made` is every card this pass has taken so far, beside
       -- who took it: CR 101.4b lets a later chooser know them.
       pickExactly made asked n candidates
@@ -1136,7 +1141,7 @@ chosenCardsInGraveyard legal resolving controller source (ChosenCardInGraveyard.
               (\decider who pool ceiling_ -> Prompt.ChooseAnyNumber decider who source AnyNumberOf.CardsInGraveyards pool ceiling_ (byChooser made))
               amount
               count
-              Nothing
+              admits
               candidates
       ask asked = fmap (fmap snd . Foldable.toList) . pick Seq.empty asked
   case chooser of
@@ -3927,7 +3932,7 @@ effectIsImpossible asked resolving source controller legal gs effect = case effe
     let placers = playerRefPlayers legal resolving source controller gs player
         named = case ref of
           ObjectRef.ChosenPermanents choice -> chosenCandidates legal resolving controller source gs choice
-          ObjectRef.ChosenCardInGraveyard (ChosenCardInGraveyard.MkChosenCardInGraveyard chooser scope filter_ _) -> case chooser of
+          ObjectRef.ChosenCardInGraveyard (ChosenCardInGraveyard.MkChosenCardInGraveyard chooser scope filter_ _ _) -> case chooser of
             Chooser.BoundInSlot slot -> case playerRefPlayers legal resolving source controller gs (PlayerRef.InSlot slot) of
               [pid] | List.elem pid (Target.zoneScopePlayers (Plane.rangePerspective source controller gs) (Just controller) legal scope gs) -> graveyardCardsOf context gs pid filter_
               _ -> []
@@ -3992,7 +3997,7 @@ effectIsImpossible asked resolving source controller legal gs effect = case effe
       ObjectRef.RandomCard (RandomCard.MkRandomCard HiddenZone.Hand player filter_ _) ->
         let holders = handChoosers legal resolving source controller gs player
          in not (null holders) && all (\pid -> null (handCardsOf context gs pid filter_)) holders
-      ObjectRef.ChosenCardInGraveyard (ChosenCardInGraveyard.MkChosenCardInGraveyard chooser scope filter_ count) ->
+      ObjectRef.ChosenCardInGraveyard (ChosenCardInGraveyard.MkChosenCardInGraveyard chooser scope filter_ count _) ->
         mustPick count && case chooser of
           Chooser.TheController -> null (graveyardCards context legal source controller gs scope filter_)
           Chooser.EachInScope ->

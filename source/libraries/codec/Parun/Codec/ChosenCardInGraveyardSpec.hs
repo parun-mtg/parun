@@ -9,10 +9,12 @@ import qualified Parun.Types.Chooser as Chooser
 import qualified Parun.Types.ChosenCardInGraveyard as ChosenCardInGraveyard
 import qualified Parun.Types.Filter as Filter
 import qualified Parun.Types.HowMany as HowMany
+import qualified Parun.Types.Measure as Measure
 import qualified Parun.Types.PlayerRelation as PlayerRelation
 import qualified Parun.Types.PlayerScope as PlayerScope
 import qualified Parun.Types.Quantity as Quantity
 import qualified Parun.Types.SlotName as SlotName
+import qualified Parun.Types.TotalCap as TotalCap
 import qualified Parun.Types.ZoneScope as ZoneScope
 
 spec :: (Monad m, Monad n) => Spec.Spec m n -> n ()
@@ -29,7 +31,8 @@ spec s = Spec.describe s "Parun.Codec.ChosenCardInGraveyard" $ do
           { ChosenCardInGraveyard.chooser = Chooser.TheController,
             ChosenCardInGraveyard.players = ZoneScope.Scoped (PlayerScope.Related PlayerRelation.You),
             ChosenCardInGraveyard.filter = Filter.HasCardType CardType.Creature,
-            ChosenCardInGraveyard.count = HowMany.one
+            ChosenCardInGraveyard.count = HowMany.one,
+            ChosenCardInGraveyard.total = Nothing
           }
       )
       " {\"chooser\":{\"type\":\"TheController\"},\"players\":{\"type\":\"Scoped\",\"value\":{\"type\":\"You\"}},\"filter\":{\"type\":\"HasCardType\",\"value\":\"Creature\"}} "
@@ -44,7 +47,8 @@ spec s = Spec.describe s "Parun.Codec.ChosenCardInGraveyard" $ do
           { ChosenCardInGraveyard.chooser = Chooser.TheController,
             ChosenCardInGraveyard.players = ZoneScope.InSlot (SlotName.MkSlotName (Text.pack "opponent")),
             ChosenCardInGraveyard.filter = Filter.HasCardType CardType.Artifact,
-            ChosenCardInGraveyard.count = HowMany.one
+            ChosenCardInGraveyard.count = HowMany.one,
+            ChosenCardInGraveyard.total = Nothing
           }
       )
       " {\"chooser\":{\"type\":\"TheController\"},\"players\":{\"type\":\"InSlot\",\"value\":\"opponent\"},\"filter\":{\"type\":\"HasCardType\",\"value\":\"Artifact\"}} "
@@ -58,7 +62,8 @@ spec s = Spec.describe s "Parun.Codec.ChosenCardInGraveyard" $ do
           { ChosenCardInGraveyard.chooser = Chooser.EachInScope,
             ChosenCardInGraveyard.players = ZoneScope.Scoped (PlayerScope.Related PlayerRelation.AnyPlayer),
             ChosenCardInGraveyard.filter = Filter.HasCardType CardType.Land,
-            ChosenCardInGraveyard.count = HowMany.Exactly (Quantity.Literal 2)
+            ChosenCardInGraveyard.count = HowMany.Exactly (Quantity.Literal 2),
+            ChosenCardInGraveyard.total = Nothing
           }
       )
       " {\"chooser\":{\"type\":\"EachInScope\"},\"players\":{\"type\":\"Scoped\",\"value\":{\"type\":\"AnyPlayer\"}},\"filter\":{\"type\":\"HasCardType\",\"value\":\"Land\"},\"count\":{\"type\":\"Exactly\",\"value\":{\"type\":\"Literal\",\"value\":2}}} "
@@ -71,8 +76,24 @@ spec s = Spec.describe s "Parun.Codec.ChosenCardInGraveyard" $ do
           { ChosenCardInGraveyard.chooser = Chooser.TheController,
             ChosenCardInGraveyard.players = ZoneScope.Scoped (PlayerScope.Related PlayerRelation.AnyPlayer),
             ChosenCardInGraveyard.filter = Filter.HasCardType CardType.Creature,
-            ChosenCardInGraveyard.count = HowMany.UpTo (Just (Quantity.Literal 2))
+            ChosenCardInGraveyard.count = HowMany.UpTo (Just (Quantity.Literal 2)),
+            ChosenCardInGraveyard.total = Nothing
           }
       )
       " {\"chooser\":{\"type\":\"TheController\"},\"players\":{\"type\":\"Scoped\",\"value\":{\"type\":\"AnyPlayer\"}},\"filter\":{\"type\":\"HasCardType\",\"value\":\"Creature\"},\"count\":{\"type\":\"UpTo\",\"value\":{\"type\":\"Literal\",\"value\":2}}} "
+  -- Lively Dirge's "with total mana value 4 or less": defaulted, so every
+  -- uncapped choice above encodes without it.
+  Spec.it s "MkChosenCardInGraveyard, a total" $
+    Common.assertCodec
+      s
+      ChosenCardInGraveyard.codec
+      ( ChosenCardInGraveyard.MkChosenCardInGraveyard
+          { ChosenCardInGraveyard.chooser = Chooser.TheController,
+            ChosenCardInGraveyard.players = ZoneScope.Scoped (PlayerScope.Related PlayerRelation.You),
+            ChosenCardInGraveyard.filter = Filter.HasCardType CardType.Creature,
+            ChosenCardInGraveyard.count = HowMany.UpTo (Just (Quantity.Literal 2)),
+            ChosenCardInGraveyard.total = Just TotalCap.MkTotalCap {TotalCap.weight = Quantity.Measure Measure.ManaValue, TotalCap.most = Quantity.Literal 4}
+          }
+      )
+      " {\"chooser\":{\"type\":\"TheController\"},\"players\":{\"type\":\"Scoped\",\"value\":{\"type\":\"You\"}},\"filter\":{\"type\":\"HasCardType\",\"value\":\"Creature\"},\"count\":{\"type\":\"UpTo\",\"value\":{\"type\":\"Literal\",\"value\":2}},\"total\":{\"weight\":{\"type\":\"Measure\",\"value\":\"ManaValue\"},\"most\":{\"type\":\"Literal\",\"value\":4}}} "
   Spec.it s "has a schema" $ Common.assertHasSchema s ChosenCardInGraveyard.codec

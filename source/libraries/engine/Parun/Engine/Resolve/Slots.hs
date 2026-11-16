@@ -602,7 +602,7 @@ objectRefSlots ref = joinTwo (joinSlots (fmap playerRefSlots (objectRefPlayerRef
   --
   -- Joined with the COUNT's own slots, TopOfLibrary's arm above and for its
   -- reason, and with the Filter's, EachCardInGraveyard's.
-  ObjectRef.ChosenCardInGraveyard (ChosenCardInGraveyard.MkChosenCardInGraveyard chooser scope filter_ count) -> joinSlots [chooserSlots chooser, zoneScopeSlots scope, filterSlotsOf filter_, maybe Map.empty quantitySlots (HowMany.quantity count)]
+  ObjectRef.ChosenCardInGraveyard (ChosenCardInGraveyard.MkChosenCardInGraveyard chooser scope filter_ count total) -> joinSlots ([chooserSlots chooser, zoneScopeSlots scope, filterSlotsOf filter_] <> fmap quantitySlots (Foldable.toList (HowMany.quantity count) <> totalCapQuantities total))
   -- CR 402.3: the choosers own the hands, so the PlayerRef is reported by
   -- objectRefPlayerRefs rather than here; the COUNT's slots and the Filter's
   -- are this arm's.
@@ -691,7 +691,7 @@ objectRefQuantities ref = case ref of
   -- the Thran's and Aquatic Subtlety's printed two. A REGRESSION FENCE for the
   -- ChosenCardFromAmong arm below's reason: every count in the pool is a
   -- Literal, which reads no slot.
-  ObjectRef.ChosenCardInGraveyard (ChosenCardInGraveyard.MkChosenCardInGraveyard _ _ _ count) -> Foldable.toList (HowMany.quantity count)
+  ObjectRef.ChosenCardInGraveyard (ChosenCardInGraveyard.MkChosenCardInGraveyard _ _ _ count total) -> Foldable.toList (HowMany.quantity count) <> totalCapQuantities total
   ObjectRef.ChosenCardInHand (ChosenCardInHand.MkChosenCardInHand _ _ count) -> Foldable.toList (HowMany.quantity count)
   -- How many cards are picked out of the group -- Ancestral Memories' printed
   -- two, the library walks' counts above being the only other ObjectRef numbers.
@@ -743,7 +743,7 @@ objectRefPlayerRefs ref = case ref of
   -- Whose graveyard, the two library walks' own read over CR 400.1's other
   -- per-player zone.
   ObjectRef.TopOfGraveyard player -> [player]
-  ObjectRef.ChosenCardInGraveyard (ChosenCardInGraveyard.MkChosenCardInGraveyard _ _ _ _) -> []
+  ObjectRef.ChosenCardInGraveyard (ChosenCardInGraveyard.MkChosenCardInGraveyard _ _ _ _ _) -> []
   ObjectRef.ChosenCardInHand (ChosenCardInHand.MkChosenCardInHand player _ _) -> [player]
   -- The seat that picks out of the group -- Animal Magnetism's opponent, and by
   -- default CR 608.2c's resolving controller -- and the one that takes a pile

@@ -6,8 +6,10 @@ import qualified Parun.Codec.Chooser as Chooser
 import qualified Parun.Codec.Filter as Filter
 import qualified Parun.Codec.HowMany as HowMany
 import qualified Parun.Codec.Keyword as Keyword
+import qualified Parun.Codec.TotalCap as TotalCap
 import qualified Parun.Codec.ZoneScope as ZoneScope
 import qualified Parun.JsonCodec.Codec as Codec
+import qualified Parun.JsonCodec.Common as Common
 import qualified Parun.JsonCodec.Fields as Fields
 import qualified Parun.Types.ChosenCardInGraveyard as ChosenCardInGraveyard
 import qualified Parun.Types.HowMany as HowMany
@@ -23,10 +25,12 @@ codec = Fields.object $ do
   players <- Fields.required "players" ZoneScope.codec ChosenCardInGraveyard.players
   filter_ <- Fields.required "filter" (Filter.codec Keyword.codec) ChosenCardInGraveyard.filter
   count <- Fields.defaulted "count" HowMany.one HowMany.codec ChosenCardInGraveyard.count
+  total <- Fields.defaulted "total" Nothing (Common.maybe TotalCap.codec) ChosenCardInGraveyard.total
   pure
     ChosenCardInGraveyard.MkChosenCardInGraveyard
       { ChosenCardInGraveyard.chooser = chooser,
         ChosenCardInGraveyard.players = players,
         ChosenCardInGraveyard.filter = filter_,
-        ChosenCardInGraveyard.count = count
+        ChosenCardInGraveyard.count = count,
+        ChosenCardInGraveyard.total = total
       }
