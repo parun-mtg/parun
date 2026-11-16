@@ -715,7 +715,7 @@ phasedOutNames row = case row of
   PhasedOut.Directly _under -> Set.empty
   PhasedOut.Indirectly _under -> Set.empty
   PhasedOut.Orphaned _under -> Set.empty
-  PhasedOut.Until _under ending -> foldMap endingNames ending
+  PhasedOut.Until _under ending _phasesIn -> foldMap endingNames ending
 
 -- The objects a GameState.movedUntil row names beyond its key: CR 610.3's
 -- source, whose leaving the battlefield ends the move, and nothing for a CR 726

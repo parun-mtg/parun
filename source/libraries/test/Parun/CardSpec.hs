@@ -837,7 +837,7 @@ objectRefPositions =
         ("transform", Effect.Transform (plantedRef "tr"), [plantedRef "tr"]),
         ("convert", Effect.Convert (plantedRef "cv"), [plantedRef "cv"]),
         ("meld", Effect.Meld (Meld.MkMeld (plantedRef "me") ()), [plantedRef "me"]),
-        ("phase-out", Effect.PhaseOut (PhaseOut.MkPhaseOut (plantedRef "po") Nothing), [plantedRef "po"]),
+        ("phase-out", Effect.PhaseOut (PhaseOut.MkPhaseOut (plantedRef "po") Nothing Nothing Nothing), [plantedRef "po"]),
         ("turn-face-down", Effect.TurnFaceDown (TurnFaceDown.MkTurnFaceDown (plantedRef "tf") FaceDownCharacteristics.defaultValue), [plantedRef "tf"]),
         ("remove-from-combat", Effect.RemoveFromCombat (RemoveFromCombat.MkRemoveFromCombat (plantedRef "rc") Unblocking.StayBlocked), [plantedRef "rc"]),
         ("block-attacker", Effect.BlockAttacker (plantedRef "ba"), [plantedRef "ba"]),
@@ -5444,7 +5444,7 @@ effectFilters effect = case effect of
   Effect.Convert ref -> frame SourceHostFramed (objectRefFilters ref)
   Effect.Flip ref -> frame SourceHostFramed (objectRefFilters ref)
   Effect.Meld (Meld.MkMeld ref card) -> frame SourceHostFramed (objectRefFilters ref) <> overFaces cardFilters card
-  Effect.PhaseOut (PhaseOut.MkPhaseOut ref _duration) -> frame SourceHostFramed (objectRefFilters ref)
+  Effect.PhaseOut (PhaseOut.MkPhaseOut ref _duration _slot _phasesIn) -> frame SourceHostFramed (objectRefFilters ref)
   Effect.AddPhases _ -> []
   Effect.AddStep _ -> []
   Effect.EndTurn -> []

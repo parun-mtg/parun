@@ -1899,14 +1899,21 @@ spec s = Spec.describe s "Parun.Codec.Effect" $ do
       s
       toJson
       fromJson
-      (Effect.PhaseOut (PhaseOut.MkPhaseOut (ObjectRef.InSlot (SlotName.MkSlotName (Text.pack "target"))) Nothing))
+      (Effect.PhaseOut (PhaseOut.MkPhaseOut (ObjectRef.InSlot (SlotName.MkSlotName (Text.pack "target"))) Nothing Nothing Nothing))
       " {\"type\":\"PhaseOut\",\"value\":{\"ref\":{\"type\":\"InSlot\",\"value\":\"target\"}}} "
     Common.assertJsonCodec
       s
       toJson
       fromJson
-      (Effect.PhaseOut (PhaseOut.MkPhaseOut (ObjectRef.EachMatching (Filter.HasCardType CardType.Creature)) (Just MoveDuration.UntilAPlayerPlaneswalks)))
+      (Effect.PhaseOut (PhaseOut.MkPhaseOut (ObjectRef.EachMatching (Filter.HasCardType CardType.Creature)) (Just MoveDuration.UntilAPlayerPlaneswalks) Nothing Nothing))
       " {\"type\":\"PhaseOut\",\"value\":{\"duration\":\"UntilAPlayerPlaneswalks\",\"ref\":{\"type\":\"EachMatching\",\"value\":{\"type\":\"HasCardType\",\"value\":\"Creature\"}}}} "
+    -- Out of Time's count slot and Oubliette's phase-in status.
+    Common.assertJsonCodec
+      s
+      toJson
+      fromJson
+      (Effect.PhaseOut (PhaseOut.MkPhaseOut (ObjectRef.InSlot (SlotName.MkSlotName (Text.pack "target"))) (Just MoveDuration.UntilSourceLeavesTheBattlefield) (Just (SlotName.MkSlotName (Text.pack "phased"))) (Just TapState.Tapped)))
+      " {\"type\":\"PhaseOut\",\"value\":{\"duration\":\"UntilSourceLeavesTheBattlefield\",\"phasesIn\":\"Tapped\",\"ref\":{\"type\":\"InSlot\",\"value\":\"target\"},\"slot\":\"phased\"}} "
   -- CR 708.2. One slot and no ObjectRef, since Backslide names a target and
   -- nothing in the pool sweeps a set face down; the listed characteristics are
   -- CR 708.2a's here, so that key is absent.

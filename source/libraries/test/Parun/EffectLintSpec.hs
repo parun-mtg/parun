@@ -1651,7 +1651,7 @@ effectObjectRefs effect =
         Effect.Flip ref -> read_ [ref]
         -- A plain READ: Parun.Engine.Resolve's Meld arm sweeps the ref and asks nothing.
         Effect.Meld (Meld.MkMeld ref _) -> read_ [ref]
-        Effect.PhaseOut (PhaseOut.MkPhaseOut ref _duration) -> read_ [ref]
+        Effect.PhaseOut (PhaseOut.MkPhaseOut ref _duration _slot _phasesIn) -> read_ [ref]
         Effect.AddPhases {} -> []
         Effect.AddStep {} -> []
         Effect.EndTurn -> []

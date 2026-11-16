@@ -1812,26 +1812,32 @@ meld settle resolving source controller legal (Meld.MkMeld ref resultCard) = do
   Monad.void (Event.meld settle controller (objectRefObjects legal resolving controller source gs ref) resultCard)
 
 phaseOut :: ObjectId -> ObjectId -> PlayerId -> Map.Map SlotName (Set Recipient) -> PhaseOut.PhaseOut -> Game ()
-phaseOut resolving source controller legal payload =
-  State.modify' $ \gs ->
-    -- CR 702.26b: each named permanent phases out; the victims are enumerated
-    -- ONCE (CR 608.2f). The whole set goes to Phasing.phaseOutSet in one call,
-    -- because CR 702.26g and CR 702.26h both ask whether a permanent's HOST is
-    -- leaving in this same event, which per-victim calls could not see.
-    --
-    -- Nothing about the row is read off `controller`: rule 702.26a schedules
-    -- the return by who controlled IT, and `controller` is only phaseOutSet's
-    -- fallback for a permanent the projection can no longer place.
-    --
-    -- CR 610.4b / 610.4c: an "until" whose event has already happened declines
-    -- the phase-out, the test Parun.Engine.MoveDuration.hasHappened shares
-    -- with CR 610.3's moves.
-    let duration = PhaseOut.duration payload
-        declined = any (\lasting -> MoveDuration.hasHappened lasting resolving source controller gs) duration
-        ending = fmap (\lasting -> MoveDuration.endingOf lasting source controller) duration
-     in if declined
-          then gs
-          else Phasing.phaseOutSet controller ending (Set.fromList (objectRefObjects legal resolving controller source gs (PhaseOut.ref payload))) gs
+phaseOut resolving source controller legal payload = do
+  gs <- State.get
+  -- CR 702.26b: each named permanent phases out; the victims are enumerated
+  -- ONCE (CR 608.2f). The whole set goes to Phasing.phaseOutSet in one call,
+  -- because CR 702.26g and CR 702.26h both ask whether a permanent's HOST is
+  -- leaving in this same event, which per-victim calls could not see.
+  --
+  -- Nothing about the row is read off `controller`: rule 702.26a schedules
+  -- the return by who controlled IT, and `controller` is only phaseOutSet's
+  -- fallback for a permanent the projection can no longer place.
+  --
+  -- CR 610.4b / 610.4c: an "until" whose event has already happened declines
+  -- the phase-out, the test Parun.Engine.MoveDuration.hasHappened shares
+  -- with CR 610.3's moves.
+  let duration = PhaseOut.duration payload
+      declined = any (\lasting -> MoveDuration.hasHappened lasting resolving source controller gs) duration
+      ending = fmap (\lasting -> MoveDuration.endingOf lasting source controller) duration
+      named = Set.fromList (objectRefObjects legal resolving controller source gs (PhaseOut.ref payload))
+      after = if declined then gs else Phasing.phaseOutSet controller ending (PhaseOut.phasesIn payload) named gs
+      -- Out of Time's "each creature that phased out this way": the named
+      -- permanents that left the battlefield for GameState.phasedOut here, so
+      -- a declined phase-out counts 0.
+      phased oid = Set.member oid (GameState.battlefield gs) && Map.member oid (GameState.phasedOut after)
+      tally = Natural.length (Set.filter phased named)
+  -- Bound on `source`, Destroy's `slot`.
+  State.put (maybe after (\slot -> Common.bindAmountSlot resolving source slot tally after) (PhaseOut.slot payload))
 
 -- CR 500.8: add the phases, directly after the phase this is resolving in.
 -- Turn.splicePhases is handed TurnRegisters.phase because that is NOT the head of
