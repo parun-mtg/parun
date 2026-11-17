@@ -4530,9 +4530,9 @@ filterReads f = case f of
   -- Reads a ZONE's size, which is no object's characteristic (CR 109.3) and no
   -- Modification writes; every zone change happens between projections.
   Filter.Type.CardsInZoneAtLeast _ _ -> Set.empty
-  -- Over-declared for Controls' reason: each bound object's owner plus whatever
+  -- Over-declared for Controls' reason: each bound object's holder plus whatever
   -- the nest reads of it.
-  Filter.Type.OwnsBoundAtLeast _ _ g -> holderReads Holder.Owner <> filterReads g
+  Filter.Type.HoldsBoundAtLeast holder _ _ _ g -> holderReads holder <> filterReads g
   Filter.Type.IsAttacking _ -> Set.empty
   -- Reads nothing, for IsAttacking's reason and off the same map: what a creature
   -- is attacking is no characteristic of it (CR 109.3).
@@ -4907,7 +4907,7 @@ filterReadsPeers f = case f of
   Filter.Type.IsControllerOfBound _ -> False
   Filter.Type.CardsInZoneAtLeast _ _ -> False
   -- DESCENT for Controls' reason.
-  Filter.Type.OwnsBoundAtLeast _ _ g -> filterReadsPeers g
+  Filter.Type.HoldsBoundAtLeast _ _ _ _ g -> filterReadsPeers g
   Filter.Type.IsAttacking _ -> False
   Filter.Type.IsAttackingPlayer _ -> False
   Filter.Type.DeclaredAttackedThisCombat -> False

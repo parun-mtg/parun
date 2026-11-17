@@ -150,6 +150,7 @@ import qualified Parun.Codec.BlockersAreSpec
 import qualified Parun.Codec.BlocksDeclaredSpec
 import qualified Parun.Codec.BoardSpec
 import qualified Parun.Codec.BoundMeasureSpec
+import qualified Parun.Codec.BoundReadingSpec
 import qualified Parun.Codec.CandidateIdSpec
 import qualified Parun.Codec.CandidateScopeSpec
 import qualified Parun.Codec.CantAttackPlayerSpec
@@ -1260,6 +1261,7 @@ spec s reference corpus = do
   Parun.Codec.BlockStatusSpec.spec s
   Parun.Codec.BoardSpec.spec s
   Parun.Codec.BoundMeasureSpec.spec s
+  Parun.Codec.BoundReadingSpec.spec s
   Parun.Codec.CandidateIdSpec.spec s
   Parun.Codec.CantAttackPlayerSpec.spec s
   Parun.Codec.CantBeBlockedBySpec.spec s

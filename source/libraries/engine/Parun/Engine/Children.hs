@@ -631,7 +631,7 @@ filterChildren children predicate = case predicate of
   Filter.IsControllerOfBound name -> fmap Filter.IsControllerOfBound (slot children SlotArity.One name)
   Filter.Controls margin f -> fmap (Filter.Controls margin) (nest children f)
   Filter.CardsInZoneAtLeast _ _ -> pure predicate
-  Filter.OwnsBoundAtLeast n name f -> liftA2 (Filter.OwnsBoundAtLeast n) (slot children SlotArity.Many name) (nest children f)
+  Filter.HoldsBoundAtLeast holder reading n name f -> liftA2 (Filter.HoldsBoundAtLeast holder reading n) (slot children SlotArity.Many name) (nest children f)
   Filter.TappedForManaThisTurn f -> fmap Filter.TappedForManaThisTurn (nest children f)
   Filter.IsAttacking _ -> pure predicate
   Filter.IsAttackingPlayer _ -> pure predicate

@@ -356,6 +356,8 @@ library codec
     Parun.Codec.BoardSpec
     Parun.Codec.BoundMeasure
     Parun.Codec.BoundMeasureSpec
+    Parun.Codec.BoundReading
+    Parun.Codec.BoundReadingSpec
     Parun.Codec.CandidateId
     Parun.Codec.CandidateIdSpec
     Parun.Codec.CandidateScope
