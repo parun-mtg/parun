@@ -1,0 +1,6 @@
+-- The wasm build of the web client (#8007), from the wasm dev shell:
+--   nix develop .#wasm --command wasm32-wasi-cabal \
+--     --project-file=cabal.wasm.project --builddir=dist-wasm \
+--     build parun:engine parun:play parun:web
+-- Int is 32 bits on wasm32, unlike every native target.
+import: cabal.project

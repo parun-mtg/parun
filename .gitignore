@@ -5,4 +5,5 @@
 /cabal.project.*
 /dist-mutate/
 /dist-newstyle/
+/dist-wasm/
 /tags
