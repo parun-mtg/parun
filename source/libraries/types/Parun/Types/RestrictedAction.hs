@@ -9,6 +9,8 @@ data RestrictedAction
     Sacrifice
   | -- | It can't be turned face up (CR 116.2b, 708).
     TurnFaceUp
+  | -- | It can't phase in (CR 702.26c).
+    PhaseIn
   | -- | It can't gain the designation (CR 701.60a's "becomes suspected").
     BecomeDesignated Designation.Designation
   deriving (Eq, Ord, Show)
