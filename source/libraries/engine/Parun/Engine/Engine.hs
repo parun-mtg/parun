@@ -1200,8 +1200,9 @@ placeBorne srcId pending = do
           -- The cast road (Cast.castProposed) and the activation road
           -- (Activate.activateAbility) ask the same three.
           --
-          -- Not implemented: revealing a card CR 406.4's draw picked out of a
-          -- face-down pile here (#5424).
+          -- Implementation-defined: a card CR 406.4's draw picked out of a
+          -- face-down pile here is shown to nobody. The rule orders a reveal
+          -- only for casting and activating.
           attempt rejected = do
             (chosen, _, seats) <- Target.chooseTargets Nothing controller abilId srcId seed inheritedX slots sets
             if Target.selectionLegal StackObjectKind.TriggeredAbility Nothing (Just controller) seed srcId inheritedX slots sets chosen gs

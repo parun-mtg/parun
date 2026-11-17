@@ -1368,7 +1368,7 @@ evaluatedAtoms value =
 
 -- How many Filter.Shares and Filter.IsAttachedTo atoms in an encoding pair an
 -- anchor with a reading Parun.Engine.Filter has none for -- sharesAnchored's
--- Nothing (#8071) and attachedAnchored's, which Filter.matches answers False --
+-- Nothing and attachedAnchored's, which Filter.matches answers False --
 -- and how many it carries in all.
 unreadAnchorCounts :: Value.Value -> (Int, Int)
 unreadAnchorCounts value =
@@ -2451,7 +2451,8 @@ filterPositionLintSpec s registry corpus = Spec.describe s "Lint" $ do
             }
     Spec.assertEqWith s "Coat of Arms' two atoms planted are outside every Count" (evaluatedCounts plantedOthers) (0, 2)
   -- A pair Filter.matches has no reading for answers False wherever it sits,
-  -- so it is rejected outright rather than by position (#8071).
+  -- so it is rejected outright rather than by position. Unprinted: the card
+  -- that needs such a pair adds its reading.
   Spec.it s "no card writes a Shares or IsAttachedTo anchor the filter context carries no values for" $ do
     ps <- S.allPrintings s corpus
     let encodedFace = Codec.encode (Face.Codec.codec Card.codec)

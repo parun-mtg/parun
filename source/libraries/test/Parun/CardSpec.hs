@@ -6612,11 +6612,13 @@ lintSpec s registry corpus = Spec.describe s "Lint" $ do
   -- CR 702.102: every card that prints fuse can actually BE fused.
   --
   -- Parun.Engine.Card.fusedFace answers Nothing for a fuse card whose halves name
-  -- a target slot alike, or that pairs a modal half with entwine or mode costs,
-  -- and either would be a card quietly offering two halves where the printing
-  -- offers three casts. Slot names are card DATA and never printed, so the first
-  -- is always the card file's to fix; the second is a capability nothing in the
-  -- pool needs yet (gap #4777).
+  -- a target slot alike, which would be a card quietly offering two halves where
+  -- the printing offers three casts. Slot names are card DATA and never printed,
+  -- so that is always the card file's to fix.
+  --
+  -- Unprinted: a fuse card whose modal half prints entwine or mode costs, or
+  -- lets a targeted mode be chosen twice. fusedFace answers Nothing for it too,
+  -- so this check keeps it out of the pool; the case below proves the refusals.
   Spec.it s "CR 702.102 every card with fuse has a fused face" $ do
     Spec.assertBool s (not (null corpus)) "the corpus is not empty"
     let offends (path, result) = case result of
@@ -6626,6 +6628,17 @@ lintSpec s registry corpus = Spec.describe s "Lint" $ do
               then Just (path <> ": prints fuse and cannot be fused")
               else Nothing
     Spec.assertEqWith s "every card with fuse fuses" (Maybe.mapMaybe offends corpus) []
+  Spec.it s "CR 702.102 a modal fuse half with entwine, a mode cost or a repeated targeted mode cannot be fused" $ do
+    fork <- S.printingOf s registry "Synthetic Fork Choice"
+    let card = Printing.card fork
+        free = Cost.Type.MkCost Nothing []
+        doctored change = card {Card.Type.faces = fmap change (Card.Type.faces card)}
+        modal face = Modal.modeCount (Face.spell face) > 1
+        entwined face = face {Face.keywords = Map.insert (Keyword.Entwine free) 1 (Face.keywords face)}
+        priced face = if modal face then face {Face.modeCosts = Map.singleton (ModeIndex.MkModeIndex 0) free} else face
+        repeated face = if modal face then face {Face.spell = (Face.spell face) {Modal.selection = ModeSelection.ChooseExactlyWithRepeats 2}} else face
+        fuses = Maybe.isJust . Card.fusedFace
+    Spec.assertEqWith s "as printed, entwined, priced, repeated" (fmap fuses [card, doctored entwined, doctored priced, doctored repeated]) [True, False, False, False]
   -- CR 407.3: a card is ante-only exactly when it prints the ante reminder.
   -- The engine reads the flag and never the text; this pins the two together.
   Spec.it s "CR 407.3 a card is ante-only exactly when it prints the ante reminder" $ do

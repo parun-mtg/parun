@@ -116,7 +116,8 @@ data ObjectRef
     -- hand it is -- which is why one PlayerRef does the chooser's and the zone's
     -- duty at once.
     --
-    -- Never a target, because parun has no target pool over a hidden zone (#559).
+    -- Unprinted: a target in a hidden zone. Parun has no target pool over one,
+    -- so this is never a target.
     ChosenCardInHand ChosenCardInHand.ChosenCardInHand
   | -- | CR 608.2d / Commune with the Gods: a card chosen out of the group a slot
     -- holds -- the printed "from among them" -- read through
