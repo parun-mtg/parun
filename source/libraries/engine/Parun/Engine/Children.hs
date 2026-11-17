@@ -2602,7 +2602,7 @@ instructionRewriteChildren c rewrite = case rewrite of
   InstructionRewrite.Scaled scaling -> InstructionRewrite.Scaled <$> scalingChildren c scaling
   InstructionRewrite.DrawInstead -> pure rewrite
   InstructionRewrite.RollD20Instead -> pure rewrite
-  InstructionRewrite.DrawFirst -> pure rewrite
+  InstructionRewrite.PerformFirst _ -> pure rewrite
   InstructionRewrite.ReturnSourceInstead -> pure rewrite
   InstructionRewrite.SetTo _ -> pure rewrite
 

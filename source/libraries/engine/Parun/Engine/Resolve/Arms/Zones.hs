@@ -1592,14 +1592,9 @@ scry settle resolving source controller legal (PlayerQuantity.MkPlayerQuantity r
       case Common.evaluateForRecipient viewOf context gs resolving source pid quantity of
         -- CR 701.22b: scry 0 is not a scry, so zero raises no prompt and
         -- proposes no event for a CR 614.1a row to replace.
-        Just n | n > 0 -> do
-          outcome <- Event.applyReplacementsIn settle Nothing Set.empty Set.empty (ProposedEvent.WouldPerform PlayerInstruction.Scry Nothing pid (Integer.toNaturalSaturating n))
-          -- A row that replaced the scry outright (Eligeth, Crossroads Augur)
-          -- has done its own work: nothing to decide and, CR 614.6, no scry.
-          Monad.forM (outcome >>= Replacement.asPerformed PlayerInstruction.Scry) $ \(scryer, settled) ->
-            Common.decideScry (toInteger settled) scryer
+        Just n | n > 0 -> Event.proposeScry settle pid (Integer.toNaturalSaturating n)
         _ -> pure Nothing
-  Monad.mapM_ (\(pid, order) -> Monad.forM_ order (\(looked, whole) -> State.modify' (Common.reorderLibrary pid looked whole))) decided
+  Monad.mapM_ (\(pid, order) -> Monad.forM_ order (\(looked, whole) -> State.modify' (Event.reorderLibrary pid looked whole))) decided
   -- CR 701.22d: recorded once the process is complete, and for a scry whose
   -- move was impossible too.
   Monad.mapM_ (\(pid, _) -> State.modify' (Event.recordEvent (GameEvent.PlayerActed (PlayerActed.MkPlayerActed PlayerAction.Scry pid)))) decided
