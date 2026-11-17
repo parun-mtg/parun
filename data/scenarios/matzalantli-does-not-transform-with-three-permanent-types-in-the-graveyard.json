@@ -1,0 +1,92 @@
+{
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "battlefield": [
+          {
+            "card": "Matzalantli, the Great Door",
+            "label": "door"
+          }
+        ],
+        "graveyard": [
+          {
+            "card": "Ornithopter"
+          },
+          {
+            "card": "Grizzly Bears"
+          },
+          {
+            "card": "Forest"
+          },
+          {
+            "card": "Crib Swap"
+          }
+        ],
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ],
+        "manaPool": "CCCC",
+        "name": "alice"
+      },
+      {
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ],
+        "name": "bob"
+      }
+    ],
+    "step": "PrecombatMain"
+  },
+  "description": "CR 110.4, 602.5: Matzalantli can't transform with three permanent types among cards in its controller's graveyard; the kindred instant's Kindred and Instant are not permanent types",
+  "note": "An artifact, a creature, a land and a kindred instant: five card types, three of them permanent types. The control scenario adds an enchantment.",
+  "timeline": [
+    {
+      "player": "alice",
+      "refuse": {
+        "Activate": {
+          "ability": 1,
+          "mana": [],
+          "object": "$door"
+        }
+      },
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Names": {
+          "names": [
+            "Matzalantli, the Great Door"
+          ],
+          "object": "$door"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    }
+  ]
+}

@@ -21,6 +21,7 @@ import qualified Data.Set as Set
 import qualified Numeric.Natural as Natural
 import qualified Parun.Engine.AbilityZone as AbilityZone
 import qualified Parun.Engine.Binding as Binding
+import qualified Parun.Engine.Card as Card
 import qualified Parun.Engine.Children as Children
 import qualified Parun.Engine.Deploy as Deploy
 import qualified Parun.Engine.Devotion as Devotion
@@ -624,6 +625,8 @@ aggregate :: QuantityOf quantity -> Aggregation.Aggregation quantity -> [(Maybe 
 aggregate quantityOf aggregation members = case aggregation of
   Aggregation.Members -> toInteger (length members)
   Aggregation.Distinct DistinctOf.CardTypes -> toInteger (Set.size (Set.unions (fmap (Filter.cardTypes . snd) members)))
+  -- CR 110.4: a kindred member's Kindred adds nothing.
+  Aggregation.Distinct DistinctOf.PermanentTypes -> toInteger (Set.size (Set.filter Card.isPermanentType (Set.unions (fmap (Filter.cardTypes . snd) members))))
   -- CR 105.2c: a colorless member adds nothing.
   Aggregation.Distinct DistinctOf.Colors -> toInteger (Set.size (Set.unions (fmap (Filter.colors . snd) members)))
   -- CR 105.5: two members of one color pair count once.

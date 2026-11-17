@@ -5,6 +5,9 @@ module Parun.Types.DistinctOf where
 data DistinctOf
   = -- | CR 205.2a: card types (CR 208.2a's Tarmogoyf).
     CardTypes
+  | -- | CR 110.4: permanent types, a member's other card types adding none
+    -- (Matzalantli, the Great Door).
+    PermanentTypes
   | -- | CR 105.1: colors, a colorless member adding nothing (CR 105.2c).
     Colors
   | -- | CR 105.2 / 105.5: color combinations, each member's whole set of
