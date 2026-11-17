@@ -8,6 +8,7 @@ import qualified Parun.Codec.CardType as CardType
 import qualified Parun.Codec.CastingPermission as CastingPermission
 import qualified Parun.Codec.ChangeMode as ChangeMode
 import qualified Parun.Codec.ChangeWord as ChangeWord
+import qualified Parun.Codec.ChoiceOrdinal as ChoiceOrdinal
 import qualified Parun.Codec.Color as Color
 import qualified Parun.Codec.CombatDamageAmount as CombatDamageAmount
 import qualified Parun.Codec.CombatDamageObligation as CombatDamageObligationCodec
@@ -34,6 +35,7 @@ import qualified Parun.JsonCodec.Arm as Arm
 import qualified Parun.JsonCodec.Codec as Codec
 import qualified Parun.JsonCodec.Common as Common
 import qualified Parun.JsonCodec.Fields as Fields
+import qualified Parun.Types.ChoiceOrdinal as ChoiceOrdinal
 import qualified Parun.Types.CombatDamageObligation as CombatDamageObligation
 import qualified Parun.Types.Modification as Modification
 
@@ -58,9 +60,10 @@ codec abilityCodec =
             <*> Fields.required "subtype" Subtype.codec snd
       chosenSubtype =
         Fields.object $
-          (,)
-            <$> Fields.required "mode" ChangeMode.codec fst
-            <*> Fields.required "family" SubtypeFamily.codec snd
+          (,,)
+            <$> Fields.defaulted "ordinal" ChoiceOrdinal.First ChoiceOrdinal.codec (\(o, _, _) -> o)
+            <*> Fields.required "mode" ChangeMode.codec (\(_, m, _) -> m)
+            <*> Fields.required "family" SubtypeFamily.codec (\(_, _, f) -> f)
       keywordsAmong =
         Fields.object $
           (,,)
@@ -105,7 +108,7 @@ codec abilityCodec =
           Arm.payload "SetBasePowerToughness" SetBasePowerToughness.codec Modification.SetBasePowerToughness (\x -> case x of Modification.SetBasePowerToughness y -> Just y; _ -> Nothing),
           Arm.payload "ModifyPowerToughness" ModifyPowerToughness.codec Modification.ModifyPowerToughness (\x -> case x of Modification.ModifyPowerToughness y -> Just y; _ -> Nothing),
           Arm.payload "LandSubtype" subtype (uncurry Modification.LandSubtype) (\x -> case x of Modification.LandSubtype mode y -> Just (mode, y); _ -> Nothing),
-          Arm.payload "ChosenSubtype" chosenSubtype (uncurry Modification.ChosenSubtype) (\x -> case x of Modification.ChosenSubtype mode y -> Just (mode, y); _ -> Nothing),
+          Arm.payload "ChosenSubtype" chosenSubtype (\(ordinal, mode, y) -> Modification.ChosenSubtype ordinal mode y) (\x -> case x of Modification.ChosenSubtype ordinal mode y -> Just (ordinal, mode, y); _ -> Nothing),
           Arm.payload "CreatureSubtype" subtype (uncurry Modification.CreatureSubtype) (\x -> case x of Modification.CreatureSubtype mode y -> Just (mode, y); _ -> Nothing),
           Arm.nullary "AddEveryCreatureSubtype" Modification.AddEveryCreatureSubtype,
           Arm.payload "LoseEverySubtype" CardType.codec Modification.LoseEverySubtype (\x -> case x of Modification.LoseEverySubtype y -> Just y; _ -> Nothing),

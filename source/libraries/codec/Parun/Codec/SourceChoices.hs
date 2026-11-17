@@ -20,7 +20,7 @@ codec :: Codec.Codec SourceChoices.SourceChoices
 codec = Fields.object $ do
   names <- Fields.defaulted "names" Map.empty (Common.naturalMap PlayerId.codec (Common.set CardName.codec)) SourceChoices.names
   colors <- Fields.defaulted "colors" Set.empty (Common.set Color.codec) SourceChoices.colors
-  subtype <- Fields.defaulted "subtype" Nothing (Common.maybe Subtype.codec) SourceChoices.subtype
+  subtype <- Fields.defaulted "subtype" Nothing (Common.maybe (Common.nonEmpty Subtype.codec)) SourceChoices.subtype
   cardType <- Fields.defaulted "cardType" Nothing (Common.maybe CardType.codec) SourceChoices.cardType
   number <- Fields.defaulted "number" Nothing (Common.maybe Common.natural) SourceChoices.number
   acquisition <- Fields.defaulted "acquisition" Acquisition.Own Acquisition.codec SourceChoices.acquisition

@@ -117,7 +117,7 @@ codec = Fields.object $ do
   counterTimestamps <- Fields.defaulted "counterTimestamps" (Object.counterTimestamps defaults) (Common.keyedList counterTimestamp) Object.counterTimestamps
   attachedTo <- Fields.defaulted "attachedTo" (Object.attachedTo defaults) (Common.maybe Recipient.codec) Object.attachedTo
   chosenColors <- Fields.defaulted "chosenColors" (Object.chosenColors defaults) (Common.keyedList (Common.keyValue Acquisition.codec (Common.set Color.codec))) Object.chosenColors
-  chosenSubtype <- Fields.defaulted "chosenSubtype" (Object.chosenSubtype defaults) (Common.keyedList (Common.keyValue Acquisition.codec Subtype.codec)) Object.chosenSubtype
+  chosenSubtype <- Fields.defaulted "chosenSubtype" (Object.chosenSubtype defaults) (Common.keyedList (Common.keyValue Acquisition.codec (Common.nonEmpty Subtype.codec))) Object.chosenSubtype
   chosenCardType <- Fields.defaulted "chosenCardType" (Object.chosenCardType defaults) (Common.keyedList (Common.keyValue Acquisition.codec CardType.codec)) Object.chosenCardType
   chosenNumber <- Fields.defaulted "chosenNumber" (Object.chosenNumber defaults) (Common.keyedList (Common.keyValue Acquisition.codec Common.natural)) Object.chosenNumber
   chosenObjects <- Fields.defaulted "chosenObjects" (Object.chosenObjects defaults) (Common.keyedList (Common.keyValue Acquisition.codec (Common.set ObjectId.codec))) Object.chosenObjects

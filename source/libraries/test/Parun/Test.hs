@@ -182,6 +182,8 @@ import qualified Parun.Codec.ChapterMomentSpec
 import qualified Parun.Codec.CharacteristicColorsSpec
 import qualified Parun.Codec.CharacteristicPTSpec
 import qualified Parun.Codec.CheckSpec
+import qualified Parun.Codec.ChoiceDistinctSpec
+import qualified Parun.Codec.ChoiceOrdinalSpec
 import qualified Parun.Codec.ChoicesSpec
 import qualified Parun.Codec.ChooseBetweenSpec
 import qualified Parun.Codec.ChooseGroupSpec
@@ -739,6 +741,7 @@ import qualified Parun.Codec.RequireBlockSpec
 import qualified Parun.Codec.RequiredBlockersSpec
 import qualified Parun.Codec.RequiredDefenderSpec
 import qualified Parun.Codec.RequirementAritySpec
+import qualified Parun.Codec.RerollReachSpec
 import qualified Parun.Codec.ReselectAttackSpec
 import qualified Parun.Codec.RestartSignalSpec
 import qualified Parun.Codec.RestrictedActionSpec
@@ -756,7 +759,9 @@ import qualified Parun.Codec.RevealedSpec
 import qualified Parun.Codec.RevealedThisWaySpec
 import qualified Parun.Codec.RiderClauseSpec
 import qualified Parun.Codec.RollDieSpec
+import qualified Parun.Codec.RollKindSpec
 import qualified Parun.Codec.RollModifierSpec
+import qualified Parun.Codec.RollTriggerSpec
 import qualified Parun.Codec.RoomHalfSpec
 import qualified Parun.Codec.RoomIndexSpec
 import qualified Parun.Codec.RoundingSpec
@@ -1306,6 +1311,8 @@ spec s reference corpus = do
   Parun.Codec.CoinFlippedSpec.spec s
   Parun.Codec.CoinReadingSpec.spec s
   Parun.Codec.ChangeModeSpec.spec s
+  Parun.Codec.ChoiceDistinctSpec.spec s
+  Parun.Codec.ChoiceOrdinalSpec.spec s
   Parun.Codec.ColorSpec.spec s
   Parun.Codec.ColorSpreadSpec.spec s
   Parun.Codec.CombatRestrictionSpec.spec s
@@ -1408,6 +1415,8 @@ spec s reference corpus = do
   Parun.Codec.AttachmentTriggerSpec.spec s
   Parun.Codec.CoinFlipTriggerSpec.spec s
   Parun.Codec.FlipOutcomeSpec.spec s
+  Parun.Codec.RollKindSpec.spec s
+  Parun.Codec.RollTriggerSpec.spec s
   Parun.Codec.TransformTriggerSpec.spec s
   Parun.Codec.CrewingSpec.spec s
   Parun.Codec.KeywordCostRestrictionSpec.spec s
@@ -1867,6 +1876,7 @@ spec s reference corpus = do
   Parun.Codec.RevealSpec.spec s
   Parun.Codec.RevealWindowSpec.spec s
   Parun.Codec.RollDieSpec.spec s
+  Parun.Codec.RerollReachSpec.spec s
   Parun.Codec.RollModifierSpec.spec s
   Parun.Codec.RoomHalfSpec.spec s
   Parun.Codec.RoomIndexSpec.spec s

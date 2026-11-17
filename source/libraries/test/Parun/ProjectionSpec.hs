@@ -61,6 +61,7 @@ import qualified Parun.Types.CardName as CardName
 import qualified Parun.Types.CardType as CardType
 import qualified Parun.Types.ChangeMode as ChangeMode
 import qualified Parun.Types.ChangeWord as ChangeWord
+import qualified Parun.Types.ChoiceOrdinal as ChoiceOrdinal
 import qualified Parun.Types.Color as Color
 import qualified Parun.Types.CombatStep as CombatStep
 import qualified Parun.Types.Compares as Compares
@@ -743,7 +744,7 @@ dealTo src victim amount gs =
     ( S.runPure
         S.identityAnswer
         gs
-        (Damage.applyDamage (pure ()) [DamageEvent.MkDamageEvent src (Recipient.ToCreature victim) amount 0 False False False 0 Nothing Nothing mempty False mempty mempty mempty Nothing mempty Nothing DamageKind.Noncombat])
+        (Damage.applyDamage (pure ()) [DamageEvent.MkDamageEvent src (Recipient.ToCreature victim) amount 0 False False False 0 Nothing Nothing mempty False mempty mempty mempty mempty Nothing mempty Nothing DamageKind.Noncombat])
     )
 
 -- Serra the Benevolent {2}{W}{W} Legendary Planeswalker -- Serra, loyalty 4.
@@ -806,7 +807,7 @@ dealToPlayer src victim amount gs =
     ( S.runPure
         S.identityAnswer
         gs
-        (Damage.applyDamage (pure ()) [DamageEvent.MkDamageEvent src (Recipient.ToPlayer victim) amount 0 False False False 0 Nothing Nothing mempty False mempty mempty mempty Nothing mempty Nothing DamageKind.Noncombat])
+        (Damage.applyDamage (pure ()) [DamageEvent.MkDamageEvent src (Recipient.ToPlayer victim) amount 0 False False False 0 Nothing Nothing mempty False mempty mempty mempty mempty Nothing mempty Nothing DamageKind.Noncombat])
     )
 
 -- CR 702.16's quality: red, the colour Goblin Piker is and Cabal Evangel is not.
@@ -1668,8 +1669,8 @@ spec s registry = Spec.describe s "Parun.Engine.Projection" $ do
         (srcB, g2) = S.addPermanent piker S.alice g1
         withChoices = S.withChosenSubtype Subtype.Type.Swamp srcB (S.withChosenSubtype Subtype.Type.Island srcA g2)
         gs =
-          S.withEffectFromAt srcB landB (Timestamp.MkTimestamp 101) (Modification.ChosenSubtype ChangeMode.Replace SubtypeFamily.BasicLandType) $
-            S.withEffectFromAt srcA landA (Timestamp.MkTimestamp 100) (Modification.ChosenSubtype ChangeMode.Replace SubtypeFamily.BasicLandType) withChoices
+          S.withEffectFromAt srcB landB (Timestamp.MkTimestamp 101) (Modification.ChosenSubtype ChoiceOrdinal.First ChangeMode.Replace SubtypeFamily.BasicLandType) $
+            S.withEffectFromAt srcA landA (Timestamp.MkTimestamp 100) (Modification.ChosenSubtype ChoiceOrdinal.First ChangeMode.Replace SubtypeFamily.BasicLandType) withChoices
     Spec.assertEqWith s "the Island source's land is only an Island" (Projection.subtypesOf landA gs) (Set.singleton Subtype.Type.Island)
     Spec.assertEqWith s "the Swamp source's land is only a Swamp" (Projection.subtypesOf landB gs) (Set.singleton Subtype.Type.Swamp)
 

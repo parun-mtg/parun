@@ -922,7 +922,7 @@ withEffectFromAt src oid ts m gs =
 -- Mirage test, and this exists so a projection test does not have to cast.
 withChosenSubtype :: Subtype.Subtype -> ObjectId.ObjectId -> GameState.GameState -> GameState.GameState
 withChosenSubtype subtype oid gs =
-  let set obj = obj {Object.chosenSubtype = Map.singleton Acquisition.Own subtype}
+  let set obj = obj {Object.chosenSubtype = Map.singleton Acquisition.Own (NonEmpty.singleton subtype)}
    in gs {GameState.objects = Map.adjust set oid (GameState.objects gs)}
 
 -- withEffectAt, allocating its own fresh timestamp -- the convenience shape for

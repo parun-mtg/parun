@@ -1,5 +1,6 @@
 module Parun.Codec.SourceChoicesSpec where
 
+import qualified Data.List.NonEmpty as NonEmpty
 import qualified Data.Map.Strict as Map
 import qualified Data.Set as Set
 import qualified Data.Text as Text
@@ -37,11 +38,11 @@ spec s = Spec.describe s "Parun.Codec.SourceChoices" $ do
       SourceChoices.MkSourceChoices
         { SourceChoices.names = Map.singleton (PlayerId.MkPlayerId 4) (Set.fromList [CardName.MkCardName (Text.pack "Shock"), CardName.MkCardName (Text.pack "Lightning Bolt")]),
           SourceChoices.colors = Set.singleton Color.Red,
-          SourceChoices.subtype = Just Subtype.Goblin,
+          SourceChoices.subtype = Just (Subtype.Goblin NonEmpty.:| [Subtype.Elf]),
           SourceChoices.cardType = Just CardType.Creature,
           SourceChoices.number = Just 5,
           SourceChoices.acquisition = Acquisition.Copied (Timestamp.MkTimestamp 3)
         }
-      " {\"names\":{\"4\":[\"Lightning Bolt\",\"Shock\"]},\"colors\":[\"Red\"],\"subtype\":\"Goblin\",\"cardType\":\"Creature\",\"number\":5,\"acquisition\":{\"type\":\"Copied\",\"value\":3}} "
+      " {\"names\":{\"4\":[\"Lightning Bolt\",\"Shock\"]},\"colors\":[\"Red\"],\"subtype\":[\"Goblin\",\"Elf\"],\"cardType\":\"Creature\",\"number\":5,\"acquisition\":{\"type\":\"Copied\",\"value\":3}} "
   Spec.it s "has a schema" $
     Common.assertHasSchema s SourceChoices.codec

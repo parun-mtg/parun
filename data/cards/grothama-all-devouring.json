@@ -114,8 +114,9 @@
                           "quantity": {
                             "type": "DamageDealtThisTurn",
                             "value": {
-                              "controlledBy": {
-                                "type": "Candidate"
+                              "by": {
+                                "type": "HeldByRecipient",
+                                "value": "Controller"
                               },
                               "direction": "DealtTo"
                             }

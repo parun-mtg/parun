@@ -1,6 +1,7 @@
 module Parun.Types.RollModifier where
 
 import qualified Numeric.Natural as Natural
+import qualified Parun.Types.RerollReach as RerollReach
 
 -- | CR 706.2b: HOW a modifier reaching a die roll from outside the roll's own
 -- instruction changes the natural result. Rule 706.2b sorts every such modifier
@@ -17,13 +18,13 @@ import qualified Numeric.Natural as Natural
 data RollModifier
   = -- | CR 706.2b's FIRST step: throw the same die again and take the new number
     -- as the natural result, the old one simply ceasing to be it (Clam-I-Am's
-    -- "you may reroll that die").
+    -- "you may reroll that die"), on as many of the roll's dice as it reaches.
     --
     -- The discarded number is NOT CR 706.6's ignored roll: that rule treats a
     -- roll as never having happened, while a rerolled die's first result
     -- happened and has already triggered any ability that triggers "whenever a
     -- player rolls one or more dice" (CR 706.7's words).
-    Reroll
+    Reroll RerollReach.RerollReach
   | -- | CR 706.2b's SECOND step: increase or decrease the result by this amount,
     -- the direction chosen as the modifier is applied (Night Shift of the Living
     -- Dead's "increase or decrease the result by 1").

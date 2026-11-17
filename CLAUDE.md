@@ -209,14 +209,26 @@ to agents as written. What it doesn't say:
   last-known view has no zone, so the clause drops a permanent the counter
   killed.
 
-- When no printing can reach the rule, write `data/cards/synthetic-*.json`.
-  Search first: a real card wins, in the order regular > Arena > playtest >
-  un-set > synthetic (`docs/design.md` section 6), and a better-ranked card
-  replaces a worse one whenever it turns up; a digital-only producer is
-  ordinary card-driven work. A synthetic card is legitimate when you can cite
-  the rule it exercises and the CR does not forbid such a card (that issue
-  waits under `expires:synthetic`); when the absence is rules-*enforced*, the
-  elision is provably sound --- close the issue as wontfix.
+- A synthetic card (`data/cards/synthetic-*.json`) is the last resort. Search
+  first: a real card wins, in the order regular > Arena > playtest > un-set >
+  synthetic (`docs/design.md` section 6), and a better-ranked card replaces a
+  worse one whenever it turns up; a digital-only producer is ordinary
+  card-driven work. When no printing reaches the behaviour, which case is it?
+
+  - A CR rule is ABOUT the situation and the engine diverges from it: write
+    the synthetic, provided the CR does not forbid such a card (that issue
+    waits under `expires:synthetic`). A rule that merely composes with a card
+    shape nobody prints is the next case.
+  - The rules say what an unprinted card shape would do: build nothing and
+    write no synthetic. Where card data can write the shape, a pool-wide lint
+    rejects it ("no card writes X", proved by a doctored card inside the
+    spec) and the issue closes with the lint; where it cannot, there is
+    nothing to fence. The printed card that later needs it is card-driven
+    work, and its PR deletes the lint.
+  - The CR is silent and no printed card reaches it: implementation-defined.
+    No card, no test, no issue; the code site says so.
+  - The absence is rules-*enforced*: the elision is provably sound --- close
+    the issue as wontfix.
 
 - A reading gets a `docs/decisions.md` entry, in the same PR, only when BOTH
   hold: it is observable (different game states or legal choices on a
@@ -240,6 +252,10 @@ to agents as written. What it doesn't say:
   historical reference sharing a paragraph with an elision drops the
   parentheses (`see #1116`). Closing an issue means grepping its bare number
   over the whole tree and rewriting every elision citing it, in the same PR.
+  Two paragraphs cite no issue: one opening "Unprinted:" says what a card
+  shape nobody prints would need and names the lint, if there is one, keeping
+  it out of card data; one opening "Implementation-defined:" says what the
+  engine does where the CR is silent.
 
   Fold a known problem in or file it, naming the card that exercises it;
   `docs/agents/set-by-set.md`, "Follow-ups: fold in or file", has the rule.

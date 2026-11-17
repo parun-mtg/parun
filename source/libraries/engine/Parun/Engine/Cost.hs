@@ -100,6 +100,8 @@ import qualified Parun.Types.CardTally as CardTally
 import qualified Parun.Types.CardType as CardType
 import qualified Parun.Types.CardsFromHand as CardsFromHand
 import qualified Parun.Types.CastingPermission as CastingPermission
+import qualified Parun.Types.ChoiceDistinct as ChoiceDistinct
+import qualified Parun.Types.ChoiceOrdinal as ChoiceOrdinal
 import qualified Parun.Types.Chosen as Chosen
 import qualified Parun.Types.ChosenQuality as ChosenQuality
 import Parun.Types.Claim (Claim)
@@ -191,6 +193,7 @@ import qualified Parun.Types.PlayerEffect as PlayerEffect.Type
 import Parun.Types.PlayerId (PlayerId)
 import qualified Parun.Types.PlayerRef as PlayerRef
 import qualified Parun.Types.PlayerRelation as PlayerRelation
+import qualified Parun.Types.PlayerScope as PlayerScope
 import qualified Parun.Types.ProjectedCharacteristics as PC
 import qualified Parun.Types.Prompt as Prompt
 import qualified Parun.Types.Prototype as Prototype
@@ -1778,7 +1781,7 @@ substituteCandidates :: Map.Map SlotName.SlotName (Set.Set Recipient.Recipient) 
 substituteCandidates slots pid oid substitute gs = case substitute of
   Keyword.TapUntapped criterion -> tapCandidates slots pid oid criterion gs
   Keyword.TapToConvoke criterion -> tapCandidates slots pid oid criterion gs
-  Keyword.ExileFromGraveyard criterion -> exileCandidates slots pid oid criterion gs
+  Keyword.ExileFromGraveyard criterion -> exileCandidates slots pid oid yourGraveyard criterion gs
 
 -- The component that SPENDS this many of a Keyword.Substitute's objects. Carrying
 -- the substitution as a component is what puts it on the same ClaimAxis as every
@@ -1789,7 +1792,7 @@ substituteComponent :: Keyword.Substitute -> Natural -> CostComponent.CostCompon
 substituteComponent substitute n = case substitute of
   Keyword.TapUntapped criterion -> CostComponent.TapPermanents (TapPermanents.MkTapPermanents (CostAmount.Fixed n) criterion False TapState.Tapped)
   Keyword.TapToConvoke criterion -> CostComponent.TapPermanents (TapPermanents.MkTapPermanents (CostAmount.Fixed n) criterion False TapState.Tapped)
-  Keyword.ExileFromGraveyard criterion -> CostComponent.MoveCardsFromGraveyard (MoveCardsFromGraveyard.MkMoveCardsFromGraveyard (CostAmount.Fixed n) criterion GraveyardCostDestination.Exile)
+  Keyword.ExileFromGraveyard criterion -> CostComponent.MoveCardsFromGraveyard (MoveCardsFromGraveyard.MkMoveCardsFromGraveyard (CostAmount.Fixed n) criterion GraveyardCostDestination.Exile yourGraveyard)
 
 -- The components an offer's substitutes are paid as, `substituteComponent` over
 -- each.
@@ -2588,7 +2591,7 @@ revealFromHandCandidates = discardCandidates
 beholdCandidates :: Maybe Subtype.Type.Subtype -> Zone.Zone -> Map.Map SlotName.SlotName (Set.Set Recipient.Recipient) -> PlayerId -> ObjectId -> Filter.Type.Filter Keyword.Type.Keyword -> GameState -> [ObjectId]
 beholdCandidates supposed cardZone slots pid oid criterion gs =
   let framed = Projection.framedBy oid gs (Projection.contextWithSlots gs (Just pid) (Just oid) slots)
-      context = maybe framed (\subtype -> framed {Filter.sourceChosenSubtype = Just subtype}) supposed
+      context = maybe framed (\subtype -> framed {Filter.sourceChosenSubtype = Just (NonEmpty.singleton subtype)}) supposed
       viewOf = Projection.viewsOf gs
       matches candidate = Filter.matches context (viewOf candidate) criterion
    in filter matches (beholdPool cardZone pid oid gs)
@@ -2673,11 +2676,15 @@ secretChoiceOf pid oid gs = do
   let acquisition = Game.acquisitionOf oid gs
   chooser <- Map.lookup PlayerChoice.SecretChooser =<< Game.choiceWithLastKnown Chosen.Players acquisition oid gs
   Monad.guard (chooser == pid)
-  Game.choiceWithLastKnown Chosen.Subtype acquisition oid gs
+  NonEmpty.head <$> Game.choiceWithLastKnown Chosen.Subtype acquisition oid gs
 
 -- The cards this player may move to pay a MoveCardsFromGraveyard component:
--- their OWN graveyard, in its own order, narrowed by the criterion. Per-owner by
--- CR 400.3 with CR 108.4, a card in a graveyard having no controller.
+-- the graveyards the scope names against this player (CR 109.5), each in its own
+-- order, narrowed by the criterion. Per-owner by CR 400.3 with CR 108.4, a card
+-- in a graveyard having no controller, so a stolen Lamplight Phoenix's "exile
+-- it" reaches its owner's graveyard only through a scope naming that player
+-- (data/scenarios/'s "stolen Lamplight Phoenix" file proves it). Every other
+-- graveyard cost reads `yourGraveyard`.
 --
 -- Matched through the card's own CR 613 projection, discardCandidates' reading;
 -- CR 208.2a's characteristic-defining power rides along at layer 7a
@@ -2693,15 +2700,20 @@ secretChoiceOf pid oid gs = do
 -- which is the exclusion the callers asking BEFORE CR 601.2a's move need and the
 -- only one CR 601.2a states -- Loathsome Chimera is not among the cards its own
 -- escape cost can exile.
-exileCandidates :: Map.Map SlotName.SlotName (Set.Set Recipient.Recipient) -> PlayerId -> ObjectId -> Filter.Type.Filter Keyword.Type.Keyword -> GameState -> [ObjectId]
-exileCandidates slots pid oid criterion gs = exileCandidatesGiven (Snapshot.onDemand gs) slots pid oid criterion gs
+exileCandidates :: Map.Map SlotName.SlotName (Set.Set Recipient.Recipient) -> PlayerId -> ObjectId -> PlayerScope.PlayerScope -> Filter.Type.Filter Keyword.Type.Keyword -> GameState -> [ObjectId]
+exileCandidates slots pid oid scope criterion gs = exileCandidatesGiven (Snapshot.onDemand gs) slots pid oid scope criterion gs
 
 -- The same pool read off a snapshot of `gs` the caller already took.
-exileCandidatesGiven :: Snapshot.Snapshot -> Map.Map SlotName.SlotName (Set.Set Recipient.Recipient) -> PlayerId -> ObjectId -> Filter.Type.Filter Keyword.Type.Keyword -> GameState -> [ObjectId]
-exileCandidatesGiven board slots pid oid criterion gs =
+exileCandidatesGiven :: Snapshot.Snapshot -> Map.Map SlotName.SlotName (Set.Set Recipient.Recipient) -> PlayerId -> ObjectId -> PlayerScope.PlayerScope -> Filter.Type.Filter Keyword.Type.Keyword -> GameState -> [ObjectId]
+exileCandidatesGiven board slots pid oid scope criterion gs =
   let context = Projection.framedBy oid gs (Projection.contextWithSlots gs (Just pid) (Just oid) slots)
-      matches candidate = Filter.matches context (Snapshot.views board candidate) criterion
-   in filter (\candidate -> not (Game.beingCast gs candidate) && matches candidate) (Game.cardsIn Zone.Graveyard pid gs)
+      offered candidate = not (Game.beingCast gs candidate) && Filter.matches context (Snapshot.views board candidate) criterion
+      owners = Maybe.fromMaybe [] (PlayerEffect.playersInScope (Just pid) (Just pid) gs scope)
+   in concatMap (\owner -> filter offered (Game.cardsIn Zone.Graveyard owner gs)) owners
+
+-- CR 109.5: "your graveyard", the payer's own.
+yourGraveyard :: PlayerScope.PlayerScope
+yourGraveyard = PlayerScope.Related PlayerRelation.You
 
 -- The objects this player may exile to pay an ExileMaterials component on `oid`:
 -- CR 702.167a's "from among permanents you control and\/or cards in your
@@ -2723,7 +2735,7 @@ materialCandidates slots pid oid criterion gs =
       viewOf = Projection.viewsOf gs
       matches candidate = candidate /= oid && Filter.matches context (viewOf candidate) criterion
    in filter matches (List.sort (Projection.controls pid gs))
-        <> exileCandidates slots pid oid criterion gs
+        <> exileCandidates slots pid oid yourGraveyard criterion gs
 
 -- The one card an ExileTopFromGraveyard component takes: the TOP matching card
 -- of this player's graveyard, or Nothing where it holds none.
@@ -2734,7 +2746,7 @@ materialCandidates slots pid oid criterion gs =
 -- the player's to change, so "the top creature card" names exactly one.
 topExileCandidate :: Map.Map SlotName.SlotName (Set.Set Recipient.Recipient) -> PlayerId -> ObjectId -> Filter.Type.Filter Keyword.Type.Keyword -> GameState -> Maybe ObjectId
 topExileCandidate slots pid oid criterion gs =
-  Maybe.listToMaybe (reverse (exileCandidates slots pid oid criterion gs))
+  Maybe.listToMaybe (reverse (exileCandidates slots pid oid yourGraveyard criterion gs))
 
 -- The cards a PutExiledIntoGraveyard component may take: every card in exile
 -- the criterion admits, ascending, whoever owns it. A face-down card has no
@@ -2810,7 +2822,7 @@ tallyValueGiven tally viewOf candidate =
 exileTotalling :: ManaAbilityPerformer.ManaAbilityPerformer -> Map.Map SlotName.SlotName (Set.Set Recipient.Recipient) -> PlayerId -> ObjectId -> ExileCardsTotalling.ExileCardsTotalling Keyword.Type.Keyword -> Game (Maybe (Set.Set ObjectId, [ObjectId]))
 exileTotalling perform slots pid oid (ExileCardsTotalling.MkExileCardsTotalling n tally criterion) = do
   gs <- State.get
-  let candidates = exileCandidates slots pid oid criterion gs
+  let candidates = exileCandidates slots pid oid yourGraveyard criterion gs
       decider = Decide.deciderFor pid gs
       valueOf c = tallyValue tally c gs
   chosen <- Game.choose (Prompt.ChooseExilesTotalling decider pid oid tally (fmap (\c -> (c, valueOf c)) candidates) n)
@@ -2826,27 +2838,23 @@ exileTotalling perform slots pid oid (ExileCardsTotalling.MkExileCardsTotalling 
 -- printed when the component is one its own card states (printedCastCost), and
 -- Event.carryOver hands the link to the permanent the spell becomes; an
 -- activated ability's links under that ability's name and the acquisition it
--- froze going on the stack (Game.readingAcquisition's reason), unless another
--- object lent it unnamed (Projection.ownsActivatedAbility), which would file it
--- as `oid`'s own. A keyword's substitute links on its own road
+-- froze going on the stack (Game.readingAcquisition's reason); one another
+-- object lent is named for its lender (Projection.namedForGranter), so it
+-- links to its own pair (CR 607.5). A keyword's substitute links on its own road
 -- (linkSubstitutedExiles). Kylox's Voltstrider's scenario proves the activated
 -- road, Skyway Robber's and Fear of Abduction's the spell's, and
 -- data/scenarios/cost's cr-607-2a and cr-607-2q files what neither links.
 --
 -- Not implemented: a mana ability's cost, which has no stack object to name its
--- ability, links nothing (#8188); nor does a pair another object lends unnamed,
--- an exiling cost and its reader, which CR 607.5 links to each other (#8204).
+-- ability, links nothing (#8188).
 linkPaidExiles :: Maybe ObjectId -> ObjectId -> CostComponent.CostComponent Keyword.Type.Keyword -> [ObjectId] -> Game ()
 linkPaidExiles paidFor oid component arrived = do
   gs <- State.get
   let link = case paidFor of
         Just paying
           | paying == oid -> if printedCastCost oid component gs then Just (printedLink oid) else Nothing
-          | Just (Source.OfAbility activated) <- fmap Object.source (Game.lookupObject paying gs),
-            let ability = ActivatedAbilitySource.ability activated
-                name = ActivatedAbility.name ability,
-            any Binding.isAcquired name || Projection.ownsActivatedAbility oid gs ability ->
-              Just (exileLink oid name (ActivatedAbilitySource.acquisition activated))
+          | Just (Source.OfAbility activated) <- fmap Object.source (Game.lookupObject paying gs) ->
+              Just (exileLink oid (ActivatedAbility.name (ActivatedAbilitySource.ability activated)) (ActivatedAbilitySource.acquisition activated))
         _ -> Nothing
   Foldable.for_ link (\l -> linkExiles oid l arrived)
 
@@ -3277,10 +3285,10 @@ claimOfGiven board slots pid oid component gs =
           claim (ClaimAxis.Removal Zone.Hand) (Set.fromList (exileFromHandCandidates slots pid oid criterion gs)) n
         -- Nothing until CR 601.2b fixes the count, Sacrifice's arm.
         CostComponent.ExileCardsFromHand (CardsFromHand.MkCardsFromHand (CostAmount.Announced _) _) -> Nothing
-        CostComponent.MoveCardsFromGraveyard (MoveCardsFromGraveyard.MkMoveCardsFromGraveyard (CostAmount.Fixed n) criterion _) ->
-          claim (ClaimAxis.Removal Zone.Graveyard) (Set.fromList (exileCandidatesGiven board slots pid oid criterion gs)) n
+        CostComponent.MoveCardsFromGraveyard (MoveCardsFromGraveyard.MkMoveCardsFromGraveyard (CostAmount.Fixed n) criterion _ scope) ->
+          claim (ClaimAxis.Removal Zone.Graveyard) (Set.fromList (exileCandidatesGiven board slots pid oid scope criterion gs)) n
         -- Nothing until CR 601.2b fixes the count, Sacrifice's arm.
-        CostComponent.MoveCardsFromGraveyard (MoveCardsFromGraveyard.MkMoveCardsFromGraveyard (CostAmount.Announced _) _ _) -> Nothing
+        CostComponent.MoveCardsFromGraveyard (MoveCardsFromGraveyard.MkMoveCardsFromGraveyard (CostAmount.Announced _) _ _ _) -> Nothing
         -- The same graveyard pool and the same axis, as ONE selection reaching the
         -- threshold rather than the component's number of cards: the number is a
         -- THRESHOLD on the cards' total tally, so which cards a payment exiles is
@@ -3288,7 +3296,7 @@ claimOfGiven board slots pid oid component gs =
         -- for its reason. A threshold of 0 is paid by the empty set and claims
         -- nothing.
         CostComponent.ExileCardsTotalling (ExileCardsTotalling.MkExileCardsTotalling n tally criterion)
-          | n > 0 -> reaching (ClaimAxis.Removal Zone.Graveyard) (toInteger n) (tallyValueGiven tally (Snapshot.views board)) (exileCandidatesGiven board slots pid oid criterion gs)
+          | n > 0 -> reaching (ClaimAxis.Removal Zone.Graveyard) (toInteger n) (tallyValueGiven tally (Snapshot.views board)) (exileCandidatesGiven board slots pid oid yourGraveyard criterion gs)
           | otherwise -> Nothing
         -- The arm above over CR 701.59a's whole graveyard by mana value.
         CostComponent.CollectEvidence (CostAmount.Fixed n) -> claimOfGiven board slots pid oid (CostComponent.ExileCardsTotalling (evidenceExile n)) gs
@@ -3899,7 +3907,7 @@ uncountedCeiling pid oid claims gs component = case component of
           ( alone
               (ClaimAxis.Removal Zone.Graveyard)
               threshold
-              (fmap (\candidate -> tallyValue tally candidate gs) (exileCandidates Map.empty pid oid criterion gs))
+              (fmap (\candidate -> tallyValue tally candidate gs) (exileCandidates Map.empty pid oid yourGraveyard criterion gs))
           )
     | otherwise -> Nothing
   CostComponent.CollectEvidence (CostAmount.Fixed n) -> uncountedCeiling pid oid claims gs (CostComponent.ExileCardsTotalling (evidenceExile n))
@@ -4747,12 +4755,12 @@ canPayComponentGiven board slots pid oid component gs = case component of
   CostComponent.ExileThisFrom zone -> case Game.lookupObject oid gs of
     Nothing -> False
     Just obj -> Object.zone obj == zone && Object.owner obj == pid
-  -- CR 118.3: payable only if this player's own graveyard holds at least that
+  -- CR 118.3: payable only if the graveyards the scope names hold at least that
   -- many matching cards. Headless Skaab with an empty graveyard is never OFFERED
   -- rather than merely unpaid, which is what puts the additional cost INSIDE the
   -- total cost as CR 601.2f says. This component ALONE, Sacrifice's caveat.
-  CostComponent.MoveCardsFromGraveyard (MoveCardsFromGraveyard.MkMoveCardsFromGraveyard amount criterion _) ->
-    payableAnnounced amount (\n -> Natural.length (exileCandidatesGiven board slots pid oid criterion gs) >= n)
+  CostComponent.MoveCardsFromGraveyard (MoveCardsFromGraveyard.MkMoveCardsFromGraveyard amount criterion _ scope) ->
+    payableAnnounced amount (\n -> Natural.length (exileCandidatesGiven board slots pid oid scope criterion gs) >= n)
   -- CR 118.3: the arm above over CR 702.167a's two pools at once, so that a craft
   -- ability is not OFFERED where the battlefield and the graveyard together hold
   -- too few materials. ">=" answers both readings of the count: an exact one is
@@ -4767,7 +4775,7 @@ canPayComponentGiven board slots pid oid component gs = case component of
   -- total any subset reaches. ">=" because both printings say "or more"/"or
   -- greater", and a threshold of 0 is paid by the empty set with no special case.
   CostComponent.ExileCardsTotalling (ExileCardsTotalling.MkExileCardsTotalling n tally criterion) ->
-    sum (fmap (tallyValueGiven tally (Snapshot.views board)) (exileCandidatesGiven board slots pid oid criterion gs)) >= toInteger n
+    sum (fmap (tallyValueGiven tally (Snapshot.views board)) (exileCandidatesGiven board slots pid oid yourGraveyard criterion gs)) >= toInteger n
   CostComponent.CollectEvidence amount -> payableAnnounced amount (\n -> canPayComponentGiven board slots pid oid (CostComponent.ExileCardsTotalling (evidenceExile n)) gs)
   -- The arm above at the amount these slots fix (fixComputed).
   CostComponent.CollectEvidenceOfTargets -> canPayComponentGiven board slots pid oid (fixComputed slots gs component) gs
@@ -5412,8 +5420,9 @@ composeReversal before windows keeps = case NonEmpty.nonEmpty windows of
   Just ws ->
     let final = ManaWindow.closed (NonEmpty.last ws)
         newestWindow = length windows - 1
-        -- Each run as its opening, its close, and whether it is the newest
-        -- window's and reaches that window's close.
+        -- Each run as its opening, its close, whether it is the newest
+        -- window's and reaches that window's close, and the states its
+        -- stretches passed through between those two.
         stretches w window =
           let segments = zip [0 :: Int ..] (ManaWindow.segments window)
               lastIndex = length segments - 1
@@ -5424,16 +5433,17 @@ composeReversal before windows keeps = case NonEmpty.nonEmpty windows of
                     (end, endSegment) = NonEmpty.last run
                  in ( if first == 0 then ManaWindow.opened window else ManaSegment.opened firstSegment,
                       if end == lastIndex then ManaWindow.closed window else ManaSegment.closed endSegment,
-                      w == newestWindow && end == lastIndex
+                      w == newestWindow && end == lastIndex,
+                      concatMap (\(_, segment) -> [ManaSegment.opened segment, ManaSegment.closed segment]) (NonEmpty.toList run)
                     )
            in fmap stretch runs
         keptRuns = concat (zipWith stretches [0 :: Int ..] windows)
      in case reverse keptRuns of
           [] -> Just (keepingLibraryActions final before)
-          (_, newest, reachesFinal) : _ ->
+          (_, newest, reachesFinal, _) : _ ->
             let tailState = if reachesFinal then newest else keepingLibraryActions final newest
-                starts = before : fmap (\(_, closed, _) -> closed) keptRuns
-             in foldr (\(start, (opened, _, _)) rest -> rest >>= Reversal.withoutAnnouncement start opened) (Just tailState) (zip starts keptRuns)
+                starts = before : fmap (\(_, closed, _, _) -> closed) keptRuns
+             in foldr (\(start, (opened, _, _, between)) rest -> rest >>= Reversal.withoutAnnouncement start opened between) (Just tailState) (zip starts keptRuns)
 
 -- CR 734.1's last sentence: shuffling a library or revealing cards from one --
 -- or looking at them, which CR 701.20e has follow a reveal's rules -- is never
@@ -7943,7 +7953,7 @@ payPayable perform moment paidFor slots pid oid component = case component of
     Foldable.for_ (Behold.chosenType behold) $ \family -> do
       gs <- State.get
       picked <- Game.chooseAmong (\decider who offered -> Prompt.ChooseSubtype decider who oid family (Just offered)) pid (beholdableTypes slots pid oid behold family gs)
-      Foldable.for_ picked $ \subtype -> State.modify' (\g -> Game.recordChoice Chosen.Subtype (Game.acquisitionOf oid g) (const (Just subtype)) oid g)
+      Foldable.for_ picked $ \subtype -> State.modify' (\g -> Game.recordChoice Chosen.Subtype (Game.acquisitionOf oid g) (const (Just (NonEmpty.singleton subtype))) oid g)
     beheld <- beholdObjects paidFor (Behold.cardZone behold) slots pid oid n criterion
     pure (maybe Payment.Unpaid (Payment.Paid . Binding.paidObjects Binding.beheldObject . Set.fromList . fmap Recipient.ToObject) beheld)
   -- CR 701.4a's behold of ONE object, `beholdObjects` as the arm above, then CR
@@ -8231,7 +8241,7 @@ payPayable perform moment paidFor slots pid oid component = case component of
   -- nothing that could run out.
   CostComponent.ChooseSubtype family -> do
     gs <- State.get
-    Event.chooseQuality (ChosenQuality.Subtype family Nothing) pid Nothing (Game.acquisitionOf oid gs) oid
+    Event.chooseQuality (ChosenQuality.Subtype ChoiceOrdinal.First ChoiceDistinct.MayRepeat family Nothing) pid Nothing (Game.acquisitionOf oid gs) oid
     pure bindsNothing
   -- NOTHING TO PAY. Rule 701.67a's waterbend cost is the mana this component
   -- scopes, and that mana is in the cost's own mana part, paid by `payMana`
@@ -8313,9 +8323,9 @@ payPayable perform moment paidFor slots pid oid component = case component of
   --
   -- A count of 0 (Gorex, the Tombshell announcing none) has the empty set as
   -- its one answer, so nothing is asked.
-  CostComponent.MoveCardsFromGraveyard (MoveCardsFromGraveyard.MkMoveCardsFromGraveyard amount criterion destination) -> paidAnnounced amount $ \n -> do
+  CostComponent.MoveCardsFromGraveyard (MoveCardsFromGraveyard.MkMoveCardsFromGraveyard amount criterion destination scope) -> paidAnnounced amount $ \n -> do
     gs <- State.get
-    let candidates = exileCandidates slots pid oid criterion gs
+    let candidates = exileCandidates slots pid oid scope criterion gs
         decider = Decide.deciderFor pid gs
     chosen <-
       if n == 0

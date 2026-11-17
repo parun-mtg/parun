@@ -170,7 +170,7 @@ doomCannonSpec s registry =
           Prompt.ChooseTargets _ _ _ sets -> S.preferring ((== Just S.bob) . Recipient.playerOf) sets
           _ -> S.identityAnswer p
         fired chosen =
-          let chose = g2 {GameState.objects = Map.adjust (\o -> o {Object.chosenSubtype = Map.singleton Acquisition.Own chosen}) cannonId (GameState.objects g2)}
+          let chose = g2 {GameState.objects = Map.adjust (\o -> o {Object.chosenSubtype = Map.singleton Acquisition.Own (NonEmpty.singleton chosen)}) cannonId (GameState.objects g2)}
            in S.runPure S.identityAnswer (S.runPure aimAtBob chose (Activate.activateAbility S.alice cannonId (theAbility cannon))) Stack.resolveTop
         goblins = fired Subtype.Goblin
         giants = fired Subtype.Giant

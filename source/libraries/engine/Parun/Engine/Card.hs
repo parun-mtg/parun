@@ -915,11 +915,12 @@ castableFaces card = case Card.layout card of
 -- ModalDoubleFaced, Transforming, Meld) are not what rule 702.102a's "found on
 -- some split cards" reaches.
 --
--- Not implemented: fusing a card where either half prints CR 700.2h's per-mode
--- costs, or a half is modal and the card prints CR 702.42a's entwine (gap
--- #4777). fuseSpells' modes are PAIRS of selections, so a pair's cost is a sum
--- of mode costs, and entwine's "all modes" would pick every pair and run the
--- right half once per left mode.
+-- Unprinted: fusing a card where either half prints CR 700.2h's per-mode
+-- costs, or a half is modal and the card prints CR 702.42a's entwine.
+-- fuseSpells' modes are PAIRS of selections, so a pair's cost is a sum of mode
+-- costs, and entwine's "all modes" would pick every pair and run the right half
+-- once per left mode. Parun.CardSpec's "CR 702.102 every card with fuse has a
+-- fused face" keeps such a card out of the pool.
 fusedFace :: Card.Card -> Maybe (Face.Face Card.Card)
 fusedFace card = case Card.layout card of
   Layout.Split -> do
@@ -949,12 +950,14 @@ fusedFace card = case Card.layout card of
 -- drop one half's slot and leave that half's effects pointing at the other half's
 -- target. Slot names are card DATA and never printed, so a card can always name
 -- them apart; Parun.CardSpec's fuse lint is what holds every corpus card to it,
--- loudly, rather than leaving a colliding card quietly unfusable. The same refusal
--- covers a TARGETED mode chosen twice under CR 700.2d's exception: its two
+-- loudly, rather than leaving a colliding card quietly unfusable. An untargeted
+-- repeat merges as its clauses twice, which is what the rule's "as if that mode
+-- appeared that many times in sequence" asks.
+--
+-- Unprinted: a TARGETED mode chosen twice under CR 700.2d's exception. Its two
 -- instances name one slot, and Parun.Engine.Modal.instanceSlot's renaming is a
--- resolution-time projection a merged mode cannot carry (gap #4777). An
--- untargeted repeat merges as its clauses twice, which is what the rule's "as if
--- that mode appeared that many times in sequence" asks.
+-- resolution-time projection a merged mode cannot carry, so the same refusal
+-- covers it and the same lint keeps it out of the pool.
 fuseSpells ::
   NonEmpty.NonEmpty (Modal.Type.Modal Card.Card (GrantedAbility.GrantedAbility Card.Card)) ->
   Maybe (Modal.Type.Modal Card.Card (GrantedAbility.GrantedAbility Card.Card))

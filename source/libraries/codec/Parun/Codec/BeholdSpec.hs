@@ -6,6 +6,7 @@ import qualified Parun.JsonCodec.Codec as Codec
 import qualified Parun.JsonCodec.Common as Common
 import qualified Parun.Spec as Spec
 import qualified Parun.Types.Behold as Behold
+import qualified Parun.Types.ChoiceOrdinal as ChoiceOrdinal
 import qualified Parun.Types.Filter as Filter
 import qualified Parun.Types.Keyword as Keyword
 import qualified Parun.Types.Subtype as Subtype
@@ -31,7 +32,7 @@ spec s = Spec.describe s "Parun.Codec.Behold" $ do
     Common.assertCodec
       s
       codec
-      (Behold.MkBehold {Behold.count = 2, Behold.whichObjects = Filter.HasChosenSubtype, Behold.chosenType = Just SubtypeFamily.CreatureType, Behold.cardZone = Zone.Hand})
+      (Behold.MkBehold {Behold.count = 2, Behold.whichObjects = Filter.HasChosenSubtype ChoiceOrdinal.First, Behold.chosenType = Just SubtypeFamily.CreatureType, Behold.cardZone = Zone.Hand})
       " {\"chosenType\":\"CreatureType\",\"count\":2,\"whichObjects\":{\"type\":\"HasChosenSubtype\"}} "
   -- Close Encounter's creature you control or warped creature card in exile.
   Spec.it s "MkBehold from exile" $

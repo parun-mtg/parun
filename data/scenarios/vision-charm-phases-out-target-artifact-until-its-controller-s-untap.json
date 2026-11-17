@@ -1,0 +1,12 @@
+{
+  "description": "CR 702.26a / 702.26b whole card: Vision Charm's third mode phases out bob's target Ornithopter, which is treated as though it doesn't exist until it phases in during his untap step, while his Sol Ring stays",
+  "note": "The mode's target is an artifact; the first and third modes' slots are named apart.",
+  "board": {"active": "alice", "step": "PrecombatMain", "seats": [{"name": "alice", "library": [{"card": "Island"}, {"card": "Island"}, {"card": "Island"}], "battlefield": [{"card": "Island", "label": "i1"}], "hand": [{"card": "Vision Charm", "label": "charm"}]}, {"name": "bob", "library": [{"card": "Plains"}, {"card": "Plains"}, {"card": "Plains"}], "battlefield": [{"card": "Ornithopter", "label": "thopter"}, {"card": "Sol Ring", "label": "ring"}]}]},
+  "timeline": [
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": {"Cast": {"object": "$charm", "modes": [2], "targets": ["$thopter"], "mana": ["$i1"]}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass"},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Count": {"player": "bob", "zone": "Battlefield", "card": "Ornithopter", "count": 0}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Count": {"player": "bob", "zone": "Battlefield", "card": "Sol Ring", "count": 1}}},
+    {"turn": 2, "step": "Upkeep", "player": "bob", "check": {"Count": {"player": "bob", "zone": "Battlefield", "card": "Ornithopter", "count": 1}}}
+  ]
+}

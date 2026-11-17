@@ -52,7 +52,7 @@ codec = Fields.object $ do
   chosenNames <- Fields.required "chosenNames" (Common.keyedList (Common.keyValue Acquisition.codec (Common.naturalMap PlayerId.codec (Common.set CardName.codec)))) LastKnown.chosenNames
   chosenPlayers <- Fields.defaulted "chosenPlayers" Map.empty (Common.keyedList (Common.keyValue Acquisition.codec (Common.keyedList (Common.keyValue PlayerChoice.codec PlayerId.codec)))) LastKnown.chosenPlayers
   chosenColors <- Fields.defaulted "chosenColors" Map.empty (Common.keyedList (Common.keyValue Acquisition.codec (Common.set Color.codec))) LastKnown.chosenColors
-  chosenSubtype <- Fields.defaulted "chosenSubtype" Map.empty (Common.keyedList (Common.keyValue Acquisition.codec Subtype.codec)) LastKnown.chosenSubtype
+  chosenSubtype <- Fields.defaulted "chosenSubtype" Map.empty (Common.keyedList (Common.keyValue Acquisition.codec (Common.nonEmpty Subtype.codec))) LastKnown.chosenSubtype
   chosenCardType <- Fields.defaulted "chosenCardType" Map.empty (Common.keyedList (Common.keyValue Acquisition.codec CardType.codec)) LastKnown.chosenCardType
   chosenNumber <- Fields.defaulted "chosenNumber" Map.empty (Common.keyedList (Common.keyValue Acquisition.codec Common.natural)) LastKnown.chosenNumber
   chosenObjects <- Fields.defaulted "chosenObjects" Map.empty (Common.keyedList (Common.keyValue Acquisition.codec (Common.set ObjectId.codec))) LastKnown.chosenObjects

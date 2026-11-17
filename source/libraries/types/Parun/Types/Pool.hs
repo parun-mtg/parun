@@ -78,8 +78,9 @@ data Pool
     -- card in a graveyard no controller at all -- Filter.HeldBy Holder.Controller is
     -- vacuously False for every one of them.
     --
-    -- No pool reaches a hand or a library, so a graveyard and exile below are
-    -- the only other zones clause (a) can name here (#559).
+    -- Unprinted: a target in a hand or a library. No pool reaches either, so a
+    -- graveyard and exile below are the only other zones clause (a) can name
+    -- here.
     CardsInGraveyard ZoneScope.ZoneScope
   | -- | CR 406.1: the cards in the exile zone (ToObject) -- Riftsweeper's "choose
     -- target face-up exiled card". Clause (a)'s other-zone half again. Public

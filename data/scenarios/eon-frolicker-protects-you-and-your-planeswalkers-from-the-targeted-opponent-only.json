@@ -1,0 +1,303 @@
+{
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "battlefield": [
+          {
+            "card": "Ajani Goldmane",
+            "counters": [
+              {
+                "key": {
+                  "type": "Loyalty"
+                },
+                "value": 4
+              }
+            ],
+            "label": "pw"
+          }
+        ],
+        "hand": [
+          {
+            "card": "Eon Frolicker",
+            "label": "frolicker"
+          }
+        ],
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ],
+        "manaPool": "UUUU",
+        "name": "alice"
+      },
+      {
+        "battlefield": [
+          {
+            "card": "Mountain",
+            "label": "bm1"
+          },
+          {
+            "card": "Mountain",
+            "label": "bm2"
+          }
+        ],
+        "hand": [
+          {
+            "card": "Shock",
+            "label": "bshock1"
+          },
+          {
+            "card": "Shock",
+            "label": "bshock2"
+          }
+        ],
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ],
+        "name": "bob"
+      },
+      {
+        "battlefield": [
+          {
+            "card": "Mountain",
+            "label": "cm"
+          }
+        ],
+        "hand": [
+          {
+            "card": "Shock",
+            "label": "cshock"
+          }
+        ],
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ],
+        "name": "carol"
+      }
+    ],
+    "step": "PrecombatMain"
+  },
+  "description": "CR 702.16k / 608.2h: Eon Frolicker gives its controller and their planeswalkers protection from the opponent it targeted, and from no one else",
+  "note": "alice casts the Frolicker and targets bob. Through bob's extra turn his Shock can target neither alice nor her Ajani, though it can target the Frolicker, which the trigger does not protect; carol's Shock still reaches alice. A quality left reading the trigger's slot after the resolution would protect from nobody.",
+  "timeline": [
+    {
+      "do": {
+        "Cast": {
+          "object": "$frolicker"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "ChooseTargets": {
+          "target": [
+            "$bob"
+          ]
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "player": "bob",
+      "refuse": {
+        "Cast": {
+          "mana": [
+            "$bm1",
+            null
+          ],
+          "object": "$bshock1",
+          "targets": [
+            "$alice"
+          ]
+        }
+      },
+      "step": "PostcombatMain",
+      "turn": 1
+    },
+    {
+      "player": "bob",
+      "refuse": {
+        "Cast": {
+          "mana": [
+            "$bm1",
+            null
+          ],
+          "object": "$bshock1",
+          "targets": [
+            "$pw"
+          ]
+        }
+      },
+      "step": "PostcombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Cast": {
+          "mana": [
+            "$bm1",
+            null
+          ],
+          "object": "$bshock1",
+          "targets": [
+            "Eon Frolicker"
+          ]
+        }
+      },
+      "player": "bob",
+      "step": "PostcombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Damage": {
+          "damage": 2,
+          "object": "Eon Frolicker"
+        }
+      },
+      "player": "alice",
+      "step": "EndStep",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Cast": {
+          "mana": [
+            "$cm"
+          ],
+          "object": "$cshock",
+          "targets": [
+            "$alice"
+          ]
+        }
+      },
+      "player": "carol",
+      "step": "EndStep",
+      "turn": 1
+    },
+    {
+      "check": {
+        "View": {
+          "is": "bob",
+          "of": "ActivePlayer"
+        }
+      },
+      "player": "bob",
+      "step": "Upkeep",
+      "turn": 2
+    },
+    {
+      "check": {
+        "Life": {
+          "life": 18,
+          "player": "alice"
+        }
+      },
+      "player": "alice",
+      "step": "Upkeep",
+      "turn": 2
+    },
+    {
+      "player": "bob",
+      "refuse": {
+        "Cast": {
+          "mana": [
+            "$bm1",
+            null
+          ],
+          "object": "$bshock2",
+          "targets": [
+            "$alice"
+          ]
+        }
+      },
+      "step": "PrecombatMain",
+      "turn": 2
+    },
+    {
+      "player": "bob",
+      "refuse": {
+        "Cast": {
+          "mana": [
+            "$bm1",
+            null
+          ],
+          "object": "$bshock2",
+          "targets": [
+            "$pw"
+          ]
+        }
+      },
+      "step": "PrecombatMain",
+      "turn": 2
+    },
+    {
+      "do": {
+        "Cast": {
+          "mana": [
+            "$bm1",
+            null
+          ],
+          "object": "$bshock2",
+          "targets": [
+            "$carol"
+          ]
+        }
+      },
+      "player": "bob",
+      "step": "PrecombatMain",
+      "turn": 2
+    },
+    {
+      "check": {
+        "Life": {
+          "life": 18,
+          "player": "carol"
+        }
+      },
+      "player": "carol",
+      "step": "EndStep",
+      "turn": 2
+    }
+  ]
+}

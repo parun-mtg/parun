@@ -781,6 +781,9 @@ data Effect card ability
   | -- | CR 701.51b: the resolving controller opens an Attraction, performed by
     -- Parun.Engine.Attraction.open.
     OpenAttraction
+  | -- | CR 701.52a: the resolving controller rolls to visit their Attractions,
+    -- performed by Parun.Engine.Resolve.Effect.rollToVisit.
+    RollToVisit
   | -- | The Unstable FAQ's assemble, which CR 701.45a leaves out of the rules:
     -- the resolving controller puts the top card of their Contraption deck onto
     -- a sprocket they choose, performed by Parun.Engine.Contraption.assemble. The

@@ -3,6 +3,7 @@ module Parun.Codec.RollModifierSpec where
 import qualified Parun.Codec.RollModifier as RollModifier
 import qualified Parun.JsonCodec.Common as Common
 import qualified Parun.Spec as Spec
+import qualified Parun.Types.RerollReach as RerollReach
 import qualified Parun.Types.RollModifier as RollModifier
 
 spec :: (Monad m, Monad n) => Spec.Spec m n -> n ()
@@ -12,8 +13,8 @@ spec s = Spec.describe s "Parun.Codec.RollModifier" $ do
     Common.assertCodec
       s
       RollModifier.codec
-      RollModifier.Reroll
-      " {\"type\":\"Reroll\"} "
+      (RollModifier.Reroll RerollReach.ThatDie)
+      " {\"type\":\"Reroll\",\"value\":\"ThatDie\"} "
   -- CR 706.2b's second step: Night Shift of the Living Dead.
   Spec.it s "IncreaseOrDecrease" $
     Common.assertCodec

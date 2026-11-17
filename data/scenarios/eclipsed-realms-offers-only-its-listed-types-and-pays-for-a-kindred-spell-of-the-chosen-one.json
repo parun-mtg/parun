@@ -170,7 +170,7 @@
                 "retention": "Ordinary",
                 "rider": null,
                 "sourceChoices": {
-                  "subtype": "Goblin"
+                  "subtype": ["Goblin"]
                 },
                 "tags": []
               }

@@ -51,7 +51,7 @@
     { "turn": 2, "step": "PrecombatMain", "player": "bob", "check": { "Subtypes": { "object": "Multiversal Passage#2", "subtypes": ["Island"] } } },
     { "turn": 3, "step": "DeclareAttackers", "player": "alice", "do": { "Attack": [] } },
     { "turn": 4, "step": "Upkeep", "player": "bob", "do": { "Take": { "action": "ActivateManaAbility Multiversal Passage#2" } } },
-    { "turn": 4, "step": "Upkeep", "player": "bob", "check": { "View": { "of": "ManaPool", "player": "bob", "is": [{ "manaType": { "type": "Colored", "value": "Blue" }, "tags": [], "retention": "Ordinary", "restriction": null, "rider": null, "sourceChoices": { "subtype": "Island" } }] } } }
+    { "turn": 4, "step": "Upkeep", "player": "bob", "check": { "View": { "of": "ManaPool", "player": "bob", "is": [{ "manaType": { "type": "Colored", "value": "Blue" }, "tags": [], "retention": "Ordinary", "restriction": null, "rider": null, "sourceChoices": { "subtype": ["Island"] } }] } } }
   ],
   "note": "Alice chooses Swamp and pays: her Passage is untapped at 18 life, a Swamp only, and pays Typhoid Rats' {B} but not Savannah Lions' {W}. Bob chooses Island and declines: his is tapped at 20 life, an Island only, and taps for {U} in his next upkeep. Each pay prompt comes after the type choice made the land a basic land type, which CR 305.7 would have stripped a second row's ability from."
 }

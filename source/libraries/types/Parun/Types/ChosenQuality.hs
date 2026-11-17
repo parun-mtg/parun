@@ -4,6 +4,8 @@ import qualified Data.List.NonEmpty as NonEmpty
 import qualified Data.Text as Text
 import qualified Numeric.Natural as Natural
 import qualified Parun.Types.CardType as CardType
+import qualified Parun.Types.ChoiceDistinct as ChoiceDistinct
+import qualified Parun.Types.ChoiceOrdinal as ChoiceOrdinal
 import qualified Parun.Types.ChooseBetween as ChooseBetween
 import qualified Parun.Types.ExiledPile as ExiledPile
 import qualified Parun.Types.Filter as Filter
@@ -19,8 +21,8 @@ import qualified Parun.Types.SubtypeFamily as SubtypeFamily
 data ChosenQuality
   = -- | CR 105.4: between least and most different colours, the chooser picking how many, written to Object.chosenColors (Painter's Servant, Scuttlemutt).
     Colors ChooseBetween.ChooseBetween
-  | -- | CR 205.3: one subtype of the family, of the listed ones where the card lists them, written to Object.chosenSubtype (Convincing Mirage, Deification, Eclipsed Realms).
-    Subtype SubtypeFamily.SubtypeFamily (Maybe (NonEmpty.NonEmpty Subtype.Subtype))
+  | -- | CR 205.3: one subtype of the family, of the listed ones where the card lists them, other than the earlier choices' where Distinct, written to Object.chosenSubtype at the ordinal, replacing it and every later one (Convincing Mirage, Illusionary Terrain, Vision Charm).
+    Subtype ChoiceOrdinal.ChoiceOrdinal ChoiceDistinct.ChoiceDistinct SubtypeFamily.SubtypeFamily (Maybe (NonEmpty.NonEmpty Subtype.Subtype))
   | -- | CR 205.2a: one card type other than the first list's, of the second's where the card lists them, written to Object.chosenCardType (Umori, the Collector; Arachne, Psionic Weaver; Season of Gathering).
     CardType [CardType.CardType] (Maybe (NonEmpty.NonEmpty CardType.CardType))
   | -- | CR 607.2d: one number from the least through the most, unbounded above where Nothing, replacing the last, written to Object.chosenNumber (Shapeshifter; Fluros of Myra's Marvels).
