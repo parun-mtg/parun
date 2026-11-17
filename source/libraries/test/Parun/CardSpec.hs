@@ -2487,7 +2487,8 @@ namedTokens =
       -- characteristics under its name.
       CardName.MkCardName (Text.pack "Mutavault"),
       CardName.MkCardName (Text.pack "Nalaar Aetherjet"),
-      -- Artificial Anomaly's "a tapped Planet land token named New Planet".
+      -- David and Carol Marcus, Creators' "a tapped Planet land token named New
+      -- Planet".
       CardName.MkCardName (Text.pack "New Planet"),
       -- Yotia Declares War's "a 0/2 colorless Thopter artifact creature token
       -- with flying named Ornithopter".

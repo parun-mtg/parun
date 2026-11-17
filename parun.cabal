@@ -2797,6 +2797,13 @@ library trustworthy
   exposed-modules:
     Parun.Trustworthy.Directory
 
+  if arch(wasm32)
+    build-depends: ghc-experimental ^>=9.1003.0
+    hs-source-dirs: source/libraries/trustworthy-wasm
+    -- cabal-gild: discover source/libraries/trustworthy-wasm
+    exposed-modules:
+      Parun.Trustworthy.Wasm
+
 -- All of the type definitions, without any associated behavior.
 library types
   import: library
@@ -3922,6 +3929,7 @@ library web
   build-depends:
     containers ^>={0.7, 0.8},
     parun:extra,
+    parun:json,
     parun:spec,
     text ^>=2.1.3,
 
@@ -3936,6 +3944,26 @@ library web
     Parun.Web.Html
     Parun.Web.HtmlSpec
     Parun.Web.Patch
+    Parun.Web.Wire
+    Parun.Web.WireSpec
+
+-- The web client's browser half: the JavaScript FFI that runs a web app on
+-- the page. Only the wasm backend has that FFI.
+library browser
+  import: library
+  build-depends:
+    containers ^>={0.7, 0.8},
+    parun:trustworthy,
+    parun:web,
+    text ^>=2.1.3,
+
+  if !arch(wasm32)
+    buildable: False
+  hs-source-dirs: source/libraries/browser
+  -- cabal-gild: discover source/libraries/browser
+  exposed-modules:
+    Parun.Browser
+    Parun.Browser.Counter
 
 executable parun
   import: executable
@@ -3949,6 +3977,20 @@ test-suite parun-test-suite
   hs-source-dirs: source/test-suite
   main-is: Main.hs
   type: exitcode-stdio-1.0
+
+-- A reactor module: no Haskell main, only the exports the page calls.
+executable parun-web
+  import: library
+  build-depends: parun:browser
+  ghc-options:
+    -no-hs-main
+    -optl-mexec-model=reactor
+    "-optl-Wl,--export=start"
+
+  if !arch(wasm32)
+    buildable: False
+  hs-source-dirs: source/web
+  main-is: Exports.hs
 
 benchmark parun-benchmark
   import: executable
