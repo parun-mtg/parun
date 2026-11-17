@@ -12108,7 +12108,8 @@ announcing body = do
 -- names once it is announced, so a move made during it records it
 -- (Moved.whileActivating). The activations under way as it began are restored
 -- when `body` returns, whether or not the ability became activated: one
--- reversed (CR 734.1) was still under way while it lasted.
+-- reversed (CR 734.1) was still under way while it lasted (docs/decisions.md,
+-- "Whether a reversed craft activation fires Market Gnome").
 activating :: Game a -> Game a
 activating body = do
   outer <- State.gets (Scratch.activating . GameState.scratch)

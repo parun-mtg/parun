@@ -1633,11 +1633,15 @@ namedCandidate choices candidate =
       _ -> False
 
 -- | Whether a refused action left the state as it found it: the stack and the
--- acting player's hand and battlefield unchanged.
+-- acting player's hand unchanged, and no permanent added to their
+-- battlefield. A kept mana ability's cost may have taken one away (CR 734.1;
+-- the scenario
+-- leaves-trigger/cr-734-1-market-gnome-exiled-by-a-kept-food-chain-during-a-reversed-craft-still-triggers).
 reversed :: PlayerId.PlayerId -> GameState.GameState -> GameState.GameState -> Bool
 reversed actor before after =
   TurnRegisters.stack (GameState.turn before) == TurnRegisters.stack (GameState.turn after)
-    && all (\zone -> Game.zoneMembers zone actor before == Game.zoneMembers zone actor after) [Zone.Hand, Zone.Battlefield]
+    && Game.zoneMembers Zone.Hand actor before == Game.zoneMembers Zone.Hand actor after
+    && Set.isSubsetOf (Set.fromList (Game.zoneMembers Zone.Battlefield actor after)) (Set.fromList (Game.zoneMembers Zone.Battlefield actor before))
 
 answerManaSource :: GameState.GameState -> When.When -> Move.Move -> Choices.Choices -> Text.Text -> NonEmpty.NonEmpty ObjectId.ObjectId -> Run (Maybe ObjectId.ObjectId)
 answerManaSource gs key verb choices kind candidates = case Seq.viewl (Choices.manaSources choices) of
