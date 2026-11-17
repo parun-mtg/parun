@@ -1,0 +1,24 @@
+{
+  "description": "CR 603.2 / 701.13 / 121.1: Salt Vampire's enters trigger looks at target opponent's hand; the chosen nonland card is exiled (a land is refused) and only that player draws",
+  "board": {"active":"alice","step":"PrecombatMain","seats":[
+    {"name":"alice","hand":[{"card":"Salt Vampire","label":"vamp"}],"manaPool":"BB","library":[{"card":"Plains"},{"card":"Plains"},{"card":"Plains"},{"card":"Plains"},{"card":"Plains"}]},
+    {"name":"bob","hand":[{"card":"Lightning Bolt","label":"bolt"},{"card":"Hill Giant"},{"card":"Forest","label":"forest"}],"library":[{"card":"Island"},{"card":"Island"},{"card":"Island"},{"card":"Island"},{"card":"Island"}]},
+    {"name":"carol","hand":[{"card":"Shock"}],"library":[{"card":"Swamp"},{"card":"Swamp"},{"card":"Swamp"},{"card":"Swamp"},{"card":"Swamp"}]}
+  ]},
+  "timeline": [
+    {"do":{"Cast":{"object":"$vamp"}},"player":"alice","step":"PrecombatMain","turn":1},
+    {"do":"Pass","player":"alice","step":"PrecombatMain","turn":1},
+    {"do":{"ChooseTargets":{"target":["$bob"]}},"player":"alice","step":"PrecombatMain","turn":1},
+    {"do":"Pass","player":"alice","step":"PrecombatMain","turn":1},
+    {"do":{"ChooseOptional":"Exercises"},"player":"alice","step":"PrecombatMain","turn":1},
+    {"refuse":{"Answer":{"prompt":"ChooseCardFromAmong","with":"$forest"}},"player":"alice","step":"PrecombatMain","turn":1},
+    {"do":{"Answer":{"prompt":"ChooseCardFromAmong","with":"$bolt"}},"player":"alice","step":"PrecombatMain","turn":1},
+    {"check":{"Count":{"card":"Lightning Bolt","count":1,"player":"bob","zone":"Exile"}},"player":"alice","step":"PrecombatMain","turn":1},
+    {"check":{"Count":{"card":"Lightning Bolt","count":0,"player":"bob","zone":"Graveyard"}},"player":"alice","step":"PrecombatMain","turn":1},
+    {"check":{"Count":{"card":"Island","count":1,"player":"bob","zone":"Hand"}},"player":"alice","step":"PrecombatMain","turn":1},
+    {"check":{"Count":{"card":"Hill Giant","count":1,"player":"bob","zone":"Hand"}},"player":"alice","step":"PrecombatMain","turn":1},
+    {"check":{"Count":{"card":"Forest","count":1,"player":"bob","zone":"Hand"}},"player":"alice","step":"PrecombatMain","turn":1},
+    {"check":{"Count":{"card":"Swamp","count":0,"player":"carol","zone":"Hand"}},"player":"alice","step":"PrecombatMain","turn":1},
+    {"check":{"Count":{"card":"Plains","count":0,"player":"alice","zone":"Hand"}},"player":"alice","step":"PrecombatMain","turn":1}
+  ]
+}
