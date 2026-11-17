@@ -1,0 +1,163 @@
+{
+  "faces": [
+    {
+      "manaCost": [
+        {
+          "type": "Generic",
+          "value": 1
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "Red"
+          }
+        }
+      ],
+      "name": "Become Brutes",
+      "oracleText": "One or two target creatures each gain haste until end of turn. For each of those creatures, create a Monster Role token attached to it. (If you control another Role on it, put that one into the graveyard. Enchanted creature gets +1/+1 and has trample.)",
+      "spell": {
+        "modes": [
+          {
+            "clauses": [
+              {
+                "effects": [
+                  {
+                    "type": "ModifyTarget",
+                    "value": {
+                      "duration": {
+                        "type": "UntilEndOfTurn"
+                      },
+                      "modification": {
+                        "type": "GainKeyword",
+                        "value": {
+                          "type": "Haste"
+                        }
+                      },
+                      "ref": {
+                        "type": "InSlot",
+                        "value": "creatures"
+                      }
+                    }
+                  },
+                  {
+                    "type": "ForEach",
+                    "value": {
+                      "body": [
+                        {
+                          "type": "Create",
+                          "value": {
+                            "card": {
+                              "faces": [
+                                {
+                                  "enchant": [
+                                    {
+                                      "pool": {
+                                        "type": "Creatures"
+                                      }
+                                    }
+                                  ],
+                                  "name": "Monster",
+                                  "staticAbilities": [
+                                    {
+                                      "affected": {
+                                        "type": "Matching",
+                                        "value": {
+                                          "type": "And",
+                                          "value": [
+                                            {
+                                              "type": "HasCardType",
+                                              "value": "Creature"
+                                            },
+                                            {
+                                              "type": "HasAttached",
+                                              "value": {
+                                                "type": "IsSource"
+                                              }
+                                            }
+                                          ]
+                                        }
+                                      },
+                                      "modifications": [
+                                        {
+                                          "type": "ModifyPowerToughness",
+                                          "value": {
+                                            "power": {
+                                              "type": "Literal",
+                                              "value": 1
+                                            },
+                                            "toughness": {
+                                              "type": "Literal",
+                                              "value": 1
+                                            }
+                                          }
+                                        },
+                                        {
+                                          "type": "GainKeyword",
+                                          "value": {
+                                            "type": "Trample"
+                                          }
+                                        }
+                                      ]
+                                    }
+                                  ],
+                                  "typeLine": {
+                                    "subtypes": [
+                                      "Aura",
+                                      "Role"
+                                    ],
+                                    "types": [
+                                      "Enchantment"
+                                    ]
+                                  }
+                                }
+                              ]
+                            },
+                            "quantity": {
+                              "type": "Literal",
+                              "value": 1
+                            },
+                            "riders": {
+                              "attachedTo": {
+                                "type": "Specified",
+                                "value": "creature"
+                              }
+                            }
+                          }
+                        }
+                      ],
+                      "ref": {
+                        "type": "InSlot",
+                        "value": "creatures"
+                      },
+                      "slot": "creature"
+                    }
+                  }
+                ]
+              }
+            ],
+            "targetSlots": {
+              "creatures": {
+                "count": {
+                  "type": "Printed",
+                  "value": {
+                    "least": 1,
+                    "most": 2
+                  }
+                },
+                "pool": {
+                  "type": "Creatures"
+                }
+              }
+            }
+          }
+        ]
+      },
+      "typeLine": {
+        "types": [
+          "Sorcery"
+        ]
+      }
+    }
+  ]
+}
