@@ -1,0 +1,167 @@
+{
+  "faces": [
+    {
+      "manaCost": [
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "Blue"
+          }
+        }
+      ],
+      "name": "Vulcan Mind-Meld",
+      "oracleText": "Target opponent looks at the top card of your library, then exiles it face down. You look at the top two cards of their library, then exile them face down. For each card exiled this way, the player who exiled it may play it for as long as it remains exiled. Mana of any type can be spent to cast spells this way.",
+      "spell": {
+        "modes": [
+          {
+            "clauses": [
+              {
+                "effects": [
+                  {
+                    "type": "LookAt",
+                    "value": {
+                      "looker": {
+                        "type": "InSlot",
+                        "value": "target"
+                      },
+                      "ref": {
+                        "type": "TopOfLibrary",
+                        "value": {
+                          "count": {
+                            "type": "Literal",
+                            "value": 1
+                          },
+                          "player": {
+                            "type": "Relative",
+                            "value": "You"
+                          }
+                        }
+                      },
+                      "slot": "theirLook"
+                    }
+                  },
+                  {
+                    "type": "MoveToZone",
+                    "value": {
+                      "ref": {
+                        "type": "InSlot",
+                        "value": "theirLook"
+                      },
+                      "riders": {
+                        "exiledFaceDown": true
+                      },
+                      "slot": "theirExile",
+                      "zone": "Exile"
+                    }
+                  },
+                  {
+                    "type": "LookAt",
+                    "value": {
+                      "ref": {
+                        "type": "TopOfLibrary",
+                        "value": {
+                          "count": {
+                            "type": "Literal",
+                            "value": 2
+                          },
+                          "player": {
+                            "type": "InSlot",
+                            "value": "target"
+                          }
+                        }
+                      },
+                      "slot": "yourLook"
+                    }
+                  },
+                  {
+                    "type": "MoveToZone",
+                    "value": {
+                      "ref": {
+                        "type": "InSlot",
+                        "value": "yourLook"
+                      },
+                      "riders": {
+                        "exiledFaceDown": true
+                      },
+                      "slot": "yourExile",
+                      "zone": "Exile"
+                    }
+                  },
+                  {
+                    "type": "GrantLookAtExiled",
+                    "value": {
+                      "cards": {
+                        "type": "InSlot",
+                        "value": "theirExile"
+                      },
+                      "player": {
+                        "type": "InSlot",
+                        "value": "target"
+                      }
+                    }
+                  },
+                  {
+                    "type": "GrantLookAtExiled",
+                    "value": {
+                      "cards": {
+                        "type": "InSlot",
+                        "value": "yourExile"
+                      }
+                    }
+                  },
+                  {
+                    "type": "GrantPlayFromExile",
+                    "value": {
+                      "duration": {
+                        "type": "Indefinite"
+                      },
+                      "player": {
+                        "type": "InSlot",
+                        "value": "target"
+                      },
+                      "ref": {
+                        "type": "InSlot",
+                        "value": "theirExile"
+                      },
+                      "spending": "AnyType"
+                    }
+                  },
+                  {
+                    "type": "GrantPlayFromExile",
+                    "value": {
+                      "duration": {
+                        "type": "Indefinite"
+                      },
+                      "ref": {
+                        "type": "InSlot",
+                        "value": "yourExile"
+                      },
+                      "spending": "AnyType"
+                    }
+                  }
+                ]
+              }
+            ],
+            "targetSlots": {
+              "target": {
+                "filter": {
+                  "type": "IsPlayer",
+                  "value": "Opponent"
+                },
+                "pool": {
+                  "type": "Players"
+                }
+              }
+            }
+          }
+        ]
+      },
+      "typeLine": {
+        "types": [
+          "Sorcery"
+        ]
+      }
+    }
+  ]
+}
