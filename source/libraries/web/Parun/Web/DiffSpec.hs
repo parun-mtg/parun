@@ -35,7 +35,7 @@ spec s = Spec.describe s "Parun.Web.Diff" $ do
     Spec.it s "truncates children" $ do
       Spec.assertEq s (Diff.diff (list "abc") (list "a")) . Seq.singleton $ Patch.MkTruncate Seq.empty 1
 
-    Spec.it s "keeps a keyed child's node when it moves between zones" $ do
+    Spec.it s "recreates a keyed child that moves between zones" $ do
       Spec.assertEq s (Diff.diff (zones "ab" "c") (zones "b" "ca")) $
         Seq.fromList [Patch.MkArrange (Seq.singleton 0) (Seq.singleton (Patch.MkKept 1)), Patch.MkArrange (Seq.singleton 1) (Seq.fromList [Patch.MkKept 0, Patch.MkCreated (card 'a')])]
 
