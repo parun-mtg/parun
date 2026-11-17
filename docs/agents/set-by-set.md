@@ -196,7 +196,8 @@ one is your judgement.
   `-Werror` rejects it) at the site and in the PR: the assertion is a fence,
   not a proof.
 - **Green means no observer.** Don't close the issue; add the card that gives
-  the line an observer, or it is `wontfix` / `expires:synthetic`. A line kept
+  the line an observer, or take the case `CLAUDE.md`'s last-resort rule for
+  synthetic cards gives it. A line kept
   because the CR states it says so at the site and in the PR.
 
 A wire rewrite through a decode alias cannot see a field whose default changes
@@ -305,9 +306,11 @@ so in the PR.
 - **One fix, every sibling site**, proved on the observable one; a sibling
   constructor of one you are adding is folded, not filed.
 - **File** only what clears that bar, cited inline where the code elides it,
-  naming the card that exercises it (a printing, or a synthetic draft) ---
-  never dropped for want of a card in the pool. Only a rules reason lets a
-  known problem go unfiled.
+  naming the card that exercises it (a printing, or a synthetic draft where
+  `CLAUDE.md`'s last-resort rule allows one) --- never dropped for want of a
+  card in the pool. A problem only an unprinted card shape reaches is fenced
+  with a lint in the unit's PR, not filed. Only a rules reason lets a known
+  problem go unfiled.
 - **File a set's issue under its tracker** (a sub-issue), so the
   orchestrator schedules it, opening with the "Session setup" line and
   ending with the Footer (`docs/agents/orchestrating.md`, "Templates"). An
