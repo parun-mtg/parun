@@ -364,6 +364,9 @@ offerOf namer gs prompt = case prompt of
   Prompt.OfferedCast _ _ source name -> choosing namer prompt "options" (Just source) [("name", R.Text (CardName.unwrap name))] yesOrNo
   Prompt.OfferedMiracleReveal _ _ source name cost -> choosing namer prompt "options" (Just source) [("name", R.Text (CardName.unwrap name)), ("cost", payment namer cost)] yesOrNo
   Prompt.OfferedExtra _ _ source effect -> choosing namer prompt "options" (Just source) [("effect", Reply.encode (Reply.viaCodec Codec.PlayerEffect.codec) namer effect)] yesOrNo
+  -- CR 706.2b: the results in roll order, each spelled as its index, and the
+  -- one cost; none picked declines.
+  Prompt.RerollDice _ _ results cost -> subset namer Nothing ([("results", R.Array (fmap natural (NonEmpty.toList results)))] <> [("cost", payment namer c) | Just c <- [cost]]) (Nothing, Nothing) (zipWith (\index _ -> natural index) [0 ..] (NonEmpty.toList results))
   -- CR 706.2a: the result rerolled, and what rerolling costs where it costs.
   Prompt.Rethrow _ _ landed cost -> choosing namer prompt "options" Nothing ([thrown landed] <> [("cost", payment namer c) | Just c <- [cost]]) yesOrNo
   -- CR 616.1: each entry as its source and, where it renders, its Oracle text.

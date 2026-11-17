@@ -1581,6 +1581,8 @@ library codec
     Parun.Codec.RequiredDefenderSpec
     Parun.Codec.RequirementArity
     Parun.Codec.RequirementAritySpec
+    Parun.Codec.RerollReach
+    Parun.Codec.RerollReachSpec
     Parun.Codec.ReselectAttack
     Parun.Codec.ReselectAttackSpec
     Parun.Codec.RestartSignal
@@ -3635,6 +3637,7 @@ library types
     Parun.Types.RequiredBlockers
     Parun.Types.RequiredDefender
     Parun.Types.RequirementArity
+    Parun.Types.RerollReach
     Parun.Types.ReselectAttack
     Parun.Types.Response
     Parun.Types.RestartSignal

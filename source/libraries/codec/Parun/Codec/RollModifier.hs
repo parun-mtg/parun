@@ -1,5 +1,6 @@
 module Parun.Codec.RollModifier where
 
+import qualified Parun.Codec.RerollReach as RerollReach
 import qualified Parun.JsonCodec.Arm as Arm
 import qualified Parun.JsonCodec.Codec as Codec
 import qualified Parun.JsonCodec.Common as Common
@@ -9,7 +10,7 @@ codec :: Codec.Codec RollModifier.RollModifier
 codec =
   Arm.tagged
     tagOf
-    [ Arm.nullary "Reroll" RollModifier.Reroll,
+    [ Arm.payload "Reroll" RerollReach.codec RollModifier.Reroll (\x -> case x of RollModifier.Reroll y -> Just y; _ -> Nothing),
       Arm.payload "IncreaseOrDecrease" Common.natural RollModifier.IncreaseOrDecrease (\x -> case x of RollModifier.IncreaseOrDecrease y -> Just y; _ -> Nothing)
     ]
 

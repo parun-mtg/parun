@@ -22,7 +22,8 @@
             "type": "ModifyDieRoll",
             "value": {
               "modifier": {
-                "type": "Reroll"
+                "type": "Reroll",
+                "value": "ThatDie"
               },
               "natural": 3,
               "sides": 6

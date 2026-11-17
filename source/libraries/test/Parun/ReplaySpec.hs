@@ -1307,6 +1307,11 @@ combatReplaySpec s =
           Spec.assertEqWith s "shifting the second die down round trips" (Replay.decode p (Replay.encode p (Just (1, RollAdjustment.Decrease)))) (Just (Just (1, RollAdjustment.Decrease)))
           Spec.assertEqWith s "so does declining" (Replay.decode p (Replay.encode p Nothing)) (Just Nothing)
           Spec.assertEqWith s "a short transcript declines" (Replay.defaultAnswer p) Nothing
+        -- CR 706.2b: which dice one payment rerolled is a decision.
+        Spec.it s "RerollDice round-trips through the transcript" $ do
+          let p = Prompt.RerollDice decider S.alice (3 NonEmpty.:| [2]) Nothing
+          Spec.assertEqWith s "rerolling both round trips" (Replay.decode p (Replay.encode p (Set.fromList [0, 1]))) (Just (Set.fromList [0, 1]))
+          Spec.assertEqWith s "a short transcript declines" (Replay.defaultAnswer p) Set.empty
         -- CR 706.2b: which modifier the roller applied next is a decision.
         Spec.it s "ChooseRollModifier round-trips through the transcript" $ do
           let p = Prompt.ChooseRollModifier decider S.alice (Just (ObjectId.MkObjectId 7) NonEmpty.:| [Just (ObjectId.MkObjectId 9)])

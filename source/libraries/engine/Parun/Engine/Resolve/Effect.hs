@@ -112,6 +112,7 @@ import qualified Parun.Types.Prompt as Prompt
 import qualified Parun.Types.Quantity as Quantity.Type
 import Parun.Types.Recipient (Recipient)
 import qualified Parun.Types.Recipient as Recipient
+import qualified Parun.Types.RerollReach as RerollReach
 import qualified Parun.Types.Response as Response
 import Parun.Types.Result (Result)
 import qualified Parun.Types.RollAdjustment as RollAdjustment
@@ -1015,7 +1016,7 @@ throwSettled runSubgame roll perDie = do
         modifiers <- Dice.modifiersFor controller
         activations <- duringRoll natural (State.gets windowCandidates)
         let gated (_, offer) = byNumber || Maybe.isNothing (ModifiedRoll.natural offer)
-            static = fmap (\(payer, stated, offer) -> (payer, stated, Left offer)) (distinct Set.empty (fmap (offerOf gs) (filter gated (Dice.rerollOffers sides natural modifiers))))
+            static = fmap (\(payer, stated, offer) -> (payer, stated, Left offer)) (distinct Set.empty (fmap (offerOf gs) (filter gated (Dice.rerollOffers RerollReach.ThatDie sides (Just natural) modifiers))))
         offering (static <> activations) thrower natural
       -- CR 109.5's "you" on the modifier, which is the player its "may" and
       -- its CR 706.2a cost belong to -- Clam-I-Am's own controller, who is
@@ -1045,29 +1046,36 @@ throwSettled runSubgame roll perDie = do
         case picked of
           Nothing -> pure (thrower, natural)
           Just ((payer, stated, kind), rest) -> do
-            gs <- State.get
             let mCost = either ModifiedRoll.cost (Just . ActivatedAbility.cost . snd) kind
-            answer <- Game.choose (Prompt.Rethrow (Decide.deciderFor payer gs) payer (ThrowResult.DieCameUp natural) mCost)
-            case (answer, kind) of
-              (OptionalDecision.Declines, _) -> offering rest thrower natural
-              (OptionalDecision.Exercises, Left _) -> do
-                -- Not implemented: asking the payer again after a failed
-                -- payment, as payAgain does for CR 118.12 (#5078).
-                paid <- payModifier payer stated mCost
-                if not paid
-                  then offering rest thrower natural
+                ask = do
+                  gs <- State.get
+                  answer <- Game.choose (Prompt.Rethrow (Decide.deciderFor payer gs) payer (ThrowResult.DieCameUp natural) mCost)
+                  pure $ case answer of
+                    OptionalDecision.Exercises -> Just ()
+                    OptionalDecision.Declines -> Nothing
+            case kind of
+              Left offer -> do
+                taken <- askPaying Set.empty payer stated mCost ask
+                case taken of
+                  Nothing -> offering rest thrower natural
                   -- The roller throws it: Clam-I-Am's "you may reroll
                   -- it", Wall of Fortune's "have any player reroll a die
                   -- that player rolled".
-                  else rethrow controller
-              (OptionalDecision.Exercises, Right (oid, ability)) -> do
-                requested <- duringRoll natural $ do
-                  activated <- activateWhileRolling runSubgame payer oid ability
-                  after <- State.get
-                  pure (activated && Scratch.rethrowRequested (GameState.scratch after))
-                if requested
-                  then rethrow payer
-                  else offering rest thrower natural
+                  Just () -> do
+                    State.modify' (Dice.spendLimit stated offer)
+                    rethrow controller
+              Right (oid, ability) -> do
+                answer <- ask
+                case answer of
+                  Nothing -> offering rest thrower natural
+                  Just () -> do
+                    requested <- duringRoll natural $ do
+                      activated <- activateWhileRolling runSubgame payer oid ability
+                      after <- State.get
+                      pure (activated && Scratch.rethrowRequested (GameState.scratch after))
+                    if requested
+                      then rethrow payer
+                      else offering rest thrower natural
       -- CR 706.2b's reroll is a roll: Pippa, Duchess of Dice's ruling has it
       -- trigger "whenever you roll a die", so it is CR 706.1's event and goes
       -- through CR 614's loop, Event.proposeDiceRoll, as one die of the same
@@ -1096,7 +1104,7 @@ throwSettled runSubgame roll perDie = do
           Left results -> rerollingWith False by (Maybe.fromMaybe 1 (Maybe.listToMaybe results))
           Right again -> do
             State.modify' (Event.recordEvent (GameEvent.PlayerActed (PlayerActed.MkPlayerActed PlayerAction.RollDice by)))
-            kept <- naturals again (pure 0)
+            kept <- naturals False again (pure 0)
             -- One kept: a reroll names one die, and every die a row adds comes
             -- with an ignore. A d20 rolled for a coin flipped for the reroll
             -- reads back as that coin's 1 or 20.
@@ -1104,10 +1112,11 @@ throwSettled runSubgame roll perDie = do
               (total, thrower) : _ -> (thrower, readBack again (Integer.toNaturalSaturating total))
               [] -> (by, 1)
       readBack again natural = if Throw.instead again then maybe natural Event.resultOfFace (Event.faceOfResult natural) else natural
-      -- Whether an offer can still go through: a static offer's cost is
-      -- payable, an activation passes the gate a priority activation takes.
+      -- Whether an offer can still go through: a static offer's budget admits
+      -- it and its cost is payable, an activation passes the gate a priority
+      -- activation takes.
       live gs (payer, stated, kind) = case kind of
-        Left offer -> payable gs payer stated (ModifiedRoll.cost offer)
+        Left offer -> Dice.withinLimit gs payer stated offer && payable gs payer stated (ModifiedRoll.cost offer)
         Right (oid, ability) -> Activatable.activatable payer oid ability gs
       -- CR 118.3, Prompt.ChooseToPay's posture for CR 118.12: a cost the
       -- payer has not the resources to pay fully is not offered. A stated
@@ -1118,9 +1127,6 @@ throwSettled runSubgame roll perDie = do
         (_, Nothing) -> True
         (Just oid, Just cost) -> Cost.canPay PaymentSubject.ForNeither payer oid cost gs
         (Nothing, Just _) -> False
-      payModifier payer stated mCost = case (stated, mCost) of
-        (Just oid, Just cost) -> payForModifier payer oid cost
-        _ -> pure True
       -- CR 706.2b's SECOND step, once every die is up and every reroll done:
       -- a source other than this instruction offers to move one result up or
       -- down (Night Shift of the Living Dead). After the rerolls, which is
@@ -1151,24 +1157,26 @@ throwSettled runSubgame roll perDie = do
             Just (chosen@(payer, stated, (offer, amount)), rest) -> do
               let mCost = ModifiedRoll.cost offer
                   passed = adjustingThrough rest (chosen : idle <> waiting) results
-              answer <- Game.choose (Prompt.AdjustDieRoll (Decide.deciderFor payer gs) payer shown amount mCost)
-              case answer of
+              taken <- askPaying Set.empty payer stated mCost (State.get >>= \now -> Game.choose (Prompt.AdjustDieRoll (Decide.deciderFor payer now) payer shown amount mCost))
+              case taken of
                 Nothing -> passed
                 Just (index, direction) -> do
-                  paid <- payModifier payer stated mCost
-                  if not paid
-                    then passed
-                    else do
-                      State.modify' (Dice.spendLimit stated offer)
-                      -- FILTERED, NOT TRUSTED: an index past the end shifts
-                      -- the first die.
-                      let at = if index < List.genericLength results then index else 0
-                          shift n = case direction of
-                            RollAdjustment.Increase -> n + toInteger amount
-                            RollAdjustment.Decrease -> n - toInteger amount
-                      adjustingThrough (rest <> idle <> waiting) [] (zipWith (\i n -> if i == at then shift n else n) [0 :: Natural ..] results)
+                  State.modify' (Dice.spendLimit stated offer)
+                  -- FILTERED, NOT TRUSTED: an index past the end shifts
+                  -- the first die.
+                  let at = if index < List.genericLength results then index else 0
+                      shift n = case direction of
+                        RollAdjustment.Increase -> n + toInteger amount
+                        RollAdjustment.Decrease -> n - toInteger amount
+                  adjustingThrough (rest <> idle <> waiting) [] (zipWith (\i n -> if i == at then shift n else n) [0 :: Natural ..] results)
       -- CR 706.2a's cost, charged between the offer and the modifier's
-      -- application: a declined or failed payment leaves the number standing.
+      -- application: a declined payment leaves the number standing. `ask`
+      -- puts the offer, Nothing declining it, and the answer taken is paid
+      -- for; `failed` holds the answers already paid for in vain. CR 734.1 / 118.12a: a failed payment is reversed, which returns
+      -- the payer to the choice, so the offer is asked again; the same answer
+      -- paid the same way failing twice stands as declined (Common.payAgain);
+      -- the scenario "CR 734.1 a Monitor Monitor payment that fails is asked
+      -- again" proves it.
       --
       -- DuringResolution, payGatePaidBy's moment and for its reason -- the
       -- roll is a resolution being followed -- so the payment is CR 734.1's
@@ -1197,20 +1205,64 @@ throwSettled runSubgame roll perDie = do
       -- resolving object can name what it took, and the modifier's own change
       -- to the die reads no slot. Proved by Parun.DiceSpec's "CR 701.67a a
       -- modifier's waterbend cost is weighed" case.
-      payForModifier payer oid cost = Maybe.isJust . fst <$> payGateCost runSubgame Seq.empty Map.empty payer oid cost
+      askPaying failed payer stated mCost ask = do
+        answer <- ask
+        case (answer, stated, mCost) of
+          (Just taken, Just oid, Just cost) -> do
+            (paid, answered) <- payGateCost runSubgame Seq.empty Map.empty payer oid cost
+            Common.payAgain failed (taken, answered) paid (fmap (const taken)) (\failed' -> askPaying failed' payer stated mCost ask)
+          _ -> pure answer
       duringRoll natural = Common.withThrowing (ThrowResult.DieCameUp natural)
       windowCandidates = fmap (\(pid, oid, ability) -> (pid, Just oid, Right (oid, ability))) . windowAbilities
-      rollOne by modifierOf = do
+      rollOne by = do
         rolled <- Game.ask (Prompt.RollDie sides)
-        (thrower, natural) <- rerolling by (faceOf rolled)
-        -- After the rerolls above, which is CR 706.2b's order: rerolls are
-        -- considered first, and what they leave is the natural result the
-        -- instruction's own modifier adds to.
-        modifier <- modifierOf
-        -- Left unclamped: CR 706.2's result is the number after EVERY
-        -- modifier, so a shift from another source applies to this sum as it
-        -- stands, negative or not, and only the final figure is clamped below.
-        pure (toInteger natural + modifier, thrower)
+        rerolling by (faceOf rolled)
+      -- CR 706.2b's first step over the roll as a whole, once each of its dice
+      -- has had the offers that reach that die alone: a modifier reaching any
+      -- number of the dice its payer rolled at the same time, for one payment
+      -- (Monitor Monitor, Parun.Types.RerollReach). Its payer picks the dice
+      -- (Prompt.RerollDice), and each picked die is rerolled as `rethrow`
+      -- rerolls one, with its own offers. The offers are re-read after each
+      -- one taken, Night Shift's budget (Dice.withinLimit) keeping a spent one
+      -- out, so a second Monitor Monitor sees the dice the first left.
+      --
+      -- Only at the roll's top: a die `rethrow` throws is one of this roll's
+      -- dice, so it is offered here, with the others, rather than alone.
+      rerollingDice dice = do
+        modifiers <- Dice.modifiersFor controller
+        gs <- State.get
+        rerollingDiceThrough (fmap (offerOf gs) (Dice.rerollOffers RerollReach.AnyOfTheDice sides Nothing modifiers)) dice
+      rerollingDiceThrough offers dice = do
+        gs <- State.get
+        -- "Dice you rolled": the dice whose natural result its payer threw.
+        let reachable payer = [i | (i, (thrower, _)) <- zip [0 :: Natural ..] dice, thrower == payer]
+            standing (payer, stated, offer) = not (null (reachable payer)) && Dice.withinLimit gs payer stated offer && payable gs payer stated (ModifiedRoll.cost offer)
+        picked <- Dice.pickModifier controller (filter standing offers)
+        case picked of
+          Nothing -> pure dice
+          Just ((payer, stated, offer), rest) -> case NonEmpty.nonEmpty (reachable payer) of
+            -- Unreachable: `standing` kept only an offer with a die to reach.
+            Nothing -> rerollingDiceThrough rest dice
+            Just indices -> do
+              let mCost = ModifiedRoll.cost offer
+                  shown = fmap (\i -> maybe 1 snd (Maybe.listToMaybe (List.genericDrop i dice))) indices
+              taken <- askPaying Set.empty payer stated mCost $ do
+                now <- State.get
+                chosen <- Game.choose (Prompt.RerollDice (Decide.deciderFor payer now) payer shown mCost)
+                -- FILTERED, NOT TRUSTED: an index past the end is dropped.
+                let kept = Set.filter (< List.genericLength (NonEmpty.toList indices)) chosen
+                pure (if Set.null kept then Nothing else Just kept)
+              case taken of
+                Nothing -> rerollingDiceThrough rest dice
+                Just chosen -> do
+                  State.modify' (Dice.spendLimit stated offer)
+                  let targets = Set.map (List.genericIndex (NonEmpty.toList indices)) chosen
+                  rerolled <- traverse (\(i, die) -> if Set.member i targets then rethrow payer else pure die) (zip [0 :: Natural ..] dice)
+                  rerollingDice rerolled
+      -- The roll's units again, `flat` cut back to their sizes.
+      regroup units flat = case units of
+        [] -> []
+        unit : rest -> let (here, after) = List.splitAt (length unit) flat in here : regroup rest after
       -- CR 706.6: every die is thrown and every face asked for -- an ignored
       -- roll HAPPENED and is only then treated as never having happened -- so
       -- the ignore runs on the results and not on the count -- and could not
@@ -1230,8 +1282,20 @@ throwSettled runSubgame roll perDie = do
       -- Goblin Bookie reroll can make another seat's (Pippa's ruling), so
       -- dice tied for CR 706.6's lowest but thrown by different players are
       -- asked about (Dice.ignoreLowest).
-      naturals settled modifierOf = do
-        units <- traverse (\n -> traverse (const (rollOne (Throw.thrower settled) modifierOf)) [1 .. n]) (Foldable.toList (Throw.units settled))
+      --
+      -- `atTop` is whether this is the roll itself, which takes the offers over
+      -- several dice (rerollingDice), or a die `rethrow` rerolls.
+      naturals atTop settled modifierOf = do
+        thrown <- traverse (\n -> traverse (const (rollOne (Throw.thrower settled))) [1 .. n]) (Foldable.toList (Throw.units settled))
+        rerolled <- if atTop then fmap (regroup thrown) (rerollingDice (concat thrown)) else pure thrown
+        -- After the rerolls above, which is CR 706.2b's order: rerolls are
+        -- considered first, and what they leave is the natural result the
+        -- instruction's own modifier adds to.
+        --
+        -- Left unclamped: CR 706.2's result is the number after EVERY
+        -- modifier, so a shift from another source applies to this sum as it
+        -- stands, negative or not, and only the final figure is clamped below.
+        units <- traverse (traverse (\(thrower, natural) -> fmap (\modifier -> (toInteger natural + modifier, thrower)) modifierOf)) rerolled
         picked <- Monad.forM units $ \dice -> case NonEmpty.nonEmpty dice of
           -- Unreachable: a unit starts at one die and only a scaling that
           -- cannot reach zero resizes it. Defensive: a die of 1.
@@ -1243,7 +1307,7 @@ throwSettled runSubgame roll perDie = do
                 answer <- Game.choose (Prompt.ChooseDieResult (Decide.deciderFor (Throw.thrower settled) gs) (Throw.thrower settled) Nothing (fmap (Integer.toNaturalSaturating . fst) offered))
                 pure (Replacement.at dice answer (NonEmpty.head offered))
         Dice.ignoreLowest (Throw.thrower settled) fst snd (Throw.ignored settled) picked
-  kept <- naturals roll perDie
+  kept <- naturals True roll perDie
   -- CR 706.6 before the second step: an ignored roll is one "no effects apply
   -- to", so it is not offered for an adjustment.
   --

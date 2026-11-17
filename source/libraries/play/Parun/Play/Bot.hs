@@ -305,6 +305,7 @@ bot names = Answerer.MkAnswerer $ \asked -> case Asked.prompt asked of
   Prompt.ChooseReadAheadChapter _ _ _ final -> Generator.between 1 final
   -- CR 706.2b: any die moved either way, or the offer declined; raised only
   -- once its cost is payable.
+  Prompt.RerollDice _ _ results _ -> let indices = zipWith const [0 ..] (NonEmpty.toList results) in fmap Set.fromList (atMost (List.genericLength indices) indices)
   Prompt.AdjustDieRoll _ _ results _ _ -> orNone [(index, adjustment) | index <- zipWith const [0 ..] (NonEmpty.toList results), adjustment <- [RollAdjustment.Increase, RollAdjustment.Decrease]]
   prompt -> pure (Replay.defaultAnswer prompt)
 
