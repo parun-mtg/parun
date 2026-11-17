@@ -61,6 +61,7 @@ import qualified Parun.Extra.Integer as Integer
 import qualified Parun.Extra.Natural as Natural
 import qualified Parun.Types.Affected as Affected
 import qualified Parun.Types.Amass as Amass.Type
+import qualified Parun.Types.AnotherCounter as AnotherCounter
 import qualified Parun.Types.BindAmount as BindAmount
 import qualified Parun.Types.BindLeaders as BindLeaders
 import qualified Parun.Types.BindPlayers as BindPlayers
@@ -1194,21 +1195,39 @@ moveCounters resolving source controller legal (MoveCounters.MkMoveCounters from
 -- own CR 701.34a choice, read off the board the previous one left. No
 -- printed row cancels the event; a cancelled one proliferates nothing.
 --
--- A slot is Powerful Broker's targeted form instead: its targets that CR
--- 608.2b left standing, read once (CR 608.2h). Not CR 701.34a's keyword action,
--- so no WouldPerform and no "whenever you proliferate" event.
-proliferate :: ObjectId -> PlayerId -> Map.Map SlotName (Set Recipient) -> Maybe SlotName -> Game ()
+-- A slot is the targeted form instead: its targets that CR 608.2b left
+-- standing, read once (CR 608.2h). Not CR 701.34a's keyword action, so no
+-- WouldPerform and no "whenever you proliferate" event. Powerful Broker's
+-- EachKind gives every kind there; Dathon, His Heart Open's ChosenKind gives
+-- one kind its controller picks among those on each target permanent, asked
+-- only where two or more kinds make it a choice. The scenarios
+-- dathon-his-heart-open-* prove it.
+proliferate :: ObjectId -> PlayerId -> Map.Map SlotName (Set Recipient) -> Maybe AnotherCounter.AnotherCounter -> Game ()
 proliferate source controller legal targeted = case targeted of
   Nothing -> do
     outcome <- Event.applyReplacements (ProposedEvent.WouldPerform PlayerInstruction.Proliferate Nothing controller 1)
     Monad.forM_ (outcome >>= Replacement.asPerformed PlayerInstruction.Proliferate) $ \(_, times) ->
       Monad.replicateM_ (Natural.toIntSaturating times) (Common.proliferateOnce source controller)
-  Just slot -> do
+  Just (AnotherCounter.EachKind slot) -> do
     gs <- State.get
-    let recipients = Set.toList (Map.findWithDefault Set.empty slot legal)
-        permanents = Maybe.mapMaybe Recipient.objectOf recipients
-        players = [pid | Recipient.ToPlayer pid <- recipients]
+    let (permanents, players) = inSlot slot
     Common.giveAnotherOfEachKind source controller gs permanents players
+  -- Unprinted: a player in a ChosenKind slot gets nothing, no printing
+  -- choosing among a player's counters; Parun.CardSpec's
+  -- cardChosenKindReachesPlayer keeps it out of card data.
+  Just (AnotherCounter.ChosenKind slot) -> do
+    gs <- State.get
+    -- Every kind is read before any counter lands (CR 608.2h), and the kind
+    -- chosen is FILTERED, NOT TRUSTED (Game.chooseAmong).
+    picks <- Monad.forM (fst (inSlot slot)) $ \oid ->
+      fmap ((,) oid) (Game.chooseAmong (\decider who -> Prompt.ChooseCounterKind decider who (CounterKindFor.AnotherOn oid)) controller (Common.objectKinds gs oid))
+    -- CR 122.6: through the single funnel, one CR 608.2f bracket.
+    Event.simultaneously . Monad.forM_ picks $ \(oid, picked) ->
+      Monad.forM_ picked $ \kind -> Event.putCounters (CounterCause.ByEffect controller) oid kind 1
+  where
+    inSlot slot =
+      let recipients = Set.toList (Map.findWithDefault Set.empty slot legal)
+       in (Maybe.mapMaybe Recipient.objectOf recipients, [pid | Recipient.ToPlayer pid <- recipients])
 
 -- CR 701.39a: "bolster N" -- put N +1/+1 counters on a creature you control
 -- with the least toughness, or tied for least. The prompt is raised only for a

@@ -1,0 +1,154 @@
+{
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "battlefield": [
+          {
+            "card": "Captain Jonathan Archer",
+            "label": "archer",
+            "ready": true
+          },
+          {
+            "card": "Forest",
+            "label": "f1"
+          },
+          {
+            "card": "Llanowar Elves",
+            "label": "elves",
+            "ready": true,
+            "tapped": true
+          },
+          {
+            "card": "Grizzly Bears",
+            "label": "bears",
+            "ready": true
+          },
+          {
+            "card": "Grizzly Bears",
+            "label": "bears2",
+            "ready": true
+          },
+          {
+            "card": "Free Borg Revolutionaries",
+            "label": "borg",
+            "ready": true
+          },
+          {
+            "card": "Woodland Changeling",
+            "label": "changeling",
+            "ready": true
+          },
+          {
+            "card": "Dryad Arbor",
+            "label": "arbor",
+            "ready": true,
+            "tapped": true
+          }
+        ],
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ],
+        "name": "alice"
+      },
+      {
+        "battlefield": [
+          {
+            "card": "Hill Giant",
+            "label": "giant"
+          }
+        ],
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ],
+        "name": "bob"
+      }
+    ],
+    "step": "PrecombatMain"
+  },
+  "description": "CR 205.3m / 702.73a: Captain Jonathan Archer's Federation ability gives target creature alice controls +X/+X, X the number of creature types among non-Borg creatures she controls",
+  "note": "Archer adds Human and Officer; alice's Llanowar Elves, two Grizzly Bears and Dryad Arbor add Elf, Druid, Bear and Dryad, the Arbor's Forest no creature type; Free Borg Revolutionaries (Borg Rebel) and Woodland Changeling (every creature type, so a Borg, CR 702.73a) are Borg and add none; bob's Hill Giant is not alice's. X is 6, so the Bears become 8/8. Counting creatures would make 7.",
+  "timeline": [
+    {
+      "do": {
+        "Activate": {
+          "ability": 0,
+          "mana": [
+            "$f1"
+          ],
+          "object": "$archer",
+          "targets": [
+            "$bears"
+          ]
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "PowerToughness": {
+          "object": "$bears",
+          "power": 8,
+          "toughness": 8
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "PowerToughness": {
+          "object": "$bears2",
+          "power": 2,
+          "toughness": 2
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    }
+  ]
+}

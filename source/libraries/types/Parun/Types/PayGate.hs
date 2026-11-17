@@ -112,8 +112,11 @@ data PayGate = MkPayGate
     obligation :: PayObligation.PayObligation,
     -- | The "for each" the cost above is multiplied by, one whole copy of the
     -- cost per thing counted -- Rakshasa's Disdain's "pays {1} for each card in
-    -- your graveyard", CR 702.24a's "for each age counter on it". Nothing is the
-    -- unmultiplied case Mana Leak and every other unscaled gate writes.
+    -- your graveyard", CR 702.24a's "for each age counter on it" -- or the
+    -- number an earlier Effect.ChooseNumber binds, Leyline Tyrant's "pay any
+    -- amount of {R}" (CR 107.1c), which keeps every mana red where `x` below
+    -- would let any type pay. Nothing is the unmultiplied case Mana Leak and
+    -- every other unscaled gate writes.
     --
     -- ZERO leaves no copies of the cost, which Parun.Engine.Cost.repeated answers
     -- for in the cost's own terms: {0} when the cost has a mana part, which CR

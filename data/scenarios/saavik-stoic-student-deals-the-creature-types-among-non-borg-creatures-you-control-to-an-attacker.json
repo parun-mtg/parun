@@ -1,0 +1,180 @@
+{
+  "board": {
+    "active": "bob",
+    "seats": [
+      {
+        "battlefield": [
+          {
+            "card": "Ancient Brontodon",
+            "label": "maw",
+            "ready": true
+          },
+          {
+            "card": "Hill Giant",
+            "label": "giant",
+            "ready": true
+          }
+        ],
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ],
+        "name": "bob"
+      },
+      {
+        "battlefield": [
+          {
+            "card": "Plains",
+            "label": "p1"
+          },
+          {
+            "card": "Plains",
+            "label": "p2"
+          },
+          {
+            "card": "Plains",
+            "label": "p3"
+          },
+          {
+            "card": "Plains",
+            "label": "p4"
+          },
+          {
+            "card": "Plains",
+            "label": "p5"
+          },
+          {
+            "card": "Llanowar Elves",
+            "label": "elves",
+            "ready": true,
+            "tapped": true
+          },
+          {
+            "card": "Grizzly Bears",
+            "label": "bears",
+            "ready": true
+          },
+          {
+            "card": "Grizzly Bears",
+            "label": "bears2",
+            "ready": true
+          },
+          {
+            "card": "Free Borg Revolutionaries",
+            "label": "borg",
+            "ready": true
+          },
+          {
+            "card": "Woodland Changeling",
+            "label": "changeling",
+            "ready": true
+          },
+          {
+            "card": "Dryad Arbor",
+            "label": "arbor",
+            "ready": true,
+            "tapped": true
+          }
+        ],
+        "hand": [
+          {
+            "card": "Saavik, Stoic Student",
+            "label": "saavik"
+          }
+        ],
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ],
+        "name": "alice"
+      }
+    ],
+    "step": "BeginningOfCombat"
+  },
+  "description": "Saavik, Stoic Student, flashed in during bob's attack, deals X damage to target attacking creature an opponent controls, X the number of creature types among non-Borg creatures alice controls",
+  "note": "Saavik adds Vulcan and Advisor; alice's Llanowar Elves, two Grizzly Bears and Dryad Arbor add Elf, Druid, Bear and Dryad, the Arbor's Forest no creature type; Free Borg Revolutionaries (Borg Rebel) and Woodland Changeling (every creature type, so a Borg, CR 702.73a) are Borg and add none; bob's Hill Giant is not alice's. X is 6 damage to the attacking 9/9 Ancient Brontodon; counting creatures would deal 7. bob's Hill Giant is not attacking and no legal target.",
+  "timeline": [
+    {
+      "do": {
+        "Attack": [
+          "$maw"
+        ]
+      },
+      "player": "bob",
+      "step": "DeclareAttackers",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Cast": {
+          "mana": [
+            "$p1",
+            "$p2",
+            "$p3",
+            "$p4",
+            "$p5"
+          ],
+          "object": "$saavik"
+        }
+      },
+      "player": "alice",
+      "step": "DeclareAttackers",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "DeclareAttackers",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "DeclareAttackers",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Damage": {
+          "damage": 6,
+          "object": "$maw"
+        }
+      },
+      "player": "alice",
+      "step": "DeclareAttackers",
+      "turn": 1
+    }
+  ]
+}

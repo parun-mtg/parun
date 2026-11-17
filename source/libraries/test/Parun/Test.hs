@@ -79,6 +79,7 @@ import qualified Parun.Codec.AlternativeActivationCostSpec
 import qualified Parun.Codec.AlternativeCostSpec
 import qualified Parun.Codec.AmassKindSpec
 import qualified Parun.Codec.AnchorSpec
+import qualified Parun.Codec.AnotherCounterSpec
 import qualified Parun.Codec.AnswerSpec
 import qualified Parun.Codec.AnyNumberDiscardSpec
 import qualified Parun.Codec.AnyNumberMatchingSpec
@@ -1184,6 +1185,7 @@ spec s reference corpus = do
   Parun.Codec.AffectedSpec.spec s
   Parun.Codec.AffectedUnlessSpec.spec s
   Parun.Codec.AnchorSpec.spec s
+  Parun.Codec.AnotherCounterSpec.spec s
   Parun.Codec.AloneAmongSpec.spec s
   Parun.Codec.AloneUnlessSpec.spec s
   Parun.Codec.AffectPlayersSpec.spec s

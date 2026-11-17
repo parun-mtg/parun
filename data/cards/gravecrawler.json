@@ -3,7 +3,7 @@
     {
       "castingPermissions": [
         {
-          "type": "CastFromGraveyard",
+          "type": "CastFrom",
           "value": {
             "condition": {
               "type": "Compares",
@@ -48,7 +48,8 @@
                   "value": 1
                 }
               }
-            }
+            },
+            "from": "Graveyard"
           }
         }
       ],

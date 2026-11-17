@@ -40,6 +40,7 @@ import qualified Parun.Types.Again as Again
 import qualified Parun.Types.AimedAt as AimedAt
 import qualified Parun.Types.AimedPlayers as AimedPlayers
 import qualified Parun.Types.Amass as Amass.Type
+import qualified Parun.Types.AnotherCounter as AnotherCounter
 import qualified Parun.Types.Ante as Ante
 import qualified Parun.Types.AnyNumberDiscard as AnyNumberDiscard
 import qualified Parun.Types.AnyNumberMatching as AnyNumberMatching
@@ -1213,7 +1214,7 @@ slotsOf effect = joinTwo (joinTwo (joinSlots (fmap objectRefSlots (effectObjectR
       (maybe Map.empty oneSlot subject)
   Effect.ExileAllGraveyards -> Map.empty
   -- The whole set: the arm gives every recipient in the slot its counters.
-  Effect.Proliferate slot -> foldMap (`Map.singleton` SlotArity.Many) slot
+  Effect.Proliferate targeted -> foldMap ((`Map.singleton` SlotArity.Many) . AnotherCounter.slotOf) targeted
   Effect.Rethrow -> Map.empty
   -- A READ: the slot names the permanent whose stored results are rerolled.
   Effect.RerollStoredResults slot -> oneSlot slot

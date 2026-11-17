@@ -11,4 +11,7 @@ data CounterKindFor
     -- as-enters exile took (Frankenstein's Monster's "a +2/+0, +1/+1, or +0/+2
     -- counter").
     EnteringWith ObjectId.ObjectId
+  | -- | CR 122.1: the kind among this object's counters it gets one more of
+    -- (Dathon, His Heart Open's "choose a counter on target enchantment").
+    AnotherOn ObjectId.ObjectId
   deriving (Eq, Ord, Show)

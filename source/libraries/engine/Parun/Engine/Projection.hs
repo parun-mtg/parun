@@ -3115,7 +3115,7 @@ gatherGiven stripped waited functioning seed gs =
       --
       -- CR 113.6f's classification gets no limb here, where fromGraveyardCard
       -- above has one: Keyword.permissionsFor turns a keyword only into
-      -- CastingPermission.CastFromGraveyard, so a keyword rule 702 turns into a
+      -- CastingPermission.CastFrom, so a keyword rule 702 turns into a
       -- permission to cast an object from somewhere can only ever name the
       -- GRAVEYARD, and a limb
       -- asking castZoneKeyword in any of these three zones could not answer
@@ -5370,6 +5370,7 @@ aggregationReads a = case a of
   Aggregation.Distinct DistinctOf.ColorSets -> Set.singleton Colors
   Aggregation.Distinct DistinctOf.BasicLandTypes -> Set.singleton Subtypes
   Aggregation.Distinct DistinctOf.NonbasicLandTypes -> Set.singleton Subtypes
+  Aggregation.Distinct DistinctOf.CreatureTypes -> Set.singleton Subtypes
   -- measureReads' reason: no Modification writes a mana cost.
   Aggregation.Distinct DistinctOf.ManaValues -> Set.empty
   Aggregation.Distinct DistinctOf.ManaCosts -> Set.empty
