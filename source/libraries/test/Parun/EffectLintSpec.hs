@@ -33,9 +33,12 @@ import qualified Data.Text as Text
 import Parun.CardSpec (Framing (SourceHostFramed), MintedKind (MintedEmblem), anyFace, cardAuthoredEffects, cardFilters, cardReplacementEffects, cardResolutionEffects, copyTargetsRefs, delayedDeclarations, durationConditions, effectFilters, effectMintedFaces, effectWithNested, enchantSlots, faceModals, frame, framedSlotsReadSingly, grantedActivatedAbilities, grantedModifications, grantedTriggeredAbilities, instantLine, mintedFaces, mintedFacesTagged, objectRefFilters, oneFaced, overFaces, replacementEffectRiders, restrictionFilters, spellLine, triggerConditionFilters, triggerConditionSlots, vanillaFace)
 import qualified Parun.Codec.Card as Card.Codec
 import qualified Parun.Codec.Face as Face.Codec
+import qualified Parun.Codec.Keyword as Keyword.Codec
+import qualified Parun.Codec.Scope as Scope.Codec
 import qualified Parun.Engine.Binding as Binding
 import qualified Parun.Engine.Card as Card
 import qualified Parun.Engine.Children as Children
+import qualified Parun.Engine.Game as Game
 import qualified Parun.Engine.Mint as Mint
 import qualified Parun.Engine.PlayerEffect as PlayerEffect.Engine
 import qualified Parun.Engine.Projection as Projection
@@ -43,7 +46,9 @@ import qualified Parun.Engine.QuantitySlot as QuantitySlot
 import qualified Parun.Engine.Resolve.Slots as Resolve
 import qualified Parun.Engine.Subtype as Subtype.Engine
 import qualified Parun.Extra.Natural as Natural
-import Parun.FilterPositionLintSpec (jsonAtoms)
+import Parun.FilterPositionLintSpec (jsonAtoms, occurrences)
+import qualified Parun.Json.Array as Array
+import qualified Parun.Json.Value as Value
 import qualified Parun.JsonCodec.Codec as Codec
 import qualified Parun.Oracle.Normalise as Normalise
 import qualified Parun.Registry as Registry
@@ -67,6 +72,7 @@ import qualified Parun.Types.AttachTarget as AttachTarget
 import qualified Parun.Types.AttachedToBound as AttachedToBound
 import qualified Parun.Types.AttackTargetRef as AttackTargetRef
 import qualified Parun.Types.BecomeCopy as BecomeCopy
+import qualified Parun.Types.BoundReading as BoundReading
 import qualified Parun.Types.Card as Card.Type
 import qualified Parun.Types.CardName as CardName
 import qualified Parun.Types.CardSelection as CardSelection
@@ -229,6 +235,7 @@ import qualified Parun.Types.RollDie as RollDie
 import qualified Parun.Types.RoomIndex as RoomIndex
 import qualified Parun.Types.SacrificeEffect as SacrificeEffect
 import qualified Parun.Types.Scaling as Scaling
+import qualified Parun.Types.Scope as Scope
 import qualified Parun.Types.Search as Search
 import qualified Parun.Types.SearchDestination as SearchDestination
 import qualified Parun.Types.SetClassLevel as SetClassLevel
@@ -4175,6 +4182,24 @@ effectLintSpec s registry corpus = Spec.describe s "Lint" $ do
     Spec.assertBool s (not (anyFace thatCombatPhaseOffends (Printing.card bumi))) "the real Bumi, Unleashed is accepted"
     Spec.assertBool s (thatCombatPhaseOffends planted) "a restriction naming no added phase is rejected"
 
+  -- CR 400.7j / 608.2h, swept over the pool. See hiddenMoveCountOffends.
+  Spec.it s "CR 400.7j no card counts a slot an unrevealed move put into a hidden zone as bound" $ do
+    ps <- S.allPrintings s corpus
+    let offenders = filter (anyFace hiddenMoveCountOffends . Printing.card) ps
+    Spec.assertEqWith s "no unrevealed hidden arrival is counted as bound" (fmap (S.nameOf . Printing.card) offenders) []
+  -- Both directions on real cards: Dark Confidant reveals what it puts into its
+  -- hand, and Nurturing Pixie reads its returned permanent as it was; the same
+  -- Pixie read as bound is the shape #8062 reported.
+  Spec.it s "the lint itself catches a hidden arrival counted as bound" $ do
+    confidant <- S.printingOf s registry "Dark Confidant"
+    pixie <- S.printingOf s registry "Nurturing Pixie"
+    let face = S.combinedFace pixie
+        slots = hiddenMoveSlots (cardAuthoredEffects face)
+    Spec.assertBool s (not (anyFace hiddenMoveCountOffends (Printing.card confidant))) "the real Dark Confidant is accepted"
+    Spec.assertBool s (not (hiddenMoveCountOffends face)) "the real Nurturing Pixie is accepted"
+    Spec.assertBool s (not (null slots)) "Nurturing Pixie binds its unrevealed return"
+    Spec.assertBool s (hiddenMoveCountOffendsIn (cardAuthoredEffects face) (Value.Array (Array.MkArray (fmap asBound slots)))) "the return counted as bound is rejected"
+
 spec :: (Monad n) => Spec.Spec IO n -> Registry.Registry IO -> [(FilePath, Either Text.Text Card.Type.Card)] -> n ()
 spec s registry corpus = Spec.describe s "Parun.Engine.Card" $ do
   effectLintSpec s registry corpus
@@ -4265,3 +4290,31 @@ spendableUntilUseds card =
         Effect.ArmDelayedTrigger arm -> ArmDelayedTrigger.duration arm == Just (Duration.UntilUsed Nothing)
         _ -> False
    in length (filter spendable (cardAuthoredEffects card))
+
+-- CR 400.7j / 608.2h: Scope.OverBound's AsBound reading finds a bound arrival
+-- only in a public zone or where it was revealed (Parun.Engine.Count's
+-- findableAfterMove), so counting one that a MoveToZone put unrevealed into a
+-- hand or library always reads nothing; "returned this way" is
+-- BoundReading.BeforeMove's last known information (Nurturing Pixie). A move
+-- whose ref is a revealed slot's is exempt: Dark Confidant.
+hiddenMoveCountOffends :: Face.Face Card.Type.Card -> Bool
+hiddenMoveCountOffends card = hiddenMoveCountOffendsIn (cardAuthoredEffects card) (Codec.encode (Face.Codec.codec Card.Codec.codec) card)
+
+-- hiddenMoveCountOffends over a face's effects and its encoding, which is
+-- where a clause condition's Count is reached too.
+hiddenMoveCountOffendsIn :: [Effect.Effect Card.Type.Card (GrantedAbility.GrantedAbility Card.Type.Card)] -> Value.Value -> Bool
+hiddenMoveCountOffendsIn effects encoded = any (\slot -> occurrences (asBound slot) encoded /= 0) (hiddenMoveSlots effects)
+
+-- The slots a MoveToZone binds to its arrivals in a hidden zone, its ref not
+-- a revealed slot's.
+hiddenMoveSlots :: [Effect.Effect Card.Type.Card (GrantedAbility.GrantedAbility Card.Type.Card)] -> [SlotName.SlotName]
+hiddenMoveSlots effects =
+  let revealed = [slot | Effect.Reveal r <- effects, Just slot <- [Reveal.slot r]]
+      unrevealed ref = case ref of
+        ObjectRef.InSlot slot -> notElem slot revealed
+        _ -> True
+   in [slot | Effect.MoveToZone m <- effects, Game.isHiddenZone (MoveToZone.zone m), unrevealed (MoveToZone.ref m), Just slot <- [MoveToZone.slot m]]
+
+-- Scope.OverBound's AsBound reading of a slot, encoded, as a needle.
+asBound :: SlotName.SlotName -> Value.Value
+asBound slot = Codec.encode (Scope.Codec.codec Keyword.Codec.codec) (Scope.OverBound BoundReading.AsBound slot :: Scope.Scope Keyword.Keyword)
