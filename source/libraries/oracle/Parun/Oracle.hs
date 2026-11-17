@@ -188,7 +188,7 @@ deckLimit self limit =
 -- | What an ability of the card named `self` renders in, `host` being what an
 -- aura's or equipment's ability calls the object it is attached to.
 contextOf :: Text.Text -> [Text.Text] -> Target.Context
-contextOf self = Target.MkContext self Map.empty (Keyword.keywordWord self) [Text.pack " "] Map.empty [] [] [] []
+contextOf self host = Target.MkContext self Map.empty (Keyword.keywordWord self) [Text.pack " "] Map.empty [] [] [] [] host self
 
 -- | A triggered ability: "[When/Whenever/At] [trigger event], [effect]" (CR
 -- 603.1), the effect calling the source "it" once the event has named it

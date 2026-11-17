@@ -600,7 +600,16 @@ counted context n comparison k = case Count.scope n of
           -- (Knight of Grace).
           [] ->
             let be = if number == Filter.Singular then Text.pack "is" else Text.pack "are"
-             in [Text.pack "there " <> be <> Text.pack " " <> some <> Text.pack " on the battlefield", some <> Text.pack " " <> be <> Text.pack " on the battlefield"] <> [Text.pack "any player controls " <> some | comparison == Comparison.AtLeast, k == 1]
+                -- Free for one attacker: "a Rat is attacking" (Charging
+                -- Hooligan).
+                attacking = do
+                  Monad.guard (comparison == Comparison.AtLeast && k == 1)
+                  others <- [filter (/= Filter.Type.IsAttacking Nothing) rest]
+                  Monad.guard (length others < length rest && not (null others))
+                  q <- Filter.phrase (Filter.Type.And others) (Target.keyword context)
+                  one <- Filter.describe Filter.Singular Target.permanent q
+                  [Prose.article one <> Text.pack " " <> one <> Text.pack " is attacking"]
+             in [Text.pack "there " <> be <> Text.pack " " <> some <> Text.pack " on the battlefield", some <> Text.pack " " <> be <> Text.pack " on the battlefield"] <> [Text.pack "any player controls " <> some | comparison == Comparison.AtLeast, k == 1] <> attacking
           _ -> []
       _ -> []
   _ -> []

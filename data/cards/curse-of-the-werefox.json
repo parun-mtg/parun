@@ -1,0 +1,189 @@
+{
+  "faces": [
+    {
+      "delayedAbilities": {
+        "fight when you do": {
+          "condition": {
+            "type": "Reflexive"
+          },
+          "modal": {
+            "modes": [
+              {
+                "clauses": [
+                  {
+                    "effects": [
+                      {
+                        "type": "Fight",
+                        "value": {
+                          "first": "creature",
+                          "second": "victim"
+                        }
+                      }
+                    ]
+                  }
+                ],
+                "targetSlots": {
+                  "victim": {
+                    "count": {
+                      "type": "Printed",
+                      "value": {
+                        "least": 0,
+                        "most": 1
+                      }
+                    },
+                    "filter": {
+                      "type": "Not",
+                      "value": {
+                        "type": "HeldBy",
+                        "value": {
+                          "holder": "Controller",
+                          "relation": "You"
+                        }
+                      }
+                    },
+                    "pool": {
+                      "type": "Creatures"
+                    }
+                  }
+                }
+              }
+            ]
+          }
+        }
+      },
+      "manaCost": [
+        {
+          "type": "Generic",
+          "value": 2
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "Green"
+          }
+        }
+      ],
+      "name": "Curse of the Werefox",
+      "oracleText": "Create a Monster Role token attached to target creature you control. When you do, that creature fights up to one target creature you don't control. (If you control another Role on it, put that one into the graveyard. Enchanted creature gets +1/+1 and has trample. Creatures that fight each deal damage equal to their power to the other.)",
+      "spell": {
+        "modes": [
+          {
+            "clauses": [
+              {
+                "effects": [
+                  {
+                    "type": "Create",
+                    "value": {
+                      "card": {
+                        "faces": [
+                          {
+                            "enchant": [
+                              {
+                                "pool": {
+                                  "type": "Creatures"
+                                }
+                              }
+                            ],
+                            "name": "Monster",
+                            "staticAbilities": [
+                              {
+                                "affected": {
+                                  "type": "Matching",
+                                  "value": {
+                                    "type": "And",
+                                    "value": [
+                                      {
+                                        "type": "HasCardType",
+                                        "value": "Creature"
+                                      },
+                                      {
+                                        "type": "HasAttached",
+                                        "value": {
+                                          "type": "IsSource"
+                                        }
+                                      }
+                                    ]
+                                  }
+                                },
+                                "modifications": [
+                                  {
+                                    "type": "ModifyPowerToughness",
+                                    "value": {
+                                      "power": {
+                                        "type": "Literal",
+                                        "value": 1
+                                      },
+                                      "toughness": {
+                                        "type": "Literal",
+                                        "value": 1
+                                      }
+                                    }
+                                  },
+                                  {
+                                    "type": "GainKeyword",
+                                    "value": {
+                                      "type": "Trample"
+                                    }
+                                  }
+                                ]
+                              }
+                            ],
+                            "typeLine": {
+                              "subtypes": [
+                                "Aura",
+                                "Role"
+                              ],
+                              "types": [
+                                "Enchantment"
+                              ]
+                            }
+                          }
+                        ]
+                      },
+                      "quantity": {
+                        "type": "Literal",
+                        "value": 1
+                      },
+                      "riders": {
+                        "attachedTo": {
+                          "type": "Specified",
+                          "value": "creature"
+                        }
+                      }
+                    }
+                  },
+                  {
+                    "type": "ArmDelayedTrigger",
+                    "value": {
+                      "name": "fight when you do"
+                    }
+                  }
+                ]
+              }
+            ],
+            "targetSlots": {
+              "creature": {
+                "filter": {
+                  "type": "HeldBy",
+                  "value": {
+                    "holder": "Controller",
+                    "relation": "You"
+                  }
+                },
+                "pool": {
+                  "type": "Creatures"
+                }
+              }
+            }
+          }
+        ]
+      },
+      "typeLine": {
+        "types": [
+          "Sorcery"
+        ]
+      }
+    }
+  ]
+}

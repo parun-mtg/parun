@@ -387,7 +387,11 @@ clause context c
       -- mastery).
       words' <- ListUtils.nubOrd [plain, Text.replace (Text.pack "instant or sorcery cards") (Text.pack "instant and/or sorcery cards") plain]
       word <- Trigger.abilityWord words'
-      (body, ms) <- clause (if itself then context {Target.self = Text.pack "it"} else context) c {Clause.condition = Nothing}
+      -- Free: a source the sentences before called "it" is named again
+      -- after a condition about something else (Charging Hooligan).
+      let again = ObjectRef.InSlot Target.selfSlot
+      renamed <- if itself then [context {Target.self = Text.pack "it"}] else context : [context {Target.self = Target.ownName context, Target.earlier = filter (/= again) (Target.earlier context)} | Target.self context == Text.pack "it" || elem again (Target.earlier context)]
+      (body, ms) <- clause renamed c {Clause.condition = Nothing}
       -- Free: "also" before instructions that add to the ones before them
       -- (Dark Dabbling).
       opened <- [lowered context body, Text.pack "also " <> lowered context body]

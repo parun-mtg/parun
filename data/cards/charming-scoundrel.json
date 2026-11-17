@@ -1,0 +1,295 @@
+{
+  "faces": [
+    {
+      "keywords": [
+        {
+          "type": "Haste"
+        }
+      ],
+      "manaCost": [
+        {
+          "type": "Generic",
+          "value": 1
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "Red"
+          }
+        }
+      ],
+      "name": "Charming Scoundrel",
+      "oracleText": "Haste\nWhen this creature enters, choose one —\n• Discard a card, then draw a card.\n• Create a Treasure token.\n• Create a Wicked Role token attached to target creature you control.",
+      "power": {
+        "type": "Literal",
+        "value": 1
+      },
+      "toughness": {
+        "type": "Literal",
+        "value": 1
+      },
+      "triggeredAbilities": [
+        {
+          "condition": {
+            "type": "Enters",
+            "value": {}
+          },
+          "modal": {
+            "modes": [
+              {
+                "clauses": [
+                  {
+                    "effects": [
+                      {
+                        "type": "Discard",
+                        "value": {
+                          "type": "Counted",
+                          "value": {
+                            "player": {
+                              "type": "Relative",
+                              "value": "You"
+                            },
+                            "quantity": {
+                              "type": "Literal",
+                              "value": 1
+                            }
+                          }
+                        }
+                      },
+                      {
+                        "type": "Draw",
+                        "value": {
+                          "player": {
+                            "type": "Relative",
+                            "value": "You"
+                          },
+                          "quantity": {
+                            "type": "Literal",
+                            "value": 1
+                          }
+                        }
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "clauses": [
+                  {
+                    "effects": [
+                      {
+                        "type": "Create",
+                        "value": {
+                          "card": {
+                            "faces": [
+                              {
+                                "activatedAbilities": [
+                                  {
+                                    "cost": {
+                                      "components": [
+                                        {
+                                          "type": "TapThis"
+                                        },
+                                        {
+                                          "type": "SacrificeThis"
+                                        }
+                                      ],
+                                      "mana": []
+                                    },
+                                    "modal": {
+                                      "modes": [
+                                        {
+                                          "clauses": [
+                                            {
+                                              "effects": [
+                                                {
+                                                  "type": "AddMana",
+                                                  "value": {
+                                                    "production": {
+                                                      "type": "AnyColor"
+                                                    }
+                                                  }
+                                                }
+                                              ]
+                                            }
+                                          ]
+                                        }
+                                      ]
+                                    }
+                                  }
+                                ],
+                                "name": "Treasure Token",
+                                "typeLine": {
+                                  "subtypes": [
+                                    "Treasure"
+                                  ],
+                                  "types": [
+                                    "Artifact"
+                                  ]
+                                }
+                              }
+                            ]
+                          },
+                          "quantity": {
+                            "type": "Literal",
+                            "value": 1
+                          }
+                        }
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "clauses": [
+                  {
+                    "effects": [
+                      {
+                        "type": "Create",
+                        "value": {
+                          "card": {
+                            "faces": [
+                              {
+                                "enchant": [
+                                  {
+                                    "pool": {
+                                      "type": "Creatures"
+                                    }
+                                  }
+                                ],
+                                "name": "Wicked",
+                                "staticAbilities": [
+                                  {
+                                    "affected": {
+                                      "type": "Matching",
+                                      "value": {
+                                        "type": "And",
+                                        "value": [
+                                          {
+                                            "type": "HasCardType",
+                                            "value": "Creature"
+                                          },
+                                          {
+                                            "type": "HasAttached",
+                                            "value": {
+                                              "type": "IsSource"
+                                            }
+                                          }
+                                        ]
+                                      }
+                                    },
+                                    "modifications": [
+                                      {
+                                        "type": "ModifyPowerToughness",
+                                        "value": {
+                                          "power": {
+                                            "type": "Literal",
+                                            "value": 1
+                                          },
+                                          "toughness": {
+                                            "type": "Literal",
+                                            "value": 1
+                                          }
+                                        }
+                                      }
+                                    ]
+                                  }
+                                ],
+                                "triggeredAbilities": [
+                                  {
+                                    "condition": {
+                                      "type": "Leaves",
+                                      "value": {
+                                        "destinations": [
+                                          {
+                                            "zone": "Graveyard"
+                                          }
+                                        ]
+                                      }
+                                    },
+                                    "modal": {
+                                      "modes": [
+                                        {
+                                          "clauses": [
+                                            {
+                                              "effects": [
+                                                {
+                                                  "type": "LoseLife",
+                                                  "value": {
+                                                    "player": {
+                                                      "type": "Relative",
+                                                      "value": "Opponent"
+                                                    },
+                                                    "quantity": {
+                                                      "type": "Literal",
+                                                      "value": 1
+                                                    }
+                                                  }
+                                                }
+                                              ]
+                                            }
+                                          ]
+                                        }
+                                      ]
+                                    }
+                                  }
+                                ],
+                                "typeLine": {
+                                  "subtypes": [
+                                    "Aura",
+                                    "Role"
+                                  ],
+                                  "types": [
+                                    "Enchantment"
+                                  ]
+                                }
+                              }
+                            ]
+                          },
+                          "quantity": {
+                            "type": "Literal",
+                            "value": 1
+                          },
+                          "riders": {
+                            "attachedTo": {
+                              "type": "Specified",
+                              "value": "target"
+                            }
+                          }
+                        }
+                      }
+                    ]
+                  }
+                ],
+                "targetSlots": {
+                  "target": {
+                    "filter": {
+                      "type": "HeldBy",
+                      "value": {
+                        "holder": "Controller",
+                        "relation": "You"
+                      }
+                    },
+                    "pool": {
+                      "type": "Creatures"
+                    }
+                  }
+                }
+              }
+            ]
+          }
+        }
+      ],
+      "typeLine": {
+        "subtypes": [
+          "Human",
+          "Rogue"
+        ],
+        "types": [
+          "Creature"
+        ]
+      }
+    }
+  ]
+}

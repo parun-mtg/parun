@@ -2438,10 +2438,10 @@ reservedBindings = Set.intersection reservedSlots . boundSlots
 -- Nalaar Aetherjet". The same half of rule 111.4 as the legendary case, but
 -- nothing in the card data marks it, so this is a hand-kept list rather than a
 -- predicate. CR 111.10's named predefined tokens are listed too (111.10j's
--- Cursed, 111.10k's Monster, 111.10m's Royal, 111.10q's Wicked); 111.10d's
--- Walker, the other Roles and the copy tokens of CR 111.4's own Spitting Image
--- example (named Doomed Dissenter, "not Human Token or Doomed Dissenter Token")
--- will each want a line here as their cards arrive.
+-- Cursed, 111.10k's Monster, 111.10m's Royal, 111.10q's Wicked, 111.10r's Young
+-- Hero); 111.10d's Walker, the other Roles and the copy tokens of CR 111.4's own
+-- Spitting Image example (named Doomed Dissenter, "not Human Token or Doomed
+-- Dissenter Token") will each want a line here as their cards arrive.
 namedTokens :: Set.Set CardName.CardName
 namedTokens =
   Set.fromList
@@ -2515,7 +2515,9 @@ namedTokens =
       CardName.MkCardName (Text.pack "Wicked"),
       -- Master of the Hunt's "a 1/1 green Wolf creature token named Wolves of
       -- the Hunt".
-      CardName.MkCardName (Text.pack "Wolves of the Hunt")
+      CardName.MkCardName (Text.pack "Wolves of the Hunt"),
+      -- CR 111.10r's Young Hero Role (Cut In).
+      CardName.MkCardName (Text.pack "Young Hero")
     ]
 
 tokenNameOffends :: Face.Face Card.Type.Card -> Bool
