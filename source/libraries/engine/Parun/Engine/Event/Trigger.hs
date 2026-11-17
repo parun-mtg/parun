@@ -22,7 +22,7 @@ import qualified Parun.Engine.Condition as Condition
 import qualified Parun.Engine.Decide as Decide
 import qualified Parun.Engine.EffectZone as EffectZone
 import Parun.Engine.Event.Binding (attackCausers, batchBindings, batchPartition, countersMovedOn, eventBindingsOver)
-import Parun.Engine.Event.Match (additionalAttackTriggers, additionalMoveTriggers, additionalTriggers, bearerTriggers, gameAfter, leavesZoneLooksBack, matchesTriggerGiven, putIntoZoneLooksBack, stepPlayers)
+import Parun.Engine.Event.Match (additionalAttackTriggers, additionalLifeGainTriggers, additionalMoveTriggers, additionalTriggers, bearerTriggers, gameAfter, leavesZoneLooksBack, matchesTriggerGiven, putIntoZoneLooksBack, stepPlayers)
 import qualified Parun.Engine.Expiry as Expiry
 import qualified Parun.Engine.Filter as Filter
 import qualified Parun.Engine.Game as Game
@@ -2436,10 +2436,12 @@ eventTriggersGiven scope standing events gs =
             -- of All) adds to one that names the entry. So may a creature
             -- attacking (Windcrag Siege), counted over the creatures whose
             -- attacking was the event (Binding.attackCausers, Firebender
-            -- Ascension's reading).
+            -- Ascension's reading). So may the controller gaining life (Dr.
+            -- Beverly Crusher), the gain being the event.
             additional (cond, ab) =
               additionalTriggers gs (controllerFor cond) oid ab (LoggedEvent.group logged) (looksBack cond)
                 + additionalAttackTriggers gs (controllerFor cond) oid (LoggedEvent.group logged) (looksBack cond) (attackCausers gs oid (controllerFor cond) cond event)
+                + additionalLifeGainTriggers gs (controllerFor cond) oid (LoggedEvent.group logged) (looksBack cond) event
                 + case Game.enteredBattlefieldChange event of
                   Just zc -> additionalMoveTriggers gs (controllerFor cond) oid (LoggedEvent.group logged) (looksBack cond) zc
                   _ -> maybe 0 (additionalMoveTriggers gs (controllerFor cond) oid (LoggedEvent.group logged) (looksBack cond)) (Monad.mfilter Game.dies (movedOf event))

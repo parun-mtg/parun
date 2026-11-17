@@ -1,6 +1,6 @@
 module Parun.Types.TriggeringMove where
 
--- | Which event of a permanent an effect changes the triggering of
+-- | Which event an effect changes the triggering of
 -- (Parun.Types.EntriesTrigger).
 data TriggeringMove
   = -- | CR 603.6a: the permanent entering the battlefield.
@@ -12,4 +12,7 @@ data TriggeringMove
     -- Not implemented: an attack that doesn't cause abilities to trigger
     -- (EntryTriggering.NoTrigger) (#7726).
     Attacking
+  | -- | CR 119.9: the row's player gaining life; no permanent makes it, so
+    -- EntriesTrigger.entrants is unread (Parun.CardSpec's lint keeps it empty).
+    GainingLife
   deriving (Bounded, Enum, Eq, Ord, Show)

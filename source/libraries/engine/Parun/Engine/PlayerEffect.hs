@@ -1339,19 +1339,19 @@ schemesCantBeSetInMotion gs =
 entryTriggerings :: PlayerId -> ObjectId -> ObjectId -> GameState -> [EntryTriggering.EntryTriggering]
 entryTriggerings pid entrant bearer gs = moveTriggerings TriggeringMove.Entering pid [entrant] (bearer, gs) gs gs
 
--- CR 603.6a / 603.2d / 700.4 / 508.3 / 613.11 / 101.2: how the effects
+-- CR 603.6a / 603.2d / 700.4 / 508.3 / 119.9 / 613.11 / 101.2: how the effects
 -- applying to `pid` in `effects` change the triggering of `pid`'s abilities of
--- the bearer that `subjects` making `move` cause to trigger, one entry per
--- effect admitting any of them (Windcrag Siege's "a creature attacking", once
--- however many attackers caused it), with each subject read off `board`, and
--- the ability's bearer off the board paired with it. CR 109.5's "you" in
--- either filter is `pid`, not the object's controller (Traveling Chocobo's "a
+-- the bearer that `subjects` making `move`, or `pid` gaining life, cause to
+-- trigger, one entry per effect admitting any of them (Windcrag Siege's "a
+-- creature attacking", once however many attackers caused it), with each
+-- subject read off `board`, and the ability's bearer off the board paired with
+-- it. CR 109.5's "you" in either filter is `pid`, not the object's controller (Traveling Chocobo's "a
 -- land or Bird you control", The Masamune's "an emblem you own").
 moveTriggerings :: TriggeringMove.TriggeringMove -> PlayerId -> [ObjectId] -> (ObjectId, GameState) -> GameState -> GameState -> [EntryTriggering.EntryTriggering]
 moveTriggerings move pid subjects (bearer, atBearer) effects board =
   let triggering (source, effect) = case effect of
         PlayerEffect.EntriesTrigger entries ->
-          if EntriesTrigger.move entries == move && any (\subject -> matchesObjectFor pid source (EntriesTrigger.entrants entries) subject board) subjects && matchesObjectFor pid source (EntriesTrigger.bearers entries) bearer atBearer
+          if EntriesTrigger.move entries == move && admitsSubjects source entries && matchesObjectFor pid source (EntriesTrigger.bearers entries) bearer atBearer
             then Just (EntriesTrigger.triggering entries)
             else Nothing
         PlayerEffect.BearersTrigger _ -> Nothing
@@ -1410,6 +1410,16 @@ moveTriggerings move pid subjects (bearer, atBearer) effects board =
         PlayerEffect.RevealsDraw _ -> Nothing
         PlayerEffect.Precluded _ -> Nothing
         PlayerEffect.Shows _ -> Nothing
+      -- CR 119.9: a life gain is no permanent's, so no entrant is read.
+      --
+      -- Unprinted: a life gain's doubler naming an entrant; Parun.CardSpec's
+      -- "no card names an entrant for a life gain" keeps it out of card data.
+      admitsSubjects source entries = case move of
+        TriggeringMove.Entering -> anySubject source entries
+        TriggeringMove.Dying -> anySubject source entries
+        TriggeringMove.Attacking -> anySubject source entries
+        TriggeringMove.GainingLife -> True
+      anySubject source entries = any (\subject -> matchesObjectFor pid source (EntriesTrigger.entrants entries) subject board) subjects
    in Maybe.mapMaybe triggering (applying pid effects)
 
 -- CR 603.6a / 613.11: does an effect keep `entrant` entering from triggering
