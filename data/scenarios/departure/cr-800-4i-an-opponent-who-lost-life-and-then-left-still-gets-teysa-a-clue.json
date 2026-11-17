@@ -56,7 +56,7 @@
     "step": "PrecombatMain"
   },
   "description": "CR 800.4i an opponent who lost life and then left still gets Teysa a Clue",
-  "note": "Three seats. Alice's Shock takes bob from 2 to 0, and they lose the game (CR 704.5a). At alice's end step bob still lost life this turn (Teysa, Opulent Oligarch's ruling), so she investigates once; carol lost none.",
+  "note": "Three seats. Alice's Shock takes bob from 2 to 0, and they lose the game (CR 704.5a). At alice's end step bob still lost life this turn (Teysa, Opulent Oligarch's ruling), so alice investigates once; carol lost none.",
   "timeline": [
     {
       "do": {
