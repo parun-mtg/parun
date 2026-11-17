@@ -3054,11 +3054,14 @@ matches context view predicate = case predicate of
 -- and never inspected further. The one reading of every criterion, shared by
 -- the ability on the stack (IsActivatedAbility), a past activation
 -- (Parun.Engine.Count.activationMeets) and one in progress
--- (Parun.Engine.PlayerEffect.activationCostAdjustmentsGiven).
+-- (Parun.Engine.PlayerEffect.activationCostAdjustmentsGiven). A name is
+-- compared as written (Binding.asWritten), so The Dominion Bracelet's "this
+-- ability" finds the ability it lends under the lender's name; its cost
+-- scenario cr-607-2a-fear-of-abduction-* proves it.
 abilityMeets :: ActivationCriteria.ActivationCriteria Keyword.Type.Keyword -> AbilityFacts.AbilityFacts -> Bool
 abilityMeets criteria facts =
   maybe True (\g -> any (Keyword.designates g) (AbilityFacts.keyword facts)) (ActivationCriteria.grantedBy criteria)
-    && maybe True ((== AbilityFacts.name facts) . Just) (ActivationCriteria.whichAbility criteria)
+    && maybe True ((== Binding.asWritten (AbilityFacts.name facts)) . Just) (ActivationCriteria.whichAbility criteria)
     && maybe True (== AbilityFacts.kind facts) (ActivationCriteria.whichKind criteria)
     && maybe True (== AbilityFacts.loyalty facts) (ActivationCriteria.whichLoyalty criteria)
 

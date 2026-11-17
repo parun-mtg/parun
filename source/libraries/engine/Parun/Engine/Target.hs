@@ -399,9 +399,10 @@ admittedListGiven reader pools perspective unannounced bindings acquisition sour
 -- bound's evaluation.
 --
 -- `reader` is the name of the ability announcing the slot (Filter.reader, CR
--- 607.5): ActivatedAbility.name at CR 602.2b, Resolve.Slots.resolvingAbilityName
--- at CR 608.2b and at CR 115.7's re-choice. Nothing for a spell, a triggered
--- ability and an enchant slot, every one of which reads as the source's own.
+-- 607.5): ActivatedAbility.name at CR 602.2b, TriggeredAbility.name at CR
+-- 603.3d, Resolve.Slots.resolvingAbilityName at CR 608.2b and at CR 115.7's
+-- re-choice. Nothing for a spell and an enchant slot, each of which reads as
+-- the source's own.
 -- Every announcement-side entry point takes it first; legalRecipients and the
 -- enchant-slot readers (admittedRecipients, stillAdmitted, lastKnownAdmits)
 -- pass Nothing.

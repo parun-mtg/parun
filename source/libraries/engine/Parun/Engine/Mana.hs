@@ -3838,7 +3838,9 @@ payableResolutionsGiven subject spending swept pcs pid committed committedEnergy
       -- GROUPWISE, one entry per sourceOptions group plus `claimed`, so one
       -- group's own claims meeting each other is not contention --
       -- Cost.repeatsOf has already measured that, and it is what `times` is.
-      groupClaimsOf supplies = fmap (Activations.claims . fst) (ListUtils.nubOrd (fmap (\(activations, _, manaCost, _) -> (activations, manaCost)) supplies))
+      -- Gift of Paradise's lent route and its land's intrinsic one are two
+      -- groups (groupsOf's lender) claiming one {T}; its scenarios prove it.
+      groupClaimsOf supplies = fmap (\((activations, _, _, _, _), _) -> Activations.claims activations) (groupsOf supplies)
       contested = Claim.contested (claimed : concatMap groupClaimsOf suppliesPer)
       board = boardClaims claimed suppliesPer
       energyHeld = Game.energyOf pid gs
