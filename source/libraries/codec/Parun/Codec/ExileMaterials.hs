@@ -17,4 +17,5 @@ codec keywordCodec = Fields.object $ do
   count <- Fields.required "count" Common.natural ExileMaterials.count
   orMore <- Fields.defaulted "orMore" False Common.boolean ExileMaterials.orMore
   whichObjects <- Fields.required "whichObjects" (Filter.codec keywordCodec) ExileMaterials.whichObjects
-  pure ExileMaterials.MkExileMaterials {ExileMaterials.count = count, ExileMaterials.orMore = orMore, ExileMaterials.whichObjects = whichObjects}
+  oneEach <- Fields.defaulted "oneEach" [] (Common.list (Filter.codec keywordCodec)) ExileMaterials.oneEach
+  pure ExileMaterials.MkExileMaterials {ExileMaterials.count = count, ExileMaterials.orMore = orMore, ExileMaterials.whichObjects = whichObjects, ExileMaterials.oneEach = oneEach}

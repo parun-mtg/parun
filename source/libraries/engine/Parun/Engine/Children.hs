@@ -1996,7 +1996,7 @@ keywordChildren c keyword_ = case keyword_ of
   Keyword.Toxic _natural -> pure keyword_
   Keyword.Backup (Backup.MkBackup count printedAbove) -> fmap (Keyword.Backup . Backup.MkBackup count . Set.fromList) (traverse (keywordNested c) (Set.toList printedAbove))
   Keyword.Bargain -> pure keyword_
-  Keyword.Craft (Craft.MkCraft cost (ExileMaterials.MkExileMaterials count orMore whichObjects)) -> fmap Keyword.Craft (Craft.MkCraft <$> keywordCost c cost <*> fmap (ExileMaterials.MkExileMaterials count orMore) (keywordFilter c whichObjects))
+  Keyword.Craft (Craft.MkCraft cost (ExileMaterials.MkExileMaterials count orMore whichObjects oneEach)) -> fmap Keyword.Craft (Craft.MkCraft <$> keywordCost c cost <*> (ExileMaterials.MkExileMaterials count orMore <$> keywordFilter c whichObjects <*> traverse (keywordFilter c) oneEach))
   Keyword.Disguise cost -> fmap Keyword.Disguise (keywordCost c cost)
   Keyword.Plot cost -> fmap Keyword.Plot (keywordCost c cost)
   Keyword.Saddle _natural -> pure keyword_
@@ -2119,7 +2119,7 @@ costComponentChildren c component = case component of
   CostComponent.ExileThisFrom _ -> pure component
   CostComponent.ExileThis -> pure component
   CostComponent.MoveCardsFromGraveyard (MoveCardsFromGraveyard.MkMoveCardsFromGraveyard n criterion end players) -> fmap CostComponent.MoveCardsFromGraveyard (MoveCardsFromGraveyard.MkMoveCardsFromGraveyard <$> costAmountChildren c n <*> costFilter c criterion <*> pure end <*> pure players)
-  CostComponent.ExileMaterials (ExileMaterials.MkExileMaterials n orMore criterion) -> fmap CostComponent.ExileMaterials (ExileMaterials.MkExileMaterials n orMore <$> costFilter c criterion)
+  CostComponent.ExileMaterials (ExileMaterials.MkExileMaterials n orMore criterion oneEach) -> fmap CostComponent.ExileMaterials (ExileMaterials.MkExileMaterials n orMore <$> costFilter c criterion <*> traverse (costFilter c) oneEach)
   CostComponent.ExileTopFromGraveyard criterion -> CostComponent.ExileTopFromGraveyard <$> costFilter c criterion
   CostComponent.PutExiledIntoGraveyard criterion -> CostComponent.PutExiledIntoGraveyard <$> costFilter c criterion
   CostComponent.CollectEvidence amount -> CostComponent.CollectEvidence <$> costAmountChildren c amount

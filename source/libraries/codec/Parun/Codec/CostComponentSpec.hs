@@ -302,7 +302,7 @@ spec s = Spec.describe s "Parun.Codec.CostComponent" $ do
     Common.assertCodec
       s
       codec
-      (CostComponent.ExileMaterials (ExileMaterials.MkExileMaterials 1 False (Filter.HasCardType CardType.Creature)))
+      (CostComponent.ExileMaterials (ExileMaterials.MkExileMaterials 1 False (Filter.HasCardType CardType.Creature) []))
       " {\"type\":\"ExileMaterials\",\"value\":{\"count\":1,\"whichObjects\":{\"type\":\"HasCardType\",\"value\":\"Creature\"}}} "
   Spec.it s "ExileTopFromGraveyard" $
     Common.assertCodec

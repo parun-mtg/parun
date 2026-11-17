@@ -1,0 +1,148 @@
+{
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "battlefield": [
+          {
+            "card": "Throne of the Grim Captain",
+            "label": "throne"
+          },
+          {
+            "card": "Swamp",
+            "label": "s1"
+          },
+          {
+            "card": "Swamp",
+            "label": "s2"
+          },
+          {
+            "card": "Swamp",
+            "label": "s3"
+          },
+          {
+            "card": "Swamp",
+            "label": "s4"
+          },
+          {
+            "card": "Changeling Sentinel",
+            "label": "sentinel"
+          },
+          {
+            "card": "Coral Merfolk",
+            "label": "coral"
+          },
+          {
+            "card": "Headwater Sentries",
+            "label": "sentries"
+          }
+        ],
+        "exile": [
+          {
+            "card": "Barony Vampire",
+            "label": "barony"
+          }
+        ],
+        "graveyard": [
+          {
+            "card": "Ancient Brontodon",
+            "label": "brontodon"
+          }
+        ],
+        "library": [
+          {
+            "card": "Swamp"
+          },
+          {
+            "card": "Swamp"
+          },
+          {
+            "card": "Swamp"
+          },
+          {
+            "card": "Swamp"
+          }
+        ],
+        "name": "alice"
+      },
+      {
+        "battlefield": [
+          {
+            "card": "Forest",
+            "label": "bforest"
+          },
+          {
+            "card": "Grizzly Bears",
+            "label": "bbears"
+          }
+        ],
+        "library": [
+          {
+            "card": "Forest"
+          },
+          {
+            "card": "Forest"
+          },
+          {
+            "card": "Forest"
+          },
+          {
+            "card": "Forest"
+          }
+        ],
+        "name": "bob"
+      },
+      {
+        "battlefield": [
+          {
+            "card": "Island",
+            "label": "cisland"
+          },
+          {
+            "card": "Millstone",
+            "label": "cstone"
+          }
+        ],
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ],
+        "name": "charlie"
+      }
+    ],
+    "step": "PrecombatMain"
+  },
+  "description": "Throne of the Grim Captain's craft is not offered when a changeling would have to answer for both the Pirate and the Vampire",
+  "note": "The crafting scenario's board without Talas Merchant: the changeling, a Dinosaur and two Merfolk meet at most three of the four criteria, so only the mill ability is offered.",
+  "timeline": [
+    {
+      "check": {
+        "View": {
+          "is": [
+            "Pass",
+            "Activate $throne",
+            "ActivateManaAbility $s1",
+            "ActivateManaAbility $s2",
+            "ActivateManaAbility $s3",
+            "ActivateManaAbility $s4"
+          ],
+          "of": "Offered",
+          "player": "alice"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    }
+  ]
+}
