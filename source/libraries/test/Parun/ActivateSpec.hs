@@ -710,6 +710,47 @@ ninjutsuSpec s registry = Spec.describe s "Ninjutsu" $ do
         Spec.assertBool s (not (S.onBattlefield jaceId jaceGone)) "Jace left before the ability resolved"
       _ -> Spec.assertFailure s "expected exactly one ninjutsu ability"
 
+  -- CR 508.4e with 508.4a: Kira Nerys, Firebrand also puts the Ninja onto the
+  -- battlefield attacking, but ninjutsu's specification still applies, so with
+  -- the Piker's Jace gone the Ninja is never attacking -- rather than Kira's
+  -- unspecified attack offering bob, the one candidate left. Kira attacks bob,
+  -- keeping her row's "while you control an attacking creature" true, and is
+  -- blocked by the Wall, so the Piker is the only unblocked creature to return.
+  Spec.it s "CR 508.4e the Ninja is not attacking under Kira Nerys when the Piker's Jace has left" $ do
+    ninja <- S.printingOf s registry "Ninja of the Deep Hours"
+    piker <- S.printingOf s registry "Goblin Piker"
+    kira <- S.printingOf s registry "Kira Nerys, Firebrand"
+    wall <- S.printingOf s registry "Wall of Stone"
+    island <- S.printingOf s registry "Island"
+    jace <- S.printingOf s registry "Jace Beleren"
+    let (g0, ours, theirs) = S.combatBoardOf [kira, piker] [wall, jace]
+        (kiraId, pikerId, jaceId) = case (ours, theirs) of
+          ([k, p], [_, j]) -> (k, p, j)
+          -- Unreachable, for ninjutsuBeforeAttack's reason.
+          _ -> (S.noSource, S.noSource, S.noSource)
+        g1 = S.addCounter CounterKind.Loyalty 3 jaceId g0
+        (_, g2) = S.addPermanent island S.alice g1
+        (_, g3) = S.addPermanent island S.alice g2
+        (ninjaId, g4) = S.addHandCard ninja S.alice g3
+        aim :: Prompt.Prompt r -> r
+        aim p = case p of
+          Prompt.ChooseAttackTarget _ _ attacker options ->
+            let wanted = if attacker == pikerId then AttackTarget.OfPlaneswalker jaceId else AttackTarget.OfPlayer S.bob
+             in if List.elem wanted (NonEmpty.toList options) then wanted else NonEmpty.head options
+          _ -> S.aggressiveAnswer p
+        gs = withBlockersDeclared (S.runPure aim g4 {GameState.turn = (GameState.turn g4) {TurnRegisters.priority = Just S.alice}} (Combat.declareAttackers S.manaPerformer S.alice))
+    case Activatable.abilitiesFor ninjaId gs of
+      [ability] -> do
+        let activated = S.runPure aim gs (Activate.activateAbility S.alice ninjaId ability)
+            jaceGone = S.runPure S.identityAnswer activated (Event.changeZone (pure ()) jaceId Zone.Graveyard)
+            resolved = S.runPure aim jaceGone Stack.resolveTop
+            arrived = arrivedOnBattlefield jaceGone resolved
+            attackers = Combat.Type.attackers (TurnRegisters.combat (GameState.turn resolved))
+        Spec.assertEqWith s "CR 508.4e the Ninja entered but is not an attacking creature" (fmap (`Map.lookup` attackers) arrived) [Nothing]
+        Spec.assertEqWith s "setup: Kira still attacks bob, blocked, and the Piker went home" (Map.lookup kiraId attackers, Combat.isBlocked kiraId resolved, S.onBattlefield pikerId resolved) (Just (AttackTarget.OfPlayer S.bob), True, False)
+        Spec.assertEqWith s "setup: the Piker was declared at Jace" (Map.lookup pikerId (Combat.Type.attackers (TurnRegisters.combat (GameState.turn gs)))) (Just (AttackTarget.OfPlaneswalker jaceId))
+      _ -> Spec.assertFailure s "expected exactly one ninjutsu ability"
+
   -- The cost's own gate, against the board one turn-based action earlier. Same
   -- Islands, same hand, same seats: the only difference is whether alice has
   -- declared an attack, so nothing to return is the whole reason.
