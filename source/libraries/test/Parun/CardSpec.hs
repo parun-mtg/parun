@@ -2438,10 +2438,10 @@ reservedBindings = Set.intersection reservedSlots . boundSlots
 -- Nalaar Aetherjet". The same half of rule 111.4 as the legendary case, but
 -- nothing in the card data marks it, so this is a hand-kept list rather than a
 -- predicate. CR 111.10's named predefined tokens are listed too (111.10j's
--- Cursed, 111.10q's Wicked); 111.10d's Walker, the other Roles and the copy
--- tokens of CR 111.4's own Spitting Image example (named Doomed Dissenter, "not
--- Human Token or Doomed Dissenter Token") will each want a line here as their
--- cards arrive.
+-- Cursed, 111.10k's Monster, 111.10m's Royal, 111.10q's Wicked); 111.10d's
+-- Walker, the other Roles and the copy tokens of CR 111.4's own Spitting Image
+-- example (named Doomed Dissenter, "not Human Token or Doomed Dissenter Token")
+-- will each want a line here as their cards arrive.
 namedTokens :: Set.Set CardName.CardName
 namedTokens =
   Set.fromList
@@ -2479,6 +2479,8 @@ namedTokens =
       -- Mole Man, Moloid Master's "a 1/1 green Minion creature token named
       -- Moloid".
       CardName.MkCardName (Text.pack "Moloid"),
+      -- CR 111.10k's Monster Role (Become Brutes).
+      CardName.MkCardName (Text.pack "Monster"),
       -- Weapons Manufacturing's "a colorless artifact token named Munitions".
       CardName.MkCardName (Text.pack "Munitions"),
       -- Mutable Explorer's "a tapped Mutavault token", the card Mutavault's
@@ -2492,6 +2494,8 @@ namedTokens =
       -- Dragonbroods' Relic's "a 4/4 Dragon creature token named Reliquary
       -- Dragon".
       CardName.MkCardName (Text.pack "Reliquary Dragon"),
+      -- CR 111.10m's Royal Role (Besotted Knight).
+      CardName.MkCardName (Text.pack "Royal"),
       -- Preston Garvey, Minuteman's "create a green Aura enchantment token named
       -- Settlement attached to up to one target land you control".
       CardName.MkCardName (Text.pack "Settlement"),
