@@ -3580,8 +3580,8 @@ namedAbilityRemovalAfter gs =
 -- receiver (Zurgo, Thunder's Decree) and only a whole-board projection reads
 -- back. An ability sticker's too (CR 123.7), read off the object it is on at
 -- the sticker's timestamp (CR 613.7k), as View.grantedStaticAbilitiesOf reads
--- one; Parun.StickerSpec's Mystic Doom Sandwich group proves it. Hoisted over
--- the whole game like abilityRemoval.
+-- one; Parun.StickerSpec's "CR 123.7/509.1c Mystic Doom Sandwich's sticker"
+-- proves it. Hoisted over the whole game like abilityRemoval.
 --
 -- CR 613.1f's removal is asked in CR 613.7 timestamp order: only a removal
 -- later than the grant takes it (abilityRemovalAfter). Three gates a printed row
@@ -3964,7 +3964,7 @@ honeAffected =
 --
 -- A static ability's grant is gathered from the stickered object, as a stored
 -- grant's is (View.grantedStaticAbilitiesOf), and a rule ability's is read
--- there too (grantedRuleAbilities).
+-- off it by grantedRuleAbilities.
 --
 -- Unprinted: a player or self-cost ability on an ability sticker, or a keyword
 -- rule 702 states as a static ability, would need a read beside those; no
