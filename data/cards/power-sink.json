@@ -81,6 +81,10 @@
                                   }
                                 ]
                               }
+                            },
+                            "tapper": {
+                              "type": "InSlot",
+                              "value": "player"
                             }
                           }
                         },

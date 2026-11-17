@@ -3757,7 +3757,7 @@ effectIsImpossible asked resolving source controller legal gs effect = case effe
   -- CR 701.26a: "only untapped permanents can be tapped", which is what
   -- Parun.Engine.Event.tap enforces, so a sweep whose every permanent is already
   -- tapped taps nothing.
-  Effect.Tap (Tap.MkTap ref _) -> noneNamedIs TapState.Untapped ref
+  Effect.Tap (Tap.MkTap ref _ _) -> noneNamedIs TapState.Untapped ref
   -- CR 701.26b, tap's mirror and Parun.Engine.Event.untap's own guard.
   Effect.Untap ref -> noneNamedIs TapState.Tapped ref
   Effect.Detain {} -> False

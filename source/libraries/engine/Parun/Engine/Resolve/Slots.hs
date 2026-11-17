@@ -927,7 +927,7 @@ effectPlayerRefs effect = case effect of
   Effect.BindAmount {} -> []
   Effect.BindPlayers payload -> [BindPlayers.players payload]
   Effect.BindLeaders {} -> []
-  Effect.Tap {} -> []
+  Effect.Tap tap -> Maybe.maybeToList (Tap.tapper tap)
   Effect.Untap {} -> []
   Effect.Unattach {} -> []
   Effect.Detain {} -> []
