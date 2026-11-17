@@ -1235,8 +1235,9 @@ batchScoped condition = case condition of
   TriggerCondition.DealsDamage watched -> Set.null (DamageTrigger.recipients watched)
   -- "Is dealt damage" is one occurrence per damaged permanent however many
   -- sources dealt it at once (Ripjaw Raptor's and Fungusaur's rulings), split
-  -- by batchPartition; "a source deals damage to" (Belltower Sphinx) is one per
-  -- damage event, so per source.
+  -- by batchPartition, or one for the whole batch where wholeBatch says so
+  -- (Magmatic Galleon); "a source deals damage to" (Belltower Sphinx) is one
+  -- per damage event, so per source.
   TriggerCondition.IsDealtDamage watched -> PermanentIsDealtDamage.batching watched == Batching.OneOrMore
   -- CR 603.2c: simultaneous damage to the player is one event of their being
   -- dealt damage -- Lich's ruling sacrifices "for that damage simultaneously".

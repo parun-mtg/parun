@@ -170,6 +170,7 @@ import qualified Parun.Types.PayBranch as PayBranch
 import qualified Parun.Types.PayGate as PayGate
 import qualified Parun.Types.PayObligation as PayObligation
 import qualified Parun.Types.PerCreature as PerCreature
+import qualified Parun.Types.PermanentIsDealtDamage as PermanentIsDealtDamage
 import qualified Parun.Types.PlayerCounterKind as PlayerCounterKind
 import qualified Parun.Types.PlayerEffect as PlayerEffect
 import qualified Parun.Types.PlayerId as PlayerId
@@ -368,6 +369,21 @@ batchedUntaps value = case value of
           ]
      in here <> concatMap (batchedUntaps . Pair.value) pairs
   Value.Array a -> concatMap batchedUntaps (Array.unwrap a)
+  Value.String _ -> []
+  Value.Null _ -> []
+  Value.Boolean _ -> []
+  Value.Number _ -> []
+
+-- Every encoded object pairing `wholeBatch: true` with an EachOccurrence
+-- `batching`: Parun.Types.PermanentIsDealtDamage's unprinted combination.
+eachOccurrenceWholeBatches :: Value.Value -> [Value.Value]
+eachOccurrenceWholeBatches value = case value of
+  Value.Object o ->
+    let pairs = Object.unwrap o
+        keyed k v = any (\p -> String.unwrap (Pair.name p) == Text.pack k && Pair.value p == v) pairs
+        here = [value | keyed "wholeBatch" (Value.boolean True), keyed "batching" (Value.String (String.MkString (Text.pack "EachOccurrence")))]
+     in here <> concatMap (eachOccurrenceWholeBatches . Pair.value) pairs
+  Value.Array a -> concatMap eachOccurrenceWholeBatches (Array.unwrap a)
   Value.String _ -> []
   Value.Null _ -> []
   Value.Boolean _ -> []
@@ -3337,6 +3353,21 @@ filterPositionLintSpec s registry corpus = Spec.describe s "Lint" $ do
           _ -> ta
         planted = (S.combinedFace calendar) {Face.triggeredAbilities = fmap ungate (Face.triggeredAbilities (S.combinedFace calendar))}
     Spec.assertEqWith s "a planted ungated trigger is seen" (fmap (`elem` allowed) (untaps planted)) [False]
+  -- Parun.Types.PermanentIsDealtDamage's wholeBatch reads under OneOrMore
+  -- only: "one or more creatures are dealt damage" (Magmatic Galleon) has no
+  -- per-source printing.
+  Spec.it s "CR 603.2c no card writes wholeBatch beside EachOccurrence" $ do
+    ps <- S.allPrintings s corpus
+    galleon <- S.printingOf s registry "Magmatic Galleon"
+    let found = eachOccurrenceWholeBatches . Codec.encode (Face.Codec.codec Card.codec)
+        offenders = filter (anyFace (not . null . found) . Printing.card) ps
+    Spec.assertEqWith s "no card pairs them" (fmap (S.nameOf . Printing.card) offenders) []
+    -- Not vacuous: the Galleon's trigger read per source is seen.
+    let perSource ta = case TriggeredAbility.condition ta of
+          TriggerCondition.IsDealtDamage watched -> ta {TriggeredAbility.condition = TriggerCondition.IsDealtDamage watched {PermanentIsDealtDamage.batching = Batching.EachOccurrence}}
+          _ -> ta
+        planted = (S.combinedFace galleon) {Face.triggeredAbilities = fmap perSource (Face.triggeredAbilities (S.combinedFace galleon))}
+    Spec.assertEqWith s "a planted per-source whole batch is seen" (length (found planted)) 1
   -- CR 601.2c's baked "that player's graveyard", for HeldByPlayer's reason:
   -- Parun.Engine.Target.bakePerPlayer writes it, and no card may name a seat.
   Spec.it s "CR 601.2c no card writes ZoneScope.BoundPlayer" $ do

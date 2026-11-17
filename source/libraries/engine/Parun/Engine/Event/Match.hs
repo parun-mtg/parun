@@ -1190,7 +1190,7 @@ armMatches bindings frozen board atEvent beforeEvent groupEvents gs bearer you c
   --
   -- With `excess`, only an event carrying some of CR 120.10's excess, which
   -- Damage.settleExcess stamped on the batch.
-  TriggerCondition.IsDealtDamage (PermanentIsDealtDamage.MkPermanentIsDealtDamage dealt _ excess _) -> case event of
+  TriggerCondition.IsDealtDamage (PermanentIsDealtDamage.MkPermanentIsDealtDamage dealt _ _ excess _) -> case event of
     GameEvent.DamageDealt ev ->
       Game.damageCounts (DealtDamage.kind dealt) (DealtDamage.by dealt) ev
         && (not excess || DamageEvent.excess ev > 0)

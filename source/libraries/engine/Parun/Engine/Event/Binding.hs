@@ -829,15 +829,18 @@ eventBindingsOver board gs bearerBecame becameInGraveyard bearer you cond event 
   --
   -- The RECIPIENT under `became`, the object the event names: Death Pits of
   -- Rath's "destroy it". For a Self reading it is the bearer again. Also
-  -- unconditional given a match, which admits only an object recipient.
+  -- unconditional given a match, which admits only an object recipient. Not
+  -- for a whole batch (Magmatic Galleon), which names no one recipient and
+  -- which batchPartition therefore leaves whole.
   (TriggerCondition.IsDealtDamage watched, GameEvent.DamageDealt ev) ->
     let damager = case PermanentIsDealtDamage.batching watched of
           Batching.EachOccurrence -> Binding.setCombatDamager (DamageEvent.source ev)
           Batching.OneOrMore -> id
+        recipient = if PermanentIsDealtDamage.wholeBatch watched then Nothing else Recipient.objectOf (DamageEvent.target ev)
         -- CR 120.10's "that excess damage" (Fall of Cair Andros) for an
         -- excess reading, which batchBindings sums to the permanent's excess.
         dealtAmount = if PermanentIsDealtDamage.excess watched then DamageEvent.excess ev else DamageEvent.amount ev
-     in maybe id Binding.setBecame (Recipient.objectOf (DamageEvent.target ev)) (damager (Binding.setEventAmount dealtAmount Map.empty))
+     in maybe id Binding.setBecame recipient (damager (Binding.setEventAmount dealtAmount Map.empty))
   -- CR 120.3's "that many" for a damaged player (Lich), summed across the
   -- batch by batchBindings, and the damaged player under `triggerPlayer`, which
   -- batchPartition splits the batch by. A damaged planeswalker (Vengeful
@@ -946,7 +949,8 @@ batchPartition cond bindings = case cond of
   TriggerCondition.PlayerIsDealtDamage _ -> seat Binding.triggerPlayer <> object Binding.became
   -- One occurrence per damaged permanent: Death Pits of Rath's "a creature is
   -- dealt damage" destroys each creature a batch damaged, and Ripjaw Raptor's
-  -- Self reading has one.
+  -- Self reading has one. A whole batch (Magmatic Galleon's "one or more
+  -- creatures") stamps no `became`, so the split leaves it whole.
   TriggerCondition.IsDealtDamage _ -> object Binding.became
   -- CR 601.2c: one occurrence per targeting object, each its own announcement,
   -- even where several land in one group -- Hive Mind's copies, made inside its
@@ -1616,7 +1620,9 @@ eventBindingSlots cond = case cond of
   -- Rath's "destroy it" reads. See the eventBindings arm above.
   TriggerCondition.IsDealtDamage watched -> case PermanentIsDealtDamage.batching watched of
     Batching.EachOccurrence -> Set.fromList [Binding.became, Binding.combatDamager, Binding.eventAmount]
-    Batching.OneOrMore -> Set.fromList [Binding.became, Binding.eventAmount]
+    Batching.OneOrMore
+      | PermanentIsDealtDamage.wholeBatch watched -> Set.singleton Binding.eventAmount
+      | otherwise -> Set.fromList [Binding.became, Binding.eventAmount]
   -- The damaged player only where no planeswalker can stand in for one.
   TriggerCondition.PlayerIsDealtDamage watched
     | PlayerIsDealtDamage.orTheirPlaneswalkers watched || PlayerIsDealtDamage.batching watched == Batching.OneOrMore -> Set.singleton Binding.eventAmount
