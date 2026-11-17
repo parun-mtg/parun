@@ -3,7 +3,6 @@
 -- every request line answered on the page (Parun.Web.Question).
 module Parun.Browser.Hotseat where
 
-import Control.Applicative ((<|>))
 import qualified Control.Exception as Exception
 import qualified Control.Monad as Monad
 import qualified Data.ByteString as ByteString
@@ -15,6 +14,7 @@ import qualified Data.Maybe as Maybe
 import qualified Data.Sequence as Seq
 import qualified Data.Set as Set
 import qualified Data.Text as Text
+import qualified GHC.Clock as Clock
 import qualified Parun.Browser as Browser
 import qualified Parun.Codec.Reply as Codec.Reply
 import qualified Parun.Codec.Request as Codec.Request
@@ -39,13 +39,20 @@ import qualified Parun.Web.Line as Line
 import qualified Parun.Web.Lobby as Lobby
 import qualified Parun.Web.Question as Web.Question
 
+-- | The game on a page mounted first, so any exception that escapes it is
+-- shown there rather than ending the module unseen.
 start :: IO ()
 start = do
+  page <- Browser.mount
+  Exception.catch (play page) $ \problem ->
+    Browser.display page . message $ fmap Text.pack ["The game stopped on an error:", Exception.displayException (problem :: Exception.SomeException)]
+
+play :: Browser.Page (Either Line.Line Web.Question.Event) -> IO ()
+play page = do
   root <- Registry.defaultRoot
   loaded <- fmap (Registry.loadBundle root) $ Registry.bundlePath >>= ByteString.readFile
   deckRoot <- Decks.defaultRoot
   paths <- Decks.listRoot deckRoot
-  page <- Browser.mount
   let byName = Map.fromList [(Lobby.deckName deckRoot path, path) | path <- paths]
       lobby = Lobby.MkLobby (Natural.length loaded) (Seq.fromList $ Map.keys byName) Nothing
       pick chosen = do
@@ -61,7 +68,7 @@ start = do
   say [Text.pack "Starting the game\x2026"]
   registry <- Registry.defaultRegistry loaded :: IO (Registry.Registry Identity.Identity)
   -- The bot needs no screen, so the player is never handed it.
-  seatRef <- IORef.newIORef $ MkSeat (Just $ PlayerId.MkPlayerId 0) False
+  seatRef <- IORef.newIORef . MkSeat (Just $ PlayerId.MkPlayerId 0) False =<< Clock.getMonotonicTime
   listed <- (,) <$> Command.load registry one <*> Command.load registry two
   case listed of
     (Right first, Right second) -> do
@@ -83,21 +90,32 @@ options = PlayOptions.none {PlayOptions.json = True, PlayOptions.bots = Set.sing
 -- question's form until it answers, a card tapped showing its text from the
 -- card data through `lookUp`. Nothing for a line that does not read.
 exchange :: (CardName.CardName -> Either InvalidCorpus.InvalidCorpus (Maybe Card.Card)) -> Browser.Page (Either Line.Line Web.Question.Event) -> IORef.IORef Seat -> Text.Text -> IO (Maybe Text.Text)
-exchange lookUp page seatRef line = case Common.parse line >>= Codec.decode Codec.Request.codec of
-  Left _ -> pure Nothing
-  Right request -> fmap (Just . Common.render . Codec.Reply.toValue) $ do
-    state <- IORef.readIORef seatRef
-    let auto = if paying state then Web.Question.auto request else Nothing
-    IORef.writeIORef seatRef state {paying = Maybe.isJust auto}
-    case Web.Question.automatic request <|> auto of
-      Just reply -> pure reply
-      Nothing -> do
-        let seat = Question.seat $ Request.question request
-        Monad.when (facing state /= Just seat) $ do
-          Browser.display page . fmap Right $ Web.Question.handOff seat
-          untilReady
-          IORef.modifyIORef' seatRef $ \s -> s {facing = Just seat}
-        answer request Set.empty
+exchange lookUp page seatRef line = do
+  arrived <- Clock.getMonotonicTime
+  decoded <- Exception.evaluate $ Common.parse line >>= Codec.decode Codec.Request.codec
+  read' <- Clock.getMonotonicTime
+  case decoded of
+    Left _ -> pure Nothing
+    Right request -> fmap (Just . Common.render . Codec.Reply.toValue) $ do
+      state <- IORef.readIORef seatRef
+      let auto = if paying state then Web.Question.auto request else Nothing
+          kind = Question.kind $ Request.question request
+          traced how = Browser.trace page $ kind <> Text.pack (": engine " <> Browser.milliseconds (arrived - answeredAt state) <> ", decoding " <> show (Text.length line) <> " characters " <> Browser.milliseconds (read' - arrived) <> ", " <> how)
+      IORef.writeIORef seatRef state {paying = Maybe.isJust auto}
+      reply <- case (Web.Question.automatic request, auto) of
+        (Just reply, _) -> traced "answered unasked" >> pure reply
+        (_, Just reply) -> traced "paid by auto" >> pure reply
+        _ -> do
+          traced "asked"
+          let seat = Question.seat $ Request.question request
+          Monad.when (facing state /= Just seat) $ do
+            Browser.display page . fmap Right $ Web.Question.handOff seat
+            untilReady
+            IORef.modifyIORef' seatRef $ \s -> s {facing = Just seat}
+          answer request Set.empty
+      returned <- Clock.getMonotonicTime
+      IORef.modifyIORef' seatRef $ \s -> s {answeredAt = returned}
+      pure reply
   where
     untilReady = Browser.next page >>= \(event, _) -> Monad.unless (event == Right Web.Question.MkReady) untilReady
     answer request picked = asking request picked []
@@ -118,10 +136,14 @@ exchange lookUp page seatRef line = case Common.parse line >>= Codec.decode Code
         Left _ -> asking request picked reading
 
 -- | What the page keeps between request lines: the seat the screen last
--- showed, and whether the seat chose auto for the payment under way.
+-- showed, whether the seat chose auto for the payment under way, and when it
+-- last answered.
 data Seat = MkSeat
   { facing :: Maybe PlayerId.PlayerId,
-    paying :: Bool
+    paying :: Bool,
+    -- | When the last line was answered, the engine's work since then being
+    -- what the trace times.
+    answeredAt :: Double
   }
 
 message :: [Text.Text] -> Html.Html msg

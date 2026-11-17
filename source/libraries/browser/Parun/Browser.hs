@@ -4,26 +4,34 @@
 -- Web Worker the engine runs in (@source/web/engine.js@).
 module Parun.Browser where
 
+import qualified Control.Exception as Exception
+import qualified Control.Monad as Monad
 import qualified Data.IORef as IORef
+import qualified Data.Maybe as Maybe
 import qualified Data.Sequence as Seq
 import qualified Data.Text as Text
+import qualified GHC.Clock as Clock
 import qualified Parun.Trustworthy.Wasm as Prim
 import qualified Parun.Web.Diff as Diff
 import qualified Parun.Web.Html as Html
 import qualified Parun.Web.Patch as Patch
 import qualified Parun.Web.Wire as Wire
+import qualified System.Environment as Environment
+import qualified System.IO as IO
 
 -- | The view the page shows, and the events its handlers took that no one
 -- has waited for yet, each with the value of the element it came from.
 data Page msg = MkPage
   { shown :: IORef.IORef (Maybe (Html.Html msg)),
-    taken :: IORef.IORef (Seq.Seq (msg, Text.Text))
+    taken :: IORef.IORef (Seq.Seq (msg, Text.Text)),
+    -- | Whether the page asked for timings (parun_trace, the page's ?trace).
+    tracing :: Bool
   }
 
 -- | A page showing nothing yet, its events listened for.
 mount :: IO (Page msg)
 mount = do
-  page <- MkPage <$> IORef.newIORef Nothing <*> IORef.newIORef Seq.empty
+  page <- MkPage <$> IORef.newIORef Nothing <*> IORef.newIORef Seq.empty <*> fmap Maybe.isJust (Environment.lookupEnv "parun_trace")
   listen =<< wrap (dispatch page)
   pure page
 
@@ -33,7 +41,20 @@ display :: Page msg -> Html.Html msg -> IO ()
 display page html = do
   before <- IORef.readIORef $ shown page
   IORef.writeIORef (shown page) $ Just html
-  apply $ maybe (Seq.singleton $ Patch.MkReplace Seq.empty html) (`Diff.diff` html) before
+  began <- Clock.getMonotonicTime
+  json <- Exception.evaluate . Wire.patches $ maybe (Seq.singleton $ Patch.MkReplace Seq.empty html) (`Diff.diff` html) before
+  Monad.when (tracing page) $ do
+    Monad.void . Exception.evaluate $ length json
+    ended <- Clock.getMonotonicTime
+    trace page . Text.pack $ "screen: " <> show (length json) <> " bytes of patches in " <> milliseconds (ended - began)
+  applyJson $ Prim.toJSString json
+
+-- | A line of timings to the page's trace, when it asked for them.
+trace :: Page msg -> Text.Text -> IO ()
+trace page line = Monad.when (tracing page) $ IO.hPutStrLn IO.stderr (Text.unpack line)
+
+milliseconds :: Double -> String
+milliseconds seconds = show (round (seconds * 1000) :: Integer) <> " ms"
 
 -- | The next event the shown view's handlers take, waiting for one.
 next :: Page msg -> IO (msg, Text.Text)
@@ -51,9 +72,6 @@ dispatch page event path value = do
       IORef.atomicModifyIORef' (taken page) $ \events -> (events Seq.|> (msg, Text.pack $ Prim.fromJSString value), ())
       wake
     _ -> pure ()
-
-apply :: Seq.Seq (Patch.Patch msg) -> IO ()
-apply = applyJson . Prim.toJSString . Wire.patches
 
 -- | Waits until 'wake' is called: the waiting thread is suspended, and the
 -- page goes on. The import's result is a thunk, forced here.
