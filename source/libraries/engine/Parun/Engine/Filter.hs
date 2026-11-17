@@ -93,6 +93,7 @@ import qualified Parun.Types.ProductionTag as ProductionTag
 import qualified Parun.Types.Quantity as Quantity
 import qualified Parun.Types.Recipient as Recipient
 import qualified Parun.Types.RoomHalf as RoomHalf
+import qualified Parun.Types.SelfInclusion as SelfInclusion
 import qualified Parun.Types.SlotArity as SlotArity
 import qualified Parun.Types.SlotName as SlotName
 import qualified Parun.Types.StickerContent as StickerContent
@@ -2253,20 +2254,30 @@ sharesAnchored trait anchor = case anchor of
   -- Some permanent the nest admits, matched in the OUTER context, so its "you"
   -- and "another" are the outer match's (Pattern Matcher's "another creature
   -- you control"). Vacuously False where nothing fills battlefieldViews.
-  Anchor.AnyPermanent group -> case trait of
-    Trait.Name -> Just (\context view -> any (\permanent -> matches context permanent group && meets (names view) (names permanent)) (battlefieldViews context))
-    Trait.Controller -> Just (\context view -> any (\permanent -> matches context permanent group && meets (held view) (held permanent)) (battlefieldViews context))
-    -- CR 205.3i: every land type, not the basic ones alone, off each side's
-    -- subtypes, a permanent's projected (Hiveheart Shaman).
-    Trait.LandType -> Just (\context view -> any (\permanent -> matches context permanent group && meets (landTypes view) (landTypes permanent)) (battlefieldViews context))
-    -- CR 105.2. The scenario named for Jaded Response proves it.
-    Trait.Color -> Just (\context view -> any (\permanent -> matches context permanent group && meets (colors view) (colors permanent)) (battlefieldViews context))
-    -- CR 205.3m, off each side's subtypes as LandType reads them. The scenario
-    -- named for Radagast the Brown proves it.
-    Trait.CreatureType -> Just (\context view -> any (\permanent -> matches context permanent group && meets (creatureTypes view) (creatureTypes permanent)) (battlefieldViews context))
-    Trait.Owner -> Nothing
-    Trait.Sector -> Nothing
-    Trait.CardType _ -> Nothing
+  -- ExcludesCandidate drops the candidate's own view, "another permanent you
+  -- control" of a battlefield candidate; the scenarios named for Yenna,
+  -- Redtooth Regent prove it.
+  Anchor.AnyPermanent inclusion group ->
+    let peerShares traitOf = Just (\context view -> any (\permanent -> eligible view permanent && matches context permanent group && meets (traitOf view) (traitOf permanent)) (battlefieldViews context))
+        eligible view permanent = case inclusion of
+          SelfInclusion.IncludesCandidate -> True
+          SelfInclusion.ExcludesCandidate -> case identity view of
+            Nothing -> True
+            Just candidate -> identity permanent /= Just candidate
+     in case trait of
+          Trait.Name -> peerShares names
+          Trait.Controller -> peerShares held
+          -- CR 205.3i: every land type, not the basic ones alone, off each side's
+          -- subtypes, a permanent's projected (Hiveheart Shaman).
+          Trait.LandType -> peerShares landTypes
+          -- CR 105.2. The scenario named for Jaded Response proves it.
+          Trait.Color -> peerShares colors
+          -- CR 205.3m, off each side's subtypes as LandType reads them. The scenario
+          -- named for Radagast the Brown proves it.
+          Trait.CreatureType -> peerShares creatureTypes
+          Trait.Owner -> Nothing
+          Trait.Sector -> Nothing
+          Trait.CardType _ -> Nothing
   -- A commander with no creature type shares none, and neither does a player
   -- with no commander: both leave the set empty.
   Anchor.YourCommander -> case trait of
@@ -2319,7 +2330,7 @@ attachedAnchored anchor = case anchor of
   -- sharesAnchored's lint keeps it out of card data too.
   Anchor.Bound (Just _) _ -> Nothing
   -- A group names no one host: Filter.AttachedTo is that reading.
-  Anchor.AnyPermanent _ -> Nothing
+  Anchor.AnyPermanent _ _ -> Nothing
   Anchor.YourCommander -> Nothing
   -- The candidate's own host is the candidate's attachment, not an anchor.
   Anchor.Host -> Nothing
@@ -3798,7 +3809,7 @@ readsSourceValues predicate = case predicate of
       Trait.LandType -> False
     Anchor.Bound _ _ -> False
     Anchor.Evaluated -> False
-    Anchor.AnyPermanent group -> readsSourceValues group
+    Anchor.AnyPermanent _ group -> readsSourceValues group
     Anchor.YourCommander -> False
     Anchor.Host -> False
   Filter.HasSubtype _ -> False
@@ -4108,7 +4119,7 @@ overBoundSlotsWith f predicate = case predicate of
 -- The filter an anchor nests, for a traversal that descends into one.
 anchorFilter :: Anchor.Anchor nested -> Maybe nested
 anchorFilter anchor = case anchor of
-  Anchor.AnyPermanent group -> Just group
+  Anchor.AnyPermanent _ group -> Just group
   Anchor.Bound _ _ -> Nothing
   Anchor.Evaluated -> Nothing
   Anchor.Source -> Nothing
