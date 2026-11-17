@@ -1,0 +1,198 @@
+{
+  "faces": [
+    {
+      "keywords": [
+        {
+          "type": "Kicker",
+          "value": {
+            "mana": [
+              {
+                "type": "Generic",
+                "value": 4
+              },
+              {
+                "type": "OfType",
+                "value": {
+                  "type": "Colored",
+                  "value": "Blue"
+                }
+              },
+              {
+                "type": "OfType",
+                "value": {
+                  "type": "Colored",
+                  "value": "Black"
+                }
+              }
+            ]
+          }
+        }
+      ],
+      "manaCost": [
+        {
+          "type": "Generic",
+          "value": 1
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "Blue"
+          }
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "Black"
+          }
+        }
+      ],
+      "name": "Mirror Universe Intrusion",
+      "oracleText": "Kicker {4}{U}{B} (You may pay an additional {4}{U}{B} as you cast this spell.)\nCreate a token that's a copy of target creature an opponent controls, except it has menace. If this spell was kicked, instead for each creature target opponent controls, create a token that's a copy of that creature, except it has menace.",
+      "spell": {
+        "modes": [
+          {
+            "clauses": [
+              {
+                "condition": {
+                  "type": "Compares",
+                  "value": {
+                    "comparison": "Exactly",
+                    "measured": {
+                      "type": "TimesPaid",
+                      "value": {
+                        "type": "Printed",
+                        "value": "Kicker"
+                      }
+                    },
+                    "threshold": {
+                      "type": "Literal",
+                      "value": 0
+                    }
+                  }
+                },
+                "effects": [
+                  {
+                    "type": "CreateCopy",
+                    "value": {
+                      "exceptions": [
+                        {
+                          "type": "GainKeywords",
+                          "value": [
+                            {
+                              "type": "Menace"
+                            }
+                          ]
+                        }
+                      ],
+                      "ref": {
+                        "type": "InSlot",
+                        "value": "target"
+                      }
+                    }
+                  }
+                ]
+              },
+              {
+                "condition": {
+                  "type": "Compares",
+                  "value": {
+                    "comparison": "AtLeast",
+                    "measured": {
+                      "type": "TimesPaid",
+                      "value": {
+                        "type": "Printed",
+                        "value": "Kicker"
+                      }
+                    },
+                    "threshold": {
+                      "type": "Literal",
+                      "value": 1
+                    }
+                  }
+                },
+                "effects": [
+                  {
+                    "type": "ForEach",
+                    "value": {
+                      "body": [
+                        {
+                          "type": "CreateCopy",
+                          "value": {
+                            "exceptions": [
+                              {
+                                "type": "GainKeywords",
+                                "value": [
+                                  {
+                                    "type": "Menace"
+                                  }
+                                ]
+                              }
+                            ],
+                            "ref": {
+                              "type": "InSlot",
+                              "value": "creature"
+                            }
+                          }
+                        }
+                      ],
+                      "ref": {
+                        "type": "EachMatching",
+                        "value": {
+                          "type": "And",
+                          "value": [
+                            {
+                              "type": "HasCardType",
+                              "value": "Creature"
+                            },
+                            {
+                              "type": "HeldByBound",
+                              "value": {
+                                "holder": "Controller",
+                                "slot": "opponent"
+                              }
+                            }
+                          ]
+                        }
+                      },
+                      "slot": "creature"
+                    }
+                  }
+                ]
+              }
+            ],
+            "targetSlots": {
+              "opponent": {
+                "filter": {
+                  "type": "IsPlayer",
+                  "value": "Opponent"
+                },
+                "pool": {
+                  "type": "Players"
+                }
+              },
+              "target": {
+                "filter": {
+                  "type": "HeldBy",
+                  "value": {
+                    "holder": "Controller",
+                    "relation": "Opponent"
+                  }
+                },
+                "pool": {
+                  "type": "Creatures"
+                }
+              }
+            }
+          }
+        ]
+      },
+      "typeLine": {
+        "types": [
+          "Sorcery"
+        ]
+      }
+    }
+  ]
+}
