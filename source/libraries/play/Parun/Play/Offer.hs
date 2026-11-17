@@ -11,6 +11,7 @@ import qualified Data.Maybe as Maybe
 import qualified Data.Text as Text
 import qualified Parun.Codec.Cost as Codec.Cost
 import qualified Parun.Codec.Keyword as Codec.Keyword
+import qualified Parun.Codec.ManaType as Codec.ManaType
 import qualified Parun.Codec.Reply as Codec.Reply
 import qualified Parun.JsonCodec.Codec as Codec
 import qualified Parun.JsonCodec.Common as Common
@@ -18,6 +19,7 @@ import qualified Parun.Oracle.Cost as Oracle.Cost
 import qualified Parun.Oracle.Keyword as Oracle.Keyword
 import qualified Parun.Play.Protocol as Protocol
 import qualified Parun.Play.Render as Render
+import qualified Parun.Types.ManaType as ManaType
 import qualified Parun.Types.ObjectId as ObjectId
 import qualified Parun.Types.ObjectView as ObjectView
 import qualified Parun.Types.PlayerId as PlayerId
@@ -171,3 +173,10 @@ recipientObject :: R.Reply -> Maybe ObjectId.ObjectId
 recipientObject reply = case reply of
   R.Array [R.Text tag, x] | tag /= Text.pack "Player" -> objectOf x
   _ -> Nothing
+
+-- | A mana source a payment offers, and the mana each of its abilities makes.
+manaSource :: R.Reply -> Maybe (R.Reply, [[ManaType.ManaType]])
+manaSource reply = do
+  source <- Protocol.field "source" reply
+  makes <- Protocol.field "makes" reply >>= decoded (Common.list (Common.list Codec.ManaType.codec))
+  pure (source, makes)

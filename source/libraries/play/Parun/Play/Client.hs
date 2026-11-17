@@ -601,7 +601,7 @@ choice view question = Maybe.fromMaybe generic $ case Text.unpack (Question.kind
           )
     -- A source by number, or the line `none` for no source.
     sourcePick heading none others = do
-      offered <- Protocol.field "sources" offer >>= Protocol.arrayOf >>= mapM manaSource
+      offered <- Protocol.field "sources" offer >>= Protocol.arrayOf >>= mapM Offer.manaSource
       let sources = fmap fst offered
           makes yields = if null yields then Text.empty else Text.pack " (makes " <> Text.intercalate (Text.pack " or ") (fmap (foldMap Render.manaType) yields) <> Text.pack ")"
       pure
@@ -816,7 +816,7 @@ onlyPass offer = do
 autoSource :: PlayerView.PlayerView -> R.Reply -> Maybe (R.Reply, Set.Set ManaType.ManaType)
 autoSource view offer = do
   (colored, generic) <- owing view offer
-  sources <- Protocol.field "sources" offer >>= Protocol.arrayOf >>= mapM manaSource
+  sources <- Protocol.field "sources" offer >>= Protocol.arrayOf >>= mapM Offer.manaSource
   let wanted = Set.fromList colored
       makes (_, yields) = Set.fromList (concat yields)
       fewest by = Maybe.listToMaybe . List.sortOn by
@@ -950,11 +950,6 @@ unitName unit =
    in Text.pack "{" <> Render.manaType (ManaUnit.manaType unit) <> Text.pack "}" <> (if null notes then Text.empty else Text.pack " (" <> Text.intercalate (Text.pack ", ") notes <> Text.pack ")")
 
 -- | A mana source as an offer names it, beside the mana types of each yield.
-manaSource :: R.Reply -> Maybe (R.Reply, [[ManaType.ManaType]])
-manaSource reply = do
-  source <- Protocol.field "source" reply
-  makes <- Protocol.field "makes" reply >>= Offer.decoded (Common.list (Common.list Codec.ManaType.codec))
-  pure (source, makes)
 
 -- | An optional prompt's answer, a bare tag (Parun.JsonCodec.Arm.enum).
 optionalDecision :: OptionalDecision.OptionalDecision -> R.Reply
