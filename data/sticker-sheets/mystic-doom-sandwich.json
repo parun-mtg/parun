@@ -1,0 +1,120 @@
+{
+  "abilities": [
+    {
+      "keywords": [
+        {
+          "type": "Lifelink"
+        }
+      ],
+      "tickets": 2
+    },
+    {
+      "abilities": [
+        {
+          "type": "Rules",
+          "value": {
+            "blockRequirements": [
+              {
+                "arity": "AnySubject",
+                "attacker": {
+                  "type": "Matching",
+                  "value": {
+                    "type": "IsSource"
+                  }
+                }
+              }
+            ]
+          }
+        },
+        {
+          "type": "Triggered",
+          "value": {
+            "condition": {
+              "type": "Blocks",
+              "value": {
+                "role": "Attacker"
+              }
+            },
+            "modal": {
+              "modes": [
+                {
+                  "clauses": [
+                    {
+                      "effects": [
+                        {
+                          "type": "ModifyTarget",
+                          "value": {
+                            "duration": {
+                              "type": "UntilEndOfTurn"
+                            },
+                            "modification": {
+                              "type": "ModifyPowerToughness",
+                              "value": {
+                                "power": {
+                                  "type": "Times",
+                                  "value": {
+                                    "factor": {
+                                      "type": "Literal",
+                                      "value": 1
+                                    },
+                                    "quantity": {
+                                      "type": "BlockersBeyond",
+                                      "value": 0
+                                    }
+                                  }
+                                },
+                                "toughness": {
+                                  "type": "Times",
+                                  "value": {
+                                    "factor": {
+                                      "type": "Literal",
+                                      "value": 1
+                                    },
+                                    "quantity": {
+                                      "type": "BlockersBeyond",
+                                      "value": 0
+                                    }
+                                  }
+                                }
+                              }
+                            },
+                            "ref": {
+                              "type": "InSlot",
+                              "value": "self"
+                            }
+                          }
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+          }
+        }
+      ],
+      "tickets": 3
+    }
+  ],
+  "art": 3,
+  "name": "Mystic Doom Sandwich",
+  "names": [
+    "Mystic",
+    "Doom",
+    "Sandwich"
+  ],
+  "number": 11,
+  "oracleText": "{TK}{TK} — Lifelink\n{TK}{TK}{TK} — This creature must be blocked if able. Whenever this creature becomes blocked, it gets +1/+1 until end of turn for each creature blocking it.\n{TK}{TK} — 1/4\n{TK}{TK}{TK}{TK}{TK} — 6/8",
+  "powerToughness": [
+    {
+      "power": 1,
+      "tickets": 2,
+      "toughness": 4
+    },
+    {
+      "power": 6,
+      "tickets": 5,
+      "toughness": 8
+    }
+  ]
+}

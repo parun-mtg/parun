@@ -1,0 +1,225 @@
+{
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "battlefield": [
+          {
+            "card": "Swamp",
+            "label": "m0",
+            "ready": true
+          },
+          {
+            "card": "Swamp",
+            "label": "m1",
+            "ready": true
+          },
+          {
+            "card": "Swamp",
+            "label": "m2",
+            "ready": true
+          },
+          {
+            "card": "Swamp",
+            "label": "m3",
+            "ready": true
+          },
+          {
+            "card": "Swamp",
+            "label": "m4",
+            "ready": true
+          },
+          {
+            "card": "Swamp",
+            "label": "m5",
+            "ready": true
+          },
+          {
+            "card": "Swamp",
+            "label": "m6",
+            "ready": true
+          },
+          {
+            "card": "Swamp",
+            "label": "m7",
+            "ready": true
+          },
+          {
+            "card": "Swamp",
+            "label": "m8",
+            "ready": true
+          }
+        ],
+        "hand": [
+          {
+            "card": "Deep Space 9",
+            "label": "ds9"
+          }
+        ],
+        "library": [
+          {
+            "card": "Grizzly Bears"
+          },
+          {
+            "card": "Lightning Bolt"
+          },
+          {
+            "card": "Ornithopter"
+          },
+          {
+            "card": "Forest"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ],
+        "name": "alice"
+      },
+      {
+        "battlefield": [],
+        "hand": [],
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ],
+        "name": "bob"
+      }
+    ],
+    "step": "PrecombatMain"
+  },
+  "description": "CR 406.1, 110.4: Deep Space 9's entering trigger exiles the top four cards of its controller's library and puts every permanent card among them onto the battlefield",
+  "timeline": [
+    {
+      "do": {
+        "Cast": {
+          "mana": [
+            "$m0",
+            "$m1",
+            "$m2",
+            "$m3",
+            "$m4",
+            "$m5",
+            "$m6",
+            "$m7",
+            "$m8"
+          ],
+          "object": "$ds9"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "OrderTimestamps": [
+          "Grizzly Bears",
+          "Ornithopter",
+          "Forest"
+        ]
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Grizzly Bears",
+          "count": 1,
+          "player": "alice",
+          "zone": "Battlefield"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Ornithopter",
+          "count": 1,
+          "player": "alice",
+          "zone": "Battlefield"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Forest",
+          "count": 1,
+          "player": "alice",
+          "zone": "Battlefield"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Lightning Bolt",
+          "count": 1,
+          "player": "alice",
+          "zone": "Exile"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Island",
+          "count": 3,
+          "player": "alice",
+          "zone": "Library"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    }
+  ]
+}
