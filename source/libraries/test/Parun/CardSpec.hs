@@ -2487,6 +2487,9 @@ namedTokens =
       -- characteristics under its name.
       CardName.MkCardName (Text.pack "Mutavault"),
       CardName.MkCardName (Text.pack "Nalaar Aetherjet"),
+      -- Gwyndala, the Progeny's "a colorless Equipment artifact token named
+      -- Neuroflux Heirloom".
+      CardName.MkCardName (Text.pack "Neuroflux Heirloom"),
       -- David and Carol Marcus, Creators' "a tapped Planet land token named New
       -- Planet".
       CardName.MkCardName (Text.pack "New Planet"),
