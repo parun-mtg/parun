@@ -3875,6 +3875,144 @@ readsSourceValues predicate = case predicate of
   Filter.IsModal -> False
   Filter.HasInsetFrame _ -> False
 
+-- CR 800.4i: does this player Filter ask what HAPPENED to a candidate earlier
+-- this turn, so that a count of the players it admits
+-- (Parun.Engine.Count.evaluate's Scope.OverPlayers arm) still finds a player
+-- who has since left the game? Teysa, Opulent Oligarch's ruling counts an
+-- opponent who lost life and then lost the game; the departure/cr-800-4i
+-- Teysa scenario proves it. Parun.Engine.Quantity.talliesWhatHappened is the
+-- per-player quantity's twin.
+--
+-- A compound answers False, a REGRESSION FENCE: no card counts players through
+-- one, and whether a departed player answers its other parts is per part.
+-- Exhaustive, not over Parun.Engine.Children: a classification, every atom judged by someone reading it.
+talliesWhatHappened :: Filter.Filter keyword -> Bool
+talliesWhatHappened predicate = case predicate of
+  Filter.And {} -> False
+  Filter.Or {} -> False
+  Filter.Not {} -> False
+  Filter.Unwritten {} -> False
+  Filter.Controls {} -> False
+  Filter.Measures {} -> False
+  Filter.ManaValueParity {} -> False
+  Filter.ManaCostRepeatsSymbol {} -> False
+  Filter.ManaCostHasSymbol {} -> False
+  Filter.HasCardType {} -> False
+  Filter.HasSupertype {} -> False
+  Filter.HasColor {} -> False
+  Filter.Shares {} -> False
+  Filter.HasSubtype {} -> False
+  Filter.HasName {} -> False
+  Filter.NameWordsAtLeast {} -> False
+  Filter.HasNameOriginallyPrintedIn {} -> False
+  Filter.HasKeyword {} -> False
+  Filter.HasKeywordFamily {} -> False
+  Filter.ControllerIsOwner {} -> False
+  Filter.HeldBy {} -> False
+  Filter.ControlledByRole {} -> False
+  Filter.HeldByBound {} -> False
+  Filter.HeldByPlayer {} -> False
+  Filter.HeldByRecipient {} -> False
+  Filter.IsSource {} -> False
+  Filter.BecameSource {} -> False
+  Filter.PaidWithManaFromSource {} -> False
+  Filter.IsObject {} -> False
+  Filter.TargetsSource {} -> False
+  Filter.HasSingleTarget {} -> False
+  Filter.TargetsOnlyOne {} -> False
+  Filter.TargetsMatching {} -> False
+  Filter.TargetsPlayer {} -> False
+  Filter.IsBound {} -> False
+  Filter.IsTarget {} -> False
+  Filter.ControllerRelatesToBound {} -> False
+  Filter.HasChosenName {} -> False
+  Filter.HasChosenColor {} -> False
+  Filter.HasChosenSubtype {} -> False
+  Filter.HasChosenCardType {} -> False
+  Filter.Noted {} -> False
+  Filter.IsExiledWithSource {} -> False
+  Filter.IsLastExiledWithSource {} -> False
+  Filter.IsChosenObject {} -> False
+  Filter.OfChosenPlayer {} -> False
+  Filter.OfRelatedPlayer {} -> False
+  Filter.OfSpecificPlayer {} -> False
+  Filter.IsPlayer {} -> False
+  Filter.IsControllerOfBound {} -> False
+  Filter.CardsInZoneAtLeast {} -> False
+  Filter.OwnsBoundAtLeast {} -> False
+  Filter.TappedForManaThisTurn {} -> False
+  Filter.IsAttacking {} -> False
+  Filter.IsAttackingPlayer {} -> False
+  Filter.IsAttackingPlaneswalker {} -> False
+  Filter.IsAttackingBattle {} -> False
+  Filter.IsBlocking {} -> False
+  Filter.HasBlockStatus {} -> False
+  Filter.DeclaredThisTurn {} -> False
+  Filter.CouldAttackThisTurn {} -> False
+  Filter.DeclaredAttackerThisCombat {} -> False
+  Filter.DeclaredAttackedThisCombat {} -> False
+  Filter.DeclaredBlockerThisCombat {} -> False
+  Filter.HadToAttackThisCombat {} -> False
+  Filter.LeftLibraryThisTurn {} -> False
+  Filter.CantPayKeywordCost {} -> False
+  -- Not implemented: a player dealt damage who then left (#8220).
+  Filter.DealtDamageThisTurn {} -> False
+  Filter.LostLifeThisTurn -> True
+  Filter.ActivatedThisTurn {} -> False
+  Filter.ActedThisTurn {} -> False
+  Filter.DealtDamageTo {} -> False
+  Filter.EnteredThisTurn {} -> False
+  Filter.CountersPutThisTurn {} -> False
+  Filter.CrewedThisTurn {} -> False
+  Filter.ConvokedSourceThisTurn {} -> False
+  Filter.SaddledSourceThisTurn {} -> False
+  Filter.ControlledSinceTurnBegan {} -> False
+  Filter.AttachedTo {} -> False
+  Filter.BeforeMove {} -> False
+  Filter.HasAttached {} -> False
+  Filter.IsAttachedTo {} -> False
+  Filter.IsEvaluated {} -> False
+  Filter.IsHostOfSource {} -> False
+  Filter.EnteredWithSource {} -> False
+  Filter.CounterLinkedToSource {} -> False
+  Filter.AttachedNoLaterThanSource {} -> False
+  Filter.CanHostSubject {} -> False
+  Filter.CanAttachToSubject {} -> False
+  Filter.HasEntryHost {} -> False
+  Filter.HostOfSubjectHasCardType {} -> False
+  Filter.IsCommander {} -> False
+  Filter.IsToken {} -> False
+  Filter.IsCard {} -> False
+  Filter.IsActivatedAbility {} -> False
+  Filter.IsAbility {} -> False
+  Filter.IsEmblem {} -> False
+  Filter.FromSource {} -> False
+  Filter.IsTapped {} -> False
+  Filter.IsFaceDown {} -> False
+  Filter.RepresentedByCard {} -> False
+  Filter.IsExiledFaceDown {} -> False
+  Filter.IsWarped {} -> False
+  Filter.Transformed {} -> False
+  Filter.IsRingBearer {} -> False
+  Filter.IsPaired {} -> False
+  Filter.IsPairedWithSource {} -> False
+  Filter.BlockPartnerOfSource {} -> False
+  Filter.HasDesignation {} -> False
+  Filter.HasCounters {} -> False
+  Filter.HasCountersOfAnyKind {} -> False
+  Filter.HasSticker {} -> False
+  Filter.Stickered {} -> False
+  Filter.HasActivatedAbility {} -> False
+  Filter.HasAbility {} -> False
+  Filter.IsInZone {} -> False
+  Filter.WasCastFrom {} -> False
+  Filter.TagWasSpent {} -> False
+  Filter.Paid {} -> False
+  Filter.IsPrototyped {} -> False
+  Filter.IsPreparedSpell {} -> False
+  Filter.IsModal {} -> False
+  Filter.HasInsetFrame {} -> False
+
 -- The comparisons a target slot's Filter makes against its computed bound
 -- (Operand.EnclosingAmount), for Parun.Engine.Activatable.boundXs.
 enclosingReads :: Filter.Filter Keyword.Type.Keyword -> [Measures.Measures]
