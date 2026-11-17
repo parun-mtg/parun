@@ -1510,19 +1510,34 @@ learn :: Game () -> ObjectId -> ObjectId -> PlayerId -> Game ()
 learn settle resolving source controller = Learn.learn settle controller resolving source
 
 -- CR 701.58a: the instructed players each cloak the top card of their own
--- library, or of each library the payload names; the keyword action is
+-- library, or the cards the payload names; the keyword action is
 -- Parun.Engine.Cloak.cloak's, listing and all. APNAP (CR 608.2f) orders the
 -- several, which is Effect.Shuffle's posture and for its reason: the order is a
 -- fact about the rules rather than about PlayerId's Ord. The slot gathers every
 -- permanent cloaked, ManifestDread's.
-cloak :: Game () -> ObjectId -> ObjectId -> PlayerId -> Map.Map SlotName (Set Recipient) -> Cloak.Type.Cloak -> Game ()
-cloak settle resolving source controller legal (Cloak.Type.MkCloak who library mSlot) = do
+--
+-- Named cards are asked or read ONCE, before any is cloaked (CR 608.2d), and
+-- cloaked one at a time (CR 701.58e) in the order the ref names them, or in
+-- the order Prompt.Shuffle answers when the payload shuffles them (Expose the
+-- Culprit's face-down pile). A cloak takes only a card not yet on the
+-- battlefield (CR 701.58a "a card"), so a named card goes to the first
+-- instructed player alone. An EMPTY LIBRARY cloaks nothing: CR 701.58a names a
+-- card, and CR 609.3 leaves the rest of the effect to do as much as it can.
+cloak :: Game () -> ObjectId -> ObjectId -> PlayerId -> Map.Map SlotName (Set Recipient) -> Map.Map SlotName (Set Recipient) -> Cloak.Type.Cloak -> Game ()
+cloak settle resolving source controller legal chosen (Cloak.Type.MkCloak who cards shuffled mSlot) = do
   gs <- State.get
   let inApnapOrder ref =
         let named = Set.fromList (playerRefPlayers legal resolving source controller gs ref)
          in filter (`Set.member` named) (Game.apnapOrder gs)
-  cloaked <- Monad.forM (inApnapOrder who) $ \cloaker ->
-    concat <$> Monad.mapM (Cloak.cloak settle cloaker) (maybe [cloaker] inApnapOrder library)
+  asked <- traverse (Common.askingObjects Common.Present resolving source controller legal chosen) cards
+  ordered <- case asked of
+    Just batch@(_ : _ : _) | shuffled -> Just . Game.honourShuffle batch <$> Game.ask (Prompt.Shuffle batch)
+    _ -> pure asked
+  let uncloaked card g = maybe False ((/= Zone.Battlefield) . Object.zone) (Game.lookupObject card g)
+      cloakEach cloaker = fmap concat . Monad.mapM (\card -> State.gets (uncloaked card) >>= \ok -> if ok then Cloak.cloak settle cloaker card else pure [])
+  cloaked <- Monad.forM (inApnapOrder who) $ \cloaker -> case ordered of
+    Nothing -> State.gets (take 1 . Game.cardsIn Zone.Library cloaker) >>= cloakEach cloaker
+    Just named -> cloakEach cloaker named
   Common.bindObjects resolving mSlot (concat cloaked)
 
 -- CR 701.62a: the named players each manifest dread this many times, the

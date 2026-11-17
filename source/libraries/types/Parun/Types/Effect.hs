@@ -828,8 +828,9 @@ data Effect card ability
   | -- | CR 701.57a: the resolving controller discovers this many, the process
     -- Parun.Engine.Discover.process, then CR 701.57b's event.
     Discover Quantity.Quantity
-  | -- | CR 701.58a: the instructed players each cloak the top card of a
-    -- library, performed by Parun.Engine.Cloak.cloak as one procedure.
+  | -- | CR 701.58a: the instructed players each cloak the top card of their
+    -- library or the cards the payload names, each performed by
+    -- Parun.Engine.Cloak.cloak as one procedure.
     Cloak Cloak.Cloak
   | -- | CR 701.62a: the players the payload names each manifest dread this many
     -- times, each performed by Parun.Engine.ManifestDread.manifestDread as one

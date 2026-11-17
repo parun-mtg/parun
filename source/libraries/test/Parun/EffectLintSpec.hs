@@ -82,6 +82,7 @@ import qualified Parun.Types.ChosenCardInGraveyard as ChosenCardInGraveyard
 import qualified Parun.Types.ChosenCardInHand as ChosenCardInHand
 import qualified Parun.Types.ChosenPermanents as ChosenPermanents
 import qualified Parun.Types.Clause as Clause
+import qualified Parun.Types.Cloak as Cloak
 import qualified Parun.Types.Comparison as Comparison
 import qualified Parun.Types.Conjure as Conjure
 import qualified Parun.Types.ConjureCards as ConjureCards
@@ -1422,6 +1423,11 @@ chooserRef = Maybe.isJust . questionOf
 movedQuestions :: [Question]
 movedQuestions = filter (`notElem` [SeveralPermanents, ChosenAmong]) [minBound .. maxBound]
 
+-- A cloak's: Vannifar, Evolved Enigma's scenario reaches CardInHand and Hide in
+-- Plain Sight's CardFromAmong.
+cloakedQuestions :: [Question]
+cloakedQuestions = [CardInHand, CardFromAmong]
+
 -- The battlefield questions, for the opcodes that act on PERMANENTS -- Tovolar,
 -- Dire Overlord's transform, Teferi, Hero of Dominaria's untap, God-Eternal
 -- Bontu's sacrifice, Mirkwood Trapper's modification.
@@ -1505,7 +1511,7 @@ effectObjectRefs effect =
         Effect.Recruit -> []
         Effect.Discover {} -> []
         Effect.Learn -> []
-        Effect.Cloak {} -> []
+        Effect.Cloak cloak -> fmap ((,) cloakedQuestions) (Maybe.maybeToList (Cloak.cards cloak))
         Effect.ManifestDread {} -> []
         Effect.Venture {} -> []
         Effect.ExileHandThenDraw -> []

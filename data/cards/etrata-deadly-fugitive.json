@@ -188,9 +188,18 @@
                       {
                         "type": "Cloak",
                         "value": {
-                          "library": {
-                            "type": "InSlot",
-                            "value": "thatPlayer"
+                          "cards": {
+                            "type": "TopOfLibrary",
+                            "value": {
+                              "count": {
+                                "type": "Literal",
+                                "value": 1
+                              },
+                              "player": {
+                                "type": "InSlot",
+                                "value": "thatPlayer"
+                              }
+                            }
                           },
                           "player": {
                             "type": "Relative",

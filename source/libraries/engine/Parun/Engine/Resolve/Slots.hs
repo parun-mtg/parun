@@ -1024,7 +1024,7 @@ effectPlayerRefs effect = case effect of
   Effect.Learn -> []
   -- The printing's own references: who cloaks, and whose library the top
   -- card comes off where it is not their own.
-  Effect.Cloak (Cloak.MkCloak who library _) -> who : Foldable.toList library
+  Effect.Cloak (Cloak.MkCloak who _ _ _) -> [who]
   -- CR 701.62a's: whose library the two cards come off.
   Effect.ManifestDread (ManifestDread.Type.MkManifestDread ref _ _) -> [ref]
   Effect.Venture {} -> []
@@ -2831,7 +2831,7 @@ boundSlots effect = case effect of
   Effect.Learn -> Set.empty
   -- The permanents the cloaks put onto the battlefield (CR 701.58a), for
   -- Cryptic Coat's "attach this Equipment to it".
-  Effect.Cloak (Cloak.MkCloak _ _ mSlot) -> foldMap Set.singleton mSlot
+  Effect.Cloak (Cloak.MkCloak _ _ _ mSlot) -> foldMap Set.singleton mSlot
   -- The permanents the manifests put onto the battlefield (CR 701.62a), for
   -- Valgavoth's Onslaught's "those creatures".
   Effect.ManifestDread (ManifestDread.Type.MkManifestDread _ _ mSlot) -> foldMap Set.singleton mSlot
