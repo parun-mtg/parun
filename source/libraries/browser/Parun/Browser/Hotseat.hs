@@ -3,12 +3,14 @@
 -- every request line answered on the page (Parun.Web.Question).
 module Parun.Browser.Hotseat where
 
+import Control.Applicative ((<|>))
 import qualified Control.Monad as Monad
 import qualified Data.ByteString as ByteString
 import qualified Data.Either as Either
 import qualified Data.Functor.Identity as Identity
 import qualified Data.IORef as IORef
 import qualified Data.Map.Strict as Map
+import qualified Data.Maybe as Maybe
 import qualified Data.Sequence as Seq
 import qualified Data.Set as Set
 import qualified Data.Text as Text
@@ -53,14 +55,14 @@ start = do
   say [Text.pack "Starting the game\x2026"]
   registry <- Registry.defaultRegistry loaded :: IO (Registry.Registry Identity.Identity)
   -- The bot needs no screen, so the player is never handed it.
-  facing <- IORef.newIORef . Just $ PlayerId.MkPlayerId 0
+  seatRef <- IORef.newIORef $ MkSeat (Just $ PlayerId.MkPlayerId 0) False
   listed <- (,) <$> Command.load registry one <*> Command.load registry two
   case listed of
     (Right first, Right second) -> do
       settled <- Command.settle Nothing [(one, first), (two, second)]
       case settled of
         Right format -> do
-          Command.play (exchange page facing) options registry format (DeckList.deck first, DeckList.deck second)
+          Command.play (exchange page seatRef) options registry format (DeckList.deck first, DeckList.deck second)
           say [Text.pack "The game is over."]
         Left problems -> say problems
     (first, second) -> say $ Either.fromLeft [] first <> Either.fromLeft [] second
@@ -70,32 +72,45 @@ options :: PlayOptions.PlayOptions
 options = PlayOptions.none {PlayOptions.json = True, PlayOptions.bots = Set.singleton 2}
 
 -- | One request line answered on the page: a reply the seat is never asked
--- for at once, else after a hand-off when the screen last faced another seat,
--- the question's form until it answers. Nothing for a line that does not read.
-exchange :: Browser.Page (Either Line.Line Web.Question.Event) -> IORef.IORef (Maybe PlayerId.PlayerId) -> Text.Text -> IO (Maybe Text.Text)
-exchange page facing line = case Common.parse line >>= Codec.decode Codec.Request.codec of
+-- for, or auto's next source once the seat chose auto for this payment, at
+-- once; else after a hand-off when the screen last faced another seat, the
+-- question's form until it answers. Nothing for a line that does not read.
+exchange :: Browser.Page (Either Line.Line Web.Question.Event) -> IORef.IORef Seat -> Text.Text -> IO (Maybe Text.Text)
+exchange page seatRef line = case Common.parse line >>= Codec.decode Codec.Request.codec of
   Left _ -> pure Nothing
-  Right request -> fmap (Just . Common.render . Codec.Reply.toValue) $ case Web.Question.automatic request of
-    Just reply -> pure reply
-    Nothing -> do
-      let seat = Question.seat $ Request.question request
-      before <- IORef.readIORef facing
-      Monad.when (before /= Just seat) $ do
-        Browser.display page . fmap Right $ Web.Question.handOff seat
-        Monad.void . untilReady $ Browser.next page
-        IORef.writeIORef facing $ Just seat
-      answer request Set.empty
+  Right request -> fmap (Just . Common.render . Codec.Reply.toValue) $ do
+    state <- IORef.readIORef seatRef
+    let auto = if paying state then Web.Question.auto request else Nothing
+    IORef.writeIORef seatRef state {paying = Maybe.isJust auto}
+    case Web.Question.automatic request <|> auto of
+      Just reply -> pure reply
+      Nothing -> do
+        let seat = Question.seat $ Request.question request
+        Monad.when (facing state /= Just seat) $ do
+          Browser.display page . fmap Right $ Web.Question.handOff seat
+          untilReady
+          IORef.modifyIORef' seatRef $ \s -> s {facing = Just seat}
+        answer request Set.empty
   where
-    untilReady wait = wait >>= \(event, _) -> if event == Right Web.Question.MkReady then pure () else untilReady wait
+    untilReady = Browser.next page >>= \(event, _) -> Monad.unless (event == Right Web.Question.MkReady) untilReady
     answer request picked = do
       Browser.display page . fmap Right $ Web.Question.view request picked
       (event, value) <- Browser.next page
       case event of
         Right e -> case Web.Question.step request picked e value of
-          Web.Question.MkReplied reply -> pure reply
+          Web.Question.MkReplied reply -> do
+            Monad.when (e == Web.Question.MkAuto) . IORef.modifyIORef' seatRef $ \s -> s {paying = True}
+            pure reply
           Web.Question.MkPicking now -> answer request now
           Web.Question.MkRefused problem -> answer request {Request.problem = Just problem} picked
         Left _ -> answer request picked
+
+-- | What the page keeps between request lines: the seat the screen last
+-- showed, and whether the seat chose auto for the payment under way.
+data Seat = MkSeat
+  { facing :: Maybe PlayerId.PlayerId,
+    paying :: Bool
+  }
 
 message :: [Text.Text] -> Html.Html msg
 message said = Html.element (Text.pack "main") [] [Html.element (Text.pack "p") [] [Html.text t] | t <- said]

@@ -1,15 +1,17 @@
 -- | A line protocol request as a page: the seat's board, what it is asked,
 -- and an answer built from taps. Each kind of question a Portal game reaches
--- first has its own form; any other shows its offer and takes a reply typed
--- as JSON.
+-- has its own form; any other shows its offer and takes a reply typed as JSON.
 module Parun.Web.Question where
 
+import qualified Control.Monad as Monad
 import qualified Data.Foldable as Foldable
+import qualified Data.List as List
 import qualified Data.Maybe as Maybe
 import qualified Data.Set as Set
 import qualified Data.Text as Text
 import Numeric.Natural (Natural)
 import qualified Parun.Codec.ManaCost as Codec.ManaCost
+import qualified Parun.Codec.ManaUnit as Codec.ManaUnit
 import qualified Parun.Codec.Reply as Codec.Reply
 import qualified Parun.Extra.Natural as Natural
 import qualified Parun.JsonCodec.Common as Common
@@ -28,39 +30,77 @@ import qualified Parun.Web.Html as Html
 data Event
   = -- | Answers with this reply.
     MkAnswer R.Reply
-  | -- | Picks the option at this index, or drops it if picked.
-    MkToggle Natural
+  | -- | Picks this option of this group, or drops it if picked.
+    MkToggle Natural Natural
   | -- | Answers with the options picked.
     MkSubmit
   | -- | Answers with the reply typed as JSON into the element.
     MkTyped
   | -- | The seat has the screen, after a hand-off.
     MkReady
+  | -- | Pays the rest of the cost as auto chooses (Offer.autoSource).
+    MkAuto
+  | -- | Drops every pick.
+    MkClear
   deriving (Eq, Show)
 
 -- | Where an answer stands after an event.
 data Outcome
-  = -- | Still picking, these options so far.
-    MkPicking (Set.Set Natural)
+  = -- | Still picking, these options so far, each a group's and its index.
+    MkPicking (Set.Set (Natural, Natural))
   | -- | Answered.
     MkReplied R.Reply
   | -- | Not answered, and why.
     MkRefused Text.Text
   deriving (Eq, Show)
 
+-- | A question answered by picking among groups of options: its groups, the
+-- reply the picks make, each group's picks in its options' order, and the
+-- label of the button that sends it.
+data Picker = MkPicker
+  { groups :: [Group],
+    finish :: [[R.Reply]] -> Either Text.Text R.Reply,
+    send :: Text.Text
+  }
+
+-- | Options to pick from, how many at least, how many at most, and whether
+-- a pick replaces the group's last.
+data Group = MkGroup
+  { title :: Text.Text,
+    options :: [(R.Reply, Text.Text)],
+    least :: Natural,
+    most :: Natural,
+    exclusive :: Bool
+  }
+
 -- | A reply the seat is never asked for: the hotseat never concedes unasked
--- (CR 104.3a), and a priority offering nothing but a pass and mana abilities
--- is passed (Offer.onlyPass).
+-- (CR 104.3a), a priority offering nothing but a pass and mana abilities is
+-- passed (Offer.onlyPass), and a choice between indistinguishable options is
+-- made: identical mana to spend, and all of a creature's combat damage to
+-- its one recipient (CR 510.1c).
 automatic :: Request.Request -> Maybe R.Reply
 automatic request = case Text.unpack (Question.kind question) of
   "Concede" -> Just . R.Text $ Text.pack "Continues"
   "ChooseAction" -> R.Number <$> Offer.onlyPass (Question.offer question)
+  "ChooseManaToSpend" | Just (unit : rest) <- Protocol.arrayOf offer, all (== unit) rest -> Just unit
+  "AssignCombatDamage"
+    | Just [recipient] <- Protocol.field "lethal" offer >>= Protocol.arrayOf >>= mapM Protocol.entryOf,
+      Just total <- Protocol.field "total" offer >>= Protocol.naturalOf ->
+        Just $ R.Array [R.Array [fst recipient, R.Number $ toInteger total] | total > 0]
   _ -> Nothing
   where
     question = Request.question request
+    offer = Question.offer question
+
+-- | The source auto pays a payment's next part with (Offer.autoSource).
+auto :: Request.Request -> Maybe R.Reply
+auto request = do
+  Monad.guard $ Question.kind (Request.question request) == Text.pack "ChooseManaSource"
+  shown <- Request.view request
+  fst <$> Offer.autoSource shown (Question.offer $ Request.question request)
 
 -- | The page for a request, with the options picked so far.
-view :: Request.Request -> Set.Set Natural -> Html.Html Event
+view :: Request.Request -> Set.Set (Natural, Natural) -> Html.Html Event
 view request picked =
   Html.element
     (Text.pack "main")
@@ -80,50 +120,168 @@ handOff seat =
     ]
 
 -- | What an event does, the options picked so far being `picked`.
-step :: Request.Request -> Set.Set Natural -> Event -> Text.Text -> Outcome
+step :: Request.Request -> Set.Set (Natural, Natural) -> Event -> Text.Text -> Outcome
 step request picked event typed = case event of
   MkAnswer reply -> MkReplied reply
-  MkToggle i -> MkPicking $ if Set.member i picked then Set.delete i picked else Set.insert i picked
-  MkSubmit -> case picks request of
-    Just (from, wanted)
-      | Natural.length (Set.toList picked) == wanted -> MkReplied $ R.Array [option | (i, option) <- zip [0 ..] from, Set.member i picked]
-      | otherwise -> MkRefused . Text.pack $ "Choose " <> show wanted <> "."
+  MkToggle g i
+    | Just items <- ordering request ->
+        let next = if i `elem` fmap snd (Set.toList picked) then picked else Set.insert (Natural.length (Set.toList picked), i) picked
+         in if Natural.length (Set.toList next) == Natural.length items then MkReplied . R.Array . fmap (R.Number . toInteger . snd) $ Set.toAscList next else MkPicking next
+    | Set.member (g, i) picked -> MkPicking $ Set.delete (g, i) picked
+    | Just True <- exclusive <$> (picker request >>= \chooser -> Maybe.listToMaybe (List.genericDrop g (groups chooser))) -> MkPicking . Set.insert (g, i) $ Set.filter ((/= g) . fst) picked
+    | otherwise -> MkPicking $ Set.insert (g, i) picked
+  MkSubmit -> case picker request of
+    Just chooser ->
+      let chosen = [[reply | (i, (reply, _)) <- zip [0 ..] (options group), Set.member (g, i) picked] | (g, group) <- zip [0 ..] (groups chooser)]
+          wrong = [group | (group, picks) <- zip (groups chooser) chosen, Natural.length picks < least group || Natural.length picks > most group]
+       in case wrong of
+            group : _ -> MkRefused $ title group <> Text.pack (": pick " <> bounds group <> ".")
+            [] -> either MkRefused MkReplied $ finish chooser chosen
     Nothing -> MkPicking picked
   MkTyped -> either (MkRefused . (Text.pack "That reply does not read: " <>)) MkReplied $ Common.parse typed >>= Codec.Reply.fromValue
   MkReady -> MkPicking picked
+  MkClear -> MkPicking Set.empty
+  MkAuto -> maybe (MkRefused $ Text.pack "Auto can't pay the rest of this cost. Choose a source.") MkReplied $ auto request
 
--- | The cards a pick-so-many question lists, and how many it wants.
-picks :: Request.Request -> Maybe ([R.Reply], Natural)
-picks request
-  | Question.kind question `elem` fmap Text.pack ["Bottom", "ChooseDiscard"] = do
+bounds :: Group -> String
+bounds group
+  | least group == most group = show (least group)
+  | otherwise = "from " <> show (least group) <> " to " <> show (most group)
+
+-- | The groups a question is answered by picking among, for the questions
+-- that are: cards to put on the bottom or discard (CR 103.5, 701.9),
+-- attackers (CR 508.1a), blocks (CR 509.1a), targets (CR 601.2c), cards
+-- found by a search (CR 701.23b), a set from an offer's "among" that picks no
+-- option twice, mana to spend, and combat damage divided (CR 510.1c).
+picker :: Request.Request -> Maybe Picker
+picker request = do
+  shown <- Request.view request
+  let named :: [R.Reply] -> [(R.Reply, Text.Text)]
+      named = fmap (\option -> (option, Offer.listedName shown option))
+      every items = (0, Natural.length items)
+  case Text.unpack (Question.kind question) of
+    kind | kind `elem` ["Bottom", "ChooseDiscard"] -> do
       from <- Protocol.field "from" offer >>= Protocol.arrayOf
-      wanted <- Protocol.field "count" offer >>= Protocol.naturalOf
-      pure (from, min wanted $ Natural.length from)
-  | otherwise = Nothing
+      wanted <- min (Natural.length from) <$> (Protocol.field "count" offer >>= Protocol.naturalOf)
+      let purpose = if kind == "Bottom" then " to put on the bottom of your library" else " to discard"
+      pure $ MkPicker [MkGroup (Text.pack "Choose " <> Render.count wanted "card" <> Text.pack purpose) (named from) wanted wanted False] (Right . R.Array . concat) (Text.pack "Done")
+    "DeclareAttackers" -> do
+      attackers <- Protocol.arrayOf offer
+      pure $ MkPicker [uncurry (MkGroup (Text.pack "Choose attackers") (named attackers)) (every attackers) False] (Right . R.Array . concat) (Text.pack "Attack")
+    "DeclareBlockers" -> do
+      blockers <- Protocol.field "blockers" offer >>= Protocol.arrayOf
+      attackers <- Protocol.field "attackers" offer >>= Protocol.arrayOf
+      pure $
+        MkPicker
+          [uncurry (MkGroup (Offer.listedName shown blocker <> Text.pack " blocks") (named attackers)) (every attackers) False | blocker <- blockers]
+          (\chosen -> Right $ R.Array [R.Array [blocker, R.Array blocked] | (blocker, blocked) <- zip blockers chosen, not (null blocked)])
+          (Text.pack "Block")
+    "ChooseTargets" -> do
+      (source, slots) <- Offer.slotsOf question
+      pure $
+        MkPicker
+          [ let legal = Offer.bySeat shown offered
+                n = min wanted (Natural.length legal)
+             in MkGroup (Text.pack "Choose " <> Render.count n "target" <> Text.pack " for " <> Offer.objectName shown source <> foldMap (\t -> Text.pack " (" <> Render.spaced t <> Text.pack ")") (Offer.textOf slot)) [(option, Offer.targetName shown legal option) | option <- legal] n n False
+          | (slot, wanted, offered) <- slots
+          ]
+          (\chosen -> Right $ R.Array [R.Array [slot, R.Array picks] | ((slot, _, _), picks) <- zip slots chosen])
+          (Text.pack "Done")
+    "Search" -> do
+      from <- Protocol.field "from" offer >>= Protocol.arrayOf
+      names <- Protocol.field "names" offer >>= Protocol.arrayOf >>= traverse Offer.textOf
+      wanted <- min (Natural.length from) <$> (Protocol.field "count" offer >>= Protocol.naturalOf)
+      pure $ MkPicker [MkGroup (Text.pack "Choose up to " <> Render.count wanted "card" <> Text.pack " to find") (zip from names) 0 wanted False] (Right . R.Array . concat) (Text.pack "Find")
+    _
+      | Just among <- Protocol.field "among" offer >>= Protocol.arrayOf,
+        Protocol.field "repeats" offer /= Just (R.Boolean True) -> do
+          let least' = Maybe.fromMaybe 0 $ Protocol.field "least" offer >>= Protocol.naturalOf
+              most' = Maybe.fromMaybe (Natural.length among) $ Protocol.field "most" offer >>= Protocol.naturalOf
+          pure $ MkPicker [MkGroup (Render.spaced (Question.kind question) <> foldMap (\source -> Text.pack " for " <> Offer.objectName shown source) (Protocol.field "source" offer)) [(option, Offer.optionName shown option) | option <- among] least' most' False] (Right . R.Array . concat) (Text.pack "Done")
+    "ChooseManaToSpend" -> do
+      units <- Protocol.arrayOf offer
+      shownUnits <- traverse (Offer.decoded Codec.ManaUnit.codec) units
+      pure $ MkPicker [MkGroup (Text.pack "Choose the mana to spend") (zip units $ fmap Offer.unitName shownUnits) 1 1 True] (Right . Maybe.fromMaybe R.Null . Maybe.listToMaybe . concat) (Text.pack "Spend")
+    "AssignCombatDamage" -> do
+      (source, lethal, total) <- damage
+      let amounts = [(R.Number $ toInteger n, Text.pack $ show n) | n <- [0 .. total]]
+      pure $
+        MkPicker
+          [MkGroup (Offer.recipientName shown recipient <> (if threshold > 0 then Text.pack (" (lethal " <> show threshold <> ")") else Text.empty)) amounts 1 1 True | (recipient, threshold) <- lethal]
+          ( \chosen ->
+              let given = [n | [R.Number n] <- chosen]
+               in if sum given == toInteger total
+                    then Right $ R.Array [R.Array [recipient, R.Number n] | ((recipient, _), n) <- zip lethal given, n > 0]
+                    else Left . Text.pack $ "Divide " <> Text.unpack (Offer.objectName shown source) <> "'s damage so it adds up to " <> show total <> "."
+          )
+          (Text.pack "Assign")
+    _ -> Nothing
   where
     question = Request.question request
     offer = Question.offer question
+    damage = do
+      source <- Protocol.field "source" offer
+      lethal <- Protocol.field "lethal" offer >>= Protocol.arrayOf >>= mapM Protocol.entryOf
+      total <- Protocol.field "total" offer >>= Protocol.naturalOf
+      pure (source, lethal, total)
 
-form :: Request.Request -> Set.Set Natural -> [Html.Html Event]
+-- | The items a question orders, first to last, answered as a permutation of
+-- their indices (Parun.Engine.Game.permute): triggered abilities put on the
+-- stack at once (CR 603.3b).
+ordering :: Request.Request -> Maybe [Text.Text]
+ordering request = do
+  Monad.guard $ Question.kind question == Text.pack "OrderTriggers"
+  shown <- Request.view request
+  fmap (Offer.triggerName shown) <$> Protocol.arrayOf (Question.offer question)
+  where
+    question = Request.question request
+
+form :: Request.Request -> Set.Set (Natural, Natural) -> [Html.Html Event]
 form request picked = case Text.unpack (Question.kind question) of
   "PlayOrDraw" -> heading "Play first or draw?" : [button (MkAnswer option) (Offer.tagName word) | option@(R.Text word) <- Foldable.fold (Protocol.arrayOf offer)]
   "DeclareMulligan" ->
     heading ("Keep this hand, or mulligan?" <> foldMap (\n -> " A mulligan puts " <> Text.unpack (Render.count n "card") <> " on the bottom.") (Protocol.field "bottom" offer >>= Protocol.naturalOf))
       : [button (MkAnswer . R.Text $ Text.pack word) (Text.pack word) | word <- ["Keep", "Mulligan"]]
-  "ChooseAction" | Just shown <- Request.view request, Just options <- Protocol.arrayOf offer -> heading "Choose an action." : [button (MkAnswer $ R.Number i) (Offer.actionName shown option) | (i, option) <- Offer.distinct shown options]
+  "ChooseAction" | Just shown <- Request.view request, Just options' <- Protocol.arrayOf offer -> heading "Choose an action." : [button (MkAnswer $ R.Number i) (Offer.actionName shown option) | (i, option) <- Offer.distinct shown options']
   kind
     | kind `elem` ["ChooseManaSource", "ChooseExtraManaSource"],
       Just shown <- Request.view request,
       Just sources <- Protocol.field "sources" offer >>= Protocol.arrayOf >>= traverse Offer.manaSource ->
         Html.element (Text.pack "h2") [] [Html.text $ foldMap (\cost -> Text.pack "Paying " <> Render.manaCost cost <> Text.pack ". ") (Protocol.field "cost" offer >>= Offer.decoded Codec.ManaCost.codec) <> Text.pack (if kind == "ChooseManaSource" then "Choose a source." else "The cost is covered. Activate another source, or pay now.")]
-          : [button (MkAnswer source) (Offer.listedName shown source <> makes yields) | (source, yields) <- sources]
+          : [button MkAuto (Text.pack "Auto") | Maybe.isJust (auto request)]
+            <> [button (MkAnswer source) (Offer.listedName shown source <> makes yields) | (source, yields) <- sources]
             <> [button (MkAnswer R.Null) $ Text.pack (if kind == "ChooseManaSource" then "Stop paying" else "Pay now")]
-  _
+  kind
+    | kind `elem` ["ChooseOptional", "ReverseManaAbilities"],
+      Just shown <- Request.view request ->
+        heading
+          ( Text.unpack $
+              if kind == "ChooseOptional"
+                then foldMap (Offer.objectName shown) (Protocol.field "source" offer) <> Text.pack ": use its optional effect?"
+                else Text.pack "That action was reversed. Reverse the mana ability of " <> Text.intercalate (Text.pack " and ") (foldMap (fmap (Offer.listedName shown)) (Protocol.field "sources" offer >>= Protocol.arrayOf)) <> Text.pack " too?"
+          )
+          : [button (MkAnswer . R.Text $ Text.pack tag) (Text.pack label) | (tag, label) <- [("Exercises", "Yes"), ("Declines", "No")]]
+  "ChooseX"
     | Just shown <- Request.view request,
-      Just (from, wanted) <- picks request ->
-        heading ("Choose " <> Text.unpack (Render.count wanted "card") <> (if Question.kind question == Text.pack "Bottom" then " to put on the bottom of your library." else " to discard."))
-          : [toggle i (Offer.listedName shown option) | (i, option) <- zip [0 ..] from]
-            <> [button MkSubmit $ Text.pack "Done"]
+      Just least' <- Protocol.field "least" offer >>= Protocol.naturalOf,
+      Just greatest <- Protocol.field "greatest" offer >>= Protocol.naturalOf ->
+        heading (Text.unpack (Text.pack "Choose " <> Foldable.fold (Protocol.field "variable" offer >>= Offer.textOf) <> Text.pack " for " <> foldMap (Offer.objectName shown) (Protocol.field "source" offer)) <> " (" <> show least' <> " to " <> show greatest <> ").")
+          : if greatest - least' <= 20
+            then [button (MkAnswer . R.Number $ toInteger n) (Text.pack $ show n) | n <- [least' .. greatest]]
+            else [Html.element (Text.pack "input") [Attribute.MkProperty (Text.pack "placeholder") (Text.pack "A number"), Attribute.MkOn (Text.pack "change") MkTyped] []]
+  _
+    | Just items <- ordering request ->
+        heading "Order your triggered abilities, first to last. The last resolves first."
+          : [button (MkToggle 0 i) $ foldMap (\(k, _) -> Text.pack (show (k + 1) <> ". ")) (List.find ((== i) . snd) (Set.toList picked)) <> label | (i, label) <- zip [0 ..] items]
+            <> [button (MkAnswer . R.Array $ fmap (R.Number . toInteger) [0 .. length items - 1]) (Text.pack "Keep this order"), button MkClear (Text.pack "Start over")]
+  _
+    | Just chooser <- picker request ->
+        concat
+          [ Html.element (Text.pack "h2") [] [Html.text $ title group <> Text.pack (" (" <> bounds group <> ")")]
+              : [toggle g i label | (i, (_, label)) <- zip [0 ..] (options group)]
+          | (g, group) <- zip [0 ..] (groups chooser)
+          ]
+          <> [button MkSubmit $ send chooser]
   _ ->
     [ heading (Text.unpack (Render.spaced (Question.kind question)) <> ":"),
       Html.element (Text.pack "pre") [] [Html.text . Common.render $ Codec.Reply.toValue offer],
@@ -132,7 +290,7 @@ form request picked = case Text.unpack (Question.kind question) of
   where
     question = Request.question request
     offer = Question.offer question
-    toggle i label = button (MkToggle i) $ (if Set.member i picked then Text.pack "✓ " else Text.empty) <> label
+    toggle g i label = button (MkToggle g i) $ (if Set.member (g, i) picked then Text.pack "\x2713 " else Text.empty) <> label
     makes yields = if null yields then Text.empty else Text.pack " (makes " <> Text.intercalate (Text.pack " or ") (fmap (foldMap Render.manaType) yields) <> Text.pack ")"
     heading t = Html.element (Text.pack "h2") [] [Html.text $ Text.pack t]
 

@@ -60,12 +60,49 @@ spec s registry = Spec.describe s "WebQuestion" $ do
     Spec.assertEqWith s "tap" (fmap (\event -> Question.Web.step request Set.empty event Text.empty) (Html.handler (Text.pack "click") (Seq.fromList [2]) page)) (Just (Question.Web.MkReplied (PromptOffer.object Protocol.namer land)))
 
   Spec.it s "a bottom pick toggles cards and answers with exactly the count picked" $ do
-    let request = bare (Text.pack "Bottom") (R.Object [(Text.pack "from", R.Array [R.Text (Text.pack "$1"), R.Text (Text.pack "$2")]), (Text.pack "count", R.Number 1)])
-        after :: [Question.Web.Event] -> Set.Set Natural
-        after = Foldable.foldl' (\picked event -> case Question.Web.step request picked event Text.empty of Question.Web.MkPicking now -> now; _ -> picked) Set.empty
-    Spec.assertEqWith s "too few" (Question.Web.step request Set.empty Question.Web.MkSubmit Text.empty) (Question.Web.MkRefused (Text.pack "Choose 1."))
-    Spec.assertEqWith s "picked" (Question.Web.step request (after [Question.Web.MkToggle 1]) Question.Web.MkSubmit Text.empty) (Question.Web.MkReplied (R.Array [R.Text (Text.pack "$2")]))
-    Spec.assertEqWith s "unpicked" (after [Question.Web.MkToggle 1, Question.Web.MkToggle 1]) Set.empty
+    let request = asking (Text.pack "Bottom") (R.Object [(Text.pack "from", R.Array [R.Text (Text.pack "$1"), R.Text (Text.pack "$2")]), (Text.pack "count", R.Number 1)])
+        after = picking request
+    Spec.assertEqWith s "too few" (Question.Web.step request Set.empty Question.Web.MkSubmit Text.empty) (Question.Web.MkRefused (Text.pack "Choose 1 card to put on the bottom of your library: pick 1."))
+    Spec.assertEqWith s "picked" (Question.Web.step request (after [Question.Web.MkToggle 0 1]) Question.Web.MkSubmit Text.empty) (Question.Web.MkReplied (R.Array [R.Text (Text.pack "$2")]))
+    Spec.assertEqWith s "unpicked" (after [Question.Web.MkToggle 0 1, Question.Web.MkToggle 0 1]) Set.empty
+
+  Spec.it s "CR 508.1a attackers are any of those offered, none included" $ do
+    let request = asking (Text.pack "DeclareAttackers") (R.Array [R.Text (Text.pack "$1"), R.Text (Text.pack "$2")])
+    Spec.assertEqWith s "none" (Question.Web.step request Set.empty Question.Web.MkSubmit Text.empty) (Question.Web.MkReplied (R.Array []))
+    Spec.assertEqWith s "both" (Question.Web.step request (picking request [Question.Web.MkToggle 0 1, Question.Web.MkToggle 0 0]) Question.Web.MkSubmit Text.empty) (Question.Web.MkReplied (R.Array [R.Text (Text.pack "$1"), R.Text (Text.pack "$2")]))
+
+  Spec.it s "CR 509.1a blocks pair each blocker picked for with the attackers it blocks" $ do
+    let request = asking (Text.pack "DeclareBlockers") (R.Object [(Text.pack "blockers", R.Array [R.Text (Text.pack "$3"), R.Text (Text.pack "$4")]), (Text.pack "attackers", R.Array [R.Text (Text.pack "$1")])])
+    Spec.assertEqWith s "one block" (Question.Web.step request (picking request [Question.Web.MkToggle 1 0]) Question.Web.MkSubmit Text.empty) (Question.Web.MkReplied (R.Array [R.Array [R.Text (Text.pack "$4"), R.Array [R.Text (Text.pack "$1")]]]))
+
+  Spec.it s "CR 601.2c targets are exactly each slot's count, sent by slot" $ do
+    let slot = R.Text (Text.pack "target")
+        request = asking (Text.pack "ChooseTargets") (R.Object [(Text.pack "source", R.Text (Text.pack "$9")), (Text.pack "slots", R.Array [R.Array [slot, R.Array [R.Number 1, R.Array [R.Text (Text.pack "$1"), R.Text (Text.pack "$2")]]]])])
+    Spec.assertEqWith s "too few" (Question.Web.step request Set.empty Question.Web.MkSubmit Text.empty) (Question.Web.MkRefused (Text.pack "Choose 1 target for object 9 (target): pick 1."))
+    Spec.assertEqWith s "one" (Question.Web.step request (picking request [Question.Web.MkToggle 0 0]) Question.Web.MkSubmit Text.empty) (Question.Web.MkReplied (R.Array [R.Array [slot, R.Array [R.Text (Text.pack "$1")]]]))
+
+  Spec.it s "CR 603.3b triggered abilities are ordered by tapping each in turn, answered once all are" $ do
+    let request = asking (Text.pack "OrderTriggers") (R.Array [R.Object [(Text.pack "source", R.Text (Text.pack "$1"))], R.Object [(Text.pack "source", R.Text (Text.pack "$2"))]])
+    Spec.assertEqWith s "first" (Question.Web.step request Set.empty (Question.Web.MkToggle 0 1) Text.empty) (Question.Web.MkPicking (Set.singleton (0, 1)))
+    Spec.assertEqWith s "last" (Question.Web.step request (Set.singleton (0, 1)) (Question.Web.MkToggle 0 0) Text.empty) (Question.Web.MkReplied (R.Array [R.Number 1, R.Number 0]))
+    Spec.assertEqWith s "again" (Question.Web.step request (Set.singleton (0, 1)) (Question.Web.MkToggle 0 1) Text.empty) (Question.Web.MkPicking (Set.singleton (0, 1)))
+
+  Spec.it s "CR 510.1c combat damage goes to a lone recipient unasked, and among several adds up to the total" $ do
+    let offer recipients = R.Object [(Text.pack "source", R.Text (Text.pack "$9")), (Text.pack "lethal", R.Array [R.Array [r, R.Number 1] | r <- recipients]), (Text.pack "paid", R.Array []), (Text.pack "total", R.Number 3)]
+        one = R.Text (Text.pack "$1")
+        two = R.Text (Text.pack "$2")
+        request = asking (Text.pack "AssignCombatDamage") (offer [one, two])
+    Spec.assertEqWith s "lone" (Question.Web.automatic (asking (Text.pack "AssignCombatDamage") (offer [one]))) (Just (R.Array [R.Array [one, R.Number 3]]))
+    Spec.assertEqWith s "several" (Question.Web.automatic request) Nothing
+    Spec.assertEqWith s "adds up" (Question.Web.step request (picking request [Question.Web.MkToggle 0 1, Question.Web.MkToggle 1 2]) Question.Web.MkSubmit Text.empty) (Question.Web.MkReplied (R.Array [R.Array [one, R.Number 1], R.Array [two, R.Number 2]]))
+    Spec.assertBool s (case Question.Web.step request (picking request [Question.Web.MkToggle 0 1, Question.Web.MkToggle 1 1]) Question.Web.MkSubmit Text.empty of Question.Web.MkRefused _ -> True; _ -> False) "short"
+    Spec.assertEqWith s "a pick replaces the row's last" (picking request [Question.Web.MkToggle 0 1, Question.Web.MkToggle 0 3]) (Set.singleton (0, 3))
+
+  Spec.it s "CR 701.23b a search finds up to its count, none included" $ do
+    let request = asking (Text.pack "Search") (R.Object [(Text.pack "from", R.Array [R.Text (Text.pack "$1"), R.Text (Text.pack "$2")]), (Text.pack "names", R.Array [R.Text (Text.pack "Forest"), R.Text (Text.pack "Plains")]), (Text.pack "count", R.Number 1)])
+    Spec.assertBool s (Text.pack "<button>Forest</button><button>Plains</button><button>Find</button>" `Text.isInfixOf` Html.toText (Question.Web.view request Set.empty)) "names"
+    Spec.assertEqWith s "none" (Question.Web.step request Set.empty Question.Web.MkSubmit Text.empty) (Question.Web.MkReplied (R.Array []))
+    Spec.assertBool s (case Question.Web.step request (picking request [Question.Web.MkToggle 0 0, Question.Web.MkToggle 0 1]) Question.Web.MkSubmit Text.empty of Question.Web.MkRefused _ -> True; _ -> False) "too many"
 
   Spec.it s "any other question shows its offer and reads a reply typed as JSON" $ do
     let request = bare (Text.pack "ChooseX") (R.Object [(Text.pack "least", R.Number 0)])
@@ -82,3 +119,11 @@ requestFor gs prompt = case Protocol.questionOf gs prompt of
 -- | A request with no view, for questions whose form reads only the offer.
 bare :: Text.Text -> R.Reply -> Request.Request
 bare kind offer = Request.MkRequest Nothing (Question.MkQuestion S.alice kind offer) Nothing
+
+-- | A request asking the kind with the offer, with a view of an empty game.
+asking :: Text.Text -> R.Reply -> Request.Request
+asking kind offer = (requestFor (Setup.emptyGame S.bothPlayers) (Prompt.ChooseAction (Decider.MkDecider S.alice) S.alice [Action.Pass])) {Request.question = Question.MkQuestion S.alice kind offer}
+
+-- | The picks a run of events leaves.
+picking :: Request.Request -> [Question.Web.Event] -> Set.Set (Natural, Natural)
+picking request = Foldable.foldl' (\picked event -> case Question.Web.step request picked event Text.empty of Question.Web.MkPicking now -> now; _ -> picked) Set.empty
