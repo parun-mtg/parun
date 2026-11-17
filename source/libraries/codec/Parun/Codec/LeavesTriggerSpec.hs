@@ -1,12 +1,17 @@
 module Parun.Codec.LeavesTriggerSpec where
 
+import qualified Data.Either as Either
 import qualified Data.Set as Set
+import qualified Data.Text as Text
 import qualified Parun.Codec.LeavesTrigger as LeavesTrigger
+import qualified Parun.JsonCodec.Codec as Codec
 import qualified Parun.JsonCodec.Common as Common
 import qualified Parun.Spec as Spec
 import qualified Parun.Types.Batching as Batching
 import qualified Parun.Types.CardType as CardType
 import qualified Parun.Types.Filter as Filter
+import qualified Parun.Types.KeywordDesignator as KeywordDesignator
+import qualified Parun.Types.KeywordFamily as KeywordFamily
 import qualified Parun.Types.LeavesTrigger as LeavesTrigger
 import qualified Parun.Types.LeavingPermanent as LeavingPermanent
 import qualified Parun.Types.OwnedZone as OwnedZone
@@ -39,6 +44,12 @@ spec s = Spec.describe s "Parun.Codec.LeavesTrigger" $ do
     Common.assertCodec
       s
       LeavesTrigger.codec
-      (LeavesTrigger.MkLeavesTrigger (LeavingPermanent.Matching (Filter.Not (Filter.HasCardType CardType.Creature))) (Set.singleton (OwnedZone.MkOwnedZone Zone.Hand PlayerRelation.AnyPlayer)) (Set.singleton (OwnedZone.MkOwnedZone Zone.Graveyard PlayerRelation.AnyPlayer)) Batching.OneOrMore)
-      " {\"batching\":\"OneOrMore\",\"destinations\":[{\"zone\":\"Hand\"}],\"excluded\":[{\"zone\":\"Graveyard\"}],\"permanent\":{\"type\":\"Matching\",\"value\":{\"type\":\"Not\",\"value\":{\"type\":\"HasCardType\",\"value\":\"Creature\"}}}} "
+      (LeavesTrigger.MkLeavesTrigger (LeavingPermanent.Matching (Filter.Not (Filter.HasCardType CardType.Creature))) (Set.singleton (OwnedZone.MkOwnedZone Zone.Hand PlayerRelation.AnyPlayer)) (Set.singleton (OwnedZone.MkOwnedZone Zone.Graveyard PlayerRelation.AnyPlayer)) Batching.OneOrMore (Just (KeywordDesignator.OfFamily KeywordFamily.Craft)))
+      " {\"batching\":\"OneOrMore\",\"destinations\":[{\"zone\":\"Hand\"}],\"excluded\":[{\"zone\":\"Graveyard\"}],\"permanent\":{\"type\":\"Matching\",\"value\":{\"type\":\"Not\",\"value\":{\"type\":\"HasCardType\",\"value\":\"Creature\"}}},\"whileActivating\":{\"type\":\"OfFamily\",\"value\":\"Craft\"}} "
+  -- Unprinted, and refused: a departure from the game records no activation.
+  Spec.it s "rejects whileActivating without a destination" $
+    Spec.assertBool
+      s
+      (Either.isLeft (Codec.decode LeavesTrigger.codec =<< Common.parse (Text.pack "{\"whileActivating\":{\"type\":\"OfFamily\",\"value\":\"Craft\"}}")))
+      "expected a decode failure"
   Spec.it s "has a schema" $ Common.assertHasSchema s LeavesTrigger.codec

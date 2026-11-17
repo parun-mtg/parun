@@ -792,7 +792,7 @@ permissionRewrites pairs =
 -- CR 612.1 over a counter trigger's holder: the Filter, where there is one.
 -- CR 612.1 through a trigger's own condition (CR 603.1): its Filters, its
 -- conditions and a printed colour of mana. A counter kind, a slot name, a
--- turn scope and a player reference hold no word Parun.Types.ChangeText's
+-- turn scope, a player reference and a keyword designator hold no word Parun.Types.ChangeText's
 -- pairs swap, and a transform's face is a card name (CR 612.2), so the leaves
 -- keep them.
 rewriteTriggerCondition :: [(TextWord.TextWord, TextWord.TextWord)] -> TriggerCondition.TriggerCondition -> TriggerCondition.TriggerCondition

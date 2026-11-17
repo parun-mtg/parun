@@ -141,7 +141,7 @@ activateAbility pid srcId ability = Monad.void (activateAbilityWith (const False
 -- how a completed activation was announced and paid, and Nothing for one
 -- rejected.
 activateAbilityWith :: (Completion.Completion -> Bool) -> Game Result -> PlayerId -> ObjectId -> ActivatedAbility.ActivatedAbility Card.Card (GrantedAbility.GrantedAbility Card.Card) -> Game (Maybe Completion.Completion)
-activateAbilityWith refused runSubgame pid srcId ability = Event.announcing $ do
+activateAbilityWith refused runSubgame pid srcId ability = Event.announcing . Event.activating $ do
   before <- State.get
   -- CR 602.2a's own order: the reveal is part of announcing, and so precedes
   -- the ability becoming an object on the stack (the rest of that same rule).
@@ -189,7 +189,10 @@ activateAbilityWith refused runSubgame pid srcId ability = Event.announcing $ do
       -- The mana this activation may be paid with, asked by both gates and the
       -- payment alike (ActivationRestriction.SpendOnly).
       spendable = ActivationRestriction.spendableTypes srcId (ActivatedAbility.restrictions ability) gs
-  State.put onStack
+      -- CR 602.2b / 601.2i: the activation as it is recorded once activated,
+      -- and as a move made while it is under way records it (Market Gnome).
+      activation = AbilityWasActivated.MkAbilityWasActivated {AbilityWasActivated.player = pid, AbilityWasActivated.ability = Just abilId, AbilityWasActivated.source = srcId, AbilityWasActivated.facts = Game.abilityFacts AbilityKind.NonManaAbility (Just ability), AbilityWasActivated.activationCost = Cost.Type.mana (ActivatedAbility.cost ability)}
+  State.put (Event.nowActivating activation onStack)
   -- Stamped before the cost is paid, so every prompt from here on is asked with
   -- the card revealed. Inside the rollback: every rejection restores `before`.
   Monad.when revealed (Event.stampReveal (revealWindowFor ability abilId gs) srcId)
@@ -551,7 +554,7 @@ activateAbilityWith refused runSubgame pid srcId ability = Event.announcing $ do
                 -- and the log lives in that state, so no rejected activation
                 -- can leave a record behind.
                 Payment.Paid bound -> do
-                  State.modify' (Event.recordEvent (GameEvent.AbilityActivated AbilityWasActivated.MkAbilityWasActivated {AbilityWasActivated.player = pid, AbilityWasActivated.ability = Just abilId, AbilityWasActivated.source = srcId, AbilityWasActivated.facts = Game.abilityFacts AbilityKind.NonManaAbility (Just ability), AbilityWasActivated.activationCost = Cost.Type.mana (ActivatedAbility.cost ability)}))
+                  State.modify' (Event.recordEvent (GameEvent.AbilityActivated activation))
                   -- CR 608.2h: the slots the PAYMENT bound -- the permanent a
                   -- Sacrifice component put in a graveyard -- folded onto the
                   -- ability object, so "the sacrificed creature's power" has a

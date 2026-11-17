@@ -3,6 +3,7 @@
 module Parun.Codec.Moved where
 
 import qualified Data.Sequence as Seq
+import qualified Parun.Codec.AbilityWasActivated as AbilityWasActivated
 import qualified Parun.Codec.Cause as Cause
 import qualified Parun.Codec.ObjectId as ObjectId
 import qualified Parun.Codec.ObjectSnapshot as ObjectSnapshot
@@ -37,6 +38,9 @@ codec = Fields.object $ do
   causedBy <- Fields.defaulted "causedBy" Nothing (Common.maybe Cause.codec) Moved.causedBy
   -- Defaulted for the same reason: a hand-built event leaves it unset.
   arrived <- Fields.defaulted "arrived" Nothing (Common.maybe ObjectSnapshot.codec) Moved.arrived
+  -- Defaulted for the same reason: only a move made while an ability is
+  -- being activated sets it.
+  whileActivating <- Fields.defaulted "whileActivating" [] (Common.list AbilityWasActivated.codec) Moved.whileActivating
   pure
     Moved.MkMoved
       { Moved.change = change,
@@ -47,5 +51,6 @@ codec = Fields.object $ do
         Moved.revealed = revealed,
         Moved.seenArriving = seenArriving,
         Moved.causedBy = causedBy,
-        Moved.arrived = arrived
+        Moved.arrived = arrived,
+        Moved.whileActivating = whileActivating
       }

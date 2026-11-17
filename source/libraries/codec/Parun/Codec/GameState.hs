@@ -7,6 +7,7 @@ import qualified Data.Map.Strict as Map
 import qualified Data.Sequence as Seq
 import qualified Data.Set as Set
 import qualified Parun.Codec.AbilityTriggered as AbilityTriggered
+import qualified Parun.Codec.AbilityWasActivated as AbilityWasActivated
 import qualified Parun.Codec.ActiveAttackProhibition as ActiveAttackProhibition
 import qualified Parun.Codec.ActiveAttackRequirement as ActiveAttackRequirement
 import qualified Parun.Codec.ActiveBlockRequirement as ActiveBlockRequirement
@@ -237,6 +238,7 @@ codec resolve = Fields.object $ do
   gameNumber <- Fields.defaulted "gameNumber" 1 Common.natural (MatchScope.gameNumber . GameState.match)
   throwing <- Fields.defaulted "throwing" Nothing (Common.maybe ThrowResult.codec) (Scratch.throwing . GameState.scratch)
   rethrowRequested <- Fields.defaulted "rethrowRequested" False Common.boolean (Scratch.rethrowRequested . GameState.scratch)
+  activating <- Fields.defaulted "activating" [] (Common.list AbilityWasActivated.codec) (Scratch.activating . GameState.scratch)
   undone <- Fields.defaulted "undone" Map.empty (Common.naturalMap PlayerId.codec Undoing.codec) (Bookkeeping.undone . GameState.bookkeeping)
   pure
     GameState.MkGameState
@@ -284,7 +286,8 @@ codec resolve = Fields.object $ do
               Scratch.actionTops = actionTops,
               Scratch.loopPicks = loopPicks,
               Scratch.throwing = throwing,
-              Scratch.rethrowRequested = rethrowRequested
+              Scratch.rethrowRequested = rethrowRequested,
+              Scratch.activating = activating
             },
         GameState.bookkeeping =
           Bookkeeping.MkBookkeeping

@@ -41,6 +41,8 @@ import qualified Parun.Types.Holder as Holder
 import qualified Parun.Types.Hop as Hop
 import qualified Parun.Types.InZone as InZone
 import qualified Parun.Types.Keyword as Keyword
+import qualified Parun.Types.KeywordDesignator as KeywordDesignator
+import qualified Parun.Types.KeywordFamily as KeywordFamily
 import qualified Parun.Types.LeavesTrigger as LeavesTrigger
 import qualified Parun.Types.LeavingPermanent as LeavingPermanent
 import qualified Parun.Types.LifeDirection as LifeDirection
@@ -123,12 +125,12 @@ event context creature c = case c of
   -- spells CR 700.4's event out, Oracle text having no land "die": "another
   -- creature you control or a land you control is put into a graveyard from
   -- the battlefield" (Long Feng, Grand Secretariat).
-  TriggerCondition.Leaves t@(LeavesTrigger.MkLeavesTrigger (LeavingPermanent.Matching f@(Filter.Type.And (Filter.Type.Or gs : common))) _ _ _)
+  TriggerCondition.Leaves t@(LeavesTrigger.MkLeavesTrigger (LeavingPermanent.Matching f@(Filter.Type.And (Filter.Type.Or gs : common))) _ _ _ _)
     | t == LeavesTrigger.dies (LeavingPermanent.Matching f),
       any (\g -> case g of Filter.Type.And (_ : _ : _) -> True; _ -> False) gs -> do
         ones <- traverse (\g -> fmap fst (described context (Filter.Type.And (g : common)))) gs
         [other ("Whenever " <> List.intercalate " or " ones <> " is put into a graveyard from the battlefield") [(becameSlot, "it"), (departedPermanent, "it")]]
-  TriggerCondition.Leaves t@(LeavesTrigger.MkLeavesTrigger (LeavingPermanent.Matching f) _ _ _) | t == LeavesTrigger.dies (LeavingPermanent.Matching f) -> do
+  TriggerCondition.Leaves t@(LeavesTrigger.MkLeavesTrigger (LeavingPermanent.Matching f) _ _ _ _) | t == LeavesTrigger.dies (LeavingPermanent.Matching f) -> do
     (one, that) <- described context f
     word <- ["it", that]
     subject <- also one
@@ -245,6 +247,7 @@ selfEvent context creature c = case c of
     | t == LeavesTrigger.defaultValue -> [(["When"], "leaves the battlefield", [(becameSlot, "it")])]
     | t == putFromBattlefieldInto Zone.Graveyard PlayerRelation.You -> [(["When"], "is put into your graveyard from the battlefield", [(becameSlot, "it")])]
     | t == putFromBattlefieldInto Zone.Exile PlayerRelation.AnyPlayer -> [(["When"], "is put into exile from the battlefield", [(becameSlot, "it")])]
+    | t == (putFromBattlefieldInto Zone.Exile PlayerRelation.AnyPlayer) {LeavesTrigger.whileActivating = Just (KeywordDesignator.OfFamily KeywordFamily.Craft)} -> [(["When"], "is exiled from the battlefield while you're activating a craft ability", [(becameSlot, "it")])]
   TriggerCondition.Attacks (AttackTrigger.Attacker (AttackerTrigger.MkAttackerTrigger creature' AttackerTarget.AnyTarget company frequency Nothing))
     | Filter.Type.IsSource <- creature', AttackCompany.AnyCompany <- company, TriggerFrequency.EveryTime <- frequency -> [(recurring, "attacks", [(thatPlayer, "defending player")])]
     | Filter.Type.IsSource <- creature', AttackCompany.AnyCompany <- company, TriggerFrequency.FirstTimeEachTurn <- frequency -> [(recurring, "attacks for the first time each turn", [(thatPlayer, "defending player")])]

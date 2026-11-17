@@ -1,6 +1,7 @@
 module Parun.Types.Moved where
 
 import qualified Data.Sequence as Seq
+import qualified Parun.Types.AbilityWasActivated as AbilityWasActivated
 import qualified Parun.Types.Cause as Cause
 import qualified Parun.Types.ObjectId as ObjectId
 import qualified Parun.Types.ObjectSnapshot as ObjectSnapshot
@@ -77,14 +78,18 @@ data Moved = MkMoved
     -- | CR 608.2i: the leading arrival as it stood once the move finished,
     -- which `characteristics`, the departing object's, is not (CR 707.5's copy
     -- entering). Nothing where it no longer existed, and on a hand-built event.
-    arrived :: Maybe ObjectSnapshot.ObjectSnapshot
+    arrived :: Maybe ObjectSnapshot.ObjectSnapshot,
+    -- | CR 602.2: the activations under way as the object moved
+    -- (Scratch.activating), innermost first -- Market Gnome's "while you're
+    -- activating a craft ability". Empty for a move made outside one.
+    whileActivating :: [AbilityWasActivated.AbilityWasActivated]
   }
   deriving (Eq, Ord, Show)
 
 -- | The ordinary move: one departure, one arrival, no CR 713.8 split. Every
 -- construction site but Parun.Engine.Event's zone-change funnel uses this.
 moved :: ZoneChange.ZoneChange -> ProjectedCharacteristics.ProjectedCharacteristics -> Moved
-moved zc pc = MkMoved {change = zc, characteristics = pc, otherArrivals = Seq.empty, otherDepartures = Seq.empty, duringResolution = False, revealed = False, seenArriving = False, causedBy = Nothing, arrived = Nothing}
+moved zc pc = MkMoved {change = zc, characteristics = pc, otherArrivals = Seq.empty, otherDepartures = Seq.empty, duringResolution = False, revealed = False, seenArriving = False, causedBy = Nothing, arrived = Nothing, whileActivating = []}
 
 -- | CR 400.7e's "the new object it became", in the plural CR 713.8c asks for:
 -- every incarnation this move minted, first arrival first. A singleton for every

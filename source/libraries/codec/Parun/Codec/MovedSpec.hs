@@ -6,8 +6,12 @@ import qualified Parun.Codec.Moved as Moved
 import qualified Parun.Codec.ProjectedCharacteristicsSpec as ProjectedCharacteristicsSpec
 import qualified Parun.JsonCodec.Common as Common
 import qualified Parun.Spec as Spec
+import qualified Parun.Types.AbilityFacts as AbilityFacts
+import qualified Parun.Types.AbilityKind as AbilityKind
+import qualified Parun.Types.AbilityWasActivated as AbilityWasActivated
 import qualified Parun.Types.Cause as Cause
 import qualified Parun.Types.KeywordFamily as KeywordFamily
+import qualified Parun.Types.LoyaltyKind as LoyaltyKind
 import qualified Parun.Types.Moved as Moved
 import qualified Parun.Types.ObjectId as ObjectId
 import qualified Parun.Types.ObjectSnapshot as ObjectSnapshot
@@ -32,7 +36,8 @@ spec s = Spec.describe s "Parun.Codec.Moved" $ do
             Moved.revealed = False,
             Moved.seenArriving = False,
             Moved.causedBy = Nothing,
-            Moved.arrived = Nothing
+            Moved.arrived = Nothing,
+            Moved.whileActivating = []
           }
       )
       ( "{\"change\":{\"departed\":1,\"object\":2,\"from\":\"Battlefield\",\"to\":\"Graveyard\"},\"characteristics\":"
@@ -54,7 +59,8 @@ spec s = Spec.describe s "Parun.Codec.Moved" $ do
             Moved.revealed = False,
             Moved.seenArriving = False,
             Moved.causedBy = Nothing,
-            Moved.arrived = Nothing
+            Moved.arrived = Nothing,
+            Moved.whileActivating = []
           }
       )
       ( "{\"change\":{\"departed\":1,\"object\":2,\"from\":\"Battlefield\",\"to\":\"Graveyard\"},\"characteristics\":"
@@ -76,7 +82,8 @@ spec s = Spec.describe s "Parun.Codec.Moved" $ do
             Moved.revealed = False,
             Moved.seenArriving = False,
             Moved.causedBy = Nothing,
-            Moved.arrived = Nothing
+            Moved.arrived = Nothing,
+            Moved.whileActivating = []
           }
       )
       ( "{\"change\":{\"departed\":1,\"object\":2,\"from\":\"Exile\",\"to\":\"Battlefield\"},\"characteristics\":"
@@ -98,7 +105,8 @@ spec s = Spec.describe s "Parun.Codec.Moved" $ do
             Moved.revealed = False,
             Moved.seenArriving = False,
             Moved.causedBy = Nothing,
-            Moved.arrived = Nothing
+            Moved.arrived = Nothing,
+            Moved.whileActivating = []
           }
       )
       ( "{\"change\":{\"departed\":1,\"object\":2,\"from\":\"Stack\",\"to\":\"Graveyard\"},\"characteristics\":"
@@ -120,7 +128,8 @@ spec s = Spec.describe s "Parun.Codec.Moved" $ do
             Moved.revealed = True,
             Moved.seenArriving = False,
             Moved.causedBy = Nothing,
-            Moved.arrived = Nothing
+            Moved.arrived = Nothing,
+            Moved.whileActivating = []
           }
       )
       ( "{\"change\":{\"departed\":1,\"object\":2,\"from\":\"Hand\",\"to\":\"Library\"},\"characteristics\":"
@@ -142,7 +151,8 @@ spec s = Spec.describe s "Parun.Codec.Moved" $ do
             Moved.revealed = False,
             Moved.seenArriving = True,
             Moved.causedBy = Nothing,
-            Moved.arrived = Nothing
+            Moved.arrived = Nothing,
+            Moved.whileActivating = []
           }
       )
       ( "{\"change\":{\"departed\":1,\"object\":2,\"from\":\"Library\",\"to\":\"Battlefield\"},\"characteristics\":"
@@ -164,7 +174,8 @@ spec s = Spec.describe s "Parun.Codec.Moved" $ do
             Moved.revealed = False,
             Moved.seenArriving = False,
             Moved.causedBy = Just (Cause.MkCause (PlayerId.MkPlayerId 1) (ObjectId.MkObjectId 7) (Just KeywordFamily.Champion)),
-            Moved.arrived = Nothing
+            Moved.arrived = Nothing,
+            Moved.whileActivating = []
           }
       )
       ( "{\"change\":{\"departed\":1,\"object\":2,\"from\":\"Battlefield\",\"to\":\"Graveyard\"},\"characteristics\":"
@@ -196,7 +207,8 @@ spec s = Spec.describe s "Parun.Codec.Moved" $ do
                     ObjectSnapshot.zone = Zone.Battlefield,
                     ObjectSnapshot.home = Zone.Battlefield,
                     ObjectSnapshot.lapsedGrants = Set.empty
-                  }
+                  },
+            Moved.whileActivating = []
           }
       )
       ( "{\"change\":{\"departed\":1,\"object\":2,\"from\":\"Hand\",\"to\":\"Battlefield\"},\"characteristics\":"
@@ -204,5 +216,27 @@ spec s = Spec.describe s "Parun.Codec.Moved" $ do
           <> ",\"otherArrivals\":[],\"arrived\":{\"object\":2,\"characteristics\":"
           <> ProjectedCharacteristicsSpec.testCharacteristicsJson
           <> ",\"controller\":1,\"owner\":0,\"zone\":\"Battlefield\"}}"
+      )
+  -- CR 602.2's activation under way, the one shape the defaulted key appears
+  -- in: Market Gnome exiled to pay a craft cost.
+  Spec.it s "MkMoved, CR 602.2's move made while activating" $
+    Common.assertCodec
+      s
+      Moved.codec
+      ( (Moved.moved (ZoneChange.MkZoneChange (ObjectId.MkObjectId 1) (ObjectId.MkObjectId 2) Zone.Battlefield Zone.Exile) ProjectedCharacteristicsSpec.testCharacteristics)
+          { Moved.whileActivating =
+              [ AbilityWasActivated.MkAbilityWasActivated
+                  { AbilityWasActivated.player = PlayerId.MkPlayerId 1,
+                    AbilityWasActivated.ability = Just (ObjectId.MkObjectId 7),
+                    AbilityWasActivated.source = ObjectId.MkObjectId 3,
+                    AbilityWasActivated.facts = AbilityFacts.MkAbilityFacts Nothing Nothing AbilityKind.NonManaAbility LoyaltyKind.NonLoyaltyAbility,
+                    AbilityWasActivated.activationCost = Nothing
+                  }
+              ]
+          }
+      )
+      ( "{\"change\":{\"departed\":1,\"object\":2,\"from\":\"Battlefield\",\"to\":\"Exile\"},\"characteristics\":"
+          <> ProjectedCharacteristicsSpec.testCharacteristicsJson
+          <> ",\"otherArrivals\":[],\"whileActivating\":[{\"player\":1,\"ability\":7,\"source\":3,\"kind\":\"NonManaAbility\",\"loyalty\":\"NonLoyaltyAbility\"}]}"
       )
   Spec.it s "has a schema" $ Common.assertHasSchema s Moved.codec

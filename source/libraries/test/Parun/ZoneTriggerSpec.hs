@@ -1195,7 +1195,7 @@ permanentsDieSpec s registry =
         Set.fromList
           ( Maybe.mapMaybe
               ( \logged -> case LoggedEvent.event logged of
-                  GameEvent.Moved (Moved.MkMoved zc _ _ _ _ _ _ _ _)
+                  GameEvent.Moved (Moved.MkMoved zc _ _ _ _ _ _ _ _ _)
                     | ZoneChange.from zc == Zone.Battlefield && ZoneChange.to zc == Zone.Graveyard -> Just (LoggedEvent.group logged)
                   _ -> Nothing
               )

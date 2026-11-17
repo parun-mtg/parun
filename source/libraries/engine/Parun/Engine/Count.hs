@@ -813,7 +813,7 @@ slotPlayers context gs name = case Map.lookup name (Filter.slotPlayers context) 
 -- count's own, which a damage recipient is judged in (CR 109.5's "you").
 snapshotView :: ViewOf -> Filter.Context -> GameState -> EventShape.EventShape Keyword.Type.Keyword -> GameEvent.GameEvent -> Maybe Filter.View
 snapshotView viewOf context gs shape event = case event of
-  GameEvent.Moved (Moved.MkMoved zc snapshot _ _ _ _ seenArriving _ arrivedAs) -> case shape of
+  GameEvent.Moved (Moved.MkMoved zc snapshot _ _ _ _ seenArriving _ arrivedAs _) -> case shape of
     EventShape.MovedBetween (MovedBetween.MkMovedBetween from to) ->
       if ZoneChange.from zc == from && ZoneChange.to zc == to then Just (departedView viewOf gs zc snapshot) else Nothing
     -- CR 603.6c: to another zone, so Event.recordMintedArrival's same-zone

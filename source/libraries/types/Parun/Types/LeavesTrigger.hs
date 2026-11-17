@@ -2,6 +2,8 @@ module Parun.Types.LeavesTrigger where
 
 import qualified Data.Set as Set
 import qualified Parun.Types.Batching as Batching
+import qualified Parun.Types.Keyword as Keyword
+import qualified Parun.Types.KeywordDesignator as KeywordDesignator
 import qualified Parun.Types.LeavingPermanent as LeavingPermanent
 import qualified Parun.Types.OwnedZone as OwnedZone
 import qualified Parun.Types.PlayerRelation as PlayerRelation
@@ -17,7 +19,12 @@ data LeavesTrigger = MkLeavesTrigger
     -- | The destinations refused, whatever `destinations` admits; CR 700.4's
     -- graveyard for "without dying", where leaving the game still counts.
     excluded :: Set.Set OwnedZone.OwnedZone,
-    batching :: Batching.Batching
+    batching :: Batching.Batching,
+    -- | CR 602.2: only a departure made while the trigger's controller is
+    -- activating an ability of this rule-702 keyword (Moved.whileActivating) --
+    -- Market Gnome's "while you're activating a craft ability". Nothing for
+    -- every departure.
+    whileActivating :: Maybe (KeywordDesignator.KeywordDesignator Keyword.Keyword)
   }
   deriving (Eq, Ord, Show)
 
@@ -29,7 +36,8 @@ defaultValue =
     { permanent = LeavingPermanent.Self,
       destinations = Set.empty,
       excluded = Set.empty,
-      batching = Batching.EachOccurrence
+      batching = Batching.EachOccurrence,
+      whileActivating = Nothing
     }
 
 -- | CR 700.4's "dies": the permanent is put into a graveyard, anyone's.

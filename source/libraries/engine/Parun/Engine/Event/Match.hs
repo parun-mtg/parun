@@ -18,6 +18,7 @@ import qualified Parun.Engine.Count as Count
 import Parun.Engine.Event.Binding (admitsAttacker, admitsDeparture, admittedAt, admittedAttackers, admittedDepartures, admittedPreventedSources, attackedBy, combatDamagerOn, postEventView)
 import qualified Parun.Engine.Filter as Filter
 import qualified Parun.Engine.Game as Game
+import qualified Parun.Engine.Keyword as Keyword
 import qualified Parun.Engine.Plane as Plane
 import qualified Parun.Engine.PlayerEffect as PlayerEffect
 import qualified Parun.Engine.Projection as Projection
@@ -27,6 +28,7 @@ import qualified Parun.Engine.Saga as Saga
 import qualified Parun.Engine.Turn as Turn
 import qualified Parun.Extra.Natural as Natural
 import qualified Parun.Types.AbilityAddsMana as AbilityAddsMana
+import qualified Parun.Types.AbilityFacts as AbilityFacts
 import qualified Parun.Types.AbilityTriggered as AbilityTriggered
 import qualified Parun.Types.AbilityWasActivated as AbilityWasActivated
 import qualified Parun.Types.AbilityWatch as AbilityWatch
@@ -704,17 +706,24 @@ enters context board gs bearer you t event = case Game.enteredBattlefieldChange 
 -- Parun.Types.EventGroup is what fires it once (CR 603.2c).
 leaves :: Map.Map SlotName.SlotName Binding -> Filter.Context -> Maybe GameState -> GameState -> ObjectId -> PlayerId -> LeavesTrigger.LeavesTrigger -> GameEvent -> Bool
 leaves bindings context before gs bearer you t event = case event of
-  GameEvent.Moved (Moved.MkMoved zc _ _ _ _ _ _ _ _) ->
-    ZoneChange.from zc == Zone.Battlefield
-      && ZoneChange.to zc /= Zone.Battlefield
-      && (Set.null destinations || any (reaches (ZoneChange.to zc) (ZoneChange.departed zc)) destinations)
-      && not (any (reaches (ZoneChange.to zc) (ZoneChange.departed zc)) (LeavesTrigger.excluded t))
-      && deathTriggers before before you bearer zc
-      && watched (ZoneChange.departed zc)
+  GameEvent.Moved moved ->
+    let zc = Moved.change moved
+     in ZoneChange.from zc == Zone.Battlefield
+          && ZoneChange.to zc /= Zone.Battlefield
+          && (Set.null destinations || any (reaches (ZoneChange.to zc) (ZoneChange.departed zc)) destinations)
+          && not (any (reaches (ZoneChange.to zc) (ZoneChange.departed zc)) (LeavesTrigger.excluded t))
+          && deathTriggers before before you bearer zc
+          && all (\designator -> any (activatedBy designator) (Moved.whileActivating moved)) (LeavesTrigger.whileActivating t)
+          && watched (ZoneChange.departed zc)
   GameEvent.LeftTheGame l -> Set.null destinations && LeftTheGame.from l == Zone.Battlefield && watched (LeftTheGame.object l)
   _ -> False
   where
     destinations = LeavesTrigger.destinations t
+    -- CR 602.2: "while you're activating" -- the trigger's controller, an
+    -- ability under the keyword named.
+    activatedBy designator activation =
+      AbilityWasActivated.player activation == you
+        && any (Keyword.designates designator) (AbilityFacts.keyword (AbilityWasActivated.facts activation))
     reaches to departed (OwnedZone.MkOwnedZone zone owner) =
       to == zone
         && (PlayerRelation.perspectiveFree owner || maybe False (PlayerRelation.holds (Game.teams gs) owner you) (Game.ownerWithLastKnown departed gs))

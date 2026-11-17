@@ -522,7 +522,8 @@ blankScratch =
       Scratch.actionTops = Nothing,
       Scratch.loopPicks = Nothing,
       Scratch.throwing = Nothing,
-      Scratch.rethrowRequested = False
+      Scratch.rethrowRequested = False,
+      Scratch.activating = []
     }
 
 -- The history of a game nothing has happened in yet.
@@ -3955,7 +3956,7 @@ arrivalsOf oid gs =
 -- than in each of them.
 movedChange :: GameEvent -> Maybe ZoneChange.ZoneChange
 movedChange event = case event of
-  GameEvent.Moved (Moved.MkMoved change _ _ _ _ _ _ _ _) -> Just change
+  GameEvent.Moved (Moved.MkMoved change _ _ _ _ _ _ _ _ _) -> Just change
   GameEvent.Discarded {} -> Nothing
   GameEvent.Drew {} -> Nothing
   GameEvent.SpellCast {} -> Nothing
