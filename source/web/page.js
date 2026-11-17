@@ -4,7 +4,15 @@
 // is #app's only child, and paths count from it.
 const root = document.getElementById("app");
 const events = ["click", "input", "change"];
-const engine = new Worker(new URL("./engine.js", import.meta.url), { type: "module" });
+const engineUrl = new URL("./engine.js", import.meta.url);
+engineUrl.search = location.search;
+const engine = new Worker(engineUrl, { type: "module" });
+// With ?trace, the engine's step timings and the page's own go to a panel.
+const trace = new URLSearchParams(location.search).has("trace") ? document.getElementById("trace") : null;
+if (trace) trace.closest("details").hidden = false;
+function traced(line) {
+  if (trace) trace.textContent += `${Math.round(performance.now())} ${line}\n`;
+}
 
 // The engine's load phases and the last tap's response time show at the foot
 // of the page.
@@ -82,6 +90,7 @@ for (const type of events) {
     if (type === "click" && event.target.closest("button")) {
       document.body.classList.add("busy");
       tapped = performance.now();
+      traced("page: tap");
     }
     engine.postMessage({ type, path, value: String(event.target.value ?? "") });
     // A typed line is sent once; the box is ready for the next.
@@ -90,7 +99,11 @@ for (const type of events) {
 }
 
 engine.onmessage = ({ data }) => {
-  if ("patches" in data) apply(data.patches);
-  else if ("phase" in data) note(data.phase);
+  if ("patches" in data) {
+    const began = performance.now();
+    apply(data.patches);
+    traced(`page: applied ${data.patches.length} bytes in ${Math.round(performance.now() - began)} ms`);
+  } else if ("phase" in data) note(data.phase);
+  else if ("trace" in data) traced(data.trace);
 };
 engine.onerror = (error) => note(`engine failed: ${error.message}`);

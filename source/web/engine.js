@@ -77,10 +77,13 @@ phase(`fetched ${data.length} bytes`);
 const mounted = new PreopenDirectory("/data", inodes(untar(data)));
 phase("unpacked");
 
-const wasi = new WASI([], ["parun_datadir=/data"], [
+// ?trace, passed on from the page, has Haskell time each step on standard
+// error (Parun.Browser.trace), which goes to the page's trace.
+const tracing = new URLSearchParams(location.search).has("trace");
+const wasi = new WASI([], ["parun_datadir=/data", ...(tracing ? ["parun_trace=1"] : [])], [
   new OpenFile(new File([])),
   ConsoleStdout.lineBuffered((line) => console.log(line)),
-  ConsoleStdout.lineBuffered((line) => console.warn(line)),
+  ConsoleStdout.lineBuffered((line) => (tracing ? postMessage({ trace: line }) : console.warn(line))),
   mounted,
 ], { debug: false });
 const exports = {};
@@ -92,4 +95,5 @@ Object.assign(exports, instance.exports);
 phase("compiled");
 wasi.initialize(instance);
 // The game runs inside start, waiting on the page between answers.
-instance.exports.start();
+// An exception Haskell does not catch rejects start's promise; the page says so.
+instance.exports.start().catch((error) => postMessage({ phase: `engine failed: ${error.message}` }));
