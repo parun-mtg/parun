@@ -22,6 +22,7 @@ import qualified Parun.Engine.Sector as Sector
 import qualified Parun.Engine.Subtype as Subtype.Engine
 import qualified Parun.Engine.TextWord as TextWord
 import qualified Parun.Engine.Turn as Turn
+import qualified Parun.Extra.Natural as Natural.Extra
 import qualified Parun.Types.AbilityFacts as AbilityFacts
 import qualified Parun.Types.AbilityKind as AbilityKind
 import qualified Parun.Types.AbilityName as AbilityName
@@ -1035,6 +1036,29 @@ dealtByView ev =
       commander = DamageEvent.dealtByCommander ev,
       zone = DamageEvent.dealtFromZone ev
     }
+
+-- CR 115.1 / 603.10: `view`, a damage event's source, aiming at what it aimed
+-- at as it dealt the damage (DamageEvent.dealtByTargets), each target seen as
+-- `viewOf` answers -- so TargetsOnlyOne reads a spell that has since left the
+-- stack, and a target the damage killed.
+withDealtTargets :: (Recipient.Recipient -> Maybe View) -> DamageEvent.DamageEvent -> View -> View
+withDealtTargets viewOf ev view =
+  let bySlot = DamageEvent.dealtByTargets ev
+      aimed = Set.unions (Map.elems bySlot)
+   in view
+        { targets = aimed,
+          targetViews = Map.fromList [(r, v) | r <- Set.toList aimed, Just v <- [viewOf r]],
+          targetCount = sum (fmap Natural.Extra.length (Map.elems bySlot))
+        }
+
+-- CR 115.1: `context` framed so IsTarget asks whether a candidate was a target
+-- of a damage event's source as it dealt the damage -- Imodane, the
+-- Pyrohammer's "deals damage to that creature". Every object it aimed at, under
+-- Binding.announcedTargets.
+dealtTargetsContext :: DamageEvent.DamageEvent -> Context -> Context
+dealtTargetsContext ev context =
+  let aimed = Set.fromList (Maybe.mapMaybe Recipient.objectOf (Set.toList (Set.unions (Map.elems (DamageEvent.dealtByTargets ev)))))
+   in context {slotObjects = Map.insert Binding.announcedTargets aimed (slotObjects context)}
 
 -- playerView short of the player's identity: every axis empty, false or the
 -- default, each note giving the reason for a player. dealtByView builds on it

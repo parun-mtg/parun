@@ -1,5 +1,6 @@
 module Parun.Codec.DamageEventSpec where
 
+import qualified Data.Map.Strict as Map
 import qualified Data.Set as Set
 import qualified Data.Text as Text
 import qualified Parun.Codec.DamageEvent as DamageEvent
@@ -13,6 +14,7 @@ import qualified Parun.Types.DamageKind as DamageKind
 import qualified Parun.Types.ObjectId as ObjectId
 import qualified Parun.Types.PlayerId as PlayerId
 import qualified Parun.Types.Recipient as Recipient
+import qualified Parun.Types.SlotName as SlotName
 import qualified Parun.Types.Subtype as Subtype
 import qualified Parun.Types.Supertype as Supertype
 import qualified Parun.Types.Zone as Zone
@@ -47,6 +49,7 @@ spec s = Spec.describe s "Parun.Codec.DamageEvent" $ do
           DamageEvent.dealtByColors = Set.singleton Color.Red,
           DamageEvent.dealtByNames = Set.singleton (CardName.MkCardName (Text.pack "Blazing Effigy")),
           DamageEvent.dealtFromZone = Nothing,
+          DamageEvent.dealtByTargets = Map.empty,
           DamageEvent.recipientCardTypes = Set.empty,
           DamageEvent.recipientController = Nothing,
           DamageEvent.kind = DamageKind.Combat
@@ -54,7 +57,7 @@ spec s = Spec.describe s "Parun.Codec.DamageEvent" $ do
       " {\"source\":1,\"target\":{\"type\":\"ToPlayer\",\"value\":2},\"amount\":3,\"dealtByDeathtouch\":true,\"dealtByWither\":true,\"dealtByToxic\":2,\"dealtByController\":4,\"dealtByCreatureTypes\":[\"Rogue\"],\"dealtByCommander\":true,\"dealtByCardTypes\":[\"Artifact\"],\"dealtBySupertypes\":[\"Legendary\"],\"dealtByColors\":[\"Red\"],\"dealtByNames\":[\"Blazing Effigy\"],\"kind\":\"Combat\"} "
   -- CR 120.3c's recipient tag and CR 608's noncombat damage are each the other
   -- arm of their type. CR 702.15b's lifelink payee is a concrete PlayerId, and
-  -- CR 120.10's excess, CR 400.1's zone and CR 120.3's recipient card types
+  -- CR 120.10's excess, CR 400.1's zone, CR 115.1's targets and CR 120.3's recipient card types
   -- and controller are away from their defaults.
   Spec.it s "MkDamageEvent, dealt to a planeswalker, with lifelink" $
     Common.assertCodec
@@ -78,11 +81,12 @@ spec s = Spec.describe s "Parun.Codec.DamageEvent" $ do
           DamageEvent.dealtByColors = Set.empty,
           DamageEvent.dealtByNames = Set.empty,
           DamageEvent.dealtFromZone = Just Zone.Stack,
+          DamageEvent.dealtByTargets = Map.singleton (SlotName.MkSlotName (Text.pack "target")) (Set.singleton (Recipient.ToPlaneswalker (ObjectId.MkObjectId 5))),
           DamageEvent.recipientCardTypes = Set.singleton CardType.Planeswalker,
           DamageEvent.recipientController = Just (PlayerId.MkPlayerId 3),
           DamageEvent.kind = DamageKind.Noncombat
         }
-      " {\"source\":1,\"target\":{\"type\":\"ToPlaneswalker\",\"value\":5},\"amount\":4,\"excess\":1,\"dealtByInfect\":true,\"dealtByLifelink\":2,\"dealtFromZone\":\"Stack\",\"recipientCardTypes\":[\"Planeswalker\"],\"recipientController\":3,\"kind\":\"Noncombat\"} "
+      " {\"source\":1,\"target\":{\"type\":\"ToPlaneswalker\",\"value\":5},\"amount\":4,\"excess\":1,\"dealtByInfect\":true,\"dealtByLifelink\":2,\"dealtFromZone\":\"Stack\",\"dealtByTargets\":{\"target\":[{\"type\":\"ToPlaneswalker\",\"value\":5}]},\"recipientCardTypes\":[\"Planeswalker\"],\"recipientController\":3,\"kind\":\"Noncombat\"} "
   -- Every dealtBy* rider at its default, which is what an event carrying none
   -- of them means.
   Spec.it s "an all-default value omits every optional key" $
@@ -107,6 +111,7 @@ spec s = Spec.describe s "Parun.Codec.DamageEvent" $ do
           DamageEvent.dealtByColors = Set.empty,
           DamageEvent.dealtByNames = Set.empty,
           DamageEvent.dealtFromZone = Nothing,
+          DamageEvent.dealtByTargets = Map.empty,
           DamageEvent.recipientCardTypes = Set.empty,
           DamageEvent.recipientController = Nothing,
           DamageEvent.kind = DamageKind.Combat

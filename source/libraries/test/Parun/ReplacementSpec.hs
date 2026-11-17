@@ -354,7 +354,7 @@ spec s registry = Spec.describe s "Parun.Engine.Replacement" $ do
         (troll, g1) = S.addPermanent uthdenTroll S.alice base
         armed = S.runPure S.identityAnswer g1 (Activate.activateAbility S.alice troll (theAbility uthdenTroll) >> Stack.resolveTop)
         -- 2 damage is lethal to a 2/2.
-        hurt = S.runPure S.identityAnswer armed (Damage.applyDamage (pure ()) [DamageEvent.MkDamageEvent troll (Recipient.ToCreature troll) 2 0 False False False 0 Nothing Nothing mempty False mempty mempty mempty mempty Nothing mempty Nothing DamageKind.Combat])
+        hurt = S.runPure S.identityAnswer armed (Damage.applyDamage (pure ()) [DamageEvent.MkDamageEvent troll (Recipient.ToCreature troll) 2 0 False False False 0 Nothing Nothing mempty False mempty mempty mempty mempty Nothing mempty mempty Nothing DamageKind.Combat])
         settled = S.settleSba hurt
     Spec.assertBool s (Set.member troll (GameState.battlefield settled)) "the shield saved it"
   Spec.it s "CR 614.8 regeneration replaces the destruction, so Rest in Peace never sees it" $ do
@@ -706,7 +706,7 @@ galvanicBlastSpec s registry =
           (victim, g3) = S.addPermanent pikerPrinting S.bob g2
           (ts, g4) = Game.freshTimestamp g3
           armed = S.addReplacement (blastShape mine ts) g4
-          hit src = S.runPure S.identityAnswer armed (Damage.applyDamage (pure ()) [DamageEvent.MkDamageEvent src (Recipient.ToCreature victim) 2 0 False False False 0 Nothing Nothing mempty False mempty mempty mempty mempty Nothing mempty Nothing DamageKind.Noncombat])
+          hit src = S.runPure S.identityAnswer armed (Damage.applyDamage (pure ()) [DamageEvent.MkDamageEvent src (Recipient.ToCreature victim) 2 0 False False False 0 Nothing Nothing mempty False mempty mempty mempty mempty Nothing mempty mempty Nothing DamageKind.Noncombat])
       Spec.assertEqWith s "its own source's 2 becomes 4" (S.damageOf victim (hit mine)) (Just 4)
       Spec.assertEqWith s "another source's 2 stays 2" (S.damageOf victim (hit theirs)) (Just 2)
 

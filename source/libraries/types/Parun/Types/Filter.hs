@@ -206,7 +206,9 @@ data Filter keyword
     IsBound SlotName.SlotName
   | -- | CR 115.1 / 601.2c: the candidate is a target of the spell or ability
     -- whose cost is being paid -- "a creature that isn't a target of that
-    -- spell" (Synthetic Spiteful Edict), whatever its target slots are named.
+    -- spell" (Synthetic Spiteful Edict) -- or, in a damage recipient's
+    -- qualifier, of the damage's source as it dealt it (Imodane, the
+    -- Pyrohammer's "that creature"), whatever its target slots are named.
     IsTarget
   | -- | CR 110.2 asked of TWO objects: the candidate's controller stands in this
     -- relation (CR 102.2 / 102.3) to the controller of the object this slot

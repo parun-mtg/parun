@@ -1178,6 +1178,7 @@ damageEvent gs kind source target amount =
             DamageEvent.dealtByColors = PC.colors characteristics,
             DamageEvent.dealtByNames = PC.names characteristics,
             DamageEvent.dealtFromZone = Game.zoneOf source gs,
+            DamageEvent.dealtByTargets = Projection.targetSlotsOfStackObject gs source,
             -- The batch's to stamp, with the excess.
             DamageEvent.recipientCardTypes = Set.empty,
             DamageEvent.recipientController = Nothing,
