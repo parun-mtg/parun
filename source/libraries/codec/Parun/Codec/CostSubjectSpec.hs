@@ -39,5 +39,5 @@ spec s = Spec.describe s "Parun.Codec.CostSubject" $ do
       s
       CostSubject.codec
       (CostSubject.Type.SpecialActions CostedSpecialAction.Unlock)
-      " {\"type\":\"SpecialActions\",\"value\":\"Unlock\"} "
+      " {\"type\":\"SpecialActions\",\"value\":{\"type\":\"Unlock\"}} "
   Spec.it s "has a schema" $ Common.assertHasSchema s CostSubject.codec

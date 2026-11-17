@@ -79,7 +79,7 @@ spec s = Spec.describe s "Parun.Codec.CostModifier" $ do
       (Either.isLeft (Codec.decode CostModifier.codec =<< Common.parse (Text.pack "{\"subject\":{\"type\":\"Activations\",\"value\":{}},\"matching\":{\"type\":\"IsSource\"},\"whichTargets\":{\"type\":\"IsSource\"},\"change\":{\"type\":\"Add\",\"value\":{\"components\":[]}}}")))
       "expected a decode failure"
   Spec.it s "refuses a target criterion or an ordinal on an unlock" $
-    let decodeUnlock extra = Codec.decode CostModifier.codec =<< Common.parse (Text.pack ("{\"subject\":{\"type\":\"SpecialActions\",\"value\":\"Unlock\"},\"matching\":{\"type\":\"And\",\"value\":[]}" <> extra <> ",\"change\":{\"type\":\"Reduce\",\"value\":{\"amount\":[{\"type\":\"Generic\",\"value\":1}]}}}"))
+    let decodeUnlock extra = Codec.decode CostModifier.codec =<< Common.parse (Text.pack ("{\"subject\":{\"type\":\"SpecialActions\",\"value\":{\"type\":\"Unlock\"}},\"matching\":{\"type\":\"And\",\"value\":[]}" <> extra <> ",\"change\":{\"type\":\"Reduce\",\"value\":{\"amount\":[{\"type\":\"Generic\",\"value\":1}]}}}"))
      in Spec.assertBool
           s
           ( Either.isRight (decodeUnlock "")

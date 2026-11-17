@@ -45,11 +45,14 @@ import qualified Parun.Engine.Event as Event
 import qualified Parun.Engine.Game as Game
 import qualified Parun.Engine.Keyword as Keyword
 import qualified Parun.Engine.ObjectRestriction as ObjectRestriction
+import qualified Parun.Engine.PlayerEffect as PlayerEffect
 import qualified Parun.Engine.Projection as Projection
 import qualified Parun.Engine.Projection.View as Projection
 import qualified Parun.Types.CardType as CardType
 import Parun.Types.Cost (Cost)
 import qualified Parun.Types.Cost as Cost.Type
+import Parun.Types.CostAdjustments (CostAdjustments)
+import qualified Parun.Types.CostedSpecialAction as CostedSpecialAction
 import qualified Parun.Types.Face as Face
 import qualified Parun.Types.FaceDownReason as FaceDownReason
 import qualified Parun.Types.Facing as Facing
@@ -99,9 +102,26 @@ disguiseCostsOf oid gs = Keyword.disguiseCosts (faceUpKeywords oid gs)
 -- Parun.CommanderSpec's "CR 702.168a Disguise Agent's disguise casts a commander
 -- face down and turns it up for its mana cost".
 faceUpKeywords :: ObjectId -> GameState -> Set.Set Keyword
-faceUpKeywords oid gs =
-  let up = gs {GameState.objects = Map.adjust (\o -> o {Object.facing = Facing.FaceUp}) oid (GameState.objects gs)}
-   in Map.keysSet (Projection.keywordsOf oid up)
+faceUpKeywords oid gs = Map.keysSet (Projection.keywordsOf oid (asIfFaceUp oid gs))
+
+-- The board with this permanent face up and nothing else changed: CR 702.37e's
+-- and CR 702.168d's "what the permanent's ... cost WOULD BE IF IT WERE FACE UP".
+asIfFaceUp :: ObjectId -> GameState -> GameState
+asIfFaceUp oid gs = gs {GameState.objects = Map.adjust (\o -> o {Object.facing = Facing.FaceUp}) oid (GameState.objects gs)}
+
+-- CR 118.7 / 116.2b: what an effect changes about turning this permanent face
+-- up by this procedure, and the cost with their added components -- Plot.plotCost's
+-- shape. Gathered against asIfFaceUp, since the rule shows the cost the
+-- permanent would have face up: that is how a reduction the disguise ability
+-- itself prints applies to a permanent CR 708.2 leaves with no abilities
+-- (Fugitive Codebreaker). The mana part is left unadjusted: the reductions hold
+-- CR 118.7e's choice, which the payer makes (Cost.announceReductions).
+-- data/scenarios/fugitive-codebreaker-turned-face-up-for-less-with-instants-and-sorceries-in-your-graveyard
+-- proves it.
+turnUpCost :: TurnUpProcedure -> PlayerId -> ObjectId -> Cost Keyword -> GameState -> (CostAdjustments, Cost Keyword)
+turnUpCost procedure pid oid printed gs =
+  let adjustments = PlayerEffect.specialActionCostAdjustments (CostedSpecialAction.TurnFaceUp procedure) pid oid (asIfFaceUp oid gs)
+   in (adjustments, Cost.plusComponents adjustments printed)
 
 -- CR 701.40b and CR 701.58b, which say it in the same words: "show all players
 -- that the card representing that permanent IS A CREATURE CARD and what THAT
@@ -153,10 +173,11 @@ costsOf procedure oid gs = case procedure of
 -- and the sixth CR 101.2's: no effect says it CAN'T be turned face up (Unable
 -- to Scream), which beats every procedure alike.
 --
--- The payability check is Cost.canPay and NOT Cost.total's CR 601.2f
--- adjustments: that rule totals the cost of a spell being cast or an ability
--- being activated, and a special action is neither -- the same reading
--- Parun.Engine.Activate takes of an activation cost (#90).
+-- The payability check is Cost.canPay after CR 118.7's changes (turnUpCost)
+-- and NOT Cost.total's CR 601.2f adjustments: that rule totals the cost of a
+-- spell being cast or an ability being activated, and a special action is
+-- neither -- the same reading Parun.Engine.Activate takes of an activation cost
+-- (#90).
 --
 -- The TIMING clause has no conjunct here because the engine is the timing: CR
 -- 702.37e's and CR 701.40b's shared "any time you have priority" is satisfied by
@@ -196,14 +217,20 @@ canTurnFaceUp pid procedure oid gs =
    in maybe False (Facing.isFaceDown . Object.facing) (Game.lookupObject oid gs)
         && Projection.controllerOf oid gs == Just pid
         && eligible
-        && any (payable pid oid gs) (costsOf procedure oid gs)
+        && any (payable procedure pid oid gs) (costsOf procedure oid gs)
         && not (ObjectRestriction.prohibited RestrictedAction.TurnFaceUp oid gs)
 
 -- Cost.canPay for the special action, canTurnFaceUp's last conjunct and the
--- filter turnFaceUp offers its choice through. A cost with an X in it is
--- payable when it is payable with X chosen as zero (CR 107.3d).
-payable :: PlayerId -> ObjectId -> GameState -> Cost Keyword -> Bool
-payable pid oid gs cost = Cost.actionPayableAt (PaymentSubject.TurningFaceUp oid) 0 pid oid cost gs
+-- filter turnFaceUp offers its choice through: payable under some resolution of
+-- the printed cost's changes (turnUpCost). A cost with an X in it is payable
+-- when it is payable with X chosen as zero (CR 107.3d).
+payable :: TurnUpProcedure -> PlayerId -> ObjectId -> GameState -> Cost Keyword -> Bool
+payable procedure pid oid gs printed =
+  let (adjustments, cost) = turnUpCost procedure pid oid printed gs
+      payableWith manaCost = Cost.actionPayableAt (PaymentSubject.TurningFaceUp oid) 0 pid oid cost {Cost.Type.mana = manaCost} gs
+   in case Cost.Type.mana cost of
+        Nothing -> payableWith Nothing
+        Just manaCost -> any (payableWith . Just) (Cost.totalManas adjustments manaCost)
 
 -- Every way this player may turn a permanent face up right now, in battlefield
 -- order -- what Action.TurnFaceUp is built from.
@@ -258,14 +285,16 @@ turnFaceUp perform pid procedure oid = do
       -- the player's (Prompt.ChooseCost, Activate's posture), since CR 702.37b's
       -- counter hangs on it. Only the payable ones are offered, and a question
       -- with one answer is not asked.
-      chosen <- case filter (payable pid oid before) (costsOf procedure oid before) of
+      chosen <- case filter (payable procedure pid oid before) (costsOf procedure oid before) of
         [] -> pure Nothing
         [only] -> pure (Just only)
         offered -> do
           answer <- Game.choose (Prompt.ChooseCost (Decide.deciderFor pid before) pid oid (fmap Cost.untagged offered) Seq.empty)
           pure (List.find ((== answer) . Cost.untagged) offered)
       Monad.forM_ chosen $ \cost -> do
-        paid <- Cost.payAction perform before (PaymentSubject.TurningFaceUp oid) 0 pid oid cost
+        let (adjustments, adjusted) = turnUpCost procedure pid oid cost before
+        announced <- Cost.announceReductions pid oid before adjusted adjustments
+        paid <- Cost.payAction perform before (PaymentSubject.TurningFaceUp oid) 0 pid oid (Cost.totalWith announced adjusted)
         -- The PRINTED cost rides the proposed event, since CR 702.37b's
         -- megamorph row compares it against the card's; the X rides beside it,
         -- and nothing where the cost has no X.
