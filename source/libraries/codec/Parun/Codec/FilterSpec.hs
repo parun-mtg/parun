@@ -15,6 +15,7 @@ import qualified Parun.Types.Anchor as Anchor
 import qualified Parun.Types.BlockRole as BlockRole
 import qualified Parun.Types.BlockStatus as BlockStatus
 import qualified Parun.Types.BoundMeasure as BoundMeasure
+import qualified Parun.Types.BoundReading as BoundReading
 import qualified Parun.Types.CardName as CardName
 import qualified Parun.Types.CardType as CardType
 import qualified Parun.Types.ChoiceOrdinal as ChoiceOrdinal
@@ -226,12 +227,12 @@ spec s = Spec.describe s "Parun.Codec.Filter" $ do
       codec
       (Filter.CardsInZoneAtLeast Zone.Hand 2)
       " {\"type\":\"CardsInZoneAtLeast\",\"value\":{\"atLeast\":2,\"zone\":\"Hand\"}} "
-  Spec.it s "OwnsBoundAtLeast" $
+  Spec.it s "HoldsBoundAtLeast" $
     Common.assertCodec
       s
       codec
-      (Filter.OwnsBoundAtLeast 2 (SlotName.MkSlotName (Text.pack "discarded")) (Filter.Not (Filter.HasCardType CardType.Land)))
-      " {\"type\":\"OwnsBoundAtLeast\",\"value\":{\"atLeast\":2,\"filter\":{\"type\":\"Not\",\"value\":{\"type\":\"HasCardType\",\"value\":\"Land\"}},\"slot\":\"discarded\"}} "
+      (Filter.HoldsBoundAtLeast Holder.Controller BoundReading.BeforeMove 2 (SlotName.MkSlotName (Text.pack "discarded")) (Filter.Not (Filter.HasCardType CardType.Land)))
+      " {\"type\":\"HoldsBoundAtLeast\",\"value\":{\"atLeast\":2,\"filter\":{\"type\":\"Not\",\"value\":{\"type\":\"HasCardType\",\"value\":\"Land\"}},\"holder\":\"Controller\",\"reading\":\"BeforeMove\",\"slot\":\"discarded\"}} "
   Spec.it s "IsSource" $
     Common.assertCodec
       s

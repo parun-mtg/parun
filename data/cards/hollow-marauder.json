@@ -110,7 +110,7 @@
                               "filter": {
                                 "type": "Not",
                                 "value": {
-                                  "type": "OwnsBoundAtLeast",
+                                  "type": "HoldsBoundAtLeast",
                                   "value": {
                                     "atLeast": 1,
                                     "filter": {
@@ -124,6 +124,8 @@
                                         }
                                       }
                                     },
+                                    "holder": "Owner",
+                                    "reading": "AsBound",
                                     "slot": "discarded"
                                   }
                                 }

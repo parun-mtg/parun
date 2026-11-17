@@ -1,6 +1,7 @@
 module Parun.Types.BoundReading where
 
--- | Which incarnation of a bound object Parun.Types.Scope's OverBound counts.
+-- | Which incarnation of a bound object Parun.Types.Scope's OverBound counts and
+-- Parun.Types.Filter's HoldsBoundAtLeast reads the holder of.
 data BoundReading
   = -- | CR 400.7j: the object the slot holds, wherever it wound up.
     AsBound

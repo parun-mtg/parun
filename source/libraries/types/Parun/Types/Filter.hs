@@ -8,6 +8,7 @@ import qualified Parun.Types.AloneAmong as AloneAmong
 import qualified Parun.Types.Anchor as Anchor
 import qualified Parun.Types.BlockRole as BlockRole
 import qualified Parun.Types.BlockStatus as BlockStatus
+import qualified Parun.Types.BoundReading as BoundReading
 import qualified Parun.Types.CardName as CardName
 import qualified Parun.Types.CardType as CardType
 import qualified Parun.Types.ChoiceOrdinal as ChoiceOrdinal
@@ -301,9 +302,10 @@ data Filter keyword
     -- this many cards; baked like the two above, and vacuously False if it
     -- survives to Parun.Engine.Filter.matches.
     CardsInZoneAtLeast Zone.Zone Natural.Natural
-  | -- | CR 400.3 / 701.9a: the candidate PLAYER owns at least this many of the
-    -- slot's objects the filter admits; baked like the three above.
-    OwnsBoundAtLeast Natural.Natural SlotName.SlotName (Filter keyword)
+  | -- | CR 108.3 / 108.4 / 608.2h: the candidate PLAYER is the holder of at least
+    -- this many of the slot's objects the filter admits, each read as the
+    -- BoundReading says; baked like the three above.
+    HoldsBoundAtLeast Holder.Holder BoundReading.BoundReading Natural.Natural SlotName.SlotName (Filter keyword)
   | -- | CR 106.12: the candidate PLAYER tapped a permanent the nested Filter
     -- admits, as it was then, for mana earlier this turn -- Desolation's "each
     -- player who tapped a land for mana this turn"; baked like the four above.

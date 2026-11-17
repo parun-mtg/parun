@@ -10,6 +10,7 @@ import qualified Parun.Codec.AloneAmong as AloneAmong
 import qualified Parun.Codec.Anchor as Anchor
 import qualified Parun.Codec.BlockRole as BlockRole
 import qualified Parun.Codec.BlockStatus as BlockStatus
+import qualified Parun.Codec.BoundReading as BoundReading
 import qualified Parun.Codec.CardName as CardName
 import qualified Parun.Codec.CardType as CardType
 import qualified Parun.Codec.ChoiceOrdinal as ChoiceOrdinal
@@ -52,6 +53,7 @@ import qualified Parun.JsonCodec.Common as Common
 import qualified Parun.JsonCodec.Fields as Fields
 import qualified Parun.Types.ActivationCriteria as ActivationCriteria.Type
 import qualified Parun.Types.Anchor as Anchor
+import qualified Parun.Types.BoundReading as BoundReading
 import qualified Parun.Types.ChoiceOrdinal as ChoiceOrdinal
 import qualified Parun.Types.ControlMargin as ControlMargin
 import qualified Parun.Types.CounterKind as CounterKind
@@ -114,7 +116,7 @@ codec keywordCodec =
       -- rejected at decode instead of decoding into a vacuously true filter: a
       -- zone holds no negative number of cards.
       Arm.payload "CardsInZoneAtLeast" cardsInZone (uncurry Filter.CardsInZoneAtLeast) (\x -> case x of Filter.CardsInZoneAtLeast z n -> Just (z, n); _ -> Nothing),
-      Arm.payload "OwnsBoundAtLeast" (ownsBound keywordCodec) (\(n, y, f) -> Filter.OwnsBoundAtLeast n y f) (\x -> case x of Filter.OwnsBoundAtLeast n y f -> Just (n, y, f); _ -> Nothing),
+      Arm.payload "HoldsBoundAtLeast" (holdsBound keywordCodec) (\(h, r, n, y, f) -> Filter.HoldsBoundAtLeast h r n y f) (\x -> case x of Filter.HoldsBoundAtLeast h r n y f -> Just (h, r, n, y, f); _ -> Nothing),
       Arm.payload "TappedForManaThisTurn" (codec keywordCodec) Filter.TappedForManaThisTurn (\x -> case x of Filter.TappedForManaThisTurn y -> Just y; _ -> Nothing),
       Arm.nullary "IsSource" Filter.IsSource,
       Arm.nullary "BecameSource" Filter.BecameSource,
@@ -254,14 +256,17 @@ dealtDamageThisTurn keywordCodec =
       <*> Fields.defaulted "by" Nothing (Common.maybe (codec keywordCodec)) (\(_, b, _) -> b)
       <*> Fields.defaulted "excess" False Common.boolean (\(_, _, e) -> e)
 
--- | How many of the slot's objects the candidate must own, and which count.
-ownsBound :: (Typeable.Typeable keyword, Eq keyword) => Codec.Codec keyword -> Codec.Codec (Natural.Natural, SlotName.SlotName, Filter.Filter keyword)
-ownsBound keywordCodec =
+-- | Which holder, read off which incarnation, how many of the slot's objects
+-- the candidate must hold, and which count.
+holdsBound :: (Typeable.Typeable keyword, Eq keyword) => Codec.Codec keyword -> Codec.Codec (Holder.Holder, BoundReading.BoundReading, Natural.Natural, SlotName.SlotName, Filter.Filter keyword)
+holdsBound keywordCodec =
   Fields.object $
-    (,,)
-      <$> Fields.required "atLeast" Common.natural (\(n, _, _) -> n)
-      <*> Fields.required "slot" SlotName.codec (\(_, y, _) -> y)
-      <*> Fields.required "filter" (codec keywordCodec) (\(_, _, f) -> f)
+    (,,,,)
+      <$> Fields.required "holder" Holder.codec (\(h, _, _, _, _) -> h)
+      <*> Fields.required "reading" BoundReading.codec (\(_, r, _, _, _) -> r)
+      <*> Fields.required "atLeast" Common.natural (\(_, _, n, _, _) -> n)
+      <*> Fields.required "slot" SlotName.codec (\(_, _, _, y, _) -> y)
+      <*> Fields.required "filter" (codec keywordCodec) (\(_, _, _, _, f) -> f)
 
 -- | The zone, and how many cards at least.
 cardsInZone :: Codec.Codec (ZoneType.Zone, Natural.Natural)
@@ -358,7 +363,7 @@ tagOf x = case x of
   Filter.IsControllerOfBound {} -> "IsControllerOfBound"
   Filter.Controls {} -> "Controls"
   Filter.CardsInZoneAtLeast {} -> "CardsInZoneAtLeast"
-  Filter.OwnsBoundAtLeast {} -> "OwnsBoundAtLeast"
+  Filter.HoldsBoundAtLeast {} -> "HoldsBoundAtLeast"
   Filter.TappedForManaThisTurn {} -> "TappedForManaThisTurn"
   Filter.IsSource {} -> "IsSource"
   Filter.BecameSource {} -> "BecameSource"

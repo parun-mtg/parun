@@ -15,6 +15,7 @@ import qualified Parun.Types.AloneAmong as AloneAmong
 import qualified Parun.Types.Anchor as Anchor
 import qualified Parun.Types.BlockRole as BlockRole
 import qualified Parun.Types.BoundMeasure as BoundMeasure
+import qualified Parun.Types.BoundReading as BoundReading
 import qualified Parun.Types.CandidateScope as CandidateScope
 import qualified Parun.Types.CardName as CardName
 import qualified Parun.Types.CardTally as CardTally
@@ -852,8 +853,8 @@ spec s = Spec.describe s "Parun.Engine.Filter" $ do
   -- CR 400.7j's question about a slot's objects, which this module holds no game
   -- state to ask: False unbaked. The Garruk, Veiled Butcher scenarios prove the
   -- BAKED answer.
-  Spec.it s "OwnsBoundAtLeast is False unbaked, for a player and for an object alike" $ do
-    let owns = Filter.Type.OwnsBoundAtLeast 0 (SlotName.MkSlotName (Text.pack "discarded")) (Filter.Type.And [])
+  Spec.it s "HoldsBoundAtLeast is False unbaked, for a player and for an object alike" $ do
+    let owns = Filter.Type.HoldsBoundAtLeast Holder.Owner BoundReading.AsBound 0 (SlotName.MkSlotName (Text.pack "discarded")) (Filter.Type.And [])
     Spec.assertBool s (not (Filter.matches self aPlayer owns)) "player"
     Spec.assertBool s (not (Filter.matches self blackCreature owns)) "object"
 

@@ -282,10 +282,7 @@ evaluate viewOf quantityOf talliesWhatHappened candidateCounters context gs coun
         -- "total power of the creatures they exiled this way" (Parun.PlanechaseSpec's
         -- "CR 311.7 Grand Ossuary's chaos ...").
         Scope.OverBound reading slot ->
-          let bound = Set.toList (Map.findWithDefault Set.empty slot (Filter.slotObjects context))
-              ids = case reading of
-                BoundReading.AsBound -> bound
-                BoundReading.BeforeMove -> fmap (\oid -> Maybe.fromMaybe oid (departedAs gs oid)) bound
+          let ids = boundRead gs reading (Set.toList (Map.findWithDefault Set.empty slot (Filter.slotObjects context)))
               kept = Maybe.mapMaybe (\oid -> if boundMember gs aggregation predicate oid then fmap ((,) (Just oid)) (keep predicate context (orLastKnown viewOf gs oid)) else Nothing) ids
            in pure (aggregate quantityOf aggregation kept)
         -- CR 500.12: the record of the board before this turn's untap step. Its
@@ -306,10 +303,18 @@ evaluate viewOf quantityOf talliesWhatHappened candidateCounters context gs coun
               kept = Maybe.mapMaybe (\oid -> fmap ((,) (Just oid)) (keep predicate context (viewOf oid))) ids
           pure (aggregate quantityOf aggregation kept)
 
+-- CR 608.2h: the ids a slot's members are read as, under the BoundReading:
+-- each as bound, or each arrival swapped for the id it departed as. Shared by
+-- Scope.OverBound and Filter.HoldsBoundAtLeast's bake.
+boundRead :: GameState -> BoundReading.BoundReading -> [ObjectId] -> [ObjectId]
+boundRead gs reading bound = case reading of
+  BoundReading.AsBound -> bound
+  BoundReading.BeforeMove -> fmap (\oid -> Maybe.fromMaybe oid (departedAs gs oid)) bound
+
 -- CR 400.7j / 701.9c: is this bound object one the fold asks the predicate of?
 -- One a later part of the effect can find, or a discard the predicate asks
 -- nothing of the characteristics of. Scope.OverBound's membership, shared with
--- Filter.OwnsBoundAtLeast's bake.
+-- Filter.HoldsBoundAtLeast's bake.
 boundMember :: GameState -> Aggregation.Aggregation quantity -> Filter.Type.Filter keyword -> ObjectId -> Bool
 boundMember gs aggregation predicate oid =
   findableAfterMove gs oid || (countsWithoutCharacteristics aggregation predicate && wasDiscarded gs oid)
@@ -504,17 +509,21 @@ bakePerspective viewOf context gs candidate predicate =
         -- when this fold runs.
         Filter.Type.CardsInZoneAtLeast zone n ->
           truth (toInteger (length (Game.cardsIn zone candidate gs)) >= toInteger n)
-        -- CR 400.3 / 701.9a: how many of the slot's objects does THIS candidate
-        -- own? A card leaves only its owner's hand, so a discard's arrivals owned by
-        -- the candidate are the ones the candidate discarded. Baked here for
-        -- CardsInZoneAtLeast's reason, and gated by CR 400.7j exactly as
-        -- Scope.OverBound's members are (boundMember).
-        Filter.Type.OwnsBoundAtLeast n slot inner ->
-          let owned oid =
+        -- CR 108.3 / 108.4 / 701.9a: how many of the slot's objects does THIS
+        -- candidate hold? A card leaves only its owner's hand, so a discard's
+        -- arrivals owned by the candidate are the ones the candidate discarded.
+        -- Baked here for CardsInZoneAtLeast's reason, and read and gated by CR
+        -- 400.7j exactly as Scope.OverBound's members are (boundRead,
+        -- boundMember). CR 109.4 leaves a card in a hand no controller, so a
+        -- controller is read BeforeMove, off CR 608.2h's last known information:
+        -- Faerie Slumber Party's "each opponent who controlled a creature
+        -- returned this way", proved by data/scenarios' faerie-slumber-party cases.
+        Filter.Type.HoldsBoundAtLeast holder reading n slot inner ->
+          let held oid =
                 boundMember gs Aggregation.Members inner oid
-                  && maybe False (\view -> Filter.owner view == Just candidate && Filter.matches context view inner) (viewOf oid)
-              bound = Set.toList (Map.findWithDefault Set.empty slot (Filter.slotObjects context))
-           in truth (toInteger (length (Prelude.filter owned bound)) >= toInteger n)
+                  && maybe False (\view -> Filter.heldBy holder view == Just candidate && Filter.matches context view inner) (orLastKnown viewOf gs oid)
+              bound = boundRead gs reading (Set.toList (Map.findWithDefault Set.empty slot (Filter.slotObjects context)))
+           in truth (toInteger (length (Prelude.filter held bound)) >= toInteger n)
         -- CR 303.4b / 301.5a: something the nested Filter admits is attached TO this
         -- PLAYER candidate. Baked here for CardsInZoneAtLeast's reason -- CR
         -- 109.3 keeps attachment off the characteristics, so this is a board
