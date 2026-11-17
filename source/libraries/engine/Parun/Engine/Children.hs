@@ -2506,6 +2506,7 @@ entryRewriteChildren c rewrite = case rewrite of
   EntryRewrite.Compleated _ -> pure rewrite
   EntryRewrite.EntersTapState _ -> pure rewrite
   EntryRewrite.Prepared -> pure rewrite
+  EntryRewrite.EntersAttacking -> pure rewrite
   EntryRewrite.OrTapped price -> EntryRewrite.OrTapped <$> entryPriceChildren c price
   EntryRewrite.PayAnyLife cap -> EntryRewrite.PayAnyLife <$> traverse (replacementQuantity c) cap
   EntryRewrite.EntersTransformed -> pure rewrite
@@ -3308,11 +3309,12 @@ preventionRiderChildren c (PreventionRider.MkPreventionRider effects targets con
 
 -- | A pending entry effect's children: the entering object and what it runs.
 pendingEntryEffectChildren :: (Applicative f) => StoredChildren f -> PendingEntryEffect.PendingEntryEffect -> f PendingEntryEffect.PendingEntryEffect
-pendingEntryEffectChildren c (PendingEntryEffect.MkPendingEntryEffect entering controller effects) =
+pendingEntryEffectChildren c (PendingEntryEffect.MkPendingEntryEffect entering controller effects attacking) =
   PendingEntryEffect.MkPendingEntryEffect
     <$> storedObject c entering
     <*> pure controller
     <*> traverse (storedEffect c) effects
+    <*> pure attacking
 
 -- | A pending replacement effect's children: what it runs, in its environment (CR 608.2c).
 pendingReplacementEffectChildren :: (Applicative f) => StoredChildren f -> PendingReplacementEffect.PendingReplacementEffect -> f PendingReplacementEffect.PendingReplacementEffect
