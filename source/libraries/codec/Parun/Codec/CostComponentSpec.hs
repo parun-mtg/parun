@@ -35,6 +35,8 @@ import qualified Parun.Types.Keyword as Keyword
 import qualified Parun.Types.MoveCardsFromGraveyard as MoveCardsFromGraveyard
 import qualified Parun.Types.ObjectCount as ObjectCount
 import qualified Parun.Types.PlayerCounterKind as PlayerCounterKind
+import qualified Parun.Types.PlayerRelation as PlayerRelation
+import qualified Parun.Types.PlayerScope as PlayerScope
 import qualified Parun.Types.ReturnPermanents as ReturnPermanents
 import qualified Parun.Types.Rounding as Rounding
 import qualified Parun.Types.Sacrifice as Sacrifice
@@ -292,7 +294,7 @@ spec s = Spec.describe s "Parun.Codec.CostComponent" $ do
     Common.assertCodec
       s
       codec
-      (CostComponent.MoveCardsFromGraveyard (MoveCardsFromGraveyard.MkMoveCardsFromGraveyard (CostAmount.Fixed 1) (Filter.HasCardType CardType.Creature) GraveyardCostDestination.Exile))
+      (CostComponent.MoveCardsFromGraveyard (MoveCardsFromGraveyard.MkMoveCardsFromGraveyard (CostAmount.Fixed 1) (Filter.HasCardType CardType.Creature) GraveyardCostDestination.Exile (PlayerScope.Related PlayerRelation.You)))
       " {\"type\":\"MoveCardsFromGraveyard\",\"value\":{\"count\":{\"type\":\"Fixed\",\"value\":1},\"whichCards\":{\"type\":\"HasCardType\",\"value\":\"Creature\"}}} "
   -- CR 702.167a's [materials], which CR 702.167b reads across two zones -- a
   -- separate tag from the arm above, whose pool is the graveyard alone.

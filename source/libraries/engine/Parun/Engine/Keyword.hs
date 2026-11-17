@@ -3325,7 +3325,8 @@ withCost keyword cost = case keyword of
                      MoveCardsFromGraveyard.MkMoveCardsFromGraveyard
                        { MoveCardsFromGraveyard.count = CostAmount.Fixed count,
                          MoveCardsFromGraveyard.whichCards = Filter.And [],
-                         MoveCardsFromGraveyard.destination = GraveyardCostDestination.Exile
+                         MoveCardsFromGraveyard.destination = GraveyardCostDestination.Exile,
+                         MoveCardsFromGraveyard.players = PlayerScope.Related PlayerRelation.You
                        }
                  ]
         }
@@ -4282,7 +4283,7 @@ data Substitute
 --
 -- Rule 702.66a's criterion is "a card from your graveyard" and states no other
 -- quality, so it is Filter.And [], the trivial predicate: the pool's narrowing to
--- the payer's OWN graveyard is Parun.Engine.Cost.exileCandidates' (CR 400.3).
+-- the payer's OWN graveyard is Parun.Engine.Cost.yourGraveyard (CR 400.3).
 --
 -- The criteria are MINTED here rather than printed, rule 702's own words being
 -- what says what is eligible -- so CR 612.2 has no word of a card's to swap in
