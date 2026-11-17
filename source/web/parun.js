@@ -22,7 +22,13 @@ function at(path) {
   return node;
 }
 
+let started = false;
 globalThis.parunApply = (json) => {
+  document.body.classList.remove("busy");
+  if (!started) {
+    started = true;
+    phase("started");
+  }
   for (const patch of JSON.parse(json)) {
     const node = at(patch.path);
     switch (patch.op) {
@@ -66,7 +72,14 @@ globalThis.parunListen = (dispatch) => {
   for (const type of events) {
     root.addEventListener(type, (event) => {
       const path = pathOf(event.target);
-      if (path !== null) dispatch(type, path);
+      if (path === null) return;
+      const value = String(event.target.value ?? "");
+      // A tap shows the page busy until Haskell next patches it, painted
+      // before the engine runs: the dispatch waits a frame.
+      if (type === "click" && event.target.closest("button")) document.body.classList.add("busy");
+      requestAnimationFrame(() => setTimeout(() => dispatch(type, path, value), 0));
+      // A typed line is sent once; the box is ready for the next.
+      if (type === "change") event.target.value = "";
     });
   }
 };
@@ -156,8 +169,9 @@ const { instance } = await WebAssembly.instantiateStreaming(fetch("parun.wasm"),
 Object.assign(exports, instance.exports);
 phase("compiled");
 wasi.initialize(instance);
-await instance.exports.start();
-phase("started");
+// The game runs inside start, waiting on the page between answers.
+instance.exports.start();
+await new Promise((resolve) => setTimeout(resolve, 0));
 for (const [name, tally] of [...calls].sort((a, b) => b[1].ms - a[1].ms)) {
   console.log(`${name}: ${tally.count} calls, ${Math.round(tally.ms)} ms`);
 }
