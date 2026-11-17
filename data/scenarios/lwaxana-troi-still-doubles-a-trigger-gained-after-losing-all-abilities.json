@@ -11,6 +11,14 @@
           },
           {
             "card": "Grizzly Bears",
+            "counters": [
+              {
+                "key": {
+                  "type": "PlusOnePlusOne"
+                },
+                "value": 2
+              }
+            ],
             "label": "bear"
           },
           {
@@ -124,10 +132,7 @@
             "$m2",
             null
           ],
-          "object": "$lwax",
-          "targets": [
-            "$bear"
-          ]
+          "object": "$lwax"
         }
       },
       "player": "alice",
@@ -185,6 +190,20 @@
     {
       "do": {
         "ChooseOptional": "Exercises"
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Answer": {
+          "prompt": "OrderTriggers",
+          "with": [
+            0,
+            1
+          ]
+        }
       },
       "player": "alice",
       "step": "PrecombatMain",
