@@ -1,10 +1,8 @@
 {
   "board": {
     "active": "alice",
-    "step": "PrecombatMain",
     "seats": [
       {
-        "name": "alice",
         "battlefield": [
           {
             "card": "Forest",
@@ -27,12 +25,6 @@
             "label": "f5"
           }
         ],
-        "hand": [
-          {
-            "card": "Walk with the Ancestors",
-            "label": "walk"
-          }
-        ],
         "graveyard": [
           {
             "card": "Swamp",
@@ -41,6 +33,12 @@
           {
             "card": "Lightning Bolt",
             "label": "bolt"
+          }
+        ],
+        "hand": [
+          {
+            "card": "Walk with the Ancestors",
+            "label": "walk"
           }
         ],
         "library": [
@@ -60,10 +58,10 @@
             "card": "Mountain",
             "label": "mtn"
           }
-        ]
+        ],
+        "name": "alice"
       },
       {
-        "name": "bob",
         "library": [
           {
             "card": "Swamp"
@@ -71,9 +69,11 @@
           {
             "card": "Swamp"
           }
-        ]
+        ],
+        "name": "bob"
       }
-    ]
+    ],
+    "step": "PrecombatMain"
   },
   "description": "Walk with the Ancestors returns a target land card from your graveyard to your hand, then discovers 4 past a land and a six-mana card",
   "note": "The Swamp, a permanent card, is the target; the Lightning Bolt beside it is no candidate. Discover 4 exiles Island and Craw Wurm, stops at the four-mana Hill Giant, which alice declines to cast and puts into her hand; Island and Craw Wurm go beneath the Mountain.",

@@ -1,10 +1,8 @@
 {
   "board": {
     "active": "alice",
-    "step": "PrecombatMain",
     "seats": [
       {
-        "name": "alice",
         "battlefield": [
           {
             "card": "Volatile Fault",
@@ -31,10 +29,10 @@
           {
             "card": "Island"
           }
-        ]
+        ],
+        "name": "alice"
       },
       {
-        "name": "bob",
         "battlefield": [
           {
             "card": "Forest",
@@ -54,15 +52,15 @@
             "card": "Island",
             "label": "bi"
           }
-        ]
+        ],
+        "name": "bob"
       },
       {
-        "name": "carol",
         "battlefield": [
           {
             "card": "Faerie Conclave",
-            "label": "stolen",
-            "controller": "bob"
+            "controller": "bob",
+            "label": "stolen"
           },
           {
             "card": "Faerie Conclave",
@@ -77,9 +75,11 @@
           {
             "card": "Island"
           }
-        ]
+        ],
+        "name": "carol"
       }
-    ]
+    ],
+    "step": "PrecombatMain"
   },
   "description": "Volatile Fault destroys target nonbasic land an opponent controls; that land's controller, not its owner, may fetch a basic land, and the activator creates a Treasure",
   "note": "Bob controls carol's Faerie Conclave; carol's own Conclave is a second candidate. Bob fetches a Plains; carol and alice fetch nothing; alice alone gets a Treasure.",
@@ -87,12 +87,12 @@
     {
       "do": {
         "Activate": {
-          "object": "$vf",
           "ability": 1,
           "mana": [
             "$m1",
             null
           ],
+          "object": "$vf",
           "targets": [
             "$stolen"
           ]

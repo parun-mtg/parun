@@ -1,16 +1,11 @@
 {
-  "description": "CR 602.2b, 118.3: Threefold Thunderhulk cannot sacrifice itself to pay its own Sacrifice another artifact cost",
-  "note": "Alice controls Thunderhulk and two Islands but no other artifact, so the {2} activation is refused although its mana is available.",
   "board": {
     "active": "alice",
-    "step": "PrecombatMain",
     "seats": [
       {
-        "name": "alice",
         "battlefield": [
           {
             "card": "Threefold Thunderhulk",
-            "label": "hulk",
             "counters": [
               {
                 "key": {
@@ -18,7 +13,8 @@
                 },
                 "value": 3
               }
-            ]
+            ],
+            "label": "hulk"
           },
           {
             "card": "Island",
@@ -54,10 +50,10 @@
           {
             "card": "Island"
           }
-        ]
+        ],
+        "name": "alice"
       },
       {
-        "name": "bob",
         "library": [
           {
             "card": "Island"
@@ -83,30 +79,31 @@
           {
             "card": "Island"
           }
-        ]
+        ],
+        "name": "bob"
       }
-    ]
+    ],
+    "step": "PrecombatMain"
   },
+  "description": "CR 602.2b, 118.3: Threefold Thunderhulk cannot sacrifice itself to pay its own Sacrifice another artifact cost",
+  "note": "Alice controls Thunderhulk and two Islands but no other artifact, so the {2} activation is refused although its mana is available.",
   "timeline": [
     {
       "player": "alice",
-      "step": "PrecombatMain",
-      "turn": 1,
       "refuse": {
         "Activate": {
           "ability": 0,
-          "object": "$hulk",
           "mana": [
             "$i1",
             "$i2"
-          ]
+          ],
+          "object": "$hulk"
         }
-      }
+      },
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
-      "player": "alice",
-      "step": "PrecombatMain",
-      "turn": 1,
       "check": {
         "Counters": {
           "count": 3,
@@ -115,7 +112,10 @@
           },
           "object": "$hulk"
         }
-      }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
     }
   ]
 }

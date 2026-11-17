@@ -88,7 +88,7 @@
       {
         "hand": [
           {
-            "card": "Ornithopter"
+            "card": "Millstone"
           },
           {
             "card": "Lightning Bolt"
@@ -113,8 +113,8 @@
       {
         "hand": [
           {
-            "card": "Ornithopter",
-            "label": "cthopter"
+            "card": "Millstone",
+            "label": "cstone"
           },
           {
             "card": "Hill Giant",
@@ -146,7 +146,7 @@
     "step": "PrecombatMain"
   },
   "description": "Visage of Dread makes target opponent discard an artifact or creature card you choose, then crafts with two creatures into Dread Osseosaur, which may mill two as it enters and as it attacks",
-  "note": "Charlie, the target, holds an artifact, a creature, an instant and a land; the instant is refused. Bob holds the same cards and keeps them. The craft exiles one creature from the battlefield and one creature card from the graveyard, leaving Craw Wurm behind.",
+  "note": "Charlie, the target, holds a noncreature artifact, a creature, an instant and a land; the instant is refused. Bob holds the same cards and keeps them. The craft exiles one creature from the battlefield and one creature card from the graveyard, leaving Craw Wurm behind.",
   "timeline": [
     {
       "do": {
@@ -202,7 +202,7 @@
       "do": {
         "Answer": {
           "prompt": "ChooseCardFromAmong",
-          "with": "$cthopter"
+          "with": "$cstone"
         }
       },
       "player": "alice",
@@ -229,7 +229,7 @@
     {
       "check": {
         "Count": {
-          "card": "Ornithopter",
+          "card": "Millstone",
           "count": 1,
           "player": "bob",
           "zone": "Hand"
@@ -339,13 +339,48 @@
     },
     {
       "check": {
-        "View": {
-          "is": [
-            "$wurm",
-            "Plains#4",
-            "Island#4"
-          ],
-          "of": "Zone",
+        "Count": {
+          "card": "Plains",
+          "count": 1,
+          "player": "alice",
+          "zone": "Graveyard"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Island",
+          "count": 1,
+          "player": "alice",
+          "zone": "Graveyard"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Craw Wurm",
+          "count": 1,
+          "player": "alice",
+          "zone": "Graveyard"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Forest",
+          "count": 0,
           "player": "alice",
           "zone": "Graveyard"
         }
@@ -392,17 +427,37 @@
     },
     {
       "check": {
-        "View": {
-          "is": [
-            "$wurm",
-            "Plains#4",
-            "Island#4",
-            "Mountain",
-            "Wastes"
-          ],
-          "of": "Zone",
+        "Count": {
+          "card": "Mountain",
+          "count": 1,
           "player": "alice",
           "zone": "Graveyard"
+        }
+      },
+      "player": "alice",
+      "step": "DeclareAttackers",
+      "turn": 4
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Wastes",
+          "count": 1,
+          "player": "alice",
+          "zone": "Graveyard"
+        }
+      },
+      "player": "alice",
+      "step": "DeclareAttackers",
+      "turn": 4
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Forest",
+          "count": 1,
+          "player": "alice",
+          "zone": "Hand"
         }
       },
       "player": "alice",

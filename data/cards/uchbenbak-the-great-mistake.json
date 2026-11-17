@@ -1,56 +1,6 @@
 {
   "faces": [
     {
-      "name": "Uchbenbak, the Great Mistake",
-      "manaCost": [
-        {
-          "type": "Generic",
-          "value": 3
-        },
-        {
-          "type": "OfType",
-          "value": {
-            "type": "Colored",
-            "value": "Blue"
-          }
-        },
-        {
-          "type": "OfType",
-          "value": {
-            "type": "Colored",
-            "value": "Black"
-          }
-        }
-      ],
-      "typeLine": {
-        "supertypes": [
-          "Legendary"
-        ],
-        "types": [
-          "Creature"
-        ],
-        "subtypes": [
-          "Horror",
-          "Skeleton"
-        ]
-      },
-      "power": {
-        "type": "Literal",
-        "value": 6
-      },
-      "toughness": {
-        "type": "Literal",
-        "value": 4
-      },
-      "keywords": [
-        {
-          "type": "Vigilance"
-        },
-        {
-          "type": "Menace"
-        }
-      ],
-      "oracleText": "Vigilance, menace\nDescend 8 — {4}{U}{B}: Return this card from your graveyard to the battlefield with a finality counter on it. Activate only if there are eight or more permanent cards in your graveyard and only as a sorcery. (If a creature with a finality counter on it would die, exile it instead.)",
       "activatedAbilities": [
         {
           "cost": {
@@ -177,7 +127,57 @@
             }
           ]
         }
-      ]
+      ],
+      "keywords": [
+        {
+          "type": "Vigilance"
+        },
+        {
+          "type": "Menace"
+        }
+      ],
+      "manaCost": [
+        {
+          "type": "Generic",
+          "value": 3
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "Blue"
+          }
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "Black"
+          }
+        }
+      ],
+      "name": "Uchbenbak, the Great Mistake",
+      "oracleText": "Vigilance, menace\nDescend 8 — {4}{U}{B}: Return this card from your graveyard to the battlefield with a finality counter on it. Activate only if there are eight or more permanent cards in your graveyard and only as a sorcery. (If a creature with a finality counter on it would die, exile it instead.)",
+      "power": {
+        "type": "Literal",
+        "value": 6
+      },
+      "toughness": {
+        "type": "Literal",
+        "value": 4
+      },
+      "typeLine": {
+        "subtypes": [
+          "Horror",
+          "Skeleton"
+        ],
+        "supertypes": [
+          "Legendary"
+        ],
+        "types": [
+          "Creature"
+        ]
+      }
     }
   ]
 }

@@ -1,10 +1,8 @@
 {
   "board": {
     "active": "alice",
-    "step": "PrecombatMain",
     "seats": [
       {
-        "name": "alice",
         "battlefield": [
           {
             "card": "Island",
@@ -29,20 +27,6 @@
           {
             "card": "Grizzly Bears",
             "label": "bears"
-          }
-        ],
-        "hand": [
-          {
-            "card": "Wail of the Forgotten",
-            "label": "w1"
-          },
-          {
-            "card": "Wail of the Forgotten",
-            "label": "w2"
-          },
-          {
-            "card": "Lightning Bolt",
-            "label": "bolt"
           }
         ],
         "graveyard": [
@@ -74,6 +58,20 @@
             "card": "Shock"
           }
         ],
+        "hand": [
+          {
+            "card": "Wail of the Forgotten",
+            "label": "w1"
+          },
+          {
+            "card": "Wail of the Forgotten",
+            "label": "w2"
+          },
+          {
+            "card": "Lightning Bolt",
+            "label": "bolt"
+          }
+        ],
         "library": [
           {
             "card": "Craw Wurm"
@@ -97,10 +95,10 @@
           {
             "card": "Island"
           }
-        ]
+        ],
+        "name": "alice"
       },
       {
-        "name": "bob",
         "battlefield": [
           {
             "card": "Hill Giant",
@@ -136,10 +134,10 @@
           {
             "card": "Island"
           }
-        ]
+        ],
+        "name": "bob"
       },
       {
-        "name": "carol",
         "hand": [
           {
             "card": "Lava Axe",
@@ -166,71 +164,70 @@
           {
             "card": "Island"
           }
-        ]
+        ],
+        "name": "carol"
       }
-    ]
+    ],
+    "step": "PrecombatMain"
   },
   "description": "CR 700.2, 700.15, 601.2b: Wail of the Forgotten chooses one mode, or one or more while eight or more permanent cards are in its caster's graveyard as it is cast; its modes return a nonland permanent to its owner's hand, make the target opponent discard a card, and keep one of the top three cards of the library and mill the rest",
   "note": "Alice's graveyard holds nine cards, seven of them permanent cards (Pacifism and Sol Ring among them, Divination and Shock not), so two modes are refused and the discard mode alone targets bob, leaving carol's hand alone. Bolting her Grizzly Bears makes the eighth permanent card, and all three modes are then taken, the discard now aimed at carol.",
   "timeline": [
     {
-      "turn": 1,
-      "step": "PrecombatMain",
       "player": "alice",
       "refuse": {
         "Cast": {
-          "object": "$w1",
+          "mana": [
+            "$u1",
+            "$s1",
+            null
+          ],
           "modes": [
             0,
             1
           ],
+          "object": "$w1",
           "targetsBySlot": {
-            "permanent": [
-              "$giant"
-            ],
             "opponent": [
               "$bob"
+            ],
+            "permanent": [
+              "$giant"
             ]
-          },
+          }
+        }
+      },
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Cast": {
           "mana": [
             "$u1",
             "$s1",
             null
-          ]
-        }
-      }
-    },
-    {
-      "turn": 1,
-      "step": "PrecombatMain",
-      "player": "alice",
-      "do": {
-        "Cast": {
-          "object": "$w1",
+          ],
           "modes": [
             1
           ],
+          "object": "$w1",
           "targets": [
             "$bob"
-          ],
-          "mana": [
-            "$u1",
-            "$s1",
-            null
           ]
         }
-      }
-    },
-    {
-      "turn": 1,
-      "step": "PrecombatMain",
+      },
       "player": "alice",
-      "do": "Pass"
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
+      "do": "Pass",
+      "player": "alice",
       "step": "PrecombatMain",
-      "player": "bob",
+      "turn": 1
+    },
+    {
       "do": {
         "Answer": {
           "prompt": "ChooseDiscard",
@@ -238,120 +235,120 @@
             "$bd"
           ]
         }
-      }
+      },
+      "player": "bob",
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PrecombatMain",
-      "player": "alice",
       "check": {
         "Count": {
-          "player": "bob",
-          "zone": "Graveyard",
           "card": "Divination",
-          "count": 1
-        }
-      }
-    },
-    {
-      "turn": 1,
-      "step": "PrecombatMain",
-      "player": "alice",
-      "check": {
-        "Count": {
+          "count": 1,
           "player": "bob",
-          "zone": "Battlefield",
-          "card": "Hill Giant",
-          "count": 1
+          "zone": "Graveyard"
         }
-      }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PrecombatMain",
-      "player": "alice",
       "check": {
         "Count": {
-          "player": "carol",
-          "zone": "Hand",
-          "card": "Lava Axe",
-          "count": 1
+          "card": "Hill Giant",
+          "count": 1,
+          "player": "bob",
+          "zone": "Battlefield"
         }
-      }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PrecombatMain",
+      "check": {
+        "Count": {
+          "card": "Lava Axe",
+          "count": 1,
+          "player": "carol",
+          "zone": "Hand"
+        }
+      },
       "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
       "do": {
         "Cast": {
-          "object": "$bolt",
-          "targets": [
-            "$bears"
-          ],
           "mana": [
             "$m1",
             null
+          ],
+          "object": "$bolt",
+          "targets": [
+            "$bears"
           ]
         }
-      }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PrecombatMain",
+      "do": "Pass",
       "player": "alice",
-      "do": "Pass"
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PrecombatMain",
-      "player": "alice",
       "check": {
         "Count": {
-          "player": "alice",
-          "zone": "Graveyard",
           "card": "Grizzly Bears",
-          "count": 1
+          "count": 1,
+          "player": "alice",
+          "zone": "Graveyard"
         }
-      }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PrecombatMain",
-      "player": "alice",
       "do": {
         "Cast": {
-          "object": "$w2",
+          "mana": [
+            "$u2",
+            "$s2"
+          ],
           "modes": [
             0,
             1,
             2
           ],
+          "object": "$w2",
           "targetsBySlot": {
-            "permanent": [
-              "$giant"
-            ],
             "opponent": [
               "$carol"
+            ],
+            "permanent": [
+              "$giant"
             ]
-          },
-          "mana": [
-            "$u2",
-            "$s2"
-          ]
+          }
         }
-      }
-    },
-    {
-      "turn": 1,
-      "step": "PrecombatMain",
+      },
       "player": "alice",
-      "do": "Pass"
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
+      "do": "Pass",
+      "player": "alice",
       "step": "PrecombatMain",
-      "player": "carol",
+      "turn": 1
+    },
+    {
       "do": {
         "Answer": {
           "prompt": "ChooseDiscard",
@@ -359,109 +356,112 @@
             "$cl"
           ]
         }
-      }
+      },
+      "player": "carol",
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PrecombatMain",
-      "player": "alice",
       "do": {
         "Answer": {
           "prompt": "ChooseCardFromAmong",
           "with": "$ogre"
         }
-      }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PrecombatMain",
-      "player": "alice",
       "check": {
         "Count": {
-          "player": "bob",
-          "zone": "Hand",
           "card": "Hill Giant",
-          "count": 1
+          "count": 1,
+          "player": "bob",
+          "zone": "Hand"
         }
-      }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PrecombatMain",
-      "player": "alice",
       "check": {
         "Count": {
-          "player": "carol",
-          "zone": "Graveyard",
           "card": "Lava Axe",
-          "count": 1
-        }
-      }
-    },
-    {
-      "turn": 1,
-      "step": "PrecombatMain",
-      "player": "alice",
-      "check": {
-        "Count": {
+          "count": 1,
           "player": "carol",
-          "zone": "Hand",
-          "card": "Gray Ogre",
-          "count": 1
+          "zone": "Graveyard"
         }
-      }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PrecombatMain",
-      "player": "alice",
       "check": {
         "Count": {
-          "player": "alice",
-          "zone": "Hand",
           "card": "Gray Ogre",
-          "count": 1
+          "count": 1,
+          "player": "carol",
+          "zone": "Hand"
         }
-      }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PrecombatMain",
-      "player": "alice",
       "check": {
         "Count": {
+          "card": "Gray Ogre",
+          "count": 1,
           "player": "alice",
-          "zone": "Graveyard",
+          "zone": "Hand"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Count": {
           "card": "Craw Wurm",
-          "count": 1
+          "count": 1,
+          "player": "alice",
+          "zone": "Graveyard"
         }
-      }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PrecombatMain",
-      "player": "alice",
       "check": {
         "Count": {
-          "player": "alice",
-          "zone": "Graveyard",
           "card": "Serra Angel",
-          "count": 1
+          "count": 1,
+          "player": "alice",
+          "zone": "Graveyard"
         }
-      }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PrecombatMain",
-      "player": "alice",
       "check": {
         "Count": {
-          "player": "alice",
-          "zone": "Library",
           "card": "Island",
-          "count": 4
+          "count": 4,
+          "player": "alice",
+          "zone": "Library"
         }
-      }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
     }
   ]
 }

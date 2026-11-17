@@ -1,10 +1,8 @@
 {
   "board": {
     "active": "alice",
-    "step": "PrecombatMain",
     "seats": [
       {
-        "name": "alice",
         "battlefield": [
           {
             "card": "Mountain",
@@ -44,10 +42,10 @@
             "card": "Triumphant Chomp",
             "label": "c3"
           }
-        ]
+        ],
+        "name": "alice"
       },
       {
-        "name": "bob",
         "battlefield": [
           {
             "card": "Ancient Brontodon",
@@ -57,9 +55,11 @@
             "card": "Caelorna, Coral Tyrant",
             "label": "coral"
           }
-        ]
+        ],
+        "name": "bob"
       }
-    ]
+    ],
+    "step": "PrecombatMain"
   },
   "description": "Triumphant Chomp deals the greatest power among Dinosaurs you control, ignoring a bigger non-Dinosaur and an opponent's bigger Dinosaur, and 2 when that is less",
   "note": "Alice's Dinosaurs are 1 and 6 power, her Enormous Baloth 7, bob's Ancient Brontodon 9. The first Chomp deals 6 to Caelorna; the second deals 6 to Colossal Dreadmaw, killing it; the third, with only the 1-power Looming Altisaur left, deals 2.",
@@ -90,8 +90,8 @@
     {
       "check": {
         "Damage": {
-          "object": "$coral",
-          "damage": 6
+          "damage": 6,
+          "object": "$coral"
         }
       },
       "player": "alice",
@@ -159,8 +159,8 @@
     {
       "check": {
         "Damage": {
-          "object": "$bronto",
-          "damage": 2
+          "damage": 2,
+          "object": "$bronto"
         }
       },
       "player": "alice",

@@ -1,10 +1,8 @@
 {
   "board": {
     "active": "alice",
-    "step": "PrecombatMain",
     "seats": [
       {
-        "name": "alice",
         "battlefield": [
           {
             "card": "Zoyowa Lava-Tongue",
@@ -63,10 +61,10 @@
           {
             "card": "Island"
           }
-        ]
+        ],
+        "name": "alice"
       },
       {
-        "name": "bob",
         "battlefield": [
           {
             "card": "Mountain",
@@ -98,10 +96,10 @@
           {
             "card": "Island"
           }
-        ]
+        ],
+        "name": "bob"
       },
       {
-        "name": "carol",
         "battlefield": [
           {
             "card": "Runeclaw Bear",
@@ -139,10 +137,10 @@
           {
             "card": "Island"
           }
-        ]
+        ],
+        "name": "carol"
       },
       {
-        "name": "dave",
         "battlefield": [
           {
             "card": "Runeclaw Bear",
@@ -180,201 +178,200 @@
           {
             "card": "Island"
           }
-        ]
+        ],
+        "name": "dave"
       }
-    ]
+    ],
+    "step": "PrecombatMain"
   },
   "description": "CR 700.15, 603.4, 118.12: Zoyowa Lava-Tongue's end-step ability triggers only if its controller descended this turn, and deals 3 damage to each opponent who neither discards a card nor sacrifices a permanent, a land included",
   "note": "On turn 1 alice bolts her token Grizzly Bears, so only a token and an instant card reach her graveyard: no trigger, and every life total is unchanged. On turn 5 she bolts her nontoken Grizzly Bears: bob sacrifices his only permanent, a Mountain, so a land counts; carol discards; dave declines both and takes 3. Four seats so each answer is its own opponent.",
   "timeline": [
     {
-      "turn": 1,
-      "step": "PrecombatMain",
-      "player": "alice",
       "do": {
         "Cast": {
+          "mana": [
+            "$m1",
+            null
+          ],
           "object": "$bolt1",
           "targets": [
             "$tok"
-          ],
+          ]
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Grizzly Bears",
+          "count": 1,
+          "player": "alice",
+          "zone": "Battlefield"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Life": {
+          "life": 20,
+          "player": "alice"
+        }
+      },
+      "player": "bob",
+      "step": "Upkeep",
+      "turn": 2
+    },
+    {
+      "check": {
+        "Life": {
+          "life": 20,
+          "player": "bob"
+        }
+      },
+      "player": "bob",
+      "step": "Upkeep",
+      "turn": 2
+    },
+    {
+      "check": {
+        "Life": {
+          "life": 20,
+          "player": "carol"
+        }
+      },
+      "player": "bob",
+      "step": "Upkeep",
+      "turn": 2
+    },
+    {
+      "check": {
+        "Life": {
+          "life": 20,
+          "player": "dave"
+        }
+      },
+      "player": "bob",
+      "step": "Upkeep",
+      "turn": 2
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Mountain",
+          "count": 1,
+          "player": "bob",
+          "zone": "Battlefield"
+        }
+      },
+      "player": "bob",
+      "step": "Upkeep",
+      "turn": 2
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Hill Giant",
+          "count": 1,
+          "player": "carol",
+          "zone": "Hand"
+        }
+      },
+      "player": "bob",
+      "step": "Upkeep",
+      "turn": 2
+    },
+    {
+      "do": {
+        "Cast": {
           "mana": [
             "$m1",
             null
-          ]
-        }
-      }
-    },
-    {
-      "turn": 1,
-      "step": "PrecombatMain",
-      "player": "alice",
-      "do": "Pass"
-    },
-    {
-      "turn": 1,
-      "step": "PrecombatMain",
-      "player": "alice",
-      "check": {
-        "Count": {
-          "player": "alice",
-          "zone": "Battlefield",
-          "card": "Grizzly Bears",
-          "count": 1
-        }
-      }
-    },
-    {
-      "turn": 2,
-      "step": "Upkeep",
-      "player": "bob",
-      "check": {
-        "Life": {
-          "player": "alice",
-          "life": 20
-        }
-      }
-    },
-    {
-      "turn": 2,
-      "step": "Upkeep",
-      "player": "bob",
-      "check": {
-        "Life": {
-          "player": "bob",
-          "life": 20
-        }
-      }
-    },
-    {
-      "turn": 2,
-      "step": "Upkeep",
-      "player": "bob",
-      "check": {
-        "Life": {
-          "player": "carol",
-          "life": 20
-        }
-      }
-    },
-    {
-      "turn": 2,
-      "step": "Upkeep",
-      "player": "bob",
-      "check": {
-        "Life": {
-          "player": "dave",
-          "life": 20
-        }
-      }
-    },
-    {
-      "turn": 2,
-      "step": "Upkeep",
-      "player": "bob",
-      "check": {
-        "Count": {
-          "player": "bob",
-          "zone": "Battlefield",
-          "card": "Mountain",
-          "count": 1
-        }
-      }
-    },
-    {
-      "turn": 2,
-      "step": "Upkeep",
-      "player": "bob",
-      "check": {
-        "Count": {
-          "player": "carol",
-          "zone": "Hand",
-          "card": "Hill Giant",
-          "count": 1
-        }
-      }
-    },
-    {
-      "turn": 5,
-      "step": "PrecombatMain",
-      "player": "alice",
-      "do": {
-        "Cast": {
+          ],
           "object": "$bolt2",
           "targets": [
             "$bears"
-          ],
-          "mana": [
-            "$m1",
-            null
           ]
         }
-      }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 5
     },
     {
-      "turn": 5,
-      "step": "PrecombatMain",
+      "do": "Pass",
       "player": "alice",
-      "do": "Pass"
+      "step": "PrecombatMain",
+      "turn": 5
     },
     {
-      "turn": 5,
-      "step": "PrecombatMain",
-      "player": "alice",
       "check": {
         "Count": {
-          "player": "alice",
-          "zone": "Graveyard",
           "card": "Grizzly Bears",
-          "count": 1
+          "count": 1,
+          "player": "alice",
+          "zone": "Graveyard"
         }
-      }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 5
     },
     {
-      "turn": 5,
-      "step": "EndStep",
-      "player": "bob",
       "do": {
         "Answer": {
           "prompt": "ChooseCost",
           "with": 1
         }
-      }
+      },
+      "player": "bob",
+      "step": "EndStep",
+      "turn": 5
     },
     {
-      "turn": 5,
-      "step": "EndStep",
-      "player": "bob",
       "do": {
         "ChooseToPay": {
           "decision": "Pays"
         }
-      }
+      },
+      "player": "bob",
+      "step": "EndStep",
+      "turn": 5
     },
     {
-      "turn": 5,
-      "step": "EndStep",
-      "player": "carol",
       "do": {
         "Answer": {
           "prompt": "ChooseCost",
           "with": 0
         }
-      }
+      },
+      "player": "carol",
+      "step": "EndStep",
+      "turn": 5
     },
     {
-      "turn": 5,
-      "step": "EndStep",
-      "player": "carol",
       "do": {
         "ChooseToPay": {
           "decision": "Pays"
         }
-      }
+      },
+      "player": "carol",
+      "step": "EndStep",
+      "turn": 5
     },
     {
-      "turn": 5,
-      "step": "EndStep",
-      "player": "carol",
       "do": {
         "Answer": {
           "prompt": "ChooseDiscard",
@@ -382,161 +379,164 @@
             "$cc"
           ]
         }
-      }
+      },
+      "player": "carol",
+      "step": "EndStep",
+      "turn": 5
     },
     {
-      "turn": 5,
-      "step": "EndStep",
-      "player": "dave",
       "do": {
         "Answer": {
           "prompt": "ChooseCost",
           "with": 0
         }
-      }
+      },
+      "player": "dave",
+      "step": "EndStep",
+      "turn": 5
     },
     {
-      "turn": 5,
-      "step": "EndStep",
-      "player": "dave",
       "do": {
         "ChooseToPay": {
           "decision": "Declines"
         }
-      }
-    },
-    {
-      "turn": 6,
-      "step": "Upkeep",
-      "player": "bob",
-      "check": {
-        "Life": {
-          "player": "alice",
-          "life": 20
-        }
-      }
-    },
-    {
-      "turn": 6,
-      "step": "Upkeep",
-      "player": "bob",
-      "check": {
-        "Life": {
-          "player": "bob",
-          "life": 20
-        }
-      }
-    },
-    {
-      "turn": 6,
-      "step": "Upkeep",
-      "player": "bob",
-      "check": {
-        "Life": {
-          "player": "carol",
-          "life": 20
-        }
-      }
-    },
-    {
-      "turn": 6,
-      "step": "Upkeep",
-      "player": "bob",
-      "check": {
-        "Life": {
-          "player": "dave",
-          "life": 17
-        }
-      }
-    },
-    {
-      "turn": 6,
-      "step": "Upkeep",
-      "player": "bob",
-      "check": {
-        "Count": {
-          "player": "bob",
-          "zone": "Graveyard",
-          "card": "Mountain",
-          "count": 1
-        }
-      }
-    },
-    {
-      "turn": 6,
-      "step": "Upkeep",
-      "player": "bob",
-      "check": {
-        "Count": {
-          "player": "carol",
-          "zone": "Graveyard",
-          "card": "Hill Giant",
-          "count": 1
-        }
-      }
-    },
-    {
-      "turn": 6,
-      "step": "Upkeep",
-      "player": "bob",
-      "check": {
-        "Count": {
-          "player": "dave",
-          "zone": "Battlefield",
-          "card": "Runeclaw Bear",
-          "count": 1
-        }
-      }
-    },
-    {
-      "turn": 6,
-      "step": "Upkeep",
-      "player": "bob",
-      "check": {
-        "Count": {
-          "player": "dave",
-          "zone": "Hand",
-          "card": "Plains",
-          "count": 1
-        }
-      }
-    },
-    {
-      "turn": 6,
-      "step": "Upkeep",
-      "player": "bob",
-      "check": {
-        "Count": {
-          "player": "carol",
-          "zone": "Battlefield",
-          "card": "Runeclaw Bear",
-          "count": 1
-        }
-      }
-    },
-    {
-      "turn": 3,
-      "step": "DeclareAttackers",
-      "player": "carol",
-      "do": {
-        "Attack": []
-      }
-    },
-    {
-      "turn": 4,
-      "step": "DeclareAttackers",
+      },
       "player": "dave",
-      "do": {
-        "Attack": []
-      }
+      "step": "EndStep",
+      "turn": 5
     },
     {
-      "turn": 5,
-      "step": "DeclareAttackers",
-      "player": "alice",
+      "check": {
+        "Life": {
+          "life": 20,
+          "player": "alice"
+        }
+      },
+      "player": "bob",
+      "step": "Upkeep",
+      "turn": 6
+    },
+    {
+      "check": {
+        "Life": {
+          "life": 20,
+          "player": "bob"
+        }
+      },
+      "player": "bob",
+      "step": "Upkeep",
+      "turn": 6
+    },
+    {
+      "check": {
+        "Life": {
+          "life": 20,
+          "player": "carol"
+        }
+      },
+      "player": "bob",
+      "step": "Upkeep",
+      "turn": 6
+    },
+    {
+      "check": {
+        "Life": {
+          "life": 17,
+          "player": "dave"
+        }
+      },
+      "player": "bob",
+      "step": "Upkeep",
+      "turn": 6
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Mountain",
+          "count": 1,
+          "player": "bob",
+          "zone": "Graveyard"
+        }
+      },
+      "player": "bob",
+      "step": "Upkeep",
+      "turn": 6
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Hill Giant",
+          "count": 1,
+          "player": "carol",
+          "zone": "Graveyard"
+        }
+      },
+      "player": "bob",
+      "step": "Upkeep",
+      "turn": 6
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Runeclaw Bear",
+          "count": 1,
+          "player": "dave",
+          "zone": "Battlefield"
+        }
+      },
+      "player": "bob",
+      "step": "Upkeep",
+      "turn": 6
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Plains",
+          "count": 1,
+          "player": "dave",
+          "zone": "Hand"
+        }
+      },
+      "player": "bob",
+      "step": "Upkeep",
+      "turn": 6
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Runeclaw Bear",
+          "count": 1,
+          "player": "carol",
+          "zone": "Battlefield"
+        }
+      },
+      "player": "bob",
+      "step": "Upkeep",
+      "turn": 6
+    },
+    {
       "do": {
         "Attack": []
-      }
+      },
+      "player": "carol",
+      "step": "DeclareAttackers",
+      "turn": 3
+    },
+    {
+      "do": {
+        "Attack": []
+      },
+      "player": "dave",
+      "step": "DeclareAttackers",
+      "turn": 4
+    },
+    {
+      "do": {
+        "Attack": []
+      },
+      "player": "alice",
+      "step": "DeclareAttackers",
+      "turn": 5
     }
   ]
 }

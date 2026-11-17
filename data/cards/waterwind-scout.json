@@ -1,6 +1,11 @@
 {
   "faces": [
     {
+      "keywords": [
+        {
+          "type": "Flying"
+        }
+      ],
       "manaCost": [
         {
           "type": "Generic",
@@ -134,12 +139,7 @@
         "types": [
           "Creature"
         ]
-      },
-      "keywords": [
-        {
-          "type": "Flying"
-        }
-      ]
+      }
     }
   ]
 }

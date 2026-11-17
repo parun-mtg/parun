@@ -1,10 +1,8 @@
 {
   "board": {
     "active": "alice",
-    "step": "PrecombatMain",
     "seats": [
       {
-        "name": "alice",
         "battlefield": [
           {
             "card": "Island",
@@ -66,15 +64,15 @@
             "card": "Island",
             "label": "a3"
           }
-        ]
+        ],
+        "name": "alice"
       },
       {
-        "name": "bob",
         "battlefield": [
           {
             "card": "Millstone",
-            "label": "stone",
-            "controller": "carol"
+            "controller": "carol",
+            "label": "stone"
           }
         ],
         "library": [
@@ -90,15 +88,15 @@
             "card": "Island",
             "label": "b3"
           }
-        ]
+        ],
+        "name": "bob"
       },
       {
-        "name": "carol",
         "battlefield": [
           {
             "card": "Grizzly Bears",
-            "label": "bears",
-            "controller": "bob"
+            "controller": "bob",
+            "label": "bears"
           }
         ],
         "library": [
@@ -114,9 +112,11 @@
             "card": "Island",
             "label": "c3"
           }
-        ]
+        ],
+        "name": "carol"
       }
-    ]
+    ],
+    "step": "PrecombatMain"
   },
   "description": "Unlucky Drop has the owner, not the controller, of the target artifact or creature put it on their choice of the top or bottom of their library",
   "note": "Bob owns the Millstone carol controls and puts it on the bottom of his library; carol owns the Grizzly Bears bob controls and puts it on top of hers. Alice's own Jayemdae Tome stays a second candidate throughout.",

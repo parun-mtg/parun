@@ -198,8 +198,8 @@
       "typeLine": {
         "subtypes": [
           "Dinosaur",
-          "Skeleton",
-          "Horror"
+          "Horror",
+          "Skeleton"
         ],
         "types": [
           "Creature"
