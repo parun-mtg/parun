@@ -12,6 +12,7 @@ import qualified Parun.Types.BecameAttached as BecameAttached
 import qualified Parun.Types.BecameAttacked as BecameAttacked
 import qualified Parun.Types.BecameBlocking as BecameBlocking
 import qualified Parun.Types.BecameDesignated as BecameDesignated
+import qualified Parun.Types.BecameTapped as BecameTapped
 import qualified Parun.Types.BecameTarget as BecameTarget
 import qualified Parun.Types.BecameUnattached as BecameUnattached
 import qualified Parun.Types.BlocksDeclared as BlocksDeclared
@@ -500,9 +501,9 @@ data GameEvent
     -- Parun.Engine.Event.tap alone, the funnel every tapping route goes through,
     -- and only for a permanent that was untapped -- that rule's second sentence.
     -- CR 603.2e is the other exclusion: a permanent that ENTERS tapped never
-    -- transitioned. The id alone: TappedToPay below is the one cause a card
-    -- asks about.
-    BecameTapped ObjectId.ObjectId
+    -- transitioned. Carries who tapped it (Hylda of the Icy Crown's "whenever
+    -- you tap"); TappedToPay below is the one cause a card asks about.
+    BecameTapped BecameTapped.BecameTapped
   | -- | CR 601.2h / 701.26a: this permanent became tapped to pay a keyword
     -- ability's cost, recorded by Parun.Engine.Cast beside its BecameTapped.
     TappedToPay TappedToPay.TappedToPay
@@ -511,7 +512,7 @@ data GameEvent
     -- Parun.Engine.Engine.untapAll, the two roads that untap, and only for a
     -- permanent that was tapped -- that rule's second sentence. CR 603.2e is the
     -- other exclusion: a permanent that ENTERS untapped never transitioned. The
-    -- id alone, BecameTapped's mirror.
+    -- id alone: no card asks who untapped it.
     BecameUntapped ObjectId.ObjectId
   | -- | CR 106.12a: this permanent WAS TAPPED FOR MANA -- a mana ability of it
     -- whose activation cost includes {T} resolved and produced mana. Appended by

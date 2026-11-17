@@ -3841,7 +3841,7 @@ wildGrowthSpec s registry = Spec.describe s "Wild Growth" $ do
     Spec.assertEqWith s "and bob, whose land was not the one tapped, gets nothing there" (poolTypes S.bob unenchanted) []
   Spec.it s "CR 106.12 a tap that is not for mana leaves the Aura silent" $ do
     (_, bobForest, _, board) <- wildGrowthBoard s registry
-    let after = S.runPure S.identityAnswer board (Event.tap bobForest >> Engine.settleForPriority)
+    let after = S.runPure S.identityAnswer board (Event.tap S.bob bobForest >> Engine.settleForPriority)
     Spec.assertEqWith s "CR 106.12 nothing was tapped FOR MANA, so no mana was added" (poolTypes S.bob after) []
     Spec.assertEqWith s "nor did an ordinary triggered ability go on the stack" (length (TurnRegisters.stack (GameState.turn after))) 0
     Spec.assertEqWith s "and the land really is tapped, so the boards differ in nothing else" (fmap Object.tapped (Game.lookupObject bobForest after)) (Just TapState.Tapped)

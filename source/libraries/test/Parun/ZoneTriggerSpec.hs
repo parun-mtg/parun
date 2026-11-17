@@ -61,6 +61,7 @@ import qualified Parun.Types.BecameAttached as BecameAttached
 import qualified Parun.Types.BecameAttacked as BecameAttacked
 import qualified Parun.Types.BecameBlocking as BecameBlocking
 import qualified Parun.Types.BecameDesignated as BecameDesignated
+import qualified Parun.Types.BecameTapped as BecameTapped
 import qualified Parun.Types.BecameTarget as BecameTarget
 import qualified Parun.Types.BecameUnattached as BecameUnattached
 import qualified Parun.Types.BecomesTapState as BecomesTapState
@@ -1976,7 +1977,7 @@ representativeEvents cond =
         -- A paying condition admits only CR 601.2h's TappedToPay for its keyword.
         TriggerCondition.BecomesTapState watched -> case (BecomesTapState.status watched, BecomesTapState.paying watched) of
           (TapState.Tapped, Just family) -> one (GameEvent.TappedToPay (TappedToPay.MkTappedToPay {TappedToPay.permanent = departed, TappedToPay.keyword = family}))
-          (TapState.Tapped, Nothing) -> one (GameEvent.BecameTapped departed)
+          (TapState.Tapped, Nothing) -> one (GameEvent.BecameTapped (BecameTapped.MkBecameTapped departed S.alice))
           (TapState.Untapped, _) -> one (GameEvent.BecameUntapped departed)
         -- CR 106.12a's own event, on `departed` under either subject: the arm
         -- stamps the tapped permanent under every relation it admits, so the floor
@@ -2372,12 +2373,13 @@ everyTriggerCondition =
     TriggerCondition.AttachedCreatureMentors,
     TriggerCondition.Leaves LeavesTrigger.defaultValue {LeavesTrigger.permanent = LeavingPermanent.Attached},
     TriggerCondition.Leaves LeavesTrigger.defaultValue {LeavesTrigger.permanent = LeavingPermanent.Attached, LeavesTrigger.destinations = Set.singleton (OwnedZone.MkOwnedZone Zone.Graveyard PlayerRelation.AnyPlayer)},
-    TriggerCondition.BecomesTapState (BecomesTapState.MkBecomesTapState TapState.Tapped ActingPermanent.Self Batching.EachOccurrence Nothing Nothing),
-    TriggerCondition.BecomesTapState (BecomesTapState.MkBecomesTapState TapState.Tapped (ActingPermanent.Matching (Filter.Type.HasAttached Filter.Type.IsSource)) Batching.EachOccurrence Nothing Nothing),
-    TriggerCondition.BecomesTapState (BecomesTapState.MkBecomesTapState TapState.Untapped ActingPermanent.Self Batching.EachOccurrence Nothing Nothing),
-    TriggerCondition.BecomesTapState (BecomesTapState.MkBecomesTapState TapState.Untapped (ActingPermanent.Matching (Filter.Type.And [])) Batching.EachOccurrence Nothing Nothing),
-    TriggerCondition.BecomesTapState (BecomesTapState.MkBecomesTapState TapState.Tapped (ActingPermanent.Matching (Filter.Type.And [])) Batching.OneOrMore Nothing Nothing),
-    TriggerCondition.BecomesTapState (BecomesTapState.MkBecomesTapState TapState.Tapped ActingPermanent.Self Batching.EachOccurrence (Just KeywordFamily.Teamwork) Nothing),
+    TriggerCondition.BecomesTapState (BecomesTapState.MkBecomesTapState TapState.Tapped ActingPermanent.Self Batching.EachOccurrence Nothing Nothing Nothing),
+    TriggerCondition.BecomesTapState (BecomesTapState.MkBecomesTapState TapState.Tapped (ActingPermanent.Matching (Filter.Type.HasAttached Filter.Type.IsSource)) Batching.EachOccurrence Nothing Nothing Nothing),
+    TriggerCondition.BecomesTapState (BecomesTapState.MkBecomesTapState TapState.Untapped ActingPermanent.Self Batching.EachOccurrence Nothing Nothing Nothing),
+    TriggerCondition.BecomesTapState (BecomesTapState.MkBecomesTapState TapState.Untapped (ActingPermanent.Matching (Filter.Type.And [])) Batching.EachOccurrence Nothing Nothing Nothing),
+    TriggerCondition.BecomesTapState (BecomesTapState.MkBecomesTapState TapState.Tapped (ActingPermanent.Matching (Filter.Type.And [])) Batching.OneOrMore Nothing Nothing Nothing),
+    TriggerCondition.BecomesTapState (BecomesTapState.MkBecomesTapState TapState.Tapped ActingPermanent.Self Batching.EachOccurrence (Just KeywordFamily.Teamwork) Nothing Nothing),
+    TriggerCondition.BecomesTapState (BecomesTapState.MkBecomesTapState TapState.Tapped (ActingPermanent.Matching (Filter.Type.And [])) Batching.EachOccurrence Nothing (Just PlayerRelation.You) Nothing),
     TriggerCondition.TappedForMana (TappedForManaTrigger.MkTappedForManaTrigger TappedPermanent.Attached PlayerRelation.AnyPlayer ManaSpecification.AnyMana),
     -- ALL THREE relations, on the PermanentSacrificed rows' reasoning below:
     -- an eventBindings arm that had cased on the relation and stamped nothing

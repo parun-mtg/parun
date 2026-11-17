@@ -58,6 +58,7 @@ import qualified Parun.Types.BecameAttached as BecameAttached
 import qualified Parun.Types.BecameAttacked as BecameAttacked
 import qualified Parun.Types.BecameBlocking as BecameBlocking
 import qualified Parun.Types.BecameDesignated as BecameDesignated
+import qualified Parun.Types.BecameTapped as BecameTapped
 import qualified Parun.Types.BecameTarget as BecameTarget
 import qualified Parun.Types.BecameUnattached as BecameUnattached
 import qualified Parun.Types.BecomesTapState as BecomesTapState
@@ -868,7 +869,7 @@ participants event =
         GameEvent.ChaosEnsued on -> (Maybe.maybeToList on, [])
         GameEvent.ClassLevelSet c -> one (ClassLevelChange.object c)
         GameEvent.Plotted oid -> one oid
-        GameEvent.BecameTapped oid -> one oid
+        GameEvent.BecameTapped t -> one (BecameTapped.permanent t)
         GameEvent.TappedToPay t -> one (TappedToPay.permanent t)
         GameEvent.BecameUntapped oid -> one oid
         GameEvent.TappedForMana t -> one (TappedForMana.permanent t)

@@ -2374,7 +2374,7 @@ betrayalSpec s registry = Spec.describe s "CR 701.26a a becomes-tapped trigger" 
     board <- betrayalBoard s registry True
     case board of
       ([enchanted, bare], _, gs) -> do
-        let after = settleAndResolve (S.runPure S.identityAnswer gs (Event.tap bare))
+        let after = settleAndResolve (S.runPure S.identityAnswer gs (Event.tap S.alice bare))
         Spec.assertEqWith s "CR 303.4b carol's hand is still empty" (handNames S.carol after) []
         Spec.assertEqWith s "though that creature really did become tapped" (tapStatusOf bare after) (Just TapState.Tapped)
         Spec.assertEqWith s "and the enchanted one, untouched, did not" (tapStatusOf enchanted after) (Just TapState.Untapped)
@@ -2388,8 +2388,8 @@ betrayalSpec s registry = Spec.describe s "CR 701.26a a becomes-tapped trigger" 
     board <- betrayalBoard s registry True
     case board of
       ([enchanted, _], _, gs) -> do
-        let once = settleAndResolve (S.runPure S.identityAnswer gs (Event.tap enchanted))
-            twice = settleAndResolve (S.runPure S.identityAnswer gs (Event.tap enchanted >> Event.tap enchanted))
+        let once = settleAndResolve (S.runPure S.identityAnswer gs (Event.tap S.alice enchanted))
+            twice = settleAndResolve (S.runPure S.identityAnswer gs (Event.tap S.alice enchanted >> Event.tap S.alice enchanted))
         Spec.assertEqWith s "CR 701.26a the second tap drew nothing: one card, not two" (handNames S.carol twice) ["Island"]
         Spec.assertEqWith s "which is what one tap already drew" (handNames S.carol once) ["Island"]
         Spec.assertEqWith s "and the creature is tapped either way" (fmap (tapStatusOf enchanted) [once, twice]) [Just TapState.Tapped, Just TapState.Tapped]
@@ -2404,7 +2404,7 @@ betrayalSpec s registry = Spec.describe s "CR 701.26a a becomes-tapped trigger" 
     case board of
       ([enchanted, _], _, gs) -> do
         let entered = settleAndResolve (S.runPure S.identityAnswer gs (Event.enterTapState TapState.Tapped enchanted))
-            tapped = settleAndResolve (S.runPure S.identityAnswer gs (Event.tap enchanted))
+            tapped = settleAndResolve (S.runPure S.identityAnswer gs (Event.tap S.alice enchanted))
         Spec.assertEqWith s "CR 603.2e carol drew nothing off the entering stamp" (handNames S.carol entered) []
         Spec.assertEqWith s "though the very same tap through the funnel draws her a card" (handNames S.carol tapped) ["Island"]
         Spec.assertEqWith s "and both left the creature tapped, so the boards differ in nothing else" (fmap (tapStatusOf enchanted) [entered, tapped]) [Just TapState.Tapped, Just TapState.Tapped]

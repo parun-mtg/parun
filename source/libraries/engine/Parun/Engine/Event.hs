@@ -97,6 +97,7 @@ import qualified Parun.Types.AttackTrigger as AttackTrigger
 import qualified Parun.Types.AttackedTrigger as AttackedTrigger
 import qualified Parun.Types.BattlefieldCandidate as BattlefieldCandidate
 import qualified Parun.Types.BecameAttached as BecameAttached
+import qualified Parun.Types.BecameTapped as BecameTapped
 import qualified Parun.Types.BecameTarget as BecameTarget
 import qualified Parun.Types.BecameUnattached as BecameUnattached
 import qualified Parun.Types.Binding as Binding.Type
@@ -1209,7 +1210,9 @@ withRiders keywords de =
 -- Parun.Engine.Cost.tapObject for a cost component, Parun.Engine.Resolve's
 -- Effect.Tap opcode, CR 508.1f's attacker declaration in
 -- Parun.Engine.Combat.declareAttackers, and CR 701.19a's regeneration in `apply`
--- below -- so that a card watching for a tap sees every one of them.
+-- below -- so that a card watching for a tap sees every one of them. Each
+-- caller names who tapped: the payer, the attacking player, the resolving
+-- object's controller (CR 608.2c) or the regenerating permanent's controller.
 --
 -- Rule 701.26a's SECOND sentence is the guard: "only untapped permanents can be
 -- tapped", so an already-tapped permanent is left alone and nothing is recorded.
@@ -1231,8 +1234,8 @@ withRiders keywords de =
 -- reaches it (Scryfall `o:"become tapped" o:instead`, 2026-10-22, the Mask
 -- alone), so CR 616.1 has one candidate and applying it here is that loop. A
 -- printing that replaced tapping in some other way would want the event.
-tap :: ObjectId -> Game ()
-tap oid = do
+tap :: PlayerId -> ObjectId -> Game ()
+tap tapper oid = do
   before <- State.get
   case Game.lookupObject oid before of
     Just obj
@@ -1240,7 +1243,7 @@ tap oid = do
           Monad.when (turnsUpBefore TurnUpEvent.BecomesTapped oid before) (turnFaceUpByStatus oid)
           gs <- State.get
           State.put
-            . recordEvent (GameEvent.BecameTapped oid)
+            . recordEvent (GameEvent.BecameTapped (BecameTapped.MkBecameTapped oid tapper))
             $ gs {GameState.objects = Map.adjust (\o -> o {Object.tapped = TapState.Tapped}) oid (GameState.objects gs)}
     _ -> pure ()
 
@@ -4845,8 +4848,11 @@ apply settle batch applied batchPrevented candidate event =
         -- Three statements rather than one write because `tap` is a Game action;
         -- the funnel is what makes a regeneration a becomes-tapped event like any
         -- other route.
+        --
+        -- Rule 701.19a's "its controller taps it" names the tapper.
         State.modify' (\gs -> gs {GameState.objects = Map.adjust (\obj -> obj {Object.damage = 0}) oid (GameState.objects gs)})
-        tap oid
+        tapper <- State.gets (Projection.controllerOf oid)
+        Monad.forM_ tapper (`tap` oid)
         State.modify' (Game.removeFromCombat oid)
         pure Nothing
       -- CR 122.1c: "instead remove a shield counter from it". The destruction does

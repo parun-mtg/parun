@@ -37,6 +37,7 @@ import qualified Parun.Types.AttackTargetKind as AttackTargetKind
 import qualified Parun.Types.AttackedDuring as AttackedDuring
 import qualified Parun.Types.AttackerBlocked as AttackerBlocked
 import qualified Parun.Types.AttackerDeclared as AttackerDeclared
+import qualified Parun.Types.BecameTapped as BecameTapped
 import qualified Parun.Types.Bookkeeping as Bookkeeping
 import Parun.Types.Card (Card)
 import qualified Parun.Types.Card as Card.Type
@@ -4621,7 +4622,7 @@ timesTappedThisTurn gs oid = toInteger (length (Seq.filter ((== Just oid) . tapp
 -- The permanent an event records becoming tapped (CR 701.26a).
 tappedOf :: GameEvent -> Maybe ObjectId
 tappedOf event = case event of
-  GameEvent.BecameTapped oid -> Just oid
+  GameEvent.BecameTapped t -> Just (BecameTapped.permanent t)
   _ -> Nothing
 
 -- The tap for mana an event records (CR 106.12a).

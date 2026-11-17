@@ -128,6 +128,7 @@ import qualified Parun.Codec.BearersTriggerSpec
 import qualified Parun.Codec.BecameAttackedSpec
 import qualified Parun.Codec.BecameBlockingSpec
 import qualified Parun.Codec.BecameDesignatedSpec
+import qualified Parun.Codec.BecameTappedSpec
 import qualified Parun.Codec.BecomeCopySpec
 import qualified Parun.Codec.BecomesTapStateSpec
 import qualified Parun.Codec.BecomesTargetedTriggerSpec
@@ -1241,6 +1242,7 @@ spec s reference corpus = do
   Parun.Codec.BecameAttackedSpec.spec s
   Parun.Codec.BecameBlockingSpec.spec s
   Parun.Codec.BecameDesignatedSpec.spec s
+  Parun.Codec.BecameTappedSpec.spec s
   Parun.Codec.BecomeCopySpec.spec s
   Parun.Codec.BecomesTapStateSpec.spec s
   Parun.Codec.BeginningStepSpec.spec s
