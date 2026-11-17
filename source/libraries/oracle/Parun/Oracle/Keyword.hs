@@ -620,6 +620,6 @@ numberedCostedKeywords =
 -- than the source.
 otherCards :: CostComponent.CostComponent k -> CostComponent.CostComponent k
 otherCards c = case c of
-  CostComponent.MoveCardsFromGraveyard (MoveCardsFromGraveyard.MkMoveCardsFromGraveyard n f end) ->
-    CostComponent.MoveCardsFromGraveyard (MoveCardsFromGraveyard.MkMoveCardsFromGraveyard n (Filter.Type.And [Filter.Type.Not Filter.Type.IsSource, f]) end)
+  CostComponent.MoveCardsFromGraveyard (MoveCardsFromGraveyard.MkMoveCardsFromGraveyard n f end graveyards) ->
+    CostComponent.MoveCardsFromGraveyard (MoveCardsFromGraveyard.MkMoveCardsFromGraveyard n (Filter.Type.And [Filter.Type.Not Filter.Type.IsSource, f]) end graveyards)
   _ -> c

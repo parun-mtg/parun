@@ -800,8 +800,8 @@ data Prompt r where
   -- names. The Seq is what the players before this one in an edict's APNAP pass
   -- already chose, or the earlier payers of a CR 118.12 offer took (CR 101.4b).
   ChooseSacrifices :: Decider.Decider -> PlayerId.PlayerId -> ObjectId.ObjectId -> [ObjectId.ObjectId] -> Natural.Natural -> Seq.Seq (PlayerId.PlayerId, Set.Set ObjectId.ObjectId) -> Prompt (Set.Set ObjectId.ObjectId)
-  -- | CR 406.2: which cards are exiled from the payer's graveyard to pay a
-  -- cost; ChooseSacrifices' payload, posture and elision.
+  -- | CR 406.2: which cards are exiled from a graveyard to pay a cost;
+  -- ChooseSacrifices' payload, posture and elision.
   ChooseExilesFromGraveyard :: Decider.Decider -> PlayerId.PlayerId -> ObjectId.ObjectId -> [ObjectId.ObjectId] -> Natural.Natural -> Prompt (Set.Set ObjectId.ObjectId)
   -- | CR 702.167a: which objects are exiled as a craft ability's [materials],
   -- the arm above's payload, posture and elision over TWO zones at once -- the

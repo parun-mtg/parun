@@ -882,6 +882,7 @@ spec s = Spec.describe s "Parun.Oracle" $ do
   Spec.it s "render prints the costs of returning, exiling, tapping and removing counters" $ do
     let costed components = Oracle.render (withFace (\f -> f {Face.activatedAbilities = [activated (Cost.MkCost (Just (ManaCost.MkManaCost [])) components) (draw (PlayerRef.Relative PlayerRelation.You) 1)]}))
         yours = Filter.And [Filter.HasCardType CardType.Creature, Filter.HeldBy Holder.Controller PlayerRelation.You]
+        yourGraveyard = ZoneScope.Scoped (PlayerScope.Related PlayerRelation.You)
         removing n spread f = CostComponent.RemoveCounters (CountersFromPermanents.MkCountersFromPermanents (ObjectCount.Exactly n) (WhichCounters.OfKind CounterKind.PlusOnePlusOne) f spread)
     Spec.assertEq s (Just (Text.pack "Return Spark to its owner's hand: Draw a card.")) (costed [CostComponent.ReturnThis])
     Spec.assertEq s (Just (Text.pack "{T}, Exile Spark: Draw a card.")) (costed [CostComponent.TapThis, CostComponent.ExileThis])
@@ -906,8 +907,8 @@ spec s = Spec.describe s "Parun.Oracle" $ do
     Spec.assertEq s (Just (Text.pack "Tap an untapped creature you control: Draw a card.")) (costed [CostComponent.TapPermanents (TapPermanents.MkTapPermanents (CostAmount.Fixed 1) untapped False TapState.Tapped)])
     Spec.assertEq s (Just (Text.pack "Tap two untapped creatures you control that share a creature type: Draw a card.")) (costed [CostComponent.TapPermanents (TapPermanents.MkTapPermanents (CostAmount.Fixed 2) untapped True TapState.Tapped)])
     Spec.assertEq s (Just (Text.pack "Untap a tapped land an opponent controls: Draw a card.")) (costed [CostComponent.TapPermanents (TapPermanents.MkTapPermanents (CostAmount.Fixed 1) (Filter.And [Filter.IsTapped, Filter.HasCardType CardType.Land, Filter.HeldBy Holder.Controller PlayerRelation.Opponent]) False TapState.Untapped)])
-    Spec.assertEq s (Just (Text.pack "Exile seven other cards from your graveyard: Draw a card.")) (costed [CostComponent.MoveCardsFromGraveyard (MoveCardsFromGraveyard.MkMoveCardsFromGraveyard (CostAmount.Fixed 7) (Filter.Not Filter.IsSource) GraveyardCostDestination.Exile)])
-    Spec.assertEq s (Just (Text.pack "Exile an instant or sorcery card from your graveyard: Draw a card.")) (costed [CostComponent.MoveCardsFromGraveyard (MoveCardsFromGraveyard.MkMoveCardsFromGraveyard (CostAmount.Fixed 1) (Filter.Or [Filter.HasCardType CardType.Instant, Filter.HasCardType CardType.Sorcery]) GraveyardCostDestination.Exile)])
+    Spec.assertEq s (Just (Text.pack "Exile seven other cards from your graveyard: Draw a card.")) (costed [CostComponent.MoveCardsFromGraveyard (MoveCardsFromGraveyard.MkMoveCardsFromGraveyard (CostAmount.Fixed 7) (Filter.Not Filter.IsSource) GraveyardCostDestination.Exile yourGraveyard)])
+    Spec.assertEq s (Just (Text.pack "Exile an instant or sorcery card from your graveyard: Draw a card.")) (costed [CostComponent.MoveCardsFromGraveyard (MoveCardsFromGraveyard.MkMoveCardsFromGraveyard (CostAmount.Fixed 1) (Filter.Or [Filter.HasCardType CardType.Instant, Filter.HasCardType CardType.Sorcery]) GraveyardCostDestination.Exile yourGraveyard)])
 
   -- CR 705.1 / CR 705.2: "flip a coin", its outcome read by a later clause as
   -- won or lost (Winter Sky), and flipping a coin as a cost (Karplusan Minotaur).

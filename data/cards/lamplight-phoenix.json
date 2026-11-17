@@ -79,6 +79,12 @@
                                 "type": "Fixed",
                                 "value": 1
                               },
+                              "graveyards": {
+                                "type": "Scoped",
+                                "value": {
+                                  "type": "AnyPlayer"
+                                }
+                              },
                               "whichCards": {
                                 "type": "IsBound",
                                 "value": "became"

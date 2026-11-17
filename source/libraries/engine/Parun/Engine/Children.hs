@@ -2084,6 +2084,15 @@ costLeaves =
 costChildren :: (Applicative f) => CostChildren keyword f -> Cost.Cost keyword -> f (Cost.Cost keyword)
 costChildren c (Cost.MkCost mana components) = Cost.MkCost mana <$> traverse (costComponentChildren c) components
 
+-- | The slots a ZoneScope names (CR 400.1's "their graveyard"), each through
+-- the visitor; the other arms name none.
+zoneScopeSlots :: (Applicative f) => (SlotName.SlotName -> f SlotName.SlotName) -> ZoneScope.ZoneScope -> f ZoneScope.ZoneScope
+zoneScopeSlots visit zones = case zones of
+  ZoneScope.Scoped _ -> pure zones
+  ZoneScope.InSlot named -> ZoneScope.InSlot <$> visit named
+  ZoneScope.ControllerOfBound named -> ZoneScope.ControllerOfBound <$> visit named
+  ZoneScope.BoundPlayer _ -> pure zones
+
 -- | A CostComponent's children, its payload matched positionally.
 costComponentChildren :: (Applicative f) => CostChildren keyword f -> CostComponent.CostComponent keyword -> f (CostComponent.CostComponent keyword)
 costComponentChildren c component = case component of
@@ -2115,7 +2124,7 @@ costComponentChildren c component = case component of
   CostComponent.FlipCoin -> pure component
   CostComponent.ExileThisFrom _ -> pure component
   CostComponent.ExileThis -> pure component
-  CostComponent.MoveCardsFromGraveyard (MoveCardsFromGraveyard.MkMoveCardsFromGraveyard n criterion end) -> fmap CostComponent.MoveCardsFromGraveyard (MoveCardsFromGraveyard.MkMoveCardsFromGraveyard <$> costAmountChildren c n <*> costFilter c criterion <*> pure end)
+  CostComponent.MoveCardsFromGraveyard (MoveCardsFromGraveyard.MkMoveCardsFromGraveyard n criterion end graveyards) -> fmap CostComponent.MoveCardsFromGraveyard (MoveCardsFromGraveyard.MkMoveCardsFromGraveyard <$> costAmountChildren c n <*> costFilter c criterion <*> pure end <*> zoneScopeSlots (costSlot c) graveyards)
   CostComponent.ExileMaterials (ExileMaterials.MkExileMaterials n orMore criterion) -> fmap CostComponent.ExileMaterials (ExileMaterials.MkExileMaterials n orMore <$> costFilter c criterion)
   CostComponent.ExileTopFromGraveyard criterion -> CostComponent.ExileTopFromGraveyard <$> costFilter c criterion
   CostComponent.PutExiledIntoGraveyard criterion -> CostComponent.PutExiledIntoGraveyard <$> costFilter c criterion

@@ -3325,7 +3325,8 @@ withCost keyword cost = case keyword of
                      MoveCardsFromGraveyard.MkMoveCardsFromGraveyard
                        { MoveCardsFromGraveyard.count = CostAmount.Fixed count,
                          MoveCardsFromGraveyard.whichCards = Filter.And [],
-                         MoveCardsFromGraveyard.destination = GraveyardCostDestination.Exile
+                         MoveCardsFromGraveyard.destination = GraveyardCostDestination.Exile,
+                         MoveCardsFromGraveyard.graveyards = ZoneScope.Scoped (PlayerScope.Related PlayerRelation.You)
                        }
                  ]
         }

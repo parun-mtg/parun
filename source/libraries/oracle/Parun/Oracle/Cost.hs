@@ -32,11 +32,14 @@ import qualified Parun.Types.ManaSymbol as ManaSymbol
 import qualified Parun.Types.ManaType as ManaType
 import qualified Parun.Types.MoveCardsFromGraveyard as MoveCardsFromGraveyard
 import qualified Parun.Types.ObjectCount as ObjectCount
+import qualified Parun.Types.PlayerRelation as PlayerRelation
+import qualified Parun.Types.PlayerScope as PlayerScope
 import qualified Parun.Types.Sacrifice as Sacrifice
 import qualified Parun.Types.TapPermanents as TapPermanents
 import qualified Parun.Types.TapState as TapState
 import qualified Parun.Types.WhichCounters as WhichCounters
 import qualified Parun.Types.Zone as Zone
+import qualified Parun.Types.ZoneScope as ZoneScope
 
 -- | A mana symbol in braces (CR 107.4).
 symbol :: ManaSymbol.ManaSymbol -> Text.Text
@@ -170,7 +173,8 @@ component self named c = case c of
           TapState.Tapped -> Text.pack "Tap "
           TapState.Untapped -> Text.pack "Untap "
     [verb <> turned <> (if sharing then Text.pack " that share a creature type" else Text.empty)]
-  CostComponent.MoveCardsFromGraveyard (MoveCardsFromGraveyard.MkMoveCardsFromGraveyard (CostAmount.Fixed n) f destination) -> do
+  -- Only "your graveyard" renders: "exile it" (Lamplight Phoenix) names none.
+  CostComponent.MoveCardsFromGraveyard (MoveCardsFromGraveyard.MkMoveCardsFromGraveyard (CostAmount.Fixed n) f destination (ZoneScope.Scoped (PlayerScope.Related PlayerRelation.You))) -> do
     p <- Filter.phrase f named
     moved <- some (toInteger n) card (Filter.merge p (Filter.MkPhrase [] [card] []))
     case destination of

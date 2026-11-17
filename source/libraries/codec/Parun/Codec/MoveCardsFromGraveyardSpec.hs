@@ -12,7 +12,10 @@ import qualified Parun.Types.Filter as Filter
 import qualified Parun.Types.GraveyardCostDestination as GraveyardCostDestination
 import qualified Parun.Types.Keyword as Keyword
 import qualified Parun.Types.MoveCardsFromGraveyard as MoveCardsFromGraveyard
+import qualified Parun.Types.PlayerRelation as PlayerRelation
+import qualified Parun.Types.PlayerScope as PlayerScope
 import qualified Parun.Types.SlotName as SlotName
+import qualified Parun.Types.ZoneScope as ZoneScope
 
 -- | Instantiated at 'Keyword.Keyword', the only concrete instantiation anywhere
 -- in the pool.
@@ -29,7 +32,8 @@ spec s = Spec.describe s "Parun.Codec.MoveCardsFromGraveyard" $ do
       ( MoveCardsFromGraveyard.MkMoveCardsFromGraveyard
           { MoveCardsFromGraveyard.count = CostAmount.Fixed 1,
             MoveCardsFromGraveyard.whichCards = Filter.HasCardType CardType.Creature,
-            MoveCardsFromGraveyard.destination = GraveyardCostDestination.Exile
+            MoveCardsFromGraveyard.destination = GraveyardCostDestination.Exile,
+            MoveCardsFromGraveyard.graveyards = yours
           }
       )
       " {\"count\":{\"type\":\"Fixed\",\"value\":1},\"whichCards\":{\"type\":\"HasCardType\",\"value\":\"Creature\"}} "
@@ -41,7 +45,8 @@ spec s = Spec.describe s "Parun.Codec.MoveCardsFromGraveyard" $ do
       ( MoveCardsFromGraveyard.MkMoveCardsFromGraveyard
           { MoveCardsFromGraveyard.count = CostAmount.Announced (SlotName.MkSlotName (Text.pack "X")),
             MoveCardsFromGraveyard.whichCards = Filter.HasCardType CardType.Creature,
-            MoveCardsFromGraveyard.destination = GraveyardCostDestination.Exile
+            MoveCardsFromGraveyard.destination = GraveyardCostDestination.Exile,
+            MoveCardsFromGraveyard.graveyards = yours
           }
       )
       " {\"count\":{\"type\":\"Announced\",\"value\":\"X\"},\"whichCards\":{\"type\":\"HasCardType\",\"value\":\"Creature\"}} "
@@ -53,8 +58,25 @@ spec s = Spec.describe s "Parun.Codec.MoveCardsFromGraveyard" $ do
       ( MoveCardsFromGraveyard.MkMoveCardsFromGraveyard
           { MoveCardsFromGraveyard.count = CostAmount.Fixed 2,
             MoveCardsFromGraveyard.whichCards = Filter.And [],
-            MoveCardsFromGraveyard.destination = GraveyardCostDestination.LibraryBottom
+            MoveCardsFromGraveyard.destination = GraveyardCostDestination.LibraryBottom,
+            MoveCardsFromGraveyard.graveyards = yours
           }
       )
       " {\"count\":{\"type\":\"Fixed\",\"value\":2},\"destination\":\"LibraryBottom\",\"whichCards\":{\"type\":\"And\",\"value\":[]}} "
+  -- Lamplight Phoenix's "exile it", which names no graveyard (CR 400.3).
+  Spec.it s "graveyards" $
+    Common.assertCodec
+      s
+      codec
+      ( MoveCardsFromGraveyard.MkMoveCardsFromGraveyard
+          { MoveCardsFromGraveyard.count = CostAmount.Fixed 1,
+            MoveCardsFromGraveyard.whichCards = Filter.IsBound (SlotName.MkSlotName (Text.pack "became")),
+            MoveCardsFromGraveyard.destination = GraveyardCostDestination.Exile,
+            MoveCardsFromGraveyard.graveyards = ZoneScope.Scoped (PlayerScope.Related PlayerRelation.AnyPlayer)
+          }
+      )
+      " {\"count\":{\"type\":\"Fixed\",\"value\":1},\"graveyards\":{\"type\":\"Scoped\",\"value\":{\"type\":\"AnyPlayer\"}},\"whichCards\":{\"type\":\"IsBound\",\"value\":\"became\"}} "
   Spec.it s "has a schema" $ Common.assertHasSchema s codec
+
+yours :: ZoneScope.ZoneScope
+yours = ZoneScope.Scoped (PlayerScope.Related PlayerRelation.You)
