@@ -103,12 +103,14 @@ sicknessOkGiven grants pcs pid srcId ability =
 -- per CR 113.6m -- both zones' authored halves through zoneAbilitiesOf. In the
 -- COMMAND zone: CR 702.49d's commander ninjutsu, plus the same reader again,
 -- whose CR 113.6p limb keeps an emblem's (CR 114.4) and a face-up vanguard card's (CR
--- 902.7) rows that state no zone at all. Anywhere else: nothing -- flashback and
+-- 902.7) rows that state no zone at all. In EXILE: the same reader, which
+-- admits only a row stating exile (CR 113.6b), such as the one Q, Stacking the
+-- Deck grants. Anywhere else: nothing -- flashback and
 -- rule 702's other zone abilities are CASTING permissions (CR 702.34a), so they reach
--- Parun.Engine.Cast instead. The first ability ACTIVATED from a fifth zone adds
+-- Parun.Engine.Cast instead. The first ability ACTIVATED from a library adds
 -- an arm here: CR 113.6j reaches "any zone in which its cost can be paid", and
 -- Cost.zoneOfComponent names only the hand and the graveyard, so no cost in the
--- vocabulary is payable from a library or from exile. CR 113.6m's EFFECT half
+-- vocabulary is payable from a library. CR 113.6m's EFFECT half
 -- could name another zone through a MoveToZone's `origin`, and every such
 -- `origin` in `data/cards/` states the graveyard -- Jarad, Golgari Lich Lord,
 -- Reassembling Skeleton and Squee, Goblin Nabob, swept 2026-08-18.
@@ -189,6 +191,10 @@ abilitiesForGiven pcs offBoard oid gs = case fmap Object.zone (Game.lookupObject
   -- functioning here too (Parun.Engine.Keyword.commandZoneAbilitiesOf).
   -- Parun.CommanderSpec's commander ninjutsu pair proves it.
   Just Zone.Command -> Keyword.commandZoneAbilitiesOf cardKeywords <> zoneAbilitiesOf offProjected Zone.Command oid gs
+  -- CR 113.6b: only a row stating exile functions here, rule 702 minting no
+  -- exile ability. Q, Stacking the Deck's grant ("Activate only ... if this card
+  -- is exiled") is the producer; its scenario proves it.
+  Just Zone.Exile -> zoneAbilitiesOf offProjected Zone.Exile oid gs
   _ -> []
   where
     -- One projection for both halves of an off-battlefield arm.
@@ -199,10 +205,11 @@ abilitiesForGiven pcs offBoard oid gs = case fmap Object.zone (Game.lookupObject
       | otherwise = Set.empty
 
 -- CR 113.6j + CR 113.6m + CR 702.178b: the AUTHORED abilities a card outside the
--- battlefield offers from the zone it is in. Three zones ask it today -- the
+-- battlefield offers from the zone it is in. Four zones ask it today -- the
 -- graveyard, the hand for Faerie Macabre's "Discard this card: Exile up to
--- two target cards from graveyards", and the command zone for Barrin's
--- "Sacrifice a permanent: Return target creature to its owner's hand" -- and the
+-- two target cards from graveyards", the command zone for Barrin's
+-- "Sacrifice a permanent: Return target creature to its owner's hand", and exile
+-- for the ability Q, Stacking the Deck grants -- and the
 -- zone is a parameter because nothing in the reading below is about which zone
 -- it is: CR 113.6j says an
 -- ability functions "from any zone in which its cost can be paid", and
@@ -270,8 +277,8 @@ zoneAbilitiesOf projected zone oid gs = case (Game.faceOf oid gs, Game.lookupObj
 -- themselves rather than leaning on rule 602.2's fallback: CR 902.6 makes the
 -- controller of a face-up vanguard card its owner, and CR 114.2 makes an emblem
 -- both owned and controlled by the player it was created for. CR 108.4a answers
--- with its owner for every other card in that zone, as it does in a hand and a
--- graveyard. Parun.Engine.Event's command-zone trigger walk takes the owner for
+-- with its owner for every other card in that zone, as it does in a hand, a
+-- graveyard and exile. Parun.Engine.Event's command-zone trigger walk takes the owner for
 -- the same two rules, so the two cannot disagree about who a vanguard's
 -- abilities belong to.
 --
@@ -296,6 +303,8 @@ activatorOfGiven grants oid gs = case Game.lookupObject oid gs of
     Zone.Graveyard -> Just (Object.owner obj)
     -- CR 901.6: a face-up plane card's abilities are the planar controller's.
     Zone.Command -> Just (Plane.commandControllerOf oid obj gs)
+    -- CR 108.4a: an exiled card has no controller, so its owner.
+    Zone.Exile -> Just (Object.owner obj)
     _ -> Nothing
 
 -- CR 602.2's whole permission conjunct: its default, and the "unless the object
@@ -317,8 +326,9 @@ mayActivateGiven grants pid srcId ability gs = case activatorOfGiven grants srcI
 
 -- The objects whose activated abilities `pid` may be offered, which is the
 -- candidate half of CR 602.2 as mayActivateGiven above is the permission half:
--- what this player controls, plus their own hand, graveyard and command zone (CR
--- 400.3, and CR 902.6 / CR 114.2 for two of the objects rule 113.6p names there),
+-- what this player controls, plus their own hand, graveyard, command zone and
+-- exiled cards (CR 400.3 and CR 108.4a, and CR 902.6 / CR 114.2 for two of the
+-- objects rule 113.6p names there),
 -- plus CR 602.1b's exception -- a permanent someone else controls whose ability
 -- says this player may activate it.
 --
@@ -330,9 +340,9 @@ mayActivateGiven grants pid srcId ability gs = case activatorOfGiven grants srcI
 --
 -- The exception arm reads the BATTLEFIELD only. Every printing of the clause is
 -- on a permanent (Scryfall o:"any player may activate" game:paper, 2026-09-02;
--- MTGJSON's "may activate", 2026-11-04), and another player's hand, graveyard or
--- command zone offers nothing any card asks for, so those three arms stay this
--- player's own.
+-- MTGJSON's "may activate", 2026-11-04), and another player's hand, graveyard,
+-- command zone or exiled card offers nothing any card asks for, so those four
+-- arms stay this player's own.
 --
 -- That is where the DIVISION OF LABOUR between this list and mayActivateGiven
 -- lies, and it is not symmetric. On the battlefield the two agree by
@@ -341,9 +351,9 @@ mayActivateGiven grants pid srcId ability gs = case activatorOfGiven grants srcI
 -- Parun.ActivateSpec's Withered Wretch negative goes red only when BOTH are
 -- neutralized. Off it they do not: for "any player" mayActivateGiven asks only
 -- that the object HAVE an activator and that `pid` still be playing, and
--- activatorOfGiven answers the OWNER for a hand, a graveyard and the command
--- zone -- so an "any player may activate" ability printed on a card in someone
--- else's hand, graveyard or command zone would pass the permission and is kept
+-- activatorOfGiven answers the OWNER for a hand, a graveyard, the command
+-- zone and exile -- so an "any player may activate" ability printed on a card in
+-- someone else's hand, graveyard, command zone or exile would pass the permission and is kept
 -- out by this enumeration's zone scoping alone. No printing writes one, per the
 -- search above.
 activationSources :: PlayerId -> GameState -> [ObjectId]
@@ -355,7 +365,7 @@ activationSourcesGiven grants pcs pid gs =
       mine = Set.fromList own
       openToThem oid ability = ActivatedAbility.activator ability /= Activator.Related PlayerRelation.You && mayActivateGiven grants pid oid ability gs
       others = filter (\oid -> not (Set.member oid mine) && any (openToThem oid) (abilitiesForGiven pcs Map.empty oid gs)) (Set.toList (GameState.battlefield gs))
-   in own <> others <> Game.zoneMembers Zone.Hand pid gs <> Game.zoneMembers Zone.Graveyard pid gs <> Game.zoneMembers Zone.Command pid gs
+   in own <> others <> Game.zoneMembers Zone.Hand pid gs <> Game.zoneMembers Zone.Graveyard pid gs <> Game.zoneMembers Zone.Command pid gs <> Game.zoneMembers Zone.Exile pid gs
 
 -- CR 606.3 (CR 306.5d says the same for planeswalkers): a loyalty ability may be
 -- activated only with priority and an empty stack during a main phase of its
