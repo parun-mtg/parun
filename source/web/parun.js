@@ -2,7 +2,7 @@
 // patches Haskell sends and reports each event's path back (Parun.Web.Wire).
 // The view's root is #app's only child, and paths count from it. Parun's data
 // directory is data.tar.gz, unpacked into memory and mounted at /data.
-import { ConsoleStdout, Directory, File, OpenDirectory, OpenFile, PreopenDirectory, WASI, wasi } from "./browser_wasi_shim/index.js";
+import { ConsoleStdout, Directory, File, OpenDirectory, OpenFile, PreopenDirectory, WASI, wasi as defs } from "./browser_wasi_shim/index.js";
 import jsffi from "./ghc_wasm_jsffi.js";
 
 const root = document.getElementById("app");
@@ -106,7 +106,7 @@ OpenDirectory.prototype.fd_readdir_single = function (cookie) {
   this.listing ??= Array.from(this.dir.contents.entries());
   if (cookie >= BigInt(this.listing.length) + 2n) return { ret: 0, dirent: null };
   const [name, entry] = this.listing[Number(cookie - 2n)];
-  return { ret: 0, dirent: new wasi.Dirent(cookie + 1n, entry.ino, name, entry.stat().filetype) };
+  return { ret: 0, dirent: new defs.Dirent(cookie + 1n, entry.ino, name, entry.stat().filetype) };
 };
 
 function inodes(tree) {

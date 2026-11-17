@@ -14,6 +14,7 @@ rm -rf "$out"
 mkdir -p "$out"
 "$(wasm32-wasi-ghc --print-libdir)/post-link.mjs" -i "$wasm" -o "$out/ghc_wasm_jsffi.js"
 wasm-opt -Oz --strip-debug "$wasm" -o "$out/parun.wasm"
+node --check source/web/parun.js
 cp source/web/index.html source/web/parun.js "$out/"
 # The data directory the page mounts, reproducibly packed.
 tar -C data --format=ustar --sort=name --owner=0 --group=0 --numeric-owner --mtime=@0 \
