@@ -129,8 +129,7 @@
         "Cast": {
           "mana": [
             "$f1",
-            "$f2",
-            null
+            "$f2"
           ],
           "object": "$bears"
         }
