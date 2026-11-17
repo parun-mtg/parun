@@ -59,16 +59,13 @@ import qualified Parun.Types.Hotseat as Hotseat
 import qualified Parun.Types.LoggedEvent as LoggedEvent
 import qualified Parun.Types.Mana as Mana
 import qualified Parun.Types.ManaCost as ManaCost
-import qualified Parun.Types.ManaRetention as ManaRetention
 import qualified Parun.Types.ManaSymbol as ManaSymbol
-import qualified Parun.Types.ManaType as ManaType
 import qualified Parun.Types.ManaUnit as ManaUnit
 import qualified Parun.Types.NumberFloor as NumberFloor
 import qualified Parun.Types.ObjectId as ObjectId
 import qualified Parun.Types.OptionalDecision as OptionalDecision
 import qualified Parun.Types.PlayerId as PlayerId
 import qualified Parun.Types.PlayerView as PlayerView
-import qualified Parun.Types.ProductionTag as ProductionTag
 import qualified Parun.Types.Question as Question
 import qualified Parun.Types.Reply as R
 import qualified Parun.Types.Request as Request
@@ -202,7 +199,7 @@ beforeFirstTurn = ["KeepHand", "DeclareMulligan", "Bottom", "MulliganAction", "O
 -- question, and "auto" or an empty line at a mana source; everything else is
 -- read by the question's own reader until it reads.
 answer :: (Monad m) => Terminal.Terminal m -> (CardName.CardName -> Either InvalidCorpus.InvalidCorpus (Maybe Card.Card)) -> PlayerId.PlayerId -> PlayerView.PlayerView -> Question.Question -> Client m R.Reply
-answer terminal lookUp seat view question = case (Question.kind question, slotsOf question) of
+answer terminal lookUp seat view question = case (Question.kind question, Offer.slotsOf question) of
   (kind, Just (source, slots)) | kind == Text.pack "ChooseTargets" -> fmap R.Array (mapM (target source (length slots > 1)) slots)
   _ -> ask (listedObjects view (Question.offer question)) (choice view question)
   where
@@ -221,7 +218,7 @@ answer terminal lookUp seat view question = case (Question.kind question, slotsO
                   maybe True (Char.isSpace . fst) (Text.uncons wanted) -> do
                     either (stop . Text.pack . Exception.displayException) (mapM_ (say terminal)) (reading lookUp view listed (Text.strip wanted))
                     loop
-              -- The rest of this payment, by autoSource.
+              -- The rest of this payment, by Offer.autoSource.
               word
                 | word `elem` ["auto", ""],
                   Question.kind question == Text.pack "ChooseManaSource" ->
@@ -243,7 +240,7 @@ answer terminal lookUp seat view question = case (Question.kind question, slotsO
           named = if several then foldMap (\t -> Text.pack " (" <> Render.spaced t <> Text.pack ")") (Offer.textOf slot) else Text.empty
           shown =
             Text.concat [Text.pack "Choose ", Render.count n "target", Text.pack " for ", Offer.objectName view source, named, Text.pack ":"]
-              : numbered (fmap (targetName view legal) legal)
+              : numbered (fmap (Offer.targetName view legal) legal)
       picked <- ask (fmap Offer.recipientObject legal) (shown, fmap R.Array . exactly n legal)
       pure (R.Array [slot, picked])
 
@@ -301,9 +298,9 @@ choice view question = Maybe.fromMaybe generic $ case Text.unpack (Question.kind
       )
   "ChooseManaSource" -> do
     cost <- Protocol.field "cost" offer >>= Offer.decoded Codec.ManaCost.codec
-    let pool = foldMap (fmap ManaUnit.manaType . Mana.unwrap . SeatView.manaPool) (payerSeat view offer)
+    let pool = foldMap (fmap ManaUnit.manaType . Mana.unwrap . SeatView.manaPool) (Offer.payerSeat view offer)
         held = foldMap (\t -> Text.pack "{" <> Render.manaType t <> Text.pack "}") pool
-        left = foldMap (\(colored, rest) -> Text.pack ", leaving " <> Render.manaCost (ManaCost.MkManaCost ([ManaSymbol.Generic rest | rest > 0] <> fmap ManaSymbol.OfType colored))) (owing view offer)
+        left = foldMap (\(colored, rest) -> Text.pack ", leaving " <> Render.manaCost (ManaCost.MkManaCost ([ManaSymbol.Generic rest | rest > 0] <> fmap ManaSymbol.OfType colored))) (Offer.owing view offer)
         progress = if null pool then Text.empty else Text.pack " with " <> held <> Text.pack " in the pool" <> left
         substitutes = foldMap (Foldable.foldMap (Maybe.maybeToList . Maybe.listToMaybe . Oracle.Keyword.keywordWord Text.empty)) (Protocol.field "substitutes" offer >>= Offer.decoded (Common.list Codec.Keyword.codec))
         -- CR 601.2g-h: the substitution is asked once the mana window closes.
@@ -477,7 +474,7 @@ choice view question = Maybe.fromMaybe generic $ case Text.unpack (Question.kind
   -- first; Enter keeps the order shown.
   "OrderTriggers" -> do
     entries <- Protocol.arrayOf offer
-    pure (ordered (Text.pack "Order your triggered abilities: type their numbers first to last, separated by spaces, or press Enter to keep this order. On the stack, the last resolves first:") (fmap (triggerName view) entries))
+    pure (ordered (Text.pack "Order your triggered abilities: type their numbers first to last, separated by spaces, or press Enter to keep this order. On the stack, the last resolves first:") (fmap (Offer.triggerName view) entries))
   -- CR 601.2h: each component as Oracle text prints it, the first paid first.
   "OrderCostComponents" -> do
     source <- Protocol.field "source" offer
@@ -489,7 +486,7 @@ choice view question = Maybe.fromMaybe generic $ case Text.unpack (Question.kind
     units <- Protocol.arrayOf offer
     shown <- mapM (Offer.decoded Codec.ManaUnit.codec) units
     pure
-      ( Text.pack "Choose the mana to spend:" : numbered (fmap unitName shown),
+      ( Text.pack "Choose the mana to spend:" : numbered (fmap Offer.unitName shown),
         fmap (pickFrom units) . one (Natural.length units)
       )
   -- CR 701.23b: up to the count, which may be none.
@@ -789,7 +786,7 @@ unasked view request = do
 -- | Auto's next source for the seat, and the line saying so, remembering the
 -- colors the source is tapped for.
 autoPay :: (Monad m) => PlayerId.PlayerId -> PlayerView.PlayerView -> R.Reply -> Client m (Maybe (Text.Text, R.Reply))
-autoPay seat view offer = case autoSource view offer of
+autoPay seat view offer = case Offer.autoSource view offer of
   Nothing -> pure Nothing
   Just (source, wanted) -> do
     State.modify' (\h -> h {Hotseat.paying = Map.insert seat wanted (Hotseat.paying h)})
@@ -797,56 +794,6 @@ autoPay seat view offer = case autoSource view offer of
 
 stopPaying :: (Monad m) => PlayerId.PlayerId -> Client m ()
 stopPaying seat = State.modify' (\h -> h {Hotseat.paying = Map.delete seat (Hotseat.paying h)})
-
--- | CR 601.2g: the next source auto taps, and the colors it is tapped for
--- (none for generic mana). The payer's pool goes first against the cost; then
--- each colored symbol still owed is paid from the source that makes the
--- fewest of the colors still owed, then generic mana from the source that
--- makes the fewest types. Nothing when the cost holds a symbol other than
--- generic or one type of mana, when the pool already covers it, or when no
--- source makes what is still owed.
-autoSource :: PlayerView.PlayerView -> R.Reply -> Maybe (R.Reply, Set.Set ManaType.ManaType)
-autoSource view offer = do
-  (colored, generic) <- owing view offer
-  sources <- Protocol.field "sources" offer >>= Protocol.arrayOf >>= mapM Offer.manaSource
-  let wanted = Set.fromList colored
-      makes (_, yields) = Set.fromList (concat yields)
-      fewest by = Maybe.listToMaybe . List.sortOn by
-  source <-
-    if not (Set.null wanted)
-      then fewest (\s -> (Set.size (Set.intersection wanted (makes s)), Set.size (makes s))) (filter (not . Set.disjoint wanted . makes) sources)
-      else
-        if generic > 0
-          then fewest (Set.size . makes) (filter (not . Set.null . makes) sources)
-          else Nothing
-  pure (fst source, Set.intersection wanted (makes source))
-
--- | CR 601.2g-h: what of a ChooseManaSource offer's cost the payer's pool leaves
--- owed: each colored symbol the pool cannot pay, the generic mana the rest of
--- the pool does not cover. Nothing when the cost holds a symbol other than
--- generic or one type of mana.
-owing :: PlayerView.PlayerView -> R.Reply -> Maybe ([ManaType.ManaType], Natural)
-owing view offer = do
-  cost <- Protocol.field "cost" offer >>= Offer.decoded Codec.ManaCost.codec
-  owed <- mapM owedOf (ManaCost.unwrap cost)
-  let pool = foldMap (fmap ManaUnit.manaType . Mana.unwrap . SeatView.manaPool) (payerSeat view offer)
-      (colored, unspent) = List.foldl' spendOne ([], pool) (Either.rights owed)
-      generic = sum (Either.lefts owed)
-  pure (colored, generic - min generic (Natural.length unspent))
-  where
-    owedOf symbol = case symbol of
-      ManaSymbol.Generic n -> Just (Left n)
-      ManaSymbol.OfType t -> Just (Right t)
-      _ -> Nothing
-    spendOne (still, pool) t = case List.elemIndex t pool of
-      Just i -> (still, take i pool <> drop (i + 1) pool)
-      Nothing -> (still <> [t], pool)
-
--- | The seat of a payment offer's payer.
-payerSeat :: PlayerView.PlayerView -> R.Reply -> Maybe SeatView.SeatView
-payerSeat view offer = do
-  payer <- Protocol.field "payer" offer >>= Offer.textOf >>= Read.readMaybe . Text.unpack
-  List.find ((== PlayerId.MkPlayerId payer) . SeatView.player) (PlayerView.seats view)
 
 -- | CR 101.4b: a line for each earlier payer an offer lists under
 -- @"earlier"@, saying what they paid, with what, or that they declined.
@@ -896,25 +843,11 @@ componentName :: Text.Text -> R.Reply -> Text.Text
 componentName self component =
   Maybe.fromMaybe (Common.render (Codec.Reply.toValue component)) (Offer.decoded (Codec.CostComponent.codec Codec.Keyword.codec) component >>= Maybe.listToMaybe . Oracle.Cost.component self (Oracle.Keyword.keywordWord self))
 
--- | A trigger ordering's entry: its source, and its Oracle text where the
--- offer carries it.
-triggerName :: PlayerView.PlayerView -> R.Reply -> Text.Text
-triggerName = sourcedName (Text.pack "'s triggered ability")
-
--- | An entry naming its source (null for none, a rule's), and after it its
--- Oracle text where the offer carries it, or `noun` where it does not; a
--- hand action's place among its card's where the offer says it.
-sourcedName :: Text.Text -> PlayerView.PlayerView -> R.Reply -> Text.Text
-sourcedName noun view entry =
-  let source = maybe (Text.pack "A rule") (Offer.objectName view) (Monad.mfilter (/= R.Null) (Protocol.field "source" entry))
-      place = foldMap (\i -> Text.pack (" (ability " <> show (i + 1) <> ")")) (Protocol.field "ability" entry >>= Protocol.naturalOf)
-   in maybe (source <> noun) (\text -> source <> Text.pack ": " <> text) (Protocol.field "text" entry >>= Offer.textOf) <> place
-
 -- | An entry of an offer naming what each option picks
 -- (Parun.Scenario.PromptOffer.indexing): a cast as Offer.actionName names it, an entering
 -- shape (Parun.Types.EntryOption) by its power and toughness, keywords and
 -- subtypes, an event as the log tells it, an object stating something as
--- sourcedName names it, an unwitnessed event (null) as unseen, and anything
+-- Offer.sourcedName names it, an unwitnessed event (null) as unseen, and anything
 -- else as an option is named.
 entryName :: PlayerView.PlayerView -> R.Reply -> Text.Text
 entryName view entry
@@ -923,25 +856,9 @@ entryName view entry
       Text.intercalate (Text.pack ", ") (Text.pack (show (EntryOption.power shape) <> "/" <> show (EntryOption.toughness shape)) : concatMap (take 1 . Oracle.Keyword.keywordWord Text.empty) (Set.toList (EntryOption.keywords shape)) <> fmap (Text.pack . show) (Set.toList (EntryOption.subtypes shape)))
   | Just event <- Offer.decoded Codec.GameEvent.codec entry =
       Maybe.fromMaybe (Common.render (Codec.Reply.toValue entry)) (Render.event view (LoggedEvent.MkLoggedEvent (EventGroup.MkEventGroup 0) event))
-  | Maybe.isJust (Protocol.field "source" entry) = sourcedName Text.empty view entry
+  | Maybe.isJust (Protocol.field "source" entry) = Offer.sourcedName Text.empty view entry
   | entry == R.Null = Text.pack "Something you did not see"
   | otherwise = Offer.optionName view entry
-
--- | A unit of mana in the pool: its type, and what sets it apart from others
--- of its type (CR 106.6, 106.4, 107.4h).
-unitName :: ManaUnit.ManaUnit -> Text.Text
-unitName unit =
-  let notes =
-        [Text.pack "from a snow source" | Set.member ProductionTag.Snow (ManaUnit.tags unit)]
-          <> [Text.pack ("from a " <> show st) | ProductionTag.Subtype st <- Set.toList (ManaUnit.tags unit)]
-          <> [Text.pack "from an artifact" | Set.member ProductionTag.Artifact (ManaUnit.tags unit)]
-          <> [Text.pack "kept until end of turn" | ManaUnit.retention unit == ManaRetention.UntilEndOfTurn]
-          <> [Text.pack "kept until end of combat" | ManaUnit.retention unit == ManaRetention.UntilEndOfCombat]
-          <> [Text.pack "restricted" | Maybe.isJust (ManaUnit.restriction unit)]
-          <> [Text.pack "with an effect when spent" | Maybe.isJust (ManaUnit.rider unit) || Maybe.isJust (ManaUnit.spendTrigger unit)]
-   in Text.pack "{" <> Render.manaType (ManaUnit.manaType unit) <> Text.pack "}" <> (if null notes then Text.empty else Text.pack " (" <> Text.intercalate (Text.pack ", ") notes <> Text.pack ")")
-
--- | A mana source as an offer names it, beside the mana types of each yield.
 
 -- | An optional prompt's answer, a bare tag (Parun.JsonCodec.Arm.enum).
 optionalDecision :: OptionalDecision.OptionalDecision -> R.Reply
@@ -1062,31 +979,6 @@ told view self offer = case offer of
     byPlayer pair = case pair of
       R.Array [player@(R.Text _), what] | Maybe.isNothing (Offer.objectOf player) -> Just (Offer.playerName player <> Text.pack ": " <> Offer.optionName view what)
       _ -> Nothing
-
--- | A recipient as a target prompt lists it: as Offer.recipientName names it, and a
--- pile numbered among the offer's piles where it holds several.
-targetName :: PlayerView.PlayerView -> [R.Reply] -> R.Reply -> Text.Text
-targetName view legal reply =
-  Offer.recipientName view reply <> case (pileOf reply, piles) of
-    (Just pile, _ : _ : _) -> foldMap (\i -> Text.pack (" (pile " <> show (i + 1) <> ")")) (List.elemIndex pile piles)
-    _ -> Text.empty
-  where
-    piles = ListUtils.nubOrd (Maybe.mapMaybe pileOf legal)
-    pileOf r = case r of
-      R.Array [R.Text tag, draw] | tag == Text.pack "Pile" -> Protocol.field "pile" draw
-      _ -> Nothing
-
--- | A ChooseTargets offer's source and its slots: name, how many, and the
--- legal recipients.
-slotsOf :: Question.Question -> Maybe (R.Reply, [(R.Reply, Natural, [R.Reply])])
-slotsOf question = do
-  let offer = Question.offer question
-  source <- Protocol.field "source" offer
-  slots <- Protocol.field "slots" offer >>= Protocol.arrayOf
-  parsed <- Monad.forM slots $ \slot -> case slot of
-    R.Array [name, R.Array [wanted, R.Array legal]] -> fmap (\n -> (name, n, legal)) (Protocol.naturalOf wanted)
-    _ -> Nothing
-  pure (source, parsed)
 
 -- | No seat may read another's screen, so a change of seat clears it and
 -- waits for the next player to say they are there; whether it did. A seat

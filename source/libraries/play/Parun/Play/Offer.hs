@@ -5,25 +5,38 @@ module Parun.Play.Offer where
 
 import qualified Control.Monad as Monad
 import qualified Data.Char as Char
+import qualified Data.Containers.ListUtils as ListUtils
+import qualified Data.Either as Either
 import qualified Data.List as List
 import qualified Data.Map.Strict as Map
 import qualified Data.Maybe as Maybe
+import qualified Data.Set as Set
 import qualified Data.Text as Text
+import Numeric.Natural (Natural)
 import qualified Parun.Codec.Cost as Codec.Cost
 import qualified Parun.Codec.Keyword as Codec.Keyword
+import qualified Parun.Codec.ManaCost as Codec.ManaCost
 import qualified Parun.Codec.ManaType as Codec.ManaType
 import qualified Parun.Codec.Reply as Codec.Reply
+import qualified Parun.Extra.Natural as Natural
 import qualified Parun.JsonCodec.Codec as Codec
 import qualified Parun.JsonCodec.Common as Common
 import qualified Parun.Oracle.Cost as Oracle.Cost
 import qualified Parun.Oracle.Keyword as Oracle.Keyword
 import qualified Parun.Play.Protocol as Protocol
 import qualified Parun.Play.Render as Render
+import qualified Parun.Types.Mana as Mana
+import qualified Parun.Types.ManaCost as ManaCost
+import qualified Parun.Types.ManaRetention as ManaRetention
+import qualified Parun.Types.ManaSymbol as ManaSymbol
 import qualified Parun.Types.ManaType as ManaType
+import qualified Parun.Types.ManaUnit as ManaUnit
 import qualified Parun.Types.ObjectId as ObjectId
 import qualified Parun.Types.ObjectView as ObjectView
 import qualified Parun.Types.PlayerId as PlayerId
 import qualified Parun.Types.PlayerView as PlayerView
+import qualified Parun.Types.ProductionTag as ProductionTag
+import qualified Parun.Types.Question as Question
 import qualified Parun.Types.Reply as R
 import qualified Parun.Types.SeatView as SeatView
 import qualified Text.Read as Read
@@ -188,3 +201,108 @@ onlyPass offer = do
   kinds <- Protocol.arrayOf offer >>= mapM (Protocol.field "action" Monad.>=> textOf)
   Monad.guard (all (`elem` [Text.pack "Pass", Text.pack "ActivateManaAbility"]) kinds)
   fmap toInteger (List.elemIndex (Text.pack "Pass") kinds)
+
+-- | CR 601.2g: the next source auto taps, and the colors it is tapped for
+-- (none for generic mana). The payer's pool goes first against the cost; then
+-- each colored symbol still owed is paid from the source that makes the
+-- fewest of the colors still owed, then generic mana from the source that
+-- makes the fewest types. Nothing when the cost holds a symbol other than
+-- generic or one type of mana, when the pool already covers it, or when no
+-- source makes what is still owed.
+autoSource :: PlayerView.PlayerView -> R.Reply -> Maybe (R.Reply, Set.Set ManaType.ManaType)
+autoSource view offer = do
+  (colored, generic) <- owing view offer
+  sources <- Protocol.field "sources" offer >>= Protocol.arrayOf >>= mapM manaSource
+  let wanted = Set.fromList colored
+      makes (_, yields) = Set.fromList (concat yields)
+      fewest by = Maybe.listToMaybe . List.sortOn by
+  source <-
+    if not (Set.null wanted)
+      then fewest (\s -> (Set.size (Set.intersection wanted (makes s)), Set.size (makes s))) (filter (not . Set.disjoint wanted . makes) sources)
+      else
+        if generic > 0
+          then fewest (Set.size . makes) (filter (not . Set.null . makes) sources)
+          else Nothing
+  pure (fst source, Set.intersection wanted (makes source))
+
+-- | CR 601.2g-h: what of a ChooseManaSource offer's cost the payer's pool leaves
+-- owed: each colored symbol the pool cannot pay, the generic mana the rest of
+-- the pool does not cover. Nothing when the cost holds a symbol other than
+-- generic or one type of mana.
+owing :: PlayerView.PlayerView -> R.Reply -> Maybe ([ManaType.ManaType], Natural)
+owing view offer = do
+  cost <- Protocol.field "cost" offer >>= decoded Codec.ManaCost.codec
+  owed <- mapM owedOf (ManaCost.unwrap cost)
+  let pool = foldMap (fmap ManaUnit.manaType . Mana.unwrap . SeatView.manaPool) (payerSeat view offer)
+      (colored, unspent) = List.foldl' spendOne ([], pool) (Either.rights owed)
+      generic = sum (Either.lefts owed)
+  pure (colored, generic - min generic (Natural.length unspent))
+  where
+    owedOf symbol = case symbol of
+      ManaSymbol.Generic n -> Just (Left n)
+      ManaSymbol.OfType t -> Just (Right t)
+      _ -> Nothing
+    spendOne (still, pool) t = case List.elemIndex t pool of
+      Just i -> (still, take i pool <> drop (i + 1) pool)
+      Nothing -> (still <> [t], pool)
+
+-- | The seat of a payment offer's payer.
+payerSeat :: PlayerView.PlayerView -> R.Reply -> Maybe SeatView.SeatView
+payerSeat view offer = do
+  payer <- Protocol.field "payer" offer >>= textOf >>= Read.readMaybe . Text.unpack
+  List.find ((== PlayerId.MkPlayerId payer) . SeatView.player) (PlayerView.seats view)
+
+-- | A recipient as a target prompt lists it: as recipientName names it, and a
+-- pile numbered among the offer's piles where it holds several.
+targetName :: PlayerView.PlayerView -> [R.Reply] -> R.Reply -> Text.Text
+targetName view legal reply =
+  recipientName view reply <> case (pileOf reply, piles) of
+    (Just pile, _ : _ : _) -> foldMap (\i -> Text.pack (" (pile " <> show (i + 1) <> ")")) (List.elemIndex pile piles)
+    _ -> Text.empty
+  where
+    piles = ListUtils.nubOrd (Maybe.mapMaybe pileOf legal)
+    pileOf r = case r of
+      R.Array [R.Text tag, draw] | tag == Text.pack "Pile" -> Protocol.field "pile" draw
+      _ -> Nothing
+
+-- | A ChooseTargets offer's source and its slots: name, how many, and the
+-- legal recipients.
+slotsOf :: Question.Question -> Maybe (R.Reply, [(R.Reply, Natural, [R.Reply])])
+slotsOf question = do
+  let offer = Question.offer question
+  source <- Protocol.field "source" offer
+  slots <- Protocol.field "slots" offer >>= Protocol.arrayOf
+  parsed <- Monad.forM slots $ \slot -> case slot of
+    R.Array [name, R.Array [wanted, R.Array legal]] -> fmap (\n -> (name, n, legal)) (Protocol.naturalOf wanted)
+    _ -> Nothing
+  pure (source, parsed)
+
+-- | A trigger ordering's entry: its source, and its Oracle text where the
+-- offer carries it.
+triggerName :: PlayerView.PlayerView -> R.Reply -> Text.Text
+triggerName = sourcedName (Text.pack "'s triggered ability")
+
+-- | An entry naming its source (null for none, a rule's), and after it its
+-- Oracle text where the offer carries it, or `noun` where it does not; a
+-- hand action's place among its card's where the offer says it.
+sourcedName :: Text.Text -> PlayerView.PlayerView -> R.Reply -> Text.Text
+sourcedName noun view entry =
+  let source = maybe (Text.pack "A rule") (objectName view) (Monad.mfilter (/= R.Null) (Protocol.field "source" entry))
+      place = foldMap (\i -> Text.pack (" (ability " <> show (i + 1) <> ")")) (Protocol.field "ability" entry >>= Protocol.naturalOf)
+   in maybe (source <> noun) (\text -> source <> Text.pack ": " <> text) (Protocol.field "text" entry >>= textOf) <> place
+
+-- | A unit of mana in the pool: its type, and what sets it apart from others
+-- of its type (CR 106.6, 106.4, 107.4h).
+unitName :: ManaUnit.ManaUnit -> Text.Text
+unitName unit =
+  let notes =
+        [Text.pack "from a snow source" | Set.member ProductionTag.Snow (ManaUnit.tags unit)]
+          <> [Text.pack ("from a " <> show st) | ProductionTag.Subtype st <- Set.toList (ManaUnit.tags unit)]
+          <> [Text.pack "from an artifact" | Set.member ProductionTag.Artifact (ManaUnit.tags unit)]
+          <> [Text.pack "kept until end of turn" | ManaUnit.retention unit == ManaRetention.UntilEndOfTurn]
+          <> [Text.pack "kept until end of combat" | ManaUnit.retention unit == ManaRetention.UntilEndOfCombat]
+          <> [Text.pack "restricted" | Maybe.isJust (ManaUnit.restriction unit)]
+          <> [Text.pack "with an effect when spent" | Maybe.isJust (ManaUnit.rider unit) || Maybe.isJust (ManaUnit.spendTrigger unit)]
+   in Text.pack "{" <> Render.manaType (ManaUnit.manaType unit) <> Text.pack "}" <> (if null notes then Text.empty else Text.pack " (" <> Text.intercalate (Text.pack ", ") notes <> Text.pack ")")
+
+-- | A mana source as an offer names it, beside the mana types of each yield.
