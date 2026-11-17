@@ -1,0 +1,271 @@
+{
+  "faces": [
+    {
+      "keywords": [
+        {
+          "type": "Equip",
+          "value": {
+            "cost": {
+              "mana": [
+                {
+                  "type": "Generic",
+                  "value": 1
+                }
+              ]
+            },
+            "quality": null
+          }
+        },
+        {
+          "type": "Craft",
+          "value": {
+            "cost": {
+              "mana": [
+                {
+                  "type": "Generic",
+                  "value": 3
+                },
+                {
+                  "type": "OfType",
+                  "value": {
+                    "type": "Colored",
+                    "value": "Red"
+                  }
+                },
+                {
+                  "type": "OfType",
+                  "value": {
+                    "type": "Colored",
+                    "value": "Red"
+                  }
+                }
+              ]
+            },
+            "materials": {
+              "count": 1,
+              "whichObjects": {
+                "type": "HasCardType",
+                "value": "Artifact"
+              }
+            }
+          }
+        }
+      ],
+      "manaCost": [
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "Red"
+          }
+        }
+      ],
+      "name": "Dire Flail",
+      "oracleText": "Equipped creature gets +2/+0.\nEquip {1}\nCraft with artifact {3}{R}{R} ({3}{R}{R}, Exile this artifact, Exile another artifact you control or an artifact card from your graveyard: Return this card transformed under its owner's control. Craft only as a sorcery.)",
+      "staticAbilities": [
+        {
+          "affected": {
+            "type": "Attached"
+          },
+          "modifications": [
+            {
+              "type": "ModifyPowerToughness",
+              "value": {
+                "power": {
+                  "type": "Literal",
+                  "value": 2
+                },
+                "toughness": {
+                  "type": "Literal",
+                  "value": 0
+                }
+              }
+            }
+          ]
+        }
+      ],
+      "typeLine": {
+        "subtypes": [
+          "Equipment"
+        ],
+        "types": [
+          "Artifact"
+        ]
+      }
+    },
+    {
+      "colorIndicator": [
+        "Red"
+      ],
+      "keywords": [
+        {
+          "type": "Equip",
+          "value": {
+            "cost": {
+              "mana": [
+                {
+                  "type": "Generic",
+                  "value": 1
+                }
+              ]
+            },
+            "quality": null
+          }
+        }
+      ],
+      "name": "Dire Blunderbuss",
+      "oracleText": "Equipped creature gets +3/+0 and has \"Whenever this creature attacks, you may sacrifice an artifact other than Dire Blunderbuss. When you do, this creature deals damage equal to its power to target creature.\"\nEquip {1}",
+      "staticAbilities": [
+        {
+          "affected": {
+            "type": "Attached"
+          },
+          "modifications": [
+            {
+              "type": "ModifyPowerToughness",
+              "value": {
+                "power": {
+                  "type": "Literal",
+                  "value": 3
+                },
+                "toughness": {
+                  "type": "Literal",
+                  "value": 0
+                }
+              }
+            },
+            {
+              "type": "GainAbility",
+              "value": {
+                "type": "Triggered",
+                "value": {
+                  "condition": {
+                    "type": "Attacks",
+                    "value": {
+                      "type": "Attacker",
+                      "value": {}
+                    }
+                  },
+                  "modal": {
+                    "modes": [
+                      {
+                        "clauses": [
+                          {
+                            "effects": [
+                              {
+                                "type": "ArmDelayedTrigger",
+                                "value": {
+                                  "ability": {
+                                    "type": "Triggered",
+                                    "value": {
+                                      "condition": {
+                                        "type": "Reflexive"
+                                      },
+                                      "modal": {
+                                        "modes": [
+                                          {
+                                            "clauses": [
+                                              {
+                                                "effects": [
+                                                  {
+                                                    "type": "DealDamage",
+                                                    "value": {
+                                                      "parts": [
+                                                        {
+                                                          "quantity": {
+                                                            "type": "Measure",
+                                                            "value": "Power"
+                                                          },
+                                                          "ref": {
+                                                            "type": "InSlot",
+                                                            "value": "target"
+                                                          }
+                                                        }
+                                                      ]
+                                                    }
+                                                  }
+                                                ]
+                                              }
+                                            ],
+                                            "targetSlots": {
+                                              "target": {
+                                                "filter": {
+                                                  "type": "HasCardType",
+                                                  "value": "Creature"
+                                                },
+                                                "pool": {
+                                                  "type": "Permanents"
+                                                }
+                                              }
+                                            }
+                                          }
+                                        ]
+                                      }
+                                    }
+                                  },
+                                  "name": "deal damage"
+                                }
+                              }
+                            ],
+                            "payGate": {
+                              "branch": "IfPaid",
+                              "cost": {
+                                "components": [
+                                  {
+                                    "type": "Sacrifice",
+                                    "value": {
+                                      "count": {
+                                        "type": "Fixed",
+                                        "value": 1
+                                      },
+                                      "whichPermanents": {
+                                        "type": "And",
+                                        "value": [
+                                          {
+                                            "type": "HasCardType",
+                                            "value": "Artifact"
+                                          },
+                                          {
+                                            "type": "Not",
+                                            "value": {
+                                              "type": "IsBound",
+                                              "value": "thatGrantingPermanent"
+                                            }
+                                          }
+                                        ]
+                                      }
+                                    }
+                                  }
+                                ],
+                                "mana": []
+                              },
+                              "payer": {
+                                "type": "InSlot",
+                                "value": "you"
+                              }
+                            }
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                }
+              }
+            }
+          ]
+        }
+      ],
+      "typeLine": {
+        "subtypes": [
+          "Equipment"
+        ],
+        "types": [
+          "Artifact"
+        ]
+      }
+    }
+  ],
+  "layout": {
+    "type": "Transforming"
+  }
+}
