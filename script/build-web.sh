@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
 # Builds the web client into a directory ready to serve (default dist-web/):
-# the wasm module, its JavaScript FFI glue, the WASI shim and the page. Runs
-# in the wasm dev shell; serve the result with any static server, e.g.
+# the wasm module, its JavaScript FFI glue, the WASI shim, the page and the
+# data directory it mounts. Runs in the wasm dev shell; serve the result with
+# any static server, e.g.
 #   nix develop .#wasm --command script/build-web.sh
 #   python3 -m http.server -d dist-web
 set -euo pipefail
@@ -13,7 +14,20 @@ rm -rf "$out"
 mkdir -p "$out"
 "$(wasm32-wasi-ghc --print-libdir)/post-link.mjs" -i "$wasm" -o "$out/ghc_wasm_jsffi.js"
 wasm-opt -Oz --strip-debug "$wasm" -o "$out/parun.wasm"
+node --check source/web/parun.js
 cp source/web/index.html source/web/parun.js "$out/"
+# The data directory the page mounts, reproducibly packed, with the cards as
+# one bundle (Parun.Registry.loadBundle) rather than a file each.
+staging=$(mktemp -d)
+trap 'rm -rf "$staging"' EXIT
+find data/cards -name '*.json' | LC_ALL=C sort | while read -r card; do
+  printf '%s\0' "${card##*/}"
+  cat "$card"
+  printf '\0'
+done > "$staging/cards.bundle"
+tar --format=ustar --sort=name --owner=0 --group=0 --numeric-owner --mtime=@0 -cf - \
+  -C "$staging" cards.bundle \
+  -C "$PWD/data" decks formats legalities.json printings.json sticker-sheets | gzip -9n > "$out/data.tar.gz"
 cp -r "$BROWSER_WASI_SHIM/dist" "$out/browser_wasi_shim"
 chmod -R u+w "$out"
-ls -l "$out/parun.wasm"
+ls -l "$out/parun.wasm" "$out/data.tar.gz"
