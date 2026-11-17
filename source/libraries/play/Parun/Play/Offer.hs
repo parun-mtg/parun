@@ -14,10 +14,13 @@ import qualified Data.Set as Set
 import qualified Data.Text as Text
 import Numeric.Natural (Natural)
 import qualified Parun.Codec.Cost as Codec.Cost
+import qualified Parun.Codec.EntryOption as Codec.EntryOption
+import qualified Parun.Codec.GameEvent as Codec.GameEvent
 import qualified Parun.Codec.Keyword as Codec.Keyword
 import qualified Parun.Codec.ManaCost as Codec.ManaCost
 import qualified Parun.Codec.ManaType as Codec.ManaType
 import qualified Parun.Codec.Reply as Codec.Reply
+import qualified Parun.Codec.Zone as Codec.Zone
 import qualified Parun.Extra.Natural as Natural
 import qualified Parun.JsonCodec.Codec as Codec
 import qualified Parun.JsonCodec.Common as Common
@@ -25,6 +28,10 @@ import qualified Parun.Oracle.Cost as Oracle.Cost
 import qualified Parun.Oracle.Keyword as Oracle.Keyword
 import qualified Parun.Play.Protocol as Protocol
 import qualified Parun.Play.Render as Render
+import qualified Parun.Scenario.PromptOffer as PromptOffer
+import qualified Parun.Types.EntryOption as EntryOption
+import qualified Parun.Types.EventGroup as EventGroup
+import qualified Parun.Types.LoggedEvent as LoggedEvent
 import qualified Parun.Types.Mana as Mana
 import qualified Parun.Types.ManaCost as ManaCost
 import qualified Parun.Types.ManaRetention as ManaRetention
@@ -306,3 +313,37 @@ unitName unit =
    in Text.pack "{" <> Render.manaType (ManaUnit.manaType unit) <> Text.pack "}" <> (if null notes then Text.empty else Text.pack " (" <> Text.intercalate (Text.pack ", ") notes <> Text.pack ")")
 
 -- | A mana source as an offer names it, beside the mana types of each yield.
+
+-- | What the first item of an order is, by the prompt's kind and what its
+-- offer tells.
+orderNote :: Text.Text -> R.Reply -> Text.Text
+orderNote kind offer = case Text.unpack kind of
+  -- CR 401.4: from the top inward.
+  "ArrangeLibraryCards" -> Text.pack "the first goes on top"
+  "ArrangeLibraryArrivals" -> case Protocol.field "end" offer of
+    Just (R.Text end) | end == Text.pack "Top" -> Text.pack "the first goes on top"
+    _ -> Text.pack "the first goes on the bottom"
+  -- CR 613.7m.
+  "OrderTimestamps" -> Text.pack "the first gets the earliest timestamp"
+  "OrderManaActivations" -> Text.pack "the first is activated first"
+  "OrderCombatTolls" -> Text.pack "the first is paid first"
+  -- CR 713.8a.
+  "OrderComponentCards" -> Text.pack "the first goes into " <> maybe (Text.pack "the zone") PromptOffer.zoneName (Protocol.field "zone" offer >>= decoded Codec.Zone.codec) <> Text.pack " first"
+  _ -> Text.pack "the first goes first"
+
+-- | An entry of an offer naming what each option picks
+-- (Parun.Scenario.Promptindexing): a cast as actionName names it, an entering
+-- shape (Parun.Types.EntryOption) by its power and toughness, keywords and
+-- subtypes, an event as the log tells it, an object stating something as
+-- sourcedName names it, an unwitnessed event (null) as unseen, and anything
+-- else as an option is named.
+entryName :: PlayerView.PlayerView -> R.Reply -> Text.Text
+entryName view entry
+  | Maybe.isJust (Protocol.field "action" entry) = actionName view entry
+  | Just shape <- decoded Codec.EntryOption.codec entry =
+      Text.intercalate (Text.pack ", ") (Text.pack (show (EntryOption.power shape) <> "/" <> show (EntryOption.toughness shape)) : concatMap (take 1 . Oracle.Keyword.keywordWord Text.empty) (Set.toList (EntryOption.keywords shape)) <> fmap (Text.pack . show) (Set.toList (EntryOption.subtypes shape)))
+  | Just event <- decoded Codec.GameEvent.codec entry =
+      Maybe.fromMaybe (Common.render (Codec.Reply.toValue entry)) (Render.event view (LoggedEvent.MkLoggedEvent (EventGroup.MkEventGroup 0) event))
+  | Maybe.isJust (Protocol.field "source" entry) = sourcedName Text.empty view entry
+  | entry == R.Null = Text.pack "Something you did not see"
+  | otherwise = optionName view entry
