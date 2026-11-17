@@ -323,7 +323,8 @@ spec s = Spec.describe s "Parun.Oracle" $ do
   -- an imperative may keep "you" before a second instruction (Shinra
   -- Reinforcements);
   -- beside another player's instruction it stands alone (Afterlife
-  -- Insurance) or keeps "you" before "and" (Bad Deal).
+  -- Insurance), keeps "you" in a sentence of its own (Test of Conviction) or
+  -- keeps "you" before "and" (Bad Deal).
   Spec.it s "render leaves out a lone you and keeps one before and" $ do
     let divination = spell [clause [draw (PlayerRef.Relative PlayerRelation.You) 2]] []
     Spec.assertEq s [[Text.pack "Draw two cards."]] (Oracle.abilities divination)
@@ -331,7 +332,7 @@ spec s = Spec.describe s "Parun.Oracle" $ do
     Spec.assertEq s (Just (Text.pack "You draw three cards and you lose 3 life.")) (Oracle.render craving)
     Spec.assertEq s [[Text.pack "You draw three cards and you lose 3 life.", Text.pack "You draw three cards and lose 3 life.", Text.pack "Draw three cards, then lose 3 life.", Text.pack "Draw three cards, then you lose 3 life.", Text.pack "Draw three cards. You lose 3 life.", Text.pack "Draw three cards.\nYou lose 3 life.", Text.pack "Draw three cards. Then you lose 3 life.", Text.pack "Draw three cards and you lose 3 life."]] (Oracle.abilities craving)
     let insurance = spell [clause [loseLife (PlayerRef.InSlot target) 2, draw (PlayerRef.Relative PlayerRelation.You) 1]] [(target, TargetSlot.required Pool.Players Nothing)]
-    Spec.assertEq s [[Text.pack "Target player loses 2 life. Draw a card.", Text.pack "Target player loses 2 life.\nDraw a card.", Text.pack "Target player loses 2 life. Then draw a card.", Text.pack "Target player loses 2 life and you draw a card."]] (Oracle.abilities insurance)
+    Spec.assertEq s [[Text.pack "Target player loses 2 life. Draw a card.", Text.pack "Target player loses 2 life.\nDraw a card.", Text.pack "Target player loses 2 life. Then draw a card.", Text.pack "Target player loses 2 life. You draw a card.", Text.pack "Target player loses 2 life.\nYou draw a card.", Text.pack "Target player loses 2 life. Then you draw a card.", Text.pack "Target player loses 2 life and you draw a card."]] (Oracle.abilities insurance)
 
   -- CR 113.2c: text pairs with a card's abilities as a multiset, each ability in
   -- one of its own wordings. This tool pairs a spell's instructions as one unit,
@@ -342,7 +343,7 @@ spec s = Spec.describe s "Parun.Oracle" $ do
         insurance = payload [clause [loseLife (PlayerRef.InSlot target) 2, draw (PlayerRef.Relative PlayerRelation.You) 1]] [(target, TargetSlot.required Pool.Players Nothing)]
         both = withFace (\f -> f {Face.keywords = Map.fromList [(Keyword.Flying, 1), (Keyword.Vigilance, 1)], Face.activatedAbilities = [tomb], Face.spell = insurance})
         rest = "Target player loses 2 life.\nDraw a card.\n{T}: Add {G}. Then Spark deals 2 damage to you.\n"
-    Spec.assertEq s [1, 1, 4, 2] (fmap length (Oracle.abilities both))
+    Spec.assertEq s [1, 1, 7, 2] (fmap length (Oracle.abilities both))
     Spec.assertEq s (Just (Text.pack "Flying\nVigilance\nTarget player loses 2 life. Draw a card.\n{T}: Add {G}. Spark deals 2 damage to you.")) (Oracle.render both)
     Spec.assertBool s (Oracle.says both spark (Text.pack (rest <> "Flying, vigilance"))) "every ability unsaid"
     Spec.assertBool s (not (Oracle.says both spark (Text.pack (rest <> "Flying")))) "an ability left out said"
