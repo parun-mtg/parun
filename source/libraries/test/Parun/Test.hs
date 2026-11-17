@@ -756,7 +756,9 @@ import qualified Parun.Codec.RevealedSpec
 import qualified Parun.Codec.RevealedThisWaySpec
 import qualified Parun.Codec.RiderClauseSpec
 import qualified Parun.Codec.RollDieSpec
+import qualified Parun.Codec.RollKindSpec
 import qualified Parun.Codec.RollModifierSpec
+import qualified Parun.Codec.RollTriggerSpec
 import qualified Parun.Codec.RoomHalfSpec
 import qualified Parun.Codec.RoomIndexSpec
 import qualified Parun.Codec.RoundingSpec
@@ -1408,6 +1410,8 @@ spec s reference corpus = do
   Parun.Codec.AttachmentTriggerSpec.spec s
   Parun.Codec.CoinFlipTriggerSpec.spec s
   Parun.Codec.FlipOutcomeSpec.spec s
+  Parun.Codec.RollKindSpec.spec s
+  Parun.Codec.RollTriggerSpec.spec s
   Parun.Codec.TransformTriggerSpec.spec s
   Parun.Codec.CrewingSpec.spec s
   Parun.Codec.KeywordCostRestrictionSpec.spec s

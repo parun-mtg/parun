@@ -193,7 +193,6 @@ import qualified Parun.Types.Destroy as Destroy
 import qualified Parun.Types.DestructionR as DestructionR
 import qualified Parun.Types.Devotion as Devotion
 import qualified Parun.Types.Devour as Devour
-import qualified Parun.Types.DieResult as DieResult
 import qualified Parun.Types.DieRollR as DieRollR
 import qualified Parun.Types.Discard as Discard
 import qualified Parun.Types.DiscardCards as DiscardCards
@@ -428,6 +427,7 @@ import qualified Parun.Types.ReturnPermanents as ReturnPermanents
 import qualified Parun.Types.Reveal as Reveal
 import qualified Parun.Types.RevealedThisWay as RevealedThisWay
 import qualified Parun.Types.RollDie as RollDie
+import qualified Parun.Types.RollTrigger as RollTrigger
 import qualified Parun.Types.RuleAbilities as RuleAbilities
 import qualified Parun.Types.RulePermission as RulePermission
 import qualified Parun.Types.Sacrifice as Sacrifice
@@ -1312,6 +1312,7 @@ effectChildren c effect = case effect of
   Effect.Assimilate ref -> fmap Effect.Assimilate (onObjectRef c ref)
   Effect.TemptWithTheRing -> pure effect
   Effect.OpenAttraction -> pure effect
+  Effect.RollToVisit -> pure effect
   Effect.Assemble ref -> fmap Effect.Assemble (traverse (onObjectRef c) ref)
   Effect.Planeswalk ref -> fmap Effect.Planeswalk (traverse (onObjectRef c) ref)
   Effect.ChaosEnsues ref -> fmap Effect.ChaosEnsues (traverse (onObjectRef c) ref)
@@ -1720,7 +1721,7 @@ triggerConditionChildren c condition = case condition of
   TriggerCondition.PlayerRollsPlaneswalker _ -> pure condition
   TriggerCondition.TurnedUpOffDeck subject -> fmap TriggerCondition.TurnedUpOffDeck (actingChildren c subject)
   TriggerCondition.SelfPlaneswalkedAwayFrom -> pure condition
-  TriggerCondition.PlayerRollsResult (DieResult.MkDieResult _ _) -> pure condition
+  TriggerCondition.PlayerRollsResult (RollTrigger.MkRollTrigger {}) -> pure condition
   TriggerCondition.Visit -> pure condition
   TriggerCondition.FlipsCoin (CoinFlipTrigger.MkCoinFlipTrigger _ _) -> pure condition
   TriggerCondition.SelfBecomesPlotted -> pure condition

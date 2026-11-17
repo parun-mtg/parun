@@ -44385,6 +44385,8 @@
       "30": {"card":"Wall of Fortune"}
     },
     "UNF": {
+      "365": {"card":"\"Lifetime\" Pass Holder"},
+      "79": {"card":"\"Lifetime\" Pass Holder"},
       "12": {"card":"A Good Day to Pie"},
       "298": {"card":"A Good Day to Pie"},
       "161": {"card":"Ambassador Blorpityblorpboop"},
@@ -44413,6 +44415,8 @@
       "471": {"card":"Celebr-8000"},
       "132": {"card":"Centaur of Attention"},
       "418": {"card":"Centaur of Attention"},
+      "328": {"card":"Command Performance"},
+      "42": {"card":"Command Performance"},
       "329": {"card":"Croakid Amphibonaut"},
       "43": {"card":"Croakid Amphibonaut"},
       "355": {"card":"Deadbeat Attendant"},
@@ -44435,6 +44439,8 @@
       "241": {"card":"Island"},
       "487": {"card":"Island"},
       "492": {"card":"Island"},
+      "366": {"card":"Line Cutter"},
+      "80": {"card":"Line Cutter"},
       "146": {"card":"Lineprancers"},
       "432": {"card":"Lineprancers"},
       "171": {"card":"Magar of the Magic Strings"},
