@@ -2866,7 +2866,8 @@ evokeSpec s registry = Spec.describe s "Evoke" $ do
   -- CR 702.170d with CR 118.9a: a plotted card is cast without paying its mana
   -- cost, and that is its only cost -- no second alternative. Aven Interrupter
   -- plots bob's Mulldrifter off the stack; the control is the same Mulldrifter
-  -- in his hand, offered its evoke cost.
+  -- in his hand, offered its evoke cost. Asked on bob's next main phase, the
+  -- first board rule 702.170d permits the cast on.
   Spec.it s "CR 702.170d a Mulldrifter Aven Interrupter plotted is offered no evoke cost" $ do
     plains <- S.printingOf s registry "Plains"
     island <- S.printingOf s registry "Island"
@@ -2880,11 +2881,12 @@ evokeSpec s registry = Spec.describe s "Evoke" $ do
           _ -> S.identityAnswer p
         waiting = S.runPure aimed board (S.cast S.bob victim)
         after = S.runPure aimed waiting (S.cast S.alice avenId >> Engine.priorityLoop)
+        later = after {GameState.turn = (GameState.turn after) {TurnRegisters.turnNumber = TurnRegisters.turnNumber (GameState.turn after) + 1, TurnRegisters.phase = Phase.PrecombatMain, TurnRegisters.activePlayer = S.bob, TurnRegisters.priority = Just S.bob}}
         offered oid gs = fmap Cost.Type.mana (Cost.costsFor S.bob (S.printingName mulldrifter) oid gs)
         evoke = Just (ManaCost.MkManaCost evokeCost)
     case filter (\oid -> fmap S.nameOf (Game.cardOf oid after) == Just (S.printingName mulldrifter)) (Game.zoneMembers Zone.Exile S.bob after) of
       [exiled] -> do
-        Spec.assertBool s (notElem evoke (offered exiled after)) "CR 702.170d the plotted Mulldrifter is not offered evoke"
+        Spec.assertBool s (notElem evoke (offered exiled later)) "CR 702.170d the plotted Mulldrifter is not offered evoke"
         Spec.assertBool s (elem evoke (offered victim board)) "the control: in bob's hand it is"
         Spec.assertEqWith s "CR 702.170c and it was plotted" (fmap (Maybe.isJust . Object.plotted) (Game.lookupObject exiled after)) (Just True)
       other -> Spec.assertFailure s ("expected one exiled Mulldrifter, got " <> show (length other))

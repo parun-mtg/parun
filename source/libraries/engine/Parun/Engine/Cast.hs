@@ -1311,7 +1311,7 @@ stampCastPrepared sid prepared gs =
 -- spell was foretold" whatever cost it was cast for. stampCastFrom's shape above.
 --
 -- Harmless to the stamp's other readers: each asks about a card in exile
--- (Parun.Engine.Exile, Parun.Engine.Cast.permitsCastForetold, the exile arm of
+-- (Parun.Engine.Exile, Parun.Engine.Cost.permitsCastForetold, the exile arm of
 -- Parun.Engine.Cost.costsFor), and the stamp dies with the spell's incarnation.
 stampForetold :: ObjectId -> Maybe Natural -> GameState -> GameState
 stampForetold sid foretold gs =
@@ -1586,8 +1586,8 @@ permittedFrom pid oid face gs zone = case zone of
 -- whose second is why a card its own Adventure exiled offers only the creature
 -- half, while the same card in a hand -- or exiled by some other effect --
 -- offers both; the second is CR 702.170d's
--- plotted card, which permitsCastPlotted answers; the third is CR 702.143a's
--- foretold card, which permitsCastForetold answers; the fourth is CR 723.3c's
+-- plotted card, which Cost.permitsCastPlotted answers; the third is CR 702.143a's
+-- foretold card, which Cost.permitsCastForetold answers; the fourth is CR 723.3c's
 -- prepare copy, which permitsCastPrepared answers; the fifth is CR 702.185a's
 -- warped card, which permitsCastWarped answers; the sixth is a permission the
 -- card carries for itself (CR 113.6f), Khan, Vengeful Heart's "you may cast this
@@ -1616,12 +1616,19 @@ permitsCastFromExile pid oid face gs =
 -- grant's additional costs (castWays).
 exileOpen :: PlayerId -> ObjectId -> Face.Face Card.Type.Card -> GameState -> Bool
 exileOpen pid oid face gs =
+  exileGranted pid oid face gs
+    || (ownedBy pid oid gs && any (permitsFromZone Zone.Exile) (Cost.permissionsOf oid face gs))
+
+-- exileOpen's five permissions something other than the card's own text gives
+-- it: what a card exiled face down may still be cast under, its text being
+-- none until it is turned up (CR 406.3a, faceDownGateOk).
+exileGranted :: PlayerId -> ObjectId -> Face.Face Card.Type.Card -> GameState -> Bool
+exileGranted pid oid face gs =
   any (heldAdmits oid face gs) (Expiry.openPermissions pid oid gs)
-    || permitsCastPlotted pid oid gs
-    || permitsCastForetold pid oid gs
+    || Cost.permitsCastPlotted pid oid gs
+    || Cost.permitsCastForetold pid oid gs
     || permitsCastPrepared pid oid gs
     || permitsCastWarped pid oid gs
-    || (ownedBy pid oid gs && any (permitsFromZone Zone.Exile) (Cost.permissionsOf oid face gs))
 
 -- CR 723.3c's own permission, the FOURTH of permitsCastFromExile's disjuncts:
 -- "for as long as the copy remains in exile, the prepared permanent's controller
@@ -1777,74 +1784,7 @@ widerSpending one other = case (one, other) of
   (_, ManaSpending.AnyColor) -> ManaSpending.AnyColor
   (ManaSpending.AsProduced, ManaSpending.AsProduced) -> ManaSpending.AsProduced
 
--- CR 702.170d: may this player cast this PLOTTED card? Four conjuncts, and the
--- rule states each of them:
---
---   * the card is plotted, which is the Object.plotted stamp Parun.Engine.Plot
---     wrote;
---   * this player is its OWNER -- "a plotted card's OWNER may cast it from
---     exile" -- where CR 716.3d's permission names a player instead, which is why
---     the two are separate disjuncts above rather than one test;
---   * the turn is a LATER one than the stamp, "during any turn after the turn in
---     which it became plotted". A strict comparison on TurnRegisters.turnNumber,
---     which counts every turn the game takes -- extra turns (CR 500.7) included
---     -- so the clause needs no other bookkeeping.
---   * the window, "during their main phase while the stack is empty", which is
---     `sorcerySpeed` above word for word -- the phase, the active player and the
---     empty stack, asked of the same player the ownership conjunct names.
---     Priority is implicit here as everywhere in this module.
---
--- That window is a conjunct HERE and not in Cast.timingOk, which is where a
--- window normally lives: timingOk is a disjunction, so it can only widen one and
--- never narrow one. It has to narrow, because CR 702.170c's route plots whatever
--- the exiling clause admits and Kellan Joins Up's is "a nonland card with mana
--- value 3 or less", which reaches an INSTANT -- and CR 117.1a hands an instant
--- every priority its controller has. Every card the pool PRINTS plot on is a
--- creature (Djinn of Fool's Fall, Aloe Alchemist), for which CR 117.1a would have
--- covered the clause anyway. data/scenarios/special-action's "CR 702.170d a
--- plotted instant is castable only in its owner's main phase with the stack
--- empty" is what proves the narrowing, one board per conjunct.
---
--- permitsCastForetold below is the control: CR 702.143a fixes no window, so it
--- takes none.
-permitsCastPlotted :: PlayerId -> ObjectId -> GameState -> Bool
-permitsCastPlotted pid oid gs = Maybe.fromMaybe False $ do
-  obj <- Game.lookupObject oid gs
-  turn <- Object.plotted obj
-  pure (Object.owner obj == pid && TurnRegisters.turnNumber (GameState.turn gs) > turn && sorcerySpeed pid gs)
-
--- CR 702.143a: may this player cast this FORETOLD card? permitsCastPlotted's
--- stamp, owner and later-turn conjuncts one rule over, and the rule states each
--- of them:
---
---   * the card is foretold, which is the Object.foretold stamp
---     Parun.Engine.Foretell wrote;
---   * this player is its OWNER. Rule 702.143a says "THAT PLAYER may cast that
---     card", meaning the one who took the special action -- who is the owner,
---     because CR 400.1 makes a hand a per-player zone and the action exiles the
---     card from the actor's own hand. The two words are the same player here and
---     the owner is the one that survives CR 400.7's new incarnation. Rule
---     702.143d's route into the same stamp (Effect.MakeForetold) names the owner
---     only for looking and leaves "it may be cast" passive; the conjunct reads the
---     caster as that owner.
---   * the turn is a LATER one, "after the current turn has ended". A strict
---     comparison on TurnRegisters.turnNumber, plotted's clause exactly.
---
--- The rule fixes no window beyond that, unlike CR 702.170d's main phase: a
--- foretold card is cast whenever its own card type could be, so nothing here
--- narrows Cast.timingOk.
---
--- CR 601.3f does not reach this permission, which names ONE card rather than
--- rule 601.3f's qualities; `lookGateOk` is where that rule is asked. It would
--- pass here regardless: rule 702.143a grants the permission to the card's owner,
--- which is exactly what Parun.Engine.Exile.mayLookAt reads off the same stamp.
-permitsCastForetold :: PlayerId -> ObjectId -> GameState -> Bool
-permitsCastForetold pid oid gs = Maybe.fromMaybe False $ do
-  obj <- Game.lookupObject oid gs
-  turn <- Object.foretold obj
-  pure (Object.owner obj == pid && TurnRegisters.turnNumber (GameState.turn gs) > turn)
-
--- CR 702.185a: may this player cast this WARPED card? permitsCastForetold's three
+-- CR 702.185a: may this player cast this WARPED card? Cost.permitsCastForetold's three
 -- conjuncts one rule over, and rule 702.185a states each of them:
 --
 --   * the card is warped, which is the Object.warped stamp Parun.Engine.Warp
@@ -1900,7 +1840,7 @@ permitsCastWarped pid oid gs = Maybe.fromMaybe False $ do
 -- owner-filed list.
 --
 -- A card exiled FACE DOWN is a candidate like any other: CR 601.3f's gate on it
--- is `lookGateOk`'s, asked of the board before the card is turned up.
+-- is `faceDownGateOk`'s, asked of the board before the card is turned up.
 zoneCandidates :: Zone.Zone -> PlayerId -> GameState -> [ObjectId]
 zoneCandidates zone pid gs = case zone of
   Zone.Exile -> Set.toList (GameState.exile gs)
@@ -2264,7 +2204,7 @@ castableUnderHeld shared pid oid name facing gs =
           (proposedFor pid oid (CandidateCost.keyword candidate) proposed)
           (withPermissionCosts extra cost)
    in cardGatesOk pid oid name proposed
-        && lookGateOk pid oid name gs proposed
+        && faceDownGateOk pid oid name gs proposed
         -- Gated HERE, upstream of Action.legalActions, because the engine never
         -- offers an illegal action and then rejects it.
         && any candidateOk (candidatesWithWays pid oid name proposed (windowedCandidates True pid oid name proposed (Cost.candidateCostsFor pid name oid proposed)))
@@ -2318,25 +2258,30 @@ couldBeginToCast pid oid name gs =
   let proposed = asProposed oid name Facing.FaceUp gs
       allowed candidate = candidateAllowed pid oid proposed candidate && candidateInZone pid oid name proposed candidate
       candidates = windowedCandidates True pid oid name proposed (Cost.candidateCostsFor pid name oid proposed)
-   in cardGatesOk pid oid name proposed && lookGateOk pid oid name gs proposed && any allowed candidates
+   in cardGatesOk pid oid name proposed && faceDownGateOk pid oid name gs proposed && any allowed candidates
 
--- CR 601.3f / 406.3b: "a player may begin to cast such a spell only if they can
--- look at the face-down card in exile". Asked of the board BEFORE `asProposed`
--- turns the card face up (CR 406.3a), since that turn is what the proposal
--- reads and it leaves nothing face down to ask about.
+-- CR 406.3a / 601.3f: the permissions a card exiled face down may be cast under.
+-- Asked of the board BEFORE `asProposed` turns the card face up, since that turn
+-- is what the proposal reads and it leaves nothing face down to ask about.
+--
+-- Not the card's own text (exileOpen's last disjunct, Khan, Vengeful Heart's):
+-- rule 406.3a leaves the card no characteristics until the turn, which comes
+-- only once something else lets it be played. The scenario
+-- khan-vengeful-heart-exiled-face-down-by-necropotence-is-not-cast-under-its-own-permission
+-- proves it.
 --
 -- Rule 601.3f's "such a spell" is one cast from AMONG face-down cards by quality,
 -- which is every Parun.Types.PlayerEffect.CastFrom grant -- a Filter over a zone
--- -- and none of the permissions an exiled card carries for itself: each of
--- `exileOpen`'s names ONE object, so CR 406.3a alone governs it. A card this
--- player may not look at therefore stays castable under those and no other.
-lookGateOk :: PlayerId -> ObjectId -> CardName.CardName -> GameState -> GameState -> Bool
-lookGateOk pid oid name before proposed =
-  Exile.mayLookAt pid oid before
-    || maybe False (\face -> exileOpen pid oid face proposed) (proposedFace oid name proposed)
+-- -- so such a grant opens the card only to a player who may look at it. Each
+-- of `exileGranted`'s permissions names ONE object, so rule 406.3a alone governs
+-- it.
+faceDownGateOk :: PlayerId -> ObjectId -> CardName.CardName -> GameState -> GameState -> Bool
+faceDownGateOk pid oid name before proposed =
+  not (maybe False Object.exiledFaceDown (Game.lookupObject oid before))
+    || maybe False (\face -> exileGranted pid oid face proposed || (Exile.mayLookAt pid oid before && PlayerEffect.mayCastFrom pid Zone.Exile oid proposed)) (proposedFace oid name proposed)
 
 -- `castWays`' options a cast may still be made under once CR 601.3f has been
--- asked (`lookGateOk`): every one where the caster may look at the card, and
+-- asked (`faceDownGateOk`): every one where the caster may look at the card, and
 -- otherwise only those made under no CastFrom grant.
 lookedWays :: Bool -> [Maybe (ObjectId, CastFromZone.CastFromZone)] -> [Maybe (ObjectId, CastFromZone.CastFromZone)]
 lookedWays looks ways = if looks then ways else filter Maybe.isNothing ways
@@ -2865,7 +2810,7 @@ castSpell perform = castSpellWith perform True False [] ManaSpending.AsProduced
 -- `spendingFor`'s reason.
 castSpellWith :: ManaAbilityPerformer.ManaAbilityPerformer -> Bool -> Bool -> [CandidateCost.CandidateCost] -> ManaSpending -> PlayerId -> ObjectId -> CardName.CardName -> Facing.Facing -> Game ()
 castSpellWith perform timed offered applied widened pid oid name facing = Event.announcing $ do
-  -- CR 601.3f, asked of the card while it is still face down, `lookGateOk`'s
+  -- CR 601.3f, asked of the card while it is still face down, `faceDownGateOk`'s
   -- reason; `permissions` below is what reads it.
   looks <- State.gets (Exile.mayLookAt pid oid)
   -- CR 406.3a, run BEFORE `before` is read and so before CR 601.2e's rewind

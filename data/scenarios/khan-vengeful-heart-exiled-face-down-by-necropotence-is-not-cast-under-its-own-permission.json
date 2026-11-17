@@ -1,0 +1,26 @@
+{
+  "description": "CR 406.3a: Khan, Vengeful Heart exiled face down by Necropotence has no characteristics, so its own permission does not let its owner cast it",
+  "board": {
+    "active": "alice",
+    "step": "PrecombatMain",
+    "seats": [
+      {
+        "name": "alice",
+        "manaPool": "BBBB",
+        "battlefield": [{"card": "Necropotence", "label": "necro"}],
+        "library": [{"card": "Khan, Vengeful Heart"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}]
+      },
+      {
+        "name": "bob",
+        "library": [{"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}]
+      }
+    ]
+  },
+  "timeline": [
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": {"Activate": {"object": "$necro"}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass"},
+    {"turn": 1, "step": "PrecombatMain", "player": "bob", "do": "Pass"},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Count": {"player": "alice", "zone": "Exile", "card": "Khan, Vengeful Heart", "count": 1}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "refuse": {"Cast": {"object": "Khan, Vengeful Heart"}}}
+  ]
+}
