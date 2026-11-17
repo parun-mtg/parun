@@ -785,7 +785,7 @@ surveilPromptSpec s registry = Spec.describe s "SurveilPrompt" $ do
       apply effect sourceId = Resolve.applyEffect sourceId sourceId S.alice Map.empty Map.empty effect
       asks effect sourceId gs = State.execState (Engine.runGame counting gs (apply effect sourceId)) 0
   -- The case that separates surveil from scry, and the reason this pair exists:
-  -- with ONE card that is the whole library, Parun.Engine.Resolve.Common.decideScry asks
+  -- with ONE card that is the whole library, Parun.Engine.Event.decideScry asks
   -- nothing because top and bottom are the same position -- but a graveyard is
   -- somewhere else, so the player IS asked, and the answer is honoured.
   Spec.it s "CR 701.25a one card that is the whole library is still a real choice" $ do

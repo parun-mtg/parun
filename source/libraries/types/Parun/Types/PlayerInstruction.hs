@@ -47,6 +47,10 @@ data PlayerInstruction
     -- Parun.Engine.Resolve.Common.conniveOne, for a positive N only (CR
     -- 701.50e).
     Connive
+  | -- | CR 701.44a: explore, carried out by the exploring permanent for its
+    -- controller. Raised once per explorer by
+    -- Parun.Engine.Resolve.Common.exploreOne, at a count of one.
+    Explore
   | -- | CR 701.32c: set this many schemes in motion. Raised once per
     -- instruction by Parun.Engine.Archenemy.setInMotion.
     SetInMotion

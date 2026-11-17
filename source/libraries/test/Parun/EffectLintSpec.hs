@@ -571,23 +571,30 @@ phasePatternOffends replacement = case replacement of
 --   anyway.
 -- - ReturnSourceInstead on anything but a learn. Only Retriever Phoenix prints
 --   it, and a flip, a WouldThrow, has no road for it.
--- - DrawFirst on a flip, which is a WouldThrow and not the WouldPerform its
---   arm reads.
--- - SetTo on a flip, for DrawFirst's reason, and SetTo 0, a scaling settling
+-- - PerformFirst on a flip, which is a WouldThrow and not the WouldPerform its
+--   arm reads, or performing first anything but a draw or a scry, the only
+--   instructions Event.performOnce carries out.
+-- - SetTo on a flip, for PerformFirst's reason, and SetTo 0, a scaling settling
 --   at zero.
 -- - A PerformerR naming an instruction no permanent carries out, which no
---   event ever reaches: only an assembly and a connive name their performer.
+--   event ever reaches: only an assembly, a connive and an explore name their
+--   performer.
+-- - Unprinted: an explore rewritten other than by PerformFirst. Rule 701.44a
+--   states no count, so Common.exploreOne explores once whatever count a
+--   rewrite leaves.
 --
 -- Every printed row is Multiply 2, AddMore 1, Eligeth's DrawInstead on a scry,
 -- Pokey, the Scallywagg's RollD20Instead on a flip, Leader, Super-Genius's
--- DrawFirst on a connive, Plots That Span Centuries' SetTo 3 on a set in
--- motion or Retriever Phoenix's ReturnSourceInstead on a learn.
+-- PerformFirst DrawCards on a connive, Twists and Turns' PerformFirst Scry on
+-- an explore, Plots That Span Centuries' SetTo 3 on a set in motion or
+-- Retriever Phoenix's ReturnSourceInstead on a learn.
 -- Exhaustive rather than a wildcard, this file's discipline for a sum.
 instructionRowOffends :: ReplacementEffect.ReplacementEffect Card.Type.Card (GrantedAbility.GrantedAbility Card.Type.Card) (Effect.Effect Card.Type.Card (GrantedAbility.GrantedAbility Card.Type.Card)) -> Bool
 instructionRowOffends replacement = case replacement of
   ReplacementEffect.InstructionR row -> rewriteOffends (InstructionR.instruction row) (InstructionR.rewrite row)
   ReplacementEffect.PerformerR row ->
-    List.notElem (PerformerR.instruction row) [PlayerInstruction.Assemble, PlayerInstruction.Connive]
+    List.notElem (PerformerR.instruction row) [PlayerInstruction.Assemble, PlayerInstruction.Connive, PlayerInstruction.Explore]
+      || (PerformerR.instruction row == PlayerInstruction.Explore && not (performsFirst (PerformerR.rewrite row)))
       || rewriteOffends (PerformerR.instruction row) (PerformerR.rewrite row)
   ReplacementEffect.PhaseR _ -> False
   ReplacementEffect.CounterR {} -> False
@@ -613,7 +620,9 @@ instructionRowOffends replacement = case replacement of
     rewriteOffends instruction rewrite = case rewrite of
       InstructionRewrite.DrawInstead -> instruction /= PlayerInstruction.Scry
       InstructionRewrite.RollD20Instead -> instruction /= PlayerInstruction.FlipCoin
-      InstructionRewrite.DrawFirst -> instruction == PlayerInstruction.FlipCoin
+      InstructionRewrite.PerformFirst first ->
+        instruction == PlayerInstruction.FlipCoin
+          || List.notElem first [PlayerInstruction.DrawCards, PlayerInstruction.Scry]
       InstructionRewrite.ReturnSourceInstead -> instruction /= PlayerInstruction.Learn
       InstructionRewrite.SetTo count -> instruction == PlayerInstruction.FlipCoin || count == 0
       InstructionRewrite.Scaled scaling -> case scaling of
@@ -624,6 +633,13 @@ instructionRowOffends replacement = case replacement of
           _ -> True
         Scaling.Subtract _ -> True
         Scaling.Halve -> True
+    performsFirst rewrite = case rewrite of
+      InstructionRewrite.PerformFirst _ -> True
+      InstructionRewrite.Scaled _ -> False
+      InstructionRewrite.DrawInstead -> False
+      InstructionRewrite.RollD20Instead -> False
+      InstructionRewrite.SetTo _ -> False
+      InstructionRewrite.ReturnSourceInstead -> False
 
 isInstructionR :: ReplacementEffect.ReplacementEffect Card.Type.Card (GrantedAbility.GrantedAbility Card.Type.Card) (Effect.Effect Card.Type.Card (GrantedAbility.GrantedAbility Card.Type.Card)) -> Bool
 isInstructionR replacement = case replacement of
@@ -3388,7 +3404,7 @@ effectLintSpec s registry corpus = Spec.describe s "Lint" $ do
         offenders = filter (anyFace (any instructionRowOffends . cardReplacementEffects) . Printing.card) ps
     -- Guards against a vacuous sweep: these cards printing an InstructionR are
     -- all swept.
-    Spec.assertEqWith s "the pool's instruction rows include these" (filter (`notElem` fmap (S.nameOf . Printing.card) (filter rowsOf ps)) (fmap (CardName.MkCardName . Text.pack) ["Bruvac the Grandiloquent", "Eligeth, Crossroads Augur", "Kenessos, Priest of Thassa", "Krark's Thumb", "Leader, Super-Genius", "Pokey, the Scallywagg", "Quantum Riddler", "Retriever Phoenix", "Steamflogger Boss", "Tekuthal, Inquiry Dominus", "The Valeyard", "Twinning Staff"])) []
+    Spec.assertEqWith s "the pool's instruction rows include these" (filter (`notElem` fmap (S.nameOf . Printing.card) (filter rowsOf ps)) (fmap (CardName.MkCardName . Text.pack) ["Bruvac the Grandiloquent", "Eligeth, Crossroads Augur", "Kenessos, Priest of Thassa", "Krark's Thumb", "Leader, Super-Genius", "Pokey, the Scallywagg", "Quantum Riddler", "Retriever Phoenix", "Steamflogger Boss", "Tekuthal, Inquiry Dominus", "The Valeyard", "Twinning Staff", "Twists and Turns"])) []
     Spec.assertEqWith s "every instruction row is one its funnel carries out" (fmap (S.nameOf . Printing.card) offenders) []
   -- The rejecting direction, against Eligeth's and Krark's Thumb's real rows with
   -- one field changed, never a card file -- Eon Hub's posture below.
@@ -3417,6 +3433,13 @@ effectLintSpec s registry corpus = Spec.describe s "Lint" $ do
     phoenix <- S.printingOf s registry "Retriever Phoenix"
     Spec.assertBool s (not (null (rowsOf phoenix)) && not (any instructionRowOffends (rowsOf phoenix))) "Retriever Phoenix's return instead of a learn is accepted"
     Spec.assertBool s (all (instructionRowOffends . naming PlayerInstruction.Scry) (rowsOf phoenix)) "while a return instead of a scry is rejected"
+    twists <- S.printingOf s registry "Twists and Turns"
+    let rewritten rewrite replacement = case replacement of
+          ReplacementEffect.PerformerR row -> ReplacementEffect.PerformerR row {PerformerR.rewrite = rewrite}
+          other -> other
+    Spec.assertBool s (not (null (rowsOf twists)) && not (any instructionRowOffends (rowsOf twists))) "Twists and Turns' scry before an explore is accepted"
+    Spec.assertBool s (all (instructionRowOffends . rewritten (InstructionRewrite.PerformFirst PlayerInstruction.Learn)) (rowsOf twists)) "while learning before an explore is rejected"
+    Spec.assertBool s (all (instructionRowOffends . rewritten (InstructionRewrite.Scaled (Scaling.Multiply 2))) (rowsOf twists)) "and so is exploring twice"
   Spec.it s "no card authors a player-scoped phase skip (#437)" $ do
     ps <- S.allPrintings s corpus
     let offenders = filter (anyFace (any phasePatternOffends . cardReplacementEffects) . Printing.card) ps

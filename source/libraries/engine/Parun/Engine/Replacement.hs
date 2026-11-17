@@ -1189,7 +1189,7 @@ matchesPrinted viewOf gs event candidate =
               InstructionRewrite.Scaled _ -> True
               InstructionRewrite.DrawInstead -> True
               InstructionRewrite.RollD20Instead -> True
-              InstructionRewrite.DrawFirst -> True
+              InstructionRewrite.PerformFirst _ -> True
               InstructionRewrite.ReturnSourceInstead -> True
         -- The same, for the one instruction no WouldPerform carries: a flip is a
         -- WouldThrow of coins (Parun.Types.Throw), and a row naming FlipCoin
@@ -2681,8 +2681,9 @@ instructionRewriteReadsApplier rewrite = case rewrite of
   -- Pokey's "you may" is asked of the row's controller, who is the flipper its
   -- "you" names: the seat the EVENT named.
   InstructionRewrite.RollD20Instead -> False
-  -- CR 109.5: Leader, Super-Genius's "you draw a card" is the row's controller.
-  InstructionRewrite.DrawFirst -> True
+  -- CR 109.5: Leader, Super-Genius's "you draw a card" and Twists and Turns'
+  -- "you scry 1" are the row's controller's.
+  InstructionRewrite.PerformFirst _ -> True
   -- A fixed count for the seat the event named, Scaled's answer.
   InstructionRewrite.SetTo _ -> False
   -- Retriever Phoenix's "you may" is asked of the row's controller, who is the
@@ -2727,7 +2728,7 @@ instructionRewriteSubstitutes rewrite = case rewrite of
   InstructionRewrite.Scaled _ -> False
   InstructionRewrite.DrawInstead -> False
   InstructionRewrite.RollD20Instead -> True
-  InstructionRewrite.DrawFirst -> False
+  InstructionRewrite.PerformFirst _ -> False
   InstructionRewrite.SetTo _ -> False
   InstructionRewrite.ReturnSourceInstead -> False
 
@@ -2879,7 +2880,7 @@ instructionRewriteReadsSource rewrite = case rewrite of
   InstructionRewrite.Scaled scaling -> computedScaling scaling
   InstructionRewrite.DrawInstead -> False
   InstructionRewrite.RollD20Instead -> False
-  InstructionRewrite.DrawFirst -> False
+  InstructionRewrite.PerformFirst _ -> False
   InstructionRewrite.SetTo _ -> False
   -- Retriever Phoenix's "return this card" names the row's own source, so two
   -- Phoenixes in one graveyard return different cards: dredge's answer.

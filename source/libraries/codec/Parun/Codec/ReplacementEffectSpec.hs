@@ -286,8 +286,8 @@ spec s =
           Common.assertCodec
             s
             codec
-            (ReplacementEffect.PerformerR (PerformerR.MkPerformerR PlayerInstruction.Connive (Filter.HasSubtype Subtype.Rigger) InstructionRewrite.DrawFirst))
-            " {\"type\":\"PerformerR\",\"value\":{\"instruction\":\"Connive\",\"performer\":{\"type\":\"HasSubtype\",\"value\":\"Rigger\"},\"rewrite\":{\"type\":\"DrawFirst\"}}} "
+            (ReplacementEffect.PerformerR (PerformerR.MkPerformerR PlayerInstruction.Connive (Filter.HasSubtype Subtype.Rigger) (InstructionRewrite.PerformFirst PlayerInstruction.DrawCards)))
+            " {\"type\":\"PerformerR\",\"value\":{\"instruction\":\"Connive\",\"performer\":{\"type\":\"HasSubtype\",\"value\":\"Rigger\"},\"rewrite\":{\"type\":\"PerformFirst\",\"value\":\"DrawCards\"}}} "
         -- CR 106.12b: Naked Singularity's Plains.
         Spec.it s "ManaR (Naked Singularity)" $
           Common.assertCodec
