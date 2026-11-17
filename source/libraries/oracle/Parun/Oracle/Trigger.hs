@@ -463,15 +463,22 @@ lifeChanged tally =
 -- Skullhunter) or not (Trynn, Champion of Freedom). Free for threshold:
 -- printed (Anurid Barkripper) or not (Illuminate History). Free for spell
 -- mastery: printed (Calculated Dismissal). Free for infusion: printed
--- (Foolish Fate). Free for survival: printed (Cautious Survivor).
+-- (Foolish Fate). Free for survival: printed (Cautious Survivor). Free for
+-- descend 4: printed (Coati Scavenger).
 abilityWord :: Text.Text -> [Text.Text]
-abilityWord words' = [Text.empty] <> [Text.pack "Hellbent \8212 " | words' == Text.pack "you have no cards in hand"] <> [Text.pack "Raid \8212 " | words' == Text.pack "you attacked this turn"] <> [Text.pack "Threshold \8212 " | words' == Text.pack "there are seven or more cards in your graveyard"] <> [Text.pack "Spell mastery \8212 " | words' == Text.pack "there are two or more instant and/or sorcery cards in your graveyard"] <> [Text.pack "Infusion \8212 " | words' == Text.pack "you gained life this turn"] <> [Text.pack "Survival \8212 " | Text.isSuffixOf (Text.pack " is tapped") words']
+abilityWord words' = [Text.empty] <> [Text.pack "Hellbent \8212 " | words' == Text.pack "you have no cards in hand"] <> [Text.pack "Raid \8212 " | words' == Text.pack "you attacked this turn"] <> [Text.pack "Threshold \8212 " | words' == Text.pack "there are seven or more cards in your graveyard"] <> [Text.pack "Spell mastery \8212 " | words' == Text.pack "there are two or more instant and/or sorcery cards in your graveyard"] <> [Text.pack "Infusion \8212 " | words' == Text.pack "you gained life this turn"] <> [Text.pack "Descend 4 \8212 " | words' == Text.pack "there are four or more permanent cards in your graveyard"] <> [Text.pack "Survival \8212 " | Text.isSuffixOf (Text.pack " is tapped") words']
 
 -- | The ability word (CR 207.2c) Oracle text may print before an ability
 -- this event opens. Free for alliance: printed (Raphael, Tough Turtle) or not
 -- (Corpse Knight). Free for survival: printed (Glimmer Seeker).
 openingWord :: Text.Text -> [Text.Text]
 openingWord opens = [Text.pack "Alliance \8212 " | opens == Text.pack "Whenever another creature you control enters"] <> [Text.pack "Survival \8212 " | opens == Text.pack "At the beginning of your second main phase"]
+
+-- | The ability word (CR 207.2c) Oracle text may print before a triggered
+-- ability whose effect reads this. Free for fathomless descent: printed
+-- (Chupacabra Echo) or not (Cloud of Darkness, under its flavor word).
+effectWord :: Text.Text -> [Text.Text]
+effectWord effect = [Text.pack "Fathomless descent \8212 " | Text.isInfixOf (Text.pack "the number of permanent cards in your graveyard") effect]
 
 -- | Whether the condition is the source's own status ("this creature is
 -- attacking"), as 'counted' reads it, after which the source is "it".

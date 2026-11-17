@@ -92,8 +92,8 @@
                                 },
                                 "typeLine": {
                                   "subtypes": [
-                                    "Skeleton",
-                                    "Pirate"
+                                    "Pirate",
+                                    "Skeleton"
                                   ],
                                   "types": [
                                     "Creature"
