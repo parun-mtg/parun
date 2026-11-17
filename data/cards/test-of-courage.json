@@ -1,0 +1,124 @@
+{
+  "faces": [
+    {
+      "manaCost": [
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "Green"
+          }
+        }
+      ],
+      "name": "Test of Courage",
+      "oracleText": "Choose one —\n• Alter the Past — Exile target card from a graveyard. You gain 2 life.\n• Obliterate the Transwarp Network — Destroy target artifact or enchantment with mana value 3 or less.",
+      "spell": {
+        "modes": [
+          {
+            "clauses": [
+              {
+                "effects": [
+                  {
+                    "type": "MoveToZone",
+                    "value": {
+                      "ref": {
+                        "type": "InSlot",
+                        "value": "card"
+                      },
+                      "zone": "Exile"
+                    }
+                  },
+                  {
+                    "type": "GainLife",
+                    "value": {
+                      "player": {
+                        "type": "Relative",
+                        "value": "You"
+                      },
+                      "quantity": {
+                        "type": "Literal",
+                        "value": 2
+                      }
+                    }
+                  }
+                ]
+              }
+            ],
+            "targetSlots": {
+              "card": {
+                "pool": {
+                  "type": "CardsInGraveyard",
+                  "value": {
+                    "type": "Scoped",
+                    "value": {
+                      "type": "AnyPlayer"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          {
+            "clauses": [
+              {
+                "effects": [
+                  {
+                    "type": "Destroy",
+                    "value": {
+                      "ref": {
+                        "type": "InSlot",
+                        "value": "permanent"
+                      },
+                      "regenerability": "Regenerable"
+                    }
+                  }
+                ]
+              }
+            ],
+            "targetSlots": {
+              "permanent": {
+                "filter": {
+                  "type": "And",
+                  "value": [
+                    {
+                      "type": "Or",
+                      "value": [
+                        {
+                          "type": "HasCardType",
+                          "value": "Artifact"
+                        },
+                        {
+                          "type": "HasCardType",
+                          "value": "Enchantment"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "Measures",
+                      "value": {
+                        "comparison": "AtMost",
+                        "measure": "ManaValue",
+                        "operand": {
+                          "type": "Literal",
+                          "value": 3
+                        }
+                      }
+                    }
+                  ]
+                },
+                "pool": {
+                  "type": "Permanents"
+                }
+              }
+            }
+          }
+        ]
+      },
+      "typeLine": {
+        "types": [
+          "Instant"
+        ]
+      }
+    }
+  ]
+}

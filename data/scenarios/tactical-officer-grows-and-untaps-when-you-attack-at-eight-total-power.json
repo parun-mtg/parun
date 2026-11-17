@@ -1,0 +1,208 @@
+{
+  "description": "CR 508.1m, 603.2: Tactical Officer triggers when its controller attacks while their creatures have total power 8 or greater, not 7, putting a +1/+1 counter on itself and untapping it",
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "name": "alice",
+        "battlefield": [
+          {
+            "card": "Tactical Officer",
+            "label": "officer",
+            "ready": true
+          },
+          {
+            "card": "Gray Ogre",
+            "label": "ogre",
+            "ready": true
+          },
+          {
+            "card": "Hill Giant",
+            "label": "giant",
+            "ready": true
+          },
+          {
+            "card": "Mountain",
+            "label": "m1"
+          }
+        ],
+        "hand": [
+          {
+            "card": "Raging Goblin",
+            "label": "goblin"
+          }
+        ],
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ]
+      },
+      {
+        "name": "bob",
+        "battlefield": [],
+        "hand": [],
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ]
+      }
+    ],
+    "step": "PrecombatMain"
+  },
+  "timeline": [
+    {
+      "turn": 1,
+      "step": "DeclareAttackers",
+      "player": "alice",
+      "do": {
+        "Attack": [
+          "$officer",
+          "$ogre",
+          "$giant"
+        ]
+      }
+    },
+    {
+      "turn": 1,
+      "step": "DeclareAttackers",
+      "player": "alice",
+      "check": {
+        "View": {
+          "of": "Stack",
+          "is": []
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "DeclareAttackers",
+      "player": "alice",
+      "check": {
+        "Tapped": {
+          "object": "$officer",
+          "tapped": true
+        }
+      }
+    },
+    {
+      "turn": 3,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "do": {
+        "Cast": {
+          "object": "$goblin",
+          "mana": [
+            "$m1"
+          ]
+        }
+      }
+    },
+    {
+      "turn": 3,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "do": "Pass"
+    },
+    {
+      "turn": 3,
+      "step": "DeclareAttackers",
+      "player": "alice",
+      "do": {
+        "Attack": [
+          "$officer",
+          "$ogre",
+          "$giant",
+          "Raging Goblin"
+        ]
+      }
+    },
+    {
+      "turn": 3,
+      "step": "DeclareAttackers",
+      "player": "alice",
+      "check": {
+        "View": {
+          "of": "Stack",
+          "is": [
+            "trigger of $officer"
+          ]
+        }
+      }
+    },
+    {
+      "turn": 3,
+      "step": "DeclareAttackers",
+      "player": "alice",
+      "do": "Pass"
+    },
+    {
+      "turn": 3,
+      "step": "DeclareAttackers",
+      "player": "alice",
+      "check": {
+        "Counters": {
+          "object": "$officer",
+          "kind": {
+            "type": "PlusOnePlusOne"
+          },
+          "count": 1
+        }
+      }
+    },
+    {
+      "turn": 3,
+      "step": "DeclareAttackers",
+      "player": "alice",
+      "check": {
+        "Tapped": {
+          "object": "$officer",
+          "tapped": false
+        }
+      }
+    }
+  ]
+}
