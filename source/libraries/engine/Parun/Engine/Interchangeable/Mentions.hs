@@ -1013,6 +1013,8 @@ playerEffectNames asking =
           Children.playerManaRestriction = Const.Const . manaRestrictionNames asking,
           Children.playerDamage = Const.Const . damagePatternNames asking,
           Children.playerKeyword = Const.Const . keywordNames asking,
+          -- A creature type names no object and reads no history.
+          Children.playerCreatureSubtype = const (Const.Const mempty),
           Children.playerLooksBack = Const.Const . history asking
         }
 

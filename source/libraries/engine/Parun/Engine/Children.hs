@@ -2201,6 +2201,8 @@ data PlayerEffectChildren f = MkPlayerEffectChildren
     playerDamage :: DamagePattern.DamagePattern -> f DamagePattern.DamagePattern,
     -- | A keyword an effect gives a spell (CR 611.2f), whole.
     playerKeyword :: Keyword.Keyword -> f Keyword.Keyword,
+    -- | A creature type an effect adds to a spell (CR 205.3m).
+    playerCreatureSubtype :: Subtype.Subtype -> f Subtype.Subtype,
     -- | The events the engine looks back over to apply the effect.
     playerLooksBack :: HistoryRead.HistoryRead -> f ()
   }
@@ -2223,6 +2225,7 @@ playerEffectLeaves =
       playerManaRestriction = pure,
       playerDamage = pure,
       playerKeyword = pure,
+      playerCreatureSubtype = pure,
       playerLooksBack = const (pure ())
     }
 
@@ -2287,7 +2290,7 @@ playerEffectChildren c effect = case effect of
   PlayerEffect.CastOnlyAtSorcerySpeed -> pure effect
   PlayerEffect.CantPlayLands filter_ -> PlayerEffect.CantPlayLands <$> playerFilter c filter_
   PlayerEffect.CastFrom (CastFromZone.MkCastFromZone from matching limit verb pool additionalCosts reduction spending alternativeCost entersWith amount creatureTypes) ->
-    fmap PlayerEffect.CastFrom (CastFromZone.MkCastFromZone <$> playerZone c from <*> playerFilter c matching <*> pure limit <*> pure verb <*> pure pool <*> traverse (playerCostComponent c) additionalCosts <*> pure reduction <*> pure spending <*> pure alternativeCost <*> traverse (\(WithCounters.MkWithCounters counters) -> WithCounters.MkWithCounters <$> traverse (playerQuantity c) counters) entersWith <*> traverse (playerQuantity c) amount <*> pure creatureTypes)
+    fmap PlayerEffect.CastFrom (CastFromZone.MkCastFromZone <$> playerZone c from <*> playerFilter c matching <*> pure limit <*> pure verb <*> pure pool <*> traverse (playerCostComponent c) additionalCosts <*> pure reduction <*> pure spending <*> pure alternativeCost <*> traverse (\(WithCounters.MkWithCounters counters) -> WithCounters.MkWithCounters <$> traverse (playerQuantity c) counters) entersWith <*> traverse (playerQuantity c) amount <*> traverseSet (playerCreatureSubtype c) creatureTypes)
   PlayerEffect.PlayLandsFrom from -> PlayerEffect.PlayLandsFrom <$> playerZone c from
   PlayerEffect.PlotFrom (PlotFromZone.MkPlotFromZone from matching) ->
     fmap PlayerEffect.PlotFrom (PlotFromZone.MkPlotFromZone <$> playerZone c from <*> playerFilter c matching)
