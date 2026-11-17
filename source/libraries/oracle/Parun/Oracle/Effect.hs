@@ -762,6 +762,9 @@ joined context predicates = case predicates of
         [(Prose.sentence (clauseText p <> Text.pack " and " <> clauseText q) <> trailing q, allMentions p <> allMentions q) | fmap Target.wording (subject q) == Just (Text.pack "you")]
           <> [(Prose.sentence (clauseText p <> Text.pack " and " <> verb q) <> trailing q, allMentions p <> mentions q)]
           <> [(Prose.sentence ((if implied p then verb p else clauseText p) <> Text.pack ", then " <> verb q) <> trailing q, allMentions p <> mentions q)]
+          -- Free: two imperatives joined by "and" (Make It So's "create a 1/1
+          -- red Officer creature token and draw two cards").
+          <> [(Prose.sentence (verb p <> Text.pack " and " <> verb q) <> trailing q, allMentions p <> mentions q) | implied p, implied q]
           -- Free: ", then you" (Wall Crawl).
           <> [(Prose.sentence ((if implied p then verb p else clauseText p) <> Text.pack ", then " <> clauseText q) <> trailing q, allMentions p <> allMentions q) | fmap Target.wording (subject q) == Just (Text.pack "you")]
           -- Free for one count read twice: "equal to" each time, above, or one

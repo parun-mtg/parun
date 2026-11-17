@@ -1814,6 +1814,7 @@ filterPositionLintSpec s registry corpus = Spec.describe s "Lint" $ do
         ("Vexing Arcanix", 3), -- its two moves' ObjectRefs and its damage clause's gate
         ("Booby Trap", 1), -- its trigger condition
         ("Summoner's Bond", 2), -- its trigger condition and its own search
+        ("Kai Winn, Faithless Leader", 2), -- its trigger condition's two disjuncts
         ("The Clone Saga", 1), -- its delayed trigger's condition, read after the Saga is gone
         ("Pithing Needle", 1), -- its activation prohibition's affected set
         ("Phyrexian Revoker", 1), -- its activation prohibition's affected set
