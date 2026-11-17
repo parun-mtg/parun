@@ -2479,6 +2479,7 @@ library play
     Parun.Play.Key
     Parun.Play.KeySpec
     Parun.Play.Match
+    Parun.Play.Offer
     Parun.Play.Protocol
     Parun.Play.Record
     Parun.Play.Render
