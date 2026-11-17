@@ -4,12 +4,13 @@ module Parun.Types.AttackTargetKind where
 -- thing itself left out: Parun.Types.AttackTarget stripped of its payload.
 --
 -- One arm per AttackTarget arm, and named alike, so a fourth attackable thing is
--- a compile error at both types at once. Parun.Engine.Combat.attackTargetKind is
+-- a compile error at both types at once. Parun.Engine.Game.attackTargetKind is
 -- the mapping.
 --
 -- What wants the kind without the object is a restriction naming a CLASS of
 -- announcement rather than a permanent -- Parun.Types.CantAttackPlayer's `kinds`,
--- Vow of Flight's "can't attack you or planeswalkers you control".
+-- Vow of Flight's "can't attack you or planeswalkers you control" -- and a
+-- reading of the turn's attacks by class, Parun.Types.PlayerScope's AttackedYou.
 --
 -- Bounded and Enum for Parun.Codec.AttackTargetKind's Arm.enum.
 data AttackTargetKind

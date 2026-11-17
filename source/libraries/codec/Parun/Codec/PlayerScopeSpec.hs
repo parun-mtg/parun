@@ -1,8 +1,11 @@
 module Parun.Codec.PlayerScopeSpec where
 
+import qualified Data.Set as Set
 import qualified Parun.Codec.PlayerScope as PlayerScope
 import qualified Parun.JsonCodec.Common as Common
 import qualified Parun.Spec as Spec
+import qualified Parun.Types.AttackTargetKind as AttackTargetKind
+import qualified Parun.Types.AttackedDuring as AttackedDuring
 import qualified Parun.Types.Comparison as Comparison
 import qualified Parun.Types.PlayerMeasure as PlayerMeasure
 import qualified Parun.Types.PlayerRelation as PlayerRelation
@@ -72,11 +75,18 @@ spec s = Spec.describe s "Parun.Codec.PlayerScope" $ do
       PlayerScope.EnchantedPlayer
       " {\"type\":\"EnchantedPlayer\"} "
   -- Weathered Sentinels' "players who attacked you during their last turn" (CR 508.1b).
-  Spec.it s "AttackedYouLastTurn" $
+  Spec.it s "AttackedYou TheirLastTurn" $
     Common.assertCodec
       s
       PlayerScope.codec
-      PlayerScope.AttackedYouLastTurn
-      " {\"type\":\"AttackedYouLastTurn\"} "
+      (PlayerScope.AttackedYou AttackedDuring.TheirLastTurn (Set.singleton AttackTargetKind.OfPlayer))
+      " {\"type\":\"AttackedYou\",\"value\":{\"during\":\"TheirLastTurn\",\"kinds\":[\"OfPlayer\"]}} "
+  -- Sandswirl Wanderglyph's "who attacked you or a planeswalker you control this turn" (CR 508.5).
+  Spec.it s "AttackedYou ThisTurn" $
+    Common.assertCodec
+      s
+      PlayerScope.codec
+      (PlayerScope.AttackedYou AttackedDuring.ThisTurn (Set.fromList [AttackTargetKind.OfPlayer, AttackTargetKind.OfPlaneswalker]))
+      " {\"type\":\"AttackedYou\",\"value\":{\"during\":\"ThisTurn\",\"kinds\":[\"OfPlayer\",\"OfPlaneswalker\"]}} "
   Spec.it s "has a schema" $
     Common.assertHasSchema s PlayerScope.codec

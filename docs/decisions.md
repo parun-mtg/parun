@@ -2525,3 +2525,23 @@ Entries are ordered by the first rule each cites.
 - **Site**: `Parun.Engine.Event.activating`, proved by the scenario
   "cr-734-1-market-gnome-exiled-by-a-kept-food-chain-during-a-reversed-craft-still-triggers".
 - **Issue**: #8311.
+
+## Whose planeswalker an opponent "attacked" this turn
+
+- **Question**: Sandswirl Wanderglyph's "each opponent who attacked you or a
+  planeswalker you control this turn". Is "you control" read of the
+  planeswalker as the attack was declared, or now? Bob attacks alice's
+  planeswalker and carol later takes it: is bob still locked out? Bob attacks
+  carol's planeswalker and alice later takes it: is he locked out?
+- **Rules**: CR 508.1b, 508.5, 506.4; Sandswirl Wanderglyph's rulings of
+  2023-11-10; CR of 2026-11-06.
+- **Decision**: As declared. The attack recorded its defending player (CR
+  508.5), so the first board locks bob out and the second does not.
+- **Rejected**: Now, which reads "you control" as a question about the
+  planeswalker rather than about the attack, and is the reading "The seat of a
+  departed attacker's planeswalker" already turned down for Mangara.
+- **Site**: `Parun.Engine.Game.attacked`, a FENCE: no scenario changes an
+  attacked planeswalker's controller. The scenario
+  cr-508-5-sandswirl-wanderglyph-stops-an-opponent-who-attacked-your-planeswalker-from-casting-spells
+  proves the planeswalker arm.
+- **Issue**: #8290.
