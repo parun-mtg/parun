@@ -2348,7 +2348,7 @@ effectLintSpec s registry corpus = Spec.describe s "Lint" $ do
           -- CR 121.1's slot, whose plurality is read exactly as the mill's is:
           -- Parun.Engine.Resolve's Draw arm binds the singular shape only when one
           -- card was drawn across every drawer.
-          Effect.Draw (Draw.MkDraw player quantity mSlot)
+          Effect.Draw (Draw.MkDraw player quantity mSlot _)
             | not (takesAtMostOne player quantity) ->
                 Maybe.maybeToList mSlot
           -- No ref test: Parun.Engine.Resolve's Destroy arm writes both through
@@ -2587,7 +2587,7 @@ effectLintSpec s registry corpus = Spec.describe s "Lint" $ do
         -- quantity which aims an inner number at the one object a slot names.
         -- Nothing about the opcode matters: what is on trial is the atom inside
         -- the number.
-        counting quantity = Effect.Draw (Draw.MkDraw (PlayerRef.Relative PlayerRelation.You) quantity Nothing)
+        counting quantity = Effect.Draw (Draw.MkDraw (PlayerRef.Relative PlayerRelation.You) quantity Nothing Nothing)
         dealing dealer quantity = Effect.DealDamage (DealDamage.MkDealDamage (Seq.singleton (DamagePart.MkDamagePart (ObjectRef.InSlot elsewhereSlot) quantity)) (Just dealer) Nothing Nothing Nothing Nothing Nothing)
         against slot = Quantity.Type.AgainstSlot (AgainstSlot.MkAgainstSlot slot (Quantity.Type.Measure Measure.Power))
         -- The corpus half of the number leg: does any card read ANY slot inside a

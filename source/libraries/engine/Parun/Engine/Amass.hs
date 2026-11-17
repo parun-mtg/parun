@@ -182,7 +182,7 @@ jaceToken =
           (Set.singleton Color.Blue)
           Nothing
           [ loyaltyAbility 1 (Effect.Surveil (Surveil.MkSurveil you (Quantity.Literal 1) Nothing)),
-            loyaltyAbility 3 (Effect.Draw (Draw.MkDraw you (Quantity.Literal 1) Nothing))
+            loyaltyAbility 3 (Effect.Draw (Draw.MkDraw you (Quantity.Literal 1) Nothing Nothing))
           ]
       you = PlayerRef.Relative PlayerRelation.You
    in card {Card.faces = fmap (\face -> face {Face.loyalty = Just (Loyalty.Literal 0)}) (Card.faces card)}

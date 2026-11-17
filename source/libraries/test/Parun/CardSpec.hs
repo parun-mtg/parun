@@ -624,7 +624,7 @@ instantLine = spellLine CardType.Instant Set.empty Set.empty
 -- "You draw this many cards" -- the smallest payload an ability can carry, used
 -- below only so that two abilities can be told apart by their effect.
 youDraw :: Integer -> Effect.Effect Card.Type.Card (GrantedAbility.GrantedAbility Card.Type.Card)
-youDraw n = Effect.Draw (Draw.MkDraw (PlayerRef.Relative PlayerRelation.You) (Quantity.Type.Literal n) Nothing)
+youDraw n = Effect.Draw (Draw.MkDraw (PlayerRef.Relative PlayerRelation.You) (Quantity.Type.Literal n) Nothing Nothing)
 
 -- "This object has [keyword]" as a static ability (CR 604.1), the smallest
 -- carrier Face.staticAbilities takes.
@@ -899,7 +899,7 @@ playerRefPositions =
         ("add-mana-pooled", Effect.AddMana (ManaAddition.MkManaAddition (plantedPlayer "amp") (ManaProduction.Pooled (ManaCount.MkManaCount (plantedPlayer "amp-pool") ManaFilter.Any)) (Quantity.Type.Literal 1) ManaRetention.Ordinary Nothing Nothing Nothing False), [plantedPlayer "amp", plantedPlayer "amp-pool"]),
         ("firebend", Effect.Firebend (ManaAddition.MkManaAddition (plantedPlayer "fb") (ManaProduction.AnyColor ColorSpread.OneColor) (Quantity.Type.Literal 1) ManaRetention.Ordinary Nothing Nothing Nothing False), [plantedPlayer "fb"]),
         ("search", Effect.Search (Search.MkSearch (plantedPlayer "se-searcher") (plantedPlayer "se-owner") Set.empty False Nothing (Filter.Type.And []) Seq.empty False SearchDestination.Battlefield Map.empty Nothing Nothing Nothing Nothing Set.empty False False Nothing), [plantedPlayer "se-searcher", plantedPlayer "se-owner"]),
-        ("draw", Effect.Draw (Draw.MkDraw (plantedPlayer "dr") one Nothing), [plantedPlayer "dr"]),
+        ("draw", Effect.Draw (Draw.MkDraw (plantedPlayer "dr") one Nothing Nothing), [plantedPlayer "dr"]),
         ("mill", Effect.Mill (Mill.MkMill (plantedPlayer "mi") one Nothing Nothing), [plantedPlayer "mi"]),
         ("scry", Effect.Scry (playerQuantity "sc"), [plantedPlayer "sc"]),
         ("surveil", Effect.Surveil (Surveil.MkSurveil (plantedPlayer "su") one Nothing), [plantedPlayer "su"]),
@@ -5364,7 +5364,7 @@ effectFilters effect = case effect of
   -- canHostSubjects sweeps the same shape -- the lint is about the positions a
   -- card author can write, not about which of them the pool has used.
   Effect.MoveToZone (MoveToZone.MkMoveToZone ref _ riders _ _ placement _) -> frame SourceHostFramed (objectRefFilters ref) <> frame Unframed (riderFilters riders <> concatMap quantityFilters (Resolve.placementQuantities placement))
-  Effect.Draw (Draw.MkDraw _ quantity _) -> frame Unframed (quantityFilters quantity)
+  Effect.Draw (Draw.MkDraw _ quantity _ _) -> frame Unframed (quantityFilters quantity)
   -- The tally's Filter is a position a card author writes, so the lint reaches
   -- it: rule 729.1's "nonland card" is one of these, and Predict's chosen name
   -- another -- which is why the tally carries a framing of its own.

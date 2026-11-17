@@ -1807,7 +1807,7 @@ cycling cost searchFor =
   -- activated it, and rule 702.29e prints "your library". The reveal is part of
   -- the destination because it is part of that same sentence (CR 701.23e).
   let effect = case searchFor of
-        Nothing -> Effect.Draw (Draw.MkDraw (PlayerRef.Relative PlayerRelation.You) (Quantity.Literal 1) Nothing)
+        Nothing -> Effect.Draw (Draw.MkDraw (PlayerRef.Relative PlayerRelation.You) (Quantity.Literal 1) Nothing Nothing)
         -- CR 702.29e's "search your library for a [quality] card", so one card is
         -- the whole instruction's count.
         Just filter_ ->
@@ -4551,7 +4551,7 @@ whilePaid paid modifications =
 -- battlefield, draw a card" -- CR 700.4's "dies", a CR 603.10a look-back.
 blitzDraw :: TriggeredAbility Card (GrantedAbility.GrantedAbility Card)
 blitzDraw =
-  let effect = Effect.Draw Draw.MkDraw {Draw.player = PlayerRef.Relative PlayerRelation.You, Draw.quantity = Quantity.Literal 1, Draw.slot = Nothing}
+  let effect = Effect.Draw Draw.MkDraw {Draw.player = PlayerRef.Relative PlayerRelation.You, Draw.quantity = Quantity.Literal 1, Draw.slot = Nothing, Draw.drawers = Nothing}
    in Mint.trigger (TriggerCondition.Leaves (LeavesTrigger.dies LeavingPermanent.Self)) (Seq.singleton effect)
 
 -- CR 702.161a: "During your turn, this permanent is an artifact creature in
@@ -6806,7 +6806,7 @@ giftEffect :: Gift.Gift -> KeywordInstance.KeywordInstance -> Effect.Effect Card
 giftEffect something instance_ =
   let chosen = PlayerRef.ChosenPlayerOfBound Binding.triggerSource (PlayerChoice.Promised (printedGift something) instance_)
    in case something of
-        Gift.Card -> Effect.Draw Draw.MkDraw {Draw.player = chosen, Draw.quantity = Quantity.Literal 1, Draw.slot = Nothing}
+        Gift.Card -> Effect.Draw Draw.MkDraw {Draw.player = chosen, Draw.quantity = Quantity.Literal 1, Draw.slot = Nothing, Draw.drawers = Nothing}
         Gift.TappedFish subtype -> giftToken chosen TapState.Tapped (blueCreatureToken subtype 1 1)
         Gift.Octopus subtype -> giftToken chosen TapState.Untapped (blueCreatureToken subtype 8 8)
         Gift.Food -> giftToken chosen TapState.Untapped foodToken
@@ -7022,7 +7022,7 @@ spiritToken =
 -- Draw.slot is Nothing: rule 702.156a names no later clause that reads the card.
 ravenous :: TriggeredAbility Card (GrantedAbility.GrantedAbility Card)
 ravenous =
-  let effect = Effect.Draw Draw.MkDraw {Draw.player = PlayerRef.Relative PlayerRelation.You, Draw.quantity = Quantity.Literal 1, Draw.slot = Nothing}
+  let effect = Effect.Draw Draw.MkDraw {Draw.player = PlayerRef.Relative PlayerRelation.You, Draw.quantity = Quantity.Literal 1, Draw.slot = Nothing, Draw.drawers = Nothing}
    in Mint.triggerIf
         (TriggerCondition.Enters EntersTrigger.defaultValue)
         ( Condition.Compares

@@ -296,7 +296,7 @@ yourRingBearer =
 -- theRingDrainsOnCombatDamage's reasons.
 theRingLootsOnAttack :: TriggeredAbility.TriggeredAbility Card.Card (GrantedAbility.GrantedAbility Card.Card)
 theRingLootsOnAttack =
-  let draw = Effect.Draw (Draw.MkDraw (PlayerRef.Relative PlayerRelation.You) (Quantity.Literal 1) Nothing)
+  let draw = Effect.Draw (Draw.MkDraw (PlayerRef.Relative PlayerRelation.You) (Quantity.Literal 1) Nothing Nothing)
       discard =
         Effect.Discard
           ( Discard.Counted

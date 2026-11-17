@@ -40,7 +40,7 @@ endStepDraw :: TriggeredAbility Card (GrantedAbility.GrantedAbility Card)
 endStepDraw =
   Mint.trigger
     (TriggerCondition.StepBegins (StepBegins.MkStepBegins (Phase.Ending EndingStep.EndStep) Nothing (TurnScope.PlayersTurn (PlayerRef.Relative PlayerRelation.You))))
-    (Seq.singleton (Effect.Draw (Draw.MkDraw (PlayerRef.Relative PlayerRelation.You) (Quantity.Literal 1) Nothing)))
+    (Seq.singleton (Effect.Draw (Draw.MkDraw (PlayerRef.Relative PlayerRelation.You) (Quantity.Literal 1) Nothing Nothing)))
 
 -- CR 726.2's crown steal. Controlled by the current monarch; makes a DIFFERENT
 -- player (the damager's controller) the monarch.

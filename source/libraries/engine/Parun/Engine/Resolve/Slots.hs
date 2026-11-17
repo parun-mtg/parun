@@ -866,7 +866,7 @@ effectPlayerRefs effect = case effect of
     riderPlayerRefs (MoveToZone.riders move) <> case MoveToZone.placement move of
       LibraryPlacement.ArrangedBy arrival -> [ArrangedArrival.chooser arrival]
       _ -> []
-  Effect.Draw (Draw.MkDraw ref _ _) -> [ref]
+  Effect.Draw (Draw.MkDraw ref _ _ _) -> [ref]
   Effect.Mill (Mill.MkMill ref _ _ _) -> [ref]
   Effect.Reveal (Reveal.MkReveal _ _ revealer) -> Maybe.maybeToList revealer
   Effect.FromOutsideTheGame {} -> []
@@ -1290,7 +1290,7 @@ slotsOf effect = joinTwo (joinTwo (joinSlots (fmap objectRefSlots (effectObjectR
   Effect.ExchangeBlocks (ExchangeBlocks.MkExchangeBlocks firstSlot secondSlot) -> insertOne firstSlot (oneSlot secondSlot)
   Effect.MoveToZone (MoveToZone.MkMoveToZone _ _ riders _ _ placement _) -> joinTwo (joinSlots (fmap quantitySlots (riderQuantities riders <> placementQuantities placement))) (riderSlots riders)
   -- CR 121.1's bound slot is a DEFINITION, not a read: see boundSlots below.
-  Effect.Draw (Draw.MkDraw _ quantity _) -> quantitySlots quantity
+  Effect.Draw (Draw.MkDraw _ quantity _ _) -> quantitySlots quantity
   -- The tally's slot and CR 701.17c's are DEFINITIONS, not reads: see boundSlots
   -- below.
   Effect.Mill (Mill.MkMill _ quantity _ _) -> quantitySlots quantity
@@ -2236,7 +2236,7 @@ ownSlotsAreExhaustive effect = case effect of
   -- The entry rider nests a Quantity of its own, CR 122.6's count per kind; the
   -- ref's is effectObjectRefs' above.
   Effect.MoveToZone (MoveToZone.MkMoveToZone _ _ riders _ _ placement _) -> all Quantity.slotsAreExhaustive (riderQuantities riders <> placementQuantities placement)
-  Effect.Draw (Draw.MkDraw _ quantity _) -> Quantity.slotsAreExhaustive quantity
+  Effect.Draw (Draw.MkDraw _ quantity _ _) -> Quantity.slotsAreExhaustive quantity
   Effect.Mill (Mill.MkMill _ quantity _ _) -> Quantity.slotsAreExhaustive quantity
   Effect.Reveal {} -> True
   Effect.LookAt {} -> True
@@ -2554,7 +2554,7 @@ hasRead wanted =
         -- The entry rider is a nested position of its own, CR 122.6's count per
         -- kind, and no ObjectRef holds it.
         Effect.MoveToZone (MoveToZone.MkMoveToZone _ _ riders _ _ placement _) -> any (Quantity.hasRead wanted) (riderQuantities riders <> placementQuantities placement)
-        Effect.Draw (Draw.MkDraw _ quantity _) -> Quantity.hasRead wanted quantity
+        Effect.Draw (Draw.MkDraw _ quantity _ _) -> Quantity.hasRead wanted quantity
         Effect.Mill (Mill.MkMill _ quantity _ _) -> Quantity.hasRead wanted quantity
         Effect.Reveal {} -> False
         Effect.LookAt {} -> False
@@ -2878,8 +2878,8 @@ boundSlots effect = case effect of
   Effect.SwitchBlockers _ -> Set.empty
   Effect.ExchangeBlocks _ -> Set.empty
   -- CR 121.1's cards "drawn this way", as CR 400.7's incarnations in the hand
-  -- they arrived in.
-  Effect.Draw (Draw.MkDraw _ _ mSlot) -> foldMap Set.singleton mSlot
+  -- they arrived in, and the players who drew them.
+  Effect.Draw (Draw.MkDraw _ _ mSlot mDrawers) -> foldMap Set.singleton mSlot <> foldMap Set.singleton mDrawers
   -- CR 701.9a's cards "discarded this way", as CR 400.7's incarnations.
   --
   -- PROVEN rather than fenced: Psychic Miasma's second clause counts over CR

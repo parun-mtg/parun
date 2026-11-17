@@ -10,15 +10,17 @@ import qualified Parun.JsonCodec.Common as Common
 import qualified Parun.JsonCodec.Fields as Fields
 import qualified Parun.Types.Draw as Draw
 
--- | The slot is ELIDED when absent, as Mill's is.
+-- | Each slot is ELIDED when absent, as Mill's is.
 codec :: Codec.Codec Draw.Draw
 codec = Fields.object $ do
   player <- Fields.required "player" PlayerRef.codec Draw.player
   quantity <- Fields.required "quantity" Quantity.codec Draw.quantity
   slot <- Fields.defaulted "slot" Nothing (Common.maybe SlotName.codec) Draw.slot
+  drawers <- Fields.defaulted "drawers" Nothing (Common.maybe SlotName.codec) Draw.drawers
   pure
     Draw.MkDraw
       { Draw.player = player,
         Draw.quantity = quantity,
-        Draw.slot = slot
+        Draw.slot = slot,
+        Draw.drawers = drawers
       }

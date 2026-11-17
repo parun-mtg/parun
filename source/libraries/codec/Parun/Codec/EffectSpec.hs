@@ -676,13 +676,13 @@ spec s = Spec.describe s "Parun.Codec.Effect" $ do
       s
       toJson
       fromJson
-      (Effect.Draw (Draw.MkDraw (PlayerRef.Relative PlayerRelation.You) (Quantity.Literal 2) Nothing))
+      (Effect.Draw (Draw.MkDraw (PlayerRef.Relative PlayerRelation.You) (Quantity.Literal 2) Nothing Nothing))
       " {\"type\":\"Draw\",\"value\":{\"player\":{\"type\":\"Relative\",\"value\":\"You\"},\"quantity\":{\"type\":\"Literal\",\"value\":2}}} "
     Common.assertJsonCodec
       s
       toJson
       fromJson
-      (Effect.Draw (Draw.MkDraw (PlayerRef.InSlot (SlotName.MkSlotName (Text.pack "target"))) (Quantity.Literal 3) Nothing))
+      (Effect.Draw (Draw.MkDraw (PlayerRef.InSlot (SlotName.MkSlotName (Text.pack "target"))) (Quantity.Literal 3) Nothing Nothing))
       " {\"type\":\"Draw\",\"value\":{\"player\":{\"type\":\"InSlot\",\"value\":\"target\"},\"quantity\":{\"type\":\"Literal\",\"value\":3}}} "
   -- No-Regrets Egret's "you may reveal No-Regrets Egret", which names itself
   -- through CR 113.7's reserved self slot.
@@ -1241,7 +1241,7 @@ spec s = Spec.describe s "Parun.Codec.Effect" $ do
           ForEachNumber.MkForEachNumber
             { ForEachNumber.upTo = Quantity.InSlot (SlotName.MkSlotName (Text.pack "X")),
               ForEachNumber.slot = SlotName.MkSlotName (Text.pack "number"),
-              ForEachNumber.body = Seq.singleton (Effect.Draw (Draw.MkDraw (PlayerRef.Relative PlayerRelation.You) (Quantity.InSlot (SlotName.MkSlotName (Text.pack "number"))) Nothing))
+              ForEachNumber.body = Seq.singleton (Effect.Draw (Draw.MkDraw (PlayerRef.Relative PlayerRelation.You) (Quantity.InSlot (SlotName.MkSlotName (Text.pack "number"))) Nothing Nothing))
             }
       )
       " {\"type\":\"ForEachNumber\",\"value\":{\"upTo\":{\"type\":\"InSlot\",\"value\":\"X\"},\"slot\":\"number\",\"body\":[{\"type\":\"Draw\",\"value\":{\"player\":{\"type\":\"Relative\",\"value\":\"You\"},\"quantity\":{\"type\":\"InSlot\",\"value\":\"number\"}}}]}} "
@@ -1250,7 +1250,7 @@ spec s = Spec.describe s "Parun.Codec.Effect" $ do
       s
       toJson
       fromJson
-      (Effect.Repeat (Repeat.MkRepeat (Again.AskPlayer (PlayerRef.Relative PlayerRelation.You)) (Seq.singleton (Effect.Draw (Draw.MkDraw (PlayerRef.Relative PlayerRelation.You) (Quantity.Literal 1) Nothing))) Nothing Nothing Seq.empty))
+      (Effect.Repeat (Repeat.MkRepeat (Again.AskPlayer (PlayerRef.Relative PlayerRelation.You)) (Seq.singleton (Effect.Draw (Draw.MkDraw (PlayerRef.Relative PlayerRelation.You) (Quantity.Literal 1) Nothing Nothing))) Nothing Nothing Seq.empty))
       " {\"type\":\"Repeat\",\"value\":{\"again\":{\"type\":\"AskPlayer\",\"value\":{\"type\":\"Relative\",\"value\":\"You\"}},\"body\":[{\"type\":\"Draw\",\"value\":{\"player\":{\"type\":\"Relative\",\"value\":\"You\"},\"quantity\":{\"type\":\"Literal\",\"value\":1}}}]}} "
   -- Grist, the Hunger Tide's +1: go again only while the process's tally says so.
   Spec.it s "RepeatIf" $
@@ -1260,7 +1260,7 @@ spec s = Spec.describe s "Parun.Codec.Effect" $ do
       fromJson
       ( Effect.RepeatIf
           RepeatIf.MkRepeatIf
-            { RepeatIf.process = Seq.singleton (Effect.Draw (Draw.MkDraw (PlayerRef.Relative PlayerRelation.You) (Quantity.Literal 1) Nothing)),
+            { RepeatIf.process = Seq.singleton (Effect.Draw (Draw.MkDraw (PlayerRef.Relative PlayerRelation.You) (Quantity.Literal 1) Nothing Nothing)),
               RepeatIf.condition = Condition.Compares (Compares.MkCompares (Quantity.InSlot (SlotName.MkSlotName (Text.pack "milled"))) Comparison.AtLeast (Quantity.Literal 1)),
               RepeatIf.ifHolds = Seq.empty
             }

@@ -802,7 +802,7 @@ abilitySlotLintSpec s registry corpus = Spec.describe s "Lint" $ do
         pileOf n = ExiledPile.OfAbility (named n)
         you = PlayerRef.Relative PlayerRelation.You
         positions =
-          [ ("quantity", \n -> Effect.Draw (Draw.MkDraw you (Quantity.Type.AgainstExiledPile (AgainstExiledPile.MkAgainstExiledPile (pileOf n) (Quantity.Type.Literal 1))) Nothing)),
+          [ ("quantity", \n -> Effect.Draw (Draw.MkDraw you (Quantity.Type.AgainstExiledPile (AgainstExiledPile.MkAgainstExiledPile (pileOf n) (Quantity.Type.Literal 1))) Nothing Nothing)),
             ("filter", \n -> Effect.PlayerSacrifices (PlayerSacrifices.MkPlayerSacrifices you Nothing (Filter.Type.IsExiledWithSource (pileOf n)) (Quantity.Type.Literal 1) Nothing)),
             ("permission pool", \n -> Effect.AffectPlayers (AffectPlayers.MkAffectPlayers Duration.UntilEndOfTurn (AffectedPlayers.Scoped (PlayerScope.Related PlayerRelation.You)) (PlayerEffect.CastFrom (CastFromZone.MkCastFromZone (InZone.MkInZone Zone.Exile (PlayerRef.Relative PlayerRelation.AnyPlayer)) (Filter.Type.And []) PermissionLimit.Unlimited PermissionVerb.Cast (PermissionPool.InExiledPile (pileOf n)) [] 0 ManaSpending.AsProduced Nothing Nothing Nothing Set.empty False))))
           ]
@@ -1050,7 +1050,7 @@ abilitySlotLintSpec s registry corpus = Spec.describe s "Lint" $ do
         sweeps = anyFaceOrMinted cardOffends
         offenders = filter (sweeps . Printing.card) ps
         -- Rule 702.70a's shape, as a targetless read of "that player".
-        tokenDrawing condition = (vanillaFace "Token" instantLine) {Face.triggeredAbilities = [oneEffectTrigger condition (Effect.Draw (Draw.MkDraw (PlayerRef.InSlot Binding.triggerPlayer) (Quantity.Type.Literal 1) Nothing))]}
+        tokenDrawing condition = (vanillaFace "Token" instantLine) {Face.triggeredAbilities = [oneEffectTrigger condition (Effect.Draw (Draw.MkDraw (PlayerRef.InSlot Binding.triggerPlayer) (Quantity.Type.Literal 1) Nothing Nothing))]}
     Spec.assertEqWith s "no dangling triggered-ability slot" (fmap (S.nameOf . Printing.card) offenders) []
     Spec.assertBool s (sweeps (mintingSpell createToken (tokenDrawing (TriggerCondition.Leaves (LeavesTrigger.dies LeavingPermanent.Self))))) "a token's dies trigger reading thatPlayer is caught"
     Spec.assertBool s (not (sweeps (mintingSpell createToken (tokenDrawing Mint.dealsCombatDamageToAPlayer)))) "and its combat-damage trigger reading thatPlayer is accepted"
@@ -1066,7 +1066,7 @@ abilitySlotLintSpec s registry corpus = Spec.describe s "Lint" $ do
     let -- Endless Cockroaches' own payload: "return it to its owner's hand".
         returnIt = Effect.MoveToZone (MoveToZone.MkMoveToZone (ObjectRef.InSlot Binding.became) Zone.Hand EntryRiders.defaultValue Nothing Nothing LibraryPlacement.defaultValue Nothing)
         -- Rule 702.70a's shape, as a targetless read of "that player".
-        thatPlayerDraws = Effect.Draw (Draw.MkDraw (PlayerRef.InSlot Binding.triggerPlayer) (Quantity.Type.Literal 1) Nothing)
+        thatPlayerDraws = Effect.Draw (Draw.MkDraw (PlayerRef.InSlot Binding.triggerPlayer) (Quantity.Type.Literal 1) Nothing Nothing)
     Spec.assertBool
       s
       (triggeredAbilityOffends (oneEffectTrigger (TriggerCondition.Enters EntersTrigger.defaultValue) returnIt))
@@ -1197,7 +1197,7 @@ abilitySlotLintSpec s registry corpus = Spec.describe s "Lint" $ do
   Spec.it s "the lint itself catches a slot read only from a clause's condition" $ do
     let gated condition =
           Mode.MkMode
-            (Seq.fromList [Mint.mandatory (Seq.singleton (Effect.Draw (Draw.MkDraw (PlayerRef.Relative PlayerRelation.You) (Quantity.Type.Literal 1) Nothing))), Clause.MkClause Nothing (Just condition) Nothing Optionality.Mandatory Nothing (Seq.singleton (Effect.Draw (Draw.MkDraw (PlayerRef.Relative PlayerRelation.You) (Quantity.Type.Literal 1) Nothing)))])
+            (Seq.fromList [Mint.mandatory (Seq.singleton (Effect.Draw (Draw.MkDraw (PlayerRef.Relative PlayerRelation.You) (Quantity.Type.Literal 1) Nothing Nothing))), Clause.MkClause Nothing (Just condition) Nothing Optionality.Mandatory Nothing (Seq.singleton (Effect.Draw (Draw.MkDraw (PlayerRef.Relative PlayerRelation.You) (Quantity.Type.Literal 1) Nothing Nothing)))])
             Map.empty
         atLeastOne measured = Condition.Type.Compares (Compares.MkCompares measured Comparison.AtLeast (Quantity.Type.Literal 1))
         -- "if that player has gained life this turn", the reference nested in the
@@ -1245,7 +1245,7 @@ abilitySlotLintSpec s registry corpus = Spec.describe s "Lint" $ do
   Spec.it s "the lint itself catches a slot read only from inside a number" $ do
     let drawsTally ref =
           Mode.MkMode
-            (Seq.singleton (Mint.mandatory (Seq.singleton (Effect.Draw (Draw.MkDraw (PlayerRef.Relative PlayerRelation.You) (Quantity.Type.TalliedThisTurn TurnTally.CardsDiscarded ref) Nothing)))))
+            (Seq.singleton (Mint.mandatory (Seq.singleton (Effect.Draw (Draw.MkDraw (PlayerRef.Relative PlayerRelation.You) (Quantity.Type.TalliedThisTurn TurnTally.CardsDiscarded ref) Nothing Nothing)))))
             Map.empty
     Spec.assertBool
       s
@@ -1268,7 +1268,7 @@ abilitySlotLintSpec s registry corpus = Spec.describe s "Lint" $ do
   Spec.it s "the lint itself catches a slot read only from a damage look-back's recipient" $ do
     let drawsSources ref =
           Mode.MkMode
-            (Seq.singleton (Mint.mandatory (Seq.singleton (Effect.Draw (Draw.MkDraw (PlayerRef.Relative PlayerRelation.You) (Quantity.Type.Count (Count.Type.MkCount (Scope.InHistory (EventShape.SourceDealtDamage (SourceDealtDamage.MkSourceDealtDamage Nothing (Set.singleton (DamageRecipient.Player ref))))) (Filter.Type.And []) Aggregation.Members)) Nothing)))))
+            (Seq.singleton (Mint.mandatory (Seq.singleton (Effect.Draw (Draw.MkDraw (PlayerRef.Relative PlayerRelation.You) (Quantity.Type.Count (Count.Type.MkCount (Scope.InHistory (EventShape.SourceDealtDamage (SourceDealtDamage.MkSourceDealtDamage Nothing (Set.singleton (DamageRecipient.Player ref))))) (Filter.Type.And []) Aggregation.Members)) Nothing Nothing)))))
             Map.empty
     Spec.assertBool
       s
@@ -1311,7 +1311,7 @@ abilitySlotLintSpec s registry corpus = Spec.describe s "Lint" $ do
                             PayGate.marks = Nothing
                           }
                     )
-                    (Seq.singleton (Effect.Draw (Draw.MkDraw (PlayerRef.Relative PlayerRelation.You) (Quantity.Type.Literal 1) Nothing)))
+                    (Seq.singleton (Effect.Draw (Draw.MkDraw (PlayerRef.Relative PlayerRelation.You) (Quantity.Type.Literal 1) Nothing Nothing)))
                 )
             )
             Map.empty
@@ -1387,7 +1387,7 @@ abilitySlotLintSpec s registry corpus = Spec.describe s "Lint" $ do
         readsAnySlot (_, ab) = not (all (Map.null . Resolve.slotsOf) (Modal.allEffects (ActivatedAbility.modal ab)))
         offends (face, ab) = activatedAbilityOffendsGiven (armedReads face) ab
         sweeps = any offends . cardAbilities
-        tokenDrawing slot = (vanillaFace "Token" instantLine) {Face.activatedAbilities = [oneEffectActivated Nothing (Effect.Draw (Draw.MkDraw (PlayerRef.InSlot slot) (Quantity.Type.Literal 1) Nothing))]}
+        tokenDrawing slot = (vanillaFace "Token" instantLine) {Face.activatedAbilities = [oneEffectActivated Nothing (Effect.Draw (Draw.MkDraw (PlayerRef.InSlot slot) (Quantity.Type.Literal 1) Nothing Nothing))]}
     Spec.assertBool s (sweeps (mintingSpell createToken (tokenDrawing Binding.triggerPlayer))) "a token's ability reading thatPlayer is caught"
     Spec.assertBool s (not (sweeps (mintingSpell createToken (tokenDrawing Binding.you)))) "and one reading you is accepted"
     -- Guards the sweep against passing vacuously, in both directions: an empty
@@ -1525,13 +1525,13 @@ abilitySlotLintSpec s registry corpus = Spec.describe s "Lint" $ do
         -- Endless Cockroaches' payload (CR 400.7e) and rule 702.70a's, the two
         -- event slots, neither of which an activation has an event to bind.
         returnIt = Effect.MoveToZone (MoveToZone.MkMoveToZone (ObjectRef.InSlot Binding.became) Zone.Hand EntryRiders.defaultValue Nothing Nothing LibraryPlacement.defaultValue Nothing)
-        thatPlayerDraws = Effect.Draw (Draw.MkDraw (PlayerRef.InSlot Binding.triggerPlayer) (Quantity.Type.Literal 1) Nothing)
+        thatPlayerDraws = Effect.Draw (Draw.MkDraw (PlayerRef.InSlot Binding.triggerPlayer) (Quantity.Type.Literal 1) Nothing Nothing)
         -- CR 113.7's source slot, which every activation DOES bind.
         tapSelf = Effect.Tap (Tap.plain (ObjectRef.InSlot Binding.triggerSource))
         -- An ordinary slot this ability neither declares nor mints.
         tapGhost = Effect.Tap (Tap.plain (ObjectRef.InSlot (SlotName.MkSlotName (Text.pack "ghost"))))
         -- CR 601.2b's announced value, read as a slot rather than as Quantity.X.
-        drawX = Effect.Draw (Draw.MkDraw (PlayerRef.Relative PlayerRelation.You) (Quantity.Type.InSlot Binding.variableX) Nothing)
+        drawX = Effect.Draw (Draw.MkDraw (PlayerRef.Relative PlayerRelation.You) (Quantity.Type.InSlot Binding.variableX) Nothing Nothing)
     Spec.assertBool
       s
       (not (activatedAbilityOffends (oneEffectActivated free youDiscards)))

@@ -1334,7 +1334,7 @@ playerEffects context who n = case Node.tag n of
     pure [Effect.Create Create.MkCreate {Create.quantity = q, Create.card = c, Create.riders = EntryRiders.defaultValue, Create.slot = Nothing, Create.creator = who, Create.linked = False} | (q, c) <- tokens]
   _ -> Node.untranslated n
   where
-    draw q = pure [Effect.Draw Draw.MkDraw {Draw.player = who, Draw.quantity = q, Draw.slot = Nothing}]
+    draw q = pure [Effect.Draw Draw.MkDraw {Draw.player = who, Draw.quantity = q, Draw.slot = Nothing, Draw.drawers = Nothing}]
     -- So much for each object counted (CR 608.2h).
     forEach = do
       (each, counted) <- pair n

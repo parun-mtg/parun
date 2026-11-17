@@ -763,12 +763,12 @@ spec s = Spec.describe s "Parun.Oracle" $ do
     Spec.assertEq s [[Text.pack "You gain 2 life for each card in your hand."]] (Oracle.abilities (spell [clause [gainLifeBy (Quantity.Arithmetic (Arithmetic.Times (Times.MkTimes (Quantity.Literal 2) hand)))]] []))
     let tapped = countOf (Filter.And [Filter.HasCardType CardType.Creature, Filter.IsTapped, Filter.HeldByBound Holder.Controller target]) (onBattlefield (PlayerRef.Relative PlayerRelation.AnyPlayer))
         opponent = [(target, TargetSlot.required Pool.Players (Just (Filter.IsPlayer PlayerRelation.Opponent)))]
-    Spec.assertEq s [[Text.pack "Draw a card for each tapped creature target opponent controls.", Text.pack "Draw cards equal to the number of tapped creatures target opponent controls."]] (Oracle.abilities (spell [clause [Effect.Draw (Draw.MkDraw (PlayerRef.Relative PlayerRelation.You) tapped Nothing)]] opponent))
+    Spec.assertEq s [[Text.pack "Draw a card for each tapped creature target opponent controls.", Text.pack "Draw cards equal to the number of tapped creatures target opponent controls."]] (Oracle.abilities (spell [clause [Effect.Draw (Draw.MkDraw (PlayerRef.Relative PlayerRelation.You) tapped Nothing Nothing)]] opponent))
     let swamps = countOf (Filter.And [Filter.HasSubtype Subtype.Swamp, Filter.HeldBy Holder.Controller PlayerRelation.You]) (onBattlefield (PlayerRef.Relative PlayerRelation.AnyPlayer))
         coffers = activated (Cost.MkCost (Just (ManaCost.MkManaCost [ManaSymbol.Generic 2])) [CostComponent.TapThis]) (Effect.AddMana (ManaAddition.MkManaAddition (PlayerRef.Relative PlayerRelation.You) (ManaProduction.OfType (ManaType.Colored Color.Black)) swamps ManaRetention.Ordinary Nothing Nothing Nothing False))
     Spec.assertEq s [[Text.pack "{2}, {T}: Add {B} for each Swamp you control."]] (Oracle.abilities (withFace (\f -> f {Face.activatedAbilities = [coffers]})))
     let theirs = countOf (Filter.HasCardType CardType.Creature) (InZone.MkInZone Zone.Graveyard PlayerRef.Candidate)
-    Spec.assertEq s (Just (Text.pack "Each player draws a card for each creature card in their graveyard.")) (Oracle.render (spell [clause [Effect.Draw (Draw.MkDraw (PlayerRef.Relative PlayerRelation.AnyPlayer) theirs Nothing)]] []))
+    Spec.assertEq s (Just (Text.pack "Each player draws a card for each creature card in their graveyard.")) (Oracle.render (spell [clause [Effect.Draw (Draw.MkDraw (PlayerRef.Relative PlayerRelation.AnyPlayer) theirs Nothing Nothing)]] []))
 
   -- CR 120.1: damage reads "equal to" a count after its recipients (Rockslide
   -- Ambush) and a characteristic before them (Soul's Fire), each also the
@@ -795,7 +795,7 @@ spec s = Spec.describe s "Parun.Oracle" $ do
   -- does (Soul's Majesty).
   Spec.it s "render reads a target's characteristic as its own" $ do
     let mine = [(target, TargetSlot.required Pool.Creatures (Just (Filter.HeldBy Holder.Controller PlayerRelation.You)))]
-        majesty = spell [clause [Effect.Draw (Draw.MkDraw (PlayerRef.Relative PlayerRelation.You) (powerOf target) Nothing)]] mine
+        majesty = spell [clause [Effect.Draw (Draw.MkDraw (PlayerRef.Relative PlayerRelation.You) (powerOf target) Nothing Nothing)]] mine
     Spec.assertEq s [[Text.pack "Draw cards equal to the power of target creature you control."]] (Oracle.abilities majesty)
     let plowshares = spell [clause [Effect.MoveToZone (move (ObjectRef.InSlot target) Zone.Exile), Effect.GainLife (PlayerQuantity.MkPlayerQuantity (PlayerRef.HolderOfBound Holder.Controller Hop.Itself target) (powerOf target))]] [(target, TargetSlot.required Pool.Creatures Nothing)]
     Spec.assertBool s (elem (Text.pack "Exile target creature. Its controller gains life equal to its power.") (concat (Oracle.abilities plowshares))) "no \"its power\""
@@ -1286,7 +1286,7 @@ destroy :: ObjectRef.ObjectRef -> Regenerability.Regenerability -> Effect.Effect
 destroy ref regenerability = Effect.Destroy (Destroy.MkDestroy ref regenerability Nothing Nothing Nothing)
 
 draw :: PlayerRef.PlayerRef -> Integer -> Effect.Effect Card.Card (GrantedAbility.GrantedAbility Card.Card)
-draw who n = Effect.Draw (Draw.MkDraw who (Quantity.Literal n) Nothing)
+draw who n = Effect.Draw (Draw.MkDraw who (Quantity.Literal n) Nothing Nothing)
 
 loseLife :: PlayerRef.PlayerRef -> Integer -> Effect.Effect Card.Card (GrantedAbility.GrantedAbility Card.Card)
 loseLife who n = Effect.LoseLife (LifeLoss.MkLifeLoss who (Quantity.Literal n) LifeLossCause.ByEffect Nothing)
