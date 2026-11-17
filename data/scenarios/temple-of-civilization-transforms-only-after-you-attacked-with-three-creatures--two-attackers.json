@@ -1,0 +1,124 @@
+{
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "battlefield": [
+          {
+            "card": "Ojer Taq, Deepest Foundation",
+            "face": "Temple of Civilization",
+            "label": "temple"
+          },
+          {
+            "card": "Plains",
+            "label": "p1"
+          },
+          {
+            "card": "Plains",
+            "label": "p2"
+          },
+          {
+            "card": "Plains",
+            "label": "p3"
+          },
+          {
+            "card": "Grizzly Bears",
+            "label": "bears"
+          },
+          {
+            "card": "Savannah Lions",
+            "label": "lions"
+          },
+          {
+            "card": "Hill Giant",
+            "label": "giant"
+          }
+        ],
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ],
+        "name": "alice"
+      },
+      {
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ],
+        "name": "bob"
+      }
+    ],
+    "step": "PrecombatMain"
+  },
+  "description": "CR 602.5: two attackers leave Temple of Civilization's transform ability refused",
+  "note": "The control of the three-attacker file: the same board attacking with two.",
+  "timeline": [
+    {
+      "do": {
+        "Attack": [
+          "$bears",
+          "$lions"
+        ]
+      },
+      "player": "alice",
+      "step": "DeclareAttackers",
+      "turn": 3
+    },
+    {
+      "player": "alice",
+      "refuse": {
+        "Activate": {
+          "ability": 1,
+          "mana": [
+            "$p1",
+            "$p2",
+            "$p3",
+            null
+          ],
+          "object": "$temple"
+        }
+      },
+      "step": "PostcombatMain",
+      "turn": 3
+    },
+    {
+      "check": {
+        "Names": {
+          "names": [
+            "Temple of Civilization"
+          ],
+          "object": "Temple of Civilization"
+        }
+      },
+      "player": "alice",
+      "step": "PostcombatMain",
+      "turn": 3
+    }
+  ]
+}

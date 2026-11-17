@@ -5630,6 +5630,10 @@ apply settle batch applied batchPrevented candidate event =
     -- CR 614.16: an effects-only row scales only the lots an effect makes
     -- (Replacement.reachesLot), and a lot this row appends is one.
     --
+    -- CR 614.1a: Ojer Taq, Deepest Foundation's "three times that many of those
+    -- tokens" scales only the lots its whatToken matches; another lot of the
+    -- same event stays. data/scenarios/ojer-taq-* is the proof.
+    --
     -- CR 614.1a: Draconic Visitor's "that many ... are created instead" swaps
     -- each matched lot for the row's card at the same count, in the same event,
     -- so the riders still reach it (its ruling) and a later row scales it. An
@@ -5684,14 +5688,14 @@ apply settle batch applied batchPrevented candidate event =
         OptionalDecision.Exercises -> do
           Replacement.consume identity_
           gs <- State.get
-          let scaleLot factor lot
-                | Replacement.reachesLot pat lot = lot {TokenLot.count = Replacement.scale gs candidate factor (TokenLot.count lot)}
+          let matched lot = Replacement.reachesLot pat lot && Replacement.matchesTokenLot gs (Replacement.candidateContext gs candidate) (TokenPattern.whatToken pat) pid lot
+              scaleLot factor lot
+                | matched lot = lot {TokenLot.count = Replacement.scale gs candidate factor (TokenLot.count lot)}
                 | otherwise = lot
               scaled = maybe lots (\factor -> fmap (scaleLot factor) lots) scaling
               lotOf card n = TokenLot.MkTokenLot {TokenLot.card = card, TokenLot.copy = Nothing, TokenLot.count = n, TokenLot.byEffect = True}
               swapFor card copy lot
-                | Replacement.reachesLot pat lot && Replacement.matchesTokenLot gs (Replacement.candidateContext gs candidate) (TokenPattern.whatToken pat) pid lot =
-                    lot {TokenLot.card = card, TokenLot.copy = copy}
+                | matched lot = lot {TokenLot.card = card, TokenLot.copy = copy}
                 | otherwise = lot
               appended = case plus of
                 Nothing -> scaled
