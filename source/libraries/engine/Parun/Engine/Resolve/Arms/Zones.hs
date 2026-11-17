@@ -1232,12 +1232,13 @@ repeatArm applyLoopBody runSubgame resolving source controller legal chosen (Rep
               Monad.when (decision == OptionalDecision.Exercises) (goAgain runs)
   run 1
 
--- CR 701.57a: N read once, then Parun.Engine.Discover's walk and afterWalk run
--- as a loop body over its reserved slot, rescoped so a second discover in one
--- resolution does not read the first one's exiles. CR 701.57b's event follows
--- unconditionally, the library run out or not. The scenario
+-- CR 701.57a: for each player the payload names, in APNAP order, N read once,
+-- then Parun.Engine.Discover's walk and afterWalk run over that player's
+-- library as a loop body over its reserved slot, rescoped so a second discover
+-- in one resolution does not read the first one's exiles. CR 701.57b's event
+-- follows unconditionally, the library run out or not. The scenario
 -- curator-of-suns-creation-discovers-again-for-the-same-value-once-each-turn
--- proves it carries N.
+-- proves it carries N; the zoyowas-justice scenarios prove the discoverer.
 --
 -- Between the two, while every exiled card is still in exile, CR 701.57c's
 -- discovered card is bound at the payload's slot: the one exiled card passing
@@ -1247,20 +1248,25 @@ repeatArm applyLoopBody runSubgame resolving source controller legal chosen (Rep
 -- Unprinted: two discovers binding one slot in one resolution, where a
 -- second walk that ran the library out would leave the first's card bound.
 discover :: (Game Result -> ObjectId -> ObjectId -> PlayerId -> Map.Map SlotName (Set Recipient) -> Map.Map SlotName (Set Recipient) -> Set SlotName -> Seq.Seq (Effect Card.Type.Card (GrantedAbility.GrantedAbility Card.Type.Card)) -> Game ()) -> Game Result -> ObjectId -> ObjectId -> PlayerId -> Map.Map SlotName (Set Recipient) -> Map.Map SlotName (Set Recipient) -> Discover.Type.Discover -> Game ()
-discover applyLoopBody runSubgame resolving source controller legal chosen (Discover.Type.MkDiscover quantity mSlot) = do
+discover applyLoopBody runSubgame resolving source controller legal chosen (Discover.Type.MkDiscover ref quantity mSlot) = do
   gs0 <- State.get
-  let viewOf = effectViewOf resolving source legal gs0
-      context = effectContext gs0 resolving controller source legal (slotBindings resolving gs0)
-      n = maybe 0 Integer.toNaturalSaturating (Common.evaluateForRecipient viewOf context gs0 resolving source controller quantity)
-      bound = Set.singleton Binding.discoveredCards
-      apply = applyLoopBody runSubgame resolving source controller legal chosen bound
-  State.modify' (Common.rescopeRun resolving bound gs0)
-  apply (Seq.singleton (Discover.walk (toInteger n)))
-  exiled <- Common.fromAmongMembers legal resolving chosen Binding.discoveredCards
-  gs <- State.get
-  Common.bindObjects resolving mSlot (matchingFromAmong legal resolving controller source gs (Discover.stopsOn (toInteger n)) exiled)
-  apply (Discover.afterWalk (toInteger n))
-  State.modify' (Event.recordEvent (GameEvent.Discovered Discovered.MkDiscovered {Discovered.player = controller, Discovered.value = n}))
+  -- An illegal slot (CR 608.2b) or a reference naming nobody discovers nothing.
+  let named = playerRefPlayers legal resolving source controller gs0 ref
+  Monad.forM_ (filter (`List.elem` named) (Game.apnapOrder gs0)) $ \discoverer -> do
+    gs1 <- State.get
+    let viewOf = effectViewOf resolving source legal gs1
+        context = effectContext gs1 resolving controller source legal (slotBindings resolving gs1)
+        n = maybe 0 Integer.toNaturalSaturating (Common.evaluateForRecipient viewOf context gs1 resolving source discoverer quantity)
+        bound = Set.singleton Binding.discoveredCards
+        apply = applyLoopBody runSubgame resolving source controller legal chosen bound
+        who = PlayerRef.Specific discoverer
+    State.modify' (Common.rescopeRun resolving bound gs1)
+    apply (Seq.singleton (Discover.walk who (toInteger n)))
+    exiled <- Common.fromAmongMembers legal resolving chosen Binding.discoveredCards
+    gs <- State.get
+    Common.bindObjects resolving mSlot (matchingFromAmong legal resolving discoverer source gs (Discover.stopsOn (toInteger n)) exiled)
+    apply (Discover.afterWalk who (toInteger n))
+    State.modify' (Event.recordEvent (GameEvent.Discovered Discovered.MkDiscovered {Discovered.player = discoverer, Discovered.value = n}))
 
 -- CR 608.2c: the process in written order, then its printed "if" asked of the
 -- state that run left -- live, so the tally the run's own mill just bound is

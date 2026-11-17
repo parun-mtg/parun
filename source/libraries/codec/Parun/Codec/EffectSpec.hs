@@ -2886,7 +2886,7 @@ spec s = Spec.describe s "Parun.Codec.Effect" $ do
       s
       toJson
       fromJson
-      (Effect.Discover (Discover.MkDiscover (Quantity.Literal 5) Nothing))
+      (Effect.Discover (Discover.MkDiscover (PlayerRef.Relative PlayerRelation.You) (Quantity.Literal 5) Nothing))
       " {\"type\":\"Discover\",\"value\":{\"quantity\":{\"type\":\"Literal\",\"value\":5}}} "
   -- Hit the Mother Lode's "the discovered card" (CR 701.57c), bound at a slot.
   Spec.it s "Discover, binding a slot" $
@@ -2894,8 +2894,16 @@ spec s = Spec.describe s "Parun.Codec.Effect" $ do
       s
       toJson
       fromJson
-      (Effect.Discover (Discover.MkDiscover (Quantity.Literal 10) (Just (SlotName.MkSlotName (Text.pack "discovered")))))
+      (Effect.Discover (Discover.MkDiscover (PlayerRef.Relative PlayerRelation.You) (Quantity.Literal 10) (Just (SlotName.MkSlotName (Text.pack "discovered")))))
       " {\"type\":\"Discover\",\"value\":{\"quantity\":{\"type\":\"Literal\",\"value\":10},\"slot\":\"discovered\"}} "
+  -- Zoyowa's Justice's "that player discovers X" (CR 701.57a).
+  Spec.it s "Discover, by another player" $
+    Common.assertJsonCodec
+      s
+      toJson
+      fromJson
+      (Effect.Discover (Discover.MkDiscover (PlayerRef.HolderOfBound Holder.Owner Hop.Itself (SlotName.MkSlotName (Text.pack "target"))) (Quantity.Literal 3) Nothing))
+      " {\"type\":\"Discover\",\"value\":{\"player\":{\"type\":\"HolderOfBound\",\"value\":{\"holder\":\"Owner\",\"hop\":\"Itself\",\"slot\":\"target\"}},\"quantity\":{\"type\":\"Literal\",\"value\":3}}} "
   -- CR 701.48a: nullary, rule 701.48a fixing both branches and the learner.
   Spec.it s "Learn" $
     Common.assertJsonCodec

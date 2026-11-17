@@ -34,7 +34,6 @@ import qualified Parun.Types.OfferCast as OfferCast
 import qualified Parun.Types.Operand as Operand
 import qualified Parun.Types.PermissionVerb as PermissionVerb
 import qualified Parun.Types.PlayerRef as PlayerRef
-import qualified Parun.Types.PlayerRelation as PlayerRelation
 import qualified Parun.Types.Quantity as Quantity
 import qualified Parun.Types.SlotName as SlotName
 import qualified Parun.Types.TopOfLibraryUntil as TopOfLibraryUntil
@@ -52,12 +51,14 @@ import qualified Parun.Types.Zone as Zone
 -- nothing into the hand. The data\/scenarios\/investigate discover scenarios
 -- prove the offer, the hand and the bottom.
 --
--- The walk binds every card it exiled at Binding.discoveredCards.
-walk :: Integer -> Effect.Effect Card (GrantedAbility.GrantedAbility Card)
-walk n =
+-- The walk binds every card it exiled at Binding.discoveredCards. The player
+-- is the discovering one, whose library the walk reads and who is offered the
+-- cast (CR 701.57a); the Zoyowa's Justice scenarios prove both.
+walk :: PlayerRef.PlayerRef -> Integer -> Effect.Effect Card (GrantedAbility.GrantedAbility Card)
+walk discoverer n =
   Effect.MoveToZone (move (ObjectRef.TopOfLibraryUntil exiling) Zone.Exile LibraryPlacement.defaultValue (Just Binding.discoveredCards))
   where
-    exiling = TopOfLibraryUntil.MkTopOfLibraryUntil {TopOfLibraryUntil.player = you, TopOfLibraryUntil.filter = stopsOn n, TopOfLibraryUntil.weight = Quantity.Literal 1, TopOfLibraryUntil.count = Quantity.Literal 1, TopOfLibraryUntil.deck = Nothing}
+    exiling = TopOfLibraryUntil.MkTopOfLibraryUntil {TopOfLibraryUntil.player = discoverer, TopOfLibraryUntil.filter = stopsOn n, TopOfLibraryUntil.weight = Quantity.Literal 1, TopOfLibraryUntil.count = Quantity.Literal 1, TopOfLibraryUntil.deck = Nothing}
 
 -- | CR 701.57a / 701.57c: what the walk stops on, a nonland card with mana
 -- value N or less. Among the cards it exiled, only the discovered card passes.
@@ -65,13 +66,13 @@ stopsOn :: Integer -> Filter.Filter Keyword.Keyword
 stopsOn n = Filter.And [Filter.Not (Filter.HasCardType CardType.Land), atMost n]
 
 -- | The process after the walk: the offer, the hand move and the bottom.
-afterWalk :: Integer -> Seq.Seq (Effect.Effect Card (GrantedAbility.GrantedAbility Card))
-afterWalk n =
+afterWalk :: PlayerRef.PlayerRef -> Integer -> Seq.Seq (Effect.Effect Card (GrantedAbility.GrantedAbility Card))
+afterWalk discoverer n =
   Seq.fromList
     [ Effect.OfferCast
         OfferCast.MkOfferCast
           { OfferCast.ref = discovered,
-            OfferCast.caster = you,
+            OfferCast.caster = discoverer,
             OfferCast.optionality = CastObligation.Optional,
             OfferCast.verb = PermissionVerb.Cast,
             OfferCast.offer = free,
@@ -97,9 +98,6 @@ afterWalk n =
           CastOffer.payableFromSpent = False,
           CastOffer.reduction = 0
         }
-
-you :: PlayerRef.PlayerRef
-you = PlayerRef.Relative PlayerRelation.You
 
 atMost :: Integer -> Filter.Filter Keyword.Keyword
 atMost n = Filter.Measures Measures.MkMeasures {Measures.measure = Measure.ManaValue, Measures.comparison = Comparison.AtMost, Measures.operand = Operand.Literal n}
