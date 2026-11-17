@@ -975,7 +975,7 @@ effect context e = case e of
           Text.pack "put X " <> word <> Text.pack " counters" <> on <> Text.pack ", where X is " <> equal
           ]
     MkPredicate Nothing phrase [] (Target.mentions ref <> Target.names a) Nothing False : supported context p
-  Effect.Tap (Tap.MkTap r Nothing) -> acted context (Text.pack "tap ") r
+  Effect.Tap (Tap.MkTap r Nothing (PlayerRef.Relative PlayerRelation.You)) -> acted context (Text.pack "tap ") r
   -- "Sacrifice this creature" (CR 701.21a): one object, which the
   -- instruction's controller sacrifices. A sweep is not spelled out here.
   Effect.Sacrifice (SacrificeEffect.MkSacrificeEffect r@(ObjectRef.InSlot _) Sacrificer.EffectController Nothing Nothing) -> acted context (Text.pack "sacrifice ") r

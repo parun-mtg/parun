@@ -5,6 +5,8 @@ import qualified Parun.Codec.Tap as Tap
 import qualified Parun.JsonCodec.Common as Common
 import qualified Parun.Spec as Spec
 import qualified Parun.Types.ObjectRef as ObjectRef
+import qualified Parun.Types.PlayerRef as PlayerRef
+import qualified Parun.Types.PlayerRelation as PlayerRelation
 import qualified Parun.Types.SlotName as SlotName
 import qualified Parun.Types.Tap as Tap
 
@@ -20,6 +22,12 @@ spec s = Spec.describe s "Parun.Codec.Tap" $ do
     Common.assertCodec
       s
       Tap.codec
-      (Tap.MkTap (ObjectRef.InSlot (SlotName.MkSlotName (Text.pack "target"))) (Just (SlotName.MkSlotName (Text.pack "tapped"))))
+      (Tap.MkTap (ObjectRef.InSlot (SlotName.MkSlotName (Text.pack "target"))) (Just (SlotName.MkSlotName (Text.pack "tapped"))) (PlayerRef.Relative PlayerRelation.You))
       " {\"ref\":{\"type\":\"InSlot\",\"value\":\"target\"},\"tapped\":\"tapped\"} "
+  Spec.it s "another tapper: the key is written" $
+    Common.assertCodec
+      s
+      Tap.codec
+      ((Tap.plain (ObjectRef.InSlot (SlotName.MkSlotName (Text.pack "target")))) {Tap.tapper = PlayerRef.InSlot (SlotName.MkSlotName (Text.pack "player"))})
+      " {\"ref\":{\"type\":\"InSlot\",\"value\":\"target\"},\"tapper\":{\"type\":\"InSlot\",\"value\":\"player\"}} "
   Spec.it s "has a schema" $ Common.assertHasSchema s Tap.codec

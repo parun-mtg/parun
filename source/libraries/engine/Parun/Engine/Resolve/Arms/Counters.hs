@@ -1716,13 +1716,20 @@ bindLeaders resolving source controller legal (BindLeaders.MkBindLeaders among m
 -- that was untapped before and is tapped after, so one already tapped is not
 -- "tapped this way". That exclusion is a regression fence, not a proved
 -- behaviour: Master of the Wild Hunt's sweep names only untapped Wolves.
+--
+-- Each event credits the player the instruction tells to tap (CR 608.2c), not
+-- the resolving controller: Power Sink's "they tap" is the countered spell's
+-- controller's tap, which Hylda of the Icy Crown's "whenever you tap" must not
+-- see: power-sink-s-tap-is-the-countered-player-s-and-does-not-grow-icewrought-sentry
+-- proves it.
 tap :: ObjectId -> ObjectId -> PlayerId -> Map.Map SlotName (Set Recipient) -> Tap.Tap -> Game ()
-tap resolving source controller legal (Tap.MkTap ref mTapped) = do
+tap resolving source controller legal (Tap.MkTap ref mTapped tapper) = do
   gs <- State.get
   let victims = ListUtils.nubOrd (objectRefObjects legal resolving controller source gs ref)
       tappedIn g oid = fmap Object.tapped (Game.lookupObject oid g) == Just TapState.Tapped
   -- One event group, CR 608.2f.
-  Event.simultaneously (Monad.forM_ victims (Event.tap controller))
+  Monad.forM_ (Common.oneSeat legal resolving source controller gs tapper) $ \who ->
+    Event.simultaneously (Monad.forM_ victims (Event.tap who))
   after <- State.get
   Monad.forM_ mTapped $ \slot -> do
     let turned = filter (\oid -> not (tappedIn gs oid) && tappedIn after oid) victims
