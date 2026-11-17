@@ -525,7 +525,10 @@ exiledPermanent = SlotName.MkSlotName (Text.pack "thatExiledPermanent")
 -- Parun.Engine.Resolve.Slots.effectViewOf needs no arm.
 --
 -- Bound by Parun.Engine.Cost.payComponent's ExileThis and ExileThisFrom
--- arms alike, the two components that exile the object the cost is on, and left
+-- arms alike, the two components that exile the object the cost is on, and by
+-- its MoveCardsFromGraveyard arm's exile (CR 400.7j) -- Lamplight Phoenix's
+-- "exile it" names the card its dies trigger's `became` found. A cost holding
+-- both binds both; Say Its Name does and reads neither. Left
 -- UNBOUND where nothing arrived in exile -- a replacement effect may have sent
 -- the object elsewhere, and a slot naming the object that did not arrive would
 -- be read as CR 608.2h information the rules never granted.

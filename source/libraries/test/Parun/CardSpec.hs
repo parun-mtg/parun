@@ -288,6 +288,7 @@ import qualified Parun.Types.GrantLookAtExiled as GrantLookAtExiled
 import qualified Parun.Types.GrantPlayFromExile as GrantPlayFromExile
 import qualified Parun.Types.GrantZone as GrantZone
 import qualified Parun.Types.GrantedAbility as GrantedAbility
+import qualified Parun.Types.GraveyardCostDestination as GraveyardCostDestination
 import qualified Parun.Types.Grouping as Grouping
 import qualified Parun.Types.Guess as Guess
 import qualified Parun.Types.HandAction as HandAction
@@ -1363,9 +1364,25 @@ payGatesOf modal =
 -- resolve through that fold.
 payGateBound :: Modal.Modal Card.Type.Card (GrantedAbility.GrantedAbility Card.Type.Card) -> Set.Set SlotName.SlotName
 payGateBound modal =
-  if any sacrificesAsCost (payGateCostsOf modal)
-    then Set.singleton Binding.sacrificedPermanent
-    else Set.empty
+  Set.fromList ([Binding.sacrificedPermanent | any sacrificesAsCost (payGateCostsOf modal)] <> [Binding.exiledCard | any exilesCardAsCost (payGateCostsOf modal)])
+
+-- Does this cost EXILE a card it names? sacrificesAsCost's shape, for
+-- Binding.exiledCard (Parun.Engine.Cost.payComponent's ExileThis,
+-- ExileThisFrom and MoveCardsFromGraveyard arms, folded on by Activate and
+-- Resolve.Common.foldPaid), so CR 702.167a's "Return this card to the
+-- battlefield" and Lamplight Phoenix's are ordinary slot reads.
+--
+-- Not offered on the CAST side (cardOffends): no printing in `data/cards/`
+-- reads the slot after an additional cost, so the exemption would fence
+-- nothing.
+exilesCardAsCost :: Cost.Type.Cost Keyword.Keyword -> Bool
+exilesCardAsCost =
+  let isExile component = case component of
+        CostComponent.ExileThis -> True
+        CostComponent.ExileThisFrom _ -> True
+        CostComponent.MoveCardsFromGraveyard exile -> MoveCardsFromGraveyard.destination exile == GraveyardCostDestination.Exile
+        _ -> False
+   in any isExile . Cost.Type.components
 
 -- Every effect a card AUTHORS: the ones its carriers hold, plus everything
 -- nested inside one of those effects' own payloads, transitively. The nested
