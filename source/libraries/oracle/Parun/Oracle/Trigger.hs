@@ -541,7 +541,8 @@ counted context n comparison k = case Count.scope n of
     (noun, _) <- Target.andOr (plain, number)
     place <- Target.zoneOf Zone.Graveyard who
     -- Free: "there is" or "there's" a card (First-Time Flyer).
-    there <- if number == Filter.Singular then [Text.pack "there is", Text.pack "there's"] else [Text.pack "there are"]
+    -- Free: "you have" them there (Oversold Cemetery).
+    there <- (if number == Filter.Singular then [Text.pack "there is", Text.pack "there's"] else [Text.pack "there are"]) <> [Text.pack "you have"]
     [there <> Text.pack " " <> before noun <> Text.pack " " <> noun <> Text.pack " " <> place]
   Scope.InZone (InZone.MkInZone Zone.Hand who)
     | Count.filter n == Filter.Type.And [] -> do
