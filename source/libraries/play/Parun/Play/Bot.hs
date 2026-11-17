@@ -183,9 +183,9 @@ bot names = Answerer.MkAnswerer $ \asked -> case Asked.prompt asked of
   Prompt.ChooseCopyTarget _ _ _ candidates -> Generator.pick (Nothing NonEmpty.:| fmap Just candidates)
   Prompt.ChooseAnyNumber _ _ _ _ candidates most _ -> fmap Set.fromList (atMost (Maybe.fromMaybe (List.genericLength candidates) most) candidates)
   -- CR 510.1c-e / 702.19b-c: every division whose gates this creature's
-  -- damage clears beside what the step's attacking creatures announced so far.
-  -- Not implemented: a division leaning on damage a creature announces later
-  -- in the same group (#6637).
+  -- damage clears beside what the step's attacking creatures announced so far;
+  -- the bot answers each prompt alone, so it never leans on a later
+  -- announcement.
   Prompt.AssignCombatDamage _ _ _ thresholds paid power ->
     pickOr (Replay.defaultAnswer (Asked.prompt asked)) (filter (\division -> Damage.tiersCleared thresholds (Map.unionWith (+) paid division) Set.empty division) (divisions (Map.keys thresholds) power))
   Prompt.Search _ _ cards most -> atMost most cards
