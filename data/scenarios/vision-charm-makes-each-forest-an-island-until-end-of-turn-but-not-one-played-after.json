@@ -1,0 +1,17 @@
+{
+  "description": "CR 607.2d / 611.2c / 305.7 whole card: Vision Charm's caster chooses the land type Forest and the basic land type Island, and each land that was a Forest as it resolved is only an Island until end of turn, a Forest played after it resolved left out",
+  "note": "Bob's Bayou is a Forest Swamp, so it becomes only an Island. Alice's Forest, played after the Charm resolved, stays a Forest, the set being locked in as the effect began. Bob's Forest is a Forest again on his turn.",
+  "board": {"active": "alice", "step": "PrecombatMain", "seats": [{"name": "alice", "library": [{"card": "Island"}, {"card": "Island"}, {"card": "Island"}], "battlefield": [{"card": "Island", "label": "i1"}], "hand": [{"card": "Vision Charm", "label": "charm"}, {"card": "Forest", "label": "later"}]}, {"name": "bob", "library": [{"card": "Plains"}, {"card": "Plains"}, {"card": "Plains"}], "battlefield": [{"card": "Forest", "label": "forest"}, {"card": "Bayou", "label": "bayou"}, {"card": "Plains", "label": "plains"}]}]},
+  "timeline": [
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": {"Cast": {"object": "$charm", "modes": [1], "mana": ["$i1"]}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass"},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": {"Answer": {"prompt": "ChooseLandType", "with": "Forest"}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": {"Answer": {"prompt": "ChooseBasicLandType", "with": "Island"}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Subtypes": {"object": "$forest", "subtypes": ["Island"]}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Subtypes": {"object": "$bayou", "subtypes": ["Island"]}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Subtypes": {"object": "$plains", "subtypes": ["Plains"]}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": {"PlayLand": "$later"}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Subtypes": {"object": "Forest#2", "subtypes": ["Forest"]}}},
+    {"turn": 2, "step": "Upkeep", "player": "bob", "check": {"Subtypes": {"object": "$forest", "subtypes": ["Forest"]}}}
+  ]
+}

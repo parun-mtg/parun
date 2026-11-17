@@ -10,6 +10,7 @@ import qualified Parun.Types.BlockRole as BlockRole
 import qualified Parun.Types.BlockStatus as BlockStatus
 import qualified Parun.Types.CardName as CardName
 import qualified Parun.Types.CardType as CardType
+import qualified Parun.Types.ChoiceOrdinal as ChoiceOrdinal
 import qualified Parun.Types.Color as Color
 import qualified Parun.Types.ControlMargin as ControlMargin
 import qualified Parun.Types.CounterKind as CounterKind
@@ -242,14 +243,15 @@ data Filter keyword
     -- read off the source instead of written on the card, and vacuously False
     -- where the source has chosen none.
     HasChosenColor
-  | -- | CR 205.3: the candidate's subtypes include the one the SOURCE chose as it
-    -- entered (CR 614.1c), the two abilities linked by CR 607.2d -- Obelisk of
+  | -- | CR 205.3: the candidate's subtypes include the one the SOURCE chose,
+    -- the ordinal saying which of its choices, as it entered (CR 614.1c), the
+    -- two abilities linked by CR 607.2d -- Obelisk of
     -- Urd's "creatures you control of the chosen type" and Pillar of Origins'
     -- "creature spell of the chosen type" -- or earlier in the same resolution
     -- (CR 608.2d, Kindred Judgment). HasSubtype above with the subtype read
     -- off the source instead of written on the card, and vacuously False where the
     -- source has chosen none.
-    HasChosenSubtype
+    HasChosenSubtype ChoiceOrdinal.ChoiceOrdinal
   | -- | CR 205.2a: the candidate's card types include the one the SOURCE chose
     -- as it entered (CR 614.1c, 607.2d; Umori, the Collector's "spells you cast
     -- of the chosen type"). Vacuously False where the source has chosen none.

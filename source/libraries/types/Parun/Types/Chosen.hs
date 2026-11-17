@@ -2,6 +2,7 @@
 
 module Parun.Types.Chosen where
 
+import qualified Data.List.NonEmpty as NonEmpty
 import qualified Data.Map.Strict as Map
 import qualified Data.Set as Set
 import qualified Numeric.Natural as Natural
@@ -19,8 +20,8 @@ import qualified Parun.Types.Subtype as Subtype
 data Chosen a where
   -- | CR 105.1: the chosen colours (Object.chosenColors).
   Colors :: Chosen (Set.Set Color.Color)
-  -- | CR 205.3: the chosen subtype (Object.chosenSubtype).
-  Subtype :: Chosen Subtype.Subtype
+  -- | CR 205.3: the chosen subtypes, in the order chosen (Object.chosenSubtype).
+  Subtype :: Chosen (NonEmpty.NonEmpty Subtype.Subtype)
   -- | CR 205.2a: the chosen card type (Object.chosenCardType).
   CardType :: Chosen CardType.CardType
   -- | CR 201.4 / 702.106f: the chosen card names, by chooser (Object.chosenNames).

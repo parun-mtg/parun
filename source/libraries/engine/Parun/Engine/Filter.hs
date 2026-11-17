@@ -5,6 +5,7 @@ import qualified Data.Foldable as Foldable
 import qualified Data.Functor.Const as Const
 import qualified Data.Functor.Identity as Identity
 import qualified Data.List as List
+import qualified Data.List.NonEmpty as NonEmpty
 import qualified Data.Map.Strict as Map
 import qualified Data.Maybe as Maybe
 import qualified Data.Monoid as Monoid
@@ -13,6 +14,7 @@ import qualified Data.Set as Set
 import qualified Numeric.Natural as Natural
 import qualified Parun.Engine.Binding as Binding
 import qualified Parun.Engine.Children as Children
+import qualified Parun.Engine.ChoiceOrdinal as ChoiceOrdinal
 import qualified Parun.Engine.Keyword as Keyword
 import qualified Parun.Engine.ManaSymbolText as ManaSymbolText
 import qualified Parun.Engine.NameWords as NameWords
@@ -1867,7 +1869,7 @@ data Context = MkContext
     -- atom's YourCounters operand, which asks the perspective player's. Filled
     -- by contextIn; empty in contextFor, where the operand reads nothing.
     playerCounters :: Map.Map PlayerId.PlayerId (Map.Map PlayerCounterKind.PlayerCounterKind Natural.Natural),
-    -- CR 205.3: the subtype the SOURCE chose as it entered (CR 614.1c), for the
+    -- CR 205.3: the subtypes the SOURCE chose as it entered (CR 614.1c), for the
     -- one atom that asks whether a candidate wears it (HasChosenSubtype). Filled
     -- where sourceChosenColors above is, and read the same way (Obelisk of Urd,
     -- From the Rubble, Doom Cannon).
@@ -1881,7 +1883,7 @@ data Context = MkContext
     --
     -- Vacuously False everywhere else, sourceChosenColors's posture, and fenced by
     -- the same lint's subtype twin.
-    sourceChosenSubtype :: Maybe Subtype.Subtype,
+    sourceChosenSubtype :: Maybe (NonEmpty.NonEmpty Subtype.Subtype),
     -- CR 205.2a: the card type the SOURCE chose as it entered (CR 614.1c), for
     -- HasChosenCardType. Filled where sourceChosenColors above is, and Nothing
     -- everywhere else, so the atom is vacuously False there.
@@ -2596,7 +2598,7 @@ matches context view predicate = case predicate of
   -- arriving on the Context: whatever CR 613.1d's layer left the candidate
   -- wearing is what CR 607.2d's link is compared against. A source that has
   -- chosen none matches nothing.
-  Filter.HasChosenSubtype -> maybe False (`Set.member` subtypes view) (sourceChosenSubtype context)
+  Filter.HasChosenSubtype ordinal -> maybe False (`Set.member` subtypes view) (ChoiceOrdinal.chosenAt ordinal =<< sourceChosenSubtype context)
   -- CR 205.2a, HasChosenSubtype's arm one characteristic over.
   Filter.HasChosenCardType -> maybe False (`Set.member` cardTypes view) (sourceChosenCardType context)
   -- CR 607.2d by identity: what the source chose names an object, not a quality.
@@ -3412,7 +3414,7 @@ manaValueThresholds predicate = case predicate of
   Filter.HasChosenName {} -> []
   Filter.HasChosenColor -> []
   Filter.Noted _ -> []
-  Filter.HasChosenSubtype -> []
+  Filter.HasChosenSubtype _ -> []
   Filter.HasChosenCardType -> []
   Filter.IsExiledWithSource _ -> []
   Filter.IsLastExiledWithSource -> []
@@ -3601,7 +3603,7 @@ statesAQuality predicate = case predicate of
   Filter.Noted _ -> True
   -- The arm above one characteristic over: a subtype is a stated quality whichever
   -- way the card arrived at it.
-  Filter.HasChosenSubtype -> True
+  Filter.HasChosenSubtype _ -> True
   -- And a card type, one characteristic further.
   Filter.HasChosenCardType -> True
   -- IsObject's posture: the candidate is named by identity.
@@ -3801,7 +3803,7 @@ readsSourceValues predicate = case predicate of
   Filter.ControllerRelatesToBound {} -> False
   Filter.HasChosenName {} -> True
   Filter.HasChosenColor -> True
-  Filter.HasChosenSubtype -> True
+  Filter.HasChosenSubtype _ -> True
   Filter.HasChosenCardType -> True
   -- The PERSPECTIVE player's notes, not the source's: two sources one player
   -- controls read the same ones.

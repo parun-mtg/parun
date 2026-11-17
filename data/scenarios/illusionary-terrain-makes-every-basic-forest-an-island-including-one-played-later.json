@@ -1,0 +1,17 @@
+{
+  "description": "CR 607.2d / 611.3a / 305.7 whole card: Illusionary Terrain's controller chooses Forest, then Island from the basic land types other than Forest, and every basic Forest is an Island, a Forest played after it entered included",
+  "note": "Bob's Bayou is a Forest but not basic, so it keeps its types; his Plains is not of the first type. The Forest he plays on his turn is caught because a static ability's set is read live.",
+  "board": {"active": "alice", "step": "PrecombatMain", "seats": [{"name": "alice", "library": [{"card": "Island"}, {"card": "Island"}, {"card": "Island"}], "battlefield": [{"card": "Island", "label": "i1"}, {"card": "Island", "label": "i2"}], "hand": [{"card": "Illusionary Terrain", "label": "terrain"}]}, {"name": "bob", "library": [{"card": "Plains"}, {"card": "Plains"}, {"card": "Plains"}], "battlefield": [{"card": "Forest", "label": "forest"}, {"card": "Bayou", "label": "bayou"}, {"card": "Plains", "label": "plains"}], "hand": [{"card": "Forest", "label": "later"}]}]},
+  "timeline": [
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": {"Cast": {"object": "$terrain", "mana": ["$i1", "$i2"]}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass"},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": {"Answer": {"prompt": "ChooseBasicLandType", "with": "Forest"}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"View": {"of": "Prompt", "is": {"kind": "ChooseBasicLandType", "offer": {"source": "Illusionary Terrain", "options": ["Island", "Mountain", "Plains", "Swamp"]}}}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": {"Answer": {"prompt": "ChooseBasicLandType", "with": "Island"}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Subtypes": {"object": "$forest", "subtypes": ["Island"]}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Subtypes": {"object": "$bayou", "subtypes": ["Forest", "Swamp"]}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Subtypes": {"object": "$plains", "subtypes": ["Plains"]}}},
+    {"turn": 2, "step": "PrecombatMain", "player": "bob", "do": {"PlayLand": "$later"}},
+    {"turn": 2, "step": "PrecombatMain", "player": "bob", "check": {"Subtypes": {"object": "Forest#2", "subtypes": ["Island"]}}}
+  ]
+}

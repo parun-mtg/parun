@@ -1,5 +1,6 @@
 module Parun.Codec.ManaUnitSpec where
 
+import qualified Data.List.NonEmpty as NonEmpty
 import qualified Data.Map.Strict as Map
 import qualified Data.Set as Set
 import qualified Parun.Codec.FaceSpec as FaceSpec
@@ -56,11 +57,11 @@ spec s = Spec.describe s "Parun.Codec.ManaUnit" $ do
           ManaUnit.restriction = Just (ManaRestriction.onlyCasts (Filter.HasCardType CardType.Creature)),
           ManaUnit.rider = Nothing,
           ManaUnit.spendTrigger = Nothing,
-          ManaUnit.sourceChoices = Just SourceChoices.MkSourceChoices {SourceChoices.names = Map.empty, SourceChoices.colors = Set.singleton Color.Red, SourceChoices.subtype = Just Subtype.Goblin, SourceChoices.cardType = Nothing, SourceChoices.number = Nothing, SourceChoices.acquisition = Acquisition.Own},
+          ManaUnit.sourceChoices = Just SourceChoices.MkSourceChoices {SourceChoices.names = Map.empty, SourceChoices.colors = Set.singleton Color.Red, SourceChoices.subtype = Just (NonEmpty.singleton Subtype.Goblin), SourceChoices.cardType = Nothing, SourceChoices.number = Nothing, SourceChoices.acquisition = Acquisition.Own},
           ManaUnit.sourceLastExiled = Just (ObjectId.MkObjectId 7),
           ManaUnit.producer = Nothing
         }
-      " {\"manaType\":{\"type\":\"Colored\",\"value\":\"Red\"},\"tags\":[\"Snow\"],\"retention\":\"UntilEndOfTurn\",\"restriction\":{\"casts\":{\"type\":\"HasCardType\",\"value\":\"Creature\"}},\"rider\":null,\"sourceChoices\":{\"colors\":[\"Red\"],\"subtype\":\"Goblin\"},\"sourceLastExiled\":7} "
+      " {\"manaType\":{\"type\":\"Colored\",\"value\":\"Red\"},\"tags\":[\"Snow\"],\"retention\":\"UntilEndOfTurn\",\"restriction\":{\"casts\":{\"type\":\"HasCardType\",\"value\":\"Creature\"}},\"rider\":null,\"sourceChoices\":{\"colors\":[\"Red\"],\"subtype\":[\"Goblin\"]},\"sourceLastExiled\":7} "
   -- Pyromancer's Goggles' red: CR 106.6's third shape, written only when set.
   Spec.it s "mana carrying a spend trigger" $
     Common.assertCodec

@@ -11,6 +11,7 @@ import qualified Data.Set as Set
 import qualified Data.Text as Text
 import Numeric.Natural (Natural)
 import qualified Parun.Engine.Binding as Binding
+import qualified Parun.Engine.ChoiceOrdinal as ChoiceOrdinal
 import qualified Parun.Engine.CostAdjustments as CostAdjustments.Engine
 import qualified Parun.Engine.Deploy as Deploy
 import qualified Parun.Engine.Earthbend as Earthbend
@@ -4799,7 +4800,7 @@ mintedRemovalRestrictionsFor keyword =
 -- `already`, the host's attachments stamped no later than the granter (CR
 -- 613.7e restamps each attach, so that is "already attached when the effect
 -- started to apply").
-grantedBy :: ObjectId -> Set.Set Color.Color -> Maybe Subtype.Subtype -> Maybe PlayerId -> [ObjectId] -> Keyword -> Keyword
+grantedBy :: ObjectId -> Set.Set Color.Color -> Maybe (NonEmpty.NonEmpty Subtype.Subtype) -> Maybe PlayerId -> [ObjectId] -> Keyword -> Keyword
 grantedBy granter chosen subtype you already keyword = case withChoices chosen subtype keyword of
   Keyword.Protection protection ->
     Keyword.Protection protection {Protection.spares = fmap spare (Protection.spares protection)}
@@ -4826,7 +4827,7 @@ grantedBy granter chosen subtype you already keyword = case withChoices chosen s
 -- grantedBy's first half, and Parun.Engine.Projection.freezeQuantities' whole
 -- answer for a resolution's grant (Stave Off), whose source has left the stack
 -- by the time the grant is projected.
-withChoices :: Set.Set Color.Color -> Maybe Subtype.Subtype -> Keyword -> Keyword
+withChoices :: Set.Set Color.Color -> Maybe (NonEmpty.NonEmpty Subtype.Subtype) -> Keyword -> Keyword
 withChoices chosen subtype keyword = case keyword of
   Keyword.Protection protection
     | Protection.quality protection == Filter.HasChosenColor ->
@@ -4839,7 +4840,7 @@ withChoices chosen subtype keyword = case keyword of
   _ -> keyword
   where
     landOf criterion = case criterion of
-      Filter.HasChosenSubtype -> maybe (Filter.Or []) Filter.HasSubtype subtype
+      Filter.HasChosenSubtype ordinal -> maybe (Filter.Or []) Filter.HasSubtype (ChoiceOrdinal.chosenAt ordinal =<< subtype)
       Filter.And filters -> Filter.And (fmap landOf filters)
       _ -> criterion
     baked = case Set.toList chosen of
