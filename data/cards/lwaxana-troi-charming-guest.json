@@ -23,7 +23,7 @@
                   {
                     "effects": [
                       {
-                        "type": "ModifyTarget",
+                        "type": "AffectPlayers",
                         "value": {
                           "duration": {
                             "type": "ForAsLongAs",
@@ -67,29 +67,21 @@
                               }
                             }
                           },
-                          "modification": {
-                            "type": "GainAbility",
+                          "effect": {
+                            "type": "BearersTrigger",
                             "value": {
-                              "type": "Player",
-                              "value": {
-                                "effect": {
-                                  "type": "BearersTrigger",
-                                  "value": {
-                                    "bearers": {
-                                      "type": "IsSource"
-                                    },
-                                    "triggering": "AnAdditionalTime"
-                                  }
-                                },
-                                "scope": {
-                                  "type": "AnyPlayer"
-                                }
-                              }
+                              "bearers": {
+                                "type": "IsBound",
+                                "value": "target"
+                              },
+                              "triggering": "AnAdditionalTime"
                             }
                           },
-                          "ref": {
-                            "type": "InSlot",
-                            "value": "target"
+                          "players": {
+                            "type": "Scoped",
+                            "value": {
+                              "type": "AnyPlayer"
+                            }
                           }
                         }
                       }
