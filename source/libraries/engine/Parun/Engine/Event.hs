@@ -80,6 +80,7 @@ import qualified Parun.Extra.Integer as Integer
 import qualified Parun.Extra.Natural as Natural
 import qualified Parun.Types.AbilityName as AbilityName
 import qualified Parun.Types.AbilityTriggered as AbilityTriggered
+import qualified Parun.Types.AbilityWasActivated as AbilityWasActivated
 import qualified Parun.Types.Acquisition as Acquisition
 import qualified Parun.Types.ActiveCopy as ActiveCopy
 import qualified Parun.Types.ActiveReplacement as ActiveReplacement
@@ -9653,6 +9654,7 @@ changeZoneWithCause settle discarded asOf batch oid requestedDest requestedPosit
                     Monad.forM_ (Object.attachedTo obj) (unattach lki oid)
                   seenArriving <- State.gets (Visibility.seenByEveryone newId)
                   causer <- State.gets (Scratch.causing . GameState.scratch)
+                  underWay <- State.gets (Scratch.activating . GameState.scratch)
                   -- CR 608.2i: the arrival as it stands, after runEntry above.
                   arrivedAs <- State.gets (Projection.objectSnapshot newId)
                   Monad.when (fromZone == Zone.Battlefield) (State.modify' (fileBoardBefore lki))
@@ -9672,7 +9674,8 @@ changeZoneWithCause settle discarded asOf batch oid requestedDest requestedPosit
                         Moved.revealed = revealedLeaving,
                         Moved.seenArriving = seenArriving,
                         Moved.causedBy = causer,
-                        Moved.arrived = arrivedAs
+                        Moved.arrived = arrivedAs,
+                        Moved.whileActivating = underWay
                       }
                   -- CR 713.8's second clause: "two cards are put into the
                   -- appropriate zone". One event per card AFTER the leading one,
@@ -11118,7 +11121,7 @@ recordMintedArrival zone newId = do
   -- Moved.revealed is read by no look-back here: none reaches a battlefield
   -- destination (Event.Trigger.looksBack), and every battlefield-bound redirect
   -- in data/cards/ exiles, a public zone, so the public origin answers.
-  State.modify' (recordEvent (GameEvent.Moved ((Moved.moved (ZoneChange.MkZoneChange newId newId zone zone) snapshot) {Moved.revealed = True, Moved.seenArriving = Visibility.seenByEveryone newId placed, Moved.causedBy = Scratch.causing (GameState.scratch placed), Moved.arrived = Projection.objectSnapshot newId placed})))
+  State.modify' (recordEvent (GameEvent.Moved ((Moved.moved (ZoneChange.MkZoneChange newId newId zone zone) snapshot) {Moved.revealed = True, Moved.seenArriving = Visibility.seenByEveryone newId placed, Moved.causedBy = Scratch.causing (GameState.scratch placed), Moved.arrived = Projection.objectSnapshot newId placed, Moved.whileActivating = Scratch.activating (GameState.scratch placed)})))
 
 -- CR 701.42a: meld these cards -- "put them onto the battlefield with their back
 -- faces up and combined. The resulting permanent is a single object represented by
@@ -11260,7 +11263,7 @@ meld settle controller victims resultCard = do
           -- Moved.revealed is read by no look-back here: none reaches a
           -- battlefield destination (Event.Trigger.looksBack), so the origin's
           -- zone answers.
-          entry = (Moved.moved (ZoneChange.MkZoneChange (fst (NonEmpty.head melding)) newId origin Zone.Battlefield) snapshot) {Moved.otherDepartures = Seq.fromList (fmap fst (NonEmpty.tail melding)), Moved.revealed = not (Game.isHiddenZone origin), Moved.seenArriving = Visibility.seenByEveryone newId placed, Moved.causedBy = Scratch.causing (GameState.scratch placed), Moved.arrived = Projection.objectSnapshot newId placed}
+          entry = (Moved.moved (ZoneChange.MkZoneChange (fst (NonEmpty.head melding)) newId origin Zone.Battlefield) snapshot) {Moved.otherDepartures = Seq.fromList (fmap fst (NonEmpty.tail melding)), Moved.revealed = not (Game.isHiddenZone origin), Moved.seenArriving = Visibility.seenByEveryone newId placed, Moved.causedBy = Scratch.causing (GameState.scratch placed), Moved.arrived = Projection.objectSnapshot newId placed, Moved.whileActivating = Scratch.activating (GameState.scratch placed)}
       State.modify' (recordEvent (GameEvent.Moved entry))
       pure (Just newId)
 
@@ -12100,6 +12103,22 @@ announcing body = do
       result <- body
       State.modify' (\g -> g {GameState.scratch = (GameState.scratch g) {Scratch.keptFaceDown = Nothing, Scratch.announcedTops = Nothing}})
       pure result
+
+-- CR 602.2's window: run `body` as an activation, whose ability `nowActivating`
+-- names once it is announced, so a move made during it records it
+-- (Moved.whileActivating). The activations under way as it began are restored
+-- when `body` returns, whether or not the ability became activated: one
+-- reversed (CR 734.1) was still under way while it lasted.
+activating :: Game a -> Game a
+activating body = do
+  outer <- State.gets (Scratch.activating . GameState.scratch)
+  result <- body
+  State.modify' (\g -> g {GameState.scratch = (GameState.scratch g) {Scratch.activating = outer}})
+  pure result
+
+-- CR 602.2: `activation` is under way, innermost (`activating`'s window).
+nowActivating :: AbilityWasActivated.AbilityWasActivated -> GameState -> GameState
+nowActivating activation g = g {GameState.scratch = (GameState.scratch g) {Scratch.activating = activation : Scratch.activating (GameState.scratch g)}}
 
 -- CR 401.5's window for a special action (CR 116): run `body` as the taking of
 -- one, so a library's new top card is held back until it is finished

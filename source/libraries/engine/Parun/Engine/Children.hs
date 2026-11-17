@@ -1558,7 +1558,9 @@ data TriggerChildren f = MkTriggerChildren
     -- | Which mana a mana trigger watches (CR 106.12a), whole.
     triggerMana :: ManaSpecification.ManaSpecification -> f ManaSpecification.ManaSpecification,
     -- | A player a damage recipient names (CR 120.1), whole.
-    triggerPlayer :: PlayerRef.PlayerRef -> f PlayerRef.PlayerRef
+    triggerPlayer :: PlayerRef.PlayerRef -> f PlayerRef.PlayerRef,
+    -- | A rule-702 ability a field names (CR 702), whole.
+    triggerDesignator :: KeywordDesignator.KeywordDesignator Keyword.Keyword -> f (KeywordDesignator.KeywordDesignator Keyword.Keyword)
   }
 
 -- | Every child of a trigger condition left as it is: the base a walk
@@ -1575,7 +1577,8 @@ triggerLeaves =
       triggerFrequency = const pure,
       triggerCounters = pure,
       triggerMana = pure,
-      triggerPlayer = pure
+      triggerPlayer = pure,
+      triggerDesignator = pure
     }
 
 -- | A TriggerCondition's immediate children, each through its visitor. A
@@ -1617,16 +1620,22 @@ triggerConditionChildren c condition = case condition of
               )
           <*> pure batching
       )
-  TriggerCondition.Leaves (LeavesTrigger.MkLeavesTrigger permanent destinations excluded batching) ->
+  TriggerCondition.Leaves (LeavesTrigger.MkLeavesTrigger permanent destinations excluded batching whileActivating) ->
     fmap
-      (\renamed -> TriggerCondition.Leaves (LeavesTrigger.MkLeavesTrigger renamed destinations excluded batching))
-      ( case permanent of
-          LeavingPermanent.Self -> pure permanent
-          LeavingPermanent.Matching filter_ -> fmap LeavingPermanent.Matching (triggerFilter c filter_)
-          LeavingPermanent.Attached -> pure permanent
-          LeavingPermanent.Haunted -> pure permanent
-          LeavingPermanent.Bound slot_ -> fmap LeavingPermanent.Bound (triggerSlot c slot_)
-          LeavingPermanent.Chosen -> pure permanent
+      TriggerCondition.Leaves
+      ( LeavesTrigger.MkLeavesTrigger
+          <$> ( case permanent of
+                  LeavingPermanent.Self -> pure permanent
+                  LeavingPermanent.Matching filter_ -> fmap LeavingPermanent.Matching (triggerFilter c filter_)
+                  LeavingPermanent.Attached -> pure permanent
+                  LeavingPermanent.Haunted -> pure permanent
+                  LeavingPermanent.Bound slot_ -> fmap LeavingPermanent.Bound (triggerSlot c slot_)
+                  LeavingPermanent.Chosen -> pure permanent
+              )
+          <*> pure destinations
+          <*> pure excluded
+          <*> pure batching
+          <*> traverse (triggerDesignator c) whileActivating
       )
   TriggerCondition.LeavesZone (LeavesZoneTrigger.MkLeavesZoneTrigger card from to whose turn batching) ->
     fmap TriggerCondition.LeavesZone (LeavesZoneTrigger.MkLeavesZoneTrigger <$> actingChildren c card <*> pure from <*> pure to <*> pure whose <*> triggerTurn c turn <*> pure batching)

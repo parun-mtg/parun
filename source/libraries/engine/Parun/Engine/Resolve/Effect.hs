@@ -1537,8 +1537,11 @@ reflipWindow runSubgame flipper face = do
 -- The effects then run as performManaAbilityEffects runs a mana ability's, the
 -- source standing in for the ability object.
 activateWhileRolling :: Game Result -> PlayerId -> ObjectId -> ActivatedAbility.ActivatedAbility Card.Type.Card (GrantedAbility.GrantedAbility Card.Type.Card) -> Game Bool
-activateWhileRolling runSubgame pid oid ability = do
+activateWhileRolling runSubgame pid oid ability = Event.activating $ do
   before <- State.get
+  -- CR 602.2b: recorded with no stack object to name, and under way as such.
+  let activation = AbilityWasActivated.MkAbilityWasActivated {AbilityWasActivated.player = pid, AbilityWasActivated.ability = Nothing, AbilityWasActivated.source = oid, AbilityWasActivated.facts = Game.abilityFacts AbilityKind.NonManaAbility (Just ability), AbilityWasActivated.activationCost = Cost.Type.mana (ActivatedAbility.cost ability)}
+  State.modify' (Event.nowActivating activation)
   let stamp = ActivatedAbility.keyword ability
       loyalty = Loyalty.loyaltyKindOf (ActivatedAbility.cost ability)
       gathered = Cost.activationAdjustments Set.empty stamp (ActivatedAbility.name ability) AbilityKind.NonManaAbility loyalty pid oid before
@@ -1557,7 +1560,7 @@ activateWhileRolling runSubgame pid oid ability = do
     Payment.Paid _ -> do
       State.modify' (ActivationRestriction.recordActivation oid ability)
       State.modify' (ActivationRestriction.logActivation before pid oid (Just ability) AbilityKind.NonManaAbility Set.empty)
-      State.modify' (Event.recordEvent (GameEvent.AbilityActivated AbilityWasActivated.MkAbilityWasActivated {AbilityWasActivated.player = pid, AbilityWasActivated.ability = Nothing, AbilityWasActivated.source = oid, AbilityWasActivated.facts = Game.abilityFacts AbilityKind.NonManaAbility (Just ability), AbilityWasActivated.activationCost = Cost.Type.mana (ActivatedAbility.cost ability)}))
+      State.modify' (Event.recordEvent (GameEvent.AbilityActivated activation))
       let modal = ActivatedAbility.modal ability
           every = Set.fromList (fmap fst (zip (fmap ModeIndex.MkModeIndex [0 ..]) (Modal.modeEffects modal)))
           bound =

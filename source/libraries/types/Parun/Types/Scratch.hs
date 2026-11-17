@@ -4,6 +4,7 @@ import qualified Data.Map.Strict as Map
 import qualified Data.Sequence as Seq
 import qualified Data.Set as Set
 import qualified Numeric.Natural as Natural
+import qualified Parun.Types.AbilityWasActivated as AbilityWasActivated
 import qualified Parun.Types.Arrival as Arrival
 import qualified Parun.Types.Cause as Cause
 import qualified Parun.Types.CounterKind as CounterKind
@@ -116,6 +117,12 @@ data Scratch = MkScratch
     throwing :: !(Maybe ThrowResult.ThrowResult),
     -- | CR 706.2b: whether an ability activated inside that window asked for
     -- the die to be rerolled or the coin reflipped (Goblin Bookie).
-    rethrowRequested :: !Bool
+    rethrowRequested :: !Bool,
+    -- | CR 602.2: the activations under way, innermost first, as each will be
+    -- recorded once activated (Parun.Engine.Event.activating), which
+    -- Moved.whileActivating records. Empty outside one. A mana ability's is
+    -- not pushed: LeavesTrigger.whileActivating names a CR 702 keyword, and
+    -- none is a mana ability.
+    activating :: ![AbilityWasActivated.AbilityWasActivated]
   }
   deriving (Eq, Ord, Show)
