@@ -1,0 +1,112 @@
+{
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "battlefield": [
+          {
+            "card": "Magmatic Galleon",
+            "label": "galleon"
+          },
+          {
+            "card": "Mountain",
+            "label": "m1"
+          },
+          {
+            "card": "Mountain",
+            "label": "m2"
+          }
+        ],
+        "hand": [
+          {
+            "card": "Pyroclasm",
+            "label": "clasm"
+          }
+        ],
+        "name": "alice"
+      },
+      {
+        "battlefield": [
+          {
+            "card": "Llanowar Elves",
+            "label": "bobElves"
+          }
+        ],
+        "name": "bob"
+      },
+      {
+        "battlefield": [
+          {
+            "card": "Llanowar Elves",
+            "label": "carolElves"
+          }
+        ],
+        "name": "carol"
+      }
+    ],
+    "step": "PrecombatMain"
+  },
+  "description": "CR 603.2c Magmatic Galleon makes one Treasure when one sweeper deals excess damage to two opponents' creatures",
+  "note": "Pyroclasm's 2 damage to each 1/1 Llanowar Elves is 1 excess each, to creatures of two different opponents in one event: one occurrence of \"one or more creatures\", so one Treasure, not one per creature or per opponent.",
+  "timeline": [
+    {
+      "do": {
+        "Cast": {
+          "mana": [
+            "$m1",
+            "$m2"
+          ],
+          "object": "$clasm"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Llanowar Elves",
+          "count": 1,
+          "player": "bob",
+          "zone": "Graveyard"
+        }
+      },
+      "player": "alice",
+      "step": "EndStep",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Llanowar Elves",
+          "count": 1,
+          "player": "carol",
+          "zone": "Graveyard"
+        }
+      },
+      "player": "alice",
+      "step": "EndStep",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Treasure Token",
+          "count": 1,
+          "player": "alice",
+          "zone": "Battlefield"
+        }
+      },
+      "player": "alice",
+      "step": "EndStep",
+      "turn": 1
+    }
+  ]
+}

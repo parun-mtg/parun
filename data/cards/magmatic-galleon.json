@@ -1,0 +1,205 @@
+{
+  "faces": [
+    {
+      "keywords": [
+        {
+          "type": "Crew",
+          "value": {
+            "power": 2
+          }
+        }
+      ],
+      "manaCost": [
+        {
+          "type": "Generic",
+          "value": 3
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "Red"
+          }
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "Red"
+          }
+        }
+      ],
+      "name": "Magmatic Galleon",
+      "oracleText": "When this Vehicle enters, it deals 5 damage to target creature an opponent controls.\nWhenever one or more creatures your opponents control are dealt excess noncombat damage, create a Treasure token.\nCrew 2",
+      "power": {
+        "type": "Literal",
+        "value": 5
+      },
+      "toughness": {
+        "type": "Literal",
+        "value": 5
+      },
+      "triggeredAbilities": [
+        {
+          "condition": {
+            "type": "Enters",
+            "value": {}
+          },
+          "modal": {
+            "modes": [
+              {
+                "clauses": [
+                  {
+                    "effects": [
+                      {
+                        "type": "DealDamage",
+                        "value": {
+                          "parts": [
+                            {
+                              "quantity": {
+                                "type": "Literal",
+                                "value": 5
+                              },
+                              "ref": {
+                                "type": "InSlot",
+                                "value": "target"
+                              }
+                            }
+                          ]
+                        }
+                      }
+                    ]
+                  }
+                ],
+                "targetSlots": {
+                  "target": {
+                    "filter": {
+                      "type": "HeldBy",
+                      "value": {
+                        "holder": "Controller",
+                        "relation": "Opponent"
+                      }
+                    },
+                    "pool": {
+                      "type": "Creatures"
+                    }
+                  }
+                }
+              }
+            ]
+          }
+        },
+        {
+          "condition": {
+            "type": "IsDealtDamage",
+            "value": {
+              "dealt": {
+                "kind": "Noncombat",
+                "recipient": {
+                  "type": "Matching",
+                  "value": {
+                    "type": "And",
+                    "value": [
+                      {
+                        "type": "HasCardType",
+                        "value": "Creature"
+                      },
+                      {
+                        "type": "HeldBy",
+                        "value": {
+                          "holder": "Controller",
+                          "relation": "Opponent"
+                        }
+                      }
+                    ]
+                  }
+                }
+              },
+              "excess": true,
+              "wholeBatch": true
+            }
+          },
+          "modal": {
+            "modes": [
+              {
+                "clauses": [
+                  {
+                    "effects": [
+                      {
+                        "type": "Create",
+                        "value": {
+                          "card": {
+                            "faces": [
+                              {
+                                "activatedAbilities": [
+                                  {
+                                    "cost": {
+                                      "components": [
+                                        {
+                                          "type": "TapThis"
+                                        },
+                                        {
+                                          "type": "SacrificeThis"
+                                        }
+                                      ],
+                                      "mana": []
+                                    },
+                                    "modal": {
+                                      "modes": [
+                                        {
+                                          "clauses": [
+                                            {
+                                              "effects": [
+                                                {
+                                                  "type": "AddMana",
+                                                  "value": {
+                                                    "production": {
+                                                      "type": "AnyColor"
+                                                    }
+                                                  }
+                                                }
+                                              ]
+                                            }
+                                          ]
+                                        }
+                                      ]
+                                    }
+                                  }
+                                ],
+                                "name": "Treasure Token",
+                                "typeLine": {
+                                  "subtypes": [
+                                    "Treasure"
+                                  ],
+                                  "types": [
+                                    "Artifact"
+                                  ]
+                                }
+                              }
+                            ]
+                          },
+                          "quantity": {
+                            "type": "Literal",
+                            "value": 1
+                          }
+                        }
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      ],
+      "typeLine": {
+        "subtypes": [
+          "Vehicle"
+        ],
+        "types": [
+          "Artifact"
+        ]
+      }
+    }
+  ]
+}

@@ -10,10 +10,18 @@ import qualified Parun.Types.DealtDamage as DealtDamage
 data PermanentIsDealtDamage = MkPermanentIsDealtDamage
   { dealt :: DealtDamage.DealtDamage ActingPermanent.ActingPermanent,
     -- | OneOrMore for "is dealt damage": one occurrence per damaged permanent
-    -- per simultaneous batch (Ripjaw Raptor's and Fungusaur's rulings).
+    -- per simultaneous batch (Ripjaw Raptor's and Fungusaur's rulings), or
+    -- one for the batch with wholeBatch.
     -- EachOccurrence for "a source deals damage to": one per damage event, so
     -- per source (Belltower Sphinx).
     batching :: Batching.Batching,
+    -- | Under OneOrMore, one occurrence for the whole batch, whichever
+    -- permanents it damaged: "one or more creatures ... are dealt damage"
+    -- (Magmatic Galleon, CR 603.2c).
+    --
+    -- Unprinted: beside EachOccurrence; Parun.FilterPositionLintSpec's "CR
+    -- 603.2c no card writes wholeBatch beside EachOccurrence" keeps it out.
+    wholeBatch :: Bool,
     -- | CR 120.10: only damage over the permanent's bar, "is dealt excess
     -- damage" (Fall of Cair Andros); its amount is the excess.
     excess :: Bool,
