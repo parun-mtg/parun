@@ -464,9 +464,9 @@ lifeChanged tally =
 -- printed (Anurid Barkripper) or not (Illuminate History). Free for spell
 -- mastery: printed (Calculated Dismissal). Free for infusion: printed
 -- (Foolish Fate). Free for survival: printed (Cautious Survivor). Free for
--- descend 4: printed (Frilled Cave-Wurm).
+-- descend 4 and descend 8: printed (Join the Dead, Frilled Cave-Wurm).
 abilityWord :: Text.Text -> [Text.Text]
-abilityWord words' = [Text.empty] <> [Text.pack "Hellbent \8212 " | words' == Text.pack "you have no cards in hand"] <> [Text.pack "Raid \8212 " | words' == Text.pack "you attacked this turn"] <> [Text.pack "Threshold \8212 " | words' == Text.pack "there are seven or more cards in your graveyard"] <> [Text.pack "Spell mastery \8212 " | words' == Text.pack "there are two or more instant and/or sorcery cards in your graveyard"] <> [Text.pack "Infusion \8212 " | words' == Text.pack "you gained life this turn"] <> [Text.pack "Survival \8212 " | Text.isSuffixOf (Text.pack " is tapped") words'] <> [Text.pack "Descend 4 \8212 " | words' == Text.pack "there are four or more permanent cards in your graveyard"]
+abilityWord words' = [Text.empty] <> [Text.pack "Hellbent \8212 " | words' == Text.pack "you have no cards in hand"] <> [Text.pack "Raid \8212 " | words' == Text.pack "you attacked this turn"] <> [Text.pack "Threshold \8212 " | words' == Text.pack "there are seven or more cards in your graveyard"] <> [Text.pack "Spell mastery \8212 " | words' == Text.pack "there are two or more instant and/or sorcery cards in your graveyard"] <> [Text.pack "Infusion \8212 " | words' == Text.pack "you gained life this turn"] <> [Text.pack "Survival \8212 " | Text.isSuffixOf (Text.pack " is tapped") words'] <> [Text.pack "Descend " <> Text.pack (show n) <> Text.pack " \8212 " | n <- [4 :: Int, 8], words' == Text.pack "there are " <> Prose.cardinal (toInteger n) <> Text.pack " or more permanent cards in your graveyard"]
 
 -- | The ability word (CR 207.2c) Oracle text may print before an ability
 -- this event opens. Free for alliance: printed (Raphael, Tough Turtle) or not
