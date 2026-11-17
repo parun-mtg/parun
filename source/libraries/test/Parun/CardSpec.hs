@@ -6981,6 +6981,10 @@ lintSpec s registry corpus = Spec.describe s "Lint" $ do
           Resolve.hasRead StaticRead.ReadsManaSpent (Modal.allEffects (Face.spell c))
             || entryCountersRead (Quantity.hasRead StaticRead.ReadsManaSpent) (concatMap (entryMembers . PrintedReplacement.effect) (Face.replacementEffects c))
             || asCopyAmountRead (Quantity.hasRead StaticRead.ReadsManaSpent) (concatMap (entryMembers . PrintedReplacement.effect) (Face.replacementEffects c))
+        -- CR 702.44a's reader: sunburst counts the colours of the mana spent
+        -- to cast the spell, X's among them (Engineered Explosives). Like
+        -- spellReadsSpent, it answers only for a spell declaring X.
+        sunburstReadsSpent c = Map.member Keyword.Sunburst (Face.keywords c)
         -- CR 707.5's offer bounded by an amount (Parun.Types.AsCopy's), read
         -- at the entry like entryCountersRead's counters.
         asCopyAmountRead readsOff rows =
@@ -6989,7 +6993,7 @@ lintSpec s registry corpus = Spec.describe s "Lint" $ do
             fmap readsOff (Maybe.maybeToList (AsCopy.amount asCopy))
         offends f =
           let spellDeclaresX = any declaresVariable (spellCostsOf f)
-           in ((readsX f || (spellDeclaresX && spellReadsSpent f)) /= (spellDeclaresX || turnUpDeclaresX f))
+           in ((readsX f || (spellDeclaresX && (spellReadsSpent f || sunburstReadsSpent f))) /= (spellDeclaresX || turnUpDeclaresX f))
                 || (not spellDeclaresX && turnUpDeclaresX f /= turnedUpReadsX f)
         offenders = filter (anyFace offends . Printing.card) ps
     Spec.assertEqWith s "X read iff X declared" (fmap (S.nameOf . Printing.card) offenders) []

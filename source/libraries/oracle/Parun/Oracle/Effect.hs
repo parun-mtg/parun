@@ -196,6 +196,7 @@ choose context memory selection count = case (memory, selection) of
           casting <- Text.empty : [Text.pack " as you cast this spell" | elem (Text.pack "\n") (Target.breaks context)]
           widened <- case ChooseInstead.instead ci of
             ModeSelection.ChooseExactly k | k > n -> [Text.pack "choose " <> many k]
+            ModeSelection.ChooseBetween b | ChooseBetween.least b == 1, n == 1, toInteger (ChooseBetween.most b) == toInteger count, count > 2 -> [Text.pack "choose one or more"]
             ModeSelection.ChooseBetween b | ChooseBetween.least b == n, ChooseBetween.most b > n -> [Text.pack "you may choose " <> many (ChooseBetween.most b)]
             _ -> []
           [Text.pack "Choose " <> Prose.cardinal (toInteger n) <> Text.pack ". If " <> words' <> casting <> Text.pack ", " <> widened <> Text.pack " instead."]
@@ -762,6 +763,9 @@ joined context predicates = case predicates of
         [(Prose.sentence (clauseText p <> Text.pack " and " <> clauseText q) <> trailing q, allMentions p <> allMentions q) | fmap Target.wording (subject q) == Just (Text.pack "you")]
           <> [(Prose.sentence (clauseText p <> Text.pack " and " <> verb q) <> trailing q, allMentions p <> mentions q)]
           <> [(Prose.sentence ((if implied p then verb p else clauseText p) <> Text.pack ", then " <> verb q) <> trailing q, allMentions p <> mentions q)]
+          -- Free: two imperatives joined by "and" (Make It So's "create a 1/1
+          -- red Officer creature token and draw two cards").
+          <> [(Prose.sentence (verb p <> Text.pack " and " <> verb q) <> trailing q, allMentions p <> mentions q) | implied p, implied q]
           -- Free: ", then you" (Wall Crawl).
           <> [(Prose.sentence ((if implied p then verb p else clauseText p) <> Text.pack ", then " <> clauseText q) <> trailing q, allMentions p <> allMentions q) | fmap Target.wording (subject q) == Just (Text.pack "you")]
           -- Free for one count read twice: "equal to" each time, above, or one
@@ -778,7 +782,7 @@ joined context predicates = case predicates of
           <> imperativeAnd
     -- Free: two sentences (Afterlife Insurance), "and" (Bad Deal) or, after
     -- an imperative, ", then" (Macabre Waltz) or "and" (Sorcerer's Strongbox).
-    | implied p || implied q -> apart <> together <> togetherX <> thenImperative <> andImperative <> imperativeAnd <> imperativeThen
+    | implied p || implied q -> apart <> apartRestated <> together <> togetherX <> thenImperative <> andImperative <> imperativeAnd <> imperativeThen
     -- Free: "and" (Vampiric Feast), two sentences (Soul Shred) or, after an
     -- instruction naming no subject, ", then" (Rust Harvester).
     | otherwise -> together <> apart <> togetherX <> durationFirst <> durationFirstX <> subjectlessThen
@@ -805,6 +809,10 @@ joined context predicates = case predicates of
       together = [(Prose.sentence (clauseText p <> Text.pack " and " <> clauseText q) <> trailing q, allMentions p <> allMentions q)]
       subjectlessThen = [(Prose.sentence (clauseText p <> Text.pack ", then " <> clauseText q) <> trailing q, allMentions p <> allMentions q) | Maybe.isNothing (subject p)]
       apart = [(text, allMentions p <> allMentions q) | text <- followedBy context (sentences p) (sentences q)]
+      -- Free: after another player's sentence, an imperative of "you" keeps
+      -- its "you" (Test of Conviction's "Target opponent draws a card. You
+      -- draw two cards.").
+      apartRestated = [(text, allMentions p <> allMentions q) | Maybe.isJust (subject p), not (implied p), implied q, text <- followedBy context (sentences p) (Prose.sentence (clauseText q) <> trailing q)]
       -- Free: a series, whose last step alone keeps "then" (Curse-Marred
       -- Demon's "put it into your hand, shuffle, then discard a card at random").
       thenImperative = [(Prose.sentence (first <> Text.pack ", then " <> verb q) <> trailing q, allMentions p <> mentions q) | Maybe.isNothing (subject p), implied q, first <- clauseText p : serial (clauseText p)]
