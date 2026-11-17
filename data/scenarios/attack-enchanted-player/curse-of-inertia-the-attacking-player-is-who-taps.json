@@ -1,0 +1,36 @@
+{
+  "description": "CR 608.2c Curse of Inertia: \"that attacking player may tap\" is the attacking player's tap, so their Icewrought Sentry's \"whenever you tap an untapped creature an opponent controls\" triggers",
+  "note": "Bob's Curse enchants carol and alice attacks her with her Bears. Bob controls the trigger, but alice taps bob's Hill Giant, so her Sentry at home is a 4/4 by the declare blockers step; crediting bob, who tapped his own creature, leaves it a 2/3.",
+  "board": {
+    "active": "alice",
+    "step": "BeginningOfCombat",
+    "seats": [
+      {
+        "name": "alice",
+        "battlefield": [
+          { "card": "Icewrought Sentry", "label": "sentry", "ready": true },
+          { "card": "Grizzly Bears", "label": "bears", "ready": true }
+        ]
+      },
+      {
+        "name": "bob",
+        "battlefield": [
+          { "card": "Curse of Inertia", "label": "curse", "attached": "carol" },
+          { "card": "Hill Giant", "label": "giant" }
+        ]
+      },
+      {
+        "name": "carol",
+        "battlefield": [{ "card": "Forest" }]
+      }
+    ]
+  },
+  "timeline": [
+    { "turn": 1, "step": "DeclareAttackers", "player": "alice", "do": { "Attack": ["$bears"] } },
+    { "turn": 1, "step": "DeclareAttackers", "player": "alice", "source": "$bears", "do": { "ChooseAttackTarget": "$carol" } },
+    { "turn": 1, "step": "DeclareAttackers", "player": "alice", "source": "$curse", "do": { "ChooseTargets": { "target": ["$giant"] } } },
+    { "turn": 1, "step": "DeclareAttackers", "player": "alice", "source": "$curse", "do": { "ChooseOptional": "Exercises" } },
+    { "turn": 1, "step": "DeclareAttackers", "player": "alice", "check": { "Tapped": { "object": "$giant", "tapped": true } } },
+    { "turn": 1, "step": "DeclareBlockers", "player": "alice", "check": { "PowerToughness": { "object": "$sentry", "power": 4, "toughness": 4 } } }
+  ]
+}
