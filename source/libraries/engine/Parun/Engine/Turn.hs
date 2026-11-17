@@ -34,6 +34,7 @@ import qualified Parun.Types.PlayerRelation as PlayerRelation
 import qualified Parun.Types.StepBegan as StepBegan
 import qualified Parun.Types.Teams as Teams
 import qualified Parun.Types.Timestamp as Timestamp
+import qualified Parun.Types.TurnKind as TurnKind
 import qualified Parun.Types.TurnMarker as TurnMarker
 import qualified Parun.Types.TurnRegisters as TurnRegisters
 import qualified Parun.Types.TurnRole as TurnRole
@@ -145,20 +146,22 @@ duringRunningTurn :: (PlayerRef.PlayerRef -> Maybe [PlayerId]) -> GameState -> M
 duringRunningTurn named gs window scope own =
   any (\(active, phase) -> maybe True (`inWindow` phase) window && turnScopeAdmits named gs scope active own) (runningTurns gs)
 
--- | CR 500.7: how many turns this player has begun this game, extra turns
--- included.
-turnsBegun :: PlayerId -> GameState -> Natural
-turnsBegun pid gs = Map.findWithDefault 0 pid (GameState.turnsBegun gs)
+-- | CR 500.7: how many turns of this kind this player has begun this game.
+turnsBegun :: TurnKind.TurnKind -> PlayerId -> GameState -> Natural
+turnsBegun kind pid gs = maybe 0 (Map.findWithDefault 0 pid) (Map.lookup kind (GameState.turnsBegun gs))
 
 -- | CR 500.7 / 805.4: GameState.turnsBegun once a turn begins, counted for
--- every player who takes it.
-countTurnBegun :: [PlayerId] -> Map.Map PlayerId Natural -> Map.Map PlayerId Natural
-countTurnBegun takers tally = List.foldl' (\counted p -> Map.insertWith (+) p 1 counted) tally takers
+-- every player who takes it: as TurnKind.AnyTurn, and as `kind` too, the
+-- turn's own kind.
+countTurnBegun :: TurnKind.TurnKind -> [PlayerId] -> Map.Map TurnKind.TurnKind (Map.Map PlayerId Natural) -> Map.Map TurnKind.TurnKind (Map.Map PlayerId Natural)
+countTurnBegun kind takers tallies =
+  let count tally = List.foldl' (\counted p -> Map.insertWith (+) p 1 counted) tally takers
+   in Foldable.foldl' (flip (Map.alter (Just . count . Maybe.fromMaybe Map.empty))) tallies (Set.fromList [TurnKind.AnyTurn, kind])
 
 -- | CR 103.1 / 805.4: GameState.turnsBegun as a game begins with `starter`'s
 -- turn, each of its takers' first.
-firstTurnBegun :: GameSettings.GameSettings -> [PlayerId] -> PlayerId -> Map.Map PlayerId Natural
-firstTurnBegun settings order starter = countTurnBegun (filter (sharesTurnUnder settings starter) order) Map.empty
+firstTurnBegun :: GameSettings.GameSettings -> [PlayerId] -> PlayerId -> Map.Map TurnKind.TurnKind (Map.Map PlayerId Natural)
+firstTurnBegun settings order starter = countTurnBegun TurnKind.AnyTurn (filter (sharesTurnUnder settings starter) order) Map.empty
 
 -- | CR 500.7: "that turn", the extra turn `source`'s resolution just created
 -- for `controller` -- the most recently created pending entry from that source

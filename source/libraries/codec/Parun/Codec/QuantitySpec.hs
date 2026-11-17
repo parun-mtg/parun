@@ -71,6 +71,7 @@ import qualified Parun.Types.SlotName as SlotName
 import qualified Parun.Types.SpellTally as SpellTally
 import qualified Parun.Types.Subtype as Subtype
 import qualified Parun.Types.Times as Times
+import qualified Parun.Types.TurnKind as TurnKind
 import qualified Parun.Types.TurnTally as TurnTally
 import qualified Parun.Types.VotesReceived as VotesReceived
 import qualified Parun.Types.WhichTurn as WhichTurn
@@ -370,8 +371,15 @@ spec s = Spec.describe s "Parun.Codec.Quantity" $ do
     Common.assertCodec
       s
       Quantity.codec
-      (Quantity.TurnsBegun (PlayerRef.Relative PlayerRelation.You))
+      (Quantity.TurnsBegun TurnKind.AnyTurn (PlayerRef.Relative PlayerRelation.You))
       " {\"type\":\"TurnsBegun\",\"value\":{\"type\":\"Relative\",\"value\":\"You\"}} "
+  -- H.M.S. Bounty's "haven't begun an extra turn this game".
+  Spec.it s "ExtraTurnsBegun" $
+    Common.assertCodec
+      s
+      Quantity.codec
+      (Quantity.TurnsBegun TurnKind.ExtraTurn (PlayerRef.Relative PlayerRelation.You))
+      " {\"type\":\"ExtraTurnsBegun\",\"value\":{\"type\":\"Relative\",\"value\":\"You\"}} "
   -- CR 702.112b, CR 701.37b and CR 701.60b: WHICH designation is on the wire and
   -- nothing else, the object it is asked of riding the evaluation rather than a
   -- reference -- so this is Power's shape rather than IsMonarch's.

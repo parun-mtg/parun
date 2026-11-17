@@ -35,6 +35,7 @@ import qualified Parun.Types.SlotName as SlotName
 import qualified Parun.Types.Snapshots as Snapshots
 import qualified Parun.Types.StoredEffects as StoredEffects
 import qualified Parun.Types.Timestamp as Timestamp
+import qualified Parun.Types.TurnKind as TurnKind
 import qualified Parun.Types.TurnMarker as TurnMarker
 import qualified Parun.Types.TurnRegisters as TurnRegisters
 
@@ -110,11 +111,12 @@ data GameState = MkGameState
     -- opposite to `seating`, an odd number of reversals having resolved.
     -- Seating itself does not change.
     turnOrderReversed :: Bool,
-    -- | CR 500.7 / 805.4: how many turns each player has begun this game, extra
-    -- turns included; under the shared team turns option a team's turn is each
-    -- member's. Kept across turns; a restart (CR 728.1) and a subgame (CR
-    -- 730.2) begin it again. Turn.turnsBegun reads it.
-    turnsBegun :: Map.Map PlayerId.PlayerId Natural.Natural,
+    -- | CR 500.7 / 805.4: how many turns of each kind each player has begun
+    -- this game, every turn counting as TurnKind.AnyTurn; under the shared team
+    -- turns option a team's turn is each member's. Kept across turns; a restart
+    -- (CR 728.1) and a subgame (CR 730.2) begin it again. Turn.turnsBegun reads
+    -- it.
+    turnsBegun :: Map.Map TurnKind.TurnKind (Map.Map PlayerId.PlayerId Natural.Natural),
     result :: Maybe Result.Result,
     -- | CR 728.4: raised while a restart has replaced this game underneath the
     -- frames still running it; Engine.runStep lowers it as turn 1's untap step

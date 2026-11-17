@@ -2432,7 +2432,7 @@ newTurn extra pid gs =
       -- control (CR 724.1b) runs on through this one's beginning.
       parked = Map.elems (GameState.parkedTurns gs)
       elsewhere taker = any (\r -> Turn.sharesTurn gs (TurnRegisters.activePlayer r) taker) parked
-      begunSoFar = [sum (GameState.turnsBegun gs) | not (null (GameState.turnMarkers gs))]
+      begunSoFar = [sum (Map.findWithDefault Map.empty TurnKind.AnyTurn (GameState.turnsBegun gs)) | not (null (GameState.turnMarkers gs))]
    in -- CR 603.7a: the one moment a delayed ability armed for "your next turn"
       -- can learn which turn that is, and an entry whose turn has passed be
       -- retired. Applied to the UPDATED state, both answers being read off this
@@ -2452,8 +2452,9 @@ newTurn extra pid gs =
                   TurnRegisters.remaining = Turn.laterPhases,
                   TurnRegisters.turnResume = TurnResume.AtStepStart
                 },
-            -- CR 500.7: the turn is one of each taker's turns of the game.
-            GameState.turnsBegun = Turn.countTurnBegun takers (GameState.turnsBegun gs),
+            -- CR 500.7: the turn is one of each taker's turns of the game, and
+            -- one of their extra turns if an effect created it.
+            GameState.turnsBegun = Turn.countTurnBegun (maybe TurnKind.AnyTurn (const TurnKind.ExtraTurn) extra) takers (GameState.turnsBegun gs),
             -- CR 801.2c: who is in range is fixed as each turn begins, so the
             -- seats emptied during the outgoing turn close up here.
             GameState.departedThisTurn = Set.empty,

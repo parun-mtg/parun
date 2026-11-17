@@ -38,6 +38,7 @@ import qualified Parun.Types.PlayerRef as PlayerRef
 import qualified Parun.Types.ProductionTag as ProductionTag
 import qualified Parun.Types.SlotName as SlotName
 import qualified Parun.Types.SpellTally as SpellTally
+import qualified Parun.Types.TurnKind as TurnKind
 import qualified Parun.Types.TurnTally as TurnTally
 import qualified Parun.Types.VotesReceived as VotesReceived
 
@@ -140,8 +141,8 @@ data Quantity
     IsStartingPlayer PlayerRef.PlayerRef
   | -- | CR 102.1: 1 if that player is the active player, else 0.
     IsActivePlayer PlayerRef.PlayerRef
-  | -- | CR 500.7: how many turns of the game that player has begun, extra turns included.
-    TurnsBegun PlayerRef.PlayerRef
+  | -- | CR 500.7: how many turns of that kind of the game that player has begun.
+    TurnsBegun TurnKind.TurnKind PlayerRef.PlayerRef
   | -- | CR 700.5: that player's devotion to the payload's colours -- how many
     -- mana symbols of any of them appear among the mana costs of the permanents
     -- they control.

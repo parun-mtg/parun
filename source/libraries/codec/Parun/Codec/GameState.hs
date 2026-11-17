@@ -3,9 +3,11 @@
 -- | A game in progress, on the wire (#126).
 module Parun.Codec.GameState where
 
+import qualified Data.List as List
 import qualified Data.Map.Strict as Map
 import qualified Data.Sequence as Seq
 import qualified Data.Set as Set
+import qualified Data.Text as Text
 import qualified Parun.Codec.AbilityTriggered as AbilityTriggered
 import qualified Parun.Codec.AbilityWasActivated as AbilityWasActivated
 import qualified Parun.Codec.ActiveAttackProhibition as ActiveAttackProhibition
@@ -83,6 +85,7 @@ import qualified Parun.Types.Scratch as Scratch
 import qualified Parun.Types.SlotName as SlotName.Type
 import qualified Parun.Types.Snapshots as Snapshots
 import qualified Parun.Types.StoredEffects as StoredEffects
+import qualified Parun.Types.TurnKind as TurnKind
 
 -- | Every field but one, in the record's own order.
 --
@@ -184,7 +187,7 @@ codec resolve = Fields.object $ do
   ignoredAbilities <- Fields.defaulted "ignoredAbilities" [] (Common.list IgnoredAbility.codec) (StoredEffects.ignoredAbilities . GameState.stored)
   seating <- Fields.required "seating" (Common.list PlayerId.codec) GameState.seating
   turnOrderReversed <- Fields.defaulted "turnOrderReversed" False Common.boolean GameState.turnOrderReversed
-  turnsBegun <- Fields.defaulted "turnsBegun" Map.empty (Common.naturalMap PlayerId.codec Common.natural) GameState.turnsBegun
+  turnsBegun <- Fields.defaulted "turnsBegun" Map.empty (Common.textMap (Text.pack . show) turnKindOf (Common.naturalMap PlayerId.codec Common.natural)) GameState.turnsBegun
   result <- Fields.defaulted "result" Nothing (Common.maybe Result.codec) GameState.result
   restartSignal <- Fields.defaulted "restartSignal" RestartSignal.Type.Playing RestartSignal.codec GameState.restartSignal
   nextObjectId <- Fields.required "nextObjectId" ObjectId.codec (Bookkeeping.nextObjectId . GameState.bookkeeping)
@@ -390,3 +393,7 @@ codec resolve = Fields.object $ do
 -- half of it is written".
 invert :: Map.Map PrintingId.Type.PrintingId Printing.Type.Printing -> Map.Map Printing.Type.Printing PrintingId.Type.PrintingId
 invert = Map.fromList . fmap (\(i, p) -> (p, i)) . Map.toList
+
+-- | A GameState.turnsBegun key: a TurnKind by its constructor's name.
+turnKindOf :: Text.Text -> Either Text.Text TurnKind.TurnKind
+turnKindOf key = maybe (Left (Text.pack "unknown turn kind: " <> key)) Right (List.lookup key [(Text.pack (show kind), kind) | kind <- [minBound .. maxBound]])

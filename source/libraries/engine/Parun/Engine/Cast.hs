@@ -154,6 +154,7 @@ import qualified Parun.Types.TappedToPay as TappedToPay
 import qualified Parun.Types.TargetSlot as TargetSlot
 import qualified Parun.Types.Timestamp as Timestamp
 import qualified Parun.Types.Together as Together
+import qualified Parun.Types.TurnKind as TurnKind
 import qualified Parun.Types.TurnRegisters as TurnRegisters
 import qualified Parun.Types.TurnWindow as TurnWindow
 import qualified Parun.Types.TypeLine as TypeLine
@@ -2060,7 +2061,7 @@ restrictionMet pid oid gs restriction = case restriction of
   CastingRestriction.DuringTurn scope -> Turn.duringRunningTurn named gs Nothing scope pid
   -- CR 500.7: the caster's own turns, extra ones included; another player's
   -- turn is never one of them (Serra Avenger's rulings).
-  CastingRestriction.NotDuringFirstTurns n -> not (Turn.hasTurnRunning gs pid && Turn.turnsBegun pid gs <= n)
+  CastingRestriction.NotDuringFirstTurns n -> not (Turn.hasTurnRunning gs pid && Turn.turnsBegun TurnKind.AnyTurn pid gs <= n)
   -- CR 601.3's prohibition over a fact about the game, through the evaluation
   -- CR 602.5's activation rider uses (ActivationRestriction.onlyIfHolds), with
   -- the would-be caster as CR 109.5's "you". Against the board BEFORE CR

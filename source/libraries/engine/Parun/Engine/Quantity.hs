@@ -595,8 +595,8 @@ evaluateAgainst viewOf context gs announcedOn mOid mView quantity =
           Just pids -> Just (if any (Turn.hasTurnRunning gs) pids then 1 else 0)
         -- CR 500.7: the count CastingRestriction.NotDuringFirstTurns reads, of
         -- exactly one player, LifeTotal's arity.
-        Quantity.TurnsBegun ref -> case playersOf ref of
-          Just [pid] -> Just (toInteger (Turn.turnsBegun pid gs))
+        Quantity.TurnsBegun kind ref -> case playersOf ref of
+          Just [pid] -> Just (toInteger (Turn.turnsBegun kind pid gs))
           _ -> Nothing
         -- CR 122.1: how many counters of a kind that player has. The third arm on
         -- LifeTotal's and Speed's terms -- live, one player only, through the same
@@ -1784,7 +1784,7 @@ talliesWhatHappened quantity = case quantity of
   Quantity.HasPlayerDesignation {} -> False
   Quantity.IsStartingPlayer _ -> False
   Quantity.IsActivePlayer _ -> False
-  Quantity.TurnsBegun _ -> False
+  Quantity.TurnsBegun {} -> False
   Quantity.PlayerCounters {} -> False
   Quantity.Devotion {} -> False
   Quantity.PartySize _ -> False

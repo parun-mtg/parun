@@ -1,7 +1,8 @@
 module Parun.Types.TurnKind where
 
--- | CR 500.7 / 614.10: which turns a whole-turn skip names, or which kind of
--- turn Parun.Engine.Engine offers up as one would begin.
+-- | CR 500.7 / 614.10: which turns a whole-turn skip names or a turn count
+-- counts, or which kind of turn Parun.Engine.Engine offers up as one would
+-- begin.
 data TurnKind
   = -- | Any turn (CR 500.11); offered for a turn no effect created.
     AnyTurn
