@@ -336,7 +336,9 @@ fight runPreventionRiders runReplacementEffects runSubgame resolving source cont
       -- action, so the two blows land simultaneously and a creature that dies
       -- to the first still dealt the second. A paired fight's pairs share it,
       -- Ezuri's Predation's ruling of 2015-11-04 that the fights happen at the
-      -- same time.
+      -- same time:
+      -- data/scenarios/ezuris-predation-fights-every-pair-in-one-damage-batch.json
+      -- proves it.
       if null events
         then pure 0
         else do

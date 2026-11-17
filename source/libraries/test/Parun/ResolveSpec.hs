@@ -868,6 +868,21 @@ resolveSpec s registry = Spec.describe s "Resolve" $ do
     Spec.assertEqWith s "and her library still holds all three Pikers" (length (Game.zoneMembers Zone.Library S.alice after)) 3
     Spec.assertEqWith s "CR 603.5's \"may\" was never put" (optionalsAnswered asked) []
     Spec.assertEqWith s "the control: the mandatory first clause still happened, so bob took the 3 damage" (S.lifeOf S.bob after) (Just 17)
+  -- CR 603.12: an object loop clears its name as it begins and leaves its
+  -- members under it as it ends (Arms.Zones.forEach), whether or not its body
+  -- did anything, so neither write is an act. A REGRESSION FENCE: no card puts
+  -- a "when you do" or a mandatory "if you do" after an object loop. The
+  -- control is the same group left without the note.
+  Spec.it s "CR 603.12 a loop's group of its members is no act" $ do
+    piker <- S.printingOf s registry "Goblin Piker"
+    let (holder, gs1) = S.addPermanent piker S.alice (Setup.emptyGame S.bothPlayers)
+        (member, gs) = S.addPermanent piker S.bob gs1
+        slot = SlotName.MkSlotName (Text.pack "those")
+        group = Resolve.overHolderBindings holder (Map.insert slot (Binding.toObjects (Seq.singleton member)))
+        cleared = Resolve.overHolderBindings holder (Map.delete slot)
+    Spec.assertEqWith s "CR 603.12 the noted group is no act" (Resolve.happenedBetween gs (group (Resolve.noteLoopGroup holder slot gs))) False
+    Spec.assertEqWith s "nor is clearing it" (Resolve.happenedBetween (group gs) (cleared (Resolve.noteLoopGroup holder slot (group gs)))) False
+    Spec.assertEqWith s "the control: unnoted, the same group is a difference" (Resolve.happenedBetween gs (group gs)) True
   -- CR 118.12: Victimize ({2}{B} Sorcery, "Choose two target creature cards in
   -- your graveyard. Sacrifice a creature. If you do, return the chosen cards to
   -- the battlefield tapped."; Scryfall 2026-10-03). The sacrifice is MANDATORY,

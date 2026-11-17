@@ -166,6 +166,7 @@ withoutAnnouncement before entry between closed = do
   loopInvolvement <- newest GameState.loopInvolvement
   drewFromEmpty <- setOf GameState.drewFromEmpty
   fellShort <- newest (Bookkeeping.fellShort . GameState.bookkeeping)
+  loopGroups <- mapOf (Bookkeeping.loopGroups . GameState.bookkeeping)
   landsPlayed <- mapOf GameState.landsPlayed
   cardsPlayed <- mapOf GameState.cardsPlayed
   drawsThisTurn <- mapOf (TurnRegisters.drawsThisTurn . GameState.turn)
@@ -318,7 +319,8 @@ withoutAnnouncement before entry between closed = do
               Bookkeeping.lastChoice = lastChoice,
               Bookkeeping.repeatPicks = repeatPicks,
               Bookkeeping.undone = undone,
-              Bookkeeping.fellShort = fellShort
+              Bookkeeping.fellShort = fellShort,
+              Bookkeeping.loopGroups = loopGroups
             },
         GameState.snapshots =
           Snapshots.MkSnapshots

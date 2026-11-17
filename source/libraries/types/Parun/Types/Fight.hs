@@ -22,7 +22,8 @@ data Fight = MkFight
     second :: SlotName.SlotName,
     -- | CR 301.5a / 303.4b / 608.2h: which object `first` names, its slot's own
     -- or the permanent that one is attached to as the fight happens (Novel
-    -- Nunchaku's "equipped creature fights"). Elided when Hop.Itself.
+    -- Nunchaku's "equipped creature fights"). The codec omits
+    -- Hop.Itself.
     hop :: Hop.Hop,
     -- | Where to record the excess damage (CR 120.10) dealt to `second`'s
     -- creature: Parun.Types.DealDamage's `excessTally`, for a fight.
@@ -32,8 +33,8 @@ data Fight = MkFight
     -- | CR 701.14a / 608.2d: each slot names a group, and the resolving
     -- controller pairs each member of the smaller with a different member of
     -- the other, every pair fighting at once (Ezuri's Predation's "each of
-    -- those tokens fights a different one of those creatures"). Elided when
-    -- False. data/scenarios/ezuris-predation-pairs-each-beast-with-a-different-opponents-creature.json
+    -- those tokens fights a different one of those creatures"). The codec
+    -- omits False. data/scenarios/ezuris-predation-pairs-each-beast-with-a-different-opponents-creature.json
     -- proves it, and the Doubling Season scenario beside it the extras.
     paired :: Bool
   }
