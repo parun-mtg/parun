@@ -26,8 +26,10 @@
                           "modification": {
                             "type": "GainCastingPermission",
                             "value": {
-                              "type": "CastFromGraveyard",
-                              "value": {}
+                              "type": "CastFrom",
+                              "value": {
+                                "from": "Graveyard"
+                              }
                             }
                           },
                           "ref": {

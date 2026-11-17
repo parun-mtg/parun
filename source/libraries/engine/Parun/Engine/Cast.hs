@@ -1578,9 +1578,9 @@ permittedFrom pid oid face gs zone = case zone of
   -- No other zone is in castZones.
   _ -> False
 
--- CR 601.3: may this player cast this half of this exiled card? SIX INDEPENDENT
--- PERMISSIONS, any of which suffices, because the rules state six: exileOpen's
--- five below, and a player's CR 601.3 CastFrom grant naming exile (Dawnhand
+-- CR 601.3: may this player cast this half of this exiled card? SEVEN INDEPENDENT
+-- PERMISSIONS, any of which suffices, because the rules state seven: exileOpen's
+-- six below, and a player's CR 601.3 CastFrom grant naming exile (Dawnhand
 -- Dissident's).
 -- The first is Object.playPermissions', whose two conjuncts are below and
 -- whose second is why a card its own Adventure exiled offers only the creature
@@ -1589,7 +1589,9 @@ permittedFrom pid oid face gs zone = case zone of
 -- plotted card, which permitsCastPlotted answers; the third is CR 702.143a's
 -- foretold card, which permitsCastForetold answers; the fourth is CR 723.3c's
 -- prepare copy, which permitsCastPrepared answers; the fifth is CR 702.185a's
--- warped card, which permitsCastWarped answers.
+-- warped card, which permitsCastWarped answers; the sixth is a permission the
+-- card carries for itself (CR 113.6f), Khan, Vengeful Heart's "you may cast this
+-- card from exile", by its owner (CR 109.5).
 --
 --   * Some permission in Object.playPermissions names the player -- which is
 --     what keeps a permission from being an offer to the table. Each written
@@ -1608,7 +1610,7 @@ permitsCastFromExile :: PlayerId -> ObjectId -> Face.Face Card.Type.Card -> Game
 permitsCastFromExile pid oid face gs =
   exileOpen pid oid face gs || PlayerEffect.mayCastFrom pid Zone.Exile oid gs
 
--- permitsCastFromExile's five permissions an exiled card carries for itself,
+-- permitsCastFromExile's six permissions an exiled card carries for itself,
 -- without a player's CR 601.3 CastFrom grant (Dawnhand Dissident's): a cast one
 -- of these admits need be made under no such grant, so it pays none of that
 -- grant's additional costs (castWays).
@@ -1619,6 +1621,7 @@ exileOpen pid oid face gs =
     || permitsCastForetold pid oid gs
     || permitsCastPrepared pid oid gs
     || permitsCastWarped pid oid gs
+    || (ownedBy pid oid gs && any (permitsFromZone Zone.Exile) (Cost.permissionsOf oid face gs))
 
 -- CR 723.3c's own permission, the FOURTH of permitsCastFromExile's disjuncts:
 -- "for as long as the copy remains in exile, the prepared permanent's controller
@@ -2503,12 +2506,13 @@ permitsCastWhileSearching :: ObjectId -> Face.Face Card.Type.Card -> GameState -
 permitsCastWhileSearching oid face gs =
   elem CastingPermission.CastFromLibraryWhileSearching (Cost.permissionsOf oid face gs)
 
--- Any graveyard permission, whichever cost it admits: Cost.candidateCostsGiven
--- prices the cast, and offers nothing where the permission admits nothing.
-isGraveyardPermission :: CastingPermission.CastingPermission -> Bool
-isGraveyardPermission permission = case permission of
-  CastingPermission.CastFromGraveyard {} -> True
-  CastingPermission.PlayFromGraveyard -> True
+-- CR 601.3 / 113.6f: does this permission the card carries for itself open
+-- `zone` to its owner, whichever cost it admits? Cost.candidateCostsGiven prices
+-- the cast, and offers nothing where the permission admits nothing.
+permitsFromZone :: Zone.Zone -> CastingPermission.CastingPermission -> Bool
+permitsFromZone zone permission = case permission of
+  CastingPermission.CastFrom from _ _ _ _ -> from == zone
+  CastingPermission.PlayFromGraveyard -> zone == Zone.Graveyard
   CastingPermission.CastFromLibraryWhileSearching -> False
   CastingPermission.CastAsThoughItHadFlash {} -> False
 
@@ -2517,7 +2521,7 @@ isGraveyardPermission permission = case permission of
 isFlashPermission :: CastingPermission.CastingPermission -> Bool
 isFlashPermission permission = case permission of
   CastingPermission.CastAsThoughItHadFlash {} -> True
-  CastingPermission.CastFromGraveyard {} -> False
+  CastingPermission.CastFrom {} -> False
   CastingPermission.PlayFromGraveyard -> False
   CastingPermission.CastFromLibraryWhileSearching -> False
 
@@ -2543,7 +2547,7 @@ isFlashPermission permission = case permission of
 -- to say "for this player".
 permitsCastFromGraveyard :: PlayerId -> ObjectId -> Face.Face Card.Type.Card -> GameState -> Bool
 permitsCastFromGraveyard pid oid face gs =
-  (ownedBy pid oid gs && (any isGraveyardPermission (Cost.permissionsOf oid face gs) || permitsDisturb oid face gs))
+  (ownedBy pid oid gs && (any (permitsFromZone Zone.Graveyard) (Cost.permissionsOf oid face gs) || permitsDisturb oid face gs))
     || PlayerEffect.mayCastFrom pid Zone.Graveyard oid gs
     || permitsCastUnderPermission pid oid face gs
 
@@ -3368,7 +3372,7 @@ replacementRow src controller slot oid rewrite gs =
 -- blitz ability") opens the zone for that cost alone.
 castWays :: (ObjectId -> Bool) -> PlayerId -> ObjectId -> CastOrigin.CastOrigin -> Face.Face Card.Type.Card -> GameState -> Maybe Keyword -> [Maybe (ObjectId, CastFromZone.CastFromZone)]
 castWays rides pid oid origin face gs castFor =
-  let named = ownedBy pid oid gs && any (\family -> (castFor >>= Keyword.familyOf) == Just family) [family | CastingPermission.CastFromGraveyard _ (Just family) [] Nothing <- Cost.permissionsOf oid face gs]
+  let named = ownedBy pid oid gs && any (\family -> (castFor >>= Keyword.familyOf) == Just family) [family | CastingPermission.CastFrom Zone.Graveyard _ (Just family) [] Nothing <- Cost.permissionsOf oid face gs]
       ownOpen = case origin of
         CastOrigin.FromZone Zone.Exile -> exileOpen pid oid face gs
         CastOrigin.FromZone Zone.Graveyard -> permitsCastUnderPermission pid oid face gs || PlayerEffect.mayPlayFromOwnGraveyard Map.empty PermissionVerb.Cast pid oid gs || named
@@ -3406,7 +3410,7 @@ ownPayingWays oid face gs =
           CastFromZone.outsideTheGame = False
         }
     )
-  | permission@(CastingPermission.CastFromGraveyard _ _ additional entersWith) <- Cost.permissionsOf oid face gs,
+  | permission@(CastingPermission.CastFrom Zone.Graveyard _ _ additional entersWith) <- Cost.permissionsOf oid face gs,
     Cost.addsToItsCast permission
   ]
 

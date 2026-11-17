@@ -18,8 +18,10 @@
       ],
       "castingPermissions": [
         {
-          "type": "CastFromGraveyard",
-          "value": {}
+          "type": "CastFrom",
+          "value": {
+            "from": "Graveyard"
+          }
         }
       ],
       "keywords": [

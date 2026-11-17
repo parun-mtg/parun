@@ -1,8 +1,10 @@
 module Parun.Codec.CastingPermissionSpec where
 
+import qualified Data.Either as Either
 import qualified Data.Map.Strict as Map
 import qualified Data.Text as Text
 import qualified Parun.Codec.CastingPermission as CastingPermission
+import qualified Parun.JsonCodec.Codec as Codec
 import qualified Parun.JsonCodec.Common as Common
 import qualified Parun.Spec as Spec
 import qualified Parun.Types.AbilityName as AbilityName
@@ -16,6 +18,7 @@ import qualified Parun.Types.ManaCost as ManaCost
 import qualified Parun.Types.ManaSymbol as ManaSymbol
 import qualified Parun.Types.Quantity as Quantity
 import qualified Parun.Types.WithCounters as WithCounters
+import qualified Parun.Types.Zone as Zone
 
 spec :: (Monad m, Monad n) => Spec.Spec m n -> n ()
 spec s = Spec.describe s "Parun.Codec.CastingPermission" $ do
@@ -25,36 +28,52 @@ spec s = Spec.describe s "Parun.Codec.CastingPermission" $ do
       CastingPermission.codec
       CastingPermission.CastFromLibraryWhileSearching
       " {\"type\":\"CastFromLibraryWhileSearching\"} "
-  Spec.it s "CastFromGraveyard" $
+  Spec.it s "CastFrom a graveyard" $
     Common.assertCodec
       s
       CastingPermission.codec
-      (CastingPermission.CastFromGraveyard Nothing Nothing [] Nothing)
-      " {\"type\":\"CastFromGraveyard\",\"value\":{}} "
-  Spec.it s "CastFromGraveyard using a keyword" $
+      (CastingPermission.CastFrom Zone.Graveyard Nothing Nothing [] Nothing)
+      " {\"type\":\"CastFrom\",\"value\":{\"from\":\"Graveyard\"}} "
+  Spec.it s "CastFrom a graveyard using a keyword" $
     Common.assertCodec
       s
       CastingPermission.codec
-      (CastingPermission.CastFromGraveyard Nothing (Just KeywordFamily.Blitz) [] Nothing)
-      " {\"type\":\"CastFromGraveyard\",\"value\":{\"using\":\"Blitz\"}} "
-  Spec.it s "CastFromGraveyard paying an additional cost" $
+      (CastingPermission.CastFrom Zone.Graveyard Nothing (Just KeywordFamily.Blitz) [] Nothing)
+      " {\"type\":\"CastFrom\",\"value\":{\"from\":\"Graveyard\",\"using\":\"Blitz\"}} "
+  Spec.it s "CastFrom a graveyard paying an additional cost" $
     Common.assertCodec
       s
       CastingPermission.codec
-      (CastingPermission.CastFromGraveyard Nothing Nothing [CostComponent.PayLife (CostAmount.Fixed 2)] Nothing)
-      " {\"type\":\"CastFromGraveyard\",\"value\":{\"additionalCosts\":[{\"type\":\"PayLife\",\"value\":{\"type\":\"Fixed\",\"value\":2}}]}} "
-  Spec.it s "CastFromGraveyard entering with counters" $
+      (CastingPermission.CastFrom Zone.Graveyard Nothing Nothing [CostComponent.PayLife (CostAmount.Fixed 2)] Nothing)
+      " {\"type\":\"CastFrom\",\"value\":{\"from\":\"Graveyard\",\"additionalCosts\":[{\"type\":\"PayLife\",\"value\":{\"type\":\"Fixed\",\"value\":2}}]}} "
+  Spec.it s "CastFrom a graveyard entering with counters" $
     Common.assertCodec
       s
       CastingPermission.codec
-      (CastingPermission.CastFromGraveyard Nothing Nothing [] (Just (WithCounters.MkWithCounters (Map.singleton CounterKind.Finality (Quantity.Literal 1)))))
-      " {\"type\":\"CastFromGraveyard\",\"value\":{\"entersWith\":[{\"count\":{\"type\":\"Literal\",\"value\":1},\"kind\":{\"type\":\"Finality\"}}]}} "
-  Spec.it s "CastFromGraveyard under a condition" $
+      (CastingPermission.CastFrom Zone.Graveyard Nothing Nothing [] (Just (WithCounters.MkWithCounters (Map.singleton CounterKind.Finality (Quantity.Literal 1)))))
+      " {\"type\":\"CastFrom\",\"value\":{\"from\":\"Graveyard\",\"entersWith\":[{\"count\":{\"type\":\"Literal\",\"value\":1},\"kind\":{\"type\":\"Finality\"}}]}} "
+  Spec.it s "CastFrom a graveyard under a condition" $
     Common.assertCodec
       s
       CastingPermission.codec
-      (CastingPermission.CastFromGraveyard (Just (Condition.Any [])) Nothing [] Nothing)
-      " {\"type\":\"CastFromGraveyard\",\"value\":{\"condition\":{\"type\":\"Any\",\"value\":[]}}} "
+      (CastingPermission.CastFrom Zone.Graveyard (Just (Condition.Any [])) Nothing [] Nothing)
+      " {\"type\":\"CastFrom\",\"value\":{\"from\":\"Graveyard\",\"condition\":{\"type\":\"Any\",\"value\":[]}}} "
+  Spec.it s "CastFrom exile" $
+    Common.assertCodec
+      s
+      CastingPermission.codec
+      (CastingPermission.CastFrom Zone.Exile Nothing Nothing [] Nothing)
+      " {\"type\":\"CastFrom\",\"value\":{\"from\":\"Exile\"}} "
+  Spec.it s "rejects CastFrom a hand" $
+    Spec.assertBool
+      s
+      (Either.isLeft (Codec.decode CastingPermission.codec =<< Common.parse (Text.pack "{\"type\":\"CastFrom\",\"value\":{\"from\":\"Hand\"}}")))
+      "expected a decode failure"
+  Spec.it s "rejects CastFrom exile using a keyword" $
+    Spec.assertBool
+      s
+      (Either.isLeft (Codec.decode CastingPermission.codec =<< Common.parse (Text.pack "{\"type\":\"CastFrom\",\"value\":{\"from\":\"Exile\",\"using\":\"Blitz\"}}")))
+      "expected a decode failure"
   Spec.it s "PlayFromGraveyard" $
     Common.assertCodec
       s

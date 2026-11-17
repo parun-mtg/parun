@@ -3,7 +3,7 @@
     {
       "castingPermissions": [
         {
-          "type": "CastFromGraveyard",
+          "type": "CastFrom",
           "value": {
             "entersWith": [
               {
@@ -15,7 +15,8 @@
                   "type": "Finality"
                 }
               }
-            ]
+            ],
+            "from": "Graveyard"
           }
         }
       ],
