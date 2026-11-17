@@ -80,6 +80,7 @@ import qualified Parun.Types.CommittedCrime as CommittedCrime
 import qualified Parun.Types.ControlChanged as ControlChanged
 import qualified Parun.Types.CounterChange as CounterChange
 import qualified Parun.Types.CounterHolder as CounterHolder
+import qualified Parun.Types.CounterKind as CounterKind
 import qualified Parun.Types.CounterMotion as CounterMotion
 import qualified Parun.Types.CounterTrigger as CounterTrigger
 import qualified Parun.Types.CounteredKind as CounteredKind
@@ -602,16 +603,22 @@ countersMoved gs you counterTrigger event = case (CounterTrigger.motion counterT
     | wanted kind -> Just (oid, before, after)
   _ -> Nothing
   where
-    wanted kind = case CounterTrigger.kind counterTrigger of
-      WhichCounters.OfKind named -> kind == named
-      WhichCounters.OfAnyKind -> True
+    wanted = admitsKind (CounterTrigger.kind counterTrigger)
 
--- CR 122.6: the first event this turn that put counters of any kind on this
--- permanent, on the battlefield as countersMoved asks; Nothing for none.
-firstPlacementOn :: ObjectId -> GameState -> Maybe GameEvent
-firstPlacementOn oid gs =
+-- CR 122.1: whether a counter of this kind is one the trigger names.
+admitsKind :: WhichCounters.WhichCounters Keyword.Type.Keyword -> CounterKind.CounterKind Keyword.Type.Keyword -> Bool
+admitsKind which kind = case which of
+  WhichCounters.OfKind named -> kind == named
+  WhichCounters.OfAnyKind -> True
+
+-- CR 122.6: the first event this turn that put counters of a kind the trigger
+-- names on this permanent, on the battlefield as countersMoved asks; Nothing
+-- for none. Stalwart Successor names any kind, U.S.S. Enterprise-D, Galaxy-Class
+-- charge counters.
+firstPlacementOn :: WhichCounters.WhichCounters Keyword.Type.Keyword -> ObjectId -> GameState -> Maybe GameEvent
+firstPlacementOn which oid gs =
   let placedOnIt event = case event of
-        GameEvent.CountersPut placed -> CountersPlaced.object placed == oid && ObjectSnapshot.zone (CountersPlaced.snapshot placed) == Zone.Battlefield
+        GameEvent.CountersPut placed -> CountersPlaced.object placed == oid && admitsKind which (CountersPlaced.kind placed) && ObjectSnapshot.zone (CountersPlaced.snapshot placed) == Zone.Battlefield
         _ -> False
    in Foldable.find placedOnIt (fmap LoggedEvent.event (TurnRegisters.events (GameState.turn gs)))
 
@@ -1670,14 +1677,15 @@ armMatches bindings frozen board atEvent beforeEvent groupEvents gs bearer you c
           (CounterMotion.Removed, Just n) -> after <= n && n < before
         -- "If it's the first time counters have been put on that creature this
         -- turn" (CR 603.4) asks about the triggering event, so it reads the same
-        -- on resolution and is matched here: the holder's first placement of any
-        -- kind in the log is in the matched event's group. An id names one
-        -- object (CR 400.7), and a later placement, the bonus counter
+        -- on resolution and is matched here, as "for the first time each turn"
+        -- in a trigger event is (CR 603.2): the holder's first placement of
+        -- the trigger's kind in the log is in the matched event's group. An id
+        -- names one object (CR 400.7), and a later placement, the bonus counter
         -- included, is never the first.
         && case CounterTrigger.frequency counterTrigger of
           TriggerFrequency.EveryTime -> True
           TriggerFrequency.FirstTimeEachTurn ->
-            maybe True (`elem` (if event `elem` groupEvents then groupEvents else [event])) (firstPlacementOn oid gs)
+            maybe True (`elem` (if event `elem` groupEvents then groupEvents else [event])) (firstPlacementOn (CounterTrigger.kind counterTrigger) oid gs)
   -- CR 717.2a: the BEARER's class level crossed N going up. "When this Class
   -- becomes level N" is printed inside the level-N section, so CR 717.2a's static
   -- half is what grants it, and CR 603.10 is what lets it see its own arrival:
