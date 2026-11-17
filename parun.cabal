@@ -3937,6 +3937,8 @@ library web
     Parun.Web.DiffSpec
     Parun.Web.Html
     Parun.Web.HtmlSpec
+    Parun.Web.Lobby
+    Parun.Web.LobbySpec
     Parun.Web.Patch
     Parun.Web.Wire
     Parun.Web.WireSpec
@@ -3947,6 +3949,8 @@ library browser
   import: library
   build-depends:
     containers ^>={0.7, 0.8},
+    parun:extra,
+    parun:registry,
     parun:trustworthy,
     parun:web,
     text ^>=2.1.3,
@@ -3957,7 +3961,7 @@ library browser
   -- cabal-gild: discover source/libraries/browser
   exposed-modules:
     Parun.Browser
-    Parun.Browser.Counter
+    Parun.Browser.Lobby
 
 executable parun
   import: executable
