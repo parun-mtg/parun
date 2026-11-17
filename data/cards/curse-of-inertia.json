@@ -49,7 +49,8 @@
                           "ref": {
                             "type": "InSlot",
                             "value": "target"
-                          }
+                          },
+                          "tapper": "thatAttackingPlayer"
                         }
                       }
                     ],

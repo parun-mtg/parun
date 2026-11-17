@@ -125,6 +125,7 @@ import qualified Parun.Types.PlayerChoice as PlayerChoice
 import qualified Parun.Types.PlayerCounters as PlayerCounters
 import Parun.Types.PlayerId (PlayerId)
 import qualified Parun.Types.PlayerInstruction as PlayerInstruction
+import qualified Parun.Types.PlayerRef as PlayerRef
 import qualified Parun.Types.Prompt as Prompt
 import qualified Parun.Types.ProposedEvent as ProposedEvent
 import qualified Parun.Types.PutCounters as PutCounters
@@ -1716,13 +1717,24 @@ bindLeaders resolving source controller legal (BindLeaders.MkBindLeaders among m
 -- that was untapped before and is tapped after, so one already tapped is not
 -- "tapped this way". That exclusion is a regression fence, not a proved
 -- behaviour: Master of the Wild Hunt's sweep names only untapped Wolves.
+--
+-- CR 608.2c: the tap is credited to the player the instruction addresses, the
+-- resolving controller unless a `tapper` slot names another (Power Sink's
+-- "they tap"). data/scenarios/icewrought-sentry-does-not-grow-when-power-sink-makes-an-opponent-tap.json
+-- proves it.
+--
+-- Implementation-defined: a tapper slot naming no one player credits the
+-- resolving controller.
 tap :: ObjectId -> ObjectId -> PlayerId -> Map.Map SlotName (Set Recipient) -> Tap.Tap -> Game ()
-tap resolving source controller legal (Tap.MkTap ref mTapped) = do
+tap resolving source controller legal (Tap.MkTap ref mTapped mTapper) = do
   gs <- State.get
   let victims = ListUtils.nubOrd (objectRefObjects legal resolving controller source gs ref)
       tappedIn g oid = fmap Object.tapped (Game.lookupObject oid g) == Just TapState.Tapped
+      tapper = case fmap (playerRefPlayers legal resolving source controller gs . PlayerRef.InSlot) mTapper of
+        Just [named] -> named
+        _ -> controller
   -- One event group, CR 608.2f.
-  Event.simultaneously (Monad.forM_ victims (Event.tap controller))
+  Event.simultaneously (Monad.forM_ victims (Event.tap tapper))
   after <- State.get
   Monad.forM_ mTapped $ \slot -> do
     let turned = filter (\oid -> not (tappedIn gs oid) && tappedIn after oid) victims

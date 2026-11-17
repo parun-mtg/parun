@@ -9,10 +9,13 @@ data Tap = MkTap
     -- | Where the permanents this tap turned sideways are bound, as a group --
     -- Master of the Wild Hunt's "each Wolf tapped this way". Nothing is bound
     -- when nothing was tapped.
-    tapped :: Maybe SlotName.SlotName
+    tapped :: Maybe SlotName.SlotName,
+    -- | The slot naming the player the instruction addresses, who taps (CR
+    -- 608.2c): Power Sink's "they tap". Absent, the resolving controller.
+    tapper :: Maybe SlotName.SlotName
   }
   deriving (Eq, Ord, Show)
 
 -- | Tap what the ObjectRef names, binding nothing.
 plain :: ObjectRef.ObjectRef -> Tap
-plain r = MkTap {ref = r, tapped = Nothing}
+plain r = MkTap {ref = r, tapped = Nothing, tapper = Nothing}

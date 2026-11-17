@@ -2739,9 +2739,12 @@ attemptAttackDeclaration perform pid asked forced rejected = do
             -- Through Parun.Engine.Event.tap, because rule 508.1f says outright that
             -- "attacking simply causes creatures to become tapped": it is not a
             -- cost, but it IS a tap, and a card watching for one must see it.
+            -- Credited to the creature's attacking player: under shared team
+            -- turns each active-team member is an active player (CR 901.12d)
+            -- and none touches a teammate's permanent (CR 810.5).
             tapIt oid = do
               g <- State.get
-              Monad.unless (Projection.hasKeyword Keyword.Vigilance oid g) (Event.tap pid oid)
+              Monad.unless (Projection.hasKeyword Keyword.Vigilance oid g) (Event.tap (attackerOf oid) oid)
         -- UNIONED into the record, not written over it: "the record is mine alone"
         -- is exactly the assumption CR 508.8's second clause breaks, and replacing
         -- the map would silently remove such a creature from combat.

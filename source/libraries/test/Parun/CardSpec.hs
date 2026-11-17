@@ -898,6 +898,7 @@ playerRefPositions =
         ("firebend", Effect.Firebend (ManaAddition.MkManaAddition (plantedPlayer "fb") (ManaProduction.AnyColor ColorSpread.OneColor) (Quantity.Type.Literal 1) ManaRetention.Ordinary Nothing Nothing Nothing False), [plantedPlayer "fb"]),
         ("search", Effect.Search (Search.MkSearch (plantedPlayer "se-searcher") (plantedPlayer "se-owner") Set.empty False Nothing (Filter.Type.And []) Seq.empty False SearchDestination.Battlefield Map.empty Nothing Nothing Nothing Nothing Set.empty False False Nothing), [plantedPlayer "se-searcher", plantedPlayer "se-owner"]),
         ("draw", Effect.Draw (Draw.MkDraw (plantedPlayer "dr") one Nothing), [plantedPlayer "dr"]),
+        ("tap-tapper", Effect.Tap (Tap.MkTap (ObjectRef.InSlot (SlotName.MkSlotName (Text.pack "tp-ref"))) Nothing (Just (SlotName.MkSlotName (Text.pack "tp")))), [plantedPlayer "tp"]),
         ("mill", Effect.Mill (Mill.MkMill (plantedPlayer "mi") one Nothing Nothing), [plantedPlayer "mi"]),
         ("scry", Effect.Scry (playerQuantity "sc"), [plantedPlayer "sc"]),
         ("surveil", Effect.Surveil (Surveil.MkSurveil (plantedPlayer "su") one Nothing), [plantedPlayer "su"]),

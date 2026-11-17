@@ -927,7 +927,8 @@ effectPlayerRefs effect = case effect of
   Effect.BindAmount {} -> []
   Effect.BindPlayers payload -> [BindPlayers.players payload]
   Effect.BindLeaders {} -> []
-  Effect.Tap {} -> []
+  -- CR 608.2c: the player the instruction addresses, read singly.
+  Effect.Tap tap -> foldMap (pure . PlayerRef.InSlot) (Tap.tapper tap)
   Effect.Untap {} -> []
   Effect.Unattach {} -> []
   Effect.Detain {} -> []

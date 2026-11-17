@@ -20,6 +20,12 @@ spec s = Spec.describe s "Parun.Codec.Tap" $ do
     Common.assertCodec
       s
       Tap.codec
-      (Tap.MkTap (ObjectRef.InSlot (SlotName.MkSlotName (Text.pack "target"))) (Just (SlotName.MkSlotName (Text.pack "tapped"))))
+      (Tap.MkTap (ObjectRef.InSlot (SlotName.MkSlotName (Text.pack "target"))) (Just (SlotName.MkSlotName (Text.pack "tapped"))) Nothing)
       " {\"ref\":{\"type\":\"InSlot\",\"value\":\"target\"},\"tapped\":\"tapped\"} "
+  Spec.it s "a tapper: the key is written" $
+    Common.assertCodec
+      s
+      Tap.codec
+      (Tap.MkTap (ObjectRef.InSlot (SlotName.MkSlotName (Text.pack "target"))) Nothing (Just (SlotName.MkSlotName (Text.pack "player"))))
+      " {\"ref\":{\"type\":\"InSlot\",\"value\":\"target\"},\"tapper\":\"player\"} "
   Spec.it s "has a schema" $ Common.assertHasSchema s Tap.codec

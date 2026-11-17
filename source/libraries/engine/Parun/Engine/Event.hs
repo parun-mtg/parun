@@ -1212,8 +1212,8 @@ withRiders keywords de =
 -- Effect.Tap opcode, CR 508.1f's attacker declaration in
 -- Parun.Engine.Combat.declareAttackers, and CR 701.19a's regeneration in `apply`
 -- below -- so that a card watching for a tap sees every one of them. Each
--- caller names who tapped: the payer, the attacking player, the resolving
--- object's controller (CR 608.2c) or the regenerating permanent's controller.
+-- caller names who tapped: the payer, the attacking player, the player the
+-- instruction addresses (CR 608.2c) or the regenerating permanent's controller.
 --
 -- Rule 701.26a's SECOND sentence is the guard: "only untapped permanents can be
 -- tapped", so an already-tapped permanent is left alone and nothing is recorded.
