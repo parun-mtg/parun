@@ -657,9 +657,9 @@ eventBindingsOver board gs bearerBecame becameInGraveyard bearer you cond event 
   -- direction's event falls through and stamps nothing. Mesmeric Orb's "that
   -- permanent's controller" reads the untap direction's slot.
   --
-  -- A OneOrMore batch binds nothing, falling to the arm below: Deeproot
-  -- Pilgrimage's payload names no tapped permanent, and one slot could not
-  -- name a batch of them.
+  -- A OneOrMore batch names no one permanent, so it stamps CR 603.2c's "that
+  -- many" alone: one per permanent, summed by batchBindings (The Millennium
+  -- Calendar).
   (TriggerCondition.BecomesTapState watched, GameEvent.BecameTapped tapped)
     | BecomesTapState.batching watched == Batching.EachOccurrence && BecomesTapState.status watched == TapState.Tapped ->
         Binding.setTapStatePermanent TapState.Tapped tapped Map.empty
@@ -669,6 +669,12 @@ eventBindingsOver board gs bearerBecame becameInGraveyard bearer you cond event 
   (TriggerCondition.BecomesTapState watched, GameEvent.BecameUntapped untapped)
     | BecomesTapState.batching watched == Batching.EachOccurrence && BecomesTapState.status watched == TapState.Untapped ->
         Binding.setTapStatePermanent TapState.Untapped untapped Map.empty
+  (TriggerCondition.BecomesTapState watched, GameEvent.BecameTapped _)
+    | BecomesTapState.status watched == TapState.Tapped -> Binding.setEventAmount 1 Map.empty
+  (TriggerCondition.BecomesTapState watched, GameEvent.TappedToPay _)
+    | BecomesTapState.status watched == TapState.Tapped -> Binding.setEventAmount 1 Map.empty
+  (TriggerCondition.BecomesTapState watched, GameEvent.BecameUntapped _)
+    | BecomesTapState.status watched == TapState.Untapped -> Binding.setEventAmount 1 Map.empty
   -- CR 106.12a's permanent, bound for the BecomesTapState arm's reason: Wild
   -- Growth's "its controller" is the enchanted land's controller, and
   -- PlayerRef.HolderOfBound is how a card names it -- CR 109.5's "you" would
@@ -1763,10 +1769,10 @@ eventBindingSlots cond = case cond of
   TriggerCondition.AttachedCreatureMentors -> Set.singleton Binding.mentoredCreature
   -- The permanent that became tapped or untapped, which the arm above stamps
   -- for every match: Blight destroys it and Mesmeric Orb reads its controller.
-  -- Empty for a OneOrMore batch, eventBindings' arm.
+  -- A OneOrMore batch binds "that many" instead, eventBindings' arm.
   TriggerCondition.BecomesTapState watched -> case BecomesTapState.batching watched of
     Batching.EachOccurrence -> Set.singleton (Binding.tapStatePermanent (BecomesTapState.status watched))
-    Batching.OneOrMore -> Set.empty
+    Batching.OneOrMore -> Set.singleton Binding.eventAmount
   -- The permanent tapped for mana, which the arm above stamps for every
   -- match: Wild Growth reads it through PlayerRef.HolderOfBound. The same slot
   -- for the bystander reading and the tapping player beside it.
