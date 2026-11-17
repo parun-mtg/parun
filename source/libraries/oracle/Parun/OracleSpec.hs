@@ -713,7 +713,7 @@ spec s = Spec.describe s "Parun.Oracle" $ do
     let instruction = counters CounterKind.PlusOnePlusOne 1 (ObjectRef.InSlot target)
     Spec.assertEq s [[Text.pack "Put a +1/+1 counter on each of up to two target creatures.", Text.pack "Support 2."]] (Oracle.abilities (spell [clause [instruction]] [(target, upTo 2 Nothing)]))
     let ability slot = withFace (\f -> f {Face.activatedAbilities = [(activated (Cost.MkCost (Just (ManaCost.MkManaCost [green])) []) instruction) {ActivatedAbility.modal = payload [clause [instruction]] [(target, slot)]}]})
-    Spec.assertEq s [[Text.pack "{G}: Put a +1/+1 counter on each of up to two other target creatures.", Text.pack "{G}: Support 2."]] (Oracle.abilities (ability (upTo 2 (Just (Filter.Not Filter.IsSource)))))
+    Spec.assertEq s [[Text.pack "{G}: Put a +1/+1 counter on each of up to two other target creatures.", Text.pack "{G}: Support 2.", Text.pack "{G}: Put a +1/+1 counter on each of up to two target creatures other than ~.", Text.pack "{G}: Support 2."]] (Oracle.abilities (ability (upTo 2 (Just (Filter.Not Filter.IsSource)))))
     Spec.assertEq s [[Text.pack "{G}: Put a +1/+1 counter on each of up to two target creatures."]] (Oracle.abilities (ability (upTo 2 Nothing)))
 
   -- CR 701.26a: tapping and untapping; "another target" for one other object.

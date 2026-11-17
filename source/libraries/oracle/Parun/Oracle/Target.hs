@@ -3,7 +3,6 @@
 module Parun.Oracle.Target where
 
 import qualified Control.Monad as Monad
-import qualified Data.Bifunctor as Bifunctor
 import qualified Data.Containers.ListUtils as ListUtils
 import qualified Data.List.NonEmpty as NonEmpty
 import qualified Data.Map.Strict as Map
@@ -329,8 +328,9 @@ object context determiner ref = case ref of
     | elem ref (earlier context) -> case ref of
         ObjectRef.InSlot s
           | s == selfSlot -> [MkReference (Text.pack "it") [] Filter.Singular []]
+          -- The slot's "other than ~" wording is not a second announcement.
           | Just slot <- Map.lookup s (slots context),
-            fmap number (target context s) == [Filter.Singular] -> case (TargetSlot.pool slot, pooled slot) of
+            fmap number (filter (not . Text.isSuffixOf otherThanSelf . wording) (target context s)) == [Filter.Singular] -> case (TargetSlot.pool slot, pooled slot) of
               (Pool.Players, _) -> [MkReference (Text.pack "that player") [] Filter.Singular [s]]
               -- Free: "it" (Cryogenic Stasis) or "that creature" (Burning
               -- Cloak).
@@ -537,10 +537,22 @@ heads context slot = case (TargetSlot.pool slot, TargetSlot.filter slot) of
   (Pool.AnyTarget, Nothing) -> [(Text.pack "any target", Text.pack "targets")]
   (Pool.PlayersAndPlaneswalkers, Nothing) -> [(Text.pack "target player or planeswalker", Text.pack "target players and/or planeswalkers")]
   (Pool.PermanentsAndPlayers, Nothing) -> [(Text.pack "target permanent or player", Text.pack "target permanents and/or players")]
-  _ -> fmap (Bifunctor.bimap (targeted (Text.pack "another target ")) (targeted (Text.pack "other target "))) (described context slot)
+  _ -> do
+    (one, many) <- described context slot
+    (targeted (Text.pack "another target ") one, targeted (Text.pack "other target ") many) : otherThan one many
   where
     -- "other" stands before "target", as "another" in the singular.
     targeted other text = maybe (Text.pack "target " <> text) (other <>) (Text.stripPrefix (Text.pack "other ") text)
+    -- Free: "other" may close the head instead, "target nonland permanent
+    -- other than this creature" (Council of Echoes).
+    otherThan one many = do
+      one' <- Maybe.maybeToList (Text.stripPrefix (Text.pack "other ") one)
+      many' <- Maybe.maybeToList (Text.stripPrefix (Text.pack "other ") many)
+      [(Text.pack "target " <> one' <> otherThanSelf, Text.pack "target " <> many' <> otherThanSelf)]
+
+-- | What closes a head 'heads' reads "other" at the end of.
+otherThanSelf :: Text.Text
+otherThanSelf = Text.pack " other than ~"
 
 -- | What a slot's objects are, in both numbers and without "target":
 -- ("creature", "creatures"), as an Aura's enchant ability names them too

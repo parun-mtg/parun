@@ -463,9 +463,10 @@ lifeChanged tally =
 -- Skullhunter) or not (Trynn, Champion of Freedom). Free for threshold:
 -- printed (Anurid Barkripper) or not (Illuminate History). Free for spell
 -- mastery: printed (Calculated Dismissal). Free for infusion: printed
--- (Foolish Fate). Free for survival: printed (Cautious Survivor).
+-- (Foolish Fate). Free for survival: printed (Cautious Survivor). Free for
+-- descend 4 and 8: printed (Echo of Dusk, Akawalli, the Seething Tower).
 abilityWord :: Text.Text -> [Text.Text]
-abilityWord words' = [Text.empty] <> [Text.pack "Hellbent \8212 " | words' == Text.pack "you have no cards in hand"] <> [Text.pack "Raid \8212 " | words' == Text.pack "you attacked this turn"] <> [Text.pack "Threshold \8212 " | words' == Text.pack "there are seven or more cards in your graveyard"] <> [Text.pack "Spell mastery \8212 " | words' == Text.pack "there are two or more instant and/or sorcery cards in your graveyard"] <> [Text.pack "Infusion \8212 " | words' == Text.pack "you gained life this turn"] <> [Text.pack "Survival \8212 " | Text.isSuffixOf (Text.pack " is tapped") words']
+abilityWord words' = [Text.empty] <> [Text.pack "Hellbent \8212 " | words' == Text.pack "you have no cards in hand"] <> [Text.pack "Raid \8212 " | words' == Text.pack "you attacked this turn"] <> [Text.pack "Threshold \8212 " | words' == Text.pack "there are seven or more cards in your graveyard"] <> [Text.pack "Spell mastery \8212 " | words' == Text.pack "there are two or more instant and/or sorcery cards in your graveyard"] <> [Text.pack "Infusion \8212 " | words' == Text.pack "you gained life this turn"] <> [Text.pack "Survival \8212 " | Text.isSuffixOf (Text.pack " is tapped") words'] <> [Text.pack "Descend " <> n <> Text.pack " \8212 " | (n, count) <- [(Text.pack "4", Text.pack "four"), (Text.pack "8", Text.pack "eight")], words' == Text.pack "there are " <> count <> Text.pack " or more permanent cards in your graveyard"]
 
 -- | The ability word (CR 207.2c) Oracle text may print before an ability
 -- this event opens. Free for alliance: printed (Raphael, Tough Turtle) or not
