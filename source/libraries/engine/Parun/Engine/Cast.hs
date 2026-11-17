@@ -1090,6 +1090,16 @@ announceOptionalCosts held modes spending pid sid candidates offers gs =
         _ -> pure paid
    in Map.filter (any (> 0)) <$> Monad.foldM ask Map.empty offers
 
+-- The optional-cost declarations castability is asked under, paidReadings'
+-- shape for the mana total: none, or one of the spell's optional additional
+-- costs (CR 118.8b) declared once.
+--
+-- Unprinted: a reduction read off two optional costs declared together, or one
+-- declared more than once, would need those combinations here too.
+gateDeclarations :: PlayerId -> ObjectId -> GameState -> [Map.Map Keyword (Map.Map KeywordInstance.KeywordInstance Natural)]
+gateDeclarations pid oid gs =
+  Map.empty : fmap (\keyword -> Map.singleton keyword (Map.singleton (KeywordInstance.Own 1) 1)) (Keyword.optionalCosts (Map.keysSet (Cost.spellKeywords pid oid gs)))
+
 -- CR 601.2b's record, written onto the spell's own stack incarnation -- CR
 -- 702.33d's "that spell has been kicked" among it. Read back by Quantity.TimesPaid
 -- through the CR 613 projection, which is how the card's own CR 702.33e ability
@@ -2227,7 +2237,14 @@ castableUnderHeld shared pid oid name facing gs =
         (Just _, Just face) -> case underAlternative (candidateAllowed pid oid proposed) face alternative candidate of
           Nothing -> False
           Just cost -> payableUnder candidate extra less wayGives cost
-      payableUnder candidate extra less wayGives cost = payable (fillableXs pid oid name proposed candidate) (CandidateCost.reductions candidate <> less) (spendingWith wayGives pid oid proposed) (proposedFor pid oid (CandidateCost.keyword candidate) proposed) (withPermissionCosts extra cost)
+      -- CR 601.2b/601.2f: payable with SOME optional additional cost's
+      -- declaration (gateDeclarations), priced on the board it stamps, so a
+      -- reduction "if it's bargained" lowers the total it is offered at.
+      payableUnder candidate extra less wayGives cost =
+        let board = proposedFor pid oid (CandidateCost.keyword candidate) proposed
+         in any
+              (\paid -> payable (fillableXs pid oid name proposed candidate) (CandidateCost.reductions candidate <> less) (spendingWith wayGives pid oid proposed) (stampPaidCosts paid oid board) (withOptionalPayments paid (withPermissionCosts extra cost)))
+              (gateDeclarations pid oid board)
    in cardGatesOk pid oid name proposed
         && lookGateOk pid oid name gs proposed
         -- Gated HERE, upstream of Action.legalActions, because the engine never
