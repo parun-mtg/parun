@@ -2499,6 +2499,8 @@ namedTokens =
       -- Preston Garvey, Minuteman's "create a green Aura enchantment token named
       -- Settlement attached to up to one target land you control".
       CardName.MkCardName (Text.pack "Settlement"),
+      -- CR 111.10n's Sorcerer Role (Living Lectern).
+      CardName.MkCardName (Text.pack "Sorcerer"),
       -- Stone-Giant of High Pass's "a 3/1 colorless Wall artifact creature token
       -- with defender named Stone Boulder".
       CardName.MkCardName (Text.pack "Stone Boulder"),
