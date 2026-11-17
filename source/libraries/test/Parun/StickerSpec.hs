@@ -1344,17 +1344,16 @@ spec s registry = Spec.describe s "Sticker" $ do
     Spec.assertEqWith s "CR 123.3c four, two, none and none" (fmap (\ref -> Sticker.ticketCost ref gs) [jugglerIndestructible, otterFiveOne, night, aliceSticker 2 StickerKind.Art 0]) [4, 2, 0, 0]
     Spec.assertEqWith s "CR 123.8 Otter's sticker is a 5/1" (Game.stickerContent otterFiveOne gs) (Just (StickerContent.PowerToughness PowerToughnessSticker.MkPowerToughnessSticker {PowerToughnessSticker.tickets = 2, PowerToughnessSticker.power = 5, PowerToughnessSticker.toughness = 1}))
     Spec.assertEqWith s "CR 123.7 Juggler's second ability sticker is indestructible" [Map.keys (AbilitySticker.keywords a) | Just (StickerContent.Ability a) <- [Game.stickerContent jugglerIndestructible gs]] [[Keyword.Indestructible]]
-  -- #8365's tripwire: a rule, player or self-cost ability on an ability
-  -- sticker, or a keyword rule 702 states as a static ability, does not reach
-  -- the stickered object -- a rule ability joins no list for a grant to the
-  -- object itself, and the gates in front of the rest ask no sticker.
+  -- A player or self-cost ability on an ability sticker, or a keyword rule
+  -- 702 states as a static ability, does not reach the stickered object: the
+  -- gates in front of them ask no sticker, and no sheet prints one.
   -- Exhaustive, so a new kind of ability is decided here.
-  Spec.it s "CR 123.7 no committed ability sticker carries an ability stickerGathered cannot grant (#8365)" $ do
+  Spec.it s "CR 123.7 no committed ability sticker carries an ability stickerGathered cannot grant" $ do
     root <- StickerSheets.defaultRoot
     loaded <- StickerSheets.loadRoot root
     let selfOnly g = case g of
           GrantedAbility.Static _ -> False
-          GrantedAbility.Rules _ -> True
+          GrantedAbility.Rules _ -> False
           GrantedAbility.Player _ -> True
           GrantedAbility.SelfCostReduction _ -> True
           GrantedAbility.SelfAlternativeCost _ -> True
@@ -1364,6 +1363,29 @@ spec s registry = Spec.describe s "Sticker" $ do
           GrantedAbility.Replacement _ -> False
         offends a = any selfOnly (AbilitySticker.abilities a) || not (null (KeywordEngine.mintedStaticAbilitiesOf (Map.keysSet (AbilitySticker.keywords a))))
     Spec.assertEqWith s "no such sheet" [StickerSheet.name sheet | (_, Right sheet) <- loaded, a <- Foldable.toList (StickerSheet.abilities sheet), offends a] []
+  -- Mystic Doom Sandwich's second ability sticker on an attacking Grizzly
+  -- Bears, against bob's untapped Goblin Piker; the unstickered Bears is the
+  -- control.
+  Spec.it s "CR 123.7/509.1c Mystic Doom Sandwich's sticker makes alice's Bears be blocked, and it grows for its blocker" $ do
+    root <- StickerSheets.defaultRoot
+    loaded <- StickerSheets.loadRoot root
+    bears <- S.printingOf s registry "Grizzly Bears"
+    piker <- S.printingOf s registry "Goblin Piker"
+    let sheets = [sheet | (_, Right sheet) <- loaded, StickerSheet.name sheet == Text.pack "Mystic Doom Sandwich"]
+        sandwich = aliceSticker 0 StickerKind.Ability 1
+    case S.combatBoardOf [bears] [piker] of
+      (board, [bearsId], [pikerId]) -> do
+        let attackedWith gs = S.runPure S.aggressiveAnswer gs (Combat.declareAttackers S.manaPerformer S.alice)
+            plain = attackedWith (withSheets sheets board)
+            stickered = attackedWith (Sticker.put S.alice bearsId sandwich Nothing (withSheets sheets board))
+            blocked = S.runPure S.aggressiveAnswer stickered (Combat.declareBlockers S.manaPerformer >> drain)
+        Spec.assertEqWith s "the sheet loads" (length sheets) 1
+        Spec.assertBool s (Combat.legalBlockDeclaration S.bob Map.empty plain) "CR 509.1c without the sticker bob may decline to block"
+        -- The proving assertion.
+        Spec.assertBool s (not (Combat.legalBlockDeclaration S.bob Map.empty stickered)) "CR 509.1c with it declining is illegal"
+        Spec.assertBool s (Combat.legalBlockDeclaration S.bob (Map.singleton pikerId (Set.singleton bearsId)) stickered) "and the Piker blocking the Bears is legal"
+        Spec.assertEqWith s "CR 509.3c the sticker's trigger gives the blocked Bears +1/+1" (Projection.powerOf bearsId blocked, Projection.toughnessOf bearsId blocked) (Just 3, Just 3)
+      _ -> Spec.assertFailure s "fixture should have one creature a side"
   -- Trained Blessed Mind's second ability sticker on Grizzly Bears: the Bears'
   -- own graveyard count gates it, and a card in the graveyard is not pumped.
   Spec.it s "CR 123.7 Trained Blessed Mind's threshold sticker pumps a stickered Grizzly Bears at seven cards" $ do

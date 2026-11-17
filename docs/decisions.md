@@ -830,6 +830,25 @@ Entries are ordered by the first rule each cites.
   `planeswalkerificate-damage-lowers-toughness-and-marks-damage`.
 - **Issue**: #7022.
 
+## Whether no cards exiled with All Good Things... share a card type
+
+- **Question**: All Good Things...'s chapter IV gains life "if all cards
+  exiled with this Saga share a card type". Does that hold when none are, say
+  after each was put back into its owner's graveyard?
+- **Rules**: CR 607.2a, 406.6, 715.2b; CR of 2026-11-06. None defines
+  "share" over an empty set.
+- **Decision**: Yes. The cards share a card type when the most of them
+  sharing one equals how many there are, which a single card meets, and so
+  does none.
+- **Rejected**: Requiring at least one exiled card. The text names no count,
+  and the extra condition would be a second clause the card does not print.
+- **Site**: `data/cards/all-good-things.json`'s chapter IV, a `MostSharing`
+  count compared `Exactly` with a `Members` count. The scenarios
+  `all-good-things-gains-ten-when-every-card-it-exiled-shares-a-card-type`
+  and `all-good-things-gains-nothing-when-a-card-it-exiled-shares-no-card-type`
+  prove the non-empty readings; the empty pile is not driven.
+- **Issue**: #8384.
+
 ## One creature per opponent for Nihiloor
 
 - **Question**: Nihiloor says "for each opponent, tap up to one untapped

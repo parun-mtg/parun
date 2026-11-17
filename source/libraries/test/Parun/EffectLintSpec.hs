@@ -2377,7 +2377,7 @@ effectLintSpec s registry corpus = Spec.describe s "Lint" $ do
           Effect.CopyStackObject copyStackObject -> Maybe.maybeToList (CopyStackObject.slot copyStackObject)
           -- The destruction's shape: Resolve's Tap and Divide arms bind the
           -- group however few objects it holds.
-          Effect.Tap (Tap.MkTap _ mTapped) -> Maybe.maybeToList mTapped
+          Effect.Tap (Tap.MkTap _ mTapped _) -> Maybe.maybeToList mTapped
           Effect.Divide divide -> [Divide.slot divide]
           _ -> []
         takesAtMostOne player quantity = case quantity of
