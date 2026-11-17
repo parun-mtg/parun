@@ -73,7 +73,7 @@
     ],
     "step": "PrecombatMain"
   },
-  "description": "CR 201.2 / 707.9b: Yenna, Redtooth Regent targets only an enchantment its controller controls that shares no name with another permanent they control, and copies it as a nonlegendary token",
+  "description": "CR 201.2a / 707.9b: Yenna, Redtooth Regent targets only an enchantment its controller controls that shares no name with another permanent they control, and copies it as a nonlegendary token",
   "note": "A Glorious Anthem is refused, since Alice controls another. Her Honden is uniquely named among her permanents (Bob's Honden is not hers), so it is a legal target although it shares its own name; its token is not legendary, so both Hondens survive the legend rule. The token is no Aura, so Yenna stays tapped and nothing is scried.",
   "timeline": [
     {
