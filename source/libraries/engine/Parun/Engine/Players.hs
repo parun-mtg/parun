@@ -1,5 +1,6 @@
 module Parun.Engine.Players where
 
+import qualified Control.Monad as Monad
 import qualified Data.List as List
 import qualified Data.Map.Strict as Map
 import qualified Data.Maybe as Maybe
@@ -53,6 +54,9 @@ data Reads = MkReads
     slotPlayers :: SlotName -> Maybe [PlayerId],
     -- | The ONE object a slot names, Nothing where it names none or several.
     slotObject :: SlotName -> Maybe ObjectId,
+    -- | EVERY object a slot names, a group's members included; Nothing where
+    -- it is not bound.
+    slotObjects :: SlotName -> Maybe [ObjectId],
     -- | CR 613.1b's controller of an object, as this position sees it.
     controllerOf :: ObjectId -> Maybe PlayerId,
     -- | CR 108.3's owner of an object, as this position sees it.
@@ -92,6 +96,7 @@ resolution controllerRead ownerRead acquisitionRead slots reach controller gs =
           bound = True,
           slotPlayers = \slot -> fmap (Maybe.mapMaybe Recipient.playerOf . Set.toList) (Map.lookup slot slots),
           slotObject = \slot -> Map.lookup slot (Binding.objectsIn slots),
+          slotObjects = \slot -> fmap (Maybe.mapMaybe Recipient.objectOf . Set.toList) (Map.lookup slot slots),
           controllerOf = controllerRead,
           ownerOf = ownerRead,
           acquisitionOf = acquisitionRead,
@@ -193,6 +198,10 @@ namedUncut given gs ref =
         Holder.Controller -> controllerOf given
         Holder.Owner -> ownerOf given
         Holder.Caster -> (`Game.casterOf` gs)
+      -- CR 303.4b: the object a slot names, or what it is attached to.
+      hopped hop = case hop of
+        Hop.Itself -> Just
+        Hop.Host -> (`Game.hostWithLastKnown` gs)
    in case ref of
         PlayerRef.Relative relation -> related' relation
         -- Every player minus every player the slot names (CR 104.2c's winning
@@ -240,11 +249,11 @@ namedUncut given gs ref =
         -- count's, and The Deck of Many Things' 20 band (Parun.DiceSpec) the
         -- owner, which reanimating an opponent's creature parts from the
         -- controller.
-        PlayerRef.HolderOfBound holder hop slot ->
-          let hopped = case hop of
-                Hop.Itself -> Just
-                Hop.Host -> (`Game.hostWithLastKnown` gs)
-           in fmap pure (slotObject given slot >>= hopped >>= holderOf holder)
+        PlayerRef.HolderOfBound holder hop slot -> fmap pure (slotObject given slot >>= hopped hop >>= holderOf holder)
+        -- The arm above over every object the slot names, each read the same
+        -- way and the seats deduplicated; an object no view answers for adds
+        -- nobody. Krenko's Buzzcrusher's scenarios prove it.
+        PlayerRef.HoldersOfBound holder hop slot -> fmap (Set.toList . Set.fromList . Maybe.mapMaybe (hopped hop Monad.>=> holderOf holder)) (slotObjects given slot)
         -- CR 303.4b / 303.4m: the player the object a slot names is attached
         -- to, read live -- Parun.Types.LastKnown.host records an object host
         -- only. Unanswered where the slot names no one object or its host is
@@ -338,6 +347,7 @@ activatorPermits controllerOf' activator usual oid pid gs = case activator of
           bound = False,
           slotPlayers = const Nothing,
           slotObject = \slot -> if slot == Binding.triggerSource then Just oid else Nothing,
+          slotObjects = \slot -> if slot == Binding.triggerSource then Just [oid] else Nothing,
           controllerOf = controllerOf',
           ownerOf = fmap Object.owner . (`Game.lookupObject` gs),
           acquisitionOf = (`Game.acquisitionOf` gs),

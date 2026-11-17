@@ -48,6 +48,9 @@ codec =
       -- Things the owner of a creature it reanimated, Soul Bleed the controller
       -- of the creature it enchants.
       Arm.payload "HolderOfBound" holderOfBound (\(h, o, y) -> PlayerRef.HolderOfBound h o y) (\x -> case x of PlayerRef.HolderOfBound h o y -> Just (h, o, y); _ -> Nothing),
+      -- Its plural, which a card writes: Krenko's Buzzcrusher asks the
+      -- controller of each land it destroyed.
+      Arm.payload "HoldersOfBound" holderOfBound (\(h, o, y) -> PlayerRef.HoldersOfBound h o y) (\x -> case x of PlayerRef.HoldersOfBound h o y -> Just (h, o, y); _ -> Nothing),
       -- The arm above, baked: decodable for Specific's reason, and swept out of
       -- card data beside it.
       Arm.payload "HolderOfObject" holderOfObject (uncurry PlayerRef.HolderOfObject) (\x -> case x of PlayerRef.HolderOfObject h y -> Just (h, y); _ -> Nothing),
@@ -78,6 +81,7 @@ tagOf x = case x of
   PlayerRef.Specific {} -> "Specific"
   PlayerRef.Candidate {} -> "Candidate"
   PlayerRef.HolderOfBound {} -> "HolderOfBound"
+  PlayerRef.HoldersOfBound {} -> "HoldersOfBound"
   PlayerRef.PlayerHostOfBound {} -> "PlayerHostOfBound"
   PlayerRef.AttackedByBound {} -> "AttackedByBound"
   PlayerRef.HolderOfObject {} -> "HolderOfObject"

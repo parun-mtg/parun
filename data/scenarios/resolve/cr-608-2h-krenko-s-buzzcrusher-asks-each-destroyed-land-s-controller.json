@@ -1,0 +1,294 @@
+{
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "battlefield": [
+          {
+            "card": "Mountain",
+            "label": "m1",
+            "ready": true
+          },
+          {
+            "card": "Mountain",
+            "label": "m2",
+            "ready": true
+          },
+          {
+            "card": "Mountain",
+            "label": "m3",
+            "ready": true
+          },
+          {
+            "card": "Mountain",
+            "label": "m4",
+            "ready": true
+          },
+          {
+            "card": "Evolving Wilds",
+            "label": "alice-wilds"
+          }
+        ],
+        "hand": [
+          {
+            "card": "Krenko's Buzzcrusher",
+            "label": "buzzcrusher"
+          }
+        ],
+        "library": [
+          {
+            "card": "Goblin Piker",
+            "label": "alice-piker"
+          },
+          {
+            "card": "Mountain",
+            "label": "alice-mountain"
+          }
+        ],
+        "name": "alice"
+      },
+      {
+        "battlefield": [
+          {
+            "card": "Evolving Wilds",
+            "label": "bob-wilds"
+          }
+        ],
+        "library": [
+          {
+            "card": "Goblin Piker",
+            "label": "bob-piker"
+          },
+          {
+            "card": "Island",
+            "label": "bob-island"
+          }
+        ],
+        "name": "bob"
+      },
+      {
+        "battlefield": [
+          {
+            "card": "Plains",
+            "label": "carol-plains"
+          }
+        ],
+        "library": [
+          {
+            "card": "Goblin Piker",
+            "label": "carol-piker"
+          },
+          {
+            "card": "Plains",
+            "label": "carol-library-plains"
+          }
+        ],
+        "name": "carol"
+      }
+    ],
+    "step": "PrecombatMain"
+  },
+  "description": "CR 608.2h Krenko's Buzzcrusher asks only each destroyed land's controller whether to search, and a decliner's library is not shuffled",
+  "final": [
+    {
+      "Tapped": {
+        "object": "Mountain#5",
+        "tapped": true
+      }
+    },
+    {
+      "View": {
+        "is": [
+          "$m1",
+          "$m2",
+          "$m3",
+          "$m4",
+          "Krenko's Buzzcrusher",
+          "Mountain#5"
+        ],
+        "of": "Zone",
+        "player": "alice",
+        "zone": "Battlefield"
+      }
+    },
+    {
+      "View": {
+        "is": [
+          "Evolving Wilds"
+        ],
+        "of": "Zone",
+        "player": "alice",
+        "zone": "Graveyard"
+      }
+    },
+    {
+      "View": {
+        "is": [
+          "Evolving Wilds#2"
+        ],
+        "of": "Zone",
+        "player": "bob",
+        "zone": "Graveyard"
+      }
+    },
+    {
+      "View": {
+        "is": [
+          "Goblin Piker#3"
+        ],
+        "of": "Zone",
+        "player": "alice",
+        "zone": "Library"
+      }
+    },
+    {
+      "View": {
+        "is": [
+          "$bob-piker",
+          "$bob-island"
+        ],
+        "of": "Zone",
+        "player": "bob",
+        "zone": "Library"
+      }
+    },
+    {
+      "View": {
+        "is": [
+          "$carol-plains"
+        ],
+        "of": "Zone",
+        "player": "carol",
+        "zone": "Battlefield"
+      }
+    },
+    {
+      "View": {
+        "is": [
+          "$carol-piker",
+          "$carol-library-plains"
+        ],
+        "of": "Zone",
+        "player": "carol",
+        "zone": "Library"
+      }
+    }
+  ],
+  "timeline": [
+    {
+      "do": {
+        "Cast": {
+          "mana": [
+            "$m1",
+            "$m2",
+            "$m3",
+            "$m4"
+          ],
+          "object": "$buzzcrusher"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "View": {
+          "is": [
+            "trigger of Krenko's Buzzcrusher"
+          ],
+          "of": "Stack"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Answer": {
+          "prompt": "ChooseAnyNumberOfPermanents",
+          "with": [
+            "$alice-wilds"
+          ]
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Answer": {
+          "prompt": "ChooseAnyNumberOfPermanents",
+          "with": [
+            "$bob-wilds"
+          ]
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Answer": {
+          "prompt": "ChooseOptional",
+          "with": "Exercises"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Answer": {
+          "prompt": "ChooseOptional",
+          "with": "Declines"
+        }
+      },
+      "player": "bob",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Answer": {
+          "prompt": "Search",
+          "with": [
+            "$alice-mountain"
+          ]
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Answer": {
+          "prompt": "Shuffle",
+          "with": [
+            "$alice-piker"
+          ]
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    }
+  ]
+}

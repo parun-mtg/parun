@@ -80,6 +80,12 @@ spec s = Spec.describe s "Parun.Codec.PlayerRef" $ do
       PlayerRef.codec
       (PlayerRef.HolderOfBound Holder.Owner Hop.Itself (SlotName.MkSlotName (Text.pack "permanent")))
       " {\"type\":\"HolderOfBound\",\"value\":{\"holder\":\"Owner\",\"hop\":\"Itself\",\"slot\":\"permanent\"}} "
+  Spec.it s "HoldersOfBound controller" $
+    Common.assertCodec
+      s
+      PlayerRef.codec
+      (PlayerRef.HoldersOfBound Holder.Controller Hop.Itself (SlotName.MkSlotName (Text.pack "destroyed")))
+      " {\"type\":\"HoldersOfBound\",\"value\":{\"holder\":\"Controller\",\"hop\":\"Itself\",\"slot\":\"destroyed\"}} "
   Spec.it s "HolderOfObject controller" $
     Common.assertCodec
       s
