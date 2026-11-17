@@ -1,0 +1,190 @@
+{
+  "faces": [
+    {
+      "manaCost": [
+        {
+          "type": "Generic",
+          "value": 7
+        }
+      ],
+      "name": "Myr Battlesphere",
+      "oracleText": "When this creature enters, create four 1/1 colorless Myr artifact creature tokens.\nWhenever this creature attacks, you may tap X untapped Myr you control. If you do, this creature gets +X/+0 until end of turn and deals X damage to the player or planeswalker it's attacking.",
+      "power": {
+        "type": "Literal",
+        "value": 4
+      },
+      "toughness": {
+        "type": "Literal",
+        "value": 7
+      },
+      "triggeredAbilities": [
+        {
+          "condition": {
+            "type": "Enters",
+            "value": {}
+          },
+          "modal": {
+            "modes": [
+              {
+                "clauses": [
+                  {
+                    "effects": [
+                      {
+                        "type": "Create",
+                        "value": {
+                          "card": {
+                            "faces": [
+                              {
+                                "name": "Myr Token",
+                                "power": {
+                                  "type": "Literal",
+                                  "value": 1
+                                },
+                                "toughness": {
+                                  "type": "Literal",
+                                  "value": 1
+                                },
+                                "typeLine": {
+                                  "subtypes": [
+                                    "Myr"
+                                  ],
+                                  "types": [
+                                    "Artifact",
+                                    "Creature"
+                                  ]
+                                }
+                              }
+                            ]
+                          },
+                          "quantity": {
+                            "type": "Literal",
+                            "value": 4
+                          }
+                        }
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "condition": {
+            "type": "Attacks",
+            "value": {
+              "type": "Attacker",
+              "value": {}
+            }
+          },
+          "modal": {
+            "modes": [
+              {
+                "clauses": [
+                  {
+                    "effects": [
+                      {
+                        "type": "ChoosePermanents",
+                        "value": {
+                          "permanents": {
+                            "count": {
+                              "type": "UpTo"
+                            },
+                            "filter": {
+                              "type": "And",
+                              "value": [
+                                {
+                                  "type": "HasSubtype",
+                                  "value": "Myr"
+                                },
+                                {
+                                  "type": "HeldBy",
+                                  "value": {
+                                    "holder": "Controller",
+                                    "relation": "You"
+                                  }
+                                },
+                                {
+                                  "type": "Not",
+                                  "value": {
+                                    "type": "IsTapped"
+                                  }
+                                }
+                              ]
+                            }
+                          },
+                          "slot": "chosen"
+                        }
+                      },
+                      {
+                        "type": "Tap",
+                        "value": {
+                          "ref": {
+                            "type": "InSlot",
+                            "value": "chosen"
+                          }
+                        }
+                      },
+                      {
+                        "type": "ModifyTarget",
+                        "value": {
+                          "duration": {
+                            "type": "UntilEndOfTurn"
+                          },
+                          "modification": {
+                            "type": "ModifyPowerToughness",
+                            "value": {
+                              "power": {
+                                "type": "BoundCount",
+                                "value": "chosen"
+                              },
+                              "toughness": {
+                                "type": "Literal",
+                                "value": 0
+                              }
+                            }
+                          },
+                          "ref": {
+                            "type": "InSlot",
+                            "value": "self"
+                          }
+                        }
+                      },
+                      {
+                        "type": "DealDamage",
+                        "value": {
+                          "parts": [
+                            {
+                              "quantity": {
+                                "type": "BoundCount",
+                                "value": "chosen"
+                              },
+                              "ref": {
+                                "type": "AttackedBy",
+                                "value": "self"
+                              }
+                            }
+                          ]
+                        }
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      ],
+      "typeLine": {
+        "subtypes": [
+          "Construct",
+          "Myr"
+        ],
+        "types": [
+          "Artifact",
+          "Creature"
+        ]
+      }
+    }
+  ]
+}

@@ -1,0 +1,212 @@
+{
+  "description": "CR 903.3d, 508.1, 603.2, 701.34a: Norn's Choirmaster proliferates once when a commander its controller controls attacks, and not when an opponent's commander attacks",
+  "note": "Krenko, alice's commander, attacks beside Grizzly Bears: one trigger, so the Bears' two counters become three, not four. On bob's turn his commander Isamaru attacks and the Bears stay at three: a commander alice does not control is not hers (CR 903.3d).",
+  "board": {
+    "active": "alice",
+    "step": "PrecombatMain",
+    "seats": [
+      {
+        "name": "alice",
+        "battlefield": [
+          {
+            "card": "Norn's Choirmaster",
+            "label": "choir"
+          },
+          {
+            "card": "Krenko, Mob Boss",
+            "label": "krenko",
+            "commander": true,
+            "ready": true
+          },
+          {
+            "card": "Grizzly Bears",
+            "label": "bears",
+            "ready": true,
+            "counters": [
+              {
+                "key": {
+                  "type": "PlusOnePlusOne"
+                },
+                "value": 2
+              }
+            ]
+          }
+        ],
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ]
+      },
+      {
+        "name": "bob",
+        "battlefield": [
+          {
+            "card": "Isamaru, Hound of Konda",
+            "label": "isamaru",
+            "commander": true,
+            "ready": true
+          }
+        ],
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ]
+      }
+    ]
+  },
+  "timeline": [
+    {
+      "turn": 1,
+      "step": "DeclareAttackers",
+      "player": "alice",
+      "do": {
+        "Attack": [
+          "$krenko",
+          "$bears"
+        ]
+      }
+    },
+    {
+      "turn": 1,
+      "step": "DeclareAttackers",
+      "player": "alice",
+      "do": {
+        "Answer": {
+          "prompt": "ChooseProliferate",
+          "with": [
+            [
+              "$bears"
+            ],
+            []
+          ]
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "DeclareAttackers",
+      "player": "alice",
+      "do": "Pass"
+    },
+    {
+      "turn": 1,
+      "step": "DeclareAttackers",
+      "player": "alice",
+      "check": {
+        "Counters": {
+          "object": "$bears",
+          "kind": {
+            "type": "PlusOnePlusOne"
+          },
+          "count": 3
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "DeclareBlockers",
+      "player": "bob",
+      "do": {
+        "Block": {}
+      }
+    },
+    {
+      "turn": 1,
+      "step": "EndOfCombat",
+      "player": "alice",
+      "check": {
+        "Life": {
+          "player": "bob",
+          "life": 12
+        }
+      }
+    },
+    {
+      "turn": 2,
+      "step": "DeclareAttackers",
+      "player": "bob",
+      "do": {
+        "Attack": [
+          "$isamaru"
+        ]
+      }
+    },
+    {
+      "turn": 2,
+      "step": "DeclareBlockers",
+      "player": "alice",
+      "do": {
+        "Block": {}
+      }
+    },
+    {
+      "turn": 2,
+      "step": "EndOfCombat",
+      "player": "bob",
+      "check": {
+        "Counters": {
+          "object": "$bears",
+          "kind": {
+            "type": "PlusOnePlusOne"
+          },
+          "count": 3
+        }
+      }
+    },
+    {
+      "turn": 2,
+      "step": "EndOfCombat",
+      "player": "bob",
+      "check": {
+        "Life": {
+          "player": "alice",
+          "life": 18
+        }
+      }
+    }
+  ]
+}
