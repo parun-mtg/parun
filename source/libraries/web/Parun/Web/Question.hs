@@ -81,13 +81,16 @@ data Group = MkGroup
   }
 
 -- | A reply the seat is never asked for: the hotseat never concedes unasked
--- (CR 104.3a), a priority offering nothing but a pass and mana abilities is
+-- (CR 104.3a), the seat plays first when it chooses, a priority offering nothing but a pass and mana abilities is
 -- passed (Offer.onlyPass), and a choice between indistinguishable options is
 -- made: identical mana to spend, and all of a creature's combat damage to
 -- its one recipient (CR 510.1c).
 automatic :: Request.Request -> Maybe R.Reply
 automatic request = case Text.unpack (Question.kind question) of
   "Concede" -> Just . R.Text $ Text.pack "Continues"
+  -- The player is taken to want to play first (CR 103.1), a default of this
+  -- client's rather than the engine's.
+  "PlayOrDraw" -> Just . R.Text $ Text.pack "Play"
   "ChooseAction" -> R.Number <$> Offer.onlyPass (Question.offer question)
   "ChooseManaToSpend" | Just (unit : rest) <- Protocol.arrayOf offer, all (== unit) rest -> Just unit
   "AssignCombatDamage"

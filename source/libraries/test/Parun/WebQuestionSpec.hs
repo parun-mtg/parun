@@ -47,10 +47,11 @@ spec s registry = Spec.describe s "WebQuestion" $ do
     Spec.assertEqWith s "a card in hand is tapped to read it" (Html.handler (Text.pack "click") (Seq.fromList [0, 4, 0]) (Question.Web.view request Set.empty [])) (Just (Question.Web.MkRead land))
     Spec.assertBool s (Text.pack "<section class=\"reading\"><p>Mountain</p><button>Close</button></section>" `Text.isInfixOf` Html.toText (Question.Web.view request Set.empty [Text.pack "Mountain"])) "reading"
 
-  Spec.it s "a priority offering only a pass, and the hotseat's concession, are answered unasked" $ do
+  Spec.it s "a priority offering only a pass, the hotseat's concession, and play or draw are answered unasked" $ do
     let gs = Setup.emptyGame S.bothPlayers
     Spec.assertEqWith s "pass" (Question.Web.automatic (requestFor gs (Prompt.ChooseAction (Decider.MkDecider S.alice) S.alice [Action.Pass]))) (Just (R.Number 0))
     Spec.assertEqWith s "concede" (Question.Web.automatic (bare (Text.pack "Concede") R.Null)) (Just (R.Text (Text.pack "Continues")))
+    Spec.assertEqWith s "play first" (Question.Web.automatic (bare (Text.pack "PlayOrDraw") (R.Array [R.Text (Text.pack "Play"), R.Text (Text.pack "Draw")]))) (Just (R.Text (Text.pack "Play")))
 
   Spec.it s "a payment shows each source with what it makes, and a tap answers with that source" $ do
     mountain <- S.printingOf s registry "Mountain"
