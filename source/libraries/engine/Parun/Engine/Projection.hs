@@ -3948,9 +3948,12 @@ honeAffected =
 -- Game.stickerContent) decides the layer; what an ability sticker grants is
 -- handed over unread (stickerGrants).
 --
--- Not implemented: a static, rule, player or self-cost ability on an ability
--- sticker, or a keyword rule 702 states as a static ability, reaching the
--- stickered object (#4934).
+-- A static ability's grant is gathered from the stickered object, as a stored
+-- grant's is (View.grantedStaticAbilitiesOf).
+--
+-- Not implemented: a rule, player or self-cost ability on an ability sticker,
+-- or a keyword rule 702 states as a static ability, reaching the stickered
+-- object (#8365).
 stickerGathered :: GameState -> [Gathered]
 stickerGathered gs =
   let at oid placement lyr affected m =

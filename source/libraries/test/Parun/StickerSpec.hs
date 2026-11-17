@@ -1306,16 +1306,16 @@ spec s registry = Spec.describe s "Sticker" $ do
     Spec.assertEqWith s "CR 123.3c four, two, none and none" (fmap (\ref -> Sticker.ticketCost ref gs) [jugglerIndestructible, otterFiveOne, night, aliceSticker 2 StickerKind.Art 0]) [4, 2, 0, 0]
     Spec.assertEqWith s "CR 123.8 Otter's sticker is a 5/1" (Game.stickerContent otterFiveOne gs) (Just (StickerContent.PowerToughness PowerToughnessSticker.MkPowerToughnessSticker {PowerToughnessSticker.tickets = 2, PowerToughnessSticker.power = 5, PowerToughnessSticker.toughness = 1}))
     Spec.assertEqWith s "CR 123.7 Juggler's second ability sticker is indestructible" [Map.keys (AbilitySticker.keywords a) | Just (StickerContent.Ability a) <- [Game.stickerContent jugglerIndestructible gs]] [[Keyword.Indestructible]]
-  -- #4934's tripwire: a static, rule, player or self-cost ability on an
-  -- ability sticker, or a keyword rule 702 states as a static ability, does not
-  -- reach the stickered object -- the first two join no list for a grant to
-  -- the object itself, and the gates in front of the rest ask no sticker.
+  -- #8365's tripwire: a rule, player or self-cost ability on an ability
+  -- sticker, or a keyword rule 702 states as a static ability, does not reach
+  -- the stickered object -- a rule ability joins no list for a grant to the
+  -- object itself, and the gates in front of the rest ask no sticker.
   -- Exhaustive, so a new kind of ability is decided here.
-  Spec.it s "CR 123.7 no committed ability sticker carries an ability stickerGathered cannot grant (#4934)" $ do
+  Spec.it s "CR 123.7 no committed ability sticker carries an ability stickerGathered cannot grant (#8365)" $ do
     root <- StickerSheets.defaultRoot
     loaded <- StickerSheets.loadRoot root
     let selfOnly g = case g of
-          GrantedAbility.Static _ -> True
+          GrantedAbility.Static _ -> False
           GrantedAbility.Rules _ -> True
           GrantedAbility.Player _ -> True
           GrantedAbility.SelfCostReduction _ -> True
@@ -1326,6 +1326,23 @@ spec s registry = Spec.describe s "Sticker" $ do
           GrantedAbility.Replacement _ -> False
         offends a = any selfOnly (AbilitySticker.abilities a) || not (null (KeywordEngine.mintedStaticAbilitiesOf (Map.keysSet (AbilitySticker.keywords a))))
     Spec.assertEqWith s "no such sheet" [StickerSheet.name sheet | (_, Right sheet) <- loaded, a <- Foldable.toList (StickerSheet.abilities sheet), offends a] []
+  -- Trained Blessed Mind's second ability sticker on Grizzly Bears: the Bears'
+  -- own graveyard count gates it, and a card in the graveyard is not pumped.
+  Spec.it s "CR 123.7 Trained Blessed Mind's threshold sticker pumps a stickered Grizzly Bears at seven cards" $ do
+    root <- StickerSheets.defaultRoot
+    loaded <- StickerSheets.loadRoot root
+    bears <- S.printingOf s registry "Grizzly Bears"
+    let sheets = [sheet | (_, Right sheet) <- loaded, StickerSheet.name sheet == Text.pack "Trained Blessed Mind"]
+        base = withSheets sheets (Setup.gameWith GameSettings.plain S.bothPlayers)
+        filled n gs = List.foldl' (\g _ -> snd (S.addGraveyardCard bears S.alice g)) gs [1 .. n :: Int]
+        threshold = aliceSticker 0 StickerKind.Ability 1
+        onBattlefield n = let (oid, gs) = S.addPermanent bears S.alice (filled n base) in (oid, Sticker.put S.alice oid threshold Nothing gs)
+        seen (oid, gs) = (Projection.powerOf oid gs, Projection.toughnessOf oid gs, Projection.hasKeyword Keyword.Trample oid gs)
+        (inGraveyard, graveyardBoard) = S.addGraveyardCard bears S.alice (filled 7 base)
+    Spec.assertEqWith s "the sheet loads" (length sheets) 1
+    Spec.assertEqWith s "CR 611.3a at six cards the Bears are a 2/2 without trample" (seen (onBattlefield 6)) (Just 2, Just 2, False)
+    Spec.assertEqWith s "CR 123.7 at seven they get +4/+0 and trample" (seen (onBattlefield 7)) (Just 6, Just 2, True)
+    Spec.assertEqWith s "CR 113.6 the sticker on a card in the graveyard pumps nothing" (seen (inGraveyard, Sticker.put S.alice inGraveyard threshold Nothing graveyardBoard)) (Just 2, Just 2, False)
   -- Every one of unit 1's eight ability stickers on its own Grizzly Bears:
   -- each keyword is granted, and Contortionist Otter Storm's {T} ability joins
   -- the Bears' activated abilities. Juggler's bolster trigger joins its
