@@ -440,7 +440,10 @@ applyModification textBoxOf viewOf src stamp gs oid unitTypes affected m pc =
         -- regained from the same granter is the same ability, still spent
         -- (docs/decisions.md, "A rider ability regained from one granter stays
         -- spent"). The Well Rested, Tyvar, Aura Graft and Touch of Vitae files
-        -- in data/scenarios prove it.
+        -- in data/scenarios prove it. CR 607.1a / 607.5: so is every ability
+        -- another object lends, so what it exiles is linked to its own pair
+        -- and none of the receiver's (Binding.isLinkedExile); one the receiver
+        -- grants itself counts as printed and stays unnamed.
         Modification.GainAbility g -> case g of
           -- The cost names its granter by id (Binding.grantingPermanent);
           -- data/scenarios' Fishing Pole files prove each names its own. The
@@ -448,12 +451,12 @@ applyModification textBoxOf viewOf src stamp gs oid unitTypes affected m pc =
           -- is named for it, so Binding.setGranter can bind the slot as it is
           -- activated or put on the stack (CR 608.2h).
           GrantedAbility.Activated a ->
-            let named = namedForGranter src a
+            let named = namedForGranter src oid a
              in pc {PC.activatedAbilities = PC.activatedAbilities pc <> [named {ActivatedAbility.cost = Filter.bakeCost Binding.grantingPermanent src (ActivatedAbility.cost a), ActivatedAbility.costChoices = fmap (CostChoice.MkCostChoice . fmap (Filter.bakeCost Binding.grantingPermanent src) . CostChoice.unwrap) (ActivatedAbility.costChoices a), ActivatedAbility.modal = bakeGranter src (ActivatedAbility.modal a)}]}
           GrantedAbility.Triggered t ->
             let forGranter = t {TriggeredAbility.name = Just (Binding.acquiredFrom src (TriggeredAbility.name t))}
                 named = case TriggeredAbility.limit t of
-                  TriggerLimit.Unlimited -> if readsGranter (TriggeredAbility.modal t) then forGranter else t
+                  TriggerLimit.Unlimited -> if src /= oid || readsGranter (TriggeredAbility.modal t) then forGranter else t
                   TriggerLimit.OncePerTurn _ -> forGranter
                   TriggerLimit.OncePerGame -> forGranter
              in pc {PC.triggeredAbilities = PC.triggeredAbilities pc <> [named {TriggeredAbility.modal = bakeGranter src (TriggeredAbility.modal named)}]}
@@ -1031,12 +1034,13 @@ intrinsicManaAbilitiesOf pc =
 lendsKind :: Maybe AbilityKind.AbilityKind -> Maybe LoyaltyKind.LoyaltyKind -> ActivatedAbility.ActivatedAbility Card.Type.Card (GrantedAbility.GrantedAbility Card.Type.Card) -> Bool
 lendsKind only loyalty a = all (== (if ManaAbility.isManaAbility a then AbilityKind.ManaAbility else AbilityKind.NonManaAbility)) only && all (== LoyaltyAbility.loyaltyKindOf (ActivatedAbility.cost a)) loyalty
 
--- CR 113.2c / 201.5a: a granted activated ability, named for its granter
--- (Binding.acquiredFrom) where a rider counts its activations or a quantity of
--- it reads the granter by slot (readsGranter).
-namedForGranter :: ObjectId -> ActivatedAbility.ActivatedAbility Card.Type.Card (GrantedAbility.GrantedAbility Card.Type.Card) -> ActivatedAbility.ActivatedAbility Card.Type.Card (GrantedAbility.GrantedAbility Card.Type.Card)
-namedForGranter src a
-  | Keyword.countsActivations a || readsGranter (ActivatedAbility.modal a) = a {ActivatedAbility.name = Just (Binding.acquiredFrom src (ActivatedAbility.name a))}
+-- CR 113.2c / 201.5a / 607.5: an activated ability `src` grants `receiver`,
+-- named for its granter (Binding.acquiredFrom) where another object lends it,
+-- a rider counts its activations or a quantity of it reads the granter by
+-- slot (readsGranter).
+namedForGranter :: ObjectId -> ObjectId -> ActivatedAbility.ActivatedAbility Card.Type.Card (GrantedAbility.GrantedAbility Card.Type.Card) -> ActivatedAbility.ActivatedAbility Card.Type.Card (GrantedAbility.GrantedAbility Card.Type.Card)
+namedForGranter src receiver a
+  | src /= receiver || Keyword.countsActivations a || readsGranter (ActivatedAbility.modal a) = a {ActivatedAbility.name = Just (Binding.acquiredFrom src (ActivatedAbility.name a))}
   | otherwise = a
 
 -- CR 201.5a / 608.2h: whether the granted ability reads its granter by slot
@@ -2708,15 +2712,6 @@ printedTriggeredAbility = printedAbility rewriteTriggeredAbility PC.triggeredAbi
 -- skinshifter-* text-change pairs prove it, spent before the change and after.
 printedActivatedAbility :: ObjectId -> GameState -> ActivatedAbility.ActivatedAbility Card.Type.Card (GrantedAbility.GrantedAbility Card.Type.Card) -> ActivatedAbility.ActivatedAbility Card.Type.Card (GrantedAbility.GrantedAbility Card.Type.Card)
 printedActivatedAbility = printedAbility rewriteActivatedAbility PC.activatedAbilities
-
--- | CR 607.1a: whether `oid` has this activated ability of its own -- printed,
--- or granted by an ability of its own -- rather than lent by a layer-6 grant
--- whose source is another object. Asked of `oid` projected without those
--- grants. data/scenarios/cost's Dominion Bracelet file proves a lent one.
-ownsActivatedAbility :: ObjectId -> GameState -> ActivatedAbility.ActivatedAbility Card.Type.Card (GrantedAbility.GrantedAbility Card.Type.Card) -> Bool
-ownsActivatedAbility oid gs ability =
-  let lent c = gLayer c == Layer.Ability && gSource c /= oid
-   in elem ability (PC.activatedAbilities (projectFrom (filter (not . lent) (gather gs)) oid gs))
 
 -- CR 613.1c: the stored resolution effects' layer-3 parts, gathered WITHOUT
 -- gather, which asks textChangesAffecting.

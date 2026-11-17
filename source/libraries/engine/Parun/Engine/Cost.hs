@@ -2836,27 +2836,23 @@ exileTotalling perform slots pid oid (ExileCardsTotalling.MkExileCardsTotalling 
 -- printed when the component is one its own card states (printedCastCost), and
 -- Event.carryOver hands the link to the permanent the spell becomes; an
 -- activated ability's links under that ability's name and the acquisition it
--- froze going on the stack (Game.readingAcquisition's reason), unless another
--- object lent it unnamed (Projection.ownsActivatedAbility), which would file it
--- as `oid`'s own. A keyword's substitute links on its own road
+-- froze going on the stack (Game.readingAcquisition's reason); one another
+-- object lent is named for its lender (Projection.namedForGranter), so it
+-- links to its own pair (CR 607.5). A keyword's substitute links on its own road
 -- (linkSubstitutedExiles). Kylox's Voltstrider's scenario proves the activated
 -- road, Skyway Robber's and Fear of Abduction's the spell's, and
 -- data/scenarios/cost's cr-607-2a and cr-607-2q files what neither links.
 --
 -- Not implemented: a mana ability's cost, which has no stack object to name its
--- ability, links nothing (#8188); nor does a pair another object lends unnamed,
--- an exiling cost and its reader, which CR 607.5 links to each other (#8204).
+-- ability, links nothing (#8188).
 linkPaidExiles :: Maybe ObjectId -> ObjectId -> CostComponent.CostComponent Keyword.Type.Keyword -> [ObjectId] -> Game ()
 linkPaidExiles paidFor oid component arrived = do
   gs <- State.get
   let link = case paidFor of
         Just paying
           | paying == oid -> if printedCastCost oid component gs then Just (printedLink oid) else Nothing
-          | Just (Source.OfAbility activated) <- fmap Object.source (Game.lookupObject paying gs),
-            let ability = ActivatedAbilitySource.ability activated
-                name = ActivatedAbility.name ability,
-            any Binding.isAcquired name || Projection.ownsActivatedAbility oid gs ability ->
-              Just (exileLink oid name (ActivatedAbilitySource.acquisition activated))
+          | Just (Source.OfAbility activated) <- fmap Object.source (Game.lookupObject paying gs) ->
+              Just (exileLink oid (ActivatedAbility.name (ActivatedAbilitySource.ability activated)) (ActivatedAbilitySource.acquisition activated))
         _ -> Nothing
   Foldable.for_ link (\l -> linkExiles oid l arrived)
 

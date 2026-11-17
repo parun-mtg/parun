@@ -73,10 +73,10 @@ data ActivePlayerEffect = MkActivePlayerEffect
     expiry :: Expiry.Expiry,
     scope :: AffectedPlayers.AffectedPlayers PlayerId.PlayerId,
     effect :: PlayerEffect.PlayerEffect,
-    -- | CR 607.5: the name of the activated ability whose resolution began the
-    -- effect (Parun.Engine.Resolve.Slots.resolvingAbilityName), so a reference
-    -- to cards exiled with `source` reads that ability's pair. Nothing for an
-    -- unnamed one, a trigger or a spell.
+    -- | CR 607.5: the name of the activated or triggered ability whose
+    -- resolution began the effect (Parun.Engine.Resolve.Slots.resolvingAbilityName),
+    -- so a reference to cards exiled with `source` reads that ability's pair.
+    -- Nothing for an unnamed one or a spell.
     ability :: Maybe AbilityName.AbilityName,
     -- | The objects a Filter.IsBound in `effect` names: a slot the resolution
     -- bound, captured as the row begins (Vexing Shusher's "target spell"), or

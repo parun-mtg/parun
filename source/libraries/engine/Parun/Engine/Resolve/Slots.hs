@@ -294,6 +294,7 @@ import qualified Parun.Types.Toughness as Toughness
 import qualified Parun.Types.TransformR as TransformR
 import qualified Parun.Types.TransformRewrite as TransformRewrite
 import qualified Parun.Types.TriggeredAbility as TriggeredAbility
+import qualified Parun.Types.TriggeredAbilitySource as TriggeredAbilitySource
 import qualified Parun.Types.TurnRegisters as TurnRegisters
 import qualified Parun.Types.TurnUpR as TurnUpR
 import qualified Parun.Types.TurnUpRewrite as TurnUpRewrite
@@ -3895,17 +3896,17 @@ conjureQuantities conjure =
 resolvingKind :: ObjectId -> GameState -> StackObjectKind.StackObjectKind
 resolvingKind resolving gs = Maybe.fromMaybe StackObjectKind.Spell (Game.stackObjectKind resolving gs)
 
--- | CR 607.2a's name for the ability resolving as `resolving`: an activated
--- ability's ActivatedAbility.name, which is how a linked reference names one of
--- two exiling abilities of an object, and how one acquired from an exiled card
--- names its pair (Binding.isLinkedExile). Nothing for every other kind of
+-- | CR 607.2a's name for the ability resolving as `resolving`: an activated or
+-- triggered ability's name, which is how a linked reference names one of two
+-- exiling abilities of an object, and how one another object lent names its
+-- pair (Binding.isLinkedExile, CR 607.5). Nothing for every other kind of
 -- object, none of which carries a name a reference could state.
 resolvingAbilityName :: ObjectId -> GameState -> Maybe AbilityName.AbilityName
 resolvingAbilityName resolving gs = case fmap Object.source (Game.lookupObject resolving gs) of
   Nothing -> Nothing
   Just src -> case src of
     Source.OfAbility a -> ActivatedAbility.name (ActivatedAbilitySource.ability a)
-    Source.OfTrigger _ -> Nothing
+    Source.OfTrigger t -> TriggeredAbility.name (TriggeredAbilitySource.ability t)
     Source.OfInherentTrigger _ -> Nothing
     Source.OfCard _ -> Nothing
     Source.OfSpellCopy _ -> Nothing

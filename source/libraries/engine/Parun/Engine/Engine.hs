@@ -1066,7 +1066,7 @@ placeBorne srcId pending = do
       remembered = Target.rememberedModes memoryKey modal srcId gs
       -- CR 612.1: a text change rewrites the ability, not which ability it is.
       memoryKey = StackedAbility.Triggered (Projection.printedTriggeredAbility srcId gs ability)
-      legal = Set.difference (Target.fillableModes StackObjectKind.TriggeredAbility Nothing (Just controller) bound srcId Map.empty modal gs) remembered
+      legal = Set.difference (Target.fillableModes StackObjectKind.TriggeredAbility (TriggeredAbility.name ability) (Just controller) bound srcId Map.empty modal gs) remembered
       -- CR 603.3c: the instruction as the modes are announced, with its
       -- condition and its computed ceiling read then (Modal.settle). The ceiling
       -- reads the X inherited above, so The Ruinous Wrecking Crew's "choose up to
@@ -1148,7 +1148,7 @@ placeBorne srcId pending = do
       -- data/scenarios/dune-drifter-returns-a-card-up-to-the-x-its-spell-announced.json
       -- proves.
       let slots = Target.announcedSlots controller srcId gs (Modal.modesTargetSlots chosenModes modal)
-          sets = Target.legalSets StackObjectKind.TriggeredAbility Nothing (Just controller) False seed srcId slots gs
+          sets = Target.legalSets StackObjectKind.TriggeredAbility (TriggeredAbility.name ability) (Just controller) False seed srcId slots gs
           -- CR 603.3d's "identical to the process ... listed in rules 601.2c-d",
           -- and 601.2c's single announcement: an answer whose slots read each
           -- other is judged WHOLE, exactly as a cast's is
@@ -1204,8 +1204,8 @@ placeBorne srcId pending = do
           -- face-down pile here is shown to nobody. The rule orders a reveal
           -- only for casting and activating.
           attempt rejected = do
-            (chosen, _, seats) <- Target.chooseTargets Nothing controller abilId srcId seed inheritedX slots sets
-            if Target.selectionLegal StackObjectKind.TriggeredAbility Nothing (Just controller) seed srcId inheritedX slots sets chosen gs
+            (chosen, _, seats) <- Target.chooseTargets (TriggeredAbility.name ability) controller abilId srcId seed inheritedX slots sets
+            if Target.selectionLegal StackObjectKind.TriggeredAbility (TriggeredAbility.name ability) (Just controller) seed srcId inheritedX slots sets chosen gs
               then pure (Just (chosen, seats))
               else
                 let key = Map.intersectionWith Set.intersection chosen sets
@@ -1218,7 +1218,7 @@ placeBorne srcId pending = do
         Nothing -> State.modify' (Game.cease abilId)
         Just (chosen, seats) -> do
           -- CR 603.3d / 601.2d: the division among the targets just fixed.
-          divisions <- Target.announceDivision Nothing controller abilId srcId bound slots seats chosen
+          divisions <- Target.announceDivision (TriggeredAbility.name ability) controller abilId srcId bound slots seats chosen
           -- CR 113.7: the ability's SOURCE is bound under the reserved slot as it
           -- is placed, so "this creature" resolves as an ordinary slot read even
           -- after the source has left. CR 603.7c: a delayed ability's CAPTURED
