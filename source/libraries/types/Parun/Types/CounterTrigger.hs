@@ -11,7 +11,7 @@ import qualified Parun.Types.WhichCounters as WhichCounters
 -- | CR 603.2 over CR 122.6's placement or a removal: which kind (or any, CR
 -- 122.1), which way, on what, whether the count must cross a threshold, and
 -- per counter, per permanent or per batch (CR 603.2c), and whether only the
--- holder's first placement this turn counts.
+-- holder's first such placement this turn counts.
 data CounterTrigger = MkCounterTrigger
   { kind :: WhichCounters.WhichCounters Keyword.Keyword,
     motion :: CounterMotion.CounterMotion,
@@ -22,7 +22,8 @@ data CounterTrigger = MkCounterTrigger
     threshold :: Maybe Natural.Natural,
     grouping :: CounterGrouping.CounterGrouping,
     -- | FirstTimeEachTurn: only the first event this turn that put counters of
-    -- any kind on the holder, counted per holder (Stalwart Successor).
+    -- the trigger's kind on the holder, counted per holder (Stalwart
+    -- Successor's any kind, U.S.S. Enterprise-D, Galaxy-Class's charge).
     frequency :: TriggerFrequency.TriggerFrequency
   }
   deriving (Eq, Ord, Show)
