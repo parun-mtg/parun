@@ -1,6 +1,6 @@
 {
-  "description": "CR 734.1 the Drum whose tap Pili-Pala untapped is not offered back",
-  "note": "Ghostly Prison's toll for two Bears is {4}. In its window alice taps Pili-Pala for the first Drum, pays Pili-Pala's {2} with the Islands and untaps it for its {Q}, taps it again for the second Drum, and closes the window short with three {W}. Asked newest first, she reverses the second Drum and keeps Pili-Pala, whose mana the Islands paid, so they are not asked. Nor is the first Drum: Pili-Pala's kept {Q} untapped the creature its cost tapped (CR 107.6), so no kept state undoes that tap. Two {W} float, Pili-Pala is untapped and the first Drum stays tapped. The declaration goes back, and she declares no attackers.",
+  "description": "CR 734.1 the Drum whose tap Pili-Pala untapped and the second Drum redid is offered back",
+  "note": "The board of the-drum-whose-tap-pili-pala-untapped-is-offered-back, but alice keeps the second Drum and Pili-Pala, so the Islands, whose mana paid Pili-Pala, are not asked. She reverses the first Drum, whose mana was spent on nothing: the second Drum's kept tap came last, so Pili-Pala stays tapped while the first Drum untaps. Two {W} float, and she declares no attackers.",
   "board": {
     "active": "alice",
     "step": "BeginningOfCombat",
@@ -268,7 +268,7 @@
       "do": {
         "Answer": {
           "prompt": "ReverseManaAbilities",
-          "with": "Exercises"
+          "with": "Declines"
         }
       }
     },
@@ -280,6 +280,17 @@
         "Answer": {
           "prompt": "ReverseManaAbilities",
           "with": "Declines"
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "DeclareAttackers",
+      "player": "alice",
+      "do": {
+        "Answer": {
+          "prompt": "ReverseManaAbilities",
+          "with": "Exercises"
         }
       }
     },
@@ -337,7 +348,7 @@
       "check": {
         "Tapped": {
           "object": "$drum1",
-          "tapped": true
+          "tapped": false
         }
       }
     },
@@ -348,7 +359,7 @@
       "check": {
         "Tapped": {
           "object": "$drum2",
-          "tapped": false
+          "tapped": true
         }
       }
     },
@@ -359,7 +370,7 @@
       "check": {
         "Tapped": {
           "object": "$pili",
-          "tapped": false
+          "tapped": true
         }
       }
     },

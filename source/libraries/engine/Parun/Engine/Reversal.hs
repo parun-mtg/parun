@@ -49,7 +49,8 @@ import qualified Parun.Types.TurnRegisters as TurnRegisters
 -- Nothing where some leaf was written by BOTH sides to two different values,
 -- which is a state this function declines to invent -- except a pool, a life
 -- total, a count of counters and a count of activations, whose two changes add
--- up (`pools`, `playerWith`, `tally`, `nestedTally`). Any other Nothing is
+-- up (`pools`, `playerWith`, `tally`, `nestedTally`), and a tap status, whose
+-- window write came last (`objectWith`). Any other Nothing is
 -- CONSERVATIVE rather than a claim of impossibility: Parun.Engine.Cost then
 -- leaves the activation standing, or reverses the whole action unasked, so the
 -- worst it can cost is the question.
@@ -472,12 +473,13 @@ objectsWith before entry between =
 -- combat toll" group is the proof. Each field is a whole-value leaf.
 --
 -- `tapped` is a leaf the window's stretches are read for too: where both sides
--- changed it, the window's tap or untap was made on the status the undone
--- side left (CR 107.6, 701.26), so no kept state has it and this answers
--- Nothing, even where the window ended on the value it began with: Pili-Pala's
--- {Q} untapping it after the first Drum's cost tapped it, then the second Drum
--- tapping it again. The scenarios
--- combat-cost/cr-734-1-the-drum-whose-tap-pili-pala-untapped-is-not-offered-back
+-- changed it, the window's kept tap or untap came after the undone side's, so
+-- the status is the window's last (CR 701.26), even where the window ended on
+-- the value the undone side left: Pili-Pala's {Q} untapping it after the first
+-- Drum's cost tapped it, then the second Drum tapping it again. CR 734.1 bars
+-- reversing that Drum only for spent mana, not for a kept cost paid on its
+-- tap. The scenarios
+-- combat-cost/cr-734-1-the-drum-whose-tap-pili-pala-untapped-is-offered-back
 -- and its -and-the-second-drum-redid- sibling are the proof.
 --
 -- A TOTAL record construction for `withoutAnnouncement`'s reason: a new Object
@@ -491,7 +493,7 @@ objectWith before entry between closed = do
   zone <- field Object.zone
   tapped <-
     if Object.tapped before /= Object.tapped entry && any ((/= Object.tapped entry) . Object.tapped) (between <> [closed])
-      then Nothing
+      then Just (Object.tapped closed)
       else field Object.tapped
   facing <- field Object.facing
   flipped <- field Object.flipped
