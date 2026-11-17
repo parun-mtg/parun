@@ -18,6 +18,7 @@ module Parun.CostSpec where
 import qualified Control.Monad as Monad
 import qualified Control.Monad.Trans.State.Strict as State
 import qualified Data.Foldable as Foldable
+import qualified Data.Functor.Const as Functor
 import qualified Data.List as List
 import qualified Data.List.NonEmpty as NonEmpty
 import qualified Data.Map.Strict as Map
@@ -31,6 +32,7 @@ import qualified Parun.Engine.Activatable as Activatable
 import qualified Parun.Engine.Activate as Activate
 import qualified Parun.Engine.Binding as Binding
 import qualified Parun.Engine.Cast as Cast
+import qualified Parun.Engine.Children as Children
 import qualified Parun.Engine.Combat as Combat
 import qualified Parun.Engine.Cost as Cost
 import qualified Parun.Engine.Engine as Engine
@@ -62,11 +64,13 @@ import qualified Parun.Types.CandidateCost as CandidateCost
 import qualified Parun.Types.Card as Card.Type
 import qualified Parun.Types.CardName as CardName
 import qualified Parun.Types.CardSelection as CardSelection
+import qualified Parun.Types.CardTally as CardTally
 import qualified Parun.Types.CardType as CardType
 import qualified Parun.Types.CastWindow as CastWindow
 import qualified Parun.Types.Color as Color
 import qualified Parun.Types.Combat as Combat.Type
 import qualified Parun.Types.CombatStep as CombatStep
+import qualified Parun.Types.Comparison as Comparison
 import qualified Parun.Types.Copyability as Copyability
 import qualified Parun.Types.Cost as Cost.Type
 import qualified Parun.Types.CostAmount as CostAmount
@@ -79,6 +83,7 @@ import qualified Parun.Types.CountersOnThis as CountersOnThis
 import qualified Parun.Types.DiscardCards as DiscardCards
 import qualified Parun.Types.DiscardCause as DiscardCause
 import qualified Parun.Types.EventShape as EventShape
+import qualified Parun.Types.ExileCardsTotalling as ExileCardsTotalling
 import qualified Parun.Types.Existence as Existence
 import qualified Parun.Types.Face as Face
 import qualified Parun.Types.FaceDownReason as FaceDownReason
@@ -1803,6 +1808,15 @@ hatredSpec s registry =
       Spec.assertBool s (not (Cost.canPayComponent Map.empty S.alice S.noSource (CostComponent.PayEnergy (CostAmount.Fixed 3)) gs)) "and an announced 3 is not"
       Spec.assertBool s (Cost.hasVariable (Cost.Type.MkCost Nothing [CostComponent.PayEnergy (CostAmount.Announced Binding.variableX)])) "it is a CR 107.3 variable"
       Spec.assertBool s (Cost.demandGrowsWithX (Cost.Type.MkCost Nothing [CostComponent.PayEnergy (CostAmount.Announced Binding.variableX)])) "whose demand grows, so the board itself refuses a big enough value"
+    -- The walk Parun.Engine.Resolve.Slots.payGateSlots and
+    -- Parun.Engine.Interchangeable.Mentions read: an exile-totalling cost's
+    -- announced threshold is a slot it names, as every sibling component's
+    -- announced amount is.
+    Spec.it s "an exile-totalling cost's announced threshold is a slot the Children walk visits" $ do
+      let slot = SlotName.MkSlotName (Text.pack "N")
+          exile = CostComponent.ExileCardsTotalling (ExileCardsTotalling.MkExileCardsTotalling (CostAmount.Announced slot) Comparison.AtLeast 0 (CardTally.ManaSymbolsOf Color.Black) (Filter.Type.HasColor Color.Black) Zone.Graveyard)
+          visited = Functor.getConst (Children.costComponentChildren Children.costLeaves {Children.costSlot = \named -> Functor.Const [named]} exile)
+      Spec.assertEqWith s "the walk visits the announced slot" visited [slot]
 
 -- Living Destiny {3}{G} Instant: "As an additional cost to cast this spell,
 -- reveal a creature card from your hand. You gain life equal to the revealed

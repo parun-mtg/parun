@@ -2136,7 +2136,7 @@ costComponentChildren c component = case component of
   CostComponent.PutExiledIntoGraveyard criterion -> CostComponent.PutExiledIntoGraveyard <$> costFilter c criterion
   CostComponent.CollectEvidence amount -> CostComponent.CollectEvidence <$> costAmountChildren c amount
   CostComponent.CollectEvidenceOfTargets -> pure component
-  CostComponent.ExileCardsTotalling (ExileCardsTotalling.MkExileCardsTotalling threshold comparison fewest tally criterion zone) -> fmap CostComponent.ExileCardsTotalling (ExileCardsTotalling.MkExileCardsTotalling threshold comparison fewest <$> cardTallyChildren c tally <*> costFilter c criterion <*> pure zone)
+  CostComponent.ExileCardsTotalling (ExileCardsTotalling.MkExileCardsTotalling threshold comparison fewest tally criterion zone) -> fmap CostComponent.ExileCardsTotalling (ExileCardsTotalling.MkExileCardsTotalling <$> costAmountChildren c threshold <*> pure comparison <*> pure fewest <*> cardTallyChildren c tally <*> costFilter c criterion <*> pure zone)
   CostComponent.ExileCardsFromHand (CardsFromHand.MkCardsFromHand n criterion) -> fmap CostComponent.ExileCardsFromHand (CardsFromHand.MkCardsFromHand <$> costAmountChildren c n <*> costFilter c criterion)
   CostComponent.RevealCardsFromHand (CardsFromHand.MkCardsFromHand n criterion) -> fmap CostComponent.RevealCardsFromHand (CardsFromHand.MkCardsFromHand <$> costAmountChildren c n <*> costFilter c criterion)
   CostComponent.Behold (Behold.MkBehold n criterion chosen zone) -> fmap CostComponent.Behold ((\f -> Behold.MkBehold n f chosen zone) <$> costFilter c criterion)
