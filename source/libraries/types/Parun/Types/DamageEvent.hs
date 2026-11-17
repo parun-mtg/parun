@@ -2,6 +2,7 @@ module Parun.Types.DamageEvent where
 
 import qualified Data.Set as Set
 import qualified Numeric.Natural as Natural
+import qualified Parun.Types.CardName as CardName
 import qualified Parun.Types.CardType as CardType
 import qualified Parun.Types.Color as Color
 import qualified Parun.Types.DamageKind as DamageKind
@@ -98,6 +99,10 @@ data DamageEvent = MkDamageEvent
     -- dealtByCardTypes's reason (Suffocation's "by a red instant or sorcery
     -- spell").
     dealtByColors :: Set.Set Color.Color,
+    -- | CR 201.2a: the source's NAMES when this damage was dealt, for
+    -- dealtByCardTypes's reason (Blazing Effigy's "by other sources named
+    -- Blazing Effigy").
+    dealtByNames :: Set.Set CardName.CardName,
     -- | CR 400.1: the zone the source was in when this damage was dealt, so a
     -- source on the stack was a spell (CR 112.1, Aegar, the Freezing Flame's
     -- "a ... spell you controlled dealt damage"). Nothing for a source already

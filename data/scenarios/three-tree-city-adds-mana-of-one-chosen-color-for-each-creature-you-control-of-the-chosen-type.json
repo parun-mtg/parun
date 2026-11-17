@@ -128,7 +128,7 @@
                 "restriction": null,
                 "rider": null,
                 "sourceChoices": {
-                  "subtype": "Bear"
+                  "subtype": ["Bear"]
                 }
               },
               {
@@ -141,7 +141,7 @@
                 "restriction": null,
                 "rider": null,
                 "sourceChoices": {
-                  "subtype": "Bear"
+                  "subtype": ["Bear"]
                 }
               }
             ]
@@ -168,7 +168,7 @@
               "restriction": null,
               "rider": null,
               "sourceChoices": {
-                "subtype": "Bear"
+                "subtype": ["Bear"]
               }
             },
             {
@@ -181,7 +181,7 @@
               "restriction": null,
               "rider": null,
               "sourceChoices": {
-                "subtype": "Bear"
+                "subtype": ["Bear"]
               }
             }
           ]

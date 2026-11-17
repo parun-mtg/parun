@@ -1,5 +1,5 @@
 {
-  "description": "CR 603.2c / 601.2c / 707.10c: Leyline of Combustion triggers once per copy that targets its controller, even when one Hive Mind trigger makes the copies together",
+  "description": "CR 603.2c / 601.2c / 707.10c: Leyline of Combustion triggers once per copy that targets its controller, even when one Hive Mind trigger makes every copy",
   "note": "Four seats. Bob's Shock at alice costs him 2. Dave's Hive Mind has alice, carol and dave copy it, each keeping alice as the target. Alice's own copy triggers nothing; carol's and dave's are two spells, so two triggers, 2 damage to each: one trigger would leave one of them at 20.",
   "board": {"active": "bob", "step": "PrecombatMain", "seats": [
     {"name": "alice", "battlefield": [{"card": "Leyline of Combustion", "label": "leyline"}], "library": [{"card": "Island"}, {"card": "Island"}]},

@@ -1373,10 +1373,10 @@ abilitySlotLintSpec s registry corpus = Spec.describe s "Lint" $ do
   -- read as the projection hands it over, its granter baked in
   -- (Projection.bakeGranter), so Trusty Boomerang's name for its granter is no
   -- slot read, and named for it (Projection.namedForGranter), so Archery
-  -- Training's read is bound; any id serves.
+  -- Training's read is bound; any two ids serve, as a lend.
   Spec.it s "every slot an activated ability reads is bound for its activation, and every slot it declares is read" $ do
     ps <- S.allPrintings s corpus
-    let baked ability = (Projection.namedForGranter (ObjectId.MkObjectId 0) ability) {ActivatedAbility.modal = Projection.bakeGranter (ObjectId.MkObjectId 0) (ActivatedAbility.modal ability)}
+    let baked ability = (Projection.namedForGranter (ObjectId.MkObjectId 0) (ObjectId.MkObjectId 1) ability) {ActivatedAbility.modal = Projection.bakeGranter (ObjectId.MkObjectId 0) (ActivatedAbility.modal ability)}
         -- Each ability beside the face whose delayed abilities it can arm.
         faceAbilities face = fmap ((,) face) (Face.activatedAbilities face <> fmap baked (grantedActivatedAbilities face))
         -- Over withMinted, each ability against what its own activation binds:

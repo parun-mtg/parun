@@ -12,6 +12,8 @@ import qualified Parun.JsonCodec.Common as Common
 import qualified Parun.Spec as Spec
 import qualified Parun.Types.AsCopy as AsCopy
 import qualified Parun.Types.CardType as CardType
+import qualified Parun.Types.ChoiceDistinct as ChoiceDistinct
+import qualified Parun.Types.ChoiceOrdinal as ChoiceOrdinal
 import qualified Parun.Types.ChooseBetween as ChooseBetween
 import qualified Parun.Types.ChosenQuality as ChosenQuality
 import qualified Parun.Types.CopyClause as CopyClause
@@ -365,6 +367,6 @@ spec s = Spec.describe s "Parun.Codec.EntryRewrite" $ do
     Common.assertCodec
       s
       (EntryRewrite.codec (GrantedAbility.codec Card.codec) (Effect.codec Card.codec (GrantedAbility.codec Card.codec)))
-      (EntryRewrite.InOrder (EntryRewrite.ChooseQuality (ChosenQuality.Subtype SubtypeFamily.BasicLandType Nothing) NonEmpty.:| [EntryRewrite.OrTapped (EntryPrice.PayLife 2)]))
+      (EntryRewrite.InOrder (EntryRewrite.ChooseQuality (ChosenQuality.Subtype ChoiceOrdinal.First ChoiceDistinct.MayRepeat SubtypeFamily.BasicLandType Nothing) NonEmpty.:| [EntryRewrite.OrTapped (EntryPrice.PayLife 2)]))
       " {\"type\":\"InOrder\",\"value\":[{\"type\":\"ChooseQuality\",\"value\":{\"type\":\"Subtype\",\"value\":{\"family\":\"BasicLandType\"}}},{\"type\":\"OrTapped\",\"value\":{\"type\":\"PayLife\",\"value\":2}}]} "
   Spec.it s "has a schema" $ Common.assertHasSchema s (EntryRewrite.codec (GrantedAbility.codec Card.codec) (Effect.codec Card.codec (GrantedAbility.codec Card.codec)))

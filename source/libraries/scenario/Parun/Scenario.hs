@@ -1231,6 +1231,8 @@ withinOffer prompt chosen = case prompt of
   Prompt.Type.ChooseMovedCounters _ _ _ _ available -> Map.isSubmapOfBy (<=) chosen available
   Prompt.Type.ChooseMovedCountersAtLeastOne _ _ _ _ available -> Map.isSubmapOfBy (<=) chosen available
   Prompt.Type.ChooseStoredRerolls _ _ _ stored -> Map.isSubmapOfBy (<=) chosen stored
+  -- Indices into the results offered.
+  Prompt.Type.RerollDice _ _ results _ -> all (< List.genericLength (NonEmpty.toList results)) chosen
   -- An index into the list offered.
   Prompt.Type.ChooseReplacement _ _ entries -> indexInto entries chosen
   Prompt.Type.ChooseEntryOption _ _ _ options -> indexInto options chosen

@@ -165,7 +165,7 @@
                 "retention": "Ordinary",
                 "rider": null,
                 "sourceChoices": {
-                  "subtype": "Kithkin"
+                  "subtype": ["Kithkin"]
                 },
                 "tags": []
               }

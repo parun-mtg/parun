@@ -45,7 +45,7 @@ codec = Fields.object $ do
   ability <- Fields.required "ability" (Common.maybe AbilityView.codec) ObjectView.ability
   targets <- Fields.required "targets" (Common.list Recipient.codec) ObjectView.targets
   chosenColors <- Fields.defaulted "chosenColors" Map.empty (Common.keyedList (Common.keyValue Acquisition.codec (Common.set Color.codec))) ObjectView.chosenColors
-  chosenSubtype <- Fields.defaulted "chosenSubtype" Map.empty (Common.keyedList (Common.keyValue Acquisition.codec Subtype.codec)) ObjectView.chosenSubtype
+  chosenSubtype <- Fields.defaulted "chosenSubtype" Map.empty (Common.keyedList (Common.keyValue Acquisition.codec (Common.nonEmpty Subtype.codec))) ObjectView.chosenSubtype
   chosenCardType <- Fields.defaulted "chosenCardType" Map.empty (Common.keyedList (Common.keyValue Acquisition.codec CardType.codec)) ObjectView.chosenCardType
   chosenNames <- Fields.defaulted "chosenNames" Map.empty (Common.keyedList (Common.keyValue Acquisition.codec (Common.naturalMap PlayerId.codec (Common.set CardName.codec)))) ObjectView.chosenNames
   chosenPlayers <- Fields.defaulted "chosenPlayers" Map.empty (Common.keyedList (Common.keyValue Acquisition.codec (Common.keyedList (Common.keyValue PlayerChoice.codec PlayerId.codec)))) ObjectView.chosenPlayers

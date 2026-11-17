@@ -201,6 +201,8 @@ import qualified Parun.Types.RevealCause as RevealCause
 import qualified Parun.Types.RevealTiming as RevealTiming
 import qualified Parun.Types.Revealed as Revealed
 import qualified Parun.Types.RevealedThisWay as RevealedThisWay
+import qualified Parun.Types.RollKind as RollKind
+import qualified Parun.Types.RollTrigger as RollTrigger
 import qualified Parun.Types.RoomIndex as RoomIndex
 import qualified Parun.Types.SacrificeTrigger as SacrificeTrigger
 import qualified Parun.Types.Saddling as Saddling
@@ -1653,10 +1655,10 @@ representativeEvents cond =
       resolvedIntoGraveyard = GameEvent.Moved (Moved.moved (ZoneChange.MkZoneChange departed arrived Zone.Stack Zone.Graveyard) S.emptyCharacteristics) {Moved.duringResolution = True}
       combatDamage =
         GameEvent.DamageDealt
-          (DamageEvent.MkDamageEvent departed (Recipient.ToPlayer S.bob) 2 0 False False False 0 Nothing Nothing mempty False mempty mempty mempty Nothing mempty Nothing DamageKind.Combat)
+          (DamageEvent.MkDamageEvent departed (Recipient.ToPlayer S.bob) 2 0 False False False 0 Nothing Nothing mempty False mempty mempty mempty mempty Nothing mempty Nothing DamageKind.Combat)
       combatDamageToAlice =
         GameEvent.DamageDealt
-          (DamageEvent.MkDamageEvent departed (Recipient.ToPlayer S.alice) 2 0 False False False 0 Nothing Nothing mempty False mempty mempty mempty Nothing mempty Nothing DamageKind.Combat)
+          (DamageEvent.MkDamageEvent departed (Recipient.ToPlayer S.alice) 2 0 False False False 0 Nothing Nothing mempty False mempty mempty mempty mempty Nothing mempty Nothing DamageKind.Combat)
       -- A row whose arm reads no arrival table, which is every arm but one.
       noTable e = (Map.empty, e)
       one e = noTable e NonEmpty.:| []
@@ -1697,7 +1699,7 @@ representativeEvents cond =
                 DamageRecipient.Permanent CardType.Planeswalker _ -> Recipient.ToPlaneswalker arrived
                 DamageRecipient.Permanent CardType.Battle _ -> Recipient.ToBattle arrived
                 DamageRecipient.Permanent {} -> Recipient.ToCreature arrived
-              events = [noTable (GameEvent.DamageDealt (DamageEvent.MkDamageEvent departed recipient 3 0 False False False 0 Nothing Nothing mempty False mempty mempty mempty Nothing mempty Nothing kind)) | kind <- kinds, recipient <- recipients]
+              events = [noTable (GameEvent.DamageDealt (DamageEvent.MkDamageEvent departed recipient 3 0 False False False 0 Nothing Nothing mempty False mempty mempty mempty mempty Nothing mempty Nothing kind)) | kind <- kinds, recipient <- recipients]
            in case events of
                 event : rest -> event NonEmpty.:| rest
                 [] -> one combatDamage
@@ -1706,18 +1708,18 @@ representativeEvents cond =
         -- condition admits both, as the arm above does: a floor claimed for one
         -- kind and not the other would come apart here.
         TriggerCondition.IsDealtDamage _ ->
-          noTable (GameEvent.DamageDealt (DamageEvent.MkDamageEvent arrived (Recipient.ToCreature departed) 2 0 False False False 0 Nothing Nothing mempty False mempty mempty mempty Nothing mempty Nothing DamageKind.Noncombat))
-            NonEmpty.:| [noTable (GameEvent.DamageDealt (DamageEvent.MkDamageEvent arrived (Recipient.ToCreature departed) 3 0 False False False 0 Nothing Nothing mempty False mempty mempty mempty Nothing mempty Nothing DamageKind.Combat))]
+          noTable (GameEvent.DamageDealt (DamageEvent.MkDamageEvent arrived (Recipient.ToCreature departed) 2 0 False False False 0 Nothing Nothing mempty False mempty mempty mempty mempty Nothing mempty Nothing DamageKind.Noncombat))
+            NonEmpty.:| [noTable (GameEvent.DamageDealt (DamageEvent.MkDamageEvent arrived (Recipient.ToCreature departed) 3 0 False False False 0 Nothing Nothing mempty False mempty mempty mempty mempty Nothing mempty Nothing DamageKind.Combat))]
         -- CR 120.3's event pointed at a player, alice being the "you", in both
         -- kinds for the arm above's reason. A reading that admits the player's
         -- planeswalkers admits damage to one too, so its second event names one.
         TriggerCondition.PlayerIsDealtDamage watched
           | PlayerIsDealtDamage.orTheirPlaneswalkers watched ->
-              noTable (GameEvent.DamageDealt (DamageEvent.MkDamageEvent arrived (Recipient.ToPlayer S.alice) 2 0 False False False 0 Nothing Nothing mempty False mempty mempty mempty Nothing mempty Nothing DamageKind.Combat))
-                NonEmpty.:| [noTable (GameEvent.DamageDealt (DamageEvent.MkDamageEvent arrived (Recipient.ToPlaneswalker departed) 3 0 False False False 0 Nothing Nothing mempty False mempty mempty mempty Nothing mempty Nothing DamageKind.Combat))]
+              noTable (GameEvent.DamageDealt (DamageEvent.MkDamageEvent arrived (Recipient.ToPlayer S.alice) 2 0 False False False 0 Nothing Nothing mempty False mempty mempty mempty mempty Nothing mempty Nothing DamageKind.Combat))
+                NonEmpty.:| [noTable (GameEvent.DamageDealt (DamageEvent.MkDamageEvent arrived (Recipient.ToPlaneswalker departed) 3 0 False False False 0 Nothing Nothing mempty False mempty mempty mempty mempty Nothing mempty Nothing DamageKind.Combat))]
         TriggerCondition.PlayerIsDealtDamage _ ->
-          noTable (GameEvent.DamageDealt (DamageEvent.MkDamageEvent arrived (Recipient.ToPlayer S.alice) 2 0 False False False 0 Nothing Nothing mempty False mempty mempty mempty Nothing mempty Nothing DamageKind.Noncombat))
-            NonEmpty.:| [noTable (GameEvent.DamageDealt (DamageEvent.MkDamageEvent arrived (Recipient.ToPlayer S.alice) 3 0 False False False 0 Nothing Nothing mempty False mempty mempty mempty Nothing mempty Nothing DamageKind.Combat))]
+          noTable (GameEvent.DamageDealt (DamageEvent.MkDamageEvent arrived (Recipient.ToPlayer S.alice) 2 0 False False False 0 Nothing Nothing mempty False mempty mempty mempty mempty Nothing mempty Nothing DamageKind.Noncombat))
+            NonEmpty.:| [noTable (GameEvent.DamageDealt (DamageEvent.MkDamageEvent arrived (Recipient.ToPlayer S.alice) 3 0 False False False 0 Nothing Nothing mempty False mempty mempty mempty mempty Nothing mempty Nothing DamageKind.Combat))]
         -- The same one event, and NOT because the batch reading matches nothing:
         -- Event.matchesTrigger answers alike for both (its batch arm delegates to
         -- DealsDamage's), CR 603.2c's once-per-step scoping living in
@@ -2083,8 +2085,13 @@ representativeEvents cond =
         TriggerCondition.PlayerCommitsCrime _ -> one (GameEvent.CommittedCrime (CommittedCrime.MkCommittedCrime S.bob departed))
         -- CR 700.14's own event, crossing the amount the condition states.
         TriggerCondition.PlayerExpends e -> one (GameEvent.Expended Expended.MkExpended {Expended.player = S.bob, Expended.before = 0, Expended.after = PlayerExpends.amount e})
-        -- CR 706.2's per-die event, carrying the number the condition states.
-        TriggerCondition.PlayerRollsResult watched -> one (GameEvent.DieResultSettled DieResult.MkDieResult {DieResult.roller = S.bob, DieResult.result = DieResult.result watched})
+        -- CR 706.2's per-die event, or CR 701.52a's for a roll to visit,
+        -- carrying the number the condition states.
+        TriggerCondition.PlayerRollsResult watched ->
+          let rolled = DieResult.MkDieResult {DieResult.roller = S.bob, DieResult.result = RollTrigger.result watched}
+           in case RollTrigger.roll watched of
+                RollKind.AnyRoll -> one (GameEvent.DieResultSettled rolled)
+                RollKind.ToVisit -> one (GameEvent.RolledToVisit rolled)
         -- CR 701.52a's own event, and the only one this condition admits.
         TriggerCondition.Visit -> one (GameEvent.RolledToVisit DieResult.MkDieResult {DieResult.roller = S.bob, DieResult.result = 3})
         -- CR 311.7's own event, chaos ensuing.
@@ -2435,8 +2442,10 @@ everyTriggerCondition =
     TriggerCondition.PlayerFacesDilemma PlayerRelation.You,
     TriggerCondition.PlayerCommitsCrime PlayerRelation.You,
     TriggerCondition.PlayerExpends (PlayerExpends.MkPlayerExpends PlayerRelation.You 4),
-    TriggerCondition.PlayerRollsResult DieResult.MkDieResult {DieResult.roller = PlayerRelation.You, DieResult.result = 6},
-    TriggerCondition.PlayerRollsResult DieResult.MkDieResult {DieResult.roller = PlayerRelation.Opponent, DieResult.result = 6},
+    TriggerCondition.PlayerRollsResult (RollTrigger.MkRollTrigger PlayerRelation.You 6 RollKind.AnyRoll),
+    TriggerCondition.PlayerRollsResult (RollTrigger.MkRollTrigger PlayerRelation.Opponent 6 RollKind.AnyRoll),
+    -- "Lifetime" Pass Holder's roll to visit.
+    TriggerCondition.PlayerRollsResult (RollTrigger.MkRollTrigger PlayerRelation.You 6 RollKind.ToVisit),
     TriggerCondition.Visit,
     TriggerCondition.ChaosEnsues,
     TriggerCondition.PlayerRollsPlaneswalker PlayerRelation.You,

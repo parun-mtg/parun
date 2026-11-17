@@ -17,6 +17,7 @@ import qualified Control.Monad as Monad
 import qualified Control.Monad.Trans.State.Strict as State
 import qualified Data.Foldable as Foldable
 import qualified Data.List as List
+import qualified Data.List.NonEmpty as NonEmpty
 import qualified Data.Map.Strict as Map
 import qualified Data.Maybe as Maybe
 import qualified Data.Sequence as Seq
@@ -991,7 +992,7 @@ spinesplitterSpec s registry =
         S.runPure
           S.identityAnswer
           gs
-          (Damage.applyDamage (pure ()) [DamageEvent.MkDamageEvent src target amount 0 False False False 0 Nothing Nothing mempty False mempty mempty mempty Nothing mempty Nothing DamageKind.Noncombat])
+          (Damage.applyDamage (pure ()) [DamageEvent.MkDamageEvent src target amount 0 False False False 0 Nothing Nothing mempty False mempty mempty mempty mempty Nothing mempty Nothing DamageKind.Noncombat])
    in Spec.describe s "Furious Spinesplitter" $ do
         Spec.it s "CR 120.1 a counter for each OPPONENT dealt damage, not for each damage event" $ do
           spinesplitter <- S.printingOf s registry "Furious Spinesplitter"
@@ -1067,7 +1068,7 @@ tymnaSpec s registry =
         S.runPure
           S.identityAnswer
           gs
-          (Damage.applyDamage (pure ()) [DamageEvent.MkDamageEvent src (Recipient.ToPlayer target) amount 0 False False False 0 Nothing Nothing mempty False mempty mempty mempty Nothing mempty Nothing kind])
+          (Damage.applyDamage (pure ()) [DamageEvent.MkDamageEvent src (Recipient.ToPlayer target) amount 0 False False False 0 Nothing Nothing mempty False mempty mempty mempty mempty Nothing mempty Nothing kind])
    in Spec.describe s "Tymna the Weaver"
         . Spec.it s "CR 510.2 X counts the opponents dealt COMBAT damage this turn"
         $ do
@@ -1108,7 +1109,7 @@ stampedeSpec s registry =
         S.runPure
           S.identityAnswer
           gs
-          (Damage.applyDamage (pure ()) [DamageEvent.MkDamageEvent src (Recipient.ToPlayer target) 2 0 False False False 0 Nothing Nothing mempty False mempty mempty mempty Nothing mempty Nothing kind])
+          (Damage.applyDamage (pure ()) [DamageEvent.MkDamageEvent src (Recipient.ToPlayer target) 2 0 False False False 0 Nothing Nothing mempty False mempty mempty mempty mempty Nothing mempty Nothing kind])
    in Spec.describe s "Vivien's Stampede"
         . Spec.it s "CR 603.7 at the next main phase alice draws one per player dealt combat damage"
         $ do
@@ -2250,7 +2251,7 @@ kindredDiscoverySpec s registry =
         stocked = List.foldl' (\g _ -> snd (S.addLibraryCard island S.alice g)) g0 [1 :: Int .. 5]
         drawn chosen =
           let chose = case mine of
-                discoveryId : _ -> stocked {GameState.objects = Map.adjust (\o -> o {Object.chosenSubtype = Map.singleton Acquisition.Own chosen}) discoveryId (GameState.objects stocked)}
+                discoveryId : _ -> stocked {GameState.objects = Map.adjust (\o -> o {Object.chosenSubtype = Map.singleton Acquisition.Own (NonEmpty.singleton chosen)}) discoveryId (GameState.objects stocked)}
                 [] -> stocked
            in S.handSize S.alice (S.runToStep (Phase.Combat CombatStep.DeclareBlockers) S.aggressiveAnswer chose)
     Spec.assertEqWith s "having chosen Goblin, the two attacking Pikers draw two" (drawn Subtype.Goblin) 2

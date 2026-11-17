@@ -79,6 +79,9 @@
                                 "type": "Fixed",
                                 "value": 1
                               },
+                              "players": {
+                                "type": "AnyPlayer"
+                              },
                               "whichCards": {
                                 "type": "IsBound",
                                 "value": "became"

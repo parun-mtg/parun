@@ -1,0 +1,128 @@
+{
+  "faces": [
+    {
+      "manaCost": [
+        {
+          "type": "Generic",
+          "value": 1
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "Blue"
+          }
+        }
+      ],
+      "name": "Command Performance",
+      "oracleText": "Choose two —\n• Open an Attraction. (Put the top card of your Attraction deck onto the battlefield.)\n• Roll to visit your Attractions.\n• You get {TK}{TK}.\n• You may put a sticker on a nonland permanent you own.",
+      "spell": {
+        "modes": [
+          {
+            "clauses": [
+              {
+                "effects": [
+                  {
+                    "type": "OpenAttraction"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "clauses": [
+              {
+                "effects": [
+                  {
+                    "type": "RollToVisit"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "clauses": [
+              {
+                "effects": [
+                  {
+                    "type": "GainPlayerCounters",
+                    "value": {
+                      "kind": "Ticket",
+                      "player": {
+                        "type": "Relative",
+                        "value": "You"
+                      },
+                      "quantity": {
+                        "type": "Literal",
+                        "value": 2
+                      }
+                    }
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "clauses": [
+              {
+                "effects": [
+                  {
+                    "type": "PutSticker",
+                    "value": {
+                      "kinds": [
+                        "Name",
+                        "Ability",
+                        "PowerToughness",
+                        "Art"
+                      ],
+                      "player": {
+                        "type": "Relative",
+                        "value": "You"
+                      },
+                      "ref": {
+                        "type": "ChosenPermanents",
+                        "value": {
+                          "filter": {
+                            "type": "And",
+                            "value": [
+                              {
+                                "type": "Not",
+                                "value": {
+                                  "type": "HasCardType",
+                                  "value": "Land"
+                                }
+                              },
+                              {
+                                "type": "HeldBy",
+                                "value": {
+                                  "holder": "Owner",
+                                  "relation": "You"
+                                }
+                              }
+                            ]
+                          }
+                        }
+                      }
+                    }
+                  }
+                ],
+                "optionality": {
+                  "type": "Optional"
+                }
+              }
+            ]
+          }
+        ],
+        "selection": {
+          "type": "ChooseExactly",
+          "value": 2
+        }
+      },
+      "typeLine": {
+        "types": [
+          "Sorcery"
+        ]
+      }
+    }
+  ]
+}

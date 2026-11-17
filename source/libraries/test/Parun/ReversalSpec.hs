@@ -3,6 +3,7 @@
 module Parun.ReversalSpec where
 
 import qualified Data.Map.Strict as Map
+import qualified Data.Maybe as Maybe
 import qualified Data.Sequence as Seq
 import qualified Data.Set as Set
 import qualified Parun.Engine.Game as Game
@@ -46,7 +47,7 @@ withoutAnnouncementSpec s registry = Spec.describe s "withoutAnnouncement" $ do
   -- honours CR 734.1 hands down today.
   Spec.it s "CR 734.1 an announcement that wrote nothing keeps the window whole" $ do
     (began, closed) <- transition s registry
-    Spec.assertBool s (Reversal.withoutAnnouncement began began closed == Just closed) "the window's state comes back unchanged"
+    Spec.assertBool s (Reversal.withoutAnnouncement began began [] closed == Just closed) "the window's state comes back unchanged"
 
   -- The announcement's side alone, and the law that finds a field the merge
   -- mishandles: with nothing written after the window opened, everything the
@@ -68,7 +69,7 @@ withoutAnnouncementSpec s registry = Spec.describe s "withoutAnnouncement" $ do
                   },
               GameState.loopInvolvement = GameState.loopInvolvement closed
             }
-    Spec.assertBool s (Reversal.withoutAnnouncement began closed closed == Just expected) "every field the cast wrote is back at where the action began, the monotone counters apart"
+    Spec.assertBool s (Reversal.withoutAnnouncement began closed [] closed == Just expected) "every field the cast wrote is back at where the action began, the monotone counters apart"
     Spec.assertNeWith s "the transition wrote something, so the law above is not vacuous" (Seq.length (TurnRegisters.events (GameState.turn closed))) (Seq.length (TurnRegisters.events (GameState.turn began)))
 
   -- Both sides at once, which is the whole point: the announcement took the card
@@ -100,7 +101,7 @@ withoutAnnouncementSpec s registry = Spec.describe s "withoutAnnouncement" $ do
                 entry
                   { GameState.objects = Map.adjust (\o -> o {Object.tapped = TapState.Tapped}) land (GameState.objects entry)
                   }
-        case Reversal.withoutAnnouncement began entry closed of
+        case Reversal.withoutAnnouncement began entry [] closed of
           Nothing -> Spec.assertFailure s "the two sides share no leaf, so a kept state does exist"
           Just kept -> do
             Spec.assertEqWith s "the mana the window made is still floating" (Game.poolOf S.alice kept) (Mana.Type.MkMana [red])
@@ -119,9 +120,22 @@ withoutAnnouncementSpec s registry = Spec.describe s "withoutAnnouncement" $ do
         let entry = began {GameState.objects = Map.adjust (\o -> o {Object.exertedBy = Set.singleton S.alice}) land (GameState.objects began)}
             closed = entry {GameState.objects = Map.adjust (\o -> o {Object.tapped = TapState.Tapped}) land (GameState.objects entry)}
             keptField :: (Object.Object -> a) -> Maybe (Maybe a)
-            keptField field = fmap (fmap field . Map.lookup land . GameState.objects) (Reversal.withoutAnnouncement began entry closed)
+            keptField field = fmap (fmap field . Map.lookup land . GameState.objects) (Reversal.withoutAnnouncement began entry [] closed)
         Spec.assertEqWith s "the window's tap stands" (keptField Object.tapped) (Just (Just TapState.Tapped))
         Spec.assertEqWith s "and the announcement's exert goes" (keptField Object.exertedBy) (Just (Just Set.empty))
+
+  -- CR 701.26: the undone side taps a permanent, and the window untaps it and
+  -- taps it again. The window ends where it began, but each of its writes was
+  -- made on the undone side's tap, so no kept state has them.
+  Spec.it s "CR 734.1 a tap the window undid and redid has no kept state" $ do
+    (began, _) <- transition s registry
+    case Set.lookupMin (GameState.battlefield began) of
+      Nothing -> Spec.assertFailure s "the board seated no permanent"
+      Just land -> do
+        let tapTo status gs = gs {GameState.objects = Map.adjust (\o -> o {Object.tapped = status}) land (GameState.objects gs)}
+            entry = tapTo TapState.Tapped began
+        Spec.assertBool s (Maybe.isNothing (Reversal.withoutAnnouncement began entry [tapTo TapState.Untapped entry] entry)) "the window's untap and retap stand on the undone tap"
+        Spec.assertBool s (Maybe.isJust (Reversal.withoutAnnouncement began entry [entry] entry)) "a window that never wrote it leaves it to the undone side"
 
   -- CR 734.1's last sentence on a library both sides touched: the announcement
   -- cast its second card (the stack exception), and the window shuffled. The

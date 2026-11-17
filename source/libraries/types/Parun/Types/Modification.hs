@@ -8,6 +8,7 @@ import qualified Parun.Types.CardType as CardType
 import qualified Parun.Types.CastingPermission as CastingPermission
 import qualified Parun.Types.ChangeMode as ChangeMode
 import qualified Parun.Types.ChangeWord as ChangeWord
+import qualified Parun.Types.ChoiceOrdinal as ChoiceOrdinal
 import qualified Parun.Types.Color as Color
 import qualified Parun.Types.CombatDamageAmount as CombatDamageAmount
 import qualified Parun.Types.CombatDamageObligation as CombatDamageObligation
@@ -244,9 +245,9 @@ data Modification ability
     -- A closed-half CITATION exactly as LoseKeyword's Keyword is: KeywordFamily
     -- names rule 702's abilities with their payloads dropped.
     --
-    -- Not implemented: a removal scoped to every keyword an object has at once,
-    -- which names no family -- Modular Monstrosity's "loses all keyword
-    -- abilities" (gap #2983).
+    -- Unprinted: a removal scoped to every keyword an object has at once, which
+    -- names no family. Modular Monstrosity's "loses all keyword abilities" is
+    -- the one printing, an Unstable card out of scope.
     LoseKeywordFamily KeywordFamily.KeywordFamily
   | -- | layer 6, CR 613.1f / 113.11: this object loses this keyword and can't
     -- have it (Archetype of Courage); a family where CR 702.11d makes the
@@ -260,8 +261,9 @@ data Modification ability
     LandSubtype ChangeMode.ChangeMode Subtype.Subtype
   | -- | layer 4, CR 613.1d / 205.1a / 205.1b: LandSubtype, CreatureSubtype or
     -- (a planeswalker type) Subtype, as the family says, with the
-    -- subtype chosen for THIS effect's SOURCE (Object.chosenSubtype), as it
-    -- entered or by Effect.ChooseQuality.
+    -- subtype chosen for THIS effect's SOURCE (Object.chosenSubtype), the
+    -- ordinal saying which of its choices, as it entered or by
+    -- Effect.ChooseQuality.
     -- Convincing Mirage's "enchanted land is the chosen type"; Mystic Compass's,
     -- which a resolution bakes; Adaptive Automaton's "is the chosen type in
     -- addition to its other types".
@@ -271,7 +273,7 @@ data Modification ability
     -- a player will choose. The family is written rather than read off the
     -- choice so that Parun.Engine.Projection.setsLandSubtype, CR 305.7's strip,
     -- classifies by constructor as it does LandSubtype's.
-    ChosenSubtype ChangeMode.ChangeMode SubtypeFamily.SubtypeFamily
+    ChosenSubtype ChoiceOrdinal.ChoiceOrdinal ChangeMode.ChangeMode SubtypeFamily.SubtypeFamily
   | -- | layer 4, CR 205.1a / 205.1b: this object's creature types become this
     -- one, or it gains it in addition to them, as the mode says (Turn to Frog ->
     -- Frog, Life and Limb -> Saproling). Strips no ability and touches no card

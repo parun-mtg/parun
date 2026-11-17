@@ -1,0 +1,112 @@
+{
+  "faces": [
+    {
+      "keywords": [
+        {
+          "type": "CumulativeUpkeep",
+          "value": {
+            "mana": [
+              {
+                "type": "Generic",
+                "value": 2
+              }
+            ]
+          }
+        }
+      ],
+      "manaCost": [
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "Blue"
+          }
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "Blue"
+          }
+        }
+      ],
+      "name": "Illusionary Terrain",
+      "oracleText": "Cumulative upkeep {2} (At the beginning of your upkeep, put an age counter on this permanent, then sacrifice it unless you pay its upkeep cost for each age counter on it.)\nAs this enchantment enters, choose two basic land types.\nBasic lands of the first chosen type are the second chosen type.",
+      "replacementEffects": [
+        {
+          "effect": {
+            "type": "EntryR",
+            "value": {
+              "matching": {
+                "type": "IsSource"
+              },
+              "rewrite": {
+                "type": "InOrder",
+                "value": [
+                  {
+                    "type": "ChooseQuality",
+                    "value": {
+                      "type": "Subtype",
+                      "value": {
+                        "family": "BasicLandType"
+                      }
+                    }
+                  },
+                  {
+                    "type": "ChooseQuality",
+                    "value": {
+                      "type": "Subtype",
+                      "value": {
+                        "distinct": "Distinct",
+                        "family": "BasicLandType",
+                        "ordinal": "Second"
+                      }
+                    }
+                  }
+                ]
+              }
+            }
+          }
+        }
+      ],
+      "staticAbilities": [
+        {
+          "affected": {
+            "type": "Matching",
+            "value": {
+              "type": "And",
+              "value": [
+                {
+                  "type": "HasCardType",
+                  "value": "Land"
+                },
+                {
+                  "type": "HasSupertype",
+                  "value": "Basic"
+                },
+                {
+                  "type": "HasChosenSubtype"
+                }
+              ]
+            }
+          },
+          "modifications": [
+            {
+              "type": "ChosenSubtype",
+              "value": {
+                "family": "BasicLandType",
+                "mode": "Replace",
+                "ordinal": "Second"
+              }
+            }
+          ]
+        }
+      ],
+      "typeLine": {
+        "types": [
+          "Enchantment"
+        ]
+      }
+    }
+  ]
+}
