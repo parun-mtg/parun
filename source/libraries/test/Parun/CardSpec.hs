@@ -5064,7 +5064,7 @@ searchFramed = fmap ((,) SearchFramed)
 chosenQualityFilters :: ChosenQuality.ChosenQuality -> [(Framing, Filter.Type.Filter Keyword.Keyword)]
 chosenQualityFilters quality = case quality of
   ChosenQuality.Colors _ -> []
-  ChosenQuality.Subtype _ _ -> []
+  ChosenQuality.Subtype {} -> []
   ChosenQuality.CardType _ _ -> []
   ChosenQuality.Number _ _ -> []
   ChosenQuality.Parity -> []

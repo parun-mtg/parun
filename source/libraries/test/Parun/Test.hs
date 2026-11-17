@@ -182,6 +182,8 @@ import qualified Parun.Codec.ChapterMomentSpec
 import qualified Parun.Codec.CharacteristicColorsSpec
 import qualified Parun.Codec.CharacteristicPTSpec
 import qualified Parun.Codec.CheckSpec
+import qualified Parun.Codec.ChoiceDistinctSpec
+import qualified Parun.Codec.ChoiceOrdinalSpec
 import qualified Parun.Codec.ChoicesSpec
 import qualified Parun.Codec.ChooseBetweenSpec
 import qualified Parun.Codec.ChooseGroupSpec
@@ -1306,6 +1308,8 @@ spec s reference corpus = do
   Parun.Codec.CoinFlippedSpec.spec s
   Parun.Codec.CoinReadingSpec.spec s
   Parun.Codec.ChangeModeSpec.spec s
+  Parun.Codec.ChoiceDistinctSpec.spec s
+  Parun.Codec.ChoiceOrdinalSpec.spec s
   Parun.Codec.ColorSpec.spec s
   Parun.Codec.ColorSpreadSpec.spec s
   Parun.Codec.CombatRestrictionSpec.spec s

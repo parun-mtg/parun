@@ -612,7 +612,7 @@ filterChildren children predicate = case predicate of
   Filter.HasChosenName _ -> pure predicate
   Filter.HasChosenColor -> pure predicate
   Filter.Noted _ -> pure predicate
-  Filter.HasChosenSubtype -> pure predicate
+  Filter.HasChosenSubtype _ -> pure predicate
   Filter.HasChosenCardType -> pure predicate
   Filter.IsExiledWithSource _ -> pure predicate
   Filter.IsLastExiledWithSource -> pure predicate
@@ -2499,7 +2499,7 @@ entryRewriteChildren c rewrite = case rewrite of
 chosenQualityChildren :: (Applicative f) => (Subtype.Subtype -> f Subtype.Subtype) -> (Filter.Filter Keyword.Keyword -> f (Filter.Filter Keyword.Keyword)) -> ChosenQuality.ChosenQuality -> f ChosenQuality.ChosenQuality
 chosenQualityChildren onListed onCards quality = case quality of
   ChosenQuality.Colors _ -> pure quality
-  ChosenQuality.Subtype family among -> ChosenQuality.Subtype family <$> traverse (traverse onListed) among
+  ChosenQuality.Subtype ordinal distinct family among -> ChosenQuality.Subtype ordinal distinct family <$> traverse (traverse onListed) among
   ChosenQuality.CardType _ _ -> pure quality
   ChosenQuality.Number _ _ -> pure quality
   ChosenQuality.Parity -> pure quality

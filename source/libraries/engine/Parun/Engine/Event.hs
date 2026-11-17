@@ -41,6 +41,7 @@ import qualified Parun.Engine.Attach as Attach
 import qualified Parun.Engine.Battle as Battle
 import qualified Parun.Engine.Binding as Binding
 import qualified Parun.Engine.Card as Card
+import qualified Parun.Engine.ChoiceOrdinal as ChoiceOrdinal
 import qualified Parun.Engine.Coin as Coin
 import qualified Parun.Engine.Commander as Commander
 import qualified Parun.Engine.Condition as Condition
@@ -106,6 +107,7 @@ import qualified Parun.Types.CardType as CardType
 import qualified Parun.Types.CarryOver as CarryOver
 import qualified Parun.Types.Cause as Cause
 import qualified Parun.Types.CausedBy as CausedBy
+import qualified Parun.Types.ChoiceDistinct as ChoiceDistinct
 import qualified Parun.Types.ChooseBetween as ChooseBetween
 import qualified Parun.Types.Chosen as Chosen
 import qualified Parun.Types.ChosenQuality as ChosenQuality
@@ -6035,13 +6037,20 @@ chooseQuality quality chooser reader acquisition oid = case quality of
           pure (maybe chosen (`Set.insert` chosen) picked)
     picked <- Monad.foldM pick Set.empty [1 .. count]
     State.modify' (Game.recordChoice Chosen.Colors acquisition (const (Just picked)) oid)
-  ChosenQuality.Subtype family among -> do
+  ChosenQuality.Subtype ordinal distinct family among -> do
     gs <- State.get
+    let earlier = ChoiceOrdinal.before ordinal (Game.choiceWithLastKnown Chosen.Subtype acquisition oid gs)
+        -- docs/decisions.md, "Illusionary Terrain's two basic land types differ".
+        excluded = case distinct of
+          ChoiceDistinct.MayRepeat -> []
+          ChoiceDistinct.Distinct -> earlier
     picked <- case among of
-      Nothing -> Just <$> Game.choose (Prompt.ChooseSubtype (Decide.deciderFor chooser gs) chooser oid family Nothing)
+      Nothing
+        | null excluded -> Just <$> Game.choose (Prompt.ChooseSubtype (Decide.deciderFor chooser gs) chooser oid family Nothing)
+        | otherwise -> Game.chooseAmong (\decider who offered -> Prompt.ChooseSubtype decider who oid family (Just offered)) chooser (filter (\subtype -> Subtype.Engine.inFamily family subtype && notElem subtype excluded) [minBound .. maxBound])
       -- CR 612.1: a text change can leave the list naming one type twice, which is one option.
-      Just listed -> Game.chooseAmong (\decider who offered -> Prompt.ChooseSubtype decider who oid family (Just offered)) chooser (ListUtils.nubOrd (NonEmpty.toList listed))
-    Foldable.for_ picked $ \subtype -> State.modify' (Game.recordChoice Chosen.Subtype acquisition (const (Just subtype)) oid)
+      Just listed -> Game.chooseAmong (\decider who offered -> Prompt.ChooseSubtype decider who oid family (Just offered)) chooser (filter (`notElem` excluded) (ListUtils.nubOrd (NonEmpty.toList listed)))
+    Foldable.for_ picked $ \subtype -> State.modify' (Game.recordChoice Chosen.Subtype acquisition (Just . ChoiceOrdinal.chooseAt ordinal subtype) oid)
   ChosenQuality.CardType except among -> do
     let listed = maybe [minBound .. maxBound] NonEmpty.toList among
     picked <- Game.chooseAmong (\decider who offered -> Prompt.ChooseCardType decider who oid offered) chooser (filter (`notElem` except) listed)
@@ -6076,7 +6085,7 @@ chooseQuality quality chooser reader acquisition oid = case quality of
 restoreQuality :: ChosenQuality.ChosenQuality -> Acquisition.Acquisition -> ObjectId -> GameState -> GameState -> GameState
 restoreQuality quality acquisition oid before = case quality of
   ChosenQuality.Colors _ -> Game.restoreChoice Chosen.Colors acquisition oid before
-  ChosenQuality.Subtype _ _ -> Game.restoreChoice Chosen.Subtype acquisition oid before
+  ChosenQuality.Subtype {} -> Game.restoreChoice Chosen.Subtype acquisition oid before
   ChosenQuality.CardType _ _ -> Game.restoreChoice Chosen.CardType acquisition oid before
   ChosenQuality.Number _ _ -> Game.restoreChoice Chosen.Number acquisition oid before
   ChosenQuality.Parity -> Game.restoreChoice Chosen.Number acquisition oid before

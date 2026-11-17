@@ -2367,6 +2367,21 @@ Entries are ordered by the first rule each cites.
   `quicksilver-elemental-keeps-a-gained-ability-after-the-creature-leaves`.
 - **Issue**: #7279.
 
+## Illusionary Terrain's two basic land types differ
+
+- **Question**: Illusionary Terrain's "choose two basic land types": may its
+  controller choose one type twice, leaving the enchantment doing nothing?
+- **Rules**: CR 607.2d, 305.6; CR of 2026-11-06. Nothing in the CR defines
+  choosing two of a quality; the card's one ruling is silent.
+- **Decision**: No: the second prompt offers every basic land type but the
+  first (`ChoiceDistinct.Distinct`). Vision Charm's "a land type and a basic
+  land type" names two separate choices, so it may repeat one.
+- **Rejected**: Allowing the repeat, which reads "two basic land types" as
+  one type named twice.
+- **Site**: `Parun.Engine.Event`'s `chooseQuality`, proved by the scenario
+  `illusionary-terrain-makes-every-basic-forest-an-island-including-one-played-later`.
+- **Issue**: #7637.
+
 ## A linked choice made again replaces the earlier one
 
 - **Question**: Zenos yae Galvus's "choose a creature an opponent controls"

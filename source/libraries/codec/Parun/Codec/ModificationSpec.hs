@@ -19,6 +19,7 @@ import qualified Parun.Types.CardType as CardType
 import qualified Parun.Types.CastingPermission as CastingPermission
 import qualified Parun.Types.ChangeMode as ChangeMode
 import qualified Parun.Types.ChangeWord as ChangeWord
+import qualified Parun.Types.ChoiceOrdinal as ChoiceOrdinal
 import qualified Parun.Types.Color as Color
 import qualified Parun.Types.CombatDamageAmount as CombatDamageAmount
 import qualified Parun.Types.CombatDamageObligation as CombatDamageObligation
@@ -176,8 +177,14 @@ spec s = Spec.describe s "Parun.Codec.Modification" $ do
     Common.assertCodec
       s
       codec
-      (Modification.ChosenSubtype ChangeMode.InAddition SubtypeFamily.CreatureType)
+      (Modification.ChosenSubtype ChoiceOrdinal.First ChangeMode.InAddition SubtypeFamily.CreatureType)
       " {\"type\":\"ChosenSubtype\",\"value\":{\"family\":\"CreatureType\",\"mode\":\"InAddition\"}} "
+  Spec.it s "ChosenSubtype Second (Illusionary Terrain)" $
+    Common.assertCodec
+      s
+      codec
+      (Modification.ChosenSubtype ChoiceOrdinal.Second ChangeMode.Replace SubtypeFamily.BasicLandType)
+      " {\"type\":\"ChosenSubtype\",\"value\":{\"family\":\"BasicLandType\",\"mode\":\"Replace\",\"ordinal\":\"Second\"}} "
   -- layer 4, CR 305.7 add (Urborg -> Swamp).
   Spec.it s "LandSubtype InAddition" $
     Common.assertCodec

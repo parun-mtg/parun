@@ -423,6 +423,10 @@ library codec
     Parun.Codec.CharacteristicPTSpec
     Parun.Codec.Check
     Parun.Codec.CheckSpec
+    Parun.Codec.ChoiceDistinct
+    Parun.Codec.ChoiceDistinctSpec
+    Parun.Codec.ChoiceOrdinal
+    Parun.Codec.ChoiceOrdinalSpec
     Parun.Codec.Choices
     Parun.Codec.ChoicesSpec
     Parun.Codec.ChooseBetween
@@ -2002,6 +2006,7 @@ library engine
     Parun.Engine.Card
     Parun.Engine.Cast
     Parun.Engine.Children
+    Parun.Engine.ChoiceOrdinal
     Parun.Engine.Claim
     Parun.Engine.Cloak
     Parun.Engine.Coin
@@ -2963,6 +2968,8 @@ library types
     Parun.Types.CharacteristicColors
     Parun.Types.CharacteristicPT
     Parun.Types.Check
+    Parun.Types.ChoiceDistinct
+    Parun.Types.ChoiceOrdinal
     Parun.Types.Choices
     Parun.Types.ChooseBetween
     Parun.Types.ChooseCardName

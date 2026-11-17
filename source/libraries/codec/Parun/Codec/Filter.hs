@@ -12,6 +12,7 @@ import qualified Parun.Codec.BlockRole as BlockRole
 import qualified Parun.Codec.BlockStatus as BlockStatus
 import qualified Parun.Codec.CardName as CardName
 import qualified Parun.Codec.CardType as CardType
+import qualified Parun.Codec.ChoiceOrdinal as ChoiceOrdinal
 import qualified Parun.Codec.Color as Color
 import qualified Parun.Codec.ControlMargin as ControlMargin
 import qualified Parun.Codec.CounterKind as CounterKind
@@ -51,6 +52,7 @@ import qualified Parun.JsonCodec.Common as Common
 import qualified Parun.JsonCodec.Fields as Fields
 import qualified Parun.Types.ActivationCriteria as ActivationCriteria.Type
 import qualified Parun.Types.Anchor as Anchor
+import qualified Parun.Types.ChoiceOrdinal as ChoiceOrdinal
 import qualified Parun.Types.ControlMargin as ControlMargin
 import qualified Parun.Types.CounterKind as CounterKind
 import qualified Parun.Types.DamageKind as DamageKind.Type
@@ -130,7 +132,8 @@ codec keywordCodec =
       Arm.payload "HasChosenName" NameChooser.codec Filter.HasChosenName (\x -> case x of Filter.HasChosenName y -> Just y; _ -> Nothing),
       Arm.nullary "HasChosenColor" Filter.HasChosenColor,
       Arm.payload "Noted" CardName.codec Filter.Noted (\x -> case x of Filter.Noted y -> Just y; _ -> Nothing),
-      Arm.nullary "HasChosenSubtype" Filter.HasChosenSubtype,
+      -- A bare tag is the first choice, a card's only one.
+      Arm.optionalPayload "HasChosenSubtype" ChoiceOrdinal.codec (Filter.HasChosenSubtype . Maybe.fromMaybe ChoiceOrdinal.First) (\x -> case x of Filter.HasChosenSubtype ChoiceOrdinal.First -> Just Nothing; Filter.HasChosenSubtype ordinal -> Just (Just ordinal); _ -> Nothing),
       Arm.nullary "HasChosenCardType" Filter.HasChosenCardType,
       Arm.payload "IsExiledWithSource" ExiledPile.codec Filter.IsExiledWithSource (\x -> case x of Filter.IsExiledWithSource y -> Just y; _ -> Nothing),
       Arm.nullary "IsLastExiledWithSource" Filter.IsLastExiledWithSource,

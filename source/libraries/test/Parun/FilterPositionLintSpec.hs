@@ -65,6 +65,8 @@ import qualified Parun.Types.Card as Card.Type
 import qualified Parun.Types.CardAbilities as CardAbilities
 import qualified Parun.Types.CardType as CardType
 import qualified Parun.Types.CastFromZone as CastFromZone
+import qualified Parun.Types.ChoiceDistinct as ChoiceDistinct
+import qualified Parun.Types.ChoiceOrdinal as ChoiceOrdinal
 import qualified Parun.Types.ChooseBetween as ChooseBetween
 import qualified Parun.Types.ChooseCardName as ChooseCardName
 import qualified Parun.Types.ChoosePermanents as ChoosePermanents
@@ -843,7 +845,7 @@ chosenValueCounts :: (Framing -> Bool) -> (ChosenQuality.ChosenQuality -> Bool) 
 chosenValueCounts admitted answers tag card =
   let total keep pairs = sum (fmap (\(_, f) -> filterAtoms tag f) (filter (keep . fst) pairs))
       spellPairs = modalFilters (Face.spell (surveyedFace card))
-      paying = filter (any (\family -> answers (ChosenQuality.Subtype family Nothing)) . Behold.chosenType) (castBeholds (surveyedFace card))
+      paying = filter (any (\family -> answers (ChosenQuality.Subtype ChoiceOrdinal.First ChoiceDistinct.MayRepeat family Nothing)) . Behold.chosenType) (castBeholds (surveyedFace card))
       untargeted modal = modal {Modal.modes = fmap (\mode -> Mode.MkMode (Mode.clauses mode) Map.empty) (Modal.modes modal)}
       answered =
         if null paying
@@ -903,7 +905,7 @@ afterChoice answers modal =
 writesColors :: ChosenQuality.ChosenQuality -> Bool
 writesColors quality = case quality of
   ChosenQuality.Colors _ -> True
-  ChosenQuality.Subtype _ _ -> False
+  ChosenQuality.Subtype {} -> False
   ChosenQuality.CardType _ _ -> False
   ChosenQuality.Number _ _ -> False
   ChosenQuality.Parity -> False
@@ -914,7 +916,7 @@ writesColors quality = case quality of
 writesSubtype :: ChosenQuality.ChosenQuality -> Bool
 writesSubtype quality = case quality of
   ChosenQuality.Colors _ -> False
-  ChosenQuality.Subtype _ _ -> True
+  ChosenQuality.Subtype {} -> True
   ChosenQuality.CardType _ _ -> False
   ChosenQuality.Number _ _ -> False
   ChosenQuality.Parity -> False
@@ -925,7 +927,7 @@ writesSubtype quality = case quality of
 writesCardType :: ChosenQuality.ChosenQuality -> Bool
 writesCardType quality = case quality of
   ChosenQuality.Colors _ -> False
-  ChosenQuality.Subtype _ _ -> False
+  ChosenQuality.Subtype {} -> False
   ChosenQuality.CardType _ _ -> True
   ChosenQuality.Number _ _ -> False
   ChosenQuality.Parity -> False
@@ -976,7 +978,7 @@ bareSubtype k = case k of
   _ -> False
   where
     baked criterion = case criterion of
-      Filter.Type.HasChosenSubtype -> True
+      Filter.Type.HasChosenSubtype _ -> True
       Filter.Type.And filters -> any baked filters
       _ -> False
 
@@ -4027,7 +4029,7 @@ filterPositionLintSpec s registry corpus = Spec.describe s "Lint" $ do
         drawing f = Effect.Draw (Draw.MkDraw (PlayerRef.InSlot Binding.you) (Quantity.Type.Count (Count.Type.MkCount (Scope.InZone (InZone.MkInZone Zone.Battlefield (PlayerRef.Relative PlayerRelation.AnyPlayer))) f Aggregation.Members)) Nothing)
     Monad.forM_
       [ (Filter.Type.HasChosenColor, ChosenQuality.Colors (ChooseBetween.MkChooseBetween 1 1), hasChosenColorCounts, hasChosenColorTag),
-        (Filter.Type.HasChosenSubtype, ChosenQuality.Subtype SubtypeFamily.BasicLandType Nothing, hasChosenSubtypeCounts, hasChosenSubtypeTag),
+        (Filter.Type.HasChosenSubtype ChoiceOrdinal.First, ChosenQuality.Subtype ChoiceOrdinal.First ChoiceDistinct.MayRepeat SubtypeFamily.BasicLandType Nothing, hasChosenSubtypeCounts, hasChosenSubtypeTag),
         (Filter.Type.HasChosenCardType, ChosenQuality.CardType [] Nothing, hasChosenCardTypeCounts, hasChosenCardTypeTag)
       ]
       $ \(atom, quality, counts, tag) -> do

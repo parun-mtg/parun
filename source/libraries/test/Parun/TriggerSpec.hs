@@ -17,6 +17,7 @@ import qualified Control.Monad as Monad
 import qualified Control.Monad.Trans.State.Strict as State
 import qualified Data.Foldable as Foldable
 import qualified Data.List as List
+import qualified Data.List.NonEmpty as NonEmpty
 import qualified Data.Map.Strict as Map
 import qualified Data.Maybe as Maybe
 import qualified Data.Sequence as Seq
@@ -2250,7 +2251,7 @@ kindredDiscoverySpec s registry =
         stocked = List.foldl' (\g _ -> snd (S.addLibraryCard island S.alice g)) g0 [1 :: Int .. 5]
         drawn chosen =
           let chose = case mine of
-                discoveryId : _ -> stocked {GameState.objects = Map.adjust (\o -> o {Object.chosenSubtype = Map.singleton Acquisition.Own chosen}) discoveryId (GameState.objects stocked)}
+                discoveryId : _ -> stocked {GameState.objects = Map.adjust (\o -> o {Object.chosenSubtype = Map.singleton Acquisition.Own (NonEmpty.singleton chosen)}) discoveryId (GameState.objects stocked)}
                 [] -> stocked
            in S.handSize S.alice (S.runToStep (Phase.Combat CombatStep.DeclareBlockers) S.aggressiveAnswer chose)
     Spec.assertEqWith s "having chosen Goblin, the two attacking Pikers draw two" (drawn Subtype.Goblin) 2

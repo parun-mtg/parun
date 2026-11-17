@@ -1,5 +1,6 @@
 module Parun.Types.LastKnown where
 
+import qualified Data.List.NonEmpty as NonEmpty
 import qualified Data.Map.Strict as Map
 import qualified Data.Sequence as Seq
 import qualified Data.Set as Set
@@ -161,9 +162,9 @@ data LastKnown = MkLastKnown
     -- left (Pentarch Paladin destroyed in response, Parun.TargetSpec). Not a
     -- characteristic, for `chosenNames`' reason.
     chosenColors :: !(Map.Map Acquisition.Acquisition (Set.Set Color.Color)),
-    -- | The subtype chosen for it as it entered, `chosenColors`'s sibling for
+    -- | The subtypes chosen for it as it entered, `chosenColors`'s sibling for
     -- Object.chosenSubtype.
-    chosenSubtype :: !(Map.Map Acquisition.Acquisition Subtype.Subtype),
+    chosenSubtype :: !(Map.Map Acquisition.Acquisition (NonEmpty.NonEmpty Subtype.Subtype)),
     -- | The card type chosen for it as it entered, `chosenColors`'s sibling for
     -- Object.chosenCardType.
     chosenCardType :: !(Map.Map Acquisition.Acquisition CardType.CardType),

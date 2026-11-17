@@ -100,6 +100,8 @@ import qualified Parun.Types.CardTally as CardTally
 import qualified Parun.Types.CardType as CardType
 import qualified Parun.Types.CardsFromHand as CardsFromHand
 import qualified Parun.Types.CastingPermission as CastingPermission
+import qualified Parun.Types.ChoiceDistinct as ChoiceDistinct
+import qualified Parun.Types.ChoiceOrdinal as ChoiceOrdinal
 import qualified Parun.Types.Chosen as Chosen
 import qualified Parun.Types.ChosenQuality as ChosenQuality
 import Parun.Types.Claim (Claim)
@@ -2588,7 +2590,7 @@ revealFromHandCandidates = discardCandidates
 beholdCandidates :: Maybe Subtype.Type.Subtype -> Zone.Zone -> Map.Map SlotName.SlotName (Set.Set Recipient.Recipient) -> PlayerId -> ObjectId -> Filter.Type.Filter Keyword.Type.Keyword -> GameState -> [ObjectId]
 beholdCandidates supposed cardZone slots pid oid criterion gs =
   let framed = Projection.framedBy oid gs (Projection.contextWithSlots gs (Just pid) (Just oid) slots)
-      context = maybe framed (\subtype -> framed {Filter.sourceChosenSubtype = Just subtype}) supposed
+      context = maybe framed (\subtype -> framed {Filter.sourceChosenSubtype = Just (NonEmpty.singleton subtype)}) supposed
       viewOf = Projection.viewsOf gs
       matches candidate = Filter.matches context (viewOf candidate) criterion
    in filter matches (beholdPool cardZone pid oid gs)
@@ -2673,7 +2675,7 @@ secretChoiceOf pid oid gs = do
   let acquisition = Game.acquisitionOf oid gs
   chooser <- Map.lookup PlayerChoice.SecretChooser =<< Game.choiceWithLastKnown Chosen.Players acquisition oid gs
   Monad.guard (chooser == pid)
-  Game.choiceWithLastKnown Chosen.Subtype acquisition oid gs
+  NonEmpty.head <$> Game.choiceWithLastKnown Chosen.Subtype acquisition oid gs
 
 -- The cards this player may move to pay a MoveCardsFromGraveyard component:
 -- their OWN graveyard, in its own order, narrowed by the criterion. Per-owner by
@@ -7943,7 +7945,7 @@ payPayable perform moment paidFor slots pid oid component = case component of
     Foldable.for_ (Behold.chosenType behold) $ \family -> do
       gs <- State.get
       picked <- Game.chooseAmong (\decider who offered -> Prompt.ChooseSubtype decider who oid family (Just offered)) pid (beholdableTypes slots pid oid behold family gs)
-      Foldable.for_ picked $ \subtype -> State.modify' (\g -> Game.recordChoice Chosen.Subtype (Game.acquisitionOf oid g) (const (Just subtype)) oid g)
+      Foldable.for_ picked $ \subtype -> State.modify' (\g -> Game.recordChoice Chosen.Subtype (Game.acquisitionOf oid g) (const (Just (NonEmpty.singleton subtype))) oid g)
     beheld <- beholdObjects paidFor (Behold.cardZone behold) slots pid oid n criterion
     pure (maybe Payment.Unpaid (Payment.Paid . Binding.paidObjects Binding.beheldObject . Set.fromList . fmap Recipient.ToObject) beheld)
   -- CR 701.4a's behold of ONE object, `beholdObjects` as the arm above, then CR
@@ -8231,7 +8233,7 @@ payPayable perform moment paidFor slots pid oid component = case component of
   -- nothing that could run out.
   CostComponent.ChooseSubtype family -> do
     gs <- State.get
-    Event.chooseQuality (ChosenQuality.Subtype family Nothing) pid Nothing (Game.acquisitionOf oid gs) oid
+    Event.chooseQuality (ChosenQuality.Subtype ChoiceOrdinal.First ChoiceDistinct.MayRepeat family Nothing) pid Nothing (Game.acquisitionOf oid gs) oid
     pure bindsNothing
   -- NOTHING TO PAY. Rule 701.67a's waterbend cost is the mana this component
   -- scopes, and that mana is in the cost's own mana part, paid by `payMana`

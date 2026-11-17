@@ -27,6 +27,7 @@ import Numeric.Natural (Natural)
 import qualified Parun.Engine.AbilityZone as AbilityZone
 import qualified Parun.Engine.Binding as Binding
 import qualified Parun.Engine.Children as Children
+import qualified Parun.Engine.ChoiceOrdinal as ChoiceOrdinal
 import qualified Parun.Engine.Commander as Commander
 import qualified Parun.Engine.Condition as Condition
 import qualified Parun.Engine.Count as Count
@@ -852,8 +853,8 @@ applyModification textBoxOf viewOf src stamp gs oid unitTypes affected m pc =
         -- replacement whose rewrite writes the field before the permanent is on
         -- the battlefield to be projected, and a resolution stores this arm
         -- already baked (freezeQuantities).
-        Modification.ChosenSubtype mode family ->
-          case Game.currentChoice Chosen.Subtype src gs of
+        Modification.ChosenSubtype ordinal mode family ->
+          case ChoiceOrdinal.chosenAt ordinal =<< Game.currentChoice Chosen.Subtype src gs of
             Nothing -> pc
             Just s -> applyModification textBoxOf viewOf src stamp gs oid unitTypes affected (chosenSubtypeAs mode family s) pc
         -- CR 612.1/612.2: a text-changing effect swaps a subtype word in the type
@@ -2065,8 +2066,8 @@ freezeQuantities viewOf gs announcedOn source context m =
         -- effect already stored. Nothing for a source that chose none. Proved
         -- by data/scenarios/'s Mystic Compass scenario, which Disenchants the
         -- Compass after it resolves.
-        Modification.ChosenSubtype mode family ->
-          chosenSubtypeAs mode family <$> Game.choiceWithLastKnown Chosen.Subtype (Game.readingAcquisition announcedOn source gs source) source gs
+        Modification.ChosenSubtype ordinal mode family ->
+          chosenSubtypeAs mode family <$> (ChoiceOrdinal.chosenAt ordinal =<< Game.choiceWithLastKnown Chosen.Subtype (Game.readingAcquisition announcedOn source gs source) source gs)
         Modification.CreatureSubtype {} -> Just m
         Modification.AddEveryCreatureSubtype -> Just m
         Modification.LoseEverySubtype _ -> Just m
@@ -2253,7 +2254,7 @@ setsLandSubtype m = case m of
   -- CR 305.7 does not care where the type came from: a type chosen as the source
   -- entered (CR 614.1c) strips rules text as a printed one does. A chosen
   -- creature type is CreatureSubtype's answer below.
-  Modification.ChosenSubtype mode family -> case family of
+  Modification.ChosenSubtype _ mode family -> case family of
     SubtypeFamily.BasicLandType -> setsLandSubtype (Modification.LandSubtype mode Subtype.Type.Forest)
     SubtypeFamily.LandType -> setsLandSubtype (Modification.LandSubtype mode Subtype.Type.Forest)
     SubtypeFamily.NonbasicLandType -> setsLandSubtype (Modification.LandSubtype mode Subtype.Type.Desert)
@@ -4509,7 +4510,7 @@ filterReads f = case f of
   Filter.Type.Noted _ -> Set.fromList [Colors, Subtypes]
   -- Reads the candidate's SUBTYPES, HasSubtype's answer: the chosen half arrives
   -- on the Context baked at production, and CR 613.1d's layer writes the other.
-  Filter.Type.HasChosenSubtype -> Set.singleton Subtypes
+  Filter.Type.HasChosenSubtype _ -> Set.singleton Subtypes
   -- HasCardType's answer, the chosen half arriving on the Context.
   Filter.Type.HasChosenCardType -> Set.singleton Types
   Filter.Type.IsExiledWithSource _ -> Set.empty
@@ -4891,7 +4892,7 @@ filterReadsPeers f = case f of
   -- The source's chosen subtype arrives on the Context, baked onto the mana unit
   -- at production; the candidate's own subtypes come from its partial, so no PEER
   -- is projected.
-  Filter.Type.HasChosenSubtype -> False
+  Filter.Type.HasChosenSubtype _ -> False
   Filter.Type.HasChosenCardType -> False
   Filter.Type.IsExiledWithSource _ -> False
   Filter.Type.IsLastExiledWithSource -> False
@@ -5051,7 +5052,7 @@ modificationWrites m = case m of
   Modification.LandSubtype mode _ -> case mode of
     ChangeMode.Replace -> Set.fromList [Subtypes, Keywords]
     ChangeMode.InAddition -> Set.singleton Subtypes
-  Modification.ChosenSubtype mode family -> modificationWrites (chosenSubtypeAs mode family Subtype.Type.Forest)
+  Modification.ChosenSubtype _ mode family -> modificationWrites (chosenSubtypeAs mode family Subtype.Type.Forest)
   Modification.CreatureSubtype {} -> Set.singleton Subtypes
   Modification.AddEveryCreatureSubtype -> Set.singleton Subtypes
   -- The honest answer -- the arm writes PC.subtypes and nothing else, and CR
