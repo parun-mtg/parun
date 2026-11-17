@@ -998,6 +998,10 @@ candidateCostsGiven permitted pid name oid gs =
                   let free = insteadOfManaCost mana face
                 ]
               ordinary = untagged printed : alternatives <> bestowed <> prototyped <> mutated <> evoked <> emerged <> surged <> spectacled <> prowled <> freerun <> freeCast
+              -- CR 113.6f: does the card carry a permission of its own to be
+              -- cast from exile (Khan, Vengeful Heart's)? The plotted arm's
+              -- question; the caller there is the owner already.
+              ownExilePermission = not (null [() | CastingPermission.CastFrom Zone.Exile _ _ _ _ <- permissionsOf oid face gs])
            in -- CR 118.8 / 601.2b: every candidate below owes this face's choice
               -- costs, whichever of them the caster announces, so the expansion
               -- wraps the whole list rather than any one arm of it. The zone is
@@ -1210,8 +1214,8 @@ candidateCostsGiven permitted pid name oid gs =
                         -- ability") offers it here.
                         <> filter usingPermitted warped
                 -- CR 702.170d: a PLOTTED card is cast "without paying its mana
-                -- cost", CR 118.9's alternative cost. INSTEAD of the printed cost,
-                -- rule 702.170d being the only thing permitting this cast, and
+                -- cost", CR 118.9's alternative cost, INSTEAD of the printed cost
+                -- where rule 702.170d is the only thing permitting this cast, and
                 -- only while it permits one: a plotted card cast under another
                 -- permission (Khan, Vengeful Heart's own, the turn it was plotted)
                 -- pays what that one prices. The scenario
@@ -1221,10 +1225,21 @@ candidateCostsGiven permitted pid name oid gs =
                 -- only when it carries an alternative cost, which is the arm two
                 -- below.
                 --
-                -- Not implemented: casting a plotted card that another permission
-                -- also opens under that one, for the cost it prices (#8489).
+                -- CR 601.3: where the card's own permission (CR 113.6f) also opens
+                -- it, its owner -- the player both name -- picks which the cast is
+                -- made under, and so pays the free cost or the `_` arm's: the
+                -- candidate announced is the record. The scenario
+                -- khan-vengeful-heart-plotted-by-aven-interrupter-is-cast-on-a-later-turn-for-its-mana-cost-and-the-tax
+                -- proves it.
+                --
+                -- Unprinted: a plotted card that also holds an Object.playPermissions
+                -- entry. Every route to the stamp exiles the card as it plots it
+                -- (CR 702.170a, 702.170c's printings), minting an incarnation with
+                -- none, and each GrantPlayFromExile in data/cards/ names cards its
+                -- own source exiled (2026-11-17).
                 Just Zone.Exile
-                  | permitsCastPlotted pid oid gs -> [untagged (withoutPayingManaCost face)]
+                  | permitsCastPlotted pid oid gs ->
+                      ListUtils.nubOrd (untagged (withoutPayingManaCost face) : if ownExilePermission then ordinary else [])
                 -- CR 702.143a: a FORETOLD card is cast for its foretell cost, CR
                 -- 118.9's alternative cost, wrapped by withAdditional as flashback's
                 -- is. INSTEAD of the printed cost, the plotted arm's reason, and
