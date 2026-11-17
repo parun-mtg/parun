@@ -204,7 +204,7 @@ evaluate viewOf quantityOf talliesWhatHappened candidateCounters context gs coun
         -- historyPlayersFor's roster instead, as does a count of the players a
         -- filter of what happened admits. The departure/cr-800-4i scenarios
         -- (Daybreak Ranger's casts, Savage Gorger's life lost, Teysa's
-        -- investigations) are the proof.
+        -- investigations, Blitzball's damage dealt) are the proof.
         --
         -- Each candidate is seen through playerView below rather than through the
         -- injected ViewOf, which answers about OBJECTS (CR 109.1) and has no id to

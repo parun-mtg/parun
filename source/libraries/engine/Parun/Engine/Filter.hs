@@ -3880,8 +3880,8 @@ readsSourceValues predicate = case predicate of
 -- (Parun.Engine.Count.evaluate's Scope.OverPlayers arm) still finds a player
 -- who has since left the game? Teysa, Opulent Oligarch's ruling counts an
 -- opponent who lost life and then lost the game; the departure/cr-800-4i
--- Teysa scenario proves it. Parun.Engine.Quantity.talliesWhatHappened is the
--- per-player quantity's twin.
+-- Teysa scenario proves it, and its Blitzball sibling proves damage dealt.
+-- Parun.Engine.Quantity.talliesWhatHappened is the per-player quantity's twin.
 --
 -- A compound answers False, a REGRESSION FENCE: no card counts players through
 -- one, and whether a departed player answers its other parts is per part.
@@ -3955,8 +3955,9 @@ talliesWhatHappened predicate = case predicate of
   Filter.HadToAttackThisCombat {} -> False
   Filter.LeftLibraryThisTurn {} -> False
   Filter.CantPayKeywordCost {} -> False
-  -- Not implemented: a player dealt damage who then left (#8220).
-  Filter.DealtDamageThisTurn {} -> False
+  -- Tymna the Weaver's ruling (2020-11-10) counts a player dealt combat damage
+  -- who then lost the game; the departure/cr-800-4i Blitzball scenario proves it.
+  Filter.DealtDamageThisTurn {} -> True
   Filter.LostLifeThisTurn -> True
   Filter.ActivatedThisTurn {} -> False
   Filter.ActedThisTurn {} -> False
