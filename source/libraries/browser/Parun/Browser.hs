@@ -1,6 +1,7 @@
 -- | A page driven through the wasm backend's JavaScript FFI: Haskell shows
 -- views and waits for the events their handlers take. The page's script
--- (@source/web/parun.js@) applies the patches and reports events.
+-- (@source/web/page.js@) applies the patches and reports events, through the
+-- Web Worker the engine runs in (@source/web/engine.js@).
 module Parun.Browser where
 
 import qualified Data.IORef as IORef
