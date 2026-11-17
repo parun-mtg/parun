@@ -3211,7 +3211,7 @@ costComponentFilters component = case component of
   -- CR 406.2 as a cost: Food Chain's "a creature you control".
   CostComponent.ExilePermanents (ExilePermanents.MkExilePermanents _ f) -> [f]
   -- CR 406.2 as a cost: Headless Skaab's "a creature card from your graveyard".
-  CostComponent.MoveCardsFromGraveyard (MoveCardsFromGraveyard.MkMoveCardsFromGraveyard _ f _) -> [f]
+  CostComponent.MoveCardsFromGraveyard (MoveCardsFromGraveyard.MkMoveCardsFromGraveyard _ f _ _) -> [f]
   -- CR 406.2 with a threshold: Baron Helmut Zemo's "black cards".
   CostComponent.ExileCardsTotalling (ExileCardsTotalling.MkExileCardsTotalling _ _ f) -> [f]
   -- CR 702.167a over the battlefield and the graveyard at once: Tithing Blade's

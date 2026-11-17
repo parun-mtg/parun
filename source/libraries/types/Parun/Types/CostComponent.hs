@@ -155,11 +155,8 @@ data CostComponent keyword
     -- permanent the cost is on, off the battlefield.
     ExileThis
   | -- | CR 406.2 in its choosing form / Headless Skaab, Gurzigost: exile this many
-    -- cards matching the Filter from the paying player's own graveyard (CR 400.3,
+    -- cards matching the Filter from the graveyards the payload names (CR 400.3,
     -- CR 108.4), which the payer chooses, or put them on the bottom of their library.
-    --
-    -- Not implemented: a card in another player's graveyard, a stolen Lamplight
-    -- Phoenix's "exile it" (#8225).
     MoveCardsFromGraveyard (MoveCardsFromGraveyard.MoveCardsFromGraveyard keyword)
   | -- | CR 702.167a's [materials] / Tithing Blade: exile this many objects --
     -- or, where the payload says so, at least this many -- matching the Filter
