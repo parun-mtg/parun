@@ -7441,7 +7441,7 @@ resolveLifeGainSpent settle spent cause pid n =
 -- stands for the d20 and is called, `settleCoins`' posture.
 --
 -- `throw` is the caller's CR 706 road for that roll (Parun.Engine.Resolve.Effect's
--- throwForCoin), and `reflip` its CR 705.1 window over each coin flipped
+-- throwRecorded), and `reflip` its CR 705.1 window over each coin flipped
 -- (reflipWindow; see `settleCoins`), which this module cannot reach: Resolve passes it directly and
 -- Parun.Engine.Cost through Parun.Types.ManaAbilityPerformer. A caller with no
 -- thrower passes Nothing, and the substitution is then kept out of CR 616.1's
@@ -7700,6 +7700,8 @@ proposeDiceRoll reflip pid sides named ignore = do
       let settled = Maybe.fromMaybe proposed (outcome >>= Replacement.asThrow)
       case Throw.kind settled of
         ThrowKind.Dice _ -> pure (Right settled)
+        -- Unreachable: no row turns a roll into the planar die.
+        ThrowKind.PlanarDie -> pure (Right settled)
         ThrowKind.Coins -> do
           statements <- Coin.statementsFor (Just (Throw.thrower settled))
           faces <- settleCoins reflip (Throw.thrower settled) settled Nothing statements

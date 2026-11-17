@@ -59,14 +59,14 @@ import qualified Parun.Types.PendingTrigger as PendingTrigger
 import qualified Parun.Types.PlanarDieFace as PlanarDieFace
 import qualified Parun.Types.PlanarDieRolled as PlanarDieRolled
 import qualified Parun.Types.PlaneswalkCause as PlaneswalkCause
-import qualified Parun.Types.PlayerActed as PlayerActed
-import qualified Parun.Types.PlayerAction as PlayerAction
 import Parun.Types.PlayerId (PlayerId)
 import qualified Parun.Types.PlayerRelation as PlayerRelation
 import qualified Parun.Types.Prompt as Prompt
 import qualified Parun.Types.ProposedEvent as ProposedEvent
 import qualified Parun.Types.SideDeck as SideDeck
 import qualified Parun.Types.Source as Source
+import qualified Parun.Types.Throw as Throw
+import qualified Parun.Types.ThrowKind as ThrowKind
 import qualified Parun.Types.TriggerCondition as TriggerCondition
 import qualified Parun.Types.TriggerSource as TriggerSource
 import Parun.Types.TriggeredAbility (TriggeredAbility)
@@ -338,15 +338,13 @@ faceOf n = case n of
   6 -> PlanarDieFace.Planeswalker
   _ -> PlanarDieFace.Blank
 
--- | CR 116.2i / 901.9: pay, then roll the planar die. The roll records
--- PlayerAction.RollDice (CR 901.9d) and PlanarDieRolled, which CR 901.8's
--- planeswalking ability triggers on, and for the chaos symbol ChaosEnsued, which
--- CR 311.7's chaos abilities trigger on.
+-- | CR 116.2i / 901.9: pay, then roll the planar die, through CR 706.2's
+-- modifiers from other sources (ManaAbilityPerformer.throwRecorded, which
+-- records PlayerAction.RollDice, CR 901.9d). The final face records
+-- PlanarDieRolled, which CR 901.8's planeswalking ability triggers on, and for
+-- the chaos symbol ChaosEnsued, which CR 311.7's chaos abilities trigger on.
 -- A payment that fails restores the state, Parun.Engine.Companion.take's
 -- posture, and nothing is rolled.
---
--- Not implemented: CR 706.2's modifiers from other sources on this roll
--- (Wall of Fortune, Monitor Monitor) (#8262).
 roll :: ManaAbilityPerformer.ManaAbilityPerformer -> PlayerId -> Game ()
 roll perform pid = do
   before <- State.get
@@ -354,11 +352,12 @@ roll perform pid = do
     noSource <- State.state Game.freshObjectId
     paid <- Cost.payAction perform before PaymentSubject.ForNeither 0 pid noSource (rollCost pid before)
     Monad.forM_ paid $ \_ -> do
-      rolled <- Game.ask (Prompt.RollDie 6)
-      State.modify' (Event.recordEvent (GameEvent.PlayerActed (PlayerActed.MkPlayerActed PlayerAction.RollDice pid)))
-      State.modify' (Event.recordEvent (GameEvent.PlanarDieRolled (PlanarDieRolled.MkPlanarDieRolled pid (faceOf rolled))))
-      -- CR 901.9b: the chaos symbol makes chaos ensue.
-      Monad.when (faceOf rolled == PlanarDieFace.Chaos) (State.modify' (Event.recordEvent (GameEvent.ChaosEnsued Nothing)))
+      kept <- ManaAbilityPerformer.throwRecorded perform (Throw.MkThrow {Throw.thrower = pid, Throw.kind = ThrowKind.PlanarDie, Throw.units = Seq.singleton 1, Throw.ignored = 0, Throw.instead = False})
+      -- Exactly one: nothing adds a die to the planar die's roll.
+      Foldable.for_ (Maybe.listToMaybe kept) $ \rolled -> do
+        State.modify' (Event.recordEvent (GameEvent.PlanarDieRolled (PlanarDieRolled.MkPlanarDieRolled pid (faceOf rolled))))
+        -- CR 901.9b: the chaos symbol makes chaos ensue.
+        Monad.when (faceOf rolled == PlanarDieFace.Chaos) (State.modify' (Event.recordEvent (GameEvent.ChaosEnsued Nothing)))
 
 -- | CR 901.8: the planeswalking ability, paired with each player, for
 -- Parun.Engine.Event.Trigger.inherentTriggers. Planechase games have it; it "has

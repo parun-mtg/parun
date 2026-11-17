@@ -1685,7 +1685,7 @@ rerollStoredResults throwDice runSubgame resolving source controller legal slot 
 -- all, which is why a statement of heads alone still loses this flip against a
 -- call of tails.
 flipCoinArm :: (Game Result -> Throw.Throw -> Game [Natural]) -> (Game Result -> PlayerId -> CoinFace.CoinFace -> Game Bool) -> Game Result -> ObjectId -> ObjectId -> PlayerId -> Map.Map SlotName (Set Recipient) -> FlipCoin.FlipCoin -> Game ()
-flipCoinArm throwForCoin reflipWindow runSubgame resolving source controller legal flipCoin = do
+flipCoinArm throwRecorded reflipWindow runSubgame resolving source controller legal flipCoin = do
   gs <- State.get
   let viewOf = effectViewOf resolving source legal gs
       context = effectContext gs resolving controller source legal (slotBindings resolving gs)
@@ -1712,7 +1712,7 @@ flipCoinArm throwForCoin reflipWindow runSubgame resolving source controller leg
           -- data/scenarios/coin/cr-705-2-only-the-flipping-player-calls-*.json
           -- proves it by what the engine ASKED rather than by anything the board
           -- shows.
-          CoinReading.Wins -> Event.flipWinLoseCoin (Just (throwForCoin runSubgame)) (reflipWindow runSubgame) flipper statements
+          CoinReading.Wins -> Event.flipWinLoseCoin (Just (throwRecorded runSubgame)) (reflipWindow runSubgame) flipper statements
           -- CR 705.2's first sentence: the effect cares only about the face, so
           -- no Prompt.CallCoin is asked -- "no player wins or loses a coin flip
           -- for this kind of effect", so there is no call to make and nothing
@@ -1730,7 +1730,7 @@ flipCoinArm throwForCoin reflipWindow runSubgame resolving source controller leg
           -- flipped a coin for that d20, the coin is called
           -- (Event.settleCoins).
           CoinReading.Heads -> do
-            (face, _) <- Event.flipOneCoin (Just (throwForCoin runSubgame)) (reflipWindow runSubgame) (Just flipper) Nothing statements
+            (face, _) <- Event.flipOneCoin (Just (throwRecorded runSubgame)) (reflipWindow runSubgame) (Just flipper) Nothing statements
             pure (face == Just CoinFace.Heads)
         pure (if hit then acc + 1 else acc)
   -- Bound AFTER every coin, since the slot tallies all of one instruction's flips.
