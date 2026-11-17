@@ -146,7 +146,8 @@ faceAbilities face =
       rest = face {Face.loyalty = Nothing, Face.keywords = Map.empty, Face.spell = Face.defaultSpell, Face.activatedAbilities = [], Face.triggeredAbilities = [], Face.staticAbilities = [], Face.replacementEffects = [], Face.combatRestrictions = [], Face.playerAbilities = [], Face.enchant = [], Face.characteristicPT = Nothing, Face.characteristicColors = Nothing, Face.deckLimit = Nothing}
       subtypes = TypeLine.subtypes (Face.typeLine face)
       unread = rest /= Face.Oracle.bare (Face.name face) (Face.oracleText face) (Face.manaCost face) (Face.colorIndicator face) (Face.typeLine face) (Face.power face) (Face.toughness face) Map.empty
-      spell = [Effect.modal context {Target.breaks = [Text.pack " ", Text.pack "\n"]} (Face.spell face) | Face.spell face /= Face.defaultSpell]
+      -- Free for fathomless descent on a spell: printed (Terror Tide).
+      spell = [[heading <> stated | stated <- Effect.modal context {Target.breaks = [Text.pack " ", Text.pack "\n"]} (Face.spell face), heading <- Text.empty : Trigger.effectWord stated] | Face.spell face /= Face.defaultSpell]
       bestowed = any (\k -> case k of Keyword.Type.Bestow _ -> True; _ -> False) (Map.keys (Face.keywords face))
       attached = Continuous.attachedWord subtypes bestowed
       (statics, combat, joint) = Continuous.evasive context attached (Face.enchant face) (Face.staticAbilities face) (Face.combatRestrictions face)

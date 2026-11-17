@@ -474,10 +474,10 @@ abilityWord words' = [Text.empty] <> [Text.pack "Hellbent \8212 " | words' == Te
 openingWord :: Text.Text -> [Text.Text]
 openingWord opens = [Text.pack "Alliance \8212 " | opens == Text.pack "Whenever another creature you control enters"] <> [Text.pack "Survival \8212 " | opens == Text.pack "At the beginning of your second main phase"]
 
--- | The ability word (CR 207.2c) Oracle text may print before a triggered or
--- static ability whose effect reads this. Free for fathomless descent:
--- printed (Chupacabra Echo, Song of Stupefaction) or not (Cloud of Darkness,
--- under its flavor word).
+-- | The ability word (CR 207.2c) Oracle text may print before a spell's, a
+-- triggered or a static ability's effect that reads this. Free for fathomless
+-- descent: printed (Chupacabra Echo, Song of Stupefaction, Terror Tide) or not
+-- (Cloud of Darkness, under its flavor word).
 effectWord :: Text.Text -> [Text.Text]
 effectWord effect = [Text.pack "Fathomless descent \8212 " | Text.isInfixOf (Text.pack "the number of permanent cards in your graveyard") effect]
 

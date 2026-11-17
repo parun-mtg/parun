@@ -2119,8 +2119,9 @@ filterPositionLintSpec s registry corpus = Spec.describe s "Lint" $ do
     -- slot"); Blighted Nightmare and
     -- Tameshi, Reality Architect, on ACTIVATED abilities, whose X CR 602.2b
     -- announces; Sundering Archaic, whose bound is the colors of mana spent to
-    -- cast its source (CR 601.2h); and Astelli Reclaimer, whose bound is the
-    -- amount of it.
+    -- cast its source (CR 601.2h); Astelli Reclaimer, whose bound is the
+    -- amount of it; and Squirming Emergence, whose bound counts the permanent
+    -- cards in its controller's graveyard.
     --
     -- Exactly, against the mana value: Chthonian Nightmare, Shelob, Dread
     -- Weaver, Rydia, Summoner of Mist, Tamiyo, Compleated Sage, Synthetic Counted, Announced, Wide, Paired, Total and Divided
@@ -2170,6 +2171,7 @@ filterPositionLintSpec s registry corpus = Spec.describe s "Lint" $ do
         ("Blighted Nightmare", 1),
         ("Sundering Archaic", 1),
         ("Astelli Reclaimer", 1),
+        ("Squirming Emergence", 1),
         ("Tameshi, Reality Architect", 1),
         ("Chthonian Nightmare", 1),
         ("Shelob, Dread Weaver", 1),

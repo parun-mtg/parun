@@ -1,0 +1,165 @@
+{
+  "faces": [
+    {
+      "manaCost": [
+        {
+          "type": "Generic",
+          "value": 2
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "Black"
+          }
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "Black"
+          }
+        }
+      ],
+      "name": "Terror Tide",
+      "oracleText": "Fathomless descent — All creatures get -X/-X until end of turn, where X is the number of permanent cards in your graveyard.",
+      "spell": {
+        "modes": [
+          {
+            "clauses": [
+              {
+                "effects": [
+                  {
+                    "type": "ModifyTarget",
+                    "value": {
+                      "duration": {
+                        "type": "UntilEndOfTurn"
+                      },
+                      "modification": {
+                        "type": "ModifyPowerToughness",
+                        "value": {
+                          "power": {
+                            "type": "Negate",
+                            "value": {
+                              "type": "Count",
+                              "value": {
+                                "aggregation": {
+                                  "type": "Members"
+                                },
+                                "filter": {
+                                  "type": "Or",
+                                  "value": [
+                                    {
+                                      "type": "HasCardType",
+                                      "value": "Artifact"
+                                    },
+                                    {
+                                      "type": "HasCardType",
+                                      "value": "Battle"
+                                    },
+                                    {
+                                      "type": "HasCardType",
+                                      "value": "Creature"
+                                    },
+                                    {
+                                      "type": "HasCardType",
+                                      "value": "Enchantment"
+                                    },
+                                    {
+                                      "type": "HasCardType",
+                                      "value": "Land"
+                                    },
+                                    {
+                                      "type": "HasCardType",
+                                      "value": "Planeswalker"
+                                    }
+                                  ]
+                                },
+                                "scope": {
+                                  "type": "InZone",
+                                  "value": {
+                                    "player": {
+                                      "type": "Relative",
+                                      "value": "You"
+                                    },
+                                    "zone": "Graveyard"
+                                  }
+                                }
+                              }
+                            }
+                          },
+                          "toughness": {
+                            "type": "Negate",
+                            "value": {
+                              "type": "Count",
+                              "value": {
+                                "aggregation": {
+                                  "type": "Members"
+                                },
+                                "filter": {
+                                  "type": "Or",
+                                  "value": [
+                                    {
+                                      "type": "HasCardType",
+                                      "value": "Artifact"
+                                    },
+                                    {
+                                      "type": "HasCardType",
+                                      "value": "Battle"
+                                    },
+                                    {
+                                      "type": "HasCardType",
+                                      "value": "Creature"
+                                    },
+                                    {
+                                      "type": "HasCardType",
+                                      "value": "Enchantment"
+                                    },
+                                    {
+                                      "type": "HasCardType",
+                                      "value": "Land"
+                                    },
+                                    {
+                                      "type": "HasCardType",
+                                      "value": "Planeswalker"
+                                    }
+                                  ]
+                                },
+                                "scope": {
+                                  "type": "InZone",
+                                  "value": {
+                                    "player": {
+                                      "type": "Relative",
+                                      "value": "You"
+                                    },
+                                    "zone": "Graveyard"
+                                  }
+                                }
+                              }
+                            }
+                          }
+                        }
+                      },
+                      "ref": {
+                        "type": "EachMatching",
+                        "value": {
+                          "type": "HasCardType",
+                          "value": "Creature"
+                        }
+                      }
+                    }
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "typeLine": {
+        "types": [
+          "Sorcery"
+        ]
+      }
+    }
+  ]
+}

@@ -1,0 +1,345 @@
+{
+  "faces": [
+    {
+      "activatedAbilities": [
+        {
+          "cost": {
+            "mana": [
+              {
+                "type": "Generic",
+                "value": 2
+              },
+              {
+                "type": "OfType",
+                "value": {
+                  "type": "Colored",
+                  "value": "Blue"
+                }
+              },
+              {
+                "type": "OfType",
+                "value": {
+                  "type": "Colored",
+                  "value": "Black"
+                }
+              }
+            ]
+          },
+          "modal": {
+            "modes": [
+              {
+                "clauses": [
+                  {
+                    "effects": [
+                      {
+                        "type": "Draw",
+                        "value": {
+                          "player": {
+                            "type": "Relative",
+                            "value": "You"
+                          },
+                          "quantity": {
+                            "type": "Literal",
+                            "value": 1
+                          }
+                        }
+                      }
+                    ]
+                  },
+                  {
+                    "effects": [
+                      {
+                        "type": "Discard",
+                        "value": {
+                          "type": "Counted",
+                          "value": {
+                            "discarded": "discarded",
+                            "player": {
+                              "type": "Relative",
+                              "value": "You"
+                            },
+                            "quantity": {
+                              "type": "Literal",
+                              "value": 1
+                            }
+                          }
+                        }
+                      }
+                    ]
+                  },
+                  {
+                    "condition": {
+                      "type": "Compares",
+                      "value": {
+                        "comparison": "AtLeast",
+                        "measured": {
+                          "type": "Count",
+                          "value": {
+                            "aggregation": {
+                              "type": "Members"
+                            },
+                            "filter": {
+                              "type": "And",
+                              "value": []
+                            },
+                            "scope": {
+                              "type": "OverBound",
+                              "value": "discarded"
+                            }
+                          }
+                        },
+                        "threshold": {
+                          "type": "Literal",
+                          "value": 1
+                        }
+                      }
+                    },
+                    "effects": [
+                      {
+                        "type": "ArmDelayedTrigger",
+                        "value": {
+                          "name": "mill"
+                        }
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      ],
+      "combatRestrictions": [
+        {
+          "type": "CantAttack",
+          "value": {
+            "affected": {
+              "type": "Matching",
+              "value": {
+                "type": "IsSource"
+              }
+            },
+            "unless": {
+              "type": "Compares",
+              "value": {
+                "comparison": "AtLeast",
+                "measured": {
+                  "type": "Count",
+                  "value": {
+                    "aggregation": {
+                      "type": "Members"
+                    },
+                    "filter": {
+                      "type": "Or",
+                      "value": [
+                        {
+                          "type": "HasCardType",
+                          "value": "Artifact"
+                        },
+                        {
+                          "type": "HasCardType",
+                          "value": "Battle"
+                        },
+                        {
+                          "type": "HasCardType",
+                          "value": "Creature"
+                        },
+                        {
+                          "type": "HasCardType",
+                          "value": "Enchantment"
+                        },
+                        {
+                          "type": "HasCardType",
+                          "value": "Land"
+                        },
+                        {
+                          "type": "HasCardType",
+                          "value": "Planeswalker"
+                        }
+                      ]
+                    },
+                    "scope": {
+                      "type": "InZone",
+                      "value": {
+                        "player": {
+                          "type": "Relative",
+                          "value": "You"
+                        },
+                        "zone": "Graveyard"
+                      }
+                    }
+                  }
+                },
+                "threshold": {
+                  "type": "Literal",
+                  "value": 8
+                }
+              }
+            }
+          }
+        },
+        {
+          "type": "CantBlock",
+          "value": {
+            "affected": {
+              "type": "Matching",
+              "value": {
+                "type": "IsSource"
+              }
+            },
+            "unless": {
+              "type": "Compares",
+              "value": {
+                "comparison": "AtLeast",
+                "measured": {
+                  "type": "Count",
+                  "value": {
+                    "aggregation": {
+                      "type": "Members"
+                    },
+                    "filter": {
+                      "type": "Or",
+                      "value": [
+                        {
+                          "type": "HasCardType",
+                          "value": "Artifact"
+                        },
+                        {
+                          "type": "HasCardType",
+                          "value": "Battle"
+                        },
+                        {
+                          "type": "HasCardType",
+                          "value": "Creature"
+                        },
+                        {
+                          "type": "HasCardType",
+                          "value": "Enchantment"
+                        },
+                        {
+                          "type": "HasCardType",
+                          "value": "Land"
+                        },
+                        {
+                          "type": "HasCardType",
+                          "value": "Planeswalker"
+                        }
+                      ]
+                    },
+                    "scope": {
+                      "type": "InZone",
+                      "value": {
+                        "player": {
+                          "type": "Relative",
+                          "value": "You"
+                        },
+                        "zone": "Graveyard"
+                      }
+                    }
+                  }
+                },
+                "threshold": {
+                  "type": "Literal",
+                  "value": 8
+                }
+              }
+            }
+          }
+        }
+      ],
+      "delayedAbilities": {
+        "mill": {
+          "condition": {
+            "type": "Reflexive"
+          },
+          "modal": {
+            "modes": [
+              {
+                "clauses": [
+                  {
+                    "effects": [
+                      {
+                        "type": "Mill",
+                        "value": {
+                          "player": {
+                            "type": "InSlot",
+                            "value": "target"
+                          },
+                          "quantity": {
+                            "type": "Count",
+                            "value": {
+                              "aggregation": {
+                                "type": "Total",
+                                "value": {
+                                  "type": "Measure",
+                                  "value": "ManaValue"
+                                }
+                              },
+                              "filter": {
+                                "type": "And",
+                                "value": []
+                              },
+                              "scope": {
+                                "type": "OverBound",
+                                "value": "discarded"
+                              }
+                            }
+                          }
+                        }
+                      }
+                    ]
+                  }
+                ],
+                "targetSlots": {
+                  "target": {
+                    "pool": {
+                      "type": "Players"
+                    }
+                  }
+                }
+              }
+            ]
+          }
+        }
+      },
+      "manaCost": [
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "Blue"
+          }
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "Black"
+          }
+        }
+      ],
+      "name": "The Ancient One",
+      "oracleText": "Descend 8 — The Ancient One can't attack or block unless there are eight or more permanent cards in your graveyard.\n{2}{U}{B}: Draw a card, then discard a card. When you discard a card this way, target player mills cards equal to its mana value.",
+      "power": {
+        "type": "Literal",
+        "value": 8
+      },
+      "toughness": {
+        "type": "Literal",
+        "value": 8
+      },
+      "typeLine": {
+        "subtypes": [
+          "God",
+          "Spirit"
+        ],
+        "supertypes": [
+          "Legendary"
+        ],
+        "types": [
+          "Creature"
+        ]
+      }
+    }
+  ]
+}

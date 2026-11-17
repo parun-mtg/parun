@@ -1,0 +1,502 @@
+{
+  "faces": [
+    {
+      "manaCost": [
+        {
+          "type": "Generic",
+          "value": 2
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "White"
+          }
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "White"
+          }
+        }
+      ],
+      "name": "Thousand Moons Smithy",
+      "oracleText": "When Thousand Moons Smithy enters, create a white Gnome Soldier artifact creature token with \"This token's power and toughness are each equal to the number of artifacts and/or creatures you control.\"\nAt the beginning of your first main phase, you may tap five untapped artifacts and/or creatures you control. If you do, transform Thousand Moons Smithy.",
+      "triggeredAbilities": [
+        {
+          "condition": {
+            "type": "Enters",
+            "value": {}
+          },
+          "modal": {
+            "modes": [
+              {
+                "clauses": [
+                  {
+                    "effects": [
+                      {
+                        "type": "Create",
+                        "value": {
+                          "card": {
+                            "faces": [
+                              {
+                                "characteristicPT": {
+                                  "power": {
+                                    "type": "Count",
+                                    "value": {
+                                      "aggregation": {
+                                        "type": "Members"
+                                      },
+                                      "filter": {
+                                        "type": "And",
+                                        "value": [
+                                          {
+                                            "type": "Or",
+                                            "value": [
+                                              {
+                                                "type": "HasCardType",
+                                                "value": "Artifact"
+                                              },
+                                              {
+                                                "type": "HasCardType",
+                                                "value": "Creature"
+                                              }
+                                            ]
+                                          },
+                                          {
+                                            "type": "HeldBy",
+                                            "value": {
+                                              "holder": "Controller",
+                                              "relation": "You"
+                                            }
+                                          }
+                                        ]
+                                      },
+                                      "scope": {
+                                        "type": "InZone",
+                                        "value": {
+                                          "player": {
+                                            "type": "Relative",
+                                            "value": "AnyPlayer"
+                                          },
+                                          "zone": "Battlefield"
+                                        }
+                                      }
+                                    }
+                                  },
+                                  "toughness": {
+                                    "type": "Count",
+                                    "value": {
+                                      "aggregation": {
+                                        "type": "Members"
+                                      },
+                                      "filter": {
+                                        "type": "And",
+                                        "value": [
+                                          {
+                                            "type": "Or",
+                                            "value": [
+                                              {
+                                                "type": "HasCardType",
+                                                "value": "Artifact"
+                                              },
+                                              {
+                                                "type": "HasCardType",
+                                                "value": "Creature"
+                                              }
+                                            ]
+                                          },
+                                          {
+                                            "type": "HeldBy",
+                                            "value": {
+                                              "holder": "Controller",
+                                              "relation": "You"
+                                            }
+                                          }
+                                        ]
+                                      },
+                                      "scope": {
+                                        "type": "InZone",
+                                        "value": {
+                                          "player": {
+                                            "type": "Relative",
+                                            "value": "AnyPlayer"
+                                          },
+                                          "zone": "Battlefield"
+                                        }
+                                      }
+                                    }
+                                  }
+                                },
+                                "colorIndicator": [
+                                  "White"
+                                ],
+                                "name": "Gnome Soldier Token",
+                                "power": {
+                                  "type": "Star"
+                                },
+                                "toughness": {
+                                  "type": "Star"
+                                },
+                                "typeLine": {
+                                  "subtypes": [
+                                    "Gnome",
+                                    "Soldier"
+                                  ],
+                                  "types": [
+                                    "Artifact",
+                                    "Creature"
+                                  ]
+                                }
+                              }
+                            ]
+                          },
+                          "quantity": {
+                            "type": "Literal",
+                            "value": 1
+                          }
+                        }
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "condition": {
+            "type": "StepBegins",
+            "value": {
+              "ordinal": 1,
+              "phase": {
+                "type": "PrecombatMain"
+              },
+              "scope": {
+                "type": "PlayersTurn",
+                "value": {
+                  "type": "Relative",
+                  "value": "You"
+                }
+              }
+            }
+          },
+          "modal": {
+            "modes": [
+              {
+                "clauses": [
+                  {
+                    "effects": [
+                      {
+                        "type": "Transform",
+                        "value": {
+                          "type": "InSlot",
+                          "value": "self"
+                        }
+                      }
+                    ],
+                    "payGate": {
+                      "branch": "IfPaid",
+                      "cost": {
+                        "components": [
+                          {
+                            "type": "TapPermanents",
+                            "value": {
+                              "count": {
+                                "type": "Fixed",
+                                "value": 5
+                              },
+                              "whichPermanents": {
+                                "type": "And",
+                                "value": [
+                                  {
+                                    "type": "Or",
+                                    "value": [
+                                      {
+                                        "type": "HasCardType",
+                                        "value": "Artifact"
+                                      },
+                                      {
+                                        "type": "HasCardType",
+                                        "value": "Creature"
+                                      }
+                                    ]
+                                  },
+                                  {
+                                    "type": "HeldBy",
+                                    "value": {
+                                      "holder": "Controller",
+                                      "relation": "You"
+                                    }
+                                  },
+                                  {
+                                    "type": "Not",
+                                    "value": {
+                                      "type": "IsTapped"
+                                    }
+                                  }
+                                ]
+                              }
+                            }
+                          }
+                        ],
+                        "mana": []
+                      },
+                      "payer": {
+                        "type": "InSlot",
+                        "value": "you"
+                      }
+                    }
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      ],
+      "typeLine": {
+        "supertypes": [
+          "Legendary"
+        ],
+        "types": [
+          "Artifact"
+        ]
+      }
+    },
+    {
+      "activatedAbilities": [
+        {
+          "cost": {
+            "components": [
+              {
+                "type": "TapThis"
+              }
+            ],
+            "mana": []
+          },
+          "modal": {
+            "modes": [
+              {
+                "clauses": [
+                  {
+                    "effects": [
+                      {
+                        "type": "AddMana",
+                        "value": {
+                          "production": {
+                            "type": "OfType",
+                            "value": {
+                              "type": "Colored",
+                              "value": "White"
+                            }
+                          }
+                        }
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      ],
+      "name": "Barracks of the Thousand",
+      "oracleText": "(Transforms from Thousand Moons Smithy.)\n{T}: Add {W}.\nWhenever you cast an artifact or creature spell using mana produced by Barracks of the Thousand, create a white Gnome Soldier artifact creature token with \"This token's power and toughness are each equal to the number of artifacts and/or creatures you control.\"",
+      "triggeredAbilities": [
+        {
+          "condition": {
+            "type": "SpellCast",
+            "value": {
+              "scope": {
+                "type": "PlayersTurn",
+                "value": {
+                  "type": "Relative",
+                  "value": "AnyPlayer"
+                }
+              },
+              "spell": {
+                "type": "Matching",
+                "value": {
+                  "type": "And",
+                  "value": [
+                    {
+                      "type": "HeldBy",
+                      "value": {
+                        "holder": "Controller",
+                        "relation": "You"
+                      }
+                    },
+                    {
+                      "type": "Or",
+                      "value": [
+                        {
+                          "type": "HasCardType",
+                          "value": "Artifact"
+                        },
+                        {
+                          "type": "HasCardType",
+                          "value": "Creature"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "PaidWithManaFromSource"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "modal": {
+            "modes": [
+              {
+                "clauses": [
+                  {
+                    "effects": [
+                      {
+                        "type": "Create",
+                        "value": {
+                          "card": {
+                            "faces": [
+                              {
+                                "characteristicPT": {
+                                  "power": {
+                                    "type": "Count",
+                                    "value": {
+                                      "aggregation": {
+                                        "type": "Members"
+                                      },
+                                      "filter": {
+                                        "type": "And",
+                                        "value": [
+                                          {
+                                            "type": "Or",
+                                            "value": [
+                                              {
+                                                "type": "HasCardType",
+                                                "value": "Artifact"
+                                              },
+                                              {
+                                                "type": "HasCardType",
+                                                "value": "Creature"
+                                              }
+                                            ]
+                                          },
+                                          {
+                                            "type": "HeldBy",
+                                            "value": {
+                                              "holder": "Controller",
+                                              "relation": "You"
+                                            }
+                                          }
+                                        ]
+                                      },
+                                      "scope": {
+                                        "type": "InZone",
+                                        "value": {
+                                          "player": {
+                                            "type": "Relative",
+                                            "value": "AnyPlayer"
+                                          },
+                                          "zone": "Battlefield"
+                                        }
+                                      }
+                                    }
+                                  },
+                                  "toughness": {
+                                    "type": "Count",
+                                    "value": {
+                                      "aggregation": {
+                                        "type": "Members"
+                                      },
+                                      "filter": {
+                                        "type": "And",
+                                        "value": [
+                                          {
+                                            "type": "Or",
+                                            "value": [
+                                              {
+                                                "type": "HasCardType",
+                                                "value": "Artifact"
+                                              },
+                                              {
+                                                "type": "HasCardType",
+                                                "value": "Creature"
+                                              }
+                                            ]
+                                          },
+                                          {
+                                            "type": "HeldBy",
+                                            "value": {
+                                              "holder": "Controller",
+                                              "relation": "You"
+                                            }
+                                          }
+                                        ]
+                                      },
+                                      "scope": {
+                                        "type": "InZone",
+                                        "value": {
+                                          "player": {
+                                            "type": "Relative",
+                                            "value": "AnyPlayer"
+                                          },
+                                          "zone": "Battlefield"
+                                        }
+                                      }
+                                    }
+                                  }
+                                },
+                                "colorIndicator": [
+                                  "White"
+                                ],
+                                "name": "Gnome Soldier Token",
+                                "power": {
+                                  "type": "Star"
+                                },
+                                "toughness": {
+                                  "type": "Star"
+                                },
+                                "typeLine": {
+                                  "subtypes": [
+                                    "Gnome",
+                                    "Soldier"
+                                  ],
+                                  "types": [
+                                    "Artifact",
+                                    "Creature"
+                                  ]
+                                }
+                              }
+                            ]
+                          },
+                          "quantity": {
+                            "type": "Literal",
+                            "value": 1
+                          }
+                        }
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      ],
+      "typeLine": {
+        "supertypes": [
+          "Legendary"
+        ],
+        "types": [
+          "Artifact",
+          "Land"
+        ]
+      }
+    }
+  ],
+  "layout": {
+    "type": "Transforming"
+  }
+}
