@@ -106,10 +106,7 @@ rewriteModification :: [(TextWord.TextWord, TextWord.TextWord)] -> Modification 
 -- every static ability on every projection.
 rewriteModification [] = id
 rewriteModification pairs =
-  let -- `inFamily` is CR 612.2's gate.
-      swap inFamily s = case lookup (TextWord.SubtypeWord s) pairs of
-        Just (TextWord.SubtypeWord t) | inFamily s -> t
-        _ -> s
+  let swap inFamily = subtypeAfterIn inFamily pairs
    in Identity.runIdentity
         . Children.modificationChildren
           Children.MkModificationChildren
@@ -128,6 +125,13 @@ rewriteModification pairs =
               Children.modificationCreatureSubtype = Identity.Identity . swap Subtype.isCreatureType,
               Children.modificationColors = Identity.Identity . Set.map (TextWord.Engine.colorAfter pairs)
             }
+
+-- A subtype word swapped where the position's family holds the word being
+-- replaced: CR 612.2's gate, the position's family fixed by its constructor.
+subtypeAfterIn :: (Subtype.Type.Subtype -> Bool) -> [(TextWord.TextWord, TextWord.TextWord)] -> Subtype.Type.Subtype -> Subtype.Type.Subtype
+subtypeAfterIn inFamily pairs s = case lookup (TextWord.SubtypeWord s) pairs of
+  Just (TextWord.SubtypeWord t) | inFamily s -> t
+  _ -> s
 
 -- rewriteModification's sibling for the other half of a static ability. Under CR
 -- 612.1 an ability's affected clause is rules text like any other, so a hacked
@@ -166,8 +170,10 @@ rewriteAffected pairs =
 -- Filter.rewriteCost's reading (Wall of Fortune's "tap an untapped Wall"; a
 -- component an effect adds), the mana a
 -- clause keeps or spends rewriteManaFilter's colour word (Celestial Dawn's
--- "white mana"), and an addition's scale is Drought's "for each black mana
--- symbol", a colour word used as one (CR 612.2). A rule-702 designator, CR
+-- "white mana"), a creature type a cast permission adds a creature-type word
+-- (The Tomb of Aclazotz's "is a Vampire"), and an addition's scale is
+-- Drought's "for each black mana symbol", a colour word used as one (CR
+-- 612.2). A rule-702 designator, CR
 -- 605.1a's and CR 606.2's classifications, a zone, a turn and a count name no
 -- word CR 612.2 reaches; CR 201.4's chosen names are read off the source, and
 -- CR 612.2's second sentence keeps a swap off a card name even if they were not.
@@ -191,7 +197,8 @@ rewritePlayerEffect pairs =
           Children.playerSpending = Identity.Identity . rewriteSpendManaAsThough pairs,
           Children.playerManaRestriction = Identity.Identity . rewriteManaRestriction pairs,
           Children.playerDamage = Identity.Identity . rewriteDamagePattern pairs,
-          Children.playerKeyword = Identity.Identity . Filter.rewriteKeyword pairs
+          Children.playerKeyword = Identity.Identity . Filter.rewriteKeyword pairs,
+          Children.playerCreatureSubtype = Identity.Identity . subtypeAfterIn Subtype.isCreatureType pairs
         }
 
 -- CR 612.1 through a mana payload: Parun.Engine.Children's traversal at
