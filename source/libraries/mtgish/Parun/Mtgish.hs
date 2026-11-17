@@ -411,8 +411,12 @@ rule face n = case Node.tag n of
     (quality, price) <- pair n
     f <- permanents outermost quality
     Monad.unless (f == Filter.HasCardType CardType.Creature) (Node.untranslated n)
-    c <- costOf price
-    keyword (Keyword.Equip Equip.MkEquip {Equip.cost = c, Equip.quality = Nothing, Equip.target = EquipTarget.Creature, Equip.timesEachTurn = Nothing})
+    options <- costOptions price
+    -- CR 602.2b: an "or" is a choice inside the cost (Bloodthorn Flail).
+    let (c, choices) = case options of
+          only NonEmpty.:| [] -> (only, [])
+          _ -> (Cost.MkCost {Cost.mana = Just (ManaCost.MkManaCost []), Cost.components = []}, [options])
+    keyword (Keyword.Equip Equip.MkEquip {Equip.cost = c, Equip.costChoices = choices, Equip.quality = Nothing, Equip.target = EquipTarget.Creature, Equip.timesEachTurn = Nothing})
   _ -> keywordRule n >>= keyword
   where
     static f affected modifications = case modifications of
@@ -738,6 +742,7 @@ costPart n = case Node.tag n of
     m <- natural n k
     Right (Right (CostComponent.PayLife (CostAmount.Fixed m)))
   "DiscardHand" -> Right (Right (CostComponent.DiscardCards DiscardCards.MkDiscardCards {DiscardCards.count = ObjectCount.Every, DiscardCards.whichCards = Filter.And [], DiscardCards.selection = CardSelection.ByChoice}))
+  "DiscardACard" -> Right (Right (CostComponent.DiscardCards DiscardCards.MkDiscardCards {DiscardCards.count = ObjectCount.Exactly (CostAmount.Fixed 1), DiscardCards.whichCards = Filter.And [], DiscardCards.selection = CardSelection.ByChoice}))
   "DiscardACardAtRandom" -> Right (Right (CostComponent.DiscardCards DiscardCards.MkDiscardCards {DiscardCards.count = ObjectCount.Exactly (CostAmount.Fixed 1), DiscardCards.whichCards = Filter.And [], DiscardCards.selection = CardSelection.AtRandom}))
   _ -> Node.untranslated n
   where

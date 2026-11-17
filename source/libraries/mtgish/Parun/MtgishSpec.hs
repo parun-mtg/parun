@@ -262,6 +262,10 @@ spec s = Spec.describe s "Parun.Mtgish" $ do
     Spec.assertEq s (Right ()) (accepts bonesplitter)
     Spec.assertEq s [Affected.Matching (Filter.And [Filter.HasCardType CardType.Creature, Filter.HasAttached Filter.IsSource])] (fmap StaticAbility.affected (Face.staticAbilities (translated bonesplitter)))
 
+  -- CR 602.2b: an "or" in equip's cost is a choice inside it.
+  Spec.it s "reads a choice inside an equip cost" $
+    Spec.assertEq s (Right ()) (accepts bloodthornFlail)
+
   -- CR 113.1a: "with no abilities" is the negated ability atom.
   Spec.it s "reads a creature with no abilities" $ do
     Spec.assertEq s (Right ()) (accepts muragandaPetroglyphs)
@@ -457,6 +461,13 @@ bonesplitter :: (String, String)
 bonesplitter =
   ( "{\"_OracleCard\":\"Card\",\"Name\":\"Bonesplitter\",\"Typeline\":{\"Supertypes\":[],\"Cardtypes\":[\"Artifact\"],\"Subtypes\":[\"Equipment\"]},\"ManaCost\":[{\"_ManaSymbol\":\"ManaCostGeneric\",\"args\":1}],\"Rules\":[{\"_Rule\":\"PermanentLayerEffect\",\"args\":[{\"_Permanent\":\"HostPermanent\"},[{\"_StaticLayerEffect\":\"AdjustPT\",\"args\":[2,0]}]]},{\"_Rule\":\"Equip\",\"args\":[{\"_Permanents\":\"IsCardtype\",\"args\":\"Creature\"},{\"_Cost\":\"PayMana\",\"args\":[{\"_ManaSymbol\":\"ManaCostGeneric\",\"args\":1}]}]}]}",
     "Equipped creature gets +2/+0.\nEquip {1}"
+  )
+
+-- | Bloodthorn Flail's AST, and its Oracle text.
+bloodthornFlail :: (String, String)
+bloodthornFlail =
+  ( "{\"_OracleCard\":\"Card\",\"Name\":\"Bloodthorn Flail\",\"Typeline\":{\"Supertypes\":[],\"Cardtypes\":[\"Artifact\"],\"Subtypes\":[\"Equipment\"]},\"ManaCost\":[{\"_ManaSymbol\":\"ManaCostB\"}],\"Rules\":[{\"_Rule\":\"PermanentLayerEffect\",\"args\":[{\"_Permanent\":\"HostPermanent\"},[{\"_StaticLayerEffect\":\"AdjustPT\",\"args\":[2,1]}]]},{\"_Rule\":\"Equip\",\"args\":[{\"_Permanents\":\"IsCardtype\",\"args\":\"Creature\"},{\"_Cost\":\"Or\",\"args\":[{\"_Cost\":\"PayMana\",\"args\":[{\"_ManaSymbol\":\"ManaCostGeneric\",\"args\":3}]},{\"_Cost\":\"DiscardACard\"}]}]}]}",
+    "Equipped creature gets +2/+1.\nEquip\8212Pay {3} or discard a card."
   )
 
 -- | Nightmare's AST, and its Oracle text.
