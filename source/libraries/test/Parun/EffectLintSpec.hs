@@ -858,7 +858,7 @@ nonEntryCopyRiderOffends replacement = case replacement of
   ReplacementEffect.AttachR (AttachR.MkAttachR _ (AttachRewrite.AsCopy asCopy)) -> riders asCopy
   _ -> False
   where
-    riders asCopy = AsCopy.tapped asCopy || any (Maybe.isJust . CopyClause.counters) (AsCopy.clauses asCopy)
+    riders asCopy = AsCopy.tapped asCopy || any (\c -> Maybe.isJust (CopyClause.counters c) || CopyClause.copiedCounters c) (AsCopy.clauses asCopy)
 
 -- isPhaseR's twin: did the sweep above have anything to look at? A wildcard for
 -- the same reason.
@@ -3380,25 +3380,30 @@ effectLintSpec s registry corpus = Spec.describe s "Lint" $ do
     Spec.assertBool s (any turnUpRequiringOffends (cardReplacementEffects baked)) "and the same card naming CR 702.37e's is rejected"
   -- nonEntryCopyRiderOffends over the pool, and its rejecting direction against
   -- Vesuvan Shapeshifter and Dinosaur Headdress with Vesuva's `tapped` baked
-  -- into their rows, the pair above's shape.
+  -- into their rows, the pair above's shape, and Vesuvan Shapeshifter with
+  -- Dominion Saboteur's copied counters.
   Spec.it s "no turn-up or attach copy states an entry rider (CR 614.1d, 707.9e)" $ do
     ps <- S.allPrintings s corpus
     vesuvan <- S.printingOf s registry "Vesuvan Shapeshifter"
     headdress <- S.printingOf s registry "Paleontologist's Pick-Axe"
     let writes p = anyFace (any p . cardReplacementEffects) . Printing.card
-        bake replacement = case replacement of
+        bake f replacement = case replacement of
           ReplacementEffect.TurnUpR (TurnUpR.MkTurnUpR m r c (TurnUpRewrite.AsCopy asCopy)) ->
-            ReplacementEffect.TurnUpR (TurnUpR.MkTurnUpR m r c (TurnUpRewrite.AsCopy asCopy {AsCopy.tapped = True}))
+            ReplacementEffect.TurnUpR (TurnUpR.MkTurnUpR m r c (TurnUpRewrite.AsCopy (f asCopy)))
           ReplacementEffect.AttachR (AttachR.MkAttachR m (AttachRewrite.AsCopy asCopy)) ->
-            ReplacementEffect.AttachR (AttachR.MkAttachR m (AttachRewrite.AsCopy asCopy {AsCopy.tapped = True}))
+            ReplacementEffect.AttachR (AttachR.MkAttachR m (AttachRewrite.AsCopy (f asCopy)))
           other -> other
-        baked card = card {Face.replacementEffects = fmap (\pr -> pr {PrintedReplacement.effect = bake (PrintedReplacement.effect pr)}) (Face.replacementEffects card)}
+        bakedWith f card = card {Face.replacementEffects = fmap (\pr -> pr {PrintedReplacement.effect = bake f (PrintedReplacement.effect pr)}) (Face.replacementEffects card)}
+        baked = bakedWith (\asCopy -> asCopy {AsCopy.tapped = True})
+        -- Dominion Saboteur's copied counters, a clause of their own.
+        copying = bakedWith (\asCopy -> asCopy {AsCopy.clauses = CopyClause.MkCopyClause Nothing [] Nothing True : AsCopy.clauses asCopy})
         back = NonEmpty.last (Card.Type.faces (Printing.card headdress))
     Spec.assertEqWith s "no printing states one" (fmap (S.nameOf . Printing.card) (filter (writes nonEntryCopyRiderOffends) ps)) []
     Spec.assertBool s (not (any nonEntryCopyRiderOffends (cardReplacementEffects (S.combinedFace vesuvan)))) "the real Vesuvan Shapeshifter states none and is accepted"
     Spec.assertBool s (any nonEntryCopyRiderOffends (cardReplacementEffects (baked (S.combinedFace vesuvan)))) "and the same card entering tapped is rejected"
     Spec.assertBool s (not (any nonEntryCopyRiderOffends (cardReplacementEffects back))) "the real Dinosaur Headdress states none and is accepted"
     Spec.assertBool s (any nonEntryCopyRiderOffends (cardReplacementEffects (baked back))) "and the same card entering tapped is rejected"
+    Spec.assertBool s (any nonEntryCopyRiderOffends (cardReplacementEffects (copying (S.combinedFace vesuvan)))) "and Vesuvan Shapeshifter with copied counters is rejected"
   -- The sibling of the lint above, for the OTHER PlayerId the engine bakes and
   -- the codec accepts. See phasePatternOffends for why a card cannot name a
   -- player, and for why this is a lint rather than a type split (#437).

@@ -6279,7 +6279,15 @@ becomeCopyAs batch candidate asCopy oid = do
         State.modify' (\g -> g {GameState.stored = (GameState.stored g) {StoredEffects.delayedTriggers = Seq.filter (not . linkedEarlier) (StoredEffects.delayedTriggers (GameState.stored g))}})
         Foldable.for_ (Replacement.linkedTrigger (AsCopy.whenYouDo asCopy)) $ \linked ->
           State.modify' (\g -> armDelayed linked (Projection.delayedSnapshotOf oid g) oid controller (Map.singleton Binding.copiedObject (Binding.toObject src2)) (Just TurnWindow.AnyTurn) Nothing g)
-      pure (fmap (\src2 -> (src2, Maybe.mapMaybe CopyClause.counters applying)) chosen)
+      -- CR 707.9e / 122.1: Dominion Saboteur's copied counters, read off the
+      -- copied permanent as the copy is made, ride the printed rows' funnel
+      -- and are taken back with them (docs/decisions.md, "Whether Dominion
+      -- Saboteur's copied counters are a CR 707.9e exception").
+      gs1 <- State.get
+      let countersFor src2 clause =
+            Maybe.maybeToList (CopyClause.counters clause)
+              <> [WithCounters.MkWithCounters (fmap (Quantity.Type.Literal . toInteger) copied) | CopyClause.copiedCounters clause, let copied = Projection.countersOf src2 gs1, not (Map.null copied)]
+      pure (fmap (\src2 -> (src2, concatMap (countersFor src2) applying)) chosen)
 
 -- CR 707.2 / 202.3b / 202.3c: the copiable values a copy takes off the object it
 -- copies. Projection.copiableCharacteristics answers all but one of them; the

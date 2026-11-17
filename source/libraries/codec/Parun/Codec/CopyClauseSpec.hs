@@ -25,20 +25,27 @@ spec s = Spec.describe s "Parun.Codec.CopyClause" $ do
     Common.assertCodec
       s
       (CopyClause.codec Common.text)
-      (CopyClause.MkCopyClause Nothing [CopyException.SetPowerToughness (SetPowerToughness.MkSetPowerToughness 7 7)] Nothing)
+      (CopyClause.MkCopyClause Nothing [CopyException.SetPowerToughness (SetPowerToughness.MkSetPowerToughness 7 7)] Nothing False)
       " {\"exceptions\":[{\"type\":\"SetPowerToughness\",\"value\":{\"power\":7,\"toughness\":7}}]} "
   -- CR 707.9e: Altered Ego's counters alone.
   Spec.it s "MkCopyClause, unconditional counters" $
     Common.assertCodec
       s
       (CopyClause.codec Common.text)
-      (CopyClause.MkCopyClause Nothing [] (Just (WithCounters.one CounterKind.PlusOnePlusOne (Quantity.Literal 1))))
+      (CopyClause.MkCopyClause Nothing [] (Just (WithCounters.one CounterKind.PlusOnePlusOne (Quantity.Literal 1))) False)
       " {\"counters\":[{\"kind\":{\"type\":\"PlusOnePlusOne\"},\"count\":{\"type\":\"Literal\",\"value\":1}}]} "
   -- CR 707.9: Vizier of Many Faces' colour, under its embalmed condition.
   Spec.it s "MkCopyClause, a condition" $
     Common.assertCodec
       s
       (CopyClause.codec Common.text)
-      (CopyClause.MkCopyClause (Just (Condition.Compares (Compares.MkCompares (Quantity.HasDesignation Designation.Embalmed) Comparison.AtLeast (Quantity.Literal 1)))) [CopyException.SetColors ChangeMode.Replace (Set.singleton Color.White)] Nothing)
+      (CopyClause.MkCopyClause (Just (Condition.Compares (Compares.MkCompares (Quantity.HasDesignation Designation.Embalmed) Comparison.AtLeast (Quantity.Literal 1)))) [CopyException.SetColors ChangeMode.Replace (Set.singleton Color.White)] Nothing False)
       " {\"condition\":{\"type\":\"Compares\",\"value\":{\"measured\":{\"type\":\"HasDesignation\",\"value\":\"Embalmed\"},\"comparison\":\"AtLeast\",\"threshold\":{\"type\":\"Literal\",\"value\":1}}},\"exceptions\":[{\"type\":\"SetColors\",\"value\":{\"mode\":\"Replace\",\"colors\":[\"White\"]}}]} "
+  -- CR 707.9e: Dominion Saboteur's copied counters alone.
+  Spec.it s "MkCopyClause, copied counters" $
+    Common.assertCodec
+      s
+      (CopyClause.codec Common.text)
+      (CopyClause.MkCopyClause Nothing [] Nothing True)
+      " {\"copiedCounters\":true} "
   Spec.it s "has a schema" $ Common.assertHasSchema s (CopyClause.codec Common.text)

@@ -13,10 +13,11 @@ import qualified Parun.Types.CopyClause as CopyClause
 
 -- | A bare object keyed by the record's field names, every key defaulted: most
 -- parts state no condition (Quicksilver Gargantuan), Altered Ego's states
--- counters alone and Vizier of Many Faces' exceptions alone.
+-- counters alone, Dominion Saboteur's copied counters alone, and Vizier of Many Faces' exceptions alone.
 codec :: (Typeable.Typeable ability, Eq ability) => Codec.Codec ability -> Codec.Codec (CopyClause.CopyClause ability)
 codec abilityCodec = Fields.object $ do
   condition <- Fields.defaulted "condition" Nothing (Common.maybe Condition.codec) CopyClause.condition
   exceptions <- Fields.defaulted "exceptions" [] (Common.list (CopyException.codec abilityCodec)) CopyClause.exceptions
   counters <- Fields.defaulted "counters" Nothing (Common.maybe WithCounters.codec) CopyClause.counters
-  pure CopyClause.MkCopyClause {CopyClause.condition = condition, CopyClause.exceptions = exceptions, CopyClause.counters = counters}
+  copiedCounters <- Fields.defaulted "copiedCounters" False Common.boolean CopyClause.copiedCounters
+  pure CopyClause.MkCopyClause {CopyClause.condition = condition, CopyClause.exceptions = exceptions, CopyClause.counters = counters, CopyClause.copiedCounters = copiedCounters}
