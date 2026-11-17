@@ -2591,6 +2591,7 @@ library test
     parun:trustworthy,
     parun:types,
     parun:uri,
+    parun:web,
     text ^>=2.1.3,
     transformers ^>=0.6.1,
 
@@ -3902,6 +3903,29 @@ library uri
   exposed-modules:
     Parun.Uri.Fragment
     Parun.Uri.FragmentSpec
+
+-- An Elm-architecture view layer for the web client: an Html tree, the
+-- patches between two of them, and the pure update loop. The browser glue
+-- builds on it; everything here runs and is tested natively.
+library web
+  import: library
+  build-depends:
+    containers ^>={0.7, 0.8},
+    parun:extra,
+    parun:spec,
+    text ^>=2.1.3,
+
+  hs-source-dirs: source/libraries/web
+  -- cabal-gild: discover source/libraries/web
+  exposed-modules:
+    Parun.Web.App
+    Parun.Web.AppSpec
+    Parun.Web.Attribute
+    Parun.Web.Diff
+    Parun.Web.DiffSpec
+    Parun.Web.Html
+    Parun.Web.HtmlSpec
+    Parun.Web.Patch
 
 executable parun
   import: executable
