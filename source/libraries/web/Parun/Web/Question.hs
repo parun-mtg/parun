@@ -49,15 +49,15 @@ data Outcome
   deriving (Eq, Show)
 
 -- | A reply the seat is never asked for: the hotseat never concedes unasked
--- (CR 104.3a), and a priority offering only a pass is passed.
+-- (CR 104.3a), and a priority offering nothing but a pass and mana abilities
+-- is passed (Offer.onlyPass).
 automatic :: Request.Request -> Maybe R.Reply
 automatic request = case Text.unpack (Question.kind question) of
   "Concede" -> Just . R.Text $ Text.pack "Continues"
-  "ChooseAction" | Just [only] <- Protocol.arrayOf (Question.offer question), action only == Just (Text.pack "Pass") -> Just $ R.Number 0
+  "ChooseAction" -> R.Number <$> Offer.onlyPass (Question.offer question)
   _ -> Nothing
   where
     question = Request.question request
-    action option = Protocol.field "action" option >>= Offer.textOf
 
 -- | The page for a request, with the options picked so far.
 view :: Request.Request -> Set.Set Natural -> Html.Html Event

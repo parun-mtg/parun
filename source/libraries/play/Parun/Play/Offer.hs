@@ -180,3 +180,11 @@ manaSource reply = do
   source <- Protocol.field "source" reply
   makes <- Protocol.field "makes" reply >>= decoded (Common.list (Common.list Codec.ManaType.codec))
   pure (source, makes)
+
+-- | Where Pass sits in a ChooseAction offer whose every other action is a
+-- mana ability (CR 605.3a), which a client need not ask about.
+onlyPass :: R.Reply -> Maybe Integer
+onlyPass offer = do
+  kinds <- Protocol.arrayOf offer >>= mapM (Protocol.field "action" Monad.>=> textOf)
+  Monad.guard (all (`elem` [Text.pack "Pass", Text.pack "ActivateManaAbility"]) kinds)
+  fmap toInteger (List.elemIndex (Text.pack "Pass") kinds)

@@ -765,7 +765,7 @@ unasked view request = do
     "ChooseAction"
       | Hotseat.autoPass hotseat,
         Hotseat.facing hotseat == Just seat,
-        Just pass <- onlyPass offer ->
+        Just pass <- Offer.onlyPass offer ->
           let active = PlayerView.active view
               whose = if active == seat then Text.pack "their " else Render.player active <> Text.pack "'s "
            in pure ([Render.player seat <> Text.pack " passes in " <> whose <> Render.phase (PlayerView.phase view) <> Text.pack " (no other actions)."], Just (R.Number pass))
@@ -797,14 +797,6 @@ autoPay seat view offer = case autoSource view offer of
 
 stopPaying :: (Monad m) => PlayerId.PlayerId -> Client m ()
 stopPaying seat = State.modify' (\h -> h {Hotseat.paying = Map.delete seat (Hotseat.paying h)})
-
--- | Where Pass sits in a ChooseAction offer whose every other action is a
--- mana ability (CR 605.3a), which the text client does not ask about.
-onlyPass :: R.Reply -> Maybe Integer
-onlyPass offer = do
-  kinds <- Protocol.arrayOf offer >>= mapM (Protocol.field "action" Monad.>=> Offer.textOf)
-  Monad.guard (all (`elem` [Text.pack "Pass", Text.pack "ActivateManaAbility"]) kinds)
-  fmap toInteger (List.elemIndex (Text.pack "Pass") kinds)
 
 -- | CR 601.2g: the next source auto taps, and the colors it is tapped for
 -- (none for generic mana). The payer's pool goes first against the cost; then

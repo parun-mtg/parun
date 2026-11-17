@@ -1,6 +1,6 @@
--- | A hotseat game in the browser: the lobby picks each seat's deck from the
--- data the page mounted, then `parun play --json`'s game runs with every
--- request line answered on the page (Parun.Web.Question).
+-- | A game against the random bot in the browser: the lobby picks each deck
+-- from the data the page mounted, then `parun play --json`'s game runs with
+-- every request line answered on the page (Parun.Web.Question).
 module Parun.Browser.Hotseat where
 
 import qualified Control.Monad as Monad
@@ -35,7 +35,6 @@ start :: IO ()
 start = do
   root <- Registry.defaultRoot
   loaded <- fmap (Registry.loadBundle root) $ Registry.bundlePath >>= ByteString.readFile
-  registry <- Registry.defaultRegistry loaded :: IO (Registry.Registry Identity.Identity)
   deckRoot <- Decks.defaultRoot
   paths <- Decks.listRoot deckRoot
   page <- Browser.mount
@@ -47,20 +46,28 @@ start = do
         case event of
           Left line | Just path <- Map.lookup (Line.resolve line value) byName -> pure path
           _ -> pick chosen
+      say = Browser.display page . fmap Right . message
   one <- pick Nothing
   two <- pick . Just $ Lobby.deckName deckRoot one
-  facing <- IORef.newIORef Nothing
-  let say = Browser.display page . fmap Right . message
+  -- The printing table is the slow part of the registry, so the lobby shows first.
+  say [Text.pack "Starting the game\x2026"]
+  registry <- Registry.defaultRegistry loaded :: IO (Registry.Registry Identity.Identity)
+  -- The bot needs no screen, so the player is never handed it.
+  facing <- IORef.newIORef . Just $ PlayerId.MkPlayerId 0
   listed <- (,) <$> Command.load registry one <*> Command.load registry two
   case listed of
     (Right first, Right second) -> do
       settled <- Command.settle Nothing [(one, first), (two, second)]
       case settled of
         Right format -> do
-          Command.play (exchange page facing) PlayOptions.none {PlayOptions.json = True} registry format (DeckList.deck first, DeckList.deck second)
+          Command.play (exchange page facing) options registry format (DeckList.deck first, DeckList.deck second)
           say [Text.pack "The game is over."]
         Left problems -> say problems
     (first, second) -> say $ Either.fromLeft [] first <> Either.fromLeft [] second
+
+-- | The player is seat 1, over the line protocol; the random bot is seat 2.
+options :: PlayOptions.PlayOptions
+options = PlayOptions.none {PlayOptions.json = True, PlayOptions.bots = Set.singleton 2}
 
 -- | One request line answered on the page: a reply the seat is never asked
 -- for at once, else after a hand-off when the screen last faced another seat,

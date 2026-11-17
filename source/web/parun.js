@@ -24,6 +24,7 @@ function at(path) {
 
 let started = false;
 globalThis.parunApply = (json) => {
+  document.body.classList.remove("busy");
   if (!started) {
     started = true;
     phase("started");
@@ -72,7 +73,11 @@ globalThis.parunListen = (dispatch) => {
     root.addEventListener(type, (event) => {
       const path = pathOf(event.target);
       if (path === null) return;
-      dispatch(type, path, String(event.target.value ?? ""));
+      const value = String(event.target.value ?? "");
+      // A tap shows the page busy until Haskell next patches it, painted
+      // before the engine runs: the dispatch waits a frame.
+      if (type === "click" && event.target.closest("button")) document.body.classList.add("busy");
+      requestAnimationFrame(() => setTimeout(() => dispatch(type, path, value), 0));
       // A typed line is sent once; the box is ready for the next.
       if (type === "change") event.target.value = "";
     });

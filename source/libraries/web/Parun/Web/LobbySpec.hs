@@ -19,11 +19,11 @@ spec s = Spec.describe s "Parun.Web.Lobby" $ do
   Spec.describe s "view" $ do
     Spec.it s "shows the corpus and every deck" $ do
       Spec.assertEq s (Html.toText . Lobby.view . Lobby.MkLobby 2 (Seq.fromList [Text.pack "a", Text.pack "b"]) $ Nothing) $
-        Text.pack "<main><h1>Parun</h1><p>2 card files loaded.</p><p>Choose seat 1's deck.</p><ul><li><button>a</button></li><li><button>b</button></li></ul></main>"
+        Text.pack "<main><h1>Parun</h1><p>2 card files loaded.</p><p>Choose your deck.</p><ul><li><button>a</button></li><li><button>b</button></li></ul></main>"
 
-    Spec.it s "names the first seat's deck once it is chosen" $ do
+    Spec.it s "names the player's deck once it is chosen" $ do
       Spec.assertEq s (Html.toText . Lobby.view . Lobby.MkLobby 2 (Seq.fromList [Text.pack "a"]) . Just $ Text.pack "a") $
-        Text.pack "<main><h1>Parun</h1><p>2 card files loaded.</p><p>Seat 1 plays a. Choose seat 2's deck.</p><ul><li><button>a</button></li></ul></main>"
+        Text.pack "<main><h1>Parun</h1><p>2 card files loaded.</p><p>You play a. Choose the bot's deck.</p><ul><li><button>a</button></li></ul></main>"
 
     Spec.it s "sends a deck's name when it is tapped" $ do
       Spec.assertEq s (Html.handler (Text.pack "click") (Seq.fromList [3, 1, 0]) . Lobby.view . Lobby.MkLobby 2 (Seq.fromList [Text.pack "a", Text.pack "b"]) $ Nothing) . Just . Line.MkFixed $ Text.pack "b"
