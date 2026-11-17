@@ -11,7 +11,7 @@ data TokenPattern = MkTokenPattern
   { whose :: ControllerRelation.ControllerRelation,
     -- | What the token being created IS, judged off the characteristics the
     -- creating effect gives it (CR 111.3). A creation of several lots matches
-    -- when any lot does.
+    -- when any lot does, and the row scales or swaps only the lots that do.
     whatToken :: Filter.Filter Keyword.Keyword,
     -- | CR 614.16: Doubling Season's "if an EFFECT would create", reaching only
     -- a lot TokenLot.byEffect marks. False for "if one or more tokens would be
