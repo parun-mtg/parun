@@ -216,14 +216,15 @@ spec s = Spec.describe s "Parun.Oracle" $ do
     Spec.assertEq s (Text.pack "\8226 Draw a card.\n\8226 {1} \8212 Draw a card.") (Normalise.withoutFlavorWords (Text.pack "\8226 Technopathy \8212 Draw a card.\n\8226 {1} \8212 Draw a card."))
 
   -- CR 201.5 / 201.5c / 700.7: a card names itself by its name, a legendary one by
-  -- the part before the comma or the word before " of ", and newer Oracle text
-  -- as "this creature".
+  -- the part before the comma, the word before " of " or its first and last
+  -- words, and newer Oracle text as "this creature".
   Spec.it s "normalise writes every self-reference alike, and only whole words" $ do
     let rograkh = CardName.MkCardName (Text.pack "Rograkh, Son of Rohgahh")
         shock = CardName.MkCardName (Text.pack "Shock")
         kiora = CardName.MkCardName (Text.pack "Kiora of Fire and Ashes")
     Spec.assertEq s (Normalise.normalise rograkh (Text.pack "Rograkh, Son of Rohgahh deals 1 damage.")) (Normalise.normalise rograkh (Text.pack "Rograkh deals 1 damage."))
     Spec.assertEq s [Text.pack "when ~ enters"] (Normalise.normalise kiora (Text.pack "When Kiora enters"))
+    Spec.assertEq s [Text.pack "whenever ~ attacks"] (Normalise.normalise (CardName.MkCardName (Text.pack "Captain James T. Kirk")) (Text.pack "Whenever Captain Kirk attacks"))
     Spec.assertEq s (Normalise.normalise rograkh (Text.pack "Rograkh deals 1 damage.")) (Normalise.normalise rograkh (Text.pack "This creature deals 1 damage."))
     Spec.assertEq s [Text.pack "~ deals 2 damage to any target."] (Normalise.normalise shock (Text.pack "Shock deals 2 damage to any target."))
     Spec.assertEq s [Text.pack "shockwave."] (Normalise.normalise shock (Text.pack "Shockwave."))
@@ -977,6 +978,7 @@ spec s = Spec.describe s "Parun.Oracle" $ do
     let thirteen = Condition.Compares (Compares.MkCompares (Quantity.LifeTotal (PlayerRef.Relative PlayerRelation.You)) Comparison.Exactly (Quantity.Literal 13))
         instead' = ModeSelection.ChooseInstead . ChooseInstead.MkChooseInstead thirteen (ModeSelection.ChooseExactly 1)
     Spec.assertEq s (Just (Text.pack "Choose one. If you have exactly 13 life, you may choose both instead.\n\8226 Destroy target artifact.\n\8226 Draw a card.")) (Oracle.render (chosen (instead' (ModeSelection.ChooseBetween (ChooseBetween.MkChooseBetween 1 2))) [destroying CardType.Artifact, drawing]))
+    Spec.assertEq s (Just (Text.pack "Choose one. If you have exactly 13 life, choose one or more instead.\n\8226 Destroy target artifact.\n\8226 Destroy target land.\n\8226 Draw a card.")) (Oracle.render (chosen (instead' (ModeSelection.ChooseBetween (ChooseBetween.MkChooseBetween 1 3))) three))
     Spec.assertEq s (Just (Text.pack "Choose one. If you have exactly 13 life, choose two instead.\n\8226 Destroy target artifact.\n\8226 Destroy target land.\n\8226 Draw a card.")) (Oracle.render (chosen (instead' (ModeSelection.ChooseExactly 2)) three))
     let adding c = Mode.MkMode (Seq.singleton (clause [Effect.AddMana (ManaAddition.MkManaAddition (PlayerRef.Relative PlayerRelation.You) (ManaProduction.OfType (ManaType.Colored c)) (Quantity.Literal 1) ManaRetention.Ordinary Nothing Nothing Nothing False)])) Map.empty
         elf = ActivatedAbility.MkActivatedAbility (mana [ManaSymbol.Generic 1]) [] [] Nothing (Modal.MkModal (Seq.fromList [adding Color.Red, adding Color.White]) (ModeSelection.ChooseExactly 1) ModeMemory.NoMemory Seq.empty) [] (Activator.Related PlayerRelation.You) Nothing Nothing Nothing Copyability.Copyable Nothing

@@ -196,6 +196,7 @@ choose context memory selection count = case (memory, selection) of
           casting <- Text.empty : [Text.pack " as you cast this spell" | elem (Text.pack "\n") (Target.breaks context)]
           widened <- case ChooseInstead.instead ci of
             ModeSelection.ChooseExactly k | k > n -> [Text.pack "choose " <> many k]
+            ModeSelection.ChooseBetween b | ChooseBetween.least b == 1, n == 1, toInteger (ChooseBetween.most b) == toInteger count, count > 2 -> [Text.pack "choose one or more"]
             ModeSelection.ChooseBetween b | ChooseBetween.least b == n, ChooseBetween.most b > n -> [Text.pack "you may choose " <> many (ChooseBetween.most b)]
             _ -> []
           [Text.pack "Choose " <> Prose.cardinal (toInteger n) <> Text.pack ". If " <> words' <> casting <> Text.pack ", " <> widened <> Text.pack " instead."]

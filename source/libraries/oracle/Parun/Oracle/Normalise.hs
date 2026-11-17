@@ -34,7 +34,9 @@ normalise name =
 -- | Lowercase text with every way a card names itself written "~": its name,
 -- the part of a legendary name before the comma or, for a one-word name
 -- before " the " or " of ", that word (CR 201.5c: "Arcanis" for Arcanis the
--- Omnipotent, "Kiora" for Kiora of Fire and Ashes), and "this creature" and
+-- Omnipotent, "Kiora" for Kiora of Fire and Ashes), its first and last words
+-- for a name of three or more ("Captain Kirk" for Captain James T. Kirk), and
+-- "this creature" and
 -- its siblings, which Oracle text uses
 -- for the same thing on newer cards (CR 700.7). A named character's "he",
 -- "she" or "him" is written "it", the pronoun the renderer gives the source
@@ -47,8 +49,11 @@ selfReferences name text =
       epithet separator =
         let (before, after) = Text.breakOn (Text.pack separator) full
          in if Text.null after || Text.any (== ' ') before then Text.empty else before
+      titled = case Text.words short of
+        title : _ : rest@(_ : _) -> Text.unwords [title, last rest]
+        _ -> Text.empty
       nouns = fmap (\noun -> Text.pack ("this " <> noun)) ["creature", "spell", "artifact", "enchantment", "land", "permanent", "card", "planeswalker", "aura", "equipment", "vehicle"]
-      named = List.foldl' (\t needle -> replaceWord needle (Text.pack "~") t) text ([full, short, epithet " the ", epithet " of "] <> nouns)
+      named = List.foldl' (\t needle -> replaceWord needle (Text.pack "~") t) text ([full, short, titled, epithet " the ", epithet " of "] <> nouns)
    in List.foldl' (\t pronoun -> replaceWord pronoun (Text.pack "it") t) named (fmap Text.pack ["he", "she", "him"])
 
 -- | Every occurrence of the needle standing as whole words replaced, so a card
