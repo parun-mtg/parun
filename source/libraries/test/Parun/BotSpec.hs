@@ -667,6 +667,7 @@ spec s registry = Spec.describe s "Bot" $ do
     Spec.assertEqWith s "assist amounts" (drawn (Prompt.ChooseAssistAmount decider S.alice oid 3)) (Set.fromList [0 .. 3])
     Spec.assertEqWith s "paid energy" (drawn (Prompt.ChoosePaidEnergy decider S.alice oid 3)) (Set.fromList [0 .. 3])
     Spec.assertEqWith s "chapters" (drawn (Prompt.ChooseReadAheadChapter decider S.alice oid 3)) (Set.fromList [1 .. 3])
+    Spec.assertEqWith s "dice rerolled" (drawn (Prompt.RerollDice decider S.alice (3 NonEmpty.:| [2]) Nothing)) (Set.fromList (fmap Set.fromList [[], [0], [1], [0, 1]]))
     Spec.assertEqWith s "die adjustments" (drawn (Prompt.AdjustDieRoll decider S.alice (4 NonEmpty.:| [-1]) 1 Nothing)) (Set.fromList (Nothing : [Just (index, adjustment) | index <- [0, 1], adjustment <- [RollAdjustment.Increase, RollAdjustment.Decrease]]))
 
 -- Every answer the bot gives the prompt over many seeds.

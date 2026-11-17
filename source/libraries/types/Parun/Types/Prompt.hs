@@ -217,6 +217,12 @@ data Prompt r where
   -- Never elided. CR 706.2a's "may" makes one offer a real fork, and the two
   -- answers are two different numbers on the board.
   Rethrow :: Decider.Decider -> PlayerId.PlayerId -> ThrowResult.ThrowResult -> Maybe (Cost.Cost Keyword.Keyword) -> Prompt OptionalDecision.OptionalDecision
+  -- | CR 706.2b's first step over several dice: which of the natural results
+  -- the payer rolled at the same time a reroll modifier reaching any number of
+  -- them rerolls, for its one cost (Monitor Monitor's "reroll one or more dice
+  -- you rolled"). The answer indexes the results, in roll order; the empty set
+  -- declines. Rethrow's seat and cost, for its reasons.
+  RerollDice :: Decider.Decider -> PlayerId.PlayerId -> NonEmpty.NonEmpty Natural.Natural -> Maybe (Cost.Cost Keyword.Keyword) -> Prompt (Set.Set Natural.Natural)
   -- | CR 706.2b's second step: whether an increase-or-decrease modifier a
   -- permanent offers is taken, on which die, and which way (Night Shift of the
   -- Living Dead's "you may pay 1 life. If you do, increase or decrease the

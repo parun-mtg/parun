@@ -40,9 +40,9 @@ import qualified Parun.Types.RollModifier as RollModifier
 -- and its "you" is the Wall's controller.
 --
 -- `limit` is the printed budget on taking the modifier at all, Night Shift of
--- the Living Dead's "Do this only once each turn", spent only when it is taken;
--- Unlimited where the card states none. Read by an IncreaseOrDecrease alone: no
--- reroll printing states a budget.
+-- the Living Dead's "Do this only once each turn" or Monitor Monitor's "Once
+-- each turn", spent only when it is taken; Unlimited where the card states
+-- none.
 --
 -- Not implemented: a modifier that is MANDATORY (#3981). CR 706.2a allows one
 -- and no printing states one: Scryfall @o:reroll@, 2026-09-22, returns seven

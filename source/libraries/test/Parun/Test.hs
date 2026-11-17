@@ -739,6 +739,7 @@ import qualified Parun.Codec.RequireBlockSpec
 import qualified Parun.Codec.RequiredBlockersSpec
 import qualified Parun.Codec.RequiredDefenderSpec
 import qualified Parun.Codec.RequirementAritySpec
+import qualified Parun.Codec.RerollReachSpec
 import qualified Parun.Codec.ReselectAttackSpec
 import qualified Parun.Codec.RestartSignalSpec
 import qualified Parun.Codec.RestrictedActionSpec
@@ -1871,6 +1872,7 @@ spec s reference corpus = do
   Parun.Codec.RevealSpec.spec s
   Parun.Codec.RevealWindowSpec.spec s
   Parun.Codec.RollDieSpec.spec s
+  Parun.Codec.RerollReachSpec.spec s
   Parun.Codec.RollModifierSpec.spec s
   Parun.Codec.RoomHalfSpec.spec s
   Parun.Codec.RoomIndexSpec.spec s

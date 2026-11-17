@@ -1475,7 +1475,8 @@ chooseGroup resolving source controller legal (ChooseGroup.MkChooseGroup among s
 -- die's own top face. CR 107.1b for a sum a negative modifier drove below zero.
 --
 -- CR 706.2b's two steps are taken in the rule's order: `rerolling` below,
--- per die on its natural result, and then `adjusting`, once every die is up.
+-- per die on its natural result, then `rerollingDice` over the roll's dice
+-- together, and then `adjusting`, once every die is up.
 --
 -- CR 706.1's roll is also the PlayerAction.RollDice TriggerCondition.PlayerActs watches
 -- (Feywild Trickster). Recorded under each ROLLER, not `source`: rule 706.1's

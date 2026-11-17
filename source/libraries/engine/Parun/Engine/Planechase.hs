@@ -344,6 +344,9 @@ faceOf n = case n of
 -- CR 311.7's chaos abilities trigger on.
 -- A payment that fails restores the state, Parun.Engine.Companion.take's
 -- posture, and nothing is rolled.
+--
+-- Not implemented: CR 706.2's modifiers from other sources on this roll
+-- (Wall of Fortune, Monitor Monitor) (#8262).
 roll :: ManaAbilityPerformer.ManaAbilityPerformer -> PlayerId -> Game ()
 roll perform pid = do
   before <- State.get

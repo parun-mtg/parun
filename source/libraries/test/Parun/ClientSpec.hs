@@ -1420,6 +1420,7 @@ spec s registry = Spec.describe s "Client" $ do
         (multikicked, _) = asking facing ["7"] gs (Prompt.ChooseKicker alice S.alice f (Keyword.Multikicker (Cost.MkCost Nothing [])) Nothing Nothing)
         (adjusted, adjusting) = asking facing ["4"] gs (Prompt.AdjustDieRoll alice S.alice (4 NonEmpty.:| [-1]) 2 Nothing)
         (declined, single) = asking facing ["3"] gs (Prompt.AdjustDieRoll alice S.alice (6 NonEmpty.:| []) 1 Nothing)
+        (rerolled, rerolling) = asking facing ["1 2"] gs (Prompt.RerollDice alice S.alice (3 NonEmpty.:| [2]) Nothing)
     Spec.assertEqWith s "CR 702.132a an assist past the pool refused, then read" assisted (Right 2)
     Spec.assertEqWith s "with its bounds" (filter (Text.isPrefixOf (Text.pack "Type a number")) assist) [Text.pack "Type a number from 0 to 3."]
     Spec.assertEqWith s "CR 107.14 no energy" energy (Right 0)
@@ -1428,6 +1429,8 @@ spec s registry = Spec.describe s "Client" $ do
     Spec.assertEqWith s "CR 702.33c any number of times" multikicked (Right (KickerDecision.MkKickerDecision 7))
     Spec.assertEqWith s "CR 706.2b each die by its place, moved either way by the amount, then none" (upTo (Text.pack "Results: ") adjusting) (fmap Text.pack ["Results: 4, -1", "Amount: 2", "Adjust die roll:", "  1. Die 1: Increase 4 to 6", "  2. Die 1: Decrease 4 to 2", "  3. Die 2: Increase -1 to 1", "  4. Die 2: Decrease -1 to -3", "  5. None"])
     Spec.assertEqWith s "the second die decreased" adjusted (Right (Just (1, RollAdjustment.Decrease)))
+    Spec.assertEqWith s "CR 706.2b each die rerollable by its place and result" (upTo (Text.pack "Results: ") rerolling) (fmap Text.pack ["Results: 3, 2", "Reroll dice: choose any number, by number or range such as 1-3, separated by spaces, or press Enter for none:", "  1. Die 1 showing 3", "  2. Die 2 showing 2"])
+    Spec.assertEqWith s "both dice rerolled" rerolled (Right (Set.fromList [0, 1]))
     Spec.assertEqWith s "one die is not numbered" (upTo (Text.pack "Adjust die roll") single) (fmap Text.pack ["Adjust die roll:", "  1. Increase 6 to 7", "  2. Decrease 6 to 5", "  3. None"])
     Spec.assertEqWith s "declined" declined (Right Nothing)
 
