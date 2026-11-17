@@ -10,10 +10,12 @@ codec =
   Arm.tagged
     tagOf
     [ Arm.nullary "AnyNameSticker" NameStickerTest.AnyNameSticker,
-      Arm.payload "WithLetterCount" LetterCount.codec NameStickerTest.WithLetterCount (\x -> case x of NameStickerTest.WithLetterCount y -> Just y; _ -> Nothing)
+      Arm.payload "WithLetterCount" LetterCount.codec NameStickerTest.WithLetterCount (\x -> case x of NameStickerTest.WithLetterCount y -> Just y; _ -> Nothing),
+      Arm.nullary "BeginningWithChosenLetter" NameStickerTest.BeginningWithChosenLetter
     ]
 
 tagOf :: NameStickerTest.NameStickerTest -> String
 tagOf x = case x of
   NameStickerTest.AnyNameSticker {} -> "AnyNameSticker"
   NameStickerTest.WithLetterCount {} -> "WithLetterCount"
+  NameStickerTest.BeginningWithChosenLetter -> "BeginningWithChosenLetter"

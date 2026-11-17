@@ -5087,6 +5087,7 @@ chosenQualityFilters quality = case quality of
   ChosenQuality.Number _ _ -> []
   ChosenQuality.Parity -> []
   ChosenQuality.Word _ -> []
+  ChosenQuality.Letter -> []
   ChosenQuality.ExiledCard pile cards -> unframed [Filter.Type.IsExiledWithSource pile, cards]
 
 outsideTheGameFramed :: [Filter.Type.Filter Keyword.Keyword] -> [(Framing, Filter.Type.Filter Keyword.Keyword)]

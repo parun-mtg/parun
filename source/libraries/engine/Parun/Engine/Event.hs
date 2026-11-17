@@ -35,6 +35,7 @@ import qualified Data.Maybe as Maybe
 import qualified Data.Sequence as Seq
 import Data.Set (Set)
 import qualified Data.Set as Set
+import qualified Data.Text as Text
 import Numeric.Natural (Natural)
 import qualified Parun.Engine.Ante as Ante
 import qualified Parun.Engine.Attach as Attach
@@ -57,6 +58,7 @@ import qualified Parun.Engine.Filter as Filter
 import qualified Parun.Engine.Game as Game
 import qualified Parun.Engine.Keyword as Keyword
 import qualified Parun.Engine.ManaRider as ManaRider
+import qualified Parun.Engine.NameWords as NameWords
 import qualified Parun.Engine.ObjectRestriction as ObjectRestriction
 import qualified Parun.Engine.Plane as Plane
 import qualified Parun.Engine.PlayerEffect as PlayerEffect
@@ -6021,7 +6023,8 @@ chooseQualityAs candidate quality oid = do
 -- and every one is offered. A parity is written to
 -- Object.chosenNumber as 0 (even) or 1 (odd), whose parity it is; a word as
 -- its 1-based position among the card's, read by a Quantity.ChosenNumber
--- condition (CR 614.12c).
+-- condition (CR 614.12c); a letter as its position in the alphabet, all 26
+-- offered (CR 123.6d), read by NameStickerTest.BeginningWithChosenLetter.
 --
 -- An exiled card is one of the pile as the ability named `reader` reads it
 -- (CR 607.5, Game.linkedPile) that the Filter matches, and is marked on its
@@ -6079,6 +6082,9 @@ chooseQuality quality chooser reader acquisition oid = case quality of
     picked <- Game.chooseAmong (\decider who anchors -> Prompt.ChooseWord decider who oid anchors) chooser (fmap snd numbered)
     let position = picked >>= \word -> fst <$> List.find ((== word) . snd) numbered
     Foldable.for_ position $ \n -> State.modify' (Game.recordChoice Chosen.Number acquisition (const (Just n)) oid)
+  ChosenQuality.Letter -> do
+    picked <- Game.chooseAmong (\decider who anchors -> Prompt.ChooseWord decider who oid anchors) chooser (fmap Text.singleton NameWords.alphabet)
+    Foldable.for_ (picked >>= Text.uncons >>= NameWords.letterPosition . fst) $ \n -> State.modify' (Game.recordChoice Chosen.Number acquisition (const (Just n)) oid)
   ChosenQuality.ExiledCard pile cards -> do
     gs <- State.get
     let context = Projection.sourceContext gs (Just chooser) oid
@@ -6097,6 +6103,7 @@ restoreQuality quality acquisition oid before = case quality of
   ChosenQuality.Number _ _ -> Game.restoreChoice Chosen.Number acquisition oid before
   ChosenQuality.Parity -> Game.restoreChoice Chosen.Number acquisition oid before
   ChosenQuality.Word _ -> Game.restoreChoice Chosen.Number acquisition oid before
+  ChosenQuality.Letter -> Game.restoreChoice Chosen.Number acquisition oid before
   -- Every card `oid` exiled under the acquisition, whichever pile was offered.
   ChosenQuality.ExiledCard _ _ -> \gs ->
     let mine = Map.keysSet (Map.filter (\link -> ExileLink.source link == oid && ExileLink.acquisition link == acquisition) (GameState.exiledWith gs))
