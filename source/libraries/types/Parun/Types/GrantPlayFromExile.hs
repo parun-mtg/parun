@@ -54,7 +54,8 @@ data GrantPlayFromExile = MkGrantPlayFromExile
     condition :: Maybe Condition.Condition,
     -- | CR 601.3 / 305.9: Ragavan, Nimble Pilferer\'s "you may CAST that card"
     -- is Cast, which never lets an exiled land be played; Galvanic Relay\'s
-    -- "you may PLAY that card" is Play.
+    -- "you may PLAY that card" is Play; Mosswood Dreadknight\'s "you may cast
+    -- it ... as an Adventure" is CastAsAdventure.
     verb :: PermissionVerb.PermissionVerb,
     -- | CR 601.2f: the generic mana each spell cast under it costs more --
     -- Lightstall Inquisitor\'s "each spell cast this way costs {1} more".

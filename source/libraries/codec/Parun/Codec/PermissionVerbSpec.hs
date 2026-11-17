@@ -19,6 +19,12 @@ spec s = Spec.describe s "Parun.Codec.PermissionVerb" $ do
       PermissionVerb.codec
       PermissionVerb.Play
       " \"Play\" "
+  Spec.it s "CastAsAdventure" $
+    Common.assertCodec
+      s
+      PermissionVerb.codec
+      PermissionVerb.CastAsAdventure
+      " \"CastAsAdventure\" "
   Spec.it s "round trips every constructor" $ Common.assertEnumCodec s PermissionVerb.codec
   Spec.it s "has a schema" $
     Common.assertHasSchema s PermissionVerb.codec

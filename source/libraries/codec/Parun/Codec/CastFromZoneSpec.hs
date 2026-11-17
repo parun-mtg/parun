@@ -1,8 +1,10 @@
 module Parun.Codec.CastFromZoneSpec where
 
+import qualified Data.Either as Either
 import qualified Data.Set as Set
 import qualified Data.Text as Text
 import qualified Parun.Codec.CastFromZone as CastFromZone
+import qualified Parun.JsonCodec.Codec as Codec
 import qualified Parun.JsonCodec.Common as Common
 import qualified Parun.Spec as Spec
 import qualified Parun.Types.CardType as CardType
@@ -278,4 +280,10 @@ spec s = Spec.describe s "Parun.Codec.CastFromZone" $ do
           }
       )
       " {\"from\":{\"zone\":\"Exile\",\"player\":{\"type\":\"Relative\",\"value\":\"AnyPlayer\"}},\"matching\":{\"type\":\"Measures\",\"value\":{\"measure\":\"ManaValue\",\"comparison\":\"AtMost\",\"operand\":{\"type\":\"EnclosingAmount\"}}},\"limit\":\"OnceEachTurn\",\"pool\":{\"type\":\"InExiledPile\",\"value\":{\"type\":\"OwnAbilities\"}},\"alternativeCost\":{\"type\":\"InsteadOfManaCost\",\"value\":[]},\"amount\":{\"type\":\"Literal\",\"value\":2}} "
+  -- Unprinted: a permission to cast cards as an Adventure, so refused.
+  Spec.it s "rejects casting as an Adventure" $
+    Spec.assertBool
+      s
+      (Either.isLeft (Codec.decode CastFromZone.codec =<< Common.parse (Text.pack "{\"from\":{\"zone\":\"Graveyard\",\"player\":{\"type\":\"Relative\",\"value\":\"You\"}},\"matching\":{\"type\":\"And\",\"value\":[]},\"verb\":\"CastAsAdventure\"}")))
+      "expected a decode failure"
   Spec.it s "has a schema" $ Common.assertHasSchema s CastFromZone.codec

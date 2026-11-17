@@ -1626,12 +1626,30 @@ permitsCastPrepared pid oid gs = case Game.lookupObject oid gs of
 -- cr-601-3-aminatous-augury-casts-hill-giant-as-the-artifact-encroaching-mycosynth-made-it
 -- proves it.
 --
+-- Nor any face but the Adventure one under a permission to cast the card as an
+-- Adventure (verbAdmits).
+--
 -- A classification of the PERMISSION, never of the effect that wrote one --
 -- ExilePlayPermission.origin has two arms and neither names a card.
 heldAdmits :: ObjectId -> Face.Face Card.Type.Card -> GameState -> ExilePlayPermission.ExilePlayPermission -> Bool
 heldAdmits oid face board permission =
   not (Card.isAdventure face && ExilePlayPermission.origin permission == PlayPermissionOrigin.Adventure)
+    && verbAdmits face permission
     && maybe True (not . Set.null) (unspentTypes (PC.cardTypes (Projection.project oid board)) permission)
+
+-- CR 601.3 / 716.3: may `face` be cast under this permission's verb? Mosswood
+-- Dreadknight's "you may cast it ... as an Adventure" admits the Adventure face
+-- alone; every other verb admits any face. The scenario
+-- cr-716-3-mosswood-dreadknight-casts-dread-whispers-from-its-graveyard-but-not-the-creature
+-- proves it.
+verbAdmits :: Face.Face Card.Type.Card -> ExilePlayPermission.ExilePlayPermission -> Bool
+verbAdmits face permission = ExilePlayPermission.verb permission /= PermissionVerb.CastAsAdventure || Card.isAdventure face
+
+-- CR 601.3: does some open permission in Object.playPermissions name this
+-- player and admit this face under its verb (verbAdmits)? Asked of a cast from
+-- a graveyard, where CR 716.3d's own permission never lies.
+permitsCastUnderPermission :: PlayerId -> ObjectId -> Face.Face Card.Type.Card -> GameState -> Bool
+permitsCastUnderPermission pid oid face gs = any (verbAdmits face) (Expiry.openPermissions pid oid gs)
 
 -- CR 601.3 / 205.2b: which of `types` a spell may still be cast as under this
 -- permission's per-type budget (PlayAllowance.EachCardTypeBut); Nothing for a
@@ -1644,7 +1662,7 @@ unspentTypes types permission = case fmap PlayBudget.remaining (ExilePlayPermiss
 -- Object.playPermissions on their own -- whichever rule wrote each, with none
 -- of permitsCastFromExile's other disjuncts and without its Adventure
 -- conjunct: does some permission the object holds name THIS player? Asked in
--- exile and, for a cast, in a graveyard (permitsCastFromGraveyard).
+-- exile and a graveyard; a cast from a graveyard asks permitsCastUnderPermission.
 --
 -- This is the conjunct the land side shares, through
 -- permitsLandPlayUnderPermission below, which Parun.Engine.Action.playableLands
@@ -2481,8 +2499,8 @@ isFlashPermission permission = case permission of
 -- CR 613.11 continuous effect a player has (Yawgmoth's Will), which no function
 -- of a Face could answer: it is nowhere on the card being cast, and it names a
 -- player. The third is Object.playPermissions, each one effect's permission
--- about this one card for one player (Jace, Telepath Unbound's -3), read
--- exactly as exile reads it (permitsPlayUnderPermission).
+-- about this one card for one player (Jace, Telepath Unbound's -3), read with
+-- its verb's face confinement (permitsCastUnderPermission).
 --
 -- Not implemented: that permission's keywords, budget and an increase no target
 -- waives (#8118), on a graveyard card.
@@ -2495,7 +2513,7 @@ permitsCastFromGraveyard :: PlayerId -> ObjectId -> Face.Face Card.Type.Card -> 
 permitsCastFromGraveyard pid oid face gs =
   (ownedBy pid oid gs && (any isGraveyardPermission (Cost.permissionsOf oid face gs) || permitsDisturb oid face gs))
     || PlayerEffect.mayCastFrom pid Zone.Graveyard oid gs
-    || permitsPlayUnderPermission pid oid gs
+    || permitsCastUnderPermission pid oid face gs
 
 -- CR 702.146a's permission, which is the one rule 702 permission no keyword set
 -- of the PROPOSED half can carry: "you may cast this card TRANSFORMED from your
@@ -3311,7 +3329,7 @@ castWays rides pid oid zone face gs castFor =
   let named = ownedBy pid oid gs && any (\family -> (castFor >>= Keyword.familyOf) == Just family) [family | CastingPermission.CastFromGraveyard _ (Just family) [] Nothing <- Cost.permissionsOf oid face gs]
       ownOpen = case zone of
         Zone.Exile -> exileOpen pid oid face gs
-        Zone.Graveyard -> permitsPlayUnderPermission pid oid gs || PlayerEffect.mayPlayFromOwnGraveyard Map.empty PermissionVerb.Cast pid oid gs || named
+        Zone.Graveyard -> permitsCastUnderPermission pid oid face gs || PlayerEffect.mayPlayFromOwnGraveyard Map.empty PermissionVerb.Cast pid oid gs || named
         _ -> False
       -- CR 118.8: a cast an effect offers never asks, that offer being the
       -- permission it is made under (StickerSpec's "a stickered card offered
