@@ -1,5 +1,6 @@
 module Parun.Types.DamagePattern where
 
+import qualified Parun.Types.ComparedTo as ComparedTo
 import qualified Parun.Types.ControllerRelation as ControllerRelation
 import qualified Parun.Types.DamageKind as DamageKind
 import qualified Parun.Types.Filter as Filter
@@ -11,7 +12,7 @@ import qualified Parun.Types.SlotName as SlotName
 -- | CR 614.1a / 615.1: which damage events a replacement or prevention
 -- intercepts -- both, since this type is shared. The examples below name the
 -- first six fields, every one of them a shield or a replacement and so carrying
--- Nothing in the seventh: Fog's prevention is
+-- Nothing in the last two: Fog's prevention is
 -- (Just Combat, And [], Nothing, Nothing, Nothing, Nothing); Furnace of Rath's
 -- replacement is (Nothing, And [], Nothing, Nothing, Nothing, Nothing); Mending
 -- Hands' shield is (Nothing, And [], Nothing, Nothing, Just the chosen
@@ -128,6 +129,11 @@ import qualified Parun.Types.SlotName as SlotName
 -- Only the CR 615.12 / 614.17 prohibitions can carry it. A prevention shield's
 -- pattern is built by Parun.Engine.Resolve.Common.installDamageRow, which has
 -- already baked its recipient and writes Nothing here.
+--
+-- `whatAmount` admits only an event whose amount compares thus with its
+-- threshold, read against the row's source as the event would happen (CR
+-- 614.1a): Ojer Axonil, Deepest Might's "an amount of noncombat damage less
+-- than Ojer Axonil's power". Nothing admits any amount.
 data DamagePattern = MkDamagePattern
   { whichKind :: Maybe DamageKind.DamageKind,
     whatSource :: Filter.Filter Keyword.Keyword,
@@ -135,6 +141,7 @@ data DamagePattern = MkDamagePattern
     whoRecipient :: Maybe ControllerRelation.ControllerRelation,
     whichRecipient :: Maybe Recipient.Recipient,
     whichSource :: Maybe ObjectId.ObjectId,
-    boundRecipient :: Maybe SlotName.SlotName
+    boundRecipient :: Maybe SlotName.SlotName,
+    whatAmount :: Maybe ComparedTo.ComparedTo
   }
   deriving (Eq, Ord, Show)

@@ -121,6 +121,7 @@ import qualified Parun.Types.CombatRestriction as CombatRestriction
 import qualified Parun.Types.CommanderColors as CommanderColors
 import qualified Parun.Types.CommanderDeckRule as CommanderDeckRule
 import qualified Parun.Types.CompanionCondition as CompanionCondition
+import qualified Parun.Types.ComparedTo as ComparedTo
 import qualified Parun.Types.Compares as Compares
 import qualified Parun.Types.CompletedDungeon as CompletedDungeon
 import qualified Parun.Types.Condition as Condition
@@ -856,7 +857,7 @@ quantityChildren children quantity = case quantity of
   Quantity.LifeChanged (LifeTally.MkLifeTally ref direction turn) -> fmap (\renamed -> Quantity.LifeChanged (LifeTally.MkLifeTally renamed direction turn)) (player children ref)
   Quantity.PlayersDealtDamage (DamageTally.MkDamageTally dealt turn) -> fmap (\renamed -> Quantity.PlayersDealtDamage (DamageTally.MkDamageTally renamed turn)) (dealtDamageChildren children dealt)
   Quantity.DamageDealtToPlayersThisTurn dealt -> fmap Quantity.DamageDealtToPlayersThisTurn (dealtDamageChildren children dealt)
-  Quantity.DamageDealtThisTurn (ObjectDamage.MkObjectDamage direction by) -> fmap (Quantity.DamageDealtThisTurn . ObjectDamage.MkObjectDamage direction) (traverse (nest children) by)
+  Quantity.DamageDealtThisTurn (ObjectDamage.MkObjectDamage direction by kind) -> fmap (\visited -> Quantity.DamageDealtThisTurn (ObjectDamage.MkObjectDamage direction visited kind)) (traverse (nest children) by)
   Quantity.SpellsCast (SpellTally.MkSpellTally ref turn) -> fmap (\renamed -> Quantity.SpellsCast (SpellTally.MkSpellTally renamed turn)) (player children ref)
   Quantity.TimesThisTurn _ -> pure quantity
   Quantity.ActivationsThisTurn (ActivationsThisTurn.MkActivationsThisTurn ref source criteria) -> fmap Quantity.ActivationsThisTurn (ActivationsThisTurn.MkActivationsThisTurn <$> player children ref <*> nest children source <*> activationCriteriaChildren children criteria)
@@ -2543,7 +2544,7 @@ damageRewriteChildren c rewrite = case rewrite of
   DamageRewrite.PreventNext _ -> pure rewrite
   DamageRewrite.PreventAllBut _ -> pure rewrite
   DamageRewrite.PreventUpTo most -> DamageRewrite.PreventUpTo <$> replacementQuantity c most
-  DamageRewrite.SetAmount _ -> pure rewrite
+  DamageRewrite.SetAmount amount -> DamageRewrite.SetAmount <$> replacementQuantity c amount
   DamageRewrite.Scale scaling -> DamageRewrite.Scale <$> scalingChildren c scaling
   DamageRewrite.Redirect recipient -> DamageRewrite.Redirect <$> replacementRecipient c recipient
   DamageRewrite.RedirectNext amount recipient -> DamageRewrite.RedirectNext amount <$> replacementRecipient c recipient
@@ -3902,12 +3903,14 @@ data DamagePatternChildren f = MkDamagePatternChildren
     -- | The slot the recipient is bound to.
     damageSlot :: SlotName.SlotName -> f SlotName.SlotName,
     -- | The player recipient's relation (CR 109.5, 608.2h), whole.
-    damageWhose :: ControllerRelation.ControllerRelation -> f ControllerRelation.ControllerRelation
+    damageWhose :: ControllerRelation.ControllerRelation -> f ControllerRelation.ControllerRelation,
+    -- | The threshold the damage's amount is compared with (CR 614.1a).
+    damageQuantity :: Quantity.Quantity -> f Quantity.Quantity
   }
 
 -- | A damage pattern's children. Its damage kind is left as it is.
 damagePatternChildren :: (Applicative f) => DamagePatternChildren f -> DamagePattern.DamagePattern -> f DamagePattern.DamagePattern
-damagePatternChildren c (DamagePattern.MkDamagePattern whichKind whatSource whatRecipient whoRecipient whichRecipient whichSource boundRecipient) =
+damagePatternChildren c (DamagePattern.MkDamagePattern whichKind whatSource whatRecipient whoRecipient whichRecipient whichSource boundRecipient whatAmount) =
   DamagePattern.MkDamagePattern whichKind
     <$> damageFilter c whatSource
     <*> traverse (damageFilter c) whatRecipient
@@ -3915,6 +3918,7 @@ damagePatternChildren c (DamagePattern.MkDamagePattern whichKind whatSource what
     <*> traverse (damageRecipient c) whichRecipient
     <*> traverse (damageObject c) whichSource
     <*> traverse (damageSlot c) boundRecipient
+    <*> traverse (\(ComparedTo.MkComparedTo comparison threshold) -> ComparedTo.MkComparedTo comparison <$> damageQuantity c threshold) whatAmount
 
 -- | One visitor per kind of child a copy or entry payload holds: a copy's
 -- "enter as a copy" rewrite (CR 707.5, 614.1c), its CR 707.9 exceptions, an

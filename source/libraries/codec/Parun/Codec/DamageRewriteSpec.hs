@@ -76,8 +76,8 @@ spec s = Spec.describe s "Parun.Codec.DamageRewrite" $ do
     Common.assertCodec
       s
       (DamageRewrite.codec (Effect.codec Card.codec (GrantedAbility.codec Card.codec)))
-      (DamageRewrite.SetAmount 4)
-      " {\"type\":\"SetAmount\",\"value\":4} "
+      (DamageRewrite.SetAmount (Quantity.Literal 4))
+      " {\"type\":\"SetAmount\",\"value\":{\"type\":\"Literal\",\"value\":4}} "
   -- A doubling, which is Scaling's Multiply 2.
   Spec.it s "Scale" $
     Common.assertCodec

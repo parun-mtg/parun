@@ -182,7 +182,7 @@ spec s =
           Common.assertCodec
             s
             codec
-            (ReplacementEffect.DamageR (DamageR.MkDamageR DamagePattern.MkDamagePattern {DamagePattern.whichKind = Just DamageKind.Combat, DamagePattern.whatSource = Filter.And [], DamagePattern.whatRecipient = Nothing, DamagePattern.whoRecipient = Nothing, DamagePattern.whichRecipient = Nothing, DamagePattern.whichSource = Nothing, DamagePattern.boundRecipient = Nothing} DamageRewrite.PreventAll Seq.empty))
+            (ReplacementEffect.DamageR (DamageR.MkDamageR DamagePattern.MkDamagePattern {DamagePattern.whichKind = Just DamageKind.Combat, DamagePattern.whatSource = Filter.And [], DamagePattern.whatRecipient = Nothing, DamagePattern.whoRecipient = Nothing, DamagePattern.whichRecipient = Nothing, DamagePattern.whichSource = Nothing, DamagePattern.boundRecipient = Nothing, DamagePattern.whatAmount = Nothing} DamageRewrite.PreventAll Seq.empty))
             " {\"type\":\"DamageR\",\"value\":{\"matching\":{\"whichKind\":\"Combat\"},\"rewrite\":{\"type\":\"PreventAll\"}}} "
         -- CR 614.15 / 614.1a: source-scoped, any kind, and a flat instead-amount
         -- rather than a prevention.
@@ -190,13 +190,13 @@ spec s =
           Common.assertCodec
             s
             codec
-            (ReplacementEffect.DamageR (DamageR.MkDamageR DamagePattern.MkDamagePattern {DamagePattern.whichKind = Nothing, DamagePattern.whatSource = Filter.IsSource, DamagePattern.whatRecipient = Nothing, DamagePattern.whoRecipient = Nothing, DamagePattern.whichRecipient = Nothing, DamagePattern.whichSource = Nothing, DamagePattern.boundRecipient = Nothing} (DamageRewrite.SetAmount 4) Seq.empty))
-            " {\"type\":\"DamageR\",\"value\":{\"matching\":{\"whatSource\":{\"type\":\"IsSource\"}},\"rewrite\":{\"type\":\"SetAmount\",\"value\":4}}} "
+            (ReplacementEffect.DamageR (DamageR.MkDamageR DamagePattern.MkDamagePattern {DamagePattern.whichKind = Nothing, DamagePattern.whatSource = Filter.IsSource, DamagePattern.whatRecipient = Nothing, DamagePattern.whoRecipient = Nothing, DamagePattern.whichRecipient = Nothing, DamagePattern.whichSource = Nothing, DamagePattern.boundRecipient = Nothing, DamagePattern.whatAmount = Nothing} (DamageRewrite.SetAmount (Quantity.Literal 4)) Seq.empty))
+            " {\"type\":\"DamageR\",\"value\":{\"matching\":{\"whatSource\":{\"type\":\"IsSource\"}},\"rewrite\":{\"type\":\"SetAmount\",\"value\":{\"type\":\"Literal\",\"value\":4}}}} "
         Spec.it s "DamageR (any source's damage, doubled)" $
           Common.assertCodec
             s
             codec
-            (ReplacementEffect.DamageR (DamageR.MkDamageR DamagePattern.MkDamagePattern {DamagePattern.whichKind = Nothing, DamagePattern.whatSource = Filter.And [], DamagePattern.whatRecipient = Nothing, DamagePattern.whoRecipient = Nothing, DamagePattern.whichRecipient = Nothing, DamagePattern.whichSource = Nothing, DamagePattern.boundRecipient = Nothing} (DamageRewrite.Scale (Scaling.Multiply 2)) Seq.empty))
+            (ReplacementEffect.DamageR (DamageR.MkDamageR DamagePattern.MkDamagePattern {DamagePattern.whichKind = Nothing, DamagePattern.whatSource = Filter.And [], DamagePattern.whatRecipient = Nothing, DamagePattern.whoRecipient = Nothing, DamagePattern.whichRecipient = Nothing, DamagePattern.whichSource = Nothing, DamagePattern.boundRecipient = Nothing, DamagePattern.whatAmount = Nothing} (DamageRewrite.Scale (Scaling.Multiply 2)) Seq.empty))
             " {\"type\":\"DamageR\",\"value\":{\"matching\":{},\"rewrite\":{\"type\":\"Scale\",\"value\":{\"type\":\"Multiply\",\"value\":2}}}} "
         -- CR 614.8: regeneration, which names no subject of its own.
         Spec.it s "DestructionR (regenerate)" $

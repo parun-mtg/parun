@@ -1,0 +1,303 @@
+{
+  "faces": [
+    {
+      "keywords": [
+        {
+          "type": "Trample"
+        }
+      ],
+      "manaCost": [
+        {
+          "type": "Generic",
+          "value": 2
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "Red"
+          }
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "Red"
+          }
+        }
+      ],
+      "name": "Ojer Axonil, Deepest Might",
+      "oracleText": "Trample\nIf a red source you control would deal an amount of noncombat damage less than Ojer Axonil's power to an opponent, that source deals damage equal to Ojer Axonil's power instead.\nWhen Ojer Axonil dies, return it to the battlefield tapped and transformed under its owner's control.",
+      "power": {
+        "type": "Literal",
+        "value": 4
+      },
+      "replacementEffects": [
+        {
+          "effect": {
+            "type": "DamageR",
+            "value": {
+              "matching": {
+                "whatAmount": {
+                  "comparison": "LessThan",
+                  "threshold": {
+                    "type": "Measure",
+                    "value": "Power"
+                  }
+                },
+                "whatSource": {
+                  "type": "And",
+                  "value": [
+                    {
+                      "type": "HasColor",
+                      "value": "Red"
+                    },
+                    {
+                      "type": "HeldBy",
+                      "value": {
+                        "holder": "Controller",
+                        "relation": "You"
+                      }
+                    }
+                  ]
+                },
+                "whichKind": "Noncombat",
+                "whoRecipient": {
+                  "type": "Opponent"
+                }
+              },
+              "rewrite": {
+                "type": "SetAmount",
+                "value": {
+                  "type": "Measure",
+                  "value": "Power"
+                }
+              }
+            }
+          }
+        }
+      ],
+      "toughness": {
+        "type": "Literal",
+        "value": 4
+      },
+      "triggeredAbilities": [
+        {
+          "condition": {
+            "type": "Leaves",
+            "value": {
+              "destinations": [
+                {
+                  "zone": "Graveyard"
+                }
+              ]
+            }
+          },
+          "modal": {
+            "modes": [
+              {
+                "clauses": [
+                  {
+                    "effects": [
+                      {
+                        "type": "MoveToZone",
+                        "value": {
+                          "ref": {
+                            "type": "InSlot",
+                            "value": "became"
+                          },
+                          "riders": {
+                            "tapped": "Tapped",
+                            "transformed": true,
+                            "under": {
+                              "type": "Owner"
+                            }
+                          },
+                          "zone": "Battlefield"
+                        }
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      ],
+      "typeLine": {
+        "subtypes": [
+          "God"
+        ],
+        "supertypes": [
+          "Legendary"
+        ],
+        "types": [
+          "Creature"
+        ]
+      }
+    },
+    {
+      "activatedAbilities": [
+        {
+          "cost": {
+            "components": [
+              {
+                "type": "TapThis"
+              }
+            ],
+            "mana": []
+          },
+          "modal": {
+            "modes": [
+              {
+                "clauses": [
+                  {
+                    "effects": [
+                      {
+                        "type": "AddMana",
+                        "value": {
+                          "production": {
+                            "type": "OfType",
+                            "value": {
+                              "type": "Colored",
+                              "value": "Red"
+                            }
+                          }
+                        }
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "cost": {
+            "components": [
+              {
+                "type": "TapThis"
+              }
+            ],
+            "mana": [
+              {
+                "type": "Generic",
+                "value": 2
+              },
+              {
+                "type": "OfType",
+                "value": {
+                  "type": "Colored",
+                  "value": "Red"
+                }
+              }
+            ]
+          },
+          "modal": {
+            "modes": [
+              {
+                "clauses": [
+                  {
+                    "effects": [
+                      {
+                        "type": "Transform",
+                        "value": {
+                          "type": "InSlot",
+                          "value": "self"
+                        }
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          },
+          "restrictions": [
+            {
+              "type": "OnlyIf",
+              "value": {
+                "type": "Compares",
+                "value": {
+                  "comparison": "AtLeast",
+                  "measured": {
+                    "type": "Count",
+                    "value": {
+                      "aggregation": {
+                        "type": "Total",
+                        "value": {
+                          "type": "DamageDealtThisTurn",
+                          "value": {
+                            "by": {
+                              "type": "And",
+                              "value": [
+                                {
+                                  "type": "HasColor",
+                                  "value": "Red"
+                                },
+                                {
+                                  "type": "HeldBy",
+                                  "value": {
+                                    "holder": "Controller",
+                                    "relation": "You"
+                                  }
+                                }
+                              ]
+                            },
+                            "direction": "DealtBy",
+                            "kind": "Noncombat"
+                          }
+                        }
+                      },
+                      "filter": {
+                        "type": "And",
+                        "value": [
+                          {
+                            "type": "HasColor",
+                            "value": "Red"
+                          },
+                          {
+                            "type": "HeldBy",
+                            "value": {
+                              "holder": "Controller",
+                              "relation": "You"
+                            }
+                          }
+                        ]
+                      },
+                      "scope": {
+                        "type": "InHistory",
+                        "value": {
+                          "type": "SourceDealtDamage",
+                          "value": {
+                            "kind": "Noncombat"
+                          }
+                        }
+                      }
+                    }
+                  },
+                  "threshold": {
+                    "type": "Literal",
+                    "value": 4
+                  }
+                }
+              }
+            },
+            {
+              "type": "SorcerySpeed"
+            }
+          ]
+        }
+      ],
+      "name": "Temple of Power",
+      "oracleText": "(Transforms from Ojer Axonil, Deepest Might.)\n{T}: Add {R}.\n{2}{R}, {T}: Transform this land. Activate only if red sources you controlled dealt 4 or more noncombat damage this turn and only as a sorcery.",
+      "typeLine": {
+        "types": [
+          "Land"
+        ]
+      }
+    }
+  ],
+  "layout": {
+    "type": "Transforming"
+  }
+}

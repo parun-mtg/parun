@@ -165,6 +165,7 @@ import qualified Parun.Types.ColorSpread as ColorSpread
 import qualified Parun.Types.CombatRestriction as CombatRestriction
 import qualified Parun.Types.CommanderDeckRule as CommanderDeckRule
 import qualified Parun.Types.CompanionCondition as CompanionCondition
+import qualified Parun.Types.ComparedTo as ComparedTo
 import qualified Parun.Types.Condition as Condition.Type
 import qualified Parun.Types.Conjure as Conjure
 import qualified Parun.Types.ConjureCards as ConjureCards
@@ -4419,13 +4420,16 @@ replacementEffectFilters replacementEffect = case replacementEffect of
   -- dealing the damage (Luminesce's "black sources and red sources", Galvanic
   -- Blast's `IsSource`), and by their printed RECIPIENT, which is a second
   -- Filter over the object being dealt to (Stormwild Capridor's `IsSource`). The
-  -- kind and the baked recipient beside them are not Filters.
+  -- kind and the baked recipient beside them are not Filters; the amount's
+  -- threshold is a Quantity, whose Count may hold one.
   --
   -- The REWRITE holds one too, on a third axis: CR 614.9's printed destination
   -- (Pariah's "enchanted creature") or a counted ceiling's Count, which
   -- damageRewriteFilters below answers.
   ReplacementEffect.DamageR (DamageR.MkDamageR damagePattern rewrite _) ->
-    unframed (DamagePattern.whatSource damagePattern : Maybe.maybeToList (DamagePattern.whatRecipient damagePattern)) <> damageRewriteFilters rewrite
+    unframed (DamagePattern.whatSource damagePattern : Maybe.maybeToList (DamagePattern.whatRecipient damagePattern))
+      <> foldMap (quantityFilters . ComparedTo.threshold) (DamagePattern.whatAmount damagePattern)
+      <> damageRewriteFilters rewrite
   -- CR 614.1a's printed subject (Pyramids' "target land").
   ReplacementEffect.DestructionR (DestructionR.MkDestructionR matching _) -> unframed (Maybe.maybeToList matching)
   -- CR 111.1: what the token being created is (Queen Allenal of Ruadach's

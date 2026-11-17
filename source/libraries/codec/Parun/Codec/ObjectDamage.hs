@@ -3,6 +3,7 @@
 module Parun.Codec.ObjectDamage where
 
 import qualified Parun.Codec.DamageDirection as DamageDirection
+import qualified Parun.Codec.DamageKind as DamageKind
 import qualified Parun.Codec.Filter as Filter
 import qualified Parun.Codec.Keyword as Keyword
 import qualified Parun.JsonCodec.Codec as Codec
@@ -14,4 +15,5 @@ codec :: Codec.Codec ObjectDamage.ObjectDamage
 codec = Fields.object $ do
   direction <- Fields.required "direction" DamageDirection.codec ObjectDamage.direction
   by <- Fields.defaulted "by" Nothing (Common.maybe (Filter.codec Keyword.codec)) ObjectDamage.by
-  pure ObjectDamage.MkObjectDamage {ObjectDamage.direction = direction, ObjectDamage.by = by}
+  kind <- Fields.defaulted "kind" Nothing (Common.maybe DamageKind.codec) ObjectDamage.kind
+  pure ObjectDamage.MkObjectDamage {ObjectDamage.direction = direction, ObjectDamage.by = by, ObjectDamage.kind = kind}

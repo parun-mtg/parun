@@ -74,6 +74,7 @@ import Parun.Types.Card (Card)
 import qualified Parun.Types.Card as Card.Type
 import qualified Parun.Types.Cause as Cause
 import qualified Parun.Types.Chosen as Chosen
+import qualified Parun.Types.ComparedTo as ComparedTo
 import Parun.Types.ControllerRelation (ControllerRelation)
 import qualified Parun.Types.ControllerRelation as ControllerRelation
 import qualified Parun.Types.CopyCoverage as CopyCoverage
@@ -436,7 +437,8 @@ collect sources floating =
                     DamagePattern.whoRecipient = Nothing,
                     DamagePattern.whichRecipient = Just (Recipient.ToPlayer pid),
                     DamagePattern.whichSource = Nothing,
-                    DamagePattern.boundRecipient = Nothing
+                    DamagePattern.boundRecipient = Nothing,
+                    DamagePattern.whatAmount = Nothing
                   },
               DamageR.rewrite = DamageRewrite.PreventAll,
               DamageR.riders = Seq.empty
@@ -1750,15 +1752,16 @@ matchesDamageSource viewOf gs context filter_ de =
    in Filter.matches context located filter_
 
 -- CR 615.1 / 614.1a: does this damage event have the qualities the pattern
--- names? Five of them: a pattern naming no KIND admits combat and noncombat
+-- names? Six of them: a pattern naming no KIND admits combat and noncombat
 -- alike (CR 510.2's dealing versus CR 608's), one narrowing the SOURCE admits
 -- only the damage a source it describes is dealing (CR 120.1's "an object that
 -- deals damage is the source of that damage" -- CR 609.7b's characteristic, or
 -- CR 614.15's identity), one DESCRIBING the recipient admits only damage
 -- addressed to an object matching it (Stormwild Capridor's "to this creature"),
 -- one NAMING a recipient admits only the damage addressed to the permanent or
--- player the engine baked in (CR 615.7), and one NAMING a source admits only the
--- damage the one object a player chose is dealing (CR 609.7a).
+-- player the engine baked in (CR 615.7), one NAMING a source admits only the
+-- damage the one object a player chose is dealing (CR 609.7a), and one
+-- bounding the AMOUNT admits only an event whose amount meets it (amountAdmitted).
 --
 -- That chosen source is compared by ID and its properties are not re-read here:
 -- CR 615.9 splits the question in two, and the property half is the Filter
@@ -1781,6 +1784,16 @@ matchesDamagePattern viewOf gs context pat de =
     && matchesPrintedRecipient viewOf gs context de pat
     && maybe True (== DamageEvent.target de) (DamagePattern.whichRecipient pat)
     && maybe True (== DamageEvent.source de) (DamagePattern.whichSource pat)
+    && all (amountAdmitted gs context de) (DamagePattern.whatAmount pat)
+
+-- CR 614.1a: does the event's amount compare thus with the threshold, read
+-- against the context's source as the event would happen (Ojer Axonil,
+-- Deepest Might)? A threshold that cannot be read admits nothing.
+amountAdmitted :: GameState -> Filter.Context -> DamageEvent.DamageEvent -> ComparedTo.ComparedTo -> Bool
+amountAdmitted gs context de (ComparedTo.MkComparedTo comparison threshold) =
+  case Filter.source context >>= \src -> Quantity.evaluate (Projection.fullView gs) context gs src threshold of
+    Nothing -> False
+    Just t -> Filter.compares comparison (toInteger (DamageEvent.amount de)) t
 
 -- CR 615.1: does the damage's recipient satisfy the pattern's PRINTED recipient
 -- side, which is the DISJUNCTION of its object half and its player half?
@@ -2150,15 +2163,18 @@ matchingEnteringCounters gs candidate pat oid =
 scale :: GameState -> ReplacementCandidate -> Scaling.Scaling -> Natural -> Natural
 scale gs candidate s n = case s of
   Scaling.Multiply m -> n * m
-  Scaling.AddMore quantity ->
-    let more = Maybe.fromMaybe 0 (Quantity.evaluate (Projection.fullView gs) (candidateContext gs candidate) gs (ReplacementCandidate.source candidate) quantity)
-     in Integer.toNaturalSaturating (toInteger n + more)
+  Scaling.AddMore quantity -> Integer.toNaturalSaturating (toInteger n + rowQuantity gs candidate quantity)
   -- CR 122.1: saturating, for the reason Parun.Types.Scaling gives -- and one of
   -- the two scalings that can answer zero.
   Scaling.Subtract m -> Natural.minusSaturating n m
   -- CR 107.1a: "half that many . . . rounded down", which `div` on Natural
   -- already is. One is what makes this answer zero, as Subtract above does.
   Scaling.Halve -> n `div` 2
+
+-- CR 614.1a: a rewrite's Quantity, read against the row's own context and
+-- source as the event would happen; an undeterminable one is 0 (CR 107.2).
+rowQuantity :: GameState -> ReplacementCandidate -> Quantity.Type.Quantity -> Integer
+rowQuantity gs candidate = Maybe.fromMaybe 0 . Quantity.evaluate (Projection.fullView gs) (candidateContext gs candidate) gs (ReplacementCandidate.source candidate)
 
 -- CR 616.1a-e: take the HIGHEST non-empty bucket. Ord on ReplacementBucket is
 -- ascending in the CR's own order, so that is the minimum present; the fold seeds
@@ -2732,8 +2748,8 @@ instructionRewriteSubstitutes rewrite = case rewrite of
   InstructionRewrite.SetTo _ -> False
   InstructionRewrite.ReturnSourceInstead -> False
 
--- Is this rewrite's amount not a literal -- a CR 702.64a ceiling, or a computed
--- AddMore -- so that Event.apply evaluates it against the applying candidate's
+-- Is this rewrite's amount not a literal -- a CR 702.64a ceiling, a computed
+-- AddMore or a computed SetAmount -- so that Event.apply evaluates it against the applying candidate's
 -- Context? No wildcard, readsApplier's discipline.
 computedAmount :: Rewrite -> Bool
 computedAmount rewrite = case rewrite of
@@ -2744,7 +2760,8 @@ computedAmount rewrite = case rewrite of
   DamageRewrite.PreventRemovingCounters _ -> False
   DamageRewrite.PreventNext _ -> False
   DamageRewrite.PreventAllBut _ -> False
-  DamageRewrite.SetAmount _ -> False
+  DamageRewrite.SetAmount (Quantity.Type.Literal _) -> False
+  DamageRewrite.SetAmount _ -> True
   DamageRewrite.Scale scaling -> computedScaling scaling
   DamageRewrite.Redirect _ -> False
   DamageRewrite.RedirectNext _ _ -> False
@@ -4374,7 +4391,7 @@ ceilingLeft :: GameState -> Tally -> ReplacementCandidate -> ProposedEvent -> Ma
 ceilingLeft gs (earlier, _) candidate event = case (ReplacementCandidate.effect candidate, event) of
   (ReplacementEffect.DamageR (DamageR.MkDamageR _ rewrite _), ProposedEvent.WouldDealDamage de) -> case rewrite of
     DamageRewrite.PreventUpTo quantity ->
-      let ceiling_ = maybe 0 Integer.toNaturalSaturating (Quantity.evaluate (Projection.fullView gs) (candidateContext gs candidate) gs (ReplacementCandidate.source candidate) quantity)
+      let ceiling_ = Integer.toNaturalSaturating (rowQuantity gs candidate quantity)
           spent =
             sum
               [ n

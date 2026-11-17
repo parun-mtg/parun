@@ -33,9 +33,9 @@ import qualified Parun.Types.Scaling as Scaling
 -- authored, since a shield names the permanent or player it shields, chosen at
 -- resolution; Effect.PreventNextDamage is the one producer.
 --
--- SetAmount is CR 614.1a's "instead" with a flat number (Galvanic Blast). A
--- Natural rather than a Quantity because every printed instead-amount in the pool
--- is a literal; PreventUpTo shows the Quantity shape it would take.
+-- SetAmount is CR 614.1a's "instead" with an amount: a literal (Galvanic
+-- Blast), or a Quantity read against the row's source as the event would happen
+-- (Ojer Axonil, Deepest Might's "damage equal to Ojer Axonil's power").
 --
 -- Scale is Furnace of Rath's "double that damage ... instead", reusing
 -- Parun.Types.Scaling rather than a Double arm -- the difference between doubling
@@ -137,7 +137,7 @@ data DamageRewrite effect
     -- Power Leak's "prevent X of that damage" is this ceiling on a CR 614.15
     -- self-replacement with Uses.Once, its X settled as the row is installed.
     PreventUpTo Quantity.Quantity
-  | SetAmount Natural.Natural
+  | SetAmount Quantity.Quantity
   | Scale Scaling.Scaling
   | Redirect Recipient.Recipient
   | -- | CR 614.9's redirection with a REMAINING amount, PreventNext's counted twin

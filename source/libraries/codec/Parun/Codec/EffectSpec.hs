@@ -1087,10 +1087,10 @@ spec s = Spec.describe s "Parun.Codec.Effect" $ do
               Replace.uses = Uses.Once,
               Replace.origin = ReplacementOrigin.SelfReplacement,
               Replace.condition = Just (Condition.Compares (Compares.MkCompares (Quantity.Count threeArtifacts) Comparison.AtLeast (Quantity.Literal 3))),
-              Replace.effect = ReplacementEffect.DamageR (DamageR.MkDamageR (DamagePattern.MkDamagePattern Nothing Filter.IsSource Nothing Nothing Nothing Nothing Nothing) (DamageRewrite.SetAmount 4) Seq.empty)
+              Replace.effect = ReplacementEffect.DamageR (DamageR.MkDamageR (DamagePattern.MkDamagePattern Nothing Filter.IsSource Nothing Nothing Nothing Nothing Nothing Nothing) (DamageRewrite.SetAmount (Quantity.Literal 4)) Seq.empty)
             }
       )
-      " {\"type\":\"Replace\",\"value\":{\"duration\":{\"type\":\"UntilEndOfTurn\"},\"uses\":\"Once\",\"origin\":\"SelfReplacement\",\"condition\":{\"type\":\"Compares\",\"value\":{\"measured\":{\"type\":\"Count\",\"value\":{\"scope\":{\"type\":\"InZone\",\"value\":{\"zone\":\"Battlefield\",\"player\":{\"type\":\"Relative\",\"value\":\"AnyPlayer\"}}},\"filter\":{\"type\":\"And\",\"value\":[{\"type\":\"HasCardType\",\"value\":\"Artifact\"},{\"type\":\"HeldBy\",\"value\":{\"holder\":\"Controller\",\"relation\":\"You\"}}]},\"aggregation\":{\"type\":\"Members\"}}},\"comparison\":\"AtLeast\",\"threshold\":{\"type\":\"Literal\",\"value\":3}}},\"effect\":{\"type\":\"DamageR\",\"value\":{\"matching\":{\"whatSource\":{\"type\":\"IsSource\"}},\"rewrite\":{\"type\":\"SetAmount\",\"value\":4}}}}} "
+      " {\"type\":\"Replace\",\"value\":{\"duration\":{\"type\":\"UntilEndOfTurn\"},\"uses\":\"Once\",\"origin\":\"SelfReplacement\",\"condition\":{\"type\":\"Compares\",\"value\":{\"measured\":{\"type\":\"Count\",\"value\":{\"scope\":{\"type\":\"InZone\",\"value\":{\"zone\":\"Battlefield\",\"player\":{\"type\":\"Relative\",\"value\":\"AnyPlayer\"}}},\"filter\":{\"type\":\"And\",\"value\":[{\"type\":\"HasCardType\",\"value\":\"Artifact\"},{\"type\":\"HeldBy\",\"value\":{\"holder\":\"Controller\",\"relation\":\"You\"}}]},\"aggregation\":{\"type\":\"Members\"}}},\"comparison\":\"AtLeast\",\"threshold\":{\"type\":\"Literal\",\"value\":3}}},\"effect\":{\"type\":\"DamageR\",\"value\":{\"matching\":{\"whatSource\":{\"type\":\"IsSource\"}},\"rewrite\":{\"type\":\"SetAmount\",\"value\":{\"type\":\"Literal\",\"value\":4}}}}}} "
   -- CR 614.10a: a slot read, plus the whole-phase selector -- the arm a Phase
   -- alone cannot spell (CR 500.1).
   Spec.it s "SkipPhase" $ do

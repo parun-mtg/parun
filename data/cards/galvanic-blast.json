@@ -78,7 +78,10 @@
                           },
                           "rewrite": {
                             "type": "SetAmount",
-                            "value": 4
+                            "value": {
+                              "type": "Literal",
+                              "value": 4
+                            }
                           }
                         }
                       },

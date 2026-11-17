@@ -1310,7 +1310,8 @@ anyDamage =
       DamagePattern.whoRecipient = Nothing,
       DamagePattern.whichRecipient = Nothing,
       DamagePattern.whichSource = Nothing,
-      DamagePattern.boundRecipient = Nothing
+      DamagePattern.boundRecipient = Nothing,
+      DamagePattern.whatAmount = Nothing
     }
 
 -- Every (scope, player effect) pair a card authors, on BOTH of the carriers

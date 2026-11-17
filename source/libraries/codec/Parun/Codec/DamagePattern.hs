@@ -2,6 +2,7 @@
 
 module Parun.Codec.DamagePattern where
 
+import qualified Parun.Codec.ComparedTo as ComparedTo
 import qualified Parun.Codec.ControllerRelation as ControllerRelation
 import qualified Parun.Codec.DamageKind as DamageKind
 import qualified Parun.Codec.Filter as Filter
@@ -45,6 +46,7 @@ codec = Fields.object $ do
   whichRecipient <- Fields.defaulted "whichRecipient" Nothing (Common.maybe Recipient.codec) DamagePattern.whichRecipient
   whichSource <- Fields.defaulted "whichSource" Nothing (Common.maybe ObjectId.codec) DamagePattern.whichSource
   boundRecipient <- Fields.defaulted "boundRecipient" Nothing (Common.maybe SlotName.codec) DamagePattern.boundRecipient
+  whatAmount <- Fields.defaulted "whatAmount" Nothing (Common.maybe ComparedTo.codec) DamagePattern.whatAmount
   pure
     DamagePattern.MkDamagePattern
       { DamagePattern.whichKind = whichKind,
@@ -53,5 +55,6 @@ codec = Fields.object $ do
         DamagePattern.whoRecipient = whoRecipient,
         DamagePattern.whichRecipient = whichRecipient,
         DamagePattern.whichSource = whichSource,
-        DamagePattern.boundRecipient = boundRecipient
+        DamagePattern.boundRecipient = boundRecipient,
+        DamagePattern.whatAmount = whatAmount
       }

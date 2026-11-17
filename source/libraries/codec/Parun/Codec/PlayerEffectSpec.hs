@@ -383,7 +383,7 @@ spec s = Spec.describe s "Parun.Codec.PlayerEffect" $ do
     Common.assertCodec
       s
       PlayerEffect.codec
-      (PlayerEffect.DamageCantBePrevented (DamagePattern.MkDamagePattern Nothing (Filter.And []) Nothing Nothing Nothing Nothing Nothing))
+      (PlayerEffect.DamageCantBePrevented (DamagePattern.MkDamagePattern Nothing (Filter.And []) Nothing Nothing Nothing Nothing Nothing Nothing))
       " {\"type\":\"DamageCantBePrevented\",\"value\":{}} "
   -- CR 615.12 narrowed / Excruciator, "damage that would be dealt by this
   -- creature": the same effect keyed to its own source (Filter.IsSource),
@@ -392,7 +392,7 @@ spec s = Spec.describe s "Parun.Codec.PlayerEffect" $ do
     Common.assertCodec
       s
       PlayerEffect.codec
-      (PlayerEffect.DamageCantBePrevented (DamagePattern.MkDamagePattern Nothing Filter.IsSource Nothing Nothing Nothing Nothing Nothing))
+      (PlayerEffect.DamageCantBePrevented (DamagePattern.MkDamagePattern Nothing Filter.IsSource Nothing Nothing Nothing Nothing Nothing Nothing))
       " {\"type\":\"DamageCantBePrevented\",\"value\":{\"whatSource\":{\"type\":\"IsSource\"}}} "
   -- CR 614.17 / Lava Burst, "if Lava Burst would deal damage to a creature, that
   -- damage can't be ... dealt instead to another permanent or player": the
@@ -401,7 +401,7 @@ spec s = Spec.describe s "Parun.Codec.PlayerEffect" $ do
     Common.assertCodec
       s
       PlayerEffect.codec
-      (PlayerEffect.DamageCantBeRedirected (DamagePattern.MkDamagePattern Nothing Filter.IsSource (Just (Filter.HasCardType CardType.Creature)) Nothing Nothing Nothing Nothing))
+      (PlayerEffect.DamageCantBeRedirected (DamagePattern.MkDamagePattern Nothing Filter.IsSource (Just (Filter.HasCardType CardType.Creature)) Nothing Nothing Nothing Nothing Nothing))
       " {\"type\":\"DamageCantBeRedirected\",\"value\":{\"whatRecipient\":{\"type\":\"HasCardType\",\"value\":\"Creature\"},\"whatSource\":{\"type\":\"IsSource\"}}} "
   -- CR 120.3 / Phyrexian Unlife: damage dealt to you as though its source had
   -- infect.
@@ -409,7 +409,7 @@ spec s = Spec.describe s "Parun.Codec.PlayerEffect" $ do
     Common.assertCodec
       s
       PlayerEffect.codec
-      (PlayerEffect.DamageAsThoughSourceHad (DamagePattern.MkDamagePattern Nothing (Filter.And []) Nothing (Just (ControllerRelation.Related PlayerRelation.You)) Nothing Nothing Nothing) Keyword.Infect)
+      (PlayerEffect.DamageAsThoughSourceHad (DamagePattern.MkDamagePattern Nothing (Filter.And []) Nothing (Just (ControllerRelation.Related PlayerRelation.You)) Nothing Nothing Nothing Nothing) Keyword.Infect)
       " {\"type\":\"DamageAsThoughSourceHad\",\"value\":{\"matching\":{\"whoRecipient\":{\"type\":\"You\"}},\"keyword\":{\"type\":\"Infect\"}}} "
   -- CR 701.23 / Leonin Arbiter.
   Spec.it s "CantSearchLibraries" $
