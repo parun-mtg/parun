@@ -851,9 +851,10 @@ runEntryEffect runSubgame pending = do
   State.modify' (\gs -> gs {GameState.scratch = (GameState.scratch gs) {Scratch.enteringBeside = outer, Scratch.enteringSubjects = outerSubjects}})
   Foldable.for_ announced $ \_ -> State.modify' (setX before)
   -- CR 508.4: EntryRewrite.EntersAttacking, whose guards (CR 506.3) and
-  -- choice are Combat's, the road Create's attacking rider takes. Skipped for a
-  -- creature already attacking: a second row, or an effect's own rider (a
-  -- mobilize token, a ninja) put it there first, and it enters attacking once.
+  -- choice are Combat's, the road Create's attacking rider takes. An effect's
+  -- own rider (a mobilize token, a ninja) cleared the flag, met or failed (CR
+  -- 508.4e); skipped for a creature a second row already put in combat, since
+  -- it enters attacking once.
   attacking <- State.gets (Map.member oid . Combat.Type.attackers . TurnRegisters.combat . GameState.turn)
   Monad.when (PendingEntryEffect.attacking pending && not attacking) (Combat.putOntoBattlefieldAttacking Combat.Any oid)
   State.modify' (Trigger.resampleEntry oid)

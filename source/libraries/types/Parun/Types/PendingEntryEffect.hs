@@ -31,7 +31,8 @@ data PendingEntryEffect = MkPendingEntryEffect
     effects :: Seq.Seq (Effect.Effect Card.Card (GrantedAbility.GrantedAbility Card.Card)),
     -- | CR 508.4: put the permanent into combat attacking, after the effects
     -- (EntryRewrite.EntersAttacking); Parun.Engine.Combat sits above the module
-    -- applying the rewrite, as Resolve does.
+    -- applying the rewrite, as Resolve does. Cleared by an effect's own
+    -- CR 508.4 rider, whose specification governs (CR 508.4e).
     attacking :: Bool
   }
   deriving (Eq, Ord, Show)

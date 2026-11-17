@@ -71,12 +71,14 @@ import Parun.Types.ObjectId (ObjectId)
 import qualified Parun.Types.OptionalDecision as OptionalDecision
 import qualified Parun.Types.PayOffer as PayOffer
 import qualified Parun.Types.PaymentDecision as PaymentDecision
+import qualified Parun.Types.PendingEntryEffect as PendingEntryEffect
 import qualified Parun.Types.PlayerEffect as PlayerEffect.Type
 import Parun.Types.PlayerId (PlayerId)
 import qualified Parun.Types.PlayerRelation as PlayerRelation
 import qualified Parun.Types.ProjectedCharacteristics as PC
 import qualified Parun.Types.Prompt as Prompt
 import qualified Parun.Types.RuleWaiver as RuleWaiver
+import qualified Parun.Types.StoredEffects as StoredEffects
 import qualified Parun.Types.TapState as TapState
 import qualified Parun.Types.TurnRegisters as TurnRegisters
 import qualified Parun.Types.TurnWindow as TurnWindow
@@ -3261,6 +3263,12 @@ data AttackChoice
 -- Ninjutsu group proves a ninja takes the returned creature's planeswalker.
 putOntoBattlefieldAttacking :: AttackChoice -> ObjectId -> Game ()
 putOntoBattlefieldAttacking choice oid = do
+  -- CR 508.4e: this effect's specification applies to the entry whatever a
+  -- queued EntryRewrite.EntersAttacking (Kira Nerys, Firebrand) would add, so
+  -- that row's own CR 508.4 choice is spent here, met or failed (CR 508.4a).
+  -- Parun.ActivateSpec's Ninjutsu group proves a ninja whose planeswalker left
+  -- enters unattacking under Kira.
+  State.modify' (\g -> g {GameState.stored = (GameState.stored g) {StoredEffects.pendingEntryEffects = fmap (\pending -> if PendingEntryEffect.object pending == oid then pending {PendingEntryEffect.attacking = False} else pending) (StoredEffects.pendingEntryEffects (GameState.stored g))}})
   gs <- State.get
   let c = TurnRegisters.combat (GameState.turn gs)
       targets = declarableTargets gs
