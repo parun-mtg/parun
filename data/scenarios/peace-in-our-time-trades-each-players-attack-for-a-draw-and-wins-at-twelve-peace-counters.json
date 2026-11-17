@@ -1,0 +1,362 @@
+{
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "battlefield": [
+          {
+            "card": "Peace in Our Time",
+            "counters": [
+              {
+                "key": {
+                  "type": "Named",
+                  "value": "peace"
+                },
+                "value": 10
+              }
+            ],
+            "label": "peace"
+          },
+          {
+            "card": "Grizzly Bears",
+            "label": "abears",
+            "ready": true
+          }
+        ],
+        "library": [
+          {
+            "card": "Forest"
+          },
+          {
+            "card": "Swamp"
+          },
+          {
+            "card": "Mountain"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Plains"
+          },
+          {
+            "card": "Wastes"
+          }
+        ],
+        "name": "alice"
+      },
+      {
+        "battlefield": [
+          {
+            "card": "Hill Giant",
+            "label": "giant",
+            "ready": true
+          }
+        ],
+        "library": [
+          {
+            "card": "Lightning Bolt"
+          },
+          {
+            "card": "Shock"
+          },
+          {
+            "card": "Memnite"
+          },
+          {
+            "card": "Ornithopter"
+          },
+          {
+            "card": "Frogmite"
+          },
+          {
+            "card": "Darksteel Myr"
+          }
+        ],
+        "name": "bob"
+      }
+    ],
+    "step": "PrecombatMain"
+  },
+  "description": "Peace in Our Time lets each player draw at the beginning of combat on their turn; one who does can't attack that turn and adds a peace counter, and its controller wins at their upkeep with twelve or more",
+  "final": [
+    {
+      "View": {
+        "is": {
+          "won": "alice"
+        },
+        "of": "Result"
+      }
+    }
+  ],
+  "note": "Starting at ten counters. Alice draws on turn 1, so her Grizzly Bears can't attack: eleven. Bob declines on turn 2 and his Hill Giant hits Alice to 17. At Alice's turn-3 upkeep eleven counters win nothing; she draws again: twelve. Bob draws on turn 4 and can't attack: thirteen. Alice wins at her turn-5 upkeep.",
+  "timeline": [
+    {
+      "do": {
+        "ChooseOptional": "Exercises"
+      },
+      "player": "alice",
+      "step": "BeginningOfCombat",
+      "turn": 1
+    },
+    {
+      "check": {
+        "View": {
+          "is": [
+            [
+              "alice",
+              "ChooseOptional"
+            ]
+          ],
+          "of": "Asked"
+        }
+      },
+      "player": "alice",
+      "step": "EndOfCombat",
+      "turn": 1
+    },
+    {
+      "check": {
+        "View": {
+          "is": [
+            "Swamp",
+            "Mountain",
+            "Island",
+            "Plains",
+            "Wastes"
+          ],
+          "of": "Zone",
+          "player": "alice",
+          "zone": "Library"
+        }
+      },
+      "player": "alice",
+      "step": "EndOfCombat",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Life": {
+          "life": 20,
+          "player": "bob"
+        }
+      },
+      "player": "alice",
+      "step": "EndOfCombat",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Counters": {
+          "count": 11,
+          "kind": {
+            "type": "Named",
+            "value": "peace"
+          },
+          "object": "Peace in Our Time"
+        }
+      },
+      "player": "alice",
+      "step": "EndOfCombat",
+      "turn": 1
+    },
+    {
+      "do": {
+        "ChooseOptional": "Declines"
+      },
+      "player": "bob",
+      "step": "BeginningOfCombat",
+      "turn": 2
+    },
+    {
+      "do": {
+        "Attack": [
+          "$giant"
+        ]
+      },
+      "player": "bob",
+      "step": "DeclareAttackers",
+      "turn": 2
+    },
+    {
+      "do": {
+        "Block": {}
+      },
+      "player": "alice",
+      "step": "DeclareBlockers",
+      "turn": 2
+    },
+    {
+      "check": {
+        "Life": {
+          "life": 17,
+          "player": "alice"
+        }
+      },
+      "player": "bob",
+      "step": "EndOfCombat",
+      "turn": 2
+    },
+    {
+      "check": {
+        "View": {
+          "is": [
+            [
+              "bob",
+              "ChooseOptional"
+            ],
+            [
+              "bob",
+              "DeclareAttackers"
+            ],
+            [
+              "alice",
+              "DeclareBlockers"
+            ]
+          ],
+          "of": "Asked"
+        }
+      },
+      "player": "bob",
+      "step": "EndOfCombat",
+      "turn": 2
+    },
+    {
+      "check": {
+        "Counters": {
+          "count": 11,
+          "kind": {
+            "type": "Named",
+            "value": "peace"
+          },
+          "object": "Peace in Our Time"
+        }
+      },
+      "player": "bob",
+      "step": "EndOfCombat",
+      "turn": 2
+    },
+    {
+      "check": {
+        "View": {
+          "is": [
+            "Shock",
+            "Memnite",
+            "Ornithopter",
+            "Frogmite",
+            "Darksteel Myr"
+          ],
+          "of": "Zone",
+          "player": "bob",
+          "zone": "Library"
+        }
+      },
+      "player": "bob",
+      "step": "EndOfCombat",
+      "turn": 2
+    },
+    {
+      "check": {
+        "View": {
+          "is": null,
+          "of": "Result"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 3
+    },
+    {
+      "do": {
+        "ChooseOptional": "Exercises"
+      },
+      "player": "alice",
+      "step": "BeginningOfCombat",
+      "turn": 3
+    },
+    {
+      "check": {
+        "Counters": {
+          "count": 12,
+          "kind": {
+            "type": "Named",
+            "value": "peace"
+          },
+          "object": "Peace in Our Time"
+        }
+      },
+      "player": "alice",
+      "step": "EndOfCombat",
+      "turn": 3
+    },
+    {
+      "do": {
+        "ChooseOptional": "Exercises"
+      },
+      "player": "bob",
+      "step": "BeginningOfCombat",
+      "turn": 4
+    },
+    {
+      "check": {
+        "View": {
+          "is": [
+            [
+              "bob",
+              "ChooseOptional"
+            ]
+          ],
+          "of": "Asked"
+        }
+      },
+      "player": "bob",
+      "step": "EndOfCombat",
+      "turn": 4
+    },
+    {
+      "check": {
+        "Life": {
+          "life": 17,
+          "player": "alice"
+        }
+      },
+      "player": "bob",
+      "step": "EndOfCombat",
+      "turn": 4
+    },
+    {
+      "check": {
+        "Counters": {
+          "count": 13,
+          "kind": {
+            "type": "Named",
+            "value": "peace"
+          },
+          "object": "Peace in Our Time"
+        }
+      },
+      "player": "bob",
+      "step": "EndOfCombat",
+      "turn": 4
+    },
+    {
+      "check": {
+        "View": {
+          "is": [
+            "trigger of $peace"
+          ],
+          "of": "Stack"
+        }
+      },
+      "player": "alice",
+      "step": "Upkeep",
+      "turn": 5
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "Upkeep",
+      "turn": 5
+    }
+  ]
+}

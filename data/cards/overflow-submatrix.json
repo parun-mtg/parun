@@ -1,0 +1,82 @@
+{
+  "faces": [
+    {
+      "manaCost": [
+        {
+          "type": "Generic",
+          "value": 2
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "Black"
+          }
+        }
+      ],
+      "name": "Overflow Submatrix",
+      "oracleText": "Once during each of your turns, you may cast an artifact creature spell from your graveyard. If you cast a spell this way, that artifact creature enters with a finality counter on it. (If a creature with a finality counter on it would die, exile it instead.)",
+      "playerAbilities": [
+        {
+          "effect": {
+            "type": "CastFrom",
+            "value": {
+              "entersWith": [
+                {
+                  "count": {
+                    "type": "Literal",
+                    "value": 1
+                  },
+                  "kind": {
+                    "type": "Finality"
+                  }
+                }
+              ],
+              "from": {
+                "player": {
+                  "type": "Relative",
+                  "value": "You"
+                },
+                "zone": "Graveyard"
+              },
+              "limit": "OnceEachOfYourTurns",
+              "matching": {
+                "type": "And",
+                "value": [
+                  {
+                    "type": "HasCardType",
+                    "value": "Artifact"
+                  },
+                  {
+                    "type": "HasCardType",
+                    "value": "Creature"
+                  }
+                ]
+              }
+            }
+          },
+          "scope": {
+            "type": "You"
+          }
+        }
+      ],
+      "power": {
+        "type": "Literal",
+        "value": 3
+      },
+      "toughness": {
+        "type": "Literal",
+        "value": 3
+      },
+      "typeLine": {
+        "subtypes": [
+          "Borg"
+        ],
+        "types": [
+          "Artifact",
+          "Creature"
+        ]
+      }
+    }
+  ]
+}
