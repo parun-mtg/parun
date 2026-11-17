@@ -362,7 +362,7 @@ combatReplaySpec s =
         -- One prompt, one Response constructor per CounterKindFor: a move's
         -- answer does not replay into an entry's choice, nor the other way.
         Spec.it s "ChooseCounterKind records and replays each purpose, and rejects the other's answer" $ do
-          let purposes = [CounterKindFor.MovedBetween oid (ObjectId.MkObjectId 9), CounterKindFor.EnteringWith oid]
+          let purposes = [CounterKindFor.MovedBetween oid (ObjectId.MkObjectId 9), CounterKindFor.EnteringWith oid, CounterKindFor.AnotherOn oid]
               prompt for = Prompt.ChooseCounterKind decider S.alice for (CounterKind.PlusOnePlusOne NonEmpty.:| [CounterKind.Shield])
           Monad.forM_ purposes $ \for ->
             Monad.forM_ purposes $ \other ->

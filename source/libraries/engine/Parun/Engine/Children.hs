@@ -34,6 +34,7 @@ import qualified Parun.Types.AlternativeActivationCost as AlternativeActivationC
 import qualified Parun.Types.AlternativeCost as AlternativeCost
 import qualified Parun.Types.Amass as Amass
 import qualified Parun.Types.Anchor as Anchor
+import qualified Parun.Types.AnotherCounter as AnotherCounter
 import qualified Parun.Types.Ante as Ante
 import qualified Parun.Types.AnyNumberDiscard as AnyNumberDiscard
 import qualified Parun.Types.AnyNumberMatching as AnyNumberMatching
@@ -1306,7 +1307,11 @@ effectChildren c effect = case effect of
     fmap Effect.Guess (Guess.MkGuess <$> onObjectRef c subject <*> onSlot c named <*> onPlayer c guesser <*> onFilter c proposition <*> onSlot c right)
   Effect.ExileHandThenDraw -> pure effect
   Effect.NoteManaSpent -> pure effect
-  Effect.Proliferate named -> fmap Effect.Proliferate (traverse (onSlot c) named)
+  Effect.Proliferate targeted -> fmap Effect.Proliferate (traverse anotherCounter targeted)
+    where
+      anotherCounter x = case x of
+        AnotherCounter.EachKind named -> AnotherCounter.EachKind <$> onSlot c named
+        AnotherCounter.ChosenKind named -> AnotherCounter.ChosenKind <$> onSlot c named
   Effect.ChooseCardName (ChooseCardName.MkChooseCardName who restriction among) ->
     fmap Effect.ChooseCardName (ChooseCardName.MkChooseCardName <$> onPlayer c who <*> onFilter c restriction <*> traverse (onSlot c) among)
   Effect.ChooseQuality (ChooseQuality.MkChooseQuality quality linked secret) -> fmap Effect.ChooseQuality (ChooseQuality.MkChooseQuality <$> chosenQualityChildren (onSubtype c) (onFilter c) quality <*> pure linked <*> pure secret)

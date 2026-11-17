@@ -153,6 +153,7 @@ encode p answer = case p of
   Prompt.ChooseCounterKind _ _ for _ -> case for of
     CounterKindFor.MovedBetween _ _ -> Response.ChoseMovedCounter answer
     CounterKindFor.EnteringWith _ -> Response.ChoseEntryCounter answer
+    CounterKindFor.AnotherOn _ -> Response.ChoseAnotherCounter answer
   Prompt.ChooseMovedCounters {} -> Response.ChoseMovedCounters answer
   Prompt.ChooseStoredRerolls {} -> Response.ChoseStoredRerolls answer
   Prompt.ChooseMovedCountersAtLeastOne {} -> Response.ChoseMovedCountersAtLeastOne answer
@@ -454,6 +455,7 @@ decode p response = case p of
   Prompt.ChooseCounterKind _ _ for _ -> case (for, response) of
     (CounterKindFor.MovedBetween _ _, Response.ChoseMovedCounter kind) -> Just kind
     (CounterKindFor.EnteringWith _, Response.ChoseEntryCounter kind) -> Just kind
+    (CounterKindFor.AnotherOn _, Response.ChoseAnotherCounter kind) -> Just kind
     _ -> Nothing
   Prompt.ChooseMovedCounters {} -> case response of
     Response.ChoseMovedCounters counters -> Just counters

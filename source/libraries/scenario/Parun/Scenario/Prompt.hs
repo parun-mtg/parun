@@ -70,6 +70,7 @@ kindOf prompt = Text.pack $ case prompt of
   Prompt.ChooseCounterKind _ _ for _ -> case for of
     CounterKindFor.MovedBetween _ _ -> "ChooseMovedCounter"
     CounterKindFor.EnteringWith _ -> "ChooseEntryCounter"
+    CounterKindFor.AnotherOn _ -> "ChooseAnotherCounter"
   Prompt.ChooseMovedCounters {} -> "ChooseMovedCounters"
   Prompt.ChooseStoredRerolls {} -> "ChooseStoredRerolls"
   Prompt.ChooseMovedCountersAtLeastOne {} -> "ChooseMovedCountersAtLeastOne"
