@@ -134,6 +134,13 @@
               meta = ghc-wasm-meta.packages.${system};
             in
             pkgs.mkShell {
+              # The WASI imports a page gives the module; script/build-web.sh
+              # copies it into the site.
+              BROWSER_WASI_SHIM = pkgs.fetchzip {
+                url = "https://registry.npmjs.org/@bjorn3/browser_wasi_shim/-/browser_wasi_shim-0.4.2.tgz";
+                hash = "sha256-lfKZk1ZFchBCqon+Pr+PoT1Kb6Hq8O+0NKsalWEfCnI=";
+              };
+
               nativeBuildInputs = [
                 meta.binaryen
                 meta.nodejs
