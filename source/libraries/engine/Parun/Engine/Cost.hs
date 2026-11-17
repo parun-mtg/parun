@@ -5412,8 +5412,9 @@ composeReversal before windows keeps = case NonEmpty.nonEmpty windows of
   Just ws ->
     let final = ManaWindow.closed (NonEmpty.last ws)
         newestWindow = length windows - 1
-        -- Each run as its opening, its close, and whether it is the newest
-        -- window's and reaches that window's close.
+        -- Each run as its opening, its close, whether it is the newest
+        -- window's and reaches that window's close, and the states its
+        -- stretches passed through between those two.
         stretches w window =
           let segments = zip [0 :: Int ..] (ManaWindow.segments window)
               lastIndex = length segments - 1
@@ -5424,16 +5425,17 @@ composeReversal before windows keeps = case NonEmpty.nonEmpty windows of
                     (end, endSegment) = NonEmpty.last run
                  in ( if first == 0 then ManaWindow.opened window else ManaSegment.opened firstSegment,
                       if end == lastIndex then ManaWindow.closed window else ManaSegment.closed endSegment,
-                      w == newestWindow && end == lastIndex
+                      w == newestWindow && end == lastIndex,
+                      concatMap (\(_, segment) -> [ManaSegment.opened segment, ManaSegment.closed segment]) (NonEmpty.toList run)
                     )
            in fmap stretch runs
         keptRuns = concat (zipWith stretches [0 :: Int ..] windows)
      in case reverse keptRuns of
           [] -> Just (keepingLibraryActions final before)
-          (_, newest, reachesFinal) : _ ->
+          (_, newest, reachesFinal, _) : _ ->
             let tailState = if reachesFinal then newest else keepingLibraryActions final newest
-                starts = before : fmap (\(_, closed, _) -> closed) keptRuns
-             in foldr (\(start, (opened, _, _)) rest -> rest >>= Reversal.withoutAnnouncement start opened) (Just tailState) (zip starts keptRuns)
+                starts = before : fmap (\(_, closed, _, _) -> closed) keptRuns
+             in foldr (\(start, (opened, _, _, between)) rest -> rest >>= Reversal.withoutAnnouncement start opened between) (Just tailState) (zip starts keptRuns)
 
 -- CR 734.1's last sentence: shuffling a library or revealing cards from one --
 -- or looking at them, which CR 701.20e has follow a reveal's rules -- is never

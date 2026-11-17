@@ -43,7 +43,8 @@ import qualified Parun.Types.TurnRegisters as TurnRegisters
 -- CR 734.1: `closed` with the announcement undone -- "the entire action is
 -- reversed and any payments already made are canceled", while the mana
 -- abilities the payer activated stand. The arguments are where the action
--- began, where the payment's mana window opened, and where it closed.
+-- began, where the payment's mana window opened, the states the window passed
+-- through on the way (its stretches' ends), and where it closed.
 --
 -- Nothing where some leaf was written by BOTH sides to two different values,
 -- which is a state this function declines to invent -- except a pool, a life
@@ -64,10 +65,10 @@ import qualified Parun.Types.TurnRegisters as TurnRegisters
 -- declaration writes it (Combat.declaredAttackers, Combat.declaredBlockers),
 -- and a window that wrote it too answers Nothing, the conservative fallback
 -- above.
-withoutAnnouncement :: GameState -> GameState -> GameState -> Maybe GameState
-withoutAnnouncement before entry closed = do
+withoutAnnouncement :: GameState -> GameState -> [GameState] -> GameState -> Maybe GameState
+withoutAnnouncement before entry between closed = do
   settings <- one (MatchScope.settings . GameState.match)
-  objects <- objectsWith (GameState.objects before) (GameState.objects entry) (GameState.objects closed)
+  objects <- objectsWith (GameState.objects before) (GameState.objects entry) (fmap GameState.objects between) (GameState.objects closed)
   library <- libraries GameState.library
   hand <- zoneOf GameState.hand
   graveyard <- zoneOf GameState.graveyard
@@ -451,11 +452,16 @@ withoutAnnouncement before entry closed = do
 -- Ashnod's Altar in the toll's window; the scenario
 -- combat-cost/cr-508-1i-the-exerted-attacker-sacrificed-for-the-toll-reverses-the-attack
 -- is the proof.
-objectsWith :: (Ord k) => Map.Map k Object -> Map.Map k Object -> Map.Map k Object -> Maybe (Map.Map k Object)
-objectsWith = keysWith $ \b e c -> case (b, e, c) of
-  (Just held, Just opened, Just shut) -> fmap Just (objectWith held opened shut)
-  (Just _, Just _, Nothing) -> Just Nothing
-  _ -> leaf b e c
+objectsWith :: (Ord k) => Map.Map k Object -> Map.Map k Object -> [Map.Map k Object] -> Map.Map k Object -> Maybe (Map.Map k Object)
+objectsWith before entry between =
+  keysWith
+    ( \key b e c -> case (b, e, c) of
+        (Just held, Just opened, Just shut) -> fmap Just (objectWith held opened (Maybe.mapMaybe (Map.lookup key) between) shut)
+        (Just _, Just _, Nothing) -> Just Nothing
+        _ -> leaf b e c
+    )
+    before
+    entry
 
 -- `leaf` reached through an Object's fields, so a permanent both sides wrote
 -- keeps each side's own field: CR 508.1f taps or CR 508.1g exerts an attacker,
@@ -463,16 +469,28 @@ objectsWith = keysWith $ \b e c -> case (b, e, c) of
 -- "Tap an untapped creature you control"). CombatCostSpec's "Reversal at a
 -- combat toll" group is the proof. Each field is a whole-value leaf.
 --
+-- `tapped` is a leaf the window's stretches are read for too: where both sides
+-- changed it, the window's tap or untap was made on the status the undone
+-- side left (CR 107.6, 701.26), so no kept state has it and this answers
+-- Nothing, even where the window ended on the value it began with: Pili-Pala's
+-- {Q} untapping it after the first Drum's cost tapped it, then the second Drum
+-- tapping it again. The scenarios
+-- combat-cost/cr-734-1-the-drum-whose-tap-pili-pala-untapped-is-not-offered-back
+-- and its -and-the-second-drum-redid- sibling are the proof.
+--
 -- A TOTAL record construction for `withoutAnnouncement`'s reason: a new Object
 -- field is a `-Wmissing-fields` error here.
-objectWith :: Object -> Object -> Object -> Maybe Object
-objectWith before entry closed = do
+objectWith :: Object -> Object -> [Object] -> Object -> Maybe Object
+objectWith before entry between closed = do
   owner <- field Object.owner
   identity <- field Object.identity
   enteredUnder <- field Object.enteredUnder
   source <- field Object.source
   zone <- field Object.zone
-  tapped <- field Object.tapped
+  tapped <-
+    if Object.tapped before /= Object.tapped entry && any ((/= Object.tapped entry) . Object.tapped) (between <> [closed])
+      then Nothing
+      else field Object.tapped
   facing <- field Object.facing
   flipped <- field Object.flipped
   exiledFaceDown <- field Object.exiledFaceDown
@@ -725,15 +743,15 @@ putBackAt = Foldable.foldl' (\held (i, x) -> let (above, below) = splitAt i held
 -- own so that an inserted key and a deleted one take the same rule as a changed
 -- one. `combine` is the rule for a key all three hold.
 mapWith :: (Ord k, Eq v) => (v -> v -> v -> Maybe v) -> Map.Map k v -> Map.Map k v -> Map.Map k v -> Maybe (Map.Map k v)
-mapWith combine = keysWith $ \b e c -> case (b, e, c) of
+mapWith combine = keysWith $ \_ b e c -> case (b, e, c) of
   (Just held, Just opened, Just shut) -> fmap Just (combine held opened shut)
   _ -> leaf b e c
 
 -- Each key's three values, a missing one Nothing, combined by `at` into the
 -- key's value, Nothing dropping the key.
-keysWith :: (Ord k) => (Maybe v -> Maybe v -> Maybe v -> Maybe (Maybe v)) -> Map.Map k v -> Map.Map k v -> Map.Map k v -> Maybe (Map.Map k v)
+keysWith :: (Ord k) => (k -> Maybe v -> Maybe v -> Maybe v -> Maybe (Maybe v)) -> Map.Map k v -> Map.Map k v -> Map.Map k v -> Maybe (Map.Map k v)
 keysWith at before entry closed =
-  let atKey key = fmap ((,) key) (at (Map.lookup key before) (Map.lookup key entry) (Map.lookup key closed))
+  let atKey key = fmap ((,) key) (at key (Map.lookup key before) (Map.lookup key entry) (Map.lookup key closed))
       keys = Set.unions [Map.keysSet before, Map.keysSet entry, Map.keysSet closed]
       held (key, value) = fmap ((,) key) value
    in fmap (Map.fromList . Maybe.mapMaybe held) (traverse atKey (Set.toList keys))
