@@ -92,6 +92,7 @@ import qualified Parun.Types.RestartSignal as RestartSignal
 import qualified Parun.Types.Revealed as Revealed
 import qualified Parun.Types.Sickness as Sickness
 import qualified Parun.Types.Status as Status
+import qualified Parun.Types.TurnKind as TurnKind
 import qualified Parun.Types.TurnRegisters as TurnRegisters
 import qualified Parun.Types.Visibility as Visibility.Type
 import qualified Parun.Types.Zone as Zone
@@ -275,7 +276,7 @@ spec s registry = Spec.describe s "Conspiracy" $ do
       Spec.assertEqWith s "bob takes the first turn" (TurnRegisters.activePlayer (GameState.turn with)) S.bob
       Spec.assertEqWith s "the turn order begins with him" (GameState.seating with) [S.bob, S.alice]
       -- CR 500.7: Serra Avenger's count of turns of the game.
-      Spec.assertEqWith s "and the first turn is his first turn of the game, not alice's" (GameState.turnsBegun with) (Map.singleton S.bob 1)
+      Spec.assertEqWith s "and the first turn is his first turn of the game, not alice's" (GameState.turnsBegun with) (Map.singleton TurnKind.AnyTurn (Map.singleton S.bob 1))
       -- CR 103.5: the starting player declares first.
       Spec.assertEqWith s "bob declares his mulligan first" (declarers asked) [S.bob, S.alice]
       Spec.assertEqWith s "the control leg is untouched" (declarers controlAsked) [S.alice, S.bob]
@@ -305,7 +306,7 @@ spec s registry = Spec.describe s "Conspiracy" $ do
       powerPlay <- S.printingOf s registry "Power Play"
       let restart conspiracies = S.runPure keepAnswer (built mountain conspiracies) (Setup.restartGame S.performer Set.empty S.alice)
       Spec.assertEqWith s "with Power Play, bob starts the new game" (GameState.seating (restart [powerPlay])) [S.bob, S.alice]
-      Spec.assertEqWith s "its first turn his first turn of the game (CR 500.7)" (GameState.turnsBegun (restart [powerPlay])) (Map.singleton S.bob 1)
+      Spec.assertEqWith s "its first turn his first turn of the game (CR 500.7)" (GameState.turnsBegun (restart [powerPlay])) (Map.singleton TurnKind.AnyTurn (Map.singleton S.bob 1))
       Spec.assertEqWith s "without it, alice does" (GameState.seating (restart [])) [S.alice, S.bob]
 
   -- CR 315.5a: alice brings Backup Plan over thirty Mountains, and bob brings

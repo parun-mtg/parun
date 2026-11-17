@@ -61,6 +61,7 @@ import qualified Parun.Types.SpellCast as SpellCast
 import qualified Parun.Types.StepBegins as StepBegins
 import qualified Parun.Types.TriggerCondition as TriggerCondition
 import qualified Parun.Types.TriggerFrequency as TriggerFrequency
+import qualified Parun.Types.TurnKind as TurnKind
 import qualified Parun.Types.TurnScope as TurnScope
 import qualified Parun.Types.WhichTurn as WhichTurn
 import qualified Parun.Types.Zone as Zone
@@ -410,7 +411,8 @@ castSpell = SlotName.MkSlotName (Text.pack "thatSpell")
 -- a hand ("you have no cards in hand"), of permanents ("you control no
 -- creatures", "there are no Zombies on the battlefield"), the source's own
 -- status ("this artifact is untapped"), a player's life, monarchy or attack
--- this turn, or whose turn it is. Any other condition is not spelled out here.
+-- this turn, whose turn it is, or whether a player has begun an extra turn.
+-- Any other condition is not spelled out here.
 condition :: Target.Context -> Condition.Condition -> [Text.Text]
 condition context c = case c of
   Condition.Compares (Compares.MkCompares measured comparison threshold) -> case (measured, threshold) of
@@ -436,10 +438,20 @@ condition context c = case c of
     (Quantity.LifeChanged tally, Quantity.Literal 1) | comparison == Comparison.AtLeast -> do
       (subject, _) <- holder context (LifeTally.player tally)
       [subject <> lifeChanged tally]
+    -- CR 500.7: "you haven't begun an extra turn this game".
+    (Quantity.TurnsBegun TurnKind.ExtraTurn who, Quantity.Literal 0) | comparison == Comparison.Exactly -> do
+      (subject, have) <- holder context who
+      [subject <> Text.pack " " <> have <> Text.pack "n't begun an extra turn this game"]
     _ -> []
+  -- CR 500.7: a condition of yours, then "and haven't begun an extra turn this
+  -- game" (H.M.S. Bounty).
+  Condition.All [first, Condition.Compares (Compares.MkCompares (Quantity.TurnsBegun TurnKind.ExtraTurn (PlayerRef.Relative PlayerRelation.You)) Comparison.Exactly (Quantity.Literal 0))] -> do
+    words' <- condition context first
+    Monad.guard (Text.isPrefixOf (Text.pack "you ") words')
+    [words' <> Text.pack " and haven't begun an extra turn this game"]
   -- CR 500.7: "it's your first, second, or third turn of the game" (Starting
   -- Town).
-  Condition.All [Condition.Compares (Compares.MkCompares (Quantity.IsActivePlayer (PlayerRef.Relative PlayerRelation.You)) Comparison.Exactly (Quantity.Literal 1)), Condition.Compares (Compares.MkCompares (Quantity.TurnsBegun (PlayerRef.Relative PlayerRelation.You)) Comparison.AtMost (Quantity.Literal k))]
+  Condition.All [Condition.Compares (Compares.MkCompares (Quantity.IsActivePlayer (PlayerRef.Relative PlayerRelation.You)) Comparison.Exactly (Quantity.Literal 1)), Condition.Compares (Compares.MkCompares (Quantity.TurnsBegun TurnKind.AnyTurn (PlayerRef.Relative PlayerRelation.You)) Comparison.AtMost (Quantity.Literal k))]
     | k > 0 -> do
         places <- traverse Prose.ordinal [1 .. k]
         [Text.pack "it's your " <> Prose.listing "or" places <> Text.pack " turn of the game"]

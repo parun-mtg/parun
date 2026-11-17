@@ -92,6 +92,7 @@ import qualified Parun.Types.TapState as TapState
 import qualified Parun.Types.TeamId as TeamId
 import qualified Parun.Types.Teams as Teams
 import qualified Parun.Types.Timestamp as Timestamp
+import qualified Parun.Types.TurnKind as TurnKind
 import qualified Parun.Types.TurnRegisters as TurnRegisters
 import qualified Parun.Types.Zone as Zone
 
@@ -337,8 +338,8 @@ engineSpec s registry = Spec.describe s "Engine" $ do
     -- Parun.PlayerEffectSpec is where the raised number is measured.
     Spec.assertBool
       s
-      ( Natural.length (Game.zoneMembers Zone.Battlefield S.alice gs) <= Turn.turnsBegun S.alice gs
-          && Natural.length (Game.zoneMembers Zone.Battlefield S.bob gs) <= Turn.turnsBegun S.bob gs
+      ( Natural.length (Game.zoneMembers Zone.Battlefield S.alice gs) <= Turn.turnsBegun TurnKind.AnyTurn S.alice gs
+          && Natural.length (Game.zoneMembers Zone.Battlefield S.bob gs) <= Turn.turnsBegun TurnKind.AnyTurn S.bob gs
       )
       "no double land plays"
 

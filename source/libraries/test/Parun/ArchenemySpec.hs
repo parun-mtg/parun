@@ -36,6 +36,7 @@ import qualified Parun.Types.PlayerCounterKind as PlayerCounterKind
 import qualified Parun.Types.PlayerId as PlayerId
 import qualified Parun.Types.Prompt as Prompt
 import qualified Parun.Types.SideDeck as SideDeck
+import qualified Parun.Types.TurnKind as TurnKind
 import qualified Parun.Types.TurnRegisters as TurnRegisters
 import qualified Parun.Types.Zone as Zone
 
@@ -68,7 +69,7 @@ spec s registry = Spec.describe s "Parun.Engine.Archenemy" $ do
         started bobs = S.runPure lastDrawn (Setup.emptyGame S.threePlayers) (Setup.newGame (Resolve.performHandAction Resolve.noSubgame) ((S.alice, plain) NonEmpty.:| [(S.bob, bobs), (S.carol, schemer)]))
         sides gs = (fmap (`Game.opponentsOf` gs) [S.alice, S.bob, S.carol], Turn.sharesTurn gs S.alice S.bob)
     Spec.assertEqWith s "CR 904.6 carol takes the first turn, the cyclic order kept" (TurnRegisters.activePlayer (GameState.turn (started plain)), GameState.seating (started plain)) (S.carol, [S.carol, S.alice, S.bob])
-    Spec.assertEqWith s "CR 500.7 it is carol's first turn of the game and nobody else's" (GameState.turnsBegun (started plain)) (Map.singleton S.carol 1)
+    Spec.assertEqWith s "CR 500.7 it is carol's first turn of the game and nobody else's" (GameState.turnsBegun (started plain)) (Map.singleton TurnKind.AnyTurn (Map.singleton S.carol 1))
     Spec.assertEqWith s "CR 904.2 alice and bob are teammates sharing turns, each carol's opponent" (sides (started plain)) ([[S.carol], [S.carol], [S.alice, S.bob]], True)
     Spec.assertEqWith s "CR 904.12c with two archenemies alice starts a free-for-all" (TurnRegisters.activePlayer (GameState.turn (started schemer)), sides (started schemer)) (S.alice, ([[S.bob, S.carol], [S.alice, S.carol], [S.alice, S.bob]], False))
 

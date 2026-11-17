@@ -125,6 +125,7 @@ import qualified Parun.Types.StoredResult as StoredResult
 import qualified Parun.Types.Subtype as Subtype
 import qualified Parun.Types.TapState as TapState
 import qualified Parun.Types.Timestamp as Timestamp
+import qualified Parun.Types.TurnKind as TurnKind
 import qualified Parun.Types.TurnRegisters as TurnRegisters
 import qualified Parun.Types.Uses as Uses
 import qualified Parun.Types.Zone as Zone
@@ -393,12 +394,12 @@ setupSpec s registry = Spec.describe s "Setup" $ do
   -- names a starting player the board's first turn did not.
   Spec.it s "CR 500.7 setup, a restart and a subgame each count only the new game's first turn" $ do
     let built = Setup.gameWith GameSettings.plain S.bothPlayers
-        raised = built {GameState.turnsBegun = Map.fromList [(S.alice, 4), (S.bob, 3)]}
+        raised = built {GameState.turnsBegun = Map.fromList [(TurnKind.AnyTurn, Map.fromList [(S.alice, 4), (S.bob, 3)]), (TurnKind.ExtraTurn, Map.singleton S.alice 1)]}
         restarted = S.runPure S.identityAnswer raised (Setup.restartGame S.performer Set.empty S.bob)
         subgame = Setup.subgameStateFrom S.bob raised
-    Spec.assertEqWith s "setup counts the starting player's first turn" (GameState.turnsBegun built) (Map.singleton S.alice 1)
-    Spec.assertEqWith s "a restart counts its controller's first turn and nothing before it" (GameState.turnsBegun restarted) (Map.singleton S.bob 1)
-    Spec.assertEqWith s "a subgame counts its starting player's first turn and nothing of the main game's" (GameState.turnsBegun subgame) (Map.singleton S.bob 1)
+    Spec.assertEqWith s "setup counts the starting player's first turn" (GameState.turnsBegun built) (Map.singleton TurnKind.AnyTurn (Map.singleton S.alice 1))
+    Spec.assertEqWith s "a restart counts its controller's first turn and nothing before it" (GameState.turnsBegun restarted) (Map.singleton TurnKind.AnyTurn (Map.singleton S.bob 1))
+    Spec.assertEqWith s "a subgame counts its starting player's first turn and nothing of the main game's" (GameState.turnsBegun subgame) (Map.singleton TurnKind.AnyTurn (Map.singleton S.bob 1))
 
   -- CR 728.1 / 730.1b: a restart and a subgame are new games, so no stored
   -- result of the old one survives into them. The board carries a row in every

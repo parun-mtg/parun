@@ -180,6 +180,7 @@ import qualified Parun.Types.TriggerEntry as TriggerEntry
 import qualified Parun.Types.TriggerSource as TriggerSource
 import qualified Parun.Types.TriggeredAbility as TriggeredAbility
 import qualified Parun.Types.TriggeredAbilitySource as TriggeredAbilitySource
+import qualified Parun.Types.TurnKind as TurnKind
 import qualified Parun.Types.TurnRegisters as TurnRegisters
 import qualified Parun.Types.TypesAre as TypesAre
 import qualified Parun.Types.View as View
@@ -427,7 +428,7 @@ stage registry board =
                           TurnRegisters.phase = Board.phase board,
                           TurnRegisters.remaining = Seq.drop 1 (Seq.dropWhileL (/= Board.phase board) (Seq.fromList Turn.allPhases))
                         },
-                    GameState.turnsBegun = turnsBegunBy base active (Board.turn board),
+                    GameState.turnsBegun = Map.singleton TurnKind.AnyTurn (turnsBegunBy base active (Board.turn board)),
                     GameState.manaPool = Map.fromList [(pid, Mana.Type.MkMana (fmap plainUnit (Seat.manaPool seat))) | (seat, pid) <- NonEmpty.toList seated, not (null (Seat.manaPool seat))],
                     GameState.players = Map.mapWithKey (\pid p -> p {Player.life = Map.findWithDefault (Player.life p) pid lives, Player.counters = Map.findWithDefault (Player.counters p) pid counters, Player.graveyardOrder = Map.findWithDefault (Player.graveyardOrder p) pid orders, Player.draftNotes = Map.findWithDefault (Player.draftNotes p) pid notes, Player.speed = Map.findWithDefault (Player.speed p) pid speeds}) (GameState.players base),
                     GameState.monarch = monarch
@@ -442,7 +443,7 @@ stage registry board =
 
 -- | CR 500.7: each seat's turns of the game on a board that starts at `turn`
 -- with `active`'s turn, as an ordinary rotation with no extra turn taken would
--- have counted them -- one turn per team under CR 805.4's option.
+-- have counted them as TurnKind.AnyTurn -- one turn per team under CR 805.4's option.
 turnsBegunBy :: GameState.GameState -> PlayerId.PlayerId -> Natural -> Map.Map PlayerId.PlayerId Natural
 turnsBegunBy gs active turn =
   let order = GameState.seating gs

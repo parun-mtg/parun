@@ -143,7 +143,7 @@ withoutAnnouncement before entry between closed = do
   priority <- one (TurnRegisters.priority . GameState.turn)
   passed <- one (TurnRegisters.passed . GameState.turn)
   turnNumber <- one (TurnRegisters.turnNumber . GameState.turn)
-  turnsBegun <- mapOf GameState.turnsBegun
+  turnsBegun <- mapOfMaps GameState.turnsBegun
   permanentsAsTurnBegan <- one (TurnRegisters.permanentsAsTurnBegan . GameState.turn)
   result <- one GameState.result
   restartSignal <- one GameState.restartSignal

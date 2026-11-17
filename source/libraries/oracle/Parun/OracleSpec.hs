@@ -191,6 +191,7 @@ import qualified Parun.Types.Toughness as Toughness
 import qualified Parun.Types.TriggerCondition as TriggerCondition
 import qualified Parun.Types.TriggerLimit as TriggerLimit
 import qualified Parun.Types.TriggeredAbility as TriggeredAbility
+import qualified Parun.Types.TurnKind as TurnKind
 import qualified Parun.Types.TurnScope as TurnScope
 import qualified Parun.Types.TypeLine as TypeLine
 import qualified Parun.Types.Uses as Uses
@@ -514,6 +515,12 @@ spec s = Spec.describe s "Parun.Oracle" $ do
     Spec.assertEq s (Just (Text.pack "At the beginning of your upkeep, if you control no other creatures, you gain 1 life.")) (Oracle.render (gated (upkeeps (TurnScope.PlayersTurn (PlayerRef.Relative PlayerRelation.You))) (compares (countOf (Filter.And [Filter.HasCardType CardType.Creature, Filter.HeldBy Holder.Controller PlayerRelation.You, Filter.Not Filter.IsSource]) (onBattlefield (PlayerRef.Relative PlayerRelation.AnyPlayer))) Comparison.Exactly 0) [gainLife 1]))
     Spec.assertEq s (Just (Text.pack "At the beginning of each player's upkeep, if Spark is untapped, that player draws a card.")) (Oracle.render (gated (upkeeps (TurnScope.PlayersTurn (PlayerRef.Relative PlayerRelation.AnyPlayer))) (compares (countOf (Filter.And [Filter.IsSource, Filter.Not Filter.IsTapped]) (onBattlefield (PlayerRef.Relative PlayerRelation.AnyPlayer))) Comparison.AtLeast 1) [draw (PlayerRef.InSlot thatPlayer) 1]))
     Spec.assertEq s (Just (Text.pack "At the beginning of your upkeep, if you have 40 or more life, you gain 1 life.")) (Oracle.render (gated (upkeeps (TurnScope.PlayersTurn (PlayerRef.Relative PlayerRelation.You))) (compares (Quantity.LifeTotal (PlayerRef.Relative PlayerRelation.You)) Comparison.AtLeast 40) [gainLife 1]))
+    -- CR 500.7: no extra turn begun, alone and after a condition of yours
+    -- (H.M.S. Bounty).
+    let unextended = compares (Quantity.TurnsBegun TurnKind.ExtraTurn (PlayerRef.Relative PlayerRelation.You)) Comparison.Exactly 0
+    Spec.assertEq s (Just (Text.pack "At the beginning of your upkeep, if you haven't begun an extra turn this game, you gain 1 life.")) (Oracle.render (gated (upkeeps (TurnScope.PlayersTurn (PlayerRef.Relative PlayerRelation.You))) unextended [gainLife 1]))
+    let whales = compares (countOf (Filter.And [Filter.HasSubtype Subtype.Whale, Filter.HeldBy Holder.Controller PlayerRelation.You]) (onBattlefield (PlayerRef.Relative PlayerRelation.AnyPlayer))) Comparison.AtLeast 1
+    Spec.assertEq s (Just (Text.pack "At the beginning of your upkeep, if you control a Whale and haven't begun an extra turn this game, you gain 1 life.")) (Oracle.render (gated (upkeeps (TurnScope.PlayersTurn (PlayerRef.Relative PlayerRelation.You))) (Condition.All [whales, unextended]) [gainLife 1]))
 
   -- A creature type names creatures alone ("target attacking Goblin you
   -- control", Boggart Prankster); a change to each of several objects reads

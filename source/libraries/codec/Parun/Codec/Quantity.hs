@@ -51,6 +51,7 @@ import qualified Parun.Types.ControlWindow as ControlWindow
 import qualified Parun.Types.PlayerAction as PlayerActionType
 import qualified Parun.Types.PlayerRef as PlayerRefType
 import qualified Parun.Types.Quantity as Quantity
+import qualified Parun.Types.TurnKind as TurnKind
 import qualified Parun.Types.TurnTally as TurnTally
 import qualified Parun.Types.Zone as ZoneType
 
@@ -117,7 +118,10 @@ codec =
       Arm.payload "HasPlayerDesignation" PlayerDesignationTally.codec Quantity.HasPlayerDesignation (\x -> case x of Quantity.HasPlayerDesignation y -> Just y; _ -> Nothing),
       Arm.payload "IsStartingPlayer" PlayerRef.codec Quantity.IsStartingPlayer (\x -> case x of Quantity.IsStartingPlayer y -> Just y; _ -> Nothing),
       Arm.payload "IsActivePlayer" PlayerRef.codec Quantity.IsActivePlayer (\x -> case x of Quantity.IsActivePlayer y -> Just y; _ -> Nothing),
-      Arm.payload "TurnsBegun" PlayerRef.codec Quantity.TurnsBegun (\x -> case x of Quantity.TurnsBegun y -> Just y; _ -> Nothing),
+      -- CR 500.7's count, flat as Parun.Codec.SkipWindow's whole turns: one tag
+      -- per TurnKind.
+      Arm.payload "TurnsBegun" PlayerRef.codec (Quantity.TurnsBegun TurnKind.AnyTurn) (\x -> case x of Quantity.TurnsBegun TurnKind.AnyTurn y -> Just y; _ -> Nothing),
+      Arm.payload "ExtraTurnsBegun" PlayerRef.codec (Quantity.TurnsBegun TurnKind.ExtraTurn) (\x -> case x of Quantity.TurnsBegun TurnKind.ExtraTurn y -> Just y; _ -> Nothing),
       Arm.payload "PlayerCounters" PlayerCounterTally.codec Quantity.PlayerCounters (\x -> case x of Quantity.PlayerCounters y -> Just y; _ -> Nothing),
       -- CR 700.5's number: a PlayerRef and the colours it is measured to, which
       -- Parun.Types.Devotion holds as a SET so "to black and green" is one reading
@@ -329,7 +333,8 @@ tagOf x = case x of
   Quantity.HasPlayerDesignation {} -> "HasPlayerDesignation"
   Quantity.IsStartingPlayer {} -> "IsStartingPlayer"
   Quantity.IsActivePlayer {} -> "IsActivePlayer"
-  Quantity.TurnsBegun {} -> "TurnsBegun"
+  Quantity.TurnsBegun TurnKind.AnyTurn _ -> "TurnsBegun"
+  Quantity.TurnsBegun TurnKind.ExtraTurn _ -> "ExtraTurnsBegun"
   Quantity.PlayerCounters {} -> "PlayerCounters"
   Quantity.Devotion {} -> "Devotion"
   Quantity.PartySize {} -> "PartySize"
