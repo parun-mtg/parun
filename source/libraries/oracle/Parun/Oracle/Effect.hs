@@ -305,9 +305,11 @@ steps context cs = case cs of
             trailed = do
               gate <- Foldable.toList (Clause.condition d)
               (words', itself) <- condition replacing gate
+              -- Free: an ability word heads it (Join the Dead's descend 4).
+              word <- Trigger.abilityWord words'
               (body, ns) <- clause (if itself then replacing {Target.self = Text.pack "it"} else replacing) d {Clause.condition = Nothing}
               body' <- Foldable.toList (Text.stripSuffix (Text.pack ".") body)
-              [(body' <> Text.pack " instead if " <> words' <> Text.pack ".", ns)]
+              [(word <> body' <> Text.pack " instead if " <> words' <> Text.pack ".", ns)]
         second <- led <> trailed
         fmap ([(first, ms), second] <>) (steps (noted context [c, d]) rest)
   (i, c) : (j, d) : rest
