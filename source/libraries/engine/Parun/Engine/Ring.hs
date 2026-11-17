@@ -363,7 +363,7 @@ theRingSacrificesTheBlocker =
               ArmDelayedTrigger.duration = Nothing,
               ArmDelayedTrigger.ability = Nothing
             }
-   in Mint.trigger (TriggerCondition.Blocks (BlockTrigger.MkBlockTrigger BlockRole.Attacker yourRingBearer (BlockCount.EachCreature (Filter.And [])) Batching.EachOccurrence)) (Seq.singleton effect)
+   in Mint.trigger (TriggerCondition.Blocks (BlockTrigger.MkBlockTrigger BlockRole.Attacker yourRingBearer (BlockCount.EachCreature (Filter.And [])) Batching.EachOccurrence Nothing)) (Seq.singleton effect)
 
 -- | CR 603.7 / 701.54c: the delayed half of the sentence above -- at end of
 -- combat, the blocking creature is sacrificed.

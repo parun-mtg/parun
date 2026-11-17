@@ -3918,13 +3918,14 @@ triggerConditionFilters triggerCondition = case triggerCondition of
   -- (Venom's "enchanted creature", CR 701.54c's "your Ring-bearer") and of the
   -- creatures on the other side (Netcaster Spider's "with flying", rule
   -- 702.25a's "without flanking", Serra Inquisitors' "black").
-  TriggerCondition.Blocks (BlockTrigger.MkBlockTrigger _ creature count _) ->
+  TriggerCondition.Blocks (BlockTrigger.MkBlockTrigger _ creature count _ while_) ->
     unframed
       ( creature : case count of
           BlockCount.Once -> []
           BlockCount.EachCreature others -> [others]
           BlockCount.AtLeast _ others -> [others]
       )
+      <> foldMap (frame Unframed . conditionFilters) while_
   -- CR 603.6c names a quality of the departed permanent ("a creature you
   -- control", Tameshi's "noncreature permanents"), read off last known
   -- information; the other subjects carry none.

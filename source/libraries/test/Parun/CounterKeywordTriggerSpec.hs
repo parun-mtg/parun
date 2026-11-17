@@ -856,7 +856,7 @@ flankingSpec s registry =
         Spec.it s "CR 702.25b two instances mint two abilities, both CR 509.3d" $ do
           let abilities = Keyword.abilitiesFor Keyword.Type.Flanking 2
               expected =
-                TriggerCondition.Blocks (BlockTrigger.MkBlockTrigger BlockRole.Attacker Filter.Type.IsSource (BlockCount.EachCreature (Filter.Type.And [Filter.Type.HasCardType CardType.Creature, Filter.Type.Not (Filter.Type.HasKeyword Keyword.Type.Flanking)])) Batching.EachOccurrence)
+                TriggerCondition.Blocks (BlockTrigger.MkBlockTrigger BlockRole.Attacker Filter.Type.IsSource (BlockCount.EachCreature (Filter.Type.And [Filter.Type.HasCardType CardType.Creature, Filter.Type.Not (Filter.Type.HasKeyword Keyword.Type.Flanking)])) Batching.EachOccurrence Nothing)
           Spec.assertEqWith s "two abilities" (length abilities) 2
           Spec.assertEqWith s "each watching CR 509.3d, filtered on the blocker's own flanking" (fmap TriggeredAbility.condition abilities) [expected, expected]
 
@@ -945,7 +945,7 @@ afflictSpec s _ =
     -- 702.130a's "defending player" reads, beside the attacker. The falsifier
     -- is an arm that binds the attacking side there, or drops either.
     Spec.it s "CR 603.2 the defending player rides the becomes-blocked event in the reserved slot" $ do
-      let bindings = Event.eventBindings (Setup.emptyGame S.bothPlayers) Nothing Map.empty (ObjectId.MkObjectId 0) S.alice (TriggerCondition.Blocks (BlockTrigger.MkBlockTrigger BlockRole.Attacker Filter.Type.IsSource BlockCount.Once Batching.EachOccurrence)) (GameEvent.AttackerBlocked (AttackerBlocked.MkAttackerBlocked (ObjectId.MkObjectId 9) S.carol (Set.singleton (ObjectId.MkObjectId 10))))
+      let bindings = Event.eventBindings (Setup.emptyGame S.bothPlayers) Nothing Map.empty (ObjectId.MkObjectId 0) S.alice (TriggerCondition.Blocks (BlockTrigger.MkBlockTrigger BlockRole.Attacker Filter.Type.IsSource BlockCount.Once Batching.EachOccurrence Nothing)) (GameEvent.AttackerBlocked (AttackerBlocked.MkAttackerBlocked (ObjectId.MkObjectId 9) S.carol (Set.singleton (ObjectId.MkObjectId 10))))
       Spec.assertEqWith s "carol is bound under thatPlayer, the attacker under thatAttackingCreature, and nothing else" (Binding.targetsOf bindings) (Map.fromList [(Binding.triggerPlayer, Set.singleton (Recipient.ToPlayer S.carol)), (Binding.attackingCreature, Set.singleton (Recipient.ToObject (ObjectId.MkObjectId 9)))])
     -- CR 702.130b: "If a creature has multiple instances of afflict, each
     -- triggers separately." Asked of the mint rather than of a board, as
@@ -1052,7 +1052,7 @@ rampageSpec s registry =
                                   GameEvent.AbilityTriggered record
                                     | AbilityTriggered.source record == TriggerSource.OfObject pack,
                                       AbilityTriggered.controller record == S.alice,
-                                      TriggeredAbility.condition (AbilityTriggered.ability record) == TriggerCondition.Blocks (BlockTrigger.MkBlockTrigger BlockRole.Attacker Filter.Type.IsSource BlockCount.Once Batching.EachOccurrence) ->
+                                      TriggeredAbility.condition (AbilityTriggered.ability record) == TriggerCondition.Blocks (BlockTrigger.MkBlockTrigger BlockRole.Attacker Filter.Type.IsSource BlockCount.Once Batching.EachOccurrence Nothing) ->
                                         Just ()
                                   _ -> Nothing
                               )
