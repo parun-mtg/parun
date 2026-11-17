@@ -18,12 +18,22 @@ import qualified Parun.Engine.Keyword as Keyword
 import qualified Parun.Engine.Modal as Modal
 import qualified Parun.Types.AbilityName as AbilityName
 import qualified Parun.Types.ActivatedAbility as ActivatedAbility
+import qualified Parun.Types.ActivationRestriction as ActivationRestriction
+import qualified Parun.Types.Aggregation as Aggregation
 import qualified Parun.Types.Card as Card
+import qualified Parun.Types.Compares as Compares
+import qualified Parun.Types.Comparison as Comparison
+import qualified Parun.Types.Condition as Condition
 import Parun.Types.Cost (Cost)
 import qualified Parun.Types.Cost as Cost
 import qualified Parun.Types.CostComponent as CostComponent
+import qualified Parun.Types.Count as Count
+import qualified Parun.Types.Filter as Filter
 import qualified Parun.Types.GrantedAbility as GrantedAbility
+import qualified Parun.Types.InZone as InZone
 import qualified Parun.Types.Keyword as Keyword.Type
+import qualified Parun.Types.Quantity as Quantity
+import qualified Parun.Types.Scope as Scope
 import qualified Parun.Types.TriggeredAbility as TriggeredAbility
 import qualified Parun.Types.Zone as Zone
 
@@ -90,6 +100,7 @@ zonesFunctionedIn declared ability =
       | otherwise ->
           EffectZone.conjoin $
             costZones (ActivatedAbility.cost ability)
+              <> foldMap restrictionZone (ActivatedAbility.restrictions ability)
               <> foldMap
                 -- CR 113.7's source slot ALONE is "the object it's on" here: an
                 -- activation is not an event, so Parun.Engine.Event.Binding.eventBindings
@@ -105,6 +116,29 @@ functionsIn :: Zone.Zone -> Map.Map AbilityName.AbilityName (TriggeredAbility.Tr
 functionsIn home delayed zone ability = case zonesFunctionedIn delayed ability of
   Nothing -> zone == home
   Just named -> Set.member zone named
+
+-- CR 113.6b: a restriction stating a zone its ability's own object must be in
+-- -- Q, Stacking the Deck's grant, "Activate only ... if this card is exiled"
+-- -- states the zone the ability functions in. Only the bare "this object is
+-- there" count: Ancient Hellkite's "only if this creature is attacking" asks a
+-- further fact of a permanent, and states no zone beyond CR 113.6's default.
+restrictionZone :: ActivationRestriction.ActivationRestriction -> Set.Set Zone.Zone
+restrictionZone restriction = case restriction of
+  ActivationRestriction.OnlyIf
+    ( Condition.Compares
+        Compares.MkCompares
+          { Compares.measured =
+              Quantity.Count
+                Count.MkCount
+                  { Count.filter = Filter.IsSource,
+                    Count.scope = Scope.InZone InZone.MkInZone {InZone.zone = zone},
+                    Count.aggregation = Aggregation.Members
+                  },
+            Compares.comparison = Comparison.AtLeast,
+            Compares.threshold = Quantity.Literal 1
+          }
+      ) -> Set.singleton zone
+  _ -> Set.empty
 
 -- CR 113.6m's COST half: an ability whose cost moves the object it's on out of a
 -- particular zone functions only in that zone. The "or effect" half is

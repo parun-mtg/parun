@@ -301,9 +301,10 @@ legalActions pid gs =
       -- CR 702.29a: a HAND is a source of activations too, not just the
       -- battlefield -- cycling functions only while the card is in a player's
       -- hand. So is a GRAVEYARD, by CR 113.6m: Loxodon Surveyor's "{3}, Exile
-      -- this card from your graveyard: Draw a card" functions only there. Which
+      -- this card from your graveyard: Draw a card" functions only there, and
+      -- EXILE by CR 113.6b, for the ability Q, Stacking the Deck grants. Which
       -- abilities an object offers from where is Activatable.abilitiesFor's
-      -- question; this list only says where to look, and the three zones are
+      -- question; this list only says where to look, and the zones are
       -- pairwise disjoint.
       --
       -- ONE control-grant walk and ONE whole-board projection for the whole
