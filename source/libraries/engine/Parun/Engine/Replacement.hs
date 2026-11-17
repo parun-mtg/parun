@@ -675,8 +675,9 @@ admits regenerability cause rewrite = case rewrite of
   -- and umbra armor is not a regeneration, so CR 701.19c's prohibition leaves it
   -- standing.
   DestructionRewrite.UmbraArmor -> True
-  -- Pyramids' shield is not a regeneration (CR 701.19c) and names no cause.
-  DestructionRewrite.Heal -> True
+  -- Pyramids' shield and Dr. McCoy's are not regenerations (CR 701.19c) and
+  -- name no cause.
+  DestructionRewrite.Heal _ -> True
 
 -- CR 614.1: which permanent's destruction each rewrite watches for when its row
 -- prints no subject of its own.
@@ -703,7 +704,7 @@ scopes gs rewrite src oid = case rewrite of
     (Recipient.objectOf =<< (Object.attachedTo =<< Game.lookupObject src gs)) == Just oid
   -- Read only for a row printing no subject, which no heal shield does; the
   -- self-scope is regeneration's reading of an unnamed subject.
-  DestructionRewrite.Heal -> src == oid
+  DestructionRewrite.Heal _ -> src == oid
 
 -- CR 615.7: a spent shield is not an applicable prevention effect at all, and is
 -- refused HERE rather than applied for nothing -- as `admits` refuses a

@@ -204,7 +204,7 @@ spec s =
             s
             codec
             (ReplacementEffect.DestructionR (DestructionR.MkDestructionR Nothing DestructionRewrite.Regenerate))
-            " {\"type\":\"DestructionR\",\"value\":{\"rewrite\":\"Regenerate\"}} "
+            " {\"type\":\"DestructionR\",\"value\":{\"rewrite\":{\"type\":\"Regenerate\"}}} "
         -- CR 122.1d -- engine-minted, so this is the only place its wire form is
         -- pinned whole. Bewitching Leechcraft's printed row is in
         -- Parun.Codec.UntapRSpec.

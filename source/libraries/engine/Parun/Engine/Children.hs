@@ -193,6 +193,7 @@ import qualified Parun.Types.DelayedTrigger as DelayedTrigger
 import qualified Parun.Types.Designate as Designate
 import qualified Parun.Types.Destroy as Destroy
 import qualified Parun.Types.DestructionR as DestructionR
+import qualified Parun.Types.DestructionRewrite as DestructionRewrite
 import qualified Parun.Types.Devotion as Devotion
 import qualified Parun.Types.Devour as Devour
 import qualified Parun.Types.DieRollR as DieRollR
@@ -2443,7 +2444,7 @@ replacementEffectChildren c replacement = case replacement of
   ReplacementEffect.EntryR (EntryR.MkEntryR matching rewrite) -> fmap ReplacementEffect.EntryR (EntryR.MkEntryR <$> replacementFilter c matching <*> entryRewriteChildren c rewrite)
   ReplacementEffect.DamageR (DamageR.MkDamageR matching rewrite riders) ->
     fmap ReplacementEffect.DamageR (DamageR.MkDamageR <$> replacementDamage c matching <*> damageRewriteChildren c rewrite <*> traverse (replacementEffect c) riders)
-  ReplacementEffect.DestructionR (DestructionR.MkDestructionR matching rewrite) -> fmap ReplacementEffect.DestructionR (DestructionR.MkDestructionR <$> traverse (replacementFilter c) matching <*> pure rewrite)
+  ReplacementEffect.DestructionR (DestructionR.MkDestructionR matching rewrite) -> fmap ReplacementEffect.DestructionR (DestructionR.MkDestructionR <$> traverse (replacementFilter c) matching <*> destructionRewriteChildren c rewrite)
   ReplacementEffect.CounterR (CounterR.MkCounterR (CounterPattern.MkCounterPattern kind subject whose onWhat onWho) scaling) ->
     fmap ReplacementEffect.CounterR (CounterR.MkCounterR <$> (CounterPattern.MkCounterPattern <$> traverse (replacementCounterKind c) kind <*> counterSubjectChildren c subject <*> replacementWhose c whose <*> replacementFilter c onWhat <*> traverse (replacementWhose c) onWho) <*> scalingChildren c scaling)
   ReplacementEffect.TokenR (TokenR.MkTokenR (TokenPattern.MkTokenPattern whose whatToken effectsOnly firstEachTurn) scaling plus optional) ->
@@ -2592,6 +2593,14 @@ transformRewriteChildren :: (Applicative f) => ReplacementChildren card ability 
 transformRewriteChildren c rewrite = case rewrite of
   TransformRewrite.RunEffects effects -> TransformRewrite.RunEffects <$> traverse (replacementEffect c) effects
   TransformRewrite.ChoosePlayer _ -> pure rewrite
+
+-- | What a destruction replacement does (CR 614.1a).
+destructionRewriteChildren :: (Applicative f) => ReplacementChildren card ability effect f -> DestructionRewrite.DestructionRewrite -> f DestructionRewrite.DestructionRewrite
+destructionRewriteChildren c rewrite = case rewrite of
+  DestructionRewrite.Regenerate -> pure rewrite
+  DestructionRewrite.RemoveShieldCounter -> pure rewrite
+  DestructionRewrite.UmbraArmor -> pure rewrite
+  DestructionRewrite.Heal kind -> DestructionRewrite.Heal <$> traverse (replacementCounterKind c) kind
 
 -- | What an untap replacement does (CR 614.1a).
 untapRewriteChildren :: (Applicative f) => ReplacementChildren card ability effect f -> UntapRewrite.UntapRewrite -> f UntapRewrite.UntapRewrite

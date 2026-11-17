@@ -1073,7 +1073,7 @@ spec s = Spec.describe s "Parun.Codec.Effect" $ do
               Replace.effect = ReplacementEffect.DestructionR (DestructionR.MkDestructionR Nothing DestructionRewrite.Regenerate)
             }
       )
-      " {\"type\":\"Replace\",\"value\":{\"duration\":{\"type\":\"UntilEndOfTurn\"},\"uses\":\"Once\",\"origin\":\"Other\",\"effect\":{\"type\":\"DestructionR\",\"value\":{\"rewrite\":\"Regenerate\"}}}} "
+      " {\"type\":\"Replace\",\"value\":{\"duration\":{\"type\":\"UntilEndOfTurn\"},\"uses\":\"Once\",\"origin\":\"Other\",\"effect\":{\"type\":\"DestructionR\",\"value\":{\"rewrite\":{\"type\":\"Regenerate\"}}}}} "
   -- CR 614.15 / 616.1a: a self-replacement gated on a nonzero threshold.
   -- CR 207.2c's ability words have no rules meaning, so "Metalcraft" itself
   -- encodes nothing.

@@ -30,7 +30,9 @@
                                 "type": "IsBound",
                                 "value": "artifact"
                               },
-                              "rewrite": "Regenerate"
+                              "rewrite": {
+                                "type": "Regenerate"
+                              }
                             }
                           },
                           "origin": "Other",
