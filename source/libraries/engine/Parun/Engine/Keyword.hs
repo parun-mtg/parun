@@ -4855,14 +4855,20 @@ withChoices chosen subtype keyword = case keyword of
 -- posture. Proved by data/scenarios/'s Figure of Fable control-change
 -- scenario.
 --
+-- CR 702.16k / 608.2h: a bare Filter.OfBoundPlayer likewise, as the one
+-- player `bound` reads its slot as naming, and left standing where it names
+-- none -- Eon Frolicker's "that player", whose slot dies with the resolution.
+-- Proved by data/scenarios/'s Eon Frolicker scenario.
+--
 -- grantedBy does not call it: no static ability grants a permanent this
 -- quality (Scryfall o:"protection from each of your opponents", 2026-11-13,
 -- four cards; an Aura reading "enchanted creature has" it would refute this).
-withRelatedPlayers :: (PlayerRelation.PlayerRelation -> [PlayerId]) -> Keyword -> Keyword
-withRelatedPlayers related keyword = case keyword of
-  Keyword.Protection protection
-    | Filter.OfRelatedPlayer relation <- Protection.quality protection ->
-        Keyword.Protection protection {Protection.quality = Filter.Or (fmap Filter.OfSpecificPlayer (related relation))}
+withQualityPlayers :: (PlayerRelation.PlayerRelation -> [PlayerId]) -> (SlotName.SlotName -> Maybe PlayerId) -> Keyword -> Keyword
+withQualityPlayers related bound keyword = case keyword of
+  Keyword.Protection protection -> case Protection.quality protection of
+    Filter.OfRelatedPlayer relation -> Keyword.Protection protection {Protection.quality = Filter.Or (fmap Filter.OfSpecificPlayer (related relation))}
+    Filter.OfBoundPlayer slot | Just pid <- bound slot -> Keyword.Protection protection {Protection.quality = Filter.OfSpecificPlayer pid}
+    _ -> keyword
   _ -> keyword
 
 -- The attachment prohibitions one keyword states.

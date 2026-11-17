@@ -274,6 +274,10 @@ data Filter keyword
   | -- | CR 702.16k: the candidate is this player's, by the atom above's three
     -- readings. Runtime-only, HeldByPlayer's posture.
     OfSpecificPlayer PlayerId.PlayerId
+  | -- | CR 702.16k / 608.2h: the candidate is the player's a slot binds, by
+    -- OfChosenPlayer's three readings (Eon Frolicker's "that player"). Baked
+    -- to OfSpecificPlayer as a resolution stores it; vacuously False unbaked.
+    OfBoundPlayer SlotName.SlotName
   | -- | CR 115.1: the candidate is a PLAYER who relates thus to the perspective
     -- -- "target opponent". Separate from HeldBy, which asks who holds
     -- an object candidate rather than who the candidate is (CR 109.1, CR 108.4).
