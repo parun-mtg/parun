@@ -489,7 +489,8 @@ blankBookkeeping =
       Bookkeeping.lastChoice = Timestamp.MkTimestamp 0,
       Bookkeeping.repeatPicks = Nothing,
       Bookkeeping.undone = Map.empty,
-      Bookkeeping.fellShort = 0
+      Bookkeeping.fellShort = 0,
+      Bookkeeping.loopGroups = Map.empty
     }
 
 -- The snapshots of a game nothing has happened in yet.

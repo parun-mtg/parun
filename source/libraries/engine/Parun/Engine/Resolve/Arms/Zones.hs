@@ -969,8 +969,9 @@ forEach applyEffectWith loopOffers runSubgame resolving source controller legal 
   -- The loop's own name holds each member in turn through the map handed
   -- down, so a group an earlier loop left under it (below) must not shadow
   -- that member. A REGRESSION FENCE: no card runs two object loops under one
-  -- name, so no board observes it.
-  State.modify' (Common.overHolderBindings resolving (Map.delete slot))
+  -- name, so no board observes it. Noted first, so neither this clear nor the
+  -- fill below is an act (Common.happenedBetween).
+  State.modify' (Common.overHolderBindings resolving (Map.delete slot) . Common.noteLoopGroup resolving slot)
   gs0 <- State.get
   -- CR 608.2d: a "you may" per member is ONE announcement of which members,
   -- made before the first iteration, since the loop is one action (CR 608.2f)

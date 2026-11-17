@@ -64,6 +64,7 @@ import qualified Parun.Codec.RestartSignal as RestartSignal
 import qualified Parun.Codec.Result as Result
 import qualified Parun.Codec.ReturnWatch as ReturnWatch
 import qualified Parun.Codec.SideDeck as SideDeck
+import qualified Parun.Codec.SlotName as SlotName
 import qualified Parun.Codec.ThrowResult as ThrowResult
 import qualified Parun.Codec.Timestamp as Timestamp
 import qualified Parun.Codec.TurnMarker as TurnMarker
@@ -205,6 +206,7 @@ codec resolve = Fields.object $ do
   loopInvolvement <- Fields.defaulted "loopInvolvement" Map.empty (Common.naturalMap PlayerId.codec Timestamp.codec) GameState.loopInvolvement
   drewFromEmpty <- Fields.defaulted "drewFromEmpty" Set.empty (Common.set PlayerId.codec) GameState.drewFromEmpty
   fellShort <- Fields.defaulted "fellShort" 0 Common.natural (Bookkeeping.fellShort . GameState.bookkeeping)
+  loopGroups <- Fields.defaulted "loopGroups" Map.empty (Common.naturalMap ObjectId.codec (Common.set SlotName.codec)) (Bookkeeping.loopGroups . GameState.bookkeeping)
   landsPlayed <- Fields.defaulted "landsPlayed" Map.empty (Common.naturalMap PlayerId.codec Common.natural) GameState.landsPlayed
   cardsPlayed <- Fields.defaulted "cardsPlayed" Map.empty (Common.naturalMap ObjectId.codec PlayerId.codec) GameState.cardsPlayed
   keptFaceDown <- Fields.defaulted "keptFaceDown" Nothing (Common.maybe (Common.naturalMap ObjectId.codec Common.natural)) (Scratch.keptFaceDown . GameState.scratch)
@@ -307,7 +309,8 @@ codec resolve = Fields.object $ do
               Bookkeeping.lastChoice = lastChoice,
               Bookkeeping.repeatPicks = repeatPicks,
               Bookkeeping.undone = undone,
-              Bookkeeping.fellShort = fellShort
+              Bookkeeping.fellShort = fellShort,
+              Bookkeeping.loopGroups = loopGroups
             },
         GameState.snapshots =
           Snapshots.MkSnapshots

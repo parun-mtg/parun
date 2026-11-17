@@ -574,6 +574,13 @@ fallShort = State.modify' (\gs -> gs {GameState.bookkeeping = (GameState.bookkee
 -- CR 701.24a's Object.exposed (a settle exposes the top cards a seat sees, and
 -- the one before the instruction exposed every card seen then).
 --
+-- Discounted: every slot Bookkeeping.loopGroups lists for its holder, a name
+-- an object loop clears as it begins and fills with its members as it ends
+-- (Arms.Zones.forEach), whether or not its body did anything; only that loop
+-- writes the name. Parun.ResolveSpec's "CR 603.12 a loop's group of its
+-- members is no act" is the case: no card puts a "when you do" or a mandatory
+-- "if you do" after an object loop.
+--
 -- Proved: GameState.bookkeeping's skip by "CR 701.28f / 603.12 an ignored
 -- convert arms no reflexive" (nextTimestamp), Parun.ResolveSpec's Victimize
 -- case (nextEventGroup, fellShort) and the scenario "CR 608.2c Djinn of Wishes
@@ -587,8 +594,10 @@ happenedBetween :: GameState -> GameState -> Bool
 happenedBetween before after =
   let tallyless :: Map.Map SlotName Binding.Type.Binding -> Map.Map SlotName Binding.Type.Binding
       tallyless = Map.filter (/= Binding.Type.empty) . Map.map (\binding -> binding {Binding.Type.amount = Nothing})
+      groups = Bookkeeping.loopGroups (GameState.bookkeeping after)
+      groupless oid = (`Map.withoutKeys` Map.findWithDefault Set.empty oid groups)
       objectTallyless :: Map.Map ObjectId Object.Object -> Map.Map ObjectId Object.Object
-      objectTallyless = Map.map (\obj -> obj {Object.bindings = tallyless (Object.bindings obj), Object.controlClock = Map.empty})
+      objectTallyless = Map.mapWithKey (\oid obj -> obj {Object.bindings = tallyless (groupless oid (Object.bindings obj)), Object.controlClock = Map.empty})
       comparable gs =
         gs
           { GameState.turn =
@@ -4436,6 +4445,12 @@ overHolderBindings holder f gs =
         { GameState.objects = Map.adjust put holder (GameState.objects gs),
           GameState.snapshots = (GameState.snapshots gs) {Snapshots.stackArchive = Map.adjust put holder (Snapshots.stackArchive (GameState.snapshots gs))}
         }
+
+-- CR 608.2c: `slot` names an object loop's members on `holder` as a group, a
+-- note happenedBetween reads so that clearing or filling it is no act.
+noteLoopGroup :: ObjectId -> SlotName -> GameState -> GameState
+noteLoopGroup holder slot gs =
+  gs {GameState.bookkeeping = (GameState.bookkeeping gs) {Bookkeeping.loopGroups = Map.insertWith Set.union holder (Set.singleton slot) (Bookkeeping.loopGroups (GameState.bookkeeping gs))}}
 
 -- "Put into a graveyard this way" (CR 701.8a), asked of one CR 400.7 incarnation:
 -- is it in a graveyard? A question about where the object ended up rather than

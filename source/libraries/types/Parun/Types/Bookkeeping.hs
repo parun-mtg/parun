@@ -12,6 +12,7 @@ import qualified Parun.Types.PlayerId as PlayerId
 import qualified Parun.Types.Printing as Printing
 import qualified Parun.Types.PrintingId as PrintingId
 import qualified Parun.Types.RepeatPicks as RepeatPicks
+import qualified Parun.Types.SlotName as SlotName
 import qualified Parun.Types.Timestamp as Timestamp
 import qualified Parun.Types.Undoing as Undoing
 
@@ -62,6 +63,11 @@ data Bookkeeping = MkBookkeeping
     -- | CR 603.12: how many draw or mill instructions have done fewer than the
     -- number they named. It only rises, so one instruction's shortfall is a
     -- difference across it (Parun.Engine.Resolve.Common.instructionDone).
-    fellShort :: !Natural.Natural
+    fellShort :: !Natural.Natural,
+    -- | CR 608.2c: the names each resolving object's object loops left their
+    -- members under as a group (Parun.Engine.Resolve.Arms.Zones.forEach),
+    -- which the loop writes whether or not its body did anything, so
+    -- Parun.Engine.Resolve.Common.happenedBetween discounts those slots.
+    loopGroups :: !(Map.Map ObjectId.ObjectId (Set.Set SlotName.SlotName))
   }
   deriving (Eq, Ord, Show)
