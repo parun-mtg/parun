@@ -3278,8 +3278,10 @@ claimOfGiven board slots pid oid component gs =
           | n > 0 -> reaching (ClaimAxis.Removal Zone.Graveyard) (toInteger n) (tallyValueGiven tally (Snapshot.views board)) (exileCandidatesGiven board slots pid oid criterion gs)
           | otherwise -> Nothing
         -- The arm above over CR 701.59a's whole graveyard by mana value.
-        CostComponent.CollectEvidence n -> claimOfGiven board slots pid oid (CostComponent.ExileCardsTotalling (evidenceExile n)) gs
-        -- The arm above at the amount these slots fix (fixComputed).
+        CostComponent.CollectEvidence (CostAmount.Fixed n) -> claimOfGiven board slots pid oid (CostComponent.ExileCardsTotalling (evidenceExile n)) gs
+        -- Nothing until CR 107.3f fixes the amount, Sacrifice's arm.
+        CostComponent.CollectEvidence (CostAmount.Announced _) -> Nothing
+        -- The Fixed arm above at the amount these slots fix (fixComputed).
         CostComponent.CollectEvidenceOfTargets -> claimOfGiven board slots pid oid (fixComputed slots gs component) gs
         -- A pool of at most ONE, CR 404.2's order having picked it.
         CostComponent.ExileTopFromGraveyard criterion ->
@@ -3887,8 +3889,10 @@ uncountedCeiling pid oid claims gs component = case component of
               (fmap (\candidate -> tallyValue tally candidate gs) (exileCandidates Map.empty pid oid criterion gs))
           )
     | otherwise -> Nothing
-  CostComponent.CollectEvidence n -> uncountedCeiling pid oid claims gs (CostComponent.ExileCardsTotalling (evidenceExile n))
-  -- The arm above at the amount no targets fix: CR 605.3b's mana ability has no
+  CostComponent.CollectEvidence (CostAmount.Fixed n) -> uncountedCeiling pid oid claims gs (CostComponent.ExileCardsTotalling (evidenceExile n))
+  -- The guard's answer above, which this arm never reaches.
+  CostComponent.CollectEvidence (CostAmount.Announced _) -> Just 0
+  -- The Fixed arm above at the amount no targets fix: CR 605.3b's mana ability has no
   -- CR 601.2c step (fixComputed).
   CostComponent.CollectEvidenceOfTargets -> uncountedCeiling pid oid claims gs (fixComputed Map.empty gs component)
   -- Counted by `objectCeiling`, on `turnAxis`: the count is exact, so the
@@ -4230,7 +4234,7 @@ fixComputed :: Map.Map SlotName.SlotName (Set.Set Recipient.Recipient) -> GameSt
 fixComputed slots gs component
   | targetComputed component =
       let permanents = Set.filter (\candidate -> Game.zoneOf candidate gs == Just Zone.Battlefield) (Set.unions (Map.elems (Binding.objectsOfSlots slots)))
-       in CostComponent.CollectEvidence (Integer.toNaturalSaturating (sum (fmap (`evidenceValue` gs) (Set.toList permanents))))
+       in CostComponent.CollectEvidence (CostAmount.Fixed (Integer.toNaturalSaturating (sum (fmap (`evidenceValue` gs) (Set.toList permanents)))))
   | otherwise = component
 
 -- fixComputed over a whole cost. Urgent Necropsy's ruling locks its X in once
@@ -4749,7 +4753,7 @@ canPayComponentGiven board slots pid oid component gs = case component of
   -- greater", and a threshold of 0 is paid by the empty set with no special case.
   CostComponent.ExileCardsTotalling (ExileCardsTotalling.MkExileCardsTotalling n tally criterion) ->
     sum (fmap (tallyValueGiven tally (Snapshot.views board)) (exileCandidatesGiven board slots pid oid criterion gs)) >= toInteger n
-  CostComponent.CollectEvidence n -> canPayComponentGiven board slots pid oid (CostComponent.ExileCardsTotalling (evidenceExile n)) gs
+  CostComponent.CollectEvidence amount -> payableAnnounced amount (\n -> canPayComponentGiven board slots pid oid (CostComponent.ExileCardsTotalling (evidenceExile n)) gs)
   -- The arm above at the amount these slots fix (fixComputed).
   CostComponent.CollectEvidenceOfTargets -> canPayComponentGiven board slots pid oid (fixComputed slots gs component) gs
   -- CR 118.3 again: payable only if the graveyard holds a matching card at all,
@@ -8357,7 +8361,7 @@ payPayable perform moment paidFor slots pid oid component = case component of
   -- cr-701-59c-vitu-ghazi-inspector-s-enters-ability-reads-the-evidence-its-spell-collected
   -- is the proof. LINKS what arrived to `oid` (linkPaidExiles), Kylox's
   -- Voltstrider's "cards exiled with it".
-  CostComponent.CollectEvidence n -> do
+  CostComponent.CollectEvidence (CostAmount.Fixed n) -> do
     exiled <- exileTotalling perform slots pid oid (evidenceExile n)
     case exiled of
       Nothing -> pure Payment.Unpaid
@@ -8366,7 +8370,9 @@ payPayable perform moment paidFor slots pid oid component = case component of
         -- Evidence Examiner's "Whenever you collect evidence" reads this.
         State.modify' (Event.recordEvent (GameEvent.PlayerActed (PlayerActed.MkPlayerActed PlayerAction.CollectEvidence pid)))
         pure (Payment.Paid (Binding.paidObjects Binding.collectedEvidence (Set.map Recipient.ToObject chosen)))
-  -- The arm above with its own filter and tally, and no keyword action (Baron
+  -- An unannounced amount is unpaid, payableAnnounced's fence.
+  CostComponent.CollectEvidence (CostAmount.Announced _) -> pure Payment.Unpaid
+  -- The Fixed arm above with its own filter and tally, and no keyword action (Baron
   -- Helmut Zemo). BINDS what ARRIVED in exile under Binding.totalledExiles,
   -- craftMaterials' reason: "copy those exiled cards" copies the cards in exile.
   CostComponent.ExileCardsTotalling exile -> do

@@ -182,7 +182,7 @@ data CostComponent keyword
     PutExiledIntoGraveyard (Filter.Filter keyword)
   | -- | CR 701.59a as a cost / Forensic Researcher: the paying player exiles any
     -- number of cards from their own graveyard whose total mana value reaches
-    -- this number.
+    -- this amount.
     --
     -- A THRESHOLD on an aggregate and not a count, TapForTotalPower's shape one
     -- zone over: how many cards a payment exiles is not settled until the payer
@@ -192,8 +192,9 @@ data CostComponent keyword
     -- BINDS the exiled cards under Parun.Engine.Binding.collectedEvidence, which
     -- is what CR 701.59c's "if evidence was collected" is read off through
     -- Quantity.WasBound; CR 118.8b's optional "you may collect evidence" is a
-    -- Parun.Types.CostChoice, Behold's shape below.
-    CollectEvidence Natural.Natural
+    -- Parun.Types.CostChoice, Behold's shape below. Incinerator of the Guilty's
+    -- "collect evidence X" is this with an announced amount (CR 107.3f).
+    CollectEvidence CostAmount.CostAmount
   | -- | CR 701.59a as a cost / Urgent Necropsy: collect evidence N, N the total
     -- mana value of the permanents CR 601.2c's targets name
     -- (Parun.Engine.Cost.fixComputed).

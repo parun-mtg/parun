@@ -10,7 +10,10 @@
               },
               {
                 "type": "CollectEvidence",
-                "value": 4
+                "value": {
+                  "type": "Fixed",
+                  "value": 4
+                }
               }
             ],
             "mana": [
