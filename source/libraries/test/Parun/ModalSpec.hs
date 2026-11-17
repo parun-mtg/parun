@@ -195,8 +195,8 @@ modalReaderSpec s = Spec.describe s "M4h Modal reader" $ do
     let m =
           ModalT.MkModal
             ( Seq.fromList
-                [ Mode.MkMode (Seq.singleton (Mint.mandatory (Seq.singleton (Effect.Draw (Draw.MkDraw (PlayerRef.Relative PlayerRelation.You) (Quantity.Literal 1) Nothing))))) Map.empty,
-                  Mode.MkMode (Seq.singleton (Mint.mandatory (Seq.singleton (Effect.Draw (Draw.MkDraw (PlayerRef.Relative PlayerRelation.You) (Quantity.Literal 2) Nothing))))) Map.empty
+                [ Mode.MkMode (Seq.singleton (Mint.mandatory (Seq.singleton (Effect.Draw (Draw.MkDraw (PlayerRef.Relative PlayerRelation.You) (Quantity.Literal 1) Nothing Nothing))))) Map.empty,
+                  Mode.MkMode (Seq.singleton (Mint.mandatory (Seq.singleton (Effect.Draw (Draw.MkDraw (PlayerRef.Relative PlayerRelation.You) (Quantity.Literal 2) Nothing Nothing))))) Map.empty
                 ]
             )
             (ModeSelection.ChooseExactly 1)
@@ -204,7 +204,7 @@ modalReaderSpec s = Spec.describe s "M4h Modal reader" $ do
             Seq.empty ::
             ModalT.Modal Card.Type.Card (GrantedAbility.GrantedAbility Card.Type.Card)
         chosen = Seq.singleton (ModeIndex.MkModeIndex 1)
-    Spec.assertEqWith s "only mode 1's effect" (Modal.modesEffects chosen m) [Effect.Draw (Draw.MkDraw (PlayerRef.Relative PlayerRelation.You) (Quantity.Literal 2) Nothing)]
+    Spec.assertEqWith s "only mode 1's effect" (Modal.modesEffects chosen m) [Effect.Draw (Draw.MkDraw (PlayerRef.Relative PlayerRelation.You) (Quantity.Literal 2) Nothing Nothing)]
     Spec.assertEqWith s "an exact instruction's two bounds are its count" (Modal.leastOf (ModalT.selection m), Modal.mostOf (ModalT.selection m)) (1, Just 1)
 
 -- M4h task 4: CR 602.2b -- the activation path prompts ChooseModes exactly like

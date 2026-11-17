@@ -36,6 +36,12 @@ import qualified Parun.Types.SlotName as SlotName
 data Draw = MkDraw
   { player :: PlayerRef.PlayerRef,
     quantity :: Quantity.Quantity,
-    slot :: Maybe SlotName.SlotName
+    slot :: Maybe SlotName.SlotName,
+    -- | CR 121.1 / 608.2c: the slot the PLAYERS who drew a card this way are
+    -- remembered under, a CR 614 replacement's draws included: Cut a Deal's
+    -- rulings count an opponent whose draw was doubled once and one whose draw
+    -- was replaced not at all. `slot` cannot answer it, since CR 121.6c keeps a
+    -- replacement's cards out of it. Absent for every draw nothing asks this of.
+    drawers :: Maybe SlotName.SlotName
   }
   deriving (Eq, Ord, Show)

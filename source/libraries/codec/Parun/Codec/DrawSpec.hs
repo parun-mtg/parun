@@ -17,7 +17,7 @@ spec s = Spec.describe s "Parun.Codec.Draw" $ do
     Common.assertCodec
       s
       Draw.codec
-      (Draw.MkDraw (PlayerRef.Relative PlayerRelation.You) (Quantity.Literal 2) Nothing)
+      (Draw.MkDraw (PlayerRef.Relative PlayerRelation.You) (Quantity.Literal 2) Nothing Nothing)
       " {\"player\":{\"type\":\"Relative\",\"value\":\"You\"},\"quantity\":{\"type\":\"Literal\",\"value\":2}} "
   Spec.it s "MkDraw, CR 121.1's drawn card remembered: the key is written" $
     Common.assertCodec
@@ -27,6 +27,18 @@ spec s = Spec.describe s "Parun.Codec.Draw" $ do
           (PlayerRef.Relative PlayerRelation.You)
           (Quantity.Literal 1)
           (Just (SlotName.MkSlotName (Text.pack "drawn")))
+          Nothing
       )
       " {\"player\":{\"type\":\"Relative\",\"value\":\"You\"},\"quantity\":{\"type\":\"Literal\",\"value\":1},\"slot\":\"drawn\"} "
+  Spec.it s "MkDraw, the players who drew remembered: the key is written" $
+    Common.assertCodec
+      s
+      Draw.codec
+      ( Draw.MkDraw
+          (PlayerRef.Relative PlayerRelation.Opponent)
+          (Quantity.Literal 1)
+          Nothing
+          (Just (SlotName.MkSlotName (Text.pack "drew")))
+      )
+      " {\"drawers\":\"drew\",\"player\":{\"type\":\"Relative\",\"value\":\"Opponent\"},\"quantity\":{\"type\":\"Literal\",\"value\":1}} "
   Spec.it s "has a schema" $ Common.assertHasSchema s Draw.codec

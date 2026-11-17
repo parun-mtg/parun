@@ -3619,7 +3619,7 @@ effectIsImpossible asked resolving source controller legal gs effect = case effe
   -- draw can't choose an offered draw, nor one of more cards than a limit
   -- leaves. The drawers are the executing arm's own read.
   -- data/scenarios/cant-draw's "is not offered" scenarios prove both.
-  Effect.Draw (Draw.MkDraw ref quantity _) ->
+  Effect.Draw (Draw.MkDraw ref quantity _ _) ->
     let drawers = playerRefPlayers legal resolving source controller gs ref
         offered = maybe 1 (max 1 . Integer.toNaturalSaturating) (Quantity.evaluateFor viewOf context gs resolving source quantity)
      in not (null drawers) && all (\drawer -> PlayerEffect.prohibitsDrawingCards offered drawer gs) drawers

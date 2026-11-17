@@ -171,6 +171,7 @@ import qualified Parun.Types.Subtype as Subtype
 import qualified Parun.Types.Surveil as Surveil
 import qualified Parun.Types.TapState as TapState
 import qualified Parun.Types.TheseDiscard as TheseDiscard
+import qualified Parun.Types.TurnRegisters as TurnRegisters
 import qualified Parun.Types.Vote as Vote
 import qualified Parun.Types.VoteChoices as VoteChoices
 import qualified Parun.Types.VoteObjects as VoteObjects
@@ -1328,7 +1329,7 @@ repeatIf applyLoopBody runSubgame resolving source controller legal chosen (Repe
   State.modify' (\gs -> gs {GameState.bookkeeping = (GameState.bookkeeping gs) {Bookkeeping.repeatPicks = outer}})
 
 draw :: Game () -> ObjectId -> ObjectId -> PlayerId -> Map.Map SlotName (Set Recipient) -> Draw.Draw -> Game ()
-draw settle resolving source controller legal (Draw.MkDraw ref quantity mSlot) = do
+draw settle resolving source controller legal (Draw.MkDraw ref quantity mSlot mDrawers) = do
   gs <- State.get
   let viewOf = effectViewOf resolving source legal gs
       context = effectContext gs resolving controller source legal (slotBindings resolving gs)
@@ -1352,6 +1353,8 @@ draw settle resolving source controller legal (Draw.MkDraw ref quantity mSlot) =
       drawers = filter (`Map.member` instructed) (Game.apnapOrder gs)
       instruction pid = ProposedEvent.WouldPerform PlayerInstruction.DrawCards Nothing pid (Integer.toNaturalSaturating (Map.findWithDefault 0 pid instructed))
   -- CR 121.2d: the active team's drawers in the order that team likes.
+  let tallies = TurnRegisters.drawsThisTurn . GameState.turn
+  before <- State.gets tallies
   drawn <- fmap concat . Event.inDrawOrder (\pid -> [instruction pid, ProposedEvent.WouldDraw pid DrawKind.Other]) drawers $ \pid -> do
     -- CR 121.2a: the INSTRUCTION is its own replaceable event, and rule
     -- 616.1g settles it before any of the individual draws below -- so
@@ -1382,6 +1385,13 @@ draw settle resolving source controller legal (Draw.MkDraw ref quantity mSlot) =
   -- SINGLE binding, which slotOne and every singular reader can see, and
   -- several take the group.
   Common.bindObjects resolving mSlot drawn
+  -- CR 121.1 / 608.2c: the players who drew a card this way, read off the
+  -- turn's draw tally, which a replacement's draws (CR 614.11a) write and a
+  -- replaced draw (CR 614.6) does not: Cut a Deal's rulings, proved by
+  -- data/scenarios' cut-a-deal cases.
+  after <- State.gets tallies
+  let grew pid cards = Seq.length cards > Seq.length (Map.findWithDefault Seq.empty pid before)
+  Foldable.for_ mDrawers $ \name -> State.modify' (Common.bindPlayerSlot resolving name (Map.keysSet (Map.filterWithKey grew after)))
 
 mill :: Game () -> ObjectId -> ObjectId -> PlayerId -> Map.Map SlotName (Set Recipient) -> Mill.Mill -> Game ()
 mill settle resolving source controller legal (Mill.MkMill ref quantity mTally mSlot) = do

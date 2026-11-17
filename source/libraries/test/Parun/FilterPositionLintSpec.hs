@@ -2377,7 +2377,7 @@ filterPositionLintSpec s registry corpus = Spec.describe s "Lint" $ do
     -- gathers no pool.
     piker <- S.printingOf s registry "Goblin Piker"
     let atom = Filter.Type.And [Filter.Type.HasCardType CardType.Creature, Filter.Type.Measures (Measures.MkMeasures Measure.Power Comparison.AtLeast (Operand.OfEachOtherCandidate (OtherCandidates.MkOtherCandidates Measure.Power CandidateScope.SameController)))]
-        planted = (S.combinedFace piker) {Face.triggeredAbilities = [oneEffectTrigger (TriggerCondition.Enters (EntersTrigger.matching atom)) (Effect.Draw (Draw.MkDraw (PlayerRef.InSlot Binding.you) (Quantity.Type.Literal 1) Nothing))]}
+        planted = (S.combinedFace piker) {Face.triggeredAbilities = [oneEffectTrigger (TriggerCondition.Enters (EntersTrigger.matching atom)) (Effect.Draw (Draw.MkDraw (PlayerRef.InSlot Binding.you) (Quantity.Type.Literal 1) Nothing Nothing))]}
     Spec.assertEqWith s "a planted atom in an entry trigger's filter is an offence" (otherCandidateCounts planted) (0, 1)
     -- And in a target slot's filter, and a chosen permanent's on the
     -- battlefield, but not in exile: chosenCandidates' exile arm never calls
@@ -2505,7 +2505,7 @@ filterPositionLintSpec s registry corpus = Spec.describe s "Lint" $ do
     -- A PERMANENT's trigger condition is source-framed, but CR 704.5n has
     -- unattached an Equipment before a CR 603.10a look-back is matched, so it
     -- is refused.
-    let onTrigger = (S.combinedFace piker) {Face.triggeredAbilities = [oneEffectTrigger (TriggerCondition.Enters (EntersTrigger.matching buried)) (Effect.Draw (Draw.MkDraw (PlayerRef.InSlot Binding.you) (Quantity.Type.Literal 1) Nothing))]}
+    let onTrigger = (S.combinedFace piker) {Face.triggeredAbilities = [oneEffectTrigger (TriggerCondition.Enters (EntersTrigger.matching buried)) (Effect.Draw (Draw.MkDraw (PlayerRef.InSlot Binding.you) (Quantity.Type.Literal 1) Nothing Nothing))]}
     Spec.assertEqWith s "a trigger condition asking it is an offence too" (hostOfSourceCounts (survey onTrigger)) (0, 1)
     -- CastOffer.payingInstead carries SlotlessCostFramed and is paid framed by
     -- the OFFERED card (Parun.Engine.Resolve.Effect.offerCastOnce), so neither the
@@ -3585,7 +3585,7 @@ filterPositionLintSpec s registry corpus = Spec.describe s "Lint" $ do
                 { Face.triggeredAbilities =
                     [ oneEffectTrigger
                         (TriggerCondition.Enters (EntersTrigger.matching buried))
-                        (Effect.Draw (Draw.MkDraw (PlayerRef.InSlot Binding.you) (Quantity.Type.Literal 1) Nothing))
+                        (Effect.Draw (Draw.MkDraw (PlayerRef.InSlot Binding.you) (Quantity.Type.Literal 1) Nothing Nothing))
                     ]
                 }
             ),
@@ -3818,7 +3818,7 @@ filterPositionLintSpec s registry corpus = Spec.describe s "Lint" $ do
                 { Face.triggeredAbilities =
                     [ oneEffectTrigger
                         (TriggerCondition.Enters (EntersTrigger.matching buried))
-                        (Effect.Draw (Draw.MkDraw (PlayerRef.InSlot Binding.you) (Quantity.Type.Literal 1) Nothing))
+                        (Effect.Draw (Draw.MkDraw (PlayerRef.InSlot Binding.you) (Quantity.Type.Literal 1) Nothing Nothing))
                     ]
                 }
             ),
@@ -4017,7 +4017,7 @@ filterPositionLintSpec s registry corpus = Spec.describe s "Lint" $ do
             { Face.triggeredAbilities =
                 [ oneEffectTrigger
                     (TriggerCondition.Enters (EntersTrigger.matching buried))
-                    (Effect.Draw (Draw.MkDraw (PlayerRef.InSlot Binding.you) (Quantity.Type.Literal 1) Nothing))
+                    (Effect.Draw (Draw.MkDraw (PlayerRef.InSlot Binding.you) (Quantity.Type.Literal 1) Nothing Nothing))
                 ]
             }
     Spec.assertEqWith
@@ -4174,9 +4174,9 @@ filterPositionLintSpec s registry corpus = Spec.describe s "Lint" $ do
               base {Face.triggeredAbilities = [(oneEffectTrigger (TriggerCondition.Enters EntersTrigger.defaultValue) draw) {TriggeredAbility.intervening = Just (Condition.Type.Compares (Compares.MkCompares (Quantity.Type.Count (Count.Type.MkCount (Scope.InZone (InZone.MkInZone Zone.Battlefield (PlayerRef.Relative PlayerRelation.AnyPlayer))) f Aggregation.Members)) Comparison.AtLeast (Quantity.Type.Literal 1)))}]}
             )
           ]
-        draw = Effect.Draw (Draw.MkDraw (PlayerRef.InSlot Binding.you) (Quantity.Type.Literal 1) Nothing)
+        draw = Effect.Draw (Draw.MkDraw (PlayerRef.InSlot Binding.you) (Quantity.Type.Literal 1) Nothing Nothing)
         choosingAsItEnters quality = [PrintedReplacement.MkPrintedReplacement Nothing (ReplacementEffect.EntryR (EntryR.MkEntryR Filter.Type.IsSource (EntryRewrite.ChooseQuality quality))) Set.empty Nothing]
-        drawing f = Effect.Draw (Draw.MkDraw (PlayerRef.InSlot Binding.you) (Quantity.Type.Count (Count.Type.MkCount (Scope.InZone (InZone.MkInZone Zone.Battlefield (PlayerRef.Relative PlayerRelation.AnyPlayer))) f Aggregation.Members)) Nothing)
+        drawing f = Effect.Draw (Draw.MkDraw (PlayerRef.InSlot Binding.you) (Quantity.Type.Count (Count.Type.MkCount (Scope.InZone (InZone.MkInZone Zone.Battlefield (PlayerRef.Relative PlayerRelation.AnyPlayer))) f Aggregation.Members)) Nothing Nothing)
     Monad.forM_
       [ (Filter.Type.HasChosenColor, ChosenQuality.Colors (ChooseBetween.MkChooseBetween 1 1), hasChosenColorCounts, hasChosenColorTag),
         (Filter.Type.HasChosenSubtype ChoiceOrdinal.First, ChosenQuality.Subtype ChoiceOrdinal.First ChoiceDistinct.MayRepeat SubtypeFamily.BasicLandType Nothing, hasChosenSubtypeCounts, hasChosenSubtypeTag),
@@ -4263,7 +4263,7 @@ filterPositionLintSpec s registry corpus = Spec.describe s "Lint" $ do
     let counting tag =
           (S.combinedFace piker)
             { Face.spell =
-                Mint.oneModeTargeting Map.empty (Seq.singleton (Effect.Draw (Draw.MkDraw (PlayerRef.Relative PlayerRelation.You) (Quantity.Type.ManaSpent (ManaSpent.Tagged (ProductionTag.Subtype tag))) Nothing)))
+                Mint.oneModeTargeting Map.empty (Seq.singleton (Effect.Draw (Draw.MkDraw (PlayerRef.Relative PlayerRelation.You) (Quantity.Type.ManaSpent (ManaSpent.Tagged (ProductionTag.Subtype tag))) Nothing Nothing)))
             }
     Spec.assertBool s (untaggedSubtypeOffends (counting Subtype.Forest)) "a count of mana from a Forest is an offence"
     Spec.assertBool s (not (untaggedSubtypeOffends (counting Subtype.Cave))) "and the same count from a Cave is not"

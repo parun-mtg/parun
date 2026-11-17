@@ -1599,7 +1599,7 @@ optionalEffectSpec s registry =
               -- A Stack-zone object whose Object.owner is the effect controller
               -- resolveModes reads, without paying to cast anything.
               (stackId, gs) = S.spellOnStack piker S.alice gs1
-              draw = Effect.Draw (Draw.MkDraw (PlayerRef.Relative PlayerRelation.You) (Quantity.Literal 1) Nothing)
+              draw = Effect.Draw (Draw.MkDraw (PlayerRef.Relative PlayerRelation.You) (Quantity.Literal 1) Nothing Nothing)
               mode =
                 Mode.MkMode
                   ( Seq.fromList
