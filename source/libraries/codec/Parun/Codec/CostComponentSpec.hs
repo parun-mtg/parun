@@ -319,8 +319,15 @@ spec s = Spec.describe s "Parun.Codec.CostComponent" $ do
     Common.assertCodec
       s
       codec
-      (CostComponent.CollectEvidence 3)
-      " {\"type\":\"CollectEvidence\",\"value\":3} "
+      (CostComponent.CollectEvidence (CostAmount.Fixed 3))
+      " {\"type\":\"CollectEvidence\",\"value\":{\"type\":\"Fixed\",\"value\":3}} "
+  -- CR 107.3f: Incinerator of the Guilty's collect evidence X.
+  Spec.it s "CollectEvidence of X" $
+    Common.assertCodec
+      s
+      codec
+      (CostComponent.CollectEvidence (CostAmount.Announced (SlotName.MkSlotName (Text.pack "X"))))
+      " {\"type\":\"CollectEvidence\",\"value\":{\"type\":\"Announced\",\"value\":\"X\"}} "
   -- CR 701.59a with the total read off the targets: Urgent Necropsy.
   Spec.it s "CollectEvidenceOfTargets" $
     Common.assertCodec

@@ -2119,7 +2119,7 @@ costComponentChildren c component = case component of
   CostComponent.ExileMaterials (ExileMaterials.MkExileMaterials n orMore criterion) -> fmap CostComponent.ExileMaterials (ExileMaterials.MkExileMaterials n orMore <$> costFilter c criterion)
   CostComponent.ExileTopFromGraveyard criterion -> CostComponent.ExileTopFromGraveyard <$> costFilter c criterion
   CostComponent.PutExiledIntoGraveyard criterion -> CostComponent.PutExiledIntoGraveyard <$> costFilter c criterion
-  CostComponent.CollectEvidence _ -> pure component
+  CostComponent.CollectEvidence amount -> CostComponent.CollectEvidence <$> costAmountChildren c amount
   CostComponent.CollectEvidenceOfTargets -> pure component
   CostComponent.ExileCardsTotalling (ExileCardsTotalling.MkExileCardsTotalling threshold tally criterion) -> fmap CostComponent.ExileCardsTotalling (ExileCardsTotalling.MkExileCardsTotalling threshold <$> cardTallyChildren c tally <*> costFilter c criterion)
   CostComponent.ExileCardsFromHand (CardsFromHand.MkCardsFromHand n criterion) -> fmap CostComponent.ExileCardsFromHand (CardsFromHand.MkCardsFromHand <$> costAmountChildren c n <*> costFilter c criterion)

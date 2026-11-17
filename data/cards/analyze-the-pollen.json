@@ -7,7 +7,10 @@
             "components": [
               {
                 "type": "CollectEvidence",
-                "value": 8
+                "value": {
+                  "type": "Fixed",
+                  "value": 8
+                }
               }
             ],
             "mana": []

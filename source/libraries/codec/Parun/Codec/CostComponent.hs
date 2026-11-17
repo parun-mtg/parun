@@ -79,7 +79,7 @@ codec keywordCodec =
       Arm.nullary "ExileThis" CostComponent.ExileThis,
       Arm.payload "MoveCardsFromGraveyard" (MoveCardsFromGraveyard.codec keywordCodec) CostComponent.MoveCardsFromGraveyard (\x -> case x of CostComponent.MoveCardsFromGraveyard y -> Just y; _ -> Nothing),
       Arm.payload "ExileMaterials" (ExileMaterials.codec keywordCodec) CostComponent.ExileMaterials (\x -> case x of CostComponent.ExileMaterials y -> Just y; _ -> Nothing),
-      Arm.payload "CollectEvidence" Common.natural CostComponent.CollectEvidence (\x -> case x of CostComponent.CollectEvidence y -> Just y; _ -> Nothing),
+      Arm.payload "CollectEvidence" CostAmount.codec CostComponent.CollectEvidence (\x -> case x of CostComponent.CollectEvidence y -> Just y; _ -> Nothing),
       Arm.nullary "CollectEvidenceOfTargets" CostComponent.CollectEvidenceOfTargets,
       Arm.payload "ExileCardsTotalling" (ExileCardsTotalling.codec keywordCodec) CostComponent.ExileCardsTotalling (\x -> case x of CostComponent.ExileCardsTotalling y -> Just y; _ -> Nothing),
       Arm.payload "ExileTopFromGraveyard" (Filter.codec keywordCodec) CostComponent.ExileTopFromGraveyard (\x -> case x of CostComponent.ExileTopFromGraveyard y -> Just y; _ -> Nothing),
