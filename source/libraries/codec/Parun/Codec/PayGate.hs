@@ -28,8 +28,9 @@ import qualified Parun.Types.PayObligation as PayObligation
 -- The other seven are elided when unmarked, which is what most cards write: CR
 -- 118.12a's rewriting makes an "unless" cost optional, a clause that names no
 -- other clause makes its own offer, and a cost is offered once rather than once
--- per counted thing. Rakshasa's Disdain's `perEach` counts a graveyard and
--- Magnetic Mountain's the permanents an earlier clause chose; CR 702.24a's mint
+-- per counted thing. Rakshasa's Disdain's `perEach` counts a graveyard,
+-- Magnetic Mountain's the permanents an earlier clause chose and Leyline Tyrant's
+-- a chosen number; CR 702.24a's mint
 -- writes one too, but a minted ability never goes on the wire.
 -- `basis` is Flash's alone: CR 118.6 lets a cost be described in terms of
 -- another object's mana cost rather than printed, and every other gate prints
