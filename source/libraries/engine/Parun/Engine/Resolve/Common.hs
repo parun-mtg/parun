@@ -313,6 +313,12 @@ objectsBound resolving mSlot named = case (mSlot, named) of
 -- would instead be a board-reading box on a permanent, which is not a thing CR
 -- 208 allows a token to have.
 --
+-- A negative value is kept, not floored: defining a token's power and toughness
+-- sets them to a specific value (CR 111.3, 208.4a), CR 107.1b's exception. The
+-- scenario
+-- the-skullspore-nexus-sets-a-negative-total-power-as-its-tokens-base-power-and-toughness
+-- proves it.
+--
 -- The star half is proved by the scenario
 -- consuming-blob-ooze-token-keeps-its-star-plus-one-box: Consuming Blob's Ooze
 -- token prints a *+1 toughness, and settling that box makes it a 3/1.

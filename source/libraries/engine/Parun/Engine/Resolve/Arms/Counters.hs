@@ -1658,7 +1658,10 @@ chooseNumber resolving source controller legal (ChooseNumber.MkChooseNumber slot
 -- known information when it has left, as Ratchet Bomb has after CR 601.2h's
 -- sacrifice -- and a later instruction reads the number off the slot. Bound
 -- even at zero, PayAnyEnergy's reason; a quantity that cannot be evaluated
--- binds nothing, Bolster's posture. The scenario
+-- binds nothing, Bolster's posture. A negative quantity binds 0 (CR 107.1b),
+-- so a token's power and toughness, which CR 107.1b leaves negative, reads its
+-- quantity in the token's face (Common.bakeTokenCharacteristics), never a
+-- bound amount. The scenario
 -- ratchet-bomb-destroys-each-nonland-permanent-with-mana-value-equal-to-its-charge-counters
 -- proves the last known read.
 bindAmount :: ObjectId -> ObjectId -> PlayerId -> Map.Map SlotName (Set Recipient) -> BindAmount.BindAmount -> Game ()
