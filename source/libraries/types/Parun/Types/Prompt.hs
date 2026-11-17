@@ -856,8 +856,9 @@ data Prompt r where
   -- then being that creature. Also CR 701.3a: the one destination a group of
   -- attachments moves to (Parun.Types.Effect's AttachAll), and the one object
   -- a chosen Parun.Types.ObjectRef.OneAmong names. Also CR 616.1:
-  -- which Opposition Agent's exile applies to a search's finds. The Seq is
-  -- ChooseAnyNumber's.
+  -- which Opposition Agent's exile applies to a search's finds. Also CR
+  -- 608.2d: which creature of a paired fight's other group the ObjectId fights
+  -- (Ezuri's Predation). The Seq is ChooseAnyNumber's.
   ChoosePermanent :: Decider.Decider -> PlayerId.PlayerId -> ObjectId.ObjectId -> NonEmpty.NonEmpty ObjectId.ObjectId -> Seq.Seq (PlayerId.PlayerId, Set.Set ObjectId.ObjectId) -> Prompt ObjectId.ObjectId
   -- | CR 702.122a: which untapped permanents are tapped to crew, the Natural a
   -- power threshold rather than a size (Parun.Engine.Cost validates the sum).

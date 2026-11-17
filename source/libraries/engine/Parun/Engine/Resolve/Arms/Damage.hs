@@ -40,7 +40,7 @@ import qualified Parun.Engine.Projection.View as Projection
 import qualified Parun.Engine.Quantity as Quantity
 import qualified Parun.Engine.Replacement as Replacement
 import qualified Parun.Engine.Resolve.Common as Common
-import Parun.Engine.Resolve.Slots (battlefieldMatching, chosenCandidates, effectContext, effectContextNaming, effectViewOf, legalMany, legalOne, objectRefObjects, playerRefPlayers, resolvingAbilityName, slotBindings)
+import Parun.Engine.Resolve.Slots (battlefieldMatching, chosenCandidates, effectContext, effectContextNaming, effectViewOf, legalMany, legalOne, objectRefObjects, playerRefPlayers, resolvingAbilityName, slotBindings, slotGroup)
 import qualified Parun.Engine.Restamp as Restamp
 import qualified Parun.Engine.Sector as Sector
 import qualified Parun.Engine.Setup as Setup
@@ -259,8 +259,8 @@ dealDamage runPreventionRiders runReplacementEffects runSubgame resolving source
 -- CR 701.14. Every clause of the rule is one line here, and none of them is a
 -- read of what the effect IS: the amounts come off the projection, the kind is
 -- data, and the pair guard is arithmetic on two Maybes.
-fight :: (Game Result -> Game ()) -> (Game Result -> Game ()) -> Game Result -> ObjectId -> ObjectId -> Map.Map SlotName (Set Recipient) -> Fight.Fight -> Game ()
-fight runPreventionRiders runReplacementEffects runSubgame resolving source legal (Fight.MkFight firstSlot secondSlot firstHop mExcessTally) = do
+fight :: (Game Result -> Game ()) -> (Game Result -> Game ()) -> Game Result -> ObjectId -> ObjectId -> PlayerId -> Map.Map SlotName (Set Recipient) -> Fight.Fight -> Game ()
+fight runPreventionRiders runReplacementEffects runSubgame resolving source controller legal (Fight.MkFight firstSlot secondSlot firstHop mExcessTally paired) = do
   gs <- State.get
   -- CR 701.14b, and it is a guard on the PAIR: "if one or both creatures
   -- instructed to fight are no longer on the battlefield or are no longer
@@ -276,9 +276,7 @@ fight runPreventionRiders runReplacementEffects runSubgame resolving source lega
   -- creature" is whatever the Equipment is attached to now, or was as it left
   -- (CR 113.7a). Proved by
   -- data/scenarios/novel-nunchaku-moved-in-response-its-new-creature-fights.json.
-  let fighter hop slot = do
-        recipient <- legalOne slot legal
-        named <- Recipient.objectOf recipient
+  let fighter hop named = do
         oid <- case hop of
           Hop.Itself -> Just named
           Hop.Host -> Game.hostWithLastKnown named gs
@@ -286,8 +284,22 @@ fight runPreventionRiders runReplacementEffects runSubgame resolving source lega
         Monad.guard (Projection.isCreatureOf oid gs)
         power <- Projection.powerOf oid gs
         pure (oid, power)
-  excessDealt <- case (fighter firstHop firstSlot, fighter Hop.Itself secondSlot) of
-    (Just (oneId, onePower), Just (twoId, twoPower)) -> do
+      single hop slot = fighter hop =<< Recipient.objectOf =<< legalOne slot legal
+      -- A paired fight's slot names a group (Create's tokens, a loop's
+      -- members), or the targets its slot holds; each member that can fight
+      -- now (CR 701.14b) is offered for a pair.
+      group hop slot =
+        let named = maybe (Maybe.mapMaybe Recipient.objectOf (legalMany slot legal)) Foldable.toList (slotGroup slot resolving gs)
+         in Maybe.mapMaybe (fighter hop) (ListUtils.nubOrd named)
+  pairs <-
+    if paired
+      then pairFighters controller (group firstHop firstSlot) (group Hop.Itself secondSlot)
+      else pure (Maybe.maybeToList ((,) <$> single firstHop firstSlot <*> single Hop.Itself secondSlot))
+  excessDealt <- case pairs of
+    [] -> pure 0
+    -- The excess is the first pair's: Parun.Codec.Fight refuses a paired
+    -- fight's tally.
+    ((oneId, _), (twoId, _)) : _ -> do
       -- CR 701.14d: "the damage dealt when a creature fights ISN'T COMBAT
       -- DAMAGE", so DamageKind.Noncombat and never the combat damage path.
       -- Each creature is its own blow's source (CR 120.2b), which is what makes
@@ -299,29 +311,32 @@ fight runPreventionRiders runReplacementEffects runSubgame resolving source lega
             if amount > 0
               then [Event.damageEvent gs DamageKind.Noncombat dealer (Recipient.ToCreature victim) (Integer.toNaturalSaturating amount)]
               else []
-          events
-            -- CR 701.14c: "if a creature fights itself, it deals damage to
-            -- itself equal to TWICE its power" -- ONE event, not two of its
-            -- power. Every observer that sums (marked damage, CR 120.4a's
-            -- excess, lifelink, CR 615.7's amount-based shield) agrees either
-            -- way; one that counts events (CR 122.1c's shield counters, a
-            -- damage trigger) does not, which is why the rule bothers to say
-            -- it.
-            --
-            -- Both reads of the same power off the same pre-effect state, so
-            -- doubling one is the same number as summing the two; written as
-            -- the rule words it.
-            | oneId == twoId = blow oneId oneId (2 * onePower)
-            | otherwise = blow oneId twoId onePower <> blow twoId oneId twoPower
+          -- CR 701.14c: "if a creature fights itself, it deals damage to
+          -- itself equal to TWICE its power" -- ONE event, not two of its
+          -- power. Every observer that sums (marked damage, CR 120.4a's
+          -- excess, lifelink, CR 615.7's amount-based shield) agrees either
+          -- way; one that counts events (CR 122.1c's shield counters, a
+          -- damage trigger) does not, which is why the rule bothers to say
+          -- it.
+          --
+          -- Both reads of the same power off the same pre-effect state, so
+          -- doubling one is the same number as summing the two; written as
+          -- the rule words it.
+          blows ((one, onePower), (two, twoPower))
+            | one == two = blow one one (2 * onePower)
+            | otherwise = blow one two onePower <> blow two one twoPower
+          events = concatMap blows pairs
       -- Each creature fought, whatever damage it dealt: a 0-power fighter
       -- still fights (CR 701.14a). One act for a self-fight (CR 701.14c).
       -- data/scenarios/foe-razer-regent-grows-each-creature-you-control-that-fought.json
       -- proves it.
-      Monad.forM_ (ListUtils.nubOrd [oneId, twoId]) $ \oid ->
+      Monad.forM_ (ListUtils.nubOrd (concatMap (\((one, _), (two, _)) -> [one, two]) pairs)) $ \oid ->
         State.modify' (Event.recordEvent (GameEvent.PermanentActed (PermanentActed.MkPermanentActed PermanentAction.Fight oid Nothing)))
       -- ONE batch: CR 701.14a's "each of those creatures deals damage" is one
       -- action, so the two blows land simultaneously and a creature that dies
-      -- to the first still dealt the second.
+      -- to the first still dealt the second. A paired fight's pairs share it,
+      -- Ezuri's Predation's ruling of 2015-11-04 that the fights happen at the
+      -- same time.
       if null events
         then pure 0
         else do
@@ -340,11 +355,29 @@ fight runPreventionRiders runReplacementEffects runSubgame resolving source lega
           -- data/scenarios/the-last-agni-kai-counts-a-deathtouch-fighters-second-point-as-excess.json
           -- proves the dealer.
           pure (Damage.excessDealt gs oneId [Recipient.ToCreature twoId] (filter ((== oneId) . DamageEvent.source) settled))
-    _ -> pure 0
   -- The Last Agni Kai's "is dealt excess damage this way". Bound even at 0,
   -- DealDamage's excessTally's posture, and so when no fight happens (CR
   -- 701.14b).
   Monad.forM_ mExcessTally $ \slot -> State.modify' (Common.bindAmountSlot resolving source slot excessDealt)
+
+-- CR 608.2d: the resolving controller pairs each member of the smaller group
+-- with a different member of the other, one ChoosePermanent per member of the
+-- smaller (the first group's at equal size), so a larger group's extras fight
+-- nothing. Elided where one candidate is left (Game.chooseAmong). The pairs
+-- are ordered by the asking order.
+pairFighters :: PlayerId -> [(ObjectId, Integer)] -> [(ObjectId, Integer)] -> Game [((ObjectId, Integer), (ObjectId, Integer))]
+pairFighters controller firsts seconds
+  | length seconds < length firsts = fmap (fmap (\(two, one) -> (one, two))) (pairEach seconds firsts)
+  | otherwise = pairEach firsts seconds
+  where
+    pairEach subjects pool = fmap (reverse . fst) (Monad.foldM (pickFor pool) ([], Set.empty) subjects)
+    pickFor pool (made, taken) subject = do
+      let remaining = filter ((`Set.notMember` taken) . fst) pool
+          picks = if Set.null taken then Seq.empty else Seq.singleton (controller, taken)
+      answer <- Game.chooseAmong (\decider who offered -> Prompt.ChoosePermanent decider who (fst subject) offered picks) controller (fmap fst remaining)
+      pure $ case answer >>= \oid -> List.find ((== oid) . fst) remaining of
+        Just other -> ((subject, other) : made, Set.insert (fst other) taken)
+        Nothing -> (made, taken)
 
 modifyTarget :: ObjectId -> ObjectId -> PlayerId -> Map.Map SlotName (Set Recipient) -> Map.Map SlotName (Set Recipient) -> ModifyTarget.ModifyTarget (GrantedAbility.GrantedAbility Card.Type.Card) -> Game ()
 modifyTarget resolving source controller legal chosen (ModifyTarget.MkModifyTarget duration modification ref each) = do

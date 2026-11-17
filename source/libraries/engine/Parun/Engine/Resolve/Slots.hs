@@ -1177,8 +1177,11 @@ slotsOf effect = joinTwo (joinTwo (joinSlots (fmap objectRefSlots (effectObjectR
           Just slot | Maybe.isNothing excess && Maybe.isNothing excessTally -> Map.insert slot SlotArity.Many amounts
           _ -> joinTwo amounts (maybe Map.empty oneSlot dealer)
   -- BOTH fighters: CR 701.14a reads each one's power against the other, so a
-  -- slot named by only one half would still look dangling.
-  Effect.Fight (Fight.MkFight first second _ _) -> joinTwo (oneSlot first) (oneSlot second)
+  -- slot named by only one half would still look dangling. A paired fight
+  -- reads each slot's whole group.
+  Effect.Fight (Fight.MkFight first second _ _ paired) ->
+    let arity = if paired then SlotArity.Many else SlotArity.One
+     in joinTwo (Map.singleton first arity) (Map.singleton second arity)
   -- The modification's own quantities read slots too, through
   -- Projection.quantitiesOf. The per-object name is subtracted: the arm itself
   -- binds it while it freezes, and nowhere else. A battlefield lend's Filter
@@ -2793,7 +2796,7 @@ boundSlots effect = case effect of
   Effect.DealDamage (DealDamage.MkDealDamage _ _ _ _ mTally mDamaged mExcessTally) -> foldMap Set.singleton mTally <> foldMap Set.singleton mDamaged <> foldMap Set.singleton mExcessTally
   -- CR 120.10's excess again, The Last Agni Kai's "is dealt excess damage this
   -- way".
-  Effect.Fight (Fight.MkFight _ _ _ mExcessTally) -> foldMap Set.singleton mExcessTally
+  Effect.Fight (Fight.MkFight _ _ _ mExcessTally _) -> foldMap Set.singleton mExcessTally
   Effect.ModifyTarget {} -> Set.empty
   Effect.ChangeText {} -> Set.empty
   Effect.AddMana _ -> Set.empty

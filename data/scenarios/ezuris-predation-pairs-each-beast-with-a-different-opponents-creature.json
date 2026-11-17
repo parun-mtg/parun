@@ -1,0 +1,20 @@
+{
+  "description": "CR 701.14a / 608.2d: Ezuri's Predation makes a Beast per opposing creature, and its caster pairs each Beast with a different one of those creatures",
+  "note": "Three seats, so 'your opponents' spans two. alice answers the first Beast's prompt with bob's Wall and the second's with carol's Bears, neither the first candidate; the third Beast is left the Giant. Each Beast's marked damage names the creature it fought. alice's own Bears is not one of those creatures and is untouched.",
+  "board": {"active": "alice", "step": "PrecombatMain", "seats": [{"name": "alice", "battlefield": [{"card": "Grizzly Bears", "label": "mine"}, {"card": "Forest", "label": "f1"}, {"card": "Forest", "label": "f2"}, {"card": "Forest", "label": "f3"}, {"card": "Forest", "label": "f4"}, {"card": "Forest", "label": "f5"}, {"card": "Forest", "label": "f6"}, {"card": "Forest", "label": "f7"}, {"card": "Forest", "label": "f8"}], "hand": [{"card": "Ezuri's Predation", "label": "predation"}], "library": [{"card": "Island"}, {"card": "Island"}]}, {"name": "bob", "battlefield": [{"card": "Hill Giant", "label": "giant"}, {"card": "Wall of Stone", "label": "wall"}], "library": [{"card": "Island"}, {"card": "Island"}]}, {"name": "carol", "battlefield": [{"card": "Grizzly Bears", "label": "bears"}], "library": [{"card": "Island"}, {"card": "Island"}]}]},
+  "timeline": [
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": {"Cast": {"object": "$predation", "mana": ["$f1", "$f2", "$f3", "$f4", "$f5", "$f6", "$f7", "$f8"]}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass"},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": {"Answer": {"prompt": "OrderForEach", "with": [0, 1]}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": {"OrderTimestamps": ["Phyrexian Beast Token", "Phyrexian Beast Token#2", "Phyrexian Beast Token#3"]}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": {"Answer": {"prompt": "ChoosePermanent", "with": "$wall"}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": {"Answer": {"prompt": "ChoosePermanent", "with": "$bears"}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Damage": {"object": "Phyrexian Beast Token", "damage": 0}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Damage": {"object": "Phyrexian Beast Token#2", "damage": 2}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Damage": {"object": "Phyrexian Beast Token#3", "damage": 3}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Damage": {"object": "$wall", "damage": 4}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Count": {"player": "bob", "zone": "Graveyard", "card": "Hill Giant", "count": 1}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Count": {"player": "carol", "zone": "Graveyard", "card": "Grizzly Bears", "count": 1}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Damage": {"object": "$mine", "damage": 0}}}
+  ]
+}

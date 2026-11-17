@@ -1,0 +1,124 @@
+{
+  "faces": [
+    {
+      "manaCost": [
+        {
+          "type": "Generic",
+          "value": 5
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "Green"
+          }
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "Green"
+          }
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "Green"
+          }
+        }
+      ],
+      "name": "Ezuri's Predation",
+      "oracleText": "For each creature your opponents control, create a 4/4 green Phyrexian Beast creature token. Each of those tokens fights a different one of those creatures.",
+      "spell": {
+        "modes": [
+          {
+            "clauses": [
+              {
+                "effects": [
+                  {
+                    "type": "ForEach",
+                    "value": {
+                      "body": [
+                        {
+                          "type": "Create",
+                          "value": {
+                            "card": {
+                              "faces": [
+                                {
+                                  "colorIndicator": [
+                                    "Green"
+                                  ],
+                                  "name": "Phyrexian Beast Token",
+                                  "power": {
+                                    "type": "Literal",
+                                    "value": 4
+                                  },
+                                  "toughness": {
+                                    "type": "Literal",
+                                    "value": 4
+                                  },
+                                  "typeLine": {
+                                    "subtypes": [
+                                      "Beast",
+                                      "Phyrexian"
+                                    ],
+                                    "types": [
+                                      "Creature"
+                                    ]
+                                  }
+                                }
+                              ]
+                            },
+                            "quantity": {
+                              "type": "Literal",
+                              "value": 1
+                            },
+                            "slot": "beast"
+                          }
+                        }
+                      ],
+                      "ref": {
+                        "type": "EachMatching",
+                        "value": {
+                          "type": "And",
+                          "value": [
+                            {
+                              "type": "HasCardType",
+                              "value": "Creature"
+                            },
+                            {
+                              "type": "HeldBy",
+                              "value": {
+                                "holder": "Controller",
+                                "relation": "Opponent"
+                              }
+                            }
+                          ]
+                        }
+                      },
+                      "slot": "creature"
+                    }
+                  },
+                  {
+                    "type": "Fight",
+                    "value": {
+                      "first": "beast",
+                      "paired": true,
+                      "second": "creature"
+                    }
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "typeLine": {
+        "types": [
+          "Sorcery"
+        ]
+      }
+    }
+  ]
+}
