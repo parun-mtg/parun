@@ -41,22 +41,24 @@
                   {
                     "type": "Discover",
                     "value": {
-                      "type": "Count",
-                      "value": {
-                        "aggregation": {
-                          "type": "Total",
-                          "value": {
-                            "type": "Measure",
-                            "value": "ManaValue"
+                      "quantity": {
+                        "type": "Count",
+                        "value": {
+                          "aggregation": {
+                            "type": "Total",
+                            "value": {
+                              "type": "Measure",
+                              "value": "ManaValue"
+                            }
+                          },
+                          "filter": {
+                            "type": "IsBound",
+                            "value": "spell"
+                          },
+                          "scope": {
+                            "type": "OverBound",
+                            "value": "spell"
                           }
-                        },
-                        "filter": {
-                          "type": "IsBound",
-                          "value": "spell"
-                        },
-                        "scope": {
-                          "type": "OverBound",
-                          "value": "spell"
                         }
                       }
                     }

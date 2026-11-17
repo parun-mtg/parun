@@ -774,6 +774,7 @@ library codec
     Parun.Codec.DiscardTriggerSpec
     Parun.Codec.DiscardWay
     Parun.Codec.DiscardWaySpec
+    Parun.Codec.Discover
     Parun.Codec.Discovered
     Parun.Codec.DistinctOf
     Parun.Codec.DistinctOfSpec
@@ -3175,6 +3176,7 @@ library types
     Parun.Types.DiscardSubject
     Parun.Types.DiscardTrigger
     Parun.Types.DiscardWay
+    Parun.Types.Discover
     Parun.Types.Discovered
     Parun.Types.Discrepancy
     Parun.Types.DistinctOf

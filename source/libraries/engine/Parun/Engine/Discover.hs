@@ -36,23 +36,39 @@ import qualified Parun.Types.PermissionVerb as PermissionVerb
 import qualified Parun.Types.PlayerRef as PlayerRef
 import qualified Parun.Types.PlayerRelation as PlayerRelation
 import qualified Parun.Types.Quantity as Quantity
+import qualified Parun.Types.SlotName as SlotName
 import qualified Parun.Types.TopOfLibraryUntil as TopOfLibraryUntil
 import qualified Parun.Types.Zone as Zone
 
--- | CR 701.57a for this N, in written order: exile until a nonland card with
--- mana value N or less; offer its cast without paying its mana cost, the
--- resulting spell's mana value N or less; put it into the hand if it is still
--- in exile; put the rest on the bottom in a random order.
+-- | CR 701.57a for this N, in written order, is walk then afterWalk: exile
+-- until a nonland card with mana value N or less; offer its cast without paying
+-- its mana cost, the resulting spell's mana value N or less; put it into the
+-- hand if it is still in exile; put the rest on the bottom in a random order.
+-- Two pieces so the arm can bind CR 701.57c's discovered card between them,
+-- while every card the walk exiled is still where it arrived.
 --
 -- The OFFER and the HAND move read only a card the walk STOPPED on, so a walk
 -- that ran the library out (CR 701.57b's "impossible") offers nothing and puts
 -- nothing into the hand. The data\/scenarios\/investigate discover scenarios
 -- prove the offer, the hand and the bottom.
-process :: Integer -> Seq.Seq (Effect.Effect Card (GrantedAbility.GrantedAbility Card))
-process n =
+--
+-- The walk binds every card it exiled at Binding.discoveredCards.
+walk :: Integer -> Effect.Effect Card (GrantedAbility.GrantedAbility Card)
+walk n =
+  Effect.MoveToZone (move (ObjectRef.TopOfLibraryUntil exiling) Zone.Exile LibraryPlacement.defaultValue (Just Binding.discoveredCards))
+  where
+    exiling = TopOfLibraryUntil.MkTopOfLibraryUntil {TopOfLibraryUntil.player = you, TopOfLibraryUntil.filter = stopsOn n, TopOfLibraryUntil.weight = Quantity.Literal 1, TopOfLibraryUntil.count = Quantity.Literal 1, TopOfLibraryUntil.deck = Nothing}
+
+-- | CR 701.57a / 701.57c: what the walk stops on, a nonland card with mana
+-- value N or less. Among the cards it exiled, only the discovered card passes.
+stopsOn :: Integer -> Filter.Filter Keyword.Keyword
+stopsOn n = Filter.And [Filter.Not (Filter.HasCardType CardType.Land), atMost n]
+
+-- | The process after the walk: the offer, the hand move and the bottom.
+afterWalk :: Integer -> Seq.Seq (Effect.Effect Card (GrantedAbility.GrantedAbility Card))
+afterWalk n =
   Seq.fromList
-    [ Effect.MoveToZone (move (ObjectRef.TopOfLibraryUntil walk) Zone.Exile LibraryPlacement.defaultValue (Just Binding.discoveredCards)),
-      Effect.OfferCast
+    [ Effect.OfferCast
         OfferCast.MkOfferCast
           { OfferCast.ref = discovered,
             OfferCast.caster = you,
@@ -68,31 +84,34 @@ process n =
       Effect.MoveToZone (move (ObjectRef.InSlot Binding.discoveredCards) Zone.Library (LibraryPlacement.RandomOrder LibraryPosition.Bottom) Nothing)
     ]
   where
-    you = PlayerRef.Relative PlayerRelation.You
-    atMostN = Filter.Measures Measures.MkMeasures {Measures.measure = Measure.ManaValue, Measures.comparison = Comparison.AtMost, Measures.operand = Operand.Literal n}
-    stopsOn :: Filter.Filter Keyword.Keyword
-    stopsOn = Filter.And [Filter.Not (Filter.HasCardType CardType.Land), atMostN]
-    walk = TopOfLibraryUntil.MkTopOfLibraryUntil {TopOfLibraryUntil.player = you, TopOfLibraryUntil.filter = stopsOn, TopOfLibraryUntil.weight = Quantity.Literal 1, TopOfLibraryUntil.count = Quantity.Literal 1, TopOfLibraryUntil.deck = Nothing}
-    discovered = ObjectRef.EachCardFromAmong EachCardFromAmong.MkEachCardFromAmong {EachCardFromAmong.slot = Binding.discoveredCards, EachCardFromAmong.filter = stopsOn}
+    discovered = ObjectRef.EachCardFromAmong EachCardFromAmong.MkEachCardFromAmong {EachCardFromAmong.slot = Binding.discoveredCards, EachCardFromAmong.filter = stopsOn n}
     free =
       CastOffer.MkCastOffer
         { CastOffer.transformed = False,
           CastOffer.withoutPayingManaCost = True,
           CastOffer.payingInstead = Nothing,
           CastOffer.spending = ManaSpending.AsProduced,
-          CastOffer.restriction = Just atMostN,
+          CastOffer.restriction = Just (atMost n),
           CastOffer.offeredBy = Nothing,
           CastOffer.faceDown = Nothing,
           CastOffer.payableFromSpent = False,
           CastOffer.reduction = 0
         }
-    move ref zone placement bound =
-      MoveToZone.MkMoveToZone
-        { MoveToZone.ref = ref,
-          MoveToZone.zone = zone,
-          MoveToZone.riders = EntryRiders.defaultValue,
-          MoveToZone.slot = bound,
-          MoveToZone.origin = Nothing,
-          MoveToZone.placement = placement,
-          MoveToZone.duration = Nothing
-        }
+
+you :: PlayerRef.PlayerRef
+you = PlayerRef.Relative PlayerRelation.You
+
+atMost :: Integer -> Filter.Filter Keyword.Keyword
+atMost n = Filter.Measures Measures.MkMeasures {Measures.measure = Measure.ManaValue, Measures.comparison = Comparison.AtMost, Measures.operand = Operand.Literal n}
+
+move :: ObjectRef.ObjectRef -> Zone.Zone -> LibraryPlacement.LibraryPlacement -> Maybe SlotName.SlotName -> MoveToZone.MoveToZone (GrantedAbility.GrantedAbility Card)
+move ref zone placement bound =
+  MoveToZone.MkMoveToZone
+    { MoveToZone.ref = ref,
+      MoveToZone.zone = zone,
+      MoveToZone.riders = EntryRiders.defaultValue,
+      MoveToZone.slot = bound,
+      MoveToZone.origin = Nothing,
+      MoveToZone.placement = placement,
+      MoveToZone.duration = Nothing
+    }

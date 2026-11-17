@@ -97,6 +97,7 @@ import qualified Parun.Types.DestructionR as DestructionR
 import qualified Parun.Types.DestructionRewrite as DestructionRewrite
 import qualified Parun.Types.DiceReading as DiceReading
 import qualified Parun.Types.Discard as Discard
+import qualified Parun.Types.Discover as Discover
 import qualified Parun.Types.Divide as Divide
 import qualified Parun.Types.DoesNotUntapNext as DoesNotUntapNext
 import qualified Parun.Types.Draw as Draw
@@ -2885,8 +2886,16 @@ spec s = Spec.describe s "Parun.Codec.Effect" $ do
       s
       toJson
       fromJson
-      (Effect.Discover (Quantity.Literal 5))
-      " {\"type\":\"Discover\",\"value\":{\"type\":\"Literal\",\"value\":5}} "
+      (Effect.Discover (Discover.MkDiscover (Quantity.Literal 5) Nothing))
+      " {\"type\":\"Discover\",\"value\":{\"quantity\":{\"type\":\"Literal\",\"value\":5}}} "
+  -- Hit the Mother Lode's "the discovered card" (CR 701.57c), bound at a slot.
+  Spec.it s "Discover, binding a slot" $
+    Common.assertJsonCodec
+      s
+      toJson
+      fromJson
+      (Effect.Discover (Discover.MkDiscover (Quantity.Literal 10) (Just (SlotName.MkSlotName (Text.pack "discovered")))))
+      " {\"type\":\"Discover\",\"value\":{\"quantity\":{\"type\":\"Literal\",\"value\":10},\"slot\":\"discovered\"}} "
   -- CR 701.48a: nullary, rule 701.48a fixing both branches and the learner.
   Spec.it s "Learn" $
     Common.assertJsonCodec

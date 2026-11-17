@@ -200,6 +200,7 @@ import qualified Parun.Types.Discard as Discard
 import qualified Parun.Types.DiscardCards as DiscardCards
 import qualified Parun.Types.DiscardSubject as DiscardSubject
 import qualified Parun.Types.DiscardTrigger as DiscardTrigger
+import qualified Parun.Types.Discover as Discover
 import qualified Parun.Types.Divide as Divide
 import qualified Parun.Types.DoesNotUntapNext as DoesNotUntapNext
 import qualified Parun.Types.DraftNoteTally as DraftNoteTally
@@ -1328,7 +1329,7 @@ effectChildren c effect = case effect of
   Effect.Learn -> pure effect
   Effect.TimeTravel -> pure effect
   Effect.Recruit -> pure effect
-  Effect.Discover quantity -> fmap Effect.Discover (onQuantity c quantity)
+  Effect.Discover (Discover.MkDiscover quantity named) -> fmap Effect.Discover (Discover.MkDiscover <$> onQuantity c quantity <*> traverse (onSlot c) named)
   Effect.Cloak (Cloak.MkCloak who cards shuffled named) -> fmap Effect.Cloak (Cloak.MkCloak <$> onPlayer c who <*> traverse (onObjectRef c) cards <*> pure shuffled <*> traverse (onSlot c) named)
   Effect.ManifestDread (ManifestDread.MkManifestDread who quantity named) -> fmap Effect.ManifestDread (ManifestDread.MkManifestDread <$> onPlayer c who <*> onQuantity c quantity <*> traverse (onSlot c) named)
   Effect.Venture _ -> pure effect

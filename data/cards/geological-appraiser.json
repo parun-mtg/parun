@@ -60,8 +60,10 @@
                       {
                         "type": "Discover",
                         "value": {
-                          "type": "Literal",
-                          "value": 3
+                          "quantity": {
+                            "type": "Literal",
+                            "value": 3
+                          }
                         }
                       }
                     ]

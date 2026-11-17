@@ -1104,7 +1104,7 @@ airbentObjects :: SlotName
 airbentObjects = SlotName.MkSlotName (Text.pack "thoseAirbentObjects")
 
 -- CR 701.57a: the reserved slot naming the cards a discover exiled, written by
--- the walk Parun.Engine.Discover.process mints and read by its later steps.
+-- the walk Parun.Engine.Discover.walk mints and read by its later steps.
 -- Reserved for airbentObjects' reason.
 discoveredCards :: SlotName
 discoveredCards = SlotName.MkSlotName (Text.pack "thoseDiscoverExiles")

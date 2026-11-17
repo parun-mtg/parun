@@ -231,6 +231,7 @@ import qualified Parun.Types.Discard as Discard
 import qualified Parun.Types.DiscardCards as DiscardCards
 import qualified Parun.Types.DiscardSubject as DiscardSubject
 import qualified Parun.Types.DiscardTrigger as DiscardTrigger
+import qualified Parun.Types.Discover as Discover
 import qualified Parun.Types.Divide as Divide
 import qualified Parun.Types.DoesNotUntapNext as DoesNotUntapNext
 import qualified Parun.Types.Draw as Draw
@@ -5278,7 +5279,7 @@ effectFilters effect = case effect of
   Effect.Populate -> []
   Effect.TimeTravel -> []
   Effect.Recruit -> []
-  Effect.Discover quantity -> frame Unframed (quantityFilters quantity)
+  Effect.Discover (Discover.MkDiscover quantity _) -> frame Unframed (quantityFilters quantity)
   Effect.Learn -> []
   -- The move's answer: the cards' ref is read where the move's is.
   Effect.Cloak (Cloak.MkCloak _ cards _ _) -> frame SourceHostFramed (foldMap objectRefFilters cards)

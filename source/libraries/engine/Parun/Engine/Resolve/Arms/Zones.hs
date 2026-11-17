@@ -74,6 +74,7 @@ import qualified Parun.Types.ContinuousEffect as ContinuousEffect
 import qualified Parun.Types.CountedDiscard as CountedDiscard
 import qualified Parun.Types.Departure as Departure.Type
 import qualified Parun.Types.Discard as Discard
+import qualified Parun.Types.Discover as Discover.Type
 import qualified Parun.Types.Discovered as Discovered
 import qualified Parun.Types.Draw as Draw
 import qualified Parun.Types.DrawKind as DrawKind
@@ -1231,21 +1232,34 @@ repeatArm applyLoopBody runSubgame resolving source controller legal chosen (Rep
               Monad.when (decision == OptionalDecision.Exercises) (goAgain runs)
   run 1
 
--- CR 701.57a: N read once, then Parun.Engine.Discover.process run as a loop
--- body over its reserved slot, rescoped so a second discover in one resolution
--- does not read the first one's exiles. CR 701.57b's event follows
+-- CR 701.57a: N read once, then Parun.Engine.Discover's walk and afterWalk run
+-- as a loop body over its reserved slot, rescoped so a second discover in one
+-- resolution does not read the first one's exiles. CR 701.57b's event follows
 -- unconditionally, the library run out or not. The scenario
 -- curator-of-suns-creation-discovers-again-for-the-same-value-once-each-turn
 -- proves it carries N.
-discover :: (Game Result -> ObjectId -> ObjectId -> PlayerId -> Map.Map SlotName (Set Recipient) -> Map.Map SlotName (Set Recipient) -> Set SlotName -> Seq.Seq (Effect Card.Type.Card (GrantedAbility.GrantedAbility Card.Type.Card)) -> Game ()) -> Game Result -> ObjectId -> ObjectId -> PlayerId -> Map.Map SlotName (Set Recipient) -> Map.Map SlotName (Set Recipient) -> Quantity.Type.Quantity -> Game ()
-discover applyLoopBody runSubgame resolving source controller legal chosen quantity = do
+--
+-- Between the two, while every exiled card is still in exile, CR 701.57c's
+-- discovered card is bound at the payload's slot: the one exiled card passing
+-- the walk's own stop, none when the walk ran the library out. The Hit the
+-- Mother Lode scenarios prove it.
+--
+-- Unprinted: two discovers binding one slot in one resolution, where a
+-- second walk that ran the library out would leave the first's card bound.
+discover :: (Game Result -> ObjectId -> ObjectId -> PlayerId -> Map.Map SlotName (Set Recipient) -> Map.Map SlotName (Set Recipient) -> Set SlotName -> Seq.Seq (Effect Card.Type.Card (GrantedAbility.GrantedAbility Card.Type.Card)) -> Game ()) -> Game Result -> ObjectId -> ObjectId -> PlayerId -> Map.Map SlotName (Set Recipient) -> Map.Map SlotName (Set Recipient) -> Discover.Type.Discover -> Game ()
+discover applyLoopBody runSubgame resolving source controller legal chosen (Discover.Type.MkDiscover quantity mSlot) = do
   gs0 <- State.get
   let viewOf = effectViewOf resolving source legal gs0
       context = effectContext gs0 resolving controller source legal (slotBindings resolving gs0)
       n = maybe 0 Integer.toNaturalSaturating (Common.evaluateForRecipient viewOf context gs0 resolving source controller quantity)
       bound = Set.singleton Binding.discoveredCards
+      apply = applyLoopBody runSubgame resolving source controller legal chosen bound
   State.modify' (Common.rescopeRun resolving bound gs0)
-  applyLoopBody runSubgame resolving source controller legal chosen bound (Discover.process (toInteger n))
+  apply (Seq.singleton (Discover.walk (toInteger n)))
+  exiled <- Common.fromAmongMembers legal resolving chosen Binding.discoveredCards
+  gs <- State.get
+  Common.bindObjects resolving mSlot (matchingFromAmong legal resolving controller source gs (Discover.stopsOn (toInteger n)) exiled)
+  apply (Discover.afterWalk (toInteger n))
   State.modify' (Event.recordEvent (GameEvent.Discovered Discovered.MkDiscovered {Discovered.player = controller, Discovered.value = n}))
 
 -- CR 608.2c: the process in written order, then its printed "if" asked of the

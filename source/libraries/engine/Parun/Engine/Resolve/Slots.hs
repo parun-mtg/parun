@@ -118,6 +118,7 @@ import qualified Parun.Types.Destroy as Destroy
 import qualified Parun.Types.DestructionR as DestructionR
 import qualified Parun.Types.DieRollR as DieRollR
 import qualified Parun.Types.Discard as Discard
+import qualified Parun.Types.Discover as Discover
 import qualified Parun.Types.Divide as Divide
 import qualified Parun.Types.Draw as Draw
 import qualified Parun.Types.DrawCountR as DrawCountR
@@ -1248,7 +1249,7 @@ slotsOf effect = joinTwo (joinTwo (joinSlots (fmap objectRefSlots (effectObjectR
   Effect.Populate -> Map.empty
   Effect.TimeTravel -> Map.empty
   Effect.Recruit -> Map.empty
-  Effect.Discover quantity -> quantitySlots quantity
+  Effect.Discover (Discover.MkDiscover quantity _) -> quantitySlots quantity
   Effect.Learn -> Map.empty
   Effect.Cloak {} -> Map.empty
   Effect.ManifestDread (ManifestDread.Type.MkManifestDread _ quantity _) -> quantitySlots quantity
@@ -2205,7 +2206,7 @@ ownSlotsAreExhaustive effect = case effect of
   Effect.Populate -> True
   Effect.TimeTravel -> True
   Effect.Recruit -> True
-  Effect.Discover quantity -> Quantity.slotsAreExhaustive quantity
+  Effect.Discover (Discover.MkDiscover quantity _) -> Quantity.slotsAreExhaustive quantity
   Effect.Learn -> True
   Effect.Cloak {} -> True
   Effect.ManifestDread (ManifestDread.Type.MkManifestDread _ quantity _) -> Quantity.slotsAreExhaustive quantity
@@ -2523,7 +2524,7 @@ hasRead wanted =
         Effect.Populate -> False
         Effect.TimeTravel -> False
         Effect.Recruit -> False
-        Effect.Discover quantity -> Quantity.hasRead wanted quantity
+        Effect.Discover (Discover.MkDiscover quantity _) -> Quantity.hasRead wanted quantity
         Effect.Learn -> False
         Effect.Cloak {} -> False
         Effect.ManifestDread (ManifestDread.Type.MkManifestDread _ quantity _) -> Quantity.hasRead wanted quantity
@@ -2838,7 +2839,8 @@ boundSlots effect = case effect of
   Effect.Populate -> Set.empty
   Effect.TimeTravel -> Set.empty
   Effect.Recruit -> Set.empty
-  Effect.Discover _ -> Set.empty
+  -- CR 701.57c's discovered card, as it was in exile, for a later clause.
+  Effect.Discover (Discover.MkDiscover _ mSlot) -> foldMap Set.singleton mSlot
   Effect.Learn -> Set.empty
   -- The permanents the cloaks put onto the battlefield (CR 701.58a), for
   -- Cryptic Coat's "attach this Equipment to it".

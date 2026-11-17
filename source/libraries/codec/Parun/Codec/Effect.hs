@@ -55,6 +55,7 @@ import qualified Parun.Codec.DealDamage as DealDamage
 import qualified Parun.Codec.Designate as Designate
 import qualified Parun.Codec.Destroy as Destroy
 import qualified Parun.Codec.Discard as Discard
+import qualified Parun.Codec.Discover as Discover
 import qualified Parun.Codec.Divide as Divide
 import qualified Parun.Codec.DoesNotUntapNext as DoesNotUntapNext
 import qualified Parun.Codec.Draw as Draw
@@ -193,7 +194,7 @@ codec cardCodec abilityCodec =
           Arm.nullary "Populate" Effect.Populate,
           Arm.nullary "TimeTravel" Effect.TimeTravel,
           Arm.nullary "Recruit" Effect.Recruit,
-          Arm.payload "Discover" Quantity.codec Effect.Discover (\x -> case x of Effect.Discover y -> Just y; _ -> Nothing),
+          Arm.payload "Discover" Discover.codec Effect.Discover (\x -> case x of Effect.Discover y -> Just y; _ -> Nothing),
           Arm.nullary "Learn" Effect.Learn,
           Arm.payload "Cloak" Cloak.codec Effect.Cloak (\x -> case x of Effect.Cloak y -> Just y; _ -> Nothing),
           Arm.payload "ManifestDread" ManifestDread.codec Effect.ManifestDread (\x -> case x of Effect.ManifestDread y -> Just y; _ -> Nothing),
