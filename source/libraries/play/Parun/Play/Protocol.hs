@@ -39,19 +39,20 @@ import qualified Parun.Types.Reply as R
 import qualified Parun.Types.Request as Request
 import qualified Text.Read as Read
 
--- | Answers each prompt a seat answers over the line `send` carries, asking
+-- | Answers each prompt a seat answers with the reply `send` gets for its
+-- request (over lines through 'viaLines'), asking
 -- again with the problem until the reply reads, is on offer and `judge` lets
 -- it stand; every other prompt goes to `fallback`. `judge` is what the host
 -- refuses that the engine cannot, with why (Parun.Play.Game.judgingNames).
-over :: (Monad m) => (forall r. Asked.Asked GameState.GameState r -> r -> m (Either Text.Text r)) -> (Text.Text -> m Text.Text) -> Answerer.Answerer (Asked.Asked GameState.GameState) m -> Answerer.Answerer (Asked.Asked GameState.GameState) m
+over :: (Monad m) => (forall r. Asked.Asked GameState.GameState r -> r -> m (Either Text.Text r)) -> (Request.Request -> m (Either Text.Text R.Reply)) -> Answerer.Answerer (Asked.Asked GameState.GameState) m -> Answerer.Answerer (Asked.Asked GameState.GameState) m
 over judge send fallback = Answerer.MkAnswerer $ \asked -> case requestFor asked of
   Nothing -> Answerer.unwrap fallback asked
   Just request ->
     let go pending = do
-          line <- send (render pending)
+          sent <- send pending
           judged <-
             either (pure . Left) (judge asked) $
-              Common.parse line >>= Codec.Reply.fromValue >>= decodeAnswer (Asked.prompt asked) >>= onOffer (Question.offer (Request.question request)) (Asked.prompt asked) >>= lawful named (Asked.game asked) (Asked.prompt asked)
+              sent >>= decodeAnswer (Asked.prompt asked) >>= onOffer (Question.offer (Request.question request)) (Asked.prompt asked) >>= lawful named (Asked.game asked) (Asked.prompt asked)
           either (\problem -> go pending {Request.problem = Just problem}) pure judged
         named = maybe (const (Text.pack "a creature")) Render.named (Request.view request)
      in go request
@@ -89,6 +90,23 @@ lawful named gs prompt answer = case prompt of
 -- | One line: no newline inside it, and none after.
 render :: Request.Request -> Text.Text
 render = Common.render . Codec.encode Codec.Request.codec
+
+-- | A seat's side of the protocol as values: each request, and Nothing at the
+-- end of input or else its reply, Left where the reply does not read. A
+-- client in the engine's process answers so, skipping the lines' JSON.
+type Exchange m = Request.Request -> m (Maybe (Either Text.Text R.Reply))
+
+-- | An exchange over lines: each request rendered, and its reply line read.
+overLines :: (Functor m) => (Text.Text -> m (Maybe Text.Text)) -> Exchange m
+overLines send = fmap (fmap readReply) . send . render
+
+-- | What 'over' sends through, over lines that never end.
+viaLines :: (Functor m) => (Text.Text -> m Text.Text) -> Request.Request -> m (Either Text.Text R.Reply)
+viaLines send = fmap readReply . send . render
+
+-- | A reply line's reply, or why it does not read.
+readReply :: Text.Text -> Either Text.Text R.Reply
+readReply line = Common.parse line >>= Codec.Reply.fromValue
 
 -- | What the seat answering this prompt is sent, or Nothing for a prompt no
 -- seat answers.
@@ -135,14 +153,14 @@ idOf label =
 -- | CR 103.1: whether this seat plays first rather than draws, asked over the
 -- line before the game begins, so with no view; asked again with the problem
 -- until the reply is Play or Draw. Nothing at the end of input.
-playOrDraw :: (Monad m) => (Text.Text -> m (Maybe Text.Text)) -> PlayerId.PlayerId -> m (Maybe Bool)
+playOrDraw :: (Monad m) => Exchange m -> PlayerId.PlayerId -> m (Maybe Bool)
 playOrDraw send seat = go Nothing
   where
     choices = [(Text.pack "Play", True), (Text.pack "Draw", False)]
     question = Question.MkQuestion seat (Text.pack "PlayOrDraw") (R.Array (fmap (R.Text . fst) choices))
     go problem = do
-      line <- send (render (Request.MkRequest Nothing question problem))
-      case fmap (\l -> Common.parse l >>= Codec.Reply.fromValue >>= chosen) line of
+      sent <- send (Request.MkRequest Nothing question problem)
+      case fmap (>>= chosen) sent of
         Nothing -> pure Nothing
         Just (Right plays) -> pure (Just plays)
         Just (Left again) -> go (Just again)
