@@ -265,7 +265,11 @@ static context attached enchants a
             (verb, defined) <- modifications Static (Target.number subject) False context' (Foldable.toList (StaticAbility.modifications a))
             [Target.wording subject <> Text.pack " " <> verb <> defined]
        in case StaticAbility.condition a of
-            Nothing -> fmap Prose.sentence (body context)
+            -- Free: an ability word the effect earns (Song of Stupefaction's
+            -- fathomless descent).
+            Nothing -> do
+              stated <- fmap Prose.sentence (body context)
+              stated : [word <> stated | word <- Trigger.effectWord stated]
             Just c -> do
               words' <- Trigger.condition context c
               word <- Trigger.abilityWord words'

@@ -1,0 +1,117 @@
+{
+  "faces": [
+    {
+      "keywords": [
+        {
+          "type": "Ward",
+          "value": {
+            "cost": {
+              "mana": [
+                {
+                  "type": "Generic",
+                  "value": 2
+                }
+              ]
+            }
+          }
+        }
+      ],
+      "manaCost": [
+        {
+          "type": "Generic",
+          "value": 4
+        }
+      ],
+      "name": "Roaming Throne",
+      "oracleText": "Ward {2}\nAs this creature enters, choose a creature type.\nThis creature is the chosen type in addition to its other types.\nIf a triggered ability of another creature you control of the chosen type triggers, it triggers an additional time.",
+      "playerAbilities": [
+        {
+          "effect": {
+            "type": "BearersTrigger",
+            "value": {
+              "bearers": {
+                "type": "And",
+                "value": [
+                  {
+                    "type": "Not",
+                    "value": {
+                      "type": "IsSource"
+                    }
+                  },
+                  {
+                    "type": "HasCardType",
+                    "value": "Creature"
+                  },
+                  {
+                    "type": "HasChosenSubtype"
+                  }
+                ]
+              },
+              "triggering": "AnAdditionalTime"
+            }
+          },
+          "scope": {
+            "type": "You"
+          }
+        }
+      ],
+      "power": {
+        "type": "Literal",
+        "value": 4
+      },
+      "replacementEffects": [
+        {
+          "effect": {
+            "type": "EntryR",
+            "value": {
+              "matching": {
+                "type": "IsSource"
+              },
+              "rewrite": {
+                "type": "ChooseQuality",
+                "value": {
+                  "type": "Subtype",
+                  "value": {
+                    "family": "CreatureType"
+                  }
+                }
+              }
+            }
+          }
+        }
+      ],
+      "staticAbilities": [
+        {
+          "affected": {
+            "type": "Matching",
+            "value": {
+              "type": "IsSource"
+            }
+          },
+          "modifications": [
+            {
+              "type": "ChosenSubtype",
+              "value": {
+                "family": "CreatureType",
+                "mode": "InAddition"
+              }
+            }
+          ]
+        }
+      ],
+      "toughness": {
+        "type": "Literal",
+        "value": 4
+      },
+      "typeLine": {
+        "subtypes": [
+          "Golem"
+        ],
+        "types": [
+          "Artifact",
+          "Creature"
+        ]
+      }
+    }
+  ]
+}
