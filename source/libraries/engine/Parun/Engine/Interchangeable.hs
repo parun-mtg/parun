@@ -196,7 +196,7 @@ objects pcs gs a b =
         )
       -- Quantity.DamageDealtThisTurn's totals, which no View field carries: two
       -- objects that dealt damage to the same recipients but in different amounts.
-      dealtAmounts oid = fmap (\direction -> Game.damageDealtThisTurn direction Nothing gs oid) [minBound .. maxBound :: DamageDirection.DamageDirection]
+      dealtAmounts oid = fmap (\direction -> Game.damageDealtThisTurn direction (const True) gs oid) [minBound .. maxBound :: DamageDirection.DamageDirection]
       -- What Filter.BeforeMove's nest reads: the record of what each was before
       -- its move, and any slot naming that earlier id, which no search for the
       -- two ids below would find.

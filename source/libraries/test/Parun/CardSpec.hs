@@ -364,6 +364,7 @@ import qualified Parun.Types.MovedKinds as MovedKinds
 import qualified Parun.Types.NewX as NewX
 import qualified Parun.Types.NextDamageInstance as NextDamageInstance
 import qualified Parun.Types.Ninjutsu as Ninjutsu
+import qualified Parun.Types.ObjectDamage as ObjectDamage
 import qualified Parun.Types.ObjectId as ObjectId
 import qualified Parun.Types.ObjectRef as ObjectRef
 import qualified Parun.Types.ObjectRestriction as ObjectRestriction
@@ -3560,7 +3561,7 @@ quantityKindFilters quantity = case quantity of
   Quantity.Type.Convokers -> []
   Quantity.Type.ControlGained _ _ -> []
   Quantity.Type.PlayedBy _ -> []
-  Quantity.Type.DamageDealtThisTurn _ -> []
+  Quantity.Type.DamageDealtThisTurn damage -> fmap ((,) Unframed) (Foldable.toList (ObjectDamage.by damage))
   -- CR 122.1's PER-PLAYER tally, whose kind is a Parun.Types.PlayerCounterKind --
   -- a disjoint domain from the object kinds, carrying no Keyword and so no
   -- Filter. See Parun.Types.PlayerCounterKind.

@@ -1383,14 +1383,32 @@ unreadAnchorCounts value =
 -- its encoding carries in all.
 evaluatedCounts :: Face.Face Card.Type.Card -> (Int, Int)
 evaluatedCounts card =
-  ( sum (fmap (evaluatedAtoms . atomJson . Count.Type.filter) (cardCounts card)),
-    evaluatedAtoms (Codec.encode (Face.Codec.codec Card.codec) card)
-  )
+  let encoded = Codec.encode (Face.Codec.codec Card.codec) card
+   in ( sum (fmap (evaluatedAtoms . atomJson . Count.Type.filter) (cardCounts card)) + damageSourceAtoms encoded,
+        evaluatedAtoms encoded
+      )
+
+-- How many evaluated-object atoms sit in a Quantity.DamageDealtThisTurn's
+-- source filter (Parun.Types.ObjectDamage.by), counted off the encoding as
+-- triggerConditionAtoms counts its own.
+damageSourceAtoms :: Value.Value -> Int
+damageSourceAtoms value = case value of
+  Value.Object o ->
+    let pairs = Object.unwrap o
+        named k = [Pair.value p | p <- pairs, String.unwrap (Pair.name p) == Text.pack k]
+        tally = not (null [t | Value.String t <- named "type", String.unwrap t == Text.pack "DamageDealtThisTurn"])
+        own = if tally then sum [evaluatedAtoms by | Value.Object v <- named "value", by <- [Pair.value q | q <- Object.unwrap v, String.unwrap (Pair.name q) == Text.pack "by"]] else 0
+     in own + sum (fmap (damageSourceAtoms . Pair.value) pairs)
+  Value.Array a -> sum (fmap damageSourceAtoms (Array.unwrap a))
+  Value.String _ -> 0
+  Value.Null _ -> 0
+  Value.Number _ -> 0
+  Value.Boolean _ -> 0
 
 -- Filter.Context.evaluated and evaluatedView are filled by
--- Parun.Engine.Quantity's Count arm, the only caller of
--- Parun.Engine.Count.evaluate, and by nothing else, so the atoms anywhere but a
--- Count's filter are a silent False. An atom the codec finds and
+-- Parun.Engine.Quantity's Count and DamageDealtThisTurn arms and by nothing
+-- else, so the atoms anywhere but a Count's filter or a damage tally's source
+-- filter are a silent False. An atom the codec finds and
 -- cardCounts does not is the offence -- misplaced, or in a blind spot of that
 -- traversal.
 evaluatedOffends :: Face.Face Card.Type.Card -> Bool
@@ -2401,17 +2419,20 @@ filterPositionLintSpec s registry corpus = Spec.describe s "Lint" $ do
     -- host nor a chosen value of the offering object answers there.
     Spec.assertEqWith s "an offer's cost is not source-framed" (sourceFramed SlotlessCostFramed, hostFramed SlotlessCostFramed) (False, False)
   -- CR 613.4c's "it": the atoms aimed at a quantity's object are answerable only
-  -- in a Count's filter. See evaluatedOffends.
-  Spec.it s "CR 613.4c no card asks an evaluated-object atom outside a Count" $ do
+  -- in a Count's filter or a damage tally's source filter. See evaluatedOffends.
+  Spec.it s "CR 613.4c no card asks an evaluated-object atom outside a Count or a damage tally" $ do
     ps <- S.allPrintings s corpus
     let offenders = filter (anyFace evaluatedOffends . Printing.card) ps
-    Spec.assertEqWith s "the atom sits only in a Count's filter" (fmap (S.nameOf . Printing.card) offenders) []
+    Spec.assertEqWith s "the atom sits only in a Count's or a damage tally's filter" (fmap (S.nameOf . Printing.card) offenders) []
     -- NOT vacuous: Thran Power Suit writes it twice, once per half of its pump.
     suit <- S.printingOf s registry "Thran Power Suit"
     Spec.assertEqWith s "Thran Power Suit's two atoms are both in Counts" (evaluatedCounts (S.combinedFace suit)) (2, 2)
     -- Coat of Arms writes IsEvaluated and the Evaluated anchor once per half.
     coat <- S.printingOf s registry "Coat of Arms"
     Spec.assertEqWith s "Coat of Arms' four atoms are all in Counts" (evaluatedCounts (S.combinedFace coat)) (4, 4)
+    -- Blazing Effigy writes IsEvaluated once, in its damage tally's source filter.
+    effigy <- S.printingOf s registry "Blazing Effigy"
+    Spec.assertEqWith s "Blazing Effigy's atom is in its damage tally" (evaluatedCounts (S.combinedFace effigy)) (1, 1)
     -- The rejected side: the same atom planted in a target slot.
     piker <- S.printingOf s registry "Goblin Piker"
     let buried = Filter.Type.And [Filter.Type.Or [Filter.Type.HasCardType CardType.Creature, Filter.Type.Not (Filter.Type.IsAttachedTo Anchor.Evaluated)]]
