@@ -8308,7 +8308,8 @@ payPayable perform moment paidFor slots pid oid component = case component of
   -- for three counters" proves it; ExileMaterials and CollectEvidence below
   -- follow.
   --
-  -- LINKS the exiled cards to `oid` (linkPaidExiles).
+  -- LINKS the exiled cards to `oid` (linkPaidExiles), and BINDS them under
+  -- Binding.exiledCard (CR 400.7j), Lamplight Phoenix's "return this card".
   --
   -- A count of 0 (Gorex, the Tombshell announcing none) has the empty set as
   -- its one answer, so nothing is asked.
@@ -8336,8 +8337,11 @@ payPayable perform moment paidFor slots pid oid component = case component of
               batch -> pure batch
             pure (fmap (\c -> (c, Zone.Library)) (reverse ordered))
         arrived <- Event.changeZonesTogether (ManaAbilityPerformer.settle perform) moves
-        Monad.when (destination == GraveyardCostDestination.Exile) (linkPaidExiles paidFor oid component (foldMap Foldable.toList arrived))
-        pure bindsNothing
+        case destination of
+          GraveyardCostDestination.Exile -> do
+            linkPaidExiles paidFor oid component (foldMap Foldable.toList arrived)
+            State.gets (\after -> bindFindable Binding.exiledCard after (foldMap Foldable.toList arrived))
+          GraveyardCostDestination.LibraryBottom -> pure bindsNothing
       else pure Payment.Unpaid
   -- CR 702.167a's [materials]: the arm above over the battlefield and the
   -- graveyard at once, with `materialCandidates` for the pool and

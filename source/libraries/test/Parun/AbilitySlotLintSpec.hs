@@ -31,7 +31,7 @@ import qualified Data.Maybe as Maybe
 import qualified Data.Sequence as Seq
 import qualified Data.Set as Set
 import qualified Data.Text as Text
-import Parun.CardSpec (anyFace, anyFaceOrMinted, armedReads, cardAuthoredEffects, cardCounts, cardFilters, cardResolutionEffects, collectsEvidenceAsCost, createToken, declaresVariable, delayedDeclarations, discardsAsCost, effectCounts, effectWithNested, grantedActivatedAbilities, grantedTriggeredAbilities, instantLine, lintMode, mintingSpell, modalActivated, modalClauseConditions, modalSlotsOffend, oneEffectActivated, oneEffectTrigger, payGateBound, removesCountersAsCost, sacrificesAsCost, spellCostsOf, triggerConditionSlots, vanillaFace, waterbendsAsCost, withMinted)
+import Parun.CardSpec (anyFace, anyFaceOrMinted, armedReads, cardAuthoredEffects, cardCounts, cardFilters, cardResolutionEffects, collectsEvidenceAsCost, createToken, declaresVariable, delayedDeclarations, discardsAsCost, effectCounts, effectWithNested, exilesCardAsCost, grantedActivatedAbilities, grantedTriggeredAbilities, instantLine, lintMode, mintingSpell, modalActivated, modalClauseConditions, modalSlotsOffend, oneEffectActivated, oneEffectTrigger, payGateBound, removesCountersAsCost, sacrificesAsCost, spellCostsOf, triggerConditionSlots, vanillaFace, waterbendsAsCost, withMinted)
 import qualified Parun.Engine.Binding as Binding
 import qualified Parun.Engine.Card as Card
 import qualified Parun.Engine.Children as Children
@@ -402,7 +402,7 @@ activatedAbilityOffendsGiven armed ability =
           then Set.singleton Binding.tappedForTotalPower
           else Set.empty
       exiled =
-        if exilesSelfAsCost (ActivatedAbility.cost ability)
+        if exilesCardAsCost (ActivatedAbility.cost ability)
           then Set.singleton Binding.exiledCard
           else Set.empty
       exiledPermanents =
@@ -473,27 +473,8 @@ tapsForTotalPowerAsCost =
         _ -> False
    in any isThresholdTap . Cost.Type.components
 
--- Does this cost EXILE the object it is on? sacrificesAsCost's shape, and the
--- same reason: CR 601.2h's payment binds Binding.exiledCard (Cost.payComponent's
--- ExileThis and ExileThisFrom arms, folded on by Activate), so CR
--- 702.167a's "Return this card to the battlefield" is an ordinary slot read.
---
--- Both components, one question: they differ in the zone the object leaves (CR
--- 113.6m, AbilityZone.costZones) and not in what they bind, and no printing
--- carries both.
---
--- Not offered on the CAST side (Parun.CardSpec's cardOffends): no printing in
--- `data/cards/` exiles the spell itself as an additional cost, so the exemption
--- would fence nothing.
-exilesSelfAsCost :: Cost.Type.Cost Keyword.Keyword -> Bool
-exilesSelfAsCost =
-  let isExile component = case component of
-        CostComponent.ExileThis -> True
-        CostComponent.ExileThisFrom _ -> True
-        _ -> False
-   in any isExile . Cost.Type.components
-
--- Does this cost put an exiled card into a graveyard? exilesSelfAsCost's shape:
+-- Does this cost put an exiled card into a graveyard? Parun.CardSpec's
+-- exilesCardAsCost's shape:
 -- CR 601.2h's payment binds Binding.graveyardedCard (Cost.payComponent's
 -- PutExiledIntoGraveyard arm, folded on by Activate), so Jester's Scepter's
 -- "that card" is an ordinary slot read. Not offered on the CAST side: no
@@ -662,7 +643,7 @@ armingCostSlots card =
     ( fmap
         ( \ability ->
             let cost = ActivatedAbility.cost ability
-             in Set.fromList ([Binding.discardedCard | discardsAsCost cost] <> [Binding.exiledCard | exilesSelfAsCost cost] <> foldMap (pure . PlayerSlot.slot) (ActivatedAbility.chosenPlayer ability))
+             in Set.fromList ([Binding.discardedCard | discardsAsCost cost] <> [Binding.exiledCard | exilesCardAsCost cost] <> foldMap (pure . PlayerSlot.slot) (ActivatedAbility.chosenPlayer ability))
         )
         (Face.activatedAbilities card)
     )
