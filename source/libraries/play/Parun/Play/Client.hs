@@ -988,7 +988,7 @@ unitName :: ManaUnit.ManaUnit -> Text.Text
 unitName unit =
   let notes =
         [Text.pack "from a snow source" | Set.member ProductionTag.Snow (ManaUnit.tags unit)]
-          <> [Text.pack "from a Treasure" | Set.member ProductionTag.Treasure (ManaUnit.tags unit)]
+          <> [Text.pack ("from a " <> show st) | ProductionTag.Subtype st <- Set.toList (ManaUnit.tags unit)]
           <> [Text.pack "from an artifact" | Set.member ProductionTag.Artifact (ManaUnit.tags unit)]
           <> [Text.pack "kept until end of turn" | ManaUnit.retention unit == ManaRetention.UntilEndOfTurn]
           <> [Text.pack "kept until end of combat" | ManaUnit.retention unit == ManaRetention.UntilEndOfCombat]

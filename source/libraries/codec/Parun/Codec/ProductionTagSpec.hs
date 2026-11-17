@@ -4,6 +4,7 @@ import qualified Parun.Codec.ProductionTag as ProductionTag
 import qualified Parun.JsonCodec.Common as Common
 import qualified Parun.Spec as Spec
 import qualified Parun.Types.ProductionTag as ProductionTag
+import qualified Parun.Types.Subtype as Subtype
 
 spec :: (Monad m, Monad n) => Spec.Spec m n -> n ()
 spec s = Spec.describe s "Parun.Codec.ProductionTag" $ do
@@ -13,9 +14,17 @@ spec s = Spec.describe s "Parun.Codec.ProductionTag" $ do
       ProductionTag.codec
       ProductionTag.Snow
       " \"Snow\" "
-  -- Exhaustive where the literals above are representative: Arm.enum derives
-  -- the arm list from the type, so this is what would catch a constructor the
-  -- derivation missed or two that encode alike.
-  Spec.it s "round trips every constructor" $ Common.assertEnumCodec s ProductionTag.codec
+  Spec.it s "Subtype" $
+    Common.assertCodec
+      s
+      ProductionTag.codec
+      (ProductionTag.Subtype Subtype.Cave)
+      " {\"Subtype\":\"Cave\"} "
+  Spec.it s "Artifact" $
+    Common.assertCodec
+      s
+      ProductionTag.codec
+      ProductionTag.Artifact
+      " \"Artifact\" "
   Spec.it s "has a schema" $
     Common.assertHasSchema s ProductionTag.codec

@@ -21,12 +21,14 @@ import qualified Parun.Codec.Face as Face.Codec
 import qualified Parun.Codec.Filter as Filter.Codec
 import qualified Parun.Codec.Keyword as Keyword.Codec
 import qualified Parun.Codec.KeywordDesignator as KeywordDesignator.Codec
+import qualified Parun.Codec.Subtype as Subtype.Codec
 import qualified Parun.Engine.Binding as Binding
 import qualified Parun.Engine.Card as Card
 import qualified Parun.Engine.Children as Children
 import qualified Parun.Engine.Event.Trigger as Trigger
 import qualified Parun.Engine.Filter as Filter
 import qualified Parun.Engine.Keyword as Keyword.Engine
+import qualified Parun.Engine.Mana as Mana
 import qualified Parun.Engine.Mint as Mint
 import qualified Parun.Json.Array as Array
 import qualified Parun.Json.Object as Object
@@ -146,6 +148,7 @@ import qualified Parun.Types.LifeDirection as LifeDirection
 import qualified Parun.Types.LifeTally as LifeTally
 import qualified Parun.Types.Lookback as Lookback
 import qualified Parun.Types.ManaCost as ManaCost
+import qualified Parun.Types.ManaSpent as ManaSpent
 import qualified Parun.Types.ManaSymbol as ManaSymbol
 import qualified Parun.Types.Measure as Measure
 import qualified Parun.Types.Measures as Measures
@@ -180,6 +183,7 @@ import qualified Parun.Types.PlayerStaticAbility as PlayerStaticAbility
 import qualified Parun.Types.Pool as Pool
 import qualified Parun.Types.PrintedReplacement as PrintedReplacement
 import qualified Parun.Types.Printing as Printing
+import qualified Parun.Types.ProductionTag as ProductionTag
 import qualified Parun.Types.Protection as Protection
 import qualified Parun.Types.PutCounters as PutCounters
 import qualified Parun.Types.PutCountersFrom as PutCountersFrom
@@ -1604,6 +1608,29 @@ assertAuthors s registry pool label counts authors = do
   let listed = Set.fromList (fmap filed printings)
   Spec.assertEqWith s "and they are the pool's only ones: unlisted authors" [filed p | (p, faces) <- pool, uncurry (+) (facesCount faces) > 0, filed p `Set.notMember` listed] []
   Spec.assertEqWith s "and they are the pool's only ones" (sum (fmap (uncurry (+) . facesCount . snd) pool)) (sum (fmap snd authors))
+
+-- Every ProductionTag.Subtype in a card's encoding, by Parun.Codec.ProductionTag's
+-- keyed spelling: the one-key object {"Subtype": ...}, which no other codec a card
+-- reaches writes.
+productionTagSubtypes :: Face.Face Card.Type.Card -> [Value.Value]
+productionTagSubtypes = go . Codec.encode (Face.Codec.codec Card.codec)
+  where
+    go value = case value of
+      Value.Object o -> case Object.unwrap o of
+        [p] | String.unwrap (Pair.name p) == Text.pack "Subtype" -> [Pair.value p]
+        ps -> concatMap (go . Pair.value) ps
+      Value.Array a -> concatMap go (Array.unwrap a)
+      Value.String _ -> []
+      Value.Null _ -> []
+      Value.Boolean _ -> []
+      Value.Number _ -> []
+
+-- A face asking about mana from a subtype Parun.Engine.Mana.productionTagsGiven
+-- never stamps, which would answer 0 however the spell was paid for.
+untaggedSubtypeOffends :: Face.Face Card.Type.Card -> Bool
+untaggedSubtypeOffends = any (`notElem` stamped) . productionTagSubtypes
+  where
+    stamped = fmap (Codec.encode Subtype.Codec.codec) (Set.toList Mana.taggedSubtypes)
 
 filterPositionLintSpec :: (Monad n) => Spec.Spec IO n -> Registry.Registry IO -> [(FilePath, Either Text.Text Card.Type.Card)] -> n ()
 filterPositionLintSpec s registry corpus = Spec.describe s "Lint" $ do
@@ -4168,6 +4195,25 @@ filterPositionLintSpec s registry corpus = Spec.describe s "Lint" $ do
                 ]
             }
     Spec.assertEqWith s "and one in an affected set is seen" (counts (survey planted)) (0, 1)
+  -- CR 106.3: a unit records only the subtypes Mana.taggedSubtypes lists, so a
+  -- card asking about mana from any other subtype would read 0 for every payment.
+  Spec.it s "CR 106.3 no card asks about mana from a subtype the engine does not stamp" $ do
+    ps <- S.allPrintings s corpus
+    let offenders = filter (anyFace untaggedSubtypeOffends . Printing.card) ps
+    Spec.assertEqWith s "every production-tag subtype is stamped" (fmap (S.nameOf . Printing.card) offenders) []
+    -- Not vacuous: Bat Colony's Cave is seen and accepted, and the same count
+    -- over a Forest is rejected.
+    colony <- S.printingOf s registry "Bat Colony"
+    Spec.assertBool s (not (null (productionTagSubtypes (S.combinedFace colony)))) "Bat Colony's Cave tag is seen"
+    Spec.assertBool s (not (untaggedSubtypeOffends (S.combinedFace colony))) "and accepted"
+    piker <- S.printingOf s registry "Goblin Piker"
+    let counting tag =
+          (S.combinedFace piker)
+            { Face.spell =
+                Mint.oneModeTargeting Map.empty (Seq.singleton (Effect.Draw (Draw.MkDraw (PlayerRef.Relative PlayerRelation.You) (Quantity.Type.ManaSpent (ManaSpent.Tagged (ProductionTag.Subtype tag))) Nothing)))
+            }
+    Spec.assertBool s (untaggedSubtypeOffends (counting Subtype.Forest)) "a count of mana from a Forest is an offence"
+    Spec.assertBool s (not (untaggedSubtypeOffends (counting Subtype.Cave))) "and the same count from a Cave is not"
 
 spec :: (Monad n) => Spec.Spec IO n -> Registry.Registry IO -> [(FilePath, Either Text.Text Card.Type.Card)] -> n ()
 spec s registry corpus = Spec.describe s "Parun.Engine.Card" $ do

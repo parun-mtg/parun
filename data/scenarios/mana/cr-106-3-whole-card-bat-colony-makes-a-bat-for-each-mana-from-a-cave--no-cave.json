@@ -1,0 +1,27 @@
+{
+  "description": "CR 106.3 whole card: Bat Colony cast off three Plains makes no Bat",
+  "note": "The control for the main file: the same spell paid for by no Cave, so the count is zero.",
+  "board": {
+    "seats": [
+      {
+        "name": "alice",
+        "battlefield": [
+          { "card": "Plains", "label": "plains-1" },
+          { "card": "Plains", "label": "plains-2" },
+          { "card": "Plains", "label": "plains" }
+        ],
+        "hand": [{ "card": "Bat Colony", "label": "colony" }]
+      },
+      { "name": "bob" }
+    ],
+    "active": "alice",
+    "step": "PrecombatMain"
+  },
+  "timeline": [
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": { "Cast": { "object": "$colony", "mana": ["$plains-1", "$plains-2", "$plains"] } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass" },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "Count": { "player": "alice", "zone": "Battlefield", "card": "Bat Colony", "count": 1 } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass" },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "Count": { "player": "alice", "zone": "Battlefield", "card": "Bat Token", "count": 0 } } }
+  ]
+}

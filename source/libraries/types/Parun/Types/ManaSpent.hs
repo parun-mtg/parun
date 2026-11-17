@@ -2,6 +2,7 @@ module Parun.Types.ManaSpent where
 
 import qualified Parun.Types.CostPortion as CostPortion
 import qualified Parun.Types.ManaType as ManaType
+import qualified Parun.Types.ProductionTag as ProductionTag
 
 -- | The payload of Parun.Types.Quantity's ManaSpent arm: which of the mana spent
 -- to pay for the object it counts (Parun.Types.Object.manaSpent).
@@ -16,4 +17,7 @@ data ManaSpent
   | -- | CR 601.2h / 106.1a: how many of the five colors the mana spent includes --
     -- Converge's "the number of colors of mana spent to cast this spell".
     Colors
+  | -- | CR 106.3 / 601.2h / 400.7d: how many units carrying that production
+    -- tag were spent -- Bat Colony's "for each mana from a Cave spent to cast it".
+    Tagged ProductionTag.ProductionTag
   deriving (Eq, Ord, Show)

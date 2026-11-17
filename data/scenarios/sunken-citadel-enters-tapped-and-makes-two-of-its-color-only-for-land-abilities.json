@@ -172,7 +172,7 @@
                     "Green"
                   ]
                 },
-                "tags": []
+                "tags": [{"Subtype": "Cave"}]
               },
               {
                 "manaType": {
@@ -192,7 +192,7 @@
                     "Green"
                   ]
                 },
-                "tags": []
+                "tags": [{"Subtype": "Cave"}]
               }
             ]
           ]
@@ -254,7 +254,7 @@
                     "Green"
                   ]
                 },
-                "tags": []
+                "tags": [{"Subtype": "Cave"}]
               },
               {
                 "manaType": {
@@ -274,7 +274,7 @@
                     "Green"
                   ]
                 },
-                "tags": []
+                "tags": [{"Subtype": "Cave"}]
               }
             ]
           ]
@@ -336,7 +336,7 @@
                     "Green"
                   ]
                 },
-                "tags": []
+                "tags": [{"Subtype": "Cave"}]
               }
             ]
           ]

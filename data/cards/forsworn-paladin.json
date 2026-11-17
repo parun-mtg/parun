@@ -161,7 +161,9 @@
                           "value": {
                             "quantity": {
                               "type": "TagWasSpent",
-                              "value": "Treasure"
+                              "value": {
+                                "Subtype": "Treasure"
+                              }
                             },
                             "slot": "thisAbility"
                           }

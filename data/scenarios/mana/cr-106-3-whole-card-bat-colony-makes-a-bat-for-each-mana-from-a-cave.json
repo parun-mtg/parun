@@ -1,0 +1,27 @@
+{
+  "description": "CR 106.3 whole card: Bat Colony cast with two mana from Caves and one from a Plains makes two Bats",
+  "note": "Hidden Courtyard and Cavernous Maw are Caves, the Plains is not, so the count is two where the total spent is three. The -no-cave file casts it off three Plains instead.",
+  "board": {
+    "seats": [
+      {
+        "name": "alice",
+        "battlefield": [
+          { "card": "Hidden Courtyard", "label": "courtyard" },
+          { "card": "Cavernous Maw", "label": "maw" },
+          { "card": "Plains", "label": "plains" }
+        ],
+        "hand": [{ "card": "Bat Colony", "label": "colony" }]
+      },
+      { "name": "bob" }
+    ],
+    "active": "alice",
+    "step": "PrecombatMain"
+  },
+  "timeline": [
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": { "Cast": { "object": "$colony", "mana": ["$courtyard", "$maw", "$plains"] } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass" },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "Count": { "player": "alice", "zone": "Battlefield", "card": "Bat Colony", "count": 1 } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass" },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "Count": { "player": "alice", "zone": "Battlefield", "card": "Bat Token", "count": 2 } } }
+  ]
+}

@@ -2538,7 +2538,7 @@ spec s = Spec.describe s "Parun.Engine.Filter" $ do
   Spec.describe s "TagWasSpent" $ do
     Spec.it s "matches a tag the candidate's payment carried and no other" $ do
       Spec.assertBool s (Filter.matches self paidWithArtifactMana (Filter.Type.TagWasSpent ProductionTag.Artifact)) "the view's own recorded tag"
-      Spec.assertBool s (not (Filter.matches self paidWithArtifactMana (Filter.Type.TagWasSpent ProductionTag.Treasure))) "and not a different one"
+      Spec.assertBool s (not (Filter.matches self paidWithArtifactMana (Filter.Type.TagWasSpent (ProductionTag.Subtype Subtype.Treasure)))) "and not a different one"
 
     -- The pair that makes the atom discriminating: two views differing in the
     -- recorded tag set alone, so neither answer can come from anything else.

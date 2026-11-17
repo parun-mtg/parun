@@ -751,6 +751,11 @@ evaluateAgainst viewOf context gs announcedOn mOid mView quantity =
           -- CR 601.2h / 106.1a: Converge's count, a SET of colours so two mana of
           -- one colour count once and colourless (CR 106.1b) counts none.
           ManaSpent.Colors -> fmap (toInteger . Set.size . ManaSymbolText.colorsOf . Filter.manaSpent) mView
+          -- CR 106.3 / 601.2h: Bat Colony's "for each mana from a Cave spent to
+          -- cast it", a COUNT of the units carrying the tag where TagWasSpent
+          -- asks only whether one did. A classification, never an effect's
+          -- identity.
+          ManaSpent.Tagged tag -> fmap (toInteger . length . filter (Set.member tag . ManaUnit.tags) . Mana.unwrap . Filter.manaSpent) mView
         -- CR 111.6's status as a 0/1, WasForetold's arm in every respect. Filter.token
         -- rather than Game.isToken: reading the object directly answers False for an
         -- id naming nothing, which is the whole case this arm exists for; see #1102.
@@ -1713,6 +1718,7 @@ hasRead wanted quantity = case quantity of
     -- 2026-11-13, none).
     ManaSpent.OfType _ portion -> portion == CostPortion.OnX && wanted == StaticRead.ReadsManaSpentOnX
     ManaSpent.Colors -> False
+    ManaSpent.Tagged _ -> False
   _ -> Monoid.getAny (Const.getConst (Children.quantityChildren (Children.descendingQuantities (Const.Const . Monoid.Any . hasRead wanted)) quantity))
 
 -- CR 607.2a: the linked pile this quantity reads its number off, where that

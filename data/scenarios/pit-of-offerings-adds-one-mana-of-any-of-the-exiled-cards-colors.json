@@ -170,7 +170,7 @@
                   "type": "Colored",
                   "value": "Green"
                 },
-                "tags": [],
+                "tags": [{"Subtype": "Cave"}],
                 "retention": "Ordinary",
                 "restriction": null,
                 "rider": null,
@@ -196,7 +196,7 @@
                 "type": "Colored",
                 "value": "Green"
               },
-              "tags": [],
+              "tags": [{"Subtype": "Cave"}],
               "retention": "Ordinary",
               "restriction": null,
               "rider": null,
