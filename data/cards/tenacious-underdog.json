@@ -3,8 +3,9 @@
     {
       "castingPermissions": [
         {
-          "type": "CastFromGraveyard",
+          "type": "CastFrom",
           "value": {
+            "from": "Graveyard",
             "using": "Blitz"
           }
         }

@@ -7,6 +7,7 @@ import qualified Parun.Types.Keyword as Keyword
 import qualified Parun.Types.KeywordFamily as KeywordFamily
 import qualified Parun.Types.ManaCost as ManaCost
 import qualified Parun.Types.WithCounters as WithCounters
+import qualified Parun.Types.Zone as Zone
 
 -- | CR 113.6 / 601.3: a static permission to cast a card from a zone or under a
 -- condition it normally could not. CastFromLibraryWhileSearching is Panglacial
@@ -26,7 +27,8 @@ import qualified Parun.Types.WithCounters as WithCounters
 -- Parun.Engine.Cast.permitsCastFromGraveyard reads the two beside each other.
 data CastingPermission
   = CastFromLibraryWhileSearching
-  | -- | CR 601.3: cast this card from its owner's graveyard, using only the
+  | -- | CR 601.3 / 113.6f: cast this card from the zone, by its owner: a graveyard
+    -- (Skaab Ruinator) or exile (Khan, Vengeful Heart). In a graveyard, using only the
     -- alternative costs a keyword of the named family offers (Tenacious
     -- Underdog's "using its blitz ability"); Nothing where the keyword granting
     -- the permission prices the cast itself, as CR 702.34a's, 702.81a's,
@@ -40,13 +42,16 @@ data CastingPermission
     -- Hundred-Battle Veteran's "If you do, it enters with a finality counter".
     -- The condition, asked of its owner (CR 109.5), is what the permission holds
     -- under (Undead Sprinter's "if a non-Zombie creature died this turn");
-    -- Parun.Engine.PlayerEffect.graveyardPermissionHolds asks it.
+    -- Parun.Engine.PlayerEffect.permissionHolds asks it.
     --
     -- Those keywords' permissions come from Parun.Engine.Keyword.castingPermissionsOf,
     -- a constructor here rather than a keyword read at the gate, so
     -- Parun.Engine.Cast keeps asking "may this be cast from the graveyard?" and
     -- never "does this have flashback?".
-    CastFromGraveyard (Maybe Condition.Condition) (Maybe KeywordFamily.KeywordFamily) [CostComponent.CostComponent Keyword.Keyword] (Maybe WithCounters.WithCounters)
+    --
+    -- Unprinted: another zone, or exile beside a condition, a family, a cost or
+    -- counters. Parun.Codec.CastingPermission refuses each.
+    CastFrom Zone.Zone (Maybe Condition.Condition) (Maybe KeywordFamily.KeywordFamily) [CostComponent.CostComponent Keyword.Keyword] (Maybe WithCounters.WithCounters)
   | -- | CR 601.3 / 305.1: play this card from its owner's graveyard, casting
     -- it for its printed or an alternative cost (CR 118.9) or playing it as a land.
     PlayFromGraveyard
