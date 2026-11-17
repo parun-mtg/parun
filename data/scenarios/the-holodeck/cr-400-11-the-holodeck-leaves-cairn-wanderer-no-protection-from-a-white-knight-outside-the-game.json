@@ -1,0 +1,133 @@
+{
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "battlefield": [
+          {
+            "card": "The Holodeck"
+          },
+          {
+            "card": "Swamp",
+            "label": "s1"
+          },
+          {
+            "card": "Swamp",
+            "label": "s2"
+          },
+          {
+            "card": "Swamp",
+            "label": "s3"
+          }
+        ],
+        "hand": [
+          {
+            "card": "Murder",
+            "label": "murder"
+          }
+        ],
+        "library": [
+          {
+            "card": "Hill Giant"
+          },
+          {
+            "card": "Hill Giant"
+          },
+          {
+            "card": "Hill Giant"
+          },
+          {
+            "card": "Hill Giant"
+          }
+        ],
+        "name": "alice",
+        "outsideTheGame": [
+          {
+            "key": "White Knight",
+            "value": 1
+          }
+        ]
+      },
+      {
+        "battlefield": [
+          {
+            "card": "Cairn Wanderer",
+            "label": "wanderer"
+          }
+        ],
+        "library": [
+          {
+            "card": "Hill Giant"
+          },
+          {
+            "card": "Hill Giant"
+          },
+          {
+            "card": "Hill Giant"
+          },
+          {
+            "card": "Hill Giant"
+          }
+        ],
+        "name": "bob"
+      }
+    ],
+    "step": "PrecombatMain"
+  },
+  "description": "CR 400.11: a White Knight alice owns outside the game, which The Holodeck lets her play, is in no graveyard, so Cairn Wanderer has no protection from black and Murder destroys it",
+  "note": "The Holodeck offers the Knight as an object while she chooses; Cairn Wanderer's \"a creature card with protection is in a graveyard\" does not see it, so Murder is offered and destroys the Wanderer, its only target.",
+  "timeline": [
+    {
+      "check": {
+        "View": {
+          "is": [
+            "Pass",
+            "Cast $murder",
+            "ActivateManaAbility $s1",
+            "ActivateManaAbility $s2",
+            "ActivateManaAbility $s3"
+          ],
+          "of": "Offered",
+          "player": "alice"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Cast": {
+          "mana": [
+            "$s1",
+            "$s2",
+            "$s3"
+          ],
+          "object": "$murder"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Cairn Wanderer",
+          "count": 1,
+          "player": "bob",
+          "zone": "Graveyard"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    }
+  ]
+}
