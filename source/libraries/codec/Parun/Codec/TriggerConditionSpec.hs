@@ -548,12 +548,12 @@ spec s = Spec.describe s "Parun.Codec.TriggerCondition" $ do
     Common.assertCodec
       s
       TriggerCondition.codec
-      (TriggerCondition.PermanentActs (PermanentActsTrigger.MkPermanentActsTrigger (PermanentActed.MkPermanentActed PermanentAction.Evolve ActingPermanent.Self) Batching.EachOccurrence))
+      (TriggerCondition.PermanentActs (PermanentActsTrigger.MkPermanentActsTrigger (PermanentActed.MkPermanentActed PermanentAction.Evolve ActingPermanent.Self Nothing) Batching.EachOccurrence))
       " {\"type\":\"PermanentActs\",\"value\":{\"action\":\"Evolve\",\"permanent\":{\"type\":\"Self\"}}} "
     Common.assertCodec
       s
       TriggerCondition.codec
-      (TriggerCondition.PermanentActs (PermanentActsTrigger.MkPermanentActsTrigger (PermanentActed.MkPermanentActed PermanentAction.Explore (ActingPermanent.Matching (Filter.HeldBy Holder.Controller PlayerRelation.You))) Batching.EachOccurrence))
+      (TriggerCondition.PermanentActs (PermanentActsTrigger.MkPermanentActsTrigger (PermanentActed.MkPermanentActed PermanentAction.Explore (ActingPermanent.Matching (Filter.HeldBy Holder.Controller PlayerRelation.You)) Nothing) Batching.EachOccurrence))
       " {\"type\":\"PermanentActs\",\"value\":{\"action\":\"Explore\",\"permanent\":{\"type\":\"Matching\",\"value\":{\"type\":\"HeldBy\",\"value\":{\"holder\":\"Controller\",\"relation\":\"You\"}}}}} "
   -- CR 708.9: Synthetic Unmasking Witness's condition.
   Spec.it s "FaceDownPermanentLeavesRevealed round-trips" $

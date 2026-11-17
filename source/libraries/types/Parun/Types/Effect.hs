@@ -647,7 +647,7 @@ data Effect card ability
   | -- | CR 702.100b and CR 702.149c: put a +1/+1 counter on the slot's
     -- permanent, and if one or more land, it performs the action (evolves,
     -- trains). One opcode because both rules make the marker the placement.
-    CounterAndMark (PermanentActed.PermanentActed SlotName.SlotName)
+    CounterAndMark (PermanentActed.PermanentActed () SlotName.SlotName)
   | -- | CR 702.134a and CR 702.134c together: put a +1/+1 counter on the slot's
     -- creature, and record that the source mentored it. Not CounterAndMark: rule
     -- 702.134c's marker is the resolution, and it names two creatures.

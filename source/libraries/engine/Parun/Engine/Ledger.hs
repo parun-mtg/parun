@@ -81,7 +81,7 @@ tapping before after logged =
          in case event of
               GameEvent.BecameTapped oid -> to TapState.Tapped oid
               GameEvent.BecameUntapped oid -> to TapState.Untapped oid
-              GameEvent.PermanentActed (PermanentActed.MkPermanentActed PermanentAction.PhaseIn oid) -> (Map.delete oid held, idle)
+              GameEvent.PermanentActed (PermanentActed.MkPermanentActed PermanentAction.PhaseIn oid _) -> (Map.delete oid held, idle)
               _ -> (held, idle)
       (replayed, idles) = Foldable.foldl' turn (statuses before, Seq.empty) logged
       differing = Map.intersectionWith (,) replayed (statuses after)

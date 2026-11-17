@@ -1779,6 +1779,9 @@ wildgrowthWalkerSpec s registry =
         Prompt.ChooseExplore {} -> OptionalDecision.Exercises
         _ -> S.identityAnswer p
       settle gs = S.runPure binIt gs Engine.priorityLoop
+      explored oid event = case event of
+        GameEvent.PermanentActed acted -> PermanentActed.action acted == PermanentAction.Explore && PermanentActed.permanent acted == oid
+        _ -> False
    in Spec.describe s "WildgrowthWalkerExploreTrigger" $ do
         -- The whole card. The Branchwalker's own +1/+1 counter and the Walker's
         -- are read separately, so "a counter went somewhere" cannot pass for
@@ -1787,7 +1790,7 @@ wildgrowthWalkerSpec s registry =
           (walkerId, branchId, gs) <- board S.alice ["Goblin Piker", "Bird Maiden"]
           let after = settle gs
           Spec.assertEqWith s "the Walker started 1/3" (S.powerToughnessOf walkerId gs) (Just (1, 3))
-          Spec.assertBool s (elem (GameEvent.PermanentActed (PermanentActed.MkPermanentActed PermanentAction.Explore branchId)) (S.eventsOf after)) "CR 701.44b the explore recorded its event"
+          Spec.assertBool s (any (explored branchId) (S.eventsOf after)) "CR 701.44b the explore recorded its event"
           Spec.assertEqWith s "the Walker took its +1/+1 counter" (S.powerToughnessOf walkerId after) (Just (2, 4))
           Spec.assertEqWith s "and the Branchwalker took its own, which is a different counter" (S.powerToughnessOf branchId after) (Just (3, 2))
           Spec.assertEqWith s "alice gained 3" (S.lifeOf S.alice after) (Just 23)
@@ -1799,7 +1802,7 @@ wildgrowthWalkerSpec s registry =
         Spec.it s "CR 109.5 bob's creature exploring does not grow alice's Walker" $ do
           (walkerId, branchId, gs) <- board S.bob ["Goblin Piker", "Bird Maiden"]
           let after = settle gs
-          Spec.assertBool s (elem (GameEvent.PermanentActed (PermanentActed.MkPermanentActed PermanentAction.Explore branchId)) (S.eventsOf after)) "bob's Branchwalker really explored"
+          Spec.assertBool s (any (explored branchId) (S.eventsOf after)) "bob's Branchwalker really explored"
           Spec.assertEqWith s "so it took its own counter" (S.powerToughnessOf branchId after) (Just (3, 2))
           Spec.assertEqWith s "but alice's Walker is still 1/3" (S.powerToughnessOf walkerId after) (Just (1, 3))
           Spec.assertEqWith s "and alice gained no life" (S.lifeOf S.alice after) (Just 20)
@@ -1809,7 +1812,7 @@ wildgrowthWalkerSpec s registry =
         Spec.it s "CR 701.44b an explore off an empty library still grows the Walker" $ do
           (walkerId, branchId, gs) <- board S.alice []
           let after = settle gs
-          Spec.assertBool s (elem (GameEvent.PermanentActed (PermanentActed.MkPermanentActed PermanentAction.Explore branchId)) (S.eventsOf after)) "the explore is still an event"
+          Spec.assertBool s (any (explored branchId) (S.eventsOf after)) "the explore is still an event"
           Spec.assertEqWith s "the Walker grew" (S.powerToughnessOf walkerId after) (Just (2, 4))
           Spec.assertEqWith s "alice gained 3" (S.lifeOf S.alice after) (Just 23)
           Spec.assertEqWith s "and nothing was binned" (length (Game.zoneMembers Zone.Graveyard S.alice after)) 0
@@ -1968,7 +1971,7 @@ ironMongerSpec s registry =
           (mongerId, informantId, gs) <- board S.alice
           let after = settle gs
           Spec.assertEqWith s "CR 701.50f alice's Monger took its +1/+1 counter" (S.powerToughnessOf mongerId after) (Just (3, 3))
-          Spec.assertBool s (elem (GameEvent.PermanentActed (PermanentActed.MkPermanentActed PermanentAction.Connive informantId)) (S.eventsOf after)) "the connive recorded its event"
+          Spec.assertBool s (elem (GameEvent.PermanentActed (PermanentActed.MkPermanentActed PermanentAction.Connive informantId Nothing)) (S.eventsOf after)) "the connive recorded its event"
           Spec.assertEqWith s "and the Informant grew off its own nonland discard" (S.powerToughnessOf informantId after) (Just (3, 2))
         -- The negative, one thing different: bob controls the Informant. The
         -- connive still happens and still records its event, so what fails is the
@@ -1977,7 +1980,7 @@ ironMongerSpec s registry =
           (mongerId, informantId, gs) <- board S.bob
           let after = settle gs
           Spec.assertEqWith s "alice's Monger is still 2/2" (S.powerToughnessOf mongerId after) (Just (2, 2))
-          Spec.assertBool s (elem (GameEvent.PermanentActed (PermanentActed.MkPermanentActed PermanentAction.Connive informantId)) (S.eventsOf after)) "bob's Informant really did connive"
+          Spec.assertBool s (elem (GameEvent.PermanentActed (PermanentActed.MkPermanentActed PermanentAction.Connive informantId Nothing)) (S.eventsOf after)) "bob's Informant really did connive"
           Spec.assertEqWith s "and bob's Informant grew off its own nonland discard" (S.powerToughnessOf informantId after) (Just (3, 2))
 
 -- CR 701.50e over a whole card. Spymaster's Vault, Land, "{B}, {T}: Target
@@ -2013,7 +2016,7 @@ spymastersVaultSpec s registry =
           (mongerId, after) <- board False
           Spec.assertEqWith s "no card was drawn" (length (Game.zoneMembers Zone.Hand S.alice after), length (Game.zoneMembers Zone.Library S.alice after)) (0, 1)
           Spec.assertEqWith s "the Monger neither grew nor triggered" (S.powerToughnessOf mongerId after) (Just (2, 2))
-          Spec.assertBool s (notElem (GameEvent.PermanentActed (PermanentActed.MkPermanentActed PermanentAction.Connive mongerId)) (S.eventsOf after)) "and no connive event was recorded"
+          Spec.assertBool s (notElem (GameEvent.PermanentActed (PermanentActed.MkPermanentActed PermanentAction.Connive mongerId Nothing)) (S.eventsOf after)) "and no connive event was recorded"
         Spec.it s "CR 701.50d with a creature dead, the Monger connives 1" $ do
           (mongerId, after) <- board True
           Spec.assertEqWith s "the Giant was drawn and discarded" (length (Game.zoneMembers Zone.Hand S.alice after), length (Game.zoneMembers Zone.Library S.alice after)) (0, 0)

@@ -189,6 +189,8 @@ import qualified Parun.Types.PayGate as PayGate
 import qualified Parun.Types.PayObligation as PayObligation
 import qualified Parun.Types.PerformerR as PerformerR
 import qualified Parun.Types.PermanentActed as PermanentActed
+import qualified Parun.Types.PermanentAction as PermanentAction
+import qualified Parun.Types.PermanentActsTrigger as PermanentActsTrigger
 import qualified Parun.Types.PermissionLimit as PermissionLimit
 import qualified Parun.Types.PhaseOut as PhaseOut
 import qualified Parun.Types.PhasePattern as PhasePattern
@@ -579,9 +581,9 @@ phasePatternOffends replacement = case replacement of
 -- - A PerformerR naming an instruction no permanent carries out, which no
 --   event ever reaches: only an assembly, a connive and an explore name their
 --   performer.
--- - Unprinted: an explore rewritten other than by PerformFirst. Rule 701.44a
---   states no count, so Common.exploreOne explores once whatever count a
---   rewrite leaves.
+-- - Unprinted: an explore rewritten other than by PerformFirst, on either
+--   row. Rule 701.44a states no count, so Common.exploreOne explores once
+--   whatever count a rewrite leaves.
 --
 -- Every printed row is Multiply 2, AddMore 1, Eligeth's DrawInstead on a scry,
 -- Pokey, the Scallywagg's RollD20Instead on a flip, Leader, Super-Genius's
@@ -594,7 +596,6 @@ instructionRowOffends replacement = case replacement of
   ReplacementEffect.InstructionR row -> rewriteOffends (InstructionR.instruction row) (InstructionR.rewrite row)
   ReplacementEffect.PerformerR row ->
     List.notElem (PerformerR.instruction row) [PlayerInstruction.Assemble, PlayerInstruction.Connive, PlayerInstruction.Explore]
-      || (PerformerR.instruction row == PlayerInstruction.Explore && not (performsFirst (PerformerR.rewrite row)))
       || rewriteOffends (PerformerR.instruction row) (PerformerR.rewrite row)
   ReplacementEffect.PhaseR _ -> False
   ReplacementEffect.CounterR {} -> False
@@ -617,7 +618,9 @@ instructionRowOffends replacement = case replacement of
   ReplacementEffect.GameLossR {} -> False
   ReplacementEffect.PlaneswalkR {} -> False
   where
-    rewriteOffends instruction rewrite = case rewrite of
+    rewriteOffends instruction rewrite =
+      (instruction == PlayerInstruction.Explore && not (performsFirst rewrite)) || rewriteMisfits instruction rewrite
+    rewriteMisfits instruction rewrite = case rewrite of
       InstructionRewrite.DrawInstead -> instruction /= PlayerInstruction.Scry
       InstructionRewrite.RollD20Instead -> instruction /= PlayerInstruction.FlipCoin
       InstructionRewrite.PerformFirst first ->
@@ -2421,7 +2424,7 @@ effectLintSpec s registry corpus = Spec.describe s "Lint" $ do
           Effect.RollDie rollDie -> Foldable.toList (RollDie.store rollDie)
           Effect.RerollStoredResults slot -> [slot]
           Effect.SetClassLevel (SetClassLevel.MkSetClassLevel _ slot) -> [slot]
-          Effect.CounterAndMark (PermanentActed.MkPermanentActed _ slot) -> [slot]
+          Effect.CounterAndMark (PermanentActed.MkPermanentActed _ slot ()) -> [slot]
           Effect.BecomeProtector slot -> [slot]
           Effect.Mentor slot -> [slot]
           -- Effect.Attach is NOT one: CR 301.5c makes a slot naming several
@@ -3428,6 +3431,7 @@ effectLintSpec s registry corpus = Spec.describe s "Lint" $ do
     Spec.assertBool s (all (instructionRowOffends . scaledBy (Scaling.Subtract 1)) (rowsOf thumb)) "while one coin fewer is rejected"
     Spec.assertBool s (all (instructionRowOffends . scaledBy Scaling.Halve) (rowsOf thumb)) "and so is half as many"
     Spec.assertBool s (all (instructionRowOffends . scaledBy (Scaling.Multiply 0)) (rowsOf thumb)) "and so is none"
+    Spec.assertBool s (all (instructionRowOffends . naming PlayerInstruction.Explore) (rowsOf thumb)) "and so is doubling an explore, a performer's instruction on the instruction row"
     Spec.assertBool s (not (null (rowsOf pokey)) && not (any instructionRowOffends (rowsOf pokey))) "Pokey's d20 instead of a flip is accepted"
     Spec.assertBool s (all (instructionRowOffends . naming PlayerInstruction.Scry) (rowsOf pokey)) "while a d20 instead of a scry is rejected"
     phoenix <- S.printingOf s registry "Retriever Phoenix"
@@ -4050,6 +4054,22 @@ effectLintSpec s registry corpus = Spec.describe s "Lint" $ do
       (not (all (all (null . doors) . Card.Type.faces . Printing.card) ps))
       "the pool has a card with an unlock trigger to lint"
     Spec.assertEqWith s "every door named is a face of the card naming it" (fmap (S.nameOf . Printing.card) offenders) []
+  -- Unprinted: a revealed-card Filter on any act but an explore. Only
+  -- Common.exploreOne records a reveal on its act (CR 701.44a), so such a
+  -- trigger could never fire. Printed triggers only, the unlock lint's reach.
+  Spec.it s "no card asks a revealed card of an act that reveals none" $ do
+    ps <- S.allPrintings s corpus
+    nicanzil <- S.printingOf s registry "Nicanzil, Current Conductor"
+    let revealing c = Maybe.mapMaybe (\cond -> case TriggeredAbility.condition cond of TriggerCondition.PermanentActs t | Maybe.isJust (PermanentActed.revealed (PermanentActsTrigger.acted t)) -> Just (PermanentActed.action (PermanentActsTrigger.acted t)); _ -> Nothing) (Face.triggeredAbilities c)
+        offends = any (any (/= PermanentAction.Explore) . revealing) . Card.Type.faces
+        offenders = filter (offends . Printing.card) ps
+        connives cond = case TriggeredAbility.condition cond of
+          TriggerCondition.PermanentActs t -> cond {TriggeredAbility.condition = TriggerCondition.PermanentActs t {PermanentActsTrigger.acted = (PermanentActsTrigger.acted t) {PermanentActed.action = PermanentAction.Connive}}}
+          _ -> cond
+        doctored = (Printing.card nicanzil) {Card.Type.faces = fmap (\f -> f {Face.triggeredAbilities = fmap connives (Face.triggeredAbilities f)}) (Card.Type.faces (Printing.card nicanzil))}
+    Spec.assertBool s (not (all (null . revealing) (Card.Type.faces (Printing.card nicanzil)))) "the pool has a revealed-card Filter to lint"
+    Spec.assertEqWith s "every revealed-card Filter is on an explore" (fmap (S.nameOf . Printing.card) offenders) []
+    Spec.assertBool s (offends doctored) "and Nicanzil's triggers moved onto a connive are rejected"
   -- CR 709.5a, swept over the pool. See sharedTypeLineOffends for what the rule
   -- asks and why the check is full type-line equality.
   Spec.it s "CR 709.5a a Room's faces agree on their shared type line" $ do

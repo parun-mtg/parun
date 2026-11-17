@@ -1268,7 +1268,7 @@ effectChildren c effect = case effect of
   Effect.SetClassLevel (SetClassLevel.MkSetClassLevel level named) -> fmap (Effect.SetClassLevel . SetClassLevel.MkSetClassLevel level) (onSlot c named)
   Effect.Undesignate (Undesignate.MkUndesignate designation ref) -> fmap (Effect.Undesignate . Undesignate.MkUndesignate designation) (onObjectRef c ref)
   Effect.SetHalfLocked (SetHalfLocked.MkSetHalfLocked every locked named) -> fmap (Effect.SetHalfLocked . SetHalfLocked.MkSetHalfLocked every locked) (onObjectRef c named)
-  Effect.CounterAndMark (PermanentActed.MkPermanentActed action permanent) -> fmap (Effect.CounterAndMark . PermanentActed.MkPermanentActed action) (onSlot c permanent)
+  Effect.CounterAndMark (PermanentActed.MkPermanentActed action permanent ()) -> fmap (\p -> Effect.CounterAndMark (PermanentActed.MkPermanentActed action p ())) (onSlot c permanent)
   Effect.Mentor named -> fmap Effect.Mentor (onSlot c named)
   Effect.Firebend addition -> fmap Effect.Firebend (onManaAddition c addition)
   Effect.Exploit -> pure effect
@@ -1730,7 +1730,7 @@ triggerConditionChildren c condition = case condition of
   TriggerCondition.SelfBecomesPlotted -> pure condition
   TriggerCondition.AttachmentChanges (AttachmentTrigger.MkAttachmentTrigger end direction other) -> (\renamed qualified -> TriggerCondition.AttachmentChanges (AttachmentTrigger.MkAttachmentTrigger renamed direction qualified)) <$> attachmentEndChildren c end <*> triggerFilter c other
   TriggerCondition.Reflexive -> pure condition
-  TriggerCondition.PermanentActs (PermanentActsTrigger.MkPermanentActsTrigger (PermanentActed.MkPermanentActed action permanent) batching) -> fmap (\p -> TriggerCondition.PermanentActs (PermanentActsTrigger.MkPermanentActsTrigger (PermanentActed.MkPermanentActed action p) batching)) (actingChildren c permanent)
+  TriggerCondition.PermanentActs (PermanentActsTrigger.MkPermanentActsTrigger (PermanentActed.MkPermanentActed action permanent revealed) batching) -> (\p r -> TriggerCondition.PermanentActs (PermanentActsTrigger.MkPermanentActsTrigger (PermanentActed.MkPermanentActed action p r) batching)) <$> actingChildren c permanent <*> traverse (triggerFilter c) revealed
   TriggerCondition.PlayerActs (PlayerActed.MkPlayerActed _ _) -> pure condition
   TriggerCondition.PlacesSticker (PlacesSticker.MkPlacesSticker placer kinds stickered) -> fmap (TriggerCondition.PlacesSticker . PlacesSticker.MkPlacesSticker placer kinds) (triggerFilter c stickered)
 

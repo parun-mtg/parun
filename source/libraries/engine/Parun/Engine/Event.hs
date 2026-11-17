@@ -1258,7 +1258,7 @@ turnsUpBefore event oid gs = case fmap Object.facing (Game.lookupObject oid gs) 
 exert :: PlayerId -> ObjectId -> GameState -> GameState
 exert pid oid gs =
   recordEvent
-    (GameEvent.PermanentActed (PermanentActed.MkPermanentActed PermanentAction.Exert oid))
+    (GameEvent.PermanentActed (PermanentActed.MkPermanentActed PermanentAction.Exert oid Nothing))
     gs {GameState.objects = Map.adjust (\o -> o {Object.exertedBy = Set.insert pid (Object.exertedBy o)}) oid (GameState.objects gs)}
 
 -- CR 701.26b: rotate one permanent back upright from a sideways position, and
@@ -11531,7 +11531,7 @@ merge sid target side = do
                           (GameState.objects u)
                     }
           )
-        State.modify' (recordEvent (GameEvent.PermanentActed (PermanentActed.MkPermanentActed PermanentAction.Mutate target)))
+        State.modify' (recordEvent (GameEvent.PermanentActed (PermanentActed.MkPermanentActed PermanentAction.Mutate target Nothing)))
         pure True
       _ -> pure False
     _ -> pure False

@@ -115,4 +115,4 @@ crank pid = do
       first : _ -> do
         chosen <- Game.choose (Prompt.ChooseAnyNumber (Decide.deciderFor pid moved) pid first AnyNumberOf.ToCrank candidates Nothing Seq.empty)
         Monad.forM_ (filter (`Set.member` chosen) candidates) $ \oid ->
-          State.modify' (Event.recordEvent (GameEvent.PermanentActed (PermanentActed.MkPermanentActed PermanentAction.Crank oid)))
+          State.modify' (Event.recordEvent (GameEvent.PermanentActed (PermanentActed.MkPermanentActed PermanentAction.Crank oid Nothing)))

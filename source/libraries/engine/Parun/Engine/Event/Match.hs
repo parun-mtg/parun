@@ -2015,13 +2015,29 @@ armMatches bindings frozen board atEvent beforeEvent groupEvents gs bearer you c
   -- was, and the permanent turned face down is seen with CR 708.2's listed
   -- characteristics. An actor that is gone AND filed no last known information
   -- answers False.
+  --
+  -- A revealed-card Filter ("explores a land card") reads the snapshot the act
+  -- recorded, the card as it was revealed (Nicanzil, Current Conductor's ruling
+  -- of 2023-11-10), never the card now; an act that revealed nothing matches no
+  -- such Filter. The scenarios nicanzil-current-conductor-* prove it.
   TriggerCondition.PermanentActs (PermanentActsTrigger.MkPermanentActsTrigger watched _) -> case event of
     GameEvent.PermanentActed acted ->
-      PermanentActed.action acted == PermanentActed.action watched && case PermanentActed.permanent watched of
-        ActingPermanent.Self -> PermanentActed.permanent acted == bearer
-        ActingPermanent.Matching f ->
-          let actor = PermanentActed.permanent acted
-           in maybe False (\view -> Filter.matches bearerContext view f) (Projection.viewWithLastKnown actor gs actor)
+      PermanentActed.action acted == PermanentActed.action watched
+        && ( case PermanentActed.permanent watched of
+               ActingPermanent.Self -> PermanentActed.permanent acted == bearer
+               ActingPermanent.Matching f ->
+                 let actor = PermanentActed.permanent acted
+                  in maybe False (\view -> Filter.matches bearerContext view f) (Projection.viewWithLastKnown actor gs actor)
+           )
+        && case PermanentActed.revealed watched of
+          Nothing -> True
+          Just f -> case PermanentActed.revealed acted of
+            Nothing -> False
+            Just r ->
+              -- CR 108.4a: a library card's controller is its owner.
+              let owner = Game.ownerWithLastKnown (Revealed.card r) gs
+                  view = Count.viewOfSnapshot False owner owner False Map.empty Zone.Library Zone.Library Set.empty (Revealed.characteristics r)
+               in Filter.matches bearerContext view f
     _ -> False
   -- CR 708.9: the cause alone. The permanent is gone by the scan (CR 400.7) and
   -- the condition names nothing else, so there is no view to read. A face-up

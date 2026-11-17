@@ -354,7 +354,7 @@ eventBindingsOver board gs bearerBecame becameInGraveyard bearer you cond event 
   -- slot as the printed word, the Matching TurnedFaceUp reading above. Per
   -- occurrence only: a OneOrMore batch's one slot would name one of several
   -- actors (leavesSlots' reason).
-  (TriggerCondition.PermanentActs (PermanentActsTrigger.MkPermanentActsTrigger (PermanentActed.MkPermanentActed _ (ActingPermanent.Matching _)) Batching.EachOccurrence), GameEvent.PermanentActed acted) ->
+  (TriggerCondition.PermanentActs (PermanentActsTrigger.MkPermanentActsTrigger (PermanentActed.MkPermanentActed _ (ActingPermanent.Matching _) _) Batching.EachOccurrence), GameEvent.PermanentActed acted) ->
     Binding.setBecame (PermanentActed.permanent acted) Map.empty
   -- CR 701.32b's "that scheme" (My Laughter Echoes): the scheme set in motion.
   -- No zone change need have happened, so CR 400.7e's slot is the printed word,
@@ -1547,7 +1547,7 @@ eventBindingSlots cond = case cond of
   -- Under a Filter, one occurrence's actor is CR 400.7e's slot, as a Matching
   -- TurnedFaceUp's is (Foe-Razer Regent's "it"); a OneOrMore batch binds
   -- nothing, eventBindings' arm's reason.
-  TriggerCondition.PermanentActs (PermanentActsTrigger.MkPermanentActsTrigger (PermanentActed.MkPermanentActed _ (ActingPermanent.Matching _)) Batching.EachOccurrence) -> Set.singleton Binding.became
+  TriggerCondition.PermanentActs (PermanentActsTrigger.MkPermanentActsTrigger (PermanentActed.MkPermanentActed _ (ActingPermanent.Matching _) _) Batching.EachOccurrence) -> Set.singleton Binding.became
   TriggerCondition.PermanentActs _ -> Set.empty
   -- Empty as a floor: CR 701.62b fires on a manifest dread that put nothing into
   -- the graveyard, which binds nothing. The `became` it binds otherwise is

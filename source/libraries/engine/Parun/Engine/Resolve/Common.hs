@@ -229,6 +229,8 @@ import qualified Parun.Types.ReplacementOrigin as ReplacementOrigin
 import Parun.Types.Result (Result)
 import qualified Parun.Types.Result as Result
 import qualified Parun.Types.Reveal as Reveal
+import qualified Parun.Types.RevealCause as RevealCause
+import qualified Parun.Types.Revealed as Revealed
 import qualified Parun.Types.Sacrificer as Sacrificer
 import qualified Parun.Types.Scratch as Scratch
 import qualified Parun.Types.SearchDestination as SearchDestination
@@ -5099,8 +5101,8 @@ exploreOne settle resolving oid = do
     Nothing -> pure ()
     Just (pid, _) -> do
       gs <- State.get
-      case Game.cardsIn Zone.Library pid gs of
-        [] -> grow pid
+      revealed <- case Game.cardsIn Zone.Library pid gs of
+        [] -> Nothing <$ grow pid
         top : _ -> do
           Event.revealResolving resolving pid top
           after <- State.get
@@ -5112,11 +5114,16 @@ exploreOne settle resolving oid = do
               asked <- State.get
               decision <- Game.choose (Prompt.ChooseExplore (Decide.deciderFor pid asked) pid oid top)
               Monad.when (decision == OptionalDecision.Exercises) (Event.changeZone settle top Zone.Graveyard)
+          -- The card as it was revealed (Nicanzil, Current Conductor's ruling
+          -- of 2023-11-10), the snapshot Event.revealResolving showed.
+          pure (Just (Revealed.MkRevealed pid top RevealCause.Ordinary (Projection.projectShown top after)))
       -- CR 701.44b: the permanent explores once the whole of rule 701.44a is
       -- done, so this comes after every branch above. Inside the Just, since an
       -- id nobody ever controlled explores nothing; but not inside the library
-      -- case, that rule firing even when the actions were impossible.
-      State.modify' (Event.recordEvent (GameEvent.PermanentActed (PermanentActed.MkPermanentActed PermanentAction.Explore oid)))
+      -- case, that rule firing even when the actions were impossible. An empty
+      -- library revealed no card, so the explore was of neither a land card nor
+      -- a nonland card.
+      State.modify' (Event.recordEvent (GameEvent.PermanentActed (PermanentActed.MkPermanentActed PermanentAction.Explore oid revealed)))
 
 -- CR 701.50d: one permanent's connive N. Rule 701.50a's bare connive is this
 -- with N of one, so there is no second road.
@@ -5181,7 +5188,7 @@ conniveOne settle proposed oid = Monad.when (proposed > 0) $ do
     -- impossible -- exploreOne's CR 701.44b line. Inside the Just, since an id
     -- nobody ever controlled connives nothing; CR 701.50e's zero never reaches
     -- here, the guard above having returned.
-    State.modify' (Event.recordEvent (GameEvent.PermanentActed (PermanentActed.MkPermanentActed PermanentAction.Connive oid)))
+    State.modify' (Event.recordEvent (GameEvent.PermanentActed (PermanentActed.MkPermanentActed PermanentAction.Connive oid Nothing)))
 
 -- CR 702.26e: the objects a resolving effect that changes characteristics or
 -- control freezes (CR 611.2c), less every phased-out permanent -- even one it

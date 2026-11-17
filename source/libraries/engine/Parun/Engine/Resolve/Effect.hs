@@ -1665,7 +1665,7 @@ payGatePaid runSubgame resolving source controller idx cIdx legal announced comm
   -- PayGate.marks: the source performs the act once anybody has paid (CR
   -- 702.30a's echo cost, Shah of Naar Isle).
   Foldable.for_ (PayGate.marks gate) $ \action ->
-    Monad.when (any (Maybe.isJust . snd) answered) (State.modify' (Event.recordEvent (GameEvent.PermanentActed (PermanentActed.MkPermanentActed action source))))
+    Monad.when (any (Maybe.isJust . snd) answered) (State.modify' (Event.recordEvent (GameEvent.PermanentActed (PermanentActed.MkPermanentActed action source Nothing))))
   pure (Map.fromList [(payer, Maybe.isJust paid) | (payer, paid) <- Foldable.toList answered])
 
 -- CR 118.12a over CR 608.2f's loop: the members whose ForEach.payGate branch

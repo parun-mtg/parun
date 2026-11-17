@@ -404,12 +404,18 @@ spec s = Spec.describe s "Parun.Codec.GameEvent" $ do
     Common.assertCodec
       s
       GameEvent.codec
-      (GameEvent.PermanentActed (PermanentActed.MkPermanentActed PermanentAction.Explore (ObjectId.MkObjectId 6)))
+      (GameEvent.PermanentActed (PermanentActed.MkPermanentActed PermanentAction.Explore (ObjectId.MkObjectId 6) Nothing))
       " {\"type\":\"PermanentActed\",\"value\":{\"action\":\"Explore\",\"permanent\":6}} "
     Spec.assertBool
       s
-      (Codec.encode GameEvent.codec (GameEvent.PermanentActed (PermanentActed.MkPermanentActed PermanentAction.Connive (ObjectId.MkObjectId 6))) /= Codec.encode GameEvent.codec (GameEvent.PermanentActed (PermanentActed.MkPermanentActed PermanentAction.Explore (ObjectId.MkObjectId 6))))
+      (Codec.encode GameEvent.codec (GameEvent.PermanentActed (PermanentActed.MkPermanentActed PermanentAction.Connive (ObjectId.MkObjectId 6) Nothing)) /= Codec.encode GameEvent.codec (GameEvent.PermanentActed (PermanentActed.MkPermanentActed PermanentAction.Explore (ObjectId.MkObjectId 6) Nothing)))
       "a connive and an explore of the same object encode differently"
+    -- CR 701.44a's reveal rides along, Nicanzil, Current Conductor's reading.
+    Common.assertCodec
+      s
+      GameEvent.codec
+      (GameEvent.PermanentActed (PermanentActed.MkPermanentActed PermanentAction.Explore (ObjectId.MkObjectId 6) (Just (Revealed.MkRevealed (PlayerId.MkPlayerId 0) (ObjectId.MkObjectId 7) RevealCause.Ordinary ProjectedCharacteristicsSpec.testCharacteristics))))
+      ("{\"type\":\"PermanentActed\",\"value\":{\"action\":\"Explore\",\"permanent\":6,\"revealed\":{\"player\":0,\"card\":7,\"cause\":{\"type\":\"Ordinary\"},\"characteristics\":" <> ProjectedCharacteristicsSpec.testCharacteristicsJson <> "}}}")
   -- CR 701.27a, the different game action CR 701.27b holds it apart from. More
   -- than one field: CR 701.27f reads what the permanent turned INTO, and CR
   -- 603.10 adds the two axes CR 109.3 keeps out of that. The two CR 603.10 axes
@@ -715,7 +721,7 @@ spec s = Spec.describe s "Parun.Codec.GameEvent" $ do
       " {\"type\":\"BecameTapped\",\"value\":8} "
     Spec.assertBool
       s
-      (Codec.encode GameEvent.codec (GameEvent.BecameTapped (ObjectId.MkObjectId 8)) /= Codec.encode GameEvent.codec (GameEvent.PermanentActed (PermanentActed.MkPermanentActed PermanentAction.Exert (ObjectId.MkObjectId 8))))
+      (Codec.encode GameEvent.codec (GameEvent.BecameTapped (ObjectId.MkObjectId 8)) /= Codec.encode GameEvent.codec (GameEvent.PermanentActed (PermanentActed.MkPermanentActed PermanentAction.Exert (ObjectId.MkObjectId 8) Nothing)))
       "a tap and an exert of the same object encode differently"
   -- CR 601.2h / 701.26a. The keyword is what separates it from the
   -- BecameTapped the same tap wrote.

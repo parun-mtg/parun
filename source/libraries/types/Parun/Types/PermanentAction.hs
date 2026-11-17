@@ -1,7 +1,8 @@
 module Parun.Types.PermanentAction where
 
 -- | Something a permanent does that a "whenever [a permanent] <acts>" trigger
--- (CR 603.2) watches, with no payload the trigger reads. Recorded by
+-- (CR 603.2) watches, with no payload of its own (an explore's reveal rides on
+-- Parun.Types.PermanentActed). Recorded by
 -- Parun.Types.GameEvent's PermanentActed, matched by
 -- Parun.Types.TriggerCondition's PermanentActs and looked back on by
 -- Parun.Types.Filter's ActedThisTurn. Each constructor's comment names
