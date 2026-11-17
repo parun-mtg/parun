@@ -4,6 +4,7 @@
 module Parun.Browser.Hotseat where
 
 import Control.Applicative ((<|>))
+import qualified Control.Exception as Exception
 import qualified Control.Monad as Monad
 import qualified Data.ByteString as ByteString
 import qualified Data.Either as Either
@@ -19,11 +20,16 @@ import qualified Parun.Codec.Reply as Codec.Reply
 import qualified Parun.Codec.Request as Codec.Request
 import qualified Parun.DeckList as DeckList
 import qualified Parun.Decks as Decks
+import qualified Parun.Exceptions.InvalidCorpus as InvalidCorpus
 import qualified Parun.Extra.Natural as Natural
+import qualified Parun.Interpreter as Interpreter
 import qualified Parun.JsonCodec.Codec as Codec
 import qualified Parun.JsonCodec.Common as Common
 import qualified Parun.Play.Command as Command
+import qualified Parun.Play.Render as Render
 import qualified Parun.Registry as Registry
+import qualified Parun.Types.Card as Card
+import qualified Parun.Types.CardName as CardName
 import qualified Parun.Types.PlayOptions as PlayOptions
 import qualified Parun.Types.PlayerId as PlayerId
 import qualified Parun.Types.Question as Question
@@ -62,7 +68,7 @@ start = do
       settled <- Command.settle Nothing [(one, first), (two, second)]
       case settled of
         Right format -> do
-          Command.play (exchange page seatRef) options registry format (DeckList.deck first, DeckList.deck second)
+          Command.play (exchange (Identity.runIdentity . Interpreter.chosenCard registry) page seatRef) options registry format (DeckList.deck first, DeckList.deck second)
           say [Text.pack "The game is over."]
         Left problems -> say problems
     (first, second) -> say $ Either.fromLeft [] first <> Either.fromLeft [] second
@@ -74,9 +80,10 @@ options = PlayOptions.none {PlayOptions.json = True, PlayOptions.bots = Set.sing
 -- | One request line answered on the page: a reply the seat is never asked
 -- for, or auto's next source once the seat chose auto for this payment, at
 -- once; else after a hand-off when the screen last faced another seat, the
--- question's form until it answers. Nothing for a line that does not read.
-exchange :: Browser.Page (Either Line.Line Web.Question.Event) -> IORef.IORef Seat -> Text.Text -> IO (Maybe Text.Text)
-exchange page seatRef line = case Common.parse line >>= Codec.decode Codec.Request.codec of
+-- question's form until it answers, a card tapped showing its text from the
+-- card data through `lookUp`. Nothing for a line that does not read.
+exchange :: (CardName.CardName -> Either InvalidCorpus.InvalidCorpus (Maybe Card.Card)) -> Browser.Page (Either Line.Line Web.Question.Event) -> IORef.IORef Seat -> Text.Text -> IO (Maybe Text.Text)
+exchange lookUp page seatRef line = case Common.parse line >>= Codec.decode Codec.Request.codec of
   Left _ -> pure Nothing
   Right request -> fmap (Just . Common.render . Codec.Reply.toValue) $ do
     state <- IORef.readIORef seatRef
@@ -93,17 +100,22 @@ exchange page seatRef line = case Common.parse line >>= Codec.decode Codec.Reque
         answer request Set.empty
   where
     untilReady = Browser.next page >>= \(event, _) -> Monad.unless (event == Right Web.Question.MkReady) untilReady
-    answer request picked = do
-      Browser.display page . fmap Right $ Web.Question.view request picked
+    answer request picked = asking request picked []
+    asking request picked reading = do
+      Browser.display page . fmap Right $ Web.Question.view request picked reading
       (event, value) <- Browser.next page
       case event of
+        Right (Web.Question.MkRead object)
+          | Just shown <- Request.view request,
+            Just o <- Map.lookup object (Render.objects shown) ->
+              asking request picked . either (pure . Text.pack . Exception.displayException) id $ Render.details lookUp shown o
         Right e -> case Web.Question.step request picked e value of
-          Web.Question.MkReplied reply -> do
+          Web.Question.MkReplied answered -> do
             Monad.when (e == Web.Question.MkAuto) . IORef.modifyIORef' seatRef $ \s -> s {paying = True}
-            pure reply
-          Web.Question.MkPicking now -> answer request now
-          Web.Question.MkRefused problem -> answer request {Request.problem = Just problem} picked
-        Left _ -> answer request picked
+            pure answered
+          Web.Question.MkPicking now -> asking request now []
+          Web.Question.MkRefused problem -> asking request {Request.problem = Just problem} picked []
+        Left _ -> asking request picked reading
 
 -- | What the page keeps between request lines: the seat the screen last
 -- showed, and whether the seat chose auto for the payment under way.

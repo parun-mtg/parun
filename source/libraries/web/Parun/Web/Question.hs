@@ -20,6 +20,7 @@ import qualified Parun.JsonCodec.Common as Common
 import qualified Parun.Play.Offer as Offer
 import qualified Parun.Play.Protocol as Protocol
 import qualified Parun.Play.Render as Render
+import qualified Parun.Types.ObjectId as ObjectId
 import qualified Parun.Types.PlayerId as PlayerId
 import qualified Parun.Types.Question as Question
 import qualified Parun.Types.Reply as R
@@ -44,6 +45,10 @@ data Event
     MkAuto
   | -- | Drops every pick.
     MkClear
+  | -- | Shows a card's text (Render.details).
+    MkRead ObjectId.ObjectId
+  | -- | Hides the card shown.
+    MkClose
   deriving (Eq, Show)
 
 -- | Where an answer stands after an event.
@@ -76,13 +81,16 @@ data Group = MkGroup
   }
 
 -- | A reply the seat is never asked for: the hotseat never concedes unasked
--- (CR 104.3a), a priority offering nothing but a pass and mana abilities is
+-- (CR 104.3a), the seat plays first when it chooses, a priority offering nothing but a pass and mana abilities is
 -- passed (Offer.onlyPass), and a choice between indistinguishable options is
 -- made: identical mana to spend, and all of a creature's combat damage to
 -- its one recipient (CR 510.1c).
 automatic :: Request.Request -> Maybe R.Reply
 automatic request = case Text.unpack (Question.kind question) of
   "Concede" -> Just . R.Text $ Text.pack "Continues"
+  -- The player is taken to want to play first (CR 103.1), a default of this
+  -- client's rather than the engine's.
+  "PlayOrDraw" -> Just . R.Text $ Text.pack "Play"
   "ChooseAction" -> R.Number <$> Offer.onlyPass (Question.offer question)
   "ChooseManaToSpend" | Just (unit : rest) <- Protocol.arrayOf offer, all (== unit) rest -> Just unit
   "AssignCombatDamage"
@@ -101,13 +109,15 @@ auto request = do
   shown <- Request.view request
   fst <$> Offer.autoSource shown (Question.offer $ Request.question request)
 
--- | The page for a request, with the options picked so far.
-view :: Request.Request -> Set.Set (Natural, Natural) -> Html.Html Event
-view request picked =
+-- | The page for a request, with the options picked so far and the lines
+-- describing the card the seat is reading, if any.
+view :: Request.Request -> Set.Set (Natural, Natural) -> [Text.Text] -> Html.Html Event
+view request picked reading =
   Html.element
     (Text.pack "main")
     []
-    $ foldMap (\board -> [Board.view board]) (Request.view request)
+    $ foldMap (\board -> [Board.view MkRead board]) (Request.view request)
+      <> [Html.element (Text.pack "section") [Attribute.MkProperty (Text.pack "class") (Text.pack "reading")] (fmap (\line -> Html.element (Text.pack "p") [] [Html.text line]) reading <> [button MkClose $ Text.pack "Close"]) | not (null reading)]
       <> [Html.element (Text.pack "p") [Attribute.MkProperty (Text.pack "class") (Text.pack "problem")] [Html.text problem] | problem <- Maybe.maybeToList (Request.problem request)]
       <> form request picked
 
@@ -151,6 +161,8 @@ step request picked event typed = case event of
   MkTyped -> either (MkRefused . (Text.pack "That reply does not read: " <>)) MkReplied $ Common.parse typed >>= Codec.Reply.fromValue
   MkReady -> MkPicking picked
   MkClear -> MkPicking Set.empty
+  MkRead _ -> MkPicking picked
+  MkClose -> MkPicking picked
   MkAuto -> maybe (MkRefused $ Text.pack "Auto can't pay the rest of this cost. Choose a source.") MkReplied $ auto request
 
 bounds :: Group -> String

@@ -23,8 +23,13 @@ function at(path) {
 }
 
 let started = false;
+let tapped = null;
 globalThis.parunApply = (json) => {
   document.body.classList.remove("busy");
+  if (tapped !== null) {
+    document.getElementById("response").textContent = `last response ${Math.round(performance.now() - tapped)} ms`;
+    tapped = null;
+  }
   if (!started) {
     started = true;
     phase("started");
@@ -76,7 +81,10 @@ globalThis.parunListen = (dispatch) => {
       const value = String(event.target.value ?? "");
       // A tap shows the page busy until Haskell next patches it, painted
       // before the engine runs: the dispatch waits a frame.
-      if (type === "click" && event.target.closest("button")) document.body.classList.add("busy");
+      if (type === "click" && event.target.closest("button")) {
+        document.body.classList.add("busy");
+        tapped = performance.now();
+      }
       requestAnimationFrame(() => setTimeout(() => dispatch(type, path, value), 0));
       // A typed line is sent once; the box is ready for the next.
       if (type === "change") event.target.value = "";
@@ -129,9 +137,14 @@ function inodes(tree) {
 // Each phase's time goes to the console; with ?profile, so does the time
 // spent in each WASI import.
 let mark = performance.now();
+// The phases and the last tap's response time also show at the foot of the
+// page, readable with Web Inspector closed (which slows Safari's wasm).
+const timings = document.getElementById("timings");
 function phase(name) {
   const now = performance.now();
-  console.log(`${name} in ${Math.round(now - mark)} ms`);
+  const line = `${name} in ${Math.round(now - mark)} ms`;
+  console.log(line);
+  timings.textContent += (timings.textContent ? "; " : "") + line;
   mark = now;
 }
 
