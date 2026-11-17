@@ -1,0 +1,297 @@
+{
+  "description": "CR 613.1f, 602.5d, 701.22a: Warden of the Inner Sky taps three artifacts and/or creatures at sorcery speed for a counter and scry 1, and with three counters of any kind it has flying and vigilance",
+  "note": "The Warden starts with a +1/+1 and a shield counter: two kinds, so a +1/+1-only count would stop at two. The activation is refused at beginning of combat with the same permanents untapped, then paid in the second main phase by tapping the Warden itself, a noncreature artifact (Millstone) and a nonartifact creature (Grizzly Bears), leaving Ornithopter untapped. Scry 1 bottoms the Forest. On turn 3 the Warden attacks and stays untapped.",
+  "board": {
+    "active": "alice",
+    "step": "PrecombatMain",
+    "seats": [
+      {
+        "name": "alice",
+        "battlefield": [
+          {
+            "card": "Warden of the Inner Sky",
+            "label": "warden",
+            "counters": [
+              {
+                "key": {
+                  "type": "PlusOnePlusOne"
+                },
+                "value": 1
+              },
+              {
+                "key": {
+                  "type": "Shield"
+                },
+                "value": 1
+              }
+            ]
+          },
+          {
+            "card": "Millstone",
+            "label": "mill"
+          },
+          {
+            "card": "Grizzly Bears",
+            "label": "bears"
+          },
+          {
+            "card": "Ornithopter",
+            "label": "thopter"
+          }
+        ],
+        "library": [
+          {
+            "card": "Forest",
+            "label": "top"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ]
+      },
+      {
+        "name": "bob",
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ]
+      }
+    ]
+  },
+  "timeline": [
+    {
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1,
+      "check": {
+        "Keywords": {
+          "count": 0,
+          "keyword": {
+            "type": "Flying"
+          },
+          "object": "$warden"
+        }
+      }
+    },
+    {
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1,
+      "check": {
+        "Keywords": {
+          "count": 0,
+          "keyword": {
+            "type": "Vigilance"
+          },
+          "object": "$warden"
+        }
+      }
+    },
+    {
+      "player": "alice",
+      "step": "BeginningOfCombat",
+      "turn": 1,
+      "refuse": {
+        "Activate": {
+          "ability": 0,
+          "object": "$warden"
+        }
+      }
+    },
+    {
+      "player": "alice",
+      "step": "PostcombatMain",
+      "turn": 1,
+      "do": {
+        "Activate": {
+          "ability": 0,
+          "object": "$warden"
+        }
+      }
+    },
+    {
+      "player": "alice",
+      "step": "PostcombatMain",
+      "turn": 1,
+      "do": {
+        "Answer": {
+          "prompt": "ChooseTaps",
+          "with": [
+            "$warden",
+            "$mill",
+            "$bears"
+          ]
+        }
+      }
+    },
+    {
+      "player": "alice",
+      "step": "PostcombatMain",
+      "turn": 1,
+      "do": "Pass"
+    },
+    {
+      "player": "alice",
+      "step": "PostcombatMain",
+      "turn": 1,
+      "do": {
+        "Answer": {
+          "prompt": "ChooseScry",
+          "with": [
+            [
+              "$top"
+            ],
+            []
+          ]
+        }
+      }
+    },
+    {
+      "player": "alice",
+      "step": "PostcombatMain",
+      "turn": 1,
+      "check": {
+        "Counters": {
+          "count": 2,
+          "kind": {
+            "type": "PlusOnePlusOne"
+          },
+          "object": "$warden"
+        }
+      }
+    },
+    {
+      "player": "alice",
+      "step": "PostcombatMain",
+      "turn": 1,
+      "check": {
+        "Tapped": {
+          "object": "$thopter",
+          "tapped": false
+        }
+      }
+    },
+    {
+      "player": "alice",
+      "step": "PostcombatMain",
+      "turn": 1,
+      "check": {
+        "Tapped": {
+          "object": "$mill",
+          "tapped": true
+        }
+      }
+    },
+    {
+      "player": "alice",
+      "step": "PostcombatMain",
+      "turn": 1,
+      "check": {
+        "Keywords": {
+          "count": 1,
+          "keyword": {
+            "type": "Flying"
+          },
+          "object": "$warden"
+        }
+      }
+    },
+    {
+      "player": "alice",
+      "step": "PostcombatMain",
+      "turn": 1,
+      "check": {
+        "Keywords": {
+          "count": 1,
+          "keyword": {
+            "type": "Vigilance"
+          },
+          "object": "$warden"
+        }
+      }
+    },
+    {
+      "player": "alice",
+      "step": "PostcombatMain",
+      "turn": 1,
+      "check": {
+        "View": {
+          "of": "Zone",
+          "player": "alice",
+          "zone": "Library",
+          "is": [
+            "Island",
+            "Island#2",
+            "Island#3",
+            "Island#4",
+            "Island#5",
+            "Island#6",
+            "Island#7",
+            "Forest"
+          ]
+        }
+      }
+    },
+    {
+      "player": "alice",
+      "step": "DeclareAttackers",
+      "turn": 3,
+      "do": {
+        "Attack": [
+          "$warden"
+        ]
+      }
+    },
+    {
+      "player": "alice",
+      "step": "DeclareBlockers",
+      "turn": 3,
+      "check": {
+        "Tapped": {
+          "object": "$warden",
+          "tapped": false
+        }
+      }
+    }
+  ]
+}
