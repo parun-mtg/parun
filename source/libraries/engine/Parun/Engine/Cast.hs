@@ -1100,6 +1100,14 @@ gateDeclarations :: PlayerId -> ObjectId -> GameState -> [Map.Map Keyword (Map.M
 gateDeclarations pid oid gs =
   Map.empty : fmap (\keyword -> Map.singleton keyword (Map.singleton (KeywordInstance.Own 1) 1)) (Keyword.optionalCosts (Map.keysSet (Cost.spellKeywords pid oid gs)))
 
+-- CR 601.2b/601.2f: `payable` on `board` and `cost` under SOME optional
+-- additional cost's declaration (gateDeclarations), priced on the board it
+-- stamps, so a reduction "if it's bargained" lowers the total a cast is gated
+-- at. The one wrapper castableUnderHeld and castableWhenOffered both ask.
+payableDeclaring :: (GameState -> Cost Keyword -> Bool) -> PlayerId -> ObjectId -> GameState -> Cost Keyword -> Bool
+payableDeclaring payable pid oid board cost =
+  any (\paid -> payable (stampPaidCosts paid oid board) (withOptionalPayments paid cost)) (gateDeclarations pid oid board)
+
 -- CR 601.2b's record, written onto the spell's own stack incarnation -- CR
 -- 702.33d's "that spell has been kicked" among it. Read back by Quantity.TimesPaid
 -- through the CR 613 projection, which is how the card's own CR 702.33e ability
@@ -2237,14 +2245,13 @@ castableUnderHeld shared pid oid name facing gs =
         (Just _, Just face) -> case underAlternative (candidateAllowed pid oid proposed) face alternative candidate of
           Nothing -> False
           Just cost -> payableUnder candidate extra less wayGives cost
-      -- CR 601.2b/601.2f: payable with SOME optional additional cost's
-      -- declaration (gateDeclarations), priced on the board it stamps, so a
-      -- reduction "if it's bargained" lowers the total it is offered at.
       payableUnder candidate extra less wayGives cost =
-        let board = proposedFor pid oid (CandidateCost.keyword candidate) proposed
-         in any
-              (\paid -> payable (fillableXs pid oid name proposed candidate) (CandidateCost.reductions candidate <> less) (spendingWith wayGives pid oid proposed) (stampPaidCosts paid oid board) (withOptionalPayments paid (withPermissionCosts extra cost)))
-              (gateDeclarations pid oid board)
+        payableDeclaring
+          (payable (fillableXs pid oid name proposed candidate) (CandidateCost.reductions candidate <> less) (spendingWith wayGives pid oid proposed))
+          pid
+          oid
+          (proposedFor pid oid (CandidateCost.keyword candidate) proposed)
+          (withPermissionCosts extra cost)
    in cardGatesOk pid oid name proposed
         && lookGateOk pid oid name gs proposed
         -- Gated HERE, upstream of Action.legalActions, because the engine never
@@ -2708,10 +2715,11 @@ castableWhenOffered spending pid oid name candidates proposed =
   -- still there.
   not (SplitSecond.inForce proposed)
     -- CR 601.3's prohibit half, CR 601.2c's fillability and CR 601.2h's
-    -- affordability, asked per candidate for `castable`'s reason and through
-    -- its predicates: CR 702.103d judges a bestow announcement on the Aura it
-    -- makes of the spell, and an offer that hands in the card's own list (CR
-    -- 118.9's absent) carries that candidate.
+    -- affordability (under payableDeclaring's declarations), asked per
+    -- candidate for `castable`'s reason and through its predicates: CR
+    -- 702.103d judges a bestow announcement on the Aura it makes of the spell,
+    -- and an offer that hands in the card's own list (CR 118.9's absent)
+    -- carries that candidate.
     --
     -- A REGRESSION FENCE on this path rather than a proved behaviour: no board in
     -- the pool puts a CastOffer together with a bestow card and either a
@@ -2723,7 +2731,12 @@ castableWhenOffered spending pid oid name candidates proposed =
       ( \candidate ->
           candidateAllowed pid oid proposed candidate
             && candidateFillable Map.empty pid oid name proposed candidate
-            && payableCost (fillableXs pid oid name proposed candidate) Nothing (CandidateCost.reductions candidate) (spendingWith spending pid oid proposed) pid oid (proposedFor pid oid (CandidateCost.keyword candidate) proposed) (CandidateCost.cost candidate)
+            && payableDeclaring
+              (payableCost (fillableXs pid oid name proposed candidate) Nothing (CandidateCost.reductions candidate) (spendingWith spending pid oid proposed) pid oid)
+              pid
+              oid
+              (proposedFor pid oid (CandidateCost.keyword candidate) proposed)
+              (CandidateCost.cost candidate)
       )
       candidates
     && printedRestrictionsOk pid oid name proposed
