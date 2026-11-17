@@ -11933,7 +11933,8 @@ inDrawOrder proposals drawers act =
 -- each one acts, while `asked` holds of the teammates left: docs/decisions.md,
 -- "When a team sharing a turn settles the order its players draw in". Seat
 -- order otherwise, and without the shared team turns option, where the active
--- team is one seat.
+-- team is one seat. A nonactive team is not asked: docs/decisions.md, "Whether
+-- a nonactive team names its players' order".
 inActiveTeamOrder :: (GameState -> [PlayerId] -> Bool) -> [PlayerId] -> (PlayerId -> b -> Game b) -> b -> Game b
 inActiveTeamOrder asked players act acc = do
   gs <- State.get
