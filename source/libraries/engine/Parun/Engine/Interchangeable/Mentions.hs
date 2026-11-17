@@ -625,7 +625,8 @@ damagePatternNames asking =
           Children.damageRecipient = Const.Const . recipientNames asking,
           Children.damageObject = \oid -> Const.Const (names asking (== oid)),
           Children.damageSlot = Const.Const . slotNames asking,
-          Children.damageWhose = Const.Const . controllerRelationNames asking
+          Children.damageWhose = Const.Const . controllerRelationNames asking,
+          Children.damageQuantity = Const.Const . quantityNames asking
         }
 
 activeLaterPaymentNames :: (Monoid r) => Asking r -> ActiveLaterPayment.ActiveLaterPayment -> r

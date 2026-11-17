@@ -6488,7 +6488,8 @@ shieldOf oid gs =
                   -- targeted it (CR 601.2c); rule 122.1c minted it off the
                   -- permanent's counters.
                   DamagePattern.whichSource = Nothing,
-                  DamagePattern.boundRecipient = Nothing
+                  DamagePattern.boundRecipient = Nothing,
+                  DamagePattern.whatAmount = Nothing
                 }
               DamageRewrite.PreventRemovingShieldCounter
               -- CR 615.5: the counter removal is part of the REWRITE, so this
@@ -6619,7 +6620,8 @@ turnUpOf oid gs = case fmap Object.facing (Game.lookupObject oid gs) of
           DamagePattern.whoRecipient = Nothing,
           DamagePattern.whichRecipient = Nothing,
           DamagePattern.whichSource = Nothing,
-          DamagePattern.boundRecipient = Nothing
+          DamagePattern.boundRecipient = Nothing,
+          DamagePattern.whatAmount = Nothing
         }
     damageRow matching = [ReplacementEffect.DamageR DamageR.MkDamageR {DamageR.matching = matching, DamageR.rewrite = DamageRewrite.TurnFaceUp, DamageR.riders = Seq.empty}]
     row event = case event of

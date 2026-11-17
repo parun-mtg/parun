@@ -4672,13 +4672,14 @@ apply settle batch applied batchPrevented candidate event =
         if stopped >= amount
           then pure Nothing
           else pure (Just (ProposedEvent.WouldDealDamage de {DamageEvent.amount = amount - stopped}))
-      -- CR 614.1a's "instead" with a flat amount (Galvanic Blast). Only the
+      -- CR 614.1a's "instead" with an amount (Galvanic Blast, Ojer Axonil). Only the
       -- AMOUNT is rewritten, and that is the rule rather than economy: a
       -- replaced damage event keeps its source, its recipient and every
       -- deal-time rider it was proposed with.
-      DamageRewrite.SetAmount n -> do
+      DamageRewrite.SetAmount quantity -> do
         Replacement.consume (ReplacementCandidate.identity candidate)
-        pure (dealing de {DamageEvent.amount = n})
+        gs <- State.get
+        pure (dealing de {DamageEvent.amount = Integer.toNaturalSaturating (Replacement.rowQuantity gs candidate quantity)})
       -- CR 614.1a: Furnace of Rath's "it deals double that damage ... instead".
       -- Through the same `scale` the counter and token rewrites use, so a
       -- doubling means one thing across every event class.

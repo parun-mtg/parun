@@ -545,12 +545,12 @@ spec s = Spec.describe s "Parun.Codec.Quantity" $ do
     Common.assertCodec
       s
       Quantity.codec
-      (Quantity.DamageDealtThisTurn (ObjectDamage.MkObjectDamage DamageDirection.DealtTo Nothing))
+      (Quantity.DamageDealtThisTurn (ObjectDamage.MkObjectDamage DamageDirection.DealtTo Nothing Nothing))
       " {\"type\":\"DamageDealtThisTurn\",\"value\":{\"direction\":\"DealtTo\"}} "
     Common.assertCodec
       s
       Quantity.codec
-      (Quantity.DamageDealtThisTurn (ObjectDamage.MkObjectDamage DamageDirection.DealtBy Nothing))
+      (Quantity.DamageDealtThisTurn (ObjectDamage.MkObjectDamage DamageDirection.DealtBy Nothing Nothing))
       " {\"type\":\"DamageDealtThisTurn\",\"value\":{\"direction\":\"DealtBy\"}} "
   -- CR 509.1h's status as a look-back, on the wire the same way again.
   Spec.it s "WasBlockedThisTurn" $

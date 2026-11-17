@@ -21,7 +21,7 @@ spec s = Spec.describe s "Parun.Codec.DamagePattern" $ do
     Common.assertCodec
       s
       DamagePattern.codec
-      (DamagePattern.MkDamagePattern (Just DamageKind.Combat) (Filter.And []) Nothing Nothing Nothing Nothing Nothing)
+      (DamagePattern.MkDamagePattern (Just DamageKind.Combat) (Filter.And []) Nothing Nothing Nothing Nothing Nothing Nothing)
       " {\"whichKind\":\"Combat\"} "
   -- No kind, no source, no recipient -- every field elided at its default, so
   -- the pattern matches any damage instance whatsoever.
@@ -29,7 +29,7 @@ spec s = Spec.describe s "Parun.Codec.DamagePattern" $ do
     Common.assertCodec
       s
       DamagePattern.codec
-      (DamagePattern.MkDamagePattern Nothing (Filter.And []) Nothing Nothing Nothing Nothing Nothing)
+      (DamagePattern.MkDamagePattern Nothing (Filter.And []) Nothing Nothing Nothing Nothing Nothing Nothing)
       " {} "
   -- CR 614.15's keying: names the damage its own resolution is dealing, and
   -- says nothing about the kind.
@@ -37,7 +37,7 @@ spec s = Spec.describe s "Parun.Codec.DamagePattern" $ do
     Common.assertCodec
       s
       DamagePattern.codec
-      (DamagePattern.MkDamagePattern Nothing Filter.IsSource Nothing Nothing Nothing Nothing Nothing)
+      (DamagePattern.MkDamagePattern Nothing Filter.IsSource Nothing Nothing Nothing Nothing Nothing Nothing)
       " {\"whatSource\":{\"type\":\"IsSource\"}} "
   -- The permanent a shield covers (CR 615.7's, and CR 615.3's unbounded one),
   -- baked by Resolve's prevention arms and never authored on a card.
@@ -45,7 +45,7 @@ spec s = Spec.describe s "Parun.Codec.DamagePattern" $ do
     Common.assertCodec
       s
       DamagePattern.codec
-      (DamagePattern.MkDamagePattern Nothing (Filter.And []) Nothing Nothing (Just (Recipient.ToCreature (ObjectId.MkObjectId 7))) Nothing Nothing)
+      (DamagePattern.MkDamagePattern Nothing (Filter.And []) Nothing Nothing (Just (Recipient.ToCreature (ObjectId.MkObjectId 7))) Nothing Nothing Nothing)
       " {\"whichRecipient\":{\"type\":\"ToCreature\",\"value\":7}} "
   -- The recipient a CARD describes rather than one the engine baked -- Stormwild
   -- Capridor's "to this creature".
@@ -53,7 +53,7 @@ spec s = Spec.describe s "Parun.Codec.DamagePattern" $ do
     Common.assertCodec
       s
       DamagePattern.codec
-      (DamagePattern.MkDamagePattern (Just DamageKind.Noncombat) (Filter.And []) (Just Filter.IsSource) Nothing Nothing Nothing Nothing)
+      (DamagePattern.MkDamagePattern (Just DamageKind.Noncombat) (Filter.And []) (Just Filter.IsSource) Nothing Nothing Nothing Nothing Nothing)
       " {\"whichKind\":\"Noncombat\",\"whatRecipient\":{\"type\":\"IsSource\"}} "
   -- CR 615.7's DISJOINED recipient side, both halves written: Divine
   -- Deflection's "you and/or permanents you control", where the player half is a
@@ -62,7 +62,7 @@ spec s = Spec.describe s "Parun.Codec.DamagePattern" $ do
     Common.assertCodec
       s
       DamagePattern.codec
-      (DamagePattern.MkDamagePattern Nothing (Filter.And []) (Just (Filter.HeldBy Holder.Controller PlayerRelation.You)) (Just (ControllerRelation.Related PlayerRelation.You)) Nothing Nothing Nothing)
+      (DamagePattern.MkDamagePattern Nothing (Filter.And []) (Just (Filter.HeldBy Holder.Controller PlayerRelation.You)) (Just (ControllerRelation.Related PlayerRelation.You)) Nothing Nothing Nothing Nothing)
       " {\"whatRecipient\":{\"type\":\"HeldBy\",\"value\":{\"holder\":\"Controller\",\"relation\":\"You\"}},\"whoRecipient\":{\"type\":\"You\"}} "
   -- CR 608.2h's player by SLOT on the player half: Lightning, Army of One's
   -- "that player or a permanent that player controls".
@@ -70,7 +70,7 @@ spec s = Spec.describe s "Parun.Codec.DamagePattern" $ do
     Common.assertCodec
       s
       DamagePattern.codec
-      (DamagePattern.MkDamagePattern Nothing (Filter.And []) (Just (Filter.HeldByBound Holder.Controller thatPlayer)) (Just (ControllerRelation.InSlot thatPlayer)) Nothing Nothing Nothing)
+      (DamagePattern.MkDamagePattern Nothing (Filter.And []) (Just (Filter.HeldByBound Holder.Controller thatPlayer)) (Just (ControllerRelation.InSlot thatPlayer)) Nothing Nothing Nothing Nothing)
       " {\"whatRecipient\":{\"type\":\"HeldByBound\",\"value\":{\"holder\":\"Controller\",\"slot\":\"thatPlayer\"}},\"whoRecipient\":{\"type\":\"InSlot\",\"value\":\"thatPlayer\"}} "
   -- CR 609.7a's chosen source, baked as an id by Resolve's prevention arms and
   -- never authored either -- Healing Grace's "a source of your choice", whose
@@ -79,7 +79,7 @@ spec s = Spec.describe s "Parun.Codec.DamagePattern" $ do
     Common.assertCodec
       s
       DamagePattern.codec
-      (DamagePattern.MkDamagePattern Nothing (Filter.And []) Nothing Nothing Nothing (Just (ObjectId.MkObjectId 9)) Nothing)
+      (DamagePattern.MkDamagePattern Nothing (Filter.And []) Nothing Nothing Nothing (Just (ObjectId.MkObjectId 9)) Nothing Nothing)
       " {\"whichSource\":9} "
   -- CR 601.2c's recipient by SLOT, the one half of this pattern's recipient side
   -- a card writes as a name rather than as a description -- Whippoorwill's "that
@@ -89,7 +89,7 @@ spec s = Spec.describe s "Parun.Codec.DamagePattern" $ do
     Common.assertCodec
       s
       DamagePattern.codec
-      (DamagePattern.MkDamagePattern Nothing (Filter.And []) Nothing Nothing Nothing Nothing (Just (SlotName.MkSlotName (Text.pack "target"))))
+      (DamagePattern.MkDamagePattern Nothing (Filter.And []) Nothing Nothing Nothing Nothing (Just (SlotName.MkSlotName (Text.pack "target"))) Nothing)
       " {\"boundRecipient\":\"target\"} "
   Spec.it s "has a schema" $ Common.assertHasSchema s DamagePattern.codec
   where

@@ -47,6 +47,7 @@ import qualified Parun.Types.ControlChanged as ControlChanged
 import qualified Parun.Types.ControlClock as ControlClock
 import qualified Parun.Types.ControlWindow as ControlWindow
 import qualified Parun.Types.CostPortion as CostPortion
+import qualified Parun.Types.DamageEvent as DamageEvent
 import qualified Parun.Types.DamageTally as DamageTally
 import qualified Parun.Types.DealtDamage as DealtDamage
 import qualified Parun.Types.Devotion as Devotion
@@ -831,10 +832,14 @@ evaluateAgainst viewOf context gs announcedOn mOid mView quantity =
         -- tallied object as the evaluated one (Blazing Effigy's "other
         -- sources") and the surrounding effect's recipient as HeldByRecipient's
         -- player (Grothama, All-Devouring's "sources they controlled").
-        Quantity.DamageDealtThisTurn (ObjectDamage.MkObjectDamage direction by) ->
+        --
+        -- A Count.InHistory member has no object, only its snapshot, so the
+        -- tallied id is the snapshot's: Temple of Power totals each red source's
+        -- noncombat damage off the sources the log saw deal it.
+        Quantity.DamageDealtThisTurn (ObjectDamage.MkObjectDamage direction by kind) ->
           let judged = context {Filter.evaluated = mOid, Filter.evaluatedView = mView}
-              admits ev = all (Filter.matches judged (Filter.dealtByView ev)) by
-           in fmap (toInteger . Game.damageDealtThisTurn direction admits gs) mOid
+              admits ev = all (== DamageEvent.kind ev) kind && all (Filter.matches judged (Filter.dealtByView ev)) by
+           in fmap (toInteger . Game.damageDealtThisTurn direction admits gs) (mOid <|> (mView >>= Filter.identity))
         -- CR 508.3b: how many of that player's opponents they declared attacked this
         -- combat phase. LifeTotal's arm in shape -- live, one player only, resolved
         -- through the same playersOf, and Nothing for a reference naming

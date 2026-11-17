@@ -507,6 +507,8 @@ library codec
     Parun.Codec.CompanionConditionSpec
     Parun.Codec.CompanyCount
     Parun.Codec.CompanyCountSpec
+    Parun.Codec.ComparedTo
+    Parun.Codec.ComparedToSpec
     Parun.Codec.Compares
     Parun.Codec.ComparesSpec
     Parun.Codec.Comparison
@@ -3026,6 +3028,7 @@ library types
     Parun.Types.CommittedCrime
     Parun.Types.CompanionCondition
     Parun.Types.CompanyCount
+    Parun.Types.ComparedTo
     Parun.Types.Compares
     Parun.Types.Comparison
     Parun.Types.CompletedDungeon

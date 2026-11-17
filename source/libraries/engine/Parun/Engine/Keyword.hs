@@ -379,7 +379,8 @@ expansionOf keyword = case keyword of
                           DamagePattern.whoRecipient = Nothing,
                           DamagePattern.whichRecipient = Nothing,
                           DamagePattern.whichSource = Nothing,
-                          DamagePattern.boundRecipient = Nothing
+                          DamagePattern.boundRecipient = Nothing,
+                          DamagePattern.whatAmount = Nothing
                         },
                     DamageR.rewrite = DamageRewrite.PreventAll,
                     DamageR.riders = Seq.empty
@@ -807,7 +808,8 @@ expansionOf keyword = case keyword of
                           DamagePattern.whoRecipient = Nothing,
                           DamagePattern.whichRecipient = Nothing,
                           DamagePattern.whichSource = Nothing,
-                          DamagePattern.boundRecipient = Nothing
+                          DamagePattern.boundRecipient = Nothing,
+                          DamagePattern.whatAmount = Nothing
                         },
                     DamageR.rewrite = DamageRewrite.PreventUpTo (Quantity.Literal (toInteger n)),
                     DamageR.riders = Seq.empty

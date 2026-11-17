@@ -81,6 +81,7 @@ import qualified Parun.Types.PlayerRelation as PlayerRelation
 import qualified Parun.Types.Printing as Printing
 import qualified Parun.Types.ProjectedCharacteristics as ProjectedCharacteristics
 import qualified Parun.Types.Prompt as Prompt
+import qualified Parun.Types.Quantity as Quantity
 import qualified Parun.Types.Recipient as Recipient
 import qualified Parun.Types.Regenerability as Regenerability
 import qualified Parun.Types.ReplacementEffect as ReplacementEffect
@@ -984,7 +985,7 @@ blastShape :: ObjectId.ObjectId -> Timestamp.Timestamp -> ActiveReplacement.Acti
 blastShape src ts =
   ActiveReplacement.MkActiveReplacement
     { ActiveReplacement.effect =
-        ReplacementEffect.DamageR (DamageR.MkDamageR (DamagePattern.MkDamagePattern Nothing Filter.Type.IsSource Nothing Nothing Nothing Nothing Nothing) (DamageRewrite.SetAmount 4) Seq.empty),
+        ReplacementEffect.DamageR (DamageR.MkDamageR (DamagePattern.MkDamagePattern Nothing Filter.Type.IsSource Nothing Nothing Nothing Nothing Nothing Nothing) (DamageRewrite.SetAmount (Quantity.Literal 4)) Seq.empty),
       ActiveReplacement.source = src,
       ActiveReplacement.controller = S.alice,
       ActiveReplacement.timestamp = ts,

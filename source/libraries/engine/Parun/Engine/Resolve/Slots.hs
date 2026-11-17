@@ -81,6 +81,7 @@ import qualified Parun.Types.ChosenCardInHand as ChosenCardInHand
 import qualified Parun.Types.ChosenPermanents as ChosenPermanents
 import qualified Parun.Types.Clause as Clause
 import qualified Parun.Types.Cloak as Cloak
+import qualified Parun.Types.ComparedTo as ComparedTo
 import qualified Parun.Types.Compares as Compares
 import qualified Parun.Types.Condition as Condition.Type
 import qualified Parun.Types.Conjure as Conjure
@@ -1702,7 +1703,7 @@ replacementRowReads re = case re of
   ReplacementEffect.EntryR (EntryR.MkEntryR pat rewrite) -> addFilter pat (entryRewriteReads rewrite)
   ReplacementEffect.DamageR (DamageR.MkDamageR pat rewrite _) ->
     let (filters, quantities) = damageRewriteReads rewrite
-     in (DamagePattern.whatSource pat : (Maybe.maybeToList (DamagePattern.whatRecipient pat) <> filters), quantities)
+     in (DamagePattern.whatSource pat : (Maybe.maybeToList (DamagePattern.whatRecipient pat) <> filters), foldMap (pure . ComparedTo.threshold) (DamagePattern.whatAmount pat) <> quantities)
   -- CR 614.1a's printed subject (Pyramids' "target land"); the rewrite is nullary.
   ReplacementEffect.DestructionR (DestructionR.MkDestructionR matching _) -> (Maybe.maybeToList matching, [])
   -- The rewrite is one Scaling, which is a constructor and a Natural.
@@ -2101,7 +2102,7 @@ damageRewriteReads rewrite = case rewrite of
   DamageRewrite.PreventNext _ -> ([], [])
   DamageRewrite.PreventAllBut _ -> ([], [])
   DamageRewrite.PreventUpTo quantity -> ([], [quantity])
-  DamageRewrite.SetAmount _ -> ([], [])
+  DamageRewrite.SetAmount quantity -> ([], [quantity])
   -- Taii Wakeen, Perfect Shot's "plus X".
   DamageRewrite.Scale (Scaling.AddMore quantity) -> ([], [quantity])
   DamageRewrite.Scale (Scaling.Multiply _) -> ([], [])

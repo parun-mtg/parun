@@ -1,6 +1,7 @@
 module Parun.Types.ObjectDamage where
 
 import qualified Parun.Types.DamageDirection as DamageDirection
+import qualified Parun.Types.DamageKind as DamageKind
 import qualified Parun.Types.Filter as Filter
 import qualified Parun.Types.Keyword as Keyword
 
@@ -12,6 +13,9 @@ data ObjectDamage = MkObjectDamage
     -- matches (Grothama, All-Devouring's "by sources they controlled", Blazing
     -- Effigy's "by other sources named Blazing Effigy"), or any damage when
     -- Nothing.
-    by :: Maybe (Filter.Filter Keyword.Keyword)
+    by :: Maybe (Filter.Filter Keyword.Keyword),
+    -- | Nothing for any damage; Just Noncombat for CR 120.2b's alone (Temple of
+    -- Power's "dealt 4 or more noncombat damage").
+    kind :: Maybe DamageKind.DamageKind
   }
   deriving (Eq, Ord, Show)

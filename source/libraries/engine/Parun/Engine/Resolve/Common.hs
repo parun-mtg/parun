@@ -1683,7 +1683,8 @@ installDamageRow resolving targets slots controller source duration kind rewrite
                     DamagePattern.whichSource = fmap snd sourceChoice,
                     -- A shield's recipient is already baked, one field up, so
                     -- the slot that would name one has nothing left to say.
-                    DamagePattern.boundRecipient = Nothing
+                    DamagePattern.boundRecipient = Nothing,
+                    DamagePattern.whatAmount = Nothing
                   }
                 rewrite
                 -- CR 615.5's rider on this carrier is the snapshotted one
@@ -1781,7 +1782,8 @@ bakeRowPlayers players =
           Children.damageRecipient = pure,
           Children.damageObject = pure,
           Children.damageSlot = pure,
-          Children.damageWhose = pure
+          Children.damageWhose = pure,
+          Children.damageQuantity = pure
         }
 
 -- CR 611.2c: a combat restriction's stored class, every slot it names baked

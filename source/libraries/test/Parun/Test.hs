@@ -222,6 +222,7 @@ import qualified Parun.Codec.CommanderDeckRuleSpec
 import qualified Parun.Codec.CommittedCrimeSpec
 import qualified Parun.Codec.CompanionConditionSpec
 import qualified Parun.Codec.CompanyCountSpec
+import qualified Parun.Codec.ComparedToSpec
 import qualified Parun.Codec.ComparesSpec
 import qualified Parun.Codec.ComparisonSpec
 import qualified Parun.Codec.CompletedDungeonSpec
@@ -1324,6 +1325,7 @@ spec s reference corpus = do
   Parun.Codec.PregameExileSpec.spec s
   Parun.Codec.CompanionConditionSpec.spec s
   Parun.Codec.ComparesSpec.spec s
+  Parun.Codec.ComparedToSpec.spec s
   Parun.Codec.CompanyCountSpec.spec s
   Parun.Codec.ComparisonSpec.spec s
   Parun.Codec.CompletedDungeonSpec.spec s
