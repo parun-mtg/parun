@@ -185,7 +185,7 @@
                 },
                 "rider": null,
                 "sourceChoices": {
-                  "subtype": "Goblin"
+                  "subtype": ["Goblin"]
                 }
               }
             ]

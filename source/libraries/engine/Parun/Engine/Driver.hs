@@ -107,6 +107,7 @@ deciderOf prompt = case prompt of
   Prompt.ChooseFateseal decider _ _ _ -> Just (Decider.unwrap decider)
   Prompt.ChooseExplore decider _ _ _ -> Just (Decider.unwrap decider)
   Prompt.Rethrow decider _ _ _ -> Just (Decider.unwrap decider)
+  Prompt.RerollDice decider _ _ _ -> Just (Decider.unwrap decider)
   Prompt.AdjustDieRoll decider _ _ _ _ -> Just (Decider.unwrap decider)
   Prompt.ChooseRollModifier decider _ _ -> Just (Decider.unwrap decider)
   Prompt.ChooseDefender decider _ _ -> Just (Decider.unwrap decider)

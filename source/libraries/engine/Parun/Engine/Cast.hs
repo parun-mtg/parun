@@ -422,8 +422,8 @@ flashOn oid face gs =
 -- observable -- not any claim about Magic:
 --
 --   * no target pool names a hidden zone at all. Parun.Types.Pool has Permanents,
---     Spells, CardsInGraveyard and CardsInExile, and no hand or library arm
---     (#559), so no target set can be measured differently either side of it.
+--     Spells, CardsInGraveyard and CardsInExile, and no hand or library arm,
+--     so no target set can be measured differently either side of it.
 --   * nothing counts a hand. No Parun.Types.Count arm reaches a hand zone, so
 --     hand size cannot enter a cost or a filter.
 --   * a cost adjustment counts nothing in one. Parun.Types.CostChange's

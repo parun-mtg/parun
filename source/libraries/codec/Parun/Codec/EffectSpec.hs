@@ -2714,6 +2714,14 @@ spec s = Spec.describe s "Parun.Codec.Effect" $ do
       fromJson
       Effect.OpenAttraction
       " {\"type\":\"OpenAttraction\"} "
+  -- CR 701.52a: nullary, the rule fixing the die.
+  Spec.it s "RollToVisit" $
+    Common.assertJsonCodec
+      s
+      toJson
+      fromJson
+      Effect.RollToVisit
+      " {\"type\":\"RollToVisit\"} "
   -- The Unstable FAQ: the assembling permanent, or null for the player.
   Spec.it s "Assemble" $ do
     Common.assertJsonCodec

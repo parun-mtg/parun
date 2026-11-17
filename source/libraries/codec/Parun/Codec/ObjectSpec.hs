@@ -1,5 +1,6 @@
 module Parun.Codec.ObjectSpec where
 
+import qualified Data.List.NonEmpty as NonEmpty
 import qualified Data.Map as Map
 import qualified Data.Sequence as Seq
 import qualified Data.Set as Set
@@ -142,7 +143,7 @@ spec s = Spec.describe s "Parun.Codec.Object" $ do
           Object.counterTimestamps = Map.singleton CounterKind.PlusOnePlusOne (Timestamp.MkTimestamp 7),
           Object.attachedTo = Just (Recipient.ToCreature (ObjectId.MkObjectId 8)),
           Object.chosenColors = Map.singleton Acquisition.Own (Set.singleton Color.Red),
-          Object.chosenSubtype = Map.singleton (Acquisition.Copied (Timestamp.MkTimestamp 43)) Subtype.Goblin,
+          Object.chosenSubtype = Map.singleton (Acquisition.Copied (Timestamp.MkTimestamp 43)) (Subtype.Goblin NonEmpty.:| [Subtype.Elf]),
           Object.chosenCardType = Map.singleton Acquisition.Own CardType.Creature,
           Object.chosenNumber = Map.singleton Acquisition.Own 5,
           Object.chosenObjects = Map.singleton Acquisition.Own (Set.singleton (ObjectId.MkObjectId 11)),
@@ -242,7 +243,7 @@ spec s = Spec.describe s "Parun.Codec.Object" $ do
           <> ",{\"key\":{\"type\":\"Loyalty\"},\"value\":0}]"
           <> ",\"counterTimestamps\":[{\"kind\":{\"type\":\"PlusOnePlusOne\"},\"timestamp\":7}]"
           <> ",\"attachedTo\":{\"type\":\"ToCreature\",\"value\":8}"
-          <> ",\"chosenColors\":[{\"key\":{\"type\":\"Own\"},\"value\":[\"Red\"]}],\"chosenSubtype\":[{\"key\":{\"type\":\"Copied\",\"value\":43},\"value\":\"Goblin\"}],\"chosenCardType\":[{\"key\":{\"type\":\"Own\"},\"value\":\"Creature\"}],\"chosenNumber\":[{\"key\":{\"type\":\"Own\"},\"value\":5}],\"chosenObjects\":[{\"key\":{\"type\":\"Own\"},\"value\":[11]}]"
+          <> ",\"chosenColors\":[{\"key\":{\"type\":\"Own\"},\"value\":[\"Red\"]}],\"chosenSubtype\":[{\"key\":{\"type\":\"Copied\",\"value\":43},\"value\":[\"Goblin\",\"Elf\"]}],\"chosenCardType\":[{\"key\":{\"type\":\"Own\"},\"value\":\"Creature\"}],\"chosenNumber\":[{\"key\":{\"type\":\"Own\"},\"value\":5}],\"chosenObjects\":[{\"key\":{\"type\":\"Own\"},\"value\":[11]}]"
           <> ",\"chosenNames\":[{\"key\":{\"type\":\"Own\"},\"value\":{\"29\":[\"Mountain\"]}}],\"chosenPlayers\":[{\"key\":{\"type\":\"Own\"},\"value\":[{\"key\":{\"type\":\"AsEntersOrTransforms\"},\"value\":9},{\"key\":{\"type\":\"Promised\",\"value\":[{\"type\":\"Card\"},{\"type\":\"Granted\",\"value\":[[4,6],2]}]},\"value\":10}]}]"
           <> ",\"timestamp\":10,\"face\":\"Delver of Secrets\",\"turnedOverAt\":11"
           <> ",\"worldSince\":12"

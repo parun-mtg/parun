@@ -19,8 +19,9 @@ import qualified Parun.Types.DealDamage as DealDamage
 -- A sweep of @dealers@ binds each under @dealer@'s name, so it is refused
 -- without one.
 --
--- Not implemented: a sweep beside @excess@ or @excessTally@, which several
--- dealers would misread (#7272); it is refused.
+-- Unprinted: a sweep beside @excess@ or @excessTally@, which several dealers
+-- would misread. It is refused, and Parun.Codec.DealDamageSpec's "rejects
+-- dealers beside excess" proves the refusal.
 codec :: Codec.Codec DealDamage.DealDamage
 codec = Fields.objectWith sweepIsNamed $ do
   parts <- Fields.required "parts" (Common.seq DamagePart.codec) DealDamage.parts
@@ -47,5 +48,5 @@ codec = Fields.objectWith sweepIsNamed $ do
 sweepIsNamed :: DealDamage.DealDamage -> Either Text.Text DealDamage.DealDamage
 sweepIsNamed damage
   | Maybe.isJust (DealDamage.dealers damage) && Maybe.isNothing (DealDamage.dealer damage) = Left (Text.pack "DealDamage: dealers needs a dealer to bind each one under")
-  | Maybe.isJust (DealDamage.dealers damage) && (Maybe.isJust (DealDamage.excess damage) || Maybe.isJust (DealDamage.excessTally damage)) = Left (Text.pack "DealDamage: dealers beside excess or excessTally is not implemented (#7272)")
+  | Maybe.isJust (DealDamage.dealers damage) && (Maybe.isJust (DealDamage.excess damage) || Maybe.isJust (DealDamage.excessTally damage)) = Left (Text.pack "DealDamage: dealers beside excess or excessTally is unprinted and not supported")
   | otherwise = Right damage

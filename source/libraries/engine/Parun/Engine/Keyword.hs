@@ -11,6 +11,7 @@ import qualified Data.Set as Set
 import qualified Data.Text as Text
 import Numeric.Natural (Natural)
 import qualified Parun.Engine.Binding as Binding
+import qualified Parun.Engine.ChoiceOrdinal as ChoiceOrdinal
 import qualified Parun.Engine.CostAdjustments as CostAdjustments.Engine
 import qualified Parun.Engine.Deploy as Deploy
 import qualified Parun.Engine.Earthbend as Earthbend
@@ -3325,7 +3326,8 @@ withCost keyword cost = case keyword of
                      MoveCardsFromGraveyard.MkMoveCardsFromGraveyard
                        { MoveCardsFromGraveyard.count = CostAmount.Fixed count,
                          MoveCardsFromGraveyard.whichCards = Filter.And [],
-                         MoveCardsFromGraveyard.destination = GraveyardCostDestination.Exile
+                         MoveCardsFromGraveyard.destination = GraveyardCostDestination.Exile,
+                         MoveCardsFromGraveyard.players = PlayerScope.Related PlayerRelation.You
                        }
                  ]
         }
@@ -4282,7 +4284,7 @@ data Substitute
 --
 -- Rule 702.66a's criterion is "a card from your graveyard" and states no other
 -- quality, so it is Filter.And [], the trivial predicate: the pool's narrowing to
--- the payer's OWN graveyard is Parun.Engine.Cost.exileCandidates' (CR 400.3).
+-- the payer's OWN graveyard is Parun.Engine.Cost.yourGraveyard (CR 400.3).
 --
 -- The criteria are MINTED here rather than printed, rule 702's own words being
 -- what says what is eligible -- so CR 612.2 has no word of a card's to swap in
@@ -4798,7 +4800,7 @@ mintedRemovalRestrictionsFor keyword =
 -- `already`, the host's attachments stamped no later than the granter (CR
 -- 613.7e restamps each attach, so that is "already attached when the effect
 -- started to apply").
-grantedBy :: ObjectId -> Set.Set Color.Color -> Maybe Subtype.Subtype -> Maybe PlayerId -> [ObjectId] -> Keyword -> Keyword
+grantedBy :: ObjectId -> Set.Set Color.Color -> Maybe (NonEmpty.NonEmpty Subtype.Subtype) -> Maybe PlayerId -> [ObjectId] -> Keyword -> Keyword
 grantedBy granter chosen subtype you already keyword = case withChoices chosen subtype keyword of
   Keyword.Protection protection ->
     Keyword.Protection protection {Protection.spares = fmap spare (Protection.spares protection)}
@@ -4825,7 +4827,7 @@ grantedBy granter chosen subtype you already keyword = case withChoices chosen s
 -- grantedBy's first half, and Parun.Engine.Projection.freezeQuantities' whole
 -- answer for a resolution's grant (Stave Off), whose source has left the stack
 -- by the time the grant is projected.
-withChoices :: Set.Set Color.Color -> Maybe Subtype.Subtype -> Keyword -> Keyword
+withChoices :: Set.Set Color.Color -> Maybe (NonEmpty.NonEmpty Subtype.Subtype) -> Keyword -> Keyword
 withChoices chosen subtype keyword = case keyword of
   Keyword.Protection protection
     | Protection.quality protection == Filter.HasChosenColor ->
@@ -4838,7 +4840,7 @@ withChoices chosen subtype keyword = case keyword of
   _ -> keyword
   where
     landOf criterion = case criterion of
-      Filter.HasChosenSubtype -> maybe (Filter.Or []) Filter.HasSubtype subtype
+      Filter.HasChosenSubtype ordinal -> maybe (Filter.Or []) Filter.HasSubtype (ChoiceOrdinal.chosenAt ordinal =<< subtype)
       Filter.And filters -> Filter.And (fmap landOf filters)
       _ -> criterion
     baked = case Set.toList chosen of
@@ -4854,14 +4856,20 @@ withChoices chosen subtype keyword = case keyword of
 -- posture. Proved by data/scenarios/'s Figure of Fable control-change
 -- scenario.
 --
+-- CR 702.16k / 608.2h: a bare Filter.OfBoundPlayer likewise, as the one
+-- player `bound` reads its slot as naming, and left standing where it names
+-- none -- Eon Frolicker's "that player", whose slot dies with the resolution.
+-- Proved by data/scenarios/'s Eon Frolicker scenario.
+--
 -- grantedBy does not call it: no static ability grants a permanent this
 -- quality (Scryfall o:"protection from each of your opponents", 2026-11-13,
 -- four cards; an Aura reading "enchanted creature has" it would refute this).
-withRelatedPlayers :: (PlayerRelation.PlayerRelation -> [PlayerId]) -> Keyword -> Keyword
-withRelatedPlayers related keyword = case keyword of
-  Keyword.Protection protection
-    | Filter.OfRelatedPlayer relation <- Protection.quality protection ->
-        Keyword.Protection protection {Protection.quality = Filter.Or (fmap Filter.OfSpecificPlayer (related relation))}
+withQualityPlayers :: (PlayerRelation.PlayerRelation -> [PlayerId]) -> (SlotName.SlotName -> Maybe PlayerId) -> Keyword -> Keyword
+withQualityPlayers related bound keyword = case keyword of
+  Keyword.Protection protection -> case Protection.quality protection of
+    Filter.OfRelatedPlayer relation -> Keyword.Protection protection {Protection.quality = Filter.Or (fmap Filter.OfSpecificPlayer (related relation))}
+    Filter.OfBoundPlayer slot | Just pid <- bound slot -> Keyword.Protection protection {Protection.quality = Filter.OfSpecificPlayer pid}
+    _ -> keyword
   _ -> keyword
 
 -- The attachment prohibitions one keyword states.

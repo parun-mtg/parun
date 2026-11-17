@@ -1322,11 +1322,33 @@ Entries are ordered by the first rule each cites.
   to announce an order.
 - **Site**: `Parun.Engine.Event.inActiveTeamOrder`, for draws
   (`Parun.Engine.Event.inDrawOrder`) and, under CR 805.6, a loop's choices
+  and an individually processed loop's members
   (`Parun.Engine.Resolve.Arms.Zones.forEach`). The scenarios "CR 805.6a the
   active team names which teammate draws first" and "CR 805.6 the active team
   names which teammate chooses first for Fortunate Few" prove the choice, on
   two teammates, where the readings agree.
 - **Issue**: #4014, #7293.
+
+## Whether a nonactive team names its players' order
+
+- **Question**: CR 805.6 lets the active team's players act "in whatever
+  order they like", then has "the players on each nonactive team in turn
+  order do the same". Does a nonactive team also pick the order its own
+  players act in?
+- **Rules**: CR 101.4, 608.2f, 805.3a, 805.6, 805.6a, 805.7; CR of
+  2026-11-06.
+- **Decision**: No. A nonactive team's players act in seat order, unasked.
+  The rule grants the choice to the active team by name and says "in turn
+  order" of the rest, the contrast CR 805.3a and 805.6a draw too.
+- **Rejected**: Each nonactive team naming its order, reading "do the same"
+  as carrying the choice and "in turn order" as ordering the teams alone.
+  CR 805.7's "do the same" does carry a choice, but there the choice is the
+  action itself, ordering triggers.
+- **Site**: `Parun.Engine.Event.inActiveTeamOrder`, through
+  `Parun.Engine.Resolve.Arms.Zones.forEach` and
+  `Parun.Engine.Event.inDrawOrder`. The scenario "CR 805.6 a nonactive
+  team's Hive Mind copies go in seat order, unasked" proves it.
+- **Issue**: #8206.
 
 ## Whose range of influence cuts a team's choice
 
@@ -2366,6 +2388,21 @@ Entries are ordered by the first rule each cites.
   scenario
   `quicksilver-elemental-keeps-a-gained-ability-after-the-creature-leaves`.
 - **Issue**: #7279.
+
+## Illusionary Terrain's two basic land types differ
+
+- **Question**: Illusionary Terrain's "choose two basic land types": may its
+  controller choose one type twice, leaving the enchantment doing nothing?
+- **Rules**: CR 607.2d, 305.6; CR of 2026-11-06. Nothing in the CR defines
+  choosing two of a quality; the card's one ruling is silent.
+- **Decision**: No: the second prompt offers every basic land type but the
+  first (`ChoiceDistinct.Distinct`). Vision Charm's "a land type and a basic
+  land type" names two separate choices, so it may repeat one.
+- **Rejected**: Allowing the repeat, which reads "two basic land types" as
+  one type named twice.
+- **Site**: `Parun.Engine.Event`'s `chooseQuality`, proved by the scenario
+  `illusionary-terrain-makes-every-basic-forest-an-island-including-one-played-later`.
+- **Issue**: #7637.
 
 ## A linked choice made again replaces the earlier one
 

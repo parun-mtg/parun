@@ -27,6 +27,7 @@ import Numeric.Natural (Natural)
 import qualified Parun.Engine.AbilityZone as AbilityZone
 import qualified Parun.Engine.Binding as Binding
 import qualified Parun.Engine.Children as Children
+import qualified Parun.Engine.ChoiceOrdinal as ChoiceOrdinal
 import qualified Parun.Engine.Commander as Commander
 import qualified Parun.Engine.Condition as Condition
 import qualified Parun.Engine.Count as Count
@@ -440,7 +441,10 @@ applyModification textBoxOf viewOf src stamp gs oid unitTypes affected m pc =
         -- regained from the same granter is the same ability, still spent
         -- (docs/decisions.md, "A rider ability regained from one granter stays
         -- spent"). The Well Rested, Tyvar, Aura Graft and Touch of Vitae files
-        -- in data/scenarios prove it.
+        -- in data/scenarios prove it. CR 607.1a / 607.5: so is every ability
+        -- another object lends, so what it exiles is linked to its own pair
+        -- and none of the receiver's (Binding.isLinkedExile); one the receiver
+        -- grants itself counts as printed and stays unnamed.
         Modification.GainAbility g -> case g of
           -- The cost names its granter by id (Binding.grantingPermanent);
           -- data/scenarios' Fishing Pole files prove each names its own. The
@@ -448,12 +452,12 @@ applyModification textBoxOf viewOf src stamp gs oid unitTypes affected m pc =
           -- is named for it, so Binding.setGranter can bind the slot as it is
           -- activated or put on the stack (CR 608.2h).
           GrantedAbility.Activated a ->
-            let named = namedForGranter src a
+            let named = namedForGranter src oid a
              in pc {PC.activatedAbilities = PC.activatedAbilities pc <> [named {ActivatedAbility.cost = Filter.bakeCost Binding.grantingPermanent src (ActivatedAbility.cost a), ActivatedAbility.costChoices = fmap (CostChoice.MkCostChoice . fmap (Filter.bakeCost Binding.grantingPermanent src) . CostChoice.unwrap) (ActivatedAbility.costChoices a), ActivatedAbility.modal = bakeGranter src (ActivatedAbility.modal a)}]}
           GrantedAbility.Triggered t ->
             let forGranter = t {TriggeredAbility.name = Just (Binding.acquiredFrom src (TriggeredAbility.name t))}
                 named = case TriggeredAbility.limit t of
-                  TriggerLimit.Unlimited -> if readsGranter (TriggeredAbility.modal t) then forGranter else t
+                  TriggerLimit.Unlimited -> if src /= oid || readsGranter (TriggeredAbility.modal t) then forGranter else t
                   TriggerLimit.OncePerTurn _ -> forGranter
                   TriggerLimit.OncePerGame -> forGranter
              in pc {PC.triggeredAbilities = PC.triggeredAbilities pc <> [named {TriggeredAbility.modal = bakeGranter src (TriggeredAbility.modal named)}]}
@@ -852,8 +856,8 @@ applyModification textBoxOf viewOf src stamp gs oid unitTypes affected m pc =
         -- replacement whose rewrite writes the field before the permanent is on
         -- the battlefield to be projected, and a resolution stores this arm
         -- already baked (freezeQuantities).
-        Modification.ChosenSubtype mode family ->
-          case Game.currentChoice Chosen.Subtype src gs of
+        Modification.ChosenSubtype ordinal mode family ->
+          case ChoiceOrdinal.chosenAt ordinal =<< Game.currentChoice Chosen.Subtype src gs of
             Nothing -> pc
             Just s -> applyModification textBoxOf viewOf src stamp gs oid unitTypes affected (chosenSubtypeAs mode family s) pc
         -- CR 612.1/612.2: a text-changing effect swaps a subtype word in the type
@@ -1031,12 +1035,13 @@ intrinsicManaAbilitiesOf pc =
 lendsKind :: Maybe AbilityKind.AbilityKind -> Maybe LoyaltyKind.LoyaltyKind -> ActivatedAbility.ActivatedAbility Card.Type.Card (GrantedAbility.GrantedAbility Card.Type.Card) -> Bool
 lendsKind only loyalty a = all (== (if ManaAbility.isManaAbility a then AbilityKind.ManaAbility else AbilityKind.NonManaAbility)) only && all (== LoyaltyAbility.loyaltyKindOf (ActivatedAbility.cost a)) loyalty
 
--- CR 113.2c / 201.5a: a granted activated ability, named for its granter
--- (Binding.acquiredFrom) where a rider counts its activations or a quantity of
--- it reads the granter by slot (readsGranter).
-namedForGranter :: ObjectId -> ActivatedAbility.ActivatedAbility Card.Type.Card (GrantedAbility.GrantedAbility Card.Type.Card) -> ActivatedAbility.ActivatedAbility Card.Type.Card (GrantedAbility.GrantedAbility Card.Type.Card)
-namedForGranter src a
-  | Keyword.countsActivations a || readsGranter (ActivatedAbility.modal a) = a {ActivatedAbility.name = Just (Binding.acquiredFrom src (ActivatedAbility.name a))}
+-- CR 113.2c / 201.5a / 607.5: an activated ability `src` grants `receiver`,
+-- named for its granter (Binding.acquiredFrom) where another object lends it,
+-- a rider counts its activations or a quantity of it reads the granter by
+-- slot (readsGranter).
+namedForGranter :: ObjectId -> ObjectId -> ActivatedAbility.ActivatedAbility Card.Type.Card (GrantedAbility.GrantedAbility Card.Type.Card) -> ActivatedAbility.ActivatedAbility Card.Type.Card (GrantedAbility.GrantedAbility Card.Type.Card)
+namedForGranter src receiver a
+  | src /= receiver || Keyword.countsActivations a || readsGranter (ActivatedAbility.modal a) = a {ActivatedAbility.name = Just (Binding.acquiredFrom src (ActivatedAbility.name a))}
   | otherwise = a
 
 -- CR 201.5a / 608.2h: whether the granted ability reads its granter by slot
@@ -2034,12 +2039,16 @@ freezeQuantities viewOf gs announcedOn source context m =
         --
         -- CR 702.16i / 109.5: "each of your opponents" is locked in likewise,
         -- as the players relating thus to the resolving ability's controller,
-        -- the context's perspective (Figure of Fable).
+        -- the context's perspective (Figure of Fable). CR 702.16k: "that
+        -- player" is locked in as the one player its slot names (Eon Frolicker).
         Modification.GainKeyword k ->
           let related relation = [q | you <- Foldable.toList (Filter.perspective context), q <- Game.stillPlaying gs, PlayerRelation.holds (Filter.teams context) relation you q]
+              bound slot = case fmap Set.toList (Map.lookup slot (Filter.slotPlayers context)) of
+                Just [pid] -> Just pid
+                _ -> Nothing
               acquisition = Game.readingAcquisition announcedOn source gs source
               chosen = Maybe.fromMaybe Set.empty (Game.choiceWithLastKnown Chosen.Colors acquisition source gs)
-           in Just (Modification.GainKeyword (Keyword.withRelatedPlayers related (Keyword.withChoices chosen (Game.choiceWithLastKnown Chosen.Subtype acquisition source gs) k)))
+           in Just (Modification.GainKeyword (Keyword.withQualityPlayers related bound (Keyword.withChoices chosen (Game.choiceWithLastKnown Chosen.Subtype acquisition source gs) k)))
         -- Its cost is derived at projection time, not evaluated from a Quantity,
         -- so there is nothing here to freeze.
         Modification.GainKeywordAtManaCost _ -> Just m
@@ -2065,8 +2074,8 @@ freezeQuantities viewOf gs announcedOn source context m =
         -- effect already stored. Nothing for a source that chose none. Proved
         -- by data/scenarios/'s Mystic Compass scenario, which Disenchants the
         -- Compass after it resolves.
-        Modification.ChosenSubtype mode family ->
-          chosenSubtypeAs mode family <$> Game.choiceWithLastKnown Chosen.Subtype (Game.readingAcquisition announcedOn source gs source) source gs
+        Modification.ChosenSubtype ordinal mode family ->
+          chosenSubtypeAs mode family <$> (ChoiceOrdinal.chosenAt ordinal =<< Game.choiceWithLastKnown Chosen.Subtype (Game.readingAcquisition announcedOn source gs source) source gs)
         Modification.CreatureSubtype {} -> Just m
         Modification.AddEveryCreatureSubtype -> Just m
         Modification.LoseEverySubtype _ -> Just m
@@ -2253,7 +2262,7 @@ setsLandSubtype m = case m of
   -- CR 305.7 does not care where the type came from: a type chosen as the source
   -- entered (CR 614.1c) strips rules text as a printed one does. A chosen
   -- creature type is CreatureSubtype's answer below.
-  Modification.ChosenSubtype mode family -> case family of
+  Modification.ChosenSubtype _ mode family -> case family of
     SubtypeFamily.BasicLandType -> setsLandSubtype (Modification.LandSubtype mode Subtype.Type.Forest)
     SubtypeFamily.LandType -> setsLandSubtype (Modification.LandSubtype mode Subtype.Type.Forest)
     SubtypeFamily.NonbasicLandType -> setsLandSubtype (Modification.LandSubtype mode Subtype.Type.Desert)
@@ -2704,15 +2713,6 @@ printedTriggeredAbility = printedAbility rewriteTriggeredAbility PC.triggeredAbi
 -- skinshifter-* text-change pairs prove it, spent before the change and after.
 printedActivatedAbility :: ObjectId -> GameState -> ActivatedAbility.ActivatedAbility Card.Type.Card (GrantedAbility.GrantedAbility Card.Type.Card) -> ActivatedAbility.ActivatedAbility Card.Type.Card (GrantedAbility.GrantedAbility Card.Type.Card)
 printedActivatedAbility = printedAbility rewriteActivatedAbility PC.activatedAbilities
-
--- | CR 607.1a: whether `oid` has this activated ability of its own -- printed,
--- or granted by an ability of its own -- rather than lent by a layer-6 grant
--- whose source is another object. Asked of `oid` projected without those
--- grants. data/scenarios/cost's Dominion Bracelet file proves a lent one.
-ownsActivatedAbility :: ObjectId -> GameState -> ActivatedAbility.ActivatedAbility Card.Type.Card (GrantedAbility.GrantedAbility Card.Type.Card) -> Bool
-ownsActivatedAbility oid gs ability =
-  let lent c = gLayer c == Layer.Ability && gSource c /= oid
-   in elem ability (PC.activatedAbilities (projectFrom (filter (not . lent) (gather gs)) oid gs))
 
 -- CR 613.1c: the stored resolution effects' layer-3 parts, gathered WITHOUT
 -- gather, which asks textChangesAffecting.
@@ -4509,7 +4509,7 @@ filterReads f = case f of
   Filter.Type.Noted _ -> Set.fromList [Colors, Subtypes]
   -- Reads the candidate's SUBTYPES, HasSubtype's answer: the chosen half arrives
   -- on the Context baked at production, and CR 613.1d's layer writes the other.
-  Filter.Type.HasChosenSubtype -> Set.singleton Subtypes
+  Filter.Type.HasChosenSubtype _ -> Set.singleton Subtypes
   -- HasCardType's answer, the chosen half arriving on the Context.
   Filter.Type.HasChosenCardType -> Set.singleton Types
   Filter.Type.IsExiledWithSource _ -> Set.empty
@@ -4520,6 +4520,7 @@ filterReads f = case f of
   Filter.Type.OfChosenPlayer -> Set.singleton Controller
   Filter.Type.OfRelatedPlayer _ -> Set.singleton Controller
   Filter.Type.OfSpecificPlayer _ -> Set.singleton Controller
+  Filter.Type.OfBoundPlayer _ -> Set.singleton Controller
   Filter.Type.IsPlayer _ -> Set.empty
   -- Reads a CONTROLLER rather than a characteristic (CR 109.3 lists none).
   Filter.Type.IsControllerOfBound _ -> Set.empty
@@ -4891,7 +4892,7 @@ filterReadsPeers f = case f of
   -- The source's chosen subtype arrives on the Context, baked onto the mana unit
   -- at production; the candidate's own subtypes come from its partial, so no PEER
   -- is projected.
-  Filter.Type.HasChosenSubtype -> False
+  Filter.Type.HasChosenSubtype _ -> False
   Filter.Type.HasChosenCardType -> False
   Filter.Type.IsExiledWithSource _ -> False
   Filter.Type.IsLastExiledWithSource -> False
@@ -4901,6 +4902,7 @@ filterReadsPeers f = case f of
   Filter.Type.OfChosenPlayer -> False
   Filter.Type.OfRelatedPlayer _ -> False
   Filter.Type.OfSpecificPlayer _ -> False
+  Filter.Type.OfBoundPlayer _ -> False
   Filter.Type.IsPlayer _ -> False
   Filter.Type.IsControllerOfBound _ -> False
   Filter.Type.CardsInZoneAtLeast _ _ -> False
@@ -5051,7 +5053,7 @@ modificationWrites m = case m of
   Modification.LandSubtype mode _ -> case mode of
     ChangeMode.Replace -> Set.fromList [Subtypes, Keywords]
     ChangeMode.InAddition -> Set.singleton Subtypes
-  Modification.ChosenSubtype mode family -> modificationWrites (chosenSubtypeAs mode family Subtype.Type.Forest)
+  Modification.ChosenSubtype _ mode family -> modificationWrites (chosenSubtypeAs mode family Subtype.Type.Forest)
   Modification.CreatureSubtype {} -> Set.singleton Subtypes
   Modification.AddEveryCreatureSubtype -> Set.singleton Subtypes
   -- The honest answer -- the arm writes PC.subtypes and nothing else, and CR

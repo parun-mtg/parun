@@ -159,8 +159,8 @@ combatReplaySpec s =
       -- CR 615.7: two simultaneous combat damage events one shield could cover
       -- part of, which is the batch that prompt is asked over.
       orderDamageEvents =
-        [ DamageEvent.MkDamageEvent oid (Recipient.ToPlayer S.alice) 5 0 False False False 0 Nothing Nothing mempty False mempty mempty mempty Nothing mempty Nothing DamageKind.Combat,
-          DamageEvent.MkDamageEvent (ObjectId.MkObjectId 8) (Recipient.ToPlayer S.alice) 3 0 False False False 0 Nothing Nothing mempty False mempty mempty mempty Nothing mempty Nothing DamageKind.Combat
+        [ DamageEvent.MkDamageEvent oid (Recipient.ToPlayer S.alice) 5 0 False False False 0 Nothing Nothing mempty False mempty mempty mempty mempty Nothing mempty Nothing DamageKind.Combat,
+          DamageEvent.MkDamageEvent (ObjectId.MkObjectId 8) (Recipient.ToPlayer S.alice) 3 0 False False False 0 Nothing Nothing mempty False mempty mempty mempty mempty Nothing mempty Nothing DamageKind.Combat
         ]
       -- CR 601.2h: Jarad, Golgari Lich Lord's two halves, the printed cost whose
       -- payment order is the payer's.
@@ -1307,6 +1307,11 @@ combatReplaySpec s =
           Spec.assertEqWith s "shifting the second die down round trips" (Replay.decode p (Replay.encode p (Just (1, RollAdjustment.Decrease)))) (Just (Just (1, RollAdjustment.Decrease)))
           Spec.assertEqWith s "so does declining" (Replay.decode p (Replay.encode p Nothing)) (Just Nothing)
           Spec.assertEqWith s "a short transcript declines" (Replay.defaultAnswer p) Nothing
+        -- CR 706.2b: which dice one payment rerolled is a decision.
+        Spec.it s "RerollDice round-trips through the transcript" $ do
+          let p = Prompt.RerollDice decider S.alice (3 NonEmpty.:| [2]) Nothing
+          Spec.assertEqWith s "rerolling both round trips" (Replay.decode p (Replay.encode p (Set.fromList [0, 1]))) (Just (Set.fromList [0, 1]))
+          Spec.assertEqWith s "a short transcript declines" (Replay.defaultAnswer p) Set.empty
         -- CR 706.2b: which modifier the roller applied next is a decision.
         Spec.it s "ChooseRollModifier round-trips through the transcript" $ do
           let p = Prompt.ChooseRollModifier decider S.alice (Just (ObjectId.MkObjectId 7) NonEmpty.:| [Just (ObjectId.MkObjectId 9)])

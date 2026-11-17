@@ -73,6 +73,7 @@ module Parun.TargetSpec where
 import qualified Control.Monad as Monad
 import qualified Control.Monad.Trans.State.Strict as State
 import qualified Data.List as List
+import qualified Data.List.NonEmpty as NonEmpty
 import qualified Data.Map.Strict as Map
 import qualified Data.Maybe as Maybe
 import qualified Data.Sequence as Seq
@@ -404,7 +405,7 @@ fromTheRubbleSpec s registry =
         endOfTurn chosen =
           let chose =
                 g2
-                  { GameState.objects = Map.adjust (\o -> o {Object.chosenSubtype = Map.singleton Acquisition.Own chosen}) rubbleId (GameState.objects g2),
+                  { GameState.objects = Map.adjust (\o -> o {Object.chosenSubtype = Map.singleton Acquisition.Own (NonEmpty.singleton chosen)}) rubbleId (GameState.objects g2),
                     GameState.turn =
                       (GameState.turn g2)
                         { TurnRegisters.remaining = Seq.fromList [Phase.Ending EndingStep.EndStep, Phase.Ending EndingStep.Cleanup]

@@ -26,6 +26,7 @@ import Parun.Types.ObjectId (ObjectId)
 import qualified Parun.Types.PermissionLimit as PermissionLimit
 import Parun.Types.PlayerId (PlayerId)
 import qualified Parun.Types.Prompt as Prompt
+import qualified Parun.Types.RerollReach as RerollReach
 import qualified Parun.Types.RollModifier as RollModifier
 import qualified Parun.Types.TurnRegisters as TurnRegisters
 
@@ -56,12 +57,16 @@ modifiersFor pid = fmap (PlayerEffect.rollModifiers pid) State.get
 --
 -- An unstated `sides` or `natural` matches every roll -- Wall of Fortune's bare
 -- "a die" -- rather than none.
-rerollOffers :: Natural.Natural -> Natural.Natural -> [(Maybe ObjectId, ModifiedRoll.ModifiedRoll)] -> [(Maybe ObjectId, ModifiedRoll.ModifiedRoll)]
-rerollOffers sides natural modifiers =
+--
+-- `reach` picks the offers that reach that many dice (Parun.Types.RerollReach).
+-- `natural` is Nothing where the offer is over several dice at once, and then
+-- a modifier stating a number is not one of them; no printing states both.
+rerollOffers :: RerollReach.RerollReach -> Natural.Natural -> Maybe Natural.Natural -> [(Maybe ObjectId, ModifiedRoll.ModifiedRoll)] -> [(Maybe ObjectId, ModifiedRoll.ModifiedRoll)]
+rerollOffers reach sides natural modifiers =
   let matches modifier =
-        ModifiedRoll.modifier modifier == RollModifier.Reroll
+        ModifiedRoll.modifier modifier == RollModifier.Reroll reach
           && all (== sides) (ModifiedRoll.sides modifier)
-          && all (== natural) (ModifiedRoll.natural modifier)
+          && all (\stated -> natural == Just stated) (ModifiedRoll.natural modifier)
    in filter (matches . snd) modifiers
 
 -- | CR 706.2b's SECOND step: which of the modifiers in force offer to increase
@@ -73,7 +78,7 @@ rerollOffers sides natural modifiers =
 adjustOffers :: Natural.Natural -> [(Maybe ObjectId, ModifiedRoll.ModifiedRoll)] -> [(Maybe ObjectId, ModifiedRoll.ModifiedRoll, Natural.Natural)]
 adjustOffers sides modifiers =
   let amountOf (stated, modifier) = case ModifiedRoll.modifier modifier of
-        RollModifier.Reroll -> Nothing
+        RollModifier.Reroll _ -> Nothing
         RollModifier.IncreaseOrDecrease amount ->
           if all (== sides) (ModifiedRoll.sides modifier) then Just (stated, modifier, amount) else Nothing
    in Maybe.mapMaybe amountOf modifiers

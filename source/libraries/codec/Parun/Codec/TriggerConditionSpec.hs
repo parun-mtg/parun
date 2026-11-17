@@ -44,7 +44,6 @@ import qualified Parun.Types.DamageRecipient as DamageRecipient
 import qualified Parun.Types.DamageTrigger as DamageTrigger
 import qualified Parun.Types.DealtDamage as DealtDamage
 import qualified Parun.Types.Designation as Designation
-import qualified Parun.Types.DieResult as DieResult
 import qualified Parun.Types.DiscardSubject as DiscardSubject
 import qualified Parun.Types.DiscardTrigger as DiscardTrigger
 import qualified Parun.Types.DiscardWay as DiscardWay
@@ -82,6 +81,8 @@ import qualified Parun.Types.PlaysLand as PlaysLand
 import qualified Parun.Types.PutIntoZoneTrigger as PutIntoZoneTrigger
 import qualified Parun.Types.Quantity as Quantity
 import qualified Parun.Types.RevealedThisWay as RevealedThisWay
+import qualified Parun.Types.RollKind as RollKind
+import qualified Parun.Types.RollTrigger as RollTrigger
 import qualified Parun.Types.RoomIndex as RoomIndex
 import qualified Parun.Types.SacrificeTrigger as SacrificeTrigger
 import qualified Parun.Types.SlotName as SlotName
@@ -728,7 +729,7 @@ spec s = Spec.describe s "Parun.Codec.TriggerCondition" $ do
     Common.assertCodec
       s
       TriggerCondition.codec
-      (TriggerCondition.PlayerRollsResult DieResult.MkDieResult {DieResult.roller = PlayerRelation.You, DieResult.result = 6})
+      (TriggerCondition.PlayerRollsResult (RollTrigger.MkRollTrigger PlayerRelation.You 6 RollKind.AnyRoll))
       " {\"type\":\"PlayerRollsResult\",\"value\":{\"roller\":\"You\",\"result\":6}} "
   -- CR 702.159a: nullary, the lights being the printing's.
   Spec.it s "Visit" $

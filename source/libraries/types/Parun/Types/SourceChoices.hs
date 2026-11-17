@@ -1,5 +1,6 @@
 module Parun.Types.SourceChoices where
 
+import qualified Data.List.NonEmpty as NonEmpty
 import qualified Data.Map.Strict as Map
 import qualified Data.Set as Set
 import qualified Numeric.Natural as Natural
@@ -17,8 +18,8 @@ data SourceChoices = MkSourceChoices
     names :: Map.Map PlayerId.PlayerId (Set.Set CardName.CardName),
     -- | CR 105.2: the chosen colours.
     colors :: Set.Set Color.Color,
-    -- | CR 205.3: the chosen subtype.
-    subtype :: Maybe Subtype.Subtype,
+    -- | CR 205.3: the chosen subtypes, in the order chosen.
+    subtype :: Maybe (NonEmpty.NonEmpty Subtype.Subtype),
     -- | CR 205.2a: the chosen card type.
     cardType :: Maybe CardType.CardType,
     -- | CR 607.2d: the last chosen number.

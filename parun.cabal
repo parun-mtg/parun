@@ -423,6 +423,10 @@ library codec
     Parun.Codec.CharacteristicPTSpec
     Parun.Codec.Check
     Parun.Codec.CheckSpec
+    Parun.Codec.ChoiceDistinct
+    Parun.Codec.ChoiceDistinctSpec
+    Parun.Codec.ChoiceOrdinal
+    Parun.Codec.ChoiceOrdinalSpec
     Parun.Codec.Choices
     Parun.Codec.ChoicesSpec
     Parun.Codec.ChooseBetween
@@ -1583,6 +1587,8 @@ library codec
     Parun.Codec.RequiredDefenderSpec
     Parun.Codec.RequirementArity
     Parun.Codec.RequirementAritySpec
+    Parun.Codec.RerollReach
+    Parun.Codec.RerollReachSpec
     Parun.Codec.ReselectAttack
     Parun.Codec.ReselectAttackSpec
     Parun.Codec.RestartSignal
@@ -1617,8 +1623,12 @@ library codec
     Parun.Codec.RiderClauseSpec
     Parun.Codec.RollDie
     Parun.Codec.RollDieSpec
+    Parun.Codec.RollKind
+    Parun.Codec.RollKindSpec
     Parun.Codec.RollModifier
     Parun.Codec.RollModifierSpec
+    Parun.Codec.RollTrigger
+    Parun.Codec.RollTriggerSpec
     Parun.Codec.RoomHalf
     Parun.Codec.RoomHalfSpec
     Parun.Codec.RoomIndex
@@ -2004,6 +2014,7 @@ library engine
     Parun.Engine.Card
     Parun.Engine.Cast
     Parun.Engine.Children
+    Parun.Engine.ChoiceOrdinal
     Parun.Engine.Claim
     Parun.Engine.Cloak
     Parun.Engine.Coin
@@ -2965,6 +2976,8 @@ library types
     Parun.Types.CharacteristicColors
     Parun.Types.CharacteristicPT
     Parun.Types.Check
+    Parun.Types.ChoiceDistinct
+    Parun.Types.ChoiceOrdinal
     Parun.Types.Choices
     Parun.Types.ChooseBetween
     Parun.Types.ChooseCardName
@@ -3639,6 +3652,7 @@ library types
     Parun.Types.RequiredBlockers
     Parun.Types.RequiredDefender
     Parun.Types.RequirementArity
+    Parun.Types.RerollReach
     Parun.Types.ReselectAttack
     Parun.Types.Response
     Parun.Types.RestartSignal
@@ -3658,7 +3672,9 @@ library types
     Parun.Types.RiderClause
     Parun.Types.RollAdjustment
     Parun.Types.RollDie
+    Parun.Types.RollKind
     Parun.Types.RollModifier
+    Parun.Types.RollTrigger
     Parun.Types.RoomHalf
     Parun.Types.RoomIndex
     Parun.Types.Rounding

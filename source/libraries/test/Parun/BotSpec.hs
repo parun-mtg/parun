@@ -511,7 +511,7 @@ spec s registry = Spec.describe s "Bot" $ do
   -- CR 615.7: a shield with 3 left over hits of 2 and 3 spends all 3, each
   -- hit taking at most its own damage.
   Spec.it s "allocates a shield every way that spends it" $ do
-    let hit n = DamageEvent.MkDamageEvent oid (Recipient.ToPlayer S.alice) n 0 False False False 0 Nothing Nothing mempty False mempty mempty mempty Nothing mempty Nothing DamageKind.Noncombat
+    let hit n = DamageEvent.MkDamageEvent oid (Recipient.ToPlayer S.alice) n 0 False False False 0 Nothing Nothing mempty False mempty mempty mempty mempty Nothing mempty Nothing DamageKind.Noncombat
     Spec.assertEqWith s "shares" (drawn (Prompt.AllocateDamage decider S.alice [hit 2, hit 3] 3)) (Set.fromList [[0, 3], [1, 2], [2, 1]])
 
   -- Each candidate the caller found legal, CR 118.13's payable routes included.
@@ -667,6 +667,7 @@ spec s registry = Spec.describe s "Bot" $ do
     Spec.assertEqWith s "assist amounts" (drawn (Prompt.ChooseAssistAmount decider S.alice oid 3)) (Set.fromList [0 .. 3])
     Spec.assertEqWith s "paid energy" (drawn (Prompt.ChoosePaidEnergy decider S.alice oid 3)) (Set.fromList [0 .. 3])
     Spec.assertEqWith s "chapters" (drawn (Prompt.ChooseReadAheadChapter decider S.alice oid 3)) (Set.fromList [1 .. 3])
+    Spec.assertEqWith s "dice rerolled" (drawn (Prompt.RerollDice decider S.alice (3 NonEmpty.:| [2]) Nothing)) (Set.fromList (fmap Set.fromList [[], [0], [1], [0, 1]]))
     Spec.assertEqWith s "die adjustments" (drawn (Prompt.AdjustDieRoll decider S.alice (4 NonEmpty.:| [-1]) 1 Nothing)) (Set.fromList (Nothing : [Just (index, adjustment) | index <- [0, 1], adjustment <- [RollAdjustment.Increase, RollAdjustment.Decrease]]))
 
 -- Every answer the bot gives the prompt over many seeds.

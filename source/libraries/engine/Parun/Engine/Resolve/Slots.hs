@@ -294,6 +294,7 @@ import qualified Parun.Types.Toughness as Toughness
 import qualified Parun.Types.TransformR as TransformR
 import qualified Parun.Types.TransformRewrite as TransformRewrite
 import qualified Parun.Types.TriggeredAbility as TriggeredAbility
+import qualified Parun.Types.TriggeredAbilitySource as TriggeredAbilitySource
 import qualified Parun.Types.TurnRegisters as TurnRegisters
 import qualified Parun.Types.TurnUpR as TurnUpR
 import qualified Parun.Types.TurnUpRewrite as TurnUpRewrite
@@ -1014,6 +1015,7 @@ effectPlayerRefs effect = case effect of
   Effect.Assimilate {} -> []
   Effect.TemptWithTheRing -> []
   Effect.OpenAttraction -> []
+  Effect.RollToVisit -> []
   Effect.Planeswalk {} -> []
   Effect.ChaosEnsues {} -> []
   Effect.Abandon -> []
@@ -1162,9 +1164,10 @@ slotsOf effect = joinTwo (joinTwo (joinSlots (fmap objectRefSlots (effectObjectR
   -- sweep of dealers is effectObjectRefs' half, and the slot is no read at
   -- all: the arm itself binds each dealer there, ModifyTarget's `each`.
   --
-  -- Not implemented: several dealers under an instruction that states or
-  -- tallies excess damage (CR 120.4a, 120.10), whose dealer stays one object
-  -- (#7272).
+  -- Unprinted: several dealers under an instruction that states or tallies
+  -- excess damage (CR 120.4a, 120.10). Its dealer stays one object, so
+  -- Parun.AbilitySlotLintSpec's "every slot that may take more than one target
+  -- is read where a set fits" refuses a plural dealer slot there.
   Effect.DealDamage (DealDamage.MkDealDamage parts dealer sweep excess _ _ excessTally) ->
     let amounts = joinSlots (fmap (quantitySlots . DamagePart.quantity) (Foldable.toList parts))
      in case dealer of
@@ -1234,6 +1237,7 @@ slotsOf effect = joinTwo (joinTwo (joinSlots (fmap objectRefSlots (effectObjectR
   Effect.Assimilate {} -> Map.empty
   Effect.TemptWithTheRing -> Map.empty
   Effect.OpenAttraction -> Map.empty
+  Effect.RollToVisit -> Map.empty
   Effect.Planeswalk {} -> Map.empty
   Effect.ChaosEnsues {} -> Map.empty
   Effect.Abandon -> Map.empty
@@ -2190,6 +2194,7 @@ ownSlotsAreExhaustive effect = case effect of
   Effect.Assimilate {} -> True
   Effect.TemptWithTheRing -> True
   Effect.OpenAttraction -> True
+  Effect.RollToVisit -> True
   Effect.Planeswalk {} -> True
   Effect.ChaosEnsues {} -> True
   Effect.Abandon -> True
@@ -2507,6 +2512,7 @@ hasRead wanted =
         Effect.Assimilate {} -> False
         Effect.TemptWithTheRing -> False
         Effect.OpenAttraction -> False
+        Effect.RollToVisit -> False
         Effect.Planeswalk {} -> False
         Effect.ChaosEnsues {} -> False
         Effect.Abandon -> False
@@ -2821,6 +2827,7 @@ boundSlots effect = case effect of
   Effect.Assimilate _ -> Set.empty
   Effect.TemptWithTheRing -> Set.empty
   Effect.OpenAttraction -> Set.empty
+  Effect.RollToVisit -> Set.empty
   Effect.Planeswalk {} -> Set.empty
   Effect.ChaosEnsues {} -> Set.empty
   Effect.Abandon -> Set.empty
@@ -3889,17 +3896,17 @@ conjureQuantities conjure =
 resolvingKind :: ObjectId -> GameState -> StackObjectKind.StackObjectKind
 resolvingKind resolving gs = Maybe.fromMaybe StackObjectKind.Spell (Game.stackObjectKind resolving gs)
 
--- | CR 607.2a's name for the ability resolving as `resolving`: an activated
--- ability's ActivatedAbility.name, which is how a linked reference names one of
--- two exiling abilities of an object, and how one acquired from an exiled card
--- names its pair (Binding.isLinkedExile). Nothing for every other kind of
+-- | CR 607.2a's name for the ability resolving as `resolving`: an activated or
+-- triggered ability's name, which is how a linked reference names one of two
+-- exiling abilities of an object, and how one another object lent names its
+-- pair (Binding.isLinkedExile, CR 607.5). Nothing for every other kind of
 -- object, none of which carries a name a reference could state.
 resolvingAbilityName :: ObjectId -> GameState -> Maybe AbilityName.AbilityName
 resolvingAbilityName resolving gs = case fmap Object.source (Game.lookupObject resolving gs) of
   Nothing -> Nothing
   Just src -> case src of
     Source.OfAbility a -> ActivatedAbility.name (ActivatedAbilitySource.ability a)
-    Source.OfTrigger _ -> Nothing
+    Source.OfTrigger t -> TriggeredAbility.name (TriggeredAbilitySource.ability t)
     Source.OfInherentTrigger _ -> Nothing
     Source.OfCard _ -> Nothing
     Source.OfSpellCopy _ -> Nothing

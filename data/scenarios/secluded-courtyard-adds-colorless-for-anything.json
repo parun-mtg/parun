@@ -146,7 +146,7 @@
                 "restriction": null,
                 "rider": null,
                 "sourceChoices": {
-                  "subtype": "Goblin"
+                  "subtype": ["Goblin"]
                 }
               }
             ]

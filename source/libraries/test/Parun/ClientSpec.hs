@@ -1134,7 +1134,7 @@ spec s registry = Spec.describe s "Client" $ do
         listedAfter heading screenLines = takeWhile (Text.isPrefixOf (Text.pack "  ")) (drop 1 (dropWhile (/= Text.pack heading) screenLines))
         arrange = Prompt.ArrangeLibraryArrivals alice S.alice LibraryPosition.Top [b, g]
         (reordered, shown) = asking facing ["2 1"] gs arrange
-        hit target n = DamageEvent.MkDamageEvent f target n 0 False False False 0 Nothing Nothing mempty False mempty mempty mempty Nothing mempty Nothing DamageKind.Noncombat
+        hit target n = DamageEvent.MkDamageEvent f target n 0 False False False 0 Nothing Nothing mempty False mempty mempty mempty mempty Nothing mempty Nothing DamageKind.Noncombat
         (_, damage) = asking facing [""] gs (Prompt.OrderDamage alice S.alice [hit (Recipient.ToPlayer S.bob) 2, hit (Recipient.ToCreature g) 3])
     Spec.assertEqWith s "cards listed, the first going on top" (listedAfter "Arrange library arrivals: type their numbers first to last, separated by spaces, or press Enter to keep this order; the first goes on top:" shown) [Text.pack "  1. Grizzly Bears", Text.pack "  2. Your Hill Giant 3/3"]
     Spec.assertEqWith s "the order typed" reordered (Right [1, 0])
@@ -1281,7 +1281,7 @@ spec s registry = Spec.describe s "Client" $ do
         time = CounterKind.Time
         kinds = Map.fromList [(plus, 2), (time, 1)] :: Map.Map (CounterKind.CounterKind Keyword.Keyword) Natural
         among = Prompt.ChooseCounterRemovalAmong alice S.alice f 2 (Map.fromList [(b, 1), (g, 2)])
-        hit amount = DamageEvent.MkDamageEvent f (Recipient.ToPlayer S.bob) amount 0 False False False 0 Nothing Nothing mempty False mempty mempty mempty Nothing mempty Nothing DamageKind.Noncombat
+        hit amount = DamageEvent.MkDamageEvent f (Recipient.ToPlayer S.bob) amount 0 False False False 0 Nothing Nothing mempty False mempty mempty mempty mempty Nothing mempty Nothing DamageKind.Noncombat
         allocate = Prompt.AllocateDamage alice S.alice [hit 2, hit 3] 4
         slot = SlotName.MkSlotName (Text.pack "target")
         announce = Prompt.AnnounceTargets alice S.alice f (Map.singleton slot (TargetCount.MkTargetCount 1 Nothing, Set.fromList [Recipient.ToPlayer S.bob, Recipient.ToCreature b]))
@@ -1420,6 +1420,7 @@ spec s registry = Spec.describe s "Client" $ do
         (multikicked, _) = asking facing ["7"] gs (Prompt.ChooseKicker alice S.alice f (Keyword.Multikicker (Cost.MkCost Nothing [])) Nothing Nothing)
         (adjusted, adjusting) = asking facing ["4"] gs (Prompt.AdjustDieRoll alice S.alice (4 NonEmpty.:| [-1]) 2 Nothing)
         (declined, single) = asking facing ["3"] gs (Prompt.AdjustDieRoll alice S.alice (6 NonEmpty.:| []) 1 Nothing)
+        (rerolled, rerolling) = asking facing ["1 2"] gs (Prompt.RerollDice alice S.alice (3 NonEmpty.:| [2]) Nothing)
     Spec.assertEqWith s "CR 702.132a an assist past the pool refused, then read" assisted (Right 2)
     Spec.assertEqWith s "with its bounds" (filter (Text.isPrefixOf (Text.pack "Type a number")) assist) [Text.pack "Type a number from 0 to 3."]
     Spec.assertEqWith s "CR 107.14 no energy" energy (Right 0)
@@ -1428,6 +1429,8 @@ spec s registry = Spec.describe s "Client" $ do
     Spec.assertEqWith s "CR 702.33c any number of times" multikicked (Right (KickerDecision.MkKickerDecision 7))
     Spec.assertEqWith s "CR 706.2b each die by its place, moved either way by the amount, then none" (upTo (Text.pack "Results: ") adjusting) (fmap Text.pack ["Results: 4, -1", "Amount: 2", "Adjust die roll:", "  1. Die 1: Increase 4 to 6", "  2. Die 1: Decrease 4 to 2", "  3. Die 2: Increase -1 to 1", "  4. Die 2: Decrease -1 to -3", "  5. None"])
     Spec.assertEqWith s "the second die decreased" adjusted (Right (Just (1, RollAdjustment.Decrease)))
+    Spec.assertEqWith s "CR 706.2b each die rerollable by its place and result" (upTo (Text.pack "Results: ") rerolling) (fmap Text.pack ["Results: 3, 2", "Reroll dice: choose any number, by number or range such as 1-3, separated by spaces, or press Enter for none:", "  1. Die 1 showing 3", "  2. Die 2 showing 2"])
+    Spec.assertEqWith s "both dice rerolled" rerolled (Right (Set.fromList [0, 1]))
     Spec.assertEqWith s "one die is not numbered" (upTo (Text.pack "Adjust die roll") single) (fmap Text.pack ["Adjust die roll:", "  1. Increase 6 to 7", "  2. Decrease 6 to 5", "  3. None"])
     Spec.assertEqWith s "declined" declined (Right Nothing)
 
@@ -1442,7 +1445,7 @@ spec s registry = Spec.describe s "Client" $ do
         upTo heading screenLines = takeWhile (\l -> not (any (`Text.isPrefixOf` l) [Text.pack "Type ", Text.pack "> "])) (dropWhile (not . Text.isPrefixOf heading) screenLines)
         tapped = ReplacementEntry.MkReplacementEntry f (ReplacementEffect.EntryR (EntryR.MkEntryR Filter.Type.IsSource (EntryRewrite.EntersTapState TapState.Tapped)))
         (picked, replacement) = asking facing ["1"] gs (Prompt.ChooseReplacement alice S.alice [tapped, ReplacementEntry.MkReplacementEntry g (ReplacementEffect.EntryR (EntryR.MkEntryR Filter.Type.IsSource EntryRewrite.Prepared))])
-        hit = DamageEvent.MkDamageEvent f (Recipient.ToPlayer S.bob) 2 0 False False False 0 Nothing Nothing mempty False mempty mempty mempty Nothing mempty Nothing DamageKind.Noncombat
+        hit = DamageEvent.MkDamageEvent f (Recipient.ToPlayer S.bob) 2 0 False False False 0 Nothing Nothing mempty False mempty mempty mempty mempty Nothing mempty Nothing DamageKind.Noncombat
         (event, delayed) = asking facing ["2"] gs (Prompt.ChooseDelayedTriggerEvent alice S.alice f (GameEvent.DamageDealt hit NonEmpty.:| [GameEvent.DamageDealt hit {DamageEvent.amount = 3}]))
         (modifier, modifiers) = asking facing ["2"] gs (Prompt.ChooseRollModifier alice S.alice (Just f NonEmpty.:| [Nothing]))
         (_, keepers) = asking facing ["1"] gs (Prompt.ChooseStickerKeeper alice S.alice (printing NonEmpty.:| [printing]))
