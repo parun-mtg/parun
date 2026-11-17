@@ -1,6 +1,6 @@
 -- | What crosses between Haskell and the page's script: patches out as JSON,
 -- an event's path in as dotted child indices. Pure, so tested natively; the
--- page's half is @source/web/parun.js@.
+-- page's half is @source/web/page.js@.
 module Parun.Web.Wire where
 
 import qualified Data.Char as Char

@@ -1,8 +1,10 @@
 #!/usr/bin/env bash
 # Builds the web client into a directory ready to serve (default dist-web/):
-# the wasm module, its JavaScript FFI glue, the WASI shim, the page and the
-# data directory it mounts. Runs in the wasm dev shell; serve the result with
-# any static server, e.g.
+# the page, the engine's Web Worker, the wasm module and its JavaScript FFI
+# glue, the WASI shim, and the data directory the engine mounts. Every file
+# but index.html is named by a hash of its contents, so a browser caches each
+# until it changes and only index.html needs fetching afresh. Runs in the wasm
+# dev shell; serve the result with any static server, e.g.
 #   nix develop .#wasm --command script/build-web.sh
 #   python3 -m http.server -d dist-web
 set -euo pipefail
@@ -10,13 +12,16 @@ out=${1:-dist-web}
 cabal=(wasm32-wasi-cabal --project-file=cabal.wasm.project --builddir=dist-wasm --flags=pedantic)
 "${cabal[@]}" build -v1 --enable-optimization exe:parun-web
 wasm=$("${cabal[@]}" list-bin -v0 --enable-optimization exe:parun-web)
+node --check source/web/page.js
+node --check source/web/engine.js
 rm -rf "$out"
 mkdir -p "$out"
 "$(wasm32-wasi-ghc --print-libdir)/post-link.mjs" -i "$wasm" -o "$out/ghc_wasm_jsffi.js"
 wasm-opt -Oz --strip-debug "$wasm" -o "$out/parun.wasm"
-node --check source/web/parun.js
-cp source/web/index.html source/web/parun.js "$out/"
-# The data directory the page mounts, reproducibly packed, with the cards as
+cp source/web/index.html source/web/page.js source/web/engine.js "$out/"
+cp -r "$BROWSER_WASI_SHIM/dist" "$out/browser_wasi_shim"
+chmod -R u+w "$out"
+# The data directory the engine mounts, reproducibly packed, with the cards as
 # one bundle (Parun.Registry.loadBundle) rather than a file each.
 staging=$(mktemp -d)
 trap 'rm -rf "$staging"' EXIT
@@ -28,6 +33,31 @@ done > "$staging/cards.bundle"
 tar --format=ustar --sort=name --owner=0 --group=0 --numeric-owner --mtime=@0 -cf - \
   -C "$staging" cards.bundle \
   -C "$PWD/data" decks formats legalities.json printings.json sticker-sheets | gzip -9n > "$out/data.tar.gz"
-cp -r "$BROWSER_WASI_SHIM/dist" "$out/browser_wasi_shim"
-chmod -R u+w "$out"
-ls -l "$out/parun.wasm" "$out/data.tar.gz"
+
+# Content addressing, leaves first: a file's hash covers the names it refers
+# to, so a change anywhere renames every file that leads to it.
+hash() { sha256sum "$1" | cut -c1-16; }
+# Renames name.ext to name-HASH.ext and rewrites "./name.ext" in each
+# referring file.
+address() {
+  local file=$1
+  shift
+  local stem=${file%.*} ext=${file##*.}
+  local named
+  named="$stem-$(hash "$out/$file").$ext"
+  mv "$out/$file" "$out/$named"
+  for referrer in "$@"; do
+    sed -i "s|\"\\./$file\"|\"./$named\"|g" "$out/$referrer"
+  done
+}
+# The shim's modules import each other by name, so its directory is renamed
+# whole, by a hash of every file in it.
+shim="browser_wasi_shim-$(cat "$out"/browser_wasi_shim/* | sha256sum | cut -c1-16)"
+mv "$out/browser_wasi_shim" "$out/$shim"
+sed -i "s|\"\\./browser_wasi_shim/|\"./$shim/|g" "$out/engine.js"
+address parun.wasm engine.js
+address data.tar.gz engine.js
+address ghc_wasm_jsffi.js engine.js
+address engine.js page.js
+address page.js index.html
+ls -l "$out"
