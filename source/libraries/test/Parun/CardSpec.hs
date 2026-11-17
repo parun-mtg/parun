@@ -4342,6 +4342,7 @@ entryRewriteFilters entryRewrite = case entryRewrite of
   EntryRewrite.Compleated _ -> []
   EntryRewrite.EntersTapState _ -> []
   EntryRewrite.Prepared -> []
+  EntryRewrite.EntersAttacking -> []
   EntryRewrite.OrTapped (EntryPrice.PayLife _) -> []
   -- The cap is a Quantity, reaching Filters the way withCountersFilters' do.
   EntryRewrite.PayAnyLife cap -> foldMap quantityFilters cap

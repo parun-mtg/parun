@@ -19,9 +19,11 @@ codec = Fields.object $ do
   object <- Fields.required "object" ObjectId.codec PendingEntryEffect.object
   controller <- Fields.required "controller" PlayerId.codec PendingEntryEffect.controller
   effects <- Fields.required "effects" (Common.seq (Effect.codec Card.codec (GrantedAbility.codec Card.codec))) PendingEntryEffect.effects
+  attacking <- Fields.defaulted "attacking" False Common.boolean PendingEntryEffect.attacking
   pure
     PendingEntryEffect.MkPendingEntryEffect
       { PendingEntryEffect.object = object,
         PendingEntryEffect.controller = controller,
-        PendingEntryEffect.effects = effects
+        PendingEntryEffect.effects = effects,
+        PendingEntryEffect.attacking = attacking
       }

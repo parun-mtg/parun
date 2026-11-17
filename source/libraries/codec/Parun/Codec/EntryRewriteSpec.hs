@@ -276,6 +276,12 @@ spec s = Spec.describe s "Parun.Codec.EntryRewrite" $ do
       (EntryRewrite.codec (GrantedAbility.codec Card.codec) (Effect.codec Card.codec (GrantedAbility.codec Card.codec)))
       EntryRewrite.Prepared
       " {\"type\":\"Prepared\"} "
+  Spec.it s "EntersAttacking (Kira Nerys, Firebrand)" $
+    Common.assertCodec
+      s
+      (EntryRewrite.codec (GrantedAbility.codec Card.codec) (Effect.codec Card.codec (GrantedAbility.codec Card.codec)))
+      EntryRewrite.EntersAttacking
+      " {\"type\":\"EntersAttacking\"} "
   -- CR 702.145b via CR 614.1d: the enters-transformed rewrite, payload-free
   -- because the rule fixes every half -- which face comes from the card's layout,
   -- and the condition from the game's designation.

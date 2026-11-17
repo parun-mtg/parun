@@ -75,6 +75,7 @@ import qualified Parun.Types.Object as Object
 import Parun.Types.ObjectId (ObjectId)
 import qualified Parun.Types.ObjectSnapshot as ObjectSnapshot
 import qualified Parun.Types.PastActivation as PastActivation
+import qualified Parun.Types.PendingEntryEffect as PendingEntryEffect
 import qualified Parun.Types.PendingSkipEffect as PendingSkipEffect
 import qualified Parun.Types.PhasedOut as PhasedOut
 import qualified Parun.Types.ProjectedCharacteristics as PC
@@ -214,6 +215,8 @@ objects pcs gs a b =
       -- CR 305.1's GameState.cardsPlayed is never cleared, so it keys every
       -- permanent a play made; its one reader (Quantity.PlayedBy) asks only
       -- WHO played the object, so it is compared rather than searched too.
+      -- The queued entries rowNames leaves unsearched, keyed by their object.
+      pendingAttacks oid = [(PendingEntryEffect.controller row, PendingEntryEffect.attacking row) | row <- Foldable.toList (StoredEffects.pendingEntryEffects (GameState.stored gs)), PendingEntryEffect.object row == oid, Seq.null (PendingEntryEffect.effects row)]
       sameSamples =
         sameSample (Snapshots.controlSample (GameState.snapshots gs))
           && sameSample (GameState.cardsPlayed gs)
@@ -230,6 +233,7 @@ objects pcs gs a b =
                && not (namedByAnother b gs)
                && not (namedByStored a gs)
                && not (namedByStored b gs)
+               && pendingAttacks a == pendingAttacks b
                && not (layeredBetween a b gs)
            )
 
@@ -426,7 +430,12 @@ rowNames oid gs kind row = case kind of
   StoredKind.PendingPreventionRider -> Mentions.preventionNames (searched oid) row
   StoredKind.PendingReplacementEffect -> Mentions.pendingDamageEffectNames (searched oid) row
   StoredKind.PendingSkipEffect -> Mentions.pendingDamageEffectNames (searched oid) (PendingSkipEffect.pending row)
-  StoredKind.PendingEntryEffect -> Mentions.pendingEntryEffectNames (searched oid) row
+  -- One that runs nothing names only its own entering object, so it is
+  -- compared in `objects` (pendingAttacks) rather than searched: twin tokens
+  -- entering attacking under Kira Nerys, Firebrand each hold one.
+  StoredKind.PendingEntryEffect
+    | Seq.null (PendingEntryEffect.effects row) -> Monoid.Any False
+    | otherwise -> Mentions.pendingEntryEffectNames (searched oid) row
 
 -- The question asked of a row that stores the environment its slots read --
 -- searched alongside the row's trees, so a slot read is answered there.

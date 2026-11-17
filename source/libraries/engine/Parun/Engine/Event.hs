@@ -4367,6 +4367,20 @@ apply settle batch applied batchPrevented candidate event =
             g {GameState.objects = Map.adjust (\o -> o {Object.designations = Set.insert Designation.Prepared (Object.designations o)}) oid (GameState.objects g)}
           Prepare.mintOnDesignated Designation.Prepared oid
         pure (Just event)
+      -- CR 614.1a / 508.4: "instead it enters tapped and attacking" (Kira
+      -- Nerys, Firebrand), the attacking half; the tapped half is a sibling
+      -- EntersTapState under InOrder. QUEUED for RunEffects' reason below:
+      -- Parun.Engine.Combat, which asks CR 508.4's choice and owns its guards,
+      -- sits above this module. Resolve.runEntryEffects drains it where
+      -- Create's attacking rider is applied, after the entry and before the
+      -- next instruction or the trigger scan. Its controller is read now, for
+      -- RunEffects' reason; the attacking player is Combat's question.
+      EntryRewrite.EntersAttacking -> do
+        Replacement.consume (ReplacementCandidate.identity candidate)
+        gs <- State.get
+        Monad.forM_ (Projection.controllerOf oid gs) $ \controller ->
+          State.modify' (queueEntryEffect PendingEntryEffect.MkPendingEntryEffect {PendingEntryEffect.object = oid, PendingEntryEffect.controller = controller, PendingEntryEffect.effects = Seq.empty, PendingEntryEffect.attacking = True})
+        pure (Just event)
       -- CR 614.1c: "As this land enters, you may [price]. If you don't, it enters
       -- tapped" (Razorgrass Field, Rustic Clachan). The arm above's write, with a
       -- price on avoiding it -- so declining here leaves exactly the board Zof
@@ -4539,19 +4553,7 @@ apply settle batch applied batchPrevented candidate event =
           -- picking a performer.
           Nothing -> pure (Just event)
           Just controller -> do
-            State.modify' $ \g ->
-              g
-                { GameState.stored =
-                    (GameState.stored g)
-                      { StoredEffects.pendingEntryEffects =
-                          StoredEffects.pendingEntryEffects (GameState.stored g)
-                            Seq.|> PendingEntryEffect.MkPendingEntryEffect
-                              { PendingEntryEffect.object = oid,
-                                PendingEntryEffect.controller = controller,
-                                PendingEntryEffect.effects = effects
-                              }
-                      }
-                }
+            State.modify' (queueEntryEffect PendingEntryEffect.MkPendingEntryEffect {PendingEntryEffect.object = oid, PendingEntryEffect.controller = controller, PendingEntryEffect.effects = effects, PendingEntryEffect.attacking = False})
             pure (Just event)
       -- CR 614.1c / 614.12: one ability's rewrites, each applied to what the
       -- one before left, inside this one application. CR 614.12's re-check
@@ -13268,3 +13270,10 @@ abilityTriggeredOf event = case event of
   GameEvent.TriggeredAbilityResolved _ -> Nothing
   GameEvent.TriggeredAbilityFinished _ -> Nothing
   GameEvent.CardArrived _ -> Nothing
+
+-- CR 614.1c: queue an as-enters rewrite's work for Resolve.runEntryEffects,
+-- which can run effects and put a creature into combat where this module
+-- cannot (StoredEffects.pendingEntryEffects).
+queueEntryEffect :: PendingEntryEffect.PendingEntryEffect -> GameState -> GameState
+queueEntryEffect pending g =
+  g {GameState.stored = (GameState.stored g) {StoredEffects.pendingEntryEffects = StoredEffects.pendingEntryEffects (GameState.stored g) Seq.|> pending}}

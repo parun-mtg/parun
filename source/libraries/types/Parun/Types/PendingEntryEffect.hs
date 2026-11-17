@@ -28,6 +28,10 @@ import qualified Parun.Types.PlayerId as PlayerId
 data PendingEntryEffect = MkPendingEntryEffect
   { object :: ObjectId.ObjectId,
     controller :: PlayerId.PlayerId,
-    effects :: Seq.Seq (Effect.Effect Card.Card (GrantedAbility.GrantedAbility Card.Card))
+    effects :: Seq.Seq (Effect.Effect Card.Card (GrantedAbility.GrantedAbility Card.Card)),
+    -- | CR 508.4: put the permanent into combat attacking, after the effects
+    -- (EntryRewrite.EntersAttacking); Parun.Engine.Combat sits above the module
+    -- applying the rewrite, as Resolve does.
+    attacking :: Bool
   }
   deriving (Eq, Ord, Show)
