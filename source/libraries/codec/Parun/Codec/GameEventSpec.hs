@@ -35,6 +35,7 @@ import qualified Parun.Types.BlockProducer as BlockProducer
 import qualified Parun.Types.BlocksDeclared as BlocksDeclared
 import qualified Parun.Types.CandidateId as CandidateId
 import qualified Parun.Types.CardName as CardName
+import qualified Parun.Types.CastOrigin as CastOrigin
 import qualified Parun.Types.ChoseSecretly as ChoseSecretly
 import qualified Parun.Types.ClassLevel as ClassLevel
 import qualified Parun.Types.ClassLevelChange as ClassLevelChange
@@ -619,8 +620,8 @@ spec s = Spec.describe s "Parun.Codec.GameEvent" $ do
     Common.assertCodec
       s
       GameEvent.codec
-      (GameEvent.LandPlayed (LandPlayed.MkLandPlayed (PlayerId.MkPlayerId 1) (ObjectId.MkObjectId 7) Zone.Exile))
-      " {\"type\":\"LandPlayed\",\"value\":{\"player\":1,\"land\":7,\"from\":\"Exile\"}} "
+      (GameEvent.LandPlayed (LandPlayed.MkLandPlayed (PlayerId.MkPlayerId 1) (ObjectId.MkObjectId 7) (CastOrigin.FromZone Zone.Exile)))
+      " {\"type\":\"LandPlayed\",\"value\":{\"player\":1,\"land\":7,\"from\":{\"type\":\"FromZone\",\"value\":\"Exile\"}}} "
   -- CR 701.62b. The cards the process put into the graveyard ride along, the
   -- "this way" a trigger on it reads back.
   Spec.it s "ManifestedDread" $

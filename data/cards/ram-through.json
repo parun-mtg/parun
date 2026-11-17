@@ -1,0 +1,206 @@
+{
+  "faces": [
+    {
+      "manaCost": [
+        {
+          "type": "Generic",
+          "value": 1
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "Green"
+          }
+        }
+      ],
+      "name": "Ram Through",
+      "oracleText": "Target creature you control deals damage equal to its power to target creature you don't control. If the creature you control has trample, excess damage is dealt to that creature's controller instead.",
+      "spell": {
+        "modes": [
+          {
+            "clauses": [
+              {
+                "condition": {
+                  "type": "Compares",
+                  "value": {
+                    "comparison": "Exactly",
+                    "measured": {
+                      "type": "Count",
+                      "value": {
+                        "aggregation": {
+                          "type": "Members"
+                        },
+                        "filter": {
+                          "type": "And",
+                          "value": [
+                            {
+                              "type": "IsBound",
+                              "value": "dealer"
+                            },
+                            {
+                              "type": "HasKeyword",
+                              "value": {
+                                "type": "Trample"
+                              }
+                            }
+                          ]
+                        },
+                        "scope": {
+                          "type": "InZone",
+                          "value": {
+                            "player": {
+                              "type": "Relative",
+                              "value": "AnyPlayer"
+                            },
+                            "zone": "Battlefield"
+                          }
+                        }
+                      }
+                    },
+                    "threshold": {
+                      "type": "Literal",
+                      "value": 0
+                    }
+                  }
+                },
+                "effects": [
+                  {
+                    "type": "DealDamage",
+                    "value": {
+                      "dealer": "dealer",
+                      "parts": [
+                        {
+                          "quantity": {
+                            "type": "AgainstSlot",
+                            "value": {
+                              "quantity": {
+                                "type": "Measure",
+                                "value": "Power"
+                              },
+                              "slot": "dealer"
+                            }
+                          },
+                          "ref": {
+                            "type": "InSlot",
+                            "value": "victim"
+                          }
+                        }
+                      ]
+                    }
+                  }
+                ]
+              },
+              {
+                "condition": {
+                  "type": "Compares",
+                  "value": {
+                    "comparison": "AtLeast",
+                    "measured": {
+                      "type": "Count",
+                      "value": {
+                        "aggregation": {
+                          "type": "Members"
+                        },
+                        "filter": {
+                          "type": "And",
+                          "value": [
+                            {
+                              "type": "IsBound",
+                              "value": "dealer"
+                            },
+                            {
+                              "type": "HasKeyword",
+                              "value": {
+                                "type": "Trample"
+                              }
+                            }
+                          ]
+                        },
+                        "scope": {
+                          "type": "InZone",
+                          "value": {
+                            "player": {
+                              "type": "Relative",
+                              "value": "AnyPlayer"
+                            },
+                            "zone": "Battlefield"
+                          }
+                        }
+                      }
+                    },
+                    "threshold": {
+                      "type": "Literal",
+                      "value": 1
+                    }
+                  }
+                },
+                "effects": [
+                  {
+                    "type": "DealDamage",
+                    "value": {
+                      "dealer": "dealer",
+                      "excess": "ToRecipientController",
+                      "parts": [
+                        {
+                          "quantity": {
+                            "type": "AgainstSlot",
+                            "value": {
+                              "quantity": {
+                                "type": "Measure",
+                                "value": "Power"
+                              },
+                              "slot": "dealer"
+                            }
+                          },
+                          "ref": {
+                            "type": "InSlot",
+                            "value": "victim"
+                          }
+                        }
+                      ]
+                    }
+                  }
+                ]
+              }
+            ],
+            "targetSlots": {
+              "dealer": {
+                "filter": {
+                  "type": "HeldBy",
+                  "value": {
+                    "holder": "Controller",
+                    "relation": "You"
+                  }
+                },
+                "pool": {
+                  "type": "Creatures"
+                }
+              },
+              "victim": {
+                "filter": {
+                  "type": "Not",
+                  "value": {
+                    "type": "HeldBy",
+                    "value": {
+                      "holder": "Controller",
+                      "relation": "You"
+                    }
+                  }
+                },
+                "pool": {
+                  "type": "Creatures"
+                }
+              }
+            }
+          }
+        ]
+      },
+      "typeLine": {
+        "types": [
+          "Instant"
+        ]
+      }
+    }
+  ]
+}

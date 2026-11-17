@@ -68,6 +68,11 @@ data CastFromZone = MkCastFromZone
     -- | CR 205.1b / 400.7a: the creature types a spell cast under it has in
     -- addition to its other types, on the stack and as the permanent it
     -- becomes (The Tomb of Aclazotz's Vampire). Empty where it states none.
-    creatureTypes :: Set.Set Subtype.Subtype
+    creatureTypes :: Set.Set Subtype.Subtype,
+    -- | CR 400.11: whether it also opens the cards `from`'s player owns outside
+    -- the game (The Holodeck). A Bool beside `from`, Parun.Types.Search's
+    -- `outsideTheGame` being the precedent: outside the game is no zone, and
+    -- one budget covers both.
+    outsideTheGame :: Bool
   }
   deriving (Eq, Ord, Show)

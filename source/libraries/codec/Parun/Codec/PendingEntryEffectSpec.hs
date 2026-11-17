@@ -21,8 +21,20 @@ spec s = Spec.describe s "Parun.Codec.PendingEntryEffect" $ do
       PendingEntryEffect.MkPendingEntryEffect
         { PendingEntryEffect.object = ObjectId.MkObjectId 3,
           PendingEntryEffect.controller = PlayerId.MkPlayerId 1,
-          PendingEntryEffect.effects = Seq.fromList [Effect.Proliferate Nothing]
+          PendingEntryEffect.effects = Seq.fromList [Effect.Proliferate Nothing],
+          PendingEntryEffect.attacking = False
         }
       " {\"object\":3,\"controller\":1,\"effects\":[{\"type\":\"Proliferate\"}]} "
+  Spec.it s "a queued entry into combat (CR 508.4)" $
+    Common.assertCodec
+      s
+      PendingEntryEffect.codec
+      PendingEntryEffect.MkPendingEntryEffect
+        { PendingEntryEffect.object = ObjectId.MkObjectId 3,
+          PendingEntryEffect.controller = PlayerId.MkPlayerId 1,
+          PendingEntryEffect.effects = Seq.empty,
+          PendingEntryEffect.attacking = True
+        }
+      " {\"object\":3,\"controller\":1,\"effects\":[],\"attacking\":true} "
   Spec.it s "has a schema" $
     Common.assertHasSchema s PendingEntryEffect.codec

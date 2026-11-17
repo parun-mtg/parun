@@ -1,0 +1,122 @@
+{
+  "faces": [
+    {
+      "manaCost": [
+        {
+          "type": "Generic",
+          "value": 4
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "Green"
+          }
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "Green"
+          }
+        }
+      ],
+      "name": "Rishkar's Expertise",
+      "oracleText": "Draw cards equal to the greatest power among creatures you control.\nYou may cast a spell with mana value 5 or less from your hand without paying its mana cost.",
+      "spell": {
+        "modes": [
+          {
+            "clauses": [
+              {
+                "effects": [
+                  {
+                    "type": "Draw",
+                    "value": {
+                      "player": {
+                        "type": "Relative",
+                        "value": "You"
+                      },
+                      "quantity": {
+                        "type": "Count",
+                        "value": {
+                          "aggregation": {
+                            "type": "Greatest",
+                            "value": {
+                              "type": "Measure",
+                              "value": "Power"
+                            }
+                          },
+                          "filter": {
+                            "type": "And",
+                            "value": [
+                              {
+                                "type": "HasCardType",
+                                "value": "Creature"
+                              },
+                              {
+                                "type": "HeldBy",
+                                "value": {
+                                  "holder": "Controller",
+                                  "relation": "You"
+                                }
+                              }
+                            ]
+                          },
+                          "scope": {
+                            "type": "InZone",
+                            "value": {
+                              "player": {
+                                "type": "Relative",
+                                "value": "AnyPlayer"
+                              },
+                              "zone": "Battlefield"
+                            }
+                          }
+                        }
+                      }
+                    }
+                  },
+                  {
+                    "type": "OfferCast",
+                    "value": {
+                      "offer": {
+                        "withoutPayingManaCost": true
+                      },
+                      "ref": {
+                        "type": "EachCardInHand",
+                        "value": {
+                          "filter": {
+                            "type": "Measures",
+                            "value": {
+                              "comparison": "AtMost",
+                              "measure": "ManaValue",
+                              "operand": {
+                                "type": "Literal",
+                                "value": 5
+                              }
+                            }
+                          },
+                          "hands": {
+                            "type": "Scoped",
+                            "value": {
+                              "type": "You"
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "typeLine": {
+        "types": [
+          "Sorcery"
+        ]
+      }
+    }
+  ]
+}

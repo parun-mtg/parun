@@ -2113,17 +2113,77 @@ holdFound pid card = do
   let printed = case card of
         OutsideCard.InPool printingId -> Just printingId
         OutsideCard.InAnotherGame outerId -> OutsideObject.printing <$> Map.lookup outerId (GameState.outsideObjects gs)
-  Monad.forM printed $ \printingId -> do
-    let (oid, gs1) = Game.freshObjectId gs
-        (ts, gs2) = Game.freshTimestamp gs1
-        obj = Object.new pid (Source.OfCard printingId) Zone.Graveyard ts
-    State.put
-      gs2
-        { GameState.objects = Map.insert oid obj (GameState.objects gs2),
-          GameState.outsideCopies = Set.insert oid (GameState.outsideCopies gs2),
-          GameState.outsideFinds = Map.insert oid card (GameState.outsideFinds gs2)
-        }
-    pure oid
+  Monad.forM printed $ \printingId -> State.state (standIn pid printingId card)
+
+-- `holdFound`'s object for one card outside the game, of this printing: in
+-- `objects`, GameState.outsideCopies and GameState.outsideFinds, in no zone's
+-- membership, Object.zone holding `mintOutside`'s placeholder.
+standIn :: PlayerId -> PrintingId.PrintingId -> OutsideCard.OutsideCard -> GameState.GameState -> (ObjectId, GameState.GameState)
+standIn pid printingId card gs =
+  let (oid, gs1) = Game.freshObjectId gs
+      (ts, gs2) = Game.freshTimestamp gs1
+      obj = Object.new pid (Source.OfCard printingId) Zone.Graveyard ts
+   in ( oid,
+        gs2
+          { GameState.objects = Map.insert oid obj (GameState.objects gs2),
+            GameState.outsideCopies = Set.insert oid (GameState.outsideCopies gs2),
+            GameState.outsideFinds = Map.insert oid card (GameState.outsideFinds gs2)
+          }
+      )
+
+-- CR 400.11 / 601.3: as `pid` is asked for a priority action, one `standIn` for
+-- each printing in their sideboard pool, where a CastFrom permission opens
+-- their cards outside the game (The Holodeck), so the play and cast roads
+-- offer them as objects; the copies of one printing are indistinguishable, so
+-- one stands for all. Any stand-in left from before is discarded first.
+-- `eligible` admits the cards, so a Commander game offers none (CR 903.11).
+--
+-- Not implemented: a subgame's main-game cards (CR 730.4), which `eligible`
+-- also answers, are not stood in for (#8449).
+offerOutside :: PlayerId -> GameState.GameState -> GameState.GameState
+offerOutside pid gs0 =
+  let gs = discardOutsideFinds gs0
+   in case PlayerEffect.outsideGrants pid gs of
+        [] -> gs
+        source : _ ->
+          let pool = [(printingId, card) | card@(OutsideCard.InPool printingId) <- eligible (Filter.Type.And []) source pid gs]
+           in Foldable.foldl' (\g (printingId, card) -> snd (standIn pid printingId card g)) gs pool
+
+-- CR 400.11: `discardOutsideFinds`, sparing the stand-in a chosen priority
+-- action names.
+keepOutsideFind :: Maybe ObjectId -> GameState.GameState -> GameState.GameState
+keepOutsideFind kept gs = Foldable.foldl' (flip forgetFound) gs (filter ((/= kept) . Just) (Map.keys (GameState.outsideFinds gs)))
+
+-- CR 305.1 / 400.11b: play the land a stand-in names (`offerOutside`), its card
+-- brought in onto the battlefield under `pid` with the face `shown` up (CR
+-- 712.9), spent from the pool. Entering, `conjureOntoBattlefield`'s road: no
+-- zone was left. A CR 614.6 redirect places it where it says, and CR 614.1a's
+-- "instead" of an unpaid entry puts it into its owner's graveyard; either way it
+-- was played. Answers the land as it arrived, empty where it never came in.
+playFromOutside :: Game () -> PlayerId -> ObjectId -> Maybe CardName.CardName -> Game (Seq.Seq ObjectId)
+playFromOutside settle pid oid shown = do
+  gs <- State.get
+  case (Map.lookup oid (GameState.outsideFinds gs), Game.lookupObject oid gs) of
+    (Just (OutsideCard.InPool printingId), Just obj) -> do
+      State.modify' (forgetFound oid)
+      let owner = Object.owner obj
+          start = Bookkeeping.nextTimestamp (GameState.bookkeeping gs)
+      land <- State.state (mintCard owner (Just pid) printingId Zone.Battlefield LibraryPosition.defaultValue TapState.Untapped)
+      State.modify' (\g -> g {GameState.objects = Map.adjust (\o -> o {Object.face = shown}) land (GameState.objects g)})
+      refusal <- runEntry settle (Just Zone.Battlefield) Nothing Set.empty land
+      case refusal of
+        Nothing -> do
+          State.modify' (spendFromPool owner printingId)
+          settleMinted start [land]
+          pure (Seq.singleton land)
+        Just EntryRefusal.Unpaid -> do
+          State.modify' (spendFromPool owner printingId)
+          placeDiverted land Zone.Graveyard LibraryPosition.defaultValue
+          pure (Seq.singleton land)
+        Just diverted
+          | isDiverted diverted -> Seq.singleton land <$ State.modify' (spendFromPool owner printingId)
+          | otherwise -> Seq.empty <$ unmake land
+    _ -> pure Seq.empty
 
 -- CR 400.11b: a move of an object `holdFound` stands for brings its card in at
 -- the zone and end the move names, through `bringChosen`, the road every card
@@ -4367,6 +4427,20 @@ apply settle batch applied batchPrevented candidate event =
             g {GameState.objects = Map.adjust (\o -> o {Object.designations = Set.insert Designation.Prepared (Object.designations o)}) oid (GameState.objects g)}
           Prepare.mintOnDesignated Designation.Prepared oid
         pure (Just event)
+      -- CR 614.1a / 508.4: "instead it enters tapped and attacking" (Kira
+      -- Nerys, Firebrand), the attacking half; the tapped half is a sibling
+      -- EntersTapState under InOrder. QUEUED for RunEffects' reason below:
+      -- Parun.Engine.Combat, which asks CR 508.4's choice and owns its guards,
+      -- sits above this module. Resolve.runEntryEffects drains it where
+      -- Create's attacking rider is applied, after the entry and before the
+      -- next instruction or the trigger scan. Its controller is read now, for
+      -- RunEffects' reason; the attacking player is Combat's question.
+      EntryRewrite.EntersAttacking -> do
+        Replacement.consume (ReplacementCandidate.identity candidate)
+        gs <- State.get
+        Monad.forM_ (Projection.controllerOf oid gs) $ \controller ->
+          State.modify' (queueEntryEffect PendingEntryEffect.MkPendingEntryEffect {PendingEntryEffect.object = oid, PendingEntryEffect.controller = controller, PendingEntryEffect.effects = Seq.empty, PendingEntryEffect.attacking = True})
+        pure (Just event)
       -- CR 614.1c: "As this land enters, you may [price]. If you don't, it enters
       -- tapped" (Razorgrass Field, Rustic Clachan). The arm above's write, with a
       -- price on avoiding it -- so declining here leaves exactly the board Zof
@@ -4539,19 +4613,7 @@ apply settle batch applied batchPrevented candidate event =
           -- picking a performer.
           Nothing -> pure (Just event)
           Just controller -> do
-            State.modify' $ \g ->
-              g
-                { GameState.stored =
-                    (GameState.stored g)
-                      { StoredEffects.pendingEntryEffects =
-                          StoredEffects.pendingEntryEffects (GameState.stored g)
-                            Seq.|> PendingEntryEffect.MkPendingEntryEffect
-                              { PendingEntryEffect.object = oid,
-                                PendingEntryEffect.controller = controller,
-                                PendingEntryEffect.effects = effects
-                              }
-                      }
-                }
+            State.modify' (queueEntryEffect PendingEntryEffect.MkPendingEntryEffect {PendingEntryEffect.object = oid, PendingEntryEffect.controller = controller, PendingEntryEffect.effects = effects, PendingEntryEffect.attacking = False})
             pure (Just event)
       -- CR 614.1c / 614.12: one ability's rewrites, each applied to what the
       -- one before left, inside this one application. CR 614.12's re-check
@@ -4893,9 +4955,16 @@ apply settle batch applied batchPrevented candidate event =
       -- CR 614.1a / 701.69a: Pyramids' "remove all damage marked on it
       -- instead", and nothing else -- no tap and no removal from combat, which
       -- are regeneration's (CR 701.19a). `oid` is the printed subject the row's
-      -- pattern matched. A resolution's Uses.Once row, spent as regeneration's is.
-      DestructionRewrite.Heal -> do
+      -- pattern matched. A resolution's Uses.Once row, spent as regeneration's is;
+      -- a permanent's static row (Dr. McCoy) is not spent at all.
+      --
+      -- Dr. McCoy's "remove all +1/+1 counters from it" comes first, in printed
+      -- order; with none of the kind on it, nothing is removed.
+      DestructionRewrite.Heal kind -> do
         Replacement.consume (ReplacementCandidate.identity candidate)
+        Monad.forM_ kind $ \k -> do
+          held <- State.gets (maybe 0 (Map.findWithDefault 0 k . Object.counters) . Game.lookupObject oid)
+          removeCounters oid k held
         State.modify' (\gs -> gs {GameState.objects = Map.adjust (\obj -> obj {Object.damage = 0}) oid (GameState.objects gs)})
         pure Nothing
     -- Unreachable: `applies` admits DestructionR only against WouldBeDestroyed.
@@ -6279,7 +6348,15 @@ becomeCopyAs batch candidate asCopy oid = do
         State.modify' (\g -> g {GameState.stored = (GameState.stored g) {StoredEffects.delayedTriggers = Seq.filter (not . linkedEarlier) (StoredEffects.delayedTriggers (GameState.stored g))}})
         Foldable.for_ (Replacement.linkedTrigger (AsCopy.whenYouDo asCopy)) $ \linked ->
           State.modify' (\g -> armDelayed linked (Projection.delayedSnapshotOf oid g) oid controller (Map.singleton Binding.copiedObject (Binding.toObject src2)) (Just TurnWindow.AnyTurn) Nothing g)
-      pure (fmap (\src2 -> (src2, Maybe.mapMaybe CopyClause.counters applying)) chosen)
+      -- CR 707.9e / 122.1: Dominion Saboteur's copied counters, read off the
+      -- copied permanent as the copy is made, ride the printed rows' funnel
+      -- and are taken back with them (docs/decisions.md, "Whether Dominion
+      -- Saboteur's copied counters are a CR 707.9e exception").
+      gs1 <- State.get
+      let countersFor src2 clause =
+            Maybe.maybeToList (CopyClause.counters clause)
+              <> [WithCounters.MkWithCounters (fmap (Quantity.Type.Literal . toInteger) copied) | CopyClause.copiedCounters clause, let copied = Projection.countersOf src2 gs1, not (Map.null copied)]
+      pure (fmap (\src2 -> (src2, concatMap (countersFor src2) applying)) chosen)
 
 -- CR 707.2 / 202.3b / 202.3c: the copiable values a copy takes off the object it
 -- copies. Projection.copiableCharacteristics answers all but one of them; the
@@ -8049,10 +8126,16 @@ castFromOutside caster oid requestedDest shown facing = do
                     Object.face = if arrived then shown else Nothing,
                     Object.facing = if arrived then facing else Facing.FaceUp
                   }
+          -- CR 400.11b: a stand-in's card (`offerOutside`) is brought in, so
+          -- the pool spends it.
+          let spend g = case Map.lookup oid (GameState.outsideFinds g) of
+                Just (OutsideCard.InPool printingId) -> spendFromPool (Object.owner obj) printingId g
+                _ -> g
           State.modify' $ \g ->
-            g
+            (spend g)
               { GameState.objects = Map.delete oid (GameState.objects g),
-                GameState.outsideCopies = Set.delete oid (GameState.outsideCopies g)
+                GameState.outsideCopies = Set.delete oid (GameState.outsideCopies g),
+                GameState.outsideFinds = Map.delete oid (GameState.outsideFinds g)
               }
           fmap Seq.singleton (placeObject (Object.owner obj) mkObj dest LibraryPosition.defaultValue)
 
@@ -13268,3 +13351,10 @@ abilityTriggeredOf event = case event of
   GameEvent.TriggeredAbilityResolved _ -> Nothing
   GameEvent.TriggeredAbilityFinished _ -> Nothing
   GameEvent.CardArrived _ -> Nothing
+
+-- CR 614.1c: queue an as-enters rewrite's work for Resolve.runEntryEffects,
+-- which can run effects and put a creature into combat where this module
+-- cannot (StoredEffects.pendingEntryEffects).
+queueEntryEffect :: PendingEntryEffect.PendingEntryEffect -> GameState -> GameState
+queueEntryEffect pending g =
+  g {GameState.stored = (GameState.stored g) {StoredEffects.pendingEntryEffects = StoredEffects.pendingEntryEffects (GameState.stored g) Seq.|> pending}}

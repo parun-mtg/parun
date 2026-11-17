@@ -1,0 +1,93 @@
+{
+  "faces": [
+    {
+      "manaCost": [
+        {
+          "type": "Generic",
+          "value": 6
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "Black"
+          }
+        }
+      ],
+      "name": "Necrotic Hex",
+      "oracleText": "Each player sacrifices six creatures of their choice. You create six tapped 2/2 black Zombie creature tokens.",
+      "spell": {
+        "modes": [
+          {
+            "clauses": [
+              {
+                "effects": [
+                  {
+                    "type": "PlayerSacrifices",
+                    "value": {
+                      "filter": {
+                        "type": "HasCardType",
+                        "value": "Creature"
+                      },
+                      "players": {
+                        "type": "Relative",
+                        "value": "AnyPlayer"
+                      },
+                      "quantity": {
+                        "type": "Literal",
+                        "value": 6
+                      }
+                    }
+                  },
+                  {
+                    "type": "Create",
+                    "value": {
+                      "card": {
+                        "faces": [
+                          {
+                            "colorIndicator": [
+                              "Black"
+                            ],
+                            "name": "Zombie Token",
+                            "power": {
+                              "type": "Literal",
+                              "value": 2
+                            },
+                            "toughness": {
+                              "type": "Literal",
+                              "value": 2
+                            },
+                            "typeLine": {
+                              "subtypes": [
+                                "Zombie"
+                              ],
+                              "types": [
+                                "Creature"
+                              ]
+                            }
+                          }
+                        ]
+                      },
+                      "quantity": {
+                        "type": "Literal",
+                        "value": 6
+                      },
+                      "riders": {
+                        "tapped": "Tapped"
+                      }
+                    }
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "typeLine": {
+        "types": [
+          "Sorcery"
+        ]
+      }
+    }
+  ]
+}

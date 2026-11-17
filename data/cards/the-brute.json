@@ -51,7 +51,9 @@
                                       "type": "IsBound",
                                       "value": "regenerated"
                                     },
-                                    "rewrite": "Regenerate"
+                                    "rewrite": {
+                                      "type": "Regenerate"
+                                    }
                                   }
                                 },
                                 "origin": "Other",

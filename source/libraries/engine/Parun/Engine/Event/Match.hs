@@ -66,6 +66,7 @@ import qualified Parun.Types.BlockRole as BlockRole
 import qualified Parun.Types.BlockTrigger as BlockTrigger
 import qualified Parun.Types.BlocksDeclared as BlocksDeclared
 import qualified Parun.Types.CardType as CardType
+import qualified Parun.Types.CastOrigin as CastOrigin
 import qualified Parun.Types.CastWindow as CastWindow
 import qualified Parun.Types.Cause as Cause
 import qualified Parun.Types.CausedBy as CausedBy
@@ -997,6 +998,16 @@ bearerTriggers gs you bearer ability group looksBack = maybe True (not . PlayerE
 additionalAttackTriggers :: GameState -> PlayerId -> ObjectId -> EventGroup.EventGroup -> Bool -> Set.Set ObjectId -> Natural
 additionalAttackTriggers gs you bearer group looksBack causers = case bearerBoard gs bearer group looksBack of
   Just board | not (Set.null causers) -> PlayerEffect.additionalMoveTriggers TriggeringMove.Attacking you (Set.toList causers) (bearer, board) board (gameAfter group gs)
+  _ -> 0
+
+-- CR 603.2d / 119.9: how many additional times an ability of `you`'s that
+-- `event` caused `bearer` to trigger triggers, for an event of `you` gaining
+-- life (Dr. Beverly Crusher), one per effect admitting it; none for any other
+-- event, another player's gain included. The bearer and the effects are read
+-- off `additionalTriggers`' board.
+additionalLifeGainTriggers :: GameState -> PlayerId -> ObjectId -> EventGroup.EventGroup -> Bool -> GameEvent -> Natural
+additionalLifeGainTriggers gs you bearer group looksBack event = case (event, bearerBoard gs bearer group looksBack) of
+  (GameEvent.LifeGained change, Just board) | LifeChange.player change == you -> PlayerEffect.additionalMoveTriggers TriggeringMove.GainingLife you [] (bearer, board) board board
   _ -> 0
 
 -- The board `bearer`'s ability on the event of `group` reads, while the bearer
@@ -2369,7 +2380,7 @@ armMatches bindings frozen board atEvent beforeEvent groupEvents gs bearer you c
   TriggerCondition.PlayerPlaysLand p -> case event of
     GameEvent.LandPlayed played ->
       PlayerRelation.holds (Game.teams gs) (PlaysLand.player p) you (LandPlayed.player played)
-        && all (== LandPlayed.from played) (PlaysLand.from p)
+        && all ((== LandPlayed.from played) . CastOrigin.FromZone) (PlaysLand.from p)
         -- The land as it arrived (CR 400.7i), read the way a Matching Enters
         -- reads an entrant, so Fires of Mount Doom's Filter.IsBound names the
         -- permanent Cast.playLand's follow moved the binding onto.

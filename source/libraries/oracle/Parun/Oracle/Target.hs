@@ -247,7 +247,7 @@ possessive word
 counting :: Context -> Count.Count Quantity.Quantity -> [(Text.Text, Text.Text, [SlotName.SlotName])]
 counting context c = case (Count.aggregation c, Count.scope c) of
   (Aggregation.Members, Scope.InZone (InZone.MkInZone zone whose)) -> (<> kinds zone whose) $ do
-    p <- Filter.phrase (Filter.Type.And rest) (keyword context)
+    p <- Filter.counted <$> Filter.phrase (Filter.Type.And rest) (keyword context)
     (placed, fallback, ms) <- case (zone, whose, controllers) of
       (Zone.Battlefield, PlayerRef.Relative PlayerRelation.AnyPlayer, []) ->
         let nowhere = null (Filter.qualifiers p) && not (any (`elem` [Filter.Type.IsAttacking Nothing, Filter.Type.IsBlocking]) rest)

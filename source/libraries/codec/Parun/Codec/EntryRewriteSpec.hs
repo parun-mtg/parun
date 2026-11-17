@@ -61,7 +61,7 @@ spec s = Spec.describe s "Parun.Codec.EntryRewrite" $ do
     Common.assertCodec
       s
       (EntryRewrite.codec (GrantedAbility.codec Card.codec) (Effect.codec Card.codec (GrantedAbility.codec Card.codec)))
-      (EntryRewrite.AsCopy (AsCopy.MkAsCopy (Filter.HasCardType CardType.Creature) Nothing [CopyClause.MkCopyClause Nothing [CopyException.SetPowerToughness (SetPowerToughness.MkSetPowerToughness 7 7)] Nothing] False Seq.empty (CopyDomain.InZone Zone.Battlefield) Nothing CopyRecipient.ThisObject True))
+      (EntryRewrite.AsCopy (AsCopy.MkAsCopy (Filter.HasCardType CardType.Creature) Nothing [CopyClause.MkCopyClause Nothing [CopyException.SetPowerToughness (SetPowerToughness.MkSetPowerToughness 7 7)] Nothing False] False Seq.empty (CopyDomain.InZone Zone.Battlefield) Nothing CopyRecipient.ThisObject True))
       " {\"type\":\"AsCopy\",\"value\":{\"eligible\":{\"type\":\"HasCardType\",\"value\":\"Creature\"},\"clauses\":[{\"exceptions\":[{\"type\":\"SetPowerToughness\",\"value\":{\"power\":7,\"toughness\":7}}]}]}} "
   -- The narrowed set the widening exists for (#1512): Copy Enchantment's "any
   -- enchantment", where Clone's is "any creature".
@@ -276,6 +276,12 @@ spec s = Spec.describe s "Parun.Codec.EntryRewrite" $ do
       (EntryRewrite.codec (GrantedAbility.codec Card.codec) (Effect.codec Card.codec (GrantedAbility.codec Card.codec)))
       EntryRewrite.Prepared
       " {\"type\":\"Prepared\"} "
+  Spec.it s "EntersAttacking (Kira Nerys, Firebrand)" $
+    Common.assertCodec
+      s
+      (EntryRewrite.codec (GrantedAbility.codec Card.codec) (Effect.codec Card.codec (GrantedAbility.codec Card.codec)))
+      EntryRewrite.EntersAttacking
+      " {\"type\":\"EntersAttacking\"} "
   -- CR 702.145b via CR 614.1d: the enters-transformed rewrite, payload-free
   -- because the rule fixes every half -- which face comes from the card's layout,
   -- and the condition from the game's designation.

@@ -1,5 +1,8 @@
 module Parun.Types.DestructionRewrite where
 
+import qualified Parun.Types.CounterKind as CounterKind
+import qualified Parun.Types.Keyword as Keyword
+
 -- | CR 614.8 / 701.19: how a replacement rewrites a would-be-destroyed event.
 -- Under every arm the destruction itself does not happen, so nothing downstream
 -- of it (a put-into-graveyard, and therefore Rest in Peace) ever runs.
@@ -43,7 +46,8 @@ data DestructionRewrite
     -- either, so Parun.Engine.Replacement.admits refuses it neither cause nor an
     -- unregeneratable destruction.
     UmbraArmor
-  | -- | CR 614.1a / 701.69a: "remove all damage marked on it instead" (Pyramids).
+  | -- | CR 614.1a / 701.69a: "remove all damage marked on it instead" (Pyramids),
+    -- first removing every counter of the kind given (Dr. McCoy, Surly Surgeon).
     -- Not a regeneration, so CR 701.19c does not bar it.
-    Heal
-  deriving (Bounded, Enum, Eq, Ord, Show)
+    Heal (Maybe (CounterKind.CounterKind Keyword.Keyword))
+  deriving (Eq, Ord, Show)

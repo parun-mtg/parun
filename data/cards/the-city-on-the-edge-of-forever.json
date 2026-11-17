@@ -1,0 +1,272 @@
+{
+  "faces": [
+    {
+      "manaCost": [
+        {
+          "type": "Generic",
+          "value": 3
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "White"
+          }
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "Black"
+          }
+        }
+      ],
+      "name": "The City on the Edge of Forever",
+      "oracleText": "(As this Saga enters and after your draw step, add a lore counter. Sacrifice after III.)\nI — All artifacts and creatures phase out. Create a 0/1 white Human creature token with \"Permanents can't phase in.\" (Treat phased-out permanents and anything attached to them as though they don't exist.)\nII — You draw two cards and each player loses 2 life.\nIII — Sacrifice a creature token. If you do, you gain 5 life.",
+      "triggeredAbilities": [
+        {
+          "condition": {
+            "type": "CountersChange",
+            "value": {
+              "kind": {
+                "type": "OfKind",
+                "value": {
+                  "type": "Lore"
+                }
+              },
+              "motion": {
+                "type": "Put",
+                "value": "AnyPlayer"
+              },
+              "threshold": 1
+            }
+          },
+          "modal": {
+            "modes": [
+              {
+                "clauses": [
+                  {
+                    "effects": [
+                      {
+                        "type": "PhaseOut",
+                        "value": {
+                          "ref": {
+                            "type": "EachMatching",
+                            "value": {
+                              "type": "Or",
+                              "value": [
+                                {
+                                  "type": "HasCardType",
+                                  "value": "Artifact"
+                                },
+                                {
+                                  "type": "HasCardType",
+                                  "value": "Creature"
+                                }
+                              ]
+                            }
+                          }
+                        }
+                      },
+                      {
+                        "type": "Create",
+                        "value": {
+                          "card": {
+                            "faces": [
+                              {
+                                "colorIndicator": [
+                                  "White"
+                                ],
+                                "name": "Human Token",
+                                "objectRestrictions": [
+                                  {
+                                    "action": {
+                                      "type": "PhaseIn"
+                                    },
+                                    "affected": {
+                                      "type": "MatchingAnywhere",
+                                      "value": {
+                                        "type": "IsInZone",
+                                        "value": "Battlefield"
+                                      }
+                                    }
+                                  }
+                                ],
+                                "power": {
+                                  "type": "Literal",
+                                  "value": 0
+                                },
+                                "toughness": {
+                                  "type": "Literal",
+                                  "value": 1
+                                },
+                                "typeLine": {
+                                  "subtypes": [
+                                    "Human"
+                                  ],
+                                  "types": [
+                                    "Creature"
+                                  ]
+                                }
+                              }
+                            ]
+                          },
+                          "quantity": {
+                            "type": "Literal",
+                            "value": 1
+                          }
+                        }
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "condition": {
+            "type": "CountersChange",
+            "value": {
+              "kind": {
+                "type": "OfKind",
+                "value": {
+                  "type": "Lore"
+                }
+              },
+              "motion": {
+                "type": "Put",
+                "value": "AnyPlayer"
+              },
+              "threshold": 2
+            }
+          },
+          "modal": {
+            "modes": [
+              {
+                "clauses": [
+                  {
+                    "effects": [
+                      {
+                        "type": "Draw",
+                        "value": {
+                          "player": {
+                            "type": "Relative",
+                            "value": "You"
+                          },
+                          "quantity": {
+                            "type": "Literal",
+                            "value": 2
+                          }
+                        }
+                      },
+                      {
+                        "type": "LoseLife",
+                        "value": {
+                          "player": {
+                            "type": "Relative",
+                            "value": "AnyPlayer"
+                          },
+                          "quantity": {
+                            "type": "Literal",
+                            "value": 2
+                          }
+                        }
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "condition": {
+            "type": "CountersChange",
+            "value": {
+              "kind": {
+                "type": "OfKind",
+                "value": {
+                  "type": "Lore"
+                }
+              },
+              "motion": {
+                "type": "Put",
+                "value": "AnyPlayer"
+              },
+              "threshold": 3
+            }
+          },
+          "modal": {
+            "modes": [
+              {
+                "clauses": [
+                  {
+                    "effects": [
+                      {
+                        "type": "PlayerSacrifices",
+                        "value": {
+                          "filter": {
+                            "type": "And",
+                            "value": [
+                              {
+                                "type": "HasCardType",
+                                "value": "Creature"
+                              },
+                              {
+                                "type": "IsToken"
+                              }
+                            ]
+                          },
+                          "players": {
+                            "type": "EachInSlot",
+                            "value": "you"
+                          },
+                          "quantity": {
+                            "type": "Literal",
+                            "value": 1
+                          }
+                        }
+                      }
+                    ]
+                  },
+                  {
+                    "effects": [
+                      {
+                        "type": "GainLife",
+                        "value": {
+                          "player": {
+                            "type": "Relative",
+                            "value": "You"
+                          },
+                          "quantity": {
+                            "type": "Literal",
+                            "value": 5
+                          }
+                        }
+                      }
+                    ],
+                    "ifTaken": {
+                      "type": "AnyTaken",
+                      "value": [
+                        0
+                      ]
+                    }
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      ],
+      "typeLine": {
+        "subtypes": [
+          "Saga"
+        ],
+        "types": [
+          "Enchantment"
+        ]
+      }
+    }
+  ]
+}

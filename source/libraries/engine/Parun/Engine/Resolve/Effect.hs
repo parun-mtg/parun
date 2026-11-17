@@ -24,6 +24,7 @@ import qualified Parun.Engine.ActivationRestriction as ActivationRestriction
 import qualified Parun.Engine.Binding as Binding
 import qualified Parun.Engine.Card as Card
 import qualified Parun.Engine.Cast as Cast
+import qualified Parun.Engine.Combat as Combat
 import qualified Parun.Engine.Cost as Cost
 import qualified Parun.Engine.Decide as Decide
 import qualified Parun.Engine.Dice as Dice
@@ -60,6 +61,7 @@ import qualified Parun.Types.CastRepetition as CastRepetition
 import Parun.Types.ClauseIndex (ClauseIndex)
 import qualified Parun.Types.ClauseIndex as ClauseIndex
 import qualified Parun.Types.CoinFace as CoinFace
+import qualified Parun.Types.Combat as Combat.Type
 import qualified Parun.Types.ControlDuration as ControlDuration
 import qualified Parun.Types.Cost as Cost.Type
 import qualified Parun.Types.Decider as Decider
@@ -848,6 +850,13 @@ runEntryEffect runSubgame pending = do
   Monad.void (runCarrying runSubgame oid (PendingEntryEffect.controller pending) Map.empty Map.empty (PendingEntryEffect.effects pending))
   State.modify' (\gs -> gs {GameState.scratch = (GameState.scratch gs) {Scratch.enteringBeside = outer, Scratch.enteringSubjects = outerSubjects}})
   Foldable.for_ announced $ \_ -> State.modify' (setX before)
+  -- CR 508.4: EntryRewrite.EntersAttacking, whose guards (CR 506.3) and
+  -- choice are Combat's, the road Create's attacking rider takes. An effect's
+  -- own rider (a mobilize token, a ninja) cleared the flag, met or failed (CR
+  -- 508.4e); skipped for a creature a second row already put in combat, since
+  -- it enters attacking once.
+  attacking <- State.gets (Map.member oid . Combat.Type.attackers . TurnRegisters.combat . GameState.turn)
+  Monad.when (PendingEntryEffect.attacking pending && not attacking) (Combat.putOntoBattlefieldAttacking Combat.Any oid)
   State.modify' (Trigger.resampleEntry oid)
 
 -- CR 614.1a: run the effects a replacement put in an event's place -- Kill-Suit

@@ -30,7 +30,9 @@
                                 "type": "IsBound",
                                 "value": "samurai"
                               },
-                              "rewrite": "Regenerate"
+                              "rewrite": {
+                                "type": "Regenerate"
+                              }
                             }
                           },
                           "origin": "Other",

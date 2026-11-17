@@ -11,6 +11,7 @@ codec =
     tagOf
     [ Arm.nullary "Sacrifice" RestrictedAction.Sacrifice,
       Arm.nullary "TurnFaceUp" RestrictedAction.TurnFaceUp,
+      Arm.nullary "PhaseIn" RestrictedAction.PhaseIn,
       Arm.payload "BecomeDesignated" Designation.codec RestrictedAction.BecomeDesignated (\x -> case x of RestrictedAction.BecomeDesignated y -> Just y; _ -> Nothing)
     ]
 
@@ -18,4 +19,5 @@ tagOf :: RestrictedAction.RestrictedAction -> String
 tagOf x = case x of
   RestrictedAction.Sacrifice {} -> "Sacrifice"
   RestrictedAction.TurnFaceUp {} -> "TurnFaceUp"
+  RestrictedAction.PhaseIn {} -> "PhaseIn"
   RestrictedAction.BecomeDesignated {} -> "BecomeDesignated"

@@ -1,0 +1,146 @@
+{
+  "faces": [
+    {
+      "attackRequirements": [
+        {
+          "subject": {
+            "type": "Matching",
+            "value": {
+              "type": "And",
+              "value": [
+                {
+                  "type": "HasSubtype",
+                  "value": "Juggernaut"
+                },
+                {
+                  "type": "HasCardType",
+                  "value": "Creature"
+                },
+                {
+                  "type": "HeldBy",
+                  "value": {
+                    "holder": "Controller",
+                    "relation": "You"
+                  }
+                }
+              ]
+            }
+          }
+        }
+      ],
+      "combatRestrictions": [
+        {
+          "type": "CantBeBlockedBy",
+          "value": {
+            "affected": {
+              "type": "Matching",
+              "value": {
+                "type": "And",
+                "value": [
+                  {
+                    "type": "HasSubtype",
+                    "value": "Juggernaut"
+                  },
+                  {
+                    "type": "HasCardType",
+                    "value": "Creature"
+                  },
+                  {
+                    "type": "HeldBy",
+                    "value": {
+                      "holder": "Controller",
+                      "relation": "You"
+                    }
+                  }
+                ]
+              }
+            },
+            "blockers": {
+              "type": "HasSubtype",
+              "value": "Wall"
+            }
+          }
+        }
+      ],
+      "manaCost": [
+        {
+          "type": "Generic",
+          "value": 8
+        }
+      ],
+      "name": "Graaz, Unstoppable Juggernaut",
+      "oracleText": "Juggernauts you control attack each combat if able.\nJuggernauts you control can't be blocked by Walls.\nOther creatures you control have base power and toughness 5/3 and are Juggernauts in addition to their other creature types.",
+      "power": {
+        "type": "Literal",
+        "value": 7
+      },
+      "staticAbilities": [
+        {
+          "affected": {
+            "type": "Matching",
+            "value": {
+              "type": "And",
+              "value": [
+                {
+                  "type": "HasCardType",
+                  "value": "Creature"
+                },
+                {
+                  "type": "HeldBy",
+                  "value": {
+                    "holder": "Controller",
+                    "relation": "You"
+                  }
+                },
+                {
+                  "type": "Not",
+                  "value": {
+                    "type": "IsSource"
+                  }
+                }
+              ]
+            }
+          },
+          "modifications": [
+            {
+              "type": "SetBasePowerToughness",
+              "value": {
+                "power": {
+                  "type": "Literal",
+                  "value": 5
+                },
+                "toughness": {
+                  "type": "Literal",
+                  "value": 3
+                }
+              }
+            },
+            {
+              "type": "CreatureSubtype",
+              "value": {
+                "mode": "InAddition",
+                "subtype": "Juggernaut"
+              }
+            }
+          ]
+        }
+      ],
+      "toughness": {
+        "type": "Literal",
+        "value": 5
+      },
+      "typeLine": {
+        "subtypes": [
+          "Juggernaut"
+        ],
+        "supertypes": [
+          "Legendary"
+        ],
+        "types": [
+          "Artifact",
+          "Creature"
+        ]
+      }
+    }
+  ]
+}

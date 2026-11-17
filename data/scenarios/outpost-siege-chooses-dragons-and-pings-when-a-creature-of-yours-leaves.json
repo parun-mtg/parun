@@ -1,0 +1,50 @@
+{
+  "description": "CR 614.1c, 614.12, 603.6c, 603.10a: Outpost Siege chosen Dragons deals 1 damage to any target whenever a creature its controller controls leaves the battlefield, not an opponent's",
+  "note": "Alice names Dragons. Bolting bob's Hill Giant raises nothing; bolting her own Grizzly Bears triggers once, and the Siege deals 1 to bob.",
+  "board": {
+    "seats": [
+      {
+        "name": "alice",
+        "battlefield": [
+          { "card": "Grizzly Bears", "label": "bears" },
+          { "card": "Mountain", "label": "m1" },
+          { "card": "Mountain", "label": "m2" },
+          { "card": "Mountain", "label": "m3" },
+          { "card": "Mountain", "label": "m4" },
+          { "card": "Mountain", "label": "m5" },
+          { "card": "Mountain", "label": "m6" }
+        ],
+        "hand": [
+          { "card": "Outpost Siege", "label": "siege" },
+          { "card": "Lightning Bolt", "label": "bolt1" },
+          { "card": "Lightning Bolt", "label": "bolt2" }
+        ],
+        "library": [{ "card": "Island" }, { "card": "Island" }, { "card": "Island" }, { "card": "Island" }, { "card": "Island" }]
+      },
+      {
+        "name": "bob",
+        "battlefield": [{ "card": "Hill Giant", "label": "giant" }],
+        "library": [{ "card": "Swamp" }, { "card": "Swamp" }, { "card": "Swamp" }, { "card": "Swamp" }, { "card": "Swamp" }]
+      }
+    ],
+    "active": "alice",
+    "step": "PrecombatMain"
+  },
+  "timeline": [
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": { "Cast": { "object": "$siege", "mana": ["$m1", "$m2", "$m3", "$m4", null] } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass" },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": { "Answer": { "prompt": "ChooseWord", "with": "Dragons" } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": { "Cast": { "object": "$bolt1", "mana": ["$m5", null], "targets": ["$giant"] } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass" },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "Count": { "player": "bob", "zone": "Graveyard", "card": "Hill Giant", "count": 1 } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "View": { "of": "Stack", "is": [] } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": { "Cast": { "object": "$bolt2", "mana": ["$m6"], "targets": ["$bears"] } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass" },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": { "ChooseTargets": { "target": ["$bob"] } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "View": { "of": "Stack", "is": ["trigger of Outpost Siege"] } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass" },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "Life": { "player": "bob", "life": 19 } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "Life": { "player": "alice", "life": 20 } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "View": { "of": "Stack", "is": [] } } }
+  ]
+}

@@ -1,0 +1,44 @@
+{
+  "description": "CR 602.2, 118.1, 400.7: Master Transmuter's cost returns an artifact its controller controls to hand, and its ability may put an artifact card from that player's hand onto the battlefield",
+  "note": "Bob's Sol Ring is refused as the cost's artifact, being no artifact alice controls; alice's Ornithopter pays it. At resolution Grizzly Bears, no artifact card, is refused; Frogmite enters. The returned Ornithopter is a new object in hand and stays there.",
+  "board": {
+    "seats": [
+      {
+        "name": "alice",
+        "battlefield": [
+          { "card": "Master Transmuter", "label": "transmuter", "ready": true },
+          { "card": "Ornithopter", "label": "thopter" },
+          { "card": "Island", "label": "island" }
+        ],
+        "hand": [
+          { "card": "Grizzly Bears", "label": "bears" },
+          { "card": "Frogmite", "label": "frogmite" }
+        ],
+        "library": [{ "card": "Island" }, { "card": "Island" }, { "card": "Island" }]
+      },
+      {
+        "name": "bob",
+        "battlefield": [{ "card": "Sol Ring", "label": "ring" }],
+        "library": [{ "card": "Swamp" }, { "card": "Swamp" }, { "card": "Swamp" }]
+      }
+    ],
+    "active": "alice",
+    "step": "PrecombatMain"
+  },
+  "timeline": [
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": { "Activate": { "object": "$transmuter", "mana": ["$island"], "costOrder": [0, 1] } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "refuse": { "Answer": { "prompt": "ChooseReturns", "with": ["$ring"] } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": { "Answer": { "prompt": "ChooseReturns", "with": ["$thopter"] } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "Count": { "player": "alice", "zone": "Hand", "card": "Ornithopter", "count": 1 } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "Tapped": { "object": "$transmuter", "tapped": true } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "View": { "of": "Stack", "is": ["ability of $transmuter"] } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass" },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": { "ChooseOptional": "Exercises" } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "refuse": { "Answer": { "prompt": "ChooseCardInHand", "with": "$bears" } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": { "Answer": { "prompt": "ChooseCardInHand", "with": "$frogmite" } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "Count": { "player": "alice", "zone": "Battlefield", "card": "Frogmite", "count": 1 } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "Count": { "player": "alice", "zone": "Hand", "card": "Grizzly Bears", "count": 1 } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "Count": { "player": "alice", "zone": "Hand", "card": "Ornithopter", "count": 1 } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "bob", "check": { "Count": { "player": "bob", "zone": "Battlefield", "card": "Sol Ring", "count": 1 } } }
+  ]
+}

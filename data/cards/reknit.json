@@ -41,7 +41,9 @@
                             "type": "IsBound",
                             "value": "permanent"
                           },
-                          "rewrite": "Regenerate"
+                          "rewrite": {
+                            "type": "Regenerate"
+                          }
                         }
                       },
                       "origin": "Other",

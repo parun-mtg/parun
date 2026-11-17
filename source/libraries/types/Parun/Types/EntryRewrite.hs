@@ -170,6 +170,9 @@ data EntryRewrite ability effect
     EntersTapState TapState.TapState
   | -- | CR 723.3a / 614.1d / Pompous Battlemage: "This creature enters prepared".
     Prepared
+  | -- | CR 614.1a / 614.12 / 508.4 / Kira Nerys, Firebrand: enters attacking,
+    -- its controller choosing what it attacks.
+    EntersAttacking
   | -- | CR 614.1c / Razorgrass Field, Rustic Clachan: "you may [price]. If you
     -- don't, it enters tapped" -- the arm above's rewrite with a price on
     -- avoiding it.

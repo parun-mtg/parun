@@ -193,6 +193,7 @@ import qualified Parun.Types.DelayedTrigger as DelayedTrigger
 import qualified Parun.Types.Designate as Designate
 import qualified Parun.Types.Destroy as Destroy
 import qualified Parun.Types.DestructionR as DestructionR
+import qualified Parun.Types.DestructionRewrite as DestructionRewrite
 import qualified Parun.Types.Devotion as Devotion
 import qualified Parun.Types.Devour as Devour
 import qualified Parun.Types.DieRollR as DieRollR
@@ -2302,8 +2303,8 @@ playerEffectChildren c effect = case effect of
   PlayerEffect.CantCastMatching filter_ -> PlayerEffect.CantCastMatching <$> playerFilter c filter_
   PlayerEffect.CastOnlyAtSorcerySpeed -> pure effect
   PlayerEffect.CantPlayLands filter_ -> PlayerEffect.CantPlayLands <$> playerFilter c filter_
-  PlayerEffect.CastFrom (CastFromZone.MkCastFromZone from matching limit verb pool additionalCosts reduction spending alternativeCost entersWith amount creatureTypes) ->
-    fmap PlayerEffect.CastFrom (CastFromZone.MkCastFromZone <$> playerZone c from <*> playerFilter c matching <*> pure limit <*> pure verb <*> pure pool <*> traverse (playerCostComponent c) additionalCosts <*> pure reduction <*> pure spending <*> pure alternativeCost <*> traverse (\(WithCounters.MkWithCounters counters) -> WithCounters.MkWithCounters <$> traverse (playerQuantity c) counters) entersWith <*> traverse (playerQuantity c) amount <*> traverseSet (playerCreatureSubtype c) creatureTypes)
+  PlayerEffect.CastFrom (CastFromZone.MkCastFromZone from matching limit verb pool additionalCosts reduction spending alternativeCost entersWith amount creatureTypes outsideTheGame) ->
+    fmap PlayerEffect.CastFrom (CastFromZone.MkCastFromZone <$> playerZone c from <*> playerFilter c matching <*> pure limit <*> pure verb <*> pure pool <*> traverse (playerCostComponent c) additionalCosts <*> pure reduction <*> pure spending <*> pure alternativeCost <*> traverse (\(WithCounters.MkWithCounters counters) -> WithCounters.MkWithCounters <$> traverse (playerQuantity c) counters) entersWith <*> traverse (playerQuantity c) amount <*> traverseSet (playerCreatureSubtype c) creatureTypes <*> pure outsideTheGame)
   PlayerEffect.PlayLandsFrom from -> PlayerEffect.PlayLandsFrom <$> playerZone c from
   PlayerEffect.PlotFrom (PlotFromZone.MkPlotFromZone from matching) ->
     fmap PlayerEffect.PlotFrom (PlotFromZone.MkPlotFromZone <$> playerZone c from <*> playerFilter c matching)
@@ -2443,7 +2444,7 @@ replacementEffectChildren c replacement = case replacement of
   ReplacementEffect.EntryR (EntryR.MkEntryR matching rewrite) -> fmap ReplacementEffect.EntryR (EntryR.MkEntryR <$> replacementFilter c matching <*> entryRewriteChildren c rewrite)
   ReplacementEffect.DamageR (DamageR.MkDamageR matching rewrite riders) ->
     fmap ReplacementEffect.DamageR (DamageR.MkDamageR <$> replacementDamage c matching <*> damageRewriteChildren c rewrite <*> traverse (replacementEffect c) riders)
-  ReplacementEffect.DestructionR (DestructionR.MkDestructionR matching rewrite) -> fmap ReplacementEffect.DestructionR (DestructionR.MkDestructionR <$> traverse (replacementFilter c) matching <*> pure rewrite)
+  ReplacementEffect.DestructionR (DestructionR.MkDestructionR matching rewrite) -> fmap ReplacementEffect.DestructionR (DestructionR.MkDestructionR <$> traverse (replacementFilter c) matching <*> destructionRewriteChildren c rewrite)
   ReplacementEffect.CounterR (CounterR.MkCounterR (CounterPattern.MkCounterPattern kind subject whose onWhat onWho) scaling) ->
     fmap ReplacementEffect.CounterR (CounterR.MkCounterR <$> (CounterPattern.MkCounterPattern <$> traverse (replacementCounterKind c) kind <*> counterSubjectChildren c subject <*> replacementWhose c whose <*> replacementFilter c onWhat <*> traverse (replacementWhose c) onWho) <*> scalingChildren c scaling)
   ReplacementEffect.TokenR (TokenR.MkTokenR (TokenPattern.MkTokenPattern whose whatToken effectsOnly firstEachTurn) scaling plus optional) ->
@@ -2506,6 +2507,7 @@ entryRewriteChildren c rewrite = case rewrite of
   EntryRewrite.Compleated _ -> pure rewrite
   EntryRewrite.EntersTapState _ -> pure rewrite
   EntryRewrite.Prepared -> pure rewrite
+  EntryRewrite.EntersAttacking -> pure rewrite
   EntryRewrite.OrTapped price -> EntryRewrite.OrTapped <$> entryPriceChildren c price
   EntryRewrite.PayAnyLife cap -> EntryRewrite.PayAnyLife <$> traverse (replacementQuantity c) cap
   EntryRewrite.EntersTransformed -> pure rewrite
@@ -2591,6 +2593,14 @@ transformRewriteChildren :: (Applicative f) => ReplacementChildren card ability 
 transformRewriteChildren c rewrite = case rewrite of
   TransformRewrite.RunEffects effects -> TransformRewrite.RunEffects <$> traverse (replacementEffect c) effects
   TransformRewrite.ChoosePlayer _ -> pure rewrite
+
+-- | What a destruction replacement does (CR 614.1a).
+destructionRewriteChildren :: (Applicative f) => ReplacementChildren card ability effect f -> DestructionRewrite.DestructionRewrite -> f DestructionRewrite.DestructionRewrite
+destructionRewriteChildren c rewrite = case rewrite of
+  DestructionRewrite.Regenerate -> pure rewrite
+  DestructionRewrite.RemoveShieldCounter -> pure rewrite
+  DestructionRewrite.UmbraArmor -> pure rewrite
+  DestructionRewrite.Heal kind -> DestructionRewrite.Heal <$> traverse (replacementCounterKind c) kind
 
 -- | What an untap replacement does (CR 614.1a).
 untapRewriteChildren :: (Applicative f) => ReplacementChildren card ability effect f -> UntapRewrite.UntapRewrite -> f UntapRewrite.UntapRewrite
@@ -3308,11 +3318,12 @@ preventionRiderChildren c (PreventionRider.MkPreventionRider effects targets con
 
 -- | A pending entry effect's children: the entering object and what it runs.
 pendingEntryEffectChildren :: (Applicative f) => StoredChildren f -> PendingEntryEffect.PendingEntryEffect -> f PendingEntryEffect.PendingEntryEffect
-pendingEntryEffectChildren c (PendingEntryEffect.MkPendingEntryEffect entering controller effects) =
+pendingEntryEffectChildren c (PendingEntryEffect.MkPendingEntryEffect entering controller effects attacking) =
   PendingEntryEffect.MkPendingEntryEffect
     <$> storedObject c entering
     <*> pure controller
     <*> traverse (storedEffect c) effects
+    <*> pure attacking
 
 -- | A pending replacement effect's children: what it runs, in its environment (CR 608.2c).
 pendingReplacementEffectChildren :: (Applicative f) => StoredChildren f -> PendingReplacementEffect.PendingReplacementEffect -> f PendingReplacementEffect.PendingReplacementEffect
@@ -4006,11 +4017,12 @@ asCopyChildren c (AsCopy.MkAsCopy eligible amount clauses tapped whenYouDo among
 -- | One clause of a copy's exceptions: its condition (CR 707.9f), its
 -- exceptions and its counters (CR 707.9e).
 copyClauseChildren :: (Applicative f) => CopyChildren ability effect f -> CopyClause.CopyClause ability -> f (CopyClause.CopyClause ability)
-copyClauseChildren c (CopyClause.MkCopyClause condition exceptions counters) =
+copyClauseChildren c (CopyClause.MkCopyClause condition exceptions counters copied) =
   CopyClause.MkCopyClause
     <$> traverse (copyCondition c) condition
     <*> traverse (copyExceptionChildren c) exceptions
     <*> traverse (withCountersChildren c) counters
+    <*> pure copied
 
 -- | A CR 707.9 exception's children. A power and toughness, card types,
 -- supertypes and a name are left as they are.

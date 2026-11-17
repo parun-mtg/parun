@@ -1,0 +1,128 @@
+{
+  "faces": [
+    {
+      "keywords": [
+        {
+          "type": "Flying"
+        },
+        {
+          "type": "Haste"
+        }
+      ],
+      "manaCost": [
+        {
+          "type": "Generic",
+          "value": 4
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "Red"
+          }
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "Red"
+          }
+        }
+      ],
+      "name": "Hellkite Charger",
+      "oracleText": "Flying, haste\nWhenever this creature attacks, you may pay {5}{R}{R}. If you do, untap all attacking creatures and after this phase, there is an additional combat phase.",
+      "power": {
+        "type": "Literal",
+        "value": 5
+      },
+      "toughness": {
+        "type": "Literal",
+        "value": 5
+      },
+      "triggeredAbilities": [
+        {
+          "condition": {
+            "type": "Attacks",
+            "value": {
+              "type": "Attacker",
+              "value": {}
+            }
+          },
+          "modal": {
+            "modes": [
+              {
+                "clauses": [
+                  {
+                    "effects": [
+                      {
+                        "type": "Untap",
+                        "value": {
+                          "type": "EachMatching",
+                          "value": {
+                            "type": "And",
+                            "value": [
+                              {
+                                "type": "IsAttacking"
+                              },
+                              {
+                                "type": "HasCardType",
+                                "value": "Creature"
+                              }
+                            ]
+                          }
+                        }
+                      },
+                      {
+                        "type": "AddPhases",
+                        "value": [
+                          "ExtraCombat"
+                        ]
+                      }
+                    ],
+                    "payGate": {
+                      "branch": "IfPaid",
+                      "cost": {
+                        "mana": [
+                          {
+                            "type": "Generic",
+                            "value": 5
+                          },
+                          {
+                            "type": "OfType",
+                            "value": {
+                              "type": "Colored",
+                              "value": "Red"
+                            }
+                          },
+                          {
+                            "type": "OfType",
+                            "value": {
+                              "type": "Colored",
+                              "value": "Red"
+                            }
+                          }
+                        ]
+                      },
+                      "payer": {
+                        "type": "Relative",
+                        "value": "You"
+                      }
+                    }
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      ],
+      "typeLine": {
+        "subtypes": [
+          "Dragon"
+        ],
+        "types": [
+          "Creature"
+        ]
+      }
+    }
+  ]
+}

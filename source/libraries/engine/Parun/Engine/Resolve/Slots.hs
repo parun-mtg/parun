@@ -1812,6 +1812,7 @@ entryRewriteReads rewrite = case rewrite of
   EntryRewrite.Compleated _ -> ([], [])
   EntryRewrite.EntersTapState _ -> ([], [])
   EntryRewrite.Prepared -> ([], [])
+  EntryRewrite.EntersAttacking -> ([], [])
   EntryRewrite.OrTapped (EntryPrice.PayLife _) -> ([], [])
   EntryRewrite.OrTapped (EntryPrice.Reveal filter_) -> ([filter_], [])
   EntryRewrite.OrTapped (EntryPrice.Behold filter_) -> ([filter_], [])
@@ -2055,6 +2056,7 @@ entryRewriteEffects rewrite = case rewrite of
   EntryRewrite.Compleated _ -> []
   EntryRewrite.EntersTapState _ -> []
   EntryRewrite.Prepared -> []
+  EntryRewrite.EntersAttacking -> []
   EntryRewrite.OrTapped _ -> []
   EntryRewrite.PayAnyLife _ -> []
   EntryRewrite.EntersTransformed -> []

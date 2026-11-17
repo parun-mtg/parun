@@ -25,7 +25,9 @@ import qualified Parun.Types.Quantity as Quantity
 -- The EMPTY map is representable in the type and unsayable on the wire:
 -- Parun.Codec.WithCounters decodes through Common.nonEmptyKeyedList, so a card
 -- file placing nothing is a decode failure rather than a row that does nothing.
--- Every engine minting site builds a singleton by construction.
+-- Every engine minting site builds a singleton by construction, but
+-- Parun.Engine.Event.becomeCopyAs's copy of a permanent's counters, which it
+-- mints only when that map is nonempty.
 newtype WithCounters = MkWithCounters
   { counters :: Map.Map (CounterKind.CounterKind Keyword.Keyword) Quantity.Quantity
   }

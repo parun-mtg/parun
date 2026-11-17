@@ -120,7 +120,7 @@ phraseJoining joining f named = case f of
   Filter.IsAttacking (Just AloneAmong.EveryAttacker) -> [qualifier (Text.pack "that's attacking alone") (Text.pack "that are attacking alone")]
   Filter.IsBlocking -> [adjective (Text.pack "blocking")]
   Filter.HeldBy Holder.Controller PlayerRelation.You -> [qualifier (Text.pack "you control") (Text.pack "you control")]
-  Filter.HeldBy Holder.Controller PlayerRelation.Opponent -> [qualifier (Text.pack "an opponent controls") (Text.pack "your opponents control")]
+  Filter.HeldBy Holder.Controller PlayerRelation.Opponent -> [MkPhrase [] [] [opponentControls]]
   Filter.Not (Filter.HeldBy Holder.Controller PlayerRelation.You) -> [qualifier (Text.pack "you don't control") (Text.pack "you don't control")]
   Filter.IsPlayer PlayerRelation.Opponent -> [noun (Text.pack "opponent") (Just (Text.pack "opponents"))]
   Filter.IsPlayer PlayerRelation.AnyPlayer -> [noun (Text.pack "player") (Just (Text.pack "players"))]
@@ -184,6 +184,20 @@ noun s p = MkPhrase [] [MkNoun s p] []
 
 adjective :: Text.Text -> Phrase
 adjective a = MkPhrase [MkQualifier a a] [] []
+
+-- | "an opponent controls", "your opponents control": the one qualifier
+-- whose number a count overrides ('counted').
+opponentControls :: Qualifier
+opponentControls = MkQualifier (Text.pack "an opponent controls") (Text.pack "your opponents control")
+
+-- | A phrase as a count reads it, singular after "for each": "for each tapped
+-- land your opponents control" (Mana Geyser), never "an opponent controls".
+counted :: Phrase -> Phrase
+counted p = p {qualifiers = fmap theirs (qualifiers p)}
+  where
+    theirs q
+      | q == opponentControls = MkQualifier (many q) (many q)
+      | otherwise = q
 
 qualifier :: Text.Text -> Text.Text -> Phrase
 qualifier o m = MkPhrase [] [] [MkQualifier o m]

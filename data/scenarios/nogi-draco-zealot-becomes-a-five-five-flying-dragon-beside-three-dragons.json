@@ -1,0 +1,184 @@
+{
+  "description": "CR 603.4, 205.1a, 613.4b: Nogi, Draco-Zealot attacking beside three Dragons becomes a 5/5 flying Dragon, losing its other creature types, until end of turn",
+  "note": "Alice controls three Dragons, Nogi not among them, so the intervening if holds. Nogi becomes a Dragon only, its Kobold and Shaman replaced (CR 205.1a), with base 5/5 and flying, and bob takes 5. On bob's turn the effect has ended and it is a 3/3 Kobold Shaman again. The two-Dragon control is nogi-draco-zealot-stays-a-kobold-beside-two-dragons.",
+  "board": {
+    "active": "alice",
+    "step": "PrecombatMain",
+    "seats": [
+      {
+        "name": "alice",
+        "battlefield": [
+          {
+            "card": "Nogi, Draco-Zealot",
+            "label": "nogi",
+            "ready": true
+          },
+          {
+            "card": "Shivan Dragon",
+            "label": "shivan"
+          },
+          {
+            "card": "Alabaster Dragon",
+            "label": "alabaster"
+          },
+          {
+            "card": "Cloud Dragon",
+            "label": "cloud"
+          }
+        ],
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ]
+      },
+      {
+        "name": "bob",
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ]
+      }
+    ]
+  },
+  "timeline": [
+    {
+      "turn": 1,
+      "step": "DeclareAttackers",
+      "player": "alice",
+      "do": {
+        "Attack": [
+          "$nogi"
+        ]
+      }
+    },
+    {
+      "turn": 1,
+      "step": "DeclareAttackers",
+      "player": "alice",
+      "check": {
+        "View": {
+          "of": "Stack",
+          "is": [
+            "trigger of $nogi"
+          ]
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "DeclareAttackers",
+      "player": "alice",
+      "do": "Pass"
+    },
+    {
+      "turn": 1,
+      "step": "DeclareAttackers",
+      "player": "alice",
+      "check": {
+        "Subtypes": {
+          "object": "$nogi",
+          "subtypes": [
+            "Dragon"
+          ]
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "DeclareAttackers",
+      "player": "alice",
+      "check": {
+        "PowerToughness": {
+          "object": "$nogi",
+          "power": 5,
+          "toughness": 5
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "DeclareAttackers",
+      "player": "alice",
+      "check": {
+        "Keywords": {
+          "object": "$nogi",
+          "keyword": {
+            "type": "Flying"
+          },
+          "count": 1
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "EndOfCombat",
+      "player": "alice",
+      "check": {
+        "Life": {
+          "player": "bob",
+          "life": 15
+        }
+      }
+    },
+    {
+      "turn": 2,
+      "step": "Upkeep",
+      "player": "bob",
+      "check": {
+        "Subtypes": {
+          "object": "$nogi",
+          "subtypes": [
+            "Kobold",
+            "Shaman"
+          ]
+        }
+      }
+    },
+    {
+      "turn": 2,
+      "step": "Upkeep",
+      "player": "bob",
+      "check": {
+        "PowerToughness": {
+          "object": "$nogi",
+          "power": 3,
+          "toughness": 3
+        }
+      }
+    },
+    {
+      "turn": 2,
+      "step": "Upkeep",
+      "player": "bob",
+      "check": {
+        "Keywords": {
+          "object": "$nogi",
+          "keyword": {
+            "type": "Flying"
+          },
+          "count": 0
+        }
+      }
+    }
+  ]
+}

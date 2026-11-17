@@ -32,7 +32,8 @@ data SpellWasCast = MkSpellWasCast
     --
     -- Nothing when the cast was proposed for a card no longer findable at that
     -- point, which is Parun.Engine.Cast's own `castFrom`, and for a CR 707.13
-    -- copy cast from outside the game (CR 400.11), which was in no zone.
+    -- copy or a card (Parun.Engine.Event.offerOutside) cast from outside the
+    -- game (CR 400.11), which was in no zone.
     zone :: Maybe Zone.Zone,
     -- | CR 601.2b: the keyword whose cost the spell was cast for, copied off
     -- Object.castUsing as it became cast, since CR 400.7 leaves no object to

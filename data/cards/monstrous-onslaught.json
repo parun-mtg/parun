@@ -1,0 +1,113 @@
+{
+  "faces": [
+    {
+      "manaCost": [
+        {
+          "type": "Generic",
+          "value": 3
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "Green"
+          }
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "Green"
+          }
+        }
+      ],
+      "name": "Monstrous Onslaught",
+      "oracleText": "Monstrous Onslaught deals X damage divided as you choose among any number of target creatures, where X is the greatest power among creatures you control as you cast this spell.",
+      "spell": {
+        "modes": [
+          {
+            "clauses": [
+              {
+                "effects": [
+                  {
+                    "type": "DealDamage",
+                    "value": {
+                      "parts": [
+                        {
+                          "quantity": {
+                            "type": "Share",
+                            "value": "creatures"
+                          },
+                          "ref": {
+                            "type": "InSlot",
+                            "value": "creatures"
+                          }
+                        }
+                      ]
+                    }
+                  }
+                ]
+              }
+            ],
+            "targetSlots": {
+              "creatures": {
+                "count": {
+                  "type": "Printed",
+                  "value": {
+                    "least": 0
+                  }
+                },
+                "divided": {
+                  "type": "Count",
+                  "value": {
+                    "aggregation": {
+                      "type": "Greatest",
+                      "value": {
+                        "type": "Measure",
+                        "value": "Power"
+                      }
+                    },
+                    "filter": {
+                      "type": "And",
+                      "value": [
+                        {
+                          "type": "HasCardType",
+                          "value": "Creature"
+                        },
+                        {
+                          "type": "HeldBy",
+                          "value": {
+                            "holder": "Controller",
+                            "relation": "You"
+                          }
+                        }
+                      ]
+                    },
+                    "scope": {
+                      "type": "InZone",
+                      "value": {
+                        "player": {
+                          "type": "Relative",
+                          "value": "AnyPlayer"
+                        },
+                        "zone": "Battlefield"
+                      }
+                    }
+                  }
+                },
+                "pool": {
+                  "type": "Creatures"
+                }
+              }
+            }
+          }
+        ]
+      },
+      "typeLine": {
+        "types": [
+          "Sorcery"
+        ]
+      }
+    }
+  ]
+}

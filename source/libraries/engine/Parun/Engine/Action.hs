@@ -30,7 +30,6 @@ import qualified Parun.Types.Action as Action
 import qualified Parun.Types.CardName as CardName
 import qualified Parun.Types.Facing as Facing
 import Parun.Types.GameState (GameState)
-import qualified Parun.Types.Object as Object
 import Parun.Types.ObjectId (ObjectId)
 import qualified Parun.Types.PermissionVerb as PermissionVerb
 import Parun.Types.PlayerId (PlayerId)
@@ -121,7 +120,7 @@ playableLands pid gs =
       -- card and has a budget, so each land in the piles it opens is asked
       -- whether a use is left for it, and CR 712.9's chosen face is what is
       -- asked: Muldrotha's land row admits Zof Consumption as Zof Bloodbog.
-      permitted oid mName = maybe False (\obj -> not (null (PlayerEffect.landPermissionsFrom pid (Object.zone obj) oid (Cast.asPlayed oid mName gs)))) (Game.lookupObject oid gs)
+      permitted oid mName = not (null (PlayerEffect.landPermissionsFrom pid (Game.castOrigin (Game.zoneOf oid gs)) oid (Cast.asPlayed oid mName gs)))
       fromPermitted = concatMap (\(zone, owner) -> Cast.pileCandidates zone owner gs) (PlayerEffect.playPermissionPiles pid gs)
       -- Per card instead, because CR 716.3d's permission is state on ONE
       -- incarnation naming ONE player: an exiled one, or a graveyard one
@@ -141,7 +140,10 @@ playableLands pid gs =
       fromGraveyard = filter (\oid -> PlayerEffect.mayPlayFromOwnGraveyard buried PermissionVerb.Play pid oid gs) graveyard
       -- Every card here is open whichever land face it is played as.
       open = Set.fromList (fromHand <> fromGranted <> fromPermission <> fromMayhem <> fromGraveyard)
-   in concatMap playable (ListUtils.nubOrd (fromHand <> fromGranted <> fromPermitted <> fromPermission <> fromMayhem <> fromGraveyard))
+      -- CR 400.11: the cards outside the game Event.offerOutside stood in
+      -- for, which only a Play-verb permission opens.
+      fromOutside = Game.standInsOf pid gs
+   in concatMap playable (ListUtils.nubOrd (fromHand <> fromGranted <> fromPermitted <> fromPermission <> fromMayhem <> fromGraveyard <> fromOutside))
 
 -- The cards in this player's hand whose text grants CR 116.2e's special
 -- action: Circling Vultures' "you may discard this card any time you could cast
@@ -159,6 +161,14 @@ discardableCards :: PlayerId -> GameState -> [ObjectId]
 discardableCards pid gs =
   let grantsIt oid = Maybe.isJust (Game.cardOfHandMember oid gs) && List.elem SpecialAction.DiscardThisAnyTime (Projection.specialActionsOf oid gs)
    in filter grantsIt (Game.zoneMembers Zone.Hand pid gs)
+
+-- The card a play or a cast takes, the only actions a stand-in for a card
+-- outside the game (Event.offerOutside) is offered for.
+playedObject :: Action -> Maybe ObjectId
+playedObject action = case action of
+  Action.Play oid _ -> Just oid
+  Action.Cast oid _ _ -> Just oid
+  _ -> Nothing
 
 legalActions :: PlayerId -> GameState -> [Action]
 legalActions pid gs =
@@ -301,9 +311,10 @@ legalActions pid gs =
       -- CR 702.29a: a HAND is a source of activations too, not just the
       -- battlefield -- cycling functions only while the card is in a player's
       -- hand. So is a GRAVEYARD, by CR 113.6m: Loxodon Surveyor's "{3}, Exile
-      -- this card from your graveyard: Draw a card" functions only there. Which
+      -- this card from your graveyard: Draw a card" functions only there, and
+      -- EXILE by CR 113.6b, for the ability Q, Stacking the Deck grants. Which
       -- abilities an object offers from where is Activatable.abilitiesFor's
-      -- question; this list only says where to look, and the three zones are
+      -- question; this list only says where to look, and the zones are
       -- pairwise disjoint.
       --
       -- ONE control-grant walk and ONE whole-board projection for the whole

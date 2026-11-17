@@ -87,7 +87,8 @@ data StoredEffects = MkStoredEffects
     -- to actually occur (PhaseRewrite.MaySkipFor), drained by
     -- Parun.Engine.Engine.startStep as that step begins.
     pendingSkipEffects :: Seq.Seq PendingSkipEffect.PendingSkipEffect,
-    -- | CR 614.1c: as-enters rewrites whose effects have not run yet. Drained as
+    -- | CR 614.1c: as-enters rewrites whose effects, or CR 508.4 entry into
+    -- combat, have not run yet. Drained as
     -- the instruction that entered the permanent finishes
     -- (Parun.Engine.Resolve.Effect.applyEffectWith), and first thing in
     -- Parun.Engine.Engine.performSettle for every other road; either way the entry's

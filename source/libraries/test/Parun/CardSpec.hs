@@ -508,6 +508,7 @@ import qualified Parun.Types.TransformTrigger as TransformTrigger
 import qualified Parun.Types.TriggerCondition as TriggerCondition
 import qualified Parun.Types.TriggerLimit as TriggerLimit
 import qualified Parun.Types.TriggeredAbility as TriggeredAbility
+import qualified Parun.Types.TriggeringMove as TriggeringMove
 import qualified Parun.Types.TurnFaceDown as TurnFaceDown
 import qualified Parun.Types.TurnUpR as TurnUpR
 import qualified Parun.Types.TurnUpRewrite as TurnUpRewrite
@@ -963,7 +964,7 @@ playerRefPositions =
         -- zone (Sen Triplets). All three are planted, since Parun.Engine.PlayerEffect's
         -- traversal is what the AffectPlayers arm delegates to and a missing arm
         -- there answers [] rather than failing to compile.
-        ("affect-players-cast-from", affecting (PlayerEffect.CastFrom (CastFromZone.MkCastFromZone (InZone.MkInZone Zone.Hand (plantedPlayer "ap-cast")) (Filter.Type.And []) PermissionLimit.Unlimited PermissionVerb.Cast PermissionPool.EveryCard [] 0 ManaSpending.AsProduced Nothing Nothing Nothing Set.empty)), [plantedPlayer "ap-cast"]),
+        ("affect-players-cast-from", affecting (PlayerEffect.CastFrom (CastFromZone.MkCastFromZone (InZone.MkInZone Zone.Hand (plantedPlayer "ap-cast")) (Filter.Type.And []) PermissionLimit.Unlimited PermissionVerb.Cast PermissionPool.EveryCard [] 0 ManaSpending.AsProduced Nothing Nothing Nothing Set.empty False)), [plantedPlayer "ap-cast"]),
         ("affect-players-play-lands-from", affecting (PlayerEffect.PlayLandsFrom (InZone.MkInZone Zone.Graveyard (plantedPlayer "ap-land"))), [plantedPlayer "ap-land"]),
         ("affect-players-plot-from", affecting (PlayerEffect.PlotFrom (PlotFromZone.MkPlotFromZone (InZone.MkInZone Zone.Library (plantedPlayer "ap-plot")) (Filter.Type.And []))), [plantedPlayer "ap-plot"]),
         -- And an arm carrying none, so the traversal is shown answering nothing where
@@ -1959,6 +1960,19 @@ modeDivisionDangles mode =
       reads_ = Set.fromList [slot | (slot, ObjectRef.InSlot named) <- sharing, slot == named]
       offends (slot, ref) = ref /= ObjectRef.InSlot slot || not (Set.member slot divided)
    in any offends sharing || not (Set.isSubsetOf divided reads_)
+
+-- Unprinted: a TriggeringMove.GainingLife row naming an entrant (CR 119.9's
+-- gain is no permanent's), over every player effect a face writes: its own,
+-- those it grants, and those its effects store.
+cardGainingLifeNamesEntrant :: Face.Face Card.Type.Card -> Bool
+cardGainingLifeNamesEntrant card =
+  let rows =
+        fmap PlayerStaticAbility.effect (Face.playerAbilities card <> grantedPlayerAbilities card)
+          <> [effect | Effect.AffectPlayers (AffectPlayers.MkAffectPlayers _ _ effect) <- cardAuthoredEffects card]
+      offends effect = case effect of
+        PlayerEffect.EntriesTrigger e -> EntriesTrigger.move e == TriggeringMove.GainingLife && EntriesTrigger.entrants e /= Filter.Type.And []
+        _ -> False
+   in any offends rows
 
 -- CR 118.6: does any clause state a cost DESCRIBED in terms of another object's
 -- mana cost (Parun.Types.CostBasis) and a mana part of its own beside it?
@@ -4342,6 +4356,7 @@ entryRewriteFilters entryRewrite = case entryRewrite of
   EntryRewrite.Compleated _ -> []
   EntryRewrite.EntersTapState _ -> []
   EntryRewrite.Prepared -> []
+  EntryRewrite.EntersAttacking -> []
   EntryRewrite.OrTapped (EntryPrice.PayLife _) -> []
   -- The cap is a Quantity, reaching Filters the way withCountersFilters' do.
   EntryRewrite.PayAnyLife cap -> foldMap quantityFilters cap
@@ -6586,6 +6601,23 @@ lintSpec s registry corpus = Spec.describe s "Lint" $ do
     Spec.assertBool s (not (cardCostBasisStatesMana face)) "Flash, whose gate states no mana of its own, is accepted"
     Spec.assertBool s (cardCostBasisStatesMana (overGate stated)) "a described cost stating a mana part of its own is rejected"
     Spec.assertBool s (not (cardCostBasisStatesMana (overGate (stated . undescribed)))) "and a gate stating mana and describing nothing is what every other card writes"
+  -- Unprinted: a life gain's doubler naming an entrant, which
+  -- PlayerEffect.moveTriggerings never reads (CR 119.9): the corpus half.
+  Spec.it s "CR 119.9 no card names an entrant for a life gain" $ do
+    ps <- S.allPrintings s corpus
+    Spec.assertEqWith s "no entrant under GainingLife" (fmap (S.nameOf . Printing.card) (filter (anyFaceOrMinted cardGainingLifeNamesEntrant . Printing.card) ps)) []
+  -- And the rejecting direction, against Teysa Karlov misauthored on purpose.
+  Spec.it s "the lint itself catches an entrant under GainingLife" $ do
+    teysa <- S.printingOf s registry "Teysa Karlov"
+    crusher <- S.printingOf s registry "Dr. Beverly Crusher"
+    let face = S.combinedFace teysa
+        gaining effect = case effect of
+          PlayerEffect.EntriesTrigger e -> PlayerEffect.EntriesTrigger e {EntriesTrigger.move = TriggeringMove.GainingLife}
+          other -> other
+        doctored = face {Face.playerAbilities = fmap (\ability -> ability {PlayerStaticAbility.effect = gaining (PlayerStaticAbility.effect ability)}) (Face.playerAbilities face)}
+    Spec.assertBool s (not (cardGainingLifeNamesEntrant (S.combinedFace crusher))) "Dr. Beverly Crusher, naming no entrant, is accepted"
+    Spec.assertBool s (not (cardGainingLifeNamesEntrant face)) "Teysa Karlov's creature dying is accepted"
+    Spec.assertBool s (cardGainingLifeNamesEntrant doctored) "her creature entrant under GainingLife is rejected"
   -- Parun.Engine.Cost.tapForManaWith adds a clause's shares as one, so an
   -- addition whose colour is chosen is its clause's only one: the corpus half.
   Spec.it s "CR 608.2c an addition choosing its source's colour is its clause's only addition" $ do

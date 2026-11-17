@@ -1,0 +1,281 @@
+{
+  "faces": [
+    {
+      "activatedAbilities": [
+        {
+          "cost": {
+            "mana": [
+              {
+                "type": "Generic",
+                "value": 2
+              },
+              {
+                "type": "OfType",
+                "value": {
+                  "type": "Colored",
+                  "value": "Green"
+                }
+              }
+            ]
+          },
+          "modal": {
+            "modes": [
+              {
+                "clauses": [
+                  {
+                    "effects": [
+                      {
+                        "type": "ModifyTarget",
+                        "value": {
+                          "duration": {
+                            "type": "UntilEndOfTurn"
+                          },
+                          "modification": {
+                            "type": "ModifyPowerToughness",
+                            "value": {
+                              "power": {
+                                "type": "Literal",
+                                "value": 2
+                              },
+                              "toughness": {
+                                "type": "Literal",
+                                "value": 0
+                              }
+                            }
+                          },
+                          "ref": {
+                            "type": "InSlot",
+                            "value": "target"
+                          }
+                        }
+                      },
+                      {
+                        "type": "ModifyTarget",
+                        "value": {
+                          "duration": {
+                            "type": "UntilEndOfTurn"
+                          },
+                          "modification": {
+                            "type": "GainKeyword",
+                            "value": {
+                              "type": "Trample"
+                            }
+                          },
+                          "ref": {
+                            "type": "InSlot",
+                            "value": "target"
+                          }
+                        }
+                      }
+                    ]
+                  }
+                ],
+                "targetSlots": {
+                  "target": {
+                    "filter": {
+                      "type": "Not",
+                      "value": {
+                        "type": "IsSource"
+                      }
+                    },
+                    "pool": {
+                      "type": "Creatures"
+                    }
+                  }
+                }
+              }
+            ]
+          }
+        }
+      ],
+      "combatRestrictions": [
+        {
+          "type": "CantAttack",
+          "value": {
+            "affected": {
+              "type": "Matching",
+              "value": {
+                "type": "IsSource"
+              }
+            },
+            "unless": {
+              "type": "Compares",
+              "value": {
+                "comparison": "AtLeast",
+                "measured": {
+                  "type": "Count",
+                  "value": {
+                    "aggregation": {
+                      "type": "Members"
+                    },
+                    "filter": {
+                      "type": "And",
+                      "value": [
+                        {
+                          "type": "HasCardType",
+                          "value": "Creature"
+                        },
+                        {
+                          "type": "HeldBy",
+                          "value": {
+                            "holder": "Controller",
+                            "relation": "You"
+                          }
+                        },
+                        {
+                          "type": "Not",
+                          "value": {
+                            "type": "IsSource"
+                          }
+                        },
+                        {
+                          "type": "Measures",
+                          "value": {
+                            "comparison": "AtLeast",
+                            "measure": "Power",
+                            "operand": {
+                              "type": "Literal",
+                              "value": 4
+                            }
+                          }
+                        }
+                      ]
+                    },
+                    "scope": {
+                      "type": "InZone",
+                      "value": {
+                        "player": {
+                          "type": "Relative",
+                          "value": "AnyPlayer"
+                        },
+                        "zone": "Battlefield"
+                      }
+                    }
+                  }
+                },
+                "threshold": {
+                  "type": "Literal",
+                  "value": 1
+                }
+              }
+            }
+          }
+        },
+        {
+          "type": "CantBlock",
+          "value": {
+            "affected": {
+              "type": "Matching",
+              "value": {
+                "type": "IsSource"
+              }
+            },
+            "unless": {
+              "type": "Compares",
+              "value": {
+                "comparison": "AtLeast",
+                "measured": {
+                  "type": "Count",
+                  "value": {
+                    "aggregation": {
+                      "type": "Members"
+                    },
+                    "filter": {
+                      "type": "And",
+                      "value": [
+                        {
+                          "type": "HasCardType",
+                          "value": "Creature"
+                        },
+                        {
+                          "type": "HeldBy",
+                          "value": {
+                            "holder": "Controller",
+                            "relation": "You"
+                          }
+                        },
+                        {
+                          "type": "Not",
+                          "value": {
+                            "type": "IsSource"
+                          }
+                        },
+                        {
+                          "type": "Measures",
+                          "value": {
+                            "comparison": "AtLeast",
+                            "measure": "Power",
+                            "operand": {
+                              "type": "Literal",
+                              "value": 4
+                            }
+                          }
+                        }
+                      ]
+                    },
+                    "scope": {
+                      "type": "InZone",
+                      "value": {
+                        "player": {
+                          "type": "Relative",
+                          "value": "AnyPlayer"
+                        },
+                        "zone": "Battlefield"
+                      }
+                    }
+                  }
+                },
+                "threshold": {
+                  "type": "Literal",
+                  "value": 1
+                }
+              }
+            }
+          }
+        }
+      ],
+      "keywords": [
+        {
+          "type": "Deathtouch"
+        },
+        {
+          "type": "Indestructible"
+        }
+      ],
+      "manaCost": [
+        {
+          "type": "Generic",
+          "value": 2
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "Green"
+          }
+        }
+      ],
+      "name": "Rhonas the Indomitable",
+      "oracleText": "Deathtouch, indestructible\nRhonas can't attack or block unless you control another creature with power 4 or greater.\n{2}{G}: Another target creature gets +2/+0 and gains trample until end of turn.",
+      "power": {
+        "type": "Literal",
+        "value": 5
+      },
+      "toughness": {
+        "type": "Literal",
+        "value": 5
+      },
+      "typeLine": {
+        "subtypes": [
+          "God"
+        ],
+        "supertypes": [
+          "Legendary"
+        ],
+        "types": [
+          "Creature"
+        ]
+      }
+    }
+  ]
+}

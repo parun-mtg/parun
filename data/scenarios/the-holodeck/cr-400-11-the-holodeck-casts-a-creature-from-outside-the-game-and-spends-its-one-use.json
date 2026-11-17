@@ -1,0 +1,183 @@
+{
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "battlefield": [
+          {
+            "card": "The Holodeck"
+          },
+          {
+            "card": "Forest",
+            "label": "f1"
+          },
+          {
+            "card": "Forest",
+            "label": "f2"
+          },
+          {
+            "card": "Swamp",
+            "label": "s1"
+          },
+          {
+            "card": "Swamp",
+            "label": "s2"
+          }
+        ],
+        "graveyard": [
+          {
+            "card": "Walking Corpse",
+            "label": "corpse"
+          }
+        ],
+        "hand": [
+          {
+            "card": "Plains",
+            "label": "plains"
+          }
+        ],
+        "library": [
+          {
+            "card": "Hill Giant"
+          },
+          {
+            "card": "Hill Giant"
+          },
+          {
+            "card": "Hill Giant"
+          },
+          {
+            "card": "Hill Giant"
+          }
+        ],
+        "name": "alice",
+        "outsideTheGame": [
+          {
+            "key": "Grizzly Bears",
+            "value": 1
+          },
+          {
+            "key": "Mountain",
+            "value": 1
+          }
+        ]
+      },
+      {
+        "library": [
+          {
+            "card": "Hill Giant"
+          },
+          {
+            "card": "Hill Giant"
+          },
+          {
+            "card": "Hill Giant"
+          },
+          {
+            "card": "Hill Giant"
+          }
+        ],
+        "name": "bob"
+      }
+    ],
+    "step": "PrecombatMain"
+  },
+  "description": "CR 400.11: The Holodeck casts a Grizzly Bears alice owns outside the game, its one use this turn is spent, and the card stays in the game",
+  "note": "Before the cast her Grizzly Bears outside the game is offered beside the Mountain out there and the Walking Corpse in her graveyard. The cast spends the use: with both Swamps still untapped for the Corpse, neither it nor the Mountain is offered, while the Plains in her hand still is. On her next turn the use is back, and the Bears, brought in, is offered no more.",
+  "timeline": [
+    {
+      "check": {
+        "View": {
+          "is": [
+            "Pass",
+            "PlayLand $plains",
+            "PlayLand Mountain",
+            "Cast $corpse",
+            "Cast Grizzly Bears",
+            "ActivateManaAbility $f1",
+            "ActivateManaAbility $f2",
+            "ActivateManaAbility $s1",
+            "ActivateManaAbility $s2"
+          ],
+          "of": "Offered",
+          "player": "alice"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Cast": {
+          "mana": [
+            "$f1",
+            "$f2",
+            null
+          ],
+          "object": "Grizzly Bears"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Grizzly Bears",
+          "count": 1,
+          "player": "alice",
+          "zone": "Battlefield"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "View": {
+          "is": [
+            "Pass",
+            "PlayLand $plains",
+            "ActivateManaAbility $s1",
+            "ActivateManaAbility $s2"
+          ],
+          "of": "Offered",
+          "player": "alice"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "View": {
+          "is": [
+            "Pass",
+            "PlayLand $plains",
+            "PlayLand Mountain",
+            "Cast $corpse",
+            "ActivateManaAbility $f1",
+            "ActivateManaAbility $f2",
+            "ActivateManaAbility $s1",
+            "ActivateManaAbility $s2"
+          ],
+          "of": "Offered",
+          "player": "alice"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 3
+    }
+  ]
+}

@@ -1,0 +1,133 @@
+{
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "battlefield": [
+          {
+            "card": "Curious Altisaur",
+            "label": "alt",
+            "ready": true
+          },
+          {
+            "card": "Ancient Brontodon",
+            "label": "bronto",
+            "ready": true
+          },
+          {
+            "card": "Grizzly Bears",
+            "label": "bears",
+            "ready": true
+          }
+        ],
+        "hand": [],
+        "library": [
+          {
+            "card": "Plains"
+          },
+          {
+            "card": "Mountain"
+          },
+          {
+            "card": "Forest"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ],
+        "name": "alice"
+      },
+      {
+        "battlefield": [
+          {
+            "card": "Curious Altisaur",
+            "label": "bobalt",
+            "tapped": true
+          }
+        ],
+        "hand": [],
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ],
+        "name": "bob"
+      }
+    ],
+    "step": "PrecombatMain"
+  },
+  "description": "CR 603.2, 510.2: Curious Altisaur draws a card for each Dinosaur you control dealing combat damage to a player, itself included, and not for a non-Dinosaur or for bob's",
+  "note": "Three attackers connect: the Altisaur and Ancient Brontodon (Dinosaurs) draw the Plains and the Mountain; Grizzly Bears would draw the Forest. Bob's tapped Altisaur sees no Dinosaur of bob's deal damage, so bob draws nothing.",
+  "timeline": [
+    {
+      "do": {
+        "Attack": [
+          "$alt",
+          "$bronto",
+          "$bears"
+        ]
+      },
+      "player": "alice",
+      "step": "DeclareAttackers",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Life": {
+          "life": 7,
+          "player": "bob"
+        }
+      },
+      "player": "alice",
+      "step": "CombatDamage",
+      "turn": 1
+    },
+    {
+      "check": {
+        "View": {
+          "is": [
+            "Plains",
+            "Mountain"
+          ],
+          "of": "Zone",
+          "player": "alice",
+          "zone": "Hand"
+        }
+      },
+      "player": "alice",
+      "step": "EndOfCombat",
+      "turn": 1
+    },
+    {
+      "check": {
+        "View": {
+          "is": [],
+          "of": "Zone",
+          "player": "bob",
+          "zone": "Hand"
+        }
+      },
+      "player": "alice",
+      "step": "EndOfCombat",
+      "turn": 1
+    }
+  ]
+}

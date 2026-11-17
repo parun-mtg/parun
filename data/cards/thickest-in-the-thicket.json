@@ -1,0 +1,244 @@
+{
+  "faces": [
+    {
+      "manaCost": [
+        {
+          "type": "Generic",
+          "value": 3
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "Green"
+          }
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "Green"
+          }
+        }
+      ],
+      "name": "Thickest in the Thicket",
+      "oracleText": "When this enchantment enters, put X +1/+1 counters on target creature, where X is that creature's power.\nAt the beginning of your end step, draw two cards if you control the creature with the greatest power or tied for the greatest power.",
+      "triggeredAbilities": [
+        {
+          "condition": {
+            "type": "Enters",
+            "value": {}
+          },
+          "modal": {
+            "modes": [
+              {
+                "clauses": [
+                  {
+                    "effects": [
+                      {
+                        "type": "PutCounters",
+                        "value": {
+                          "kind": {
+                            "type": "PlusOnePlusOne"
+                          },
+                          "quantity": {
+                            "type": "AgainstSlot",
+                            "value": {
+                              "quantity": {
+                                "type": "Measure",
+                                "value": "Power"
+                              },
+                              "slot": "target"
+                            }
+                          },
+                          "ref": {
+                            "type": "InSlot",
+                            "value": "target"
+                          }
+                        }
+                      }
+                    ]
+                  }
+                ],
+                "targetSlots": {
+                  "target": {
+                    "pool": {
+                      "type": "Creatures"
+                    }
+                  }
+                }
+              }
+            ]
+          }
+        },
+        {
+          "condition": {
+            "type": "StepBegins",
+            "value": {
+              "phase": {
+                "type": "Ending",
+                "value": "EndStep"
+              },
+              "scope": {
+                "type": "PlayersTurn",
+                "value": {
+                  "type": "Relative",
+                  "value": "You"
+                }
+              }
+            }
+          },
+          "modal": {
+            "modes": [
+              {
+                "clauses": [
+                  {
+                    "condition": {
+                      "type": "All",
+                      "value": [
+                        {
+                          "type": "Compares",
+                          "value": {
+                            "comparison": "AtLeast",
+                            "measured": {
+                              "type": "Count",
+                              "value": {
+                                "aggregation": {
+                                  "type": "Members"
+                                },
+                                "filter": {
+                                  "type": "And",
+                                  "value": [
+                                    {
+                                      "type": "HasCardType",
+                                      "value": "Creature"
+                                    },
+                                    {
+                                      "type": "HeldBy",
+                                      "value": {
+                                        "holder": "Controller",
+                                        "relation": "You"
+                                      }
+                                    }
+                                  ]
+                                },
+                                "scope": {
+                                  "type": "InZone",
+                                  "value": {
+                                    "player": {
+                                      "type": "Relative",
+                                      "value": "AnyPlayer"
+                                    },
+                                    "zone": "Battlefield"
+                                  }
+                                }
+                              }
+                            },
+                            "threshold": {
+                              "type": "Literal",
+                              "value": 1
+                            }
+                          }
+                        },
+                        {
+                          "type": "Compares",
+                          "value": {
+                            "comparison": "AtLeast",
+                            "measured": {
+                              "type": "Count",
+                              "value": {
+                                "aggregation": {
+                                  "type": "Greatest",
+                                  "value": {
+                                    "type": "Measure",
+                                    "value": "Power"
+                                  }
+                                },
+                                "filter": {
+                                  "type": "And",
+                                  "value": [
+                                    {
+                                      "type": "HasCardType",
+                                      "value": "Creature"
+                                    },
+                                    {
+                                      "type": "HeldBy",
+                                      "value": {
+                                        "holder": "Controller",
+                                        "relation": "You"
+                                      }
+                                    }
+                                  ]
+                                },
+                                "scope": {
+                                  "type": "InZone",
+                                  "value": {
+                                    "player": {
+                                      "type": "Relative",
+                                      "value": "AnyPlayer"
+                                    },
+                                    "zone": "Battlefield"
+                                  }
+                                }
+                              }
+                            },
+                            "threshold": {
+                              "type": "Count",
+                              "value": {
+                                "aggregation": {
+                                  "type": "Greatest",
+                                  "value": {
+                                    "type": "Measure",
+                                    "value": "Power"
+                                  }
+                                },
+                                "filter": {
+                                  "type": "HasCardType",
+                                  "value": "Creature"
+                                },
+                                "scope": {
+                                  "type": "InZone",
+                                  "value": {
+                                    "player": {
+                                      "type": "Relative",
+                                      "value": "AnyPlayer"
+                                    },
+                                    "zone": "Battlefield"
+                                  }
+                                }
+                              }
+                            }
+                          }
+                        }
+                      ]
+                    },
+                    "effects": [
+                      {
+                        "type": "Draw",
+                        "value": {
+                          "player": {
+                            "type": "Relative",
+                            "value": "You"
+                          },
+                          "quantity": {
+                            "type": "Literal",
+                            "value": 2
+                          }
+                        }
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      ],
+      "typeLine": {
+        "types": [
+          "Enchantment"
+        ]
+      }
+    }
+  ]
+}

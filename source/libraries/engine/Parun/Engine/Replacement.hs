@@ -675,8 +675,9 @@ admits regenerability cause rewrite = case rewrite of
   -- and umbra armor is not a regeneration, so CR 701.19c's prohibition leaves it
   -- standing.
   DestructionRewrite.UmbraArmor -> True
-  -- Pyramids' shield is not a regeneration (CR 701.19c) and names no cause.
-  DestructionRewrite.Heal -> True
+  -- Pyramids' shield and Dr. McCoy's are not regenerations (CR 701.19c) and
+  -- name no cause.
+  DestructionRewrite.Heal _ -> True
 
 -- CR 614.1: which permanent's destruction each rewrite watches for when its row
 -- prints no subject of its own.
@@ -703,7 +704,7 @@ scopes gs rewrite src oid = case rewrite of
     (Recipient.objectOf =<< (Object.attachedTo =<< Game.lookupObject src gs)) == Just oid
   -- Read only for a row printing no subject, which no heal shield does; the
   -- self-scope is regeneration's reading of an unnamed subject.
-  DestructionRewrite.Heal -> src == oid
+  DestructionRewrite.Heal _ -> src == oid
 
 -- CR 615.7: a spent shield is not an applicable prevention effect at all, and is
 -- refused HERE rather than applied for nothing -- as `admits` refuses a
@@ -1536,6 +1537,8 @@ admitsEntry gs oid rewrite = case rewrite of
   -- characteristics of a prepare spell", read off the copiable values the
   -- entry has settled so far (CR 723.2b).
   EntryRewrite.Prepared -> Prepare.hasPrepareSpell oid gs
+  -- CR 508.4's guards (CR 506.3) are Combat's, asked as the queue drains.
+  EntryRewrite.EntersAttacking -> True
   EntryRewrite.OrTapped _ -> True
   EntryRewrite.PayAnyLife _ -> True
   -- CR 614.1c's "as [this permanent] enters, [do something]". No condition here
@@ -1618,6 +1621,7 @@ entryCostOf rewrite = case rewrite of
   EntryRewrite.Compleated _ -> Nothing
   EntryRewrite.EntersTapState _ -> Nothing
   EntryRewrite.Prepared -> Nothing
+  EntryRewrite.EntersAttacking -> Nothing
   EntryRewrite.OrTapped _ -> Nothing
   EntryRewrite.PayAnyLife _ -> Nothing
   EntryRewrite.EntersTransformed -> Nothing
@@ -2280,6 +2284,7 @@ bucketOfEffect re = case re of
   -- CR 723.3a's designation is none of CR 616.1a-d either: a marker, not
   -- control, a copy or a face. So CR 616.1e.
   ReplacementEffect.EntryR (EntryR.MkEntryR _ EntryRewrite.Prepared) -> ReplacementBucket.Other
+  ReplacementEffect.EntryR (EntryR.MkEntryR _ EntryRewrite.EntersAttacking) -> ReplacementBucket.Other
   -- CR 614.1c's priced variant of the same rewrite is none of CR 616.1a-d
   -- either, and the price does not make it one: what the rewrite changes is still
   -- the STATUS the permanent enters with (CR 110.5b), and CR 701.20b makes a
@@ -2490,6 +2495,8 @@ readsApplier re = case re of
   -- CR 723.3a: Tapped's reason -- one marker on the object the event named, and
   -- CR 723.3a's second gate makes a second row a no-op.
   ReplacementEffect.EntryR (EntryR.MkEntryR _ EntryRewrite.Prepared) -> False
+  -- CR 508.4: the chooser is the entering creature's controller, and no payload.
+  ReplacementEffect.EntryR (EntryR.MkEntryR _ EntryRewrite.EntersAttacking) -> False
   -- CR 614.1c: NO despite spending a resource, for SacrificeAnyNumber's reason.
   -- The payer is the ENTERING object's controller -- "you" in an "as this
   -- permanent enters" ability the permanent prints about itself -- read live off
@@ -3071,6 +3078,7 @@ recordsAChoice effect = case effect of
     EntryRewrite.Compleated _ -> False
     EntryRewrite.EntersTapState _ -> False
     EntryRewrite.Prepared -> False
+    EntryRewrite.EntersAttacking -> False
     EntryRewrite.OrTapped _ -> False
     -- Records the amount, but spends life to do it.
     EntryRewrite.PayAnyLife _ -> False

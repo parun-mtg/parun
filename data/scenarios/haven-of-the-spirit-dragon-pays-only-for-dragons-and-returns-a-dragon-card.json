@@ -1,0 +1,334 @@
+{
+  "description": "CR 106.6, 115.1: Haven of the Spirit Dragon's coloured mana casts only a Dragon creature spell, and it returns a Dragon creature card or an Ugin planeswalker card from your graveyard",
+  "note": "Goblin Piker and Dragon Hatchling cost {1}{R} each and Wastes pays only the {1}, so only the Haven's restricted mana can pay {R}; Shivan Dragon and Ugin, the Spirit Dragon each return, and Grizzly Bears is refused as a return target.",
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "name": "alice",
+        "battlefield": [
+          {
+            "card": "Haven of the Spirit Dragon",
+            "label": "haven"
+          },
+          {
+            "card": "Haven of the Spirit Dragon",
+            "label": "haven2"
+          },
+          {
+            "card": "Haven of the Spirit Dragon",
+            "label": "haven3"
+          },
+          {
+            "card": "Wastes",
+            "label": "wastes"
+          }
+        ],
+        "hand": [
+          {
+            "card": "Goblin Piker",
+            "label": "piker"
+          },
+          {
+            "card": "Dragon Hatchling",
+            "label": "hatchling"
+          }
+        ],
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ],
+        "graveyard": [
+          {
+            "card": "Shivan Dragon",
+            "label": "shivan"
+          },
+          {
+            "card": "Ugin, the Spirit Dragon",
+            "label": "ugin"
+          },
+          {
+            "card": "Grizzly Bears",
+            "label": "bears"
+          }
+        ],
+        "manaPool": "CCCC"
+      },
+      {
+        "name": "bob",
+        "battlefield": [],
+        "hand": [],
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ]
+      }
+    ],
+    "step": "PrecombatMain"
+  },
+  "timeline": [
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "refuse": {
+        "Activate": {
+          "object": "$haven2",
+          "ability": 2,
+          "targets": [
+            "$bears"
+          ],
+          "mana": [
+            null
+          ]
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "do": {
+        "Activate": {
+          "object": "$haven2",
+          "ability": 2,
+          "targets": [
+            "$shivan"
+          ],
+          "mana": [
+            null
+          ]
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "do": "Pass"
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "bob",
+      "do": "Pass"
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "do": {
+        "Activate": {
+          "object": "$haven3",
+          "ability": 2,
+          "mana": [
+            null
+          ]
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "do": "Pass"
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "bob",
+      "do": "Pass"
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "check": {
+        "Count": {
+          "player": "alice",
+          "zone": "Hand",
+          "card": "Shivan Dragon",
+          "count": 1
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "check": {
+        "Count": {
+          "player": "alice",
+          "zone": "Hand",
+          "card": "Ugin, the Spirit Dragon",
+          "count": 1
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "check": {
+        "Count": {
+          "player": "alice",
+          "zone": "Graveyard",
+          "card": "Grizzly Bears",
+          "count": 1
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "check": {
+        "Count": {
+          "player": "alice",
+          "zone": "Graveyard",
+          "card": "Haven of the Spirit Dragon",
+          "count": 2
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "refuse": {
+        "Cast": {
+          "object": "$piker",
+          "mana": [
+            "$wastes",
+            "$haven"
+          ]
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "do": {
+        "Cast": {
+          "object": "$hatchling",
+          "mana": [
+            "$wastes",
+            "$haven"
+          ],
+          "yields": [
+            [
+              {
+                "manaType": {
+                  "type": "Colored",
+                  "value": "Red"
+                },
+                "tags": [],
+                "retention": "Ordinary",
+                "restriction": {
+                  "casts": {
+                    "type": "And",
+                    "value": [
+                      {
+                        "type": "HasSubtype",
+                        "value": "Dragon"
+                      },
+                      {
+                        "type": "HasCardType",
+                        "value": "Creature"
+                      }
+                    ]
+                  }
+                },
+                "rider": null,
+                "sourceChoices": null
+              }
+            ]
+          ]
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "do": "Pass"
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "bob",
+      "do": "Pass"
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "check": {
+        "Count": {
+          "player": "alice",
+          "zone": "Battlefield",
+          "card": "Dragon Hatchling",
+          "count": 1
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "check": {
+        "Count": {
+          "player": "alice",
+          "zone": "Hand",
+          "card": "Goblin Piker",
+          "count": 1
+        }
+      }
+    }
+  ]
+}

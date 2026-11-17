@@ -5,8 +5,9 @@ import qualified Parun.Types.Filter as Filter
 import qualified Parun.Types.Keyword as Keyword
 import qualified Parun.Types.TriggeringMove as TriggeringMove
 
--- | A rule over the abilities a permanent entering, dying or attacking causes to trigger,
--- read for the player whose abilities they are
+-- | A rule over the abilities a permanent entering, dying or attacking, or the
+-- player gaining life, causes to trigger, read for the player whose abilities
+-- they are
 -- (Parun.Types.PlayerEffect.EntriesTrigger).
 data EntriesTrigger = MkEntriesTrigger
   { -- | Which permanents it applies to: an entrant read as it exists on the

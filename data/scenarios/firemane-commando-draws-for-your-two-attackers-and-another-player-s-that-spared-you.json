@@ -1,0 +1,286 @@
+{
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "battlefield": [
+          {
+            "card": "Firemane Commando",
+            "label": "commando",
+            "ready": true
+          },
+          {
+            "card": "Grizzly Bears",
+            "label": "abears",
+            "ready": true
+          }
+        ],
+        "hand": [],
+        "library": [
+          {
+            "card": "Plains",
+            "label": "aplains"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ],
+        "name": "alice"
+      },
+      {
+        "battlefield": [
+          {
+            "card": "Hill Giant",
+            "label": "bgiant"
+          },
+          {
+            "card": "Grizzly Bears",
+            "label": "bbears"
+          }
+        ],
+        "hand": [],
+        "library": [
+          {
+            "card": "Mountain",
+            "label": "bmountain"
+          },
+          {
+            "card": "Forest",
+            "label": "bforest"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ],
+        "name": "bob"
+      },
+      {
+        "battlefield": [
+          {
+            "card": "Hill Giant",
+            "label": "cgiant"
+          },
+          {
+            "card": "Grizzly Bears",
+            "label": "cbears"
+          }
+        ],
+        "hand": [],
+        "library": [
+          {
+            "card": "Swamp",
+            "label": "cswamp"
+          },
+          {
+            "card": "Plains",
+            "label": "cplains"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ],
+        "name": "carol"
+      }
+    ],
+    "step": "PrecombatMain"
+  },
+  "description": "CR 508.3d, 508.1b: Firemane Commando draws when you attack with two creatures, and another player attacking with two draws only when none of them attacked you",
+  "note": "Three seats, so another player can attack someone other than alice: bob's two attackers go at carol and bob draws the Forest; carol sends one of hers at alice and does not draw the Plains.",
+  "timeline": [
+    {
+      "do": {
+        "Attack": [
+          "$commando",
+          "$abears"
+        ]
+      },
+      "player": "alice",
+      "step": "DeclareAttackers",
+      "turn": 1
+    },
+    {
+      "do": {
+        "ChooseAttackTarget": "$bob"
+      },
+      "player": "alice",
+      "source": "$commando",
+      "step": "DeclareAttackers",
+      "turn": 1
+    },
+    {
+      "do": {
+        "ChooseAttackTarget": "$bob"
+      },
+      "player": "alice",
+      "source": "$abears",
+      "step": "DeclareAttackers",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Block": {}
+      },
+      "player": "bob",
+      "step": "DeclareBlockers",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Plains",
+          "count": 1,
+          "player": "alice",
+          "zone": "Hand"
+        }
+      },
+      "player": "alice",
+      "step": "PostcombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Attack": [
+          "$bgiant",
+          "$bbears"
+        ]
+      },
+      "player": "bob",
+      "step": "DeclareAttackers",
+      "turn": 2
+    },
+    {
+      "do": {
+        "ChooseAttackTarget": "$carol"
+      },
+      "player": "bob",
+      "source": "$bgiant",
+      "step": "DeclareAttackers",
+      "turn": 2
+    },
+    {
+      "do": {
+        "ChooseAttackTarget": "$carol"
+      },
+      "player": "bob",
+      "source": "$bbears",
+      "step": "DeclareAttackers",
+      "turn": 2
+    },
+    {
+      "do": {
+        "Block": {}
+      },
+      "player": "carol",
+      "step": "DeclareBlockers",
+      "turn": 2
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Mountain",
+          "count": 1,
+          "player": "bob",
+          "zone": "Hand"
+        }
+      },
+      "player": "bob",
+      "step": "PostcombatMain",
+      "turn": 2
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Forest",
+          "count": 1,
+          "player": "bob",
+          "zone": "Hand"
+        }
+      },
+      "player": "bob",
+      "step": "PostcombatMain",
+      "turn": 2
+    },
+    {
+      "do": {
+        "Attack": [
+          "$cgiant",
+          "$cbears"
+        ]
+      },
+      "player": "carol",
+      "step": "DeclareAttackers",
+      "turn": 3
+    },
+    {
+      "do": {
+        "ChooseAttackTarget": "$alice"
+      },
+      "player": "carol",
+      "source": "$cgiant",
+      "step": "DeclareAttackers",
+      "turn": 3
+    },
+    {
+      "do": {
+        "ChooseAttackTarget": "$bob"
+      },
+      "player": "carol",
+      "source": "$cbears",
+      "step": "DeclareAttackers",
+      "turn": 3
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Swamp",
+          "count": 1,
+          "player": "carol",
+          "zone": "Hand"
+        }
+      },
+      "player": "carol",
+      "step": "PostcombatMain",
+      "turn": 3
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Plains",
+          "count": 0,
+          "player": "carol",
+          "zone": "Hand"
+        }
+      },
+      "player": "carol",
+      "step": "PostcombatMain",
+      "turn": 3
+    }
+  ]
+}

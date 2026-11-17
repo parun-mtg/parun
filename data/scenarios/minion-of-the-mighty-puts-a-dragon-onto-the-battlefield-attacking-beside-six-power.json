@@ -1,0 +1,183 @@
+{
+  "description": "CR 603.4, 508.4: Minion of the Mighty's pack tactics trigger, with attackers of total power 6 declared this combat, puts a Dragon creature card from hand onto the battlefield tapped and attacking",
+  "note": "The 0-power Minion and two 3-power Hill Giants attack for exactly 6. Grizzly Bears in hand is no Dragon and is refused; of two Dragons, Alabaster Dragon enters tapped and attacking bob, never declared as an attacker (CR 508.4), Shivan Dragon stays in hand, and bob takes 3 + 3 + 4. The 5-power control is minion-of-the-mighty-stays-silent-beside-five-power.",
+  "board": {
+    "active": "alice",
+    "step": "PrecombatMain",
+    "seats": [
+      {
+        "name": "alice",
+        "battlefield": [
+          {
+            "card": "Minion of the Mighty",
+            "label": "minion",
+            "ready": true
+          },
+          {
+            "card": "Hill Giant",
+            "label": "giant1",
+            "ready": true
+          },
+          {
+            "card": "Hill Giant",
+            "label": "giant2",
+            "ready": true
+          }
+        ],
+        "hand": [
+          {
+            "card": "Grizzly Bears",
+            "label": "bears"
+          },
+          {
+            "card": "Alabaster Dragon",
+            "label": "dragon"
+          },
+          {
+            "card": "Shivan Dragon",
+            "label": "shivan"
+          }
+        ],
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ]
+      },
+      {
+        "name": "bob",
+        "life": 21,
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ]
+      }
+    ]
+  },
+  "timeline": [
+    {
+      "turn": 1,
+      "step": "DeclareAttackers",
+      "player": "alice",
+      "do": {
+        "Attack": [
+          "$minion",
+          "$giant1",
+          "$giant2"
+        ]
+      }
+    },
+    {
+      "turn": 1,
+      "step": "DeclareAttackers",
+      "player": "alice",
+      "do": "Pass"
+    },
+    {
+      "turn": 1,
+      "step": "DeclareAttackers",
+      "player": "alice",
+      "do": {
+        "ChooseOptional": "Exercises"
+      }
+    },
+    {
+      "turn": 1,
+      "step": "DeclareAttackers",
+      "player": "alice",
+      "refuse": {
+        "Answer": {
+          "prompt": "ChooseCardInHand",
+          "with": "$bears"
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "DeclareAttackers",
+      "player": "alice",
+      "do": {
+        "Answer": {
+          "prompt": "ChooseCardInHand",
+          "with": "$dragon"
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "DeclareAttackers",
+      "player": "alice",
+      "check": {
+        "Attackers": {
+          "attackers": {
+            "$minion": "$bob",
+            "$giant1": "$bob",
+            "$giant2": "$bob",
+            "Alabaster Dragon": "$bob"
+          }
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "DeclareAttackers",
+      "player": "alice",
+      "check": {
+        "Tapped": {
+          "object": "Alabaster Dragon",
+          "tapped": true
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "DeclareAttackers",
+      "player": "alice",
+      "check": {
+        "Count": {
+          "player": "alice",
+          "zone": "Hand",
+          "card": "Shivan Dragon",
+          "count": 1
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "DeclareAttackers",
+      "player": "alice",
+      "check": {
+        "Count": {
+          "player": "alice",
+          "zone": "Hand",
+          "card": "Grizzly Bears",
+          "count": 1
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "EndOfCombat",
+      "player": "alice",
+      "check": {
+        "Life": {
+          "player": "bob",
+          "life": 11
+        }
+      }
+    }
+  ]
+}

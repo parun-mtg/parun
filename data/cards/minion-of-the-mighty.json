@@ -1,0 +1,134 @@
+{
+  "faces": [
+    {
+      "keywords": [
+        {
+          "type": "Menace"
+        }
+      ],
+      "manaCost": [
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "Red"
+          }
+        }
+      ],
+      "name": "Minion of the Mighty",
+      "oracleText": "Menace\nPack tactics — Whenever this creature attacks, if you attacked with creatures with total power 6 or greater this combat, you may put a Dragon creature card from your hand onto the battlefield tapped and attacking.",
+      "power": {
+        "type": "Literal",
+        "value": 0
+      },
+      "toughness": {
+        "type": "Literal",
+        "value": 1
+      },
+      "triggeredAbilities": [
+        {
+          "condition": {
+            "type": "Attacks",
+            "value": {
+              "type": "Attacker",
+              "value": {}
+            }
+          },
+          "intervening": {
+            "type": "Compares",
+            "value": {
+              "comparison": "AtLeast",
+              "measured": {
+                "type": "Count",
+                "value": {
+                  "aggregation": {
+                    "type": "Total",
+                    "value": {
+                      "type": "Measure",
+                      "value": "Power"
+                    }
+                  },
+                  "filter": {
+                    "type": "HeldBy",
+                    "value": {
+                      "holder": "Controller",
+                      "relation": "You"
+                    }
+                  },
+                  "scope": {
+                    "type": "InHistory",
+                    "value": {
+                      "type": "AttackerDeclared",
+                      "value": "ThisCombat"
+                    }
+                  }
+                }
+              },
+              "threshold": {
+                "type": "Literal",
+                "value": 6
+              }
+            }
+          },
+          "modal": {
+            "modes": [
+              {
+                "clauses": [
+                  {
+                    "effects": [
+                      {
+                        "type": "MoveToZone",
+                        "value": {
+                          "ref": {
+                            "type": "ChosenCardInHand",
+                            "value": {
+                              "filter": {
+                                "type": "And",
+                                "value": [
+                                  {
+                                    "type": "HasCardType",
+                                    "value": "Creature"
+                                  },
+                                  {
+                                    "type": "HasSubtype",
+                                    "value": "Dragon"
+                                  }
+                                ]
+                              },
+                              "player": {
+                                "type": "Relative",
+                                "value": "You"
+                              }
+                            }
+                          },
+                          "riders": {
+                            "attacking": {
+                              "type": "Chosen"
+                            },
+                            "tapped": "Tapped"
+                          },
+                          "zone": "Battlefield"
+                        }
+                      }
+                    ],
+                    "optionality": {
+                      "type": "Optional"
+                    }
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      ],
+      "typeLine": {
+        "subtypes": [
+          "Kobold"
+        ],
+        "types": [
+          "Creature"
+        ]
+      }
+    }
+  ]
+}

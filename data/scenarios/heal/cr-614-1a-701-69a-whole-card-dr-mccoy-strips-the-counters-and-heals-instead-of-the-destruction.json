@@ -1,0 +1,49 @@
+{
+  "description": "CR 614.1a / 701.69a whole card: Dr. McCoy strips the +1/+1 counters and heals instead of the destruction",
+  "note": "McCoy's enters trigger takes the Bears from one +1/+1 counter to two (4/4). Bolt marks 3 damage, then Terror would destroy it: instead both counters come off and the damage is healed, so it survives as a 2/2 with neither. Terror's 'can't be regenerated' does not reach a destruction replacement that is not a regeneration (CR 701.19c). The second Bolt kills it: with no counter left, McCoy's filter no longer admits it.",
+  "board": {
+    "active": "alice",
+    "step": "PrecombatMain",
+    "seats": [
+      {
+        "name": "alice",
+        "battlefield": [
+          {"card": "Plains", "label": "plains"},
+          {"card": "Plains", "label": "plains-2"},
+          {"card": "Plains", "label": "plains-3"},
+          {"card": "Plains", "label": "plains-4"},
+          {"card": "Mountain", "label": "mountain"},
+          {"card": "Mountain", "label": "mountain-2"},
+          {"card": "Swamp", "label": "swamp"},
+          {"card": "Swamp", "label": "swamp-2"},
+          {"card": "Grizzly Bears", "label": "bears", "counters": [{"key": {"type": "PlusOnePlusOne"}, "value": 1}]}
+        ],
+        "hand": [
+          {"card": "Dr. McCoy, Surly Surgeon", "label": "mccoy"},
+          {"card": "Lightning Bolt", "label": "bolt"},
+          {"card": "Lightning Bolt", "label": "bolt-2"},
+          {"card": "Terror", "label": "terror"}
+        ]
+      },
+      {"name": "bob"}
+    ]
+  },
+  "timeline": [
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": {"Cast": {"object": "$mccoy", "mana": ["$plains", "$plains-2", "$plains-3", "$plains-4", null]}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass"},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass"},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Counters": {"object": "$bears", "kind": {"type": "PlusOnePlusOne"}, "count": 2}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": {"Cast": {"object": "$bolt", "mana": ["$mountain", null], "targets": ["$bears"]}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass"},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Damage": {"object": "$bears", "damage": 3}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": {"Cast": {"object": "$terror", "mana": ["$swamp", "$swamp-2", null], "targets": ["$bears"]}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass"},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Count": {"card": "Grizzly Bears", "player": "alice", "zone": "Battlefield", "count": 1}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Counters": {"object": "$bears", "kind": {"type": "PlusOnePlusOne"}, "count": 0}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Damage": {"object": "$bears", "damage": 0}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"PowerToughness": {"object": "$bears", "power": 2, "toughness": 2}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": {"Cast": {"object": "$bolt-2", "mana": ["$mountain-2"], "targets": ["$bears"]}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass"},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Count": {"card": "Grizzly Bears", "player": "alice", "zone": "Graveyard", "count": 1}}}
+  ]
+}

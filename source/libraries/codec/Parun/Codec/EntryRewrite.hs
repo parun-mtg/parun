@@ -60,6 +60,7 @@ codec abilityCodec effectCodec =
       Arm.nullary "Tapped" (EntryRewrite.EntersTapState TapState.Tapped),
       Arm.nullary "Untapped" (EntryRewrite.EntersTapState TapState.Untapped),
       Arm.nullary "Prepared" EntryRewrite.Prepared,
+      Arm.nullary "EntersAttacking" EntryRewrite.EntersAttacking,
       Arm.nullary "EntersTransformed" EntryRewrite.EntersTransformed,
       Arm.payload "OrTapped" EntryPrice.codec EntryRewrite.OrTapped (\x -> case x of EntryRewrite.OrTapped y -> Just y; _ -> Nothing),
       -- Optional: the absent "value" key is the uncapped "any amount".
@@ -96,6 +97,7 @@ tagOf x = case x of
   EntryRewrite.EntersTapState TapState.Tapped -> "Tapped"
   EntryRewrite.EntersTapState TapState.Untapped -> "Untapped"
   EntryRewrite.Prepared {} -> "Prepared"
+  EntryRewrite.EntersAttacking {} -> "EntersAttacking"
   EntryRewrite.EntersTransformed {} -> "EntersTransformed"
   EntryRewrite.OrTapped {} -> "OrTapped"
   EntryRewrite.PayAnyLife {} -> "PayAnyLife"

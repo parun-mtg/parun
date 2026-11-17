@@ -1,0 +1,122 @@
+{
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "battlefield": [
+          {
+            "card": "Kira Nerys, Firebrand",
+            "label": "kira",
+            "ready": true
+          },
+          {
+            "card": "Forest",
+            "label": "forest-1"
+          },
+          {
+            "card": "Forest",
+            "label": "forest-2"
+          }
+        ],
+        "hand": [
+          {
+            "card": "Ambush Viper",
+            "label": "viper"
+          }
+        ],
+        "name": "alice"
+      },
+      {
+        "name": "bob"
+      }
+    ],
+    "step": "BeginningOfCombat"
+  },
+  "description": "CR 614.1c / 508.4: Kira Nerys, Firebrand, attacking, has a flashed-in Ambush Viper enter tapped and attacking, pumped by her trigger",
+  "note": "bob is the only candidate, so CR 508.4's choice is elided. The Viper deals 3 beside Kira's 4: it was never declared, yet it is an attacking creature through combat damage.",
+  "timeline": [
+    {
+      "do": {
+        "Attack": [
+          "$kira"
+        ]
+      },
+      "player": "alice",
+      "step": "DeclareAttackers",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Cast": {
+          "mana": [
+            "$forest-1",
+            "$forest-2"
+          ],
+          "object": "$viper"
+        }
+      },
+      "player": "alice",
+      "step": "DeclareAttackers",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "DeclareAttackers",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "DeclareAttackers",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Tapped": {
+          "object": "Ambush Viper",
+          "tapped": true
+        }
+      },
+      "player": "alice",
+      "step": "DeclareAttackers",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Attackers": {
+          "attackers": {
+            "$kira": "$bob",
+            "Ambush Viper": "$bob"
+          }
+        }
+      },
+      "player": "alice",
+      "step": "DeclareAttackers",
+      "turn": 1
+    },
+    {
+      "check": {
+        "PowerToughness": {
+          "object": "Ambush Viper",
+          "power": 3,
+          "toughness": 2
+        }
+      },
+      "player": "alice",
+      "step": "DeclareAttackers",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Life": {
+          "life": 13,
+          "player": "bob"
+        }
+      },
+      "player": "alice",
+      "step": "PostcombatMain",
+      "turn": 1
+    }
+  ]
+}

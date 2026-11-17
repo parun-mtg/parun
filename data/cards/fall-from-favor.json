@@ -1,0 +1,141 @@
+{
+  "faces": [
+    {
+      "enchant": [
+        {
+          "pool": {
+            "type": "Creatures"
+          }
+        }
+      ],
+      "manaCost": [
+        {
+          "type": "Generic",
+          "value": 2
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "Blue"
+          }
+        }
+      ],
+      "name": "Fall from Favor",
+      "oracleText": "Enchant creature\nWhen this Aura enters, tap enchanted creature and you become the monarch.\nEnchanted creature doesn't untap during its controller's untap step unless that player is the monarch.",
+      "triggeredAbilities": [
+        {
+          "condition": {
+            "type": "Enters",
+            "value": {}
+          },
+          "modal": {
+            "modes": [
+              {
+                "clauses": [
+                  {
+                    "effects": [
+                      {
+                        "type": "Tap",
+                        "value": {
+                          "ref": {
+                            "type": "EachMatching",
+                            "value": {
+                              "type": "IsHostOfSource"
+                            }
+                          }
+                        }
+                      },
+                      {
+                        "type": "BecomeMonarch",
+                        "value": {
+                          "type": "TheController"
+                        }
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      ],
+      "typeLine": {
+        "subtypes": [
+          "Aura"
+        ],
+        "types": [
+          "Enchantment"
+        ]
+      },
+      "untapRestrictions": [
+        {
+          "affected": {
+            "type": "Matching",
+            "value": {
+              "type": "And",
+              "value": [
+                {
+                  "type": "HasCardType",
+                  "value": "Creature"
+                },
+                {
+                  "type": "HasAttached",
+                  "value": {
+                    "type": "IsSource"
+                  }
+                }
+              ]
+            }
+          },
+          "while": {
+            "type": "Compares",
+            "value": {
+              "comparison": "Exactly",
+              "measured": {
+                "type": "Count",
+                "value": {
+                  "aggregation": {
+                    "type": "Total",
+                    "value": {
+                      "type": "IsMonarch",
+                      "value": {
+                        "type": "Candidate"
+                      }
+                    }
+                  },
+                  "filter": {
+                    "type": "Controls",
+                    "value": {
+                      "filter": {
+                        "type": "HasAttached",
+                        "value": {
+                          "type": "IsSource"
+                        }
+                      },
+                      "margin": {
+                        "type": "AtLeast",
+                        "value": 1
+                      }
+                    }
+                  },
+                  "scope": {
+                    "type": "OverPlayers",
+                    "value": {
+                      "type": "Relative",
+                      "value": "AnyPlayer"
+                    }
+                  }
+                }
+              },
+              "threshold": {
+                "type": "Literal",
+                "value": 0
+              }
+            }
+          }
+        }
+      ]
+    }
+  ]
+}

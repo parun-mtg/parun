@@ -50,5 +50,18 @@ spec s = Spec.describe s "Parun.Codec.EntriesTrigger" $ do
           }
       )
       " {\"bearers\":{\"type\":\"Or\",\"value\":[{\"type\":\"IsSource\"},{\"type\":\"IsEmblem\"}]},\"entrants\":{\"type\":\"HasCardType\",\"value\":\"Creature\"},\"move\":\"Dying\",\"triggering\":\"AnAdditionalTime\"} "
+  -- Dr. Beverly Crusher's "you gaining life", with no entrant.
+  Spec.it s "MkEntriesTrigger gaining life" $
+    Common.assertCodec
+      s
+      EntriesTrigger.codec
+      ( EntriesTrigger.MkEntriesTrigger
+          { EntriesTrigger.entrants = Filter.And [],
+            EntriesTrigger.bearers = Filter.IsSource,
+            EntriesTrigger.move = TriggeringMove.GainingLife,
+            EntriesTrigger.triggering = EntryTriggering.AnAdditionalTime
+          }
+      )
+      " {\"bearers\":{\"type\":\"IsSource\"},\"move\":\"GainingLife\",\"triggering\":\"AnAdditionalTime\"} "
   Spec.it s "has a schema" $
     Common.assertHasSchema s EntriesTrigger.codec

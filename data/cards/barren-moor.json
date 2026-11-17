@@ -1,0 +1,83 @@
+{
+  "faces": [
+    {
+      "activatedAbilities": [
+        {
+          "cost": {
+            "components": [
+              {
+                "type": "TapThis"
+              }
+            ],
+            "mana": []
+          },
+          "modal": {
+            "modes": [
+              {
+                "clauses": [
+                  {
+                    "effects": [
+                      {
+                        "type": "AddMana",
+                        "value": {
+                          "production": {
+                            "type": "OfType",
+                            "value": {
+                              "type": "Colored",
+                              "value": "Black"
+                            }
+                          }
+                        }
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      ],
+      "keywords": [
+        {
+          "type": "Cycling",
+          "value": {
+            "cost": {
+              "mana": [
+                {
+                  "type": "OfType",
+                  "value": {
+                    "type": "Colored",
+                    "value": "Black"
+                  }
+                }
+              ]
+            },
+            "searchFor": null
+          }
+        }
+      ],
+      "name": "Barren Moor",
+      "oracleText": "This land enters tapped.\n{T}: Add {B}.\nCycling {B} ({B}, Discard this card: Draw a card.)",
+      "replacementEffects": [
+        {
+          "effect": {
+            "type": "EntryR",
+            "value": {
+              "matching": {
+                "type": "IsSource"
+              },
+              "rewrite": {
+                "type": "Tapped"
+              }
+            }
+          }
+        }
+      ],
+      "typeLine": {
+        "types": [
+          "Land"
+        ]
+      }
+    }
+  ]
+}
