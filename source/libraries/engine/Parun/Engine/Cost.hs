@@ -1228,7 +1228,7 @@ candidateCostsGiven permitted pid name oid gs =
 -- additional cost is the cost reducer, so a re-read after CR 601.2h's sacrifice
 -- costs a mana more.
 total :: PlayerId -> ObjectId -> Cost Keyword.Type.Keyword -> GameState -> Cost Keyword.Type.Keyword
-total pid oid cost gs = totalWith (spellAdjustments Map.empty pid oid gs) cost
+total pid oid cost gs = totalWith (spellAdjustments (announcedRecords cost) Map.empty pid oid gs) cost
 
 -- CR 601.2f's increases and reductions for a SPELL being cast: the ones CARDS
 -- generate (Parun.Engine.PlayerEffect, plus the spell's own text through
@@ -1242,10 +1242,14 @@ total pid oid cost gs = totalWith (spellAdjustments Map.empty pid oid gs) cost
 -- sentence may read (selfReductions), and so may another object's per-target
 -- change (PlayerEffect.perTargetCount); empty for a caller standing before CR
 -- 601.2c, where neither applies.
-spellAdjustments :: Map.Map SlotName.SlotName (Set.Set Recipient.Recipient) -> PlayerId -> ObjectId -> GameState -> CostAdjustments.CostAdjustments
-spellAdjustments aiming pid oid gs =
+--
+-- `announced` is the records the cost being totalled will bind
+-- (announcedRecords), which the spell's own sentence may also read
+-- (selfReductions).
+spellAdjustments :: Set.Set SlotName.SlotName -> Map.Map SlotName.SlotName (Set.Set Recipient.Recipient) -> PlayerId -> ObjectId -> GameState -> CostAdjustments.CostAdjustments
+spellAdjustments announced aiming pid oid gs =
   let adjustments = PlayerEffect.spellCostAdjustments (Set.unions (Map.elems aiming)) pid oid gs
-      self = selfReductions aiming pid oid gs
+      self = selfReductions announced aiming pid oid gs
       withSelf =
         adjustments
           { CostAdjustments.reductions =
@@ -1343,6 +1347,13 @@ raiseCandidate pid oid gs cost =
 -- target beyond the first" is a BoundCount of its own slot less one --
 -- data/scenarios/divided-evenly proves it.
 --
+-- CR 601.2b announced the optional additional costs before this step and CR
+-- 601.2h pays them after it, so a sentence asking whether one was chosen (Bite
+-- Down on Crime's "if evidence was collected") reads `announced`, the records
+-- the cost being totalled will bind (announcedRecords), as present: Cast's
+-- `settledFor` stand-in, one step later. The scenario
+-- bite-down-on-crime-costs-two-less-when-evidence-was-collected proves it.
+--
 -- The PRINTED reductions come straight off the object rather than through a
 -- projection: it is the half Cast.asProposed already stamped (CR 709.3b), with
 -- its copy stamp's costs laid over it (Game.castingFaceOf, CR 707.2). They are
@@ -1354,12 +1365,14 @@ raiseCandidate pid oid gs cost =
 -- printed and granted alike (CR 702.41a, CR 702.125a), so a spell given
 -- affinity is reduced by it -- Parun.CostSpec's Mycosynth Golem group proves
 -- it.
-selfReductions :: Map.Map SlotName.SlotName (Set.Set Recipient.Recipient) -> PlayerId -> ObjectId -> GameState -> [(CostDirection.CostDirection, ManaCost.ManaCost)]
-selfReductions aiming pid oid gs =
+selfReductions :: Set.Set SlotName.SlotName -> Map.Map SlotName.SlotName (Set.Set Recipient.Recipient) -> PlayerId -> ObjectId -> GameState -> [(CostDirection.CostDirection, ManaCost.ManaCost)]
+selfReductions announced aiming pid oid gs =
   let -- CR 109.5: the perspective is the would-be controller, `pid` -- not
       -- Projection.controllerOf, which answers Nothing for a card in a hand.
       -- The source is the spell itself, the reduction being printed on it.
-      context = Projection.framedBySlots gs aiming (Projection.sourceContext gs (Just pid) oid)
+      framed = Projection.framedBySlots gs aiming (Projection.sourceContext gs (Just pid) oid)
+      -- Presence alone, all Quantity.WasBound asks, so the amount is a stand-in.
+      context = framed {Filter.boundAmounts = Map.union (Filter.boundAmounts framed) (Map.fromSet (const 0) announced)}
       targets = Set.fromList (Maybe.mapMaybe Recipient.objectOf (Set.toList (Set.unions (Map.elems aiming))))
       -- CR 601.2f: a conditional reduction is asked here, as the total is
       -- determined, against the same perspective as its count.
@@ -4302,9 +4315,11 @@ targetComputed component = case component of
 -- "if" to read through Quantity.WasBound, known from the announcement alone --
 -- what CR 700.2's mode count asks of a cost not yet paid (Pyrrhic Strike's "if
 -- this spell's additional cost was paid, choose both instead";
--- Parun.Engine.Cast's `settledFor`). Blight's arm is the one a printing's mode
--- count reaches; the others are the same fact about `payComponent`'s arms, and
--- Parun.CardSpec's slot lint reads them all.
+-- Parun.Engine.Cast's `settledFor`), and what CR 601.2f's total asks of one
+-- (Bite Down on Crime's "if evidence was collected"; selfReductions).
+-- Blight's arm is the one a printing's mode count reaches and CollectEvidence's
+-- the one a printing's reduction does; the others are the same fact about
+-- `payComponent`'s arms, and Parun.CardSpec's slot lint reads them all.
 -- EXHAUSTIVE with no wildcard, so a new recording component answers here.
 announcedRecord :: CostComponent.CostComponent Keyword.Type.Keyword -> Maybe SlotName.SlotName
 announcedRecord component = case component of

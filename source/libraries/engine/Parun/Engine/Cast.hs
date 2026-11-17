@@ -700,7 +700,7 @@ payableCountedAtGiven modes pcs sources x extra spending pid oid gs cost =
       assisted = Cost.assistable (PaymentSubject.Casting oid) pid oid gs
       withX o = o {Object.bindings = Map.union (Binding.fromChoices Map.empty (Just x) Seq.empty) (Object.bindings o)}
       priced = if readsAnnouncedX pid oid cost gs then gs {GameState.objects = Map.adjust withX oid (GameState.objects gs)} else gs
-      adjustmentsFor aiming = CostAdjustments.Engine.plusReductions extra (Cost.spellAdjustments aiming pid oid priced)
+      adjustmentsFor aiming = CostAdjustments.Engine.plusReductions extra (Cost.spellAdjustments (Cost.announcedRecords cost) aiming pid oid priced)
       -- The X CR 601.2h's "Spend only black mana on X" confines: `x` while the
       -- cost still carries its {X}, and the X announced on the spell once
       -- castSpell has substituted it (its `announcedBoard`).
@@ -4422,7 +4422,7 @@ castProposed perform baseSpending pid oid sid printedFace castFrom preparedFor k
                   -- 601.2f Dismember under Hinata offers both mana routes" proves
                   -- it.
                   let aimedSets = Target.legalSets StackObjectKind.Spell Nothing (Just pid) False (Binding.fromChoices Map.empty mAmount Seq.empty) sid slots announcedBoard
-                      gatheredFor targets = CostAdjustments.Engine.plusReductions chosenReductions (Cost.spellAdjustments targets pid sid announcedBoard)
+                      gatheredFor targets = CostAdjustments.Engine.plusReductions chosenReductions (Cost.spellAdjustments (Cost.announcedRecords announcedAtX) targets pid sid announcedBoard)
                       gathered = gatheredFor Map.empty
                       -- Merged by value: aimings counting alike total alike. The
                       -- empty aiming is among them only where every slot may take
@@ -4575,7 +4575,7 @@ castProposed perform baseSpending pid oid sid printedFace castFrom preparedFor k
                       pricedGs <- State.get
                       -- CR 601.2c's targets are fixed by now, so an adjustment
                       -- reading them (Bury in Books, Hinata) is asked here.
-                      adjustments <- Cost.announceReductions pid sid pricedGs announcedCost (CostAdjustments.Engine.plusReductions chosenReductions (Cost.spellAdjustments chosen pid sid pricedGs))
+                      adjustments <- Cost.announceReductions pid sid pricedGs announcedCost (CostAdjustments.Engine.plusReductions chosenReductions (Cost.spellAdjustments (Cost.announcedRecords announcedCost) chosen pid sid pricedGs))
                       -- CR 601.2f's "plus all additional costs", gathered NOW
                       -- that the targets are fixed, where `gathered` at CR
                       -- 601.2b above could not see them: a component read off
