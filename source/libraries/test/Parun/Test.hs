@@ -1103,6 +1103,9 @@ import qualified Parun.VanguardSpec
 import qualified Parun.VariableEffectSpec
 import qualified Parun.VisibilitySpec
 import qualified Parun.VoteSpec
+import qualified Parun.Web.AppSpec
+import qualified Parun.Web.DiffSpec
+import qualified Parun.Web.HtmlSpec
 import qualified Parun.ZoneChangeSpec
 import qualified Parun.ZoneReplacementSpec
 import qualified Parun.ZoneTriggerSpec
@@ -2238,6 +2241,9 @@ spec s reference corpus = do
   Parun.VariableEffectSpec.spec s registry
   Parun.VisibilitySpec.spec s registry
   Parun.VoteSpec.spec s registry
+  Parun.Web.AppSpec.spec s
+  Parun.Web.DiffSpec.spec s
+  Parun.Web.HtmlSpec.spec s
   Parun.ZoneChangeSpec.spec s registry
   Parun.ZoneReplacementSpec.spec s registry
   Parun.ZoneTriggerSpec.spec s registry

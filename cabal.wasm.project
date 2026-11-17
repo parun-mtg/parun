@@ -1,0 +1,5 @@
+-- The wasm build (#8007), from the wasm dev shell; CI's Wasm job runs the same:
+--   nix develop .#wasm --command wasm32-wasi-cabal build all \
+--     --builddir=dist-wasm --project-file=cabal.wasm.project
+-- Int is 32 bits on wasm32, unlike every native target.
+import: cabal.project

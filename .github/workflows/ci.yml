@@ -45,6 +45,31 @@ jobs:
             ~/.local/state/cabal
             dist-newstyle
           key: ${{ steps.cache.outputs.cache-primary-key }}
+  # The web client's target (#8007): Int is 32 bits and there is no threaded RTS.
+  wasm:
+    name: Wasm
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: nixbuild/nix-quick-install-action@v35
+      - id: cache
+        uses: actions/cache/restore@v6
+        with:
+          path: dist-wasm
+          key: wasm-${{ hashFiles('flake.lock') }}-${{ github.sha }}
+          restore-keys: wasm-${{ hashFiles('flake.lock') }}-
+      - run: |
+          nix develop .#wasm --command wasm32-wasi-cabal build all \
+            --builddir=dist-wasm \
+            --enable-benchmarks \
+            --enable-tests \
+            --flags=pedantic \
+            --project-file=cabal.wasm.project
+      - if: github.event_name != 'merge_group' && steps.cache.outputs.cache-hit != 'true'
+        uses: actions/cache/save@v6
+        with:
+          path: dist-wasm
+          key: ${{ steps.cache.outputs.cache-primary-key }}
   cabal:
     name: Cabal
     if: github.event_name != 'push'

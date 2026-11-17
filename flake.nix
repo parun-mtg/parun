@@ -2,6 +2,8 @@
   inputs = {
     cabal-gild.inputs.nixpkgs.follows = "nixpkgs";
     cabal-gild.url = "github:tfausak/cabal-gild-nix";
+    ghc-wasm-meta.inputs.nixpkgs.follows = "nixpkgs";
+    ghc-wasm-meta.url = "github:haskell-wasm/ghc-wasm-meta";
     hooky.inputs.nixpkgs.follows = "nixpkgs";
     hooky.url = "github:tfausak/hooky-nix";
     nixpkgs.url = "github:NixOS/nixpkgs/nixpkgs-unstable";
@@ -10,6 +12,7 @@
   outputs =
     {
       cabal-gild,
+      ghc-wasm-meta,
       hooky,
       nixpkgs,
       ...
@@ -122,12 +125,33 @@
               pkgs.ghc
             ];
           };
+
+          # The GHC wasm backend, for the web client (#8007). Its flavour
+          # tracks the native GHC's major version, so both build one set of
+          # boot libraries.
+          wasm =
+            let
+              meta = ghc-wasm-meta.packages.${system};
+            in
+            pkgs.mkShell {
+              nativeBuildInputs = [
+                meta.binaryen
+                meta.nodejs
+                meta.wasi-sdk
+                meta.wasm32-wasi-cabal-9_10
+                meta.wasm32-wasi-ghc-9_10
+                meta.wasmtime
+              ];
+            };
         in
         {
-          inherit ci;
+          inherit ci wasm;
 
           default = pkgs.mkShell {
-            inputsFrom = [ ci ];
+            inputsFrom = [
+              ci
+              wasm
+            ];
 
             nativeBuildInputs = [
               cabal-gild.packages.${system}.default

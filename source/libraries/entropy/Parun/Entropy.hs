@@ -1,7 +1,8 @@
 {-# LANGUAGE CPP #-}
 
 -- | Random bytes from the operating system's cryptographically secure
--- generator: @/dev/urandom@ on POSIX, @BCryptGenRandom@ on Windows.
+-- generator: @/dev/urandom@ on POSIX, @BCryptGenRandom@ on Windows,
+-- @getentropy@ on WASI, which has no device files.
 module Parun.Entropy where
 
 import qualified Control.Exception as Exception
@@ -12,6 +13,10 @@ import qualified Parun.Exceptions.EntropyUnavailable as EntropyUnavailable
 #if defined(mingw32_HOST_OS)
 import qualified Data.Int as Int
 import qualified Data.Word as Word
+import qualified Foreign.Marshal.Alloc as Alloc
+import qualified Foreign.Ptr as Ptr
+#elif defined(wasm32_HOST_ARCH)
+import qualified Foreign.C.Types as CTypes
 import qualified Foreign.Marshal.Alloc as Alloc
 import qualified Foreign.Ptr as Ptr
 #else
@@ -45,6 +50,16 @@ systemPreferredRng = 2
 
 foreign import ccall unsafe "BCryptGenRandom"
   bCryptGenRandom :: Ptr.Ptr () -> Ptr.Ptr Word.Word8 -> Word.Word32 -> Word.Word32 -> IO Int.Int32
+#elif defined(wasm32_HOST_ARCH)
+draw :: IO ByteString.ByteString
+draw = Alloc.allocaBytes size $ \buffer -> do
+  status <- getEntropy buffer 32
+  Monad.unless (status == 0) $
+    Exception.throwIO (EntropyUnavailable.MkEntropyUnavailable (Text.pack ("getentropy returned " <> show status)))
+  ByteString.packCStringLen (Ptr.castPtr buffer, size)
+
+foreign import ccall unsafe "getentropy"
+  getEntropy :: Ptr.Ptr CTypes.CUChar -> CTypes.CSize -> IO CTypes.CInt
 #else
 draw :: IO ByteString.ByteString
 draw = IO.withBinaryFile "/dev/urandom" IO.ReadMode $ \handle -> ByteString.hGet handle size

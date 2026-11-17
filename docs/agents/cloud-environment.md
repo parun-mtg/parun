@@ -30,14 +30,21 @@ if [ ! -x /root/.nix-profile/bin/nix ]; then
 fi
 
 # 2. Enter the dev shell. The session's GitHub proxy refuses github: inputs,
-# so fetch each as an archive tarball. Sessions never load the shell, so link
-# its tools into /usr/local/bin, which is on their PATH.
+# so fetch each as an archive tarball, nested inputs by their path. Sessions
+# never load the shell, so link its tools into /usr/local/bin, which is on
+# their PATH. The wasm toolchain comes from release assets, which sessions
+# can fetch but only this script can install.
 overrides=()
 while read -r name url; do overrides+=(--override-input "$name" "$url"); done < <(jq -r '
-  .nodes | to_entries[] | select(.value.locked.type == "github") | .value.locked as $l
-  | "\(.key) https://github.com/\($l.owner)/\($l.repo)/archive/\($l.rev).tar.gz"' flake.lock)
+  . as $lock
+  | def inputs($node; $path): ($lock.nodes[$node].inputs // {}) | to_entries[]
+      | select(.value | type == "string") | [$path + [.key], .value] as $edge
+      | $edge, inputs($edge[1]; $edge[0]);
+  inputs($lock.root; []) | $lock.nodes[.[1]].locked as $l | select($l.type == "github")
+  | "\(.[0] | join("/")) https://github.com/\($l.owner)/\($l.repo)/archive/\($l.rev).tar.gz"' flake.lock)
 shell() { nix develop --no-write-lock-file "${overrides[@]}" . --command bash -c "$1"; }
-shell 'for tool in ghc cabal cabal-gild hooky hlint ormolu ghcid nixfmt; do
+shell 'for tool in ghc cabal cabal-gild hooky hlint ormolu ghcid nixfmt \
+  wasm32-wasi-ghc wasm32-wasi-cabal wasm-opt wasmtime node; do
   ln -sf "$(dirname "$(command -v "$tool")")"/* /usr/local/bin/; done'
 
 # 3. Configure cabal. cabal.project already turns off shared and dynamic objects.
