@@ -16,9 +16,18 @@ mkdir -p "$out"
 wasm-opt -Oz --strip-debug "$wasm" -o "$out/parun.wasm"
 node --check source/web/parun.js
 cp source/web/index.html source/web/parun.js "$out/"
-# The data directory the page mounts, reproducibly packed.
-tar -C data --format=ustar --sort=name --owner=0 --group=0 --numeric-owner --mtime=@0 \
-  -cf - cards decks formats legalities.json printings.json sticker-sheets | gzip -9n > "$out/data.tar.gz"
+# The data directory the page mounts, reproducibly packed, with the cards as
+# one bundle (Parun.Registry.loadBundle) rather than a file each.
+staging=$(mktemp -d)
+trap 'rm -rf "$staging"' EXIT
+find data/cards -name '*.json' | LC_ALL=C sort | while read -r card; do
+  printf '%s\0' "${card##*/}"
+  cat "$card"
+  printf '\0'
+done > "$staging/cards.bundle"
+tar --format=ustar --sort=name --owner=0 --group=0 --numeric-owner --mtime=@0 -cf - \
+  -C "$staging" cards.bundle \
+  -C "$PWD/data" decks formats legalities.json printings.json sticker-sheets | gzip -9n > "$out/data.tar.gz"
 cp -r "$BROWSER_WASI_SHIM/dist" "$out/browser_wasi_shim"
 chmod -R u+w "$out"
 ls -l "$out/parun.wasm" "$out/data.tar.gz"

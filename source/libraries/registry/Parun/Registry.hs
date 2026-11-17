@@ -323,6 +323,23 @@ loadRoot root = do
   paths <- listRoot root
   mapM (\path -> fmap (\bytes -> (path, parseCard bytes)) (ByteString.readFile path)) paths
 
+-- 'loadRoot''s answer from a bundle of the root's card files rather than the
+-- directory: each file's name beneath the root and its bytes, each followed by
+-- a NUL, as script/build-web.sh packs data/cards. The web client reads one
+-- file where a directory would cost it a WASI round trip and a Handle per
+-- card. Files are parsed as lazily as 'loadRoot''s, and a trailing name with
+-- no contents is dropped.
+loadBundle :: FilePath -> ByteString.ByteString -> [(FilePath, Either Text.Text Card.Card)]
+loadBundle root =
+  let pairs fields = case fields of
+        name : bytes : rest -> (root <> "/" <> Text.unpack (Encoding.decodeUtf8Lenient name), parseCard bytes) : pairs rest
+        _ -> []
+   in List.sortOn fst . filter (List.isSuffixOf ".json" . fst) . pairs . ByteString.split 0
+
+-- Where the web client's bundle of the shipped cards is, 'loadBundle''s input.
+bundlePath :: IO FilePath
+bundlePath = Paths.getDataFileName "cards.bundle"
+
 -- Every card file in a root, ascending by path, read no further: the
 -- enumeration half of 'loadRoot', for a caller that parses each file later.
 listRoot :: FilePath -> IO [FilePath]

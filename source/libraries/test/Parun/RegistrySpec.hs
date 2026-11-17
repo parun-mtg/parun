@@ -12,6 +12,7 @@ import qualified Data.List as List
 import qualified Data.List.NonEmpty as NonEmpty
 import qualified Data.Maybe as Maybe
 import qualified Data.Text as Text
+import qualified Data.Text.Encoding as Encoding
 import qualified Parun.Engine.Card as Card
 import qualified Parun.Exceptions.InvalidCorpus as InvalidCorpus
 import qualified Parun.Exceptions.MissingRoot as MissingRoot
@@ -339,3 +340,12 @@ spec s = Spec.describe s "Parun.Registry" $ do
         Spec.assertEqWith s "ascending, .json only" (fmap fst loaded) [root <> "/bird-maiden.json", root <> "/goblin-piker.json"]
         Spec.assertEqWith s "the good one parsed" (Maybe.mapMaybe (\entry -> case snd entry of Right c -> Just (Face.name (Card.combined c)); Left _ -> Nothing) loaded) [CardName.MkCardName $ Text.pack "Goblin Piker"]
         Spec.assertEqWith s "and the bad one is reported, not thrown" (length (Maybe.mapMaybe (\entry -> case snd entry of Left reason -> Just reason; Right _ -> Nothing) loaded)) 1
+
+  Spec.it s "loadBundle answers what loadRoot does over the same files" $ do
+    piker <- S.pikerJson
+    let files = [("goblin-piker.json", piker), ("bird-maiden.json", Text.pack "{oh no"), ("README.md", Text.pack "not a card")]
+    S.withCorpusDir "load-bundle" files $ \root -> do
+      loaded <- Registry.loadRoot root
+      let field = (<> ByteString.singleton 0)
+          bundle = foldMap (\(name, contents) -> field (ByteString.Char8.pack name) <> field (Encoding.encodeUtf8 contents)) files
+      Spec.assertEq s (Registry.loadBundle root bundle) loaded

@@ -113,24 +113,51 @@ function inodes(tree) {
   return new Map(Array.from(tree, ([name, node]) => [name, node instanceof Map ? new Directory(inodes(node)) : node]));
 }
 
-const fetched = performance.now();
+// Each phase's time goes to the console; with ?profile, so does the time
+// spent in each WASI import.
+let mark = performance.now();
+function phase(name) {
+  const now = performance.now();
+  console.log(`${name} in ${Math.round(now - mark)} ms`);
+  mark = now;
+}
+
 const archive = await fetch("data.tar.gz");
 const data = new Uint8Array(await new Response(archive.body.pipeThrough(new DecompressionStream("gzip"))).arrayBuffer());
-const unpacked = performance.now();
-console.log(`data: ${data.length} bytes in ${Math.round(unpacked - fetched)} ms`);
+phase(`fetched ${data.length} bytes`);
+const mounted = new PreopenDirectory("/data", inodes(untar(data)));
+phase("unpacked");
 
 const wasi = new WASI([], ["parun_datadir=/data"], [
   new OpenFile(new File([])),
   ConsoleStdout.lineBuffered((line) => console.log(line)),
   ConsoleStdout.lineBuffered((line) => console.warn(line)),
-  new PreopenDirectory("/data", inodes(untar(data))),
+  mounted,
 ], { debug: false });
+const calls = new Map();
+if (new URLSearchParams(location.search).has("profile")) {
+  for (const [name, call] of Object.entries(wasi.wasiImport)) {
+    wasi.wasiImport[name] = (...args) => {
+      const start = performance.now();
+      try {
+        return call(...args);
+      } finally {
+        const tally = calls.get(name) ?? { count: 0, ms: 0 };
+        calls.set(name, { count: tally.count + 1, ms: tally.ms + performance.now() - start });
+      }
+    };
+  }
+}
 const exports = {};
 const { instance } = await WebAssembly.instantiateStreaming(fetch("parun.wasm"), {
   ghc_wasm_jsffi: jsffi(exports),
   wasi_snapshot_preview1: wasi.wasiImport,
 });
 Object.assign(exports, instance.exports);
+phase("compiled");
 wasi.initialize(instance);
 await instance.exports.start();
-console.log(`started in ${Math.round(performance.now() - unpacked)} ms`);
+phase("started");
+for (const [name, tally] of [...calls].sort((a, b) => b[1].ms - a[1].ms)) {
+  console.log(`${name}: ${tally.count} calls, ${Math.round(tally.ms)} ms`);
+}

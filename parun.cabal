@@ -3954,6 +3954,7 @@ library web
 library browser
   import: library
   build-depends:
+    bytestring ^>=0.12.2,
     containers ^>={0.7, 0.8},
     parun:extra,
     parun:registry,
