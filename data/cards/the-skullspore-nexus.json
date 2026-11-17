@@ -183,32 +183,6 @@
                   {
                     "effects": [
                       {
-                        "type": "BindAmount",
-                        "value": {
-                          "quantity": {
-                            "type": "Count",
-                            "value": {
-                              "aggregation": {
-                                "type": "Total",
-                                "value": {
-                                  "type": "Measure",
-                                  "value": "Power"
-                                }
-                              },
-                              "filter": {
-                                "type": "And",
-                                "value": []
-                              },
-                              "scope": {
-                                "type": "OverBound",
-                                "value": "thatDepartedPermanent"
-                              }
-                            }
-                          },
-                          "slot": "total"
-                        }
-                      },
-                      {
                         "type": "Create",
                         "value": {
                           "card": {
@@ -219,12 +193,44 @@
                                 ],
                                 "name": "Fungus Dinosaur Token",
                                 "power": {
-                                  "type": "InSlot",
-                                  "value": "total"
+                                  "type": "Count",
+                                  "value": {
+                                    "aggregation": {
+                                      "type": "Total",
+                                      "value": {
+                                        "type": "Measure",
+                                        "value": "Power"
+                                      }
+                                    },
+                                    "filter": {
+                                      "type": "And",
+                                      "value": []
+                                    },
+                                    "scope": {
+                                      "type": "OverBound",
+                                      "value": "thatDepartedPermanent"
+                                    }
+                                  }
                                 },
                                 "toughness": {
-                                  "type": "InSlot",
-                                  "value": "total"
+                                  "type": "Count",
+                                  "value": {
+                                    "aggregation": {
+                                      "type": "Total",
+                                      "value": {
+                                        "type": "Measure",
+                                        "value": "Power"
+                                      }
+                                    },
+                                    "filter": {
+                                      "type": "And",
+                                      "value": []
+                                    },
+                                    "scope": {
+                                      "type": "OverBound",
+                                      "value": "thatDepartedPermanent"
+                                    }
+                                  }
                                 },
                                 "typeLine": {
                                   "subtypes": [
