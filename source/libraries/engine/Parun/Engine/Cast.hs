@@ -2725,7 +2725,7 @@ castableWhenOffered spending pid oid name candidates proposed =
       ( \candidate ->
           candidateAllowed pid oid proposed candidate
             && candidateFillable Map.empty pid oid name proposed candidate
-            && payableDeclaring (\board -> payableCost (fillableXs pid oid name proposed candidate) Nothing (CandidateCost.reductions candidate) (spendingWith spending pid oid proposed) pid oid board) pid oid (proposedFor pid oid (CandidateCost.keyword candidate) proposed) (CandidateCost.cost candidate)
+            && payableDeclaring (payableCost (fillableXs pid oid name proposed candidate) Nothing (CandidateCost.reductions candidate) (spendingWith spending pid oid proposed) pid oid) pid oid (proposedFor pid oid (CandidateCost.keyword candidate) proposed) (CandidateCost.cost candidate)
       )
       candidates
     && printedRestrictionsOk pid oid name proposed
