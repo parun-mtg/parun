@@ -71,7 +71,9 @@
                                 "type": "IsBound",
                                 "value": "land"
                               },
-                              "rewrite": "Heal"
+                              "rewrite": {
+                                "type": "Heal"
+                              }
                             }
                           },
                           "origin": "Other",

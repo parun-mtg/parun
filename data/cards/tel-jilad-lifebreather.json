@@ -51,7 +51,9 @@
                                 "type": "IsBound",
                                 "value": "creature"
                               },
-                              "rewrite": "Regenerate"
+                              "rewrite": {
+                                "type": "Regenerate"
+                              }
                             }
                           },
                           "origin": "Other",

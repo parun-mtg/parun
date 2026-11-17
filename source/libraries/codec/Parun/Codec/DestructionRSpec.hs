@@ -17,12 +17,12 @@ spec s = Spec.describe s "Parun.Codec.DestructionR" $ do
       s
       DestructionR.codec
       (DestructionR.MkDestructionR {DestructionR.matching = Nothing, DestructionR.rewrite = DestructionRewrite.Regenerate})
-      " {\"rewrite\":\"Regenerate\"} "
+      " {\"rewrite\":{\"type\":\"Regenerate\"}} "
   -- CR 614.1a, Pyramids' "the next time target land would be destroyed".
   Spec.it s "MkDestructionR (a printed subject)" $
     Common.assertCodec
       s
       DestructionR.codec
-      (DestructionR.MkDestructionR {DestructionR.matching = Just (Filter.IsBound (SlotName.MkSlotName (Text.pack "land"))), DestructionR.rewrite = DestructionRewrite.Heal})
-      " {\"matching\":{\"type\":\"IsBound\",\"value\":\"land\"},\"rewrite\":\"Heal\"} "
+      (DestructionR.MkDestructionR {DestructionR.matching = Just (Filter.IsBound (SlotName.MkSlotName (Text.pack "land"))), DestructionR.rewrite = DestructionRewrite.Heal Nothing})
+      " {\"matching\":{\"type\":\"IsBound\",\"value\":\"land\"},\"rewrite\":{\"type\":\"Heal\"}} "
   Spec.it s "has a schema" $ Common.assertHasSchema s DestructionR.codec

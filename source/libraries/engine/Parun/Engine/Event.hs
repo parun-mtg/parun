@@ -4893,9 +4893,16 @@ apply settle batch applied batchPrevented candidate event =
       -- CR 614.1a / 701.69a: Pyramids' "remove all damage marked on it
       -- instead", and nothing else -- no tap and no removal from combat, which
       -- are regeneration's (CR 701.19a). `oid` is the printed subject the row's
-      -- pattern matched. A resolution's Uses.Once row, spent as regeneration's is.
-      DestructionRewrite.Heal -> do
+      -- pattern matched. A resolution's Uses.Once row, spent as regeneration's is;
+      -- a permanent's static row (Dr. McCoy) is not spent at all.
+      --
+      -- Dr. McCoy's "remove all +1/+1 counters from it" comes first, in printed
+      -- order; with none of the kind on it, nothing is removed.
+      DestructionRewrite.Heal kind -> do
         Replacement.consume (ReplacementCandidate.identity candidate)
+        Monad.forM_ kind $ \k -> do
+          held <- State.gets (maybe 0 (Map.findWithDefault 0 k . Object.counters) . Game.lookupObject oid)
+          removeCounters oid k held
         State.modify' (\gs -> gs {GameState.objects = Map.adjust (\obj -> obj {Object.damage = 0}) oid (GameState.objects gs)})
         pure Nothing
     -- Unreachable: `applies` admits DestructionR only against WouldBeDestroyed.

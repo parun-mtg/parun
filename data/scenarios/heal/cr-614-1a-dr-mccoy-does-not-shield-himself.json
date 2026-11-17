@@ -1,0 +1,27 @@
+{
+  "description": "CR 614.1a Dr. McCoy does not shield himself",
+  "note": "McCoy's replacement reaches only another creature you control. With a +1/+1 counter of his own, Terror still destroys him, and the counter goes with him.",
+  "board": {
+    "active": "alice",
+    "step": "PrecombatMain",
+    "seats": [
+      {
+        "name": "alice",
+        "battlefield": [
+          {"card": "Swamp", "label": "swamp"},
+          {"card": "Swamp", "label": "swamp-2"},
+          {"card": "Dr. McCoy, Surly Surgeon", "label": "mccoy", "counters": [{"key": {"type": "PlusOnePlusOne"}, "value": 1}]}
+        ],
+        "hand": [
+          {"card": "Terror", "label": "terror"}
+        ]
+      },
+      {"name": "bob"}
+    ]
+  },
+  "timeline": [
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": {"Cast": {"object": "$terror", "mana": ["$swamp", "$swamp-2"]}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass"},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Count": {"card": "Dr. McCoy, Surly Surgeon", "player": "alice", "zone": "Graveyard", "count": 1}}}
+  ]
+}

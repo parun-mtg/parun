@@ -779,7 +779,7 @@ engineMintedDestruction rewrite = case rewrite of
   DestructionRewrite.RemoveShieldCounter -> True
   DestructionRewrite.UmbraArmor -> True
   DestructionRewrite.Regenerate -> False
-  DestructionRewrite.Heal -> False
+  DestructionRewrite.Heal _ -> False
 
 -- The non-vacuity half of the same lint: is this the replacement that carries a
 -- PhasePattern at all? A wildcard is right here, where it is not above -- this
