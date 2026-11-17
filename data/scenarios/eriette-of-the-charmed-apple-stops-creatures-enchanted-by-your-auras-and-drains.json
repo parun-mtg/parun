@@ -1,0 +1,170 @@
+{
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "battlefield": [
+          {
+            "card": "Eriette of the Charmed Apple",
+            "label": "eriette"
+          },
+          {
+            "attached": "eriette",
+            "card": "Holy Strength",
+            "label": "h2"
+          }
+        ],
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ],
+        "name": "alice"
+      },
+      {
+        "battlefield": [
+          {
+            "card": "Grizzly Bears",
+            "label": "bears",
+            "ready": true
+          },
+          {
+            "card": "Hill Giant",
+            "label": "giant",
+            "ready": true
+          },
+          {
+            "attached": "giant",
+            "card": "Holy Strength",
+            "label": "h3"
+          },
+          {
+            "attached": "bears",
+            "card": "Holy Strength",
+            "controller": "alice",
+            "label": "h1"
+          }
+        ],
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ],
+        "name": "bob"
+      }
+    ],
+    "step": "PrecombatMain"
+  },
+  "description": "Eriette of the Charmed Apple keeps each creature enchanted by an Aura its controller controls from attacking them, and drains each opponent for each Aura they control at their end step",
+  "note": "alice controls two Holy Strengths, one on bob's Grizzly Bears and one on Eriette, so her end step drains 2; bob's own Holy Strength on his Hill Giant counts for nothing and stops nothing: the Bears may not attack alice, and the 4/4 Giant does, for 4.",
+  "timeline": [
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "EndStep",
+      "turn": 1
+    },
+    {
+      "check": {
+        "View": {
+          "is": [],
+          "of": "Stack"
+        }
+      },
+      "player": "alice",
+      "step": "EndStep",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Life": {
+          "life": 22,
+          "player": "alice"
+        }
+      },
+      "player": "alice",
+      "step": "EndStep",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Life": {
+          "life": 18,
+          "player": "bob"
+        }
+      },
+      "player": "alice",
+      "step": "EndStep",
+      "turn": 1
+    },
+    {
+      "player": "bob",
+      "refuse": {
+        "Attack": [
+          "$bears"
+        ]
+      },
+      "step": "DeclareAttackers",
+      "turn": 2
+    },
+    {
+      "do": {
+        "Attack": [
+          "$giant"
+        ]
+      },
+      "player": "bob",
+      "step": "DeclareAttackers",
+      "turn": 2
+    },
+    {
+      "do": {
+        "Block": {}
+      },
+      "player": "alice",
+      "step": "DeclareBlockers",
+      "turn": 2
+    },
+    {
+      "check": {
+        "Life": {
+          "life": 18,
+          "player": "alice"
+        }
+      },
+      "player": "bob",
+      "step": "PostcombatMain",
+      "turn": 2
+    }
+  ]
+}

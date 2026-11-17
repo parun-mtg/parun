@@ -1,0 +1,171 @@
+{
+  "faces": [
+    {
+      "keywords": [
+        {
+          "type": "Bargain"
+        }
+      ],
+      "manaCost": [
+        {
+          "type": "Generic",
+          "value": 2
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "Blue"
+          }
+        }
+      ],
+      "name": "Diminisher Witch",
+      "oracleText": "Bargain (You may sacrifice an artifact, enchantment, or token as you cast this spell.)\nWhen this creature enters, if it was bargained, create a Cursed Role token attached to target creature an opponent controls. (If you control another Role on it, put that one into the graveyard. Enchanted creature is 1/1.)",
+      "power": {
+        "type": "Literal",
+        "value": 3
+      },
+      "toughness": {
+        "type": "Literal",
+        "value": 2
+      },
+      "triggeredAbilities": [
+        {
+          "condition": {
+            "type": "Enters",
+            "value": {}
+          },
+          "intervening": {
+            "type": "Compares",
+            "value": {
+              "comparison": "AtLeast",
+              "measured": {
+                "type": "TimesPaid",
+                "value": {
+                  "type": "OfKeyword",
+                  "value": {
+                    "type": "Bargain"
+                  }
+                }
+              },
+              "threshold": {
+                "type": "Literal",
+                "value": 1
+              }
+            }
+          },
+          "modal": {
+            "modes": [
+              {
+                "clauses": [
+                  {
+                    "effects": [
+                      {
+                        "type": "Create",
+                        "value": {
+                          "card": {
+                            "faces": [
+                              {
+                                "enchant": [
+                                  {
+                                    "pool": {
+                                      "type": "Creatures"
+                                    }
+                                  }
+                                ],
+                                "name": "Cursed",
+                                "staticAbilities": [
+                                  {
+                                    "affected": {
+                                      "type": "Matching",
+                                      "value": {
+                                        "type": "And",
+                                        "value": [
+                                          {
+                                            "type": "HasCardType",
+                                            "value": "Creature"
+                                          },
+                                          {
+                                            "type": "HasAttached",
+                                            "value": {
+                                              "type": "IsSource"
+                                            }
+                                          }
+                                        ]
+                                      }
+                                    },
+                                    "modifications": [
+                                      {
+                                        "type": "SetBasePowerToughness",
+                                        "value": {
+                                          "power": {
+                                            "type": "Literal",
+                                            "value": 1
+                                          },
+                                          "toughness": {
+                                            "type": "Literal",
+                                            "value": 1
+                                          }
+                                        }
+                                      }
+                                    ]
+                                  }
+                                ],
+                                "typeLine": {
+                                  "subtypes": [
+                                    "Aura",
+                                    "Role"
+                                  ],
+                                  "types": [
+                                    "Enchantment"
+                                  ]
+                                }
+                              }
+                            ]
+                          },
+                          "quantity": {
+                            "type": "Literal",
+                            "value": 1
+                          },
+                          "riders": {
+                            "attachedTo": {
+                              "type": "Specified",
+                              "value": "target"
+                            }
+                          }
+                        }
+                      }
+                    ]
+                  }
+                ],
+                "targetSlots": {
+                  "target": {
+                    "filter": {
+                      "type": "HeldBy",
+                      "value": {
+                        "holder": "Controller",
+                        "relation": "Opponent"
+                      }
+                    },
+                    "pool": {
+                      "type": "Creatures"
+                    }
+                  }
+                }
+              }
+            ]
+          }
+        }
+      ],
+      "typeLine": {
+        "subtypes": [
+          "Human",
+          "Warlock"
+        ],
+        "types": [
+          "Creature"
+        ]
+      }
+    }
+  ]
+}

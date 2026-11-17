@@ -1,0 +1,222 @@
+{
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "battlefield": [
+          {
+            "card": "Forest",
+            "label": "forest1",
+            "ready": true
+          },
+          {
+            "card": "Forest",
+            "label": "forest2",
+            "ready": true
+          },
+          {
+            "card": "Forest",
+            "label": "forest3",
+            "ready": true
+          },
+          {
+            "card": "Forest",
+            "label": "forest4",
+            "ready": true
+          },
+          {
+            "card": "Forest",
+            "label": "forest5",
+            "ready": true
+          },
+          {
+            "card": "Howling Mine",
+            "label": "mine"
+          }
+        ],
+        "hand": [
+          {
+            "card": "Tough Cookie",
+            "label": "cookie"
+          }
+        ],
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ],
+        "name": "alice"
+      },
+      {
+        "battlefield": [
+          {
+            "card": "Sol Ring",
+            "label": "ring"
+          }
+        ],
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ],
+        "name": "bob"
+      }
+    ],
+    "step": "PrecombatMain"
+  },
+  "description": "CR 205.1b / 613.4b: Tough Cookie's enters trigger creates a Food, and its {2}{G} makes target noncreature artifact its controller controls a 4/4 artifact creature until end of turn",
+  "note": "The Food it made becomes a 4/4 Food artifact creature, chosen over alice's Howling Mine; Tough Cookie itself (already a creature) and bob's Sol Ring are not legal targets. At cleanup the effect ends.",
+  "timeline": [
+    {
+      "do": {
+        "Cast": {
+          "mana": [
+            "$forest1",
+            "$forest2",
+            null
+          ],
+          "object": "$cookie"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "View": {
+          "is": [],
+          "of": "Stack"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Food Token",
+          "count": 1,
+          "player": "alice",
+          "zone": "Battlefield"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Activate": {
+          "ability": 0,
+          "mana": [
+            "$forest3",
+            "$forest4",
+            "$forest5"
+          ],
+          "object": "Tough Cookie",
+          "targets": [
+            "Food Token"
+          ]
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "View": {
+          "is": [],
+          "of": "Stack"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Types": {
+          "object": "Food Token",
+          "types": [
+            "Artifact",
+            "Creature"
+          ]
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "PowerToughness": {
+          "object": "Food Token",
+          "power": 4,
+          "toughness": 4
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Types": {
+          "object": "$mine",
+          "types": [
+            "Artifact"
+          ]
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Types": {
+          "object": "Food Token",
+          "types": [
+            "Artifact"
+          ]
+        }
+      },
+      "player": "bob",
+      "step": "Upkeep",
+      "turn": 2
+    }
+  ]
+}

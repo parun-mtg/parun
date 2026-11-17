@@ -1,0 +1,226 @@
+{
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "battlefield": [
+          {
+            "card": "Plains",
+            "label": "p1"
+          },
+          {
+            "card": "Plains",
+            "label": "p2"
+          },
+          {
+            "card": "Plains",
+            "label": "p3"
+          },
+          {
+            "card": "Plains",
+            "label": "p4"
+          }
+        ],
+        "hand": [
+          {
+            "card": "Plunge into Winter",
+            "label": "plunge"
+          },
+          {
+            "card": "Plunge into Winter",
+            "label": "plunge2"
+          }
+        ],
+        "library": [
+          {
+            "card": "Forest",
+            "label": "top"
+          },
+          {
+            "card": "Mountain",
+            "label": "second"
+          },
+          {
+            "card": "Swamp",
+            "label": "third"
+          },
+          {
+            "card": "Island"
+          }
+        ],
+        "name": "alice"
+      },
+      {
+        "battlefield": [
+          {
+            "card": "Hill Giant",
+            "label": "giant"
+          },
+          {
+            "card": "Gray Ogre",
+            "label": "ogre"
+          }
+        ],
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ],
+        "name": "bob"
+      }
+    ],
+    "step": "PrecombatMain"
+  },
+  "description": "CR 115.1 / 701.22a / 121.1: Plunge into Winter taps up to one target creature, then its caster scries 1 and draws a card",
+  "note": "The first copy taps bob's Hill Giant, leaves his Gray Ogre untapped, and alice keeps the Forest on top and draws it; the second copy names no target and still scries and draws.",
+  "timeline": [
+    {
+      "do": {
+        "Cast": {
+          "mana": [
+            "$p1",
+            "$p2",
+            null
+          ],
+          "object": "$plunge",
+          "targets": [
+            "$giant"
+          ]
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Answer": {
+          "prompt": "ChooseScry",
+          "with": [
+            [],
+            [
+              "$top"
+            ]
+          ]
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Tapped": {
+          "object": "$giant",
+          "tapped": true
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Tapped": {
+          "object": "$ogre",
+          "tapped": false
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "View": {
+          "is": [
+            "$plunge2",
+            "Forest"
+          ],
+          "of": "Zone",
+          "player": "alice",
+          "zone": "Hand"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Cast": {
+          "mana": [
+            "$p3",
+            "$p4"
+          ],
+          "object": "$plunge2",
+          "targets": []
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Answer": {
+          "prompt": "ChooseScry",
+          "with": [
+            [
+              "$second"
+            ],
+            []
+          ]
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "View": {
+          "is": [
+            "Forest",
+            "Swamp"
+          ],
+          "of": "Zone",
+          "player": "alice",
+          "zone": "Hand"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Tapped": {
+          "object": "$ogre",
+          "tapped": false
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    }
+  ]
+}

@@ -1,0 +1,133 @@
+{
+  "faces": [
+    {
+      "keywords": [
+        {
+          "type": "Flying"
+        },
+        {
+          "type": "Vigilance"
+        }
+      ],
+      "manaCost": [
+        {
+          "type": "Generic",
+          "value": 1
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "Blue"
+          }
+        }
+      ],
+      "name": "Picklock Prankster",
+      "oracleText": "Flying, vigilance",
+      "power": {
+        "type": "Literal",
+        "value": 1
+      },
+      "toughness": {
+        "type": "Literal",
+        "value": 3
+      },
+      "typeLine": {
+        "subtypes": [
+          "Faerie",
+          "Rogue"
+        ],
+        "types": [
+          "Creature"
+        ]
+      }
+    },
+    {
+      "manaCost": [
+        {
+          "type": "Generic",
+          "value": 1
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "Blue"
+          }
+        }
+      ],
+      "name": "Free the Fae",
+      "oracleText": "Mill four cards. Then put an instant, sorcery, or Faerie card from among the milled cards into your hand.",
+      "spell": {
+        "modes": [
+          {
+            "clauses": [
+              {
+                "effects": [
+                  {
+                    "type": "Mill",
+                    "value": {
+                      "player": {
+                        "type": "Relative",
+                        "value": "You"
+                      },
+                      "quantity": {
+                        "type": "Literal",
+                        "value": 4
+                      },
+                      "slot": "milled"
+                    }
+                  }
+                ]
+              },
+              {
+                "effects": [
+                  {
+                    "type": "MoveToZone",
+                    "value": {
+                      "ref": {
+                        "type": "ChosenCardFromAmong",
+                        "value": {
+                          "filter": {
+                            "type": "Or",
+                            "value": [
+                              {
+                                "type": "HasCardType",
+                                "value": "Instant"
+                              },
+                              {
+                                "type": "HasCardType",
+                                "value": "Sorcery"
+                              },
+                              {
+                                "type": "HasSubtype",
+                                "value": "Faerie"
+                              }
+                            ]
+                          },
+                          "slot": "milled"
+                        }
+                      },
+                      "zone": "Hand"
+                    }
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "typeLine": {
+        "subtypes": [
+          "Adventure"
+        ],
+        "types": [
+          "Instant"
+        ]
+      }
+    }
+  ],
+  "layout": {
+    "type": "Adventure"
+  }
+}

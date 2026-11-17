@@ -1,0 +1,125 @@
+{
+  "faces": [
+    {
+      "manaCost": [
+        {
+          "type": "Generic",
+          "value": 4
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "Blue"
+          }
+        }
+      ],
+      "name": "Virtue of Knowledge",
+      "oracleText": "If a permanent entering causes a triggered ability of a permanent you control to trigger, that ability triggers an additional time.",
+      "playerAbilities": [
+        {
+          "effect": {
+            "type": "EntriesTrigger",
+            "value": {
+              "bearers": {
+                "type": "And",
+                "value": [
+                  {
+                    "type": "IsInZone",
+                    "value": "Battlefield"
+                  },
+                  {
+                    "type": "HeldBy",
+                    "value": {
+                      "holder": "Controller",
+                      "relation": "You"
+                    }
+                  }
+                ]
+              },
+              "entrants": {
+                "type": "IsInZone",
+                "value": "Battlefield"
+              },
+              "triggering": "AnAdditionalTime"
+            }
+          },
+          "scope": {
+            "type": "You"
+          }
+        }
+      ],
+      "typeLine": {
+        "types": [
+          "Enchantment"
+        ]
+      }
+    },
+    {
+      "manaCost": [
+        {
+          "type": "Generic",
+          "value": 1
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "Blue"
+          }
+        }
+      ],
+      "name": "Vantress Visions",
+      "oracleText": "Copy target activated or triggered ability you control. You may choose new targets for the copy.",
+      "spell": {
+        "modes": [
+          {
+            "clauses": [
+              {
+                "effects": [
+                  {
+                    "type": "CopyStackObject",
+                    "value": {
+                      "ref": {
+                        "type": "InSlot",
+                        "value": "ability"
+                      },
+                      "targets": {
+                        "type": "ChosenByController"
+                      }
+                    }
+                  }
+                ]
+              }
+            ],
+            "targetSlots": {
+              "ability": {
+                "filter": {
+                  "type": "HeldBy",
+                  "value": {
+                    "holder": "Controller",
+                    "relation": "You"
+                  }
+                },
+                "pool": {
+                  "type": "Abilities"
+                }
+              }
+            }
+          }
+        ]
+      },
+      "typeLine": {
+        "subtypes": [
+          "Adventure"
+        ],
+        "types": [
+          "Instant"
+        ]
+      }
+    }
+  ],
+  "layout": {
+    "type": "Adventure"
+  }
+}

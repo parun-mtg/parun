@@ -17,6 +17,7 @@ import qualified Parun.Codec.BecameAttached as BecameAttached
 import qualified Parun.Codec.BecameAttacked as BecameAttacked
 import qualified Parun.Codec.BecameBlocking as BecameBlocking
 import qualified Parun.Codec.BecameDesignated as BecameDesignated
+import qualified Parun.Codec.BecameTapped as BecameTapped
 import qualified Parun.Codec.BecameTarget as BecameTarget
 import qualified Parun.Codec.BecameUnattached as BecameUnattached
 import qualified Parun.Codec.BlocksDeclared as BlocksDeclared
@@ -155,7 +156,7 @@ codec =
       Arm.payload "TurnedUpOffDeck" TurnedUpOffDeck.codec GameEvent.TurnedUpOffDeck (\x -> case x of GameEvent.TurnedUpOffDeck y -> Just y; _ -> Nothing),
       Arm.payload "ClassLevelSet" ClassLevelChange.codec GameEvent.ClassLevelSet (\x -> case x of GameEvent.ClassLevelSet y -> Just y; _ -> Nothing),
       Arm.payload "Plotted" ObjectId.codec GameEvent.Plotted (\x -> case x of GameEvent.Plotted y -> Just y; _ -> Nothing),
-      Arm.payload "BecameTapped" ObjectId.codec GameEvent.BecameTapped (\x -> case x of GameEvent.BecameTapped y -> Just y; _ -> Nothing),
+      Arm.payload "BecameTapped" BecameTapped.codec GameEvent.BecameTapped (\x -> case x of GameEvent.BecameTapped y -> Just y; _ -> Nothing),
       Arm.payload "TappedToPay" TappedToPay.codec GameEvent.TappedToPay (\x -> case x of GameEvent.TappedToPay y -> Just y; _ -> Nothing),
       Arm.payload "BecameUntapped" ObjectId.codec GameEvent.BecameUntapped (\x -> case x of GameEvent.BecameUntapped y -> Just y; _ -> Nothing),
       Arm.payload "TappedForMana" TappedForMana.codec GameEvent.TappedForMana (\x -> case x of GameEvent.TappedForMana y -> Just y; _ -> Nothing),

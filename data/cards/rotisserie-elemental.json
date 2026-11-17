@@ -1,0 +1,143 @@
+{
+  "faces": [
+    {
+      "keywords": [
+        {
+          "type": "Menace"
+        }
+      ],
+      "manaCost": [
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "Red"
+          }
+        }
+      ],
+      "name": "Rotisserie Elemental",
+      "oracleText": "Menace\nWhenever this creature deals combat damage to a player, put a skewer counter on this creature. Then you may sacrifice it. If you do, exile the top X cards of your library, where X is the number of skewer counters on this creature. You may play those cards this turn.",
+      "power": {
+        "type": "Literal",
+        "value": 1
+      },
+      "toughness": {
+        "type": "Literal",
+        "value": 1
+      },
+      "triggeredAbilities": [
+        {
+          "condition": {
+            "type": "DealsDamage",
+            "value": {
+              "actor": {
+                "type": "Self"
+              },
+              "kind": "Combat",
+              "recipients": [
+                {
+                  "type": "Player",
+                  "value": {
+                    "type": "Relative",
+                    "value": "AnyPlayer"
+                  }
+                }
+              ]
+            }
+          },
+          "modal": {
+            "modes": [
+              {
+                "clauses": [
+                  {
+                    "effects": [
+                      {
+                        "type": "PutCounters",
+                        "value": {
+                          "kind": {
+                            "type": "Named",
+                            "value": "skewer"
+                          },
+                          "quantity": {
+                            "type": "Literal",
+                            "value": 1
+                          },
+                          "ref": {
+                            "type": "InSlot",
+                            "value": "self"
+                          }
+                        }
+                      }
+                    ]
+                  },
+                  {
+                    "effects": [
+                      {
+                        "type": "MoveToZone",
+                        "value": {
+                          "ref": {
+                            "type": "TopOfLibrary",
+                            "value": {
+                              "count": {
+                                "type": "ObjectCounters",
+                                "value": {
+                                  "type": "Named",
+                                  "value": "skewer"
+                                }
+                              },
+                              "player": {
+                                "type": "Relative",
+                                "value": "You"
+                              }
+                            }
+                          },
+                          "slot": "exiled",
+                          "zone": "Exile"
+                        }
+                      },
+                      {
+                        "type": "GrantPlayFromExile",
+                        "value": {
+                          "duration": {
+                            "type": "UntilEndOfTurn"
+                          },
+                          "ref": {
+                            "type": "InSlot",
+                            "value": "exiled"
+                          }
+                        }
+                      }
+                    ],
+                    "payGate": {
+                      "branch": "IfPaid",
+                      "cost": {
+                        "components": [
+                          {
+                            "type": "SacrificeThis"
+                          }
+                        ],
+                        "mana": []
+                      },
+                      "payer": {
+                        "type": "InSlot",
+                        "value": "you"
+                      }
+                    }
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      ],
+      "typeLine": {
+        "subtypes": [
+          "Elemental"
+        ],
+        "types": [
+          "Creature"
+        ]
+      }
+    }
+  ]
+}

@@ -12,6 +12,7 @@ import qualified Parun.Types.CardType as CardType
 import qualified Parun.Types.Filter as Filter.Type
 import qualified Parun.Types.Holder as Holder
 import qualified Parun.Types.Keyword as Keyword.Type
+import qualified Parun.Types.SelfInclusion as SelfInclusion
 import qualified Parun.Types.SlotName as SlotName
 
 spec :: (Monad m, Monad n) => Spec.Spec m n -> n ()
@@ -44,8 +45,14 @@ spec s = Spec.describe s "Parun.Codec.Anchor" $ do
     Common.assertCodec
       s
       codec
-      (Anchor.AnyPermanent (Filter.Type.HasCardType CardType.Creature))
+      (Anchor.AnyPermanent SelfInclusion.IncludesCandidate (Filter.Type.HasCardType CardType.Creature))
       " {\"type\":\"AnyPermanent\",\"value\":{\"type\":\"HasCardType\",\"value\":\"Creature\"}} "
+  Spec.it s "AnyOtherPermanent" $
+    Common.assertCodec
+      s
+      codec
+      (Anchor.AnyPermanent SelfInclusion.ExcludesCandidate (Filter.Type.HasCardType CardType.Creature))
+      " {\"type\":\"AnyOtherPermanent\",\"value\":{\"type\":\"HasCardType\",\"value\":\"Creature\"}} "
   Spec.it s "YourCommander" $
     Common.assertCodec
       s

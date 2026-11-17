@@ -1,0 +1,168 @@
+{
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "battlefield": [
+          {
+            "card": "Plains",
+            "label": "p1",
+            "ready": true
+          },
+          {
+            "card": "Plains",
+            "label": "p2",
+            "ready": true
+          },
+          {
+            "card": "Yenna, Redtooth Regent",
+            "label": "yenna",
+            "ready": true
+          },
+          {
+            "card": "Glorious Anthem",
+            "label": "anthem1"
+          },
+          {
+            "card": "Glorious Anthem",
+            "label": "anthem2"
+          },
+          {
+            "card": "Honden of Cleansing Fire",
+            "label": "honden"
+          },
+          {
+            "attached": "yenna",
+            "card": "Holy Strength",
+            "label": "strength"
+          }
+        ],
+        "library": [
+          {
+            "card": "Plains"
+          },
+          {
+            "card": "Plains"
+          },
+          {
+            "card": "Plains"
+          }
+        ],
+        "name": "alice"
+      },
+      {
+        "battlefield": [
+          {
+            "card": "Honden of Cleansing Fire",
+            "label": "bobhonden"
+          }
+        ],
+        "library": [
+          {
+            "card": "Plains"
+          },
+          {
+            "card": "Plains"
+          },
+          {
+            "card": "Plains"
+          }
+        ],
+        "name": "bob"
+      }
+    ],
+    "step": "PrecombatMain"
+  },
+  "description": "CR 201.2a / 707.9b: Yenna, Redtooth Regent targets only an enchantment its controller controls that shares no name with another permanent they control, and copies it as a nonlegendary token",
+  "note": "A Glorious Anthem is refused, since Alice controls another. Her Honden is uniquely named among her permanents (Bob's Honden is not hers), so it is a legal target although it shares its own name; its token is not legendary, so both Hondens survive the legend rule. The token is no Aura, so Yenna stays tapped and nothing is scried.",
+  "timeline": [
+    {
+      "player": "alice",
+      "refuse": {
+        "Activate": {
+          "mana": [
+            "$p1",
+            "$p2"
+          ],
+          "object": "$yenna",
+          "targets": [
+            "$anthem1"
+          ]
+        }
+      },
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Activate": {
+          "mana": [
+            "$p1",
+            "$p2"
+          ],
+          "object": "$yenna",
+          "targets": [
+            "$honden"
+          ]
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "View": {
+          "is": [],
+          "of": "Stack"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Honden of Cleansing Fire",
+          "count": 2,
+          "player": "alice",
+          "zone": "Battlefield"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Glorious Anthem",
+          "count": 2,
+          "player": "alice",
+          "zone": "Battlefield"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Tapped": {
+          "object": "$yenna",
+          "tapped": true
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    }
+  ]
+}

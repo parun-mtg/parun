@@ -1,0 +1,175 @@
+{
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "battlefield": [
+          {
+            "card": "Plains",
+            "label": "p1"
+          },
+          {
+            "card": "Grizzly Bears",
+            "label": "mine",
+            "ready": true
+          }
+        ],
+        "hand": [
+          {
+            "card": "Cheeky House-Mouse",
+            "label": "mouse"
+          }
+        ],
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ],
+        "name": "alice"
+      },
+      {
+        "battlefield": [
+          {
+            "card": "Hill Giant",
+            "label": "giant"
+          },
+          {
+            "card": "Grizzly Bears",
+            "label": "theirs"
+          }
+        ],
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ],
+        "name": "bob"
+      }
+    ],
+    "step": "PrecombatMain"
+  },
+  "description": "Squeak By gives +1/+1 and stops creatures with power 3 or greater from blocking",
+  "note": "Alice's Grizzly Bears become 3/3; bob's Hill Giant is refused as a blocker and his Grizzly Bears block.",
+  "timeline": [
+    {
+      "do": {
+        "Cast": {
+          "face": "Squeak By",
+          "mana": [
+            "$p1"
+          ],
+          "object": "$mouse"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "View": {
+          "is": [],
+          "of": "Stack"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "PowerToughness": {
+          "object": "$mine",
+          "power": 3,
+          "toughness": 3
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Attack": [
+          "$mine"
+        ]
+      },
+      "player": "alice",
+      "step": "DeclareAttackers",
+      "turn": 1
+    },
+    {
+      "player": "bob",
+      "refuse": {
+        "Block": {
+          "$giant": [
+            "$mine"
+          ]
+        }
+      },
+      "step": "DeclareBlockers",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Block": {
+          "$theirs": [
+            "$mine"
+          ]
+        }
+      },
+      "player": "bob",
+      "step": "DeclareBlockers",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Blockers": {
+          "attacker": "$mine",
+          "blockers": [
+            "$theirs"
+          ]
+        }
+      },
+      "player": "alice",
+      "step": "DeclareBlockers",
+      "turn": 1
+    }
+  ]
+}

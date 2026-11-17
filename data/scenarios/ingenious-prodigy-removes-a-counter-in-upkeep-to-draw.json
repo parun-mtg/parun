@@ -1,0 +1,101 @@
+{
+  "board": {
+    "active": "bob",
+    "seats": [
+      {
+        "battlefield": [
+          {
+            "card": "Ingenious Prodigy",
+            "counters": [
+              {
+                "key": {
+                  "type": "PlusOnePlusOne"
+                },
+                "value": 2
+              }
+            ],
+            "label": "prodigy"
+          }
+        ],
+        "library": [
+          {
+            "card": "Plains"
+          },
+          {
+            "card": "Plains"
+          },
+          {
+            "card": "Plains"
+          }
+        ],
+        "name": "alice"
+      },
+      {
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ],
+        "name": "bob"
+      }
+    ],
+    "step": "EndStep"
+  },
+  "description": "Ingenious Prodigy with counters may remove one at the beginning of alice's upkeep to draw a card",
+  "timeline": [
+    {
+      "do": {
+        "ChooseToPay": {
+          "decision": "Pays"
+        }
+      },
+      "player": "alice",
+      "step": "Upkeep",
+      "turn": 2
+    },
+    {
+      "check": {
+        "View": {
+          "is": [],
+          "of": "Stack"
+        }
+      },
+      "player": "alice",
+      "step": "Upkeep",
+      "turn": 2
+    },
+    {
+      "check": {
+        "Counters": {
+          "count": 1,
+          "kind": {
+            "type": "PlusOnePlusOne"
+          },
+          "object": "$prodigy"
+        }
+      },
+      "player": "alice",
+      "step": "Upkeep",
+      "turn": 2
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Plains",
+          "count": 1,
+          "player": "alice",
+          "zone": "Hand"
+        }
+      },
+      "player": "alice",
+      "step": "Upkeep",
+      "turn": 2
+    }
+  ]
+}

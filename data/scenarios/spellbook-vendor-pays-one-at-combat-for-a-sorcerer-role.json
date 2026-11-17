@@ -1,0 +1,298 @@
+{
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "battlefield": [
+          {
+            "card": "Spellbook Vendor",
+            "label": "vendor",
+            "ready": true
+          },
+          {
+            "card": "Grizzly Bears",
+            "label": "bears",
+            "ready": true
+          },
+          {
+            "card": "Plains",
+            "label": "p1"
+          },
+          {
+            "card": "Plains",
+            "label": "p2"
+          }
+        ],
+        "library": [
+          {
+            "card": "Hill Giant"
+          },
+          {
+            "card": "Mountain"
+          },
+          {
+            "card": "Forest"
+          },
+          {
+            "card": "Plains"
+          },
+          {
+            "card": "Swamp"
+          },
+          {
+            "card": "Island"
+          }
+        ],
+        "name": "alice"
+      },
+      {
+        "battlefield": [
+          {
+            "card": "Goblin Piker",
+            "label": "bobpiker"
+          }
+        ],
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ],
+        "name": "bob"
+      }
+    ],
+    "step": "PrecombatMain"
+  },
+  "description": "Spellbook Vendor pays {1} at the beginning of combat on your turn to attach a Sorcerer Role to target creature you control",
+  "note": "At alice's beginning of combat she pays {1} with one Plains (the other stays untapped) and the reflexive trigger puts a Sorcerer Role (CR 111.10n) on her Grizzly Bears, which become 3/3 while the Vendor stays 2/2; bob's Goblin Piker is refused as a target. Attacking, the Bears' granted trigger scries 1 and alice bottoms Hill Giant; the Vendor attacks untapped (vigilance). Bob takes 3 + 2 = 5.",
+  "timeline": [
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "BeginningOfCombat",
+      "turn": 1
+    },
+    {
+      "do": {
+        "ChooseToPay": {
+          "decision": "Pays",
+          "mana": [
+            "$p1",
+            null
+          ]
+        }
+      },
+      "player": "alice",
+      "step": "BeginningOfCombat",
+      "turn": 1
+    },
+    {
+      "player": "alice",
+      "refuse": {
+        "ChooseTargets": {
+          "creature": [
+            "$bobpiker"
+          ]
+        }
+      },
+      "step": "BeginningOfCombat",
+      "turn": 1
+    },
+    {
+      "do": {
+        "ChooseTargets": {
+          "creature": [
+            "$bears"
+          ]
+        }
+      },
+      "player": "alice",
+      "step": "BeginningOfCombat",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "BeginningOfCombat",
+      "turn": 1
+    },
+    {
+      "check": {
+        "View": {
+          "is": [],
+          "of": "Stack"
+        }
+      },
+      "player": "alice",
+      "step": "BeginningOfCombat",
+      "turn": 1
+    },
+    {
+      "check": {
+        "View": {
+          "is": "$bears",
+          "object": "Sorcerer",
+          "of": "AttachedTo"
+        }
+      },
+      "player": "alice",
+      "step": "BeginningOfCombat",
+      "turn": 1
+    },
+    {
+      "check": {
+        "PowerToughness": {
+          "object": "$bears",
+          "power": 3,
+          "toughness": 3
+        }
+      },
+      "player": "alice",
+      "step": "BeginningOfCombat",
+      "turn": 1
+    },
+    {
+      "check": {
+        "PowerToughness": {
+          "object": "$vendor",
+          "power": 2,
+          "toughness": 2
+        }
+      },
+      "player": "alice",
+      "step": "BeginningOfCombat",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Tapped": {
+          "object": "$p2",
+          "tapped": false
+        }
+      },
+      "player": "alice",
+      "step": "BeginningOfCombat",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Attack": [
+          "$bears",
+          "$vendor"
+        ]
+      },
+      "player": "alice",
+      "step": "DeclareAttackers",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "DeclareAttackers",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Answer": {
+          "prompt": "ChooseScry",
+          "with": [
+            [
+              "Hill Giant"
+            ],
+            []
+          ]
+        }
+      },
+      "player": "alice",
+      "step": "DeclareAttackers",
+      "turn": 1
+    },
+    {
+      "check": {
+        "View": {
+          "is": [],
+          "of": "Stack"
+        }
+      },
+      "player": "alice",
+      "step": "DeclareAttackers",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Tapped": {
+          "object": "$vendor",
+          "tapped": false
+        }
+      },
+      "player": "alice",
+      "step": "DeclareAttackers",
+      "turn": 1
+    },
+    {
+      "check": {
+        "View": {
+          "is": [
+            "Mountain",
+            "Forest",
+            "Plains#3",
+            "Swamp",
+            "Island",
+            "Hill Giant"
+          ],
+          "of": "Zone",
+          "player": "alice",
+          "zone": "Library"
+        }
+      },
+      "player": "alice",
+      "step": "DeclareAttackers",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Block": {}
+      },
+      "player": "bob",
+      "step": "DeclareBlockers",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Life": {
+          "life": 15,
+          "player": "bob"
+        }
+      },
+      "player": "alice",
+      "step": "PostcombatMain",
+      "turn": 1
+    }
+  ]
+}

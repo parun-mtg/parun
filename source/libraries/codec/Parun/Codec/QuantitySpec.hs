@@ -182,6 +182,13 @@ spec s = Spec.describe s "Parun.Codec.Quantity" $ do
       Quantity.codec
       (Quantity.NameStickers (NameStickerTest.WithLetterCount (LetterCount.MkLetterCount Comparison.AtLeast 8)))
       " {\"type\":\"NameStickers\",\"value\":{\"type\":\"WithLetterCount\",\"value\":{\"comparison\":\"AtLeast\",\"letters\":8}}} "
+  -- CR 123.6d (_____ _____ Rocketship).
+  Spec.it s "NameStickers, beginning with the chosen letter" $
+    Common.assertCodec
+      s
+      Quantity.codec
+      (Quantity.NameStickers NameStickerTest.BeginningWithChosenLetter)
+      " {\"type\":\"NameStickers\",\"value\":{\"type\":\"BeginningWithChosenLetter\"}} "
   -- CR 123.8a (Ambassador Blorpityblorpboop).
   Spec.it s "PowerOfStickers, a bare tag" $
     Common.assertCodec

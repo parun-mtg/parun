@@ -1,0 +1,104 @@
+{
+  "faces": [
+    {
+      "keywords": [
+        {
+          "type": "Reach"
+        }
+      ],
+      "manaCost": [
+        {
+          "type": "Generic",
+          "value": 4
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "Green"
+          }
+        }
+      ],
+      "name": "Beanstalk Wurm",
+      "oracleText": "Reach",
+      "power": {
+        "type": "Literal",
+        "value": 5
+      },
+      "toughness": {
+        "type": "Literal",
+        "value": 4
+      },
+      "typeLine": {
+        "subtypes": [
+          "Plant",
+          "Wurm"
+        ],
+        "types": [
+          "Creature"
+        ]
+      }
+    },
+    {
+      "manaCost": [
+        {
+          "type": "Generic",
+          "value": 1
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "Green"
+          }
+        }
+      ],
+      "name": "Plant Beans",
+      "oracleText": "You may play an additional land this turn. (Then exile this card. You may cast the creature later from exile.)",
+      "spell": {
+        "modes": [
+          {
+            "clauses": [
+              {
+                "effects": [
+                  {
+                    "type": "AffectPlayers",
+                    "value": {
+                      "duration": {
+                        "type": "UntilEndOfTurn"
+                      },
+                      "effect": {
+                        "type": "PlayAdditionalLands",
+                        "value": {
+                          "type": "Additional",
+                          "value": 1
+                        }
+                      },
+                      "players": {
+                        "type": "Scoped",
+                        "value": {
+                          "type": "You"
+                        }
+                      }
+                    }
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "typeLine": {
+        "subtypes": [
+          "Adventure"
+        ],
+        "types": [
+          "Sorcery"
+        ]
+      }
+    }
+  ],
+  "layout": {
+    "type": "Adventure"
+  }
+}

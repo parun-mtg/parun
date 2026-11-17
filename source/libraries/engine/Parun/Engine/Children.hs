@@ -631,7 +631,7 @@ filterChildren children predicate = case predicate of
   Filter.IsControllerOfBound name -> fmap Filter.IsControllerOfBound (slot children SlotArity.One name)
   Filter.Controls margin f -> fmap (Filter.Controls margin) (nest children f)
   Filter.CardsInZoneAtLeast _ _ -> pure predicate
-  Filter.OwnsBoundAtLeast n name f -> liftA2 (Filter.OwnsBoundAtLeast n) (slot children SlotArity.Many name) (nest children f)
+  Filter.HoldsBoundAtLeast holder reading n name f -> liftA2 (Filter.HoldsBoundAtLeast holder reading n) (slot children SlotArity.Many name) (nest children f)
   Filter.TappedForManaThisTurn f -> fmap Filter.TappedForManaThisTurn (nest children f)
   Filter.IsAttacking _ -> pure predicate
   Filter.IsAttackingPlayer _ -> pure predicate
@@ -715,7 +715,7 @@ anchorChildren children anchor = case anchor of
   Anchor.Bound held name -> fmap (Anchor.Bound held) (slot children SlotArity.Many name)
   Anchor.Evaluated -> pure anchor
   Anchor.Source -> pure anchor
-  Anchor.AnyPermanent group -> fmap Anchor.AnyPermanent (nest children group)
+  Anchor.AnyPermanent inclusion group -> fmap (Anchor.AnyPermanent inclusion) (nest children group)
   Anchor.YourCommander -> pure anchor
   Anchor.Host -> pure anchor
 
@@ -1645,7 +1645,7 @@ triggerConditionChildren c condition = case condition of
     fmap TriggerCondition.LeavesZone (LeavesZoneTrigger.MkLeavesZoneTrigger <$> actingChildren c card <*> pure from <*> pure to <*> pure whose <*> triggerTurn c turn <*> pure batching)
   TriggerCondition.PutIntoZone (PutIntoZoneTrigger.MkPutIntoZoneTrigger card from to turn duringResolution batching) ->
     fmap TriggerCondition.PutIntoZone (PutIntoZoneTrigger.MkPutIntoZoneTrigger <$> actingChildren c card <*> pure from <*> pure to <*> triggerTurn c turn <*> pure duringResolution <*> pure batching)
-  TriggerCondition.BecomesTapState (BecomesTapState.MkBecomesTapState status actor batching paying while_) -> fmap TriggerCondition.BecomesTapState (BecomesTapState.MkBecomesTapState status <$> actingChildren c actor <*> pure batching <*> pure paying <*> traverse (triggerState c) while_)
+  TriggerCondition.BecomesTapState (BecomesTapState.MkBecomesTapState status actor batching paying tapper while_) -> fmap TriggerCondition.BecomesTapState (BecomesTapState.MkBecomesTapState status <$> actingChildren c actor <*> pure batching <*> pure paying <*> pure tapper <*> traverse (triggerState c) while_)
   TriggerCondition.TappedForMana (TappedForManaTrigger.MkTappedForManaTrigger permanent who mana) ->
     fmap
       TriggerCondition.TappedForMana
@@ -2523,6 +2523,7 @@ chosenQualityChildren onListed onCards quality = case quality of
   ChosenQuality.Number _ _ -> pure quality
   ChosenQuality.Parity -> pure quality
   ChosenQuality.Word _ -> pure quality
+  ChosenQuality.Letter -> pure quality
   ChosenQuality.ExiledCard pile cards -> ChosenQuality.ExiledCard pile <$> onCards cards
 
 -- | One option an entering permanent may be (CR 208.2b).

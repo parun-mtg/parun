@@ -1,0 +1,147 @@
+{
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "battlefield": [
+          {
+            "card": "The Witch's Vanity",
+            "counters": [
+              {
+                "key": {
+                  "type": "Lore"
+                },
+                "value": 2
+              }
+            ],
+            "label": "vanity"
+          },
+          {
+            "card": "Savannah Lions",
+            "label": "lions"
+          },
+          {
+            "card": "Grizzly Bears",
+            "label": "bears"
+          }
+        ],
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ],
+        "name": "alice"
+      },
+      {
+        "battlefield": [
+          {
+            "card": "Hill Giant",
+            "label": "giant"
+          }
+        ],
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ],
+        "name": "bob"
+      }
+    ],
+    "step": "Upkeep",
+    "turn": 3
+  },
+  "description": "CR 715.2b / 303.7: The Witch's Vanity's chapter III creates a Wicked Role token attached to target creature its controller controls, then the Saga is sacrificed",
+  "note": "The Saga starts with two lore counters; the third, after alice's draw step, triggers chapter III. Savannah Lions is chosen over Grizzly Bears and becomes 3/2; bob's Hill Giant is not offered.",
+  "timeline": [
+    {
+      "player": "alice",
+      "refuse": {
+        "ChooseTargets": {
+          "creature": [
+            "$giant"
+          ]
+        }
+      },
+      "step": "PrecombatMain",
+      "turn": 3
+    },
+    {
+      "do": {
+        "ChooseTargets": {
+          "creature": [
+            "$lions"
+          ]
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 3
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 3
+    },
+    {
+      "check": {
+        "View": {
+          "is": [],
+          "of": "Stack"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 3
+    },
+    {
+      "check": {
+        "PowerToughness": {
+          "object": "$lions",
+          "power": 3,
+          "toughness": 2
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 3
+    },
+    {
+      "check": {
+        "PowerToughness": {
+          "object": "$bears",
+          "power": 2,
+          "toughness": 2
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 3
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "The Witch's Vanity",
+          "count": 1,
+          "player": "alice",
+          "zone": "Graveyard"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 3
+    }
+  ]
+}

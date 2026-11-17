@@ -1,0 +1,170 @@
+{
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "battlefield": [
+          {
+            "card": "Troyan, Gutsy Explorer",
+            "label": "troyan",
+            "ready": true
+          },
+          {
+            "card": "Forest",
+            "label": "forest1",
+            "ready": true
+          },
+          {
+            "card": "Forest",
+            "label": "forest2",
+            "ready": true
+          },
+          {
+            "card": "Forest",
+            "label": "forest3",
+            "ready": true
+          },
+          {
+            "card": "Forest",
+            "label": "forest4",
+            "ready": true
+          }
+        ],
+        "hand": [
+          {
+            "card": "Grizzly Bears",
+            "label": "bears"
+          },
+          {
+            "card": "Craw Wurm",
+            "label": "wurm"
+          }
+        ],
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ],
+        "name": "alice"
+      },
+      {
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ],
+        "name": "bob"
+      }
+    ],
+    "step": "PrecombatMain"
+  },
+  "description": "CR 106.6: Troyan's {G}{U} can be spent only on spells with mana value 5 or greater or with {X} in their mana costs",
+  "note": "Paying Grizzly Bears with Troyan's mana is refused, though four Forests are untapped; Craw Wurm (mana value 6) is then cast with Troyan's two mana and four Forests.",
+  "timeline": [
+    {
+      "player": "alice",
+      "refuse": {
+        "Cast": {
+          "mana": [
+            "$troyan",
+            null
+          ],
+          "object": "$bears"
+        }
+      },
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "ChooseOptional": "Exercises"
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Tapped": {
+          "object": "$troyan",
+          "tapped": false
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Cast": {
+          "mana": [
+            "$troyan",
+            "$forest1",
+            "$forest2",
+            "$forest3",
+            "$forest4"
+          ],
+          "object": "$wurm"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "View": {
+          "is": [],
+          "of": "Stack"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Craw Wurm",
+          "count": 1,
+          "player": "alice",
+          "zone": "Battlefield"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Grizzly Bears",
+          "count": 1,
+          "player": "alice",
+          "zone": "Hand"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    }
+  ]
+}

@@ -1,0 +1,131 @@
+{
+  "faces": [
+    {
+      "manaCost": [
+        {
+          "type": "Generic",
+          "value": 2
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "White"
+          }
+        }
+      ],
+      "name": "Pests of Honor",
+      "oracleText": "Celebration — At the beginning of combat on your turn, if two or more nonland permanents entered the battlefield under your control this turn, put a +1/+1 counter on this creature.",
+      "power": {
+        "type": "Literal",
+        "value": 2
+      },
+      "toughness": {
+        "type": "Literal",
+        "value": 2
+      },
+      "triggeredAbilities": [
+        {
+          "condition": {
+            "type": "StepBegins",
+            "value": {
+              "phase": {
+                "type": "Combat",
+                "value": "BeginningOfCombat"
+              },
+              "scope": {
+                "type": "PlayersTurn",
+                "value": {
+                  "type": "Relative",
+                  "value": "You"
+                }
+              }
+            }
+          },
+          "intervening": {
+            "type": "Compares",
+            "value": {
+              "comparison": "AtLeast",
+              "measured": {
+                "type": "Count",
+                "value": {
+                  "aggregation": {
+                    "type": "Members"
+                  },
+                  "filter": {
+                    "type": "And",
+                    "value": [
+                      {
+                        "type": "Not",
+                        "value": {
+                          "type": "HasCardType",
+                          "value": "Land"
+                        }
+                      },
+                      {
+                        "type": "HeldBy",
+                        "value": {
+                          "holder": "Controller",
+                          "relation": "You"
+                        }
+                      }
+                    ]
+                  },
+                  "scope": {
+                    "type": "InHistory",
+                    "value": {
+                      "type": "CardArrivedIn",
+                      "value": {
+                        "to": "Battlefield"
+                      }
+                    }
+                  }
+                }
+              },
+              "threshold": {
+                "type": "Literal",
+                "value": 2
+              }
+            }
+          },
+          "modal": {
+            "modes": [
+              {
+                "clauses": [
+                  {
+                    "effects": [
+                      {
+                        "type": "PutCounters",
+                        "value": {
+                          "kind": {
+                            "type": "PlusOnePlusOne"
+                          },
+                          "quantity": {
+                            "type": "Literal",
+                            "value": 1
+                          },
+                          "ref": {
+                            "type": "InSlot",
+                            "value": "self"
+                          }
+                        }
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      ],
+      "typeLine": {
+        "subtypes": [
+          "Mouse"
+        ],
+        "types": [
+          "Creature"
+        ]
+      }
+    }
+  ]
+}

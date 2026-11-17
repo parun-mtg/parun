@@ -1,0 +1,272 @@
+{
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "battlefield": [
+          {
+            "card": "Picnic Ruiner",
+            "label": "ruiner",
+            "ready": true
+          },
+          {
+            "card": "Grizzly Bears",
+            "label": "bears"
+          },
+          {
+            "card": "Llanowar Elves",
+            "label": "elf"
+          },
+          {
+            "card": "Forest",
+            "label": "f1"
+          },
+          {
+            "card": "Forest",
+            "label": "f2"
+          },
+          {
+            "card": "Forest",
+            "label": "f3"
+          },
+          {
+            "card": "Forest",
+            "label": "f4"
+          }
+        ],
+        "hand": [
+          {
+            "card": "Picnic Ruiner",
+            "label": "goodies"
+          }
+        ],
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ],
+        "name": "alice"
+      },
+      {
+        "battlefield": [],
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ],
+        "name": "bob"
+      }
+    ],
+    "step": "PrecombatMain"
+  },
+  "description": "Stolen Goodies divides three +1/+1 counters between two creatures alice controls, making Grizzly Bears 4/4, so the 3/3 Picnic Ruiner gains double strike as it next attacks, as it did not before",
+  "note": "On turn 1 alice controls no creature with power 4 or greater and the 2/2 Ruiner deals 2; on turn 3 the 3/3 Ruiner deals 3 first-strike and 3 regular damage.",
+  "timeline": [
+    {
+      "do": {
+        "Attack": [
+          "$ruiner"
+        ]
+      },
+      "player": "alice",
+      "step": "DeclareAttackers",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Keywords": {
+          "count": 0,
+          "keyword": {
+            "type": "DoubleStrike"
+          },
+          "object": "$ruiner"
+        }
+      },
+      "player": "alice",
+      "step": "DeclareBlockers",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Life": {
+          "life": 18,
+          "player": "bob"
+        }
+      },
+      "player": "alice",
+      "step": "EndOfCombat",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Cast": {
+          "face": "Stolen Goodies",
+          "mana": [
+            "$f1",
+            "$f2",
+            "$f3",
+            "$f4"
+          ],
+          "object": "$goodies",
+          "targets": [
+            "$bears",
+            "$ruiner"
+          ]
+        }
+      },
+      "player": "alice",
+      "step": "PostcombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Answer": {
+          "prompt": "ChooseDivision",
+          "with": [
+            [
+              [
+                "Creature",
+                "$bears"
+              ],
+              2
+            ],
+            [
+              [
+                "Creature",
+                "$ruiner"
+              ],
+              1
+            ]
+          ]
+        }
+      },
+      "player": "alice",
+      "step": "PostcombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PostcombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "View": {
+          "is": [],
+          "of": "Stack"
+        }
+      },
+      "player": "alice",
+      "step": "PostcombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Counters": {
+          "count": 2,
+          "kind": {
+            "type": "PlusOnePlusOne"
+          },
+          "object": "$bears"
+        }
+      },
+      "player": "alice",
+      "step": "PostcombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Counters": {
+          "count": 1,
+          "kind": {
+            "type": "PlusOnePlusOne"
+          },
+          "object": "$ruiner"
+        }
+      },
+      "player": "alice",
+      "step": "PostcombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Counters": {
+          "count": 0,
+          "kind": {
+            "type": "PlusOnePlusOne"
+          },
+          "object": "$elf"
+        }
+      },
+      "player": "alice",
+      "step": "PostcombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Attack": [
+          "$ruiner"
+        ]
+      },
+      "player": "alice",
+      "step": "DeclareAttackers",
+      "turn": 3
+    },
+    {
+      "check": {
+        "Keywords": {
+          "count": 1,
+          "keyword": {
+            "type": "DoubleStrike"
+          },
+          "object": "$ruiner"
+        }
+      },
+      "player": "alice",
+      "step": "DeclareBlockers",
+      "turn": 3
+    },
+    {
+      "check": {
+        "Life": {
+          "life": 12,
+          "player": "bob"
+        }
+      },
+      "player": "alice",
+      "step": "EndOfCombat",
+      "turn": 3
+    }
+  ]
+}

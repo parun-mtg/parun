@@ -22,6 +22,7 @@ import qualified Parun.Engine.Sector as Sector
 import qualified Parun.Engine.Subtype as Subtype.Engine
 import qualified Parun.Engine.TextWord as TextWord
 import qualified Parun.Engine.Turn as Turn
+import qualified Parun.Extra.Natural as Natural.Extra
 import qualified Parun.Types.AbilityFacts as AbilityFacts
 import qualified Parun.Types.AbilityKind as AbilityKind
 import qualified Parun.Types.AbilityName as AbilityName
@@ -93,6 +94,7 @@ import qualified Parun.Types.ProductionTag as ProductionTag
 import qualified Parun.Types.Quantity as Quantity
 import qualified Parun.Types.Recipient as Recipient
 import qualified Parun.Types.RoomHalf as RoomHalf
+import qualified Parun.Types.SelfInclusion as SelfInclusion
 import qualified Parun.Types.SlotArity as SlotArity
 import qualified Parun.Types.SlotName as SlotName
 import qualified Parun.Types.StickerContent as StickerContent
@@ -1004,7 +1006,7 @@ spentTagColors spent =
 -- identity is the only thing THIS VIEW can answer, which is exactly what
 -- IsPlayer asks. The other player-shaped atoms are answered elsewhere on
 -- purpose: Controls, IsControllerOfBound, CardsInZoneAtLeast,
--- OwnsBoundAtLeast and TappedForManaThisTurn each ask about the board, a zone
+-- HoldsBoundAtLeast and TappedForManaThisTurn each ask about the board, a zone
 -- or the turn's log, which a function taking nothing but a PlayerId cannot see,
 -- so Parun.Engine.Count.bakePerspective bakes them against the game state
 -- before the match instead.
@@ -1034,6 +1036,29 @@ dealtByView ev =
       commander = DamageEvent.dealtByCommander ev,
       zone = DamageEvent.dealtFromZone ev
     }
+
+-- CR 115.1 / 603.10: `view`, a damage event's source, aiming at what it aimed
+-- at as it dealt the damage (DamageEvent.dealtByTargets), each target seen as
+-- `viewOf` answers -- so TargetsOnlyOne reads a spell that has since left the
+-- stack, and a target the damage killed.
+withDealtTargets :: (Recipient.Recipient -> Maybe View) -> DamageEvent.DamageEvent -> View -> View
+withDealtTargets viewOf ev view =
+  let bySlot = DamageEvent.dealtByTargets ev
+      aimed = Set.unions (Map.elems bySlot)
+   in view
+        { targets = aimed,
+          targetViews = Map.fromList [(r, v) | r <- Set.toList aimed, Just v <- [viewOf r]],
+          targetCount = sum (fmap Natural.Extra.length (Map.elems bySlot))
+        }
+
+-- CR 115.1: `context` framed so IsTarget asks whether a candidate was a target
+-- of a damage event's source as it dealt the damage -- Imodane, the
+-- Pyrohammer's "deals damage to that creature". Every object it aimed at, under
+-- Binding.announcedTargets.
+dealtTargetsContext :: DamageEvent.DamageEvent -> Context -> Context
+dealtTargetsContext ev context =
+  let aimed = Set.fromList (Maybe.mapMaybe Recipient.objectOf (Set.toList (Set.unions (Map.elems (DamageEvent.dealtByTargets ev)))))
+   in context {slotObjects = Map.insert Binding.announcedTargets aimed (slotObjects context)}
 
 -- playerView short of the player's identity: every axis empty, false or the
 -- default, each note giving the reason for a player. dealtByView builds on it
@@ -1888,7 +1913,8 @@ data Context = MkContext
     -- HasChosenCardType. Filled where sourceChosenColors above is, and Nothing
     -- everywhere else, so the atom is vacuously False there.
     sourceChosenCardType :: Maybe CardType.CardType,
-    -- CR 607.2d: the number the SOURCE last chose, for Quantity.ChosenNumber.
+    -- CR 607.2d: the number the SOURCE last chose, for Quantity.ChosenNumber
+    -- and NameStickerTest.BeginningWithChosenLetter.
     -- Filled where sourceChosenColors above is.
     sourceChosenNumber :: Maybe Natural.Natural,
     -- CR 607.2d: the objects the SOURCE last chose (Object.chosenObjects), for
@@ -2252,20 +2278,30 @@ sharesAnchored trait anchor = case anchor of
   -- Some permanent the nest admits, matched in the OUTER context, so its "you"
   -- and "another" are the outer match's (Pattern Matcher's "another creature
   -- you control"). Vacuously False where nothing fills battlefieldViews.
-  Anchor.AnyPermanent group -> case trait of
-    Trait.Name -> Just (\context view -> any (\permanent -> matches context permanent group && meets (names view) (names permanent)) (battlefieldViews context))
-    Trait.Controller -> Just (\context view -> any (\permanent -> matches context permanent group && meets (held view) (held permanent)) (battlefieldViews context))
-    -- CR 205.3i: every land type, not the basic ones alone, off each side's
-    -- subtypes, a permanent's projected (Hiveheart Shaman).
-    Trait.LandType -> Just (\context view -> any (\permanent -> matches context permanent group && meets (landTypes view) (landTypes permanent)) (battlefieldViews context))
-    -- CR 105.2. The scenario named for Jaded Response proves it.
-    Trait.Color -> Just (\context view -> any (\permanent -> matches context permanent group && meets (colors view) (colors permanent)) (battlefieldViews context))
-    -- CR 205.3m, off each side's subtypes as LandType reads them. The scenario
-    -- named for Radagast the Brown proves it.
-    Trait.CreatureType -> Just (\context view -> any (\permanent -> matches context permanent group && meets (creatureTypes view) (creatureTypes permanent)) (battlefieldViews context))
-    Trait.Owner -> Nothing
-    Trait.Sector -> Nothing
-    Trait.CardType _ -> Nothing
+  -- ExcludesCandidate drops the candidate's own view, "another permanent you
+  -- control" of a battlefield candidate; the scenarios named for Yenna,
+  -- Redtooth Regent prove it.
+  Anchor.AnyPermanent inclusion group ->
+    let peerShares traitOf = Just (\context view -> any (\permanent -> eligible view permanent && matches context permanent group && meets (traitOf view) (traitOf permanent)) (battlefieldViews context))
+        eligible view permanent = case inclusion of
+          SelfInclusion.IncludesCandidate -> True
+          SelfInclusion.ExcludesCandidate -> case identity view of
+            Nothing -> True
+            Just candidate -> identity permanent /= Just candidate
+     in case trait of
+          Trait.Name -> peerShares names
+          Trait.Controller -> peerShares held
+          -- CR 205.3i: every land type, not the basic ones alone, off each side's
+          -- subtypes, a permanent's projected (Hiveheart Shaman).
+          Trait.LandType -> peerShares landTypes
+          -- CR 105.2. The scenario named for Jaded Response proves it.
+          Trait.Color -> peerShares colors
+          -- CR 205.3m, off each side's subtypes as LandType reads them. The scenario
+          -- named for Radagast the Brown proves it.
+          Trait.CreatureType -> peerShares creatureTypes
+          Trait.Owner -> Nothing
+          Trait.Sector -> Nothing
+          Trait.CardType _ -> Nothing
   -- A commander with no creature type shares none, and neither does a player
   -- with no commander: both leave the set empty.
   Anchor.YourCommander -> case trait of
@@ -2318,7 +2354,7 @@ attachedAnchored anchor = case anchor of
   -- sharesAnchored's lint keeps it out of card data too.
   Anchor.Bound (Just _) _ -> Nothing
   -- A group names no one host: Filter.AttachedTo is that reading.
-  Anchor.AnyPermanent _ -> Nothing
+  Anchor.AnyPermanent _ _ -> Nothing
   Anchor.YourCommander -> Nothing
   -- The candidate's own host is the candidate's attachment, not an anchor.
   Anchor.Host -> Nothing
@@ -2697,7 +2733,7 @@ matches context view predicate = case predicate of
   Filter.CardsInZoneAtLeast _ _ -> False
   -- False wherever it is reached, for the atom above's reason: this module holds
   -- no game state to ask CR 400.7j's question of the slot's objects with.
-  Filter.OwnsBoundAtLeast {} -> False
+  Filter.HoldsBoundAtLeast {} -> False
   -- False wherever it is reached, likewise: the turn's log is game state.
   Filter.TappedForManaThisTurn _ -> False
   -- CR 508.1k: a creature stays attacking until it is removed from combat or the
@@ -3300,7 +3336,7 @@ bakeCost slot object =
 -- named inside one must be baked before the match or it can never be answered.
 -- No other slot is substituted: a Measures operand's slot holds a number or an
 -- object, which the Context carries into the match, and IsControllerOfBound's
--- and OwnsBoundAtLeast's hold objects, answered by
+-- and HoldsBoundAtLeast's hold objects, answered by
 -- Parun.Engine.Count.bakePerspective.
 --
 -- NO DESCENT INTO A KEYWORD, unlike `rewrite` above, and the difference is
@@ -3453,7 +3489,7 @@ manaValueThresholds predicate = case predicate of
   -- No threshold: the literal bounds a COUNT OF CARDS in a zone, not a mana
   -- value, so CR 601.3a's sample has nothing to learn from it.
   Filter.CardsInZoneAtLeast _ _ -> []
-  Filter.OwnsBoundAtLeast _ _ f -> manaValueThresholds f
+  Filter.HoldsBoundAtLeast _ _ _ _ f -> manaValueThresholds f
   Filter.TappedForManaThisTurn f -> manaValueThresholds f
   Filter.IsAttacking _ -> []
   Filter.IsAttackingPlayer _ -> []
@@ -3647,7 +3683,7 @@ statesAQuality predicate = case predicate of
   Filter.IsPlayer _ -> True
   Filter.IsControllerOfBound _ -> True
   Filter.CardsInZoneAtLeast _ _ -> True
-  Filter.OwnsBoundAtLeast {} -> True
+  Filter.HoldsBoundAtLeast {} -> True
   Filter.TappedForManaThisTurn _ -> True
   Filter.IsAttacking _ -> True
   Filter.IsAttackingPlayer _ -> True
@@ -3797,7 +3833,7 @@ readsSourceValues predicate = case predicate of
       Trait.LandType -> False
     Anchor.Bound _ _ -> False
     Anchor.Evaluated -> False
-    Anchor.AnyPermanent group -> readsSourceValues group
+    Anchor.AnyPermanent _ group -> readsSourceValues group
     Anchor.YourCommander -> False
     Anchor.Host -> False
   Filter.HasSubtype _ -> False
@@ -3843,7 +3879,7 @@ readsSourceValues predicate = case predicate of
   Filter.IsPlayer _ -> False
   Filter.IsControllerOfBound _ -> False
   Filter.CardsInZoneAtLeast _ _ -> False
-  Filter.OwnsBoundAtLeast _ _ f -> readsSourceValues f
+  Filter.HoldsBoundAtLeast _ _ _ _ f -> readsSourceValues f
   Filter.TappedForManaThisTurn f -> readsSourceValues f
   Filter.IsAttacking _ -> False
   Filter.IsAttackingPlayer _ -> False
@@ -3981,7 +4017,7 @@ talliesWhatHappened predicate = case predicate of
   Filter.IsPlayer {} -> False
   Filter.IsControllerOfBound {} -> False
   Filter.CardsInZoneAtLeast {} -> False
-  Filter.OwnsBoundAtLeast {} -> False
+  Filter.HoldsBoundAtLeast {} -> False
   Filter.TappedForManaThisTurn {} -> False
   Filter.IsAttacking {} -> False
   Filter.IsAttackingPlayer {} -> False
@@ -4107,7 +4143,7 @@ overBoundSlotsWith f predicate = case predicate of
 -- The filter an anchor nests, for a traversal that descends into one.
 anchorFilter :: Anchor.Anchor nested -> Maybe nested
 anchorFilter anchor = case anchor of
-  Anchor.AnyPermanent group -> Just group
+  Anchor.AnyPermanent _ group -> Just group
   Anchor.Bound _ _ -> Nothing
   Anchor.Evaluated -> Nothing
   Anchor.Source -> Nothing

@@ -1,0 +1,203 @@
+{
+  "faces": [
+    {
+      "activatedAbilities": [
+        {
+          "cost": {
+            "components": [
+              {
+                "type": "TapThis"
+              }
+            ],
+            "mana": []
+          },
+          "modal": {
+            "modes": [
+              {
+                "clauses": [
+                  {
+                    "effects": [
+                      {
+                        "type": "AddMana",
+                        "value": {
+                          "production": {
+                            "type": "OfType",
+                            "value": {
+                              "type": "Colored",
+                              "value": "Green"
+                            }
+                          },
+                          "restriction": {
+                            "casts": {
+                              "type": "Or",
+                              "value": [
+                                {
+                                  "type": "Measures",
+                                  "value": {
+                                    "comparison": "AtLeast",
+                                    "measure": "ManaValue",
+                                    "operand": {
+                                      "type": "Literal",
+                                      "value": 5
+                                    }
+                                  }
+                                },
+                                {
+                                  "type": "ManaCostHasSymbol",
+                                  "value": {
+                                    "type": "VariableSymbol"
+                                  }
+                                }
+                              ]
+                            }
+                          }
+                        }
+                      },
+                      {
+                        "type": "AddMana",
+                        "value": {
+                          "production": {
+                            "type": "OfType",
+                            "value": {
+                              "type": "Colored",
+                              "value": "Blue"
+                            }
+                          },
+                          "restriction": {
+                            "casts": {
+                              "type": "Or",
+                              "value": [
+                                {
+                                  "type": "Measures",
+                                  "value": {
+                                    "comparison": "AtLeast",
+                                    "measure": "ManaValue",
+                                    "operand": {
+                                      "type": "Literal",
+                                      "value": 5
+                                    }
+                                  }
+                                },
+                                {
+                                  "type": "ManaCostHasSymbol",
+                                  "value": {
+                                    "type": "VariableSymbol"
+                                  }
+                                }
+                              ]
+                            }
+                          }
+                        }
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "cost": {
+            "components": [
+              {
+                "type": "TapThis"
+              }
+            ],
+            "mana": [
+              {
+                "type": "OfType",
+                "value": {
+                  "type": "Colored",
+                  "value": "Blue"
+                }
+              }
+            ]
+          },
+          "modal": {
+            "modes": [
+              {
+                "clauses": [
+                  {
+                    "effects": [
+                      {
+                        "type": "Draw",
+                        "value": {
+                          "player": {
+                            "type": "Relative",
+                            "value": "You"
+                          },
+                          "quantity": {
+                            "type": "Literal",
+                            "value": 1
+                          }
+                        }
+                      },
+                      {
+                        "type": "Discard",
+                        "value": {
+                          "type": "Counted",
+                          "value": {
+                            "player": {
+                              "type": "Relative",
+                              "value": "You"
+                            },
+                            "quantity": {
+                              "type": "Literal",
+                              "value": 1
+                            }
+                          }
+                        }
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      ],
+      "manaCost": [
+        {
+          "type": "Generic",
+          "value": 1
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "Green"
+          }
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "Blue"
+          }
+        }
+      ],
+      "name": "Troyan, Gutsy Explorer",
+      "oracleText": "{T}: Add {G}{U}. Spend this mana only to cast spells with mana value 5 or greater or spells with {X} in their mana costs.\n{U}, {T}: Draw a card, then discard a card.",
+      "power": {
+        "type": "Literal",
+        "value": 1
+      },
+      "toughness": {
+        "type": "Literal",
+        "value": 3
+      },
+      "typeLine": {
+        "subtypes": [
+          "Scout",
+          "Vedalken"
+        ],
+        "supertypes": [
+          "Legendary"
+        ],
+        "types": [
+          "Creature"
+        ]
+      }
+    }
+  ]
+}

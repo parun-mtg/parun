@@ -1,0 +1,203 @@
+{
+  "faces": [
+    {
+      "keywords": [
+        {
+          "type": "Flying"
+        },
+        {
+          "type": "Crew",
+          "value": {
+            "power": 2
+          }
+        }
+      ],
+      "manaCost": [
+        {
+          "type": "Generic",
+          "value": 4
+        }
+      ],
+      "name": "_____ _____ Rocketship",
+      "oracleText": "Flying\nWhen this Vehicle enters, you may put up to two name stickers on it.\nWhenever this Vehicle attacks, choose a letter. This Vehicle gets +1/+1 until end of turn for each name sticker on it that begins with the chosen letter.\nCrew 2",
+      "power": {
+        "type": "Literal",
+        "value": 2
+      },
+      "toughness": {
+        "type": "Literal",
+        "value": 3
+      },
+      "triggeredAbilities": [
+        {
+          "condition": {
+            "type": "Enters",
+            "value": {}
+          },
+          "modal": {
+            "modes": [
+              {
+                "clauses": [
+                  {
+                    "effects": [
+                      {
+                        "type": "PutSticker",
+                        "value": {
+                          "kinds": [
+                            "Name"
+                          ],
+                          "player": {
+                            "type": "Relative",
+                            "value": "You"
+                          },
+                          "ref": {
+                            "type": "InSlot",
+                            "value": "self"
+                          }
+                        }
+                      }
+                    ],
+                    "optionality": {
+                      "type": "Optional"
+                    }
+                  },
+                  {
+                    "effects": [
+                      {
+                        "type": "PutSticker",
+                        "value": {
+                          "kinds": [
+                            "Name"
+                          ],
+                          "player": {
+                            "type": "Relative",
+                            "value": "You"
+                          },
+                          "ref": {
+                            "type": "InSlot",
+                            "value": "self"
+                          }
+                        }
+                      }
+                    ],
+                    "optionality": {
+                      "type": "Optional"
+                    }
+                  }
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "condition": {
+            "type": "Attacks",
+            "value": {
+              "type": "Attacker",
+              "value": {}
+            }
+          },
+          "modal": {
+            "modes": [
+              {
+                "clauses": [
+                  {
+                    "effects": [
+                      {
+                        "type": "ChooseQuality",
+                        "value": {
+                          "quality": {
+                            "type": "Letter"
+                          }
+                        }
+                      },
+                      {
+                        "type": "ModifyTarget",
+                        "value": {
+                          "duration": {
+                            "type": "UntilEndOfTurn"
+                          },
+                          "modification": {
+                            "type": "ModifyPowerToughness",
+                            "value": {
+                              "power": {
+                                "type": "Count",
+                                "value": {
+                                  "aggregation": {
+                                    "type": "Total",
+                                    "value": {
+                                      "type": "NameStickers",
+                                      "value": {
+                                        "type": "BeginningWithChosenLetter"
+                                      }
+                                    }
+                                  },
+                                  "filter": {
+                                    "type": "IsSource"
+                                  },
+                                  "scope": {
+                                    "type": "InZone",
+                                    "value": {
+                                      "player": {
+                                        "type": "Relative",
+                                        "value": "AnyPlayer"
+                                      },
+                                      "zone": "Battlefield"
+                                    }
+                                  }
+                                }
+                              },
+                              "toughness": {
+                                "type": "Count",
+                                "value": {
+                                  "aggregation": {
+                                    "type": "Total",
+                                    "value": {
+                                      "type": "NameStickers",
+                                      "value": {
+                                        "type": "BeginningWithChosenLetter"
+                                      }
+                                    }
+                                  },
+                                  "filter": {
+                                    "type": "IsSource"
+                                  },
+                                  "scope": {
+                                    "type": "InZone",
+                                    "value": {
+                                      "player": {
+                                        "type": "Relative",
+                                        "value": "AnyPlayer"
+                                      },
+                                      "zone": "Battlefield"
+                                    }
+                                  }
+                                }
+                              }
+                            }
+                          },
+                          "ref": {
+                            "type": "InSlot",
+                            "value": "self"
+                          }
+                        }
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      ],
+      "typeLine": {
+        "subtypes": [
+          "Vehicle"
+        ],
+        "types": [
+          "Artifact"
+        ]
+      }
+    }
+  ]
+}

@@ -1,0 +1,134 @@
+{
+  "faces": [
+    {
+      "keywords": [
+        {
+          "type": "Haste"
+        }
+      ],
+      "manaCost": [
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "Red"
+          }
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "White"
+          }
+        }
+      ],
+      "name": "Ash, Party Crasher",
+      "oracleText": "Haste\nCelebration — Whenever Ash attacks, if two or more nonland permanents entered the battlefield under your control this turn, put a +1/+1 counter on Ash.",
+      "power": {
+        "type": "Literal",
+        "value": 2
+      },
+      "toughness": {
+        "type": "Literal",
+        "value": 2
+      },
+      "triggeredAbilities": [
+        {
+          "condition": {
+            "type": "Attacks",
+            "value": {
+              "type": "Attacker",
+              "value": {}
+            }
+          },
+          "intervening": {
+            "type": "Compares",
+            "value": {
+              "comparison": "AtLeast",
+              "measured": {
+                "type": "Count",
+                "value": {
+                  "aggregation": {
+                    "type": "Members"
+                  },
+                  "filter": {
+                    "type": "And",
+                    "value": [
+                      {
+                        "type": "Not",
+                        "value": {
+                          "type": "HasCardType",
+                          "value": "Land"
+                        }
+                      },
+                      {
+                        "type": "HeldBy",
+                        "value": {
+                          "holder": "Controller",
+                          "relation": "You"
+                        }
+                      }
+                    ]
+                  },
+                  "scope": {
+                    "type": "InHistory",
+                    "value": {
+                      "type": "CardArrivedIn",
+                      "value": {
+                        "to": "Battlefield"
+                      }
+                    }
+                  }
+                }
+              },
+              "threshold": {
+                "type": "Literal",
+                "value": 2
+              }
+            }
+          },
+          "modal": {
+            "modes": [
+              {
+                "clauses": [
+                  {
+                    "effects": [
+                      {
+                        "type": "PutCounters",
+                        "value": {
+                          "kind": {
+                            "type": "PlusOnePlusOne"
+                          },
+                          "quantity": {
+                            "type": "Literal",
+                            "value": 1
+                          },
+                          "ref": {
+                            "type": "InSlot",
+                            "value": "self"
+                          }
+                        }
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      ],
+      "typeLine": {
+        "subtypes": [
+          "Human",
+          "Peasant"
+        ],
+        "supertypes": [
+          "Legendary"
+        ],
+        "types": [
+          "Creature"
+        ]
+      }
+    }
+  ]
+}

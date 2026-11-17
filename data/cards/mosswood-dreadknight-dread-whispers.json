@@ -1,0 +1,149 @@
+{
+  "faces": [
+    {
+      "keywords": [
+        {
+          "type": "Trample"
+        }
+      ],
+      "manaCost": [
+        {
+          "type": "Generic",
+          "value": 1
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "Green"
+          }
+        }
+      ],
+      "name": "Mosswood Dreadknight",
+      "oracleText": "Trample\nWhen this creature dies, you may cast it from your graveyard as an Adventure until the end of your next turn.",
+      "power": {
+        "type": "Literal",
+        "value": 3
+      },
+      "toughness": {
+        "type": "Literal",
+        "value": 2
+      },
+      "triggeredAbilities": [
+        {
+          "condition": {
+            "type": "Leaves",
+            "value": {
+              "destinations": [
+                {
+                  "zone": "Graveyard"
+                }
+              ]
+            }
+          },
+          "modal": {
+            "modes": [
+              {
+                "clauses": [
+                  {
+                    "effects": [
+                      {
+                        "type": "GrantPlayFromExile",
+                        "value": {
+                          "duration": {
+                            "type": "UntilEndOfYourNextTurn"
+                          },
+                          "ref": {
+                            "type": "InSlot",
+                            "value": "became"
+                          },
+                          "verb": "CastAsAdventure",
+                          "zone": "Graveyard"
+                        }
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      ],
+      "typeLine": {
+        "subtypes": [
+          "Human",
+          "Knight"
+        ],
+        "types": [
+          "Creature"
+        ]
+      }
+    },
+    {
+      "manaCost": [
+        {
+          "type": "Generic",
+          "value": 1
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "Black"
+          }
+        }
+      ],
+      "name": "Dread Whispers",
+      "oracleText": "You draw a card and you lose 1 life. (Then exile this card. You may cast the creature later from exile.)",
+      "spell": {
+        "modes": [
+          {
+            "clauses": [
+              {
+                "effects": [
+                  {
+                    "type": "Draw",
+                    "value": {
+                      "player": {
+                        "type": "Relative",
+                        "value": "You"
+                      },
+                      "quantity": {
+                        "type": "Literal",
+                        "value": 1
+                      }
+                    }
+                  },
+                  {
+                    "type": "LoseLife",
+                    "value": {
+                      "player": {
+                        "type": "Relative",
+                        "value": "You"
+                      },
+                      "quantity": {
+                        "type": "Literal",
+                        "value": 1
+                      }
+                    }
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "typeLine": {
+        "subtypes": [
+          "Adventure"
+        ],
+        "types": [
+          "Sorcery"
+        ]
+      }
+    }
+  ],
+  "layout": {
+    "type": "Adventure"
+  }
+}

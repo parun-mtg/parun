@@ -1,0 +1,247 @@
+{
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "battlefield": [
+          {
+            "card": "Forest",
+            "label": "f1"
+          },
+          {
+            "card": "Forest",
+            "label": "f2"
+          },
+          {
+            "card": "Forest",
+            "label": "f3"
+          },
+          {
+            "card": "Forest",
+            "label": "f4"
+          },
+          {
+            "card": "Forest",
+            "label": "f5"
+          },
+          {
+            "card": "Forest",
+            "label": "f6"
+          },
+          {
+            "card": "Forest",
+            "label": "f7"
+          },
+          {
+            "card": "Forest",
+            "label": "f8"
+          },
+          {
+            "card": "Forest",
+            "label": "f9"
+          },
+          {
+            "card": "Forest",
+            "label": "f10"
+          },
+          {
+            "card": "Golden Egg",
+            "label": "egg"
+          },
+          {
+            "card": "Grizzly Bears",
+            "label": "bears"
+          }
+        ],
+        "hand": [
+          {
+            "card": "Night of the Sweets' Revenge",
+            "label": "night"
+          }
+        ],
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ],
+        "name": "alice"
+      },
+      {
+        "battlefield": [
+          {
+            "card": "Goblin Piker",
+            "label": "piker"
+          }
+        ],
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ],
+        "name": "bob"
+      }
+    ],
+    "step": "PrecombatMain"
+  },
+  "description": "Night of the Sweets' Revenge makes a Food, lets its controller's Foods tap for green, and sacrifices itself to pump creatures by the number of Foods",
+  "note": "Alice casts it beside a Golden Egg, a printed Food, so its trigger brings her to two Foods. Her six Forests cannot pay {5}{G}{G} alone: the seventh mana is the Food token's granted {T}: Add {G}. The Grizzly Bears become 4/4, +2/+2 for the two Foods; the sacrificed enchantment is not a Food. Bob's Goblin Piker stays 2/1.",
+  "timeline": [
+    {
+      "do": {
+        "Cast": {
+          "mana": [
+            "$f1",
+            "$f2",
+            "$f3",
+            "$f4",
+            null
+          ],
+          "object": "$night"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Food Token",
+          "count": 1,
+          "player": "alice",
+          "zone": "Battlefield"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Activate": {
+          "mana": [
+            "$f5",
+            "$f6",
+            "$f7",
+            "$f8",
+            "$f9",
+            "$f10",
+            "Food Token",
+            null
+          ],
+          "object": "Night of the Sweets' Revenge"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Tapped": {
+          "object": "Food Token",
+          "tapped": true
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "View": {
+          "is": [],
+          "of": "Stack"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Night of the Sweets' Revenge",
+          "count": 1,
+          "player": "alice",
+          "zone": "Graveyard"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "PowerToughness": {
+          "object": "$bears",
+          "power": 4,
+          "toughness": 4
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "PowerToughness": {
+          "object": "$piker",
+          "power": 2,
+          "toughness": 1
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    }
+  ]
+}

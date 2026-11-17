@@ -1,0 +1,176 @@
+{
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "battlefield": [
+          {
+            "card": "Plains",
+            "label": "p1",
+            "ready": true
+          },
+          {
+            "card": "Plains",
+            "label": "p2",
+            "ready": true
+          },
+          {
+            "card": "Yenna, Redtooth Regent",
+            "label": "yenna",
+            "ready": true
+          },
+          {
+            "card": "Grizzly Bears",
+            "label": "bears"
+          },
+          {
+            "attached": "bears",
+            "card": "Holy Strength",
+            "label": "strength"
+          },
+          {
+            "card": "Glorious Anthem",
+            "label": "anthem"
+          }
+        ],
+        "library": [
+          {
+            "card": "Forest",
+            "label": "top"
+          },
+          {
+            "card": "Island",
+            "label": "second"
+          },
+          {
+            "card": "Plains",
+            "label": "third"
+          }
+        ],
+        "name": "alice"
+      },
+      {
+        "library": [
+          {
+            "card": "Plains"
+          },
+          {
+            "card": "Plains"
+          },
+          {
+            "card": "Plains"
+          }
+        ],
+        "name": "bob"
+      }
+    ],
+    "step": "PrecombatMain"
+  },
+  "description": "CR 707.9b / 701.22a: when Yenna, Redtooth Regent's token copy is an Aura, Yenna untaps and its controller scries 2",
+  "note": "The Holy Strength token is attached to the Grizzly Bears as it enters, so the Bears get +1/+2 twice beside the Anthem's +1/+1. Yenna untaps, and Alice scries the Forest to the bottom.",
+  "timeline": [
+    {
+      "do": {
+        "Activate": {
+          "mana": [
+            "$p1",
+            "$p2"
+          ],
+          "object": "$yenna",
+          "targets": [
+            "$strength"
+          ]
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Answer": {
+          "prompt": "ChooseAttachment",
+          "with": "$bears"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Answer": {
+          "prompt": "ChooseScry",
+          "with": [
+            [
+              "$top"
+            ],
+            [
+              "$second"
+            ]
+          ]
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "View": {
+          "is": [],
+          "of": "Stack"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Tapped": {
+          "object": "$yenna",
+          "tapped": false
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "PowerToughness": {
+          "object": "$bears",
+          "power": 5,
+          "toughness": 7
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "View": {
+          "is": [
+            "Island",
+            "$third",
+            "Forest"
+          ],
+          "of": "Zone",
+          "player": "alice",
+          "zone": "Library"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    }
+  ]
+}

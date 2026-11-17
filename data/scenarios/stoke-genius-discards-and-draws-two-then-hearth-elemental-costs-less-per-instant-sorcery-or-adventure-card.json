@@ -1,0 +1,197 @@
+{
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "battlefield": [
+          {
+            "card": "Mountain",
+            "label": "m1",
+            "ready": true
+          },
+          {
+            "card": "Mountain",
+            "label": "m2",
+            "ready": true
+          },
+          {
+            "card": "Mountain",
+            "label": "m3",
+            "ready": true
+          },
+          {
+            "card": "Mountain",
+            "label": "m4",
+            "ready": true
+          },
+          {
+            "card": "Mountain",
+            "label": "m5",
+            "ready": true
+          }
+        ],
+        "graveyard": [
+          {
+            "card": "Lightning Bolt"
+          },
+          {
+            "card": "Flaxen Intruder"
+          }
+        ],
+        "hand": [
+          {
+            "card": "Hearth Elemental",
+            "label": "he"
+          },
+          {
+            "card": "Divination"
+          },
+          {
+            "card": "Grizzly Bears"
+          }
+        ],
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ],
+        "name": "alice"
+      },
+      {
+        "name": "bob"
+      }
+    ],
+    "step": "PrecombatMain"
+  },
+  "description": "Stoke Genius discards the hand and draws two; Hearth Elemental then costs {X} less for the instant, sorcery and Adventure cards in the graveyard, not the bear",
+  "timeline": [
+    {
+      "do": {
+        "Cast": {
+          "face": "Stoke Genius",
+          "mana": [
+            "$m1",
+            "$m2",
+            null
+          ],
+          "object": "$he"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "View": {
+          "is": [],
+          "of": "Stack"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Island",
+          "count": 2,
+          "player": "alice",
+          "zone": "Hand"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Grizzly Bears",
+          "count": 1,
+          "player": "alice",
+          "zone": "Graveyard"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Divination",
+          "count": 1,
+          "player": "alice",
+          "zone": "Graveyard"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Hearth Elemental",
+          "count": 1,
+          "player": "alice",
+          "zone": "Exile"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Cast": {
+          "mana": [
+            "$m3",
+            "$m4",
+            "$m5"
+          ],
+          "object": "Hearth Elemental"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Hearth Elemental",
+          "count": 1,
+          "player": "alice",
+          "zone": "Battlefield"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    }
+  ]
+}

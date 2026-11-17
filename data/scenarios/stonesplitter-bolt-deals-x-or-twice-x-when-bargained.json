@@ -1,0 +1,317 @@
+{
+  "description": "Stonesplitter Bolt deals X damage to target creature or planeswalker, or twice X damage instead if it was bargained",
+  "note": "Unbargained with X=3 it deals 3 to Ancient Carp (2/5), and the Braidwood Sextant stays. Bargained by sacrificing the Sextant (Bad Moon, the other candidate, stays) with X=2 it deals 4, not 2 and not 6, to Ancient Brontodon (9/9).",
+  "board": {
+    "active": "alice",
+    "step": "PrecombatMain",
+    "seats": [
+      {
+        "name": "alice",
+        "battlefield": [
+          {
+            "card": "Mountain",
+            "label": "m1",
+            "ready": true
+          },
+          {
+            "card": "Mountain",
+            "label": "m2",
+            "ready": true
+          },
+          {
+            "card": "Mountain",
+            "label": "m3",
+            "ready": true
+          },
+          {
+            "card": "Mountain",
+            "label": "m4",
+            "ready": true
+          },
+          {
+            "card": "Mountain",
+            "label": "m5",
+            "ready": true
+          },
+          {
+            "card": "Mountain",
+            "label": "m6",
+            "ready": true
+          },
+          {
+            "card": "Mountain",
+            "label": "m7",
+            "ready": true
+          },
+          {
+            "card": "Braidwood Sextant",
+            "label": "sextant"
+          },
+          {
+            "card": "Bad Moon",
+            "label": "moon"
+          }
+        ],
+        "hand": [
+          {
+            "card": "Stonesplitter Bolt",
+            "label": "bolt1"
+          },
+          {
+            "card": "Stonesplitter Bolt",
+            "label": "bolt2"
+          }
+        ],
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ]
+      },
+      {
+        "name": "bob",
+        "battlefield": [
+          {
+            "card": "Ancient Carp",
+            "label": "carp"
+          },
+          {
+            "card": "Ancient Brontodon",
+            "label": "bronto"
+          }
+        ],
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ]
+      }
+    ]
+  },
+  "timeline": [
+    {
+      "player": "alice",
+      "turn": 1,
+      "step": "PrecombatMain",
+      "do": {
+        "Answer": {
+          "prompt": "ChooseKicker",
+          "with": 0
+        }
+      }
+    },
+    {
+      "player": "alice",
+      "turn": 1,
+      "step": "PrecombatMain",
+      "do": {
+        "Cast": {
+          "object": "$bolt1",
+          "x": 3,
+          "mana": [
+            "$m1",
+            "$m2",
+            "$m3",
+            "$m4",
+            null
+          ],
+          "targets": [
+            "$carp"
+          ]
+        }
+      }
+    },
+    {
+      "player": "alice",
+      "turn": 1,
+      "step": "PrecombatMain",
+      "do": "Pass"
+    },
+    {
+      "player": "alice",
+      "turn": 1,
+      "step": "PrecombatMain",
+      "check": {
+        "View": {
+          "of": "Stack",
+          "is": []
+        }
+      }
+    },
+    {
+      "player": "alice",
+      "turn": 1,
+      "step": "PrecombatMain",
+      "check": {
+        "Damage": {
+          "object": "$carp",
+          "damage": 3
+        }
+      }
+    },
+    {
+      "player": "alice",
+      "turn": 1,
+      "step": "PrecombatMain",
+      "check": {
+        "Count": {
+          "card": "Braidwood Sextant",
+          "count": 1,
+          "player": "alice",
+          "zone": "Battlefield"
+        }
+      }
+    },
+    {
+      "player": "alice",
+      "turn": 1,
+      "step": "PrecombatMain",
+      "do": {
+        "Answer": {
+          "prompt": "ChooseKicker",
+          "with": 1
+        }
+      }
+    },
+    {
+      "player": "alice",
+      "turn": 1,
+      "step": "PrecombatMain",
+      "do": {
+        "Answer": {
+          "prompt": "ChooseSacrifices",
+          "with": [
+            "$sextant"
+          ]
+        }
+      }
+    },
+    {
+      "player": "alice",
+      "turn": 1,
+      "step": "PrecombatMain",
+      "do": {
+        "Cast": {
+          "object": "$bolt2",
+          "x": 2,
+          "mana": [
+            "$m5",
+            "$m6",
+            "$m7"
+          ],
+          "targets": [
+            "$bronto"
+          ]
+        }
+      }
+    },
+    {
+      "player": "alice",
+      "turn": 1,
+      "step": "PrecombatMain",
+      "do": "Pass"
+    },
+    {
+      "player": "alice",
+      "turn": 1,
+      "step": "PrecombatMain",
+      "check": {
+        "View": {
+          "of": "Stack",
+          "is": []
+        }
+      }
+    },
+    {
+      "player": "alice",
+      "turn": 1,
+      "step": "PrecombatMain",
+      "check": {
+        "Damage": {
+          "object": "$bronto",
+          "damage": 4
+        }
+      }
+    },
+    {
+      "player": "alice",
+      "turn": 1,
+      "step": "PrecombatMain",
+      "check": {
+        "Count": {
+          "card": "Braidwood Sextant",
+          "count": 1,
+          "player": "alice",
+          "zone": "Graveyard"
+        }
+      }
+    },
+    {
+      "player": "alice",
+      "turn": 1,
+      "step": "PrecombatMain",
+      "check": {
+        "Count": {
+          "card": "Bad Moon",
+          "count": 1,
+          "player": "alice",
+          "zone": "Battlefield"
+        }
+      }
+    }
+  ]
+}

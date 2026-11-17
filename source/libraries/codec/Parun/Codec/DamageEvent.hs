@@ -2,6 +2,7 @@
 
 module Parun.Codec.DamageEvent where
 
+import qualified Data.Map.Strict as Map
 import qualified Data.Set as Set
 import qualified Parun.Codec.CardName as CardName
 import qualified Parun.Codec.CardType as CardType
@@ -17,6 +18,7 @@ import qualified Parun.JsonCodec.Codec as Codec
 import qualified Parun.JsonCodec.Common as Common
 import qualified Parun.JsonCodec.Fields as Fields
 import qualified Parun.Types.DamageEvent as DamageEvent
+import qualified Parun.Types.SlotName as SlotName
 
 -- | The wire format is unchanged by the conversion to a bundle; what it adds is
 -- the schema.
@@ -44,6 +46,7 @@ codec = Fields.object $ do
   dealtByColors <- Fields.defaulted "dealtByColors" Set.empty (Common.set Color.codec) DamageEvent.dealtByColors
   dealtByNames <- Fields.defaulted "dealtByNames" Set.empty (Common.set CardName.codec) DamageEvent.dealtByNames
   dealtFromZone <- Fields.defaulted "dealtFromZone" Nothing (Common.maybe Zone.codec) DamageEvent.dealtFromZone
+  dealtByTargets <- Fields.defaulted "dealtByTargets" Map.empty (Common.textMap SlotName.unwrap (Right . SlotName.MkSlotName) (Common.set Recipient.codec)) DamageEvent.dealtByTargets
   recipientCardTypes <- Fields.defaulted "recipientCardTypes" Set.empty (Common.set CardType.codec) DamageEvent.recipientCardTypes
   recipientController <- Fields.defaulted "recipientController" Nothing (Common.maybe PlayerId.codec) DamageEvent.recipientController
   kind <- Fields.required "kind" DamageKind.codec DamageEvent.kind
@@ -66,6 +69,7 @@ codec = Fields.object $ do
         DamageEvent.dealtByColors = dealtByColors,
         DamageEvent.dealtByNames = dealtByNames,
         DamageEvent.dealtFromZone = dealtFromZone,
+        DamageEvent.dealtByTargets = dealtByTargets,
         DamageEvent.recipientCardTypes = recipientCardTypes,
         DamageEvent.recipientController = recipientController,
         DamageEvent.kind = kind

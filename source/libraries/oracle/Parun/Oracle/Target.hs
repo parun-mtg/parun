@@ -76,7 +76,11 @@ data Context = MkContext
     -- | What the instructions call the object the source is attached to (CR
     -- 303.4b, CR 301.5a): "enchanted creature", "equipped creature", or
     -- nothing for a source that attaches to nothing.
-    host :: [Text.Text]
+    host :: [Text.Text],
+    -- | What the card calls itself by name, which a sentence after "it" may
+    -- return to: "If a Rat is attacking, this creature gains trample"
+    -- (Charging Hooligan).
+    ownName :: Text.Text
   }
 
 -- | Words that name something, with the target slots they announce (each slot

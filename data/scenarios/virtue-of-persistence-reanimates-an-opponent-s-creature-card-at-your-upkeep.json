@@ -1,0 +1,286 @@
+{
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "battlefield": [
+          {
+            "card": "Virtue of Persistence",
+            "label": "virtue"
+          },
+          {
+            "card": "Swamp",
+            "label": "s1"
+          },
+          {
+            "card": "Swamp",
+            "label": "s2"
+          },
+          {
+            "card": "Savannah Lions",
+            "label": "lions"
+          }
+        ],
+        "graveyard": [
+          {
+            "card": "Grizzly Bears",
+            "label": "bears"
+          }
+        ],
+        "hand": [
+          {
+            "card": "Virtue of Persistence",
+            "label": "scorn"
+          }
+        ],
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ],
+        "name": "alice"
+      },
+      {
+        "battlefield": [
+          {
+            "card": "Craw Wurm",
+            "label": "wurm"
+          }
+        ],
+        "graveyard": [
+          {
+            "card": "Hill Giant",
+            "label": "giant"
+          },
+          {
+            "card": "Mountain",
+            "label": "gmountain"
+          }
+        ],
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ],
+        "name": "bob"
+      }
+    ],
+    "step": "PrecombatMain"
+  },
+  "description": "Locthwain Scorn gives bob's Craw Wurm -3/-3 and alice 2 life; at alice's next upkeep Virtue of Persistence puts bob's Hill Giant from his graveyard onto the battlefield under her control",
+  "note": "Alice casts the Adventure half of a second Virtue at bob's Craw Wurm, not her Savannah Lions: it is 3/1 that turn and 6/4 again on bob's turn, alice goes to 22, and the card goes to exile (CR 716.3d). Bob's upkeep triggers nothing. At alice's upkeep the trigger offers her own Grizzly Bears and bob's Hill Giant, not the Mountain in bob's graveyard; she takes the Giant, which leaves bob's graveyard and enters under alice's control, the Bears staying put.",
+  "timeline": [
+    {
+      "do": {
+        "Cast": {
+          "face": "Locthwain Scorn",
+          "mana": [
+            "$s1",
+            "$s2"
+          ],
+          "object": "$scorn",
+          "targets": [
+            "$wurm"
+          ]
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "View": {
+          "is": [],
+          "of": "Stack"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "PowerToughness": {
+          "object": "$wurm",
+          "power": 3,
+          "toughness": 1
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "PowerToughness": {
+          "object": "$lions",
+          "power": 2,
+          "toughness": 1
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Life": {
+          "life": 22,
+          "player": "alice"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Virtue of Persistence",
+          "count": 1,
+          "player": "alice",
+          "zone": "Exile"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "PowerToughness": {
+          "object": "$wurm",
+          "power": 6,
+          "toughness": 4
+        }
+      },
+      "player": "bob",
+      "step": "Upkeep",
+      "turn": 2
+    },
+    {
+      "do": {
+        "Attack": []
+      },
+      "player": "bob",
+      "step": "DeclareAttackers",
+      "turn": 2
+    },
+    {
+      "player": "alice",
+      "refuse": {
+        "ChooseTargets": {
+          "target": [
+            "$gmountain"
+          ]
+        }
+      },
+      "step": "Upkeep",
+      "turn": 3
+    },
+    {
+      "do": {
+        "ChooseTargets": {
+          "target": [
+            "$giant"
+          ]
+        }
+      },
+      "player": "alice",
+      "step": "Upkeep",
+      "turn": 3
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "Upkeep",
+      "turn": 3
+    },
+    {
+      "check": {
+        "View": {
+          "is": [],
+          "of": "Stack"
+        }
+      },
+      "player": "alice",
+      "step": "Upkeep",
+      "turn": 3
+    },
+    {
+      "check": {
+        "View": {
+          "is": "alice",
+          "object": "Hill Giant",
+          "of": "Controller"
+        }
+      },
+      "player": "alice",
+      "step": "Upkeep",
+      "turn": 3
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Hill Giant",
+          "count": 0,
+          "player": "bob",
+          "zone": "Graveyard"
+        }
+      },
+      "player": "alice",
+      "step": "Upkeep",
+      "turn": 3
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Grizzly Bears",
+          "count": 1,
+          "player": "alice",
+          "zone": "Graveyard"
+        }
+      },
+      "player": "alice",
+      "step": "Upkeep",
+      "turn": 3
+    }
+  ]
+}

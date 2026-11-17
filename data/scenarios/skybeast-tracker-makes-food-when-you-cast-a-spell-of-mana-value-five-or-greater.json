@@ -1,0 +1,324 @@
+{
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "battlefield": [
+          {
+            "card": "Skybeast Tracker",
+            "label": "tracker"
+          },
+          {
+            "card": "Mountain",
+            "label": "m1"
+          },
+          {
+            "card": "Mountain",
+            "label": "m2"
+          },
+          {
+            "card": "Mountain",
+            "label": "m3"
+          },
+          {
+            "card": "Mountain",
+            "label": "m4"
+          },
+          {
+            "card": "Mountain",
+            "label": "m5"
+          },
+          {
+            "card": "Mountain",
+            "label": "m6"
+          },
+          {
+            "card": "Mountain",
+            "label": "m7"
+          },
+          {
+            "card": "Mountain",
+            "label": "m8"
+          },
+          {
+            "card": "Mountain",
+            "label": "m9"
+          }
+        ],
+        "hand": [
+          {
+            "card": "Hill Giant",
+            "label": "giant"
+          },
+          {
+            "card": "Earth Elemental",
+            "label": "elemental"
+          }
+        ],
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ],
+        "name": "alice"
+      },
+      {
+        "battlefield": [
+          {
+            "card": "Mountain",
+            "label": "b1"
+          },
+          {
+            "card": "Mountain",
+            "label": "b2"
+          },
+          {
+            "card": "Mountain",
+            "label": "b3"
+          },
+          {
+            "card": "Mountain",
+            "label": "b4"
+          },
+          {
+            "card": "Mountain",
+            "label": "b5"
+          }
+        ],
+        "hand": [
+          {
+            "card": "Earth Elemental",
+            "label": "belemental"
+          }
+        ],
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ],
+        "name": "bob"
+      }
+    ],
+    "step": "PrecombatMain"
+  },
+  "description": "CR 603.2, 202.3: Skybeast Tracker creates a Food token when its controller casts a spell with mana value 5 or greater",
+  "note": "Alice's mana value 4 Hill Giant does not trigger it and her mana value 5 Earth Elemental does; bob's Earth Elemental on his own turn does not.",
+  "timeline": [
+    {
+      "do": {
+        "Cast": {
+          "mana": [
+            "$m1",
+            "$m2",
+            "$m3",
+            "$m4",
+            null
+          ],
+          "object": "$giant"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "View": {
+          "is": [
+            "Hill Giant"
+          ],
+          "of": "Stack"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Food Token",
+          "count": 0,
+          "player": "alice",
+          "zone": "Battlefield"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Cast": {
+          "mana": [
+            "$m5",
+            "$m6",
+            "$m7",
+            "$m8",
+            "$m9"
+          ],
+          "object": "$elemental"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "View": {
+          "is": [
+            "trigger of $tracker",
+            "Earth Elemental#2"
+          ],
+          "of": "Stack"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Food Token",
+          "count": 1,
+          "player": "alice",
+          "zone": "Battlefield"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Types": {
+          "object": "Food Token",
+          "types": [
+            "Artifact"
+          ]
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Cast": {
+          "mana": [
+            "$b1",
+            "$b2",
+            "$b3",
+            "$b4",
+            "$b5"
+          ],
+          "object": "$belemental"
+        }
+      },
+      "player": "bob",
+      "step": "PrecombatMain",
+      "turn": 2
+    },
+    {
+      "check": {
+        "View": {
+          "is": [
+            "Earth Elemental#2"
+          ],
+          "of": "Stack"
+        }
+      },
+      "player": "bob",
+      "step": "PrecombatMain",
+      "turn": 2
+    },
+    {
+      "do": "Pass",
+      "player": "bob",
+      "step": "PrecombatMain",
+      "turn": 2
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Food Token",
+          "count": 1,
+          "player": "alice",
+          "zone": "Battlefield"
+        }
+      },
+      "player": "bob",
+      "step": "PrecombatMain",
+      "turn": 2
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Food Token",
+          "count": 0,
+          "player": "bob",
+          "zone": "Battlefield"
+        }
+      },
+      "player": "bob",
+      "step": "PrecombatMain",
+      "turn": 2
+    }
+  ]
+}

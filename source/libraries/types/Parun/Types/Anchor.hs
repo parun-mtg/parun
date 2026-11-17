@@ -1,6 +1,7 @@
 module Parun.Types.Anchor where
 
 import qualified Parun.Types.Holder as Holder
+import qualified Parun.Types.SelfInclusion as SelfInclusion
 import qualified Parun.Types.SlotName as SlotName
 
 -- | Which object a Parun.Types.Filter atom relates its candidate to. Parametric
@@ -13,7 +14,7 @@ data Anchor nested
   | -- | CR 113.7: the source of the ability or effect the match is made for.
     Source
   | -- | CR 109.2: any one permanent this filter admits, read against the outer match's context.
-    AnyPermanent nested
+    AnyPermanent SelfInclusion.SelfInclusion nested
   | -- | CR 903.3e: the commanders of the player the match is made for, at their current characteristics in any zone.
     YourCommander
   | -- | CR 301.5 / 303.4b: the object the candidate is attached to.

@@ -1,0 +1,303 @@
+{
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "battlefield": [
+          {
+            "card": "Grizzly Bears",
+            "label": "bears"
+          },
+          {
+            "card": "Island",
+            "label": "i1"
+          },
+          {
+            "card": "Island",
+            "label": "i2"
+          },
+          {
+            "card": "Island",
+            "label": "i3"
+          }
+        ],
+        "hand": [
+          {
+            "card": "Succumb to the Cold",
+            "label": "cold"
+          }
+        ],
+        "library": [
+          {
+            "card": "Swamp"
+          },
+          {
+            "card": "Swamp"
+          },
+          {
+            "card": "Swamp"
+          },
+          {
+            "card": "Swamp"
+          },
+          {
+            "card": "Swamp"
+          },
+          {
+            "card": "Swamp"
+          }
+        ],
+        "name": "alice"
+      },
+      {
+        "battlefield": [
+          {
+            "card": "Hill Giant",
+            "label": "giant"
+          },
+          {
+            "card": "Goblin Piker",
+            "label": "piker"
+          }
+        ],
+        "hand": [],
+        "library": [
+          {
+            "card": "Mountain"
+          },
+          {
+            "card": "Mountain"
+          },
+          {
+            "card": "Mountain"
+          },
+          {
+            "card": "Mountain"
+          },
+          {
+            "card": "Mountain"
+          },
+          {
+            "card": "Mountain"
+          }
+        ],
+        "name": "bob"
+      },
+      {
+        "battlefield": [
+          {
+            "card": "Llanowar Elves",
+            "label": "elf"
+          }
+        ],
+        "hand": [],
+        "library": [
+          {
+            "card": "Forest"
+          },
+          {
+            "card": "Forest"
+          },
+          {
+            "card": "Forest"
+          },
+          {
+            "card": "Forest"
+          },
+          {
+            "card": "Forest"
+          },
+          {
+            "card": "Forest"
+          }
+        ],
+        "name": "carol"
+      }
+    ],
+    "step": "PrecombatMain"
+  },
+  "description": "Succumb to the Cold taps and stuns one or two creatures opponents control, across two opponents, and cannot target alice's own creature",
+  "note": "Three seats so 'an opponent' is not one player: the two targets are bob's Hill Giant and carol's Llanowar Elves (CR 601.2c, each target checked alone). Bob's untargeted Goblin Piker and alice's Grizzly Bears stay untapped and unstunned. Targeting the Bears is refused. In bob's untap step the stun counter is removed instead of the Giant untapping (CR 122.1d).",
+  "timeline": [
+    {
+      "player": "alice",
+      "refuse": {
+        "Cast": {
+          "mana": [
+            "$i1",
+            "$i2",
+            "$i3"
+          ],
+          "object": "$cold",
+          "targets": [
+            "$giant",
+            "$bears"
+          ]
+        }
+      },
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Cast": {
+          "mana": [
+            "$i1",
+            "$i2",
+            "$i3"
+          ],
+          "object": "$cold",
+          "targets": [
+            "$giant",
+            "$elf"
+          ]
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "View": {
+          "is": [],
+          "of": "Stack"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Tapped": {
+          "object": "$giant",
+          "tapped": true
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Tapped": {
+          "object": "$elf",
+          "tapped": true
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Tapped": {
+          "object": "$piker",
+          "tapped": false
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Tapped": {
+          "object": "$bears",
+          "tapped": false
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Counters": {
+          "count": 1,
+          "kind": {
+            "type": "Stun"
+          },
+          "object": "$giant"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Counters": {
+          "count": 1,
+          "kind": {
+            "type": "Stun"
+          },
+          "object": "$elf"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Counters": {
+          "count": 0,
+          "kind": {
+            "type": "Stun"
+          },
+          "object": "$piker"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Counters": {
+          "count": 0,
+          "kind": {
+            "type": "Stun"
+          },
+          "object": "$bears"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Tapped": {
+          "object": "$giant",
+          "tapped": true
+        }
+      },
+      "player": "bob",
+      "step": "Upkeep",
+      "turn": 2
+    },
+    {
+      "check": {
+        "Counters": {
+          "count": 0,
+          "kind": {
+            "type": "Stun"
+          },
+          "object": "$giant"
+        }
+      },
+      "player": "bob",
+      "step": "Upkeep",
+      "turn": 2
+    }
+  ]
+}

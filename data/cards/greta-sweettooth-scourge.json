@@ -1,0 +1,277 @@
+{
+  "faces": [
+    {
+      "activatedAbilities": [
+        {
+          "cost": {
+            "components": [
+              {
+                "type": "Sacrifice",
+                "value": {
+                  "count": {
+                    "type": "Fixed",
+                    "value": 1
+                  },
+                  "whichPermanents": {
+                    "type": "HasSubtype",
+                    "value": "Food"
+                  }
+                }
+              }
+            ],
+            "mana": [
+              {
+                "type": "OfType",
+                "value": {
+                  "type": "Colored",
+                  "value": "Green"
+                }
+              }
+            ]
+          },
+          "modal": {
+            "modes": [
+              {
+                "clauses": [
+                  {
+                    "effects": [
+                      {
+                        "type": "PutCounters",
+                        "value": {
+                          "kind": {
+                            "type": "PlusOnePlusOne"
+                          },
+                          "quantity": {
+                            "type": "Literal",
+                            "value": 1
+                          },
+                          "ref": {
+                            "type": "InSlot",
+                            "value": "target"
+                          }
+                        }
+                      }
+                    ]
+                  }
+                ],
+                "targetSlots": {
+                  "target": {
+                    "pool": {
+                      "type": "Creatures"
+                    }
+                  }
+                }
+              }
+            ]
+          },
+          "restrictions": [
+            {
+              "type": "SorcerySpeed"
+            }
+          ]
+        },
+        {
+          "cost": {
+            "components": [
+              {
+                "type": "Sacrifice",
+                "value": {
+                  "count": {
+                    "type": "Fixed",
+                    "value": 1
+                  },
+                  "whichPermanents": {
+                    "type": "HasSubtype",
+                    "value": "Food"
+                  }
+                }
+              }
+            ],
+            "mana": [
+              {
+                "type": "Generic",
+                "value": 1
+              },
+              {
+                "type": "OfType",
+                "value": {
+                  "type": "Colored",
+                  "value": "Black"
+                }
+              }
+            ]
+          },
+          "modal": {
+            "modes": [
+              {
+                "clauses": [
+                  {
+                    "effects": [
+                      {
+                        "type": "Draw",
+                        "value": {
+                          "player": {
+                            "type": "Relative",
+                            "value": "You"
+                          },
+                          "quantity": {
+                            "type": "Literal",
+                            "value": 1
+                          }
+                        }
+                      },
+                      {
+                        "type": "LoseLife",
+                        "value": {
+                          "player": {
+                            "type": "Relative",
+                            "value": "You"
+                          },
+                          "quantity": {
+                            "type": "Literal",
+                            "value": 1
+                          }
+                        }
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      ],
+      "manaCost": [
+        {
+          "type": "Generic",
+          "value": 1
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "Black"
+          }
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "Green"
+          }
+        }
+      ],
+      "name": "Greta, Sweettooth Scourge",
+      "oracleText": "When Greta enters, create a Food token. (It's an artifact with \"{2}, {T}, Sacrifice this token: You gain 3 life.\")\n{G}, Sacrifice a Food: Put a +1/+1 counter on target creature. Activate only as a sorcery.\n{1}{B}, Sacrifice a Food: You draw a card and you lose 1 life.",
+      "power": {
+        "type": "Literal",
+        "value": 3
+      },
+      "toughness": {
+        "type": "Literal",
+        "value": 3
+      },
+      "triggeredAbilities": [
+        {
+          "condition": {
+            "type": "Enters",
+            "value": {}
+          },
+          "modal": {
+            "modes": [
+              {
+                "clauses": [
+                  {
+                    "effects": [
+                      {
+                        "type": "Create",
+                        "value": {
+                          "card": {
+                            "faces": [
+                              {
+                                "activatedAbilities": [
+                                  {
+                                    "cost": {
+                                      "components": [
+                                        {
+                                          "type": "TapThis"
+                                        },
+                                        {
+                                          "type": "SacrificeThis"
+                                        }
+                                      ],
+                                      "mana": [
+                                        {
+                                          "type": "Generic",
+                                          "value": 2
+                                        }
+                                      ]
+                                    },
+                                    "modal": {
+                                      "modes": [
+                                        {
+                                          "clauses": [
+                                            {
+                                              "effects": [
+                                                {
+                                                  "type": "GainLife",
+                                                  "value": {
+                                                    "player": {
+                                                      "type": "Relative",
+                                                      "value": "You"
+                                                    },
+                                                    "quantity": {
+                                                      "type": "Literal",
+                                                      "value": 3
+                                                    }
+                                                  }
+                                                }
+                                              ]
+                                            }
+                                          ]
+                                        }
+                                      ]
+                                    }
+                                  }
+                                ],
+                                "name": "Food Token",
+                                "typeLine": {
+                                  "subtypes": [
+                                    "Food"
+                                  ],
+                                  "types": [
+                                    "Artifact"
+                                  ]
+                                }
+                              }
+                            ]
+                          },
+                          "quantity": {
+                            "type": "Literal",
+                            "value": 1
+                          }
+                        }
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      ],
+      "typeLine": {
+        "subtypes": [
+          "Human",
+          "Warrior"
+        ],
+        "supertypes": [
+          "Legendary"
+        ],
+        "types": [
+          "Creature"
+        ]
+      }
+    }
+  ]
+}

@@ -1,0 +1,226 @@
+{
+  "board": {
+    "active": "bob",
+    "seats": [
+      {
+        "battlefield": [
+          {
+            "card": "Hill Giant",
+            "label": "giant",
+            "ready": true
+          },
+          {
+            "card": "Grizzly Bears",
+            "label": "theirs",
+            "ready": true
+          },
+          {
+            "card": "Mountain",
+            "label": "m"
+          }
+        ],
+        "hand": [
+          {
+            "card": "Shock",
+            "label": "shock"
+          }
+        ],
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ],
+        "name": "bob"
+      },
+      {
+        "battlefield": [
+          {
+            "card": "Grizzly Bears",
+            "label": "mine",
+            "ready": true
+          },
+          {
+            "card": "Plains",
+            "label": "p1"
+          },
+          {
+            "card": "Plains",
+            "label": "p2"
+          },
+          {
+            "card": "Plains",
+            "label": "p3"
+          }
+        ],
+        "hand": [
+          {
+            "card": "Eerie Interference",
+            "label": "ei"
+          }
+        ],
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ],
+        "name": "alice"
+      }
+    ],
+    "step": "DeclareAttackers"
+  },
+  "description": "Eerie Interference prevents the damage creatures would deal to its caster and the creatures they control, and not damage from other sources or to an opponent's creatures",
+  "note": "bob's Grizzly Bears goes unblocked and his Hill Giant is blocked by alice's Bears: neither deals damage, while alice's Bears still deals 2 to the Giant; bob's Shock afterwards still deals 2 to alice.",
+  "timeline": [
+    {
+      "do": {
+        "Attack": [
+          "$giant",
+          "$theirs"
+        ]
+      },
+      "player": "bob",
+      "step": "DeclareAttackers",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Block": {
+          "$mine": [
+            "$giant"
+          ]
+        }
+      },
+      "player": "alice",
+      "step": "DeclareBlockers",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Cast": {
+          "mana": [
+            "$p1",
+            "$p2",
+            "$p3"
+          ],
+          "object": "$ei"
+        }
+      },
+      "player": "alice",
+      "step": "DeclareBlockers",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "DeclareBlockers",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Life": {
+          "life": 20,
+          "player": "alice"
+        }
+      },
+      "player": "bob",
+      "step": "PostcombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Damage": {
+          "damage": 0,
+          "object": "$mine"
+        }
+      },
+      "player": "bob",
+      "step": "PostcombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Damage": {
+          "damage": 2,
+          "object": "$giant"
+        }
+      },
+      "player": "bob",
+      "step": "PostcombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Cast": {
+          "mana": [
+            "$m"
+          ],
+          "object": "$shock",
+          "targets": [
+            "$alice"
+          ]
+        }
+      },
+      "player": "bob",
+      "step": "PostcombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "bob",
+      "step": "PostcombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "View": {
+          "is": [],
+          "of": "Stack"
+        }
+      },
+      "player": "bob",
+      "step": "PostcombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Life": {
+          "life": 18,
+          "player": "alice"
+        }
+      },
+      "player": "bob",
+      "step": "PostcombatMain",
+      "turn": 1
+    }
+  ]
+}

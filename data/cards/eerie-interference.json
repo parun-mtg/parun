@@ -1,0 +1,76 @@
+{
+  "faces": [
+    {
+      "manaCost": [
+        {
+          "type": "Generic",
+          "value": 2
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "White"
+          }
+        }
+      ],
+      "name": "Eerie Interference",
+      "oracleText": "Prevent all damage that would be dealt to you and creatures you control this turn by creatures.",
+      "spell": {
+        "modes": [
+          {
+            "clauses": [
+              {
+                "effects": [
+                  {
+                    "type": "PreventAllDamage",
+                    "value": {
+                      "duration": {
+                        "type": "UntilEndOfTurn"
+                      },
+                      "whatRecipient": {
+                        "type": "And",
+                        "value": [
+                          {
+                            "type": "HasCardType",
+                            "value": "Creature"
+                          },
+                          {
+                            "type": "HeldBy",
+                            "value": {
+                              "holder": "Controller",
+                              "relation": "You"
+                            }
+                          }
+                        ]
+                      },
+                      "whatSource": {
+                        "type": "And",
+                        "value": [
+                          {
+                            "type": "HasCardType",
+                            "value": "Creature"
+                          },
+                          {
+                            "type": "IsInZone",
+                            "value": "Battlefield"
+                          }
+                        ]
+                      },
+                      "whoRecipient": "You"
+                    }
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "typeLine": {
+        "types": [
+          "Instant"
+        ]
+      }
+    }
+  ]
+}

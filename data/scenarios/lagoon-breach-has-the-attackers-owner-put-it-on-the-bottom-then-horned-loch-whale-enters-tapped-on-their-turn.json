@@ -1,0 +1,214 @@
+{
+  "board": {
+    "active": "bob",
+    "seats": [
+      {
+        "battlefield": [
+          {
+            "card": "Island",
+            "label": "i1",
+            "ready": true
+          },
+          {
+            "card": "Island",
+            "label": "i2",
+            "ready": true
+          },
+          {
+            "card": "Island",
+            "label": "i3",
+            "ready": true
+          },
+          {
+            "card": "Island",
+            "label": "i4",
+            "ready": true
+          },
+          {
+            "card": "Island",
+            "label": "i5",
+            "ready": true
+          },
+          {
+            "card": "Island",
+            "label": "i6",
+            "ready": true
+          },
+          {
+            "card": "Island",
+            "label": "i7",
+            "ready": true
+          },
+          {
+            "card": "Island",
+            "label": "i8",
+            "ready": true
+          }
+        ],
+        "hand": [
+          {
+            "card": "Horned Loch-Whale",
+            "label": "whale"
+          }
+        ],
+        "name": "alice"
+      },
+      {
+        "battlefield": [
+          {
+            "card": "Grizzly Bears",
+            "label": "bears",
+            "ready": true
+          }
+        ],
+        "library": [
+          {
+            "card": "Plains",
+            "label": "b1"
+          },
+          {
+            "card": "Plains",
+            "label": "b2"
+          }
+        ],
+        "name": "bob"
+      }
+    ],
+    "step": "PrecombatMain"
+  },
+  "description": "Lagoon Breach has the owner of the attacking bear put it on the bottom of their library; Horned Loch-Whale, flashed in from exile on bob's turn, enters tapped",
+  "timeline": [
+    {
+      "do": {
+        "Attack": [
+          "$bears"
+        ]
+      },
+      "player": "bob",
+      "step": "DeclareAttackers",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Cast": {
+          "face": "Lagoon Breach",
+          "mana": [
+            "$i1",
+            "$i2",
+            null
+          ],
+          "object": "$whale"
+        }
+      },
+      "player": "alice",
+      "step": "DeclareAttackers",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "DeclareAttackers",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Answer": {
+          "prompt": "ChooseLibraryEnd",
+          "with": "Bottom"
+        }
+      },
+      "player": "bob",
+      "step": "DeclareAttackers",
+      "turn": 1
+    },
+    {
+      "check": {
+        "View": {
+          "is": [],
+          "of": "Stack"
+        }
+      },
+      "player": "alice",
+      "step": "DeclareAttackers",
+      "turn": 1
+    },
+    {
+      "check": {
+        "View": {
+          "is": [
+            "$b1",
+            "$b2",
+            "Grizzly Bears"
+          ],
+          "of": "Zone",
+          "player": "bob",
+          "zone": "Library"
+        }
+      },
+      "player": "alice",
+      "step": "DeclareAttackers",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Horned Loch-Whale",
+          "count": 1,
+          "player": "alice",
+          "zone": "Exile"
+        }
+      },
+      "player": "alice",
+      "step": "DeclareAttackers",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Cast": {
+          "mana": [
+            "$i3",
+            "$i4",
+            "$i5",
+            "$i6",
+            "$i7",
+            "$i8"
+          ],
+          "object": "Horned Loch-Whale"
+        }
+      },
+      "player": "alice",
+      "step": "DeclareAttackers",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "DeclareAttackers",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Horned Loch-Whale",
+          "count": 1,
+          "player": "alice",
+          "zone": "Battlefield"
+        }
+      },
+      "player": "alice",
+      "step": "DeclareAttackers",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Tapped": {
+          "object": "Horned Loch-Whale",
+          "tapped": true
+        }
+      },
+      "player": "alice",
+      "step": "DeclareAttackers",
+      "turn": 1
+    }
+  ]
+}

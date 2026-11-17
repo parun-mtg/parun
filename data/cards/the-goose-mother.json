@@ -1,0 +1,236 @@
+{
+  "faces": [
+    {
+      "keywords": [
+        {
+          "type": "Flying"
+        }
+      ],
+      "manaCost": [
+        {
+          "type": "Variable"
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "Green"
+          }
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "Blue"
+          }
+        }
+      ],
+      "name": "The Goose Mother",
+      "oracleText": "Flying\nThe Goose Mother enters with X +1/+1 counters on it.\nWhen The Goose Mother enters, create half X Food tokens, rounded up.\nWhenever The Goose Mother attacks, you may sacrifice a Food. If you do, draw a card.",
+      "power": {
+        "type": "Literal",
+        "value": 2
+      },
+      "replacementEffects": [
+        {
+          "effect": {
+            "type": "EntryR",
+            "value": {
+              "matching": {
+                "type": "IsSource"
+              },
+              "rewrite": {
+                "type": "WithCounters",
+                "value": [
+                  {
+                    "count": {
+                      "type": "InSlot",
+                      "value": "X"
+                    },
+                    "kind": {
+                      "type": "PlusOnePlusOne"
+                    }
+                  }
+                ]
+              }
+            }
+          }
+        }
+      ],
+      "toughness": {
+        "type": "Literal",
+        "value": 2
+      },
+      "triggeredAbilities": [
+        {
+          "condition": {
+            "type": "Enters",
+            "value": {}
+          },
+          "modal": {
+            "modes": [
+              {
+                "clauses": [
+                  {
+                    "effects": [
+                      {
+                        "type": "Create",
+                        "value": {
+                          "card": {
+                            "faces": [
+                              {
+                                "activatedAbilities": [
+                                  {
+                                    "cost": {
+                                      "components": [
+                                        {
+                                          "type": "TapThis"
+                                        },
+                                        {
+                                          "type": "SacrificeThis"
+                                        }
+                                      ],
+                                      "mana": [
+                                        {
+                                          "type": "Generic",
+                                          "value": 2
+                                        }
+                                      ]
+                                    },
+                                    "modal": {
+                                      "modes": [
+                                        {
+                                          "clauses": [
+                                            {
+                                              "effects": [
+                                                {
+                                                  "type": "GainLife",
+                                                  "value": {
+                                                    "player": {
+                                                      "type": "Relative",
+                                                      "value": "You"
+                                                    },
+                                                    "quantity": {
+                                                      "type": "Literal",
+                                                      "value": 3
+                                                    }
+                                                  }
+                                                }
+                                              ]
+                                            }
+                                          ]
+                                        }
+                                      ]
+                                    }
+                                  }
+                                ],
+                                "name": "Food Token",
+                                "typeLine": {
+                                  "subtypes": [
+                                    "Food"
+                                  ],
+                                  "types": [
+                                    "Artifact"
+                                  ]
+                                }
+                              }
+                            ]
+                          },
+                          "quantity": {
+                            "type": "Quotient",
+                            "value": {
+                              "divisor": {
+                                "type": "Literal",
+                                "value": 2
+                              },
+                              "quantity": {
+                                "type": "InSlot",
+                                "value": "X"
+                              },
+                              "rounding": "Up"
+                            }
+                          }
+                        }
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "condition": {
+            "type": "Attacks",
+            "value": {
+              "type": "Attacker",
+              "value": {}
+            }
+          },
+          "modal": {
+            "modes": [
+              {
+                "clauses": [
+                  {
+                    "effects": [
+                      {
+                        "type": "Draw",
+                        "value": {
+                          "player": {
+                            "type": "Relative",
+                            "value": "You"
+                          },
+                          "quantity": {
+                            "type": "Literal",
+                            "value": 1
+                          }
+                        }
+                      }
+                    ],
+                    "payGate": {
+                      "branch": "IfPaid",
+                      "cost": {
+                        "components": [
+                          {
+                            "type": "Sacrifice",
+                            "value": {
+                              "count": {
+                                "type": "Fixed",
+                                "value": 1
+                              },
+                              "whichPermanents": {
+                                "type": "HasSubtype",
+                                "value": "Food"
+                              }
+                            }
+                          }
+                        ],
+                        "mana": []
+                      },
+                      "payer": {
+                        "type": "InSlot",
+                        "value": "you"
+                      }
+                    }
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      ],
+      "typeLine": {
+        "subtypes": [
+          "Bird",
+          "Hydra"
+        ],
+        "supertypes": [
+          "Legendary"
+        ],
+        "types": [
+          "Creature"
+        ]
+      }
+    }
+  ]
+}

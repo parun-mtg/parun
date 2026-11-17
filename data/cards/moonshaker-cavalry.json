@@ -1,0 +1,190 @@
+{
+  "faces": [
+    {
+      "keywords": [
+        {
+          "type": "Flying"
+        }
+      ],
+      "manaCost": [
+        {
+          "type": "Generic",
+          "value": 5
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "White"
+          }
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "White"
+          }
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "White"
+          }
+        }
+      ],
+      "name": "Moonshaker Cavalry",
+      "oracleText": "Flying\nWhen this creature enters, creatures you control gain flying and get +X/+X until end of turn, where X is the number of creatures you control.",
+      "power": {
+        "type": "Literal",
+        "value": 6
+      },
+      "toughness": {
+        "type": "Literal",
+        "value": 6
+      },
+      "triggeredAbilities": [
+        {
+          "condition": {
+            "type": "Enters",
+            "value": {}
+          },
+          "modal": {
+            "modes": [
+              {
+                "clauses": [
+                  {
+                    "effects": [
+                      {
+                        "type": "BindAmount",
+                        "value": {
+                          "quantity": {
+                            "type": "Count",
+                            "value": {
+                              "aggregation": {
+                                "type": "Members"
+                              },
+                              "filter": {
+                                "type": "And",
+                                "value": [
+                                  {
+                                    "type": "HasCardType",
+                                    "value": "Creature"
+                                  },
+                                  {
+                                    "type": "HeldBy",
+                                    "value": {
+                                      "holder": "Controller",
+                                      "relation": "You"
+                                    }
+                                  }
+                                ]
+                              },
+                              "scope": {
+                                "type": "InZone",
+                                "value": {
+                                  "player": {
+                                    "type": "Relative",
+                                    "value": "AnyPlayer"
+                                  },
+                                  "zone": "Battlefield"
+                                }
+                              }
+                            }
+                          },
+                          "slot": "creatures"
+                        }
+                      },
+                      {
+                        "type": "ModifyTarget",
+                        "value": {
+                          "duration": {
+                            "type": "UntilEndOfTurn"
+                          },
+                          "modification": {
+                            "type": "GainKeyword",
+                            "value": {
+                              "type": "Flying"
+                            }
+                          },
+                          "ref": {
+                            "type": "EachMatching",
+                            "value": {
+                              "type": "And",
+                              "value": [
+                                {
+                                  "type": "HasCardType",
+                                  "value": "Creature"
+                                },
+                                {
+                                  "type": "HeldBy",
+                                  "value": {
+                                    "holder": "Controller",
+                                    "relation": "You"
+                                  }
+                                }
+                              ]
+                            }
+                          }
+                        }
+                      },
+                      {
+                        "type": "ModifyTarget",
+                        "value": {
+                          "duration": {
+                            "type": "UntilEndOfTurn"
+                          },
+                          "modification": {
+                            "type": "ModifyPowerToughness",
+                            "value": {
+                              "power": {
+                                "type": "InSlot",
+                                "value": "creatures"
+                              },
+                              "toughness": {
+                                "type": "InSlot",
+                                "value": "creatures"
+                              }
+                            }
+                          },
+                          "ref": {
+                            "type": "EachMatching",
+                            "value": {
+                              "type": "And",
+                              "value": [
+                                {
+                                  "type": "HasCardType",
+                                  "value": "Creature"
+                                },
+                                {
+                                  "type": "HeldBy",
+                                  "value": {
+                                    "holder": "Controller",
+                                    "relation": "You"
+                                  }
+                                }
+                              ]
+                            }
+                          }
+                        }
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      ],
+      "typeLine": {
+        "subtypes": [
+          "Knight",
+          "Spirit"
+        ],
+        "types": [
+          "Creature"
+        ]
+      }
+    }
+  ]
+}

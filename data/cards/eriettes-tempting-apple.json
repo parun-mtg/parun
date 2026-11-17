@@ -1,0 +1,188 @@
+{
+  "faces": [
+    {
+      "activatedAbilities": [
+        {
+          "cost": {
+            "components": [
+              {
+                "type": "TapThis"
+              },
+              {
+                "type": "SacrificeThis"
+              }
+            ],
+            "mana": [
+              {
+                "type": "Generic",
+                "value": 2
+              }
+            ]
+          },
+          "modal": {
+            "modes": [
+              {
+                "clauses": [
+                  {
+                    "effects": [
+                      {
+                        "type": "GainLife",
+                        "value": {
+                          "player": {
+                            "type": "Relative",
+                            "value": "You"
+                          },
+                          "quantity": {
+                            "type": "Literal",
+                            "value": 3
+                          }
+                        }
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "cost": {
+            "components": [
+              {
+                "type": "TapThis"
+              },
+              {
+                "type": "SacrificeThis"
+              }
+            ],
+            "mana": [
+              {
+                "type": "Generic",
+                "value": 2
+              }
+            ]
+          },
+          "modal": {
+            "modes": [
+              {
+                "clauses": [
+                  {
+                    "effects": [
+                      {
+                        "type": "LoseLife",
+                        "value": {
+                          "player": {
+                            "type": "InSlot",
+                            "value": "target"
+                          },
+                          "quantity": {
+                            "type": "Literal",
+                            "value": 3
+                          }
+                        }
+                      }
+                    ]
+                  }
+                ],
+                "targetSlots": {
+                  "target": {
+                    "filter": {
+                      "type": "IsPlayer",
+                      "value": "Opponent"
+                    },
+                    "pool": {
+                      "type": "Players"
+                    }
+                  }
+                }
+              }
+            ]
+          }
+        }
+      ],
+      "manaCost": [
+        {
+          "type": "Generic",
+          "value": 4
+        }
+      ],
+      "name": "Eriette's Tempting Apple",
+      "oracleText": "When Eriette's Tempting Apple enters, gain control of target creature until end of turn. Untap that creature. It gains haste until end of turn.\n{2}, {T}, Sacrifice Eriette's Tempting Apple: You gain 3 life.\n{2}, {T}, Sacrifice Eriette's Tempting Apple: Target opponent loses 3 life.",
+      "triggeredAbilities": [
+        {
+          "condition": {
+            "type": "Enters",
+            "value": {}
+          },
+          "modal": {
+            "modes": [
+              {
+                "clauses": [
+                  {
+                    "effects": [
+                      {
+                        "type": "GainControl",
+                        "value": {
+                          "duration": {
+                            "type": "UntilEndOfTurn"
+                          },
+                          "ref": {
+                            "type": "InSlot",
+                            "value": "target"
+                          }
+                        }
+                      },
+                      {
+                        "type": "Untap",
+                        "value": {
+                          "type": "InSlot",
+                          "value": "target"
+                        }
+                      },
+                      {
+                        "type": "ModifyTarget",
+                        "value": {
+                          "duration": {
+                            "type": "UntilEndOfTurn"
+                          },
+                          "modification": {
+                            "type": "GainKeyword",
+                            "value": {
+                              "type": "Haste"
+                            }
+                          },
+                          "ref": {
+                            "type": "InSlot",
+                            "value": "target"
+                          }
+                        }
+                      }
+                    ]
+                  }
+                ],
+                "targetSlots": {
+                  "target": {
+                    "pool": {
+                      "type": "Creatures"
+                    }
+                  }
+                }
+              }
+            ]
+          }
+        }
+      ],
+      "typeLine": {
+        "subtypes": [
+          "Food"
+        ],
+        "supertypes": [
+          "Legendary"
+        ],
+        "types": [
+          "Artifact"
+        ]
+      }
+    }
+  ]
+}

@@ -1,0 +1,110 @@
+{
+  "faces": [
+    {
+      "manaCost": [
+        {
+          "type": "Generic",
+          "value": 2
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "Red"
+          }
+        }
+      ],
+      "name": "Minecart Daredevil",
+      "oracleText": "",
+      "power": {
+        "type": "Literal",
+        "value": 4
+      },
+      "toughness": {
+        "type": "Literal",
+        "value": 2
+      },
+      "typeLine": {
+        "subtypes": [
+          "Dwarf",
+          "Knight"
+        ],
+        "types": [
+          "Creature"
+        ]
+      }
+    },
+    {
+      "manaCost": [
+        {
+          "type": "Generic",
+          "value": 1
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "Red"
+          }
+        }
+      ],
+      "name": "Ride the Rails",
+      "oracleText": "Target creature gets +2/+1 until end of turn. (Then exile this card. You may cast the creature later from exile.)",
+      "spell": {
+        "modes": [
+          {
+            "clauses": [
+              {
+                "effects": [
+                  {
+                    "type": "ModifyTarget",
+                    "value": {
+                      "duration": {
+                        "type": "UntilEndOfTurn"
+                      },
+                      "modification": {
+                        "type": "ModifyPowerToughness",
+                        "value": {
+                          "power": {
+                            "type": "Literal",
+                            "value": 2
+                          },
+                          "toughness": {
+                            "type": "Literal",
+                            "value": 1
+                          }
+                        }
+                      },
+                      "ref": {
+                        "type": "InSlot",
+                        "value": "target"
+                      }
+                    }
+                  }
+                ]
+              }
+            ],
+            "targetSlots": {
+              "target": {
+                "pool": {
+                  "type": "Creatures"
+                }
+              }
+            }
+          }
+        ]
+      },
+      "typeLine": {
+        "subtypes": [
+          "Adventure"
+        ],
+        "types": [
+          "Instant"
+        ]
+      }
+    }
+  ],
+  "layout": {
+    "type": "Adventure"
+  }
+}

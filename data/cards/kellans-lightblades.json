@@ -1,0 +1,130 @@
+{
+  "faces": [
+    {
+      "keywords": [
+        {
+          "type": "Bargain"
+        }
+      ],
+      "manaCost": [
+        {
+          "type": "Generic",
+          "value": 1
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "White"
+          }
+        }
+      ],
+      "name": "Kellan's Lightblades",
+      "oracleText": "Bargain (You may sacrifice an artifact, enchantment, or token as you cast this spell.)\nKellan's Lightblades deals 3 damage to target attacking or blocking creature. If this spell was bargained, destroy that creature instead.",
+      "spell": {
+        "modes": [
+          {
+            "clauses": [
+              {
+                "condition": {
+                  "type": "Compares",
+                  "value": {
+                    "comparison": "Exactly",
+                    "measured": {
+                      "type": "TimesPaid",
+                      "value": {
+                        "type": "OfKeyword",
+                        "value": {
+                          "type": "Bargain"
+                        }
+                      }
+                    },
+                    "threshold": {
+                      "type": "Literal",
+                      "value": 0
+                    }
+                  }
+                },
+                "effects": [
+                  {
+                    "type": "DealDamage",
+                    "value": {
+                      "parts": [
+                        {
+                          "quantity": {
+                            "type": "Literal",
+                            "value": 3
+                          },
+                          "ref": {
+                            "type": "InSlot",
+                            "value": "target"
+                          }
+                        }
+                      ]
+                    }
+                  }
+                ]
+              },
+              {
+                "condition": {
+                  "type": "Compares",
+                  "value": {
+                    "comparison": "AtLeast",
+                    "measured": {
+                      "type": "TimesPaid",
+                      "value": {
+                        "type": "OfKeyword",
+                        "value": {
+                          "type": "Bargain"
+                        }
+                      }
+                    },
+                    "threshold": {
+                      "type": "Literal",
+                      "value": 1
+                    }
+                  }
+                },
+                "effects": [
+                  {
+                    "type": "Destroy",
+                    "value": {
+                      "ref": {
+                        "type": "InSlot",
+                        "value": "target"
+                      },
+                      "regenerability": "Regenerable"
+                    }
+                  }
+                ]
+              }
+            ],
+            "targetSlots": {
+              "target": {
+                "filter": {
+                  "type": "Or",
+                  "value": [
+                    {
+                      "type": "IsAttacking"
+                    },
+                    {
+                      "type": "IsBlocking"
+                    }
+                  ]
+                },
+                "pool": {
+                  "type": "Creatures"
+                }
+              }
+            }
+          }
+        ]
+      },
+      "typeLine": {
+        "types": [
+          "Instant"
+        ]
+      }
+    }
+  ]
+}

@@ -1,0 +1,365 @@
+{
+  "description": "Stockpiling Celebrant's entering trigger may return another target nonland permanent you control to its owner's hand, and scries 2 only if it did",
+  "note": "The first Celebrant targets the Grizzly Bears and declines: the bears stay and no scry is asked (an unscheduled scry prompt would fail the run). The trigger may not target the Celebrant itself, a land, or Bob's creature. The second returns the Braidwood Sextant, a noncreature permanent, and scries 2, the Island going to the bottom.",
+  "board": {
+    "active": "alice",
+    "step": "PrecombatMain",
+    "seats": [
+      {
+        "name": "alice",
+        "battlefield": [
+          {
+            "card": "Plains",
+            "label": "p1"
+          },
+          {
+            "card": "Plains",
+            "label": "p2"
+          },
+          {
+            "card": "Plains",
+            "label": "p3"
+          },
+          {
+            "card": "Plains",
+            "label": "p4"
+          },
+          {
+            "card": "Plains",
+            "label": "p5"
+          },
+          {
+            "card": "Plains",
+            "label": "p6"
+          },
+          {
+            "card": "Braidwood Sextant",
+            "label": "sextant"
+          },
+          {
+            "card": "Grizzly Bears",
+            "label": "bears"
+          }
+        ],
+        "hand": [
+          {
+            "card": "Stockpiling Celebrant",
+            "label": "c1"
+          },
+          {
+            "card": "Stockpiling Celebrant",
+            "label": "c2"
+          }
+        ],
+        "library": [
+          {
+            "card": "Island",
+            "label": "top"
+          },
+          {
+            "card": "Swamp",
+            "label": "second"
+          },
+          {
+            "card": "Forest"
+          },
+          {
+            "card": "Forest"
+          },
+          {
+            "card": "Forest"
+          },
+          {
+            "card": "Forest"
+          }
+        ]
+      },
+      {
+        "name": "bob",
+        "battlefield": [
+          {
+            "card": "Grizzly Bears",
+            "label": "bbears"
+          }
+        ],
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ]
+      }
+    ]
+  },
+  "timeline": [
+    {
+      "player": "alice",
+      "turn": 1,
+      "step": "PrecombatMain",
+      "do": {
+        "Cast": {
+          "object": "$c1",
+          "mana": [
+            "$p1",
+            "$p2",
+            "$p3",
+            null
+          ]
+        }
+      }
+    },
+    {
+      "player": "alice",
+      "turn": 1,
+      "step": "PrecombatMain",
+      "do": "Pass"
+    },
+    {
+      "player": "alice",
+      "turn": 1,
+      "step": "PrecombatMain",
+      "refuse": {
+        "ChooseTargets": {
+          "target": [
+            "Stockpiling Celebrant#2"
+          ]
+        }
+      }
+    },
+    {
+      "player": "alice",
+      "turn": 1,
+      "step": "PrecombatMain",
+      "refuse": {
+        "ChooseTargets": {
+          "target": [
+            "$p4"
+          ]
+        }
+      }
+    },
+    {
+      "player": "alice",
+      "turn": 1,
+      "step": "PrecombatMain",
+      "refuse": {
+        "ChooseTargets": {
+          "target": [
+            "$bbears"
+          ]
+        }
+      }
+    },
+    {
+      "player": "alice",
+      "turn": 1,
+      "step": "PrecombatMain",
+      "do": {
+        "ChooseTargets": {
+          "target": [
+            "$bears"
+          ]
+        }
+      }
+    },
+    {
+      "player": "alice",
+      "turn": 1,
+      "step": "PrecombatMain",
+      "do": "Pass"
+    },
+    {
+      "player": "alice",
+      "turn": 1,
+      "step": "PrecombatMain",
+      "do": {
+        "ChooseOptional": "Declines"
+      }
+    },
+    {
+      "player": "alice",
+      "turn": 1,
+      "step": "PrecombatMain",
+      "check": {
+        "View": {
+          "of": "Stack",
+          "is": []
+        }
+      }
+    },
+    {
+      "player": "alice",
+      "turn": 1,
+      "step": "PrecombatMain",
+      "check": {
+        "Count": {
+          "card": "Grizzly Bears",
+          "count": 1,
+          "player": "alice",
+          "zone": "Battlefield"
+        }
+      }
+    },
+    {
+      "player": "alice",
+      "turn": 1,
+      "step": "PrecombatMain",
+      "check": {
+        "Count": {
+          "card": "Grizzly Bears",
+          "count": 0,
+          "player": "alice",
+          "zone": "Hand"
+        }
+      }
+    },
+    {
+      "player": "alice",
+      "turn": 1,
+      "step": "PrecombatMain",
+      "do": {
+        "Cast": {
+          "object": "$c2",
+          "mana": [
+            "$p4",
+            "$p5",
+            "$p6"
+          ]
+        }
+      }
+    },
+    {
+      "player": "alice",
+      "turn": 1,
+      "step": "PrecombatMain",
+      "do": "Pass"
+    },
+    {
+      "player": "alice",
+      "turn": 1,
+      "step": "PrecombatMain",
+      "do": {
+        "ChooseTargets": {
+          "target": [
+            "$sextant"
+          ]
+        }
+      }
+    },
+    {
+      "player": "alice",
+      "turn": 1,
+      "step": "PrecombatMain",
+      "do": "Pass"
+    },
+    {
+      "player": "alice",
+      "turn": 1,
+      "step": "PrecombatMain",
+      "do": {
+        "ChooseOptional": "Exercises"
+      }
+    },
+    {
+      "player": "alice",
+      "turn": 1,
+      "step": "PrecombatMain",
+      "do": {
+        "Answer": {
+          "prompt": "ChooseScry",
+          "with": [
+            [
+              "$top"
+            ],
+            [
+              "$second"
+            ]
+          ]
+        }
+      }
+    },
+    {
+      "player": "alice",
+      "turn": 1,
+      "step": "PrecombatMain",
+      "check": {
+        "View": {
+          "of": "Stack",
+          "is": []
+        }
+      }
+    },
+    {
+      "player": "alice",
+      "turn": 1,
+      "step": "PrecombatMain",
+      "check": {
+        "Count": {
+          "card": "Braidwood Sextant",
+          "count": 1,
+          "player": "alice",
+          "zone": "Hand"
+        }
+      }
+    },
+    {
+      "player": "alice",
+      "turn": 1,
+      "step": "PrecombatMain",
+      "check": {
+        "Count": {
+          "card": "Braidwood Sextant",
+          "count": 0,
+          "player": "alice",
+          "zone": "Battlefield"
+        }
+      }
+    },
+    {
+      "player": "alice",
+      "turn": 1,
+      "step": "PrecombatMain",
+      "check": {
+        "View": {
+          "of": "Zone",
+          "player": "alice",
+          "zone": "Library",
+          "is": [
+            "Swamp",
+            "Forest",
+            "Forest#2",
+            "Forest#3",
+            "Forest#4",
+            "Island#11"
+          ]
+        }
+      }
+    }
+  ]
+}

@@ -1,0 +1,118 @@
+{
+  "faces": [
+    {
+      "keywords": [
+        {
+          "type": "Flying"
+        },
+        {
+          "type": "Bargain"
+        }
+      ],
+      "manaCost": [
+        {
+          "type": "Generic",
+          "value": 3
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "Black"
+          }
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "Black"
+          }
+        }
+      ],
+      "name": "High Fae Negotiator",
+      "oracleText": "Bargain (You may sacrifice an artifact, enchantment, or token as you cast this spell.)\nFlying\nWhen this creature enters, if it was bargained, each opponent loses 3 life and you gain 3 life.",
+      "power": {
+        "type": "Literal",
+        "value": 3
+      },
+      "toughness": {
+        "type": "Literal",
+        "value": 5
+      },
+      "triggeredAbilities": [
+        {
+          "condition": {
+            "type": "Enters",
+            "value": {}
+          },
+          "intervening": {
+            "type": "Compares",
+            "value": {
+              "comparison": "AtLeast",
+              "measured": {
+                "type": "TimesPaid",
+                "value": {
+                  "type": "OfKeyword",
+                  "value": {
+                    "type": "Bargain"
+                  }
+                }
+              },
+              "threshold": {
+                "type": "Literal",
+                "value": 1
+              }
+            }
+          },
+          "modal": {
+            "modes": [
+              {
+                "clauses": [
+                  {
+                    "effects": [
+                      {
+                        "type": "LoseLife",
+                        "value": {
+                          "player": {
+                            "type": "Relative",
+                            "value": "Opponent"
+                          },
+                          "quantity": {
+                            "type": "Literal",
+                            "value": 3
+                          }
+                        }
+                      },
+                      {
+                        "type": "GainLife",
+                        "value": {
+                          "player": {
+                            "type": "Relative",
+                            "value": "You"
+                          },
+                          "quantity": {
+                            "type": "Literal",
+                            "value": 3
+                          }
+                        }
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      ],
+      "typeLine": {
+        "subtypes": [
+          "Faerie",
+          "Warlock"
+        ],
+        "types": [
+          "Creature"
+        ]
+      }
+    }
+  ]
+}

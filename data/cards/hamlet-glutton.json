@@ -1,0 +1,118 @@
+{
+  "faces": [
+    {
+      "costReductions": [
+        {
+          "amount": [
+            {
+              "type": "Generic",
+              "value": 2
+            }
+          ],
+          "condition": {
+            "type": "Compares",
+            "value": {
+              "comparison": "AtLeast",
+              "measured": {
+                "type": "TimesPaid",
+                "value": {
+                  "type": "OfKeyword",
+                  "value": {
+                    "type": "Bargain"
+                  }
+                }
+              },
+              "threshold": {
+                "type": "Literal",
+                "value": 1
+              }
+            }
+          },
+          "perEach": {
+            "type": "Literal",
+            "value": 1
+          }
+        }
+      ],
+      "keywords": [
+        {
+          "type": "Trample"
+        },
+        {
+          "type": "Bargain"
+        }
+      ],
+      "manaCost": [
+        {
+          "type": "Generic",
+          "value": 5
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "Green"
+          }
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "Green"
+          }
+        }
+      ],
+      "name": "Hamlet Glutton",
+      "oracleText": "Bargain (You may sacrifice an artifact, enchantment, or token as you cast this spell.)\nThis spell costs {2} less to cast if it's bargained.\nTrample\nWhen this creature enters, you gain 3 life.",
+      "power": {
+        "type": "Literal",
+        "value": 6
+      },
+      "toughness": {
+        "type": "Literal",
+        "value": 6
+      },
+      "triggeredAbilities": [
+        {
+          "condition": {
+            "type": "Enters",
+            "value": {}
+          },
+          "modal": {
+            "modes": [
+              {
+                "clauses": [
+                  {
+                    "effects": [
+                      {
+                        "type": "GainLife",
+                        "value": {
+                          "player": {
+                            "type": "Relative",
+                            "value": "You"
+                          },
+                          "quantity": {
+                            "type": "Literal",
+                            "value": 3
+                          }
+                        }
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      ],
+      "typeLine": {
+        "subtypes": [
+          "Giant"
+        ],
+        "types": [
+          "Creature"
+        ]
+      }
+    }
+  ]
+}

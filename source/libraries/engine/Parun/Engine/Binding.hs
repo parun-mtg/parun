@@ -1228,7 +1228,9 @@ thisAbility = SlotName.MkSlotName (Text.pack "thisAbility")
 -- Parun.Engine.Cast.castProposed and Parun.Engine.Activate.activateAbility as the
 -- targets are recorded, and handed to a payability gate's aiming the same way
 -- (withAnnouncedTargets). Not stamped for a triggered ability, which has no CR
--- 601.2h payment for a cost to read it in.
+-- 601.2h payment for a cost to read it in. A damage recipient's qualifier is
+-- framed with it too, from the source's deal-time targets
+-- (Parun.Engine.Filter.dealtTargetsContext).
 announcedTargets :: SlotName
 announcedTargets = SlotName.MkSlotName (Text.pack "announcedTargets")
 

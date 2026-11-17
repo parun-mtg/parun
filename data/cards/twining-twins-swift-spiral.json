@@ -1,0 +1,184 @@
+{
+  "faces": [
+    {
+      "keywords": [
+        {
+          "type": "Flying"
+        },
+        {
+          "type": "Vigilance"
+        },
+        {
+          "type": "Ward",
+          "value": {
+            "cost": {
+              "mana": [
+                {
+                  "type": "Generic",
+                  "value": 1
+                }
+              ]
+            }
+          }
+        }
+      ],
+      "manaCost": [
+        {
+          "type": "Generic",
+          "value": 2
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "Blue"
+          }
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "Blue"
+          }
+        }
+      ],
+      "name": "Twining Twins",
+      "oracleText": "Flying, vigilance, ward {1}",
+      "power": {
+        "type": "Literal",
+        "value": 4
+      },
+      "toughness": {
+        "type": "Literal",
+        "value": 4
+      },
+      "typeLine": {
+        "subtypes": [
+          "Faerie",
+          "Wizard"
+        ],
+        "types": [
+          "Creature"
+        ]
+      }
+    },
+    {
+      "delayedAbilities": {
+        "return it": {
+          "condition": {
+            "type": "StepBegins",
+            "value": {
+              "phase": {
+                "type": "Ending",
+                "value": "EndStep"
+              },
+              "scope": {
+                "type": "PlayersTurn",
+                "value": {
+                  "type": "Relative",
+                  "value": "AnyPlayer"
+                }
+              }
+            }
+          },
+          "modal": {
+            "modes": [
+              {
+                "clauses": [
+                  {
+                    "effects": [
+                      {
+                        "type": "MoveToZone",
+                        "value": {
+                          "origin": "Exile",
+                          "ref": {
+                            "type": "InSlot",
+                            "value": "exiled"
+                          },
+                          "riders": {
+                            "under": {
+                              "type": "Owner"
+                            }
+                          },
+                          "zone": "Battlefield"
+                        }
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      },
+      "manaCost": [
+        {
+          "type": "Generic",
+          "value": 1
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "White"
+          }
+        }
+      ],
+      "name": "Swift Spiral",
+      "oracleText": "Exile target nontoken creature. Return it to the battlefield under its owner's control at the beginning of the next end step.",
+      "spell": {
+        "modes": [
+          {
+            "clauses": [
+              {
+                "effects": [
+                  {
+                    "type": "MoveToZone",
+                    "value": {
+                      "ref": {
+                        "type": "InSlot",
+                        "value": "nontoken"
+                      },
+                      "slot": "exiled",
+                      "zone": "Exile"
+                    }
+                  },
+                  {
+                    "type": "ArmDelayedTrigger",
+                    "value": {
+                      "name": "return it"
+                    }
+                  }
+                ]
+              }
+            ],
+            "targetSlots": {
+              "nontoken": {
+                "filter": {
+                  "type": "Not",
+                  "value": {
+                    "type": "IsToken"
+                  }
+                },
+                "pool": {
+                  "type": "Creatures"
+                }
+              }
+            }
+          }
+        ]
+      },
+      "typeLine": {
+        "subtypes": [
+          "Adventure"
+        ],
+        "types": [
+          "Instant"
+        ]
+      }
+    }
+  ],
+  "layout": {
+    "type": "Adventure"
+  }
+}

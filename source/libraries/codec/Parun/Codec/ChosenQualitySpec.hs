@@ -89,6 +89,12 @@ spec s = Spec.describe s "Parun.Codec.ChosenQuality" $ do
       ChosenQuality.codec
       (ChosenQuality.Word (Text.pack "Khans" NonEmpty.:| [Text.pack "Dragons"]))
       " {\"type\":\"Word\",\"value\":[\"Khans\",\"Dragons\"]} "
+  Spec.it s "Letter (_____ _____ Rocketship)" $
+    Common.assertCodec
+      s
+      ChosenQuality.codec
+      ChosenQuality.Letter
+      " {\"type\":\"Letter\"} "
   Spec.it s "ExiledCard (Koh, the Face Stealer)" $
     Common.assertCodec
       s

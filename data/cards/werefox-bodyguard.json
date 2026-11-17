@@ -1,0 +1,163 @@
+{
+  "faces": [
+    {
+      "activatedAbilities": [
+        {
+          "cost": {
+            "components": [
+              {
+                "type": "SacrificeThis"
+              }
+            ],
+            "mana": [
+              {
+                "type": "Generic",
+                "value": 1
+              },
+              {
+                "type": "OfType",
+                "value": {
+                  "type": "Colored",
+                  "value": "White"
+                }
+              }
+            ]
+          },
+          "modal": {
+            "modes": [
+              {
+                "clauses": [
+                  {
+                    "effects": [
+                      {
+                        "type": "GainLife",
+                        "value": {
+                          "player": {
+                            "type": "Relative",
+                            "value": "You"
+                          },
+                          "quantity": {
+                            "type": "Literal",
+                            "value": 2
+                          }
+                        }
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      ],
+      "keywords": [
+        {
+          "type": "Flash"
+        }
+      ],
+      "manaCost": [
+        {
+          "type": "Generic",
+          "value": 1
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "White"
+          }
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "White"
+          }
+        }
+      ],
+      "name": "Werefox Bodyguard",
+      "oracleText": "Flash\nWhen this creature enters, exile up to one other target non-Fox creature until this creature leaves the battlefield.\n{1}{W}, Sacrifice this creature: You gain 2 life.",
+      "power": {
+        "type": "Literal",
+        "value": 2
+      },
+      "toughness": {
+        "type": "Literal",
+        "value": 2
+      },
+      "triggeredAbilities": [
+        {
+          "condition": {
+            "type": "Enters",
+            "value": {}
+          },
+          "modal": {
+            "modes": [
+              {
+                "clauses": [
+                  {
+                    "effects": [
+                      {
+                        "type": "MoveToZone",
+                        "value": {
+                          "duration": "UntilSourceLeavesTheBattlefield",
+                          "ref": {
+                            "type": "InSlot",
+                            "value": "target"
+                          },
+                          "zone": "Exile"
+                        }
+                      }
+                    ]
+                  }
+                ],
+                "targetSlots": {
+                  "target": {
+                    "count": {
+                      "type": "Printed",
+                      "value": {
+                        "least": 0,
+                        "most": 1
+                      }
+                    },
+                    "filter": {
+                      "type": "And",
+                      "value": [
+                        {
+                          "type": "Not",
+                          "value": {
+                            "type": "IsSource"
+                          }
+                        },
+                        {
+                          "type": "Not",
+                          "value": {
+                            "type": "HasSubtype",
+                            "value": "Fox"
+                          }
+                        }
+                      ]
+                    },
+                    "pool": {
+                      "type": "Creatures"
+                    }
+                  }
+                }
+              }
+            ]
+          }
+        }
+      ],
+      "typeLine": {
+        "subtypes": [
+          "Elf",
+          "Fox",
+          "Knight"
+        ],
+        "types": [
+          "Creature"
+        ]
+      }
+    }
+  ]
+}

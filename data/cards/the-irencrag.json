@@ -1,0 +1,252 @@
+{
+  "faces": [
+    {
+      "activatedAbilities": [
+        {
+          "cost": {
+            "components": [
+              {
+                "type": "TapThis"
+              }
+            ],
+            "mana": []
+          },
+          "modal": {
+            "modes": [
+              {
+                "clauses": [
+                  {
+                    "effects": [
+                      {
+                        "type": "AddMana",
+                        "value": {
+                          "production": {
+                            "type": "OfType",
+                            "value": {
+                              "type": "Colorless"
+                            }
+                          }
+                        }
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      ],
+      "manaCost": [
+        {
+          "type": "Generic",
+          "value": 2
+        }
+      ],
+      "name": "The Irencrag",
+      "oracleText": "{T}: Add {C}.\nWhenever a legendary creature you control enters, you may have The Irencrag become a legendary Equipment artifact named Everflame, Heroes' Legacy. If you do, it gains equip {3} and \"Equipped creature gets +3/+3\" and loses all other abilities.",
+      "triggeredAbilities": [
+        {
+          "condition": {
+            "type": "Enters",
+            "value": {
+              "permanent": {
+                "type": "Matching",
+                "value": {
+                  "type": "And",
+                  "value": [
+                    {
+                      "type": "HasSupertype",
+                      "value": "Legendary"
+                    },
+                    {
+                      "type": "HasCardType",
+                      "value": "Creature"
+                    },
+                    {
+                      "type": "HeldBy",
+                      "value": {
+                        "holder": "Controller",
+                        "relation": "You"
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "modal": {
+            "modes": [
+              {
+                "clauses": [
+                  {
+                    "effects": [
+                      {
+                        "type": "ModifyTarget",
+                        "value": {
+                          "duration": {
+                            "type": "Indefinite"
+                          },
+                          "modification": {
+                            "type": "SetName",
+                            "value": "Everflame, Heroes' Legacy"
+                          },
+                          "ref": {
+                            "type": "InSlot",
+                            "value": "self"
+                          }
+                        }
+                      },
+                      {
+                        "type": "ModifyTarget",
+                        "value": {
+                          "duration": {
+                            "type": "Indefinite"
+                          },
+                          "modification": {
+                            "type": "AddSupertype",
+                            "value": "Legendary"
+                          },
+                          "ref": {
+                            "type": "InSlot",
+                            "value": "self"
+                          }
+                        }
+                      },
+                      {
+                        "type": "ModifyTarget",
+                        "value": {
+                          "duration": {
+                            "type": "Indefinite"
+                          },
+                          "modification": {
+                            "type": "Subtype",
+                            "value": {
+                              "mode": "InAddition",
+                              "subtype": "Equipment"
+                            }
+                          },
+                          "ref": {
+                            "type": "InSlot",
+                            "value": "self"
+                          }
+                        }
+                      },
+                      {
+                        "type": "ModifyTarget",
+                        "value": {
+                          "duration": {
+                            "type": "Indefinite"
+                          },
+                          "modification": {
+                            "type": "LoseAllAbilities"
+                          },
+                          "ref": {
+                            "type": "InSlot",
+                            "value": "self"
+                          }
+                        }
+                      },
+                      {
+                        "type": "ModifyTarget",
+                        "value": {
+                          "duration": {
+                            "type": "Indefinite"
+                          },
+                          "modification": {
+                            "type": "GainKeyword",
+                            "value": {
+                              "type": "Equip",
+                              "value": {
+                                "cost": {
+                                  "mana": [
+                                    {
+                                      "type": "Generic",
+                                      "value": 3
+                                    }
+                                  ]
+                                },
+                                "quality": null
+                              }
+                            }
+                          },
+                          "ref": {
+                            "type": "InSlot",
+                            "value": "self"
+                          }
+                        }
+                      },
+                      {
+                        "type": "ModifyTarget",
+                        "value": {
+                          "duration": {
+                            "type": "Indefinite"
+                          },
+                          "modification": {
+                            "type": "GainAbility",
+                            "value": {
+                              "type": "Static",
+                              "value": {
+                                "affected": {
+                                  "type": "Matching",
+                                  "value": {
+                                    "type": "And",
+                                    "value": [
+                                      {
+                                        "type": "HasCardType",
+                                        "value": "Creature"
+                                      },
+                                      {
+                                        "type": "HasAttached",
+                                        "value": {
+                                          "type": "IsSource"
+                                        }
+                                      }
+                                    ]
+                                  }
+                                },
+                                "modifications": [
+                                  {
+                                    "type": "ModifyPowerToughness",
+                                    "value": {
+                                      "power": {
+                                        "type": "Literal",
+                                        "value": 3
+                                      },
+                                      "toughness": {
+                                        "type": "Literal",
+                                        "value": 3
+                                      }
+                                    }
+                                  }
+                                ]
+                              }
+                            }
+                          },
+                          "ref": {
+                            "type": "InSlot",
+                            "value": "self"
+                          }
+                        }
+                      }
+                    ],
+                    "optionality": {
+                      "type": "Optional"
+                    }
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      ],
+      "typeLine": {
+        "supertypes": [
+          "Legendary"
+        ],
+        "types": [
+          "Artifact"
+        ]
+      }
+    }
+  ]
+}

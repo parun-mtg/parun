@@ -28,6 +28,7 @@ import qualified Parun.Types.BecameAttached as BecameAttached
 import qualified Parun.Types.BecameAttacked as BecameAttacked
 import qualified Parun.Types.BecameBlocking as BecameBlocking
 import qualified Parun.Types.BecameDesignated as BecameDesignated
+import qualified Parun.Types.BecameTapped as BecameTapped
 import qualified Parun.Types.BecameTarget as BecameTarget
 import qualified Parun.Types.BecameUnattached as BecameUnattached
 import qualified Parun.Types.BlockProducer as BlockProducer
@@ -152,7 +153,7 @@ spec s = Spec.describe s "Parun.Codec.GameEvent" $ do
     Common.assertCodec
       s
       GameEvent.codec
-      (GameEvent.DamageDealt (DamageEvent.MkDamageEvent (ObjectId.MkObjectId 1) (Recipient.ToPlayer (PlayerId.MkPlayerId 1)) 2 0 True False False 3 (Just (PlayerId.MkPlayerId 2)) Nothing mempty False mempty mempty mempty mempty Nothing mempty Nothing DamageKind.Combat))
+      (GameEvent.DamageDealt (DamageEvent.MkDamageEvent (ObjectId.MkObjectId 1) (Recipient.ToPlayer (PlayerId.MkPlayerId 1)) 2 0 True False False 3 (Just (PlayerId.MkPlayerId 2)) Nothing mempty False mempty mempty mempty mempty Nothing mempty mempty Nothing DamageKind.Combat))
       ( "{\"type\":\"DamageDealt\",\"value\":{\"source\":1,\"target\":{\"type\":\"ToPlayer\",\"value\":1},\"amount\":2,"
           <> "\"dealtByDeathtouch\":true,\"dealtByToxic\":3,\"dealtByLifelink\":2,\"kind\":\"Combat\"}}"
       )
@@ -711,18 +712,13 @@ spec s = Spec.describe s "Parun.Codec.GameEvent" $ do
       GameEvent.codec
       (GameEvent.Plotted (ObjectId.MkObjectId 5))
       " {\"type\":\"Plotted\",\"value\":5} "
-  -- CR 701.26a. A bare ObjectId, the acting permanent PermanentActed carries, so
-  -- the TAG is the whole difference from an exert of the same object.
-  Spec.it s "BecameTapped" $ do
+  -- CR 701.26a: the permanent and who tapped it.
+  Spec.it s "BecameTapped" $
     Common.assertCodec
       s
       GameEvent.codec
-      (GameEvent.BecameTapped (ObjectId.MkObjectId 8))
-      " {\"type\":\"BecameTapped\",\"value\":8} "
-    Spec.assertBool
-      s
-      (Codec.encode GameEvent.codec (GameEvent.BecameTapped (ObjectId.MkObjectId 8)) /= Codec.encode GameEvent.codec (GameEvent.PermanentActed (PermanentActed.MkPermanentActed PermanentAction.Exert (ObjectId.MkObjectId 8) Nothing)))
-      "a tap and an exert of the same object encode differently"
+      (GameEvent.BecameTapped (BecameTapped.MkBecameTapped (ObjectId.MkObjectId 8) (PlayerId.MkPlayerId 1)))
+      " {\"type\":\"BecameTapped\",\"value\":{\"permanent\":8,\"tapper\":1}} "
   -- CR 601.2h / 701.26a. The keyword is what separates it from the
   -- BecameTapped the same tap wrote.
   Spec.it s "TappedToPay" $
@@ -731,8 +727,8 @@ spec s = Spec.describe s "Parun.Codec.GameEvent" $ do
       GameEvent.codec
       (GameEvent.TappedToPay (TappedToPay.MkTappedToPay {TappedToPay.permanent = ObjectId.MkObjectId 8, TappedToPay.keyword = KeywordFamily.Teamwork}))
       " {\"type\":\"TappedToPay\",\"value\":{\"permanent\":8,\"keyword\":\"Teamwork\"}} "
-  -- CR 701.26b. BecameTapped's payload exactly, so the TAG is the whole
-  -- difference between the two directions of one status.
+  -- CR 701.26b. A bare ObjectId, the acting permanent PermanentActed carries, so
+  -- the TAG is the whole difference from a phase-in of the same object.
   Spec.it s "BecameUntapped" $ do
     Common.assertCodec
       s
@@ -741,8 +737,8 @@ spec s = Spec.describe s "Parun.Codec.GameEvent" $ do
       " {\"type\":\"BecameUntapped\",\"value\":8} "
     Spec.assertBool
       s
-      (Codec.encode GameEvent.codec (GameEvent.BecameUntapped (ObjectId.MkObjectId 8)) /= Codec.encode GameEvent.codec (GameEvent.BecameTapped (ObjectId.MkObjectId 8)))
-      "an untap and a tap of the same object encode differently"
+      (Codec.encode GameEvent.codec (GameEvent.BecameUntapped (ObjectId.MkObjectId 8)) /= Codec.encode GameEvent.codec (GameEvent.PermanentActed (PermanentActed.MkPermanentActed PermanentAction.PhaseIn (ObjectId.MkObjectId 8) Nothing)))
+      "an untap and a phase-in of the same object encode differently"
   -- CR 106.12a. BecameTapped's permanent plus the mana that activation produced,
   -- which is what that rule's "of a specified type" narrowing reads -- and the
   -- two events one mana activation writes about the same permanent stay
@@ -755,7 +751,7 @@ spec s = Spec.describe s "Parun.Codec.GameEvent" $ do
       (" {\"type\":\"TappedForMana\",\"value\":{\"mana\":[{\"type\":\"Colored\",\"value\":\"Green\"}],\"permanent\":9,\"player\":1,\"snapshot\":" <> TappedForManaSpec.testSnapshotJson <> "}} ")
     Spec.assertBool
       s
-      (Codec.encode GameEvent.codec (GameEvent.TappedForMana (TappedForMana.MkTappedForMana {TappedForMana.permanent = ObjectId.MkObjectId 9, TappedForMana.mana = Set.singleton (ManaType.Colored Color.Green), TappedForMana.player = PlayerId.MkPlayerId 1, TappedForMana.snapshot = TappedForManaSpec.testSnapshot})) /= Codec.encode GameEvent.codec (GameEvent.BecameTapped (ObjectId.MkObjectId 9)))
+      (Codec.encode GameEvent.codec (GameEvent.TappedForMana (TappedForMana.MkTappedForMana {TappedForMana.permanent = ObjectId.MkObjectId 9, TappedForMana.mana = Set.singleton (ManaType.Colored Color.Green), TappedForMana.player = PlayerId.MkPlayerId 1, TappedForMana.snapshot = TappedForManaSpec.testSnapshot})) /= Codec.encode GameEvent.codec (GameEvent.BecameTapped (BecameTapped.MkBecameTapped (ObjectId.MkObjectId 9) (PlayerId.MkPlayerId 1))))
       "a tap for mana and a plain tap of the same object encode differently"
   -- CR 605.1b's other event about one activation, keyed by the recipient as
   -- well as the source.

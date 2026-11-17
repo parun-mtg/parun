@@ -1,0 +1,151 @@
+{
+  "faces": [
+    {
+      "combatRestrictions": [
+        {
+          "type": "CantBeBlockedBy",
+          "value": {
+            "affected": {
+              "type": "Matching",
+              "value": {
+                "type": "IsSource"
+              }
+            },
+            "blockers": {
+              "type": "And",
+              "value": [
+                {
+                  "type": "HasCardType",
+                  "value": "Creature"
+                },
+                {
+                  "type": "Measures",
+                  "value": {
+                    "comparison": "LessThan",
+                    "measure": "Power",
+                    "operand": {
+                      "type": "OfSource",
+                      "value": "Power"
+                    }
+                  }
+                }
+              ]
+            },
+            "frame": "Source"
+          }
+        }
+      ],
+      "keywords": [
+        {
+          "type": "Prowess"
+        }
+      ],
+      "manaCost": [
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "Blue"
+          }
+        }
+      ],
+      "name": "Elusive Otter",
+      "oracleText": "Prowess (Whenever you cast a noncreature spell, this creature gets +1/+1 until end of turn.)\nCreatures with power less than this creature's power can't block it.",
+      "power": {
+        "type": "Literal",
+        "value": 1
+      },
+      "toughness": {
+        "type": "Literal",
+        "value": 1
+      },
+      "typeLine": {
+        "subtypes": [
+          "Otter"
+        ],
+        "types": [
+          "Creature"
+        ]
+      }
+    },
+    {
+      "manaCost": [
+        {
+          "type": "Variable"
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "Green"
+          }
+        }
+      ],
+      "name": "Grove's Bounty",
+      "oracleText": "Distribute X +1/+1 counters among any number of target creatures you control. (Then exile this card. You may cast the creature later from exile.)",
+      "spell": {
+        "modes": [
+          {
+            "clauses": [
+              {
+                "effects": [
+                  {
+                    "type": "PutCounters",
+                    "value": {
+                      "kind": {
+                        "type": "PlusOnePlusOne"
+                      },
+                      "quantity": {
+                        "type": "Share",
+                        "value": "targets"
+                      },
+                      "ref": {
+                        "type": "InSlot",
+                        "value": "targets"
+                      }
+                    }
+                  }
+                ]
+              }
+            ],
+            "targetSlots": {
+              "targets": {
+                "count": {
+                  "type": "Printed",
+                  "value": {
+                    "least": 0
+                  }
+                },
+                "divided": {
+                  "type": "InSlot",
+                  "value": "X"
+                },
+                "filter": {
+                  "type": "HeldBy",
+                  "value": {
+                    "holder": "Controller",
+                    "relation": "You"
+                  }
+                },
+                "pool": {
+                  "type": "Creatures"
+                }
+              }
+            }
+          }
+        ]
+      },
+      "typeLine": {
+        "subtypes": [
+          "Adventure"
+        ],
+        "types": [
+          "Sorcery"
+        ]
+      }
+    }
+  ],
+  "layout": {
+    "type": "Adventure"
+  }
+}

@@ -1,0 +1,115 @@
+{
+  "faces": [
+    {
+      "manaCost": [
+        {
+          "type": "Generic",
+          "value": 4
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "Black"
+          }
+        }
+      ],
+      "name": "Lich-Knights' Conquest",
+      "oracleText": "Sacrifice any number of artifacts, enchantments, and/or tokens. Return that many creature cards from your graveyard to the battlefield.",
+      "spell": {
+        "modes": [
+          {
+            "clauses": [
+              {
+                "effects": [
+                  {
+                    "type": "Sacrifice",
+                    "value": {
+                      "ref": {
+                        "type": "ChosenPermanents",
+                        "value": {
+                          "count": {
+                            "type": "UpTo"
+                          },
+                          "filter": {
+                            "type": "And",
+                            "value": [
+                              {
+                                "type": "Or",
+                                "value": [
+                                  {
+                                    "type": "HasCardType",
+                                    "value": "Artifact"
+                                  },
+                                  {
+                                    "type": "HasCardType",
+                                    "value": "Enchantment"
+                                  },
+                                  {
+                                    "type": "IsToken"
+                                  }
+                                ]
+                              },
+                              {
+                                "type": "HeldBy",
+                                "value": {
+                                  "holder": "Controller",
+                                  "relation": "You"
+                                }
+                              }
+                            ]
+                          }
+                        }
+                      },
+                      "sacrificed": "sacrificed"
+                    }
+                  }
+                ]
+              },
+              {
+                "effects": [
+                  {
+                    "type": "MoveToZone",
+                    "value": {
+                      "ref": {
+                        "type": "ChosenCardInGraveyard",
+                        "value": {
+                          "chooser": {
+                            "type": "TheController"
+                          },
+                          "count": {
+                            "type": "Exactly",
+                            "value": {
+                              "type": "InSlot",
+                              "value": "sacrificed"
+                            }
+                          },
+                          "filter": {
+                            "type": "HasCardType",
+                            "value": "Creature"
+                          },
+                          "players": {
+                            "type": "Scoped",
+                            "value": {
+                              "type": "You"
+                            }
+                          }
+                        }
+                      },
+                      "zone": "Battlefield"
+                    }
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "typeLine": {
+        "types": [
+          "Sorcery"
+        ]
+      }
+    }
+  ]
+}

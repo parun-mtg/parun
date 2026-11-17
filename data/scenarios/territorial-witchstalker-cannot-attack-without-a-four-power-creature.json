@@ -1,0 +1,93 @@
+{
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "battlefield": [
+          {
+            "card": "Territorial Witchstalker",
+            "label": "stalker",
+            "ready": true
+          },
+          {
+            "card": "Hill Giant",
+            "label": "giant",
+            "ready": true
+          }
+        ],
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ],
+        "name": "alice"
+      },
+      {
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ],
+        "name": "bob"
+      }
+    ],
+    "step": "PrecombatMain"
+  },
+  "description": "CR 603.4 / 702.3b: without a creature with power 4 or greater, Territorial Witchstalker's combat trigger does not fire and defender keeps it home",
+  "note": "Alice controls Hill Giant (3/3) instead of Craw Wurm: the Witchstalker's declaration is refused and it stays 2/3.",
+  "timeline": [
+    {
+      "player": "alice",
+      "refuse": {
+        "Attack": [
+          "$stalker"
+        ]
+      },
+      "step": "DeclareAttackers",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Attack": []
+      },
+      "player": "alice",
+      "step": "DeclareAttackers",
+      "turn": 1
+    },
+    {
+      "check": {
+        "PowerToughness": {
+          "object": "$stalker",
+          "power": 2,
+          "toughness": 3
+        }
+      },
+      "player": "alice",
+      "step": "PostcombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Life": {
+          "life": 20,
+          "player": "bob"
+        }
+      },
+      "player": "alice",
+      "step": "PostcombatMain",
+      "turn": 1
+    }
+  ]
+}

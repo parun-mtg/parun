@@ -1,0 +1,219 @@
+{
+  "faces": [
+    {
+      "manaCost": [
+        {
+          "type": "Variable"
+        },
+        {
+          "type": "Variable"
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "Blue"
+          }
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "Blue"
+          }
+        }
+      ],
+      "name": "Extraordinary Journey",
+      "oracleText": "When this enchantment enters, exile up to X target creatures. For each of those cards, its owner may play it for as long as it remains exiled.\nWhenever one or more nontoken creatures enter, if one or more of them entered from exile or was cast from exile, you draw a card. This ability triggers only once each turn.",
+      "triggeredAbilities": [
+        {
+          "condition": {
+            "type": "Enters",
+            "value": {}
+          },
+          "modal": {
+            "modes": [
+              {
+                "clauses": [
+                  {
+                    "effects": [
+                      {
+                        "type": "MoveToZone",
+                        "value": {
+                          "ref": {
+                            "type": "InSlot",
+                            "value": "target"
+                          },
+                          "slot": "exiled",
+                          "zone": "Exile"
+                        }
+                      },
+                      {
+                        "type": "ForEach",
+                        "value": {
+                          "body": [
+                            {
+                              "type": "GrantPlayFromExile",
+                              "value": {
+                                "duration": {
+                                  "type": "Indefinite"
+                                },
+                                "player": {
+                                  "type": "HolderOfBound",
+                                  "value": {
+                                    "holder": "Owner",
+                                    "hop": "Itself",
+                                    "slot": "exiledCard"
+                                  }
+                                },
+                                "ref": {
+                                  "type": "InSlot",
+                                  "value": "exiledCard"
+                                }
+                              }
+                            }
+                          ],
+                          "ref": {
+                            "type": "InSlot",
+                            "value": "exiled"
+                          },
+                          "slot": "exiledCard"
+                        }
+                      }
+                    ]
+                  }
+                ],
+                "targetSlots": {
+                  "target": {
+                    "count": {
+                      "type": "UpToAnnouncedX"
+                    },
+                    "pool": {
+                      "type": "Creatures"
+                    }
+                  }
+                }
+              }
+            ]
+          }
+        },
+        {
+          "condition": {
+            "type": "Enters",
+            "value": {
+              "batching": "OneOrMore",
+              "permanent": {
+                "type": "Matching",
+                "value": {
+                  "type": "And",
+                  "value": [
+                    {
+                      "type": "Not",
+                      "value": {
+                        "type": "IsToken"
+                      }
+                    },
+                    {
+                      "type": "HasCardType",
+                      "value": "Creature"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "intervening": {
+            "type": "Compares",
+            "value": {
+              "comparison": "AtLeast",
+              "measured": {
+                "type": "Count",
+                "value": {
+                  "aggregation": {
+                    "type": "Total",
+                    "value": {
+                      "type": "Plus",
+                      "value": {
+                        "left": {
+                          "type": "EnteredFrom",
+                          "value": {
+                            "player": {
+                              "type": "Relative",
+                              "value": "AnyPlayer"
+                            },
+                            "zone": "Exile"
+                          }
+                        },
+                        "right": {
+                          "type": "WasCastFrom",
+                          "value": {
+                            "caster": {
+                              "type": "Relative",
+                              "value": "AnyPlayer"
+                            },
+                            "from": {
+                              "player": {
+                                "type": "Relative",
+                                "value": "AnyPlayer"
+                              },
+                              "zone": "Exile"
+                            }
+                          }
+                        }
+                      }
+                    }
+                  },
+                  "filter": {
+                    "type": "And",
+                    "value": []
+                  },
+                  "scope": {
+                    "type": "OverBound",
+                    "value": "became"
+                  }
+                }
+              },
+              "threshold": {
+                "type": "Literal",
+                "value": 1
+              }
+            }
+          },
+          "limit": {
+            "type": "OncePerTurn"
+          },
+          "modal": {
+            "modes": [
+              {
+                "clauses": [
+                  {
+                    "effects": [
+                      {
+                        "type": "Draw",
+                        "value": {
+                          "player": {
+                            "type": "Relative",
+                            "value": "You"
+                          },
+                          "quantity": {
+                            "type": "Literal",
+                            "value": 1
+                          }
+                        }
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      ],
+      "typeLine": {
+        "types": [
+          "Enchantment"
+        ]
+      }
+    }
+  ]
+}

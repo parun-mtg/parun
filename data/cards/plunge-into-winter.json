@@ -1,0 +1,87 @@
+{
+  "faces": [
+    {
+      "manaCost": [
+        {
+          "type": "Generic",
+          "value": 1
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "White"
+          }
+        }
+      ],
+      "name": "Plunge into Winter",
+      "oracleText": "Tap up to one target creature. Scry 1, then draw a card.",
+      "spell": {
+        "modes": [
+          {
+            "clauses": [
+              {
+                "effects": [
+                  {
+                    "type": "Tap",
+                    "value": {
+                      "ref": {
+                        "type": "InSlot",
+                        "value": "target"
+                      }
+                    }
+                  },
+                  {
+                    "type": "Scry",
+                    "value": {
+                      "player": {
+                        "type": "Relative",
+                        "value": "You"
+                      },
+                      "quantity": {
+                        "type": "Literal",
+                        "value": 1
+                      }
+                    }
+                  },
+                  {
+                    "type": "Draw",
+                    "value": {
+                      "player": {
+                        "type": "Relative",
+                        "value": "You"
+                      },
+                      "quantity": {
+                        "type": "Literal",
+                        "value": 1
+                      }
+                    }
+                  }
+                ]
+              }
+            ],
+            "targetSlots": {
+              "target": {
+                "count": {
+                  "type": "Printed",
+                  "value": {
+                    "least": 0,
+                    "most": 1
+                  }
+                },
+                "pool": {
+                  "type": "Creatures"
+                }
+              }
+            }
+          }
+        ]
+      },
+      "typeLine": {
+        "types": [
+          "Instant"
+        ]
+      }
+    }
+  ]
+}

@@ -671,7 +671,7 @@ evaluateAgainst viewOf context gs announcedOn mOid mView quantity =
         Quantity.ObjectCountersOfAnyKind -> fmap (toInteger . sum . Filter.counters) mView
         -- CR 123.6d off the view, ObjectCounters' posture.
         Quantity.LettersOnNameStickers letters -> fmap (\v -> toInteger (sum [NameWords.letterCount letters w | StickerContent.Name w <- Foldable.toList (Filter.stickers v)])) mView
-        Quantity.NameStickers test -> fmap (\v -> toInteger (length [w | StickerContent.Name w <- Foldable.toList (Filter.stickers v), passesNameStickerTest test w])) mView
+        Quantity.NameStickers test -> fmap (\v -> toInteger (length [w | StickerContent.Name w <- Foldable.toList (Filter.stickers v), passesNameStickerTest (Filter.sourceChosenNumber context) test w])) mView
         Quantity.PowerOfStickers -> fmap (\v -> sum [PowerToughnessSticker.power pt | StickerContent.PowerToughness pt <- Foldable.toList (Filter.stickers v)]) mView
         Quantity.ToughnessOfStickers -> fmap (\v -> sum [PowerToughnessSticker.toughness pt | StickerContent.PowerToughness pt <- Foldable.toList (Filter.stickers v)]) mView
         -- The designation as a 0/1, off the same view ObjectCounters reads -- so CR
@@ -2039,9 +2039,11 @@ walkedTo pids oid event = case event of
       && elem (TurnedUpOffDeck.player turned) pids
   _ -> False
 
--- | CR 123.6 / 123.6d: does the word on a name sticker pass the test?
-passesNameStickerTest :: NameStickerTest.NameStickerTest -> Text.Text -> Bool
-passesNameStickerTest test word = case test of
+-- | CR 123.6 / 123.6d: does the word on a name sticker pass the test, given
+-- the source's chosen number?
+passesNameStickerTest :: Maybe Natural -> NameStickerTest.NameStickerTest -> Text.Text -> Bool
+passesNameStickerTest chosen test word = case test of
   NameStickerTest.AnyNameSticker -> True
   NameStickerTest.WithLetterCount (LetterCount.MkLetterCount comparison n) ->
     Filter.compares comparison (toInteger (NameWords.letterTotal word)) (toInteger n)
+  NameStickerTest.BeginningWithChosenLetter -> maybe False (`NameWords.beginsWithLetterAt` word) chosen

@@ -1,0 +1,179 @@
+{
+  "faces": [
+    {
+      "keywords": [
+        {
+          "type": "Trample"
+        }
+      ],
+      "manaCost": [
+        {
+          "type": "Generic",
+          "value": 3
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "Green"
+          }
+        }
+      ],
+      "name": "Ferocious Werefox",
+      "oracleText": "Trample",
+      "power": {
+        "type": "Literal",
+        "value": 4
+      },
+      "toughness": {
+        "type": "Literal",
+        "value": 3
+      },
+      "typeLine": {
+        "subtypes": [
+          "Elf",
+          "Fox",
+          "Warrior"
+        ],
+        "types": [
+          "Creature"
+        ]
+      }
+    },
+    {
+      "manaCost": [
+        {
+          "type": "Generic",
+          "value": 1
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "Green"
+          }
+        }
+      ],
+      "name": "Guard Change",
+      "oracleText": "Create a Monster Role token attached to target creature you control. (Enchanted creature gets +1/+1 and has trample.)",
+      "spell": {
+        "modes": [
+          {
+            "clauses": [
+              {
+                "effects": [
+                  {
+                    "type": "Create",
+                    "value": {
+                      "card": {
+                        "faces": [
+                          {
+                            "enchant": [
+                              {
+                                "pool": {
+                                  "type": "Creatures"
+                                }
+                              }
+                            ],
+                            "name": "Monster",
+                            "staticAbilities": [
+                              {
+                                "affected": {
+                                  "type": "Matching",
+                                  "value": {
+                                    "type": "And",
+                                    "value": [
+                                      {
+                                        "type": "HasCardType",
+                                        "value": "Creature"
+                                      },
+                                      {
+                                        "type": "HasAttached",
+                                        "value": {
+                                          "type": "IsSource"
+                                        }
+                                      }
+                                    ]
+                                  }
+                                },
+                                "modifications": [
+                                  {
+                                    "type": "ModifyPowerToughness",
+                                    "value": {
+                                      "power": {
+                                        "type": "Literal",
+                                        "value": 1
+                                      },
+                                      "toughness": {
+                                        "type": "Literal",
+                                        "value": 1
+                                      }
+                                    }
+                                  },
+                                  {
+                                    "type": "GainKeyword",
+                                    "value": {
+                                      "type": "Trample"
+                                    }
+                                  }
+                                ]
+                              }
+                            ],
+                            "typeLine": {
+                              "subtypes": [
+                                "Aura",
+                                "Role"
+                              ],
+                              "types": [
+                                "Enchantment"
+                              ]
+                            }
+                          }
+                        ]
+                      },
+                      "quantity": {
+                        "type": "Literal",
+                        "value": 1
+                      },
+                      "riders": {
+                        "attachedTo": {
+                          "type": "Specified",
+                          "value": "target"
+                        }
+                      }
+                    }
+                  }
+                ]
+              }
+            ],
+            "targetSlots": {
+              "target": {
+                "filter": {
+                  "type": "HeldBy",
+                  "value": {
+                    "holder": "Controller",
+                    "relation": "You"
+                  }
+                },
+                "pool": {
+                  "type": "Creatures"
+                }
+              }
+            }
+          }
+        ]
+      },
+      "typeLine": {
+        "subtypes": [
+          "Adventure"
+        ],
+        "types": [
+          "Instant"
+        ]
+      }
+    }
+  ],
+  "layout": {
+    "type": "Adventure"
+  }
+}

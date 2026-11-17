@@ -128,6 +128,7 @@ import qualified Parun.Codec.BearersTriggerSpec
 import qualified Parun.Codec.BecameAttackedSpec
 import qualified Parun.Codec.BecameBlockingSpec
 import qualified Parun.Codec.BecameDesignatedSpec
+import qualified Parun.Codec.BecameTappedSpec
 import qualified Parun.Codec.BecomeCopySpec
 import qualified Parun.Codec.BecomesTapStateSpec
 import qualified Parun.Codec.BecomesTargetedTriggerSpec
@@ -150,6 +151,7 @@ import qualified Parun.Codec.BlockersAreSpec
 import qualified Parun.Codec.BlocksDeclaredSpec
 import qualified Parun.Codec.BoardSpec
 import qualified Parun.Codec.BoundMeasureSpec
+import qualified Parun.Codec.BoundReadingSpec
 import qualified Parun.Codec.CandidateIdSpec
 import qualified Parun.Codec.CandidateScopeSpec
 import qualified Parun.Codec.CantAttackPlayerSpec
@@ -1245,6 +1247,7 @@ spec s reference corpus = do
   Parun.Codec.BecameAttackedSpec.spec s
   Parun.Codec.BecameBlockingSpec.spec s
   Parun.Codec.BecameDesignatedSpec.spec s
+  Parun.Codec.BecameTappedSpec.spec s
   Parun.Codec.BecomeCopySpec.spec s
   Parun.Codec.BecomesTapStateSpec.spec s
   Parun.Codec.BeginningStepSpec.spec s
@@ -1265,6 +1268,7 @@ spec s reference corpus = do
   Parun.Codec.BlockStatusSpec.spec s
   Parun.Codec.BoardSpec.spec s
   Parun.Codec.BoundMeasureSpec.spec s
+  Parun.Codec.BoundReadingSpec.spec s
   Parun.Codec.CandidateIdSpec.spec s
   Parun.Codec.CantAttackPlayerSpec.spec s
   Parun.Codec.CantBeBlockedBySpec.spec s

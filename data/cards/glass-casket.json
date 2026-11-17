@@ -1,0 +1,87 @@
+{
+  "faces": [
+    {
+      "manaCost": [
+        {
+          "type": "Generic",
+          "value": 1
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "White"
+          }
+        }
+      ],
+      "name": "Glass Casket",
+      "oracleText": "When this artifact enters, exile target creature an opponent controls with mana value 3 or less until this artifact leaves the battlefield.",
+      "triggeredAbilities": [
+        {
+          "condition": {
+            "type": "Enters",
+            "value": {}
+          },
+          "modal": {
+            "modes": [
+              {
+                "clauses": [
+                  {
+                    "effects": [
+                      {
+                        "type": "MoveToZone",
+                        "value": {
+                          "duration": "UntilSourceLeavesTheBattlefield",
+                          "ref": {
+                            "type": "InSlot",
+                            "value": "target"
+                          },
+                          "zone": "Exile"
+                        }
+                      }
+                    ]
+                  }
+                ],
+                "targetSlots": {
+                  "target": {
+                    "filter": {
+                      "type": "And",
+                      "value": [
+                        {
+                          "type": "HeldBy",
+                          "value": {
+                            "holder": "Controller",
+                            "relation": "Opponent"
+                          }
+                        },
+                        {
+                          "type": "Measures",
+                          "value": {
+                            "comparison": "AtMost",
+                            "measure": "ManaValue",
+                            "operand": {
+                              "type": "Literal",
+                              "value": 3
+                            }
+                          }
+                        }
+                      ]
+                    },
+                    "pool": {
+                      "type": "Creatures"
+                    }
+                  }
+                }
+              }
+            ]
+          }
+        }
+      ],
+      "typeLine": {
+        "types": [
+          "Artifact"
+        ]
+      }
+    }
+  ]
+}

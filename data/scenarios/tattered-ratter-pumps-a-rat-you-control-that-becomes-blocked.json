@@ -1,0 +1,129 @@
+{
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "battlefield": [
+          {
+            "card": "Tattered Ratter",
+            "label": "ratter",
+            "ready": true
+          },
+          {
+            "card": "Muck Rats",
+            "label": "rats",
+            "ready": true
+          }
+        ],
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ],
+        "name": "alice"
+      },
+      {
+        "battlefield": [
+          {
+            "card": "Wall of Stone",
+            "label": "wall"
+          },
+          {
+            "card": "Wall of Stone",
+            "label": "wall2"
+          }
+        ],
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ],
+        "name": "bob"
+      }
+    ],
+    "step": "PrecombatMain"
+  },
+  "description": "CR 509.3c / 603.2: whenever a Rat its controller controls becomes blocked, Tattered Ratter gives it +2/+0 until end of turn",
+  "note": "Alice attacks with Muck Rats and the Ratter (a Human Peasant, not a Rat); bob blocks both with Walls of Stone. Only the Rats become 3/1; the Ratter stays 2/2.",
+  "timeline": [
+    {
+      "do": {
+        "Attack": [
+          "$ratter",
+          "$rats"
+        ]
+      },
+      "player": "alice",
+      "step": "DeclareAttackers",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Block": {
+          "$wall": [
+            "$rats"
+          ],
+          "$wall2": [
+            "$ratter"
+          ]
+        }
+      },
+      "player": "bob",
+      "step": "DeclareBlockers",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "DeclareBlockers",
+      "turn": 1
+    },
+    {
+      "check": {
+        "PowerToughness": {
+          "object": "$rats",
+          "power": 3,
+          "toughness": 1
+        }
+      },
+      "player": "alice",
+      "step": "DeclareBlockers",
+      "turn": 1
+    },
+    {
+      "check": {
+        "PowerToughness": {
+          "object": "$ratter",
+          "power": 2,
+          "toughness": 2
+        }
+      },
+      "player": "alice",
+      "step": "DeclareBlockers",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Damage": {
+          "damage": 3,
+          "object": "$wall"
+        }
+      },
+      "player": "alice",
+      "step": "EndOfCombat",
+      "turn": 1
+    }
+  ]
+}

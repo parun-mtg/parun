@@ -1,0 +1,285 @@
+{
+  "description": "Casting Bear Down, Stormkeld Vanguard's Adventure, destroys target artifact or enchantment and exiles the card, from where the creature is cast later",
+  "note": "Bear Down destroys Bob's Bad Moon, leaving his Braidwood Sextant, the other legal target. The card goes to exile (CR 716.3d), and Stormkeld Vanguard is then cast from there as a 6/7.",
+  "board": {
+    "active": "alice",
+    "step": "PrecombatMain",
+    "seats": [
+      {
+        "name": "alice",
+        "battlefield": [
+          {
+            "card": "Forest",
+            "label": "f1"
+          },
+          {
+            "card": "Forest",
+            "label": "f2"
+          },
+          {
+            "card": "Forest",
+            "label": "f3"
+          },
+          {
+            "card": "Forest",
+            "label": "f4"
+          },
+          {
+            "card": "Forest",
+            "label": "f5"
+          },
+          {
+            "card": "Forest",
+            "label": "f6"
+          },
+          {
+            "card": "Forest",
+            "label": "f7"
+          },
+          {
+            "card": "Forest",
+            "label": "f8"
+          }
+        ],
+        "hand": [
+          {
+            "card": "Stormkeld Vanguard",
+            "label": "vanguard"
+          }
+        ],
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ]
+      },
+      {
+        "name": "bob",
+        "battlefield": [
+          {
+            "card": "Bad Moon",
+            "label": "moon"
+          },
+          {
+            "card": "Braidwood Sextant",
+            "label": "sextant"
+          },
+          {
+            "card": "Grizzly Bears",
+            "label": "bears"
+          }
+        ],
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ]
+      }
+    ]
+  },
+  "timeline": [
+    {
+      "player": "alice",
+      "turn": 1,
+      "step": "PrecombatMain",
+      "do": {
+        "Cast": {
+          "face": "Bear Down",
+          "object": "$vanguard",
+          "mana": [
+            "$f1",
+            "$f2",
+            null
+          ],
+          "targets": [
+            "$moon"
+          ]
+        }
+      }
+    },
+    {
+      "player": "alice",
+      "turn": 1,
+      "step": "PrecombatMain",
+      "do": "Pass"
+    },
+    {
+      "player": "alice",
+      "turn": 1,
+      "step": "PrecombatMain",
+      "check": {
+        "View": {
+          "of": "Stack",
+          "is": []
+        }
+      }
+    },
+    {
+      "player": "alice",
+      "turn": 1,
+      "step": "PrecombatMain",
+      "check": {
+        "Count": {
+          "card": "Bad Moon",
+          "count": 1,
+          "player": "bob",
+          "zone": "Graveyard"
+        }
+      }
+    },
+    {
+      "player": "alice",
+      "turn": 1,
+      "step": "PrecombatMain",
+      "check": {
+        "Count": {
+          "card": "Braidwood Sextant",
+          "count": 1,
+          "player": "bob",
+          "zone": "Battlefield"
+        }
+      }
+    },
+    {
+      "player": "alice",
+      "turn": 1,
+      "step": "PrecombatMain",
+      "check": {
+        "Count": {
+          "card": "Stormkeld Vanguard",
+          "count": 1,
+          "player": "alice",
+          "zone": "Exile"
+        }
+      }
+    },
+    {
+      "player": "alice",
+      "turn": 1,
+      "step": "PrecombatMain",
+      "check": {
+        "Count": {
+          "card": "Stormkeld Vanguard",
+          "count": 0,
+          "player": "alice",
+          "zone": "Graveyard"
+        }
+      }
+    },
+    {
+      "player": "alice",
+      "turn": 1,
+      "step": "PrecombatMain",
+      "do": {
+        "Cast": {
+          "face": "Stormkeld Vanguard",
+          "object": "Stormkeld Vanguard",
+          "mana": [
+            "$f3",
+            "$f4",
+            "$f5",
+            "$f6",
+            "$f7",
+            "$f8"
+          ]
+        }
+      }
+    },
+    {
+      "player": "alice",
+      "turn": 1,
+      "step": "PrecombatMain",
+      "do": "Pass"
+    },
+    {
+      "player": "alice",
+      "turn": 1,
+      "step": "PrecombatMain",
+      "check": {
+        "View": {
+          "of": "Stack",
+          "is": []
+        }
+      }
+    },
+    {
+      "player": "alice",
+      "turn": 1,
+      "step": "PrecombatMain",
+      "check": {
+        "Count": {
+          "card": "Stormkeld Vanguard",
+          "count": 1,
+          "player": "alice",
+          "zone": "Battlefield"
+        }
+      }
+    },
+    {
+      "player": "alice",
+      "turn": 1,
+      "step": "PrecombatMain",
+      "check": {
+        "PowerToughness": {
+          "object": "Stormkeld Vanguard",
+          "power": 6,
+          "toughness": 7
+        }
+      }
+    }
+  ]
+}

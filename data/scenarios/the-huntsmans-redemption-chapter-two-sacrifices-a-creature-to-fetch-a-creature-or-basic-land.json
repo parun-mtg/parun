@@ -1,0 +1,200 @@
+{
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "name": "alice",
+        "battlefield": [
+          {
+            "card": "The Huntsman's Redemption",
+            "label": "saga",
+            "counters": [
+              {
+                "key": {
+                  "type": "Lore"
+                },
+                "value": 1
+              }
+            ]
+          },
+          {
+            "card": "Savannah Lions",
+            "label": "lions"
+          },
+          {
+            "card": "Grizzly Bears",
+            "label": "bears"
+          }
+        ],
+        "library": [
+          {
+            "card": "Island",
+            "label": "top"
+          },
+          {
+            "card": "Craw Wurm",
+            "label": "wurm"
+          },
+          {
+            "card": "Lightning Bolt",
+            "label": "bolt"
+          },
+          {
+            "card": "Mishra's Factory",
+            "label": "factory"
+          },
+          {
+            "card": "Forest",
+            "label": "forest"
+          }
+        ]
+      },
+      {
+        "name": "bob",
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ]
+      }
+    ],
+    "step": "Upkeep",
+    "turn": 3
+  },
+  "description": "CR 715.2b / 701.23a: The Huntsman's Redemption's chapter II lets its controller sacrifice a creature; if they do, they search for a creature or basic land card, reveal it, and put it into their hand",
+  "note": "Alice sacrifices Savannah Lions over Grizzly Bears and finds Craw Wurm; Lightning Bolt and Mishra's Factory (a nonbasic land) are not offered.",
+  "timeline": [
+    {
+      "turn": 3,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "source": "$saga",
+      "do": {
+        "ChooseToPay": {
+          "decision": "Pays"
+        }
+      }
+    },
+    {
+      "turn": 3,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "do": {
+        "Answer": {
+          "prompt": "ChooseSacrifices",
+          "with": [
+            "$lions"
+          ]
+        }
+      }
+    },
+    {
+      "turn": 3,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "check": {
+        "View": {
+          "of": "Prompt",
+          "is": {
+            "kind": "Search",
+            "offer": {
+              "from": [
+                "$wurm",
+                "$forest"
+              ],
+              "names": [
+                "Craw Wurm",
+                "Forest"
+              ],
+              "count": 1
+            }
+          }
+        }
+      }
+    },
+    {
+      "turn": 3,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "do": {
+        "Answer": {
+          "prompt": "Search",
+          "with": [
+            "$wurm"
+          ]
+        }
+      }
+    },
+    {
+      "turn": 3,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "do": {
+        "Answer": {
+          "prompt": "Shuffle",
+          "with": [
+            "$bolt",
+            "$factory",
+            "$forest"
+          ]
+        }
+      }
+    },
+    {
+      "turn": 3,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "check": {
+        "View": {
+          "of": "Stack",
+          "is": []
+        }
+      }
+    },
+    {
+      "turn": 3,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "check": {
+        "Count": {
+          "player": "alice",
+          "zone": "Hand",
+          "card": "Craw Wurm",
+          "count": 1
+        }
+      }
+    },
+    {
+      "turn": 3,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "check": {
+        "Count": {
+          "player": "alice",
+          "zone": "Graveyard",
+          "card": "Savannah Lions",
+          "count": 1
+        }
+      }
+    },
+    {
+      "turn": 3,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "check": {
+        "Count": {
+          "player": "alice",
+          "zone": "Battlefield",
+          "card": "Grizzly Bears",
+          "count": 1
+        }
+      }
+    }
+  ]
+}

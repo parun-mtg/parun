@@ -1,0 +1,244 @@
+{
+  "faces": [
+    {
+      "delayedAbilities": {
+        "sorcerer role": {
+          "condition": {
+            "type": "Reflexive"
+          },
+          "modal": {
+            "modes": [
+              {
+                "clauses": [
+                  {
+                    "effects": [
+                      {
+                        "type": "Create",
+                        "value": {
+                          "card": {
+                            "faces": [
+                              {
+                                "enchant": [
+                                  {
+                                    "pool": {
+                                      "type": "Creatures"
+                                    }
+                                  }
+                                ],
+                                "name": "Sorcerer",
+                                "staticAbilities": [
+                                  {
+                                    "affected": {
+                                      "type": "Matching",
+                                      "value": {
+                                        "type": "And",
+                                        "value": [
+                                          {
+                                            "type": "HasCardType",
+                                            "value": "Creature"
+                                          },
+                                          {
+                                            "type": "HasAttached",
+                                            "value": {
+                                              "type": "IsSource"
+                                            }
+                                          }
+                                        ]
+                                      }
+                                    },
+                                    "modifications": [
+                                      {
+                                        "type": "ModifyPowerToughness",
+                                        "value": {
+                                          "power": {
+                                            "type": "Literal",
+                                            "value": 1
+                                          },
+                                          "toughness": {
+                                            "type": "Literal",
+                                            "value": 1
+                                          }
+                                        }
+                                      },
+                                      {
+                                        "type": "GainAbility",
+                                        "value": {
+                                          "type": "Triggered",
+                                          "value": {
+                                            "condition": {
+                                              "type": "Attacks",
+                                              "value": {
+                                                "type": "Attacker",
+                                                "value": {}
+                                              }
+                                            },
+                                            "modal": {
+                                              "modes": [
+                                                {
+                                                  "clauses": [
+                                                    {
+                                                      "effects": [
+                                                        {
+                                                          "type": "Scry",
+                                                          "value": {
+                                                            "player": {
+                                                              "type": "Relative",
+                                                              "value": "You"
+                                                            },
+                                                            "quantity": {
+                                                              "type": "Literal",
+                                                              "value": 1
+                                                            }
+                                                          }
+                                                        }
+                                                      ]
+                                                    }
+                                                  ]
+                                                }
+                                              ]
+                                            }
+                                          }
+                                        }
+                                      }
+                                    ]
+                                  }
+                                ],
+                                "typeLine": {
+                                  "subtypes": [
+                                    "Aura",
+                                    "Role"
+                                  ],
+                                  "types": [
+                                    "Enchantment"
+                                  ]
+                                }
+                              }
+                            ]
+                          },
+                          "quantity": {
+                            "type": "Literal",
+                            "value": 1
+                          },
+                          "riders": {
+                            "attachedTo": {
+                              "type": "Specified",
+                              "value": "creature"
+                            }
+                          }
+                        }
+                      }
+                    ]
+                  }
+                ],
+                "targetSlots": {
+                  "creature": {
+                    "filter": {
+                      "type": "HeldBy",
+                      "value": {
+                        "holder": "Controller",
+                        "relation": "You"
+                      }
+                    },
+                    "pool": {
+                      "type": "Creatures"
+                    }
+                  }
+                }
+              }
+            ]
+          }
+        }
+      },
+      "keywords": [
+        {
+          "type": "Vigilance"
+        }
+      ],
+      "manaCost": [
+        {
+          "type": "Generic",
+          "value": 1
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "White"
+          }
+        }
+      ],
+      "name": "Spellbook Vendor",
+      "oracleText": "Vigilance\nAt the beginning of combat on your turn, you may pay {1}. When you do, create a Sorcerer Role token attached to target creature you control. (If you control another Role on it, put that one into the graveyard. Enchanted creature gets +1/+1 and has \"Whenever this creature attacks, scry 1.\")",
+      "power": {
+        "type": "Literal",
+        "value": 2
+      },
+      "toughness": {
+        "type": "Literal",
+        "value": 2
+      },
+      "triggeredAbilities": [
+        {
+          "condition": {
+            "type": "StepBegins",
+            "value": {
+              "phase": {
+                "type": "Combat",
+                "value": "BeginningOfCombat"
+              },
+              "scope": {
+                "type": "PlayersTurn",
+                "value": {
+                  "type": "Relative",
+                  "value": "You"
+                }
+              }
+            }
+          },
+          "modal": {
+            "modes": [
+              {
+                "clauses": [
+                  {
+                    "effects": [
+                      {
+                        "type": "ArmDelayedTrigger",
+                        "value": {
+                          "name": "sorcerer role"
+                        }
+                      }
+                    ],
+                    "payGate": {
+                      "branch": "IfPaid",
+                      "cost": {
+                        "mana": [
+                          {
+                            "type": "Generic",
+                            "value": 1
+                          }
+                        ]
+                      },
+                      "payer": {
+                        "type": "InSlot",
+                        "value": "you"
+                      }
+                    }
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      ],
+      "typeLine": {
+        "subtypes": [
+          "Human",
+          "Peasant"
+        ],
+        "types": [
+          "Creature"
+        ]
+      }
+    }
+  ]
+}

@@ -1,0 +1,113 @@
+{
+  "faces": [
+    {
+      "costReductions": [
+        {
+          "amount": [
+            {
+              "type": "Generic",
+              "value": 2
+            }
+          ],
+          "condition": {
+            "type": "Compares",
+            "value": {
+              "comparison": "AtLeast",
+              "measured": {
+                "type": "TimesPaid",
+                "value": {
+                  "type": "OfKeyword",
+                  "value": {
+                    "type": "Bargain"
+                  }
+                }
+              },
+              "threshold": {
+                "type": "Literal",
+                "value": 1
+              }
+            }
+          },
+          "perEach": {
+            "type": "Literal",
+            "value": 1
+          }
+        }
+      ],
+      "keywords": [
+        {
+          "type": "Bargain"
+        }
+      ],
+      "manaCost": [
+        {
+          "type": "Generic",
+          "value": 3
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "Blue"
+          }
+        }
+      ],
+      "name": "Johann's Stopgap",
+      "oracleText": "Bargain (You may sacrifice an artifact, enchantment, or token as you cast this spell.)\nThis spell costs {2} less to cast if it's bargained.\nReturn target nonland permanent to its owner's hand. Draw a card.",
+      "spell": {
+        "modes": [
+          {
+            "clauses": [
+              {
+                "effects": [
+                  {
+                    "type": "MoveToZone",
+                    "value": {
+                      "ref": {
+                        "type": "InSlot",
+                        "value": "target"
+                      },
+                      "zone": "Hand"
+                    }
+                  },
+                  {
+                    "type": "Draw",
+                    "value": {
+                      "player": {
+                        "type": "Relative",
+                        "value": "You"
+                      },
+                      "quantity": {
+                        "type": "Literal",
+                        "value": 1
+                      }
+                    }
+                  }
+                ]
+              }
+            ],
+            "targetSlots": {
+              "target": {
+                "filter": {
+                  "type": "Not",
+                  "value": {
+                    "type": "HasCardType",
+                    "value": "Land"
+                  }
+                },
+                "pool": {
+                  "type": "Permanents"
+                }
+              }
+            }
+          }
+        ]
+      },
+      "typeLine": {
+        "types": [
+          "Sorcery"
+        ]
+      }
+    }
+  ]
+}

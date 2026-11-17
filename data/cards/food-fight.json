@@ -1,0 +1,147 @@
+{
+  "faces": [
+    {
+      "manaCost": [
+        {
+          "type": "Generic",
+          "value": 1
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "Red"
+          }
+        }
+      ],
+      "name": "Food Fight",
+      "oracleText": "Artifacts you control have \"{2}, Sacrifice this artifact: It deals damage to any target equal to 1 plus the number of permanents named Food Fight you control.\"",
+      "staticAbilities": [
+        {
+          "affected": {
+            "type": "Matching",
+            "value": {
+              "type": "And",
+              "value": [
+                {
+                  "type": "HasCardType",
+                  "value": "Artifact"
+                },
+                {
+                  "type": "HeldBy",
+                  "value": {
+                    "holder": "Controller",
+                    "relation": "You"
+                  }
+                }
+              ]
+            }
+          },
+          "modifications": [
+            {
+              "type": "GainAbility",
+              "value": {
+                "type": "Activated",
+                "value": {
+                  "cost": {
+                    "components": [
+                      {
+                        "type": "SacrificeThis"
+                      }
+                    ],
+                    "mana": [
+                      {
+                        "type": "Generic",
+                        "value": 2
+                      }
+                    ]
+                  },
+                  "modal": {
+                    "modes": [
+                      {
+                        "clauses": [
+                          {
+                            "effects": [
+                              {
+                                "type": "DealDamage",
+                                "value": {
+                                  "parts": [
+                                    {
+                                      "quantity": {
+                                        "type": "Plus",
+                                        "value": {
+                                          "left": {
+                                            "type": "Literal",
+                                            "value": 1
+                                          },
+                                          "right": {
+                                            "type": "Count",
+                                            "value": {
+                                              "aggregation": {
+                                                "type": "Members"
+                                              },
+                                              "filter": {
+                                                "type": "And",
+                                                "value": [
+                                                  {
+                                                    "type": "HeldBy",
+                                                    "value": {
+                                                      "holder": "Controller",
+                                                      "relation": "You"
+                                                    }
+                                                  },
+                                                  {
+                                                    "type": "HasName",
+                                                    "value": "Food Fight"
+                                                  }
+                                                ]
+                                              },
+                                              "scope": {
+                                                "type": "InZone",
+                                                "value": {
+                                                  "player": {
+                                                    "type": "Relative",
+                                                    "value": "AnyPlayer"
+                                                  },
+                                                  "zone": "Battlefield"
+                                                }
+                                              }
+                                            }
+                                          }
+                                        }
+                                      },
+                                      "ref": {
+                                        "type": "InSlot",
+                                        "value": "target"
+                                      }
+                                    }
+                                  ]
+                                }
+                              }
+                            ]
+                          }
+                        ],
+                        "targetSlots": {
+                          "target": {
+                            "pool": {
+                              "type": "AnyTarget"
+                            }
+                          }
+                        }
+                      }
+                    ]
+                  }
+                }
+              }
+            }
+          ]
+        }
+      ],
+      "typeLine": {
+        "types": [
+          "Enchantment"
+        ]
+      }
+    }
+  ]
+}

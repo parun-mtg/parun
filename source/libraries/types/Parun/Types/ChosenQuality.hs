@@ -31,6 +31,8 @@ data ChosenQuality
     Parity
   | -- | CR 607.2f / 614.12c: one of the card's words, written to Object.chosenNumber as its 1-based position for a Quantity.ChosenNumber condition to read (Citadel Siege).
     Word (NonEmpty.NonEmpty Text.Text)
+  | -- | CR 123.6d: one letter of the alphabet, written to Object.chosenNumber as its 1-based position for NameStickerTest.BeginningWithChosenLetter to read (_____ _____ Rocketship).
+    Letter
   | -- | CR 607.2d: one card of the pile the Filter matches, replacing the last, written to its ExileLink.chosen (Koh, the Face Stealer).
     ExiledCard ExiledPile.ExiledPile (Filter.Filter Keyword.Keyword)
   deriving (Eq, Ord, Show)

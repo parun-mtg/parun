@@ -35,6 +35,7 @@ import qualified Data.Maybe as Maybe
 import qualified Data.Sequence as Seq
 import Data.Set (Set)
 import qualified Data.Set as Set
+import qualified Data.Text as Text
 import Numeric.Natural (Natural)
 import qualified Parun.Engine.Ante as Ante
 import qualified Parun.Engine.Attach as Attach
@@ -57,6 +58,7 @@ import qualified Parun.Engine.Filter as Filter
 import qualified Parun.Engine.Game as Game
 import qualified Parun.Engine.Keyword as Keyword
 import qualified Parun.Engine.ManaRider as ManaRider
+import qualified Parun.Engine.NameWords as NameWords
 import qualified Parun.Engine.ObjectRestriction as ObjectRestriction
 import qualified Parun.Engine.Plane as Plane
 import qualified Parun.Engine.PlayerEffect as PlayerEffect
@@ -95,6 +97,7 @@ import qualified Parun.Types.AttackTrigger as AttackTrigger
 import qualified Parun.Types.AttackedTrigger as AttackedTrigger
 import qualified Parun.Types.BattlefieldCandidate as BattlefieldCandidate
 import qualified Parun.Types.BecameAttached as BecameAttached
+import qualified Parun.Types.BecameTapped as BecameTapped
 import qualified Parun.Types.BecameTarget as BecameTarget
 import qualified Parun.Types.BecameUnattached as BecameUnattached
 import qualified Parun.Types.Binding as Binding.Type
@@ -1175,6 +1178,7 @@ damageEvent gs kind source target amount =
             DamageEvent.dealtByColors = PC.colors characteristics,
             DamageEvent.dealtByNames = PC.names characteristics,
             DamageEvent.dealtFromZone = Game.zoneOf source gs,
+            DamageEvent.dealtByTargets = Projection.targetSlotsOfStackObject gs source,
             -- The batch's to stamp, with the excess.
             DamageEvent.recipientCardTypes = Set.empty,
             DamageEvent.recipientController = Nothing,
@@ -1207,7 +1211,9 @@ withRiders keywords de =
 -- Parun.Engine.Cost.tapObject for a cost component, Parun.Engine.Resolve's
 -- Effect.Tap opcode, CR 508.1f's attacker declaration in
 -- Parun.Engine.Combat.declareAttackers, and CR 701.19a's regeneration in `apply`
--- below -- so that a card watching for a tap sees every one of them.
+-- below -- so that a card watching for a tap sees every one of them. Each
+-- caller names who tapped: the payer, the attacking player, the resolving
+-- object's controller (CR 608.2c) or the regenerating permanent's controller.
 --
 -- Rule 701.26a's SECOND sentence is the guard: "only untapped permanents can be
 -- tapped", so an already-tapped permanent is left alone and nothing is recorded.
@@ -1229,8 +1235,8 @@ withRiders keywords de =
 -- reaches it (Scryfall `o:"become tapped" o:instead`, 2026-10-22, the Mask
 -- alone), so CR 616.1 has one candidate and applying it here is that loop. A
 -- printing that replaced tapping in some other way would want the event.
-tap :: ObjectId -> Game ()
-tap oid = do
+tap :: PlayerId -> ObjectId -> Game ()
+tap tapper oid = do
   before <- State.get
   case Game.lookupObject oid before of
     Just obj
@@ -1238,7 +1244,7 @@ tap oid = do
           Monad.when (turnsUpBefore TurnUpEvent.BecomesTapped oid before) (turnFaceUpByStatus oid)
           gs <- State.get
           State.put
-            . recordEvent (GameEvent.BecameTapped oid)
+            . recordEvent (GameEvent.BecameTapped (BecameTapped.MkBecameTapped oid tapper))
             $ gs {GameState.objects = Map.adjust (\o -> o {Object.tapped = TapState.Tapped}) oid (GameState.objects gs)}
     _ -> pure ()
 
@@ -4843,8 +4849,11 @@ apply settle batch applied batchPrevented candidate event =
         -- Three statements rather than one write because `tap` is a Game action;
         -- the funnel is what makes a regeneration a becomes-tapped event like any
         -- other route.
+        --
+        -- Rule 701.19a's "its controller taps it" names the tapper.
         State.modify' (\gs -> gs {GameState.objects = Map.adjust (\obj -> obj {Object.damage = 0}) oid (GameState.objects gs)})
-        tap oid
+        tapper <- State.gets (Projection.controllerOf oid)
+        Monad.forM_ tapper (`tap` oid)
         State.modify' (Game.removeFromCombat oid)
         pure Nothing
       -- CR 122.1c: "instead remove a shield counter from it". The destruction does
@@ -6021,7 +6030,8 @@ chooseQualityAs candidate quality oid = do
 -- and every one is offered. A parity is written to
 -- Object.chosenNumber as 0 (even) or 1 (odd), whose parity it is; a word as
 -- its 1-based position among the card's, read by a Quantity.ChosenNumber
--- condition (CR 614.12c).
+-- condition (CR 614.12c); a letter as its position in the alphabet, all 26
+-- offered (CR 123.6d), read by NameStickerTest.BeginningWithChosenLetter.
 --
 -- An exiled card is one of the pile as the ability named `reader` reads it
 -- (CR 607.5, Game.linkedPile) that the Filter matches, and is marked on its
@@ -6079,6 +6089,9 @@ chooseQuality quality chooser reader acquisition oid = case quality of
     picked <- Game.chooseAmong (\decider who anchors -> Prompt.ChooseWord decider who oid anchors) chooser (fmap snd numbered)
     let position = picked >>= \word -> fst <$> List.find ((== word) . snd) numbered
     Foldable.for_ position $ \n -> State.modify' (Game.recordChoice Chosen.Number acquisition (const (Just n)) oid)
+  ChosenQuality.Letter -> do
+    picked <- Game.chooseAmong (\decider who anchors -> Prompt.ChooseWord decider who oid anchors) chooser (fmap Text.singleton NameWords.alphabet)
+    Foldable.for_ (picked >>= Text.uncons >>= NameWords.letterPosition . fst) $ \n -> State.modify' (Game.recordChoice Chosen.Number acquisition (const (Just n)) oid)
   ChosenQuality.ExiledCard pile cards -> do
     gs <- State.get
     let context = Projection.sourceContext gs (Just chooser) oid
@@ -6097,6 +6110,7 @@ restoreQuality quality acquisition oid before = case quality of
   ChosenQuality.Number _ _ -> Game.restoreChoice Chosen.Number acquisition oid before
   ChosenQuality.Parity -> Game.restoreChoice Chosen.Number acquisition oid before
   ChosenQuality.Word _ -> Game.restoreChoice Chosen.Number acquisition oid before
+  ChosenQuality.Letter -> Game.restoreChoice Chosen.Number acquisition oid before
   -- Every card `oid` exiled under the acquisition, whichever pile was offered.
   ChosenQuality.ExiledCard _ _ -> \gs ->
     let mine = Map.keysSet (Map.filter (\link -> ExileLink.source link == oid && ExileLink.acquisition link == acquisition) (GameState.exiledWith gs))
@@ -7441,7 +7455,7 @@ resolveLifeGainSpent settle spent cause pid n =
 -- stands for the d20 and is called, `settleCoins`' posture.
 --
 -- `throw` is the caller's CR 706 road for that roll (Parun.Engine.Resolve.Effect's
--- throwForCoin), and `reflip` its CR 705.1 window over each coin flipped
+-- throwRecorded), and `reflip` its CR 705.1 window over each coin flipped
 -- (reflipWindow; see `settleCoins`), which this module cannot reach: Resolve passes it directly and
 -- Parun.Engine.Cost through Parun.Types.ManaAbilityPerformer. A caller with no
 -- thrower passes Nothing, and the substitution is then kept out of CR 616.1's
@@ -7700,6 +7714,8 @@ proposeDiceRoll reflip pid sides named ignore = do
       let settled = Maybe.fromMaybe proposed (outcome >>= Replacement.asThrow)
       case Throw.kind settled of
         ThrowKind.Dice _ -> pure (Right settled)
+        -- Unreachable: no row turns a roll into the planar die.
+        ThrowKind.PlanarDie -> pure (Right settled)
         ThrowKind.Coins -> do
           statements <- Coin.statementsFor (Just (Throw.thrower settled))
           faces <- settleCoins reflip (Throw.thrower settled) settled Nothing statements

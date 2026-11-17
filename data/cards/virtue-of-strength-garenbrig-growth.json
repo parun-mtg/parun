@@ -1,0 +1,138 @@
+{
+  "faces": [
+    {
+      "manaCost": [
+        {
+          "type": "Generic",
+          "value": 5
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "Green"
+          }
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "Green"
+          }
+        }
+      ],
+      "name": "Virtue of Strength",
+      "oracleText": "If you tap a basic land for mana, it produces three times as much of that mana instead.",
+      "replacementEffects": [
+        {
+          "effect": {
+            "type": "ManaR",
+            "value": {
+              "amount": {
+                "type": "Times",
+                "value": 3
+              },
+              "matching": {
+                "type": "And",
+                "value": [
+                  {
+                    "type": "HasSupertype",
+                    "value": "Basic"
+                  },
+                  {
+                    "type": "HasCardType",
+                    "value": "Land"
+                  },
+                  {
+                    "type": "HeldBy",
+                    "value": {
+                      "holder": "Controller",
+                      "relation": "You"
+                    }
+                  }
+                ]
+              }
+            }
+          }
+        }
+      ],
+      "typeLine": {
+        "types": [
+          "Enchantment"
+        ]
+      }
+    },
+    {
+      "manaCost": [
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "Green"
+          }
+        }
+      ],
+      "name": "Garenbrig Growth",
+      "oracleText": "Return target creature or land card from your graveyard to your hand. (Then exile this card. You may cast the enchantment later from exile.)",
+      "spell": {
+        "modes": [
+          {
+            "clauses": [
+              {
+                "effects": [
+                  {
+                    "type": "MoveToZone",
+                    "value": {
+                      "ref": {
+                        "type": "InSlot",
+                        "value": "card"
+                      },
+                      "zone": "Hand"
+                    }
+                  }
+                ]
+              }
+            ],
+            "targetSlots": {
+              "card": {
+                "filter": {
+                  "type": "Or",
+                  "value": [
+                    {
+                      "type": "HasCardType",
+                      "value": "Creature"
+                    },
+                    {
+                      "type": "HasCardType",
+                      "value": "Land"
+                    }
+                  ]
+                },
+                "pool": {
+                  "type": "CardsInGraveyard",
+                  "value": {
+                    "type": "Scoped",
+                    "value": {
+                      "type": "You"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        ]
+      },
+      "typeLine": {
+        "subtypes": [
+          "Adventure"
+        ],
+        "types": [
+          "Sorcery"
+        ]
+      }
+    }
+  ],
+  "layout": {
+    "type": "Adventure"
+  }
+}

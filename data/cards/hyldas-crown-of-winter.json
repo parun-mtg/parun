@@ -1,0 +1,190 @@
+{
+  "faces": [
+    {
+      "activatedAbilities": [
+        {
+          "cost": {
+            "components": [
+              {
+                "type": "TapThis"
+              }
+            ],
+            "mana": [
+              {
+                "type": "Generic",
+                "value": 1
+              }
+            ]
+          },
+          "modal": {
+            "modes": [
+              {
+                "clauses": [
+                  {
+                    "effects": [
+                      {
+                        "type": "Tap",
+                        "value": {
+                          "ref": {
+                            "type": "InSlot",
+                            "value": "target"
+                          }
+                        }
+                      }
+                    ]
+                  }
+                ],
+                "targetSlots": {
+                  "target": {
+                    "pool": {
+                      "type": "Creatures"
+                    }
+                  }
+                }
+              }
+            ]
+          },
+          "name": "tap"
+        },
+        {
+          "cost": {
+            "components": [
+              {
+                "type": "SacrificeThis"
+              }
+            ],
+            "mana": [
+              {
+                "type": "Generic",
+                "value": 3
+              }
+            ]
+          },
+          "modal": {
+            "modes": [
+              {
+                "clauses": [
+                  {
+                    "effects": [
+                      {
+                        "type": "Draw",
+                        "value": {
+                          "player": {
+                            "type": "Relative",
+                            "value": "You"
+                          },
+                          "quantity": {
+                            "type": "Count",
+                            "value": {
+                              "aggregation": {
+                                "type": "Members"
+                              },
+                              "filter": {
+                                "type": "And",
+                                "value": [
+                                  {
+                                    "type": "HasCardType",
+                                    "value": "Creature"
+                                  },
+                                  {
+                                    "type": "IsTapped"
+                                  },
+                                  {
+                                    "type": "HeldBy",
+                                    "value": {
+                                      "holder": "Controller",
+                                      "relation": "Opponent"
+                                    }
+                                  }
+                                ]
+                              },
+                              "scope": {
+                                "type": "InZone",
+                                "value": {
+                                  "player": {
+                                    "type": "Relative",
+                                    "value": "AnyPlayer"
+                                  },
+                                  "zone": "Battlefield"
+                                }
+                              }
+                            }
+                          }
+                        }
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      ],
+      "manaCost": [
+        {
+          "type": "Generic",
+          "value": 3
+        }
+      ],
+      "name": "Hylda's Crown of Winter",
+      "oracleText": "{1}, {T}: Tap target creature. This ability costs {1} less to activate during your turn.\n{3}, Sacrifice Hylda's Crown of Winter: Draw a card for each tapped creature your opponents control.",
+      "playerAbilities": [
+        {
+          "condition": {
+            "type": "Compares",
+            "value": {
+              "comparison": "Exactly",
+              "measured": {
+                "type": "IsActivePlayer",
+                "value": {
+                  "type": "Relative",
+                  "value": "You"
+                }
+              },
+              "threshold": {
+                "type": "Literal",
+                "value": 1
+              }
+            }
+          },
+          "effect": {
+            "type": "ModifyCost",
+            "value": {
+              "change": {
+                "type": "Reduce",
+                "value": {
+                  "amount": [
+                    {
+                      "type": "Generic",
+                      "value": 1
+                    }
+                  ]
+                }
+              },
+              "matching": {
+                "type": "IsSource"
+              },
+              "subject": {
+                "type": "Activations",
+                "value": {
+                  "whichAbility": "tap"
+                }
+              }
+            }
+          },
+          "scope": {
+            "type": "You"
+          }
+        }
+      ],
+      "typeLine": {
+        "supertypes": [
+          "Legendary"
+        ],
+        "types": [
+          "Artifact"
+        ]
+      }
+    }
+  ]
+}
