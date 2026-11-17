@@ -472,7 +472,7 @@ indirectSpec s registry = Spec.describe s "Indirect" $ do
         gone = untapStep S.alice board
         back = untapStep S.alice gone
         logged before after = fmap LoggedEvent.event (Foldable.toList (Seq.drop (length (TurnRegisters.events (GameState.turn before))) (TurnRegisters.events (GameState.turn after))))
-        acts action = List.sort [GameEvent.PermanentActed (PermanentActed.MkPermanentActed action oid) | oid <- [crocId, auraId]]
+        acts action = List.sort [GameEvent.PermanentActed (PermanentActed.MkPermanentActed action oid Nothing) | oid <- [crocId, auraId]]
     Spec.assertEqWith s "phasing out logged its two phase-outs alone" (List.sort (logged board gone)) (acts PermanentAction.PhaseOut)
     Spec.assertEqWith s "and phasing in its two phase-ins alone" (List.sort (logged gone back)) (acts PermanentAction.PhaseIn)
 

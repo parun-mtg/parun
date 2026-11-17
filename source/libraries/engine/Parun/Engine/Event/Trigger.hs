@@ -1574,7 +1574,7 @@ eventTriggersGiven scope standing events gs =
               GameEvent.ControlChanged (ControlChanged.MkControlChanged oid before _) ->
                 let abilities = maybe (foldMap snd (Map.lookup oid onBattlefield)) (battlefieldAbilitiesOf . Projection.project oid) (filed oid)
                  in Map.singleton oid (before, lookingBack abilities)
-              GameEvent.PermanentActed (PermanentActed.MkPermanentActed PermanentAction.PhaseOut oid) -> case filed oid of
+              GameEvent.PermanentActed (PermanentActed.MkPermanentActed PermanentAction.PhaseOut oid _) -> case filed oid of
                 Just board | Just controller <- Projection.controllerOf oid board -> Map.singleton oid (controller, lookingBack (battlefieldAbilitiesOf (Projection.project oid board)))
                 _ -> Map.empty
               _ -> Map.empty
@@ -4129,7 +4129,10 @@ resnapshot gs without event =
         GameEvent.CountersRemoved {} -> Just event
         GameEvent.HalfUnlocked {} -> Just event
         GameEvent.TurnedFaceUp {} -> Just event
-        GameEvent.PermanentActed {} -> Just event
+        -- An explore's reveal, re-read as GameEvent.Revealed's is.
+        GameEvent.PermanentActed a -> case PermanentActed.revealed a of
+          Nothing -> Just event
+          Just r -> fmap (\pc -> GameEvent.PermanentActed a {PermanentActed.revealed = Just r {Revealed.characteristics = pc}}) (rereadBy Projection.projectShown (Revealed.card r) (Revealed.characteristics r))
         GameEvent.BecameDesignated {} -> Just event
         GameEvent.Mentored {} -> Just event
         GameEvent.Exploited {} -> Just event

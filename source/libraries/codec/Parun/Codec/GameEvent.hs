@@ -76,7 +76,9 @@ import qualified Parun.Codec.ZoneChange as ZoneChange
 import qualified Parun.JsonCodec.Arm as Arm
 import qualified Parun.JsonCodec.Codec as Codec
 import qualified Parun.JsonCodec.Common as Common
+import qualified Parun.JsonCodec.Fields as Fields
 import qualified Parun.Types.GameEvent as GameEvent
+import qualified Parun.Types.PermanentActed as PermanentActed.Type
 
 codec :: Codec.Codec GameEvent.GameEvent
 codec =
@@ -119,7 +121,7 @@ codec =
       Arm.payload "CountersRemoved" CounterChange.codec GameEvent.CountersRemoved (\x -> case x of GameEvent.CountersRemoved y -> Just y; _ -> Nothing),
       Arm.payload "HalfUnlocked" HalfUnlocked.codec GameEvent.HalfUnlocked (\x -> case x of GameEvent.HalfUnlocked y -> Just y; _ -> Nothing),
       Arm.payload "TurnedFaceUp" TurnedFaceUp.codec GameEvent.TurnedFaceUp (\x -> case x of GameEvent.TurnedFaceUp y -> Just y; _ -> Nothing),
-      Arm.payload "PermanentActed" (PermanentActed.codec ObjectId.codec) GameEvent.PermanentActed (\x -> case x of GameEvent.PermanentActed y -> Just y; _ -> Nothing),
+      Arm.payload "PermanentActed" (PermanentActed.codec (Fields.defaulted "revealed" Nothing (Common.maybe Revealed.codec) PermanentActed.Type.revealed) ObjectId.codec) GameEvent.PermanentActed (\x -> case x of GameEvent.PermanentActed y -> Just y; _ -> Nothing),
       Arm.payload "Transformed" Transformed.codec GameEvent.Transformed (\x -> case x of GameEvent.Transformed y -> Just y; _ -> Nothing),
       Arm.payload "BecameDesignated" BecameDesignated.codec GameEvent.BecameDesignated (\x -> case x of GameEvent.BecameDesignated y -> Just y; _ -> Nothing),
       Arm.payload "Mentored" Mentored.codec GameEvent.Mentored (\x -> case x of GameEvent.Mentored y -> Just y; _ -> Nothing),

@@ -2412,7 +2412,7 @@ spec s = Spec.describe s "Parun.Codec.Effect" $ do
       s
       toJson
       fromJson
-      (Effect.CounterAndMark (PermanentActed.MkPermanentActed PermanentAction.Evolve (SlotName.MkSlotName (Text.pack "self"))))
+      (Effect.CounterAndMark (PermanentActed.MkPermanentActed PermanentAction.Evolve (SlotName.MkSlotName (Text.pack "self")) ()))
       " {\"type\":\"CounterAndMark\",\"value\":{\"action\":\"Evolve\",\"permanent\":\"self\"}} "
   Spec.it s "BecomeProtector" $
     Common.assertJsonCodec

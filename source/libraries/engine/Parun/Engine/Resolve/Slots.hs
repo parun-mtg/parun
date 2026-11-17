@@ -1499,7 +1499,7 @@ slotsOf effect = joinTwo (joinTwo (joinSlots (fmap objectRefSlots (effectObjectR
   -- kind.
   Effect.SetHalfLocked _ -> Map.empty
   -- A READ, Designate's: the slot names where the counter goes.
-  Effect.CounterAndMark (PermanentActed.MkPermanentActed _ slot) -> oneSlot slot
+  Effect.CounterAndMark (PermanentActed.MkPermanentActed _ slot ()) -> oneSlot slot
   Effect.BecomeProtector slot -> oneSlot slot
   Effect.Mentor slot -> oneSlot slot
   Effect.Exploit -> Map.empty

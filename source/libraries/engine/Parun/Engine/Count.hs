@@ -1484,7 +1484,7 @@ activatedThisTurn oid gs = any ((== oid) . ObjectSnapshot.object . PastActivatio
 actedThisTurn :: ObjectId -> GameState -> Set.Set PermanentAction.PermanentAction
 actedThisTurn oid gs =
   let actOf event = case event of
-        GameEvent.PermanentActed (PermanentActed.MkPermanentActed action actor) | actor == oid -> Just action
+        GameEvent.PermanentActed (PermanentActed.MkPermanentActed action actor _) | actor == oid -> Just action
         _ -> Nothing
    in Set.fromList (Maybe.mapMaybe (actOf . LoggedEvent.event) (Foldable.toList (TurnRegisters.events (GameState.turn gs))))
 

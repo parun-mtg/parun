@@ -308,7 +308,7 @@ codec cardCodec abilityCodec =
           Arm.payload "SetClassLevel" SetClassLevel.codec Effect.SetClassLevel (\x -> case x of Effect.SetClassLevel y -> Just y; _ -> Nothing),
           Arm.payload "Undesignate" Undesignate.codec Effect.Undesignate (\x -> case x of Effect.Undesignate y -> Just y; _ -> Nothing),
           Arm.payload "SetHalfLocked" SetHalfLocked.codec Effect.SetHalfLocked (\x -> case x of Effect.SetHalfLocked y -> Just y; _ -> Nothing),
-          Arm.payload "CounterAndMark" (PermanentActed.codec SlotName.codec) Effect.CounterAndMark (\x -> case x of Effect.CounterAndMark y -> Just y; _ -> Nothing),
+          Arm.payload "CounterAndMark" (PermanentActed.codec (pure ()) SlotName.codec) Effect.CounterAndMark (\x -> case x of Effect.CounterAndMark y -> Just y; _ -> Nothing),
           Arm.payload "BecomeProtector" SlotName.codec Effect.BecomeProtector (\x -> case x of Effect.BecomeProtector y -> Just y; _ -> Nothing),
           Arm.payload "Mentor" SlotName.codec Effect.Mentor (\x -> case x of Effect.Mentor y -> Just y; _ -> Nothing),
           Arm.nullary "Exploit" Effect.Exploit,

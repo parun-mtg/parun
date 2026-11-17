@@ -6014,7 +6014,7 @@ soulbondOtherEnters =
 -- data/scenarios/condition's One with the Stars Raptor pair proves it.
 evolve :: TriggeredAbility Card (GrantedAbility.GrantedAbility Card)
 evolve =
-  let effect = Effect.CounterAndMark (PermanentActed.MkPermanentActed PermanentAction.Evolve Binding.triggerSource)
+  let effect = Effect.CounterAndMark (PermanentActed.MkPermanentActed PermanentAction.Evolve Binding.triggerSource ())
       entrantExceeds quantity =
         Condition.Compares
           ( Compares.MkCompares
@@ -6399,7 +6399,7 @@ mentorTarget = SlotName.MkSlotName (Text.pack "mentored")
 -- any other +1/+1 counter arriving.
 training :: TriggeredAbility Card (GrantedAbility.GrantedAbility Card)
 training =
-  let effect = Effect.CounterAndMark (PermanentActed.MkPermanentActed PermanentAction.Train Binding.triggerSource)
+  let effect = Effect.CounterAndMark (PermanentActed.MkPermanentActed PermanentAction.Train Binding.triggerSource ())
    in Mint.trigger
         ( TriggerCondition.Attacks
             ( AttackTrigger.Attacker

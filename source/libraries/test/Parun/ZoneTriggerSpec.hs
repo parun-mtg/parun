@@ -1956,7 +1956,7 @@ representativeEvents cond =
         -- the trivial Filter the pair really matches, and under Self it does not,
         -- which pins the floor for a matching pair too, this arm binding nothing
         -- either way.
-        TriggerCondition.PermanentActs watched -> one (GameEvent.PermanentActed (PermanentActed.MkPermanentActed (PermanentActed.action (PermanentActsTrigger.acted watched)) departed))
+        TriggerCondition.PermanentActs watched -> one (GameEvent.PermanentActed (PermanentActed.MkPermanentActed (PermanentActed.action (PermanentActsTrigger.acted watched)) departed Nothing))
         -- CR 708.9's reveal, the only event this condition admits.
         TriggerCondition.FaceDownPermanentLeavesRevealed -> one (GameEvent.Revealed (Revealed.MkRevealed S.alice departed RevealCause.LeavingFaceDown S.emptyCharacteristics))
         -- CR 702.112b's own event, and the only one this condition admits, on
@@ -2471,7 +2471,7 @@ everyTriggerCondition =
     -- nothing under one value would go unseen if only one were listed.
     <> [TriggerCondition.PlayerActs (PlayerActed.MkPlayerActed action relation) | action <- [minBound .. maxBound], relation <- [minBound .. maxBound]]
     -- EVERY permanent action under both subjects, for the same reason.
-    <> [TriggerCondition.PermanentActs (PermanentActsTrigger.MkPermanentActsTrigger (PermanentActed.MkPermanentActed action subject) batching) | action <- [minBound .. maxBound], subject <- [ActingPermanent.Self, ActingPermanent.Matching (Filter.Type.And [])], batching <- [minBound .. maxBound]]
+    <> [TriggerCondition.PermanentActs (PermanentActsTrigger.MkPermanentActsTrigger (PermanentActed.MkPermanentActed action subject Nothing) batching) | action <- [minBound .. maxBound], subject <- [ActingPermanent.Self, ActingPermanent.Matching (Filter.Type.And [])], batching <- [minBound .. maxBound]]
 
 -- CR 702.46 soulshift N, the first minted keyword ability that TARGETS A CARD IN
 -- A GRAVEYARD -- CR 115.2's clause (a) pool, which until now only card data

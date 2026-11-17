@@ -580,8 +580,9 @@ data GameEvent
     -- Not TriggeredAbilityResolved, which is filed before the clauses run so
     -- Quantity.TimesThisTurn counts the resolution asking.
     TriggeredAbilityFinished AbilityTriggered.AbilityTriggered
-  | -- | CR 603.2: a permanent performed a Parun.Types.PermanentAction.
-    PermanentActed (PermanentActed.PermanentActed ObjectId.ObjectId)
+  | -- | CR 603.2: a permanent performed a Parun.Types.PermanentAction, with the
+    -- reveal it made: CR 701.44a's explore, where the library had a card.
+    PermanentActed (PermanentActed.PermanentActed (Maybe Revealed.Revealed) ObjectId.ObjectId)
   | -- | CR 603.2: a player performed a Parun.Types.PlayerAction.
     PlayerActed (PlayerActed.PlayerActed PlayerId.PlayerId)
   | -- | CR 701.57b: a player finished discovering, with the N it was for, which

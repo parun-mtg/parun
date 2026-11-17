@@ -219,7 +219,7 @@ phaseOutSet fallback ending phasesIn hosts gs =
 -- CR 603.2: one GameEvent.PermanentActed per permanent, in ascending order,
 -- each against the board as it stands once every write is made.
 recordActs :: PermanentAction.PermanentAction -> [ObjectId] -> GameState -> GameState
-recordActs action oids gs = List.foldl' (\g oid -> Event.recordEvent (GameEvent.PermanentActed (PermanentActed.MkPermanentActed action oid)) g) gs oids
+recordActs action oids gs = List.foldl' (\g oid -> Event.recordEvent (GameEvent.PermanentActed (PermanentActed.MkPermanentActed action oid Nothing)) g) gs oids
 
 -- CR 702.26a's first half: the phased-in permanents with phasing this player
 -- controls.

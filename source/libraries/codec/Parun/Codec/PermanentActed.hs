@@ -9,9 +9,11 @@ import qualified Parun.JsonCodec.Fields as Fields
 import qualified Parun.Types.PermanentActed as PermanentActed
 
 -- | A bare object keyed by the record's field names, the permanent written with
--- whichever codec its parameter takes.
-codec :: (Typeable.Typeable permanent) => Codec.Codec permanent -> Codec.Codec (PermanentActed.PermanentActed permanent)
-codec permanent = Fields.object $ do
+-- whichever codec its parameter takes and the revealed card with whichever
+-- fields the caller gives (`pure ()` writes none).
+codec :: (Typeable.Typeable revealed, Typeable.Typeable permanent) => Fields.Fields (PermanentActed.PermanentActed revealed permanent) revealed -> Codec.Codec permanent -> Codec.Codec (PermanentActed.PermanentActed revealed permanent)
+codec revealedFields permanent = Fields.object $ do
   action <- Fields.required "action" PermanentAction.codec PermanentActed.action
   actor <- Fields.required "permanent" permanent PermanentActed.permanent
-  pure PermanentActed.MkPermanentActed {PermanentActed.action = action, PermanentActed.permanent = actor}
+  revealed <- revealedFields
+  pure PermanentActed.MkPermanentActed {PermanentActed.action = action, PermanentActed.permanent = actor, PermanentActed.revealed = revealed}

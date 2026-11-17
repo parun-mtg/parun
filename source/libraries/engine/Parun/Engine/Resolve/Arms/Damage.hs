@@ -318,7 +318,7 @@ fight runPreventionRiders runReplacementEffects runSubgame resolving source lega
       -- data/scenarios/foe-razer-regent-grows-each-creature-you-control-that-fought.json
       -- proves it.
       Monad.forM_ (ListUtils.nubOrd [oneId, twoId]) $ \oid ->
-        State.modify' (Event.recordEvent (GameEvent.PermanentActed (PermanentActed.MkPermanentActed PermanentAction.Fight oid)))
+        State.modify' (Event.recordEvent (GameEvent.PermanentActed (PermanentActed.MkPermanentActed PermanentAction.Fight oid Nothing)))
       -- ONE batch: CR 701.14a's "each of those creatures deals damage" is one
       -- action, so the two blows land simultaneously and a creature that dies
       -- to the first still dealt the second.
@@ -1972,7 +1972,7 @@ turnFaceDown resolving source controller legal (TurnFaceDown.MkTurnFaceDown ref 
     )
   -- CR 701.27b: one event per permanent that actually turned, after the writes,
   -- so a trigger's Filter reads the face-down permanent (CR 603.10).
-  Monad.mapM_ (State.modify' . Event.recordEvent . GameEvent.PermanentActed . PermanentActed.MkPermanentActed PermanentAction.TurnFaceDown) ordered
+  Monad.mapM_ (State.modify' . Event.recordEvent . GameEvent.PermanentActed . (\oid -> PermanentActed.MkPermanentActed PermanentAction.TurnFaceDown oid Nothing)) ordered
   -- CR 611.2a: "until this creature is turned face down" (Vesuvan
   -- Shapeshifter) ends here, for each permanent that actually turned. This
   -- arm is the only road that turns a permanent face down.

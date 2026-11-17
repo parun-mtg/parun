@@ -2004,12 +2004,12 @@ becomeProtector controller legal slot = case legalOne slot legal >>= Recipient.o
 -- (CR 614.16) or forbidden marks nothing. The event names that permanent, each
 -- rule's "it". The scenario "CR 702.100b a placement Solemnity forbids is no
 -- evolution" proves the gate.
-counterAndMark :: PlayerId -> Map.Map SlotName (Set Recipient) -> PermanentActed.PermanentActed SlotName -> Game ()
-counterAndMark controller legal (PermanentActed.MkPermanentActed action slot) = case legalOne slot legal >>= Recipient.objectOf of
+counterAndMark :: PlayerId -> Map.Map SlotName (Set Recipient) -> PermanentActed.PermanentActed () SlotName -> Game ()
+counterAndMark controller legal (PermanentActed.MkPermanentActed action slot ()) = case legalOne slot legal >>= Recipient.objectOf of
   Nothing -> pure ()
   Just target -> do
     placed <- Event.putCounters (CounterCause.ByEffect controller) target CounterKind.PlusOnePlusOne 1
-    Monad.when (placed > 0) (State.modify' (Event.recordEvent (GameEvent.PermanentActed (PermanentActed.MkPermanentActed action target))))
+    Monad.when (placed > 0) (State.modify' (Event.recordEvent (GameEvent.PermanentActed (PermanentActed.MkPermanentActed action target Nothing))))
 
 -- CR 702.134a's counter and CR 702.134c's marker: rule 702.134c fires on the
 -- mentor ability RESOLVING, so the event is recorded however many counters CR

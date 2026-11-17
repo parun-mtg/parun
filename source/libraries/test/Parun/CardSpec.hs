@@ -3837,8 +3837,9 @@ triggerConditionFilters triggerCondition = case triggerCondition of
   TriggerCondition.PermanentBecomesDesignated (PermanentBecomesDesignated.MkPermanentBecomesDesignated _ f) -> unframed [f]
   -- A bystander's PermanentActs DOES carry one, a predicate over the actor --
   -- Wildgrowth Walker's "a creature you control" -- which the card lint must
-  -- sweep. The self-scoped reading carries nothing.
-  TriggerCondition.PermanentActs acts -> actingFilters (PermanentActed.permanent (PermanentActsTrigger.acted acts))
+  -- sweep. The self-scoped reading carries nothing. A revealed-card Filter is
+  -- one more, Nicanzil, Current Conductor's "a land card".
+  TriggerCondition.PermanentActs acts -> actingFilters (PermanentActed.permanent (PermanentActsTrigger.acted acts)) <> unframed (Maybe.maybeToList (PermanentActed.revealed (PermanentActsTrigger.acted acts)))
   -- CR 702.134c's carries none either: "equipped creature" is CR 301.5f's one
   -- permanent rather than a class of them, and "a creature" narrows by nothing.
   TriggerCondition.AttachedCreatureMentors -> []
