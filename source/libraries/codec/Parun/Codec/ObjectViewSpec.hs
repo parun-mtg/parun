@@ -7,13 +7,16 @@ import qualified Parun.Codec.TriggeredAbilitySourceSpec as TriggeredAbilitySourc
 import qualified Parun.JsonCodec.Common as Common
 import qualified Parun.Spec as Spec
 import qualified Parun.Types.AbilityView as AbilityView
+import qualified Parun.Types.Acquisition as Acquisition
 import qualified Parun.Types.ManaCost as ManaCost
 import qualified Parun.Types.ManaSymbol as ManaSymbol
 import qualified Parun.Types.ObjectId as ObjectId
 import qualified Parun.Types.ObjectView as ObjectView
+import qualified Parun.Types.PlayerChoice as PlayerChoice
 import qualified Parun.Types.PlayerId as PlayerId
 import qualified Parun.Types.Recipient as Recipient
 import qualified Parun.Types.StackedAbility as StackedAbility
+import qualified Parun.Types.Subtype as Subtype
 import qualified Parun.Types.TapState as TapState
 
 spec :: (Monad m, Monad n) => Spec.Spec m n -> n ()
@@ -60,6 +63,16 @@ spec s = Spec.describe s "Parun.Codec.ObjectView" $ do
       ObjectView.codec
       (hidden {ObjectView.foretellCostReduction = Just (ManaCost.MkManaCost [ManaSymbol.Generic 2])})
       "{\"object\":7,\"owner\":0,\"controller\":1,\"tapped\":true,\"damage\":2,\"counters\":[],\"attachedTo\":null,\"characteristics\":null,\"face\":null,\"foretellCostReduction\":[{\"type\":\"Generic\",\"value\":2}],\"ability\":null,\"targets\":[]}"
+  Spec.it s "an object with a secret choice" $
+    Common.assertCodec
+      s
+      ObjectView.codec
+      ( hidden
+          { ObjectView.chosenSubtype = Map.singleton Acquisition.Own Subtype.Merfolk,
+            ObjectView.chosenPlayers = Map.singleton Acquisition.Own (Map.singleton PlayerChoice.SecretChooser (PlayerId.MkPlayerId 0))
+          }
+      )
+      (init hiddenJson <> ",\"chosenSubtype\":[{\"key\":{\"type\":\"Own\"},\"value\":\"Merfolk\"}],\"chosenPlayers\":[{\"key\":{\"type\":\"Own\"},\"value\":[{\"key\":{\"type\":\"SecretChooser\"},\"value\":0}]}]}")
   Spec.it s "has a schema" $ Common.assertHasSchema s ObjectView.codec
 
 -- Tapped and damaged, so neither status key encodes a default.
@@ -77,7 +90,14 @@ hidden =
       ObjectView.face = Nothing,
       ObjectView.foretellCostReduction = Nothing,
       ObjectView.ability = Nothing,
-      ObjectView.targets = []
+      ObjectView.targets = [],
+      ObjectView.chosenColors = Map.empty,
+      ObjectView.chosenSubtype = Map.empty,
+      ObjectView.chosenCardType = Map.empty,
+      ObjectView.chosenNames = Map.empty,
+      ObjectView.chosenPlayers = Map.empty,
+      ObjectView.chosenNumber = Map.empty,
+      ObjectView.chosenObjects = Map.empty
     }
 
 hiddenJson :: String

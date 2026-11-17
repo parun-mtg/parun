@@ -1,15 +1,22 @@
 module Parun.Types.ObjectView where
 
 import qualified Data.Map.Strict as Map
+import qualified Data.Set as Set
 import qualified Numeric.Natural as Natural
 import qualified Parun.Types.AbilityView as AbilityView
+import qualified Parun.Types.Acquisition as Acquisition
+import qualified Parun.Types.CardName as CardName
+import qualified Parun.Types.CardType as CardType
+import qualified Parun.Types.Color as Color
 import qualified Parun.Types.CounterKind as CounterKind
 import qualified Parun.Types.Keyword as Keyword
 import qualified Parun.Types.ManaCost as ManaCost
 import qualified Parun.Types.ObjectId as ObjectId
+import qualified Parun.Types.PlayerChoice as PlayerChoice
 import qualified Parun.Types.PlayerId as PlayerId
 import qualified Parun.Types.ProjectedCharacteristics as ProjectedCharacteristics
 import qualified Parun.Types.Recipient as Recipient
+import qualified Parun.Types.Subtype as Subtype
 import qualified Parun.Types.TapState as TapState
 
 -- | CR 400.2 / 708.2: an object as one seat sees it, its status always, its
@@ -31,6 +38,20 @@ data ObjectView = MkObjectView
     -- | CR 113.7a / 602.2a: what an ability on the stack came from, and Nothing for anything else.
     ability :: Maybe AbilityView.AbilityView,
     -- | CR 601.2c / 602.2b / 603.3d: what a spell or ability on the stack targets, and empty for anything else.
-    targets :: [Recipient.Recipient]
+    targets :: [Recipient.Recipient],
+    -- | CR 607.2d: Object.chosenColors, less a secret choice (PlayerChoice.SecretChooser) the seat is not privy to (CR 724.4).
+    chosenColors :: Map.Map Acquisition.Acquisition (Set.Set Color.Color),
+    -- | CR 607.2d: Object.chosenSubtype, less a secret choice the seat is not privy to.
+    chosenSubtype :: Map.Map Acquisition.Acquisition Subtype.Subtype,
+    -- | CR 607.2d: Object.chosenCardType, less a secret choice the seat is not privy to.
+    chosenCardType :: Map.Map Acquisition.Acquisition CardType.CardType,
+    -- | CR 607.2d: Object.chosenNames, less a secret choice the seat is not privy to.
+    chosenNames :: Map.Map Acquisition.Acquisition (Map.Map PlayerId.PlayerId (Set.Set CardName.CardName)),
+    -- | CR 607.2d: Object.chosenPlayers, a secret choice's chooser included.
+    chosenPlayers :: Map.Map Acquisition.Acquisition (Map.Map PlayerChoice.PlayerChoice PlayerId.PlayerId),
+    -- | CR 607.2d: Object.chosenNumber, less a secret choice the seat is not privy to.
+    chosenNumber :: Map.Map Acquisition.Acquisition Natural.Natural,
+    -- | CR 607.2d: Object.chosenObjects, less a secret choice the seat is not privy to.
+    chosenObjects :: Map.Map Acquisition.Acquisition (Set.Set ObjectId.ObjectId)
   }
   deriving (Eq, Show)

@@ -415,6 +415,42 @@ spec s registry = Spec.describe s "PlayerView" $ do
         gs = started0 {GameState.control = Map.singleton S.bob (row NonEmpty.:| [])}
     Spec.assertEqWith s "alice sees bob's hand" (fmap (length . SeatView.hand) (seatOf S.bob (PlayerView.viewFor S.alice gs))) (Just 7)
     Spec.assertEqWith s "without control she does not" (fmap (length . SeatView.hand) (seatOf S.bob (PlayerView.viewFor S.alice started0))) (Just 0)
+  -- A Killer Among Us's ruling: alice's secret creature type is on her view of
+  -- the Killer once her ChoseSecretly entry has left the log, and on bob's only
+  -- while he makes her decisions (CR 724.4).
+  Spec.it s "CR 724.4 a secret choice shows on its object to its chooser and whoever controls them" $ do
+    killer <- S.printingOf s registry "A Killer Among Us"
+    forest <- S.printingOf s registry "Forest"
+    let (spell, staged) = S.addHandCard killer S.alice (S.landsFor forest S.alice 5 (Setup.emptyGame S.bothPlayers))
+        resolved = S.runPure S.identityAnswer (primedMain staged) (S.cast S.alice spell >> Engine.priorityLoop)
+        gs = Game.overTurn (\registers -> registers {TurnRegisters.events = Seq.empty}) resolved
+        chosen = [Object.chosenSubtype o | o <- Map.elems (GameState.objects gs), Object.zone o == Zone.Battlefield, not (Map.null (Object.chosenPlayers o))]
+        shown pid g = [ObjectView.chosenSubtype o | o <- PlayerView.Type.battlefield (PlayerView.viewFor pid g), not (Map.null (ObjectView.chosenPlayers o))]
+        row =
+          PlayerControl.MkPlayerControl
+            { PlayerControl.decider = Decider.MkDecider S.bob,
+              PlayerControl.duration = ControlDuration.UntilTurnEnds,
+              PlayerControl.manaFromLandsOnly = False,
+              PlayerControl.timestamp = Timestamp.MkTimestamp 0
+            }
+        controlled = gs {GameState.control = Map.singleton S.alice (row NonEmpty.:| [])}
+    Spec.assertBool s (length chosen == 1 && not (any Map.null chosen)) ("alice secretly chose one type: " <> show chosen)
+    Spec.assertEqWith s "no log entry is left to tell it" (PlayerView.Type.witnessed (PlayerView.viewFor S.alice gs)) []
+    Spec.assertEqWith s "alice sees her type" (shown S.alice gs) chosen
+    Spec.assertEqWith s "bob does not" (shown S.bob gs) [Map.empty]
+    Spec.assertEqWith s "bob making alice's decisions does" (shown S.bob controlled) chosen
+  -- CR 614.1c: Painter's Servant's colour, chosen in the open, is on its view
+  -- for every seat.
+  Spec.it s "CR 614.1c an open choice shows on its object to every seat" $ do
+    servant <- S.printingOf s registry "Painter's Servant"
+    mountain <- S.printingOf s registry "Mountain"
+    let (spell, staged) = S.addHandCard servant S.alice (S.landsFor mountain S.alice 2 (Setup.emptyGame S.bothPlayers))
+        gs = S.runPure S.identityAnswer (primedMain staged) (S.cast S.alice spell >> Engine.priorityLoop)
+        chosen = [Object.chosenColors o | o <- Map.elems (GameState.objects gs), Object.zone o == Zone.Battlefield, not (Map.null (Object.chosenColors o))]
+        shown pid = [ObjectView.chosenColors o | o <- PlayerView.Type.battlefield (PlayerView.viewFor pid gs), not (Map.null (ObjectView.chosenColors o))]
+    Spec.assertEqWith s "the Servant chose a colour" (length chosen) 1
+    Spec.assertEqWith s "alice sees it" (shown S.alice) chosen
+    Spec.assertEqWith s "bob sees it" (shown S.bob) chosen
   Spec.it s "a look reaches only its audience" $ do
     piker <- S.printingOf s registry "Goblin Piker"
     let (oid, placed) = S.addObjectIn Zone.Hand piker S.alice (Setup.emptyGame S.bothPlayers)
@@ -770,3 +806,16 @@ aimedAt :: (Recipient.Recipient -> Bool) -> Prompt.Prompt r -> r
 aimedAt wanted p = case p of
   Prompt.ChooseTargets _ _ _ asked -> fmap (Set.filter wanted . snd) asked
   _ -> S.identityAnswer p
+
+-- Alice's precombat main phase with her holding priority, where a cast and
+-- Engine.priorityLoop resolve it.
+primedMain :: GameState.GameState -> GameState.GameState
+primedMain =
+  Game.overTurn
+    ( \registers ->
+        registers
+          { TurnRegisters.activePlayer = S.alice,
+            TurnRegisters.phase = Phase.PrecombatMain,
+            TurnRegisters.priority = Just S.alice
+          }
+    )
