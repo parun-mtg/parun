@@ -1308,7 +1308,7 @@ cantBlockCreatures defending blockers attackers gs =
 --
 -- CR 506.3's kind is the third component and not a second call, because one
 -- printed sentence can name several: the row is the ANNOUNCEMENT it forbids, and
--- Parun.Engine.Combat.attackTargetKind is what turns an announcement back into
+-- Parun.Engine.Game.attackTargetKind is what turns an announcement back into
 -- one. Nothing of the source or of the printed wording survives into the answer.
 --
 -- `cantBeBlockedBy`'s shape one declaration over, and a set of TUPLES for its

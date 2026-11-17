@@ -39,7 +39,13 @@
             "defenders": {
               "type": "Scoped",
               "value": {
-                "type": "AttackedYouLastTurn"
+                "type": "AttackedYou",
+                "value": {
+                  "during": "TheirLastTurn",
+                  "kinds": [
+                    "OfPlayer"
+                  ]
+                }
               }
             },
             "kinds": [

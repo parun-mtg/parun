@@ -249,6 +249,8 @@ library codec
     Parun.Codec.AttackCostSpec
     Parun.Codec.AttackCount
     Parun.Codec.AttackCountSpec
+    Parun.Codec.AttackedDuring
+    Parun.Codec.AttackedDuringSpec
     Parun.Codec.AttackedSubject
     Parun.Codec.AttackedSubjectSpec
     Parun.Codec.AttackedTrigger
@@ -2884,6 +2886,7 @@ library types
     Parun.Types.AttackCost
     Parun.Types.AttackCostScope
     Parun.Types.AttackCount
+    Parun.Types.AttackedDuring
     Parun.Types.AttackedSubject
     Parun.Types.AttackedTrigger
     Parun.Types.AttackerBlocked
