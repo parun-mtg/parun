@@ -144,8 +144,8 @@
       "typeLine": {
         "subtypes": [
           "Klingon",
-          "Warrior",
-          "Spy"
+          "Spy",
+          "Warrior"
         ],
         "supertypes": [
           "Legendary"

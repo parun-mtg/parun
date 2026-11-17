@@ -228,8 +228,8 @@
       "typeLine": {
         "subtypes": [
           "Klingon",
-          "Warrior",
-          "Officer"
+          "Officer",
+          "Warrior"
         ],
         "supertypes": [
           "Legendary"
