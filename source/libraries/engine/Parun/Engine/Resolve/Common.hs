@@ -4848,19 +4848,6 @@ putOntoBattlefield settle asOf searcher tapped counters cardId =
   Foldable.toList
     <$> Event.changeZoneAttaching settle (Just asOf) Set.empty cardId Zone.Battlefield LibraryPosition.defaultValue Nothing tapped counters (Just searcher) Nothing Facing.FaceUp False CarryOver.NotCarried False Seq.empty
 
--- Write a whole new order back to a player's library: CR 701.22a's scry, CR
--- 701.25a's surveil and CR 701.29a's fateseal, CR 401.4's arrangement and CR
--- 701.30a's clash.
---
--- `placed` is the cards the instruction put back, wherever they land -- the
--- reordered ones of CR 701.20d / 701.20e, each of which becomes a new object if
--- it was revealed or looked at (Event.forgetShown), as a card put into the
--- library it is already in does (Event.stayPut). Parun.ClashSpec's "CR 701.20d a
--- card the clash bottoms" case is the proof.
-reorderLibrary :: PlayerId -> [ObjectId] -> [ObjectId] -> GameState -> GameState
-reorderLibrary pid placed order gs =
-  Event.forgetAllShown placed gs {GameState.library = Map.insert pid (Seq.fromList order) (GameState.library gs)}
-
 -- `arranger` puts the cards `cards` names back into a pile -- `holder`'s
 -- library, or their side deck of a kind -- in an order they state: at the
 -- positions those cards already occupy, or moved to a stated end. CR 401.4's
@@ -4868,9 +4855,10 @@ reorderLibrary pid placed order gs =
 -- Effect.ArrangeInLibrary; Nothing for a random order nobody states.
 --
 -- The pile is REWRITTEN rather than funnelled through Event.changeZone, for
--- decideScry's reason one rule over: nothing crosses a zone boundary, so CR 400.7
--- mints no new incarnation and the ids the prompt named are the ids that move;
--- CR 701.20d / 701.20e's new objects come after (reorderLibrary).
+-- Event.decideScry's reason one rule over: nothing crosses a zone boundary, so
+-- CR 400.7 mints no new incarnation and the ids the prompt named are the ids
+-- that move; CR 701.20d / 701.20e's new objects come after
+-- (Event.reorderLibrary).
 --
 -- ASKED AT TWO OR MORE, which is rule 401.4's own count: one card has one
 -- order, and the engine does not raise a question with a single answer. Two
@@ -4905,7 +4893,7 @@ arrangeInLibrary arranger cards end (deck, holder) = do
         Just LibraryPosition.Top -> arranged <> rest
         Just LibraryPosition.Bottom -> rest <> reverse arranged
       write = case deck of
-        Nothing -> reorderLibrary holder moving order
+        Nothing -> Event.reorderLibrary holder moving order
         Just kind -> Game.overSideDecks kind (Map.insert holder (Seq.fromList order))
   Monad.when (length moving > (if Maybe.isJust end then 0 else 1)) (State.modify' write)
 
@@ -4928,80 +4916,24 @@ refill whole moving ordered =
         _ -> (remaining, oid)
    in snd (List.mapAccumL step ordered whole)
 
--- The top `n` CARDS of `pid`'s library (CR 108.2), and every other object in it
--- in library order. A token put there waits for CR 704.5d and is no card, so the
--- look passes it; it stays among the rest, since a rewrite of the library
--- (reorderLibrary) must keep it, and where among them is unobservable.
-topCards :: Integer -> PlayerId -> GameState -> ([ObjectId], [ObjectId])
-topCards n pid gs =
-  let looked = List.genericTake n (Game.cardsIn Zone.Library pid gs)
-   in (looked, filter (`List.notElem` looked) (Game.zoneMembers Zone.Library pid gs))
-
--- CR 701.22a: one player's scry DECISION, answered with the cards looked at and
--- the library order it makes -- Nothing where there was nothing to decide. A short library is looked
--- at as far as it goes; rule 701.22 states no penalty for scrying more than
--- there is. The move and the CR 701.22d event are the Scry arm's, after every
--- scryer has decided (CR 701.22c).
---
--- The library is REWRITTEN rather than funnelled through Event.changeZone:
--- nothing crosses a zone boundary, so CR 400.7 mints no new incarnation and the
--- ids the prompt named still move; CR 701.20e's new objects come after
--- (reorderLibrary). Looking mints nothing either (CR 701.20b).
---
--- Every card looked at is logged (Event.look) before the question, and where
--- none is asked: the look is the rule's, the question the engine's.
-decideScry :: Integer -> PlayerId -> Game (PlayerId, Maybe ([ObjectId], [ObjectId]))
-decideScry n pid = do
-  gs <- State.get
-  let (looked, beneath) = topCards n pid gs
-      -- The engine never makes the player's choice, but does not ask a question
-      -- with one answer either: nothing to look at, or a single looked-at card
-      -- that is the whole library. One card with more beneath it IS a decision.
-      decided = case looked of
-        [] -> False
-        [_] -> any (`Game.isCardObject` gs) beneath
-        _ -> True
-  Monad.mapM_ (Event.look pid) looked
-  if decided
-    then do
-      answer <- Game.choose (Prompt.ChooseScry (Decide.deciderFor pid gs) pid looked)
-      let (toBottom, onTop) = splitLooked looked answer
-      pure (pid, Just (looked, onTop <> beneath <> toBottom))
-    else pure (pid, Nothing)
-
--- Repair a look-and-split answer into the two groups the effect then moves: the
--- cards going AWAY from the top, and the cards staying on top in reading order.
---
--- Filtered, deduped and COMPLETED, Effect.Discard's arm's posture: a card named
--- in neither list stays on top behind the ones that were named, and a card named
--- in BOTH goes away, the first list winning. One function for all three keyword
--- actions, the repair being a question about the ANSWER.
-splitLooked :: [ObjectId] -> ([ObjectId], [ObjectId]) -> ([ObjectId], [ObjectId])
-splitLooked looked (away, kept) =
-  let named xs = ListUtils.nubOrd (filter (\c -> List.elem c looked) xs)
-      leaving = named away
-      onTop = filter (\c -> List.notElem c leaving) (named kept)
-      unnamed = filter (\c -> List.notElem c leaving && List.notElem c onTop) looked
-   in (leaving, onTop <> unnamed)
-
--- CR 701.25a: one player's surveil DECISION -- decideScry's shape over a
+-- CR 701.25a: one player's surveil DECISION -- Event.decideScry's shape over a
 -- different destination, answered with the library order that stays and the
 -- cards bound for the graveyard. Nothing for an empty library, which is still a
 -- surveil (CR 701.25d) with nothing to ask.
 --
--- The ELISION is decideScry's minus its one-card case: the graveyard and the top
--- of the library are still two different places.
+-- The ELISION is Event.decideScry's minus its one-card case: the graveyard and
+-- the top of the library are still two different places.
 decideSurveil :: Integer -> PlayerId -> Game (PlayerId, Maybe ([ObjectId], [ObjectId], [ObjectId]))
 decideSurveil n pid = do
   gs <- State.get
-  let (looked, beneath) = topCards n pid gs
+  let (looked, beneath) = Event.topCards n pid gs
   if null looked
     then pure (pid, Nothing)
     else do
       -- CR 701.25a: the cards are looked at before the split is chosen.
       Monad.mapM_ (Event.look pid) looked
       answer <- Game.choose (Prompt.ChooseSurveil (Decide.deciderFor pid gs) pid looked)
-      let (toGraveyard, onTop) = splitLooked looked answer
+      let (toGraveyard, onTop) = Event.splitLooked looked answer
       pure (pid, Just (onTop, beneath, toGraveyard))
 
 -- One decided surveil's move. Half of it IS a zone change: the graveyard cards
@@ -5016,7 +4948,7 @@ applySurveil :: Game () -> (PlayerId, Maybe ([ObjectId], [ObjectId], [ObjectId])
 applySurveil settle (pid, decision) = fmap Foldable.fold . Monad.forM decision $ \(onTop, beneath, toGraveyard) -> do
   -- Order-independent: Game.removeFromZones takes each mover out of the library
   -- by identity rather than by position.
-  State.modify' (reorderLibrary pid onTop (onTop <> beneath))
+  State.modify' (Event.reorderLibrary pid onTop (onTop <> beneath))
   -- ONE event (CR 608.2f) on ONE board, and one CR 401.4 scope for a redirect
   -- into a library.
   Event.simultaneously $ do
@@ -5025,13 +4957,13 @@ applySurveil settle (pid, decision) = fmap Foldable.fold . Monad.forM decision $
     State.modify' (Event.arrangedAlready (Foldable.fold arrived))
     pure (Foldable.toList (Foldable.fold arrived))
 
--- CR 701.29a: one player's fateseal -- decideScry's question over an opponent's
--- library.
+-- CR 701.29a: one player's fateseal -- Event.decideScry's question over an
+-- opponent's library.
 --
 -- TWO choices, both the fatesealer's and in this order: which opponent, then how
 -- to split. The first is elided at one candidate (CR 102.2) and filtered rather
 -- than trusted (Players.chooseOne); the library's owner is asked neither. The
--- look is the fatesealer's alone (Event.look), logged as decideScry's is.
+-- look is the fatesealer's alone (Event.look), logged as Event.decideScry's is.
 fatesealOne :: ObjectId -> Integer -> PlayerId -> Game ()
 fatesealOne source n pid = do
   gs <- State.get
@@ -5040,7 +4972,7 @@ fatesealOne source n pid = do
     -- Re-read rather than reusing the state the opponent choice was made
     -- against: a prompt is the one place this function yields.
     chosen <- State.get
-    let (looked, beneath) = topCards n owner chosen
+    let (looked, beneath) = Event.topCards n owner chosen
         decided = case looked of
           [] -> False
           [_] -> any (`Game.isCardObject` chosen) beneath
@@ -5048,8 +4980,8 @@ fatesealOne source n pid = do
     Monad.mapM_ (Event.look pid) looked
     Monad.when decided $ do
       answer <- Game.choose (Prompt.ChooseFateseal (Decide.deciderFor pid chosen) pid owner looked)
-      let (toBottom, onTop) = splitLooked looked answer
-      State.modify' (reorderLibrary owner looked (onTop <> beneath <> toBottom))
+      let (toBottom, onTop) = Event.splitLooked looked answer
+      State.modify' (Event.reorderLibrary owner looked (onTop <> beneath <> toBottom))
 
 -- CR 701.30b: "Clash with an opponent" -- the controller chooses an opponent,
 -- and the two of them clash (CR 701.30c). Answers 1 where the CONTROLLER won the
@@ -5116,8 +5048,8 @@ clash resolving source controller = do
                 asked <- State.get
                 -- The engine never makes the player's choice, but does not ask a
                 -- question with one answer either: a revealed card that is the
-                -- whole library is already at both ends, decideScry's elision one
-                -- card over.
+                -- whole library is already at both ends, Event.decideScry's
+                -- elision one card over.
                 let alone = length (Game.cardsIn Zone.Library pid asked) <= 1
                     earlier = fmap (\(who, _, at) -> (who, at)) made
                 position <-
@@ -5132,7 +5064,7 @@ clash resolving source controller = do
         Monad.when (position == LibraryPosition.Bottom) $ do
           moving <- State.get
           let whole = Game.zoneMembers Zone.Library pid moving
-          State.modify' (reorderLibrary pid [top] (filter (/= top) whole <> [top]))
+          State.modify' (Event.reorderLibrary pid [top] (filter (/= top) whole <> [top]))
       pure (if won then 1 else 0)
 
 -- CR 701.44a: one permanent's explore.
@@ -5155,11 +5087,18 @@ exploreOne settle resolving oid = do
   -- CR 122.6 through the one counter funnel, so a CR 614.1 counter replacement
   -- (Hardened Scales) gets its opportunity against this placement too.
   let grow pid = Monad.void (Event.putCounters (CounterCause.ByEffect pid) oid CounterKind.PlusOnePlusOne 1)
-  gs <- State.get
-  case Projection.controllerWithLastKnown oid gs of
+  known <- State.get
+  -- CR 614.1a: the explore is one replaceable instruction, the connive's
+  -- posture (conniveOne); Twists and Turns scries first, then leaves it
+  -- standing. The scenario
+  -- twists-and-turns-scries-before-a-creature-you-control-explores proves it.
+  settled <- Monad.forM (Projection.controllerWithLastKnown oid known) $ \controller ->
+    Event.applyReplacementsIn settle Nothing Set.empty Set.empty (ProposedEvent.WouldPerform PlayerInstruction.Explore (Just oid) controller 1)
+  case Monad.join settled >>= Replacement.asPerformed PlayerInstruction.Explore of
     -- An id nothing was ever filed under: nobody explores and nothing happens.
     Nothing -> pure ()
-    Just pid -> do
+    Just (pid, _) -> do
+      gs <- State.get
       case Game.cardsIn Zone.Library pid gs of
         [] -> grow pid
         top : _ -> do

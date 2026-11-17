@@ -2739,6 +2739,15 @@ materialCandidates slots pid oid criterion gs =
    in filter matches (List.sort (Projection.controls pid gs))
         <> exileCandidates slots pid oid yourGraveyard criterion gs
 
+-- CR 702.167a's [materials] as a list, "a Dinosaur, a Merfolk, a Pirate, and a
+-- Vampire": whether these objects meet every criterion, each by a different
+-- one. A maximum bipartite matching (Claim.countable), so a changeling answers
+-- for one criterion and not four. Each criterion is read over the pools as
+-- `materialCandidates` reads the shared one.
+materialsMatch :: Map.Map SlotName.SlotName (Set.Set Recipient.Recipient) -> PlayerId -> ObjectId -> [Filter.Type.Filter Keyword.Type.Keyword] -> Set.Set ObjectId -> GameState -> Bool
+materialsMatch slots pid oid criteria objects gs =
+  Claim.countable [(Set.intersection objects (Set.fromList (materialCandidates slots pid oid criterion gs)), 1) | criterion <- criteria]
+
 -- The one card an ExileTopFromGraveyard component takes: the TOP matching card
 -- of this player's graveyard, or Nothing where it holds none.
 --
@@ -4848,8 +4857,15 @@ canPayComponentGiven board slots pid oid component gs = case component of
   -- too few materials. ">=" answers both readings of the count: an exact one is
   -- payable at exactly that many and a minimum at that many or more, so rule
   -- 702.167a's "one or more" moves the CEILING and never the floor.
-  CostComponent.ExileMaterials (ExileMaterials.MkExileMaterials n _ criterion) ->
-    Natural.length (materialCandidates slots pid oid criterion gs) >= n
+  --
+  -- `oneEach` asks that some choice also meet every one of its criteria by a
+  -- different object: a matching over the whole pool saturating them
+  -- (`materialsMatch`), and an exact count no smaller than the criteria.
+  CostComponent.ExileMaterials (ExileMaterials.MkExileMaterials n orMore criterion oneEach) ->
+    let candidates = materialCandidates slots pid oid criterion gs
+     in Natural.length candidates >= n
+          && (orMore || n >= Natural.length oneEach)
+          && materialsMatch slots pid oid oneEach (Set.fromList candidates) gs
   -- CR 118.3, and CR 701.59b for collect evidence: a player who cannot meet the
   -- total can't pay at all. The arm above read as a SUM rather than a size,
   -- TapForTotalPower's question one zone over: whether SOME subset of the pool
@@ -5207,7 +5223,7 @@ criteriaOf component = case component of
   CostComponent.BeholdAndExile criterion -> [criterion]
   CostComponent.MoveCardsFromGraveyard exile -> [MoveCardsFromGraveyard.whichCards exile]
   CostComponent.ExileCardsTotalling exile -> [ExileCardsTotalling.whichCards exile]
-  CostComponent.ExileMaterials materials -> [ExileMaterials.whichObjects materials]
+  CostComponent.ExileMaterials materials -> ExileMaterials.whichObjects materials : ExileMaterials.oneEach materials
   CostComponent.ExileTopFromGraveyard criterion -> [criterion]
   CostComponent.PutExiledIntoGraveyard criterion -> [criterion]
   CostComponent.RemoveCounters remove -> [CountersFromPermanents.whichPermanent remove]
@@ -8450,11 +8466,14 @@ payPayable perform moment paidFor slots pid oid component = case component of
   -- BINDS the materials' exile incarnations under Binding.craftMaterials, which
   -- is CR 702.167c's "the exiled cards used to craft it": the craft ability's
   -- return links them to the permanent it puts onto the battlefield.
-  CostComponent.ExileMaterials (ExileMaterials.MkExileMaterials n orMore criterion) -> do
+  --
+  -- `oneEach` is checked of the answer, not the offer: the chosen set must meet
+  -- each of its criteria by a different object (`materialsMatch`).
+  CostComponent.ExileMaterials (ExileMaterials.MkExileMaterials n orMore criterion oneEach) -> do
     gs <- State.get
     let candidates = materialCandidates slots pid oid criterion gs
         decider = Decide.deciderFor pid gs
-        enough chosen = if orMore then Natural.length chosen >= n else Natural.length chosen == n
+        enough chosen = (if orMore then Natural.length chosen >= n else Natural.length chosen == n) && materialsMatch slots pid oid oneEach chosen gs
     chosen <-
       if Natural.length candidates <= n
         then pure (Set.fromList candidates)

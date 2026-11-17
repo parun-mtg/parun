@@ -4,6 +4,7 @@ import qualified Parun.Codec.InstructionRewrite as InstructionRewrite
 import qualified Parun.JsonCodec.Common as Common
 import qualified Parun.Spec as Spec
 import qualified Parun.Types.InstructionRewrite as InstructionRewrite
+import qualified Parun.Types.PlayerInstruction as PlayerInstruction
 import qualified Parun.Types.Scaling as Scaling
 
 spec :: (Monad m, Monad n) => Spec.Spec m n -> n ()
@@ -30,12 +31,12 @@ spec s = Spec.describe s "Parun.Codec.InstructionRewrite" $ do
       InstructionRewrite.RollD20Instead
       " {\"type\":\"RollD20Instead\"} "
   -- Leader, Super-Genius's "instead you draw a card, then that creature connives".
-  Spec.it s "DrawFirst" $
+  Spec.it s "PerformFirst" $
     Common.assertCodec
       s
       InstructionRewrite.codec
-      InstructionRewrite.DrawFirst
-      " {\"type\":\"DrawFirst\"} "
+      (InstructionRewrite.PerformFirst PlayerInstruction.DrawCards)
+      " {\"type\":\"PerformFirst\",\"value\":\"DrawCards\"} "
   -- Plots That Span Centuries' "set three schemes in motion instead".
   Spec.it s "SetTo" $
     Common.assertCodec

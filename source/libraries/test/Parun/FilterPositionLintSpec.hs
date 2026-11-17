@@ -55,6 +55,7 @@ import qualified Parun.Types.AttackCostScope as AttackCostScope
 import qualified Parun.Types.AttackTrigger as AttackTrigger
 import qualified Parun.Types.AttackerTrigger as AttackerTrigger
 import qualified Parun.Types.Batching as Batching
+import qualified Parun.Types.BecomesTapState as BecomesTapState
 import qualified Parun.Types.Behold as Behold
 import qualified Parun.Types.BlockCost as BlockCost
 import qualified Parun.Types.BoundMeasure as BoundMeasure
@@ -347,6 +348,30 @@ canHostSubjectCounts card =
 -- pairwise combat restriction.
 jsonAtoms :: Text.Text -> Value.Value -> Int
 jsonAtoms = occurrences . Value.String . String.MkString
+
+-- Every encoded BecomesTapState condition watching a OneOrMore untap.
+batchedUntaps :: Value.Value -> [Value.Value]
+batchedUntaps value = case value of
+  Value.Object o ->
+    let pairs = Object.unwrap o
+        named v k = case v of
+          Value.Object inner -> [Pair.value p | p <- Object.unwrap inner, String.unwrap (Pair.name p) == Text.pack k]
+          _ -> []
+        isText t v = case v of
+          Value.String x -> String.unwrap x == Text.pack t
+          _ -> False
+        payload = named value "value"
+        here =
+          [ value
+          | any (isText "BecomesTapState") (named value "type"),
+            any (\p -> any (isText "OneOrMore") (named p "batching") && any (isText "Untapped") (named p "status")) payload
+          ]
+     in here <> concatMap (batchedUntaps . Pair.value) pairs
+  Value.Array a -> concatMap batchedUntaps (Array.unwrap a)
+  Value.String _ -> []
+  Value.Null _ -> []
+  Value.Boolean _ -> []
+  Value.Number _ -> []
 
 -- How many subtrees of a card's encoding equal `needle`: a bare tag string
 -- (jsonAtoms), or a whole encoded atom where its payload is what tells two apart
@@ -3293,6 +3318,25 @@ filterPositionLintSpec s registry corpus = Spec.describe s "Lint" $ do
     Spec.assertEqWith s "a planted atom is seen" (atoms planted) 1
     let owned = (S.combinedFace piker) {Face.spell = Mint.oneModeTargeting (Map.singleton (SlotName.MkSlotName (Text.pack "target")) (TargetSlot.required Pool.Creatures (Just (Filter.Type.HeldByPlayer Holder.Owner (PlayerId.MkPlayerId 1))))) Seq.empty}
     Spec.assertEqWith s "and its owner holder" (atoms owned) 1
+  -- CR 603.2c's batched untap is one event only where the untap is one: CR
+  -- 502.3's turn-based untap brackets its batch, and Effect.Untap does not
+  -- (Parun.Engine.Resolve.Arms.Counters.untap). So every OneOrMore untap trigger
+  -- a card writes is The Millennium Calendar's, gated on its controller's untap
+  -- step.
+  Spec.it s "CR 603.2c no card writes a batched untap trigger outside the untap step" $ do
+    ps <- S.allPrintings s corpus
+    calendar <- S.printingOf s registry "The Millennium Calendar"
+    let untaps = batchedUntaps . Codec.encode (Face.Codec.codec Card.codec)
+        allowed = untaps (S.combinedFace calendar)
+        offenders = filter (anyFace (not . all (`elem` allowed) . untaps) . Printing.card) ps
+    Spec.assertEqWith s "the Calendar writes the one allowed shape" (length allowed) 1
+    Spec.assertEqWith s "every batched untap trigger is the Calendar's" (fmap (S.nameOf . Printing.card) offenders) []
+    -- Not vacuous: the Calendar's trigger with its untap-step gate dropped is seen.
+    let ungate ta = case TriggeredAbility.condition ta of
+          TriggerCondition.BecomesTapState watched -> ta {TriggeredAbility.condition = TriggerCondition.BecomesTapState watched {BecomesTapState.while = Nothing}}
+          _ -> ta
+        planted = (S.combinedFace calendar) {Face.triggeredAbilities = fmap ungate (Face.triggeredAbilities (S.combinedFace calendar))}
+    Spec.assertEqWith s "a planted ungated trigger is seen" (fmap (`elem` allowed) (untaps planted)) [False]
   -- CR 601.2c's baked "that player's graveyard", for HeldByPlayer's reason:
   -- Parun.Engine.Target.bakePerPlayer writes it, and no card may name a seat.
   Spec.it s "CR 601.2c no card writes ZoneScope.BoundPlayer" $ do

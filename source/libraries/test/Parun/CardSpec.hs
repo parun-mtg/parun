@@ -959,7 +959,7 @@ playerRefPositions =
         -- zone (Sen Triplets). All three are planted, since Parun.Engine.PlayerEffect's
         -- traversal is what the AffectPlayers arm delegates to and a missing arm
         -- there answers [] rather than failing to compile.
-        ("affect-players-cast-from", affecting (PlayerEffect.CastFrom (CastFromZone.MkCastFromZone (InZone.MkInZone Zone.Hand (plantedPlayer "ap-cast")) (Filter.Type.And []) PermissionLimit.Unlimited PermissionVerb.Cast PermissionPool.EveryCard [] 0 ManaSpending.AsProduced Nothing Nothing Nothing)), [plantedPlayer "ap-cast"]),
+        ("affect-players-cast-from", affecting (PlayerEffect.CastFrom (CastFromZone.MkCastFromZone (InZone.MkInZone Zone.Hand (plantedPlayer "ap-cast")) (Filter.Type.And []) PermissionLimit.Unlimited PermissionVerb.Cast PermissionPool.EveryCard [] 0 ManaSpending.AsProduced Nothing Nothing Nothing Set.empty)), [plantedPlayer "ap-cast"]),
         ("affect-players-play-lands-from", affecting (PlayerEffect.PlayLandsFrom (InZone.MkInZone Zone.Graveyard (plantedPlayer "ap-land"))), [plantedPlayer "ap-land"]),
         ("affect-players-plot-from", affecting (PlayerEffect.PlotFrom (PlotFromZone.MkPlotFromZone (InZone.MkInZone Zone.Library (plantedPlayer "ap-plot")) (Filter.Type.And []))), [plantedPlayer "ap-plot"]),
         -- And an arm carrying none, so the traversal is shown answering nothing where
@@ -3169,7 +3169,7 @@ keywordPayloadFilters keyword = case keyword of
   -- CR 702.167a's payload is a Cost AND the [materials] criterion, which no
   -- other keyword's is: rule 702.167a writes the materials into the ability's
   -- cost, so both halves are the card's own words.
-  Keyword.Craft crafting -> costFilters (Craft.cost crafting) <> [ExileMaterials.whichObjects (Craft.materials crafting)]
+  Keyword.Craft crafting -> costFilters (Craft.cost crafting) <> (ExileMaterials.whichObjects (Craft.materials crafting) : ExileMaterials.oneEach (Craft.materials crafting))
   -- CR 702.47a's payload is a [quality] and a Cost, both printed.
   Keyword.Splice splicing -> Splice.onto splicing : costFilters (Splice.cost splicing)
 
@@ -3217,7 +3217,7 @@ costComponentFilters component = case component of
   CostComponent.ExileCardsTotalling (ExileCardsTotalling.MkExileCardsTotalling _ _ _ _ f _) -> [f]
   -- CR 702.167a over the battlefield and the graveyard at once: Tithing Blade's
   -- "a creature", which CR 702.167b reads in both zones.
-  CostComponent.ExileMaterials (ExileMaterials.MkExileMaterials _ _ f) -> [f]
+  CostComponent.ExileMaterials (ExileMaterials.MkExileMaterials _ _ f oneEach) -> f : oneEach
   -- CR 406.2 again: Circling Vultures' "the top creature card of your
   -- graveyard".
   CostComponent.ExileTopFromGraveyard f -> [f]

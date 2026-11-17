@@ -1737,6 +1737,11 @@ tap resolving source controller legal (Tap.MkTap ref mTapped) = do
 --
 -- Through askingObjects, so CR 608.2d's "untap up to two lands" (Teferi,
 -- Hero of Dominaria) is asked rather than read.
+--
+-- Unprinted: a OneOrMore untap trigger outside CR 502.3's untap step, which
+-- would need these untaps bracketed as one event group, as Effect.Tap's are.
+-- Parun.FilterPositionLintSpec's "no card writes a batched untap trigger
+-- outside the untap step" keeps it out of card data.
 untap :: ObjectId -> ObjectId -> PlayerId -> Map.Map SlotName (Set Recipient) -> Map.Map SlotName (Set Recipient) -> ObjectRef -> Game ()
 untap resolving source controller legal chosen ref = do
   victims <- Common.askingObjects Common.Present resolving source controller legal chosen ref

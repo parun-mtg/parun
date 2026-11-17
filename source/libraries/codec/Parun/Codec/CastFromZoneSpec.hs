@@ -1,5 +1,6 @@
 module Parun.Codec.CastFromZoneSpec where
 
+import qualified Data.Set as Set
 import qualified Data.Text as Text
 import qualified Parun.Codec.CastFromZone as CastFromZone
 import qualified Parun.JsonCodec.Common as Common
@@ -30,6 +31,7 @@ import qualified Parun.Types.PlayerRef as PlayerRef
 import qualified Parun.Types.PlayerRelation as PlayerRelation
 import qualified Parun.Types.Quantity as Quantity
 import qualified Parun.Types.SlotName as SlotName
+import qualified Parun.Types.Subtype as Subtype
 import qualified Parun.Types.WhichCounters as WhichCounters
 import qualified Parun.Types.WithCounters as WithCounters
 import qualified Parun.Types.Zone as Zone
@@ -52,7 +54,8 @@ spec s = Spec.describe s "Parun.Codec.CastFromZone" $ do
             CastFromZone.spending = ManaSpending.AsProduced,
             CastFromZone.alternativeCost = Nothing,
             CastFromZone.entersWith = Nothing,
-            CastFromZone.amount = Nothing
+            CastFromZone.amount = Nothing,
+            CastFromZone.creatureTypes = Set.empty
           }
       )
       " {\"from\":{\"zone\":\"Graveyard\",\"player\":{\"type\":\"Relative\",\"value\":\"You\"}},\"matching\":{\"type\":\"And\",\"value\":[]}} "
@@ -72,7 +75,8 @@ spec s = Spec.describe s "Parun.Codec.CastFromZone" $ do
             CastFromZone.spending = ManaSpending.AsProduced,
             CastFromZone.alternativeCost = Nothing,
             CastFromZone.entersWith = Nothing,
-            CastFromZone.amount = Nothing
+            CastFromZone.amount = Nothing,
+            CastFromZone.creatureTypes = Set.empty
           }
       )
       " {\"from\":{\"zone\":\"Hand\",\"player\":{\"type\":\"InSlot\",\"value\":\"opponent\"}},\"matching\":{\"type\":\"HasCardType\",\"value\":\"Creature\"}} "
@@ -94,7 +98,8 @@ spec s = Spec.describe s "Parun.Codec.CastFromZone" $ do
             CastFromZone.spending = ManaSpending.AsProduced,
             CastFromZone.alternativeCost = Nothing,
             CastFromZone.entersWith = Nothing,
-            CastFromZone.amount = Nothing
+            CastFromZone.amount = Nothing,
+            CastFromZone.creatureTypes = Set.empty
           }
       )
       " {\"from\":{\"zone\":\"Library\",\"player\":{\"type\":\"Relative\",\"value\":\"You\"}},\"matching\":{\"type\":\"And\",\"value\":[]},\"limit\":\"OnceEachTurn\"} "
@@ -115,7 +120,8 @@ spec s = Spec.describe s "Parun.Codec.CastFromZone" $ do
             CastFromZone.spending = ManaSpending.AsProduced,
             CastFromZone.alternativeCost = Nothing,
             CastFromZone.entersWith = Nothing,
-            CastFromZone.amount = Nothing
+            CastFromZone.amount = Nothing,
+            CastFromZone.creatureTypes = Set.empty
           }
       )
       " {\"from\":{\"zone\":\"Graveyard\",\"player\":{\"type\":\"Relative\",\"value\":\"You\"}},\"matching\":{\"type\":\"And\",\"value\":[]},\"limit\":\"OnceEachOfYourTurns\",\"verb\":\"Play\"} "
@@ -135,7 +141,8 @@ spec s = Spec.describe s "Parun.Codec.CastFromZone" $ do
             CastFromZone.spending = ManaSpending.AnyType,
             CastFromZone.alternativeCost = Nothing,
             CastFromZone.entersWith = Nothing,
-            CastFromZone.amount = Nothing
+            CastFromZone.amount = Nothing,
+            CastFromZone.creatureTypes = Set.empty
           }
       )
       " {\"from\":{\"zone\":\"Exile\",\"player\":{\"type\":\"Relative\",\"value\":\"AnyPlayer\"}},\"matching\":{\"type\":\"And\",\"value\":[]},\"spending\":\"AnyType\"} "
@@ -156,6 +163,7 @@ spec s = Spec.describe s "Parun.Codec.CastFromZone" $ do
             CastFromZone.alternativeCost = Nothing,
             CastFromZone.entersWith = Nothing,
             CastFromZone.amount = Nothing,
+            CastFromZone.creatureTypes = Set.empty,
             CastFromZone.additionalCosts = [CostComponent.RemoveCounters (CountersFromPermanents.MkCountersFromPermanents (ObjectCount.Exactly (CostAmount.Fixed 3)) WhichCounters.OfAnyKind (Filter.And [Filter.HasCardType CardType.Creature, Filter.HeldBy Holder.Controller PlayerRelation.You]) CounterSpread.FromAmong)]
           }
       )
@@ -177,7 +185,8 @@ spec s = Spec.describe s "Parun.Codec.CastFromZone" $ do
             CastFromZone.spending = ManaSpending.AsProduced,
             CastFromZone.alternativeCost = Nothing,
             CastFromZone.entersWith = Nothing,
-            CastFromZone.amount = Nothing
+            CastFromZone.amount = Nothing,
+            CastFromZone.creatureTypes = Set.empty
           }
       )
       " {\"from\":{\"zone\":\"Exile\",\"player\":{\"type\":\"Relative\",\"value\":\"AnyPlayer\"}},\"matching\":{\"type\":\"And\",\"value\":[]},\"verb\":\"Play\",\"pool\":{\"type\":\"InExiledPile\",\"value\":{\"type\":\"OwnAbilities\"}},\"reduction\":2} "
@@ -198,7 +207,8 @@ spec s = Spec.describe s "Parun.Codec.CastFromZone" $ do
             CastFromZone.spending = ManaSpending.AsProduced,
             CastFromZone.alternativeCost = Just (PermissionCost.InsteadOfManaCost (ManaCost.MkManaCost [])),
             CastFromZone.entersWith = Nothing,
-            CastFromZone.amount = Nothing
+            CastFromZone.amount = Nothing,
+            CastFromZone.creatureTypes = Set.empty
           }
       )
       " {\"from\":{\"zone\":\"Hand\",\"player\":{\"type\":\"Relative\",\"value\":\"You\"}},\"matching\":{\"type\":\"Or\",\"value\":[{\"type\":\"HasCardType\",\"value\":\"Instant\"},{\"type\":\"HasCardType\",\"value\":\"Sorcery\"}]},\"limit\":\"OnceEachOfYourTurns\",\"alternativeCost\":{\"type\":\"InsteadOfManaCost\",\"value\":[]}} "
@@ -219,10 +229,33 @@ spec s = Spec.describe s "Parun.Codec.CastFromZone" $ do
             CastFromZone.spending = ManaSpending.AsProduced,
             CastFromZone.alternativeCost = Nothing,
             CastFromZone.entersWith = Just (WithCounters.one CounterKind.Finality (Quantity.Literal 1)),
-            CastFromZone.amount = Nothing
+            CastFromZone.amount = Nothing,
+            CastFromZone.creatureTypes = Set.empty
           }
       )
       " {\"from\":{\"zone\":\"Graveyard\",\"player\":{\"type\":\"Relative\",\"value\":\"You\"}},\"matching\":{\"type\":\"And\",\"value\":[]},\"entersWith\":[{\"kind\":{\"type\":\"Finality\"},\"count\":{\"type\":\"Literal\",\"value\":1}}]} "
+  -- The Tomb of Aclazotz: a creature cast this way enters with a finality
+  -- counter and is a Vampire in addition to its other types (CR 205.1b).
+  Spec.it s "added creature types" $
+    Common.assertCodec
+      s
+      CastFromZone.codec
+      ( CastFromZone.MkCastFromZone
+          { CastFromZone.from = InZone.MkInZone {InZone.zone = Zone.Graveyard, InZone.player = PlayerRef.Relative PlayerRelation.You},
+            CastFromZone.matching = Filter.HasCardType CardType.Creature,
+            CastFromZone.limit = PermissionLimit.OncePerEffect,
+            CastFromZone.verb = PermissionVerb.Cast,
+            CastFromZone.pool = PermissionPool.EveryCard,
+            CastFromZone.additionalCosts = [],
+            CastFromZone.reduction = 0,
+            CastFromZone.spending = ManaSpending.AsProduced,
+            CastFromZone.alternativeCost = Nothing,
+            CastFromZone.entersWith = Just (WithCounters.one CounterKind.Finality (Quantity.Literal 1)),
+            CastFromZone.amount = Nothing,
+            CastFromZone.creatureTypes = Set.singleton Subtype.Vampire
+          }
+      )
+      " {\"from\":{\"zone\":\"Graveyard\",\"player\":{\"type\":\"Relative\",\"value\":\"You\"}},\"matching\":{\"type\":\"HasCardType\",\"value\":\"Creature\"},\"limit\":\"OncePerEffect\",\"entersWith\":[{\"kind\":{\"type\":\"Finality\"},\"count\":{\"type\":\"Literal\",\"value\":1}}],\"creatureTypes\":[\"Vampire\"]} "
   -- Maralen, Fae Ascendant's shape: a mana value compared against a count
   -- read for the permission's source (CR 109.5).
   Spec.it s "a computed bound" $
@@ -240,7 +273,8 @@ spec s = Spec.describe s "Parun.Codec.CastFromZone" $ do
             CastFromZone.spending = ManaSpending.AsProduced,
             CastFromZone.alternativeCost = Just (PermissionCost.InsteadOfManaCost (ManaCost.MkManaCost [])),
             CastFromZone.entersWith = Nothing,
-            CastFromZone.amount = Just (Quantity.Literal 2)
+            CastFromZone.amount = Just (Quantity.Literal 2),
+            CastFromZone.creatureTypes = Set.empty
           }
       )
       " {\"from\":{\"zone\":\"Exile\",\"player\":{\"type\":\"Relative\",\"value\":\"AnyPlayer\"}},\"matching\":{\"type\":\"Measures\",\"value\":{\"measure\":\"ManaValue\",\"comparison\":\"AtMost\",\"operand\":{\"type\":\"EnclosingAmount\"}}},\"limit\":\"OnceEachTurn\",\"pool\":{\"type\":\"InExiledPile\",\"value\":{\"type\":\"OwnAbilities\"}},\"alternativeCost\":{\"type\":\"InsteadOfManaCost\",\"value\":[]},\"amount\":{\"type\":\"Literal\",\"value\":2}} "

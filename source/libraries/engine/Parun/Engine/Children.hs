@@ -1996,7 +1996,7 @@ keywordChildren c keyword_ = case keyword_ of
   Keyword.Toxic _natural -> pure keyword_
   Keyword.Backup (Backup.MkBackup count printedAbove) -> fmap (Keyword.Backup . Backup.MkBackup count . Set.fromList) (traverse (keywordNested c) (Set.toList printedAbove))
   Keyword.Bargain -> pure keyword_
-  Keyword.Craft (Craft.MkCraft cost (ExileMaterials.MkExileMaterials count orMore whichObjects)) -> fmap Keyword.Craft (Craft.MkCraft <$> keywordCost c cost <*> fmap (ExileMaterials.MkExileMaterials count orMore) (keywordFilter c whichObjects))
+  Keyword.Craft (Craft.MkCraft cost (ExileMaterials.MkExileMaterials count orMore whichObjects oneEach)) -> fmap Keyword.Craft (Craft.MkCraft <$> keywordCost c cost <*> (ExileMaterials.MkExileMaterials count orMore <$> keywordFilter c whichObjects <*> traverse (keywordFilter c) oneEach))
   Keyword.Disguise cost -> fmap Keyword.Disguise (keywordCost c cost)
   Keyword.Plot cost -> fmap Keyword.Plot (keywordCost c cost)
   Keyword.Saddle _natural -> pure keyword_
@@ -2119,7 +2119,7 @@ costComponentChildren c component = case component of
   CostComponent.ExileThisFrom _ -> pure component
   CostComponent.ExileThis -> pure component
   CostComponent.MoveCardsFromGraveyard (MoveCardsFromGraveyard.MkMoveCardsFromGraveyard n criterion end players) -> fmap CostComponent.MoveCardsFromGraveyard (MoveCardsFromGraveyard.MkMoveCardsFromGraveyard <$> costAmountChildren c n <*> costFilter c criterion <*> pure end <*> pure players)
-  CostComponent.ExileMaterials (ExileMaterials.MkExileMaterials n orMore criterion) -> fmap CostComponent.ExileMaterials (ExileMaterials.MkExileMaterials n orMore <$> costFilter c criterion)
+  CostComponent.ExileMaterials (ExileMaterials.MkExileMaterials n orMore criterion oneEach) -> fmap CostComponent.ExileMaterials (ExileMaterials.MkExileMaterials n orMore <$> costFilter c criterion <*> traverse (costFilter c) oneEach)
   CostComponent.ExileTopFromGraveyard criterion -> CostComponent.ExileTopFromGraveyard <$> costFilter c criterion
   CostComponent.PutExiledIntoGraveyard criterion -> CostComponent.PutExiledIntoGraveyard <$> costFilter c criterion
   CostComponent.CollectEvidence amount -> CostComponent.CollectEvidence <$> costAmountChildren c amount
@@ -2286,8 +2286,8 @@ playerEffectChildren c effect = case effect of
   PlayerEffect.CantCastMatching filter_ -> PlayerEffect.CantCastMatching <$> playerFilter c filter_
   PlayerEffect.CastOnlyAtSorcerySpeed -> pure effect
   PlayerEffect.CantPlayLands filter_ -> PlayerEffect.CantPlayLands <$> playerFilter c filter_
-  PlayerEffect.CastFrom (CastFromZone.MkCastFromZone from matching limit verb pool additionalCosts reduction spending alternativeCost entersWith amount) ->
-    fmap PlayerEffect.CastFrom (CastFromZone.MkCastFromZone <$> playerZone c from <*> playerFilter c matching <*> pure limit <*> pure verb <*> pure pool <*> traverse (playerCostComponent c) additionalCosts <*> pure reduction <*> pure spending <*> pure alternativeCost <*> traverse (\(WithCounters.MkWithCounters counters) -> WithCounters.MkWithCounters <$> traverse (playerQuantity c) counters) entersWith <*> traverse (playerQuantity c) amount)
+  PlayerEffect.CastFrom (CastFromZone.MkCastFromZone from matching limit verb pool additionalCosts reduction spending alternativeCost entersWith amount creatureTypes) ->
+    fmap PlayerEffect.CastFrom (CastFromZone.MkCastFromZone <$> playerZone c from <*> playerFilter c matching <*> pure limit <*> pure verb <*> pure pool <*> traverse (playerCostComponent c) additionalCosts <*> pure reduction <*> pure spending <*> pure alternativeCost <*> traverse (\(WithCounters.MkWithCounters counters) -> WithCounters.MkWithCounters <$> traverse (playerQuantity c) counters) entersWith <*> traverse (playerQuantity c) amount <*> pure creatureTypes)
   PlayerEffect.PlayLandsFrom from -> PlayerEffect.PlayLandsFrom <$> playerZone c from
   PlayerEffect.PlotFrom (PlotFromZone.MkPlotFromZone from matching) ->
     fmap PlayerEffect.PlotFrom (PlotFromZone.MkPlotFromZone <$> playerZone c from <*> playerFilter c matching)
@@ -2602,7 +2602,7 @@ instructionRewriteChildren c rewrite = case rewrite of
   InstructionRewrite.Scaled scaling -> InstructionRewrite.Scaled <$> scalingChildren c scaling
   InstructionRewrite.DrawInstead -> pure rewrite
   InstructionRewrite.RollD20Instead -> pure rewrite
-  InstructionRewrite.DrawFirst -> pure rewrite
+  InstructionRewrite.PerformFirst _ -> pure rewrite
   InstructionRewrite.ReturnSourceInstead -> pure rewrite
   InstructionRewrite.SetTo _ -> pure rewrite
 

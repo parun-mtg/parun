@@ -1328,7 +1328,10 @@ defaultAnswer p = case p of
   -- CR 702.167a: the first `count` candidates, the arm above's rule over the
   -- battlefield-and-graveyard union `Parun.Engine.Cost.materialCandidates` offers.
   -- The Bool is ignored because `count` is legal under both readings of it --
-  -- exactly the count, and the smallest answer a minimum admits.
+  -- exactly the count, and the smallest answer a minimum admits. The prompt
+  -- does not carry ExileMaterials' oneEach, so under it this answer may meet
+  -- too few criteria; the payment is then Unpaid and the action reversed (CR
+  -- 734.1).
   Prompt.ChooseMaterials _ _ _ candidates count _ -> Set.fromList (List.genericTake count candidates)
   -- CR 701.59a: every candidate where the total is a floor,
   -- ChooseTapsForTotalPower's maximal subset and for its reason read over mana

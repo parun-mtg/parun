@@ -2,6 +2,7 @@
 
 module Parun.Codec.CastFromZone where
 
+import qualified Data.Set as Set
 import qualified Parun.Codec.CostComponent as CostComponent
 import qualified Parun.Codec.Filter as Filter
 import qualified Parun.Codec.InZone as InZone
@@ -12,6 +13,7 @@ import qualified Parun.Codec.PermissionLimit as PermissionLimit
 import qualified Parun.Codec.PermissionPool as PermissionPool
 import qualified Parun.Codec.PermissionVerb as PermissionVerb
 import qualified Parun.Codec.Quantity as Quantity
+import qualified Parun.Codec.Subtype as Subtype
 import qualified Parun.Codec.WithCounters as WithCounters
 import qualified Parun.JsonCodec.Codec as Codec
 import qualified Parun.JsonCodec.Common as Common
@@ -30,7 +32,8 @@ import qualified Parun.Types.PermissionVerb as PermissionVerb
 -- prints no budget grants (Future Sight, Garruk's Horde, Sen Triplets), and the
 -- verb to Cast, which is what a permission naming no land play grants. The pool
 -- defaults to the whole zone, the additional costs to none, the spending to
--- mana as produced, and the alternative cost and the entry counters to none.
+-- mana as produced, and the alternative cost, the entry counters and the added creature types to
+-- none.
 codec :: Codec.Codec CastFromZone.CastFromZone
 codec = Fields.object $ do
   from <- Fields.required "from" InZone.codec CastFromZone.from
@@ -44,4 +47,5 @@ codec = Fields.object $ do
   alternativeCost <- Fields.defaulted "alternativeCost" Nothing (Common.maybe PermissionCost.codec) CastFromZone.alternativeCost
   entersWith <- Fields.defaulted "entersWith" Nothing (Common.maybe WithCounters.codec) CastFromZone.entersWith
   amount <- Fields.defaulted "amount" Nothing (Common.maybe Quantity.codec) CastFromZone.amount
-  pure CastFromZone.MkCastFromZone {CastFromZone.from = from, CastFromZone.matching = matching, CastFromZone.limit = limit, CastFromZone.verb = verb, CastFromZone.pool = pool, CastFromZone.additionalCosts = additionalCosts, CastFromZone.reduction = reduction, CastFromZone.spending = spending, CastFromZone.alternativeCost = alternativeCost, CastFromZone.entersWith = entersWith, CastFromZone.amount = amount}
+  creatureTypes <- Fields.defaulted "creatureTypes" Set.empty (Common.set Subtype.codec) CastFromZone.creatureTypes
+  pure CastFromZone.MkCastFromZone {CastFromZone.from = from, CastFromZone.matching = matching, CastFromZone.limit = limit, CastFromZone.verb = verb, CastFromZone.pool = pool, CastFromZone.additionalCosts = additionalCosts, CastFromZone.reduction = reduction, CastFromZone.spending = spending, CastFromZone.alternativeCost = alternativeCost, CastFromZone.entersWith = entersWith, CastFromZone.amount = amount, CastFromZone.creatureTypes = creatureTypes}

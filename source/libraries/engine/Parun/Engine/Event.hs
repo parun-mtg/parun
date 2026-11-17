@@ -5444,10 +5444,10 @@ apply settle batch applied batchPrevented candidate event =
         gs <- State.get
         pure (Just (ProposedEvent.WouldThrow throw {Throw.units = fmap (Replacement.scale gs candidate scaling) (Throw.units throw)}))
       -- Unreachable: the same lint admits DrawInstead on a scry alone,
-      -- ReturnSourceInstead on a learn alone, and DrawFirst and SetTo on an
+      -- ReturnSourceInstead on a learn alone, and PerformFirst and SetTo on an
       -- instruction a WouldPerform carries.
       InstructionRewrite.DrawInstead -> pure (Just event)
-      InstructionRewrite.DrawFirst -> pure (Just event)
+      InstructionRewrite.PerformFirst _ -> pure (Just event)
       InstructionRewrite.SetTo _ -> pure (Just event)
       InstructionRewrite.ReturnSourceInstead -> pure (Just event)
       InstructionRewrite.RollD20Instead -> do
@@ -7515,12 +7515,14 @@ performRewritten settle candidate event rewrite = case event of
       drawInstruction settle DrawKind.Other Set.empty pid n
       pure Nothing
     -- Leader, Super-Genius's "instead you draw a card, then that creature
-    -- connives": the row's controller (CR 109.5) draws through CR 121.2a's
-    -- instruction, then the instruction stands as it was. With no controller
-    -- the row's "you" names nobody, so nobody draws.
-    InstructionRewrite.DrawFirst -> do
+    -- connives" and Twists and Turns' "instead you scry 1, then that creature
+    -- explores": the row's controller (CR 109.5) performs the first
+    -- instruction once, as an instruction of its own that rows may replace,
+    -- then the instruction stands as it was. With no controller the row's
+    -- "you" names nobody, so nothing is performed first.
+    InstructionRewrite.PerformFirst first -> do
       Replacement.consume (ReplacementCandidate.identity candidate)
-      Foldable.for_ (ReplacementCandidate.controller candidate) (\drawer -> drawInstruction settle DrawKind.Other Set.empty drawer 1)
+      Foldable.for_ (ReplacementCandidate.controller candidate) (performOnce settle first)
       pure (Just event)
     -- Unreachable: Parun.EffectLintSpec's "no card pairs an instruction with
     -- a rewrite the engine cannot carry out" confines RollD20Instead to a
@@ -7538,6 +7540,25 @@ performRewritten settle candidate event rewrite = case event of
           pure Nothing
         else pure (Just event)
   _ -> pure (Just event)
+
+-- One performance of an instruction by a player, PerformFirst's: CR 121.2a's
+-- draw of one card, or CR 701.22a's scry 1. Every other instruction performs
+-- nothing: Parun.EffectLintSpec's "no card pairs an instruction with a rewrite
+-- the engine cannot carry out" keeps it out of card data.
+performOnce :: Game () -> PlayerInstruction.PlayerInstruction -> PlayerId -> Game ()
+performOnce settle instruction pid = case instruction of
+  PlayerInstruction.DrawCards -> drawInstruction settle DrawKind.Other Set.empty pid 1
+  PlayerInstruction.Scry -> scryInstruction settle pid 1
+  PlayerInstruction.MillCards -> pure ()
+  PlayerInstruction.FlipCoin -> pure ()
+  PlayerInstruction.Proliferate -> pure ()
+  PlayerInstruction.FaceVillainousChoice -> pure ()
+  PlayerInstruction.Assemble -> pure ()
+  PlayerInstruction.Connive -> pure ()
+  PlayerInstruction.Explore -> pure ()
+  PlayerInstruction.SetInMotion -> pure ()
+  PlayerInstruction.Learn -> pure ()
+  PlayerInstruction.CopySpell -> pure ()
 
 -- Pokey, the Scallywagg's and Retriever Phoenix's "you may" (CR 614.1a), asked
 -- of the row's controller, whose flip, roll or learn its "you" watches; spent
@@ -12466,6 +12487,96 @@ look pid oid = do
   gs <- State.get
   Monad.forM_ (Game.lookupObject oid gs) $ \_ ->
     State.modify' (recordEvent (GameEvent.Looked (Looked.MkLooked oid (Projection.projectShown oid gs) (Decide.privyTo pid gs))))
+
+-- Write a whole new order back to a player's library: CR 701.22a's scry, CR
+-- 701.25a's surveil and CR 701.29a's fateseal, CR 401.4's arrangement and CR
+-- 701.30a's clash.
+--
+-- `placed` is the cards the instruction put back, wherever they land -- the
+-- reordered ones of CR 701.20d / 701.20e, each of which becomes a new object if
+-- it was revealed or looked at (forgetShown), as a card put into the
+-- library it is already in does (stayPut). Parun.ClashSpec's "CR 701.20d a
+-- card the clash bottoms" case is the proof.
+reorderLibrary :: PlayerId -> [ObjectId] -> [ObjectId] -> GameState -> GameState
+reorderLibrary pid placed order gs =
+  forgetAllShown placed gs {GameState.library = Map.insert pid (Seq.fromList order) (GameState.library gs)}
+
+-- The top `n` CARDS of `pid`'s library (CR 108.2), and every other object in it
+-- in library order. A token put there waits for CR 704.5d and is no card, so the
+-- look passes it; it stays among the rest, since a rewrite of the library
+-- (reorderLibrary) must keep it, and where among them is unobservable.
+topCards :: Integer -> PlayerId -> GameState -> ([ObjectId], [ObjectId])
+topCards n pid gs =
+  let looked = List.genericTake n (Game.cardsIn Zone.Library pid gs)
+   in (looked, filter (`List.notElem` looked) (Game.zoneMembers Zone.Library pid gs))
+
+-- CR 701.22a: one player's scry DECISION, answered with the cards looked at and
+-- the library order it makes -- Nothing where there was nothing to decide. A
+-- short library is looked at as far as it goes; rule 701.22 states no penalty
+-- for scrying more than there is. The move and the CR 701.22d event come after every scryer has
+-- decided (CR 701.22c): the Scry arm's, or scryInstruction's for its one.
+--
+-- The library is REWRITTEN rather than funnelled through changeZone:
+-- nothing crosses a zone boundary, so CR 400.7 mints no new incarnation and the
+-- ids the prompt named still move; CR 701.20e's new objects come after
+-- (reorderLibrary). Looking mints nothing either (CR 701.20b).
+--
+-- Every card looked at is logged (look) before the question, and where
+-- none is asked: the look is the rule's, the question the engine's.
+decideScry :: Integer -> PlayerId -> Game (PlayerId, Maybe ([ObjectId], [ObjectId]))
+decideScry n pid = do
+  gs <- State.get
+  let (looked, beneath) = topCards n pid gs
+      -- The engine never makes the player's choice, but does not ask a question
+      -- with one answer either: nothing to look at, or a single looked-at card
+      -- that is the whole library. One card with more beneath it IS a decision.
+      decided = case looked of
+        [] -> False
+        [_] -> any (`Game.isCardObject` gs) beneath
+        _ -> True
+  Monad.mapM_ (look pid) looked
+  if decided
+    then do
+      answer <- Game.choose (Prompt.ChooseScry (Decide.deciderFor pid gs) pid looked)
+      let (toBottom, onTop) = splitLooked looked answer
+      pure (pid, Just (looked, onTop <> beneath <> toBottom))
+    else pure (pid, Nothing)
+
+-- Repair a look-and-split answer into the two groups the effect then moves: the
+-- cards going AWAY from the top, and the cards staying on top in reading order.
+--
+-- Filtered, deduped and COMPLETED, Effect.Discard's arm's posture: a card named
+-- in neither list stays on top behind the ones that were named, and a card named
+-- in BOTH goes away, the first list winning. One function for all three keyword
+-- actions, the repair being a question about the ANSWER.
+splitLooked :: [ObjectId] -> ([ObjectId], [ObjectId]) -> ([ObjectId], [ObjectId])
+splitLooked looked (away, kept) =
+  let named xs = ListUtils.nubOrd (filter (\c -> List.elem c looked) xs)
+      leaving = named away
+      onTop = filter (\c -> List.notElem c leaving) (named kept)
+      unnamed = filter (\c -> List.notElem c leaving && List.notElem c onTop) looked
+   in (leaving, onTop <> unnamed)
+
+-- CR 701.22a: one player's scry of a positive `n` (CR 701.22b), proposed as CR
+-- 614.1a's replaceable instruction and then decided. Nothing where a row
+-- replaced it outright (Eligeth, Crossroads Augur): it has done its own work,
+-- and by CR 614.6 there is no scry.
+proposeScry :: Game () -> PlayerId -> Natural -> Game (Maybe (PlayerId, Maybe ([ObjectId], [ObjectId])))
+proposeScry settle pid n = do
+  outcome <- applyReplacementsIn settle Nothing Set.empty Set.empty (ProposedEvent.WouldPerform PlayerInstruction.Scry Nothing pid n)
+  Monad.forM (outcome >>= Replacement.asPerformed PlayerInstruction.Scry) $ \(scryer, settled) ->
+    decideScry (toInteger settled) scryer
+
+-- CR 701.22a: one player's whole scry of a positive `n`, where nobody scries
+-- beside them: proposeScry, the move, and CR 701.22d's event, recorded once the
+-- process is complete and for a scry whose move was impossible too. Twists and
+-- Turns' "instead you scry 1" (InstructionRewrite.PerformFirst).
+scryInstruction :: Game () -> PlayerId -> Natural -> Game ()
+scryInstruction settle pid n = do
+  decided <- proposeScry settle pid n
+  Monad.forM_ decided $ \(scryer, order) -> do
+    Monad.forM_ order (\(looked, whole) -> State.modify' (reorderLibrary scryer looked whole))
+    State.modify' (recordEvent (GameEvent.PlayerActed (PlayerActed.MkPlayerActed PlayerAction.Scry scryer)))
 
 -- | CR 701.20a: keep a revealed card revealed for a window, beside any it
 -- already has. Parun.VisibilitySpec's "CR 701.20a a second behold" case proves a

@@ -1767,7 +1767,7 @@ spec s = Spec.describe s "Parun.Codec.Keyword" $ do
     Common.assertCodec
       s
       Keyword.codec
-      (Keyword.Craft (Craft.MkCraft cost (ExileMaterials.MkExileMaterials 1 False (Filter.HasCardType CardType.Creature))))
+      (Keyword.Craft (Craft.MkCraft cost (ExileMaterials.MkExileMaterials 1 False (Filter.HasCardType CardType.Creature) [])))
       " {\"type\":\"Craft\",\"value\":{\"cost\":{\"mana\":[{\"type\":\"Generic\",\"value\":4},{\"type\":\"OfType\",\"value\":{\"type\":\"Colored\",\"value\":\"Black\"}}]},\"materials\":{\"count\":1,\"whichObjects\":{\"type\":\"HasCardType\",\"value\":\"Creature\"}}}} "
   -- CR 702.47a: Desperate Ritual's "Splice onto Arcane {1}{R}".
   Spec.it s "Splice carries its quality and its cost" $ do
