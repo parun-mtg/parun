@@ -3578,8 +3578,10 @@ namedAbilityRemovalAfter gs =
 -- reads next to the object's own (ruleAbilitiesOf): a stored grant's (Chomping
 -- Kavu's backup), and a static ability's, which the fold recorded on the
 -- receiver (Zurgo, Thunder's Decree) and only a whole-board projection reads
--- back. Hoisted over the whole game like abilityRemoval, and no work on a board
--- with neither.
+-- back. An ability sticker's too (CR 123.7), read off the object it is on at
+-- the sticker's timestamp (CR 613.7k), as View.grantedStaticAbilitiesOf reads
+-- one; Parun.StickerSpec's Mystic Doom Sandwich group proves it. Hoisted over
+-- the whole game like abilityRemoval.
 --
 -- CR 613.1f's removal is asked in CR 613.7 timestamp order: only a removal
 -- later than the grant takes it (abilityRemovalAfter). Three gates a printed row
@@ -3604,10 +3606,22 @@ grantedRuleAbilities gs =
       heldBy oid (ts, holders, rules) =
         if Set.member oid holders then RuleAbilities.Engine.keepNamed (\name -> not (removedAfter name ts oid)) rules else mempty
       stored = if null grants then const mempty else \oid -> foldMap (heldBy oid) grants
+      -- CR 123.7 / 613.7k: an ability sticker's, at the sticker's timestamp;
+      -- its set is the object it is on, as fixed as a stored grant's.
+      stickered oid = case Game.lookupObject oid gs of
+        Just obj
+          | not (Seq.null (Object.stickers obj)) ->
+              mconcat
+                [ heldBy oid (StickerPlacement.timestamp placement, Set.singleton oid, rules)
+                | placement <- Foldable.toList (Object.stickers obj),
+                  Just (StickerContent.Ability sticker) <- [Game.stickerContent (StickerPlacement.sticker placement) gs],
+                  GrantedAbility.Rules rules <- AbilitySticker.abilities sticker
+                ]
+        _ -> mempty
       -- The fold already took any grant a later removal reaches (CR 613.7).
       pcs = projectAll gs
       recorded oid = PC.grantedRuleAbilities (projectGiven pcs oid gs)
-   in if grantsRuleAbilityAnywhere gs then \oid -> stored oid <> recorded oid else stored
+   in if grantsRuleAbilityAnywhere gs then \oid -> stored oid <> stickered oid <> recorded oid else \oid -> stored oid <> stickered oid
 
 -- CR 613.1f: does this modification remove abilities? Total: a new
 -- ability-removing Modification must break this build rather than silently answer
@@ -3949,11 +3963,14 @@ honeAffected =
 -- handed over unread (stickerGrants).
 --
 -- A static ability's grant is gathered from the stickered object, as a stored
--- grant's is (View.grantedStaticAbilitiesOf).
+-- grant's is (View.grantedStaticAbilitiesOf), and a rule ability's is read
+-- there too (grantedRuleAbilities).
 --
--- Not implemented: a rule, player or self-cost ability on an ability sticker,
--- or a keyword rule 702 states as a static ability, reaching the stickered
--- object (#8365).
+-- Unprinted: a player or self-cost ability on an ability sticker, or a keyword
+-- rule 702 states as a static ability, would need a read beside those; no
+-- sheet prints one, and Parun.StickerSpec's "no committed ability sticker
+-- carries an ability stickerGathered cannot grant" keeps one out of
+-- data/sticker-sheets/.
 stickerGathered :: GameState -> [Gathered]
 stickerGathered gs =
   let at oid placement lyr affected m =
