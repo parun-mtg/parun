@@ -33,6 +33,8 @@ import qualified Parun.Types.ActiveCopy as ActiveCopy
 import qualified Parun.Types.ArmDelayedTrigger as ArmDelayedTrigger
 import qualified Parun.Types.Asked as Asked
 import qualified Parun.Types.AttackTarget as AttackTarget
+import qualified Parun.Types.AttackTargetKind as AttackTargetKind
+import qualified Parun.Types.AttackedDuring as AttackedDuring
 import qualified Parun.Types.AttackerBlocked as AttackerBlocked
 import qualified Parun.Types.AttackerDeclared as AttackerDeclared
 import qualified Parun.Types.Bookkeeping as Bookkeeping
@@ -4562,16 +4564,35 @@ attackedInLastTurnOf gs pid oid = any ((== oid) . AttackerDeclared.attacker) (at
 -- Every seat counts, a departed player's among them, CR 800.4i's limb on
 -- actions of a player who left the game, until attacksInOwnLastTurn expires it.
 attackersInTheirLastTurn :: GameState -> PlayerId -> Natural
-attackersInTheirLastTurn gs victim = Natural.length (filter (\attacking -> attackedInTheirLastTurn gs attacking victim) (GameState.seating gs))
+attackersInTheirLastTurn gs victim = Natural.length (filter (\attacking -> attacked gs AttackedDuring.TheirLastTurn (Set.singleton AttackTargetKind.OfPlayer) attacking victim) (GameState.seating gs))
 
--- CR 508.1b / 800.4i: did @attacking@ attack @victim@ during @attacking@'s own
--- most recent turn? Weathered Sentinels' "players who attacked you during their
--- last turn", and attackersInTheirLastTurn's per-seat question.
-attackedInTheirLastTurn :: GameState -> PlayerId -> PlayerId -> Bool
-attackedInTheirLastTurn gs attacking victim =
+-- CR 508.1b / 508.5: did @attacking@ declare an attacker, in the window, at
+-- @victim@ or at a permanent of one of these kinds @victim@ defended? Weathered
+-- Sentinels' "players who attacked you during their last turn", Sandswirl
+-- Wanderglyph's "attacked you or a planeswalker you control this turn". The
+-- defender is the one the declaration recorded, so "you control" is read as the
+-- attack was declared (docs/decisions.md, "Whose planeswalker an opponent
+-- "attacked" this turn"). Declarations only: CR 508.4's creature put onto the
+-- battlefield attacking never "attacked".
+attacked :: GameState -> AttackedDuring.AttackedDuring -> Set.Set AttackTargetKind.AttackTargetKind -> PlayerId -> PlayerId -> Bool
+attacked gs during kinds attacking victim =
   any
-    (\row -> AttackerDeclared.attackingPlayer row == attacking && AttackerDeclared.target row == AttackTarget.OfPlayer victim)
-    (attacksInOwnLastTurn gs attacking)
+    (\row -> AttackerDeclared.attackingPlayer row == attacking && AttackerDeclared.defender row == victim && Set.member (attackTargetKind (AttackerDeclared.target row)) kinds)
+    rows
+  where
+    rows = case during of
+      AttackedDuring.TheirLastTurn -> attacksInOwnLastTurn gs attacking
+      AttackedDuring.ThisTurn -> attacksInLog (TurnRegisters.events (GameState.turn gs))
+
+-- CR 506.3: which of the three attackable things an announcement names, the
+-- thing itself dropped. The mapping Parun.Types.AttackTargetKind's arms are named
+-- for, and the reason a restriction can say "or planeswalkers you control"
+-- without naming a planeswalker.
+attackTargetKind :: AttackTarget.AttackTarget -> AttackTargetKind.AttackTargetKind
+attackTargetKind target = case target of
+  AttackTarget.OfPlayer {} -> AttackTargetKind.OfPlayer
+  AttackTarget.OfPlaneswalker {} -> AttackTargetKind.OfPlaneswalker
+  AttackTarget.OfBattle {} -> AttackTargetKind.OfBattle
 
 -- CR 509.1h / 608.2i: did this OBJECT become a blocked creature this turn?
 -- attackersDeclaredThisTurn's footing over the other combat log, and its extent

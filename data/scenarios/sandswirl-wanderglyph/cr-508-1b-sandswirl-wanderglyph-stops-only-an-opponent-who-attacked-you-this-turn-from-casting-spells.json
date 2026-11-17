@@ -1,0 +1,230 @@
+{
+  "board": {
+    "active": "bob",
+    "seats": [
+      {
+        "battlefield": [
+          {
+            "card": "Unstable Glyphbridge",
+            "face": "Sandswirl Wanderglyph",
+            "label": "glyph",
+            "ready": true
+          }
+        ],
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ],
+        "name": "alice"
+      },
+      {
+        "battlefield": [
+          {
+            "card": "Grizzly Bears",
+            "label": "bobbears",
+            "ready": true
+          },
+          {
+            "card": "Swamp",
+            "label": "swamp"
+          }
+        ],
+        "hand": [
+          {
+            "card": "Dark Ritual",
+            "label": "ritual"
+          }
+        ],
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ],
+        "name": "bob"
+      },
+      {
+        "battlefield": [
+          {
+            "card": "Grizzly Bears",
+            "label": "carolbears",
+            "ready": true
+          },
+          {
+            "card": "Swamp",
+            "label": "carolswamp"
+          }
+        ],
+        "hand": [
+          {
+            "card": "Ornithopter",
+            "label": "thopter"
+          },
+          {
+            "card": "Dark Ritual",
+            "label": "carolritual"
+          }
+        ],
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ],
+        "name": "carol"
+      }
+    ],
+    "step": "PrecombatMain"
+  },
+  "description": "CR 508.1b Sandswirl Wanderglyph stops an opponent who attacked its controller this turn from casting spells, and neither an opponent who attacked another player nor the same opponent on a later turn",
+  "final": [
+    {
+      "Count": {
+        "card": "Ornithopter",
+        "count": 1,
+        "player": "carol",
+        "zone": "Battlefield"
+      }
+    },
+    {
+      "Count": {
+        "card": "Dark Ritual",
+        "count": 1,
+        "player": "bob",
+        "zone": "Graveyard"
+      }
+    },
+    {
+      "Count": {
+        "card": "Dark Ritual",
+        "count": 1,
+        "player": "carol",
+        "zone": "Graveyard"
+      }
+    }
+  ],
+  "note": "Three seats from bob's turn. bob attacks alice and can't cast Dark Ritual after combat, while carol, who attacked nobody, casts hers. On carol's turn carol attacks bob and still casts Ornithopter, and bob, whose attack was last turn, casts Dark Ritual.",
+  "timeline": [
+    {
+      "do": {
+        "Attack": [
+          "$bobbears"
+        ]
+      },
+      "player": "bob",
+      "step": "DeclareAttackers",
+      "turn": 1
+    },
+    {
+      "do": {
+        "ChooseAttackTarget": "$alice"
+      },
+      "player": "bob",
+      "source": "$bobbears",
+      "step": "DeclareAttackers",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Block": {}
+      },
+      "player": "alice",
+      "step": "DeclareBlockers",
+      "turn": 1
+    },
+    {
+      "player": "bob",
+      "refuse": {
+        "Cast": {
+          "mana": [
+            "$swamp"
+          ],
+          "object": "$ritual"
+        }
+      },
+      "step": "PostcombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Cast": {
+          "mana": [
+            "$carolswamp"
+          ],
+          "object": "$carolritual"
+        }
+      },
+      "player": "carol",
+      "step": "EndStep",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Attack": [
+          "$carolbears"
+        ]
+      },
+      "player": "carol",
+      "step": "DeclareAttackers",
+      "turn": 2
+    },
+    {
+      "do": {
+        "ChooseAttackTarget": "$bob"
+      },
+      "player": "carol",
+      "source": "$carolbears",
+      "step": "DeclareAttackers",
+      "turn": 2
+    },
+    {
+      "do": {
+        "Cast": {
+          "object": "$thopter"
+        }
+      },
+      "player": "carol",
+      "step": "PostcombatMain",
+      "turn": 2
+    },
+    {
+      "do": {
+        "Cast": {
+          "mana": [
+            "$swamp"
+          ],
+          "object": "$ritual"
+        }
+      },
+      "player": "bob",
+      "step": "EndStep",
+      "turn": 2
+    }
+  ]
+}

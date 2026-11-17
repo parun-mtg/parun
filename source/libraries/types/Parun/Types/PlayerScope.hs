@@ -1,5 +1,8 @@
 module Parun.Types.PlayerScope where
 
+import Data.Set (Set)
+import qualified Parun.Types.AttackTargetKind as AttackTargetKind
+import qualified Parun.Types.AttackedDuring as AttackedDuring
 import qualified Parun.Types.PlayerRelation as PlayerRelation
 import qualified Parun.Types.Superlative as Superlative
 import qualified Parun.Types.TurnRole as TurnRole
@@ -66,6 +69,7 @@ data PlayerScope
   | -- | CR 303.4b: the player the source enchants, nobody where the carrier has
     -- no source or the source enchants no player.
     EnchantedPlayer
-  | -- | CR 508.1b / 800.4i: the players who attacked the perspective during their own last turn.
-    AttackedYouLastTurn
+  | -- | CR 508.1b / 508.5: the players who, in the window, attacked the perspective or a
+    -- permanent of one of these kinds the perspective then defended.
+    AttackedYou AttackedDuring.AttackedDuring (Set AttackTargetKind.AttackTargetKind)
   deriving (Eq, Ord, Show)

@@ -199,7 +199,7 @@ inScopeWithin source reach pid controller gs scope = case scope of
   PlayerScope.ChosenPlayer -> (source >>= \oid -> Game.currentChoice Chosen.Players oid gs >>= Map.lookup PlayerChoice.AsEntersOrTransforms) == Just pid
   PlayerScope.SourceOwner -> (source >>= \oid -> fmap Object.owner (Game.lookupObject oid gs)) == Just pid
   PlayerScope.EnchantedPlayer -> (source >>= \oid -> Projection.enchantedPlayerOf oid gs) == Just pid
-  PlayerScope.AttackedYouLastTurn -> Game.attackedInTheirLastTurn gs pid controller
+  PlayerScope.AttackedYou during kinds -> Game.attacked gs during kinds pid controller
 
 -- The same question over a CARRIER's affected set rather than over a bare scope:
 -- is `pid` one of the players this row applies to? inScope for the Scoped arm,
@@ -256,7 +256,7 @@ playersInScope reach perspective gs scope = case scope of
   PlayerScope.ChosenPlayer -> Nothing
   PlayerScope.SourceOwner -> Nothing
   PlayerScope.EnchantedPlayer -> Nothing
-  PlayerScope.AttackedYouLastTurn -> fmap (\you -> filter (\pid -> Game.attackedInTheirLastTurn gs pid you) (Players.table reach gs)) perspective
+  PlayerScope.AttackedYou during kinds -> fmap (\you -> filter (\pid -> Game.attacked gs during kinds pid you) (Players.table reach gs)) perspective
 
 -- CR 707.2a: the player abilities this permanent's copiable rules text gives it
 -- -- its copy snapshot's when it has one, its printed face's otherwise. The
@@ -3226,7 +3226,7 @@ protectedFromTargeting rows pastHexproof caster source sourceView pid gs =
             -- Nor enchants one.
             PlayerScope.EnchantedPlayer -> False
             -- Nor attacked anyone.
-            PlayerScope.AttackedYouLastTurn -> False
+            PlayerScope.AttackedYou {} -> False
         PlayerEffect.CantCastSpells -> False
         PlayerEffect.CantActivateAbilities {} -> False
         PlayerEffect.CantCastMoreThan _ -> False

@@ -536,8 +536,8 @@ eventBindingsOver board gs bearerBecame becameInGraveyard bearer you cond event 
   --
   -- The pairwise count reads the other event, so it stamps nothing here, which
   -- keeps a pairwise branch of CR 603.1b's AnyOf from naming its own blocker.
-  -- CR 603.2c: a OneOrMore batch binds nothing, a OneOrMore Leaves' answer:
-  -- Neyith of the Dire Hunt's payload names none of the creatures.
+  -- CR 603.2c: a OneOrMore batch binds nothing: Neyith of the Dire Hunt's
+  -- payload names none of the creatures.
   (TriggerCondition.Blocks (BlockTrigger.MkBlockTrigger _ _ _ Batching.OneOrMore _), _) -> Map.empty
   (TriggerCondition.Blocks (BlockTrigger.MkBlockTrigger BlockRole.Blocker _ count _ _), GameEvent.BlocksDeclared (BlocksDeclared.MkBlocksDeclared blocker _)) -> case count of
     BlockCount.Once -> Binding.setBlockingCreature blocker Map.empty
@@ -1344,14 +1344,23 @@ turnedFaceUpSlots subject = case subject of
 -- payload names none) (#3153).
 --
 -- Nothing for a Haunted subject (rule 702.55b's ability speaks about the
--- creature it HAUNTS, never the deceased), and nothing for a OneOrMore batch:
--- batchBindings would join a slot across the batch, and one slot naming one of
--- several departed permanents is no partial binding but a wrong one. No pool
--- card's batch payload reads one (Vengeful Townsfolk, Tameshi, Reality
--- Architect).
+-- creature it HAUNTS, never the deceased).
+--
+-- A OneOrMore batch binds `departedPermanent` alone, as a one-member GROUP per
+-- departure that batchBindings joins across the batch (CR 603.2c), and only for
+-- a bystander subject, entersBindings' reason: The Skullspore Nexus's "the
+-- total power of those creatures", each read by CR 608.2h's last known
+-- information. No singular slot: one naming one of several departed permanents
+-- is no partial binding but a wrong one.
 leavesSlots :: LeavesTrigger.LeavesTrigger -> (Set.Set SlotName.SlotName, Set.Set SlotName.SlotName)
 leavesSlots t
-  | LeavesTrigger.batching t == Batching.OneOrMore = (Set.empty, Set.empty)
+  | LeavesTrigger.batching t == Batching.OneOrMore = case LeavesTrigger.permanent t of
+      LeavingPermanent.Matching _ -> (Set.singleton Binding.departedPermanent, Set.empty)
+      LeavingPermanent.Bound _ -> (Set.singleton Binding.departedPermanent, Set.empty)
+      LeavingPermanent.Chosen -> (Set.singleton Binding.departedPermanent, Set.empty)
+      LeavingPermanent.Self -> (Set.empty, Set.empty)
+      LeavingPermanent.Attached -> (Set.empty, Set.empty)
+      LeavingPermanent.Haunted -> (Set.empty, Set.empty)
   | otherwise = case LeavesTrigger.permanent t of
       LeavingPermanent.Haunted -> (Set.empty, Set.empty)
       LeavingPermanent.Attached
@@ -1376,7 +1385,13 @@ leavesSlots t
 -- the trigger admitted.
 leavesBindings :: GameState -> Maybe ObjectId -> LeavesTrigger.LeavesTrigger -> GameEvent -> Map.Map SlotName.SlotName Binding
 leavesBindings gs bearerBecame t event
-  | LeavesTrigger.batching t == Batching.OneOrMore = Map.empty
+  | LeavesTrigger.batching t == Batching.OneOrMore = case (LeavesTrigger.permanent t, event) of
+      (LeavingPermanent.Self, _) -> Map.empty
+      (LeavingPermanent.Attached, _) -> Map.empty
+      (LeavingPermanent.Haunted, _) -> Map.empty
+      (_, GameEvent.Moved m) -> group (ZoneChange.departed (Moved.change m))
+      (_, GameEvent.LeftTheGame l) -> group (LeftTheGame.object l)
+      _ -> Map.empty
   | otherwise = case (LeavesTrigger.permanent t, event) of
       (LeavingPermanent.Haunted, _) -> Map.empty
       (LeavingPermanent.Attached, GameEvent.Moved m) -> Binding.setDepartedPermanent (ZoneChange.departed (Moved.change m)) aura
@@ -1392,6 +1407,7 @@ leavesBindings gs bearerBecame t event
       | Game.isHiddenZone (ZoneChange.to (Moved.change m)) = Map.empty
       | otherwise = setBecameArrivals m Map.empty
     departed oid = maybe id (Binding.setTriggerPlayer . LastKnown.owner) (Game.lastKnownOf oid gs) . Binding.setDepartedPermanent oid
+    group oid = Map.singleton Binding.departedPermanent (Binding.toObjects (Seq.singleton oid))
 
 -- CR 508.3b / 508.3e: the creatures declared attacking the event's target, for
 -- 508.3e only the attacking player's (Garruk, Curse Breaker's "those

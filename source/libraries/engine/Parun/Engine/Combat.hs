@@ -309,16 +309,6 @@ targetDefender target gs = case target of
   AttackTarget.OfPlaneswalker pw -> List.find (\d -> List.elem pw (attackablePlaneswalkers d gs)) (Defender.defendingPlayers gs)
   AttackTarget.OfBattle battle -> List.find (\d -> List.elem battle (attackableBattles d gs)) (Defender.defendingPlayers gs)
 
--- CR 506.3: which of the three attackable things an announcement names, the
--- thing itself dropped. The mapping Parun.Types.AttackTargetKind's arms are named
--- for, and the reason a restriction can say "or planeswalkers you control"
--- without naming a planeswalker.
-attackTargetKind :: AttackTarget.AttackTarget -> AttackTargetKind.AttackTargetKind
-attackTargetKind target = case target of
-  AttackTarget.OfPlayer {} -> AttackTargetKind.OfPlayer
-  AttackTarget.OfPlaneswalker {} -> AttackTargetKind.OfPlaneswalker
-  AttackTarget.OfBattle {} -> AttackTargetKind.OfBattle
-
 -- CR 802.4a: the attacking creatures one defending player may block -- the ones
 -- attacking them, a planeswalker they control, or a battle they protect. Every
 -- attacker wherever one player defends, which is what keeps CR 509.1 a special
@@ -720,7 +710,7 @@ attackCeiling candidates gs =
 --   * The AIMED-AT one (Blazing Archon, "creatures can't attack you"; Vow of
 --     Flight, "can't attack you or planeswalkers you control") names WHICH of CR
 --     506.3's things on that player's side are barred, so the announcement's
---     defending player is not enough on its own -- attackTargetKind is the other
+--     defending player is not enough on its own -- Game.attackTargetKind is the other
 --     half of the key. Blazing Archon writes OfPlayer alone, which is why a
 --     planeswalker its controller controls stays attackable under it, and what
 --     tells that restriction from a blanket "can't attack".
@@ -731,7 +721,7 @@ attackCeiling candidates gs =
 --     directly. So it bars every kind at that seat at once.
 --
 -- Both halves go through targetDefender, which is CR 508.5's reading, and
--- attackTargetKind is exhaustive over CR 506.3's three things, so a fourth of
+-- Game.attackTargetKind is exhaustive over CR 506.3's three things, so a fourth of
 -- them fails to compile.
 --
 -- targetDefender answering Nothing is an announcement naming no defending player
@@ -742,7 +732,7 @@ barredAnnouncements candidates gs =
   let defenders = Defender.defendingPlayers gs
       aimed = CombatRestriction.cantAttackPlayer candidates defenders gs
       gated = CombatRestriction.cantAttackDefender candidates defenders gs
-      aimedAt oid target = Maybe.maybe False (\d -> Set.member (oid, d, attackTargetKind target) aimed) (targetDefender target gs)
+      aimedAt oid target = Maybe.maybe False (\d -> Set.member (oid, d, Game.attackTargetKind target) aimed) (targetDefender target gs)
       gatedAt oid target = Maybe.maybe False (\d -> Set.member (oid, d) gated) (targetDefender target gs)
       -- CR 508.1b-c: an announcement naming a permanent that can't be attacked
       -- is barred for every creature (The Aetherspark).
@@ -761,7 +751,7 @@ barredAnnouncements candidates gs =
       outOfReach oid target =
         any
           ( \waiver -> case Map.lookup (oid, waiver) waived of
-              Just (Just reach) -> needs oid waiver && Maybe.maybe True (\d -> not (Set.member (d, attackTargetKind target) reach)) (targetDefender target gs)
+              Just (Just reach) -> needs oid waiver && Maybe.maybe True (\d -> not (Set.member (d, Game.attackTargetKind target) reach)) (targetDefender target gs)
               _ -> False
           )
           [minBound .. maxBound]
@@ -3405,7 +3395,7 @@ joinAttack chooser alongside oid = do
 reselectAttack :: Set AttackTargetKind.AttackTargetKind -> PlayerId -> ObjectId -> Game ()
 reselectAttack kinds chooser oid = do
   gs <- State.get
-  let allowed target = Set.member (attackTargetKind target) kinds
+  let allowed target = Set.member (Game.attackTargetKind target) kinds
   Monad.forM_ (Map.lookup oid (Combat.attackers (TurnRegisters.combat (GameState.turn gs)))) $ \current -> do
     target <- announceAttackTarget chooser oid (current NonEmpty.:| List.delete current (filter allowed (declarableTargets gs)))
     Monad.when (target /= current) . State.modify' $ \g ->

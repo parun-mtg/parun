@@ -110,6 +110,7 @@ import qualified Parun.Codec.AttackTargetRefSpec
 import qualified Parun.Codec.AttackTargetSpec
 import qualified Parun.Codec.AttackTriggerSpec
 import qualified Parun.Codec.AttackWindowSpec
+import qualified Parun.Codec.AttackedDuringSpec
 import qualified Parun.Codec.AttackedSubjectSpec
 import qualified Parun.Codec.AttackedTriggerSpec
 import qualified Parun.Codec.AttackerBlockedSpec
@@ -1229,6 +1230,7 @@ spec s reference corpus = do
   Parun.Codec.RuleWaiverSpec.spec s
   Parun.Codec.AttackRequirementSpec.spec s
   Parun.Codec.AttackTargetKindSpec.spec s
+  Parun.Codec.AttackedDuringSpec.spec s
   Parun.Codec.AttackTargetRefSpec.spec s
   Parun.Codec.AttackTargetSpec.spec s
   Parun.Codec.AudienceSpec.spec s
