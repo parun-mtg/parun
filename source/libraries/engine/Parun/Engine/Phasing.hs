@@ -29,8 +29,10 @@
 -- Parun.Engine.Damage.removeAllDamage clears every object rather than every
 -- permanent and so covers a phased-out one without naming it.
 --
--- A stored "can't phase in" (Prohibition.PhaseIn, Teferi, Timeless Voyager) is the
--- other effect on that far side: `phasingIn` asks it by id. CR 702.26b's "except"
+-- A "can't phase in" is the other effect on that far side, stored
+-- (Prohibition.PhaseIn, Teferi, Timeless Voyager) or printed
+-- (RestrictedAction.PhaseIn, read through Affected.MatchingAnywhere, whose
+-- set has no battlefield gate): `held` asks both. CR 702.26b's "except"
 -- leaves it standing, as an effect naming the permanent as phased out.
 --
 -- The object itself does NOT move zones, which is CR 702.26d: Object.zone stays
@@ -103,6 +105,7 @@ import qualified Data.Set as Set
 import qualified Parun.Engine.Event as Event
 import qualified Parun.Engine.Game as Game
 import qualified Parun.Engine.MoveDuration as MoveDuration
+import qualified Parun.Engine.ObjectRestriction as ObjectRestriction
 import qualified Parun.Engine.Prepare as Prepare
 import qualified Parun.Engine.Projection as Projection
 import qualified Parun.Engine.Projection.View as Projection
@@ -119,6 +122,7 @@ import qualified Parun.Types.PhasedOut as PhasedOut
 import Parun.Types.PlayerId (PlayerId)
 import qualified Parun.Types.Prohibition as Prohibition
 import qualified Parun.Types.Recipient as Recipient
+import qualified Parun.Types.RestrictedAction as RestrictedAction
 import qualified Parun.Types.ReturnEnding as ReturnEnding
 import qualified Parun.Types.Subtype as Subtype
 import qualified Parun.Types.TapState as TapState
@@ -308,19 +312,27 @@ heldBy pid oid gs = Maybe.fromMaybe pid (Projection.controllerOf oid gs)
 -- rather than beside it, so an Aura that phased out indirectly on an orphaned
 -- host still rides back with that host (CR 702.26g).
 --
--- A permanent a stored prohibition holds (CR 101.2) drops off `onSchedule`, and
+-- A permanent an effect holds (CR 101.2, `held`) drops off `onSchedule`, and
 -- what rides on it stays with it (CR 702.26g). It is only passed over: its row
 -- stands, so the first untap step on its schedule after the hold ends takes it.
--- Scenario teferi-timeless-voyager-held-creatures-miss-their-untap-step is the
--- proof, and "CR 702.26n a held orphaned row waits out the hold" in
+-- Scenarios teferi-timeless-voyager-held-creatures-miss-their-untap-step and
+-- the-city-on-the-edge-of-forever-keeps-every-artifact-and-creature-phased-out-until-its-token-goes
+-- are the proofs, stored and printed, and "CR 702.26n a held orphaned row waits out the hold" in
 -- Parun.PhasingSpec the orphaned half.
 phasingIn :: PlayerId -> GameState -> [ObjectId]
 phasingIn pid gs =
   let rows = GameState.phasedOut gs
       due = Map.keysSet (Map.filter (\row -> row == PhasedOut.Directly pid || isOrphaned row) rows)
-      onSchedule = Set.difference due (RestrictedCreatures.prohibited Prohibition.PhaseIn (Set.toList due) gs)
+      onSchedule = Set.difference due (held (Set.toList due) gs)
       indirect = Map.keysSet (Map.filter isIndirect rows)
    in Set.toAscList (closeOver indirect onSchedule gs)
+
+-- CR 101.2 / 702.26c: which of `due` an effect in force says can't phase in --
+-- a resolution's stored row (Prohibition.PhaseIn, Teferi, Timeless Voyager's
+-- -8) or a printed static (RestrictedAction.PhaseIn, The City on the Edge of
+-- Forever's Human token). The one reader both phase-in roads ask.
+held :: [ObjectId] -> GameState -> Set.Set ObjectId
+held due gs = Set.union (RestrictedCreatures.prohibited Prohibition.PhaseIn due gs) (ObjectRestriction.restricted RestrictedAction.PhaseIn due gs)
 
 isIndirect :: PhasedOut.PhasedOut -> Bool
 isIndirect status = case status of
@@ -350,10 +362,12 @@ isOrphaned status = case status of
 -- batched by the event group their ending happened in
 -- (Parun.Engine.MoveDuration.dueIn), earlier groups first.
 --
--- A permanent a stored prohibition holds (CR 101.2) does not phase in, and its
+-- A permanent an effect holds (CR 101.2, `held`) does not phase in, and its
 -- row's ending is spent, since rule 610.4 creates the second one-shot effect
 -- once: it stays phased out until some other effect phases it in (CR 610.4a).
--- What rides on it stays with it.
+-- What rides on it stays with it. Scenario
+-- the-city-on-the-edge-of-forever-s-token-keeps-an-oubliette-d-creature-out-as-oubliette-leaves
+-- is the proof for a printed hold.
 phaseInDue :: GameState -> (Bool, GameState)
 phaseInDue gs =
   let rows = GameState.phasedOut gs
@@ -370,9 +384,9 @@ phaseInDue gs =
         _ -> row
       spend g oid = g {GameState.phasedOut = Map.adjust spent oid (GameState.phasedOut g)}
       batch g due =
-        let held = RestrictedCreatures.prohibited Prohibition.PhaseIn due g
-            returning = Set.toAscList (closeOver indirect (Set.difference (Set.fromList due) held) g)
-            heldSpent = List.foldl' spend g (Set.toList held)
+        let holding = held due g
+            returning = Set.toAscList (closeOver indirect (Set.difference (Set.fromList due) holding) g)
+            heldSpent = List.foldl' spend g (Set.toList holding)
             phased
               | null returning = heldSpent
               | otherwise = Event.simultaneouslyPure (\g' -> recordActs PermanentAction.PhaseIn returning (foldr phaseIn (foldr phasesInAs g' returning) returning)) heldSpent

@@ -7,8 +7,9 @@ import qualified Parun.Types.RestrictedAction as RestrictedAction
 -- can't undergo one game action. Garland, Royal Kidnapper's third clause
 -- ("creatures you control but don't own get +2/+2 and can't be sacrificed",
 -- CR 701.21a), Unable to Scream's last ("it can't be turned face up", CR
--- 708) and Airtight Alibi's last ("can't become suspected", CR 701.60a) are
--- the pool's printings.
+-- 708), Airtight Alibi's last ("can't become suspected", CR 701.60a) and The
+-- City on the Edge of Forever's Human token ("permanents can't phase in", CR
+-- 702.26c) are the pool's printings.
 --
 -- The NINTH carrier of a printed static ability, alongside
 -- Parun.Types.StaticAbility, Parun.Types.PlayerStaticAbility,

@@ -20,6 +20,12 @@ spec s = Spec.describe s "Parun.Codec.RestrictedAction" $ do
       RestrictedAction.codec
       RestrictedAction.TurnFaceUp
       " {\"type\":\"TurnFaceUp\"} "
+  Spec.it s "PhaseIn" $
+    Common.assertCodec
+      s
+      RestrictedAction.codec
+      RestrictedAction.PhaseIn
+      " {\"type\":\"PhaseIn\"} "
   Spec.it s "BecomeDesignated" $
     Common.assertCodec
       s
