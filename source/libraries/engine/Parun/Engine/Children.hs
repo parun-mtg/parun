@@ -801,7 +801,7 @@ quantityChildren children quantity = case quantity of
   Quantity.UniqueVowelsOnSticker name -> fmap Quantity.UniqueVowelsOnSticker (slot children SlotArity.Amount name)
   Quantity.VotesReceived (VotesReceived.MkVotesReceived name ref) -> fmap Quantity.VotesReceived (VotesReceived.MkVotesReceived <$> slot children SlotArity.Amount name <*> player children ref)
   Quantity.LettersOnNameStickers _ -> pure quantity
-  Quantity.NameStickers -> pure quantity
+  Quantity.NameStickers _ -> pure quantity
   Quantity.PowerOfStickers -> pure quantity
   Quantity.ToughnessOfStickers -> pure quantity
   Quantity.Star -> pure quantity

@@ -20,6 +20,7 @@ import qualified Parun.Types.CardType as CardType
 import qualified Parun.Types.CastFrom as CastFrom
 import qualified Parun.Types.Color as Color
 import qualified Parun.Types.CommanderColors as CommanderColors
+import qualified Parun.Types.Comparison as Comparison
 import qualified Parun.Types.CompletedDungeon as CompletedDungeon
 import qualified Parun.Types.ControlWindow as ControlWindow
 import qualified Parun.Types.Cost as Cost
@@ -40,6 +41,7 @@ import qualified Parun.Types.InZone as InZone
 import qualified Parun.Types.Keyword as Keyword
 import qualified Parun.Types.KeywordDesignator as KeywordDesignator
 import qualified Parun.Types.KeywordFamily as KeywordFamily
+import qualified Parun.Types.LetterCount as LetterCount
 import qualified Parun.Types.LifeDirection as LifeDirection
 import qualified Parun.Types.LifeTally as LifeTally
 import qualified Parun.Types.LoyaltyKind as LoyaltyKind
@@ -48,6 +50,7 @@ import qualified Parun.Types.ManaSpent as ManaSpent
 import qualified Parun.Types.ManaSymbol as ManaSymbol
 import qualified Parun.Types.ManaSymbolKind as ManaSymbolKind
 import qualified Parun.Types.Measure as Measure
+import qualified Parun.Types.NameStickerTest as NameStickerTest
 import qualified Parun.Types.NoteFold as NoteFold
 import qualified Parun.Types.ObjectDamage as ObjectDamage
 import qualified Parun.Types.PhaseSelector as PhaseSelector
@@ -165,12 +168,19 @@ spec s = Spec.describe s "Parun.Codec.Quantity" $ do
       Quantity.codec
       (Quantity.LettersOnNameStickers (Text.pack "o"))
       " {\"type\":\"LettersOnNameStickers\",\"value\":\"o\"} "
-  Spec.it s "NameStickers, a bare tag" $
+  Spec.it s "NameStickers, every sticker" $
     Common.assertCodec
       s
       Quantity.codec
-      Quantity.NameStickers
-      " {\"type\":\"NameStickers\"} "
+      (Quantity.NameStickers NameStickerTest.AnyNameSticker)
+      " {\"type\":\"NameStickers\",\"value\":{\"type\":\"AnyNameSticker\"}} "
+  -- CR 123.6d (Fight the _____ Fight).
+  Spec.it s "NameStickers, by letter count" $
+    Common.assertCodec
+      s
+      Quantity.codec
+      (Quantity.NameStickers (NameStickerTest.WithLetterCount (LetterCount.MkLetterCount Comparison.AtLeast 8)))
+      " {\"type\":\"NameStickers\",\"value\":{\"type\":\"WithLetterCount\",\"value\":{\"comparison\":\"AtLeast\",\"letters\":8}}} "
   -- CR 123.8a (Ambassador Blorpityblorpboop).
   Spec.it s "PowerOfStickers, a bare tag" $
     Common.assertCodec

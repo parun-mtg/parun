@@ -34,7 +34,10 @@
                             "type": "ModifyPowerToughness",
                             "value": {
                               "power": {
-                                "type": "NameStickers"
+                                "type": "NameStickers",
+                                "value": {
+                                  "type": "AnyNameSticker"
+                                }
                               },
                               "toughness": {
                                 "type": "Literal",

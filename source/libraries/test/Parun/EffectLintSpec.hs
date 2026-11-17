@@ -360,7 +360,7 @@ printedBoxQuantity quantity = case quantity of
   Quantity.Type.ObjectCounters {} -> False
   Quantity.Type.ObjectCountersOfAnyKind -> False
   Quantity.Type.LettersOnNameStickers _ -> False
-  Quantity.Type.NameStickers -> False
+  Quantity.Type.NameStickers _ -> False
   Quantity.Type.PowerOfStickers -> False
   Quantity.Type.ToughnessOfStickers -> False
   Quantity.Type.HasDesignation {} -> False

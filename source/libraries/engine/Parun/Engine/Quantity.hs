@@ -11,6 +11,7 @@ import qualified Data.Monoid as Monoid
 import qualified Data.Sequence as Seq
 import Data.Set (Set)
 import qualified Data.Set as Set
+import qualified Data.Text as Text
 import Numeric.Natural (Natural)
 import qualified Parun.Engine.Binding as Binding
 import qualified Parun.Engine.Children as Children
@@ -63,6 +64,7 @@ import qualified Parun.Types.InZone as InZone
 import qualified Parun.Types.Keyword as Keyword.Type
 import qualified Parun.Types.LandPlayed as LandPlayed
 import qualified Parun.Types.LastKnown as LastKnown
+import qualified Parun.Types.LetterCount as LetterCount
 import qualified Parun.Types.LifeTally as LifeTally
 import qualified Parun.Types.LoggedEvent as LoggedEvent
 import qualified Parun.Types.Mana as Mana
@@ -73,6 +75,7 @@ import qualified Parun.Types.ManaUnit as ManaUnit
 import qualified Parun.Types.MatchScope as MatchScope
 import qualified Parun.Types.Measure as Measure
 import qualified Parun.Types.Moved as Moved
+import qualified Parun.Types.NameStickerTest as NameStickerTest
 import qualified Parun.Types.NoteFold as NoteFold
 import qualified Parun.Types.Object as Object
 import qualified Parun.Types.ObjectDamage as ObjectDamage
@@ -667,7 +670,7 @@ evaluateAgainst viewOf context gs announcedOn mOid mView quantity =
         Quantity.ObjectCountersOfAnyKind -> fmap (toInteger . sum . Filter.counters) mView
         -- CR 123.6d off the view, ObjectCounters' posture.
         Quantity.LettersOnNameStickers letters -> fmap (\v -> toInteger (sum [NameWords.letterCount letters w | StickerContent.Name w <- Foldable.toList (Filter.stickers v)])) mView
-        Quantity.NameStickers -> fmap (\v -> toInteger (length [w | StickerContent.Name w <- Foldable.toList (Filter.stickers v)])) mView
+        Quantity.NameStickers test -> fmap (\v -> toInteger (length [w | StickerContent.Name w <- Foldable.toList (Filter.stickers v), passesNameStickerTest test w])) mView
         Quantity.PowerOfStickers -> fmap (\v -> sum [PowerToughnessSticker.power pt | StickerContent.PowerToughness pt <- Foldable.toList (Filter.stickers v)]) mView
         Quantity.ToughnessOfStickers -> fmap (\v -> sum [PowerToughnessSticker.toughness pt | StickerContent.PowerToughness pt <- Foldable.toList (Filter.stickers v)]) mView
         -- The designation as a 0/1, off the same view ObjectCounters reads -- so CR
@@ -1775,7 +1778,7 @@ talliesWhatHappened quantity = case quantity of
   Quantity.ObjectCounters _ -> False
   Quantity.ObjectCountersOfAnyKind -> False
   Quantity.LettersOnNameStickers _ -> False
-  Quantity.NameStickers -> False
+  Quantity.NameStickers _ -> False
   Quantity.PowerOfStickers -> False
   Quantity.ToughnessOfStickers -> False
   Quantity.HasDesignation _ -> False
@@ -2023,3 +2026,10 @@ walkedTo pids oid event = case event of
       && TurnedUpOffDeck.card turned == oid
       && elem (TurnedUpOffDeck.player turned) pids
   _ -> False
+
+-- | CR 123.6 / 123.6d: does the word on a name sticker pass the test?
+passesNameStickerTest :: NameStickerTest.NameStickerTest -> Text.Text -> Bool
+passesNameStickerTest test word = case test of
+  NameStickerTest.AnyNameSticker -> True
+  NameStickerTest.WithLetterCount (LetterCount.MkLetterCount comparison n) ->
+    Filter.compares comparison (toInteger (NameWords.letterTotal word)) (toInteger n)

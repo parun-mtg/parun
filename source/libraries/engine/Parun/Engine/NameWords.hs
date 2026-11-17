@@ -2,6 +2,7 @@
 -- 123.6d-e's letter and vowel reads. Pure text, no game state.
 module Parun.Engine.NameWords where
 
+import qualified Data.Char as Char
 import qualified Data.Set as Set
 import qualified Data.Text as Text
 import Numeric.Natural (Natural)
@@ -39,6 +40,11 @@ letterCount :: Text.Text -> Text.Text -> Natural
 letterCount letters text =
   let wanted = Set.fromList (Text.unpack (Text.toLower letters))
    in Natural.length (filter (\c -> Set.member c wanted) (Text.unpack (Text.toLower text)))
+
+-- | CR 123.6d: how many letters the text holds, either case; a space,
+-- hyphen or apostrophe is none.
+letterTotal :: Text.Text -> Natural
+letterTotal = Natural.length . filter Char.isLetter . Text.unpack
 
 -- | CR 123.6e: how many different vowels, A, E, I, O, U and Y, either case.
 uniqueVowels :: Text.Text -> Natural

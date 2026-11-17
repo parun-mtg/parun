@@ -27,6 +27,7 @@ import qualified Parun.Codec.ManaCount as ManaCount
 import qualified Parun.Codec.ManaSpent as ManaSpent
 import qualified Parun.Codec.ManaSymbolKind as ManaSymbolKind
 import qualified Parun.Codec.Measure as Measure
+import qualified Parun.Codec.NameStickerTest as NameStickerTest
 import qualified Parun.Codec.ObjectDamage as ObjectDamage
 import qualified Parun.Codec.PhaseSelector as PhaseSelector
 import qualified Parun.Codec.PlayerAction as PlayerAction
@@ -81,7 +82,7 @@ codec =
       Arm.payload "WasBound" SlotName.codec Quantity.WasBound (\x -> case x of Quantity.WasBound y -> Just y; _ -> Nothing),
       Arm.payload "BoundCount" SlotName.codec Quantity.BoundCount (\x -> case x of Quantity.BoundCount y -> Just y; _ -> Nothing),
       Arm.payload "LettersOnNameStickers" Common.text Quantity.LettersOnNameStickers (\x -> case x of Quantity.LettersOnNameStickers y -> Just y; _ -> Nothing),
-      Arm.nullary "NameStickers" Quantity.NameStickers,
+      Arm.payload "NameStickers" NameStickerTest.codec Quantity.NameStickers (\x -> case x of Quantity.NameStickers y -> Just y; _ -> Nothing),
       Arm.nullary "PowerOfStickers" Quantity.PowerOfStickers,
       Arm.nullary "ToughnessOfStickers" Quantity.ToughnessOfStickers,
       Arm.payload "UniqueVowelsOnSticker" SlotName.codec Quantity.UniqueVowelsOnSticker (\x -> case x of Quantity.UniqueVowelsOnSticker y -> Just y; _ -> Nothing),

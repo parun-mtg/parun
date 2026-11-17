@@ -2124,7 +2124,7 @@ operandValue context view operand = case operand of
   Operand.ChosenNumber -> toInteger <$> sourceChosenNumber context
 
 -- Does the measured number relate thus to the threshold? Parun.Types.Comparison's
--- one reader: this module's Measures atom and Parun.Engine.Condition's Compares.
+-- one reader.
 compares :: Comparison.Comparison -> Integer -> Integer -> Bool
 compares comparison n t = case comparison of
   Comparison.Exactly -> n == t

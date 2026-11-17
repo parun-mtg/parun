@@ -3578,7 +3578,7 @@ quantityKindFilters quantity = case quantity of
   -- nothing to dig out.
   Quantity.Type.ObjectCountersOfAnyKind -> []
   Quantity.Type.LettersOnNameStickers _ -> []
-  Quantity.Type.NameStickers -> []
+  Quantity.Type.NameStickers _ -> []
   Quantity.Type.PowerOfStickers -> []
   Quantity.Type.ToughnessOfStickers -> []
   Quantity.Type.OpponentsAttacked _ -> []
