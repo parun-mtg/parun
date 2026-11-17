@@ -1,5 +1,6 @@
 module Parun.Types.CastFromZone where
 
+import qualified Data.Set as Set
 import qualified Numeric.Natural as Natural
 import qualified Parun.Types.CostComponent as CostComponent
 import qualified Parun.Types.Filter as Filter
@@ -11,6 +12,7 @@ import qualified Parun.Types.PermissionLimit as PermissionLimit
 import qualified Parun.Types.PermissionPool as PermissionPool
 import qualified Parun.Types.PermissionVerb as PermissionVerb
 import qualified Parun.Types.Quantity as Quantity
+import qualified Parun.Types.Subtype as Subtype
 import qualified Parun.Types.WithCounters as WithCounters
 
 -- | The payload of Parun.Types.PlayerEffect's CastFrom arm: whose copy of which
@@ -62,6 +64,10 @@ data CastFromZone = MkCastFromZone
     -- | CR 109.5: the number `matching`'s EnclosingAmount operand compares
     -- against, read for the permission's SOURCE as Parun.Types.FreeCast's
     -- `amount` is (Maralen, Fae Ascendant). Nothing where it states none.
-    amount :: Maybe Quantity.Quantity
+    amount :: Maybe Quantity.Quantity,
+    -- | CR 205.1b / 400.7a: the creature types a spell cast under it has in
+    -- addition to its other types, on the stack and as the permanent it
+    -- becomes (The Tomb of Aclazotz's Vampire). Empty where it states none.
+    creatureTypes :: Set.Set Subtype.Subtype
   }
   deriving (Eq, Ord, Show)

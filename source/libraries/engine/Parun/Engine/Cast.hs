@@ -52,6 +52,7 @@ import qualified Parun.Extra.Natural as Natural
 import qualified Parun.Types.AbilityName as AbilityName
 import qualified Parun.Types.ActivePlayerEffect as ActivePlayerEffect
 import qualified Parun.Types.ActiveReplacement as ActiveReplacement
+import qualified Parun.Types.Affected as Affected
 import qualified Parun.Types.Binding as Binding.Type
 import qualified Parun.Types.BuybackDecision as BuybackDecision
 import qualified Parun.Types.CandidateCost as CandidateCost
@@ -61,6 +62,7 @@ import qualified Parun.Types.CardType as CardType
 import qualified Parun.Types.CastFromZone as CastFromZone
 import qualified Parun.Types.CastingPermission as CastingPermission
 import qualified Parun.Types.CastingRestriction as CastingRestriction
+import qualified Parun.Types.ChangeMode as ChangeMode
 import qualified Parun.Types.Clause as Clause
 import qualified Parun.Types.Compares as Compares
 import qualified Parun.Types.Condition as Condition.Type
@@ -111,6 +113,7 @@ import qualified Parun.Types.Modal as Modal.Type
 import qualified Parun.Types.Mode as Mode
 import qualified Parun.Types.ModeIndex as ModeIndex
 import qualified Parun.Types.ModeSelection as ModeSelection
+import qualified Parun.Types.Modification as Modification
 import qualified Parun.Types.Object as Object
 import Parun.Types.ObjectId (ObjectId)
 import qualified Parun.Types.Payment as Payment
@@ -3338,7 +3341,8 @@ ownPayingWays oid face gs =
           CastFromZone.spending = ManaSpending.AsProduced,
           CastFromZone.alternativeCost = Nothing,
           CastFromZone.entersWith = entersWith,
-          CastFromZone.amount = Nothing
+          CastFromZone.amount = Nothing,
+          CastFromZone.creatureTypes = Set.empty
         }
     )
   | permission@(CastingPermission.CastFromGraveyard _ _ additional entersWith) <- Cost.permissionsOf oid face gs,
@@ -3529,6 +3533,31 @@ installPermissionEntry caster permission spell gs = case permission of
     | Just counters <- CastFromZone.entersWith grant ->
         snd (replacementRow src caster Binding.castSpell spell (EntryRewrite.WithCounters counters) gs)
   _ -> gs
+
+-- CR 205.1b / 400.7a: "If you do, it ... is a Vampire in addition to its other
+-- types" (The Tomb of Aclazotz), the creature types the permission the cast of
+-- `spell` was made under adds: one stored effect per type naming the spell,
+-- which Parun.Engine.Event.carryOver re-keys onto the permanent it becomes, so
+-- it is one on the stack too (the card's ruling). Nothing for a cast made under
+-- no permission or one stating none. Its expiry is Never: the rider states no
+-- duration. The scenarios under data/scenarios/cast-permission naming The Tomb
+-- of Aclazotz prove it.
+installPermissionTypes :: Maybe (ObjectId, CastFromZone.CastFromZone) -> ObjectId -> GameState -> GameState
+installPermissionTypes permission spell gs = case permission of
+  Just (src, grant) -> List.foldl' (install src) gs (Set.toAscList (CastFromZone.creatureTypes grant))
+  Nothing -> gs
+  where
+    install src g subtype =
+      let (ts, g1) = Game.freshTimestamp g
+          effect =
+            ContinuousEffect.MkContinuousEffect
+              { ContinuousEffect.source = src,
+                ContinuousEffect.timestamp = ts,
+                ContinuousEffect.expiry = Expiry.Never,
+                ContinuousEffect.modification = Modification.CreatureSubtype ChangeMode.InAddition subtype,
+                ContinuousEffect.affected = Affected.TheseObjects (Set.singleton spell)
+              }
+       in g1 {GameState.stored = (GameState.stored g1) {StoredEffects.continuousEffects = effect : StoredEffects.continuousEffects (GameState.stored g1)}}
 
 -- CR 601.2a / 106.6: the pooled units baked with this card as their source's
 -- last exiled card (Parun.Types.ManaUnit.sourceLastExiled) now name the spell the
@@ -4717,6 +4746,9 @@ castProposed perform baseSpending pid oid sid printedFace castFrom preparedFor k
                           -- CR 614.1d: so is its entry rider, as a row naming the
                           -- spell.
                           State.modify' (installPermissionEntry pid permissionUsed sid)
+                          -- CR 205.1b: and its added creature types, as effects
+                          -- naming the spell.
+                          State.modify' (installPermissionTypes permissionUsed sid)
                           -- CR 400.7h: and, made under the card's own
                           -- permission, that permission's.
                           Monad.when (not ownPermission && Maybe.isNothing permissionUsed) (State.modify' (installSpellEntry pid ownHeld sid))
