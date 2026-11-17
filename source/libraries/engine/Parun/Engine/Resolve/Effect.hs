@@ -852,8 +852,10 @@ runEntryEffect runSubgame pending = do
   Foldable.for_ announced $ \_ -> State.modify' (setX before)
   -- CR 508.4: EntryRewrite.EntersAttacking, whose guards (CR 506.3) and
   -- choice are Combat's, the road Create's attacking rider takes. Skipped for a
-  -- creature already attacking: a second row, or an effect's own rider (a
-  -- mobilize token, a ninja) put it there first, and it enters attacking once.
+  -- creature already attacking: a second row put it there first, and it enters
+  -- attacking once. An effect's own rider (a mobilize token, a ninja) has
+  -- already cleared the flag, whether or not its specification left the
+  -- creature attacking (CR 508.4e, Combat.putOntoBattlefieldAttacking).
   attacking <- State.gets (Map.member oid . Combat.Type.attackers . TurnRegisters.combat . GameState.turn)
   Monad.when (PendingEntryEffect.attacking pending && not attacking) (Combat.putOntoBattlefieldAttacking Combat.Any oid)
   State.modify' (Trigger.resampleEntry oid)
