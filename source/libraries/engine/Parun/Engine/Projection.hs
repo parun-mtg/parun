@@ -5345,6 +5345,7 @@ aggregationReads :: Aggregation.Aggregation Quantity.Type.Quantity -> Set Aspect
 aggregationReads a = case a of
   Aggregation.Members -> Set.empty
   Aggregation.Distinct DistinctOf.CardTypes -> Set.singleton Types
+  Aggregation.Distinct DistinctOf.PermanentTypes -> Set.singleton Types
   Aggregation.Distinct DistinctOf.Colors -> Set.singleton Colors
   Aggregation.Distinct DistinctOf.ColorSets -> Set.singleton Colors
   Aggregation.Distinct DistinctOf.BasicLandTypes -> Set.singleton Subtypes
