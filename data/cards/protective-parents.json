@@ -1,0 +1,237 @@
+{
+  "faces": [
+    {
+      "manaCost": [
+        {
+          "type": "Generic",
+          "value": 2
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "White"
+          }
+        }
+      ],
+      "name": "Protective Parents",
+      "oracleText": "When this creature dies, create a Young Hero Role token attached to up to one target creature you control. (If you control another Role on it, put that one into the graveyard. Enchanted creature has \"Whenever this creature attacks, if its toughness is 3 or less, put a +1/+1 counter on it.\")",
+      "power": {
+        "type": "Literal",
+        "value": 3
+      },
+      "toughness": {
+        "type": "Literal",
+        "value": 2
+      },
+      "triggeredAbilities": [
+        {
+          "condition": {
+            "type": "Leaves",
+            "value": {
+              "destinations": [
+                {
+                  "zone": "Graveyard"
+                }
+              ]
+            }
+          },
+          "modal": {
+            "modes": [
+              {
+                "clauses": [
+                  {
+                    "effects": [
+                      {
+                        "type": "Create",
+                        "value": {
+                          "card": {
+                            "faces": [
+                              {
+                                "enchant": [
+                                  {
+                                    "pool": {
+                                      "type": "Creatures"
+                                    }
+                                  }
+                                ],
+                                "name": "Young Hero",
+                                "staticAbilities": [
+                                  {
+                                    "affected": {
+                                      "type": "Matching",
+                                      "value": {
+                                        "type": "And",
+                                        "value": [
+                                          {
+                                            "type": "HasCardType",
+                                            "value": "Creature"
+                                          },
+                                          {
+                                            "type": "HasAttached",
+                                            "value": {
+                                              "type": "IsSource"
+                                            }
+                                          }
+                                        ]
+                                      }
+                                    },
+                                    "modifications": [
+                                      {
+                                        "type": "GainAbility",
+                                        "value": {
+                                          "type": "Triggered",
+                                          "value": {
+                                            "condition": {
+                                              "type": "Attacks",
+                                              "value": {
+                                                "type": "Attacker",
+                                                "value": {}
+                                              }
+                                            },
+                                            "intervening": {
+                                              "type": "Compares",
+                                              "value": {
+                                                "comparison": "AtLeast",
+                                                "measured": {
+                                                  "type": "Count",
+                                                  "value": {
+                                                    "aggregation": {
+                                                      "type": "Members"
+                                                    },
+                                                    "filter": {
+                                                      "type": "And",
+                                                      "value": [
+                                                        {
+                                                          "type": "IsSource"
+                                                        },
+                                                        {
+                                                          "type": "Measures",
+                                                          "value": {
+                                                            "comparison": "AtMost",
+                                                            "measure": "Toughness",
+                                                            "operand": {
+                                                              "type": "Literal",
+                                                              "value": 3
+                                                            }
+                                                          }
+                                                        }
+                                                      ]
+                                                    },
+                                                    "scope": {
+                                                      "type": "InZone",
+                                                      "value": {
+                                                        "player": {
+                                                          "type": "Relative",
+                                                          "value": "AnyPlayer"
+                                                        },
+                                                        "zone": "Battlefield"
+                                                      }
+                                                    }
+                                                  }
+                                                },
+                                                "threshold": {
+                                                  "type": "Literal",
+                                                  "value": 1
+                                                }
+                                              }
+                                            },
+                                            "modal": {
+                                              "modes": [
+                                                {
+                                                  "clauses": [
+                                                    {
+                                                      "effects": [
+                                                        {
+                                                          "type": "PutCounters",
+                                                          "value": {
+                                                            "kind": {
+                                                              "type": "PlusOnePlusOne"
+                                                            },
+                                                            "quantity": {
+                                                              "type": "Literal",
+                                                              "value": 1
+                                                            },
+                                                            "ref": {
+                                                              "type": "InSlot",
+                                                              "value": "self"
+                                                            }
+                                                          }
+                                                        }
+                                                      ]
+                                                    }
+                                                  ]
+                                                }
+                                              ]
+                                            }
+                                          }
+                                        }
+                                      }
+                                    ]
+                                  }
+                                ],
+                                "typeLine": {
+                                  "subtypes": [
+                                    "Aura",
+                                    "Role"
+                                  ],
+                                  "types": [
+                                    "Enchantment"
+                                  ]
+                                }
+                              }
+                            ]
+                          },
+                          "quantity": {
+                            "type": "Literal",
+                            "value": 1
+                          },
+                          "riders": {
+                            "attachedTo": {
+                              "type": "Specified",
+                              "value": "target"
+                            }
+                          }
+                        }
+                      }
+                    ]
+                  }
+                ],
+                "targetSlots": {
+                  "target": {
+                    "count": {
+                      "type": "Printed",
+                      "value": {
+                        "least": 0,
+                        "most": 1
+                      }
+                    },
+                    "filter": {
+                      "type": "HeldBy",
+                      "value": {
+                        "holder": "Controller",
+                        "relation": "You"
+                      }
+                    },
+                    "pool": {
+                      "type": "Creatures"
+                    }
+                  }
+                }
+              }
+            ]
+          }
+        }
+      ],
+      "typeLine": {
+        "subtypes": [
+          "Human",
+          "Peasant"
+        ],
+        "types": [
+          "Creature"
+        ]
+      }
+    }
+  ]
+}
