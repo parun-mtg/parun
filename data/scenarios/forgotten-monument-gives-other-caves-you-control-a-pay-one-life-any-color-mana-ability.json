@@ -1,0 +1,195 @@
+{
+  "board": {
+    "active": "alice",
+    "step": "PrecombatMain",
+    "seats": [
+      {
+        "name": "alice",
+        "life": 17,
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ],
+        "battlefield": [
+          {
+            "card": "Forgotten Monument",
+            "label": "monument"
+          },
+          {
+            "card": "Promising Vein",
+            "label": "vein"
+          }
+        ]
+      },
+      {
+        "name": "bob",
+        "life": 19,
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ],
+        "battlefield": [
+          {
+            "card": "Promising Vein",
+            "label": "theirs"
+          }
+        ]
+      }
+    ]
+  },
+  "description": "CR 613.1f / 605.1a: Forgotten Monument gives other Caves you control \"{T}, Pay 1 life: Add one mana of any color\", not itself and not an opponent's Cave",
+  "timeline": [
+    {
+      "do": {
+        "Take": {
+          "action": "ActivateManaAbility $monument"
+        }
+      },
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice"
+    },
+    {
+      "check": {
+        "View": {
+          "of": "ManaPool",
+          "player": "alice",
+          "is": [
+            {
+              "manaType": {
+                "type": "Colorless"
+              },
+              "tags": [],
+              "retention": "Ordinary",
+              "restriction": null,
+              "rider": null,
+              "sourceChoices": null
+            }
+          ]
+        }
+      },
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice"
+    },
+    {
+      "check": {
+        "Life": {
+          "life": 17,
+          "player": "alice"
+        }
+      },
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice"
+    },
+    {
+      "do": {
+        "Take": {
+          "action": "ActivateManaAbility $vein",
+          "yields": [
+            [
+              {
+                "manaType": {
+                  "type": "Colored",
+                  "value": "Red"
+                },
+                "restriction": null,
+                "retention": "Ordinary",
+                "rider": null,
+                "sourceChoices": null,
+                "tags": []
+              }
+            ]
+          ]
+        }
+      },
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice"
+    },
+    {
+      "check": {
+        "Tapped": {
+          "object": "$vein",
+          "tapped": true
+        }
+      },
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice"
+    },
+    {
+      "check": {
+        "Life": {
+          "life": 16,
+          "player": "alice"
+        }
+      },
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice"
+    },
+    {
+      "check": {
+        "View": {
+          "of": "ManaPool",
+          "player": "alice",
+          "is": [
+            {
+              "manaType": {
+                "type": "Colorless"
+              },
+              "tags": [],
+              "retention": "Ordinary",
+              "restriction": null,
+              "rider": null,
+              "sourceChoices": null
+            },
+            {
+              "manaType": {
+                "type": "Colored",
+                "value": "Red"
+              },
+              "tags": [],
+              "retention": "Ordinary",
+              "restriction": null,
+              "rider": null,
+              "sourceChoices": null
+            }
+          ]
+        }
+      },
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice"
+    }
+  ],
+  "note": "Forgotten Monument itself taps for {C} unasked, so it has no second mana ability: the \"Other\" half. Promising Vein's printed mana ability adds only {C} too, so red from it is the granted ability."
+}
