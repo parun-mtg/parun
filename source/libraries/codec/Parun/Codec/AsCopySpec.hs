@@ -47,7 +47,7 @@ spec s = Spec.describe s "Parun.Codec.AsCopy" $ do
     Common.assertCodec
       s
       (AsCopy.codec Common.text Common.text)
-      (AsCopy.MkAsCopy (Filter.HasCardType CardType.Creature) Nothing [CopyClause.MkCopyClause Nothing [CopyException.SetPowerToughness (SetPowerToughness.MkSetPowerToughness 7 7)] Nothing] False Seq.empty (CopyDomain.InZone Zone.Battlefield) Nothing CopyRecipient.ThisObject True)
+      (AsCopy.MkAsCopy (Filter.HasCardType CardType.Creature) Nothing [CopyClause.MkCopyClause Nothing [CopyException.SetPowerToughness (SetPowerToughness.MkSetPowerToughness 7 7)] Nothing False] False Seq.empty (CopyDomain.InZone Zone.Battlefield) Nothing CopyRecipient.ThisObject True)
       " {\"eligible\":{\"type\":\"HasCardType\",\"value\":\"Creature\"},\"clauses\":[{\"exceptions\":[{\"type\":\"SetPowerToughness\",\"value\":{\"power\":7,\"toughness\":7}}]}]} "
   -- CR 614.1d inside CR 614.1c: Vesuva's "enter tapped as a copy".
   Spec.it s "MkAsCopy, entering tapped (Vesuva)" $
@@ -64,7 +64,7 @@ spec s = Spec.describe s "Parun.Codec.AsCopy" $ do
     Common.assertCodec
       s
       (AsCopy.codec Common.text Common.text)
-      (AsCopy.MkAsCopy (Filter.HasCardType CardType.Creature) Nothing [CopyClause.MkCopyClause Nothing [] (Just (WithCounters.one CounterKind.PlusOnePlusOne (Quantity.InSlot (SlotName.MkSlotName (Text.pack "X")))))] False Seq.empty (CopyDomain.InZone Zone.Battlefield) Nothing CopyRecipient.ThisObject True)
+      (AsCopy.MkAsCopy (Filter.HasCardType CardType.Creature) Nothing [CopyClause.MkCopyClause Nothing [] (Just (WithCounters.one CounterKind.PlusOnePlusOne (Quantity.InSlot (SlotName.MkSlotName (Text.pack "X"))))) False] False Seq.empty (CopyDomain.InZone Zone.Battlefield) Nothing CopyRecipient.ThisObject True)
       " {\"eligible\":{\"type\":\"HasCardType\",\"value\":\"Creature\"},\"clauses\":[{\"counters\":[{\"kind\":{\"type\":\"PlusOnePlusOne\"},\"count\":{\"type\":\"InSlot\",\"value\":\"X\"}}]}]} "
   -- CR 707.9g: the linked "when you do" trigger's effects, Wall of Stolen
   -- Identity's; the effect codec is a parameter, so text stands in for it.
@@ -110,8 +110,8 @@ spec s = Spec.describe s "Parun.Codec.AsCopy" $ do
       ( AsCopy.MkAsCopy
           (Filter.HasCardType CardType.Creature)
           Nothing
-          [ CopyClause.MkCopyClause Nothing [CopyException.RemoveSupertypes (Set.singleton Supertype.Legendary)] Nothing,
-            CopyClause.MkCopyClause (Just (Condition.Compares (Compares.MkCompares (Quantity.Literal 1) Comparison.AtLeast (Quantity.Literal 1)))) [] (Just (WithCounters.one CounterKind.PlusOnePlusOne (Quantity.Literal 1)))
+          [ CopyClause.MkCopyClause Nothing [CopyException.RemoveSupertypes (Set.singleton Supertype.Legendary)] Nothing False,
+            CopyClause.MkCopyClause (Just (Condition.Compares (Compares.MkCompares (Quantity.Literal 1) Comparison.AtLeast (Quantity.Literal 1)))) [] (Just (WithCounters.one CounterKind.PlusOnePlusOne (Quantity.Literal 1))) False
           ]
           False
           Seq.empty

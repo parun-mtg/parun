@@ -34,6 +34,10 @@ data CopyClause ability = MkCopyClause
     -- back when a later copy effect is applied to the same entry: the scenario
     -- "CR 707.9e a copy effect applied after Altered Ego's takes back its
     -- additional counters" proves it.
-    counters :: Maybe WithCounters.WithCounters
+    counters :: Maybe WithCounters.WithCounters,
+    -- | CR 707.9e / 122.1: also enters with the counters the copied permanent
+    -- has, kind for kind (Dominion Saboteur), read as the copy is made and
+    -- placed through `counters`' funnel.
+    copiedCounters :: Bool
   }
   deriving (Eq, Ord, Show)

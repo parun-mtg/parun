@@ -1,0 +1,35 @@
+{
+  "description": "CR 707.9e declining the second copy leaves Dominion Saboteur its copied counters",
+  "note": "Alice's Quicksilver Gargantuan, on the battlefield as its printed self, carries one +1/+1 counter. Dominion Saboteur copies it and gains the Gargantuan's own \"enter as a copy\" replacement, whose copy alice declines, so no copy effect is applied after the Saboteur's and it keeps the copied counter: an 8/8. The scenario beside it takes the second copy and loses the counter; the two differ in that one answer.",
+  "board": {
+    "seats": [
+      {
+        "name": "alice",
+        "battlefield": [
+          { "card": "Quicksilver Gargantuan", "label": "gargantuan", "counters": [{ "key": { "type": "PlusOnePlusOne" }, "value": 1 }] },
+          { "card": "Island", "ready": true },
+          { "card": "Island", "ready": true },
+          { "card": "Island", "ready": true },
+          { "card": "Island", "ready": true },
+          { "card": "Island", "ready": true }
+        ],
+        "hand": [{ "card": "Dominion Saboteur", "label": "saboteur" }]
+      },
+      {
+        "name": "bob",
+        "battlefield": [{ "card": "Hill Giant", "label": "giant", "ready": true }]
+      }
+    ],
+    "active": "alice",
+    "step": "PrecombatMain"
+  },
+  "timeline": [
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": { "Cast": { "object": "$saboteur", "mana": ["Island", "Island#2", "Island#3", "Island#4", "Island#5"] } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass" },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": { "ChooseCopyTarget": "$gargantuan" } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": { "ChooseCopyTarget": null } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "Counters": { "object": "Dominion Saboteur", "kind": { "type": "PlusOnePlusOne" }, "count": 1 } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "PowerToughness": { "object": "Dominion Saboteur", "power": 8, "toughness": 8 } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "Names": { "object": "Dominion Saboteur", "names": ["Quicksilver Gargantuan"] } } }
+  ]
+}

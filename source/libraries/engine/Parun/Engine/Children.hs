@@ -4006,11 +4006,12 @@ asCopyChildren c (AsCopy.MkAsCopy eligible amount clauses tapped whenYouDo among
 -- | One clause of a copy's exceptions: its condition (CR 707.9f), its
 -- exceptions and its counters (CR 707.9e).
 copyClauseChildren :: (Applicative f) => CopyChildren ability effect f -> CopyClause.CopyClause ability -> f (CopyClause.CopyClause ability)
-copyClauseChildren c (CopyClause.MkCopyClause condition exceptions counters) =
+copyClauseChildren c (CopyClause.MkCopyClause condition exceptions counters copied) =
   CopyClause.MkCopyClause
     <$> traverse (copyCondition c) condition
     <*> traverse (copyExceptionChildren c) exceptions
     <*> traverse (withCountersChildren c) counters
+    <*> pure copied
 
 -- | A CR 707.9 exception's children. A power and toughness, card types,
 -- supertypes and a name are left as they are.

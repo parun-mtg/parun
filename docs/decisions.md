@@ -2564,3 +2564,22 @@ Entries are ordered by the first rule each cites.
   cr-508-5-sandswirl-wanderglyph-stops-an-opponent-who-attacked-your-planeswalker-from-casting-spells
   proves the planeswalker arm.
 - **Issue**: #8290.
+
+## Whether Dominion Saboteur's copied counters are a CR 707.9e exception
+
+- **Question**: Dominion Saboteur's counters ride a second sentence ("If you
+  do, it enters with additional counters ..."), not its "except" clause. If a
+  copy effect is applied to the same entry after the Saboteur's (it copies an
+  uncopied Quicksilver Gargantuan, CR 616.2), does it keep them?
+- **Rules**: CR 707.9e, 614.1c, 616.2 (CR of 2026-11-06); the card has no
+  rulings.
+- **Decision**: No. The counters are an additional effect of the replacement
+  that generates the copy effect, which is what CR 707.9e describes, so they
+  are written as a `CopyClause` and taken back like Altered Ego's.
+- **Rejected**: Keeping them because the sentence is not introduced by
+  "except": CR 707.9e names the effect, not the wording, and the Saboteur's
+  "If you do" ties the counters to the copy being made exactly as Altered
+  Ego's "except" does.
+- **Site**: `Parun.Engine.Event.becomeCopyAs`, proved by the scenario
+  cr-707-9e-a-copy-effect-applied-after-dominion-saboteur-s-takes-back-its-copied-counters.
+- **Issue**: #8400.

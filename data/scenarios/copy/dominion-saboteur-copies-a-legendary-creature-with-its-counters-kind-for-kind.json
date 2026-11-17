@@ -1,0 +1,45 @@
+{
+  "description": "Dominion Saboteur copies a legendary creature with its counters kind for kind",
+  "note": "Bob's Isamaru, Hound of Konda, a legendary 2/2, carries two +1/+1 counters and a flying counter. Dominion Saboteur enters as a copy of it that isn't legendary (CR 707.9b) with the same counters (CR 707.9e): two +1/+1 and one flying, a 4/4 flier, and CR 704.5j leaves both on the battlefield.",
+  "board": {
+    "seats": [
+      {
+        "name": "alice",
+        "battlefield": [
+          { "card": "Island", "ready": true },
+          { "card": "Island", "ready": true },
+          { "card": "Island", "ready": true },
+          { "card": "Island", "ready": true },
+          { "card": "Island", "ready": true }
+        ],
+        "hand": [{ "card": "Dominion Saboteur", "label": "saboteur" }]
+      },
+      {
+        "name": "bob",
+        "battlefield": [
+          {
+            "card": "Isamaru, Hound of Konda",
+            "label": "isamaru",
+            "ready": true,
+            "counters": [
+              { "key": { "type": "PlusOnePlusOne" }, "value": 2 },
+              { "key": { "type": "Keyword", "value": { "type": "Flying" } }, "value": 1 }
+            ]
+          }
+        ]
+      }
+    ],
+    "active": "alice",
+    "step": "PrecombatMain"
+  },
+  "timeline": [
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": { "Cast": { "object": "$saboteur", "mana": ["Island", "Island#2", "Island#3", "Island#4", "Island#5"] } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass" },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": { "ChooseCopyTarget": "$isamaru" } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "Counters": { "object": "Dominion Saboteur", "kind": { "type": "PlusOnePlusOne" }, "count": 2 } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "Counters": { "object": "Dominion Saboteur", "kind": { "type": "Keyword", "value": { "type": "Flying" } }, "count": 1 } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "PowerToughness": { "object": "Dominion Saboteur", "power": 4, "toughness": 4 } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "View": { "object": "Dominion Saboteur", "of": "Supertypes", "is": [] } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "Names": { "object": "Dominion Saboteur", "names": ["Isamaru, Hound of Konda"] } } }
+  ]
+}
