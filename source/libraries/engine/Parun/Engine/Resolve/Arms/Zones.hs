@@ -915,7 +915,7 @@ grantLookAtExiled resolving source controller legal grant =
 -- enumerated ONCE (CR 608.2f).
 --
 -- NOT gated on the object being in exile: a stamp that landed elsewhere is
--- inert -- Cast.permitsCastPlotted is asked only of exile's members, and
+-- inert -- Cost.permitsCastPlotted is asked only of exile's members, and
 -- CR 400.7's new incarnation carries no stamp across a zone change.
 makePlotted :: ObjectId -> ObjectId -> PlayerId -> Map.Map SlotName (Set Recipient) -> ObjectRef -> Game ()
 makePlotted resolving source controller legal ref =

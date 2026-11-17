@@ -75,6 +75,7 @@ import qualified Parun.Engine.Snapshot as Snapshot
 import qualified Parun.Engine.Subtype as Subtype
 import qualified Parun.Engine.Summoning as Summoning
 import qualified Parun.Engine.Target as Target
+import qualified Parun.Engine.Turn as Turn
 import qualified Parun.Engine.UntapRestriction as UntapRestriction
 import qualified Parun.Extra.Integer as Integer
 import qualified Parun.Extra.Natural as Natural
@@ -536,6 +537,73 @@ withFlashPermission pid oid face gs =
             | (additional, arms) <- permitted,
               (additional, arms) /= ((Nothing, []), Nothing)
             ]
+
+-- CR 702.170d: may this player cast this PLOTTED card? Four conjuncts, and the
+-- rule states each of them:
+--
+--   * the card is plotted, which is the Object.plotted stamp Parun.Engine.Plot
+--     wrote;
+--   * this player is its OWNER -- "a plotted card's OWNER may cast it from
+--     exile" -- where CR 716.3d's permission names a player instead, which is why
+--     the two are separate disjuncts of Cast.exileOpen rather than one test;
+--   * the turn is a LATER one than the stamp, "during any turn after the turn in
+--     which it became plotted". A strict comparison on TurnRegisters.turnNumber,
+--     which counts every turn the game takes -- extra turns (CR 500.7) included
+--     -- so the clause needs no other bookkeeping.
+--   * the window, "during their main phase while the stack is empty", which is
+--     Turn.sorcerySpeedWindow word for word -- the phase, the active player and the
+--     empty stack, asked of the same player the ownership conjunct names.
+--     Priority is implicit, the engine offering actions only to its holder.
+--
+-- That window is a conjunct HERE and not in Cast.timingOk, which is where a
+-- window normally lives: timingOk is a disjunction, so it can only widen one and
+-- never narrow one. It has to narrow, because CR 702.170c's route plots whatever
+-- the exiling clause admits and Kellan Joins Up's is "a nonland card with mana
+-- value 3 or less", which reaches an INSTANT -- and CR 117.1a hands an instant
+-- every priority its controller has. Every card the pool PRINTS plot on is a
+-- creature (Djinn of Fool's Fall, Aloe Alchemist), for which CR 117.1a would have
+-- covered the clause anyway. data/scenarios/special-action's "CR 702.170d a
+-- plotted instant is castable only in its owner's main phase with the stack
+-- empty" is what proves the narrowing, one board per conjunct.
+--
+-- permitsCastForetold below is the control: CR 702.143a fixes no window, so it
+-- takes none.
+permitsCastPlotted :: PlayerId -> ObjectId -> GameState -> Bool
+permitsCastPlotted pid oid gs = Maybe.fromMaybe False $ do
+  obj <- Game.lookupObject oid gs
+  turn <- Object.plotted obj
+  pure (Object.owner obj == pid && TurnRegisters.turnNumber (GameState.turn gs) > turn && Turn.sorcerySpeedWindow pid gs)
+
+-- CR 702.143a: may this player cast this FORETOLD card? permitsCastPlotted's
+-- stamp, owner and later-turn conjuncts one rule over, and the rule states each
+-- of them:
+--
+--   * the card is foretold, which is the Object.foretold stamp
+--     Parun.Engine.Foretell wrote;
+--   * this player is its OWNER. Rule 702.143a says "THAT PLAYER may cast that
+--     card", meaning the one who took the special action -- who is the owner,
+--     because CR 400.1 makes a hand a per-player zone and the action exiles the
+--     card from the actor's own hand. The two words are the same player here and
+--     the owner is the one that survives CR 400.7's new incarnation. Rule
+--     702.143d's route into the same stamp (Effect.MakeForetold) names the owner
+--     only for looking and leaves "it may be cast" passive; the conjunct reads the
+--     caster as that owner.
+--   * the turn is a LATER one, "after the current turn has ended". A strict
+--     comparison on TurnRegisters.turnNumber, plotted's clause exactly.
+--
+-- The rule fixes no window beyond that, unlike CR 702.170d's main phase: a
+-- foretold card is cast whenever its own card type could be, so nothing here
+-- narrows Cast.timingOk.
+--
+-- CR 601.3f does not reach this permission, which names ONE card rather than
+-- rule 601.3f's qualities; Cast.faceDownGateOk is where that rule is asked. It would
+-- pass here regardless: rule 702.143a grants the permission to the card's owner,
+-- which is exactly what Parun.Engine.Exile.mayLookAt reads off the same stamp.
+permitsCastForetold :: PlayerId -> ObjectId -> GameState -> Bool
+permitsCastForetold pid oid gs = Maybe.fromMaybe False $ do
+  obj <- Game.lookupObject oid gs
+  turn <- Object.foretold obj
+  pure (Object.owner obj == pid && TurnRegisters.turnNumber (GameState.turn gs) > turn)
 
 -- | candidateCostsFor, told whether CR 601.3's permission comes from the EFFECT
 -- rather than from the board.
@@ -1143,15 +1211,27 @@ candidateCostsGiven permitted pid name oid gs =
                         <> filter usingPermitted warped
                 -- CR 702.170d: a PLOTTED card is cast "without paying its mana
                 -- cost", CR 118.9's alternative cost. INSTEAD of the printed cost,
-                -- rule 702.170d being the only thing permitting this cast. CR
-                -- 716.3d's permission states no cost and falls through to the `_`
-                -- arm; Effect.GrantPlayFromExile's states one only when it carries
-                -- an alternative cost, which is the arm two below.
+                -- rule 702.170d being the only thing permitting this cast, and
+                -- only while it permits one: a plotted card cast under another
+                -- permission (Khan, Vengeful Heart's own, the turn it was plotted)
+                -- pays what that one prices. The scenario
+                -- khan-vengeful-heart-plotted-by-aven-interrupter-is-cast-the-same-turn-for-its-mana-cost-and-the-tax
+                -- proves it. CR 716.3d's permission states no cost and falls
+                -- through to the `_` arm; Effect.GrantPlayFromExile's states one
+                -- only when it carries an alternative cost, which is the arm two
+                -- below.
+                --
+                -- Not implemented: casting a plotted card that another permission
+                -- also opens under that one, for the cost it prices (#8489).
                 Just Zone.Exile
-                  | Maybe.isJust (Object.plotted obj) -> [untagged (withoutPayingManaCost face)]
+                  | permitsCastPlotted pid oid gs -> [untagged (withoutPayingManaCost face)]
                 -- CR 702.143a: a FORETOLD card is cast for its foretell cost, CR
                 -- 118.9's alternative cost, wrapped by withAdditional as flashback's
-                -- is. INSTEAD of the printed cost, the plotted arm's reason.
+                -- is. INSTEAD of the printed cost, the plotted arm's reason, and
+                -- only while CR 702.143a permits the cast, for its reason too. A
+                -- regression fence: every route into the stamp exiles the card
+                -- face down, which Cast.faceDownGateOk closes to the card's own
+                -- permission.
                 --
                 -- "ANY foretell cost it has" is plural, and CR 702.143d is why: an
                 -- effect may give a foretold card a cost of its own (Ethereal
@@ -1169,7 +1249,7 @@ candidateCostsGiven permitted pid name oid gs =
                 -- Storytelling // Harnfel, Horn of Bounty). `face` is the face this
                 -- call was asked about.
                 Just Zone.Exile
-                  | Maybe.isJust (Object.foretold obj) ->
+                  | permitsCastForetold pid oid gs ->
                       fmap
                         (untagged . withAdditional)
                         (Maybe.maybeToList (grantedForetellCost face obj) <> Maybe.mapMaybe (foretellCostFor face) (Keyword.foretellCosts (Face.keywordSet face)))
