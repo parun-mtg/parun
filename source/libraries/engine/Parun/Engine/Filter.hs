@@ -1015,10 +1015,10 @@ playerView :: PlayerId.PlayerId -> View
 playerView pid = nobodyView {playerIdentity = Just pid}
 
 -- CR 120.1 / 608.2h: a damage event's source as it was when it dealt the
--- damage, off the event's deal-time riders: its controller, card types,
+-- damage, off the event's deal-time riders: its controller, names, card types,
 -- supertypes, colors, creature types, commander status and zone (a spell is on
--- the stack, CR 112.1). Not implemented: any other characteristic of the
--- source, which reads as nobodyView's empty answer (#8032).
+-- the stack, CR 112.1). Any other characteristic reads as nobodyView's empty
+-- answer; a reader asking one adds its rider.
 dealtByView :: DamageEvent.DamageEvent -> View
 dealtByView ev =
   nobodyView
@@ -1027,6 +1027,7 @@ dealtByView ev =
       cardTypes = DamageEvent.dealtByCardTypes ev,
       supertypes = DamageEvent.dealtBySupertypes ev,
       colors = DamageEvent.dealtByColors ev,
+      names = DamageEvent.dealtByNames ev,
       subtypes = DamageEvent.dealtByCreatureTypes ev,
       commander = DamageEvent.dealtByCommander ev,
       zone = DamageEvent.dealtFromZone ev
@@ -1698,10 +1699,11 @@ data Context = MkContext
     sourceAttachedTo :: Maybe ObjectId.ObjectId,
     -- The object the surrounding Quantity is evaluated against, which
     -- IsAttachedTo Evaluated compares a candidate's host with and IsEvaluated the
-    -- candidate itself. Filled by Parun.Engine.Quantity's Count arm alone; Nothing
-    -- everywhere else, where the atoms answer False. Parun.FilterPositionLintSpec's
-    -- "CR 613.4c no card asks an evaluated-object atom outside a Count" keeps a
-    -- card to the filled position.
+    -- candidate itself. Filled by Parun.Engine.Quantity's Count and
+    -- DamageDealtThisTurn arms alone; Nothing everywhere else, where the atoms
+    -- answer False. Parun.FilterPositionLintSpec's "CR 613.4c no card asks an
+    -- evaluated-object atom outside a Count or a damage tally" keeps a card to
+    -- the filled positions.
     evaluated :: Maybe ObjectId.ObjectId,
     -- That object's view, for Shares at Evaluated (Coat of Arms' "shares at
     -- least one creature type with it", Locket of Yesterdays' "with the same

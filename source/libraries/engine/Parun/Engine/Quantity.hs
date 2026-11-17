@@ -823,14 +823,15 @@ evaluateAgainst viewOf context gs announcedOn mOid mView quantity =
         -- wither and infect are three boards where the damage that was dealt is no
         -- longer marked on the creature that took it.
         --
-        -- A source's controller is the one CR 120.1's event captured as the
-        -- damage was dealt (DamageEvent.dealtByController), off its last known
-        -- information if it was already gone (CR 608.2h). Nothing for a
-        -- reference naming anything but exactly one player.
-        Quantity.DamageDealtThisTurn (ObjectDamage.MkObjectDamage direction controlledBy) -> case fmap playersOf controlledBy of
-          Nothing -> fmap (toInteger . Game.damageDealtThisTurn direction Nothing gs) mOid
-          Just (Just [pid]) -> fmap (toInteger . Game.damageDealtThisTurn direction (Just pid) gs) mOid
-          Just _ -> Nothing
+        -- The source filter judges each source as CR 120.1's event captured it
+        -- as the damage was dealt (Filter.dealtByView, CR 608.2h), with the
+        -- tallied object as the evaluated one (Blazing Effigy's "other
+        -- sources") and the surrounding effect's recipient as HeldByRecipient's
+        -- player (Grothama, All-Devouring's "sources they controlled").
+        Quantity.DamageDealtThisTurn (ObjectDamage.MkObjectDamage direction by) ->
+          let judged = context {Filter.evaluated = mOid, Filter.evaluatedView = mView}
+              admits ev = all (Filter.matches judged (Filter.dealtByView ev)) by
+           in fmap (toInteger . Game.damageDealtThisTurn direction admits gs) mOid
         -- CR 508.3b: how many of that player's opponents they declared attacked this
         -- combat phase. LifeTotal's arm in shape -- live, one player only, resolved
         -- through the same playersOf, and Nothing for a reference naming
