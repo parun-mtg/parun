@@ -1,0 +1,50 @@
+{
+  "faces": [
+    {
+      "combatRestrictions": [
+        {
+          "type": "CantAttackAlone",
+          "value": {
+            "affected": {
+              "type": "Matching",
+              "value": {
+                "type": "IsSource"
+              }
+            }
+          }
+        }
+      ],
+      "manaCost": [
+        {
+          "type": "Generic",
+          "value": 2
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "White"
+          }
+        }
+      ],
+      "name": "Pet Sehlat",
+      "oracleText": "This creature can't attack alone.",
+      "power": {
+        "type": "Literal",
+        "value": 4
+      },
+      "toughness": {
+        "type": "Literal",
+        "value": 3
+      },
+      "typeLine": {
+        "subtypes": [
+          "Bear"
+        ],
+        "types": [
+          "Creature"
+        ]
+      }
+    }
+  ]
+}
