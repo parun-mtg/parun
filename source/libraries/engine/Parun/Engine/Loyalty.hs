@@ -93,7 +93,7 @@ loyaltyAmountOf component = case component of
   CostComponent.TapInsteadOfMana _ -> Nothing
   CostComponent.VariableAtLeast _ -> Nothing
   CostComponent.PayManaCostOf _ -> Nothing
-  CostComponent.ExileThisFrom _ -> Nothing
+  CostComponent.MoveThisFrom _ -> Nothing
   CostComponent.ExileThis -> Nothing
   CostComponent.MoveCardsFromGraveyard {} -> Nothing
   CostComponent.ExileMaterials {} -> Nothing

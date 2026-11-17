@@ -524,8 +524,8 @@ exiledPermanent = SlotName.MkSlotName (Text.pack "thatExiledPermanent")
 -- so every read is CURRENT information (CR 608.2h's first clause) and
 -- Parun.Engine.Resolve.Slots.effectViewOf needs no arm.
 --
--- Bound by Parun.Engine.Cost.payComponent's ExileThis and ExileThisFrom
--- arms alike, the two components that exile the object the cost is on, and by
+-- Bound by Parun.Engine.Cost.payComponent's ExileThis arm and MoveThisFrom's exile
+-- alike, the two components that exile the object the cost is on, and by
 -- its MoveCardsFromGraveyard arm's exile (CR 400.7j) -- Lamplight Phoenix's
 -- "exile it" names the card its dies trigger's `became` found. A cost holding
 -- both binds both; Say Its Name does and reads neither. Left

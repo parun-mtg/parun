@@ -2130,7 +2130,7 @@ costComponentChildren c component = case component of
   CostComponent.Blight amount -> CostComponent.Blight <$> costAmountChildren c amount
   CostComponent.Forage -> pure component
   CostComponent.FlipCoin -> pure component
-  CostComponent.ExileThisFrom _ -> pure component
+  CostComponent.MoveThisFrom _ -> pure component
   CostComponent.ExileThis -> pure component
   CostComponent.MoveCardsFromGraveyard (MoveCardsFromGraveyard.MkMoveCardsFromGraveyard n criterion end players) -> fmap CostComponent.MoveCardsFromGraveyard (MoveCardsFromGraveyard.MkMoveCardsFromGraveyard <$> costAmountChildren c n <*> costFilter c criterion <*> pure end <*> pure players)
   CostComponent.ExileMaterials (ExileMaterials.MkExileMaterials n orMore criterion oneEach) -> fmap CostComponent.ExileMaterials (ExileMaterials.MkExileMaterials n orMore <$> costFilter c criterion <*> traverse (costFilter c) oneEach)

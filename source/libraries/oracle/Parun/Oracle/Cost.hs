@@ -31,6 +31,7 @@ import qualified Parun.Types.ManaCost as ManaCost
 import qualified Parun.Types.ManaSymbol as ManaSymbol
 import qualified Parun.Types.ManaType as ManaType
 import qualified Parun.Types.MoveCardsFromGraveyard as MoveCardsFromGraveyard
+import qualified Parun.Types.MoveThisFrom as MoveThisFrom
 import qualified Parun.Types.ObjectCount as ObjectCount
 import qualified Parun.Types.PlayerRelation as PlayerRelation
 import qualified Parun.Types.PlayerScope as PlayerScope
@@ -107,7 +108,7 @@ namesSelf c = case c of
   CostComponent.ReturnThis -> True
   CostComponent.ExertThis -> True
   CostComponent.ExileThis -> True
-  CostComponent.ExileThisFrom _ -> True
+  CostComponent.MoveThisFrom _ -> True
   CostComponent.RemoveCountersFromThis _ -> True
   CostComponent.RemoveCounters r -> case CountersFromPermanents.whichPermanent r of
     Filter.Type.IsSource -> True
@@ -158,9 +159,10 @@ component self named c = case c of
   CostComponent.FlipCoin -> [Text.pack "Flip a coin"]
   CostComponent.PayManaCostOf Hop.Itself -> [Text.pack "Pay " <> self <> Text.pack "'s mana cost"]
   CostComponent.PayManaCostOf Hop.Host -> [Text.pack "Pay enchanted " <> Text.pack noun <> Text.pack "'s mana cost" | noun <- ["creature", "artifact", "enchantment", "land", "permanent"]]
-  CostComponent.ExileThisFrom zone -> case zone of
-    Zone.Graveyard -> [Text.pack "Exile " <> self <> Text.pack " from your graveyard"]
-    Zone.Hand -> [Text.pack "Exile " <> self <> Text.pack " from your hand"]
+  CostComponent.MoveThisFrom (MoveThisFrom.MkMoveThisFrom zone destination) -> case (zone, destination) of
+    (Zone.Graveyard, GraveyardCostDestination.Exile) -> [Text.pack "Exile " <> self <> Text.pack " from your graveyard"]
+    (Zone.Hand, GraveyardCostDestination.Exile) -> [Text.pack "Exile " <> self <> Text.pack " from your hand"]
+    (Zone.Graveyard, GraveyardCostDestination.LibraryBottom) -> [Text.pack "Put " <> self <> Text.pack " from your graveyard on the bottom of your library"]
     _ -> []
   CostComponent.PayEnergy (CostAmount.Fixed n) | n > 0 -> [Text.pack "Pay " <> foldMap (const energy) [1 .. n]]
   CostComponent.PayEnergy (CostAmount.Announced _) -> [Text.pack "Pay X " <> energy]

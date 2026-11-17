@@ -104,7 +104,7 @@ traverseAmount f component = case component of
   CostComponent.TapInsteadOfMana _ -> pure component
   CostComponent.VariableAtLeast _ -> pure component
   CostComponent.PayManaCostOf _ -> pure component
-  CostComponent.ExileThisFrom _ -> pure component
+  CostComponent.MoveThisFrom _ -> pure component
   CostComponent.ExileThis -> pure component
   CostComponent.MoveCardsFromGraveyard exile -> (\amount -> CostComponent.MoveCardsFromGraveyard exile {MoveCardsFromGraveyard.count = amount}) <$> f (MoveCardsFromGraveyard.count exile)
   CostComponent.ExileMaterials {} -> pure component

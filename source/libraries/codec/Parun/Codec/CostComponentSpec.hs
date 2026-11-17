@@ -34,6 +34,7 @@ import qualified Parun.Types.GraveyardCostDestination as GraveyardCostDestinatio
 import qualified Parun.Types.Hop as Hop
 import qualified Parun.Types.Keyword as Keyword
 import qualified Parun.Types.MoveCardsFromGraveyard as MoveCardsFromGraveyard
+import qualified Parun.Types.MoveThisFrom as MoveThisFrom
 import qualified Parun.Types.ObjectCount as ObjectCount
 import qualified Parun.Types.PlayerCounterKind as PlayerCounterKind
 import qualified Parun.Types.PlayerRelation as PlayerRelation
@@ -279,12 +280,17 @@ spec s = Spec.describe s "Parun.Codec.CostComponent" $ do
       " {\"type\":\"FlipCoin\"} "
   -- CR 406.2's halves: the two that name the object the cost is on, one per
   -- zone, and the one that names a count and a criterion.
-  Spec.it s "ExileThisFrom" $
+  Spec.it s "MoveThisFrom" $ do
     Common.assertCodec
       s
       codec
-      (CostComponent.ExileThisFrom Zone.Graveyard)
-      " {\"type\":\"ExileThisFrom\",\"value\":\"Graveyard\"} "
+      (CostComponent.MoveThisFrom (MoveThisFrom.MkMoveThisFrom Zone.Graveyard GraveyardCostDestination.Exile))
+      " {\"type\":\"MoveThisFrom\",\"value\":{\"zone\":\"Graveyard\"}} "
+    Common.assertCodec
+      s
+      codec
+      (CostComponent.MoveThisFrom (MoveThisFrom.MkMoveThisFrom Zone.Graveyard GraveyardCostDestination.LibraryBottom))
+      " {\"type\":\"MoveThisFrom\",\"value\":{\"destination\":\"LibraryBottom\",\"zone\":\"Graveyard\"}} "
   Spec.it s "ExileThis" $
     Common.assertCodec
       s

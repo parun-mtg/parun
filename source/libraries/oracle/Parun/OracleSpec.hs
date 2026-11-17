@@ -133,6 +133,7 @@ import qualified Parun.Types.Modification as Modification
 import qualified Parun.Types.ModifyPowerToughness as ModifyPowerToughness
 import qualified Parun.Types.ModifyTarget as ModifyTarget
 import qualified Parun.Types.MoveCardsFromGraveyard as MoveCardsFromGraveyard
+import qualified Parun.Types.MoveThisFrom as MoveThisFrom
 import qualified Parun.Types.MoveToZone as MoveToZone
 import qualified Parun.Types.ObjectCount as ObjectCount
 import qualified Parun.Types.ObjectRef as ObjectRef
@@ -896,8 +897,9 @@ spec s = Spec.describe s "Parun.Oracle" $ do
         removing n spread f = CostComponent.RemoveCounters (CountersFromPermanents.MkCountersFromPermanents (ObjectCount.Exactly n) (WhichCounters.OfKind CounterKind.PlusOnePlusOne) f spread)
     Spec.assertEq s (Just (Text.pack "Return Spark to its owner's hand: Draw a card.")) (costed [CostComponent.ReturnThis])
     Spec.assertEq s (Just (Text.pack "{T}, Exile Spark: Draw a card.")) (costed [CostComponent.TapThis, CostComponent.ExileThis])
-    Spec.assertEq s (Just (Text.pack "Exile Spark from your graveyard: Draw a card.")) (costed [CostComponent.ExileThisFrom Zone.Graveyard])
-    Spec.assertEq s (Just (Text.pack "Exile Spark from your hand: Draw a card.")) (costed [CostComponent.ExileThisFrom Zone.Hand])
+    Spec.assertEq s (Just (Text.pack "Exile Spark from your graveyard: Draw a card.")) (costed [CostComponent.MoveThisFrom (MoveThisFrom.MkMoveThisFrom Zone.Graveyard GraveyardCostDestination.Exile)])
+    Spec.assertEq s (Just (Text.pack "Exile Spark from your hand: Draw a card.")) (costed [CostComponent.MoveThisFrom (MoveThisFrom.MkMoveThisFrom Zone.Hand GraveyardCostDestination.Exile)])
+    Spec.assertEq s (Just (Text.pack "Put Spark from your graveyard on the bottom of your library: Draw a card.")) (costed [CostComponent.MoveThisFrom (MoveThisFrom.MkMoveThisFrom Zone.Graveyard GraveyardCostDestination.LibraryBottom)])
     Spec.assertEq s (Just (Text.pack "Pay {E}{E}: Draw a card.")) (costed [CostComponent.PayEnergy (CostAmount.Fixed 2)])
     Spec.assertEq s (Just (Text.pack "Pay Spark's mana cost: Draw a card.")) (costed [CostComponent.PayManaCostOf Hop.Itself])
     Spec.assertEq s (Just (Text.pack "Pay enchanted creature's mana cost: Draw a card.")) (costed [CostComponent.PayManaCostOf Hop.Host])

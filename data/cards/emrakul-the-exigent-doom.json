@@ -6,8 +6,10 @@
           "cost": {
             "components": [
               {
-                "type": "ExileThisFrom",
-                "value": "Hand"
+                "type": "MoveThisFrom",
+                "value": {
+                  "zone": "Hand"
+                }
               }
             ],
             "mana": [

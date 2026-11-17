@@ -1,6 +1,7 @@
 module Parun.Types.GraveyardCostDestination where
 
--- | Where Parun.Types.MoveCardsFromGraveyard puts the cards it moves.
+-- | Where Parun.Types.MoveCardsFromGraveyard puts the cards it moves, and
+-- Parun.Types.MoveThisFrom the card the cost is on.
 data GraveyardCostDestination
   = -- | CR 406.2 / Headless Skaab: exile them.
     Exile

@@ -1277,6 +1277,7 @@ library codec
     Parun.Codec.MoveMana
     Parun.Codec.MoveManaSpec
     Parun.Codec.MoveSpec
+    Parun.Codec.MoveThisFrom
     Parun.Codec.MoveToZone
     Parun.Codec.MoveToZoneSpec
     Parun.Codec.MulliganDecision
@@ -3489,6 +3490,7 @@ library types
     Parun.Types.MoveDuration
     Parun.Types.MoveMana
     Parun.Types.MoveSpread
+    Parun.Types.MoveThisFrom
     Parun.Types.MoveToZone
     Parun.Types.MulliganDecision
     Parun.Types.MulliganDeclared

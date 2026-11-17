@@ -174,6 +174,7 @@ import qualified Parun.Types.ManaUnit as ManaUnit
 import qualified Parun.Types.ManaWindow as ManaWindow
 import qualified Parun.Types.Measures as Measures
 import qualified Parun.Types.MoveCardsFromGraveyard as MoveCardsFromGraveyard
+import qualified Parun.Types.MoveThisFrom as MoveThisFrom
 import qualified Parun.Types.Object as Object
 import qualified Parun.Types.ObjectCount as ObjectCount
 import Parun.Types.ObjectId (ObjectId)
@@ -2101,7 +2102,7 @@ componentDemandGrowsWith slot component = case component of
   CostComponent.TapInsteadOfMana _ -> False
   CostComponent.VariableAtLeast _ -> False
   CostComponent.PayManaCostOf _ -> False
-  CostComponent.ExileThisFrom _ -> False
+  CostComponent.MoveThisFrom _ -> False
   CostComponent.ExileThis -> False
   -- One card per exile out of a finite graveyard, Sacrifice's reason.
   CostComponent.MoveCardsFromGraveyard exile -> MoveCardsFromGraveyard.count exile == announced
@@ -2453,7 +2454,7 @@ componentStatesHiddenQuality component = case component of
   CostComponent.TapPermanents {} -> False
   CostComponent.ReturnPermanents {} -> False
   CostComponent.ExilePermanents {} -> False
-  CostComponent.ExileThisFrom _ -> False
+  CostComponent.MoveThisFrom _ -> False
   CostComponent.MoveCardsFromGraveyard {} -> False
   CostComponent.ExileMaterials {} -> False
   CostComponent.ExileTopFromGraveyard _ -> False
@@ -3399,7 +3400,7 @@ claimOfGiven board slots pid oid component gs =
         -- 406.4 reaches it through its pile, so it is a card the payment can spend.
         CostComponent.PutExiledIntoGraveyard criterion ->
           claim (ClaimAxis.Removal Zone.Exile) (Set.fromList (exiledCandidatesGiven board slots pid oid criterion gs)) 1
-        CostComponent.ExileThisFrom zone -> claim (ClaimAxis.Removal zone) itself 1
+        CostComponent.MoveThisFrom move -> claim (ClaimAxis.Removal (MoveThisFrom.zone move)) itself 1
         -- CR 701.17a spends cards out of the paying player's own library, so the pool
         -- is that library and the count is how many the mill takes -- the ZONE keying a
         -- Removal soundly for the header's reason. What it buys is two mills of one
@@ -3957,7 +3958,7 @@ uncountedCeiling pid oid claims gs component = case component of
   CostComponent.ExileMaterials {} -> Just 1
   CostComponent.ExileTopFromGraveyard _ -> Nothing
   CostComponent.PutExiledIntoGraveyard _ -> Nothing
-  CostComponent.ExileThisFrom _ -> Nothing
+  CostComponent.MoveThisFrom _ -> Nothing
   CostComponent.ExileThis -> Nothing
   -- Counted by `objectCeiling` too, the library being this claim's pool.
   CostComponent.MillCards _ -> Nothing
@@ -4389,7 +4390,7 @@ targetComputed component = case component of
   CostComponent.Blight _ -> False
   CostComponent.Forage -> False
   CostComponent.FlipCoin -> False
-  CostComponent.ExileThisFrom _ -> False
+  CostComponent.MoveThisFrom _ -> False
   CostComponent.ExileThis -> False
   CostComponent.MoveCardsFromGraveyard _ -> False
   CostComponent.ExileMaterials _ -> False
@@ -4450,7 +4451,7 @@ announcedRecord component = case component of
   CostComponent.Blight _ -> Just Binding.blightCost
   CostComponent.Forage -> Nothing
   CostComponent.FlipCoin -> Nothing
-  CostComponent.ExileThisFrom _ -> Nothing
+  CostComponent.MoveThisFrom _ -> Nothing
   CostComponent.ExileThis -> Nothing
   CostComponent.MoveCardsFromGraveyard _ -> Nothing
   CostComponent.ExileMaterials _ -> Nothing
@@ -4523,7 +4524,7 @@ lifeOwedByComponent pid gs component = case component of
   CostComponent.TapInsteadOfMana _ -> 0
   CostComponent.VariableAtLeast _ -> 0
   CostComponent.PayManaCostOf _ -> 0
-  CostComponent.ExileThisFrom _ -> 0
+  CostComponent.MoveThisFrom _ -> 0
   CostComponent.ExileThis -> 0
   CostComponent.MoveCardsFromGraveyard {} -> 0
   CostComponent.ExileMaterials {} -> 0
@@ -4583,7 +4584,7 @@ energyOwedByComponent component = case component of
   CostComponent.TapInsteadOfMana _ -> 0
   CostComponent.VariableAtLeast _ -> 0
   CostComponent.PayManaCostOf _ -> 0
-  CostComponent.ExileThisFrom _ -> 0
+  CostComponent.MoveThisFrom _ -> 0
   CostComponent.ExileThis -> 0
   CostComponent.MoveCardsFromGraveyard {} -> 0
   CostComponent.ExileMaterials {} -> 0
@@ -4653,7 +4654,7 @@ countersOwedByComponent component = case component of
   CostComponent.TapInsteadOfMana _ -> []
   CostComponent.VariableAtLeast _ -> []
   CostComponent.PayManaCostOf _ -> []
-  CostComponent.ExileThisFrom _ -> []
+  CostComponent.MoveThisFrom _ -> []
   CostComponent.ExileThis -> []
   CostComponent.MoveCardsFromGraveyard {} -> []
   CostComponent.ExileMaterials {} -> []
@@ -4843,9 +4844,9 @@ canPayComponentGiven board slots pid oid component gs = case component of
   -- is CR 113.6m's whole enforcement for the COST, so the zone gate Activate
   -- applies to the OFFER is not the only thing between a Loxodon Surveyor on the
   -- battlefield and a free draw.
-  CostComponent.ExileThisFrom zone -> case Game.lookupObject oid gs of
+  CostComponent.MoveThisFrom move -> case Game.lookupObject oid gs of
     Nothing -> False
-    Just obj -> Object.zone obj == zone && Object.owner obj == pid
+    Just obj -> Object.zone obj == MoveThisFrom.zone move && Object.owner obj == pid
   -- CR 118.3: payable only if the graveyards the scope names hold at least that
   -- many matching cards. Headless Skaab with an empty graveyard is never OFFERED
   -- rather than merely unpaid, which is what puts the additional cost INSIDE the
@@ -5263,7 +5264,7 @@ criteriaOf component = case component of
   CostComponent.TapInsteadOfMana criterion -> [criterion]
   CostComponent.VariableAtLeast _ -> []
   CostComponent.PayManaCostOf _ -> []
-  CostComponent.ExileThisFrom _ -> []
+  CostComponent.MoveThisFrom _ -> []
   CostComponent.ExileThis -> []
   CostComponent.MillCards _ -> []
   CostComponent.RevealTopOfLibrary _ -> []
@@ -5975,7 +5976,7 @@ paySubstitutingReadingThen refuses slots perform began earlier moment subject an
 --
 -- The bound slots ride out unread. A component of a combat toll binds what
 -- payComponent binds it (Sacrifice, TapPermanents, TapForTotalPower, ExileThis
--- and ExileThisFrom each reserve a name), and there is no resolving ability
+-- and MoveThisFrom's exile each reserve a name), and there is no resolving ability
 -- holding a binding environment to write them into -- CR 508.1j and CR 509.1f name a payment and no effect, where CR
 -- 601.2f's components are paid for a spell that goes on to resolve.
 --
@@ -6334,7 +6335,7 @@ paidInSecondPass slots pid oid gs component = case component of
   CostComponent.ReturnThis -> False
   CostComponent.ReturnPermanents {} -> False
   CostComponent.ExilePermanents {} -> False
-  CostComponent.ExileThisFrom _ -> False
+  CostComponent.MoveThisFrom _ -> False
   CostComponent.ExileThis -> False
   CostComponent.MoveCardsFromGraveyard {} -> False
   CostComponent.ExileMaterials {} -> False
@@ -6412,7 +6413,7 @@ mergeBound bound outcome = case outcome of
 bindsNothing :: Payment.Payment
 bindsNothing = Payment.Paid Map.empty
 
--- The payment an ExileThis or ExileThisFrom component makes: CR 601.2h
+-- The payment an ExileThis or MoveThisFrom component makes: CR 601.2h
 -- pays it, and Binding.exiledCard names what CR 400.7 put into exile.
 --
 -- An empty arrival binds NOTHING rather than an empty set, a replacement effect
@@ -6473,7 +6474,7 @@ sourceOnly component = case component of
   CostComponent.SacrificeThis -> Just True
   CostComponent.ReturnThis -> Just True
   CostComponent.ExileThis -> Just True
-  CostComponent.ExileThisFrom _ -> Just True
+  CostComponent.MoveThisFrom _ -> Just True
   CostComponent.DiscardThis _ -> Just True
   CostComponent.TapThis -> Just False
   CostComponent.UntapThis -> Just False
@@ -6563,7 +6564,7 @@ orderSensitive component = case component of
   -- TRUE, unlike Behold above: the exile takes the object out of a pool another
   -- part could draw on.
   CostComponent.BeholdAndExile _ -> True
-  CostComponent.ExileThisFrom _ -> True
+  CostComponent.MoveThisFrom _ -> True
   CostComponent.ExileThis -> True
   CostComponent.TapThis -> True
   CostComponent.UntapThis -> True
@@ -8371,19 +8372,25 @@ payPayable perform moment paidFor slots pid oid component = case component of
   CostComponent.TapInsteadOfMana _ -> pure bindsNothing
   CostComponent.VariableAtLeast _ -> pure bindsNothing
   CostComponent.PayManaCostOf _ -> pure bindsNothing
-  -- CR 406.2's move, through the Event.changeZone funnel, so the card gets a CR
-  -- 400.7 incarnation and anything watching a graveyard- or hand-to-exile move
-  -- sees it. No prompt: the cost names this card.
+  -- CR 406.2's move, or CR 400.3's to the library's bottom (Daniels, Temporal
+  -- Agent), through the Event.changeZone funnel, so the card gets a CR 400.7
+  -- incarnation and anything watching the move sees it. No prompt: the cost
+  -- names this card, and one card leaves CR 401.4 nothing to arrange.
   --
-  -- The card is in EXILE by the time the ability resolves, which is what makes CR
-  -- 113.7a load-bearing here -- Loxodon Surveyor's draw resolves off a source
-  -- that has already left the graveyard the cost read.
+  -- The card has LEFT the zone by the time the ability resolves, which is what
+  -- makes CR 113.7a load-bearing here -- Loxodon Surveyor's draw resolves off a
+  -- source that has already left the graveyard the cost read.
   --
-  -- Binds Binding.exiledCard off what ARRIVED, ExileThis' binding below and for
-  -- its reason.
-  CostComponent.ExileThisFrom _ -> do
-    arrived <- Event.changeZoneReturning (ManaAbilityPerformer.settle perform) oid Zone.Exile
-    pure (bindExiled arrived)
+  -- An exile binds Binding.exiledCard off what ARRIVED, ExileThis' binding below
+  -- and for its reason; the library move binds nothing, MoveCardsFromGraveyard's
+  -- LibraryBottom arm.
+  CostComponent.MoveThisFrom move -> case MoveThisFrom.destination move of
+    GraveyardCostDestination.Exile -> do
+      arrived <- Event.changeZoneReturning (ManaAbilityPerformer.settle perform) oid Zone.Exile
+      pure (bindExiled arrived)
+    GraveyardCostDestination.LibraryBottom -> do
+      _ <- Event.changeZoneReturning (ManaAbilityPerformer.settle perform) oid Zone.Library
+      pure bindsNothing
   -- CR 406.2's move off the BATTLEFIELD, through the same funnel and with no
   -- prompt for the same reason: the cost names this permanent. CR 118.3 asked
   -- again, SacrificeThis' reason above; Parun.CostSpec's "CR 118.3 the Altar eats
