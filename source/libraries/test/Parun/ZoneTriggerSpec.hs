@@ -1781,7 +1781,7 @@ representativeEvents cond =
           -- CR 508.5's defending player.
           AttackTrigger.Unblocked _ -> one (GameEvent.AttackerUnblocked (AttackerUnblocked.MkAttackerUnblocked departed S.carol))
         -- CR 509.3: one shape of event per role and count.
-        TriggerCondition.Blocks (BlockTrigger.MkBlockTrigger role _ count _) -> case (role, count) of
+        TriggerCondition.Blocks (BlockTrigger.MkBlockTrigger role _ count _ _) -> case (role, count) of
           -- The GROUPED blocking event, which is CR 509.3a's arity and CR
           -- 509.3e's: one per blocking creature, whatever it was declared
           -- against. The blocker is what both bind.
@@ -2228,16 +2228,17 @@ everyTriggerCondition =
     TriggerCondition.Attacks (AttackTrigger.Declaration (DeclarationTrigger.MkDeclarationTrigger PlayerRelation.You (Just (AttackCount.MkAttackCount AttackMeasure.TotalPower 12 (Filter.Type.And []))) TriggerFrequency.FirstTimeEachTurn Nothing)),
     TriggerCondition.Attacks (AttackTrigger.Declaration (DeclarationTrigger.MkDeclarationTrigger PlayerRelation.You Nothing TriggerFrequency.EveryTime (Just (Condition.Type.Compares (Compares.MkCompares (Quantity.Type.Literal 0) Comparison.Exactly (Quantity.Type.Literal 0)))))),
     TriggerCondition.Attacks (AttackTrigger.Unblocked (Filter.Type.And [])),
-    TriggerCondition.Blocks (BlockTrigger.MkBlockTrigger BlockRole.Blocker Filter.Type.IsSource BlockCount.Once Batching.EachOccurrence),
-    TriggerCondition.Blocks (BlockTrigger.MkBlockTrigger BlockRole.Blocker (Filter.Type.And []) BlockCount.Once Batching.EachOccurrence),
-    TriggerCondition.Blocks (BlockTrigger.MkBlockTrigger BlockRole.Blocker Filter.Type.IsSource (BlockCount.AtLeast 2 (Filter.Type.And [])) Batching.EachOccurrence),
-    TriggerCondition.Blocks (BlockTrigger.MkBlockTrigger BlockRole.Blocker (Filter.Type.And []) (BlockCount.EachCreature (Filter.Type.And [])) Batching.EachOccurrence),
-    TriggerCondition.Blocks (BlockTrigger.MkBlockTrigger BlockRole.Attacker (Filter.Type.And []) BlockCount.Once Batching.EachOccurrence),
-    TriggerCondition.Blocks (BlockTrigger.MkBlockTrigger BlockRole.Blocker Filter.Type.IsSource (BlockCount.AtLeast 1 (Filter.Type.And [])) Batching.EachOccurrence),
-    TriggerCondition.Blocks (BlockTrigger.MkBlockTrigger BlockRole.Attacker (Filter.Type.And []) (BlockCount.EachCreature (Filter.Type.And [])) Batching.EachOccurrence),
-    TriggerCondition.Blocks (BlockTrigger.MkBlockTrigger BlockRole.Attacker Filter.Type.IsSource (BlockCount.AtLeast 1 (Filter.Type.And [])) Batching.EachOccurrence),
-    TriggerCondition.Blocks (BlockTrigger.MkBlockTrigger BlockRole.Attacker (Filter.Type.IsAttackingPlayer PlayerRelation.Opponent) (BlockCount.AtLeast 2 (Filter.Type.And [])) Batching.EachOccurrence),
-    TriggerCondition.Blocks (BlockTrigger.MkBlockTrigger BlockRole.Attacker (Filter.Type.And []) BlockCount.Once Batching.OneOrMore),
+    TriggerCondition.Blocks (BlockTrigger.MkBlockTrigger BlockRole.Blocker Filter.Type.IsSource BlockCount.Once Batching.EachOccurrence Nothing),
+    TriggerCondition.Blocks (BlockTrigger.MkBlockTrigger BlockRole.Blocker (Filter.Type.And []) BlockCount.Once Batching.EachOccurrence Nothing),
+    TriggerCondition.Blocks (BlockTrigger.MkBlockTrigger BlockRole.Blocker Filter.Type.IsSource (BlockCount.AtLeast 2 (Filter.Type.And [])) Batching.EachOccurrence Nothing),
+    TriggerCondition.Blocks (BlockTrigger.MkBlockTrigger BlockRole.Blocker (Filter.Type.And []) (BlockCount.EachCreature (Filter.Type.And [])) Batching.EachOccurrence Nothing),
+    TriggerCondition.Blocks (BlockTrigger.MkBlockTrigger BlockRole.Attacker (Filter.Type.And []) BlockCount.Once Batching.EachOccurrence Nothing),
+    TriggerCondition.Blocks (BlockTrigger.MkBlockTrigger BlockRole.Blocker Filter.Type.IsSource (BlockCount.AtLeast 1 (Filter.Type.And [])) Batching.EachOccurrence Nothing),
+    TriggerCondition.Blocks (BlockTrigger.MkBlockTrigger BlockRole.Attacker (Filter.Type.And []) (BlockCount.EachCreature (Filter.Type.And [])) Batching.EachOccurrence Nothing),
+    TriggerCondition.Blocks (BlockTrigger.MkBlockTrigger BlockRole.Attacker Filter.Type.IsSource (BlockCount.AtLeast 1 (Filter.Type.And [])) Batching.EachOccurrence Nothing),
+    TriggerCondition.Blocks (BlockTrigger.MkBlockTrigger BlockRole.Attacker (Filter.Type.IsAttackingPlayer PlayerRelation.Opponent) (BlockCount.AtLeast 2 (Filter.Type.And [])) Batching.EachOccurrence Nothing),
+    TriggerCondition.Blocks (BlockTrigger.MkBlockTrigger BlockRole.Attacker (Filter.Type.And []) BlockCount.Once Batching.OneOrMore Nothing),
+    TriggerCondition.Blocks (BlockTrigger.MkBlockTrigger BlockRole.Blocker Filter.Type.IsSource BlockCount.Once Batching.EachOccurrence (Just (Condition.Type.Compares (Compares.MkCompares (Quantity.Type.Literal 0) Comparison.Exactly (Quantity.Type.Literal 0))))),
     -- CR 603.6's arrival: each subject, origins named and not, CR 608.2n's
     -- narrowing, a batch into a hidden zone, and a batch from the battlefield.
     TriggerCondition.PutIntoZone (PutIntoZoneTrigger.self Zone.Graveyard),

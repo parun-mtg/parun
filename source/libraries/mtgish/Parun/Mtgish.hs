@@ -823,7 +823,7 @@ trigger n = case Node.tag n of
   where
     bound pairs = outermost {bindings = Map.fromList pairs}
     -- CR 509.3's one condition, from its three fields.
-    blocks role creature count = TriggerCondition.Blocks (BlockTrigger.MkBlockTrigger role creature count Batching.EachOccurrence)
+    blocks role creature count = TriggerCondition.Blocks (BlockTrigger.MkBlockTrigger role creature count Batching.EachOccurrence Nothing)
     -- The source's own event, which calls the source "that creature" too.
     itself condition = do
       who <- Node.argument n

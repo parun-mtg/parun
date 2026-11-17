@@ -87,7 +87,7 @@ event :: Target.Context -> Bool -> TriggerCondition.TriggerCondition -> [Event]
 event context creature c = case c of
   -- One description of the creature for both: "blocks or becomes blocked by
   -- a creature" (Inferno Elemental).
-  TriggerCondition.AnyOf [TriggerCondition.Blocks (BlockTrigger.MkBlockTrigger BlockRole.Blocker Filter.Type.IsSource (BlockCount.EachCreature f) Batching.EachOccurrence), TriggerCondition.Blocks (BlockTrigger.MkBlockTrigger BlockRole.Attacker Filter.Type.IsSource (BlockCount.EachCreature g) Batching.EachOccurrence)] | f == g -> do
+  TriggerCondition.AnyOf [TriggerCondition.Blocks (BlockTrigger.MkBlockTrigger BlockRole.Blocker Filter.Type.IsSource (BlockCount.EachCreature f) Batching.EachOccurrence Nothing), TriggerCondition.Blocks (BlockTrigger.MkBlockTrigger BlockRole.Attacker Filter.Type.IsSource (BlockCount.EachCreature g) Batching.EachOccurrence Nothing)] | f == g -> do
     (one, that) <- described context f
     itself recurring (Text.pack ("blocks or becomes blocked by " <> one)) [(thatAttacker, that), (thatBlocker, that)] []
   TriggerCondition.AnyOf cs@(_ : _ : _) -> do
@@ -135,7 +135,7 @@ event context creature c = case c of
     word <- ["it", that]
     subject <- also one
     [other ("Whenever " <> subject <> " dies") [(becameSlot, word), (departedPermanent, word)]]
-  TriggerCondition.Blocks (BlockTrigger.MkBlockTrigger BlockRole.Attacker f BlockCount.Once Batching.EachOccurrence) -> do
+  TriggerCondition.Blocks (BlockTrigger.MkBlockTrigger BlockRole.Attacker f BlockCount.Once Batching.EachOccurrence Nothing) -> do
     (one, that) <- described context f
     -- Free: the attacker is "it" (Somberwald Alpha) or "that creature".
     word <- ["it", that]
@@ -254,12 +254,12 @@ selfEvent context creature c = case c of
     | Filter.Type.And [Filter.Type.IsSource, Filter.Type.HasDesignation Designation.Saddled] <- creature', AttackCompany.AnyCompany <- company, TriggerFrequency.EveryTime <- frequency -> [(recurring, "attacks while saddled", [])]
     | Filter.Type.IsSource <- creature', AttackCompany.Alone AloneAmong.EveryAttacker <- company, TriggerFrequency.EveryTime <- frequency -> [(recurring, "attacks alone", [(attackingCreature, "it")])]
   TriggerCondition.Attacks (AttackTrigger.Unblocked Filter.Type.IsSource) -> [(recurring, "attacks and isn't blocked", [(thatPlayer, "defending player"), (attackingCreature, "it")])]
-  TriggerCondition.Blocks (BlockTrigger.MkBlockTrigger BlockRole.Blocker Filter.Type.IsSource BlockCount.Once Batching.EachOccurrence) -> [(recurring, "blocks", [])]
-  TriggerCondition.Blocks (BlockTrigger.MkBlockTrigger BlockRole.Attacker Filter.Type.IsSource BlockCount.Once Batching.EachOccurrence) -> [(recurring, "becomes blocked", [(thatPlayer, "defending player"), (attackingCreature, "it")])]
-  TriggerCondition.Blocks (BlockTrigger.MkBlockTrigger BlockRole.Blocker Filter.Type.IsSource (BlockCount.EachCreature f) Batching.EachOccurrence) -> do
+  TriggerCondition.Blocks (BlockTrigger.MkBlockTrigger BlockRole.Blocker Filter.Type.IsSource BlockCount.Once Batching.EachOccurrence Nothing) -> [(recurring, "blocks", [])]
+  TriggerCondition.Blocks (BlockTrigger.MkBlockTrigger BlockRole.Attacker Filter.Type.IsSource BlockCount.Once Batching.EachOccurrence Nothing) -> [(recurring, "becomes blocked", [(thatPlayer, "defending player"), (attackingCreature, "it")])]
+  TriggerCondition.Blocks (BlockTrigger.MkBlockTrigger BlockRole.Blocker Filter.Type.IsSource (BlockCount.EachCreature f) Batching.EachOccurrence Nothing) -> do
     (one, that) <- described context f
     [(recurring, "blocks " <> one, [(thatAttacker, that)])]
-  TriggerCondition.Blocks (BlockTrigger.MkBlockTrigger BlockRole.Attacker Filter.Type.IsSource (BlockCount.EachCreature f) Batching.EachOccurrence) -> do
+  TriggerCondition.Blocks (BlockTrigger.MkBlockTrigger BlockRole.Attacker Filter.Type.IsSource (BlockCount.EachCreature f) Batching.EachOccurrence Nothing) -> do
     (one, that) <- described context f
     [(recurring, "becomes blocked by " <> one, [(thatBlocker, that)])]
   -- Free: the ability word enrage (CR 207.2c) printed (Ripjaw Raptor) or

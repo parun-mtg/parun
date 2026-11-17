@@ -538,8 +538,8 @@ eventBindingsOver board gs bearerBecame becameInGraveyard bearer you cond event 
   -- keeps a pairwise branch of CR 603.1b's AnyOf from naming its own blocker.
   -- CR 603.2c: a OneOrMore batch binds nothing: Neyith of the Dire Hunt's
   -- payload names none of the creatures.
-  (TriggerCondition.Blocks (BlockTrigger.MkBlockTrigger _ _ _ Batching.OneOrMore), _) -> Map.empty
-  (TriggerCondition.Blocks (BlockTrigger.MkBlockTrigger BlockRole.Blocker _ count _), GameEvent.BlocksDeclared (BlocksDeclared.MkBlocksDeclared blocker _)) -> case count of
+  (TriggerCondition.Blocks (BlockTrigger.MkBlockTrigger _ _ _ Batching.OneOrMore _), _) -> Map.empty
+  (TriggerCondition.Blocks (BlockTrigger.MkBlockTrigger BlockRole.Blocker _ count _ _), GameEvent.BlocksDeclared (BlocksDeclared.MkBlocksDeclared blocker _)) -> case count of
     BlockCount.Once -> Binding.setBlockingCreature blocker Map.empty
     BlockCount.AtLeast {} -> Binding.setBlockingCreature blocker Map.empty
     BlockCount.EachCreature _ -> Map.empty
@@ -557,7 +557,7 @@ eventBindingsOver board gs bearerBecame becameInGraveyard bearer you cond event 
   -- Venom's "the other creature" its host. Read outside CR 603.7c's frame, so a
   -- delayed trigger's slot atom in the Filter would stamp nothing; none in
   -- data/cards, 2026-11-03.
-  (TriggerCondition.Blocks (BlockTrigger.MkBlockTrigger role creature (BlockCount.EachCreature _) _), GameEvent.BecameBlocking (BecameBlocking.MkBecameBlocking {BecameBlocking.attacker = attacker, BecameBlocking.blocker = blocker})) -> case role of
+  (TriggerCondition.Blocks (BlockTrigger.MkBlockTrigger role creature (BlockCount.EachCreature _) _ _), GameEvent.BecameBlocking (BecameBlocking.MkBecameBlocking {BecameBlocking.attacker = attacker, BecameBlocking.blocker = blocker})) -> case role of
     BlockRole.Blocker
       | admittedAt (Projection.sourceContext gs (Just you) bearer) board gs blocker creature -> Binding.setBlockedCreature attacker Map.empty
     BlockRole.Attacker
@@ -567,16 +567,16 @@ eventBindingsOver board gs bearerBecame becameInGraveyard bearer you cond event 
   -- "defending player" (afflict) is CR 508.5's, which every writer of the event
   -- stamps -- Combat.declareBlockers, Combat.becomeBlocked (CR 509.1h's effect)
   -- and Combat.putOntoBattlefieldBlocking (CR 509.4).
-  (TriggerCondition.Blocks (BlockTrigger.MkBlockTrigger BlockRole.Attacker _ BlockCount.Once _), GameEvent.AttackerBlocked (AttackerBlocked.MkAttackerBlocked attacker defending _)) ->
+  (TriggerCondition.Blocks (BlockTrigger.MkBlockTrigger BlockRole.Attacker _ BlockCount.Once _ _), GameEvent.AttackerBlocked (AttackerBlocked.MkAttackerBlocked attacker defending _)) ->
     Binding.setTriggerPlayer defending (Binding.setAttackingCreature attacker Map.empty)
   -- CR 509.3e's "that attacking creature" (Seifer, Balamb Rival), off both of
   -- that form's events: the becoming and an arrival at an attacker blocked
   -- already. Without the second the trigger fires with an empty binding map,
   -- which is why Parun.ZoneTriggerSpec's representativeEvents lists BOTH. The
   -- defending player goes unbound, since the arrival does not carry one.
-  (TriggerCondition.Blocks (BlockTrigger.MkBlockTrigger BlockRole.Attacker _ (BlockCount.AtLeast _ _) _), GameEvent.AttackerBlocked (AttackerBlocked.MkAttackerBlocked attacker _ _)) ->
+  (TriggerCondition.Blocks (BlockTrigger.MkBlockTrigger BlockRole.Attacker _ (BlockCount.AtLeast _ _) _ _), GameEvent.AttackerBlocked (AttackerBlocked.MkAttackerBlocked attacker _ _)) ->
     Binding.setAttackingCreature attacker Map.empty
-  (TriggerCondition.Blocks (BlockTrigger.MkBlockTrigger BlockRole.Attacker _ (BlockCount.AtLeast _ _) _), GameEvent.BecameBlocking (BecameBlocking.MkBecameBlocking {BecameBlocking.attacker = attacker})) ->
+  (TriggerCondition.Blocks (BlockTrigger.MkBlockTrigger BlockRole.Attacker _ (BlockCount.AtLeast _ _) _ _), GameEvent.BecameBlocking (BecameBlocking.MkBecameBlocking {BecameBlocking.attacker = attacker})) ->
     Binding.setAttackingCreature attacker Map.empty
   -- CR 701.3a's "that creature" read from the ATTACHMENT: the host the bearer
   -- went onto, which Enormous Energy Blade taps. A Host end has no arm here at
@@ -1690,7 +1690,7 @@ eventBindingSlots cond = case cond of
   -- each guaranteed given a match -- every such event carries both ids, and
   -- matchesTrigger has already read the named creature's Filter. A OneOrMore
   -- batch stamps nothing.
-  TriggerCondition.Blocks (BlockTrigger.MkBlockTrigger role _ count batching) -> case batching of
+  TriggerCondition.Blocks (BlockTrigger.MkBlockTrigger role _ count batching _) -> case batching of
     Batching.EachOccurrence -> blockSlots role count
     Batching.OneOrMore -> Set.empty
   TriggerCondition.LeavesZone t -> fst (leavesZoneSlots t)

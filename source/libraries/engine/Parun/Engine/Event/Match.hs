@@ -426,7 +426,7 @@ answersEffectCrossing blocker before after = Set.lookupMin (Set.difference after
 -- player would receive priority, and CR 614.16 can double one token-making
 -- effect into several arrivals at once.
 blocks :: Filter.Context -> Map.Map ObjectId (BattlefieldCandidate.BattlefieldCandidate PC.ProjectedCharacteristics) -> GameState -> BlockTrigger.BlockTrigger -> GameEvent -> Bool
-blocks context board gs (BlockTrigger.MkBlockTrigger role creature count _) event =
+blocks context board gs (BlockTrigger.MkBlockTrigger role creature count _ _) event =
   let admits = admittedAt context board gs
       tally others = Natural.length . Set.filter (`admits` others)
    in case (role, count, event) of
@@ -1348,8 +1348,15 @@ armMatches bindings frozen board atEvent beforeEvent groupEvents gs bearer you c
   -- CR 508.3, as a function of Parun.Types.AttackTrigger's arity and fields:
   -- attacks.
   TriggerCondition.Attacks t -> attacks bearerContext board atEvent gs bearer you t event
-  -- CR 509.3, as a function of Parun.Types.BlockTrigger's fields: blocks.
-  TriggerCondition.Blocks t -> blocks bearerContext board gs t event
+  -- CR 509.3, as a function of Parun.Types.BlockTrigger's fields: blocks. Its
+  -- condition is asked of the game the event left (CR 603.2), never re-checked
+  -- as TriggeredAbility.intervening would be (CR 603.4). data/scenarios's
+  -- burning-sun-cavalry-blocks-beside-a-non-dinosaur-without-triggering and
+  -- burning-sun-cavalry-pumps-though-its-dinosaur-dies-before-the-trigger-resolves
+  -- prove it.
+  TriggerCondition.Blocks t ->
+    blocks bearerContext board gs t event
+      && maybe True (Condition.holds (Projection.viewWithLastKnownAnywhere atEvent) bearerContext atEvent bearer) (BlockTrigger.while t)
   TriggerCondition.Leaves t -> leaves bindings bearerContext beforeEvent gs bearer you t event
   TriggerCondition.LeavesZone t -> leavesZone beforeEvent board gs bearer you (admitsTurn . LeavesZoneTrigger.scope) t event
   TriggerCondition.PutIntoZone t -> putIntoZone bearerContext board atEvent beforeEvent gs bearer you (admitsTurn . PutIntoZoneTrigger.scope) t event
