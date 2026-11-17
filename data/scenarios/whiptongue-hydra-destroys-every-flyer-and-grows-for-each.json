@@ -1,0 +1,193 @@
+{
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "battlefield": [
+          {
+            "card": "Wind Drake"
+          }
+        ],
+        "hand": [
+          {
+            "card": "Whiptongue Hydra",
+            "label": "hydra"
+          }
+        ],
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ],
+        "manaPool": "CCCCCG",
+        "name": "alice"
+      },
+      {
+        "battlefield": [
+          {
+            "card": "Serra Angel"
+          },
+          {
+            "card": "Wind Drake"
+          },
+          {
+            "card": "Grizzly Bears"
+          }
+        ],
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ],
+        "name": "bob"
+      }
+    ],
+    "step": "PrecombatMain"
+  },
+  "description": "CR 701.8a, 608.2c, 122.1: Whiptongue Hydra destroys all creatures with flying as it enters and gets a +1/+1 counter for each destroyed this way",
+  "note": "Alice's Wind Drake and bob's Serra Angel and Wind Drake die, his Grizzly Bears does not; the Hydra gets three counters, a 7/7 with reach and no flying of its own.",
+  "timeline": [
+    {
+      "do": {
+        "Cast": {
+          "object": "$hydra"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Wind Drake",
+          "count": 1,
+          "player": "alice",
+          "zone": "Graveyard"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Serra Angel",
+          "count": 1,
+          "player": "bob",
+          "zone": "Graveyard"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Wind Drake",
+          "count": 1,
+          "player": "bob",
+          "zone": "Graveyard"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Grizzly Bears",
+          "count": 1,
+          "player": "bob",
+          "zone": "Battlefield"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Counters": {
+          "count": 3,
+          "kind": {
+            "type": "PlusOnePlusOne"
+          },
+          "object": "Whiptongue Hydra"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "PowerToughness": {
+          "object": "Whiptongue Hydra",
+          "power": 7,
+          "toughness": 7
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    }
+  ]
+}

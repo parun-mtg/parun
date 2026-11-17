@@ -1,0 +1,206 @@
+{
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "battlefield": [
+          {
+            "card": "Swamp"
+          },
+          {
+            "card": "Swamp"
+          }
+        ],
+        "graveyard": [
+          {
+            "card": "Grizzly Bears"
+          },
+          {
+            "card": "Hill Giant"
+          }
+        ],
+        "hand": [
+          {
+            "card": "Witch's Cottage",
+            "label": "c1"
+          },
+          {
+            "card": "Witch's Cottage",
+            "label": "c2"
+          }
+        ],
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ],
+        "name": "alice"
+      },
+      {
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ],
+        "name": "bob"
+      }
+    ],
+    "step": "PrecombatMain"
+  },
+  "description": "CR 614.1c, 603.2, 608.2b: Witch's Cottage enters tapped unless its controller controls three or more other Swamps, and only an untapped entry puts a creature card from their graveyard on top of their library",
+  "note": "Beside two Swamps the first Cottage enters tapped and raises nothing. On turn 3, beside two Swamps and that Cottage, the second enters untapped and puts Grizzly Bears from the graveyard on top, over Hill Giant.",
+  "timeline": [
+    {
+      "do": {
+        "PlayLand": "$c1"
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Tapped": {
+          "object": "Witch's Cottage#2",
+          "tapped": true
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "View": {
+          "is": [],
+          "of": "Stack"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "PlayLand": "$c2"
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 3
+    },
+    {
+      "do": {
+        "ChooseTargets": {
+          "target": [
+            "Grizzly Bears"
+          ]
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 3
+    },
+    {
+      "check": {
+        "Tapped": {
+          "object": "Witch's Cottage#2",
+          "tapped": false
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 3
+    },
+    {
+      "check": {
+        "View": {
+          "is": [
+            "trigger of Witch's Cottage"
+          ],
+          "of": "Stack"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 3
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 3
+    },
+    {
+      "do": {
+        "ChooseOptional": "Exercises"
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 3
+    },
+    {
+      "check": {
+        "View": {
+          "is": [
+            "Grizzly Bears",
+            "Island",
+            "Island#2",
+            "Island#3",
+            "Island#4",
+            "Island#5",
+            "Island#6",
+            "Island#7"
+          ],
+          "of": "Zone",
+          "player": "alice",
+          "zone": "Library"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 3
+    }
+  ]
+}

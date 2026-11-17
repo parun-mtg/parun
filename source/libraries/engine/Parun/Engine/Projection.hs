@@ -6301,10 +6301,13 @@ combatDamageObligation option oid gs = Map.lookup option (PC.combatDamageOptions
 
 -- CR 702.1c: the objects in a zone whose keywords a "the same is true for" grant
 -- reads: the permanents on the battlefield, and elsewhere the cards (CR 108.2).
+-- Through Game.zoneOf, so a card outside the game (CR 400.11), whose
+-- Object.zone is a placeholder, is in none: The Holodeck's stand-ins give
+-- Cairn Wanderer nothing (data/scenarios/the-holodeck/cr-400-11c-*).
 keywordHolders :: Zone.Zone -> GameState -> [ObjectId]
 keywordHolders zone gs = case zone of
   Zone.Battlefield -> Set.toAscList (GameState.battlefield gs)
-  _ -> Map.keys (Map.filterWithKey (\oid o -> Object.zone o == zone && Game.isCardObject oid gs) (GameState.objects gs))
+  _ -> filter (\oid -> Game.zoneOf oid gs == Just zone && Game.isCardObject oid gs) (Map.keys (GameState.objects gs))
 
 -- CR 702: an object's keyword abilities after the layer fold, counted per
 -- keyword. Most readers want hasKeyword or totalToxic.

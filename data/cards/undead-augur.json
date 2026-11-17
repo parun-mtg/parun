@@ -1,0 +1,124 @@
+{
+  "faces": [
+    {
+      "manaCost": [
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "Black"
+          }
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "Black"
+          }
+        }
+      ],
+      "name": "Undead Augur",
+      "oracleText": "Whenever this creature or another Zombie you control dies, you draw a card and lose 1 life.",
+      "power": {
+        "type": "Literal",
+        "value": 2
+      },
+      "toughness": {
+        "type": "Literal",
+        "value": 2
+      },
+      "triggeredAbilities": [
+        {
+          "condition": {
+            "type": "Leaves",
+            "value": {
+              "destinations": [
+                {
+                  "zone": "Graveyard"
+                }
+              ],
+              "permanent": {
+                "type": "Matching",
+                "value": {
+                  "type": "Or",
+                  "value": [
+                    {
+                      "type": "IsSource"
+                    },
+                    {
+                      "type": "And",
+                      "value": [
+                        {
+                          "type": "HasSubtype",
+                          "value": "Zombie"
+                        },
+                        {
+                          "type": "HasCardType",
+                          "value": "Creature"
+                        },
+                        {
+                          "type": "HeldBy",
+                          "value": {
+                            "holder": "Controller",
+                            "relation": "You"
+                          }
+                        }
+                      ]
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "modal": {
+            "modes": [
+              {
+                "clauses": [
+                  {
+                    "effects": [
+                      {
+                        "type": "Draw",
+                        "value": {
+                          "player": {
+                            "type": "Relative",
+                            "value": "You"
+                          },
+                          "quantity": {
+                            "type": "Literal",
+                            "value": 1
+                          }
+                        }
+                      },
+                      {
+                        "type": "LoseLife",
+                        "value": {
+                          "player": {
+                            "type": "Relative",
+                            "value": "You"
+                          },
+                          "quantity": {
+                            "type": "Literal",
+                            "value": 1
+                          }
+                        }
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      ],
+      "typeLine": {
+        "subtypes": [
+          "Wizard",
+          "Zombie"
+        ],
+        "types": [
+          "Creature"
+        ]
+      }
+    }
+  ]
+}

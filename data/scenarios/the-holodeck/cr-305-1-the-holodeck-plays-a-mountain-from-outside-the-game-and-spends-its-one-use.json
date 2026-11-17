@@ -1,0 +1,112 @@
+{
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "battlefield": [
+          {
+            "card": "The Holodeck"
+          },
+          {
+            "card": "Forest",
+            "label": "f1"
+          },
+          {
+            "card": "Forest",
+            "label": "f2"
+          }
+        ],
+        "library": [
+          {
+            "card": "Hill Giant"
+          },
+          {
+            "card": "Hill Giant"
+          },
+          {
+            "card": "Hill Giant"
+          },
+          {
+            "card": "Hill Giant"
+          }
+        ],
+        "name": "alice",
+        "outsideTheGame": [
+          {
+            "key": "Grizzly Bears",
+            "value": 1
+          },
+          {
+            "key": "Mountain",
+            "value": 1
+          }
+        ]
+      },
+      {
+        "library": [
+          {
+            "card": "Hill Giant"
+          },
+          {
+            "card": "Hill Giant"
+          },
+          {
+            "card": "Hill Giant"
+          },
+          {
+            "card": "Hill Giant"
+          }
+        ],
+        "name": "bob"
+      }
+    ],
+    "step": "PrecombatMain"
+  },
+  "description": "CR 305.1: The Holodeck plays a Mountain alice owns outside the game, which spends its one use this turn, so the Grizzly Bears out there is offered no more",
+  "note": "Before the play both the Mountain and the Grizzly Bears outside the game are offered, and both Forests could pay for the Bears. After the Mountain is played the Forests are still untapped, but the Bears is not offered.",
+  "timeline": [
+    {
+      "check": {
+        "View": {
+          "is": [
+            "Pass",
+            "PlayLand Mountain",
+            "Cast Grizzly Bears",
+            "ActivateManaAbility $f1",
+            "ActivateManaAbility $f2"
+          ],
+          "of": "Offered",
+          "player": "alice"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "PlayLand": "Mountain"
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "View": {
+          "is": [
+            "Pass",
+            "ActivateManaAbility $f1",
+            "ActivateManaAbility $f2",
+            "ActivateManaAbility Mountain"
+          ],
+          "of": "Offered",
+          "player": "alice"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    }
+  ]
+}

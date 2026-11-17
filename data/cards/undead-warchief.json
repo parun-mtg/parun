@@ -1,0 +1,116 @@
+{
+  "faces": [
+    {
+      "manaCost": [
+        {
+          "type": "Generic",
+          "value": 2
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "Black"
+          }
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "Black"
+          }
+        }
+      ],
+      "name": "Undead Warchief",
+      "oracleText": "Zombie spells you cast cost {1} less to cast.\nZombie creatures you control get +2/+1.",
+      "playerAbilities": [
+        {
+          "effect": {
+            "type": "ModifyCost",
+            "value": {
+              "change": {
+                "type": "Reduce",
+                "value": {
+                  "amount": [
+                    {
+                      "type": "Generic",
+                      "value": 1
+                    }
+                  ]
+                }
+              },
+              "matching": {
+                "type": "HasSubtype",
+                "value": "Zombie"
+              },
+              "subject": {
+                "type": "Spells"
+              }
+            }
+          },
+          "scope": {
+            "type": "You"
+          }
+        }
+      ],
+      "power": {
+        "type": "Literal",
+        "value": 1
+      },
+      "staticAbilities": [
+        {
+          "affected": {
+            "type": "Matching",
+            "value": {
+              "type": "And",
+              "value": [
+                {
+                  "type": "HasSubtype",
+                  "value": "Zombie"
+                },
+                {
+                  "type": "HasCardType",
+                  "value": "Creature"
+                },
+                {
+                  "type": "HeldBy",
+                  "value": {
+                    "holder": "Controller",
+                    "relation": "You"
+                  }
+                }
+              ]
+            }
+          },
+          "modifications": [
+            {
+              "type": "ModifyPowerToughness",
+              "value": {
+                "power": {
+                  "type": "Literal",
+                  "value": 2
+                },
+                "toughness": {
+                  "type": "Literal",
+                  "value": 1
+                }
+              }
+            }
+          ]
+        }
+      ],
+      "toughness": {
+        "type": "Literal",
+        "value": 1
+      },
+      "typeLine": {
+        "subtypes": [
+          "Zombie"
+        ],
+        "types": [
+          "Creature"
+        ]
+      }
+    }
+  ]
+}

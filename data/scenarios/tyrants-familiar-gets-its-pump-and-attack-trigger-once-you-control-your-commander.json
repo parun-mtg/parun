@@ -1,0 +1,210 @@
+{
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "battlefield": [
+          {
+            "card": "Tyrant's Familiar",
+            "label": "familiar"
+          },
+          {
+            "card": "Grizzly Bears",
+            "label": "mine"
+          }
+        ],
+        "command": [
+          {
+            "card": "Krenko, Mob Boss",
+            "commander": true,
+            "label": "krenko"
+          }
+        ],
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ],
+        "manaPool": "CCRR",
+        "name": "alice"
+      },
+      {
+        "battlefield": [
+          {
+            "card": "Colossal Dreadmaw",
+            "label": "giant"
+          },
+          {
+            "card": "Hill Giant",
+            "label": "hill"
+          }
+        ],
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ],
+        "name": "bob"
+      }
+    ],
+    "step": "PrecombatMain"
+  },
+  "description": "CR 613.4c, 603.2, 903.3d: Lieutenant: Tyrant's Familiar is 5/5 until its controller controls their commander, then 7/7 with an attack trigger dealing 7 damage to a creature the defending player controls",
+  "note": "Krenko still in the command zone leaves the Familiar 5/5; cast, it makes it 7/7. Attacking, the granted trigger refuses alice's own Grizzly Bears and kills bob's 6/6 Colossal Dreadmaw, which damage of the Familiar's printed power 5 would not; bob's Hill Giant is untouched.",
+  "timeline": [
+    {
+      "check": {
+        "PowerToughness": {
+          "object": "$familiar",
+          "power": 5,
+          "toughness": 5
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Cast": {
+          "object": "$krenko"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "PowerToughness": {
+          "object": "$familiar",
+          "power": 7,
+          "toughness": 7
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Attack": [
+          "$familiar"
+        ]
+      },
+      "player": "alice",
+      "step": "DeclareAttackers",
+      "turn": 1
+    },
+    {
+      "player": "alice",
+      "refuse": {
+        "ChooseTargets": {
+          "target": [
+            "$mine"
+          ]
+        }
+      },
+      "step": "DeclareAttackers",
+      "turn": 1
+    },
+    {
+      "do": {
+        "ChooseTargets": {
+          "target": [
+            "$giant"
+          ]
+        }
+      },
+      "player": "alice",
+      "step": "DeclareAttackers",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "DeclareAttackers",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Colossal Dreadmaw",
+          "count": 1,
+          "player": "bob",
+          "zone": "Graveyard"
+        }
+      },
+      "player": "alice",
+      "step": "DeclareAttackers",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Hill Giant",
+          "count": 1,
+          "player": "bob",
+          "zone": "Battlefield"
+        }
+      },
+      "player": "alice",
+      "step": "DeclareAttackers",
+      "turn": 1
+    }
+  ]
+}

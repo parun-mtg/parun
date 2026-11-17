@@ -1,0 +1,104 @@
+{
+  "faces": [
+    {
+      "manaCost": [
+        {
+          "type": "Generic",
+          "value": 5
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "Green"
+          }
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "Green"
+          }
+        }
+      ],
+      "name": "Verdant Sun's Avatar",
+      "oracleText": "Whenever this creature or another creature you control enters, you gain life equal to that creature's toughness.",
+      "power": {
+        "type": "Literal",
+        "value": 5
+      },
+      "toughness": {
+        "type": "Literal",
+        "value": 5
+      },
+      "triggeredAbilities": [
+        {
+          "condition": {
+            "type": "Enters",
+            "value": {
+              "permanent": {
+                "type": "Matching",
+                "value": {
+                  "type": "And",
+                  "value": [
+                    {
+                      "type": "HasCardType",
+                      "value": "Creature"
+                    },
+                    {
+                      "type": "HeldBy",
+                      "value": {
+                        "holder": "Controller",
+                        "relation": "You"
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "modal": {
+            "modes": [
+              {
+                "clauses": [
+                  {
+                    "effects": [
+                      {
+                        "type": "GainLife",
+                        "value": {
+                          "player": {
+                            "type": "Relative",
+                            "value": "You"
+                          },
+                          "quantity": {
+                            "type": "AgainstSlot",
+                            "value": {
+                              "quantity": {
+                                "type": "Measure",
+                                "value": "Toughness"
+                              },
+                              "slot": "became"
+                            }
+                          }
+                        }
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      ],
+      "typeLine": {
+        "subtypes": [
+          "Avatar",
+          "Dinosaur"
+        ],
+        "types": [
+          "Creature"
+        ]
+      }
+    }
+  ]
+}

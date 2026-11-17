@@ -1,0 +1,158 @@
+{
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "battlefield": [
+          {
+            "card": "Tome of Legends",
+            "counters": [
+              {
+                "key": {
+                  "type": "Named",
+                  "value": "page"
+                },
+                "value": 1
+              }
+            ],
+            "label": "tome"
+          },
+          {
+            "card": "Krenko, Mob Boss",
+            "commander": true,
+            "label": "krenko",
+            "ready": true
+          },
+          {
+            "card": "Grizzly Bears",
+            "label": "bears",
+            "ready": true
+          }
+        ],
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ],
+        "name": "alice"
+      },
+      {
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ],
+        "name": "bob"
+      }
+    ],
+    "step": "PrecombatMain"
+  },
+  "description": "CR 508.1m, 603.2, 903.3: Tome of Legends gets one page counter when its controller's commander attacks, and none for another attacker",
+  "note": "Krenko, alice's commander, attacks beside Grizzly Bears: one trigger, so the Tome goes from one counter to two and the stack is then empty.",
+  "timeline": [
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Attack": [
+          "$krenko",
+          "$bears"
+        ]
+      },
+      "player": "alice",
+      "step": "DeclareAttackers",
+      "turn": 1
+    },
+    {
+      "check": {
+        "View": {
+          "is": [
+            "trigger of $tome"
+          ],
+          "of": "Stack"
+        }
+      },
+      "player": "alice",
+      "step": "DeclareAttackers",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "DeclareAttackers",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Counters": {
+          "count": 2,
+          "kind": {
+            "type": "Named",
+            "value": "page"
+          },
+          "object": "$tome"
+        }
+      },
+      "player": "alice",
+      "step": "DeclareAttackers",
+      "turn": 1
+    },
+    {
+      "check": {
+        "View": {
+          "is": [],
+          "of": "Stack"
+        }
+      },
+      "player": "alice",
+      "step": "DeclareAttackers",
+      "turn": 1
+    }
+  ]
+}

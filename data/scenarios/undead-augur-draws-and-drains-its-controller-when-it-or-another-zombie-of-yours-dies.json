@@ -1,0 +1,337 @@
+{
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "battlefield": [
+          {
+            "card": "Undead Augur",
+            "label": "augur"
+          },
+          {
+            "card": "Walking Corpse",
+            "label": "corpse"
+          },
+          {
+            "card": "Grizzly Bears",
+            "label": "bears"
+          }
+        ],
+        "hand": [
+          {
+            "card": "Shock",
+            "label": "scorpse"
+          },
+          {
+            "card": "Shock",
+            "label": "stheirs"
+          },
+          {
+            "card": "Shock",
+            "label": "sbears"
+          },
+          {
+            "card": "Shock",
+            "label": "saugur"
+          }
+        ],
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ],
+        "manaPool": "RRRR",
+        "name": "alice"
+      },
+      {
+        "battlefield": [
+          {
+            "card": "Walking Corpse",
+            "label": "theirs"
+          }
+        ],
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ],
+        "name": "bob"
+      }
+    ],
+    "step": "PrecombatMain"
+  },
+  "description": "CR 603.6c, 603.10a, 700.4: Undead Augur's controller draws a card and loses 1 life when it or another Zombie they control dies, not for an opponent's Zombie or a non-Zombie",
+  "note": "Alice Shocks her Walking Corpse (draw, 19 life), bob's Walking Corpse and her Grizzly Bears (nothing), then the Augur itself (draw, 18 life).",
+  "timeline": [
+    {
+      "do": {
+        "Cast": {
+          "object": "$scorpse",
+          "targets": [
+            "$corpse"
+          ]
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Life": {
+          "life": 19,
+          "player": "alice"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Island",
+          "count": 1,
+          "player": "alice",
+          "zone": "Hand"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "View": {
+          "is": [],
+          "of": "Stack"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Cast": {
+          "object": "$stheirs",
+          "targets": [
+            "$theirs"
+          ]
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Life": {
+          "life": 19,
+          "player": "alice"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Island",
+          "count": 1,
+          "player": "alice",
+          "zone": "Hand"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "View": {
+          "is": [],
+          "of": "Stack"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Cast": {
+          "object": "$sbears",
+          "targets": [
+            "$bears"
+          ]
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Life": {
+          "life": 19,
+          "player": "alice"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Island",
+          "count": 1,
+          "player": "alice",
+          "zone": "Hand"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "View": {
+          "is": [],
+          "of": "Stack"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Cast": {
+          "object": "$saugur",
+          "targets": [
+            "$augur"
+          ]
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Life": {
+          "life": 18,
+          "player": "alice"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Island",
+          "count": 2,
+          "player": "alice",
+          "zone": "Hand"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "View": {
+          "is": [],
+          "of": "Stack"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    }
+  ]
+}
