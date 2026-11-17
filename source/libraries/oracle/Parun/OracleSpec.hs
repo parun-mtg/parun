@@ -251,13 +251,21 @@ spec s = Spec.describe s "Parun.Oracle" $ do
   -- CR 602.5b: a rider printed after equip is a sentence of its own, Leather
   -- Armor's after a mana cost and Shredder's Armor's after a sentence.
   Spec.it s "render prints an equip ability's once-each-turn rider" $ do
-    let equip cost = Keyword.Equip (Equip.MkEquip cost Nothing EquipTarget.Creature (Just 1))
+    let equip cost = Keyword.Equip (Equip.MkEquip cost [] Nothing EquipTarget.Creature (Just 1))
         another = Filter.And [Filter.Not Filter.IsSource, Filter.Not (Filter.HasCardType CardType.Land)]
     Spec.assertEq s (Just (Text.pack "Equip {0}. Activate only once each turn.")) (Oracle.render (card Layout.Normal [[equip (Cost.MkCost (Just (ManaCost.MkManaCost [ManaSymbol.Generic 0])) [])]]))
     Spec.assertEq
       s
       (Just (Text.pack "Equip\8212Sacrifice another nonland permanent. Activate only once each turn."))
       (Oracle.render (card Layout.Normal [[equip (Cost.MkCost (Just (ManaCost.MkManaCost [])) [CostComponent.Sacrifice (Sacrifice.MkSacrifice (ObjectCount.Exactly (CostAmount.Fixed 1)) another Set.empty)])]]))
+
+  -- CR 602.2b: a choice inside equip's cost is a sentence after the dash,
+  -- Bloodthorn Flail's.
+  Spec.it s "render prints a choice inside an equip cost" $ do
+    let three = Cost.MkCost (Just (ManaCost.MkManaCost [ManaSymbol.Generic 3])) []
+        discarding = Cost.MkCost (Just (ManaCost.MkManaCost [])) [CostComponent.DiscardCards (DiscardCards.MkDiscardCards (ObjectCount.Exactly (CostAmount.Fixed 1)) (Filter.And []) CardSelection.ByChoice)]
+        equip = Keyword.Equip (Equip.MkEquip (Cost.MkCost (Just (ManaCost.MkManaCost [])) []) [three NonEmpty.:| [discarding]] Nothing EquipTarget.Creature Nothing)
+    Spec.assertEq s (Just (Text.pack "Equip\8212Pay {3} or discard a card.")) (Oracle.render (card Layout.Normal [[equip]]))
 
   -- CR 602.5b: crew's rider, Luxurious Locomotive's, likewise.
   Spec.it s "render prints a crew ability's once-each-turn rider" $ do

@@ -1,5 +1,6 @@
 module Parun.Codec.EquipSpec where
 
+import qualified Data.List.NonEmpty as NonEmpty
 import qualified Parun.Codec.Equip as Equip
 import qualified Parun.Codec.EquipTarget as EquipTarget
 import qualified Parun.Codec.Keyword as Keyword
@@ -7,6 +8,7 @@ import qualified Parun.JsonCodec.Codec as Codec
 import qualified Parun.JsonCodec.Common as Common
 import qualified Parun.Spec as Spec
 import qualified Parun.Types.Cost as Cost
+import qualified Parun.Types.CostComponent as CostComponent
 import qualified Parun.Types.Equip as Equip
 import qualified Parun.Types.EquipTarget as EquipTarget
 import qualified Parun.Types.Filter as Filter
@@ -29,6 +31,7 @@ spec s = Spec.describe s "Parun.Codec.Equip" $ do
       codec
       ( Equip.MkEquip
           { Equip.cost = Cost.MkCost {Cost.mana = Just (ManaCost.MkManaCost [ManaSymbol.Generic 3]), Cost.components = []},
+            Equip.costChoices = [],
             Equip.quality = Nothing,
             Equip.target = EquipTarget.Creature,
             Equip.timesEachTurn = Nothing
@@ -42,6 +45,7 @@ spec s = Spec.describe s "Parun.Codec.Equip" $ do
       codec
       ( Equip.MkEquip
           { Equip.cost = Cost.MkCost {Cost.mana = Just (ManaCost.MkManaCost [ManaSymbol.Generic 1]), Cost.components = []},
+            Equip.costChoices = [],
             Equip.quality = Just (Filter.HasSubtype Subtype.Human),
             Equip.target = EquipTarget.Creature,
             Equip.timesEachTurn = Nothing
@@ -55,6 +59,7 @@ spec s = Spec.describe s "Parun.Codec.Equip" $ do
       codec
       ( Equip.MkEquip
           { Equip.cost = Cost.MkCost {Cost.mana = Just (ManaCost.MkManaCost [ManaSymbol.Generic 1]), Cost.components = []},
+            Equip.costChoices = [],
             Equip.quality = Nothing,
             Equip.target = EquipTarget.Planeswalker,
             Equip.timesEachTurn = Nothing
@@ -68,6 +73,7 @@ spec s = Spec.describe s "Parun.Codec.Equip" $ do
       codec
       ( Equip.MkEquip
           { Equip.cost = Cost.MkCost {Cost.mana = Just (ManaCost.MkManaCost [ManaSymbol.Generic 0]), Cost.components = []},
+            Equip.costChoices = [],
             Equip.quality = Nothing,
             Equip.target = EquipTarget.Creature,
             Equip.timesEachTurn = Just 1
@@ -78,3 +84,20 @@ spec s = Spec.describe s "Parun.Codec.Equip" $ do
   -- Arm.enum derives the target's arms from the type, so this is what would
   -- catch two constructors that encode alike.
   Spec.it s "round trips every target" $ Common.assertEnumCodec s EquipTarget.codec
+  -- CR 602.2b: a choice inside the cost, Bloodthorn Flail's shape.
+  Spec.it s "MkEquip with a cost choice" $
+    Common.assertCodec
+      s
+      codec
+      ( Equip.MkEquip
+          { Equip.cost = Cost.MkCost {Cost.mana = Just (ManaCost.MkManaCost []), Cost.components = []},
+            Equip.costChoices =
+              [ Cost.MkCost {Cost.mana = Just (ManaCost.MkManaCost [ManaSymbol.Generic 3]), Cost.components = []}
+                  NonEmpty.:| [Cost.MkCost {Cost.mana = Just (ManaCost.MkManaCost []), Cost.components = [CostComponent.TapThis]}]
+              ],
+            Equip.quality = Nothing,
+            Equip.target = EquipTarget.Creature,
+            Equip.timesEachTurn = Nothing
+          }
+      )
+      " {\"cost\":{\"mana\":[]},\"costChoices\":[[{\"mana\":[{\"type\":\"Generic\",\"value\":3}]},{\"mana\":[],\"components\":[{\"type\":\"TapThis\"}]}]],\"quality\":null} "

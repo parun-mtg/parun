@@ -1,5 +1,6 @@
 module Parun.Types.Equip where
 
+import qualified Data.List.NonEmpty as NonEmpty
 import Numeric.Natural (Natural)
 import qualified Parun.Types.Cost as Cost
 import qualified Parun.Types.EquipTarget as EquipTarget
@@ -23,8 +24,15 @@ import qualified Parun.Types.Filter as Filter
 -- Armor's "Activate only once each turn"; Nothing prints none. A count rather
 -- than a list of Parun.Types.ActivationRestriction, which imports Keyword
 -- (through Parun.Types.Quantity) and so cannot be named here.
+--
+-- costChoices is a choice printed inside the [cost], Bloodthorn Flail's
+-- "Equip--Pay {3} or discard a card", each list one
+-- Parun.Types.CostChoice the minted ability's
+-- Parun.Types.ActivatedAbility.costChoices carries (CR 702.6a, 602.2b). Bare
+-- options rather than CostChoice, which imports Keyword.
 data Equip keyword = MkEquip
   { cost :: Cost.Cost keyword,
+    costChoices :: [NonEmpty.NonEmpty (Cost.Cost keyword)],
     quality :: Maybe (Filter.Filter keyword),
     target :: EquipTarget.EquipTarget,
     timesEachTurn :: Maybe Natural

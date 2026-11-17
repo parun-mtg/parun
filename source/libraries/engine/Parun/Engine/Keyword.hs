@@ -2972,7 +2972,7 @@ equip payload =
         EquipTarget.Creature -> (TargetSlot.required Pool.Creatures (narrowed []), Effect.Attach equipTarget)
         EquipTarget.Planeswalker -> (TargetSlot.required Pool.Permanents (narrowed [Filter.HasCardType CardType.Planeswalker]), Effect.AttachAsThoughCreature equipTarget)
    in ActivatedAbility.MkActivatedAbility
-        { ActivatedAbility.costChoices = [],
+        { ActivatedAbility.costChoices = fmap CostChoice.MkCostChoice (Equip.costChoices payload),
           ActivatedAbility.cost = Equip.cost payload,
           ActivatedAbility.modal =
             Mint.oneModeTargeting (Map.singleton equipTarget slot) (Seq.singleton effect),

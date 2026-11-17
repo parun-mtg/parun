@@ -31,6 +31,7 @@ import qualified Parun.Types.KeywordCount as KeywordCount
 import qualified Parun.Types.KeywordFamily as KeywordFamily
 import qualified Parun.Types.Loyalty as Loyalty
 import qualified Parun.Types.MadnessCost as MadnessCost
+import qualified Parun.Types.ManaCost as ManaCost
 import qualified Parun.Types.Morph as Morph
 import qualified Parun.Types.MorphVariant as MorphVariant
 import qualified Parun.Types.MoveCardsFromGraveyard as MoveCardsFromGraveyard
@@ -83,12 +84,21 @@ printed self keyword = case keyword of
   Keyword.DoubleStrike -> [Text.pack "Double strike"]
   Keyword.Equip e -> case (Equip.quality e, Equip.target e) of
     (Nothing, EquipTarget.Creature) -> do
-      text <- Cost.keyworded self (keywordWord self) (Text.pack "Equip") (Equip.cost e)
+      text <- case Equip.costChoices e of
+        [] -> Cost.keyworded self (keywordWord self) (Text.pack "Equip") (Equip.cost e)
+        -- CR 602.2b: each choice follows the rest of the cost, the whole a
+        -- sentence after the dash, "Equip--Pay {3} or discard a card."
+        -- (Bloodthorn Flail). A cost of nothing else prints no {0} before it.
+        options -> do
+          before <- Cost.cost self (keywordWord self) (Equip.cost e)
+          choices <- traverse (fmap fst . Cost.paymentChoice self (keywordWord self)) options
+          let shared = [before | not (null (Cost.Type.components (Equip.cost e))) || maybe False (not . null . ManaCost.unwrap) (Cost.Type.mana (Equip.cost e))]
+          [Text.pack "Equip\8212" <> Prose.sentence (Text.intercalate (Text.pack ", ") (shared <> choices))]
       -- CR 602.5b: its own sentence, after "Equip {0}" (Leather Armor) or the
       -- cost's (Shredder's Armor).
       rider <- case Equip.timesEachTurn e of
         Nothing -> [Text.empty]
-        Just 1 -> [Text.pack (if null (Cost.Type.components (Equip.cost e)) then ". " else " ") <> Text.pack "Activate only once each turn."]
+        Just 1 -> [Text.pack (if null (Cost.Type.components (Equip.cost e)) && null (Equip.costChoices e) then ". " else " ") <> Text.pack "Activate only once each turn."]
         Just _ -> []
       [text <> rider]
     _ -> []
@@ -551,7 +561,7 @@ numberedKeywords =
 -- from it: "Cycling {2}" (CR 702.29a).
 costedKeywords :: [Cost.Type.Cost Keyword.Keyword -> Keyword.Keyword]
 costedKeywords =
-  [ \c -> Keyword.Equip Equip.MkEquip {Equip.cost = c, Equip.quality = Nothing, Equip.target = EquipTarget.Creature, Equip.timesEachTurn = Nothing},
+  [ \c -> Keyword.Equip Equip.MkEquip {Equip.cost = c, Equip.costChoices = [], Equip.quality = Nothing, Equip.target = EquipTarget.Creature, Equip.timesEachTurn = Nothing},
     Keyword.MoreThanMeetsTheEye,
     \c -> Keyword.Ward Ward.MkWard {Ward.cost = NonEmpty.singleton c, Ward.perEach = Nothing},
     Keyword.CumulativeUpkeep,
