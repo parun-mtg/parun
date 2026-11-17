@@ -1,0 +1,51 @@
+{
+  "description": "CR 113.7 / 608.2c / 611.2b / 613.1f Tishana's Tidebinder counters a creature's ability, and that creature loses all abilities until the Tidebinder leaves the battlefield",
+  "note": "bob's Air Servant activates its tap ability on itself; alice flashes in the Tidebinder, whose trigger counters it. The Servant stays untapped and loses flying; bolting the Tidebinder gives flying back.",
+  "board": {
+    "active": "bob",
+    "step": "PrecombatMain",
+    "seats": [
+      {
+        "name": "alice",
+        "battlefield": [
+          {"card": "Island", "label": "a1", "ready": true},
+          {"card": "Island", "label": "a2", "ready": true},
+          {"card": "Island", "label": "a3", "ready": true},
+          {"card": "Mountain", "label": "m", "ready": true}
+        ],
+        "hand": [
+          {"card": "Tishana's Tidebinder", "label": "tidebinder"},
+          {"card": "Lightning Bolt", "label": "bolt"}
+        ]
+      },
+      {
+        "name": "bob",
+        "battlefield": [
+          {"card": "Air Servant", "label": "servant", "ready": true},
+          {"card": "Island", "label": "b1", "ready": true},
+          {"card": "Island", "label": "b2", "ready": true},
+          {"card": "Island", "label": "b3", "ready": true}
+        ]
+      }
+    ]
+  },
+  "timeline": [
+    {"turn": 1, "step": "PrecombatMain", "player": "bob", "do": {"Activate": {"object": "$servant", "mana": ["$b1", "$b2", "$b3"]}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "bob", "do": "Pass"},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": {"Cast": {"object": "$tidebinder", "mana": ["$a1", "$a2", "$a3", null]}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass"},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": {"ChooseTargets": {"ability": ["ability of $servant"]}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass"},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"View": {"of": "Stack", "is": []}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Tapped": {"object": "$servant", "tapped": false}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Keywords": {"object": "$servant", "keyword": {"type": "Flying"}, "count": 0}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Keywords": {"object": "Tishana's Tidebinder", "keyword": {"type": "Flash"}, "count": 1}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": {"Cast": {"object": "$bolt", "targets": ["Tishana's Tidebinder"], "mana": ["$m"]}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass"},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Keywords": {"object": "$servant", "keyword": {"type": "Flying"}, "count": 1}}}
+  ],
+  "final": [
+    {"Count": {"player": "alice", "zone": "Graveyard", "card": "Tishana's Tidebinder", "count": 1}},
+    {"View": {"of": "Stack", "is": []}}
+  ]
+}
