@@ -1014,6 +1014,7 @@ effectPlayerRefs effect = case effect of
   Effect.Assimilate {} -> []
   Effect.TemptWithTheRing -> []
   Effect.OpenAttraction -> []
+  Effect.RollToVisit -> []
   Effect.Planeswalk {} -> []
   Effect.ChaosEnsues {} -> []
   Effect.Abandon -> []
@@ -1234,6 +1235,7 @@ slotsOf effect = joinTwo (joinTwo (joinSlots (fmap objectRefSlots (effectObjectR
   Effect.Assimilate {} -> Map.empty
   Effect.TemptWithTheRing -> Map.empty
   Effect.OpenAttraction -> Map.empty
+  Effect.RollToVisit -> Map.empty
   Effect.Planeswalk {} -> Map.empty
   Effect.ChaosEnsues {} -> Map.empty
   Effect.Abandon -> Map.empty
@@ -2190,6 +2192,7 @@ ownSlotsAreExhaustive effect = case effect of
   Effect.Assimilate {} -> True
   Effect.TemptWithTheRing -> True
   Effect.OpenAttraction -> True
+  Effect.RollToVisit -> True
   Effect.Planeswalk {} -> True
   Effect.ChaosEnsues {} -> True
   Effect.Abandon -> True
@@ -2507,6 +2510,7 @@ hasRead wanted =
         Effect.Assimilate {} -> False
         Effect.TemptWithTheRing -> False
         Effect.OpenAttraction -> False
+        Effect.RollToVisit -> False
         Effect.Planeswalk {} -> False
         Effect.ChaosEnsues {} -> False
         Effect.Abandon -> False
@@ -2821,6 +2825,7 @@ boundSlots effect = case effect of
   Effect.Assimilate _ -> Set.empty
   Effect.TemptWithTheRing -> Set.empty
   Effect.OpenAttraction -> Set.empty
+  Effect.RollToVisit -> Set.empty
   Effect.Planeswalk {} -> Set.empty
   Effect.ChaosEnsues {} -> Set.empty
   Effect.Abandon -> Set.empty

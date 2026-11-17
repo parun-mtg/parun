@@ -17,7 +17,6 @@ import qualified Parun.Codec.CounterTrigger as CounterTrigger
 import qualified Parun.Codec.CounteringTrigger as CounteringTrigger
 import qualified Parun.Codec.CrewRole as CrewRole
 import qualified Parun.Codec.DamageTrigger as DamageTrigger
-import qualified Parun.Codec.DieResult as DieResult
 import qualified Parun.Codec.DiscardTrigger as DiscardTrigger
 import qualified Parun.Codec.EntersTrigger as EntersTrigger
 import qualified Parun.Codec.ExploitTrigger as ExploitTrigger
@@ -41,6 +40,7 @@ import qualified Parun.Codec.PlayerScope as PlayerScope
 import qualified Parun.Codec.PlaysLand as PlaysLand
 import qualified Parun.Codec.PutIntoZoneTrigger as PutIntoZoneTrigger
 import qualified Parun.Codec.RevealedThisWay as RevealedThisWay
+import qualified Parun.Codec.RollTrigger as RollTrigger
 import qualified Parun.Codec.RoomIndex as RoomIndex
 import qualified Parun.Codec.SacrificeTrigger as SacrificeTrigger
 import qualified Parun.Codec.SpellCast as SpellCast
@@ -122,7 +122,7 @@ codec =
           Arm.payload "PlayerFacesDilemma" PlayerRelation.codec TriggerCondition.PlayerFacesDilemma (\x -> case x of TriggerCondition.PlayerFacesDilemma y -> Just y; _ -> Nothing),
           Arm.payload "PlayerCommitsCrime" PlayerRelation.codec TriggerCondition.PlayerCommitsCrime (\x -> case x of TriggerCondition.PlayerCommitsCrime y -> Just y; _ -> Nothing),
           Arm.payload "PlayerExpends" PlayerExpends.codec TriggerCondition.PlayerExpends (\x -> case x of TriggerCondition.PlayerExpends y -> Just y; _ -> Nothing),
-          Arm.payload "PlayerRollsResult" (DieResult.codec PlayerRelation.codec) TriggerCondition.PlayerRollsResult (\x -> case x of TriggerCondition.PlayerRollsResult y -> Just y; _ -> Nothing),
+          Arm.payload "PlayerRollsResult" RollTrigger.codec TriggerCondition.PlayerRollsResult (\x -> case x of TriggerCondition.PlayerRollsResult y -> Just y; _ -> Nothing),
           Arm.nullary "Visit" TriggerCondition.Visit,
           Arm.nullary "ChaosEnsues" TriggerCondition.ChaosEnsues,
           Arm.payload "PlayerRollsPlaneswalker" PlayerRelation.codec TriggerCondition.PlayerRollsPlaneswalker (\x -> case x of TriggerCondition.PlayerRollsPlaneswalker y -> Just y; _ -> Nothing),

@@ -1615,8 +1615,12 @@ library codec
     Parun.Codec.RiderClauseSpec
     Parun.Codec.RollDie
     Parun.Codec.RollDieSpec
+    Parun.Codec.RollKind
+    Parun.Codec.RollKindSpec
     Parun.Codec.RollModifier
     Parun.Codec.RollModifierSpec
+    Parun.Codec.RollTrigger
+    Parun.Codec.RollTriggerSpec
     Parun.Codec.RoomHalf
     Parun.Codec.RoomHalfSpec
     Parun.Codec.RoomIndex
@@ -3654,7 +3658,9 @@ library types
     Parun.Types.RiderClause
     Parun.Types.RollAdjustment
     Parun.Types.RollDie
+    Parun.Types.RollKind
     Parun.Types.RollModifier
+    Parun.Types.RollTrigger
     Parun.Types.RoomHalf
     Parun.Types.RoomIndex
     Parun.Types.Rounding

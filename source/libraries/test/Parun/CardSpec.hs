@@ -5261,6 +5261,7 @@ effectFilters effect = case effect of
   Effect.Assimilate ref -> frame SourceHostFramed (objectRefFilters ref)
   Effect.TemptWithTheRing -> []
   Effect.OpenAttraction -> []
+  Effect.RollToVisit -> []
   Effect.Planeswalk ref -> foldMap (frame SourceHostFramed . objectRefFilters) ref
   Effect.ChaosEnsues ref -> foldMap (frame SourceHostFramed . objectRefFilters) ref
   Effect.Abandon -> []

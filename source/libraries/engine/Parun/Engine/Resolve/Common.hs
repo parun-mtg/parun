@@ -3858,6 +3858,8 @@ effectIsImpossible asked resolving source controller legal gs effect = case effe
   Effect.TemptWithTheRing {} -> False
   -- CR 609.3: an empty Attraction deck opens nothing.
   Effect.OpenAttraction -> null (Attraction.deckOf controller gs)
+  -- CR 701.52a: the die is rolled with no Attraction to visit.
+  Effect.RollToVisit -> False
   -- The Unstable FAQ: assembling from an empty Contraption deck does nothing.
   Effect.Assemble _ -> null (Game.sideDeckOf SideDeck.Contraption controller gs)
   -- CR 701.31a: only the planar controller of a Planechase game planeswalks.

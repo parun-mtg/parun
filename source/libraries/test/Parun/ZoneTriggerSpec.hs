@@ -201,6 +201,8 @@ import qualified Parun.Types.RevealCause as RevealCause
 import qualified Parun.Types.RevealTiming as RevealTiming
 import qualified Parun.Types.Revealed as Revealed
 import qualified Parun.Types.RevealedThisWay as RevealedThisWay
+import qualified Parun.Types.RollKind as RollKind
+import qualified Parun.Types.RollTrigger as RollTrigger
 import qualified Parun.Types.RoomIndex as RoomIndex
 import qualified Parun.Types.SacrificeTrigger as SacrificeTrigger
 import qualified Parun.Types.Saddling as Saddling
@@ -2083,8 +2085,13 @@ representativeEvents cond =
         TriggerCondition.PlayerCommitsCrime _ -> one (GameEvent.CommittedCrime (CommittedCrime.MkCommittedCrime S.bob departed))
         -- CR 700.14's own event, crossing the amount the condition states.
         TriggerCondition.PlayerExpends e -> one (GameEvent.Expended Expended.MkExpended {Expended.player = S.bob, Expended.before = 0, Expended.after = PlayerExpends.amount e})
-        -- CR 706.2's per-die event, carrying the number the condition states.
-        TriggerCondition.PlayerRollsResult watched -> one (GameEvent.DieResultSettled DieResult.MkDieResult {DieResult.roller = S.bob, DieResult.result = DieResult.result watched})
+        -- CR 706.2's per-die event, or CR 701.52a's for a roll to visit,
+        -- carrying the number the condition states.
+        TriggerCondition.PlayerRollsResult watched ->
+          let rolled = DieResult.MkDieResult {DieResult.roller = S.bob, DieResult.result = RollTrigger.result watched}
+           in case RollTrigger.roll watched of
+                RollKind.AnyRoll -> one (GameEvent.DieResultSettled rolled)
+                RollKind.ToVisit -> one (GameEvent.RolledToVisit rolled)
         -- CR 701.52a's own event, and the only one this condition admits.
         TriggerCondition.Visit -> one (GameEvent.RolledToVisit DieResult.MkDieResult {DieResult.roller = S.bob, DieResult.result = 3})
         -- CR 311.7's own event, chaos ensuing.
@@ -2435,8 +2442,10 @@ everyTriggerCondition =
     TriggerCondition.PlayerFacesDilemma PlayerRelation.You,
     TriggerCondition.PlayerCommitsCrime PlayerRelation.You,
     TriggerCondition.PlayerExpends (PlayerExpends.MkPlayerExpends PlayerRelation.You 4),
-    TriggerCondition.PlayerRollsResult DieResult.MkDieResult {DieResult.roller = PlayerRelation.You, DieResult.result = 6},
-    TriggerCondition.PlayerRollsResult DieResult.MkDieResult {DieResult.roller = PlayerRelation.Opponent, DieResult.result = 6},
+    TriggerCondition.PlayerRollsResult (RollTrigger.MkRollTrigger PlayerRelation.You 6 RollKind.AnyRoll),
+    TriggerCondition.PlayerRollsResult (RollTrigger.MkRollTrigger PlayerRelation.Opponent 6 RollKind.AnyRoll),
+    -- "Lifetime" Pass Holder's roll to visit.
+    TriggerCondition.PlayerRollsResult (RollTrigger.MkRollTrigger PlayerRelation.You 6 RollKind.ToVisit),
     TriggerCondition.Visit,
     TriggerCondition.ChaosEnsues,
     TriggerCondition.PlayerRollsPlaneswalker PlayerRelation.You,

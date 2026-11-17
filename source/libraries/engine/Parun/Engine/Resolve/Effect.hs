@@ -699,6 +699,7 @@ applyOneEffect runSubgame resolving source controller legal chosen effect = case
   Effect.Blight payload -> Counters.blight resolving source controller legal payload
   Effect.TemptWithTheRing -> Counters.temptWithTheRing controller
   Effect.OpenAttraction -> Counters.openAttraction (runReplacementEffects runSubgame) controller
+  Effect.RollToVisit -> rollToVisit runSubgame controller
   Effect.Assemble payload -> Counters.assemble (runReplacementEffects runSubgame) resolving source controller legal payload
   Effect.Planeswalk ref -> Counters.planeswalk resolving source controller legal ref
   Effect.ChaosEnsues ref -> Counters.chaosEnsues resolving source controller legal ref
