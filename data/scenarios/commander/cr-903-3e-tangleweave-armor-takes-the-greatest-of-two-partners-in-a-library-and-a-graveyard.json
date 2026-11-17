@@ -1,0 +1,62 @@
+{
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "battlefield": [
+          {
+            "card": "Grizzly Bears",
+            "label": "bears"
+          },
+          {
+            "attached": "bears",
+            "card": "Tangleweave Armor",
+            "label": "armor"
+          }
+        ],
+        "graveyard": [
+          {
+            "card": "Akiri, Line-Slinger",
+            "commander": true,
+            "label": "akiri"
+          }
+        ],
+        "library": [
+          {
+            "card": "Tymna the Weaver",
+            "commander": true,
+            "label": "tymna"
+          }
+        ],
+        "name": "alice"
+      },
+      {
+        "command": [
+          {
+            "card": "Ghalta, Primal Hunger",
+            "commander": true,
+            "label": "ghalta"
+          }
+        ],
+        "name": "bob"
+      }
+    ],
+    "step": "PrecombatMain"
+  },
+  "description": "CR 903.3e Tangleweave Armor takes the greatest of two partners in a library and a graveyard",
+  "note": "Tymna the Weaver (mana value 3) in alice's library and Akiri, Line-Slinger (mana value 2) in her graveyard: X is 3, not their sum, so the 2/2 Bears are 5/5. Bob's Ghalta adds nothing.",
+  "timeline": [
+    {
+      "check": {
+        "PowerToughness": {
+          "object": "$bears",
+          "power": 5,
+          "toughness": 5
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    }
+  ]
+}

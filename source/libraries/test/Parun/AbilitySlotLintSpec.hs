@@ -212,6 +212,8 @@ scopeOffends scope = case scope of
   Scope.InPosition _ inZone -> scopeOffends (Scope.InZone inZone)
   -- Every permanent at once, so no player's copy of a zone to pair with.
   Scope.AsTurnBegan -> False
+  -- Every zone at once, so no player's copy of one to pair with.
+  Scope.Anywhere -> False
 
 cardOffendsSharedZoneScope :: Face.Face Card.Type.Card -> Bool
 cardOffendsSharedZoneScope card =

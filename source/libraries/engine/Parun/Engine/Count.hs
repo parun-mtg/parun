@@ -158,12 +158,7 @@ evaluate viewOf quantityOf talliesWhatHappened candidateCounters context gs coun
    in case Count.Type.scope count of
         Scope.InZone (InZone.MkInZone zone ref) -> do
           pids <- playersFor viewOf context gs ref
-          -- CR 108.2b: a token awaiting CR 704.5d in a hand, graveyard or exile
-          -- is no card there (go-ninja-go-exiles-a-token-cosmogoyf-does-not-count).
-          -- A library's members stay whole: Warp World's "that many" counts a
-          -- token shuffled in (warp-world-counts-a-token-but-reveals-only-cards).
-          let members = if List.elem zone [Zone.Graveyard, Zone.Hand, Zone.Exile] then Game.cardsIn else Game.zoneMembers
-              ids = concatMap (\pid -> members zone pid gs) pids
+          let ids = concatMap (\pid -> residents zone pid gs) pids
               kept = Maybe.mapMaybe (\oid -> fmap ((,) (Just oid)) (keep predicate context (viewOf oid))) ids
           pure (aggregate quantityOf aggregation kept)
         -- CR 608.2i: the event log. Views of the object that MOVED come from each
@@ -291,6 +286,15 @@ evaluate viewOf quantityOf talliesWhatHappened candidateCounters context gs coun
           let views = Map.elems (Map.mapWithKey (\oid record -> lastKnownView viewOf oid gs record) (Maybe.fromMaybe Map.empty (TurnRegisters.permanentsAsTurnBegan (GameState.turn gs))))
               kept = fmap ((,) Nothing) (Maybe.mapMaybe (keep predicate context . Just) views)
            in pure (aggregate quantityOf aggregation kept)
+        -- CR 400.1: every zone, each player's copy of the per-player ones, each
+        -- read as the zone arm reads it; the Filter says whose. Tangleweave
+        -- Armor's "your commanders" wherever each is (CR 903.3e):
+        -- data/scenarios/commander's cr-903-3e-tangleweave-armor-* prove it.
+        Scope.Anywhere -> do
+          pids <- playersFor viewOf context gs (PlayerRef.Relative PlayerRelation.AnyPlayer)
+          let ids = concatMap (\zone -> concatMap (\pid -> residents zone pid gs) pids) [minBound .. maxBound]
+              kept = Maybe.mapMaybe (\oid -> fmap ((,) (Just oid)) (keep predicate context (viewOf oid))) ids
+          pure (aggregate quantityOf aggregation kept)
         -- CR 401.2 / 404.1: each named library or graveyard, narrowed by
         -- POSITION before the Filter is asked -- the zone arm above answers "any
         -- matching card" instead. Order-insensitive like every Aggregation, so no
@@ -302,6 +306,14 @@ evaluate viewOf quantityOf talliesWhatHappened candidateCounters context gs coun
           let ids = foldMap (\pid -> Game.atPosition position (Filter.source context) zone pid gs) pids
               kept = Maybe.mapMaybe (\oid -> fmap ((,) (Just oid)) (keep predicate context (viewOf oid))) ids
           pure (aggregate quantityOf aggregation kept)
+
+-- CR 400.1: the objects a count over one player's copy of a zone folds over.
+-- CR 108.2b: a token awaiting CR 704.5d in a hand, graveyard or exile is no card
+-- there (go-ninja-go-exiles-a-token-cosmogoyf-does-not-count). A library's
+-- members stay whole: Warp World's "that many" counts a token shuffled in
+-- (warp-world-counts-a-token-but-reveals-only-cards).
+residents :: Zone.Zone -> PlayerId -> GameState -> [ObjectId]
+residents zone = if List.elem zone [Zone.Graveyard, Zone.Hand, Zone.Exile] then Game.cardsIn zone else Game.zoneMembers zone
 
 -- CR 608.2h: the ids a slot's members are read as, under the BoundReading:
 -- each as bound, or each arrival swapped for the id it departed as. Shared by

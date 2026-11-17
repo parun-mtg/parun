@@ -24,7 +24,8 @@ codec keywordCodec =
       Arm.payload "OverBoundBeforeMove" SlotName.codec (Scope.OverBound BoundReading.BeforeMove) (\x -> case x of Scope.OverBound BoundReading.BeforeMove y -> Just y; _ -> Nothing),
       Arm.payload "TopOf" InZone.codec (Scope.InPosition ZonePosition.Top) (\x -> case x of Scope.InPosition ZonePosition.Top y -> Just y; _ -> Nothing),
       Arm.payload "AboveSource" InZone.codec (Scope.InPosition ZonePosition.AboveSource) (\x -> case x of Scope.InPosition ZonePosition.AboveSource y -> Just y; _ -> Nothing),
-      Arm.nullary "AsTurnBegan" Scope.AsTurnBegan
+      Arm.nullary "AsTurnBegan" Scope.AsTurnBegan,
+      Arm.nullary "Anywhere" Scope.Anywhere
     ]
 
 tagOf :: Scope.Scope keyword -> String
@@ -37,3 +38,4 @@ tagOf x = case x of
   Scope.InPosition ZonePosition.Top _ -> "TopOf"
   Scope.InPosition ZonePosition.AboveSource _ -> "AboveSource"
   Scope.AsTurnBegan -> "AsTurnBegan"
+  Scope.Anywhere -> "Anywhere"

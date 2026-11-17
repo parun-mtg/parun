@@ -75,4 +75,11 @@ spec s = Spec.describe s "Parun.Codec.Scope" $ do
       (Scope.codec Keyword.codec)
       Scope.AsTurnBegan
       " {\"type\":\"AsTurnBegan\"} "
+  -- CR 400.1: every zone at once.
+  Spec.it s "Anywhere" $
+    Common.assertCodec
+      s
+      (Scope.codec Keyword.codec)
+      Scope.Anywhere
+      " {\"type\":\"Anywhere\"} "
   Spec.it s "has a schema" $ Common.assertHasSchema s (Scope.codec Keyword.codec)
