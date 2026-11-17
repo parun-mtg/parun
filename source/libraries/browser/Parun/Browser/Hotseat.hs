@@ -16,16 +16,13 @@ import qualified Data.Set as Set
 import qualified Data.Text as Text
 import qualified GHC.Clock as Clock
 import qualified Parun.Browser as Browser
-import qualified Parun.Codec.Reply as Codec.Reply
-import qualified Parun.Codec.Request as Codec.Request
 import qualified Parun.DeckList as DeckList
 import qualified Parun.Decks as Decks
 import qualified Parun.Exceptions.InvalidCorpus as InvalidCorpus
 import qualified Parun.Extra.Natural as Natural
 import qualified Parun.Interpreter as Interpreter
-import qualified Parun.JsonCodec.Codec as Codec
-import qualified Parun.JsonCodec.Common as Common
 import qualified Parun.Play.Command as Command
+import qualified Parun.Play.Protocol as Protocol
 import qualified Parun.Play.Render as Render
 import qualified Parun.Registry as Registry
 import qualified Parun.Types.Card as Card
@@ -84,56 +81,52 @@ play page = do
 options :: PlayOptions.PlayOptions
 options = PlayOptions.none {PlayOptions.json = True, PlayOptions.bots = Set.singleton 2}
 
--- | One request line answered on the page: a reply the seat is never asked
+-- | One request answered on the page, as values (Protocol.Exchange): a reply the seat is never asked
 -- for, or auto's next source once the seat chose auto for this payment, at
 -- once; else after a hand-off when the screen last faced another seat, the
 -- question's form until it answers, a card tapped showing its text from the
--- card data through `lookUp`. Nothing for a line that does not read.
-exchange :: (CardName.CardName -> Either InvalidCorpus.InvalidCorpus (Maybe Card.Card)) -> Browser.Page (Either Line.Line Web.Question.Event) -> IORef.IORef Seat -> Text.Text -> IO (Maybe Text.Text)
-exchange lookUp page seatRef line = do
+-- card data through `lookUp`.
+exchange :: (CardName.CardName -> Either InvalidCorpus.InvalidCorpus (Maybe Card.Card)) -> Browser.Page (Either Line.Line Web.Question.Event) -> IORef.IORef Seat -> Protocol.Exchange IO
+exchange lookUp page seatRef request = do
   arrived <- Clock.getMonotonicTime
-  decoded <- Exception.evaluate $ Common.parse line >>= Codec.decode Codec.Request.codec
-  read' <- Clock.getMonotonicTime
-  case decoded of
-    Left _ -> pure Nothing
-    Right request -> fmap (Just . Common.render . Codec.Reply.toValue) $ do
-      state <- IORef.readIORef seatRef
-      let auto = if paying state then Web.Question.auto request else Nothing
-          kind = Question.kind $ Request.question request
-          traced how = Browser.trace page $ kind <> Text.pack (": engine " <> Browser.milliseconds (arrived - answeredAt state) <> ", decoding " <> show (Text.length line) <> " characters " <> Browser.milliseconds (read' - arrived) <> ", " <> how)
-      IORef.writeIORef seatRef state {paying = Maybe.isJust auto}
-      reply <- case (Web.Question.automatic request, auto) of
-        (Just reply, _) -> traced "answered unasked" >> pure reply
-        (_, Just reply) -> traced "paid by auto" >> pure reply
-        _ -> do
-          traced "asked"
-          let seat = Question.seat $ Request.question request
-          Monad.when (facing state /= Just seat) $ do
-            Browser.display page . fmap Right $ Web.Question.handOff seat
-            untilReady
-            IORef.modifyIORef' seatRef $ \s -> s {facing = Just seat}
-          answer request Set.empty
-      returned <- Clock.getMonotonicTime
-      IORef.modifyIORef' seatRef $ \s -> s {answeredAt = returned}
-      pure reply
+  fmap (Just . Right) $ do
+    state <- IORef.readIORef seatRef
+    let auto = if paying state then Web.Question.auto request else Nothing
+        kind = Question.kind $ Request.question request
+        traced how = Browser.trace page $ kind <> Text.pack (": engine " <> Browser.milliseconds (arrived - answeredAt state) <> ", " <> how)
+    IORef.writeIORef seatRef state {paying = Maybe.isJust auto}
+    reply <- case (Web.Question.automatic request, auto) of
+      (Just reply, _) -> traced "answered unasked" >> pure reply
+      (_, Just reply) -> traced "paid by auto" >> pure reply
+      _ -> do
+        traced "asked"
+        let seat = Question.seat $ Request.question request
+        Monad.when (facing state /= Just seat) $ do
+          Browser.display page . fmap Right $ Web.Question.handOff seat
+          untilReady
+          IORef.modifyIORef' seatRef $ \s -> s {facing = Just seat}
+        answer request Set.empty
+    returned <- Clock.getMonotonicTime
+    IORef.modifyIORef' seatRef $ \s -> s {answeredAt = returned}
+    pure reply
   where
     untilReady = Browser.next page >>= \(event, _) -> Monad.unless (event == Right Web.Question.MkReady) untilReady
-    answer request picked = asking request picked []
-    asking request picked reading = do
-      Browser.display page . fmap Right $ Web.Question.view request picked reading
+    answer pending picked = asking pending picked []
+    asking pending picked reading = do
+      Browser.display page . fmap Right $ Web.Question.view pending picked reading
       (event, value) <- Browser.next page
       case event of
         Right (Web.Question.MkRead object)
-          | Just shown <- Request.view request,
+          | Just shown <- Request.view pending,
             Just o <- Map.lookup object (Render.objects shown) ->
-              asking request picked . either (pure . Text.pack . Exception.displayException) id $ Render.details lookUp shown o
-        Right e -> case Web.Question.step request picked e value of
+              asking pending picked . either (pure . Text.pack . Exception.displayException) id $ Render.details lookUp shown o
+        Right e -> case Web.Question.step pending picked e value of
           Web.Question.MkReplied answered -> do
             Monad.when (e == Web.Question.MkAuto) . IORef.modifyIORef' seatRef $ \s -> s {paying = True}
             pure answered
-          Web.Question.MkPicking now -> asking request now []
-          Web.Question.MkRefused problem -> asking request {Request.problem = Just problem} picked []
-        Left _ -> asking request picked reading
+          Web.Question.MkPicking now -> asking pending now []
+          Web.Question.MkRefused problem -> asking pending {Request.problem = Just problem} picked []
+        Left _ -> asking pending picked reading
 
 -- | What the page keeps between request lines: the seat the screen last
 -- showed, whether the seat chose auto for the payment under way, and when it

@@ -3970,11 +3970,9 @@ library browser
   build-depends:
     bytestring ^>=0.12.2,
     containers ^>={0.7, 0.8},
-    parun:codec,
     parun:exceptions,
     parun:extra,
     parun:interpreter,
-    parun:json-codec,
     parun:play,
     parun:registry,
     parun:trustworthy,

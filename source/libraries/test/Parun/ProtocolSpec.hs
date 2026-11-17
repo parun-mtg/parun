@@ -168,7 +168,7 @@ spec s registry = Spec.describe s "Protocol" $ do
     Spec.assertBool s (survives (Prompt.DeclareBlockers (Decider.MkDecider S.bob) S.bob [o9] [o7]) (Map.singleton o9 (Set.singleton o7))) "blockers"
     Spec.assertBool s (survives (Prompt.ChooseTargets (Decider.MkDecider S.alice) S.alice o7 (Map.singleton slot (1, Set.fromList [Recipient.ToPlayer S.bob, Recipient.ToCreature o9]))) (Map.singleton slot (Set.singleton (Recipient.ToPlayer S.bob)))) "targets"
   Spec.it s "CR 103.1 a seat on the line is asked to play first or draw before the game, with no view" $ do
-    let asking replies = State.runState (Protocol.playOrDraw (\line -> State.state (\(out, rest) -> (Maybe.listToMaybe rest, (out <> [line], drop 1 rest)))) S.bob) ([], fmap Text.pack replies)
+    let asking replies = State.runState (Protocol.playOrDraw (Protocol.overLines (\line -> State.state (\(out, rest) -> (Maybe.listToMaybe rest, (out <> [line], drop 1 rest))))) S.bob) ([], fmap Text.pack replies)
         (drew, (sent, _)) = asking ["\"Maybe\"", "\"Draw\""]
         requests = fmap (requestOf . Text.unpack) sent
     Spec.assertEqWith s "draws" drew (Just False)
@@ -589,7 +589,7 @@ spec s registry = Spec.describe s "Protocol" $ do
 
   Spec.it s "a hidden card reaches no line sent to the other seat" $ do
     gs <- started s registry
-    let logged = State.execState (Driver.drive [observer] (Protocol.over trusting (exchanging client) chance) 10000 (pure . (>= 5) . (TurnRegisters.turnNumber . GameState.turn)) gs) []
+    let logged = State.execState (Driver.drive [observer] (Protocol.over trusting (Protocol.viaLines (exchanging client)) chance) 10000 (pure . (>= 5) . (TurnRegisters.turnNumber . GameState.turn)) gs) []
         sent = linesWithState logged
         to pid = [(at, line) | (at, line) <- sent, fmap (Question.seat . Request.question) (requestOf line) == Just pid]
         leaks (at, line) =
@@ -605,7 +605,7 @@ spec s registry = Spec.describe s "Protocol" $ do
     Spec.assertBool s (Maybe.isNothing (Protocol.questionOf S.threePlayerGame (Prompt.RollDie 6))) "die"
   Spec.it s "a reply that cannot be read is asked again with the problem" $ do
     gs <- started s registry
-    let garbled = State.execState (Driver.drive [observer] (Protocol.over trusting (exchanging once) chance) 10000 (pure . (>= 3) . (TurnRegisters.turnNumber . GameState.turn)) gs) []
+    let garbled = State.execState (Driver.drive [observer] (Protocol.over trusting (Protocol.viaLines (exchanging once)) chance) 10000 (pure . (>= 3) . (TurnRegisters.turnNumber . GameState.turn)) gs) []
         problems = fmap (fmap Request.problem . requestOf . snd) (linesWithState garbled)
     case problems of
       first : second : _ -> do
@@ -615,7 +615,7 @@ spec s registry = Spec.describe s "Protocol" $ do
 
   Spec.it s "an answer naming what the prompt does not offer is asked again" $ do
     gs <- started s registry
-    let strayed = State.execState (Driver.drive [observer] (Protocol.over trusting (exchanging stray) chance) 10000 (pure . (>= 3) . (TurnRegisters.turnNumber . GameState.turn)) gs) []
+    let strayed = State.execState (Driver.drive [observer] (Protocol.over trusting (Protocol.viaLines (exchanging stray)) chance) 10000 (pure . (>= 3) . (TurnRegisters.turnNumber . GameState.turn)) gs) []
         discards = [Request.problem request | Just request <- fmap (requestOf . snd) (linesWithState strayed), Question.kind (Request.question request) == Text.pack "ChooseDiscard"]
     case discards of
       first : second : _ -> do
@@ -630,7 +630,7 @@ spec s registry = Spec.describe s "Protocol" $ do
     let (_, g1) = S.addPermanent forest S.alice gs
         (_, g2) = S.addPermanent forest S.alice g1
         board = snd (S.addHandCard bears S.alice g2)
-        logged = State.execState (Driver.drive [observer] (Protocol.over trusting (exchanging stopsOnce) chance) 10000 (pure . (>= 4) . (TurnRegisters.turnNumber . GameState.turn)) board) []
+        logged = State.execState (Driver.drive [observer] (Protocol.over trusting (Protocol.viaLines (exchanging stopsOnce)) chance) 10000 (pure . (>= 4) . (TurnRegisters.turnNumber . GameState.turn)) board) []
         sent = fmap snd (linesWithState logged)
         afterStop = drop 1 (dropWhile (not . List.isInfixOf "\"kind\":\"ChooseManaSource\"") sent)
         undone = [PlayerView.undone view | Just request <- fmap requestOf afterStop, Question.seat (Request.question request) == S.alice, Question.kind (Request.question request) == Text.pack "ChooseAction", Just view <- [Request.view request]]
@@ -776,7 +776,7 @@ declaringByKind queues gs =
       fallback :: Answerer.Answerer (Asked.Asked GameState.GameState) (State.State ([String], Map.Map String ([R.Reply], R.Reply)))
       fallback = Answerer.MkAnswerer (pure . Replay.defaultAnswer . Asked.prompt)
       game = Combat.declareAttackers S.manaPerformer S.alice >> Combat.declareBlockers S.manaPerformer
-      ((_, after), (sent, _)) = State.runState (Engine.runGameAsked (Answerer.unwrap (Protocol.over trusting send fallback)) gs game) ([], Map.fromList queues)
+      ((_, after), (sent, _)) = State.runState (Engine.runGameAsked (Answerer.unwrap (Protocol.over trusting (Protocol.viaLines send) fallback)) gs game) ([], Map.fromList queues)
    in (sent, after)
 
 -- Runs `game` over the line, answering each line sent with the next of
@@ -788,7 +788,7 @@ overTheLine replies gs game =
         [] -> error ("no reply left for " <> Text.unpack line)
       fallback :: Answerer.Answerer (Asked.Asked GameState.GameState) (State.State ([String], [R.Reply]))
       fallback = Answerer.MkAnswerer (pure . Replay.defaultAnswer . Asked.prompt)
-      (ran, (sent, _)) = State.runState (Engine.runGameAsked (Answerer.unwrap (Protocol.over trusting send fallback)) gs game) ([], replies)
+      (ran, (sent, _)) = State.runState (Engine.runGameAsked (Answerer.unwrap (Protocol.over trusting (Protocol.viaLines send) fallback)) gs game) ([], replies)
    in (ran, sent)
 
 -- The problem each line of this kind was sent with.

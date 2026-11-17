@@ -48,7 +48,7 @@ type Play m = State.StateT Generator.Generator (Client.Client m)
 -- | A person at the terminal, reading cards' printed text from the card data
 -- and told why the reference `registry` refuses a name (judgingNames).
 human :: (Monad m) => Registry.Registry m -> Terminal.Terminal m -> (CardName.CardName -> Either InvalidCorpus.InvalidCorpus (Maybe Card.Card)) -> Answerer.Answerer (Asked.Asked GameState.GameState) (Play m)
-human registry terminal lookUp = Protocol.over (judgingNames registry) (Trans.lift . Client.respond terminal lookUp) Chance.chance
+human registry terminal lookUp = Protocol.over (judgingNames registry) (Protocol.viaLines (Trans.lift . Client.respond terminal lookUp)) Chance.chance
 
 -- | The random bot, answering each prompt from its seat's view of the game
 -- (Driver.seated) and naming a card from the reference's names
@@ -60,10 +60,10 @@ bot registry = Answerer.MkAnswerer $ \asked -> do
     _ -> pure []
   Answerer.unwrap (Driver.seated (Bot.bot names) Chance.chance) asked
 
--- | A program speaking the protocol: each request line out, its reply line
--- back, Nothing at the end of input.
-wired :: (Monad m) => Registry.Registry m -> (Text.Text -> m (Maybe Text.Text)) -> Answerer.Answerer (Asked.Asked GameState.GameState) (Play m)
-wired registry exchange = Protocol.over (judgingNames registry) (\line -> Trans.lift (Client.lift2 (exchange line) >>= maybe (Client.stop (Text.pack "end of input")) pure)) Chance.chance
+-- | A program speaking the protocol (Protocol.Exchange): each request out,
+-- its reply back, Nothing at the end of input.
+wired :: (Monad m) => Registry.Registry m -> Protocol.Exchange m -> Answerer.Answerer (Asked.Asked GameState.GameState) (Play m)
+wired registry exchange = Protocol.over (judgingNames registry) (\request -> Trans.lift (Client.lift2 (exchange request) >>= maybe (Client.stop (Text.pack "end of input")) pure)) Chance.chance
 
 -- | A plain two-player game over the card reference `registry`
 -- ('consulting'), under `format` (CR 100.2), from setup to its result; the

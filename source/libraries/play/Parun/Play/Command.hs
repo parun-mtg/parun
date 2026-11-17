@@ -57,7 +57,7 @@ main arguments = case GetOpt.getOpt GetOpt.Permute flags arguments of
       registry <- Registry.defaultRoot >>= Registry.loadRoot >>= Registry.defaultRegistry
       lists <- (,) <$> orExit (load registry one) <*> orExit (load registry two)
       format <- orExit (settle (PlayOptions.format options) [(one, fst lists), (two, snd lists)])
-      play exchange options registry format (Bifunctor.bimap DeckList.deck DeckList.deck lists)
+      play (Protocol.overLines exchange) options registry format (Bifunctor.bimap DeckList.deck DeckList.deck lists)
   (_, _, problems) -> usage problems
 
 flags :: [GetOpt.OptDescr (PlayOptions.PlayOptions -> Either String PlayOptions.PlayOptions)]
@@ -134,9 +134,9 @@ refusals format lists = do
 
 -- | A game between the two decks under `format`, the one 'settle' names
 -- (CR 100.2). With --json, each line protocol request goes out through
--- `send` and its reply comes back: standard input and output here
--- ('exchange'), a page in the web client.
-play :: (Text.Text -> IO (Maybe Text.Text)) -> PlayOptions.PlayOptions -> Registry.Registry Identity.Identity -> Maybe Format.Format -> (Deck.Deck, Deck.Deck) -> IO ()
+-- `send` and its reply comes back: over standard input and output here
+-- ('exchange'), as values in the web client.
+play :: Protocol.Exchange IO -> PlayOptions.PlayOptions -> Registry.Registry Identity.Identity -> Maybe Format.Format -> (Deck.Deck, Deck.Deck) -> IO ()
 play send options registry format (one, two) = do
   IO.hSetBuffering IO.stdout IO.LineBuffering
   let reference :: Registry.Registry IO
