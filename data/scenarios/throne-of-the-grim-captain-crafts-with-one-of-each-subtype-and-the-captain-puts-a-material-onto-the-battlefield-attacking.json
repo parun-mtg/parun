@@ -1,0 +1,571 @@
+{
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "battlefield": [
+          {
+            "card": "Throne of the Grim Captain",
+            "label": "throne"
+          },
+          {
+            "card": "Swamp",
+            "label": "s1"
+          },
+          {
+            "card": "Swamp",
+            "label": "s2"
+          },
+          {
+            "card": "Swamp",
+            "label": "s3"
+          },
+          {
+            "card": "Swamp",
+            "label": "s4"
+          },
+          {
+            "card": "Changeling Sentinel",
+            "label": "sentinel"
+          },
+          {
+            "card": "Coral Merfolk",
+            "label": "coral"
+          },
+          {
+            "card": "Headwater Sentries",
+            "label": "sentries"
+          }
+        ],
+        "exile": [
+          {
+            "card": "Barony Vampire",
+            "label": "barony"
+          }
+        ],
+        "graveyard": [
+          {
+            "card": "Ancient Brontodon",
+            "label": "brontodon"
+          },
+          {
+            "card": "Talas Merchant",
+            "label": "merchant"
+          }
+        ],
+        "library": [
+          {
+            "card": "Swamp"
+          },
+          {
+            "card": "Swamp"
+          },
+          {
+            "card": "Swamp"
+          },
+          {
+            "card": "Swamp"
+          }
+        ],
+        "name": "alice"
+      },
+      {
+        "battlefield": [
+          {
+            "card": "Forest",
+            "label": "bforest"
+          },
+          {
+            "card": "Grizzly Bears",
+            "label": "bbears"
+          }
+        ],
+        "library": [
+          {
+            "card": "Forest"
+          },
+          {
+            "card": "Forest"
+          },
+          {
+            "card": "Forest"
+          },
+          {
+            "card": "Forest"
+          }
+        ],
+        "name": "bob"
+      },
+      {
+        "battlefield": [
+          {
+            "card": "Island",
+            "label": "cisland"
+          },
+          {
+            "card": "Millstone",
+            "label": "cstone"
+          }
+        ],
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ],
+        "name": "charlie"
+      }
+    ],
+    "step": "PrecombatMain"
+  },
+  "description": "Throne of the Grim Captain crafts with a Dinosaur, a Merfolk, a Pirate and a Vampire, a changeling answering for one, and The Grim Captain's attack puts a material creature card onto the battlefield tapped and attacking",
+  "note": "Two Merfolk beside a changeling and a Dinosaur leave the Pirate or the Vampire unmet, and a Dinosaur, two Merfolk and a Pirate leave the Vampire unmet: both refused. The changeling as the Vampire is taken; Headwater Sentries stays. On the attack each opponent sacrifices its one nonland permanent, Barony Vampire exiled by no craft is not offered, and Ancient Brontodon enters attacking charlie.",
+  "timeline": [
+    {
+      "do": {
+        "Answer": {
+          "prompt": "ChooseMaterials",
+          "with": [
+            "$sentinel",
+            "$brontodon",
+            "$coral",
+            "$sentries"
+          ]
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "player": "alice",
+      "refuse": {
+        "Activate": {
+          "ability": 1,
+          "costOrder": [
+            0,
+            1
+          ],
+          "mana": [
+            "$s1",
+            "$s2",
+            "$s3",
+            "$s4"
+          ],
+          "object": "$throne"
+        }
+      },
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Answer": {
+          "prompt": "ReverseManaAbilities",
+          "with": "Exercises"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Answer": {
+          "prompt": "ReverseManaAbilities",
+          "with": "Exercises"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Answer": {
+          "prompt": "ReverseManaAbilities",
+          "with": "Exercises"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Answer": {
+          "prompt": "ReverseManaAbilities",
+          "with": "Exercises"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Answer": {
+          "prompt": "ChooseMaterials",
+          "with": [
+            "$brontodon",
+            "$coral",
+            "$sentries",
+            "$merchant"
+          ]
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "player": "alice",
+      "refuse": {
+        "Activate": {
+          "ability": 1,
+          "costOrder": [
+            0,
+            1
+          ],
+          "mana": [
+            "$s1",
+            "$s2",
+            "$s3",
+            "$s4"
+          ],
+          "object": "$throne"
+        }
+      },
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Answer": {
+          "prompt": "ReverseManaAbilities",
+          "with": "Exercises"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Answer": {
+          "prompt": "ReverseManaAbilities",
+          "with": "Exercises"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Answer": {
+          "prompt": "ReverseManaAbilities",
+          "with": "Exercises"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Answer": {
+          "prompt": "ReverseManaAbilities",
+          "with": "Exercises"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Answer": {
+          "prompt": "ChooseMaterials",
+          "with": [
+            "$sentinel",
+            "$brontodon",
+            "$coral",
+            "$merchant"
+          ]
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Activate": {
+          "ability": 1,
+          "costOrder": [
+            0,
+            1
+          ],
+          "mana": [
+            "$s1",
+            "$s2",
+            "$s3",
+            "$s4"
+          ],
+          "object": "$throne"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "The Grim Captain",
+          "count": 1,
+          "player": "alice",
+          "zone": "Battlefield"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Changeling Sentinel",
+          "count": 1,
+          "player": "alice",
+          "zone": "Exile"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Ancient Brontodon",
+          "count": 1,
+          "player": "alice",
+          "zone": "Exile"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Coral Merfolk",
+          "count": 1,
+          "player": "alice",
+          "zone": "Exile"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Talas Merchant",
+          "count": 1,
+          "player": "alice",
+          "zone": "Exile"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Headwater Sentries",
+          "count": 1,
+          "player": "alice",
+          "zone": "Battlefield"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Attack": []
+      },
+      "player": "bob",
+      "step": "DeclareAttackers",
+      "turn": 2
+    },
+    {
+      "do": {
+        "Attack": [
+          "The Grim Captain"
+        ]
+      },
+      "player": "alice",
+      "step": "DeclareAttackers",
+      "turn": 4
+    },
+    {
+      "do": {
+        "ChooseAttackTarget": "$bob"
+      },
+      "player": "alice",
+      "source": "The Grim Captain",
+      "step": "DeclareAttackers",
+      "turn": 4
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "DeclareAttackers",
+      "turn": 4
+    },
+    {
+      "do": {
+        "ChooseOptional": "Exercises"
+      },
+      "player": "alice",
+      "step": "DeclareAttackers",
+      "turn": 4
+    },
+    {
+      "player": "alice",
+      "refuse": {
+        "Answer": {
+          "prompt": "ChoosePermanent",
+          "with": "$barony"
+        }
+      },
+      "step": "DeclareAttackers",
+      "turn": 4
+    },
+    {
+      "do": {
+        "Answer": {
+          "prompt": "ChoosePermanent",
+          "with": "Ancient Brontodon"
+        }
+      },
+      "player": "alice",
+      "step": "DeclareAttackers",
+      "turn": 4
+    },
+    {
+      "do": {
+        "ChooseAttackTarget": "$charlie"
+      },
+      "player": "alice",
+      "source": "Ancient Brontodon",
+      "step": "DeclareAttackers",
+      "turn": 4
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Grizzly Bears",
+          "count": 1,
+          "player": "bob",
+          "zone": "Graveyard"
+        }
+      },
+      "player": "alice",
+      "step": "DeclareAttackers",
+      "turn": 4
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Millstone",
+          "count": 1,
+          "player": "charlie",
+          "zone": "Graveyard"
+        }
+      },
+      "player": "alice",
+      "step": "DeclareAttackers",
+      "turn": 4
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Ancient Brontodon",
+          "count": 1,
+          "player": "alice",
+          "zone": "Battlefield"
+        }
+      },
+      "player": "alice",
+      "step": "DeclareAttackers",
+      "turn": 4
+    },
+    {
+      "check": {
+        "Tapped": {
+          "object": "Ancient Brontodon",
+          "tapped": true
+        }
+      },
+      "player": "alice",
+      "step": "DeclareAttackers",
+      "turn": 4
+    },
+    {
+      "check": {
+        "Life": {
+          "life": 13,
+          "player": "bob"
+        }
+      },
+      "player": "alice",
+      "step": "EndOfCombat",
+      "turn": 4
+    },
+    {
+      "check": {
+        "Life": {
+          "life": 11,
+          "player": "charlie"
+        }
+      },
+      "player": "alice",
+      "step": "EndOfCombat",
+      "turn": 4
+    },
+    {
+      "check": {
+        "Life": {
+          "life": 27,
+          "player": "alice"
+        }
+      },
+      "player": "alice",
+      "step": "EndOfCombat",
+      "turn": 4
+    }
+  ]
+}

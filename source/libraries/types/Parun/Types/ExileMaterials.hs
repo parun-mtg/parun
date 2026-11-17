@@ -28,6 +28,11 @@ import qualified Parun.Types.Filter as Filter
 data ExileMaterials keyword = MkExileMaterials
   { count :: Natural.Natural,
     orMore :: Bool,
-    whichObjects :: Filter.Filter keyword
+    whichObjects :: Filter.Filter keyword,
+    -- | CR 702.167a: criteria the chosen materials meet one to one, each by a
+    -- different object; empty is none. Throne of the Grim Captain's "a
+    -- Dinosaur, a Merfolk, a Pirate, and a Vampire", where a changeling answers
+    -- for one. Proved by its scenarios.
+    oneEach :: [Filter.Filter keyword]
   }
   deriving (Eq, Ord, Show)
