@@ -1,0 +1,89 @@
+{
+  "faces": [
+    {
+      "activatedAbilities": [
+        {
+          "cost": {
+            "components": [
+              {
+                "type": "TapThis"
+              }
+            ],
+            "mana": []
+          },
+          "modal": {
+            "modes": [
+              {
+                "clauses": [
+                  {
+                    "effects": [
+                      {
+                        "type": "AddMana",
+                        "value": {
+                          "production": {
+                            "type": "OfType",
+                            "value": {
+                              "type": "Colorless"
+                            }
+                          }
+                        }
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      ],
+      "name": "Echoing Deeps",
+      "oracleText": "You may have this land enter tapped as a copy of any land card in a graveyard, except it's a Cave in addition to its other types.\n{T}: Add {C}.",
+      "replacementEffects": [
+        {
+          "effect": {
+            "type": "EntryR",
+            "value": {
+              "matching": {
+                "type": "IsSource"
+              },
+              "rewrite": {
+                "type": "AsCopy",
+                "value": {
+                  "among": {
+                    "type": "InZone",
+                    "value": "Graveyard"
+                  },
+                  "clauses": [
+                    {
+                      "exceptions": [
+                        {
+                          "type": "AddSubtypes",
+                          "value": [
+                            "Cave"
+                          ]
+                        }
+                      ]
+                    }
+                  ],
+                  "eligible": {
+                    "type": "HasCardType",
+                    "value": "Land"
+                  },
+                  "tapped": true
+                }
+              }
+            }
+          }
+        }
+      ],
+      "typeLine": {
+        "subtypes": [
+          "Cave"
+        ],
+        "types": [
+          "Land"
+        ]
+      }
+    }
+  ]
+}
