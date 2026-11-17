@@ -1,0 +1,353 @@
+{
+  "board": {
+    "active": "alice",
+    "step": "PrecombatMain",
+    "seats": [
+      {
+        "name": "alice",
+        "life": 20,
+        "library": [
+          {
+            "card": "Craw Wurm"
+          },
+          {
+            "card": "Forest"
+          },
+          {
+            "card": "Grizzly Bears"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Divination"
+          }
+        ],
+        "battlefield": [
+          {
+            "card": "Forest",
+            "label": "f1"
+          },
+          {
+            "card": "Forest",
+            "label": "f2"
+          },
+          {
+            "card": "Forest",
+            "label": "f3"
+          },
+          {
+            "card": "Forest",
+            "label": "f4"
+          },
+          {
+            "card": "Forest",
+            "label": "f5"
+          },
+          {
+            "card": "Hill Giant"
+          },
+          {
+            "card": "Memnite"
+          },
+          {
+            "card": "Ornithopter"
+          }
+        ],
+        "hand": [
+          {
+            "card": "Growing Rites of Itlimoc",
+            "label": "rites"
+          }
+        ]
+      },
+      {
+        "name": "bob",
+        "life": 20,
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ]
+      }
+    ]
+  },
+  "description": "CR 603.4 / 701.27a: Growing Rites of Itlimoc takes a creature card from the top four as it enters, transforms at your end step if you control four or more creatures, and Itlimoc adds {G} for each creature you control",
+  "timeline": [
+    {
+      "do": {
+        "Cast": {
+          "object": "$rites",
+          "mana": [
+            "$f1",
+            "$f2",
+            "$f3",
+            null
+          ]
+        }
+      },
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice"
+    },
+    {
+      "do": "Pass",
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice"
+    },
+    {
+      "do": "Pass",
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice"
+    },
+    {
+      "do": {
+        "ChooseOptional": "Exercises"
+      },
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice"
+    },
+    {
+      "do": {
+        "Answer": {
+          "prompt": "ChooseCardFromAmong",
+          "with": "Grizzly Bears"
+        }
+      },
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice"
+    },
+    {
+      "do": {
+        "Answer": {
+          "prompt": "ArrangeLibraryArrivals",
+          "with": [
+            0,
+            1,
+            2
+          ]
+        }
+      },
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice"
+    },
+    {
+      "check": {
+        "View": {
+          "is": [
+            "Grizzly Bears"
+          ],
+          "of": "Zone",
+          "player": "alice",
+          "zone": "Hand"
+        }
+      },
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice"
+    },
+    {
+      "check": {
+        "View": {
+          "of": "Zone",
+          "player": "alice",
+          "zone": "Library",
+          "is": [
+            "Divination",
+            "Island#6",
+            "Forest#6",
+            "Craw Wurm"
+          ]
+        }
+      },
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice"
+    },
+    {
+      "do": {
+        "Cast": {
+          "object": "Grizzly Bears",
+          "mana": [
+            "$f4",
+            "$f5"
+          ]
+        }
+      },
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice"
+    },
+    {
+      "do": "Pass",
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice"
+    },
+    {
+      "do": "Pass",
+      "turn": 1,
+      "step": "EndStep",
+      "player": "alice"
+    },
+    {
+      "check": {
+        "Names": {
+          "object": "Growing Rites of Itlimoc",
+          "names": [
+            "Itlimoc, Cradle of the Sun"
+          ]
+        }
+      },
+      "turn": 1,
+      "step": "EndStep",
+      "player": "alice"
+    },
+    {
+      "do": {
+        "Take": {
+          "action": "ActivateManaAbility Growing Rites of Itlimoc",
+          "yields": [
+            [
+              {
+                "manaType": {
+                  "type": "Colored",
+                  "value": "Green"
+                },
+                "tags": [],
+                "retention": "Ordinary",
+                "restriction": null,
+                "rider": null,
+                "sourceChoices": null
+              },
+              {
+                "manaType": {
+                  "type": "Colored",
+                  "value": "Green"
+                },
+                "tags": [],
+                "retention": "Ordinary",
+                "restriction": null,
+                "rider": null,
+                "sourceChoices": null
+              },
+              {
+                "manaType": {
+                  "type": "Colored",
+                  "value": "Green"
+                },
+                "tags": [],
+                "retention": "Ordinary",
+                "restriction": null,
+                "rider": null,
+                "sourceChoices": null
+              },
+              {
+                "manaType": {
+                  "type": "Colored",
+                  "value": "Green"
+                },
+                "tags": [],
+                "retention": "Ordinary",
+                "restriction": null,
+                "rider": null,
+                "sourceChoices": null
+              }
+            ]
+          ]
+        }
+      },
+      "turn": 1,
+      "step": "EndStep",
+      "player": "alice"
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Grizzly Bears",
+          "count": 1,
+          "player": "alice",
+          "zone": "Battlefield"
+        }
+      },
+      "turn": 1,
+      "step": "EndStep",
+      "player": "alice"
+    },
+    {
+      "check": {
+        "View": {
+          "of": "ManaPool",
+          "player": "alice",
+          "is": [
+            {
+              "manaType": {
+                "type": "Colored",
+                "value": "Green"
+              },
+              "tags": [],
+              "retention": "Ordinary",
+              "restriction": null,
+              "rider": null,
+              "sourceChoices": null
+            },
+            {
+              "manaType": {
+                "type": "Colored",
+                "value": "Green"
+              },
+              "tags": [],
+              "retention": "Ordinary",
+              "restriction": null,
+              "rider": null,
+              "sourceChoices": null
+            },
+            {
+              "manaType": {
+                "type": "Colored",
+                "value": "Green"
+              },
+              "tags": [],
+              "retention": "Ordinary",
+              "restriction": null,
+              "rider": null,
+              "sourceChoices": null
+            },
+            {
+              "manaType": {
+                "type": "Colored",
+                "value": "Green"
+              },
+              "tags": [],
+              "retention": "Ordinary",
+              "restriction": null,
+              "rider": null,
+              "sourceChoices": null
+            }
+          ]
+        }
+      },
+      "turn": 1,
+      "step": "EndStep",
+      "player": "alice"
+    }
+  ],
+  "note": "Grizzly Bears, taken and cast, is the fourth creature, so the trigger's condition holds as the end step begins and as it resolves. Itlimoc's {G} for each creature gives four."
+}

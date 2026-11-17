@@ -1,0 +1,180 @@
+{
+  "board": {
+    "active": "alice",
+    "step": "PrecombatMain",
+    "seats": [
+      {
+        "name": "alice",
+        "life": 20,
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ],
+        "manaPool": "BBBBBBBB",
+        "battlefield": [
+          {
+            "card": "Hidden Cataract",
+            "tapped": true
+          },
+          {
+            "card": "Promising Vein",
+            "tapped": true
+          },
+          {
+            "card": "Swamp",
+            "tapped": true
+          }
+        ],
+        "hand": [
+          {
+            "card": "Gargantuan Leech",
+            "label": "leech"
+          }
+        ],
+        "graveyard": [
+          {
+            "card": "Captivating Cave"
+          },
+          {
+            "card": "Forest"
+          },
+          {
+            "card": "Hidden Courtyard"
+          }
+        ]
+      },
+      {
+        "name": "bob",
+        "life": 20,
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ],
+        "battlefield": [
+          {
+            "card": "Hidden Nursery"
+          },
+          {
+            "card": "Forgotten Monument"
+          }
+        ]
+      }
+    ]
+  },
+  "description": "CR 601.2f: Gargantuan Leech costs {1} less for each Cave you control and each Cave card in your graveyard, not an opponent's Caves",
+  "timeline": [
+    {
+      "do": {
+        "Cast": {
+          "object": "$leech"
+        }
+      },
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice"
+    },
+    {
+      "check": {
+        "View": {
+          "of": "ManaPool",
+          "player": "alice",
+          "is": [
+            {
+              "manaType": {
+                "type": "Colored",
+                "value": "Black"
+              },
+              "tags": [],
+              "retention": "Ordinary",
+              "restriction": null,
+              "rider": null,
+              "sourceChoices": null
+            },
+            {
+              "manaType": {
+                "type": "Colored",
+                "value": "Black"
+              },
+              "tags": [],
+              "retention": "Ordinary",
+              "restriction": null,
+              "rider": null,
+              "sourceChoices": null
+            },
+            {
+              "manaType": {
+                "type": "Colored",
+                "value": "Black"
+              },
+              "tags": [],
+              "retention": "Ordinary",
+              "restriction": null,
+              "rider": null,
+              "sourceChoices": null
+            },
+            {
+              "manaType": {
+                "type": "Colored",
+                "value": "Black"
+              },
+              "tags": [],
+              "retention": "Ordinary",
+              "restriction": null,
+              "rider": null,
+              "sourceChoices": null
+            }
+          ]
+        }
+      },
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice"
+    },
+    {
+      "do": "Pass",
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice"
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Gargantuan Leech",
+          "count": 1,
+          "player": "alice",
+          "zone": "Battlefield"
+        }
+      },
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice"
+    }
+  ],
+  "note": "Two Caves on alice's battlefield and two Cave cards in her graveyard take {4} off {7}{B}, so four of her eight black mana are left; a Swamp and a Forest do not count, nor do bob's two Caves."
+}
