@@ -1358,8 +1358,12 @@ damagePart context measured group = case group of
   first : _ -> do
     a <- Target.amounts measured (DamagePart.quantity first)
     refs <- traverse (Target.object context Target.Each . DamagePart.ref) group
-    let recipients = Prose.listing "and" (fmap Target.wording refs)
-        to = Text.pack "damage to " <> recipients
+    let listed = Prose.listing "and" (fmap Target.wording refs)
+        opponents = Text.pack "each opponent and each creature an opponent controls"
+    -- Free: the opponents' creatures after "each opponent" are "they control"
+    -- (Tectonic Hazard).
+    recipients <- listed : [Text.replace opponents (Text.pack "each opponent and each creature they control") listed | Text.isInfixOf opponents listed]
+    let to = Text.pack "damage to " <> recipients
         counted = case DamagePart.quantity first of
           Quantity.Count _ -> True
           _ -> False
