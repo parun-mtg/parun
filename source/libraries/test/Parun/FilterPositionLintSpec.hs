@@ -1934,7 +1934,9 @@ filterPositionLintSpec s registry corpus = Spec.describe s "Lint" $ do
         ("Radagast the Brown", 1), -- its from-among choice's filter, negated, CreatureType at AnyPermanent
         ("Spellweaver Helix", 2), -- its intervening "if"'s Count filter and its choice's filter
         ("Jester's Scepter", 1), -- its counter clause's "if"'s Count filter
-        ("Deadly Cover-Up", 1) -- its search's filter, against its exiled card
+        ("Deadly Cover-Up", 1), -- its search's filter, against its exiled card
+        ("The Apprentice's Folly", 2), -- its chapters' target slots, negated, at AnyPermanent
+        ("The End", 1) -- its search's filter, against its exiled target
       ]
     -- Both sides of the split, with room to spare under the pool's real figures:
     -- a traversal that had stopped walking, or a Framing that had stopped marking

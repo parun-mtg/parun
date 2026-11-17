@@ -1,0 +1,139 @@
+{
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "battlefield": [
+          {
+            "card": "Forest",
+            "label": "forest1",
+            "ready": true
+          },
+          {
+            "card": "Forest",
+            "label": "forest2",
+            "ready": true
+          },
+          {
+            "card": "Forest",
+            "label": "forest3",
+            "ready": true
+          },
+          {
+            "card": "Island",
+            "label": "island1",
+            "ready": true
+          },
+          {
+            "card": "Island",
+            "label": "island2",
+            "ready": true
+          }
+        ],
+        "hand": [
+          {
+            "card": "The Goose Mother",
+            "label": "goose"
+          }
+        ],
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ],
+        "name": "alice"
+      },
+      {
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ],
+        "name": "bob"
+      }
+    ],
+    "step": "PrecombatMain"
+  },
+  "description": "CR 107.3m / 614.1c: The Goose Mother cast with X=3 enters with three +1/+1 counters, and its enters trigger creates two Food tokens, half of three rounded up",
+  "note": "X=3 tells rounding up (2) from down (1) and from X itself (3).",
+  "timeline": [
+    {
+      "do": {
+        "Cast": {
+          "mana": [
+            "$forest1",
+            "$forest2",
+            "$forest3",
+            "$island1",
+            "$island2"
+          ],
+          "object": "$goose",
+          "x": 3
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "View": {
+          "is": [],
+          "of": "Stack"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "PowerToughness": {
+          "object": "The Goose Mother",
+          "power": 5,
+          "toughness": 5
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Food Token",
+          "count": 2,
+          "player": "alice",
+          "zone": "Battlefield"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    }
+  ]
+}
