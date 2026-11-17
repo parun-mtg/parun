@@ -3955,8 +3955,9 @@ talliesWhatHappened predicate = case predicate of
   Filter.HadToAttackThisCombat {} -> False
   Filter.LeftLibraryThisTurn {} -> False
   Filter.CantPayKeywordCost {} -> False
-  -- Not implemented: a player dealt damage who then left (#8220).
-  Filter.DealtDamageThisTurn {} -> False
+  -- Tymna the Weaver's ruling counts a player dealt combat damage who then
+  -- lost the game; the departure/cr-800-4i Blitzball scenario proves it.
+  Filter.DealtDamageThisTurn {} -> True
   Filter.LostLifeThisTurn -> True
   Filter.ActivatedThisTurn {} -> False
   Filter.ActedThisTurn {} -> False
