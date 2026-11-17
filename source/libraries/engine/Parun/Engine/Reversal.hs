@@ -24,11 +24,13 @@ import qualified Data.Sequence as Seq
 import qualified Data.Set as Set
 import Numeric.Natural (Natural)
 import qualified Parun.Engine.Event as Event
+import qualified Parun.Engine.Ledger as Ledger
 import qualified Parun.Extra.Integer as Integer
 import qualified Parun.Types.Bookkeeping as Bookkeeping
 import Parun.Types.GameState (GameState)
 import qualified Parun.Types.GameState as GameState
 import qualified Parun.Types.History as History
+import qualified Parun.Types.LoggedEvent as LoggedEvent
 import qualified Parun.Types.Mana as Mana
 import qualified Parun.Types.MatchScope as MatchScope
 import Parun.Types.Object (Object)
@@ -49,7 +51,8 @@ import qualified Parun.Types.TurnRegisters as TurnRegisters
 -- Nothing where some leaf was written by BOTH sides to two different values,
 -- which is a state this function declines to invent -- except a pool, a life
 -- total, a count of counters and a count of activations, whose two changes add
--- up (`pools`, `playerWith`, `tally`, `nestedTally`). Any other Nothing is
+-- up (`pools`, `playerWith`, `tally`, `nestedTally`), and a tap status, whose
+-- window write came last (`objectWith`). Any other Nothing is
 -- CONSERVATIVE rather than a claim of impossibility: Parun.Engine.Cost then
 -- leaves the activation standing, or reverses the whole action unasked, so the
 -- worst it can cost is the question.
@@ -86,7 +89,7 @@ withoutAnnouncement before entry between closed = do
   departedCards <- mapOf GameState.departedCards
   manaPool <- pools (GameState.manaPool before) (GameState.manaPool entry) (GameState.manaPool closed)
   combat <- one (TurnRegisters.combat . GameState.turn)
-  events <- Event.restampLifeChanges <$> eventsOf (TurnRegisters.events . GameState.turn)
+  events <- Event.restampLifeChanges . withoutIdleTaps <$> eventsOf (TurnRegisters.events . GameState.turn)
   nextEventGroup <- newest (Bookkeeping.nextEventGroup . GameState.bookkeeping)
   eventGroupDepth <- one (Bookkeeping.eventGroupDepth . GameState.bookkeeping)
   enteringTogether <- one (Scratch.enteringTogether . GameState.scratch)
@@ -432,6 +435,16 @@ withoutAnnouncement before entry between closed = do
     -- library is, its order being a shuffle's too (CR 103.3a).
     pilesOf :: (Ord k, Eq a) => Map.Map k (Seq.Seq a) -> Map.Map k (Seq.Seq a) -> Map.Map k (Seq.Seq a) -> Maybe (Map.Map k (Seq.Seq a))
     pilesOf = mapWith (\b e c -> Just (Seq.fromList (libraryOrder (Foldable.toList b) (Foldable.toList e) (Foldable.toList c))))
+    -- CR 603.2e, 734.1: a kept tap or untap the cut leaves changing nothing
+    -- did not happen, its change having been on the undone side's write
+    -- (`objectWith`'s `tapped`), so it goes and triggers nothing.
+    withoutIdleTaps :: Seq.Seq LoggedEvent.LoggedEvent -> Seq.Seq LoggedEvent.LoggedEvent
+    withoutIdleTaps whole =
+      let (earlier, kept) = Seq.splitAt (Seq.length (TurnRegisters.events (GameState.turn before))) whole
+          step (held, out) logged =
+            let (next, idle) = Ledger.tapStep held (LoggedEvent.event logged)
+             in (next, if idle then out else out Seq.|> logged)
+       in earlier <> snd (Foldable.foldl' step (Ledger.statuses before, Seq.empty) kept)
     -- CR 734.1: "no abilities trigger and no effects apply as a result of an
     -- undone action", so the announcement's own segment of the log goes and the
     -- window's stands. The log only grows, so that segment is the one between
@@ -472,12 +485,14 @@ objectsWith before entry between =
 -- combat toll" group is the proof. Each field is a whole-value leaf.
 --
 -- `tapped` is a leaf the window's stretches are read for too: where both sides
--- changed it, the window's tap or untap was made on the status the undone
--- side left (CR 107.6, 701.26), so no kept state has it and this answers
--- Nothing, even where the window ended on the value it began with: Pili-Pala's
--- {Q} untapping it after the first Drum's cost tapped it, then the second Drum
--- tapping it again. The scenarios
--- combat-cost/cr-734-1-the-drum-whose-tap-pili-pala-untapped-is-not-offered-back
+-- changed it, the window's kept tap or untap came after the undone side's, so
+-- the status is the window's last (CR 701.26), even where the window ended on
+-- the value the undone side left: Pili-Pala's {Q} untapping it after the first
+-- Drum's cost tapped it, then the second Drum tapping it again. CR 734.1 bars
+-- reversing that Drum only for spent mana, not for a kept cost paid on its
+-- tap. A kept write left changing nothing leaves the log (`withoutIdleTaps`).
+-- The scenarios
+-- combat-cost/cr-734-1-the-drum-whose-tap-pili-pala-untapped-is-offered-back
 -- and its -and-the-second-drum-redid- sibling are the proof.
 --
 -- A TOTAL record construction for `withoutAnnouncement`'s reason: a new Object
@@ -491,7 +506,7 @@ objectWith before entry between closed = do
   zone <- field Object.zone
   tapped <-
     if Object.tapped before /= Object.tapped entry && any ((/= Object.tapped entry) . Object.tapped) (between <> [closed])
-      then Nothing
+      then Just (Object.tapped closed)
       else field Object.tapped
   facing <- field Object.facing
   flipped <- field Object.flipped

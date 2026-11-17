@@ -73,19 +73,26 @@ tapping :: GameState.GameState -> GameState.GameState -> Seq.Seq LoggedEvent.Log
 tapping before after logged =
   let turn (held, idle) entry =
         let event = LoggedEvent.event entry
-            to status oid = case Map.lookup oid held of
-              Just from
-                | from == status -> (held, idle Seq.|> Discrepancy.MkIdleEvent event)
-                | otherwise -> (Map.insert oid status held, idle)
-              Nothing -> (held, idle)
-         in case event of
-              GameEvent.BecameTapped oid -> to TapState.Tapped oid
-              GameEvent.BecameUntapped oid -> to TapState.Untapped oid
-              GameEvent.PermanentActed (PermanentActed.MkPermanentActed PermanentAction.PhaseIn oid _) -> (Map.delete oid held, idle)
-              _ -> (held, idle)
+            (next, idling) = tapStep held event
+         in (next, if idling then idle Seq.|> Discrepancy.MkIdleEvent event else idle)
       (replayed, idles) = Foldable.foldl' turn (statuses before, Seq.empty) logged
       differing = Map.intersectionWith (,) replayed (statuses after)
    in Foldable.toList idles <> [Discrepancy.MkTapState oid expected actual | (oid, (expected, actual)) <- Map.toList differing, expected /= actual]
+
+-- | One entry of `tapping`'s replay: the statuses after it, and whether it
+-- reported a change that did not happen (CR 603.2e).
+tapStep :: Map.Map ObjectId.ObjectId TapState.TapState -> GameEvent.GameEvent -> (Map.Map ObjectId.ObjectId TapState.TapState, Bool)
+tapStep held event =
+  let to status oid = case Map.lookup oid held of
+        Just from
+          | from == status -> (held, True)
+          | otherwise -> (Map.insert oid status held, False)
+        Nothing -> (held, False)
+   in case event of
+        GameEvent.BecameTapped oid -> to TapState.Tapped oid
+        GameEvent.BecameUntapped oid -> to TapState.Untapped oid
+        GameEvent.PermanentActed (PermanentActed.MkPermanentActed PermanentAction.PhaseIn oid _) -> (Map.delete oid held, False)
+        _ -> (held, False)
 
 statuses :: GameState.GameState -> Map.Map ObjectId.ObjectId TapState.TapState
 statuses = fmap Object.tapped . GameState.objects
