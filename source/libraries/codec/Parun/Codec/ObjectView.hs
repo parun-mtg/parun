@@ -2,14 +2,21 @@
 
 module Parun.Codec.ObjectView where
 
+import qualified Data.Map.Strict as Map
 import qualified Parun.Codec.AbilityView as AbilityView
+import qualified Parun.Codec.Acquisition as Acquisition
+import qualified Parun.Codec.CardName as CardName
+import qualified Parun.Codec.CardType as CardType
+import qualified Parun.Codec.Color as Color
 import qualified Parun.Codec.CounterKind as CounterKind
 import qualified Parun.Codec.Keyword as Keyword
 import qualified Parun.Codec.ManaCost as ManaCost
 import qualified Parun.Codec.ObjectId as ObjectId
+import qualified Parun.Codec.PlayerChoice as PlayerChoice
 import qualified Parun.Codec.PlayerId as PlayerId
 import qualified Parun.Codec.ProjectedCharacteristics as ProjectedCharacteristics
 import qualified Parun.Codec.Recipient as Recipient
+import qualified Parun.Codec.Subtype as Subtype
 import qualified Parun.Codec.TapState as TapState
 import qualified Parun.JsonCodec.Codec as Codec
 import qualified Parun.JsonCodec.Common as Common
@@ -21,7 +28,8 @@ import qualified Parun.Types.ObjectView as ObjectView
 -- one the seat may look at; `foretellCostReduction` is null for anything but a
 -- card given a foretell cost the seat may look at; `ability` is null for
 -- anything but an ability on the stack; `targets` is empty for anything but a
--- spell or ability on the stack with a target.
+-- spell or ability on the stack with a target; each chosen field is omitted
+-- when empty, Parun.Codec.Object's keys and shapes otherwise.
 codec :: Codec.Codec ObjectView.ObjectView
 codec = Fields.object $ do
   object <- Fields.required "object" ObjectId.codec ObjectView.object
@@ -36,6 +44,13 @@ codec = Fields.object $ do
   foretellCostReduction <- Fields.required "foretellCostReduction" (Common.maybe ManaCost.codec) ObjectView.foretellCostReduction
   ability <- Fields.required "ability" (Common.maybe AbilityView.codec) ObjectView.ability
   targets <- Fields.required "targets" (Common.list Recipient.codec) ObjectView.targets
+  chosenColors <- Fields.defaulted "chosenColors" Map.empty (Common.keyedList (Common.keyValue Acquisition.codec (Common.set Color.codec))) ObjectView.chosenColors
+  chosenSubtype <- Fields.defaulted "chosenSubtype" Map.empty (Common.keyedList (Common.keyValue Acquisition.codec Subtype.codec)) ObjectView.chosenSubtype
+  chosenCardType <- Fields.defaulted "chosenCardType" Map.empty (Common.keyedList (Common.keyValue Acquisition.codec CardType.codec)) ObjectView.chosenCardType
+  chosenNames <- Fields.defaulted "chosenNames" Map.empty (Common.keyedList (Common.keyValue Acquisition.codec (Common.naturalMap PlayerId.codec (Common.set CardName.codec)))) ObjectView.chosenNames
+  chosenPlayers <- Fields.defaulted "chosenPlayers" Map.empty (Common.keyedList (Common.keyValue Acquisition.codec (Common.keyedList (Common.keyValue PlayerChoice.codec PlayerId.codec)))) ObjectView.chosenPlayers
+  chosenNumber <- Fields.defaulted "chosenNumber" Map.empty (Common.keyedList (Common.keyValue Acquisition.codec Common.natural)) ObjectView.chosenNumber
+  chosenObjects <- Fields.defaulted "chosenObjects" Map.empty (Common.keyedList (Common.keyValue Acquisition.codec (Common.set ObjectId.codec))) ObjectView.chosenObjects
   pure
     ObjectView.MkObjectView
       { ObjectView.object = object,
@@ -49,5 +64,12 @@ codec = Fields.object $ do
         ObjectView.face = face,
         ObjectView.foretellCostReduction = foretellCostReduction,
         ObjectView.ability = ability,
-        ObjectView.targets = targets
+        ObjectView.targets = targets,
+        ObjectView.chosenColors = chosenColors,
+        ObjectView.chosenSubtype = chosenSubtype,
+        ObjectView.chosenCardType = chosenCardType,
+        ObjectView.chosenNames = chosenNames,
+        ObjectView.chosenPlayers = chosenPlayers,
+        ObjectView.chosenNumber = chosenNumber,
+        ObjectView.chosenObjects = chosenObjects
       }

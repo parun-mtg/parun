@@ -8,14 +8,17 @@ import qualified Data.Map.Strict as Map
 import qualified Data.Maybe as Maybe
 import qualified Data.Sequence as Seq
 import qualified Data.Set as Set
+import qualified Parun.Engine.Decide as Decide
 import qualified Parun.Engine.Game as Game
 import qualified Parun.Engine.Projection as Projection
 import qualified Parun.Engine.Projection.View as Projection.View
 import qualified Parun.Engine.Visibility as Visibility
 import qualified Parun.Extra.Natural as Natural
 import qualified Parun.Types.AbilityView as AbilityView
+import qualified Parun.Types.Acquisition as Acquisition
 import qualified Parun.Types.ActivatedAbilitySource as ActivatedAbilitySource
 import qualified Parun.Types.Bookkeeping as Bookkeeping
+import qualified Parun.Types.Chosen as Chosen
 import qualified Parun.Types.Facing as Facing
 import qualified Parun.Types.GameState as GameState
 import qualified Parun.Types.InherentTriggerSource as InherentTriggerSource
@@ -26,6 +29,7 @@ import qualified Parun.Types.Object as Object
 import qualified Parun.Types.ObjectId as ObjectId
 import qualified Parun.Types.ObjectView as ObjectView
 import qualified Parun.Types.Player as Player
+import qualified Parun.Types.PlayerChoice as PlayerChoice
 import qualified Parun.Types.PlayerId as PlayerId
 import qualified Parun.Types.PlayerView as PlayerView
 import qualified Parun.Types.SeatView as SeatView
@@ -89,14 +93,22 @@ seatView pid gs seat = do
 -- CR 613) for a seat that may see them, which for a face-down permanent or
 -- spell is every seat (CR 708.2); the card behind a face-down object for a
 -- seat that may look at it (CR 406.3, 708.5), and the foretell cost it was
--- given with it (CR 702.143e); what an ability came from; and what a stack
--- object targets, which CR 601.2c / 602.2b / 603.3d announce to every seat.
+-- given with it (CR 702.143e); what an ability came from; what a stack
+-- object targets, which CR 601.2c / 602.2b / 603.3d announce to every seat;
+-- and what the object has chosen (CR 607.2d), for a seat that sees it, less a
+-- secret choice to all but its chooser and whoever controls them (CR 724.4).
 objectView :: PlayerId.PlayerId -> GameState.GameState -> ObjectId.ObjectId -> Maybe ObjectView.ObjectView
 objectView pid gs oid = do
   object <- Game.lookupObject oid gs
   let seen = Visibility.sees pid oid gs == Visibility.Type.Visible
       public = Facing.isFaceDown (Object.facing object) && (Game.zoneOf oid gs == Just Zone.Battlefield || Game.zoneOf oid gs == Just Zone.Stack)
       faceDown = Facing.isFaceDown (Object.facing object) || Object.exiledFaceDown object
+      -- A Killer Among Us's ruling: the acquisitions whose choice was made in
+      -- secret by a player this seat is not privy to.
+      unprivy players = maybe False (\chooser -> Set.notMember pid (Decide.privyTo chooser gs)) (Map.lookup PlayerChoice.SecretChooser players)
+      secrets = Map.keysSet (Map.filter unprivy (Object.chosenPlayers object))
+      chosen :: Chosen.Chosen a -> Map.Map Acquisition.Acquisition a
+      chosen field = if public || seen then Map.withoutKeys (Game.objectChoices field object) secrets else Map.empty
   pure
     ObjectView.MkObjectView
       { ObjectView.object = oid,
@@ -119,7 +131,14 @@ objectView pid gs oid = do
             then Object.foretellCostReduction object
             else Nothing,
         ObjectView.ability = abilityView pid gs oid,
-        ObjectView.targets = Set.toList (Projection.View.targetsOfStackObject gs oid)
+        ObjectView.targets = Set.toList (Projection.View.targetsOfStackObject gs oid),
+        ObjectView.chosenColors = chosen Chosen.Colors,
+        ObjectView.chosenSubtype = chosen Chosen.Subtype,
+        ObjectView.chosenCardType = chosen Chosen.CardType,
+        ObjectView.chosenNames = chosen Chosen.Names,
+        ObjectView.chosenPlayers = if public || seen then Object.chosenPlayers object else Map.empty,
+        ObjectView.chosenNumber = chosen Chosen.Number,
+        ObjectView.chosenObjects = chosen Chosen.Objects
       }
 
 -- | CR 113.7a / 602.2a: an ability on the stack by its source, where `pid` may
