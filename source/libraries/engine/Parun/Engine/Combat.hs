@@ -71,12 +71,14 @@ import Parun.Types.ObjectId (ObjectId)
 import qualified Parun.Types.OptionalDecision as OptionalDecision
 import qualified Parun.Types.PayOffer as PayOffer
 import qualified Parun.Types.PaymentDecision as PaymentDecision
+import qualified Parun.Types.PendingEntryEffect as PendingEntryEffect
 import qualified Parun.Types.PlayerEffect as PlayerEffect.Type
 import Parun.Types.PlayerId (PlayerId)
 import qualified Parun.Types.PlayerRelation as PlayerRelation
 import qualified Parun.Types.ProjectedCharacteristics as PC
 import qualified Parun.Types.Prompt as Prompt
 import qualified Parun.Types.RuleWaiver as RuleWaiver
+import qualified Parun.Types.StoredEffects as StoredEffects
 import qualified Parun.Types.TapState as TapState
 import qualified Parun.Types.TurnRegisters as TurnRegisters
 import qualified Parun.Types.TurnWindow as TurnWindow
@@ -3261,6 +3263,12 @@ data AttackChoice
 -- Ninjutsu group proves a ninja takes the returned creature's planeswalker.
 putOntoBattlefieldAttacking :: AttackChoice -> ObjectId -> Game ()
 putOntoBattlefieldAttacking choice oid = do
+  -- CR 508.4e: this effect's specification still applies beside a queued
+  -- EntryRewrite.EntersAttacking for the same entry (Kira Nerys, Firebrand),
+  -- so that row no longer asks (Resolve's runEntryEffect), whether or not this
+  -- call puts the creature into combat: a ninja whose planeswalker left enters
+  -- not attacking (CR 508.4a).
+  State.modify' (settleQueuedAttack oid)
   gs <- State.get
   let c = TurnRegisters.combat (GameState.turn gs)
       targets = declarableTargets gs
@@ -3343,6 +3351,16 @@ putOntoBattlefieldAttacking choice oid = do
                       }
                 }
     _ -> pure ()
+
+-- Clear `attacking` on every queued as-enters row for `oid`: what it attacks
+-- has been settled by the effect putting it onto the battlefield.
+settleQueuedAttack :: ObjectId -> GameState -> GameState
+settleQueuedAttack oid gs =
+  let stored = GameState.stored gs
+      settle pending
+        | PendingEntryEffect.object pending == oid = pending {PendingEntryEffect.attacking = False}
+        | otherwise = pending
+   in gs {GameState.stored = stored {StoredEffects.pendingEntryEffects = fmap settle (StoredEffects.pendingEntryEffects stored)}}
 
 -- CR 508.4's second sentence for a creature already on the battlefield
 -- (Tahngarth, First Mate): an effect states it is attacking what `chooser`
