@@ -1,0 +1,510 @@
+{
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "battlefield": [
+          {
+            "card": "Mountain",
+            "label": "am1"
+          },
+          {
+            "card": "Mountain",
+            "label": "am2"
+          },
+          {
+            "card": "Mountain",
+            "label": "am3"
+          },
+          {
+            "card": "Mountain",
+            "label": "am4"
+          },
+          {
+            "card": "Mountain",
+            "label": "am5"
+          },
+          {
+            "card": "Mountain",
+            "label": "am6"
+          },
+          {
+            "card": "Island",
+            "label": "ai"
+          },
+          {
+            "card": "Swamp",
+            "label": "as"
+          }
+        ],
+        "hand": [
+          {
+            "card": "Talion, the Kindly Lord",
+            "label": "talion"
+          },
+          {
+            "card": "Hill Giant",
+            "label": "own-giant"
+          }
+        ],
+        "library": [
+          {
+            "card": "Forest"
+          },
+          {
+            "card": "Willow Faerie"
+          },
+          {
+            "card": "Plains"
+          },
+          {
+            "card": "Lightning Bolt"
+          },
+          {
+            "card": "Bombard"
+          },
+          {
+            "card": "Pacifism"
+          }
+        ],
+        "name": "alice"
+      },
+      {
+        "battlefield": [
+          {
+            "card": "Forest",
+            "label": "bf1"
+          },
+          {
+            "card": "Forest",
+            "label": "bf2"
+          },
+          {
+            "card": "Forest",
+            "label": "bf3"
+          },
+          {
+            "card": "Forest",
+            "label": "bf4"
+          },
+          {
+            "card": "Forest",
+            "label": "bf5"
+          },
+          {
+            "card": "Forest",
+            "label": "bf6"
+          },
+          {
+            "card": "Forest",
+            "label": "bf7"
+          },
+          {
+            "card": "Forest",
+            "label": "bf8"
+          },
+          {
+            "card": "Mountain",
+            "label": "bm"
+          }
+        ],
+        "hand": [
+          {
+            "card": "Grizzly Bears",
+            "label": "bears"
+          },
+          {
+            "card": "Hill Giant",
+            "label": "giant"
+          },
+          {
+            "card": "Alpine Grizzly",
+            "label": "grizzly"
+          }
+        ],
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ],
+        "name": "bob"
+      },
+      {
+        "battlefield": [
+          {
+            "card": "Forest",
+            "label": "cf1"
+          },
+          {
+            "card": "Forest",
+            "label": "cf2"
+          },
+          {
+            "card": "Forest",
+            "label": "cf3"
+          },
+          {
+            "card": "Forest",
+            "label": "cf4"
+          },
+          {
+            "card": "Forest",
+            "label": "cf5"
+          },
+          {
+            "card": "Forest",
+            "label": "cf6"
+          }
+        ],
+        "hand": [
+          {
+            "card": "Craw Wurm",
+            "label": "wurm"
+          }
+        ],
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ],
+        "name": "charlie"
+      }
+    ],
+    "step": "PrecombatMain"
+  },
+  "description": "Talion, the Kindly Lord chooses a number as it enters; whenever an opponent casts a spell with that mana value, power or toughness, that player loses 2 life and Talion's controller draws",
+  "note": "Alice chooses 4. Her own Hill Giant (mana value 4) does not trigger it. On Bob's turn his Grizzly Bears (2/2, mana value 2) does not; his Hill Giant (3/3, mana value 4) does on mana value alone, and his Alpine Grizzly (4/2, mana value 3) on power alone. On Charlie's turn his Craw Wurm (6/4, mana value 6) does on toughness alone. Bob ends at 16 and Charlie at 18, so the life is lost by the caster, not every opponent, and Alice draws exactly three.",
+  "timeline": [
+    {
+      "do": {
+        "Cast": {
+          "mana": [
+            "$ai",
+            "$as",
+            "$am1",
+            "$am2",
+            null
+          ],
+          "object": "$talion"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Answer": {
+          "prompt": "ChooseNumber",
+          "with": 4
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Talion, the Kindly Lord",
+          "count": 1,
+          "player": "alice",
+          "zone": "Battlefield"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Cast": {
+          "mana": [
+            "$am3",
+            "$am4",
+            "$am5",
+            "$am6"
+          ],
+          "object": "$own-giant"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "View": {
+          "is": [
+            "Forest",
+            "Willow Faerie",
+            "Plains",
+            "Lightning Bolt",
+            "Bombard",
+            "Pacifism"
+          ],
+          "of": "Zone",
+          "player": "alice",
+          "zone": "Library"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "View": {
+          "is": [],
+          "of": "Stack"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Cast": {
+          "mana": [
+            "$bf1",
+            "$bf2",
+            null
+          ],
+          "object": "$bears"
+        }
+      },
+      "player": "bob",
+      "step": "PrecombatMain",
+      "turn": 2
+    },
+    {
+      "do": "Pass",
+      "player": "bob",
+      "step": "PrecombatMain",
+      "turn": 2
+    },
+    {
+      "check": {
+        "Life": {
+          "life": 20,
+          "player": "bob"
+        }
+      },
+      "player": "bob",
+      "step": "PrecombatMain",
+      "turn": 2
+    },
+    {
+      "do": {
+        "Cast": {
+          "mana": [
+            "$bm",
+            "$bf3",
+            "$bf4",
+            "$bf5",
+            null
+          ],
+          "object": "$giant"
+        }
+      },
+      "player": "bob",
+      "step": "PrecombatMain",
+      "turn": 2
+    },
+    {
+      "do": "Pass",
+      "player": "bob",
+      "step": "PrecombatMain",
+      "turn": 2
+    },
+    {
+      "check": {
+        "Life": {
+          "life": 18,
+          "player": "bob"
+        }
+      },
+      "player": "bob",
+      "step": "PrecombatMain",
+      "turn": 2
+    },
+    {
+      "do": "Pass",
+      "player": "bob",
+      "step": "PrecombatMain",
+      "turn": 2
+    },
+    {
+      "do": {
+        "Cast": {
+          "mana": [
+            "$bf6",
+            "$bf7",
+            "$bf8"
+          ],
+          "object": "$grizzly"
+        }
+      },
+      "player": "bob",
+      "step": "PrecombatMain",
+      "turn": 2
+    },
+    {
+      "do": "Pass",
+      "player": "bob",
+      "step": "PrecombatMain",
+      "turn": 2
+    },
+    {
+      "check": {
+        "Life": {
+          "life": 16,
+          "player": "bob"
+        }
+      },
+      "player": "bob",
+      "step": "PrecombatMain",
+      "turn": 2
+    },
+    {
+      "do": "Pass",
+      "player": "bob",
+      "step": "PrecombatMain",
+      "turn": 2
+    },
+    {
+      "do": {
+        "Cast": {
+          "mana": [
+            "$cf1",
+            "$cf2",
+            "$cf3",
+            "$cf4",
+            "$cf5",
+            "$cf6"
+          ],
+          "object": "$wurm"
+        }
+      },
+      "player": "charlie",
+      "step": "PrecombatMain",
+      "turn": 3
+    },
+    {
+      "do": "Pass",
+      "player": "charlie",
+      "step": "PrecombatMain",
+      "turn": 3
+    },
+    {
+      "check": {
+        "Life": {
+          "life": 18,
+          "player": "charlie"
+        }
+      },
+      "player": "charlie",
+      "step": "PrecombatMain",
+      "turn": 3
+    },
+    {
+      "do": "Pass",
+      "player": "charlie",
+      "step": "PrecombatMain",
+      "turn": 3
+    },
+    {
+      "check": {
+        "View": {
+          "is": [],
+          "of": "Stack"
+        }
+      },
+      "player": "charlie",
+      "step": "PrecombatMain",
+      "turn": 3
+    },
+    {
+      "check": {
+        "Life": {
+          "life": 16,
+          "player": "bob"
+        }
+      },
+      "player": "charlie",
+      "step": "PrecombatMain",
+      "turn": 3
+    },
+    {
+      "check": {
+        "Life": {
+          "life": 20,
+          "player": "alice"
+        }
+      },
+      "player": "charlie",
+      "step": "PrecombatMain",
+      "turn": 3
+    },
+    {
+      "check": {
+        "View": {
+          "is": [
+            "Lightning Bolt",
+            "Bombard",
+            "Pacifism"
+          ],
+          "of": "Zone",
+          "player": "alice",
+          "zone": "Library"
+        }
+      },
+      "player": "charlie",
+      "step": "PrecombatMain",
+      "turn": 3
+    }
+  ]
+}
