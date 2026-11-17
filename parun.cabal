@@ -313,6 +313,8 @@ library codec
     Parun.Codec.BecameBlockingSpec
     Parun.Codec.BecameDesignated
     Parun.Codec.BecameDesignatedSpec
+    Parun.Codec.BecameTapped
+    Parun.Codec.BecameTappedSpec
     Parun.Codec.BecameTarget
     Parun.Codec.BecameUnattached
     Parun.Codec.BecomeCopy
@@ -360,6 +362,8 @@ library codec
     Parun.Codec.BoardSpec
     Parun.Codec.BoundMeasure
     Parun.Codec.BoundMeasureSpec
+    Parun.Codec.BoundReading
+    Parun.Codec.BoundReadingSpec
     Parun.Codec.CandidateId
     Parun.Codec.CandidateIdSpec
     Parun.Codec.CandidateScope
@@ -2930,6 +2934,7 @@ library types
     Parun.Types.BecameAttacked
     Parun.Types.BecameBlocking
     Parun.Types.BecameDesignated
+    Parun.Types.BecameTapped
     Parun.Types.BecameTarget
     Parun.Types.BecameUnattached
     Parun.Types.BecomeCopy
@@ -3725,6 +3730,7 @@ library types
     Parun.Types.SeatView
     Parun.Types.SecretChoice
     Parun.Types.Selection
+    Parun.Types.SelfInclusion
     Parun.Types.SetBasePowerToughness
     Parun.Types.SetClassLevel
     Parun.Types.SetHalfLocked

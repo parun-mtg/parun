@@ -3,7 +3,6 @@
 module Parun.ReversalSpec where
 
 import qualified Data.Map.Strict as Map
-import qualified Data.Maybe as Maybe
 import qualified Data.Sequence as Seq
 import qualified Data.Set as Set
 import qualified Parun.Engine.Game as Game
@@ -125,17 +124,20 @@ withoutAnnouncementSpec s registry = Spec.describe s "withoutAnnouncement" $ do
         Spec.assertEqWith s "and the announcement's exert goes" (keptField Object.exertedBy) (Just (Just Set.empty))
 
   -- CR 701.26: the undone side taps a permanent, and the window untaps it and
-  -- taps it again. The window ends where it began, but each of its writes was
-  -- made on the undone side's tap, so no kept state has them.
-  Spec.it s "CR 734.1 a tap the window undid and redid has no kept state" $ do
+  -- taps it again. The window ends where it began, and its last write, which
+  -- came after the undone side's, is the status that stands.
+  Spec.it s "CR 734.1 a tap the window undid and redid stands as the window left it" $ do
     (began, _) <- transition s registry
     case Set.lookupMin (GameState.battlefield began) of
       Nothing -> Spec.assertFailure s "the board seated no permanent"
       Just land -> do
         let tapTo status gs = gs {GameState.objects = Map.adjust (\o -> o {Object.tapped = status}) land (GameState.objects gs)}
             entry = tapTo TapState.Tapped began
-        Spec.assertBool s (Maybe.isNothing (Reversal.withoutAnnouncement began entry [tapTo TapState.Untapped entry] entry)) "the window's untap and retap stand on the undone tap"
-        Spec.assertBool s (Maybe.isJust (Reversal.withoutAnnouncement began entry [entry] entry)) "a window that never wrote it leaves it to the undone side"
+            tappedIn :: Maybe GameState.GameState -> Maybe (Maybe TapState.TapState)
+            tappedIn = fmap (fmap Object.tapped . Map.lookup land . GameState.objects)
+        Spec.assertEqWith s "the window's untap and retap stand" (tappedIn (Reversal.withoutAnnouncement began entry [tapTo TapState.Untapped entry] entry)) (Just (Just TapState.Tapped))
+        Spec.assertEqWith s "and its untap alone stands" (tappedIn (Reversal.withoutAnnouncement began entry [] (tapTo TapState.Untapped entry))) (Just (Just TapState.Untapped))
+        Spec.assertEqWith s "a window that never wrote it leaves it to the undone side" (tappedIn (Reversal.withoutAnnouncement began entry [entry] entry)) (Just (Just TapState.Untapped))
 
   -- CR 734.1's last sentence on a library both sides touched: the announcement
   -- cast its second card (the stack exception), and the window shuffled. The

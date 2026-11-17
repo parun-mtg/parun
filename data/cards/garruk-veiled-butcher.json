@@ -237,7 +237,7 @@
                               "filter": {
                                 "type": "Not",
                                 "value": {
-                                  "type": "OwnsBoundAtLeast",
+                                  "type": "HoldsBoundAtLeast",
                                   "value": {
                                     "atLeast": 2,
                                     "filter": {
@@ -247,6 +247,8 @@
                                         "value": "Land"
                                       }
                                     },
+                                    "holder": "Owner",
+                                    "reading": "AsBound",
                                     "slot": "discarded"
                                   }
                                 }

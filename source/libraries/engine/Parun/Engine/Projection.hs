@@ -3948,9 +3948,12 @@ honeAffected =
 -- Game.stickerContent) decides the layer; what an ability sticker grants is
 -- handed over unread (stickerGrants).
 --
--- Not implemented: a static, rule, player or self-cost ability on an ability
--- sticker, or a keyword rule 702 states as a static ability, reaching the
--- stickered object (#4934).
+-- A static ability's grant is gathered from the stickered object, as a stored
+-- grant's is (View.grantedStaticAbilitiesOf).
+--
+-- Not implemented: a rule, player or self-cost ability on an ability sticker,
+-- or a keyword rule 702 states as a static ability, reaching the stickered
+-- object (#8365).
 stickerGathered :: GameState -> [Gathered]
 stickerGathered gs =
   let at oid placement lyr affected m =
@@ -4530,9 +4533,9 @@ filterReads f = case f of
   -- Reads a ZONE's size, which is no object's characteristic (CR 109.3) and no
   -- Modification writes; every zone change happens between projections.
   Filter.Type.CardsInZoneAtLeast _ _ -> Set.empty
-  -- Over-declared for Controls' reason: each bound object's owner plus whatever
+  -- Over-declared for Controls' reason: each bound object's holder plus whatever
   -- the nest reads of it.
-  Filter.Type.OwnsBoundAtLeast _ _ g -> holderReads Holder.Owner <> filterReads g
+  Filter.Type.HoldsBoundAtLeast holder _ _ _ g -> holderReads holder <> filterReads g
   Filter.Type.IsAttacking _ -> Set.empty
   -- Reads nothing, for IsAttacking's reason and off the same map: what a creature
   -- is attacking is no characteristic of it (CR 109.3).
@@ -4838,7 +4841,7 @@ filterReadsPeers f = case f of
   -- A group anchor reads every permanent's view (Filter.Context.battlefieldViews),
   -- and Host the candidate's attachedToView.
   Filter.Type.Shares _ anchor -> case anchor of
-    Anchor.AnyPermanent _ -> True
+    Anchor.AnyPermanent _ _ -> True
     Anchor.Host -> True
     Anchor.Bound _ _ -> False
     Anchor.Evaluated -> False
@@ -4907,7 +4910,7 @@ filterReadsPeers f = case f of
   Filter.Type.IsControllerOfBound _ -> False
   Filter.Type.CardsInZoneAtLeast _ _ -> False
   -- DESCENT for Controls' reason.
-  Filter.Type.OwnsBoundAtLeast _ _ g -> filterReadsPeers g
+  Filter.Type.HoldsBoundAtLeast _ _ _ _ g -> filterReadsPeers g
   Filter.Type.IsAttacking _ -> False
   Filter.Type.IsAttackingPlayer _ -> False
   Filter.Type.DeclaredAttackedThisCombat -> False

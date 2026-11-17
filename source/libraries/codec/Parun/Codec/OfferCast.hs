@@ -2,6 +2,7 @@
 
 module Parun.Codec.OfferCast where
 
+import qualified Data.Text as Text
 import qualified Parun.Codec.CastObligation as CastObligation
 import qualified Parun.Codec.CastOffer as CastOffer
 import qualified Parun.Codec.CastRepetition as CastRepetition
@@ -29,8 +30,12 @@ import qualified Parun.Types.PlayerRelation as PlayerRelation
 -- every one of them into a repeated offer, and a defaulted True on `copied`
 -- would make CR 707.12's copy of every one of them. Likewise `verb` defaults to
 -- Cast, `controlWhileResolving` to no control, and `slot` to binding nothing.
+--
+-- Unprinted: an offer to cast a card as an Adventure. It is refused, and
+-- Parun.Codec.OfferCastSpec's "rejects casting as an Adventure" proves the
+-- refusal.
 codec :: Codec.Codec OfferCast.OfferCast
-codec = Fields.object $ do
+codec = Fields.objectWith verbIsPrinted $ do
   ref <- Fields.required "ref" ObjectRef.codec OfferCast.ref
   caster <- Fields.defaulted "caster" (PlayerRef.Type.Relative PlayerRelation.You) PlayerRef.codec OfferCast.caster
   optionality <- Fields.defaulted "optionality" CastObligation.Type.Optional CastObligation.codec OfferCast.optionality
@@ -52,3 +57,8 @@ codec = Fields.object $ do
         OfferCast.controlWhileResolving = controlWhileResolving,
         OfferCast.slot = slot
       }
+
+verbIsPrinted :: OfferCast.OfferCast -> Either Text.Text OfferCast.OfferCast
+verbIsPrinted offer
+  | OfferCast.verb offer == PermissionVerb.Type.CastAsAdventure = Left (Text.pack "OfferCast: casting as an Adventure is unprinted and not supported")
+  | otherwise = Right offer

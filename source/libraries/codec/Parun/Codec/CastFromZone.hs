@@ -3,6 +3,7 @@
 module Parun.Codec.CastFromZone where
 
 import qualified Data.Set as Set
+import qualified Data.Text as Text
 import qualified Parun.Codec.CostComponent as CostComponent
 import qualified Parun.Codec.Filter as Filter
 import qualified Parun.Codec.InZone as InZone
@@ -34,8 +35,12 @@ import qualified Parun.Types.PermissionVerb as PermissionVerb
 -- defaults to the whole zone, the additional costs to none, the spending to
 -- mana as produced, and the alternative cost, the entry counters and the added creature types to
 -- none.
+--
+-- Unprinted: a permission to cast cards as an Adventure. It is refused, and
+-- Parun.Codec.CastFromZoneSpec's "rejects casting as an Adventure" proves the
+-- refusal.
 codec :: Codec.Codec CastFromZone.CastFromZone
-codec = Fields.object $ do
+codec = Fields.objectWith verbIsPrinted $ do
   from <- Fields.required "from" InZone.codec CastFromZone.from
   matching <- Fields.required "matching" (Filter.codec Keyword.codec) CastFromZone.matching
   limit <- Fields.defaulted "limit" PermissionLimit.Unlimited PermissionLimit.codec CastFromZone.limit
@@ -49,3 +54,8 @@ codec = Fields.object $ do
   amount <- Fields.defaulted "amount" Nothing (Common.maybe Quantity.codec) CastFromZone.amount
   creatureTypes <- Fields.defaulted "creatureTypes" Set.empty (Common.set Subtype.codec) CastFromZone.creatureTypes
   pure CastFromZone.MkCastFromZone {CastFromZone.from = from, CastFromZone.matching = matching, CastFromZone.limit = limit, CastFromZone.verb = verb, CastFromZone.pool = pool, CastFromZone.additionalCosts = additionalCosts, CastFromZone.reduction = reduction, CastFromZone.spending = spending, CastFromZone.alternativeCost = alternativeCost, CastFromZone.entersWith = entersWith, CastFromZone.amount = amount, CastFromZone.creatureTypes = creatureTypes}
+
+verbIsPrinted :: CastFromZone.CastFromZone -> Either Text.Text CastFromZone.CastFromZone
+verbIsPrinted grant
+  | CastFromZone.verb grant == PermissionVerb.CastAsAdventure = Left (Text.pack "CastFromZone: casting as an Adventure is unprinted and not supported")
+  | otherwise = Right grant

@@ -1,0 +1,84 @@
+{
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "battlefield": [
+          {
+            "card": "Kellan, the Fae-Blooded",
+            "label": "kellan"
+          },
+          {
+            "card": "Grizzly Bears",
+            "label": "bears"
+          },
+          {
+            "attached": "kellan",
+            "card": "Holy Strength",
+            "label": "aura"
+          },
+          {
+            "attached": "kellan",
+            "card": "Bonesplitter",
+            "label": "splitter"
+          },
+          {
+            "attached": "bears",
+            "card": "Bonesplitter",
+            "label": "other"
+          }
+        ],
+        "name": "alice"
+      },
+      {
+        "battlefield": [
+          {
+            "card": "Hill Giant",
+            "label": "giant"
+          }
+        ],
+        "name": "bob"
+      }
+    ],
+    "step": "PrecombatMain"
+  },
+  "description": "Kellan, the Fae-Blooded gives each other creature alice controls +1/+0 for each Aura and Equipment attached to him, not to itself",
+  "timeline": [
+    {
+      "check": {
+        "PowerToughness": {
+          "object": "$kellan",
+          "power": 5,
+          "toughness": 4
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "PowerToughness": {
+          "object": "$bears",
+          "power": 6,
+          "toughness": 2
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "PowerToughness": {
+          "object": "$giant",
+          "power": 3,
+          "toughness": 3
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    }
+  ]
+}

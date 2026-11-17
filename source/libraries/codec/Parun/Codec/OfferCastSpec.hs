@@ -1,8 +1,10 @@
 module Parun.Codec.OfferCastSpec where
 
+import qualified Data.Either as Either
 import qualified Data.Text as Text
 import qualified Parun.Codec.CastOffer as CastOffer
 import qualified Parun.Codec.OfferCast as OfferCast
+import qualified Parun.JsonCodec.Codec as Codec
 import qualified Parun.JsonCodec.Common as Common
 import qualified Parun.Spec as Spec
 import qualified Parun.Types.CastObligation as CastObligation
@@ -151,4 +153,10 @@ spec s = Spec.describe s "Parun.Codec.OfferCast" $ do
           }
       )
       " {\"ref\":{\"type\":\"InSlot\",\"value\":\"exiled\"},\"slot\":\"spell\"} "
+  -- Unprinted: an offer to cast a card as an Adventure, so refused.
+  Spec.it s "rejects casting as an Adventure" $
+    Spec.assertBool
+      s
+      (Either.isLeft (Codec.decode OfferCast.codec =<< Common.parse (Text.pack "{\"ref\":{\"type\":\"InSlot\",\"value\":\"exiled\"},\"verb\":\"CastAsAdventure\"}")))
+      "expected a decode failure"
   Spec.it s "has a schema" $ Common.assertHasSchema s OfferCast.codec

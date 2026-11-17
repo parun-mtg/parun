@@ -1,0 +1,160 @@
+{
+  "faces": [
+    {
+      "castingPermissions": [
+        {
+          "type": "CastAsThoughItHadFlash",
+          "value": {
+            "additionalMana": [
+              {
+                "type": "Generic",
+                "value": 2
+              }
+            ]
+          }
+        }
+      ],
+      "manaCost": [
+        {
+          "type": "Generic",
+          "value": 2
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "Blue"
+          }
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "Blue"
+          }
+        }
+      ],
+      "name": "Asinine Antics",
+      "oracleText": "You may cast this spell as though it had flash if you pay {2} more to cast it.\nFor each creature your opponents control, create a Cursed Role token attached to that creature. (If you control another Role on it, put that one into the graveyard. Enchanted creature is 1/1.)",
+      "spell": {
+        "modes": [
+          {
+            "clauses": [
+              {
+                "effects": [
+                  {
+                    "type": "ForEach",
+                    "value": {
+                      "body": [
+                        {
+                          "type": "Create",
+                          "value": {
+                            "card": {
+                              "faces": [
+                                {
+                                  "enchant": [
+                                    {
+                                      "pool": {
+                                        "type": "Creatures"
+                                      }
+                                    }
+                                  ],
+                                  "name": "Cursed",
+                                  "staticAbilities": [
+                                    {
+                                      "affected": {
+                                        "type": "Matching",
+                                        "value": {
+                                          "type": "And",
+                                          "value": [
+                                            {
+                                              "type": "HasCardType",
+                                              "value": "Creature"
+                                            },
+                                            {
+                                              "type": "HasAttached",
+                                              "value": {
+                                                "type": "IsSource"
+                                              }
+                                            }
+                                          ]
+                                        }
+                                      },
+                                      "modifications": [
+                                        {
+                                          "type": "SetBasePowerToughness",
+                                          "value": {
+                                            "power": {
+                                              "type": "Literal",
+                                              "value": 1
+                                            },
+                                            "toughness": {
+                                              "type": "Literal",
+                                              "value": 1
+                                            }
+                                          }
+                                        }
+                                      ]
+                                    }
+                                  ],
+                                  "typeLine": {
+                                    "subtypes": [
+                                      "Aura",
+                                      "Role"
+                                    ],
+                                    "types": [
+                                      "Enchantment"
+                                    ]
+                                  }
+                                }
+                              ]
+                            },
+                            "quantity": {
+                              "type": "Literal",
+                              "value": 1
+                            },
+                            "riders": {
+                              "attachedTo": {
+                                "type": "Specified",
+                                "value": "creature"
+                              }
+                            }
+                          }
+                        }
+                      ],
+                      "ref": {
+                        "type": "EachMatching",
+                        "value": {
+                          "type": "And",
+                          "value": [
+                            {
+                              "type": "HasCardType",
+                              "value": "Creature"
+                            },
+                            {
+                              "type": "HeldBy",
+                              "value": {
+                                "holder": "Controller",
+                                "relation": "Opponent"
+                              }
+                            }
+                          ]
+                        }
+                      },
+                      "slot": "creature"
+                    }
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "typeLine": {
+        "types": [
+          "Sorcery"
+        ]
+      }
+    }
+  ]
+}

@@ -203,6 +203,7 @@ import qualified Parun.Types.Scaling as Scaling
 import qualified Parun.Types.Scope as Scope
 import qualified Parun.Types.Search as Search
 import qualified Parun.Types.SearchDestination as SearchDestination
+import qualified Parun.Types.SelfInclusion as SelfInclusion
 import qualified Parun.Types.SlotName as SlotName
 import qualified Parun.Types.SpecialAction as SpecialAction
 import qualified Parun.Types.StaticAbility as StaticAbility
@@ -473,11 +474,14 @@ wishFilterAtoms needle value = case value of
 isTargetTag :: Text.Text
 isTargetTag = Text.pack "IsTarget"
 
--- How many Filter.IsTarget atoms sit OUTSIDE a cost an announcement pays, the
--- only positions Binding.announcedTargets is stamped for: a spell's additional
--- costs, an activated ability's cost (an object with a "cost" beside a "modal"),
--- and the components a cost modifier's CostChange.Add adds. Anywhere else --
--- a triggered ability above all, which is never stamped -- the atom is a silent
+-- How many Filter.IsTarget atoms sit OUTSIDE a cost an announcement pays, or
+-- a damage recipient's qualifier (an object with a "matching" beside a
+-- "cardType"), the only positions Binding.announcedTargets is stamped for: a
+-- spell's additional costs, an activated ability's cost (an object with a
+-- "cost" beside a "modal"), the components a cost modifier's CostChange.Add
+-- adds, and the damage source's deal-time targets
+-- (Parun.Engine.Filter.dealtTargetsContext). Anywhere else -- a triggered
+-- ability's effects above all, which are never stamped -- the atom is a silent
 -- False, isBoundOffends' offence one atom over. Counted off the encoding, so a
 -- grant nested inside an effect is reached too.
 isTargetStrays :: Value.Value -> Int
@@ -487,11 +491,13 @@ isTargetStrays value = case value of
         nameOf p = String.unwrap (Pair.name p)
         has k = any ((== Text.pack k) . nameOf) pairs
         activated = has "cost" && has "modal" && not (has "condition")
+        damaged = has "cardType" && has "matching"
         adding = any (\p -> nameOf p == Text.pack "type" && Pair.value p == Value.String (String.MkString (Text.pack "Add"))) pairs
         paid p =
           elem (nameOf p) (fmap Text.pack ["additionalCosts", "additionalCostChoices"])
             || (activated && nameOf p == Text.pack "cost")
             || (adding && nameOf p == Text.pack "value")
+            || (damaged && nameOf p == Text.pack "matching")
         here = fromEnum (any (\p -> nameOf p == Text.pack "type" && Pair.value p == Value.String (String.MkString isTargetTag)) pairs)
      in here + sum [isTargetStrays (Pair.value p) | p <- pairs, not (paid p)]
   Value.Array a -> sum (fmap isTargetStrays (Array.unwrap a))
@@ -955,6 +961,7 @@ writesColors quality = case quality of
   ChosenQuality.Number _ _ -> False
   ChosenQuality.Parity -> False
   ChosenQuality.Word _ -> False
+  ChosenQuality.Letter -> False
   ChosenQuality.ExiledCard _ _ -> False
 
 -- Whether a choice of this quality answers HasChosenSubtype, writesColors' twin.
@@ -966,6 +973,7 @@ writesSubtype quality = case quality of
   ChosenQuality.Number _ _ -> False
   ChosenQuality.Parity -> False
   ChosenQuality.Word _ -> False
+  ChosenQuality.Letter -> False
   ChosenQuality.ExiledCard _ _ -> False
 
 -- Whether a choice of this quality answers HasChosenCardType, writesColors' twin.
@@ -977,6 +985,7 @@ writesCardType quality = case quality of
   ChosenQuality.Number _ _ -> False
   ChosenQuality.Parity -> False
   ChosenQuality.Word _ -> False
+  ChosenQuality.Letter -> False
   ChosenQuality.ExiledCard _ _ -> False
 
 -- CR 105.2's chosen colour is answerable only where Filter.Context.sourceChosenColors
@@ -1139,7 +1148,7 @@ decodedAtoms tag wanted value =
 -- Name, Controller, Color or CreatureType at AnyPermanent
 -- (Filter.Context.battlefieldViews).
 framedNameAtoms :: Value.Value -> Int
-framedNameAtoms = decodedAtoms "Shares" (\atom -> case atom of Filter.Type.Shares Trait.Name (Anchor.Bound _ _) -> True; Filter.Type.Shares Trait.Name (Anchor.AnyPermanent _) -> True; Filter.Type.Shares Trait.Controller (Anchor.AnyPermanent _) -> True; Filter.Type.Shares Trait.Color (Anchor.AnyPermanent _) -> True; Filter.Type.Shares Trait.CreatureType (Anchor.AnyPermanent _) -> True; _ -> False)
+framedNameAtoms = decodedAtoms "Shares" (\atom -> case atom of Filter.Type.Shares Trait.Name (Anchor.Bound _ _) -> True; Filter.Type.Shares Trait.Name (Anchor.AnyPermanent _ _) -> True; Filter.Type.Shares Trait.Controller (Anchor.AnyPermanent _ _) -> True; Filter.Type.Shares Trait.Color (Anchor.AnyPermanent _ _) -> True; Filter.Type.Shares Trait.CreatureType (Anchor.AnyPermanent _ _) -> True; _ -> False)
 
 -- How many CR 709.4a atoms this card carries in one of the ADMITTED positions
 -- -- a MODE's target slot filter (Harness the Storm), a CR 701.23 search filter
@@ -1934,7 +1943,10 @@ filterPositionLintSpec s registry corpus = Spec.describe s "Lint" $ do
         ("Radagast the Brown", 1), -- its from-among choice's filter, negated, CreatureType at AnyPermanent
         ("Spellweaver Helix", 2), -- its intervening "if"'s Count filter and its choice's filter
         ("Jester's Scepter", 1), -- its counter clause's "if"'s Count filter
-        ("Deadly Cover-Up", 1) -- its search's filter, against its exiled card
+        ("Deadly Cover-Up", 1), -- its search's filter, against its exiled card
+        ("The Apprentice's Folly", 2), -- its chapters' target slots, negated, at AnyPermanent
+        ("Yenna, Redtooth Regent", 1), -- its ability's target slot, negated, at AnyPermanent excluding the candidate
+        ("The End", 1) -- its search's filter, against its exiled target
       ]
     -- Both sides of the split, with room to spare under the pool's real figures:
     -- a traversal that had stopped walking, or a Framing that had stopped marking
@@ -2074,7 +2086,8 @@ filterPositionLintSpec s registry corpus = Spec.describe s "Lint" $ do
         ("Legion's End", 1), -- its exile's object, relative to the target's controller
         ("Run Away Together", 2), -- both target slots, each relative to the other
         ("Kitsune, Dragon's Daughter", 2), -- both target slots, Run Away Together's shape
-        ("Trial of Agony", 1) -- its second target slot, Sorrow's Path's shape
+        ("Trial of Agony", 1), -- its second target slot, Sorrow's Path's shape
+        ("Fear, Fire, Foes!", 1) -- its damage's object, relative to the target's controller
       ]
     -- The REJECTING direction, hand-built for the reason every sibling lint's is:
     -- a card that offends must not be loadable, so no file can carry one. Buried
@@ -2192,7 +2205,7 @@ filterPositionLintSpec s registry corpus = Spec.describe s "Lint" $ do
     -- cards in its controller's graveyard.
     --
     -- Exactly, against the mana value: Chthonian Nightmare, Shelob, Dread
-    -- Weaver, Rydia, Summoner of Mist, Tamiyo, Compleated Sage, Synthetic Counted, Announced, Wide, Paired, Total and Divided
+    -- Weaver, Likeness Looter, Rydia, Summoner of Mist, Tamiyo, Compleated Sage, Synthetic Counted, Announced, Wide, Paired, Total and Divided
     -- Verdict, Synthetic Wide Muster on a modal trigger, Spell Blast and Detonate in a slot, and Fear of Change and Ornate Imitations in a reference
     -- pick, at the top level and
     -- inside a ForEachNumber body; Isareth the Awakener in a reflexive delayed
@@ -2244,6 +2257,7 @@ filterPositionLintSpec s registry corpus = Spec.describe s "Lint" $ do
         ("Tameshi, Reality Architect", 1),
         ("Chthonian Nightmare", 1),
         ("Shelob, Dread Weaver", 1),
+        ("Likeness Looter", 1),
         ("Rydia, Summoner of Mist", 1),
         ("Tamiyo, Compleated Sage", 1),
         ("Liliana, Heretical Healer", 1),
@@ -2427,9 +2441,11 @@ filterPositionLintSpec s registry corpus = Spec.describe s "Lint" $ do
         ("Charmed Sleep", 1), -- Claustrophobia's wording
         ("Paralyze", 2), -- the entering tap and the paid untap
         ("Erosion", 1), -- the destroy a refused payment leaves
+        ("Cooped Up", 1), -- an activated exile of its host
         ("Waterknot", 1), -- Claustrophobia's wording
         ("Sleep Paralysis", 1), -- Claustrophobia's wording
         ("Capture Sphere", 1), -- Claustrophobia's wording
+        ("Bitter Chill", 1), -- Claustrophobia's wording
         ("Blossombind", 1), -- Claustrophobia's wording
         ("Frozen in Ice", 1), -- Claustrophobia's wording
         ("Starlight Snare", 1), -- Claustrophobia's wording
@@ -2542,9 +2558,9 @@ filterPositionLintSpec s registry corpus = Spec.describe s "Lint" $ do
             { Face.spell =
                 Mint.oneModeTargeting (Map.singleton slot (TargetSlot.required Pool.Creatures (Just (Filter.Type.And [Filter.Type.Not atom])))) Seq.empty
             }
-    Spec.assertEqWith s "a planted Shares Owner AnyPermanent is unread" (unreadAnchorCounts (encodedFace (plantedWith (Filter.Type.Shares Trait.Owner (Anchor.AnyPermanent (Filter.Type.And [])))))) (1, 1)
+    Spec.assertEqWith s "a planted Shares Owner AnyPermanent is unread" (unreadAnchorCounts (encodedFace (plantedWith (Filter.Type.Shares Trait.Owner (Anchor.AnyPermanent SelfInclusion.IncludesCandidate (Filter.Type.And [])))))) (1, 1)
     Spec.assertEqWith s "a planted Shares Color Bound is read" (unreadAnchorCounts (encodedFace (plantedWith (Filter.Type.Shares Trait.Color (Anchor.Bound Nothing slot))))) (0, 1)
-    Spec.assertEqWith s "a planted IsAttachedTo AnyPermanent is unread" (unreadAnchorCounts (encodedFace (plantedWith (Filter.Type.IsAttachedTo (Anchor.AnyPermanent (Filter.Type.And [])))))) (1, 1)
+    Spec.assertEqWith s "a planted IsAttachedTo AnyPermanent is unread" (unreadAnchorCounts (encodedFace (plantedWith (Filter.Type.IsAttachedTo (Anchor.AnyPermanent SelfInclusion.IncludesCandidate (Filter.Type.And [])))))) (1, 1)
     Spec.assertEqWith s "a planted IsAttachedTo Bound is read" (unreadAnchorCounts (encodedFace (plantedWith (Filter.Type.IsAttachedTo (Anchor.Bound Nothing slot))))) (0, 1)
     Spec.assertEqWith s "a planted Shares Name Bound is read" (unreadAnchorCounts (encodedFace (plantedWith (Filter.Type.Shares Trait.Name (Anchor.Bound Nothing slot))))) (0, 1)
     Spec.assertEqWith s "a planted Shares CreatureType at a Bound narrowed to the candidate's controller is read" (unreadAnchorCounts (encodedFace (plantedWith (Filter.Type.Shares Trait.CreatureType (Anchor.Bound (Just Holder.Controller) slot))))) (0, 1)
@@ -2616,16 +2632,18 @@ filterPositionLintSpec s registry corpus = Spec.describe s "Lint" $ do
   -- candidates are not objects in the game -- CR 400.11c's wish filter, matched
   -- against a printed face. See isBoundOffends for the two offences.
   -- CR 601.2c: Filter.IsTarget reads the targets a cast or an activation
-  -- stamped, so it is answerable in the cost that announcement pays and a
-  -- silent False elsewhere (isTargetStrays).
-  Spec.it s "CR 601.2c no card asks IsTarget outside a cost an announcement pays" $ do
+  -- stamped, so it is answerable in the cost that announcement pays, and in a
+  -- damage recipient's qualifier, framed with the source's deal-time targets,
+  -- and a silent False elsewhere (isTargetStrays).
+  Spec.it s "CR 601.2c no card asks IsTarget outside a cost an announcement pays or a damage recipient" $ do
     ps <- S.allPrintings s corpus
     Spec.assertEqWith s "no card asks IsTarget where nothing stamps the targets" (fmap (S.nameOf . Printing.card) (filter (anyFace isTargetOffends . Printing.card) ps)) []
     edict <- S.printingOf s registry "Synthetic Spiteful Edict"
     rite <- S.printingOf s registry "Synthetic Spiteful Rite"
     altar <- S.printingOf s registry "Synthetic Spiteful Altar"
     let atoms = jsonAtoms isTargetTag . Codec.encode (Face.Codec.codec Card.codec) . S.combinedFace
-    Spec.assertEqWith s "and the added, additional and activation costs that ask it are accepted" (fmap atoms [edict, rite, altar], fmap (isTargetOffends . S.combinedFace) [edict, rite, altar]) ([1, 1, 1], [False, False, False])
+    imodane <- S.printingOf s registry "Imodane, the Pyrohammer"
+    Spec.assertEqWith s "and the added, additional and activation costs and the damage recipient that ask it are accepted" (fmap atoms [edict, rite, altar, imodane], fmap (isTargetOffends . S.combinedFace) [edict, rite, altar, imodane]) ([1, 1, 1, 1], [False, False, False, False])
     piker <- S.printingOf s registry "Goblin Piker"
     let planted = (S.combinedFace piker) {Face.spell = Mint.oneMode (Seq.singleton (Effect.Destroy (Destroy.MkDestroy (ObjectRef.EachMatching (Filter.Type.Not Filter.Type.IsTarget)) Regenerability.Regenerable Nothing Nothing Nothing)))}
     Spec.assertBool s (isTargetOffends planted) "the same atom in an effect's filter is an offence"
@@ -2756,7 +2774,7 @@ filterPositionLintSpec s registry corpus = Spec.describe s "Lint" $ do
         boundAtom = bury (Filter.Type.IsBound slot)
         hostAtom = bury Filter.Type.IsHostOfSource
         nameAtom = bury (Filter.Type.Shares Trait.Name (Anchor.Bound Nothing slot))
-        groupAtom = bury (Filter.Type.Shares Trait.Name (Anchor.AnyPermanent creatures))
+        groupAtom = bury (Filter.Type.Shares Trait.Name (Anchor.AnyPermanent SelfInclusion.IncludesCandidate creatures))
         keywordOf f = Keyword.Hexproof (Just f)
         kindOf f = CounterKind.Keyword (keywordOf f)
         plain = CounterKind.PlusOnePlusOne

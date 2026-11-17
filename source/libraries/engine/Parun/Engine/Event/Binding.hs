@@ -40,6 +40,7 @@ import qualified Parun.Types.BattlefieldCandidate as BattlefieldCandidate
 import qualified Parun.Types.BecameAttached as BecameAttached
 import qualified Parun.Types.BecameAttacked as BecameAttacked
 import qualified Parun.Types.BecameBlocking as BecameBlocking
+import qualified Parun.Types.BecameTapped as BecameTapped
 import qualified Parun.Types.BecameTarget as BecameTarget
 import qualified Parun.Types.BecameUnattached as BecameUnattached
 import qualified Parun.Types.BecomesTapState as BecomesTapState
@@ -662,7 +663,7 @@ eventBindingsOver board gs bearerBecame becameInGraveyard bearer you cond event 
   -- Calendar).
   (TriggerCondition.BecomesTapState watched, GameEvent.BecameTapped tapped)
     | BecomesTapState.batching watched == Batching.EachOccurrence && BecomesTapState.status watched == TapState.Tapped ->
-        Binding.setTapStatePermanent TapState.Tapped tapped Map.empty
+        Binding.setTapStatePermanent TapState.Tapped (BecameTapped.permanent tapped) Map.empty
   (TriggerCondition.BecomesTapState watched, GameEvent.TappedToPay paid)
     | BecomesTapState.batching watched == Batching.EachOccurrence && BecomesTapState.status watched == TapState.Tapped ->
         Binding.setTapStatePermanent TapState.Tapped (TappedToPay.permanent paid) Map.empty

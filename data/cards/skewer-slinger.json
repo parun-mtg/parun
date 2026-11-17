@@ -1,0 +1,116 @@
+{
+  "faces": [
+    {
+      "keywords": [
+        {
+          "type": "Reach"
+        }
+      ],
+      "manaCost": [
+        {
+          "type": "Generic",
+          "value": 1
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "Red"
+          }
+        }
+      ],
+      "name": "Skewer Slinger",
+      "oracleText": "Reach\nWhenever this creature blocks or becomes blocked by a creature, this creature deals 1 damage to that creature.",
+      "power": {
+        "type": "Literal",
+        "value": 1
+      },
+      "toughness": {
+        "type": "Literal",
+        "value": 3
+      },
+      "triggeredAbilities": [
+        {
+          "condition": {
+            "type": "AnyOf",
+            "value": [
+              {
+                "type": "Blocks",
+                "value": {
+                  "count": {
+                    "type": "EachCreature",
+                    "value": {
+                      "type": "HasCardType",
+                      "value": "Creature"
+                    }
+                  },
+                  "role": "Blocker"
+                }
+              },
+              {
+                "type": "Blocks",
+                "value": {
+                  "count": {
+                    "type": "EachCreature",
+                    "value": {
+                      "type": "HasCardType",
+                      "value": "Creature"
+                    }
+                  },
+                  "role": "Attacker"
+                }
+              }
+            ]
+          },
+          "modal": {
+            "modes": [
+              {
+                "clauses": [
+                  {
+                    "effects": [
+                      {
+                        "type": "DealDamage",
+                        "value": {
+                          "parts": [
+                            {
+                              "quantity": {
+                                "type": "Literal",
+                                "value": 1
+                              },
+                              "ref": {
+                                "type": "AllOf",
+                                "value": [
+                                  {
+                                    "type": "InSlot",
+                                    "value": "thatAttacker"
+                                  },
+                                  {
+                                    "type": "InSlot",
+                                    "value": "thatBlocker"
+                                  }
+                                ]
+                              }
+                            }
+                          ]
+                        }
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      ],
+      "typeLine": {
+        "subtypes": [
+          "Dwarf",
+          "Knight"
+        ],
+        "types": [
+          "Creature"
+        ]
+      }
+    }
+  ]
+}

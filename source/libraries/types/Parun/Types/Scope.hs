@@ -46,7 +46,7 @@ data Scope keyword
     -- lands than you"), Filter.IsControllerOfBound (Spikeshell Harrier's "each
     -- other player"), Filter.CardsInZoneAtLeast (The Master of
     -- Lake-town's "each graveyard with seven or more cards in it") and
-    -- Filter.OwnsBoundAtLeast (Garruk, Veiled Butcher's "each opponent who
+    -- Filter.HoldsBoundAtLeast (Garruk, Veiled Butcher's "each opponent who
     -- didn't discard two nonland cards this way") are instead
     -- BAKED against the board at Parun.Engine.Count.bakePerspective, each asking
     -- something no view of a player could carry.

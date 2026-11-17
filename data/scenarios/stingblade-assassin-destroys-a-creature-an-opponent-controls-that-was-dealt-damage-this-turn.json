@@ -1,0 +1,406 @@
+{
+  "description": "Stingblade Assassin, cast with flash on an opponent's turn, enters and destroys target creature an opponent controls that was dealt damage this turn",
+  "note": "Alice Shocks her own Hill Giant, Bob's and Carol's, each surviving with 2 damage. The trigger may not target her own damaged giant (not an opponent's) or Bob's undamaged Grizzly Bears; of the two legal targets it takes Carol's giant, leaving Bob's.",
+  "board": {
+    "active": "bob",
+    "step": "Upkeep",
+    "seats": [
+      {
+        "name": "alice",
+        "battlefield": [
+          {
+            "card": "Swamp",
+            "label": "s1"
+          },
+          {
+            "card": "Swamp",
+            "label": "s2"
+          },
+          {
+            "card": "Swamp",
+            "label": "s3"
+          },
+          {
+            "card": "Swamp",
+            "label": "s4"
+          },
+          {
+            "card": "Mountain",
+            "label": "m1"
+          },
+          {
+            "card": "Mountain",
+            "label": "m2"
+          },
+          {
+            "card": "Mountain",
+            "label": "m3"
+          },
+          {
+            "card": "Hill Giant",
+            "label": "mine"
+          }
+        ],
+        "hand": [
+          {
+            "card": "Stingblade Assassin",
+            "label": "assassin"
+          },
+          {
+            "card": "Shock",
+            "label": "shock1"
+          },
+          {
+            "card": "Shock",
+            "label": "shock2"
+          },
+          {
+            "card": "Shock",
+            "label": "shock3"
+          }
+        ],
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ]
+      },
+      {
+        "name": "bob",
+        "battlefield": [
+          {
+            "card": "Hill Giant",
+            "label": "bgiant"
+          },
+          {
+            "card": "Grizzly Bears",
+            "label": "bears"
+          }
+        ],
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ]
+      },
+      {
+        "name": "carol",
+        "battlefield": [
+          {
+            "card": "Hill Giant",
+            "label": "cgiant"
+          }
+        ],
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ]
+      }
+    ]
+  },
+  "timeline": [
+    {
+      "player": "alice",
+      "turn": 2,
+      "step": "Upkeep",
+      "do": {
+        "Cast": {
+          "object": "$shock1",
+          "mana": [
+            "$m1",
+            null
+          ],
+          "targets": [
+            "$mine"
+          ]
+        }
+      }
+    },
+    {
+      "player": "alice",
+      "turn": 2,
+      "step": "Upkeep",
+      "do": "Pass"
+    },
+    {
+      "player": "alice",
+      "turn": 2,
+      "step": "Upkeep",
+      "do": {
+        "Cast": {
+          "object": "$shock2",
+          "mana": [
+            "$m2",
+            null
+          ],
+          "targets": [
+            "$bgiant"
+          ]
+        }
+      }
+    },
+    {
+      "player": "alice",
+      "turn": 2,
+      "step": "Upkeep",
+      "do": "Pass"
+    },
+    {
+      "player": "alice",
+      "turn": 2,
+      "step": "Upkeep",
+      "do": {
+        "Cast": {
+          "object": "$shock3",
+          "mana": [
+            "$m3",
+            null
+          ],
+          "targets": [
+            "$cgiant"
+          ]
+        }
+      }
+    },
+    {
+      "player": "alice",
+      "turn": 2,
+      "step": "Upkeep",
+      "do": "Pass"
+    },
+    {
+      "player": "alice",
+      "turn": 2,
+      "step": "Upkeep",
+      "check": {
+        "Damage": {
+          "object": "$mine",
+          "damage": 2
+        }
+      }
+    },
+    {
+      "player": "alice",
+      "turn": 2,
+      "step": "Upkeep",
+      "do": {
+        "Cast": {
+          "object": "$assassin",
+          "mana": [
+            "$s1",
+            "$s2",
+            "$s3",
+            "$s4"
+          ]
+        }
+      }
+    },
+    {
+      "player": "alice",
+      "turn": 2,
+      "step": "Upkeep",
+      "do": "Pass"
+    },
+    {
+      "player": "alice",
+      "turn": 2,
+      "step": "Upkeep",
+      "refuse": {
+        "ChooseTargets": {
+          "target": [
+            "$mine"
+          ]
+        }
+      }
+    },
+    {
+      "player": "alice",
+      "turn": 2,
+      "step": "Upkeep",
+      "refuse": {
+        "ChooseTargets": {
+          "target": [
+            "$bears"
+          ]
+        }
+      }
+    },
+    {
+      "player": "alice",
+      "turn": 2,
+      "step": "Upkeep",
+      "do": {
+        "ChooseTargets": {
+          "target": [
+            "$cgiant"
+          ]
+        }
+      }
+    },
+    {
+      "player": "alice",
+      "turn": 2,
+      "step": "Upkeep",
+      "do": "Pass"
+    },
+    {
+      "player": "alice",
+      "turn": 2,
+      "step": "Upkeep",
+      "check": {
+        "View": {
+          "of": "Stack",
+          "is": []
+        }
+      }
+    },
+    {
+      "player": "alice",
+      "turn": 2,
+      "step": "Upkeep",
+      "check": {
+        "Count": {
+          "card": "Hill Giant",
+          "count": 1,
+          "player": "carol",
+          "zone": "Graveyard"
+        }
+      }
+    },
+    {
+      "player": "alice",
+      "turn": 2,
+      "step": "Upkeep",
+      "check": {
+        "Count": {
+          "card": "Hill Giant",
+          "count": 1,
+          "player": "bob",
+          "zone": "Battlefield"
+        }
+      }
+    },
+    {
+      "player": "alice",
+      "turn": 2,
+      "step": "Upkeep",
+      "check": {
+        "Count": {
+          "card": "Hill Giant",
+          "count": 1,
+          "player": "alice",
+          "zone": "Battlefield"
+        }
+      }
+    },
+    {
+      "player": "alice",
+      "turn": 2,
+      "step": "Upkeep",
+      "check": {
+        "Count": {
+          "card": "Grizzly Bears",
+          "count": 1,
+          "player": "bob",
+          "zone": "Battlefield"
+        }
+      }
+    },
+    {
+      "player": "alice",
+      "turn": 2,
+      "step": "Upkeep",
+      "check": {
+        "Keywords": {
+          "object": "Stingblade Assassin",
+          "keyword": {
+            "type": "Flying"
+          },
+          "count": 1
+        }
+      }
+    }
+  ]
+}

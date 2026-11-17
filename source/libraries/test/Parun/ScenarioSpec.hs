@@ -671,7 +671,7 @@ spec s registry = Spec.describe s "Scenario" $ do
             Spec.assertEqWith s "the unlogged tap" (NonEmpty.toList found) [Discrepancy.MkTapState land TapState.Untapped TapState.Tapped]
           Left failure -> Spec.assertFailure s (S.renderFailure failure)
           Right _ -> Spec.assertFailure s "a tap with no event passed"
-        case Scenario.rehearse Seq.empty built (between (Event.tap land)) of
+        case Scenario.rehearse Seq.empty built (between (Event.tap S.alice land)) of
           Left failure -> Spec.assertFailure s (S.renderFailure failure)
           Right _ -> pure ()
 
