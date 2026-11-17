@@ -4838,7 +4838,7 @@ filterReadsPeers f = case f of
   -- A group anchor reads every permanent's view (Filter.Context.battlefieldViews),
   -- and Host the candidate's attachedToView.
   Filter.Type.Shares _ anchor -> case anchor of
-    Anchor.AnyPermanent _ -> True
+    Anchor.AnyPermanent _ _ -> True
     Anchor.Host -> True
     Anchor.Bound _ _ -> False
     Anchor.Evaluated -> False

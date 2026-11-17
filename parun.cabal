@@ -3713,6 +3713,7 @@ library types
     Parun.Types.SeatView
     Parun.Types.SecretChoice
     Parun.Types.Selection
+    Parun.Types.SelfInclusion
     Parun.Types.SetBasePowerToughness
     Parun.Types.SetClassLevel
     Parun.Types.SetHalfLocked

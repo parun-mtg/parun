@@ -9,6 +9,7 @@ import qualified Parun.JsonCodec.Common as Common
 import qualified Parun.JsonCodec.Fields as Fields
 import qualified Parun.Types.Anchor as Anchor
 import qualified Parun.Types.Holder as Holder.Type
+import qualified Parun.Types.SelfInclusion as SelfInclusion
 import qualified Parun.Types.SlotName as SlotName.Type
 
 -- | Parametric in the filter's codec, which Parun.Codec.Filter supplies.
@@ -19,7 +20,8 @@ codec filterCodec =
     [ Arm.payload "Bound" bound (uncurry Anchor.Bound) (\x -> case x of Anchor.Bound h y -> Just (h, y); _ -> Nothing),
       Arm.nullary "Evaluated" Anchor.Evaluated,
       Arm.nullary "Source" Anchor.Source,
-      Arm.payload "AnyPermanent" filterCodec Anchor.AnyPermanent (\x -> case x of Anchor.AnyPermanent y -> Just y; _ -> Nothing),
+      Arm.payload "AnyPermanent" filterCodec (Anchor.AnyPermanent SelfInclusion.IncludesCandidate) (\x -> case x of Anchor.AnyPermanent SelfInclusion.IncludesCandidate y -> Just y; _ -> Nothing),
+      Arm.payload "AnyOtherPermanent" filterCodec (Anchor.AnyPermanent SelfInclusion.ExcludesCandidate) (\x -> case x of Anchor.AnyPermanent SelfInclusion.ExcludesCandidate y -> Just y; _ -> Nothing),
       Arm.nullary "YourCommander" Anchor.YourCommander,
       Arm.nullary "Host" Anchor.Host
     ]
@@ -37,6 +39,7 @@ tagOf x = case x of
   Anchor.Bound {} -> "Bound"
   Anchor.Evaluated {} -> "Evaluated"
   Anchor.Source {} -> "Source"
-  Anchor.AnyPermanent {} -> "AnyPermanent"
+  Anchor.AnyPermanent SelfInclusion.IncludesCandidate _ -> "AnyPermanent"
+  Anchor.AnyPermanent SelfInclusion.ExcludesCandidate _ -> "AnyOtherPermanent"
   Anchor.YourCommander {} -> "YourCommander"
   Anchor.Host {} -> "Host"
