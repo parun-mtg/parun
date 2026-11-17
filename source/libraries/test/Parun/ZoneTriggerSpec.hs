@@ -77,6 +77,7 @@ import qualified Parun.Types.Card as Card
 import qualified Parun.Types.CardName as CardName
 import qualified Parun.Types.CardSelection as CardSelection
 import qualified Parun.Types.CardType as CardType
+import qualified Parun.Types.CastOrigin as CastOrigin
 import qualified Parun.Types.CausedBy as CausedBy
 import qualified Parun.Types.ChapterMoment as ChapterMoment
 import qualified Parun.Types.ClassLevel as ClassLevel
@@ -2074,7 +2075,7 @@ representativeEvents cond =
         TriggerCondition.PlayerLosesGame _ -> one (GameEvent.LostTheGame S.bob)
         TriggerCondition.PlacesSticker _ -> one (GameEvent.StickerPut StickerPut.MkStickerPut {StickerPut.placer = S.bob, StickerPut.object = departed, StickerPut.kind = StickerKind.Art})
         -- CR 305.1's own event: a land play binds nothing.
-        TriggerCondition.PlayerPlaysLand p -> one (GameEvent.LandPlayed (LandPlayed.MkLandPlayed S.bob departed (Maybe.fromMaybe Zone.Hand (PlaysLand.from p))))
+        TriggerCondition.PlayerPlaysLand p -> one (GameEvent.LandPlayed (LandPlayed.MkLandPlayed S.bob departed (CastOrigin.FromZone (Maybe.fromMaybe Zone.Hand (PlaysLand.from p)))))
         -- TWO: CR 701.62b's manifest dread that binned nothing, and one that
         -- binned a card, which is what parts the floor from the ceiling.
         TriggerCondition.PlayerManifestsDread _ ->

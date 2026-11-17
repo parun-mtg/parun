@@ -2113,17 +2113,77 @@ holdFound pid card = do
   let printed = case card of
         OutsideCard.InPool printingId -> Just printingId
         OutsideCard.InAnotherGame outerId -> OutsideObject.printing <$> Map.lookup outerId (GameState.outsideObjects gs)
-  Monad.forM printed $ \printingId -> do
-    let (oid, gs1) = Game.freshObjectId gs
-        (ts, gs2) = Game.freshTimestamp gs1
-        obj = Object.new pid (Source.OfCard printingId) Zone.Graveyard ts
-    State.put
-      gs2
-        { GameState.objects = Map.insert oid obj (GameState.objects gs2),
-          GameState.outsideCopies = Set.insert oid (GameState.outsideCopies gs2),
-          GameState.outsideFinds = Map.insert oid card (GameState.outsideFinds gs2)
-        }
-    pure oid
+  Monad.forM printed $ \printingId -> State.state (standIn pid printingId card)
+
+-- `holdFound`'s object for one card outside the game, of this printing: in
+-- `objects`, GameState.outsideCopies and GameState.outsideFinds, in no zone's
+-- membership, Object.zone holding `mintOutside`'s placeholder.
+standIn :: PlayerId -> PrintingId.PrintingId -> OutsideCard.OutsideCard -> GameState.GameState -> (ObjectId, GameState.GameState)
+standIn pid printingId card gs =
+  let (oid, gs1) = Game.freshObjectId gs
+      (ts, gs2) = Game.freshTimestamp gs1
+      obj = Object.new pid (Source.OfCard printingId) Zone.Graveyard ts
+   in ( oid,
+        gs2
+          { GameState.objects = Map.insert oid obj (GameState.objects gs2),
+            GameState.outsideCopies = Set.insert oid (GameState.outsideCopies gs2),
+            GameState.outsideFinds = Map.insert oid card (GameState.outsideFinds gs2)
+          }
+      )
+
+-- CR 400.11 / 601.3: as `pid` is asked for a priority action, one `standIn` for
+-- each printing in their sideboard pool, where a CastFrom permission opens
+-- their cards outside the game (The Holodeck), so the play and cast roads
+-- offer them as objects; the copies of one printing are indistinguishable, so
+-- one stands for all. Any stand-in left from before is discarded first.
+-- `eligible` admits the cards, so a Commander game offers none (CR 903.11).
+--
+-- Not implemented: a subgame's main-game cards (CR 730.4), which `eligible`
+-- also answers, are not stood in for (#8449).
+offerOutside :: PlayerId -> GameState.GameState -> GameState.GameState
+offerOutside pid gs0 =
+  let gs = discardOutsideFinds gs0
+   in case PlayerEffect.outsideGrants pid gs of
+        [] -> gs
+        source : _ ->
+          let pool = [(printingId, card) | card@(OutsideCard.InPool printingId) <- eligible (Filter.Type.And []) source pid gs]
+           in Foldable.foldl' (\g (printingId, card) -> snd (standIn pid printingId card g)) gs pool
+
+-- CR 400.11: `discardOutsideFinds`, sparing the stand-in a chosen priority
+-- action names.
+keepOutsideFind :: Maybe ObjectId -> GameState.GameState -> GameState.GameState
+keepOutsideFind kept gs = Foldable.foldl' (flip forgetFound) gs (filter ((/= kept) . Just) (Map.keys (GameState.outsideFinds gs)))
+
+-- CR 305.1 / 400.11b: play the land a stand-in names (`offerOutside`), its card
+-- brought in onto the battlefield under `pid` with the face `shown` up (CR
+-- 712.9), spent from the pool. Entering, `conjureOntoBattlefield`'s road: no
+-- zone was left. A CR 614.6 redirect places it where it says, and CR 614.1a's
+-- "instead" of an unpaid entry puts it into its owner's graveyard; either way it
+-- was played. Answers the land as it arrived, empty where it never came in.
+playFromOutside :: Game () -> PlayerId -> ObjectId -> Maybe CardName.CardName -> Game (Seq.Seq ObjectId)
+playFromOutside settle pid oid shown = do
+  gs <- State.get
+  case (Map.lookup oid (GameState.outsideFinds gs), Game.lookupObject oid gs) of
+    (Just (OutsideCard.InPool printingId), Just obj) -> do
+      State.modify' (forgetFound oid)
+      let owner = Object.owner obj
+          start = Bookkeeping.nextTimestamp (GameState.bookkeeping gs)
+      land <- State.state (mintCard owner (Just pid) printingId Zone.Battlefield LibraryPosition.defaultValue TapState.Untapped)
+      State.modify' (\g -> g {GameState.objects = Map.adjust (\o -> o {Object.face = shown}) land (GameState.objects g)})
+      refusal <- runEntry settle (Just Zone.Battlefield) Nothing Set.empty land
+      case refusal of
+        Nothing -> do
+          State.modify' (spendFromPool owner printingId)
+          settleMinted start [land]
+          pure (Seq.singleton land)
+        Just EntryRefusal.Unpaid -> do
+          State.modify' (spendFromPool owner printingId)
+          placeDiverted land Zone.Graveyard LibraryPosition.defaultValue
+          pure (Seq.singleton land)
+        Just diverted
+          | isDiverted diverted -> Seq.singleton land <$ State.modify' (spendFromPool owner printingId)
+          | otherwise -> Seq.empty <$ unmake land
+    _ -> pure Seq.empty
 
 -- CR 400.11b: a move of an object `holdFound` stands for brings its card in at
 -- the zone and end the move names, through `bringChosen`, the road every card
@@ -8059,10 +8119,16 @@ castFromOutside caster oid requestedDest shown facing = do
                     Object.face = if arrived then shown else Nothing,
                     Object.facing = if arrived then facing else Facing.FaceUp
                   }
+          -- CR 400.11b: a stand-in's card (`offerOutside`) is brought in, so
+          -- the pool spends it.
+          let spend g = case Map.lookup oid (GameState.outsideFinds g) of
+                Just (OutsideCard.InPool printingId) -> spendFromPool (Object.owner obj) printingId g
+                _ -> g
           State.modify' $ \g ->
-            g
+            (spend g)
               { GameState.objects = Map.delete oid (GameState.objects g),
-                GameState.outsideCopies = Set.delete oid (GameState.outsideCopies g)
+                GameState.outsideCopies = Set.delete oid (GameState.outsideCopies g),
+                GameState.outsideFinds = Map.delete oid (GameState.outsideFinds g)
               }
           fmap Seq.singleton (placeObject (Object.owner obj) mkObj dest LibraryPosition.defaultValue)
 

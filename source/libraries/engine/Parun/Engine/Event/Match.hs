@@ -66,6 +66,7 @@ import qualified Parun.Types.BlockRole as BlockRole
 import qualified Parun.Types.BlockTrigger as BlockTrigger
 import qualified Parun.Types.BlocksDeclared as BlocksDeclared
 import qualified Parun.Types.CardType as CardType
+import qualified Parun.Types.CastOrigin as CastOrigin
 import qualified Parun.Types.CastWindow as CastWindow
 import qualified Parun.Types.Cause as Cause
 import qualified Parun.Types.CausedBy as CausedBy
@@ -2369,7 +2370,7 @@ armMatches bindings frozen board atEvent beforeEvent groupEvents gs bearer you c
   TriggerCondition.PlayerPlaysLand p -> case event of
     GameEvent.LandPlayed played ->
       PlayerRelation.holds (Game.teams gs) (PlaysLand.player p) you (LandPlayed.player played)
-        && all (== LandPlayed.from played) (PlaysLand.from p)
+        && all ((== LandPlayed.from played) . CastOrigin.FromZone) (PlaysLand.from p)
         -- The land as it arrived (CR 400.7i), read the way a Matching Enters
         -- reads an entrant, so Fires of Mount Doom's Filter.IsBound names the
         -- permanent Cast.playLand's follow moved the binding onto.

@@ -57,7 +57,8 @@ spec s = Spec.describe s "Parun.Codec.CastFromZone" $ do
             CastFromZone.alternativeCost = Nothing,
             CastFromZone.entersWith = Nothing,
             CastFromZone.amount = Nothing,
-            CastFromZone.creatureTypes = Set.empty
+            CastFromZone.creatureTypes = Set.empty,
+            CastFromZone.outsideTheGame = False
           }
       )
       " {\"from\":{\"zone\":\"Graveyard\",\"player\":{\"type\":\"Relative\",\"value\":\"You\"}},\"matching\":{\"type\":\"And\",\"value\":[]}} "
@@ -78,7 +79,8 @@ spec s = Spec.describe s "Parun.Codec.CastFromZone" $ do
             CastFromZone.alternativeCost = Nothing,
             CastFromZone.entersWith = Nothing,
             CastFromZone.amount = Nothing,
-            CastFromZone.creatureTypes = Set.empty
+            CastFromZone.creatureTypes = Set.empty,
+            CastFromZone.outsideTheGame = False
           }
       )
       " {\"from\":{\"zone\":\"Hand\",\"player\":{\"type\":\"InSlot\",\"value\":\"opponent\"}},\"matching\":{\"type\":\"HasCardType\",\"value\":\"Creature\"}} "
@@ -101,7 +103,8 @@ spec s = Spec.describe s "Parun.Codec.CastFromZone" $ do
             CastFromZone.alternativeCost = Nothing,
             CastFromZone.entersWith = Nothing,
             CastFromZone.amount = Nothing,
-            CastFromZone.creatureTypes = Set.empty
+            CastFromZone.creatureTypes = Set.empty,
+            CastFromZone.outsideTheGame = False
           }
       )
       " {\"from\":{\"zone\":\"Library\",\"player\":{\"type\":\"Relative\",\"value\":\"You\"}},\"matching\":{\"type\":\"And\",\"value\":[]},\"limit\":\"OnceEachTurn\"} "
@@ -123,7 +126,8 @@ spec s = Spec.describe s "Parun.Codec.CastFromZone" $ do
             CastFromZone.alternativeCost = Nothing,
             CastFromZone.entersWith = Nothing,
             CastFromZone.amount = Nothing,
-            CastFromZone.creatureTypes = Set.empty
+            CastFromZone.creatureTypes = Set.empty,
+            CastFromZone.outsideTheGame = False
           }
       )
       " {\"from\":{\"zone\":\"Graveyard\",\"player\":{\"type\":\"Relative\",\"value\":\"You\"}},\"matching\":{\"type\":\"And\",\"value\":[]},\"limit\":\"OnceEachOfYourTurns\",\"verb\":\"Play\"} "
@@ -144,7 +148,8 @@ spec s = Spec.describe s "Parun.Codec.CastFromZone" $ do
             CastFromZone.alternativeCost = Nothing,
             CastFromZone.entersWith = Nothing,
             CastFromZone.amount = Nothing,
-            CastFromZone.creatureTypes = Set.empty
+            CastFromZone.creatureTypes = Set.empty,
+            CastFromZone.outsideTheGame = False
           }
       )
       " {\"from\":{\"zone\":\"Exile\",\"player\":{\"type\":\"Relative\",\"value\":\"AnyPlayer\"}},\"matching\":{\"type\":\"And\",\"value\":[]},\"spending\":\"AnyType\"} "
@@ -166,6 +171,7 @@ spec s = Spec.describe s "Parun.Codec.CastFromZone" $ do
             CastFromZone.entersWith = Nothing,
             CastFromZone.amount = Nothing,
             CastFromZone.creatureTypes = Set.empty,
+            CastFromZone.outsideTheGame = False,
             CastFromZone.additionalCosts = [CostComponent.RemoveCounters (CountersFromPermanents.MkCountersFromPermanents (ObjectCount.Exactly (CostAmount.Fixed 3)) WhichCounters.OfAnyKind (Filter.And [Filter.HasCardType CardType.Creature, Filter.HeldBy Holder.Controller PlayerRelation.You]) CounterSpread.FromAmong)]
           }
       )
@@ -188,7 +194,8 @@ spec s = Spec.describe s "Parun.Codec.CastFromZone" $ do
             CastFromZone.alternativeCost = Nothing,
             CastFromZone.entersWith = Nothing,
             CastFromZone.amount = Nothing,
-            CastFromZone.creatureTypes = Set.empty
+            CastFromZone.creatureTypes = Set.empty,
+            CastFromZone.outsideTheGame = False
           }
       )
       " {\"from\":{\"zone\":\"Exile\",\"player\":{\"type\":\"Relative\",\"value\":\"AnyPlayer\"}},\"matching\":{\"type\":\"And\",\"value\":[]},\"verb\":\"Play\",\"pool\":{\"type\":\"InExiledPile\",\"value\":{\"type\":\"OwnAbilities\"}},\"reduction\":2} "
@@ -210,7 +217,8 @@ spec s = Spec.describe s "Parun.Codec.CastFromZone" $ do
             CastFromZone.alternativeCost = Just (PermissionCost.InsteadOfManaCost (ManaCost.MkManaCost [])),
             CastFromZone.entersWith = Nothing,
             CastFromZone.amount = Nothing,
-            CastFromZone.creatureTypes = Set.empty
+            CastFromZone.creatureTypes = Set.empty,
+            CastFromZone.outsideTheGame = False
           }
       )
       " {\"from\":{\"zone\":\"Hand\",\"player\":{\"type\":\"Relative\",\"value\":\"You\"}},\"matching\":{\"type\":\"Or\",\"value\":[{\"type\":\"HasCardType\",\"value\":\"Instant\"},{\"type\":\"HasCardType\",\"value\":\"Sorcery\"}]},\"limit\":\"OnceEachOfYourTurns\",\"alternativeCost\":{\"type\":\"InsteadOfManaCost\",\"value\":[]}} "
@@ -232,7 +240,8 @@ spec s = Spec.describe s "Parun.Codec.CastFromZone" $ do
             CastFromZone.alternativeCost = Nothing,
             CastFromZone.entersWith = Just (WithCounters.one CounterKind.Finality (Quantity.Literal 1)),
             CastFromZone.amount = Nothing,
-            CastFromZone.creatureTypes = Set.empty
+            CastFromZone.creatureTypes = Set.empty,
+            CastFromZone.outsideTheGame = False
           }
       )
       " {\"from\":{\"zone\":\"Graveyard\",\"player\":{\"type\":\"Relative\",\"value\":\"You\"}},\"matching\":{\"type\":\"And\",\"value\":[]},\"entersWith\":[{\"kind\":{\"type\":\"Finality\"},\"count\":{\"type\":\"Literal\",\"value\":1}}]} "
@@ -254,7 +263,8 @@ spec s = Spec.describe s "Parun.Codec.CastFromZone" $ do
             CastFromZone.alternativeCost = Nothing,
             CastFromZone.entersWith = Just (WithCounters.one CounterKind.Finality (Quantity.Literal 1)),
             CastFromZone.amount = Nothing,
-            CastFromZone.creatureTypes = Set.singleton Subtype.Vampire
+            CastFromZone.creatureTypes = Set.singleton Subtype.Vampire,
+            CastFromZone.outsideTheGame = False
           }
       )
       " {\"from\":{\"zone\":\"Graveyard\",\"player\":{\"type\":\"Relative\",\"value\":\"You\"}},\"matching\":{\"type\":\"HasCardType\",\"value\":\"Creature\"},\"limit\":\"OncePerEffect\",\"entersWith\":[{\"kind\":{\"type\":\"Finality\"},\"count\":{\"type\":\"Literal\",\"value\":1}}],\"creatureTypes\":[\"Vampire\"]} "
@@ -276,10 +286,34 @@ spec s = Spec.describe s "Parun.Codec.CastFromZone" $ do
             CastFromZone.alternativeCost = Just (PermissionCost.InsteadOfManaCost (ManaCost.MkManaCost [])),
             CastFromZone.entersWith = Nothing,
             CastFromZone.amount = Just (Quantity.Literal 2),
-            CastFromZone.creatureTypes = Set.empty
+            CastFromZone.creatureTypes = Set.empty,
+            CastFromZone.outsideTheGame = False
           }
       )
       " {\"from\":{\"zone\":\"Exile\",\"player\":{\"type\":\"Relative\",\"value\":\"AnyPlayer\"}},\"matching\":{\"type\":\"Measures\",\"value\":{\"measure\":\"ManaValue\",\"comparison\":\"AtMost\",\"operand\":{\"type\":\"EnclosingAmount\"}}},\"limit\":\"OnceEachTurn\",\"pool\":{\"type\":\"InExiledPile\",\"value\":{\"type\":\"OwnAbilities\"}},\"alternativeCost\":{\"type\":\"InsteadOfManaCost\",\"value\":[]},\"amount\":{\"type\":\"Literal\",\"value\":2}} "
+  -- The Holodeck: a permanent card from your graveyard or from outside the
+  -- game (CR 400.11), once during each of your turns.
+  Spec.it s "outside the game" $
+    Common.assertCodec
+      s
+      CastFromZone.codec
+      ( CastFromZone.MkCastFromZone
+          { CastFromZone.from = InZone.MkInZone {InZone.zone = Zone.Graveyard, InZone.player = PlayerRef.Relative PlayerRelation.You},
+            CastFromZone.matching = Filter.HasCardType CardType.Land,
+            CastFromZone.limit = PermissionLimit.OnceEachOfYourTurns,
+            CastFromZone.verb = PermissionVerb.Play,
+            CastFromZone.pool = PermissionPool.EveryCard,
+            CastFromZone.additionalCosts = [],
+            CastFromZone.reduction = 0,
+            CastFromZone.spending = ManaSpending.AsProduced,
+            CastFromZone.alternativeCost = Nothing,
+            CastFromZone.entersWith = Nothing,
+            CastFromZone.amount = Nothing,
+            CastFromZone.creatureTypes = Set.empty,
+            CastFromZone.outsideTheGame = True
+          }
+      )
+      " {\"from\":{\"zone\":\"Graveyard\",\"player\":{\"type\":\"Relative\",\"value\":\"You\"}},\"matching\":{\"type\":\"HasCardType\",\"value\":\"Land\"},\"limit\":\"OnceEachOfYourTurns\",\"verb\":\"Play\",\"outsideTheGame\":true} "
   -- Unprinted: a permission to cast cards as an Adventure, so refused.
   Spec.it s "rejects casting as an Adventure" $
     Spec.assertBool
