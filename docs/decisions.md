@@ -2506,3 +2506,22 @@ Entries are ordered by the first rule each cites.
 - **Site**: `Parun.Engine.Replacement.spendPrevented`, proved by the scenario
   "circle-of-solace-prevents-the-chosen-types-next-damage-without-a-choice".
 - **Issue**: #7439.
+
+## Whether a reversed craft activation fires Market Gnome
+
+- **Question**: Paying for a craft ability, Market Gnome's controller exiles it
+  with Food Chain, then the craft is reversed and Food Chain kept. Does "is
+  exiled from the battlefield while you're activating a craft ability" still
+  trigger?
+- **Rules**: CR 602.2, 603.2, 734.1; Market Gnome's ruling of 2023-11-10 that a
+  mana ability activated paying for the craft triggers it; CR of 2026-11-06.
+- **Decision**: Yes. The event is the exile, a result of the kept mana ability
+  rather than of the undone action, and the craft was under way when it
+  happened.
+- **Rejected**: No trigger, reading the condition's craft activation as
+  something CR 734.1's "no abilities trigger ... as a result of an undone
+  action" reaches. The condition describes when the event happened, not what
+  caused it, and the cause stands.
+- **Site**: `Parun.Engine.Event.activating`, proved by the scenario
+  "cr-734-1-market-gnome-exiled-by-a-kept-food-chain-during-a-reversed-craft-still-triggers".
+- **Issue**: #8311.
