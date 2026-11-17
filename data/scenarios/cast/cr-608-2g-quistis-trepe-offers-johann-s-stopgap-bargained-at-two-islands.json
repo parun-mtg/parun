@@ -1,0 +1,46 @@
+{
+  "description": "CR 608.2g, 601.2b, 601.2f, 702.166b: Quistis Trepe's Blue Magic offers Johann's Stopgap with two Islands left, priced bargained at {1}{U}; the giant returns to hand and alice draws",
+  "note": "Unbargained, the Stopgap's {3}{U} is beyond the two untapped Islands, so the offer exists only if the gate prices the bargained declaration. The Sextant is the only thing to bargain.",
+  "board": {
+    "active": "alice",
+    "step": "PrecombatMain",
+    "seats": [
+      {
+        "name": "alice",
+        "battlefield": [
+          { "card": "Island", "label": "i1" },
+          { "card": "Island", "label": "i2" },
+          { "card": "Island", "label": "i3" },
+          { "card": "Island", "label": "i4" },
+          { "card": "Island", "label": "i5" },
+          { "card": "Braidwood Sextant", "label": "sextant" }
+        ],
+        "hand": [{ "card": "Quistis Trepe", "label": "quistis" }],
+        "graveyard": [{ "card": "Johann's Stopgap", "label": "stopgap" }],
+        "library": [{ "card": "Plains", "label": "drawn" }]
+      },
+      {
+        "name": "bob",
+        "battlefield": [{ "card": "Hill Giant", "label": "giant" }],
+        "library": [{ "card": "Island" }]
+      }
+    ]
+  },
+  "timeline": [
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": { "Cast": { "object": "$quistis", "mana": ["$i1", "$i2", "$i3", null] } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass" },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass" },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "View": { "of": "Prompt", "is": { "kind": "OfferedCast", "offer": { "source": "$stopgap", "name": "Johann's Stopgap", "options": ["Exercises", "Declines"] } } } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": { "Answer": { "prompt": "OfferedCast", "with": "Exercises" } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": { "Answer": { "prompt": "ChooseKicker", "with": 1 } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": { "ChooseTargets": { "target": ["$giant"] } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": { "Answer": { "prompt": "ChooseManaSource", "with": "$i4" } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": { "Answer": { "prompt": "ChooseManaSource", "with": "$i5" } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "View": { "of": "Stack", "is": ["Johann's Stopgap"] } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass" },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "Count": { "player": "bob", "zone": "Hand", "card": "Hill Giant", "count": 1 } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "Count": { "player": "alice", "zone": "Hand", "card": "Plains", "count": 1 } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "Count": { "player": "alice", "zone": "Exile", "card": "Johann's Stopgap", "count": 1 } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "Count": { "player": "alice", "zone": "Battlefield", "card": "Braidwood Sextant", "count": 0 } } }
+  ]
+}
