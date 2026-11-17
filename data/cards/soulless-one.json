@@ -1,0 +1,136 @@
+{
+  "faces": [
+    {
+      "characteristicPT": {
+        "power": {
+          "type": "Plus",
+          "value": {
+            "left": {
+              "type": "Count",
+              "value": {
+                "aggregation": {
+                  "type": "Members"
+                },
+                "filter": {
+                  "type": "HasSubtype",
+                  "value": "Zombie"
+                },
+                "scope": {
+                  "type": "InZone",
+                  "value": {
+                    "player": {
+                      "type": "Relative",
+                      "value": "AnyPlayer"
+                    },
+                    "zone": "Battlefield"
+                  }
+                }
+              }
+            },
+            "right": {
+              "type": "Count",
+              "value": {
+                "aggregation": {
+                  "type": "Members"
+                },
+                "filter": {
+                  "type": "HasSubtype",
+                  "value": "Zombie"
+                },
+                "scope": {
+                  "type": "InZone",
+                  "value": {
+                    "player": {
+                      "type": "Relative",
+                      "value": "AnyPlayer"
+                    },
+                    "zone": "Graveyard"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "toughness": {
+          "type": "Plus",
+          "value": {
+            "left": {
+              "type": "Count",
+              "value": {
+                "aggregation": {
+                  "type": "Members"
+                },
+                "filter": {
+                  "type": "HasSubtype",
+                  "value": "Zombie"
+                },
+                "scope": {
+                  "type": "InZone",
+                  "value": {
+                    "player": {
+                      "type": "Relative",
+                      "value": "AnyPlayer"
+                    },
+                    "zone": "Battlefield"
+                  }
+                }
+              }
+            },
+            "right": {
+              "type": "Count",
+              "value": {
+                "aggregation": {
+                  "type": "Members"
+                },
+                "filter": {
+                  "type": "HasSubtype",
+                  "value": "Zombie"
+                },
+                "scope": {
+                  "type": "InZone",
+                  "value": {
+                    "player": {
+                      "type": "Relative",
+                      "value": "AnyPlayer"
+                    },
+                    "zone": "Graveyard"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "manaCost": [
+        {
+          "type": "Generic",
+          "value": 3
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "Black"
+          }
+        }
+      ],
+      "name": "Soulless One",
+      "oracleText": "Soulless One's power and toughness are each equal to the number of Zombies on the battlefield plus the number of Zombie cards in all graveyards.",
+      "power": {
+        "type": "Star"
+      },
+      "toughness": {
+        "type": "Star"
+      },
+      "typeLine": {
+        "subtypes": [
+          "Avatar",
+          "Zombie"
+        ],
+        "types": [
+          "Creature"
+        ]
+      }
+    }
+  ]
+}
