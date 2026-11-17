@@ -159,6 +159,7 @@ import qualified Parun.Types.Superlative as Superlative
 import qualified Parun.Types.TapForMana as TapForMana
 import qualified Parun.Types.TargetRestriction as TargetRestriction
 import qualified Parun.Types.Teams as Teams
+import qualified Parun.Types.TextWord as TextWord
 import Parun.Types.Timestamp (Timestamp)
 import qualified Parun.Types.TriggeredAbility as TriggeredAbility
 import qualified Parun.Types.TriggeringMove as TriggeringMove
@@ -283,6 +284,59 @@ playerAbilitiesOf carrier gs =
           -- fork being made once for all six readers rather than per reader.
           Nothing -> foldMap Face.playerAbilities (Game.faceOf oid gs)
 
+-- One object's rows, each ability stamped and read through `changes`,
+-- CR 612.1's word swap over the text it is printed in -- none for a
+-- granted one (CR 612.3). `controller` is the row's "you".
+rowsOf :: GameState -> [(TextWord.TextWord, TextWord.TextWord)] -> ObjectId -> PlayerId -> [(Timestamp, PlayerStaticAbility.PlayerStaticAbility)] -> [(Timestamp, RowSource, Maybe AbilityName.AbilityName, PlayerId -> Bool, PlayerEffect)]
+rowsOf gs changes oid controller stamped =
+  let readAs = if null changes then id else Projection.rewritePlayerEffect changes
+      -- The "as long as" clause (CR 611.3a), the same gate
+      -- Projection.gatherStatic applies to the object-facing
+      -- carrier, and asked here for the player-facing one.
+      --
+      -- The VIEW is the FINISHED projection, not a bounded one:
+      -- CR 613.10 and CR 613.11 apply a player effect after the
+      -- seven layers have run, so there is no layer to bound
+      -- against -- the answer Projection.abilitiesGiven takes for
+      -- CR 702.178a's max speed gate, and for that same reason.
+      --
+      -- The PERSPECTIVE is the permanent's controller and the
+      -- source is the permanent, so CR 109.5's "you" inside the
+      -- clause is the Class controller rather than the taxed
+      -- player -- which is the whole content of "during YOUR
+      -- turn". The taxed player is PlayerRef.Candidate instead,
+      -- substituted per affected player (Condition.forCandidate):
+      -- Angelic Arbiter's "each opponent who cast a spell this
+      -- turn" asks each opponent about themselves. The same player
+      -- is the Context's recipient, so Ethersworn Canonist's "each
+      -- player who has cast a nonartifact spell" counts their own
+      -- casts through Filter.HeldByRecipient.
+      --
+      -- The clause takes the same CR 612.1 word swap the effect
+      -- beside it does, since one ability's two halves cannot
+      -- disagree about what a word means.
+      lives ability pid = case PlayerStaticAbility.condition ability of
+        Nothing -> True
+        Just c ->
+          Condition.holds
+            (Projection.fullView gs)
+            ((Projection.sourceContext gs (Just controller) oid) {Filter.recipient = Just pid})
+            gs
+            oid
+            (Condition.forCandidate pid (if null changes then c else Projection.rewriteCondition changes c))
+      -- CR 801.10: within the controller's range of influence, unless
+      -- the source is a planar card (CR 801.18, Plane.exemptFromRange).
+      -- Parun.RangeOfInfluenceSpec's "CR 801.10 a player ability does
+      -- not reach a player outside its controller's range" proves the
+      -- cut, and Parun.PlanechaseSpec's "CR 801.18 a face-up plane's
+      -- player ability reaches a player outside the planar controller's
+      -- range" the exemption.
+      reaches ability pid =
+        (Plane.exemptFromRange oid gs || Game.inRangeOf controller pid gs)
+          && inScopeWithin (Just oid) (Plane.rangePerspective oid controller gs) pid controller gs (PlayerStaticAbility.scope ability)
+          && lives ability pid
+   in fmap (\(stamp, ability) -> (stamp, (liveSource (Just oid)) {RowSource.controller = Just controller}, PlayerStaticAbility.name ability, reaches ability, readAs (PlayerStaticAbility.effect ability))) stamped
+
 -- CR 613.7a: the PRINTED carrier's rows -- printed as opposed to CR 611.2c's
 -- stored one, the list itself being the COPIABLE one above -- one per player
 -- ability on one battlefield permanent, or command-zone object whose abilities
@@ -309,57 +363,6 @@ printedRows gs =
       -- has a player ability forces it -- so the ordinary board pays nothing for
       -- the CR 604.2 question below.
       removed = Projection.namedAbilityRemoval gs
-      -- One permanent's rows, each ability stamped and read through `changes`,
-      -- CR 612.1's word swap over the text it is printed in -- none for a
-      -- granted one (CR 612.3).
-      rowsOf changes oid controller stamped =
-        let readAs = if null changes then id else Projection.rewritePlayerEffect changes
-            -- The "as long as" clause (CR 611.3a), the same gate
-            -- Projection.gatherStatic applies to the object-facing
-            -- carrier, and asked here for the player-facing one.
-            --
-            -- The VIEW is the FINISHED projection, not a bounded one:
-            -- CR 613.10 and CR 613.11 apply a player effect after the
-            -- seven layers have run, so there is no layer to bound
-            -- against -- the answer Projection.abilitiesGiven takes for
-            -- CR 702.178a's max speed gate, and for that same reason.
-            --
-            -- The PERSPECTIVE is the permanent's controller and the
-            -- source is the permanent, so CR 109.5's "you" inside the
-            -- clause is the Class controller rather than the taxed
-            -- player -- which is the whole content of "during YOUR
-            -- turn". The taxed player is PlayerRef.Candidate instead,
-            -- substituted per affected player (Condition.forCandidate):
-            -- Angelic Arbiter's "each opponent who cast a spell this
-            -- turn" asks each opponent about themselves. The same player
-            -- is the Context's recipient, so Ethersworn Canonist's "each
-            -- player who has cast a nonartifact spell" counts their own
-            -- casts through Filter.HeldByRecipient.
-            --
-            -- The clause takes the same CR 612.1 word swap the effect
-            -- beside it does, since one ability's two halves cannot
-            -- disagree about what a word means.
-            lives ability pid = case PlayerStaticAbility.condition ability of
-              Nothing -> True
-              Just c ->
-                Condition.holds
-                  (Projection.fullView gs)
-                  ((Projection.sourceContext gs (Just controller) oid) {Filter.recipient = Just pid})
-                  gs
-                  oid
-                  (Condition.forCandidate pid (if null changes then c else Projection.rewriteCondition changes c))
-            -- CR 801.10: within the controller's range of influence, unless
-            -- the source is a planar card (CR 801.18, Plane.exemptFromRange).
-            -- Parun.RangeOfInfluenceSpec's "CR 801.10 a player ability does
-            -- not reach a player outside its controller's range" proves the
-            -- cut, and Parun.PlanechaseSpec's "CR 801.18 a face-up plane's
-            -- player ability reaches a player outside the planar controller's
-            -- range" the exemption.
-            reaches ability pid =
-              (Plane.exemptFromRange oid gs || Game.inRangeOf controller pid gs)
-                && inScopeWithin (Just oid) (Plane.rangePerspective oid controller gs) pid controller gs (PlayerStaticAbility.scope ability)
-                && lives ability pid
-         in fmap (\(stamp, ability) -> (stamp, (liveSource (Just oid)) {RowSource.controller = Just controller}, PlayerStaticAbility.name ability, reaches ability, readAs (PlayerStaticAbility.effect ability))) stamped
       fromPermanent oid = case playerAbilitiesOf oid gs of
         -- The overwhelming majority of permanents: no ability, so no
         -- controller projection and no CR 305.7 check is paid for.
@@ -410,7 +413,7 @@ printedRows gs =
                     -- permanent that prints no player ability, so the fold runs
                     -- once per ability-bearing permanent instead of once per
                     -- permanent on the battlefield.
-                    rowsOf (Projection.readerTextChanges oid gs) oid controller (fmap ((,) (Projection.staticTimestampOf oid object gs)) kept)
+                    rowsOf gs (Projection.readerTextChanges oid gs) oid controller (fmap ((,) (Projection.staticTimestampOf oid object gs)) kept)
                   else []
       -- CR 613.1f / 613.10 / 613.11: the player abilities layer 6 GRANTED a permanent
       -- (Nerd Rage's "You have no maximum hand size"), read off the finished
@@ -429,16 +432,45 @@ printedRows gs =
       grantedFrom oid = case PC.grantedPlayerAbilities (Projection.projectGiven pcs oid gs) of
         [] -> []
         abilities -> case (Game.lookupObject oid gs, Projection.controllerOf oid gs) of
-          (Just object, Just controller) -> rowsOf [] oid controller (fmap (Bifunctor.first (max (Object.timestamp object))) abilities)
+          (Just object, Just controller) -> rowsOf gs [] oid controller (fmap (Bifunctor.first (max (Object.timestamp object))) abilities)
           _ -> []
       onBattlefield = Set.toList (GameState.battlefield gs)
       -- CR 113.6p / 901.7: an object whose abilities function from the command
       -- zone -- a face-up plane or phenomenon, an emblem, a vanguard --
       -- contributes its player abilities from there. Parun.PlanechaseSpec's "CR
       -- 901.7 a face-up plane's player ability affects the game" proves it.
-      inCommand = filter (`Vanguard.functionsFromCommandZone` gs) (Set.toList (GameState.command gs))
+      inCommand = filter (`printedCarrier` gs) (Set.toList (GameState.command gs))
    in concatMap fromPermanent (onBattlefield <> inCommand)
         <> (if Projection.grantsPlayerAbilityAnywhere gs then concatMap grantedFrom onBattlefield else [])
+
+-- CR 113.6 / 113.6p: whether printedRows walks this object -- a battlefield
+-- permanent, or a command-zone object whose abilities function there.
+printedCarrier :: ObjectId -> GameState -> Bool
+printedCarrier oid gs = Set.member oid (GameState.battlefield gs) || (Set.member oid (GameState.command gs) && Vanguard.functionsFromCommandZone oid gs)
+
+-- CR 113.6m / 602.2b: an activated ability's own "this ability costs less to
+-- activate" rider on an object printedRows does not walk (Razorlash
+-- Transmogrant in its owner's graveyard). The rider is part of the ability it
+-- names, and CR 601.2f applies it wherever that ability is activated; only a
+-- row naming its own source qualifies, since the object's other player
+-- abilities function only on the battlefield (CR 113.6). The activator is the
+-- row's "you". The Razorlash Transmogrant scenarios prove it.
+ownActivationRows :: PlayerId -> ObjectId -> GameState -> [(RowSource, PlayerEffect)]
+ownActivationRows pid oid gs
+  | printedCarrier oid gs = []
+  | otherwise = case Game.lookupObject oid gs of
+      Nothing -> []
+      Just object ->
+        [ (source, effect)
+        | (_, source, _, reaches, effect) <- rowsOf gs [] oid pid (fmap ((,) (Object.timestamp object)) (filter ownRider (playerAbilitiesOf oid gs))),
+          reaches pid
+        ]
+  where
+    ownRider ability = case PlayerStaticAbility.effect ability of
+      PlayerEffect.ModifyCost modifier -> case CostModifier.subject modifier of
+        CostSubject.Activations _ -> CostModifier.matching modifier == Filter.Type.IsSource
+        _ -> False
+      _ -> False
 
 -- The printed WHO: is `pid` a player whose game the permanent `oid` is changing
 -- right now? CR 116.2d says only "a player"; every printed producer offers the
@@ -2164,7 +2196,8 @@ activationCostAdjustments targets stamp named kind loyalty pid srcId gs = activa
 --
 -- IT MUST BE `applying pid gs`'s OWN ANSWER for the same pid and the same
 -- board. Nothing in the type says so, and the wrapper above is what a caller
--- with no list of its own uses.
+-- with no list of its own uses. The per-object half it lacks,
+-- ownActivationRows, is added here.
 --
 -- The rows arrive PAIRED WITH THEIR SOURCE and not stripped to bare effects,
 -- because CR 303.4b's "enchanted" is a fact about the row's own permanent: the
@@ -2196,7 +2229,7 @@ activationCostAdjustmentsGiven effects pid targets stamp named kind loyalty srcI
         CostSubject.SpecialActions _ -> False
       gathered =
         modifierAdjustments
-          [(source, modifier) | (source, PlayerEffect.ModifyCost modifier) <- effects, reaches source modifier]
+          [(source, modifier) | (source, PlayerEffect.ModifyCost modifier) <- effects <> ownActivationRows pid srcId gs, reaches source modifier]
           (\source wanted -> not (null (matchingTargets source wanted)))
           (\source perTarget -> sum (fmap (perTargetTimes pid source gs perTarget . Just) (matchingTargets source (PerTarget.matching perTarget))))
           (perEachCount pid srcId gs)
