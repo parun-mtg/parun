@@ -1178,6 +1178,7 @@ scopeNames asking x = case x of
   Scope.OverBound _ slotName -> slotNames asking slotName
   Scope.InPosition _position inZone -> inZoneNames asking inZone
   Scope.AsTurnBegan -> mempty
+  Scope.Anywhere -> mempty
 
 specialActionNames :: (Monoid r) => Asking r -> SpecialAction.SpecialAction -> r
 specialActionNames asking x = case x of
