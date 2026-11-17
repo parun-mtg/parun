@@ -55,6 +55,7 @@ import qualified Parun.Types.PlayerRelation as PlayerRelation
 import qualified Parun.Types.PlayerScope as PlayerScope
 import qualified Parun.Types.PlotFromZone as PlotFromZone
 import qualified Parun.Types.Quantity as Quantity
+import qualified Parun.Types.RerollReach as RerollReach
 import qualified Parun.Types.RevealObligation as RevealObligation
 import qualified Parun.Types.RiderClause as RiderClause
 import qualified Parun.Types.RollModifier as RollModifier
@@ -646,12 +647,12 @@ spec s = Spec.describe s "Parun.Codec.PlayerEffect" $ do
           ModifiedRoll.MkModifiedRoll
             { ModifiedRoll.sides = Just 6,
               ModifiedRoll.natural = Just 3,
-              ModifiedRoll.modifier = RollModifier.Reroll,
+              ModifiedRoll.modifier = RollModifier.Reroll RerollReach.ThatDie,
               ModifiedRoll.cost = Nothing,
               ModifiedRoll.limit = PermissionLimit.Unlimited
             }
       )
-      " {\"type\":\"ModifyDieRoll\",\"value\":{\"sides\":6,\"natural\":3,\"modifier\":{\"type\":\"Reroll\"}}} "
+      " {\"type\":\"ModifyDieRoll\",\"value\":{\"sides\":6,\"natural\":3,\"modifier\":{\"type\":\"Reroll\",\"value\":\"ThatDie\"}}} "
   -- CR 701.38d as Brago's Representative prints it, and the wire form
   -- data/cards/bragos-representative.json writes.
   Spec.it s "AdditionalVotes, Brago's Representative's one" $

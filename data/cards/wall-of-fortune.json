@@ -63,7 +63,8 @@
                 "mana": []
               },
               "modifier": {
-                "type": "Reroll"
+                "type": "Reroll",
+                "value": "ThatDie"
               }
             }
           },

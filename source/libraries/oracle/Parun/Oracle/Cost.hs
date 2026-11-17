@@ -32,6 +32,8 @@ import qualified Parun.Types.ManaSymbol as ManaSymbol
 import qualified Parun.Types.ManaType as ManaType
 import qualified Parun.Types.MoveCardsFromGraveyard as MoveCardsFromGraveyard
 import qualified Parun.Types.ObjectCount as ObjectCount
+import qualified Parun.Types.PlayerRelation as PlayerRelation
+import qualified Parun.Types.PlayerScope as PlayerScope
 import qualified Parun.Types.Sacrifice as Sacrifice
 import qualified Parun.Types.TapPermanents as TapPermanents
 import qualified Parun.Types.TapState as TapState
@@ -170,12 +172,13 @@ component self named c = case c of
           TapState.Tapped -> Text.pack "Tap "
           TapState.Untapped -> Text.pack "Untap "
     [verb <> turned <> (if sharing then Text.pack " that share a creature type" else Text.empty)]
-  CostComponent.MoveCardsFromGraveyard (MoveCardsFromGraveyard.MkMoveCardsFromGraveyard (CostAmount.Fixed n) f destination) -> do
+  CostComponent.MoveCardsFromGraveyard (MoveCardsFromGraveyard.MkMoveCardsFromGraveyard (CostAmount.Fixed n) f destination scope) -> do
     p <- Filter.phrase f named
     moved <- some (toInteger n) card (Filter.merge p (Filter.MkPhrase [] [card] []))
-    case destination of
-      GraveyardCostDestination.Exile -> [Text.pack "Exile " <> moved <> Text.pack " from your graveyard"]
-      GraveyardCostDestination.LibraryBottom -> [Text.pack "Put " <> moved <> Text.pack " from your graveyard on the bottom of your library"]
+    case (destination, scope) of
+      (GraveyardCostDestination.Exile, PlayerScope.Related PlayerRelation.You) -> [Text.pack "Exile " <> moved <> Text.pack " from your graveyard"]
+      (GraveyardCostDestination.LibraryBottom, PlayerScope.Related PlayerRelation.You) -> [Text.pack "Put " <> moved <> Text.pack " from your graveyard on the bottom of your library"]
+      _ -> []
   CostComponent.RemoveCountersFromThis (CountersOnThis.MkCountersOnThis kind (CostAmount.Fixed n) Nothing) -> do
     word <- counterWord named kind
     removed <- counted (word <> Text.pack " ") (toInteger n)

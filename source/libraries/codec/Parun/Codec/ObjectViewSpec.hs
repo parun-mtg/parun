@@ -1,5 +1,6 @@
 module Parun.Codec.ObjectViewSpec where
 
+import qualified Data.List.NonEmpty as NonEmpty
 import qualified Data.Map.Strict as Map
 import qualified Parun.Codec.ObjectView as ObjectView
 import qualified Parun.Codec.ProjectedCharacteristicsSpec as ProjectedCharacteristicsSpec
@@ -68,11 +69,11 @@ spec s = Spec.describe s "Parun.Codec.ObjectView" $ do
       s
       ObjectView.codec
       ( hidden
-          { ObjectView.chosenSubtype = Map.singleton Acquisition.Own Subtype.Merfolk,
+          { ObjectView.chosenSubtype = Map.singleton Acquisition.Own (NonEmpty.singleton Subtype.Merfolk),
             ObjectView.chosenPlayers = Map.singleton Acquisition.Own (Map.singleton PlayerChoice.SecretChooser (PlayerId.MkPlayerId 0))
           }
       )
-      (init hiddenJson <> ",\"chosenSubtype\":[{\"key\":{\"type\":\"Own\"},\"value\":\"Merfolk\"}],\"chosenPlayers\":[{\"key\":{\"type\":\"Own\"},\"value\":[{\"key\":{\"type\":\"SecretChooser\"},\"value\":0}]}]}")
+      (init hiddenJson <> ",\"chosenSubtype\":[{\"key\":{\"type\":\"Own\"},\"value\":[\"Merfolk\"]}],\"chosenPlayers\":[{\"key\":{\"type\":\"Own\"},\"value\":[{\"key\":{\"type\":\"SecretChooser\"},\"value\":0}]}]}")
   Spec.it s "has a schema" $ Common.assertHasSchema s ObjectView.codec
 
 -- Tapped and damaged, so neither status key encodes a default.

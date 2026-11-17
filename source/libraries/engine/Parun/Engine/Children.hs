@@ -193,7 +193,6 @@ import qualified Parun.Types.Destroy as Destroy
 import qualified Parun.Types.DestructionR as DestructionR
 import qualified Parun.Types.Devotion as Devotion
 import qualified Parun.Types.Devour as Devour
-import qualified Parun.Types.DieResult as DieResult
 import qualified Parun.Types.DieRollR as DieRollR
 import qualified Parun.Types.Discard as Discard
 import qualified Parun.Types.DiscardCards as DiscardCards
@@ -428,6 +427,7 @@ import qualified Parun.Types.ReturnPermanents as ReturnPermanents
 import qualified Parun.Types.Reveal as Reveal
 import qualified Parun.Types.RevealedThisWay as RevealedThisWay
 import qualified Parun.Types.RollDie as RollDie
+import qualified Parun.Types.RollTrigger as RollTrigger
 import qualified Parun.Types.RuleAbilities as RuleAbilities
 import qualified Parun.Types.RulePermission as RulePermission
 import qualified Parun.Types.Sacrifice as Sacrifice
@@ -612,7 +612,7 @@ filterChildren children predicate = case predicate of
   Filter.HasChosenName _ -> pure predicate
   Filter.HasChosenColor -> pure predicate
   Filter.Noted _ -> pure predicate
-  Filter.HasChosenSubtype -> pure predicate
+  Filter.HasChosenSubtype _ -> pure predicate
   Filter.HasChosenCardType -> pure predicate
   Filter.IsExiledWithSource _ -> pure predicate
   Filter.IsLastExiledWithSource -> pure predicate
@@ -620,6 +620,8 @@ filterChildren children predicate = case predicate of
   Filter.OfChosenPlayer -> pure predicate
   Filter.OfRelatedPlayer _ -> pure predicate
   Filter.OfSpecificPlayer _ -> pure predicate
+  -- ONE: the one player the slot names, HeldByBound's reading.
+  Filter.OfBoundPlayer name -> fmap Filter.OfBoundPlayer (slot children SlotArity.One name)
   Filter.IsPlayer _ -> pure predicate
   -- ONE: the controller of the one object the slot names (CR 608.2h), read
   -- through Parun.Engine.Filter.slotOneObject.
@@ -853,7 +855,7 @@ quantityChildren children quantity = case quantity of
   Quantity.LifeChanged (LifeTally.MkLifeTally ref direction turn) -> fmap (\renamed -> Quantity.LifeChanged (LifeTally.MkLifeTally renamed direction turn)) (player children ref)
   Quantity.PlayersDealtDamage (DamageTally.MkDamageTally dealt turn) -> fmap (\renamed -> Quantity.PlayersDealtDamage (DamageTally.MkDamageTally renamed turn)) (dealtDamageChildren children dealt)
   Quantity.DamageDealtToPlayersThisTurn dealt -> fmap Quantity.DamageDealtToPlayersThisTurn (dealtDamageChildren children dealt)
-  Quantity.DamageDealtThisTurn (ObjectDamage.MkObjectDamage direction controlledBy) -> fmap (Quantity.DamageDealtThisTurn . ObjectDamage.MkObjectDamage direction) (traverse (player children) controlledBy)
+  Quantity.DamageDealtThisTurn (ObjectDamage.MkObjectDamage direction by) -> fmap (Quantity.DamageDealtThisTurn . ObjectDamage.MkObjectDamage direction) (traverse (nest children) by)
   Quantity.SpellsCast (SpellTally.MkSpellTally ref turn) -> fmap (\renamed -> Quantity.SpellsCast (SpellTally.MkSpellTally renamed turn)) (player children ref)
   Quantity.TimesThisTurn _ -> pure quantity
   Quantity.ActivationsThisTurn (ActivationsThisTurn.MkActivationsThisTurn ref source criteria) -> fmap Quantity.ActivationsThisTurn (ActivationsThisTurn.MkActivationsThisTurn <$> player children ref <*> nest children source <*> activationCriteriaChildren children criteria)
@@ -1312,6 +1314,7 @@ effectChildren c effect = case effect of
   Effect.Assimilate ref -> fmap Effect.Assimilate (onObjectRef c ref)
   Effect.TemptWithTheRing -> pure effect
   Effect.OpenAttraction -> pure effect
+  Effect.RollToVisit -> pure effect
   Effect.Assemble ref -> fmap Effect.Assemble (traverse (onObjectRef c) ref)
   Effect.Planeswalk ref -> fmap Effect.Planeswalk (traverse (onObjectRef c) ref)
   Effect.ChaosEnsues ref -> fmap Effect.ChaosEnsues (traverse (onObjectRef c) ref)
@@ -1720,7 +1723,7 @@ triggerConditionChildren c condition = case condition of
   TriggerCondition.PlayerRollsPlaneswalker _ -> pure condition
   TriggerCondition.TurnedUpOffDeck subject -> fmap TriggerCondition.TurnedUpOffDeck (actingChildren c subject)
   TriggerCondition.SelfPlaneswalkedAwayFrom -> pure condition
-  TriggerCondition.PlayerRollsResult (DieResult.MkDieResult _ _) -> pure condition
+  TriggerCondition.PlayerRollsResult (RollTrigger.MkRollTrigger {}) -> pure condition
   TriggerCondition.Visit -> pure condition
   TriggerCondition.FlipsCoin (CoinFlipTrigger.MkCoinFlipTrigger _ _) -> pure condition
   TriggerCondition.SelfBecomesPlotted -> pure condition
@@ -2115,7 +2118,7 @@ costComponentChildren c component = case component of
   CostComponent.FlipCoin -> pure component
   CostComponent.ExileThisFrom _ -> pure component
   CostComponent.ExileThis -> pure component
-  CostComponent.MoveCardsFromGraveyard (MoveCardsFromGraveyard.MkMoveCardsFromGraveyard n criterion end) -> fmap CostComponent.MoveCardsFromGraveyard (MoveCardsFromGraveyard.MkMoveCardsFromGraveyard <$> costAmountChildren c n <*> costFilter c criterion <*> pure end)
+  CostComponent.MoveCardsFromGraveyard (MoveCardsFromGraveyard.MkMoveCardsFromGraveyard n criterion end players) -> fmap CostComponent.MoveCardsFromGraveyard (MoveCardsFromGraveyard.MkMoveCardsFromGraveyard <$> costAmountChildren c n <*> costFilter c criterion <*> pure end <*> pure players)
   CostComponent.ExileMaterials (ExileMaterials.MkExileMaterials n orMore criterion) -> fmap CostComponent.ExileMaterials (ExileMaterials.MkExileMaterials n orMore <$> costFilter c criterion)
   CostComponent.ExileTopFromGraveyard criterion -> CostComponent.ExileTopFromGraveyard <$> costFilter c criterion
   CostComponent.PutExiledIntoGraveyard criterion -> CostComponent.PutExiledIntoGraveyard <$> costFilter c criterion
@@ -2499,7 +2502,7 @@ entryRewriteChildren c rewrite = case rewrite of
 chosenQualityChildren :: (Applicative f) => (Subtype.Subtype -> f Subtype.Subtype) -> (Filter.Filter Keyword.Keyword -> f (Filter.Filter Keyword.Keyword)) -> ChosenQuality.ChosenQuality -> f ChosenQuality.ChosenQuality
 chosenQualityChildren onListed onCards quality = case quality of
   ChosenQuality.Colors _ -> pure quality
-  ChosenQuality.Subtype family among -> ChosenQuality.Subtype family <$> traverse (traverse onListed) among
+  ChosenQuality.Subtype ordinal distinct family among -> ChosenQuality.Subtype ordinal distinct family <$> traverse (traverse onListed) among
   ChosenQuality.CardType _ _ -> pure quality
   ChosenQuality.Number _ _ -> pure quality
   ChosenQuality.Parity -> pure quality

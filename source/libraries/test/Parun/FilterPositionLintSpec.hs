@@ -65,6 +65,8 @@ import qualified Parun.Types.Card as Card.Type
 import qualified Parun.Types.CardAbilities as CardAbilities
 import qualified Parun.Types.CardType as CardType
 import qualified Parun.Types.CastFromZone as CastFromZone
+import qualified Parun.Types.ChoiceDistinct as ChoiceDistinct
+import qualified Parun.Types.ChoiceOrdinal as ChoiceOrdinal
 import qualified Parun.Types.ChooseBetween as ChooseBetween
 import qualified Parun.Types.ChooseCardName as ChooseCardName
 import qualified Parun.Types.ChoosePermanents as ChoosePermanents
@@ -843,7 +845,7 @@ chosenValueCounts :: (Framing -> Bool) -> (ChosenQuality.ChosenQuality -> Bool) 
 chosenValueCounts admitted answers tag card =
   let total keep pairs = sum (fmap (\(_, f) -> filterAtoms tag f) (filter (keep . fst) pairs))
       spellPairs = modalFilters (Face.spell (surveyedFace card))
-      paying = filter (any (\family -> answers (ChosenQuality.Subtype family Nothing)) . Behold.chosenType) (castBeholds (surveyedFace card))
+      paying = filter (any (\family -> answers (ChosenQuality.Subtype ChoiceOrdinal.First ChoiceDistinct.MayRepeat family Nothing)) . Behold.chosenType) (castBeholds (surveyedFace card))
       untargeted modal = modal {Modal.modes = fmap (\mode -> Mode.MkMode (Mode.clauses mode) Map.empty) (Modal.modes modal)}
       answered =
         if null paying
@@ -903,7 +905,7 @@ afterChoice answers modal =
 writesColors :: ChosenQuality.ChosenQuality -> Bool
 writesColors quality = case quality of
   ChosenQuality.Colors _ -> True
-  ChosenQuality.Subtype _ _ -> False
+  ChosenQuality.Subtype {} -> False
   ChosenQuality.CardType _ _ -> False
   ChosenQuality.Number _ _ -> False
   ChosenQuality.Parity -> False
@@ -914,7 +916,7 @@ writesColors quality = case quality of
 writesSubtype :: ChosenQuality.ChosenQuality -> Bool
 writesSubtype quality = case quality of
   ChosenQuality.Colors _ -> False
-  ChosenQuality.Subtype _ _ -> True
+  ChosenQuality.Subtype {} -> True
   ChosenQuality.CardType _ _ -> False
   ChosenQuality.Number _ _ -> False
   ChosenQuality.Parity -> False
@@ -925,7 +927,7 @@ writesSubtype quality = case quality of
 writesCardType :: ChosenQuality.ChosenQuality -> Bool
 writesCardType quality = case quality of
   ChosenQuality.Colors _ -> False
-  ChosenQuality.Subtype _ _ -> False
+  ChosenQuality.Subtype {} -> False
   ChosenQuality.CardType _ _ -> True
   ChosenQuality.Number _ _ -> False
   ChosenQuality.Parity -> False
@@ -976,7 +978,7 @@ bareSubtype k = case k of
   _ -> False
   where
     baked criterion = case criterion of
-      Filter.Type.HasChosenSubtype -> True
+      Filter.Type.HasChosenSubtype _ -> True
       Filter.Type.And filters -> any baked filters
       _ -> False
 
@@ -1368,7 +1370,7 @@ evaluatedAtoms value =
 
 -- How many Filter.Shares and Filter.IsAttachedTo atoms in an encoding pair an
 -- anchor with a reading Parun.Engine.Filter has none for -- sharesAnchored's
--- Nothing (#8071) and attachedAnchored's, which Filter.matches answers False --
+-- Nothing and attachedAnchored's, which Filter.matches answers False --
 -- and how many it carries in all.
 unreadAnchorCounts :: Value.Value -> (Int, Int)
 unreadAnchorCounts value =
@@ -1383,14 +1385,32 @@ unreadAnchorCounts value =
 -- its encoding carries in all.
 evaluatedCounts :: Face.Face Card.Type.Card -> (Int, Int)
 evaluatedCounts card =
-  ( sum (fmap (evaluatedAtoms . atomJson . Count.Type.filter) (cardCounts card)),
-    evaluatedAtoms (Codec.encode (Face.Codec.codec Card.codec) card)
-  )
+  let encoded = Codec.encode (Face.Codec.codec Card.codec) card
+   in ( sum (fmap (evaluatedAtoms . atomJson . Count.Type.filter) (cardCounts card)) + damageSourceAtoms encoded,
+        evaluatedAtoms encoded
+      )
+
+-- How many evaluated-object atoms sit in a Quantity.DamageDealtThisTurn's
+-- source filter (Parun.Types.ObjectDamage.by), counted off the encoding as
+-- triggerConditionAtoms counts its own.
+damageSourceAtoms :: Value.Value -> Int
+damageSourceAtoms value = case value of
+  Value.Object o ->
+    let pairs = Object.unwrap o
+        named k = [Pair.value p | p <- pairs, String.unwrap (Pair.name p) == Text.pack k]
+        tally = not (null [t | Value.String t <- named "type", String.unwrap t == Text.pack "DamageDealtThisTurn"])
+        own = if tally then sum [evaluatedAtoms by | Value.Object v <- named "value", by <- [Pair.value q | q <- Object.unwrap v, String.unwrap (Pair.name q) == Text.pack "by"]] else 0
+     in own + sum (fmap (damageSourceAtoms . Pair.value) pairs)
+  Value.Array a -> sum (fmap damageSourceAtoms (Array.unwrap a))
+  Value.String _ -> 0
+  Value.Null _ -> 0
+  Value.Number _ -> 0
+  Value.Boolean _ -> 0
 
 -- Filter.Context.evaluated and evaluatedView are filled by
--- Parun.Engine.Quantity's Count arm, the only caller of
--- Parun.Engine.Count.evaluate, and by nothing else, so the atoms anywhere but a
--- Count's filter are a silent False. An atom the codec finds and
+-- Parun.Engine.Quantity's Count and DamageDealtThisTurn arms and by nothing
+-- else, so the atoms anywhere but a Count's filter or a damage tally's source
+-- filter are a silent False. An atom the codec finds and
 -- cardCounts does not is the offence -- misplaced, or in a blind spot of that
 -- traversal.
 evaluatedOffends :: Face.Face Card.Type.Card -> Bool
@@ -2401,17 +2421,20 @@ filterPositionLintSpec s registry corpus = Spec.describe s "Lint" $ do
     -- host nor a chosen value of the offering object answers there.
     Spec.assertEqWith s "an offer's cost is not source-framed" (sourceFramed SlotlessCostFramed, hostFramed SlotlessCostFramed) (False, False)
   -- CR 613.4c's "it": the atoms aimed at a quantity's object are answerable only
-  -- in a Count's filter. See evaluatedOffends.
-  Spec.it s "CR 613.4c no card asks an evaluated-object atom outside a Count" $ do
+  -- in a Count's filter or a damage tally's source filter. See evaluatedOffends.
+  Spec.it s "CR 613.4c no card asks an evaluated-object atom outside a Count or a damage tally" $ do
     ps <- S.allPrintings s corpus
     let offenders = filter (anyFace evaluatedOffends . Printing.card) ps
-    Spec.assertEqWith s "the atom sits only in a Count's filter" (fmap (S.nameOf . Printing.card) offenders) []
+    Spec.assertEqWith s "the atom sits only in a Count's or a damage tally's filter" (fmap (S.nameOf . Printing.card) offenders) []
     -- NOT vacuous: Thran Power Suit writes it twice, once per half of its pump.
     suit <- S.printingOf s registry "Thran Power Suit"
     Spec.assertEqWith s "Thran Power Suit's two atoms are both in Counts" (evaluatedCounts (S.combinedFace suit)) (2, 2)
     -- Coat of Arms writes IsEvaluated and the Evaluated anchor once per half.
     coat <- S.printingOf s registry "Coat of Arms"
     Spec.assertEqWith s "Coat of Arms' four atoms are all in Counts" (evaluatedCounts (S.combinedFace coat)) (4, 4)
+    -- Blazing Effigy writes IsEvaluated once, in its damage tally's source filter.
+    effigy <- S.printingOf s registry "Blazing Effigy"
+    Spec.assertEqWith s "Blazing Effigy's atom is in its damage tally" (evaluatedCounts (S.combinedFace effigy)) (1, 1)
     -- The rejected side: the same atom planted in a target slot.
     piker <- S.printingOf s registry "Goblin Piker"
     let buried = Filter.Type.And [Filter.Type.Or [Filter.Type.HasCardType CardType.Creature, Filter.Type.Not (Filter.Type.IsAttachedTo Anchor.Evaluated)]]
@@ -2430,7 +2453,8 @@ filterPositionLintSpec s registry corpus = Spec.describe s "Lint" $ do
             }
     Spec.assertEqWith s "Coat of Arms' two atoms planted are outside every Count" (evaluatedCounts plantedOthers) (0, 2)
   -- A pair Filter.matches has no reading for answers False wherever it sits,
-  -- so it is rejected outright rather than by position (#8071).
+  -- so it is rejected outright rather than by position. Unprinted: the card
+  -- that needs such a pair adds its reading.
   Spec.it s "no card writes a Shares or IsAttachedTo anchor the filter context carries no values for" $ do
     ps <- S.allPrintings s corpus
     let encodedFace = Codec.encode (Face.Codec.codec Card.codec)
@@ -3301,9 +3325,10 @@ filterPositionLintSpec s registry corpus = Spec.describe s "Lint" $ do
             }
     Spec.assertEqWith s "a planted atom is seen" (atoms planted) 1
   -- CR 702.16i's baked half, HeldByPlayer's position: a PlayerId only a
-  -- resolution can know, written by Parun.Engine.Keyword.withRelatedPlayers
-  -- into a granted protection's quality. The UNBAKED OfRelatedPlayer beside it
-  -- is card data -- Figure of Fable writes it -- and is not swept.
+  -- resolution can know, written by Parun.Engine.Keyword.withQualityPlayers
+  -- into a granted protection's quality. The UNBAKED OfRelatedPlayer and
+  -- OfBoundPlayer beside it are card data -- Figure of Fable and Eon Frolicker
+  -- write them -- and are not swept.
   Spec.it s "CR 702.16i no card writes OfSpecificPlayer" $ do
     ps <- S.allPrintings s corpus
     let atoms c = jsonAtoms (Text.pack "OfSpecificPlayer") (Codec.encode (Face.Codec.codec Card.codec) c)
@@ -4027,7 +4052,7 @@ filterPositionLintSpec s registry corpus = Spec.describe s "Lint" $ do
         drawing f = Effect.Draw (Draw.MkDraw (PlayerRef.InSlot Binding.you) (Quantity.Type.Count (Count.Type.MkCount (Scope.InZone (InZone.MkInZone Zone.Battlefield (PlayerRef.Relative PlayerRelation.AnyPlayer))) f Aggregation.Members)) Nothing)
     Monad.forM_
       [ (Filter.Type.HasChosenColor, ChosenQuality.Colors (ChooseBetween.MkChooseBetween 1 1), hasChosenColorCounts, hasChosenColorTag),
-        (Filter.Type.HasChosenSubtype, ChosenQuality.Subtype SubtypeFamily.BasicLandType Nothing, hasChosenSubtypeCounts, hasChosenSubtypeTag),
+        (Filter.Type.HasChosenSubtype ChoiceOrdinal.First, ChosenQuality.Subtype ChoiceOrdinal.First ChoiceDistinct.MayRepeat SubtypeFamily.BasicLandType Nothing, hasChosenSubtypeCounts, hasChosenSubtypeTag),
         (Filter.Type.HasChosenCardType, ChosenQuality.CardType [] Nothing, hasChosenCardTypeCounts, hasChosenCardTypeTag)
       ]
       $ \(atom, quality, counts, tag) -> do

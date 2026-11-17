@@ -100,7 +100,7 @@ spec s = Spec.describe s "Parun.Codec.DealDamage" $ do
       s
       (Either.isLeft (Codec.decode DealDamage.codec =<< Common.parse (Text.pack "{\"parts\":[],\"dealers\":{\"type\":\"EachMatching\",\"value\":{\"type\":\"HasKeyword\",\"value\":{\"type\":\"Flying\"}}}}")))
       "expected a decode failure"
-  -- Not implemented beside a stated excess (#7272), so refused.
+  -- Unprinted: several dealers beside a stated excess, so refused.
   Spec.it s "rejects dealers beside excess" $
     Spec.assertBool
       s

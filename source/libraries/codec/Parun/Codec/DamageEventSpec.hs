@@ -1,9 +1,11 @@
 module Parun.Codec.DamageEventSpec where
 
 import qualified Data.Set as Set
+import qualified Data.Text as Text
 import qualified Parun.Codec.DamageEvent as DamageEvent
 import qualified Parun.JsonCodec.Common as Common
 import qualified Parun.Spec as Spec
+import qualified Parun.Types.CardName as CardName
 import qualified Parun.Types.CardType as CardType
 import qualified Parun.Types.Color as Color
 import qualified Parun.Types.DamageEvent as DamageEvent
@@ -21,8 +23,8 @@ spec s = Spec.describe s "Parun.Codec.DamageEvent" $ do
   -- getting defaulted past, and CR 702.80b's wither bit set so it round-trips as
   -- a present key too. No lifelink, no infect, so dealtByInfect and
   -- dealtByLifelink are both omitted keys. CR 702.76a's and CR 702.173a's three
-  -- deal-time reads, and CR 105.2's colors, are all set away from their defaults
-  -- for the same reason.
+  -- deal-time reads, CR 105.2's colors and CR 201.2a's names are all set away
+  -- from their defaults for the same reason.
   Spec.it s "MkDamageEvent, dealt to a player" $
     Common.assertCodec
       s
@@ -43,12 +45,13 @@ spec s = Spec.describe s "Parun.Codec.DamageEvent" $ do
           DamageEvent.dealtByCardTypes = Set.singleton CardType.Artifact,
           DamageEvent.dealtBySupertypes = Set.singleton Supertype.Legendary,
           DamageEvent.dealtByColors = Set.singleton Color.Red,
+          DamageEvent.dealtByNames = Set.singleton (CardName.MkCardName (Text.pack "Blazing Effigy")),
           DamageEvent.dealtFromZone = Nothing,
           DamageEvent.recipientCardTypes = Set.empty,
           DamageEvent.recipientController = Nothing,
           DamageEvent.kind = DamageKind.Combat
         }
-      " {\"source\":1,\"target\":{\"type\":\"ToPlayer\",\"value\":2},\"amount\":3,\"dealtByDeathtouch\":true,\"dealtByWither\":true,\"dealtByToxic\":2,\"dealtByController\":4,\"dealtByCreatureTypes\":[\"Rogue\"],\"dealtByCommander\":true,\"dealtByCardTypes\":[\"Artifact\"],\"dealtBySupertypes\":[\"Legendary\"],\"dealtByColors\":[\"Red\"],\"kind\":\"Combat\"} "
+      " {\"source\":1,\"target\":{\"type\":\"ToPlayer\",\"value\":2},\"amount\":3,\"dealtByDeathtouch\":true,\"dealtByWither\":true,\"dealtByToxic\":2,\"dealtByController\":4,\"dealtByCreatureTypes\":[\"Rogue\"],\"dealtByCommander\":true,\"dealtByCardTypes\":[\"Artifact\"],\"dealtBySupertypes\":[\"Legendary\"],\"dealtByColors\":[\"Red\"],\"dealtByNames\":[\"Blazing Effigy\"],\"kind\":\"Combat\"} "
   -- CR 120.3c's recipient tag and CR 608's noncombat damage are each the other
   -- arm of their type. CR 702.15b's lifelink payee is a concrete PlayerId, and
   -- CR 120.10's excess, CR 400.1's zone and CR 120.3's recipient card types
@@ -73,6 +76,7 @@ spec s = Spec.describe s "Parun.Codec.DamageEvent" $ do
           DamageEvent.dealtByCardTypes = Set.empty,
           DamageEvent.dealtBySupertypes = Set.empty,
           DamageEvent.dealtByColors = Set.empty,
+          DamageEvent.dealtByNames = Set.empty,
           DamageEvent.dealtFromZone = Just Zone.Stack,
           DamageEvent.recipientCardTypes = Set.singleton CardType.Planeswalker,
           DamageEvent.recipientController = Just (PlayerId.MkPlayerId 3),
@@ -101,6 +105,7 @@ spec s = Spec.describe s "Parun.Codec.DamageEvent" $ do
           DamageEvent.dealtByCardTypes = Set.empty,
           DamageEvent.dealtBySupertypes = Set.empty,
           DamageEvent.dealtByColors = Set.empty,
+          DamageEvent.dealtByNames = Set.empty,
           DamageEvent.dealtFromZone = Nothing,
           DamageEvent.recipientCardTypes = Set.empty,
           DamageEvent.recipientController = Nothing,

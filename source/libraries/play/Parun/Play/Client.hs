@@ -378,6 +378,14 @@ choice view question = Maybe.fromMaybe generic $ case Text.unpack (Question.kind
   "ChoosePaidEnergy" -> bounded (Text.pack "Choose how much energy to pay for ")
   -- CR 715.3b.
   "ChooseReadAheadChapter" -> bounded (Text.pack "Choose the chapter to read ahead to for ")
+  -- CR 706.2b: each die by its result, Enter declining.
+  "RerollDice" -> do
+    results <- Protocol.field "results" offer >>= Protocol.arrayOf
+    let name option = case option of
+          R.Number index
+            | Just (R.Number result) <- Maybe.listToMaybe (List.genericDrop index results) -> Text.pack ("Die " <> show (index + 1) <> " showing " <> show result)
+          _ -> optionName view option
+    subset name Text.empty R.Array
   -- CR 706.2b: each die moved either way by the amount, then none.
   "AdjustDieRoll" -> do
     options <- Protocol.field "options" offer >>= Protocol.arrayOf

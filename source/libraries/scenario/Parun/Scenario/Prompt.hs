@@ -40,6 +40,7 @@ kindOf prompt = Text.pack $ case prompt of
   Prompt.ChooseFateseal {} -> "ChooseFateseal"
   Prompt.ChooseExplore {} -> "ChooseExplore"
   Prompt.Rethrow {} -> "Rethrow"
+  Prompt.RerollDice {} -> "RerollDice"
   Prompt.AdjustDieRoll {} -> "AdjustDieRoll"
   Prompt.ChooseRollModifier {} -> "ChooseRollModifier"
   Prompt.ChooseDefender {} -> "ChooseDefender"

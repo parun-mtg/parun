@@ -183,9 +183,9 @@ bot names = Answerer.MkAnswerer $ \asked -> case Asked.prompt asked of
   Prompt.ChooseCopyTarget _ _ _ candidates -> Generator.pick (Nothing NonEmpty.:| fmap Just candidates)
   Prompt.ChooseAnyNumber _ _ _ _ candidates most _ -> fmap Set.fromList (atMost (Maybe.fromMaybe (List.genericLength candidates) most) candidates)
   -- CR 510.1c-e / 702.19b-c: every division whose gates this creature's
-  -- damage clears beside what the step's attacking creatures announced so far.
-  -- Not implemented: a division leaning on damage a creature announces later
-  -- in the same group (#6637).
+  -- damage clears beside what the step's attacking creatures announced so far;
+  -- the bot answers each prompt alone, so it never leans on a later
+  -- announcement.
   Prompt.AssignCombatDamage _ _ _ thresholds paid power ->
     pickOr (Replay.defaultAnswer (Asked.prompt asked)) (filter (\division -> Damage.tiersCleared thresholds (Map.unionWith (+) paid division) Set.empty division) (divisions (Map.keys thresholds) power))
   Prompt.Search _ _ cards most -> atMost most cards
@@ -305,6 +305,7 @@ bot names = Answerer.MkAnswerer $ \asked -> case Asked.prompt asked of
   Prompt.ChooseReadAheadChapter _ _ _ final -> Generator.between 1 final
   -- CR 706.2b: any die moved either way, or the offer declined; raised only
   -- once its cost is payable.
+  Prompt.RerollDice _ _ results _ -> let indices = zipWith const [0 ..] (NonEmpty.toList results) in fmap Set.fromList (atMost (List.genericLength indices) indices)
   Prompt.AdjustDieRoll _ _ results _ _ -> orNone [(index, adjustment) | index <- zipWith const [0 ..] (NonEmpty.toList results), adjustment <- [RollAdjustment.Increase, RollAdjustment.Decrease]]
   prompt -> pure (Replay.defaultAnswer prompt)
 

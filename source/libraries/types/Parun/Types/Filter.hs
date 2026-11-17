@@ -10,6 +10,7 @@ import qualified Parun.Types.BlockRole as BlockRole
 import qualified Parun.Types.BlockStatus as BlockStatus
 import qualified Parun.Types.CardName as CardName
 import qualified Parun.Types.CardType as CardType
+import qualified Parun.Types.ChoiceOrdinal as ChoiceOrdinal
 import qualified Parun.Types.Color as Color
 import qualified Parun.Types.ControlMargin as ControlMargin
 import qualified Parun.Types.CounterKind as CounterKind
@@ -65,13 +66,13 @@ data Filter keyword
     -- 205.3i / 205.3m / 709.4a), as Parun.Engine.Filter.sharesAnchored reads each
     -- pair.
     --
-    -- Not implemented: a pair the Context carries no anchored values for (Owner,
+    -- Unprinted: a pair the Context carries no anchored values for (Owner,
     -- Controller or Sector at Bound, anything but CreatureType at a Bound
     -- narrowed to the candidate's controller, anything at one narrowed to its
     -- owner, anything but CreatureType or Name at Evaluated,
     -- CreatureType or Controller at Source, Owner, Sector or CardType at
     -- AnyPermanent, anything but Controller at Host), which answers False and
-    -- Parun.FilterPositionLintSpec keeps out of card data (#8071).
+    -- Parun.FilterPositionLintSpec keeps out of card data.
     Shares Trait.Trait (Anchor.Anchor (Filter keyword))
   | HasSubtype Subtype.Subtype -- CR 205.3: the object's subtypes include this one.
   | -- | CR 201.2: the object's names include this LITERAL one. Membership, as CR
@@ -242,14 +243,15 @@ data Filter keyword
     -- read off the source instead of written on the card, and vacuously False
     -- where the source has chosen none.
     HasChosenColor
-  | -- | CR 205.3: the candidate's subtypes include the one the SOURCE chose as it
-    -- entered (CR 614.1c), the two abilities linked by CR 607.2d -- Obelisk of
+  | -- | CR 205.3: the candidate's subtypes include the one the SOURCE chose,
+    -- the ordinal saying which of its choices, as it entered (CR 614.1c), the
+    -- two abilities linked by CR 607.2d -- Obelisk of
     -- Urd's "creatures you control of the chosen type" and Pillar of Origins'
     -- "creature spell of the chosen type" -- or earlier in the same resolution
     -- (CR 608.2d, Kindred Judgment). HasSubtype above with the subtype read
     -- off the source instead of written on the card, and vacuously False where the
     -- source has chosen none.
-    HasChosenSubtype
+    HasChosenSubtype ChoiceOrdinal.ChoiceOrdinal
   | -- | CR 205.2a: the candidate's card types include the one the SOURCE chose
     -- as it entered (CR 614.1c, 607.2d; Umori, the Collector's "spells you cast
     -- of the chosen type"). Vacuously False where the source has chosen none.
@@ -274,6 +276,10 @@ data Filter keyword
   | -- | CR 702.16k: the candidate is this player's, by the atom above's three
     -- readings. Runtime-only, HeldByPlayer's posture.
     OfSpecificPlayer PlayerId.PlayerId
+  | -- | CR 702.16k / 608.2h: the candidate is the player's a slot binds, by
+    -- OfChosenPlayer's three readings (Eon Frolicker's "that player"). Baked
+    -- to OfSpecificPlayer as a resolution stores it; vacuously False unbaked.
+    OfBoundPlayer SlotName.SlotName
   | -- | CR 115.1: the candidate is a PLAYER who relates thus to the perspective
     -- -- "target opponent". Separate from HeldBy, which asks who holds
     -- an object candidate rather than who the candidate is (CR 109.1, CR 108.4).

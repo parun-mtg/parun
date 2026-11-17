@@ -17,7 +17,6 @@ import qualified Parun.Types.CounterTrigger as CounterTrigger
 import qualified Parun.Types.CounteringTrigger as CounteringTrigger
 import qualified Parun.Types.CrewRole as CrewRole
 import qualified Parun.Types.DamageTrigger as DamageTrigger
-import qualified Parun.Types.DieResult as DieResult
 import qualified Parun.Types.DiscardTrigger as DiscardTrigger
 import qualified Parun.Types.EntersTrigger as EntersTrigger
 import qualified Parun.Types.ExploitTrigger as ExploitTrigger
@@ -41,6 +40,7 @@ import qualified Parun.Types.PlayerScope as PlayerScope
 import qualified Parun.Types.PlaysLand as PlaysLand
 import qualified Parun.Types.PutIntoZoneTrigger as PutIntoZoneTrigger
 import qualified Parun.Types.RevealedThisWay as RevealedThisWay
+import qualified Parun.Types.RollTrigger as RollTrigger
 import qualified Parun.Types.RoomIndex as RoomIndex
 import qualified Parun.Types.SacrificeTrigger as SacrificeTrigger
 import qualified Parun.Types.SpellCast as SpellCast
@@ -285,9 +285,10 @@ data TriggerCondition
     -- against a GameEvent.TurnedUpOffDeck naming the ability's own card among
     -- those walked away from. A look-back.
     SelfPlaneswalkedAwayFrom
-  | -- | CR 706.2: "whenever you roll a 6" (Night Shift of the Living Dead), once
-    -- per die whose result, after every modifier, is the stated number.
-    PlayerRollsResult (DieResult.DieResult PlayerRelation.PlayerRelation)
+  | -- | CR 706.2 / 701.52a: "whenever you roll a 6" (Night Shift of the Living
+    -- Dead), once per die whose result, after every modifier, is the stated
+    -- number; for a roll to visit, the one result the visit reads.
+    PlayerRollsResult RollTrigger.RollTrigger
   | -- | CR 702.159a: Visit -- its controller rolled to visit their Attractions
     -- and the result is lit up on this one.
     Visit

@@ -5,6 +5,7 @@ import qualified Data.Foldable as Foldable
 import qualified Data.Functor.Const as Const
 import qualified Data.Functor.Identity as Identity
 import qualified Data.List as List
+import qualified Data.List.NonEmpty as NonEmpty
 import qualified Data.Map.Strict as Map
 import qualified Data.Maybe as Maybe
 import qualified Data.Monoid as Monoid
@@ -13,6 +14,7 @@ import qualified Data.Set as Set
 import qualified Numeric.Natural as Natural
 import qualified Parun.Engine.Binding as Binding
 import qualified Parun.Engine.Children as Children
+import qualified Parun.Engine.ChoiceOrdinal as ChoiceOrdinal
 import qualified Parun.Engine.Keyword as Keyword
 import qualified Parun.Engine.ManaSymbolText as ManaSymbolText
 import qualified Parun.Engine.NameWords as NameWords
@@ -1015,10 +1017,10 @@ playerView :: PlayerId.PlayerId -> View
 playerView pid = nobodyView {playerIdentity = Just pid}
 
 -- CR 120.1 / 608.2h: a damage event's source as it was when it dealt the
--- damage, off the event's deal-time riders: its controller, card types,
+-- damage, off the event's deal-time riders: its controller, names, card types,
 -- supertypes, colors, creature types, commander status and zone (a spell is on
--- the stack, CR 112.1). Not implemented: any other characteristic of the
--- source, which reads as nobodyView's empty answer (#8032).
+-- the stack, CR 112.1). Any other characteristic reads as nobodyView's empty
+-- answer; a reader asking one adds its rider.
 dealtByView :: DamageEvent.DamageEvent -> View
 dealtByView ev =
   nobodyView
@@ -1027,6 +1029,7 @@ dealtByView ev =
       cardTypes = DamageEvent.dealtByCardTypes ev,
       supertypes = DamageEvent.dealtBySupertypes ev,
       colors = DamageEvent.dealtByColors ev,
+      names = DamageEvent.dealtByNames ev,
       subtypes = DamageEvent.dealtByCreatureTypes ev,
       commander = DamageEvent.dealtByCommander ev,
       zone = DamageEvent.dealtFromZone ev
@@ -1698,10 +1701,11 @@ data Context = MkContext
     sourceAttachedTo :: Maybe ObjectId.ObjectId,
     -- The object the surrounding Quantity is evaluated against, which
     -- IsAttachedTo Evaluated compares a candidate's host with and IsEvaluated the
-    -- candidate itself. Filled by Parun.Engine.Quantity's Count arm alone; Nothing
-    -- everywhere else, where the atoms answer False. Parun.FilterPositionLintSpec's
-    -- "CR 613.4c no card asks an evaluated-object atom outside a Count" keeps a
-    -- card to the filled position.
+    -- candidate itself. Filled by Parun.Engine.Quantity's Count and
+    -- DamageDealtThisTurn arms alone; Nothing everywhere else, where the atoms
+    -- answer False. Parun.FilterPositionLintSpec's "CR 613.4c no card asks an
+    -- evaluated-object atom outside a Count or a damage tally" keeps a card to
+    -- the filled positions.
     evaluated :: Maybe ObjectId.ObjectId,
     -- That object's view, for Shares at Evaluated (Coat of Arms' "shares at
     -- least one creature type with it", Locket of Yesterdays' "with the same
@@ -1804,7 +1808,7 @@ data Context = MkContext
     -- CR 702.16b / CR 702.16k: the controller of the spell or ability being
     -- AIMED, which rule 702.16k's targeting clause names beside the source
     -- object's -- "can't be targeted by spells or abilities the specified player
-    -- controls". Read by the three atoms that ask who an object belongs to
+    -- controls". Read by the atoms that ask who an object belongs to
     -- (OfChosenPlayer, OfRelatedPlayer, OfSpecificPlayer), and filled by the one position that
     -- judges a protection quality against an aiming object,
     -- Parun.Engine.Target.targetable, for a permanent and (through
@@ -1865,7 +1869,7 @@ data Context = MkContext
     -- atom's YourCounters operand, which asks the perspective player's. Filled
     -- by contextIn; empty in contextFor, where the operand reads nothing.
     playerCounters :: Map.Map PlayerId.PlayerId (Map.Map PlayerCounterKind.PlayerCounterKind Natural.Natural),
-    -- CR 205.3: the subtype the SOURCE chose as it entered (CR 614.1c), for the
+    -- CR 205.3: the subtypes the SOURCE chose as it entered (CR 614.1c), for the
     -- one atom that asks whether a candidate wears it (HasChosenSubtype). Filled
     -- where sourceChosenColors above is, and read the same way (Obelisk of Urd,
     -- From the Rubble, Doom Cannon).
@@ -1879,7 +1883,7 @@ data Context = MkContext
     --
     -- Vacuously False everywhere else, sourceChosenColors's posture, and fenced by
     -- the same lint's subtype twin.
-    sourceChosenSubtype :: Maybe Subtype.Subtype,
+    sourceChosenSubtype :: Maybe (NonEmpty.NonEmpty Subtype.Subtype),
     -- CR 205.2a: the card type the SOURCE chose as it entered (CR 614.1c), for
     -- HasChosenCardType. Filled where sourceChosenColors above is, and Nothing
     -- everywhere else, so the atom is vacuously False there.
@@ -2156,8 +2160,10 @@ heldBy holder view = case holder of
 -- context did not fill -- leaves its set empty and answers False without a case
 -- of its own, but for one posture below.
 --
--- Not implemented: a pair the Context carries no anchored values for, answered
--- Nothing (#8071).
+-- Unprinted: a pair the Context carries no anchored values for, answered
+-- Nothing. Parun.FilterPositionLintSpec's "no card writes a Shares or
+-- IsAttachedTo anchor the filter context carries no values for" keeps it out
+-- of card data.
 sharesAnchored :: Trait.Trait -> Anchor.Anchor (Filter.Filter Keyword.Type.Keyword) -> Maybe (Context -> View -> Bool)
 sharesAnchored trait anchor = case anchor of
   Anchor.Source -> case trait of
@@ -2283,8 +2289,8 @@ attachedAnchored anchor = case anchor of
           Map.notMember slot (slotControllers context)
             || Set.member host (Map.findWithDefault Set.empty slot (slotObjects context))
       )
-  -- Not implemented: a slot narrowed to the members the candidate's holder
-  -- holds (#8071).
+  -- Unprinted: a slot narrowed to the members the candidate's holder holds.
+  -- sharesAnchored's lint keeps it out of card data too.
   Anchor.Bound (Just _) _ -> Nothing
   -- A group names no one host: Filter.AttachedTo is that reading.
   Anchor.AnyPermanent _ -> Nothing
@@ -2592,7 +2598,7 @@ matches context view predicate = case predicate of
   -- arriving on the Context: whatever CR 613.1d's layer left the candidate
   -- wearing is what CR 607.2d's link is compared against. A source that has
   -- chosen none matches nothing.
-  Filter.HasChosenSubtype -> maybe False (`Set.member` subtypes view) (sourceChosenSubtype context)
+  Filter.HasChosenSubtype ordinal -> maybe False (`Set.member` subtypes view) (ChoiceOrdinal.chosenAt ordinal =<< sourceChosenSubtype context)
   -- CR 205.2a, HasChosenSubtype's arm one characteristic over.
   Filter.HasChosenCardType -> maybe False (`Set.member` cardTypes view) (sourceChosenCardType context)
   -- CR 607.2d by identity: what the source chose names an object, not a quality.
@@ -2636,6 +2642,9 @@ matches context view predicate = case predicate of
     Just you -> ofPlayer (maybe False (PlayerRelation.holds (teams context) relation you)) (aimingController context) view
   -- The arm above with its players fixed (CR 608.2h), so no perspective is read.
   Filter.OfSpecificPlayer pid -> ofPlayer (== Just pid) (aimingController context) view
+  -- Baked to the arm above before any match (bakeBound,
+  -- Keyword.withQualityPlayers), so vacuously False if it survives to one.
+  Filter.OfBoundPlayer _ -> False
   -- CR 115.1's "target opponent". The same CR 102.3 reading the HeldBy Controller arm
   -- above argues for. Vacuously False for an object candidate,
   -- which has no playerIdentity, and for a match with no perspective.
@@ -3054,11 +3063,14 @@ matches context view predicate = case predicate of
 -- and never inspected further. The one reading of every criterion, shared by
 -- the ability on the stack (IsActivatedAbility), a past activation
 -- (Parun.Engine.Count.activationMeets) and one in progress
--- (Parun.Engine.PlayerEffect.activationCostAdjustmentsGiven).
+-- (Parun.Engine.PlayerEffect.activationCostAdjustmentsGiven). A name is
+-- compared as written (Binding.asWritten), so The Dominion Bracelet's "this
+-- ability" finds the ability it lends under the lender's name; its cost
+-- scenario cr-607-2a-fear-of-abduction-* proves it.
 abilityMeets :: ActivationCriteria.ActivationCriteria Keyword.Type.Keyword -> AbilityFacts.AbilityFacts -> Bool
 abilityMeets criteria facts =
   maybe True (\g -> any (Keyword.designates g) (AbilityFacts.keyword facts)) (ActivationCriteria.grantedBy criteria)
-    && maybe True ((== AbilityFacts.name facts) . Just) (ActivationCriteria.whichAbility criteria)
+    && maybe True ((== Binding.asWritten (AbilityFacts.name facts)) . Just) (ActivationCriteria.whichAbility criteria)
     && maybe True (== AbilityFacts.kind facts) (ActivationCriteria.whichKind criteria)
     && maybe True (== AbilityFacts.loyalty facts) (ActivationCriteria.whichLoyalty criteria)
 
@@ -3244,7 +3256,7 @@ bakeCost slot object =
         }
 
 -- CR 603.2: replace every HeldByBound atom whose slot this environment names
--- with its baked HeldByPlayer, every IsBound atom whose slot
+-- with its baked HeldByPlayer (an OfBoundPlayer with its OfSpecificPlayer), every IsBound atom whose slot
 -- `objects` names with the objects it holds, and every ControllerRelatesToBound
 -- atom whose slot `controllers` names with the players its relation admits. What makes "target
 -- creature THAT PLAYER controls" answerable at all -- the player is a fact about the EVENT that
@@ -3275,6 +3287,7 @@ bakeCost slot object =
 bakeBound :: Map.Map SlotName.SlotName PlayerId.PlayerId -> Map.Map SlotName.SlotName (Set.Set ObjectId.ObjectId) -> Map.Map SlotName.SlotName (PlayerRelation.PlayerRelation -> Set.Set PlayerId.PlayerId) -> Filter.Filter Keyword.Type.Keyword -> Filter.Filter Keyword.Type.Keyword
 bakeBound players objects controllers predicate = case predicate of
   Filter.HeldByBound holder slot -> maybe predicate (Filter.HeldByPlayer holder) (Map.lookup slot players)
+  Filter.OfBoundPlayer slot -> maybe predicate Filter.OfSpecificPlayer (Map.lookup slot players)
   -- The objects the slot holds, named outright, so a class stored past the
   -- resolution still knows them: Oracle en-Vec's "other creatures can't
   -- attack". Left standing where the map does not bind the slot.
@@ -3401,7 +3414,7 @@ manaValueThresholds predicate = case predicate of
   Filter.HasChosenName {} -> []
   Filter.HasChosenColor -> []
   Filter.Noted _ -> []
-  Filter.HasChosenSubtype -> []
+  Filter.HasChosenSubtype _ -> []
   Filter.HasChosenCardType -> []
   Filter.IsExiledWithSource _ -> []
   Filter.IsLastExiledWithSource -> []
@@ -3409,6 +3422,7 @@ manaValueThresholds predicate = case predicate of
   Filter.OfChosenPlayer -> []
   Filter.OfRelatedPlayer _ -> []
   Filter.OfSpecificPlayer _ -> []
+  Filter.OfBoundPlayer _ -> []
   Filter.IsPlayer _ -> []
   Filter.IsControllerOfBound _ -> []
   -- No threshold: the literal bounds a COUNT OF CARDS in a zone, not a mana
@@ -3589,7 +3603,7 @@ statesAQuality predicate = case predicate of
   Filter.Noted _ -> True
   -- The arm above one characteristic over: a subtype is a stated quality whichever
   -- way the card arrived at it.
-  Filter.HasChosenSubtype -> True
+  Filter.HasChosenSubtype _ -> True
   -- And a card type, one characteristic further.
   Filter.HasChosenCardType -> True
   -- IsObject's posture: the candidate is named by identity.
@@ -3604,6 +3618,7 @@ statesAQuality predicate = case predicate of
   Filter.OfChosenPlayer -> True
   Filter.OfRelatedPlayer _ -> True
   Filter.OfSpecificPlayer _ -> True
+  Filter.OfBoundPlayer _ -> True
   Filter.IsPlayer _ -> True
   Filter.IsControllerOfBound _ -> True
   Filter.CardsInZoneAtLeast _ _ -> True
@@ -3788,7 +3803,7 @@ readsSourceValues predicate = case predicate of
   Filter.ControllerRelatesToBound {} -> False
   Filter.HasChosenName {} -> True
   Filter.HasChosenColor -> True
-  Filter.HasChosenSubtype -> True
+  Filter.HasChosenSubtype _ -> True
   Filter.HasChosenCardType -> True
   -- The PERSPECTIVE player's notes, not the source's: two sources one player
   -- controls read the same ones.
@@ -3799,6 +3814,7 @@ readsSourceValues predicate = case predicate of
   Filter.OfChosenPlayer -> False
   Filter.OfRelatedPlayer _ -> False
   Filter.OfSpecificPlayer _ -> False
+  Filter.OfBoundPlayer _ -> False
   Filter.IsPlayer _ -> False
   Filter.IsControllerOfBound _ -> False
   Filter.CardsInZoneAtLeast _ _ -> False
@@ -3936,6 +3952,7 @@ talliesWhatHappened predicate = case predicate of
   Filter.OfChosenPlayer {} -> False
   Filter.OfRelatedPlayer {} -> False
   Filter.OfSpecificPlayer {} -> False
+  Filter.OfBoundPlayer {} -> False
   Filter.IsPlayer {} -> False
   Filter.IsControllerOfBound {} -> False
   Filter.CardsInZoneAtLeast {} -> False
@@ -3955,8 +3972,9 @@ talliesWhatHappened predicate = case predicate of
   Filter.HadToAttackThisCombat {} -> False
   Filter.LeftLibraryThisTurn {} -> False
   Filter.CantPayKeywordCost {} -> False
-  -- Not implemented: a player dealt damage who then left (#8220).
-  Filter.DealtDamageThisTurn {} -> False
+  -- Tymna the Weaver's ruling counts a player dealt combat damage who then
+  -- lost the game; the departure/cr-800-4i Blitzball scenario proves it.
+  Filter.DealtDamageThisTurn {} -> True
   Filter.LostLifeThisTurn -> True
   Filter.ActivatedThisTurn {} -> False
   Filter.ActedThisTurn {} -> False

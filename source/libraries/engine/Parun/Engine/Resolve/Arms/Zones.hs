@@ -576,8 +576,10 @@ exchangeZones settle resolving source controller legal (ExchangeZones.MkExchange
 -- card is judged as the resolving controller's (Attach.entryAttachmentFor),
 -- a fence too: AuraSwap's Aura card comes from its controller's own hand.
 --
--- Not implemented: a library card from neither end of its library, which
--- LibraryPosition cannot name, sends the other card to the bottom (#4974).
+-- Implementation-defined: a library card from neither end of its library,
+-- which LibraryPosition cannot name, sends the other card to the bottom. CR
+-- 701.12d names no position, and no printed card exchanges with a card inside
+-- a library.
 exchangeCardZones :: Game () -> ObjectId -> ObjectId -> PlayerId -> Map.Map SlotName (Set Recipient) -> Map.Map SlotName (Set Recipient) -> ExchangeCardZones.ExchangeCardZones -> Game ()
 exchangeCardZones settle resolving source controller legal chosen (ExchangeCardZones.MkExchangeCardZones one other) = do
   ones <- Common.askingObjects Common.Present resolving source controller legal chosen one
@@ -1091,12 +1093,16 @@ forEach applyEffectWith loopOffers runSubgame resolving source controller legal 
             effect
         bound <- State.gets produced
         pure (Map.insert member bound made, Map.insert member answer asked)
-      -- CR 805.6: a pass making choices (`chooses`) takes the active team's
-      -- seats in the order that team likes, each seat's members together
-      -- (Event.inActiveTeamOrder). APNAP order only: a card naming the seat to
-      -- start with (`startingWith`) sets its own.
-      overMembers chooses run state
-        | chooses && Maybe.isNothing startingWith = do
+      -- CR 805.6: a pass whose order is observable (`observable`) takes the
+      -- active team's seats in the order that team likes, each seat's members
+      -- together (Event.inActiveTeamOrder): a pass making choices, and an
+      -- individually processed loop, whose APNAP order (CR 608.2f) rule 805.6
+      -- modifies alike. APNAP order only: a card naming the seat to start with
+      -- (`startingWith`) sets its own. The nonactive teams keep seat order:
+      -- docs/decisions.md, "Whether a nonactive team names its players'
+      -- order".
+      overMembers observable run state
+        | observable && Maybe.isNothing startingWith = do
             let seatOf = Common.recipientSeat gs0
                 ofSeat pid = filter ((== Just pid) . seatOf) members
             seated <- Event.inActiveTeamOrder (\_ _ -> True) (ListUtils.nubOrd (Maybe.mapMaybe seatOf members)) (\pid state' -> Monad.foldM (flip run) state' (ofSeat pid)) state
@@ -1104,7 +1110,10 @@ forEach applyEffectWith loopOffers runSubgame resolving source controller legal 
         | otherwise = Monad.foldM (flip run) state members
       -- CR 608.2f's THIRD sentence: each member considered individually, its
       -- whole body before the next member's, and no event shared between them.
-      memberMajor = overMembers (any Common.choosesOnly body) (\member state -> Monad.foldM (step member) state body)
+      -- The order is observable, so the active team names it: Hive Mind's
+      -- copies, the scenario "CR 805.6 the active team names which teammate
+      -- copies first for Hive Mind".
+      memberMajor = overMembers True (\member state -> Monad.foldM (step member) state body)
       -- CR 608.2e / 608.2f's second sentence: the body's actions in written
       -- order, each one's choices made for every member and then the action
       -- processed for every member at once, before the next action's choices.

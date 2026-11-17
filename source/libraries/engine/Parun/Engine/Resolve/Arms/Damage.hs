@@ -229,9 +229,9 @@ dealDamage runPreventionRiders runReplacementEffects runSubgame resolving source
         -- redirect keeps the dealer, and Eye for an Eye's added damage is its
         -- own, the scenario eye-for-an-eye-damage-back-is-not-damage-dealt-this-way.
         --
-        -- Not implemented: the excess several dealers deal one recipient
-        -- together (CR 120.10); each dealer's is counted against its own bar
-        -- (#7272).
+        -- Unprinted: the excess several dealers deal one recipient together
+        -- (CR 120.10). Each dealer's is counted against its own bar, and
+        -- Parun.Codec.DealDamage refuses several dealers beside a tally.
         let dealtBy dealt = filter ((== dealt) . DamageEvent.source) settled
         pure (filter ((`elem` fmap fst dealers) . DamageEvent.source) settled, sum [Damage.excessDealt gs dealt (fmap DamageEvent.target events) (dealtBy dealt) | (dealt, _) <- dealers])
   -- Syphon Soul's "the damage dealt this way": the SETTLED total, after CR
@@ -1475,7 +1475,8 @@ chooseGroup resolving source controller legal (ChooseGroup.MkChooseGroup among s
 -- die's own top face. CR 107.1b for a sum a negative modifier drove below zero.
 --
 -- CR 706.2b's two steps are taken in the rule's order: `rerolling` below,
--- per die on its natural result, and then `adjusting`, once every die is up.
+-- per die on its natural result, then `rerollingDice` over the roll's dice
+-- together, and then `adjusting`, once every die is up.
 --
 -- CR 706.1's roll is also the PlayerAction.RollDice TriggerCondition.PlayerActs watches
 -- (Feywild Trickster). Recorded under each ROLLER, not `source`: rule 706.1's

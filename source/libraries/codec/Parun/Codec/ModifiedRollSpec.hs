@@ -10,6 +10,7 @@ import qualified Parun.Types.Filter as Filter
 import qualified Parun.Types.ManaCost as ManaCost
 import qualified Parun.Types.ModifiedRoll as ModifiedRoll
 import qualified Parun.Types.PermissionLimit as PermissionLimit
+import qualified Parun.Types.RerollReach as RerollReach
 import qualified Parun.Types.RollModifier as RollModifier
 import qualified Parun.Types.Subtype as Subtype
 import qualified Parun.Types.TapPermanents as TapPermanents
@@ -26,11 +27,11 @@ spec s = Spec.describe s "Parun.Codec.ModifiedRoll" $ do
       ModifiedRoll.MkModifiedRoll
         { ModifiedRoll.sides = Just 6,
           ModifiedRoll.natural = Just 3,
-          ModifiedRoll.modifier = RollModifier.Reroll,
+          ModifiedRoll.modifier = RollModifier.Reroll RerollReach.ThatDie,
           ModifiedRoll.cost = Nothing,
           ModifiedRoll.limit = PermissionLimit.Unlimited
         }
-      " {\"sides\":6,\"natural\":3,\"modifier\":{\"type\":\"Reroll\"}} "
+      " {\"sides\":6,\"natural\":3,\"modifier\":{\"type\":\"Reroll\",\"value\":\"ThatDie\"}} "
   -- Both narrowings and CR 706.2a's cost default away, which is Wall of
   -- Fortune's bare "a die" with its cost dropped.
   Spec.it s "MkModifiedRoll narrowing nothing" $
@@ -40,11 +41,11 @@ spec s = Spec.describe s "Parun.Codec.ModifiedRoll" $ do
       ModifiedRoll.MkModifiedRoll
         { ModifiedRoll.sides = Nothing,
           ModifiedRoll.natural = Nothing,
-          ModifiedRoll.modifier = RollModifier.Reroll,
+          ModifiedRoll.modifier = RollModifier.Reroll RerollReach.ThatDie,
           ModifiedRoll.cost = Nothing,
           ModifiedRoll.limit = PermissionLimit.Unlimited
         }
-      " {\"modifier\":{\"type\":\"Reroll\"}} "
+      " {\"modifier\":{\"type\":\"Reroll\",\"value\":\"ThatDie\"}} "
   -- CR 706.2a's associated cost, and the wire form
   -- data/cards/wall-of-fortune.json writes: a non-mana cost of one tap.
   Spec.it s "MkModifiedRoll, Wall of Fortune's costed reroll" $
@@ -54,7 +55,7 @@ spec s = Spec.describe s "Parun.Codec.ModifiedRoll" $ do
       ModifiedRoll.MkModifiedRoll
         { ModifiedRoll.sides = Nothing,
           ModifiedRoll.natural = Nothing,
-          ModifiedRoll.modifier = RollModifier.Reroll,
+          ModifiedRoll.modifier = RollModifier.Reroll RerollReach.ThatDie,
           ModifiedRoll.cost =
             Just
               Cost.MkCost
@@ -71,7 +72,7 @@ spec s = Spec.describe s "Parun.Codec.ModifiedRoll" $ do
                 },
           ModifiedRoll.limit = PermissionLimit.Unlimited
         }
-      " {\"modifier\":{\"type\":\"Reroll\"},\"cost\":{\"mana\":[],\"components\":[{\"type\":\"TapPermanents\",\"value\":{\"count\":{\"type\":\"Fixed\",\"value\":1},\"whichPermanents\":{\"type\":\"HasSubtype\",\"value\":\"Wall\"}}}]}} "
+      " {\"modifier\":{\"type\":\"Reroll\",\"value\":\"ThatDie\"},\"cost\":{\"mana\":[],\"components\":[{\"type\":\"TapPermanents\",\"value\":{\"count\":{\"type\":\"Fixed\",\"value\":1},\"whichPermanents\":{\"type\":\"HasSubtype\",\"value\":\"Wall\"}}}]}} "
   -- CR 706.2b's second step with a life cost and a budget, the wire form
   -- data/cards/night-shift-of-the-living-dead.json writes.
   Spec.it s "MkModifiedRoll, Night Shift of the Living Dead's budgeted adjustment" $

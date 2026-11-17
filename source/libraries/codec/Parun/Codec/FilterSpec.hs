@@ -17,6 +17,7 @@ import qualified Parun.Types.BlockStatus as BlockStatus
 import qualified Parun.Types.BoundMeasure as BoundMeasure
 import qualified Parun.Types.CardName as CardName
 import qualified Parun.Types.CardType as CardType
+import qualified Parun.Types.ChoiceOrdinal as ChoiceOrdinal
 import qualified Parun.Types.Color as Color
 import qualified Parun.Types.Comparison as Comparison
 import qualified Parun.Types.ControlMargin as ControlMargin
@@ -332,8 +333,14 @@ spec s = Spec.describe s "Parun.Codec.Filter" $ do
     Common.assertCodec
       s
       codec
-      Filter.HasChosenSubtype
+      (Filter.HasChosenSubtype ChoiceOrdinal.First)
       " {\"type\":\"HasChosenSubtype\"} "
+  Spec.it s "HasChosenSubtype Second" $
+    Common.assertCodec
+      s
+      codec
+      (Filter.HasChosenSubtype ChoiceOrdinal.Second)
+      " {\"type\":\"HasChosenSubtype\",\"value\":\"Second\"} "
   Spec.it s "HasChosenCardType" $
     Common.assertCodec
       s
@@ -377,6 +384,12 @@ spec s = Spec.describe s "Parun.Codec.Filter" $ do
       codec
       (Filter.OfSpecificPlayer (PlayerId.MkPlayerId 1))
       " {\"type\":\"OfSpecificPlayer\",\"value\":1} "
+  Spec.it s "OfBoundPlayer" $
+    Common.assertCodec
+      s
+      codec
+      (Filter.OfBoundPlayer (SlotName.MkSlotName (Text.pack "target")))
+      " {\"type\":\"OfBoundPlayer\",\"value\":\"target\"} "
   Spec.it s "IsAttacking" $
     Common.assertCodec
       s

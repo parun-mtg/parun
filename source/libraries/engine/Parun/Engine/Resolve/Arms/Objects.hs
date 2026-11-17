@@ -20,6 +20,7 @@ import Data.Set (Set)
 import qualified Data.Set as Set
 import qualified Parun.Engine.Attach as Attach
 import qualified Parun.Engine.Binding as Binding
+import qualified Parun.Engine.Children as Children
 import qualified Parun.Engine.Combat as Combat
 import qualified Parun.Engine.Damage as Damage
 import qualified Parun.Engine.Daytime as Daytime
@@ -1515,7 +1516,10 @@ affectPlayers resolving source controller legal (AffectPlayers.MkAffectPlayers d
         seatNow ref = case playerRefPlayers legal resolving source controller gs ref of
           [pid] -> PlayerRef.Specific pid
           _ -> ref
-        withPlayers = PlayerEffect.mapPlayerRefs atResolution playerEffect
+        -- CR 702.16k / 608.2h: a player a Filter names by its slot is fixed
+        -- likewise, Filter.bakeBound's posture -- Eon Frolicker's "you gain
+        -- protection from that player". Its scenario proves it.
+        withPlayers = Functor.runIdentity (Children.playerEffectChildren Children.playerEffectLeaves {Children.playerFilter = Functor.Identity . Filter.bakeBound (Binding.playersIn legal) Map.empty Map.empty} (PlayerEffect.mapPlayerRefs atResolution playerEffect))
         -- CR 608.2h / 611.2d: a number the stored effect counts with is
         -- determined once, now. Mutated Cultist's "for each counter removed
         -- this way" reads tallies that die with this resolution. One that

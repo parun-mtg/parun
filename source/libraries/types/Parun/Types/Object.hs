@@ -1,5 +1,6 @@
 module Parun.Types.Object where
 
+import qualified Data.List.NonEmpty as NonEmpty
 import qualified Data.Map.Strict as Map
 import qualified Data.Sequence as Seq
 import qualified Data.Set as Set
@@ -250,9 +251,10 @@ data Object = MkObject
     -- reference is undefined (CR 607.5a) until the copy ends. An absent key is
     -- that undefined choice. data/scenarios/copy's CR 607.5a scenarios prove it.
     chosenColors :: Map.Map Acquisition.Acquisition (Set.Set Color.Color),
-    -- | CR 614.1c: a subtype this object's controller chose as it entered -- a
-    -- basic land type (Convincing Mirage) or a creature type (Pillar of Origins),
-    -- ONE field because no printing makes both choices. Also the type a spell's
+    -- | CR 614.1c: the subtypes this object's controller chose as it entered,
+    -- in the order chosen -- a basic land type (Convincing Mirage), a creature
+    -- type (Pillar of Origins), or two (Illusionary Terrain), read by a
+    -- ChoiceOrdinal. Also the type a spell's
     -- Behold cost chose as it was paid (Behold.chosenType). Read by
     -- Modification.ChosenSubtype and by Filter.HasChosenSubtype off the
     -- effect's SOURCE -- in a CR 106.6 restriction through the value
@@ -260,7 +262,7 @@ data Object = MkObject
     -- A sibling of chosenColors rather than one generalized
     -- choice map, whose sum-typed value every reader would have to re-narrow. Not
     -- a copiable value and per-incarnation, for that field's reasons.
-    chosenSubtype :: Map.Map Acquisition.Acquisition Subtype.Subtype,
+    chosenSubtype :: Map.Map Acquisition.Acquisition (NonEmpty.NonEmpty Subtype.Subtype),
     -- | CR 614.1c: the card type this object's controller chose as it entered
     -- (Umori, the Collector). Read by Filter.HasChosenCardType off the effect's
     -- SOURCE. Not a copiable value and per-incarnation, for chosenColors's

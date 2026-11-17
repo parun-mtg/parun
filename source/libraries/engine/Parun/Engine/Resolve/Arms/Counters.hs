@@ -483,7 +483,8 @@ chooseQuality resolving source controller choice = do
   Monad.when (ChooseQuality.secret choice) $ do
     State.modify' (Game.recordChoice Chosen.Players acquisition (Just . Map.insert PlayerChoice.SecretChooser controller . Maybe.fromMaybe Map.empty) source)
     chosen <- State.get
-    Foldable.for_ (Game.choiceWithLastKnown Chosen.Subtype acquisition source chosen) $ \subtype ->
+    -- The last subtype, the one this choice wrote (ChoiceOrdinal.chooseAt).
+    Foldable.for_ (NonEmpty.last <$> Game.choiceWithLastKnown Chosen.Subtype acquisition source chosen) $ \subtype ->
       State.modify' (Event.recordEvent (GameEvent.ChoseSecretly (ChoseSecretly.MkChoseSecretly (SecretChoice.MkSecretChoice controller source subtype) (Decide.privyTo controller chosen))))
 
 -- CR 400.11c: the resolving controller reveals a card they own from outside the
