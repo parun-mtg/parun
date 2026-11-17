@@ -1624,8 +1624,12 @@ priorityDecision trail = do
                       grantAfterSettle next
                       pure (PriorityWindow.Open trail)
                     Concession.Continues -> do
+                      -- CR 400.11: the cards outside the game a permission
+                      -- lets `p` play stand in as objects while they choose.
+                      State.modify' (Event.offerOutside p)
+                      offering <- State.get
                       let decider = Decide.deciderFor p gs
-                          actions = Action.legalActions p gs
+                          actions = Action.legalActions p offering
                       -- CR 104.4b: a menu that is only Pass offers no
                       -- optional action, so it does not break a loop of
                       -- mandatory actions -- still ASKED, just not RECORDED
@@ -1667,6 +1671,7 @@ priorityDecision trail = do
                       let chosen = if List.elem answered menu then answered else Action.Type.Pass
                           refusing completion = not (Set.null refusedCompletions) && Set.member (Fragmented.choiceKey here chosen, Fragmented.completionKey here completion) refusedCompletions
                           trail' = if offersAChoice then Fragmented.record here p chosen settled else trail
+                      State.modify' (Event.keepOutsideFind (Action.playedObject chosen))
                       case chosen of
                         -- CR 117.4 / 805.5b: every team has passed in
                         -- succession once every still-playing player has,

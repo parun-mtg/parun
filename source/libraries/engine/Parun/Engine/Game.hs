@@ -236,6 +236,11 @@ zoneOf oid gs
   | Set.member oid (GameState.outsideCopies gs) = Nothing
   | otherwise = fmap Object.zone (lookupObject oid gs)
 
+-- CR 400.11: the objects Parun.Engine.Event.offerOutside stood in for the cards
+-- `pid` owns outside the game, which a priority action may play or cast.
+standInsOf :: PlayerId -> GameState -> [ObjectId]
+standInsOf pid gs = [oid | oid <- Map.keys (GameState.outsideFinds gs), fmap Object.owner (lookupObject oid gs) == Just pid]
+
 -- CR 601.2a / 400.11: the origin of a cast out of what `zoneOf` answered for
 -- the card being cast, no zone being outside the game.
 castOrigin :: Maybe Zone -> CastOrigin.CastOrigin

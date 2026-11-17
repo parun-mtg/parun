@@ -70,6 +70,7 @@ import qualified Parun.Types.AppliedReduction as AppliedReduction
 import qualified Parun.Types.BearersTrigger as BearersTrigger
 import qualified Parun.Types.CantSearchLibraries as CantSearchLibraries
 import qualified Parun.Types.CastFromZone as CastFromZone
+import qualified Parun.Types.CastOrigin as CastOrigin
 import qualified Parun.Types.CastWindow as CastWindow
 import qualified Parun.Types.CastingPermission as CastingPermission
 import qualified Parun.Types.Chosen as Chosen
@@ -2586,7 +2587,19 @@ opensZoneOf pid zone oid inZone gs =
 -- the proposal through Parun.Engine.Cast.asProposed first, so the same
 -- matchesObject reads the chosen half rather than CR 709.4's combined view.
 mayCastFrom :: PlayerId -> Zone.Zone -> ObjectId -> GameState -> Bool
-mayCastFrom pid zone oid gs = not (null (castPermissionsFrom pid zone oid gs))
+mayCastFrom pid zone oid gs = not (null (castPermissionsFrom pid (CastOrigin.FromZone zone) oid gs))
+
+-- CR 400.11: the objects granting a CastFrom row applying to `pid` that opens
+-- their cards outside the game (The Holodeck), for
+-- Parun.Engine.Event.offerOutside.
+outsideGrants :: PlayerId -> GameState -> [ObjectId]
+outsideGrants pid gs =
+  [ sid
+  | (source, effect) <- applying pid gs,
+    Just grant <- [castFromGrantOf effect],
+    CastFromZone.outsideTheGame grant,
+    Just sid <- [RowSource.object source]
+  ]
 
 -- CR 601.3e: mayCastFrom on the card as printed or as a prototyped spell
 -- (prototypedReading), for a gate asked before the candidate is chosen.
@@ -2678,17 +2691,26 @@ anyCastFromRow gs =
     || any (Maybe.isJust . castFromGrantOf . ActivePlayerEffect.effect) (StoredEffects.playerEffects (GameState.stored gs))
 
 -- The permissions mayCastFrom answers off: every CR 601.3 CastFrom row applying
--- to `pid` that opens `zone` for `oid` and has a use left, paired with the object
+-- to `pid` that opens `origin` for `oid` and has a use left, paired with the object
 -- that granted it, in `applying`'s timestamp order.
 --
 -- A row whose limit is spent is ABSENT rather than flagged, which is what makes
 -- one function serve both the gate and the spend: castPermissionOptions below
 -- reads this same list, so the permission the cast is offered under and the one
 -- it consumes cannot disagree.
-castPermissionsFrom :: PlayerId -> Zone.Zone -> ObjectId -> GameState -> [(Maybe ObjectId, CastFromZone.CastFromZone)]
-castPermissionsFrom pid zone oid gs =
-  let allows (source, grant) =
-        opensZoneOf pid zone oid (CastFromZone.from grant) gs
+castPermissionsFrom :: PlayerId -> CastOrigin.CastOrigin -> ObjectId -> GameState -> [(Maybe ObjectId, CastFromZone.CastFromZone)]
+castPermissionsFrom pid origin oid gs =
+  let opens grant = case origin of
+        CastOrigin.FromZone zone -> opensZoneOf pid zone oid (CastFromZone.from grant) gs
+        -- CR 400.11: a card outside the game is offered as the object
+        -- Parun.Engine.Event.offerOutside stands in for it, owned by `from`'s
+        -- player.
+        CastOrigin.OutsideTheGame ->
+          CastFromZone.outsideTheGame grant
+            && Map.member oid (GameState.outsideFinds gs)
+            && maybe False (\obj -> elem (Object.owner obj) (zoneOwners pid (InZone.player (CastFromZone.from grant)) gs)) (Game.lookupObject oid gs)
+      allows (source, grant) =
+        opens grant
           && inPool source (CastFromZone.pool grant)
           && Filter.matches (permissionContext pid source grant oid gs) (Projection.viewOfObject oid gs) (CastFromZone.matching grant)
           && unspentPermission pid source grant gs
@@ -2733,7 +2755,7 @@ unspentPermission pid source grant gs =
         PermissionLimit.OnceEachOfYourTurns -> Turn.isActive gs pid && unspent
         PermissionLimit.OncePerEffect -> Maybe.isJust (RowSource.choices source)
 
--- CR 601.3 / 400.7h: the ways a cast of `oid` out of `zone` can be made, for
+-- CR 601.3 / 400.7h: the ways a cast of `oid` out of `origin` can be made, for
 -- Parun.Engine.Cast.choosePlayPermission. Asked of the PRE-MOVE state by
 -- Parun.Engine.Cast.castSpellWith, so the permissions offered are the ones the
 -- gate read, and spent only once the announcement has succeeded, so a rejected
@@ -2755,10 +2777,10 @@ unspentPermission pid source grant gs =
 -- `own` is a permission the card carries for itself that adds a cost or entry
 -- counters of its own, and so is a way like a player's
 -- (Parun.Engine.Cast.ownPayingWays).
-castPermissionOptions :: (ObjectId -> Bool) -> Bool -> [(Maybe ObjectId, CastFromZone.CastFromZone)] -> PlayerId -> Zone.Zone -> ObjectId -> GameState -> [Maybe (ObjectId, CastFromZone.CastFromZone)]
-castPermissionOptions rides open own pid zone oid gs =
+castPermissionOptions :: (ObjectId -> Bool) -> Bool -> [(Maybe ObjectId, CastFromZone.CastFromZone)] -> PlayerId -> CastOrigin.CastOrigin -> ObjectId -> GameState -> [Maybe (ObjectId, CastFromZone.CastFromZone)]
+castPermissionOptions rides open own pid origin oid gs =
   let owned = fmap Object.owner (Game.lookupObject oid gs) == Just pid
-   in permissionOptions rides (open || (zone == Zone.Hand && owned)) (castPermissionsFrom pid zone oid gs <> own)
+   in permissionOptions rides (open || (origin == CastOrigin.FromZone Zone.Hand && owned)) (castPermissionsFrom pid origin oid gs <> own)
 
 -- CR 601.3 / 305.1: the ways a play admitted by `usable` can be made, one per
 -- distinguishable outcome -- Nothing, where `open` says the play needs none of
@@ -2848,11 +2870,11 @@ spendCastPermission pid spent gs = case spent of
           }
 
 -- CR 305.1 / 601.3: the Play-verb permissions (Parun.Types.PermissionVerb) that
--- let `pid` play the land `oid` out of `zone` -- castPermissionsFrom's rows
+-- let `pid` play the land `oid` out of `origin` -- castPermissionsFrom's rows
 -- narrowed to the ones that name a land play, so the budget the two sides spend
 -- is one key.
-landPermissionsFrom :: PlayerId -> Zone.Zone -> ObjectId -> GameState -> [(Maybe ObjectId, CastFromZone.CastFromZone)]
-landPermissionsFrom pid zone oid gs = filter (\(_, grant) -> CastFromZone.verb grant == PermissionVerb.Play) (castPermissionsFrom pid zone oid gs)
+landPermissionsFrom :: PlayerId -> CastOrigin.CastOrigin -> ObjectId -> GameState -> [(Maybe ObjectId, CastFromZone.CastFromZone)]
+landPermissionsFrom pid origin oid gs = filter (\(_, grant) -> CastFromZone.verb grant == PermissionVerb.Play) (castPermissionsFrom pid origin oid gs)
 
 -- The (zone, owner) piles some Play-verb permission opens to `pid`, for
 -- Parun.Engine.Action.playableLands to draw candidates from; which of their
@@ -2877,9 +2899,13 @@ landPermissionOptions :: (ObjectId -> Bool) -> PlayerId -> ObjectId -> GameState
 landPermissionOptions rides pid oid gs = case Game.lookupObject oid gs of
   Nothing -> []
   Just obj ->
-    let zone = Object.zone obj
-        free = (zone == Zone.Hand && Object.owner obj == pid) || elem (zone, Object.owner obj) (playLandPiles pid gs) || mayPlayByMayhem pid oid gs || mayPlayFromOwnGraveyard Map.empty PermissionVerb.Play pid oid gs
-     in permissionOptions rides free (landPermissionsFrom pid zone oid gs)
+    let origin = Game.castOrigin (Game.zoneOf oid gs)
+        -- CR 400.11: a card outside the game is admitted by a Play-verb
+        -- permission alone (Parun.Types.CastFromZone's outsideTheGame).
+        free = case origin of
+          CastOrigin.OutsideTheGame -> False
+          CastOrigin.FromZone zone -> (zone == Zone.Hand && Object.owner obj == pid) || elem (zone, Object.owner obj) (playLandPiles pid gs) || mayPlayByMayhem pid oid gs || mayPlayFromOwnGraveyard Map.empty PermissionVerb.Play pid oid gs
+     in permissionOptions rides free (landPermissionsFrom pid origin oid gs)
 
 -- CR 702.187c: may `pid` play `oid` out of their graveyard under the card's own
 -- costless mayhem? It is in `pid`'s graveyard (rule 702.187c's "your

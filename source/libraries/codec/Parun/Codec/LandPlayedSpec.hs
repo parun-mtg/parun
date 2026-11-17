@@ -3,6 +3,7 @@ module Parun.Codec.LandPlayedSpec where
 import qualified Parun.Codec.LandPlayed as LandPlayed
 import qualified Parun.JsonCodec.Common as Common
 import qualified Parun.Spec as Spec
+import qualified Parun.Types.CastOrigin as CastOrigin
 import qualified Parun.Types.LandPlayed as LandPlayed
 import qualified Parun.Types.ObjectId as ObjectId
 import qualified Parun.Types.PlayerId as PlayerId
@@ -18,8 +19,8 @@ spec s = Spec.describe s "Parun.Codec.LandPlayed" $ do
       ( LandPlayed.MkLandPlayed
           { LandPlayed.player = PlayerId.MkPlayerId 1,
             LandPlayed.land = ObjectId.MkObjectId 7,
-            LandPlayed.from = Zone.Exile
+            LandPlayed.from = CastOrigin.FromZone Zone.Exile
           }
       )
-      " {\"player\":1,\"land\":7,\"from\":\"Exile\"} "
+      " {\"player\":1,\"land\":7,\"from\":{\"type\":\"FromZone\",\"value\":\"Exile\"}} "
   Spec.it s "has a schema" $ Common.assertHasSchema s LandPlayed.codec

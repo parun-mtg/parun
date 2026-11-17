@@ -125,7 +125,8 @@ data GameState = MkGameState
     outsideCopies :: Set.Set ObjectId.ObjectId,
     -- | CR 400.11 / 701.23j: the card outside the game each of those objects
     -- stands for, where a search revealed it there and left it for a later
-    -- clause of the same resolution to bring in (Event.holdFound).
+    -- clause of the same resolution to bring in (Event.holdFound), or where a
+    -- permission lets a player play it at priority (Event.offerOutside).
     outsideFinds :: Map.Map ObjectId.ObjectId OutsideCard.OutsideCard,
     -- | CR 707.13: the card names each object's ability has chosen to copy by
     -- name. Keyed by id, so CR 400.7's new object remembers none.

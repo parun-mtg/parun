@@ -38,6 +38,7 @@ import qualified Parun.Types.AttackTarget as AttackTarget
 import qualified Parun.Types.Card as Card
 import qualified Parun.Types.CardType as CardType
 import qualified Parun.Types.CastFrom as CastFrom
+import qualified Parun.Types.CastOrigin as CastOrigin
 import qualified Parun.Types.ClassLevel as ClassLevel
 import qualified Parun.Types.Color as Color
 import qualified Parun.Types.Combat as Combat
@@ -1990,9 +1991,11 @@ talliedThisTurn tally pid gs = case tally of
 -- another player's hand (Sen Triplets) was not played from "your hand".
 playedNotFrom :: Set.Set Zone.Zone -> PlayerId.PlayerId -> GameState -> LandPlayed.LandPlayed -> Bool
 playedNotFrom excluding pid gs played =
-  let from = LandPlayed.from played
-      own = Zone.shared from || Game.ownerWithLastKnown (LandPlayed.land played) gs == Just pid
-   in LandPlayed.player played == pid && not (Set.member from excluding && own)
+  let excluded = case LandPlayed.from played of
+        CastOrigin.FromZone from -> Set.member from excluding && (Zone.shared from || Game.ownerWithLastKnown (LandPlayed.land played) gs == Just pid)
+        -- CR 400.11: outside the game is no zone `excluding` can name.
+        CastOrigin.OutsideTheGame -> False
+   in LandPlayed.player played == pid && not excluded
 
 landPlayedOf :: GameEvent.GameEvent -> Maybe LandPlayed.LandPlayed
 landPlayedOf event = case event of

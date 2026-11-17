@@ -60,6 +60,7 @@ import qualified Parun.Types.Card as Card.Type
 import qualified Parun.Types.CardName as CardName
 import qualified Parun.Types.CardType as CardType
 import qualified Parun.Types.CastFromZone as CastFromZone
+import qualified Parun.Types.CastOrigin as CastOrigin
 import qualified Parun.Types.CastingPermission as CastingPermission
 import qualified Parun.Types.CastingRestriction as CastingRestriction
 import qualified Parun.Types.ChangeMode as ChangeMode
@@ -1499,7 +1500,14 @@ candidateInZone pid oid name proposed candidate =
   let board = proposedFor pid oid (CandidateCost.keyword candidate) proposed
    in case (Game.zoneOf oid board, proposedFace oid name board) of
         (Just zone, Just face) -> permittedFrom pid oid face board zone
+        (Nothing, Just _) -> permittedOutside pid oid board
         _ -> False
+
+-- CR 400.11 / 601.3: may this player cast this stand-in for a card outside the
+-- game (Event.offerOutside)? Only a CastFrom permission opening outside the game
+-- allows it; no rule does.
+permittedOutside :: PlayerId -> ObjectId -> GameState -> Bool
+permittedOutside pid oid gs = not (null (PlayerEffect.castPermissionsFrom pid CastOrigin.OutsideTheGame oid gs))
 
 -- CR 601.3: the zones a spell can be cast from at all, in the engine's
 -- canonical order -- what castableSpells scans, and the list inCastableZone
@@ -1934,7 +1942,7 @@ inCastableZone pid oid name gs =
     Nothing -> False
     -- Membership first, so only the zone the object lies in pays for its
     -- permission (#4698).
-    Just face -> any (\zone -> elem oid (zoneCandidates zone pid gs) && permittedFrom pid oid face gs zone) castZones
+    Just face -> any (\zone -> elem oid (zoneCandidates zone pid gs) && permittedFrom pid oid face gs zone) castZones || permittedOutside pid oid gs
 
 -- CR 205.4e: a legendary instant or sorcery can't be cast unless its caster
 -- controls a legendary creature or a legendary planeswalker.
@@ -2439,7 +2447,7 @@ castProposals among pid gs =
         face <- Maybe.maybeToList (fusedFaceOf oid gs)
         pure (oid, Face.name face, Facing.FaceUp)
       inZone zone = concatMap (\oid -> proposals oid <> fusedProposals zone oid) (filter among (zoneCandidates zone pid gs))
-   in concatMap inZone castZones
+   in concatMap inZone castZones <> concatMap proposals (Game.standInsOf pid gs)
 
 -- CR 601.3 / 613.1f: is `oid` a graveyard card no permission can name on this
 -- board, in any half or facing? Decided without projecting it, so
@@ -3137,7 +3145,12 @@ playLand settle offered pid oid mName = do
   -- CR 614.1a: a land an EntryRewrite.SacrificeToEnter turns into the graveyard
   -- was still played, so it spends the permission as a land that arrived does.
   State.modify' (\g -> g {GameState.scratch = (GameState.scratch g) {Scratch.refusedEntries = Just Set.empty}})
-  moved <- Event.changeZoneShowing settle (Just pid) oid Zone.Battlefield mName
+  -- CR 400.11: a stand-in for a card outside the game left no zone, so its
+  -- card is brought in rather than moved (Event.playFromOutside).
+  moved <-
+    if Map.member oid (GameState.outsideFinds before)
+      then Event.playFromOutside settle pid oid mName
+      else Event.changeZoneShowing settle (Just pid) oid Zone.Battlefield mName
   -- CR 614.3: the row watched this one entry, so one the entry left unapplied
   -- (a CR 614.6 redirect, SacrificeToEnter's CR 614.1a graveyard) goes with it.
   Monad.forM_ entryRow $ \ts ->
@@ -3161,8 +3174,7 @@ playLand settle offered pid oid mName = do
       State.modify' (followIntoSpell (heldPermission oid held) oid land)
     -- CR 305.1: the play itself, for a condition watching land plays
     -- (TriggerCondition.PlayerPlaysLand), naming the zone it was played from.
-    Monad.forM_ (Game.zoneOf oid before) $ \from ->
-      State.modify' (Event.recordEvent (GameEvent.LandPlayed (LandPlayed.MkLandPlayed pid (Maybe.fromMaybe oid (Seq.lookup 0 moved)) from)))
+    State.modify' (Event.recordEvent (GameEvent.LandPlayed (LandPlayed.MkLandPlayed pid (Maybe.fromMaybe oid (Seq.lookup 0 moved)) (Game.castOrigin (Game.zoneOf oid before)))))
   -- CR 305.2a counts the lands played this turn, so this TALLIES rather than
   -- flagging. CR 305.4: the only tally, an effect that PUTS a land onto the
   -- battlefield not being one.
@@ -3342,7 +3354,7 @@ replacementRow src controller slot oid rewrite gs =
    in (ts, stamped {GameState.stored = (GameState.stored stamped) {StoredEffects.replacements = active : StoredEffects.replacements (GameState.stored stamped)}})
 
 -- CR 601.3: PlayerEffect.castPermissionOptions for a cast of `oid` out of
--- `zone`, open without a grant where the card carries a permission of its own
+-- `origin`, open without a grant where the card carries a permission of its own
 -- (exileOpen in exile; Object.playPermissions or
 -- PlayerEffect.mayPlayFromOwnGraveyard in a graveyard). For a timed cast
 -- alone: castSpellWith's `permissions` gives an untimed one no way.
@@ -3354,12 +3366,12 @@ replacementRow src controller slot oid rewrite gs =
 -- `castFor` is the keyword the candidate's cost came from: a costless permission
 -- of the card's naming that keyword's family (Tenacious Underdog's "using its
 -- blitz ability") opens the zone for that cost alone.
-castWays :: (ObjectId -> Bool) -> PlayerId -> ObjectId -> Zone.Zone -> Face.Face Card.Type.Card -> GameState -> Maybe Keyword -> [Maybe (ObjectId, CastFromZone.CastFromZone)]
-castWays rides pid oid zone face gs castFor =
+castWays :: (ObjectId -> Bool) -> PlayerId -> ObjectId -> CastOrigin.CastOrigin -> Face.Face Card.Type.Card -> GameState -> Maybe Keyword -> [Maybe (ObjectId, CastFromZone.CastFromZone)]
+castWays rides pid oid origin face gs castFor =
   let named = ownedBy pid oid gs && any (\family -> (castFor >>= Keyword.familyOf) == Just family) [family | CastingPermission.CastFromGraveyard _ (Just family) [] Nothing <- Cost.permissionsOf oid face gs]
-      ownOpen = case zone of
-        Zone.Exile -> exileOpen pid oid face gs
-        Zone.Graveyard -> permitsCastUnderPermission pid oid face gs || PlayerEffect.mayPlayFromOwnGraveyard Map.empty PermissionVerb.Cast pid oid gs || named
+      ownOpen = case origin of
+        CastOrigin.FromZone Zone.Exile -> exileOpen pid oid face gs
+        CastOrigin.FromZone Zone.Graveyard -> permitsCastUnderPermission pid oid face gs || PlayerEffect.mayPlayFromOwnGraveyard Map.empty PermissionVerb.Cast pid oid gs || named
         _ -> False
       -- CR 118.8: a cast an effect offers never asks, that offer being the
       -- permission it is made under (StickerSpec's "a stickered card offered
@@ -3368,8 +3380,8 @@ castWays rides pid oid zone face gs castFor =
       -- data/cards/ holds no CastFrom row and no graveyard GrantPlayFromExile over
       -- another player's graveyard outside an offer (jq, `from.player` other than
       -- You, 2026-11-01); a card standing over an opponent's graveyard would refute it.
-      own = if zone == Zone.Graveyard && ownedBy pid oid gs then ownPayingWays oid face gs else []
-   in PlayerEffect.castPermissionOptions rides ownOpen own pid zone oid gs
+      own = if origin == CastOrigin.FromZone Zone.Graveyard && ownedBy pid oid gs then ownPayingWays oid face gs else []
+   in PlayerEffect.castPermissionOptions rides ownOpen own pid origin oid gs
 
 -- CR 118.8 / 601.3: each graveyard permission the card carries for itself that
 -- states an additional cost or entry counters (Cost.addsToItsCast), as the
@@ -3390,7 +3402,8 @@ ownPayingWays oid face gs =
           CastFromZone.alternativeCost = Nothing,
           CastFromZone.entersWith = entersWith,
           CastFromZone.amount = Nothing,
-          CastFromZone.creatureTypes = Set.empty
+          CastFromZone.creatureTypes = Set.empty,
+          CastFromZone.outsideTheGame = False
         }
     )
   | permission@(CastingPermission.CastFromGraveyard _ _ additional entersWith) <- Cost.permissionsOf oid face gs,
@@ -3411,7 +3424,7 @@ candidateWays rides pid oid zone face gs castFor =
         then Nothing
         -- CR 601.3e / 719.3a: the permissions naming the spell this
         -- candidate makes, read off the board its choice produces.
-        else Just (foldMap (\from -> castWays rides pid oid from face (proposedFor pid oid castFor gs) castFor) zone)
+        else Just (castWays rides pid oid (Game.castOrigin zone) face (proposedFor pid oid castFor gs) castFor)
 
 -- CR 601.3 / 702.103d: `candidates` less any no way admits on its own board, where
 -- another's way does: with only Muldrotha's creature permission left, Nyxborn
