@@ -1,0 +1,291 @@
+1 Abrade
+1 Abuelo's Awakening
+1 Abuelo, Ancestral Echo
+1 Abyssal Gorestalker
+1 Aclazotz, Deepest Betrayal // Temple of the Dead
+1 Acolyte of Aclazotz
+1 Acrobatic Leap
+1 Adaptive Gemguard
+1 Akal Pakal, First Among Equals
+1 Akawalli, the Seething Tower
+1 Amalia Benavides Aguirre
+1 Ancestors' Aid
+1 Ancestral Reminiscence
+1 Anim Pakal, Thousandth Moon
+1 Another Chance
+1 Armored Kincaller
+1 Attentive Sunscribe
+1 Bartolomé del Presidio
+1 Basking Capybara
+1 Bat Colony
+1 Bedrock Tortoise
+1 Belligerent Yearling
+1 Bitter Triumph
+1 Bloodletter of Aclazotz
+1 Bloodthorn Flail
+1 Bonehoard Dracosaur
+1 Brackish Blunder
+1 Braided Net // Braided Quipu
+1 Brass's Tunnel-Grinder // Tecutlan, the Searing Rift
+1 Brazen Blademaster
+1 Breeches, Eager Pillager
+1 Bringer of the Last Gift
+1 Broodrage Mycoid
+1 Buried Treasure
+1 Burning Sun Cavalry
+1 Calamitous Cave-In
+1 Canonized in Blood
+1 Caparocti Sunborn
+1 Captain Storm, Cosmium Raider
+1 Captivating Cave
+1 Careening Mine Cart
+1 Cartographer's Companion
+1 Cavern Stomper
+1 Cavern of Souls
+1 Cavernous Maw
+1 Cenote Scout
+1 Chart a Course
+1 Child of the Volcano
+1 Chimil, the Inner Sun
+1 Chupacabra Echo
+1 Clay-Fired Bricks // Cosmium Kiln
+1 Coati Scavenger
+1 Cogwork Wrestler
+1 Colossadactyl
+1 Compass Gnome
+1 Confounding Riddle
+1 Contested Game Ball
+1 Corpses of the Lost
+1 Cosmium Blast
+1 Cosmium Confluence
+1 Council of Echoes
+1 Curator of Sun's Creation
+1 Daring Discovery
+1 Dauntless Dismantler
+1 Dead Weight
+1 Deathcap Marionette
+1 Deconstruction Hammer
+1 Deep Goblin Skulltaker
+1 Deep-Cavern Bat
+1 Deepfathom Echo
+1 Deeproot Pilgrimage
+1 Defossilize
+1 Diamond Pick-Axe
+1 Didact Echo
+1 Digsite Conservator
+1 Dinotomaton
+1 Dire Flail // Dire Blunderbuss
+1 Disruptor Wanderglyph
+1 Disturbed Slumber
+1 Dowsing Device // Geode Grotto
+1 Dreadmaw's Ire
+1 Dusk Rose Reliquary
+1 Earthshaker Dreadmaw
+1 Eaten by Piranhas
+1 Echo of Dusk
+1 Echoing Deeps
+1 Enterprising Scallywag
+1 Envoy of Okinec Ahau
+1 Etali's Favor
+1 Explorer's Cache
+1 Fabrication Foundry
+1 Family Reunion
+1 Fanatical Offering
+1 Forest
+1 Forgotten Monument
+1 Frilled Cave-Wurm
+1 Fungal Fortitude
+1 Gargantuan Leech
+1 Geological Appraiser
+1 Get Lost
+1 Ghalta, Stampede Tyrant
+1 Gishath, Sun's Avatar
+1 Glimpse the Core
+1 Glorifier of Suffering
+1 Glowcap Lantern
+1 Goblin Tomb Raider
+1 Goldfury Strider
+1 Grasping Shadows // Shadows' Lair
+1 Greedy Freebooter
+1 Growing Rites of Itlimoc // Itlimoc, Cradle of the Sun
+1 Guardian of the Great Door
+1 Helping Hand
+1 Hermitic Nautilus
+1 Hidden Cataract
+1 Hidden Courtyard
+1 Hidden Necropolis
+1 Hidden Nursery
+1 Hidden Volcano
+1 Hit the Mother Lode
+1 Hotfoot Gnome
+1 Hoverstone Pilgrim
+1 Huatli's Final Strike
+1 Huatli, Poet of Unity // Roar of the Fifth People
+1 Hulking Raptor
+1 Hunter's Blowgun
+1 Hurl into History
+1 Idol of the Deep King // Sovereign's Macuahuitl
+1 In the Presence of Ages
+1 Inti, Seneschal of the Sun
+1 Intrepid Paleontologist
+1 Inverted Iceberg // Iceberg Titan
+1 Ironpaw Aspirant
+1 Island
+1 Itzquinth, Firstborn of Gishath
+1 Ixalli's Lorekeeper
+1 Jade Seedstones // Jadeheart Attendant
+1 Jadelight Spelunker
+1 Join the Dead
+1 Kaslem's Stonetree // Kaslem's Strider
+1 Kellan, Daring Traveler // Journey On
+1 Kinjalli's Dawnrunner
+1 Kitesail Larcenist
+1 Kutzil's Flanker
+1 Kutzil, Malamet Exemplar
+1 Lodestone Needle // Guidestone Compass
+1 Magmatic Galleon
+1 Malamet Battle Glyph
+1 Malamet Brawler
+1 Malamet Scythe
+1 Malamet Veteran
+1 Malamet War Scribe
+1 Malcolm, Alluring Scoundrel
+1 Malicious Eclipse
+1 Marauding Brinefang
+1 Market Gnome
+1 Master's Guide-Mural // Master's Manufactory
+1 Matzalantli, the Great Door // The Core
+1 Mephitic Draught
+1 Merfolk Cave-Diver
+1 Might of the Ancestors
+1 Miner's Guidewing
+1 Mineshaft Spider
+1 Mischievous Pup
+1 Molten Collapse
+1 Mountain
+1 Nicanzil, Current Conductor
+1 Nurturing Bristleback
+1 Oaken Siren
+1 Ojer Axonil, Deepest Might // Temple of Power
+1 Ojer Kaslem, Deepest Growth // Temple of Cultivation
+1 Ojer Pakpatiq, Deepest Epoch // Temple of Cyclical Time
+1 Ojer Taq, Deepest Foundation // Temple of Civilization
+1 Oltec Archaeologists
+1 Oltec Cloud Guard
+1 Orazca Puzzle-Door
+1 Oteclan Landmark // Oteclan Levitator
+1 Out of Air
+1 Over the Edge
+1 Palani's Hatcher
+1 Panicked Altisaur
+1 Pathfinding Axejaw
+1 Petrify
+1 Pirate Hat
+1 Pit of Offerings
+1 Plains
+1 Plundering Pirate
+1 Poetic Ingenuity
+1 Poison Dart Frog
+1 Preacher of the Schism
+1 Primordial Gnawer
+1 Promising Vein
+1 Pugnacious Hammerskull
+1 Queen's Bay Paladin
+1 Quicksand Whirlpool
+1 Quintorius Kand
+1 Rampaging Ceratops
+1 Rampaging Spiketail
+1 Ray of Ruin
+1 Relic's Roar
+1 Resplendent Angel
+1 Restless Anchorage
+1 Restless Prairie
+1 Restless Reef
+1 Restless Ridgeline
+1 Restless Vents
+1 River Herald Guide
+1 River Herald Scout
+1 Roaming Throne
+1 Ruin-Lurker Bat
+1 Rumbling Rockslide
+1 Runaway Boulder
+1 Sage of Days
+1 Saheeli's Lattice // Mastercraft Raptor
+1 Saheeli, the Sun's Brilliance
+1 Sanguine Evangelist
+1 Scampering Surveyor
+1 Screaming Phantom
+1 Scytheclaw Raptor
+1 Seeker of Sunlight
+1 Seismic Monstrosaur
+1 Self-Reflection
+1 Sentinel of the Nameless City
+1 Shipwreck Sentry
+1 Sinuous Benthisaur
+1 Skullcap Snail
+1 Soaring Sandwing
+1 Song of Stupefaction
+1 Sorcerous Spyglass
+1 Soulcoil Viper
+1 Souls of the Lost
+1 Sovereign Okinec Ahau
+1 Spelunking
+1 Spring-Loaded Sawblades // Bladewheel Chariot
+1 Spyglass Siren
+1 Squirming Emergence
+1 Staggering Size
+1 Stalactite Stalker
+1 Starving Revenant
+1 Staunch Crewmate
+1 Stinging Cave Crawler
+1 Subterranean Schooner
+1 Sunbird Standard // Sunbird Effigy
+1 Sunfire Torch
+1 Sunken Citadel
+1 Sunshot Militia
+1 Swamp
+1 Swashbuckler's Whip
+1 Synapse Necromage
+1 Tarrian's Journal // The Tomb of Aclazotz
+1 Tarrian's Soulcleaver
+1 Tectonic Hazard
+1 Tendril of the Mycotyrant
+1 Terror Tide
+1 The Ancient One
+1 The Belligerent
+1 The Enigma Jewel // Locus of Enlightenment
+1 The Everflowing Well // The Myriad Pools
+1 The Millennium Calendar
+1 The Mycotyrant
+1 The Skullspore Nexus
+1 Thousand Moons Crackshot
+1 Thousand Moons Infantry
+1 Thousand Moons Smithy // Barracks of the Thousand
+1 Thrashing Brontodon
+1 Threefold Thunderhulk
+1 Throne of the Grim Captain // The Grim Captain
+1 Tinker's Tote
+1 Tishana's Tidebinder
+1 Tithing Blade // Consuming Sepulcher
+1 Treasure Map // Treasure Cove
+1 Triumphant Chomp
+1 Trumpeting Carnosaur
+1 Twists and Turns // Mycoid Maze
+1 Uchbenbak, the Great Mistake
+1 Unlucky Drop
+1 Unstable Glyphbridge // Sandswirl Wanderglyph
+1 Vanguard of the Rose
+1 Visage of Dread // Dread Osseosaur
+1 Vito's Inquisitor
+1 Vito, Fanatic of Aclazotz
+1 Volatile Fault
+1 Volatile Wanderglyph
+1 Wail of the Forgotten
+1 Walk with the Ancestors
+1 Warden of the Inner Sky
+1 Waterlogged Hulk // Watertight Gondola
+1 Waterwind Scout
+1 Waylaying Pirates
+1 Zoetic Glyph
+1 Zoyowa Lava-Tongue
+1 Zoyowa's Justice
