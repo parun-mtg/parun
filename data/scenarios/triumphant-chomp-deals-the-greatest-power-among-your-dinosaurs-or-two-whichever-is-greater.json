@@ -1,0 +1,171 @@
+{
+  "board": {
+    "active": "alice",
+    "step": "PrecombatMain",
+    "seats": [
+      {
+        "name": "alice",
+        "battlefield": [
+          {
+            "card": "Mountain",
+            "label": "m1"
+          },
+          {
+            "card": "Mountain",
+            "label": "m2"
+          },
+          {
+            "card": "Mountain",
+            "label": "m3"
+          },
+          {
+            "card": "Looming Altisaur",
+            "label": "altisaur"
+          },
+          {
+            "card": "Colossal Dreadmaw",
+            "label": "dreadmaw"
+          },
+          {
+            "card": "Enormous Baloth",
+            "label": "baloth"
+          }
+        ],
+        "hand": [
+          {
+            "card": "Triumphant Chomp",
+            "label": "c1"
+          },
+          {
+            "card": "Triumphant Chomp",
+            "label": "c2"
+          },
+          {
+            "card": "Triumphant Chomp",
+            "label": "c3"
+          }
+        ]
+      },
+      {
+        "name": "bob",
+        "battlefield": [
+          {
+            "card": "Ancient Brontodon",
+            "label": "bronto"
+          },
+          {
+            "card": "Caelorna, Coral Tyrant",
+            "label": "coral"
+          }
+        ]
+      }
+    ]
+  },
+  "description": "Triumphant Chomp deals the greatest power among Dinosaurs you control, ignoring a bigger non-Dinosaur and an opponent's bigger Dinosaur, and 2 when that is less",
+  "note": "Alice's Dinosaurs are 1 and 6 power, her Enormous Baloth 7, bob's Ancient Brontodon 9. The first Chomp deals 6 to Caelorna; the second deals 6 to Colossal Dreadmaw, killing it; the third, with only the 1-power Looming Altisaur left, deals 2.",
+  "timeline": [
+    {
+      "do": {
+        "Cast": {
+          "mana": [
+            "$m1",
+            null
+          ],
+          "object": "$c1",
+          "targets": [
+            "$coral"
+          ]
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Damage": {
+          "object": "$coral",
+          "damage": 6
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Cast": {
+          "mana": [
+            "$m2",
+            null
+          ],
+          "object": "$c2",
+          "targets": [
+            "$dreadmaw"
+          ]
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Colossal Dreadmaw",
+          "count": 1,
+          "player": "alice",
+          "zone": "Graveyard"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Cast": {
+          "mana": [
+            "$m3"
+          ],
+          "object": "$c3",
+          "targets": [
+            "$bronto"
+          ]
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Damage": {
+          "object": "$bronto",
+          "damage": 2
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    }
+  ]
+}

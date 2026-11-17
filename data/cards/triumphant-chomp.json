@@ -1,0 +1,120 @@
+{
+  "faces": [
+    {
+      "manaCost": [
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "Red"
+          }
+        }
+      ],
+      "name": "Triumphant Chomp",
+      "oracleText": "Triumphant Chomp deals damage to target creature equal to 2 or the greatest power among Dinosaurs you control, whichever is greater.",
+      "spell": {
+        "modes": [
+          {
+            "clauses": [
+              {
+                "effects": [
+                  {
+                    "type": "DealDamage",
+                    "value": {
+                      "parts": [
+                        {
+                          "quantity": {
+                            "type": "Plus",
+                            "value": {
+                              "left": {
+                                "type": "Literal",
+                                "value": 2
+                              },
+                              "right": {
+                                "type": "NonNegative",
+                                "value": {
+                                  "type": "Plus",
+                                  "value": {
+                                    "left": {
+                                      "type": "Count",
+                                      "value": {
+                                        "aggregation": {
+                                          "type": "Greatest",
+                                          "value": {
+                                            "type": "Measure",
+                                            "value": "Power"
+                                          }
+                                        },
+                                        "filter": {
+                                          "type": "And",
+                                          "value": [
+                                            {
+                                              "type": "HasCardType",
+                                              "value": "Creature"
+                                            },
+                                            {
+                                              "type": "HasSubtype",
+                                              "value": "Dinosaur"
+                                            },
+                                            {
+                                              "type": "HeldBy",
+                                              "value": {
+                                                "holder": "Controller",
+                                                "relation": "You"
+                                              }
+                                            }
+                                          ]
+                                        },
+                                        "scope": {
+                                          "type": "InZone",
+                                          "value": {
+                                            "player": {
+                                              "type": "Relative",
+                                              "value": "AnyPlayer"
+                                            },
+                                            "zone": "Battlefield"
+                                          }
+                                        }
+                                      }
+                                    },
+                                    "right": {
+                                      "type": "Negate",
+                                      "value": {
+                                        "type": "Literal",
+                                        "value": 2
+                                      }
+                                    }
+                                  }
+                                }
+                              }
+                            }
+                          },
+                          "ref": {
+                            "type": "InSlot",
+                            "value": "creature"
+                          }
+                        }
+                      ]
+                    }
+                  }
+                ]
+              }
+            ],
+            "targetSlots": {
+              "creature": {
+                "pool": {
+                  "type": "Creatures"
+                }
+              }
+            }
+          }
+        ]
+      },
+      "typeLine": {
+        "types": [
+          "Sorcery"
+        ]
+      }
+    }
+  ]
+}
