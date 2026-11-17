@@ -4,7 +4,8 @@
 # sets it was printed in for `parun translate --set`; every face's Oracle
 # text by card and face name, which both stamp on the cards they write; and
 # every card's legalities by its faces' names, as Parun.Ingest.cardKey joins
-# them, which `parun ingest` writes to data/legalities.json for the pool. A
+# them, which `parun ingest` writes to data/legalities.json for the pool,
+# skipping a funny card that shares a real card's name (Red Herring). A
 # reversible card is a second printing of a card, so it is left out. Run as
 #   jq -f script/ingest/candidates.jq _scratch/AtomicCards.json > _scratch/candidates.json
 def printed: {manaCost, colorIndicator, supertypes, types, subtypes, power, toughness, text};
@@ -22,6 +23,6 @@ def printed: {manaCost, colorIndicator, supertypes, types, subtypes, power, toug
         empty
       end
   ],
-  legalities: [.data[] | select(.[0].layout != "reversible_card") | {card: ([sort_by(.side)[] | (.faceName // .name)] | join(" // ")), legalities: .[0].legalities}],
+  legalities: [.data[] | ((map(select((.isFunny // false) == false)) | select(length > 0)) // .) | select(.[0].layout != "reversible_card") | {card: ([sort_by(.side)[] | (.faceName // .name)] | join(" // ")), legalities: .[0].legalities}],
   texts: [.data | to_entries[] | .key as $card | .value[] | {card: $card, name: (.faceName // .name), text: (.text // "")}] | unique
 }
