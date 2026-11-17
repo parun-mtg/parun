@@ -19,6 +19,8 @@ data DistinctOf
   | -- | CR 205.3i: the land types other than the five basic ones, Mojave
     -- Desert's "the number of nonbasic land types among lands that player controls".
     NonbasicLandTypes
+  | -- | CR 205.3m: creature types, a changeling adding every one (CR 702.73a).
+    CreatureTypes
   | -- | CR 202.3: mana values, a member with no mana cost adding 0 (CR 202.3a).
     ManaValues
   | -- | CR 202.1 / 202.1b: mana costs by symbol, a costless member adding none.
