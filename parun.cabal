@@ -64,9 +64,13 @@ common executable
   import: library
   ghc-options:
     -rtsopts
-    -threaded
     -with-rtsopts=-A64m
-    -with-rtsopts=-N
+
+  -- The wasm RTS has no threaded way.
+  if !arch(wasm32)
+    ghc-options:
+      -threaded
+      -with-rtsopts=-N
 
 -- The benchmark suite. The `parun-benchmark` target is a thin wrapper around it.
 library benchmark

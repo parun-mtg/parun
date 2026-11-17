@@ -1,5 +1,7 @@
 module Parun.Extra.NaturalSpec where
 
+import qualified Numeric.Natural as Natural
+import qualified Parun.Extra.Integer as Integer
 import qualified Parun.Extra.Natural as Natural
 import qualified Parun.Spec as Spec
 
@@ -20,20 +22,20 @@ spec s = Spec.describe s "Parun.Extra.Natural" $ do
       Spec.assertEq s (Natural.toInt 0) $ Just 0
 
     Spec.it s "succeeds with the max bound" $ do
-      Spec.assertEq s (Natural.toInt 9223372036854775807) $ Just 9223372036854775807
+      Spec.assertEq s (Natural.toInt maxInt) $ Just maxBound
 
     Spec.it s "fails beyond the max bound" $ do
-      Spec.assertEq s (Natural.toInt 9223372036854775808) Nothing
+      Spec.assertEq s (Natural.toInt $ maxInt + 1) Nothing
 
   Spec.describe s "toIntSaturating" $ do
     Spec.it s "works with zero" $ do
       Spec.assertEq s (Natural.toIntSaturating 0) 0
 
     Spec.it s "works with the max bound" $ do
-      Spec.assertEq s (Natural.toIntSaturating 9223372036854775807) 9223372036854775807
+      Spec.assertEq s (Natural.toIntSaturating maxInt) maxBound
 
     Spec.it s "clamps to the max bound" $ do
-      Spec.assertEq s (Natural.toIntSaturating 9223372036854775808) 9223372036854775807
+      Spec.assertEq s (Natural.toIntSaturating $ maxInt + 1) maxBound
 
   Spec.describe s "minusSaturating" $ do
     Spec.it s "subtracts when the result is not negative" $ do
@@ -51,3 +53,7 @@ spec s = Spec.describe s "Parun.Extra.Natural" $ do
 
     Spec.it s "fails beyond the max bound" $ do
       Spec.assertEq s (Natural.toWord64 18446744073709551616) Nothing
+
+-- Int's width varies by target: 64 bits natively, 32 on wasm32.
+maxInt :: Natural.Natural
+maxInt = Integer.toNaturalSaturating $ toInteger (maxBound :: Int)

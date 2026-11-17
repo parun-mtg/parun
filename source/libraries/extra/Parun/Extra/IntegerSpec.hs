@@ -10,32 +10,32 @@ spec s = Spec.describe s "Parun.Extra.Integer" $ do
       Spec.assertEq s (Integer.toInt 0) $ Just 0
 
     Spec.it s "succeeds with the max bound" $ do
-      Spec.assertEq s (Integer.toInt 9223372036854775807) $ Just 9223372036854775807
+      Spec.assertEq s (Integer.toInt maxInt) $ Just maxBound
 
     Spec.it s "fails beyond the max bound" $ do
-      Spec.assertEq s (Integer.toInt 9223372036854775808) Nothing
+      Spec.assertEq s (Integer.toInt $ maxInt + 1) Nothing
 
     Spec.it s "succeeds with the min bound" $ do
-      Spec.assertEq s (Integer.toInt (-9223372036854775808)) $ Just (-9223372036854775808)
+      Spec.assertEq s (Integer.toInt minInt) $ Just minBound
 
     Spec.it s "fails beyond the min bound" $ do
-      Spec.assertEq s (Integer.toInt (-9223372036854775809)) Nothing
+      Spec.assertEq s (Integer.toInt $ minInt - 1) Nothing
 
   Spec.describe s "toIntSaturating" $ do
     Spec.it s "works with zero" $ do
       Spec.assertEq s (Integer.toIntSaturating 0) 0
 
     Spec.it s "works with the max bound" $ do
-      Spec.assertEq s (Integer.toIntSaturating 9223372036854775807) 9223372036854775807
+      Spec.assertEq s (Integer.toIntSaturating maxInt) maxBound
 
     Spec.it s "clamps to the max bound" $ do
-      Spec.assertEq s (Integer.toIntSaturating 9223372036854775808) 9223372036854775807
+      Spec.assertEq s (Integer.toIntSaturating $ maxInt + 1) maxBound
 
     Spec.it s "works with the min bound" $ do
-      Spec.assertEq s (Integer.toIntSaturating (-9223372036854775808)) (-9223372036854775808)
+      Spec.assertEq s (Integer.toIntSaturating minInt) minBound
 
     Spec.it s "clamps to the min bound" $ do
-      Spec.assertEq s (Integer.toIntSaturating (-9223372036854775809)) (-9223372036854775808)
+      Spec.assertEq s (Integer.toIntSaturating $ minInt - 1) minBound
 
   Spec.describe s "toNatural" $ do
     Spec.it s "succeeds with zero" $ do
@@ -56,3 +56,10 @@ spec s = Spec.describe s "Parun.Extra.Integer" $ do
 
     Spec.it s "converts a negative number to zero" $ do
       Spec.assertEq s (Integer.toNaturalSaturating (-1)) 0
+
+-- Int's width varies by target: 64 bits natively, 32 on wasm32.
+maxInt :: Integer
+maxInt = toInteger (maxBound :: Int)
+
+minInt :: Integer
+minInt = toInteger (minBound :: Int)
