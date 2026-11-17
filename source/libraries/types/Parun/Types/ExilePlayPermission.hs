@@ -100,8 +100,10 @@ data ExilePlayPermission = MkExilePlayPermission
     condition :: Maybe Condition.Condition,
     origin :: PlayPermissionOrigin.PlayPermissionOrigin,
     -- | CR 601.3 / 305.9: whether the permission also lets the land it lies
-    -- on be played (Play) or only lets a spell be cast (Cast). Read by
-    -- Parun.Engine.Cast.permitsLandPlayUnderPermission.
+    -- on be played (Play), only lets a spell be cast (Cast), or only lets its
+    -- Adventure half be cast (CastAsAdventure). Read by
+    -- Parun.Engine.Cast.permitsLandPlayUnderPermission and
+    -- Parun.Engine.Cast.verbAdmits.
     verb :: PermissionVerb.PermissionVerb,
     -- | CR 601.2f: the generic mana each spell cast under it costs more --
     -- Lightstall Inquisitor\'s "each spell cast this way costs {1} more".
