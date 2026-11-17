@@ -80,7 +80,7 @@
                           "count": {
                             "type": "Exactly",
                             "value": {
-                              "type": "BoundCount",
+                              "type": "InSlot",
                               "value": "sacrificed"
                             }
                           },
