@@ -133,6 +133,7 @@ withoutAnnouncementSpec s registry = Spec.describe s "withoutAnnouncement" $ do
       Just land -> do
         let tapTo status gs = gs {GameState.objects = Map.adjust (\o -> o {Object.tapped = status}) land (GameState.objects gs)}
             entry = tapTo TapState.Tapped began
+            tappedIn :: Maybe GameState.GameState -> Maybe (Maybe TapState.TapState)
             tappedIn = fmap (fmap Object.tapped . Map.lookup land . GameState.objects)
         Spec.assertEqWith s "the window's untap and retap stand" (tappedIn (Reversal.withoutAnnouncement began entry [tapTo TapState.Untapped entry] entry)) (Just (Just TapState.Tapped))
         Spec.assertEqWith s "and its untap alone stands" (tappedIn (Reversal.withoutAnnouncement began entry [] (tapTo TapState.Untapped entry))) (Just (Just TapState.Untapped))
