@@ -201,8 +201,10 @@ evaluate viewOf quantityOf talliesWhatHappened candidateCounters context gs coun
         -- playersFor the zone arm indexes by, so CR 800.4a's departed seat is not
         -- one -- except where the per-member quantity tallies what players did:
         -- CR 800.4i finds a departed player's actions, so that fold reads
-        -- historyPlayersFor's roster instead. The departure/cr-800-4i scenarios
-        -- (Daybreak Ranger's casts, Savage Gorger's life lost) are the proof.
+        -- historyPlayersFor's roster instead, as does a count of the players a
+        -- filter of what happened admits. The departure/cr-800-4i scenarios
+        -- (Daybreak Ranger's casts, Savage Gorger's life lost, Teysa's
+        -- investigations) are the proof.
         --
         -- Each candidate is seen through playerView below rather than through the
         -- injected ViewOf, which answers about OBJECTS (CR 109.1) and has no id to
@@ -219,7 +221,7 @@ evaluate viewOf quantityOf talliesWhatHappened candidateCounters context gs coun
           let tallied = case aggregation of
                 Aggregation.Greatest quantity -> talliesWhatHappened quantity
                 Aggregation.Total quantity -> talliesWhatHappened quantity
-                Aggregation.Members -> False
+                Aggregation.Members -> Filter.talliesWhatHappened predicate
                 Aggregation.Distinct _ -> False
                 Aggregation.MostSharing _ -> False
                 Aggregation.DistinctNames -> False
