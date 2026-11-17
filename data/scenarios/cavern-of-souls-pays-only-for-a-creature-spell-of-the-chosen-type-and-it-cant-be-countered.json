@@ -166,7 +166,9 @@
                   }
                 },
                 "sourceChoices": {
-                  "subtype": "Goblin"
+                  "subtype": [
+                    "Goblin"
+                  ]
                 },
                 "tags": []
               }
