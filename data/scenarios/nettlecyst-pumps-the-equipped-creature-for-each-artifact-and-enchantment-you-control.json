@@ -1,0 +1,36 @@
+{
+  "description": "CR 301.5, 613.4c, 109.2: Nettlecyst gives the equipped creature +1/+1 for each artifact and/or enchantment its controller controls, an artifact enchantment counted once",
+  "note": "Alice controls Nettlecyst, Ornithopter, Spear of Heliod (an artifact enchantment, counted once) and a Pacifism on bob's Hill Giant: four, so her Grizzly Bears is 2/2 +4 +1 from the Spear = 7/7. Her Forest and bob's Sol Ring are not counted; Ornithopter, unequipped, is 1/3 from the Spear alone.",
+  "board": {
+    "seats": [
+      {
+        "name": "alice",
+        "battlefield": [
+          { "card": "Grizzly Bears", "label": "bears" },
+          { "card": "Nettlecyst", "label": "cyst", "attached": "bears" },
+          { "card": "Ornithopter", "label": "thopter" },
+          { "card": "Spear of Heliod", "label": "spear" },
+          { "card": "Pacifism", "label": "pacifism", "attached": "giant" },
+          { "card": "Forest", "label": "forest" }
+        ],
+        "library": [{ "card": "Island" }, { "card": "Island" }, { "card": "Island" }]
+      },
+      {
+        "name": "bob",
+        "battlefield": [
+          { "card": "Hill Giant", "label": "giant" },
+          { "card": "Sol Ring", "label": "ring" }
+        ],
+        "library": [{ "card": "Swamp" }, { "card": "Swamp" }, { "card": "Swamp" }]
+      }
+    ],
+    "active": "alice",
+    "step": "PrecombatMain"
+  },
+  "timeline": [
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "View": { "of": "AttachedTo", "object": "$cyst", "is": "$bears" } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "PowerToughness": { "object": "$bears", "power": 7, "toughness": 7 } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "PowerToughness": { "object": "$thopter", "power": 1, "toughness": 3 } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "PowerToughness": { "object": "$giant", "power": 3, "toughness": 3 } } }
+  ]
+}
