@@ -1,5 +1,7 @@
 module Parun.Types.ProductionTag where
 
+import qualified Parun.Types.Subtype as Subtype
+
 -- | A fact about the EVENT that produced one unit of mana, captured as the mana is
 -- added and carried by the unit for as long as it exists.
 --
@@ -20,20 +22,23 @@ data ProductionTag
     -- Neither a mana type nor a colour (CR 107.4h), so it sits here rather than
     -- in Parun.Types.ManaType.
     Snow
-  | -- | "Mana from a Treasure" (Forsworn Paladin): the mana's source (CR 106.3)
-    -- was a permanent with the Treasure subtype.
+  | -- | "Mana from a Treasure" (Forsworn Paladin), "mana from a Cave" (Bat
+    -- Colony): the mana's source (CR 106.3) was a permanent with that subtype.
     --
     -- No comprehensive rule coins the phrase, exactly as
     -- Parun.Types.SpellCast.ordinal's haddock says of "your second spell each
     -- turn" -- it is plain card text over CR 106.3's source, and this says so
     -- rather than manufacturing a citation.
-    Treasure
+    --
+    -- Stamped only for the subtypes Parun.Engine.Mana.taggedSubtypes lists, which
+    -- Parun.FilterPositionLintSpec holds every card to.
+    Subtype Subtype.Subtype
   | -- | "Mana from an artifact" (Shadow the Hedgehog): the mana's source (CR
     -- 106.3) was a permanent with CR 205.2a's artifact card type.
     --
-    -- Treasure's posture one axis over, and uncoined by the rules for the same
+    -- Subtype's posture one axis over, and uncoined by the rules for the same
     -- reason: plain card text over CR 106.3's source, read off the card TYPE
     -- where the arm above reads CR 205.3g's subtype and Snow reads CR 205.4g's
     -- supertype.
     Artifact
-  deriving (Bounded, Enum, Eq, Ord, Show)
+  deriving (Eq, Ord, Show)

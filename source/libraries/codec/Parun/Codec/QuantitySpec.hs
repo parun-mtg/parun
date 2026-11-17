@@ -69,6 +69,7 @@ import qualified Parun.Types.Rounding as Rounding
 import qualified Parun.Types.Scope as Scope
 import qualified Parun.Types.SlotName as SlotName
 import qualified Parun.Types.SpellTally as SpellTally
+import qualified Parun.Types.Subtype as Subtype
 import qualified Parun.Types.Times as Times
 import qualified Parun.Types.TurnTally as TurnTally
 import qualified Parun.Types.VotesReceived as VotesReceived
@@ -463,8 +464,8 @@ spec s = Spec.describe s "Parun.Codec.Quantity" $ do
     Common.assertCodec
       s
       Quantity.codec
-      (Quantity.TagWasSpent ProductionTag.Treasure)
-      " {\"type\":\"TagWasSpent\",\"value\":\"Treasure\"} "
+      (Quantity.TagWasSpent (ProductionTag.Subtype Subtype.Treasure))
+      " {\"type\":\"TagWasSpent\",\"value\":{\"Subtype\":\"Treasure\"}} "
   -- CR 107.4h with CR 202.2, the arm above's tag on a different wire word.
   Spec.it s "ChosenNumber" $
     Common.assertCodec

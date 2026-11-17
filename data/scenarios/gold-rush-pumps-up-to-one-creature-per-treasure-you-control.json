@@ -298,7 +298,7 @@
                 "rider": null,
                 "sourceChoices": null,
                 "tags": [
-                  "Treasure",
+                  {"Subtype": "Treasure"},
                   "Artifact"
                 ]
               }

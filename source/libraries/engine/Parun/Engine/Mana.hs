@@ -1415,16 +1415,25 @@ productionTagsGiven pcs oid gs =
   let characteristics = Projection.projectWithLastKnown pcs oid gs
    in Set.unions
         [ if Set.member Supertype.Snow (PC.supertypes characteristics) then Set.singleton ProductionTag.Snow else Set.empty,
-          -- Forsworn Paladin's "mana from a Treasure", read off the same source and by
-          -- the same rule: CR 106.3 names the source, and being a Treasure is CR
-          -- 205.3g's subtype where being snow is CR 205.4g's supertype. Two independent
-          -- axes, so the answer is a union rather than a choice.
-          if Set.member Subtype.Treasure (PC.subtypes characteristics) then Set.singleton ProductionTag.Treasure else Set.empty,
+          -- Forsworn Paladin's "mana from a Treasure" and Bat Colony's "mana from a
+          -- Cave", read off the same source and by the same rule: CR 106.3 names the
+          -- source, and having a subtype is CR 205.3a where being snow is CR
+          -- 205.4g's supertype. Independent axes, so the answer is a union rather
+          -- than a choice.
+          Set.map ProductionTag.Subtype (Set.intersection taggedSubtypes (PC.subtypes characteristics)),
           -- Shadow the Hedgehog's "mana from an artifact", the same read a third axis
           -- over: CR 205.2a's card type, and independent of the other two -- a snow
           -- Treasure token is all three at once, which is why this stays a union.
           if Set.member CardType.Artifact (PC.cardTypes characteristics) then Set.singleton ProductionTag.Artifact else Set.empty
         ]
+
+-- The subtypes a unit's ProductionTag.Subtype records of its source: the ones a
+-- card asks about, Forsworn Paladin's Treasure and Bat Colony's Cave. Stamping
+-- every subtype would change every unit a scenario names; a card asking about one
+-- this leaves out fails Parun.FilterPositionLintSpec's "no card asks about mana
+-- from a subtype the engine does not stamp".
+taggedSubtypes :: Set.Set Subtype.Subtype
+taggedSubtypes = Set.fromList [Subtype.Cave, Subtype.Treasure]
 
 -- The units of one yield, in printed order.
 unitsOf :: Mana -> [ManaUnit]

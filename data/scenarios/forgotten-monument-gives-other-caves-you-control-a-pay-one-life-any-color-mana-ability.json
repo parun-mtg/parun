@@ -85,7 +85,7 @@
               "manaType": {
                 "type": "Colorless"
               },
-              "tags": [],
+              "tags": [{"Subtype": "Cave"}],
               "retention": "Ordinary",
               "restriction": null,
               "rider": null,
@@ -124,7 +124,7 @@
                 "retention": "Ordinary",
                 "rider": null,
                 "sourceChoices": null,
-                "tags": []
+                "tags": [{"Subtype": "Cave"}]
               }
             ]
           ]
@@ -166,7 +166,7 @@
               "manaType": {
                 "type": "Colorless"
               },
-              "tags": [],
+              "tags": [{"Subtype": "Cave"}],
               "retention": "Ordinary",
               "restriction": null,
               "rider": null,
@@ -177,7 +177,7 @@
                 "type": "Colored",
                 "value": "Red"
               },
-              "tags": [],
+              "tags": [{"Subtype": "Cave"}],
               "retention": "Ordinary",
               "restriction": null,
               "rider": null,

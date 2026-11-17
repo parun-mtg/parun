@@ -257,7 +257,7 @@
                   "value": "Green"
                 },
                 "tags": [
-                  "Treasure",
+                  {"Subtype": "Treasure"},
                   "Artifact"
                 ],
                 "retention": "Ordinary",
@@ -298,7 +298,7 @@
                 "value": "Green"
               },
               "tags": [
-                "Treasure",
+                {"Subtype": "Treasure"},
                 "Artifact"
               ],
               "retention": "Ordinary",

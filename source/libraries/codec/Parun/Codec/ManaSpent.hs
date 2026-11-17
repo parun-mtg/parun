@@ -2,6 +2,7 @@ module Parun.Codec.ManaSpent where
 
 import qualified Parun.Codec.CostPortion as CostPortion
 import qualified Parun.Codec.ManaType as ManaType
+import qualified Parun.Codec.ProductionTag as ProductionTag
 import qualified Parun.JsonCodec.Arm as Arm
 import qualified Parun.JsonCodec.Codec as Codec
 import qualified Parun.JsonCodec.Fields as Fields
@@ -15,7 +16,8 @@ codec =
     tagOf
     [ Arm.nullary "Total" ManaSpent.Total,
       Arm.payload "OfType" ofTypeCodec (uncurry ManaSpent.OfType) (\x -> case x of ManaSpent.OfType y z -> Just (y, z); _ -> Nothing),
-      Arm.nullary "Colors" ManaSpent.Colors
+      Arm.nullary "Colors" ManaSpent.Colors,
+      Arm.payload "Tagged" ProductionTag.codec ManaSpent.Tagged (\x -> case x of ManaSpent.Tagged y -> Just y; _ -> Nothing)
     ]
 
 -- OfType's payload: which type of mana, spent on which portion of the cost.
@@ -31,3 +33,4 @@ tagOf x = case x of
   ManaSpent.Total {} -> "Total"
   ManaSpent.OfType {} -> "OfType"
   ManaSpent.Colors {} -> "Colors"
+  ManaSpent.Tagged {} -> "Tagged"

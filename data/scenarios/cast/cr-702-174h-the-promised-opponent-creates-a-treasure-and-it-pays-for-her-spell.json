@@ -174,7 +174,7 @@
                   "value": "Red"
                 },
                 "tags": [
-                  "Treasure",
+                  {"Subtype": "Treasure"},
                   "Artifact"
                 ],
                 "retention": "Ordinary",
