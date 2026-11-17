@@ -104,6 +104,26 @@ spec s registry = Spec.describe s "WebQuestion" $ do
     Spec.assertEqWith s "none" (Question.Web.step request Set.empty Question.Web.MkSubmit Text.empty) (Question.Web.MkReplied (R.Array []))
     Spec.assertBool s (case Question.Web.step request (picking request [Question.Web.MkToggle 0 0, Question.Web.MkToggle 0 1]) Question.Web.MkSubmit Text.empty of Question.Web.MkRefused _ -> True; _ -> False) "too many"
 
+  Spec.it s "CR 701.22a a scry places each card on top or bottom in the order tapped, sent as the bottom pile then the top" $ do
+    let one = R.Text (Text.pack "$1")
+        two = R.Text (Text.pack "$2")
+        request = asking (Text.pack "ChooseScry") (R.Object [(Text.pack "from", R.Array [one, two])])
+    Spec.assertEqWith s "placed" (Question.Web.step request (picking request [Question.Web.MkToggle 1 0]) (Question.Web.MkToggle 0 1) Text.empty) (Question.Web.MkReplied (R.Array [R.Array [one], R.Array [two]]))
+    Spec.assertEqWith s "half" (Question.Web.step request Set.empty (Question.Web.MkToggle 0 1) Text.empty) (Question.Web.MkPicking (Set.singleton (0, 1)))
+
+  Spec.it s "an offer listing an order is ordered by tapping, an offer listing options is one tap, and a range is a number" $ do
+    let ordered = asking (Text.pack "OrderTimestamps") (R.Object [(Text.pack "order", R.Array [R.Text (Text.pack "a"), R.Text (Text.pack "b")])])
+        listed = asking (Text.pack "ChooseWhatever") (R.Object [(Text.pack "options", R.Array [R.Text (Text.pack "Up"), R.Text (Text.pack "Down")])])
+        ranged = asking (Text.pack "ChooseNumber") (R.Object [(Text.pack "least", R.Number 1), (Text.pack "greatest", R.Number 3)])
+    Spec.assertEqWith s "ordered" (Question.Web.step ordered (Set.singleton (0, 1)) (Question.Web.MkToggle 0 0) Text.empty) (Question.Web.MkReplied (R.Array [R.Number 1, R.Number 0]))
+    Spec.assertBool s (Text.pack "<button>Up</button><button>Down</button>" `Text.isInfixOf` Html.toText (Question.Web.view listed Set.empty)) "listed"
+    Spec.assertBool s (Text.pack "<button>1</button><button>2</button><button>3</button>" `Text.isInfixOf` Html.toText (Question.Web.view ranged Set.empty)) "ranged"
+
+  Spec.it s "a card name is typed as itself" $ do
+    let request = asking (Text.pack "ChooseCardName") R.Null
+    Spec.assertEqWith s "named" (Question.Web.step request Set.empty Question.Web.MkTyped (Text.pack " Grizzly Bears ")) (Question.Web.MkReplied (R.Text (Text.pack "Grizzly Bears")))
+    Spec.assertBool s (case Question.Web.step request Set.empty Question.Web.MkTyped Text.empty of Question.Web.MkRefused _ -> True; _ -> False) "empty"
+
   Spec.it s "any other question shows its offer and reads a reply typed as JSON" $ do
     let request = bare (Text.pack "ChooseX") (R.Object [(Text.pack "least", R.Number 0)])
     Spec.assertBool s (Text.pack "<pre>{&quot;least&quot;:0}</pre>" `Text.isInfixOf` Html.toText (Question.Web.view request Set.empty)) "offer"

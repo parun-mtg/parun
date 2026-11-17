@@ -22,8 +22,6 @@ import Numeric.Natural (Natural)
 import qualified Parun.Codec.CombatDamageOption as Codec.CombatDamageOption
 import qualified Parun.Codec.CostComponent as Codec.CostComponent
 import qualified Parun.Codec.CounterKind as Codec.CounterKind
-import qualified Parun.Codec.EntryOption as Codec.EntryOption
-import qualified Parun.Codec.GameEvent as Codec.GameEvent
 import qualified Parun.Codec.Keyword as Codec.Keyword
 import qualified Parun.Codec.ManaCost as Codec.ManaCost
 import qualified Parun.Codec.ManaSymbol as Codec.ManaSymbol
@@ -33,7 +31,6 @@ import qualified Parun.Codec.NumberFloor as Codec.NumberFloor
 import qualified Parun.Codec.Reply as Codec.Reply
 import qualified Parun.Codec.Request as Codec.Request
 import qualified Parun.Codec.StoredResult as Codec.StoredResult
-import qualified Parun.Codec.Zone as Codec.Zone
 import qualified Parun.Engine.PlayerView as PlayerView.Engine
 import qualified Parun.Exceptions.InvalidCorpus as InvalidCorpus
 import qualified Parun.Extra.Natural as Natural
@@ -44,15 +41,12 @@ import qualified Parun.Oracle.Keyword as Oracle.Keyword
 import qualified Parun.Play.Offer as Offer
 import qualified Parun.Play.Protocol as Protocol
 import qualified Parun.Play.Render as Render
-import qualified Parun.Scenario.PromptOffer as PromptOffer
 import qualified Parun.Types.AbilityFacts as AbilityFacts
 import qualified Parun.Types.AbilityKind as AbilityKind
 import qualified Parun.Types.AbilityWasActivated as AbilityWasActivated
 import qualified Parun.Types.Card as Card
 import qualified Parun.Types.CardName as CardName
 import qualified Parun.Types.CombatDamageOption as CombatDamageOption
-import qualified Parun.Types.EntryOption as EntryOption
-import qualified Parun.Types.EventGroup as EventGroup
 import qualified Parun.Types.GameEvent as GameEvent
 import qualified Parun.Types.GameState as GameState
 import qualified Parun.Types.Hotseat as Hotseat
@@ -554,7 +548,7 @@ choice view question = Maybe.fromMaybe generic $ case Text.unpack (Question.kind
   -- indices.
   _
     | Just items <- Protocol.field "order" offer >>= Protocol.arrayOf ->
-        pure (ordered (orderHeading (foldMap (\source -> Text.pack " for " <> Offer.objectName view source) (Protocol.field "source" offer)) (orderNote (Question.kind question) offer)) (fmap (Offer.optionName view) items))
+        pure (ordered (orderHeading (foldMap (\source -> Text.pack " for " <> Offer.objectName view source) (Protocol.field "source" offer)) (Offer.orderNote (Question.kind question) offer)) (fmap (Offer.optionName view) items))
   -- An amount per item the offer lists, each within its range.
   _ | Just caps <- Protocol.field "amounts" offer -> pure (amounted caps)
   -- A set of what the offer lists, within its least and most, each beside
@@ -571,7 +565,7 @@ choice view question = Maybe.fromMaybe generic $ case Text.unpack (Question.kind
         entries = foldMap (fmap Just) (Protocol.field "entries" offer >>= Protocol.arrayOf) <> repeat Nothing
     pure
       ( told view self offer
-          <> (kindHeading <> foldMap (\source -> Text.pack " for " <> Offer.objectName view source) (Protocol.field "source" offer) <> Text.pack ":" : numbered (zipWith (\option entry -> maybe (Maybe.fromMaybe (name option) (gone option)) (entryName view) entry) options entries)),
+          <> (kindHeading <> foldMap (\source -> Text.pack " for " <> Offer.objectName view source) (Protocol.field "source" offer) <> Text.pack ":" : numbered (zipWith (\option entry -> maybe (Maybe.fromMaybe (name option) (gone option)) (Offer.entryName view) entry) options entries)),
         fmap (pickFrom options) . one (Natural.length options)
       )
   where
@@ -820,45 +814,11 @@ ordered heading names =
   where
     size = Natural.length names
 
--- | What the first item of an order is, by the prompt's kind and what its
--- offer tells.
-orderNote :: Text.Text -> R.Reply -> Text.Text
-orderNote kind offer = case Text.unpack kind of
-  -- CR 401.4: from the top inward.
-  "ArrangeLibraryCards" -> Text.pack "the first goes on top"
-  "ArrangeLibraryArrivals" -> case Protocol.field "end" offer of
-    Just (R.Text end) | end == Text.pack "Top" -> Text.pack "the first goes on top"
-    _ -> Text.pack "the first goes on the bottom"
-  -- CR 613.7m.
-  "OrderTimestamps" -> Text.pack "the first gets the earliest timestamp"
-  "OrderManaActivations" -> Text.pack "the first is activated first"
-  "OrderCombatTolls" -> Text.pack "the first is paid first"
-  -- CR 713.8a.
-  "OrderComponentCards" -> Text.pack "the first goes into " <> maybe (Text.pack "the zone") PromptOffer.zoneName (Protocol.field "zone" offer >>= Offer.decoded Codec.Zone.codec) <> Text.pack " first"
-  _ -> Text.pack "the first goes first"
-
 -- | A cost component as Oracle text prints it (Oracle.Cost.component), or the
 -- offer itself where it does not print.
 componentName :: Text.Text -> R.Reply -> Text.Text
 componentName self component =
   Maybe.fromMaybe (Common.render (Codec.Reply.toValue component)) (Offer.decoded (Codec.CostComponent.codec Codec.Keyword.codec) component >>= Maybe.listToMaybe . Oracle.Cost.component self (Oracle.Keyword.keywordWord self))
-
--- | An entry of an offer naming what each option picks
--- (Parun.Scenario.PromptOffer.indexing): a cast as Offer.actionName names it, an entering
--- shape (Parun.Types.EntryOption) by its power and toughness, keywords and
--- subtypes, an event as the log tells it, an object stating something as
--- Offer.sourcedName names it, an unwitnessed event (null) as unseen, and anything
--- else as an option is named.
-entryName :: PlayerView.PlayerView -> R.Reply -> Text.Text
-entryName view entry
-  | Maybe.isJust (Protocol.field "action" entry) = Offer.actionName view entry
-  | Just shape <- Offer.decoded Codec.EntryOption.codec entry =
-      Text.intercalate (Text.pack ", ") (Text.pack (show (EntryOption.power shape) <> "/" <> show (EntryOption.toughness shape)) : concatMap (take 1 . Oracle.Keyword.keywordWord Text.empty) (Set.toList (EntryOption.keywords shape)) <> fmap (Text.pack . show) (Set.toList (EntryOption.subtypes shape)))
-  | Just event <- Offer.decoded Codec.GameEvent.codec entry =
-      Maybe.fromMaybe (Common.render (Codec.Reply.toValue entry)) (Render.event view (LoggedEvent.MkLoggedEvent (EventGroup.MkEventGroup 0) event))
-  | Maybe.isJust (Protocol.field "source" entry) = Offer.sourcedName Text.empty view entry
-  | entry == R.Null = Text.pack "Something you did not see"
-  | otherwise = Offer.optionName view entry
 
 -- | An optional prompt's answer, a bare tag (Parun.JsonCodec.Arm.enum).
 optionalDecision :: OptionalDecision.OptionalDecision -> R.Reply
