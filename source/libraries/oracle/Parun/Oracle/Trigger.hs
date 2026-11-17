@@ -474,6 +474,12 @@ abilityWord words' = [Text.empty] <> [Text.pack "Hellbent \8212 " | words' == Te
 openingWord :: Text.Text -> [Text.Text]
 openingWord opens = [Text.pack "Alliance \8212 " | opens == Text.pack "Whenever another creature you control enters"] <> [Text.pack "Survival \8212 " | opens == Text.pack "At the beginning of your second main phase"]
 
+-- | The ability word (CR 207.2c) Oracle text may print before a triggered
+-- ability whose effect reads this. Free for fathomless descent: printed
+-- (Chupacabra Echo) or not (Cloud of Darkness, under its flavor word).
+effectWord :: Text.Text -> [Text.Text]
+effectWord effect = [Text.pack "Fathomless descent \8212 " | Text.isInfixOf (Text.pack "the number of permanent cards in your graveyard") effect]
+
 -- | Whether the condition is the source's own status ("this creature is
 -- attacking"), as 'counted' reads it, after which the source is "it".
 aboutSource :: Condition.Condition -> Bool

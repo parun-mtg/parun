@@ -219,7 +219,7 @@ triggered context creature t
       -- An ability word heads an ability whose effect ends in its condition
       -- (Old-Growth Educator's Infusion), as it heads an intervening "if".
       worded <- if Text.null gate then trailingWord effect else [word]
-      heading <- worded : [opened | Text.null worded, opened <- Trigger.openingWord (Trigger.opening e)]
+      heading <- worded : [opened | Text.null worded, opened <- Trigger.openingWord (Trigger.opening e) <> Trigger.effectWord effect]
       [heading <> Trigger.opening e <> gate <> Text.pack ", " <> (if named' then effect else Prose.decapitalise effect)]
   | otherwise = []
 
