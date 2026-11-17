@@ -43,6 +43,7 @@ import qualified Parun.Types.DealDamage as DealDamage
 import qualified Parun.Types.Designate as Designate
 import qualified Parun.Types.Destroy as Destroy
 import qualified Parun.Types.Discard as Discard
+import qualified Parun.Types.Discover as Discover
 import qualified Parun.Types.Divide as Divide
 import qualified Parun.Types.DoesNotUntapNext as DoesNotUntapNext
 import qualified Parun.Types.Draw as Draw
@@ -828,9 +829,9 @@ data Effect card ability
     -- Parun.Engine.Recruit.recruit as one procedure. Nullary, rule 701.70a
     -- fixing everything but which card is discarded.
     Recruit
-  | -- | CR 701.57a: the resolving controller discovers this many, the process
-    -- Parun.Engine.Discover.process, then CR 701.57b's event.
-    Discover Quantity.Quantity
+  | -- | CR 701.57a: the resolving controller discovers, the process
+    -- Parun.Engine.Discover's walk and afterWalk, then CR 701.57b's event.
+    Discover Discover.Discover
   | -- | CR 701.58a: the instructed players each cloak the top card of their
     -- library or the cards the payload names, each performed by
     -- Parun.Engine.Cloak.cloak as one procedure.

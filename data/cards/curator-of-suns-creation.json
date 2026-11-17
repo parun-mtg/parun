@@ -45,8 +45,10 @@
                       {
                         "type": "Discover",
                         "value": {
-                          "type": "InSlot",
-                          "value": "thatMuch"
+                          "quantity": {
+                            "type": "InSlot",
+                            "value": "thatMuch"
+                          }
                         }
                       }
                     ]

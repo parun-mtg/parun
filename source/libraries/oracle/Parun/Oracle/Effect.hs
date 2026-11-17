@@ -47,6 +47,7 @@ import qualified Parun.Types.Destroy as Destroy
 import qualified Parun.Types.DestructionR as DestructionR
 import qualified Parun.Types.DestructionRewrite as DestructionRewrite
 import qualified Parun.Types.Discard as Discard
+import qualified Parun.Types.Discover as Discover
 import qualified Parun.Types.Draw as Draw
 import qualified Parun.Types.Duration as Duration
 import qualified Parun.Types.EachCardInGraveyard as EachCardInGraveyard
@@ -1029,7 +1030,7 @@ effect context e = case e of
     n <- Target.amount q
     imperative context who (Text.pack "empower Jace " <> n) (Text.pack "empowers Jace " <> n)
   -- "Discover 4" (CR 701.57a).
-  Effect.Discover q -> do
+  Effect.Discover (Discover.MkDiscover q _) -> do
     n <- Target.amount q
     imperative context (PlayerRef.Relative PlayerRelation.You) (Text.pack "discover " <> n) (Text.pack "discovers " <> n)
   -- "Scry 2" (CR 701.22a).
