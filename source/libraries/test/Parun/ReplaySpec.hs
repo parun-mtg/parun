@@ -33,6 +33,7 @@ import qualified Parun.Types.CastFromZone as CastFromZone
 import qualified Parun.Types.ClauseIndex as ClauseIndex
 import qualified Parun.Types.CoinFace as CoinFace
 import qualified Parun.Types.Color as Color
+import qualified Parun.Types.Comparison as Comparison
 import qualified Parun.Types.Concession as Concession
 import qualified Parun.Types.Cost as Cost.Type
 import qualified Parun.Types.CostAmount as CostAmount
@@ -857,7 +858,7 @@ combatReplaySpec s =
         -- between the exile and the sacrifice. What the second assertion pins is
         -- that a ChooseSacrifices entry still does not answer it.
         Spec.it s "ChooseExilesTotalling records and replays a Set ObjectId" $ do
-          let p = Prompt.ChooseExilesTotalling decider S.alice oid CardTally.ManaValue [(oid, 1), (ObjectId.MkObjectId 8, 2)] 3
+          let p = Prompt.ChooseExilesTotalling decider S.alice oid CardTally.ManaValue [(oid, 1), (ObjectId.MkObjectId 8, 2)] Comparison.AtLeast 3 0
               answer = Set.singleton (ObjectId.MkObjectId 8)
           Spec.assertEqWith s "round trip" (Replay.decode p (Replay.encode p answer)) (Just answer)
           Spec.assertEqWith
@@ -872,7 +873,7 @@ combatReplaySpec s =
           Spec.assertEqWith
             s
             "every candidate"
-            (Replay.defaultAnswer (Prompt.ChooseExilesTotalling decider S.alice oid CardTally.ManaValue [(oid, 1), (ObjectId.MkObjectId 8, 2)] 3))
+            (Replay.defaultAnswer (Prompt.ChooseExilesTotalling decider S.alice oid CardTally.ManaValue [(oid, 1), (ObjectId.MkObjectId 8, 2)] Comparison.AtLeast 3 0))
             (Set.fromList [oid, ObjectId.MkObjectId 8])
         -- CR 702.167a does NOT share Response.ChoseExilesFromGraveyard with the
         -- two prompts above, unlike the pair just above each other: its pool

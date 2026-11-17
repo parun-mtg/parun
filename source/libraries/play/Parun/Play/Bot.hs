@@ -15,6 +15,7 @@ import qualified Data.Traversable as Traversable
 import Numeric.Natural (Natural)
 import qualified Parun.Engine.Cost as Cost
 import qualified Parun.Engine.Damage as Damage
+import qualified Parun.Engine.Filter as Filter
 import qualified Parun.Engine.Modal as Modal
 import qualified Parun.Engine.Replay as Replay
 import qualified Parun.Engine.Resolve.Common as Common
@@ -30,6 +31,7 @@ import qualified Parun.Types.BuybackDecision as BuybackDecision
 import qualified Parun.Types.CardName as CardName
 import qualified Parun.Types.CoinFace as CoinFace
 import qualified Parun.Types.CommandZoneDecision as CommandZoneDecision
+import qualified Parun.Types.Comparison as Comparison
 import qualified Parun.Types.DamageEvent as DamageEvent
 import qualified Parun.Types.Dividing as Dividing
 import qualified Parun.Types.EntwineDecision as EntwineDecision
@@ -125,7 +127,11 @@ bot names = Answerer.MkAnswerer $ \asked -> case Asked.prompt asked of
   -- CR 702.122a / 701.59a: any group whose total power or mana value reaches
   -- the threshold, judged by the values the prompt carries.
   Prompt.ChooseTapsForTotalPower _ _ _ candidates power -> fmap (maybe (Replay.defaultAnswer (Asked.prompt asked)) Set.fromList) (reaching (toInteger power) candidates)
-  Prompt.ChooseExilesTotalling _ _ _ _ candidates total -> fmap (maybe (Replay.defaultAnswer (Asked.prompt asked)) Set.fromList) (reaching (toInteger total) candidates)
+  Prompt.ChooseExilesTotalling _ _ _ _ candidates comparison total fewest
+    | comparison == Comparison.AtLeast && fewest == 0 -> fmap (maybe (Replay.defaultAnswer (Asked.prompt asked)) Set.fromList) (reaching (toInteger total) candidates)
+    -- Fabrication Foundry's exact total: the first subset meeting it, out of
+    -- the candidates shuffled.
+    | otherwise -> fmap (maybe (Replay.defaultAnswer (Asked.prompt asked)) Set.fromList . Maybe.listToMaybe . Filter.meetingSubsets comparison (toInteger total) fewest) (Generator.shuffle candidates)
   -- CR 702.167a: the count exactly, or at least it where "one or more" makes
   -- it a floor.
   Prompt.ChooseMaterials _ _ _ candidates count orMore

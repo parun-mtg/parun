@@ -302,7 +302,7 @@ activateAbilityWith refused runSubgame pid srcId ability = Event.announcing $ do
       -- fence: no card pairs a criterion reading X with a second cost, and one
       -- cost is paid whether offered or not.
       let admitsModes cost = Modal.selectionSatisfiedBy legal (settledGiven Map.empty (const (Natural.length legal)) cost) chosenModes
-          offeredCosts = filter (\cost -> admitsModes cost && any (\x -> Activatable.payableCostAt aimableUnannounced x stamp (ActivatedAbility.name ability) spendable pid srcId gs cost) (Activatable.gateXs mCeiling floorX gs cost)) (Activatable.costsFor (PlayerEffect.applying pid gs) pid srcId ability gs)
+          offeredCosts = filter (\cost -> admitsModes cost && any (\x -> Activatable.payableCostAt aimableUnannounced x stamp (ActivatedAbility.name ability) spendable pid srcId gs cost) (Activatable.gateXs mCeiling floorX pid srcId gs cost)) (Activatable.costsFor (PlayerEffect.applying pid gs) pid srcId ability gs)
       printedCost <- case offeredCosts of
         _ : _ : _ -> CandidateCost.cost <$> Game.choose (Prompt.ChooseCost decider pid abilId (fmap Cost.untagged offeredCosts) Seq.empty)
         [only] -> pure only

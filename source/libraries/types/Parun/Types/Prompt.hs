@@ -24,6 +24,7 @@ import qualified Parun.Types.CoinFace as CoinFace
 import qualified Parun.Types.Color as Color
 import qualified Parun.Types.CombatDamageOption as CombatDamageOption
 import qualified Parun.Types.CommandZoneDecision as CommandZoneDecision
+import qualified Parun.Types.Comparison as Comparison
 import qualified Parun.Types.Concession as Concession
 import qualified Parun.Types.Cost as Cost
 import qualified Parun.Types.CostComponent as CostComponent
@@ -821,14 +822,15 @@ data Prompt r where
   -- from the pool and the number alone, and an engine that guessed would be
   -- choosing how many to exile for the payer.
   ChooseMaterials :: Decider.Decider -> PlayerId.PlayerId -> ObjectId.ObjectId -> [ObjectId.ObjectId] -> Natural.Natural -> Bool -> Prompt (Set.Set ObjectId.ObjectId)
-  -- | CR 701.59a / 406.2: which cards are exiled from the payer\'s graveyard to
-  -- pay a threshold cost, the Natural the TOTAL of the CardTally they must reach
-  -- rather than how many. The arm above\'s payload read as a threshold, which is
-  -- ChooseTapsForTotalPower\'s relation to ChooseTaps -- and NEVER elided for its
-  -- reason: whether the answer is forced is a question about subsets, so eliding
-  -- it would decide for the player. Each candidate carries its tally, so the
-  -- answerer can judge a total without reading the board.
-  ChooseExilesTotalling :: Decider.Decider -> PlayerId.PlayerId -> ObjectId.ObjectId -> CardTally.CardTally -> [(ObjectId.ObjectId, Integer)] -> Natural.Natural -> Prompt (Set.Set ObjectId.ObjectId)
+  -- | CR 701.59a / 406.2: which objects are exiled to pay a threshold cost,
+  -- their CardTally's TOTAL comparing to the first Natural as the Comparison
+  -- says, and at least the second Natural of them. The arm above\'s payload read
+  -- as a threshold, which is ChooseTapsForTotalPower\'s relation to ChooseTaps
+  -- -- and NEVER elided for its reason: whether the answer is forced is a
+  -- question about subsets, so eliding it would decide for the player. Each
+  -- candidate carries its tally, so the answerer can judge a total without
+  -- reading the board.
+  ChooseExilesTotalling :: Decider.Decider -> PlayerId.PlayerId -> ObjectId.ObjectId -> CardTally.CardTally -> [(ObjectId.ObjectId, Integer)] -> Comparison.Comparison -> Natural.Natural -> Natural.Natural -> Prompt (Set.Set ObjectId.ObjectId)
   -- | Any number of the candidates, the empty set included, at most the Natural
   -- where there is one; the AnyNumberOf says what they are and what is done to
   -- them. Asked at one candidate, where declining is a second answer, and

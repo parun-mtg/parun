@@ -638,26 +638,30 @@ leastX pid srcId ability gs = case Cost.definingCandidates pid srcId ability gs 
 -- X is found among `gateXs` instead of by the climb.
 affordableX :: Maybe Natural -> [(Map.Map SlotName (Natural, Natural), Map.Map SlotName (Set.Set ObjectId))] -> Maybe Keyword -> Maybe AbilityName.AbilityName -> Maybe (Set.Set ManaType.ManaType) -> PlayerId -> ObjectId -> GameState -> Cost Keyword -> Natural
 affordableX mCeiling aimable stamp named spendable pid srcId gs cost
-  | criterionReadsX cost = Maybe.fromMaybe 0 (Maybe.listToMaybe (reverse (filter payableAt (gateXs mCeiling 0 gs cost))))
+  | criterionReadsX cost = Maybe.fromMaybe 0 (Maybe.listToMaybe (reverse (filter payableAt (gateXs mCeiling 0 pid srcId gs cost))))
   | otherwise = Cost.greatestPayableX mCeiling payableAt cost
   where
     payableAt x = payableCostAt aimable x stamp named spendable pid srcId gs cost
 
--- Does a component's criterion compare against X (CostAmount.Engine.criterionReadsOfX)?
+-- Does a component's criterion compare against X (CostAmount.Engine.criterionReadsOfX),
+-- or its total other than as a floor (Cost.costTotalReadsX)?
 criterionReadsX :: Cost Keyword -> Bool
-criterionReadsX = not . all (null . CostAmount.Engine.criterionReadsOfX) . Cost.Type.components
+criterionReadsX cost = not (all (null . CostAmount.Engine.criterionReadsOfX) (Cost.Type.components cost)) || Cost.costTotalReadsX cost
 
 -- CR 601.2b via 602.2b: the values of X a gate asks an activation cost at, in
 -- ascending order. The least X alone, unless a component's criterion compares
 -- against X (Sidisi, Regent of the Mire's "a creature you control with mana
 -- value X"): payability is then not monotone in X, and changes only where X
 -- meets a compared measure of some object, so each such value past the floor,
--- and the one after it, is asked too, up to CR 101.1's ceiling.
+-- and the one after it, is asked too, up to CR 101.1's ceiling. Likewise
+-- where a total compares against X other than as a floor (Fabrication
+-- Foundry's), at each total its pool reaches (Cost.totallingXs).
 -- Cast.gateXs extends it with a spell's own climb.
-gateXs :: Maybe Natural -> Natural -> GameState -> Cost Keyword -> [Natural]
-gateXs mCeiling floorX gs cost =
+gateXs :: Maybe Natural -> Natural -> PlayerId -> ObjectId -> GameState -> Cost Keyword -> [Natural]
+gateXs mCeiling floorX pid srcId gs cost =
   let compared = fmap Measures.measure (concatMap CostAmount.Engine.criterionReadsOfX (Cost.Type.components cost))
-   in floorX : Set.toAscList (Set.fromList (breakpointXs [0, 1] mCeiling floorX gs compared))
+      totals = [x | x <- Cost.totallingXs pid srcId gs cost, x > floorX, all (x <=) mCeiling]
+   in floorX : Set.toAscList (Set.fromList (breakpointXs [0, 1] mCeiling floorX gs compared <> totals))
 
 -- The values of X, past the floor and up to CR 101.1's ceiling, lying at one of
 -- `offsets` from a compared measure of some object: where an X-reading
@@ -785,7 +789,7 @@ activatableGiven pools sources pid srcId ability gs =
             let (fillableUnder, aimableUnder) = announcement (Map.singleton Binding.variableX (Binding.toAmount x))
              in selectable fillableUnder && payableAt aimableUnder x gs cost
         | otherwise = payableAt aimable x gs cost
-      xsFor cost = boundXs mCeiling floorX modal gs (gateXs mCeiling floorX gs cost)
+      xsFor cost = boundXs mCeiling floorX modal gs (gateXs mCeiling floorX pid srcId gs cost)
       -- The player rows and CR 602.5's prohibitions out of the enumeration's
       -- pools, each a walk of the board that does not depend on this ability.
       rows = Target.playerRowsOf pools pid gs

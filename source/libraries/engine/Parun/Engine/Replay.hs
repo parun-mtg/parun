@@ -14,6 +14,7 @@ import qualified Data.Set as Set
 import qualified Data.Text as Text
 import Numeric.Natural (Natural)
 import qualified Parun.Engine.Cost as Cost
+import qualified Parun.Engine.Filter as Filter
 import qualified Parun.Engine.Modal as Modal
 import qualified Parun.Engine.Target as Target
 import qualified Parun.Engine.TextWord as TextWord
@@ -25,6 +26,7 @@ import qualified Parun.Types.BuybackDecision as BuybackDecision
 import qualified Parun.Types.CardName as CardName
 import qualified Parun.Types.CoinFace as CoinFace
 import qualified Parun.Types.CommandZoneDecision as CommandZoneDecision
+import qualified Parun.Types.Comparison as Comparison
 import qualified Parun.Types.Concession as Concession
 import qualified Parun.Types.CounterKindFor as CounterKindFor
 import qualified Parun.Types.DamageEvent as DamageEvent
@@ -1328,12 +1330,16 @@ defaultAnswer p = case p of
   -- The Bool is ignored because `count` is legal under both readings of it --
   -- exactly the count, and the smallest answer a minimum admits.
   Prompt.ChooseMaterials _ _ _ candidates count _ -> Set.fromList (List.genericTake count candidates)
-  -- CR 701.59a: every candidate, ChooseTapsForTotalPower's maximal subset and
-  -- for its reason read over mana values -- no card has a NEGATIVE mana value
-  -- (CR 202.3), so dragging every one in can only raise the total, and the whole
-  -- graveyard is a legal answer whenever the cost is payable at all. A
-  -- deterministic fallback, not a recommendation.
-  Prompt.ChooseExilesTotalling _ _ _ _ candidates _ -> Set.fromList (fmap fst candidates)
+  -- CR 701.59a: every candidate where the total is a floor,
+  -- ChooseTapsForTotalPower's maximal subset and for its reason read over mana
+  -- values -- no card has a NEGATIVE mana value (CR 202.3), so dragging every
+  -- one in can only raise the total, and the whole pool is a legal answer
+  -- whenever the cost is payable at all. Otherwise (Fabrication Foundry's exact
+  -- total) the first subset meeting it, or none. A deterministic fallback, not a
+  -- recommendation.
+  Prompt.ChooseExilesTotalling _ _ _ _ candidates comparison total fewest
+    | comparison `elem` [Comparison.AtLeast, Comparison.GreaterThan] -> Set.fromList (fmap fst candidates)
+    | otherwise -> Set.fromList (concat (take 1 (Filter.meetingSubsets comparison (toInteger total) fewest candidates)))
   -- CR 608.2d: the head of the offer, ChooseCardInGraveyard's fallback. Every
   -- candidate was pre-filtered by the engine, so the head is a legal answer. A
   -- deterministic fallback, not a recommendation.

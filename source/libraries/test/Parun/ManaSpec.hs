@@ -2666,7 +2666,7 @@ cryptexSpec s registry = Spec.describe s "Cryptex" $ do
 -- ChooseExilesTotalling.
 collectWorthThree :: Prompt.Prompt r -> r
 collectWorthThree p = case p of
-  Prompt.ChooseExilesTotalling _ _ _ _ candidates _ -> Set.fromList [candidate | (candidate, value) <- candidates, value == 3]
+  Prompt.ChooseExilesTotalling _ _ _ _ candidates _ _ _ -> Set.fromList [candidate | (candidate, value) <- candidates, value == 3]
   _ -> S.identityAnswer p
 
 -- Alice's Cryptex and two Islands, Bloodbraid Elf and the named card in her

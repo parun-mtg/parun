@@ -3214,7 +3214,7 @@ costComponentFilters component = case component of
   -- CR 406.2 as a cost: Headless Skaab's "a creature card from your graveyard".
   CostComponent.MoveCardsFromGraveyard (MoveCardsFromGraveyard.MkMoveCardsFromGraveyard _ f _ _) -> [f]
   -- CR 406.2 with a threshold: Baron Helmut Zemo's "black cards".
-  CostComponent.ExileCardsTotalling (ExileCardsTotalling.MkExileCardsTotalling _ _ f) -> [f]
+  CostComponent.ExileCardsTotalling (ExileCardsTotalling.MkExileCardsTotalling _ _ _ _ f _) -> [f]
   -- CR 702.167a over the battlefield and the graveyard at once: Tithing Blade's
   -- "a creature", which CR 702.167b reads in both zones.
   CostComponent.ExileMaterials (ExileMaterials.MkExileMaterials _ _ f) -> [f]

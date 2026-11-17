@@ -2110,7 +2110,9 @@ componentDemandGrowsWith slot component = case component of
   CostComponent.PutExiledIntoGraveyard _ -> False
   CostComponent.CollectEvidence _ -> False
   CostComponent.CollectEvidenceOfTargets -> False
-  CostComponent.ExileCardsTotalling _ -> False
+  -- A finite pool's total refuses a big enough X, unless the total is a
+  -- ceiling.
+  CostComponent.ExileCardsTotalling exile -> ExileCardsTotalling.threshold exile == announced && ExileCardsTotalling.comparison exile `elem` [Comparison.AtLeast, Comparison.Exactly, Comparison.GreaterThan]
   -- One card per exile out of a finite hand, Sacrifice's reason, criterion
   -- included (Sickening Shoal's "a black card with mana value X").
   CostComponent.ExileCardsFromHand exile -> CardsFromHand.count exile == announced || criterionBounds
@@ -2783,10 +2785,70 @@ drawsFromPile slots pid oid criterion gs =
 evidenceExile :: Natural -> ExileCardsTotalling.ExileCardsTotalling Keyword.Type.Keyword
 evidenceExile n =
   ExileCardsTotalling.MkExileCardsTotalling
-    { ExileCardsTotalling.threshold = n,
+    { ExileCardsTotalling.threshold = CostAmount.Fixed n,
+      ExileCardsTotalling.comparison = Comparison.AtLeast,
+      ExileCardsTotalling.fewest = 0,
       ExileCardsTotalling.tally = CardTally.ManaValue,
-      ExileCardsTotalling.whichCards = Filter.Type.And []
+      ExileCardsTotalling.whichCards = Filter.Type.And [],
+      ExileCardsTotalling.zone = Zone.Graveyard
     }
+
+-- The objects a threshold exile on `oid` may take: the payer's graveyard
+-- (`exileCandidates`), or the permanents its criterion admits, Food Chain's
+-- pool (`returnCandidates`), each matched as `exileCandidates` matches.
+--
+-- Unprinted: any other zone, which Parun.Codec.ExileCardsTotalling refuses;
+-- it offers nothing here.
+totallingCandidates :: Map.Map SlotName.SlotName (Set.Set Recipient.Recipient) -> PlayerId -> ObjectId -> ExileCardsTotalling.ExileCardsTotalling Keyword.Type.Keyword -> GameState -> [ObjectId]
+totallingCandidates slots pid oid exile gs = totallingCandidatesGiven (Snapshot.onDemand gs) slots pid oid exile gs
+
+-- The same pool read off a snapshot of `gs` the caller already took.
+totallingCandidatesGiven :: Snapshot.Snapshot -> Map.Map SlotName.SlotName (Set.Set Recipient.Recipient) -> PlayerId -> ObjectId -> ExileCardsTotalling.ExileCardsTotalling Keyword.Type.Keyword -> GameState -> [ObjectId]
+totallingCandidatesGiven board slots pid oid exile gs = case ExileCardsTotalling.zone exile of
+  Zone.Graveyard -> exileCandidatesGiven board slots pid oid yourGraveyard criterion gs
+  Zone.Battlefield -> returnCandidatesGiven board slots pid oid criterion gs
+  _ -> []
+  where
+    criterion = ExileCardsTotalling.whichCards exile
+
+-- CR 601.2b: the values of X at which a threshold exile comparing against an
+-- announced X other than as a floor can change its answer -- every total some
+-- subset of its pool reaches, and the one after it -- since payability is then
+-- not monotone in X (Fabrication Foundry's exact total). Activatable.gateXs
+-- asks at each.
+totallingXs :: PlayerId -> ObjectId -> GameState -> Cost Keyword.Type.Keyword -> [Natural]
+totallingXs pid oid gs cost =
+  Set.toAscList
+    ( Set.fromList
+        [ x
+        | CostComponent.ExileCardsTotalling exile <- Cost.components cost,
+          totalReadsX exile,
+          let values = fmap (\candidate -> tallyValue (ExileCardsTotalling.tally exile) candidate gs) (totallingCandidates Map.empty pid oid exile gs),
+          reached <- Set.toList (List.foldl' (\seen value -> Set.union seen (Set.map (+ value) seen)) (Set.singleton 0) values),
+          Just x <- [Integer.toNatural reached, Integer.toNatural (reached + 1)]
+        ]
+    )
+
+-- Does a component's total compare against the announced X other than as a
+-- floor, so that payability is not monotone in X (`totallingXs`)?
+totalReadsX :: ExileCardsTotalling.ExileCardsTotalling keyword -> Bool
+totalReadsX exile =
+  ExileCardsTotalling.threshold exile == CostAmount.Announced Binding.variableX
+    && ExileCardsTotalling.comparison exile `notElem` [Comparison.AtLeast, Comparison.GreaterThan]
+
+-- Does any component's total (`totalReadsX`)?
+costTotalReadsX :: Cost Keyword.Type.Keyword -> Bool
+costTotalReadsX cost = or [totalReadsX exile | CostComponent.ExileCardsTotalling exile <- Cost.components cost]
+
+-- CR 118.3: whether some choice out of the pool meets the payload at this
+-- threshold (Filter.someSubsetMeets).
+totallingPayable :: Snapshot.Snapshot -> Map.Map SlotName.SlotName (Set.Set Recipient.Recipient) -> PlayerId -> ObjectId -> ExileCardsTotalling.ExileCardsTotalling Keyword.Type.Keyword -> Natural -> GameState -> Bool
+totallingPayable board slots pid oid exile n gs =
+  Filter.someSubsetMeets
+    (ExileCardsTotalling.comparison exile)
+    (toInteger n)
+    (ExileCardsTotalling.fewest exile)
+    (fmap (tallyValueGiven (ExileCardsTotalling.tally exile) (Snapshot.views board)) (totallingCandidatesGiven board slots pid oid exile gs))
 
 -- CR 202.3's mana value of one card, read off its CR 613 projection.
 evidenceValue :: ObjectId -> GameState -> Integer
@@ -2809,24 +2871,26 @@ tallyValueGiven tally viewOf candidate =
         CardTally.ManaValue -> Maybe.fromMaybe 0 (Filter.manaValue view)
         CardTally.ManaSymbolsOf color -> toInteger (ManaSymbolText.symbolsOfColor color (foldMap ManaCost.unwrap (Filter.manaCost view)))
 
--- CR 601.2h's payment of a threshold exile: the payer chooses WHICH cards and
+-- CR 601.2h's payment of a threshold exile: the payer chooses WHICH objects and
 -- HOW MANY, so this is a prompt, and it is NEVER elided -- TapForTotalPower's
 -- posture, whether the answer is forced being a question about subsets.
 --
 -- Reject-not-repair, Sacrifice's posture: Nothing where the answer strays outside
--- the pool or falls short. The total is summed over the answer as given, and the
+-- the pool, misses the total or holds too few, or where the threshold is still
+-- unannounced. The total is summed over the answer as given, and the
 -- candidates are read HERE so an earlier component of the same cost that emptied
--- the graveyard refuses this one. The exile goes through Event.changeZonesTogether,
--- MoveCardsFromGraveyard's route. Answers the cards chosen and the exile
+-- the pool refuses this one. The exile goes through Event.changeZonesTogether,
+-- MoveCardsFromGraveyard's route. Answers the objects chosen and the exile
 -- incarnations that arrived.
 exileTotalling :: ManaAbilityPerformer.ManaAbilityPerformer -> Map.Map SlotName.SlotName (Set.Set Recipient.Recipient) -> PlayerId -> ObjectId -> ExileCardsTotalling.ExileCardsTotalling Keyword.Type.Keyword -> Game (Maybe (Set.Set ObjectId, [ObjectId]))
-exileTotalling perform slots pid oid (ExileCardsTotalling.MkExileCardsTotalling n tally criterion) = do
+exileTotalling _ _ _ _ (ExileCardsTotalling.MkExileCardsTotalling (CostAmount.Announced _) _ _ _ _ _) = pure Nothing
+exileTotalling perform slots pid oid exile@(ExileCardsTotalling.MkExileCardsTotalling (CostAmount.Fixed n) comparison fewest tally _ _) = do
   gs <- State.get
-  let candidates = exileCandidates slots pid oid yourGraveyard criterion gs
+  let candidates = totallingCandidates slots pid oid exile gs
       decider = Decide.deciderFor pid gs
       valueOf c = tallyValue tally c gs
-  chosen <- Game.choose (Prompt.ChooseExilesTotalling decider pid oid tally (fmap (\c -> (c, valueOf c)) candidates) n)
-  if Set.isSubsetOf chosen (Set.fromList candidates) && sum (fmap valueOf (Set.toAscList chosen)) >= toInteger n
+  chosen <- Game.choose (Prompt.ChooseExilesTotalling decider pid oid tally (fmap (\c -> (c, valueOf c)) candidates) comparison n fewest)
+  if Set.isSubsetOf chosen (Set.fromList candidates) && Filter.compares comparison (sum (fmap valueOf (Set.toAscList chosen))) (toInteger n) && Natural.length chosen >= fewest
     then do
       arrived <- Event.changeZonesTogether (ManaAbilityPerformer.settle perform) (fmap (\c -> (c, Zone.Exile)) (Set.toAscList chosen))
       pure (Just (chosen, foldMap Foldable.toList arrived))
@@ -3289,15 +3353,30 @@ claimOfGiven board slots pid oid component gs =
           claim (ClaimAxis.Removal Zone.Graveyard) (Set.fromList (exileCandidatesGiven board slots pid oid scope criterion gs)) n
         -- Nothing until CR 601.2b fixes the count, Sacrifice's arm.
         CostComponent.MoveCardsFromGraveyard (MoveCardsFromGraveyard.MkMoveCardsFromGraveyard (CostAmount.Announced _) _ _ _) -> Nothing
-        -- The same graveyard pool and the same axis, as ONE selection reaching the
+        -- The same pool and the same axis, as ONE selection reaching the
         -- threshold rather than the component's number of cards: the number is a
         -- THRESHOLD on the cards' total tally, so which cards a payment exiles is
         -- not settled until the payer picks them. TapForTotalPower's arm below and
         -- for its reason. A threshold of 0 is paid by the empty set and claims
         -- nothing.
-        CostComponent.ExileCardsTotalling (ExileCardsTotalling.MkExileCardsTotalling n tally criterion)
-          | n > 0 -> reaching (ClaimAxis.Removal Zone.Graveyard) (toInteger n) (tallyValueGiven tally (Snapshot.views board)) (exileCandidatesGiven board slots pid oid yourGraveyard criterion gs)
+        --
+        -- Any other comparison or a fewest claims what every answer must hold,
+        -- a NECESSARY condition: Fabrication Foundry's exact X reaches X, and
+        -- "one or more" takes one. canPayComponent asks the exact question.
+        CostComponent.ExileCardsTotalling exile@(ExileCardsTotalling.MkExileCardsTotalling (CostAmount.Fixed n) comparison fewest tally _ zone)
+          | needed > 0 -> reaching (ClaimAxis.Removal zone) needed (tallyValueGiven tally (Snapshot.views board)) pool
+          | fewest > 0 -> claim (ClaimAxis.Removal zone) (Set.fromList pool) fewest
           | otherwise -> Nothing
+          where
+            pool = totallingCandidatesGiven board slots pid oid exile gs
+            needed = case comparison of
+              Comparison.AtLeast -> toInteger n
+              Comparison.Exactly -> toInteger n
+              Comparison.GreaterThan -> toInteger n + 1
+              Comparison.AtMost -> 0
+              Comparison.LessThan -> 0
+        -- Nothing until CR 601.2b fixes the threshold, Sacrifice's arm.
+        CostComponent.ExileCardsTotalling (ExileCardsTotalling.MkExileCardsTotalling (CostAmount.Announced _) _ _ _ _ _) -> Nothing
         -- The arm above over CR 701.59a's whole graveyard by mana value.
         CostComponent.CollectEvidence (CostAmount.Fixed n) -> claimOfGiven board slots pid oid (CostComponent.ExileCardsTotalling (evidenceExile n)) gs
         -- Nothing until CR 107.3f fixes the amount, Sacrifice's arm.
@@ -3901,15 +3980,18 @@ uncountedCeiling pid oid claims gs component = case component of
   -- threshold on total mana value, so three one-drops collect evidence 3 once,
   -- not three times. A FENCE: Cryptex, the one printed mana ability collecting
   -- evidence, also charges {T}.
-  CostComponent.ExileCardsTotalling (ExileCardsTotalling.MkExileCardsTotalling threshold tally criterion)
+  CostComponent.ExileCardsTotalling exile@(ExileCardsTotalling.MkExileCardsTotalling (CostAmount.Fixed threshold) Comparison.AtLeast 0 tally _ zone)
     | threshold > 0 ->
         Just
           ( alone
-              (ClaimAxis.Removal Zone.Graveyard)
+              (ClaimAxis.Removal zone)
               threshold
-              (fmap (\candidate -> tallyValue tally candidate gs) (exileCandidates Map.empty pid oid yourGraveyard criterion gs))
+              (fmap (\candidate -> tallyValue tally candidate gs) (totallingCandidates Map.empty pid oid exile gs))
           )
     | otherwise -> Nothing
+  -- 1, the header's understatement: an exact total or a fewest is not a
+  -- floor `alone` can divide the pool by. Unannounced, the guard's answer.
+  CostComponent.ExileCardsTotalling _ -> Just 1
   CostComponent.CollectEvidence (CostAmount.Fixed n) -> uncountedCeiling pid oid claims gs (CostComponent.ExileCardsTotalling (evidenceExile n))
   -- The guard's answer above, which this arm never reaches.
   CostComponent.CollectEvidence (CostAmount.Announced _) -> Just 0
@@ -4768,14 +4850,14 @@ canPayComponentGiven board slots pid oid component gs = case component of
   -- 702.167a's "one or more" moves the CEILING and never the floor.
   CostComponent.ExileMaterials (ExileMaterials.MkExileMaterials n _ criterion) ->
     Natural.length (materialCandidates slots pid oid criterion gs) >= n
-  -- CR 118.3, and CR 701.59b for collect evidence: a player who cannot reach the
+  -- CR 118.3, and CR 701.59b for collect evidence: a player who cannot meet the
   -- total can't pay at all. The arm above read as a SUM rather than a size,
-  -- TapForTotalPower's question one zone over -- and EXACT rather than a bound, no
-  -- tally being negative (CR 202.3), so every matching card together is the largest
-  -- total any subset reaches. ">=" because both printings say "or more"/"or
-  -- greater", and a threshold of 0 is paid by the empty set with no special case.
-  CostComponent.ExileCardsTotalling (ExileCardsTotalling.MkExileCardsTotalling n tally criterion) ->
-    sum (fmap (tallyValueGiven tally (Snapshot.views board)) (exileCandidatesGiven board slots pid oid yourGraveyard criterion gs)) >= toInteger n
+  -- TapForTotalPower's question one zone over: whether SOME subset of the pool
+  -- meets the comparison and the fewest (Filter.someSubsetMeets), which for
+  -- Baron Helmut Zemo's "or more" is every matching card together, and for
+  -- Fabrication Foundry's exact X a search. Unpayable while unannounced.
+  CostComponent.ExileCardsTotalling exile ->
+    payableAnnounced (ExileCardsTotalling.threshold exile) (\n -> totallingPayable board slots pid oid exile n gs)
   CostComponent.CollectEvidence amount -> payableAnnounced amount (\n -> canPayComponentGiven board slots pid oid (CostComponent.ExileCardsTotalling (evidenceExile n)) gs)
   -- The arm above at the amount these slots fix (fixComputed).
   CostComponent.CollectEvidenceOfTargets -> canPayComponentGiven board slots pid oid (fixComputed slots gs component) gs

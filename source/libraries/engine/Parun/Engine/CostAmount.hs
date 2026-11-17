@@ -17,6 +17,7 @@ import qualified Parun.Types.CostComponent as CostComponent
 import qualified Parun.Types.CountersFromPermanents as CountersFromPermanents
 import qualified Parun.Types.CountersOnThis as CountersOnThis
 import qualified Parun.Types.DiscardCards as DiscardCards
+import qualified Parun.Types.ExileCardsTotalling as ExileCardsTotalling
 import qualified Parun.Types.Filter as Filter
 import qualified Parun.Types.Measures as Measures
 import qualified Parun.Types.MoveCardsFromGraveyard as MoveCardsFromGraveyard
@@ -111,7 +112,8 @@ traverseAmount f component = case component of
   CostComponent.PutExiledIntoGraveyard _ -> pure component
   -- Incinerator of the Guilty's "collect evidence X" (CR 107.3f, 701.59a).
   CostComponent.CollectEvidence amount -> CostComponent.CollectEvidence <$> f amount
-  CostComponent.ExileCardsTotalling _ -> pure component
+  -- Fabrication Foundry's "total mana value X" (CR 107.3a).
+  CostComponent.ExileCardsTotalling exile -> (\amount -> CostComponent.ExileCardsTotalling exile {ExileCardsTotalling.threshold = amount}) <$> f (ExileCardsTotalling.threshold exile)
   -- CR 601.2f's computed amount, not CR 601.2b's X: fixComputed reads it once the
   -- targets exist.
   CostComponent.CollectEvidenceOfTargets -> pure component
