@@ -160,6 +160,7 @@ import qualified Parun.Types.ClauseIndex as ClauseIndex
 import qualified Parun.Types.Cloak as Cloak
 import qualified Parun.Types.CoinReading as CoinReading
 import qualified Parun.Types.Color as Color
+import qualified Parun.Types.ColorAmong as ColorAmong
 import qualified Parun.Types.ColorSpread as ColorSpread
 import qualified Parun.Types.CombatRestriction as CombatRestriction
 import qualified Parun.Types.CommanderDeckRule as CommanderDeckRule
@@ -5161,7 +5162,7 @@ manaProductionFilters production = case production of
   ManaProduction.InCommanderIdentity -> []
   ManaProduction.Circled -> []
   ManaProduction.DraftNoted _ -> []
-  ManaProduction.EachColorAmong among -> [among]
+  ManaProduction.ColorAmong among -> [ColorAmong.among among]
   ManaProduction.ManaCostOf among -> [among]
 
 -- AddMana's and Firebend's shared payload: CR 106.7's group, CR 106.3's

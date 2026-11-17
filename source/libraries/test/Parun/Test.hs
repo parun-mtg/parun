@@ -207,6 +207,7 @@ import qualified Parun.Codec.CoinFaceSpec
 import qualified Parun.Codec.CoinFlipTriggerSpec
 import qualified Parun.Codec.CoinFlippedSpec
 import qualified Parun.Codec.CoinReadingSpec
+import qualified Parun.Codec.ColorAmongSpec
 import qualified Parun.Codec.ColorSpec
 import qualified Parun.Codec.ColorSpreadSpec
 import qualified Parun.Codec.CombatDamageAmountSpec
@@ -1310,6 +1311,7 @@ spec s reference corpus = do
   Parun.Codec.CoinFaceSpec.spec s
   Parun.Codec.CoinFlippedSpec.spec s
   Parun.Codec.CoinReadingSpec.spec s
+  Parun.Codec.ColorAmongSpec.spec s
   Parun.Codec.ChangeModeSpec.spec s
   Parun.Codec.ChoiceDistinctSpec.spec s
   Parun.Codec.ChoiceOrdinalSpec.spec s

@@ -65,6 +65,7 @@ import qualified Parun.Types.Claim as Claim.Type
 import qualified Parun.Types.ClaimAxis as ClaimAxis
 import qualified Parun.Types.Clause as Clause
 import qualified Parun.Types.Color as Color
+import qualified Parun.Types.ColorAmong as ColorAmong
 import qualified Parun.Types.ColorSpread as ColorSpread
 import Parun.Types.Cost (Cost)
 import qualified Parun.Types.Cost as Cost
@@ -324,9 +325,12 @@ noActivations = Activations.MkActivations {Activations.times = 0, Activations.cl
 -- the ability has none, so CR 106.5 adds nothing.
 --
 -- Bloom Tender's "for each color among" SETTLES one mana of every colour the
--- matched permanents have between them (CR 105.2), read off the board as the
+-- matched objects have between them (CR 105.2), read off the board as the
 -- ability resolves (CR 608.2h): the colours are determined, so nothing is
--- asked, and a colourless board adds none (CR 105.2c).
+-- asked, and a colourless board adds none (CR 105.2c). Pit of Offerings' "any
+-- of the exiled cards' colors" asks CR 105.4's choice among the same colours
+-- instead. Every zone is read, the filter confining it: Pit's pile is in
+-- exile (CR 607.2a).
 --
 -- Elemental Resonance's "mana equal to enchanted permanent's mana cost" reads
 -- the PROJECTED cost (CR 707.2), each symbol rewritten by symbolAdds: settled
@@ -363,10 +367,11 @@ producedVisiting bound visited acquisition oid gs poolBoard production = case pr
   ManaProduction.DraftNoted card ->
     let noted = maybe Seq.empty (Map.findWithDefault Seq.empty card . Player.draftNotes) (Projection.controllerOf oid gs >>= (`Map.lookup` GameState.players gs))
      in among (fmap ManaType.Colored (Set.toList (Set.fromList [color | DraftNote.Color color <- Foldable.toList noted])))
-  ManaProduction.EachColorAmong matching ->
+  ManaProduction.ColorAmong (ColorAmong.MkColorAmong matching spread) ->
     let context = Projection.sourceContext gs (Projection.controllerOf oid gs) oid
         colorsOf other = maybe Set.empty (\view -> if Filter.matches context view matching then Filter.colors view else Set.empty) (Projection.fullView gs other)
-     in Settles (fmap ManaType.Colored (Set.toList (foldMap colorsOf (Set.toList (GameState.battlefield gs)))))
+        colors = fmap ManaType.Colored (Set.toList (foldMap colorsOf (Map.keys (GameState.objects gs))))
+     in maybe (Settles colors) (`amongSpread` colors) spread
   ManaProduction.ManaCostOf matching ->
     let context = Projection.sourceContext gs (Projection.controllerOf oid gs) oid
         costOf other = foldMap (\view -> if Filter.matches context view matching then foldMap ManaCost.unwrap (Filter.manaCost view) else []) (Projection.fullView gs other)
@@ -990,7 +995,7 @@ readsPool (clause, _) = any (poolProduction . ManaAddition.production) (Maybe.ma
       ManaProduction.InCommanderIdentity -> False
       ManaProduction.Circled -> False
       ManaProduction.DraftNoted _ -> False
-      ManaProduction.EachColorAmong _ -> False
+      ManaProduction.ColorAmong _ -> False
       ManaProduction.ManaCostOf _ -> False
 
 -- CR 603.7a / 106.6a: the delayed ability a Parun.Types.WhenSpent creates as

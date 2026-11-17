@@ -6,6 +6,7 @@ import qualified Parun.JsonCodec.Common as Common
 import qualified Parun.Spec as Spec
 import qualified Parun.Types.CardType as CardType
 import qualified Parun.Types.Color as Color
+import qualified Parun.Types.ColorAmong as ColorAmong
 import qualified Parun.Types.ColorSpread as ColorSpread
 import qualified Parun.Types.CouldProduce as CouldProduce
 import qualified Parun.Types.Filter as Filter
@@ -73,12 +74,12 @@ spec s = Spec.describe s "Parun.Codec.ManaProduction" $ do
       ManaProduction.codec
       (ManaProduction.Pooled (ManaCount.MkManaCount (PlayerRef.Relative PlayerRelation.You) ManaFilter.Any))
       " {\"type\":\"Pooled\",\"value\":{\"filter\":{\"type\":\"Any\"},\"player\":{\"type\":\"Relative\",\"value\":\"You\"}}} "
-  Spec.it s "EachColorAmong" $
+  Spec.it s "ColorAmong" $
     Common.assertCodec
       s
       ManaProduction.codec
-      (ManaProduction.EachColorAmong (Filter.HasCardType CardType.Land))
-      " {\"type\":\"EachColorAmong\",\"value\":{\"type\":\"HasCardType\",\"value\":\"Land\"}} "
+      (ManaProduction.ColorAmong (ColorAmong.MkColorAmong (Filter.HasCardType CardType.Land) (Just ColorSpread.OneColor)))
+      " {\"type\":\"ColorAmong\",\"value\":{\"among\":{\"type\":\"HasCardType\",\"value\":\"Land\"},\"spread\":\"OneColor\"}} "
   Spec.it s "ManaCostOf" $
     Common.assertCodec
       s

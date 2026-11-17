@@ -56,33 +56,35 @@
                         "type": "AddMana",
                         "value": {
                           "production": {
-                            "type": "EachColorAmong",
+                            "type": "ColorAmong",
                             "value": {
-                              "type": "And",
-                              "value": [
-                                {
-                                  "type": "IsInZone",
-                                  "value": "Battlefield"
-                                },
-                                {
-                                  "type": "HeldBy",
-                                  "value": {
-                                    "holder": "Controller",
-                                    "relation": "You"
-                                  }
-                                },
-                                {
-                                  "type": "Measures",
-                                  "value": {
-                                    "comparison": "Exactly",
-                                    "measure": "ColorCount",
-                                    "operand": {
-                                      "type": "Literal",
-                                      "value": 1
+                              "among": {
+                                "type": "And",
+                                "value": [
+                                  {
+                                    "type": "IsInZone",
+                                    "value": "Battlefield"
+                                  },
+                                  {
+                                    "type": "HeldBy",
+                                    "value": {
+                                      "holder": "Controller",
+                                      "relation": "You"
+                                    }
+                                  },
+                                  {
+                                    "type": "Measures",
+                                    "value": {
+                                      "comparison": "Exactly",
+                                      "measure": "ColorCount",
+                                      "operand": {
+                                        "type": "Literal",
+                                        "value": 1
+                                      }
                                     }
                                   }
-                                }
-                              ]
+                                ]
+                              }
                             }
                           }
                         }
