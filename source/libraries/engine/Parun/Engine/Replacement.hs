@@ -1216,6 +1216,10 @@ matchesPrinted viewOf gs event candidate =
         -- reading of Krark's Thumb's ruling, die for coin.
         (ReplacementEffect.DieRollR (DieRollR.MkDieRollR whose rewrite), ProposedEvent.WouldThrow throw) -> case Throw.kind throw of
           ThrowKind.Coins -> False
+          -- CR 901.9d: an effect reading a die's number ignores the planar
+          -- die, and both rewrites do: Pixie Guide ignores the lowest roll,
+          -- Pokey reads a d20.
+          ThrowKind.PlanarDie -> False
           ThrowKind.Dice sides ->
             matchesPlayer gs candidate whose (Throw.thrower throw)
               && case rewrite of

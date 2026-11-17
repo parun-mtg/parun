@@ -135,10 +135,10 @@ event context creature c = case c of
     (one, that) <- described context f
     word <- ["it", that]
     subject <- also one
-    -- A creature "dies"; a kind named only by a noncreature card type "is put
-    -- into a graveyard from the battlefield" (CR 700.4, Ashiok's Reaper).
-    let happens = if namesOnlyNoncreatureTypes f then "is put into a graveyard from the battlefield" else "dies"
-    [other ("Whenever " <> subject <> " " <> happens) [(becameSlot, word), (departedPermanent, word)]]
+    -- CR 700.4: only a creature "dies"; a kind naming another card type and not
+    -- creature keeps the long form (Knight of Doves).
+    let verb = if noncreature f then "is put into a graveyard from the battlefield" else "dies"
+    [other ("Whenever " <> subject <> " " <> verb) [(becameSlot, word), (departedPermanent, word)]]
   TriggerCondition.Blocks (BlockTrigger.MkBlockTrigger BlockRole.Attacker f BlockCount.Once Batching.EachOccurrence Nothing) -> do
     (one, that) <- described context f
     -- Free: the attacker is "it" (Somberwald Alpha) or "that creature".
@@ -237,15 +237,16 @@ event context creature c = case c of
       article : rest | creature, article /= "another" -> [one, self <> " or another " <> unwords rest]
       _ -> [one]
 
--- | Whether a filter's conjuncts name a card type and none of them names
--- Creature: "an enchantment you control", not "a Goblin you control".
-namesOnlyNoncreatureTypes :: Filter.Type.Filter k -> Bool
-namesOnlyNoncreatureTypes f =
-  let conjuncts = case f of
-        Filter.Type.And gs -> gs
-        g -> [g]
-      types = [t | Filter.Type.HasCardType t <- conjuncts]
-   in not (null types) && notElem CardType.Creature types
+-- | Whether a filter names a card type and creature is not among those it
+-- names: the top-level conjuncts decide, so "a Bird" stays a creature.
+noncreature :: Filter.Type.Filter keyword -> Bool
+noncreature f =
+  let types = [t | Filter.Type.HasCardType t <- conjuncts f]
+   in not (null types) && CardType.Creature `notElem` types
+  where
+    conjuncts g = case g of
+      Filter.Type.And gs -> gs
+      _ -> [g]
 
 -- | What the source's own event says after its name, the words opening it
 -- ("When", or "Whenever" for one that can recur), and the words the rest

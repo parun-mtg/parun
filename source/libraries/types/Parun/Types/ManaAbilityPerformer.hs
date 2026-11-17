@@ -39,7 +39,8 @@ import qualified Parun.Types.Throw as Throw
 --
 -- A RECORD rather than one function, so that CR 605.4a's triggered mana ability,
 -- CR 118.12's resolution cost and CR 706's roll and CR 705.1's reflip window
--- for a cost's coin flip ride the same injection: the payment path needs them too, and all live in
+-- for a cost's coin flip ride the same injection (the planar die's roll, CR
+-- 901.9, too): the payment path needs them, and all live in
 -- Parun.Engine.Resolve, so a parameter of each own would have to be threaded
 -- through every caller of Parun.Engine.Cost.pay for no gain.
 data ManaAbilityPerformer = MkManaAbilityPerformer
@@ -58,9 +59,10 @@ data ManaAbilityPerformer = MkManaAbilityPerformer
     -- recorded by ordinal (PayGate.offeredAt) -- and say whether the clause
     -- happens. Rhystic Cave's "unless any player pays {1}".
     payGate :: ObjectId.ObjectId -> PlayerId.PlayerId -> ClauseIndex.ClauseIndex -> PayGate.PayGate -> Map.Map ClauseIndex.ClauseIndex (Map.Map PlayerId.PlayerId Bool) -> Game.Game (Bool, Map.Map ClauseIndex.ClauseIndex (Map.Map PlayerId.PlayerId Bool)),
-    -- | CR 614.6 / 706.1: throw and record the die roll Pokey, the Scallywagg
-    -- makes instead of a cost's coin flip, answering the kept results.
-    throwForCoin :: Throw.Throw -> Game.Game [Natural.Natural],
+    -- | CR 706.1: throw and record a roll settled below Resolve -- Pokey, the
+    -- Scallywagg's instead of a cost's coin flip (CR 614.6), the planar die
+    -- (CR 901.9) -- answering the kept results.
+    throwRecorded :: Throw.Throw -> Game.Game [Natural.Natural],
     -- | CR 705.1: the window Goblin Bookie's reflip is activated in, over the
     -- flipper's coin just flipped for a cost; answers whether it is flipped
     -- again.

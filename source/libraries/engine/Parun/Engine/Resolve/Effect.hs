@@ -571,7 +571,7 @@ applyOneEffect runSubgame resolving source controller legal chosen effect = case
   Effect.RollDie payload -> Damage.rollDieArm throwDice runSubgame resolving source controller legal payload
   Effect.Rethrow -> Damage.rethrow
   Effect.RerollStoredResults payload -> Damage.rerollStoredResults throwDice runSubgame resolving source controller legal payload
-  Effect.FlipCoin payload -> Damage.flipCoinArm throwForCoin reflipWindow runSubgame resolving source controller legal payload
+  Effect.FlipCoin payload -> Damage.flipCoinArm throwRecorded reflipWindow runSubgame resolving source controller legal payload
   Effect.Guess payload -> Zones.guess resolving source controller legal chosen payload
   Effect.ControlPlayerNext payload -> Damage.controlPlayerNext controller legal payload
   Effect.ControlPlayerThisResolution payload -> Damage.controlPlayerThisResolution controller legal payload
@@ -953,20 +953,25 @@ throwDice runSubgame controller sides named ignore perDie = do
     Left results -> pure (results, fmap (const controller) results, [])
     Right roll -> do
       -- A roll standing for Pokey's flip throws with no modifier of the
-      -- instruction's own, throwForCoin's reason: the flip named none, and
+      -- instruction's own, throwRecorded's reason: the flip named none, and
       -- the instruction sees only the 1 or 20 the face is read as.
       (results, throwers) <- throwSettled runSubgame roll (if Throw.instead roll then pure 0 else perDie)
       let readBack = if Throw.instead roll then Maybe.mapMaybe (fmap Event.resultOfFace . Event.faceOfResult) results else results
       pure (readBack, throwers, results)
 
--- | CR 706.1: the roll Pokey, the Scallywagg makes instead of a coin flip,
--- thrown through `throwSettled` and recorded -- the CR 706 road
--- Parun.Engine.Event.flipOneCoin cannot reach. No modifier of the instruction's
--- own: the flip named none.
-throwForCoin :: Game Result -> Throw.Throw -> Game [Natural]
-throwForCoin runSubgame roll = do
+-- | CR 706.1: a roll settled below Resolve, thrown through `throwSettled` and
+-- recorded -- the CR 706 road Parun.Engine.Event.flipOneCoin and
+-- Parun.Engine.Planechase.roll cannot reach. Pokey, the Scallywagg's roll
+-- instead of a coin flip, and the planar die (CR 901.9). No modifier of the
+-- instruction's own: neither names one.
+throwRecorded :: Game Result -> Throw.Throw -> Game [Natural]
+throwRecorded runSubgame roll = do
   (results, throwers) <- throwSettled runSubgame roll (pure 0)
-  Monad.unless (null results) (Common.recordRoll (Throw.thrower roll) throwers results)
+  Monad.unless (null results) $ case Throw.kind roll of
+    -- CR 901.9d: a roll of dice, but no number came up for "whenever you roll
+    -- a 6" to read.
+    ThrowKind.PlanarDie -> State.modify' (Event.recordEvent (GameEvent.PlayerActed (PlayerActed.MkPlayerActed PlayerAction.RollDice (Throw.thrower roll))))
+    _ -> Common.recordRoll (Throw.thrower roll) throwers results
   pure results
 
 -- | `throwDice` once CR 614.1a's loop has settled the roll: how many dice to
@@ -980,6 +985,13 @@ throwSettled runSubgame roll perDie = do
       sides = case Throw.kind roll of
         ThrowKind.Dice n -> n
         ThrowKind.Coins -> 1
+        -- CR 901.3a, Parun.Engine.Planechase.faceOf's numbering.
+        ThrowKind.PlanarDie -> 6
+      -- CR 901.9d: an effect reading a die's number ignores the planar die, so
+      -- only a reroll that names no number reaches it (Wall of Fortune, Monitor
+      -- Monitor), and an adjustment changes nothing (Night Shift of the Living
+      -- Dead's ruling: the life is paid, the result stands).
+      numbered = Throw.kind roll /= ThrowKind.PlanarDie
       -- CR 706.1a's outcomes "numbered from 1 to N", BOTH ends included: the
       -- answer filtered back to a face the die could show. Its own binding
       -- because a reroll runs it a second time.
@@ -1008,7 +1020,7 @@ throwSettled runSubgame roll perDie = do
       -- or whoever activated a reroll in the window below (`windowCandidates`).
       -- The static offers and those activations compete in the one step, so
       -- both are candidates for the roller's pick.
-      rerolling = rerollingWith True
+      rerolling = rerollingWith numbered
       -- `byNumber` False for a natural result a coin gave (`rethrow`): no die
       -- came up that number, so an offer gated on one ("if you roll a 3") is
       -- not made, where one that reaches any die the player rolled is.
@@ -1100,7 +1112,12 @@ throwSettled runSubgame roll perDie = do
       -- docs/decisions.md, "Whether a reroll reaches a die before the lowest roll is
       -- ignored".
       rethrow by = do
-        settled <- Event.proposeDiceRoll (reflipWindow runSubgame) by sides 1 0
+        -- The planar die past CR 614.1a's loop: every printed row reads a
+        -- number (Parun.Engine.Replacement's DieRollR arm).
+        settled <-
+          if numbered
+            then Event.proposeDiceRoll (reflipWindow runSubgame) by sides 1 0
+            else pure (Right roll {Throw.thrower = by, Throw.units = Seq.singleton 1, Throw.ignored = 0})
         case settled of
           Left results -> rerollingWith False by (Maybe.fromMaybe 1 (Maybe.listToMaybe results))
           Right again -> do
@@ -1166,9 +1183,11 @@ throwSettled runSubgame roll perDie = do
                   -- FILTERED, NOT TRUSTED: an index past the end shifts
                   -- the first die.
                   let at = if index < List.genericLength results then index else 0
-                      shift n = case direction of
-                        RollAdjustment.Increase -> n + toInteger amount
-                        RollAdjustment.Decrease -> n - toInteger amount
+                      shift n
+                        | not numbered = n
+                        | otherwise = case direction of
+                            RollAdjustment.Increase -> n + toInteger amount
+                            RollAdjustment.Decrease -> n - toInteger amount
                   adjustingThrough (rest <> idle <> waiting) [] (zipWith (\i n -> if i == at then shift n else n) [0 :: Natural ..] results)
       -- CR 706.2a's cost, charged between the offer and the modifier's
       -- application: a declined payment leaves the number standing. `ask`
@@ -1321,7 +1340,8 @@ throwSettled runSubgame roll perDie = do
 -- What Parun.Engine.Cost reaches through the Parun.Types.ManaAbilityPerformer
 -- parameter: CR 405.6c's other effects of the activated mana ability being paid,
 -- CR 605.4a's triggered mana ability, CR 118.12's resolution cost, and the CR
--- 706 roll Pokey, the Scallywagg makes for a cost's coin flip (throwForCoin),
+-- 706 roll Pokey, the Scallywagg makes for a cost's coin flip and the planar
+-- die's (throwRecorded),
 -- and CR 614.11a's settle for a life payment's draws.
 --
 -- `runSubgame` is CR 730.1a's runner for a subgame either one starts. Only the
@@ -1335,7 +1355,7 @@ performManaAbility runSubgame =
     { ManaAbilityPerformer.effects = performManaAbilityEffects runSubgame,
       ManaAbilityPerformer.triggered = performTriggeredManaAbility runSubgame,
       ManaAbilityPerformer.payGate = performManaPayGate runSubgame,
-      ManaAbilityPerformer.throwForCoin = throwForCoin runSubgame,
+      ManaAbilityPerformer.throwRecorded = throwRecorded runSubgame,
       ManaAbilityPerformer.reflipWindow = reflipWindow runSubgame,
       ManaAbilityPerformer.settle = runReplacementEffects runSubgame
     }
