@@ -229,9 +229,9 @@ dealDamage runPreventionRiders runReplacementEffects runSubgame resolving source
         -- redirect keeps the dealer, and Eye for an Eye's added damage is its
         -- own, the scenario eye-for-an-eye-damage-back-is-not-damage-dealt-this-way.
         --
-        -- Not implemented: the excess several dealers deal one recipient
-        -- together (CR 120.10); each dealer's is counted against its own bar
-        -- (#7272).
+        -- Unprinted: the excess several dealers deal one recipient together
+        -- (CR 120.10). Each dealer's is counted against its own bar, and
+        -- Parun.Codec.DealDamage refuses several dealers beside a tally.
         let dealtBy dealt = filter ((== dealt) . DamageEvent.source) settled
         pure (filter ((`elem` fmap fst dealers) . DamageEvent.source) settled, sum [Damage.excessDealt gs dealt (fmap DamageEvent.target events) (dealtBy dealt) | (dealt, _) <- dealers])
   -- Syphon Soul's "the damage dealt this way": the SETTLED total, after CR

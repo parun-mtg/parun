@@ -2156,8 +2156,10 @@ heldBy holder view = case holder of
 -- context did not fill -- leaves its set empty and answers False without a case
 -- of its own, but for one posture below.
 --
--- Not implemented: a pair the Context carries no anchored values for, answered
--- Nothing (#8071).
+-- Unprinted: a pair the Context carries no anchored values for, answered
+-- Nothing. Parun.FilterPositionLintSpec's "no card writes a Shares or
+-- IsAttachedTo anchor the filter context carries no values for" keeps it out
+-- of card data.
 sharesAnchored :: Trait.Trait -> Anchor.Anchor (Filter.Filter Keyword.Type.Keyword) -> Maybe (Context -> View -> Bool)
 sharesAnchored trait anchor = case anchor of
   Anchor.Source -> case trait of
@@ -2283,8 +2285,8 @@ attachedAnchored anchor = case anchor of
           Map.notMember slot (slotControllers context)
             || Set.member host (Map.findWithDefault Set.empty slot (slotObjects context))
       )
-  -- Not implemented: a slot narrowed to the members the candidate's holder
-  -- holds (#8071).
+  -- Unprinted: a slot narrowed to the members the candidate's holder holds.
+  -- sharesAnchored's lint keeps it out of card data too.
   Anchor.Bound (Just _) _ -> Nothing
   -- A group names no one host: Filter.AttachedTo is that reading.
   Anchor.AnyPermanent _ -> Nothing

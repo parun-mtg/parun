@@ -244,9 +244,9 @@ data Modification ability
     -- A closed-half CITATION exactly as LoseKeyword's Keyword is: KeywordFamily
     -- names rule 702's abilities with their payloads dropped.
     --
-    -- Not implemented: a removal scoped to every keyword an object has at once,
-    -- which names no family -- Modular Monstrosity's "loses all keyword
-    -- abilities" (gap #2983).
+    -- Unprinted: a removal scoped to every keyword an object has at once, which
+    -- names no family. Modular Monstrosity's "loses all keyword abilities" is
+    -- the one printing, an Unstable card out of scope.
     LoseKeywordFamily KeywordFamily.KeywordFamily
   | -- | layer 6, CR 613.1f / 113.11: this object loses this keyword and can't
     -- have it (Archetype of Courage); a family where CR 702.11d makes the

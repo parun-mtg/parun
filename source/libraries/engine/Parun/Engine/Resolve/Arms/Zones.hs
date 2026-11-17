@@ -576,8 +576,10 @@ exchangeZones settle resolving source controller legal (ExchangeZones.MkExchange
 -- card is judged as the resolving controller's (Attach.entryAttachmentFor),
 -- a fence too: AuraSwap's Aura card comes from its controller's own hand.
 --
--- Not implemented: a library card from neither end of its library, which
--- LibraryPosition cannot name, sends the other card to the bottom (#4974).
+-- Implementation-defined: a library card from neither end of its library,
+-- which LibraryPosition cannot name, sends the other card to the bottom. CR
+-- 701.12d names no position, and no printed card exchanges with a card inside
+-- a library.
 exchangeCardZones :: Game () -> ObjectId -> ObjectId -> PlayerId -> Map.Map SlotName (Set Recipient) -> Map.Map SlotName (Set Recipient) -> ExchangeCardZones.ExchangeCardZones -> Game ()
 exchangeCardZones settle resolving source controller legal chosen (ExchangeCardZones.MkExchangeCardZones one other) = do
   ones <- Common.askingObjects Common.Present resolving source controller legal chosen one

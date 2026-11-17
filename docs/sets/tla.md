@@ -68,10 +68,11 @@ face name in the pool.
   without the keyword, #7316), #7306 (a capped target total's test gap,
   #7335) and #7313 (a borrowed delayed trigger arming a second, #7324).
   Outside it: #7272 (several damage dealers with excess or redirected
-  damage; open), #7278 (Master of the Wild Hunt's Wolves dealing damage one
-  at a time, #7292), #7307 (a lent mana ability can't arm its card's delayed
-  trigger, #7345), #7329 (a granted ability naming its granter
-  outside an effect's own object; its remainder #7341 and #7342, closed, and
+  damage; unprinted, refused by the codec), #7278 (Master of the Wild
+  Hunt's Wolves dealing damage one at a time, #7292), #7307 (a lent mana
+  ability can't arm its card's delayed trigger, #7345), #7329 (a granted
+  ability naming its granter outside an effect's own object; its remainder
+  #7341 and #7342, closed, and
   #7794, open).
 - Audits: 12 of 18 capability PRs (#7298 inline by the orchestrator) and all
   5 fix PRs (#7335 inline); 3 found rules defects and 1 a test gap. Skipped

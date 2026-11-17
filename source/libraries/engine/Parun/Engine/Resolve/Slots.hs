@@ -1162,9 +1162,10 @@ slotsOf effect = joinTwo (joinTwo (joinSlots (fmap objectRefSlots (effectObjectR
   -- sweep of dealers is effectObjectRefs' half, and the slot is no read at
   -- all: the arm itself binds each dealer there, ModifyTarget's `each`.
   --
-  -- Not implemented: several dealers under an instruction that states or
-  -- tallies excess damage (CR 120.4a, 120.10), whose dealer stays one object
-  -- (#7272).
+  -- Unprinted: several dealers under an instruction that states or tallies
+  -- excess damage (CR 120.4a, 120.10). Its dealer stays one object, so
+  -- Parun.AbilitySlotLintSpec's "every slot that may take more than one target
+  -- is read where a set fits" refuses a plural dealer slot there.
   Effect.DealDamage (DealDamage.MkDealDamage parts dealer sweep excess _ _ excessTally) ->
     let amounts = joinSlots (fmap (quantitySlots . DamagePart.quantity) (Foldable.toList parts))
      in case dealer of

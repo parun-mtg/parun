@@ -3127,7 +3127,8 @@ chooseNewTargetsFor unannounced source chooser controller copyId = do
       Monad.when wellFormed $ do
         -- CR 406.4's draw, run on the ANSWER: a pile the player named becomes
         -- the card randomness picked out of it before any target is recorded.
-        -- Not implemented: revealing the card it picked (#5424).
+        -- Implementation-defined: the card it picked is shown to nobody. CR
+        -- 406.4 orders a reveal only for casting and activating.
         drawn <- traverse (fmap fst . Target.drawFromPiles (Just chooser)) answer
         -- CR 707.10c: "if the player chooses to change some or all of the
         -- targets, the new targets must be legal". Asked of the DRAWN answer
@@ -3277,7 +3278,8 @@ changeTargetsFor onto source chooser controller oid = do
                 Map.keysSet answer == Map.keysSet asked
                   && and (Map.elems (Map.intersectionWith admits asked answer))
           Monad.when wellFormed $ do
-            -- Not implemented: revealing the card CR 406.4's draw picked (#5424).
+            -- Implementation-defined: the card CR 406.4's draw picked is shown
+            -- to nobody. The rule orders a reveal only for casting and activating.
             drawn <- traverse (fmap fst . Target.drawFromPiles (Just chooser)) answer
             let stands slot picked =
                   Set.isSubsetOf picked (Map.findWithDefault Set.empty slot fresh)

@@ -60,8 +60,8 @@ data DealDamage = MkDealDamage
     -- data/scenarios/master-of-the-wild-hunt-a-shield-is-divided-between-the-wolves.json
     -- proves it.
     --
-    -- Not implemented: several dealers beside `excess` or `excessTally`
-    -- (#7272).
+    -- Unprinted: several dealers beside `excess` or `excessTally`.
+    -- Parun.Codec.DealDamage refuses the pair.
     --
     -- An empty slot deals nothing. The dealer of a printed card is a TARGET, so
     -- one that has become illegal (CR 608.2b) leaves the instruction without
