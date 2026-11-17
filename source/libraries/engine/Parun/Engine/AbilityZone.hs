@@ -32,6 +32,7 @@ import qualified Parun.Types.Filter as Filter
 import qualified Parun.Types.GrantedAbility as GrantedAbility
 import qualified Parun.Types.InZone as InZone
 import qualified Parun.Types.Keyword as Keyword.Type
+import qualified Parun.Types.MoveThisFrom as MoveThisFrom
 import qualified Parun.Types.Quantity as Quantity
 import qualified Parun.Types.Scope as Scope
 import qualified Parun.Types.TriggeredAbility as TriggeredAbility
@@ -159,7 +160,7 @@ zoneOfComponent component = case component of
   -- reinforce abilities into the projection for every zone -- this is what keeps
   -- a Rustic Clachan on the battlefield from offering its reinforce ability.
   CostComponent.DiscardThis _ -> Just Zone.Hand
-  CostComponent.ExileThisFrom zone -> Just zone
+  CostComponent.MoveThisFrom move -> Just (MoveThisFrom.zone move)
   CostComponent.TapThis -> Nothing
   CostComponent.UntapThis -> Nothing
   CostComponent.ExertThis -> Nothing

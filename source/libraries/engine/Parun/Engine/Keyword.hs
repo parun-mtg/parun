@@ -195,6 +195,7 @@ import qualified Parun.Types.Morph as Morph
 import qualified Parun.Types.MorphVariant as MorphVariant
 import qualified Parun.Types.MoveCardsFromGraveyard as MoveCardsFromGraveyard
 import qualified Parun.Types.MoveCounters as MoveCounters
+import qualified Parun.Types.MoveThisFrom as MoveThisFrom
 import qualified Parun.Types.MoveToZone as MoveToZone
 import qualified Parun.Types.MovedKinds as MovedKinds
 import qualified Parun.Types.Ninjutsu as Ninjutsu
@@ -2379,7 +2380,7 @@ graveyardTokenCopy exceptions cost =
             }
    in ActivatedAbility.MkActivatedAbility
         { ActivatedAbility.costChoices = [],
-          ActivatedAbility.cost = cost {Cost.components = Cost.components cost <> [CostComponent.ExileThisFrom Zone.Graveyard]},
+          ActivatedAbility.cost = cost {Cost.components = Cost.components cost <> [CostComponent.MoveThisFrom (MoveThisFrom.MkMoveThisFrom Zone.Graveyard GraveyardCostDestination.Exile)]},
           ActivatedAbility.modal =
             Mint.oneMode (Seq.singleton copied),
           ActivatedAbility.maximumX = [],
@@ -2426,7 +2427,7 @@ scavenge cost =
           )
    in ActivatedAbility.MkActivatedAbility
         { ActivatedAbility.costChoices = [],
-          ActivatedAbility.cost = cost {Cost.components = Cost.components cost <> [CostComponent.ExileThisFrom Zone.Graveyard]},
+          ActivatedAbility.cost = cost {Cost.components = Cost.components cost <> [CostComponent.MoveThisFrom (MoveThisFrom.MkMoveThisFrom Zone.Graveyard GraveyardCostDestination.Exile)]},
           ActivatedAbility.modal =
             Mint.oneModeTargeting (Map.singleton scavengeTarget slot) (Seq.singleton effect),
           ActivatedAbility.maximumX = [],
@@ -2535,7 +2536,7 @@ encore cost =
             }
    in ActivatedAbility.MkActivatedAbility
         { ActivatedAbility.costChoices = [],
-          ActivatedAbility.cost = cost {Cost.components = Cost.components cost <> [CostComponent.ExileThisFrom Zone.Graveyard]},
+          ActivatedAbility.cost = cost {Cost.components = Cost.components cost <> [CostComponent.MoveThisFrom (MoveThisFrom.MkMoveThisFrom Zone.Graveyard GraveyardCostDestination.Exile)]},
           ActivatedAbility.modal =
             Mint.oneMode (Seq.fromList [loop, hasted, armed]),
           ActivatedAbility.maximumX = [],

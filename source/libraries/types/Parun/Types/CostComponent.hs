@@ -17,12 +17,12 @@ import qualified Parun.Types.Filter as Filter
 import qualified Parun.Types.Gift as Gift
 import qualified Parun.Types.Hop as Hop
 import qualified Parun.Types.MoveCardsFromGraveyard as MoveCardsFromGraveyard
+import qualified Parun.Types.MoveThisFrom as MoveThisFrom
 import qualified Parun.Types.ReturnPermanents as ReturnPermanents
 import qualified Parun.Types.Sacrifice as Sacrifice
 import qualified Parun.Types.SubtypeFamily as SubtypeFamily
 import qualified Parun.Types.TapForTotalPower as TapForTotalPower
 import qualified Parun.Types.TapPermanents as TapPermanents
-import qualified Parun.Types.Zone as Zone
 
 -- | One component of a Parun.Types.Cost's non-mana part, alongside its mana part
 -- (CR 601.2f).
@@ -146,11 +146,10 @@ data CostComponent keyword
     -- provenance and binds a tally for a later effect to read, where a cost binds
     -- nothing; Parun.Engine.Event.flipWinLoseCoin is the one procedure both reach.
     FlipCoin
-  | -- | CR 406.2 as a cost / Loxodon Surveyor, Emrakul, the Exigent Doom: exile
-    -- the card the cost is on from this zone, its owner's graveyard or hand --
-    -- the zone CR 113.6m then functions the ability in, read off the payload by
-    -- Parun.Engine.AbilityZone.costZones.
-    ExileThisFrom Zone.Zone
+  | -- | CR 406.2 / 400.3 as a cost / Loxodon Surveyor, Daniels, Temporal
+    -- Agent: move the card the cost is on out of its owner's graveyard or hand,
+    -- into exile or onto the bottom of its library.
+    MoveThisFrom MoveThisFrom.MoveThisFrom
   | -- | CR 406.2 as a cost, from the other zone / Brittle Effigy: exile the
     -- permanent the cost is on, off the battlefield.
     ExileThis

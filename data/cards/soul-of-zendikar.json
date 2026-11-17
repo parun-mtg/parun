@@ -77,8 +77,10 @@
           "cost": {
             "components": [
               {
-                "type": "ExileThisFrom",
-                "value": "Graveyard"
+                "type": "MoveThisFrom",
+                "value": {
+                  "zone": "Graveyard"
+                }
               }
             ],
             "mana": [

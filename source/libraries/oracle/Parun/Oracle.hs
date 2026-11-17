@@ -41,9 +41,11 @@ import qualified Parun.Types.CostComponent as CostComponent
 import qualified Parun.Types.DeckLimit as DeckLimit
 import qualified Parun.Types.DuringPhase as DuringPhase
 import qualified Parun.Types.Face as Face
+import qualified Parun.Types.GraveyardCostDestination as GraveyardCostDestination
 import qualified Parun.Types.Keyword as Keyword.Type
 import qualified Parun.Types.Layout as Layout
 import qualified Parun.Types.ManaCost as ManaCost
+import qualified Parun.Types.MoveThisFrom as MoveThisFrom
 import qualified Parun.Types.Phase as Phase
 import qualified Parun.Types.PhaseSelector as PhaseSelector
 import qualified Parun.Types.PlayerRef as PlayerRef
@@ -276,7 +278,7 @@ activated context a
       word <-
         Text.empty
           : [ Text.pack "Renew \8212 "
-            | elem (CostComponent.ExileThisFrom Zone.Graveyard) components,
+            | elem (CostComponent.MoveThisFrom (MoveThisFrom.MkMoveThisFrom Zone.Graveyard GraveyardCostDestination.Exile)) components,
               elem ActivationRestriction.SorcerySpeed (ActivatedAbility.restrictions a)
             ]
       [word <> cost <> Text.pack ": " <> effect <> rider]

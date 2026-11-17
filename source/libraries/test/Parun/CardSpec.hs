@@ -363,6 +363,7 @@ import qualified Parun.Types.ModifyTarget as ModifyTarget
 import qualified Parun.Types.Morph as Morph
 import qualified Parun.Types.MoveCardsFromGraveyard as MoveCardsFromGraveyard
 import qualified Parun.Types.MoveCounters as MoveCounters
+import qualified Parun.Types.MoveThisFrom as MoveThisFrom
 import qualified Parun.Types.MoveToZone as MoveToZone
 import qualified Parun.Types.MovedKinds as MovedKinds
 import qualified Parun.Types.NewX as NewX
@@ -1375,7 +1376,7 @@ payGateBound modal =
 
 -- Does this cost EXILE a card it names? sacrificesAsCost's shape, for
 -- Binding.exiledCard (Parun.Engine.Cost.payComponent's ExileThis,
--- ExileThisFrom and MoveCardsFromGraveyard arms, folded on by Activate and
+-- MoveThisFrom and MoveCardsFromGraveyard arms, folded on by Activate and
 -- Resolve.Common.foldPaid), so CR 702.167a's "Return this card to the
 -- battlefield" and Lamplight Phoenix's are ordinary slot reads.
 --
@@ -1386,7 +1387,7 @@ exilesCardAsCost :: Cost.Type.Cost Keyword.Keyword -> Bool
 exilesCardAsCost =
   let isExile component = case component of
         CostComponent.ExileThis -> True
-        CostComponent.ExileThisFrom _ -> True
+        CostComponent.MoveThisFrom move -> MoveThisFrom.destination move == GraveyardCostDestination.Exile
         CostComponent.MoveCardsFromGraveyard exile -> MoveCardsFromGraveyard.destination exile == GraveyardCostDestination.Exile
         _ -> False
    in any isExile . Cost.Type.components
@@ -3301,10 +3302,10 @@ costComponentFilters component = case component of
   CostComponent.Blight _ -> []
   CostComponent.Forage -> []
   CostComponent.FlipCoin -> []
-  CostComponent.ExileThisFrom _ -> []
+  CostComponent.MoveThisFrom _ -> []
   CostComponent.ExileThis -> []
   -- CR 701.17a takes the cards off the top, so this component carries no Filter
-  -- to narrow -- ExileThisFrom's answer above and for its reason.
+  -- to narrow -- MoveThisFrom's answer above and for its reason.
   CostComponent.MillCards _ -> []
   CostComponent.RevealTopOfLibrary _ -> []
   CostComponent.RevealSecretChoice -> []

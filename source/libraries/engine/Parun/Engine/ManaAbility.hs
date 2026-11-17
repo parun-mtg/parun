@@ -59,6 +59,7 @@ import qualified Parun.Types.ManaAddedCause as ManaAddedCause
 import qualified Parun.Types.ManaAddition as ManaAddition
 import qualified Parun.Types.Meld as Meld
 import qualified Parun.Types.MoveCardsFromGraveyard as MoveCardsFromGraveyard
+import qualified Parun.Types.MoveThisFrom as MoveThisFrom
 import qualified Parun.Types.MoveToZone as MoveToZone
 import qualified Parun.Types.ObjectRef as ObjectRef
 import qualified Parun.Types.RandomCard as RandomCard
@@ -255,11 +256,12 @@ costMovesLibraryCard component = case component of
   CostComponent.ReturnThis -> False
   CostComponent.ReturnPermanents {} -> False
   CostComponent.ExilePermanents {} -> False
-  CostComponent.ExileThisFrom _ -> False
   CostComponent.ExileThis -> False
-  -- Gurzigost's cost puts the cards INTO a library. A fence: no mana ability
-  -- prints this cost, so no test observes the answer.
+  -- Gurzigost's and Daniels, Temporal Agent's costs put the cards INTO a
+  -- library. A fence: no mana ability prints either cost, so no test observes
+  -- the answer.
   CostComponent.MoveCardsFromGraveyard move -> MoveCardsFromGraveyard.destination move == GraveyardCostDestination.LibraryBottom
+  CostComponent.MoveThisFrom move -> MoveThisFrom.destination move == GraveyardCostDestination.LibraryBottom
   CostComponent.ExileMaterials {} -> False
   CostComponent.ExileTopFromGraveyard _ -> False
   CostComponent.PutExiledIntoGraveyard _ -> False

@@ -16,12 +16,12 @@ import qualified Parun.Codec.Filter as Filter
 import qualified Parun.Codec.Gift as Gift
 import qualified Parun.Codec.Hop as Hop
 import qualified Parun.Codec.MoveCardsFromGraveyard as MoveCardsFromGraveyard
+import qualified Parun.Codec.MoveThisFrom as MoveThisFrom
 import qualified Parun.Codec.ReturnPermanents as ReturnPermanents
 import qualified Parun.Codec.Sacrifice as Sacrifice
 import qualified Parun.Codec.SubtypeFamily as SubtypeFamily
 import qualified Parun.Codec.TapForTotalPower as TapForTotalPower
 import qualified Parun.Codec.TapPermanents as TapPermanents
-import qualified Parun.Codec.Zone as Zone
 import qualified Parun.JsonCodec.Arm as Arm
 import qualified Parun.JsonCodec.Codec as Codec
 import qualified Parun.JsonCodec.Common as Common
@@ -75,7 +75,7 @@ codec keywordCodec =
       Arm.payload "Blight" CostAmount.codec CostComponent.Blight (\x -> case x of CostComponent.Blight y -> Just y; _ -> Nothing),
       Arm.nullary "Forage" CostComponent.Forage,
       Arm.nullary "FlipCoin" CostComponent.FlipCoin,
-      Arm.payload "ExileThisFrom" Zone.codec CostComponent.ExileThisFrom (\x -> case x of CostComponent.ExileThisFrom y -> Just y; _ -> Nothing),
+      Arm.payload "MoveThisFrom" MoveThisFrom.codec CostComponent.MoveThisFrom (\x -> case x of CostComponent.MoveThisFrom y -> Just y; _ -> Nothing),
       Arm.nullary "ExileThis" CostComponent.ExileThis,
       Arm.payload "MoveCardsFromGraveyard" (MoveCardsFromGraveyard.codec keywordCodec) CostComponent.MoveCardsFromGraveyard (\x -> case x of CostComponent.MoveCardsFromGraveyard y -> Just y; _ -> Nothing),
       Arm.payload "ExileMaterials" (ExileMaterials.codec keywordCodec) CostComponent.ExileMaterials (\x -> case x of CostComponent.ExileMaterials y -> Just y; _ -> Nothing),
@@ -127,7 +127,7 @@ tagOf x = case x of
   CostComponent.Blight {} -> "Blight"
   CostComponent.Forage {} -> "Forage"
   CostComponent.FlipCoin {} -> "FlipCoin"
-  CostComponent.ExileThisFrom {} -> "ExileThisFrom"
+  CostComponent.MoveThisFrom {} -> "MoveThisFrom"
   CostComponent.ExileThis {} -> "ExileThis"
   CostComponent.MoveCardsFromGraveyard {} -> "MoveCardsFromGraveyard"
   CostComponent.ExileMaterials {} -> "ExileMaterials"
