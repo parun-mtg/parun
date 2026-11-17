@@ -1,0 +1,49 @@
+{
+  "faces": [
+    {
+      "attackCosts": [
+        {
+          "perAttacker": {
+            "type": "Fixed",
+            "value": {
+              "mana": [
+                {
+                  "type": "Generic",
+                  "value": 2
+                }
+              ]
+            }
+          },
+          "scope": "Controller",
+          "subject": {
+            "type": "Matching",
+            "value": {
+              "type": "HasCardType",
+              "value": "Creature"
+            }
+          }
+        }
+      ],
+      "manaCost": [
+        {
+          "type": "Generic",
+          "value": 2
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "Blue"
+          }
+        }
+      ],
+      "name": "Propaganda",
+      "oracleText": "Creatures can't attack you unless their controller pays {2} for each creature they control that's attacking you.",
+      "typeLine": {
+        "types": [
+          "Enchantment"
+        ]
+      }
+    }
+  ]
+}

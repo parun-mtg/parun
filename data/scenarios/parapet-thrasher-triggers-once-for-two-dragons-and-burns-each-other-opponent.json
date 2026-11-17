@@ -1,0 +1,166 @@
+{
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "battlefield": [
+          {
+            "card": "Parapet Thrasher",
+            "label": "thrasher",
+            "ready": true
+          },
+          {
+            "card": "Shivan Dragon",
+            "label": "shivan",
+            "ready": true
+          }
+        ],
+        "hand": [],
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ],
+        "name": "alice"
+      },
+      {
+        "battlefield": [],
+        "hand": [],
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ],
+        "name": "bob"
+      },
+      {
+        "battlefield": [],
+        "hand": [],
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ],
+        "life": 14,
+        "name": "carol"
+      }
+    ],
+    "step": "PrecombatMain",
+    "turn": 3
+  },
+  "description": "CR 603.2c: two Dragons dealing combat damage to bob trigger Parapet Thrasher once, and its second mode deals 4 damage to each opponent other than bob",
+  "note": "Three seats: bob takes 4 and 5 in combat and nothing more; carol, at 14, takes 4. A second trigger would raise an unscheduled mode prompt.",
+  "timeline": [
+    {
+      "do": {
+        "Attack": [
+          "$thrasher",
+          "$shivan"
+        ]
+      },
+      "player": "alice",
+      "step": "DeclareAttackers",
+      "turn": 3
+    },
+    {
+      "do": {
+        "ChooseAttackTarget": "$bob"
+      },
+      "player": "alice",
+      "source": "$thrasher",
+      "step": "DeclareAttackers",
+      "turn": 3
+    },
+    {
+      "do": {
+        "ChooseAttackTarget": "$bob"
+      },
+      "player": "alice",
+      "source": "$shivan",
+      "step": "DeclareAttackers",
+      "turn": 3
+    },
+    {
+      "do": {
+        "Answer": {
+          "prompt": "ChooseModes",
+          "with": [
+            1
+          ]
+        }
+      },
+      "player": "alice",
+      "step": "CombatDamage",
+      "turn": 3
+    },
+    {
+      "check": {
+        "Life": {
+          "life": 11,
+          "player": "bob"
+        }
+      },
+      "player": "alice",
+      "step": "EndOfCombat",
+      "turn": 3
+    },
+    {
+      "check": {
+        "Life": {
+          "life": 10,
+          "player": "carol"
+        }
+      },
+      "player": "alice",
+      "step": "EndOfCombat",
+      "turn": 3
+    },
+    {
+      "check": {
+        "Life": {
+          "life": 20,
+          "player": "alice"
+        }
+      },
+      "player": "alice",
+      "step": "EndOfCombat",
+      "turn": 3
+    }
+  ]
+}

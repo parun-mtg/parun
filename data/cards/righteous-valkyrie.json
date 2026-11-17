@@ -1,0 +1,184 @@
+{
+  "faces": [
+    {
+      "keywords": [
+        {
+          "type": "Flying"
+        }
+      ],
+      "manaCost": [
+        {
+          "type": "Generic",
+          "value": 2
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "White"
+          }
+        }
+      ],
+      "name": "Righteous Valkyrie",
+      "oracleText": "Flying\nWhenever another Angel or Cleric you control enters, you gain life equal to that creature's toughness.\nAs long as you have at least 7 life more than your starting life total, creatures you control get +2/+2.",
+      "power": {
+        "type": "Literal",
+        "value": 2
+      },
+      "staticAbilities": [
+        {
+          "affected": {
+            "type": "Matching",
+            "value": {
+              "type": "And",
+              "value": [
+                {
+                  "type": "HasCardType",
+                  "value": "Creature"
+                },
+                {
+                  "type": "HeldBy",
+                  "value": {
+                    "holder": "Controller",
+                    "relation": "You"
+                  }
+                }
+              ]
+            }
+          },
+          "condition": {
+            "type": "Compares",
+            "value": {
+              "comparison": "AtLeast",
+              "measured": {
+                "type": "LifeTotal",
+                "value": {
+                  "type": "Relative",
+                  "value": "You"
+                }
+              },
+              "threshold": {
+                "type": "Plus",
+                "value": {
+                  "left": {
+                    "type": "StartingLifeTotal",
+                    "value": {
+                      "type": "Relative",
+                      "value": "You"
+                    }
+                  },
+                  "right": {
+                    "type": "Literal",
+                    "value": 7
+                  }
+                }
+              }
+            }
+          },
+          "modifications": [
+            {
+              "type": "ModifyPowerToughness",
+              "value": {
+                "power": {
+                  "type": "Literal",
+                  "value": 2
+                },
+                "toughness": {
+                  "type": "Literal",
+                  "value": 2
+                }
+              }
+            }
+          ]
+        }
+      ],
+      "toughness": {
+        "type": "Literal",
+        "value": 4
+      },
+      "triggeredAbilities": [
+        {
+          "condition": {
+            "type": "Enters",
+            "value": {
+              "permanent": {
+                "type": "Matching",
+                "value": {
+                  "type": "And",
+                  "value": [
+                    {
+                      "type": "Not",
+                      "value": {
+                        "type": "IsSource"
+                      }
+                    },
+                    {
+                      "type": "Or",
+                      "value": [
+                        {
+                          "type": "HasSubtype",
+                          "value": "Angel"
+                        },
+                        {
+                          "type": "HasSubtype",
+                          "value": "Cleric"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "HeldBy",
+                      "value": {
+                        "holder": "Controller",
+                        "relation": "You"
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "modal": {
+            "modes": [
+              {
+                "clauses": [
+                  {
+                    "effects": [
+                      {
+                        "type": "GainLife",
+                        "value": {
+                          "player": {
+                            "type": "Relative",
+                            "value": "You"
+                          },
+                          "quantity": {
+                            "type": "AgainstSlot",
+                            "value": {
+                              "quantity": {
+                                "type": "Measure",
+                                "value": "Toughness"
+                              },
+                              "slot": "became"
+                            }
+                          }
+                        }
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      ],
+      "typeLine": {
+        "subtypes": [
+          "Angel",
+          "Cleric"
+        ],
+        "types": [
+          "Creature"
+        ]
+      }
+    }
+  ]
+}

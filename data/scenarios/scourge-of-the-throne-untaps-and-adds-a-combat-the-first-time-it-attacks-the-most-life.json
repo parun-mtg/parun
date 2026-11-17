@@ -1,0 +1,197 @@
+{
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "battlefield": [
+          {
+            "card": "Scourge of the Throne",
+            "label": "scourge",
+            "ready": true
+          },
+          {
+            "card": "Grizzly Bears",
+            "label": "bears",
+            "ready": true
+          }
+        ],
+        "hand": [],
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ],
+        "life": 10,
+        "name": "alice"
+      },
+      {
+        "battlefield": [],
+        "hand": [],
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ],
+        "name": "bob"
+      },
+      {
+        "battlefield": [],
+        "hand": [],
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ],
+        "life": 15,
+        "name": "carol"
+      }
+    ],
+    "step": "PrecombatMain",
+    "turn": 3
+  },
+  "description": "CR 603.4, 500.8, 702.105a: Scourge of the Throne's first attack of the turn, at the player with the most life, untaps the attackers and adds a combat phase; its second attack adds none",
+  "note": "Three seats: bob (20) has the most life, so the first attack, both creatures at bob, takes him to 12 and leaves carol (15) the most; the second, both at carol, takes her to 6 with a second Dethrone counter. A third combat would raise an unscheduled attack prompt.",
+  "timeline": [
+    {
+      "do": {
+        "Attack": [
+          "$scourge",
+          "$bears"
+        ]
+      },
+      "player": "alice",
+      "step": "DeclareAttackers",
+      "turn": 3
+    },
+    {
+      "do": {
+        "ChooseAttackTarget": "$bob"
+      },
+      "player": "alice",
+      "source": "$scourge",
+      "step": "DeclareAttackers",
+      "turn": 3
+    },
+    {
+      "do": {
+        "ChooseAttackTarget": "$bob"
+      },
+      "player": "alice",
+      "source": "$bears",
+      "step": "DeclareAttackers",
+      "turn": 3
+    },
+    {
+      "do": {
+        "OrderTriggers": [
+          "$scourge",
+          "$scourge"
+        ]
+      },
+      "player": "alice",
+      "step": "DeclareAttackers",
+      "turn": 3
+    },
+    {
+      "do": {
+        "Attack": [
+          "$scourge",
+          "$bears"
+        ]
+      },
+      "player": "alice",
+      "step": "DeclareAttackers",
+      "turn": 3
+    },
+    {
+      "do": {
+        "ChooseAttackTarget": "$carol"
+      },
+      "player": "alice",
+      "source": "$scourge",
+      "step": "DeclareAttackers",
+      "turn": 3
+    },
+    {
+      "do": {
+        "ChooseAttackTarget": "$carol"
+      },
+      "player": "alice",
+      "source": "$bears",
+      "step": "DeclareAttackers",
+      "turn": 3
+    },
+    {
+      "check": {
+        "Life": {
+          "life": 12,
+          "player": "bob"
+        }
+      },
+      "player": "alice",
+      "step": "PostcombatMain",
+      "turn": 3
+    },
+    {
+      "check": {
+        "Life": {
+          "life": 6,
+          "player": "carol"
+        }
+      },
+      "player": "alice",
+      "step": "PostcombatMain",
+      "turn": 3
+    },
+    {
+      "check": {
+        "Counters": {
+          "count": 2,
+          "kind": {
+            "type": "PlusOnePlusOne"
+          },
+          "object": "$scourge"
+        }
+      },
+      "player": "alice",
+      "step": "PostcombatMain",
+      "turn": 3
+    }
+  ]
+}

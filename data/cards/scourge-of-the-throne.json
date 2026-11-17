@@ -1,0 +1,139 @@
+{
+  "faces": [
+    {
+      "keywords": [
+        {
+          "type": "Flying"
+        },
+        {
+          "type": "Dethrone"
+        }
+      ],
+      "manaCost": [
+        {
+          "type": "Generic",
+          "value": 4
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "Red"
+          }
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "Red"
+          }
+        }
+      ],
+      "name": "Scourge of the Throne",
+      "oracleText": "Flying\nDethrone (Whenever this creature attacks the player with the most life or tied for most life, put a +1/+1 counter on it.)\nWhenever this creature attacks for the first time each turn, if it's attacking the player with the most life or tied for most life, untap all attacking creatures. After this phase, there is an additional combat phase.",
+      "power": {
+        "type": "Literal",
+        "value": 5
+      },
+      "toughness": {
+        "type": "Literal",
+        "value": 5
+      },
+      "triggeredAbilities": [
+        {
+          "condition": {
+            "type": "Attacks",
+            "value": {
+              "type": "Attacker",
+              "value": {
+                "frequency": "FirstTimeEachTurn"
+              }
+            }
+          },
+          "intervening": {
+            "type": "Compares",
+            "value": {
+              "comparison": "AtLeast",
+              "measured": {
+                "type": "LifeTotal",
+                "value": {
+                  "type": "AttackedByBound",
+                  "value": "self"
+                }
+              },
+              "threshold": {
+                "type": "Count",
+                "value": {
+                  "aggregation": {
+                    "type": "Greatest",
+                    "value": {
+                      "type": "LifeTotal",
+                      "value": {
+                        "type": "Candidate"
+                      }
+                    }
+                  },
+                  "filter": {
+                    "type": "And",
+                    "value": []
+                  },
+                  "scope": {
+                    "type": "OverPlayers",
+                    "value": {
+                      "type": "Relative",
+                      "value": "AnyPlayer"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "modal": {
+            "modes": [
+              {
+                "clauses": [
+                  {
+                    "effects": [
+                      {
+                        "type": "Untap",
+                        "value": {
+                          "type": "EachMatching",
+                          "value": {
+                            "type": "And",
+                            "value": [
+                              {
+                                "type": "HasCardType",
+                                "value": "Creature"
+                              },
+                              {
+                                "type": "IsAttacking"
+                              }
+                            ]
+                          }
+                        }
+                      },
+                      {
+                        "type": "AddPhases",
+                        "value": [
+                          "ExtraCombat"
+                        ]
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      ],
+      "typeLine": {
+        "subtypes": [
+          "Dragon"
+        ],
+        "types": [
+          "Creature"
+        ]
+      }
+    }
+  ]
+}

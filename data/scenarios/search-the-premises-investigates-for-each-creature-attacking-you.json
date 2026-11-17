@@ -1,0 +1,177 @@
+{
+  "board": {
+    "active": "bob",
+    "seats": [
+      {
+        "battlefield": [
+          {
+            "card": "Search the Premises"
+          }
+        ],
+        "hand": [],
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ],
+        "name": "alice"
+      },
+      {
+        "battlefield": [
+          {
+            "card": "Grizzly Bears",
+            "label": "bears",
+            "ready": true
+          },
+          {
+            "card": "Hill Giant",
+            "label": "giant",
+            "ready": true
+          }
+        ],
+        "hand": [],
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ],
+        "name": "bob"
+      },
+      {
+        "battlefield": [],
+        "hand": [],
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ],
+        "name": "carol"
+      }
+    ],
+    "step": "PrecombatMain",
+    "turn": 3
+  },
+  "description": "CR 508.3a, 701.16a: Search the Premises investigates once for a creature attacking alice, and not for one attacking carol",
+  "note": "Three seats: bob sends Grizzly Bears at alice and Hill Giant at carol; alice makes one Clue.",
+  "timeline": [
+    {
+      "do": {
+        "Attack": [
+          "$bears",
+          "$giant"
+        ]
+      },
+      "player": "bob",
+      "step": "DeclareAttackers",
+      "turn": 3
+    },
+    {
+      "do": {
+        "ChooseAttackTarget": "$alice"
+      },
+      "player": "bob",
+      "source": "$bears",
+      "step": "DeclareAttackers",
+      "turn": 3
+    },
+    {
+      "do": {
+        "ChooseAttackTarget": "$carol"
+      },
+      "player": "bob",
+      "source": "$giant",
+      "step": "DeclareAttackers",
+      "turn": 3
+    },
+    {
+      "do": "Pass",
+      "player": "bob",
+      "step": "DeclareAttackers",
+      "turn": 3
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Clue Token",
+          "count": 1,
+          "player": "alice",
+          "zone": "Battlefield"
+        }
+      },
+      "player": "bob",
+      "step": "DeclareAttackers",
+      "turn": 3
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Clue Token",
+          "count": 1,
+          "player": "alice",
+          "zone": "Battlefield"
+        }
+      },
+      "player": "bob",
+      "step": "EndOfCombat",
+      "turn": 3
+    },
+    {
+      "check": {
+        "Life": {
+          "life": 18,
+          "player": "alice"
+        }
+      },
+      "player": "bob",
+      "step": "EndOfCombat",
+      "turn": 3
+    },
+    {
+      "check": {
+        "Life": {
+          "life": 17,
+          "player": "carol"
+        }
+      },
+      "player": "bob",
+      "step": "EndOfCombat",
+      "turn": 3
+    }
+  ]
+}

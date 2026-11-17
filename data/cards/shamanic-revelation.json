@@ -1,0 +1,151 @@
+{
+  "faces": [
+    {
+      "manaCost": [
+        {
+          "type": "Generic",
+          "value": 3
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "Green"
+          }
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "Green"
+          }
+        }
+      ],
+      "name": "Shamanic Revelation",
+      "oracleText": "Draw a card for each creature you control.\nFerocious — You gain 4 life for each creature you control with power 4 or greater.",
+      "spell": {
+        "modes": [
+          {
+            "clauses": [
+              {
+                "effects": [
+                  {
+                    "type": "Draw",
+                    "value": {
+                      "player": {
+                        "type": "Relative",
+                        "value": "You"
+                      },
+                      "quantity": {
+                        "type": "Count",
+                        "value": {
+                          "aggregation": {
+                            "type": "Members"
+                          },
+                          "filter": {
+                            "type": "And",
+                            "value": [
+                              {
+                                "type": "HasCardType",
+                                "value": "Creature"
+                              },
+                              {
+                                "type": "HeldBy",
+                                "value": {
+                                  "holder": "Controller",
+                                  "relation": "You"
+                                }
+                              }
+                            ]
+                          },
+                          "scope": {
+                            "type": "InZone",
+                            "value": {
+                              "player": {
+                                "type": "Relative",
+                                "value": "AnyPlayer"
+                              },
+                              "zone": "Battlefield"
+                            }
+                          }
+                        }
+                      }
+                    }
+                  },
+                  {
+                    "type": "GainLife",
+                    "value": {
+                      "player": {
+                        "type": "Relative",
+                        "value": "You"
+                      },
+                      "quantity": {
+                        "type": "Times",
+                        "value": {
+                          "factor": {
+                            "type": "Literal",
+                            "value": 4
+                          },
+                          "quantity": {
+                            "type": "Count",
+                            "value": {
+                              "aggregation": {
+                                "type": "Members"
+                              },
+                              "filter": {
+                                "type": "And",
+                                "value": [
+                                  {
+                                    "type": "HasCardType",
+                                    "value": "Creature"
+                                  },
+                                  {
+                                    "type": "HeldBy",
+                                    "value": {
+                                      "holder": "Controller",
+                                      "relation": "You"
+                                    }
+                                  },
+                                  {
+                                    "type": "Measures",
+                                    "value": {
+                                      "comparison": "AtLeast",
+                                      "measure": "Power",
+                                      "operand": {
+                                        "type": "Literal",
+                                        "value": 4
+                                      }
+                                    }
+                                  }
+                                ]
+                              },
+                              "scope": {
+                                "type": "InZone",
+                                "value": {
+                                  "player": {
+                                    "type": "Relative",
+                                    "value": "AnyPlayer"
+                                  },
+                                  "zone": "Battlefield"
+                                }
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "typeLine": {
+        "types": [
+          "Sorcery"
+        ]
+      }
+    }
+  ]
+}
