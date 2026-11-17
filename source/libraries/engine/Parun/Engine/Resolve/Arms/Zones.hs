@@ -966,6 +966,11 @@ forEach applyEffectWith loopOffers runSubgame resolving source controller legal 
   -- than objects, since rule 608.2f is about "players and/or objects" and
   -- Soulfire Eruption's targets are both.
   swept <- Common.loopMembers resolving source controller legal chosen ref
+  -- The loop's own name holds each member in turn through the map handed
+  -- down, so a group an earlier loop left under it (below) must not shadow
+  -- that member. A REGRESSION FENCE: no card runs two object loops under one
+  -- name, so no board observes it.
+  State.modify' (Common.overHolderBindings resolving (Map.delete slot))
   gs0 <- State.get
   -- CR 608.2d: a "you may" per member is ONE announcement of which members,
   -- made before the first iteration, since the loop is one action (CR 608.2f)
@@ -1151,6 +1156,13 @@ forEach applyEffectWith loopOffers runSubgame resolving source controller legal 
   (made, _) <- (if individually then memberMajor else actionMajor) (Map.empty, Map.empty)
   let accumulated = List.foldl' (\acc member -> Map.unionWith Common.joinAcross acc (fmap (ofMember member) (Map.findWithDefault Map.empty member made))) Map.empty members
   State.modify' (bindAcross accumulated . rescope Map.empty . onSource (\bindings -> Map.union sourceBefore (Map.withoutKeys bindings (Map.keysSet earlier))))
+  -- CR 608.2c: an instruction after the loop names its object members as a
+  -- group, Ezuri's Predation's "those creatures" (Slots.boundSlots already
+  -- counts the name as defined). A player member stays the loop's own.
+  -- data/scenarios/ezuris-predation-pairs-each-beast-with-a-different-opponents-creature.json
+  -- proves it.
+  let memberObjects = ListUtils.nubOrd (Maybe.mapMaybe Recipient.objectOf members)
+  Monad.unless (null memberObjects) (State.modify' (Common.overHolderBindings resolving (Map.insert slot (Binding.toObjects (Seq.fromList memberObjects)))))
   Monad.when opened (State.modify' (\gs -> gs {GameState.scratch = (GameState.scratch gs) {Scratch.loopPicks = Nothing}}))
 
 -- CR 608.2f over numbers: the bound read once off the pre-loop board, and each

@@ -158,8 +158,9 @@ data Effect card ability
   = -- | CR 120.1: deal damage to what the payload's clauses name, each clause
     -- carrying its own amount and all of them one CR 608.2f action.
     DealDamage DealDamage.DealDamage
-  | -- | CR 701.14: the two slots' creatures fight, which CR 701.14b makes a
-    -- condition on the pair rather than two independent damage instructions.
+  | -- | CR 701.14: the two slots' creatures fight, or a paired fight's pairs,
+    -- CR 701.14b making each a condition on its pair rather than two
+    -- independent damage instructions.
     Fight Fight.Fight
   | -- | CR 611: create a continuous effect on the objects the ObjectRef names,
     -- for a duration, over the set CR 611.2c freezes as the effect begins, or
