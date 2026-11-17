@@ -1171,9 +1171,9 @@ armMatches bindings frozen board atEvent beforeEvent groupEvents gs bearer you c
   -- killed.
   TriggerCondition.DealsDamage watched -> case event of
     GameEvent.DamageDealt ev ->
-      damageBy (DamageTrigger.actor watched) (DamageEvent.source ev)
+      damageBy (Filter.withDealtTargets (ProjectionView.viewOfRecipient (postEventView board gs) gs) ev) (DamageTrigger.actor watched) (DamageEvent.source ev)
         && all (== DamageEvent.kind ev) (DamageTrigger.kind watched)
-        && (Set.null (DamageTrigger.recipients watched) || any (damagedIs (DamageEvent.amount ev) (DamageEvent.target ev)) (DamageTrigger.recipients watched))
+        && (Set.null (DamageTrigger.recipients watched) || any (damagedIs ev) (DamageTrigger.recipients watched))
     _ -> False
   -- CR 120.3: the watched permanent was DEALT damage -- enrage's event, and
   -- Death Pits of Rath's. DealsDamage's arm with the check moved from the
@@ -1194,7 +1194,7 @@ armMatches bindings frozen board atEvent beforeEvent groupEvents gs bearer you c
     GameEvent.DamageDealt ev ->
       Game.damageCounts (DealtDamage.kind dealt) (DealtDamage.by dealt) ev
         && (not excess || DamageEvent.excess ev > 0)
-        && maybe False (damageBy (DealtDamage.recipient dealt)) (Recipient.objectOf (DamageEvent.target ev))
+        && maybe False (damageBy id (DealtDamage.recipient dealt)) (Recipient.objectOf (DamageEvent.target ev))
     _ -> False
   -- CR 120.3: a player the scope admits, read against the bearer (PlayerLosesGame's
   -- reading), was DEALT damage of the kind and from
@@ -2580,9 +2580,14 @@ armMatches bindings frozen board atEvent beforeEvent groupEvents gs bearer you c
     -- CR 113.7a / 608.2h: a source gone before its ability dealt the damage is
     -- judged in the zone it last existed in, so "a creature you control" still
     -- admits it. Scenario hooded-blightfang-destroys-for-noncombat-damage-from-a-pinger-gone-in-response.
-    damageBy watched oid = case watched of
+    --
+    -- `seen` finishes the view: a damage SOURCE aims at its deal-time targets
+    -- (Filter.withDealtTargets), so Imodane, the Pyrohammer's "spell ... that
+    -- targets only a single creature" reads a spell that has left the stack.
+    -- Scenario imodane-the-pyrohammer-burns-opponents-only-for-damage-to-the-spells-single-target.
+    damageBy seen watched oid = case watched of
       ActingPermanent.Self -> oid == bearer
-      ActingPermanent.Matching f -> maybe False (\view -> Filter.matches bearerContext (Count.lastZoned gs oid view) f) (postEventView board gs oid)
+      ActingPermanent.Matching f -> maybe False (\view -> Filter.matches bearerContext (seen (Count.lastZoned gs oid view)) f) (postEventView board gs oid)
     -- CR 120.1: is the damage's recipient one this DamageRecipient admits? A
     -- permanent's qualifier reads it as damageBy reads the source, off CR
     -- 603.10's sample, so a recipient the damage killed still answers. Scenario
@@ -2591,19 +2596,25 @@ armMatches bindings frozen board atEvent beforeEvent groupEvents gs bearer you c
     -- Taii Wakeen's "equal to that creature's toughness" compares the two on
     -- that same sample. Scenario
     -- taii-wakeen-draws-for-damage-equal-to-toughness-not-less-or-more.
-    damagedIs amount target recipient = case recipient of
-      -- A relation is read off the damaged player alone, never through
-      -- Players.table's roster. Any other reference reads the creating
-      -- effect's slots (CR 603.7), Great Train Heist's "that player". Scenario
-      -- cr-603-7-great-train-heist-makes-treasure-only-for-damage-to-the-target-opponent.
-      DamageRecipient.Player ref -> case (ref, Recipient.playerOf target) of
-        (_, Nothing) -> False
-        (PlayerRef.Relative relation, Just damaged) -> PlayerRelation.holds (Game.teams gs) relation you damaged
-        (_, Just damaged) -> maybe False (elem damaged) (scopeNamed ref)
-      DamageRecipient.Permanent cardType qualifier ->
-        let dealt = bearerContext {Filter.boundAmounts = Map.insert Binding.eventAmount amount (Filter.boundAmounts bearerContext)}
-         in Set.member cardType (Projection.damagedCardTypes gs target)
-              && maybe False (\oid -> maybe False (\view -> Filter.matches dealt (Count.lastZoned gs oid view) qualifier) (postEventView board gs oid)) (Recipient.objectOf target)
+    --
+    -- IsTarget in the qualifier asks whether the source aimed at it as it dealt
+    -- the damage (Filter.dealtTargetsContext), Imodane, the Pyrohammer's "deals
+    -- damage to that creature"; the same scenario proves it.
+    damagedIs ev recipient =
+      let amount = DamageEvent.amount ev; target = DamageEvent.target ev
+       in case recipient of
+            -- A relation is read off the damaged player alone, never through
+            -- Players.table's roster. Any other reference reads the creating
+            -- effect's slots (CR 603.7), Great Train Heist's "that player". Scenario
+            -- cr-603-7-great-train-heist-makes-treasure-only-for-damage-to-the-target-opponent.
+            DamageRecipient.Player ref -> case (ref, Recipient.playerOf target) of
+              (_, Nothing) -> False
+              (PlayerRef.Relative relation, Just damaged) -> PlayerRelation.holds (Game.teams gs) relation you damaged
+              (_, Just damaged) -> maybe False (elem damaged) (scopeNamed ref)
+            DamageRecipient.Permanent cardType qualifier ->
+              let dealt = Filter.dealtTargetsContext ev bearerContext {Filter.boundAmounts = Map.insert Binding.eventAmount amount (Filter.boundAmounts bearerContext)}
+               in Set.member cardType (Projection.damagedCardTypes gs target)
+                    && maybe False (\oid -> maybe False (\view -> Filter.matches dealt (Count.lastZoned gs oid view) qualifier) (postEventView board gs oid)) (Recipient.objectOf target)
 
 -- CR 106.12a's second half: did an activation that produced @produced@ produce
 -- the mana this condition specified? The narrowing half of the

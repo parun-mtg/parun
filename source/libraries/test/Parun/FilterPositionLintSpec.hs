@@ -473,11 +473,14 @@ wishFilterAtoms needle value = case value of
 isTargetTag :: Text.Text
 isTargetTag = Text.pack "IsTarget"
 
--- How many Filter.IsTarget atoms sit OUTSIDE a cost an announcement pays, the
--- only positions Binding.announcedTargets is stamped for: a spell's additional
--- costs, an activated ability's cost (an object with a "cost" beside a "modal"),
--- and the components a cost modifier's CostChange.Add adds. Anywhere else --
--- a triggered ability above all, which is never stamped -- the atom is a silent
+-- How many Filter.IsTarget atoms sit OUTSIDE a cost an announcement pays, or
+-- a damage recipient's qualifier (an object with a "matching" beside a
+-- "cardType"), the only positions Binding.announcedTargets is stamped for: a
+-- spell's additional costs, an activated ability's cost (an object with a
+-- "cost" beside a "modal"), the components a cost modifier's CostChange.Add
+-- adds, and the damage source's deal-time targets
+-- (Parun.Engine.Filter.dealtTargetsContext). Anywhere else -- a triggered
+-- ability's effects above all, which are never stamped -- the atom is a silent
 -- False, isBoundOffends' offence one atom over. Counted off the encoding, so a
 -- grant nested inside an effect is reached too.
 isTargetStrays :: Value.Value -> Int
@@ -487,11 +490,13 @@ isTargetStrays value = case value of
         nameOf p = String.unwrap (Pair.name p)
         has k = any ((== Text.pack k) . nameOf) pairs
         activated = has "cost" && has "modal" && not (has "condition")
+        damaged = has "cardType" && has "matching"
         adding = any (\p -> nameOf p == Text.pack "type" && Pair.value p == Value.String (String.MkString (Text.pack "Add"))) pairs
         paid p =
           elem (nameOf p) (fmap Text.pack ["additionalCosts", "additionalCostChoices"])
             || (activated && nameOf p == Text.pack "cost")
             || (adding && nameOf p == Text.pack "value")
+            || (damaged && nameOf p == Text.pack "matching")
         here = fromEnum (any (\p -> nameOf p == Text.pack "type" && Pair.value p == Value.String (String.MkString isTargetTag)) pairs)
      in here + sum [isTargetStrays (Pair.value p) | p <- pairs, not (paid p)]
   Value.Array a -> sum (fmap isTargetStrays (Array.unwrap a))
@@ -2079,7 +2084,8 @@ filterPositionLintSpec s registry corpus = Spec.describe s "Lint" $ do
         ("Legion's End", 1), -- its exile's object, relative to the target's controller
         ("Run Away Together", 2), -- both target slots, each relative to the other
         ("Kitsune, Dragon's Daughter", 2), -- both target slots, Run Away Together's shape
-        ("Trial of Agony", 1) -- its second target slot, Sorrow's Path's shape
+        ("Trial of Agony", 1), -- its second target slot, Sorrow's Path's shape
+        ("Fear, Fire, Foes!", 1) -- its damage's object, relative to the target's controller
       ]
     -- The REJECTING direction, hand-built for the reason every sibling lint's is:
     -- a card that offends must not be loadable, so no file can carry one. Buried
@@ -2624,16 +2630,18 @@ filterPositionLintSpec s registry corpus = Spec.describe s "Lint" $ do
   -- candidates are not objects in the game -- CR 400.11c's wish filter, matched
   -- against a printed face. See isBoundOffends for the two offences.
   -- CR 601.2c: Filter.IsTarget reads the targets a cast or an activation
-  -- stamped, so it is answerable in the cost that announcement pays and a
-  -- silent False elsewhere (isTargetStrays).
-  Spec.it s "CR 601.2c no card asks IsTarget outside a cost an announcement pays" $ do
+  -- stamped, so it is answerable in the cost that announcement pays, and in a
+  -- damage recipient's qualifier, framed with the source's deal-time targets,
+  -- and a silent False elsewhere (isTargetStrays).
+  Spec.it s "CR 601.2c no card asks IsTarget outside a cost an announcement pays or a damage recipient" $ do
     ps <- S.allPrintings s corpus
     Spec.assertEqWith s "no card asks IsTarget where nothing stamps the targets" (fmap (S.nameOf . Printing.card) (filter (anyFace isTargetOffends . Printing.card) ps)) []
     edict <- S.printingOf s registry "Synthetic Spiteful Edict"
     rite <- S.printingOf s registry "Synthetic Spiteful Rite"
     altar <- S.printingOf s registry "Synthetic Spiteful Altar"
     let atoms = jsonAtoms isTargetTag . Codec.encode (Face.Codec.codec Card.codec) . S.combinedFace
-    Spec.assertEqWith s "and the added, additional and activation costs that ask it are accepted" (fmap atoms [edict, rite, altar], fmap (isTargetOffends . S.combinedFace) [edict, rite, altar]) ([1, 1, 1], [False, False, False])
+    imodane <- S.printingOf s registry "Imodane, the Pyrohammer"
+    Spec.assertEqWith s "and the added, additional and activation costs and the damage recipient that ask it are accepted" (fmap atoms [edict, rite, altar, imodane], fmap (isTargetOffends . S.combinedFace) [edict, rite, altar, imodane]) ([1, 1, 1, 1], [False, False, False, False])
     piker <- S.printingOf s registry "Goblin Piker"
     let planted = (S.combinedFace piker) {Face.spell = Mint.oneMode (Seq.singleton (Effect.Destroy (Destroy.MkDestroy (ObjectRef.EachMatching (Filter.Type.Not Filter.Type.IsTarget)) Regenerability.Regenerable Nothing Nothing Nothing)))}
     Spec.assertBool s (isTargetOffends planted) "the same atom in an effect's filter is an offence"

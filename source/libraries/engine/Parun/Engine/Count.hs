@@ -871,14 +871,14 @@ snapshotView viewOf context gs shape event = case event of
         -- relation is read off the damaged player alone, never the roster, so
         -- a player who has since left was still dealt the damage; a permanent
         -- is seen as it was dealt it (dealtToView), with the damage dealt to
-        -- it at Binding.eventAmount.
+        -- it at Binding.eventAmount and IsTarget framed as there.
         damagedIs to recipient = case recipient of
           DamageRecipient.Player ref -> case (ref, Recipient.playerOf to, Filter.perspective context) of
             (_, Nothing, _) -> False
             (PlayerRef.Relative relation, Just damaged, Just you) -> PlayerRelation.holds (Game.teams gs) relation you damaged
             (_, Just damaged, _) -> maybe False (elem damaged) (playersFor viewOf context gs ref)
           DamageRecipient.Permanent cardType qualifier ->
-            let dealtContext = context {Filter.boundAmounts = Map.insert Binding.eventAmount (DamageEvent.amount dealt) (Filter.boundAmounts context)}
+            let dealtContext = Filter.dealtTargetsContext dealt context {Filter.boundAmounts = Map.insert Binding.eventAmount (DamageEvent.amount dealt) (Filter.boundAmounts context)}
                 admits view = Set.member cardType (Filter.cardTypes view) && Filter.matches dealtContext view qualifier
              in any (admits . dealtToView dealt) (Game.damagedObject event >>= orLastKnown viewOf gs)
     -- CR 120.3 / 608.2i: the permanent as it is or last was, seen as it was

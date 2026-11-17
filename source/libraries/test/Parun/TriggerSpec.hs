@@ -992,7 +992,7 @@ spinesplitterSpec s registry =
         S.runPure
           S.identityAnswer
           gs
-          (Damage.applyDamage (pure ()) [DamageEvent.MkDamageEvent src target amount 0 False False False 0 Nothing Nothing mempty False mempty mempty mempty mempty Nothing mempty Nothing DamageKind.Noncombat])
+          (Damage.applyDamage (pure ()) [DamageEvent.MkDamageEvent src target amount 0 False False False 0 Nothing Nothing mempty False mempty mempty mempty mempty Nothing mempty mempty Nothing DamageKind.Noncombat])
    in Spec.describe s "Furious Spinesplitter" $ do
         Spec.it s "CR 120.1 a counter for each OPPONENT dealt damage, not for each damage event" $ do
           spinesplitter <- S.printingOf s registry "Furious Spinesplitter"
@@ -1068,7 +1068,7 @@ tymnaSpec s registry =
         S.runPure
           S.identityAnswer
           gs
-          (Damage.applyDamage (pure ()) [DamageEvent.MkDamageEvent src (Recipient.ToPlayer target) amount 0 False False False 0 Nothing Nothing mempty False mempty mempty mempty mempty Nothing mempty Nothing kind])
+          (Damage.applyDamage (pure ()) [DamageEvent.MkDamageEvent src (Recipient.ToPlayer target) amount 0 False False False 0 Nothing Nothing mempty False mempty mempty mempty mempty Nothing mempty mempty Nothing kind])
    in Spec.describe s "Tymna the Weaver"
         . Spec.it s "CR 510.2 X counts the opponents dealt COMBAT damage this turn"
         $ do
@@ -1109,7 +1109,7 @@ stampedeSpec s registry =
         S.runPure
           S.identityAnswer
           gs
-          (Damage.applyDamage (pure ()) [DamageEvent.MkDamageEvent src (Recipient.ToPlayer target) 2 0 False False False 0 Nothing Nothing mempty False mempty mempty mempty mempty Nothing mempty Nothing kind])
+          (Damage.applyDamage (pure ()) [DamageEvent.MkDamageEvent src (Recipient.ToPlayer target) 2 0 False False False 0 Nothing Nothing mempty False mempty mempty mempty mempty Nothing mempty mempty Nothing kind])
    in Spec.describe s "Vivien's Stampede"
         . Spec.it s "CR 603.7 at the next main phase alice draws one per player dealt combat damage"
         $ do

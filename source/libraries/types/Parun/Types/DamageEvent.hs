@@ -1,5 +1,6 @@
 module Parun.Types.DamageEvent where
 
+import qualified Data.Map.Strict as Map
 import qualified Data.Set as Set
 import qualified Numeric.Natural as Natural
 import qualified Parun.Types.CardName as CardName
@@ -9,6 +10,7 @@ import qualified Parun.Types.DamageKind as DamageKind
 import qualified Parun.Types.ObjectId as ObjectId
 import qualified Parun.Types.PlayerId as PlayerId
 import qualified Parun.Types.Recipient as Recipient
+import qualified Parun.Types.SlotName as SlotName
 import qualified Parun.Types.Subtype as Subtype
 import qualified Parun.Types.Supertype as Supertype
 import qualified Parun.Types.Zone as Zone
@@ -108,6 +110,12 @@ data DamageEvent = MkDamageEvent
     -- "a ... spell you controlled dealt damage"). Nothing for a source already
     -- gone.
     dealtFromZone :: Maybe Zone.Zone,
+    -- | CR 115.1 / 601.2c: the source's targets by slot when this damage was
+    -- dealt, empty for a source not on the stack (Imodane, the Pyrohammer's
+    -- "targets only a single creature"). Captured for dealtByCardTypes's
+    -- reason: a spell has left the stack, and its targets their zones, by the
+    -- time a trigger is matched.
+    dealtByTargets :: Map.Map SlotName.SlotName (Set.Set Recipient.Recipient),
     -- | CR 120.3: the recipient's card types as this damage was dealt
     -- (Parun.Engine.Projection.damagedCardTypes), so "dealt damage to another
     -- creature" reads the creature it was. Stamped with `excess` by
