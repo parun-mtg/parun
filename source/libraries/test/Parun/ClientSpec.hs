@@ -67,6 +67,7 @@ import qualified Parun.Types.ClauseIndex as ClauseIndex
 import qualified Parun.Types.Color as Color
 import qualified Parun.Types.Combat as Combat.Type
 import qualified Parun.Types.CombatStep as CombatStep
+import qualified Parun.Types.Comparison as Comparison
 import qualified Parun.Types.Convoking as Convoking
 import qualified Parun.Types.Cost as Cost
 import qualified Parun.Types.CounterKind as CounterKind
@@ -1257,7 +1258,7 @@ spec s registry = Spec.describe s "Client" $ do
         taps = Prompt.ChooseTaps alice S.alice f TapState.Tapped [b, g] 1
     Spec.assertEqWith s "CR 702.122a the power told, then any number, each beside the power it counts as" (upTo (Text.pack "Power: ") crewShown) (fmap Text.pack ["Power: 3", "Choose taps for total power for Forest: choose any number, by number or range such as 1-3, separated by spaces, or press Enter for none:", "  1. Your Grizzly Bears 2/2 (counts as 4)", "  2. Your Hill Giant 3/3 (counts as 3)"])
     Spec.assertEqWith s "a range picks both" crewed (Right (Set.fromList [b, g]))
-    Spec.assertEqWith s "CR 701.59a the mana value told, in words, then each card's" (upTo (Text.pack "Mana value: ") (snd (asking facing [""] gs (Prompt.ChooseExilesTotalling alice S.alice f CardTally.ManaValue [(b, 2), (g, 4)] 4)))) (fmap Text.pack ["Mana value: 4", "Choose exiles totalling for Forest: choose any number, by number or range such as 1-3, separated by spaces, or press Enter for none:", "  1. Your Grizzly Bears 2/2 (counts as 2)", "  2. Your Hill Giant 3/3 (counts as 4)"])
+    Spec.assertEqWith s "CR 701.59a the mana value told, in words, then each card's" (upTo (Text.pack "Mana value: ") (snd (asking facing [""] gs (Prompt.ChooseExilesTotalling alice S.alice f CardTally.ManaValue [(b, 2), (g, 4)] Comparison.AtLeast 4 0)))) (fmap Text.pack ["Mana value: 4", "Choose exiles totalling for Forest: choose any number, by number or range such as 1-3, separated by spaces, or press Enter for none:", "  1. Your Grizzly Bears 2/2 (counts as 2)", "  2. Your Hill Giant 3/3 (counts as 4)"])
     Spec.assertEqWith s "an exact count refuses one too many" (fst (asking facing ["1 2"] gs taps)) (Left (Text.pack "end of input"))
     Spec.assertEqWith s "and takes the count" (fst (asking facing ["2"] gs taps)) (Right (Set.singleton g))
     Spec.assertEqWith s "a most refuses past it" (fst (asking facing ["all"] gs (Prompt.ChooseAnyNumber alice S.alice f AnyNumberOf.ToSacrifice [b, g] (Just 1) Seq.empty))) (Left (Text.pack "end of input"))

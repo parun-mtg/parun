@@ -24,6 +24,7 @@ import qualified Parun.Types.Color as Color
 import qualified Parun.Types.Comparison as Comparison
 import qualified Parun.Types.ControlMargin as ControlMargin
 import qualified Parun.Types.Cost as Cost
+import qualified Parun.Types.CostAmount as CostAmount
 import qualified Parun.Types.CostComponent as CostComponent
 import qualified Parun.Types.CounterKind as CounterKind
 import qualified Parun.Types.Cycling as Cycling
@@ -1459,7 +1460,7 @@ spec s = Spec.describe s "Parun.Engine.Filter" $ do
     -- CR 612.2: Baron Helmut Zemo's "black cards with fifteen or more black
     -- mana symbols" holds the colour word twice, once outside the Filter.
     Spec.it s "swaps a threshold exile's colour word in its filter and its tally" $ do
-      let exile c = CostComponent.ExileCardsTotalling (ExileCardsTotalling.MkExileCardsTotalling 15 (CardTally.ManaSymbolsOf c) (Filter.Type.HasColor c))
+      let exile c = CostComponent.ExileCardsTotalling (ExileCardsTotalling.MkExileCardsTotalling (CostAmount.Fixed 15) Comparison.AtLeast 0 (CardTally.ManaSymbolsOf c) (Filter.Type.HasColor c) Zone.Graveyard)
       Spec.assertEqWith
         s
         "black became white twice"

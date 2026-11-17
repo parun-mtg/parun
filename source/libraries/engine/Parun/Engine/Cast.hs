@@ -562,7 +562,7 @@ gateXs pid oid gs cost =
       climbed
         | readsAnnouncedX pid oid cost gs && bounded = takeWhile (\x -> all (x <=) ceiling_ && componentsAt x) [least + 1 ..]
         | otherwise = []
-   in Set.toAscList (Set.fromList (Activatable.gateXs ceiling_ least gs cost <> climbed))
+   in Set.toAscList (Set.fromList (Activatable.gateXs ceiling_ least pid oid gs cost <> climbed))
 
 -- CR 101.1: the least X a cast for this cost may announce -- the face's
 -- printed floor (Face.minimumX) or the cost's own (Cost.variableFloor, Light

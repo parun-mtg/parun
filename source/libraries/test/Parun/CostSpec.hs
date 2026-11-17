@@ -2249,7 +2249,7 @@ collecting srcId picks victim p = case p of
         State.put (1, offers)
         pure offer
       _ -> pure Action.Type.Pass
-  Prompt.ChooseExilesTotalling _ _ _ _ valued _ -> do
+  Prompt.ChooseExilesTotalling _ _ _ _ valued _ _ _ -> do
     let candidates = fmap fst valued
     State.modify' (\(taken, offers) -> (taken, offers <> [candidates]))
     pure (Set.fromList (filter (`List.elem` picks) candidates))
@@ -2522,7 +2522,7 @@ necropsyAnswer victim p =
    in case p of
         Prompt.AnnounceTargets _ _ _ asked -> fmap (\(_, legal) -> if Set.null (named legal) then 0 else 1) asked
         Prompt.ChooseTargets _ _ _ asked -> fmap (named . snd) asked
-        Prompt.ChooseExilesTotalling _ _ _ _ candidates owed -> if owed == 0 then Set.empty else Set.fromList (fmap fst candidates)
+        Prompt.ChooseExilesTotalling _ _ _ _ candidates _ owed _ -> if owed == 0 then Set.empty else Set.fromList (fmap fst candidates)
         _ -> S.identityAnswer p
 
 -- CR 115.4's "any target" pointed at a PLAYER, FILTERED out of the offered

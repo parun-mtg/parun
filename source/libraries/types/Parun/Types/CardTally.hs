@@ -2,7 +2,7 @@ module Parun.Types.CardTally where
 
 import qualified Parun.Types.Color as Color
 
--- | What a threshold cost totals over the cards it exiles
+-- | What a threshold cost totals over the objects it exiles
 -- (Parun.Types.ExileCardsTotalling).
 data CardTally
   = -- | CR 202.3: each card's mana value.

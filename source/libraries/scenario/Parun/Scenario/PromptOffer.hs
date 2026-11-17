@@ -69,6 +69,7 @@ import qualified Parun.Types.Clause as Clause
 import qualified Parun.Types.ClauseIndex as ClauseIndex
 import qualified Parun.Types.CoinFace as CoinFace
 import qualified Parun.Types.CommandZoneDecision as CommandZoneDecision
+import qualified Parun.Types.Comparison as Comparison
 import qualified Parun.Types.Cost as Cost.Type
 import qualified Parun.Types.CounterSpread as CounterSpread
 import qualified Parun.Types.DamageEvent as DamageEvent
@@ -413,8 +414,10 @@ offerOf namer gs prompt = case prompt of
   -- and under @"counts"@ the power each counts as, a Pilot's "as though" raised.
   Prompt.ChooseTapsForTotalPower _ _ source candidates power -> subset namer (Just source) [("power", natural power), counts candidates] (Nothing, Nothing) (fmap (object namer . fst) candidates)
   -- CR 701.59a / 406.2: any of them, whose total tally the engine judges, and
-  -- under @"counts"@ each one's tally.
-  Prompt.ChooseExilesTotalling _ _ source tally candidates total -> subset namer (Just source) [(tallyKey tally, natural total), counts candidates] (Nothing, Nothing) (fmap (object namer . fst) candidates)
+  -- under @"counts"@ each one's tally; how the total compares where it is not
+  -- a floor, and the fewest where there is one (Fabrication Foundry's).
+  Prompt.ChooseExilesTotalling _ _ source tally candidates comparison total fewest ->
+    subset namer (Just source) ([(tallyKey tally, natural total)] <> [("comparison", R.Text (Text.pack (show comparison))) | comparison /= Comparison.AtLeast] <> [counts candidates]) (if fewest > 0 then Just fewest else Nothing, Nothing) (fmap (object namer . fst) candidates)
   -- CR 608.2d: up to the most where there is one; CR 101.4b: what earlier
   -- choosers picked.
   Prompt.ChooseAnyNumber _ _ source purpose candidates most earlier ->

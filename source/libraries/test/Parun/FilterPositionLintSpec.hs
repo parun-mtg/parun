@@ -2141,7 +2141,7 @@ filterPositionLintSpec s registry corpus = Spec.describe s "Lint" $ do
     -- JUDGED (Parun.Engine.Target.jointlyJudged); Synthetic Measured Refrain, whose
     -- bound folds over what a sibling slot names (Parun.TargetSpec's "CR 700.2d a
     -- repeated mode's computed bound measures its own occurrence's sibling
-    -- slot"); Blighted Nightmare and
+    -- slot"); Blighted Nightmare, Fabrication Foundry and
     -- Tameshi, Reality Architect, on ACTIVATED abilities, whose X CR 602.2b
     -- announces; Sundering Archaic, whose bound is the colors of mana spent to
     -- cast its source (CR 601.2h); Astelli Reclaimer, whose bound is the
@@ -2194,6 +2194,7 @@ filterPositionLintSpec s registry corpus = Spec.describe s "Lint" $ do
         ("Synthetic Borrowed Exhumation", 1),
         ("Synthetic Measured Refrain", 1),
         ("Blighted Nightmare", 1),
+        ("Fabrication Foundry", 1),
         ("Sundering Archaic", 1),
         ("Astelli Reclaimer", 1),
         ("Squirming Emergence", 1),

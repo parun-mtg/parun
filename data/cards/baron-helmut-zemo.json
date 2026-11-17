@@ -12,7 +12,10 @@
                     "type": "ManaSymbolsOf",
                     "value": "Black"
                   },
-                  "threshold": 15,
+                  "threshold": {
+                    "type": "Fixed",
+                    "value": 15
+                  },
                   "whichCards": {
                     "type": "HasColor",
                     "value": "Black"

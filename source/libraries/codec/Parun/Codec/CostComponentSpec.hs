@@ -13,6 +13,7 @@ import qualified Parun.Types.CardTally as CardTally
 import qualified Parun.Types.CardType as CardType
 import qualified Parun.Types.CardsFromHand as CardsFromHand
 import qualified Parun.Types.Color as Color
+import qualified Parun.Types.Comparison as Comparison
 import qualified Parun.Types.ComputedLife as ComputedLife
 import qualified Parun.Types.CostAmount as CostAmount
 import qualified Parun.Types.CostComponent as CostComponent
@@ -342,8 +343,8 @@ spec s = Spec.describe s "Parun.Codec.CostComponent" $ do
     Common.assertCodec
       s
       codec
-      (CostComponent.ExileCardsTotalling (ExileCardsTotalling.MkExileCardsTotalling 15 (CardTally.ManaSymbolsOf Color.Black) (Filter.HasColor Color.Black)))
-      " {\"type\":\"ExileCardsTotalling\",\"value\":{\"tally\":{\"type\":\"ManaSymbolsOf\",\"value\":\"Black\"},\"threshold\":15,\"whichCards\":{\"type\":\"HasColor\",\"value\":\"Black\"}}} "
+      (CostComponent.ExileCardsTotalling (ExileCardsTotalling.MkExileCardsTotalling (CostAmount.Fixed 15) Comparison.AtLeast 0 (CardTally.ManaSymbolsOf Color.Black) (Filter.HasColor Color.Black) Zone.Graveyard))
+      " {\"type\":\"ExileCardsTotalling\",\"value\":{\"tally\":{\"type\":\"ManaSymbolsOf\",\"value\":\"Black\"},\"threshold\":{\"type\":\"Fixed\",\"value\":15},\"whichCards\":{\"type\":\"HasColor\",\"value\":\"Black\"}}} "
   -- CR 406.2 out of the hand: a count and a criterion.
   Spec.it s "ExileCardsFromHand" $
     Common.assertCodec

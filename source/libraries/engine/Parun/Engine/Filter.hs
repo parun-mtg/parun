@@ -2137,6 +2137,31 @@ compares comparison n t = case comparison of
   Comparison.LessThan -> n < t
   Comparison.GreaterThan -> n > t
 
+-- CR 118.3 for a cost exiling objects by their total (Fabrication Foundry's
+-- "one or more ... with total mana value X"): does some subset of at least
+-- `fewest` of these values total a number comparing thus to `t`? Values are
+-- never negative (CR 202.3), so every value together answers an upward
+-- comparison, and a bounded one is a search over the totals reachable without
+-- passing `t`.
+someSubsetMeets :: Comparison.Comparison -> Integer -> Natural.Natural -> [Integer] -> Bool
+someSubsetMeets comparison t fewest values
+  | comparison `elem` [Comparison.AtLeast, Comparison.GreaterThan] = compares comparison (sum values) t && List.genericLength values >= fewest
+  | otherwise = any (\(total, count) -> count >= fewest && compares comparison total t) (Set.toList (List.foldl' step (Set.singleton (0, 0)) values))
+  where
+    step seen value = Set.union seen (Set.fromList [(total + value, min fewest (count + 1)) | (total, count) <- Set.toList seen, total + value <= t])
+
+-- The subsets `someSubsetMeets` asks after, each in the items' order, one
+-- taking an item listed before one leaving it.
+meetingSubsets :: Comparison.Comparison -> Integer -> Natural.Natural -> [(a, Integer)] -> [[a]]
+meetingSubsets comparison t fewest = go 0 0
+  where
+    bounded = comparison `notElem` [Comparison.AtLeast, Comparison.GreaterThan]
+    go total count items = case items of
+      [] -> [[] | count >= fewest, compares comparison total t]
+      (item, value) : later ->
+        let taken = if bounded && total + value > t then [] else fmap (item :) (go (total + value) (count + 1 :: Natural.Natural) later)
+         in taken <> go total count later
+
 -- A whole number's parity, zero being even (Void Winnower's and Gollum, Riddle
 -- Master's reminder text).
 parityOf :: Integer -> Parity.Parity
