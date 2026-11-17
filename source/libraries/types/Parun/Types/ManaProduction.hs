@@ -1,6 +1,7 @@
 module Parun.Types.ManaProduction where
 
 import qualified Parun.Types.CardName as CardName
+import qualified Parun.Types.ColorAmong as ColorAmong
 import qualified Parun.Types.ColorSpread as ColorSpread
 import qualified Parun.Types.CouldProduce as CouldProduce
 import qualified Parun.Types.Filter as Filter
@@ -83,8 +84,8 @@ data ManaProduction
     Circled
   | -- | CR 905.2b: one mana of a colour the producing player noted during the draft for cards of this name (Paliano, the High City).
     DraftNoted CardName.CardName
-  | -- | CR 105.2 / 106.1a: one mana of each colour among the permanents the filter matches, no choice in it (Bloom Tender).
-    EachColorAmong (Filter.Filter Keyword.Keyword)
+  | -- | CR 105.2 / 106.1a: mana of the colours among the objects the filter matches, each settled (Bloom Tender) or one chosen (Pit of Offerings).
+    ColorAmong ColorAmong.ColorAmong
   | -- | CR 106.8-106.11: the mana the mana costs of the permanents the filter matches represent, a half chosen per hybrid symbol (Elemental Resonance).
     ManaCostOf (Filter.Filter Keyword.Keyword)
   deriving (Eq, Ord, Show)

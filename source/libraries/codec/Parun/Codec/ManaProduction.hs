@@ -2,6 +2,7 @@ module Parun.Codec.ManaProduction where
 
 import qualified Data.Maybe as Maybe
 import qualified Parun.Codec.CardName as CardName
+import qualified Parun.Codec.ColorAmong as ColorAmong
 import qualified Parun.Codec.ColorSpread as ColorSpread
 import qualified Parun.Codec.CouldProduce as CouldProduce
 import qualified Parun.Codec.Filter as Filter
@@ -32,7 +33,7 @@ codec =
       Arm.nullary "InCommanderIdentity" ManaProduction.InCommanderIdentity,
       Arm.nullary "Circled" ManaProduction.Circled,
       Arm.payload "DraftNoted" CardName.codec ManaProduction.DraftNoted (\x -> case x of ManaProduction.DraftNoted y -> Just y; _ -> Nothing),
-      Arm.payload "EachColorAmong" (Filter.codec Keyword.codec) ManaProduction.EachColorAmong (\x -> case x of ManaProduction.EachColorAmong y -> Just y; _ -> Nothing),
+      Arm.payload "ColorAmong" ColorAmong.codec ManaProduction.ColorAmong (\x -> case x of ManaProduction.ColorAmong y -> Just y; _ -> Nothing),
       Arm.payload "ManaCostOf" (Filter.codec Keyword.codec) ManaProduction.ManaCostOf (\x -> case x of ManaProduction.ManaCostOf y -> Just y; _ -> Nothing)
     ]
 
@@ -50,5 +51,5 @@ tagOf x = case x of
   ManaProduction.InCommanderIdentity {} -> "InCommanderIdentity"
   ManaProduction.Circled {} -> "Circled"
   ManaProduction.DraftNoted {} -> "DraftNoted"
-  ManaProduction.EachColorAmong {} -> "EachColorAmong"
+  ManaProduction.ColorAmong {} -> "ColorAmong"
   ManaProduction.ManaCostOf {} -> "ManaCostOf"

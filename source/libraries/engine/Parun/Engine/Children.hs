@@ -116,6 +116,7 @@ import qualified Parun.Types.Clause as Clause
 import qualified Parun.Types.Cloak as Cloak
 import qualified Parun.Types.CoinFlipTrigger as CoinFlipTrigger
 import qualified Parun.Types.Color as Color
+import qualified Parun.Types.ColorAmong as ColorAmong
 import qualified Parun.Types.CombatRestriction as CombatRestriction
 import qualified Parun.Types.CommanderColors as CommanderColors
 import qualified Parun.Types.CommanderDeckRule as CommanderDeckRule
@@ -3833,7 +3834,7 @@ manaProductionChildren c production = case production of
   ManaProduction.InCommanderIdentity -> pure production
   ManaProduction.Circled -> pure production
   ManaProduction.DraftNoted _ -> pure production
-  ManaProduction.EachColorAmong among -> fmap ManaProduction.EachColorAmong (manaCriterion c among)
+  ManaProduction.ColorAmong (ColorAmong.MkColorAmong among spread) -> fmap ManaProduction.ColorAmong (ColorAmong.MkColorAmong <$> manaCriterion c among <*> pure spread)
   ManaProduction.ManaCostOf among -> fmap ManaProduction.ManaCostOf (manaCriterion c among)
 
 -- | A spending restriction's children (CR 106.6). Whether it prohibits and

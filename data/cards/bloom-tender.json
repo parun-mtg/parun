@@ -21,22 +21,24 @@
                         "type": "AddMana",
                         "value": {
                           "production": {
-                            "type": "EachColorAmong",
+                            "type": "ColorAmong",
                             "value": {
-                              "type": "And",
-                              "value": [
-                                {
-                                  "type": "IsInZone",
-                                  "value": "Battlefield"
-                                },
-                                {
-                                  "type": "HeldBy",
-                                  "value": {
-                                    "holder": "Controller",
-                                    "relation": "You"
+                              "among": {
+                                "type": "And",
+                                "value": [
+                                  {
+                                    "type": "IsInZone",
+                                    "value": "Battlefield"
+                                  },
+                                  {
+                                    "type": "HeldBy",
+                                    "value": {
+                                      "holder": "Controller",
+                                      "relation": "You"
+                                    }
                                   }
-                                }
-                              ]
+                                ]
+                              }
                             }
                           }
                         }
