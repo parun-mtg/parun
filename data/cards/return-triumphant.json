@@ -1,0 +1,234 @@
+{
+  "faces": [
+    {
+      "manaCost": [
+        {
+          "type": "Generic",
+          "value": 1
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "White"
+          }
+        }
+      ],
+      "name": "Return Triumphant",
+      "oracleText": "Return target creature card with mana value 3 or less from your graveyard to the battlefield. Create a Young Hero Role token attached to it. (Enchanted creature has \"Whenever this creature attacks, if its toughness is 3 or less, put a +1/+1 counter on it.\" If you put another Role on the creature later, put this one into the graveyard.)",
+      "spell": {
+        "modes": [
+          {
+            "clauses": [
+              {
+                "effects": [
+                  {
+                    "type": "MoveToZone",
+                    "value": {
+                      "ref": {
+                        "type": "InSlot",
+                        "value": "target"
+                      },
+                      "slot": "returned",
+                      "zone": "Battlefield"
+                    }
+                  },
+                  {
+                    "type": "Create",
+                    "value": {
+                      "card": {
+                        "faces": [
+                          {
+                            "enchant": [
+                              {
+                                "pool": {
+                                  "type": "Creatures"
+                                }
+                              }
+                            ],
+                            "name": "Young Hero",
+                            "staticAbilities": [
+                              {
+                                "affected": {
+                                  "type": "Matching",
+                                  "value": {
+                                    "type": "And",
+                                    "value": [
+                                      {
+                                        "type": "HasCardType",
+                                        "value": "Creature"
+                                      },
+                                      {
+                                        "type": "HasAttached",
+                                        "value": {
+                                          "type": "IsSource"
+                                        }
+                                      }
+                                    ]
+                                  }
+                                },
+                                "modifications": [
+                                  {
+                                    "type": "GainAbility",
+                                    "value": {
+                                      "type": "Triggered",
+                                      "value": {
+                                        "condition": {
+                                          "type": "Attacks",
+                                          "value": {
+                                            "type": "Attacker",
+                                            "value": {}
+                                          }
+                                        },
+                                        "intervening": {
+                                          "type": "Compares",
+                                          "value": {
+                                            "comparison": "AtLeast",
+                                            "measured": {
+                                              "type": "Count",
+                                              "value": {
+                                                "aggregation": {
+                                                  "type": "Members"
+                                                },
+                                                "filter": {
+                                                  "type": "And",
+                                                  "value": [
+                                                    {
+                                                      "type": "IsSource"
+                                                    },
+                                                    {
+                                                      "type": "Measures",
+                                                      "value": {
+                                                        "comparison": "AtMost",
+                                                        "measure": "Toughness",
+                                                        "operand": {
+                                                          "type": "Literal",
+                                                          "value": 3
+                                                        }
+                                                      }
+                                                    }
+                                                  ]
+                                                },
+                                                "scope": {
+                                                  "type": "InZone",
+                                                  "value": {
+                                                    "player": {
+                                                      "type": "Relative",
+                                                      "value": "AnyPlayer"
+                                                    },
+                                                    "zone": "Battlefield"
+                                                  }
+                                                }
+                                              }
+                                            },
+                                            "threshold": {
+                                              "type": "Literal",
+                                              "value": 1
+                                            }
+                                          }
+                                        },
+                                        "modal": {
+                                          "modes": [
+                                            {
+                                              "clauses": [
+                                                {
+                                                  "effects": [
+                                                    {
+                                                      "type": "PutCounters",
+                                                      "value": {
+                                                        "kind": {
+                                                          "type": "PlusOnePlusOne"
+                                                        },
+                                                        "quantity": {
+                                                          "type": "Literal",
+                                                          "value": 1
+                                                        },
+                                                        "ref": {
+                                                          "type": "InSlot",
+                                                          "value": "self"
+                                                        }
+                                                      }
+                                                    }
+                                                  ]
+                                                }
+                                              ]
+                                            }
+                                          ]
+                                        }
+                                      }
+                                    }
+                                  }
+                                ]
+                              }
+                            ],
+                            "typeLine": {
+                              "subtypes": [
+                                "Aura",
+                                "Role"
+                              ],
+                              "types": [
+                                "Enchantment"
+                              ]
+                            }
+                          }
+                        ]
+                      },
+                      "quantity": {
+                        "type": "Literal",
+                        "value": 1
+                      },
+                      "riders": {
+                        "attachedTo": {
+                          "type": "Specified",
+                          "value": "returned"
+                        }
+                      }
+                    }
+                  }
+                ]
+              }
+            ],
+            "targetSlots": {
+              "target": {
+                "filter": {
+                  "type": "And",
+                  "value": [
+                    {
+                      "type": "HasCardType",
+                      "value": "Creature"
+                    },
+                    {
+                      "type": "Measures",
+                      "value": {
+                        "comparison": "AtMost",
+                        "measure": "ManaValue",
+                        "operand": {
+                          "type": "Literal",
+                          "value": 3
+                        }
+                      }
+                    }
+                  ]
+                },
+                "pool": {
+                  "type": "CardsInGraveyard",
+                  "value": {
+                    "type": "Scoped",
+                    "value": {
+                      "type": "You"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        ]
+      },
+      "typeLine": {
+        "types": [
+          "Sorcery"
+        ]
+      }
+    }
+  ]
+}
