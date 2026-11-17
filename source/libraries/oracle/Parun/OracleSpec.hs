@@ -397,14 +397,15 @@ spec s = Spec.describe s "Parun.Oracle" $ do
     let maybeDraw = spell [(clause [draw (PlayerRef.Relative PlayerRelation.You) 1]) {Clause.optionality = Optionality.Optional (PlayerRef.Relative PlayerRelation.You) MayPass.AllSeatsFirst}] []
     Spec.assertEq s (Just (Text.pack "You may draw a card.")) (Oracle.render maybeDraw)
 
-  -- CR 603.6a / 700.4: "When [this] enters" and "When [this] dies", the
-  -- effect naming the source again as "it"; a noncreature "is put into a
-  -- graveyard from the battlefield" (Chromatic Star).
+  -- CR 603.6a / 700.4: "When [this] enters" and "When [this] dies" ("die"
+  -- for a plural name, The Duras Sisters), the effect naming the source again
+  -- as "it"; a noncreature "is put into a graveyard from the battlefield"
+  -- (Chromatic Star).
   Spec.it s "render prints a trigger on entering or dying" $ do
     let imp = triggered (TriggerCondition.Enters EntersTrigger.defaultValue) [clause [damage [(target, 2)]]] [(target, TargetSlot.required Pool.Creatures Nothing)]
     Spec.assertEq s [[Text.pack "When Spark enters, it deals 2 damage to target creature.", Text.pack "When Spark enters, Spark deals 2 damage to target creature."]] (Oracle.abilities (withFace (\f -> f {Face.triggeredAbilities = [imp]})))
     let star = triggered (TriggerCondition.Leaves (LeavesTrigger.dies LeavingPermanent.Self)) [clause [draw (PlayerRef.Relative PlayerRelation.You) 1]] []
-    Spec.assertEq s [[Text.pack "When Spark dies, draw a card.", Text.pack "When Spark dies, you draw a card."]] (Oracle.abilities (withFace (\f -> (typed [CardType.Creature] [] f) {Face.triggeredAbilities = [star]})))
+    Spec.assertEq s [[Text.pack "When Spark dies, draw a card.", Text.pack "When Spark dies, you draw a card.", Text.pack "When Spark die, draw a card.", Text.pack "When Spark die, you draw a card."]] (Oracle.abilities (withFace (\f -> (typed [CardType.Creature] [] f) {Face.triggeredAbilities = [star]})))
     Spec.assertEq s [[Text.pack "When Spark is put into a graveyard from the battlefield, draw a card.", Text.pack "When Spark is put into a graveyard from the battlefield, you draw a card."]] (Oracle.abilities (withFace (\f -> (typed [CardType.Artifact] [] f) {Face.triggeredAbilities = [star]})))
 
   -- CR 603.2b: "At the beginning of [step]", in whose turns the scope says;
@@ -868,7 +869,7 @@ spec s = Spec.describe s "Parun.Oracle" $ do
     -- A third option has no rendering yet, so the card stays unrendered.
     Spec.assertEq s Nothing (Oracle.render (choosing (mana [ManaSymbol.Generic 1] NonEmpty.:| [life, discards])))
     let seer = triggered (TriggerCondition.Leaves (LeavesTrigger.dies LeavingPermanent.Self)) [(clause [draw (PlayerRef.Relative PlayerRelation.You) 1]) {Clause.payGate = Just (gate PayBranch.IfPaid (PlayerRef.InSlot you) (mana [ManaSymbol.Generic 1, ManaSymbol.OfType (ManaType.Colored Color.Blue)]))}] []
-    Spec.assertEq s [[Text.pack "When Spark dies, you may pay {1}{U}. If you do, draw a card."]] (Oracle.abilities (withFace (\f -> (typed [CardType.Creature] [] f) {Face.triggeredAbilities = [seer]})))
+    Spec.assertEq s [[Text.pack "When Spark dies, you may pay {1}{U}. If you do, draw a card.", Text.pack "When Spark die, you may pay {1}{U}. If you do, draw a card."]] (Oracle.abilities (withFace (\f -> (typed [CardType.Creature] [] f) {Face.triggeredAbilities = [seer]})))
     let mountain = Cost.MkCost (Just (ManaCost.MkManaCost [])) [CostComponent.Sacrifice (Sacrifice.MkSacrifice (ObjectCount.Exactly (CostAmount.Fixed 1)) (Filter.HasSubtype Subtype.Mountain) Set.empty)]
         upkeep = TriggerCondition.StepBegins (StepBegins.MkStepBegins (Phase.Beginning BeginningStep.Upkeep) Nothing (TurnScope.PlayersTurn (PlayerRef.Relative PlayerRelation.You)))
         lithophage = triggered upkeep [(clause [sacrifice]) {Clause.payGate = Just (gate PayBranch.IfNotPaid (PlayerRef.InSlot you) mountain)}] []

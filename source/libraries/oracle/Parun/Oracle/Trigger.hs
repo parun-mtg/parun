@@ -252,12 +252,13 @@ noncreature f =
 -- ("When", or "Whenever" for one that can recur), and the words the rest
 -- names the objects and players it binds with. A creature "dies"; any other
 -- permanent "is put into a graveyard from the battlefield", the same event
--- (CR 700.4) in the words Oracle text keeps for it (Chromatic Star).
+-- (CR 700.4) in the words Oracle text keeps for it (Chromatic Star). A plural
+-- name takes "die" (The Duras Sisters).
 selfEvent :: Target.Context -> Bool -> TriggerCondition.TriggerCondition -> [([String], String, [(SlotName.SlotName, String)])]
 selfEvent context creature c = case c of
   TriggerCondition.Enters t | t == EntersTrigger.defaultValue -> [(["When"], "enters", [])]
   TriggerCondition.Leaves t
-    | t == LeavesTrigger.dies LeavingPermanent.Self, creature -> [(["When"], "dies", [(becameSlot, "it")])]
+    | t == LeavesTrigger.dies LeavingPermanent.Self, creature -> [(["When"], verb, [(becameSlot, "it")]) | verb <- ["dies", "die"]]
     | t == LeavesTrigger.dies LeavingPermanent.Self -> [(["When"], "is put into a graveyard from the battlefield", [(becameSlot, "it")])]
     | t == LeavesTrigger.defaultValue -> [(["When"], "leaves the battlefield", [(becameSlot, "it")])]
     | t == putFromBattlefieldInto Zone.Graveyard PlayerRelation.You -> [(["When"], "is put into your graveyard from the battlefield", [(becameSlot, "it")])]

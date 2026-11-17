@@ -87,7 +87,8 @@ withoutReminders = Text.pack . go (0 :: Int) . Text.unpack
 -- 207.2d): what precedes a line's first " \8212 ", past a mode's bullet (The
 -- Vision), when that is a phrase (it opens with a letter or digit and holds no
 -- sentence or reminder punctuation, a thousands separator aside: Jumbo
--- Cactuar's "10,000 Needles") that is neither an ability word (CR 207.2c), which
+-- Cactuar's "10,000 Needles"; a mode's heading may hold a comma too: Test of
+-- Loyalty's "Plain, Simple Garak") that is neither an ability word (CR 207.2c), which
 -- the renderer prints, nor a chapter symbol's numeral (CR 715.2). Only the stamped side goes through this, so a heading the
 -- renderer prints that is not an ability word fails the check until it is
 -- exempted here.
@@ -95,16 +96,16 @@ withoutFlavorWords :: Text.Text -> Text.Text
 withoutFlavorWords = Text.intercalate (Text.pack "\n") . fmap unheaded . Text.splitOn (Text.pack "\n")
   where
     unheaded line = case Text.stripPrefix bullet line of
-      Just mode -> bullet <> unbulleted mode
-      Nothing -> unbulleted line
-    unbulleted line = case Text.breakOn dash line of
-      (heading, rest) | not (Text.null rest), flavorWord heading -> Text.drop (Text.length dash) rest
+      Just mode -> bullet <> unbulleted ".:;(\"{" mode
+      Nothing -> unbulleted ".,:;(\"{" line
+    unbulleted punctuation line = case Text.breakOn dash line of
+      (heading, rest) | not (Text.null rest), flavorWord punctuation heading -> Text.drop (Text.length dash) rest
       _ -> line
     bullet = Text.pack "\8226 "
     dash = Text.pack " \8212 "
-    flavorWord heading =
+    flavorWord punctuation heading =
       maybe False (Char.isAlphaNum . fst) (Text.uncons heading)
-        && not (Text.any (`elem` ".,:;(\"{") (withoutThousandsSeparators heading))
+        && not (Text.any (`elem` punctuation) (withoutThousandsSeparators heading))
         && not (Text.all (`elem` "IVX") heading)
         && Set.notMember (key heading) abilityWords
     withoutThousandsSeparators heading =
