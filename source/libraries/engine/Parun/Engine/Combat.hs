@@ -71,12 +71,14 @@ import Parun.Types.ObjectId (ObjectId)
 import qualified Parun.Types.OptionalDecision as OptionalDecision
 import qualified Parun.Types.PayOffer as PayOffer
 import qualified Parun.Types.PaymentDecision as PaymentDecision
+import qualified Parun.Types.PendingEntryEffect as PendingEntryEffect
 import qualified Parun.Types.PlayerEffect as PlayerEffect.Type
 import Parun.Types.PlayerId (PlayerId)
 import qualified Parun.Types.PlayerRelation as PlayerRelation
 import qualified Parun.Types.ProjectedCharacteristics as PC
 import qualified Parun.Types.Prompt as Prompt
 import qualified Parun.Types.RuleWaiver as RuleWaiver
+import qualified Parun.Types.StoredEffects as StoredEffects
 import qualified Parun.Types.TapState as TapState
 import qualified Parun.Types.TurnRegisters as TurnRegisters
 import qualified Parun.Types.TurnWindow as TurnWindow
@@ -3261,6 +3263,7 @@ data AttackChoice
 -- Ninjutsu group proves a ninja takes the returned creature's planeswalker.
 putOntoBattlefieldAttacking :: AttackChoice -> ObjectId -> Game ()
 putOntoBattlefieldAttacking choice oid = do
+  State.modify' (settleQueuedAttack oid)
   gs <- State.get
   let c = TurnRegisters.combat (GameState.turn gs)
       targets = declarableTargets gs
@@ -3343,6 +3346,20 @@ putOntoBattlefieldAttacking choice oid = do
                       }
                 }
     _ -> pure ()
+
+-- CR 508.4e: this effect's specification holds whatever order the effects
+-- putting the creature onto the battlefield attacking apply in, so an
+-- as-enters rewrite's queued entry into combat (EntryRewrite.EntersAttacking,
+-- Kira Nerys, Firebrand) is settled here, not run again by
+-- Resolve.runEntryEffect, even where CR 508.4a leaves the creature
+-- unattacking. The scenario
+-- kira-nerys-firebrand-leaves-a-ninja-whose-planeswalker-died-unattacking
+-- proves it.
+settleQueuedAttack :: ObjectId -> GameState -> GameState
+settleQueuedAttack oid gs =
+  gs {GameState.stored = (GameState.stored gs) {StoredEffects.pendingEntryEffects = fmap settle (StoredEffects.pendingEntryEffects (GameState.stored gs))}}
+  where
+    settle row = if PendingEntryEffect.object row == oid then row {PendingEntryEffect.attacking = False} else row
 
 -- CR 508.4's second sentence for a creature already on the battlefield
 -- (Tahngarth, First Mate): an effect states it is attacking what `chooser`
