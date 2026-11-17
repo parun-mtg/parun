@@ -1,0 +1,65 @@
+{
+  "faces": [
+    {
+      "castingPermissions": [
+        {
+          "type": "CastFromGraveyard",
+          "value": {
+            "entersWith": [
+              {
+                "count": {
+                  "type": "Literal",
+                  "value": 1
+                },
+                "kind": {
+                  "type": "Finality"
+                }
+              }
+            ]
+          }
+        }
+      ],
+      "combatRestrictions": [
+        {
+          "type": "CantBlock",
+          "value": {
+            "affected": {
+              "type": "Matching",
+              "value": {
+                "type": "IsSource"
+              }
+            }
+          }
+        }
+      ],
+      "manaCost": [
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "Black"
+          }
+        }
+      ],
+      "name": "Storied Veteran",
+      "oracleText": "This creature can't block.\nYou may cast this card from your graveyard. If you do, it enters with a finality counter on it. (If a creature with a finality counter on it would die, exile it instead.)",
+      "power": {
+        "type": "Literal",
+        "value": 2
+      },
+      "toughness": {
+        "type": "Literal",
+        "value": 1
+      },
+      "typeLine": {
+        "subtypes": [
+          "Advisor",
+          "Klingon"
+        ],
+        "types": [
+          "Creature"
+        ]
+      }
+    }
+  ]
+}
