@@ -14,7 +14,7 @@ import qualified Parun.Types.TriggeringMove as TriggeringMove.Type
 
 codec :: Codec.Codec EntriesTrigger.EntriesTrigger
 codec = Fields.object $ do
-  entrants <- Fields.required "entrants" (Filter.codec Keyword.codec) EntriesTrigger.entrants
+  entrants <- Fields.defaulted "entrants" (Filter.Type.And []) (Filter.codec Keyword.codec) EntriesTrigger.entrants
   bearers <- Fields.defaulted "bearers" (Filter.Type.And []) (Filter.codec Keyword.codec) EntriesTrigger.bearers
   move <- Fields.defaulted "move" TriggeringMove.Type.Entering TriggeringMove.codec EntriesTrigger.move
   triggering <- Fields.required "triggering" EntryTriggering.codec EntriesTrigger.triggering

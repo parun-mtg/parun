@@ -1000,6 +1000,16 @@ additionalAttackTriggers gs you bearer group looksBack causers = case bearerBoar
   Just board | not (Set.null causers) -> PlayerEffect.additionalMoveTriggers TriggeringMove.Attacking you (Set.toList causers) (bearer, board) board (gameAfter group gs)
   _ -> 0
 
+-- CR 603.2d / 119.9: how many additional times an ability of `you`'s that
+-- `event` caused `bearer` to trigger triggers, for an event of `you` gaining
+-- life (Dr. Beverly Crusher), one per effect admitting it; none for any other
+-- event, another player's gain included. The bearer and the effects are read
+-- off `additionalTriggers`' board.
+additionalLifeGainTriggers :: GameState -> PlayerId -> ObjectId -> EventGroup.EventGroup -> Bool -> GameEvent -> Natural
+additionalLifeGainTriggers gs you bearer group looksBack event = case (event, bearerBoard gs bearer group looksBack) of
+  (GameEvent.LifeGained change, Just board) | LifeChange.player change == you -> PlayerEffect.additionalMoveTriggers TriggeringMove.GainingLife you [] (bearer, board) board board
+  _ -> 0
+
 -- The board `bearer`'s ability on the event of `group` reads, while the bearer
 -- is a permanent on it (`additionalTriggers`).
 bearerBoard :: GameState -> ObjectId -> EventGroup.EventGroup -> Bool -> Maybe GameState

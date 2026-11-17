@@ -468,7 +468,7 @@ spec s = Spec.describe s "Parun.Codec.PlayerEffect" $ do
       s
       PlayerEffect.codec
       (PlayerEffect.EntriesTrigger EntriesTrigger.MkEntriesTrigger {EntriesTrigger.entrants = Filter.And [], EntriesTrigger.bearers = Filter.And [], EntriesTrigger.move = TriggeringMove.Entering, EntriesTrigger.triggering = EntryTriggering.AnAdditionalTime})
-      " {\"type\":\"EntriesTrigger\",\"value\":{\"entrants\":{\"type\":\"And\",\"value\":[]},\"triggering\":\"AnAdditionalTime\"}} "
+      " {\"type\":\"EntriesTrigger\",\"value\":{\"triggering\":\"AnAdditionalTime\"}} "
   -- CR 724.2 / Opposition Agent.
   Spec.it s "ControlledWhileSearching" $
     Common.assertCodec
