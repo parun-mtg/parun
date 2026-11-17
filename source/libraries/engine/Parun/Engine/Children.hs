@@ -1329,7 +1329,7 @@ effectChildren c effect = case effect of
   Effect.Learn -> pure effect
   Effect.TimeTravel -> pure effect
   Effect.Recruit -> pure effect
-  Effect.Discover (Discover.MkDiscover quantity named) -> fmap Effect.Discover (Discover.MkDiscover <$> onQuantity c quantity <*> traverse (onSlot c) named)
+  Effect.Discover (Discover.MkDiscover who quantity named) -> fmap Effect.Discover (Discover.MkDiscover <$> onPlayer c who <*> onQuantity c quantity <*> traverse (onSlot c) named)
   Effect.Cloak (Cloak.MkCloak who cards shuffled named) -> fmap Effect.Cloak (Cloak.MkCloak <$> onPlayer c who <*> traverse (onObjectRef c) cards <*> pure shuffled <*> traverse (onSlot c) named)
   Effect.ManifestDread (ManifestDread.MkManifestDread who quantity named) -> fmap Effect.ManifestDread (ManifestDread.MkManifestDread <$> onPlayer c who <*> onQuantity c quantity <*> traverse (onSlot c) named)
   Effect.Venture _ -> pure effect

@@ -1027,7 +1027,7 @@ effectPlayerRefs effect = case effect of
   Effect.Populate -> []
   Effect.TimeTravel -> []
   Effect.Recruit -> []
-  Effect.Discover {} -> []
+  Effect.Discover (Discover.MkDiscover ref _ _) -> [ref]
   Effect.Learn -> []
   -- The printing's own references: who cloaks, and whose library the top
   -- card comes off where it is not their own.
@@ -1249,7 +1249,7 @@ slotsOf effect = joinTwo (joinTwo (joinSlots (fmap objectRefSlots (effectObjectR
   Effect.Populate -> Map.empty
   Effect.TimeTravel -> Map.empty
   Effect.Recruit -> Map.empty
-  Effect.Discover (Discover.MkDiscover quantity _) -> quantitySlots quantity
+  Effect.Discover (Discover.MkDiscover _ quantity _) -> quantitySlots quantity
   Effect.Learn -> Map.empty
   Effect.Cloak {} -> Map.empty
   Effect.ManifestDread (ManifestDread.Type.MkManifestDread _ quantity _) -> quantitySlots quantity
@@ -2206,7 +2206,7 @@ ownSlotsAreExhaustive effect = case effect of
   Effect.Populate -> True
   Effect.TimeTravel -> True
   Effect.Recruit -> True
-  Effect.Discover (Discover.MkDiscover quantity _) -> Quantity.slotsAreExhaustive quantity
+  Effect.Discover (Discover.MkDiscover _ quantity _) -> Quantity.slotsAreExhaustive quantity
   Effect.Learn -> True
   Effect.Cloak {} -> True
   Effect.ManifestDread (ManifestDread.Type.MkManifestDread _ quantity _) -> Quantity.slotsAreExhaustive quantity
@@ -2524,7 +2524,7 @@ hasRead wanted =
         Effect.Populate -> False
         Effect.TimeTravel -> False
         Effect.Recruit -> False
-        Effect.Discover (Discover.MkDiscover quantity _) -> Quantity.hasRead wanted quantity
+        Effect.Discover (Discover.MkDiscover _ quantity _) -> Quantity.hasRead wanted quantity
         Effect.Learn -> False
         Effect.Cloak {} -> False
         Effect.ManifestDread (ManifestDread.Type.MkManifestDread _ quantity _) -> Quantity.hasRead wanted quantity
@@ -2840,7 +2840,7 @@ boundSlots effect = case effect of
   Effect.TimeTravel -> Set.empty
   Effect.Recruit -> Set.empty
   -- CR 701.57c's discovered card, as it was in exile, for a later clause.
-  Effect.Discover (Discover.MkDiscover _ mSlot) -> foldMap Set.singleton mSlot
+  Effect.Discover (Discover.MkDiscover _ _ mSlot) -> foldMap Set.singleton mSlot
   Effect.Learn -> Set.empty
   -- The permanents the cloaks put onto the battlefield (CR 701.58a), for
   -- Cryptic Coat's "attach this Equipment to it".

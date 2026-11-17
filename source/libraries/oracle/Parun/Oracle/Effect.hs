@@ -1030,9 +1030,9 @@ effect context e = case e of
     n <- Target.amount q
     imperative context who (Text.pack "empower Jace " <> n) (Text.pack "empowers Jace " <> n)
   -- "Discover 4" (CR 701.57a).
-  Effect.Discover (Discover.MkDiscover q _) -> do
+  Effect.Discover (Discover.MkDiscover who q _) -> do
     n <- Target.amount q
-    imperative context (PlayerRef.Relative PlayerRelation.You) (Text.pack "discover " <> n) (Text.pack "discovers " <> n)
+    imperative context who (Text.pack "discover " <> n) (Text.pack "discovers " <> n)
   -- "Scry 2" (CR 701.22a).
   Effect.Scry (PlayerQuantity.MkPlayerQuantity who q) -> do
     n <- Target.amount q

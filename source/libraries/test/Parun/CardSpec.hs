@@ -903,6 +903,7 @@ playerRefPositions =
         ("surveil", Effect.Surveil (Surveil.MkSurveil (plantedPlayer "su") one Nothing), [plantedPlayer "su"]),
         ("amass", Effect.Amass (Amass.MkAmass (plantedPlayer "as") one (AmassKind.Army Subtype.Goblin) Nothing), [plantedPlayer "as"]),
         ("fateseal", Effect.Fateseal (playerQuantity "fs"), [plantedPlayer "fs"]),
+        ("discover", Effect.Discover (Discover.MkDiscover (plantedPlayer "di") one Nothing), [plantedPlayer "di"]),
         ("reveal", Effect.Reveal (Reveal.MkReveal (plantedRef "rv") Nothing (Just (plantedPlayer "rv"))), [plantedPlayer "rv"]),
         ("look-at", Effect.LookAt (LookAt.MkLookAt (plantedRef "la") (SlotName.MkSlotName (Text.pack "seen")) (plantedPlayer "lk")), [plantedPlayer "lk"]),
         ("guess", Effect.Guess Guess.MkGuess {Guess.subject = plantedRef "gu", Guess.slot = SlotName.MkSlotName (Text.pack "gs"), Guess.guesser = plantedPlayer "gu", Guess.proposition = Filter.Type.And [], Guess.right = SlotName.MkSlotName (Text.pack "gr")}, [plantedPlayer "gu"]),
@@ -5279,7 +5280,7 @@ effectFilters effect = case effect of
   Effect.Populate -> []
   Effect.TimeTravel -> []
   Effect.Recruit -> []
-  Effect.Discover (Discover.MkDiscover quantity _) -> frame Unframed (quantityFilters quantity)
+  Effect.Discover (Discover.MkDiscover _ quantity _) -> frame Unframed (quantityFilters quantity)
   Effect.Learn -> []
   -- The move's answer: the cards' ref is read where the move's is.
   Effect.Cloak (Cloak.MkCloak _ cards _ _) -> frame SourceHostFramed (foldMap objectRefFilters cards)

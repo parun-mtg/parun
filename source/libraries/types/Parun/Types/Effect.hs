@@ -829,7 +829,7 @@ data Effect card ability
     -- Parun.Engine.Recruit.recruit as one procedure. Nullary, rule 701.70a
     -- fixing everything but which card is discarded.
     Recruit
-  | -- | CR 701.57a: the resolving controller discovers, the process
+  | -- | CR 701.57a: the payload's player discovers, the process
     -- Parun.Engine.Discover's walk and afterWalk, then CR 701.57b's event.
     Discover Discover.Discover
   | -- | CR 701.58a: the instructed players each cloak the top card of their
