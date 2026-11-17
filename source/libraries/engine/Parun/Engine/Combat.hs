@@ -2741,7 +2741,7 @@ attemptAttackDeclaration perform pid asked forced rejected = do
             -- cost, but it IS a tap, and a card watching for one must see it.
             tapIt oid = do
               g <- State.get
-              Monad.unless (Projection.hasKeyword Keyword.Vigilance oid g) (Event.tap oid)
+              Monad.unless (Projection.hasKeyword Keyword.Vigilance oid g) (Event.tap pid oid)
         -- UNIONED into the record, not written over it: "the record is mine alone"
         -- is exactly the assumption CR 508.8's second clause breaks, and replacing
         -- the map would silently remove such a creature from combat.
@@ -2924,7 +2924,7 @@ attemptAttackDeclaration perform pid asked forced rejected = do
             -- the offer taps nobody and arms nothing.
             answer <- Game.mayChooseAmong (\enlistDecider who -> Prompt.ChooseEnlist enlistDecider who oid) you enlistCandidates
             Monad.forM_ answer $ \tapped -> do
-              Event.tap tapped
+              Event.tap you tapped
               State.modify' (\armed -> Event.armDelayed Keyword.Engine.enlistReflexive (Projection.delayedSnapshotOf oid armed) oid you (Map.singleton Binding.tappedPermanent (Binding.toObject tapped)) (Just TurnWindow.AnyTurn) Nothing armed)
             pure (fmap ((,) you) answer)
         gs1 <- State.get

@@ -54,6 +54,7 @@ import qualified Parun.Types.BecameAttached as BecameAttached
 import qualified Parun.Types.BecameAttacked as BecameAttacked
 import qualified Parun.Types.BecameBlocking as BecameBlocking
 import qualified Parun.Types.BecameDesignated as BecameDesignated
+import qualified Parun.Types.BecameTapped as BecameTapped
 import qualified Parun.Types.BecameTarget as BecameTarget
 import qualified Parun.Types.BecameUnattached as BecameUnattached
 import qualified Parun.Types.BecomesTapState as BecomesTapState
@@ -1420,11 +1421,15 @@ armMatches bindings frozen board atEvent beforeEvent groupEvents gs bearer you c
         -- stands in it though they are scanned in the upkeep (CR 502.4).
         -- data/scenarios's the-ninth-doctor pair proves it.
         holdsThen = maybe True (Condition.holds (Projection.viewWithLastKnownAnywhere atEvent) bearerContext atEvent bearer) (BecomesTapState.while watched)
+        -- Hylda of the Icy Crown's "whenever you tap": the event's tapper
+        -- against CR 109.5's `you`. Parun.Codec.BecomesTapState admits a tapper
+        -- only beside a causeless tap, so the other arms never read it.
+        tappedBy pid = maybe True (\relation -> PlayerRelation.holds (Game.teams gs) relation you pid) (BecomesTapState.tapper watched)
      in holdsThen && case event of
           -- CR 601.2h: a cause narrows the tap to TappedToPay's for that keyword
           -- (Agent Maria Hill), and a causeless condition reads only
           -- BecameTapped, which the same tap also wrote.
-          GameEvent.BecameTapped tapped -> BecomesTapState.status watched == TapState.Tapped && Maybe.isNothing (BecomesTapState.paying watched) && watches tapped
+          GameEvent.BecameTapped tapped -> BecomesTapState.status watched == TapState.Tapped && Maybe.isNothing (BecomesTapState.paying watched) && tappedBy (BecameTapped.tapper tapped) && watches (BecameTapped.permanent tapped)
           GameEvent.TappedToPay paid -> BecomesTapState.status watched == TapState.Tapped && BecomesTapState.paying watched == Just (TappedToPay.keyword paid) && watches (TappedToPay.permanent paid)
           GameEvent.BecameUntapped untapped -> BecomesTapState.status watched == TapState.Untapped && watches untapped
           -- CR 106.12a's event is a DIFFERENT one, and stated rather than folded

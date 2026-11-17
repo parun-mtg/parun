@@ -3246,8 +3246,8 @@ largestSharingGroup candidates gs =
 -- CR 701.26a: tap one permanent, through Parun.Engine.Event's funnel so that
 -- paying a tap cost is a becomes-tapped event like any other route. Shared by
 -- every component that taps -- see payComponent's TapThis arm -- which is what
--- gave all of them the event for one call.
-tapObject :: ObjectId -> Game ()
+-- gave all of them the event for one call. The payer is the tapper.
+tapObject :: PlayerId -> ObjectId -> Game ()
 tapObject = Event.tap
 
 -- What this component SPENDS out of a pool of objects: which resource it draws
@@ -7629,7 +7629,7 @@ payPayable perform moment paidFor slots pid oid component = case component of
   -- CR 701.26a through tapObject; CR 107.5's "already tapped" is `payComponent`'s
   -- guard.
   CostComponent.TapThis -> do
-    tapObject oid
+    tapObject pid oid
     pure bindsNothing
   -- Through Parun.Engine.Event.untap, the CR 701.26b funnel, exactly as TapThis
   -- above goes through Event.tap -- and rule 701.26b draws no such distinction
@@ -7785,7 +7785,7 @@ payPayable perform moment paidFor slots pid oid component = case component of
     let totalPower = sum (fmap (\c -> tapPower keyword c gs) (Set.toAscList chosen))
     if Set.isSubsetOf chosen (Set.fromList candidates) && totalPower >= toInteger n
       then do
-        Event.simultaneously (Monad.mapM_ tapObject (Set.toAscList chosen))
+        Event.simultaneously (Monad.mapM_ (tapObject pid) (Set.toAscList chosen))
         pure (Payment.Paid (Binding.paidObjects Binding.tappedForTotalPower (Set.map Recipient.ToObject chosen)))
       else pure Payment.Unpaid
   -- The payer chooses WHICH permanents to tap, so this is a prompt. Sacrifice's
@@ -7816,7 +7816,7 @@ payPayable perform moment paidFor slots pid oid component = case component of
     gs <- State.get
     let candidates = turnCandidatesGiven (Snapshot.onDemand gs) slots pid oid tap gs
         turn = case becoming of
-          TapState.Tapped -> tapObject
+          TapState.Tapped -> tapObject pid
           TapState.Untapped -> Event.untap
         decider = Decide.deciderFor pid gs
     chosen <-

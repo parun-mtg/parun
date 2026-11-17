@@ -309,6 +309,8 @@ library codec
     Parun.Codec.BecameBlockingSpec
     Parun.Codec.BecameDesignated
     Parun.Codec.BecameDesignatedSpec
+    Parun.Codec.BecameTapped
+    Parun.Codec.BecameTappedSpec
     Parun.Codec.BecameTarget
     Parun.Codec.BecameUnattached
     Parun.Codec.BecomeCopy
@@ -2918,6 +2920,7 @@ library types
     Parun.Types.BecameAttacked
     Parun.Types.BecameBlocking
     Parun.Types.BecameDesignated
+    Parun.Types.BecameTapped
     Parun.Types.BecameTarget
     Parun.Types.BecameUnattached
     Parun.Types.BecomeCopy

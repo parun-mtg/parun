@@ -18,6 +18,7 @@ import qualified Data.Set as Set
 import qualified Numeric.Natural as Natural
 import qualified Parun.Engine.Game as Game
 import qualified Parun.Types.BecameAttached as BecameAttached
+import qualified Parun.Types.BecameTapped as BecameTapped
 import qualified Parun.Types.BecameUnattached as BecameUnattached
 import qualified Parun.Types.CounterChange as CounterChange
 import qualified Parun.Types.CounterKind as CounterKind
@@ -89,7 +90,7 @@ tapStep held event =
           | otherwise -> (Map.insert oid status held, False)
         Nothing -> (held, False)
    in case event of
-        GameEvent.BecameTapped oid -> to TapState.Tapped oid
+        GameEvent.BecameTapped t -> to TapState.Tapped (BecameTapped.permanent t)
         GameEvent.BecameUntapped oid -> to TapState.Untapped oid
         GameEvent.PermanentActed (PermanentActed.MkPermanentActed PermanentAction.PhaseIn oid _) -> (Map.delete oid held, False)
         _ -> (held, False)

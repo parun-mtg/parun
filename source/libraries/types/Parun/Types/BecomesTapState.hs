@@ -4,6 +4,7 @@ import qualified Parun.Types.ActingPermanent as ActingPermanent
 import qualified Parun.Types.Batching as Batching
 import qualified Parun.Types.Condition as Condition
 import qualified Parun.Types.KeywordFamily as KeywordFamily
+import qualified Parun.Types.PlayerRelation as PlayerRelation
 import qualified Parun.Types.TapState as TapState
 
 -- | CR 701.26a / 701.26b: which permanent's transition into which tapped status
@@ -19,6 +20,13 @@ data BecomesTapState = MkBecomesTapState
     -- "becomes tapped to pay a teamwork cost"; Nothing for any tap. Read only
     -- with TapState.Tapped, an untap paying no cost.
     paying :: Maybe KeywordFamily.KeywordFamily,
+    -- | CR 701.26a: Just the relation the player who tapped it bears to the
+    -- bearer's controller, Hylda of the Icy Crown's "whenever YOU tap";
+    -- Nothing for a tap by anyone.
+    --
+    -- Unprinted: a tapper beside TapState.Untapped or `paying`.
+    -- Parun.Codec.BecomesTapState refuses either.
+    tapper :: Maybe PlayerRelation.PlayerRelation,
     -- | The Ninth Doctor's "DURING YOUR UNTAP STEP": a state asked of the game
     -- the transition left (CR 603.2) and never re-checked, as
     -- Parun.Types.SpellCast.while is. Nothing for a transition at any time.

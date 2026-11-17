@@ -18,6 +18,7 @@ import qualified Parun.Registry as Registry
 import qualified Parun.Spec as Spec
 import qualified Parun.Support as S
 import qualified Parun.Types.BecameAttached as BecameAttached
+import qualified Parun.Types.BecameTapped as BecameTapped
 import qualified Parun.Types.BecameUnattached as BecameUnattached
 import qualified Parun.Types.CounterCause as CounterCause
 import qualified Parun.Types.CounterKind as CounterKind
@@ -72,7 +73,7 @@ spec s registry = Spec.describe s "Ledger" $ do
   Spec.it s "CR 701.26a: a tap through its funnel is accounted for" $ do
     plains <- S.printingOf s registry "Plains"
     let (land, before) = S.addPermanent plains S.alice (S.landsInPlay plains 0)
-        after = S.runPure S.identityAnswer before (Event.tap land)
+        after = S.runPure S.identityAnswer before (Event.tap S.alice land)
     Spec.assertEqWith s "no discrepancy" (Ledger.discrepancies before after) []
   Spec.it s "CR 701.26a: a tap with no event is named" $ do
     plains <- S.printingOf s registry "Plains"
@@ -83,13 +84,13 @@ spec s registry = Spec.describe s "Ledger" $ do
     plains <- S.printingOf s registry "Plains"
     let (land, untapped) = S.addPermanent plains S.alice (S.landsInPlay plains 0)
         before = setTapped land TapState.Tapped untapped
-        after = Event.recordEvent (GameEvent.BecameTapped land) before
-    Spec.assertEqWith s "the idle tap" (Ledger.discrepancies before after) [Discrepancy.MkIdleEvent (GameEvent.BecameTapped land)]
+        after = Event.recordEvent (GameEvent.BecameTapped (BecameTapped.MkBecameTapped land S.alice)) before
+    Spec.assertEqWith s "the idle tap" (Ledger.discrepancies before after) [Discrepancy.MkIdleEvent (GameEvent.BecameTapped (BecameTapped.MkBecameTapped land S.alice))]
   Spec.it s "CR 701.26b: an untap through its funnel, then a tap, is accounted for" $ do
     plains <- S.printingOf s registry "Plains"
     let (land, untapped) = S.addPermanent plains S.alice (S.landsInPlay plains 0)
         before = setTapped land TapState.Tapped untapped
-        after = S.runPure S.identityAnswer before (Event.untap land >> Event.tap land)
+        after = S.runPure S.identityAnswer before (Event.untap land >> Event.tap S.alice land)
     Spec.assertEqWith s "no discrepancy" (Ledger.discrepancies before after) []
   Spec.it s "CR 119.3: a life change through its funnel is accounted for" $ do
     plains <- S.printingOf s registry "Plains"
@@ -181,7 +182,7 @@ spec s registry = Spec.describe s "Ledger" $ do
   Spec.it s "CR 608.2i: the log carried across a turn handoff is read from both halves" $ do
     plains <- S.printingOf s registry "Plains"
     let (land, before) = S.addPermanent plains S.alice (S.landsInPlay plains 0)
-        tapped = S.runPure S.identityAnswer before (Event.tap land)
+        tapped = S.runPure S.identityAnswer before (Event.tap S.alice land)
         handedOff =
           S.withLastTurn
             (TurnRegisters.events (GameState.turn tapped))

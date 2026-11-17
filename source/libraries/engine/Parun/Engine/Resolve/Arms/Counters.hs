@@ -1722,7 +1722,7 @@ tap resolving source controller legal (Tap.MkTap ref mTapped) = do
   let victims = ListUtils.nubOrd (objectRefObjects legal resolving controller source gs ref)
       tappedIn g oid = fmap Object.tapped (Game.lookupObject oid g) == Just TapState.Tapped
   -- One event group, CR 608.2f.
-  Event.simultaneously (Monad.forM_ victims Event.tap)
+  Event.simultaneously (Monad.forM_ victims (Event.tap controller))
   after <- State.get
   Monad.forM_ mTapped $ \slot -> do
     let turned = filter (\oid -> not (tappedIn gs oid) && tappedIn after oid) victims
