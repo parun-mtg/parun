@@ -860,7 +860,7 @@ data Response
     ChoseForage ForageMode.ForageMode
   | -- | CR 607.2d's answer to Prompt.ChooseParity: odd or even.
     ChoseParity Parity.Parity
-  | -- | CR 607.2f's answer to Prompt.ChooseWord: one of the card's words.
+  | -- | CR 607.2f / 123.6d's answer to Prompt.ChooseWord: one of the offered words or letters.
     ChoseWord Text.Text
   | -- | CR 701.48a's answer: which branch of learning the learner took, or
     -- Nothing for neither.

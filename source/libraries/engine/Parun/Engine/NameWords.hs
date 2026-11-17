@@ -3,6 +3,7 @@
 module Parun.Engine.NameWords where
 
 import qualified Data.Char as Char
+import qualified Data.List as List
 import qualified Data.Set as Set
 import qualified Data.Text as Text
 import Numeric.Natural (Natural)
@@ -40,6 +41,19 @@ letterCount :: Text.Text -> Text.Text -> Natural
 letterCount letters text =
   let wanted = Set.fromList (Text.unpack (Text.toLower letters))
    in Natural.length (filter (\c -> Set.member c wanted) (Text.unpack (Text.toLower text)))
+
+-- | CR 123.6d: the letters a "choose a letter" offers, A through Z.
+alphabet :: [Char]
+alphabet = ['A' .. 'Z']
+
+-- | CR 123.6d: a letter's 1-based position in the alphabet, either case.
+letterPosition :: Char -> Maybe Natural
+letterPosition c = fmap fst (List.find ((== Char.toUpper c) . snd) (zip [1 ..] alphabet))
+
+-- | CR 123.6d: whether the text's first letter, spaces and punctuation
+-- ignored (_____ _____ Rocketship's ruling), is the one at this position.
+beginsWithLetterAt :: Natural -> Text.Text -> Bool
+beginsWithLetterAt n text = (Text.find Char.isLetter text >>= letterPosition) == Just n
 
 -- | CR 123.6d: how many letters the text holds, either case; a space,
 -- hyphen or apostrophe is none.

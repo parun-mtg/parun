@@ -25,6 +25,7 @@ import qualified Parun.Engine.Activatable as Activatable
 import qualified Parun.Engine.Activate as Activate
 import qualified Parun.Engine.BlockRequirement as BlockRequirement
 import qualified Parun.Engine.Cast as Cast
+import qualified Parun.Engine.Combat as Combat
 import qualified Parun.Engine.Cost as Cost
 import qualified Parun.Engine.Engine as Engine
 import qualified Parun.Engine.Event as Event
@@ -57,6 +58,7 @@ import qualified Parun.Types.Bookkeeping as Bookkeeping
 import qualified Parun.Types.CandidateCost as CandidateCost
 import qualified Parun.Types.CardName as CardName
 import qualified Parun.Types.CardType as CardType
+import qualified Parun.Types.Combat as Combat.Type
 import qualified Parun.Types.CombatStep as CombatStep
 import qualified Parun.Types.Cost as Cost.Type
 import qualified Parun.Types.CounterKind as CounterKind
@@ -313,6 +315,13 @@ castPin pin x ref gs0 =
   let (card, board) = S.addHandCard pin S.alice (mainPhaseForAlice gs0)
       ((_, after), offers) = State.runState (Engine.runGame (placingRef x Nothing ref) board (S.cast S.alice card >> drain)) (MkOffers [] [] 0)
    in (List.find (\oid -> Set.notMember oid (GameState.battlefield board)) (Set.toList (GameState.battlefield after)), after, offers)
+
+-- Answers ChooseWord with `letter` where it is offered, the first offered
+-- otherwise, and attacks with everything.
+lettering :: Text.Text -> Prompt.Prompt r -> r
+lettering letter p = case p of
+  Prompt.ChooseWord _ _ _ offered -> if List.elem letter offered then letter else NonEmpty.head offered
+  _ -> S.aggressiveAnswer p
 
 -- Settle and resolve until the stack is empty.
 drain :: Game.Type.Game ()
@@ -1142,6 +1151,35 @@ spec s registry = Spec.describe s "Sticker" $ do
     Spec.assertEqWith s "CR 701.14 bob's Piker died both times" (length (Game.zoneMembers Zone.Graveyard S.bob (snd illusion)), length (Game.zoneMembers Zone.Graveyard S.bob (snd burrito))) (1, 1)
     Spec.assertEqWith s "CR 123.6d Illusion: the Bears are 2/4 and live" (Projection.toughnessOf bearsId (snd illusion)) (Just 4)
     Spec.assertEqWith s "CR 123.6d Burrito: the 2/2 Bears died" (Set.member bearsId (GameState.battlefield (snd burrito))) False
+  -- Slimy and Storm share a first letter; both hold an m, which a
+  -- "contains" reading would count.
+  Spec.it s "CR 123.6d _____ _____ Rocketship attacks: S grows it for Slimy and Storm, M for neither, O for Otter alone" $ do
+    sheets <- committedSheets
+    rocket <- S.printingOf s registry "_____ _____ Rocketship"
+    bears <- S.printingOf s registry "Grizzly Bears"
+    let attacked letter refs =
+          let (rid, g1) = S.addPermanent rocket S.alice (withSheets sheets (Setup.gameWith GameSettings.plain S.bothPlayers))
+              g2 = List.foldl' (\g ref -> Sticker.put S.alice rid ref (Just 0) g) g1 refs
+              board = mainPhaseForAlice (snd (S.addPermanent bears S.alice g2))
+              crewed = case Projection.abilitiesOf rid board of
+                [crew] -> S.runPure (lettering letter) board (Activate.activateAbility S.alice rid crew >> Stack.resolveTop)
+                _ -> board
+              combat = crewed {GameState.turn = (GameState.turn crewed) {TurnRegisters.phase = Phase.Combat CombatStep.DeclareAttackers, TurnRegisters.combat = Combat.emptyCombat {Combat.Type.defenders = [S.bob]}}}
+              after = S.runPure (lettering letter) combat (Combat.declareAttackers S.manaPerformer S.alice >> drain)
+           in (Projection.powerOf rid after, Projection.toughnessOf rid after)
+    Spec.assertEqWith s "CR 123.6d S: two stickers begin with it, 4/5" (attacked (Text.pack "S") [slimy, nameSticker 2 2]) (Just 4, Just 5)
+    Spec.assertEqWith s "CR 123.6d M: neither begins with it, 2/3" (attacked (Text.pack "M") [slimy, nameSticker 2 2]) (Just 2, Just 3)
+    Spec.assertEqWith s "CR 123.6d O: Otter alone, 3/4" (attacked (Text.pack "O") [slimy, otter]) (Just 3, Just 4)
+  -- Wee Champion sees each of the two placements.
+  Spec.it s "CR 123.3 _____ _____ Rocketship enters and takes two name stickers, each one a placement" $ do
+    sheets <- committedSheets
+    rocket <- S.printingOf s registry "_____ _____ Rocketship"
+    champion <- S.printingOf s registry "Wee Champion"
+    let (championId, g1) = S.addPermanent champion S.alice (withSheets sheets (Setup.gameWith GameSettings.plain S.bothPlayers))
+        (rid, after, asked) = entersNaming rocket (placingAt Nothing slimy 0) g1
+    Spec.assertEqWith s "CR 123.6 two name stickers" (length (stickerKindsOn rid after)) 2
+    Spec.assertEqWith s "CR 123.6b a position asked per placement" (length asked) 2
+    Spec.assertEqWith s "CR 123.3 Wee Champion got +1/+1 twice" (Projection.powerOf championId after) (Just 2)
   -- Two boards: Balls of Fire's own sticker triggers it; a sticker on the
   -- Bears does not, though Balls of Fire carries an Otter of its own.
   Spec.it s "CR 123.6d Otter's capital O counts: _____ Balls of Fire deals bob 1, and only for its own sticker" $ do

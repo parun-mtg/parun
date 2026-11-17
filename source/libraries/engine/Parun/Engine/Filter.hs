@@ -1888,7 +1888,8 @@ data Context = MkContext
     -- HasChosenCardType. Filled where sourceChosenColors above is, and Nothing
     -- everywhere else, so the atom is vacuously False there.
     sourceChosenCardType :: Maybe CardType.CardType,
-    -- CR 607.2d: the number the SOURCE last chose, for Quantity.ChosenNumber.
+    -- CR 607.2d: the number the SOURCE last chose, for Quantity.ChosenNumber
+    -- and NameStickerTest.BeginningWithChosenLetter.
     -- Filled where sourceChosenColors above is.
     sourceChosenNumber :: Maybe Natural.Natural,
     -- CR 607.2d: the objects the SOURCE last chose (Object.chosenObjects), for

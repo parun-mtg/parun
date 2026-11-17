@@ -955,6 +955,7 @@ writesColors quality = case quality of
   ChosenQuality.Number _ _ -> False
   ChosenQuality.Parity -> False
   ChosenQuality.Word _ -> False
+  ChosenQuality.Letter -> False
   ChosenQuality.ExiledCard _ _ -> False
 
 -- Whether a choice of this quality answers HasChosenSubtype, writesColors' twin.
@@ -966,6 +967,7 @@ writesSubtype quality = case quality of
   ChosenQuality.Number _ _ -> False
   ChosenQuality.Parity -> False
   ChosenQuality.Word _ -> False
+  ChosenQuality.Letter -> False
   ChosenQuality.ExiledCard _ _ -> False
 
 -- Whether a choice of this quality answers HasChosenCardType, writesColors' twin.
@@ -977,6 +979,7 @@ writesCardType quality = case quality of
   ChosenQuality.Number _ _ -> False
   ChosenQuality.Parity -> False
   ChosenQuality.Word _ -> False
+  ChosenQuality.Letter -> False
   ChosenQuality.ExiledCard _ _ -> False
 
 -- CR 105.2's chosen colour is answerable only where Filter.Context.sourceChosenColors

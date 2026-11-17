@@ -2523,6 +2523,7 @@ chosenQualityChildren onListed onCards quality = case quality of
   ChosenQuality.Number _ _ -> pure quality
   ChosenQuality.Parity -> pure quality
   ChosenQuality.Word _ -> pure quality
+  ChosenQuality.Letter -> pure quality
   ChosenQuality.ExiledCard pile cards -> ChosenQuality.ExiledCard pile <$> onCards cards
 
 -- | One option an entering permanent may be (CR 208.2b).

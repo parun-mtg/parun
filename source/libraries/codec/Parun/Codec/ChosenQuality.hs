@@ -29,6 +29,7 @@ codec =
       Arm.payload "Number" number (uncurry ChosenQuality.Number) (\x -> case x of ChosenQuality.Number least most -> Just (least, most); _ -> Nothing),
       Arm.nullary "Parity" ChosenQuality.Parity,
       Arm.payload "Word" (Common.nonEmpty Common.text) ChosenQuality.Word (\x -> case x of ChosenQuality.Word y -> Just y; _ -> Nothing),
+      Arm.nullary "Letter" ChosenQuality.Letter,
       Arm.payload "ExiledCard" exiledCard (uncurry ChosenQuality.ExiledCard) (\x -> case x of ChosenQuality.ExiledCard pile cards -> Just (pile, cards); _ -> Nothing)
     ]
   where
@@ -65,4 +66,5 @@ tagOf x = case x of
   ChosenQuality.CardType {} -> "CardType"
   ChosenQuality.Parity -> "Parity"
   ChosenQuality.Word {} -> "Word"
+  ChosenQuality.Letter -> "Letter"
   ChosenQuality.ExiledCard {} -> "ExiledCard"
