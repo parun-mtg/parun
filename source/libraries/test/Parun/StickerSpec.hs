@@ -1123,6 +1123,25 @@ spec s registry = Spec.describe s "Sticker" $ do
           _ -> board
     Spec.assertEqWith s "CR 123.6 one name sticker: power 3" (Projection.powerOf tId after) (Just 3)
     Spec.assertEqWith s "CR 123.6a three blanks and one word: two positions" asked [Positioned S.alice [0, 1]]
+  -- Two boards differing in the sticker alone. The Bears carry no sticker, so
+  -- a count read off the enchanted creature would kill them on both.
+  Spec.it s "CR 123.6d Fight the _____ Fight: Illusion, eight letters, saves the Bears from bob's Piker; Burrito, seven, does not" $ do
+    sheets <- committedSheets
+    aura <- S.printingOf s registry "Fight the _____ Fight"
+    bears <- S.printingOf s registry "Grizzly Bears"
+    piker <- S.printingOf s registry "Goblin Piker"
+    forest <- S.printingOf s registry "Forest"
+    let (bearsId, g1) = S.addPermanent bears S.alice (S.landsFor forest S.alice 2 (withSheets sheets (Setup.gameWith GameSettings.plain S.bothPlayers)))
+        (pikerId, g2) = S.addPermanent piker S.bob g1
+        (auraCard, board) = S.addHandCard aura S.alice (mainPhaseForAlice g2)
+        fought ref =
+          let how = (placingAt Nothing ref 0) {namingPrefers = \r -> List.elem (Recipient.objectOf r) [Just bearsId, Just pikerId]}
+           in fst (State.runState (Engine.runGame (naming how) board (S.cast S.alice auraCard >> drain)) [])
+        illusion = fought (nameSticker 1 2)
+        burrito = fought (nameSticker 1 1)
+    Spec.assertEqWith s "CR 701.14 bob's Piker died both times" (length (Game.zoneMembers Zone.Graveyard S.bob (snd illusion)), length (Game.zoneMembers Zone.Graveyard S.bob (snd burrito))) (1, 1)
+    Spec.assertEqWith s "CR 123.6d Illusion: the Bears are 2/4 and live" (Projection.toughnessOf bearsId (snd illusion)) (Just 4)
+    Spec.assertEqWith s "CR 123.6d Burrito: the 2/2 Bears died" (Set.member bearsId (GameState.battlefield (snd burrito))) False
   -- Two boards: Balls of Fire's own sticker triggers it; a sticker on the
   -- Bears does not, though Balls of Fire carries an Otter of its own.
   Spec.it s "CR 123.6d Otter's capital O counts: _____ Balls of Fire deals bob 1, and only for its own sticker" $ do

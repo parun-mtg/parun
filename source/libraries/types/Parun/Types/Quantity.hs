@@ -29,6 +29,7 @@ import qualified Parun.Types.ManaCount as ManaCount
 import qualified Parun.Types.ManaSpent as ManaSpent
 import qualified Parun.Types.ManaSymbolKind as ManaSymbolKind
 import qualified Parun.Types.Measure as Measure
+import qualified Parun.Types.NameStickerTest as NameStickerTest
 import qualified Parun.Types.ObjectDamage as ObjectDamage
 import qualified Parun.Types.PhaseSelector as PhaseSelector
 import qualified Parun.Types.PlayerCounterTally as PlayerCounterTally
@@ -96,12 +97,9 @@ data Quantity
   | -- | CR 123.6d: how many of these letters, either case, are on the name
     -- stickers on the object this is evaluated against.
     LettersOnNameStickers Text.Text
-  | -- | CR 123.6: how many name stickers are on the object this is evaluated
-    -- against.
-    --
-    -- Not implemented: a letter condition on the count, "with eight or more
-    -- letters" (#4902).
-    NameStickers
+  | -- | CR 123.6: how many name stickers passing the test are on the object
+    -- this is evaluated against.
+    NameStickers NameStickerTest.NameStickerTest
   | -- | CR 123.8a: the printed power on the P/T stickers on the object this is
     -- evaluated against, summed (Ambassador Blorpityblorpboop).
     PowerOfStickers
