@@ -1,0 +1,208 @@
+{
+  "faces": [
+    {
+      "keywords": [
+        {
+          "type": "Haste"
+        }
+      ],
+      "manaCost": [
+        {
+          "type": "Generic",
+          "value": 1
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "Red"
+          }
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "Red"
+          }
+        }
+      ],
+      "name": "Goddric, Cloaked Reveler",
+      "oracleText": "Haste\nCelebration — As long as two or more nonland permanents entered the battlefield under your control this turn, Goddric is a Dragon with base power and toughness 4/4, flying, and \"{R}: Dragons you control get +1/+0 until end of turn.\" (He loses all other creature types.)",
+      "power": {
+        "type": "Literal",
+        "value": 3
+      },
+      "staticAbilities": [
+        {
+          "affected": {
+            "type": "Matching",
+            "value": {
+              "type": "IsSource"
+            }
+          },
+          "condition": {
+            "type": "Compares",
+            "value": {
+              "comparison": "AtLeast",
+              "measured": {
+                "type": "Count",
+                "value": {
+                  "aggregation": {
+                    "type": "Members"
+                  },
+                  "filter": {
+                    "type": "And",
+                    "value": [
+                      {
+                        "type": "Not",
+                        "value": {
+                          "type": "HasCardType",
+                          "value": "Land"
+                        }
+                      },
+                      {
+                        "type": "HeldBy",
+                        "value": {
+                          "holder": "Controller",
+                          "relation": "You"
+                        }
+                      }
+                    ]
+                  },
+                  "scope": {
+                    "type": "InHistory",
+                    "value": {
+                      "type": "CardArrivedIn",
+                      "value": {
+                        "to": "Battlefield"
+                      }
+                    }
+                  }
+                }
+              },
+              "threshold": {
+                "type": "Literal",
+                "value": 2
+              }
+            }
+          },
+          "modifications": [
+            {
+              "type": "CreatureSubtype",
+              "value": {
+                "mode": "Replace",
+                "subtype": "Dragon"
+              }
+            },
+            {
+              "type": "SetBasePowerToughness",
+              "value": {
+                "power": {
+                  "type": "Literal",
+                  "value": 4
+                },
+                "toughness": {
+                  "type": "Literal",
+                  "value": 4
+                }
+              }
+            },
+            {
+              "type": "GainKeyword",
+              "value": {
+                "type": "Flying"
+              }
+            },
+            {
+              "type": "GainAbility",
+              "value": {
+                "type": "Activated",
+                "value": {
+                  "cost": {
+                    "mana": [
+                      {
+                        "type": "OfType",
+                        "value": {
+                          "type": "Colored",
+                          "value": "Red"
+                        }
+                      }
+                    ]
+                  },
+                  "modal": {
+                    "modes": [
+                      {
+                        "clauses": [
+                          {
+                            "effects": [
+                              {
+                                "type": "ModifyTarget",
+                                "value": {
+                                  "duration": {
+                                    "type": "UntilEndOfTurn"
+                                  },
+                                  "modification": {
+                                    "type": "ModifyPowerToughness",
+                                    "value": {
+                                      "power": {
+                                        "type": "Literal",
+                                        "value": 1
+                                      },
+                                      "toughness": {
+                                        "type": "Literal",
+                                        "value": 0
+                                      }
+                                    }
+                                  },
+                                  "ref": {
+                                    "type": "EachMatching",
+                                    "value": {
+                                      "type": "And",
+                                      "value": [
+                                        {
+                                          "type": "HasSubtype",
+                                          "value": "Dragon"
+                                        },
+                                        {
+                                          "type": "HeldBy",
+                                          "value": {
+                                            "holder": "Controller",
+                                            "relation": "You"
+                                          }
+                                        }
+                                      ]
+                                    }
+                                  }
+                                }
+                              }
+                            ]
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                }
+              }
+            }
+          ]
+        }
+      ],
+      "toughness": {
+        "type": "Literal",
+        "value": 3
+      },
+      "typeLine": {
+        "subtypes": [
+          "Human",
+          "Noble"
+        ],
+        "supertypes": [
+          "Legendary"
+        ],
+        "types": [
+          "Creature"
+        ]
+      }
+    }
+  ]
+}
