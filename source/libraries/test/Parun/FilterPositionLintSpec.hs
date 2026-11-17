@@ -2427,6 +2427,7 @@ filterPositionLintSpec s registry corpus = Spec.describe s "Lint" $ do
         ("Charmed Sleep", 1), -- Claustrophobia's wording
         ("Paralyze", 2), -- the entering tap and the paid untap
         ("Erosion", 1), -- the destroy a refused payment leaves
+        ("Cooped Up", 1), -- an activated exile of its host
         ("Waterknot", 1), -- Claustrophobia's wording
         ("Sleep Paralysis", 1), -- Claustrophobia's wording
         ("Capture Sphere", 1), -- Claustrophobia's wording
