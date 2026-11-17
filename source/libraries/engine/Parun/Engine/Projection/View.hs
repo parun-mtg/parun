@@ -40,6 +40,7 @@ import qualified Parun.Engine.Subtype as Subtype
 import qualified Parun.Engine.Vanguard as Vanguard
 import qualified Parun.Extra.Natural as Natural
 import qualified Parun.Types.AbilityKind as AbilityKind
+import qualified Parun.Types.AbilitySticker as AbilitySticker
 import qualified Parun.Types.ActivatedAbility as ActivatedAbility
 import qualified Parun.Types.ActivatedAbilitySource as ActivatedAbilitySource
 import qualified Parun.Types.Affected as Affected
@@ -95,6 +96,8 @@ import Parun.Types.SlotName (SlotName)
 import qualified Parun.Types.Source as Source
 import qualified Parun.Types.SpecialAction as SpecialAction
 import qualified Parun.Types.StaticAbility as StaticAbility
+import qualified Parun.Types.StickerContent as StickerContent
+import qualified Parun.Types.StickerPlacement as StickerPlacement
 import qualified Parun.Types.StoredEffects as StoredEffects
 import qualified Parun.Types.Subtype as Subtype.Type
 import qualified Parun.Types.Teams as Teams
@@ -1823,6 +1826,11 @@ staticAbilitiesOf carrier gs =
 -- staticAbilitiesOf's reason: every stored effect's set is CR 611.2c's
 -- TheseObjects, fixed as it began, so no layer has to decide who holds one.
 --
+-- An ability sticker's static abilities too (CR 123.7), at the sticker's
+-- timestamp (CR 613.7k): its set is the object it is on, as fixed as a stored
+-- grant's. Parun.StickerSpec's "CR 123.7 Trained Blessed Mind's threshold
+-- sticker" proves it.
+--
 -- Read off `oid` itself and never off textBoxHolderOf: a granted ability is not
 -- rules text (CR 612.3), so an exchange of text boxes leaves it where it is.
 --
@@ -1842,7 +1850,16 @@ grantedStaticAbilitiesOf oid gs =
         (Modification.GainAbility (GrantedAbility.Static sa), Affected.TheseObjects held) | Set.member oid held -> [(ContinuousEffect.timestamp eff, sa)]
         (Modification.GainKeyword keyword, Affected.TheseObjects held) | Set.member oid held -> fmap ((,) (ContinuousEffect.timestamp eff)) (Keyword.mintedStaticAbilitiesOf (Set.singleton keyword))
         _ -> []
-   in List.sortOn fst (concatMap grant (StoredEffects.continuousEffects (GameState.stored gs)))
+      stickered = case Game.lookupObject oid gs of
+        Just obj
+          | not (Seq.null (Object.stickers obj)) ->
+              [ (StickerPlacement.timestamp placement, sa)
+              | placement <- Foldable.toList (Object.stickers obj),
+                Just (StickerContent.Ability sticker) <- [Game.stickerContent (StickerPlacement.sticker placement) gs],
+                GrantedAbility.Static sa <- AbilitySticker.abilities sticker
+              ]
+        _ -> []
+   in List.sortOn fst (concatMap grant (StoredEffects.continuousEffects (GameState.stored gs)) <> stickered)
 
 -- CR 116.2: the special actions this object's copiable rules text grants -- its
 -- copy snapshot's when it has one, its printed face's otherwise.
