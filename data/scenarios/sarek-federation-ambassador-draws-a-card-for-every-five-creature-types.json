@@ -1,0 +1,144 @@
+{
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "battlefield": [
+          {
+            "card": "Sarek, Federation Ambassador",
+            "label": "sarek"
+          },
+          {
+            "card": "Goblin Piker"
+          },
+          {
+            "card": "Memnite"
+          },
+          {
+            "card": "Llanowar Elves",
+            "label": "elves",
+            "ready": true,
+            "tapped": true
+          },
+          {
+            "card": "Grizzly Bears",
+            "label": "bears",
+            "ready": true
+          },
+          {
+            "card": "Grizzly Bears",
+            "label": "bears2",
+            "ready": true
+          },
+          {
+            "card": "Free Borg Revolutionaries",
+            "label": "borg",
+            "ready": true
+          },
+          {
+            "card": "Woodland Changeling",
+            "label": "changeling",
+            "ready": true
+          },
+          {
+            "card": "Dryad Arbor",
+            "label": "arbor",
+            "ready": true,
+            "tapped": true
+          }
+        ],
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ],
+        "name": "alice"
+      },
+      {
+        "battlefield": [
+          {
+            "card": "Hill Giant"
+          }
+        ],
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ],
+        "name": "bob"
+      }
+    ],
+    "step": "PrecombatMain"
+  },
+  "description": "Sarek, Federation Ambassador's Federation trigger draws a card for every five creature types among non-Borg creatures alice controls, rounded down, and puts no counters under three draws",
+  "note": "Sarek adds Vulcan and Advisor, Goblin Piker Goblin and Warrior, Memnite Construct; alice's Llanowar Elves, two Grizzly Bears and Dryad Arbor add Elf, Druid, Bear and Dryad, the Arbor's Forest no creature type; Free Borg Revolutionaries (Borg Rebel) and Woodland Changeling (every creature type, so a Borg, CR 702.73a) are Borg and add none; bob's Hill Giant is not alice's. Nine types draw one card; rounding up, or counting the Arbor's Forest, would draw two. Sarek stays 0/5.",
+  "timeline": [
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "BeginningOfCombat",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Island",
+          "count": 1,
+          "player": "alice",
+          "zone": "Hand"
+        }
+      },
+      "player": "alice",
+      "step": "BeginningOfCombat",
+      "turn": 1
+    },
+    {
+      "check": {
+        "PowerToughness": {
+          "object": "$sarek",
+          "power": 0,
+          "toughness": 5
+        }
+      },
+      "player": "alice",
+      "step": "BeginningOfCombat",
+      "turn": 1
+    }
+  ]
+}
