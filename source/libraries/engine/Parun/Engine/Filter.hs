@@ -1804,7 +1804,7 @@ data Context = MkContext
     -- CR 702.16b / CR 702.16k: the controller of the spell or ability being
     -- AIMED, which rule 702.16k's targeting clause names beside the source
     -- object's -- "can't be targeted by spells or abilities the specified player
-    -- controls". Read by the three atoms that ask who an object belongs to
+    -- controls". Read by the atoms that ask who an object belongs to
     -- (OfChosenPlayer, OfRelatedPlayer, OfSpecificPlayer), and filled by the one position that
     -- judges a protection quality against an aiming object,
     -- Parun.Engine.Target.targetable, for a permanent and (through
@@ -2636,6 +2636,9 @@ matches context view predicate = case predicate of
     Just you -> ofPlayer (maybe False (PlayerRelation.holds (teams context) relation you)) (aimingController context) view
   -- The arm above with its players fixed (CR 608.2h), so no perspective is read.
   Filter.OfSpecificPlayer pid -> ofPlayer (== Just pid) (aimingController context) view
+  -- Baked to the arm above before any match (bakeBound,
+  -- Keyword.withQualityPlayers), so vacuously False if it survives to one.
+  Filter.OfBoundPlayer _ -> False
   -- CR 115.1's "target opponent". The same CR 102.3 reading the HeldBy Controller arm
   -- above argues for. Vacuously False for an object candidate,
   -- which has no playerIdentity, and for a match with no perspective.
@@ -3244,7 +3247,7 @@ bakeCost slot object =
         }
 
 -- CR 603.2: replace every HeldByBound atom whose slot this environment names
--- with its baked HeldByPlayer, every IsBound atom whose slot
+-- with its baked HeldByPlayer (an OfBoundPlayer with its OfSpecificPlayer), every IsBound atom whose slot
 -- `objects` names with the objects it holds, and every ControllerRelatesToBound
 -- atom whose slot `controllers` names with the players its relation admits. What makes "target
 -- creature THAT PLAYER controls" answerable at all -- the player is a fact about the EVENT that
@@ -3275,6 +3278,7 @@ bakeCost slot object =
 bakeBound :: Map.Map SlotName.SlotName PlayerId.PlayerId -> Map.Map SlotName.SlotName (Set.Set ObjectId.ObjectId) -> Map.Map SlotName.SlotName (PlayerRelation.PlayerRelation -> Set.Set PlayerId.PlayerId) -> Filter.Filter Keyword.Type.Keyword -> Filter.Filter Keyword.Type.Keyword
 bakeBound players objects controllers predicate = case predicate of
   Filter.HeldByBound holder slot -> maybe predicate (Filter.HeldByPlayer holder) (Map.lookup slot players)
+  Filter.OfBoundPlayer slot -> maybe predicate Filter.OfSpecificPlayer (Map.lookup slot players)
   -- The objects the slot holds, named outright, so a class stored past the
   -- resolution still knows them: Oracle en-Vec's "other creatures can't
   -- attack". Left standing where the map does not bind the slot.
@@ -3409,6 +3413,7 @@ manaValueThresholds predicate = case predicate of
   Filter.OfChosenPlayer -> []
   Filter.OfRelatedPlayer _ -> []
   Filter.OfSpecificPlayer _ -> []
+  Filter.OfBoundPlayer _ -> []
   Filter.IsPlayer _ -> []
   Filter.IsControllerOfBound _ -> []
   -- No threshold: the literal bounds a COUNT OF CARDS in a zone, not a mana
@@ -3604,6 +3609,7 @@ statesAQuality predicate = case predicate of
   Filter.OfChosenPlayer -> True
   Filter.OfRelatedPlayer _ -> True
   Filter.OfSpecificPlayer _ -> True
+  Filter.OfBoundPlayer _ -> True
   Filter.IsPlayer _ -> True
   Filter.IsControllerOfBound _ -> True
   Filter.CardsInZoneAtLeast _ _ -> True
@@ -3799,6 +3805,7 @@ readsSourceValues predicate = case predicate of
   Filter.OfChosenPlayer -> False
   Filter.OfRelatedPlayer _ -> False
   Filter.OfSpecificPlayer _ -> False
+  Filter.OfBoundPlayer _ -> False
   Filter.IsPlayer _ -> False
   Filter.IsControllerOfBound _ -> False
   Filter.CardsInZoneAtLeast _ _ -> False
@@ -3936,6 +3943,7 @@ talliesWhatHappened predicate = case predicate of
   Filter.OfChosenPlayer {} -> False
   Filter.OfRelatedPlayer {} -> False
   Filter.OfSpecificPlayer {} -> False
+  Filter.OfBoundPlayer {} -> False
   Filter.IsPlayer {} -> False
   Filter.IsControllerOfBound {} -> False
   Filter.CardsInZoneAtLeast {} -> False

@@ -3301,9 +3301,10 @@ filterPositionLintSpec s registry corpus = Spec.describe s "Lint" $ do
             }
     Spec.assertEqWith s "a planted atom is seen" (atoms planted) 1
   -- CR 702.16i's baked half, HeldByPlayer's position: a PlayerId only a
-  -- resolution can know, written by Parun.Engine.Keyword.withRelatedPlayers
-  -- into a granted protection's quality. The UNBAKED OfRelatedPlayer beside it
-  -- is card data -- Figure of Fable writes it -- and is not swept.
+  -- resolution can know, written by Parun.Engine.Keyword.withQualityPlayers
+  -- into a granted protection's quality. The UNBAKED OfRelatedPlayer and
+  -- OfBoundPlayer beside it are card data -- Figure of Fable and Eon Frolicker
+  -- write them -- and are not swept.
   Spec.it s "CR 702.16i no card writes OfSpecificPlayer" $ do
     ps <- S.allPrintings s corpus
     let atoms c = jsonAtoms (Text.pack "OfSpecificPlayer") (Codec.encode (Face.Codec.codec Card.codec) c)

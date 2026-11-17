@@ -377,6 +377,12 @@ spec s = Spec.describe s "Parun.Codec.Filter" $ do
       codec
       (Filter.OfSpecificPlayer (PlayerId.MkPlayerId 1))
       " {\"type\":\"OfSpecificPlayer\",\"value\":1} "
+  Spec.it s "OfBoundPlayer" $
+    Common.assertCodec
+      s
+      codec
+      (Filter.OfBoundPlayer (SlotName.MkSlotName (Text.pack "target")))
+      " {\"type\":\"OfBoundPlayer\",\"value\":\"target\"} "
   Spec.it s "IsAttacking" $
     Common.assertCodec
       s

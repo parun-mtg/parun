@@ -2034,12 +2034,16 @@ freezeQuantities viewOf gs announcedOn source context m =
         --
         -- CR 702.16i / 109.5: "each of your opponents" is locked in likewise,
         -- as the players relating thus to the resolving ability's controller,
-        -- the context's perspective (Figure of Fable).
+        -- the context's perspective (Figure of Fable). CR 702.16k: "that
+        -- player" is locked in as the one player its slot names (Eon Frolicker).
         Modification.GainKeyword k ->
           let related relation = [q | you <- Foldable.toList (Filter.perspective context), q <- Game.stillPlaying gs, PlayerRelation.holds (Filter.teams context) relation you q]
+              bound slot = case fmap Set.toList (Map.lookup slot (Filter.slotPlayers context)) of
+                Just [pid] -> Just pid
+                _ -> Nothing
               acquisition = Game.readingAcquisition announcedOn source gs source
               chosen = Maybe.fromMaybe Set.empty (Game.choiceWithLastKnown Chosen.Colors acquisition source gs)
-           in Just (Modification.GainKeyword (Keyword.withRelatedPlayers related (Keyword.withChoices chosen (Game.choiceWithLastKnown Chosen.Subtype acquisition source gs) k)))
+           in Just (Modification.GainKeyword (Keyword.withQualityPlayers related bound (Keyword.withChoices chosen (Game.choiceWithLastKnown Chosen.Subtype acquisition source gs) k)))
         -- Its cost is derived at projection time, not evaluated from a Quantity,
         -- so there is nothing here to freeze.
         Modification.GainKeywordAtManaCost _ -> Just m
@@ -4520,6 +4524,7 @@ filterReads f = case f of
   Filter.Type.OfChosenPlayer -> Set.singleton Controller
   Filter.Type.OfRelatedPlayer _ -> Set.singleton Controller
   Filter.Type.OfSpecificPlayer _ -> Set.singleton Controller
+  Filter.Type.OfBoundPlayer _ -> Set.singleton Controller
   Filter.Type.IsPlayer _ -> Set.empty
   -- Reads a CONTROLLER rather than a characteristic (CR 109.3 lists none).
   Filter.Type.IsControllerOfBound _ -> Set.empty
@@ -4901,6 +4906,7 @@ filterReadsPeers f = case f of
   Filter.Type.OfChosenPlayer -> False
   Filter.Type.OfRelatedPlayer _ -> False
   Filter.Type.OfSpecificPlayer _ -> False
+  Filter.Type.OfBoundPlayer _ -> False
   Filter.Type.IsPlayer _ -> False
   Filter.Type.IsControllerOfBound _ -> False
   Filter.Type.CardsInZoneAtLeast _ _ -> False
