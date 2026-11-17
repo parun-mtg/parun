@@ -1223,7 +1223,7 @@ effectChildren c effect = case effect of
   Effect.BindAmount (BindAmount.MkBindAmount quantity named) -> fmap Effect.BindAmount (BindAmount.MkBindAmount <$> onQuantity c quantity <*> onSlot c named)
   Effect.BindPlayers (BindPlayers.MkBindPlayers who named) -> fmap Effect.BindPlayers (BindPlayers.MkBindPlayers <$> onPlayer c who <*> onSlot c named)
   Effect.BindLeaders (BindLeaders.MkBindLeaders among measure named) -> fmap Effect.BindLeaders (BindLeaders.MkBindLeaders <$> onSlot c among <*> pure measure <*> onSlot c named)
-  Effect.Tap (Tap.MkTap ref tapped) -> fmap Effect.Tap (Tap.MkTap <$> onObjectRef c ref <*> traverse (onSlot c) tapped)
+  Effect.Tap (Tap.MkTap ref tapped tapper) -> fmap Effect.Tap (Tap.MkTap <$> onObjectRef c ref <*> traverse (onSlot c) tapped <*> onPlayer c tapper)
   Effect.Untap ref -> fmap Effect.Untap (onObjectRef c ref)
   Effect.Detain ref -> fmap Effect.Detain (onObjectRef c ref)
   Effect.Goad ref -> fmap Effect.Goad (onObjectRef c ref)

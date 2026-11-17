@@ -1,0 +1,33 @@
+{
+  "description": "CR 608.2c Curse of Inertia: the attacking player taps, not the Curse's controller",
+  "note": "Alice's Curse enchants bob and carol attacks him, tapping bob's Grizzly Bears through the Curse. Carol tapped it, not alice, so alice's Icewrought Sentry, which grows whenever she taps an untapped creature an opponent controls, stays a 2/3.",
+  "board": {
+    "active": "carol",
+    "step": "BeginningOfCombat",
+    "seats": [
+      {
+        "name": "alice",
+        "battlefield": [
+          { "card": "Curse of Inertia", "label": "curse", "attached": "bob" },
+          { "card": "Icewrought Sentry", "label": "sentry" }
+        ]
+      },
+      {
+        "name": "bob",
+        "battlefield": [{ "card": "Grizzly Bears", "label": "bears" }]
+      },
+      {
+        "name": "carol",
+        "battlefield": [{ "card": "Goblin Piker", "label": "attacker", "ready": true }]
+      }
+    ]
+  },
+  "timeline": [
+    { "turn": 1, "step": "DeclareAttackers", "player": "carol", "do": { "Attack": ["$attacker"] } },
+    { "turn": 1, "step": "DeclareAttackers", "player": "carol", "source": "$attacker", "do": { "ChooseAttackTarget": "$bob" } },
+    { "turn": 1, "step": "DeclareAttackers", "player": "carol", "source": "$curse", "do": { "ChooseTargets": { "target": ["$bears"] } } },
+    { "turn": 1, "step": "DeclareAttackers", "player": "carol", "source": "$curse", "do": { "ChooseOptional": "Exercises" } },
+    { "turn": 1, "step": "DeclareAttackers", "player": "carol", "check": { "Tapped": { "object": "$bears", "tapped": true } } },
+    { "turn": 1, "step": "DeclareBlockers", "player": "bob", "check": { "PowerToughness": { "object": "$sentry", "power": 2, "toughness": 3 } } }
+  ]
+}

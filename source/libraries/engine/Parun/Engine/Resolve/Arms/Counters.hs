@@ -1716,17 +1716,25 @@ bindLeaders resolving source controller legal (BindLeaders.MkBindLeaders among m
 -- that was untapped before and is tapped after, so one already tapped is not
 -- "tapped this way". That exclusion is a regression fence, not a proved
 -- behaviour: Master of the Wild Hunt's sweep names only untapped Wolves.
+--
+-- Each tap is credited to the player the instruction addresses (CR 608.2c),
+-- Tap.tapper, read as a decider: Power Sink's "they tap" is the countered
+-- spell's controller, whom Hylda of the Icy Crown's "whenever you tap" does not
+-- see as its controller.
 tap :: ObjectId -> ObjectId -> PlayerId -> Map.Map SlotName (Set Recipient) -> Tap.Tap -> Game ()
-tap resolving source controller legal (Tap.MkTap ref mTapped) = do
+tap resolving source controller legal (Tap.MkTap ref mTapped tapperRef) = do
   gs <- State.get
-  let victims = ListUtils.nubOrd (objectRefObjects legal resolving controller source gs ref)
-      tappedIn g oid = fmap Object.tapped (Game.lookupObject oid g) == Just TapState.Tapped
-  -- One event group, CR 608.2f.
-  Event.simultaneously (Monad.forM_ victims (Event.tap controller))
-  after <- State.get
-  Monad.forM_ mTapped $ \slot -> do
-    let turned = filter (\oid -> not (tappedIn gs oid) && tappedIn after oid) victims
-    Monad.unless (null turned) (State.modify' (Common.bindObjectsSlot resolving slot (Seq.fromList turned)))
+  case Common.decidersOf legal resolving source controller gs tapperRef of
+    [tapper] -> do
+      let victims = ListUtils.nubOrd (objectRefObjects legal resolving controller source gs ref)
+          tappedIn g oid = fmap Object.tapped (Game.lookupObject oid g) == Just TapState.Tapped
+      -- One event group, CR 608.2f.
+      Event.simultaneously (Monad.forM_ victims (Event.tap tapper))
+      after <- State.get
+      Monad.forM_ mTapped $ \slot -> do
+        let turned = filter (\oid -> not (tappedIn gs oid) && tappedIn after oid) victims
+        Monad.unless (null turned) (State.modify' (Common.bindObjectsSlot resolving slot (Seq.fromList turned)))
+    _ -> pure ()
 
 -- CR 701.26b: rotate each named permanent back upright. The victims are
 -- enumerated ONCE (CR 608.2f) and off the board as it stands before any of them
