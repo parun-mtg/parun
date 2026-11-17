@@ -610,9 +610,9 @@ armingTargetSlots card =
 -- dies trigger's own event named -- which no target slot and no Create can
 -- supply.
 --
--- Triggered abilities only: a spell and an activation are not events, so
--- Parun.Engine.Event.Binding.eventBindings never runs for either and neither can
--- put an event slot in the environment it captures.
+-- Triggered abilities only, delayed ones included: a spell and an activation
+-- are not events, so Parun.Engine.Event.Binding.eventBindings never runs for
+-- either and neither can put an event slot in the environment it captures.
 --
 -- LOOSE about WHICH carrier armed, armingTargetSlots' own caveat and for its
 -- reason: nothing here tracks that, so a delayed ability reading a slot bound by
@@ -629,7 +629,16 @@ armingEventSlots card =
         <> fmap
           (\ability -> Set.union (Event.eventBindingSlots (TriggeredAbility.condition ability)) (Event.eventBindingSlotsSometimes (TriggeredAbility.condition ability)))
           (grantedTriggeredAbilities card)
+        -- And a DELAYED ability's that itself arms one: Event.delayedPending
+        -- stamps its event slots over the environment it captured, and its arm
+        -- captures them again (CR 603.7c) -- Dr. Leonard "Bones" McCoy's "when it
+        -- dies this turn" names `became` for its end-step return.
+        <> fmap
+          (\ability -> Set.union (Event.eventBindingSlots (TriggeredAbility.condition ability)) (Event.eventBindingSlotsSometimes (TriggeredAbility.condition ability)))
+          (filter armsAnother (delayedDeclarations card))
     )
+  where
+    armsAnother ability = not (null [() | Effect.ArmDelayedTrigger _ <- concatMap effectWithNested (Modal.allEffects (TriggeredAbility.modal ability))])
 
 -- The third half: the reserved slot an ACTIVATED arming ability's own cost
 -- bound as it was paid (CR 400.7j), which Parun.Engine.Activate folds onto the
@@ -866,7 +875,8 @@ abilitySlotLintSpec s registry corpus = Spec.describe s "Lint" $ do
   -- is CR 603.7c's captured environment -- Ray of Command's third sentence), an
   -- event slot a TRIGGERED arming ability's condition stamped into that same
   -- environment (armingEventSlots -- Ivory Gargoyle's delayed return reading CR
-  -- 400.7e's `became`), a slot an ACTIVATED arming ability's own cost bound
+  -- 400.7e's `became`, or a delayed one's -- Dr. Leonard "Bones" McCoy's), a
+  -- slot an ACTIVATED arming ability's own cost bound
   -- (armingCostSlots -- Calim, Djinn Emperor's discarded card), a slot an
   -- arming ability's resolution-time cost bound (armingPayGateSlots -- Bolg of
   -- the North's sacrificed creature), the permanent a spell that armed as it
@@ -927,6 +937,19 @@ abilitySlotLintSpec s registry corpus = Spec.describe s "Lint" $ do
     -- below takes.
     Spec.assertBool s (conditionOffends (Set.singleton armingSlot) (watching strangerSlot)) "a condition naming a slot the card never binds is caught"
     Spec.assertBool s (not (conditionOffends (Set.singleton armingSlot) (watching armingSlot))) "a condition naming the arming spell's target slot is left alone"
+    -- armingEventSlots' delayed half, put to a pair differing in whether the
+    -- delayed ability that dies-triggers arms the one reading its `became`.
+    let returning = AbilityName.MkAbilityName (Text.pack "return")
+        nesting arms =
+          (vanillaFace "Nester" instantLine)
+            { Face.delayedAbilities =
+                Map.fromList
+                  [ (AbilityName.MkAbilityName (Text.pack "dies"), modalTrigger (TriggerCondition.Leaves (LeavesTrigger.dies LeavingPermanent.Self)) [lintMode [Effect.ArmDelayedTrigger (ArmDelayedTrigger.MkArmDelayedTrigger returning Onset.Immediately Nothing Nothing) | arms] []]),
+                    (returning, modalTrigger (TriggerCondition.LosesControl (LostPermanent.Bound Binding.triggerSource)) [lintMode [Effect.Tap (Tap.plain (ObjectRef.InSlot Binding.became))] []])
+                  ]
+            }
+    Spec.assertBool s (not (cardOffends (nesting True))) "a delayed ability reading the event slot of the delayed ability arming it is accepted"
+    Spec.assertBool s (cardOffends (nesting False)) "and one reading the event slot of a delayed ability arming nothing is caught"
     Spec.assertEqWith s "no dangling delayed-ability slot" (fmap (S.nameOf . Printing.card) offenders) []
   -- A delayed ability may not DECLARE a target slot under a name its own card
   -- already DEFINES, because the two would land in one slot and the reader would
