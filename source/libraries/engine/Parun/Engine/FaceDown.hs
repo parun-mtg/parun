@@ -177,7 +177,7 @@ costsOf procedure oid gs = case procedure of
 -- and NOT Cost.total's CR 601.2f adjustments: that rule totals the cost of a
 -- spell being cast or an ability being activated, and a special action is
 -- neither -- the same reading Parun.Engine.Activate takes of an activation cost
--- (#90).
+-- (see #90).
 --
 -- The TIMING clause has no conjunct here because the engine is the timing: CR
 -- 702.37e's and CR 701.40b's shared "any time you have priority" is satisfied by

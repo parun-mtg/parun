@@ -1,0 +1,20 @@
+{
+  "description": "CR 603.4, 608.2h: Consul's Lieutenant killed in response to its renowned attack trigger still gives the pump, its intervening \"if\" reading its last-known renown",
+  "note": "On turn 1 the Lieutenant's first-strike damage makes it renowned. On turn 3 bob bolts it with the trigger on the stack; the trigger still resolves and the Bears attack as a 3/3.",
+  "board": {"active": "alice", "step": "PrecombatMain", "seats": [
+    {"name": "alice", "battlefield": [{"card": "Consul's Lieutenant", "label": "lieutenant", "ready": true}, {"card": "Grizzly Bears", "label": "bears", "ready": true}], "library": [{"card": "Island"}, {"card": "Island"}, {"card": "Island"}]},
+    {"name": "bob", "battlefield": [{"card": "Mountain", "label": "mountain"}], "hand": [{"card": "Lightning Bolt", "label": "bolt"}], "library": [{"card": "Island"}, {"card": "Island"}, {"card": "Island"}]}]},
+  "timeline": [
+    {"turn": 1, "step": "DeclareAttackers", "player": "alice", "do": {"Attack": ["$lieutenant", "$bears"]}},
+    {"turn": 1, "step": "EndOfCombat", "player": "alice", "check": {"Life": {"player": "bob", "life": 16}}},
+    {"turn": 3, "step": "DeclareAttackers", "player": "alice", "do": {"Attack": ["$lieutenant", "$bears"]}},
+    {"turn": 3, "step": "DeclareAttackers", "player": "alice", "do": "Pass"},
+    {"turn": 3, "step": "DeclareAttackers", "player": "bob", "do": {"Cast": {"object": "$bolt", "targets": ["$lieutenant"], "mana": ["$mountain"]}}},
+    {"turn": 3, "step": "DeclareAttackers", "player": "bob", "do": "Pass"},
+    {"turn": 3, "step": "DeclareAttackers", "player": "alice", "do": "Pass"},
+    {"turn": 3, "step": "DeclareAttackers", "player": "alice", "check": {"Count": {"player": "alice", "zone": "Graveyard", "card": "Consul's Lieutenant", "count": 1}}},
+    {"turn": 3, "step": "DeclareAttackers", "player": "alice", "do": "Pass"},
+    {"turn": 3, "step": "DeclareAttackers", "player": "alice", "check": {"PowerToughness": {"object": "$bears", "power": 3, "toughness": 3}}},
+    {"turn": 3, "step": "EndOfCombat", "player": "alice", "check": {"Life": {"player": "bob", "life": 13}}}
+  ]
+}

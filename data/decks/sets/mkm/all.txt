@@ -1,0 +1,279 @@
+1 A Killer Among Us
+1 Absolving Lammasu
+1 Aftermath Analyst
+1 Agency Coroner
+1 Agency Outfitter
+1 Agrus Kos, Spirit of Justice
+1 Airtight Alibi
+1 Alley Assailant
+1 Alquist Proft, Master Sleuth
+1 Analyze the Pollen
+1 Anzrag's Rampage
+1 Anzrag, the Quake-Mole
+1 Archdruid's Charm
+1 Assassin's Trophy
+1 Assemble the Players
+1 Audience with Trostani
+1 Aurelia's Vindicator
+1 Aurelia, the Law Above
+1 Auspicious Arrival
+1 Axebane Ferox
+1 Barbed Servitor
+1 Basilica Stalker
+1 Behind the Mask
+1 Benthic Criminologists
+1 Bite Down on Crime
+1 Blood Spatter Analysis
+1 Bolrac-Clan Basher
+1 Branch of Vitu-Ghazi
+1 Break Out
+1 Bubble Smuggler
+1 Burden of Proof
+1 Buried in the Garden
+1 Call a Surprise Witness
+1 Candlestick
+1 Case File Auditor
+1 Case of the Burning Masks
+1 Case of the Crimson Pulse
+1 Case of the Filched Falcon
+1 Case of the Gateway Express
+1 Case of the Gorgon's Kiss
+1 Case of the Locked Hothouse
+1 Case of the Pilfered Proof
+1 Case of the Ransacked Lab
+1 Case of the Shattered Pact
+1 Case of the Stashed Skeleton
+1 Case of the Trampled Garden
+1 Case of the Uneaten Feast
+1 Caught Red-Handed
+1 Cease // Desist
+1 Cerebral Confiscation
+1 Chalk Outline
+1 Clandestine Meddler
+1 Coerced to Kill
+1 Cold Case Cracker
+1 Commercial District
+1 Concealed Weapon
+1 Connecting the Dots
+1 Conspiracy Unraveler
+1 Convenient Target
+1 Cornered Crook
+1 Coveted Falcon
+1 Crime Novelist
+1 Crimestopper Sprite
+1 Crowd-Control Warden
+1 Cryptex
+1 Cryptic Coat
+1 Culvert Ambusher
+1 Curious Cadaver
+1 Curious Inquiry
+1 Deadly Complication
+1 Deadly Cover-Up
+1 Deduce
+1 Defenestrated Phantom
+1 Delney, Streetwise Lookout
+1 Demand Answers
+1 Detective's Satchel
+1 Dog Walker
+1 Doorkeeper Thrull
+1 Doppelgang
+1 Drag the Canal
+1 Dramatic Accusation
+1 Due Diligence
+1 Elegant Parlor
+1 Eliminate the Impossible
+1 Escape Tunnel
+1 Essence of Antiquity
+1 Etrata, Deadly Fugitive
+1 Evidence Examiner
+1 Exit Specialist
+1 Expedited Inheritance
+1 Expose the Culprit
+1 Extract a Confession
+1 Ezrim, Agency Chief
+1 Fae Flight
+1 Faerie Snoop
+1 Fanatical Strength
+1 Felonious Rage
+1 Festerleech
+1 Flotsam // Jetsam
+1 Flourishing Bloom-Kin
+1 Forensic Gadgeteer
+1 Forensic Researcher
+1 Forest
+1 Forum Familiar
+1 Frantic Scapegoat
+1 Fugitive Codebreaker
+1 Furtive Courier
+1 Fuss // Bother
+1 Gadget Technician
+1 Galvanize
+1 Gearbane Orangutan
+1 Get a Leg Up
+1 Gleaming Geardrake
+1 Glint Weaver
+1 Goblin Maskmaker
+1 Granite Witness
+1 Gravestone Strider
+1 Greenbelt Radical
+1 Griffnaut Tracker
+1 Haazda Vigilante
+1 Hard-Hitting Question
+1 Harried Dronesmith
+1 Hedge Maze
+1 Hedge Whisperer
+1 Hide in Plain Sight
+1 Homicide Investigator
+1 Hotshot Investigators
+1 Hunted Bonebrute
+1 Hustle // Bustle
+1 Ill-Timed Explosion
+1 Illicit Masquerade
+1 Incinerator of the Guilty
+1 Innocent Bystander
+1 Inside Source
+1 Insidious Roots
+1 Intrude on the Mind
+1 Island
+1 It Doesn't Add Up
+1 Izoni, Center of the Web
+1 Jaded Analyst
+1 Judith, Carnage Connoisseur
+1 Karlov Watchdog
+1 Kaya, Spirits' Justice
+1 Kellan, Inquisitive Prodigy // Tail the Suspect
+1 Knife
+1 Kraul Whipcracker
+1 Krenko's Buzzcrusher
+1 Krenko, Baron of Tin Street
+1 Krovod Haunch
+1 Kylox's Voltstrider
+1 Kylox, Visionary Inventor
+1 Lamplight Phoenix
+1 Lazav, Wearer of Faces
+1 Lead Pipe
+1 Leering Onlooker
+1 Leyline of the Guildpact
+1 Lightning Helix
+1 Living Conundrum
+1 Long Goodbye
+1 Lost in the Maze
+1 Loxodon Eavesdropper
+1 Lumbering Laundry
+1 Lush Portico
+1 Macabre Reconstruction
+1 Magnetic Snuffler
+1 Magnifying Glass
+1 Make Your Move
+1 Makeshift Binding
+1 Marketwatch Phantom
+1 Massacre Girl, Known Killer
+1 Meddling Youths
+1 Melek, Reforged Researcher
+1 Meticulous Archive
+1 Mistway Spy
+1 Mountain
+1 Murder
+1 Museum Nightwatch
+1 Neighborhood Guardian
+1 Nervous Gardener
+1 Nightdrinker Moroii
+1 Niv-Mizzet, Guildpact
+1 No More Lies
+1 No Witnesses
+1 Not on My Watch
+1 Novice Inspector
+1 Offender at Large
+1 Officious Interrogation
+1 On the Job
+1 Out Cold
+1 Outrageous Robbery
+1 Perimeter Enforcer
+1 Person of Interest
+1 Persuasive Interrogators
+1 Pick Your Poison
+1 Plains
+1 Polygraph Orb
+1 Pompous Gadabout
+1 Presumed Dead
+1 Private Eye
+1 Proft's Eidetic Memory
+1 Projektor Inspector
+1 Public Thoroughfare
+1 Push // Pull
+1 Pyrotechnic Performer
+1 Rakdos, Patron of Chaos
+1 Rakish Scoundrel
+1 Raucous Theater
+1 Reasonable Doubt
+1 Reckless Detective
+1 Red Herring
+1 Reenact the Crime
+1 Relive the Past
+1 Repeat Offender
+1 Repulsive Mutation
+1 Riftburst Hellion
+1 Rope
+1 Rot Farm Mortipede
+1 Rubblebelt Braggart
+1 Rubblebelt Maverick
+1 Rune-Brand Juggler
+1 Sample Collector
+1 Sanctuary Wall
+1 Sanguine Savior
+1 Sanitation Automaton
+1 Scene of the Crime
+1 Seasoned Consultant
+1 Shadowy Backstreet
+1 Shady Informant
+1 Sharp-Eyed Rookie
+1 Shock
+1 Slice from the Shadows
+1 Slime Against Humanity
+1 Slimy Dualleech
+1 Snarling Gorehound
+1 Soul Enervation
+1 Soul Search
+1 Steamcore Scholar
+1 Sudden Setback
+1 Sumala Sentry
+1 Surveillance Monitor
+1 Suspicious Detonation
+1 Swamp
+1 Tenth District Hero
+1 Teysa, Opulent Oligarch
+1 The Chase Is On
+1 The Pride of Hull Clade
+1 They Went This Way
+1 Thinking Cap
+1 Thundering Falls
+1 Tin Street Gossip
+1 Tolsimir, Midnight's Light
+1 Tomik, Wielder of Law
+1 Topiary Panther
+1 Torch the Witness
+1 Toxin Analysis
+1 Treacherous Greed
+1 Trostani, Three Whispers
+1 Tunnel Tipster
+1 Unauthorized Exit
+1 Undercity Eliminator
+1 Undercity Sewers
+1 Undercover Crocodelf
+1 Underground Mortuary
+1 Undergrowth Recon
+1 Unscrupulous Agent
+1 Unyielding Gatekeeper
+1 Urgent Necropsy
+1 Vannifar, Evolved Enigma
+1 Vein Ripper
+1 Vengeful Creeper
+1 Vengeful Tracker
+1 Vitu-Ghazi Inspector
+1 Voja, Jaws of the Conclave
+1 Warleader's Call
+1 Wispdrinker Vampire
+1 Wojek Investigator
+1 Worldsoul's Rage
+1 Wrench
+1 Yarus, Roar of the Old Gods
