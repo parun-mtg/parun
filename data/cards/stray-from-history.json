@@ -27,7 +27,7 @@
                     "value": {
                       "ref": {
                         "type": "InSlot",
-                        "value": "target"
+                        "value": "returned"
                       },
                       "zone": "Hand"
                     }
@@ -36,7 +36,7 @@
               }
             ],
             "targetSlots": {
-              "target": {
+              "returned": {
                 "count": {
                   "type": "Printed",
                   "value": {
@@ -81,7 +81,7 @@
                         "value": {
                           "hands": {
                             "type": "InSlot",
-                            "value": "target"
+                            "value": "opponent"
                           }
                         }
                       },
@@ -115,7 +115,7 @@
               }
             ],
             "targetSlots": {
-              "target": {
+              "opponent": {
                 "filter": {
                   "type": "IsPlayer",
                   "value": "Opponent"

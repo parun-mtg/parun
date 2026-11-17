@@ -1,0 +1,328 @@
+{
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "battlefield": [
+          {
+            "card": "Seven of Nine, Unassimilated",
+            "label": "sevena",
+            "ready": true
+          },
+          {
+            "card": "Island",
+            "label": "a0",
+            "ready": true
+          },
+          {
+            "card": "Island",
+            "label": "a1",
+            "ready": true
+          },
+          {
+            "card": "Island",
+            "label": "a2",
+            "ready": true
+          },
+          {
+            "card": "Island",
+            "label": "a3",
+            "ready": true
+          },
+          {
+            "card": "Forest",
+            "label": "a4",
+            "ready": true
+          },
+          {
+            "card": "Mountain",
+            "label": "a5",
+            "ready": true
+          },
+          {
+            "card": "Plains",
+            "label": "a6",
+            "ready": true
+          }
+        ],
+        "hand": [
+          {
+            "card": "Grizzly Bears",
+            "label": "ah"
+          }
+        ],
+        "library": [
+          {
+            "card": "Island",
+            "label": "al0"
+          },
+          {
+            "card": "Island",
+            "label": "al1"
+          },
+          {
+            "card": "Island",
+            "label": "al2"
+          },
+          {
+            "card": "Island",
+            "label": "al3"
+          },
+          {
+            "card": "Island",
+            "label": "al4"
+          },
+          {
+            "card": "Island",
+            "label": "al5"
+          }
+        ],
+        "name": "alice"
+      },
+      {
+        "battlefield": [
+          {
+            "card": "Seven of Nine, Unassimilated",
+            "label": "sevenb",
+            "ready": true
+          },
+          {
+            "card": "Island",
+            "label": "b0",
+            "ready": true
+          },
+          {
+            "card": "Forest",
+            "label": "b1",
+            "ready": true
+          },
+          {
+            "card": "Mountain",
+            "label": "b2",
+            "ready": true
+          },
+          {
+            "card": "Plains",
+            "label": "b3",
+            "ready": true
+          },
+          {
+            "card": "Swamp",
+            "label": "b4",
+            "ready": true
+          },
+          {
+            "card": "Wastes",
+            "label": "b5",
+            "ready": true
+          },
+          {
+            "card": "Strip Mine",
+            "label": "b6",
+            "ready": true
+          }
+        ],
+        "hand": [
+          {
+            "card": "Hill Giant",
+            "label": "bh"
+          }
+        ],
+        "library": [
+          {
+            "card": "Island",
+            "label": "bl0"
+          },
+          {
+            "card": "Island",
+            "label": "bl1"
+          },
+          {
+            "card": "Island",
+            "label": "bl2"
+          },
+          {
+            "card": "Island",
+            "label": "bl3"
+          },
+          {
+            "card": "Island",
+            "label": "bl4"
+          },
+          {
+            "card": "Island",
+            "label": "bl5"
+          }
+        ],
+        "name": "bob"
+      }
+    ],
+    "step": "Upkeep"
+  },
+  "description": "CR 505.1 / 603.2b / 602.5 / 611.2a / 613.4b: Seven of Nine, Unassimilated draws at the beginning of its controller's first main phase, discarding unless they control five or more differently named lands, and becomes 7/9 for the rest of the game only with seven differently named lands",
+  "note": "Alice controls seven lands but only four names, so a count of lands rather than names would spare her discard and allow her activation; bob controls seven names.",
+  "timeline": [
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Answer": {
+          "prompt": "ChooseDiscard",
+          "with": [
+            "$ah"
+          ]
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Grizzly Bears",
+          "count": 1,
+          "player": "alice",
+          "zone": "Graveyard"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "player": "alice",
+      "refuse": {
+        "Activate": {
+          "ability": 0,
+          "mana": [
+            "$a0",
+            "$a1",
+            "$a2",
+            "$a3",
+            "$a4",
+            "$a5",
+            "$a6"
+          ],
+          "object": "$sevena"
+        }
+      },
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Attack": []
+      },
+      "player": "alice",
+      "step": "DeclareAttackers",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Attack": []
+      },
+      "player": "bob",
+      "step": "DeclareAttackers",
+      "turn": 2
+    },
+    {
+      "do": "Pass",
+      "player": "bob",
+      "step": "PrecombatMain",
+      "turn": 2
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Hill Giant",
+          "count": 1,
+          "player": "bob",
+          "zone": "Hand"
+        }
+      },
+      "player": "bob",
+      "step": "PrecombatMain",
+      "turn": 2
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Island",
+          "count": 0,
+          "player": "bob",
+          "zone": "Graveyard"
+        }
+      },
+      "player": "bob",
+      "step": "PrecombatMain",
+      "turn": 2
+    },
+    {
+      "check": {
+        "PowerToughness": {
+          "object": "$sevenb",
+          "power": 0,
+          "toughness": 4
+        }
+      },
+      "player": "bob",
+      "step": "PrecombatMain",
+      "turn": 2
+    },
+    {
+      "do": {
+        "Activate": {
+          "ability": 0,
+          "mana": [
+            "$b0",
+            "$b1",
+            "$b2",
+            "$b3",
+            "$b4",
+            "$b5",
+            "$b6"
+          ],
+          "object": "$sevenb"
+        }
+      },
+      "player": "bob",
+      "step": "PrecombatMain",
+      "turn": 2
+    },
+    {
+      "do": "Pass",
+      "player": "bob",
+      "step": "PrecombatMain",
+      "turn": 2
+    },
+    {
+      "check": {
+        "PowerToughness": {
+          "object": "$sevenb",
+          "power": 7,
+          "toughness": 9
+        }
+      },
+      "player": "bob",
+      "step": "PrecombatMain",
+      "turn": 2
+    },
+    {
+      "check": {
+        "PowerToughness": {
+          "object": "$sevenb",
+          "power": 7,
+          "toughness": 9
+        }
+      },
+      "player": "alice",
+      "step": "Upkeep",
+      "turn": 3
+    }
+  ]
+}

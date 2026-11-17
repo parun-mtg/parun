@@ -11,7 +11,7 @@
         }
       ],
       "name": "Set Phasers to . . .",
-      "oracleText": "Choose one \u2014\n\u2022 Stun \u2014 Tap target creature and put a stun counter on it. (If a permanent with a stun counter would become untapped, remove one from it instead.)\n\u2022 Kill \u2014 This spell deals 3 damage to target attacking creature.",
+      "oracleText": "Choose one —\n• Stun — Tap target creature and put a stun counter on it. (If a permanent with a stun counter would become untapped, remove one from it instead.)\n• Kill — This spell deals 3 damage to target attacking creature.",
       "spell": {
         "modes": [
           {
@@ -23,7 +23,7 @@
                     "value": {
                       "ref": {
                         "type": "InSlot",
-                        "value": "target"
+                        "value": "stunned"
                       }
                     }
                   },
@@ -39,7 +39,7 @@
                       },
                       "ref": {
                         "type": "InSlot",
-                        "value": "target"
+                        "value": "stunned"
                       }
                     }
                   }
@@ -47,7 +47,7 @@
               }
             ],
             "targetSlots": {
-              "target": {
+              "stunned": {
                 "pool": {
                   "type": "Creatures"
                 }
@@ -69,7 +69,7 @@
                           },
                           "ref": {
                             "type": "InSlot",
-                            "value": "target"
+                            "value": "shot"
                           }
                         }
                       ]
@@ -79,7 +79,7 @@
               }
             ],
             "targetSlots": {
-              "target": {
+              "shot": {
                 "filter": {
                   "type": "IsAttacking"
                 },

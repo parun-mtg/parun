@@ -1,0 +1,379 @@
+{
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "battlefield": [
+          {
+            "card": "Rod of Ruin",
+            "label": "arod",
+            "ready": true
+          },
+          {
+            "card": "Forest",
+            "label": "a0",
+            "ready": true
+          },
+          {
+            "card": "Forest",
+            "label": "a1",
+            "ready": true
+          },
+          {
+            "card": "Forest",
+            "label": "a2",
+            "ready": true
+          },
+          {
+            "card": "Forest",
+            "label": "a3",
+            "ready": true
+          },
+          {
+            "card": "Forest",
+            "label": "a4",
+            "ready": true
+          },
+          {
+            "card": "Forest",
+            "label": "a5",
+            "ready": true
+          },
+          {
+            "card": "Forest",
+            "label": "a6",
+            "ready": true
+          },
+          {
+            "card": "Island",
+            "label": "a7",
+            "ready": true
+          },
+          {
+            "card": "Mountain",
+            "label": "a8",
+            "ready": true
+          }
+        ],
+        "hand": [
+          {
+            "card": "Species 8472",
+            "label": "species"
+          }
+        ],
+        "library": [
+          {
+            "card": "Island",
+            "label": "al0"
+          },
+          {
+            "card": "Island",
+            "label": "al1"
+          },
+          {
+            "card": "Island",
+            "label": "al2"
+          },
+          {
+            "card": "Island",
+            "label": "al3"
+          },
+          {
+            "card": "Island",
+            "label": "al4"
+          },
+          {
+            "card": "Island",
+            "label": "al5"
+          }
+        ],
+        "name": "alice"
+      },
+      {
+        "battlefield": [
+          {
+            "card": "Rod of Ruin",
+            "label": "brod",
+            "ready": true
+          },
+          {
+            "card": "Prodigal Sorcerer",
+            "label": "sorcerer",
+            "ready": true
+          },
+          {
+            "card": "Mountain",
+            "label": "b0",
+            "ready": true
+          },
+          {
+            "card": "Mountain",
+            "label": "b1",
+            "ready": true
+          },
+          {
+            "card": "Mountain",
+            "label": "b2",
+            "ready": true
+          },
+          {
+            "card": "Mountain",
+            "label": "b3",
+            "ready": true
+          },
+          {
+            "card": "Mountain",
+            "label": "b4",
+            "ready": true
+          },
+          {
+            "card": "Mountain",
+            "label": "b5",
+            "ready": true
+          },
+          {
+            "card": "Mountain",
+            "label": "b6",
+            "ready": true
+          },
+          {
+            "card": "Mountain",
+            "label": "b7",
+            "ready": true
+          },
+          {
+            "card": "Mountain",
+            "label": "b8",
+            "ready": true
+          },
+          {
+            "card": "Mountain",
+            "label": "b9",
+            "ready": true
+          }
+        ],
+        "hand": [
+          {
+            "card": "Meteor Golem",
+            "label": "golem"
+          }
+        ],
+        "library": [
+          {
+            "card": "Island",
+            "label": "bl0"
+          },
+          {
+            "card": "Island",
+            "label": "bl1"
+          },
+          {
+            "card": "Island",
+            "label": "bl2"
+          },
+          {
+            "card": "Island",
+            "label": "bl3"
+          },
+          {
+            "card": "Island",
+            "label": "bl4"
+          },
+          {
+            "card": "Island",
+            "label": "bl5"
+          }
+        ],
+        "name": "bob"
+      }
+    ],
+    "step": "PrecombatMain"
+  },
+  "description": "CR 207.2c / 115.1 / 101.2: Species 8472 gains life equal to the number of differently named lands its controller controls as it enters, and can't be the target of activated or triggered abilities from artifacts its opponents control, though its controller's artifact and an opponent's nonartifact source can target it",
+  "note": "Alice controls nine lands under three names. Meteor Golem's trigger has alice's Rod of Ruin as its only legal target once Species 8472 is excluded, so it is bound unasked; without the restriction the trigger would ask bob to choose.",
+  "timeline": [
+    {
+      "do": {
+        "Cast": {
+          "mana": [
+            "$a0",
+            "$a1",
+            "$a2",
+            "$a3",
+            "$a4",
+            "$a5",
+            null
+          ],
+          "object": "$species"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Life": {
+          "life": 23,
+          "player": "alice"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Activate": {
+          "mana": [
+            "$a6",
+            "$a7",
+            "$a8"
+          ],
+          "object": "$arod",
+          "targets": [
+            "Species 8472"
+          ]
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Damage": {
+          "damage": 1,
+          "object": "Species 8472"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "player": "bob",
+      "refuse": {
+        "Activate": {
+          "mana": [
+            "$b0",
+            "$b1",
+            "$b2"
+          ],
+          "object": "$brod",
+          "targets": [
+            "Species 8472"
+          ]
+        }
+      },
+      "step": "PrecombatMain",
+      "turn": 2
+    },
+    {
+      "do": {
+        "Activate": {
+          "object": "$sorcerer",
+          "targets": [
+            "Species 8472"
+          ]
+        }
+      },
+      "player": "bob",
+      "step": "PrecombatMain",
+      "turn": 2
+    },
+    {
+      "do": "Pass",
+      "player": "bob",
+      "step": "PrecombatMain",
+      "turn": 2
+    },
+    {
+      "check": {
+        "Damage": {
+          "damage": 1,
+          "object": "Species 8472"
+        }
+      },
+      "player": "bob",
+      "step": "PrecombatMain",
+      "turn": 2
+    },
+    {
+      "do": {
+        "Cast": {
+          "mana": [
+            "$b0",
+            "$b1",
+            "$b2",
+            "$b3",
+            "$b4",
+            "$b5",
+            "$b6",
+            null
+          ],
+          "object": "$golem"
+        }
+      },
+      "player": "bob",
+      "step": "PrecombatMain",
+      "turn": 2
+    },
+    {
+      "do": "Pass",
+      "player": "bob",
+      "step": "PrecombatMain",
+      "turn": 2
+    },
+    {
+      "do": "Pass",
+      "player": "bob",
+      "step": "PrecombatMain",
+      "turn": 2
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Rod of Ruin",
+          "count": 1,
+          "player": "alice",
+          "zone": "Graveyard"
+        }
+      },
+      "player": "bob",
+      "step": "PrecombatMain",
+      "turn": 2
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Species 8472",
+          "count": 1,
+          "player": "alice",
+          "zone": "Battlefield"
+        }
+      },
+      "player": "bob",
+      "step": "PrecombatMain",
+      "turn": 2
+    }
+  ]
+}
