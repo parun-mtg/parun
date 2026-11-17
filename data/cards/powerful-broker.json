@@ -19,7 +19,10 @@
                     "effects": [
                       {
                         "type": "Proliferate",
-                        "value": "target"
+                        "value": {
+                          "type": "EachKind",
+                          "value": "target"
+                        }
                       }
                     ]
                   }

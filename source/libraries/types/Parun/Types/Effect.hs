@@ -4,6 +4,7 @@ import qualified Data.List.NonEmpty as NonEmpty
 import qualified Parun.Types.ActivateManaAbilities as ActivateManaAbilities
 import qualified Parun.Types.AffectPlayers as AffectPlayers
 import qualified Parun.Types.Amass as Amass
+import qualified Parun.Types.AnotherCounter as AnotherCounter
 import qualified Parun.Types.Ante as Ante
 import qualified Parun.Types.ArmDelayedTrigger as ArmDelayedTrigger
 import qualified Parun.Types.ArrangeInLibrary as ArrangeInLibrary
@@ -732,11 +733,11 @@ data Effect card ability
   | -- | CR 607.2e: note, for the source, the type and amount of mana spent to
     -- activate this ability (Ice Cauldron), replacing any earlier note.
     NoteManaSpent
-  | -- | Give each recipient one additional counter of each kind it already has
-    -- (CR 122.1): 'Nothing' is CR 701.34a's proliferate, the recipients chosen
-    -- on resolution; 'Just' is Powerful Broker's targets in that slot (CR
+  | -- | Give each recipient one additional counter of a kind it already has
+    -- (CR 122.1): 'Nothing' is CR 701.34a's proliferate, every kind, the
+    -- recipients chosen on resolution; 'Just' is the targets in a slot (CR
     -- 115.1), which is not a proliferate.
-    Proliferate (Maybe SlotName.SlotName)
+    Proliferate (Maybe AnotherCounter.AnotherCounter)
   | -- | CR 201.4 via CR 608.2c: the players the payload's PlayerRef names each
     -- choose a card name, written to Object.chosenNames on the resolving object
     -- (Ancient Vendetta, Petra Sphinx). The Filter is CR 201.4a's restriction,

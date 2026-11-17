@@ -206,6 +206,8 @@ library codec
     Parun.Codec.AmassKindSpec
     Parun.Codec.Anchor
     Parun.Codec.AnchorSpec
+    Parun.Codec.AnotherCounter
+    Parun.Codec.AnotherCounterSpec
     Parun.Codec.Answer
     Parun.Codec.AnswerSpec
     Parun.Codec.Ante
@@ -2874,6 +2876,7 @@ library types
     Parun.Types.AmassKind
     Parun.Types.Anchor
     Parun.Types.Announcement
+    Parun.Types.AnotherCounter
     Parun.Types.Answer
     Parun.Types.Answerer
     Parun.Types.Ante

@@ -16,6 +16,7 @@ import qualified Data.Typeable as Typeable
 import qualified Parun.Codec.ActivateManaAbilities as ActivateManaAbilities
 import qualified Parun.Codec.AffectPlayers as AffectPlayers
 import qualified Parun.Codec.Amass as Amass
+import qualified Parun.Codec.AnotherCounter as AnotherCounter
 import qualified Parun.Codec.Ante as Ante
 import qualified Parun.Codec.ArmDelayedTrigger as ArmDelayedTrigger
 import qualified Parun.Codec.ArrangeInLibrary as ArrangeInLibrary
@@ -171,7 +172,7 @@ codec cardCodec abilityCodec =
           Arm.payload "MoveMana" MoveMana.codec Effect.MoveMana (\x -> case x of Effect.MoveMana y -> Just y; _ -> Nothing),
           Arm.payload "Search" Search.codec Effect.Search (\x -> case x of Effect.Search y -> Just y; _ -> Nothing),
           Arm.nullary "ExileAllGraveyards" Effect.ExileAllGraveyards,
-          Arm.optionalPayload "Proliferate" SlotName.codec Effect.Proliferate (\x -> case x of Effect.Proliferate y -> Just y; _ -> Nothing),
+          Arm.optionalPayload "Proliferate" AnotherCounter.codec Effect.Proliferate (\x -> case x of Effect.Proliferate y -> Just y; _ -> Nothing),
           Arm.nullary "Rethrow" Effect.Rethrow,
           Arm.payload "RerollStoredResults" SlotName.codec Effect.RerollStoredResults (\x -> case x of Effect.RerollStoredResults y -> Just y; _ -> Nothing),
           Arm.payload "ChooseCardName" ChooseCardName.codec Effect.ChooseCardName (\x -> case x of Effect.ChooseCardName y -> Just y; _ -> Nothing),

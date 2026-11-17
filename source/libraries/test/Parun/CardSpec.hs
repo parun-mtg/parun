@@ -84,6 +84,7 @@ import qualified Parun.Types.AloneUnless as AloneUnless
 import qualified Parun.Types.AlternativeCost as AlternativeCost
 import qualified Parun.Types.Amass as Amass
 import qualified Parun.Types.AmassKind as AmassKind
+import qualified Parun.Types.AnotherCounter as AnotherCounter
 import qualified Parun.Types.Ante as Ante
 import qualified Parun.Types.AnyNumberDiscard as AnyNumberDiscard
 import qualified Parun.Types.AnyNumberMatching as AnyNumberMatching
@@ -1960,6 +1961,17 @@ modeDivisionDangles mode =
       reads_ = Set.fromList [slot | (slot, ObjectRef.InSlot named) <- sharing, slot == named]
       offends (slot, ref) = ref /= ObjectRef.InSlot slot || not (Set.member slot divided)
    in any offends sharing || not (Set.isSubsetOf divided reads_)
+
+-- Unprinted: a chosen-kind Proliferate (AnotherCounter.ChosenKind) whose slot
+-- admits a player, whose counters its prompt cannot offer.
+cardChosenKindReachesPlayer :: Face.Face Card.Type.Card -> Bool
+cardChosenKindReachesPlayer = any (any offends . Modal.modes) . faceModals
+  where
+    offends mode =
+      or
+        [ maybe True (\slot -> not (Card.poolWithin (TargetSlot.pool slot) Pool.Permanents)) (Map.lookup named (Mode.targetSlots mode))
+        | Effect.Proliferate (Just (AnotherCounter.ChosenKind named)) <- Foldable.toList (Mode.allEffects mode)
+        ]
 
 -- Unprinted: a TriggeringMove.GainingLife row naming an entrant (CR 119.9's
 -- gain is no permanent's), over every player effect a face writes: its own,
@@ -6497,6 +6509,18 @@ lintSpec s registry corpus = Spec.describe s "Lint" $ do
     Spec.assertBool s (not (cardDivisionsDangle face)) "Forked Lightning reads its division, and is accepted"
     Spec.assertBool s (cardDivisionsDangle (rewrite undivided)) "a part read off an undivided slot is rejected"
     Spec.assertBool s (cardDivisionsDangle (rewrite unread)) "a division nothing reads is rejected"
+  -- Dathon, His Heart Open's chosen kind is offered among a PERMANENT's
+  -- counters only.
+  Spec.it s "no card's chosen-kind proliferate slot admits a player" $ do
+    ps <- S.allPrintings s corpus
+    Spec.assertEqWith s "no chosen kind over a player" (fmap (S.nameOf . Printing.card) (filter (anyFace cardChosenKindReachesPlayer . Printing.card) ps)) []
+  Spec.it s "the lint itself catches a chosen-kind slot admitting a player" $ do
+    dathon <- S.printingOf s registry "Dathon, His Heart Open"
+    let face = S.combinedFace dathon
+        widen mode = mode {Mode.targetSlots = fmap (\slot -> slot {TargetSlot.pool = Pool.PermanentsAndPlayers}) (Mode.targetSlots mode)}
+        widened = face {Face.activatedAbilities = fmap (\ability -> ability {ActivatedAbility.modal = (ActivatedAbility.modal ability) {Modal.modes = fmap widen (Modal.modes (ActivatedAbility.modal ability))}}) (Face.activatedAbilities face)}
+    Spec.assertBool s (not (cardChosenKindReachesPlayer face)) "Dathon targets an enchantment, and is accepted"
+    Spec.assertBool s (cardChosenKindReachesPlayer widened) "a slot admitting players is rejected"
   -- Demonic Pact's "that hasn't been chosen" on a spell or a mana ability is
   -- read by nothing, so a chosen mode would be offered again.
   Spec.it s "only a triggered or a non-mana activated ability remembers its chosen modes" $ do

@@ -22,6 +22,7 @@ import qualified Parun.Types.AgainstSlot as AgainstSlot
 import qualified Parun.Types.Aggregation as Aggregation
 import qualified Parun.Types.Amass as Amass
 import qualified Parun.Types.AmassKind as AmassKind
+import qualified Parun.Types.AnotherCounter as AnotherCounter
 import qualified Parun.Types.Ante as Ante
 import qualified Parun.Types.ArmDelayedTrigger as ArmDelayedTrigger
 import qualified Parun.Types.ArrangeInLibrary as ArrangeInLibrary
@@ -2564,8 +2565,8 @@ spec s = Spec.describe s "Parun.Codec.Effect" $ do
       s
       toJson
       fromJson
-      (Effect.Proliferate (Just (SlotName.MkSlotName (Text.pack "target"))))
-      " {\"type\":\"Proliferate\",\"value\":\"target\"} "
+      (Effect.Proliferate (Just (AnotherCounter.EachKind (SlotName.MkSlotName (Text.pack "target")))))
+      " {\"type\":\"Proliferate\",\"value\":{\"type\":\"EachKind\",\"value\":\"target\"}} "
   Spec.it s "Rethrow" $
     Common.assertJsonCodec
       s
