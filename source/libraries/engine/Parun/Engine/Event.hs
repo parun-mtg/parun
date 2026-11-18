@@ -5542,11 +5542,9 @@ apply settle batch applied batchPrevented candidate event =
     -- already applied off it -- Pokey's ruling, "the nonsense stops there" --
     -- and a flip row such as Krark's Thumb no longer applies to it. The Thumb's
     -- extra coins become extra dice, of which one is still kept. One "you may"
-    -- for the whole event, reading CR 614.5's one opportunity as one choice.
-    -- `flipOneCoin` throws the roll it settles to and reads the face back.
-    --
-    -- Not implemented: rolling for some of the Thumb's coins and flipping the
-    -- rest (#5357).
+    -- for the whole event: docs/decisions.md, "Whether Pokey's swap is one
+    -- choice for the units a replacement added". `flipOneCoin` throws the roll
+    -- it settles to and reads the face back.
     (ReplacementEffect.InstructionR row, ProposedEvent.WouldThrow throw) -> case InstructionR.rewrite row of
       InstructionRewrite.Scaled scaling -> do
         Replacement.consume (ReplacementCandidate.identity candidate)
@@ -5595,10 +5593,8 @@ apply settle batch applied batchPrevented candidate event =
       -- reason: Pokey's "you may instead flip a coin" leaves a flip standing in
       -- this loop, a coin for each d20 and Pixie Guide's ignored die an ignored
       -- coin, which Krark's Thumb may then resize; `proposeDiceRoll` flips it
-      -- and reads the results back.
-      --
-      -- Not implemented: flipping for some of the roll's d20s and rolling the
-      -- rest (#5357).
+      -- and reads the results back. One "you may" for every d20 of the event,
+      -- the same decision.
       DieRollRewrite.FlipCoinInstead -> do
         exercised <- substitutes candidate
         pure . Just $
