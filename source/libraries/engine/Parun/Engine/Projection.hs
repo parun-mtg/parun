@@ -1504,8 +1504,15 @@ affectsFramed frame grants peers source oid a partial gs = case a of
 -- OBJECT and not its card: Object.chosenColors is per-incarnation, and CR 707.6
 -- leaves a copy to make its own choice, so two permanents of the one printing
 -- answer differently.
+--
+-- The source's measures ride `peers`, the reader at the candidate's depth: in
+-- the layer fold, the layers before the effect's own (projectUpTo), so the read
+-- cannot reach the effect it frames. Baeloth Barrityl, Entertainer's goad (CR
+-- 613.11, after every layer) is the one writer, which
+-- data/scenarios/goad/baeloth-barrityl-entertainer-makes-a-treasure-only-for-the-goaded-creature-that-dies.json
+-- proves.
 affectedContext :: Count.ViewOf -> ObjectId -> Maybe PlayerId.PlayerId -> GameState -> Filter.Context
-affectedContext peers source perspective gs = SourceContext.sourceContext peers gs perspective source
+affectedContext peers source perspective gs = (SourceContext.sourceContext peers gs perspective source) {Filter.sourceMeasures = sourceMeasuresOf (peers source)}
 
 -- The characteristics view of an object: its CR 613 projection and its projected
 -- controller (CR 613.1b; Nothing when the id is unknown). Rule 613.1 names no
@@ -1741,7 +1748,7 @@ withCharacteristicsOf :: ObjectId -> GameState -> Filter.Context -> Filter.Conte
 withCharacteristicsOf object gs context =
   let view = viewWithLastKnownAnywhere gs object
    in context
-        { Filter.sourceMeasures = foldMap (\v -> Map.union (Filter.measuresOf v) (Map.fromList [(Measure.Power, 0), (Measure.Toughness, 0), (Measure.TotalPowerAndToughness, 0)])) view,
+        { Filter.sourceMeasures = sourceMeasuresOf view,
           Filter.sourceColors = foldMap Filter.colors view,
           Filter.sourceSectors = foldMap (Sector.sectorsIn . Filter.designations) view,
           Filter.sourceNames = foldMap Filter.names view,
@@ -1750,6 +1757,11 @@ withCharacteristicsOf object gs context =
           Filter.sourceCrewed = Count.crewedThisTurn object gs,
           Filter.sourceBefore = Count.departedAs gs object
         }
+
+-- The source's measures a Filter.Measures OfSource operand reads, off its
+-- view: withCharacteristicsOf's and affectedContext's one reading.
+sourceMeasuresOf :: Maybe Filter.View -> Map Measure.Measure Integer
+sourceMeasuresOf = foldMap (\v -> Map.union (Filter.measuresOf v) (Map.fromList [(Measure.Power, 0), (Measure.Toughness, 0), (Measure.TotalPowerAndToughness, 0)]))
 
 -- CR 509.1b: the context a pairwise blocking restriction or cost is matched
 -- in, framed by the creature being compared (Spitfire Handler's "this

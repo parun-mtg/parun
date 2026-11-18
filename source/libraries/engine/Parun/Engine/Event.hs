@@ -11982,6 +11982,8 @@ lastKnownFrom gs oid obj =
     -- CR 701.60b's marks and their kin, per-incarnation (CR 400.7).
     (Object.designations obj)
     (Object.designationValues obj)
+    -- CR 701.15b's goaded, per-incarnation (CR 400.7) like the designations.
+    (Object.goadedBy obj)
   where
     characteristics = Projection.project oid gs
 

@@ -78,6 +78,7 @@ codec = Fields.object $ do
   faceDown <- Fields.defaulted "faceDown" False Common.boolean LastKnown.faceDown
   designations <- Fields.defaulted "designations" Set.empty (Common.set Designation.codec) LastKnown.designations
   designationValues <- Fields.defaulted "designationValues" Map.empty (Common.keyedList Object.designationValue) LastKnown.designationValues
+  goadedBy <- Fields.defaulted "goadedBy" Set.empty (Common.set PlayerId.codec) LastKnown.goadedBy
   pure
     LastKnown.MkLastKnown
       { LastKnown.characteristics = characteristics,
@@ -117,5 +118,6 @@ codec = Fields.object $ do
         LastKnown.tapped = tapped,
         LastKnown.faceDown = faceDown,
         LastKnown.designations = designations,
-        LastKnown.designationValues = designationValues
+        LastKnown.designationValues = designationValues,
+        LastKnown.goadedBy = goadedBy
       }

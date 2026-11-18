@@ -1366,6 +1366,9 @@ lastKnownView peers oid gs lastKnown =
           -- Agency Coroner's and Hydra Broodmaster's scenarios prove them.
           Filter.designations = LastKnown.designations lastKnown,
           Filter.designationValues = LastKnown.designationValues lastKnown,
+          -- CR 701.15b / 608.2h: goaded as it left, by either carrier. Baeloth
+          -- Barrityl, Entertainer's scenarios prove it.
+          Filter.goaded = not (Set.null (PC.goadedBy (LastKnown.characteristics lastKnown))) || not (Set.null (LastKnown.goadedBy lastKnown)),
           Filter.attacking = LastKnown.attacking lastKnown,
           -- `attackingAlone` keeps the snapshot's empty set: LastKnown records no
           -- fellow attackers, and no card asks CR 506.5 or 506.6 of a departed
@@ -1801,9 +1804,11 @@ viewOfSnapshot deploy mController mOwner isToken counters zone home lapsed snaps
       Filter.declaredAttackerThisCombat = False,
       Filter.declaredBlockerThisCombat = False,
       Filter.hadToAttackThisCombat = False,
-      -- CR 701.15b: a designation, not a characteristic. Not implemented: a
-      -- departed creature's goaded designation (#8669).
-      Filter.goaded = False,
+      -- CR 701.15b: the projected carrier the snapshot holds; lastKnownView
+      -- adds the one-shot Object.goadedBy, which no characteristic carries. A
+      -- regression fence: no card asks IsGoaded of a snapshot outside
+      -- lastKnownView.
+      Filter.goaded = not (Set.null (PC.goadedBy snapshot)),
       -- CR 701.17a mills a CARD, and this view describes a snapshot rather than
       -- an object -- there is no id here for the turn's mills to have named.
       Filter.leftLibraryThisTurn = Set.empty,

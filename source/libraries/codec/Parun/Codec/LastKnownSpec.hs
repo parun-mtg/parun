@@ -119,7 +119,8 @@ spec s = Spec.describe s "Parun.Codec.LastKnown" $ do
           LastKnown.tapped = True,
           LastKnown.faceDown = True,
           LastKnown.designations = Set.fromList [Designation.Monstrous, Designation.Suspected],
-          LastKnown.designationValues = Map.singleton Designation.Monstrous 3
+          LastKnown.designationValues = Map.singleton Designation.Monstrous 3,
+          LastKnown.goadedBy = Set.singleton (PlayerId.MkPlayerId 2)
         }
       ( " {\"characteristics\":"
           <> ProjectedCharacteristicsSpec.testCharacteristicsJson
@@ -142,7 +143,7 @@ spec s = Spec.describe s "Parun.Codec.LastKnown" $ do
           <> ",\"chosenModes\":[{\"key\":{\"type\":\"Triggered\",\"value\":{\"condition\":{\"type\":\"Enters\",\"value\":{}},\"modal\":{\"modes\":[{}]}}},\"value\":{\"2\":3}}]"
           <> ",\"controlClock\":[{\"player\":1,\"clock\":\"SinceLastUpkeep\"}]"
           <> ",\"zone\":\"Battlefield\",\"home\":\"Command\",\"pile\":6"
-          <> ",\"lapsedGrants\":[{\"type\":\"Compares\",\"value\":{\"measured\":{\"type\":\"Literal\",\"value\":3},\"comparison\":\"AtLeast\",\"threshold\":{\"type\":\"Literal\",\"value\":5}}}],\"tapped\":true,\"faceDown\":true,\"designations\":[\"Monstrous\",\"Suspected\"],\"designationValues\":[{\"designation\":\"Monstrous\",\"value\":3}]} "
+          <> ",\"lapsedGrants\":[{\"type\":\"Compares\",\"value\":{\"measured\":{\"type\":\"Literal\",\"value\":3},\"comparison\":\"AtLeast\",\"threshold\":{\"type\":\"Literal\",\"value\":5}}}],\"tapped\":true,\"faceDown\":true,\"designations\":[\"Monstrous\",\"Suspected\"],\"designationValues\":[{\"designation\":\"Monstrous\",\"value\":3}],\"goadedBy\":[2]} "
       )
   -- CR 109.3: neither an attachment nor a chosen name is a characteristic, and
   -- most objects have neither, so the absent case is written out rather than left
@@ -189,7 +190,8 @@ spec s = Spec.describe s "Parun.Codec.LastKnown" $ do
           LastKnown.tapped = False,
           LastKnown.faceDown = False,
           LastKnown.designations = Set.empty,
-          LastKnown.designationValues = Map.empty
+          LastKnown.designationValues = Map.empty,
+          LastKnown.goadedBy = Set.empty
         }
       ( " {\"characteristics\":"
           <> minimalJson
