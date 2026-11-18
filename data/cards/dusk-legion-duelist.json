@@ -1,0 +1,96 @@
+{
+  "faces": [
+    {
+      "keywords": [
+        {
+          "type": "Vigilance"
+        }
+      ],
+      "manaCost": [
+        {
+          "type": "Generic",
+          "value": 1
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "White"
+          }
+        }
+      ],
+      "name": "Dusk Legion Duelist",
+      "oracleText": "Vigilance\nWhenever one or more +1/+1 counters are put on this creature, draw a card. This ability triggers only once each turn.",
+      "power": {
+        "type": "Literal",
+        "value": 2
+      },
+      "toughness": {
+        "type": "Literal",
+        "value": 2
+      },
+      "triggeredAbilities": [
+        {
+          "condition": {
+            "type": "CountersChange",
+            "value": {
+              "holder": {
+                "type": "Permanent",
+                "value": {
+                  "type": "IsSource"
+                }
+              },
+              "kind": {
+                "type": "OfKind",
+                "value": {
+                  "type": "PlusOnePlusOne"
+                }
+              },
+              "motion": {
+                "type": "Put",
+                "value": "AnyPlayer"
+              }
+            }
+          },
+          "limit": {
+            "type": "OncePerTurn"
+          },
+          "modal": {
+            "modes": [
+              {
+                "clauses": [
+                  {
+                    "effects": [
+                      {
+                        "type": "Draw",
+                        "value": {
+                          "player": {
+                            "type": "Relative",
+                            "value": "You"
+                          },
+                          "quantity": {
+                            "type": "Literal",
+                            "value": 1
+                          }
+                        }
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      ],
+      "typeLine": {
+        "subtypes": [
+          "Soldier",
+          "Vampire"
+        ],
+        "types": [
+          "Creature"
+        ]
+      }
+    }
+  ]
+}

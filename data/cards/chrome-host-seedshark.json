@@ -1,0 +1,190 @@
+{
+  "faces": [
+    {
+      "keywords": [
+        {
+          "type": "Flying"
+        }
+      ],
+      "manaCost": [
+        {
+          "type": "Generic",
+          "value": 2
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "Blue"
+          }
+        }
+      ],
+      "name": "Chrome Host Seedshark",
+      "oracleText": "Flying\nWhenever you cast a noncreature spell, incubate X, where X is that spell's mana value. (Create an Incubator token with X +1/+1 counters on it and \"{2}: Transform this token.\" It transforms into a 0/0 Phyrexian artifact creature.)",
+      "power": {
+        "type": "Literal",
+        "value": 2
+      },
+      "toughness": {
+        "type": "Literal",
+        "value": 4
+      },
+      "triggeredAbilities": [
+        {
+          "condition": {
+            "type": "SpellCast",
+            "value": {
+              "scope": {
+                "type": "PlayersTurn",
+                "value": {
+                  "type": "Relative",
+                  "value": "AnyPlayer"
+                }
+              },
+              "spell": {
+                "type": "Matching",
+                "value": {
+                  "type": "And",
+                  "value": [
+                    {
+                      "type": "Not",
+                      "value": {
+                        "type": "HasCardType",
+                        "value": "Creature"
+                      }
+                    },
+                    {
+                      "type": "HeldBy",
+                      "value": {
+                        "holder": "Controller",
+                        "relation": "You"
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "modal": {
+            "modes": [
+              {
+                "clauses": [
+                  {
+                    "effects": [
+                      {
+                        "type": "Create",
+                        "value": {
+                          "card": {
+                            "faces": [
+                              {
+                                "activatedAbilities": [
+                                  {
+                                    "cost": {
+                                      "mana": [
+                                        {
+                                          "type": "Generic",
+                                          "value": 2
+                                        }
+                                      ]
+                                    },
+                                    "modal": {
+                                      "modes": [
+                                        {
+                                          "clauses": [
+                                            {
+                                              "effects": [
+                                                {
+                                                  "type": "Transform",
+                                                  "value": {
+                                                    "type": "InSlot",
+                                                    "value": "self"
+                                                  }
+                                                }
+                                              ]
+                                            }
+                                          ]
+                                        }
+                                      ]
+                                    }
+                                  }
+                                ],
+                                "name": "Incubator Token",
+                                "typeLine": {
+                                  "subtypes": [
+                                    "Incubator"
+                                  ],
+                                  "types": [
+                                    "Artifact"
+                                  ]
+                                }
+                              },
+                              {
+                                "name": "Phyrexian Token",
+                                "power": {
+                                  "type": "Literal",
+                                  "value": 0
+                                },
+                                "toughness": {
+                                  "type": "Literal",
+                                  "value": 0
+                                },
+                                "typeLine": {
+                                  "subtypes": [
+                                    "Phyrexian"
+                                  ],
+                                  "types": [
+                                    "Artifact",
+                                    "Creature"
+                                  ]
+                                }
+                              }
+                            ],
+                            "layout": {
+                              "type": "Transforming"
+                            }
+                          },
+                          "quantity": {
+                            "type": "Literal",
+                            "value": 1
+                          },
+                          "riders": {
+                            "counters": [
+                              {
+                                "count": {
+                                  "type": "AgainstSlot",
+                                  "value": {
+                                    "quantity": {
+                                      "type": "Measure",
+                                      "value": "ManaValue"
+                                    },
+                                    "slot": "thatSpell"
+                                  }
+                                },
+                                "kind": {
+                                  "type": "PlusOnePlusOne"
+                                }
+                              }
+                            ]
+                          }
+                        }
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      ],
+      "typeLine": {
+        "subtypes": [
+          "Phyrexian",
+          "Shark"
+        ],
+        "types": [
+          "Creature"
+        ]
+      }
+    }
+  ]
+}

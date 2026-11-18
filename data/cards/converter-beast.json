@@ -1,0 +1,149 @@
+{
+  "faces": [
+    {
+      "manaCost": [
+        {
+          "type": "Generic",
+          "value": 3
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "Green"
+          }
+        }
+      ],
+      "name": "Converter Beast",
+      "oracleText": "When this creature enters, incubate 5. (Create an Incubator token with five +1/+1 counters on it and \"{2}: Transform this token.\" It transforms into a 0/0 Phyrexian artifact creature.)",
+      "power": {
+        "type": "Literal",
+        "value": 0
+      },
+      "toughness": {
+        "type": "Literal",
+        "value": 1
+      },
+      "triggeredAbilities": [
+        {
+          "condition": {
+            "type": "Enters",
+            "value": {}
+          },
+          "modal": {
+            "modes": [
+              {
+                "clauses": [
+                  {
+                    "effects": [
+                      {
+                        "type": "Create",
+                        "value": {
+                          "card": {
+                            "faces": [
+                              {
+                                "activatedAbilities": [
+                                  {
+                                    "cost": {
+                                      "mana": [
+                                        {
+                                          "type": "Generic",
+                                          "value": 2
+                                        }
+                                      ]
+                                    },
+                                    "modal": {
+                                      "modes": [
+                                        {
+                                          "clauses": [
+                                            {
+                                              "effects": [
+                                                {
+                                                  "type": "Transform",
+                                                  "value": {
+                                                    "type": "InSlot",
+                                                    "value": "self"
+                                                  }
+                                                }
+                                              ]
+                                            }
+                                          ]
+                                        }
+                                      ]
+                                    }
+                                  }
+                                ],
+                                "name": "Incubator Token",
+                                "typeLine": {
+                                  "subtypes": [
+                                    "Incubator"
+                                  ],
+                                  "types": [
+                                    "Artifact"
+                                  ]
+                                }
+                              },
+                              {
+                                "name": "Phyrexian Token",
+                                "power": {
+                                  "type": "Literal",
+                                  "value": 0
+                                },
+                                "toughness": {
+                                  "type": "Literal",
+                                  "value": 0
+                                },
+                                "typeLine": {
+                                  "subtypes": [
+                                    "Phyrexian"
+                                  ],
+                                  "types": [
+                                    "Artifact",
+                                    "Creature"
+                                  ]
+                                }
+                              }
+                            ],
+                            "layout": {
+                              "type": "Transforming"
+                            }
+                          },
+                          "quantity": {
+                            "type": "Literal",
+                            "value": 1
+                          },
+                          "riders": {
+                            "counters": [
+                              {
+                                "count": {
+                                  "type": "Literal",
+                                  "value": 5
+                                },
+                                "kind": {
+                                  "type": "PlusOnePlusOne"
+                                }
+                              }
+                            ]
+                          }
+                        }
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      ],
+      "typeLine": {
+        "subtypes": [
+          "Beast",
+          "Phyrexian"
+        ],
+        "types": [
+          "Creature"
+        ]
+      }
+    }
+  ]
+}

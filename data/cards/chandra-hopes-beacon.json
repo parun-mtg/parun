@@ -1,0 +1,284 @@
+{
+  "faces": [
+    {
+      "activatedAbilities": [
+        {
+          "cost": {
+            "components": [
+              {
+                "type": "AddLoyaltyToThis",
+                "value": 2
+              }
+            ],
+            "mana": []
+          },
+          "modal": {
+            "modes": [
+              {
+                "clauses": [
+                  {
+                    "effects": [
+                      {
+                        "type": "AddMana",
+                        "value": {
+                          "count": {
+                            "type": "Literal",
+                            "value": 2
+                          },
+                          "production": {
+                            "type": "AnyColor",
+                            "value": "AnyCombination"
+                          }
+                        }
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "cost": {
+            "components": [
+              {
+                "type": "AddLoyaltyToThis",
+                "value": 1
+              }
+            ],
+            "mana": []
+          },
+          "modal": {
+            "modes": [
+              {
+                "clauses": [
+                  {
+                    "effects": [
+                      {
+                        "type": "MoveToZone",
+                        "value": {
+                          "ref": {
+                            "type": "TopOfLibrary",
+                            "value": {
+                              "count": {
+                                "type": "Literal",
+                                "value": 5
+                              },
+                              "player": {
+                                "type": "Relative",
+                                "value": "You"
+                              }
+                            }
+                          },
+                          "slot": "exiled",
+                          "zone": "Exile"
+                        }
+                      },
+                      {
+                        "type": "GrantPlayFromExile",
+                        "value": {
+                          "duration": {
+                            "type": "UntilEndOfYourNextTurn"
+                          },
+                          "ref": {
+                            "type": "EachCardFromAmong",
+                            "value": {
+                              "filter": {
+                                "type": "Or",
+                                "value": [
+                                  {
+                                    "type": "HasCardType",
+                                    "value": "Instant"
+                                  },
+                                  {
+                                    "type": "HasCardType",
+                                    "value": "Sorcery"
+                                  }
+                                ]
+                              },
+                              "slot": "exiled"
+                            }
+                          },
+                          "upTo": {
+                            "type": "Plays",
+                            "value": 1
+                          },
+                          "verb": "Cast"
+                        }
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "cost": {
+            "components": [
+              {
+                "type": "RemoveLoyaltyFromThis",
+                "value": {
+                  "type": "Announced",
+                  "value": "X"
+                }
+              }
+            ],
+            "mana": []
+          },
+          "modal": {
+            "modes": [
+              {
+                "clauses": [
+                  {
+                    "effects": [
+                      {
+                        "type": "DealDamage",
+                        "value": {
+                          "parts": [
+                            {
+                              "quantity": {
+                                "type": "InSlot",
+                                "value": "X"
+                              },
+                              "ref": {
+                                "type": "InSlot",
+                                "value": "target"
+                              }
+                            }
+                          ]
+                        }
+                      }
+                    ]
+                  }
+                ],
+                "targetSlots": {
+                  "target": {
+                    "count": {
+                      "type": "Printed",
+                      "value": {
+                        "least": 0,
+                        "most": 2
+                      }
+                    },
+                    "pool": {
+                      "type": "AnyTarget"
+                    }
+                  }
+                }
+              }
+            ]
+          }
+        }
+      ],
+      "loyalty": {
+        "type": "Literal",
+        "value": 5
+      },
+      "manaCost": [
+        {
+          "type": "Generic",
+          "value": 4
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "Red"
+          }
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "Red"
+          }
+        }
+      ],
+      "name": "Chandra, Hope's Beacon",
+      "oracleText": "Whenever you cast an instant or sorcery spell, copy it. You may choose new targets for the copy. This ability triggers only once each turn.\n[+2]: Add two mana in any combination of colors.\n[+1]: Exile the top five cards of your library. Until the end of your next turn, you may cast an instant or sorcery spell from among those exiled cards.\n[−X]: Chandra deals X damage to each of up to two targets.",
+      "triggeredAbilities": [
+        {
+          "condition": {
+            "type": "SpellCast",
+            "value": {
+              "scope": {
+                "type": "PlayersTurn",
+                "value": {
+                  "type": "Relative",
+                  "value": "AnyPlayer"
+                }
+              },
+              "spell": {
+                "type": "Matching",
+                "value": {
+                  "type": "And",
+                  "value": [
+                    {
+                      "type": "HeldBy",
+                      "value": {
+                        "holder": "Controller",
+                        "relation": "You"
+                      }
+                    },
+                    {
+                      "type": "Or",
+                      "value": [
+                        {
+                          "type": "HasCardType",
+                          "value": "Instant"
+                        },
+                        {
+                          "type": "HasCardType",
+                          "value": "Sorcery"
+                        }
+                      ]
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "limit": {
+            "type": "OncePerTurn"
+          },
+          "modal": {
+            "modes": [
+              {
+                "clauses": [
+                  {
+                    "effects": [
+                      {
+                        "type": "CopyStackObject",
+                        "value": {
+                          "ref": {
+                            "type": "InSlot",
+                            "value": "thatSpell"
+                          },
+                          "targets": {
+                            "type": "ChosenByController"
+                          }
+                        }
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      ],
+      "typeLine": {
+        "subtypes": [
+          "Chandra"
+        ],
+        "supertypes": [
+          "Legendary"
+        ],
+        "types": [
+          "Planeswalker"
+        ]
+      }
+    }
+  ]
+}

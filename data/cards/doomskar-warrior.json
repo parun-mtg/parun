@@ -1,0 +1,175 @@
+{
+  "faces": [
+    {
+      "keywords": [
+        {
+          "type": "Trample"
+        },
+        {
+          "type": "Backup",
+          "value": {
+            "count": 1
+          }
+        }
+      ],
+      "manaCost": [
+        {
+          "type": "Generic",
+          "value": 2
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "Green"
+          }
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "Green"
+          }
+        }
+      ],
+      "name": "Doomskar Warrior",
+      "oracleText": "Backup 1\nTrample\nWhenever this creature deals combat damage to a player or battle, look at that many cards from the top of your library. You may reveal a creature or land card from among them and put it into your hand. Put the rest on the bottom of your library in a random order.",
+      "power": {
+        "type": "Literal",
+        "value": 4
+      },
+      "toughness": {
+        "type": "Literal",
+        "value": 3
+      },
+      "triggeredAbilities": [
+        {
+          "condition": {
+            "type": "DealsDamage",
+            "value": {
+              "actor": {
+                "type": "Self"
+              },
+              "kind": "Combat",
+              "recipients": [
+                {
+                  "type": "Player",
+                  "value": {
+                    "type": "Relative",
+                    "value": "AnyPlayer"
+                  }
+                },
+                {
+                  "type": "Permanent",
+                  "value": {
+                    "cardType": "Battle"
+                  }
+                }
+              ]
+            }
+          },
+          "modal": {
+            "modes": [
+              {
+                "clauses": [
+                  {
+                    "effects": [
+                      {
+                        "type": "LookAt",
+                        "value": {
+                          "ref": {
+                            "type": "TopOfLibrary",
+                            "value": {
+                              "count": {
+                                "type": "InSlot",
+                                "value": "thatMuch"
+                              },
+                              "player": {
+                                "type": "Relative",
+                                "value": "You"
+                              }
+                            }
+                          },
+                          "slot": "looked"
+                        }
+                      }
+                    ]
+                  },
+                  {
+                    "effects": [
+                      {
+                        "type": "Reveal",
+                        "value": {
+                          "ref": {
+                            "type": "ChosenCardFromAmong",
+                            "value": {
+                              "filter": {
+                                "type": "Or",
+                                "value": [
+                                  {
+                                    "type": "HasCardType",
+                                    "value": "Creature"
+                                  },
+                                  {
+                                    "type": "HasCardType",
+                                    "value": "Land"
+                                  }
+                                ]
+                              },
+                              "slot": "looked"
+                            }
+                          },
+                          "slot": "taken"
+                        }
+                      },
+                      {
+                        "type": "MoveToZone",
+                        "value": {
+                          "ref": {
+                            "type": "InSlot",
+                            "value": "taken"
+                          },
+                          "zone": "Hand"
+                        }
+                      }
+                    ],
+                    "optionality": {
+                      "type": "Optional"
+                    }
+                  },
+                  {
+                    "effects": [
+                      {
+                        "type": "MoveToZone",
+                        "value": {
+                          "placement": {
+                            "type": "RandomOrder",
+                            "value": "Bottom"
+                          },
+                          "ref": {
+                            "type": "InSlot",
+                            "value": "looked"
+                          },
+                          "zone": "Library"
+                        }
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      ],
+      "typeLine": {
+        "subtypes": [
+          "Human",
+          "Warrior"
+        ],
+        "types": [
+          "Creature"
+        ]
+      }
+    }
+  ]
+}

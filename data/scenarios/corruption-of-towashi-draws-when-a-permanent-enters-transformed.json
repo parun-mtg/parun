@@ -1,0 +1,165 @@
+{
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "battlefield": [
+          {
+            "card": "Corruption of Towashi",
+            "label": "towashi"
+          },
+          {
+            "card": "Compleated Huntmaster",
+            "label": "hunt",
+            "ready": true
+          },
+          {
+            "card": "Biolume Egg",
+            "label": "egg"
+          }
+        ],
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ],
+        "manaPool": "C",
+        "name": "alice"
+      },
+      {
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ],
+        "name": "bob"
+      }
+    ],
+    "step": "PrecombatMain"
+  },
+  "description": "CR 712.11a / 603.6a: Corruption of Towashi's draw follows a permanent entering transformed; Compleated Huntmaster incubates 3",
+  "final": [
+    {
+      "Count": {
+        "card": "Biolume Serpent",
+        "count": 1,
+        "player": "alice",
+        "zone": "Battlefield"
+      }
+    },
+    {
+      "Count": {
+        "card": "Island",
+        "count": 1,
+        "player": "alice",
+        "zone": "Hand"
+      }
+    }
+  ],
+  "note": "Huntmaster sacrifices Biolume Egg, which returns as Biolume Serpent at the end step.",
+  "timeline": [
+    {
+      "do": {
+        "Activate": {
+          "costOrder": [
+            0,
+            1
+          ],
+          "object": "$hunt"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Counters": {
+          "count": 3,
+          "kind": {
+            "type": "PlusOnePlusOne"
+          },
+          "object": "Incubator Token"
+        }
+      },
+      "player": "alice",
+      "step": "BeginningOfCombat",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Island",
+          "count": 0,
+          "player": "alice",
+          "zone": "Hand"
+        }
+      },
+      "player": "alice",
+      "step": "BeginningOfCombat",
+      "turn": 1
+    },
+    {
+      "do": {
+        "ChooseOptional": "Exercises"
+      },
+      "player": "alice",
+      "step": "EndStep",
+      "turn": 1
+    }
+  ]
+}

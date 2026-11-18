@@ -1,0 +1,185 @@
+{
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "battlefield": [
+          {
+            "card": "Doomskar Warrior",
+            "label": "dw",
+            "ready": true
+          }
+        ],
+        "library": [
+          {
+            "card": "Lightning Bolt",
+            "label": "bolt"
+          },
+          {
+            "card": "Plains",
+            "label": "plains"
+          },
+          {
+            "card": "Grizzly Bears",
+            "label": "gb"
+          },
+          {
+            "card": "Opt",
+            "label": "opt"
+          },
+          {
+            "card": "Forest",
+            "label": "deep"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ],
+        "name": "alice"
+      },
+      {
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ],
+        "name": "bob"
+      }
+    ],
+    "step": "PrecombatMain"
+  },
+  "description": "CR 510.3a / 701.20a: Doomskar Warrior's combat damage lets alice look at four and put a creature or land card into her hand",
+  "note": "Lightning Bolt is not a candidate; alice takes the Plains and the rest go to the bottom.",
+  "timeline": [
+    {
+      "do": {
+        "Attack": [
+          "$dw"
+        ]
+      },
+      "player": "alice",
+      "step": "DeclareAttackers",
+      "turn": 1
+    },
+    {
+      "do": {
+        "ChooseOptional": "Exercises"
+      },
+      "player": "alice",
+      "step": "CombatDamage",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Answer": {
+          "prompt": "ChooseCardFromAmong",
+          "with": "$plains"
+        }
+      },
+      "player": "alice",
+      "step": "CombatDamage",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Answer": {
+          "prompt": "Shuffle",
+          "with": [
+            "$bolt",
+            "$gb",
+            "$opt"
+          ]
+        }
+      },
+      "player": "alice",
+      "step": "CombatDamage",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Life": {
+          "life": 16,
+          "player": "bob"
+        }
+      },
+      "player": "alice",
+      "step": "EndOfCombat",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Plains",
+          "count": 1,
+          "player": "alice",
+          "zone": "Hand"
+        }
+      },
+      "player": "alice",
+      "step": "EndOfCombat",
+      "turn": 1
+    },
+    {
+      "check": {
+        "View": {
+          "is": [
+            "$deep",
+            "Island",
+            "Island#2",
+            "Island#3",
+            "Island#4",
+            "Island#5",
+            "Opt",
+            "Grizzly Bears",
+            "Lightning Bolt"
+          ],
+          "of": "Zone",
+          "player": "alice",
+          "zone": "Library"
+        }
+      },
+      "player": "alice",
+      "step": "EndOfCombat",
+      "turn": 1
+    }
+  ]
+}

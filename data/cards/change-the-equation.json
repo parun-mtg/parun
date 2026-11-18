@@ -1,0 +1,118 @@
+{
+  "faces": [
+    {
+      "manaCost": [
+        {
+          "type": "Generic",
+          "value": 1
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "Blue"
+          }
+        }
+      ],
+      "name": "Change the Equation",
+      "oracleText": "Choose one —\n• Counter target spell with mana value 2 or less.\n• Counter target red or green spell with mana value 6 or less.",
+      "spell": {
+        "modes": [
+          {
+            "clauses": [
+              {
+                "effects": [
+                  {
+                    "type": "Counter",
+                    "value": {
+                      "ref": {
+                        "type": "InSlot",
+                        "value": "spell"
+                      }
+                    }
+                  }
+                ]
+              }
+            ],
+            "targetSlots": {
+              "spell": {
+                "filter": {
+                  "type": "Measures",
+                  "value": {
+                    "comparison": "AtMost",
+                    "measure": "ManaValue",
+                    "operand": {
+                      "type": "Literal",
+                      "value": 2
+                    }
+                  }
+                },
+                "pool": {
+                  "type": "Spells"
+                }
+              }
+            }
+          },
+          {
+            "clauses": [
+              {
+                "effects": [
+                  {
+                    "type": "Counter",
+                    "value": {
+                      "ref": {
+                        "type": "InSlot",
+                        "value": "target"
+                      }
+                    }
+                  }
+                ]
+              }
+            ],
+            "targetSlots": {
+              "target": {
+                "filter": {
+                  "type": "And",
+                  "value": [
+                    {
+                      "type": "Or",
+                      "value": [
+                        {
+                          "type": "HasColor",
+                          "value": "Red"
+                        },
+                        {
+                          "type": "HasColor",
+                          "value": "Green"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "Measures",
+                      "value": {
+                        "comparison": "AtMost",
+                        "measure": "ManaValue",
+                        "operand": {
+                          "type": "Literal",
+                          "value": 6
+                        }
+                      }
+                    }
+                  ]
+                },
+                "pool": {
+                  "type": "Spells"
+                }
+              }
+            }
+          }
+        ]
+      },
+      "typeLine": {
+        "types": [
+          "Instant"
+        ]
+      }
+    }
+  ]
+}

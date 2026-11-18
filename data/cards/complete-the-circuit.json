@@ -1,0 +1,147 @@
+{
+  "faces": [
+    {
+      "delayedAbilities": {
+        "copy that spell": {
+          "condition": {
+            "type": "SpellCast",
+            "value": {
+              "scope": {
+                "type": "PlayersTurn",
+                "value": {
+                  "type": "Relative",
+                  "value": "AnyPlayer"
+                }
+              },
+              "spell": {
+                "type": "Matching",
+                "value": {
+                  "type": "And",
+                  "value": [
+                    {
+                      "type": "HeldBy",
+                      "value": {
+                        "holder": "Controller",
+                        "relation": "You"
+                      }
+                    },
+                    {
+                      "type": "Or",
+                      "value": [
+                        {
+                          "type": "HasCardType",
+                          "value": "Instant"
+                        },
+                        {
+                          "type": "HasCardType",
+                          "value": "Sorcery"
+                        }
+                      ]
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "modal": {
+            "modes": [
+              {
+                "clauses": [
+                  {
+                    "effects": [
+                      {
+                        "type": "CopyStackObject",
+                        "value": {
+                          "quantity": {
+                            "type": "Literal",
+                            "value": 2
+                          },
+                          "ref": {
+                            "type": "InSlot",
+                            "value": "thatSpell"
+                          },
+                          "targets": {
+                            "type": "ChosenByController"
+                          }
+                        }
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      },
+      "keywords": [
+        {
+          "type": "Convoke"
+        }
+      ],
+      "manaCost": [
+        {
+          "type": "Generic",
+          "value": 5
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "Blue"
+          }
+        }
+      ],
+      "name": "Complete the Circuit",
+      "oracleText": "Convoke (Your creatures can help cast this spell. Each creature you tap while casting this spell pays for {1} or one mana of that creature's color.)\nYou may cast sorcery spells this turn as though they had flash.\nWhen you next cast an instant or sorcery spell this turn, copy that spell twice. You may choose new targets for the copies.",
+      "spell": {
+        "modes": [
+          {
+            "clauses": [
+              {
+                "effects": [
+                  {
+                    "type": "AffectPlayers",
+                    "value": {
+                      "duration": {
+                        "type": "UntilEndOfTurn"
+                      },
+                      "effect": {
+                        "type": "CastAsThoughItHadFlash",
+                        "value": {
+                          "matching": {
+                            "type": "HasCardType",
+                            "value": "Sorcery"
+                          }
+                        }
+                      },
+                      "players": {
+                        "type": "Scoped",
+                        "value": {
+                          "type": "You"
+                        }
+                      }
+                    }
+                  },
+                  {
+                    "type": "ArmDelayedTrigger",
+                    "value": {
+                      "duration": {
+                        "type": "UntilUsed"
+                      },
+                      "name": "copy that spell"
+                    }
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "typeLine": {
+        "types": [
+          "Instant"
+        ]
+      }
+    }
+  ]
+}

@@ -1,0 +1,197 @@
+{
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "battlefield": [
+          {
+            "card": "Djeru and Hazoret",
+            "label": "dh"
+          }
+        ],
+        "hand": [
+          {
+            "card": "Island"
+          }
+        ],
+        "library": [
+          {
+            "card": "Grizzly Bears",
+            "label": "gb"
+          },
+          {
+            "card": "Isamaru, Hound of Konda",
+            "label": "isamaru"
+          },
+          {
+            "card": "Island",
+            "label": "l1"
+          },
+          {
+            "card": "Island",
+            "label": "l2"
+          },
+          {
+            "card": "Island",
+            "label": "l3"
+          },
+          {
+            "card": "Island",
+            "label": "l4"
+          },
+          {
+            "card": "Island",
+            "label": "l5"
+          },
+          {
+            "card": "Island",
+            "label": "l6"
+          },
+          {
+            "card": "Island",
+            "label": "l7"
+          },
+          {
+            "card": "Island",
+            "label": "l8"
+          }
+        ],
+        "name": "alice"
+      },
+      {
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ],
+        "name": "bob"
+      }
+    ],
+    "step": "PrecombatMain"
+  },
+  "description": "CR 702.10b / 702.20b / 118.9: Djeru and Hazoret has haste and vigilance with one card in hand, and casts the legendary creature it exiles without paying its mana cost",
+  "note": "Grizzly Bears, not legendary, is not a candidate; Isamaru is cast for free with no lands.",
+  "timeline": [
+    {
+      "check": {
+        "Keywords": {
+          "count": 1,
+          "keyword": {
+            "type": "Vigilance"
+          },
+          "object": "$dh"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Attack": [
+          "$dh"
+        ]
+      },
+      "player": "alice",
+      "step": "DeclareAttackers",
+      "turn": 1
+    },
+    {
+      "do": {
+        "ChooseOptional": "Exercises"
+      },
+      "player": "alice",
+      "step": "DeclareAttackers",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Answer": {
+          "prompt": "Shuffle",
+          "with": [
+            "$gb",
+            "$l1",
+            "$l2",
+            "$l3",
+            "$l4"
+          ]
+        }
+      },
+      "player": "alice",
+      "step": "DeclareAttackers",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Tapped": {
+          "object": "$dh",
+          "tapped": false
+        }
+      },
+      "player": "alice",
+      "step": "EndOfCombat",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Life": {
+          "life": 15,
+          "player": "bob"
+        }
+      },
+      "player": "alice",
+      "step": "EndOfCombat",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Cast": {
+          "object": "Isamaru, Hound of Konda"
+        }
+      },
+      "player": "alice",
+      "step": "PostcombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Isamaru, Hound of Konda",
+          "count": 1,
+          "player": "alice",
+          "zone": "Battlefield"
+        }
+      },
+      "player": "alice",
+      "step": "EndStep",
+      "turn": 1
+    }
+  ]
+}
