@@ -1218,17 +1218,33 @@ arrivalBindings t arrival = case PutIntoZoneTrigger.batching t of
 -- (CR 603.2c) where a recipient would keep only the first: Dunbarrow
 -- Revivalist's boon attaches its Role to "one of them", which a choice among the
 -- group reads.
+--
+-- A single entrant the Filter requires to be attacking (CR 508.4) is also bound
+-- under Binding.attackingCreature, the slot a declared attacker's is, so CR
+-- 603.1b's "attacks or enters attacking" shares one "that creature" across
+-- both branches: data/cards/arni-metalbrow.json is the reader.
 entersSlots :: EntersTrigger.EntersTrigger -> (Set.Set SlotName.SlotName, Set.Set SlotName.SlotName)
 entersSlots t = case EntersTrigger.permanent t of
   ActingPermanent.Self -> (Set.empty, Set.singleton Binding.attachedHost)
-  ActingPermanent.Matching _ -> (Set.singleton Binding.became, Set.empty)
+  ActingPermanent.Matching f -> (Set.fromList (Binding.became : [Binding.attackingCreature | entersAttacking t f]), Set.empty)
+
+-- Does an Enters trigger name ONE entrant that its Filter requires to be
+-- attacking? Only a conjunct proves it: under Or or Not a match need not be
+-- attacking.
+entersAttacking :: EntersTrigger.EntersTrigger -> Filter.Type.Filter keyword -> Bool
+entersAttacking t f = EntersTrigger.batching t == Batching.EachOccurrence && requiresAttacking f
+  where
+    requiresAttacking g = case g of
+      Filter.Type.IsAttacking _ -> True
+      Filter.Type.And gs -> any requiresAttacking gs
+      _ -> False
 
 -- CR 603.6a: entersSlots, stamped off the entry eventBindings was reached past.
 entersBindings :: GameState -> EntersTrigger.EntersTrigger -> ZoneChange.ZoneChange -> Map.Map SlotName.SlotName Binding
 entersBindings gs t zc = case EntersTrigger.permanent t of
   ActingPermanent.Self -> maybe Map.empty (`Binding.setAttachedHost` Map.empty) (Game.hostWithLastKnown entrant gs)
-  ActingPermanent.Matching _ -> case EntersTrigger.batching t of
-    Batching.EachOccurrence -> Binding.setBecame entrant Map.empty
+  ActingPermanent.Matching f -> case EntersTrigger.batching t of
+    Batching.EachOccurrence -> (if entersAttacking t f then Binding.setAttackingCreature entrant else id) (Binding.setBecame entrant Map.empty)
     Batching.OneOrMore -> Binding.setBecameGroup (Seq.singleton entrant) Map.empty
   where
     entrant = ZoneChange.object zc
