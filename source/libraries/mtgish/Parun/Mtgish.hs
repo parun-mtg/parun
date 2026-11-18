@@ -371,7 +371,7 @@ rule face n = case Node.tag n of
     (who, effects') <- pair n
     relation <- players who
     rows <- Common.asArray effects' >>= traverse (Node.node Monad.>=> playerRule)
-    pure face {Face.playerAbilities = Face.playerAbilities face <> [PlayerStaticAbility.MkPlayerStaticAbility (PlayerScope.Related relation) Nothing Nothing e | e <- rows]}
+    pure face {Face.playerAbilities = Face.playerAbilities face <> [PlayerStaticAbility.MkPlayerStaticAbility (PlayerScope.Related relation) Nothing Set.empty Nothing e | e <- rows]}
   -- "This land enters tapped" (CR 614.1d), or "... unless [condition]",
   -- which applies while the condition fails ('Oracle.Trigger.unless'); "This
   -- creature enters prepared" (CR 723.3a).

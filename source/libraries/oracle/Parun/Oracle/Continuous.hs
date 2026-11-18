@@ -377,8 +377,9 @@ combatRestrictions context attached enchants rs = case rs of
 -- out here.
 playerRule :: Target.Context -> PlayerStaticAbility.PlayerStaticAbility -> [Text.Text]
 playerRule context a = case a of
-  PlayerStaticAbility.MkPlayerStaticAbility (PlayerScope.Related relation) Nothing Nothing (PlayerEffect.ModifyCost (CostModifier.MkCostModifier CostSubject.Spells f Nothing Nothing Nothing CountedAgainst.ChangeSource Nothing (CostChange.Increase k)))
-    | not (null (ManaCost.unwrap k)),
+  PlayerStaticAbility.MkPlayerStaticAbility (PlayerScope.Related relation) Nothing zones Nothing (PlayerEffect.ModifyCost (CostModifier.MkCostModifier CostSubject.Spells f Nothing Nothing Nothing CountedAgainst.ChangeSource Nothing (CostChange.Increase k)))
+    | Set.null zones,
+      not (null (ManaCost.unwrap k)),
       not (any disjoined (conjuncts f)) -> do
         casters <- case relation of
           PlayerRelation.AnyPlayer -> [Text.empty]

@@ -364,7 +364,7 @@ printedRows gs =
       -- has a player ability forces it -- so the ordinary board pays nothing for
       -- the CR 604.2 question below.
       removed = Projection.namedAbilityRemoval gs
-      fromPermanent oid = case playerAbilitiesOf oid gs of
+      fromPermanent oid = case filter (functionsIn oid gs) (playerAbilitiesOf oid gs) of
         -- The overwhelming majority of permanents: no ability, so no
         -- controller projection and no CR 305.7 check is paid for.
         [] -> []
@@ -440,7 +440,9 @@ printedRows gs =
       -- zone -- a face-up plane or phenomenon, an emblem, a vanguard --
       -- contributes its player abilities from there. Parun.PlanechaseSpec's "CR
       -- 901.7 a face-up plane's player ability affects the game" proves it.
-      inCommand = filter (`printedCarrier` gs) (Set.toList (GameState.command gs))
+      -- CR 113.6b: so does any other command-zone object, for an ability
+      -- stating that zone; functionsIn keeps which.
+      inCommand = Set.toList (GameState.command gs)
    in concatMap fromPermanent (onBattlefield <> inCommand)
         <> (if Projection.grantsPlayerAbilityAnywhere gs then concatMap grantedFrom onBattlefield else [])
 
@@ -449,23 +451,31 @@ printedRows gs =
 printedCarrier :: ObjectId -> GameState -> Bool
 printedCarrier oid gs = Set.member oid (GameState.battlefield gs) || (Set.member oid (GameState.command gs) && Vanguard.functionsFromCommandZone oid gs)
 
+-- CR 113.6 / 113.6b: whether this ability of this object functions where the
+-- object is -- its stated zones, or printedCarrier's default where it states
+-- none. The Ur-Sphinx scenarios prove the command-zone arm.
+functionsIn :: ObjectId -> GameState -> PlayerStaticAbility.PlayerStaticAbility -> Bool
+functionsIn oid gs ability
+  | Set.null zones = printedCarrier oid gs
+  | otherwise = any (`Set.member` zones) (Game.zoneOf oid gs)
+  where
+    zones = PlayerStaticAbility.functionsFrom ability
+
 -- CR 113.6m / 602.2b: an activated ability's own "this ability costs less to
 -- activate" rider on an object printedRows does not walk (Razorlash
 -- Transmogrant in its owner's graveyard). The rider is part of the ability it
 -- names, and CR 601.2f applies it wherever that ability is activated; only a
 -- row naming its own source qualifies, since the object's other player
--- abilities function only on the battlefield (CR 113.6). The activator is the
+-- abilities function only where functionsIn says (CR 113.6). The activator is the
 -- row's "you". The Razorlash Transmogrant scenarios prove it.
 ownActivationRows :: PlayerId -> ObjectId -> GameState -> [(RowSource, PlayerEffect)]
-ownActivationRows pid oid gs
-  | printedCarrier oid gs = []
-  | otherwise = case Game.lookupObject oid gs of
-      Nothing -> []
-      Just object ->
-        [ (source, effect)
-        | (_, source, _, reaches, effect) <- rowsOf gs [] oid pid (fmap ((,) (Object.timestamp object)) (filter ownRider (playerAbilitiesOf oid gs))),
-          reaches pid
-        ]
+ownActivationRows pid oid gs = case Game.lookupObject oid gs of
+  Nothing -> []
+  Just object ->
+    [ (source, effect)
+    | (_, source, _, reaches, effect) <- rowsOf gs [] oid pid (fmap ((,) (Object.timestamp object)) (filter (\ability -> ownRider ability && not (functionsIn oid gs ability)) (playerAbilitiesOf oid gs))),
+      reaches pid
+    ]
   where
     ownRider ability = case PlayerStaticAbility.effect ability of
       PlayerEffect.ModifyCost modifier -> case CostModifier.subject modifier of
