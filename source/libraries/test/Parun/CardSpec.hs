@@ -252,6 +252,7 @@ import qualified Parun.Types.EntersTrigger as EntersTrigger
 import qualified Parun.Types.EntersWith as EntersWith
 import qualified Parun.Types.EntriesTrigger as EntriesTrigger
 import qualified Parun.Types.EntryController as EntryController
+import qualified Parun.Types.EntryCounter as EntryCounter
 import qualified Parun.Types.EntryFlip as EntryFlip
 import qualified Parun.Types.EntryHost as EntryHost
 import qualified Parun.Types.EntryOption as EntryOption
@@ -2639,14 +2640,16 @@ protectionOffences face =
 -- Subtype became a Filter (#499). A new Filter-bearing keyword needs its arm
 -- added here by hand.
 -- The Filter positions an entry rider has: the counter KINDS it is keyed by (CR
--- 122.1b's keyword counter carries a whole Keyword) and the COUNTS it holds (CR
--- 122.6, each a Quantity, which may carry a Count whose Filter is card text),
--- and the host filter CR 303.4f's choice is narrowed by.
+-- 122.1b's keyword counter carries a whole Keyword) and each kind's entrant gate
+-- (CR 614.12), the COUNTS it holds (CR 122.6, each a Quantity, which may carry a
+-- Count whose Filter is card text), and the host filter CR 303.4f's choice is
+-- narrowed by.
 -- One function so the three effect arms that carry a rider cannot sweep
 -- different halves of it.
 riderFilters :: EntryRiders.EntryRiders Quantity.Type.Quantity (GrantedAbility.GrantedAbility Card.Type.Card) -> [(Framing, Filter.Type.Filter Keyword.Keyword)]
 riderFilters riders =
-  concatMap counterKindFilters (Map.keys (EntryRiders.counters riders))
+  concatMap (counterKindFilters . EntryCounter.kind) (Map.keys (EntryRiders.counters riders))
+    <> concatMap (foldMap (\f -> [(Unframed, f)]) . EntryCounter.onlyIf) (Map.keys (EntryRiders.counters riders))
     <> concatMap quantityFilters (Map.elems (EntryRiders.counters riders))
     -- CR 611.2e's effects, ModifyTarget's modification read.
     <> foldMap modificationFilters (EntryRiders.characteristics riders)

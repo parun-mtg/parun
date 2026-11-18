@@ -130,6 +130,7 @@ import qualified Parun.Types.EndingStep as EndingStep
 import qualified Parun.Types.EntersTrigger as EntersTrigger
 import qualified Parun.Types.EntryAttack as EntryAttack
 import qualified Parun.Types.EntryController as EntryController
+import qualified Parun.Types.EntryCounter as EntryCounter
 import qualified Parun.Types.EntryR as EntryR
 import qualified Parun.Types.EntryRewrite as EntryRewrite
 import qualified Parun.Types.EntryRiders as EntryRiders
@@ -6730,7 +6731,7 @@ returns kind =
           ( MoveToZone.MkMoveToZone
               (ObjectRef.InSlot Binding.became)
               Zone.Battlefield
-              EntryRiders.defaultValue {EntryRiders.counters = Map.singleton kind (Quantity.Literal 1), EntryRiders.under = EntryController.Owner}
+              EntryRiders.defaultValue {EntryRiders.counters = Map.singleton (EntryCounter.unconditional kind) (Quantity.Literal 1), EntryRiders.under = EntryController.Owner}
               Nothing
               Nothing
               LibraryPlacement.defaultValue

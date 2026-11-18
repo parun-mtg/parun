@@ -226,6 +226,7 @@ import qualified Parun.Types.EntriesTrigger as EntriesTrigger
 import qualified Parun.Types.EntryAttack as EntryAttack
 import qualified Parun.Types.EntryBlock as EntryBlock
 import qualified Parun.Types.EntryController as EntryController
+import qualified Parun.Types.EntryCounter as EntryCounter
 import qualified Parun.Types.EntryFlip as EntryFlip
 import qualified Parun.Types.EntryHost as EntryHost
 import qualified Parun.Types.EntryOption as EntryOption
@@ -4091,7 +4092,7 @@ entryRidersChildren c (EntryRiders.MkEntryRiders tapped attacking blocking trans
     <$> traverse attack attacking
     <*> traverse block blocking
     <*> pure transformed
-    <*> traverseCounters c counters
+    <*> traverseEntryCounters counters
     <*> controller under
     <*> pure exiledFaceDown
     <*> traverse host attachedTo
@@ -4099,6 +4100,11 @@ entryRidersChildren c (EntryRiders.MkEntryRiders tapped attacking blocking trans
     <*> pure noted
     <*> traverse (copyModification c) characteristics
   where
+    -- Kind and gate (CR 614.12) alike; traverseCounters' merge on collision.
+    traverseEntryCounters =
+      fmap (Map.fromListWith (\greater lesser -> Quantity.Arithmetic (Arithmetic.Plus (Plus.MkPlus lesser greater))))
+        . traverse (\(EntryCounter.MkEntryCounter kind gate, amount) -> (,) <$> (EntryCounter.MkEntryCounter <$> copyCounterKind c kind <*> traverse (copyFilter c) gate) <*> copyQuantity c amount)
+        . Map.toList
     attack a = case a of
       EntryAttack.Chosen -> pure a
       EntryAttack.SameAs name -> EntryAttack.SameAs <$> copySlot c name

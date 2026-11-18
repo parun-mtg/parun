@@ -127,6 +127,7 @@ import qualified Parun.Types.Duration as Duration
 import qualified Parun.Types.Earthbend as Earthbend
 import qualified Parun.Types.Effect as Effect
 import qualified Parun.Types.EntryController as EntryController
+import qualified Parun.Types.EntryCounter as EntryCounter
 import qualified Parun.Types.EntryHost as EntryHost
 import qualified Parun.Types.EntryRiders as EntryRiders
 import qualified Parun.Types.ExchangeCardZones as ExchangeCardZones
@@ -3109,6 +3110,21 @@ effectLintSpec s registry corpus = Spec.describe s "Lint" $ do
     -- prints one.
     Spec.assertBool s (any (anyFace (any counters . cardResolutionEffects) . Printing.card) ps) "the pool has a card creating a copy token with counters on it"
     Spec.assertEqWith s "a copy token reads only counters, tapped, attacking and blocking" (fmap (S.nameOf . Printing.card) offenders) []
+  -- Unprinted: a token's entry counters conditioned on the entrant (CR 614.12),
+  -- whose characteristics the creating effect already fixes. Only MoveToZone
+  -- prints one (Chief Montgomery Scott); Event.createTokens would read the gate
+  -- as the move funnel does.
+  Spec.it s "no Create or CreateCopy conditions an entry counter on the entrant" $ do
+    ps <- S.allPrintings s corpus
+    let gated riders = any (Maybe.isJust . EntryCounter.onlyIf) (Map.keys (EntryRiders.counters riders))
+        offends effect = case effect of
+          Effect.Create (Create.MkCreate _ _ riders _ _ _ _) -> gated riders
+          Effect.CreateCopy (CreateCopy.MkCreateCopy _ _ riders _ _ _ _) -> gated riders
+          _ -> False
+        doctored = EntryRiders.defaultValue {EntryRiders.counters = Map.singleton (EntryCounter.MkEntryCounter CounterKind.PlusOnePlusOne (Just (Filter.Type.HasCardType CardType.Creature))) (Quantity.Type.Literal 1)}
+        offenders = filter (anyFace (any offends . cardResolutionEffects) . Printing.card) ps
+    Spec.assertBool s (gated doctored) "the lint sees a gated entry counter"
+    Spec.assertEqWith s "a token's entry counters are unconditional" (fmap (S.nameOf . Printing.card) offenders) []
   -- CR 111.2 / 110.2a: a token enters under the player who created it, whom
   -- Effect.Create names in its own field, so its rider's instructed player is
   -- read by nothing; only the MoveToZone arm resolves one.

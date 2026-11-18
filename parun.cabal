@@ -3271,6 +3271,7 @@ library types
     Parun.Types.EntryAttack
     Parun.Types.EntryBlock
     Parun.Types.EntryController
+    Parun.Types.EntryCounter
     Parun.Types.EntryFlip
     Parun.Types.EntryHost
     Parun.Types.EntryLink
