@@ -1,0 +1,452 @@
+{
+  "faces": [
+    {
+      "defense": 6,
+      "manaCost": [
+        {
+          "type": "Variable"
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "White"
+          }
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "Blue"
+          }
+        }
+      ],
+      "name": "Invasion of New Phyrexia",
+      "oracleText": "(As a Siege enters, choose an opponent to protect it. You and others can attack it. When it's defeated, exile it, then cast it transformed.)\nWhen this Siege enters, create X 2/2 white and blue Knight creature tokens with vigilance.",
+      "triggeredAbilities": [
+        {
+          "condition": {
+            "type": "Enters",
+            "value": {}
+          },
+          "modal": {
+            "modes": [
+              {
+                "clauses": [
+                  {
+                    "effects": [
+                      {
+                        "type": "Create",
+                        "value": {
+                          "card": {
+                            "faces": [
+                              {
+                                "colorIndicator": [
+                                  "White",
+                                  "Blue"
+                                ],
+                                "keywords": [
+                                  {
+                                    "type": "Vigilance"
+                                  }
+                                ],
+                                "name": "Knight Token",
+                                "power": {
+                                  "type": "Literal",
+                                  "value": 2
+                                },
+                                "toughness": {
+                                  "type": "Literal",
+                                  "value": 2
+                                },
+                                "typeLine": {
+                                  "subtypes": [
+                                    "Knight"
+                                  ],
+                                  "types": [
+                                    "Creature"
+                                  ]
+                                }
+                              }
+                            ]
+                          },
+                          "quantity": {
+                            "type": "InSlot",
+                            "value": "X"
+                          }
+                        }
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      ],
+      "typeLine": {
+        "subtypes": [
+          "Siege"
+        ],
+        "types": [
+          "Battle"
+        ]
+      }
+    },
+    {
+      "activatedAbilities": [
+        {
+          "cost": {
+            "components": [
+              {
+                "type": "AddLoyaltyToThis",
+                "value": 1
+              }
+            ],
+            "mana": []
+          },
+          "modal": {
+            "modes": [
+              {
+                "clauses": [
+                  {
+                    "effects": [
+                      {
+                        "type": "Draw",
+                        "value": {
+                          "player": {
+                            "type": "Relative",
+                            "value": "You"
+                          },
+                          "quantity": {
+                            "type": "Literal",
+                            "value": 2
+                          }
+                        }
+                      }
+                    ]
+                  },
+                  {
+                    "effects": [
+                      {
+                        "type": "Discard",
+                        "value": {
+                          "type": "Counted",
+                          "value": {
+                            "player": {
+                              "type": "Relative",
+                              "value": "You"
+                            },
+                            "quantity": {
+                              "type": "Literal",
+                              "value": 2
+                            }
+                          }
+                        }
+                      }
+                    ],
+                    "payGate": {
+                      "branch": "IfNotPaid",
+                      "cost": {
+                        "components": [
+                          {
+                            "type": "DiscardCards",
+                            "value": {
+                              "count": {
+                                "type": "Fixed",
+                                "value": 1
+                              },
+                              "whichCards": {
+                                "type": "HasCardType",
+                                "value": "Creature"
+                              }
+                            }
+                          }
+                        ],
+                        "mana": []
+                      },
+                      "payer": {
+                        "type": "InSlot",
+                        "value": "you"
+                      }
+                    }
+                  }
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "cost": {
+            "components": [
+              {
+                "type": "RemoveLoyaltyFromThis",
+                "value": {
+                  "type": "Fixed",
+                  "value": 2
+                }
+              }
+            ],
+            "mana": []
+          },
+          "modal": {
+            "modes": [
+              {
+                "clauses": [
+                  {
+                    "effects": [
+                      {
+                        "type": "CreateEmblem",
+                        "value": {
+                          "card": {
+                            "faces": [
+                              {
+                                "name": "Teferi Akosa of Zhalfir Emblem",
+                                "staticAbilities": [
+                                  {
+                                    "affected": {
+                                      "type": "Matching",
+                                      "value": {
+                                        "type": "And",
+                                        "value": [
+                                          {
+                                            "type": "HasSubtype",
+                                            "value": "Knight"
+                                          },
+                                          {
+                                            "type": "HeldBy",
+                                            "value": {
+                                              "holder": "Controller",
+                                              "relation": "You"
+                                            }
+                                          }
+                                        ]
+                                      }
+                                    },
+                                    "modifications": [
+                                      {
+                                        "type": "ModifyPowerToughness",
+                                        "value": {
+                                          "power": {
+                                            "type": "Literal",
+                                            "value": 1
+                                          },
+                                          "toughness": {
+                                            "type": "Literal",
+                                            "value": 0
+                                          }
+                                        }
+                                      },
+                                      {
+                                        "type": "GainKeyword",
+                                        "value": {
+                                          "type": "Ward",
+                                          "value": {
+                                            "cost": {
+                                              "mana": [
+                                                {
+                                                  "type": "Generic",
+                                                  "value": 1
+                                                }
+                                              ]
+                                            }
+                                          }
+                                        }
+                                      }
+                                    ]
+                                  }
+                                ]
+                              }
+                            ]
+                          }
+                        }
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "cost": {
+            "components": [
+              {
+                "type": "RemoveLoyaltyFromThis",
+                "value": {
+                  "type": "Fixed",
+                  "value": 3
+                }
+              }
+            ],
+            "mana": []
+          },
+          "modal": {
+            "modes": [
+              {
+                "clauses": [
+                  {
+                    "effects": [
+                      {
+                        "type": "ChoosePermanents",
+                        "value": {
+                          "permanents": {
+                            "count": {
+                              "type": "UpTo"
+                            },
+                            "filter": {
+                              "type": "And",
+                              "value": [
+                                {
+                                  "type": "HasCardType",
+                                  "value": "Creature"
+                                },
+                                {
+                                  "type": "HeldBy",
+                                  "value": {
+                                    "holder": "Controller",
+                                    "relation": "You"
+                                  }
+                                },
+                                {
+                                  "type": "Not",
+                                  "value": {
+                                    "type": "IsTapped"
+                                  }
+                                }
+                              ]
+                            }
+                          },
+                          "slot": "tapped"
+                        }
+                      },
+                      {
+                        "type": "Tap",
+                        "value": {
+                          "ref": {
+                            "type": "InSlot",
+                            "value": "tapped"
+                          }
+                        }
+                      },
+                      {
+                        "type": "ArmDelayedTrigger",
+                        "value": {
+                          "name": "shuffle when you do"
+                        }
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      ],
+      "colorIndicator": [
+        "White",
+        "Blue"
+      ],
+      "delayedAbilities": {
+        "shuffle when you do": {
+          "condition": {
+            "type": "Reflexive"
+          },
+          "modal": {
+            "modes": [
+              {
+                "clauses": [
+                  {
+                    "effects": [
+                      {
+                        "type": "ShuffleIntoLibrary",
+                        "value": {
+                          "ref": {
+                            "type": "InSlot",
+                            "value": "target"
+                          }
+                        }
+                      }
+                    ]
+                  }
+                ],
+                "targetSlots": {
+                  "target": {
+                    "amount": {
+                      "type": "Count",
+                      "value": {
+                        "aggregation": {
+                          "type": "Members"
+                        },
+                        "filter": {
+                          "type": "IsBound",
+                          "value": "tapped"
+                        },
+                        "scope": {
+                          "type": "OverBound",
+                          "value": "tapped"
+                        }
+                      }
+                    },
+                    "filter": {
+                      "type": "And",
+                      "value": [
+                        {
+                          "type": "Not",
+                          "value": {
+                            "type": "HasCardType",
+                            "value": "Land"
+                          }
+                        },
+                        {
+                          "type": "HeldBy",
+                          "value": {
+                            "holder": "Controller",
+                            "relation": "Opponent"
+                          }
+                        },
+                        {
+                          "type": "Measures",
+                          "value": {
+                            "comparison": "AtMost",
+                            "measure": "ManaValue",
+                            "operand": {
+                              "type": "EnclosingAmount"
+                            }
+                          }
+                        }
+                      ]
+                    },
+                    "pool": {
+                      "type": "Permanents"
+                    }
+                  }
+                }
+              }
+            ]
+          }
+        }
+      },
+      "loyalty": {
+        "type": "Literal",
+        "value": 4
+      },
+      "name": "Teferi Akosa of Zhalfir",
+      "oracleText": "[+1]: Draw two cards. Then discard two cards unless you discard a creature card.\n[−2]: You get an emblem with \"Knights you control get +1/+0 and have ward {1}.\"\n[−3]: Tap any number of untapped creatures you control. When you do, shuffle target nonland permanent an opponent controls with mana value X or less into its owner's library, where X is the number of creatures tapped this way.",
+      "typeLine": {
+        "subtypes": [
+          "Teferi"
+        ],
+        "supertypes": [
+          "Legendary"
+        ],
+        "types": [
+          "Planeswalker"
+        ]
+      }
+    }
+  ],
+  "layout": {
+    "type": "Transforming"
+  }
+}

@@ -1,0 +1,219 @@
+{
+  "board": {
+    "active": "alice",
+    "step": "PrecombatMain",
+    "seats": [
+      {
+        "name": "alice",
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ],
+        "battlefield": [
+          {
+            "card": "Swamp",
+            "label": "s1",
+            "ready": true
+          },
+          {
+            "card": "Swamp",
+            "label": "s2",
+            "ready": true
+          },
+          {
+            "card": "Swamp",
+            "label": "s3",
+            "ready": true
+          },
+          {
+            "card": "Forest",
+            "label": "f1",
+            "ready": true
+          },
+          {
+            "card": "Forest",
+            "label": "f2",
+            "ready": true
+          },
+          {
+            "card": "Forest",
+            "label": "f3",
+            "ready": true
+          },
+          {
+            "card": "Invasion of Lorwyn",
+            "label": "forces",
+            "face": "Winnowing Forces"
+          }
+        ],
+        "hand": [
+          {
+            "card": "Invasion of Lorwyn",
+            "label": "invasion"
+          }
+        ]
+      },
+      {
+        "name": "bob",
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ],
+        "battlefield": [
+          {
+            "card": "Craw Wurm",
+            "label": "wurm"
+          },
+          {
+            "card": "Ancient Brontodon",
+            "label": "bronto"
+          },
+          {
+            "card": "Llanowar Elves",
+            "label": "elves"
+          }
+        ]
+      }
+    ]
+  },
+  "description": "CR 208.2a / 701.8a Invasion of Lorwyn destroys a non-Elf creature an opponent controls with power at most alice's land count, and Winnowing Forces counts the same lands",
+  "note": "alice controls six lands, so Winnowing Forces is 6/6 and the 6-power Craw Wurm is the trigger's only legal target, bound unasked: the 9-power Ancient Brontodon and the Elf Llanowar Elves would each make the target prompt a real choice, which the timeline does not schedule.",
+  "timeline": [
+    {
+      "check": {
+        "PowerToughness": {
+          "object": "$forces",
+          "power": 6,
+          "toughness": 6
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Cast": {
+          "object": "$invasion",
+          "mana": [
+            "$s1",
+            "$s2",
+            "$f1",
+            "$f2",
+            "$s3",
+            "$f3"
+          ]
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "bob",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "bob",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Craw Wurm",
+          "count": 1,
+          "player": "bob",
+          "zone": "Graveyard"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Ancient Brontodon",
+          "count": 1,
+          "player": "bob",
+          "zone": "Battlefield"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    }
+  ]
+}

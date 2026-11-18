@@ -1,0 +1,208 @@
+{
+  "faces": [
+    {
+      "defense": 5,
+      "manaCost": [
+        {
+          "type": "Generic",
+          "value": 2
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "Red"
+          }
+        }
+      ],
+      "name": "Invasion of Regatha",
+      "oracleText": "(As a Siege enters, choose an opponent to protect it. You and others can attack it. When it's defeated, exile it, then cast it transformed.)\nWhen this Siege enters, it deals 4 damage to another target battle or opponent and 1 damage to up to one target creature.",
+      "triggeredAbilities": [
+        {
+          "condition": {
+            "type": "Enters",
+            "value": {}
+          },
+          "modal": {
+            "modes": [
+              {
+                "clauses": [
+                  {
+                    "effects": [
+                      {
+                        "type": "DealDamage",
+                        "value": {
+                          "parts": [
+                            {
+                              "quantity": {
+                                "type": "Literal",
+                                "value": 4
+                              },
+                              "ref": {
+                                "type": "InSlot",
+                                "value": "target"
+                              }
+                            },
+                            {
+                              "quantity": {
+                                "type": "Literal",
+                                "value": 1
+                              },
+                              "ref": {
+                                "type": "InSlot",
+                                "value": "creature"
+                              }
+                            }
+                          ]
+                        }
+                      }
+                    ]
+                  }
+                ],
+                "targetSlots": {
+                  "creature": {
+                    "count": {
+                      "type": "Printed",
+                      "value": {
+                        "least": 0,
+                        "most": 1
+                      }
+                    },
+                    "pool": {
+                      "type": "Creatures"
+                    }
+                  },
+                  "target": {
+                    "filter": {
+                      "type": "Or",
+                      "value": [
+                        {
+                          "type": "And",
+                          "value": [
+                            {
+                              "type": "HasCardType",
+                              "value": "Battle"
+                            },
+                            {
+                              "type": "Not",
+                              "value": {
+                                "type": "IsSource"
+                              }
+                            }
+                          ]
+                        },
+                        {
+                          "type": "IsPlayer",
+                          "value": "Opponent"
+                        }
+                      ]
+                    },
+                    "pool": {
+                      "type": "AnyTarget"
+                    }
+                  }
+                }
+              }
+            ]
+          }
+        }
+      ],
+      "typeLine": {
+        "subtypes": [
+          "Siege"
+        ],
+        "types": [
+          "Battle"
+        ]
+      }
+    },
+    {
+      "colorIndicator": [
+        "Red"
+      ],
+      "keywords": [
+        {
+          "type": "Prowess"
+        }
+      ],
+      "name": "Disciples of the Inferno",
+      "oracleText": "Prowess (Whenever you cast a noncreature spell, this creature gets +1/+1 until end of turn.)\nIf a noncreature source you control would deal damage to a creature, battle, or opponent, it deals that much damage plus 2 instead.",
+      "power": {
+        "type": "Literal",
+        "value": 4
+      },
+      "replacementEffects": [
+        {
+          "effect": {
+            "type": "DamageR",
+            "value": {
+              "matching": {
+                "whatRecipient": {
+                  "type": "Or",
+                  "value": [
+                    {
+                      "type": "HasCardType",
+                      "value": "Creature"
+                    },
+                    {
+                      "type": "HasCardType",
+                      "value": "Battle"
+                    }
+                  ]
+                },
+                "whatSource": {
+                  "type": "And",
+                  "value": [
+                    {
+                      "type": "Not",
+                      "value": {
+                        "type": "HasCardType",
+                        "value": "Creature"
+                      }
+                    },
+                    {
+                      "type": "HeldBy",
+                      "value": {
+                        "holder": "Controller",
+                        "relation": "You"
+                      }
+                    }
+                  ]
+                },
+                "whoRecipient": {
+                  "type": "Opponent"
+                }
+              },
+              "rewrite": {
+                "type": "Scale",
+                "value": {
+                  "type": "AddMore",
+                  "value": {
+                    "type": "Literal",
+                    "value": 2
+                  }
+                }
+              }
+            }
+          }
+        }
+      ],
+      "toughness": {
+        "type": "Literal",
+        "value": 4
+      },
+      "typeLine": {
+        "subtypes": [
+          "Human",
+          "Monk"
+        ],
+        "types": [
+          "Creature"
+        ]
+      }
+    }
+  ],
+  "layout": {
+    "type": "Transforming"
+  }
+}
