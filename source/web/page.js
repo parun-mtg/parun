@@ -42,13 +42,18 @@ const settingsButton = document.getElementById("settings-button");
 const settings = document.getElementById("settings");
 const dark = matchMedia("(prefers-color-scheme: dark)");
 const systemTheme = () => (dark.matches ? "dark" : "light");
-const chosen = { theme: localStorage.getItem("parun-theme") ?? "system", density: document.documentElement.dataset.density, motion: document.documentElement.dataset.motion };
+const chosen = { theme: localStorage.getItem("parun-theme") ?? "system", density: document.documentElement.dataset.density, motion: document.documentElement.dataset.motion, notify: localStorage.getItem("parun-notify") === "on" && "Notification" in window && Notification.permission === "granted" ? "on" : "off" };
 for (const [name, value] of Object.entries(chosen)) {
   const input = settings.querySelector(`input[name="${name}"][value="${value}"]`);
   if (input) input.checked = true;
 }
-settings.addEventListener("change", ({ target }) => {
-  if (target.name === "theme") {
+settings.addEventListener("change", async ({ target }) => {
+  if (target.name === "notify") {
+    // Turning notifications on asks the browser's permission, once.
+    const allowed = target.value === "on" && "Notification" in window && (Notification.permission === "granted" || (await Notification.requestPermission()) === "granted");
+    localStorage.setItem("parun-notify", allowed ? "on" : "off");
+    settings.querySelector(`input[name="notify"][value="${allowed ? "on" : "off"}"]`).checked = true;
+  } else if (target.name === "theme") {
     if (target.value === "system") localStorage.removeItem("parun-theme");
     else localStorage.setItem("parun-theme", target.value);
     document.documentElement.dataset.theme = target.value === "system" ? systemTheme() : target.value;
@@ -115,6 +120,28 @@ function floatChanges(before) {
   }
 }
 
+// While the page is out of sight, a decision waiting for the player marks
+// the tab's title, and notifies where the player turned that on.
+const title = document.title;
+let told = false;
+function announce() {
+  const prompt = root.querySelector(".prompt");
+  const waiting = prompt !== null && prompt.querySelector(".waiting") === null && prompt.querySelector("button") !== null;
+  if (!document.hidden || !waiting || told) return;
+  told = true;
+  document.title = `\u25CF Your turn \u00B7 ${title}`;
+  if (localStorage.getItem("parun-notify") === "on" && "Notification" in window && Notification.permission === "granted") {
+    const heading = prompt.querySelector("h2")?.textContent ?? "It's your decision.";
+    new Notification("Parun", { body: heading, icon: "./icon.png", tag: "parun-turn" });
+  }
+}
+document.addEventListener("visibilitychange", () => {
+  if (!document.hidden) {
+    told = false;
+    document.title = title;
+  }
+});
+
 function apply(json) {
   document.body.classList.remove("busy");
   const hadSheet = root.querySelector(".sheet-backdrop:not(.peek) .sheet") !== null;
@@ -151,6 +178,7 @@ function apply(json) {
     }
   }
   floatChanges(before);
+  announce();
   // A sheet that just opened takes the focus, on its first action.
   const sheet = root.querySelector(".sheet-backdrop:not(.peek) .sheet");
   if (sheet && !hadSheet) sheet.querySelector(".sheet-actions button, button.close")?.focus({ preventScroll: true });

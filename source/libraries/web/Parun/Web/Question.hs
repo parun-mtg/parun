@@ -24,6 +24,9 @@ import qualified Parun.JsonCodec.Common as Common
 import qualified Parun.Play.Offer as Offer
 import qualified Parun.Play.Protocol as Protocol
 import qualified Parun.Play.Render as Render
+import qualified Parun.Types.Mana as Mana.Type
+import qualified Parun.Types.ManaRetention as ManaRetention
+import qualified Parun.Types.ManaUnit as ManaUnit
 import qualified Parun.Types.ObjectId as ObjectId
 import qualified Parun.Types.ObjectView as ObjectView
 import qualified Parun.Types.Phase as Phase
@@ -32,6 +35,7 @@ import qualified Parun.Types.PlayerView as PlayerView
 import qualified Parun.Types.Question as Question
 import qualified Parun.Types.Reply as R
 import qualified Parun.Types.Request as Request
+import qualified Parun.Types.SeatView as SeatView
 import qualified Parun.Web.Attribute as Attribute
 import qualified Parun.Web.Board as Board
 import qualified Parun.Web.Card as Card
@@ -233,7 +237,7 @@ view :: Request.Request -> Screen -> Html.Html Event
 view request screen =
   table request screen (cues request (selected screen) (focus screen)) $
     [Element.el "p" ["problem"] [Element.attr "role" (Text.pack "alert")] [Html.text problem] | problem <- Maybe.maybeToList (Request.problem request)]
-      <> news (viewerOf request) screen
+      <> news (Request.view request) (viewerOf request) screen
       <> form request (selected screen)
       <> [footer (level screen) (Maybe.isJust (passIndex request))]
 
@@ -248,7 +252,7 @@ watching request screen =
           | PlayerView.active b /= PlayerView.viewer b -> Text.unpack (Render.player (PlayerView.active b)) <> " is taking their turn\x2026"
         _ -> "Moving on\x2026"
    in table request screen (Board.MkMarks (\o -> Card.MkCue [] (MkRead (ObjectView.object o)) Nothing) (const Nothing)) $
-        news (viewerOf request) screen <> [Element.el "p" ["waiting"] [] [Element.el "span" ["spinner", "small"] [Element.attr "aria-hidden" (Text.pack "true")] [], Element.string status]]
+        news (Request.view request) (viewerOf request) screen <> [Element.el "p" ["waiting"] [] [Element.el "span" ["spinner", "small"] [Element.attr "aria-hidden" (Text.pack "true")] [], Element.string status]]
 
 -- | The prompt's foot: the level control, and conceding where the seat
 -- has priority to.
@@ -262,6 +266,11 @@ footer current concedable =
       <> [ Element.el "span" ["k"] [] [Element.string "Auto-pass"],
            Element.el "div" ["segmented"] [] [Element.el "button" ["on" | l == current] [Element.attr "type" (Text.pack "button"), Element.attr "data-level" (Text.pack (fst (levelName l))), Element.attr "aria-pressed" (Text.pack (if l == current then "true" else "false")), Element.on "click" (MkLevel l)] [Element.string (snd (levelName l))] | l <- [minBound .. maxBound]]
          ]
+
+-- | The links a log entry's names make: to the sheet of each object the
+-- view shows.
+linksOf :: Maybe PlayerView.PlayerView -> Maybe (Map.Map Text.Text ObjectId.ObjectId, ObjectId.ObjectId -> Event)
+linksOf = fmap (\b -> (Log.linkable b, MkRead))
 
 -- | The seat the request asks, as its view names it.
 viewerOf :: Request.Request -> PlayerId.PlayerId
@@ -277,27 +286,27 @@ table request screen marks prompt =
           <> foldMap (Board.hand marks) board
           <> [ Element.el "aside" ["side"] [] $
                  Element.el "section" ["prompt"] [Element.attr "aria-label" (Text.pack "Your decision")] prompt
-                   : [logView (viewerOf request) screen | not (Seq.null (logged screen))]
+                   : [logView (Request.view request) (viewerOf request) screen | not (Seq.null (logged screen))]
              ]
           <> Maybe.maybeToList (do b <- board; r <- reading screen; sheetFor request b marks r)
 
 -- | What happened since the seat last decided, the latest few, oldest
 -- first; the log holds the rest.
-news :: PlayerId.PlayerId -> Screen -> [Html.Html msg]
-news viewer screen =
+news :: Maybe PlayerView.PlayerView -> PlayerId.PlayerId -> Screen -> [Html.Html Event]
+news board viewer screen =
   let count = Natural.toIntSaturating (fresh screen)
       shown = min 4 count
       latest = Seq.drop (Seq.length (logged screen) - shown) (logged screen)
    in [ Element.el "ul" ["news"] [Element.attr "aria-label" (Text.pack "Since your last decision"), Element.attr "aria-live" (Text.pack "polite")] $
           [Element.el "li" ["more"] [] [Element.string ("\x2026\&and " <> show (count - shown) <> " more in the log")] | count > shown]
-            <> fmap (Log.item viewer False) (Foldable.toList latest)
+            <> fmap (Log.item viewer (linksOf board) False) (Foldable.toList latest)
       | shown > 0
       ]
 
 -- | The log, newest first, the entries since the seat last decided lit; its
 -- summary the newest entry.
-logView :: PlayerId.PlayerId -> Screen -> Html.Html msg
-logView viewer screen =
+logView :: Maybe PlayerView.PlayerView -> PlayerId.PlayerId -> Screen -> Html.Html Event
+logView board viewer screen =
   let entries = Log.newestFirst (Seq.mapWithIndex (,) (logged screen))
       newest = Natural.toIntSaturating (fresh screen)
       total = Seq.length (logged screen)
@@ -307,7 +316,8 @@ logView viewer screen =
         ["log"]
         []
         [ Element.el "summary" [] [] [Element.el "span" ["k"] [] [Element.string "Log"], Element.el "span" ["latest"] [] (foldMap (\(_, e) -> [Element.text (Log.sentence viewer e)]) latest)],
-          Element.keyed "ul" ["log-list"] [] (Foldable.toList (fmap (\(i, e) -> (Text.pack (show i), Log.item viewer (i >= total - newest) e)) (Seq.take 300 entries)))
+          -- The newest entries link their cards; older ones stay plain text.
+          Element.keyed "ul" ["log-list"] [] (Foldable.toList (Seq.mapWithIndex (\j (i, e) -> (Text.pack (show i), Log.item viewer (if j < 60 then linksOf board else Nothing) (i >= total - newest) e)) (Seq.take 300 entries)))
         ]
 
 -- | The sheet for the card being read, with what the seat may do with it
@@ -374,7 +384,7 @@ cues request chosen focused =
               (Just cue, _, _, _) -> cue
               (_, Just cue, _, _) -> cue
               (_, _, Just gi, _) -> toggled gi
-              (_, _, _, Just source) -> Card.MkCue ["choosable"] (MkAnswer source) Nothing
+              (_, _, _, Just source) -> Card.MkCue (["choosable"] <> ["auto-next" | auto request == Just source]) (MkAnswer source) Nothing
               _ -> Card.MkCue ["playable" | Set.member oid acting] (MkRead oid) Nothing
       -- Every tile previews its sheet under a resting pointer.
       previewing o = (objectCue o) {Card.peek = Just (MkPeek (ObjectView.object o), MkUnpeek)}
@@ -583,8 +593,21 @@ form request picked = case Text.unpack (Question.kind question) of
               | not settled = "Respond, or pass to let the top of the stack resolve."
               | yours = "Your turn. Play something, or pass to move on."
               | otherwise = "Their turn. Respond, or pass."
+            -- Unspent mana empties as the step ends (CR 106.4, 500.5) unless
+            -- it is kept longer.
+            floating = [u | seat <- PlayerView.seats shown, SeatView.player seat == PlayerView.viewer shown, u <- Mana.Type.unwrap (SeatView.manaPool seat), ManaUnit.retention u == ManaRetention.Ordinary]
+            nudges =
+              [ nudge (Text.pack "You have " <> foldMap (\u -> Text.pack "{" <> Render.manaType (ManaUnit.manaType u) <> Text.pack "}") floating <> Text.pack " unspent. It empties when this step ends.")
+              | not (null floating)
+              ]
+                <> [ nudge (Text.pack "Before ending your turn: you can still " <> Render.listing (fmap (Text.toLower . Offer.actionName shown . snd) (take 3 rest)) <> (if length rest > 3 then Text.pack ", and more." else Text.pack "."))
+                   | yours,
+                     settled,
+                     not (null rest)
+                   ]
          in heading prompt
-              : [Element.el "div" ["actions"] [] [button (MkAnswer $ R.Number i) (Offer.actionName shown option) | (i, option) <- rest] | not (null rest)]
+              : nudges
+                <> [Element.el "div" ["actions"] [] [button (MkAnswer $ R.Number i) (Offer.actionName shown option) | (i, option) <- rest] | not (null rest)]
                 <> [ Element.el "div" ["passes"] [] $
                        [primary (MkAnswer $ R.Number i) (Text.pack (if settled then "Pass" else "Pass and resolve")) | (i, _) <- passes]
                          <> [button MkSkip (Text.pack (if yours then "End turn" else "Pass to my turn")) | settled, not (null passes)]
@@ -715,6 +738,10 @@ collapsed :: [(a, Text.Text)] -> [([a], Text.Text, Int)]
 collapsed labelled =
   let order = ListUtils.nubOrd (fmap snd labelled)
    in [(xs, label, length xs) | label <- order, let xs = [x | (x, l) <- labelled, l == label]]
+
+-- | A word of information beside a question, which answers nothing.
+nudge :: Text.Text -> Html.Html msg
+nudge t = Element.el "p" ["nudge"] [Element.attr "role" (Text.pack "note")] (Mana.rich t)
 
 button :: Event -> Text.Text -> Html.Html Event
 button event label = Element.button [] event (Mana.rich label)

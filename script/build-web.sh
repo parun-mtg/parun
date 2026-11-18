@@ -24,6 +24,10 @@ wasm-opt -Oz --strip-debug "$wasm" -o "$out/parun.wasm"
 cp source/web/index.html source/web/style.css source/web/page.js source/web/engine.js source/web/sw.js source/web/manifest.webmanifest source/web/icon.svg source/web/icon.png "$out/"
 cp -r "$BROWSER_WASI_SHIM/dist" "$out/browser_wasi_shim"
 chmod -R u+w "$out"
+# The version and commit the settings menu shows.
+version=$(awk '$1 == "version:" { print $2 }' parun.cabal)
+commit=$(git rev-parse --short HEAD 2>/dev/null || echo unknown)
+sed -i "s|@VERSION@|$version|; s|@COMMIT@|$commit|" "$out/index.html"
 # The data directory the engine mounts, reproducibly packed, with the cards as
 # one bundle (Parun.Registry.loadBundle) rather than a file each.
 staging=$(mktemp -d)

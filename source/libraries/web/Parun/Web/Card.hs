@@ -123,6 +123,7 @@ summary view cue o =
           <> [Text.pack (show (ObjectView.damage o) <> " damage") | ObjectView.damage o > 0]
       action
         | elem "playable" (marks cue) = [Text.pack "you can play or use it"]
+        | elem "auto-next" (marks cue) = [Text.pack "can be chosen, and paying automatically taps it next"]
         | elem "chosen" (marks cue) = [Text.pack "chosen"]
         | elem "choosable" (marks cue) = [Text.pack "can be chosen"]
         | otherwise = []

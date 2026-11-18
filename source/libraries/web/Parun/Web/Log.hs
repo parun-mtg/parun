@@ -6,6 +6,7 @@ module Parun.Web.Log where
 import qualified Data.Foldable as Foldable
 import qualified Data.List as List
 import qualified Data.Map.Strict as Map
+import qualified Data.Maybe as Maybe
 import qualified Data.Sequence as Seq
 import qualified Data.Text as Text
 import Numeric.Natural (Natural)
@@ -14,8 +15,11 @@ import qualified Parun.Play.Render as Render
 import qualified Parun.Types.GameEvent as GameEvent
 import qualified Parun.Types.LoggedEvent as LoggedEvent
 import qualified Parun.Types.Moved as Moved
+import qualified Parun.Types.ObjectId as ObjectId
+import qualified Parun.Types.ObjectView as ObjectView
 import qualified Parun.Types.PlayerId as PlayerId
 import qualified Parun.Types.PlayerView as PlayerView
+import qualified Parun.Types.SeatView as SeatView
 import qualified Parun.Types.Zone as Zone
 import qualified Parun.Types.ZoneChange as ZoneChange
 import qualified Parun.Web.Element as Element
@@ -82,11 +86,32 @@ isTurn entry = case entry of
   MkTurn _ _ -> True
   MkEvent _ _ -> False
 
--- | An entry as a list item.
-item :: PlayerId.PlayerId -> Bool -> Entry -> Html.Html msg
-item viewer fresh entry = case entry of
+-- | An entry as a list item; where `linked` names the objects the seat can
+-- read and what tapping one sends, each name in the entry becomes a link
+-- to that object's sheet.
+item :: PlayerId.PlayerId -> Maybe (Map.Map Text.Text ObjectId.ObjectId, ObjectId.ObjectId -> msg) -> Bool -> Entry -> Html.Html msg
+item viewer linked fresh entry = case entry of
   MkTurn _ _ -> Element.el "li" ["turn"] [] [Element.text (sentence viewer entry)]
-  MkEvent w t -> Element.el "li" (["fresh" | fresh] <> ["minor" | w == MkMinor]) [] (Mana.rich t)
+  MkEvent w t -> Element.el "li" (["fresh" | fresh] <> ["minor" | w == MkMinor]) [] (maybe (Mana.rich t) (\(known, reading) -> linking known reading t) linked)
+
+-- | The text, each name it holds a link (the longest where two start
+-- together), the rest drawn as Mana.rich draws it.
+linking :: Map.Map Text.Text ObjectId.ObjectId -> (ObjectId.ObjectId -> msg) -> Text.Text -> [Html.Html msg]
+linking known reading t =
+  let found = [(Text.length before, name, oid) | (name, oid) <- Map.toList known, not (Text.null name), let (before, after) = Text.breakOn name t, not (Text.null after)]
+   in case List.sortOn (\(at, name, _) -> (at, negate (Text.length name))) found of
+        [] -> Mana.rich t
+        (at, name, oid) : _ ->
+          Mana.rich (Text.take at t)
+            <> [Element.el "button" ["log-card"] [Element.attr "type" (Text.pack "button"), Element.on "click" (reading oid)] [Element.text name]]
+            <> linking known reading (Text.drop (at + Text.length name) t)
+
+-- | The names of the objects the view shows, each to one object, a card on
+-- the battlefield or the stack before one elsewhere.
+linkable :: PlayerView.PlayerView -> Map.Map Text.Text ObjectId.ObjectId
+linkable view =
+  let shown = PlayerView.battlefield view <> PlayerView.stack view <> concatMap (\seat -> SeatView.hand seat <> SeatView.graveyard seat <> SeatView.exile seat) (PlayerView.seats view)
+   in Map.fromListWith (\_ first -> first) [(Render.cardName o, ObjectView.object o) | o <- shown, Maybe.isNothing (ObjectView.ability o), Maybe.isJust (ObjectView.characteristics o)]
 
 -- | Entries, each beside something (its place), newest turn first, each
 -- turn's heading above its entries and those newest first.

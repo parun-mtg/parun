@@ -14,6 +14,7 @@
   --accent: #2557a7;
   --accent-soft: rgb(37 87 167 / 0.12);
   --accent-text: #ffffff;
+  --link: #1f4a8e;
   --danger: #a13024;
   --danger-text: #8a291f;
   --on-danger: #ffffff;
@@ -74,6 +75,7 @@
   --accent: #6aa3ff;
   --accent-soft: rgb(106 163 255 / 0.18);
   --accent-text: #0b1526;
+  --link: #8cb8ff;
   --danger: #ff9c90;
   --danger-text: #ff9c90;
   --on-danger: #1a0a08;
@@ -162,7 +164,7 @@ button {
 
 /* ---------- Buttons ---------- */
 
-#app button:where(:not(.card, .stack-item, .scrim, .who, .slot, .deck)),
+#app button:where(:not(.card, .stack-item, .scrim, .who, .slot, .deck, .log-card)),
 .chrome button {
   appearance: none;
   min-height: 44px;
@@ -1351,6 +1353,34 @@ details.pile[open] {
   text-align: center;
 }
 
+.nudge {
+  margin: 0;
+  padding: 0.4em 0.7em;
+  border-left: 4px solid var(--accent);
+  border-radius: 0 var(--radius) var(--radius) 0;
+  background: var(--accent-soft);
+  font-size: 0.88rem;
+}
+
+/* The source "Pay automatically" taps next. */
+#app button.card.auto-next {
+  outline: 3px solid var(--good);
+  outline-offset: 2px;
+}
+
+#app button.card.auto-next::before {
+  content: "Auto";
+  position: absolute;
+  top: -10px;
+  right: -6px;
+  padding: 0 0.4em;
+  border-radius: 999px;
+  background: var(--good);
+  color: var(--on-good);
+  font-size: 0.7rem;
+  font-weight: 800;
+}
+
 .problem {
   padding: 0.5em 0.7em;
   border-radius: var(--radius);
@@ -1412,6 +1442,23 @@ details.log[open] .latest {
 
 .log-list li {
   padding: 0.12em 0;
+}
+
+/* A card named in the log, which opens its sheet. */
+#app button.log-card {
+  appearance: none;
+  display: inline;
+  min-height: 0;
+  padding: 0;
+  border: 0;
+  background: none;
+  box-shadow: none;
+  font: inherit;
+  color: var(--link);
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 2px;
+  cursor: pointer;
 }
 
 .log-list li.turn,
@@ -1765,6 +1812,18 @@ body:has(main.game) #settings-button {
 body:has(main.game) #settings {
   top: calc(100% + 0.4em);
   bottom: auto;
+}
+
+#settings .about {
+  margin: 0.2em 0 0;
+  padding-top: 0.5em;
+  border-top: 1px solid var(--border);
+  font-size: 0.8rem;
+  color: var(--muted);
+}
+
+#settings a {
+  color: var(--link);
 }
 
 #settings[hidden] {

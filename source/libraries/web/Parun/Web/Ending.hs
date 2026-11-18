@@ -63,7 +63,7 @@ view ending =
               Element.el "a" [] [Element.attr "href" (download (scenario ending)), Element.attr "download" (Text.pack "parun-game.json")] [Element.string "Save as a scenario"]
             ],
           Element.el "h2" [] [] [Element.string "Game log"],
-          Element.el "ol" ["game-log"] [] (fmap (Log.item (viewer ending) False) (Foldable.toList (witnessed ending)))
+          Element.el "ol" ["game-log"] [] (fmap (Log.item (viewer ending) Nothing False) (Foldable.toList (witnessed ending)))
         ]
 
 -- | The page starting a game between these decks at once (engine.js passes
