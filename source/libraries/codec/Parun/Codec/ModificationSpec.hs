@@ -113,12 +113,12 @@ spec s = Spec.describe s "Parun.Codec.Modification" $ do
       Modification.LoseAllAbilities
       " {\"type\":\"LoseAllAbilities\"} "
   -- layer 6, CR 123.7a (Pin Collection).
-  Spec.it s "GainAbilitiesOfStickers" $
+  Spec.it s "GainAbilitiesOfStickers carries the stickered objects" $
     Common.assertCodec
       s
       codec
-      Modification.GainAbilitiesOfStickers
-      " {\"type\":\"GainAbilitiesOfStickers\"} "
+      (Modification.GainAbilitiesOfStickers Filter.IsSource)
+      " {\"type\":\"GainAbilitiesOfStickers\",\"value\":{\"type\":\"IsSource\"}} "
   -- layer 6, CR 613.1f: the removal that names ONE ability (Gliding Licid).
   Spec.it s "LoseNamedAbility carries the name" $
     Common.assertCodec

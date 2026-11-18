@@ -1692,6 +1692,90 @@ spec s registry = Spec.describe s "Sticker" $ do
         murdered = S.settleSba (S.runPure (namingTarget bearsId) g4 (S.cast S.bob murderId >> Stack.resolveTop))
     Spec.assertEqWith s "CR 123.7a/702.12b the Bears survives Murder" (Set.member bearsId (GameState.battlefield murdered)) True
     Spec.assertEqWith s "CR 613.1f Shadowspear took Pin Collection's indestructible" (Projection.hasKeyword Keyword.Indestructible pinId murdered) False
+  -- Its two tickets pay for Night's menace (two), which goes on the Bears.
+  Spec.it s "CR 123.7 Clandestine Chameleon enters, gets two tickets, stickers the Bears, and has its menace" $ do
+    sheets <- committedSheets
+    chameleon <- S.printingOf s registry "Clandestine Chameleon"
+    bears <- S.printingOf s registry "Grizzly Bears"
+    let (bearsId, g1) = S.addPermanent bears S.alice (mainPhaseForAlice (withSheets sheets (Setup.gameWith GameSettings.plain S.bothPlayers)))
+        (chameleonId, entered) = S.entersWithTrigger chameleon S.alice g1
+        ((_, after), _) = State.runState (Engine.runGame (placingRef 0 (Just bearsId) nightMenace) entered drain) (MkOffers [] [] 0)
+    Spec.assertEqWith s "CR 123.3c the Bears took menace, paid with both new tickets" (stickerKindsOn bearsId after, S.playerCounterOf PlayerCounterKind.Ticket S.alice after) ([StickerKind.Ability], 0)
+    Spec.assertEqWith s "CR 123.7 the Chameleon has menace" (Projection.hasKeyword Keyword.Menace chameleonId after) True
+    Spec.assertEqWith s "CR 123.4 and is not stickered" (stickerKindsOn chameleonId after) []
+  -- Flying from a Bears alice owns and bob controls, indestructible from her
+  -- graveyard, persist once from its own sticker; bob's permanent and graveyard
+  -- card lend nothing.
+  Spec.it s "CR 123.7 Clandestine Chameleon has the ability stickers of other permanents and graveyard cards alice owns" $ do
+    sheets <- withJuggler
+    chameleon <- S.printingOf s registry "Clandestine Chameleon"
+    bears <- S.printingOf s registry "Grizzly Bears"
+    let base = withSheets sheets (Setup.gameWith GameSettings.plain S.bothPlayers)
+        (chameleonId, g1) = S.addPermanent chameleon S.alice base
+        (lentId, g2) = S.addPermanent bears S.alice g1
+        (buriedId, g3) = S.addGraveyardCard bears S.alice g2
+        (bobsId, g4) = S.addPermanent bears S.bob g3
+        (bobsBuriedId, g5) = S.addGraveyardCard bears S.bob g4
+        board =
+          Sticker.put S.alice chameleonId (aliceSticker 0 StickerKind.Ability 1) Nothing
+            . Sticker.put S.alice bobsBuriedId (aliceSticker 1 StickerKind.Ability 1) Nothing
+            . Sticker.put S.alice bobsId nightMenace Nothing
+            . Sticker.put S.alice buriedId jugglerIndestructible Nothing
+            . Sticker.put S.alice lentId hotDogFlying Nothing
+            $ S.giveControl lentId S.bob g5
+        has k = Projection.hasKeyword k chameleonId board
+    Spec.assertEqWith s "CR 123.7 flying from the permanent alice owns, though bob controls it" (has Keyword.Flying) True
+    Spec.assertEqWith s "CR 123.5/123.7 indestructible from the card in alice's graveyard" (has Keyword.Indestructible) True
+    Spec.assertEqWith s "no menace from bob's permanent" (has Keyword.Menace) False
+    Spec.assertEqWith s "no double strike from bob's graveyard" (has Keyword.DoubleStrike) False
+    Spec.assertEqWith s "persist once, from its own sticker only" (Map.lookup Keyword.Persist (Projection.keywordsOf chameleonId board)) (Just 1)
+  -- Pin Collection's Shadowspear case on another object: the Chameleon enters
+  -- after the loss, so only the sticker can make it indestructible.
+  Spec.it s "CR 123.7a Clandestine Chameleon has the indestructible of a sticker whose Bears Shadowspear stripped" $ do
+    sheets <- withJuggler
+    chameleon <- S.printingOf s registry "Clandestine Chameleon"
+    spear <- S.printingOf s registry "Shadowspear"
+    bears <- S.printingOf s registry "Grizzly Bears"
+    swamp <- S.printingOf s registry "Swamp"
+    let base = withSheets sheets (S.landsFor swamp S.bob 4 (Setup.gameWith GameSettings.plain S.bothPlayers))
+        (bearsId, g1) = S.addPermanent bears S.alice base
+        (spearId, g2) = S.addPermanent spear S.bob (Sticker.put S.alice bearsId jugglerIndestructible Nothing g1)
+        bobsTurn =
+          g2
+            { GameState.turn =
+                (GameState.turn g2)
+                  { TurnRegisters.activePlayer = S.bob,
+                    TurnRegisters.phase = Phase.PrecombatMain,
+                    TurnRegisters.priority = Just S.bob
+                  }
+            }
+        stripped = case Activatable.abilitiesFor spearId bobsTurn of
+          lose : _ -> S.runPure S.identityAnswer bobsTurn (Activate.activateAbility S.bob spearId lose >> Stack.resolveTop)
+          [] -> bobsTurn
+        (chameleonId, after) = S.addPermanent chameleon S.alice stripped
+    Spec.assertEqWith s "CR 613.1f Shadowspear took the Bears' indestructible" (Projection.hasKeyword Keyword.Indestructible bearsId after) False
+    Spec.assertEqWith s "CR 123.7a the Chameleon has it anyway" (Projection.hasKeyword Keyword.Indestructible chameleonId after) True
+  -- A death keeps the sticker on the card (CR 123.5); a bounce takes it off.
+  Spec.it s "CR 123.5 Clandestine Chameleon keeps flying when the stickered Bears dies and loses it when the Bears is bounced" $ do
+    sheets <- committedSheets
+    chameleon <- S.printingOf s registry "Clandestine Chameleon"
+    bears <- S.printingOf s registry "Grizzly Bears"
+    bolt <- S.printingOf s registry "Lightning Bolt"
+    unsummon <- S.printingOf s registry "Unsummon"
+    mountain <- S.printingOf s registry "Mountain"
+    island <- S.printingOf s registry "Island"
+    let base = withSheets sheets (S.landsFor island S.bob 1 (S.landsFor mountain S.bob 1 (Setup.gameWith GameSettings.plain S.bothPlayers)))
+        (chameleonId, g1) = S.addPermanent chameleon S.alice base
+        (bearsId, g2) = S.addPermanent bears S.alice g1
+        (boltId, g3) = S.addHandCard bolt S.bob (Sticker.put S.alice bearsId hotDogFlying Nothing g2)
+        (unsummonId, g4) = S.addHandCard unsummon S.bob g3
+        bobsWindow = g4 {GameState.turn = (GameState.turn g4) {TurnRegisters.priority = Just S.bob}}
+        killed = S.settleSba (S.runPure (namingTarget bearsId) bobsWindow (S.cast S.bob boltId >> Stack.resolveTop))
+        bounced = S.runPure (namingTarget bearsId) bobsWindow (S.cast S.bob unsummonId >> Stack.resolveTop)
+    Spec.assertEqWith s "CR 123.7 the Chameleon flies" (Projection.hasKeyword Keyword.Flying chameleonId bobsWindow) True
+    Spec.assertEqWith s "the Bears died" (Set.member bearsId (GameState.battlefield killed)) False
+    Spec.assertEqWith s "CR 123.5 the Chameleon flies off the card in alice's graveyard" (Projection.hasKeyword Keyword.Flying chameleonId killed) True
+    Spec.assertEqWith s "CR 123.5 the Chameleon does not fly once the Bears is in alice's hand" (Projection.hasKeyword Keyword.Flying chameleonId bounced) False
   -- One board, two answers: Night's menace (ability) or Otter's 5/1 (P/T) on
   -- the Bears. Alice's one ticket and Tusk's make two.
   Spec.it s "CR 123.7 Tusk and Whiskers puts a +1/+1 counter on a creature that takes an ability sticker, and none for a P/T sticker" $ do
