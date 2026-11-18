@@ -1,0 +1,177 @@
+{
+  "board": {
+    "active": "bob",
+    "seats": [
+      {
+        "battlefield": [
+          {
+            "card": "Mountain",
+            "label": "m1"
+          },
+          {
+            "card": "Mountain",
+            "label": "m2"
+          },
+          {
+            "card": "Mountain",
+            "label": "m3"
+          },
+          {
+            "card": "Mountain",
+            "label": "m4"
+          }
+        ],
+        "hand": [
+          {
+            "card": "Kang, Suspicious Captain",
+            "label": "kang"
+          }
+        ],
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ],
+        "name": "bob"
+      },
+      {
+        "battlefield": [
+          {
+            "card": "Mountain",
+            "label": "a1"
+          },
+          {
+            "card": "Mountain",
+            "label": "a2"
+          },
+          {
+            "card": "Mountain",
+            "label": "a3"
+          },
+          {
+            "card": "Goblin Piker",
+            "label": "piker",
+            "ready": true
+          }
+        ],
+        "hand": [
+          {
+            "card": "Act of Treason",
+            "label": "treason"
+          }
+        ],
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ],
+        "name": "alice"
+      },
+      {
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ],
+        "name": "carol"
+      }
+    ],
+    "step": "PrecombatMain"
+  },
+  "description": "Kang, Suspicious Captain's goad ends once bob no longer controls Kang, though Kang stays on the battlefield",
+  "note": "CR 611.2b: alice gains control of Kang with Act of Treason during her own turn, so Kang, still on the battlefield, no longer counts for bob, and her Goblin Piker is no longer goaded: declaring no attackers stands.",
+  "timeline": [
+    {
+      "do": {
+        "Cast": {
+          "mana": [
+            "$m1",
+            "$m2",
+            "$m3",
+            "$m4"
+          ],
+          "object": "$kang"
+        }
+      },
+      "player": "bob",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "bob",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Cast": {
+          "mana": [
+            "$a1",
+            "$a2",
+            "$a3"
+          ],
+          "object": "$treason",
+          "targets": [
+            "Kang, Suspicious Captain"
+          ]
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 2
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 2
+    },
+    {
+      "do": {
+        "Attack": []
+      },
+      "player": "alice",
+      "step": "DeclareAttackers",
+      "turn": 2
+    },
+    {
+      "check": {
+        "Life": {
+          "life": 20,
+          "player": "carol"
+        }
+      },
+      "player": "alice",
+      "step": "EndOfCombat",
+      "turn": 2
+    }
+  ]
+}

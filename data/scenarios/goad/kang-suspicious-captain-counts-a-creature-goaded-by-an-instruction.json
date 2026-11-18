@@ -1,0 +1,164 @@
+{
+  "board": {
+    "active": "bob",
+    "seats": [
+      {
+        "battlefield": [
+          {
+            "card": "Mountain",
+            "label": "m1"
+          },
+          {
+            "card": "Mountain",
+            "label": "m2"
+          },
+          {
+            "card": "Mountain",
+            "label": "m3"
+          },
+          {
+            "card": "Mountain",
+            "label": "m4"
+          },
+          {
+            "card": "Kang, Suspicious Captain",
+            "label": "kang"
+          }
+        ],
+        "hand": [
+          {
+            "card": "Disrupt Decorum",
+            "label": "decorum"
+          }
+        ],
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ],
+        "name": "bob"
+      },
+      {
+        "battlefield": [
+          {
+            "card": "Goblin Piker",
+            "label": "piker",
+            "ready": true
+          }
+        ],
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ],
+        "name": "alice"
+      },
+      {
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ],
+        "name": "carol"
+      }
+    ],
+    "step": "PrecombatMain"
+  },
+  "description": "Kang, Suspicious Captain counts a creature goaded by a one-shot instruction",
+  "note": "CR 701.15a: bob's Disrupt Decorum goads alice's Goblin Piker until bob's next turn; its attack on alice's turn is a goaded creature attacking, so Kang, already on the battlefield and goading nothing itself, puts a counter on Kang, the only creature bob controls.",
+  "timeline": [
+    {
+      "do": {
+        "Cast": {
+          "mana": [
+            "$m1",
+            "$m2",
+            "$m3",
+            "$m4"
+          ],
+          "object": "$decorum"
+        }
+      },
+      "player": "bob",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "bob",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "player": "alice",
+      "refuse": {
+        "Attack": []
+      },
+      "step": "DeclareAttackers",
+      "turn": 2
+    },
+    {
+      "do": {
+        "Attack": [
+          "$piker"
+        ]
+      },
+      "player": "alice",
+      "step": "DeclareAttackers",
+      "turn": 2
+    },
+    {
+      "check": {
+        "Attackers": {
+          "attackers": {
+            "$piker": "$carol"
+          }
+        }
+      },
+      "player": "alice",
+      "step": "DeclareBlockers",
+      "turn": 2
+    },
+    {
+      "check": {
+        "Counters": {
+          "count": 1,
+          "kind": {
+            "type": "PlusOnePlusOne"
+          },
+          "object": "$kang"
+        }
+      },
+      "player": "alice",
+      "step": "EndOfCombat",
+      "turn": 2
+    }
+  ]
+}
