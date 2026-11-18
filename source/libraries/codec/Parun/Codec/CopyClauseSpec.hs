@@ -11,6 +11,7 @@ import qualified Parun.Types.Comparison as Comparison
 import qualified Parun.Types.Condition as Condition
 import qualified Parun.Types.CopyClause as CopyClause
 import qualified Parun.Types.CopyException as CopyException
+import qualified Parun.Types.CopyPowerToughness as CopyPowerToughness
 import qualified Parun.Types.CounterKind as CounterKind
 import qualified Parun.Types.Designation as Designation
 import qualified Parun.Types.Quantity as Quantity
@@ -25,8 +26,8 @@ spec s = Spec.describe s "Parun.Codec.CopyClause" $ do
     Common.assertCodec
       s
       (CopyClause.codec Common.text)
-      (CopyClause.MkCopyClause Nothing [CopyException.SetPowerToughness (SetPowerToughness.MkSetPowerToughness 7 7)] Nothing False)
-      " {\"exceptions\":[{\"type\":\"SetPowerToughness\",\"value\":{\"power\":7,\"toughness\":7}}]} "
+      (CopyClause.MkCopyClause Nothing [CopyException.SetPowerToughness (CopyPowerToughness.Numbers (SetPowerToughness.MkSetPowerToughness 7 7))] Nothing False)
+      " {\"exceptions\":[{\"type\":\"SetPowerToughness\",\"value\":{\"type\":\"Numbers\",\"value\":{\"power\":7,\"toughness\":7}}}]} "
   -- CR 707.9e: Altered Ego's counters alone.
   Spec.it s "MkCopyClause, unconditional counters" $
     Common.assertCodec

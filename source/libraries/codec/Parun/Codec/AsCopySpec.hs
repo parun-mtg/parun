@@ -14,6 +14,7 @@ import qualified Parun.Types.Condition as Condition
 import qualified Parun.Types.CopyClause as CopyClause
 import qualified Parun.Types.CopyDomain as CopyDomain
 import qualified Parun.Types.CopyException as CopyException
+import qualified Parun.Types.CopyPowerToughness as CopyPowerToughness
 import qualified Parun.Types.CopyRecipient as CopyRecipient
 import qualified Parun.Types.CounterKind as CounterKind
 import qualified Parun.Types.Duration as Duration
@@ -47,8 +48,8 @@ spec s = Spec.describe s "Parun.Codec.AsCopy" $ do
     Common.assertCodec
       s
       (AsCopy.codec Common.text Common.text)
-      (AsCopy.MkAsCopy (Filter.HasCardType CardType.Creature) Nothing [CopyClause.MkCopyClause Nothing [CopyException.SetPowerToughness (SetPowerToughness.MkSetPowerToughness 7 7)] Nothing False] False Seq.empty (CopyDomain.InZone Zone.Battlefield) Nothing CopyRecipient.ThisObject True)
-      " {\"eligible\":{\"type\":\"HasCardType\",\"value\":\"Creature\"},\"clauses\":[{\"exceptions\":[{\"type\":\"SetPowerToughness\",\"value\":{\"power\":7,\"toughness\":7}}]}]} "
+      (AsCopy.MkAsCopy (Filter.HasCardType CardType.Creature) Nothing [CopyClause.MkCopyClause Nothing [CopyException.SetPowerToughness (CopyPowerToughness.Numbers (SetPowerToughness.MkSetPowerToughness 7 7))] Nothing False] False Seq.empty (CopyDomain.InZone Zone.Battlefield) Nothing CopyRecipient.ThisObject True)
+      " {\"eligible\":{\"type\":\"HasCardType\",\"value\":\"Creature\"},\"clauses\":[{\"exceptions\":[{\"type\":\"SetPowerToughness\",\"value\":{\"type\":\"Numbers\",\"value\":{\"power\":7,\"toughness\":7}}}]}]} "
   -- CR 614.1d inside CR 614.1c: Vesuva's "enter tapped as a copy".
   Spec.it s "MkAsCopy, entering tapped (Vesuva)" $
     Common.assertCodec

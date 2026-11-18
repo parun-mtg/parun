@@ -136,6 +136,7 @@ import qualified Parun.Types.ControllerRelation as ControllerRelation
 import qualified Parun.Types.CopyClause as CopyClause
 import qualified Parun.Types.CopyException as CopyException
 import qualified Parun.Types.CopyOriginal as CopyOriginal
+import qualified Parun.Types.CopyPowerToughness as CopyPowerToughness
 import qualified Parun.Types.CopyStackObject as CopyStackObject
 import qualified Parun.Types.CopyTargets as CopyTargets
 import qualified Parun.Types.Cost as Cost
@@ -3966,7 +3967,8 @@ data CopyChildren ability effect f = MkCopyChildren
   { -- | A Filter a field holds: the objects a copy may copy, a chosen host
     -- (CR 303.4f).
     copyFilter :: Filter.Filter Keyword.Keyword -> f (Filter.Filter Keyword.Keyword),
-    -- | A Quantity a field holds: a counter amount (CR 614.1c).
+    -- | A Quantity a field holds: a counter amount (CR 614.1c), a defined
+    -- power or toughness (CR 707.9a).
     copyQuantity :: Quantity.Quantity -> f Quantity.Quantity,
     -- | The kind of counter a row places (CR 122.1).
     copyCounterKind :: CounterKind.CounterKind Keyword.Keyword -> f (CounterKind.CounterKind Keyword.Keyword),
@@ -4049,11 +4051,12 @@ copyClauseChildren c (CopyClause.MkCopyClause condition exceptions counters copi
     <*> traverse (withCountersChildren c) counters
     <*> pure copied
 
--- | A CR 707.9 exception's children. A power and toughness, card types,
--- supertypes and a name are left as they are.
+-- | A CR 707.9 exception's children. A literal power and toughness, card
+-- types, supertypes and a name are left as they are.
 copyExceptionChildren :: (Applicative f) => CopyChildren ability effect f -> CopyException.CopyException ability -> f (CopyException.CopyException ability)
 copyExceptionChildren c exception = case exception of
-  CopyException.SetPowerToughness _ -> pure exception
+  CopyException.SetPowerToughness (CopyPowerToughness.Numbers _) -> pure exception
+  CopyException.SetPowerToughness (CopyPowerToughness.Defined defined) -> CopyException.SetPowerToughness . CopyPowerToughness.Defined <$> characteristicPTChildren (copyQuantity c) defined
   CopyException.GainKeywords keywords -> CopyException.GainKeywords <$> traverseSet (copyKeyword c) keywords
   CopyException.GainThisAbility -> pure exception
   CopyException.CardTypes {} -> pure exception

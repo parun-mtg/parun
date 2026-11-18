@@ -44,8 +44,11 @@
                         {
                           "type": "SetPowerToughness",
                           "value": {
-                            "power": 7,
-                            "toughness": 7
+                            "type": "Numbers",
+                            "value": {
+                              "power": 7,
+                              "toughness": 7
+                            }
                           }
                         }
                       ]

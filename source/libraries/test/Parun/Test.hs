@@ -255,6 +255,7 @@ import qualified Parun.Codec.CopyCoverageSpec
 import qualified Parun.Codec.CopyDomainSpec
 import qualified Parun.Codec.CopyExceptionSpec
 import qualified Parun.Codec.CopyOriginalSpec
+import qualified Parun.Codec.CopyPowerToughnessSpec
 import qualified Parun.Codec.CopyRecipientSpec
 import qualified Parun.Codec.CopyStackObjectSpec
 import qualified Parun.Codec.CopyTargetsSpec
@@ -1382,6 +1383,7 @@ spec s reference corpus = do
   Parun.Codec.CopyClauseSpec.spec s
   Parun.Codec.CopyCoverageSpec.spec s
   Parun.Codec.CopyExceptionSpec.spec s
+  Parun.Codec.CopyPowerToughnessSpec.spec s
   Parun.Codec.CopyOriginalSpec.spec s
   Parun.Codec.CopyRecipientSpec.spec s
   Parun.Codec.CopyDomainSpec.spec s

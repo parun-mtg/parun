@@ -1,0 +1,39 @@
+{
+  "description": "CR 707.9a, 604.3a, 613.4a: the ability Colossal Clone Master's copy exception grants is characteristic-defining, so an earlier Godhead of Awe's base 1/1 still wins",
+  "note": "The CDA applies in layer 7a and Godhead of Awe's base-setting static in layer 7b, so the copy of Grizzly Bears is 1/1. Read as a granted layer-7b ability with the copy's later timestamp, it would be 3/3, one per differently named land (Island, Forest, Swamp).",
+  "board": {
+    "seats": [
+      {
+        "name": "alice",
+        "battlefield": [
+          {"card": "Godhead of Awe"},
+          {"card": "Island", "ready": true},
+          {"card": "Island", "ready": true},
+          {"card": "Island", "ready": true},
+          {"card": "Island", "ready": true},
+          {"card": "Forest", "ready": true},
+          {"card": "Swamp", "ready": true}
+        ],
+        "hand": [
+          {"card": "Colossal Clone Master", "label": "master"}
+        ]
+      },
+      {
+        "name": "bob",
+        "battlefield": [
+          {"card": "Grizzly Bears", "label": "bear"}
+        ]
+      }
+    ],
+    "active": "alice",
+    "step": "PrecombatMain"
+  },
+  "timeline": [
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": {"Cast": {"object": "$master", "mana": ["Island", "Island#2", "Island#3", "Island#4", "Forest", "Swamp"]}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass"},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": {"ChooseCopyTarget": "$bear"}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"PowerToughness": {"object": "$bear", "power": 1, "toughness": 1}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"PowerToughness": {"object": "Colossal Clone Master", "power": 1, "toughness": 1}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Names": {"object": "Colossal Clone Master", "names": ["Grizzly Bears"]}}}
+  ]
+}

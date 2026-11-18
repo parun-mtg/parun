@@ -176,6 +176,7 @@ import qualified Parun.Types.CopyClause as CopyClause
 import qualified Parun.Types.CopyDomain as CopyDomain
 import qualified Parun.Types.CopyException as CopyException
 import qualified Parun.Types.CopyOriginal as CopyOriginal
+import qualified Parun.Types.CopyPowerToughness as CopyPowerToughness
 import qualified Parun.Types.CopyStackObject as CopyStackObject
 import qualified Parun.Types.CopyTargets as CopyTargets
 import qualified Parun.Types.Copyability as Copyability
@@ -4256,13 +4257,17 @@ playerEffectFilters playerEffect = case playerEffect of
   PlayerEffect.Precluded _ -> []
   PlayerEffect.Shows _ -> []
 
--- CR 707.9's "except ..." clauses. Only the GainKeywords arm reaches a Filter,
--- and only through the keyword it names; CR 707.9b's other arms name a pair of
--- literals, a name, colours, the absence of a mana cost, and sets over the parts
--- of CR 205.1's type line, none of which narrows anything.
+-- CR 707.9's "except ..." clauses. The GainKeywords arm reaches a Filter
+-- through the keyword it names, and a defined power and toughness through its
+-- Counts; CR 707.9b's other arms name a pair of literals, a name, colours, the
+-- absence of a mana cost, and sets over the parts of CR 205.1's type line, none
+-- of which narrows anything.
 copyExceptionFilters :: CopyException.CopyException (GrantedAbility.GrantedAbility Card.Type.Card) -> [(Framing, Filter.Type.Filter Keyword.Keyword)]
 copyExceptionFilters exception = case exception of
-  CopyException.SetPowerToughness _ -> []
+  CopyException.SetPowerToughness (CopyPowerToughness.Numbers _) -> []
+  -- AffectedSetFramed for cardFilters' characteristic-defining reason.
+  CopyException.SetPowerToughness (CopyPowerToughness.Defined defined) ->
+    frame AffectedSetFramed (concatMap quantityFilters [CharacteristicPT.power defined, CharacteristicPT.toughness defined])
   CopyException.GainKeywords keywords -> concatMap keywordFilters (Set.toList keywords)
   CopyException.CardTypes {} -> []
   CopyException.AddSubtypes _ -> []
