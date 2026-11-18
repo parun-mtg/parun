@@ -18,6 +18,7 @@ import qualified Parun.Types.CounterKind as CounterKind
 import qualified Parun.Types.CounterLinked as CounterLinked
 import qualified Parun.Types.DamageKind as DamageKind
 import qualified Parun.Types.DealtDamageTo as DealtDamageTo
+import qualified Parun.Types.DeclaredRole as DeclaredRole
 import qualified Parun.Types.Designation as Designation
 import qualified Parun.Types.EnteredZone as EnteredZone
 import qualified Parun.Types.ExiledPile as ExiledPile
@@ -379,7 +380,9 @@ data Filter keyword
     -- this turn". A look-back read of the turn-scoped GameEvent log, which
     -- outlives CR 511.3's wipe of the combat record; declared, so a creature put
     -- onto the battlefield attacking or blocking (CR 508.4, 509.3a) never did.
-    DeclaredThisTurn BlockRole.BlockRole
+    -- An attack's announced kind is read off the declaration (CR 508.1b), so CR
+    -- 506.4's removal, or the battle's leaving under CR 704.5v, leaves it standing.
+    DeclaredThisTurn DeclaredRole.DeclaredRole
   | -- | CR 508.1a-d: the candidate could have been declared as an attacker in
     -- one of this turn's declare attackers steps -- Season of the Witch's
     -- "creatures that couldn't attack", negated. Read off

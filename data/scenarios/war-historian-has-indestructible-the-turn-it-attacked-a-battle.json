@@ -1,0 +1,256 @@
+{
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "battlefield": [
+          {
+            "card": "War Historian",
+            "label": "sieger",
+            "ready": true
+          },
+          {
+            "card": "War Historian",
+            "label": "raider",
+            "ready": true
+          },
+          {
+            "card": "Invasion of Tarkir",
+            "counters": [
+              {
+                "key": {
+                  "type": "Defense"
+                },
+                "value": 5
+              }
+            ],
+            "label": "tarkir",
+            "protector": "bob"
+          }
+        ],
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ],
+        "name": "alice"
+      },
+      {
+        "battlefield": [
+          {
+            "card": "Hill Giant",
+            "label": "giant1",
+            "ready": true
+          },
+          {
+            "card": "Hill Giant",
+            "label": "giant2",
+            "ready": true
+          }
+        ],
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ],
+        "name": "bob"
+      }
+    ],
+    "step": "BeginningOfCombat"
+  },
+  "description": "CR 508.1b / 608.2i: War Historian has indestructible for the rest of the turn it attacked a battle, and not the turn it attacked a player",
+  "note": "Two Historians, one attacking Invasion of Tarkir and one attacking bob, each blocked by a Hill Giant dealing it lethal damage: only the one that attacked the battle survives, and it is still indestructible at the end step, after combat has ended (CR 511.3), and not on bob's turn.",
+  "timeline": [
+    {
+      "do": {
+        "Attack": [
+          "$sieger",
+          "$raider"
+        ]
+      },
+      "player": "alice",
+      "step": "DeclareAttackers",
+      "turn": 1
+    },
+    {
+      "do": {
+        "ChooseAttackTarget": "$tarkir"
+      },
+      "player": "alice",
+      "source": "$sieger",
+      "step": "DeclareAttackers",
+      "turn": 1
+    },
+    {
+      "do": {
+        "ChooseAttackTarget": "$bob"
+      },
+      "player": "alice",
+      "source": "$raider",
+      "step": "DeclareAttackers",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Block": {
+          "$giant1": [
+            "$sieger"
+          ],
+          "$giant2": [
+            "$raider"
+          ]
+        }
+      },
+      "player": "bob",
+      "step": "DeclareBlockers",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Keywords": {
+          "count": 1,
+          "keyword": {
+            "type": "Indestructible"
+          },
+          "object": "$sieger"
+        }
+      },
+      "player": "alice",
+      "step": "DeclareBlockers",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Keywords": {
+          "count": 0,
+          "keyword": {
+            "type": "Indestructible"
+          },
+          "object": "$raider"
+        }
+      },
+      "player": "alice",
+      "step": "DeclareBlockers",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Damage": {
+          "damage": 3,
+          "object": "$sieger"
+        }
+      },
+      "player": "alice",
+      "step": "EndStep",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Keywords": {
+          "count": 1,
+          "keyword": {
+            "type": "Indestructible"
+          },
+          "object": "$sieger"
+        }
+      },
+      "player": "alice",
+      "step": "EndStep",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "War Historian",
+          "count": 1,
+          "player": "alice",
+          "zone": "Graveyard"
+        }
+      },
+      "player": "alice",
+      "step": "EndStep",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Hill Giant",
+          "count": 2,
+          "player": "bob",
+          "zone": "Graveyard"
+        }
+      },
+      "player": "alice",
+      "step": "EndStep",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Keywords": {
+          "count": 0,
+          "keyword": {
+            "type": "Indestructible"
+          },
+          "object": "$sieger"
+        }
+      },
+      "player": "bob",
+      "step": "Upkeep",
+      "turn": 2
+    }
+  ]
+}

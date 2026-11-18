@@ -52,7 +52,9 @@
                       "type": "EachMatching",
                       "value": {
                         "type": "DeclaredThisTurn",
-                        "value": "Attacker"
+                        "value": {
+                          "type": "Attacked"
+                        }
                       }
                     }
                   },

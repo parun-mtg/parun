@@ -50,6 +50,7 @@ import qualified Parun.Types.DamageEvent as DamageEvent
 import qualified Parun.Types.DamageKind as DamageKind
 import qualified Parun.Types.DamagedParty as DamagedParty
 import qualified Parun.Types.DealtDamageTo as DealtDamageTo
+import qualified Parun.Types.DeclaredRole as DeclaredRole
 import qualified Parun.Types.Designation as Designation
 import qualified Parun.Types.DifferentIn as DifferentIn
 import qualified Parun.Types.DifferingValue as DifferingValue
@@ -371,13 +372,14 @@ data View = MkView
     blocked :: Set.Set ObjectId.ObjectId,
     -- CR 608.2i: did this candidate attack or block earlier this turn? Unlike
     -- `attacking` not even a present state: it is a look-back read of the
-    -- turn-scoped GameEvent log.
+    -- turn-scoped GameEvent log. Every role a declaration answers, so an attack
+    -- puts both @Attacked Nothing@ and its announced kind's @Attacked Just@ in.
     --
     -- LAZY, like `attachedToView` below but for a plainer reason: filling it
     -- folds the whole turn's event log, and nothing forces it unless a Filter
     -- actually contains DeclaredThisTurn. That is a cost argument rather than
     -- the recursion hazard that field records.
-    declaredThisTurn :: Set.Set BlockRole.BlockRole,
+    declaredThisTurn :: Set.Set DeclaredRole.DeclaredRole,
     -- CR 508.1a-d: could this candidate have been declared as an attacker in
     -- one of this turn's declare attackers steps? Membership of
     -- TurnRegisters.couldAttackThisTurn.

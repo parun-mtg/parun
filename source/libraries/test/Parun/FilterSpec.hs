@@ -13,7 +13,6 @@ import qualified Parun.Types.ActivationCriteria as ActivationCriteria
 import qualified Parun.Types.Actor as Actor
 import qualified Parun.Types.AloneAmong as AloneAmong
 import qualified Parun.Types.Anchor as Anchor
-import qualified Parun.Types.BlockRole as BlockRole
 import qualified Parun.Types.BoundMeasure as BoundMeasure
 import qualified Parun.Types.BoundReading as BoundReading
 import qualified Parun.Types.CandidateScope as CandidateScope
@@ -33,6 +32,7 @@ import qualified Parun.Types.DamageEvent as DamageEvent
 import qualified Parun.Types.DamageKind as DamageKind
 import qualified Parun.Types.DamagedParty as DamagedParty
 import qualified Parun.Types.DealtDamageTo as DealtDamageTo
+import qualified Parun.Types.DeclaredRole as DeclaredRole
 import qualified Parun.Types.Designation as Designation
 import qualified Parun.Types.ExileCardsTotalling as ExileCardsTotalling
 import qualified Parun.Types.Expansion as Expansion
@@ -1583,15 +1583,15 @@ spec s = Spec.describe s "Parun.Engine.Filter" $ do
 
   Spec.describe s "DeclaredThisTurn" $ do
     Spec.it s "matches a view whose history says so" $ do
-      Spec.assertBool s (Filter.matches self (blackCreature {Filter.declaredThisTurn = Set.singleton BlockRole.Attacker}) (Filter.Type.DeclaredThisTurn BlockRole.Attacker)) "attacked"
+      Spec.assertBool s (Filter.matches self (blackCreature {Filter.declaredThisTurn = Set.singleton (DeclaredRole.Attacked Nothing)}) (Filter.Type.DeclaredThisTurn (DeclaredRole.Attacked Nothing))) "attacked"
 
     Spec.it s "asks one role, not the other" $ do
-      Spec.assertBool s (Filter.matches self (blackCreature {Filter.declaredThisTurn = Set.singleton BlockRole.Blocker}) (Filter.Type.DeclaredThisTurn BlockRole.Blocker)) "blocked"
-      Spec.assertBool s (not (Filter.matches self (blackCreature {Filter.declaredThisTurn = Set.singleton BlockRole.Blocker}) (Filter.Type.DeclaredThisTurn BlockRole.Attacker))) "blocked does not imply attacked"
-      Spec.assertBool s (not (Filter.matches self (blackCreature {Filter.declaredThisTurn = Set.singleton BlockRole.Attacker}) (Filter.Type.DeclaredThisTurn BlockRole.Blocker))) "attacked does not imply blocked"
+      Spec.assertBool s (Filter.matches self (blackCreature {Filter.declaredThisTurn = Set.singleton DeclaredRole.Blocked}) (Filter.Type.DeclaredThisTurn DeclaredRole.Blocked)) "blocked"
+      Spec.assertBool s (not (Filter.matches self (blackCreature {Filter.declaredThisTurn = Set.singleton DeclaredRole.Blocked}) (Filter.Type.DeclaredThisTurn (DeclaredRole.Attacked Nothing)))) "blocked does not imply attacked"
+      Spec.assertBool s (not (Filter.matches self (blackCreature {Filter.declaredThisTurn = Set.singleton (DeclaredRole.Attacked Nothing)}) (Filter.Type.DeclaredThisTurn DeclaredRole.Blocked))) "attacked does not imply blocked"
 
     Spec.it s "does not match a creature that never attacked" $ do
-      Spec.assertBool s (not (Filter.matches self blackCreature (Filter.Type.DeclaredThisTurn BlockRole.Attacker))) "did not attack"
+      Spec.assertBool s (not (Filter.matches self blackCreature (Filter.Type.DeclaredThisTurn (DeclaredRole.Attacked Nothing)))) "did not attack"
 
     -- The two axes are independent in BOTH directions, which is the whole
     -- reason this atom exists. A creature attacking right now may not have
@@ -1600,15 +1600,15 @@ spec s = Spec.describe s "Parun.Engine.Filter" $ do
     -- earlier this turn is no longer attacking once CR 511.3 has removed it
     -- from combat -- which is Relentless Assault's whole case.
     Spec.it s "is not implied by attacking right now" $ do
-      Spec.assertBool s (not (Filter.matches self (blackCreature {Filter.attacking = True}) (Filter.Type.DeclaredThisTurn BlockRole.Attacker))) "attacking does not imply attacked"
+      Spec.assertBool s (not (Filter.matches self (blackCreature {Filter.attacking = True}) (Filter.Type.DeclaredThisTurn (DeclaredRole.Attacked Nothing)))) "attacking does not imply attacked"
 
     Spec.it s "does not imply attacking right now" $ do
-      Spec.assertBool s (not (Filter.matches self (blackCreature {Filter.declaredThisTurn = Set.singleton BlockRole.Attacker}) (Filter.Type.IsAttacking Nothing))) "attacked does not imply attacking"
+      Spec.assertBool s (not (Filter.matches self (blackCreature {Filter.declaredThisTurn = Set.singleton (DeclaredRole.Attacked Nothing)}) (Filter.Type.IsAttacking Nothing))) "attacked does not imply attacking"
 
     -- CR 506.3: only a creature can be declared as an attacker, and a
     -- player is not one.
     Spec.it s "a player candidate is vacuously false" $ do
-      Spec.assertBool s (not (Filter.matches self aPlayer (Filter.Type.DeclaredThisTurn BlockRole.Attacker))) "player"
+      Spec.assertBool s (not (Filter.matches self aPlayer (Filter.Type.DeclaredThisTurn (DeclaredRole.Attacked Nothing)))) "player"
 
   Spec.describe s "DeclaredAttackerThisCombat" $ do
     Spec.it s "matches a view whose combat record says so" $ do
@@ -1633,8 +1633,8 @@ spec s = Spec.describe s "Parun.Engine.Filter" $ do
     -- additional combat phase makes observable: CR 511.3 empties the combat
     -- record while the turn's event log stands.
     Spec.it s "is not the same axis as DeclaredThisTurn" $ do
-      Spec.assertBool s (not (Filter.matches self (blackCreature {Filter.declaredThisTurn = Set.singleton BlockRole.Attacker}) Filter.Type.DeclaredAttackerThisCombat)) "attacked this turn does not imply declared this combat"
-      Spec.assertBool s (not (Filter.matches self (blackCreature {Filter.declaredAttackerThisCombat = True}) (Filter.Type.DeclaredThisTurn BlockRole.Attacker))) "and the other way round"
+      Spec.assertBool s (not (Filter.matches self (blackCreature {Filter.declaredThisTurn = Set.singleton (DeclaredRole.Attacked Nothing)}) Filter.Type.DeclaredAttackerThisCombat)) "attacked this turn does not imply declared this combat"
+      Spec.assertBool s (not (Filter.matches self (blackCreature {Filter.declaredAttackerThisCombat = True}) (Filter.Type.DeclaredThisTurn (DeclaredRole.Attacked Nothing)))) "and the other way round"
 
     -- CR 506.3: only a creature is ever declared as an attacker.
     Spec.it s "a player candidate is vacuously false" $ do
@@ -1895,7 +1895,7 @@ spec s = Spec.describe s "Parun.Engine.Filter" $ do
     -- Independent of the OTHER look-back atom, which reads the same log for a
     -- different entry: a milled card was never declared as an attacker.
     Spec.it s "is not implied by having attacked" $ do
-      Spec.assertBool s (not (Filter.matches self (blackCreature {Filter.declaredThisTurn = Set.singleton BlockRole.Attacker}) (Filter.Type.LeftLibraryThisTurn LibraryDeparture.Milled))) "attacked does not imply milled"
+      Spec.assertBool s (not (Filter.matches self (blackCreature {Filter.declaredThisTurn = Set.singleton (DeclaredRole.Attacked Nothing)}) (Filter.Type.LeftLibraryThisTurn LibraryDeparture.Milled))) "attacked does not imply milled"
 
     -- CR 701.17a mills CARDS, and a player is not one.
     Spec.it s "a player candidate is vacuously false" $ do
@@ -2039,7 +2039,7 @@ spec s = Spec.describe s "Parun.Engine.Filter" $ do
     -- different entries: CR 510.1a has an attacker deal combat damage, but being
     -- declared as one is not being dealt any.
     Spec.it s "is not implied by having attacked" $ do
-      Spec.assertBool s (not (Filter.matches self (blackCreature {Filter.declaredThisTurn = Set.singleton BlockRole.Attacker}) (Filter.Type.DealtDamageThisTurn Nothing Nothing False))) "attacked does not imply damaged"
+      Spec.assertBool s (not (Filter.matches self (blackCreature {Filter.declaredThisTurn = Set.singleton (DeclaredRole.Attacked Nothing)}) (Filter.Type.DealtDamageThisTurn Nothing Nothing False))) "attacked does not imply damaged"
 
     -- CR 120.1 lets a player be dealt damage, so this atom is not vacuous for a
     -- player the way the two above are: the fold reads the same field for either
@@ -2189,7 +2189,7 @@ spec s = Spec.describe s "Parun.Engine.Filter" $ do
     -- Not the look-back axis: CR 302.6's continuity is a present state read off
     -- Object.sickness, where CR 608.2i's atoms fold the turn's event log.
     Spec.it s "is not the same axis as DeclaredThisTurn" $ do
-      Spec.assertBool s (not (Filter.matches self (blackCreature {Filter.declaredThisTurn = Set.singleton BlockRole.Attacker}) Filter.Type.ControlledSinceTurnBegan)) "attacked does not imply settled"
+      Spec.assertBool s (not (Filter.matches self (blackCreature {Filter.declaredThisTurn = Set.singleton (DeclaredRole.Attacked Nothing)}) Filter.Type.ControlledSinceTurnBegan)) "attacked does not imply settled"
 
     -- CR 302.6's subject is a creature a player CONTROLS, and a player is not one.
     Spec.it s "a player candidate is vacuously false" $ do
