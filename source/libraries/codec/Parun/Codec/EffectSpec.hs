@@ -2738,6 +2738,14 @@ spec s = Spec.describe s "Parun.Codec.Effect" $ do
       fromJson
       (Effect.Assemble Nothing)
       " {\"type\":\"Assemble\",\"value\":null} "
+  -- The Unstable FAQ's reassemble: the Contraptions moved.
+  Spec.it s "Reassemble" $
+    Common.assertJsonCodec
+      s
+      toJson
+      fromJson
+      (Effect.Reassemble (ObjectRef.InSlot (SlotName.MkSlotName (Text.pack "target"))))
+      " {\"type\":\"Reassemble\",\"value\":{\"type\":\"InSlot\",\"value\":\"target\"}} "
   -- The Unstable FAQ's crank: nullary, the resolving controller cranking.
   Spec.it s "Crank" $
     Common.assertJsonCodec

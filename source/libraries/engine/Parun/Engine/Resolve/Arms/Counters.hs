@@ -86,6 +86,7 @@ import qualified Parun.Types.CounterSpread as CounterSpread
 import qualified Parun.Types.CounteredEnd as CounteredEnd
 import qualified Parun.Types.Divide as Divide
 import qualified Parun.Types.DoesNotUntapNext as DoesNotUntapNext
+import qualified Parun.Types.Duration as Duration
 import qualified Parun.Types.Earthbend as Earthbend.Type
 import Parun.Types.Effect (Effect)
 import qualified Parun.Types.Effect as Effect
@@ -126,6 +127,8 @@ import qualified Parun.Types.PlayerChoice as PlayerChoice
 import qualified Parun.Types.PlayerCounters as PlayerCounters
 import Parun.Types.PlayerId (PlayerId)
 import qualified Parun.Types.PlayerInstruction as PlayerInstruction
+import qualified Parun.Types.PlayerRef as PlayerRef
+import qualified Parun.Types.PlayerRelation as PlayerRelation
 import qualified Parun.Types.Prompt as Prompt
 import qualified Parun.Types.ProposedEvent as ProposedEvent
 import qualified Parun.Types.PutCounters as PutCounters
@@ -1472,6 +1475,19 @@ assemble settle resolving source controller legal ref = do
   gs <- State.get
   let assembler = ref >>= \r -> Maybe.listToMaybe (Maybe.mapMaybe Recipient.objectOf (Common.objectRefRecipients legal resolving controller source gs r))
   Contraption.assemble settle assembler controller
+
+-- The Unstable FAQ's reassemble over the permanents the ObjectRef names. The
+-- control gain is Effect.GainControl's arm over the one permanent, bound to
+-- Binding.reassembledContraption, and Duration.Indefinite because the FAQ
+-- states no duration (CR 611.2a), as Parun.Engine.Assimilate's.
+reassemble :: (Game Result -> ObjectId -> ObjectId -> PlayerId -> Map.Map SlotName (Set Recipient) -> Map.Map SlotName (Set Recipient) -> Effect Card.Type.Card (GrantedAbility.GrantedAbility Card.Type.Card) -> Game ()) -> Game Result -> ObjectId -> ObjectId -> PlayerId -> Map.Map SlotName (Set Recipient) -> Map.Map SlotName (Set Recipient) -> ObjectRef -> Game ()
+reassemble applyEffectWith runSubgame resolving source controller legal chosen ref = do
+  gs <- State.get
+  let slot = Binding.reassembledContraption
+      takeControl oid =
+        applyEffectWith runSubgame resolving source controller (Map.insert slot (Set.singleton (Recipient.ToObject oid)) legal) chosen $
+          Effect.GainControl (GainControl.MkGainControl Duration.Indefinite (ObjectRef.InSlot slot) Nothing (PlayerRef.Relative PlayerRelation.You))
+  Contraption.reassemble takeControl controller (objectRefObjects legal resolving controller source gs ref)
 
 -- The Unstable FAQ's crank, by an instruction rather than the upkeep.
 crank :: PlayerId -> Game ()

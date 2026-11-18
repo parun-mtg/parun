@@ -186,6 +186,7 @@ codec cardCodec abilityCodec =
           Arm.nullary "OpenAttraction" Effect.OpenAttraction,
           Arm.nullary "RollToVisit" Effect.RollToVisit,
           Arm.payload "Assemble" (Common.maybe ObjectRef.codec) Effect.Assemble (\x -> case x of Effect.Assemble y -> Just y; _ -> Nothing),
+          Arm.payload "Reassemble" ObjectRef.codec Effect.Reassemble (\x -> case x of Effect.Reassemble y -> Just y; _ -> Nothing),
           Arm.nullary "Crank" Effect.Crank,
           Arm.payload "Planeswalk" (Common.maybe ObjectRef.codec) Effect.Planeswalk (\x -> case x of Effect.Planeswalk y -> Just y; _ -> Nothing),
           Arm.optionalPayload "ChaosEnsues" ObjectRef.codec Effect.ChaosEnsues (\x -> case x of Effect.ChaosEnsues y -> Just y; _ -> Nothing),
@@ -382,6 +383,7 @@ tagOf x = case x of
   Effect.OpenAttraction {} -> "OpenAttraction"
   Effect.RollToVisit {} -> "RollToVisit"
   Effect.Assemble {} -> "Assemble"
+  Effect.Reassemble {} -> "Reassemble"
   Effect.Crank -> "Crank"
   Effect.Planeswalk {} -> "Planeswalk"
   Effect.ChaosEnsues {} -> "ChaosEnsues"

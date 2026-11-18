@@ -1,8 +1,9 @@
 -- | Unstable's Contraptions: assembling one from the Contraption deck onto a
--- sprocket, and the crank at the beginning of its controller's upkeep. CR
--- 701.45a leaves Unstable's mechanics out of the rules, so the ground truth is
--- the Unstable FAQ (2017-12-06) and the Gatherer rulings of 2018-01-19 on its
--- Contraptions (Arms Depot's, for one), the later of the two where they part.
+-- sprocket, reassembling one onto another, and the crank at the beginning of
+-- its controller's upkeep. CR 701.45a leaves Unstable's mechanics out of the
+-- rules, so the ground truth is the Unstable FAQ (2017-12-06) and the Gatherer
+-- rulings of 2018-01-19 on its Contraptions (Arms Depot's, for one), the later
+-- of the two where they part.
 --
 -- Casing on sprockets is the closed half reading those rules, as
 -- Parun.Engine.SpaceSculptor reads CR 702.158's sectors: what a reader learns
@@ -20,6 +21,7 @@ import qualified Parun.Engine.Decide as Decide
 import qualified Parun.Engine.Event as Event
 import qualified Parun.Engine.Game as Game
 import qualified Parun.Engine.Projection as Projection
+import qualified Parun.Engine.Projection.View as Projection
 import qualified Parun.Engine.Replacement as Replacement
 import qualified Parun.Engine.Sector as Sector
 import qualified Parun.Extra.Natural as Natural
@@ -72,11 +74,33 @@ putOnSprocket oid sprocket gs =
   let move o = o {Object.designations = Set.insert sprocket (Set.filter (not . Sector.isSprocket) (Object.designations o))}
    in gs {GameState.objects = Map.adjust move oid (GameState.objects gs)}
 
+-- | The FAQ's reassemble, by this player, of each of these permanents in turn.
+-- One they control moves from its sprocket to either of their other two
+-- (Cogmentor's ruling); one they don't is first handed to `gainControl` and
+-- moves onto any of their three (Suspicious Nanny's reminder text). It never
+-- leaves the battlefield. Two candidates or three, so the prompt is never
+-- elided. A permanent no longer on the battlefield is not moved.
+--
+-- Implementation-defined: one whose control the gain did not reach is not
+-- moved either, the FAQ being silent on a control change that fails.
+reassemble :: (ObjectId -> Game ()) -> PlayerId -> [ObjectId] -> Game ()
+reassemble gainControl pid oids = Monad.forM_ oids $ \oid -> do
+  before <- State.get
+  Monad.when (Set.member oid (GameState.battlefield before)) $ do
+    let held = Projection.controllerOf oid before == Just pid
+        current = maybe Set.empty (Set.filter Sector.isSprocket . Object.designations) (Game.lookupObject oid before)
+        offered = if held then filter (`Set.notMember` current) (NonEmpty.toList Sector.sprockets) else NonEmpty.toList Sector.sprockets
+    Monad.unless held (gainControl oid)
+    after <- State.get
+    Monad.when (Set.member oid (GameState.battlefield after) && Projection.controllerOf oid after == Just pid) $ do
+      picked <- Game.chooseAmong (\decider who -> Prompt.ChooseDesignation decider who oid) pid offered
+      Monad.forM_ picked (State.modify' . putOnSprocket oid)
+
 -- | The FAQ: "any Contraption that's on the battlefield and wasn't assembled
 -- immediately heads to the scrapyard" -- a Contraption on no sprocket, judged
 -- against the projection a state-based pass took (Parun.Engine.Sba). Only
--- assemble puts one on a sprocket, so a copy (Phyrexian Metamorph's) and a
--- Contraption that left and came back are on none.
+-- assemble and reassemble put one on a sprocket, so a copy (Phyrexian
+-- Metamorph's) and a Contraption that left and came back are on none.
 unassembled :: Map.Map ObjectId PC.ProjectedCharacteristics -> GameState -> [ObjectId]
 unassembled pcs gs =
   [ oid
