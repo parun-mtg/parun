@@ -11,6 +11,7 @@ import qualified Data.Map.Strict as Map
 import qualified Data.Maybe as Maybe
 import qualified Data.Set as Set
 import qualified Data.Text as Text
+import qualified Parun.Oracle.Keyword as Oracle.Keyword
 import qualified Parun.Play.Render as Render
 import qualified Parun.Types.Card as Card
 import qualified Parun.Types.CardName as CardName
@@ -42,12 +43,40 @@ tile view cue o = case ObjectView.characteristics o of
   Nothing | Maybe.isNothing (ObjectView.face o) -> Element.button (["card", "back"] <> marks cue <> tapped o) (tap cue) [Element.el "span" ["name"] [] [Element.string "Hidden card"]]
   _ ->
     Element.button
-      (["card", colour o] <> marks cue <> tapped o)
+      (["card", colour o] <> marks cue <> tapped o <> combat view o <> ["sick" | ObjectView.summoningSick o])
       (tap cue)
       [ Element.el "span" ["top"] [] $ [Element.el "span" ["name"] [] [Element.text (Render.nameOf view o)]] <> foldMap (pure . Mana.cost) (ObjectView.characteristics o >>= ProjectedCharacteristics.manaCost),
-        Element.el "span" ["type"] [] [Element.text (typeLine o)],
-        Element.el "span" ["foot"] [] (badges o <> stats o)
+        -- On the table, what a permanent can do says more than its subtypes.
+        case keywords o of
+          [] -> Element.el "span" ["type"] [] [Element.text (typeLine o)]
+          words' -> Element.el "span" ["type", "keywords"] [] [Element.text (Text.intercalate (Text.pack ", ") words')],
+        Element.el "span" ["foot"] [] (states view o <> badges o <> stats o)
       ]
+
+-- | Whether the object attacks or blocks (CR 508.1, 509.1).
+combat :: PlayerView.PlayerView -> ObjectView.ObjectView -> [String]
+combat view o =
+  let oid = ObjectView.object o
+   in ["attacking" | Map.member oid (PlayerView.attackers view)] <> ["blocking" | any (Set.member oid) (PlayerView.blockers view)]
+
+-- | The states a tile spells out: attacking, blocking, summoning sick.
+states :: PlayerView.PlayerView -> ObjectView.ObjectView -> [Html.Html msg]
+states view o =
+  let shown cls label tip = Element.el "span" ["badge", "state", cls] [Element.attr "title" (Text.pack tip)] [Element.string label]
+      kinds = combat view o
+   in [shown "attack" "Attacking" "Attacking" | elem "attacking" kinds]
+        <> [shown "block" "Blocking" "Blocking" | elem "blocking" kinds]
+        <> [shown "sick" "Sick" "Summoning sick: can't attack or tap yet (CR 302.6)" | ObjectView.summoningSick o]
+
+-- | The keyword abilities the object has now, as Oracle text prints each,
+-- those short enough for a tile; granted ones included.
+keywords :: ObjectView.ObjectView -> [Text.Text]
+keywords o = case ObjectView.characteristics o of
+  Nothing -> []
+  Just c ->
+    let self = Text.intercalate (Text.pack " // ") (fmap CardName.unwrap (Set.toList (ProjectedCharacteristics.names c)))
+        short t = Text.length t <= 18 && not (Text.any (== '{') t)
+     in ListUtils.nubOrd (concatMap (filter short . take 1 . Oracle.Keyword.printed self) (Map.keys (ProjectedCharacteristics.keywords c)))
 
 tapped :: ObjectView.ObjectView -> [String]
 tapped o = ["tapped" | ObjectView.tapped o == TapState.Tapped]
@@ -99,13 +128,23 @@ stats :: ObjectView.ObjectView -> [Html.Html msg]
 stats o = case ObjectView.characteristics o of
   Nothing -> []
   Just c ->
-    foldMap (\(p, t) -> [Element.el "span" ["pt"] [] [Element.string (show p <> "/" <> show t)]]) ((,) <$> ProjectedCharacteristics.power c <*> ProjectedCharacteristics.toughness c)
-      <> foldMap (\l -> [Element.el "span" ["pt", "loyalty"] [] [Element.string (loyalty l)]]) (ProjectedCharacteristics.loyalty c)
-      <> foldMap (\d -> [Element.el "span" ["pt", "defense"] [] [Element.string (show (Defense.unwrap d))]]) (ProjectedCharacteristics.defense c)
-  where
-    loyalty l = case l of
-      Loyalty.Literal n -> show n
-      Loyalty.Variable -> "X"
+    let loyalty l = case l of
+          Loyalty.Literal n -> show n
+          Loyalty.Variable -> "X"
+        -- Raised or lowered from its base power and toughness (CR 208.4b) by
+        -- counters and effects.
+        printedPT = (,) <$> ProjectedCharacteristics.basePower c <*> ProjectedCharacteristics.baseToughness c
+        base = foldMap (\(bp, bt) -> ", base " <> show bp <> "/" <> show bt) printedPT
+        change p t = case printedPT of
+          Just (bp, bt)
+            | (p, t) == (bp, bt) -> []
+            | p >= bp && t >= bt -> ["up"]
+            | p <= bp && t <= bt -> ["down"]
+            | otherwise -> ["mixed"]
+          Nothing -> []
+     in foldMap (\(p, t) -> [Element.el "span" (["pt"] <> change p t) [Element.attr "title" (Text.pack ("Power and toughness" <> base))] [Element.string (show p <> "/" <> show t)]]) ((,) <$> ProjectedCharacteristics.power c <*> ProjectedCharacteristics.toughness c)
+          <> foldMap (\l -> [Element.el "span" ["pt", "loyalty"] [] [Element.string (loyalty l)]]) (ProjectedCharacteristics.loyalty c)
+          <> foldMap (\d -> [Element.el "span" ["pt", "defense"] [] [Element.string (show (Defense.unwrap d))]]) (ProjectedCharacteristics.defense c)
 
 -- | The printed Oracle text of the faces the seat may read the object by
 -- (Render.cardNames), each line apart, a face's name heading its own where
@@ -167,6 +206,10 @@ fullType o = case (ObjectView.ability o, ObjectView.characteristics o) of
 status :: PlayerView.PlayerView -> ObjectView.ObjectView -> [Text.Text]
 status view o =
   [Text.pack "Tapped" | ObjectView.tapped o == TapState.Tapped]
+    <> [Text.pack "Attacking" | Map.member (ObjectView.object o) (PlayerView.attackers view)]
+    <> [Text.pack "Blocking" | any (Set.member (ObjectView.object o)) (PlayerView.blockers view)]
+    <> [Text.pack "Summoning sick: it can't attack or use {T} abilities until its controller's next turn" | ObjectView.summoningSick o]
+    <> [Text.pack "Keyword abilities: " <> Text.intercalate (Text.pack ", ") (keywords o) | not (null (keywords o))]
     <> [Text.pack "Attached to " <> Render.recipientName view r | r <- Maybe.maybeToList (ObjectView.attachedTo o)]
     <> [Text.pack "\"" <> t <> Text.pack "\"" | t <- Maybe.maybeToList (ObjectView.ability o >>= Render.abilityText view)]
     <> [Text.pack "Targeting " <> Render.listing (fmap (Render.recipientName view) (ObjectView.targets o)) | not (null (ObjectView.targets o))]

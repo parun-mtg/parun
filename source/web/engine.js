@@ -82,8 +82,9 @@ phase("unpacked");
 const tracing = new URLSearchParams(location.search).has("trace");
 // A rematch's decks (?mine=…&theirs=…) skip the lobby (Parun.Web.Ending).
 const query = new URLSearchParams(location.search);
-const decks = ["mine", "theirs"].filter((side) => query.has(side)).map((side) => `parun_${side}=${query.get(side)}`);
-const wasi = new WASI([], ["parun_datadir=/data", ...(tracing ? ["parun_trace=1"] : []), ...decks], [
+// The auto-pass level the page kept (page.js) goes in as parun_level.
+const passed = ["mine", "theirs", "level"].filter((key) => query.has(key)).map((key) => `parun_${key}=${query.get(key)}`);
+const wasi = new WASI([], ["parun_datadir=/data", ...(tracing ? ["parun_trace=1"] : []), ...passed], [
   new OpenFile(new File([])),
   ConsoleStdout.lineBuffered((line) => console.log(line)),
   ConsoleStdout.lineBuffered((line) => (tracing ? postMessage({ trace: line }) : console.warn(line))),

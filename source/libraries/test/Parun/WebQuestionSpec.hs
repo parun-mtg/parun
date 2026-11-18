@@ -18,15 +18,18 @@ import qualified Parun.Scenario.PromptOffer as PromptOffer
 import qualified Parun.Spec as Spec
 import qualified Parun.Support as S
 import qualified Parun.Types.Action as Action
+import qualified Parun.Types.BeginningStep as BeginningStep
 import qualified Parun.Types.Color as Color
 import qualified Parun.Types.Decider as Decider
 import qualified Parun.Types.GameState as GameState
 import qualified Parun.Types.ManaType as ManaType
 import qualified Parun.Types.ObjectId as ObjectId
+import qualified Parun.Types.Phase as Phase
 import qualified Parun.Types.Prompt as Prompt
 import qualified Parun.Types.Question as Question
 import qualified Parun.Types.Reply as R
 import qualified Parun.Types.Request as Request
+import qualified Parun.Types.TurnRegisters as TurnRegisters
 import qualified Parun.Types.Zone as Zone
 import qualified Parun.Web.Card as Card
 import qualified Parun.Web.Html as Html
@@ -44,7 +47,7 @@ spec s registry = Spec.describe s "WebQuestion" $ do
     Spec.assertBool s (Text.pack "<button class=\"primary\" type=\"button\">Pass</button>" `Text.isInfixOf` page) "pass"
     Spec.assertEqWith s "tap" (fmap (\event -> Question.Web.step request Set.empty event Text.empty) (tap "Play Mountain")) (Just (Question.Web.MkReplied (R.Number 1)))
     Spec.assertEqWith s "skip" (fmap (\event -> Question.Web.step request Set.empty event Text.empty) (tap "End turn")) (Just (Question.Web.MkReplied (R.Number 0)))
-    Spec.assertEqWith s "not automatic" (Question.Web.automatic request) Nothing
+    Spec.assertEqWith s "not automatic" (Question.Web.automatic Question.Web.MkStandard request) Nothing
     -- The hand's Mountain is lit, since the seat may play it, and tapping it reads it.
     Spec.assertBool s (Text.pack "<section class=\"hand\"" `Text.isInfixOf` page) "hand"
     Spec.assertBool s (Text.pack "class=\"card c-land playable\"" `Text.isInfixOf` page) "playable"
@@ -62,9 +65,23 @@ spec s registry = Spec.describe s "WebQuestion" $ do
 
   Spec.it s "a priority offering only a pass, the hotseat's concession, and play or draw are answered unasked" $ do
     let gs = Setup.emptyGame S.bothPlayers
-    Spec.assertEqWith s "pass" (Question.Web.automatic (requestFor gs (Prompt.ChooseAction (Decider.MkDecider S.alice) S.alice [Action.Pass]))) (Just (R.Number 0))
-    Spec.assertEqWith s "concede" (Question.Web.automatic (bare (Text.pack "Concede") R.Null)) (Just (R.Text (Text.pack "Continues")))
-    Spec.assertEqWith s "play first" (Question.Web.automatic (bare (Text.pack "PlayOrDraw") (R.Array [R.Text (Text.pack "Play"), R.Text (Text.pack "Draw")]))) (Just (R.Text (Text.pack "Play")))
+    Spec.assertEqWith s "pass" (Question.Web.automatic Question.Web.MkStandard (requestFor gs (Prompt.ChooseAction (Decider.MkDecider S.alice) S.alice [Action.Pass]))) (Just (R.Number 0))
+    Spec.assertEqWith s "concede" (Question.Web.automatic Question.Web.MkStandard (bare (Text.pack "Concede") R.Null)) (Just (R.Text (Text.pack "Continues")))
+    Spec.assertEqWith s "play first" (Question.Web.automatic Question.Web.MkStandard (bare (Text.pack "PlayOrDraw") (R.Array [R.Text (Text.pack "Play"), R.Text (Text.pack "Draw")]))) (Just (R.Text (Text.pack "Play")))
+
+  Spec.it s "full control asks a lone pass and who plays first; auto passes an empty stack outside the seat's main phases" $ do
+    mountain <- S.printingOf s registry "Mountain"
+    let (land, gs0) = S.addObjectIn Zone.Hand mountain S.alice (Setup.emptyGame S.bothPlayers)
+        at phase = gs0 {GameState.turn = (GameState.turn gs0) {TurnRegisters.phase = phase}}
+        offering phase = requestFor (at phase) (Prompt.ChooseAction (Decider.MkDecider S.alice) S.alice [Action.Pass, Action.Play land Nothing])
+        lonePass = requestFor gs0 (Prompt.ChooseAction (Decider.MkDecider S.alice) S.alice [Action.Pass])
+    Spec.assertEqWith s "full: a lone pass" (Question.Web.automatic Question.Web.MkFull lonePass) Nothing
+    Spec.assertEqWith s "full: play first" (Question.Web.automatic Question.Web.MkFull (bare (Text.pack "PlayOrDraw") (R.Array [R.Text (Text.pack "Play"), R.Text (Text.pack "Draw")]))) Nothing
+    Spec.assertEqWith s "auto: upkeep" (Question.Web.automatic Question.Web.MkAutoPass (offering (Phase.Beginning BeginningStep.Upkeep))) (Just (R.Number 0))
+    Spec.assertEqWith s "auto: main phase" (Question.Web.automatic Question.Web.MkAutoPass (offering Phase.PrecombatMain)) Nothing
+    Spec.assertEqWith s "standard: upkeep" (Question.Web.automatic Question.Web.MkStandard (offering (Phase.Beginning BeginningStep.Upkeep))) Nothing
+    Spec.assertEqWith s "a covered cost is paid" (Question.Web.paying (bare (Text.pack "ChooseExtraManaSource") R.Null)) (Just R.Null)
+    Spec.assertEqWith s "named" (Question.Web.levelNamed "auto") (Just Question.Web.MkAutoPass)
 
   Spec.it s "a payment shows each source with what it makes, and a tap answers with that source" $ do
     mountain <- S.printingOf s registry "Mountain"
@@ -114,8 +131,8 @@ spec s registry = Spec.describe s "WebQuestion" $ do
         one = R.Text (Text.pack "$1")
         two = R.Text (Text.pack "$2")
         request = asking (Text.pack "AssignCombatDamage") (offer [one, two])
-    Spec.assertEqWith s "lone" (Question.Web.automatic (asking (Text.pack "AssignCombatDamage") (offer [one]))) (Just (R.Array [R.Array [one, R.Number 3]]))
-    Spec.assertEqWith s "several" (Question.Web.automatic request) Nothing
+    Spec.assertEqWith s "lone" (Question.Web.automatic Question.Web.MkStandard (asking (Text.pack "AssignCombatDamage") (offer [one]))) (Just (R.Array [R.Array [one, R.Number 3]]))
+    Spec.assertEqWith s "several" (Question.Web.automatic Question.Web.MkStandard request) Nothing
     Spec.assertEqWith s "adds up" (Question.Web.step request (picking request [Question.Web.MkToggle 0 1, Question.Web.MkToggle 1 2]) Question.Web.MkSubmit Text.empty) (Question.Web.MkReplied (R.Array [R.Array [one, R.Number 1], R.Array [two, R.Number 2]]))
     Spec.assertBool s (case Question.Web.step request (picking request [Question.Web.MkToggle 0 1, Question.Web.MkToggle 1 1]) Question.Web.MkSubmit Text.empty of Question.Web.MkRefused _ -> True; _ -> False) "short"
     Spec.assertEqWith s "a pick replaces the row's last" (picking request [Question.Web.MkToggle 0 1, Question.Web.MkToggle 0 3]) (Set.singleton (0, 3))

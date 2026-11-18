@@ -9,17 +9,22 @@
   --surface: #fffdf8;
   --surface-2: #ece7dc;
   --text: #1f1b16;
-  --muted: #6c6457;
+  --muted: #4d473e;
   --border: #d8d0c1;
-  --accent: #2f6fd6;
-  --accent-soft: rgb(47 111 214 / 0.14);
+  --accent: #2557a7;
+  --accent-soft: rgb(37 87 167 / 0.12);
   --accent-text: #ffffff;
-  --danger: #c0392b;
-  --good: #2e8b57;
+  --danger: #a13024;
+  --danger-text: #8a291f;
+  --on-danger: #ffffff;
+  --good: #1c5535;
+  --good-text: #1c5535;
+  --on-good: #ffffff;
+  --border-strong: #8f897f;
   --shadow: 0 1px 2px rgb(0 0 0 / 0.08), 0 2px 8px rgb(0 0 0 / 0.06);
   --sheet-shadow: 0 -8px 32px rgb(0 0 0 / 0.18);
 
-  --c-w: #d9c46a;
+  --c-w: #9a8b4b;
   --c-w-bg: #fbf7e4;
   --c-u: #3d84c6;
   --c-u-bg: #e5eff9;
@@ -29,11 +34,11 @@
   --c-r-bg: #fae6e0;
   --c-g: #3c9a5a;
   --c-g-bg: #e3f2e6;
-  --c-multi: #c9a227;
+  --c-multi: #a78620;
   --c-multi-bg: #f7efd2;
-  --c-none: #9a9a9a;
+  --c-none: #898989;
   --c-none-bg: #eeeeee;
-  --c-land: #a88a63;
+  --c-land: #a0835e;
   --c-land-bg: #f1ebe1;
 
   --ms-w: #f8f2cc;
@@ -64,13 +69,18 @@
   --surface: #1e2128;
   --surface-2: #272b34;
   --text: #ece9e3;
-  --muted: #9a9ca3;
+  --muted: #b7b9be;
   --border: #353a45;
   --accent: #6aa3ff;
   --accent-soft: rgb(106 163 255 / 0.18);
   --accent-text: #0b1526;
-  --danger: #ff7b6b;
+  --danger: #ff9c90;
+  --danger-text: #ff9c90;
+  --on-danger: #1a0a08;
   --good: #5fd08f;
+  --good-text: #5fd08f;
+  --on-good: #0b1f14;
+  --border-strong: #686b74;
   --shadow: 0 1px 2px rgb(0 0 0 / 0.4), 0 2px 8px rgb(0 0 0 / 0.3);
   --sheet-shadow: 0 -8px 32px rgb(0 0 0 / 0.5);
 
@@ -93,8 +103,8 @@
 
   --ms-w: #efe6b4;
   --ms-u: #9cc8ee;
-  --ms-b: #a99fa3;
-  --ms-r: #ee9a82;
+  --ms-b: #aaa0a4;
+  --ms-r: #ee9c84;
   --ms-g: #93cba1;
   --ms-generic: #b9b4ad;
 }
@@ -157,7 +167,7 @@ button {
   appearance: none;
   min-height: 44px;
   padding: 0.55em 1em;
-  border: 1px solid var(--border);
+  border: 1px solid var(--border-strong);
   border-radius: var(--radius);
   background: var(--surface);
   box-shadow: var(--shadow);
@@ -193,12 +203,17 @@ button {
   outline-offset: 2px;
 }
 
+::placeholder {
+  color: var(--muted);
+  opacity: 1;
+}
+
 input {
   font: inherit;
   color: inherit;
   min-height: 44px;
   padding: 0.5em 0.8em;
-  border: 1px solid var(--border);
+  border: 1px solid var(--border-strong);
   border-radius: var(--radius);
   background: var(--surface);
   width: 100%;
@@ -408,7 +423,7 @@ main.lobby {
   gap: 0.15em;
   min-height: 64px;
   padding: 0.6em 0.8em;
-  border: 2px solid var(--border);
+  border: 2px solid var(--border-strong);
   border-radius: var(--radius);
   background: var(--surface);
   text-align: left;
@@ -478,7 +493,7 @@ main.lobby {
   appearance: none;
   min-height: 44px;
   padding: 0.5em 0.75em;
-  border: 1px solid var(--border);
+  border: 1px solid var(--border-strong);
   border-radius: var(--radius);
   background: var(--surface);
   text-align: left;
@@ -495,10 +510,6 @@ main.lobby {
 .pips {
   flex: none;
   font-size: 0.9rem;
-}
-
-.wholes .deck-list {
-  grid-template-columns: repeat(auto-fill, minmax(76px, 1fr));
 }
 
 #app button.deck.picked {
@@ -571,7 +582,7 @@ main.game {
 }
 
 .phases li.past {
-  opacity: 0.55;
+  background: transparent;
 }
 
 .phases li.now {
@@ -1031,7 +1042,72 @@ details.pile[open] {
 .badge.damage {
   background: var(--danger);
   border-color: var(--danger);
-  color: #fff;
+  color: var(--on-danger);
+}
+
+/* What a permanent is doing now, spelled out rather than only coloured. */
+.badge.state {
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+  font-size: 0.72em;
+}
+
+.badge.attack {
+  background: var(--danger);
+  border-color: var(--danger);
+  color: var(--on-danger);
+}
+
+.badge.block {
+  background: var(--good);
+  border-color: var(--good);
+  color: var(--on-good);
+}
+
+.badge.sick {
+  background: var(--surface-2);
+  color: var(--text);
+  border-style: dashed;
+}
+
+.card .keywords {
+  color: var(--text);
+  font-style: italic;
+}
+
+.pt.up {
+  color: var(--good-text);
+  border-color: var(--good-text);
+}
+
+.pt.down {
+  color: var(--danger-text);
+  border-color: var(--danger-text);
+}
+
+.pt.mixed {
+  border-style: dashed;
+  border-color: var(--text);
+}
+
+
+.levels {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.3em 0.6em;
+  margin-top: 0.2em;
+  padding-top: 0.5em;
+  border-top: 1px dashed var(--border);
+  font-size: 0.82rem;
+}
+
+#app .levels .segmented button {
+  min-height: 34px;
+  padding: 0.2em 0.6em;
+  font-size: 0.8rem;
 }
 
 #app button.card.c-land {
@@ -1039,8 +1115,10 @@ details.pile[open] {
 }
 
 #app button.card.tapped {
+  /* Tapped: turned and greyed, its text kept at full contrast. */
   transform: rotate(7deg) translateY(2px);
-  opacity: 0.62;
+  background: repeating-linear-gradient(135deg, var(--cbg), var(--cbg) 6px, var(--surface-2) 6px, var(--surface-2) 7px);
+  border-top-color: var(--border-strong);
 }
 
 #app button.card.tapped::after {
@@ -1108,13 +1186,9 @@ details.pile[open] {
     0 0 12px color-mix(in srgb, var(--danger) 40%, transparent);
 }
 
-#app button.card.blocking::after {
-  content: "\1F6E1\FE0E";
-  position: absolute;
-  left: 4px;
-  bottom: 4px;
-  font-size: 0.9em;
-  color: var(--good);
+#app button.card.blocking {
+  outline: 3px solid var(--good);
+  outline-offset: 2px;
 }
 
 /* ---------- The side panel: prompt and log ---------- */

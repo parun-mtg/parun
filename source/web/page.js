@@ -6,6 +6,9 @@ const root = document.getElementById("app");
 const events = ["click", "input", "change"];
 const engineUrl = new URL("./engine.js", import.meta.url);
 engineUrl.search = location.search;
+// The auto-pass level last chosen (Parun.Web.Question.Level) starts the game.
+const level = localStorage.getItem("parun-level");
+if (level !== null) engineUrl.searchParams.set("level", level);
 const engine = new Worker(engineUrl, { type: "module" });
 // Safari runs WebAssembly far slower outside a secure context (#8419), and
 // plain http from a network address is not one.
@@ -119,6 +122,9 @@ for (const type of events) {
   root.addEventListener(type, (event) => {
     const path = pathOf(event.target);
     if (path === null) return;
+    // An auto-pass level tapped is kept for the next game.
+    const chosen = type === "click" ? event.target.closest("[data-level]") : null;
+    if (chosen) localStorage.setItem("parun-level", chosen.dataset.level);
     // A button that asks first (data-confirm) sends nothing unless confirmed.
     const asking = type === "click" ? event.target.closest("[data-confirm]") : null;
     if (asking && !confirm(asking.dataset.confirm)) return;

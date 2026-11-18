@@ -23,9 +23,6 @@ spec s = Spec.describe s "Parun.Web.Lobby" $ do
     Spec.it s "names the set by its code and the deck in words" $ do
       Spec.assertEq s (Lobby.describe $ Text.pack "sets/m12/entangling-webs") (Text.pack "M12", Text.pack "Entangling Webs")
 
-    Spec.it s "names a set's whole list" $ do
-      Spec.assertEq s (Lobby.describe $ Text.pack "sets/por/all") (Text.pack "POR", Text.pack "Every card")
-
   Spec.describe s "deckColours" $ do
     Spec.it s "unions the colours of the cards its lines name, skipping the rest" $ do
       let known = Map.fromList [(CardName.MkCardName (Text.pack "Shock"), Set.singleton Color.Red), (CardName.MkCardName (Text.pack "Forest"), Set.empty), (CardName.MkCardName (Text.pack "Giant Growth"), Set.singleton Color.Green)]

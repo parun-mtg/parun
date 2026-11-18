@@ -122,7 +122,7 @@ update event typed lobby = case event of
   MkStart -> lobby
 
 -- | A deck's set and its own name: "sets/m12/entangling-webs" is set "M12",
--- deck "Entangling Webs", and a set's whole card list is "Every card".
+-- deck "Entangling Webs".
 describe :: Text.Text -> (Text.Text, Text.Text)
 describe name =
   let parts = Text.splitOn (Text.pack "/") name
@@ -130,7 +130,7 @@ describe name =
         l : s : _ -> (Text.toUpper s, l)
         [l] -> (Text.pack "Decks", l)
         [] -> (Text.pack "Decks", name)
-   in (group, if leaf == Text.pack "all" then Text.pack "Every card" else titled leaf)
+   in (group, titled leaf)
 
 -- | "entangling-webs" as "Entangling Webs".
 titled :: Text.Text -> Text.Text
@@ -153,14 +153,7 @@ matches typed name =
 view :: Lobby -> Html.Html Event
 view lobby =
   let shown = filter (matches (search lobby)) (Foldable.toList (decks lobby))
-      grouped = Map.toList (Map.fromListWith (flip (<>)) [(fst (describe name), [name]) | name <- shown])
-      -- A set with nothing but its whole list joins the others like it,
-      -- each named by its set.
-      lone names = case names of
-        [name] -> Text.isSuffixOf (Text.pack "/all") name
-        _ -> False
-      groups = [g | g@(_, names) <- grouped, not (lone names)]
-      wholes = concat [names | (_, names) <- grouped, lone names]
+      groups = Map.toList (Map.fromListWith (flip (<>)) [(fst (describe name), [name]) | name <- shown])
       slot which title chosen fallback =
         Element.button
           (["slot"] <> ["choosing" | choosing lobby == which])
@@ -168,11 +161,10 @@ view lobby =
           [ Element.el "span" ["slot-title"] [] [Element.string title],
             Element.el "span" ["slot-deck"] [] [Element.text (maybe (Text.pack fallback) label chosen)]
           ]
-      deck name = deckAs (snd (describe name)) name
-      deckAs title name =
+      deck name =
         let picked = Just name == (if choosing lobby == MkMine then mine lobby else theirs lobby)
             pips = Element.el "span" ["pips"] [] [Mana.symbol (Text.pack (Web.Card.letterUpper c)) | c <- Set.toList (Map.findWithDefault Set.empty name (palette lobby))]
-         in (name, Element.button (["deck"] <> ["picked" | picked]) (MkPick name) [Element.el "span" ["deck-name"] [] [Element.text title], pips])
+         in (name, Element.button (["deck"] <> ["picked" | picked]) (MkPick name) [Element.el "span" ["deck-name"] [] [Element.text (snd (describe name))], pips])
    in Element.el
         "main"
         ["lobby"]
@@ -210,9 +202,7 @@ view lobby =
                     Element.button ["random"] MkRandom [Element.string "Random"]
                   ],
                 Element.el "p" ["choosing-for"] [] [Element.string (if choosing lobby == MkMine then "Choose your deck." else "Choose the bot's deck.")],
-                Element.keyed "div" ["sets"] [] $
-                  [(group, Element.el "section" ["set"] [] [Element.el "h2" [] [] [Element.text group], Element.keyed "div" ["deck-list"] [] (fmap deck names)]) | (group, names) <- groups]
-                    <> [(Text.pack " whole", Element.el "section" ["set", "wholes"] [] [Element.el "h2" [] [] [Element.string "Whole sets"], Element.keyed "div" ["deck-list"] [] [deckAs (fst (describe name)) name | name <- wholes]]) | not (null wholes)]
+                Element.keyed "div" ["sets"] [] [(group, Element.el "section" ["set"] [] [Element.el "h2" [] [] [Element.text group], Element.keyed "div" ["deck-list"] [] (fmap deck names)]) | (group, names) <- groups]
               ]
                 <> [Element.el "p" ["empty"] [] [Element.string "No deck matches."] | null shown]
             )

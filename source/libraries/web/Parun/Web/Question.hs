@@ -25,6 +25,7 @@ import qualified Parun.Play.Protocol as Protocol
 import qualified Parun.Play.Render as Render
 import qualified Parun.Types.ObjectId as ObjectId
 import qualified Parun.Types.ObjectView as ObjectView
+import qualified Parun.Types.Phase as Phase
 import qualified Parun.Types.PlayerId as PlayerId
 import qualified Parun.Types.PlayerView as PlayerView
 import qualified Parun.Types.Question as Question
@@ -60,6 +61,8 @@ data Event
   | -- | Concedes the game (CR 104.3a): passes now, and the hotseat answers
     -- its next concession question yes.
     MkConcede
+  | -- | Lets the page answer this much for the seat.
+    MkLevel Level
   | -- | Makes this blocker the one the next attacker tapped is for.
     MkFocus Natural
   | -- | Passes now, and every priority after it until the turn ends while
@@ -96,18 +99,55 @@ data Group = MkGroup
     exclusive :: Bool
   }
 
+-- | How much the seat lets the page answer for it, its own setting: full
+-- control asks everything but the indistinguishable; standard passes a
+-- priority offering nothing but a pass and mana abilities; auto also passes
+-- an empty stack outside the seat's main phases and pays mana automatically.
+data Level
+  = MkFull
+  | MkStandard
+  | MkAutoPass
+  deriving (Bounded, Enum, Eq, Show)
+
+-- | A level as the page names it, and as it is stored (page.js).
+levelName :: Level -> (String, String)
+levelName l = case l of
+  MkFull -> ("full", "Full control")
+  MkStandard -> ("standard", "Standard")
+  MkAutoPass -> ("auto", "Auto")
+
+-- | A level by its stored name.
+levelNamed :: String -> Maybe Level
+levelNamed name = List.find ((== name) . fst . levelName) [minBound .. maxBound]
+
+-- | The reply that finishes a payment auto is making: auto's next source,
+-- or paying once the cost is covered.
+paying :: Request.Request -> Maybe R.Reply
+paying request = case Text.unpack (Question.kind (Request.question request)) of
+  "ChooseExtraManaSource" -> Just R.Null
+  _ -> auto request
+
 -- | A reply the seat is never asked for: the hotseat never concedes unasked
 -- (CR 104.3a), the seat plays first when it chooses, a priority offering nothing but a pass and mana abilities is
 -- passed (Offer.onlyPass), and a choice between indistinguishable options is
 -- made: identical mana to spend, and all of a creature's combat damage to
 -- its one recipient (CR 510.1c).
-automatic :: Request.Request -> Maybe R.Reply
-automatic request = case Text.unpack (Question.kind question) of
+automatic :: Level -> Request.Request -> Maybe R.Reply
+automatic setting request = case Text.unpack (Question.kind question) of
   "Concede" -> Just . R.Text $ Text.pack "Continues"
   -- The player is taken to want to play first (CR 103.1), a default of this
-  -- client's rather than the engine's.
-  "PlayOrDraw" -> Just . R.Text $ Text.pack "Play"
-  "ChooseAction" -> R.Number <$> Offer.onlyPass (Question.offer question)
+  -- client's rather than the engine's, which full control asks.
+  "PlayOrDraw" | setting /= MkFull -> Just . R.Text $ Text.pack "Play"
+  "ChooseAction"
+    | setting /= MkFull,
+      Just i <- Offer.onlyPass (Question.offer question) ->
+        Just (R.Number i)
+    -- Auto passes an empty stack outside the seat's own main phases.
+    | setting == MkAutoPass,
+      Just shown <- Request.view request,
+      null (PlayerView.stack shown),
+      not (PlayerView.active shown == PlayerView.viewer shown && elem (PlayerView.phase shown) [Phase.PrecombatMain, Phase.PostcombatMain]) ->
+        R.Number <$> passIndex request
   "ChooseManaToSpend" | Just (unit : rest) <- Protocol.arrayOf offer, all (== unit) rest -> Just unit
   "AssignCombatDamage"
     | Just [recipient] <- Protocol.field "lethal" offer >>= Protocol.arrayOf >>= mapM Protocol.entryOf,
@@ -171,13 +211,14 @@ data Screen = MkScreen
     -- | How many of the newest entries arrived since the seat last decided.
     fresh :: Natural,
     -- | The blocker an attacker's tile assigns to when tapped (MkFocus).
-    focus :: Maybe Natural
+    focus :: Maybe Natural,
+    level :: Level
   }
   deriving (Eq, Show)
 
 -- | A screen with nothing picked, read or logged.
 blank :: Screen
-blank = MkScreen Set.empty Nothing Seq.empty 0 Nothing
+blank = MkScreen Set.empty Nothing Seq.empty 0 Nothing MkStandard
 
 -- | The page for a request: the turn bar, the table with each tile marked
 -- for what tapping it does, the question docked with its answers, the log,
@@ -188,6 +229,7 @@ view request screen =
     [Element.el "p" ["problem"] [Element.attr "role" (Text.pack "alert")] [Html.text problem] | problem <- Maybe.maybeToList (Request.problem request)]
       <> news screen
       <> form request (selected screen)
+      <> [levels (level screen)]
 
 -- | The page while the game goes on without the seat: a request it was not
 -- asked (Hotseat answers it), its board shown as it stands, and in place of
@@ -201,6 +243,17 @@ watching request screen =
         _ -> "Moving on\x2026"
    in table request screen (Board.MkMarks (Card.MkCue [] . MkRead . ObjectView.object) (const Nothing)) $
         news screen <> [Element.el "p" ["waiting"] [] [Element.el "span" ["spinner", "small"] [Element.attr "aria-hidden" (Text.pack "true")] [], Element.string status]]
+
+-- | The level control: how much the page answers for the seat.
+levels :: Level -> Html.Html Event
+levels current =
+  Element.el
+    "div"
+    ["levels"]
+    [Element.attr "role" (Text.pack "group"), Element.attr "aria-label" (Text.pack "Automatic passing")]
+    [ Element.el "span" ["k"] [] [Element.string "Auto-pass"],
+      Element.el "div" ["segmented"] [] [Element.el "button" ["on" | l == current] [Element.attr "type" (Text.pack "button"), Element.attr "data-level" (Text.pack (fst (levelName l))), Element.attr "aria-pressed" (Text.pack (if l == current then "true" else "false")), Element.on "click" (MkLevel l)] [Element.string (snd (levelName l))] | l <- [minBound .. maxBound]]
+    ]
 
 -- | The game screen around a prompt's contents.
 table :: Request.Request -> Screen -> Board.Marks Event -> [Html.Html Event] -> Html.Html Event
@@ -368,6 +421,7 @@ step request picked event typed = case event of
   MkRead _ -> MkPicking picked
   MkClose -> MkPicking picked
   MkFocus _ -> MkPicking picked
+  MkLevel _ -> MkPicking picked
   MkConcede -> maybe (MkRefused $ Text.pack "Concede when you have priority.") (MkReplied . R.Number) $ passIndex request
   MkSkip -> maybe (MkRefused $ Text.pack "There is no pass to make.") (MkReplied . R.Number) $ passIndex request
   MkAuto -> maybe (MkRefused $ Text.pack "Auto can't pay the rest of this cost. Choose a source.") MkReplied $ auto request

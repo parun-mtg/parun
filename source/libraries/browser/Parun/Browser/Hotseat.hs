@@ -66,7 +66,8 @@ play page = do
   loaded <- fmap (Registry.loadBundle root) $ Registry.bundlePath >>= ByteString.readFile
   deckRoot <- Decks.defaultRoot
   paths <- Decks.listRoot deckRoot
-  let byName = Map.fromList [(Lobby.deckName deckRoot path, path) | path <- paths]
+  -- A set's whole card list is no deck to play.
+  let byName = Map.fromList [(name, path) | path <- paths, let name = Lobby.deckName deckRoot path, not (Text.isSuffixOf (Text.pack "/all") name)]
       names = Seq.fromList (Map.keys byName)
       random = do
         key <- Key.fresh
@@ -95,15 +96,15 @@ play page = do
               Left e -> choose (Lobby.update e value lobby) work
               Right _ -> choose lobby work
       -- A deck's colours come from the card files its lines name, each
-      -- parsed only then; a set's whole list would be every colour, so it
-      -- gets none.
+      -- parsed only then.
       -- Lazy, so a file is parsed only when looked up.
       byFile = LazyMap.fromList loaded
       colours name = case LazyMap.lookup (Registry.cardPath root (Registry.slugFor name)) byFile of
         Just (Right card) -> Lobby.cardColours card
         _ -> Set.empty
-      prepared = [(name, path) | (name, path) <- Map.toList byName, not (Text.isSuffixOf (Text.pack "/all") name)]
+      prepared = Map.toList byName
       say = Browser.display page . fmap Right . message
+  initialLevel <- maybe Web.Question.MkStandard (Maybe.fromMaybe Web.Question.MkStandard . Web.Question.levelNamed) <$> Environment.lookupEnv "parun_level"
   -- A rematch names both decks (Ending.rematch) and skips the lobby.
   asked <- (,) <$> Environment.lookupEnv "parun_mine" <*> Environment.lookupEnv "parun_theirs"
   (one, two) <- case asked of
@@ -113,7 +114,7 @@ play page = do
   Browser.display page . fmap Right $ starting (Lobby.deckName deckRoot one) (Lobby.deckName deckRoot two)
   registry <- Registry.defaultRegistry loaded :: IO (Registry.Registry Identity.Identity)
   -- The bot needs no screen, so the player is never handed it.
-  seatRef <- IORef.newIORef . MkSeat (Just player) False Nothing False Map.empty Seq.empty 0 =<< Clock.getMonotonicTime
+  seatRef <- IORef.newIORef . MkSeat (Just player) False initialLevel Nothing False Map.empty Seq.empty 0 =<< Clock.getMonotonicTime
   listed <- (,) <$> Command.load registry one <*> Command.load registry two
   case listed of
     (Right first, Right second) -> do
@@ -156,7 +157,7 @@ exchange lookUp page seatRef request = do
   fmap (Just . Right) $ do
     Monad.forM_ (Request.view request) $ IORef.modifyIORef' seatRef . witness
     state <- IORef.readIORef seatRef
-    let auto = if paying state then Web.Question.auto request else Nothing
+    let auto = if paying state || level state == Web.Question.MkAutoPass then Web.Question.paying request else Nothing
         kind = Question.kind $ Request.question request
         traced how = Browser.trace page $ kind <> Text.pack (": engine " <> Browser.milliseconds (arrived - answeredAt state) <> ", " <> how)
         turn = fmap PlayerView.turn (Request.view request)
@@ -179,7 +180,7 @@ exchange lookUp page seatRef request = do
             Browser.display page . fmap Right $ Web.Question.watching request (Web.Question.blank {Web.Question.logged = logged now, Web.Question.fresh = freshOf now})
           pure reply
         conceded = if conceding state && kind == Text.pack "Concede" then Just (R.Text (Text.pack "Concedes")) else Nothing
-    reply <- case (Monad.mplus conceded (Web.Question.automatic request), auto, skipped) of
+    reply <- case (Monad.mplus conceded (Web.Question.automatic (level state) request), auto, skipped) of
       (Just reply, _, _) -> watch "answered unasked" reply
       (_, Just reply, _) -> watch "paid by auto" reply
       (_, _, Just reply) -> watch "skipped" reply
@@ -201,7 +202,7 @@ exchange lookUp page seatRef request = do
     answer pending picked = asking pending picked Nothing Nothing
     asking pending picked reading focus = do
       state <- IORef.readIORef seatRef
-      let screen = Web.Question.MkScreen picked reading (logged state) (freshOf state) focus
+      let screen = Web.Question.MkScreen picked reading (logged state) (freshOf state) focus (level state)
       Browser.display page . fmap Right $ Web.Question.view pending screen
       (event, value) <- Browser.next page
       case event of
@@ -216,7 +217,11 @@ exchange lookUp page seatRef request = do
             Monad.when (e == Web.Question.MkConcede) . IORef.modifyIORef' seatRef $ \s -> s {conceding = True}
             pure answered
           -- A pick made from the card's sheet leaves the sheet open.
-          Web.Question.MkPicking now -> asking pending now (if isToggle e then reading else Nothing) (focusAfter e focus)
+          Web.Question.MkPicking now -> do
+            case e of
+              Web.Question.MkLevel l -> IORef.modifyIORef' seatRef $ \st -> st {level = l}
+              _ -> pure ()
+            asking pending now (if isToggle e then reading else Nothing) (focusAfter e focus)
           Web.Question.MkRefused problem -> asking pending {Request.problem = Just problem} picked Nothing focus
         Left _ -> asking pending picked reading focus
     focusAfter e focus = case e of
@@ -234,6 +239,8 @@ exchange lookUp page seatRef request = do
 data Seat = MkSeat
   { facing :: Maybe PlayerId.PlayerId,
     paying :: Bool,
+    -- | How much the page answers for the seat (Web.Question.Level).
+    level :: Web.Question.Level,
     -- | The turn the seat asked to pass to the end of (Web.Question.MkSkip).
     skipping :: Maybe Natural,
     -- | Whether the seat conceded (Web.Question.MkConcede).
