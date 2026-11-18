@@ -105,7 +105,7 @@ encode p answer = case p of
   Prompt.RandomDepth _ -> Response.PlacedAtRandomDepth answer
   Prompt.LookUpCard _ -> Response.LookedUpCard answer
   Prompt.ReferenceCards {} -> Response.ReferenceCardNames answer
-  Prompt.ReferenceNames _ -> Response.ReferenceCardNames answer
+  Prompt.ReferenceNames _ _ -> Response.ReferenceCardNames answer
   Prompt.ChooseDieResult {} -> Response.ChoseDieResult answer
   Prompt.Rethrow {} -> Response.ChoseRethrow answer
   Prompt.RerollDice {} -> Response.ChoseRerolledDice answer
@@ -321,7 +321,7 @@ decode p response = case p of
   Prompt.ReferenceCards {} -> case response of
     Response.ReferenceCardNames names -> Just names
     _ -> Nothing
-  Prompt.ReferenceNames _ -> case response of
+  Prompt.ReferenceNames _ _ -> case response of
     Response.ReferenceCardNames names -> Just names
     _ -> Nothing
   Prompt.ChooseDieResult {} -> case response of
@@ -888,7 +888,7 @@ defaultAnswer p = case p of
   Prompt.ReferenceCards {} -> []
   -- A reference holding no such face: the name grant then reaches only the
   -- faces the game holds (Parun.Engine.Game.referenceFaces).
-  Prompt.ReferenceNames _ -> []
+  Prompt.ReferenceNames _ _ -> []
   -- CR 706.4: the prompt is only raised where one instruction's results are not
   -- all the same number, and every position in them is a legal choice.
   -- Answering 0 takes the first die rolled, ChooseDelayedTriggerEvent's posture

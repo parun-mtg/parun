@@ -30,6 +30,7 @@ import qualified Parun.Types.Filter as Filter.Type
 import qualified Parun.Types.GameState as GameState
 import qualified Parun.Types.Keyword as Keyword
 import qualified Parun.Types.Layout as Layout
+import qualified Parun.Types.NameReading as NameReading
 import qualified Parun.Types.PlayerId as PlayerId
 import qualified Parun.Types.Prompt as Prompt
 
@@ -111,9 +112,14 @@ melded card = case Card.Type.layout card of
 -- CR 201.4: every name chosenFace answers to, once each, sorted: each face of
 -- each card in the reference and of each combined back face.
 cardNames :: (Monad m) => Registry.Registry m -> m (Either InvalidCorpus.InvalidCorpus [CardName.CardName])
-cardNames registry = fmap (fmap (Set.toList . Set.fromList . concatMap names)) (Registry.cards registry)
-  where
-    names card = concatMap (fmap Face.name . NonEmpty.toList . Card.Type.faces) (card : melded card)
+cardNames registry = fmap (fmap (Set.toList . Set.fromList . fmap Face.name . concatMap choosableFaces)) (Registry.cards registry)
+
+-- CR 201.4b-f: the faces a card offers a name by, each the characteristics
+-- that name is judged by: every face, a split half, back face, flip card's or
+-- adventurer, omen or preparation card's alternative alike, and a meld card's
+-- combined back faces.
+choosableFaces :: Card.Type.Card -> [Face.Face Card.Type.Card]
+choosableFaces card = concatMap (NonEmpty.toList . Card.Type.faces) (card : melded card)
 
 -- CR 201.4 / 723.5: the card a chosen name answers to. The card the registry
 -- answers with, else, for a name several cards hold only as an alternative and
@@ -180,7 +186,7 @@ policingCardNames registry failed answer asked = case Asked.prompt asked of
 -- Prompt.LookUpCard then fetches it back by. The pick among the names is not
 -- made here: the engine asks it of the answerer beneath, as randomness.
 -- Prompt.ReferenceNames asks about every NAME instead, each judged by the view
--- Card.referenceViews pairs it with.
+-- its NameReading pairs it with.
 --
 -- Parun.CastProhibitionSpec's Spy Kit case, where Runed Halo names a card in
 -- no zone, is what proves the lookup; Parun.ConjureSpec's Fear of Change case
@@ -201,17 +207,22 @@ lookingUpCards ::
 lookingUpCards registry failed answer asked = case Asked.prompt asked of
   Prompt.LookUpCard name -> fetched failed (Registry.fetchCard registry name)
   Prompt.ReferenceCards predicate amount -> fmap (referenceCards (Asked.game asked) predicate amount) (fetched failed (Registry.cards registry))
-  Prompt.ReferenceNames predicate -> fmap (referenceNames (Asked.game asked) predicate) (fetched failed (Registry.cards registry))
+  Prompt.ReferenceNames reading predicate -> fmap (referenceNames (Asked.game asked) reading predicate) (fetched failed (Registry.cards registry))
   _ -> answer asked
 
 -- | CR 108.1: Prompt.ReferenceNames' answer over the reference's cards: every
--- name the filter admits, each judged by the view Card.referenceViews pairs it
--- with. Parun.Scenario answers it so too.
-referenceNames :: GameState.GameState -> Filter.Type.Filter Keyword.Keyword -> [Card.Type.Card] -> [CardName.CardName]
-referenceNames gs predicate =
+-- name the filter admits, each judged by the view the reading pairs it with --
+-- Card.referenceViews' for a name grant (CR 612.7), choosableFaces' for a
+-- random card name (CR 201.4), the names a choice would accept (admitsName).
+-- Parun.Scenario answers it so too.
+referenceNames :: GameState.GameState -> NameReading.NameReading -> Filter.Type.Filter Keyword.Keyword -> [Card.Type.Card] -> [CardName.CardName]
+referenceNames gs reading predicate =
   let context = Filter.contextIn gs Nothing Nothing
       admitted face = Filter.matches context (Projection.viewOfCard face) predicate
-   in concatMap (fmap fst . filter (admitted . snd) . Card.referenceViews)
+      views card = case reading of
+        NameReading.OffStack -> Card.referenceViews card
+        NameReading.Choosable -> fmap (\face -> (Face.name face, face)) (choosableFaces card)
+   in concatMap (fmap fst . filter (admitted . snd) . views)
 
 -- | CR 108.1: Prompt.ReferenceCards' answer over the reference's cards: the
 -- first-face name of each the filter admits. Parun.Scenario answers it so too.

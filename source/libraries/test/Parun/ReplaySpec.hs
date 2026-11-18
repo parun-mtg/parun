@@ -79,6 +79,7 @@ import qualified Parun.Types.ModeSelection as ModeSelection
 import qualified Parun.Types.MoveSpread as MoveSpread
 import qualified Parun.Types.MulliganDecision as MulliganDecision
 import qualified Parun.Types.MulliganOffer as MulliganOffer
+import qualified Parun.Types.NameReading as NameReading
 import qualified Parun.Types.NumberFloor as NumberFloor
 import qualified Parun.Types.ObjectCount as ObjectCount
 import qualified Parun.Types.ObjectId as ObjectId
@@ -2510,7 +2511,7 @@ replaySpec s registry =
       Spec.assertEqWith s "a short transcript answers no names" (Replay.defaultAnswer p) []
     -- And for the face names it answers a name grant's filter with.
     Spec.it s "ReferenceNames round-trips through the transcript" $ do
-      let p = Prompt.ReferenceNames (Filter.Type.HasCardType CardType.Creature)
+      let p = Prompt.ReferenceNames NameReading.OffStack (Filter.Type.HasCardType CardType.Creature)
           names = [CardName.MkCardName (Text.pack "Hill Giant"), CardName.MkCardName (Text.pack "Giant Spider")]
       Spec.assertEqWith s "names round trip" (Replay.decode p (Replay.encode p names)) (Just names)
       Spec.assertEqWith s "a looked-up card does not decode as names" (Replay.decode p (Response.LookedUpCard Nothing)) Nothing

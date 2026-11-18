@@ -112,6 +112,7 @@ import qualified Parun.Types.Modification as Modification
 import qualified Parun.Types.MoveCounters as MoveCounters
 import qualified Parun.Types.MoveSpread as MoveSpread
 import qualified Parun.Types.MovedKinds as MovedKinds
+import qualified Parun.Types.NameReading as NameReading
 import qualified Parun.Types.NumberFloor as NumberFloor
 import qualified Parun.Types.Object as Object
 import Parun.Types.ObjectId (ObjectId)
@@ -448,7 +449,8 @@ chooseCardName resolving source controller legal (ChooseCardName.MkChooseCardNam
   --
   -- At random, nobody chooses: the name is drawn among the names a choice
   -- would offer, the confined list or every name of the Oracle card reference
-  -- the restriction admits (Prompt.ReferenceNames), and looked up as a chosen
+  -- the restriction admits (Prompt.ReferenceNames' Choosable reading, CR
+  -- 201.4b-f, so an Adventure's name is drawable), and looked up as a chosen
   -- name is. Discord, Lord of Disharmony's "every Magic card" is that
   -- reference, the registry the interpreter holds (CR 108.1,
   -- Parun.Interpreter.lookingUpCards), so a card the host loads no file for is
@@ -459,7 +461,7 @@ chooseCardName resolving source controller legal (ChooseCardName.MkChooseCardNam
           (CardSelection.ByChoice, Nothing) -> fmap Just (Game.choose (Prompt.ChooseCardName (Decide.deciderFor chooser g) chooser source restriction made) >>= Game.lookUpChosenName)
           (CardSelection.ByChoice, Just names) -> Common.chooseNameAmong chooser source made names
           (CardSelection.AtRandom, _) -> do
-            names <- maybe (Game.ask (Prompt.ReferenceNames restriction)) pure confined
+            names <- maybe (Game.ask (Prompt.ReferenceNames NameReading.Choosable restriction)) pure confined
             drawn <- Game.drawAmong Prompt.RandomCard (ListUtils.nubOrd names)
             Monad.mapM Game.lookUpChosenName drawn
         pure (maybe made (\name -> made Seq.|> (chooser, name)) picked)

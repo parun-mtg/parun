@@ -1,12 +1,8 @@
 {
-  "description": "CR 201.4 Discord's permission casts only the face with the drawn name",
-  "note": "Discord draws Aquatic Alchemist. In alice's next main phase the copy is offered as the creature alone: Bubble Up, its Adventure, has another name, though alice has an instant in her graveyard for it to target and the Swamps to pay for it. Bubble Up is no name the random draw offers at all (CR 716.4, Card.referenceViews).",
   "board": {
     "active": "alice",
-    "step": "PostcombatMain",
     "seats": [
       {
-        "name": "alice",
         "battlefield": [
           {
             "card": "Discord, Lord of Disharmony",
@@ -41,10 +37,10 @@
           {
             "card": "Grizzly Bears"
           }
-        ]
+        ],
+        "name": "alice"
       },
       {
-        "name": "bob",
         "library": [
           {
             "card": "Grizzly Bears"
@@ -52,68 +48,72 @@
           {
             "card": "Grizzly Bears"
           }
-        ]
+        ],
+        "name": "bob"
       }
-    ]
+    ],
+    "step": "PostcombatMain"
   },
+  "description": "CR 201.4 Discord's permission casts only the face with the drawn name",
+  "note": "Discord draws Aquatic Alchemist. In alice's next main phase the copy is offered as the creature alone: Bubble Up, its Adventure, has another name, though alice has an instant in her graveyard for it to target and the Swamps to pay for it. Drawing Bubble Up instead casts the Adventure (CR 201.4f's scenario).",
   "timeline": [
     {
-      "turn": 1,
+      "do": "Pass",
+      "player": "alice",
       "step": "PostcombatMain",
-      "player": "alice",
-      "do": "Pass"
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "EndStep",
+      "do": "Pass",
       "player": "alice",
-      "do": "Pass"
+      "step": "EndStep",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "EndStep",
-      "player": "alice",
       "do": {
         "Answer": {
           "prompt": "RandomCard",
           "with": "Aquatic Alchemist"
         }
-      }
+      },
+      "player": "alice",
+      "step": "EndStep",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "EndStep",
-      "player": "alice",
       "check": {
         "View": {
-          "of": "Offered",
-          "player": "alice",
           "is": [
             "Pass",
             "ActivateManaAbility $s1",
             "ActivateManaAbility $s2",
             "ActivateManaAbility $s3"
-          ]
+          ],
+          "of": "Offered",
+          "player": "alice"
         }
-      }
+      },
+      "player": "alice",
+      "step": "EndStep",
+      "turn": 1
     },
     {
-      "turn": 3,
-      "step": "PrecombatMain",
-      "player": "alice",
       "check": {
         "View": {
-          "of": "Offered",
-          "player": "alice",
           "is": [
             "Pass",
             "Cast Aquatic Alchemist",
             "ActivateManaAbility $s1",
             "ActivateManaAbility $s2",
             "ActivateManaAbility $s3"
-          ]
+          ],
+          "of": "Offered",
+          "player": "alice"
         }
-      }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 3
     }
   ]
 }
