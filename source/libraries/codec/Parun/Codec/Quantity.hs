@@ -139,6 +139,7 @@ codec =
       -- CR 701.37c's number, with the same designation on the wire that
       -- HasDesignation above carries: which mark's value is asked is a value.
       Arm.nullary "StoredResultsOfSameValue" Quantity.StoredResultsOfSameValue,
+      Arm.nullary "ItsDieResult" Quantity.ItsDieResult,
       Arm.payload "DesignationValue" Designation.codec Quantity.DesignationValue (\x -> case x of Quantity.DesignationValue y -> Just y; _ -> Nothing),
       -- CR 702.143c, nothing on the wire: the object is whichever one the
       -- quantity is evaluated against.
@@ -345,6 +346,7 @@ tagOf x = case x of
   Quantity.HasDesignation {} -> "HasDesignation"
   Quantity.DesignationValue {} -> "DesignationValue"
   Quantity.StoredResultsOfSameValue {} -> "StoredResultsOfSameValue"
+  Quantity.ItsDieResult {} -> "ItsDieResult"
   Quantity.WasForetold {} -> "WasForetold"
   Quantity.TributeWasPaid {} -> "TributeWasPaid"
   Quantity.TimesPaid {} -> "TimesPaid"

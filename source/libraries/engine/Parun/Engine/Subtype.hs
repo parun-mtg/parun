@@ -206,6 +206,7 @@ creatureTypeWord subtype = case subtype of
   Subtype.Deserter -> Just (Text.pack "Deserter")
   Subtype.Detective -> Just (Text.pack "Detective")
   Subtype.Devil -> Just (Text.pack "Devil")
+  Subtype.Die -> Just (Text.pack "Die")
   Subtype.Dinosaur -> Just (Text.pack "Dinosaur")
   Subtype.Djinn -> Just (Text.pack "Djinn")
   Subtype.Doctor -> Just (Text.pack "Doctor")

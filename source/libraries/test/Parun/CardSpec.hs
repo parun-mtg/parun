@@ -465,6 +465,7 @@ import qualified Parun.Types.SetClassLevel as SetClassLevel
 import qualified Parun.Types.SetHalfLocked as SetHalfLocked
 import qualified Parun.Types.SetOwner as SetOwner
 import qualified Parun.Types.SetX as SetX
+import qualified Parun.Types.ShownDie as ShownDie
 import qualified Parun.Types.ShuffleIntoLibrary as ShuffleIntoLibrary
 import qualified Parun.Types.SkipPhase as SkipPhase
 import qualified Parun.Types.SkipWindow as SkipWindow
@@ -921,7 +922,7 @@ playerRefPositions =
         ("win-game", Effect.WinGame (plantedPlayer "wg"), [plantedPlayer "wg"]),
         ("increase-speed", Effect.IncreaseSpeed (playerQuantity "is"), [plantedPlayer "is"]),
         ("decrease-speed", Effect.DecreaseSpeed (SpeedDecrease.MkSpeedDecrease (plantedPlayer "ds") one 0), [plantedPlayer "ds"]),
-        ("create", Effect.Create (Create.MkCreate one () EntryRiders.defaultValue Nothing (plantedPlayer "cr") False), [plantedPlayer "cr"]),
+        ("create", Effect.Create (Create.MkCreate one () EntryRiders.defaultValue Nothing (plantedPlayer "cr") False Nothing), [plantedPlayer "cr"]),
         ("create-copy", Effect.CreateCopy (CreateCopy.MkCreateCopy one (plantedRef "cp") EntryRiders.defaultValue Nothing [] (plantedPlayer "ccp") False), [plantedPlayer "ccp"]),
         ("create-emblem", Effect.CreateEmblem (CreateEmblem.MkCreateEmblem () (plantedPlayer "ce")), [plantedPlayer "ce"]),
         ("skip-phase", Effect.SkipPhase SkipPhase.MkSkipPhase {SkipPhase.player = plantedPlayer "sn", SkipPhase.selector = SkipWindow.PartOfTurn PhaseSelector.CombatPhase, SkipPhase.uses = Uses.Once, SkipPhase.duration = Duration.Indefinite, SkipPhase.count = SkipPhase.defaultCount}, [plantedPlayer "sn"]),
@@ -3589,6 +3590,7 @@ quantityKindFilters quantity = case quantity of
   Quantity.Type.HasDesignation _ -> []
   Quantity.Type.DesignationValue _ -> []
   Quantity.Type.StoredResultsOfSameValue -> []
+  Quantity.Type.ItsDieResult -> []
   Quantity.Type.ClassLevel -> []
   Quantity.Type.WasForetold -> []
   Quantity.Type.TributeWasPaid -> []
@@ -5414,7 +5416,7 @@ effectFilters effect = case effect of
   Effect.DecreaseSpeed d -> frame Unframed (quantityFilters (SpeedDecrease.quantity d))
   -- CR 111.1's token is a whole card, and every Filter position it has is one a
   -- card author can write -- the same nesting Parun.Codec's round trip walks.
-  Effect.Create (Create.MkCreate quantity card riders _ _ _) -> frame Unframed (quantityFilters quantity <> riderFilters riders) <> overFaces cardFilters card
+  Effect.Create (Create.MkCreate quantity card riders _ _ _ die) -> frame Unframed (quantityFilters quantity <> foldMap (quantityFilters . ShownDie.result) die <> riderFilters riders) <> overFaces cardFilters card
   -- A DUPLICATE names an object rather than writing a card out, so the Filters
   -- it can carry are the ref's, framed the way CreateCopy's arm below frames its
   -- own.
@@ -6100,7 +6102,7 @@ mintingSpell mint face =
 
 -- CR 111.1: "create a token", the token being `face`.
 createToken :: Face.Face Card.Type.Card -> Effect.Effect Card.Type.Card (GrantedAbility.GrantedAbility Card.Type.Card)
-createToken face = Effect.Create (Create.MkCreate (Quantity.Type.Literal 1) (oneFaced face) EntryRiders.defaultValue Nothing (PlayerRef.Relative PlayerRelation.You) False)
+createToken face = Effect.Create (Create.MkCreate (Quantity.Type.Literal 1) (oneFaced face) EntryRiders.defaultValue Nothing (PlayerRef.Relative PlayerRelation.You) False Nothing)
 
 -- "Conjure a card named ... into your hand", the card being `face`.
 conjureCard :: Face.Face Card.Type.Card -> Effect.Effect Card.Type.Card (GrantedAbility.GrantedAbility Card.Type.Card)
@@ -7312,7 +7314,7 @@ lintSpec s registry corpus = Spec.describe s "Lint" $ do
             { Face.activatedAbilities =
                 [ oneEffectActivated
                     (costOf [])
-                    (Effect.Create (Create.MkCreate (Quantity.Type.Literal 1) tokenLiar EntryRiders.defaultValue Nothing (PlayerRef.Relative PlayerRelation.You) False))
+                    (Effect.Create (Create.MkCreate (Quantity.Type.Literal 1) tokenLiar EntryRiders.defaultValue Nothing (PlayerRef.Relative PlayerRelation.You) False Nothing))
                 ]
             }
     Spec.assertEqWith s "no printing writes the key" (fmap (S.nameOf . Printing.card) offenders) []
@@ -7344,7 +7346,7 @@ lintSpec s registry corpus = Spec.describe s "Lint" $ do
           concatMap
             (NonEmpty.toList . Card.Type.faces)
             ( Maybe.mapMaybe
-                (\effect -> case effect of Effect.Create (Create.MkCreate _ token _ _ _ _) -> Just token; _ -> Nothing)
+                (\effect -> case effect of Effect.Create (Create.MkCreate _ token _ _ _ _ _) -> Just token; _ -> Nothing)
                 (cardResolutionEffects face)
             )
         tokens = concatMap (overFaces tokensOf . Printing.card) ps
@@ -7357,7 +7359,7 @@ lintSpec s registry corpus = Spec.describe s "Lint" $ do
     case concatMap
       (NonEmpty.toList . Card.Type.faces)
       ( Maybe.mapMaybe
-          (\effect -> case effect of Effect.Create (Create.MkCreate _ token _ _ _ _) -> Just token; _ -> Nothing)
+          (\effect -> case effect of Effect.Create (Create.MkCreate _ token _ _ _ _ _) -> Just token; _ -> Nothing)
           (cardResolutionEffects (S.combinedFace doomedTraveler))
       ) of
       [token] -> do
@@ -7377,7 +7379,7 @@ lintSpec s registry corpus = Spec.describe s "Lint" $ do
     case concatMap
       (NonEmpty.toList . Card.Type.faces)
       ( Maybe.mapMaybe
-          (\effect -> case effect of Effect.Create (Create.MkCreate _ token _ _ _ _) -> Just token; _ -> Nothing)
+          (\effect -> case effect of Effect.Create (Create.MkCreate _ token _ _ _ _ _) -> Just token; _ -> Nothing)
           (cardResolutionEffects (S.combinedFace inkshield))
       ) of
       [token] -> do
@@ -7393,7 +7395,7 @@ lintSpec s registry corpus = Spec.describe s "Lint" $ do
     case concatMap
       (NonEmpty.toList . Card.Type.faces)
       ( Maybe.mapMaybe
-          (\effect -> case effect of Effect.Create (Create.MkCreate _ token _ _ _ _) -> Just token; _ -> Nothing)
+          (\effect -> case effect of Effect.Create (Create.MkCreate _ token _ _ _ _ _) -> Just token; _ -> Nothing)
           (cardResolutionEffects (S.combinedFace tomb))
       ) of
       [token] -> do
@@ -7414,7 +7416,7 @@ lintSpec s registry corpus = Spec.describe s "Lint" $ do
       ( concatMap
           (NonEmpty.toList . Card.Type.faces)
           ( Maybe.mapMaybe
-              (\effect -> case effect of Effect.Create (Create.MkCreate _ token _ _ _ _) -> Just token; _ -> Nothing)
+              (\effect -> case effect of Effect.Create (Create.MkCreate _ token _ _ _ _ _) -> Just token; _ -> Nothing)
               (cardResolutionEffects (S.combinedFace explorer))
           )
       )
@@ -7662,13 +7664,13 @@ lintSpec s registry corpus = Spec.describe s "Lint" $ do
         onEveryFace f card = card {Card.Type.faces = fmap f (Card.Type.faces card)}
         -- The graft on the minted TOKEN, on every face of it.
         armToken effect = case effect of
-          Effect.Create (Create.MkCreate quantity token riders slot creator _) -> Effect.Create (Create.MkCreate quantity (onEveryFace arm token) riders slot creator False)
+          Effect.Create (Create.MkCreate quantity token riders slot creator _ _) -> Effect.Create (Create.MkCreate quantity (onEveryFace arm token) riders slot creator False Nothing)
           other -> other
         -- The same, on the BACK face of a two-faced token whose front is clean.
         armBackFace effect = case effect of
-          Effect.Create (Create.MkCreate quantity token riders slot creator _) ->
+          Effect.Create (Create.MkCreate quantity token riders slot creator _ _) ->
             let front = NonEmpty.head (Card.Type.faces token)
-             in Effect.Create (Create.MkCreate quantity (token {Card.Type.faces = front NonEmpty.:| [arm front]}) riders slot creator False)
+             in Effect.Create (Create.MkCreate quantity (token {Card.Type.faces = front NonEmpty.:| [arm front]}) riders slot creator False Nothing)
           other -> other
         -- The same, on a minted EMBLEM in place of the token.
         armEmblem effect = case effect of

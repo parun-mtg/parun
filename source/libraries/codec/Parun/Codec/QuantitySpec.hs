@@ -416,6 +416,12 @@ spec s = Spec.describe s "Parun.Codec.Quantity" $ do
       Quantity.codec
       Quantity.StoredResultsOfSameValue
       " {\"type\":\"StoredResultsOfSameValue\"} "
+  Spec.it s "ItsDieResult" $
+    Common.assertCodec
+      s
+      Quantity.codec
+      Quantity.ItsDieResult
+      " {\"type\":\"ItsDieResult\"} "
   -- CR 717.2b: the object's LEVEL, also with nothing on the wire, and also not a
   -- member of Parun.Types.Designation -- rule 717.2b's designation is a number.
   Spec.it s "ClassLevel" $

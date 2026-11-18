@@ -5311,6 +5311,7 @@ quantityReads q = case q of
   Quantity.Type.HasDesignation _ -> Set.empty
   Quantity.Type.DesignationValue _ -> Set.empty
   Quantity.Type.StoredResultsOfSameValue -> Set.empty
+  Quantity.Type.ItsDieResult -> Set.empty
   Quantity.Type.ClassLevel -> Set.empty
   Quantity.Type.WasForetold -> Set.empty
   Quantity.Type.TributeWasPaid -> Set.empty

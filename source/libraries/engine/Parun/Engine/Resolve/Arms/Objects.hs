@@ -167,6 +167,7 @@ import qualified Parun.Types.Scaling as Scaling
 import qualified Parun.Types.SetClassLevel as SetClassLevel
 import qualified Parun.Types.SetHalfLocked as SetHalfLocked
 import qualified Parun.Types.SetX as SetX
+import qualified Parun.Types.ShownDie as ShownDie
 import qualified Parun.Types.SkipPhase as SkipPhase
 import Parun.Types.SlotName (SlotName)
 import qualified Parun.Types.Snapshots as Snapshots
@@ -181,7 +182,7 @@ import qualified Parun.Types.WithCounters as WithCounters
 import qualified Parun.Types.Zone as Zone
 
 create :: Game () -> ObjectId -> ObjectId -> PlayerId -> Map.Map SlotName (Set Recipient) -> Map.Map SlotName (Set Recipient) -> Create.Create Card.Type.Card (GrantedAbility.GrantedAbility Card.Type.Card) -> Game ()
-create settle resolving source controller legal chosen (Create.MkCreate quantity card entry mSlot creator linked) = do
+create settle resolving source controller legal chosen (Create.MkCreate quantity card entry mSlot creator linked die) = do
   gs <- State.get
   let viewOf = effectViewOf resolving source legal gs
       context = effectContext gs resolving controller source legal (slotBindings resolving gs)
@@ -195,6 +196,9 @@ create settle resolving source controller legal chosen (Create.MkCreate quantity
       -- APNAP (CR 608.2f) for a reference naming several, apnapPlayersOf's own
       -- intersection so a reference naming a departed seat mints nothing.
       creators = Common.apnapPlayersOf creator legal resolving source controller gs
+      -- The die the tokens are, its result settled once off the same board as
+      -- the counts above (CR 608.2h).
+      shown = fmap (\d -> d {ShownDie.result = Integer.toNaturalSaturating (Quantity.determineWith (Quantity.evaluateFor viewOf context gs resolving source) (ShownDie.result d))}) die
   -- CR 509.4's parenthetical: the attacking creature the effect SPECIFIED,
   -- named by slot. Read ONCE, ahead of the minting loop, so CR 608.2f's single
   -- event cannot see it move; through fromAmongMembers, the reader every "the
@@ -245,7 +249,7 @@ create settle resolving source controller legal chosen (Create.MkCreate quantity
             -- CR 122.6's counters ride along through that rule's own door, so a
             -- counter replacement reaches them, in the counts freezeRiders
             -- settled above.
-            made <- Event.createTokens settle creating (Common.bakeTokenCharacteristics (Quantity.evaluateFor viewOf context gs resolving source) card) Nothing (Integer.toNaturalSaturating n) (EntryRiders.tapped entry) (EntryRiders.counters frozen) mAttached (Common.resolvingMarks resolving gs)
+            made <- Event.createTokens settle creating (Common.bakeTokenCharacteristics (Quantity.evaluateFor viewOf context gs resolving source) card) Nothing shown (Integer.toNaturalSaturating n) (EntryRiders.tapped entry) (EntryRiders.counters frozen) mAttached (Common.resolvingMarks resolving gs)
             -- CR 508.4: a creature put onto the battlefield attacking has its
             -- defending player chosen in Parun.Engine.Combat, and CR 508.3a's
             -- attack triggers see nothing. After the entry loops rather than
@@ -513,7 +517,7 @@ createCopy settle resolving source controller legal chosen (CreateCopy.MkCreateC
               -- Nothing for the subject's own copiable values: CR 707.9c's
               -- retained original belongs to an object that already existed,
               -- and a token minted by CR 707.1 did not.
-              made <- Event.createTokens settle creating card (Just (Replacement.applyCopyExceptions (Common.thisAbilitySource resolving gs) Nothing exceptions (Event.copiedSnapshotWithLastKnown src gs))) (Integer.toNaturalSaturating n) (EntryRiders.tapped entry) (EntryRiders.counters frozen) Nothing (Common.resolvingMarks resolving gs)
+              made <- Event.createTokens settle creating card (Just (Replacement.applyCopyExceptions (Common.thisAbilitySource resolving gs) Nothing exceptions (Event.copiedSnapshotWithLastKnown src gs))) Nothing (Integer.toNaturalSaturating n) (EntryRiders.tapped entry) (EntryRiders.counters frozen) Nothing (Common.resolvingMarks resolving gs)
               -- CR 508.4, after the entry loop for Create's reason.
               Monad.forM_ mAttack (\specified -> Monad.mapM_ (Combat.putOntoBattlefieldAttacking specified) made)
               -- CR 509.4, the blocking twin one rule over, in the same place

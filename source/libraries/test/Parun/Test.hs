@@ -796,6 +796,7 @@ import qualified Parun.Codec.SetHalfLockedSpec
 import qualified Parun.Codec.SetPowerToughnessSpec
 import qualified Parun.Codec.ShownCardsSpec
 import qualified Parun.Codec.ShownComponentSpec
+import qualified Parun.Codec.ShownDieSpec
 import qualified Parun.Codec.ShowsSpec
 import qualified Parun.Codec.ShuffleIntoLibrarySpec
 import qualified Parun.Codec.SicknessSpec
@@ -1927,6 +1928,7 @@ spec s reference corpus = do
   Parun.Codec.SetPowerToughnessSpec.spec s
   Parun.Codec.ShownCardsSpec.spec s
   Parun.Codec.ShownComponentSpec.spec s
+  Parun.Codec.ShownDieSpec.spec s
   Parun.Codec.ShowsSpec.spec s
   Parun.Codec.ShuffleIntoLibrarySpec.spec s
   Parun.Codec.SicknessSpec.spec s

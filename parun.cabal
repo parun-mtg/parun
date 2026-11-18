@@ -1706,6 +1706,8 @@ library codec
     Parun.Codec.ShownCardsSpec
     Parun.Codec.ShownComponent
     Parun.Codec.ShownComponentSpec
+    Parun.Codec.ShownDie
+    Parun.Codec.ShownDieSpec
     Parun.Codec.Shows
     Parun.Codec.ShowsSpec
     Parun.Codec.ShuffleIntoLibrary
@@ -3750,6 +3752,7 @@ library types
     Parun.Types.SetX
     Parun.Types.ShownCards
     Parun.Types.ShownComponent
+    Parun.Types.ShownDie
     Parun.Types.Shows
     Parun.Types.ShuffleIntoLibrary
     Parun.Types.Sickness

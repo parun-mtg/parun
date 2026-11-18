@@ -691,6 +691,7 @@ evaluateAgainst viewOf context gs announcedOn mOid mView quantity =
         -- every designation but a "Monstrosity X" is.
         Quantity.DesignationValue d -> fmap (toInteger . Map.findWithDefault 0 d . Filter.designationValues) mView
         Quantity.StoredResultsOfSameValue -> fmap (toInteger . greatestOfOneValue . Filter.storedResults) mView
+        Quantity.ItsDieResult -> fmap (maybe 0 toInteger . Filter.dieResult) mView
         -- CR 717.2d is applied HERE and nowhere else: a permanent with no level reads
         -- as level 1 for every rule and effect that asks, so the default belongs at the
         -- one read rather than in the field Filter.classLevel reports.
@@ -1804,6 +1805,7 @@ talliesWhatHappened quantity = case quantity of
   Quantity.HasDesignation _ -> False
   Quantity.DesignationValue _ -> False
   Quantity.StoredResultsOfSameValue -> False
+  Quantity.ItsDieResult -> False
   Quantity.ClassLevel -> False
   Quantity.WasForetold -> False
   Quantity.TributeWasPaid -> False

@@ -13,6 +13,7 @@ import qualified Parun.Types.Hop as Hop
 import qualified Parun.Types.PlayerRef as PlayerRef
 import qualified Parun.Types.PlayerRelation as PlayerRelation
 import qualified Parun.Types.Quantity as Quantity
+import qualified Parun.Types.ShownDie as ShownDie
 import qualified Parun.Types.SlotName as SlotName
 
 -- | The @card@ and @ability@ parameters are instantiated at 'Text.Text': this
@@ -44,7 +45,8 @@ spec s = Spec.describe s "Parun.Codec.Create" $ do
             Create.riders = plain,
             Create.slot = Nothing,
             Create.creator = you,
-            Create.linked = False
+            Create.linked = False,
+            Create.die = Nothing
           }
       )
       " {\"quantity\":{\"type\":\"Literal\",\"value\":2},\"card\":\"Spirit Token\"} "
@@ -61,7 +63,8 @@ spec s = Spec.describe s "Parun.Codec.Create" $ do
             Create.riders = plain,
             Create.slot = Just (SlotName.MkSlotName (Text.pack "token")),
             Create.creator = you,
-            Create.linked = False
+            Create.linked = False,
+            Create.die = Nothing
           }
       )
       " {\"quantity\":{\"type\":\"Literal\",\"value\":1},\"card\":\"Spirit Token\",\"slot\":\"token\"} "
@@ -76,7 +79,8 @@ spec s = Spec.describe s "Parun.Codec.Create" $ do
             Create.riders = plain {EntryRiders.attacking = Just EntryAttack.Chosen},
             Create.slot = Nothing,
             Create.creator = you,
-            Create.linked = False
+            Create.linked = False,
+            Create.die = Nothing
           }
       )
       " {\"quantity\":{\"type\":\"Literal\",\"value\":2},\"card\":\"Spirit Token\",\"riders\":{\"attacking\":{\"type\":\"Chosen\"}}} "
@@ -92,7 +96,8 @@ spec s = Spec.describe s "Parun.Codec.Create" $ do
             Create.riders = plain,
             Create.slot = Nothing,
             Create.creator = PlayerRef.HolderOfBound Holder.Controller Hop.Itself (SlotName.MkSlotName (Text.pack "victim")),
-            Create.linked = False
+            Create.linked = False,
+            Create.die = Nothing
           }
       )
       " {\"quantity\":{\"type\":\"Literal\",\"value\":1},\"card\":\"Centaur Token\",\"creator\":{\"type\":\"HolderOfBound\",\"value\":{\"holder\":\"Controller\",\"hop\":\"Itself\",\"slot\":\"victim\"}}} "
@@ -106,8 +111,25 @@ spec s = Spec.describe s "Parun.Codec.Create" $ do
             Create.riders = plain,
             Create.slot = Nothing,
             Create.creator = you,
-            Create.linked = True
+            Create.linked = True,
+            Create.die = Nothing
           }
       )
       " {\"quantity\":{\"type\":\"Literal\",\"value\":1},\"card\":\"Tetravite Token\",\"linked\":true} "
+  -- The die the token is, alone (Pippa, Duchess of Dice).
+  Spec.it s "MkCreate, a token that is a die" $
+    Common.assertCodec
+      s
+      codec
+      ( Create.MkCreate
+          { Create.quantity = Quantity.Literal 1,
+            Create.card = Text.pack "Die Token",
+            Create.riders = plain,
+            Create.slot = Nothing,
+            Create.creator = you,
+            Create.linked = False,
+            Create.die = Just ShownDie.MkShownDie {ShownDie.sides = 6, ShownDie.result = Quantity.InSlot (SlotName.MkSlotName (Text.pack "result"))}
+          }
+      )
+      " {\"quantity\":{\"type\":\"Literal\",\"value\":1},\"card\":\"Die Token\",\"die\":{\"sides\":6,\"result\":{\"type\":\"InSlot\",\"value\":\"result\"}}} "
   Spec.it s "has a schema" $ Common.assertHasSchema s codec
