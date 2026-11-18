@@ -1,0 +1,43 @@
+name: Pages
+# Deploys a published release's web client to GitHub Pages: the bytes of its
+# Wasm asset, not a rebuild.
+on:
+  release:
+    types:
+      - published
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: The release to deploy, like v1.2.3.
+        required: true
+        type: string
+concurrency:
+  group: pages
+permissions:
+  contents: read
+jobs:
+  deploy:
+    name: Deploy
+    # A prerelease leaves the page on the latest release.
+    if: github.event_name == 'workflow_dispatch' || !github.event.release.prerelease
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+      pages: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deploy.outputs.page_url }}
+    steps:
+      - run: |
+          gh release download "$TAG" --pattern 'parun-*-wasm.tar.gz' --repo "$GITHUB_REPOSITORY"
+          tar --extract --gzip --file parun-*-wasm.tar.gz
+          mv parun-*-wasm/web web
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ inputs.tag || github.event.release.tag_name }}
+      - uses: actions/upload-pages-artifact@v5
+        with:
+          path: web
+      - id: deploy
+        uses: actions/deploy-pages@v5

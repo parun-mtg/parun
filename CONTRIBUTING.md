@@ -62,6 +62,19 @@ close multiple issues. Other times one issue may require multiple PRs, in
 which case each PR should be independently mergeable and only the last one
 should close the issue.
 
+To cut a release:
+
+1. Bump `version:` in `parun.cabal` and merge that to `main`.
+2. Run the Release workflow (`gh workflow run release.yml`, optionally with
+   `-f ref=COMMIT`). It builds that commit without testing it and attaches its
+   assets, checksums and provenance attestations to a draft release named
+   `v` and the version.
+3. Edit the draft's notes and publish it. Publishing creates the tag and
+   locks the release, and the Pages workflow deploys its web client.
+
+A draft whose build went wrong is deleted and the workflow re-run. To deploy an
+older release's web client, run `gh workflow run pages.yml -f tag=TAG`.
+
 [1]: https://nixos.org
 [2]: https://direnv.net
 [3]: ./docs/style-guide.md
