@@ -24,6 +24,12 @@
                       "duration": {
                         "type": "UntilEndOfTurn"
                       },
+                      "exceptions": [
+                        {
+                          "type": "DontCopy",
+                          "value": "Supertypes"
+                        }
+                      ],
                       "original": {
                         "type": "Defined",
                         "value": {

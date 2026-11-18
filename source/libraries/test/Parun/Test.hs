@@ -754,6 +754,7 @@ import qualified Parun.Codec.RestartSignalSpec
 import qualified Parun.Codec.RestrictedActionSpec
 import qualified Parun.Codec.RestrictedCreaturesSpec
 import qualified Parun.Codec.ResultSpec
+import qualified Parun.Codec.RetainedCharacteristicSpec
 import qualified Parun.Codec.ReturnEndingSpec
 import qualified Parun.Codec.ReturnPermanentsSpec
 import qualified Parun.Codec.ReturnWatchSpec
@@ -1884,6 +1885,7 @@ spec s reference corpus = do
   Parun.Codec.RestartSignalSpec.spec s
   Parun.Codec.RestrictedCreaturesSpec.spec s
   Parun.Codec.ResultSpec.spec s
+  Parun.Codec.RetainedCharacteristicSpec.spec s
   Parun.Codec.ReturnEndingSpec.spec s
   Parun.Codec.ReturnPermanentsSpec.spec s
   Parun.Codec.ReturnWatchSpec.spec s

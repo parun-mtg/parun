@@ -764,7 +764,7 @@ spec s registry = Spec.describe s "Parun.Engine.Copy" $ do
     Spec.assertEqWith s "and an artifact creature" (projected PC.cardTypes metamorphId entered) . Just $ Set.fromList [CardType.Artifact, CardType.Creature]
     Spec.assertEqWith s "where the value-excepted copy is a creature alone" (projected PC.cardTypes gargantuanId entered) . Just $ Set.singleton CardType.Creature
 
-  -- THE PROVING TEST for CR 707.9c, CopyException.DontCopyColors. Vesuvan
+  -- THE PROVING TEST for CR 707.9c, CopyException.DontCopy Colors. Vesuvan
   -- Doppelganger {3}{U}{U} Creature -- Shapeshifter 0/0: "You may have this
   -- creature enter as a copy of any creature on the battlefield, except it
   -- doesn't copy that creature's color and it has \"At the beginning of your

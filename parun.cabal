@@ -1619,6 +1619,8 @@ library codec
     Parun.Codec.RestrictedCreaturesSpec
     Parun.Codec.Result
     Parun.Codec.ResultSpec
+    Parun.Codec.RetainedCharacteristic
+    Parun.Codec.RetainedCharacteristicSpec
     Parun.Codec.ReturnEnding
     Parun.Codec.ReturnEndingSpec
     Parun.Codec.ReturnPermanents
@@ -3700,6 +3702,7 @@ library types
     Parun.Types.RestrictedAction
     Parun.Types.RestrictedCreatures
     Parun.Types.Result
+    Parun.Types.RetainedCharacteristic
     Parun.Types.ReturnEnding
     Parun.Types.ReturnPermanents
     Parun.Types.ReturnWatch

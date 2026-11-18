@@ -87,6 +87,7 @@ import qualified Parun.Types.Prototype as Prototype
 import qualified Parun.Types.Quantity as Quantity.Type
 import qualified Parun.Types.RangeOfInfluence as RangeOfInfluence
 import qualified Parun.Types.Recipient as Recipient
+import qualified Parun.Types.RetainedCharacteristic as RetainedCharacteristic
 import qualified Parun.Types.RoomHalf as RoomHalf
 import qualified Parun.Types.RuleAbilities as RuleAbilities
 import qualified Parun.Types.Scratch as Scratch
@@ -1123,10 +1124,10 @@ withCopyExceptions this own exceptions pc =
 
 -- CR 707.9: an exception with the copy effect's context answered, so it means
 -- the same thing re-applied later with none. GainThisAbility becomes the ability
--- it pointed at (CR 707.9a) and DontCopyColors the colours it retained (CR
--- 707.9c); each drops where applyCopyException's own arm does nothing. One arm
--- per constructor, applyCopyException's reason: a new one that reads the
--- context has to be decided here.
+-- it pointed at (CR 707.9a) and DontCopy the value it retained (CR 707.9c),
+-- supertypes as a clear and a re-add; each drops where applyCopyException's own
+-- arm does nothing. One arm per constructor, applyCopyException's reason: a new
+-- one that reads the context has to be decided here.
 --
 -- Those two arms are a regression fence: Vesuvan Doppelganger and Unstable
 -- Shapeshifter would reach them by copying an animated Room, and no test builds
@@ -1137,8 +1138,10 @@ settleCopyException this own exception = case exception of
     Just (Source.OfTrigger triggered) -> [CopyException.GainAbility (GrantedAbility.Triggered (TriggeredAbilitySource.ability triggered))]
     Just (Source.OfAbility activated) -> [CopyException.GainAbility (GrantedAbility.Activated (keptActivated activated))]
     _ -> []
-  CopyException.DontCopyColors -> case own of
-    Just mine -> [CopyException.SetColors ChangeMode.Replace (PC.colors mine)]
+  CopyException.DontCopy retained -> case own of
+    Just mine -> case retained of
+      RetainedCharacteristic.Colors -> [CopyException.SetColors ChangeMode.Replace (PC.colors mine)]
+      RetainedCharacteristic.Supertypes -> [CopyException.RemoveSupertypes (Set.fromList [minBound .. maxBound]), CopyException.AddSupertypes (PC.supertypes mine)]
     Nothing -> []
   CopyException.SetPowerToughness _ -> [exception]
   CopyException.GainKeywords _ -> [exception]
@@ -1203,7 +1206,7 @@ withoutExceptedAbility pc exception = case exception of
   CopyException.SetLoyalty _ -> pc
   CopyException.SetColors {} -> pc
   CopyException.NoManaCost -> pc
-  CopyException.DontCopyColors -> pc
+  CopyException.DontCopy _ -> pc
 
 -- withoutExceptedAbility's subtraction over each of the sixteen lists.
 withoutRuleAbilities :: RuleAbilities.RuleAbilities -> RuleAbilities.RuleAbilities -> RuleAbilities.RuleAbilities
@@ -1476,17 +1479,24 @@ applyCopyException this own snapshot exception = case exception of
   --
   -- Nothing for `own` is the CR 707.1 token mint, where there is no earlier
   -- object to retain a value from and so nothing to do. No printed card reaches
-  -- it: every decline-to-copy clause is Vesuvan Doppelganger's, on the two
-  -- roads above.
-  CopyException.DontCopyColors -> case own of
+  -- it: every decline-to-copy clause is Vesuvan Doppelganger's or Bombardment's,
+  -- which copy over an existing object.
+  --
+  -- Supertypes (Bombardment's ruling) are retained whole for CR 205.4b's
+  -- reason: they are independent of the card types the copy changes. No
+  -- characteristic-defining ability defines one, so CR 707.9d strips nothing.
+  -- data/scenarios/bombardment-keeps-a-legendary-card-legendary.json proves it.
+  CopyException.DontCopy retained -> case own of
     Nothing -> snapshot
-    Just mine ->
-      snapshot
-        { PC.colors = PC.colors mine,
-          PC.strippedColors = PC.colors mine,
-          PC.keywords = Map.filterWithKey (\keyword _ -> not (definesColorless (Set.singleton keyword))) (PC.keywords snapshot),
-          PC.definesChosenColor = False
-        }
+    Just mine -> case retained of
+      RetainedCharacteristic.Supertypes -> snapshot {PC.supertypes = PC.supertypes mine}
+      RetainedCharacteristic.Colors ->
+        snapshot
+          { PC.colors = PC.colors mine,
+            PC.strippedColors = PC.colors mine,
+            PC.keywords = Map.filterWithKey (\keyword _ -> not (definesColorless (Set.singleton keyword))) (PC.keywords snapshot),
+            PC.definesChosenColor = False
+          }
 
 -- CR 613.2a / 613.2b: an object's LAYER 1a value -- `copiableCharacteristics`
 -- above with layer 1b's face-down substitution not yet applied. CR 708.8 names
