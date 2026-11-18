@@ -10049,7 +10049,8 @@ relink oldId newId link =
 -- the permanent, a new object (CR 400.7), never is. A regression fence: the
 -- floating rows in data/cards/ naming a spell by slot outside an EntryR (Dire
 -- Fleet Daredevil, Storm of Memories, Rod of Absorption; 2026-10-27) all name
--- an instant or sorcery spell.
+-- an instant or sorcery spell, as Parun.Engine.Cast.installPermissionExile's
+-- does for the one permission granting it (The Great Work).
 reenter :: ObjectId -> ObjectId -> ActiveReplacement.ActiveReplacement -> ActiveReplacement.ActiveReplacement
 reenter oldId newId row = case ActiveReplacement.effect row of
   ReplacementEffect.EntryR _ -> renameSlots oldId newId row

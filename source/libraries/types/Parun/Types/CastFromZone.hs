@@ -61,6 +61,9 @@ data CastFromZone = MkCastFromZone
     -- | CR 614.1d: the counters the permanent a spell cast under it becomes
     -- enters with (Leonardo, Sewer Samurai). Nothing where it states none.
     entersWith :: Maybe WithCounters.WithCounters,
+    -- | CR 614.1a: whether a spell cast under it is exiled instead of being put
+    -- into a graveyard (The Great Work).
+    exiledInstead :: Bool,
     -- | CR 109.5: the number `matching`'s EnclosingAmount operand compares
     -- against, read for the permission's SOURCE as Parun.Types.FreeCast's
     -- `amount` is (Maralen, Fae Ascendant). Nothing where it states none.

@@ -56,6 +56,7 @@ spec s = Spec.describe s "Parun.Codec.CastFromZone" $ do
             CastFromZone.spending = ManaSpending.AsProduced,
             CastFromZone.alternativeCost = Nothing,
             CastFromZone.entersWith = Nothing,
+            CastFromZone.exiledInstead = False,
             CastFromZone.amount = Nothing,
             CastFromZone.creatureTypes = Set.empty,
             CastFromZone.outsideTheGame = False
@@ -78,6 +79,7 @@ spec s = Spec.describe s "Parun.Codec.CastFromZone" $ do
             CastFromZone.spending = ManaSpending.AsProduced,
             CastFromZone.alternativeCost = Nothing,
             CastFromZone.entersWith = Nothing,
+            CastFromZone.exiledInstead = False,
             CastFromZone.amount = Nothing,
             CastFromZone.creatureTypes = Set.empty,
             CastFromZone.outsideTheGame = False
@@ -102,6 +104,7 @@ spec s = Spec.describe s "Parun.Codec.CastFromZone" $ do
             CastFromZone.spending = ManaSpending.AsProduced,
             CastFromZone.alternativeCost = Nothing,
             CastFromZone.entersWith = Nothing,
+            CastFromZone.exiledInstead = False,
             CastFromZone.amount = Nothing,
             CastFromZone.creatureTypes = Set.empty,
             CastFromZone.outsideTheGame = False
@@ -125,6 +128,7 @@ spec s = Spec.describe s "Parun.Codec.CastFromZone" $ do
             CastFromZone.spending = ManaSpending.AsProduced,
             CastFromZone.alternativeCost = Nothing,
             CastFromZone.entersWith = Nothing,
+            CastFromZone.exiledInstead = False,
             CastFromZone.amount = Nothing,
             CastFromZone.creatureTypes = Set.empty,
             CastFromZone.outsideTheGame = False
@@ -147,6 +151,7 @@ spec s = Spec.describe s "Parun.Codec.CastFromZone" $ do
             CastFromZone.spending = ManaSpending.AnyType,
             CastFromZone.alternativeCost = Nothing,
             CastFromZone.entersWith = Nothing,
+            CastFromZone.exiledInstead = False,
             CastFromZone.amount = Nothing,
             CastFromZone.creatureTypes = Set.empty,
             CastFromZone.outsideTheGame = False
@@ -169,6 +174,7 @@ spec s = Spec.describe s "Parun.Codec.CastFromZone" $ do
             CastFromZone.spending = ManaSpending.AsProduced,
             CastFromZone.alternativeCost = Nothing,
             CastFromZone.entersWith = Nothing,
+            CastFromZone.exiledInstead = False,
             CastFromZone.amount = Nothing,
             CastFromZone.creatureTypes = Set.empty,
             CastFromZone.outsideTheGame = False,
@@ -193,6 +199,7 @@ spec s = Spec.describe s "Parun.Codec.CastFromZone" $ do
             CastFromZone.spending = ManaSpending.AsProduced,
             CastFromZone.alternativeCost = Nothing,
             CastFromZone.entersWith = Nothing,
+            CastFromZone.exiledInstead = False,
             CastFromZone.amount = Nothing,
             CastFromZone.creatureTypes = Set.empty,
             CastFromZone.outsideTheGame = False
@@ -216,6 +223,7 @@ spec s = Spec.describe s "Parun.Codec.CastFromZone" $ do
             CastFromZone.spending = ManaSpending.AsProduced,
             CastFromZone.alternativeCost = Just (PermissionCost.InsteadOfManaCost (ManaCost.MkManaCost [])),
             CastFromZone.entersWith = Nothing,
+            CastFromZone.exiledInstead = False,
             CastFromZone.amount = Nothing,
             CastFromZone.creatureTypes = Set.empty,
             CastFromZone.outsideTheGame = False
@@ -239,6 +247,7 @@ spec s = Spec.describe s "Parun.Codec.CastFromZone" $ do
             CastFromZone.spending = ManaSpending.AsProduced,
             CastFromZone.alternativeCost = Nothing,
             CastFromZone.entersWith = Just (WithCounters.one CounterKind.Finality (Quantity.Literal 1)),
+            CastFromZone.exiledInstead = False,
             CastFromZone.amount = Nothing,
             CastFromZone.creatureTypes = Set.empty,
             CastFromZone.outsideTheGame = False
@@ -262,6 +271,7 @@ spec s = Spec.describe s "Parun.Codec.CastFromZone" $ do
             CastFromZone.spending = ManaSpending.AsProduced,
             CastFromZone.alternativeCost = Nothing,
             CastFromZone.entersWith = Just (WithCounters.one CounterKind.Finality (Quantity.Literal 1)),
+            CastFromZone.exiledInstead = False,
             CastFromZone.amount = Nothing,
             CastFromZone.creatureTypes = Set.singleton Subtype.Vampire,
             CastFromZone.outsideTheGame = False
@@ -285,12 +295,37 @@ spec s = Spec.describe s "Parun.Codec.CastFromZone" $ do
             CastFromZone.spending = ManaSpending.AsProduced,
             CastFromZone.alternativeCost = Just (PermissionCost.InsteadOfManaCost (ManaCost.MkManaCost [])),
             CastFromZone.entersWith = Nothing,
+            CastFromZone.exiledInstead = False,
             CastFromZone.amount = Just (Quantity.Literal 2),
             CastFromZone.creatureTypes = Set.empty,
             CastFromZone.outsideTheGame = False
           }
       )
       " {\"from\":{\"zone\":\"Exile\",\"player\":{\"type\":\"Relative\",\"value\":\"AnyPlayer\"}},\"matching\":{\"type\":\"Measures\",\"value\":{\"measure\":\"ManaValue\",\"comparison\":\"AtMost\",\"operand\":{\"type\":\"EnclosingAmount\"}}},\"limit\":\"OnceEachTurn\",\"pool\":{\"type\":\"InExiledPile\",\"value\":{\"type\":\"OwnAbilities\"}},\"alternativeCost\":{\"type\":\"InsteadOfManaCost\",\"value\":[]},\"amount\":{\"type\":\"Literal\",\"value\":2}} "
+  -- The Great Work: instant and sorcery spells from any graveyard, each
+  -- exiled instead of being put into a graveyard (CR 614.1a).
+  Spec.it s "exiled instead" $
+    Common.assertCodec
+      s
+      CastFromZone.codec
+      ( CastFromZone.MkCastFromZone
+          { CastFromZone.from = InZone.MkInZone {InZone.zone = Zone.Graveyard, InZone.player = PlayerRef.Relative PlayerRelation.AnyPlayer},
+            CastFromZone.matching = Filter.Or [Filter.HasCardType CardType.Instant, Filter.HasCardType CardType.Sorcery],
+            CastFromZone.limit = PermissionLimit.Unlimited,
+            CastFromZone.verb = PermissionVerb.Cast,
+            CastFromZone.pool = PermissionPool.EveryCard,
+            CastFromZone.additionalCosts = [],
+            CastFromZone.reduction = 0,
+            CastFromZone.spending = ManaSpending.AsProduced,
+            CastFromZone.alternativeCost = Nothing,
+            CastFromZone.entersWith = Nothing,
+            CastFromZone.exiledInstead = True,
+            CastFromZone.amount = Nothing,
+            CastFromZone.creatureTypes = Set.empty,
+            CastFromZone.outsideTheGame = False
+          }
+      )
+      " {\"from\":{\"zone\":\"Graveyard\",\"player\":{\"type\":\"Relative\",\"value\":\"AnyPlayer\"}},\"matching\":{\"type\":\"Or\",\"value\":[{\"type\":\"HasCardType\",\"value\":\"Instant\"},{\"type\":\"HasCardType\",\"value\":\"Sorcery\"}]},\"exiledInstead\":true} "
   -- The Holodeck: a permanent card from your graveyard or from outside the
   -- game (CR 400.11), once during each of your turns.
   Spec.it s "outside the game" $
@@ -308,6 +343,7 @@ spec s = Spec.describe s "Parun.Codec.CastFromZone" $ do
             CastFromZone.spending = ManaSpending.AsProduced,
             CastFromZone.alternativeCost = Nothing,
             CastFromZone.entersWith = Nothing,
+            CastFromZone.exiledInstead = False,
             CastFromZone.amount = Nothing,
             CastFromZone.creatureTypes = Set.empty,
             CastFromZone.outsideTheGame = True

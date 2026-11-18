@@ -2875,7 +2875,8 @@ castPermissionOptions rides open own pid origin oid gs =
 -- gives one, Parun.Engine.Event.permissionRiders), add the same costs (CR
 -- 118.8), take off the same reduction (CR 601.2f), offer the same alternative
 -- cost (CR 118.9), let mana be spent alike (CR 118.14) and give the same entry
--- counters (CR 614.1d) and creature types (CR 205.1b), and the first is kept:
+-- counters (CR 614.1d), exile rider (CR 614.1a) and creature types (CR
+-- 205.1b), and the first is kept:
 -- a riderless, costless unlimited permission beside an open zone changes
 -- nothing.
 -- So the head spends nothing wherever something admits the play for free.
@@ -2886,7 +2887,7 @@ permissionOptions :: (ObjectId -> Bool) -> Bool -> [(Maybe ObjectId, CastFromZon
 permissionOptions rides open usable =
   let rows = [(sid, grant) | (Just sid, grant) <- usable]
       (unlimited, limited) = List.partition ((== PermissionLimit.Unlimited) . CastFromZone.limit . snd) rows
-      key option = (permissionSpent option, option >>= \(sid, _) -> if rides sid then Just sid else Nothing, permissionCosts option, permissionReductions option, permissionAlternative option, permissionSpending option, option >>= CastFromZone.entersWith . snd, foldMap (CastFromZone.creatureTypes . snd) option)
+      key option = (permissionSpent option, option >>= \(sid, _) -> if rides sid then Just sid else Nothing, permissionCosts option, permissionReductions option, permissionAlternative option, permissionSpending option, option >>= CastFromZone.entersWith . snd, any (CastFromZone.exiledInstead . snd) option, foldMap (CastFromZone.creatureTypes . snd) option)
    in ListUtils.nubOrdOn key ([Nothing | open] <> fmap Just (unlimited <> limited))
 
 -- CR 118.8: the additional costs a cast made under `option` pays on top of its
