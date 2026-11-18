@@ -666,7 +666,7 @@ restartSpec s registry = Spec.describe s "restart (CR 728)" $ do
         g1 = S.addPlayerCounter PlayerCounterKind.Poison 3 S.bob g0
         g2 = g1 {GameState.players = Map.adjust (\p -> p {Player.life = 5}) S.bob (GameState.players g1)}
         after = snd (Engine.runGamePure S.identityAnswer g2 (Setup.restartGame S.performer Set.empty S.bob))
-    Spec.assertEqWith s "phase is the first turn's untap step" (TurnRegisters.phase (GameState.turn after)) Turn.firstPhase
+    Spec.assertEqWith s "phase is the first turn's untap step" (TurnRegisters.phase (GameState.turn after)) (Turn.firstPhase False)
     Spec.assertEqWith s "no player holds priority" (TurnRegisters.priority (GameState.turn after)) Nothing
     Spec.assertEqWith s "it is turn 1" (TurnRegisters.turnNumber (GameState.turn after)) 1
     Spec.assertEqWith s "the stack is empty" (TurnRegisters.stack (GameState.turn after)) []

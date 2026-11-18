@@ -133,6 +133,8 @@ codec =
           Arm.payload "HasProtectionFrom" filterCodec PlayerEffect.HasProtectionFrom (\x -> case x of PlayerEffect.HasProtectionFrom y -> Just y; _ -> Nothing),
           Arm.payload "StateBasedActionDoesntApply" sbaExemption (uncurry PlayerEffect.StateBasedActionDoesntApply) (\x -> case x of PlayerEffect.StateBasedActionDoesntApply y z -> Just (y, z); _ -> Nothing),
           Arm.nullary "CantSetSchemesInMotion" PlayerEffect.CantSetSchemesInMotion,
+          Arm.nullary "PhasesReversed" PlayerEffect.PhasesReversed,
+          Arm.nullary "TurnOrderReversed" PlayerEffect.TurnOrderReversed,
           Arm.payload "EntriesTrigger" EntriesTrigger.codec PlayerEffect.EntriesTrigger (\x -> case x of PlayerEffect.EntriesTrigger y -> Just y; _ -> Nothing),
           Arm.payload "BearersTrigger" BearersTrigger.codec PlayerEffect.BearersTrigger (\x -> case x of PlayerEffect.BearersTrigger y -> Just y; _ -> Nothing),
           Arm.nullary "ControlledWhileSearching" PlayerEffect.ControlledWhileSearching,
@@ -194,6 +196,8 @@ tagOf x = case x of
   PlayerEffect.HasProtectionFrom {} -> "HasProtectionFrom"
   PlayerEffect.StateBasedActionDoesntApply {} -> "StateBasedActionDoesntApply"
   PlayerEffect.CantSetSchemesInMotion {} -> "CantSetSchemesInMotion"
+  PlayerEffect.PhasesReversed {} -> "PhasesReversed"
+  PlayerEffect.TurnOrderReversed {} -> "TurnOrderReversed"
   PlayerEffect.EntriesTrigger {} -> "EntriesTrigger"
   PlayerEffect.BearersTrigger {} -> "BearersTrigger"
   PlayerEffect.ControlledWhileSearching {} -> "ControlledWhileSearching"

@@ -4191,6 +4191,8 @@ playerEffectFilters playerEffect = case playerEffect of
   -- (Spider-Verse's Spiders).
   PlayerEffect.StateBasedActionDoesntApply _ exempted -> [exempted]
   PlayerEffect.CantSetSchemesInMotion -> []
+  PlayerEffect.PhasesReversed -> []
+  PlayerEffect.TurnOrderReversed -> []
   PlayerEffect.EntriesTrigger e -> [EntriesTrigger.entrants e, EntriesTrigger.bearers e]
   PlayerEffect.BearersTrigger e -> [BearersTrigger.bearers e]
   PlayerEffect.ControlledWhileSearching -> []

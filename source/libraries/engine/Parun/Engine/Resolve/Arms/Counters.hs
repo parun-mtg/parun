@@ -2051,9 +2051,10 @@ endTurn runDamageRewriteEffect runReplacementEffects runSubgame = do
         expired = case phase of
           Phase.Ending _ -> cleared
           _ -> maybe cleared (\ending -> Mana.endRetentionAtEndOf ending (Expiry.dropAtEndOf ending cleared)) (Turn.wholePhaseOf phase)
+        reversed = TurnRegisters.phasesReversed (GameState.turn gs)
         jumped = case phase of
-          Phase.Ending EndingStep.Cleanup -> Turn.spliceStep (Phase.Ending EndingStep.Cleanup) (TurnRegisters.remaining (GameState.turn gs))
-          _ -> Turn.jumpToCleanup (TurnRegisters.remaining (GameState.turn gs))
+          Phase.Ending EndingStep.Cleanup | not reversed -> Turn.spliceStep (Phase.Ending EndingStep.Cleanup) (TurnRegisters.remaining (GameState.turn gs))
+          _ -> Turn.jumpToCleanup reversed (TurnRegisters.remaining (GameState.turn gs))
      in expired
           { GameState.turn =
               (GameState.turn expired)

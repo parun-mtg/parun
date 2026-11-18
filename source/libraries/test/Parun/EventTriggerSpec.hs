@@ -695,7 +695,7 @@ acrobaticCheerleaderSpec s registry =
                           -- here begins the precombat main a SECOND time -- and CR
                           -- 505.1b counts main phases that have begun, which would make
                           -- the postcombat main this turn's third.
-                          TurnRegisters.remaining = Seq.drop 1 (Turn.dropRestOfPhase (Phase.Beginning BeginningStep.Upkeep) Turn.laterPhases),
+                          TurnRegisters.remaining = Seq.drop 1 (Turn.dropRestOfPhase (Phase.Beginning BeginningStep.Upkeep) (Turn.laterPhases False)),
                           TurnRegisters.activePlayer = S.alice,
                           TurnRegisters.priority = Just S.alice
                         }

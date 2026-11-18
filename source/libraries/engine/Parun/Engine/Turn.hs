@@ -11,6 +11,7 @@ import Numeric.Natural (Natural)
 import qualified Parun.Extra.Natural as Natural
 import qualified Parun.Types.AttackTarget as AttackTarget
 import qualified Parun.Types.BeginningStep as BeginningStep
+import qualified Parun.Types.Bookkeeping as Bookkeeping
 import qualified Parun.Types.Combat as Combat
 import qualified Parun.Types.CombatStep as CombatStep
 import qualified Parun.Types.EndingStep as EndingStep
@@ -175,11 +176,19 @@ thatExtraTurn source controller gs =
    in fmap ExtraTurn.createdAt (List.find created (GameState.extraTurns gs))
 
 -- | CR 101.4: the turn order -- GameState.seating, run the other way round
--- while GameState.turnOrderReversed holds. Every player who began the game,
--- departed seats included. Not rotated: a reversed order does not begin with
--- the starting player, so who started and who sits where read seating.
+-- while exactly one of GameState.turnOrderReversed (Aeon Engine) and
+-- Bookkeeping.turnOrderReversedByStatic (Topsy Turvy) holds, since reversing
+-- a reversed order restores it. Every player who began the game, departed
+-- seats included. Not rotated: a reversed order does not begin with the
+-- starting player, so who started and who sits where read seating.
+--
+-- Not implemented: a static ability's reversal is the one sampled at the last
+-- state-based action check, so a read later in the same resolution misses a
+-- Topsy Turvy that resolution put onto or took off the battlefield (#8623).
 turnOrder :: GameState -> [PlayerId]
-turnOrder gs = (if GameState.turnOrderReversed gs then reverse else id) (GameState.seating gs)
+turnOrder gs =
+  let reversed = GameState.turnOrderReversed gs /= Bookkeeping.turnOrderReversedByStatic (GameState.bookkeeping gs)
+   in (if reversed then reverse else id) (GameState.seating gs)
 
 -- | Every active player in turn order from the active player, departed seats
 -- included (CR 800.4j); a caller that must not name one filters them.
@@ -199,13 +208,36 @@ roleHolders role gs = case role of
   TurnRole.Active -> activePlayers gs
   TurnRole.Defending -> let combat = TurnRegisters.combat (GameState.turn gs) in Combat.defenders combat <> Combat.barred combat
 
-firstPhase :: Phase
-firstPhase = Phase.Beginning BeginningStep.Untap
+-- | CR 500.1: where a step falls in a turn's order. A turn whose phases are
+-- reversed (Topsy Turvy) trades only its beginning and ending phases: its main
+-- phase before combat is still the precombat one, being the turn's first (CR
+-- 505.1a), and each phase keeps its steps in order (Topsy Turvy's ruling),
+-- which Phase's Ord gives.
+turnRank :: Bool -> Phase -> (Int, Phase)
+turnRank reversed phase =
+  let group :: Int
+      group = case phase of
+        Phase.Ending _ -> 0
+        Phase.PrecombatMain -> 1
+        Phase.Combat _ -> 1
+        Phase.PostcombatMain -> 1
+        Phase.Beginning _ -> 2
+   in (if reversed then group else 1, phase)
 
--- The steps of a fresh turn AFTER its first (the untap step). A new turn's
--- schedule refills to this; `firstPhase` is its current step.
-laterPhases :: Seq Phase
-laterPhases = Seq.fromList (drop 1 allPhases)
+-- | CR 500.1: a turn's steps in the order it takes them, its phases reversed or
+-- not ('turnRank').
+turnPhases :: Bool -> [Phase]
+turnPhases reversed = List.sortOn (turnRank reversed) allPhases
+
+-- | The first step of a fresh turn, its phases reversed or not: the untap step,
+-- or the end step of a reversed turn.
+firstPhase :: Bool -> Phase
+firstPhase reversed = if reversed then Phase.Ending EndingStep.EndStep else Phase.Beginning BeginningStep.Untap
+
+-- The steps of a fresh turn AFTER its first. A new turn's schedule refills to
+-- this; `firstPhase` is its current step.
+laterPhases :: Bool -> Seq Phase
+laterPhases = Seq.fromList . drop 1 . turnPhases
 
 -- Which steps grant a priority round from the PHASE alone.
 --
@@ -437,10 +469,16 @@ spliceStep = (Seq.<|)
 --
 -- The caller handles CR 725.1d's own exception -- ending the turn DURING the
 -- cleanup step, where spliceStep's new cleanup step is what the rule asks for.
-jumpToCleanup :: Seq Phase -> Seq Phase
-jumpToCleanup remaining = case Seq.elemIndexL (Phase.Ending EndingStep.Cleanup) remaining of
-  Nothing -> spliceStep (Phase.Ending EndingStep.Cleanup) remaining
-  Just i -> Seq.drop i remaining
+--
+-- A turn whose phases are reversed ends at the cleanup step it jumps to, the
+-- phases after it in its schedule dropped (docs/decisions.md, "Where a turn
+-- whose phases are reversed ends when an effect ends it").
+jumpToCleanup :: Bool -> Seq Phase -> Seq Phase
+jumpToCleanup reversed remaining
+  | reversed = Seq.singleton (Phase.Ending EndingStep.Cleanup)
+  | otherwise = case Seq.elemIndexL (Phase.Ending EndingStep.Cleanup) remaining of
+      Nothing -> spliceStep (Phase.Ending EndingStep.Cleanup) remaining
+      Just i -> Seq.drop i remaining
 
 -- The steps one added phase expands to. CR 501.1 fixes the beginning phase's
 -- three and CR 506.1 the combat phase's five, each in order; CR 505.2 ("The main
@@ -566,7 +604,7 @@ duringCombatBefore target phase = case phase of
 
 -- CR 506.8a / 506.8g: is the game short of the first time this turn that
 -- `target` begins? Every step begun this turn, the current one among them,
--- precedes it in CR 500.1's order, which Phase's Ord follows.
+-- precedes it in the turn's order ('turnRank').
 --
 -- The turn's LOG and not the phase alone, for CR 506.8d: a clause printing no
 -- "during combat" names the FIRST combat phase, so a later combat's beginning
@@ -575,7 +613,9 @@ duringCombatBefore target phase = case phase of
 -- but the next one to begin does and is past the point. TurnRegisters.events is
 -- cleared at the turn handoff, so it holds this turn's beginnings and no other.
 beforeStep :: Phase -> GameState -> Bool
-beforeStep target gs = all (< target) (TurnRegisters.phase (GameState.turn gs) : stepsBegun gs)
+beforeStep target gs =
+  let rank = turnRank (TurnRegisters.phasesReversed (GameState.turn gs))
+   in all (\step -> rank step < rank target) (TurnRegisters.phase (GameState.turn gs) : stepsBegun gs)
 
 -- CR 500.1: every step, and every main phase, that has begun this turn, oldest
 -- first, off the turn's log. A skipped one records no beginning (CR 500.11).

@@ -1,0 +1,72 @@
+{
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "battlefield": [
+          {
+            "card": "Topsy Turvy"
+          }
+        ],
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ],
+        "name": "alice"
+      },
+      {
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ],
+        "name": "bob"
+      },
+      {
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ],
+        "name": "carol"
+      }
+    ],
+    "step": "PrecombatMain"
+  },
+  "description": "Topsy Turvy reverses the turn order in a game of more than two players: carol takes the turn after alice's, not bob",
+  "note": "Seated alice, bob, carol. Carol's turn is reversed too, so it opens at its end step.",
+  "timeline": [
+    {
+      "check": {
+        "View": {
+          "is": "carol",
+          "of": "ActivePlayer"
+        }
+      },
+      "player": "carol",
+      "step": "EndStep",
+      "turn": 2
+    },
+    {
+      "check": {
+        "View": {
+          "is": "bob",
+          "of": "ActivePlayer"
+        }
+      },
+      "player": "bob",
+      "step": "EndStep",
+      "turn": 3
+    }
+  ]
+}

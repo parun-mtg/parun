@@ -67,11 +67,34 @@ import qualified Parun.Types.Zone as Zone
 turnSpec :: (Monad m, Monad n) => Spec.Spec m n -> n ()
 turnSpec s = Spec.describe s "Turn" $ do
   Spec.it s "firstPhase is the untap step" $
-    Spec.assertEqWith s "firstPhase" Turn.firstPhase (Phase.Beginning BeginningStep.Untap)
+    Spec.assertEqWith s "firstPhase" (Turn.firstPhase False) (Phase.Beginning BeginningStep.Untap)
   Spec.it s "a turn has twelve steps" $
     Spec.assertEqWith s "twelve" (length Turn.allPhases) 12
   Spec.it s "firstPhase and laterPhases reconstruct the turn template" $
-    Spec.assertEqWith s "reconstruct" Turn.laterPhases (Seq.fromList (drop 1 Turn.allPhases))
+    Spec.assertEqWith s "reconstruct" (Turn.laterPhases False) (Seq.fromList (drop 1 Turn.allPhases))
+  -- CR 500.1 / 505.1a / Topsy Turvy's ruling: the phases run the other way
+  -- round, each keeping its steps in order, and the main phase before combat
+  -- is the turn's first, so the precombat one.
+  Spec.it s "a turn whose phases are reversed opens at its end step and closes with its draw step" $
+    Spec.assertEqWith
+      s
+      "reversed"
+      (Turn.firstPhase True Seq.<| Turn.laterPhases True)
+      ( Seq.fromList
+          [ Phase.Ending EndingStep.EndStep,
+            Phase.Ending EndingStep.Cleanup,
+            Phase.PrecombatMain,
+            Phase.Combat CombatStep.BeginningOfCombat,
+            Phase.Combat CombatStep.DeclareAttackers,
+            Phase.Combat CombatStep.DeclareBlockers,
+            Phase.Combat CombatStep.CombatDamage,
+            Phase.Combat CombatStep.EndOfCombat,
+            Phase.PostcombatMain,
+            Phase.Beginning BeginningStep.Untap,
+            Phase.Beginning BeginningStep.Upkeep,
+            Phase.Beginning BeginningStep.DrawStep
+          ]
+      )
   -- CR 502.4 outright, CR 514.3's "normally" for the cleanup step -- whose
   -- CR 514.3a exception is Engine.grantsPriorityNow's question, not this
   -- one's (Parun.GameSpec's "extra cleanup step").
@@ -129,14 +152,14 @@ turnDataSpec s = Spec.describe s "TurnData" $ do
         after = snd (Engine.runGamePure S.aggressiveAnswer gs Engine.advance)
      in do
           Spec.assertEqWith s "new active player" (TurnRegisters.activePlayer (GameState.turn after)) S.bob
-          Spec.assertEqWith s "phase reset" (TurnRegisters.phase (GameState.turn after)) Turn.firstPhase
-          Spec.assertEqWith s "schedule refilled" (TurnRegisters.remaining (GameState.turn after)) Turn.laterPhases
+          Spec.assertEqWith s "phase reset" (TurnRegisters.phase (GameState.turn after)) (Turn.firstPhase False)
+          Spec.assertEqWith s "schedule refilled" (TurnRegisters.remaining (GameState.turn after)) (Turn.laterPhases False)
           Spec.assertEqWith s "turn incremented" (TurnRegisters.turnNumber (GameState.turn after)) 2
   Spec.it s "a fresh game starts at untap with the rest of the turn scheduled" $
     let gs = Setup.emptyGame S.bothPlayers
      in do
-          Spec.assertEqWith s "phase" (TurnRegisters.phase (GameState.turn gs)) Turn.firstPhase
-          Spec.assertEqWith s "remaining" (TurnRegisters.remaining (GameState.turn gs)) Turn.laterPhases
+          Spec.assertEqWith s "phase" (TurnRegisters.phase (GameState.turn gs)) (Turn.firstPhase False)
+          Spec.assertEqWith s "remaining" (TurnRegisters.remaining (GameState.turn gs)) (Turn.laterPhases False)
   -- CR 500.1: only the FIRST step of a phase that has steps opens that
   -- phase, and both main phases open none -- CR 505.2 makes each of them a
   -- single schedule entry, which PhaseSelector.Step already names.

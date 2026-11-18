@@ -1123,6 +1123,8 @@ unpreventableScopeOffends scope playerEffect = case playerEffect of
   PlayerEffect.HasProtectionFrom _ -> False
   PlayerEffect.StateBasedActionDoesntApply _ _ -> False
   PlayerEffect.CantSetSchemesInMotion -> False
+  PlayerEffect.PhasesReversed -> False
+  PlayerEffect.TurnOrderReversed -> False
   PlayerEffect.EntriesTrigger _ -> False
   PlayerEffect.BearersTrigger _ -> False
   PlayerEffect.ControlledWhileSearching -> False
@@ -1211,6 +1213,8 @@ unpreventablePatternOffends playerEffect = case playerEffect of
   PlayerEffect.HasProtectionFrom _ -> False
   PlayerEffect.StateBasedActionDoesntApply _ _ -> False
   PlayerEffect.CantSetSchemesInMotion -> False
+  PlayerEffect.PhasesReversed -> False
+  PlayerEffect.TurnOrderReversed -> False
   PlayerEffect.EntriesTrigger _ -> False
   PlayerEffect.BearersTrigger _ -> False
   PlayerEffect.ControlledWhileSearching -> False

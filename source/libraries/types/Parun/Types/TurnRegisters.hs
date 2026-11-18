@@ -32,8 +32,11 @@ data TurnRegisters = MkTurnRegisters
     phase :: Phase.Phase,
     -- | CR 500: the steps still scheduled this turn, in order, `phase` being the
     -- one in progress; CR 508.8 drops steps and CR 510.4, 500.8 and 500.9
-    -- splice them in. Refilled from `Turn.allPhases` at handoff.
+    -- splice them in. Refilled from `Turn.turnPhases` at handoff.
     remaining :: Seq.Seq Phase.Phase,
+    -- | CR 500.1 / Topsy Turvy: whether this turn takes its phases in the
+    -- reverse order, fixed as it begins (Parun.Engine.Engine.newTurn).
+    phasesReversed :: Bool,
     -- | CR 405.1 / 807.5: the stack, top first; in Grand Melee its turn
     -- marker's own, every stack being Parun.Engine.Game.allStacks.
     stack :: [ObjectId.ObjectId],

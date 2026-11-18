@@ -455,6 +455,20 @@ spec s = Spec.describe s "Parun.Codec.PlayerEffect" $ do
       PlayerEffect.codec
       PlayerEffect.CantSetSchemesInMotion
       " {\"type\":\"CantSetSchemesInMotion\"} "
+  -- CR 500.1 / Topsy Turvy.
+  Spec.it s "PhasesReversed" $
+    Common.assertCodec
+      s
+      PlayerEffect.codec
+      PlayerEffect.PhasesReversed
+      " {\"type\":\"PhasesReversed\"} "
+  -- CR 101.4 / Topsy Turvy.
+  Spec.it s "TurnOrderReversed" $
+    Common.assertCodec
+      s
+      PlayerEffect.codec
+      PlayerEffect.TurnOrderReversed
+      " {\"type\":\"TurnOrderReversed\"} "
   -- CR 603.2d / Sanctum of All.
   Spec.it s "BearersTrigger" $
     Common.assertCodec

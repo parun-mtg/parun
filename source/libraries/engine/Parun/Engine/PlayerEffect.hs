@@ -720,6 +720,8 @@ prohibitsCasting pid oid variable gs =
         PlayerEffect.HasProtectionFrom _ -> False
         PlayerEffect.StateBasedActionDoesntApply _ _ -> False
         PlayerEffect.CantSetSchemesInMotion -> False
+        PlayerEffect.PhasesReversed -> False
+        PlayerEffect.TurnOrderReversed -> False
         PlayerEffect.EntriesTrigger _ -> False
         PlayerEffect.BearersTrigger _ -> False
         PlayerEffect.ControlledWhileSearching -> False
@@ -916,6 +918,8 @@ prohibitsPlayingLand pid oid gs =
         PlayerEffect.HasProtectionFrom _ -> False
         PlayerEffect.StateBasedActionDoesntApply _ _ -> False
         PlayerEffect.CantSetSchemesInMotion -> False
+        PlayerEffect.PhasesReversed -> False
+        PlayerEffect.TurnOrderReversed -> False
         PlayerEffect.EntriesTrigger _ -> False
         PlayerEffect.BearersTrigger _ -> False
         PlayerEffect.ControlledWhileSearching -> False
@@ -987,6 +991,8 @@ searchPortion pid gs =
         PlayerEffect.DamageAsThoughSourceHad {} -> Nothing
         PlayerEffect.StateBasedActionDoesntApply _ _ -> Nothing
         PlayerEffect.CantSetSchemesInMotion -> Nothing
+        PlayerEffect.PhasesReversed -> Nothing
+        PlayerEffect.TurnOrderReversed -> Nothing
         PlayerEffect.EntriesTrigger _ -> Nothing
         PlayerEffect.BearersTrigger _ -> Nothing
         PlayerEffect.CantAttackWithCreatures -> Nothing
@@ -1079,6 +1085,8 @@ prohibitsSearching pid owner causeController gs =
         PlayerEffect.DamageAsThoughSourceHad {} -> False
         PlayerEffect.StateBasedActionDoesntApply _ _ -> False
         PlayerEffect.CantSetSchemesInMotion -> False
+        PlayerEffect.PhasesReversed -> False
+        PlayerEffect.TurnOrderReversed -> False
         PlayerEffect.EntriesTrigger _ -> False
         PlayerEffect.BearersTrigger _ -> False
         PlayerEffect.CantAttackWithCreatures -> False
@@ -1193,6 +1201,8 @@ prohibitsCounters pid kind gs =
         PlayerEffect.DamageAsThoughSourceHad {} -> False
         PlayerEffect.StateBasedActionDoesntApply _ _ -> False
         PlayerEffect.CantSetSchemesInMotion -> False
+        PlayerEffect.PhasesReversed -> False
+        PlayerEffect.TurnOrderReversed -> False
         PlayerEffect.EntriesTrigger _ -> False
         PlayerEffect.BearersTrigger _ -> False
         PlayerEffect.ControlledWhileSearching -> False
@@ -1240,6 +1250,8 @@ stateBasedActionDoesntApplyTo action pid oid gs =
   let exempts (source, effect) = case effect of
         PlayerEffect.StateBasedActionDoesntApply exempted matching -> exempted == action && matchesObjectFrom source matching oid gs
         PlayerEffect.CantSetSchemesInMotion -> False
+        PlayerEffect.PhasesReversed -> False
+        PlayerEffect.TurnOrderReversed -> False
         PlayerEffect.EntriesTrigger _ -> False
         PlayerEffect.BearersTrigger _ -> False
         PlayerEffect.ControlledWhileSearching -> False
@@ -1297,6 +1309,21 @@ stateBasedActionDoesntApplyTo action pid oid gs =
         PlayerEffect.Shows _ -> False
    in any exempts (applying pid gs)
 
+-- | CR 500.1: are the phases of `pid`'s turn reversed right now (Topsy Turvy)?
+-- Each row applying to them reverses the order once more, so an even number
+-- cancel out (Topsy Turvy's ruling). Parun.Engine.Engine.newTurn is the reader.
+phasesReversed :: PlayerId -> GameState -> Bool
+phasesReversed pid gs = odd (length (filter ((== PlayerEffect.PhasesReversed) . snd) (applying pid gs)))
+
+-- | CR 101.4: do static abilities reverse the turn order right now (Topsy
+-- Turvy)? Its sentence names no player, so each row counts once however many
+-- seats it reaches, and reverses the order once more, an even number cancelling
+-- out. Parun.Engine.Engine.sampleTurnOrder is the reader.
+turnOrderReversedByStatic :: GameState -> Bool
+turnOrderReversedByStatic gs =
+  let sources = Set.fromList [source | pid <- Game.stillPlaying gs, (source, PlayerEffect.TurnOrderReversed) <- applying pid gs]
+   in odd (Set.size sources)
+
 -- CR 701.32 / 904.9 / 101.2: may no scheme be set in motion right now (All in
 -- Good Time)? The printed sentence names no player, so it is gathered from
 -- every still-playing seat, `unpreventable`'s posture: "some player has it
@@ -1305,6 +1332,8 @@ schemesCantBeSetInMotion :: GameState -> Bool
 schemesCantBeSetInMotion gs =
   let prohibits effect = case effect of
         PlayerEffect.CantSetSchemesInMotion -> True
+        PlayerEffect.PhasesReversed -> False
+        PlayerEffect.TurnOrderReversed -> False
         PlayerEffect.EntriesTrigger _ -> False
         PlayerEffect.BearersTrigger _ -> False
         PlayerEffect.ControlledWhileSearching -> False
@@ -1389,6 +1418,8 @@ moveTriggerings move pid subjects (bearer, atBearer) effects board =
             else Nothing
         PlayerEffect.BearersTrigger _ -> Nothing
         PlayerEffect.CantSetSchemesInMotion -> Nothing
+        PlayerEffect.PhasesReversed -> Nothing
+        PlayerEffect.TurnOrderReversed -> Nothing
         PlayerEffect.ControlledWhileSearching -> Nothing
         PlayerEffect.BlocksFromPiles -> Nothing
         PlayerEffect.YouChoose _ -> Nothing
@@ -1496,6 +1527,8 @@ bearerTriggerings pid bearer ability gs =
             else Nothing
         PlayerEffect.EntriesTrigger _ -> Nothing
         PlayerEffect.CantSetSchemesInMotion -> Nothing
+        PlayerEffect.PhasesReversed -> Nothing
+        PlayerEffect.TurnOrderReversed -> Nothing
         PlayerEffect.ControlledWhileSearching -> Nothing
         PlayerEffect.BlocksFromPiles -> Nothing
         PlayerEffect.YouChoose _ -> Nothing
@@ -1574,6 +1607,8 @@ prohibitsAttackingWithCreatures pid gs =
         PlayerEffect.CantAttackWithCreatures -> True
         PlayerEffect.StateBasedActionDoesntApply _ _ -> False
         PlayerEffect.CantSetSchemesInMotion -> False
+        PlayerEffect.PhasesReversed -> False
+        PlayerEffect.TurnOrderReversed -> False
         PlayerEffect.EntriesTrigger _ -> False
         PlayerEffect.BearersTrigger _ -> False
         PlayerEffect.ControlledWhileSearching -> False
@@ -2416,6 +2451,8 @@ landPlayFlashGrant effect = case effect of
   PlayerEffect.HasProtectionFrom _ -> Nothing
   PlayerEffect.StateBasedActionDoesntApply _ _ -> Nothing
   PlayerEffect.CantSetSchemesInMotion -> Nothing
+  PlayerEffect.PhasesReversed -> Nothing
+  PlayerEffect.TurnOrderReversed -> Nothing
   PlayerEffect.EntriesTrigger _ -> Nothing
   PlayerEffect.BearersTrigger _ -> Nothing
   PlayerEffect.ControlledWhileSearching -> Nothing
@@ -2691,6 +2728,8 @@ castFromGrantOf effect = case effect of
   PlayerEffect.HasProtectionFrom _ -> Nothing
   PlayerEffect.StateBasedActionDoesntApply _ _ -> Nothing
   PlayerEffect.CantSetSchemesInMotion -> Nothing
+  PlayerEffect.PhasesReversed -> Nothing
+  PlayerEffect.TurnOrderReversed -> Nothing
   PlayerEffect.EntriesTrigger _ -> Nothing
   PlayerEffect.BearersTrigger _ -> Nothing
   PlayerEffect.ControlledWhileSearching -> Nothing
@@ -3122,6 +3161,8 @@ ratherThanManaCost pid oid gs =
         PlayerEffect.HasProtectionFrom _ -> Nothing
         PlayerEffect.StateBasedActionDoesntApply _ _ -> Nothing
         PlayerEffect.CantSetSchemesInMotion -> Nothing
+        PlayerEffect.PhasesReversed -> Nothing
+        PlayerEffect.TurnOrderReversed -> Nothing
         PlayerEffect.EntriesTrigger _ -> Nothing
         PlayerEffect.BearersTrigger _ -> Nothing
         PlayerEffect.ControlledWhileSearching -> Nothing
@@ -3206,6 +3247,8 @@ playLandPiles pid gs =
         PlayerEffect.HasProtectionFrom _ -> []
         PlayerEffect.StateBasedActionDoesntApply _ _ -> []
         PlayerEffect.CantSetSchemesInMotion -> []
+        PlayerEffect.PhasesReversed -> []
+        PlayerEffect.TurnOrderReversed -> []
         PlayerEffect.EntriesTrigger _ -> []
         PlayerEffect.BearersTrigger _ -> []
         PlayerEffect.ControlledWhileSearching -> []
@@ -3331,6 +3374,8 @@ protectedFromTargeting rows pastHexproof caster source sourceView pid gs =
         PlayerEffect.HasProtectionFrom _ -> False
         PlayerEffect.StateBasedActionDoesntApply _ _ -> False
         PlayerEffect.CantSetSchemesInMotion -> False
+        PlayerEffect.PhasesReversed -> False
+        PlayerEffect.TurnOrderReversed -> False
         PlayerEffect.EntriesTrigger _ -> False
         PlayerEffect.BearersTrigger _ -> False
         PlayerEffect.ControlledWhileSearching -> False
@@ -3445,6 +3490,8 @@ protectedFromGiven rows aimer view gs =
         PlayerEffect.DamageAsThoughSourceHad {} -> False
         PlayerEffect.StateBasedActionDoesntApply _ _ -> False
         PlayerEffect.CantSetSchemesInMotion -> False
+        PlayerEffect.PhasesReversed -> False
+        PlayerEffect.TurnOrderReversed -> False
         PlayerEffect.EntriesTrigger _ -> False
         PlayerEffect.BearersTrigger _ -> False
         PlayerEffect.ControlledWhileSearching -> False
@@ -3543,6 +3590,8 @@ protectionCarriers gs =
         PlayerEffect.DamageAsThoughSourceHad {} -> Nothing
         PlayerEffect.StateBasedActionDoesntApply _ _ -> Nothing
         PlayerEffect.CantSetSchemesInMotion -> Nothing
+        PlayerEffect.PhasesReversed -> Nothing
+        PlayerEffect.TurnOrderReversed -> Nothing
         PlayerEffect.EntriesTrigger _ -> Nothing
         PlayerEffect.BearersTrigger _ -> Nothing
         PlayerEffect.ControlledWhileSearching -> Nothing
@@ -3634,6 +3683,8 @@ landPlaysAllowed pid gs =
         PlayerEffect.HasProtectionFrom _ -> Nothing
         PlayerEffect.StateBasedActionDoesntApply _ _ -> Nothing
         PlayerEffect.CantSetSchemesInMotion -> Nothing
+        PlayerEffect.PhasesReversed -> Nothing
+        PlayerEffect.TurnOrderReversed -> Nothing
         PlayerEffect.EntriesTrigger _ -> Nothing
         PlayerEffect.BearersTrigger _ -> Nothing
         PlayerEffect.ControlledWhileSearching -> Nothing
@@ -3717,6 +3768,8 @@ votesAllowed pid gs =
         PlayerEffect.SearchesTopOfLibraries {} -> Nothing
         PlayerEffect.StateBasedActionDoesntApply _ _ -> Nothing
         PlayerEffect.CantSetSchemesInMotion -> Nothing
+        PlayerEffect.PhasesReversed -> Nothing
+        PlayerEffect.TurnOrderReversed -> Nothing
         PlayerEffect.EntriesTrigger _ -> Nothing
         PlayerEffect.BearersTrigger _ -> Nothing
         PlayerEffect.ControlledWhileSearching -> Nothing
@@ -3786,6 +3839,8 @@ offeredExtras pid gs =
         PlayerEffect.SearchesTopOfLibraries {} -> False
         PlayerEffect.StateBasedActionDoesntApply _ _ -> False
         PlayerEffect.CantSetSchemesInMotion -> False
+        PlayerEffect.PhasesReversed -> False
+        PlayerEffect.TurnOrderReversed -> False
         PlayerEffect.EntriesTrigger _ -> False
         PlayerEffect.BearersTrigger _ -> False
         PlayerEffect.ControlledWhileSearching -> False
@@ -3856,6 +3911,8 @@ cascadeActions pid gs =
         PlayerEffect.SearchesTopOfLibraries {} -> Nothing
         PlayerEffect.StateBasedActionDoesntApply _ _ -> Nothing
         PlayerEffect.CantSetSchemesInMotion -> Nothing
+        PlayerEffect.PhasesReversed -> Nothing
+        PlayerEffect.TurnOrderReversed -> Nothing
         PlayerEffect.EntriesTrigger _ -> Nothing
         PlayerEffect.BearersTrigger _ -> Nothing
         PlayerEffect.ControlledWhileSearching -> Nothing
@@ -3925,6 +3982,8 @@ drawReveals pid nth gs =
         PlayerEffect.SearchesTopOfLibraries {} -> Nothing
         PlayerEffect.StateBasedActionDoesntApply _ _ -> Nothing
         PlayerEffect.CantSetSchemesInMotion -> Nothing
+        PlayerEffect.PhasesReversed -> Nothing
+        PlayerEffect.TurnOrderReversed -> Nothing
         PlayerEffect.EntriesTrigger _ -> Nothing
         PlayerEffect.BearersTrigger _ -> Nothing
         PlayerEffect.ControlledWhileSearching -> Nothing
@@ -3994,6 +4053,8 @@ shownGrants pid gs =
         PlayerEffect.SearchesTopOfLibraries {} -> Nothing
         PlayerEffect.StateBasedActionDoesntApply _ _ -> Nothing
         PlayerEffect.CantSetSchemesInMotion -> Nothing
+        PlayerEffect.PhasesReversed -> Nothing
+        PlayerEffect.TurnOrderReversed -> Nothing
         PlayerEffect.EntriesTrigger _ -> Nothing
         PlayerEffect.BearersTrigger _ -> Nothing
         PlayerEffect.ControlledWhileSearching -> Nothing
@@ -4110,6 +4171,8 @@ maximumHandSize pid gs =
         PlayerEffect.HasProtectionFrom _ -> current
         PlayerEffect.StateBasedActionDoesntApply _ _ -> current
         PlayerEffect.CantSetSchemesInMotion -> current
+        PlayerEffect.PhasesReversed -> current
+        PlayerEffect.TurnOrderReversed -> current
         PlayerEffect.EntriesTrigger _ -> current
         PlayerEffect.BearersTrigger _ -> current
         PlayerEffect.ControlledWhileSearching -> current
@@ -4221,6 +4284,8 @@ unspentManaRows pid gs =
         PlayerEffect.HasProtectionFrom _ -> Nothing
         PlayerEffect.StateBasedActionDoesntApply _ _ -> Nothing
         PlayerEffect.CantSetSchemesInMotion -> Nothing
+        PlayerEffect.PhasesReversed -> Nothing
+        PlayerEffect.TurnOrderReversed -> Nothing
         PlayerEffect.EntriesTrigger _ -> Nothing
         PlayerEffect.BearersTrigger _ -> Nothing
         PlayerEffect.ControlledWhileSearching -> Nothing
@@ -4300,6 +4365,8 @@ losesLifeForUnspentMana pid gs =
         PlayerEffect.HasProtectionFrom _ -> False
         PlayerEffect.StateBasedActionDoesntApply _ _ -> False
         PlayerEffect.CantSetSchemesInMotion -> False
+        PlayerEffect.PhasesReversed -> False
+        PlayerEffect.TurnOrderReversed -> False
         PlayerEffect.EntriesTrigger _ -> False
         PlayerEffect.BearersTrigger _ -> False
         PlayerEffect.ControlledWhileSearching -> False
@@ -4390,6 +4457,8 @@ forbids reaches pid gs =
         PlayerEffect.HasProtectionFrom _ -> False
         PlayerEffect.StateBasedActionDoesntApply _ _ -> False
         PlayerEffect.CantSetSchemesInMotion -> False
+        PlayerEffect.PhasesReversed -> False
+        PlayerEffect.TurnOrderReversed -> False
         PlayerEffect.EntriesTrigger _ -> False
         PlayerEffect.BearersTrigger _ -> False
         PlayerEffect.ControlledWhileSearching -> False
@@ -4511,6 +4580,8 @@ precludes outcome pid gs =
         PlayerEffect.HasProtectionFrom _ -> False
         PlayerEffect.StateBasedActionDoesntApply _ _ -> False
         PlayerEffect.CantSetSchemesInMotion -> False
+        PlayerEffect.PhasesReversed -> False
+        PlayerEffect.TurnOrderReversed -> False
         PlayerEffect.EntriesTrigger _ -> False
         PlayerEffect.BearersTrigger _ -> False
         PlayerEffect.ControlledWhileSearching -> False
@@ -4589,6 +4660,8 @@ spendManaAsThoughRows pid gs =
         PlayerEffect.HasProtectionFrom _ -> Nothing
         PlayerEffect.StateBasedActionDoesntApply _ _ -> Nothing
         PlayerEffect.CantSetSchemesInMotion -> Nothing
+        PlayerEffect.PhasesReversed -> Nothing
+        PlayerEffect.TurnOrderReversed -> Nothing
         PlayerEffect.EntriesTrigger _ -> Nothing
         PlayerEffect.BearersTrigger _ -> Nothing
         PlayerEffect.ControlledWhileSearching -> Nothing
@@ -4763,6 +4836,8 @@ cantBeCountered pid counterer oid gs =
         PlayerEffect.HasProtectionFrom _ -> False
         PlayerEffect.StateBasedActionDoesntApply _ _ -> False
         PlayerEffect.CantSetSchemesInMotion -> False
+        PlayerEffect.PhasesReversed -> False
+        PlayerEffect.TurnOrderReversed -> False
         PlayerEffect.EntriesTrigger _ -> False
         PlayerEffect.BearersTrigger _ -> False
         PlayerEffect.ControlledWhileSearching -> False
@@ -4828,6 +4903,8 @@ targetingRestrictions =
         PlayerEffect.HasProtectionFrom _ -> Nothing
         PlayerEffect.StateBasedActionDoesntApply _ _ -> Nothing
         PlayerEffect.CantSetSchemesInMotion -> Nothing
+        PlayerEffect.PhasesReversed -> Nothing
+        PlayerEffect.TurnOrderReversed -> Nothing
         PlayerEffect.EntriesTrigger _ -> Nothing
         PlayerEffect.BearersTrigger _ -> Nothing
         PlayerEffect.ControlledWhileSearching -> Nothing
@@ -4912,6 +4989,8 @@ hexproofExemptions =
         PlayerEffect.HasProtectionFrom _ -> Nothing
         PlayerEffect.StateBasedActionDoesntApply _ _ -> Nothing
         PlayerEffect.CantSetSchemesInMotion -> Nothing
+        PlayerEffect.PhasesReversed -> Nothing
+        PlayerEffect.TurnOrderReversed -> Nothing
         PlayerEffect.EntriesTrigger _ -> Nothing
         PlayerEffect.BearersTrigger _ -> Nothing
         PlayerEffect.ControlledWhileSearching -> Nothing
@@ -5010,6 +5089,8 @@ unpreventable gs =
         PlayerEffect.HasProtectionFrom _ -> Nothing
         PlayerEffect.StateBasedActionDoesntApply _ _ -> Nothing
         PlayerEffect.CantSetSchemesInMotion -> Nothing
+        PlayerEffect.PhasesReversed -> Nothing
+        PlayerEffect.TurnOrderReversed -> Nothing
         PlayerEffect.EntriesTrigger _ -> Nothing
         PlayerEffect.BearersTrigger _ -> Nothing
         PlayerEffect.ControlledWhileSearching -> Nothing
@@ -5096,6 +5177,8 @@ unredirectable gs =
         PlayerEffect.HasProtectionFrom _ -> Nothing
         PlayerEffect.StateBasedActionDoesntApply _ _ -> Nothing
         PlayerEffect.CantSetSchemesInMotion -> Nothing
+        PlayerEffect.PhasesReversed -> Nothing
+        PlayerEffect.TurnOrderReversed -> Nothing
         PlayerEffect.EntriesTrigger _ -> Nothing
         PlayerEffect.BearersTrigger _ -> Nothing
         PlayerEffect.ControlledWhileSearching -> Nothing
@@ -5166,6 +5249,8 @@ damageAsThough gs =
         PlayerEffect.HasProtectionFrom _ -> Nothing
         PlayerEffect.StateBasedActionDoesntApply _ _ -> Nothing
         PlayerEffect.CantSetSchemesInMotion -> Nothing
+        PlayerEffect.PhasesReversed -> Nothing
+        PlayerEffect.TurnOrderReversed -> Nothing
         PlayerEffect.EntriesTrigger _ -> Nothing
         PlayerEffect.BearersTrigger _ -> Nothing
         PlayerEffect.ControlledWhileSearching -> Nothing
@@ -5282,6 +5367,8 @@ statedFlips pid gs =
         PlayerEffect.HasProtectionFrom _ -> Nothing
         PlayerEffect.StateBasedActionDoesntApply _ _ -> Nothing
         PlayerEffect.CantSetSchemesInMotion -> Nothing
+        PlayerEffect.PhasesReversed -> Nothing
+        PlayerEffect.TurnOrderReversed -> Nothing
         PlayerEffect.EntriesTrigger _ -> Nothing
         PlayerEffect.BearersTrigger _ -> Nothing
         PlayerEffect.ControlledWhileSearching -> Nothing
@@ -5364,6 +5451,8 @@ rollModifiers pid gs =
         PlayerEffect.HasProtectionFrom _ -> Nothing
         PlayerEffect.StateBasedActionDoesntApply _ _ -> Nothing
         PlayerEffect.CantSetSchemesInMotion -> Nothing
+        PlayerEffect.PhasesReversed -> Nothing
+        PlayerEffect.TurnOrderReversed -> Nothing
         PlayerEffect.EntriesTrigger _ -> Nothing
         PlayerEffect.BearersTrigger _ -> Nothing
         PlayerEffect.ControlledWhileSearching -> Nothing
@@ -5500,6 +5589,8 @@ overPlayerRefs f effect = case effect of
   PlayerEffect.SearchesTopOfLibraries _ -> pure effect
   PlayerEffect.StateBasedActionDoesntApply _ _ -> pure effect
   PlayerEffect.CantSetSchemesInMotion -> pure effect
+  PlayerEffect.PhasesReversed -> pure effect
+  PlayerEffect.TurnOrderReversed -> pure effect
   PlayerEffect.EntriesTrigger _ -> pure effect
   PlayerEffect.BearersTrigger _ -> pure effect
   PlayerEffect.ControlledWhileSearching -> pure effect
@@ -5600,6 +5691,8 @@ overDamagePatterns f effect = case effect of
   PlayerEffect.SearchesTopOfLibraries _ -> pure effect
   PlayerEffect.StateBasedActionDoesntApply _ _ -> pure effect
   PlayerEffect.CantSetSchemesInMotion -> pure effect
+  PlayerEffect.PhasesReversed -> pure effect
+  PlayerEffect.TurnOrderReversed -> pure effect
   PlayerEffect.EntriesTrigger _ -> pure effect
   PlayerEffect.BearersTrigger _ -> pure effect
   PlayerEffect.ControlledWhileSearching -> pure effect

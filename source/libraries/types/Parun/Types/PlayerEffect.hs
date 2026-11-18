@@ -193,6 +193,11 @@ data PlayerEffect
     StateBasedActionDoesntApply StateBasedAction.StateBasedAction (Filter.Filter Keyword.Keyword)
   | -- | CR 701.32 / 904.9 / All in Good Time: schemes can't be set in motion.
     CantSetSchemesInMotion
+  | -- | CR 500.1 / Topsy Turvy: this player's turns take their phases in the
+    -- reverse order, each phase's steps in their usual order.
+    PhasesReversed
+  | -- | CR 101.4 / Topsy Turvy: the turn order is reversed.
+    TurnOrderReversed
   | -- | CR 603.6a / 603.2d / 700.4 / 508.3 / 613.11 / Hushwing Gryff, Yarok,
     -- the Desecrated, Hushbringer, Teysa Karlov, The Masamune, Windcrag Siege:
     -- how entries, deaths or attacks change the triggering of this player's

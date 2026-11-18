@@ -140,6 +140,7 @@ withoutAnnouncement before entry between closed = do
   activePlayer <- one (TurnRegisters.activePlayer . GameState.turn)
   phase <- one (TurnRegisters.phase . GameState.turn)
   remaining <- one (TurnRegisters.remaining . GameState.turn)
+  phasesReversed <- one (TurnRegisters.phasesReversed . GameState.turn)
   priority <- one (TurnRegisters.priority . GameState.turn)
   passed <- one (TurnRegisters.passed . GameState.turn)
   turnNumber <- one (TurnRegisters.turnNumber . GameState.turn)
@@ -167,6 +168,7 @@ withoutAnnouncement before entry between closed = do
   drewFromEmpty <- setOf GameState.drewFromEmpty
   fellShort <- newest (Bookkeeping.fellShort . GameState.bookkeeping)
   loopGroups <- mapOf (Bookkeeping.loopGroups . GameState.bookkeeping)
+  turnOrderReversedByStatic <- one (Bookkeeping.turnOrderReversedByStatic . GameState.bookkeeping)
   landsPlayed <- mapOf GameState.landsPlayed
   cardsPlayed <- mapOf GameState.cardsPlayed
   drawsThisTurn <- mapOf (TurnRegisters.drawsThisTurn . GameState.turn)
@@ -259,6 +261,7 @@ withoutAnnouncement before entry between closed = do
               TurnRegisters.activePlayer = activePlayer,
               TurnRegisters.phase = phase,
               TurnRegisters.remaining = remaining,
+              TurnRegisters.phasesReversed = phasesReversed,
               TurnRegisters.priority = priority,
               TurnRegisters.passed = passed,
               TurnRegisters.turnNumber = turnNumber,
@@ -322,7 +325,8 @@ withoutAnnouncement before entry between closed = do
               Bookkeeping.repeatPicks = repeatPicks,
               Bookkeeping.undone = undone,
               Bookkeeping.fellShort = fellShort,
-              Bookkeeping.loopGroups = loopGroups
+              Bookkeeping.loopGroups = loopGroups,
+              Bookkeeping.turnOrderReversedByStatic = turnOrderReversedByStatic
             },
         GameState.snapshots =
           Snapshots.MkSnapshots
