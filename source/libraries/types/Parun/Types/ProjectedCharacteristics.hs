@@ -10,6 +10,7 @@ import qualified Parun.Types.Card as Card
 import qualified Parun.Types.CardName as CardName
 import qualified Parun.Types.CardType as CardType
 import qualified Parun.Types.CastingPermission as CastingPermission
+import qualified Parun.Types.CastingRestriction as CastingRestriction
 import qualified Parun.Types.ChangeWord as ChangeWord
 import qualified Parun.Types.CharacteristicPT as CharacteristicPT
 import qualified Parun.Types.Color as Color
@@ -394,6 +395,9 @@ data ProjectedCharacteristics = MkProjectedCharacteristics
     -- | CR 707.2 / 601.2f: the printed reductions of its own cost
     -- (Face.costReductions), read by Game.castingFaceOf.
     costReductions :: [CostReduction.CostReduction],
+    -- | CR 707.2 / 601.3: the printed restrictions on casting it
+    -- (Face.castingRestrictions), read by Game.castingFaceOf.
+    castingRestrictions :: [CastingRestriction.CastingRestriction],
     -- | CR 613.1f / 601.2f: the reductions of its own cost layer 6 GRANTED the
     -- object (Richlau, Headmaster's perpetual "This spell costs {1} less to
     -- cast"). Apart from costReductions for grantedPlayerAbilities' reason: that

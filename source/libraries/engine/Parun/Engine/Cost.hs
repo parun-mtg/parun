@@ -1505,7 +1505,7 @@ selfReductions announced aiming pid oid gs =
 -- granted and keyword ones are `asSpellProjected`'s, so the keywords are
 -- `spellKeywords`' reading.
 selfSentences :: PlayerId -> ObjectId -> GameState -> [CostReduction.CostReduction]
-selfSentences pid oid gs = case (Game.lookupObject oid gs, Game.cardOf oid gs, Game.faceOf oid gs) of
+selfSentences pid oid gs = case (Game.lookupLayerOne oid gs, Game.cardOf oid gs, Game.faceOf oid gs) of
   (Just obj, Just card, Just printedFace) ->
     let face = Game.castingFaceOf obj card printedFace
         projected = asSpellProjected pid oid gs
@@ -3093,10 +3093,10 @@ printedCastCost oid component gs =
    in any (elem (blank component) . fmap blank . printed) (faceCast oid gs)
 
 -- The face the spell `oid` was cast as, with its copiable values
--- (Game.castingFaceOf).
+-- (Game.castingFaceOf), a stored copy row's among them (Game.lookupLayerOne).
 faceCast :: ObjectId -> GameState -> Maybe (Face.Face Card.Type.Card)
 faceCast oid gs = do
-  obj <- Game.lookupObject oid gs
+  obj <- Game.lookupLayerOne oid gs
   card <- Game.cardOf oid gs
   Game.castingFaceOf obj card <$> Game.faceOf oid gs
 

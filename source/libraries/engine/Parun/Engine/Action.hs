@@ -97,7 +97,7 @@ import qualified Parun.Types.Zone as Zone
 -- is face up by the time it is played.
 playableLands :: PlayerId -> GameState -> [(ObjectId, Maybe CardName.CardName)]
 playableLands pid gs =
-  let playable oid = case (Game.lookupObject oid gs, Game.cardOfHandMember oid gs) of
+  let playable oid = case (Game.lookupLayerOne oid gs, Game.cardOfHandMember oid gs) of
         (Just obj, Just card) ->
           if PlayerEffect.prohibitsPlayingLand pid oid (Cast.turnedUpForPlay oid Facing.FaceUp gs)
             then []

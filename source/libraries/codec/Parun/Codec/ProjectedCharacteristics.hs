@@ -10,6 +10,7 @@ import qualified Parun.Codec.Card as Card
 import qualified Parun.Codec.CardName as CardName
 import qualified Parun.Codec.CardType as CardType
 import qualified Parun.Codec.CastingPermission as CastingPermission
+import qualified Parun.Codec.CastingRestriction as CastingRestriction
 import qualified Parun.Codec.ChangeWord as ChangeWord
 import qualified Parun.Codec.CharacteristicPT as CharacteristicPT
 import qualified Parun.Codec.Color as Color
@@ -105,6 +106,7 @@ codec = Fields.object $ do
   additionalCostChoices <- Fields.defaulted "additionalCostChoices" [] (Common.list CostChoice.codec) PC.additionalCostChoices
   alternativeCosts <- Fields.defaulted "alternativeCosts" [] (Common.list AlternativeCost.codec) PC.alternativeCosts
   costReductions <- Fields.defaulted "costReductions" [] (Common.list CostReduction.codec) PC.costReductions
+  castingRestrictions <- Fields.defaulted "castingRestrictions" [] (Common.list CastingRestriction.codec) PC.castingRestrictions
   grantedCostReductions <- Fields.defaulted "grantedCostReductions" [] (Common.list CostReduction.codec) PC.grantedCostReductions
   grantedAlternativeCosts <- Fields.defaulted "grantedAlternativeCosts" [] (Common.list AlternativeCost.codec) PC.grantedAlternativeCosts
   grantedSpendManaAsThough <- Fields.defaulted "grantedSpendManaAsThough" [] (Common.list SpendManaAsThough.codec) PC.grantedSpendManaAsThough
@@ -168,6 +170,7 @@ codec = Fields.object $ do
         PC.additionalCostChoices = additionalCostChoices,
         PC.alternativeCosts = alternativeCosts,
         PC.costReductions = costReductions,
+        PC.castingRestrictions = castingRestrictions,
         PC.grantedCostReductions = grantedCostReductions,
         PC.grantedAlternativeCosts = grantedAlternativeCosts,
         PC.grantedSpendManaAsThough = grantedSpendManaAsThough,
