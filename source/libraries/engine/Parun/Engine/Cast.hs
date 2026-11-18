@@ -70,6 +70,7 @@ import qualified Parun.Types.Clause as Clause
 import qualified Parun.Types.Compares as Compares
 import qualified Parun.Types.Condition as Condition.Type
 import qualified Parun.Types.ContinuousEffect as ContinuousEffect
+import qualified Parun.Types.ControllerRelation as ControllerRelation
 import qualified Parun.Types.Convoking as Convoking
 import qualified Parun.Types.CopyCoverage as CopyCoverage
 import Parun.Types.Cost (Cost)
@@ -106,6 +107,7 @@ import qualified Parun.Types.KeywordInstance as KeywordInstance
 import qualified Parun.Types.KickerDecision as KickerDecision
 import qualified Parun.Types.LandPlayed as LandPlayed
 import qualified Parun.Types.Layer as Layer
+import qualified Parun.Types.LibraryPosition as LibraryPosition
 import qualified Parun.Types.Mana as Mana.Type
 import qualified Parun.Types.ManaAbilityPerformer as ManaAbilityPerformer
 import qualified Parun.Types.ManaCost as ManaCost
@@ -165,6 +167,8 @@ import qualified Parun.Types.Undoing as Undoing
 import qualified Parun.Types.Uses as Uses
 import qualified Parun.Types.VariableChoice as VariableChoice
 import qualified Parun.Types.Zone as Zone
+import qualified Parun.Types.ZoneChangePattern as ZoneChangePattern
+import qualified Parun.Types.ZoneChangeR as ZoneChangeR
 import qualified Parun.Types.ZoneScope as ZoneScope
 
 -- CR 117.1a's second sentence: the window a NONINSTANT spell is cast in -- a
@@ -3276,7 +3280,7 @@ installLandEntry pid oid gs = case Game.lookupObject oid gs of
       ExilePlayPermission.landEnters permission == TapState.Tapped -> do
         let src = ExilePlayPermission.source permission
         live <- State.get
-        let (ts, stamped) = replacementRow src (Maybe.fromMaybe pid (Projection.controllerOf src live)) Binding.playedLand oid (EntryRewrite.EntersTapState TapState.Tapped) live
+        let (ts, stamped) = replacementRow src (Maybe.fromMaybe pid (Projection.controllerOf src live)) Binding.playedLand oid (entryRewriting Binding.playedLand (EntryRewrite.EntersTapState TapState.Tapped)) live
         State.put stamped
         pure (Just ts)
   _ -> pure Nothing
@@ -3294,19 +3298,19 @@ installSpellEntry pid permission spell gs = case permission of
   Just held
     | ExilePlayPermission.spellEnters held == TapState.Tapped ->
         let src = ExilePlayPermission.source held
-         in snd (replacementRow src (Maybe.fromMaybe pid (Projection.controllerOf src gs)) Binding.castSpell spell (EntryRewrite.EntersTapState TapState.Tapped) gs)
+         in snd (replacementRow src (Maybe.fromMaybe pid (Projection.controllerOf src gs)) Binding.castSpell spell (entryRewriting Binding.castSpell (EntryRewrite.EntersTapState TapState.Tapped)) gs)
   _ -> gs
 
--- CR 614.1d / 614.3: one floating EntryR row from `src`, controlled by
--- `controller`, rewriting the entry of the object `slot` binds to `oid`, and
--- the timestamp it was stored at. Uses.Once with expiry Never, since the
--- object enters once and the rider states no duration.
-replacementRow :: ObjectId -> PlayerId -> SlotName.SlotName -> ObjectId -> EntryRewrite.EntryRewrite (GrantedAbility.GrantedAbility Card.Type.Card) (Effect.Effect Card.Type.Card (GrantedAbility.GrantedAbility Card.Type.Card)) -> GameState -> (Timestamp.Timestamp, GameState)
-replacementRow src controller slot oid rewrite gs =
+-- CR 614.3: one floating row from `src`, controlled by `controller`, with
+-- `slot` bound to `oid`, and the timestamp it was stored at. Uses.Once with
+-- expiry Never, since the object it names enters or leaves the stack once and
+-- the rider states no duration.
+replacementRow :: ObjectId -> PlayerId -> SlotName.SlotName -> ObjectId -> ReplacementEffect.ReplacementEffect Card.Type.Card (GrantedAbility.GrantedAbility Card.Type.Card) (Effect.Effect Card.Type.Card (GrantedAbility.GrantedAbility Card.Type.Card)) -> GameState -> (Timestamp.Timestamp, GameState)
+replacementRow src controller slot oid effect gs =
   let (ts, stamped) = Game.freshTimestamp gs
       active =
         ActiveReplacement.MkActiveReplacement
-          { ActiveReplacement.effect = ReplacementEffect.EntryR (EntryR.MkEntryR (Filter.Type.IsBound slot) rewrite),
+          { ActiveReplacement.effect = effect,
             ActiveReplacement.source = src,
             ActiveReplacement.controller = controller,
             ActiveReplacement.timestamp = ts,
@@ -3319,6 +3323,10 @@ replacementRow src controller slot oid rewrite gs =
             ActiveReplacement.choices = SourceContext.choicesOf (Game.acquisitionOf src gs) src gs
           }
    in (ts, stamped {GameState.stored = (GameState.stored stamped) {StoredEffects.replacements = active : StoredEffects.replacements (GameState.stored stamped)}})
+
+-- CR 614.1d: rewriting the entry of the object `slot` binds.
+entryRewriting :: SlotName.SlotName -> EntryRewrite.EntryRewrite (GrantedAbility.GrantedAbility Card.Type.Card) (Effect.Effect Card.Type.Card (GrantedAbility.GrantedAbility Card.Type.Card)) -> ReplacementEffect.ReplacementEffect Card.Type.Card (GrantedAbility.GrantedAbility Card.Type.Card) (Effect.Effect Card.Type.Card (GrantedAbility.GrantedAbility Card.Type.Card))
+entryRewriting slot rewrite = ReplacementEffect.EntryR (EntryR.MkEntryR (Filter.Type.IsBound slot) rewrite)
 
 -- CR 601.3: PlayerEffect.castPermissionOptions for a cast of `oid` out of
 -- `origin`, open without a grant where the card carries a permission of its own
@@ -3368,6 +3376,7 @@ ownPayingWays oid face gs =
           CastFromZone.spending = ManaSpending.AsProduced,
           CastFromZone.alternativeCost = Nothing,
           CastFromZone.entersWith = entersWith,
+          CastFromZone.exiledInstead = False,
           CastFromZone.amount = Nothing,
           CastFromZone.creatureTypes = Set.empty,
           CastFromZone.outsideTheGame = False
@@ -3575,7 +3584,33 @@ installPermissionEntry :: PlayerId -> Maybe (ObjectId, CastFromZone.CastFromZone
 installPermissionEntry caster permission spell gs = case permission of
   Just (src, grant)
     | Just counters <- CastFromZone.entersWith grant ->
-        snd (replacementRow src caster Binding.castSpell spell (EntryRewrite.WithCounters counters) gs)
+        snd (replacementRow src caster Binding.castSpell spell (entryRewriting Binding.castSpell (EntryRewrite.WithCounters counters)) gs)
+  _ -> gs
+
+-- CR 614.1a / 608.2n / 701.6a: "If a spell cast this way would be put into a
+-- graveyard, exile it instead" (The Great Work), the exile rider of the
+-- permission the cast of `spell` was made under: one floating ZoneChangeR row
+-- naming the spell by slot, stored as the spell is cast for
+-- installPermissionEntry's reason. Event.reenter re-keys no such row, so a
+-- spell that becomes a permanent leaves it behind (CR 400.7). Nothing for a
+-- cast made under no permission or one stating none.
+-- the-great-work-makes-treasures-then-exiles-each-spell-cast-from-any-graveyard-this-way-and-returns-urabrask
+-- proves it on a spell that resolves, one countered and one cast from hand.
+installPermissionExile :: PlayerId -> Maybe (ObjectId, CastFromZone.CastFromZone) -> ObjectId -> GameState -> GameState
+installPermissionExile caster permission spell gs = case permission of
+  Just (src, grant)
+    | CastFromZone.exiledInstead grant ->
+        let leaving =
+              ZoneChangePattern.MkZoneChangePattern
+                { ZoneChangePattern.whenDestination = Just Zone.Graveyard,
+                  ZoneChangePattern.whoseObject = ControllerRelation.Related PlayerRelation.AnyPlayer,
+                  ZoneChangePattern.whatObject = Filter.Type.IsBound Binding.castSpell,
+                  ZoneChangePattern.whenDiscarded = Nothing,
+                  ZoneChangePattern.causedBy = Nothing,
+                  ZoneChangePattern.duringResolution = False
+                }
+            exile = ZoneChangeR.MkZoneChangeR leaving Zone.Exile False False LibraryPosition.defaultValue False Nothing Seq.empty Seq.empty
+         in snd (replacementRow src caster Binding.castSpell spell (ReplacementEffect.ZoneChangeR exile) gs)
   _ -> gs
 
 -- CR 205.1b / 400.7a: "If you do, it ... is a Vampire in addition to its other
@@ -4795,6 +4830,8 @@ castProposed perform baseSpending pid oid sid printedFace castFrom preparedFor k
                           -- CR 614.1d: so is its entry rider, as a row naming the
                           -- spell.
                           State.modify' (installPermissionEntry pid permissionUsed sid)
+                          -- CR 614.1a: and its exile rider, likewise.
+                          State.modify' (installPermissionExile pid permissionUsed sid)
                           -- CR 205.1b: and its added creature types, as effects
                           -- naming the spell.
                           State.modify' (installPermissionTypes permissionUsed sid)

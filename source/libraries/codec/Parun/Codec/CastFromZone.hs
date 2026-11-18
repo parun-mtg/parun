@@ -34,7 +34,7 @@ import qualified Parun.Types.PermissionVerb as PermissionVerb
 -- verb to Cast, which is what a permission naming no land play grants. The pool
 -- defaults to the whole zone, the additional costs to none, the spending to
 -- mana as produced, and the alternative cost, the entry counters and the added creature types to
--- none, and outside the game to unopened.
+-- none, the exile rider to absent, and outside the game to unopened.
 --
 -- Unprinted: a permission to cast cards as an Adventure. It is refused, and
 -- Parun.Codec.CastFromZoneSpec's "rejects casting as an Adventure" proves the
@@ -51,10 +51,11 @@ codec = Fields.objectWith verbIsPrinted $ do
   spending <- Fields.defaulted "spending" ManaSpending.Type.AsProduced ManaSpending.codec CastFromZone.spending
   alternativeCost <- Fields.defaulted "alternativeCost" Nothing (Common.maybe PermissionCost.codec) CastFromZone.alternativeCost
   entersWith <- Fields.defaulted "entersWith" Nothing (Common.maybe WithCounters.codec) CastFromZone.entersWith
+  exiledInstead <- Fields.defaulted "exiledInstead" False Common.boolean CastFromZone.exiledInstead
   amount <- Fields.defaulted "amount" Nothing (Common.maybe Quantity.codec) CastFromZone.amount
   creatureTypes <- Fields.defaulted "creatureTypes" Set.empty (Common.set Subtype.codec) CastFromZone.creatureTypes
   outsideTheGame <- Fields.defaulted "outsideTheGame" False Common.boolean CastFromZone.outsideTheGame
-  pure CastFromZone.MkCastFromZone {CastFromZone.from = from, CastFromZone.matching = matching, CastFromZone.limit = limit, CastFromZone.verb = verb, CastFromZone.pool = pool, CastFromZone.additionalCosts = additionalCosts, CastFromZone.reduction = reduction, CastFromZone.spending = spending, CastFromZone.alternativeCost = alternativeCost, CastFromZone.entersWith = entersWith, CastFromZone.amount = amount, CastFromZone.creatureTypes = creatureTypes, CastFromZone.outsideTheGame = outsideTheGame}
+  pure CastFromZone.MkCastFromZone {CastFromZone.from = from, CastFromZone.matching = matching, CastFromZone.limit = limit, CastFromZone.verb = verb, CastFromZone.pool = pool, CastFromZone.additionalCosts = additionalCosts, CastFromZone.reduction = reduction, CastFromZone.spending = spending, CastFromZone.alternativeCost = alternativeCost, CastFromZone.entersWith = entersWith, CastFromZone.exiledInstead = exiledInstead, CastFromZone.amount = amount, CastFromZone.creatureTypes = creatureTypes, CastFromZone.outsideTheGame = outsideTheGame}
 
 verbIsPrinted :: CastFromZone.CastFromZone -> Either Text.Text CastFromZone.CastFromZone
 verbIsPrinted grant
