@@ -156,7 +156,6 @@ import qualified Parun.Types.TapState as TapState
 import qualified Parun.Types.TappedToPay as TappedToPay
 import qualified Parun.Types.TargetSlot as TargetSlot
 import qualified Parun.Types.Timestamp as Timestamp
-import qualified Parun.Types.Together as Together
 import qualified Parun.Types.TurnKind as TurnKind
 import qualified Parun.Types.TurnRegisters as TurnRegisters
 import qualified Parun.Types.TurnWindow as TurnWindow
@@ -768,7 +767,11 @@ payableCountedAtGiven modes pcs sources x extra spending pid oid gs cost =
 -- takes back with nothing changed (CR 734.1), where a false refusal would deny
 -- a legal cast.
 --
--- Not implemented: an exact answer past the cap (#7297).
+-- Unprinted: an exact answer past the cap, owed only where an apart slot
+-- (Target.apartSlots), or an exclusion with a slot named between its two, sits
+-- beside a slot taking several targets (Target.apartWide).
+-- Parun.AbilitySlotLintSpec's "no card writes a joint check only the capped
+-- walk prices" keeps it out of card data.
 castAimable :: (Ord k) => (Recipient.Recipient -> k) -> Maybe (Seq.Seq ModeIndex.ModeIndex) -> Natural -> PlayerId -> ObjectId -> GameState -> ([Map.Map SlotName.SlotName (Set.Set Recipient.Recipient)], Bool)
 castAimable key announced x pid oid gs = case Game.faceOf oid gs of
   Nothing -> ([], False)
@@ -815,30 +818,29 @@ castAimable key announced x pid oid gs = case Game.faceOf oid gs of
         -- the walk was cut short. Recipients the cost cannot tell apart may
         -- still differ to the joint check, which is settled three ways. A slot
         -- a pool names is walked once per answer it could take
-        -- (Target.poolSplits), which leaves its dependents classed by the cost
-        -- alone. A one-zone `together` slot's members are classed by the zone
-        -- holding them besides. The members of every other jointly judged slot
-        -- (Target.entangledSlots) are each their own class, which is every
-        -- subset, so where such a slot takes several targets the walk stops at
-        -- Target.subsetBudget. Parun.CostSpec's "Drafna's Restoration" and
-        -- "Synthetic Wide Verdict" groups prove the split and the stop.
+        -- (Target.poolSplits). The members of a slot the check tells apart one
+        -- by one (Target.apartSlots) are each their own class, and the members
+        -- of every other jointly judged slot are classed by what the check reads
+        -- of them (Target.jointSignature). Only where a class of one may sit in a
+        -- slot taking several targets does the walk stop at Target.subsetBudget
+        -- (Target.apartWide). Parun.CostSpec's "Drafna's Restoration",
+        -- "Synthetic Wide Verdict" and "Graceful Takedown" groups prove the
+        -- split and the classes.
         aimingsOf slots =
           let sets = setsOf slots
               rangesOf legal = Target.aimingRanges Nothing (Just pid) oid (Just x) slots legal gs
               ranges = rangesOf sets
               legalUnder bindings slot = Target.legalRecipientsGiven StackObjectKind.Spell Nothing pools (Just pid) True bindings (Game.acquisitionFor Nothing oid gs) oid slot gs
               (split, splits) = Target.poolSplits legalUnder ranges slots sets
-              entangled = Target.entangledSlots split slots
-              zoned = Map.keysSet (Map.filter ((== Just Together.InOneZone) . TargetSlot.together) slots)
-              holders = Map.fromListWith Set.union [(Cost.aimedReferent a, Set.singleton name) | (name, members) <- Map.toList sets, a <- Set.toList members]
-              jointKey r =
-                let held = Map.findWithDefault Set.empty r holders
-                 in if Set.disjoint held entangled
-                      then Right (if Set.disjoint held zoned then Nothing else Target.zoneHolding gs r)
-                      else Left r
-              signature r = (key r, jointKey r)
-              walk = concatMap (\narrowed -> Target.aimingsBy Cost.aimedReferent signature (rangesOf narrowed) narrowed) splits
-              capped = any (\name -> maybe False ((> 1) . snd) (Map.lookup name ranges)) entangled
+              apart = Target.apartSlots split slots
+              joint = Target.jointSignature gs (Target.boundValueUnder Nothing (Just pid) True oid gs) legalUnder apart slots sets
+              signatureIn narrowed =
+                let holders = Map.fromListWith Set.union [(Cost.aimedReferent a, Set.singleton name) | (name, members) <- Map.toList narrowed, a <- Set.toList members]
+                    held r = Map.findWithDefault Set.empty r holders
+                 in \r -> (key r, joint (held r) r)
+              walkOne narrowed = Target.aimingsBy Cost.aimedReferent (signatureIn narrowed) (rangesOf narrowed) narrowed
+              walk = concatMap walkOne splits
+              capped = Target.apartWide apart ranges slots
               -- Lazy, so only the visited prefix and one aiming past it are built.
               (visited, beyond) = if capped then List.genericSplitAt Target.subsetBudget walk else (walk, [])
            in (filter (coherent slots) visited, not (null beyond))
