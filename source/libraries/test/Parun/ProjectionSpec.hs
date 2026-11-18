@@ -3652,9 +3652,9 @@ spec s registry = Spec.describe s "Parun.Engine.Projection" $ do
     Spec.assertBool s (not (asks (snapshotView travelerId gs))) "viewOfSnapshot: nor in a snapshot"
     -- CR 605.1a: the intrinsic ability IS a mana ability, so the kinds hold
     -- ManaAbility alone for the same Mountain in every builder.
-    Spec.assertEqWith s "CR 605.1a: viewOfCard's kind" (Filter.activatedAbilityKinds (Projection.viewOfCard (S.combinedFace mountain))) (Set.singleton AbilityKind.ManaAbility)
-    Spec.assertEqWith s "CR 605.1a: viewOfCharacteristics' kind" (Filter.activatedAbilityKinds (Projection.viewOfObject landId gs)) (Set.singleton AbilityKind.ManaAbility)
-    Spec.assertEqWith s "CR 605.1a again, in the snapshot" (Filter.activatedAbilityKinds (snapshotView landId gs)) (Set.singleton AbilityKind.ManaAbility)
+    Spec.assertEqWith s "CR 605.1a: viewOfCard's kind" (Filter.activatedAbilityKinds (Projection.viewOfCard (S.combinedFace mountain))) [AbilityKind.ManaAbility]
+    Spec.assertEqWith s "CR 605.1a: viewOfCharacteristics' kind" (Filter.activatedAbilityKinds (Projection.viewOfObject landId gs)) [AbilityKind.ManaAbility]
+    Spec.assertEqWith s "CR 605.1a again, in the snapshot" (Filter.activatedAbilityKinds (snapshotView landId gs)) [AbilityKind.ManaAbility]
 
   -- The same three builders under CR 613.1f: Humility strips the Dryad Arbor's
   -- CR 305.6 ability, and the two builders with a projection to read must say so

@@ -677,7 +677,7 @@ applyModification textBoxOf viewOf src stamp gs oid unitTypes affected m pc =
               PC.grantedRuleAbilities = mempty,
               -- CR 305.6's intrinsic mana ability has no list here to empty, so
               -- the removal is recorded instead and read back by
-              -- Parun.Engine.Subtype.intrinsicManaAbilityOf.
+              -- Parun.Engine.Subtype.intrinsicManaOf.
               PC.lostAllAbilities = True,
               -- CR 113.6g: a spell's own "can't be countered" and "can't be
               -- copied" go too; the scenarios patriars-humiliation/cr-113-6g-*
@@ -1026,9 +1026,7 @@ bakeGranter granter = Identity.runIdentity . Children.modalChildren Children.mod
 -- ruling on Manascape Refractor), which a lend takes beside its printed ones.
 intrinsicManaAbilitiesOf :: ProjectedCharacteristics -> [ActivatedAbility.ActivatedAbility Card.Type.Card (GrantedAbility.GrantedAbility Card.Type.Card)]
 intrinsicManaAbilitiesOf pc =
-  if Subtype.intrinsicManaAbilityOf pc
-    then fmap Mint.intrinsicManaAbility (Maybe.mapMaybe Subtype.subtypeMana (Set.toAscList (PC.subtypes pc)))
-    else []
+  fmap Mint.intrinsicManaAbility (Subtype.intrinsicManaOf pc)
 
 -- | CR 605.1a / 606.2: whether a lend naming these kinds of activated ability,
 -- Nothing for both of a division, takes this one.
@@ -4421,6 +4419,8 @@ measureReads measure = case measure of
   Measure.LockedDoors -> Set.empty
   -- CR 601.2b: a choice made as the spell was cast, no layer's.
   Measure.ModesChosen -> Set.empty
+  -- Filter.HasActivatedAbility's reads, whose field it counts.
+  Measure.ActivatedAbilityCount -> everyAspect
 
 -- Which aspects a Trait's values read, for Filter.Shares and
 -- Aggregation.MostSharing alike.
@@ -6683,7 +6683,7 @@ stunCounters oid gs = case Game.lookupObject oid gs of
 -- value under CR 707.2 (CR 707.5). Minting AFTER the layer fold puts the intrinsic
 -- rows -- CR 306.5b's, CR 310.4b's and CR 715.3's -- outside the lists a CR
 -- 613.1f wipe empties, so each reads PC.lostAllAbilities instead, as
--- Parun.Engine.Subtype.intrinsicManaAbilityOf does; riot, being a keyword, is
+-- Parun.Engine.Subtype.intrinsicManaOf does; riot, being a keyword, is
 -- inside the fold. The scenario
 -- gideon-blackblade/cr-613-1f-cast-under-humility-on-his-turn-enters-with-no-loyalty
 -- proves it.

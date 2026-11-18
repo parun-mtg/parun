@@ -463,7 +463,7 @@ choicesOf howMany spread offered = case spread of
 --
 -- Both halves read through the projection, so Humility (layer 6) strips a
 -- creature's printed mana ability AND CR 305.6's intrinsic one -- the second
--- through Parun.Engine.Subtype.intrinsicManaAbilityOf, the reader
+-- through Parun.Engine.Subtype.intrinsicManaOf, the reader
 -- Filter.HasActivatedAbility shares, so the atom and the route cannot disagree
 -- about whether the ability is there. CR 305.7 at layer 4 is what swaps a Blood
 -- Moon'd Reliquary Tower's printed "{T}: Add {C}" for the Mountain's {R} rather
@@ -520,12 +520,10 @@ choicesOf howMany spread offered = case spread of
 manaRoutesOfGiven :: Map.Map ObjectId PC.ProjectedCharacteristics -> ObjectId -> GameState -> [(Cost Keyword.Keyword, [ActivationRestriction.ActivationRestriction], Maybe (ActivatedAbility.ActivatedAbility Card.Type.Card (GrantedAbility.GrantedAbility Card.Type.Card)), [(Clause.Clause Card.Type.Card (GrantedAbility.GrantedAbility Card.Type.Card), [ManaAddition.ManaAddition])])]
 manaRoutesOfGiven pcs oid gs =
   let pc = Projection.projectGiven pcs oid gs
-      fromSubtypes
-        | Subtype.Engine.intrinsicManaAbilityOf pc =
-            fmap
-              (\manaType -> (Mint.intrinsicManaCost, [], Nothing, [(Mint.intrinsicManaClause manaType, [Mint.intrinsicManaAddition manaType])]))
-              (Maybe.mapMaybe Subtype.Engine.subtypeMana (Set.toList (PC.subtypes pc)))
-        | otherwise = []
+      fromSubtypes =
+        fmap
+          (\manaType -> (Mint.intrinsicManaCost, [], Nothing, [(Mint.intrinsicManaClause manaType, [Mint.intrinsicManaAddition manaType])]))
+          (Subtype.Engine.intrinsicManaOf pc)
       context = Projection.sourceContext gs (Projection.controllerOf oid gs) oid
       applies = maybe True (Condition.holds (Projection.fullView gs) context gs oid) . Clause.condition
       selectionRoutes ability =

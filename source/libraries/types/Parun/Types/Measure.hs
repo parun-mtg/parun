@@ -29,4 +29,6 @@ data Measure
   | -- | CR 700.2d / 700.2e: how many times its controller chose a mode for a
     -- modal spell, a repeated mode counting each time.
     ModesChosen
+  | -- | CR 602.1 / 113.2c: how many activated abilities the object has, each instance counting.
+    ActivatedAbilityCount
   deriving (Bounded, Enum, Eq, Ord, Show)

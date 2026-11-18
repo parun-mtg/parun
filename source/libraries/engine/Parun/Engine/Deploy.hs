@@ -32,7 +32,7 @@ import qualified Parun.Types.TargetSlot as TargetSlot
 -- | CR 804.2: does this permanent have the deploy ability, given whether the
 -- game uses the option (GameSettings.deployCreatures)? Every creature does. An
 -- ability of the creature like CR 305.6's intrinsic one, so CR 613.1f's "loses
--- all abilities" takes it too (Parun.Engine.Subtype.intrinsicManaAbilityOf's
+-- all abilities" takes it too (Parun.Engine.Subtype.intrinsicManaOf's
 -- reading).
 --
 -- Asked of a permanent's characteristics only: CR 804.2's "creature" is a
