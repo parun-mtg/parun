@@ -2679,7 +2679,7 @@ riderFilters riders =
     <> concatMap (foldMap (\f -> [(Unframed, f)]) . EntryCounter.onlyIf) (Map.keys (EntryRiders.counters riders))
     <> concatMap quantityFilters (Map.elems (EntryRiders.counters riders))
     -- CR 611.2e's effects, ModifyTarget's modification read.
-    <> foldMap modificationFilters (EntryRiders.characteristics riders)
+    <> foldMap (modificationFilters Unframed) (EntryRiders.characteristics riders)
     -- CR 303.4f's narrowing of the host choice (EntryHost.Chosen).
     <> foldMap hostFilters (EntryRiders.attachedTo riders)
   where
@@ -3761,9 +3761,11 @@ durationFilters duration =
 
 -- A Modification reaches a Filter two ways: through its layer-7 quantities (a
 -- Count) and through the keyword a layer-6 grant hands out or takes away (CR
--- 702.29e again).
-modificationFilters :: Projection.Modification -> [(Framing, Filter.Type.Filter Keyword.Keyword)]
-modificationFilters modification = case modification of
+-- 702.29e again). The quantities carry `amounts`: ResolutionAmountFramed where
+-- a resolution locks them (Effect.ModifyTarget), Unframed where a static
+-- ability re-reads them.
+modificationFilters :: Framing -> Projection.Modification -> [(Framing, Filter.Type.Filter Keyword.Keyword)]
+modificationFilters amounts modification = case modification of
   Modification.GainKeyword keyword -> keywordFilters keyword
   -- Payload-free but for a beam me up's unreturnable (Scotty, Miracle
   -- Worker), the keyword's own Filter -- see modificationCounts.
@@ -3808,9 +3810,9 @@ modificationFilters modification = case modification of
   Modification.GainLentKeyword lent -> frame Unframed (concatMap conditionFilters (concatMap restrictionConditions (LentKeyword.restrictions lent)))
   -- The objects whose stickers are read.
   Modification.GainAbilitiesOfStickers stickered -> [(Unframed, stickered)]
-  Modification.SetBasePowerToughness (SetBasePowerToughness.MkSetBasePowerToughness p t) -> foldMap quantityFilters p <> foldMap quantityFilters t
-  Modification.ModifyPowerToughness (ModifyPowerToughness.MkModifyPowerToughness p t) -> quantityFilters p <> quantityFilters t
-  Modification.Intensify n -> quantityFilters n
+  Modification.SetBasePowerToughness (SetBasePowerToughness.MkSetBasePowerToughness p t) -> frame amounts (foldMap quantityFilters p <> foldMap quantityFilters t)
+  Modification.ModifyPowerToughness (ModifyPowerToughness.MkModifyPowerToughness p t) -> frame amounts (quantityFilters p <> quantityFilters t)
+  Modification.Intensify n -> frame amounts (quantityFilters n)
   Modification.LoseAllAbilities -> []
   Modification.LoseNamedAbility _ -> []
   -- CR 702.14a again, from the other side: a removal names the keyword in full,
@@ -3872,7 +3874,7 @@ staticAbilityFilters ability =
     Unframed
     ( fmap ((,) AffectedSetFramed) (affectedFilters (StaticAbility.affected ability))
         <> frame Unframed (concatMap durationFilters (Maybe.maybeToList (StaticAbility.lingers ability)))
-        <> concatMap modificationFilters (StaticAbility.modifications ability)
+        <> concatMap (modificationFilters Unframed) (StaticAbility.modifications ability)
     )
     <> frame StandingHostFramed (concatMap conditionFilters (Maybe.maybeToList (StaticAbility.condition ability)))
 
@@ -4713,7 +4715,7 @@ blockPermissionFilters permission =
 --     Filter.Context.slotNames. CR 110.2's Filter.ControllerRelatesToBound belongs
 --     here, in AttachDestination, the other, and in SourceHostFramed (Flame
 --     Wave); CR 709.4a's Filter.Shares Name Bound belongs here and
---     in SearchFramed, HandSweepFramed and LifeLossAmountFramed below, the
+--     in SearchFramed, HandSweepFramed and ResolutionAmountFramed below, the
 --     other positions slotNames is filled at and a card writes it in. Their
 --     vacuous directions differ: an unfilled slotNames answers False, an
 --     unfilled slotControllers answers True. So a misplaced Shares Name Bound
@@ -4778,10 +4780,14 @@ blockPermissionFilters permission =
 --     Parun.Engine.Resolve.Arms.Zones.repeatIf through Resolve.Slots.effectContext
 --     and a view filling Filter.View.hasEntryHost, which no other position does
 --     (Thieves' Auction).
---   * LifeLossAmountFramed -- CR 119.3's amount, which the Effect.LoseLife arm
---     reads per recipient through Resolve.Slots.effectContext, so
---     Filter.Context.slotNames is filled and CR 709.4a's
---     Filter.Shares Name Bound answers in its Count filter (Grim Reminder).
+--   * ResolutionAmountFramed -- an amount a resolution reads through
+--     Resolve.Slots.effectContext: CR 119.3's, which the Effect.LoseLife arm
+--     reads per recipient, so Filter.Context.slotNames is filled and CR
+--     709.4a's Filter.Shares Name Bound answers in its Count filter (Grim
+--     Reminder); and the quantities an Effect.ModifyTarget's modification
+--     carries, which CR 608.2h locks as it resolves
+--     (Parun.Engine.Projection.freezeQuantities), so CR 205.3m's
+--     Filter.Shares CreatureType Bound answers there (Shared Animosity).
 --   * AffectedSetFramed -- a static ability's or a combat restriction's own
 --     affected set, matched by Parun.Engine.Projection.affectsWith through
 --     affectedContext, which fills Filter.Context.sourceChosenColors and
@@ -4982,9 +4988,10 @@ data Framing
   | -- | A RepeatIf's condition, evaluated in the resolution's own context. See
     -- the overview above.
     RepeatGateFramed
-  | -- | CR 119.3's per-recipient amount, evaluated in the resolution's own
-    -- context. See the overview above.
-    LifeLossAmountFramed
+  | -- | An amount evaluated in the resolution's own context: CR 119.3's
+    -- per-recipient life loss, CR 608.2h's locked modification. See the
+    -- overview above.
+    ResolutionAmountFramed
   | -- | A static ability's or a combat restriction's own affected set. See the
     -- overview above.
     AffectedSetFramed
@@ -5080,8 +5087,9 @@ sweptForSingularSlots framing = case framing of
   ClauseGateFramed -> True
   -- SWEPT for MillTallyFramed's reason: repeatIf's context carries the slots.
   RepeatGateFramed -> True
-  -- SWEPT for MillTallyFramed's reason: the LoseLife arm reads effectContext.
-  LifeLossAmountFramed -> True
+  -- SWEPT for MillTallyFramed's reason: the LoseLife and ModifyTarget arms read
+  -- effectContext.
+  ResolutionAmountFramed -> True
   -- SWEPT, as all three were while they were Unframed: the split is about CR
   -- 607.2d's chosen values, not about slots.
   AffectedSetFramed -> True
@@ -5286,7 +5294,7 @@ effectFilters effect = case effect of
   -- framed like a recipient's ref.
   Effect.DealDamage (DealDamage.MkDealDamage parts _ dealers _ _ _ _) -> foldMap (frame SourceHostFramed . objectRefFilters) dealers <> foldMap (\part -> frame SourceHostFramed (objectRefFilters (DamagePart.ref part)) <> frame Unframed (quantityFilters (DamagePart.quantity part))) parts
   Effect.ModifyTarget (ModifyTarget.MkModifyTarget duration modification ref _) ->
-    frame Unframed (durationFilters duration) <> frame Unframed (modificationFilters modification) <> frame SourceHostFramed (objectRefFilters ref)
+    frame Unframed (durationFilters duration) <> frame Unframed (modificationFilters ResolutionAmountFramed modification) <> frame SourceHostFramed (objectRefFilters ref)
   Effect.ChangeText x -> frame Unframed (durationFilters (ChangeText.duration x))
   -- CR 106.6's two clauses, and every predicate in them: the restriction's half
   -- per payment kind and the rider's condition are each an ordinary
@@ -5427,7 +5435,7 @@ effectFilters effect = case effect of
     -- The card filter is a position a card author writes -- Borborygmos and
     -- Fblthp's "land" -- read as ObjectRef.ChosenPermanents' is.
     Discard.AnyNumber (AnyNumberDiscard.MkAnyNumberDiscard _ (AnyNumberMatching.MkAnyNumberMatching f atMost) _) -> unframed [f] <> frame Unframed (foldMap quantityFilters atMost)
-  Effect.LoseLife (LifeLoss.MkLifeLoss _ quantity _ _) -> frame LifeLossAmountFramed (quantityFilters quantity)
+  Effect.LoseLife (LifeLoss.MkLifeLoss _ quantity _ _) -> frame ResolutionAmountFramed (quantityFilters quantity)
   Effect.GainLife (PlayerQuantity.MkPlayerQuantity _ quantity) -> frame Unframed (quantityFilters quantity)
   Effect.ExchangeLifeTotals _ -> []
   Effect.ExchangeValues (ExchangeValues.MkExchangeValues one other duration) -> frame Unframed (durationFilters duration) <> frame SourceHostFramed (foldMap objectRefFilters (foldMap Resolve.exchangedObjectRefs [one, other]))

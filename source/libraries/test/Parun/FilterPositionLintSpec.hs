@@ -15,7 +15,7 @@ import qualified Data.Monoid as Monoid
 import qualified Data.Sequence as Seq
 import qualified Data.Set as Set
 import qualified Data.Text as Text
-import Parun.CardSpec (Framing (ActivationCostFramed, AffectedSetFramed, AttachDestination, AttachingHostFramed, ChosenSourceFramed, ClauseGateFramed, EntryAttachDestination, HandSweepFramed, InTargetSlot, InterveningFramed, KeywordFramed, LifeLossAmountFramed, ManaRestrictionFramed, MillTallyFramed, MintedTargetSlot, OutsideTheGameFramed, PlayerEffectFramed, RepeatGateFramed, ReplacementRowFramed, SearchFramed, SlotlessCostFramed, SourceHostFramed, SpentOnFramed, StandingHostFramed, StoredClassFramed, StoredPlayerEffectFramed, TriggerConditionFramed, Unframed), Surveyed, anyFace, cardAuthoredEffects, cardCounts, cardFilters, cardResolutionEffects, conditionFilters, costComponentFilters, counterKindFilters, durationFilters, effectFilters, entryRewriteFilters, filterSlotsReadSingly, framedSlotsReadSingly, keywordFilters, modalFilters, objectRefFilters, oneEffectTrigger, oneFaced, payGateFilters, quantityFilters, replacementEffectFilters, riderFilters, survey, surveyedFace, surveyedFilters, surveyedPool, triggerConditionFilters, turnUpRewriteFilters)
+import Parun.CardSpec (Framing (ActivationCostFramed, AffectedSetFramed, AttachDestination, AttachingHostFramed, ChosenSourceFramed, ClauseGateFramed, EntryAttachDestination, HandSweepFramed, InTargetSlot, InterveningFramed, KeywordFramed, ManaRestrictionFramed, MillTallyFramed, MintedTargetSlot, OutsideTheGameFramed, PlayerEffectFramed, RepeatGateFramed, ReplacementRowFramed, ResolutionAmountFramed, SearchFramed, SlotlessCostFramed, SourceHostFramed, SpentOnFramed, StandingHostFramed, StoredClassFramed, StoredPlayerEffectFramed, TriggerConditionFramed, Unframed), Surveyed, anyFace, cardAuthoredEffects, cardCounts, cardFilters, cardResolutionEffects, conditionFilters, costComponentFilters, counterKindFilters, durationFilters, effectFilters, entryRewriteFilters, filterSlotsReadSingly, framedSlotsReadSingly, keywordFilters, modalFilters, objectRefFilters, oneEffectTrigger, oneFaced, payGateFilters, quantityFilters, replacementEffectFilters, riderFilters, survey, surveyedFace, surveyedFilters, surveyedPool, triggerConditionFilters, turnUpRewriteFilters)
 import qualified Parun.Codec.Card as Card
 import qualified Parun.Codec.Face as Face.Codec
 import qualified Parun.Codec.Filter as Filter.Codec
@@ -302,7 +302,7 @@ sourceFramed framing = case framing of
   HandSweepFramed -> True
   ClauseGateFramed -> True
   RepeatGateFramed -> True
-  LifeLossAmountFramed -> True
+  ResolutionAmountFramed -> True
   AffectedSetFramed -> True
   ActivationCostFramed -> True
   TriggerConditionFramed -> True
@@ -1202,8 +1202,8 @@ framedNameAtoms = decodedAtoms "Shares" (\atom -> case atom of Filter.Type.Share
 
 -- How many CR 709.4a atoms this card carries in one of the ADMITTED positions
 -- -- a MODE's target slot filter (Harness the Storm), a CR 701.23 search filter
--- (Bifurcate), a CR 608.2c hand sweep's (Hour of Glory), a CR 119.3 life
--- loss amount's Count filter (Grim Reminder), an effect's own object
+-- (Bifurcate), a CR 608.2c hand sweep's (Hour of Glory), a resolution's
+-- amount's Count filter (Grim Reminder's CR 119.3 life loss), an effect's own object
 -- (Legion's End), a CR 603.4 intervening "if" (Spellweaver Helix) or a mode
 -- clause's own "if" (Jester's Scepter, read by Parun.Engine.Resolve.gateHolds
 -- through effectContext) -- and how many anywhere else. The second number is the offence.
@@ -1225,7 +1225,7 @@ framedNameAtoms = decodedAtoms "Shares" (\atom -> case atom of Filter.Type.Share
 -- not, since Cost.xValue and Cost.tapForManaWith read a bare source context.
 framedNameCounts :: Surveyed -> (Int, Int)
 framedNameCounts card =
-  let total wanted = sum (fmap (\(_, f) -> framedNameAtoms (atomJson f)) (filter (\(framing, _) -> elem framing [InTargetSlot, SearchFramed, HandSweepFramed, LifeLossAmountFramed, SourceHostFramed, InterveningFramed, ClauseGateFramed] == wanted) (surveyedFilters card)))
+  let total wanted = sum (fmap (\(_, f) -> framedNameAtoms (atomJson f)) (filter (\(framing, _) -> elem framing [InTargetSlot, SearchFramed, HandSweepFramed, ResolutionAmountFramed, SourceHostFramed, InterveningFramed, ClauseGateFramed] == wanted) (surveyedFilters card)))
       inside = sum (fmap (framedNameAtoms . atomJson) (discardCostCriteria (surveyedFace card) <> choiceCriteria (surveyedFace card)))
    in (total True + inside, total False - inside)
 
@@ -1306,14 +1306,14 @@ yourCommanderOffends card =
 
 -- How many CR 205.3m atoms this card carries in a resolution's own positions --
 -- an effect's ObjectRef (Heirloom Blade), a clause's "if" (Mudbutton Clanger), a
--- search, a mill tally or a hand sweep, each read through
+-- search, a mill tally, a hand sweep or an amount (Shared Animosity), each read through
 -- Parun.Engine.Resolve.Slots.effectContext -- or in a target slot (Unbury), read
 -- through Parun.Engine.Target.slotContext: the two fillers of
 -- Filter.Context.slotCreatureTypes, slotCardTypes and slotColors. And how many anywhere else, where the atom
 -- is a silent True. The second number is the offence.
 boundCreatureTypeCounts :: Surveyed -> (Int, Int)
 boundCreatureTypeCounts card =
-  let total wanted = sum (fmap (\(_, f) -> boundCreatureTypeAtoms (atomJson f)) (filter (\(framing, _) -> elem framing [SourceHostFramed, ClauseGateFramed, SearchFramed, MillTallyFramed, HandSweepFramed, InTargetSlot] == wanted) (surveyedFilters card)))
+  let total wanted = sum (fmap (\(_, f) -> boundCreatureTypeAtoms (atomJson f)) (filter (\(framing, _) -> elem framing [SourceHostFramed, ClauseGateFramed, SearchFramed, MillTallyFramed, HandSweepFramed, ResolutionAmountFramed, InTargetSlot] == wanted) (surveyedFilters card)))
    in (total True, total False)
 
 -- The atom outside those positions, or the traversal and the codec disagreeing
@@ -1988,7 +1988,7 @@ filterPositionLintSpec s registry corpus = Spec.describe s "Lint" $ do
   -- battlefieldViews are filled (Projection.framedBySlots), and unanswerable --
   -- a silent False -- everywhere else. The positions ADMITTED here are a MODE's
   -- target slot, a CR 701.23 search filter, a CR 608.2c hand sweep's own filter,
-  -- a CR 119.3 life loss amount, an effect's own object, a mode clause's own
+  -- a resolution's amount (CR 119.3's, CR 608.2h's), an effect's own object, a mode clause's own
   -- "if" (Jester's Scepter's scenarios) and a CR 603.4
   -- intervening "if" (framedByBindings, Spellweaver Helix), the five before it since
   -- their arms take their context from the resolution (Parun.ResolveSpec's
@@ -1999,10 +1999,10 @@ filterPositionLintSpec s registry corpus = Spec.describe s "Lint" $ do
   -- -- so this rejects in the safe direction only. See framedNameOffends
   -- for the two offences and Framing for why CR 303.4a's enchant slot is not one
   -- of the safe positions.
-  Spec.it s "CR 709.4a no card asks a framed Shares Name outside a mode's target slot, a search filter, a hand sweep, a life loss amount, an effect's object, a clause's if or a discard cost" $ do
+  Spec.it s "CR 709.4a no card asks a framed Shares Name outside a mode's target slot, a search filter, a hand sweep, a resolution's amount, an effect's object, a clause's if or a discard cost" $ do
     ps <- S.allPrintings s corpus
     let offenders = fmap fst (filter (any framedNameOffends . snd) pool)
-    Spec.assertEqWith s "the atom sits only in a target slot's, a search's, a hand sweep's, a life loss amount's, an effect object's, a clause if's or a discard cost's filter" (fmap (S.nameOf . Printing.card) offenders) []
+    Spec.assertEqWith s "the atom sits only in a target slot's, a search's, a hand sweep's, a resolution's amount's, an effect object's, a clause if's or a discard cost's filter" (fmap (S.nameOf . Printing.card) offenders) []
     -- NOT vacuous, the way the sibling sweeps would be alone: the pool authors the
     -- atom, and the cards that do are ACCEPTED here rather than skipped -- one in
     -- each admitted position, so no member of the set is unwitnessed.
@@ -2073,6 +2073,8 @@ filterPositionLintSpec s registry corpus = Spec.describe s "Lint" $ do
     Spec.assertEqWith s "Confusion in the Ranks's CR 205.2a atom is in its target slot" (boundCreatureTypeCounts (survey (S.combinedFace confusion))) (1, 0)
     rally <- S.printingOf s registry "Rally the Righteous"
     Spec.assertEqWith s "Rally the Righteous's two CR 105.2 atoms are in its ObjectRefs" (boundCreatureTypeCounts (survey (S.combinedFace rally))) (2, 0)
+    animosity <- S.printingOf s registry "Shared Animosity"
+    Spec.assertEqWith s "Shared Animosity's atom is in its ModifyTarget's locked amount" (boundCreatureTypeCounts (survey (S.combinedFace animosity))) (1, 0)
     -- The lint's own proof, the pair differing in one position: the same atom in
     -- a static restriction's affected set, read through a bare contextFor.
     Spec.assertBool s (boundCreatureTypeOffends (survey restricted)) "the atom in an affected set offends"
@@ -3192,7 +3194,7 @@ filterPositionLintSpec s registry corpus = Spec.describe s "Lint" $ do
         (HandSweepFramed, [bound]),
         (ClauseGateFramed, [bound]),
         (RepeatGateFramed, [bound]),
-        (LifeLossAmountFramed, [bound]),
+        (ResolutionAmountFramed, [bound]),
         (AffectedSetFramed, [bound]),
         (ActivationCostFramed, [bound]),
         (ManaRestrictionFramed, [bound]),
@@ -3885,7 +3887,7 @@ filterPositionLintSpec s registry corpus = Spec.describe s "Lint" $ do
   -- each is asserted through framedNameCounts as well as the predicate -- the
   -- counts say the TRAVERSAL put it in that position, where the predicate alone is
   -- also satisfied by the codec half noticing an atom the traversal missed.
-  Spec.it s "the lint itself catches a framed Shares Name outside a mode's target slot, a search filter, a hand sweep, a life loss amount, an effect's object, a clause's if or a discard cost" $ do
+  Spec.it s "the lint itself catches a framed Shares Name outside a mode's target slot, a search filter, a hand sweep, a resolution's amount, an effect's object, a clause's if or a discard cost" $ do
     piker <- S.printingOf s registry "Goblin Piker"
     sorcerer <- S.printingOf s registry "Prodigal Sorcerer"
     harness <- S.printingOf s registry "Harness the Storm"
