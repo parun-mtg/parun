@@ -4368,6 +4368,26 @@ recordRoll controller throwers results = do
   Foldable.for_ (zip throwers results) $ \(thrower, result) ->
     State.modify' (Event.recordEvent (GameEvent.DieResultSettled DieResult.MkDieResult {DieResult.roller = thrower, DieResult.result = result}))
 
+-- | CR 614.12a: `act` run with every materialized-but-not-entered permanent
+-- (Scratch.enteringSubjects, Scratch.enteringBeside) out of the battlefield
+-- index, put back on the way out, so a cost paid inside a running entry loop
+-- can't tap or sacrifice one. Projection.boardAsEntering's subtraction without
+-- its return to origin: a cost reads the board, not a count. The scenario
+-- cr-614-12a-phyrexian-altar-paying-for-a-reflip-can-t-sacrifice-the-entering-molten-sentry
+-- proves it.
+withEnteringHeldOff :: Game a -> Game a
+withEnteringHeldOff act = do
+  gs <- State.get
+  let scratch = GameState.scratch gs
+      held = Set.intersection (GameState.battlefield gs) (Set.union (Scratch.enteringBeside scratch) (Map.keysSet (Scratch.enteringSubjects scratch)))
+  if Set.null held
+    then act
+    else do
+      State.modify' (\g -> g {GameState.battlefield = Set.difference (GameState.battlefield g) held})
+      result <- act
+      State.modify' (\g -> g {GameState.battlefield = Set.union (GameState.battlefield g) held})
+      pure result
+
 -- | The stamp on GameState that ActivationRestriction.DuringThrow reads and
 -- Effect.Rethrow asks against, open for `act` and restored on the way out so a
 -- roll nested inside the window's own resolution cannot leave it open.
