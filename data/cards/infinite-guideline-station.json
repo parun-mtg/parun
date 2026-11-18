@@ -96,6 +96,83 @@
               "value": {
                 "type": "Flying"
               }
+            },
+            {
+              "type": "GainAbility",
+              "value": {
+                "type": "Triggered",
+                "value": {
+                  "condition": {
+                    "type": "Attacks",
+                    "value": {
+                      "type": "Attacker",
+                      "value": {}
+                    }
+                  },
+                  "modal": {
+                    "modes": [
+                      {
+                        "clauses": [
+                          {
+                            "effects": [
+                              {
+                                "type": "Draw",
+                                "value": {
+                                  "player": {
+                                    "type": "Relative",
+                                    "value": "You"
+                                  },
+                                  "quantity": {
+                                    "type": "Count",
+                                    "value": {
+                                      "aggregation": {
+                                        "type": "Members"
+                                      },
+                                      "filter": {
+                                        "type": "And",
+                                        "value": [
+                                          {
+                                            "type": "Measures",
+                                            "value": {
+                                              "comparison": "AtLeast",
+                                              "measure": "ColorCount",
+                                              "operand": {
+                                                "type": "Literal",
+                                                "value": 2
+                                              }
+                                            }
+                                          },
+                                          {
+                                            "type": "HeldBy",
+                                            "value": {
+                                              "holder": "Controller",
+                                              "relation": "You"
+                                            }
+                                          }
+                                        ]
+                                      },
+                                      "scope": {
+                                        "type": "InZone",
+                                        "value": {
+                                          "player": {
+                                            "type": "Relative",
+                                            "value": "AnyPlayer"
+                                          },
+                                          "zone": "Battlefield"
+                                        }
+                                      }
+                                    }
+                                  }
+                                }
+                              }
+                            ]
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                }
+              }
             }
           ]
         }
@@ -182,77 +259,6 @@
                           },
                           "riders": {
                             "tapped": "Tapped"
-                          }
-                        }
-                      }
-                    ]
-                  }
-                ]
-              }
-            ]
-          }
-        },
-        {
-          "condition": {
-            "type": "Attacks",
-            "value": {
-              "type": "Attacker",
-              "value": {}
-            }
-          },
-          "modal": {
-            "modes": [
-              {
-                "clauses": [
-                  {
-                    "effects": [
-                      {
-                        "type": "Draw",
-                        "value": {
-                          "player": {
-                            "type": "Relative",
-                            "value": "You"
-                          },
-                          "quantity": {
-                            "type": "Count",
-                            "value": {
-                              "aggregation": {
-                                "type": "Members"
-                              },
-                              "filter": {
-                                "type": "And",
-                                "value": [
-                                  {
-                                    "type": "Measures",
-                                    "value": {
-                                      "comparison": "AtLeast",
-                                      "measure": "ColorCount",
-                                      "operand": {
-                                        "type": "Literal",
-                                        "value": 2
-                                      }
-                                    }
-                                  },
-                                  {
-                                    "type": "HeldBy",
-                                    "value": {
-                                      "holder": "Controller",
-                                      "relation": "You"
-                                    }
-                                  }
-                                ]
-                              },
-                              "scope": {
-                                "type": "InZone",
-                                "value": {
-                                  "player": {
-                                    "type": "Relative",
-                                    "value": "AnyPlayer"
-                                  },
-                                  "zone": "Battlefield"
-                                }
-                              }
-                            }
                           }
                         }
                       }
