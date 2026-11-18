@@ -682,10 +682,20 @@ modified context m more = do
   (change', defined) <- Continuous.modifications Continuous.Created (Target.number who) distributed context (ModifyTarget.modification m : more)
   -- Objects a change to power and toughness reaches again get "an
   -- additional" one: "That creature gets an additional +4/+4" (Wild Might).
-  let again = case ModifyTarget.modification m of
-        Modification.ModifyPowerToughness _ -> elem (ModifyTarget.ref m) (Target.pumped context)
+  -- Free for some of the objects an earlier change reached: "Creatures that
+  -- are green and/or white get an additional -2/-2" (Glistening Deluge).
+  let pumping = case ModifyTarget.modification m of
+        Modification.ModifyPowerToughness _ -> True
         _ -> False
-      changed = if again then (\(v, rest) -> v <> Text.pack " an additional" <> rest) (Text.breakOn (Text.pack " ") change') else change'
+      again = pumping && elem (ModifyTarget.ref m) (Target.pumped context)
+      narrower = case ModifyTarget.ref m of
+        ObjectRef.EachMatching f ->
+          let within r = case r of
+                ObjectRef.EachMatching g -> g /= f && all (`elem` conjuncts f) (conjuncts g)
+                _ -> False
+           in pumping && any within (Target.pumped context)
+        _ -> False
+      additional = (\(v, rest) -> v <> Text.pack " an additional" <> rest) (Text.breakOn (Text.pack " ") change')
       -- Some of the objects an earlier instruction changed "also" change:
       -- "White creatures you control also gain first strike" (Sanctified
       -- Charge), or all of them: "those creatures also gain vigilance"
@@ -702,6 +712,7 @@ modified context m more = do
            in any within (Target.earlier context)
         ref@(ObjectRef.InSlot _) -> elem ref (Target.earlier context)
         _ -> False
+  changed <- if again then [additional] else change' : [additional | narrower]
   change <- if among then [changed, Text.pack "also " <> changed] else [changed]
   lasting <- Continuous.duration (ModifyTarget.duration m)
   case lasting of

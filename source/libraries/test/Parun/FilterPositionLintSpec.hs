@@ -2265,8 +2265,9 @@ filterPositionLintSpec s registry corpus = Spec.describe s "Lint" $ do
     -- Weaver, Likeness Looter, Rydia, Summoner of Mist, Tamiyo, Compleated Sage, Synthetic Counted, Announced, Wide, Paired, Total and Divided
     -- Verdict, Synthetic Wide Muster on a modal trigger, Spell Blast and Detonate in a slot, and Fear of Change and Ornate Imitations in a reference
     -- pick, at the top level and
-    -- inside a ForEachNumber body; Isareth the Awakener in a reflexive delayed
-    -- ability's slot, whose amount the arming resolution's chosen X binds; Wishing
+    -- inside a ForEachNumber body; Isareth the Awakener and Halo Forager in a
+    -- reflexive delayed ability's slot, whose amount the arming resolution's
+    -- chosen X binds; Wishing
     -- Well in one, whose amount is its source's coin counters; Sidisi,
     -- Regent of the Mire, whose bound is X plus 1.
     --
@@ -2339,6 +2340,7 @@ filterPositionLintSpec s registry corpus = Spec.describe s "Lint" $ do
         ("Maralen, Fae Ascendant", 1),
         ("Mockingbird", 1),
         ("Isareth the Awakener", 1),
+        ("Halo Forager", 1),
         ("Wishing Well", 1),
         ("Sidisi, Regent of the Mire", 1),
         ("Jackdaw Savior", 1),
