@@ -50,6 +50,7 @@ import qualified Parun.Engine.Turn as Turn
 import qualified Parun.Extra.Integer as Integer
 import qualified Parun.Extra.Natural as Natural
 import qualified Parun.Types.AbilityName as AbilityName
+import qualified Parun.Types.ActiveCopy as ActiveCopy
 import qualified Parun.Types.ActivePlayerEffect as ActivePlayerEffect
 import qualified Parun.Types.ActiveReplacement as ActiveReplacement
 import qualified Parun.Types.Affected as Affected
@@ -69,6 +70,7 @@ import qualified Parun.Types.Compares as Compares
 import qualified Parun.Types.Condition as Condition.Type
 import qualified Parun.Types.ContinuousEffect as ContinuousEffect
 import qualified Parun.Types.Convoking as Convoking
+import qualified Parun.Types.CopyCoverage as CopyCoverage
 import Parun.Types.Cost (Cost)
 import qualified Parun.Types.Cost as Cost.Type
 import qualified Parun.Types.CostComponent as CostComponent
@@ -342,11 +344,12 @@ proposedFace :: ObjectId -> CardName.CardName -> GameState -> Maybe (Face.Face C
 proposedFace oid name gs = case fmap Object.facing (Game.lookupObject oid gs) of
   Nothing -> Nothing
   Just (Facing.FaceDown state) -> Just (Card.faceDownFace (FaceDownState.listed state))
-  -- CR 707.2: a copy stamp's half, or its cast-time values over the printed one.
+  -- CR 707.2: a copy stamp's half, or its cast-time values over the printed one,
+  -- and a stored copy row's spell abilities and type line besides.
   Just Facing.FaceUp -> do
-    obj <- Game.lookupObject oid gs
+    obj <- Game.lookupLayerOne oid gs
     card <- Game.cardOf oid gs
-    pure (Game.castingFaceNamed obj card name)
+    pure (Game.storedCopyFace oid gs (Game.castingFaceNamed obj card name))
 
 -- CR 304.1 / 702.8a: is this card one the rules let its controller cast whenever
 -- they have priority, rather than only in the sorcery-speed window? Two ways in,
@@ -2993,6 +2996,9 @@ castSpellWith perform timed offered applied widened pid oid name facing = Event.
           -- spell rather than the card. CR 601.2e's rejection puts `before` back,
           -- which puts the old name back with it.
           State.modify' (followIntoSpell (heldPermission oid held) oid sid)
+          -- A card a resolved copy effect covers is cast as the copy, for the
+          -- same step's reason: followCopyIntoSpell.
+          State.modify' (followCopyIntoSpell oid sid)
           -- CR 106.6: mana that may be spent only to cast THIS card names the
           -- spell it has just become, for the same step's reason.
           State.modify' (followIntoPools oid sid)
@@ -3479,6 +3485,22 @@ followIntoSpell permission old new gs = case permission of
      in gs
           { GameState.stored = (GameState.stored gs) {StoredEffects.replacements = fmap follow (StoredEffects.replacements (GameState.stored gs)), StoredEffects.delayedTriggers = fmap followDelayed (StoredEffects.delayedTriggers (GameState.stored gs))}
           }
+
+-- Bombardment's ruling of 2019-11-12: a card that is a Missile stops being one
+-- as it "changes zones other than by being cast as a Missile". So a resolved
+-- copy effect's fixed set (CR 611.2c) trades the card `old` for the spell `new`
+-- it becomes on the stack (CR 400.7), and the spell is announced, priced and
+-- resolved as the copy (CR 601.2a, 707.2). Its next move mints an id the set
+-- does not hold, so the spell leaving the stack leaves the copy behind. Proved
+-- by the scenario
+-- bombardment-makes-a-card-in-hand-a-missile-that-stays-one-as-it-is-cast.
+followCopyIntoSpell :: ObjectId -> ObjectId -> GameState -> GameState
+followCopyIntoSpell old new gs =
+  let follow row = case ActiveCopy.covers row of
+        CopyCoverage.These covered
+          | Set.member old covered -> row {ActiveCopy.covers = CopyCoverage.These (Set.insert new (Set.delete old covered))}
+        _ -> row
+   in gs {GameState.stored = (GameState.stored gs) {StoredEffects.copyEffects = fmap follow (StoredEffects.copyEffects (GameState.stored gs))}}
 
 -- CR 603.7g: the delayed triggered ability a static ability creates as its
 -- player takes the action it allows -- Spider Climb's "the controller of the

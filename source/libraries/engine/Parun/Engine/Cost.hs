@@ -664,7 +664,8 @@ candidateCostsGiven permitted pid name oid gs =
         Nothing -> []
         Just card ->
           let -- CR 707.2: the costs are copiable values, so a card carrying a
-              -- copy stamp or a conjured duplicate's values is priced off those
+              -- copy stamp, a stored copy row (`obj` is Game.lookupLayerOne's) or
+              -- a conjured duplicate's values is priced off those
               -- (Game.castingFaceOf).
               face = Projection.wipedFace spell (Game.castingFaceNamed obj card name)
               printed = Cost.MkCost {Cost.mana = Face.manaCost face, Cost.components = Face.additionalCosts face}
@@ -1303,7 +1304,7 @@ candidateCostsGiven permitted pid name oid gs =
                 -- CR 702.185a: warp names the hand, `warped`'s note.
                 Just Zone.Hand -> ordinary <> warped
                 _ -> ordinary
-   in case Game.lookupObject oid gs of
+   in case Game.lookupLayerOne oid gs of
         Nothing -> []
         Just obj | Facing.isFaceDown (Object.facing obj) -> [untagged faceDownCost]
         Just obj -> case Object.source obj of
