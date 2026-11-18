@@ -1,6 +1,6 @@
 {
-  "description": "CR 101.4 / 611.3a: Thieves' Auction exiles alice's Topsy Turvy, so its first round runs in the restored turn order alice, bob, carol; carol takes Topsy Turvy back, so the second round runs reversed",
-  "note": "Seated alice, bob, carol. Priority passes reversed before the spell resolves. In the second round alice takes the Forest and carol, next in the reversed order, the lone Island; bob gets nothing.",
+  "description": "CR 101.4 / 611.3a: Thieves' Auction exiles alice's Topsy Turvy, so its rounds run in the restored turn order alice, bob, carol, and the second round's last card goes to bob",
+  "note": "Seated alice, bob, carol. Priority passes reversed before the spell resolves. Five cards exiled: the first round takes three, the second gives alice the Forest and bob, next in the restored order, the lone Topsy Turvy; in the reversed order it would be carol's.",
   "board": {"active": "alice", "step": "PrecombatMain", "seats": [
     {"name": "alice", "manaPool": "RRRRRRR", "battlefield": [{"card": "Topsy Turvy"}, {"card": "Grizzly Bears"}], "hand": [{"card": "Thieves' Auction", "label": "auction"}], "library": [{"card": "Swamp"}, {"card": "Swamp"}, {"card": "Swamp"}]},
     {"name": "bob", "battlefield": [{"card": "Hill Giant"}, {"card": "Forest"}], "library": [{"card": "Swamp"}, {"card": "Swamp"}, {"card": "Swamp"}]},
@@ -13,12 +13,11 @@
     {"turn": 1, "step": "PrecombatMain", "player": "bob", "do": "Pass"},
     {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": {"Answer": {"prompt": "ChooseCardFromAmong", "with": "Hill Giant"}}},
     {"turn": 1, "step": "PrecombatMain", "player": "bob", "do": {"Answer": {"prompt": "ChooseCardFromAmong", "with": "Grizzly Bears"}}},
-    {"turn": 1, "step": "PrecombatMain", "player": "carol", "do": {"Answer": {"prompt": "ChooseCardFromAmong", "with": "Topsy Turvy"}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "carol", "do": {"Answer": {"prompt": "ChooseCardFromAmong", "with": "Island"}}},
     {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": {"Answer": {"prompt": "ChooseCardFromAmong", "with": "Forest"}}},
-    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Count": {"player": "alice", "zone": "Battlefield", "card": "Hill Giant", "count": 1}}},
-    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Count": {"player": "bob", "zone": "Battlefield", "card": "Grizzly Bears", "count": 1}}},
-    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Count": {"player": "carol", "zone": "Battlefield", "card": "Topsy Turvy", "count": 1}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Count": {"player": "bob", "zone": "Battlefield", "card": "Topsy Turvy", "count": 1}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Count": {"player": "carol", "zone": "Battlefield", "card": "Topsy Turvy", "count": 0}}},
     {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Count": {"player": "alice", "zone": "Battlefield", "card": "Forest", "count": 1}}},
-    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Count": {"player": "carol", "zone": "Battlefield", "card": "Island", "count": 1}}}
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Count": {"player": "bob", "zone": "Battlefield", "card": "Grizzly Bears", "count": 1}}}
   ]
 }
