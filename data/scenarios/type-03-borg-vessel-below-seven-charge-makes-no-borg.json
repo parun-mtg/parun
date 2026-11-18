@@ -16,12 +16,20 @@
               }
             ],
             "label": "vessel"
+          },
+          {
+            "card": "Plains",
+            "label": "p1"
           }
         ],
         "hand": [
           {
             "card": "Memnite",
             "label": "memnite"
+          },
+          {
+            "card": "Millstone",
+            "label": "millstone"
           }
         ],
         "library": [
