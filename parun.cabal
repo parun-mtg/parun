@@ -3531,6 +3531,7 @@ library types
     Parun.Types.MutateSide
     Parun.Types.NameChooser
     Parun.Types.NameInsertion
+    Parun.Types.NameReading
     Parun.Types.NamesAre
     Parun.Types.NameStickerTest
     Parun.Types.NewX

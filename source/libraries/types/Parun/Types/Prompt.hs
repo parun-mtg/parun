@@ -65,6 +65,7 @@ import qualified Parun.Types.MoveSpread as MoveSpread
 import qualified Parun.Types.MulliganDecision as MulliganDecision
 import qualified Parun.Types.MulliganOffer as MulliganOffer
 import qualified Parun.Types.MutateSide as MutateSide
+import qualified Parun.Types.NameReading as NameReading
 import qualified Parun.Types.NumberFloor as NumberFloor
 import qualified Parun.Types.ObjectId as ObjectId
 import qualified Parun.Types.OptionalDecision as OptionalDecision
@@ -172,12 +173,13 @@ data Prompt r where
   -- the pick is then RandomCard's. LookUpCard's reasons for carrying neither
   -- Decider nor PlayerId.
   ReferenceCards :: Filter.Filter Keyword.Keyword -> Maybe Integer -> Prompt [CardName.CardName]
-  -- | CR 612.7 / 108.1: every name in the Oracle card reference the filter
-  -- admits, judged off printed characteristics. Asked of the interpreter once per filter a live
-  -- Parun.Types.Modification's AddNamesMatching carries, since the projection
-  -- that reads the answer cannot ask. LookUpCard's reasons for carrying neither
-  -- Decider nor PlayerId.
-  ReferenceNames :: Filter.Filter Keyword.Keyword -> Prompt [CardName.CardName]
+  -- | CR 108.1: every name in the Oracle card reference the filter admits
+  -- under the reading, judged off printed characteristics. Asked of the
+  -- interpreter once per filter a live Parun.Types.Modification's
+  -- AddNamesMatching carries (CR 612.7), since the projection that reads the
+  -- answer cannot ask, and by a random card name (CR 201.4). LookUpCard's
+  -- reasons for carrying neither Decider nor PlayerId.
+  ReferenceNames :: NameReading.NameReading -> Filter.Filter Keyword.Keyword -> Prompt [CardName.CardName]
   -- | CR 706.4: which result of one roll instruction the roller uses (Valiant
   -- Endeavor's "roll two d6 and choose one result"); the answer indexes the
   -- results, which are in roll order and may compare equal. A choice and not a

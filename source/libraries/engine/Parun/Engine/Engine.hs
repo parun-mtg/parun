@@ -121,6 +121,7 @@ import qualified Parun.Types.Modal as Modal.Type
 import qualified Parun.Types.Mode as Mode
 import qualified Parun.Types.ModeIndex as ModeIndex
 import qualified Parun.Types.ModeSelection as ModeSelection
+import qualified Parun.Types.NameReading as NameReading
 import qualified Parun.Types.Object as Object
 import qualified Parun.Types.ObjectId as ObjectId
 import qualified Parun.Types.PastTurn as PastTurn
@@ -1369,7 +1370,7 @@ learnReferenceNames = do
   gs <- State.get
   let unasked = Set.filter (`Map.notMember` Bookkeeping.referenceNames (GameState.bookkeeping gs)) (Projection.referenceQueries gs)
   Monad.forM_ unasked $ \predicate -> do
-    names <- Game.ask (Prompt.ReferenceNames predicate)
+    names <- Game.ask (Prompt.ReferenceNames NameReading.OffStack predicate)
     State.modify' (\g -> g {GameState.bookkeeping = (GameState.bookkeeping g) {Bookkeeping.referenceNames = Map.insert predicate (Set.fromList names) (Bookkeeping.referenceNames (GameState.bookkeeping g))}})
 
 -- CR 117.5's settle, discarding the report; `performSettle` below is the same act.
