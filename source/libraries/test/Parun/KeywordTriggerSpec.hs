@@ -339,10 +339,9 @@ battleCrySpec s _ =
 prowessSpec :: (Monad m) => Spec.Spec m n -> Registry.Registry m -> n ()
 prowessSpec s _ =
   Spec.describe s "Prowess" $ do
-    -- CR 702.108b: "If a creature has multiple instances of prowess, each
-    -- triggers separately." Asked of the mint rather than of a board, as
-    -- battle cry's is: no card in this pool prints prowess twice and nothing
-    -- here grants it, so a second instance is unreachable through play.
+    -- CR 702.108b, asked of the mint. Through play, by the scenarios
+    -- `ruric-thar-biomagus-has-prowess-twice-and-draws-when-an-opponent-targets-it`
+    -- and, a face transformed into, `khenra-spellspear-transforms-and-each-of-gitaxian-spellstalkers-two-prowess-triggers`.
     Spec.it s "CR 702.108b each instance of prowess is its own ability" $ do
       Spec.assertEqWith s "prowess held twice is two abilities" (Keyword.triggeredAbilitiesOf (Map.singleton Keyword.Type.Prowess 2)) (fmap (Keyword.mintedTriggerBy Keyword.Type.Prowess) [Keyword.prowess, Keyword.prowess])
       Spec.assertEqWith s "and held once is one" (Keyword.triggeredAbilitiesOf (Map.singleton Keyword.Type.Prowess 1)) (fmap (Keyword.mintedTriggerBy Keyword.Type.Prowess) [Keyword.prowess])
