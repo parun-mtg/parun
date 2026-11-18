@@ -307,6 +307,10 @@ data LastKnown = MkLastKnown
     -- Object.designationValues as it left, `designations`' sibling. What Hydra
     -- Broodmaster's trigger reads once the Broodmaster is gone
     -- (data/scenarios/counter-keyword-trigger/cr-608-2h-hydra-broodmaster-destroyed-in-response-still-makes-two-2-2-hydras.json).
-    designationValues :: !(Map.Map Designation.Designation Natural.Natural)
+    designationValues :: !(Map.Map Designation.Designation Natural.Natural),
+    -- | CR 701.15b / 608.2h: the players who had goaded it -- Object.goadedBy as
+    -- it left; `characteristics` carries the projected PC.goadedBy. What Baeloth
+    -- Barrityl, Entertainer's dies trigger asks (data/scenarios/goad).
+    goadedBy :: !(Set.Set PlayerId.PlayerId)
   }
   deriving (Eq, Ord, Show)
