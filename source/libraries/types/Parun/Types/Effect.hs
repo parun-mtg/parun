@@ -389,7 +389,7 @@ data Effect card ability
     -- The payload's `duration` picks the road: absent, the copiable values are
     -- stamped onto the subject and last for good; stated (Mirrorweave), they are
     -- stored as a Parun.Types.ActiveCopy row that Parun.Engine.Expiry can end.
-    BecomeCopy (BecomeCopy.BecomeCopy ability)
+    BecomeCopy (BecomeCopy.BecomeCopy card ability)
   | -- | CR 707.10: put a copy of a spell or of an activated or triggered ability
     -- on the stack onto the stack (Twincast, Lithoform Engine), cloning the
     -- original stack object so CR 707.10's "all decisions made for it" carries
