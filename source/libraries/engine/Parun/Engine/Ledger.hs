@@ -56,7 +56,7 @@ logBetween :: GameState.GameState -> GameState.GameState -> Maybe (Seq.Seq Logge
 logBetween before after
   | MatchScope.gameNumber (GameState.match before) /= MatchScope.gameNumber (GameState.match after) = Nothing
   | TurnRegisters.turnNumber (GameState.turn after) == TurnRegisters.turnNumber (GameState.turn before) = past (TurnRegisters.events (GameState.turn after))
-  | TurnRegisters.turnNumber (GameState.turn after) == TurnRegisters.turnNumber (GameState.turn before) + 1 = fmap (<> TurnRegisters.events (GameState.turn after)) (past (Game.turnLog WhichTurn.LastTurn after))
+  | TurnRegisters.turnNumber (GameState.turn after) == TurnRegisters.turnNumber (GameState.turn before) + 1 = fmap (<> TurnRegisters.events (GameState.turn after)) (past (Game.turnLog WhichTurn.LastTurn Nothing after))
   | otherwise = Nothing
   where
     earlier = TurnRegisters.events (GameState.turn before)

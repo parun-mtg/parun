@@ -1034,7 +1034,7 @@ spellsCastLastTurnSpec s registry = Spec.describe s "SpellsCast at LastTurn" $ d
         handed = Engine.beginTurnOf S.bob (castAndResolve S.bob bobFog board)
     -- SPARSE: alice cast nothing and so has no entry at all, which every reader
     -- takes for 0.
-    Spec.assertEqWith s "bob cast one during alice's turn and alice cast none" (Game.castsPerPlayer (Game.turnLog WhichTurn.LastTurn handed)) (Map.fromList [(S.bob, 1)])
+    Spec.assertEqWith s "bob cast one during alice's turn and alice cast none" (Game.castsPerPlayer (Game.turnLog WhichTurn.LastTurn Nothing handed)) (Map.fromList [(S.bob, 1)])
     Spec.assertEqWith s "and CR 502.2's count still answers about alice alone" (Game.spellsCastLastTurn handed) 0
 
 -- The two names Ratchet, Field Medic // Ratchet, Rescue Racer prints. CR 701.28
