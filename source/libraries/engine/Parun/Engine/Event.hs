@@ -11857,6 +11857,10 @@ lastKnownFrom gs oid obj =
     -- to ask them of.
     (Projection.lapsedGrantsOf (Projection.fullView gs) characteristics oid gs)
     (Game.isTapped oid gs)
+    -- Unprinted: a face-down spell or exiled card leaving its zone is filed
+    -- face up here, so IsFaceDown asked of its record is unsupported; the lint
+    -- is Parun.FilterPositionLintSpec's "CR 608.2h no card asks IsFaceDown of
+    -- an object that left a zone other than the battlefield".
     (Game.isFaceDownPermanent oid gs)
     -- CR 701.60b's marks and their kin, per-incarnation (CR 400.7).
     (Object.designations obj)
