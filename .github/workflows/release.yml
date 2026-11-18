@@ -81,10 +81,21 @@ jobs:
       - uses: actions/attest-build-provenance@v4
         with:
           subject-path: assets/*
+      # Generated notes listing more PRs than a release body holds (125,000
+      # characters) shrink to their compare link.
       - run: |
+          generated=$(gh api "repos/$GITHUB_REPOSITORY/releases/generate-notes" \
+            -f tag_name="v$VERSION" -f target_commitish="$SHA" --jq .body)
+          if test "${#generated}" -gt 120000; then
+            generated=$(echo "$generated" | grep '^\*\*Full Changelog\*\*')
+          fi
+          {
+            echo "Each platform's archive holds the \`parun\` binary and the \`data\` directory it reads; set the \`parun_datadir\` environment variable to that directory's path."
+            echo
+            echo "$generated"
+          } > notes.md
           gh release create "v$VERSION" assets/* \
             --draft \
-            --generate-notes \
-            --notes "Each platform's archive holds the \`parun\` binary and the \`data\` directory it reads; set the \`parun_datadir\` environment variable to that directory's path." \
+            --notes-file notes.md \
             --target "$SHA" \
             --title "v$VERSION"
