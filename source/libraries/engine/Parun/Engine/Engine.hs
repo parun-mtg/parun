@@ -1883,6 +1883,13 @@ priorityDecision trail = do
                           Event.takingSpecialAction $ Planechase.roll performManaAbility p
                           grantAfterAction gs p
                           pure (PriorityWindow.Open trail')
+                        -- Pippa, Duchess of Dice's ruling: no stack, and
+                        -- the player keeps priority (Parun.Engine.Action's
+                        -- shownDieRerolls).
+                        Action.Type.RerollShownDie stated die -> do
+                          Resolve.rerollShownDieWith playSubgame p stated die
+                          grantAfterAction gs p
+                          pure (PriorityWindow.Open trail')
                         -- CR 116.2j / 702.106c: a special action too.
                         Action.Type.TurnConspiracyFaceUp oid -> do
                           Event.takingSpecialAction $ Conspiracy.turnFaceUp p oid

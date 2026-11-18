@@ -25,9 +25,9 @@
 module Parun.Engine.ManaAbility where
 
 import qualified Data.Foldable as Foldable
+import qualified Data.List as List
 import qualified Data.Map.Strict as Map
 import qualified Data.Maybe as Maybe
-import qualified Data.Set as Set
 import qualified Parun.Engine.Loyalty as Loyalty
 import qualified Parun.Engine.Modal as Modal
 import qualified Parun.Types.AbilityKind as AbilityKind
@@ -117,13 +117,14 @@ isManaAbility ab =
         && not (any costMovesLibraryCard (Cost.components (ActivatedAbility.cost ab)))
         && not (Loyalty.isLoyaltyCost (ActivatedAbility.cost ab))
 
--- CR 605.1a's kind of each ability on a roster, plus CR 305.6's intrinsic mana
--- ability where `intrinsic` says the object has one, since no roster holds it:
--- Filter.View's activatedAbilityKinds, filled by every view builder through
--- this one function so that they cannot disagree about one object.
-abilityKinds :: Bool -> [ActivatedAbility.ActivatedAbility Card.Type.Card (GrantedAbility.GrantedAbility Card.Type.Card)] -> Set.Set AbilityKind.AbilityKind
+-- CR 605.1a's kind of each ability on a roster, plus one mana ability for each
+-- of the `intrinsic` CR 305.6 abilities the object has, since no roster holds
+-- them: Filter.View's activatedAbilityKinds, filled by every view builder
+-- through this one function so that they cannot disagree about one object. One
+-- entry per ability, sorted, CR 113.2c's instances each counting.
+abilityKinds :: Int -> [ActivatedAbility.ActivatedAbility Card.Type.Card (GrantedAbility.GrantedAbility Card.Type.Card)] -> [AbilityKind.AbilityKind]
 abilityKinds intrinsic roster =
-  Set.fromList ([AbilityKind.ManaAbility | intrinsic] <> fmap (\ab -> if isManaAbility ab then AbilityKind.ManaAbility else AbilityKind.NonManaAbility) roster)
+  List.sort (replicate intrinsic AbilityKind.ManaAbility <> fmap (\ab -> if isManaAbility ab then AbilityKind.ManaAbility else AbilityKind.NonManaAbility) roster)
 
 -- CR 605.1b: a TRIGGERED ability is a mana ability if it doesn't require a
 -- target, triggers from the activation or resolution of an activated mana
@@ -409,6 +410,7 @@ manaProduced effect = case effect of
   Effect.AsYouCascade {} -> Nothing
   Effect.Explore {} -> Nothing
   Effect.Assemble {} -> Nothing
+  Effect.Reassemble {} -> Nothing
   Effect.Crank -> Nothing
   Effect.Connive {} -> Nothing
   Effect.Discard {} -> Nothing
@@ -626,6 +628,7 @@ playerChoice effect = case effect of
   Effect.AsYouCascade {} -> Nothing
   Effect.Explore {} -> Nothing
   Effect.Assemble {} -> Nothing
+  Effect.Reassemble {} -> Nothing
   Effect.Crank -> Nothing
   Effect.Connive {} -> Nothing
   Effect.Discard {} -> Nothing
@@ -849,6 +852,7 @@ movesLibraryCard effect = case effect of
   Effect.OpenAttraction -> False
   Effect.RollToVisit -> False
   Effect.Assemble {} -> False
+  Effect.Reassemble {} -> False
   Effect.Crank -> False
   Effect.Planeswalk {} -> False
   Effect.ChaosEnsues {} -> False

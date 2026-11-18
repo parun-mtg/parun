@@ -281,6 +281,7 @@ bot names = Answerer.MkAnswerer $ \asked -> case Asked.prompt asked of
   Prompt.ChooseAssistant _ _ _ players -> orNone (NonEmpty.toList players)
   Prompt.ChooseCompanion _ _ companions -> orNone (NonEmpty.toList companions)
   Prompt.ChooseEncode _ _ _ candidates -> orNone (NonEmpty.toList candidates)
+  Prompt.ChooseRerolledDie _ _ _ candidates -> orNone (NonEmpty.toList candidates)
   Prompt.ChooseEnlist _ _ _ candidates -> orNone (NonEmpty.toList candidates)
   Prompt.ChooseLearn _ _ _ modes -> orNone (NonEmpty.toList modes)
   Prompt.ChooseMovedCounterOrNone _ _ _ _ kinds -> orNone (NonEmpty.toList kinds)

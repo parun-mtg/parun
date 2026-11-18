@@ -1938,9 +1938,9 @@ viewOfSnapshot deploy mController mOwner isToken counters zone home lapsed snaps
       -- and `power` too -- so this answers what the object HAD at the event,
       -- through abilitiesOf, the roster every view builder reads, less what CR
       -- 604.2 withheld (snapshotRoster).
-      Filter.activatedAbilityKinds = ManaAbility.abilityKinds (Subtype.intrinsicManaAbilityOf snapshot) (snapshotRoster deploy zone home lapsed snapshot),
+      Filter.activatedAbilityKinds = ManaAbility.abilityKinds (length (Subtype.intrinsicManaOf snapshot)) (snapshotRoster deploy zone home lapsed snapshot),
       -- CR 113.1a off the snapshot, `activatedAbilityKinds` above beside it.
-      Filter.hasAbility = characteristicsHaveAbility (ManaAbility.abilityKinds (Subtype.intrinsicManaAbilityOf snapshot) (snapshotRoster deploy zone home lapsed snapshot)) snapshot,
+      Filter.hasAbility = characteristicsHaveAbility (ManaAbility.abilityKinds (length (Subtype.intrinsicManaOf snapshot)) (snapshotRoster deploy zone home lapsed snapshot)) snapshot,
       -- CR 702.184c off the snapshot, which carries the field: the marker
       -- outlives the object exactly as a keyword or a P/T does.
       Filter.controllerGrants = PC.controllerGrants snapshot,
@@ -1973,9 +1973,9 @@ grantHeld lapsed = maybe True (`Set.notMember` lapsed) . ActivatedAbility.condit
 -- CR 306.5b's and CR 310.4b's intrinsic abilities, count unless that wipe
 -- applied (PC.lostAllAbilities). Spell abilities count on an instant or a
 -- sorcery only (CR 113.3a).
-characteristicsHaveAbility :: Set.Set AbilityKind.AbilityKind -> PC.ProjectedCharacteristics -> Bool
+characteristicsHaveAbility :: [AbilityKind.AbilityKind] -> PC.ProjectedCharacteristics -> Bool
 characteristicsHaveAbility activated pc =
-  not (Set.null activated)
+  not (null activated)
     || not (Map.null (PC.keywords pc))
     || not (null (PC.lentKeywords pc))
     || Maybe.isJust (PC.characteristicPT pc)

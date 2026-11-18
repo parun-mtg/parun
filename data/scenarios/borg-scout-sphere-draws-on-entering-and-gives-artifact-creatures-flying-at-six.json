@@ -1,0 +1,44 @@
+{
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "name": "alice",
+        "battlefield": [{ "card": "Hill Giant", "label": "g1", "ready": true }, { "card": "Hill Giant", "label": "g2", "ready": true }, { "card": "Memnite", "label": "memnite" }, { "card": "Grizzly Bears", "label": "bears" }],
+        "hand": [{ "card": "Borg Scout Sphere", "label": "sphere" }],
+        "library": [{ "card": "Divination" }, { "card": "Island" }, { "card": "Island" }, { "card": "Island" }, { "card": "Island" }, { "card": "Island" }],
+        "manaPool": "UCC"
+      },
+      {
+        "name": "bob",
+        "battlefield": [{ "card": "Bronze Sable", "label": "sable" }],
+        "library": [{ "card": "Island" }, { "card": "Island" }, { "card": "Island" }, { "card": "Island" }, { "card": "Island" }, { "card": "Island" }]
+      }
+    ],
+    "step": "PrecombatMain"
+  },
+  "description": "CR 702.184a, 722.2b, 722.2a: Borg Scout Sphere draws a card as it enters, and at six or more charge counters is a 5/5 artifact creature and gives artifact creatures its controller controls flying",
+  "note": "One Hill Giant stations three counters, short of six: Memnite has no flying and the Sphere is no creature. The second makes six exactly; then Memnite and the Sphere fly, while the Grizzly Bears (not an artifact) and bob's Bronze Sable (not alice's) do not.",
+  "timeline": [
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": { "Cast": { "object": "$sphere" } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass" },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass" },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "Count": { "card": "Divination", "count": 1, "player": "alice", "zone": "Hand" } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": { "Answer": { "prompt": "ChooseTaps", "with": ["$g1"] } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": { "Activate": { "ability": 0, "object": "Borg Scout Sphere" } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass" },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "Counters": { "count": 3, "kind": { "type": "Named", "value": "charge" }, "object": "Borg Scout Sphere" } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "Types": { "object": "Borg Scout Sphere", "types": ["Artifact"] } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "Keywords": { "count": 0, "keyword": { "type": "Flying" }, "object": "$memnite" } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": { "Answer": { "prompt": "ChooseTaps", "with": ["$g2"] } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": { "Activate": { "ability": 0, "object": "Borg Scout Sphere" } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass" },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "Counters": { "count": 6, "kind": { "type": "Named", "value": "charge" }, "object": "Borg Scout Sphere" } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "Types": { "object": "Borg Scout Sphere", "types": ["Artifact", "Creature"] } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "PowerToughness": { "object": "Borg Scout Sphere", "power": 5, "toughness": 5 } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "Keywords": { "count": 1, "keyword": { "type": "Flying" }, "object": "Borg Scout Sphere" } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "Keywords": { "count": 1, "keyword": { "type": "Flying" }, "object": "$memnite" } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "Keywords": { "count": 0, "keyword": { "type": "Flying" }, "object": "$bears" } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "Keywords": { "count": 0, "keyword": { "type": "Flying" }, "object": "$sable" } } }
+  ]
+}

@@ -554,6 +554,9 @@ data Response
   | -- | CR 702.99a: the creature a spell with cipher was encoded on (Nothing =
     -- declined), ChoseEnlist's reason for being distinct.
     ChoseEncode (Maybe ObjectId.ObjectId)
+  | -- | CR 706.2b: the Die creature a reroll inside a roll rerolled (Nothing =
+    -- the die or coin under way), ChoseEnlist's reason for being distinct.
+    ChoseRerolledDie (Maybe ObjectId.ObjectId)
   | -- | CR 303.4k: whether an Aura being turned face up exercised its printed
     -- "you may attach it" (Exercises) or left itself unattached (Declines).
     -- Distinct from ChoseRiot and ChosePayLifeOnEntry for their own reason, one

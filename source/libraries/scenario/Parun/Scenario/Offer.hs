@@ -55,6 +55,7 @@ offer namer gs action = R.Object ((Text.pack "action", R.Text (Text.pack kind)) 
       Action.MakeLaterPayment oid _ -> ("MakeLaterPayment", on oid)
       Action.PayLifeForMana life mana -> ("PayLifeForMana", [("life", natural life), ("mana", Reply.encode (Reply.viaCodec Codec.ManaType.codec) namer mana)])
       Action.RollPlanarDie -> ("RollPlanarDie", [])
+      Action.RerollShownDie stated die -> ("RerollShownDie", on stated <> [("die", Reply.encode Reply.object namer die)])
     on :: ObjectId.ObjectId -> [(String, R.Reply)]
     on oid = [("object", Reply.encode Reply.object namer oid)]
     named name = [("name", R.Text (CardName.unwrap name))]

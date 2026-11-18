@@ -218,6 +218,7 @@ encode p answer = case p of
   Prompt.ChooseRevealOnEntry {} -> Response.ChoseRevealOnEntry answer
   Prompt.ChooseEnlist {} -> Response.ChoseEnlist answer
   Prompt.ChooseEncode {} -> Response.ChoseEncode answer
+  Prompt.ChooseRerolledDie {} -> Response.ChoseRerolledDie answer
   Prompt.ChooseColor {} -> Response.ChoseColor answer
   Prompt.ChooseDesignation {} -> Response.ChoseDesignation answer
   Prompt.ChooseManaType {} -> Response.ChoseManaType answer
@@ -607,6 +608,9 @@ decode p response = case p of
     _ -> Nothing
   Prompt.ChooseEncode {} -> case response of
     Response.ChoseEncode m -> Just m
+    _ -> Nothing
+  Prompt.ChooseRerolledDie {} -> case response of
+    Response.ChoseRerolledDie m -> Just m
     _ -> Nothing
   Prompt.ChooseColor {} -> case response of
     Response.ChoseColor c -> Just c
@@ -1231,6 +1235,9 @@ defaultAnswer p = case p of
   -- CR 702.99a: declining, which the printed "may" permits; the card goes to
   -- its owner's graveyard as usual (CR 608.2n).
   Prompt.ChooseEncode {} -> Nothing
+  -- CR 706.2b: the die or coin under way, what the reroll reached before a
+  -- Die creature could be chosen.
+  Prompt.ChooseRerolledDie {} -> Nothing
   -- CR 105.1: any of the five colours is a legal answer.
   Prompt.ChooseColor _ _ _ colors -> NonEmpty.head colors
   Prompt.ChooseDesignation _ _ _ sectors -> NonEmpty.head sectors

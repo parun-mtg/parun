@@ -705,6 +705,7 @@ applyOneEffect runSubgame resolving source controller legal chosen effect = case
   Effect.OpenAttraction -> Counters.openAttraction (settleWith runSubgame) controller
   Effect.RollToVisit -> rollToVisit runSubgame controller
   Effect.Assemble payload -> Counters.assemble (settleWith runSubgame) resolving source controller legal payload
+  Effect.Reassemble payload -> Counters.reassemble applyEffectWith runSubgame resolving source controller legal chosen payload
   Effect.Crank -> Counters.crank controller
   Effect.Planeswalk ref -> Counters.planeswalk resolving source controller legal ref
   Effect.ChaosEnsues ref -> Counters.chaosEnsues resolving source controller legal ref
@@ -1567,6 +1568,21 @@ reflipWindow runSubgame flipper face = do
   offers <- State.gets (fmap (\(pid, oid, ability) -> (pid, Just oid, (oid, ability))) . windowAbilities)
   offering offers
 
+-- | Action.RerollShownDie: `payer` takes the reroll the modifier `stated`
+-- states on the die permanent `die` (Dice.shownDieRerolls), paying CR 706.2a's
+-- cost through payGateCost, and the die's roller rerolls it
+-- (Damage.rerollShownDie). A payment that fails leaves the die as it was.
+rerollShownDieWith :: Game Result -> PlayerId -> ObjectId -> ObjectId -> Game ()
+rerollShownDieWith runSubgame payer stated die = do
+  gs <- State.get
+  Foldable.for_ (List.find (\(s, _, d, _) -> s == stated && d == die) (Dice.shownDieRerolls gs)) $ \(_, offer, _, roller) -> do
+    paid <- case ModifiedRoll.cost offer of
+      Nothing -> pure True
+      Just cost -> fmap (Maybe.isJust . fst) (payGateCost runSubgame Seq.empty Map.empty payer stated cost)
+    Monad.when paid $ do
+      State.modify' (Dice.spendLimit (Just stated) offer)
+      Damage.rerollShownDie throwDice runSubgame roller die
+
 -- Activate an ability inside throwDice's or reflipWindow's window and resolve
 -- it at once, answering whether it was paid for. The payment is Parun.Engine.Activate's
 -- activateAbility without the stack object: CR 602.2b's cost, with CR 601.2f's
@@ -1576,8 +1592,12 @@ reflipWindow runSubgame flipper face = do
 --
 -- The effects then run as performManaAbilityEffects runs a mana ability's, the
 -- source standing in for the ability object.
+--
+-- A window opened by an entry's flip (Molten Sentry) falls inside runEntry's
+-- loop, so the whole activation runs with the entering permanents held off the
+-- battlefield (Common.withEnteringHeldOff, CR 614.12a).
 activateWhileRolling :: Game Result -> PlayerId -> ObjectId -> ActivatedAbility.ActivatedAbility Card.Type.Card (GrantedAbility.GrantedAbility Card.Type.Card) -> Game Bool
-activateWhileRolling runSubgame pid oid ability = Event.activating $ do
+activateWhileRolling runSubgame pid oid ability = Common.withEnteringHeldOff . Event.activating $ do
   before <- State.get
   -- CR 602.2b: recorded with no stack object to name, and under way as such.
   let activation = AbilityWasActivated.MkAbilityWasActivated {AbilityWasActivated.player = pid, AbilityWasActivated.ability = Nothing, AbilityWasActivated.source = oid, AbilityWasActivated.facts = Game.abilityFacts AbilityKind.NonManaAbility (Just ability), AbilityWasActivated.activationCost = Cost.Type.mana (ActivatedAbility.cost ability)}

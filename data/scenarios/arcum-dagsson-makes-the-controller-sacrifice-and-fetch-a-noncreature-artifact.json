@@ -1,0 +1,32 @@
+{
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "name": "alice",
+        "battlefield": [{ "card": "Arcum Dagsson", "label": "arcum", "ready": true }, { "card": "Memnite", "label": "mine" }],
+        "library": [{ "card": "Darksteel Relic" }, { "card": "Island" }, { "card": "Island" }, { "card": "Island" }, { "card": "Island" }, { "card": "Island" }]
+      },
+      {
+        "name": "bob",
+        "battlefield": [{ "card": "Ornithopter", "label": "thopter" }, { "card": "Grizzly Bears", "label": "bears" }],
+        "library": [{ "card": "Bronze Sable", "label": "sable" }, { "card": "Sol Ring", "label": "ring" }, { "card": "Island", "label": "i1" }]
+      }
+    ],
+    "step": "PrecombatMain"
+  },
+  "description": "CR 701.21a, 701.23a: Arcum Dagsson's target artifact creature's controller sacrifices it, then that player may search for a noncreature artifact card and put it onto the battlefield",
+  "note": "Bob, the Ornithopter's controller, sacrifices it and searches his own library: his Sol Ring is found, his Bronze Sable (an artifact creature) is not offered. Alice's library holds a Darksteel Relic, which the search would find were it hers. Grizzly Bears, not an artifact, is no legal target; alice's own Memnite is, so the target is a real choice.",
+  "timeline": [
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "refuse": { "Activate": { "object": "$arcum", "targets": ["$bears"] } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": { "Activate": { "object": "$arcum", "targets": ["$thopter"] } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass" },
+    { "turn": 1, "step": "PrecombatMain", "player": "bob", "do": { "ChooseOptional": "Exercises" } },
+    { "turn": 1, "step": "PrecombatMain", "player": "bob", "refuse": { "Answer": { "prompt": "Search", "with": ["$sable"] } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "bob", "do": { "Answer": { "prompt": "Search", "with": ["$ring"] } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": { "Answer": { "prompt": "Shuffle", "with": ["$i1", "$sable"] } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "Count": { "card": "Ornithopter", "count": 1, "player": "bob", "zone": "Graveyard" } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "Count": { "card": "Sol Ring", "count": 1, "player": "bob", "zone": "Battlefield" } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "Count": { "card": "Darksteel Relic", "count": 0, "player": "alice", "zone": "Battlefield" } } }
+  ]
+}

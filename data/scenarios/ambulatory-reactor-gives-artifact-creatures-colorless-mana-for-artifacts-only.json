@@ -1,0 +1,30 @@
+{
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "name": "alice",
+        "battlefield": [{ "card": "Ambulatory Reactor", "label": "reactor", "ready": true }, { "card": "Ornithopter", "label": "thopter", "ready": true }, { "card": "Grizzly Bears", "label": "bears", "ready": true }, { "card": "Forest", "label": "forest" }, { "card": "Forest", "label": "forest2" }],
+        "hand": [{ "card": "Sol Ring", "label": "ring" }, { "card": "Runeclaw Bear", "label": "runeclaw" }],
+        "library": [{ "card": "Island" }, { "card": "Island" }, { "card": "Island" }, { "card": "Island" }, { "card": "Island" }, { "card": "Island" }]
+      },
+      {
+        "name": "bob",
+        "library": [{ "card": "Island" }, { "card": "Island" }, { "card": "Island" }, { "card": "Island" }, { "card": "Island" }, { "card": "Island" }]
+      }
+    ],
+    "step": "PrecombatMain"
+  },
+  "description": "CR 106.6, 605.1a, 613.1f: Ambulatory Reactor gives each artifact creature its controller controls a {C} ability whose mana pays only for artifacts",
+  "note": "The Ornithopter's {C} casts Sol Ring. The Reactor's own {C}, made while paying for Runeclaw Bear, a creature spell that is not an artifact, pays none of it: it stays in the pool and the second Forest pays.",
+  "timeline": [
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": { "Cast": { "object": "$ring", "mana": ["$thopter", null] } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "Tapped": { "object": "$thopter", "tapped": true } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass" },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "Count": { "card": "Sol Ring", "count": 1, "player": "alice", "zone": "Battlefield" } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": { "Cast": { "object": "$runeclaw", "mana": ["$forest", "$reactor", "$forest2", null] } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass" },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "Count": { "card": "Runeclaw Bear", "count": 1, "player": "alice", "zone": "Battlefield" } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "View": { "of": "ManaPool", "player": "alice", "is": [{ "manaType": { "type": "Colorless" }, "tags": ["Artifact"], "retention": "Ordinary", "restriction": { "casts": { "type": "HasCardType", "value": "Artifact" }, "activations": { "type": "HasCardType", "value": "Artifact" } }, "rider": null, "sourceChoices": null }] } } }
+  ]
+}

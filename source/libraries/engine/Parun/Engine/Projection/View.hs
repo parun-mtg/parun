@@ -131,7 +131,7 @@ viewOfCardLapsed :: Set Condition.Type.Condition -> Face.Face Card.Type.Card -> 
 viewOfCardLapsed lapsed face =
   let typeLine = Face.typeLine face
       roster = filter (Count.grantHeld lapsed) (printedAbilitiesOf face)
-      activated = ManaAbility.abilityKinds (Subtype.intrinsicManaAbility (TypeLine.types typeLine) (TypeLine.subtypes typeLine)) roster
+      activated = ManaAbility.abilityKinds (length (Subtype.intrinsicMana (TypeLine.types typeLine) (TypeLine.subtypes typeLine))) roster
    in Filter.MkView
         { -- CR 201.1 off the printed FACE. A multi-faced card's combined view
           -- carries the halves joined for rendering (Engine.Card.merge2); CR
@@ -384,9 +384,9 @@ viewOfCardLapsed lapsed face =
 -- function before play only (CR 103.5's mulligan and CR 103.6's opening-hand
 -- actions). A REGRESSION FENCE: a card in a game is read through its
 -- projection, and no card in the pool asks this of a card outside one.
-printedHasAbility :: Set AbilityKind.AbilityKind -> Face.Face Card.Type.Card -> Bool
+printedHasAbility :: [AbilityKind.AbilityKind] -> Face.Face Card.Type.Card -> Bool
 printedHasAbility activated face =
-  not (Set.null activated)
+  not (null activated)
     || not (Map.null (Face.keywords face))
     || Maybe.isJust (Face.characteristicPT face)
     || Maybe.isJust (Face.characteristicColors face)
@@ -971,11 +971,11 @@ viewOfCharacteristics peers oid pc controller counters gs =
       -- PROJECTION, so a land that lost its basic land type in layer 4 has lost
       -- the ability with it (CR 305.7) and one that lost all its abilities in
       -- layer 6 has too (CR 613.1f).
-      Filter.activatedAbilityKinds = ManaAbility.abilityKinds (Subtype.intrinsicManaAbilityOf pc) (abilitiesFromCharacteristics peers pc oid gs),
+      Filter.activatedAbilityKinds = ManaAbility.abilityKinds (length (Subtype.intrinsicManaOf pc)) (abilitiesFromCharacteristics peers pc oid gs),
       -- CR 113.1a off the PROJECTION, `activatedAbilityKinds` above among its
       -- disjuncts: a layer-6 grant or wipe moves it (CR 613.1f), and a face-down
       -- permanent's projection holds no ability (CR 708.2a).
-      Filter.hasAbility = Count.characteristicsHaveAbility (ManaAbility.abilityKinds (Subtype.intrinsicManaAbilityOf pc) (abilitiesFromCharacteristics peers pc oid gs)) pc,
+      Filter.hasAbility = Count.characteristicsHaveAbility (ManaAbility.abilityKinds (length (Subtype.intrinsicManaOf pc)) (abilitiesFromCharacteristics peers pc oid gs)) pc,
       -- CR 702.184c / 702.179d off the PROJECTION, applyModification's GrantsController
       -- arm being layer 6's only writer.
       Filter.controllerGrants = PC.controllerGrants pc,

@@ -1790,9 +1790,11 @@ landFacesOf obj card = case copyStampOf obj of
 copiableNamesOf :: Object.Object -> Card -> Set.Set CardName.CardName
 copiableNamesOf obj card = maybe (Card.combinedNames card) PC.names (copyStampOf obj)
 
--- castableFacesOf above for a caller that holds only the id.
+-- castableFacesOf above for a caller that holds only the id, asked of the
+-- object as layer 1a leaves it (`lookupLayerOne`): the scenario
+-- bombardment-leaves-a-split-card-no-half-to-cast-for-its-own-cost proves it.
 castableFacesOfId :: ObjectId -> GameState -> [Face Card]
-castableFacesOfId oid gs = case (lookupObject oid gs, cardOf oid gs) of
+castableFacesOfId oid gs = case (lookupLayerOne oid gs, cardOf oid gs) of
   (Just obj, Just card) -> castableFacesOf obj card
   _ -> []
 
@@ -2471,6 +2473,16 @@ flipsOver oid gs = Set.member oid (GameState.battlefield gs) && hasFlipHalf oid 
 -- arms -- reach it through `lookupLayerOne` below.
 storedCopyOf :: ObjectId -> GameState -> Maybe PC.ProjectedCharacteristics
 storedCopyOf oid = fmap ActiveCopy.snapshot . latestStoredCopy oid
+
+-- CR 707.2: `face` with the spell abilities and type line of the stored copy
+-- row covering the spell `oid` laid over it, and `face` itself where no row
+-- covers it. The face a card that is a Missile is cast as
+-- (Parun.Engine.Cast.proposedFace) and, once Parun.Engine.Cast.followCopyIntoSpell
+-- has carried the row onto the spell, resolved as.
+storedCopyFace :: ObjectId -> GameState -> Face Card -> Face Card
+storedCopyFace oid gs face = case storedCopyOf oid gs of
+  Nothing -> face
+  Just copied -> face {Face.spell = PC.spell copied, Face.typeLine = TypeLine.MkTypeLine (PC.supertypes copied) (PC.cardTypes copied) (PC.subtypes copied)}
 
 -- The row `storedCopyOf` reads: the latest stored copy effect covering the
 -- object (CR 613.7).

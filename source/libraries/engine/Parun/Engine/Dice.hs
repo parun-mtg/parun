@@ -22,12 +22,14 @@ import Parun.Types.Game (Game)
 import Parun.Types.GameState (GameState)
 import qualified Parun.Types.GameState as GameState
 import qualified Parun.Types.ModifiedRoll as ModifiedRoll
+import qualified Parun.Types.Object as Object
 import Parun.Types.ObjectId (ObjectId)
 import qualified Parun.Types.PermissionLimit as PermissionLimit
 import Parun.Types.PlayerId (PlayerId)
 import qualified Parun.Types.Prompt as Prompt
 import qualified Parun.Types.RerollReach as RerollReach
 import qualified Parun.Types.RollModifier as RollModifier
+import qualified Parun.Types.ShownDie as ShownDie
 import qualified Parun.Types.TurnRegisters as TurnRegisters
 
 -- | The CR 706.2 modifiers in force over the rolls `pid` is making, read fresh
@@ -68,6 +70,24 @@ rerollOffers reach sides natural modifiers =
           && all (== sides) (ModifiedRoll.sides modifier)
           && all (\stated -> natural == Just stated) (ModifiedRoll.natural modifier)
    in filter (matches . snd) modifiers
+
+-- | Pippa, Duchess of Dice's ruling ("Die creatures ... can be rerolled at any
+-- time ... by effects of cards like Wall of Fortune"): each reroll modifier
+-- reaching a permanent that is a die outside any roll, with the object stating
+-- it, the die, and the player who rerolls it -- the die's owner, who rolled it
+-- (docs/decisions.md, "Who rolled a Die creature's die"). Only a modifier
+-- reaching that die alone and stating no number, `rerollOffers`'s Nothing:
+-- docs/decisions.md, "Whether Monitor Monitor rerolls a Die creature outside a
+-- roll". One with no object behind it has no payer and is not offered.
+shownDieRerolls :: GameState -> [(ObjectId, ModifiedRoll.ModifiedRoll, ObjectId, PlayerId)]
+shownDieRerolls gs =
+  [ (stated, offer, die, roller)
+  | die <- Game.diceOnBattlefield gs,
+    Just obj <- [Game.lookupObject die gs],
+    let roller = Object.owner obj,
+    Just shown <- [Object.die obj],
+    (Just stated, offer) <- rerollOffers RerollReach.ThatDie (ShownDie.sides shown) Nothing (PlayerEffect.rollModifiers roller gs)
+  ]
 
 -- | CR 706.2b's SECOND step: which of the modifiers in force offer to increase
 -- or decrease the result of a die of `sides`, each tagged with the object that

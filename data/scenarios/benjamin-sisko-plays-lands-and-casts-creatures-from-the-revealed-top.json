@@ -1,0 +1,29 @@
+{
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "name": "alice",
+        "battlefield": [{ "card": "Benjamin Sisko, Besieged", "label": "sisko" }],
+        "library": [{ "card": "Memnite", "label": "memnite" }, { "card": "Forest", "label": "forest" }, { "card": "Sol Ring", "label": "ring" }, { "card": "Island" }, { "card": "Island" }, { "card": "Island" }]
+      },
+      {
+        "name": "bob",
+        "library": [{ "card": "Island" }, { "card": "Island" }, { "card": "Island" }, { "card": "Island" }, { "card": "Island" }, { "card": "Island" }]
+      }
+    ],
+    "step": "PrecombatMain"
+  },
+  "description": "CR 401.5, 601.3, 305.1: Benjamin Sisko reveals the top of its controller's library to everyone and lets them play a land or cast a creature spell from there, but not another spell",
+  "note": "Bob sees the top card. Memnite is cast from the top and the Forest under it is played; the Sol Ring then on top is no creature and stays put, though the untapped Forest could pay for it.",
+  "timeline": [
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "View": { "of": "Seers", "object": "$memnite", "is": ["alice", "bob"] } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": { "Cast": { "object": "$memnite" } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass" },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": { "PlayLand": "$forest" } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "refuse": { "Cast": { "object": "$ring", "mana": ["Forest"] } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "Count": { "card": "Memnite", "count": 1, "player": "alice", "zone": "Battlefield" } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "Count": { "card": "Forest", "count": 1, "player": "alice", "zone": "Battlefield" } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "Count": { "card": "Sol Ring", "count": 1, "player": "alice", "zone": "Library" } } }
+  ]
+}

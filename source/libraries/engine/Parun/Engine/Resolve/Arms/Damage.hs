@@ -1660,29 +1660,39 @@ rollDieArm throwDice runSubgame resolving source controller legal rollDie = do
 -- once the ability is done, by throwSettled's `rethrow`, as the activating
 -- player's CR 706.1 roll; the coin by Parun.Engine.Event.settleCoins.
 --
--- With no window open, the reroll reaches a permanent that IS a die (Pippa,
--- Duchess of Dice's rulings: a Die creature "can be rerolled at any time"): the
--- controller chooses one (CR 608.2d, choose, not target), throws one die of its
--- kind through throwDice -- so CR 706.2's modifiers and CR 614.1a's
--- replacements reach it, and the throw is the controller's CR 706.1 roll, as
--- the same rulings have a reroll -- and the die shows the new result. No die,
--- and nothing happens.
---
--- Not implemented: a reroll offered inside another roll's window reaching a
--- Die creature rather than the die being rolled, and a die-roll modifier
--- reaching one outside its roll (Wall of Fortune's ruling) (#8521).
+-- A permanent that IS a die is "any die" too (Pippa, Duchess of Dice's
+-- rulings: a Die creature "can be rerolled at any time"). The controller
+-- chooses one (CR 608.2d, choose, not target) and `rerollShownDie` rerolls it
+-- as theirs; inside a roll the die or coin under way is a further answer
+-- (Prompt.ChooseRerolledDie), asked only where a Die creature stands. With no
+-- roll under way and no die, nothing happens.
 rethrow :: (Game Result -> PlayerId -> Natural -> Natural -> Natural -> Game Integer -> Game ([Natural], [PlayerId], [Natural])) -> Game Result -> ObjectId -> PlayerId -> Game ()
 rethrow throwDice runSubgame resolving controller = do
   gs <- State.get
+  let dice = Game.diceOnBattlefield gs
   if Maybe.isJust (Scratch.throwing (GameState.scratch gs))
-    then State.modify' (\g -> g {GameState.scratch = (GameState.scratch g) {Scratch.rethrowRequested = True}})
+    then do
+      picked <- Game.mayChooseAmong (\decider who offered -> Prompt.ChooseRerolledDie decider who resolving offered) controller dice
+      case picked of
+        Nothing -> State.modify' (\g -> g {GameState.scratch = (GameState.scratch g) {Scratch.rethrowRequested = True}})
+        Just oid -> rerollShownDie throwDice runSubgame controller oid
     else do
-      picked <- Game.chooseAmong (\decider who offered -> Prompt.ChoosePermanent decider who resolving offered Seq.empty) controller (Game.diceOnBattlefield gs)
-      Foldable.for_ (picked >>= \oid -> fmap (\d -> (oid, d)) (Game.lookupObject oid gs >>= Object.die)) $ \(oid, shown) -> do
-        (results, throwers, rolled) <- throwDice runSubgame controller (ShownDie.sides shown) 1 0 (pure 0)
-        Monad.unless (null rolled) (Common.recordRoll controller throwers rolled)
-        Foldable.for_ (Maybe.listToMaybe results) $ \result ->
-          State.modify' (\g -> g {GameState.objects = Map.adjust (\o -> o {Object.die = fmap (\d -> d {ShownDie.result = result}) (Object.die o)}) oid (GameState.objects g)})
+      picked <- Game.chooseAmong (\decider who offered -> Prompt.ChoosePermanent decider who resolving offered Seq.empty) controller dice
+      Foldable.for_ picked (rerollShownDie throwDice runSubgame controller)
+
+-- | Reroll the die permanent `oid` is, as `roller`'s roll: one die of its kind
+-- through throwDice -- so CR 706.2's modifiers and CR 614.1a's replacements
+-- reach it, and the throw is `roller`'s CR 706.1 roll, Pippa, Duchess of
+-- Dice's rulings having a reroll be one -- and the die shows the new result.
+-- Nothing where `oid` is no die.
+rerollShownDie :: (Game Result -> PlayerId -> Natural -> Natural -> Natural -> Game Integer -> Game ([Natural], [PlayerId], [Natural])) -> Game Result -> PlayerId -> ObjectId -> Game ()
+rerollShownDie throwDice runSubgame roller oid = do
+  gs <- State.get
+  Foldable.for_ (Game.lookupObject oid gs >>= Object.die) $ \shown -> do
+    (results, throwers, rolled) <- throwDice runSubgame roller (ShownDie.sides shown) 1 0 (pure 0)
+    Monad.unless (null rolled) (Common.recordRoll roller throwers rolled)
+    Foldable.for_ (Maybe.listToMaybe results) $ \result ->
+      State.modify' (\g -> g {GameState.objects = Map.adjust (\o -> o {Object.die = fmap (\d -> d {ShownDie.result = result}) (Object.die o)}) oid (GameState.objects g)})
 
 -- CR 706.8b: the controller chooses which of the slot's stored results to
 -- reroll, rolls one die of each noted kind per result through throwDice --

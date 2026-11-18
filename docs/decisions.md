@@ -1278,6 +1278,40 @@ Entries are ordered by the first rule each cites.
   Parun.Engine.Resolve.Arms.Damage.rollDieArm. No scenario copies the ability.
 - **Issue**: #4873.
 
+## Who rolled a Die creature's die
+
+- **Question**: Pippa, Duchess of Dice's rulings let Wall of Fortune reroll a
+  Die creature at any time, but the Wall has "any player reroll a die that
+  player rolled". Outside a roll, which player rolled the die?
+- **Rules**: CR 706.2, 706.2b, 111.2; Pippa's rulings of 2020-02-29, the
+  fourth keeping a reroll of another player's roll that player's. CR of
+  2026-11-06.
+- **Decision**: The token's owner, who rolled it as Pippa's first ability made
+  it (CR 111.2), however often it was rerolled since. That player rerolls it,
+  and a "whenever you roll" of theirs triggers.
+- **Rejected**: The player who last threw it: Pippa's fourth ruling leaves a
+  rerolled roll the original roller's. Its controller: control does not change
+  who rolled a die.
+- **Site**: `Parun.Engine.Dice.shownDieRerolls`, proved by the scenario
+  `wall-of-fortune-rerolls-a-die-creature-at-priority`.
+- **Issue**: #8521.
+
+## Whether Monitor Monitor rerolls a Die creature outside a roll
+
+- **Question**: Pippa, Duchess of Dice's rulings let "effects of cards like Wall
+  of Fortune" reroll a Die creature at any time. Monitor Monitor's ruling says
+  its reroll is decided right after the roll, "You can't wait and use it to
+  reroll that die later". Can it reroll a Die creature at priority?
+- **Rules**: CR 706.2, 706.2b; Pippa's rulings of 2020-02-29, Monitor
+  Monitor's of 2022-10-07. CR of 2026-11-06.
+- **Decision**: No. Only a modifier rerolling that one die and stating no
+  number reaches a Die creature outside a roll: Wall of Fortune's shape. Monitor
+  Monitor's reroll of "one or more dice you rolled" stays inside a roll.
+- **Rejected**: Offering every reroll modifier stating no number: Monitor
+  Monitor's own, later ruling forbids using it on a die after its roll.
+- **Site**: `Parun.Engine.Dice.shownDieRerolls`'s `RerollReach.ThatDie`.
+- **Issue**: #8521.
+
 ## How a subgame's wish sees a face-down main-game object
 
 - **Question**: CR 730.1b gives main-game effects no meaning in a subgame. A

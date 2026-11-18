@@ -459,8 +459,10 @@ resolveCardBacked runSubgame oid rest printingId = do
       --
       -- Falls back to the combined view for parity with faceOf's own
       -- fallback; unreachable here since `obj` already resolved via this
-      -- same `oid`.
-      let face = Maybe.fromMaybe (Card.combined card) (Game.faceOf oid gs1)
+      -- same `oid`. A stored copy row covering the spell decides instead (CR
+      -- 707.2, Game.storedCopyFace): a creature card cast as a Missile resolves
+      -- as a sorcery.
+      let face = Game.storedCopyFace oid gs1 (Maybe.fromMaybe (Card.combined card) (Game.faceOf oid gs1))
           -- CR 712.10 / 709.5d: the half this spell showed on the stack,
           -- carried onto the permanent for the layouts whose rules say so and
           -- dropped for the rest (Card.enteringFace). What the permanent then

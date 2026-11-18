@@ -30,7 +30,7 @@ import qualified Data.Maybe as Maybe
 import qualified Data.Sequence as Seq
 import qualified Data.Set as Set
 import qualified Data.Text as Text
-import Parun.CardSpec (Framing (SourceHostFramed), MintedKind (MintedEmblem), anyFace, cardAuthoredEffects, cardFilters, cardReplacementEffects, cardResolutionEffects, copyTargetsRefs, delayedDeclarations, durationConditions, effectFilters, effectMintedFaces, effectWithNested, enchantSlots, faceModals, frame, framedSlotsReadSingly, grantedActivatedAbilities, grantedModifications, grantedTriggeredAbilities, instantLine, mintedFaces, mintedFacesTagged, objectRefFilters, oneFaced, overFaces, replacementEffectRiders, restrictionFilters, spellLine, triggerConditionFilters, triggerConditionSlots, vanillaFace)
+import Parun.CardSpec (Framing (SourceHostFramed), MintedKind (MintedEmblem), anyFace, anyFaceOrMinted, cardAuthoredEffects, cardFilters, cardReplacementEffects, cardResolutionEffects, copyTargetsRefs, delayedDeclarations, durationConditions, effectFilters, effectMintedFaces, effectWithNested, enchantSlots, faceModals, frame, framedSlotsReadSingly, grantedActivatedAbilities, grantedModifications, grantedTriggeredAbilities, instantLine, mintedFaces, mintedFacesTagged, objectRefFilters, oneFaced, overFaces, replacementEffectRiders, restrictionFilters, spellLine, triggerConditionFilters, triggerConditionSlots, vanillaFace)
 import qualified Parun.Codec.Card as Card.Codec
 import qualified Parun.Codec.Face as Face.Codec
 import qualified Parun.Codec.Keyword as Keyword.Codec
@@ -248,6 +248,7 @@ import qualified Parun.Types.ShuffleIntoLibrary as ShuffleIntoLibrary
 import qualified Parun.Types.SkipPhase as SkipPhase
 import qualified Parun.Types.SkipWindow as SkipWindow
 import qualified Parun.Types.SlotArity as SlotArity
+import qualified Parun.Types.SlotCount as SlotCount
 import qualified Parun.Types.SlotName as SlotName
 import qualified Parun.Types.Subtype as Subtype.Type
 import qualified Parun.Types.Superlative as Superlative
@@ -1579,6 +1580,7 @@ effectObjectRefs effect =
         Effect.AsYouCascade slot -> read_ [ObjectRef.InSlot slot]
         Effect.Explore ref -> read_ [ref]
         Effect.Assemble ref -> read_ (Maybe.maybeToList ref)
+        Effect.Reassemble ref -> read_ [ref]
         Effect.Crank -> []
         -- Interplanar Tunnel's "a plane card from among them" asks here.
         Effect.ArrangeInLibrary (ArrangeInLibrary.MkArrangeInLibrary ref _ _ _ _) -> [([CardFromAmong], ref)]
@@ -2135,261 +2137,7 @@ effectLintSpec s registry corpus = Spec.describe s "Lint" $ do
   -- Bliss' "return those cards to your hand".
   Spec.it s "no card reads a slot a plural move bound with a singular reader" $ do
     ps <- S.allPrintings s corpus
-    let -- The refs that move at most ONE object, and so bind the singular shape
-        -- whatever the board holds. A TopOfLibrary is `depth` cards PER LIBRARY,
-        -- so it qualifies only at a LITERAL depth of one over a PlayerRef naming a
-        -- single library -- "each player's" and, in a game of three, "each
-        -- opponent's" both move several, and so does any depth above one. A
-        -- COMPUTED depth (Commune with Lava's X) is not statically one, so it is
-        -- plural here whatever the board would make it: this lint asks what a card
-        -- may be written as, and a card whose depth is a number it computes may
-        -- always compute more than one.
-        movesAtMostOne ref = case ref of
-          ObjectRef.InSlot _ -> True
-          ObjectRef.EachMatching _ -> False
-          ObjectRef.EachCardInGraveyard {} -> False
-          ObjectRef.EachCardInYourHand -> False
-          ObjectRef.EachCardInHand {} -> False
-          ObjectRef.EachCardInYourLibrary {} -> False
-          ObjectRef.EachCardYouOwn _ -> False
-          -- CR 607.3 is what makes this one plural even where the card's own
-          -- words are singular: an ability referring to "the exiled card" whose
-          -- linked ability exiled several performs its action on each of them.
-          ObjectRef.EachCardInExiledPile _ -> False
-          ObjectRef.EachCardEncodedOnSource {} -> False
-          ObjectRef.EachSpell _ -> False
-          ObjectRef.EachAbility _ -> False
-          ObjectRef.EachOnStack _ -> False
-          ObjectRef.Players _ -> False
-          ObjectRef.TopOfLibrary (TopOfLibrary.MkTopOfLibrary player depth _) -> case depth of
-            Quantity.Type.Literal n -> n <= 1 && namesOneSeat player
-            _ -> False
-          -- FALSE however narrow the seat and however small the count: a walk
-          -- ends where the count of matches is met, and nothing about the ref
-          -- bounds how many cards it passes first. The same reading the computed
-          -- depth above gets -- this lint asks what a card may be written as.
-          ObjectRef.TopOfLibraryUntil {} -> False
-          -- TRUE at one seat: CR 404.1's top card is exactly one card per
-          -- graveyard, so the only thing that can make it plural is a PlayerRef
-          -- naming several -- TopOfLibrary's namesOneSeat with no depth to fail.
-          ObjectRef.TopOfGraveyard player -> namesOneSeat player
-          -- The ref's COUNT per CHOOSER: the resolving controller chooses once
-          -- however many graveyards the scope draws candidates from, where
-          -- Exhume's "each player" is one choice each and so several cards on
-          -- any board with more than one stocked graveyard. A count above one
-          -- -- Fall of the Thran's printed two -- is plural under either
-          -- chooser, and a COMPUTED count is plural whatever the board would
-          -- make it, TopOfLibrary's reading above and for its reason.
-          ObjectRef.ChosenCardInGraveyard (ChosenCardInGraveyard.MkChosenCardInGraveyard chooser _ _ count _) ->
-            atMostOne count && case chooser of
-              Chooser.TheController -> True
-              Chooser.EachInScope -> False
-              -- One seat, so one graveyard and one card -- TheController's
-              -- answer with the chooser named by a slot instead of by CR
-              -- 608.2c.
-              Chooser.BoundInSlot _ -> True
-          -- One card per CHOOSER again, and here the PlayerRef names the
-          -- choosers: Karn Liberated's targeted seat exiles one card, and "each
-          -- player" would be one each. The same per-seat count TopOfLibrary
-          -- takes of its own PlayerRef, which is why they share namesOneSeat.
-          -- Aquatic Subtlety's printed two makes the same seat plural, as does
-          -- The Great Aurora's "any number", and a COMPUTED count is plural
-          -- whatever the board would make it.
-          ObjectRef.ChosenCardInHand (ChosenCardInHand.MkChosenCardInHand player _ count) -> atMostOne count && namesOneSeat player
-          -- One card per ONE seat, so the ref's own count is the whole of it: a
-          -- chooser names a single seat or nobody, where ChosenCardInHand's
-          -- PlayerRef above may name several hands. A COMPUTED count is plural
-          -- here whatever the board would make it, TopOfLibrary's reading above
-          -- and for its reason.
-          ObjectRef.ChosenCardFromAmong (ChosenCardFromAmong.MkChosenCardFromAmong _ _ count _ _ _ _ _ _ _) -> atMostOne count
-          -- FALSE where the arm above is True, which is the whole difference
-          -- between them: "all" takes every member that matches, and nothing
-          -- about the ref bounds how many a group holds.
-          ObjectRef.EachCardFromAmong {} -> False
-          -- One card per SEAT, the arm above's answer with randomness in the
-          -- chooser's place: Merfolk Spy's slot names one seat and so one card,
-          -- and Fall's printed two makes the same seat plural. A COMPUTED count
-          -- is plural whatever the board would make it, ChosenCardFromAmong's
-          -- reading above and for its reason.
-          ObjectRef.RandomCard (RandomCard.MkRandomCard _ player _ count) -> case count of
-            Quantity.Type.Literal n -> n <= 1 && namesOneSeat player
-            _ -> False
-          -- One card per GRAVEYARD, the arm above one zone over: randomness picks
-          -- out of each graveyard the scope names, so a scope naming several is
-          -- plural however small the count -- which is why this arm asks the
-          -- SCOPE where ChosenCardInGraveyard above asks its chooser. A COMPUTED
-          -- count is plural whatever the board would make it, that arm's reading
-          -- and for its reason.
-          ObjectRef.RandomCardInGraveyard (RandomCardInGraveyard.MkRandomCardInGraveyard scope _ count) -> case count of
-            Quantity.Type.Literal n -> n <= 1 && namesOneGraveyard scope
-            _ -> False
-          -- TRUE for one permanent however many match, and for a printed ceiling
-          -- of one, TopOfLibrary's answer; FALSE, EachCardFromAmong's answer
-          -- over the battlefield, where "any number" states no bound.
-          ObjectRef.ChosenPermanents (ChosenPermanents.MkChosenPermanents _ _ count _ _ _) -> atMostOne count
-          -- FALSE: every attachment to a host moves, however many there are.
-          ObjectRef.AttachedToBound _ -> False
-          -- TRUE, InSlot's answer: what the slot's creature attacks.
-          ObjectRef.AttackedBy _ -> True
-          -- One player, the latest damage's.
-          ObjectRef.LastDamagerController _ -> True
-          -- TRUE, InSlot's answer: the slot's object, followed.
-          ObjectRef.FromAnywhere _ -> True
-          -- TRUE: one draw or pick names one object, however many the pool holds.
-          ObjectRef.OneAmong _ _ -> True
-          -- FALSE: several refs together name several objects.
-          ObjectRef.AllOf _ -> False
-        -- Does a choice's count name at most one? A COMPUTED count is plural
-        -- whatever the board would make it, TopOfLibrary's reading above.
-        atMostOne count = case count of
-          HowMany.Exactly (Quantity.Type.Literal n) -> n <= 1
-          HowMany.UpTo (Just (Quantity.Type.Literal n)) -> n <= 1
-          _ -> False
-        -- A strict comparison against every other player leaves at most one.
-        strictSuperlative leading = List.elem (Superlative.comparison leading) [Comparison.GreaterThan, Comparison.LessThan]
-        -- Does this PlayerRef name at most ONE seat? A per-player count over it
-        -- -- a library's top card, a card chosen out of a hand -- moves at most
-        -- one object exactly when it does.
-        -- namesOneSeat one type over, for the scope that says WHOSE zone (CR
-        -- 400.1): a slot holds one player and CR 108.4's controller is one
-        -- player, where the plural PlayerScopes are the whole table, the opponents
-        -- or a team. A strict Superlative is at most one by its own rule.
-        namesOneGraveyard scope = case scope of
-          ZoneScope.Scoped (PlayerScope.Related PlayerRelation.You) -> True
-          ZoneScope.Scoped (PlayerScope.Related PlayerRelation.Opponent) -> False
-          ZoneScope.Scoped (PlayerScope.Related PlayerRelation.AnyPlayer) -> False
-          ZoneScope.Scoped (PlayerScope.Related PlayerRelation.Teammate) -> False
-          ZoneScope.Scoped (PlayerScope.Related PlayerRelation.YourTeam) -> False
-          ZoneScope.Scoped (PlayerScope.Related PlayerRelation.AnotherPlayer) -> False
-          ZoneScope.Scoped (PlayerScope.Superlative leading) -> strictSuperlative leading
-          -- A shared team turn has several active players (CR 805.4a), and a
-          -- combat several defending ones (CR 802.2a).
-          ZoneScope.Scoped (PlayerScope.InRole _) -> False
-          ZoneScope.Scoped PlayerScope.ChosenPlayer -> True
-          ZoneScope.Scoped PlayerScope.SourceOwner -> True
-          ZoneScope.Scoped PlayerScope.EnchantedPlayer -> True
-          -- Several opponents may each have attacked you.
-          ZoneScope.Scoped PlayerScope.AttackedYou {} -> False
-          ZoneScope.InSlot _ -> True
-          ZoneScope.ControllerOfBound _ -> True
-          ZoneScope.BoundPlayer _ -> True
-        namesOneSeat player = case player of
-          PlayerRef.Relative PlayerRelation.You -> True
-          PlayerRef.Relative PlayerRelation.Opponent -> False
-          -- The whole table -- Relative AnyPlayer's answer, which this relation is.
-          PlayerRef.Relative PlayerRelation.AnyPlayer -> False
-          -- CR 102.3's teammates, of whom a team of three has two.
-          PlayerRef.Relative PlayerRelation.Teammate -> False
-          -- CR 102.4's you and your teammates.
-          PlayerRef.Relative PlayerRelation.YourTeam -> False
-          -- The whole table but one seat, EachPlayerExcept's answer below.
-          PlayerRef.Relative PlayerRelation.AnotherPlayer -> False
-          PlayerRef.InSlot _ -> True
-          -- A SET -- the arm above's plural, and the whole of what parts them.
-          PlayerRef.EachInSlot _ -> False
-          -- The whole table but one seat -- Relative AnyPlayer's answer, and for its
-          -- reason.
-          PlayerRef.EachPlayerExcept _ -> False
-          -- The opponents but one seat -- the arm above's answer, for its reason.
-          PlayerRef.EachOpponentExcept _ -> False
-          -- One seat -- InSlot's answer. Unreachable from card data, which the
-          -- sweep below is what enforces.
-          PlayerRef.Specific _ -> True
-          -- NO seat at all: an ObjectRef is read by a resolution, where no fold
-          -- supplies a candidate, so this names nobody and moves nothing --
-          -- which is at most one.
-          PlayerRef.Candidate -> True
-          -- One seat -- InSlot's answer, one indirection out, whichever player
-          -- of the object or its host it reads.
-          PlayerRef.HolderOfBound {} -> True
-          -- A SET -- the arm above's plural, EachInSlot's answer.
-          PlayerRef.HoldersOfBound {} -> False
-          -- A SET -- a pile may hold several owners' cards.
-          PlayerRef.OwnersOfExiledBy _ _ -> False
-          -- One seat -- HolderOfBound's answer, the host itself a player.
-          PlayerRef.PlayerHostOfBound _ -> True
-          -- One seat -- the arm above's answer, the attacked player.
-          PlayerRef.AttackedByBound _ -> True
-          -- One seat -- the arm above's answer, baked; unreachable from card
-          -- data, Specific's answer.
-          PlayerRef.HolderOfObject _ _ -> True
-          -- One seat or none: baked to Specific, or naming nobody unbaked.
-          PlayerRef.AtGrant _ -> True
-          -- One seat -- the arm above's answer, one record over.
-          PlayerRef.ChosenPlayerOfBound _ _ -> True
-          -- A SET -- Relative Opponent's answer, and for its reason: CR 508.6 is
-          -- a predicate over the table rather than a name for one seat.
-          PlayerRef.Attacking _ -> False
-          -- A strict lead or trail is at most one seat; any other comparison
-          -- admits ties, a SET.
-          PlayerRef.Superlative leading -> strictSuperlative leading
-          -- A SET -- Relative Opponent's answer: CR 802.2 names every
-          -- defending player.
-          PlayerRef.InRole _ -> False
-        -- WHICH opcodes bind a batch is this enumeration and not this paragraph
-        -- -- readSingly's posture below. An opcode belongs here when
-        -- Parun.Engine.Resolve hands its slot to `bindObjectsSlot`, and the guard
-        -- on the arm is the CONDITION under which that call is reached: none at
-        -- all where the arm binds a group however few objects it found, and the
-        -- opcode's own plurality test where the arm dispatches on how many
-        -- arrived and takes the single binding for one. Grepping that one
-        -- function in that one file is what makes the list checkable.
-        --
-        -- Nothing reports a `bindObjectsSlot` call added later: this case and
-        -- readSingly both end in `_ -> []`, so a new binder compiles,
-        -- round-trips and sweeps the corpus with no arm on either side. Adding
-        -- one to Resolve means coming back here by hand.
-        boundPlurally effect = case effect of
-          Effect.MoveToZone (MoveToZone.MkMoveToZone ref _ _ mSlot _ _ _) | not (movesAtMostOne ref) -> Maybe.maybeToList mSlot
-          Effect.LookAt (LookAt.MkLookAt ref slot _) | not (movesAtMostOne ref) -> [slot]
-          Effect.Reveal (Reveal.MkReveal ref mSlot _) | not (movesAtMostOne ref) -> Maybe.maybeToList mSlot
-          -- CR 701.17c's slot, plural at every depth and every seat count: an
-          -- InstructionR row resizes the INSTRUCTION (Bruvac the Grandiloquent
-          -- doubles it), so even a literal 1 can reach Resolve's `several ->
-          -- bindObjectsSlot` arm and a singular reader over that slot would
-          -- answer unanswered. No count test and no seat test, the destruction's
-          -- shape -- where the draw's arm below keeps both, since a DrawCountR row
-          -- replaces the instruction outright rather than resizing it.
-          Effect.Mill (Mill.MkMill _ _ _ mSlot) -> Maybe.maybeToList mSlot
-          -- CR 121.1's slot, whose plurality is read exactly as the mill's is:
-          -- Parun.Engine.Resolve's Draw arm binds the singular shape only when one
-          -- card was drawn across every drawer.
-          Effect.Draw (Draw.MkDraw player quantity mSlot _)
-            | not (takesAtMostOne player quantity) ->
-                Maybe.maybeToList mSlot
-          -- No ref test: Parun.Engine.Resolve's Destroy arm writes both through
-          -- bindObjectsSlot however few permanents it destroyed, so neither is
-          -- ever the singular shape -- not even for "destroy target creature".
-          Effect.Destroy (Destroy.MkDestroy _ _ _ mBuried mPermanents) ->
-            Maybe.maybeToList mBuried <> Maybe.maybeToList mPermanents
-          -- CR 701.9's look-back slot, the destruction's shape and for its
-          -- reason: the counted discard's arm binds the group however few cards
-          -- moved, so no ref test and no count test. Psychic Miasma's "if a land
-          -- card is discarded this way" is one that writes it. Discard.These and
-          -- Discard.AnyNumber bind through the same burial.
-          Effect.Discard (Discard.Counted (CountedDiscard.MkCountedDiscard _ _ mDiscarded)) -> Maybe.maybeToList mDiscarded
-          Effect.Discard (Discard.These (TheseDiscard.MkTheseDiscard _ mDiscarded)) -> Maybe.maybeToList mDiscarded
-          Effect.Discard (Discard.AnyNumber (AnyNumberDiscard.MkAnyNumberDiscard _ _ mDiscarded)) -> Maybe.maybeToList mDiscarded
-          -- CR 111.1's minted tokens. No count test and no seat test, unlike
-          -- the mill's and the draw's: Resolve.bindObjects binds every token the
-          -- effect created whatever the printed count says, so CR 614.16 makes
-          -- a literal one plural too -- a doubler, or Queen Allenal of Ruadach
-          -- appending a Soldier.
-          Effect.Create (Create.MkCreate _ _ _ mSlot _ _ _) -> Maybe.maybeToList mSlot
-          -- Create's arm and Create's test: Resolve.bindObjects binds both.
-          Effect.CreateCopy (CreateCopy.MkCreateCopy _ _ _ mSlot _ _ _) -> Maybe.maybeToList mSlot
-          -- CR 707.10's copies, bound through Resolve.bindObjects as well:
-          -- `quantity` and a plural `copier` each make several.
-          Effect.CopyStackObject copyStackObject -> Maybe.maybeToList (CopyStackObject.slot copyStackObject)
-          -- The destruction's shape: Resolve's Tap and Divide arms bind the
-          -- group however few objects it holds.
-          Effect.Tap (Tap.MkTap _ mTapped _) -> Maybe.maybeToList mTapped
-          Effect.Divide divide -> [Divide.slot divide]
-          _ -> []
-        takesAtMostOne player quantity = case quantity of
-          Quantity.Type.Literal n -> n <= 1 && namesOneSeat player
-          _ -> False
-        -- Every slot Parun.Engine.Resolve hands to a SINGULAR read with no group
+    let -- Every slot Parun.Engine.Resolve hands to a SINGULAR read with no group
         -- fallback beside it: `legalOne` over the legal-target map, or `slotOne`
         -- over the resolving object's own target bindings. Both are
         -- Binding.onlyOne, so a slot naming several objects answers Nothing and
@@ -2782,6 +2530,31 @@ effectLintSpec s registry corpus = Spec.describe s "Lint" $ do
     -- the controller of the object that did the targeting.
     Spec.assertBool s (any (anyFace (any namesControllerOfBound . faceClausePlayerRefs) . Printing.card) ps) "the pool has a card naming a clause's player by the controller of a bound object"
     Spec.assertEqWith s "a group binding is invisible to a singular reader" (fmap (S.nameOf . Printing.card) offenders) []
+  -- CR 122.5's move onto a group: the corpus half. Synthetic Ancient
+  -- Redistributor's group moves are the arms distributePair does ask about.
+  Spec.it s "no card moves counters onto a group under a kinds arm the distribution cannot ask" $ do
+    ps <- S.allPrintings s corpus
+    let offenders = filter (anyFaceOrMinted cardMovesOntoGroupUnasked . Printing.card) ps
+    Spec.assertEqWith s "no unasked group move" (fmap (S.nameOf . Printing.card) offenders) []
+  -- And the rejecting direction: the unasked arm onto a group, whether named
+  -- outright, by a slot several targets fill or by a slot a plural move bound,
+  -- against the same arm onto a one-object slot and the asked arms onto a group.
+  Spec.it s "the lint itself catches a move onto a group under an arm the distribution cannot ask" $ do
+    let self = SlotName.MkSlotName (Text.pack "self")
+        many = SlotName.MkSlotName (Text.pack "many")
+        group = ObjectRef.EachMatching (Filter.Type.And [])
+        moveOnto kinds to = Effect.MoveCounters (MoveCounters.MkMoveCounters (ObjectRef.InSlot self) kinds Nothing to)
+        moving kinds to = (vanillaFace "Mover" instantLine) {Face.spell = Mint.oneMode (Seq.singleton (moveOnto kinds to))}
+        targeting slot kinds = (vanillaFace "Mover" instantLine) {Face.spell = Mint.oneModeTargeting (Map.singleton many slot) (Seq.singleton (moveOnto kinds (ObjectRef.InSlot many)))}
+        binding kinds = (vanillaFace "Mover" instantLine) {Face.spell = Mint.oneMode (Seq.fromList [Effect.Tap (Tap.MkTap group (Just many) Nothing), moveOnto kinds (ObjectRef.InSlot many)])}
+        asked = [MovedKinds.EveryOfKind CounterKind.PlusOnePlusOne, MovedKinds.Chosen (Quantity.Type.Literal 2), MovedKinds.UpToOneChosen]
+    Spec.assertBool s (cardMovesOntoGroupUnasked (moving MovedKinds.EachAbsentKind group)) "each absent kind onto a group is rejected"
+    Spec.assertBool s (not (cardMovesOntoGroupUnasked (moving MovedKinds.EachAbsentKind (ObjectRef.InSlot self)))) "and onto an undeclared slot is accepted"
+    Spec.assertBool s (not (cardMovesOntoGroupUnasked (targeting (TargetSlot.required Pool.Creatures Nothing) MovedKinds.EachAbsentKind))) "and onto a one-target slot is accepted"
+    Spec.assertBool s (cardMovesOntoGroupUnasked (targeting (TargetSlot.upTo 2 Pool.Creatures Nothing) MovedKinds.EachAbsentKind)) "and onto a slot several targets fill is rejected"
+    Spec.assertBool s (cardMovesOntoGroupUnasked (binding MovedKinds.EachAbsentKind)) "and onto a slot a plural move bound is rejected"
+    Spec.assertEqWith s "and the asked arms onto a group are accepted" (fmap (\kinds -> cardMovesOntoGroupUnasked (moving kinds group)) asked) [False, False, False]
+    Spec.assertEqWith s "and onto plural slots too" (fmap (\kinds -> (cardMovesOntoGroupUnasked (targeting (TargetSlot.upTo 2 Pool.Creatures Nothing) kinds), cardMovesOntoGroupUnasked (binding kinds))) asked) (replicate 3 (False, False))
   -- OwnerChooses asks a player which END of a library a card arrives at (CR
   -- 401.2), and only a library HAS ends -- so on any other destination it would
   -- put a question on the wire with no board behind it. A stated position on a
@@ -4377,3 +4150,305 @@ hiddenMoveSlots effects =
 -- Scope.OverBound's AsBound reading of a slot, encoded, as a needle.
 asBound :: SlotName.SlotName -> Value.Value
 asBound slot = Codec.encode (Scope.Codec.codec Keyword.Codec.codec) (Scope.OverBound BoundReading.AsBound slot :: Scope.Scope Keyword.Keyword)
+
+-- The refs that move at most ONE object, and so bind the singular shape
+-- whatever the board holds. A TopOfLibrary is `depth` cards PER LIBRARY,
+-- so it qualifies only at a LITERAL depth of one over a PlayerRef naming a
+-- single library -- "each player's" and, in a game of three, "each
+-- opponent's" both move several, and so does any depth above one. A
+-- COMPUTED depth (Commune with Lava's X) is not statically one, so it is
+-- plural here whatever the board would make it: this lint asks what a card
+-- may be written as, and a card whose depth is a number it computes may
+-- always compute more than one.
+movesAtMostOne :: ObjectRef.ObjectRef -> Bool
+movesAtMostOne ref = case ref of
+  ObjectRef.InSlot _ -> True
+  ObjectRef.EachMatching _ -> False
+  ObjectRef.EachCardInGraveyard {} -> False
+  ObjectRef.EachCardInYourHand -> False
+  ObjectRef.EachCardInHand {} -> False
+  ObjectRef.EachCardInYourLibrary {} -> False
+  ObjectRef.EachCardYouOwn _ -> False
+  -- CR 607.3 is what makes this one plural even where the card's own
+  -- words are singular: an ability referring to "the exiled card" whose
+  -- linked ability exiled several performs its action on each of them.
+  ObjectRef.EachCardInExiledPile _ -> False
+  ObjectRef.EachCardEncodedOnSource {} -> False
+  ObjectRef.EachSpell _ -> False
+  ObjectRef.EachAbility _ -> False
+  ObjectRef.EachOnStack _ -> False
+  ObjectRef.Players _ -> False
+  ObjectRef.TopOfLibrary (TopOfLibrary.MkTopOfLibrary player depth _) -> case depth of
+    Quantity.Type.Literal n -> n <= 1 && namesOneSeat player
+    _ -> False
+  -- FALSE however narrow the seat and however small the count: a walk
+  -- ends where the count of matches is met, and nothing about the ref
+  -- bounds how many cards it passes first. The same reading the computed
+  -- depth above gets -- this lint asks what a card may be written as.
+  ObjectRef.TopOfLibraryUntil {} -> False
+  -- TRUE at one seat: CR 404.1's top card is exactly one card per
+  -- graveyard, so the only thing that can make it plural is a PlayerRef
+  -- naming several -- TopOfLibrary's namesOneSeat with no depth to fail.
+  ObjectRef.TopOfGraveyard player -> namesOneSeat player
+  -- The ref's COUNT per CHOOSER: the resolving controller chooses once
+  -- however many graveyards the scope draws candidates from, where
+  -- Exhume's "each player" is one choice each and so several cards on
+  -- any board with more than one stocked graveyard. A count above one
+  -- -- Fall of the Thran's printed two -- is plural under either
+  -- chooser, and a COMPUTED count is plural whatever the board would
+  -- make it, TopOfLibrary's reading above and for its reason.
+  ObjectRef.ChosenCardInGraveyard (ChosenCardInGraveyard.MkChosenCardInGraveyard chooser _ _ count _) ->
+    atMostOne count && case chooser of
+      Chooser.TheController -> True
+      Chooser.EachInScope -> False
+      -- One seat, so one graveyard and one card -- TheController's
+      -- answer with the chooser named by a slot instead of by CR
+      -- 608.2c.
+      Chooser.BoundInSlot _ -> True
+  -- One card per CHOOSER again, and here the PlayerRef names the
+  -- choosers: Karn Liberated's targeted seat exiles one card, and "each
+  -- player" would be one each. The same per-seat count TopOfLibrary
+  -- takes of its own PlayerRef, which is why they share namesOneSeat.
+  -- Aquatic Subtlety's printed two makes the same seat plural, as does
+  -- The Great Aurora's "any number", and a COMPUTED count is plural
+  -- whatever the board would make it.
+  ObjectRef.ChosenCardInHand (ChosenCardInHand.MkChosenCardInHand player _ count) -> atMostOne count && namesOneSeat player
+  -- One card per ONE seat, so the ref's own count is the whole of it: a
+  -- chooser names a single seat or nobody, where ChosenCardInHand's
+  -- PlayerRef above may name several hands. A COMPUTED count is plural
+  -- here whatever the board would make it, TopOfLibrary's reading above
+  -- and for its reason.
+  ObjectRef.ChosenCardFromAmong (ChosenCardFromAmong.MkChosenCardFromAmong _ _ count _ _ _ _ _ _ _) -> atMostOne count
+  -- FALSE where the arm above is True, which is the whole difference
+  -- between them: "all" takes every member that matches, and nothing
+  -- about the ref bounds how many a group holds.
+  ObjectRef.EachCardFromAmong {} -> False
+  -- One card per SEAT, the arm above's answer with randomness in the
+  -- chooser's place: Merfolk Spy's slot names one seat and so one card,
+  -- and Fall's printed two makes the same seat plural. A COMPUTED count
+  -- is plural whatever the board would make it, ChosenCardFromAmong's
+  -- reading above and for its reason.
+  ObjectRef.RandomCard (RandomCard.MkRandomCard _ player _ count) -> case count of
+    Quantity.Type.Literal n -> n <= 1 && namesOneSeat player
+    _ -> False
+  -- One card per GRAVEYARD, the arm above one zone over: randomness picks
+  -- out of each graveyard the scope names, so a scope naming several is
+  -- plural however small the count -- which is why this arm asks the
+  -- SCOPE where ChosenCardInGraveyard above asks its chooser. A COMPUTED
+  -- count is plural whatever the board would make it, that arm's reading
+  -- and for its reason.
+  ObjectRef.RandomCardInGraveyard (RandomCardInGraveyard.MkRandomCardInGraveyard scope _ count) -> case count of
+    Quantity.Type.Literal n -> n <= 1 && namesOneGraveyard scope
+    _ -> False
+  -- TRUE for one permanent however many match, and for a printed ceiling
+  -- of one, TopOfLibrary's answer; FALSE, EachCardFromAmong's answer
+  -- over the battlefield, where "any number" states no bound.
+  ObjectRef.ChosenPermanents (ChosenPermanents.MkChosenPermanents _ _ count _ _ _) -> atMostOne count
+  -- FALSE: every attachment to a host moves, however many there are.
+  ObjectRef.AttachedToBound _ -> False
+  -- TRUE, InSlot's answer: what the slot's creature attacks.
+  ObjectRef.AttackedBy _ -> True
+  -- One player, the latest damage's.
+  ObjectRef.LastDamagerController _ -> True
+  -- TRUE, InSlot's answer: the slot's object, followed.
+  ObjectRef.FromAnywhere _ -> True
+  -- TRUE: one draw or pick names one object, however many the pool holds.
+  ObjectRef.OneAmong _ _ -> True
+  -- FALSE: several refs together name several objects.
+  ObjectRef.AllOf _ -> False
+
+-- Does a choice's count name at most one? A COMPUTED count is plural
+-- whatever the board would make it, TopOfLibrary's reading above.
+atMostOne :: HowMany.HowMany -> Bool
+atMostOne count = case count of
+  HowMany.Exactly (Quantity.Type.Literal n) -> n <= 1
+  HowMany.UpTo (Just (Quantity.Type.Literal n)) -> n <= 1
+  _ -> False
+
+-- A strict comparison against every other player leaves at most one.
+strictSuperlative :: Superlative.Superlative -> Bool
+strictSuperlative leading = List.elem (Superlative.comparison leading) [Comparison.GreaterThan, Comparison.LessThan]
+
+-- namesOneSeat one type over, for the scope that says WHOSE zone (CR
+-- 400.1): a slot holds one player and CR 108.4's controller is one
+-- player, where the plural PlayerScopes are the whole table, the opponents
+-- or a team. A strict Superlative is at most one by its own rule.
+namesOneGraveyard :: ZoneScope.ZoneScope -> Bool
+namesOneGraveyard scope = case scope of
+  ZoneScope.Scoped (PlayerScope.Related PlayerRelation.You) -> True
+  ZoneScope.Scoped (PlayerScope.Related PlayerRelation.Opponent) -> False
+  ZoneScope.Scoped (PlayerScope.Related PlayerRelation.AnyPlayer) -> False
+  ZoneScope.Scoped (PlayerScope.Related PlayerRelation.Teammate) -> False
+  ZoneScope.Scoped (PlayerScope.Related PlayerRelation.YourTeam) -> False
+  ZoneScope.Scoped (PlayerScope.Related PlayerRelation.AnotherPlayer) -> False
+  ZoneScope.Scoped (PlayerScope.Superlative leading) -> strictSuperlative leading
+  -- A shared team turn has several active players (CR 805.4a), and a
+  -- combat several defending ones (CR 802.2a).
+  ZoneScope.Scoped (PlayerScope.InRole _) -> False
+  ZoneScope.Scoped PlayerScope.ChosenPlayer -> True
+  ZoneScope.Scoped PlayerScope.SourceOwner -> True
+  ZoneScope.Scoped PlayerScope.EnchantedPlayer -> True
+  -- Several opponents may each have attacked you.
+  ZoneScope.Scoped PlayerScope.AttackedYou {} -> False
+  ZoneScope.InSlot _ -> True
+  ZoneScope.ControllerOfBound _ -> True
+  ZoneScope.BoundPlayer _ -> True
+
+-- Does this PlayerRef name at most ONE seat? A per-player count over it
+-- -- a library's top card, a card chosen out of a hand -- moves at most
+-- one object exactly when it does.
+namesOneSeat :: PlayerRef.PlayerRef -> Bool
+namesOneSeat player = case player of
+  PlayerRef.Relative PlayerRelation.You -> True
+  PlayerRef.Relative PlayerRelation.Opponent -> False
+  -- The whole table -- Relative AnyPlayer's answer, which this relation is.
+  PlayerRef.Relative PlayerRelation.AnyPlayer -> False
+  -- CR 102.3's teammates, of whom a team of three has two.
+  PlayerRef.Relative PlayerRelation.Teammate -> False
+  -- CR 102.4's you and your teammates.
+  PlayerRef.Relative PlayerRelation.YourTeam -> False
+  -- The whole table but one seat, EachPlayerExcept's answer below.
+  PlayerRef.Relative PlayerRelation.AnotherPlayer -> False
+  PlayerRef.InSlot _ -> True
+  -- A SET -- the arm above's plural, and the whole of what parts them.
+  PlayerRef.EachInSlot _ -> False
+  -- The whole table but one seat -- Relative AnyPlayer's answer, and for its
+  -- reason.
+  PlayerRef.EachPlayerExcept _ -> False
+  -- The opponents but one seat -- the arm above's answer, for its reason.
+  PlayerRef.EachOpponentExcept _ -> False
+  -- One seat -- InSlot's answer. Unreachable from card data, which
+  -- Parun.FilterPositionLintSpec's Specific sweep enforces.
+  PlayerRef.Specific _ -> True
+  -- NO seat at all: an ObjectRef is read by a resolution, where no fold
+  -- supplies a candidate, so this names nobody and moves nothing --
+  -- which is at most one.
+  PlayerRef.Candidate -> True
+  -- One seat -- InSlot's answer, one indirection out, whichever player
+  -- of the object or its host it reads.
+  PlayerRef.HolderOfBound {} -> True
+  -- A SET -- the arm above's plural, EachInSlot's answer.
+  PlayerRef.HoldersOfBound {} -> False
+  -- A SET -- a pile may hold several owners' cards.
+  PlayerRef.OwnersOfExiledBy _ _ -> False
+  -- One seat -- HolderOfBound's answer, the host itself a player.
+  PlayerRef.PlayerHostOfBound _ -> True
+  -- One seat -- the arm above's answer, the attacked player.
+  PlayerRef.AttackedByBound _ -> True
+  -- One seat -- the arm above's answer, baked; unreachable from card
+  -- data, Specific's answer.
+  PlayerRef.HolderOfObject _ _ -> True
+  -- One seat or none: baked to Specific, or naming nobody unbaked.
+  PlayerRef.AtGrant _ -> True
+  -- One seat -- the arm above's answer, one record over.
+  PlayerRef.ChosenPlayerOfBound _ _ -> True
+  -- A SET -- Relative Opponent's answer, and for its reason: CR 508.6 is
+  -- a predicate over the table rather than a name for one seat.
+  PlayerRef.Attacking _ -> False
+  -- A strict lead or trail is at most one seat; any other comparison
+  -- admits ties, a SET.
+  PlayerRef.Superlative leading -> strictSuperlative leading
+  -- A SET -- Relative Opponent's answer: CR 802.2 names every
+  -- defending player.
+  PlayerRef.InRole _ -> False
+
+-- WHICH opcodes bind a batch is this enumeration and not this paragraph
+-- -- readSingly's posture, in the plural-move lint's spec. An opcode belongs here when
+-- Parun.Engine.Resolve hands its slot to `bindObjectsSlot`, and the guard
+-- on the arm is the CONDITION under which that call is reached: none at
+-- all where the arm binds a group however few objects it found, and the
+-- opcode's own plurality test where the arm dispatches on how many
+-- arrived and takes the single binding for one. Grepping that one
+-- function in that one file is what makes the list checkable.
+--
+-- Nothing reports a `bindObjectsSlot` call added later: this case and
+-- readSingly both end in `_ -> []`, so a new binder compiles,
+-- round-trips and sweeps the corpus with no arm on either side. Adding
+-- one to Resolve means coming back here by hand.
+boundPlurally :: Effect.Effect Card.Type.Card (GrantedAbility.GrantedAbility Card.Type.Card) -> [SlotName.SlotName]
+boundPlurally effect = case effect of
+  Effect.MoveToZone (MoveToZone.MkMoveToZone ref _ _ mSlot _ _ _) | not (movesAtMostOne ref) -> Maybe.maybeToList mSlot
+  Effect.LookAt (LookAt.MkLookAt ref slot _) | not (movesAtMostOne ref) -> [slot]
+  Effect.Reveal (Reveal.MkReveal ref mSlot _) | not (movesAtMostOne ref) -> Maybe.maybeToList mSlot
+  -- CR 701.17c's slot, plural at every depth and every seat count: an
+  -- InstructionR row resizes the INSTRUCTION (Bruvac the Grandiloquent
+  -- doubles it), so even a literal 1 can reach Resolve's `several ->
+  -- bindObjectsSlot` arm and a singular reader over that slot would
+  -- answer unanswered. No count test and no seat test, the destruction's
+  -- shape -- where the draw's arm below keeps both, since a DrawCountR row
+  -- replaces the instruction outright rather than resizing it.
+  Effect.Mill (Mill.MkMill _ _ _ mSlot) -> Maybe.maybeToList mSlot
+  -- CR 121.1's slot, whose plurality is read exactly as the mill's is:
+  -- Parun.Engine.Resolve's Draw arm binds the singular shape only when one
+  -- card was drawn across every drawer.
+  Effect.Draw (Draw.MkDraw player quantity mSlot _)
+    | not (takesAtMostOne player quantity) ->
+        Maybe.maybeToList mSlot
+  -- No ref test: Parun.Engine.Resolve's Destroy arm writes both through
+  -- bindObjectsSlot however few permanents it destroyed, so neither is
+  -- ever the singular shape -- not even for "destroy target creature".
+  Effect.Destroy (Destroy.MkDestroy _ _ _ mBuried mPermanents) ->
+    Maybe.maybeToList mBuried <> Maybe.maybeToList mPermanents
+  -- CR 701.9's look-back slot, the destruction's shape and for its
+  -- reason: the counted discard's arm binds the group however few cards
+  -- moved, so no ref test and no count test. Psychic Miasma's "if a land
+  -- card is discarded this way" is one that writes it. Discard.These and
+  -- Discard.AnyNumber bind through the same burial.
+  Effect.Discard (Discard.Counted (CountedDiscard.MkCountedDiscard _ _ mDiscarded)) -> Maybe.maybeToList mDiscarded
+  Effect.Discard (Discard.These (TheseDiscard.MkTheseDiscard _ mDiscarded)) -> Maybe.maybeToList mDiscarded
+  Effect.Discard (Discard.AnyNumber (AnyNumberDiscard.MkAnyNumberDiscard _ _ mDiscarded)) -> Maybe.maybeToList mDiscarded
+  -- CR 111.1's minted tokens. No count test and no seat test, unlike
+  -- the mill's and the draw's: Resolve.bindObjects binds every token the
+  -- effect created whatever the printed count says, so CR 614.16 makes
+  -- a literal one plural too -- a doubler, or Queen Allenal of Ruadach
+  -- appending a Soldier.
+  Effect.Create (Create.MkCreate _ _ _ mSlot _ _ _) -> Maybe.maybeToList mSlot
+  -- Create's arm and Create's test: Resolve.bindObjects binds both.
+  Effect.CreateCopy (CreateCopy.MkCreateCopy _ _ _ mSlot _ _ _) -> Maybe.maybeToList mSlot
+  -- CR 707.10's copies, bound through Resolve.bindObjects as well:
+  -- `quantity` and a plural `copier` each make several.
+  Effect.CopyStackObject copyStackObject -> Maybe.maybeToList (CopyStackObject.slot copyStackObject)
+  -- The destruction's shape: Resolve's Tap and Divide arms bind the
+  -- group however few objects it holds.
+  Effect.Tap (Tap.MkTap _ mTapped _) -> Maybe.maybeToList mTapped
+  Effect.Divide divide -> [Divide.slot divide]
+  _ -> []
+
+-- CR 122.5 onto a GROUP of permanents under MovedKinds.EachAbsentKind, the one
+-- `kinds` arm Parun.Engine.Resolve.Arms.Counters's distributePair does not ask
+-- about. A destination is a group where it names several objects outright
+-- (movesAtMostOne), or where it is a slot a CR 601.2c count above one fills or
+-- a plural move bound (boundPlurally). Over the whole face, so a slot name one
+-- ability declares plurally condemns the same name in another, erring toward
+-- rejection.
+cardMovesOntoGroupUnasked :: Face.Face Card.Type.Card -> Bool
+cardMovesOntoGroupUnasked face =
+  let effects = cardResolutionEffects face
+      modals =
+        faceModals face
+          <> fmap ActivatedAbility.modal (grantedActivatedAbilities face)
+          <> fmap TriggeredAbility.modal (grantedTriggeredAbilities face)
+      targeted = [slot | modal <- modals, mode <- Foldable.toList (Modal.modes modal), (slot, targetSlot) <- Map.toList (Mode.targetSlots mode), SlotCount.plural (TargetSlot.count targetSlot)]
+      plural = Set.fromList (targeted <> concatMap boundPlurally effects)
+      unasked kinds = case kinds of
+        MovedKinds.Every -> False
+        MovedKinds.Named _ _ -> False
+        MovedKinds.EveryOfKind _ -> False
+        MovedKinds.Chosen _ -> False
+        MovedKinds.AnyNumber -> False
+        MovedKinds.AtLeastOne -> False
+        MovedKinds.AnyNumberOfKind _ -> False
+        MovedKinds.EachAbsentKind -> True
+        MovedKinds.UpToOneChosen -> False
+      ontoGroup to = case to of
+        ObjectRef.InSlot slot -> Set.member slot plural
+        _ -> not (movesAtMostOne to)
+      offends effect = case effect of
+        Effect.MoveCounters (MoveCounters.MkMoveCounters _ kinds _ to) -> unasked kinds && ontoGroup to
+        _ -> False
+   in any offends effects
+
+takesAtMostOne :: PlayerRef.PlayerRef -> Quantity.Type.Quantity -> Bool
+takesAtMostOne player quantity = case quantity of
+  Quantity.Type.Literal n -> n <= 1 && namesOneSeat player
+  _ -> False

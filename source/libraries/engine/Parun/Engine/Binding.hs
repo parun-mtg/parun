@@ -1117,6 +1117,13 @@ discoveredCards = SlotName.MkSlotName (Text.pack "thoseDiscoverExiles")
 assimilatedPermanents :: SlotName
 assimilatedPermanents = SlotName.MkSlotName (Text.pack "thoseAssimilatedPermanents")
 
+-- The Unstable FAQ's reassemble: the reserved slot naming the Contraption whose
+-- control a reassemble takes, placed in the arm's own `legal` by
+-- Parun.Engine.Resolve.Arms.Counters's Reassemble arm and never stored, as
+-- assimilatedPermanents is. Reserved for airbentObjects' reason.
+reassembledContraption :: SlotName
+reassembledContraption = SlotName.MkSlotName (Text.pack "thatReassembledContraption")
+
 -- CR 701.72b: assimilatedPermanents' twin naming the CARDS in other zones,
 -- which rule 701.72b puts onto the battlefield.
 assimilatedCards :: SlotName
@@ -1348,6 +1355,10 @@ blockedCreature = SlotName.MkSlotName (Text.pack "thatAttacker")
 -- that one is the attacker a BLOCK named (CR 509.3b), read from the blocker's
 -- side, and a payload naming the wrong one would still typecheck. Two slots make
 -- the mismatch a dead name instead.
+--
+-- Also CR 508.4's creature put onto the battlefield attacking, under a Matching
+-- Enters whose Filter requires it (Parun.Engine.Event.Binding.entersSlots), so
+-- "attacks or enters attacking" names one creature (Arni Metalbrow).
 --
 -- One object, never a group: the slot is stamped per declaration event, and the
 -- only condition that reads it is one that fires when the declaration named

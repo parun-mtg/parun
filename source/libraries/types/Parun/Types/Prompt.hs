@@ -467,6 +467,10 @@ data Prompt r where
   -- 702.154a's three conjuncts, so an answer outside them is rejected rather
   -- than repaired.
   ChooseEnlist :: Decider.Decider -> PlayerId.PlayerId -> ObjectId.ObjectId -> NonEmpty.NonEmpty ObjectId.ObjectId -> Prompt (Maybe ObjectId.ObjectId)
+  -- | CR 706.2b / Pippa, Duchess of Dice's ruling: which Die creature a "reroll
+  -- any die" resolving inside another roll rerolls, Nothing being the die or
+  -- coin under way; asked wherever a Die creature stands, one included.
+  ChooseRerolledDie :: Decider.Decider -> PlayerId.PlayerId -> ObjectId.ObjectId -> NonEmpty.NonEmpty ObjectId.ObjectId -> Prompt (Maybe ObjectId.ObjectId)
   -- | CR 702.99a: the creature, if any, a resolving spell with cipher is
   -- exiled encoded on -- a "may", so declining is always an answer. Not
   -- ChooseTargets (CR 115.1).
