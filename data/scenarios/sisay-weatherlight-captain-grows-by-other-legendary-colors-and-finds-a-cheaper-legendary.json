@@ -1,0 +1,242 @@
+{
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "battlefield": [
+          {
+            "card": "Sisay, Weatherlight Captain",
+            "label": "sisay",
+            "ready": true
+          },
+          {
+            "card": "Zurgo Bellstriker",
+            "label": "zurgo"
+          },
+          {
+            "card": "Wind Drake",
+            "label": "drake"
+          },
+          {
+            "card": "Plains",
+            "label": "w"
+          },
+          {
+            "card": "Island",
+            "label": "u"
+          },
+          {
+            "card": "Swamp",
+            "label": "b"
+          },
+          {
+            "card": "Mountain",
+            "label": "r"
+          },
+          {
+            "card": "Forest",
+            "label": "g"
+          }
+        ],
+        "library": [
+          {
+            "card": "Krenko, Mob Boss",
+            "label": "krenko"
+          },
+          {
+            "card": "Thalia, Guardian of Thraben",
+            "label": "thalia"
+          },
+          {
+            "card": "Grizzly Bears",
+            "label": "bears"
+          },
+          {
+            "card": "Isamaru, Hound of Konda",
+            "label": "isamaru"
+          },
+          {
+            "card": "Squee, Goblin Nabob",
+            "label": "squee"
+          }
+        ],
+        "name": "alice"
+      },
+      {
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ],
+        "name": "bob"
+      }
+    ],
+    "step": "PrecombatMain"
+  },
+  "description": "CR 105.1, 613.4c, 701.23a: Sisay, Weatherlight Captain gets +1/+1 for each color among other legendary permanents its controller controls, and finds a legendary permanent card with mana value less than its power",
+  "note": "At 3/3 (Zurgo's red; the blue Wind Drake is not legendary and Sisay's own white is not another's), Krenko at mana value 4, Squee at 3 and the nonlegendary Bears are refused; Thalia adds white and makes Sisay 4/4.",
+  "timeline": [
+    {
+      "check": {
+        "PowerToughness": {
+          "object": "$sisay",
+          "power": 3,
+          "toughness": 3
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Activate": {
+          "ability": 0,
+          "mana": [
+            "$w",
+            "$u",
+            "$b",
+            "$r",
+            "$g"
+          ],
+          "object": "$sisay"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "bob",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "player": "alice",
+      "refuse": {
+        "Answer": {
+          "prompt": "Search",
+          "with": [
+            "$krenko"
+          ]
+        }
+      },
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "player": "alice",
+      "refuse": {
+        "Answer": {
+          "prompt": "Search",
+          "with": [
+            "$bears"
+          ]
+        }
+      },
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "player": "alice",
+      "refuse": {
+        "Answer": {
+          "prompt": "Search",
+          "with": [
+            "$squee"
+          ]
+        }
+      },
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Answer": {
+          "prompt": "Search",
+          "with": [
+            "$thalia"
+          ]
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Answer": {
+          "prompt": "Shuffle",
+          "with": [
+            "$krenko",
+            "$bears",
+            "$isamaru",
+            "$squee"
+          ]
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Thalia, Guardian of Thraben",
+          "count": 1,
+          "player": "alice",
+          "zone": "Battlefield"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "PowerToughness": {
+          "object": "$sisay",
+          "power": 4,
+          "toughness": 4
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    }
+  ]
+}
