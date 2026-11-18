@@ -1618,8 +1618,8 @@ triggerConditionChildren c condition = case condition of
   TriggerCondition.IsDealtDamage (PermanentIsDealtDamage.MkPermanentIsDealtDamage (DealtDamage.MkDealtDamage recipient kind by) batching wholeBatch excess atLeast) ->
     fmap (\renamed -> TriggerCondition.IsDealtDamage (PermanentIsDealtDamage.MkPermanentIsDealtDamage (DealtDamage.MkDealtDamage renamed kind by) batching wholeBatch excess atLeast)) (actingChildren c recipient)
   TriggerCondition.PlayerIsDealtDamage (PlayerIsDealtDamage.MkPlayerIsDealtDamage dealt orTheirPlaneswalkers batching turn) -> fmap (TriggerCondition.PlayerIsDealtDamage . PlayerIsDealtDamage.MkPlayerIsDealtDamage dealt orTheirPlaneswalkers batching) (triggerTurn c turn)
-  TriggerCondition.PermanentsDealDamageToPlayer (PermanentsDealDamageToPlayer.MkPermanentsDealDamageToPlayer filter_ kind recipient oneOrMore anyController) ->
-    fmap (\renamed -> TriggerCondition.PermanentsDealDamageToPlayer (PermanentsDealDamageToPlayer.MkPermanentsDealDamageToPlayer renamed kind recipient oneOrMore anyController)) (triggerFilter c filter_)
+  TriggerCondition.PermanentsDealDamageToPlayer (PermanentsDealDamageToPlayer.MkPermanentsDealDamageToPlayer filter_ kind recipient oneOrMore anyController orBattle) ->
+    fmap (\renamed -> TriggerCondition.PermanentsDealDamageToPlayer (PermanentsDealDamageToPlayer.MkPermanentsDealDamageToPlayer renamed kind recipient oneOrMore anyController orBattle)) (triggerFilter c filter_)
   TriggerCondition.CreatureDealtCombatDamageToMonarch -> pure condition
   TriggerCondition.CreaturesDealtCombatDamageToInitiative -> pure condition
   TriggerCondition.PlayerTookInitiative -> pure condition

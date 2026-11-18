@@ -1248,7 +1248,7 @@ batchScoped condition = case condition of
   -- simultaneously, Parun.Engine.Damage.dealWave brackets the step as one
   -- Parun.Types.EventGroup, and "one or more artifact creatures ... deal combat
   -- damage" (Pia Nalaar, Chief Mechanic) names that whole group as its trigger
-  -- event, which occurs once per damaged player and, where the filter names
+  -- event, which occurs once per damaged player or battle and, where the filter names
   -- one, damagers' controller (Event.Binding's batchPartition) -- where
   -- DealsDamage naming a player is CR 603.2c's second sentence and fires once
   -- per damager. Noncombat damage

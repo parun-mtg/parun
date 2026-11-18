@@ -6,7 +6,7 @@ import qualified Parun.Types.Keyword as Keyword
 import qualified Parun.Types.PlayerRelation as PlayerRelation
 
 -- | CR 603.2c: which permanents' damage fires the batch ability, of which
--- kind, and which player it has to have been dealt to -- Norn's Decree's "one
+-- kind, and which player (or battle) it has to have been dealt to -- Norn's Decree's "one
 -- or more creatures an opponent controls deal combat damage to you", The Thing,
 -- Ben Grimm's "one or more Heroes you control deal damage to a player".
 --
@@ -24,6 +24,9 @@ data PermanentsDealDamageToPlayer = MkPermanentsDealDamageToPlayer
     -- | CR 603.2c: a damagers' filter naming no controller (Witch-king of
     -- Angmar's "one or more creatures deal combat damage to you"), one
     -- occurrence whoever controls them, where False is one per controller.
-    anyController :: Bool
+    anyController :: Bool,
+    -- | CR 120.1a: "to a player OR BATTLE" (Zurgo and Ojutai), a battle
+    -- recipient admitted beside the player, one occurrence per battle hit.
+    orBattle :: Bool
   }
   deriving (Eq, Ord, Show)
