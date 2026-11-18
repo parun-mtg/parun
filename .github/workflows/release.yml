@@ -1,0 +1,90 @@
+name: Release
+# Builds a commit and attaches its assets to a draft release named for the
+# version in parun.cabal. Publishing the draft, by hand, creates the tag and
+# locks the release; Pages deploys its web client then (pages.yml).
+on:
+  workflow_dispatch:
+    inputs:
+      ref:
+        description: The branch, tag or commit to release.
+        default: main
+        required: true
+        type: string
+concurrency:
+  group: release
+permissions:
+  contents: read
+jobs:
+  prepare:
+    name: Prepare
+    runs-on: ubuntu-latest
+    # Write, to see draft releases.
+    permissions:
+      contents: write
+    outputs:
+      sha: ${{ steps.version.outputs.sha }}
+      version: ${{ steps.version.outputs.version }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ inputs.ref }}
+      - id: version
+        run: |
+          version=$(awk '$1 == "version:" { print $2 }' parun.cabal)
+          test -n "$version"
+          tag="v$version"
+          if git ls-remote --exit-code --tags origin "refs/tags/$tag"; then
+            echo "::error::Tag $tag already exists; bump the version in parun.cabal."
+            exit 1
+          fi
+          if gh release list --limit 1000 --json name,tagName \
+            --jq ".[] | select(.name == \"$tag\" or .tagName == \"$tag\")" | grep -q .; then
+            echo "::error::Release $tag already exists; delete the draft or bump the version."
+            exit 1
+          fi
+          echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+        env:
+          GH_TOKEN: ${{ github.token }}
+  build:
+    name: Build
+    needs: prepare
+    uses: ./.github/workflows/build.yml
+    with:
+      name: parun-${{ needs.prepare.outputs.version }}
+      ref: ${{ needs.prepare.outputs.sha }}
+      # Cut from a commit CI already tested.
+      test: false
+  publish:
+    name: Draft
+    needs:
+      - prepare
+      - build
+    runs-on: ubuntu-latest
+    permissions:
+      attestations: write
+      contents: write
+      id-token: write
+    env:
+      GH_TOKEN: ${{ github.token }}
+      SHA: ${{ needs.prepare.outputs.sha }}
+      VERSION: ${{ needs.prepare.outputs.version }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ needs.prepare.outputs.sha }}
+      - uses: actions/download-artifact@v8
+        with:
+          path: artifacts
+          pattern: parun-${{ needs.prepare.outputs.version }}-*
+      - run: script/package-release.sh "$VERSION" artifacts assets
+      - uses: actions/attest-build-provenance@v4
+        with:
+          subject-path: assets/*
+      - run: |
+          gh release create "v$VERSION" assets/* \
+            --draft \
+            --generate-notes \
+            --notes "Each platform's archive holds the \`parun\` binary and the \`data\` directory it reads; set the \`parun_datadir\` environment variable to that directory's path." \
+            --target "$SHA" \
+            --title "v$VERSION"
