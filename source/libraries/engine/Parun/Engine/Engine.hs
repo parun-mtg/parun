@@ -2063,8 +2063,15 @@ turnAnchorOf gs = Maybe.fromMaybe (TurnRegisters.activePlayer (GameState.turn gs
 -- TakeExtraTurn arm).
 --
 -- CR 807.4: a Grand Melee game's markers decide instead (takeMarkedTurn).
+--
+-- First the outgoing turn, having taken its last step, ends what lasts it and
+-- outlived its cleanup step (Expiry.TurnEnded): a turn whose phases are
+-- reversed (Topsy Turvy) takes that step second. Before an extra turn's entry
+-- is popped, so a duration naming that turn (Expiry.DuringExtraTurn) still
+-- sees it pending.
 takeNextTurn :: Game ()
 takeNextTurn = do
+  State.modify' (Expiry.sweep Expiry.TurnEnded)
   markers <- State.gets GameState.turnMarkers
   if null markers then takeOrdinaryTurn else takeMarkedTurn
 

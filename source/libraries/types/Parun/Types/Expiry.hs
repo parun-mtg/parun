@@ -54,8 +54,8 @@ data Expiry
     -- permanent and not its controller (Elvish Hunter's ruling).
     AtStepOfControllerOf StepOfControllerOf.StepOfControllerOf
   | -- | CR 611.2a: "until the end of your next turn", as a concrete player and
-    -- the turn the duration began on. Ends as that player's next turn ends, in
-    -- its cleanup step (CR 514) -- a whole turn later than AtTurnOf above.
+    -- the turn the duration began on. Ends as that player's next turn ends
+    -- (Parun.Engine.Expiry.endsAt) -- a whole turn later than AtTurnOf above.
     --
     -- Carries the turn NUMBER as well as the player because the two readings
     -- differ only when the duration begins during that player's own turn: the
@@ -92,7 +92,7 @@ data Expiry
     -- controller's next turn", open on any later turn while that object's
     -- current controller is active, pinned to DuringTurnOf once such a turn's
     -- declare attackers step ends (Parun.Engine.Expiry.pinAfterDeclareAttackers),
-    -- and ended by such a turn's cleanup if it had none.
+    -- and ended as such a turn ends if it had none.
     -- Wall of Dust and Gideon, Battle-Forged are the producers.
     DuringTurnOfControllerOf AfterObjectTurn.AfterObjectTurn
   | -- | CR 611.2a / 500.7: Duration.DuringThatExtraTurn, stored as the

@@ -281,10 +281,10 @@ endOfNextTurnSpec s = Spec.describe s "DropAtEndOfTurnOf" $ do
     Spec.assertEqWith s "alice is active on turn 3" (TurnRegisters.activePlayer (GameState.turn alicesNext), TurnRegisters.turnNumber (GameState.turn alicesNext)) (S.alice, 3)
     Spec.assertEqWith s "and it ends at that turn's cleanup" (StoredEffects.continuousEffects (GameState.stored ended)) []
   Spec.it s "CR 611.2a another player's cleanup never ends it, whatever the turn number" $ do
-    let gs0 = S.threePlayerGame
-        armed = effectWith (Expiry.Type.AtEndOfTurnOf (AfterTurn.MkAfterTurn S.bob 1)) gs0
-        carolsTurn = handoff (handoff armed)
-    Spec.assertEqWith s "carol is active on turn 3, past bob's own turn 2" (TurnRegisters.activePlayer (GameState.turn carolsTurn), TurnRegisters.turnNumber (GameState.turn carolsTurn)) (S.carol, 3)
+    let gs0 = handoff S.threePlayerGame
+        armed = effectWith (Expiry.Type.AtEndOfTurnOf (AfterTurn.MkAfterTurn S.bob 2)) gs0
+        carolsTurn = handoff armed
+    Spec.assertEqWith s "carol is active on turn 3, past bob's turn 2 it was armed on" (TurnRegisters.activePlayer (GameState.turn carolsTurn), TurnRegisters.turnNumber (GameState.turn carolsTurn)) (S.carol, 3)
     Spec.assertEqWith s "carol's cleanup is not bob's" (length ((StoredEffects.continuousEffects . GameState.stored) (Expiry.dropAtCleanup carolsTurn))) 1
   Spec.it s "CR 611.2a the turn handoff leaves it alone: it ends at that turn's END" $ do
     let gs0 = Setup.emptyGame S.bothPlayers

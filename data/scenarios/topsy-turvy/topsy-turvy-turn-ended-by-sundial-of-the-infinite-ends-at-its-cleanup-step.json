@@ -43,7 +43,7 @@
     "step": "PrecombatMain"
   },
   "description": "An effect ending a turn whose phases Topsy Turvy reversed ends it at its cleanup step: Sundial of the Infinite in bob's first main phase skips the rest of his turn, beginning phase and draw included",
-  "note": "See docs/decisions.md, \"Where a turn whose phases are reversed ends when an effect ends it\". Alice's turn 3 opens at its end step, bob having drawn nothing.",
+  "note": "CR 725.1 and 725.1f: the turn ends after its cleanup steps. Alice's turn 3 opens at its end step, bob having drawn nothing.",
   "timeline": [
     {
       "do": {
