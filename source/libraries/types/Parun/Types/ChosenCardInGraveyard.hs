@@ -16,7 +16,8 @@ import qualified Parun.Types.ZoneScope as ZoneScope
 --
 -- The COUNT is per CHOOSER: Fall of the Thran's "each player returns two land
 -- cards from their graveyard" is two each, and Liliana, the Necromancer's "up
--- to two creature cards from graveyards" any number up to two. An exact count
+-- to two creature cards from graveyards" any number up to two
+-- (Chooser.TheControllerInEach's is per graveyard instead). An exact count
 -- names DISTINCT cards, so each card picked is dropped from the candidates
 -- before the next ask (CR 608.2c's rules of English), and CR 609.3 covers the
 -- shortfall -- a graveyard holding fewer matches than the count gives what it has.

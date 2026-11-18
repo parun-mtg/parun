@@ -21,6 +21,12 @@ spec s = Spec.describe s "Parun.Codec.Chooser" $ do
       Chooser.codec
       Chooser.EachInScope
       " {\"type\":\"EachInScope\"} "
+  Spec.it s "TheControllerInEach" $
+    Common.assertCodec
+      s
+      Chooser.codec
+      Chooser.TheControllerInEach
+      " {\"type\":\"TheControllerInEach\"} "
   Spec.it s "BoundInSlot" $
     Common.assertCodec
       s

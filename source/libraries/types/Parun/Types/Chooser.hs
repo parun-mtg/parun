@@ -45,6 +45,8 @@ data Chooser
     -- the battlefield under YOUR control" is the same chooser with the rider
     -- left off.
     EachInScope
+  | -- | The resolving controller, choosing once in each graveyard the scope names (CR 608.2c).
+    TheControllerInEach
   | -- | The ONE player a slot names -- Skullwinder's "choose an opponent. That
     -- player returns a card from their graveyard to their hand", where the slot
     -- was filled by Parun.Types.Effect's ChoosePlayer earlier in the same

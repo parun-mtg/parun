@@ -469,6 +469,7 @@ chooserNames :: (Monoid r) => Asking r -> Chooser.Chooser -> r
 chooserNames asking x = case x of
   Chooser.TheController -> mempty
   Chooser.EachInScope -> mempty
+  Chooser.TheControllerInEach -> mempty
   Chooser.BoundInSlot slotName -> slotNames asking slotName
 
 chosenPermanentsNames :: (Monoid r) => Asking r -> ChosenPermanents.ChosenPermanents -> r
