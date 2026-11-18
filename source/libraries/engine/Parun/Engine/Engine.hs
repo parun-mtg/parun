@@ -514,15 +514,6 @@ sampleWorldSince = do
           stamp obj = obj {Object.worldSince = Just ts}
       State.put gs1 {GameState.objects = foldr (Map.adjust stamp) cleared toStamp}
 
--- CR 101.4: whether static abilities reverse the turn order (Topsy Turvy),
--- sampled into Bookkeeping.turnOrderReversedByStatic for Turn.turnOrder, which
--- sits below the gather of static abilities. Nothing announces a static
--- ability starting or stopping to apply, as nothing announces a change of
--- control, so it samples.
-sampleTurnOrder :: Game ()
-sampleTurnOrder = State.modify' $ \gs ->
-  gs {GameState.bookkeeping = (GameState.bookkeeping gs) {Bookkeeping.turnOrderReversedByStatic = PlayerEffect.turnOrderReversedByStatic gs}}
-
 -- CR 514.1's cleanup discard -- NOT CR 514.2, the sweep beside it. The choice is
 -- the player's: trimming front-of-hand would be the engine choosing what to
 -- pitch. The answer is filtered to cards actually in hand and capped at the
@@ -1384,7 +1375,8 @@ settleForPriority = Monad.void performSettle
 -- that stores what a projection answers live -- sampleWorldSince for CR 704.5k,
 -- Event.sampleControl for CR 603.2, Exile.accrueLookers for CR 406.3,
 -- checkControlContinuity for CR 302.6, Combat.removeChanged for CR 506.4,
--- Ring.endOnControlChange for CR 701.54a, sampleTurnOrder for CR 101.4.
+-- Ring.endOnControlChange for CR 701.54a, PlayerEffect.sampleTurnOrder for CR
+-- 101.4.
 --
 -- CR 704.3 makes "whenever a player would get priority" the coarsest moment
 -- anything outside a resolution could observe CR 611.2b's condition, so
@@ -1459,7 +1451,7 @@ settlePasses passes boards = do
   -- Before placePendingTriggers, whose CR 603.3b order is the turn order.
   -- Stamp-only, and a departure the SBA pass makes is seen on the pass it
   -- forces.
-  sampleTurnOrder
+  State.modify' PlayerEffect.sampleTurnOrder
   -- Unlike the other samples here it MAKES WORK: a GameEvent.ControlChanged
   -- it mints has to be scanned, so it runs before placePendingTriggers and joins
   -- the recursion guard below.
