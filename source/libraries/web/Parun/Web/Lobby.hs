@@ -2,16 +2,29 @@
 -- the bot's, and every deck, grouped by set and filtered by what is typed.
 module Parun.Web.Lobby where
 
+import qualified Control.Monad as Monad
 import qualified Data.Char as Char
 import qualified Data.Foldable as Foldable
 import qualified Data.List as List
 import qualified Data.Map.Strict as Map
 import qualified Data.Maybe as Maybe
 import qualified Data.Sequence as Seq
+import qualified Data.Set as Set
 import qualified Data.Text as Text
 import Numeric.Natural (Natural)
+import qualified Parun.Types.Card as Card
+import qualified Parun.Types.CardName as CardName
+import qualified Parun.Types.Color as Color
+import qualified Parun.Types.Face as Face
+import qualified Parun.Types.Hybrid as Hybrid
+import qualified Parun.Types.HybridPhyrexian as HybridPhyrexian
+import qualified Parun.Types.ManaCost as ManaCost
+import qualified Parun.Types.ManaSymbol as ManaSymbol
+import qualified Parun.Types.ManaType as ManaType
+import qualified Parun.Web.Card as Web.Card
 import qualified Parun.Web.Element as Element
 import qualified Parun.Web.Html as Html
+import qualified Parun.Web.Mana as Mana
 
 data Lobby = MkLobby
   { -- | The card files the registry holds.
@@ -25,7 +38,9 @@ data Lobby = MkLobby
     -- | Which deck a tapped deck becomes.
     choosing :: Slot,
     -- | What the deck list is filtered by.
-    search :: Text.Text
+    search :: Text.Text,
+    -- | Each deck's colours, by its name (colours).
+    palette :: Map.Map Text.Text (Set.Set Color.Color)
   }
   deriving (Eq, Show)
 
@@ -51,7 +66,39 @@ data Event
 
 -- | A lobby holding these decks, nothing chosen yet.
 new :: Natural -> Seq.Seq Text.Text -> Lobby
-new files names = MkLobby files names Nothing Nothing MkMine Text.empty
+new files names = MkLobby files names Nothing Nothing MkMine Text.empty Map.empty
+
+-- | A card's colours as a deck shows them: those of the mana symbols in
+-- its faces' costs.
+cardColours :: Card.Card -> Set.Set Color.Color
+cardColours card = foldMap (foldMap costColours . Face.manaCost) (Card.faces card)
+
+-- | The colours a cost's symbols name (CR 105.2, 202.2).
+costColours :: ManaCost.ManaCost -> Set.Set Color.Color
+costColours cost =
+  let ofType t = case t of
+        ManaType.Colored c -> Set.singleton c
+        ManaType.Colorless -> Set.empty
+      symbol sym = case sym of
+        ManaSymbol.Generic _ -> Set.empty
+        ManaSymbol.OfType t -> ofType t
+        ManaSymbol.Hybrid h -> Set.union (ofType (Hybrid.left h)) (ofType (Hybrid.right h))
+        ManaSymbol.MonocoloredHybrid t -> ofType t
+        ManaSymbol.Phyrexian c -> Set.singleton c
+        ManaSymbol.HybridPhyrexian h -> Set.fromList [HybridPhyrexian.left h, HybridPhyrexian.right h]
+        ManaSymbol.Snow -> Set.empty
+        ManaSymbol.Variable -> Set.empty
+   in foldMap symbol (ManaCost.unwrap cost)
+
+-- | A deck list's colours: those of each card a line names ("4 Forest",
+-- "1 Shock (M19) 156"), by `colours`; other lines skipped.
+deckColours :: (CardName.CardName -> Set.Set Color.Color) -> Text.Text -> Set.Set Color.Color
+deckColours colours contents =
+  let named line = do
+        let (count, rest) = Text.span Char.isDigit (Text.strip line)
+        Monad.guard (not (Text.null count))
+        pure (CardName.MkCardName (Text.strip (fst (Text.breakOn (Text.pack " (") rest))))
+   in foldMap colours (Set.fromList (Maybe.mapMaybe named (Text.lines contents)))
 
 -- | A deck file's name beneath the root, less ".txt"; the path as given
 -- where the root does not prefix it.
@@ -106,7 +153,14 @@ matches typed name =
 view :: Lobby -> Html.Html Event
 view lobby =
   let shown = filter (matches (search lobby)) (Foldable.toList (decks lobby))
-      groups = Map.toList (Map.fromListWith (flip (<>)) [(fst (describe name), [name]) | name <- shown])
+      grouped = Map.toList (Map.fromListWith (flip (<>)) [(fst (describe name), [name]) | name <- shown])
+      -- A set with nothing but its whole list joins the others like it,
+      -- each named by its set.
+      lone names = case names of
+        [name] -> Text.isSuffixOf (Text.pack "/all") name
+        _ -> False
+      groups = [g | g@(_, names) <- grouped, not (lone names)]
+      wholes = concat [names | (_, names) <- grouped, lone names]
       slot which title chosen fallback =
         Element.button
           (["slot"] <> ["choosing" | choosing lobby == which])
@@ -114,9 +168,11 @@ view lobby =
           [ Element.el "span" ["slot-title"] [] [Element.string title],
             Element.el "span" ["slot-deck"] [] [Element.text (maybe (Text.pack fallback) label chosen)]
           ]
-      deck name =
+      deck name = deckAs (snd (describe name)) name
+      deckAs title name =
         let picked = Just name == (if choosing lobby == MkMine then mine lobby else theirs lobby)
-         in (name, Element.button (["deck"] <> ["picked" | picked]) (MkPick name) [Element.text (snd (describe name))])
+            pips = Element.el "span" ["pips"] [] [Mana.symbol (Text.pack (Web.Card.letterUpper c)) | c <- Set.toList (Map.findWithDefault Set.empty name (palette lobby))]
+         in (name, Element.button (["deck"] <> ["picked" | picked]) (MkPick name) [Element.el "span" ["deck-name"] [] [Element.text title], pips])
    in Element.el
         "main"
         ["lobby"]
@@ -154,7 +210,9 @@ view lobby =
                     Element.button ["random"] MkRandom [Element.string "Random"]
                   ],
                 Element.el "p" ["choosing-for"] [] [Element.string (if choosing lobby == MkMine then "Choose your deck." else "Choose the bot's deck.")],
-                Element.keyed "div" ["sets"] [] [(group, Element.el "section" ["set"] [] [Element.el "h2" [] [] [Element.text group], Element.keyed "div" ["deck-list"] [] (fmap deck names)]) | (group, names) <- groups]
+                Element.keyed "div" ["sets"] [] $
+                  [(group, Element.el "section" ["set"] [] [Element.el "h2" [] [] [Element.text group], Element.keyed "div" ["deck-list"] [] (fmap deck names)]) | (group, names) <- groups]
+                    <> [(Text.pack " whole", Element.el "section" ["set", "wholes"] [] [Element.el "h2" [] [] [Element.string "Whole sets"], Element.keyed "div" ["deck-list"] [] [deckAs (fst (describe name)) name | name <- wholes]]) | not (null wholes)]
               ]
                 <> [Element.el "p" ["empty"] [] [Element.string "No deck matches."] | null shown]
             )

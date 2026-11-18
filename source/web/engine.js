@@ -80,7 +80,10 @@ phase("unpacked");
 // ?trace, passed on from the page, has Haskell time each step on standard
 // error (Parun.Browser.trace), which goes to the page's trace.
 const tracing = new URLSearchParams(location.search).has("trace");
-const wasi = new WASI([], ["parun_datadir=/data", ...(tracing ? ["parun_trace=1"] : [])], [
+// A rematch's decks (?mine=…&theirs=…) skip the lobby (Parun.Web.Ending).
+const query = new URLSearchParams(location.search);
+const decks = ["mine", "theirs"].filter((side) => query.has(side)).map((side) => `parun_${side}=${query.get(side)}`);
+const wasi = new WASI([], ["parun_datadir=/data", ...(tracing ? ["parun_trace=1"] : []), ...decks], [
   new OpenFile(new File([])),
   ConsoleStdout.lineBuffered((line) => console.log(line)),
   ConsoleStdout.lineBuffered((line) => (tracing ? postMessage({ trace: line }) : console.warn(line))),

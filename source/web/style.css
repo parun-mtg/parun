@@ -461,6 +461,7 @@ main.lobby {
 }
 
 .set h2 {
+  text-transform: uppercase;
   font-size: 0.78rem;
   letter-spacing: 0.08em;
   color: var(--muted);
@@ -482,6 +483,22 @@ main.lobby {
   background: var(--surface);
   text-align: left;
   cursor: pointer;
+}
+
+#app button.deck {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.4em;
+}
+
+.pips {
+  flex: none;
+  font-size: 0.9rem;
+}
+
+.wholes .deck-list {
+  grid-template-columns: repeat(auto-fill, minmax(76px, 1fr));
 }
 
 #app button.deck.picked {

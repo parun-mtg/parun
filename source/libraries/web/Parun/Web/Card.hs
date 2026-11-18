@@ -4,6 +4,7 @@
 -- with it.
 module Parun.Web.Card where
 
+import qualified Data.Char as Char
 import qualified Data.Containers.ListUtils as ListUtils
 import qualified Data.Foldable as Foldable
 import qualified Data.Map.Strict as Map
@@ -61,6 +62,10 @@ colour o =
         [] | Render.isA CardType.Land o -> "c-land"
         [] -> "c-none"
         _ -> "c-multi"
+
+-- | A colour's symbol letter (CR 105.1).
+letterUpper :: Color.Color -> String
+letterUpper c = fmap Char.toUpper (letter c)
 
 letter :: Color.Color -> String
 letter c = case c of

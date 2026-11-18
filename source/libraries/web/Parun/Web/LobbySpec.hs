@@ -1,8 +1,12 @@
 module Parun.Web.LobbySpec where
 
+import qualified Data.Map.Strict as Map
 import qualified Data.Sequence as Seq
+import qualified Data.Set as Set
 import qualified Data.Text as Text
 import qualified Parun.Spec as Spec
+import qualified Parun.Types.CardName as CardName
+import qualified Parun.Types.Color as Color
 import qualified Parun.Web.Html as Html
 import qualified Parun.Web.Lobby as Lobby
 
@@ -21,6 +25,11 @@ spec s = Spec.describe s "Parun.Web.Lobby" $ do
 
     Spec.it s "names a set's whole list" $ do
       Spec.assertEq s (Lobby.describe $ Text.pack "sets/por/all") (Text.pack "POR", Text.pack "Every card")
+
+  Spec.describe s "deckColours" $ do
+    Spec.it s "unions the colours of the cards its lines name, skipping the rest" $ do
+      let known = Map.fromList [(CardName.MkCardName (Text.pack "Shock"), Set.singleton Color.Red), (CardName.MkCardName (Text.pack "Forest"), Set.empty), (CardName.MkCardName (Text.pack "Giant Growth"), Set.singleton Color.Green)]
+      Spec.assertEq s (Lobby.deckColours (\name -> Map.findWithDefault Set.empty name known) (Text.pack "4 Shock (M19) 156\n18 Forest\n# a comment\n2 Giant Growth\n1 Unknown Card")) (Set.fromList [Color.Red, Color.Green])
 
   Spec.describe s "update" $ do
     Spec.it s "picks your deck, then moves on to the bot's" $ do

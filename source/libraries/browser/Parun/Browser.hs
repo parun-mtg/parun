@@ -64,6 +64,14 @@ next page = do
     Seq.EmptyL -> (events, Nothing)
   maybe (wait >> next page) pure queued
 
+-- | Whether an event taken waits to be read.
+pending :: Page msg -> IO Bool
+pending page = not . Seq.null <$> IORef.readIORef (taken page)
+
+-- | Gives the page a turn: its events reach the handlers before this returns.
+pause :: IO ()
+pause = pausePromise >>= \() -> pure ()
+
 -- | Drops the events taken that no one has waited for yet.
 flush :: Page msg -> IO ()
 flush page = IORef.atomicWriteIORef (taken page) Seq.empty
@@ -93,6 +101,9 @@ foreign import javascript "wrapper"
 
 foreign import javascript safe "await new Promise((resolve) => { globalThis.parunWake = resolve; })"
   waitPromise :: IO ()
+
+foreign import javascript safe "await new Promise((resolve) => setTimeout(resolve, 0))"
+  pausePromise :: IO ()
 
 foreign import javascript unsafe "globalThis.parunWake?.()"
   wake :: IO ()

@@ -10,11 +10,13 @@ import qualified Data.ByteString as ByteString
 import qualified Data.Either as Either
 import qualified Data.Functor.Identity as Identity
 import qualified Data.IORef as IORef
+import qualified Data.Map.Lazy as LazyMap
 import qualified Data.Map.Strict as Map
 import qualified Data.Maybe as Maybe
 import qualified Data.Sequence as Seq
 import qualified Data.Set as Set
 import qualified Data.Text as Text
+import qualified Data.Text.Encoding as Encoding
 import qualified GHC.Clock as Clock
 import Numeric.Natural (Natural)
 import qualified Parun.Browser as Browser
@@ -48,6 +50,7 @@ import qualified Parun.Web.Ending as Ending
 import qualified Parun.Web.Html as Html
 import qualified Parun.Web.Lobby as Lobby
 import qualified Parun.Web.Question as Web.Question
+import qualified System.Environment as Environment
 
 -- | The game on a page mounted first, so any exception that escapes it is
 -- shown there rather than ending the module unseen.
@@ -69,18 +72,43 @@ play page = do
         key <- Key.fresh
         let roll = foldr (\w acc -> acc * 4294967296 + toInteger w) 0 (Key.unwrap key)
         pure (Integer.toInt (mod roll (toInteger (max 1 (Seq.length names)))) >>= (\i -> Seq.lookup i names))
-      choose lobby = do
+      -- The lobby, with the decks whose colours are still to read: one
+      -- batch at a time while no tap waits, the page given a turn between.
+      choose lobby work = do
         Browser.display page . fmap Left $ Lobby.view lobby
-        (event, value) <- Browser.next page
-        case event of
-          Left Lobby.MkStart | Just one <- Lobby.mine lobby >>= (`Map.lookup` byName) -> do
-            two <- maybe (fmap (Maybe.fromMaybe Text.empty) random) pure (Lobby.theirs lobby)
-            maybe (choose lobby) (\path -> pure (one, path)) (Map.lookup two byName)
-          Left Lobby.MkRandom -> random >>= maybe (choose lobby) (\name -> choose (Lobby.update (Lobby.MkPick name) Text.empty lobby))
-          Left e -> choose (Lobby.update e value lobby)
-          Right _ -> choose lobby
+        waiting <- Browser.pending page
+        case work of
+          _ : _ | not waiting -> do
+            let (batch, rest) = splitAt 8 work
+            read' <- Monad.forM batch $ \(name, path) -> do
+              contents <- Encoding.decodeUtf8Lenient <$> ByteString.readFile path
+              Exception.evaluate . (,) name $! Lobby.deckColours colours contents
+            Browser.pause
+            choose lobby {Lobby.palette = Map.union (Lobby.palette lobby) (Map.fromList read')} rest
+          _ -> do
+            (event, value) <- Browser.next page
+            case event of
+              Left Lobby.MkStart | Just one <- Lobby.mine lobby >>= (`Map.lookup` byName) -> do
+                two <- maybe (fmap (Maybe.fromMaybe Text.empty) random) pure (Lobby.theirs lobby)
+                maybe (choose lobby work) (\path -> pure (one, path)) (Map.lookup two byName)
+              Left Lobby.MkRandom -> random >>= maybe (choose lobby work) (\name -> choose (Lobby.update (Lobby.MkPick name) Text.empty lobby) work)
+              Left e -> choose (Lobby.update e value lobby) work
+              Right _ -> choose lobby work
+      -- A deck's colours come from the card files its lines name, each
+      -- parsed only then; a set's whole list would be every colour, so it
+      -- gets none.
+      -- Lazy, so a file is parsed only when looked up.
+      byFile = LazyMap.fromList loaded
+      colours name = case LazyMap.lookup (Registry.cardPath root (Registry.slugFor name)) byFile of
+        Just (Right card) -> Lobby.cardColours card
+        _ -> Set.empty
+      prepared = [(name, path) | (name, path) <- Map.toList byName, not (Text.isSuffixOf (Text.pack "/all") name)]
       say = Browser.display page . fmap Right . message
-  (one, two) <- choose (Lobby.new (Natural.length loaded) names)
+  -- A rematch names both decks (Ending.rematch) and skips the lobby.
+  asked <- (,) <$> Environment.lookupEnv "parun_mine" <*> Environment.lookupEnv "parun_theirs"
+  (one, two) <- case asked of
+    (Just mine, Just theirs) | Just a <- Map.lookup (Text.pack mine) byName, Just b <- Map.lookup (Text.pack theirs) byName -> pure (a, b)
+    _ -> choose (Lobby.new (Natural.length loaded) names) prepared
   -- The printing table is the slow part of the registry, so the lobby shows first.
   Browser.display page . fmap Right $ starting (Lobby.deckName deckRoot one) (Lobby.deckName deckRoot two)
   registry <- Registry.defaultRegistry loaded :: IO (Registry.Registry Identity.Identity)
@@ -97,7 +125,7 @@ play page = do
           -- What the player saw after their last decision: the killing blow, say.
           Monad.forM_ outcome $ IORef.modifyIORef' seatRef . witness . PlayerView.Engine.viewFor player . snd
           seen <- logged <$> IORef.readIORef seatRef
-          Browser.display page . Ending.view $ Ending.MkEnding (verdictOf outcome) (either (\reason -> [Text.pack "The game stopped: " <> reason <> Text.pack "."]) (\(result, gs) -> Render.result result : Render.departures gs) outcome) (Command.rendered recorded) seen
+          Browser.display page . Ending.view $ Ending.MkEnding (verdictOf outcome) (either (\reason -> [Text.pack "The game stopped: " <> reason <> Text.pack "."]) (\(result, gs) -> Render.result result : Render.departures gs) outcome) (Command.rendered recorded) seen (Lobby.deckName deckRoot one, Lobby.deckName deckRoot two)
         Left problems -> say problems
     (first, second) -> say $ Either.fromLeft [] first <> Either.fromLeft [] second
 

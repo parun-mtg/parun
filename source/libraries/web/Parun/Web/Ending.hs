@@ -30,7 +30,9 @@ data Ending = MkEnding
     -- | The game as a scenario file (Command.rendered).
     scenario :: Text.Text,
     -- | What the player saw happen, oldest first (Client.unseen).
-    witnessed :: Seq.Seq Text.Text
+    witnessed :: Seq.Seq Text.Text,
+    -- | The player's deck and the bot's, by name (Lobby.deckName).
+    decks :: (Text.Text, Text.Text)
   }
   deriving (Eq, Show)
 
@@ -51,13 +53,23 @@ view ending =
             "div"
             ["ending-actions"]
             []
-            [ -- The empty reference is the page itself, loaded afresh.
-              Element.el "a" ["primary"] [Element.attr "href" Text.empty] [Element.string "Play again"],
+            [ Element.el "a" ["primary"] [Element.attr "href" (rematch (decks ending))] [Element.string "Rematch"],
+              -- The page itself without a query: the lobby.
+              Element.el "a" [] [Element.attr "href" (Text.pack "./")] [Element.string "New game"],
               Element.el "a" [] [Element.attr "href" (download (scenario ending)), Element.attr "download" (Text.pack "parun-game.json")] [Element.string "Save as a scenario"]
             ],
           Element.el "h2" [] [] [Element.string "Game log"],
           Element.el "ol" ["game-log"] [] [Element.el "li" [] [] [Element.text line] | line <- Foldable.toList (witnessed ending)]
         ]
+
+-- | The page starting a game between these decks at once (engine.js passes
+-- the query on as parun_mine and parun_theirs). A deck's name is a path of
+-- lowercase words, so nothing in it needs escaping in a query but what a
+-- fragment escapes too.
+rematch :: (Text.Text, Text.Text) -> Text.Text
+rematch (mine, theirs) = Text.pack "?mine=" <> query mine <> Text.pack "&theirs=" <> query theirs
+  where
+    query t = Encoding.decodeLatin1 (LazyByteString.toStrict . Builder.toLazyByteString . Fragment.encode $ Encoding.encodeUtf8Builder t)
 
 -- | A data URL holding the text as JSON (RFC 2397).
 download :: Text.Text -> Text.Text
