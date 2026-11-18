@@ -2407,16 +2407,22 @@ castProposals among pid gs =
 -- any face, no keyword whose CR 702 permission reaches a graveyard
 -- (Keyword.castingPermissionsOf, and CR 702.146a's disturb) under that face's
 -- types, and carries no copy stamp (CR 707.2) and no Object.playPermissions.
--- The board's effects, every gate open, change only power and toughness (CR
--- 613.4), so none grants it a keyword, an ability or a permission or changes
--- its types, under any proposal of a card adding no effect of its own; and no
--- CastFrom row exists at all. False wherever any of that fails, leaving the
--- card to `castable`. Parun.CastSpec's "#6552 a buried Serra Angel is ruled
--- out unprojected" proves the keyword half.
+-- No effect the board gathers with every gate open, granted statics and
+-- copied ones included, reaches it beyond power and toughness (CR 613.4):
+-- each other effect's candidate set (Projection.candidatesFor) leaves it out,
+-- so none grants it a keyword, an ability or a permission or changes its
+-- types, under any proposal of a card adding no effect of its own. No CastFrom
+-- row exists, and no effect grants a player ability that could carry one.
+-- False wherever any of that fails, leaving the card to `castable`.
+-- Parun.CastSpec's "#6552 a buried Serra Angel is ruled out unprojected"
+-- proves the keyword half, and "#6605 an anthem confined to the battlefield
+-- leaves a buried card unprojected" the reach.
 unpermittedInGraveyard :: GameState -> ObjectId -> Bool
 unpermittedInGraveyard gs =
-  let ptOnly g = let l = Projection.layer (Projection.gModification g) in l >= Layer.CharacteristicPT && l <= Layer.SwitchPT
-      quiet = all ptOnly (Projection.gatherUngated gs) && not (PlayerEffect.anyCastFromRow gs)
+  let ungated = Projection.gatherUngated gs
+      ptOnly g = let l = Projection.layer (Projection.gModification g) in l >= Layer.CharacteristicPT && l <= Layer.SwitchPT
+      reached = Set.unions [Projection.candidatesFor (Projection.gAffected g) gs | g <- ungated, not (ptOnly g)]
+      quiet = not (PlayerEffect.anyCastFromRow gs) && not (any (Projection.grantsPlayerAbility . Projection.gModification) ungated)
       keywordsPermitNothing face =
         let keywords = Face.keywordSet face
          in null (Keyword.castingPermissionsOf (TypeLine.types (Face.typeLine face)) keywords) && null (Keyword.disturbCosts keywords)
@@ -2428,6 +2434,7 @@ unpermittedInGraveyard gs =
             && null (Object.playPermissions obj)
             && all printsNothing (Card.Type.faces card)
             && quiet
+            && not (Set.member oid reached)
         _ -> False
 
 -- CR 702.102a: the fused spell this card in a hand may be cast as, or Nothing
