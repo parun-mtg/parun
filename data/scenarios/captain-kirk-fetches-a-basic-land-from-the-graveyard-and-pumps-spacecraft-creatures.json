@@ -1,0 +1,30 @@
+{
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "name": "alice",
+        "battlefield": [{"card": "Captain Kirk, Boldly Going", "label": "kirk", "ready": true}, {"card": "Borg Cube", "label": "cube", "counters": [{"key": {"type": "Named", "value": "charge"}, "value": 12}]}, {"card": "U.S.S. Excelsior, Cutting Edge", "label": "excelsior"}],
+        "graveyard": [{"card": "Plains", "label": "plains"}, {"card": "Evolving Wilds", "label": "wilds"}],
+        "library": [{"card": "Forest", "label": "forest"}, {"card": "Coastal Peak", "label": "peak"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}]
+      },
+      {
+        "name": "bob",
+        "library": [{"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}]
+      }
+    ],
+    "step": "PrecombatMain"
+  },
+  "description": "Captain Kirk's attack trigger searches his controller's library and/or graveyard for a basic land card and puts it into their hand; Spacecraft creatures they control get +3/+3",
+  "note": "The stationed Borg Cube is a 6/6 Spacecraft creature, so it is 9/9; the unstationed Excelsior is no creature and has no power. The search takes the Plains from the graveyard; Evolving Wilds and Coastal Peak are lands but not basic, so neither is offered.",
+  "timeline": [
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"PowerToughness": {"object": "$cube", "power": 9, "toughness": 9}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Types": {"object": "$excelsior", "types": ["Artifact"]}}},
+    {"turn": 1, "step": "DeclareAttackers", "player": "alice", "do": {"Attack": ["$kirk"]}},
+    {"turn": 1, "step": "DeclareAttackers", "player": "alice", "do": {"Answer": {"prompt": "ChooseSearchZones", "with": ["Graveyard"]}}},
+    {"turn": 1, "step": "DeclareAttackers", "player": "alice", "refuse": {"Answer": {"prompt": "Search", "with": ["$wilds"]}}},
+    {"turn": 1, "step": "DeclareAttackers", "player": "alice", "do": {"Answer": {"prompt": "Search", "with": ["$plains"]}}},
+    {"turn": 1, "step": "DeclareAttackers", "player": "alice", "check": {"Count": {"card": "Plains", "count": 1, "player": "alice", "zone": "Hand"}}},
+    {"turn": 1, "step": "DeclareAttackers", "player": "alice", "check": {"Count": {"card": "Evolving Wilds", "count": 1, "player": "alice", "zone": "Graveyard"}}}
+  ]
+}

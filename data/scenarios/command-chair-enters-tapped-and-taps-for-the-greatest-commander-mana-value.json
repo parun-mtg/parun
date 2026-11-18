@@ -1,0 +1,30 @@
+{
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "name": "alice",
+        "battlefield": [{"card": "Command Chair", "label": "chair"}, {"card": "Krenko, Mob Boss", "label": "krenko", "commander": true}, {"card": "Tymna the Weaver", "label": "tymna", "commander": true}, {"card": "Plains", "label": "p1"}, {"card": "Plains", "label": "p2"}, {"card": "Plains", "label": "p3"}, {"card": "Plains", "label": "p4"}, {"card": "Plains", "label": "p5"}, {"card": "Plains", "label": "p6"}],
+        "hand": [{"card": "Command Chair", "label": "new"}],
+        "command": [{"card": "Progenitus", "label": "progenitus", "commander": true}],
+        "library": [{"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}]
+      },
+      {
+        "name": "bob",
+        "battlefield": [{"card": "Ghalta, Primal Hunger", "label": "ghalta", "commander": true}],
+        "library": [{"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}]
+      }
+    ],
+    "step": "PrecombatMain"
+  },
+  "description": "CR 903.3: Command Chair enters tapped and adds X mana of any one color, X the greatest mana value among commanders its controller controls",
+  "note": "Alice controls Krenko (4) and Tymna (3): X is 4, not their total 7. Her Progenitus (6) in the command zone doesn't count: the ruling on Bane's Contingency reads a commander you control as a permanent on the battlefield. Bob's Ghalta (12) is his. The four green units are the yield the ability offers beside its fixed three.",
+  "timeline": [
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": {"Cast": {"object": "$new", "mana": ["$p1", "$p2", "$p3", "$p4", "$p5", "$p6", null]}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass"},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Tapped": {"object": "Command Chair#2", "tapped": true}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": {"Take": {"action": "ActivateManaAbility $chair", "yields": [[{"manaType": {"type": "Colored", "value": "Green"}, "restriction": null, "retention": "Ordinary", "rider": null, "sourceChoices": null, "tags": ["Artifact"]}, {"manaType": {"type": "Colored", "value": "Green"}, "restriction": null, "retention": "Ordinary", "rider": null, "sourceChoices": null, "tags": ["Artifact"]}, {"manaType": {"type": "Colored", "value": "Green"}, "restriction": null, "retention": "Ordinary", "rider": null, "sourceChoices": null, "tags": ["Artifact"]}, {"manaType": {"type": "Colored", "value": "Green"}, "restriction": null, "retention": "Ordinary", "rider": null, "sourceChoices": null, "tags": ["Artifact"]}]]}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"View": {"of": "ManaPool", "player": "alice", "is": [{"manaType": {"type": "Colored", "value": "Green"}, "tags": ["Artifact"], "retention": "Ordinary", "restriction": null, "rider": null, "sourceChoices": null}, {"manaType": {"type": "Colored", "value": "Green"}, "tags": ["Artifact"], "retention": "Ordinary", "restriction": null, "rider": null, "sourceChoices": null}, {"manaType": {"type": "Colored", "value": "Green"}, "tags": ["Artifact"], "retention": "Ordinary", "restriction": null, "rider": null, "sourceChoices": null}, {"manaType": {"type": "Colored", "value": "Green"}, "tags": ["Artifact"], "retention": "Ordinary", "restriction": null, "rider": null, "sourceChoices": null}]}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Tapped": {"object": "$chair", "tapped": true}}}
+  ]
+}

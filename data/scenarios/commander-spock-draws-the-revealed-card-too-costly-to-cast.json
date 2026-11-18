@@ -1,0 +1,25 @@
+{
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "name": "alice",
+        "battlefield": [{"card": "Commander Spock", "label": "spock", "ready": true}, {"card": "Forest"}, {"card": "Plains"}, {"card": "Island"}, {"card": "Swamp"}, {"card": "Swamp"}],
+        "library": [{"card": "Serra Angel", "label": "angel"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}]
+      },
+      {
+        "name": "bob",
+        "library": [{"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}]
+      }
+    ],
+    "step": "PrecombatMain"
+  },
+  "description": "Commander Spock's attack trigger draws the revealed card when it is still on top",
+  "note": "Serra Angel's mana value 5 exceeds the four land names, so no cast is offered; still on top, it is drawn.",
+  "timeline": [
+    {"turn": 1, "step": "DeclareAttackers", "player": "alice", "do": {"Attack": ["$spock"]}},
+    {"turn": 1, "step": "DeclareAttackers", "player": "alice", "do": "Pass"},
+    {"turn": 1, "step": "DeclareAttackers", "player": "alice", "check": {"Count": {"card": "Serra Angel", "count": 1, "player": "alice", "zone": "Hand"}}},
+    {"turn": 1, "step": "DeclareAttackers", "player": "alice", "check": {"Count": {"card": "Serra Angel", "count": 0, "player": "alice", "zone": "Battlefield"}}}
+  ]
+}
