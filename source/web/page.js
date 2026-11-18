@@ -76,6 +76,7 @@ document.addEventListener("click", (event) => {
 });
 document.addEventListener("keydown", (event) => {
   if (event.key === "Escape" && !settings.hidden) {
+    event.preventDefault();
     openSettings(false);
     settingsButton.focus();
   }
@@ -155,6 +156,8 @@ function apply(json) {
   document.body.classList.remove("busy");
   const hadSheet = root.querySelector(".sheet-backdrop:not(.peek) .sheet") !== null;
   const before = lives();
+  const focused = document.activeElement;
+  unkey();
   if (tapped !== null) {
     document.getElementById("response").textContent = `last response ${Math.round(performance.now() - tapped)} ms`;
     tapped = null;
@@ -188,9 +191,17 @@ function apply(json) {
   }
   floatChanges(before);
   announce();
-  // A sheet that just opened takes the focus, on its first action.
-  const sheet = root.querySelector(".sheet-backdrop:not(.peek) .sheet");
-  if (sheet && !hadSheet) sheet.querySelector(".sheet-actions button, button.close")?.focus({ preventScroll: true });
+  rekey();
+  // A sheet that just opened takes the focus, on its first action; closed,
+  // it gives the focus back to the card that had it.
+  const sheet = openSheet();
+  if (sheet && !hadSheet) {
+    returnTo = focused?.matches?.(".card, .stack-item") ? focused : null;
+    sheet.querySelector(".sheet-actions button, button.close")?.focus({ preventScroll: true });
+  } else if (!sheet && hadSheet) {
+    if (returnTo?.isConnected) returnTo.focus({ preventScroll: true });
+    returnTo = null;
+  }
 }
 
 // The child indices from the view's root to the node, dotted; null outside it.
@@ -255,16 +266,98 @@ root.addEventListener("pointerout", (event) => {
   }
 });
 
-// The keyboard: Escape closes the card sheet, and Enter or Space outside a
-// text box presses the prompt's main button.
+// The keyboard, which the shortcuts list (#keys, opened by ?) spells out:
+// Enter or Space presses the prompt's main button, a digit the button
+// numbered for it, a letter the button the view gave that key
+// (aria-keyshortcuts: A attacks with all, E ends the turn), the arrows step
+// through the cards, L opens or closes the log, and Escape closes the card
+// sheet. None fires while typing in a box or with a menu open.
+const shortcuts = document.getElementById("keys");
+document.getElementById("keys-button").addEventListener("click", () => {
+  openSettings(false);
+  shortcuts.showModal();
+});
+// Marks a key page.js gave, so unkey takes back only those.
+const given = "data-key-given";
+let returnTo = null;
+
+function openSheet() {
+  return root.querySelector(".sheet-backdrop:not(.peek) .sheet");
+}
+
+function mainButton() {
+  return root.querySelector(".prompt button.primary:not(:disabled), .handoff button.primary");
+}
+
+// Takes back the keys rekey gave, leaving the page as the engine built it,
+// which its patches are paths into.
+function unkey() {
+  for (const button of root.querySelectorAll(`[${given}]`)) {
+    button.removeAttribute(given);
+    button.removeAttribute("aria-keyshortcuts");
+  }
+}
+
+// Gives the main button Enter, then numbers 1 to 9 and 0 the buttons an
+// open card sheet offers, or else the prompt's: in the order shown, but the
+// main button, any with a key of the view's, the news's card links, the
+// damage rows' amounts and the auto-pass foot. A prompt's numbers follow its own buttons, so the same
+// kind of prompt numbers alike; a meaning that recurs has its letter.
+function rekey() {
+  const give = (button, key) => {
+    button.setAttribute("aria-keyshortcuts", key);
+    button.setAttribute(given, "");
+  };
+  const sheet = openSheet();
+  const main = sheet ? null : mainButton();
+  if (main && !main.hasAttribute("aria-keyshortcuts")) give(main, "Enter");
+  const candidates = sheet ? sheet.querySelectorAll(".sheet-actions button") : root.querySelectorAll(".prompt button");
+  const numbered = Array.from(candidates).filter((button) => button !== main && !button.disabled && !button.hasAttribute("aria-keyshortcuts") && !button.closest(".levels, .news, .segmented"));
+  // Buttons that are numbers themselves (choosing X) each take their own digit.
+  if (numbered.length > 0 && numbered.every((button) => /^\d+$/.test(button.textContent))) {
+    for (const button of numbered) if (/^\d$/.test(button.textContent)) give(button, button.textContent);
+  } else numbered.slice(0, 10).forEach((button, i) => give(button, String((i + 1) % 10)));
+}
+
+// The cards on the screen, the stack's included, in the order shown.
+function cards() {
+  return Array.from(root.querySelectorAll(".card, .stack-item")).filter((card) => card.getClientRects().length > 0 && !card.closest(".sheet-backdrop"));
+}
+
+// The card nearest `from` in a direction, nearer across counting double;
+// from anything but a card, the first card in hand, else the first shown.
+function nearest(from, dx, dy) {
+  const all = cards();
+  if (!all.includes(from)) return all.find((card) => card.closest(".hand")) ?? all[0] ?? null;
+  const centre = (box) => [box.left + box.width / 2, box.top + box.height / 2];
+  const [fx, fy] = centre(from.getBoundingClientRect());
+  let best = null;
+  let bestScore = Infinity;
+  for (const card of all) {
+    const [cx, cy] = centre(card.getBoundingClientRect());
+    const along = (cx - fx) * dx + (cy - fy) * dy;
+    const across = Math.abs(dx !== 0 ? cy - fy : cx - fx);
+    if (along < 1) continue;
+    const score = along + 2 * across;
+    if (score < bestScore) {
+      best = card;
+      bestScore = score;
+    }
+  }
+  return best;
+}
+
+const arrows = { ArrowLeft: [-1, 0], ArrowRight: [1, 0], ArrowUp: [0, -1], ArrowDown: [0, 1] };
+
 document.addEventListener("keydown", (event) => {
   if (event.defaultPrevented || event.metaKey || event.ctrlKey || event.altKey) return;
+  if (!settings.hidden || shortcuts.open) return;
+  const sheet = openSheet();
   if (event.key === "Escape") {
     root.querySelector(".sheet button.close")?.click();
     return;
   }
   // Tab stays within an open card sheet, as within any dialog.
-  const sheet = root.querySelector(".sheet-backdrop:not(.peek) .sheet");
   if (event.key === "Tab" && sheet) {
     const stops = Array.from(sheet.querySelectorAll("button"));
     const first = stops[0];
@@ -281,14 +374,45 @@ document.addEventListener("keydown", (event) => {
     }
     return;
   }
-  const typing = event.target instanceof HTMLInputElement || event.target instanceof HTMLTextAreaElement;
-  const onButton = event.target instanceof HTMLButtonElement || event.target instanceof HTMLSummaryElement;
-  if ((event.key === "Enter" || event.key === " ") && !typing && !onButton && !sheet) {
-    const main = root.querySelector(".prompt button.primary:not(:disabled)");
+  const target = event.target;
+  const typing = target instanceof Element && (target.matches("input, textarea, select") || target.isContentEditable);
+  if (typing) return;
+  if (event.key === "Enter" || event.key === " ") {
+    // A focused button or summary takes its own Enter.
+    // (Safari has no HTMLSummaryElement.)
+    const onButton = target instanceof Element && target.matches("button, summary");
+    const main = onButton || sheet ? null : mainButton();
     if (main) {
       event.preventDefault();
       main.click();
     }
+    return;
+  }
+  if (event.key === "?") {
+    event.preventDefault();
+    shortcuts.showModal();
+    return;
+  }
+  if (sheet === null && event.key in arrows) {
+    const next = nearest(target, ...arrows[event.key]);
+    if (next) {
+      event.preventDefault();
+      next.focus();
+    }
+    return;
+  }
+  if (sheet === null && event.key.toUpperCase() === "L") {
+    const log = root.querySelector("details.log");
+    if (log) log.open = !log.open;
+    return;
+  }
+  if (event.key.length !== 1) return;
+  const key = event.key.toUpperCase();
+  const scope = sheet ?? root.querySelector(".prompt");
+  const button = scope && Array.from(scope.querySelectorAll("button[aria-keyshortcuts]")).find((b) => !b.disabled && b.getAttribute("aria-keyshortcuts") === key);
+  if (button) {
+    event.preventDefault();
+    button.click();
   }
 });
 

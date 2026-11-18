@@ -1990,6 +1990,110 @@ main.ending h2 {
   padding: 0.1em 0;
 }
 
+/* ---------- Keyboard shortcuts (page.js) ---------- */
+
+/* A button's key, as a keycap after its label, where there is a keyboard
+   to press it with. */
+@media (hover: hover) and (pointer: fine) {
+  .prompt button[aria-keyshortcuts]::after,
+  .sheet-actions button[aria-keyshortcuts]::after {
+    content: attr(aria-keyshortcuts);
+    float: right;
+    margin-left: 0.6em;
+    padding: 0 0.4em;
+    min-width: 1.4em;
+    border: 1px solid currentColor;
+    border-radius: 4px;
+    font-size: 0.75em;
+    font-weight: 500;
+    line-height: 1.6;
+    text-align: center;
+    opacity: 0.75;
+  }
+
+  .prompt button[aria-keyshortcuts="Enter"]::after,
+  .sheet-actions button[aria-keyshortcuts="Enter"]::after {
+    content: "\21B5";
+  }
+}
+
+@media not ((hover: hover) and (pointer: fine)) {
+  .keys-only {
+    display: none;
+  }
+}
+
+kbd {
+  display: inline-block;
+  min-width: 1.5em;
+  padding: 0 0.35em;
+  border: 1px solid var(--border-strong);
+  border-radius: 4px;
+  background: var(--surface-2);
+  font: inherit;
+  font-size: 0.85em;
+  line-height: 1.5;
+  text-align: center;
+}
+
+#keys {
+  max-width: min(32em, calc(100vw - 2em));
+  padding: 1em 1.2em;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius);
+  background: var(--surface);
+  color: var(--text);
+  box-shadow: var(--sheet-shadow);
+}
+
+#keys::backdrop {
+  background: rgb(0 0 0 / 0.35);
+}
+
+#keys h2 {
+  font-size: 1.05rem;
+  margin-bottom: 0.6em;
+}
+
+#keys dl {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 0.45em 1em;
+  margin: 0 0 0.8em;
+  font-size: 0.9rem;
+}
+
+#keys dt {
+  white-space: nowrap;
+}
+
+#keys dd {
+  margin: 0;
+}
+
+#keys p {
+  font-size: 0.85rem;
+  color: var(--muted);
+  margin-bottom: 0.8em;
+}
+
+#keys button {
+  appearance: none;
+  min-height: 44px;
+  padding: 0.55em 1em;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius);
+  background: var(--surface);
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+}
+
+#keys button:focus-visible {
+  outline: 3px solid var(--accent);
+  outline-offset: 2px;
+}
+
 /* ---------- Chrome outside the engine's view ---------- */
 
 .chrome {
