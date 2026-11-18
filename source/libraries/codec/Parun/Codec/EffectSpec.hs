@@ -15,6 +15,7 @@ import qualified Parun.JsonCodec.Common as Common
 import qualified Parun.Spec as Spec
 import qualified Parun.Types.AbilityName as AbilityName
 import qualified Parun.Types.ActivateManaAbilities as ActivateManaAbilities
+import qualified Parun.Types.AddPhases as AddPhases
 import qualified Parun.Types.AffectPlayers as AffectPlayers
 import qualified Parun.Types.AffectedPlayers as AffectedPlayers
 import qualified Parun.Types.Again as Again
@@ -183,6 +184,7 @@ import qualified Parun.Types.PermanentActed as PermanentActed
 import qualified Parun.Types.PermanentAction as PermanentAction
 import qualified Parun.Types.PermissionVerb as PermissionVerb
 import qualified Parun.Types.Phase as Phase
+import qualified Parun.Types.PhaseAnchor as PhaseAnchor
 import qualified Parun.Types.PhaseOut as PhaseOut
 import qualified Parun.Types.PhaseSelector as PhaseSelector
 import qualified Parun.Types.PlayerCounterKind as PlayerCounterKind
@@ -2020,20 +2022,26 @@ spec s = Spec.describe s "Parun.Codec.Effect" $ do
       fromJson
       (Effect.ExchangeBlocks (ExchangeBlocks.MkExchangeBlocks (SlotName.MkSlotName (Text.pack "first")) (SlotName.MkSlotName (Text.pack "second"))))
       " {\"type\":\"ExchangeBlocks\",\"value\":{\"first\":\"first\",\"second\":\"second\"}} "
-  -- Both shapes in the pool: a pair, and a repeated phase.
-  Spec.it s "AddPhases round-trips the pair and a repeated phase" $ do
+  -- Every shape in the pool: a pair, a repeated phase, and an anchor.
+  Spec.it s "AddPhases round-trips the pair, a repeated phase and an anchor" $ do
     Common.assertJsonCodec
       s
       toJson
       fromJson
-      (Effect.AddPhases [ExtraPhase.ExtraCombat, ExtraPhase.ExtraMain])
-      " {\"type\":\"AddPhases\",\"value\":[\"ExtraCombat\",\"ExtraMain\"]} "
+      (Effect.AddPhases (AddPhases.MkAddPhases PhaseAnchor.ThisPhase [ExtraPhase.ExtraCombat, ExtraPhase.ExtraMain]))
+      " {\"type\":\"AddPhases\",\"value\":{\"phases\":[\"ExtraCombat\",\"ExtraMain\"]}} "
     Common.assertJsonCodec
       s
       toJson
       fromJson
-      (Effect.AddPhases [ExtraPhase.ExtraCombat, ExtraPhase.ExtraCombat])
-      " {\"type\":\"AddPhases\",\"value\":[\"ExtraCombat\",\"ExtraCombat\"]} "
+      (Effect.AddPhases (AddPhases.MkAddPhases PhaseAnchor.ThisPhase [ExtraPhase.ExtraCombat, ExtraPhase.ExtraCombat]))
+      " {\"type\":\"AddPhases\",\"value\":{\"phases\":[\"ExtraCombat\",\"ExtraCombat\"]}} "
+    Common.assertJsonCodec
+      s
+      toJson
+      fromJson
+      (Effect.AddPhases (AddPhases.MkAddPhases PhaseAnchor.SecondMainPhase [ExtraPhase.ExtraCombat, ExtraPhase.ExtraMain]))
+      " {\"type\":\"AddPhases\",\"value\":{\"after\":\"SecondMainPhase\",\"phases\":[\"ExtraCombat\",\"ExtraMain\"]}} "
   Spec.it s "AddStep" $
     Common.assertJsonCodec
       s

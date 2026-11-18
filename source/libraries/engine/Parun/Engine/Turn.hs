@@ -9,6 +9,8 @@ import qualified Data.Sequence as Seq
 import qualified Data.Set as Set
 import Numeric.Natural (Natural)
 import qualified Parun.Extra.Natural as Natural
+import Parun.Types.AddPhases (AddPhases)
+import qualified Parun.Types.AddPhases as AddPhases
 import qualified Parun.Types.AttackTarget as AttackTarget
 import qualified Parun.Types.BeginningStep as BeginningStep
 import qualified Parun.Types.Bookkeeping as Bookkeeping
@@ -27,6 +29,8 @@ import qualified Parun.Types.MatchScope as MatchScope
 import Parun.Types.ObjectId (ObjectId)
 import Parun.Types.Phase (Phase)
 import qualified Parun.Types.Phase as Phase
+import Parun.Types.PhaseAnchor (PhaseAnchor)
+import qualified Parun.Types.PhaseAnchor as PhaseAnchor
 import Parun.Types.PhaseSelector (PhaseSelector)
 import qualified Parun.Types.PhaseSelector as PhaseSelector
 import Parun.Types.PlayerId (PlayerId)
@@ -509,37 +513,65 @@ expandExtraPhase extra = case extra of
 combatPhasesIn :: Seq Phase -> Natural
 combatPhasesIn = Natural.length . Seq.filter (== Phase.Combat CombatStep.BeginningOfCombat)
 
--- | CR 500.8: "that combat phase", the one an effect resolving now added: the
--- first combat phase after the phase under way, where splicePhases put it.
+-- | CR 500.8: "that combat phase", the one an effect resolving now added after
+-- `anchor`: the first combat phase after that phase, where splicePhases put it.
 -- Named by how many combat phases the schedule holds BEHIND it, since a
 -- schedule entry has no identity of its own. That count holds for as long as
 -- the phase is ahead: every later addition goes directly after the phase then
--- under way, in front of this one, and every drop (dropRestOfPhase,
--- jumpToCleanup) takes from the front. Nothing when no combat phase follows.
-addedCombatPhase :: GameState -> Maybe Natural
-addedCombatPhase gs =
+-- under way or after the second main phase, in front of this one, and every
+-- drop (dropRestOfPhase, jumpToCleanup) takes from the front. Nothing when no
+-- combat phase follows, or the anchor names no phase.
+addedCombatPhase :: PhaseAnchor -> GameState -> Maybe Natural
+addedCombatPhase anchor gs =
   let registers = GameState.turn gs
-      (_, later) = thisPhase (TurnRegisters.phase registers) (TurnRegisters.remaining registers)
-   in case combatPhasesIn later of
-        0 -> Nothing
-        phases -> Just (phases - 1)
+   in case combatPhasesIn . snd <$> afterAnchor anchor (mainPhasesBegun gs) (TurnRegisters.phase registers) (TurnRegisters.remaining registers) of
+        Just phases | phases > 0 -> Just (phases - 1)
+        _ -> Nothing
 
--- CR 500.8: add phases directly after the specified phase, which is always the
--- one the effect resolves in.
+-- | CR 505.1b: how many main phases have begun this turn, the one under way
+-- included.
+mainPhasesBegun :: GameState -> Natural
+mainPhasesBegun = Natural.length . filter isMainPhase . stepsBegun
+
+-- CR 500.8: `remaining` split directly after the phase `anchor` names, `begun`
+-- main phases having begun this turn and `phase` under way. Nothing when that
+-- phase is neither under way nor ahead.
 --
--- Where that phase ends is `thisPhase`'s question -- which is what makes this
--- correct for an effect resolving inside a STEPPED phase, where the head of
--- `remaining` is still this phase's own later steps (Aurelia, the Warleader).
+-- Where the phase under way ends is `thisPhase`'s question -- which is what
+-- makes this correct for an effect resolving inside a STEPPED phase, where the
+-- head of `remaining` is still this phase's own later steps (Aurelia, the
+-- Warleader).
+--
+-- CR 505.1b: the second main phase is the phase under way when two main phases
+-- have begun, the one under way among them, and a later main phase of the
+-- schedule when fewer have. Past it there is no second main phase to add after
+-- (World at War's 2010-06-15 ruling).
+afterAnchor :: PhaseAnchor -> Natural -> Phase -> Seq Phase -> Maybe (Seq Phase, Seq Phase)
+afterAnchor anchor begun phase remaining =
+  let (current, rest) = thisPhase phase remaining
+   in case anchor of
+        PhaseAnchor.ThisPhase -> Just (current, rest)
+        PhaseAnchor.SecondMainPhase
+          | begun == 2 && isMainPhase phase -> Just (current, rest)
+          | begun < 2 -> do
+              i <- Maybe.listToMaybe (drop (Natural.toIntSaturating (1 - begun)) (Seq.findIndicesL isMainPhase rest))
+              let (upTo, later) = Seq.splitAt (i + 1) rest
+              Just (current <> upTo, later)
+          | otherwise -> Nothing
+
+-- CR 500.8: `remaining` with these phases added directly after the specified
+-- phase (afterAnchor, whose other arguments these are), Nothing when it names
+-- none.
 --
 -- The list is inserted as one block, in written order. CR 500.8's "most
 -- recently created phase occurs first" governs two SEPARATE effects splicing at
 -- the same boundary, which stays true here. Phases within ONE effect's list are
 -- created together, so that clause has nothing to order and they run as
 -- written.
-splicePhases :: Phase -> [ExtraPhase] -> Seq Phase -> Seq Phase
-splicePhases phase extras remaining =
-  let (current, rest) = thisPhase phase remaining
-   in current <> foldMap expandExtraPhase extras <> rest
+splicePhases :: AddPhases -> Natural -> Phase -> Seq Phase -> Maybe (Seq Phase)
+splicePhases added begun phase remaining =
+  let extras = foldMap expandExtraPhase (AddPhases.phases added)
+   in fmap (\(upTo, later) -> upTo <> extras <> later) (afterAnchor (AddPhases.after added) begun phase remaining)
 
 -- One whole combat phase followed by one whole main phase -- what Aggravated
 -- Assault and Relentless Assault add.

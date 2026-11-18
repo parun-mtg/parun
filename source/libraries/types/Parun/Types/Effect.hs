@@ -2,6 +2,7 @@ module Parun.Types.Effect where
 
 import qualified Data.List.NonEmpty as NonEmpty
 import qualified Parun.Types.ActivateManaAbilities as ActivateManaAbilities
+import qualified Parun.Types.AddPhases as AddPhases
 import qualified Parun.Types.AffectPlayers as AffectPlayers
 import qualified Parun.Types.Amass as Amass
 import qualified Parun.Types.AnotherCounter as AnotherCounter
@@ -55,7 +56,6 @@ import qualified Parun.Types.ExchangeOwnership as ExchangeOwnership
 import qualified Parun.Types.ExchangeValues as ExchangeValues
 import qualified Parun.Types.ExchangeZones as ExchangeZones
 import qualified Parun.Types.ExileHaunting as ExileHaunting
-import qualified Parun.Types.ExtraPhase as ExtraPhase
 import qualified Parun.Types.Fight as Fight
 import qualified Parun.Types.FlipCoin as FlipCoin
 import qualified Parun.Types.ForEach as ForEach
@@ -573,8 +573,8 @@ data Effect card ability
     -- each blocks what the other was blocking (Sorrow's Path), if each could.
     ExchangeBlocks ExchangeBlocks.ExchangeBlocks
   | -- | CR 500.8: add phases to a turn, directly after the specified phase, in
-    -- written order (Aggravated Assault). Targetless.
-    AddPhases [ExtraPhase.ExtraPhase]
+    -- written order (Aggravated Assault, World at War). Targetless.
+    AddPhases AddPhases.AddPhases
   | -- | CR 500.9: add this step directly after the step the effect resolves in
     -- (Paradox Haze). Targetless.
     AddStep Phase.Phase

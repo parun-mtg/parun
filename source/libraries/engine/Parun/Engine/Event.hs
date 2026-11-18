@@ -13070,13 +13070,15 @@ armDelayed ability declared source controller captured armed expiry gs = case ar
 -- CR 500.7: "that turn" is the extra turn this resolution just created for the
 -- controller (Turn.thatExtraTurn). "That player's next turn" is the one seat
 -- `seat` reads the ref as, and none -- an unfilled or illegal slot -- arms
--- nothing.
+-- nothing. CR 500.8: "that combat" is the combat phase this resolution just
+-- added (Turn.addedCombatPhase), and none arms nothing.
 armOnset :: (PlayerRef.PlayerRef -> Maybe PlayerId) -> ObjectId -> PlayerId -> GameState -> Onset -> Maybe TurnWindow
 armOnset seat source controller gs onset = case onset of
   Onset.Immediately -> Just TurnWindow.AnyTurn
   Onset.FromNextTurnOf Nothing -> Just (TurnWindow.NextTurnOf Nothing)
   Onset.FromNextTurnOf (Just ref) -> fmap (TurnWindow.NextTurnOf . Just) (seat ref)
   Onset.FromThatExtraTurn -> fmap TurnWindow.OnExtraTurn (Turn.thatExtraTurn source controller gs)
+  Onset.FromThatCombatPhase anchor -> fmap TurnWindow.InCombatPhase (Turn.addedCombatPhase anchor gs)
 
 -- CR 603.7a: a turn has BEGUN, so settle every delayed entry waiting for one and
 -- drop every entry whose turn is now over. Engine.beginTurn calls this once the
@@ -13127,6 +13129,7 @@ settleOnsets begun gs =
           | Just stamp == begun ->
               entry {DelayedTrigger.window = TurnWindow.OnTurn (TurnRegisters.turnNumber (GameState.turn gs))}
         TurnWindow.OnExtraTurn _ -> entry
+        TurnWindow.InCombatPhase _ -> entry
         TurnWindow.AnyTurn -> entry
         -- Already settled, and this is a later turn -- `live` is what ends it.
         TurnWindow.OnTurn _ -> entry
@@ -13136,6 +13139,8 @@ settleOnsets begun gs =
         TurnWindow.NextTurnOf _ -> True
         TurnWindow.OnExtraTurn stamp -> any ((== stamp) . ExtraTurn.createdAt) (GameState.extraTurns gs)
         TurnWindow.OnTurn n -> n >= TurnRegisters.turnNumber (GameState.turn gs)
+        -- Armed this turn, which is now over.
+        TurnWindow.InCombatPhase _ -> False
         -- CR 514.2 ended it last turn; a turn whose cleanup no gather followed
         -- (CR 500.11's skipped ending phase) retires it here.
         TurnWindow.Lapsed _ -> False

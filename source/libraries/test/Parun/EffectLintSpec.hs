@@ -54,7 +54,9 @@ import qualified Parun.Oracle.Normalise as Normalise
 import qualified Parun.Registry as Registry
 import qualified Parun.Spec as Spec
 import qualified Parun.Support as S
+import qualified Parun.Types.AbilityName as AbilityName
 import qualified Parun.Types.ActivatedAbility as ActivatedAbility
+import qualified Parun.Types.AddPhases as AddPhases
 import qualified Parun.Types.AffectPlayers as AffectPlayers
 import qualified Parun.Types.AffectedPlayers as AffectedPlayers
 import qualified Parun.Types.AgainstSlot as AgainstSlot
@@ -182,6 +184,7 @@ import qualified Parun.Types.ObjectId as ObjectId
 import qualified Parun.Types.ObjectRef as ObjectRef
 import qualified Parun.Types.OfferCast as OfferCast
 import qualified Parun.Types.OnePer as OnePer
+import qualified Parun.Types.Onset as Onset
 import qualified Parun.Types.Optionality as Optionality
 import qualified Parun.Types.OrElse as OrElse
 import qualified Parun.Types.PayBranch as PayBranch
@@ -192,6 +195,7 @@ import qualified Parun.Types.PermanentActed as PermanentActed
 import qualified Parun.Types.PermanentAction as PermanentAction
 import qualified Parun.Types.PermanentActsTrigger as PermanentActsTrigger
 import qualified Parun.Types.PermissionLimit as PermissionLimit
+import qualified Parun.Types.PhaseAnchor as PhaseAnchor
 import qualified Parun.Types.PhaseOut as PhaseOut
 import qualified Parun.Types.PhasePattern as PhasePattern
 import qualified Parun.Types.PhaseR as PhaseR
@@ -4011,19 +4015,25 @@ effectLintSpec s registry corpus = Spec.describe s "Lint" $ do
     Spec.assertBool s (windowOffends (planted evasion)) "an evasion is rejected"
     Spec.assertBool s (windowOffends (planted pump)) "a continuous effect on an object is rejected"
   -- CR 500.8, swept over the pool. See thatCombatPhaseOffends.
-  Spec.it s "CR 500.8 no card writes during that combat phase without adding one" $ do
+  Spec.it s "CR 500.8 no card writes during or at that combat phase without adding one" $ do
     ps <- S.allPrintings s corpus
     let writes = (/= 0) . jsonAtoms (Text.pack "DuringThatCombatPhase") . Codec.encode (Face.Codec.codec Card.Codec.codec)
         offenders = filter (anyFace thatCombatPhaseOffends . Printing.card) ps
     Spec.assertBool s (any (anyFace writes . Printing.card) ps) "the pool has a card writing the duration"
     Spec.assertEqWith s "the duration follows an added combat phase" (fmap (S.nameOf . Printing.card) offenders) []
   -- The REJECTING direction: Bumi's restriction with no phase added.
-  Spec.it s "the lint itself catches during that combat phase with no phase added" $ do
+  Spec.it s "the lint itself catches that combat phase with no phase added after its anchor" $ do
     bumi <- S.printingOf s registry "Bumi, Unleashed"
     let restriction = Effect.ForbidAttack (ForbidAttack.MkForbidAttack Duration.DuringThatCombatPhase (RestrictedCreatures.Matching (Filter.Type.HasCardType CardType.Creature)) Nothing)
         planted = (vanillaFace "Planted" instantLine) {Face.spell = Mint.oneMode (Seq.singleton restriction)}
     Spec.assertBool s (not (anyFace thatCombatPhaseOffends (Printing.card bumi))) "the real Bumi, Unleashed is accepted"
     Spec.assertBool s (thatCombatPhaseOffends planted) "a restriction naming no added phase is rejected"
+    war <- S.printingOf s registry "World at War"
+    let arm = Effect.ArmDelayedTrigger (ArmDelayedTrigger.MkArmDelayedTrigger (AbilityName.MkAbilityName (Text.pack "that combat")) (Onset.FromThatCombatPhase PhaseAnchor.SecondMainPhase) Nothing Nothing)
+        hereOnly = Effect.AddPhases (AddPhases.MkAddPhases PhaseAnchor.ThisPhase [ExtraPhase.ExtraCombat, ExtraPhase.ExtraMain])
+        misanchored = (vanillaFace "Planted" instantLine) {Face.spell = Mint.oneMode (Seq.fromList [hereOnly, arm])}
+    Spec.assertBool s (not (anyFace thatCombatPhaseOffends (Printing.card war))) "the real World at War is accepted"
+    Spec.assertBool s (thatCombatPhaseOffends misanchored) "an onset naming a combat phase added after another anchor is rejected"
 
   -- CR 400.7j / 608.2h, swept over the pool. See hiddenMoveCountOffends.
   Spec.it s "CR 400.7j no card counts a slot an unrevealed move put into a hidden zone as bound" $ do
@@ -4047,18 +4057,24 @@ spec :: (Monad n) => Spec.Spec IO n -> Registry.Registry IO -> [(FilePath, Eithe
 spec s registry corpus = Spec.describe s "Parun.Engine.Card" $ do
   effectLintSpec s registry corpus
 
--- CR 500.8: Duration.DuringThatCombatPhase names the combat phase its own
--- resolution added (Parun.Engine.Turn.addedCombatPhase reads the first one
--- scheduled), so a face writing it with no AddPhases holding an ExtraCombat
--- would name the turn's own combat phase, and offends. Counted against the
--- ENCODED face for untilUsedOffends' reason.
+-- CR 500.8: Duration.DuringThatCombatPhase and Onset.FromThatCombatPhase name
+-- the combat phase their own resolution added after an anchor
+-- (Parun.Engine.Turn.addedCombatPhase reads the first one scheduled after it),
+-- so a face writing either with no AddPhases after that anchor holding an
+-- ExtraCombat would name another combat phase, and offends. The duration's
+-- anchor is the phase under way. Counted against the ENCODED face for
+-- untilUsedOffends' reason.
 thatCombatPhaseOffends :: Face.Face Card.Type.Card -> Bool
 thatCombatPhaseOffends card =
-  let addsCombat effect = case effect of
-        Effect.AddPhases phases -> elem ExtraPhase.ExtraCombat phases
+  let effects = cardAuthoredEffects card
+      addsCombatAfter anchor effect = case effect of
+        Effect.AddPhases added -> AddPhases.after added == anchor && elem ExtraPhase.ExtraCombat (AddPhases.phases added)
         _ -> False
-   in jsonAtoms (Text.pack "DuringThatCombatPhase") (Codec.encode (Face.Codec.codec Card.Codec.codec) card) /= 0
-        && not (any addsCombat (cardAuthoredEffects card))
+      armedAfter effect = case effect of
+        Effect.ArmDelayedTrigger arm | Onset.FromThatCombatPhase anchor <- ArmDelayedTrigger.onset arm -> [anchor]
+        _ -> []
+      during = [PhaseAnchor.ThisPhase | jsonAtoms (Text.pack "DuringThatCombatPhase") (Codec.encode (Face.Codec.codec Card.Codec.codec) card) /= 0]
+   in any (\anchor -> not (any (addsCombatAfter anchor) effects)) (during <> foldMap armedAfter effects)
 
 -- CR 611.2a: a "during X's next turn" duration arms a window that
 -- Parun.Engine.Expiry.begun alone holds back until that turn. Six carriers ask

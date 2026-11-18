@@ -37,6 +37,7 @@ import qualified Parun.Spec as Spec
 import qualified Parun.Support as S
 import qualified Parun.Types.Action as Action
 import qualified Parun.Types.ActivatedAbility as ActivatedAbility
+import qualified Parun.Types.AddPhases as AddPhases
 import qualified Parun.Types.BeginningStep as BeginningStep
 import qualified Parun.Types.Card as Card.Type
 import qualified Parun.Types.CardName as CardName
@@ -54,6 +55,7 @@ import Parun.Types.ObjectId (ObjectId)
 import qualified Parun.Types.ObjectId as ObjectId
 import Parun.Types.Phase (Phase)
 import qualified Parun.Types.Phase as Phase
+import qualified Parun.Types.PhaseAnchor as PhaseAnchor
 import qualified Parun.Types.PhaseSelector as PhaseSelector
 import qualified Parun.Types.PlayerId as PlayerId
 import qualified Parun.Types.Printing as Printing
@@ -512,6 +514,10 @@ castAndResolveWith answer spell gs =
 -- main phase. Activate only as a sorcery.) and Relentless Assault ({2}{R}{R}:
 -- Untap all creatures that attacked this turn. After this main phase, there is
 -- an additional combat phase followed by an additional main phase.)
+-- Turn.splicePhases after the phase under way, which always names one.
+spliceHere :: Phase.Phase -> [ExtraPhase.ExtraPhase] -> Seq.Seq Phase.Phase -> Seq.Seq Phase.Phase
+spliceHere phase extras = Foldable.fold . Turn.splicePhases (AddPhases.MkAddPhases PhaseAnchor.ThisPhase extras) 0 phase
+
 extraPhaseSpec :: (Monad m, Monad n) => Spec.Spec m n -> Registry.Registry m -> n ()
 extraPhaseSpec s registry = Spec.describe s "ExtraPhase" $ do
   Spec.it s "CR 500.8 splicePhases from a MAIN phase goes at the head" $
@@ -522,7 +528,7 @@ extraPhaseSpec s registry = Spec.describe s "ExtraPhase" $ do
      in Spec.assertEqWith
           s
           "directly after this phase"
-          (Turn.splicePhases Phase.PrecombatMain [ExtraPhase.ExtraCombat, ExtraPhase.ExtraMain] remaining)
+          (spliceHere Phase.PrecombatMain [ExtraPhase.ExtraCombat, ExtraPhase.ExtraMain] remaining)
           (Turn.combatAndMainPhase <> remaining)
   Spec.it s "CR 500.8 splicePhases from INSIDE a combat phase goes after its end of combat" $
     -- Aurelia, the Warleader's case. Her trigger resolves in the declare
@@ -547,7 +553,7 @@ extraPhaseSpec s registry = Spec.describe s "ExtraPhase" $ do
      in Spec.assertEqWith
           s
           "not inside the current phase"
-          (Turn.splicePhases (Phase.Combat CombatStep.DeclareAttackers) [ExtraPhase.ExtraCombat] remaining)
+          (spliceHere (Phase.Combat CombatStep.DeclareAttackers) [ExtraPhase.ExtraCombat] remaining)
           expected
   Spec.it s "CR 500.8 splicePhases adds directly after a combat phase in its last step, ahead of one already added" $
     -- Resolving in the end of combat step, with an added combat phase next:
@@ -557,7 +563,7 @@ extraPhaseSpec s registry = Spec.describe s "ExtraPhase" $ do
      in Spec.assertEqWith
           s
           "ahead of the phase already scheduled"
-          (Turn.splicePhases (Phase.Combat CombatStep.EndOfCombat) [ExtraPhase.ExtraMain] remaining)
+          (spliceHere (Phase.Combat CombatStep.EndOfCombat) [ExtraPhase.ExtraMain] remaining)
           (Seq.fromList [Phase.PostcombatMain] <> remaining)
   Spec.it s "CR 500.8 / 500.10 splicePhases from a lone upkeep goes at the head, ahead of a later beginning phase" $
     -- Obeka, Splitter of Seconds' added upkeep is a phase of its own with no
@@ -569,7 +575,7 @@ extraPhaseSpec s registry = Spec.describe s "ExtraPhase" $ do
      in Spec.assertEqWith
           s
           "directly after the lone upkeep"
-          (Turn.splicePhases (Phase.Beginning BeginningStep.Upkeep) [ExtraPhase.ExtraMain] remaining)
+          (spliceHere (Phase.Beginning BeginningStep.Upkeep) [ExtraPhase.ExtraMain] remaining)
           (Seq.fromList [Phase.PostcombatMain] <> remaining)
   Spec.it s "CR 500.8 splicePhases inserts a multi-phase list in written order" $
     -- Full Throttle's "there are two additional combat phases": two whole
@@ -577,8 +583,25 @@ extraPhaseSpec s registry = Spec.describe s "ExtraPhase" $ do
     Spec.assertEqWith
       s
       "two combat phases, back to back"
-      (Turn.splicePhases Phase.PrecombatMain [ExtraPhase.ExtraCombat, ExtraPhase.ExtraCombat] Seq.empty)
+      (spliceHere Phase.PrecombatMain [ExtraPhase.ExtraCombat, ExtraPhase.ExtraCombat] Seq.empty)
       (Turn.expandExtraPhase ExtraPhase.ExtraCombat <> Turn.expandExtraPhase ExtraPhase.ExtraCombat)
+  Spec.it s "CR 500.8 / 505.1b splicePhases after the second main phase counts the main phases begun" $ do
+    -- World at War: from the first main phase, after the next main phase;
+    -- from the upkeep, after the one after it; from the second, after it.
+    let schedule = Seq.fromList [Phase.Combat CombatStep.BeginningOfCombat, Phase.PostcombatMain, Phase.Ending EndingStep.EndStep]
+        second = Turn.splicePhases (AddPhases.MkAddPhases PhaseAnchor.SecondMainPhase [ExtraPhase.ExtraCombat, ExtraPhase.ExtraMain])
+        afterSecond = Just (Seq.fromList [Phase.Combat CombatStep.BeginningOfCombat, Phase.PostcombatMain] <> Turn.combatAndMainPhase <> Seq.fromList [Phase.Ending EndingStep.EndStep])
+    Spec.assertEqWith s "from the first main phase" (second 1 Phase.PrecombatMain schedule) afterSecond
+    Spec.assertEqWith s "from the upkeep" (second 0 (Phase.Beginning BeginningStep.Upkeep) (Seq.fromList [Phase.Beginning BeginningStep.DrawStep, Phase.PrecombatMain] <> schedule)) (fmap (Seq.fromList [Phase.Beginning BeginningStep.DrawStep, Phase.PrecombatMain] <>) afterSecond)
+    Spec.assertEqWith s "from the second main phase" (second 2 Phase.PostcombatMain (Seq.fromList [Phase.Ending EndingStep.EndStep])) (Just (Turn.combatAndMainPhase <> Seq.fromList [Phase.Ending EndingStep.EndStep]))
+  Spec.it s "CR 500.8 / 505.1b splicePhases after the second main phase adds nothing once it is over" $
+    -- World at War's 2010-06-15 ruling: cast in a third main phase, no
+    -- phases are created.
+    Spec.assertEqWith
+      s
+      "no second main phase left"
+      (Turn.splicePhases (AddPhases.MkAddPhases PhaseAnchor.SecondMainPhase [ExtraPhase.ExtraCombat, ExtraPhase.ExtraMain]) 3 Phase.PostcombatMain (Seq.fromList [Phase.Ending EndingStep.EndStep]))
+      Nothing
   Spec.it s "CR 500.8 whole card: a vigilant creature attacks in the added combat phase AND the turn's own" $ do
     -- CR 506.1's five steps really run twice: Windseeker Centaur has
     -- vigilance (CR 702.20b: attacking does not tap it), so it is a legal

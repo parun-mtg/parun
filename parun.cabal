@@ -169,6 +169,7 @@ library codec
     Parun.Codec.ActiveReplacementSpec
     Parun.Codec.Actor
     Parun.Codec.ActorSpec
+    Parun.Codec.AddPhases
     Parun.Codec.Affected
     Parun.Codec.AffectedPlayers
     Parun.Codec.AffectedPlayersSpec
@@ -1418,6 +1419,7 @@ library codec
     Parun.Codec.PerTarget
     Parun.Codec.PerTargetSpec
     Parun.Codec.Phase
+    Parun.Codec.PhaseAnchor
     Parun.Codec.PhasedOut
     Parun.Codec.PhasedOutSpec
     Parun.Codec.PhaseOut
@@ -2881,6 +2883,7 @@ library types
     Parun.Types.ActivePlayerEffect
     Parun.Types.ActiveReplacement
     Parun.Types.Actor
+    Parun.Types.AddPhases
     Parun.Types.Affected
     Parun.Types.AffectedPlayers
     Parun.Types.AffectedUnless
@@ -3603,6 +3606,7 @@ library types
     Parun.Types.PermissionVerb
     Parun.Types.PerTarget
     Parun.Types.Phase
+    Parun.Types.PhaseAnchor
     Parun.Types.PhasedOut
     Parun.Types.PhaseOut
     Parun.Types.PhasePattern

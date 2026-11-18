@@ -59,6 +59,7 @@ import qualified Parun.Engine.TimeTravel as TimeTravel
 import qualified Parun.Engine.Turn as Turn
 import qualified Parun.Extra.Integer as Integer
 import qualified Parun.Extra.Natural as Natural
+import qualified Parun.Types.AddPhases as AddPhases
 import qualified Parun.Types.Affected as Affected
 import qualified Parun.Types.Amass as Amass.Type
 import qualified Parun.Types.AnotherCounter as AnotherCounter
@@ -94,7 +95,6 @@ import qualified Parun.Types.Effect as Effect
 import qualified Parun.Types.EndTurnSignal as EndTurnSignal
 import qualified Parun.Types.EndingStep as EndingStep
 import qualified Parun.Types.Expiry as Expiry.Type
-import qualified Parun.Types.ExtraPhase as ExtraPhase
 import qualified Parun.Types.ExtraTurn as ExtraTurn
 import qualified Parun.Types.Face as Face
 import qualified Parun.Types.Filter as Filter.Type
@@ -1941,22 +1941,16 @@ phaseOut resolving source controller legal payload = do
   -- Bound on `source`, Destroy's `slot`.
   State.put (maybe after (\slot -> Common.bindAmountSlot resolving source slot tally after) (PhaseOut.slot payload))
 
--- CR 500.8: add the phases, directly after the phase this is resolving in.
--- Turn.splicePhases is handed TurnRegisters.phase because that is NOT the head of
--- `remaining` when the resolving phase still has steps to come; CR 511.3 bounds
--- the phase, and Turn.thisPhase is where that lives.
+-- CR 500.8: add the phases directly after the specified phase
+-- (Turn.splicePhases), or none when the turn holds no such phase.
 --
 -- Not implemented: CR 500.10a's "you get" adding nothing on another player's
 -- turn (#7602).
-addPhases :: [ExtraPhase.ExtraPhase] -> Game ()
-addPhases extras =
-  State.modify' $ \gs ->
-    gs
-      { GameState.turn =
-          (GameState.turn gs)
-            { TurnRegisters.remaining = Turn.splicePhases (TurnRegisters.phase (GameState.turn gs)) extras (TurnRegisters.remaining (GameState.turn gs))
-            }
-      }
+addPhases :: AddPhases.AddPhases -> Game ()
+addPhases added =
+  State.modify' $ \gs -> case Turn.splicePhases added (Turn.mainPhasesBegun gs) (TurnRegisters.phase (GameState.turn gs)) (TurnRegisters.remaining (GameState.turn gs)) of
+    Nothing -> gs
+    Just spliced -> gs {GameState.turn = (GameState.turn gs) {TurnRegisters.remaining = spliced}}
 
 -- CR 500.9: add the step directly after the one this is resolving in, which is
 -- the head of `remaining`.
