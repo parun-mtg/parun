@@ -1,0 +1,168 @@
+{
+  "faces": [
+    {
+      "keywords": [
+        {
+          "type": "Equip",
+          "value": {
+            "cost": {
+              "mana": [
+                {
+                  "type": "Generic",
+                  "value": 2
+                }
+              ]
+            },
+            "quality": null
+          }
+        }
+      ],
+      "manaCost": [
+        {
+          "type": "Generic",
+          "value": 4
+        }
+      ],
+      "name": "The Sword of Kahless",
+      "oracleText": "Equipped creature gets +2/+2 and has \"Whenever this creature attacks, look at the top five cards of your library. You may put a Klingon or Warrior creature card from among them onto the battlefield. Put the rest on the bottom of your library in a random order.\"\nEquip {2}",
+      "staticAbilities": [
+        {
+          "affected": {
+            "type": "Attached"
+          },
+          "modifications": [
+            {
+              "type": "ModifyPowerToughness",
+              "value": {
+                "power": {
+                  "type": "Literal",
+                  "value": 2
+                },
+                "toughness": {
+                  "type": "Literal",
+                  "value": 2
+                }
+              }
+            },
+            {
+              "type": "GainAbility",
+              "value": {
+                "type": "Triggered",
+                "value": {
+                  "condition": {
+                    "type": "Attacks",
+                    "value": {
+                      "type": "Attacker",
+                      "value": {}
+                    }
+                  },
+                  "modal": {
+                    "modes": [
+                      {
+                        "clauses": [
+                          {
+                            "effects": [
+                              {
+                                "type": "LookAt",
+                                "value": {
+                                  "ref": {
+                                    "type": "TopOfLibrary",
+                                    "value": {
+                                      "count": {
+                                        "type": "Literal",
+                                        "value": 5
+                                      },
+                                      "player": {
+                                        "type": "Relative",
+                                        "value": "You"
+                                      }
+                                    }
+                                  },
+                                  "slot": "looked"
+                                }
+                              }
+                            ]
+                          },
+                          {
+                            "effects": [
+                              {
+                                "type": "MoveToZone",
+                                "value": {
+                                  "ref": {
+                                    "type": "ChosenCardFromAmong",
+                                    "value": {
+                                      "filter": {
+                                        "type": "And",
+                                        "value": [
+                                          {
+                                            "type": "HasCardType",
+                                            "value": "Creature"
+                                          },
+                                          {
+                                            "type": "Or",
+                                            "value": [
+                                              {
+                                                "type": "HasSubtype",
+                                                "value": "Klingon"
+                                              },
+                                              {
+                                                "type": "HasSubtype",
+                                                "value": "Warrior"
+                                              }
+                                            ]
+                                          }
+                                        ]
+                                      },
+                                      "slot": "looked"
+                                    }
+                                  },
+                                  "zone": "Battlefield"
+                                }
+                              }
+                            ],
+                            "optionality": {
+                              "type": "Optional"
+                            }
+                          },
+                          {
+                            "effects": [
+                              {
+                                "type": "MoveToZone",
+                                "value": {
+                                  "placement": {
+                                    "type": "RandomOrder",
+                                    "value": "Bottom"
+                                  },
+                                  "ref": {
+                                    "type": "InSlot",
+                                    "value": "looked"
+                                  },
+                                  "zone": "Library"
+                                }
+                              }
+                            ]
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                }
+              }
+            }
+          ]
+        }
+      ],
+      "typeLine": {
+        "subtypes": [
+          "Equipment"
+        ],
+        "supertypes": [
+          "Legendary"
+        ],
+        "types": [
+          "Artifact"
+        ]
+      }
+    }
+  ]
+}
