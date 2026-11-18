@@ -16,6 +16,7 @@ import qualified Parun.Types.Color as Color
 import qualified Parun.Types.CombatDamageAmount as CombatDamageAmount
 import qualified Parun.Types.CombatDamageObligation as CombatDamageObligation
 import qualified Parun.Types.CombatDamageOption as CombatDamageOption
+import qualified Parun.Types.ControllerGrant as ControllerGrant
 import qualified Parun.Types.CopyException as CopyException
 import qualified Parun.Types.Copyability as Copyability
 import qualified Parun.Types.CostChoice as CostChoice
@@ -364,13 +365,12 @@ data ProjectedCharacteristics = MkProjectedCharacteristics
     -- | CR 510.1b-c: where this creature assigns all its combat damage instead,
     -- and whether its controller may decline.
     combatDamageOptions :: Map.Map CombatDamageOption.CombatDamageOption CombatDamageObligation.CombatDamageObligation,
-    -- | CR 702.184c: does this object's controller's station abilities read a
-    -- tapped creature's toughness instead of its power?
-    -- Modification.GrantsStationToughness's only writer. Read by
-    -- Parun.Engine.Quantity's StationMeasure arm off every battlefield
-    -- permanent the ability's controller controls, so the fact is per-object
-    -- here and folded to a per-player question at the one site that asks it.
-    grantsStationToughness :: Bool,
+    -- | CR 702.184c / 702.179d: what this object gives its controller;
+    -- Modification.GrantsController is the only writer. Read by
+    -- Parun.Engine.Quantity's grantedToController off every battlefield
+    -- permanent, so the fact is per-object here and folded to a per-player
+    -- question at the sites that ask it.
+    controllerGrants :: Set.Set ControllerGrant.ControllerGrant,
     -- | CR 613.11: how much greater than its power this creature counts toward
     -- each keyword's tap-for-total-power cost
     -- (Modification.TapsCounting's GreaterBy), read by

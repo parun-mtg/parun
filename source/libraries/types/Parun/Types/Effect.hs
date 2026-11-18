@@ -362,7 +362,7 @@ data Effect card ability
     -- this much, never below the card's printed floor (Spikeshell Harrier).
     --
     -- Whether an effect may push speed past 4 is IncreaseSpeed's question;
-    -- Parun.Engine.Speed.maxSpeed states parun's answer.
+    -- docs/synthetic-readings.md, "Whether an effect can raise speed past 4".
     DecreaseSpeed SpeedDecrease.SpeedDecrease
   | -- | CR 111: create this many tokens with the given effect-defined
     -- characteristics (CR 111.3), the `card` being the token's text embedded

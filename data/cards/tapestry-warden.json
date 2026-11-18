@@ -73,7 +73,8 @@
           },
           "modifications": [
             {
-              "type": "GrantsStationToughness"
+              "type": "GrantsController",
+              "value": "StationsUsingToughness"
             }
           ]
         }

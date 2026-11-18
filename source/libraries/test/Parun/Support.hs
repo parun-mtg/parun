@@ -2084,7 +2084,7 @@ stubView table oid =
                 Filter.hasAbility = False,
                 -- CR 702.184c: the table registers no such grant, and no Count
                 -- in the pool reads this stub through Quantity.StationMeasure.
-                Filter.grantsStationToughness = False,
+                Filter.controllerGrants = Set.empty,
                 -- CR 700.5a: the table registers no player abilities either.
                 Filter.devotionBonus = 0,
                 Filter.loyaltyIsToughness = False,
