@@ -2,8 +2,8 @@
 # Turns a release's build artifacts (.github/workflows/build.yml), downloaded
 # into ARTIFACTS one directory each, into its assets in OUT: an archive per
 # platform holding the binary and the data directory it reads through
-# parun_datadir, the sdist, the Wasm build with the web client, the schemas,
-# and SHA256SUMS.
+# parun_datadir, the sdist, the Wasm build with the web client, and the
+# schemas. GitHub publishes each asset's digest, so no checksum file.
 #   script/package-release.sh VERSION ARTIFACTS OUT
 set -euo pipefail
 version=$1
@@ -53,5 +53,4 @@ for dir in "$work/parun-$version"-*/; do
     tar --create --gzip --file "$out/$asset.tar.gz" --directory "$work/stage" "$asset"
   fi
 done
-(cd "$out" && sha256sum -- * > SHA256SUMS)
 ls -l "$out"
