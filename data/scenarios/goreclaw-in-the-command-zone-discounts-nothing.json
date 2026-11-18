@@ -1,0 +1,14 @@
+{
+  "description": "CR 113.6 / 601.2f: Goreclaw's discount states no zone, so from the command zone it leaves alice's Craw Wurm at {4}{G}{G}, beyond four Forests that would cast it discounted",
+  "board": {
+    "active": "alice",
+    "step": "PrecombatMain",
+    "seats": [
+      {"name": "alice", "battlefield": [{"card": "Forest", "label": "f1"}, {"card": "Forest", "label": "f2"}, {"card": "Forest", "label": "f3"}, {"card": "Forest", "label": "f4"}], "hand": [{"card": "Craw Wurm", "label": "wurm"}], "command": [{"card": "Goreclaw, Terror of Qal Sisma", "label": "goreclaw", "commander": true}]},
+      {"name": "bob"}
+    ]
+  },
+  "timeline": [
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"View": {"of": "Offered", "player": "alice", "is": ["Pass", "Cast $goreclaw", "ActivateManaAbility $f1", "ActivateManaAbility $f2", "ActivateManaAbility $f3", "ActivateManaAbility $f4"]}}}
+  ]
+}
