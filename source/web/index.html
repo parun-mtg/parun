@@ -47,9 +47,27 @@
           <label><input type="radio" name="notify" value="off"> Off</label>
           <label><input type="radio" name="notify" value="on"> On</label>
         </fieldset>
+        <button type="button" id="keys-button" class="keys-only" aria-keyshortcuts="?">Keyboard shortcuts</button>
         <p class="about">Parun <span title="@COMMIT@">@VERSION@</span> · <a href="https://github.com/parun-mtg/parun" target="_blank" rel="noopener">GitHub</a></p>
       </div>
     </div>
+    <!-- The keyboard's shortcuts (page.js), opened by ? or from the settings. -->
+    <dialog id="keys" aria-labelledby="keys-title">
+      <h2 id="keys-title">Keyboard shortcuts</h2>
+      <dl>
+        <dt><kbd>Enter</kbd> or <kbd>Space</kbd></dt><dd>Press the prompt's main button, marked <kbd>&#x21B5;</kbd></dd>
+        <dt><kbd>1</kbd>&ndash;<kbd>9</kbd>, <kbd>0</kbd></dt><dd>Press the button marked with that number; with a card open, its actions</dd>
+        <dt><kbd>A</kbd></dt><dd>Attack with every creature that can</dd>
+        <dt><kbd>E</kbd></dt><dd>End your turn, or pass to your next turn</dd>
+        <dt><kbd>&larr;</kbd> <kbd>&uarr;</kbd> <kbd>&rarr;</kbd> <kbd>&darr;</kbd></dt><dd>Step through the cards on the table and in hand; <kbd>Enter</kbd> opens the one in focus</dd>
+        <dt><kbd>L</kbd></dt><dd>Open or close the log</dd>
+        <dt><kbd>Esc</kbd></dt><dd>Close the open card, this list or the settings</dd>
+        <dt><kbd>Tab</kbd></dt><dd>Move between buttons</dd>
+        <dt><kbd>?</kbd></dt><dd>Show this list</dd>
+      </dl>
+      <p>No shortcut fires while you type in a box.</p>
+      <form method="dialog"><button>Close</button></form>
+    </dialog>
     <footer class="diagnostics"><small id="timings"></small> <small id="response"></small></footer>
     <details hidden><summary>Trace</summary><pre id="trace"></pre></details>
   </body>

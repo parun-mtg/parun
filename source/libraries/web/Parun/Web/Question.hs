@@ -610,7 +610,7 @@ form request picked = case Text.unpack (Question.kind question) of
                 <> [Element.el "div" ["actions"] [] [button (MkAnswer $ R.Number i) (Offer.actionName shown option) | (i, option) <- rest] | not (null rest)]
                 <> [ Element.el "div" ["passes"] [] $
                        [primary (MkAnswer $ R.Number i) (Text.pack (if settled then "Pass" else "Pass and resolve")) | (i, _) <- passes]
-                         <> [button MkSkip (Text.pack (if yours then "End turn" else "Pass to my turn")) | settled, not (null passes)]
+                         <> [shortcut "E" MkSkip (Text.pack (if yours then "End turn" else "Pass to my turn")) | settled, not (null passes)]
                    ]
   kind
     | kind `elem` ["ChooseManaSource", "ChooseExtraManaSource"],
@@ -674,7 +674,7 @@ form request picked = case Text.unpack (Question.kind question) of
               Element.el "div" ["actions"] [] (toggles 0 [(i, Offer.listedName shown option) | (i, option) <- zip [0 ..] attackers]),
               Element.el "div" ["passes"] [] $
                 [primary MkSubmit (Text.pack (if count == 0 then "No attack" else "Attack with " <> show count))]
-                  <> [button (MkAnswer (R.Array attackers)) (Text.pack "All") | length attackers > 1, count < length attackers]
+                  <> [shortcut "A" (MkAnswer (R.Array attackers)) (Text.pack "All") | length attackers > 1, count < length attackers]
             ]
   "AssignCombatDamage"
     | Just chooser <- picker request ->
@@ -745,6 +745,11 @@ nudge t = Element.el "p" ["nudge"] [Element.attr "role" (Text.pack "note")] (Man
 
 button :: Event -> Text.Text -> Html.Html Event
 button event label = Element.button [] event (Mana.rich label)
+
+-- | A button its key presses wherever it shows (page.js): a meaning's key,
+-- the same from prompt to prompt, where page.js numbers the rest.
+shortcut :: String -> Event -> Text.Text -> Html.Html Event
+shortcut key event label = Element.el "button" [] [Element.attr "type" (Text.pack "button"), Element.attr "aria-keyshortcuts" (Text.pack key), Element.on "click" event] (Mana.rich label)
 
 -- | The button that answers, set apart from the rest.
 primary :: Event -> Text.Text -> Html.Html Event
