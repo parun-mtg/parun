@@ -1,0 +1,23 @@
+{
+  "description": "One, Borg Evolved gives the artifact creatures its controller controls flying, double strike, vigilance, menace, lifelink and ward {2}",
+  "note": "Memnite and One are artifact creatures; Grizzly Bears is not.",
+  "board": {
+    "active": "alice",
+    "seats": [
+      {"name": "alice", "battlefield": [{"card": "One, Borg Evolved", "label": "one"}, {"card": "Memnite", "label": "memnite"}, {"card": "Grizzly Bears", "label": "bears"}], "library": [{"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}]},
+      {"name": "bob", "library": [{"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}]}
+    ],
+    "step": "PrecombatMain"
+  },
+  "timeline": [
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Keywords": {"count": 1, "keyword": {"type": "Flying"}, "object": "$memnite"}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Keywords": {"count": 1, "keyword": {"type": "DoubleStrike"}, "object": "$memnite"}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Keywords": {"count": 1, "keyword": {"type": "Vigilance"}, "object": "$memnite"}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Keywords": {"count": 1, "keyword": {"type": "Menace"}, "object": "$memnite"}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Keywords": {"count": 1, "keyword": {"type": "Lifelink"}, "object": "$memnite"}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Keywords": {"count": 1, "keyword": {"type": "Ward", "value": {"cost": {"mana": [{"type": "Generic", "value": 2}]}}}, "object": "$memnite"}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Keywords": {"count": 1, "keyword": {"type": "DoubleStrike"}, "object": "$one"}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Keywords": {"count": 0, "keyword": {"type": "Flying"}, "object": "$bears"}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Keywords": {"count": 0, "keyword": {"type": "Lifelink"}, "object": "$bears"}}}
+  ]
+}

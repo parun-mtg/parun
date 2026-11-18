@@ -1,0 +1,27 @@
+{
+  "description": "Picard, Steadfast Captain puts two +1/+1 counters on another target creature its controller controls as it enters and again when it attacks",
+  "note": "Bob's Hill Giant is not alice's and Picard is not another, so both are refused. Picard enters on turn 1 and attacks on turn 3.",
+  "board": {
+    "active": "alice",
+    "seats": [
+      {"name": "alice", "battlefield": [{"card": "Grizzly Bears", "label": "bears"}, {"card": "Memnite", "label": "memnite"}], "hand": [{"card": "Picard, Steadfast Captain", "label": "picard"}], "manaPool": "WWWWWW", "library": [{"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}]},
+      {"name": "bob", "battlefield": [{"card": "Hill Giant", "label": "giant"}], "library": [{"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}]}
+    ],
+    "step": "PrecombatMain"
+  },
+  "timeline": [
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": {"Cast": {"object": "$picard"}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass"},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "refuse": {"ChooseTargets": {"target": ["$giant"]}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "refuse": {"ChooseTargets": {"target": ["Picard, Steadfast Captain"]}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": {"ChooseTargets": {"target": ["$bears"]}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass"},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Counters": {"object": "$bears", "kind": {"type": "PlusOnePlusOne"}, "count": 2}}},
+    {"turn": 2, "step": "DeclareAttackers", "player": "bob", "do": {"Attack": []}},
+    {"turn": 3, "step": "DeclareAttackers", "player": "alice", "do": {"Attack": ["Picard, Steadfast Captain"]}},
+    {"turn": 3, "step": "DeclareAttackers", "player": "alice", "do": {"ChooseTargets": {"target": ["$memnite"]}}},
+    {"turn": 3, "step": "DeclareAttackers", "player": "alice", "do": "Pass"},
+    {"turn": 3, "step": "DeclareAttackers", "player": "alice", "check": {"Counters": {"object": "$memnite", "kind": {"type": "PlusOnePlusOne"}, "count": 2}}},
+    {"turn": 3, "step": "DeclareAttackers", "player": "alice", "check": {"Counters": {"object": "$bears", "kind": {"type": "PlusOnePlusOne"}, "count": 2}}}
+  ]
+}

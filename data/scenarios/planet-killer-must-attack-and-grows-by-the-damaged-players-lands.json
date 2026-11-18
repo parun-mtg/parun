@@ -1,0 +1,20 @@
+{
+  "description": "CR 508.1d: Planet Killer attacks each combat if able, and on combat damage to a player gets a +1/+1 counter for each land that player controls",
+  "note": "Declaring no attackers is refused. Bob controls three lands and carol two, so three counters.",
+  "board": {
+    "active": "alice",
+    "seats": [
+      {"name": "alice", "battlefield": [{"card": "Planet Killer", "label": "killer", "ready": true}], "library": [{"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}]},
+      {"name": "bob", "battlefield": [{"card": "Plains"}, {"card": "Plains"}, {"card": "Swamp"}], "library": [{"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}]},
+      {"name": "carol", "battlefield": [{"card": "Forest"}, {"card": "Forest"}], "library": [{"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}]}
+    ],
+    "step": "BeginningOfCombat"
+  },
+  "timeline": [
+    {"turn": 1, "step": "DeclareAttackers", "player": "alice", "refuse": {"Attack": []}},
+    {"turn": 1, "step": "DeclareAttackers", "player": "alice", "do": {"Attack": ["$killer"]}},
+    {"turn": 1, "step": "DeclareAttackers", "player": "alice", "do": {"ChooseAttackTarget": "$bob"}, "source": "$killer"},
+    {"turn": 1, "step": "EndOfCombat", "player": "alice", "check": {"Counters": {"object": "$killer", "kind": {"type": "PlusOnePlusOne"}, "count": 3}}},
+    {"turn": 1, "step": "EndOfCombat", "player": "alice", "check": {"Life": {"player": "bob", "life": 11}}}
+  ]
+}

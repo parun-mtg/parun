@@ -1,0 +1,23 @@
+{
+  "description": "CR 701.23a: Path to Exile exiles target creature, and that creature's controller may put a basic land card from their library onto the battlefield tapped",
+  "note": "Bob, the exiled creature's controller, makes the search; Hill Giant is not a land and is refused. The Forest enters tapped.",
+  "board": {
+    "active": "alice",
+    "seats": [
+      {"name": "alice", "battlefield": [{"card": "Plains", "label": "p1"}, {"card": "Memnite"}], "hand": [{"card": "Path to Exile", "label": "path"}], "library": [{"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}]},
+      {"name": "bob", "battlefield": [{"card": "Grizzly Bears", "label": "bears"}], "library": [{"card": "Hill Giant", "label": "hg"}, {"card": "Forest", "label": "forest"}, {"card": "Serra Angel"}, {"card": "Llanowar Elves"}]}
+    ],
+    "step": "PrecombatMain"
+  },
+  "timeline": [
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": {"Cast": {"object": "$path", "targets": ["$bears"], "mana": ["$p1"]}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass"},
+    {"turn": 1, "step": "PrecombatMain", "player": "bob", "do": {"ChooseOptional": "Exercises"}},
+    {"turn": 1, "step": "PrecombatMain", "player": "bob", "refuse": {"Answer": {"prompt": "Search", "with": ["$hg"]}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "bob", "do": {"Answer": {"prompt": "Search", "with": ["$forest"]}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": {"Answer": {"prompt": "Shuffle", "with": ["$hg", "Serra Angel", "Llanowar Elves"]}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Count": {"card": "Grizzly Bears", "count": 1, "player": "bob", "zone": "Exile"}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Count": {"card": "Forest", "count": 1, "player": "bob", "zone": "Battlefield"}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Tapped": {"object": "Forest", "tapped": true}}}
+  ]
+}

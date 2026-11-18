@@ -1,0 +1,26 @@
+{
+  "description": "CR 506.4: Merciful Mandate untaps its caster's creatures, and only during a combat phase offers to end it",
+  "note": "Cast in the precombat main phase it untaps the tapped Bears and asks nothing. Cast after attackers are declared it untaps both attackers and ends combat, so bob takes no damage. Bob's tapped Hill Giant stays tapped.",
+  "board": {
+    "active": "alice",
+    "seats": [
+      {"name": "alice", "battlefield": [{"card": "Grizzly Bears", "label": "bears", "ready": true, "tapped": true}, {"card": "Serra Angel", "label": "angel", "ready": true}, {"card": "Plains", "label": "p1"}, {"card": "Plains", "label": "p2"}, {"card": "Plains", "label": "p3"}, {"card": "Plains", "label": "p4"}], "hand": [{"card": "Merciful Mandate", "label": "first"}, {"card": "Merciful Mandate", "label": "second"}], "library": [{"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}]},
+      {"name": "bob", "battlefield": [{"card": "Hill Giant", "label": "giant", "tapped": true}], "library": [{"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}]}
+    ],
+    "step": "PrecombatMain"
+  },
+  "timeline": [
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": {"Cast": {"object": "$first", "mana": ["$p1", "$p2", null]}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass"},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Tapped": {"object": "$bears", "tapped": false}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Tapped": {"object": "$giant", "tapped": true}}},
+    {"turn": 1, "step": "DeclareAttackers", "player": "alice", "do": {"Attack": ["$bears", "$angel"]}},
+    {"turn": 1, "step": "DeclareAttackers", "player": "alice", "do": {"Cast": {"object": "$second", "mana": ["$p3", "$p4"]}}},
+    {"turn": 1, "step": "DeclareAttackers", "player": "alice", "do": "Pass"},
+    {"turn": 1, "step": "DeclareAttackers", "player": "alice", "do": {"ChooseOptional": "Exercises"}},
+    {"turn": 1, "step": "PostcombatMain", "player": "alice", "check": {"Tapped": {"object": "$angel", "tapped": false}}},
+    {"turn": 1, "step": "PostcombatMain", "player": "alice", "check": {"Tapped": {"object": "$bears", "tapped": false}}},
+    {"turn": 1, "step": "PostcombatMain", "player": "alice", "check": {"Life": {"player": "bob", "life": 20}}},
+    {"turn": 1, "step": "PostcombatMain", "player": "alice", "check": {"Count": {"card": "Merciful Mandate", "count": 1, "player": "alice", "zone": "Exile"}}}
+  ]
+}

@@ -1,0 +1,21 @@
+{
+  "description": "Loran of the Third Path destroys up to one target artifact or enchantment as it enters",
+  "note": "Bob's Grizzly Bears is neither and is refused; his Sol Ring is destroyed and his On the Shoulders of Giants kept.",
+  "board": {
+    "active": "alice",
+    "seats": [
+      {"name": "alice", "hand": [{"card": "Loran of the Third Path", "label": "loran"}], "manaPool": "WWW", "library": [{"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}]},
+      {"name": "bob", "battlefield": [{"card": "Sol Ring", "label": "ring"}, {"card": "On the Shoulders of Giants", "label": "shoulders"}, {"card": "Grizzly Bears", "label": "bears"}], "library": [{"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}]}
+    ],
+    "step": "PrecombatMain"
+  },
+  "timeline": [
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": {"Cast": {"object": "$loran"}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass"},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "refuse": {"ChooseTargets": {"target": ["$bears"]}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": {"ChooseTargets": {"target": ["$ring"]}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass"},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Count": {"card": "Sol Ring", "count": 1, "player": "bob", "zone": "Graveyard"}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Count": {"card": "On the Shoulders of Giants", "count": 1, "player": "bob", "zone": "Battlefield"}}}
+  ]
+}

@@ -1,0 +1,20 @@
+{
+  "description": "Loran of the Third Path taps: its controller and target opponent each draw a card",
+  "note": "Carol is the target and draws one; bob draws none.",
+  "board": {
+    "active": "alice",
+    "seats": [
+      {"name": "alice", "battlefield": [{"card": "Loran of the Third Path", "label": "loran", "ready": true}], "library": [{"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}]},
+      {"name": "bob", "library": [{"card": "Plains"}, {"card": "Plains"}, {"card": "Plains"}]},
+      {"name": "carol", "library": [{"card": "Swamp"}, {"card": "Swamp"}, {"card": "Swamp"}]}
+    ],
+    "step": "PrecombatMain"
+  },
+  "timeline": [
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": {"Activate": {"object": "$loran", "targets": ["$carol"]}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass"},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Count": {"card": "Island", "count": 1, "player": "alice", "zone": "Hand"}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Count": {"card": "Swamp", "count": 1, "player": "carol", "zone": "Hand"}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Count": {"card": "Plains", "count": 0, "player": "bob", "zone": "Hand"}}}
+  ]
+}

@@ -1,0 +1,18 @@
+{
+  "description": "CR 700.6: On the Shoulders of Giants gives flying to the historic creatures its controller controls",
+  "note": "Memnite is an artifact and Loran legendary; Grizzly Bears is neither, and bob's Memnite is not alice's.",
+  "board": {
+    "active": "alice",
+    "seats": [
+      {"name": "alice", "battlefield": [{"card": "On the Shoulders of Giants"}, {"card": "Memnite", "label": "memnite"}, {"card": "Loran of the Third Path", "label": "loran"}, {"card": "Grizzly Bears", "label": "bears"}], "library": [{"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}]},
+      {"name": "bob", "battlefield": [{"card": "Memnite", "label": "bobs"}], "library": [{"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}]}
+    ],
+    "step": "PrecombatMain"
+  },
+  "timeline": [
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Keywords": {"count": 1, "keyword": {"type": "Flying"}, "object": "$memnite"}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Keywords": {"count": 1, "keyword": {"type": "Flying"}, "object": "$loran"}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Keywords": {"count": 0, "keyword": {"type": "Flying"}, "object": "$bears"}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Keywords": {"count": 0, "keyword": {"type": "Flying"}, "object": "$bobs"}}}
+  ]
+}
