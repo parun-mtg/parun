@@ -1,0 +1,30 @@
+{
+  "description": "Sulu, Heroic Helmsman under Tapestry Warden stations his toughness, untripled",
+  "note": "CR 702.184c: Accorder's Shield makes Sulu 2/5, so Tapestry Warden substitutes his toughness, and the tripling of his power goes unread (docs/decisions.md, \"Whether a station power multiplier raises a toughness stationer\"): 5, not 6.",
+  "board": {
+    "seats": [
+      {
+        "name": "alice",
+        "battlefield": [
+          { "card": "Lumen-Class Frigate", "label": "frigate", "ready": true },
+          { "card": "Tapestry Warden", "label": "warden", "ready": true },
+          { "card": "Sulu, Heroic Helmsman", "label": "sulu", "ready": true },
+          { "card": "Accorder's Shield", "label": "shield", "attached": "sulu" }
+        ]
+      },
+      { "name": "bob" },
+      { "name": "carol" }
+    ],
+    "active": "alice",
+    "step": "PrecombatMain"
+  },
+  "timeline": [
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "PowerToughness": { "object": "$sulu", "power": 2, "toughness": 5 } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": { "Answer": { "prompt": "ChooseTaps", "with": ["$sulu"] } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": { "Activate": { "object": "$frigate", "ability": 0 } } }
+  ],
+  "final": [
+    { "Counters": { "object": "$frigate", "kind": { "type": "Named", "value": "charge" }, "count": 5 } },
+    { "Tapped": { "object": "$sulu", "tapped": true } }
+  ]
+}

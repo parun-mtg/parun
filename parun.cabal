@@ -1830,6 +1830,8 @@ library codec
     Parun.Codec.TapForManaSpec
     Parun.Codec.TapForTotalPower
     Parun.Codec.TapForTotalPowerSpec
+    Parun.Codec.TapKeyword
+    Parun.Codec.TapKeywordSpec
     Parun.Codec.TappedForMana
     Parun.Codec.TappedForManaSpec
     Parun.Codec.TappedForManaTrigger
@@ -3853,6 +3855,7 @@ library types
     Parun.Types.TapCount
     Parun.Types.TapForMana
     Parun.Types.TapForTotalPower
+    Parun.Types.TapKeyword
     Parun.Types.TappedForMana
     Parun.Types.TappedForManaTrigger
     Parun.Types.TappedIs

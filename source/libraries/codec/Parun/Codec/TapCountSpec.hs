@@ -21,5 +21,12 @@ spec s = Spec.describe s "Parun.Codec.TapCount" $ do
       TapCount.codec
       (TapCount.GreaterBy 2)
       " {\"type\":\"GreaterBy\",\"value\":2} "
+  -- Sulu, Heroic Helmsman's "as though his power were tripled".
+  Spec.it s "Multiplied" $
+    Common.assertCodec
+      s
+      TapCount.codec
+      (TapCount.Multiplied 3)
+      " {\"type\":\"Multiplied\",\"value\":3} "
   Spec.it s "has a schema" $
     Common.assertHasSchema s TapCount.codec

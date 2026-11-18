@@ -2,7 +2,7 @@ module Parun.Types.TapForTotalPower where
 
 import qualified Numeric.Natural as Natural
 import qualified Parun.Types.Filter as Filter
-import qualified Parun.Types.KeywordFamily as KeywordFamily
+import qualified Parun.Types.TapKeyword as TapKeyword
 
 -- | The payload of Parun.Types.CostComponent's TapForTotalPower arm (#1305): CR
 -- 702.122a's crew cost.
@@ -17,9 +17,10 @@ import qualified Parun.Types.KeywordFamily as KeywordFamily
 data TapForTotalPower keyword = MkTapForTotalPower
   { totalPower :: Natural.Natural,
     whichPermanents :: Filter.Filter keyword,
-    -- | The rule-702 keyword whose cost this is (crew, saddle), which
+    -- | The rule-702 keyword whose cost this is (crew, saddle; station taps one
+    -- creature, CR 702.184a, so never this cost), which
     -- Modification.TapsCounting names; Nothing when printed
     -- outside one (data/cards/synthetic-crewed-battery.json).
-    keywordCost :: Maybe KeywordFamily.KeywordFamily
+    keywordCost :: Maybe TapKeyword.TapKeyword
   }
   deriving (Eq, Ord, Show)

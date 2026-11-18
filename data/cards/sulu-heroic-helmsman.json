@@ -1,0 +1,66 @@
+{
+  "faces": [
+    {
+      "manaCost": [
+        {
+          "type": "Generic",
+          "value": 1
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "White"
+          }
+        }
+      ],
+      "name": "Sulu, Heroic Helmsman",
+      "oracleText": "Sulu stations Spacecraft and crews Vehicles as though his power were tripled.",
+      "power": {
+        "type": "Literal",
+        "value": 2
+      },
+      "staticAbilities": [
+        {
+          "affected": {
+            "type": "Matching",
+            "value": {
+              "type": "IsSource"
+            }
+          },
+          "modifications": [
+            {
+              "type": "TapsCounting",
+              "value": {
+                "count": {
+                  "type": "Multiplied",
+                  "value": 3
+                },
+                "keywords": [
+                  "Crew",
+                  "Station"
+                ]
+              }
+            }
+          ]
+        }
+      ],
+      "toughness": {
+        "type": "Literal",
+        "value": 2
+      },
+      "typeLine": {
+        "subtypes": [
+          "Human",
+          "Pilot"
+        ],
+        "supertypes": [
+          "Legendary"
+        ],
+        "types": [
+          "Creature"
+        ]
+      }
+    }
+  ]
+}

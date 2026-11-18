@@ -165,7 +165,6 @@ import qualified Parun.Types.StoredEffects as StoredEffects
 import qualified Parun.Types.Subtype as Subtype.Type
 import qualified Parun.Types.SubtypeFamily as SubtypeFamily
 import qualified Parun.Types.Supertype as Supertype
-import qualified Parun.Types.TapCount as TapCount
 import qualified Parun.Types.TargetSlot as TargetSlot
 import qualified Parun.Types.TextWord as TextWord
 import Parun.Types.Timestamp (Timestamp (MkTimestamp))
@@ -988,15 +987,12 @@ applyModification textBoxOf viewOf src stamp gs oid unitTypes affected m pc =
         -- bare marker with no count and no source to prefer among several.
         Modification.GrantsController grant ->
           pc {PC.controllerGrants = Set.insert grant (PC.controllerGrants pc)}
-        -- CR 613.11: a GreaterBy offset is an ACCUMULATION, unlike the marker
-        -- above -- each grant is its own "as though" and they add
-        -- (docs/decisions.md, "Whether two crew power offsets add"). The
-        -- toughness substitution is a marker, as station's is.
-        Modification.TapsCounting keywords count -> case count of
-          TapCount.GreaterBy n ->
-            pc {PC.tapPowerBonus = Map.unionWith (+) (PC.tapPowerBonus pc) (Map.fromSet (const n) keywords)}
-          TapCount.UsingToughness ->
-            pc {PC.tapsUsingToughness = Set.union (PC.tapsUsingToughness pc) keywords}
+        -- CR 613.11: an ACCUMULATION, unlike the marker above -- each grant is
+        -- its own "as though" (docs/decisions.md, "Whether two crew power
+        -- offsets add"), appended so Parun.Engine.Keyword.tapsCounted reads
+        -- them in the timestamp order CR 613.11 applies them in.
+        Modification.TapsCounting keywords count ->
+          pc {PC.tapCounts = Map.unionWith (<>) (PC.tapCounts pc) (Map.fromSet (const [count]) keywords)}
         -- Alchemy's "intensifies by N": an object with no starting intensity
         -- counts from 0.
         Modification.Intensify n ->
@@ -5140,9 +5136,9 @@ modificationWrites m = case m of
   -- REGRESSION FENCE rather than a proved behaviour: no board in the pool
   -- makes another effect's affected set depend on it.
   Modification.GrantsController _ -> Set.singleton Keywords
-  -- Writes PC.tapPowerBonus and PC.tapsUsingToughness, GrantsController's
-  -- reasoning: no reader inside the layer fold (Parun.Engine.Cost.tapPowerGiven
-  -- reads them off the finished projection), so a REGRESSION FENCE.
+  -- Writes PC.tapCounts, GrantsController's reasoning: no reader inside the
+  -- layer fold (Parun.Engine.Keyword.tapsCounted reads it off the finished
+  -- projection), so a REGRESSION FENCE.
   Modification.TapsCounting {} -> Set.singleton Keywords
   -- Writes PC.intensity, which no Aspect names: no Filter atom reads it.
   Modification.Intensify _ -> Set.empty

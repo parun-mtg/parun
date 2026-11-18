@@ -2659,9 +2659,27 @@ Entries are ordered by the first rule each cites.
   reads "its power" as "the number it crews with"; and timestamp order (CR
   613.11), which makes the answer depend on which permanent arrived first when
   neither order composes the two wordings any differently.
-- **Site**: `Parun.Engine.Cost.tapPowerGiven`, a FENCE: no card in the pool
+- **Site**: `Parun.Engine.Keyword.tapsCounted`, a FENCE: no card in the pool
   grants the offset to another creature.
 - **Issue**: #7749.
+
+## Whether a station power multiplier raises a toughness stationer
+
+- **Question**: Sulu, Heroic Helmsman stations "as though his power were
+  tripled", and Tapestry Warden makes a creature you control with toughness
+  greater than its power station "using its toughness rather than its power".
+  Does a 2/5 Sulu load 5 or 6?
+- **Rules**: CR 613.11, 702.184a, 702.184c; no ruling on either card; CR of
+  2026-11-06.
+- **Decision**: 5: the multiplier raises power, which a toughness stationer
+  does not count, the crew answer above.
+- **Rejected**: 6, comparing the toughness with the tripled power, which reads
+  the Warden's "its power" as the number it stations with; and the greater of
+  the two.
+- **Site**: `Parun.Engine.Quantity`'s `StationMeasure` arm, proved by the
+  scenario
+  `sulu-heroic-helmsman-under-tapestry-warden-stations-his-toughness-untripled`.
+- **Issue**: #8538.
 
 ## Whether a described one-hit shield covers two sources at once
 

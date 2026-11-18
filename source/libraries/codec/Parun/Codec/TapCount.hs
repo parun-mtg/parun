@@ -10,10 +10,12 @@ codec =
   Arm.tagged
     tagOf
     [ Arm.nullary "UsingToughness" TapCount.UsingToughness,
-      Arm.payload "GreaterBy" Common.natural TapCount.GreaterBy (\x -> case x of TapCount.GreaterBy n -> Just n; _ -> Nothing)
+      Arm.payload "GreaterBy" Common.natural TapCount.GreaterBy (\x -> case x of TapCount.GreaterBy n -> Just n; _ -> Nothing),
+      Arm.payload "Multiplied" Common.natural TapCount.Multiplied (\x -> case x of TapCount.Multiplied n -> Just n; _ -> Nothing)
     ]
 
 tagOf :: TapCount.TapCount -> String
 tagOf x = case x of
   TapCount.UsingToughness -> "UsingToughness"
   TapCount.GreaterBy {} -> "GreaterBy"
+  TapCount.Multiplied {} -> "Multiplied"

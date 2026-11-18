@@ -55,6 +55,7 @@ import qualified Parun.Types.Subtype as Subtype
 import qualified Parun.Types.SubtypeFamily as SubtypeFamily
 import qualified Parun.Types.Supertype as Supertype
 import qualified Parun.Types.TapCount as TapCount
+import qualified Parun.Types.TapKeyword as TapKeyword
 import qualified Parun.Types.TargetSlot as TargetSlot
 import qualified Parun.Types.TextWord as TextWord
 import qualified Parun.Types.Zone as Zone
@@ -445,7 +446,7 @@ spec s = Spec.describe s "Parun.Codec.Modification" $ do
     Common.assertCodec
       s
       codec
-      (Modification.TapsCounting (Set.fromList [KeywordFamily.Crew, KeywordFamily.Saddle]) (TapCount.GreaterBy 2))
+      (Modification.TapsCounting (Set.fromList [TapKeyword.Crew, TapKeyword.Saddle]) (TapCount.GreaterBy 2))
       " {\"type\":\"TapsCounting\",\"value\":{\"keywords\":[\"Crew\",\"Saddle\"],\"count\":{\"type\":\"GreaterBy\",\"value\":2}}} "
   -- Interface Ace's "saddles Mounts and crews Vehicles using its toughness
   -- rather than its power".
@@ -453,8 +454,16 @@ spec s = Spec.describe s "Parun.Codec.Modification" $ do
     Common.assertCodec
       s
       codec
-      (Modification.TapsCounting (Set.fromList [KeywordFamily.Crew, KeywordFamily.Saddle]) TapCount.UsingToughness)
+      (Modification.TapsCounting (Set.fromList [TapKeyword.Crew, TapKeyword.Saddle]) TapCount.UsingToughness)
       " {\"type\":\"TapsCounting\",\"value\":{\"keywords\":[\"Crew\",\"Saddle\"],\"count\":{\"type\":\"UsingToughness\"}}} "
+  -- CR 702.184a: Sulu, Heroic Helmsman's "stations Spacecraft and crews
+  -- Vehicles as though his power were tripled".
+  Spec.it s "TapsCounting for station" $
+    Common.assertCodec
+      s
+      codec
+      (Modification.TapsCounting (Set.fromList [TapKeyword.Crew, TapKeyword.Station]) (TapCount.Multiplied 3))
+      " {\"type\":\"TapsCounting\",\"value\":{\"keywords\":[\"Crew\",\"Station\"],\"count\":{\"type\":\"Multiplied\",\"value\":3}}} "
   -- Alchemy's "intensifies by 1" (Static Discharge).
   Spec.it s "Intensify" $
     Common.assertCodec
