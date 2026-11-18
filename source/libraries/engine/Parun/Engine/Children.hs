@@ -639,7 +639,8 @@ filterChildren children predicate = case predicate of
   Filter.IsAttackingPlayer _ -> pure predicate
   Filter.IsAttackingPlaneswalker _ -> pure predicate
   Filter.IsAttackingBattle _ -> pure predicate
-  Filter.DeclaredAttackedThisCombat -> pure predicate
+  -- MANY: `matches` asks whether any of the slot's players declared it.
+  Filter.DeclaredAttackedThisCombat name -> fmap Filter.DeclaredAttackedThisCombat (traverse (slot children SlotArity.Many) name)
   Filter.IsBlocking -> pure predicate
   Filter.HasBlockStatus _ -> pure predicate
   Filter.DeclaredAttackerThisCombat -> pure predicate

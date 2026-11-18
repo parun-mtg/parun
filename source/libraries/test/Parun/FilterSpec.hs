@@ -120,7 +120,7 @@ blackCreature =
       Filter.attackingPlayer = Nothing,
       Filter.attackingPlaneswalkerController = Nothing,
       Filter.attackingBattleProtector = Nothing,
-      Filter.declaredAttackedThisCombat = False,
+      Filter.declaredAttackedBy = Set.empty,
       Filter.blocking = False,
       Filter.blockStatus = Nothing,
       Filter.blockers = Set.empty,
@@ -230,7 +230,7 @@ devoidBigCreature =
       Filter.attackingPlayer = Nothing,
       Filter.attackingPlaneswalkerController = Nothing,
       Filter.attackingBattleProtector = Nothing,
-      Filter.declaredAttackedThisCombat = False,
+      Filter.declaredAttackedBy = Set.empty,
       Filter.blocking = False,
       Filter.blockStatus = Nothing,
       Filter.blockers = Set.empty,
@@ -1795,26 +1795,36 @@ spec s = Spec.describe s "Parun.Engine.Filter" $ do
 
   Spec.describe s "DeclaredAttackedThisCombat" $ do
     Spec.it s "matches a view whose combat record says so" $ do
-      Spec.assertBool s (Filter.matches self (blackCreature {Filter.declaredAttackedThisCombat = True}) Filter.Type.DeclaredAttackedThisCombat) "declared attacked"
+      Spec.assertBool s (Filter.matches self (blackCreature {Filter.declaredAttackedBy = Set.singleton (PlayerId.MkPlayerId 1)}) (Filter.Type.DeclaredAttackedThisCombat Nothing)) "declared attacked"
 
     Spec.it s "does not match a permanent nobody was declared attacking" $ do
-      Spec.assertBool s (not (Filter.matches self blackCreature Filter.Type.DeclaredAttackedThisCombat)) "not declared attacked"
+      Spec.assertBool s (not (Filter.matches self blackCreature (Filter.Type.DeclaredAttackedThisCombat Nothing))) "not declared attacked"
 
     -- The two halves of Combat's declaration record, and independent in BOTH
     -- directions: CR 508.1a's subject is the attacking creature and CR 508.3b's
     -- is what it was declared attacking, and CR 508.1b lets no creature be both
     -- at once.
     Spec.it s "is not the attacker half of the same record" $ do
-      Spec.assertBool s (not (Filter.matches self (blackCreature {Filter.declaredAttackerThisCombat = True}) Filter.Type.DeclaredAttackedThisCombat)) "declared attacker does not imply declared attacked"
-      Spec.assertBool s (not (Filter.matches self (blackCreature {Filter.declaredAttackedThisCombat = True}) Filter.Type.DeclaredAttackerThisCombat)) "and the other way round"
+      Spec.assertBool s (not (Filter.matches self (blackCreature {Filter.declaredAttackerThisCombat = True}) (Filter.Type.DeclaredAttackedThisCombat Nothing))) "declared attacker does not imply declared attacked"
+      Spec.assertBool s (not (Filter.matches self (blackCreature {Filter.declaredAttackedBy = Set.singleton (PlayerId.MkPlayerId 1)}) Filter.Type.DeclaredAttackerThisCombat)) "and the other way round"
 
     -- CR 508.3b's subject list is "a player, planeswalker, or battle", so unlike
     -- every other combat atom this one really does answer for a player -- off the
     -- field Parun.Engine.Count.playerView fills from the board, which this
     -- hand-built view sets directly.
     Spec.it s "a player candidate answers rather than being vacuously false" $ do
-      Spec.assertBool s (Filter.matches self (aPlayer {Filter.declaredAttackedThisCombat = True}) Filter.Type.DeclaredAttackedThisCombat) "player attacked"
-      Spec.assertBool s (not (Filter.matches self aPlayer Filter.Type.DeclaredAttackedThisCombat)) "player nobody attacked"
+      Spec.assertBool s (Filter.matches self (aPlayer {Filter.declaredAttackedBy = Set.singleton (PlayerId.MkPlayerId 1)}) (Filter.Type.DeclaredAttackedThisCombat Nothing)) "player attacked"
+      Spec.assertBool s (not (Filter.matches self aPlayer (Filter.Type.DeclaredAttackedThisCombat Nothing))) "player nobody attacked"
+
+    -- CR 805.10c: with a slot, only the attacking players it binds count, so a
+    -- teammate's declaration does not answer for the slot's player.
+    Spec.it s "a slot narrows it to the attacking players the slot binds" $ do
+      let byBob = blackCreature {Filter.declaredAttackedBy = Set.singleton (PlayerId.MkPlayerId 1)}
+          slot = SlotName.MkSlotName (Text.pack "thatAttackingPlayer")
+          binding pid = self {Filter.slotPlayers = Map.singleton slot (Set.singleton (PlayerId.MkPlayerId pid))}
+      Spec.assertBool s (Filter.matches (binding 1) byBob (Filter.Type.DeclaredAttackedThisCombat (Just slot))) "declared by the bound player"
+      Spec.assertBool s (not (Filter.matches (binding 2) byBob (Filter.Type.DeclaredAttackedThisCombat (Just slot)))) "declared by another attacking player"
+      Spec.assertBool s (not (Filter.matches self byBob (Filter.Type.DeclaredAttackedThisCombat (Just slot)))) "slot binds no one"
 
   Spec.describe s "DeclaredBlockerThisCombat" $ do
     Spec.it s "matches a view whose combat record says so" $ do

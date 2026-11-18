@@ -460,8 +460,7 @@ playerView gs pid =
       -- CR 508.3b: the same division, one record over -- a player IS one of that
       -- rule's three subjects, and Parun.Engine.Filter.playerView holds no combat
       -- record to read the answer from.
-      Filter.declaredAttackedThisCombat =
-        Set.member (AttackTarget.OfPlayer pid) (Combat.declaredAttacked (TurnRegisters.combat (GameState.turn gs)))
+      Filter.declaredAttackedBy = declaredAttackedAs (AttackTarget.OfPlayer pid) gs
     }
 
 -- CR 109.1: does a player Filter match this player? The Scope.OverPlayers
@@ -1389,7 +1388,7 @@ lastKnownView peers oid gs lastKnown =
           Filter.declaredThisTurn = declaredThisTurn oid gs,
           Filter.couldAttackThisTurn = couldAttackThisTurn oid gs,
           Filter.declaredAttackerThisCombat = declaredAttackerThisCombat oid gs,
-          Filter.declaredAttackedThisCombat = declaredAttackedThisCombat oid gs,
+          Filter.declaredAttackedBy = declaredAttackedBy oid gs,
           Filter.declaredBlockerThisCombat = declaredBlockerThisCombat oid gs,
           -- CR 506.7: what was required of it as attackers were declared, which
           -- leaving the battlefield since cannot undo.
@@ -1451,14 +1450,18 @@ couldAttackThisTurn oid gs = Set.member oid (TurnRegisters.couldAttackThisTurn (
 declaredAttackerThisCombat :: ObjectId -> GameState -> Bool
 declaredAttackerThisCombat oid gs = Set.member oid (Combat.declaredAttackers (TurnRegisters.combat (GameState.turn gs)))
 
--- CR 508.3b: the same record's other half, indexed by TARGET rather than by
--- attacker. A permanent is named as AttackTarget.OfPlaneswalker or
--- AttackTarget.OfBattle; playerView answers CR 508.3b's third subject off the
--- same set.
-declaredAttackedThisCombat :: ObjectId -> GameState -> Bool
-declaredAttackedThisCombat oid gs =
-  Set.member (AttackTarget.OfPlaneswalker oid) (Combat.declaredAttacked (TurnRegisters.combat (GameState.turn gs)))
-    || Set.member (AttackTarget.OfBattle oid) (Combat.declaredAttacked (TurnRegisters.combat (GameState.turn gs)))
+-- CR 508.3b / 805.10c: the same record's other half, indexed by TARGET rather
+-- than by attacker, and answered as the attacking players who declared it. A
+-- permanent is named as AttackTarget.OfPlaneswalker or AttackTarget.OfBattle;
+-- playerView answers CR 508.3b's third subject off the same record.
+declaredAttackedBy :: ObjectId -> GameState -> Set.Set PlayerId
+declaredAttackedBy oid gs =
+  declaredAttackedAs (AttackTarget.OfPlaneswalker oid) gs <> declaredAttackedAs (AttackTarget.OfBattle oid) gs
+
+-- CR 805.10c: the attacking players whose declaration named this target.
+declaredAttackedAs :: AttackTarget.AttackTarget -> GameState -> Set.Set PlayerId
+declaredAttackedAs target gs =
+  Map.keysSet (Map.filter (Set.member target) (Combat.declaredAttackedBy (TurnRegisters.combat (GameState.turn gs))))
 
 -- CR 509.1a: declaredAttackerThisCombat's record, for the blockers.
 declaredBlockerThisCombat :: ObjectId -> GameState -> Bool
@@ -1767,7 +1770,7 @@ viewOfSnapshot deploy mController mOwner isToken counters zone home lapsed snaps
       -- CR 508.3b: whether the candidate was declared attacked is no more a
       -- characteristic than `attacking` above is, so a snapshot has nothing to
       -- answer it with either.
-      Filter.declaredAttackedThisCombat = False,
+      Filter.declaredAttackedBy = Set.empty,
       Filter.blocking = False,
       Filter.blockStatus = Nothing,
       Filter.blockers = Set.empty,

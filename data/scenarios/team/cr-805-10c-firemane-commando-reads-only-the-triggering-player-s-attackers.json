@@ -1,0 +1,39 @@
+{
+  "description": "CR 805.10c Firemane Commando reads only the triggering player's attackers",
+  "note": "Two-Headed Giant, carol and dave attacking: carol's two attackers go at bob and dave's one at alice. None of carol's creatures attacked alice, so carol draws the Swamp; dave's attacker answers only for dave.",
+  "board": {
+    "active": "carol",
+    "step": "BeginningOfCombat",
+    "sharedTeamTurns": true,
+    "seats": [
+      {
+        "name": "alice",
+        "team": 1,
+        "battlefield": [{ "card": "Firemane Commando", "label": "commando" }]
+      },
+      {
+        "name": "bob",
+        "team": 1
+      },
+      {
+        "name": "carol",
+        "team": 2,
+        "battlefield": [{ "card": "Hill Giant", "label": "cgiant", "ready": true }, { "card": "Grizzly Bears", "label": "cbears", "ready": true }],
+        "library": [{ "card": "Swamp", "label": "cswamp" }, { "card": "Island" }]
+      },
+      {
+        "name": "dave",
+        "team": 2,
+        "battlefield": [{ "card": "Grizzly Bears", "label": "dbears", "ready": true }]
+      }
+    ]
+  },
+  "timeline": [
+    { "turn": 1, "step": "DeclareAttackers", "player": "carol", "do": { "Attack": ["$cgiant", "$cbears", "$dbears"] } },
+    { "turn": 1, "step": "DeclareAttackers", "player": "carol", "source": "$cgiant", "do": { "ChooseAttackTarget": "$bob" } },
+    { "turn": 1, "step": "DeclareAttackers", "player": "carol", "source": "$cbears", "do": { "ChooseAttackTarget": "$bob" } },
+    { "turn": 1, "step": "DeclareAttackers", "player": "carol", "source": "$dbears", "do": { "ChooseAttackTarget": "$alice" } },
+    { "turn": 1, "step": "DeclareBlockers", "player": "alice", "do": { "Block": {} } },
+    { "turn": 1, "step": "PostcombatMain", "player": "carol", "check": { "Count": { "player": "carol", "zone": "Hand", "card": "Swamp", "count": 1 } } }
+  ]
+}

@@ -1,0 +1,40 @@
+{
+  "description": "CR 805.10c Norn's Decree reads the players the attacking player attacked",
+  "note": "Shared team turns without Two-Headed Giant, so poison stays each player's own: bob has one, alice none. Carol's Hill Giant goes at bob and dave's Grizzly Bears at alice. Carol attacked a poisoned player and draws the Swamp; dave attacked only alice and does not draw the Forest.",
+  "board": {
+    "active": "carol",
+    "step": "BeginningOfCombat",
+    "sharedTeamTurns": true,
+    "seats": [
+      {
+        "name": "alice",
+        "team": 1,
+        "battlefield": [{ "card": "Norn's Decree" }]
+      },
+      {
+        "name": "bob",
+        "team": 1,
+        "counters": [{ "key": "Poison", "value": 1 }]
+      },
+      {
+        "name": "carol",
+        "team": 2,
+        "battlefield": [{ "card": "Hill Giant", "label": "cgiant", "ready": true }],
+        "library": [{ "card": "Swamp" }]
+      },
+      {
+        "name": "dave",
+        "team": 2,
+        "battlefield": [{ "card": "Grizzly Bears", "label": "dbears", "ready": true }],
+        "library": [{ "card": "Forest" }]
+      }
+    ]
+  },
+  "timeline": [
+    { "turn": 1, "step": "DeclareAttackers", "player": "carol", "do": { "Attack": ["$cgiant", "$dbears"] } },
+    { "turn": 1, "step": "DeclareAttackers", "player": "carol", "source": "$cgiant", "do": { "ChooseAttackTarget": "$bob" } },
+    { "turn": 1, "step": "DeclareAttackers", "player": "carol", "source": "$dbears", "do": { "ChooseAttackTarget": "$alice" } },
+    { "turn": 1, "step": "PostcombatMain", "player": "carol", "check": { "Count": { "player": "carol", "zone": "Hand", "card": "Swamp", "count": 1 } } },
+    { "turn": 1, "step": "PostcombatMain", "player": "carol", "check": { "Count": { "player": "dave", "zone": "Hand", "card": "Forest", "count": 0 } } }
+  ]
+}
