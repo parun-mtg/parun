@@ -1,0 +1,15 @@
+{
+  "description": "CR 602.2, 115.1c, 205.4a, 701.26b: Minamo, School at Water's Edge pays {U} and taps to untap target legendary permanent",
+  "note": "Alice's tapped Grizzly Bears are not legendary, so Minamo refuses them as a target and they stay tapped; her tapped Isamaru is legendary and untaps. Minamo itself taps for the cost.",
+  "board": {"active": "alice", "step": "PrecombatMain", "seats": [
+    {"name": "alice", "manaPool": "U", "battlefield": [{"card": "Minamo, School at Water's Edge", "label": "minamo"}, {"card": "Isamaru, Hound of Konda", "label": "isamaru", "tapped": true}, {"card": "Grizzly Bears", "label": "bears", "tapped": true}], "library": [{"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}]},
+    {"name": "bob", "library": [{"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}]}]},
+  "timeline": [
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "refuse": {"Activate": {"object": "$minamo", "ability": 1, "targets": ["$bears"]}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": {"Activate": {"object": "$minamo", "ability": 1, "targets": ["$isamaru"]}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass"},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Tapped": {"object": "$isamaru", "tapped": false}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Tapped": {"object": "$bears", "tapped": true}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Tapped": {"object": "$minamo", "tapped": true}}}
+  ]
+}
