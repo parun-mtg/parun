@@ -16,8 +16,9 @@
     "step": "PrecombatMain"
   },
   "description": "CR 207.2c, 601.3, 305.1: Augur of Autumn's coven lets its controller cast creature spells from the top of their library only while they control three creatures with different powers; lands are played from there regardless",
-  "note": "Augur and Grizzly Bears share power 2 beside Hill Giant's 3: two different powers, so the top Memnite cannot be cast. Ornithopter, power 0, makes three, and the Memnite then is. The Forest under it is played from the top.",
+  "note": "Augur and Grizzly Bears share power 2 beside Hill Giant's 3: two different powers, so the top Memnite cannot be cast. Ornithopter, power 0, makes three, and the Memnite then is. The Forest under it is played from the top. Alice alone may look at the top card.",
   "timeline": [
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "View": { "of": "Seers", "object": "$memnite", "is": ["alice"] } } },
     { "turn": 1, "step": "PrecombatMain", "player": "alice", "refuse": { "Cast": { "object": "$memnite" } } },
     { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": { "Cast": { "object": "$thopter" } } },
     { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass" },
