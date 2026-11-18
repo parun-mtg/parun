@@ -453,7 +453,8 @@ printedCarrier oid gs = Set.member oid (GameState.battlefield gs) || (Set.member
 
 -- CR 113.6 / 113.6b: whether this ability of this object functions where the
 -- object is -- its stated zones, or printedCarrier's default where it states
--- none. The Ur-Sphinx scenarios prove the command-zone arm.
+-- none. The Ur-Sphinx scenarios prove the command-zone arm; Goreclaw's
+-- command-zone scenario proves the default leaves a commander's ability inert.
 functionsIn :: ObjectId -> GameState -> PlayerStaticAbility.PlayerStaticAbility -> Bool
 functionsIn oid gs ability
   | Set.null zones = printedCarrier oid gs
