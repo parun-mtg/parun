@@ -2558,6 +2558,7 @@ filterPositionLintSpec s registry corpus = Spec.describe s "Lint" $ do
         ("Capture Sphere", 1), -- Claustrophobia's wording
         ("Fall from Favor", 1), -- Claustrophobia's entering tap
         ("Bitter Chill", 1), -- Claustrophobia's wording
+        ("Mesmerizing Dose", 1), -- Claustrophobia's entering tap, before a proliferate
         ("Blossombind", 1), -- Claustrophobia's wording
         ("Frozen in Ice", 1), -- Claustrophobia's wording
         ("Starlight Snare", 1), -- Claustrophobia's wording
