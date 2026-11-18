@@ -2064,6 +2064,20 @@ effectLintSpec s registry corpus = Spec.describe s "Lint" $ do
           _ -> False
         offenders = filter (anyFace (any offends . cardResolutionEffects) . Printing.card) ps
     Spec.assertEqWith s "control belongs on a static ability, never in a stored effect" (fmap (S.nameOf . Printing.card) offenders) []
+  -- CR 608.2h: Modification.Goaded's seat is baked by a resolution
+  -- (Projection.freezeQuantities), and a card cannot know who is playing, so
+  -- card data writes the bare tag; the codec round-trips a seat, #199's reason
+  -- for a lint. Counted off the encoding, so every carrier is reached.
+  Spec.it s "no card writes a baked goader (CR 608.2h)" $ do
+    ps <- S.allPrintings s corpus
+    let offenders = filter (anyFace (bakesGoader . Codec.encode (Face.Codec.codec Card.Codec.codec)) . Printing.card) ps
+    Spec.assertEqWith s "a goader is the resolving controller, never card data" (fmap (S.nameOf . Printing.card) offenders) []
+    -- Not vacuous: Kang, Suspicious Captain's bare tag is seen and passes, and
+    -- a planted seat offends.
+    kang <- S.printingOf s registry "Kang, Suspicious Captain"
+    let kangJson = Codec.encode (Face.Codec.codec Card.Codec.codec) (S.combinedFace kang)
+    Spec.assertBool s (jsonAtoms (Text.pack "Goaded") kangJson /= 0 && not (bakesGoader kangJson)) "Kang's bare goad passes"
+    Spec.assertBool s (bakesGoader (Value.object [Value.pair "type" (Value.string "Goaded"), Value.pair "value" (Value.integer 0)])) "a baked goader offends"
   -- CR 106.6 restricts how mana "can be spent"; it never forbids spending it
   -- outright. A Parun.Types.ManaRestriction with no half set is mana no payment
   -- may ever use (or, under prohibits, mana restricted in nothing), which is
@@ -4502,3 +4516,7 @@ takesAtMostOne :: PlayerRef.PlayerRef -> Quantity.Type.Quantity -> Bool
 takesAtMostOne player quantity = case quantity of
   Quantity.Type.Literal n -> n <= 1 && namesOneSeat player
   _ -> False
+
+-- Does this encoding hold a Goaded tag that is not the bare, unbaked one?
+bakesGoader :: Value.Value -> Bool
+bakesGoader encoded = jsonAtoms (Text.pack "Goaded") encoded /= occurrences (Value.object [Value.pair "type" (Value.string "Goaded")]) encoded

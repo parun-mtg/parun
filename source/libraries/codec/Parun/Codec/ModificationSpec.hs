@@ -483,8 +483,15 @@ spec s = Spec.describe s "Parun.Codec.Modification" $ do
     Common.assertCodec
       s
       codec
-      Modification.Goaded
+      (Modification.Goaded Nothing)
       " {\"type\":\"Goaded\"} "
+  -- CR 608.2h: Balefang the Unslayable's goader, baked as its trigger resolves.
+  Spec.it s "Goaded carries its baked goader" $
+    Common.assertCodec
+      s
+      codec
+      (Modification.Goaded (Just (PlayerId.MkPlayerId 0)))
+      " {\"type\":\"Goaded\",\"value\":0} "
   -- layer 6, CR 613.1f: a whole quoted activated ability, Presence of Gond's
   -- "{T}: Create a 1/1 green Elf Warrior creature token" reduced to its cost.
   Spec.it s "GainAbility" $

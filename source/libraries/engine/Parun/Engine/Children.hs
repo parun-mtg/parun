@@ -3780,7 +3780,7 @@ modificationChildren c modification = case modification of
   Modification.GrantsController _ -> pure modification
   Modification.TapsCounting keywords count -> (`Modification.TapsCounting` count) <$> traverse (modificationFilter c) keywords
   Modification.LoyaltyIsToughness -> pure modification
-  Modification.Goaded -> pure modification
+  Modification.Goaded _ -> pure modification
   Modification.Intensify quantity -> Modification.Intensify <$> modificationQuantity c quantity
 
 -- | A combat restriction's children (CR 508.1c, 509.1b). Its name, limit,

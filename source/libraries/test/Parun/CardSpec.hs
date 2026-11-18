@@ -2492,6 +2492,9 @@ namedTokens =
       -- Fire Navy Trebuchet's "a 2/1 colorless Construct artifact creature
       -- token with flying named Ballistic Boulder".
       CardName.MkCardName (Text.pack "Ballistic Boulder"),
+      -- Balefang the Unslayable's "a tapped Baneslayer Angel token", its
+      -- reminder text the token's whole card.
+      CardName.MkCardName (Text.pack "Baneslayer Angel"),
       -- Synthetic Ursine Rite's, whose card-authored name spells its own Bear
       -- subtype inside a longer word -- the CR 612.2 boundary case.
       CardName.MkCardName (Text.pack "Bearer of the Wilds"),
@@ -3855,7 +3858,7 @@ modificationFilters amounts modification = case modification of
   Modification.AssignCombatDamage _ -> []
   Modification.GrantsController _ -> []
   Modification.LoyaltyIsToughness -> []
-  Modification.Goaded -> []
+  Modification.Goaded _ -> []
   -- The permanent each keyword's cost sits on, card text like any other.
   Modification.TapsCounting keywords _ -> unframed (Map.elems keywords)
   -- An enum payload holds neither.

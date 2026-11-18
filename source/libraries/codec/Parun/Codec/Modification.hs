@@ -144,7 +144,7 @@ codec abilityCodec =
           Arm.payload "TapsCounting" tapsCounting (uncurry Modification.TapsCounting) (\x -> case x of Modification.TapsCounting k n -> Just (k, n); _ -> Nothing),
           Arm.payload "Intensify" Quantity.codec Modification.Intensify (\x -> case x of Modification.Intensify y -> Just y; _ -> Nothing),
           Arm.nullary "LoyaltyIsToughness" Modification.LoyaltyIsToughness,
-          Arm.nullary "Goaded" Modification.Goaded
+          Arm.optionalPayload "Goaded" PlayerId.codec Modification.Goaded (\x -> case x of Modification.Goaded y -> Just y; _ -> Nothing)
         ]
 
 tagOf :: Modification.Modification ability -> String

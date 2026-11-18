@@ -271,7 +271,7 @@ layer m = case m of
   Modification.LoyaltyIsToughness -> Layer.Rules
   -- CR 613.11: goaded is a designation (CR 701.15b), a rules change and not a
   -- characteristic.
-  Modification.Goaded -> Layer.Rules
+  Modification.Goaded _ -> Layer.Rules
 
 -- | CR 113.11: is `keyword` one an object barred from these can't have?
 barred :: Set (KeywordDesignator.KeywordDesignator Keyword) -> Keyword -> Bool
@@ -1006,14 +1006,13 @@ applyModification textBoxOf viewOf src stamp gs oid unitTypes affected m pc =
         -- nothing.
         Modification.LoyaltyIsToughness ->
           pc {PC.loyaltyIsToughness = True}
-        -- CR 701.15b: goaded by the source's controller, derived here as
-        -- SetControllerToSource derives its player; CR 701.15d's second goad by
-        -- the same player is Set.insert doing nothing.
-        --
-        -- Not implemented: a goader baked at resolution, for a goad that
-        -- outlives its source (#8670).
-        Modification.Goaded ->
-          pc {PC.goadedBy = foldr Set.insert (PC.goadedBy pc) (controllerOf src gs)}
+        -- CR 701.15b: goaded by the seat freezeQuantities baked at resolution,
+        -- or, for a static ability (Koloth, Tribble Hunter), by the source's
+        -- controller, derived here as SetControllerToSource derives its
+        -- player. CR 701.15d's second goad by the same player is Set.insert
+        -- doing nothing.
+        Modification.Goaded goader ->
+          pc {PC.goadedBy = foldr Set.insert (PC.goadedBy pc) (goader Applicative.<|> controllerOf src gs)}
 
 -- CR 201.5a: the granter's id (Binding.grantingPermanent) baked into the
 -- effects of an ability it grants, as Filter.bakeCost bakes it into the cost:
@@ -1133,7 +1132,7 @@ cardTypesAfter m types = case m of
   Modification.TapsCounting {} -> types
   Modification.Intensify _ -> types
   Modification.LoyaltyIsToughness -> types
-  Modification.Goaded -> types
+  Modification.Goaded _ -> types
   Modification.LandSubtype {} -> types
   Modification.ChosenSubtype {} -> types
   Modification.CreatureSubtype {} -> types
@@ -2133,7 +2132,12 @@ freezeQuantities viewOf gs announcedOn source context m =
         Modification.AssignCombatDamageAs {} -> Just m
         Modification.Intensify n -> fmap Modification.Intensify (freeze n)
         Modification.LoyaltyIsToughness -> Just m
-        Modification.Goaded -> Just m
+        -- CR 701.15b / 608.2h: the goader is the resolving ability's
+        -- controller, the context's perspective, fixed now so a goad
+        -- outliving its source keeps it.
+        -- data/scenarios/goad/balefang-the-unslayable-token-stays-goaded-by-bob-after-balefang-dies.json
+        -- proves it.
+        Modification.Goaded goader -> Just (Modification.Goaded (goader Applicative.<|> Filter.perspective context))
 
 -- Every Quantity a modification carries, in order. A new Quantity field goes here
 -- as well as in freezeQuantities -- the compiler forces the arm, not its content.
@@ -2192,7 +2196,7 @@ quantitiesOf m = case m of
   Modification.AssignCombatDamageAs {} -> []
   Modification.Intensify n -> [n]
   Modification.LoyaltyIsToughness -> []
-  Modification.Goaded -> []
+  Modification.Goaded _ -> []
 
 -- CR 612.7 / 108.1: the filter over the Oracle card reference this modification
 -- grants the names of, which the projection cannot ask the interpreter about
@@ -2248,7 +2252,7 @@ referenceQuery m = case m of
   Modification.AssignCombatDamageAs {} -> Nothing
   Modification.Intensify _ -> Nothing
   Modification.LoyaltyIsToughness -> Nothing
-  Modification.Goaded -> Nothing
+  Modification.Goaded _ -> Nothing
 
 -- Every filter a live continuous effect asks the reference about
 -- (referenceQuery), each once.
@@ -2346,7 +2350,7 @@ setsLandSubtype m = case m of
   -- Not a characteristic at all.
   Modification.Intensify _ -> False
   Modification.LoyaltyIsToughness -> False
-  Modification.Goaded -> False
+  Modification.Goaded _ -> False
 
 -- One CR 305.7 subtype-setting effect: its source, the source's static ability
 -- generating it (permanentParts' index; Nothing for a stored effect), and its
@@ -3717,7 +3721,7 @@ removesAbilities m = case m of
   Modification.TapsCounting {} -> False
   Modification.Intensify _ -> False
   Modification.LoyaltyIsToughness -> False
-  Modification.Goaded -> False
+  Modification.Goaded _ -> False
   Modification.ChangeWord {} -> False
   Modification.ChosenColorWord -> False
   -- CR 205.1a's card-type set has no ability clause: Song of the Dryads strips
@@ -5175,7 +5179,7 @@ modificationWrites m = case m of
   Modification.LoyaltyIsToughness -> Set.singleton Keywords
   -- Writes PC.goadedBy, which Filter.IsGoaded reads and Aspect has no finer
   -- grain for than Keywords.
-  Modification.Goaded -> Set.singleton Keywords
+  Modification.Goaded _ -> Set.singleton Keywords
 
 -- Which aspects a Modification reads -- CR 613.8a clause (b)'s last limb:
 -- applying another effect can change "what it does to any of the things it
@@ -5251,7 +5255,7 @@ modificationReads m = case m of
   Modification.TapsCounting {} -> Set.empty
   Modification.Intensify n -> quantityReads n
   Modification.LoyaltyIsToughness -> Set.empty
-  Modification.Goaded -> Set.empty
+  Modification.Goaded _ -> Set.empty
   Modification.LandSubtype {} -> Set.empty
   Modification.ChosenSubtype {} -> Set.empty
   Modification.CreatureSubtype {} -> Set.empty
@@ -7298,7 +7302,7 @@ grantsKeywordWhere p m = case m of
   Modification.AssignCombatDamageAs {} -> False
   Modification.Intensify _ -> False
   Modification.LoyaltyIsToughness -> False
-  Modification.Goaded -> False
+  Modification.Goaded _ -> False
 
 -- Does this modification write a card type or subtype that intrinsicReplacementsOf
 -- mints an entry replacement from -- CR 306.5b's planeswalker, CR 310.4b's battle
@@ -7386,7 +7390,7 @@ grantsMintingType m = case m of
   Modification.AssignCombatDamageAs {} -> False
   Modification.Intensify _ -> False
   Modification.LoyaltyIsToughness -> False
-  Modification.Goaded -> False
+  Modification.Goaded _ -> False
 
 -- CR 614.1 / 613.1f: does this modification hand its affected objects a quoted
 -- replacement ability? replacementsAffecting's grantor disjunct for a GRANTED
@@ -7485,7 +7489,7 @@ grantsAbilityWhere p m = case m of
   Modification.AssignCombatDamageAs {} -> False
   Modification.Intensify _ -> False
   Modification.LoyaltyIsToughness -> False
-  Modification.Goaded -> False
+  Modification.Goaded _ -> False
 
 -- CR 306.5b / 310.4b: the card types intrinsicReplacementsOf mints a CR 614.1c row
 -- from. Rule 715.3a's Saga is a SUBTYPE and so is asked one function up.
