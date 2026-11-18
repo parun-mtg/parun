@@ -433,8 +433,9 @@ resolveSpellWith runSubgame oid = do
                         -- A branch is on offer only if its own printed "if"
                         -- holds (CR 701.46a, off the same live bindings this
                         -- clause's gate read) and its instruction can be carried
-                        -- out at all (CR 608.2d). The condition half is a
-                        -- REGRESSION FENCE: no either-or in data/cards prints one.
+                        -- out at all (CR 608.2d). The condition half is proved by
+                        -- the scenario "Green Sun's Twilight with X below 5 ...
+                        -- asking no destination".
                         let eligible i = case lookup i indexedClauses of
                               Nothing -> pure False
                               Just sibling -> do
