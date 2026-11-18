@@ -1693,10 +1693,21 @@ rollDieArm throwDice runSubgame resolving source controller legal rollDie = do
 -- as theirs; inside a roll the die or coin under way is a further answer
 -- (Prompt.ChooseRerolledDie), asked only where a Die creature stands. With no
 -- roll under way and no die, nothing happens.
+--
+-- A Die creature whose own reroll is being thrown (Scratch.rerolling) is not
+-- offered: rerolling it IS rethrowing that throw (CR 706.2b), the answer
+-- Nothing gives when it is the throw in its window, and a further reroll of
+-- it would be overwritten by the result its throw keeps. The scenario
+-- cr-706-2b-goblin-bookie-inside-a-die-creature-s-reroll-rerolls-that-throw
+-- proves it.
+--
+-- Not implemented: choosing a Die creature whose reroll is thrown further out
+-- than the current throw, to reroll that throw once the inner one is done; it
+-- is not offered (#8628).
 rethrow :: (Game Result -> PlayerId -> Natural -> Natural -> Natural -> Game Integer -> Game ([Natural], [PlayerId], [Natural])) -> Game Result -> ObjectId -> PlayerId -> Game ()
 rethrow throwDice runSubgame resolving controller = do
   gs <- State.get
-  let dice = Game.diceOnBattlefield gs
+  let dice = filter (`Set.notMember` Scratch.rerolling (GameState.scratch gs)) (Game.diceOnBattlefield gs)
   if Maybe.isJust (Scratch.throwing (GameState.scratch gs))
     then do
       picked <- Game.mayChooseAmong (\decider who offered -> Prompt.ChooseRerolledDie decider who resolving offered) controller dice
@@ -1711,12 +1722,17 @@ rethrow throwDice runSubgame resolving controller = do
 -- through throwDice -- so CR 706.2's modifiers and CR 614.1a's replacements
 -- reach it, and the throw is `roller`'s CR 706.1 roll, Pippa, Duchess of
 -- Dice's rulings having a reroll be one -- and the die shows the new result.
--- Nothing where `oid` is no die.
+-- Nothing where `oid` is no die. The throw runs with `oid` in
+-- Scratch.rerolling, restored on the way out.
 rerollShownDie :: (Game Result -> PlayerId -> Natural -> Natural -> Natural -> Game Integer -> Game ([Natural], [PlayerId], [Natural])) -> Game Result -> PlayerId -> ObjectId -> Game ()
 rerollShownDie throwDice runSubgame roller oid = do
   gs <- State.get
   Foldable.for_ (Game.lookupObject oid gs >>= Object.die) $ \shown -> do
+    let setRerolling held g = g {GameState.scratch = (GameState.scratch g) {Scratch.rerolling = held}}
+        before = Scratch.rerolling (GameState.scratch gs)
+    State.modify' (setRerolling (Set.insert oid before))
     (results, throwers, rolled) <- throwDice runSubgame roller (ShownDie.sides shown) 1 0 (pure 0)
+    State.modify' (setRerolling before)
     Monad.unless (null rolled) (Common.recordRoll roller throwers rolled)
     Foldable.for_ (Maybe.listToMaybe results) $ \result ->
       State.modify' (\g -> g {GameState.objects = Map.adjust (\o -> o {Object.die = fmap (\d -> d {ShownDie.result = result}) (Object.die o)}) oid (GameState.objects g)})

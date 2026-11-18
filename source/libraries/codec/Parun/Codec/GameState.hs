@@ -243,6 +243,7 @@ codec resolve = Fields.object $ do
   gameNumber <- Fields.defaulted "gameNumber" 1 Common.natural (MatchScope.gameNumber . GameState.match)
   throwing <- Fields.defaulted "throwing" Nothing (Common.maybe ThrowResult.codec) (Scratch.throwing . GameState.scratch)
   rethrowRequested <- Fields.defaulted "rethrowRequested" False Common.boolean (Scratch.rethrowRequested . GameState.scratch)
+  rerolling <- Fields.defaulted "rerolling" Set.empty (Common.set ObjectId.codec) (Scratch.rerolling . GameState.scratch)
   activating <- Fields.defaulted "activating" [] (Common.list AbilityWasActivated.codec) (Scratch.activating . GameState.scratch)
   undone <- Fields.defaulted "undone" Map.empty (Common.naturalMap PlayerId.codec Undoing.codec) (Bookkeeping.undone . GameState.bookkeeping)
   pure
@@ -292,6 +293,7 @@ codec resolve = Fields.object $ do
               Scratch.loopPicks = loopPicks,
               Scratch.throwing = throwing,
               Scratch.rethrowRequested = rethrowRequested,
+              Scratch.rerolling = rerolling,
               Scratch.activating = activating
             },
         GameState.bookkeeping =

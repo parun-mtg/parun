@@ -538,6 +538,7 @@ blankScratch =
       Scratch.loopPicks = Nothing,
       Scratch.throwing = Nothing,
       Scratch.rethrowRequested = False,
+      Scratch.rerolling = Set.empty,
       Scratch.activating = []
     }
 
