@@ -596,7 +596,8 @@ Entries are ordered by the first rule each cites.
   (With a combat phase, CR 500.5 and 500.5a end it at the first to end, and "your
   next turn" excludes an opponent's.)
 - **Rules**: CR 500.5, 500.5a, 500.8, 511.2, 611.2a, 800.4m; CR of 2026-11-06.
-- **Decision**: That turn's cleanup.
+- **Decision**: That turn's end: its cleanup step, or after its last step
+  where Topsy Turvy puts that step early (the next entry).
 - **Rejected**: The point combat would have ended, before the postcombat main.
   Carrying it to a later turn of theirs. CR 800.4m's "neither expire immediately
   nor last indefinitely" is for a departed player only, and Brazen Cannonade's
@@ -606,6 +607,24 @@ Entries are ordered by the first rule each cites.
   of that player ends it" and "CR 611.2a a next turn with no combat phase
   takes it at its cleanup".
 - **Issue**: #525.
+
+## When a duration until the end of a turn whose phases are reversed ends
+
+- **Question**: Topsy Turvy puts a turn's cleanup step second. Reckless
+  Impulse's "until the end of your next turn" during that turn: does it end at
+  that cleanup step, where CR 514.2 ends "until end of turn" effects, or when
+  the turn ends after its beginning phase?
+- **Rules**: CR 500.1, 514.2, 611.2a, 725.1f; Topsy Turvy's rulings of
+  2020-02-29 are silent. CR of 2026-11-06.
+- **Decision**: When the turn ends: at a cleanup step only when nothing but
+  cleanup steps follows it, otherwise after the turn's last step. "This turn"
+  and "until end of turn" effects still end at the early cleanup step.
+- **Rejected**: The early cleanup step, as for "until end of turn": CR 514.2
+  names only "until end of turn" and "this turn" effects, and a duration naming
+  a turn's end lasts as stated (CR 611.2a) while that turn has phases to take.
+- **Site**: `Parun.Engine.Expiry.endsAt`'s `turnEnding`, proved by the
+  scenario `reckless-impulse-s-permission-outlasts-the-early-cleanup-step-of-a-reversed-turn`.
+- **Issue**: #8635.
 
 ## Which draw is the first one drawn in a draw step
 
@@ -2847,23 +2866,4 @@ Entries are ordered by the first rule each cites.
   describes.
 - **Site**: `Parun.Engine.Engine.newTurn`, proved by the scenario
   `topsy-turvy-reverses-the-phases-of-the-next-turn`.
-- **Issue**: #5743.
-
-## Where a turn whose phases are reversed ends when an effect ends it
-
-- **Question**: CR 725.1d sends the game "straight to the cleanup step". In a
-  turn whose phases Topsy Turvy reversed, the ending phase comes first, so the
-  turn's other phases are scheduled after its cleanup step, or that step has
-  already passed. Do they still happen?
-- **Rules**: CR 725.1, 725.1d, 725.1f, 500.1. CR of 2026-11-06.
-- **Decision**: No. The turn ends after the cleanup step the effect jumps to
-  (and any further cleanup steps CR 725.1f adds); nothing scheduled after it
-  happens.
-- **Rejected**: Continuing with the phases scheduled after the cleanup step,
-  as an ordinary turn keeps a phase added after its ending phase: CR 725.1
-  calls the process ending the turn, and CR 725.1f has the turn finally end
-  after its cleanup steps, which a turn taking its main, combat and beginning
-  phases afterward would not.
-- **Site**: `Parun.Engine.Turn.jumpToCleanup`, proved by the scenario
-  `topsy-turvy-turn-ended-by-sundial-of-the-infinite-ends-at-its-cleanup-step`.
 - **Issue**: #5743.

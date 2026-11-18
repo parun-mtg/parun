@@ -63,6 +63,7 @@ import qualified Parun.Types.Designation as Designation
 import Parun.Types.Duration (Duration)
 import qualified Parun.Types.Duration as Duration
 import qualified Parun.Types.DurationEvent as DurationEvent
+import qualified Parun.Types.EndingStep as EndingStep
 import qualified Parun.Types.EventExpiry as EventExpiry
 import qualified Parun.Types.ExilePlayPermission as ExilePlayPermission
 import Parun.Types.Expiry (Expiry)
@@ -149,15 +150,15 @@ arm resolving targets controller source duration gs = case duration of
     ref -> Expiry.AtStepOf . StepOfSeats.MkStepOfSeats (NextStepOf.step next) <$> seatsOf reading targets controller gs ref
   -- CR 611.2a: "until the end of your next turn". Two samples, both taken here
   -- and neither ever rewritten: the controller (CR 109.5's "you", as above) and
-  -- the turn this duration began on. dropAtCleanup ends it at the first turn of
-  -- the controller's numbered ABOVE that one -- so a duration that began during
-  -- their own turn survives that turn's cleanup, which is the whole difference
+  -- the turn this duration began on. endsAt ends it with the first turn of the
+  -- controller's numbered ABOVE that one -- so a duration that began during
+  -- their own turn survives that turn's end, which is the whole difference
   -- between this arm and the one above.
   Duration.UntilEndOfYourNextTurn ->
     Just (Expiry.AtEndOfTurnOf (AfterTurn.MkAfterTurn controller (TurnRegisters.turnNumber (GameState.turn gs))))
   -- CR 611.2a: the arm above's window with the seat SAMPLED from a reference
   -- instead of taken from CR 109.5's "you". The turn number is sampled the same
-  -- way and for the same reason, so the two arms share dropAtCleanup's reading
+  -- way and for the same reason, so the two arms share endsAt's reading
   -- whole and differ only in whose turn is counted.
   --
   -- Nothing where the reference names nobody, which is CR 611.2b's "the duration
@@ -356,9 +357,9 @@ follows = (== Expiry.Perpetual)
 --
 -- The reading is dropAtCleanup's, one turn shifted: the window is the first turn
 -- of the named player numbered ABOVE the one the duration began on, so it is
--- open exactly while that player is active on such a turn. The row is dropped at
--- that turn's cleanup, so no LATER turn of theirs can be mistaken for it and the
--- bound needs no upper half.
+-- open exactly while that player is active on such a turn. The row is dropped as
+-- that turn ends (endsAt's `turnEnding`), so no LATER turn of theirs can be
+-- mistaken for it and the bound needs no upper half.
 --
 -- Asked by Parun.Engine.CombatRestriction, Parun.Engine.AttackRequirement,
 -- Parun.Engine.Cast.permitsPlayUnderPermission, Parun.Engine.PlayerEffect.applying,
@@ -422,6 +423,8 @@ openPermissions pid oid gs = filter (\permission -> permissionOpen pid permissio
 data Moment
   = -- | CR 514.2: the cleanup step.
     Cleanup
+  | -- | CR 500.1 / 611.2a: the turn ends, after its last step.
+    TurnEnded
   | -- | CR 611.2a / 800.4m: this seat's turn begins, or would have.
     TurnOf PlayerId
   | -- | CR 611.2a: this step of this player's turn begins.
@@ -476,35 +479,37 @@ endsAt gs moment source expiry = case expiry of
       || ( Set.member oid (GameState.battlefield gs)
              && any (\pid -> moment == StepOf (StepBegan.MkStepBegan step pid)) (View.controllerOf oid gs)
          )
-  -- CR 611.2a: "until the end of your next turn" ends at that turn's cleanup
-  -- (CR 514.2), one NAMED turn later (see Parun.Types.AfterTurn), so the turn the
-  -- duration began on is not its next turn. CR 800.4m ends it where a departed
-  -- player's next turn would have begun, since that turn's cleanup never runs.
-  Expiry.AtEndOfTurnOf afterTurn -> namedTurnEnds Cleanup afterTurn
-  -- CR 611.2a: "during that player's next turn" ends where the arm above ends,
-  -- by the same reading. Its BEGINNING is `begun`'s half: a row swept before it
-  -- began is one whose turn came and went. A departed player's window never
-  -- begins either, so CR 800.4m ends it at the same moment.
-  Expiry.DuringTurnOf afterTurn -> namedTurnEnds Cleanup afterTurn
+  -- CR 611.2a: "until the end of your next turn" ends as that turn ends
+  -- (`turnEnding`), one NAMED turn later (see Parun.Types.AfterTurn), so the turn
+  -- the duration began on is not its next turn: at its cleanup step (CR 514.2)
+  -- when that is its last, and after its last step when Topsy Turvy has put the
+  -- cleanup step early (docs/decisions.md, "When a duration until the end of a
+  -- turn whose phases are reversed ends"). CR 800.4m ends it where a departed
+  -- player's next turn would have begun, since that turn never ends.
+  Expiry.AtEndOfTurnOf afterTurn -> namedTurnEnds afterTurn
+  -- CR 611.2a / 500.1: "during that player's next turn" lasts the whole turn,
+  -- so it ends where the arm above ends. Its BEGINNING is `begun`'s half: a row
+  -- swept before it began is one whose turn came and went. A departed player's
+  -- window never begins either, so CR 800.4m ends it at the same moment.
+  Expiry.DuringTurnOf afterTurn -> namedTurnEnds afterTurn
   -- CR 500.5: ended as the untap step it names ends; a departed player's never
   -- begins (CR 800.4m).
   Expiry.DuringUntapStepOf pid ->
     (moment == EndOf (PhaseSelector.Step untapStep) && Turn.isActive gs pid) || departedTurnOf pid
-  -- Unpinned. Ended by the cleanup of a turn that was its window but had no
-  -- declare attackers step to pin it (CR 500.11, a skipped combat), and dropped
-  -- as hygiene once its object is gone. Named by an object, so no seat's turn
-  -- ends it.
+  -- Unpinned. Ended as a turn that was its window but had no declare attackers
+  -- step to pin it ends (CR 500.11, a skipped combat), and dropped as hygiene
+  -- once its object is gone. Named by an object, so no seat's turn ends it.
   Expiry.DuringTurnOfControllerOf afterObjectTurn ->
-    moment == Cleanup
+    turnEnding
       && ( Maybe.isNothing (Game.lookupObject (AfterObjectTurn.object afterObjectTurn) gs)
              || windowReached gs afterObjectTurn
          )
   -- CR 611.2a / 500.7: named by a turn rather than a seat, and kept while the
-  -- turn it names is pending, so the cleanup that ends that turn -- popped as it
-  -- began -- ends it, as does the first cleanup after CR 800.4k spent it
-  -- unbegun. Hygiene: `begun` alone decides whether the row applies.
+  -- turn it names is pending, so the end of that turn -- popped as it began --
+  -- ends it, as does the first turn to end after CR 800.4k spent it unbegun.
+  -- Hygiene: `begun` alone decides whether the row applies.
   Expiry.DuringExtraTurn stamp ->
-    moment == Cleanup && not (any ((== stamp) . ExtraTurn.createdAt) (GameState.extraTurns gs))
+    turnEnding && not (any ((== stamp) . ExtraTurn.createdAt) (GameState.extraTurns gs))
   -- CR 611.2a / 500.8: reachCombatPhase ends or pins it as its phase is
   -- reached, so only a row whose phase the turn never reached (CR 725.1d) is
   -- left for the cleanup. Hygiene: `begun` never applies the row.
@@ -513,10 +518,10 @@ endsAt gs moment source expiry = case expiry of
   Expiry.AtEndOf window -> moment == EndOf window
   -- CR 500.5 / 500.5a: the first combat phase of that turn to end ends it, so an
   -- added phase after it (CR 500.8) finds nothing. A turn with no combat phase
-  -- takes it at cleanup: docs/decisions.md, "What ends a duration until combat on
-  -- your next turn when it has no combat phase".
+  -- takes it as the turn ends: docs/decisions.md, "What ends a duration until
+  -- combat on your next turn when it has no combat phase".
   Expiry.AtEndOfCombatOn afterTurn ->
-    namedTurnEnds (EndOf PhaseSelector.CombatPhase) afterTurn || namedTurnEnds Cleanup afterTurn
+    namedTurn (moment == EndOf PhaseSelector.CombatPhase) afterTurn || namedTurnEnds afterTurn
   -- CR 116.2c: only a payment ends this, and CR 800.4m does not reach it -- the
   -- offer goes with the departed player's objects.
   Expiry.WhenPaid paid -> moment == PaidFor (PaidExpiry.resolution paid)
@@ -561,8 +566,22 @@ endsAt gs moment source expiry = case expiry of
     moment == Settle && Set.notMember source (GameState.battlefield gs) && Map.notMember source (GameState.phasedOut gs)
   where
     departedTurnOf p = moment == TurnOf p && List.notElem p (Game.stillPlaying gs)
-    namedTurnEnds at afterTurn =
-      ( moment == at
+    -- CR 500.1 / 725.1f: the turn ends. At its cleanup step, except that a turn
+    -- whose phases are reversed (Topsy Turvy) takes that step second, so its
+    -- cleanup step ends it only when nothing but cleanup steps is left
+    -- (Turn.jumpToCleanup); otherwise Engine.takeNextTurn's TurnEnded does,
+    -- after its last step. A CR 514.3a cleanup step added later finds the row
+    -- gone.
+    turnEnding =
+      moment == TurnEnded
+        || ( moment == Cleanup
+               && ( not (TurnRegisters.phasesReversed (GameState.turn gs))
+                      || all (== Phase.Ending EndingStep.Cleanup) (TurnRegisters.remaining (GameState.turn gs))
+                  )
+           )
+    namedTurnEnds = namedTurn turnEnding
+    namedTurn at afterTurn =
+      ( at
           && Turn.isActive gs (AfterTurn.player afterTurn)
           && TurnRegisters.turnNumber (GameState.turn gs) > AfterTurn.turn afterTurn
       )
@@ -728,10 +747,10 @@ dropAtTurnOf pid gs =
 -- CR 611.2a: "during its controller's next turn" pinned to a seat as a declare
 -- attackers step ends on a turn that is its window (`windowReached`). From here
 -- the row is an ordinary DuringTurnOf, so it lasts the rest of this turn (an
--- extra combat included) and dropAtCleanup ends it. A control change before
+-- extra combat included) and ends with it. A control change before
 -- then moves the window, one after does not (Gideon, Battle-Forged's 2015-06-22
 -- ruling). A turn with no combat reaches no declare attackers step, so
--- dropAtCleanup asks `windowReached` itself.
+-- endsAt asks `windowReached` itself as the turn ends.
 --
 -- data/scenarios/combat/cr-611-2a-wall-of-dust-follows-the-attacker-to-its-new-controller.json,
 -- cr-611-2a-gideon-s-requirement-follows-a-creature-handed-over-before-combat.json,

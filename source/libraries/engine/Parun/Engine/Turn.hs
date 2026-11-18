@@ -471,8 +471,9 @@ spliceStep = (Seq.<|)
 -- cleanup step, where spliceStep's new cleanup step is what the rule asks for.
 --
 -- A turn whose phases are reversed ends at the cleanup step it jumps to, the
--- phases after it in its schedule dropped (docs/decisions.md, "Where a turn
--- whose phases are reversed ends when an effect ends it").
+-- phases after it in its schedule dropped: CR 725.1 calls the process ending
+-- the turn, and CR 725.1f ends it after its cleanup steps. Proved by the
+-- scenario topsy-turvy-turn-ended-by-sundial-of-the-infinite-ends-at-its-cleanup-step.
 jumpToCleanup :: Bool -> Seq Phase -> Seq Phase
 jumpToCleanup reversed remaining
   | reversed = Seq.singleton (Phase.Ending EndingStep.Cleanup)
