@@ -17,15 +17,15 @@ import qualified Parun.Types.ObjectRef as ObjectRef
 -- priced at the copy's mana cost" is what proves the copiable values follow it
 -- there.
 --
--- A STAMPED copy does NOT follow the card onto the stack. CR 400.7 makes a cast
--- card a new object, so the spell announces and resolves its own printed text --
--- the reading a Clone dying as Clone gets. The scenario
--- cr-400-7-the-copy-cast-from-the-graveyard-is-a-new-object-so proves it. Two
--- independent roads hold it, which is why no one-line mutation reddens that
--- case: Parun.Types.Object.newIncarnation clears `bindings` on the move, and
--- Parun.Engine.Cast stamps the stack incarnation a fresh binding map besides. A
--- copy with a DURATION does follow, by Bombardment's ruling: the cast trades the
--- card for the spell in the row's fixed set (Parun.Engine.Cast.followCopyIntoSpell).
+-- The copy FOLLOWS the card onto the stack, by Bombardment's ruling
+-- (2019-11-12): a card stops being a Missile as it "changes zones other than by
+-- being cast as a Missile", so CR 601.2a's "all the characteristics of the
+-- card" include the copy effect. A stamped copy is announced off the stamp
+-- (Parun.Engine.Game.castingFaceOf) and stamped on the spell
+-- (Parun.Engine.Cast.carryCopyIntoSpell), which the scenario "CR 707.2 a
+-- graveyard card that is a copy is priced at the copy's mana cost" proves; a copy
+-- with a DURATION trades the card for the spell in the row's fixed set
+-- (Parun.Engine.Cast.followCopyIntoSpell).
 --
 -- Not implemented: Bombardment's ruling that a Missile keeps its own supertypes
 -- (#8555).

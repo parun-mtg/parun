@@ -1969,6 +1969,11 @@ objectsOfSlots = Map.filter (not . Set.null) . fmap (Set.fromList . Maybe.mapMay
 copyOf :: Map SlotName Binding -> Maybe ProjectedCharacteristics
 copyOf m = Binding.copy =<< (Map.lookup copySource m <|> Map.lookup ownCopySource m)
 
+-- The copy stamps alone, copyOf's two slots: what a card carries onto the
+-- stack as it is cast (CR 601.2a, Parun.Engine.Cast.carryCopyIntoSpell).
+copyStamps :: Map SlotName Binding -> Map SlotName Binding
+copyStamps m = Map.restrictKeys m (Set.fromList [copySource, ownCopySource])
+
 -- The source's copiable values as this triggered ability was put on the stack,
 -- if they were stamped (CR 702.165d).
 placedSourceCopyOf :: Map SlotName Binding -> Maybe ProjectedCharacteristics
