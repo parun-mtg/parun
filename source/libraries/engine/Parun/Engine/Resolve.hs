@@ -135,6 +135,8 @@ namesOwnTurn onset = case onset of
   Onset.Immediately -> False
   Onset.FromNextTurnOf ref -> ref == Just (PlayerRef.Relative PlayerRelation.You)
   Onset.FromThatExtraTurn -> True
+  -- A combat phase of the turn under way.
+  Onset.FromThatCombatPhase _ -> False
 
 -- boundSlots over a whole effect list: the write half of the dataflow lint.
 definedSlots :: [Effect Card.Type.Card (GrantedAbility.GrantedAbility Card.Type.Card)] -> Set SlotName

@@ -75,9 +75,11 @@
                           "body": [
                             {
                               "type": "AddPhases",
-                              "value": [
-                                "ExtraUpkeep"
-                              ]
+                              "value": {
+                                "phases": [
+                                  "ExtraUpkeep"
+                                ]
+                              }
                             }
                           ],
                           "slot": "step",

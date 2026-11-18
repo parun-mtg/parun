@@ -114,9 +114,11 @@
                       },
                       {
                         "type": "AddPhases",
-                        "value": [
-                          "ExtraCombat"
-                        ]
+                        "value": {
+                          "phases": [
+                            "ExtraCombat"
+                          ]
+                        }
                       }
                     ]
                   }

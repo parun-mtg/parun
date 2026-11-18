@@ -81,6 +81,7 @@ import qualified Parun.Types.Object as Object
 import Parun.Types.ObjectId (ObjectId)
 import qualified Parun.Types.PaidExpiry as PaidExpiry
 import qualified Parun.Types.Phase as Phase
+import qualified Parun.Types.PhaseAnchor as PhaseAnchor
 import Parun.Types.PhaseSelector (PhaseSelector)
 import qualified Parun.Types.PhaseSelector as PhaseSelector
 import qualified Parun.Types.PlayerControl as PlayerControl
@@ -203,10 +204,11 @@ arm resolving targets controller source duration gs = case duration of
   -- Nothing where no such turn is pending: the window cannot begin, so per CR
   -- 611.2b's reading above nothing is stored.
   Duration.DuringThatExtraTurn -> fmap Expiry.DuringExtraTurn (Turn.thatExtraTurn source controller gs)
-  -- CR 611.2a / 500.8: the combat phase this resolution added, named by its
-  -- place in the schedule (Turn.addedCombatPhase). Nothing where no combat
-  -- phase follows this one: the window cannot begin, so nothing is stored.
-  Duration.DuringThatCombatPhase -> fmap Expiry.DuringAddedCombatPhase (Turn.addedCombatPhase gs)
+  -- CR 611.2a / 500.8: the combat phase this resolution added after this
+  -- phase, named by its place in the schedule (Turn.addedCombatPhase). Nothing
+  -- where no combat phase follows this one: the window cannot begin, so
+  -- nothing is stored.
+  Duration.DuringThatCombatPhase -> fmap Expiry.DuringAddedCombatPhase (Turn.addedCombatPhase PhaseAnchor.ThisPhase gs)
   -- BAKED, and stored baked: the condition outlives the resolution that stored
   -- it, and sweepConditional below re-reads it off the effect's
   -- SOURCE, whose bindings never held the resolution's slots. An InSlot left

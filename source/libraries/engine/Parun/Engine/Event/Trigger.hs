@@ -3488,6 +3488,10 @@ delayedArmed gs entry = case DelayedTrigger.window entry of
   -- is over its event is impossible (CR 603.7a), so the window has an upper end
   -- and not merely a lower one.
   TurnWindow.OnTurn n -> n == TurnRegisters.turnNumber (GameState.turn gs)
+  -- CR 500.8: the named combat phase is the one under way exactly when the
+  -- schedule holds that many combat phases behind it, read at scan time as
+  -- Expiry.reachCombatPhase reads it.
+  TurnWindow.InCombatPhase behind -> Turn.combatPhasesIn (TurnRegisters.remaining (GameState.turn gs)) == behind
   -- Armed, `delayedSees` bounding which events it still sees.
   TurnWindow.Lapsed _ -> True
 

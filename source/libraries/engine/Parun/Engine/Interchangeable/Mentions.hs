@@ -390,6 +390,7 @@ onsetNames asking x = case x of
   Onset.Immediately -> mempty
   Onset.FromNextTurnOf playerRef -> foldMap (playerRefNames asking) playerRef
   Onset.FromThatExtraTurn -> mempty
+  Onset.FromThatCombatPhase _ -> mempty
 
 asCopyNames :: (Monoid r) => Asking r -> (ability -> r) -> (effect -> r) -> AsCopy.AsCopy ability effect -> r
 asCopyNames asking onAbility onEffect = Const.getConst . Children.asCopyChildren (copyVisitors asking onAbility onEffect)
