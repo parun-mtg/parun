@@ -62,5 +62,6 @@
         ]
       }
     }
-  ]
+  ],
+  "synthetic": true
 }

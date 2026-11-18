@@ -3244,7 +3244,7 @@ faceChildren c (Face.MkFace name oracleText manaCost typeLine power toughness lo
 
 -- | A card's children: each of its faces (CR 712.6), whole.
 cardChildren :: (Applicative f) => (Face.Face Card.Card -> f (Face.Face Card.Card)) -> Card.Card -> f Card.Card
-cardChildren onFace (Card.MkCard layout faces) = Card.MkCard layout <$> traverse onFace faces
+cardChildren onFace (Card.MkCard layout faces synthetic) = (\walked -> Card.MkCard layout walked synthetic) <$> traverse onFace faces
 
 -- | One visitor per kind of child a stored row holds: a replacement or
 -- prevention effect in force (CR 614.1a, 615.1a), a delayed triggered ability

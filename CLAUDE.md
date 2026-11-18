@@ -209,7 +209,9 @@ to agents as written. What it doesn't say:
   last-known view has no zone, so the clause drops a permanent the counter
   killed.
 
-- A synthetic card (`data/cards/synthetic-*.json`) is the last resort. Search
+- A synthetic card (`data/cards/synthetic-*.json`, saying `"synthetic": true`,
+  which is what keeps it out of the Oracle card reference: a real card's name
+  can start "Synthetic") is the last resort. Search
   first: a real card wins, in the order regular > Arena > playtest > un-set >
   synthetic (`docs/design.md` section 6), and a better-ranked card replaces a
   worse one whenever it turns up; a digital-only producer is ordinary

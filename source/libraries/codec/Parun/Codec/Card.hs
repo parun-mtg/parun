@@ -39,4 +39,6 @@ fields project = do
   -- default rather than a required key and most single-face files say nothing
   -- about it.
   layout <- Fields.defaulted "layout" Layout.Normal Layout.codec (Card.layout . project)
-  pure Card.MkCard {Card.layout = layout, Card.faces = faces}
+  -- A real card says nothing, so the key is a default.
+  synthetic <- Fields.defaulted "synthetic" False Common.boolean (Card.synthetic . project)
+  pure Card.MkCard {Card.layout = layout, Card.faces = faces, Card.synthetic = synthetic}

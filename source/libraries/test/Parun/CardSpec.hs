@@ -672,6 +672,7 @@ splitCard :: Card.Type.Card
 splitCard =
   Card.Type.MkCard
     { Card.Type.layout = Layout.Split,
+      Card.Type.synthetic = False,
       Card.Type.faces = waxFace NonEmpty.:| [waneFace]
     }
 
@@ -725,6 +726,7 @@ cardSpec s = Spec.describe s "Card" $ do
         card =
           Card.Type.MkCard
             { Card.Type.layout = Layout.Normal,
+              Card.Type.synthetic = False,
               Card.Type.faces = wax NonEmpty.:| [wane]
             }
         named = CardName.MkCardName . Text.pack
@@ -6139,7 +6141,7 @@ cardFilters card =
 -- A lint fixture built as a FACE, put back into the one-face card an
 -- Effect.Create's token payload has to be.
 oneFaced :: Face.Face Card.Type.Card -> Card.Type.Card
-oneFaced face = Card.Type.MkCard {Card.Type.layout = Layout.Normal, Card.Type.faces = NonEmpty.singleton face}
+oneFaced face = Card.Type.MkCard {Card.Type.synthetic = False, Card.Type.layout = Layout.Normal, Card.Type.faces = NonEmpty.singleton face}
 
 -- CR 709.2 / 712.6: every lint below is stated about ONE face's printed text,
 -- and a card offends when ANY of its faces does. Every card in the pool but

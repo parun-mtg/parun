@@ -200,6 +200,16 @@ spec s = Spec.describe s "Parun.Registry" $ do
       listed <- Registry.cards registry
       Spec.assertEqWith s "and listed over a sound one" (fmap (fmap S.nameOf) listed) (Right [CardName.MkCardName (Text.pack "Goblin Piker")])
 
+  -- A synthetic is out of the reference because its file says so, not because
+  -- of its name: Synthetic Destiny is a real card whose file name starts like
+  -- every synthetic's.
+  Spec.it s "the pool's cards leave out a card marked synthetic, whatever its name" $ do
+    destiny <- S.committedJson "synthetic-destiny.json"
+    engine <- S.committedJson "synthetic-alms-engine.json"
+    withCorpus "cards-synthetic" [("synthetic-destiny.json", destiny), ("synthetic-alms-engine.json", engine)] $ \_ registry -> do
+      listed <- Registry.cards registry
+      Spec.assertEqWith s "only the real card" (fmap (fmap S.nameOf) listed) (Right [CardName.MkCardName (Text.pack "Synthetic Destiny")])
+
   -- CR 709.4a: a name belongs to a card, so one name answering for two cards is
   -- a broken pool rather than a lookup with a preference: a silent
   -- last-one-wins would be a lookup quietly serving a card it was not asked

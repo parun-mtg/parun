@@ -38,5 +38,6 @@
         "lifeModifier": 5
       }
     }
-  ]
+  ],
+  "synthetic": true
 }

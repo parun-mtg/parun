@@ -160,7 +160,7 @@ mint :: ObjectId -> GameState -> GameState
 mint oid gs =
   case (Game.prepareSpellOf oid gs, Projection.controllerOf oid gs) of
     (Just face, Just controller) ->
-      let copyCard = Card.Type.MkCard {Card.Type.layout = Layout.Normal, Card.Type.faces = pure face}
+      let copyCard = Card.Type.MkCard {Card.Type.synthetic = False, Card.Type.layout = Layout.Normal, Card.Type.faces = pure face}
           (printingId, gs1) = Game.intern (Printing.ofCard copyCard) gs
           (copyId, gs2) = Game.freshObjectId gs1
           (ts, gs3) = Game.freshTimestamp gs2

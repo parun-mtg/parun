@@ -56,5 +56,6 @@
         ]
       }
     }
-  ]
+  ],
+  "synthetic": true
 }

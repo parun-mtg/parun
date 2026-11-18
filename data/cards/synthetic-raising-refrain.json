@@ -102,5 +102,6 @@
         ]
       }
     }
-  ]
+  ],
+  "synthetic": true
 }
