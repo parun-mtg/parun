@@ -79,6 +79,7 @@ import qualified Parun.Types.Condition as Condition
 import qualified Parun.Types.ControlWindow as ControlWindow
 import qualified Parun.Types.ControllerRelation as ControllerRelation
 import qualified Parun.Types.CopyException as CopyException
+import qualified Parun.Types.CopyPowerToughness as CopyPowerToughness
 import qualified Parun.Types.CopyStackObject as CopyStackObject
 import qualified Parun.Types.CopyTargets as CopyTargets
 import qualified Parun.Types.Copyability as Copyability
@@ -2348,7 +2349,7 @@ eternalize :: Cost Keyword -> ActivatedAbility Card (GrantedAbility.GrantedAbili
 eternalize =
   graveyardTokenCopy
     [ CopyException.SetColors ChangeMode.Replace (Set.singleton Color.Black),
-      CopyException.SetPowerToughness (SetPowerToughness.MkSetPowerToughness 4 4),
+      CopyException.SetPowerToughness (CopyPowerToughness.Numbers (SetPowerToughness.MkSetPowerToughness 4 4)),
       CopyException.NoManaCost,
       CopyException.AddSubtypes (Set.singleton Subtype.Zombie)
     ]
@@ -6796,7 +6797,7 @@ squad cost ordinal = paidTokenCopies (Keyword.Squad cost) (Quantity.TimesPaid (K
 -- cost was paid, create a token that's a copy of it, except it's 1/1." CR 707.9b
 -- makes the 1/1 part of the token's copiable values.
 offspring :: Cost Keyword -> Natural -> TriggeredAbility Card (GrantedAbility.GrantedAbility Card)
-offspring cost = paidTokenCopies (Keyword.Offspring cost) (Quantity.Literal 1) [CopyException.SetPowerToughness (SetPowerToughness.MkSetPowerToughness 1 1)]
+offspring cost = paidTokenCopies (Keyword.Offspring cost) (Quantity.Literal 1) [CopyException.SetPowerToughness (CopyPowerToughness.Numbers (SetPowerToughness.MkSetPowerToughness 1 1))]
 
 -- CR 702.174b's triggered ability on a permanent: "When this permanent enters,
 -- if its gift cost was paid, [effect]", the effect being whatever rule 702.174d-i

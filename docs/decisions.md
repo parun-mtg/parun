@@ -2903,3 +2903,23 @@ Entries are ordered by the first rule each cites.
 - **Site**: `Parun.Engine.Engine.newTurn`, proved by the scenario
   `topsy-turvy-reverses-the-phases-of-the-next-turn`.
 - **Issue**: #5743.
+
+## Whether a copy exception granting a power-and-toughness ability strips the copied one
+
+- **Question**: Colossal Clone Master copies a creature "except ... it has
+  'This creature's power and toughness are each equal to ...'". If the copied
+  creature has its own power-and-toughness ability (Tarmogoyf), is that
+  ability still copied beside the granted one?
+- **Rules**: CR 604.3a, 613.4a, 613.7a, 707.9a, 707.9d; CR of 2026-11-06.
+- **Decision**: No. The granted ability replaces the copied one, as CR
+  707.9d's strip does for an exception that "provides a specific set of
+  values": the quoted ability is the clause's value for power and toughness.
+- **Rejected**: Copying both, on CR 707.9a adding the ability "along with any
+  other abilities that were copied" and CR 707.9d naming only values. Both
+  would apply in layer 7a with one timestamp (CR 613.7a), and nothing orders
+  two abilities of one object sharing it, so the copy's power would rest on an
+  arbitrary order.
+- **Site**: `Parun.Engine.Projection.View.applyCopyException`'s
+  `CopyPowerToughness.Defined` arm, proved by the scenario
+  `colossal-clone-master-copying-tarmogoyf-counts-differently-named-lands`.
+- **Issue**: #8539.

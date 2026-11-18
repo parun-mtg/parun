@@ -582,6 +582,8 @@ library codec
     Parun.Codec.CopyExceptionSpec
     Parun.Codec.CopyOriginal
     Parun.Codec.CopyOriginalSpec
+    Parun.Codec.CopyPowerToughness
+    Parun.Codec.CopyPowerToughnessSpec
     Parun.Codec.CopyRecipient
     Parun.Codec.CopyRecipientSpec
     Parun.Codec.CopyStackObject
@@ -3119,6 +3121,7 @@ library types
     Parun.Types.CopyDomain
     Parun.Types.CopyException
     Parun.Types.CopyOriginal
+    Parun.Types.CopyPowerToughness
     Parun.Types.CopyRecipient
     Parun.Types.CopyStackObject
     Parun.Types.CopyTargets

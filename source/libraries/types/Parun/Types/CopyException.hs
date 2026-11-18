@@ -5,10 +5,10 @@ import qualified Parun.Types.CardName as CardName
 import qualified Parun.Types.CardType as CardType
 import qualified Parun.Types.ChangeMode as ChangeMode
 import qualified Parun.Types.Color as Color
+import qualified Parun.Types.CopyPowerToughness as CopyPowerToughness
 import qualified Parun.Types.Keyword as Keyword
 import qualified Parun.Types.Loyalty as Loyalty
 import qualified Parun.Types.RetainedCharacteristic as RetainedCharacteristic
-import qualified Parun.Types.SetPowerToughness as SetPowerToughness
 import qualified Parun.Types.Subtype as Subtype
 import qualified Parun.Types.Supertype as Supertype
 
@@ -47,20 +47,25 @@ import qualified Parun.Types.Supertype as Supertype
 -- Parun.Types.GrantedAbility, which reaches Parun.Types.Effect and so this module,
 -- the cycle Parun.Types.GrantedAbility's own variable exists to open.
 data CopyException ability
-  = -- | CR 707.9b: the copy's power and toughness are these numbers instead of
-    -- the copied object's ("except it's 7/7").
+  = -- | CR 707.9a / 707.9b: the copy's power and toughness are these numbers
+    -- ("except it's 7/7"), or what this characteristic-defining ability sets
+    -- (Colossal Clone Master's "it has 'This creature's power and toughness are
+    -- each equal to ...'"), instead of the copied object's.
     --
-    -- Two Integers rather than a Quantity, the position
-    -- Parun.Types.EntryOption's own pair takes: every printing of this clause
-    -- states two literals, and CR 614.12a settles the copy before the permanent
-    -- enters, so there is no board for a variable to be measured against yet.
+    -- The numbers are two Integers rather than a Quantity, the position
+    -- Parun.Types.EntryOption's own pair takes: every printing of "except it's
+    -- N/N" states two literals, and CR 614.12a settles the copy before the
+    -- permanent enters, so there is no board for a variable to be measured
+    -- against yet. A variable P/T is a CR 604.3a(2) ability instead, measured
+    -- in layer 7a at every projection.
     --
-    -- Applying this arm ALSO clears the copied characteristic-defining P/T,
+    -- Applying the numbers ALSO clears the copied characteristic-defining P/T,
     -- which is CR 707.9d: an effect that "provides a specific set of values for
     -- a certain characteristic" does not copy the CDA defining it. Without that
     -- half the CDA would win at layer 7a and a Gargantuan copying a Tarmogoyf
-    -- would recompute rather than stay 7/7.
-    SetPowerToughness SetPowerToughness.SetPowerToughness
+    -- would recompute rather than stay 7/7. The defined kind replaces it, for
+    -- Parun.Types.CopyPowerToughness's reason.
+    SetPowerToughness CopyPowerToughness.CopyPowerToughness
   | -- | CR 707.9a: the copy gains these abilities as part of the copying process
     -- ("except it has haste and dethrone"), so they join the copiable values.
     --

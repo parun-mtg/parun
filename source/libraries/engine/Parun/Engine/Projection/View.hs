@@ -57,6 +57,7 @@ import qualified Parun.Types.Combat as Combat
 import qualified Parun.Types.Condition as Condition.Type
 import qualified Parun.Types.ContinuousEffect as ContinuousEffect
 import qualified Parun.Types.CopyException as CopyException
+import qualified Parun.Types.CopyPowerToughness as CopyPowerToughness
 import qualified Parun.Types.Copyability as Copyability
 import qualified Parun.Types.CounterKind as CounterKind
 import qualified Parun.Types.Counterability as Counterability
@@ -1254,7 +1255,7 @@ applyCopyException this own snapshot exception = case exception of
   -- (Projection.applyCharacteristicPT). Not defensive, unlike
   -- Replacement.applyEntryOption's same write: Quicksilver Gargantuan copying a
   -- Tarmogoyf is exactly this case.
-  CopyException.SetPowerToughness (SetPowerToughness.MkSetPowerToughness p t) ->
+  CopyException.SetPowerToughness (CopyPowerToughness.Numbers (SetPowerToughness.MkSetPowerToughness p t)) ->
     snapshot
       { PC.power = Just p,
         PC.toughness = Just t,
@@ -1262,6 +1263,17 @@ applyCopyException this own snapshot exception = case exception of
         PC.baseToughness = Just t,
         PC.characteristicPT = Nothing
       }
+  -- CR 707.9a / 604.3a(2): the quoted ability joins the copiable values as a
+  -- characteristic-defining one, so layer 7a measures it (CR 613.4a) rather
+  -- than layer 7b. It REPLACES the copied one: docs/decisions.md, "Whether a
+  -- copy exception granting a power-and-toughness ability strips the copied
+  -- one". The copied boxes stay, since CR 707.9a adds an ability and states no
+  -- number. The scenarios
+  -- colossal-clone-master-copying-tarmogoyf-counts-differently-named-lands and
+  -- colossal-clone-master-s-power-and-toughness-ability-applies-before-godhead-of-awe-s
+  -- prove it.
+  CopyException.SetPowerToughness (CopyPowerToughness.Defined defined) ->
+    snapshot {PC.characteristicPT = Just defined}
   -- CR 707.9a: the gained abilities become part of the copiable values "along
   -- with any other abilities that were copied", so this ADDS rather than sets.
   -- unionWith (+) and not a plain union, Replacement.applyEntryOption's reason:
