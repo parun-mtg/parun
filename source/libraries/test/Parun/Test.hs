@@ -1125,6 +1125,7 @@ import qualified Parun.Web.DiffSpec
 import qualified Parun.Web.EndingSpec
 import qualified Parun.Web.HtmlSpec
 import qualified Parun.Web.LobbySpec
+import qualified Parun.Web.ManaSpec
 import qualified Parun.Web.WireSpec
 import qualified Parun.WebQuestionSpec
 import qualified Parun.ZoneChangeSpec
@@ -2284,6 +2285,7 @@ spec s reference corpus = do
   Parun.Web.EndingSpec.spec s
   Parun.Web.HtmlSpec.spec s
   Parun.Web.LobbySpec.spec s
+  Parun.Web.ManaSpec.spec s
   Parun.Web.WireSpec.spec s
   Parun.WebQuestionSpec.spec s registry
   Parun.ZoneChangeSpec.spec s registry

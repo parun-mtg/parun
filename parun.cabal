@@ -4022,6 +4022,7 @@ library web
     Parun.Web.LobbySpec
     Parun.Web.Log
     Parun.Web.Mana
+    Parun.Web.ManaSpec
     Parun.Web.Patch
     Parun.Web.Question
     Parun.Web.Wire
