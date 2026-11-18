@@ -198,7 +198,7 @@ maxSpeedZoneSpec s registry = Spec.describe s "MaxSpeedZone" $ do
   -- of CR 702.178a's comparison and only its own case can catch it drifting back
   -- to Exactly. atSpeed rather than an effect, this group's posture throughout;
   -- speed/cr-702-178a-past-4-the-raceway-keeps-its-max-speed-ability.json
-  -- drives the same ruling through Synthetic Speed Boost.
+  -- drives the same ruling through Gomif, Fast Racer.
   Spec.it s "CR 702.178a past max speed the Surveyor's ability is still offered" $ do
     surveyor <- S.printingOf s registry "Loxodon Surveyor"
     swamp <- S.printingOf s registry "Swamp"

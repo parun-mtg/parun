@@ -141,7 +141,9 @@
                 hash = "sha256-lfKZk1ZFchBCqon+Pr+PoT1Kb6Hq8O+0NKsalWEfCnI=";
               };
 
+              # Caddy serves the built site over https (script/serve-web.sh).
               nativeBuildInputs = [
+                pkgs.caddy
                 meta.binaryen
                 meta.nodejs
                 meta.wasi-sdk

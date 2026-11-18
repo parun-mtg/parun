@@ -1,0 +1,126 @@
+{
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "battlefield": [
+          {
+            "card": "Night of the Flying Merfolk",
+            "counters": [
+              {
+                "key": {
+                  "type": "Lore"
+                },
+                "value": 1
+              }
+            ],
+            "label": "night",
+            "ready": true
+          },
+          {
+            "card": "Grizzly Bears",
+            "label": "tapped-bear",
+            "ready": true,
+            "tapped": true
+          },
+          {
+            "card": "Grizzly Bears",
+            "label": "untapped-bear",
+            "ready": true
+          }
+        ],
+        "name": "alice"
+      },
+      {
+        "battlefield": [
+          {
+            "card": "Hill Giant",
+            "label": "giant",
+            "ready": true,
+            "tapped": true
+          }
+        ],
+        "name": "bob"
+      }
+    ],
+    "step": "PrecombatMain"
+  },
+  "description": "Night of the Flying Merfolk skips the precombat main phase and gives each tapped creature you control a flying counter at the end step",
+  "final": [
+    {
+      "Counters": {
+        "count": 1,
+        "kind": {
+          "type": "Keyword",
+          "value": {
+            "type": "Flying"
+          }
+        },
+        "object": "$tapped-bear"
+      }
+    },
+    {
+      "Counters": {
+        "count": 0,
+        "kind": {
+          "type": "Keyword",
+          "value": {
+            "type": "Flying"
+          }
+        },
+        "object": "$untapped-bear"
+      }
+    },
+    {
+      "Counters": {
+        "count": 0,
+        "kind": {
+          "type": "Keyword",
+          "value": {
+            "type": "Flying"
+          }
+        },
+        "object": "$giant"
+      }
+    }
+  ],
+  "note": "Bedtime story moves CR 715.3c's lore counter from the precombat main phase to the end step, which reaches chapter II. Only alice's tapped creature gets the counter: not her untapped one, nor bob's tapped one.",
+  "timeline": [
+    {
+      "check": {
+        "Counters": {
+          "count": 1,
+          "kind": {
+            "type": "Lore"
+          },
+          "object": "$night"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Attack": []
+      },
+      "player": "alice",
+      "step": "DeclareAttackers",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Counters": {
+          "count": 2,
+          "kind": {
+            "type": "Lore"
+          },
+          "object": "$night"
+        }
+      },
+      "player": "alice",
+      "step": "EndStep",
+      "turn": 1
+    }
+  ]
+}

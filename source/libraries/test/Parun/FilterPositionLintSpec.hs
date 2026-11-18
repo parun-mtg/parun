@@ -21,7 +21,9 @@ import qualified Parun.Codec.Face as Face.Codec
 import qualified Parun.Codec.Filter as Filter.Codec
 import qualified Parun.Codec.Keyword as Keyword.Codec
 import qualified Parun.Codec.KeywordDesignator as KeywordDesignator.Codec
+import qualified Parun.Codec.Quantity as Quantity.Codec
 import qualified Parun.Codec.Subtype as Subtype.Codec
+import qualified Parun.Codec.TriggerCondition as TriggerCondition.Codec
 import qualified Parun.Engine.Binding as Binding
 import qualified Parun.Engine.Card as Card
 import qualified Parun.Engine.Children as Children
@@ -40,6 +42,7 @@ import qualified Parun.Registry as Registry
 import qualified Parun.Spec as Spec
 import qualified Parun.Support as S
 import qualified Parun.Types.AbilityName as AbilityName
+import qualified Parun.Types.ActingPermanent as ActingPermanent
 import qualified Parun.Types.ActivatedAbility as ActivatedAbility
 import qualified Parun.Types.Activator as Activator
 import qualified Parun.Types.Actor as Actor
@@ -61,6 +64,7 @@ import qualified Parun.Types.BecomesTapState as BecomesTapState
 import qualified Parun.Types.Behold as Behold
 import qualified Parun.Types.BlockCost as BlockCost
 import qualified Parun.Types.BoundMeasure as BoundMeasure
+import qualified Parun.Types.BoundReading as BoundReading
 import qualified Parun.Types.CandidateScope as CandidateScope
 import qualified Parun.Types.CantBeBlockedBy as CantBeBlockedBy
 import qualified Parun.Types.CantBlockCreatures as CantBlockCreatures
@@ -98,6 +102,7 @@ import qualified Parun.Types.CostModifier as CostModifier
 import qualified Parun.Types.CostSubject as CostSubject
 import qualified Parun.Types.Count as Count.Type
 import qualified Parun.Types.CountedAgainst as CountedAgainst
+import qualified Parun.Types.Counter as Counter
 import qualified Parun.Types.CounterGrouping as CounterGrouping
 import qualified Parun.Types.CounterHolder as CounterHolder
 import qualified Parun.Types.CounterKind as CounterKind
@@ -129,6 +134,7 @@ import qualified Parun.Types.EntryRewrite as EntryRewrite
 import qualified Parun.Types.EntryRiders as EntryRiders
 import qualified Parun.Types.Equip as Equip
 import qualified Parun.Types.EquipTarget as EquipTarget
+import qualified Parun.Types.EventShape as EventShape
 import qualified Parun.Types.Face as Face
 import qualified Parun.Types.Filter as Filter.Type
 import qualified Parun.Types.FreeCast as FreeCast
@@ -144,6 +150,7 @@ import qualified Parun.Types.InZone as InZone
 import qualified Parun.Types.Keyword as Keyword
 import qualified Parun.Types.KeywordCostPart as KeywordCostPart
 import qualified Parun.Types.KeywordDesignator as KeywordDesignator
+import qualified Parun.Types.LeavesZoneTrigger as LeavesZoneTrigger
 import qualified Parun.Types.LifeDirection as LifeDirection
 import qualified Parun.Types.LifeTally as LifeTally
 import qualified Parun.Types.Lookback as Lookback
@@ -160,6 +167,7 @@ import qualified Parun.Types.Modification as Modification
 import qualified Parun.Types.ModifyPowerToughness as ModifyPowerToughness
 import qualified Parun.Types.ModifyTarget as ModifyTarget
 import qualified Parun.Types.MoveCounters as MoveCounters
+import qualified Parun.Types.MovedBetween as MovedBetween
 import qualified Parun.Types.MovedKinds as MovedKinds
 import qualified Parun.Types.NameChooser as NameChooser
 import qualified Parun.Types.ObjectCount as ObjectCount
@@ -1656,6 +1664,43 @@ untaggedSubtypeOffends :: Face.Face Card.Type.Card -> Bool
 untaggedSubtypeOffends = any (`notElem` stamped) . productionTagSubtypes
   where
     stamped = fmap (Codec.encode Subtype.Codec.codec) (Set.toList Mana.taggedSubtypes)
+
+-- How many Filter.IsFaceDown atoms an encoding asks of an object that may have
+-- left a zone other than the battlefield, read off its CR 608.2h record
+-- (Count.lastKnownView): a Count over a slot's bound objects, a look-back over
+-- departures from such a zone, and a card-zone leaves trigger's card. The
+-- OverBound arm also refuses a battlefield departure and a live arrival, the
+-- safe direction: no card asks IsFaceDown there either.
+departedFaceDownReads :: Value.Value -> Int
+departedFaceDownReads value =
+  here + case value of
+    Value.Array a -> sum (fmap departedFaceDownReads (Array.unwrap a))
+    Value.Object o -> sum (fmap (departedFaceDownReads . Pair.value) (Object.unwrap o))
+    Value.String _ -> 0
+    Value.Null _ -> 0
+    Value.Boolean _ -> 0
+    Value.Number _ -> 0
+  where
+    tagged tag o = elem (Pair.MkPair (String.MkString (Text.pack "type")) (Value.String (String.MkString (Text.pack tag)))) (Object.unwrap o)
+    faceDown = occurrences (atomJson Filter.Type.IsFaceDown) . atomJson
+    here = case value of
+      Value.Object o
+        | tagged "Count" o -> either (const 0) countReads (Codec.decode Quantity.Codec.codec value)
+        | tagged "LeavesZone" o -> either (const 0) leavesReads (Codec.decode TriggerCondition.Codec.codec value)
+      _ -> 0
+    countReads quantity = case quantity of
+      Quantity.Type.Count c | readsDeparture (Count.Type.scope c) -> faceDown (Count.Type.filter c)
+      _ -> 0
+    readsDeparture scope = case scope of
+      Scope.OverBound _ _ -> True
+      Scope.InHistory (EventShape.MovedFrom zone) -> zone /= Zone.Battlefield
+      Scope.InHistory (EventShape.MovedBetween moved) -> MovedBetween.from moved /= Zone.Battlefield
+      _ -> False
+    leavesReads condition = case condition of
+      TriggerCondition.LeavesZone t | LeavesZoneTrigger.from t /= Zone.Battlefield -> case LeavesZoneTrigger.card t of
+        ActingPermanent.Matching f -> faceDown f
+        ActingPermanent.Self -> 0
+      _ -> 0
 
 filterPositionLintSpec :: (Monad n) => Spec.Spec IO n -> Registry.Registry IO -> [(FilePath, Either Text.Text Card.Type.Card)] -> n ()
 filterPositionLintSpec s registry corpus = Spec.describe s "Lint" $ do
@@ -4269,6 +4314,46 @@ filterPositionLintSpec s registry corpus = Spec.describe s "Lint" $ do
             }
     Spec.assertBool s (untaggedSubtypeOffends (counting Subtype.Forest)) "a count of mana from a Forest is an offence"
     Spec.assertBool s (not (untaggedSubtypeOffends (counting Subtype.Cave))) "and the same count from a Cave is not"
+  -- CR 608.2h: a face-down spell or exiled card that leaves its zone is filed
+  -- face up (Parun.Engine.Event.lastKnownFrom), so IsFaceDown asked of that
+  -- record would be a silent False. Battlefield departures are filed right:
+  -- Cryptic Pursuit's dies trigger asks it and is accepted.
+  Spec.it s "CR 608.2h no card asks IsFaceDown of an object that left a zone other than the battlefield" $ do
+    let asked = departedFaceDownReads . Codec.encode (Face.Codec.codec Card.codec)
+    Spec.assertEqWith s "no departure's record is asked IsFaceDown" [S.nameOf (Printing.card p) | (p, faces) <- pool, any ((/= 0) . asked . surveyedFace) faces] []
+    pursuit <- S.printingOf s registry "Cryptic Pursuit"
+    Spec.assertEqWith s "Cryptic Pursuit's battlefield departure is accepted" (asked (S.combinedFace pursuit)) 0
+    -- The lint itself catches the issue's shape: Hurl into History's countered
+    -- spell, read through its slot after it left the stack, and asked whether
+    -- it was face down.
+    hurl <- S.printingOf s registry "Hurl into History"
+    let slot = SlotName.MkSlotName (Text.pack "spell")
+        drawIf scope =
+          (S.combinedFace hurl)
+            { Face.spell =
+                Mint.oneModeTargeting
+                  (Map.singleton slot (TargetSlot.required Pool.Spells Nothing))
+                  ( Seq.fromList
+                      [ Effect.Counter (Counter.MkCounter (ObjectRef.InSlot slot) Nothing Nothing Nothing),
+                        Effect.Draw (Draw.MkDraw (PlayerRef.InSlot Binding.you) (Quantity.Type.Count (Count.Type.MkCount scope (Filter.Type.And [Filter.Type.Or [Filter.Type.IsFaceDown]]) Aggregation.Members)) Nothing Nothing)
+                      ]
+                  )
+            }
+    Spec.assertEqWith s "Hurl into History as printed asks nothing" (asked (S.combinedFace hurl)) 0
+    Spec.assertEqWith s "a countered spell asked IsFaceDown is seen" (asked (drawIf (Scope.OverBound BoundReading.AsBound slot))) 1
+    Spec.assertEqWith s "and so is a look-back over cards that left exile" (asked (drawIf (Scope.InHistory (EventShape.MovedFrom Zone.Exile)))) 1
+    Spec.assertEqWith s "or over spells put from the stack into a graveyard" (asked (drawIf (Scope.InHistory (EventShape.MovedBetween (MovedBetween.MkMovedBetween Zone.Stack Zone.Graveyard))))) 1
+    Spec.assertEqWith s "but not one over permanents that left the battlefield" (asked (drawIf (Scope.InHistory (EventShape.MovedFrom Zone.Battlefield)))) 0
+    chalk <- S.printingOf s registry "Chalk Outline"
+    let leaving zone =
+          (S.combinedFace chalk)
+            { Face.triggeredAbilities =
+                [ ability {TriggeredAbility.condition = TriggerCondition.LeavesZone t {LeavesZoneTrigger.from = zone, LeavesZoneTrigger.card = ActingPermanent.Matching Filter.Type.IsFaceDown}}
+                | ability <- Face.triggeredAbilities (S.combinedFace chalk),
+                  TriggerCondition.LeavesZone t <- [TriggeredAbility.condition ability]
+                ]
+            }
+    Spec.assertEqWith s "a card leaving exile asked IsFaceDown is seen" (asked (leaving Zone.Exile)) 1
 
 spec :: (Monad n) => Spec.Spec IO n -> Registry.Registry IO -> [(FilePath, Either Text.Text Card.Type.Card)] -> n ()
 spec s registry corpus = Spec.describe s "Parun.Engine.Card" $ do

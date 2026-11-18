@@ -604,6 +604,27 @@ Entries are ordered by the first rule each cites.
   proves it.
 - **Issue**: #4781.
 
+## Bedtime story's lore counter is a turn-based action
+
+- **Question**: Bedtime story (Night of the Flying Merfolk, a Mystery Booster
+  2 playtest card) puts the Saga's lore counter on "at the beginning of your
+  end step rather than your main phase". No rule names the keyword. Is that
+  CR 715.3c's turn-based action moved to the end step, or a triggered
+  ability? A trigger uses the stack and can be countered, and its placement
+  is a resolving ability's, which Doubling Season doubles (CR 614.16).
+- **Rules**: CR 505.4, 513.1, 603.2, 609.1, 614.16, 703.4f, 715.3a, 715.3c
+  (CR of 2026-11-06). The card's rulings are the general playtest notes.
+- **Decision**: The turn-based action, moved. "Rather than your main phase"
+  relocates CR 715.3c's action, as read ahead's reminder "Add one after your
+  draw step" restates that same action; the end step gets it as its one
+  turn-based action, before priority, and the placement stays `ByRule`.
+- **Rejected**: A triggered ability. The words are reminder text for a keyword
+  that only modifies CR 715.3c, and nothing in them creates a second ability.
+- **Site**: `Parun.Engine.Saga.loreStepOf`, run by
+  `Parun.Engine.Engine.runTurnBasedActions`; proved by the scenario
+  night-of-the-flying-merfolk-enters-with-no-lore-and-gets-one-at-the-end-step-under-doubling-season.
+- **Issue**: #5290.
+
 ## The seat of a departed attacker's planeswalker
 
 - **Question**: Mangara, the Diplomat rechecks, as its trigger resolves, how
@@ -1033,6 +1054,27 @@ Entries are ordered by the first rule each cites.
   permanent after a removal that had wiped its grant" and its face-up twin.
 - **Issue**: PR #1607.
 
+## Whose cards Yawgmoth's Testament sends from exile to the library
+
+- **Question**: Yawgmoth's Testament says "If a card would be put into your
+  graveyard or exile from anywhere this turn, put it on the bottom of your
+  library instead." Exile is shared (CR 400.1), so does "your" reach the exile
+  half, sparing an opponent's card exiled this turn?
+- **Rules**: CR 614.1a, 400.3, 109.5; CR of 2026-11-06. The card (CMB2) has no
+  ruling.
+- **Decision**: Yes: only a card its controller owns is redirected, to either
+  zone. "Put it on the bottom of your library" names the controller's library,
+  which CR 400.3 makes the owner's.
+- **Rejected**: Every card bound for exile, any owner's, which leaves "your
+  library" to CR 400.3 for an opponent's card and gives "your" one zone of the
+  two; the first paragraph's "cards you own from exile" is the same
+  owner-scoped reading of exile.
+- **Site**: `data/cards/yawgmoths-testament.json`'s exile ZoneChangeR row
+  (`whoseObject` You), proved by the scenario
+  `yawgmoths-testament-puts-itself-and-a-card-plotted-after-it-on-the-bottom-of-the-library`
+  for the controller's own card.
+- **Issue**: #8498.
+
 ## Plots That Span Centuries replaces a named scheme's set in motion with three off the deck
 
 - **Question**: Plots That Span Centuries' effect is waiting, and My Laughter
@@ -1166,24 +1208,25 @@ Entries are ordered by the first rule each cites.
 ## Whether speed can pass 4
 
 - **Question**: CR 702.179e says a player has max speed "if their speed is
-  4". No rule caps speed, and none says what a speed above 4 is.
-- **Rules**: CR 702.179e, 702.178a, 702.179b, 702.179c, 702.179d, 702.179f; the
-  reminder "Max speed is 4", Hazoret, Godseeker's rulings of 2025-02-07; CR of
-  2026-11-06.
-- **Decision**: An effect may push speed past 4, and a player at 4 or more has
-  max speed. Every max speed gate is written as `AtLeast 4`. Gomif, Fast
-  Racer, an un-set printing, says "Your speed can increase beyond 4. (You're
-  still at max speed at 4 or greater.)", which supports the max speed half.
+  4", and no rule says what a speed above 4 is. Gomif, Fast Racer's "Your
+  speed can increase beyond 4" lifts CR 702.179d's "less than 4"; does a
+  speed above 4 stay once Gomif leaves?
+- **Rules**: CR 702.179b, 702.179d, 702.179e, 702.179f, 702.178a; Gomif's
+  reminder "You're still at max speed at 4 or greater"; the reminder "Max
+  speed is 4", Hazoret, Godseeker's rulings of 2025-02-07; CR of 2026-11-06.
+- **Decision**: A player at 4 or more has max speed, as Gomif's reminder text
+  says: every max speed gate is written as `AtLeast 4`. A speed Gomif let
+  pass 4 stays when Gomif leaves; nothing lowers it.
 - **Rejected**: Reading "is 4" literally (`Exactly 4`), which switches off a
-  max speed ability at 5. Capping speed at 4: no rule states it, and CR
-  702.179d's "less than 4" limits only its own climb, though Gomif's need to
-  grant the excess implies a cap otherwise.
-- **Site**: `Parun.Engine.Speed.maxSpeed`, proved by the scenario
-  `speed/cr-702-178a-past-4-the-raceway-keeps-its-max-speed-ability.json`,
-  through Synthetic Speed Boost, and `Parun.SpeedSpec`'s "CR 702.178a past max
-  speed the Surveyor's ability is still offered". On regular printings speed never passes 4; Gomif is the
-  only printed producer.
-- **Issue**: #809.
+  max speed ability at 5. Speed falling to 4 when Gomif leaves: no rule or
+  ruling sets it, and Gomif lifts a trigger's condition rather than imposing
+  a cap that returns.
+- **Site**: `Parun.Engine.Speed.maxSpeed` and `belowMaxSpeed`, proved by the
+  scenarios `speed/cr-702-178a-past-4-the-raceway-keeps-its-max-speed-ability.json`
+  and `speed/cr-702-179d-a-speed-past-4-stays-after-gomif-leaves.json`, and
+  `Parun.SpeedSpec`'s "CR 702.178a past max speed the Surveyor's ability is
+  still offered".
+- **Issue**: #809, #5326.
 
 ## Whether Goblin Bookie can be activated with nothing to reroll
 
@@ -2602,6 +2645,25 @@ Entries are ordered by the first rule each cites.
 - **Site**: `Parun.Engine.Event.offerOutside`, a FENCE: no scenario puts a
   merged permanent outside a subgame beside a Holodeck.
 - **Issue**: #8449.
+
+## Whether a reversed action restarts the pass count
+
+- **Question**: CR 734.2 keeps priority with a player whose action CR 734.1
+  reversed. Do the passes made before it still count toward CR 117.4's
+  succession, including when the payer keeps a mana ability activated while
+  making it?
+- **Rules**: CR 117.4, 117.3c, 605.3a, 734.1, 734.2; CR of 2026-11-06.
+- **Decision**: A reversal that undoes everything leaves the passes standing;
+  one where the payer keeps a mana ability restarts the count, as activating a
+  mana ability at priority does.
+- **Rejected**: Restarting on every reversal: the game rewinds to before the
+  action, so nothing was taken in between. Keeping the passes despite a kept
+  mana ability: that ability stands as an action taken (CR 605.3a), and its
+  mana sits in the pool when the next player is asked.
+- **Site**: `Parun.Engine.Engine.grantAfterAction`, proved by the scenarios
+  refuse/cr-734-2-a-reversed-cast-leaves-the-passes-before-it-standing and
+  refuse/cr-734-2-a-reversed-cast-that-keeps-its-mana-ability-restarts-the-passes.
+- **Issue**: #8443.
 
 ## What a copy of a Die creature's power and toughness are
 

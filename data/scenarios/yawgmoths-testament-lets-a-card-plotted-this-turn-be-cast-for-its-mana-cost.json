@@ -1,0 +1,33 @@
+{
+  "description": "CR 601.3, 702.170d: under Yawgmoth's Testament a Freestrider Commando plotted earlier this turn, which rule 702.170d does not yet let be cast, is cast for its mana cost",
+  "board": {
+    "active": "alice",
+    "step": "PrecombatMain",
+    "seats": [
+      {
+        "name": "alice",
+        "battlefield": [
+          {"card": "Forest", "label": "f1"}, {"card": "Forest", "label": "f2"}, {"card": "Forest", "label": "f3"}, {"card": "Forest", "label": "f4"},
+          {"card": "Forest", "label": "f5"}, {"card": "Forest", "label": "f6"}, {"card": "Forest", "label": "f7"},
+          {"card": "Swamp", "label": "s1"}, {"card": "Swamp", "label": "s2"}, {"card": "Swamp", "label": "s3"}
+        ],
+        "hand": [{"card": "Freestrider Commando", "label": "commando"}, {"card": "Yawgmoth's Testament", "label": "testament"}],
+        "library": [{"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}]
+      },
+      {
+        "name": "bob",
+        "library": [{"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}]
+      }
+    ]
+  },
+  "timeline": [
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": {"Take": {"action": "Plot $commando", "mana": ["$f1", "$f2", "$f3", "$f4", null]}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": {"Cast": {"object": "$testament", "mana": ["$s1", "$s2", "$s3", null]}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass"},
+    {"turn": 1, "step": "PrecombatMain", "player": "bob", "do": "Pass"},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": {"Cast": {"object": "Freestrider Commando", "mana": ["$f5", "$f6", "$f7"]}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass"},
+    {"turn": 1, "step": "PrecombatMain", "player": "bob", "do": "Pass"},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"PowerToughness": {"object": "Freestrider Commando", "power": 3, "toughness": 3}}}
+  ]
+}

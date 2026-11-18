@@ -257,11 +257,11 @@ layer m = case m of
   Modification.AssignCombatDamage _ -> Layer.Rules
   -- CR 613.11, the sibling above's layer: a rules change, not an ability.
   Modification.AssignCombatDamageAs {} -> Layer.Rules
-  -- CR 613.1f, GainKeyword's arm: no rule 613 sublayer is CR 702.184c's own,
-  -- so this joins the other ability-shaping grants at layer 6. Nothing else
-  -- in the layer system reads or writes PC.grantsStationToughness, so
+  -- CR 613.1f, GainKeyword's arm: no rule 613 sublayer is CR 702.184c's or
+  -- 702.179d's own, so this joins the other ability-shaping grants at layer 6.
+  -- Nothing else in the layer system reads or writes PC.controllerGrants, so
   -- ordering against a P/T or type-changing modification never bites.
-  Modification.GrantsStationToughness -> Layer.Ability
+  Modification.GrantsController _ -> Layer.Ability
   -- CR 613.11, AssignCombatDamage's layer: how a cost counts the creature, a
   -- rules change and not a characteristic.
   Modification.TapsCounting {} -> Layer.Rules
@@ -978,10 +978,10 @@ applyModification textBoxOf viewOf src stamp gs oid unitTypes affected m pc =
         -- one leaves no "may" to decline.
         Modification.AssignCombatDamageAs obligation o ->
           pc {PC.combatDamageOptions = Map.insertWith min o obligation (PC.combatDamageOptions pc)}
-        -- CR 702.184c: a SET, not an accumulation -- the fact is a bare marker
-        -- with no count and no source to prefer among several grants.
-        Modification.GrantsStationToughness ->
-          pc {PC.grantsStationToughness = True}
+        -- CR 702.184c / 702.179d: a SET, not an accumulation -- each grant is a
+        -- bare marker with no count and no source to prefer among several.
+        Modification.GrantsController grant ->
+          pc {PC.controllerGrants = Set.insert grant (PC.controllerGrants pc)}
         -- CR 613.11: a GreaterBy offset is an ACCUMULATION, unlike the marker
         -- above -- each grant is its own "as though" and they add
         -- (docs/decisions.md, "Whether two crew power offsets add"). The
@@ -995,7 +995,7 @@ applyModification textBoxOf viewOf src stamp gs oid unitTypes affected m pc =
         -- counts from 0.
         Modification.Intensify n ->
           pc {PC.intensity = fmap (Maybe.fromMaybe 0 (PC.intensity pc) +) (Quantity.evaluate viewOf context gs oid n)}
-        -- GrantsStationToughness's posture: a bare marker, so a second grant adds
+        -- GrantsController's posture: a bare marker, so a second grant adds
         -- nothing.
         Modification.LoyaltyIsToughness ->
           pc {PC.loyaltyIsToughness = True}
@@ -1116,7 +1116,7 @@ cardTypesAfter m types = case m of
   Modification.SwitchPowerToughness -> types
   Modification.AssignCombatDamage _ -> types
   Modification.AssignCombatDamageAs {} -> types
-  Modification.GrantsStationToughness -> types
+  Modification.GrantsController _ -> types
   Modification.TapsCounting {} -> types
   Modification.Intensify _ -> types
   Modification.LoyaltyIsToughness -> types
@@ -2113,7 +2113,7 @@ freezeQuantities viewOf gs announcedOn source context m =
         Modification.HasFullText _ -> Just m
         -- No quantity to freeze: two bare markers.
         Modification.AssignCombatDamage _ -> Just m
-        Modification.GrantsStationToughness -> Just m
+        Modification.GrantsController _ -> Just m
         Modification.TapsCounting {} -> Just m
         -- An enum payload, so no quantity either.
         Modification.AssignCombatDamageAs {} -> Just m
@@ -2172,7 +2172,7 @@ quantitiesOf m = case m of
   Modification.InsertNameWords _ -> []
   Modification.HasFullText _ -> []
   Modification.AssignCombatDamage _ -> []
-  Modification.GrantsStationToughness -> []
+  Modification.GrantsController _ -> []
   Modification.TapsCounting {} -> []
   Modification.AssignCombatDamageAs {} -> []
   Modification.Intensify n -> [n]
@@ -2227,7 +2227,7 @@ referenceQuery m = case m of
   Modification.SwitchPowerToughness -> Nothing
   Modification.ExchangeTextBoxes -> Nothing
   Modification.AssignCombatDamage _ -> Nothing
-  Modification.GrantsStationToughness -> Nothing
+  Modification.GrantsController _ -> Nothing
   Modification.TapsCounting {} -> Nothing
   Modification.AssignCombatDamageAs {} -> Nothing
   Modification.Intensify _ -> Nothing
@@ -2324,7 +2324,7 @@ setsLandSubtype m = case m of
   Modification.Colors {} -> False
   Modification.ChosenColor _ -> False
   -- An ability-shaping grant, not a type change.
-  Modification.GrantsStationToughness -> False
+  Modification.GrantsController _ -> False
   Modification.TapsCounting {} -> False
   -- Not a characteristic at all.
   Modification.Intensify _ -> False
@@ -3695,7 +3695,7 @@ removesAbilities m = case m of
   Modification.AssignCombatDamage _ -> False
   Modification.AssignCombatDamageAs {} -> False
   -- A grant, GainKeyword's answer above: not a removal.
-  Modification.GrantsStationToughness -> False
+  Modification.GrantsController _ -> False
   Modification.TapsCounting {} -> False
   Modification.Intensify _ -> False
   Modification.LoyaltyIsToughness -> False
@@ -5120,19 +5120,19 @@ modificationWrites m = case m of
   Modification.ChosenColor _ -> Set.singleton Colors
   Modification.SetController _ -> Set.singleton Controller
   Modification.SetControllerToSource -> Set.singleton Controller
-  -- Writes a rules marker which, like grantsStationToughness below, has no
+  -- Writes a rules marker which, like controllerGrants below, has no
   -- dedicated Aspect and no reader inside the layer fold.
   Modification.AssignCombatDamage _ -> Set.singleton Keywords
   -- The sibling above's reason: a rules marker with no Aspect of its own.
   Modification.AssignCombatDamageAs {} -> Set.singleton Keywords
-  -- Writes ProjectedCharacteristics.grantsStationToughness, which Aspect has no
+  -- Writes ProjectedCharacteristics.controllerGrants, which Aspect has no
   -- finer grain for than Keywords -- an ability-shaping write with no reader
-  -- inside the layer fold at all (Quantity.StationMeasure reads it OUTSIDE
+  -- inside the layer fold at all (Quantity.grantedToController reads it OUTSIDE
   -- CR 613.8a's dependency question, off the finished projection). A
   -- REGRESSION FENCE rather than a proved behaviour: no board in the pool
   -- makes another effect's affected set depend on it.
-  Modification.GrantsStationToughness -> Set.singleton Keywords
-  -- Writes PC.tapPowerBonus and PC.tapsUsingToughness, GrantsStationToughness'
+  Modification.GrantsController _ -> Set.singleton Keywords
+  -- Writes PC.tapPowerBonus and PC.tapsUsingToughness, GrantsController's
   -- reasoning: no reader inside the layer fold (Parun.Engine.Cost.tapPowerGiven
   -- reads them off the finished projection), so a REGRESSION FENCE.
   Modification.TapsCounting {} -> Set.singleton Keywords
@@ -5209,7 +5209,7 @@ modificationReads m = case m of
   -- Carries no Quantity: two bare markers.
   Modification.AssignCombatDamage _ -> Set.empty
   Modification.AssignCombatDamageAs {} -> Set.empty
-  Modification.GrantsStationToughness -> Set.empty
+  Modification.GrantsController _ -> Set.empty
   Modification.TapsCounting {} -> Set.empty
   Modification.Intensify n -> quantityReads n
   Modification.LoyaltyIsToughness -> Set.empty
@@ -5259,6 +5259,9 @@ quantityReads q = case q of
   -- Reads whichever of power and toughness the substitution picks, so it reads
   -- PowerA exactly as either Measure does above.
   Quantity.Type.StationMeasure -> Set.singleton PowerA
+  -- Reads each permanent's controller and its controllerGrants, which
+  -- GrantsController's write declares as Keywords.
+  Quantity.Type.ControllerGranted _ -> Set.fromList [Controller, Keywords]
   Quantity.Type.Arithmetic arithmetic -> foldMap quantityReads arithmetic
   Quantity.Type.AtMost atMost -> foldMap quantityReads atMost
   Quantity.Type.AgainstSlot (AgainstSlot.MkAgainstSlot _ a) -> quantityReads a
@@ -7247,7 +7250,7 @@ grantsKeywordWhere p m = case m of
   Modification.HasFullText _ -> False
   -- Neither marker hands out a Keyword, whatever the station one's name says.
   Modification.AssignCombatDamage _ -> False
-  Modification.GrantsStationToughness -> False
+  Modification.GrantsController _ -> False
   Modification.TapsCounting {} -> False
   Modification.AssignCombatDamageAs {} -> False
   Modification.Intensify _ -> False
@@ -7334,7 +7337,7 @@ grantsMintingType m = case m of
   Modification.HasFullText _ -> True
   -- Neither marker writes a card type or subtype.
   Modification.AssignCombatDamage _ -> False
-  Modification.GrantsStationToughness -> False
+  Modification.GrantsController _ -> False
   Modification.TapsCounting {} -> False
   Modification.AssignCombatDamageAs {} -> False
   Modification.Intensify _ -> False
@@ -7432,7 +7435,7 @@ grantsAbilityWhere p m = case m of
   -- The extra text is the one quoted ability this arm hands out.
   Modification.HasFullText ft -> any (\g -> p g || grantedStaticWrites (grantsAbilityWhere p) g) (FullText.alsoHas ft)
   Modification.AssignCombatDamage _ -> False
-  Modification.GrantsStationToughness -> False
+  Modification.GrantsController _ -> False
   Modification.TapsCounting {} -> False
   Modification.AssignCombatDamageAs {} -> False
   Modification.Intensify _ -> False

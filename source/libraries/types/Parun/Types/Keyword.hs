@@ -707,6 +707,10 @@ data Keyword
     -- entered unless it has exactly that chapter's number of lore counters; rule
     -- 715.3b REPLACES rule 715.3a's ability rather than adding to it.
     ReadAhead
+  | -- | Bedtime story, a Mystery Booster 2 playtest keyword no CR rule names: this
+    -- Saga lacks CR 715.3a's ability, and CR 715.3c's lore counter comes at the
+    -- beginning of its controller's end step instead.
+    BedtimeStory
   | -- | 702.156a: "This permanent enters with X +1\/+1 counters on it" and "When
     -- this permanent enters, if X is 5 or more, draw a card", both X being CR
     -- 107.3m's announced one.

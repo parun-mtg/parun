@@ -649,10 +649,13 @@ runTurnBasedActions phase = do
       Monad.forM_ live $ \pid -> do
         archenemy <- State.gets (Archenemy.isArchenemy pid)
         Monad.when archenemy (Archenemy.setInMotion Nothing pid)
-      Monad.mapM_ advanceSagas live
+      Monad.mapM_ (advanceSagas phase) live
       Monad.forM_ live $ \pid -> do
         visits <- State.gets (Attraction.controlsSubtype Subtype.Attraction pid)
         Monad.when visits (Resolve.rollToVisit playSubgame pid)
+    -- CR 513.1 gives the end step no turn-based action; bedtime story moves CR
+    -- 715.3c's here for its Sagas (Saga.loreStepOf).
+    Phase.Ending EndingStep.EndStep -> Monad.mapM_ (advanceSagas phase) live
     -- CR 511.1: the end of combat step has no turn-based actions, so no arm here.
     -- CR 511.3's removal from combat is an end-of-STEP action; runStep does it.
     Phase.Ending EndingStep.Cleanup -> do
@@ -671,7 +674,8 @@ runTurnBasedActions phase = do
     _ -> pure ()
 
 -- CR 505.4 / 703.4f / 715.3c's ACTION half: one lore counter onto each Saga this
--- player controls that has one or more chapter abilities. Here rather than in
+-- player controls that has one or more chapter abilities and whose
+-- Saga.loreStepOf is `phase`. Here rather than in
 -- Parun.Engine.Saga, which sits below Parun.Engine.Event in the import graph and so
 -- can classify which Sagas advance but cannot call the CR 122.6 placement funnel.
 -- Through Event.putCounters, so the placement records the event CR 715.2b's
@@ -683,11 +687,11 @@ runTurnBasedActions phase = do
 -- though it DOES double the lore counter CR 715.3a's replacement gives it as it
 -- enters. The player it carries is rule 715.3c's "that player", which is
 -- load-bearing: a clause naming a PLAYER (Vorinclex) does reach this placement.
-advanceSagas :: PlayerId -> Game ()
-advanceSagas pid = do
+advanceSagas :: Phase.Phase -> PlayerId -> Game ()
+advanceSagas phase pid = do
   gs <- State.get
   let pcs = Projection.projectAll gs
-  Monad.mapM_ (\oid -> Event.putCounters (CounterCause.ByRule pid) oid CounterKind.Lore 1) (Saga.advancing (\oid -> Projection.controllerOf oid gs) pid pcs gs)
+  Monad.mapM_ (\oid -> Event.putCounters (CounterCause.ByRule pid) oid CounterKind.Lore 1) (Saga.advancing phase (\oid -> Projection.controllerOf oid gs) pid pcs gs)
 
 -- CR 603.3: put each triggered ability that fired since the last placement on the
 -- stack, in APNAP order (CR 603.3b), with each controller choosing the order
@@ -1501,17 +1505,17 @@ settlePasses passes boards = do
   more <- if not ended && (swept || returned || phasedIn || orphaned || dayNight || designated || sampledControl || unpaired || unsectored || acted || placed) then settlePasses passed (if acted then boards <> [board] else []) else pure False
   pure (acted || placed || more)
 
--- CR 117.5: settle, then grant `holder` priority with a fresh pass count (CR
--- 117.4); nobody holds it during the settle (CR 117.3a, 117.3c).
-grantAfterSettle :: PlayerId -> Game ()
-grantAfterSettle holder = do
+-- CR 117.5: settle, then grant `holder` priority with `standing` as the pass
+-- count (CR 117.4); nobody holds it during the settle (CR 117.3a, 117.3c).
+grantAfterSettle :: Set.Set PlayerId -> PlayerId -> Game ()
+grantAfterSettle standing holder = do
   State.modify'
     ( \gs ->
         gs
           { GameState.turn =
               (GameState.turn gs)
                 { TurnRegisters.priority = Nothing,
-                  TurnRegisters.passed = Set.empty
+                  TurnRegisters.passed = standing
                 }
           }
     )
@@ -1525,6 +1529,19 @@ grantAfterSettle holder = do
                 }
           }
     )
+
+-- CR 117.3c: grant `p` priority again after an action they took at priority
+-- on `before`. The pass count restarts (CR 117.4), unless CR 734.1 reversed
+-- the action whole -- noted in Bookkeeping.undone, no mana ability it
+-- activated kept -- which leaves the passes before it standing (CR 734.2).
+-- See docs/decisions.md, "Whether a reversed action restarts the pass count".
+grantAfterAction :: GameState -> PlayerId -> Game ()
+grantAfterAction before p = do
+  after <- State.get
+  let reversed = Map.member p (Bookkeeping.undone (GameState.bookkeeping after))
+      activations = Seq.length . TurnRegisters.activationsThisTurn . GameState.turn
+      whole = reversed && activations after == activations before
+  grantAfterSettle (if whole then TurnRegisters.passed (GameState.turn before) else Set.empty) p
 
 -- Ask the priority holder for an action until every still-playing player has
 -- passed in succession (CR 117.4). A full round of passes resolves the top of the
@@ -1546,7 +1563,7 @@ openPriorityWindow :: Game ()
 openPriorityWindow = do
   offerConcessions
   holder <- State.gets priorityHolder
-  grantAfterSettle holder
+  grantAfterSettle Set.empty holder
 
 -- One priority decision: ask the holder for an action and carry it out, the
 -- window staying open with the trail it leaves or closing (CR 117.4).
@@ -1621,7 +1638,7 @@ priorityDecision trail = do
                                   }
                                 p
                           )
-                      grantAfterSettle next
+                      grantAfterSettle Set.empty next
                       pure (PriorityWindow.Open trail)
                     Concession.Continues -> do
                       -- CR 400.11: the cards outside the game a permission
@@ -1776,7 +1793,7 @@ priorityDecision trail = do
                           -- CR 116.2a: the special action, made under a
                           -- CR 601.3 permission (Cast.playLand).
                           Event.takingSpecialAction $ Cast.playLand (Resolve.runReplacementEffects playSubgame) False p oid mName
-                          grantAfterSettle p
+                          grantAfterAction gs p
                           pure (PriorityWindow.Open trail')
                         Action.Type.Cast oid name facing -> do
                           -- CR 611.2a's spend is Cast.castSpellWith's own,
@@ -1799,7 +1816,7 @@ priorityDecision trail = do
                           let completion = Completion.MkCompletion {Completion.announcement = Nothing, Completion.paid = Fragmented.paid Nothing post}
                               completed = if Cost.touchedLibrary pre post then Nothing else Just completion
                           Monad.when (any refusing completed) (Cost.restoreKeepingLibraryActions pre >> Game.noteUndoing p Undoing.RepeatedLoop)
-                          grantAfterSettle p
+                          grantAfterAction gs p
                           pure (PriorityWindow.Open (Fragmented.complete completed trail'))
                         -- CR 116.2b / 702.37e / 701.40b: a special action, so
                         -- nothing goes on the stack and no player gets a
@@ -1810,7 +1827,7 @@ priorityDecision trail = do
                         -- (Event.takingSpecialAction).
                         Action.Type.TurnFaceUp oid procedure -> do
                           Event.takingSpecialAction $ FaceDown.turnFaceUp performManaAbility p procedure oid
-                          grantAfterSettle p
+                          grantAfterAction gs p
                           pure (PriorityWindow.Open trail')
                         -- CR 116.2m / 709.5e: a special action too, the
                         -- TurnFaceUp arm's shape. What CR 709.5h's trigger
@@ -1818,7 +1835,7 @@ priorityDecision trail = do
                         -- gathers like any other.
                         Action.Type.Unlock oid half -> do
                           Event.takingSpecialAction $ Room.unlock performManaAbility p oid half
-                          grantAfterSettle p
+                          grantAfterAction gs p
                           pure (PriorityWindow.Open trail')
                         -- CR 116.2e: a special action too, the TurnFaceUp
                         -- arm's shape. The discard goes through the CR
@@ -1828,25 +1845,25 @@ priorityDecision trail = do
                         -- cause being a cycling ability's cost.
                         Action.Type.DiscardFromHand oid -> do
                           Event.takingSpecialAction $ Event.discard (Resolve.runReplacementEffects playSubgame) DiscardCause.Ordinary p oid
-                          grantAfterSettle p
+                          grantAfterAction gs p
                           pure (PriorityWindow.Open trail')
                         -- CR 116.2k / 702.170b: a special action too, the
                         -- TurnFaceUp arm's shape.
                         Action.Type.Plot oid cost -> do
                           Event.takingSpecialAction $ Plot.plot performManaAbility p oid cost
-                          grantAfterSettle p
+                          grantAfterAction gs p
                           pure (PriorityWindow.Open trail')
                         -- CR 116.2h / 702.143b: a special action too.
                         Action.Type.Foretell oid -> do
                           Event.takingSpecialAction $ Foretell.foretell performManaAbility p oid
-                          grantAfterSettle p
+                          grantAfterAction gs p
                           pure (PriorityWindow.Open trail')
                         -- CR 116.2f / 702.62a: a special action too, and
                         -- the one whose window is the card's own
                         -- castability rather than a phase.
                         Action.Type.Suspend oid -> do
                           Event.takingSpecialAction $ Suspend.suspend performManaAbility p oid
-                          grantAfterSettle p
+                          grantAfterAction gs p
                           pure (PriorityWindow.Open trail')
                         -- CR 116.2g / 702.139a: a special action too, and
                         -- the one that takes no object -- Player.companion
@@ -1854,19 +1871,19 @@ priorityDecision trail = do
                         -- object to name it with (CR 400.11).
                         Action.Type.PutCompanionIntoHand -> do
                           Event.takingSpecialAction $ Companion.take performManaAbility p
-                          grantAfterSettle p
+                          grantAfterAction gs p
                           pure (PriorityWindow.Open trail')
                         -- CR 116.2i / 901.9: a special action too, and one
                         -- that takes no object; CR 901.9a-c give the roller
                         -- priority afterwards whatever the die shows.
                         Action.Type.RollPlanarDie -> do
                           Event.takingSpecialAction $ Planechase.roll performManaAbility p
-                          grantAfterSettle p
+                          grantAfterAction gs p
                           pure (PriorityWindow.Open trail')
                         -- CR 116.2j / 702.106c: a special action too.
                         Action.Type.TurnConspiracyFaceUp oid -> do
                           Event.takingSpecialAction $ Conspiracy.turnFaceUp p oid
-                          grantAfterSettle p
+                          grantAfterAction gs p
                           pure (PriorityWindow.Open trail')
                         -- CR 116.2c: a special action too, and the one whose
                         -- permission came from a resolution rather than
@@ -1874,7 +1891,7 @@ priorityDecision trail = do
                         -- what makes the ending visible; nothing is undone.
                         Action.Type.EndEffect _ resolution -> do
                           Event.takingSpecialAction $ EndEffect.endEffect performManaAbility p resolution
-                          grantAfterSettle p
+                          grantAfterAction gs p
                           pure (PriorityWindow.Open trail')
                         -- CR 116.2c: a special action too, whose payment
                         -- leaves the offer in place.
@@ -1882,17 +1899,17 @@ priorityDecision trail = do
                           Event.takingSpecialAction $ do
                             paid <- LaterPayment.pay performManaAbility p createdAt
                             Foldable.for_ paid (Resolve.runLaterPayment playSubgame)
-                          grantAfterSettle p
+                          grantAfterAction gs p
                           pure (PriorityWindow.Open trail')
                         -- CR 116.2c / 116.3: Channel's life for mana.
                         Action.Type.PayLifeForMana life mana -> do
                           _ <- Event.takingSpecialAction (Cost.payLifeForMana performManaAbility p life mana)
-                          grantAfterSettle p
+                          grantAfterAction gs p
                           pure (PriorityWindow.Open trail')
                         -- CR 116.2d: a special action too.
                         Action.Type.Ignore oid name -> do
                           Event.takingSpecialAction $ Ignore.ignore performManaAbility p oid name
-                          grantAfterSettle p
+                          grantAfterAction gs p
                           pure (PriorityWindow.Open trail')
                         -- CR 605.3a's first window, and CR 605.3b's
                         -- immediacy: the ability does not go on the stack,
@@ -1929,11 +1946,11 @@ priorityDecision trail = do
                           let completion = Completion.MkCompletion {Completion.announcement = Nothing, Completion.paid = Fragmented.paid Nothing post}
                               completed = if null nested && not (Cost.touchedLibrary pre post) then Just completion else Nothing
                           Monad.when (any refusing completed) (Cost.restoreKeepingLibraryActions pre >> Game.noteUndoing p Undoing.RepeatedLoop)
-                          grantAfterSettle p
+                          grantAfterAction gs p
                           pure (PriorityWindow.Open (Fragmented.complete completed trail'))
                         Action.Type.Activate oid ability -> do
                           completed <- Activate.activateAbilityWith refusing playSubgame p oid ability
-                          grantAfterSettle p
+                          grantAfterAction gs p
                           pure (PriorityWindow.Open (Fragmented.complete completed trail'))
                 else do
                   -- CR 800.4a (last sentence): `p` departed in the settle

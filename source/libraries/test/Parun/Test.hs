@@ -246,6 +246,7 @@ import qualified Parun.Codec.ControlPlayerSpec
 import qualified Parun.Codec.ControlSidesSpec
 import qualified Parun.Codec.ControlSlotsSpec
 import qualified Parun.Codec.ControlSpanSpec
+import qualified Parun.Codec.ControllerGrantSpec
 import qualified Parun.Codec.ControllerRelationSpec
 import qualified Parun.Codec.ConvokingSpec
 import qualified Parun.Codec.CopyClauseSpec
@@ -1358,6 +1359,7 @@ spec s reference corpus = do
   Parun.Codec.ControlDurationSpec.spec s
   Parun.Codec.ControlMarginSpec.spec s
   Parun.Codec.TargetedSubjectSpec.spec s
+  Parun.Codec.ControllerGrantSpec.spec s
   Parun.Codec.ControllerRelationSpec.spec s
   Parun.Codec.ControlPlayerNextSpec.spec s
   Parun.Codec.ControlPlayerSpec.spec s

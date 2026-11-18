@@ -889,6 +889,7 @@ quantityChildren children quantity = case quantity of
   Quantity.AgainstExiledPile (AgainstExiledPile.MkAgainstExiledPile pile inner) -> fmap (Quantity.AgainstExiledPile . AgainstExiledPile.MkAgainstExiledPile pile) (redirected children inner)
   Quantity.AgainstLastCardExiledWith (AgainstLastCardExiledWith.MkAgainstLastCardExiledWith criterion inner) -> fmap Quantity.AgainstLastCardExiledWith (AgainstLastCardExiledWith.MkAgainstLastCardExiledWith <$> nest children criterion <*> redirected children inner)
   Quantity.StationMeasure -> pure quantity
+  Quantity.ControllerGranted _ -> pure quantity
   Quantity.AsCast inner -> Quantity.AsCast <$> term children inner
 
 -- | A count's children: its scope, the Filter its members are judged by, and
@@ -2011,6 +2012,7 @@ keywordChildren c keyword_ = case keyword_ of
   Keyword.Blitz cost -> fmap Keyword.Blitz (keywordCost c cost)
   Keyword.Casualty _casualty -> pure keyword_
   Keyword.ReadAhead -> keyword_ <$ keywordLooksBack c HistoryRead.Entries
+  Keyword.BedtimeStory -> pure keyword_
   Keyword.Ravenous -> pure keyword_
   Keyword.Squad cost -> fmap Keyword.Squad (keywordCost c cost)
   Keyword.Prototype _prototype -> pure keyword_
@@ -3754,7 +3756,7 @@ modificationChildren c modification = case modification of
   Modification.SwitchPowerToughness -> pure modification
   Modification.AssignCombatDamage _ -> pure modification
   Modification.AssignCombatDamageAs {} -> pure modification
-  Modification.GrantsStationToughness -> pure modification
+  Modification.GrantsController _ -> pure modification
   Modification.TapsCounting {} -> pure modification
   Modification.LoyaltyIsToughness -> pure modification
   Modification.Intensify quantity -> Modification.Intensify <$> modificationQuantity c quantity

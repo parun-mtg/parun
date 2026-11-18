@@ -59,9 +59,11 @@ Finished 2026-11-17.
 - Filed along the way, off the tracker: #8188 (a mana ability's cost exiles
   link nothing), #8201 (chosen qualities on `ObjectView`), #8204 (a lent
   ability's exile pairs), #8220 (Blitzball counts a departed player dealt
-  damage), #8225 (a stolen Lamplight Phoenix cannot exile its card from its
-  owner's graveyard), and by the finish #8228 (a face-down spell leaving the
-  stack is face up in its last-known record).
+  damage) and #8225 (a stolen Lamplight Phoenix cannot exile its card from its
+  owner's graveyard). Unprinted: a face-down spell leaving the stack is face up
+  in its last-known record, so IsFaceDown asked of it is unsupported; the lint
+  is `Parun.FilterPositionLintSpec`'s "CR 608.2h no card asks IsFaceDown of an
+  object that left a zone other than the battlefield".
 - Audits: 10 of 23 capability or fix PRs; 3 found rules defects. Reviewed
   inline, all clean: #8196, #8199, #8200, #8202, #8207, #8211, #8213, #8215,
   #8219, #8221, #8222, #8226. Skipped the census, every batch and #8216 (card

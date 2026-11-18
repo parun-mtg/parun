@@ -3097,6 +3097,7 @@ keywordPayloadFilters keyword = case keyword of
   -- is the ENGINE's, never a card's.
   Keyword.Reconfigure cost -> costFilters cost
   Keyword.ReadAhead -> []
+  Keyword.BedtimeStory -> []
   Keyword.Training -> []
   -- CR 702.100a is payload-free: the Filter its minted ability carries -- the
   -- entering creature's -- is the ENGINE's, never a card's.
@@ -3659,6 +3660,7 @@ quantityKindFilters quantity = case quantity of
   Quantity.Type.BlockersBeyond _ -> []
   -- Carries no CounterKind at all, Power's shape.
   Quantity.Type.StationMeasure -> []
+  Quantity.Type.ControllerGranted _ -> []
   Quantity.Type.AsCast inner -> quantityKindFilters inner
   -- quantityCounts' descent: aiming the evaluation at another object does not
   -- stop the payload from naming a kind.
@@ -3829,9 +3831,9 @@ modificationFilters modification = case modification of
   -- Nothing HERE, GainAbility's answer: grantedModifications hands the extra
   -- text to the outer granted-ability sweeps.
   Modification.HasFullText _ -> []
-  -- Payload-free, both of them, so there is no Filter to sweep.
+  -- No Filter in any of these payloads to sweep.
   Modification.AssignCombatDamage _ -> []
-  Modification.GrantsStationToughness -> []
+  Modification.GrantsController _ -> []
   Modification.TapsCounting {} -> []
   Modification.LoyaltyIsToughness -> []
   -- An enum payload holds neither.

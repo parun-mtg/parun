@@ -1,0 +1,127 @@
+{
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "battlefield": [
+          {
+            "card": "Night of the Flying Merfolk",
+            "counters": [
+              {
+                "key": {
+                  "type": "Lore"
+                },
+                "value": 2
+              }
+            ],
+            "label": "night",
+            "ready": true
+          },
+          {
+            "card": "Grizzly Bears",
+            "label": "hitter",
+            "ready": true
+          },
+          {
+            "card": "Grizzly Bears",
+            "label": "blocked",
+            "ready": true
+          },
+          {
+            "card": "Grizzly Bears",
+            "label": "idle",
+            "ready": true
+          }
+        ],
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ],
+        "name": "alice"
+      },
+      {
+        "battlefield": [
+          {
+            "card": "Wall of Wood",
+            "label": "wall",
+            "ready": true
+          }
+        ],
+        "name": "bob"
+      }
+    ],
+    "step": "PrecombatMain"
+  },
+  "description": "Night of the Flying Merfolk draws a card for each creature you control that dealt combat damage to a player this turn",
+  "final": [
+    {
+      "Life": {
+        "life": 18,
+        "player": "bob"
+      }
+    },
+    {
+      "Count": {
+        "card": "Island",
+        "count": 1,
+        "player": "alice",
+        "zone": "Hand"
+      }
+    },
+    {
+      "Count": {
+        "card": "Night of the Flying Merfolk",
+        "count": 1,
+        "player": "alice",
+        "zone": "Graveyard"
+      }
+    }
+  ],
+  "note": "Chapter III fires at the end step, after combat. Of alice's three creatures one hit bob, one was blocked by a Wall of Wood and one stayed home, so she draws one card; then the Saga is sacrificed (CR 704.5s).",
+  "timeline": [
+    {
+      "do": {
+        "Attack": [
+          "$hitter",
+          "$blocked"
+        ]
+      },
+      "player": "alice",
+      "step": "DeclareAttackers",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Block": {
+          "$wall": [
+            "$blocked"
+          ]
+        }
+      },
+      "player": "bob",
+      "step": "DeclareBlockers",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Counters": {
+          "count": 3,
+          "kind": {
+            "type": "Lore"
+          },
+          "object": "$night"
+        }
+      },
+      "player": "alice",
+      "step": "EndStep",
+      "turn": 1
+    }
+  ]
+}

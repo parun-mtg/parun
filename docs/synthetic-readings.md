@@ -195,3 +195,19 @@ Entries take `docs/decisions.md`'s format and order.
   and starting intensity siblings, prove the `firstJust` boxes on the other
   Synthetic Rival pairs.
 - **Issue**: #658, #2019.
+
+## Whether an effect can raise speed past 4
+
+- **Question**: CR 702.179d's "less than 4" caps only that ability's climb,
+  and Gomif, Fast Racer's permission and other cards' reminder "Max speed is
+  4" suggest a cap otherwise. Can an effect raise speed past 4 with no Gomif
+  out?
+- **Rules**: CR 702.179b, 702.179c, 702.179d, 702.179e; CR of 2026-11-06.
+- **Decision**: Yes. `Effect.IncreaseSpeed` has no cap: no rule states one.
+- **Rejected**: Capping an effect's increase at 4 without Gomif, which only
+  reminder text implies.
+- **Site**: `Parun.Engine.Resolve.Arms.Zones`'s speed increase, proved on
+  Synthetic Speed Boost by the scenario
+  `speed/cr-702-179c-an-effect-raises-speed-past-4-with-no-gomif-out.json`.
+  No printing increases a speed but CR 702.179d's own ability.
+- **Issue**: #809, #5326.

@@ -41,6 +41,7 @@ import qualified Parun.Types.CastOrigin as CastOrigin
 import qualified Parun.Types.ClassLevel as ClassLevel
 import qualified Parun.Types.Color as Color
 import qualified Parun.Types.Comparison as Comparison
+import qualified Parun.Types.ControllerGrant as ControllerGrant
 import qualified Parun.Types.Cost as Cost
 import qualified Parun.Types.CostComponent as CostComponent
 import qualified Parun.Types.CounterKind as CounterKind
@@ -965,17 +966,17 @@ data View = MkView
     -- HAS, so CR 702.29b's cycling counts in a graveyard. LAZY, for
     -- activatedAbilityKinds' reason, whose disjunct it is.
     hasAbility :: Bool,
-    -- CR 702.184c: does this candidate's controller's station abilities read a
-    -- tapped creature's toughness instead of its power? The projected mirror
-    -- of ProjectedCharacteristics.grantsStationToughness -- read off the
-    -- projection, and False for a printed face, CR 113.6 leaving Tapestry
-    -- Warden's ability functioning on the battlefield. No Filter atom consults it: it is here
-    -- for Parun.Engine.Quantity's StationMeasure arm, which walks the
-    -- battlefield through the same ViewOf every other Quantity arm reads.
+    -- CR 702.184c / 702.179d: what this candidate gives its controller. The
+    -- projected mirror of ProjectedCharacteristics.controllerGrants -- read off
+    -- the projection, and empty for a printed face, CR 113.6 leaving Tapestry
+    -- Warden's and Gomif's abilities functioning on the battlefield. No Filter
+    -- atom consults it: it is here for Parun.Engine.Quantity's
+    -- grantedToController, which walks the battlefield through the same ViewOf
+    -- every other Quantity arm reads.
     --
-    -- False on a player view: CR 109.1 gives a player no controller and so no
+    -- Empty on a player view: CR 109.1 gives a player no controller and so no
     -- permanent whose Modification this could be.
-    grantsStationToughness :: Bool,
+    controllerGrants :: Set.Set ControllerGrant.ControllerGrant,
     -- CR 700.5a: how much this candidate's player abilities raise its
     -- controller's devotion (Parun.Engine.Devotion.bonusOf). Read off the
     -- COPIABLE list, which copy and text-changing effects write and no later
@@ -1284,7 +1285,7 @@ nobodyView =
       hasAbility = False,
       -- CR 702.184c reaches a permanent's controller, and a player view built
       -- from a bare PlayerId has no permanent behind it to grant this at all.
-      grantsStationToughness = False,
+      controllerGrants = Set.empty,
       -- CR 109.1: a player has no abilities to raise anyone's devotion.
       devotionBonus = 0,
       loyaltyIsToughness = False,

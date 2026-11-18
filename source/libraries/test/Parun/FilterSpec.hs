@@ -191,7 +191,7 @@ blackCreature =
       -- atom's own cases below say which view they want rather than inheriting it.
       Filter.activatedAbilityKinds = Set.empty,
       Filter.hasAbility = False,
-      Filter.grantsStationToughness = False,
+      Filter.controllerGrants = Set.empty,
       Filter.devotionBonus = 0,
       Filter.loyaltyIsToughness = False,
       Filter.printedLoyalty = Nothing
@@ -300,7 +300,7 @@ devoidBigCreature =
       Filter.manaSpentOnX = Mana.MkMana [],
       Filter.activatedAbilityKinds = Set.empty,
       Filter.hasAbility = False,
-      Filter.grantsStationToughness = False,
+      Filter.controllerGrants = Set.empty,
       Filter.devotionBonus = 0,
       Filter.loyaltyIsToughness = False,
       Filter.printedLoyalty = Nothing
