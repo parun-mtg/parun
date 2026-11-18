@@ -1,0 +1,284 @@
+{
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "battlefield": [
+          {
+            "card": "Satoru, the Infiltrator",
+            "label": "satoru",
+            "ready": true
+          }
+        ],
+        "hand": [
+          {
+            "card": "Breach the Multiverse",
+            "label": "breach"
+          }
+        ],
+        "library": [
+          {
+            "card": "Grizzly Bears"
+          },
+          {
+            "card": "Hill Giant"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ],
+        "manaPool": "BBBBBBB",
+        "name": "alice"
+      },
+      {
+        "library": [
+          {
+            "card": "Jace Beleren"
+          },
+          {
+            "card": "Llanowar Elves"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ],
+        "name": "bob"
+      },
+      {
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ],
+        "name": "carol"
+      }
+    ],
+    "step": "PrecombatMain"
+  },
+  "description": "Breach the Multiverse puts one chosen card from each graveyard onto the battlefield together under its caster's control",
+  "final": [
+    {
+      "View": {
+        "is": "alice",
+        "object": "Jace Beleren",
+        "of": "Controller"
+      }
+    },
+    {
+      "View": {
+        "is": [
+          "$satoru",
+          "Hill Giant"
+        ],
+        "of": "Zone",
+        "player": "alice",
+        "zone": "Battlefield"
+      }
+    },
+    {
+      "View": {
+        "is": [
+          "Jace Beleren"
+        ],
+        "of": "Zone",
+        "player": "bob",
+        "zone": "Battlefield"
+      }
+    },
+    {
+      "Count": {
+        "card": "Llanowar Elves",
+        "count": 1,
+        "player": "bob",
+        "zone": "Graveyard"
+      }
+    },
+    {
+      "Count": {
+        "card": "Grizzly Bears",
+        "count": 1,
+        "player": "alice",
+        "zone": "Graveyard"
+      }
+    },
+    {
+      "Count": {
+        "card": "Island",
+        "count": 1,
+        "player": "alice",
+        "zone": "Hand"
+      }
+    },
+    {
+      "Subtypes": {
+        "object": "Hill Giant",
+        "subtypes": [
+          "Giant",
+          "Phyrexian"
+        ]
+      }
+    },
+    {
+      "Subtypes": {
+        "object": "$satoru",
+        "subtypes": [
+          "Human",
+          "Ninja",
+          "Rogue",
+          "Phyrexian"
+        ]
+      }
+    },
+    {
+      "Subtypes": {
+        "object": "Jace Beleren",
+        "subtypes": [
+          "Jace"
+        ]
+      }
+    },
+    {
+      "View": {
+        "is": [
+          [
+            "alice",
+            "ChooseCardInGraveyard"
+          ],
+          [
+            "alice",
+            "ChooseCardInGraveyard"
+          ],
+          [
+            "alice",
+            "OrderTimestamps"
+          ]
+        ],
+        "of": "Asked"
+      }
+    }
+  ],
+  "note": "Each player mills ten. Alice chooses Hill Giant in her graveyard and Jace Beleren in bob's; carol's holds no creature or planeswalker card. Both enter in one event, so alice orders their timestamps (CR 613.7m) and so Satoru's batch trigger draws once; then alice's creatures become Phyrexian, the planeswalker does not.",
+  "timeline": [
+    {
+      "do": {
+        "Cast": {
+          "object": "$breach"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Answer": {
+          "prompt": "ChooseCardInGraveyard",
+          "with": "Hill Giant"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Answer": {
+          "prompt": "ChooseCardInGraveyard",
+          "with": "Jace Beleren"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "OrderTimestamps": [
+          "Jace Beleren",
+          "Hill Giant"
+        ]
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    }
+  ]
+}

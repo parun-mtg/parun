@@ -68,7 +68,9 @@
                 },
                 {
                   "type": "TagWasSpent",
-                  "value": "Artifact"
+                  "value": {
+                    "CardType": "Artifact"
+                  }
                 }
               ]
             }

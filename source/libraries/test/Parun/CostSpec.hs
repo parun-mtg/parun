@@ -121,6 +121,7 @@ import qualified Parun.Types.PlayerId as PlayerId
 import qualified Parun.Types.PlayerRelation as PlayerRelation
 import qualified Parun.Types.Power as Power
 import qualified Parun.Types.Printing as Printing
+import qualified Parun.Types.ProductionTag as ProductionTag
 import qualified Parun.Types.Prompt as Prompt
 import qualified Parun.Types.Quantity as Quantity.Type
 import qualified Parun.Types.Recipient as Recipient
@@ -5219,7 +5220,7 @@ convokeWindowSpec s registry = Spec.describe s "Siege Wurm" $ do
                     TurnRegisters.priority = Just S.alice
                   }
             }
-        green = Mana.Type.MkMana [ManaUnit.MkManaUnit {ManaUnit.manaType = ManaType.Colored Color.Green, ManaUnit.tags = Set.empty, ManaUnit.retention = ManaRetention.Ordinary, ManaUnit.restriction = Nothing, ManaUnit.rider = Nothing, ManaUnit.spendTrigger = Nothing, ManaUnit.sourceChoices = Nothing, ManaUnit.sourceLastExiled = Nothing, ManaUnit.producer = Nothing}]
+        green = Mana.Type.MkMana [ManaUnit.MkManaUnit {ManaUnit.manaType = ManaType.Colored Color.Green, ManaUnit.tags = Set.singleton (ProductionTag.CardType CardType.Creature), ManaUnit.retention = ManaRetention.Ordinary, ManaUnit.restriction = Nothing, ManaUnit.rider = Nothing, ManaUnit.spendTrigger = Nothing, ManaUnit.sourceChoices = Nothing, ManaUnit.sourceLastExiled = Nothing, ManaUnit.producer = Nothing}]
         -- One {G} left to pay with mana, which is what the Birds produced: the
         -- other six symbols are convoked.
         residual = ManaCost.MkManaCost [ManaSymbol.OfType (ManaType.Colored Color.Green)]

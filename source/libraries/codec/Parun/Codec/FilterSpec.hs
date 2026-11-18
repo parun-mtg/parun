@@ -27,6 +27,7 @@ import qualified Parun.Types.CounterLinked as CounterLinked
 import qualified Parun.Types.DamageKind as DamageKind
 import qualified Parun.Types.DamagedParty as DamagedParty
 import qualified Parun.Types.DealtDamageTo as DealtDamageTo
+import qualified Parun.Types.DeclaredRole as DeclaredRole
 import qualified Parun.Types.Designation as Designation
 import qualified Parun.Types.EnteredZone as EnteredZone
 import qualified Parun.Types.EntryWindow as EntryWindow
@@ -143,6 +144,12 @@ spec s = Spec.describe s "Parun.Codec.Filter" $ do
       codec
       (Filter.ControlledByRole TurnRole.Active)
       " {\"type\":\"ControlledByRole\",\"value\":\"Active\"} "
+  Spec.it s "IsPlayerInRole Active" $
+    Common.assertCodec
+      s
+      codec
+      (Filter.IsPlayerInRole TurnRole.Active)
+      " {\"type\":\"IsPlayerInRole\",\"value\":\"Active\"} "
   Spec.it s "HeldByBound" $
     Common.assertCodec
       s
@@ -443,8 +450,8 @@ spec s = Spec.describe s "Parun.Codec.Filter" $ do
     Common.assertCodec
       s
       codec
-      (Filter.DeclaredThisTurn BlockRole.Blocker)
-      " {\"type\":\"DeclaredThisTurn\",\"value\":\"Blocker\"} "
+      (Filter.DeclaredThisTurn DeclaredRole.Blocked)
+      " {\"type\":\"DeclaredThisTurn\",\"value\":{\"type\":\"Blocked\"}} "
   Spec.it s "CouldAttackThisTurn" $
     Common.assertCodec
       s
@@ -890,8 +897,8 @@ spec s = Spec.describe s "Parun.Codec.Filter" $ do
     Common.assertCodec
       s
       codec
-      (Filter.TagWasSpent ProductionTag.Artifact)
-      " {\"type\":\"TagWasSpent\",\"value\":\"Artifact\"} "
+      (Filter.TagWasSpent (ProductionTag.CardType CardType.Artifact))
+      " {\"type\":\"TagWasSpent\",\"value\":{\"CardType\":\"Artifact\"}} "
   -- Tecutlan, the Searing Rift's "using mana produced by Tecutlan".
   Spec.it s "PaidWithManaFromSource" $
     Common.assertCodec
@@ -1020,7 +1027,7 @@ spec s = Spec.describe s "Parun.Codec.Filter" $ do
         -- Synthetic Bulwark Snare's whole target filter, the composite this atom
         -- ships in.
         bulwarkSnare = Filter.Or [Filter.IsAttackingPlayer PlayerRelation.You, Filter.IsAttackingBattle PlayerRelation.You]
-        relentlessAssault = Filter.DeclaredThisTurn BlockRole.Attacker
+        relentlessAssault = Filter.DeclaredThisTurn (DeclaredRole.Attacked Nothing)
         -- Break Open's whole target filter, the composite the new atom actually
         -- ships in.
         breakOpen = Filter.And [Filter.IsFaceDown, Filter.HeldBy Holder.Controller PlayerRelation.Opponent]

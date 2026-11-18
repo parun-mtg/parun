@@ -3,6 +3,7 @@ module Parun.Codec.ProductionTagSpec where
 import qualified Parun.Codec.ProductionTag as ProductionTag
 import qualified Parun.JsonCodec.Common as Common
 import qualified Parun.Spec as Spec
+import qualified Parun.Types.CardType as CardType
 import qualified Parun.Types.ProductionTag as ProductionTag
 import qualified Parun.Types.Subtype as Subtype
 
@@ -20,11 +21,11 @@ spec s = Spec.describe s "Parun.Codec.ProductionTag" $ do
       ProductionTag.codec
       (ProductionTag.Subtype Subtype.Cave)
       " {\"Subtype\":\"Cave\"} "
-  Spec.it s "Artifact" $
+  Spec.it s "CardType" $
     Common.assertCodec
       s
       ProductionTag.codec
-      ProductionTag.Artifact
-      " \"Artifact\" "
+      (ProductionTag.CardType CardType.Creature)
+      " {\"CardType\":\"Creature\"} "
   Spec.it s "has a schema" $
     Common.assertHasSchema s ProductionTag.codec

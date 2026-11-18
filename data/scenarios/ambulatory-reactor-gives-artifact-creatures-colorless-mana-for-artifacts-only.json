@@ -25,6 +25,6 @@
     { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": { "Cast": { "object": "$runeclaw", "mana": ["$forest", "$reactor", "$forest2", null] } } },
     { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass" },
     { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "Count": { "card": "Runeclaw Bear", "count": 1, "player": "alice", "zone": "Battlefield" } } },
-    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "View": { "of": "ManaPool", "player": "alice", "is": [{ "manaType": { "type": "Colorless" }, "tags": ["Artifact"], "retention": "Ordinary", "restriction": { "casts": { "type": "HasCardType", "value": "Artifact" }, "activations": { "type": "HasCardType", "value": "Artifact" } }, "rider": null, "sourceChoices": null }] } } }
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "View": { "of": "ManaPool", "player": "alice", "is": [{ "manaType": { "type": "Colorless" }, "tags": [{"CardType": "Artifact"}, {"CardType": "Creature"}], "retention": "Ordinary", "restriction": { "casts": { "type": "HasCardType", "value": "Artifact" }, "activations": { "type": "HasCardType", "value": "Artifact" } }, "rider": null, "sourceChoices": null }] } } }
   ]
 }

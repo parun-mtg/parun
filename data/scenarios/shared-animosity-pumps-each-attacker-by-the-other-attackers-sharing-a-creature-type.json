@@ -1,0 +1,15 @@
+{
+  "description": "CR 508.3a / 205.3m / 608.2h Shared Animosity pumps each attacker by the other attackers sharing a creature type with it",
+  "note": "Five attackers give four distinct pumps: each Goblin Piker (Goblin Warrior) shares with the other Piker and Elvish Warrior, +2 for 4/1; Elvish Warrior (Elf Warrior) with both Pikers and Llanowar Elves, +3 for 5/3; Llanowar Elves (Elf Druid) with Elvish Warrior alone, +1 for 2/1; Grizzly Bears shares a type with no attacker and stays 2/2. Raging Goblin stays home: counting a nonattacker would make each Piker 5/1, and counting the pumped creature itself 5/1 too. bob defends with nothing.",
+  "board": {"active": "alice", "step": "BeginningOfCombat", "seats": [{"name": "alice", "battlefield": [{"card": "Shared Animosity", "label": "animosity"}, {"card": "Goblin Piker", "label": "piker1", "ready": true}, {"card": "Goblin Piker", "label": "piker2", "ready": true}, {"card": "Elvish Warrior", "label": "warrior", "ready": true}, {"card": "Llanowar Elves", "label": "elves", "ready": true}, {"card": "Grizzly Bears", "label": "bears", "ready": true}, {"card": "Raging Goblin", "label": "home", "ready": true}], "library": [{"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}]}, {"name": "bob", "library": [{"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}]}]},
+  "timeline": [
+    {"turn": 1, "step": "DeclareAttackers", "player": "alice", "do": {"Attack": ["$piker1", "$piker2", "$warrior", "$elves", "$bears"]}},
+    {"turn": 1, "step": "DeclareAttackers", "player": "alice", "do": {"OrderTriggers": ["$animosity", "$animosity", "$animosity", "$animosity", "$animosity"]}},
+    {"turn": 1, "step": "DeclareBlockers", "player": "alice", "check": {"PowerToughness": {"object": "$piker1", "power": 4, "toughness": 1}}},
+    {"turn": 1, "step": "DeclareBlockers", "player": "alice", "check": {"PowerToughness": {"object": "$piker2", "power": 4, "toughness": 1}}},
+    {"turn": 1, "step": "DeclareBlockers", "player": "alice", "check": {"PowerToughness": {"object": "$warrior", "power": 5, "toughness": 3}}},
+    {"turn": 1, "step": "DeclareBlockers", "player": "alice", "check": {"PowerToughness": {"object": "$elves", "power": 2, "toughness": 1}}},
+    {"turn": 1, "step": "DeclareBlockers", "player": "alice", "check": {"PowerToughness": {"object": "$bears", "power": 2, "toughness": 2}}},
+    {"turn": 1, "step": "DeclareBlockers", "player": "alice", "check": {"PowerToughness": {"object": "$home", "power": 1, "toughness": 1}}}
+  ]
+}

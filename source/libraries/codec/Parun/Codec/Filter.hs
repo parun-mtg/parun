@@ -20,6 +20,7 @@ import qualified Parun.Codec.CounterKind as CounterKind
 import qualified Parun.Codec.CounterLinked as CounterLinked
 import qualified Parun.Codec.DamageKind as DamageKind
 import qualified Parun.Codec.DealtDamageTo as DealtDamageTo
+import qualified Parun.Codec.DeclaredRole as DeclaredRole
 import qualified Parun.Codec.Designation as Designation
 import qualified Parun.Codec.EnteredZone as EnteredZone
 import qualified Parun.Codec.ExiledPile as ExiledPile
@@ -110,6 +111,7 @@ codec keywordCodec =
       Arm.nullary "ControllerIsOwner" Filter.ControllerIsOwner,
       Arm.payload "HeldBy" heldBy (uncurry Filter.HeldBy) (\x -> case x of Filter.HeldBy h r -> Just (h, r); _ -> Nothing),
       Arm.payload "IsPlayer" PlayerRelation.codec Filter.IsPlayer (\x -> case x of Filter.IsPlayer y -> Just y; _ -> Nothing),
+      Arm.payload "IsPlayerInRole" TurnRole.codec Filter.IsPlayerInRole (\x -> case x of Filter.IsPlayerInRole y -> Just y; _ -> Nothing),
       Arm.payload "IsControllerOfBound" SlotName.codec Filter.IsControllerOfBound (\x -> case x of Filter.IsControllerOfBound y -> Just y; _ -> Nothing),
       Arm.payload "Controls" (controls keywordCodec) (uncurry Filter.Controls) (\x -> case x of Filter.Controls n y -> Just (n, y); _ -> Nothing),
       -- Natural rather than Common.integer above, so a negative literal is
@@ -153,7 +155,7 @@ codec keywordCodec =
       Arm.optionalPayload "DeclaredAttackedThisCombat" SlotName.codec Filter.DeclaredAttackedThisCombat (\x -> case x of Filter.DeclaredAttackedThisCombat y -> Just y; _ -> Nothing),
       Arm.nullary "IsBlocking" Filter.IsBlocking,
       Arm.payload "HasBlockStatus" BlockStatus.codec Filter.HasBlockStatus (\x -> case x of Filter.HasBlockStatus y -> Just y; _ -> Nothing),
-      Arm.payload "DeclaredThisTurn" BlockRole.codec Filter.DeclaredThisTurn (\x -> case x of Filter.DeclaredThisTurn y -> Just y; _ -> Nothing),
+      Arm.payload "DeclaredThisTurn" DeclaredRole.codec Filter.DeclaredThisTurn (\x -> case x of Filter.DeclaredThisTurn y -> Just y; _ -> Nothing),
       Arm.nullary "CouldAttackThisTurn" Filter.CouldAttackThisTurn,
       Arm.nullary "DeclaredAttackerThisCombat" Filter.DeclaredAttackerThisCombat,
       Arm.nullary "DeclaredBlockerThisCombat" Filter.DeclaredBlockerThisCombat,
@@ -362,6 +364,7 @@ tagOf x = case x of
   Filter.ControllerIsOwner {} -> "ControllerIsOwner"
   Filter.HeldBy {} -> "HeldBy"
   Filter.IsPlayer {} -> "IsPlayer"
+  Filter.IsPlayerInRole {} -> "IsPlayerInRole"
   Filter.IsControllerOfBound {} -> "IsControllerOfBound"
   Filter.Controls {} -> "Controls"
   Filter.CardsInZoneAtLeast {} -> "CardsInZoneAtLeast"

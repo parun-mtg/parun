@@ -1429,10 +1429,11 @@ productionTagsGiven pcs oid gs =
           -- 205.4g's supertype. Independent axes, so the answer is a union rather
           -- than a choice.
           Set.map ProductionTag.Subtype (Set.intersection taggedSubtypes (PC.subtypes characteristics)),
-          -- Shadow the Hedgehog's "mana from an artifact", the same read a third axis
-          -- over: CR 205.2a's card type, and independent of the other two -- a snow
-          -- Treasure token is all three at once, which is why this stays a union.
-          if Set.member CardType.Artifact (PC.cardTypes characteristics) then Set.singleton ProductionTag.Artifact else Set.empty
+          -- Shadow the Hedgehog's "mana from an artifact" and Inga and Esika's "mana
+          -- from creatures", the same read a third axis over: CR 205.2a's card type,
+          -- and independent of the other two -- a snow Treasure token is all three at
+          -- once, which is why this stays a union.
+          Set.map ProductionTag.CardType (Set.intersection taggedCardTypes (PC.cardTypes characteristics))
         ]
 
 -- The subtypes a unit's ProductionTag.Subtype records of its source: the ones a
@@ -1442,6 +1443,12 @@ productionTagsGiven pcs oid gs =
 -- from a subtype the engine does not stamp".
 taggedSubtypes :: Set.Set Subtype.Subtype
 taggedSubtypes = Set.fromList [Subtype.Cave, Subtype.Treasure]
+
+-- The card types a unit's ProductionTag.CardType records of its source: the ones
+-- a card asks about, Shadow the Hedgehog's artifact and Inga and Esika's
+-- creature. taggedSubtypes's reason for not stamping them all, and its lint.
+taggedCardTypes :: Set.Set CardType.CardType
+taggedCardTypes = Set.fromList [CardType.Artifact, CardType.Creature]
 
 -- The units of one yield, in printed order.
 unitsOf :: Mana -> [ManaUnit]

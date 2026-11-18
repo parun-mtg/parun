@@ -89,7 +89,11 @@
                 "type": "Colored",
                 "value": "Red"
               },
-              "tags": [],
+              "tags": [
+                {
+                  "CardType": "Creature"
+                }
+              ],
               "retention": "UntilEndOfCombat",
               "restriction": null,
               "rider": null,
@@ -100,7 +104,11 @@
                 "type": "Colored",
                 "value": "Red"
               },
-              "tags": [],
+              "tags": [
+                {
+                  "CardType": "Creature"
+                }
+              ],
               "retention": "UntilEndOfCombat",
               "restriction": null,
               "rider": null,
@@ -111,7 +119,11 @@
                 "type": "Colored",
                 "value": "Red"
               },
-              "tags": [],
+              "tags": [
+                {
+                  "CardType": "Creature"
+                }
+              ],
               "retention": "UntilEndOfCombat",
               "restriction": null,
               "rider": null,
@@ -122,7 +134,11 @@
                 "type": "Colored",
                 "value": "Red"
               },
-              "tags": [],
+              "tags": [
+                {
+                  "CardType": "Creature"
+                }
+              ],
               "retention": "UntilEndOfCombat",
               "restriction": null,
               "rider": null,
@@ -133,7 +149,11 @@
                 "type": "Colored",
                 "value": "Red"
               },
-              "tags": [],
+              "tags": [
+                {
+                  "CardType": "Creature"
+                }
+              ],
               "retention": "UntilEndOfCombat",
               "restriction": null,
               "rider": null,
@@ -144,7 +164,11 @@
                 "type": "Colored",
                 "value": "Red"
               },
-              "tags": [],
+              "tags": [
+                {
+                  "CardType": "Creature"
+                }
+              ],
               "retention": "UntilEndOfCombat",
               "restriction": null,
               "rider": null,

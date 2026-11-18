@@ -40,7 +40,6 @@ import qualified Parun.Types.Aggregation as Aggregation
 import qualified Parun.Types.AttackTarget as AttackTarget
 import qualified Parun.Types.AttackWindow as AttackWindow
 import qualified Parun.Types.AttackerDeclared as AttackerDeclared
-import qualified Parun.Types.BlockRole as BlockRole
 import qualified Parun.Types.BlocksDeclared as BlocksDeclared
 import qualified Parun.Types.BoundReading as BoundReading
 import qualified Parun.Types.Card as Card
@@ -61,6 +60,7 @@ import qualified Parun.Types.Crewing as Crewing
 import qualified Parun.Types.DamageEvent as DamageEvent
 import qualified Parun.Types.DamageKind as DamageKind
 import qualified Parun.Types.DamageRecipient as DamageRecipient
+import qualified Parun.Types.DeclaredRole as DeclaredRole
 import qualified Parun.Types.Discarded as Discarded
 import qualified Parun.Types.DistinctOf as DistinctOf
 import qualified Parun.Types.EventShape as EventShape
@@ -781,14 +781,24 @@ historyPlayersFor viewOf context gs =
         gs
 
 -- CR 102.1: the players a TurnScope.PlayersTurn reference names, which is
--- playersFor with CR 113.7's source slot naming the context's source where
--- nothing bound it already -- a step trigger is matched before its bindings
--- exist, and Soul Bleed's "enchanted creature's controller" reads the host of
--- the Aura through that slot. Turn.turnScopeAdmits takes this as its reader.
+-- playersFor over withSourceSlot -- a step trigger is matched before its
+-- bindings exist, and Soul Bleed's "enchanted creature's controller" reads the
+-- host of the Aura through that slot. Turn.turnScopeAdmits takes this as its
+-- reader.
 scopePlayers :: ViewOf -> Filter.Context -> GameState -> PlayerRef.PlayerRef -> Maybe [PlayerId]
-scopePlayers viewOf context =
-  let withSource source = context {Filter.slotObjects = Map.insertWith (\_ bound -> bound) Binding.triggerSource (Set.singleton source) (Filter.slotObjects context)}
-   in playersFor viewOf (maybe context withSource (Filter.source context))
+scopePlayers viewOf context = playersFor viewOf (withSourceSlot context)
+
+-- CR 113.7: `context` with the source slot naming its source where nothing
+-- bound it already, for a reader no announcement stands behind: scopePlayers,
+-- and a static ability's layer effect (Parun.Engine.Projection's
+-- applyModification), where Disturbing Conversion's "its controller's
+-- graveyard" reads the Aura's host. The scenario
+-- disturbing-conversion-shrinks-the-enchanted-creature-by-its-controller-s-graveyard
+-- proves the static.
+withSourceSlot :: Filter.Context -> Filter.Context
+withSourceSlot context = case Filter.source context of
+  Nothing -> context
+  Just source -> context {Filter.slotObjects = Map.insertWith (\_ bound -> bound) Binding.triggerSource (Set.singleton source) (Filter.slotObjects context)}
 
 -- CR 601.2c: the players one slot names at this position, or Nothing where no
 -- slot of that name is bound here -- which every arm above reads as
@@ -1430,14 +1440,16 @@ lastKnownView peers oid gs lastKnown =
 -- log, which CR 511.3 does not clear. Only Combat.declareAttackers appends
 -- AttackerDeclared (CR 508.3a), and GameEvent.BlocksDeclared leaves out a
 -- creature put onto the battlefield blocking (CR 509.3a), so neither CR 508.4's
--- arrival attacking nor its blocking twin counts.
-declaredThisTurn :: ObjectId -> GameState -> Set.Set BlockRole.BlockRole
+-- arrival attacking nor its blocking twin counts. An attack answers its CR
+-- 508.1b announcement's kind as declared, whatever became of the thing attacked
+-- (War Historian's ruling of 2023-04-14).
+declaredThisTurn :: ObjectId -> GameState -> Set.Set DeclaredRole.DeclaredRole
 declaredThisTurn oid gs =
-  let roleOf event = case event of
-        GameEvent.AttackerDeclared (AttackerDeclared.MkAttackerDeclared declared _ _ _ _ _) | declared == oid -> Just BlockRole.Attacker
-        GameEvent.BlocksDeclared (BlocksDeclared.MkBlocksDeclared blocker _) | blocker == oid -> Just BlockRole.Blocker
-        _ -> Nothing
-   in Set.fromList (Maybe.mapMaybe (roleOf . LoggedEvent.event) (Foldable.toList (TurnRegisters.events (GameState.turn gs))))
+  let rolesOf event = case event of
+        GameEvent.AttackerDeclared (AttackerDeclared.MkAttackerDeclared declared _ target _ _ _) | declared == oid -> [DeclaredRole.Attacked Nothing, DeclaredRole.Attacked (Just (Game.attackTargetKind target))]
+        GameEvent.BlocksDeclared (BlocksDeclared.MkBlocksDeclared blocker _) | blocker == oid -> [DeclaredRole.Blocked]
+        _ -> []
+   in Set.fromList (foldMap (rolesOf . LoggedEvent.event) (TurnRegisters.events (GameState.turn gs)))
 
 -- CR 508.1a-d: could this object have been declared as an attacker in one of
 -- this turn's declare attackers steps? The record those steps wrote as each

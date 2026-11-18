@@ -82,7 +82,6 @@ import qualified Parun.Types.Binding as Binding
 import qualified Parun.Types.BlockCost as BlockCost
 import qualified Parun.Types.BlockPermission as BlockPermission
 import qualified Parun.Types.BlockRequirement as BlockRequirement
-import qualified Parun.Types.BlockRole as BlockRole
 import qualified Parun.Types.BoundMeasure as BoundMeasure
 import qualified Parun.Types.CandidateId as CandidateId
 import qualified Parun.Types.Card as Card
@@ -107,6 +106,7 @@ import qualified Parun.Types.CounterRestriction as CounterRestriction
 import qualified Parun.Types.Counterability as Counterability
 import qualified Parun.Types.DamagePattern as DamagePattern
 import qualified Parun.Types.DamageTally as DamageTally
+import qualified Parun.Types.DeclaredRole as DeclaredRole
 import qualified Parun.Types.DelayedTrigger as DelayedTrigger
 import qualified Parun.Types.DungeonRoom as DungeonRoom
 import qualified Parun.Types.Duration as Duration
@@ -316,7 +316,7 @@ filterNames asking criterion = case criterion of
   -- The operand may read the enclosing amount as well as a slot.
   Filter.Measures measures -> measuresNames asking measures
   Filter.IsTarget -> slotNames asking Binding.Engine.announcedTargets
-  Filter.DeclaredThisTurn role -> keyed asking <> history asking (case role of BlockRole.Attacker -> HistoryRead.Attacks; BlockRole.Blocker -> HistoryRead.Blockers)
+  Filter.DeclaredThisTurn role -> keyed asking <> history asking (case role of DeclaredRole.Attacked _ -> HistoryRead.Attacks; DeclaredRole.Blocked -> HistoryRead.Blockers)
   Filter.CouldAttackThisTurn -> keyed asking
   Filter.LeftLibraryThisTurn how -> keyed asking <> case how of LibraryDeparture.Drawn -> mempty; LibraryDeparture.LastDrawn -> mempty; LibraryDeparture.Milled -> history asking HistoryRead.Mills
   Filter.CantPayKeywordCost _ -> contextNames asking
@@ -469,6 +469,7 @@ chooserNames :: (Monoid r) => Asking r -> Chooser.Chooser -> r
 chooserNames asking x = case x of
   Chooser.TheController -> mempty
   Chooser.EachInScope -> mempty
+  Chooser.TheControllerInEach -> mempty
   Chooser.BoundInSlot slotName -> slotNames asking slotName
 
 chosenPermanentsNames :: (Monoid r) => Asking r -> ChosenPermanents.ChosenPermanents -> r

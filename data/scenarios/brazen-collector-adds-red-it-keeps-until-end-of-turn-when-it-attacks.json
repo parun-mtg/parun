@@ -120,7 +120,11 @@
                 "type": "Colored",
                 "value": "Red"
               },
-              "tags": [],
+              "tags": [
+                {
+                  "CardType": "Creature"
+                }
+              ],
               "retention": "UntilEndOfTurn",
               "restriction": null,
               "rider": null,

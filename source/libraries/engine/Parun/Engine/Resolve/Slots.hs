@@ -539,6 +539,7 @@ chooserSlots :: Chooser.Chooser -> Map.Map SlotName SlotArity
 chooserSlots chooser = case chooser of
   Chooser.TheController -> Map.empty
   Chooser.EachInScope -> Map.empty
+  Chooser.TheControllerInEach -> Map.empty
   Chooser.BoundInSlot slot -> Map.singleton slot SlotArity.One
 
 -- The slots a ZoneScope reads. Only InSlot names one, and at arity Many: the

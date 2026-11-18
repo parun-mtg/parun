@@ -730,7 +730,7 @@ stadiumVendorsSpec s registry =
           piker <- S.printingOf s registry "Goblin Piker"
           let (pikerId, after, offer) = resolved S.alice (arranged vendors piker)
           Spec.assertBool s (any (S.isCastOf pikerId) (Action.legalActions S.alice after)) "alice can cast a {1}{R} Piker, which one mana could not pay for"
-          Spec.assertEqWith s "and her pool is {R}{R}, one CR 105.4 choice covering both" (poolOf S.alice after) [plainRed, plainRed]
+          Spec.assertEqWith s "and her pool is {R}{R}, one CR 105.4 choice covering both" (poolOf S.alice after) (fmap fromCreature [plainRed, plainRed])
           Spec.assertEqWith s "neither opponent got anything" (poolOf S.bob after, poolOf S.carol after) ([], [])
           Spec.assertEqWith s "every seat still in the game was offered, the chooser included" (List.sort offer) (List.sort [S.alice, S.bob, S.carol])
           Spec.assertEqWith s "the stack is empty again" (length (TurnRegisters.stack (GameState.turn after))) 0
@@ -742,7 +742,7 @@ stadiumVendorsSpec s registry =
           vendors <- S.printingOf s registry "Stadium Vendors"
           piker <- S.printingOf s registry "Goblin Piker"
           let (pikerId, after, _) = resolved S.carol (arranged vendors piker)
-          Spec.assertEqWith s "carol got {U}{U}, the colour SHE named" (poolOf S.carol after) [plainBlue, plainBlue]
+          Spec.assertEqWith s "carol got {U}{U}, the colour SHE named" (poolOf S.carol after) (fmap fromCreature [plainBlue, plainBlue])
           Spec.assertEqWith s "alice, who controls the Goblin, got nothing" (poolOf S.alice after) []
           Spec.assertBool s (not (any (S.isCastOf pikerId) (Action.legalActions S.alice after))) "so the same Piker is not castable"
           Spec.assertEqWith s "and bob, the seat neither of them named, got nothing" (poolOf S.bob after) []
@@ -789,7 +789,7 @@ shizukoSpec s registry = Spec.describe s "Shizuko, Caller of Autumn" $ do
     shizuko <- S.printingOf s registry "Shizuko, Caller of Autumn"
     let (oid, hers) = S.addHandCard shizuko S.carol (carolMain (shizukoUpkeep shizuko S.carol))
         (otherOid, his) = S.addHandCard shizuko S.carol (carolMain (shizukoUpkeep shizuko S.alice))
-    Spec.assertEqWith s "the two boards differ only in whose pool holds the mana" (poolOf S.carol hers, poolOf S.carol his) ([retainedGreen, retainedGreen, retainedGreen], [])
+    Spec.assertEqWith s "the two boards differ only in whose pool holds the mana" (poolOf S.carol hers, poolOf S.carol his) (fmap fromCreature [retainedGreen, retainedGreen, retainedGreen], [])
     Spec.assertBool s (any (S.isCastOf oid) (Action.legalActions S.carol hers)) "carol casts a second Shizuko off her own upkeep's mana"
     Spec.assertBool s (not (any (S.isCastOf otherOid) (Action.legalActions S.carol his))) "and cannot when the mana went to alice"
 
@@ -995,7 +995,7 @@ aliceMain gs =
 -- what separates them: the Spring and the Powder are both artifacts, so either
 -- board's mana would carry it.
 retainedColorless :: ManaUnit.ManaUnit
-retainedColorless = (plainOf ManaType.Colorless) {ManaUnit.retention = ManaRetention.UntilEndOfTurn, ManaUnit.tags = Set.singleton ProductionTag.Artifact}
+retainedColorless = (plainOf ManaType.Colorless) {ManaUnit.retention = ManaRetention.UntilEndOfTurn, ManaUnit.tags = Set.singleton (ProductionTag.CardType CardType.Artifact)}
 
 -- CR 106.6's OTHER subject, and the one no card in the pool reached before: a
 -- restriction over ACTIVATIONS rather than over casts. Omen Hawker ({U} 1/1
@@ -1057,7 +1057,7 @@ omenHawkerSpec s registry = Spec.describe s "Omen Hawker" $ do
         -- the blue went and the colourless floats. Either way the leftover
         -- carries the clause, which is what says the inline road (CR 605.3b)
         -- stamped it onto every unit the instruction added.
-        Spec.assertEqWith s "CR 106.4 the unspent one floats, restriction and all" (poolOf S.alice equipped) [hawkerMana ManaType.Colorless]
+        Spec.assertEqWith s "CR 106.4 the unspent one floats, restriction and all" (poolOf S.alice equipped) [fromCreature (hawkerMana ManaType.Colorless)]
         -- The BOUNDARY an activation's record must not cross. CR 400.7d's record
         -- on a PERMANENT is the mana that cast the spell it became, and the equip
         -- is an activation, whose units go on the CR 602.2a ability object instead
@@ -1440,7 +1440,7 @@ quirionSpec s registry = Spec.describe s "Quirion Sentinel" $ do
     let placed = snd (quirionPlaced quirion spy)
         offers = State.execState (Engine.runGame (recordingManaTypes (ManaType.Colored Color.Blue)) placed Stack.resolveTop) []
     Spec.assertEqWith s "asked once, with CR 105.1's five colours" offers [fmap ManaType.Colored [Color.White, Color.Blue, Color.Black, Color.Red, Color.Green]]
-    Spec.assertEqWith s "and alice's pool holds the blue that was answered" (poolUnits (quirionResolved (ManaType.Colored Color.Blue) placed)) [plainColor Color.Blue]
+    Spec.assertEqWith s "and alice's pool holds the blue that was answered" (poolUnits (quirionResolved (ManaType.Colored Color.Blue) placed)) [fromCreature (plainColor Color.Blue)]
 
   -- The pair that separates "the engine read the answer" from "the engine picked
   -- something". Two boards differing in ONE thing -- the colour answered -- and a
@@ -1449,7 +1449,7 @@ quirionSpec s registry = Spec.describe s "Quirion Sentinel" $ do
     quirion <- S.printingOf s registry "Quirion Sentinel"
     spy <- S.printingOf s registry "Merfolk Spy"
     let placed = snd (quirionPlaced quirion spy)
-    Spec.assertEqWith s "answering red adds red" (poolUnits (quirionResolved (ManaType.Colored Color.Red) placed)) [plainColor Color.Red]
+    Spec.assertEqWith s "answering red adds red" (poolUnits (quirionResolved (ManaType.Colored Color.Red) placed)) [fromCreature (plainColor Color.Red)]
     Spec.assertEqWith s "the stack is empty again" (length (TurnRegisters.stack (GameState.turn (quirionResolved (ManaType.Colored Color.Red) placed)))) 0
 
   -- Gameplay level: the added mana is ordinary mana, and WHICH colour it is
@@ -2251,6 +2251,10 @@ freeze oid gs =
 
 -- One mana of one type carrying no production tag: what a basic land really puts
 -- in a pool, and the unit the Celestial Dawn cases below seat directly.
+-- A unit as a creature source stamps it (Parun.Engine.Mana.taggedCardTypes).
+fromCreature :: ManaUnit.ManaUnit -> ManaUnit.ManaUnit
+fromCreature unit = unit {ManaUnit.tags = Set.singleton (ProductionTag.CardType CardType.Creature)}
+
 plainOf :: ManaType.ManaType -> ManaUnit.ManaUnit
 plainOf manaType = ManaUnit.MkManaUnit {ManaUnit.manaType = manaType, ManaUnit.tags = Set.empty, ManaUnit.retention = ManaRetention.Ordinary, ManaUnit.restriction = Nothing, ManaUnit.rider = Nothing, ManaUnit.spendTrigger = Nothing, ManaUnit.sourceChoices = Nothing, ManaUnit.sourceLastExiled = Nothing, ManaUnit.producer = Nothing}
 

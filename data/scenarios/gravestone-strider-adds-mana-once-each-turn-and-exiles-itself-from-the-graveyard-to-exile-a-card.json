@@ -211,7 +211,12 @@
                 "rider": null,
                 "sourceChoices": null,
                 "tags": [
-                  "Artifact"
+                  {
+                    "CardType": "Artifact"
+                  },
+                  {
+                    "CardType": "Creature"
+                  }
                 ]
               }
             ]
@@ -232,7 +237,12 @@
                 "value": "Green"
               },
               "tags": [
-                "Artifact"
+                {
+                  "CardType": "Artifact"
+                },
+                {
+                  "CardType": "Creature"
+                }
               ],
               "retention": "Ordinary",
               "restriction": null,

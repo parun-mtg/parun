@@ -745,8 +745,8 @@ prefersColor wanted p = case p of
 -- S.optionYielding by mana TYPE rather than by whole unit. CR 106.3's production
 -- tags are the engine's to stamp (Parun.Types.ProductionTag), so an answerer
 -- choosing a COLOUR must not have to predict them: the same answerer serves Birds
--- of Paradise and Chromatic Star, and only the second one's units carry
--- ProductionTag.Artifact. S.optionYielding stays the whole-unit matcher, which is
+-- of Paradise and Chromatic Star, whose units carry different
+-- ProductionTag.CardType tags. S.optionYielding stays the whole-unit matcher, which is
 -- what Parun.ManaSourceSpec's Halfling case needs to tell a restricted unit from
 -- an unrestricted one.
 optionOfTypes :: [ManaType.ManaType] -> NonEmpty.NonEmpty ManaOption.ManaOption -> ManaOption.ManaOption
@@ -1471,10 +1471,10 @@ palladiumMyrSpec s registry = Spec.describe s "Palladium Myr" $ do
     palladiumMyr <- S.printingOf s registry "Palladium Myr"
     let (_, g1) = S.addPermanent ashaya S.alice (Setup.emptyGame S.bothPlayers)
         (myrId, gs) = S.addPermanent palladiumMyr S.alice g1
-        -- CR 106.3: the Myr is an artifact whichever yield is taken, so both
-        -- units carry ProductionTag.Artifact -- including the {G} Ashaya's land
-        -- grant adds, which is a land that is still an artifact.
-        artifactUnit t = ManaUnit.MkManaUnit {ManaUnit.manaType = t, ManaUnit.tags = Set.singleton ProductionTag.Artifact, ManaUnit.retention = ManaRetention.Ordinary, ManaUnit.restriction = Nothing, ManaUnit.rider = Nothing, ManaUnit.spendTrigger = Nothing, ManaUnit.sourceChoices = Nothing, ManaUnit.sourceLastExiled = Nothing, ManaUnit.producer = Nothing}
+        -- CR 106.3: the Myr is an artifact creature whichever yield is taken, so
+        -- both units carry both card-type tags -- including the {G} Ashaya's land
+        -- grant adds, which is a land that is still an artifact creature.
+        artifactUnit t = ManaUnit.MkManaUnit {ManaUnit.manaType = t, ManaUnit.tags = Set.fromList [ProductionTag.CardType CardType.Artifact, ProductionTag.CardType CardType.Creature], ManaUnit.retention = ManaRetention.Ordinary, ManaUnit.restriction = Nothing, ManaUnit.rider = Nothing, ManaUnit.spendTrigger = Nothing, ManaUnit.sourceChoices = Nothing, ManaUnit.sourceLastExiled = Nothing, ManaUnit.producer = Nothing}
         green = artifactUnit (ManaType.Colored Color.Green)
         colorless = artifactUnit ManaType.Colorless
     Spec.assertEqWith

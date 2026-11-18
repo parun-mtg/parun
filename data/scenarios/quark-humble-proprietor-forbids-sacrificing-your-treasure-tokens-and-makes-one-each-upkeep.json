@@ -159,7 +159,9 @@
                   {
                     "Subtype": "Treasure"
                   },
-                  "Artifact"
+                  {
+                    "CardType": "Artifact"
+                  }
                 ]
               }
             ]
@@ -246,7 +248,9 @@
                   {
                     "Subtype": "Treasure"
                   },
-                  "Artifact"
+                  {
+                    "CardType": "Artifact"
+                  }
                 ]
               }
             ]

@@ -20,7 +20,9 @@
                   },
                   "filter": {
                     "type": "DeclaredThisTurn",
-                    "value": "Attacker"
+                    "value": {
+                      "type": "Attacked"
+                    }
                   },
                   "scope": {
                     "type": "InZone",
@@ -42,7 +44,9 @@
                   },
                   "filter": {
                     "type": "DeclaredThisTurn",
-                    "value": "Attacker"
+                    "value": {
+                      "type": "Attacked"
+                    }
                   },
                   "scope": {
                     "type": "InHistory",

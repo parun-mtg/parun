@@ -109,6 +109,7 @@ import qualified Parun.Types.Cycling as Cycling
 import qualified Parun.Types.DamagePattern as DamagePattern
 import qualified Parun.Types.DamageR as DamageR
 import qualified Parun.Types.DamageRewrite as DamageRewrite
+import qualified Parun.Types.DeclaredRole as DeclaredRole
 import qualified Parun.Types.Designate as Designate
 import qualified Parun.Types.Designation as Designation
 import qualified Parun.Types.DestructionR as DestructionR
@@ -4981,7 +4982,7 @@ printedRiders keyword = case keyword of
                 ( Quantity.Count
                     ( Count.MkCount
                         (Scope.InZone (InZone.MkInZone Zone.Battlefield (PlayerRef.Relative PlayerRelation.AnyPlayer)))
-                        (Filter.And [Filter.IsSource, Filter.DeclaredThisTurn BlockRole.Attacker])
+                        (Filter.And [Filter.IsSource, Filter.DeclaredThisTurn (DeclaredRole.Attacked Nothing)])
                         Aggregation.Members
                     )
                 )

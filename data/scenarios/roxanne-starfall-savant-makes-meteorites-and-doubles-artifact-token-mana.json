@@ -187,7 +187,9 @@
                   "value": "Green"
                 },
                 "tags": [
-                  "Artifact"
+                  {
+                    "CardType": "Artifact"
+                  }
                 ],
                 "retention": "Ordinary",
                 "restriction": null,
@@ -214,7 +216,9 @@
                 "value": "Green"
               },
               "tags": [
-                "Artifact"
+                {
+                  "CardType": "Artifact"
+                }
               ],
               "retention": "Ordinary",
               "restriction": null,
@@ -246,7 +250,9 @@
                   "value": "Green"
                 },
                 "tags": [
-                  "Artifact"
+                  {
+                    "CardType": "Artifact"
+                  }
                 ],
                 "retention": "Ordinary",
                 "restriction": null,
@@ -273,7 +279,9 @@
                 "value": "Green"
               },
               "tags": [
-                "Artifact"
+                {
+                  "CardType": "Artifact"
+                }
               ],
               "retention": "Ordinary",
               "restriction": null,
@@ -311,7 +319,9 @@
                   "value": "Green"
                 },
                 "tags": [
-                  "Artifact"
+                  {
+                    "CardType": "Artifact"
+                  }
                 ],
                 "retention": "Ordinary",
                 "restriction": null,
@@ -338,7 +348,9 @@
                 "value": "Green"
               },
               "tags": [
-                "Artifact"
+                {
+                  "CardType": "Artifact"
+                }
               ],
               "retention": "Ordinary",
               "restriction": null,
@@ -350,7 +362,11 @@
                 "type": "Colored",
                 "value": "Green"
               },
-              "tags": [],
+              "tags": [
+                {
+                  "CardType": "Creature"
+                }
+              ],
               "retention": "Ordinary",
               "restriction": null,
               "rider": null,
