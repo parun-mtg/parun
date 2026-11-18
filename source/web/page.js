@@ -165,7 +165,7 @@ function apply(json) {
         node.removeAttribute(patch.name);
         break;
       case "append":
-        node.append(...patch.nodes.map(build));
+        node.append(...patch.nodes.map((child) => build(child)));
         break;
       case "truncate":
         while (node.childNodes.length > patch.count) node.lastChild.remove();

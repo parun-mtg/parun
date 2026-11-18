@@ -241,18 +241,22 @@ pre {
   font-display: block;
 }
 
+/* A glyph sits inside its circle at two thirds of the circle's size. */
 .ms.glyph {
   font-family: "Mana";
   font-weight: 400;
-  font-size: 0.72em;
+  font-size: 0.74em;
+  min-width: 1.5em;
+  height: 1.5em;
+  padding: 0;
   line-height: 1;
 }
 
 .ms.glyph.hybrid {
-  font-size: 0.5em;
-  letter-spacing: -0.05em;
-  min-width: 2.4em;
-  height: 2.4em;
+  font-size: 0.48em;
+  letter-spacing: -0.08em;
+  min-width: 2.05em;
+  height: 2.05em;
 }
 
 .ms {
