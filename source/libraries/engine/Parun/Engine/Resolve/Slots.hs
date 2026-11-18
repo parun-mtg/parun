@@ -82,6 +82,7 @@ import qualified Parun.Types.ChosenCardInHand as ChosenCardInHand
 import qualified Parun.Types.ChosenPermanents as ChosenPermanents
 import qualified Parun.Types.Clause as Clause
 import qualified Parun.Types.Cloak as Cloak
+import qualified Parun.Types.ColorAmong as ColorAmong
 import qualified Parun.Types.ComparedTo as ComparedTo
 import qualified Parun.Types.Compares as Compares
 import qualified Parun.Types.Condition as Condition.Type
@@ -1101,9 +1102,10 @@ productionPlayerRefs production = case production of
   ManaProduction.ColorAmong _ -> []
   ManaProduction.ManaCostOf _ -> []
 
--- The slots a production reads: the tapped permanent's types, and the
--- objects a "could produce" filter names (Squandered Resources' sacrificed
--- land, CR 106.7).
+-- The slots a production reads: the tapped permanent's types, the objects a
+-- "could produce" filter names (Squandered Resources' sacrificed land, CR
+-- 106.7), and those a colour-among filter names (Omnath, Locus of All's
+-- looked-at card).
 productionSlots :: ManaProduction.ManaProduction -> Map.Map SlotName SlotArity
 productionSlots production = case production of
   ManaProduction.OfType _ -> Map.empty
@@ -1118,7 +1120,7 @@ productionSlots production = case production of
   ManaProduction.InCommanderIdentity -> Map.empty
   ManaProduction.Circled -> Map.empty
   ManaProduction.DraftNoted _ -> Map.empty
-  ManaProduction.ColorAmong _ -> Map.empty
+  ManaProduction.ColorAmong among -> filterSlotsOf (ColorAmong.among among)
   ManaProduction.ManaCostOf _ -> Map.empty
 
 -- The slots a MonarchTarget reads: only the targeted arm names one.
