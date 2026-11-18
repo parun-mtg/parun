@@ -17,6 +17,7 @@ import qualified Parun.Types.Card as Card.Type
 import qualified Parun.Types.CardName as CardName
 import qualified Parun.Types.CardType as CardType
 import qualified Parun.Types.CastingPermission as CastingPermission
+import qualified Parun.Types.CastingRestriction as CastingRestriction
 import qualified Parun.Types.ChangeWord as ChangeWord
 import qualified Parun.Types.Color as Color
 import qualified Parun.Types.CombatDamageAmount as CombatDamageAmount
@@ -132,6 +133,7 @@ testCharacteristics =
       PC.additionalCostChoices = [CostChoice.MkCostChoice (Cost.MkCost (Just (ManaCost.MkManaCost [])) [CostComponent.TapThis] NonEmpty.:| [Cost.MkCost (Just (ManaCost.MkManaCost [ManaSymbol.Generic 1])) []])],
       PC.alternativeCosts = [AlternativeCost.MkAlternativeCost Nothing (Cost.MkCost (Just (ManaCost.MkManaCost [])) [])],
       PC.costReductions = [CostReduction.MkCostReduction (ManaCost.MkManaCost [ManaSymbol.Generic 3]) (Quantity.Literal 1) Nothing Nothing False CostDirection.Less],
+      PC.castingRestrictions = [CastingRestriction.AttackedThisStep],
       PC.grantedCostReductions = [CostReduction.MkCostReduction (ManaCost.MkManaCost [ManaSymbol.Generic 1]) (Quantity.Literal 1) Nothing Nothing False CostDirection.Less],
       PC.grantedAlternativeCosts = [AlternativeCost.MkAlternativeCost Nothing (Cost.MkCost (Just (ManaCost.MkManaCost [ManaSymbol.Generic 2])) [])],
       PC.grantedSpendManaAsThough = [SpendManaAsThough.MkSpendManaAsThough ManaFilter.Any (Set.singleton ManaType.Colorless) True SpendScope.EveryPayment],
@@ -205,6 +207,7 @@ testCharacteristicsJson =
     <> "\"additionalCostChoices\":[[{\"components\":[{\"type\":\"TapThis\"}],\"mana\":[]},{\"mana\":[{\"type\":\"Generic\",\"value\":1}]}]],"
     <> "\"alternativeCosts\":[{\"cost\":{\"mana\":[]}}],"
     <> "\"costReductions\":[{\"amount\":[{\"type\":\"Generic\",\"value\":3}],\"perEach\":{\"type\":\"Literal\",\"value\":1}}],"
+    <> "\"castingRestrictions\":[{\"type\":\"AttackedThisStep\"}],"
     <> "\"grantedCostReductions\":[{\"amount\":[{\"type\":\"Generic\",\"value\":1}],\"perEach\":{\"type\":\"Literal\",\"value\":1}}],"
     <> "\"grantedAlternativeCosts\":[{\"cost\":{\"mana\":[{\"type\":\"Generic\",\"value\":2}]}}],"
     <> "\"grantedSpendManaAsThough\":[{\"which\":{\"type\":\"Any\"},\"asThough\":[{\"type\":\"Colorless\"}],\"only\":true}],"
@@ -271,6 +274,7 @@ minimalCharacteristics =
       PC.additionalCostChoices = [],
       PC.alternativeCosts = [],
       PC.costReductions = [],
+      PC.castingRestrictions = [],
       PC.grantedCostReductions = [],
       PC.grantedAlternativeCosts = [],
       PC.grantedSpendManaAsThough = [],

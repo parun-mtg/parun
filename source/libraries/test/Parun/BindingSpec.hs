@@ -70,6 +70,7 @@ sampleSnapshot =
       PC.additionalCostChoices = [],
       PC.alternativeCosts = [],
       PC.costReductions = [],
+      PC.castingRestrictions = [],
       PC.grantedCostReductions = [],
       PC.grantedAlternativeCosts = [],
       PC.grantedSpendManaAsThough = [],

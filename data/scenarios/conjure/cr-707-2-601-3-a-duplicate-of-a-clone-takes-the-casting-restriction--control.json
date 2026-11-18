@@ -1,0 +1,180 @@
+{
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "battlefield": [
+          {
+            "card": "Island",
+            "ready": true
+          },
+          {
+            "card": "Island",
+            "ready": true
+          },
+          {
+            "card": "Island",
+            "ready": true
+          },
+          {
+            "card": "Island",
+            "ready": true
+          },
+          {
+            "card": "Island",
+            "ready": true
+          },
+          {
+            "card": "Island",
+            "ready": true
+          },
+          {
+            "card": "Plains",
+            "ready": true
+          },
+          {
+            "card": "Plains",
+            "ready": true
+          }
+        ],
+        "hand": [
+          {
+            "card": "Clone",
+            "label": "clone"
+          },
+          {
+            "card": "Sinister Reflections",
+            "label": "reflections"
+          }
+        ],
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ],
+        "name": "alice"
+      },
+      {
+        "battlefield": [
+          {
+            "card": "Serra Avenger",
+            "label": "orig"
+          }
+        ],
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ],
+        "name": "bob"
+      }
+    ],
+    "step": "PrecombatMain",
+    "turn": 7
+  },
+  "description": "CR 707.2/601.3 a duplicate of a Clone of Serra Avenger is castable on its caster's fourth turn",
+  "note": "Control for the restriction file: on turn 7, alice's fourth, the duplicate of her Clone of bob's Serra Avenger is cast for {W}{W}.",
+  "timeline": [
+    {
+      "do": {
+        "Cast": {
+          "mana": [
+            "Island",
+            "Island#2",
+            "Island#3",
+            "Island#4",
+            null
+          ],
+          "object": "$clone"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 7
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 7
+    },
+    {
+      "do": {
+        "ChooseCopyTarget": "$orig"
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 7
+    },
+    {
+      "do": {
+        "Cast": {
+          "mana": [
+            "Island#5",
+            "Island#6",
+            null
+          ],
+          "object": "$reflections",
+          "targets": [
+            "Clone"
+          ]
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 7
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 7
+    },
+    {
+      "check": {
+        "Names": {
+          "names": [
+            "Serra Avenger"
+          ],
+          "object": "Clone#2"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 7
+    },
+    {
+      "do": {
+        "Cast": {
+          "mana": [
+            "Plains",
+            "Plains#2"
+          ],
+          "object": "Clone#2"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 7
+    },
+    {
+      "check": {
+        "View": {
+          "is": [
+            "Clone#2"
+          ],
+          "of": "Stack"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 7
+    }
+  ]
+}

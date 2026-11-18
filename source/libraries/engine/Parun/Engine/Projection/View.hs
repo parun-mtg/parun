@@ -2037,6 +2037,7 @@ noCharacteristics =
       PC.additionalCostChoices = [],
       PC.alternativeCosts = [],
       PC.costReductions = [],
+      PC.castingRestrictions = [],
       PC.grantedCostReductions = [],
       PC.grantedAlternativeCosts = [],
       PC.grantedSpendManaAsThough = [],
@@ -2245,6 +2246,7 @@ baseCharacteristics oid gs = case Game.faceOf oid gs of
               PC.additionalCostChoices = Face.additionalCostChoices face,
               PC.alternativeCosts = Face.alternativeCosts face,
               PC.costReductions = Face.costReductions face,
+              PC.castingRestrictions = Face.castingRestrictions face,
               -- CR 613.1's starting point, before layer 6 has run.
               PC.grantedCostReductions = [],
               PC.grantedAlternativeCosts = [],
@@ -2429,7 +2431,8 @@ withMergedAbilities donor base =
       PC.additionalCosts = PC.additionalCosts base <> PC.additionalCosts donor,
       PC.additionalCostChoices = PC.additionalCostChoices base <> PC.additionalCostChoices donor,
       PC.alternativeCosts = PC.alternativeCosts base <> PC.alternativeCosts donor,
-      PC.costReductions = PC.costReductions base <> PC.costReductions donor
+      PC.costReductions = PC.costReductions base <> PC.costReductions donor,
+      PC.castingRestrictions = PC.castingRestrictions base <> PC.castingRestrictions donor
     }
 
 -- CR 202.2 / 204.2 / 202.2b: an object's printed colours, from its mana cost's
