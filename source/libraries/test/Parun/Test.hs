@@ -854,6 +854,7 @@ import qualified Parun.Codec.TakingSpec
 import qualified Parun.Codec.TapCountSpec
 import qualified Parun.Codec.TapForManaSpec
 import qualified Parun.Codec.TapForTotalPowerSpec
+import qualified Parun.Codec.TapKeywordSpec
 import qualified Parun.Codec.TapPermanentsSpec
 import qualified Parun.Codec.TapSpec
 import qualified Parun.Codec.TapStateSpec
@@ -1997,6 +1998,7 @@ spec s reference corpus = do
   Parun.Codec.TakingSpec.spec s
   Parun.Codec.TapSpec.spec s
   Parun.Codec.TapCountSpec.spec s
+  Parun.Codec.TapKeywordSpec.spec s
   Parun.Codec.TapForManaSpec.spec s
   Parun.Codec.TapForTotalPowerSpec.spec s
   Parun.Codec.TappedForManaSpec.spec s

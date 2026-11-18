@@ -409,8 +409,9 @@ data Quantity
     -- quantity's source exiled LAST among those the filter matches (Duplicant);
     -- Nothing when none does.
     AgainstLastCardExiledWith (AgainstLastCardExiledWith.AgainstLastCardExiledWith Quantity)
-  | -- | CR 702.184c: the tapped creature's power, or its toughness where that is
-    -- greater and the ability's controller has ControllerGrant.StationsUsingToughness.
+  | -- | CR 702.184c: the tapped creature's power as its station TapsCounting
+    -- grants count it, or its toughness where that is greater and the
+    -- ability's controller has ControllerGrant.StationsUsingToughness.
     -- Engine-only, a leaf like Measure: Parun.Engine.Keyword.station mints it and
     -- no card should author it.
     StationMeasure

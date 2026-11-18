@@ -112,6 +112,7 @@ import qualified Parun.Types.StaticRead as StaticRead
 import qualified Parun.Types.StickerContent as StickerContent
 import qualified Parun.Types.StoredResult as StoredResult
 import qualified Parun.Types.Subtype as Subtype
+import qualified Parun.Types.TapKeyword as TapKeyword
 import qualified Parun.Types.Teams as Teams
 import qualified Parun.Types.Times as Times
 import qualified Parun.Types.TurnRegisters as TurnRegisters
@@ -1379,12 +1380,21 @@ evaluateAgainst viewOf context gs announcedOn mOid mView quantity =
         -- battlefield through the same `viewOf` every other arm reads, so a snapshot
         -- caller (CR 608.2h) answers False rather than reaching for a live board it was
         -- never handed.
+        --
+        -- Without the substitution, the tapped creature's own TapsCounting
+        -- grants for station raise the power through
+        -- Parun.Engine.Keyword.tapsCounted, crew's reader (Sulu, Heroic
+        -- Helmsman). With it, they go unread (docs/decisions.md, "Whether a
+        -- station power multiplier raises a toughness stationer").
         Quantity.StationMeasure ->
           let substitutes = maybe False (grantedToController viewOf gs ControllerGrant.StationsUsingToughness) (Filter.perspective context)
               greater = case (mView >>= Filter.toughness, mView >>= Filter.power) of
                 (Just t, Just p) -> t > p
                 _ -> False
-           in if substitutes && greater then mView >>= Filter.toughness else mView >>= Filter.power
+              counts = foldMap (Map.findWithDefault [] TapKeyword.Station . Filter.tapCounts) mView
+           in if substitutes && greater
+                then mView >>= Filter.toughness
+                else Keyword.tapsCounted counts (mView >>= Filter.power) (mView >>= Filter.toughness)
         -- CR 702.179d / 109.5: the grant as StationMeasure reads it, for the
         -- perspective's player. Parun.Engine.Speed's belowMaxSpeed is the one
         -- author, and both of CR 603.4's checks hand it the trigger's controller.

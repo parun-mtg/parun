@@ -4,7 +4,7 @@ module Parun.Codec.TapForTotalPower where
 
 import qualified Data.Typeable as Typeable
 import qualified Parun.Codec.Filter as Filter
-import qualified Parun.Codec.KeywordFamily as KeywordFamily
+import qualified Parun.Codec.TapKeyword as TapKeyword
 import qualified Parun.JsonCodec.Codec as Codec
 import qualified Parun.JsonCodec.Common as Common
 import qualified Parun.JsonCodec.Fields as Fields
@@ -17,5 +17,5 @@ codec :: (Typeable.Typeable keyword, Eq keyword) => Codec.Codec keyword -> Codec
 codec keywordCodec = Fields.object $ do
   totalPower <- Fields.required "totalPower" Common.natural TapForTotalPower.totalPower
   whichPermanents <- Fields.required "whichPermanents" (Filter.codec keywordCodec) TapForTotalPower.whichPermanents
-  keywordCost <- Fields.defaulted "keywordCost" Nothing (Common.maybe KeywordFamily.codec) TapForTotalPower.keywordCost
+  keywordCost <- Fields.defaulted "keywordCost" Nothing (Common.maybe TapKeyword.codec) TapForTotalPower.keywordCost
   pure TapForTotalPower.MkTapForTotalPower {TapForTotalPower.totalPower = totalPower, TapForTotalPower.whichPermanents = whichPermanents, TapForTotalPower.keywordCost = keywordCost}

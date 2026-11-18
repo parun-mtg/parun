@@ -8,8 +8,8 @@ import qualified Parun.Spec as Spec
 import qualified Parun.Types.CardType as CardType
 import qualified Parun.Types.Filter as Filter
 import qualified Parun.Types.Keyword as Keyword
-import qualified Parun.Types.KeywordFamily as KeywordFamily
 import qualified Parun.Types.TapForTotalPower as TapForTotalPower
+import qualified Parun.Types.TapKeyword as TapKeyword
 
 -- | Instantiated at 'Keyword.Keyword', the only concrete instantiation anywhere
 -- in the pool.
@@ -38,7 +38,7 @@ spec s = Spec.describe s "Parun.Codec.TapForTotalPower" $ do
       ( TapForTotalPower.MkTapForTotalPower
           { TapForTotalPower.totalPower = 2,
             TapForTotalPower.whichPermanents = Filter.HasCardType CardType.Creature,
-            TapForTotalPower.keywordCost = Just KeywordFamily.Saddle
+            TapForTotalPower.keywordCost = Just TapKeyword.Saddle
           }
       )
       " {\"totalPower\":2,\"whichPermanents\":{\"type\":\"HasCardType\",\"value\":\"Creature\"},\"keywordCost\":\"Saddle\"} "
