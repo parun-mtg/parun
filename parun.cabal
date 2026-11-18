@@ -3418,6 +3418,7 @@ library types
     Parun.Types.Looked
     Parun.Types.LoopMembers
     Parun.Types.LoopTrail
+    Parun.Types.LossCause
     Parun.Types.LostPermanent
     Parun.Types.Loyalty
     Parun.Types.LoyaltyClause
@@ -3934,6 +3935,7 @@ library uri
 library web
   import: library
   build-depends:
+    bytestring ^>=0.12.2,
     containers ^>={0.7, 0.8},
     parun:codec,
     parun:extra,
@@ -3942,6 +3944,7 @@ library web
     parun:play,
     parun:spec,
     parun:types,
+    parun:uri,
     text ^>=2.1.3,
 
   hs-source-dirs: source/libraries/web
@@ -3953,6 +3956,8 @@ library web
     Parun.Web.Board
     Parun.Web.Diff
     Parun.Web.DiffSpec
+    Parun.Web.Ending
+    Parun.Web.EndingSpec
     Parun.Web.Html
     Parun.Web.HtmlSpec
     Parun.Web.Line
@@ -3970,6 +3975,7 @@ library browser
   build-depends:
     bytestring ^>=0.12.2,
     containers ^>={0.7, 0.8},
+    parun:engine,
     parun:exceptions,
     parun:extra,
     parun:interpreter,

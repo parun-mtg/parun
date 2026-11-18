@@ -1,6 +1,7 @@
 -- | A game against the random bot in the browser: the lobby picks each deck
 -- from the data the page mounted, then `parun play --json`'s game runs with
--- every request line answered on the page (Parun.Web.Question).
+-- every request line answered on the page (Parun.Web.Question), and the
+-- page ends on how it ended (Parun.Web.Ending).
 module Parun.Browser.Hotseat where
 
 import qualified Control.Exception as Exception
@@ -15,13 +16,17 @@ import qualified Data.Sequence as Seq
 import qualified Data.Set as Set
 import qualified Data.Text as Text
 import qualified GHC.Clock as Clock
+import Numeric.Natural (Natural)
 import qualified Parun.Browser as Browser
 import qualified Parun.DeckList as DeckList
 import qualified Parun.Decks as Decks
+import qualified Parun.Engine.PlayerView as PlayerView.Engine
 import qualified Parun.Exceptions.InvalidCorpus as InvalidCorpus
 import qualified Parun.Extra.Natural as Natural
 import qualified Parun.Interpreter as Interpreter
+import qualified Parun.Play.Client as Client
 import qualified Parun.Play.Command as Command
+import qualified Parun.Play.Key as Key
 import qualified Parun.Play.Protocol as Protocol
 import qualified Parun.Play.Render as Render
 import qualified Parun.Registry as Registry
@@ -29,8 +34,10 @@ import qualified Parun.Types.Card as Card
 import qualified Parun.Types.CardName as CardName
 import qualified Parun.Types.PlayOptions as PlayOptions
 import qualified Parun.Types.PlayerId as PlayerId
+import qualified Parun.Types.PlayerView as PlayerView
 import qualified Parun.Types.Question as Question
 import qualified Parun.Types.Request as Request
+import qualified Parun.Web.Ending as Ending
 import qualified Parun.Web.Html as Html
 import qualified Parun.Web.Line as Line
 import qualified Parun.Web.Lobby as Lobby
@@ -65,17 +72,25 @@ play page = do
   say [Text.pack "Starting the game\x2026"]
   registry <- Registry.defaultRegistry loaded :: IO (Registry.Registry Identity.Identity)
   -- The bot needs no screen, so the player is never handed it.
-  seatRef <- IORef.newIORef . MkSeat (Just $ PlayerId.MkPlayerId 0) False =<< Clock.getMonotonicTime
+  seatRef <- IORef.newIORef . MkSeat (Just player) False Map.empty Seq.empty =<< Clock.getMonotonicTime
   listed <- (,) <$> Command.load registry one <*> Command.load registry two
   case listed of
     (Right first, Right second) -> do
       settled <- Command.settle Nothing [(one, first), (two, second)]
       case settled of
         Right format -> do
-          Command.play (exchange (Identity.runIdentity . Interpreter.chosenCard registry) page seatRef) options registry format (DeckList.deck first, DeckList.deck second)
-          say [Text.pack "The game is over."]
+          seed <- Key.fresh
+          (outcome, recorded) <- Command.game (exchange (Identity.runIdentity . Interpreter.chosenCard registry) page seatRef) options registry format (DeckList.deck first, DeckList.deck second) seed
+          -- What the player saw after their last decision: the killing blow, say.
+          Monad.forM_ outcome $ IORef.modifyIORef' seatRef . witness . PlayerView.Engine.viewFor player . snd
+          seen <- logged <$> IORef.readIORef seatRef
+          Browser.display page . Ending.view $ Ending.MkEnding (either (\reason -> [Text.pack "The game stopped: " <> reason <> Text.pack "."]) (\(result, gs) -> Render.result result : Render.departures gs) outcome) (Command.rendered recorded) seen
         Left problems -> say problems
     (first, second) -> say $ Either.fromLeft [] first <> Either.fromLeft [] second
+
+-- | The seat the page plays.
+player :: PlayerId.PlayerId
+player = PlayerId.MkPlayerId 0
 
 -- | The player is seat 1, over the line protocol; the random bot is seat 2.
 options :: PlayOptions.PlayOptions
@@ -90,6 +105,7 @@ exchange :: (CardName.CardName -> Either InvalidCorpus.InvalidCorpus (Maybe Card
 exchange lookUp page seatRef request = do
   arrived <- Clock.getMonotonicTime
   fmap (Just . Right) $ do
+    Monad.forM_ (Request.view request) $ IORef.modifyIORef' seatRef . witness
     state <- IORef.readIORef seatRef
     let auto = if paying state then Web.Question.auto request else Nothing
         kind = Question.kind $ Request.question request
@@ -129,15 +145,25 @@ exchange lookUp page seatRef request = do
         Left _ -> asking pending picked reading
 
 -- | What the page keeps between request lines: the seat the screen last
--- showed, whether the seat chose auto for the payment under way, and when it
--- last answered.
+-- showed, whether the seat chose auto for the payment under way, what the
+-- seat has seen happen, and when it last answered.
 data Seat = MkSeat
   { facing :: Maybe PlayerId.PlayerId,
     paying :: Bool,
+    -- | How far the seat has read each game's log (Client.unseen).
+    marks :: Map.Map (PlayerId.PlayerId, Natural) (Natural, Natural),
+    -- | The entries read so far, oldest first: the game log the end shows.
+    logged :: Seq.Seq Text.Text,
     -- | When the last line was answered, the engine's work since then being
     -- what the trace times.
     answeredAt :: Double
   }
+
+-- | The seat's state with the view's entries it has not read yet logged.
+witness :: PlayerView.PlayerView -> Seat -> Seat
+witness view state =
+  let (moved, unread) = Client.unseen (marks state) view
+   in state {marks = moved, logged = logged state <> Seq.fromList unread}
 
 message :: [Text.Text] -> Html.Html msg
 message said = Html.element (Text.pack "main") [] [Html.element (Text.pack "p") [] [Html.text t] | t <- said]
