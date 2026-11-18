@@ -60,7 +60,7 @@ spec s registry = Spec.describe s "WebQuestion" $ do
     -- Reading it opens its sheet, whose button plays it.
     let reading = Question.Web.view request Question.Web.blank {Question.Web.reading = Just (Card.MkReading land [Text.pack "({T}: Add {R}.)"] True)}
         sheet = Html.search (\html -> Text.pack "<section class=\"sheet" `Text.isPrefixOf` Html.toText html) reading
-    Spec.assertBool s (Text.pack "<span class=\"ms ms-r\" title=\"{R}\">R</span>" `Text.isInfixOf` Html.toText reading) "oracle"
+    Spec.assertBool s (Text.pack "<span class=\"ms ms-r glyph\" title=\"{R}\" role=\"img\" aria-label=\"red\">\xe603</span>" `Text.isInfixOf` Html.toText reading) "oracle"
     let action = do
           at <- sheet
           inner <- Html.at at reading

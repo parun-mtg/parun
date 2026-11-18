@@ -232,6 +232,29 @@ pre {
 
 /* ---------- Mana symbols ---------- */
 
+/* The Mana font by Andrew Gioia (https://github.com/andrewgioia/mana), under
+   the SIL Open Font License 1.1. The symbols it draws are copyright Wizards
+   of the Coast. */
+@font-face {
+  font-family: "Mana";
+  src: url("./mana.woff2") format("woff2");
+  font-display: block;
+}
+
+.ms.glyph {
+  font-family: "Mana";
+  font-weight: 400;
+  font-size: 0.72em;
+  line-height: 1;
+}
+
+.ms.glyph.hybrid {
+  font-size: 0.5em;
+  letter-spacing: -0.05em;
+  min-width: 2.4em;
+  height: 2.4em;
+}
+
 .ms {
   display: inline-flex;
   align-items: center;

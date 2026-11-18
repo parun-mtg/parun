@@ -21,7 +21,7 @@ rm -rf "$out"
 mkdir -p "$out"
 "$(wasm32-wasi-ghc --print-libdir)/post-link.mjs" -i "$wasm" -o "$out/ghc_wasm_jsffi.js"
 wasm-opt -Oz --strip-debug "$wasm" -o "$out/parun.wasm"
-cp source/web/index.html source/web/style.css source/web/page.js source/web/engine.js source/web/sw.js source/web/manifest.webmanifest source/web/icon.svg source/web/icon.png "$out/"
+cp source/web/index.html source/web/style.css source/web/page.js source/web/engine.js source/web/sw.js source/web/manifest.webmanifest source/web/icon.svg source/web/icon.png source/web/mana.woff2 "$out/"
 cp -r "$BROWSER_WASI_SHIM/dist" "$out/browser_wasi_shim"
 chmod -R u+w "$out"
 # The version and commit the settings menu shows.
@@ -67,5 +67,6 @@ address data.tar.gz engine.js
 address ghc_wasm_jsffi.js engine.js
 address engine.js page.js
 address page.js index.html
+address mana.woff2 style.css
 address style.css index.html
 ls -l "$out"
