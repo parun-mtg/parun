@@ -236,4 +236,8 @@ data Action
   | -- | CR 116.2i / 901.9: roll the planar die, costing {1} for each time this
     -- player has taken this action this turn.
     RollPlanarDie
+  | -- | Pippa, Duchess of Dice's ruling: take the reroll a die-roll modifier
+    -- offers (Wall of Fortune) on a permanent that is a die, at priority and
+    -- without the stack. Carries the modifier's object and the die's.
+    RerollShownDie ObjectId.ObjectId ObjectId.ObjectId
   deriving (Eq, Ord, Show)

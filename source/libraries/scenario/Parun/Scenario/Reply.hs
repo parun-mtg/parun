@@ -395,6 +395,7 @@ shapeOf prompt = case prompt of
   Prompt.ChooseExert {} -> viaCodec Codec.OptionalDecision.codec
   Prompt.ChooseEnlist {} -> maybeOf object
   Prompt.ChooseEncode {} -> maybeOf object
+  Prompt.ChooseRerolledDie {} -> maybeOf object
   Prompt.DeclareBlockers {} -> mapOf object (setOf object)
   Prompt.AssignCombatDamage {} -> mapOf recipient natural
   Prompt.ChooseTargets {} -> mapOf (viaCodec Codec.SlotName.codec) (setOf recipient)

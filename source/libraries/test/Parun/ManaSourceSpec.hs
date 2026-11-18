@@ -555,6 +555,7 @@ isActivateOf oid action = case action of
   Action.Type.Suspend _ -> False
   Action.Type.PutCompanionIntoHand -> False
   Action.Type.RollPlanarDie -> False
+  Action.Type.RerollShownDie _ _ -> False
   Action.Type.Ignore _ _ -> False
   Action.Type.EndEffect {} -> False
   Action.Type.MakeLaterPayment {} -> False

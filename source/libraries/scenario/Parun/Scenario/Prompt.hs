@@ -160,6 +160,7 @@ kindOf prompt = Text.pack $ case prompt of
   Prompt.ChooseRevealOnEntry {} -> "ChooseRevealOnEntry"
   Prompt.ChooseEnlist {} -> "ChooseEnlist"
   Prompt.ChooseEncode {} -> "ChooseEncode"
+  Prompt.ChooseRerolledDie {} -> "ChooseRerolledDie"
   Prompt.ChooseColor {} -> "ChooseColor"
   Prompt.ChooseDesignation {} -> "ChooseDesignation"
   Prompt.ChooseManaType {} -> "ChooseManaType"

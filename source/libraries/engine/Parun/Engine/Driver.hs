@@ -206,6 +206,7 @@ deciderOf prompt = case prompt of
   Prompt.ChooseRevealOnEntry decider _ _ _ -> Just (Decider.unwrap decider)
   Prompt.ChooseEnlist decider _ _ _ -> Just (Decider.unwrap decider)
   Prompt.ChooseEncode decider _ _ _ -> Just (Decider.unwrap decider)
+  Prompt.ChooseRerolledDie decider _ _ _ -> Just (Decider.unwrap decider)
   Prompt.ChooseColor decider _ _ _ -> Just (Decider.unwrap decider)
   Prompt.ChooseDesignation decider _ _ _ -> Just (Decider.unwrap decider)
   Prompt.ChooseManaType decider _ _ _ -> Just (Decider.unwrap decider)

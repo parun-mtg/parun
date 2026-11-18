@@ -1567,6 +1567,21 @@ reflipWindow runSubgame flipper face = do
   offers <- State.gets (fmap (\(pid, oid, ability) -> (pid, Just oid, (oid, ability))) . windowAbilities)
   offering offers
 
+-- | Action.RerollShownDie: `payer` takes the reroll the modifier `stated`
+-- states on the die permanent `die` (Dice.shownDieRerolls), paying CR 706.2a's
+-- cost through payGateCost, and the die's roller rerolls it
+-- (Damage.rerollShownDie). A payment that fails leaves the die as it was.
+rerollShownDieWith :: Game Result -> PlayerId -> ObjectId -> ObjectId -> Game ()
+rerollShownDieWith runSubgame payer stated die = do
+  gs <- State.get
+  Foldable.for_ (List.find (\(s, _, d, _) -> s == stated && d == die) (Dice.shownDieRerolls gs)) $ \(_, offer, _, roller) -> do
+    paid <- case ModifiedRoll.cost offer of
+      Nothing -> pure True
+      Just cost -> fmap (Maybe.isJust . fst) (payGateCost runSubgame Seq.empty Map.empty payer stated cost)
+    Monad.when paid $ do
+      State.modify' (Dice.spendLimit (Just stated) offer)
+      Damage.rerollShownDie throwDice runSubgame roller die
+
 -- Activate an ability inside throwDice's or reflipWindow's window and resolve
 -- it at once, answering whether it was paid for. The payment is Parun.Engine.Activate's
 -- activateAbility without the stack object: CR 602.2b's cost, with CR 601.2f's
