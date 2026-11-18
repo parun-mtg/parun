@@ -2741,6 +2741,34 @@ Entries are ordered by the first rule each cites.
   and `pippa-duchess-of-dice-s-die-creature-replaced-by-holo-engineer-s-illusion-is-no-die`.
 - **Issue**: #8563.
 
+## Whether Pokey's swap is one choice for the units a replacement added
+
+- **Question**: Krark's Thumb turns one coin flip into "flip two coins and
+  ignore one", and Pixie Guide one d20 roll into "that many dice plus one".
+  Pokey, the Scallywagg's "you may instead" then applies to that modified
+  event: is it one choice swapping every coin or die in it, or a choice per
+  coin or die, letting the player roll a d20 for one of the Thumb's coins and
+  flip the other?
+- **Rules**: CR 614.5, 616.1, 616.2, 705.1, 706.1; Krark's Thumb's ruling of
+  2019-01-25 has its clause replace each coin of a multi-coin INSTRUCTION, and
+  Pokey's rulings of 2024-11-08 speak per instruction; neither speaks of coins
+  or dice a replacement added. CR of 2026-11-06.
+- **Decision**: One choice. The Thumb's or Pixie Guide's replacement yields
+  one modified event, and CR 614.5 gives Pokey one opportunity at it: applied,
+  it swaps every unit; declined, none. An instruction's own coins are separate
+  events, each with its own choice.
+- **Rejected**: A choice per unit: it splits one modified event into parts
+  nothing in the CR names, and would need one throw to hold coins and dice at
+  once, with the Thumb and Pixie Guide each reaching only part of it and the
+  kept or ignored unit chosen across both kinds. The Thumb's ruling, the
+  strongest evidence for it, is about an instruction's coins, which the
+  engine already offers Pokey one by one.
+- **Site**: `Parun.Engine.Event.apply`'s `InstructionRewrite.RollD20Instead`
+  and `DieRollRewrite.FlipCoinInstead` arms, proved by the scenarios
+  `cr-616-2-pokey-after-krark-s-thumb-rolls-a-d20-for-each-coin-and-the-flipper-keeps-one`
+  and `cr-616-2-pokey-after-pixie-guide-flips-a-coin-for-each-d20-and-ignores-the-lowest`.
+- **Issue**: #5357.
+
 ## Who rerolls Ricochet's tie
 
 - **Question**: Ricochet: "each player rolls a six-sided die. Change the target
