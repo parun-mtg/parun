@@ -1,0 +1,35 @@
+{
+  "description": "CR 608.2c / 608.2h / 701.34a: Serum Snare returns target nonland permanent to its owner's hand, then proliferates because that permanent's last-known mana value was 3",
+  "note": "alice's own Mountain is refused as the target; bob's Gray Ogre (mana value 3) goes to bob's hand, and the proliferate takes alice's Grizzly Bears from two +1/+1 counters to three and bob's poison from 1 to 2. The paired scenario returns a mana value 4 Hill Giant and proliferates nothing.",
+  "board": {
+    "active": "alice",
+    "step": "PrecombatMain",
+    "seats": [
+      {
+        "name": "alice",
+        "manaPool": "UC",
+        "battlefield": [
+          {"card": "Mountain", "label": "mountain", "tapped": true},
+          {"card": "Grizzly Bears", "label": "bears", "counters": [{"key": {"type": "PlusOnePlusOne"}, "value": 2}]}
+        ],
+        "hand": [{"card": "Serum Snare", "label": "snare"}],
+        "library": [{"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}]
+      },
+      {
+        "name": "bob",
+        "counters": [{"key": "Poison", "value": 1}],
+        "battlefield": [{"card": "Gray Ogre", "label": "ogre"}],
+        "library": [{"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}]
+      }
+    ]
+  },
+  "timeline": [
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "refuse": {"Cast": {"object": "$snare", "targets": ["$mountain"]}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": {"Cast": {"object": "$snare", "targets": ["$ogre"]}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass"},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": {"Answer": {"prompt": "ChooseProliferate", "with": [["$bears"], ["bob"]]}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Count": {"player": "bob", "zone": "Hand", "card": "Gray Ogre", "count": 1}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Counters": {"object": "$bears", "kind": {"type": "PlusOnePlusOne"}, "count": 3}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"PlayerCounters": {"player": "bob", "kind": "Poison", "count": 2}}}
+  ]
+}

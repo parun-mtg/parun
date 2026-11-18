@@ -1,0 +1,45 @@
+{
+  "description": "CR 700.2a / 701.21a / 111.1: Sheoldred's Edict's second mode makes each opponent sacrifice a creature token of their choice",
+  "note": "bob loses his only creature token, a Hill Giant, and keeps his nontoken Grizzly Bears; carol picks her Gray Ogre token over her Grizzly Bears token and keeps her nontoken Hill Giant; alice's own Grizzly Bears token stays.",
+  "board": {
+    "active": "alice",
+    "step": "PrecombatMain",
+    "seats": [
+      {
+        "name": "alice",
+        "manaPool": "BC",
+        "battlefield": [{"card": "Grizzly Bears", "label": "mytoken", "token": true}],
+        "hand": [{"card": "Sheoldred's Edict", "label": "edict"}],
+        "library": [{"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}]
+      },
+      {
+        "name": "bob",
+        "battlefield": [
+          {"card": "Grizzly Bears", "label": "bobbears"},
+          {"card": "Hill Giant", "label": "bobtoken", "token": true}
+        ],
+        "library": [{"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}]
+      },
+      {
+        "name": "carol",
+        "battlefield": [
+          {"card": "Hill Giant", "label": "carolgiant"},
+          {"card": "Grizzly Bears", "label": "carolbears", "token": true},
+          {"card": "Gray Ogre", "label": "carologre", "token": true}
+        ],
+        "library": [{"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}]
+      }
+    ]
+  },
+  "timeline": [
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": {"Cast": {"object": "$edict", "modes": [1]}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass"},
+    {"turn": 1, "step": "PrecombatMain", "player": "carol", "do": {"Answer": {"prompt": "ChooseSacrifices", "with": ["$carologre"]}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Count": {"player": "bob", "zone": "Battlefield", "card": "Hill Giant", "count": 0}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Count": {"player": "bob", "zone": "Battlefield", "card": "Grizzly Bears", "count": 1}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Count": {"player": "carol", "zone": "Battlefield", "card": "Gray Ogre", "count": 0}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Count": {"player": "carol", "zone": "Battlefield", "card": "Grizzly Bears", "count": 1}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Count": {"player": "carol", "zone": "Battlefield", "card": "Hill Giant", "count": 1}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Count": {"player": "alice", "zone": "Battlefield", "card": "Grizzly Bears", "count": 1}}}
+  ]
+}

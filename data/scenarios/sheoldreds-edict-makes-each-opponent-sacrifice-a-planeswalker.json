@@ -1,0 +1,45 @@
+{
+  "description": "CR 700.2a / 701.21a: Sheoldred's Edict's third mode makes each opponent sacrifice a planeswalker of their choice",
+  "note": "bob loses his only planeswalker, Liliana of the Veil, and keeps his Grizzly Bears; carol picks Garruk Wildspeaker over Jace Beleren and keeps her Hill Giant token; alice's own Ajani Goldmane stays.",
+  "board": {
+    "active": "alice",
+    "step": "PrecombatMain",
+    "seats": [
+      {
+        "name": "alice",
+        "manaPool": "BC",
+        "battlefield": [{"card": "Ajani Goldmane", "label": "ajani", "counters": [{"key": {"type": "Loyalty"}, "value": 4}]}],
+        "hand": [{"card": "Sheoldred's Edict", "label": "edict"}],
+        "library": [{"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}]
+      },
+      {
+        "name": "bob",
+        "battlefield": [
+          {"card": "Grizzly Bears", "label": "bobbears"},
+          {"card": "Liliana of the Veil", "label": "liliana", "counters": [{"key": {"type": "Loyalty"}, "value": 3}]}
+        ],
+        "library": [{"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}]
+      },
+      {
+        "name": "carol",
+        "battlefield": [
+          {"card": "Hill Giant", "label": "caroltoken", "token": true},
+          {"card": "Jace Beleren", "label": "jace", "counters": [{"key": {"type": "Loyalty"}, "value": 2}]},
+          {"card": "Garruk Wildspeaker", "label": "garruk", "counters": [{"key": {"type": "Loyalty"}, "value": 5}]}
+        ],
+        "library": [{"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}]
+      }
+    ]
+  },
+  "timeline": [
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": {"Cast": {"object": "$edict", "modes": [2]}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass"},
+    {"turn": 1, "step": "PrecombatMain", "player": "carol", "do": {"Answer": {"prompt": "ChooseSacrifices", "with": ["$garruk"]}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Count": {"player": "bob", "zone": "Graveyard", "card": "Liliana of the Veil", "count": 1}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Count": {"player": "bob", "zone": "Battlefield", "card": "Grizzly Bears", "count": 1}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Count": {"player": "carol", "zone": "Graveyard", "card": "Garruk Wildspeaker", "count": 1}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Count": {"player": "carol", "zone": "Battlefield", "card": "Jace Beleren", "count": 1}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Count": {"player": "carol", "zone": "Battlefield", "card": "Hill Giant", "count": 1}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Count": {"player": "alice", "zone": "Battlefield", "card": "Ajani Goldmane", "count": 1}}}
+  ]
+}

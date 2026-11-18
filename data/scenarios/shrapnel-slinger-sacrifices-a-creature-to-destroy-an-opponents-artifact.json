@@ -1,0 +1,47 @@
+{
+  "description": "CR 603.12 / 701.21a / 701.8a: Shrapnel Slinger's enter trigger may sacrifice a creature; when it does, it destroys target artifact an opponent controls",
+  "note": "alice can't sacrifice her noncreature Millstone, so she sacrifices her Grizzly Bears; her own Ornithopter is refused as the target, and carol's Millstone is destroyed while bob's Ornithopter stays.",
+  "board": {
+    "active": "alice",
+    "step": "PrecombatMain",
+    "seats": [
+      {
+        "name": "alice",
+        "manaPool": "RC",
+        "battlefield": [
+          {"card": "Grizzly Bears", "label": "bears"},
+          {"card": "Millstone", "label": "mymill"},
+          {"card": "Ornithopter", "label": "mythopter"}
+        ],
+        "hand": [{"card": "Shrapnel Slinger", "label": "slinger"}],
+        "library": [{"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}]
+      },
+      {
+        "name": "bob",
+        "battlefield": [{"card": "Ornithopter", "label": "bobthopter"}],
+        "library": [{"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}]
+      },
+      {
+        "name": "carol",
+        "battlefield": [{"card": "Millstone", "label": "carolmill"}],
+        "library": [{"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}]
+      }
+    ]
+  },
+  "timeline": [
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": {"Cast": {"object": "$slinger"}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass"},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass"},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": {"ChooseToPay": {"decision": "Pays"}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "refuse": {"Answer": {"prompt": "ChooseSacrifices", "with": ["$mymill"]}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": {"Answer": {"prompt": "ChooseSacrifices", "with": ["$bears"]}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "refuse": {"ChooseTargets": {"target": ["$mythopter"]}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": {"ChooseTargets": {"target": ["$carolmill"]}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass"},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Count": {"player": "carol", "zone": "Graveyard", "card": "Millstone", "count": 1}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Count": {"player": "bob", "zone": "Battlefield", "card": "Ornithopter", "count": 1}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Count": {"player": "alice", "zone": "Graveyard", "card": "Grizzly Bears", "count": 1}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Count": {"player": "alice", "zone": "Battlefield", "card": "Millstone", "count": 1}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Count": {"player": "alice", "zone": "Battlefield", "card": "Shrapnel Slinger", "count": 1}}}
+  ]
+}
