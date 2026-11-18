@@ -540,6 +540,9 @@ applyEffectWith runSubgame resolving source controller legal chosen effect = cau
   -- CR 603.2 / 603.10d: a control change this instruction made, observed before
   -- the next one can make another.
   Monad.void Event.sampleControl
+  -- CR 101.4 / 611.3a: a Topsy Turvy this instruction put onto or took off the
+  -- battlefield, observed before the next one reads the turn order.
+  State.modify' PlayerEffect.sampleTurnOrder
   -- CR 401.6: a revealed top card this instruction covered, re-minted before
   -- the next one can uncover it (Event.settleRevealedTops).
   State.modify' Event.settleRevealedTops

@@ -68,6 +68,7 @@ import qualified Parun.Types.AffectedPlayers as AffectedPlayers
 import qualified Parun.Types.AlternativeActivationCost as AlternativeActivationCost
 import qualified Parun.Types.AppliedReduction as AppliedReduction
 import qualified Parun.Types.BearersTrigger as BearersTrigger
+import qualified Parun.Types.Bookkeeping as Bookkeeping
 import qualified Parun.Types.CantSearchLibraries as CantSearchLibraries
 import qualified Parun.Types.CastFromZone as CastFromZone
 import qualified Parun.Types.CastOrigin as CastOrigin
@@ -1324,11 +1325,21 @@ phasesReversed pid gs = odd (length (filter ((== PlayerEffect.PhasesReversed) . 
 -- | CR 101.4: do static abilities reverse the turn order right now (Topsy
 -- Turvy)? Its sentence names no player, so each row counts once however many
 -- seats it reaches, and reverses the order once more, an even number cancelling
--- out. Parun.Engine.Engine.sampleTurnOrder is the reader.
+-- out. 'sampleTurnOrder' is the reader.
 turnOrderReversedByStatic :: GameState -> Bool
 turnOrderReversedByStatic gs =
   let sources = Set.fromList [source | pid <- Game.stillPlaying gs, (source, PlayerEffect.TurnOrderReversed) <- applying pid gs]
    in odd (Set.size sources)
+
+-- | CR 101.4 / 611.3a: 'turnOrderReversedByStatic', sampled into
+-- Bookkeeping.turnOrderReversedByStatic for Parun.Engine.Turn.turnOrder, which
+-- sits below the gather of static abilities. Nothing announces a static ability
+-- starting or stopping to apply, so the settle before priority and each
+-- instruction of a resolution (Parun.Engine.Resolve.Effect.applyEffectWith)
+-- sample it.
+sampleTurnOrder :: GameState -> GameState
+sampleTurnOrder gs =
+  gs {GameState.bookkeeping = (GameState.bookkeeping gs) {Bookkeeping.turnOrderReversedByStatic = turnOrderReversedByStatic gs}}
 
 -- CR 701.32 / 904.9 / 101.2: may no scheme be set in motion right now (All in
 -- Good Time)? The printed sentence names no player, so it is gathered from

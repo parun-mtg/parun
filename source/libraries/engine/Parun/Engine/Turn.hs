@@ -185,10 +185,6 @@ thatExtraTurn source controller gs =
 -- a reversed order restores it. Every player who began the game, departed
 -- seats included. Not rotated: a reversed order does not begin with the
 -- starting player, so who started and who sits where read seating.
---
--- Not implemented: a static ability's reversal is the one sampled at the last
--- state-based action check, so a read later in the same resolution misses a
--- Topsy Turvy that resolution put onto or took off the battlefield (#8623).
 turnOrder :: GameState -> [PlayerId]
 turnOrder gs =
   let reversed = GameState.turnOrderReversed gs /= Bookkeeping.turnOrderReversedByStatic (GameState.bookkeeping gs)
