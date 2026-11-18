@@ -1576,8 +1576,12 @@ reflipWindow runSubgame flipper face = do
 --
 -- The effects then run as performManaAbilityEffects runs a mana ability's, the
 -- source standing in for the ability object.
+--
+-- A window opened by an entry's flip (Molten Sentry) falls inside runEntry's
+-- loop, so the whole activation runs with the entering permanents held off the
+-- battlefield (Common.withEnteringHeldOff, CR 614.12a).
 activateWhileRolling :: Game Result -> PlayerId -> ObjectId -> ActivatedAbility.ActivatedAbility Card.Type.Card (GrantedAbility.GrantedAbility Card.Type.Card) -> Game Bool
-activateWhileRolling runSubgame pid oid ability = Event.activating $ do
+activateWhileRolling runSubgame pid oid ability = Common.withEnteringHeldOff . Event.activating $ do
   before <- State.get
   -- CR 602.2b: recorded with no stack object to name, and under way as such.
   let activation = AbilityWasActivated.MkAbilityWasActivated {AbilityWasActivated.player = pid, AbilityWasActivated.ability = Nothing, AbilityWasActivated.source = oid, AbilityWasActivated.facts = Game.abilityFacts AbilityKind.NonManaAbility (Just ability), AbilityWasActivated.activationCost = Cost.Type.mana (ActivatedAbility.cost ability)}
