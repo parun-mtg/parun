@@ -1296,7 +1296,7 @@ effectChildren c effect = case effect of
   Effect.ItBecomes _ -> pure effect
   Effect.ExileHaunting (ExileHaunting.MkExileHaunting card host) -> fmap Effect.ExileHaunting (ExileHaunting.MkExileHaunting <$> onSlot c card <*> onSlot c host)
   Effect.PlaySubgame named -> fmap Effect.PlaySubgame (onSlot c named)
-  Effect.ChoosePlayer (ChoosePlayer.MkChoosePlayer pool named) -> fmap (Effect.ChoosePlayer . ChoosePlayer.MkChoosePlayer pool) (onSlot c named)
+  Effect.ChoosePlayer (ChoosePlayer.MkChoosePlayer pool named excluding) -> fmap Effect.ChoosePlayer (ChoosePlayer.MkChoosePlayer pool <$> onSlot c named <*> traverse (onSlot c) excluding)
   Effect.ChoosePlayerAtRandom (ChoosePlayerAtRandom.MkChoosePlayerAtRandom pool named) -> fmap (Effect.ChoosePlayerAtRandom . ChoosePlayerAtRandom.MkChoosePlayerAtRandom pool) (onSlot c named)
   Effect.ChoosePermanents (ChoosePermanents.MkChoosePermanents permanents named pileChooser rest linked) ->
     fmap Effect.ChoosePermanents (ChoosePermanents.MkChoosePermanents <$> onChosenPermanents c permanents <*> onSlot c named <*> traverse (onPlayer c) pileChooser <*> traverse (onSlot c) rest <*> pure linked)

@@ -1370,14 +1370,16 @@ attackingCreature :: SlotName
 attackingCreature = SlotName.MkSlotName (Text.pack "thatAttackingCreature")
 
 -- CR 608.2e: the reserved slot under which a CR 608.2f loop's body reads the
--- objects the loop has bound for its OTHER members so far -- Nihiloor's "for
+-- objects and players the loop has bound for its OTHER members so far (Dack
+-- Fayden, Helping Hand's "choose a different opponent") -- Nihiloor's "for
 -- each opponent, tap up to one untapped creature you control", where the
 -- creature chosen for one opponent is no choice for the next though none is
 -- tapped yet (docs/decisions.md, "One creature per opponent for Nihiloor").
 -- Stamped by Parun.Engine.Resolve.Arms.Zones's forEach for each member's step
 -- and gone when the loop ends.
 --
--- A GROUP (Binding.objects): named, never targeted (CR 115.10a).
+-- A GROUP (Binding.objects, its players in Binding.targets): named, never
+-- targeted (CR 115.10a).
 chosenForOthers :: SlotName
 chosenForOthers = SlotName.MkSlotName (Text.pack "thoseChosenForOthers")
 

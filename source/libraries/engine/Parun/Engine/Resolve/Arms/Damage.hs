@@ -1376,11 +1376,18 @@ playSubgame runSubgame resolving slot = do
 -- player" there has two candidates and must be asked. The ask is
 -- Players.chooseOne. Nobody in scope binds nothing, so the following sentence
 -- names no player and does nothing (CR 101.3).
+--
+-- The players the payload's `excluding` slot names are not offered: in a CR
+-- 608.2f loop, Binding.chosenForOthers, so "choose a different opponent" for
+-- each member never repeats one. Proved by the scenario
+-- dack-fayden-helping-hand-gives-each-creature-to-a-different-opponent.
 choosePlayer :: ObjectId -> ObjectId -> PlayerId -> ChoosePlayer.ChoosePlayer -> Game ()
 choosePlayer resolving source controller choice = do
   gs <- State.get
   let slot = ChoosePlayer.slot choice
-  chosenPlayer <- Players.chooseOne controller source Nothing (Maybe.fromMaybe [] (PlayerEffect.playersInScope (Plane.rangePerspective source controller gs) (Just controller) gs (ChoosePlayer.scope choice)))
+      excluded = foldMap (\name -> Map.findWithDefault Set.empty name (Binding.slotPlayers (slotBindings resolving gs))) (ChoosePlayer.excluding choice)
+      offered = filter (`Set.notMember` excluded) (Maybe.fromMaybe [] (PlayerEffect.playersInScope (Plane.rangePerspective source controller gs) (Just controller) gs (ChoosePlayer.scope choice)))
+  chosenPlayer <- Players.chooseOne controller source Nothing offered
   Monad.forM_ chosenPlayer $ \pid -> State.modify' (Common.bindPlayerSlot resolving slot (Set.singleton pid))
 
 -- ChoosePlayer's twin with the decision replaced by randomness (Ruhan of the
