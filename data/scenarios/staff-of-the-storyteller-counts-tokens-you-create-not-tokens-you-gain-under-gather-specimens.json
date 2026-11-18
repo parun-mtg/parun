@@ -1,0 +1,214 @@
+{
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "battlefield": [
+          {
+            "card": "Staff of the Storyteller",
+            "label": "astaff"
+          }
+        ],
+        "hand": [
+          {
+            "card": "Gather Specimens",
+            "label": "g"
+          }
+        ],
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ],
+        "manaPool": "UUUUUU",
+        "name": "alice"
+      },
+      {
+        "battlefield": [
+          {
+            "card": "Staff of the Storyteller",
+            "label": "bstaff"
+          }
+        ],
+        "hand": [
+          {
+            "card": "Raise the Alarm",
+            "label": "alarm"
+          }
+        ],
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ],
+        "manaPool": "WW",
+        "name": "bob"
+      }
+    ],
+    "step": "PrecombatMain",
+    "turn": 2
+  },
+  "description": "Under alice's Gather Specimens, the Soldiers bob's Raise the Alarm creates enter under alice's control: bob created them, so bob's Staff of the Storyteller gets a story counter and alice's gets none.",
+  "timeline": [
+    {
+      "do": {
+        "Cast": {
+          "object": "$g"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 2
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 2
+    },
+    {
+      "do": "Pass",
+      "player": "bob",
+      "step": "PrecombatMain",
+      "turn": 2
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 2
+    },
+    {
+      "do": {
+        "Cast": {
+          "object": "$alarm"
+        }
+      },
+      "player": "bob",
+      "step": "PrecombatMain",
+      "turn": 2
+    },
+    {
+      "do": "Pass",
+      "player": "bob",
+      "step": "PrecombatMain",
+      "turn": 2
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 2
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Soldier Token",
+          "count": 2,
+          "player": "alice",
+          "zone": "Battlefield"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 2
+    },
+    {
+      "check": {
+        "View": {
+          "is": [
+            "trigger of $bstaff"
+          ],
+          "of": "Stack"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 2
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 2
+    },
+    {
+      "do": "Pass",
+      "player": "bob",
+      "step": "PrecombatMain",
+      "turn": 2
+    },
+    {
+      "check": {
+        "Counters": {
+          "count": 1,
+          "kind": {
+            "type": "Named",
+            "value": "story"
+          },
+          "object": "$bstaff"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 2
+    },
+    {
+      "check": {
+        "Counters": {
+          "count": 0,
+          "kind": {
+            "type": "Named",
+            "value": "story"
+          },
+          "object": "$astaff"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 2
+    }
+  ]
+}
