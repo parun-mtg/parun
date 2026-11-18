@@ -2025,7 +2025,6 @@ damageRewriteRecipients rewrite = case rewrite of
   DamageRewrite.PreventNext _ -> []
   DamageRewrite.PreventAllBut _ -> []
   DamageRewrite.PreventUpTo _ -> []
-  DamageRewrite.SetAmount _ -> []
   DamageRewrite.Scale _ -> []
   -- The nested effects name objects through SLOTS rather than baked ids, and
   -- Parun.Engine.Resolve.Slots' replacementRowSlots is what reports those.

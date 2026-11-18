@@ -5,6 +5,7 @@ import qualified Parun.Types.CounterKind as CounterKind
 import qualified Parun.Types.CounterSubject as CounterSubject
 import qualified Parun.Types.Filter as Filter
 import qualified Parun.Types.Keyword as Keyword
+import qualified Parun.Types.PlayerCounterKind as PlayerCounterKind
 
 -- | CR 122.6 / 614.1: which counter placements a scaling replacement intercepts.
 -- Hardened Scales names a kind and a real filter; Doubling Season's counter clause
@@ -41,12 +42,14 @@ data CounterPattern = MkCounterPattern
     -- cannot be a player). Vorinclex's "or player" is Just Related AnyPlayer.
     --
     -- A relation rather than a Filter, because no printing narrows the receiving
-    -- player by anything but CR 109.5's "you" and "an opponent"; and it does not
-    -- pair with a PlayerCounterKind, because `whichKind` is the OBJECT kinds and
-    -- the two domains are disjoint (see Parun.Types.PlayerCounterKind). A pattern
-    -- naming a kind therefore reaches no player at all, which is right for every
-    -- printing today: Hardened Scales says "+1/+1 counters", a kind no player can
-    -- have.
-    onWho :: Maybe ControllerRelation.ControllerRelation
+    -- player by anything but CR 109.5's "you" and "an opponent". `whichKind` is
+    -- the OBJECT kinds and the two domains are disjoint (see
+    -- Parun.Types.PlayerCounterKind), so a pattern naming one reaches no player
+    -- at all: Hardened Scales says "+1/+1 counters", a kind no player can have.
+    onWho :: Maybe ControllerRelation.ControllerRelation,
+    -- | CR 122.1: which kind of PLAYER counter the pattern reaches, Nothing for
+    -- any -- Melira, the Living Cure's "poison counters". `whichKind`'s twin on
+    -- the player domain; read only beside `onWho`.
+    whichPlayerKind :: Maybe PlayerCounterKind.PlayerCounterKind
   }
   deriving (Eq, Ord, Show)

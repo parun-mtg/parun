@@ -647,6 +647,9 @@ instructionRowOffends replacement = case replacement of
           _ -> True
         Scaling.Subtract _ -> True
         Scaling.Halve -> True
+        Scaling.Exactly quantity -> case quantity of
+          Quantity.Type.Literal n -> n <= 0
+          _ -> True
     performsFirst rewrite = case rewrite of
       InstructionRewrite.PerformFirst _ -> True
       InstructionRewrite.Scaled _ -> False
@@ -761,7 +764,6 @@ engineMintedDamage rewrite = case rewrite of
   -- CR 702.64a's ceiling is the same kind of printed amount, and rule 702.64a is
   -- the rulebook rather than a card, so nothing here is baked either.
   DamageRewrite.PreventUpTo _ -> False
-  DamageRewrite.SetAmount _ -> False
   DamageRewrite.Scale _ -> False
   DamageRewrite.Redirect _ -> True
   -- Redirect with CR 615.7's countdown: the same baked Recipient, and the
@@ -925,7 +927,6 @@ preventsDamage rewrite = case rewrite of
   DamageRewrite.PreventUpTo _ -> True
   DamageRewrite.PreventRemovingShieldCounter -> True
   DamageRewrite.PreventRemovingCounters _ -> True
-  DamageRewrite.SetAmount _ -> False
   DamageRewrite.Scale _ -> False
   DamageRewrite.Redirect _ -> False
   DamageRewrite.RedirectNext _ _ -> False

@@ -32,5 +32,11 @@ spec s = Spec.describe s "Parun.Codec.Scaling" $ do
       Scaling.codec
       Scaling.Halve
       " {\"type\":\"Halve\"} "
+  Spec.it s "Exactly" $
+    Common.assertCodec
+      s
+      Scaling.codec
+      (Scaling.Exactly (Quantity.Literal 1))
+      " {\"type\":\"Exactly\",\"value\":{\"type\":\"Literal\",\"value\":1}} "
   Spec.it s "has a schema" $
     Common.assertHasSchema s Scaling.codec

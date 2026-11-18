@@ -27,7 +27,8 @@ spec s = Spec.describe s "Parun.Codec.CounterPattern" $ do
           CounterPattern.subject = CounterSubject.ByAnything,
           CounterPattern.whose = ControllerRelation.Related PlayerRelation.You,
           CounterPattern.onWhat = Filter.HasCardType CardType.Creature,
-          CounterPattern.onWho = Nothing
+          CounterPattern.onWho = Nothing,
+          CounterPattern.whichPlayerKind = Nothing
         }
       " {\"whichKind\":{\"type\":\"PlusOnePlusOne\"},\"subject\":{\"type\":\"ByAnything\"},\"whose\":{\"type\":\"You\"},\"onWhat\":{\"type\":\"HasCardType\",\"value\":\"Creature\"}} "
   -- whichKind = Nothing means ANY kind, never "no kind", and the trivial filter
@@ -41,7 +42,8 @@ spec s = Spec.describe s "Parun.Codec.CounterPattern" $ do
           CounterPattern.subject = CounterSubject.ByEffect,
           CounterPattern.whose = ControllerRelation.Related PlayerRelation.You,
           CounterPattern.onWhat = Filter.And [],
-          CounterPattern.onWho = Nothing
+          CounterPattern.onWho = Nothing,
+          CounterPattern.whichPlayerKind = Nothing
         }
       " {\"subject\":{\"type\":\"ByEffect\"},\"whose\":{\"type\":\"You\"},\"onWhat\":{\"type\":\"And\",\"value\":[]}} "
   -- CR 109.5: whichKind's Nothing and whose's Related AnyPlayer are both what a pattern
@@ -55,7 +57,8 @@ spec s = Spec.describe s "Parun.Codec.CounterPattern" $ do
           CounterPattern.subject = CounterSubject.ByAnything,
           CounterPattern.whose = ControllerRelation.Related PlayerRelation.AnyPlayer,
           CounterPattern.onWhat = Filter.And [],
-          CounterPattern.onWho = Nothing
+          CounterPattern.onWho = Nothing,
+          CounterPattern.whichPlayerKind = Nothing
         }
       " {\"subject\":{\"type\":\"ByAnything\"},\"onWhat\":{\"type\":\"And\",\"value\":[]}} "
   -- CR 122.6: Vorinclex, Monstrous Raider's halving clause -- narrowed by who is
@@ -69,7 +72,8 @@ spec s = Spec.describe s "Parun.Codec.CounterPattern" $ do
           CounterPattern.subject = CounterSubject.ByPlayer (ControllerRelation.Related PlayerRelation.Opponent),
           CounterPattern.whose = ControllerRelation.Related PlayerRelation.AnyPlayer,
           CounterPattern.onWhat = Filter.And [],
-          CounterPattern.onWho = Just (ControllerRelation.Related PlayerRelation.AnyPlayer)
+          CounterPattern.onWho = Just (ControllerRelation.Related PlayerRelation.AnyPlayer),
+          CounterPattern.whichPlayerKind = Nothing
         }
       " {\"subject\":{\"type\":\"ByPlayer\",\"value\":{\"type\":\"Opponent\"}},\"onWhat\":{\"type\":\"And\",\"value\":[]},\"onWho\":{\"type\":\"AnyPlayer\"}} "
   -- The breaking format change, made to prove itself: `subject` is required, so

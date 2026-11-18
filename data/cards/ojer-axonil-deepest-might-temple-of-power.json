@@ -67,10 +67,13 @@
                 }
               },
               "rewrite": {
-                "type": "SetAmount",
+                "type": "Scale",
                 "value": {
-                  "type": "Measure",
-                  "value": "Power"
+                  "type": "Exactly",
+                  "value": {
+                    "type": "Measure",
+                    "value": "Power"
+                  }
                 }
               }
             }

@@ -13,7 +13,8 @@ codec =
     [ Arm.payload "Multiply" Common.natural Scaling.Multiply (\x -> case x of Scaling.Multiply y -> Just y; _ -> Nothing),
       Arm.payload "AddMore" Quantity.codec Scaling.AddMore (\x -> case x of Scaling.AddMore y -> Just y; _ -> Nothing),
       Arm.payload "Subtract" Common.natural Scaling.Subtract (\x -> case x of Scaling.Subtract y -> Just y; _ -> Nothing),
-      Arm.nullary "Halve" Scaling.Halve
+      Arm.nullary "Halve" Scaling.Halve,
+      Arm.payload "Exactly" Quantity.codec Scaling.Exactly (\x -> case x of Scaling.Exactly y -> Just y; _ -> Nothing)
     ]
 
 tagOf :: Scaling.Scaling -> String
@@ -22,3 +23,4 @@ tagOf x = case x of
   Scaling.AddMore {} -> "AddMore"
   Scaling.Subtract {} -> "Subtract"
   Scaling.Halve {} -> "Halve"
+  Scaling.Exactly {} -> "Exactly"

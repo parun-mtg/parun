@@ -33,15 +33,14 @@ import qualified Parun.Types.Scaling as Scaling
 -- authored, since a shield names the permanent or player it shields, chosen at
 -- resolution; Effect.PreventNextDamage is the one producer.
 --
--- SetAmount is CR 614.1a's "instead" with an amount: a literal (Galvanic
--- Blast), or a Quantity read against the row's source as the event would happen
--- (Ojer Axonil, Deepest Might's "damage equal to Ojer Axonil's power").
---
 -- Scale is Furnace of Rath's "double that damage ... instead", reusing
 -- Parun.Types.Scaling rather than a Double arm -- the difference between doubling
 -- and tripling is a number, and CounterR and TokenR speak the same vocabulary.
 -- Tok-Tok, Volcano Born's "that much damage plus 1 ... instead" is the same arm
--- with Scaling's AddMore, which is why the reuse was worth having.
+-- with Scaling's AddMore, which is why the reuse was worth having, and CR
+-- 614.1a's "instead" with an amount is Scaling's Exactly: a literal (Galvanic
+-- Blast), or a Quantity read against the row's source as the event would happen
+-- (Ojer Axonil, Deepest Might's "damage equal to Ojer Axonil's power").
 --
 -- Redirect is CR 614.9's redirection effect (Turn the Tables): the event's
 -- RECIPIENT is replaced and nothing else is. A rule-614 replacement, not a rule
@@ -109,10 +108,10 @@ data DamageRewrite effect
     -- (Pariah) landing a second event of one source on one recipient is the
     -- same event, so it shares the floor (Parun.Engine.Replacement.floorLeft).
     --
-    -- Not SetAmount with the same number, which is what makes this its own arm:
-    -- that one never says "prevent", so CR 615.1a would classify it out of
-    -- `prevents` and out of CR 615.13's trigger. The two also disagree on an
-    -- event SMALLER than the number -- SetAmount would raise a 1 to a 3.
+    -- Not Scale (Exactly n) with the same number, which is what makes this its
+    -- own arm: that one never says "prevent", so CR 615.1a would classify it
+    -- out of `prevents` and out of CR 615.13's trigger. The two also disagree
+    -- on an event SMALLER than the number -- Exactly would raise a 1 to a 3.
     PreventAllBut Natural.Natural
   | -- | CR 702.64a: a static prevention that stops this much of each applicable
     -- damage event and lets the rest through -- absorb N's "prevent N of that
@@ -137,7 +136,6 @@ data DamageRewrite effect
     -- Power Leak's "prevent X of that damage" is this ceiling on a CR 614.15
     -- self-replacement with Uses.Once, its X settled as the row is installed.
     PreventUpTo Quantity.Quantity
-  | SetAmount Quantity.Quantity
   | Scale Scaling.Scaling
   | Redirect Recipient.Recipient
   | -- | CR 614.9's redirection with a REMAINING amount, PreventNext's counted twin

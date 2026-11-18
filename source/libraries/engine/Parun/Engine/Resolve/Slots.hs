@@ -1733,7 +1733,7 @@ replacementRowReads re = case re of
   -- CR 614.1a's printed subject (Pyramids' "target land"); the rewrite is nullary.
   ReplacementEffect.DestructionR (DestructionR.MkDestructionR matching _) -> (Maybe.maybeToList matching, [])
   -- The rewrite is one Scaling, which is a constructor and a Natural.
-  ReplacementEffect.CounterR (CounterR.MkCounterR pat _) -> ([CounterPattern.onWhat pat], [])
+  ReplacementEffect.CounterR (CounterR.MkCounterR pat _ _) -> ([CounterPattern.onWhat pat], [])
   -- The pattern's Filter over what the token is; the scaling is a number and
   -- the appended token is card data of its own, so neither reads a slot.
   -- CR 707.2: so does the permanent a copying row names.
@@ -2098,7 +2098,6 @@ damageRewriteEffects rewrite = case rewrite of
   DamageRewrite.PreventNext _ -> []
   DamageRewrite.PreventAllBut _ -> []
   DamageRewrite.PreventUpTo _ -> []
-  DamageRewrite.SetAmount _ -> []
   DamageRewrite.Scale _ -> []
   DamageRewrite.Redirect _ -> []
   DamageRewrite.RedirectNext _ _ -> []
@@ -2130,12 +2129,12 @@ damageRewriteReads rewrite = case rewrite of
   DamageRewrite.PreventNext _ -> ([], [])
   DamageRewrite.PreventAllBut _ -> ([], [])
   DamageRewrite.PreventUpTo quantity -> ([], [quantity])
-  DamageRewrite.SetAmount quantity -> ([], [quantity])
   -- Taii Wakeen, Perfect Shot's "plus X".
   DamageRewrite.Scale (Scaling.AddMore quantity) -> ([], [quantity])
   DamageRewrite.Scale (Scaling.Multiply _) -> ([], [])
   DamageRewrite.Scale (Scaling.Subtract _) -> ([], [])
   DamageRewrite.Scale Scaling.Halve -> ([], [])
+  DamageRewrite.Scale (Scaling.Exactly quantity) -> ([], [quantity])
   -- The nested effects are replacementRowEffects' answer above, not a read of
   -- the rewrite's own.
   DamageRewrite.RunEffects _ -> ([], [])

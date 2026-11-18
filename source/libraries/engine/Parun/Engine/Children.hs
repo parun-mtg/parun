@@ -2476,8 +2476,8 @@ replacementEffectChildren c replacement = case replacement of
   ReplacementEffect.DamageR (DamageR.MkDamageR matching rewrite riders) ->
     fmap ReplacementEffect.DamageR (DamageR.MkDamageR <$> replacementDamage c matching <*> damageRewriteChildren c rewrite <*> traverse (replacementEffect c) riders)
   ReplacementEffect.DestructionR (DestructionR.MkDestructionR matching rewrite) -> fmap ReplacementEffect.DestructionR (DestructionR.MkDestructionR <$> traverse (replacementFilter c) matching <*> destructionRewriteChildren c rewrite)
-  ReplacementEffect.CounterR (CounterR.MkCounterR (CounterPattern.MkCounterPattern kind subject whose onWhat onWho) scaling) ->
-    fmap ReplacementEffect.CounterR (CounterR.MkCounterR <$> (CounterPattern.MkCounterPattern <$> traverse (replacementCounterKind c) kind <*> counterSubjectChildren c subject <*> replacementWhose c whose <*> replacementFilter c onWhat <*> traverse (replacementWhose c) onWho) <*> scalingChildren c scaling)
+  ReplacementEffect.CounterR (CounterR.MkCounterR (CounterPattern.MkCounterPattern kind subject whose onWhat onWho playerKind) scaling barsAdditional) ->
+    fmap ReplacementEffect.CounterR (CounterR.MkCounterR <$> (CounterPattern.MkCounterPattern <$> traverse (replacementCounterKind c) kind <*> counterSubjectChildren c subject <*> replacementWhose c whose <*> replacementFilter c onWhat <*> traverse (replacementWhose c) onWho <*> pure playerKind) <*> scalingChildren c scaling <*> pure barsAdditional)
   ReplacementEffect.TokenR (TokenR.MkTokenR (TokenPattern.MkTokenPattern whose whatToken effectsOnly firstEachTurn) scaling plus optional) ->
     fmap ReplacementEffect.TokenR (TokenR.MkTokenR <$> (TokenPattern.MkTokenPattern <$> replacementWhose c whose <*> replacementFilter c whatToken <*> pure effectsOnly <*> pure firstEachTurn) <*> traverse (scalingChildren c) scaling <*> traverse (tokenPlusChildren c) plus <*> pure optional)
   ReplacementEffect.TurnUpR (TurnUpR.MkTurnUpR matching requiring paying rewrite) ->
@@ -2580,7 +2580,6 @@ damageRewriteChildren c rewrite = case rewrite of
   DamageRewrite.PreventNext _ -> pure rewrite
   DamageRewrite.PreventAllBut _ -> pure rewrite
   DamageRewrite.PreventUpTo most -> DamageRewrite.PreventUpTo <$> replacementQuantity c most
-  DamageRewrite.SetAmount amount -> DamageRewrite.SetAmount <$> replacementQuantity c amount
   DamageRewrite.Scale scaling -> DamageRewrite.Scale <$> scalingChildren c scaling
   DamageRewrite.Redirect recipient -> DamageRewrite.Redirect <$> replacementRecipient c recipient
   DamageRewrite.RedirectNext amount recipient -> DamageRewrite.RedirectNext amount <$> replacementRecipient c recipient
@@ -2684,13 +2683,14 @@ tokenPlusChildren c plus = case plus of
   TokenPlus.Instead card -> TokenPlus.Instead <$> replacementCard c card
   TokenPlus.InsteadCopies copied -> TokenPlus.InsteadCopies <$> replacementFilter c copied
 
--- | How a replacement resizes an event (CR 614.1a): only an addition holds a child.
+-- | How a replacement resizes an event (CR 614.1a): only a quantity holds a child.
 scalingChildren :: (Applicative f) => ReplacementChildren card ability effect f -> Scaling.Scaling -> f Scaling.Scaling
 scalingChildren c scaling = case scaling of
   Scaling.Multiply _ -> pure scaling
   Scaling.AddMore addend -> Scaling.AddMore <$> replacementQuantity c addend
   Scaling.Subtract _ -> pure scaling
   Scaling.Halve -> pure scaling
+  Scaling.Exactly quantity -> Scaling.Exactly <$> replacementQuantity c quantity
 
 -- | Who puts the counters a counter replacement watches: only a player relation is a child.
 counterSubjectChildren :: (Applicative f) => ReplacementChildren card ability effect f -> CounterSubject.CounterSubject -> f CounterSubject.CounterSubject
