@@ -42,7 +42,7 @@ data Expiry
     -- or HolderOfObject for a slot holding an object, since
     -- the sweep that re-reads this has no resolution to read a slot off.
     While While.While
-  | -- | CR 611.2a: "until your next turn", as a concrete player. Ends as that
+  | -- | CR 611.2a: Duration.UntilNextTurnOf, as a concrete player. Ends as that
     -- player's turn begins.
     AtTurnOf PlayerId.PlayerId
   | -- | CR 611.2a: Duration.UntilNextStepOf, as concrete players. Ends as that

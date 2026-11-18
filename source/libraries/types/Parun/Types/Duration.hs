@@ -21,10 +21,9 @@ data Duration
   | -- | Alchemy's "perpetually" (Pearl Collector): Indefinite's lifetime, plus
     -- following its objects across CR 400.7's new object.
     Perpetual
-  | -- | CR 611.2a: "until your next turn" (Hag of Inner Weakness). "Your" is
-    -- resolved to a concrete player by Parun.Engine.Expiry.arm (CR 109.5) -- it cannot
-    -- be a PlayerId here, because a printed card does not know one.
-    UntilYourNextTurn
+  | -- | CR 611.2a / 109.5: "until your next turn" (Hag of Inner Weakness), "until
+    -- that player's next turn" (Teferi's Reproach).
+    UntilNextTurnOf PlayerRef.PlayerRef
   | -- | CR 611.2a: "until the beginning of your next upkeep" (Grinning Totem),
     -- "until its controller's next untap step" (Orcish Farmer), "until the next
     -- end step" (Niko, Light of Hope): ends as that step of a named player's turn
@@ -65,10 +64,7 @@ data Duration
     DuringNextUntapStepOf PlayerRef.PlayerRef
   | -- | CR 611.2a: "during your next turn" (Galvanic Relay) -- the arm above's
     -- window with the seat taken from CR 109.5's "you" instead of sampled from a
-    -- reference, as UntilYourNextTurn stands to UntilEndOfNextTurnOf.
-    --
-    -- Nullary, as UntilYourNextTurn is: CR 109.5's "you" is the effect's
-    -- controller, which Parun.Engine.Expiry.arm already holds.
+    -- reference.
     DuringYourNextTurn
   | -- | CR 611.2a / 500.7: "during that turn", the extra turn the same resolution
     -- created (Alchemist's Gambit) -- named by its ExtraTurn.createdAt, as

@@ -263,7 +263,11 @@
                         "type": "ModifyTarget",
                         "value": {
                           "duration": {
-                            "type": "UntilYourNextTurn"
+                            "type": "UntilNextTurnOf",
+                            "value": {
+                              "type": "Relative",
+                              "value": "You"
+                            }
                           },
                           "modification": {
                             "type": "ModifyPowerToughness",

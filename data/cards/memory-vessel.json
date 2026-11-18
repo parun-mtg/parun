@@ -48,7 +48,11 @@
                               "type": "GrantPlayFromExile",
                               "value": {
                                 "duration": {
-                                  "type": "UntilYourNextTurn"
+                                  "type": "UntilNextTurnOf",
+                                  "value": {
+                                    "type": "Relative",
+                                    "value": "You"
+                                  }
                                 },
                                 "player": {
                                   "type": "HolderOfBound",
@@ -76,7 +80,11 @@
                         "type": "AffectPlayers",
                         "value": {
                           "duration": {
-                            "type": "UntilYourNextTurn"
+                            "type": "UntilNextTurnOf",
+                            "value": {
+                              "type": "Relative",
+                              "value": "You"
+                            }
                           },
                           "effect": {
                             "type": "CantCastMatching",
@@ -97,7 +105,11 @@
                         "type": "AffectPlayers",
                         "value": {
                           "duration": {
-                            "type": "UntilYourNextTurn"
+                            "type": "UntilNextTurnOf",
+                            "value": {
+                              "type": "Relative",
+                              "value": "You"
+                            }
                           },
                           "effect": {
                             "type": "CantPlayLands",

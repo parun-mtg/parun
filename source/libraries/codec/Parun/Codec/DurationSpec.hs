@@ -56,13 +56,13 @@ spec s = Spec.describe s "Parun.Codec.Duration" $ do
       s
       (Codec.encode Duration.codec Duration.Perpetual /= Codec.encode Duration.codec Duration.Indefinite)
       "perpetual and indefinite encode differently"
-  -- CR 611.2a: until your next turn.
-  Spec.it s "UntilYourNextTurn" $
+  -- CR 611.2a: until a seat's next turn, carrying its reference.
+  Spec.it s "UntilNextTurnOf carries its reference" $
     Common.assertCodec
       s
       Duration.codec
-      Duration.UntilYourNextTurn
-      " {\"type\":\"UntilYourNextTurn\"} "
+      (Duration.UntilNextTurnOf (PlayerRef.InSlot (SlotName.MkSlotName (Text.pack "opponent"))))
+      " {\"type\":\"UntilNextTurnOf\",\"value\":{\"type\":\"InSlot\",\"value\":\"opponent\"}} "
   -- CR 611.2a: until a step of your turn next begins.
   Spec.it s "UntilNextStepOf carries its step, and leaves out you" $
     Common.assertCodec

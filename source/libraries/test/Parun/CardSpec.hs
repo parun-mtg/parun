@@ -3780,7 +3780,7 @@ durationFilters duration =
           Duration.UntilEndOfTurn -> []
           Duration.Indefinite -> []
           Duration.Perpetual -> []
-          Duration.UntilYourNextTurn -> []
+          Duration.UntilNextTurnOf _ -> []
           Duration.UntilNextStepOf _ -> []
           Duration.UntilEndOfYourNextTurn -> []
           Duration.UntilEndOfNextTurnOf _ -> []

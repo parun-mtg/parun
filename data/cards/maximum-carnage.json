@@ -51,7 +51,11 @@
                             }
                           },
                           "duration": {
-                            "type": "UntilYourNextTurn"
+                            "type": "UntilNextTurnOf",
+                            "value": {
+                              "type": "Relative",
+                              "value": "You"
+                            }
                           }
                         }
                       },
@@ -73,7 +77,11 @@
                             }
                           },
                           "duration": {
-                            "type": "UntilYourNextTurn"
+                            "type": "UntilNextTurnOf",
+                            "value": {
+                              "type": "Relative",
+                              "value": "You"
+                            }
                           }
                         }
                       }
