@@ -639,6 +639,9 @@ addMana resolving source controller legal (ManaAddition.MkManaAddition ref produ
     -- count replicates the unit the answer settled rather than asking again.
     -- "In any combination of colors" asks once per unit instead: Sarkhan,
     -- Fireblood's +1 (data/scenarios/sarkhan-fireblood-rummages-and-makes-mana-only-for-dragons.json).
+    -- "Of different colors" asks once per unit over the colours not yet
+    -- picked; unproven, since every printed one is a mana ability, whose
+    -- yields Parun.Engine.Mana.choicesOf offers instead.
     Mana.Offers spread offered ->
       let named = playerRefPlayers legal resolving source controller gs0 ref
           ordered = filter (\pid -> List.elem pid named) (Game.apnapOrder gs0)
@@ -646,10 +649,17 @@ addMana resolving source controller legal (ManaAddition.MkManaAddition ref produ
        in Monad.forM_ recipients $ \pid -> do
             -- Through Game.chooseAmong, the instruction being mandatory.
             -- Mana.produced answers Offers only for two or more types.
-            let pick = fmap (Maybe.fromMaybe (NonEmpty.head offered)) (Game.chooseAmong (\decider who -> Prompt.ChooseManaType decider who resolving) pid (NonEmpty.toList offered))
+            let pickAmong = Game.chooseAmong (\decider who -> Prompt.ChooseManaType decider who resolving) pid
+                pick = fmap (Maybe.fromMaybe (NonEmpty.head offered)) (pickAmong (NonEmpty.toList offered))
+                -- "Of different colors": each pick drops out of the next
+                -- offer, the last one left taken unasked.
+                pickDistinct n candidates
+                  | n <= (0 :: Int) = pure []
+                  | otherwise = pickAmong candidates >>= maybe (pure []) (\picked -> (picked :) <$> pickDistinct (n - 1) (filter (/= picked) candidates))
             manaTypes <- case spread of
               ColorSpread.OneColor -> fmap (replicate howMany) pick
               ColorSpread.AnyCombination -> Monad.replicateM howMany pick
+              ColorSpread.DifferentColors -> pickDistinct howMany (NonEmpty.toList offered)
             State.modify' (Mana.addMana pid (fmap unitOf manaTypes))
             recordAdded pid (Set.fromList manaTypes)
             choose manaTypes

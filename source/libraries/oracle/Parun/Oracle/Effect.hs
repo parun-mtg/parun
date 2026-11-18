@@ -1319,7 +1319,8 @@ discarded context d = case d of
   _ -> []
 
 -- | The mana an instruction adds: "{G}", "{C}{C}", "one mana of any color",
--- "two mana in any combination of colors" (CR 106.1).
+-- "two mana in any combination of colors", "two mana of different colors"
+-- (CR 106.1).
 added :: ManaProduction.ManaProduction -> Quantity.Quantity -> [(Mana, Text.Text)]
 added production count = case (production, count) of
   (ManaProduction.OfType t, Quantity.Literal n)
@@ -1330,6 +1331,8 @@ added production count = case (production, count) of
   (ManaProduction.InCommanderIdentity, Quantity.Literal 1) -> [(Described, Text.pack "one mana of any color in your commander's color identity")]
   (ManaProduction.AnyColor ColorSpread.AnyCombination, Quantity.Literal n)
     | n >= 2 -> [(Described, Prose.cardinal n <> Text.pack " mana in any combination of colors")]
+  (ManaProduction.AnyColor ColorSpread.DifferentColors, Quantity.Literal n)
+    | n >= 2 -> [(Described, Prose.cardinal n <> Text.pack " mana of different colors")]
   _ -> []
 
 -- | "[Source] deals [amount] damage to [recipient]", one part after another

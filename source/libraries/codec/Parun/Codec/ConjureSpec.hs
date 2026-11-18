@@ -31,6 +31,7 @@ spec s = Spec.describe s "Parun.Codec.Conjure" $ do
           { Conjure.quantity = Conjure.defaultQuantity,
             Conjure.cards = ConjureCards.Written (Text.pack "Ornithopter" NonEmpty.:| []),
             Conjure.selection = Conjure.defaultSelection,
+            Conjure.drafted = False,
             Conjure.destination = ConjureDestination.Hand,
             Conjure.slot = Nothing
           }
@@ -46,6 +47,7 @@ spec s = Spec.describe s "Parun.Codec.Conjure" $ do
           { Conjure.quantity = Quantity.Literal 4,
             Conjure.cards = ConjureCards.Written (Text.pack "Lightning Bolt" NonEmpty.:| []),
             Conjure.selection = Conjure.defaultSelection,
+            Conjure.drafted = False,
             Conjure.destination = ConjureDestination.Library Nothing,
             Conjure.slot = Nothing
           }
@@ -61,6 +63,7 @@ spec s = Spec.describe s "Parun.Codec.Conjure" $ do
           { Conjure.quantity = Conjure.defaultQuantity,
             Conjure.cards = ConjureCards.Written (Text.pack "Ponder" NonEmpty.:| [Text.pack "Dark Ritual"]),
             Conjure.selection = Conjure.defaultSelection,
+            Conjure.drafted = False,
             Conjure.destination = ConjureDestination.Hand,
             Conjure.slot = Nothing
           }
@@ -76,11 +79,27 @@ spec s = Spec.describe s "Parun.Codec.Conjure" $ do
           { Conjure.quantity = Conjure.defaultQuantity,
             Conjure.cards = ConjureCards.Written (Text.pack "Ponder" NonEmpty.:| [Text.pack "Dark Ritual"]),
             Conjure.selection = CardSelection.ByChoice,
+            Conjure.drafted = False,
             Conjure.destination = ConjureDestination.Hand,
             Conjure.slot = Nothing
           }
       )
       " {\"cards\":{\"type\":\"Written\",\"value\":[\"Ponder\",\"Dark Ritual\"]},\"selection\":\"ByChoice\",\"destination\":{\"type\":\"Hand\"}} "
+  -- Big Spender's draft: the drafted key survives the elision guard.
+  Spec.it s "MkConjure drafted from a spellbook" $
+    Common.assertCodec
+      s
+      codec
+      ( Conjure.MkConjure
+          { Conjure.quantity = Conjure.defaultQuantity,
+            Conjure.cards = ConjureCards.Written (Text.pack "Ponder" NonEmpty.:| [Text.pack "Dark Ritual"]),
+            Conjure.selection = CardSelection.ByChoice,
+            Conjure.drafted = True,
+            Conjure.destination = ConjureDestination.Hand,
+            Conjure.slot = Nothing
+          }
+      )
+      " {\"cards\":{\"type\":\"Written\",\"value\":[\"Ponder\",\"Dark Ritual\"]},\"selection\":\"ByChoice\",\"drafted\":true,\"destination\":{\"type\":\"Hand\"}} "
   -- The other arm of the cards key: a duplicate names an object already in the
   -- game, so the card codec is never reached and the parameter goes unused.
   Spec.it s "MkConjure of a duplicate" $
@@ -91,6 +110,7 @@ spec s = Spec.describe s "Parun.Codec.Conjure" $ do
           { Conjure.quantity = Conjure.defaultQuantity,
             Conjure.cards = ConjureCards.Duplicate (ObjectRef.InSlot (SlotName.MkSlotName (Text.pack "target"))),
             Conjure.selection = Conjure.defaultSelection,
+            Conjure.drafted = False,
             Conjure.destination = ConjureDestination.Hand,
             Conjure.slot = Nothing
           }
@@ -105,6 +125,7 @@ spec s = Spec.describe s "Parun.Codec.Conjure" $ do
           { Conjure.quantity = Conjure.defaultQuantity,
             Conjure.cards = ConjureCards.Written (Text.pack "Ragavan" NonEmpty.:| []),
             Conjure.selection = Conjure.defaultSelection,
+            Conjure.drafted = False,
             Conjure.destination = ConjureDestination.Hand,
             Conjure.slot = Just (SlotName.MkSlotName (Text.pack "conjured"))
           }

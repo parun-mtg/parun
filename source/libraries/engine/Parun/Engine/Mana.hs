@@ -427,12 +427,19 @@ symbolRuns howMany symbols =
 -- CR 105.4: every way `howMany` units of an offer can be chosen. One
 -- colour repeats a single pick; any combination is each multiset of picks, the
 -- order a pool never keeps (Parun.Types.Mana) left out, so Wizard's Rockets'
--- X of 3 is 35 choices and not 125.
+-- X of 3 is 35 choices and not 125. Different colours is each subset, so
+-- Firemind Vessel's two are ten choices (Parun.ManaSpec's Firemind Vessel case).
 choicesOf :: Int -> ColorSpread.ColorSpread -> NonEmpty.NonEmpty ManaType -> [[ManaType]]
 choicesOf howMany spread offered = case spread of
   ColorSpread.OneColor -> [replicate howMany manaType | manaType <- NonEmpty.toList offered]
   ColorSpread.AnyCombination -> multisets howMany (NonEmpty.toList offered)
+  ColorSpread.DifferentColors -> subsets howMany (NonEmpty.toList offered)
   where
+    subsets n types
+      | n <= 0 = [[]]
+      | otherwise = case types of
+          [] -> []
+          first : rest -> fmap (first :) (subsets (n - 1) rest) <> subsets n rest
     multisets n types
       | n <= 0 = [[]]
       | otherwise = case types of
@@ -1220,7 +1227,7 @@ pricedOptionsVisiting visited rewritesOf paid poolBoard pcs oid gs =
             offered = runsOf offeredProduced offeredCount
             priced = runsOf pricedProduced pricedCount
          in case offeredProduced of
-              Offers ColorSpread.AnyCombination _ | offeredCount /= pricedCount -> [(o, p) | o <- offered, p <- priced]
+              Offers spread _ | spread /= ColorSpread.OneColor && offeredCount /= pricedCount -> [(o, p) | o <- offered, p <- priced]
               _ | not (sameShape offeredProduced pricedProduced) -> [(o, p) | o <- offered, p <- priced]
               _ -> zip offered priced
    in concatMap expand (manaRoutesOfGiven pcs oid gs)
