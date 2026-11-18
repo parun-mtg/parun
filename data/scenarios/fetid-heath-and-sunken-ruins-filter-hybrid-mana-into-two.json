@@ -1,0 +1,298 @@
+{
+ "description": "CR 605.1a, 106.4: Fetid Heath and Sunken Ruins pay a hybrid symbol and tap to add one of three two-mana combinations",
+ "note": "Alice pays Fetid Heath's {W/B} with a Plains for {W}{B}, then Sunken Ruins' {U/B} with an Island for {B}{B}: the pool holds exactly those four, the Plains' and Island's mana spent rather than passed through.",
+ "board": {
+  "active": "alice",
+  "step": "PrecombatMain",
+  "seats": [
+   {
+    "name": "alice",
+    "battlefield": [
+     {
+      "card": "Fetid Heath",
+      "label": "heath"
+     },
+     {
+      "card": "Sunken Ruins",
+      "label": "ruins"
+     },
+     {
+      "card": "Plains",
+      "label": "p"
+     },
+     {
+      "card": "Island",
+      "label": "i"
+     }
+    ],
+    "library": [
+     {
+      "card": "Island"
+     },
+     {
+      "card": "Island"
+     },
+     {
+      "card": "Island"
+     },
+     {
+      "card": "Island"
+     },
+     {
+      "card": "Island"
+     },
+     {
+      "card": "Island"
+     }
+    ]
+   },
+   {
+    "name": "bob",
+    "library": [
+     {
+      "card": "Island"
+     },
+     {
+      "card": "Island"
+     },
+     {
+      "card": "Island"
+     },
+     {
+      "card": "Island"
+     },
+     {
+      "card": "Island"
+     },
+     {
+      "card": "Island"
+     }
+    ]
+   }
+  ]
+ },
+ "timeline": [
+  {
+   "turn": 1,
+   "step": "PrecombatMain",
+   "player": "alice",
+   "do": {
+    "Answer": {
+     "prompt": "AnnounceHybridHalf",
+     "with": {
+      "type": "Colored",
+      "value": "White"
+     }
+    }
+   }
+  },
+  {
+   "turn": 1,
+   "step": "PrecombatMain",
+   "player": "alice",
+   "do": {
+    "Take": {
+     "action": "ActivateManaAbility $heath",
+     "mana": [
+      "$p",
+      null
+     ],
+     "yields": [
+      [
+       {
+        "manaType": {
+         "type": "Colored",
+         "value": "White"
+        },
+        "tags": [],
+        "retention": "Ordinary",
+        "restriction": null,
+        "rider": null,
+        "sourceChoices": null
+       },
+       {
+        "manaType": {
+         "type": "Colored",
+         "value": "Black"
+        },
+        "tags": [],
+        "retention": "Ordinary",
+        "restriction": null,
+        "rider": null,
+        "sourceChoices": null
+       }
+      ]
+     ]
+    }
+   }
+  },
+  {
+   "turn": 1,
+   "step": "PrecombatMain",
+   "player": "alice",
+   "check": {
+    "View": {
+     "of": "ManaPool",
+     "player": "alice",
+     "is": [
+      {
+       "manaType": {
+        "type": "Colored",
+        "value": "White"
+       },
+       "tags": [],
+       "retention": "Ordinary",
+       "restriction": null,
+       "rider": null,
+       "sourceChoices": null
+      },
+      {
+       "manaType": {
+        "type": "Colored",
+        "value": "Black"
+       },
+       "tags": [],
+       "retention": "Ordinary",
+       "restriction": null,
+       "rider": null,
+       "sourceChoices": null
+      }
+     ]
+    }
+   }
+  },
+  {
+   "turn": 1,
+   "step": "PrecombatMain",
+   "player": "alice",
+   "do": {
+    "Answer": {
+     "prompt": "AnnounceHybridHalf",
+     "with": {
+      "type": "Colored",
+      "value": "Blue"
+     }
+    }
+   }
+  },
+  {
+   "turn": 1,
+   "step": "PrecombatMain",
+   "player": "alice",
+   "do": {
+    "Take": {
+     "action": "ActivateManaAbility $ruins",
+     "mana": [
+      "$i",
+      null
+     ],
+     "yields": [
+      [
+       {
+        "manaType": {
+         "type": "Colored",
+         "value": "Black"
+        },
+        "tags": [],
+        "retention": "Ordinary",
+        "restriction": null,
+        "rider": null,
+        "sourceChoices": null
+       },
+       {
+        "manaType": {
+         "type": "Colored",
+         "value": "Black"
+        },
+        "tags": [],
+        "retention": "Ordinary",
+        "restriction": null,
+        "rider": null,
+        "sourceChoices": null
+       }
+      ]
+     ]
+    }
+   }
+  },
+  {
+   "turn": 1,
+   "step": "PrecombatMain",
+   "player": "alice",
+   "check": {
+    "Tapped": {
+     "object": "$ruins",
+     "tapped": true
+    }
+   }
+  },
+  {
+   "turn": 1,
+   "step": "PrecombatMain",
+   "player": "alice",
+   "check": {
+    "Tapped": {
+     "object": "$i",
+     "tapped": true
+    }
+   }
+  },
+  {
+   "turn": 1,
+   "step": "PrecombatMain",
+   "player": "alice",
+   "check": {
+    "View": {
+     "of": "ManaPool",
+     "player": "alice",
+     "is": [
+      {
+       "manaType": {
+        "type": "Colored",
+        "value": "White"
+       },
+       "tags": [],
+       "retention": "Ordinary",
+       "restriction": null,
+       "rider": null,
+       "sourceChoices": null
+      },
+      {
+       "manaType": {
+        "type": "Colored",
+        "value": "Black"
+       },
+       "tags": [],
+       "retention": "Ordinary",
+       "restriction": null,
+       "rider": null,
+       "sourceChoices": null
+      },
+      {
+       "manaType": {
+        "type": "Colored",
+        "value": "Black"
+       },
+       "tags": [],
+       "retention": "Ordinary",
+       "restriction": null,
+       "rider": null,
+       "sourceChoices": null
+      },
+      {
+       "manaType": {
+        "type": "Colored",
+        "value": "Black"
+       },
+       "tags": [],
+       "retention": "Ordinary",
+       "restriction": null,
+       "rider": null,
+       "sourceChoices": null
+      }
+     ]
+    }
+   }
+  }
+ ]
+}

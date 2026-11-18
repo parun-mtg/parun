@@ -1,0 +1,221 @@
+{
+ "description": "CR 603.6a, 508.1m, 111.1: Memnarch, the Warden makes two 1/1 colorless Myr artifact tokens on entering, and attacking draws a card for each artifact you control",
+ "note": "Alice's artifacts when Memnarch attacks are Memnarch, its two Myr and a Sol Ring: four, so her hand goes from the one Island her draw step gave her to five. Bob's Sol Ring is not hers and is not counted; the Forest is not an artifact.",
+ "board": {
+  "active": "alice",
+  "step": "PrecombatMain",
+  "seats": [
+   {
+    "name": "alice",
+    "hand": [
+     {
+      "card": "Memnarch, the Warden",
+      "label": "mem"
+     }
+    ],
+    "battlefield": [
+     {
+      "card": "Sol Ring",
+      "label": "ring"
+     },
+     {
+      "card": "Forest"
+     }
+    ],
+    "manaPool": "CCCCCCCCCC",
+    "library": [
+     {
+      "card": "Island"
+     },
+     {
+      "card": "Island"
+     },
+     {
+      "card": "Island"
+     },
+     {
+      "card": "Island"
+     },
+     {
+      "card": "Island"
+     },
+     {
+      "card": "Island"
+     },
+     {
+      "card": "Island"
+     },
+     {
+      "card": "Island"
+     },
+     {
+      "card": "Island"
+     },
+     {
+      "card": "Island"
+     }
+    ]
+   },
+   {
+    "name": "bob",
+    "battlefield": [
+     {
+      "card": "Sol Ring",
+      "label": "bring"
+     }
+    ],
+    "library": [
+     {
+      "card": "Island"
+     },
+     {
+      "card": "Island"
+     },
+     {
+      "card": "Island"
+     },
+     {
+      "card": "Island"
+     },
+     {
+      "card": "Island"
+     },
+     {
+      "card": "Island"
+     },
+     {
+      "card": "Island"
+     },
+     {
+      "card": "Island"
+     },
+     {
+      "card": "Island"
+     },
+     {
+      "card": "Island"
+     }
+    ]
+   }
+  ]
+ },
+ "timeline": [
+  {
+   "turn": 1,
+   "step": "PrecombatMain",
+   "player": "alice",
+   "do": {
+    "Cast": {
+     "object": "$mem",
+     "mana": [
+      null
+     ]
+    }
+   }
+  },
+  {
+   "turn": 1,
+   "step": "PrecombatMain",
+   "player": "alice",
+   "do": "Pass"
+  },
+  {
+   "turn": 1,
+   "step": "PrecombatMain",
+   "player": "alice",
+   "check": {
+    "Count": {
+     "card": "Memnarch, the Warden",
+     "count": 1,
+     "player": "alice",
+     "zone": "Battlefield"
+    }
+   }
+  },
+  {
+   "turn": 1,
+   "step": "PrecombatMain",
+   "player": "alice",
+   "do": "Pass"
+  },
+  {
+   "turn": 1,
+   "step": "PrecombatMain",
+   "player": "alice",
+   "check": {
+    "Count": {
+     "card": "Myr Token",
+     "count": 2,
+     "player": "alice",
+     "zone": "Battlefield"
+    }
+   }
+  },
+  {
+   "turn": 1,
+   "step": "PrecombatMain",
+   "player": "alice",
+   "check": {
+    "PowerToughness": {
+     "object": "Myr Token",
+     "power": 1,
+     "toughness": 1
+    }
+   }
+  },
+  {
+   "turn": 1,
+   "step": "PrecombatMain",
+   "player": "alice",
+   "check": {
+    "View": {
+     "of": "Colors",
+     "object": "Myr Token",
+     "is": []
+    }
+   }
+  },
+  {
+   "turn": 3,
+   "step": "PrecombatMain",
+   "player": "alice",
+   "check": {
+    "Count": {
+     "card": "Island",
+     "count": 1,
+     "player": "alice",
+     "zone": "Hand"
+    }
+   }
+  },
+  {
+   "turn": 3,
+   "step": "DeclareAttackers",
+   "player": "alice",
+   "do": {
+    "Attack": [
+     "Memnarch, the Warden"
+    ]
+   }
+  },
+  {
+   "turn": 3,
+   "step": "DeclareAttackers",
+   "player": "alice",
+   "do": "Pass"
+  },
+  {
+   "turn": 3,
+   "step": "DeclareAttackers",
+   "player": "alice",
+   "check": {
+    "Count": {
+     "card": "Island",
+     "count": 5,
+     "player": "alice",
+     "zone": "Hand"
+    }
+   }
+  }
+ ]
+}

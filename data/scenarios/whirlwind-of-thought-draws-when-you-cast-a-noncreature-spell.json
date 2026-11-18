@@ -1,0 +1,286 @@
+{
+ "description": "CR 603.2, 601.2i: Whirlwind of Thought draws a card when its controller casts a noncreature spell, not a creature spell or an opponent's spell",
+ "note": "Alice's Shock draws her one Island before it resolves; her Grizzly Bears and then bob's Shock at her draw nothing more.",
+ "board": {
+  "active": "alice",
+  "step": "PrecombatMain",
+  "seats": [
+   {
+    "name": "alice",
+    "hand": [
+     {
+      "card": "Shock",
+      "label": "shock"
+     },
+     {
+      "card": "Grizzly Bears",
+      "label": "bears"
+     }
+    ],
+    "battlefield": [
+     {
+      "card": "Whirlwind of Thought",
+      "label": "ww"
+     },
+     {
+      "card": "Mountain",
+      "label": "m"
+     },
+     {
+      "card": "Forest",
+      "label": "f1"
+     },
+     {
+      "card": "Forest",
+      "label": "f2"
+     }
+    ],
+    "library": [
+     {
+      "card": "Island"
+     },
+     {
+      "card": "Island"
+     },
+     {
+      "card": "Island"
+     },
+     {
+      "card": "Island"
+     },
+     {
+      "card": "Island"
+     },
+     {
+      "card": "Island"
+     },
+     {
+      "card": "Island"
+     },
+     {
+      "card": "Island"
+     },
+     {
+      "card": "Island"
+     },
+     {
+      "card": "Island"
+     }
+    ]
+   },
+   {
+    "name": "bob",
+    "hand": [
+     {
+      "card": "Shock",
+      "label": "bshock"
+     }
+    ],
+    "battlefield": [
+     {
+      "card": "Mountain",
+      "label": "bm"
+     }
+    ],
+    "library": [
+     {
+      "card": "Island"
+     },
+     {
+      "card": "Island"
+     },
+     {
+      "card": "Island"
+     },
+     {
+      "card": "Island"
+     },
+     {
+      "card": "Island"
+     },
+     {
+      "card": "Island"
+     },
+     {
+      "card": "Island"
+     },
+     {
+      "card": "Island"
+     },
+     {
+      "card": "Island"
+     },
+     {
+      "card": "Island"
+     }
+    ]
+   }
+  ]
+ },
+ "timeline": [
+  {
+   "turn": 1,
+   "step": "PrecombatMain",
+   "player": "alice",
+   "do": {
+    "Cast": {
+     "object": "$shock",
+     "targets": [
+      "$bob"
+     ],
+     "mana": [
+      "$m",
+      null
+     ]
+    }
+   }
+  },
+  {
+   "turn": 1,
+   "step": "PrecombatMain",
+   "player": "alice",
+   "do": "Pass"
+  },
+  {
+   "turn": 1,
+   "step": "PrecombatMain",
+   "player": "alice",
+   "check": {
+    "Count": {
+     "card": "Island",
+     "count": 1,
+     "player": "alice",
+     "zone": "Hand"
+    }
+   }
+  },
+  {
+   "turn": 1,
+   "step": "PrecombatMain",
+   "player": "alice",
+   "do": "Pass"
+  },
+  {
+   "turn": 1,
+   "step": "PrecombatMain",
+   "player": "alice",
+   "check": {
+    "Life": {
+     "player": "bob",
+     "life": 18
+    }
+   }
+  },
+  {
+   "turn": 1,
+   "step": "PrecombatMain",
+   "player": "alice",
+   "do": {
+    "Cast": {
+     "object": "$bears",
+     "mana": [
+      "$f1",
+      "$f2"
+     ]
+    }
+   }
+  },
+  {
+   "turn": 1,
+   "step": "PrecombatMain",
+   "player": "alice",
+   "do": "Pass"
+  },
+  {
+   "turn": 1,
+   "step": "PrecombatMain",
+   "player": "alice",
+   "check": {
+    "Count": {
+     "card": "Island",
+     "count": 1,
+     "player": "alice",
+     "zone": "Hand"
+    }
+   }
+  },
+  {
+   "turn": 1,
+   "step": "PrecombatMain",
+   "player": "alice",
+   "check": {
+    "Count": {
+     "card": "Grizzly Bears",
+     "count": 1,
+     "player": "alice",
+     "zone": "Battlefield"
+    }
+   }
+  },
+  {
+   "turn": 1,
+   "step": "EndStep",
+   "player": "bob",
+   "do": {
+    "Cast": {
+     "object": "$bshock",
+     "targets": [
+      "$alice"
+     ],
+     "mana": [
+      "$bm"
+     ]
+    }
+   }
+  },
+  {
+   "turn": 1,
+   "step": "EndStep",
+   "player": "alice",
+   "do": "Pass"
+  },
+  {
+   "turn": 1,
+   "step": "EndStep",
+   "player": "alice",
+   "check": {
+    "Count": {
+     "card": "Shock",
+     "count": 1,
+     "player": "bob",
+     "zone": "Stack"
+    }
+   }
+  },
+  {
+   "turn": 1,
+   "step": "EndStep",
+   "player": "alice",
+   "do": "Pass"
+  },
+  {
+   "turn": 1,
+   "step": "EndStep",
+   "player": "alice",
+   "check": {
+    "Count": {
+     "card": "Island",
+     "count": 1,
+     "player": "alice",
+     "zone": "Hand"
+    }
+   }
+  },
+  {
+   "turn": 1,
+   "step": "EndStep",
+   "player": "alice",
+   "check": {
+    "Life": {
+     "player": "alice",
+     "life": 18
+    }
+   }
+  }
+ ]
+}

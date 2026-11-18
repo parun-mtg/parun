@@ -1,0 +1,287 @@
+{
+ "description": "CR 605.1a, 602.1a, 106.4: Dimir, Izzet and Rakdos Signet each pay {1} and tap to add their two colours",
+ "note": "Each Signet's {1} is paid by a Wastes, whose colourless mana is spent, not passed through: each is activated in its own step (upkeep, main, beginning of combat), where the pool, emptied between steps, holds exactly that Signet's two colours. Azorius Signet shares Skycloud Expanse's wording and its scenario.",
+ "board": {
+  "active": "alice",
+  "step": "Upkeep",
+  "seats": [
+   {
+    "name": "alice",
+    "battlefield": [
+     {
+      "card": "Dimir Signet",
+      "label": "d"
+     },
+     {
+      "card": "Izzet Signet",
+      "label": "z"
+     },
+     {
+      "card": "Rakdos Signet",
+      "label": "r"
+     },
+     {
+      "card": "Wastes",
+      "label": "w0"
+     },
+     {
+      "card": "Wastes",
+      "label": "w1"
+     },
+     {
+      "card": "Wastes",
+      "label": "w2"
+     }
+    ],
+    "library": [
+     {
+      "card": "Island"
+     },
+     {
+      "card": "Island"
+     },
+     {
+      "card": "Island"
+     },
+     {
+      "card": "Island"
+     },
+     {
+      "card": "Island"
+     },
+     {
+      "card": "Island"
+     }
+    ]
+   },
+   {
+    "name": "bob",
+    "library": [
+     {
+      "card": "Island"
+     },
+     {
+      "card": "Island"
+     },
+     {
+      "card": "Island"
+     },
+     {
+      "card": "Island"
+     },
+     {
+      "card": "Island"
+     },
+     {
+      "card": "Island"
+     }
+    ]
+   }
+  ]
+ },
+ "timeline": [
+  {
+   "turn": 1,
+   "step": "Upkeep",
+   "player": "alice",
+   "do": {
+    "Take": {
+     "action": "ActivateManaAbility $d",
+     "mana": [
+      "$w0",
+      null
+     ]
+    }
+   }
+  },
+  {
+   "turn": 1,
+   "step": "Upkeep",
+   "player": "alice",
+   "check": {
+    "Tapped": {
+     "object": "$d",
+     "tapped": true
+    }
+   }
+  },
+  {
+   "turn": 1,
+   "step": "Upkeep",
+   "player": "alice",
+   "check": {
+    "View": {
+     "of": "ManaPool",
+     "player": "alice",
+     "is": [
+      {
+       "manaType": {
+        "type": "Colored",
+        "value": "Blue"
+       },
+       "tags": [
+        {
+         "CardType": "Artifact"
+        }
+       ],
+       "retention": "Ordinary",
+       "restriction": null,
+       "rider": null,
+       "sourceChoices": null
+      },
+      {
+       "manaType": {
+        "type": "Colored",
+        "value": "Black"
+       },
+       "tags": [
+        {
+         "CardType": "Artifact"
+        }
+       ],
+       "retention": "Ordinary",
+       "restriction": null,
+       "rider": null,
+       "sourceChoices": null
+      }
+     ]
+    }
+   }
+  },
+  {
+   "turn": 1,
+   "step": "PrecombatMain",
+   "player": "alice",
+   "do": {
+    "Take": {
+     "action": "ActivateManaAbility $z",
+     "mana": [
+      "$w1",
+      null
+     ]
+    }
+   }
+  },
+  {
+   "turn": 1,
+   "step": "PrecombatMain",
+   "player": "alice",
+   "check": {
+    "Tapped": {
+     "object": "$z",
+     "tapped": true
+    }
+   }
+  },
+  {
+   "turn": 1,
+   "step": "PrecombatMain",
+   "player": "alice",
+   "check": {
+    "View": {
+     "of": "ManaPool",
+     "player": "alice",
+     "is": [
+      {
+       "manaType": {
+        "type": "Colored",
+        "value": "Blue"
+       },
+       "tags": [
+        {
+         "CardType": "Artifact"
+        }
+       ],
+       "retention": "Ordinary",
+       "restriction": null,
+       "rider": null,
+       "sourceChoices": null
+      },
+      {
+       "manaType": {
+        "type": "Colored",
+        "value": "Red"
+       },
+       "tags": [
+        {
+         "CardType": "Artifact"
+        }
+       ],
+       "retention": "Ordinary",
+       "restriction": null,
+       "rider": null,
+       "sourceChoices": null
+      }
+     ]
+    }
+   }
+  },
+  {
+   "turn": 1,
+   "step": "BeginningOfCombat",
+   "player": "alice",
+   "do": {
+    "Take": {
+     "action": "ActivateManaAbility $r",
+     "mana": [
+      "$w2"
+     ]
+    }
+   }
+  },
+  {
+   "turn": 1,
+   "step": "BeginningOfCombat",
+   "player": "alice",
+   "check": {
+    "Tapped": {
+     "object": "$r",
+     "tapped": true
+    }
+   }
+  },
+  {
+   "turn": 1,
+   "step": "BeginningOfCombat",
+   "player": "alice",
+   "check": {
+    "View": {
+     "of": "ManaPool",
+     "player": "alice",
+     "is": [
+      {
+       "manaType": {
+        "type": "Colored",
+        "value": "Black"
+       },
+       "tags": [
+        {
+         "CardType": "Artifact"
+        }
+       ],
+       "retention": "Ordinary",
+       "restriction": null,
+       "rider": null,
+       "sourceChoices": null
+      },
+      {
+       "manaType": {
+        "type": "Colored",
+        "value": "Red"
+       },
+       "tags": [
+        {
+         "CardType": "Artifact"
+        }
+       ],
+       "retention": "Ordinary",
+       "restriction": null,
+       "rider": null,
+       "sourceChoices": null
+      }
+     ]
+    }
+   }
+  }
+ ]
+}
