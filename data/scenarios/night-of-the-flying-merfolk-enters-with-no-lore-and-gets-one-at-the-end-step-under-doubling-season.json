@@ -1,0 +1,109 @@
+{
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "battlefield": [
+          {
+            "card": "Island",
+            "label": "island",
+            "ready": true
+          },
+          {
+            "card": "Island",
+            "label": "island-2",
+            "ready": true
+          },
+          {
+            "card": "Island",
+            "label": "island-3",
+            "ready": true
+          },
+          {
+            "card": "Doubling Season",
+            "label": "doubling-season",
+            "ready": true
+          }
+        ],
+        "hand": [
+          {
+            "card": "Night of the Flying Merfolk",
+            "label": "night",
+            "ready": true
+          }
+        ],
+        "name": "alice"
+      },
+      {
+        "name": "bob"
+      }
+    ],
+    "step": "PrecombatMain"
+  },
+  "description": "Night of the Flying Merfolk enters with no lore counter and gets one at the end step, under Doubling Season",
+  "final": [
+    {
+      "Counters": {
+        "count": 1,
+        "kind": {
+          "type": "Lore"
+        },
+        "object": "Night of the Flying Merfolk"
+      }
+    },
+    {
+      "Count": {
+        "card": "Merfolk Token",
+        "count": 4,
+        "player": "alice",
+        "zone": "Battlefield"
+      }
+    }
+  ],
+  "note": "Bedtime story: no lore counter as it enters, so none for Doubling Season to double, and none by the postcombat main phase. The end step's counter is a turn-based action (docs/decisions.md, \"Bedtime story's lore counter is a turn-based action\"), so Doubling Season leaves it at one and only chapter I fires; its two Merfolk are doubled to four.",
+  "timeline": [
+    {
+      "do": {
+        "Cast": {
+          "mana": [
+            "$island",
+            "$island-2",
+            "$island-3"
+          ],
+          "object": "$night"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Counters": {
+          "count": 0,
+          "kind": {
+            "type": "Lore"
+          },
+          "object": "Night of the Flying Merfolk"
+        }
+      },
+      "player": "alice",
+      "step": "PostcombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Counters": {
+          "count": 1,
+          "kind": {
+            "type": "Lore"
+          },
+          "object": "Night of the Flying Merfolk"
+        }
+      },
+      "player": "alice",
+      "step": "EndStep",
+      "turn": 1
+    }
+  ]
+}

@@ -219,6 +219,7 @@ codec =
       Arm.payload "Miracle" (Cost.codec codec) Keyword.Miracle (\x -> case x of Keyword.Miracle y -> Just y; _ -> Nothing),
       Arm.nullary "Soulbond" Keyword.Soulbond,
       Arm.nullary "ReadAhead" Keyword.ReadAhead,
+      Arm.nullary "BedtimeStory" Keyword.BedtimeStory,
       Arm.payload "Prototype" Prototype.codec Keyword.Prototype (\x -> case x of Keyword.Prototype y -> Just y; _ -> Nothing),
       Arm.nullary "ForMirrodin" Keyword.ForMirrodin,
       Arm.payload "Toxic" Common.natural Keyword.Toxic (\x -> case x of Keyword.Toxic y -> Just y; _ -> Nothing),
@@ -427,6 +428,7 @@ tagOf x = case x of
   Keyword.Miracle {} -> "Miracle"
   Keyword.Soulbond {} -> "Soulbond"
   Keyword.ReadAhead {} -> "ReadAhead"
+  Keyword.BedtimeStory {} -> "BedtimeStory"
   Keyword.Prototype {} -> "Prototype"
   Keyword.ForMirrodin {} -> "ForMirrodin"
   Keyword.Toxic {} -> "Toxic"

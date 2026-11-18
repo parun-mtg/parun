@@ -3096,6 +3096,7 @@ keywordPayloadFilters keyword = case keyword of
   -- is the ENGINE's, never a card's.
   Keyword.Reconfigure cost -> costFilters cost
   Keyword.ReadAhead -> []
+  Keyword.BedtimeStory -> []
   Keyword.Training -> []
   -- CR 702.100a is payload-free: the Filter its minted ability carries -- the
   -- entering creature's -- is the ENGINE's, never a card's.

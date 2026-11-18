@@ -2009,6 +2009,7 @@ keywordChildren c keyword_ = case keyword_ of
   Keyword.Blitz cost -> fmap Keyword.Blitz (keywordCost c cost)
   Keyword.Casualty _casualty -> pure keyword_
   Keyword.ReadAhead -> keyword_ <$ keywordLooksBack c HistoryRead.Entries
+  Keyword.BedtimeStory -> pure keyword_
   Keyword.Ravenous -> pure keyword_
   Keyword.Squad cost -> fmap Keyword.Squad (keywordCost c cost)
   Keyword.Prototype _prototype -> pure keyword_
