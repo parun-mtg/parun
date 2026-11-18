@@ -10,7 +10,10 @@
 -- Contraption") are the assemblers, Arms Depot ("Whenever you crank this
 -- Contraption, put two +1/+1 counters on target creature") the Contraption, and
 -- Steamflogger Boss the black-bordered card that doubles a Rigger's assembly.
--- Clock of DOOOOOOOOOOOOM! cranks outside the upkeep (Effect.Crank).
+-- Clock of DOOOOOOOOOOOOM! cranks outside the upkeep (Effect.Crank). Cogmentor
+-- ("Reassemble target Contraption you control") and Suspicious Nanny ("it
+-- reassembles target Contraption that player controls") reassemble
+-- (Effect.Reassemble).
 module Parun.ContraptionSpec where
 
 import qualified Control.Monad as Monad
@@ -27,6 +30,7 @@ import qualified Parun.Engine.Engine as Engine
 import qualified Parun.Engine.Event as Event
 import qualified Parun.Engine.Game as Game
 import qualified Parun.Engine.Projection as Projection
+import qualified Parun.Engine.Projection.View as Projection
 import qualified Parun.Engine.Resolve.Common as Resolve
 import qualified Parun.Engine.Resolve.Effect as Resolve
 import qualified Parun.Engine.Sba as Sba
@@ -65,6 +69,7 @@ spec s registry = Spec.describe s "Contraption" $ do
   crankSpec s registry
   clockSpec s registry
   bossSpec s registry
+  reassembleSpec s registry
   scrapyardSpec s registry
   newGameSpec s registry
 
@@ -84,10 +89,11 @@ data Asked = MkAsked
 
 -- Run `game`, answering each sprocket prompt from `sprockets` in turn (the
 -- third once they run out), each crank prompt with `crank` applied to what was
--- offered, every target slot with `target` alone, and everything else as
--- S.identityAnswer does. Answers the final board and what was asked.
-driving :: [Designation.Designation] -> ([ObjectId] -> [ObjectId]) -> Maybe ObjectId -> GameState.GameState -> Game a -> (GameState.GameState, Asked)
-driving sprockets crank target gs game =
+-- offered, every target slot with what it offers of `targets`, the attackers
+-- as S.aggressiveAnswer does, and everything else as S.identityAnswer does.
+-- Answers the final board and what was asked.
+driving :: [Designation.Designation] -> ([ObjectId] -> [ObjectId]) -> [ObjectId] -> GameState.GameState -> Game a -> (GameState.GameState, Asked)
+driving sprockets crank targets gs game =
   let answering :: Prompt.Prompt r -> State.State ([Designation.Designation], Asked) r
       answering p = case p of
         Prompt.ChooseDesignation _ _ _ offered -> do
@@ -100,8 +106,9 @@ driving sprockets crank target gs game =
         Prompt.ChooseAnyNumber _ _ _ AnyNumberOf.ToCrank offered _ _ -> do
           State.modify' (\(pending, asked) -> (pending, asked {cranksOffered = cranksOffered asked <> [offered]}))
           pure (Set.fromList (crank offered))
-        -- FILTERED, NOT BUILT: the offered recipient that is `target`.
-        Prompt.ChooseTargets _ _ _ slots -> pure (fmap (Set.filter ((== target) . Recipient.objectOf) . snd) slots)
+        -- FILTERED, NOT BUILT: the offered recipients among `targets`.
+        Prompt.ChooseTargets _ _ _ slots -> pure (fmap (Set.filter (maybe False (`elem` targets) . Recipient.objectOf) . snd) slots)
+        Prompt.DeclareAttackers {} -> pure (S.aggressiveAnswer p)
         _ -> pure (S.identityAnswer p)
       ((_, after), (_, asked')) = State.runState (Engine.runGame answering gs game) (sprockets, MkAsked [] [])
    in (after, asked')
@@ -129,7 +136,7 @@ assembleSpec s registry = Spec.describe s "Assemble" $ do
     let (thopter, board) = S.addPermanent ornithopter S.bob (withDepots depot 2 S.alice (S.landsInPlay forest 4))
         (gs, spellId) = S.handOne pick board
         -- The second sprocket, which the prompt's default (its first) is not.
-        (after, asked) = driving [Designation.Sprocket2] id (Just thopter) gs (S.cast S.alice spellId >> Engine.priorityLoop)
+        (after, asked) = driving [Designation.Sprocket2] id [thopter] gs (S.cast S.alice spellId >> Engine.priorityLoop)
     -- THE GAMEPLAY ASSERTION: one Arms Depot is on the battlefield, on the
     -- sprocket alice chose.
     Spec.assertEqWith s "the Depot entered onto the second sprocket" (depotsOn after) [Set.singleton Designation.Sprocket2]
@@ -146,7 +153,7 @@ assembleSpec s registry = Spec.describe s "Assemble" $ do
     let (thopter, lands) = S.addPermanent ornithopter S.bob (S.landsInPlay forest 4)
         board = S.runPure S.identityAnswer lands (Setup.createDeck S.alice (DeckList.deck listed))
         (gs, spellId) = S.handOne pick board
-        (after, _) = driving [Designation.Sprocket2] id (Just thopter) gs (S.cast S.alice spellId >> Engine.priorityLoop)
+        (after, _) = driving [Designation.Sprocket2] id [thopter] gs (S.cast S.alice spellId >> Engine.priorityLoop)
     Spec.assertEqWith s "the Depot entered onto the second sprocket" (depotsOn after) [Set.singleton Designation.Sprocket2]
     Spec.assertEqWith s "and nothing else was listed" (DeckList.problems listed) []
   Spec.it s "a card in the Contraption deck is face down to every player, owner included" $ do
@@ -161,7 +168,7 @@ assembleSpec s registry = Spec.describe s "Assemble" $ do
     ornithopter <- S.printingOf s registry "Ornithopter"
     let (thopter, board) = S.addPermanent ornithopter S.bob (S.landsInPlay forest 4)
         (gs, spellId) = S.handOne pick board
-        (after, asked) = driving [Designation.Sprocket2] id (Just thopter) gs (S.cast S.alice spellId >> Engine.priorityLoop)
+        (after, asked) = driving [Designation.Sprocket2] id [thopter] gs (S.cast S.alice spellId >> Engine.priorityLoop)
     Spec.assertEqWith s "no Depot" (depotsOn after) []
     Spec.assertEqWith s "no sprocket asked" (sprocketsOffered asked) []
     Spec.assertBool s (not (Set.member thopter (GameState.battlefield after))) "though the rest of First Pick resolved"
@@ -172,10 +179,10 @@ crankBoard :: Printing.Printing -> Printing.Printing -> Designation.Designation 
 crankBoard depot piker sprocket =
   let (pikerId, g1) = S.addPermanent piker S.alice (Setup.emptyGame S.bothPlayers)
       (depotId, g2) = S.addPermanent depot S.alice g1
-      onSprocket = g2 {GameState.objects = Map.adjust (\o -> o {Object.designations = Set.insert sprocket (Object.designations o)}) depotId (GameState.objects g2)}
-   in ( onSprocket
+      assembled = onSprocket sprocket depotId g2
+   in ( assembled
           { GameState.turn =
-              (GameState.turn onSprocket)
+              (GameState.turn assembled)
                 { TurnRegisters.phase = Phase.Beginning BeginningStep.Upkeep,
                   TurnRegisters.activePlayer = S.alice,
                   TurnRegisters.priority = Just S.alice
@@ -196,7 +203,7 @@ crankSpec s registry = Spec.describe s "Crank" $ do
     depot <- S.printingOf s registry "Arms Depot"
     piker <- S.printingOf s registry "Goblin Piker"
     let (gs, depotId, pikerId) = crankBoard depot piker Designation.Sprocket1
-        (after, asked) = driving [] id (Just pikerId) gs upkeep
+        (after, asked) = driving [] id [pikerId] gs upkeep
     -- THE GAMEPLAY ASSERTION: the Depot's ability resolved onto the Piker.
     Spec.assertEqWith s "two +1/+1 counters on the Piker" (plusCounters pikerId after) 2
     Spec.assertEqWith s "the Depot was offered to crank" (cranksOffered asked) [[depotId]]
@@ -206,7 +213,7 @@ crankSpec s registry = Spec.describe s "Crank" $ do
     piker <- S.printingOf s registry "Goblin Piker"
     -- The board above, differing only in the Depot's sprocket.
     let (gs, _, pikerId) = crankBoard depot piker Designation.Sprocket2
-        (after, asked) = driving [] id (Just pikerId) gs upkeep
+        (after, asked) = driving [] id [pikerId] gs upkeep
     Spec.assertEqWith s "no counters on the Piker" (plusCounters pikerId after) 0
     Spec.assertEqWith s "nothing offered" (cranksOffered asked) []
     Spec.assertEqWith s "but the counter still moved" (Contraption.crankCounterOf S.alice after) Designation.Sprocket1
@@ -214,7 +221,7 @@ crankSpec s registry = Spec.describe s "Crank" $ do
     depot <- S.printingOf s registry "Arms Depot"
     piker <- S.printingOf s registry "Goblin Piker"
     let (gs, depotId, pikerId) = crankBoard depot piker Designation.Sprocket1
-        (after, asked) = driving [] (const []) (Just pikerId) gs upkeep
+        (after, asked) = driving [] (const []) [pikerId] gs upkeep
     Spec.assertEqWith s "declined, so no counters" (plusCounters pikerId after) 0
     Spec.assertEqWith s "though the Depot was offered" (cranksOffered asked) [[depotId]]
   Spec.it s "a player who controls no Contraption keeps the counter where it is" $ do
@@ -229,13 +236,13 @@ crankSpec s registry = Spec.describe s "Crank" $ do
                     TurnRegisters.priority = Just S.alice
                   }
             }
-        (after, _) = driving [] id Nothing gs upkeep
+        (after, _) = driving [] id [] gs upkeep
     Spec.assertEqWith s "still the third sprocket" (Contraption.crankCounterOf S.alice after) Designation.Sprocket3
   Spec.it s "the turn machinery itself cranks as the upkeep begins" $ do
     depot <- S.printingOf s registry "Arms Depot"
     piker <- S.printingOf s registry "Goblin Piker"
     let (gs, depotId, pikerId) = crankBoard depot piker Designation.Sprocket1
-        (after, asked) = driving [] id (Just pikerId) gs Engine.runStep
+        (after, asked) = driving [] id [pikerId] gs Engine.runStep
     Spec.assertEqWith s "the Depot was offered to crank" (cranksOffered asked) [[depotId]]
     Spec.assertEqWith s "and its ability resolved in the upkeep" (plusCounters pikerId after) 2
 
@@ -250,7 +257,7 @@ clockBoard clock mountain piker depot =
         Nothing -> g2
         Just (printing, sprocket) ->
           let (depotId, g3) = S.addPermanent printing S.alice g2
-           in g3 {GameState.objects = Map.adjust (\o -> o {Object.designations = Set.insert sprocket (Object.designations o)}) depotId (GameState.objects g3)}
+           in onSprocket sprocket depotId g3
    in ( withDepot
           { GameState.turn =
               (GameState.turn withDepot)
@@ -279,7 +286,7 @@ clockSpec s registry = Spec.describe s "Clock of DOOOOOOOOOOOOM!" $ do
     piker <- S.printingOf s registry "Goblin Piker"
     depot <- S.printingOf s registry "Arms Depot"
     let (gs, clockId, pikerId) = clockBoard clock mountain piker (Just (depot, Designation.Sprocket1))
-        (after, asked) = driving [] id (Just pikerId) gs (activateClock clock clockId)
+        (after, asked) = driving [] id [pikerId] gs (activateClock clock clockId)
     -- THE GAMEPLAY ASSERTION: the Depot's ability resolved onto the Piker.
     Spec.assertEqWith s "two +1/+1 counters on the Piker" (plusCounters pikerId after) 2
     Spec.assertEqWith s "one Depot offered to crank" (fmap length (cranksOffered asked)) [1]
@@ -289,7 +296,7 @@ clockSpec s registry = Spec.describe s "Clock of DOOOOOOOOOOOOM!" $ do
     mountain <- S.printingOf s registry "Mountain"
     piker <- S.printingOf s registry "Goblin Piker"
     let (gs, clockId, pikerId) = clockBoard clock mountain piker Nothing
-        (after, asked) = driving [] id (Just pikerId) gs (activateClock clock clockId)
+        (after, asked) = driving [] id [pikerId] gs (activateClock clock clockId)
     Spec.assertEqWith s "the counter moved to the first sprocket" (Contraption.crankCounterOf S.alice after) Designation.Sprocket1
     Spec.assertEqWith s "nothing offered" (cranksOffered asked) []
     Spec.assertEqWith s "and the Clock was tapped for it" (fmap Object.tapped (Game.lookupObject clockId after)) (Just TapState.Tapped)
@@ -306,7 +313,7 @@ bossSpec s registry = Spec.describe s "Steamflogger Boss" $ do
         bossed = snd (S.addPermanent boss S.alice base)
         run board =
           let (gs, spellId) = S.handOne rigger board
-           in driving [Designation.Sprocket2, Designation.Sprocket1] id Nothing gs (S.cast S.alice spellId >> Engine.priorityLoop)
+           in driving [Designation.Sprocket2, Designation.Sprocket1] id [] gs (S.cast S.alice spellId >> Engine.priorityLoop)
         (withBoss, askedWith) = run bossed
         (without, askedWithout) = run base
     -- THE GAMEPLAY ASSERTION: two Depots under the Boss, each on its own
@@ -331,7 +338,7 @@ bossSpec s registry = Spec.describe s "Steamflogger Boss" $ do
                 Monad.forM_ (filter (\oid -> Projection.namesOf oid g == Set.singleton (CardName.MkCardName (Text.pack "Wrench-Rigger"))) (Set.toList (GameState.battlefield g))) $ \oid ->
                   Event.changeZone (pure ()) oid Zone.Graveyard
                 Engine.priorityLoop
-           in driving [Designation.Sprocket2, Designation.Sprocket1] id Nothing gs riggerGone
+           in driving [Designation.Sprocket2, Designation.Sprocket1] id [] gs riggerGone
         (withBoss, _) = run (snd (S.addPermanent boss S.alice base))
         (without, _) = run base
     -- THE GAMEPLAY ASSERTION: the Boss reads the departed Rigger's last known
@@ -347,7 +354,7 @@ bossSpec s registry = Spec.describe s "Steamflogger Boss" $ do
     -- The first case's Boss board, differing only in who controls the Boss.
     let board = snd (S.addPermanent boss S.bob (withDepots depot 3 S.alice (S.landsInPlay mountain 1)))
         (gs, spellId) = S.handOne rigger board
-        (after, _) = driving [Designation.Sprocket2, Designation.Sprocket1] id Nothing gs (S.cast S.alice spellId >> Engine.priorityLoop)
+        (after, _) = driving [Designation.Sprocket2, Designation.Sprocket1] id [] gs (S.cast S.alice spellId >> Engine.priorityLoop)
     Spec.assertEqWith s "alice's Rigger, out of reach of bob's Boss: one Depot" (depotsOn after) [Set.singleton Designation.Sprocket2]
   Spec.it s "the Boss does not double a player's assembly" $ do
     boss <- S.printingOf s registry "Steamflogger Boss"
@@ -358,7 +365,7 @@ bossSpec s registry = Spec.describe s "Steamflogger Boss" $ do
     let (thopter, board) = S.addPermanent ornithopter S.bob (withDepots depot 3 S.alice (S.landsInPlay forest 4))
         bossed = snd (S.addPermanent boss S.alice board)
         (gs, spellId) = S.handOne pick bossed
-        (after, _) = driving [] id (Just thopter) gs (S.cast S.alice spellId >> Engine.priorityLoop)
+        (after, _) = driving [] id [thopter] gs (S.cast S.alice spellId >> Engine.priorityLoop)
     Spec.assertEqWith s "First Pick's controller, not a Rigger, assembles: one Depot" (length (depotsOn after)) 1
   Spec.it s "other Riggers alice controls get +1/+0 and haste, and the Boss does not" $ do
     boss <- S.printingOf s registry "Steamflogger Boss"
@@ -371,6 +378,50 @@ bossSpec s registry = Spec.describe s "Steamflogger Boss" $ do
     Spec.assertEqWith s "the Boss itself is 3/3" (Projection.powerOf bossId gs, Projection.toughnessOf bossId gs) (Just 3, Just 3)
     Spec.assertBool s (not (Projection.hasKeyword Keyword.Haste bossId gs)) "without haste"
     Spec.assertEqWith s "bob's Rigger is 1/1" (Projection.powerOf bobsRigger gs) (Just 1)
+
+-- Put this permanent on this sprocket, as an assemble would have.
+onSprocket :: Designation.Designation -> ObjectId -> GameState.GameState -> GameState.GameState
+onSprocket sprocket oid gs = gs {GameState.objects = Map.adjust (\o -> o {Object.designations = Set.insert sprocket (Object.designations o)}) oid (GameState.objects gs)}
+
+-- The Unstable FAQ's reassemble.
+reassembleSpec :: (Monad m, Monad n) => Spec.Spec m n -> Registry.Registry m -> n ()
+reassembleSpec s registry = Spec.describe s "Reassemble" $ do
+  Spec.it s "Cogmentor moves alice's Arms Depot onto another of her sprockets, where her next crank finds it" $ do
+    cogmentor <- S.printingOf s registry "Cogmentor"
+    depot <- S.printingOf s registry "Arms Depot"
+    mountain <- S.printingOf s registry "Mountain"
+    piker <- S.printingOf s registry "Goblin Piker"
+    let (cogId, g1) = S.addPermanent cogmentor S.alice (S.landsInPlay mountain 4)
+        (pikerId, g2) = S.addPermanent piker S.alice g1
+        (depotId, g3) = S.addPermanent depot S.alice g2
+        board = onSprocket Designation.Sprocket2 depotId g3
+        gs = board {GameState.turn = (GameState.turn board) {TurnRegisters.phase = Phase.PrecombatMain, TurnRegisters.activePlayer = S.alice, TurnRegisters.priority = Just S.alice}}
+        toUpkeep g = g {GameState.turn = (GameState.turn g) {TurnRegisters.phase = Phase.Beginning BeginningStep.Upkeep}}
+        game = do
+          Monad.forM_ (take 1 (Face.activatedAbilities (S.combinedFace cogmentor))) $ \ability ->
+            Activate.activateAbility S.alice cogId ability >> Engine.priorityLoop
+          State.modify' toUpkeep
+          upkeep
+        (after, asked) = driving [Designation.Sprocket1] id [depotId, pikerId] gs game
+    -- THE GAMEPLAY ASSERTION: the CRANK! counter moves from the third sprocket
+    -- to the first, where the reassembled Depot now is, and cranks it.
+    Spec.assertEqWith s "two +1/+1 counters on the Piker" (plusCounters pikerId after) 2
+    Spec.assertEqWith s "the Depot is on the first sprocket alone" (depotsOn after) [Set.singleton Designation.Sprocket1]
+    Spec.assertEqWith s "offered alice's two other sprockets" (sprocketsOffered asked) [[Designation.Sprocket1, Designation.Sprocket3]]
+    Spec.assertEqWith s "the same Depot, never having left the battlefield" (Game.zoneOf depotId after) (Just Zone.Battlefield)
+  Spec.it s "Suspicious Nanny's combat damage takes bob's Arms Depot onto any of alice's sprockets" $ do
+    nanny <- S.printingOf s registry "Suspicious Nanny"
+    depot <- S.printingOf s registry "Arms Depot"
+    let (board, _, _) = S.combatBoardOf [nanny] []
+        (depotId, g1) = S.addPermanent depot S.bob board
+        gs = onSprocket Designation.Sprocket2 depotId g1
+        (after, asked) = driving [Designation.Sprocket2] id [depotId] gs S.combatGame
+    -- THE GAMEPLAY ASSERTION: alice controls the Depot, on the sprocket she
+    -- chose, the one it was on included.
+    Spec.assertEqWith s "alice controls the Depot" (Projection.controllerOf depotId after) (Just S.alice)
+    Spec.assertEqWith s "on her second sprocket" (depotsOn after) [Set.singleton Designation.Sprocket2]
+    Spec.assertEqWith s "offered all three of her sprockets" (sprocketsOffered asked) [[Designation.Sprocket1, Designation.Sprocket2, Designation.Sprocket3]]
+    Spec.assertEqWith s "after the Nanny dealt bob 3 combat damage" (S.lifeOf S.bob after) (Just 17)
 
 -- The Unstable FAQ's scrapyard.
 scrapyardSpec :: (Monad m, Monad n) => Spec.Spec m n -> Registry.Registry m -> n ()
@@ -416,7 +467,7 @@ newGameSpec s registry = Spec.describe s "A new game" $ do
     piker <- S.printingOf s registry "Goblin Piker"
     let (gs, _, pikerId) = crankBoard depot piker Designation.Sprocket1
         -- One upkeep first, so the counter has left the third sprocket.
-        (cranked, _) = driving [] id (Just pikerId) gs upkeep
+        (cranked, _) = driving [] id [pikerId] gs upkeep
         board = withDepots depot 1 S.alice cranked
         restarted = S.runPure S.identityAnswer board (Setup.restartGame (Resolve.performHandAction Resolve.noSubgame) Set.empty S.alice)
     Spec.assertEqWith s "the counter had moved to the first sprocket" (Contraption.crankCounterOf S.alice board) Designation.Sprocket1
@@ -427,7 +478,7 @@ newGameSpec s registry = Spec.describe s "A new game" $ do
     depot <- S.printingOf s registry "Arms Depot"
     piker <- S.printingOf s registry "Goblin Piker"
     let (gs, assembled, pikerId) = crankBoard depot piker Designation.Sprocket1
-        (cranked, _) = driving [] id (Just pikerId) gs upkeep
+        (cranked, _) = driving [] id [pikerId] gs upkeep
         parent = withDepots depot 1 S.alice cranked
         sub = S.runPure S.identityAnswer (Setup.subgameStateFrom S.alice parent) (Setup.startGameFromCards (Resolve.performHandAction Resolve.noSubgame) Set.empty)
         back = Setup.funnelBack sub parent

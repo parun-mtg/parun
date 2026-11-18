@@ -814,6 +814,7 @@ objectRefPositions =
         ("guess", Effect.Guess Guess.MkGuess {Guess.subject = plantedRef "gu", Guess.slot = SlotName.MkSlotName (Text.pack "gs"), Guess.guesser = PlayerRef.Relative PlayerRelation.You, Guess.proposition = Filter.Type.And [], Guess.right = SlotName.MkSlotName (Text.pack "gr")}, [plantedRef "gu"]),
         ("explore", Effect.Explore (plantedRef "ex"), [plantedRef "ex"]),
         ("assemble", Effect.Assemble (Just (plantedRef "as")), [plantedRef "as"]),
+        ("reassemble", Effect.Reassemble (plantedRef "ra"), [plantedRef "ra"]),
         ("planeswalk", Effect.Planeswalk (Just (plantedRef "pw")), [plantedRef "pw"]),
         ("arrange-in-library", Effect.ArrangeInLibrary (ArrangeInLibrary.MkArrangeInLibrary (plantedRef "al") (PlayerRef.Relative PlayerRelation.You) Nothing Nothing CardSelection.ByChoice), [plantedRef "al"]),
         ("connive", Effect.Connive (Connive.MkConnive (Quantity.Type.Literal 1) (plantedRef "cn")), [plantedRef "cn"]),
@@ -5389,6 +5390,7 @@ effectFilters effect = case effect of
   -- reaches it, as PutCounters' does.
   Effect.Explore ref -> frame SourceHostFramed (objectRefFilters ref)
   Effect.Assemble ref -> foldMap (frame SourceHostFramed . objectRefFilters) ref
+  Effect.Reassemble ref -> frame SourceHostFramed (objectRefFilters ref)
   Effect.Crank -> []
   Effect.ArrangeInLibrary (ArrangeInLibrary.MkArrangeInLibrary ref _ _ _ _) -> frame SourceHostFramed (objectRefFilters ref)
   Effect.Connive (Connive.MkConnive quantity ref) -> frame Unframed (quantityFilters quantity) <> frame SourceHostFramed (objectRefFilters ref)

@@ -881,6 +881,7 @@ effectPlayerRefs effect = case effect of
   Effect.AsYouCascade {} -> []
   Effect.Explore {} -> []
   Effect.Assemble {} -> []
+  Effect.Reassemble {} -> []
   Effect.Crank -> []
   Effect.ArrangeInLibrary (ArrangeInLibrary.MkArrangeInLibrary _ chooser _ _ _) -> [chooser]
   Effect.Connive {} -> []
@@ -1313,6 +1314,7 @@ slotsOf effect = joinTwo (joinTwo (joinSlots (fmap objectRefSlots (effectObjectR
   Effect.AsYouCascade {} -> Map.empty
   Effect.Explore _ -> Map.empty
   Effect.Assemble _ -> Map.empty
+  Effect.Reassemble _ -> Map.empty
   Effect.Crank -> Map.empty
   Effect.ArrangeInLibrary _ -> Map.empty
   Effect.Connive (Connive.MkConnive quantity _) -> quantitySlots quantity
@@ -2254,6 +2256,7 @@ ownSlotsAreExhaustive effect = case effect of
   Effect.AsYouCascade {} -> True
   Effect.Explore {} -> True
   Effect.Assemble {} -> True
+  Effect.Reassemble {} -> True
   Effect.Crank -> True
   Effect.ArrangeInLibrary {} -> True
   Effect.Connive (Connive.MkConnive quantity _) -> Quantity.slotsAreExhaustive quantity
@@ -2573,6 +2576,7 @@ hasRead wanted =
         Effect.AsYouCascade {} -> False
         Effect.Explore {} -> False
         Effect.Assemble {} -> False
+        Effect.Reassemble {} -> False
         Effect.Crank -> False
         Effect.ArrangeInLibrary {} -> False
         Effect.Connive (Connive.MkConnive quantity _) -> Quantity.hasRead wanted quantity
@@ -2792,6 +2796,7 @@ boundSlots effect = case effect of
   Effect.AsYouCascade {} -> Set.empty
   Effect.Explore {} -> Set.empty
   Effect.Assemble {} -> Set.empty
+  Effect.Reassemble {} -> Set.empty
   Effect.Crank -> Set.empty
   -- CR 608.2c: the cards arranged, for a later "the rest" to exclude.
   Effect.ArrangeInLibrary payload -> foldMap Set.singleton (ArrangeInLibrary.slot payload)

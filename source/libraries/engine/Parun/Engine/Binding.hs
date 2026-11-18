@@ -1117,6 +1117,13 @@ discoveredCards = SlotName.MkSlotName (Text.pack "thoseDiscoverExiles")
 assimilatedPermanents :: SlotName
 assimilatedPermanents = SlotName.MkSlotName (Text.pack "thoseAssimilatedPermanents")
 
+-- The Unstable FAQ's reassemble: the reserved slot naming the Contraption whose
+-- control a reassemble takes, placed in the arm's own `legal` by
+-- Parun.Engine.Resolve.Arms.Counters's Reassemble arm and never stored, as
+-- assimilatedPermanents is. Reserved for airbentObjects' reason.
+reassembledContraption :: SlotName
+reassembledContraption = SlotName.MkSlotName (Text.pack "thatReassembledContraption")
+
 -- CR 701.72b: assimilatedPermanents' twin naming the CARDS in other zones,
 -- which rule 701.72b puts onto the battlefield.
 assimilatedCards :: SlotName

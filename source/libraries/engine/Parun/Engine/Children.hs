@@ -1329,6 +1329,7 @@ effectChildren c effect = case effect of
   Effect.OpenAttraction -> pure effect
   Effect.RollToVisit -> pure effect
   Effect.Assemble ref -> fmap Effect.Assemble (traverse (onObjectRef c) ref)
+  Effect.Reassemble ref -> fmap Effect.Reassemble (onObjectRef c ref)
   Effect.Crank -> pure effect
   Effect.Planeswalk ref -> fmap Effect.Planeswalk (traverse (onObjectRef c) ref)
   Effect.ChaosEnsues ref -> fmap Effect.ChaosEnsues (traverse (onObjectRef c) ref)

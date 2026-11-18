@@ -794,6 +794,11 @@ data Effect card ability
     -- ObjectRef is the permanent that assembles it (Wrench-Rigger's "it
     -- assembles"), Nothing where the player does (First Pick).
     Assemble (Maybe ObjectRef.ObjectRef)
+  | -- | The Unstable FAQ's reassemble: the resolving controller moves each
+    -- Contraption the ObjectRef names onto another of their sprockets, gaining
+    -- control of it first where they lack it, performed by
+    -- Parun.Engine.Contraption.reassemble.
+    Reassemble ObjectRef.ObjectRef
   | -- | The Unstable FAQ's crank, outside the upkeep (Clock of
     -- DOOOOOOOOOOOOM!): the resolving controller's CRANK! counter moves to
     -- their next sprocket and they crank any number of its Contraptions,

@@ -409,6 +409,7 @@ manaProduced effect = case effect of
   Effect.AsYouCascade {} -> Nothing
   Effect.Explore {} -> Nothing
   Effect.Assemble {} -> Nothing
+  Effect.Reassemble {} -> Nothing
   Effect.Crank -> Nothing
   Effect.Connive {} -> Nothing
   Effect.Discard {} -> Nothing
@@ -626,6 +627,7 @@ playerChoice effect = case effect of
   Effect.AsYouCascade {} -> Nothing
   Effect.Explore {} -> Nothing
   Effect.Assemble {} -> Nothing
+  Effect.Reassemble {} -> Nothing
   Effect.Crank -> Nothing
   Effect.Connive {} -> Nothing
   Effect.Discard {} -> Nothing
@@ -849,6 +851,7 @@ movesLibraryCard effect = case effect of
   Effect.OpenAttraction -> False
   Effect.RollToVisit -> False
   Effect.Assemble {} -> False
+  Effect.Reassemble {} -> False
   Effect.Crank -> False
   Effect.Planeswalk {} -> False
   Effect.ChaosEnsues {} -> False
