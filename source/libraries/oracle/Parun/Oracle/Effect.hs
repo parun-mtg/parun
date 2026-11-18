@@ -271,7 +271,11 @@ mode context m = named' <> chosen
       [(s, slot)] <- [Map.toList (Mode.targetSlots m)]
       (_, c) : _ <- [clauses']
       e Seq.:<| _ <- [Clause.effects c]
-      Monad.guard (TargetSlot.pool slot == Pool.Players && c == unridden c && notElem s (concatMap snd (clause inner c {Clause.effects = Seq.singleton e})))
+      -- The first instruction must render without the slot: one that renders
+      -- nothing names no slot only by failing (Archon of Cruelty's "target
+      -- opponent sacrifices ...").
+      let alone = clause inner c {Clause.effects = Seq.singleton e}
+      Monad.guard (TargetSlot.pool slot == Pool.Players && c == unridden c && not (null alone) && notElem s (concatMap snd alone))
       announced <- Target.target inner s
       rendered <- steps inner {Target.bound = Map.insert s (Text.pack "the chosen player") (Target.bound inner)} clauses'
       Monad.guard (all (null . snd) rendered && any (Text.isInfixOf (Text.pack "the chosen player") . fst) rendered)
