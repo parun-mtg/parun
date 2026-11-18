@@ -57,6 +57,9 @@ data Event
     MkRead ObjectId.ObjectId
   | -- | Hides the card shown.
     MkClose
+  | -- | Concedes the game (CR 104.3a): passes now, and the hotseat answers
+    -- its next concession question yes.
+    MkConcede
   | -- | Makes this blocker the one the next attacker tapped is for.
     MkFocus Natural
   | -- | Passes now, and every priority after it until the turn ends while
@@ -115,12 +118,37 @@ automatic request = case Text.unpack (Question.kind question) of
     question = Request.question request
     offer = Question.offer question
 
+-- | The picks a request's form starts with: combat damage divided so each
+-- recipient in order takes lethal damage and the last the rest (CR 510.1c),
+-- for the seat to change or confirm; nothing picked for any other.
+initial :: Request.Request -> Set.Set (Natural, Natural)
+initial request = case (Text.unpack (Question.kind (Request.question request)), damageOf request) of
+  ("AssignCombatDamage", Just (lethal, total)) ->
+    let lastIndex = length lethal - 1
+        go _ [] = []
+        go remaining ((g, threshold) : rest) =
+          let given = if g == lastIndex then remaining else min threshold remaining
+           in (Int.toNaturalSaturating g, given) : go (Natural.minusSaturating remaining given) rest
+     in Set.fromList (go total (zip [0 :: Int ..] (fmap snd lethal)))
+  _ -> Set.empty
+
+-- | A damage assignment's recipients with their lethal damage, and its total.
+damageOf :: Request.Request -> Maybe ([(R.Reply, Natural)], Natural)
+damageOf request = do
+  let offer = Question.offer (Request.question request)
+  lethal <- Protocol.field "lethal" offer >>= Protocol.arrayOf >>= mapM Protocol.entryOf
+  total <- Protocol.field "total" offer >>= Protocol.naturalOf
+  pure (lethal, total)
+
 -- | Where a ChooseAction offer's pass sits.
 passIndex :: Request.Request -> Maybe Integer
 passIndex request = do
   Monad.guard $ Question.kind (Request.question request) == Text.pack "ChooseAction"
   options' <- Protocol.arrayOf (Question.offer (Request.question request))
   fmap toInteger (List.findIndex isPass options')
+
+isManaAbility :: R.Reply -> Bool
+isManaAbility option = (Protocol.field "action" option >>= Offer.textOf) == Just (Text.pack "ActivateManaAbility")
 
 isPass :: R.Reply -> Bool
 isPass option = (Protocol.field "action" option >>= Offer.textOf) == Just (Text.pack "Pass")
@@ -155,19 +183,35 @@ blank = MkScreen Set.empty Nothing Seq.empty 0 Nothing
 -- and the sheet of the card being read.
 view :: Request.Request -> Screen -> Html.Html Event
 view request screen =
-  let marks = cues request (selected screen) (focus screen)
-      board = Request.view request
+  table request screen (cues request (selected screen) (focus screen)) $
+    [Element.el "p" ["problem"] [Element.attr "role" (Text.pack "alert")] [Html.text problem] | problem <- Maybe.maybeToList (Request.problem request)]
+      <> news screen
+      <> form request (selected screen)
+
+-- | The page while the game goes on without the seat: a request it was not
+-- asked (Hotseat answers it), its board shown as it stands, and in place of
+-- a question what the game is waiting on.
+watching :: Request.Request -> Screen -> Html.Html Event
+watching request screen =
+  let status = case Request.view request of
+        Just b
+          | not (null (PlayerView.stack b)) -> "Resolving\x2026"
+          | PlayerView.active b /= PlayerView.viewer b -> Text.unpack (Render.player (PlayerView.active b)) <> " is taking their turn\x2026"
+        _ -> "Moving on\x2026"
+   in table request screen (Board.MkMarks (Card.MkCue [] . MkRead . ObjectView.object) (const Nothing)) $
+        news screen <> [Element.el "p" ["waiting"] [] [Element.el "span" ["spinner", "small"] [Element.attr "aria-hidden" (Text.pack "true")] [], Element.string status]]
+
+-- | The game screen around a prompt's contents.
+table :: Request.Request -> Screen -> Board.Marks Event -> [Html.Html Event] -> Html.Html Event
+table request screen marks prompt =
+  let board = Request.view request
    in Element.el "main" ["game"] [] $
         foldMap (\b -> [Board.turnBar b]) board
           <> [Element.el "div" ["play-area"] [] (foldMap (\b -> [Board.view marks b]) board)]
           <> foldMap (Board.hand marks) board
           <> [ Element.el "aside" ["side"] [] $
-                 [ Element.el "section" ["prompt"] [Element.attr "aria-live" (Text.pack "polite")] $
-                     [Element.el "p" ["problem"] [Element.attr "role" (Text.pack "alert")] [Html.text problem] | problem <- Maybe.maybeToList (Request.problem request)]
-                       <> news screen
-                       <> form request (selected screen)
-                 ]
-                   <> [logView screen | not (Seq.null (logged screen))]
+                 Element.el "section" ["prompt"] [Element.attr "aria-live" (Text.pack "polite")] prompt
+                   : [logView screen | not (Seq.null (logged screen))]
              ]
           <> Maybe.maybeToList (do b <- board; r <- reading screen; sheetFor request b marks r)
 
@@ -230,7 +274,9 @@ cues :: Request.Request -> Set.Set (Natural, Natural) -> Maybe Natural -> Board.
 cues request chosen focused =
   let question = Request.question request
       offer = Question.offer question
-      acting = actionsByObject request
+      -- Lit: a card with an action besides a mana ability, which every
+      -- untapped land has.
+      acting = Set.fromList [oid | Question.kind question == Text.pack "ChooseAction", Just options' <- [Protocol.arrayOf offer], option <- options', not (isManaAbility option), Just oid <- [Protocol.field "object" option >>= Offer.objectOf]]
       sources = case Text.unpack (Question.kind question) of
         kind | kind `elem` ["ChooseManaSource", "ChooseExtraManaSource"] -> Map.fromList [(oid, source) | (source, _) <- foldMap (Maybe.mapMaybe Offer.manaSource) (Protocol.field "sources" offer >>= Protocol.arrayOf), Just oid <- [Offer.objectOf source]]
         _ -> Map.empty
@@ -262,7 +308,7 @@ cues request chosen focused =
               (_, Just cue, _, _) -> cue
               (_, _, Just gi, _) -> toggled gi
               (_, _, _, Just source) -> Card.MkCue ["choosable"] (MkAnswer source)
-              _ -> Card.MkCue ["playable" | Map.member oid acting] (MkRead oid)
+              _ -> Card.MkCue ["playable" | Set.member oid acting] (MkRead oid)
    in Board.MkMarks objectCue (\pid -> fmap toggled (Map.lookup pid players))
 
 withMark :: Card.Cue msg -> [String] -> Card.Cue msg
@@ -321,6 +367,7 @@ step request picked event typed = case event of
   MkRead _ -> MkPicking picked
   MkClose -> MkPicking picked
   MkFocus _ -> MkPicking picked
+  MkConcede -> maybe (MkRefused $ Text.pack "Concede when you have priority.") (MkReplied . R.Number) $ passIndex request
   MkSkip -> maybe (MkRefused $ Text.pack "There is no pass to make.") (MkReplied . R.Number) $ passIndex request
   MkAuto -> maybe (MkRefused $ Text.pack "Auto can't pay the rest of this cost. Choose a source.") MkReplied $ auto request
 
@@ -455,7 +502,9 @@ form request picked = case Text.unpack (Question.kind question) of
   "ChooseAction"
     | Just shown <- Request.view request,
       Just options' <- Protocol.arrayOf offer ->
-        let (passes, rest) = List.partition (isPass . snd) (Offer.distinct shown options')
+        let (passes, others) = List.partition (isPass . snd) (Offer.distinct shown options')
+            -- A mana ability is in its permanent's sheet, not the list.
+            rest = filter (not . isManaAbility . snd) others
             yours = PlayerView.active shown == PlayerView.viewer shown
             settled = null (PlayerView.stack shown)
             prompt
@@ -468,6 +517,7 @@ form request picked = case Text.unpack (Question.kind question) of
                        [primary (MkAnswer $ R.Number i) (Text.pack (if settled then "Pass" else "Pass and resolve")) | (i, _) <- passes]
                          <> [button MkSkip (Text.pack (if yours then "End turn" else "Pass to my turn")) | settled, not (null passes)]
                    ]
+                <> [Element.el "button" ["concede"] [Element.attr "type" (Text.pack "button"), Element.attr "data-confirm" (Text.pack "Concede this game?"), Element.on "click" MkConcede] [Element.string "Concede"] | not (null passes)]
   kind
     | kind `elem` ["ChooseManaSource", "ChooseExtraManaSource"],
       Just shown <- Request.view request,
@@ -531,6 +581,19 @@ form request picked = case Text.unpack (Question.kind question) of
                 [primary MkSubmit (Text.pack (if count == 0 then "No attack" else "Attack with " <> show count))]
                   <> [button (MkAnswer (R.Array attackers)) (Text.pack "All") | length attackers > 1, count < length attackers]
             ]
+  "AssignCombatDamage"
+    | Just chooser <- picker request ->
+        heading "Divide the combat damage. Each blocker in order takes lethal damage before the next."
+          : [ Element.el
+                "div"
+                ["amount-row"]
+                []
+                [ Element.el "span" ["amount-label"] [] [Html.text (title group)],
+                  Element.el "div" ["segmented"] [] [Element.button (["on" | Set.member (g, i) picked]) (MkToggle g i) [Html.text label] | (i, (_, label)) <- zip [0 ..] (options group)]
+                ]
+            | (g, group) <- zip [0 ..] (groups chooser)
+            ]
+            <> [primary MkSubmit (send chooser)]
   "DeclareBlockers"
     | Just chooser <- picker request ->
         heading "Declare blockers: tap a creature of yours, then the attacker it blocks."

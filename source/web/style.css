@@ -289,6 +289,20 @@ main.message {
   animation: spin 0.9s linear infinite;
 }
 
+.spinner.small {
+  display: inline-block;
+  width: 1em;
+  height: 1em;
+  border-width: 2px;
+  vertical-align: -0.15em;
+  margin-right: 0.5em;
+}
+
+.waiting {
+  color: var(--muted);
+  padding: 0.4em 0;
+}
+
 @keyframes spin {
   to { transform: rotate(360deg); }
 }
@@ -491,6 +505,7 @@ body:has(main.game) {
 main.game {
   height: 100dvh;
   display: grid;
+  grid-template-columns: minmax(0, 1fr);
   grid-template-rows: auto minmax(0, 1fr) auto auto;
   grid-template-areas:
     "bar"
@@ -746,8 +761,8 @@ details.pile[open] {
 .many {
   position: absolute;
   z-index: 1;
-  top: -7px;
-  left: -7px;
+  bottom: -6px;
+  left: -6px;
   min-width: 24px;
   height: 22px;
   padding: 0 0.4em;
@@ -1123,11 +1138,64 @@ details.pile[open] {
   font-size: 0.9em;
 }
 
+.amount-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.3em 0.6em;
+}
+
+.amount-label {
+  font-size: 0.9rem;
+}
+
+.segmented {
+  display: inline-flex;
+  flex-wrap: wrap;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+}
+
+#app .segmented button {
+  min-width: 40px;
+  border: 0;
+  border-right: 1px solid var(--border);
+  border-radius: 0;
+  box-shadow: none;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}
+
+#app .segmented button:last-child {
+  border-right: 0;
+}
+
+#app .segmented button.on {
+  background: var(--accent);
+  color: var(--accent-text);
+  font-weight: 700;
+}
+
 .subhead {
   font-size: 0.8rem;
   color: var(--muted);
   font-weight: 600;
   margin-top: 0.3em;
+}
+
+#app button.concede {
+  align-self: center;
+  min-height: 32px;
+  padding: 0.2em 0.8em;
+  border: 0;
+  background: none;
+  box-shadow: none;
+  color: var(--muted);
+  font-size: 0.8rem;
+  text-decoration: underline;
+  text-align: center;
 }
 
 .problem {
@@ -1170,6 +1238,7 @@ details.log[open] > summary::after {
 }
 
 .latest {
+  min-width: 0;
   overflow: hidden;
   white-space: nowrap;
   text-overflow: ellipsis;

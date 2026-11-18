@@ -119,6 +119,9 @@ for (const type of events) {
   root.addEventListener(type, (event) => {
     const path = pathOf(event.target);
     if (path === null) return;
+    // A button that asks first (data-confirm) sends nothing unless confirmed.
+    const asking = type === "click" ? event.target.closest("[data-confirm]") : null;
+    if (asking && !confirm(asking.dataset.confirm)) return;
     // A tap shows the page busy until the engine next patches it.
     if (type === "click" && event.target.closest("button")) {
       document.body.classList.add("busy");

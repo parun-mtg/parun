@@ -64,6 +64,10 @@ next page = do
     Seq.EmptyL -> (events, Nothing)
   maybe (wait >> next page) pure queued
 
+-- | Drops the events taken that no one has waited for yet.
+flush :: Page msg -> IO ()
+flush page = IORef.atomicWriteIORef (taken page) Seq.empty
+
 dispatch :: Page msg -> Prim.JSString -> Prim.JSString -> Prim.JSString -> IO ()
 dispatch page event path value = do
   html <- IORef.readIORef $ shown page

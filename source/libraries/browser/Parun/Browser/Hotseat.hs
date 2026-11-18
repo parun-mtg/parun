@@ -85,7 +85,7 @@ play page = do
   Browser.display page . fmap Right $ starting (Lobby.deckName deckRoot one) (Lobby.deckName deckRoot two)
   registry <- Registry.defaultRegistry loaded :: IO (Registry.Registry Identity.Identity)
   -- The bot needs no screen, so the player is never handed it.
-  seatRef <- IORef.newIORef . MkSeat (Just player) False Nothing Map.empty Seq.empty 0 =<< Clock.getMonotonicTime
+  seatRef <- IORef.newIORef . MkSeat (Just player) False Nothing False Map.empty Seq.empty 0 =<< Clock.getMonotonicTime
   listed <- (,) <$> Command.load registry one <*> Command.load registry two
   case listed of
     (Right first, Right second) -> do
@@ -143,10 +143,18 @@ exchange lookUp page seatRef request = do
             "DeclareAttackers" -> Just (R.Array [])
             _ -> Nothing
     IORef.writeIORef seatRef state {paying = Maybe.isJust auto, skipping = if skipping state == turn then skipping state else Nothing}
-    reply <- case (Web.Question.automatic request, auto, skipped) of
-      (Just reply, _, _) -> traced "answered unasked" >> pure reply
-      (_, Just reply, _) -> traced "paid by auto" >> pure reply
-      (_, _, Just reply) -> traced "skipped" >> pure reply
+    let -- The board as it stands, while the seat is not asked.
+        watch how reply = do
+          traced how
+          Monad.when (Maybe.isJust (Request.view request)) $ do
+            now <- IORef.readIORef seatRef
+            Browser.display page . fmap Right $ Web.Question.watching request (Web.Question.blank {Web.Question.logged = logged now, Web.Question.fresh = freshOf now})
+          pure reply
+        conceded = if conceding state && kind == Text.pack "Concede" then Just (R.Text (Text.pack "Concedes")) else Nothing
+    reply <- case (Monad.mplus conceded (Web.Question.automatic request), auto, skipped) of
+      (Just reply, _, _) -> watch "answered unasked" reply
+      (_, Just reply, _) -> watch "paid by auto" reply
+      (_, _, Just reply) -> watch "skipped" reply
       _ -> do
         traced "asked"
         let seat = Question.seat $ Request.question request
@@ -154,7 +162,9 @@ exchange lookUp page seatRef request = do
           Browser.display page . fmap Right $ Web.Question.handOff seat
           untilReady
           IORef.modifyIORef' seatRef $ \s -> s {facing = Just seat}
-        answer request Set.empty
+        -- A tap made while the board was only being watched is dropped.
+        Browser.flush page
+        answer request (Web.Question.initial request)
     returned <- Clock.getMonotonicTime
     IORef.modifyIORef' seatRef $ \s -> s {answeredAt = returned, decided = Seq.length (logged s)}
     pure reply
@@ -163,7 +173,7 @@ exchange lookUp page seatRef request = do
     answer pending picked = asking pending picked Nothing Nothing
     asking pending picked reading focus = do
       state <- IORef.readIORef seatRef
-      let screen = Web.Question.MkScreen picked reading (logged state) (Int.toNaturalSaturating (Seq.length (logged state) - decided state)) focus
+      let screen = Web.Question.MkScreen picked reading (logged state) (freshOf state) focus
       Browser.display page . fmap Right $ Web.Question.view pending screen
       (event, value) <- Browser.next page
       case event of
@@ -175,6 +185,7 @@ exchange lookUp page seatRef request = do
           Web.Question.MkReplied answered -> do
             Monad.when (e == Web.Question.MkAuto) . IORef.modifyIORef' seatRef $ \s -> s {paying = True}
             Monad.when (e == Web.Question.MkSkip) . IORef.modifyIORef' seatRef $ \s -> s {skipping = fmap PlayerView.turn (Request.view pending)}
+            Monad.when (e == Web.Question.MkConcede) . IORef.modifyIORef' seatRef $ \s -> s {conceding = True}
             pure answered
           -- A pick made from the card's sheet leaves the sheet open.
           Web.Question.MkPicking now -> asking pending now (if isToggle e then reading else Nothing) (focusAfter e focus)
@@ -197,6 +208,8 @@ data Seat = MkSeat
     paying :: Bool,
     -- | The turn the seat asked to pass to the end of (Web.Question.MkSkip).
     skipping :: Maybe Natural,
+    -- | Whether the seat conceded (Web.Question.MkConcede).
+    conceding :: Bool,
     -- | How far the seat has read each game's log (Client.unseen).
     marks :: Map.Map (PlayerId.PlayerId, Natural) (Natural, Natural),
     -- | The entries read so far, oldest first: the game log the end shows.
@@ -207,6 +220,10 @@ data Seat = MkSeat
     -- what the trace times.
     answeredAt :: Double
   }
+
+-- | How many entries the seat has logged since it last answered.
+freshOf :: Seat -> Natural
+freshOf state = Int.toNaturalSaturating (Seq.length (logged state) - decided state)
 
 -- | The seat's state with the view's entries it has not read yet logged.
 witness :: PlayerView.PlayerView -> Seat -> Seat
