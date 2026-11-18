@@ -2062,6 +2062,7 @@ stubView table oid =
                 -- CR 701.27h: the table registers no face, and this stub stands
                 -- for a card outside the game rather than a permanent.
                 Filter.transformed = False,
+                Filter.doubleFaced = False,
                 Filter.counters = Map.empty,
                 Filter.stickers = Seq.empty,
                 Filter.ringBearerFor = Nothing,

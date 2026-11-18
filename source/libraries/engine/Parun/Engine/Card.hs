@@ -1529,7 +1529,8 @@ hasSharedTypeLine card = case Card.layout card of
   Layout.Meld {} -> False
 
 -- CR 712.1: is this a double-faced card -- nonmodal or modal. A meld card is not
--- one (CR 713.1). A layout read; CR 712.11a, 712.13 and 731.2j are its readers.
+-- one (CR 713.1). A layout read; CR 712.11a, 712.13 and 731.2j are its readers,
+-- and Parun.Engine.Game.isDoubleFacedCard's Filter.IsDoubleFaced.
 isDoubleFaced :: Card.Card -> Bool
 isDoubleFaced card = case Card.layout card of
   Layout.Normal -> False
