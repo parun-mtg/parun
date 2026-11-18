@@ -604,6 +604,27 @@ Entries are ordered by the first rule each cites.
   proves it.
 - **Issue**: #4781.
 
+## Bedtime story's lore counter is a turn-based action
+
+- **Question**: Bedtime story (Night of the Flying Merfolk, a Mystery Booster
+  2 playtest card) puts the Saga's lore counter on "at the beginning of your
+  end step rather than your main phase". No rule names the keyword. Is that
+  CR 715.3c's turn-based action moved to the end step, or a triggered
+  ability? A trigger uses the stack and can be countered, and its placement
+  is a resolving ability's, which Doubling Season doubles (CR 614.16).
+- **Rules**: CR 505.4, 513.1, 603.2, 609.1, 614.16, 703.4f, 715.3a, 715.3c
+  (CR of 2026-11-06). The card's rulings are the general playtest notes.
+- **Decision**: The turn-based action, moved. "Rather than your main phase"
+  relocates CR 715.3c's action, as read ahead's reminder "Add one after your
+  draw step" restates that same action; the end step gets it as its one
+  turn-based action, before priority, and the placement stays `ByRule`.
+- **Rejected**: A triggered ability. The words are reminder text for a keyword
+  that only modifies CR 715.3c, and nothing in them creates a second ability.
+- **Site**: `Parun.Engine.Saga.loreStepOf`, run by
+  `Parun.Engine.Engine.runTurnBasedActions`; proved by the scenario
+  night-of-the-flying-merfolk-enters-with-no-lore-and-gets-one-at-the-end-step-under-doubling-season.
+- **Issue**: #5290.
+
 ## The seat of a departed attacker's planeswalker
 
 - **Question**: Mangara, the Diplomat rechecks, as its trigger resolves, how

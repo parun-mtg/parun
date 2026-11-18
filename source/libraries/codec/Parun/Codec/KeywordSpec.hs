@@ -1412,6 +1412,12 @@ spec s = Spec.describe s "Parun.Codec.Keyword" $ do
       Keyword.ReadAhead
       " {\"type\":\"ReadAhead\"} "
     Spec.assertBool s (Codec.encode Keyword.codec Keyword.ReadAhead /= Codec.encode Keyword.codec Keyword.Riot) "read ahead and riot encode differently"
+  Spec.it s "BedtimeStory" $
+    Common.assertCodec
+      s
+      Keyword.codec
+      Keyword.BedtimeStory
+      " {\"type\":\"BedtimeStory\"} "
   Spec.it s "Demonstrate" $
     Common.assertCodec
       s

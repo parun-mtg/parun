@@ -24,6 +24,10 @@
 -- together: `entryReplacementsOf` splits on the keyword to mint rule 715.3b's
 -- rewrite instead of rule 715.3a's, and `chapterTriggers` narrows rule 715.2b's
 -- "at least N" to rule 702.155a's equality for the turn the Saga entered.
+--
+-- BEDTIME STORY, a playtest keyword no CR rule names, is read here too:
+-- `entryReplacementsOf` mints no rule 715.3a row for it, and `loreStepOf` moves
+-- its Saga's rule 715.3c counter to the end step.
 module Parun.Engine.Saga where
 
 import Data.Map.Strict (Map)
@@ -39,6 +43,7 @@ import qualified Parun.Types.CounterMotion as CounterMotion
 import qualified Parun.Types.CounterTrigger as CounterTrigger
 import qualified Parun.Types.CountersPlaced as CountersPlaced
 import qualified Parun.Types.Effect as Effect
+import qualified Parun.Types.EndingStep as EndingStep
 import qualified Parun.Types.EntryR as EntryR
 import qualified Parun.Types.EntryRewrite as EntryRewrite
 import qualified Parun.Types.Filter as Filter
@@ -50,6 +55,7 @@ import qualified Parun.Types.GrantedAbility as GrantedAbility
 import qualified Parun.Types.Keyword as Keyword
 import qualified Parun.Types.Object as Object
 import Parun.Types.ObjectId (ObjectId)
+import qualified Parun.Types.Phase as Phase
 import Parun.Types.PlayerId (PlayerId)
 import qualified Parun.Types.ProjectedCharacteristics as PC
 import qualified Parun.Types.Quantity as Quantity
@@ -219,6 +225,8 @@ entryReplacementsOf pc
   | not (isSaga pc) || PC.lostAllAbilities pc = []
   -- CR 614.1c on both branches: the entering object is the ability's own source.
   | Map.member Keyword.ReadAhead (PC.keywords pc) = [ReplacementEffect.EntryR (EntryR.MkEntryR Filter.IsSource EntryRewrite.ReadAhead)]
+  -- Bedtime story's "Don't put a lore counter on this Saga as it enters".
+  | Map.member Keyword.BedtimeStory (PC.keywords pc) = []
   | otherwise = [ReplacementEffect.EntryR (EntryR.MkEntryR Filter.IsSource (EntryRewrite.WithCounters (WithCounters.one CounterKind.Lore (Quantity.Literal 1))))]
 
 -- | The lore counters on a permanent (CR 715.3). Zero for an object the game does
@@ -229,9 +237,17 @@ loreOn oid gs = case Game.lookupObject oid gs of
   Nothing -> 0
   Just obj -> Map.findWithDefault 0 CounterKind.Lore (Object.counters obj)
 
--- | CR 505.4 / 703.4f / 715.3c: the Sagas a player puts a lore counter on as their
--- precombat main phase begins. The turn-based action's CLASSIFIER half, kept pure
--- so Parun.Engine.Engine only has to perform it.
+-- | When CR 715.3c's turn-based action reaches this Saga: as its controller's
+-- precombat main phase begins, or under bedtime story as their end step begins
+-- (docs/decisions.md, "Bedtime story's lore counter is a turn-based action").
+loreStepOf :: PC.ProjectedCharacteristics -> Phase.Phase
+loreStepOf pc
+  | Map.member Keyword.BedtimeStory (PC.keywords pc) = Phase.Ending EndingStep.EndStep
+  | otherwise = Phase.PrecombatMain
+
+-- | CR 505.4 / 703.4f / 715.3c: the Sagas a player puts a lore counter on as
+-- `phase` begins, those whose `loreStepOf` it is. The turn-based action's
+-- CLASSIFIER half, kept pure so Parun.Engine.Engine only has to perform it.
 --
 -- Takes the controller lookup rather than importing Parun.Engine.Projection, for
 -- the reason this module's header gives.
@@ -241,11 +257,11 @@ loreOn oid gs = case Game.lookupObject oid gs of
 -- action -- but the chapter abilities it fires are gathered as one batch and
 -- ordered by their controller under CR 603.3b, so nothing here is deciding for
 -- them.
-advancing :: (ObjectId -> Maybe PlayerId) -> PlayerId -> Map ObjectId PC.ProjectedCharacteristics -> GameState -> [ObjectId]
-advancing controllerOf pid pcs gs =
+advancing :: Phase.Phase -> (ObjectId -> Maybe PlayerId) -> PlayerId -> Map ObjectId PC.ProjectedCharacteristics -> GameState -> [ObjectId]
+advancing phase controllerOf pid pcs gs =
   let mine oid = case Map.lookup oid pcs of
         Nothing -> False
-        Just pc -> tracksLore pc && controllerOf oid == Just pid
+        Just pc -> tracksLore pc && loreStepOf pc == phase && controllerOf oid == Just pid
    in filter mine (Set.toAscList (GameState.battlefield gs))
 
 -- | CR 704.5s's exemption: is this permanent "the source of a chapter ability that

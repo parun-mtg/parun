@@ -1308,6 +1308,9 @@ expansionOf keyword = case keyword of
         -- make a second instance mint a second row.
         KeywordExpansion.replacements = const []
       }
+  -- Mints nothing: Parun.Engine.Saga reads the keyword where CR 715.3a's
+  -- ability and CR 715.3c's action are decided.
+  Keyword.BedtimeStory -> mempty
   Keyword.Ravenous ->
     mempty
       { -- CR 702.156a's triggered half. Rule 702.156a states no redundancy clause,
@@ -5107,6 +5110,7 @@ functionsOnBattlefield keyword = case keyword of
   Keyword.Ravenous -> True
   Keyword.Reach -> True
   Keyword.ReadAhead -> True
+  Keyword.BedtimeStory -> True
   Keyword.Reconfigure _ -> True
   Keyword.Renown _ -> True
   Keyword.Riot -> True
@@ -5487,6 +5491,7 @@ familyOf keyword = case keyword of
   Keyword.Compleated -> Nothing
   Keyword.Reconfigure _ -> Just KeywordFamily.Reconfigure
   Keyword.ReadAhead -> Nothing
+  Keyword.BedtimeStory -> Nothing
   Keyword.Training -> Nothing
   Keyword.StartYourEngines -> Nothing
   Keyword.Ascend -> Nothing

@@ -300,6 +300,7 @@ printed self keyword = case keyword of
     let amount = maybe (Text.pack "Casualty X") (numbered "Casualty") (Casualty.amount c)
     [if null rider then amount else amount <> Text.pack ". The copy " <> Text.intercalate (Text.pack " and ") rider <> Text.pack "."]
   Keyword.ReadAhead -> [Text.pack "Read ahead"]
+  Keyword.BedtimeStory -> [Text.pack "Bedtime story"]
   Keyword.Ravenous -> [Text.pack "Ravenous"]
   Keyword.Squad c -> Cost.keyworded self (keywordWord self) (Text.pack "Squad") c
   Keyword.Prototype {} -> []
@@ -492,6 +493,7 @@ standalone =
     Keyword.Training,
     Keyword.Compleated,
     Keyword.ReadAhead,
+    Keyword.BedtimeStory,
     Keyword.Ravenous,
     Keyword.ForMirrodin,
     Keyword.Bargain,
