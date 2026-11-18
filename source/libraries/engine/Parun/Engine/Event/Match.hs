@@ -1388,31 +1388,38 @@ armMatches bindings frozen board atEvent beforeEvent groupEvents gs bearer you c
   -- kind and recipient alike (Norn's Decree's "deal combat damage to YOU",
   -- Zurgo and Ojutai's "to a player or battle"),
   -- and firing once for the CR 510.2 step is `batchScoped` below plus
-  -- eventTriggers' dedup, never this arm.
+  -- eventTriggers' dedup, never this arm. Its `while` (Tamiyo, Upriser
+  -- Crowned's "while you're the monarch") is asked of the game the damage
+  -- left (CR 603.2), never re-checked as TriggeredAbility.intervening would be
+  -- (CR 603.4). data/scenarios's
+  -- tamiyo-upriser-crowned-stuns-though-the-monarchy-changes-hands-with-the-trigger-on-the-stack
+  -- and tamiyo-upriser-crowned-ignores-combat-damage-while-another-player-is-monarch
+  -- prove it.
   TriggerCondition.PermanentsDealDamageToPlayer p ->
-    matchesAt
-      bindings
-      frozen
-      board
-      atEvent
-      beforeEvent
-      groupEvents
-      gs
-      bearer
-      you
-      ( TriggerCondition.DealsDamage
-          DamageTrigger.MkDamageTrigger
-            { DamageTrigger.actor = ActingPermanent.Matching (PermanentsDealDamageToPlayer.filter p),
-              DamageTrigger.kind = PermanentsDealDamageToPlayer.kind p,
-              DamageTrigger.recipients =
-                Set.fromList
-                  ( DamageRecipient.Player (PlayerRef.Relative (PermanentsDealDamageToPlayer.recipient p))
-                      : [DamageRecipient.Permanent CardType.Battle (Filter.Type.And []) | PermanentsDealDamageToPlayer.orBattle p]
-                  ),
-              DamageTrigger.atLeast = 0
-            }
-      )
-      event
+    maybe True (Condition.holds (Projection.viewWithLastKnownAnywhere atEvent) bearerContext atEvent bearer) (PermanentsDealDamageToPlayer.while p)
+      && matchesAt
+        bindings
+        frozen
+        board
+        atEvent
+        beforeEvent
+        groupEvents
+        gs
+        bearer
+        you
+        ( TriggerCondition.DealsDamage
+            DamageTrigger.MkDamageTrigger
+              { DamageTrigger.actor = ActingPermanent.Matching (PermanentsDealDamageToPlayer.filter p),
+                DamageTrigger.kind = PermanentsDealDamageToPlayer.kind p,
+                DamageTrigger.recipients =
+                  Set.fromList
+                    ( DamageRecipient.Player (PlayerRef.Relative (PermanentsDealDamageToPlayer.recipient p))
+                        : [DamageRecipient.Permanent CardType.Battle (Filter.Type.And []) | PermanentsDealDamageToPlayer.orBattle p]
+                    ),
+                DamageTrigger.atLeast = 0
+              }
+        )
+        event
   -- CR 701.26a's tap, once per permanent: the bearer by id (City of Brass), or
   -- a permanent the Filter admits, judged off CR 603.10's board just after the
   -- event (Thoughtleech). Betrayal's "enchanted creature" is

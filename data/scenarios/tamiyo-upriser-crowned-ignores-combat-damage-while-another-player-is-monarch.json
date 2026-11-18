@@ -1,0 +1,29 @@
+{
+  "description": "CR 603.2 Tamiyo, Upriser Crowned's trigger does not trigger on combat damage dealt to its controller while another player is the monarch",
+  "note": "bob is the monarch when his vigilant Serra Angel hits alice, so Tamiyo's trigger never goes on the stack and the Angel stays untapped with no stun counter; the paired scenario stuns them when alice is.",
+  "board": {
+    "active": "bob",
+    "step": "PrecombatMain",
+    "monarch": "bob",
+    "seats": [
+      {
+        "name": "alice",
+        "battlefield": [{ "card": "Tamiyo, Upriser Crowned", "label": "tamiyo", "ready": true }],
+        "library": [{ "card": "Plains" }, { "card": "Plains" }]
+      },
+      {
+        "name": "bob",
+        "battlefield": [{ "card": "Serra Angel", "label": "angel", "ready": true }],
+        "library": [{ "card": "Plains" }, { "card": "Plains" }]
+      }
+    ]
+  },
+  "timeline": [
+    { "turn": 1, "step": "PrecombatMain", "player": "bob", "do": "Pass" },
+    { "turn": 1, "step": "DeclareAttackers", "player": "bob", "do": { "Attack": ["$angel"] } },
+    { "turn": 1, "step": "DeclareBlockers", "player": "alice", "do": { "Block": {} } },
+    { "turn": 1, "step": "EndOfCombat", "player": "bob", "check": { "Life": { "player": "alice", "life": 16 } } },
+    { "turn": 1, "step": "EndOfCombat", "player": "bob", "check": { "Tapped": { "object": "$angel", "tapped": false } } },
+    { "turn": 1, "step": "EndOfCombat", "player": "bob", "check": { "Counters": { "object": "$angel", "kind": { "type": "Stun" }, "count": 0 } } }
+  ]
+}

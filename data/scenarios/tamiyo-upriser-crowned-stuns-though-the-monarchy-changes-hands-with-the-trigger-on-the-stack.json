@@ -1,0 +1,39 @@
+{
+  "description": "CR 603.2 Tamiyo, Upriser Crowned's \"while you're the monarch\" is asked as the damage is dealt and never again, so her trigger taps and stuns the damagers after the crown has passed to their controller",
+  "note": "alice is the monarch; bob's Bears and vigilant Serra Angel hit her unblocked. CR 726.2's two crown steals and Tamiyo's one trigger are all alice's, and she orders the steals to resolve first: bob is the monarch when Tamiyo's trigger resolves, which an intervening if (CR 603.4) would counter.",
+  "board": {
+    "active": "bob",
+    "step": "PrecombatMain",
+    "monarch": "alice",
+    "seats": [
+      {
+        "name": "alice",
+        "battlefield": [{ "card": "Tamiyo, Upriser Crowned", "label": "tamiyo", "ready": true }],
+        "library": [{ "card": "Plains" }, { "card": "Plains" }]
+      },
+      {
+        "name": "bob",
+        "battlefield": [
+          { "card": "Grizzly Bears", "label": "bears", "ready": true },
+          { "card": "Serra Angel", "label": "angel", "ready": true }
+        ],
+        "library": [{ "card": "Plains" }, { "card": "Plains" }]
+      }
+    ]
+  },
+  "timeline": [
+    { "turn": 1, "step": "PrecombatMain", "player": "bob", "do": "Pass" },
+    { "turn": 1, "step": "DeclareAttackers", "player": "bob", "do": { "Attack": ["$bears", "$angel"] } },
+    { "turn": 1, "step": "DeclareBlockers", "player": "alice", "do": { "Block": {} } },
+    { "turn": 1, "step": "CombatDamage", "player": "alice", "do": { "Answer": { "prompt": "OrderTriggers", "with": [0, 1, 2] } } },
+    { "turn": 1, "step": "CombatDamage", "player": "bob", "do": "Pass" },
+    { "turn": 1, "step": "CombatDamage", "player": "bob", "do": "Pass" },
+    { "turn": 1, "step": "CombatDamage", "player": "bob", "check": { "View": { "of": "Stack", "is": ["trigger of $tamiyo"] } } },
+    { "turn": 1, "step": "CombatDamage", "player": "bob", "check": { "Monarch": { "player": "bob" } } },
+    { "turn": 1, "step": "CombatDamage", "player": "bob", "do": "Pass" },
+    { "turn": 1, "step": "EndOfCombat", "player": "bob", "check": { "Life": { "player": "alice", "life": 14 } } },
+    { "turn": 1, "step": "EndOfCombat", "player": "bob", "check": { "Tapped": { "object": "$angel", "tapped": true } } },
+    { "turn": 1, "step": "EndOfCombat", "player": "bob", "check": { "Counters": { "object": "$bears", "kind": { "type": "Stun" }, "count": 1 } } },
+    { "turn": 1, "step": "EndOfCombat", "player": "bob", "check": { "Counters": { "object": "$angel", "kind": { "type": "Stun" }, "count": 1 } } }
+  ]
+}
