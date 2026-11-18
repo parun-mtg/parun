@@ -1,0 +1,197 @@
+{
+  "faces": [
+    {
+      "manaCost": [
+        {
+          "type": "Generic",
+          "value": 2
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "Red"
+          }
+        }
+      ],
+      "name": "Furnace Reins",
+      "oracleText": "Gain control of target creature until end of turn. Untap that creature. Until end of turn, it gains haste and \"Whenever this creature deals combat damage to a player or battle, create a Treasure token.\" (It's an artifact with \"{T}, Sacrifice this token: Add one mana of any color.\")",
+      "spell": {
+        "modes": [
+          {
+            "clauses": [
+              {
+                "effects": [
+                  {
+                    "type": "GainControl",
+                    "value": {
+                      "duration": {
+                        "type": "UntilEndOfTurn"
+                      },
+                      "ref": {
+                        "type": "InSlot",
+                        "value": "target"
+                      }
+                    }
+                  },
+                  {
+                    "type": "Untap",
+                    "value": {
+                      "type": "InSlot",
+                      "value": "target"
+                    }
+                  },
+                  {
+                    "type": "ModifyTarget",
+                    "value": {
+                      "duration": {
+                        "type": "UntilEndOfTurn"
+                      },
+                      "modification": {
+                        "type": "GainKeyword",
+                        "value": {
+                          "type": "Haste"
+                        }
+                      },
+                      "ref": {
+                        "type": "InSlot",
+                        "value": "target"
+                      }
+                    }
+                  },
+                  {
+                    "type": "ModifyTarget",
+                    "value": {
+                      "duration": {
+                        "type": "UntilEndOfTurn"
+                      },
+                      "modification": {
+                        "type": "GainAbility",
+                        "value": {
+                          "type": "Triggered",
+                          "value": {
+                            "condition": {
+                              "type": "DealsDamage",
+                              "value": {
+                                "actor": {
+                                  "type": "Self"
+                                },
+                                "kind": "Combat",
+                                "recipients": [
+                                  {
+                                    "type": "Player",
+                                    "value": {
+                                      "type": "Relative",
+                                      "value": "AnyPlayer"
+                                    }
+                                  },
+                                  {
+                                    "type": "Permanent",
+                                    "value": {
+                                      "cardType": "Battle"
+                                    }
+                                  }
+                                ]
+                              }
+                            },
+                            "modal": {
+                              "modes": [
+                                {
+                                  "clauses": [
+                                    {
+                                      "effects": [
+                                        {
+                                          "type": "Create",
+                                          "value": {
+                                            "card": {
+                                              "faces": [
+                                                {
+                                                  "activatedAbilities": [
+                                                    {
+                                                      "cost": {
+                                                        "components": [
+                                                          {
+                                                            "type": "TapThis"
+                                                          },
+                                                          {
+                                                            "type": "SacrificeThis"
+                                                          }
+                                                        ],
+                                                        "mana": []
+                                                      },
+                                                      "modal": {
+                                                        "modes": [
+                                                          {
+                                                            "clauses": [
+                                                              {
+                                                                "effects": [
+                                                                  {
+                                                                    "type": "AddMana",
+                                                                    "value": {
+                                                                      "production": {
+                                                                        "type": "AnyColor"
+                                                                      }
+                                                                    }
+                                                                  }
+                                                                ]
+                                                              }
+                                                            ]
+                                                          }
+                                                        ]
+                                                      }
+                                                    }
+                                                  ],
+                                                  "name": "Treasure Token",
+                                                  "typeLine": {
+                                                    "subtypes": [
+                                                      "Treasure"
+                                                    ],
+                                                    "types": [
+                                                      "Artifact"
+                                                    ]
+                                                  }
+                                                }
+                                              ]
+                                            },
+                                            "quantity": {
+                                              "type": "Literal",
+                                              "value": 1
+                                            }
+                                          }
+                                        }
+                                      ]
+                                    }
+                                  ]
+                                }
+                              ]
+                            }
+                          }
+                        }
+                      },
+                      "ref": {
+                        "type": "InSlot",
+                        "value": "target"
+                      }
+                    }
+                  }
+                ]
+              }
+            ],
+            "targetSlots": {
+              "target": {
+                "pool": {
+                  "type": "Creatures"
+                }
+              }
+            }
+          }
+        ]
+      },
+      "typeLine": {
+        "types": [
+          "Sorcery"
+        ]
+      }
+    }
+  ]
+}
