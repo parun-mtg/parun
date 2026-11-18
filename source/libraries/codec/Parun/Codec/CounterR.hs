@@ -5,6 +5,7 @@ module Parun.Codec.CounterR where
 import qualified Parun.Codec.CounterPattern as CounterPattern
 import qualified Parun.Codec.Scaling as Scaling
 import qualified Parun.JsonCodec.Codec as Codec
+import qualified Parun.JsonCodec.Common as Common
 import qualified Parun.JsonCodec.Fields as Fields
 import qualified Parun.Types.CounterR as CounterR
 
@@ -14,8 +15,10 @@ codec :: Codec.Codec CounterR.CounterR
 codec = Fields.object $ do
   matching <- Fields.required "matching" CounterPattern.codec CounterR.matching
   scaling <- Fields.required "scaling" Scaling.codec CounterR.scaling
+  barsAdditional <- Fields.defaulted "barsAdditional" False Common.boolean CounterR.barsAdditional
   pure
     CounterR.MkCounterR
       { CounterR.matching = matching,
-        CounterR.scaling = scaling
+        CounterR.scaling = scaling,
+        CounterR.barsAdditional = barsAdditional
       }

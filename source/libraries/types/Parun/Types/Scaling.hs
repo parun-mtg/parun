@@ -37,4 +37,9 @@ data Scaling
     -- replacement removing the event rather than resizing it. Its callers already
     -- guard on that: see Parun.Engine.Event.putCounters and putPlayerCounters.
     Halve
+  | -- | CR 614.1a's "instead" with a number, whatever the count was: Melira,
+    -- the Living Cure's "instead you get one poison counter", Galvanic Blast's
+    -- "4 damage instead", Ojer Axonil's power. Read as AddMore's quantity is,
+    -- floored at zero.
+    Exactly Quantity.Quantity
   deriving (Eq, Ord, Show)

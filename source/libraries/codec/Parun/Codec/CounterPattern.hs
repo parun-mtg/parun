@@ -7,6 +7,7 @@ import qualified Parun.Codec.CounterKind as CounterKind
 import qualified Parun.Codec.CounterSubject as CounterSubject
 import qualified Parun.Codec.Filter as Filter
 import qualified Parun.Codec.Keyword as Keyword
+import qualified Parun.Codec.PlayerCounterKind as PlayerCounterKind
 import qualified Parun.JsonCodec.Codec as Codec
 import qualified Parun.JsonCodec.Common as Common
 import qualified Parun.JsonCodec.Fields as Fields
@@ -31,11 +32,13 @@ codec = Fields.object $ do
   whose <- Fields.defaulted "whose" defaultWhose ControllerRelation.codec CounterPattern.whose
   onWhat <- Fields.required "onWhat" (Filter.codec Keyword.codec) CounterPattern.onWhat
   onWho <- Fields.defaulted "onWho" Nothing (Common.maybe ControllerRelation.codec) CounterPattern.onWho
+  whichPlayerKind <- Fields.defaulted "whichPlayerKind" Nothing (Common.maybe PlayerCounterKind.codec) CounterPattern.whichPlayerKind
   pure
     CounterPattern.MkCounterPattern
       { CounterPattern.whichKind = whichKind,
         CounterPattern.subject = subject,
         CounterPattern.whose = whose,
         CounterPattern.onWhat = onWhat,
-        CounterPattern.onWho = onWho
+        CounterPattern.onWho = onWho,
+        CounterPattern.whichPlayerKind = whichPlayerKind
       }

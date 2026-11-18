@@ -741,7 +741,6 @@ unspent rewrite = case rewrite of
   DamageRewrite.PreventRemovingShieldCounter -> True
   -- Spent by its counters too, and `ceilingLeft` refuses the row without one.
   DamageRewrite.PreventRemovingCounters _ -> True
-  DamageRewrite.SetAmount _ -> True
   DamageRewrite.Scale _ -> True
   -- CR 614.9's uncounted redirection has nothing to spend: it moves the
   -- recipient and leaves the amount alone, so no application can exhaust it.
@@ -781,7 +780,6 @@ admitsRecipient src rewrite de = case rewrite of
   DamageRewrite.PreventNext _ -> True
   DamageRewrite.PreventAllBut _ -> True
   DamageRewrite.PreventUpTo _ -> True
-  DamageRewrite.SetAmount _ -> True
   DamageRewrite.Scale _ -> True
   DamageRewrite.Redirect _ -> True
   DamageRewrite.RedirectNext _ _ -> True
@@ -950,7 +948,7 @@ matchesPrinted viewOf gs event candidate =
         -- attachment, which `scopes` reads off the board.
         (ReplacementEffect.DestructionR (DestructionR.MkDestructionR matching rewrite), ProposedEvent.WouldBeDestroyed oid regenerability cause) ->
           maybe (scopes gs rewrite src oid) (\f -> matchesFiltered viewOf gs candidate f oid) matching && admits regenerability cause rewrite
-        (ReplacementEffect.CounterR (CounterR.MkCounterR pat _), ProposedEvent.WouldPutCounters cause oid kind _) ->
+        (ReplacementEffect.CounterR (CounterR.MkCounterR pat _ _), ProposedEvent.WouldPutCounters cause oid kind _) ->
           -- Our own encoding convention, not a rule: `whichKind = Nothing` means
           -- any kind, never no kind.
           --
@@ -967,9 +965,11 @@ matchesPrinted viewOf gs event candidate =
         -- pattern naming a kind admits none of these: `whichKind` is the object
         -- kinds, and a player can hold no counter of one (see
         -- Parun.Types.CounterPattern), so Hardened Scales stays off a poison
-        -- counter without saying so.
-        (ReplacementEffect.CounterR (CounterR.MkCounterR pat _), ProposedEvent.WouldPutPlayerCounters cause pid _ _) ->
+        -- counter without saying so. `whichPlayerKind` is the player domain's
+        -- kind (Melira, the Living Cure's "poison counters").
+        (ReplacementEffect.CounterR (CounterR.MkCounterR pat _ _), ProposedEvent.WouldPutPlayerCounters cause pid kind _) ->
           Maybe.isNothing (CounterPattern.whichKind pat)
+            && maybe True (== kind) (CounterPattern.whichPlayerKind pat)
             && matchesPutter gs candidate (CounterPattern.subject pat) cause
             && maybe False (\rel -> matchesPlayer gs candidate rel pid) (CounterPattern.onWho pat)
         -- CR 614.16 at the ENTRY level: the counters this permanent is entering
@@ -990,7 +990,7 @@ matchesPrinted viewOf gs event candidate =
         -- cr-614-12-conclave-mentor-scales-another-creature-s-entering-counters-and-not-its-own
         -- proves it. `confinedToSource` is the rule's other half: no pool row
         -- confines itself, so nothing observes it.
-        (ReplacementEffect.CounterR (CounterR.MkCounterR pat _), ProposedEvent.WouldEnter oid) ->
+        (ReplacementEffect.CounterR (CounterR.MkCounterR pat _ _), ProposedEvent.WouldEnter oid) ->
           not (Map.null (matchingEnteringCounters gs candidate pat oid))
             && matchesController gs candidate (CounterPattern.whose pat) oid
             && matchesPermanent viewOf gs Nothing Map.empty Nothing (CounterPattern.onWhat pat) oid
@@ -2179,6 +2179,8 @@ scale gs candidate s n = case s of
   -- CR 107.1a: "half that many . . . rounded down", which `div` on Natural
   -- already is. One is what makes this answer zero, as Subtract above does.
   Scaling.Halve -> n `div` 2
+  -- CR 614.1a's "instead" with a number, floored as AddMore's total is.
+  Scaling.Exactly quantity -> Integer.toNaturalSaturating (rowQuantity gs candidate quantity)
 
 -- CR 614.1a: a rewrite's Quantity, read against the row's own context and
 -- source as the event would happen; an undeterminable one is 0 (CR 107.2).
@@ -2761,7 +2763,7 @@ instructionRewriteSubstitutes rewrite = case rewrite of
   InstructionRewrite.ReturnSourceInstead -> False
 
 -- Is this rewrite's amount not a literal -- a CR 702.64a ceiling, a computed
--- AddMore or a computed SetAmount -- so that Event.apply evaluates it against the applying candidate's
+-- AddMore or Exactly -- so that Event.apply evaluates it against the applying candidate's
 -- Context? No wildcard, readsApplier's discipline.
 computedAmount :: Rewrite -> Bool
 computedAmount rewrite = case rewrite of
@@ -2772,8 +2774,6 @@ computedAmount rewrite = case rewrite of
   DamageRewrite.PreventRemovingCounters _ -> False
   DamageRewrite.PreventNext _ -> False
   DamageRewrite.PreventAllBut _ -> False
-  DamageRewrite.SetAmount (Quantity.Type.Literal _) -> False
-  DamageRewrite.SetAmount _ -> True
   DamageRewrite.Scale scaling -> computedScaling scaling
   DamageRewrite.Redirect _ -> False
   DamageRewrite.RedirectNext _ _ -> False
@@ -2809,6 +2809,8 @@ computedScaling scaling = case scaling of
   Scaling.Multiply _ -> False
   Scaling.Subtract _ -> False
   Scaling.Halve -> False
+  Scaling.Exactly (Quantity.Type.Literal _) -> False
+  Scaling.Exactly _ -> True
 
 -- Does applying this effect read the candidate's SOURCE -- the object the row
 -- was minted onto -- so that two rows alike in `effect` leave different boards?
@@ -3519,7 +3521,6 @@ remainingOf rewrite = case rewrite of
   DamageRewrite.PreventRemovingShieldCounter -> Nothing
   -- Its count is on the permanent, so `allocationSupply` reads the board for it.
   DamageRewrite.PreventRemovingCounters _ -> Nothing
-  DamageRewrite.SetAmount _ -> Nothing
   DamageRewrite.Scale _ -> Nothing
   DamageRewrite.Redirect _ -> Nothing
   DamageRewrite.RedirectMatching _ -> Nothing
@@ -3570,7 +3571,6 @@ partialCoverage gs allowances candidate event = case (ReplacementCandidate.effec
     DamageRewrite.PreventAllBut _ -> Nothing
     DamageRewrite.PreventUpTo _ -> Nothing
     DamageRewrite.PreventRemovingShieldCounter -> Nothing
-    DamageRewrite.SetAmount _ -> Nothing
     DamageRewrite.Scale _ -> Nothing
     DamageRewrite.Redirect _ -> Nothing
     -- CR 614.1a's "instead [do something]" takes the event whole, however large:
@@ -3666,7 +3666,7 @@ oneThreadPerRecipient threads =
 -- CR 615.1a: is this damage rewrite a PREVENTION effect, rather than one of CR
 -- 614.1a's replacements? "Effects that use the word 'prevent' are prevention
 -- effects", and that word is what CR 615.13's trigger watches for -- so a
--- SetAmount that cuts an event from 3 to 1 has prevented nothing, though it
+-- Scale (Exactly 1) that cuts an event from 3 to 1 has prevented nothing, though it
 -- shrank the event exactly as a shield would.
 --
 -- A CLASSIFICATION of effects -- what SHAPE a rewrite has, never which effect it
@@ -3684,16 +3684,15 @@ prevents rewrite = case rewrite of
   DamageRewrite.PreventNext _ -> True
   DamageRewrite.PreventAll -> True
   -- Temple Altisaur says "prevent all but 1 of that damage", so CR 615.1a makes
-  -- this one a prevention too -- which is the whole reason it is not SetAmount.
+  -- this one a prevention too -- which is the whole reason it is not Scale (Exactly 1).
   DamageRewrite.PreventAllBut _ -> True
   -- Rule 702.64a says "prevent N of that damage", so CR 615.1a makes absorb a
-  -- prevention too -- which is what keeps it out of SetAmount.
+  -- prevention too -- which is what keeps it out of Scale.
   DamageRewrite.PreventUpTo _ -> True
   -- CR 122.1c says "prevent that damage", so CR 615.1a makes this one too.
   DamageRewrite.PreventRemovingShieldCounter -> True
   -- Rock Hydra says "prevent that 1 damage".
   DamageRewrite.PreventRemovingCounters _ -> True
-  DamageRewrite.SetAmount _ -> False
   DamageRewrite.Scale _ -> False
   -- CR 614.9's redirection is a rule-614 replacement. Turn the Tables never says
   -- "prevent" -- the damage is still dealt, one recipient over -- so this False
@@ -3748,7 +3747,6 @@ spentInertly rewrite = case rewrite of
   DamageRewrite.PreventAll -> False
   -- CR 614.1a's replacements are not preventions, are applied in full to
   -- unpreventable damage, and have no contested resource either.
-  DamageRewrite.SetAmount _ -> False
   DamageRewrite.Scale _ -> False
   DamageRewrite.Redirect _ -> False
   DamageRewrite.RedirectNext _ _ -> False
@@ -3966,7 +3964,6 @@ redirects rewrite = case rewrite of
   DamageRewrite.PreventRemovingCounters _ -> False
   -- CR 614.1a's two amount rewrites leave the recipient where it was, so neither
   -- deals the damage "instead to another permanent or player".
-  DamageRewrite.SetAmount _ -> False
   DamageRewrite.Scale _ -> False
   -- The effects run in the damage's place, so nothing is dealt to anybody: no
   -- recipient moves and CR 614.17's prohibition has nothing to stop.
@@ -4011,7 +4008,7 @@ redirectable viewOf gs de = not (any (\(src, pat) -> matchesDamagePattern viewOf
 --
 -- The two halves above, asked together, and asked HERE so that the loop reads
 -- one classification rather than composing two. `prevents` is the effect half
--- and refuses CR 614.1a's SetAmount and Scale, which prevent nothing and are not
+-- and refuses CR 614.1a's Scale, which prevents nothing and is not
 -- what the rule is about: Furnace of Rath doubles unpreventable damage like any
 -- other.
 --
@@ -4418,7 +4415,6 @@ ceilingLeft gs (earlier, _) candidate event = case (ReplacementCandidate.effect 
     DamageRewrite.PreventRemovingShieldCounter -> Nothing
     DamageRewrite.PreventNext _ -> Nothing
     DamageRewrite.PreventAllBut _ -> Nothing
-    DamageRewrite.SetAmount _ -> Nothing
     DamageRewrite.Scale _ -> Nothing
     DamageRewrite.Redirect _ -> Nothing
     DamageRewrite.RunEffects _ -> Nothing
@@ -4451,7 +4447,6 @@ floorLeft (_, passed) candidate event = case (ReplacementCandidate.effect candid
     DamageRewrite.PreventRemovingCounters _ -> Nothing
     DamageRewrite.PreventNext _ -> Nothing
     DamageRewrite.PreventUpTo _ -> Nothing
-    DamageRewrite.SetAmount _ -> Nothing
     DamageRewrite.Scale _ -> Nothing
     DamageRewrite.Redirect _ -> Nothing
     DamageRewrite.RunEffects _ -> Nothing
@@ -4641,7 +4636,6 @@ contestedResource gs candidate = case ReplacementCandidate.effect candidate of
     -- recipient, which is one event (`ceilingLeft`), so there is nothing to
     -- allocate.
     DamageRewrite.PreventUpTo _ -> Nothing
-    DamageRewrite.SetAmount _ -> Nothing
     DamageRewrite.Scale _ -> Nothing
     DamageRewrite.Redirect _ -> Nothing
     DamageRewrite.RedirectMatching _ -> Nothing

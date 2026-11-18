@@ -87,6 +87,7 @@ import qualified Parun.Types.Regenerability as Regenerability
 import qualified Parun.Types.ReplacementEffect as ReplacementEffect
 import qualified Parun.Types.ReplacementOrigin as ReplacementOrigin
 import qualified Parun.Types.Response as Response
+import qualified Parun.Types.Scaling as Scaling
 import qualified Parun.Types.Scratch as Scratch
 import qualified Parun.Types.Settle as Settle
 import qualified Parun.Types.SlotName as SlotName
@@ -986,7 +987,7 @@ blastShape :: ObjectId.ObjectId -> Timestamp.Timestamp -> ActiveReplacement.Acti
 blastShape src ts =
   ActiveReplacement.MkActiveReplacement
     { ActiveReplacement.effect =
-        ReplacementEffect.DamageR (DamageR.MkDamageR (DamagePattern.MkDamagePattern Nothing Filter.Type.IsSource Nothing Nothing Nothing Nothing Nothing Nothing) (DamageRewrite.SetAmount (Quantity.Literal 4)) Seq.empty),
+        ReplacementEffect.DamageR (DamageR.MkDamageR (DamagePattern.MkDamagePattern Nothing Filter.Type.IsSource Nothing Nothing Nothing Nothing Nothing Nothing) (DamageRewrite.Scale (Scaling.Exactly (Quantity.Literal 4))) Seq.empty),
       ActiveReplacement.source = src,
       ActiveReplacement.controller = S.alice,
       ActiveReplacement.timestamp = ts,
