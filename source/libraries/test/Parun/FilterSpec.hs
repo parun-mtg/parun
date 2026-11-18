@@ -82,7 +82,7 @@ blackCreature =
       Filter.supertypes = Set.empty,
       Filter.colors = Set.singleton Color.Black,
       Filter.subtypes = Set.singleton Subtype.Zombie,
-      Filter.keywords = Set.singleton Keyword.Flying,
+      Filter.keywords = Map.singleton Keyword.Flying 1,
       Filter.power = Just 2,
       Filter.toughness = Just 2,
       Filter.basePower = Just 2,
@@ -210,7 +210,7 @@ devoidBigCreature =
       Filter.supertypes = Set.empty,
       Filter.colors = Set.empty,
       Filter.subtypes = Set.empty,
-      Filter.keywords = Set.empty,
+      Filter.keywords = Map.empty,
       Filter.power = Just 5,
       Filter.toughness = Just 5,
       Filter.basePower = Just 5,
@@ -318,7 +318,7 @@ devoidBigCreature =
 -- views the family/instance cases below are asked about. Off blackCreature, so
 -- every other axis is a fixed background and only the keyword set varies.
 withKeyword :: Keyword.Keyword -> Filter.View
-withKeyword keyword = blackCreature {Filter.keywords = Set.singleton keyword}
+withKeyword keyword = blackCreature {Filter.keywords = Map.singleton keyword 1}
 
 -- blackCreature carrying player 0's Ring-bearer designation (CR 701.54a). Off
 -- blackCreature, so the designation is the only axis that varies.
@@ -339,7 +339,7 @@ suspectedCreature :: Filter.View
 suspectedCreature =
   blackCreature
     { Filter.designations = Set.singleton Designation.Suspected,
-      Filter.keywords = Set.singleton Keyword.Menace
+      Filter.keywords = Map.singleton Keyword.Menace 1
     }
 
 -- CR 122.1's markers, two kinds at once so an atom that read the map's emptiness

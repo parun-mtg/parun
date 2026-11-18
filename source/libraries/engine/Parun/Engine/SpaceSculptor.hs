@@ -50,7 +50,7 @@ sustained gs =
   let onBattlefield = any (\oid -> Projection.hasKeyword Keyword.SpaceSculptor oid gs) (Set.toList (GameState.battlefield gs))
       sourceSculpts oid = case Game.abilitySourceOf oid gs of
         Nothing -> False
-        Just source -> maybe False (Set.member Keyword.SpaceSculptor . Filter.keywords) (Projection.viewWithLastKnownAnywhere gs source)
+        Just source -> maybe False (Map.member Keyword.SpaceSculptor . Filter.keywords) (Projection.viewWithLastKnownAnywhere gs source)
    in onBattlefield || any sourceSculpts (Game.allStacks gs)
 
 -- The permanents, phased out ones included: a sector lapses for those too,

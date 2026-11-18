@@ -1208,7 +1208,7 @@ withRiders keywords de =
         { DamageEvent.dealtByDeathtouch = DamageEvent.dealtByDeathtouch de || has Keyword.Type.Deathtouch,
           DamageEvent.dealtByInfect = DamageEvent.dealtByInfect de || has Keyword.Type.Infect,
           DamageEvent.dealtByWither = DamageEvent.dealtByWither de || has Keyword.Type.Wither,
-          DamageEvent.dealtByToxic = DamageEvent.dealtByToxic de + Projection.toxicIn keywords,
+          DamageEvent.dealtByToxic = DamageEvent.dealtByToxic de + Keyword.totalToxicValue keywords,
           DamageEvent.dealtByLifelink =
             if Maybe.isNothing (DamageEvent.dealtByLifelink de) && has Keyword.Type.Lifelink
               then DamageEvent.dealtByController de

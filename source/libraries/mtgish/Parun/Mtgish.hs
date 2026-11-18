@@ -1616,6 +1616,7 @@ quantity context value = do
       Right (Quantity.Count Count.MkCount {Count.scope = Scope.InZone (InZone.MkInZone Zone.Graveyard whose), Count.filter = conjoined fs, Count.aggregation = Aggregation.Members})
     "PowerOfPermanent" -> measured Measure.Power n
     "ToughnessOfPermanent" -> measured Measure.Toughness n
+    "ToxicValueOfPermanent" -> measured Measure.TotalToxicValue n
     _ -> Node.untranslated n
   where
     measured m n = do

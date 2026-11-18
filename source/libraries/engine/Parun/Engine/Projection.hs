@@ -517,7 +517,7 @@ applyModification textBoxOf viewOf src stamp gs oid unitTypes affected m pc =
         -- and cairn-wanderer-finds-nothing-yixlid-jailer-took prove the two.
         Modification.GainKeywordsAmong designator zone among ->
           let holders = filter (maybe False (\view -> Filter.matches context view among) . viewOf) (keywordHolders zone gs)
-              found = foldMap (foldMap Filter.keywords . viewOf) holders
+              found = foldMap (foldMap (Map.keysSet . Filter.keywords) . viewOf) holders
            in List.foldl' grantingTo pc (filter (Keyword.designates designator) (Set.toAscList found))
         -- CR 613.1f / 607.2a: the activated abilities of each card the payload
         -- walks that its Filter matches, framed by `src`, read off its copiable values
@@ -4460,6 +4460,7 @@ measureReads measure = case measure of
   Measure.ModesChosen -> Set.empty
   -- Filter.HasActivatedAbility's reads, whose field it counts.
   Measure.ActivatedAbilityCount -> everyAspect
+  Measure.TotalToxicValue -> Set.singleton Keywords
 
 -- Which aspects a Trait's values read, for Filter.Shares and
 -- Aggregation.MostSharing alike.
@@ -7648,19 +7649,9 @@ hasKeyword = hasKeywordGiven Map.empty
 hasKeywordGiven :: Map ObjectId ProjectedCharacteristics -> Keyword -> ObjectId -> GameState -> Bool
 hasKeywordGiven pcs keyword oid gs = Map.member keyword (keywordsGiven pcs oid gs)
 
--- Rule 702.164b: a creature's total toxic value sums the N of every toxic
--- ability it has, with no redundancy clause -- which is why keywords are counted.
+-- Rule 702.164b: a creature's total toxic value (Keyword.totalToxicValue).
 totalToxic :: ObjectId -> GameState -> Natural
-totalToxic oid gs = toxicIn (keywordsOf oid gs)
-
--- totalToxic's fold, over a keyword map the caller already has -- so a reader
--- that took the map through CR 608.2h's last-known fallback sums it the same way.
-toxicIn :: Map Keyword Natural -> Natural
-toxicIn keywords =
-  let value keyword count = case keyword of
-        Keyword.Type.Toxic n -> n * count
-        _ -> 0
-   in sum (Map.elems (Map.mapWithKey value keywords))
+totalToxic oid gs = Keyword.totalToxicValue (keywordsOf oid gs)
 
 -- The battlefield permanents a player controls (CR 108.4). Computes the grant
 -- list ONCE and threads it, which is linear rather than quadratic.

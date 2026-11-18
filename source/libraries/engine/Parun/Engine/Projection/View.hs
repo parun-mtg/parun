@@ -155,7 +155,7 @@ viewOfCardLapsed lapsed face =
               then Set.union Subtype.everyCreatureType (TypeLine.subtypes typeLine)
               else TypeLine.subtypes typeLine,
           -- CR 702: read off the printed face, like the type line above.
-          Filter.keywords = Face.keywordSet face,
+          Filter.keywords = Face.keywords face,
           -- CR 208.1 read off the PRINTED power box -- see printedPower below.
           Filter.power = printedPower face,
           -- CR 208.1's other half off the printed toughness box.
