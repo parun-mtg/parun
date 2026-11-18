@@ -1,0 +1,296 @@
+1 Aerial Boost
+1 Aetherblade Agent // Gitaxian Mindstinger
+1 Akki Scrapchomper
+1 Alabaster Host Intercessor
+1 Alabaster Host Sanctifier
+1 Ancient Imperiosaur
+1 Angelic Intervention
+1 Arachnoid Adaptation
+1 Archangel Elspeth
+1 Archpriest of Shadows
+1 Artistic Refusal
+1 Assimilate Essence
+1 Astral Wingspan
+1 Atraxa's Fall
+1 Attentive Skywarden
+1 Axgard Artisan
+1 Ayara, Widow of the Realm // Ayara, Furnace Queen
+1 Baral and Kari Zev
+1 Beamtown Beatstick
+1 Bladed Battle-Fan
+1 Blighted Burgeoning
+1 Blightreaper Thallid // Blightsower Thallid
+1 Bloated Processor
+1 Bloodfeather Phoenix
+1 Bloodfell Caves
+1 Blossoming Sands
+1 Bola Slinger
+1 Bonded Herdbeast // Plated Kilnbeast
+1 Boon-Bringer Valkyrie
+1 Borborygmos and Fblthp
+1 Botanical Brawler
+1 Breach the Multiverse
+1 Burning Sun's Fury
+1 Captive Weird // Compleated Conjurer
+1 Chandra, Hope's Beacon
+1 Change the Equation
+1 Chomping Kavu
+1 Chrome Host Seedshark
+1 City on Fire
+1 Collective Nightmare
+1 Coming In Hot
+1 Compleated Huntmaster
+1 Complete the Circuit
+1 Consuming Aetherborn
+1 Converter Beast
+1 Copper Host Crusher
+1 Corrupted Conviction
+1 Corruption of Towashi
+1 Cosmic Hunger
+1 Cragsmasher Yeti
+1 Crystal Carapace
+1 Cut Short
+1 Deadly Derision
+1 Deeproot Wayfinder
+1 Dismal Backwater
+1 Disturbing Conversion
+1 Djeru and Hazoret
+1 Doomskar Warrior
+1 Drana and Linvala
+1 Dreg Recycler
+1 Dusk Legion Duelist
+1 Elesh Norn // The Argent Etchings
+1 Elspeth's Smite
+1 Elvish Vatkeeper
+1 Enduring Bondwarden
+1 Ephara's Dispersal
+1 Errant and Giada
+1 Essence of Orthodoxy
+1 Etali, Primal Conqueror // Etali, Primal Sickness
+1 Etched Familiar
+1 Etched Host Doombringer
+1 Expedition Lookout
+1 Eyes of Gitaxias
+1 Faerie Mastermind
+1 Failed Conversion
+1 Fairgrounds Trumpeter
+1 Fearless Skald
+1 Fertilid's Favor
+1 Final Flourish
+1 Flitting Guerrilla
+1 Flywheel Racer
+1 Forest
+1 Furnace Gremlin
+1 Furnace Host Charger
+1 Furnace Reins
+1 Furtive Analyst
+1 Ghalta and Mavren
+1 Gift of Compleation
+1 Glissa, Herald of Predation
+1 Glistening Dawn
+1 Glistening Deluge
+1 Gloomfang Mauler
+1 Gnottvold Hermit // Chrome Host Hulk
+1 Golden-Scale Aeronaut
+1 Grafted Butcher
+1 Guardian of Ghirapur
+1 Halo Forager
+1 Halo Hopper
+1 Halo-Charged Skaab
+1 Hangar Scrounger
+1 Harried Artisan // Phyrexian Skyflayer
+1 Heliod, the Radiant Dawn // Heliod, the Warped Eclipse
+1 Herbology Instructor // Malady Invoker
+1 Hidetsugu and Kairi
+1 Hoarding Broodlord
+1 Ichor Drinker
+1 Ichor Shade
+1 Infected Defector
+1 Inga and Esika
+1 Injector Crocodile
+1 Inspired Charge
+1 Interdisciplinary Mascot
+1 Into the Fire
+1 Invasion of Alara // Awaken the Maelstrom
+1 Invasion of Amonkhet // Lazotep Convert
+1 Invasion of Arcavios // Invocation of the Founders
+1 Invasion of Azgol // Ashen Reaper
+1 Invasion of Belenon // Belenon War Anthem
+1 Invasion of Dominaria // Serra Faithkeeper
+1 Invasion of Eldraine // Prickle Faeries
+1 Invasion of Ergamon // Truga Cliffcharger
+1 Invasion of Fiora // Marchesa, Resolute Monarch
+1 Invasion of Gobakhan // Lightshield Array
+1 Invasion of Ikoria // Zilortha, Apex of Ikoria
+1 Invasion of Innistrad // Deluge of the Dead
+1 Invasion of Ixalan // Belligerent Regisaur
+1 Invasion of Kaladesh // Aetherwing, Golden-Scale Flagship
+1 Invasion of Kaldheim // Pyre of the World Tree
+1 Invasion of Kamigawa // Rooftop Saboteurs
+1 Invasion of Karsus // Refraction Elemental
+1 Invasion of Kylem // Valor's Reach Tag Team
+1 Invasion of Lorwyn // Winnowing Forces
+1 Invasion of Mercadia // Kyren Flamewright
+1 Invasion of Moag // Bloomwielder Dryads
+1 Invasion of Muraganda // Primordial Plasm
+1 Invasion of New Capenna // Holy Frazzle-Cannon
+1 Invasion of New Phyrexia // Teferi Akosa of Zhalfir
+1 Invasion of Pyrulea // Gargantuan Slabhorn
+1 Invasion of Ravnica // Guildpact Paragon
+1 Invasion of Regatha // Disciples of the Inferno
+1 Invasion of Segovia // Caetus, Sea Tyrant of Segovia
+1 Invasion of Shandalar // Leyline Surge
+1 Invasion of Tarkir // Defiant Thundermaw
+1 Invasion of Theros // Ephara, Ever-Sheltering
+1 Invasion of Tolvada // The Broken Sky
+1 Invasion of Ulgrotha // Grandmother Ravi Sengir
+1 Invasion of Vryn // Overloaded Mage-Ring
+1 Invasion of Xerex // Vertex Paladin
+1 Invasion of Zendikar // Awakened Skyclave
+1 Iridescent Blademaster
+1 Island
+1 Jin-Gitaxias // The Great Synthesis
+1 Joyful Stormsculptor
+1 Jungle Hollow
+1 Kami of Whispered Hopes
+1 Karsus Depthguard
+1 Khenra Spellspear // Gitaxian Spellstalker
+1 Kitesail
+1 Kithkin Billyrider
+1 Knight of the New Coalition
+1 Knight-Errant of Eos
+1 Kogla and Yidaro
+1 Kor Halberd
+1 Kroxa and Kunoros
+1 Lithomantic Barrage
+1 Marauding Dreadship
+1 Marshal of Zhalfir
+1 Meeting of Minds
+1 Merciless Repurposing
+1 Mirran Banesplitter
+1 Mirrodin Avenged
+1 Mirror-Shield Hoplite
+1 Moment of Truth
+1 Monastery Mentor
+1 Mountain
+1 Mutagen Connoisseur
+1 Nahiri's Warcrafting
+1 Negate
+1 Nezumi Freewheeler // Hideous Fleshwheeler
+1 Nezumi Informant
+1 Norn's Inquisitor
+1 Oculus Whelp
+1 Omen Hawker
+1 Omnath, Locus of All
+1 Onakke Javelineer
+1 Oracle of Tragedy
+1 Order of the Mirror // Order of the Alabaster Host
+1 Orthion, Hero of Lavabrink
+1 Overgrown Pest
+1 Ozolith, the Shattered Spire
+1 Phyrexian Archivist
+1 Phyrexian Awakening
+1 Phyrexian Censor
+1 Phyrexian Gargantua
+1 Phyrexian Pegasus
+1 Pile On
+1 Placid Rottentail
+1 Plains
+1 Polukranos Reborn // Polukranos, Engine of Ruin
+1 Portent Tracker
+1 Preening Champion
+1 Progenitor Exarch
+1 Protocol Knight
+1 Pyretic Prankster // Glistening Goremonger
+1 Quintorius, Loremaster
+1 Ral's Reinforcements
+1 Ramosian Greatsword
+1 Rampaging Geoderm
+1 Rampaging Raptor
+1 Rankle and Torbran
+1 Ravenous Sailback
+1 Realmbreaker's Grasp
+1 Realmbreaker, the Invasion Tree
+1 Redcap Heelslasher
+1 Referee Squad
+1 Render Inert
+1 Rona, Herald of Invasion // Rona, Tolarian Obliterator
+1 Rugged Highlands
+1 Ruins Recluse
+1 Saiba Cryptomancer
+1 Sandstalker Moloch
+1 Scorn-Blade Berserker
+1 Scoured Barrens
+1 Scrappy Bruiser
+1 Scrollshift
+1 Sculpted Perfection
+1 Seal from Existence
+1 Searing Barb
+1 See Double
+1 Seed of Hope
+1 Seedpod Caretaker
+1 Seer of Stolen Sight
+1 Seraph of New Capenna // Seraph of New Phyrexia
+1 Serpent-Blade Assailant
+1 Shatter the Source
+1 Sheoldred // The True Scriptures
+1 Shivan Branch-Burner
+1 Sigiled Sentinel
+1 Skittering Surveyor
+1 Skyclave Aerialist // Skyclave Invader
+1 Stasis Field
+1 Stoke the Flames
+1 Storm the Seedcore
+1 Stormclaw Rager
+1 Streetwise Negotiator
+1 Sun-Blessed Guardian // Furnace-Blessed Conqueror
+1 Sunder the Gateway
+1 Sunfall
+1 Surge of Salvation
+1 Surrak and Goreclaw
+1 Swamp
+1 Swiftwater Cliffs
+1 Sword of Once and Future
+1 Swordsworn Cavalier
+1 Tandem Takedown
+1 Tangled Skyline
+1 Tarkir Duneshaper // Burnished Dunestomper
+1 Temporal Cleansing
+1 Tenured Oilcaster
+1 Terror of Towashi
+1 Thalia and The Gitrog Monster
+1 Thornwood Falls
+1 Thrashing Frontliner
+1 Thunderhead Squadron
+1 Tidal Terror
+1 Tiller of Flesh
+1 Timberland Ancient
+1 Trailblazing Historian
+1 Tranquil Cove
+1 Transcendent Message
+1 Traumatic Revelation
+1 Tribute to the World Tree
+1 Unseal the Necropolis
+1 Urabrask // The Great Work
+1 Urn of Godfire
+1 Vanquish the Weak
+1 Vengeant Earth
+1 Volcanic Spite
+1 Voldaren Thrillseeker
+1 Vorinclex // The Grand Evolution
+1 War Historian
+1 War-Trained Slasher
+1 Wary Thespian
+1 Wicked Slumber
+1 Wildwood Escort
+1 Wind-Scarred Crag
+1 Wrenn and Realmbreaker
+1 Wrenn's Resolve
+1 Xerex Strobe-Knight
+1 Yargle and Multani
+1 Zephyr Singer
+1 Zephyr Winder
+1 Zhalfirin Lancer
+1 Zhalfirin Shapecraft
+1 Zimone and Dina
+1 Zurgo and Ojutai
