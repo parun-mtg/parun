@@ -729,7 +729,7 @@ payableCountedAtGiven modes pcs sources x extra spending pid oid gs cost =
       blindCost = Cost.plusComponents blind substituted
       (aimable, beyond) = castAimable (Cost.aimingKey pid oid gs blindCost) modes x pid oid gs
    in if Cost.readsBoundSlot blindCost || Cost.readsTargets pid oid gs
-        then beyond || any (\aiming -> askWith (adjustmentsFor aiming) aiming) aimable
+        then any (\aiming -> askWith (adjustmentsFor aiming) aiming) aimable || beyond
         else askWith blind Map.empty
 
 -- What CR 601.2c could still bind for this proposal: every aiming
@@ -766,11 +766,15 @@ payableCountedAtGiven modes pcs sources x extra spending pid oid gs cost =
 -- The Bool says a walk was cut short at Target.subsetBudget (`aimingsOf`), which
 -- payableCountedAtGiven answers as payable: a false offer CR 601.2h's payment
 -- takes back with nothing changed (CR 734.1), where a false refusal would deny
--- a legal cast.
+-- a legal cast. The list is lazy and asked before the Bool, so the gate stops
+-- at the first aiming that pays.
 --
--- Unprinted: an exact answer past the cap, owed only where an apart slot
+-- Not implemented: an exact answer past the cap for a Differing slot taking
+-- several targets whose candidates share many values (#8649).
+--
+-- Unprinted: an exact answer past the cap where an apart slot
 -- (Target.apartSlots), or an exclusion with a slot named between its two, sits
--- beside a slot taking several targets (Target.apartWide).
+-- beside a slot taking several targets (Target.cappedWalk).
 -- Parun.AbilitySlotLintSpec's "no card writes a joint check only the capped
 -- walk prices" keeps it out of card data.
 castAimable :: (Ord k) => (Recipient.Recipient -> k) -> Maybe (Seq.Seq ModeIndex.ModeIndex) -> Natural -> PlayerId -> ObjectId -> GameState -> ([Map.Map SlotName.SlotName (Set.Set Recipient.Recipient)], Bool)
@@ -822,11 +826,11 @@ castAimable key announced x pid oid gs = case Game.faceOf oid gs of
         -- (Target.poolSplits). The members of a slot the check tells apart one
         -- by one (Target.apartSlots) are each their own class, and the members
         -- of every other jointly judged slot are classed by what the check reads
-        -- of them (Target.jointSignature). Only where a class of one may sit in a
-        -- slot taking several targets does the walk stop at Target.subsetBudget
-        -- (Target.apartWide). Parun.CostSpec's "Drafna's Restoration",
-        -- "Synthetic Wide Verdict" and "Graceful Takedown" groups prove the
-        -- split and the classes.
+        -- of them (Target.jointSignature). Only where classes of one may sit in
+        -- a slot taking several targets does the walk stop at
+        -- Target.subsetBudget (Target.cappedWalk). Parun.CostSpec's "Drafna's
+        -- Restoration", "Synthetic Wide Verdict", "Graceful Takedown" and
+        -- "Behold the Sinister Six!" groups prove the split and the classes.
         aimingsOf slots =
           let sets = setsOf slots
               rangesOf legal = Target.aimingRanges Nothing (Just pid) oid (Just x) slots legal gs
@@ -841,8 +845,9 @@ castAimable key announced x pid oid gs = case Game.faceOf oid gs of
                  in \r -> (key r, joint (held r) r)
               walkOne narrowed = Target.aimingsBy Cost.aimedReferent (signatureIn narrowed) (rangesOf narrowed) narrowed
               walk = concatMap walkOne splits
-              capped = Target.apartWide apart ranges slots
-              -- Lazy, so only the visited prefix and one aiming past it are built.
+              capped = Target.cappedWalk apart ranges slots
+              -- Lazy, so only the prefix the gate asks of, and under a cap one
+              -- aiming past it, are built.
               (visited, beyond) = if capped then List.genericSplitAt Target.subsetBudget walk else (walk, [])
            in (filter (coherent slots) visited, not (null beyond))
         -- CR 700.2: the modes CR 601.2b announced, or every selection the printed
@@ -850,7 +855,7 @@ castAimable key announced x pid oid gs = case Game.faceOf oid gs of
         -- (Ojutai's Command) aims across both.
         selected modal = maybe (Modal.selections (Target.fillableModes StackObjectKind.Spell Nothing (Just pid) Map.empty oid enchant modal gs) (Modal.Type.selection modal)) pure announced
         walks = [aimingsOf (slotsOf modal chosen) | modal <- readings, chosen <- selected modal]
-     in (Set.toList (Set.fromList (concatMap fst walks)), any snd walks)
+     in (ListUtils.nubOrd (concatMap fst walks), any snd walks)
 
 -- CR 601.2b: the greatest value of X this player could actually pay for, which is
 -- what Prompt.ChooseX carries -- measured on the cost the cast is measuring, with

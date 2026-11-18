@@ -274,11 +274,12 @@ loadIndependentDeck registry = do
 -- the board a mana-payability question is asked about, with no game played to
 -- reach it.
 onBattlefield :: NonEmpty.NonEmpty PlayerId -> [Printing.Printing] -> GameState
-onBattlefield players printings = inZones players printings []
+onBattlefield players printings = inZones players [] printings []
 
--- onBattlefield, plus `buried` in the first player's graveyard.
-inZones :: NonEmpty.NonEmpty PlayerId -> [Printing.Printing] -> [Printing.Printing] -> GameState
-inZones players printings buried =
+-- onBattlefield, plus `held` in the first player's hand and `buried` in their
+-- graveyard.
+inZones :: NonEmpty.NonEmpty PlayerId -> [Printing.Printing] -> [Printing.Printing] -> [Printing.Printing] -> GameState
+inZones players held printings buried =
   let pid = NonEmpty.head players
       place zone gs printing =
         let (printingId, interned) = Game.intern printing gs
@@ -289,7 +290,7 @@ inZones players printings buried =
                   GameState.library = Map.adjust (Seq.filter (/= oid)) pid (GameState.library created)
                 }
          in Game.insertIntoZone zone LibraryPosition.Bottom pid oid settled
-      board = Foldable.foldl' (place Zone.Graveyard) (Foldable.foldl' (place Zone.Battlefield) (Setup.emptyGame players) printings) buried
+      board = Foldable.foldl' (place Zone.Hand) (Foldable.foldl' (place Zone.Graveyard) (Foldable.foldl' (place Zone.Battlefield) (Setup.emptyGame players) printings) buried) held
    in board
         { GameState.turn =
             (GameState.turn board)
@@ -328,10 +329,17 @@ legalActionCount tapper n =
 -- names.
 legalActionCountOf :: [Printing.Printing] -> [Printing.Printing] -> Natural -> Int
 legalActionCountOf printings buried n =
-  let players = playersFrom 0
-      times :: [Printing.Printing] -> [Printing.Printing]
+  let times :: [Printing.Printing] -> [Printing.Printing]
       times = concatMap (List.genericReplicate n)
-      gs = inZones players (times printings) (times buried)
+   in legalActionsIn [] (times printings) (times buried)
+{-# NOINLINE legalActionCountOf #-}
+
+-- legalActionCount over `held` in the first player's hand, `printings` on
+-- their battlefield and `buried` in their graveyard.
+legalActionsIn :: [Printing.Printing] -> [Printing.Printing] -> [Printing.Printing] -> Int
+legalActionsIn held printings buried =
+  let players = playersFrom 0
+      gs = inZones players held printings buried
    in length
         ( Action.legalActions
             (NonEmpty.head players)
@@ -342,7 +350,60 @@ legalActionCountOf printings buried n =
                     }
               }
         )
-{-# NOINLINE legalActionCountOf #-}
+
+-- #8644: Behold the Sinister Six! in hand under the first player's own Hinata,
+-- Dawn-Crowned, which reads its targets, over the first `n` of `named`, no
+-- two sharing a name, in their graveyard and no land, so no aiming pays.
+differentNamesCount :: Printing.Printing -> Printing.Printing -> [Printing.Printing] -> Natural -> Int
+differentNamesCount behold hinata named n = legalActionsIn [behold] [hinata] (List.genericTake n named)
+{-# NOINLINE differentNamesCount #-}
+
+-- Forty vanilla creature cards, no two sharing a name.
+loadDistinctCreatures :: Registry.Registry IO -> IO [Printing.Printing]
+loadDistinctCreatures registry =
+  traverse
+    (fetchOrThrow registry)
+    [ "Aegis Turtle",
+      "Ageless Guardian",
+      "Alaborn Trooper",
+      "Alpha Tyrranax",
+      "Alpine Grizzly",
+      "Amphin Cutthroat",
+      "Ancient Brontodon",
+      "Ancient Carp",
+      "Ancient Crab",
+      "Armored Cancrix",
+      "Armored Warhorse",
+      "Armored Whirl Turtle",
+      "Armored Wolf-Rider",
+      "Axebane Beast",
+      "Axebane Stag",
+      "Axegrinder Giant",
+      "Balduvian Barbarians",
+      "Balduvian Bears",
+      "Bane Alley Blackguard",
+      "Barbarian Horde",
+      "Barbary Apes",
+      "Barbtooth Wurm",
+      "Barony Vampire",
+      "Bastion Enforcer",
+      "Bear Cub",
+      "Blade of the Sixth Pride",
+      "Blanchwood Treefolk",
+      "Blind Phantasm",
+      "Bogstomper",
+      "Bonebreaker Giant",
+      "Border Guard",
+      "Borderland Minotaur",
+      "Broodhunter Wurm",
+      "Cabal Evangel",
+      "Canal Monitor",
+      "Canopy Gorger",
+      "Canyon Minotaur",
+      "Capital Guard",
+      "Catacomb Crocodile",
+      "Catacomb Slug"
+    ]
 
 -- Every shape #595 names that keeps a source plural, on one board: Treasonous
 -- Ogre pays life, Springleaf Drum's tap claim contends with every Llanowar Elves,
@@ -398,6 +459,9 @@ main = do
   hearse <- fetchOrThrow registry "Unlicensed Hearse"
   shade <- fetchOrThrow registry "Frozen Shade"
   angel <- fetchOrThrow registry "Serra Angel"
+  behold <- fetchOrThrow registry "Behold the Sinister Six!"
+  hinata <- fetchOrThrow registry "Hinata, Dawn-Crowned"
+  named <- loadDistinctCreatures registry
   Harness.defaultMain
     [ Harness.whnf "goldfish 2p" (goldfish deck) 0,
       Harness.whnf "casting 2p" (casting deck) 0,
@@ -447,5 +511,8 @@ main = do
       -- A graveyard of cards printing keywords that permit no cast there:
       -- Serra Angel's, beside a Mountain apiece.
       Harness.whnf "legal actions 40 buried keywords" (legalActionCountOf [mountain] [angel]) 40,
-      Harness.whnf "legal actions 80 buried keywords" (legalActionCountOf [mountain] [angel]) 80
+      Harness.whnf "legal actions 80 buried keywords" (legalActionCountOf [mountain] [angel]) 80,
+      -- #8644: a different-names slot over 20 and 40 cards, each its own name.
+      Harness.whnf "legal actions 20 different names" (differentNamesCount behold hinata named) 20,
+      Harness.whnf "legal actions 40 different names" (differentNamesCount behold hinata named) 40
     ]
