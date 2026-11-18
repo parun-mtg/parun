@@ -1,0 +1,139 @@
+{
+  "faces": [
+    {
+      "manaCost": [
+        {
+          "type": "Generic",
+          "value": 2
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "Black"
+          }
+        }
+      ],
+      "name": "Yawgmoth's Testament",
+      "oracleText": "Until end of turn, you may play face-up cards you own from exile.\nIf a card would be put into your graveyard or exile from anywhere this turn, put it on the bottom of your library instead.",
+      "spell": {
+        "modes": [
+          {
+            "clauses": [
+              {
+                "effects": [
+                  {
+                    "type": "AffectPlayers",
+                    "value": {
+                      "duration": {
+                        "type": "UntilEndOfTurn"
+                      },
+                      "effect": {
+                        "type": "CastFrom",
+                        "value": {
+                          "from": {
+                            "player": {
+                              "type": "Relative",
+                              "value": "AnyPlayer"
+                            },
+                            "zone": "Exile"
+                          },
+                          "matching": {
+                            "type": "And",
+                            "value": [
+                              {
+                                "type": "Not",
+                                "value": {
+                                  "type": "IsExiledFaceDown"
+                                }
+                              },
+                              {
+                                "type": "HeldBy",
+                                "value": {
+                                  "holder": "Owner",
+                                  "relation": "You"
+                                }
+                              }
+                            ]
+                          },
+                          "verb": "Play"
+                        }
+                      },
+                      "players": {
+                        "type": "Scoped",
+                        "value": {
+                          "type": "You"
+                        }
+                      }
+                    }
+                  },
+                  {
+                    "type": "Replace",
+                    "value": {
+                      "duration": {
+                        "type": "UntilEndOfTurn"
+                      },
+                      "effect": {
+                        "type": "ZoneChangeR",
+                        "value": {
+                          "destination": "Library",
+                          "matching": {
+                            "whatObject": {
+                              "type": "Not",
+                              "value": {
+                                "type": "IsToken"
+                              }
+                            },
+                            "whenDestination": "Graveyard",
+                            "whoseObject": {
+                              "type": "You"
+                            }
+                          }
+                        }
+                      },
+                      "origin": "Other",
+                      "uses": "Unlimited"
+                    }
+                  },
+                  {
+                    "type": "Replace",
+                    "value": {
+                      "duration": {
+                        "type": "UntilEndOfTurn"
+                      },
+                      "effect": {
+                        "type": "ZoneChangeR",
+                        "value": {
+                          "destination": "Library",
+                          "matching": {
+                            "whatObject": {
+                              "type": "Not",
+                              "value": {
+                                "type": "IsToken"
+                              }
+                            },
+                            "whenDestination": "Exile",
+                            "whoseObject": {
+                              "type": "You"
+                            }
+                          }
+                        }
+                      },
+                      "origin": "Other",
+                      "uses": "Unlimited"
+                    }
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "typeLine": {
+        "types": [
+          "Sorcery"
+        ]
+      }
+    }
+  ]
+}

@@ -1237,17 +1237,22 @@ candidateCostsGiven permitted pid name oid gs =
                 -- only when it carries an alternative cost, which is the arm two
                 -- below.
                 --
-                -- CR 601.3: where the card's own permission opens it too, its
-                -- owner casts under either, so the printed cost and its
-                -- alternatives follow the free one. The scenarios
+                -- CR 601.3: where the card's own permission or a player's
+                -- grant opens it too, its owner casts under either, so the
+                -- printed cost and its alternatives follow the free one. The
+                -- scenarios
                 -- khan-vengeful-heart-plotted-by-aven-interrupter-is-cast-on-a-later-turn-for-its-mana-cost
-                -- and its for-free twin prove both.
+                -- and its for-free twin prove the first,
+                -- yawgmoths-testament-lets-a-plotted-card-be-cast-on-a-later-turn-for-its-mana-cost
+                -- the second.
                 --
-                -- Not implemented: a CR 716.3d permission or a player's CR 601.3
-                -- grant opening a plotted card beside rule 702.170d's (#8498).
+                -- Unprinted: a CR 716.3d permission on a plotted card. Rule
+                -- 716.3d writes it only as an Adventure exiles itself resolving,
+                -- and CR 616.1 leaves Lilah, Undefeated Slickshot's card plotted
+                -- or on an adventure, never both.
                 Just Zone.Exile
                   | permitsCastPlotted pid oid gs ->
-                      untagged (withoutPayingManaCost face) : (if ownPermissionOpens Zone.Exile pid oid face gs then ordinary else [])
+                      untagged (withoutPayingManaCost face) : (if ownPermissionOpens Zone.Exile pid oid face gs || PlayerEffect.mayCastFrom pid Zone.Exile oid gs then ordinary else [])
                 -- CR 702.143a: a FORETOLD card is cast for its foretell cost, CR
                 -- 118.9's alternative cost, wrapped by withAdditional as flashback's
                 -- is. INSTEAD of the printed cost, the plotted arm's reason, and

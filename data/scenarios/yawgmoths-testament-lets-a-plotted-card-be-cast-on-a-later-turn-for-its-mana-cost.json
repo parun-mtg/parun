@@ -1,0 +1,34 @@
+{
+  "description": "CR 601.3, 702.170d: under Yawgmoth's Testament a Freestrider Commando plotted on an earlier turn is cast for its mana cost, though rule 702.170d's free cast is also open, so mana was spent and it enters without counters",
+  "board": {
+    "active": "alice",
+    "step": "PrecombatMain",
+    "seats": [
+      {
+        "name": "alice",
+        "battlefield": [
+          {"card": "Forest", "label": "f1"}, {"card": "Forest", "label": "f2"}, {"card": "Forest", "label": "f3"}, {"card": "Forest", "label": "f4"},
+          {"card": "Swamp", "label": "s1"}, {"card": "Swamp", "label": "s2"}, {"card": "Swamp", "label": "s3"}
+        ],
+        "hand": [{"card": "Freestrider Commando", "label": "commando"}, {"card": "Yawgmoth's Testament", "label": "testament"}],
+        "library": [{"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}]
+      },
+      {
+        "name": "bob",
+        "library": [{"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}]
+      }
+    ]
+  },
+  "timeline": [
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": {"Take": {"action": "Plot $commando", "mana": ["$f1", "$f2", "$f3", "$f4", null]}}},
+    {"turn": 3, "step": "PrecombatMain", "player": "alice", "do": {"Cast": {"object": "$testament", "mana": ["$s1", "$s2", "$s3", null]}}},
+    {"turn": 3, "step": "PrecombatMain", "player": "alice", "do": "Pass"},
+    {"turn": 3, "step": "PrecombatMain", "player": "bob", "do": "Pass"},
+    {"turn": 3, "step": "PrecombatMain", "player": "alice", "check": {"Count": {"player": "alice", "zone": "Library", "card": "Yawgmoth's Testament", "count": 1}}},
+    {"turn": 3, "step": "PrecombatMain", "player": "alice", "do": {"Cast": {"object": "Freestrider Commando", "cost": [{"type": "Generic", "value": 2}, {"type": "OfType", "value": {"type": "Colored", "value": "Green"}}], "mana": ["$f1", "$f2", "$f3", null]}}},
+    {"turn": 3, "step": "PrecombatMain", "player": "alice", "do": "Pass"},
+    {"turn": 3, "step": "PrecombatMain", "player": "bob", "do": "Pass"},
+    {"turn": 3, "step": "PrecombatMain", "player": "alice", "check": {"PowerToughness": {"object": "Freestrider Commando", "power": 3, "toughness": 3}}},
+    {"turn": 3, "step": "PrecombatMain", "player": "alice", "check": {"Tapped": {"object": "$f3", "tapped": true}}}
+  ]
+}
