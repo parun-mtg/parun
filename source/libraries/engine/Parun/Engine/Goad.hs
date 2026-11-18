@@ -58,9 +58,10 @@ goad until_ oid gs =
 -- creature two players have goaded owes two different exclusions.
 --
 -- Two carriers, one answer: the one-shot goad above, and a continuous effect's
--- Modification.Goaded (Kang, Suspicious Captain's "for as long as"; Koloth,
--- Tribble Hunter's static ability), which the projection folds into
--- PC.goadedBy. CR 701.15d makes a seat on both one goader.
+-- Modification.Goaded (Kang, Suspicious Captain's "for as long as"; Balefang
+-- the Unslayable's "for the rest of the game"; Koloth, Tribble Hunter's static
+-- ability), which the projection folds into PC.goadedBy. CR 701.15d makes a
+-- seat on both one goader.
 goadedBy :: ObjectId -> GameState.GameState -> Set PlayerId
 goadedBy oid gs = case Map.lookup oid (GameState.objects gs) of
   Nothing -> Set.empty
