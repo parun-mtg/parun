@@ -3225,7 +3225,7 @@ retargetEach reaim legal resolving controller source ref = do
 -- so the spell resolves" proves the refused draw.
 --
 -- `onto`: CR 115.7b's change of one target to a named object, below.
-changeTargetsFor :: Maybe (Set ObjectId) -> ObjectId -> PlayerId -> PlayerId -> ObjectId -> Game ()
+changeTargetsFor :: Maybe (Recipient -> Bool) -> ObjectId -> PlayerId -> PlayerId -> ObjectId -> Game ()
 changeTargetsFor onto source chooser controller oid = do
   gs <- State.get
   Monad.forM_ (Game.lookupObject oid gs) $ \obj -> do
@@ -3242,7 +3242,7 @@ changeTargetsFor onto source chooser controller oid = do
             State.modify' (\g -> g {GameState.objects = Map.adjust write oid (GameState.objects g)})
     case onto of
       -- CR 115.7b: each OPTION is the current targets with one of them
-      -- swapped for a recipient `named` refers to, legal now in that slot and
+      -- swapped for a recipient `named` admits, legal now in that slot and
       -- not already among its targets. Which target is the chooser's (Mizzium
       -- Meddler's ruling, 2015-06-22). None means nothing changes: CR 115.7a's
       -- "only to another legal target", which Meddler gone from the battlefield
@@ -3263,7 +3263,7 @@ changeTargetsFor onto source chooser controller oid = do
         let refused = Target.jointlyIllegal (resolvingKind oid gs) (resolvingAbilityName oid gs) (Just controller) seed aimer slots
             already = refused current gs
             causes picked = or (Map.mapWithKey (\slot r -> not (Set.isSubsetOf r (Map.findWithDefault Set.empty slot already))) (refused picked gs))
-            swapsIn slot olds = Set.filter (any (`Set.member` named) . Recipient.objectOf) (Target.inChooserRange source chooser gs (another olds (Map.findWithDefault Set.empty slot fresh)))
+            swapsIn slot olds = Set.filter named (Target.inChooserRange source chooser gs (another olds (Map.findWithDefault Set.empty slot fresh)))
             options =
               Set.toList . Set.fromList $
                 [ picked

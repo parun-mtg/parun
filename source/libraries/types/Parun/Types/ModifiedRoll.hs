@@ -58,7 +58,7 @@ import qualified Parun.Types.RollModifier as RollModifier
 -- output forever, with real randomness as much as with a fixed answerer. The one
 -- printed mandatory reroll is bounded by the card's own words and belongs to the
 -- rolling instruction rather than to this type -- Ricochet's "reroll to break
--- ties, if necessary", see #3990.
+-- ties, if necessary", Parun.Types.RollEnd's LowestBreakingTies.
 --
 -- Construct with BRACE syntax: `sides` and `natural` are two Naturals in a row,
 -- and positional construction that transposed them would compile.

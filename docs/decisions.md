@@ -2740,3 +2740,25 @@ Entries are ordered by the first rule each cites.
   `pippa-duchess-of-dice-s-die-creatures-doubled-by-doubling-season-are-each-their-own-die`
   and `pippa-duchess-of-dice-s-die-creature-replaced-by-holo-engineer-s-illusion-is-no-die`.
 - **Issue**: #8563.
+
+## Who rerolls Ricochet's tie
+
+- **Question**: Ricochet: "each player rolls a six-sided die. Change the target
+  of that spell to the player with the lowest result. Reroll to break ties, if
+  necessary." With two players tied for the lowest, does only that pair
+  reroll, or does every player? And is "a spell that targets a single player"
+  one whose only target is a player, or any spell with exactly one player
+  among its targets?
+- **Rules**: CR 706.1, 706.2a, 115.7a; the card has no rulings. CR of
+  2026-11-06.
+- **Decision**: Only the players tied for the lowest reroll, in APNAP order,
+  until one is lowest; the others' results stand. The trigger reads a spell
+  whose one target is a player (`Filter.TargetsOnlyOne`).
+- **Rejected**: Every player rerolling: a player above the tie takes no part
+  in breaking it, and a reroll of everyone can leave a different player
+  lowest, which is no tie broken. Any spell with one player target among
+  others: "change the target of that spell" speaks of one target.
+- **Site**: `Parun.Engine.Resolve.Arms.Damage.rollDieArm`'s `breakTies`, under
+  `Parun.Types.RollEnd.LowestBreakingTies`, proved by the scenario
+  `cr-706-1-the-players-tied-for-the-lowest-roll-reroll-until-one-is-lowest`.
+- **Issue**: #3990.

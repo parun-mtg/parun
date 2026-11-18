@@ -1,0 +1,91 @@
+{
+  "faces": [
+    {
+      "manaCost": [
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "Red"
+          }
+        }
+      ],
+      "name": "Ricochet",
+      "oracleText": "Whenever a player casts a spell that targets a single player, each player rolls a six-sided die. Change the target of that spell to the player with the lowest result. Reroll to break ties, if necessary.",
+      "triggeredAbilities": [
+        {
+          "condition": {
+            "type": "SpellCast",
+            "value": {
+              "scope": {
+                "type": "PlayersTurn",
+                "value": {
+                  "type": "Relative",
+                  "value": "AnyPlayer"
+                }
+              },
+              "spell": {
+                "type": "Matching",
+                "value": {
+                  "type": "TargetsOnlyOne",
+                  "value": {
+                    "type": "IsPlayer",
+                    "value": "AnyPlayer"
+                  }
+                }
+              }
+            }
+          },
+          "modal": {
+            "modes": [
+              {
+                "clauses": [
+                  {
+                    "effects": [
+                      {
+                        "type": "RollDie",
+                        "value": {
+                          "extreme": {
+                            "end": "LowestBreakingTies",
+                            "slot": "lowest"
+                          },
+                          "roller": {
+                            "type": "Relative",
+                            "value": "AnyPlayer"
+                          },
+                          "sides": 6,
+                          "slot": "result"
+                        }
+                      },
+                      {
+                        "type": "ChangeTargets",
+                        "value": {
+                          "objects": {
+                            "type": "InSlot",
+                            "value": "thatSpell"
+                          },
+                          "onto": {
+                            "type": "Players",
+                            "value": {
+                              "type": "InSlot",
+                              "value": "lowest"
+                            }
+                          }
+                        }
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      ],
+      "typeLine": {
+        "types": [
+          "Enchantment"
+        ]
+      }
+    }
+  ]
+}

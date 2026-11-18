@@ -2,9 +2,9 @@
 
 module Parun.Codec.RequireAttack where
 
-import qualified Parun.Codec.AttackTargetRef as AttackTargetRef
 import qualified Parun.Codec.Duration as Duration
 import qualified Parun.Codec.ObjectRef as ObjectRef
+import qualified Parun.Codec.RecipientRef as RecipientRef
 import qualified Parun.Codec.RestrictedCreatures as RestrictedCreatures
 import qualified Parun.JsonCodec.Codec as Codec
 import qualified Parun.JsonCodec.Common as Common
@@ -18,7 +18,7 @@ codec :: Codec.Codec RequireAttack.RequireAttack
 codec = Fields.object $ do
   duration <- Fields.required "duration" Duration.codec RequireAttack.duration
   attacker <- Fields.required "attacker" (RestrictedCreatures.codec ObjectRef.codec) RequireAttack.attacker
-  defender <- Fields.defaulted "defender" Nothing (Common.maybe AttackTargetRef.codec) RequireAttack.defender
+  defender <- Fields.defaulted "defender" Nothing (Common.maybe RecipientRef.codec) RequireAttack.defender
   pure
     RequireAttack.MkRequireAttack
       { RequireAttack.duration = duration,

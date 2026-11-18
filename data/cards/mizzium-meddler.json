@@ -49,8 +49,11 @@
                             "value": "redirected"
                           },
                           "onto": {
-                            "type": "InSlot",
-                            "value": "self"
+                            "type": "Permanents",
+                            "value": {
+                              "type": "InSlot",
+                              "value": "self"
+                            }
                           }
                         }
                       }
