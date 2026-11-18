@@ -7544,17 +7544,15 @@ tapForManaWith perform window inFlight refused activator oid = do
 --
 -- CR 603.4's intervening "if" is applied, Event.reactionTriggers doing it.
 --
--- Not implemented: an ordering choice where ONE activation fires several
--- triggered mana abilities -- two Wild Growths enchanting one Forest, or a Caged
--- Sun beside a Gauntlet of Power. `fired` is applied in gather order,
--- engine-chosen. CR 605.4a keeps them off the stack, so CR 603.3b's process does
--- not literally run, but it is the rule that gives their controller the order,
--- and no prompt is raised. Sound only while every such ability's effect is
--- order-independent, which every AddMana into a pool is (#3724).
+-- Implementation-defined: where ONE activation fires several triggered mana
+-- abilities -- two Wild Growths enchanting one Forest, or a Caged Sun beside a
+-- Gauntlet of Power -- they run in gather order. CR 605.4a keeps them off the
+-- stack and names no order among several.
 --
--- Not implemented: the printed "triggers only once" riders
--- (Parun.Types.TriggerLimit), which Event.withinTriggerLimit spends for a trigger
--- that reaches the stack (#3724).
+-- Unprinted: a "triggers only once" rider (Parun.Types.TriggerLimit) on a
+-- triggered mana ability, which nothing here spends. Parun.CardSpec's "CR 605.1b
+-- no card writes a trigger limit or a mode choice on a triggered mana ability"
+-- keeps it out of card data.
 applyManaTriggers :: ManaAbilityPerformer.ManaAbilityPerformer -> [GameEvent.GameEvent] -> Game ()
 applyManaTriggers perform events = do
   Monad.mapM_ (State.modify' . Event.recordEvent) events

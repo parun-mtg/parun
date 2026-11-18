@@ -1414,9 +1414,11 @@ performManaPayGate runSubgame source controller cIdx gate answers = do
 -- states adds mana, and Parun.Engine.Cost gathers only from an object's
 -- conditions. Answered by doing nothing rather than by a partial pattern.
 --
--- CR 700.2b's mode choice is FORCED or nothing: a modal triggered mana ability
--- would want the prompt Engine.placeBorne raises, and CR 605.4a leaves no stack
--- object to raise it against. Not implemented: such an ability (#3724).
+-- Unprinted: a modal triggered mana ability, which would want the CR 700.2b
+-- prompt Engine.placeBorne raises where CR 605.4a leaves no stack object; only
+-- a FORCED selection is applied. Parun.CardSpec's "CR 605.1b no card writes a
+-- trigger limit or a mode choice on a triggered mana ability" keeps it out of
+-- card data.
 performTriggeredManaAbility :: Game Result -> PendingTrigger.PendingTrigger -> Game ()
 performTriggeredManaAbility runSubgame pending = case PendingTrigger.source pending of
   TriggerSource.Sourceless -> pure ()
