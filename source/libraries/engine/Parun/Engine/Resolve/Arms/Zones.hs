@@ -2216,10 +2216,9 @@ redistributeLifeTotals settle source controller = do
 -- CR 702.179c: each named player's speed increases by this much. Its two
 -- readings -- a player who HAS speed goes up, a player with NONE has their
 -- speed BECOME the value -- are spelled separately, since DecreaseSpeed below
--- must not create a speed out of nothing. No cap, which is a PROJECT DECISION
--- and not a rule: nothing in rule 702.179 bounds speed from above, and nothing
--- permits exceeding 4 either, so parun rules that an effect may push past it.
--- Parun.Engine.Speed.maxSpeed carries the decision and CR 702.178a's side of it.
+-- must not create a speed out of nothing. No cap: nothing in rule 702.179
+-- bounds speed from above, a reading only Synthetic Speed Boost observes
+-- (docs/synthetic-readings.md, "Whether an effect can raise speed past 4").
 increaseSpeed :: ObjectId -> ObjectId -> PlayerId -> Map.Map SlotName (Set Recipient) -> PlayerQuantity.PlayerQuantity -> Game ()
 increaseSpeed resolving source controller legal (PlayerQuantity.MkPlayerQuantity ref quantity) = do
   gs <- State.get

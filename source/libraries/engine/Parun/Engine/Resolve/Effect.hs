@@ -572,7 +572,7 @@ applyOneEffect runSubgame resolving source controller legal chosen effect = case
   Effect.ChoosePermanents payload -> Damage.choosePermanents resolving source controller legal payload
   Effect.ChooseGroup payload -> Damage.chooseGroup resolving source controller legal payload
   Effect.RollDie payload -> Damage.rollDieArm throwDice runSubgame resolving source controller legal payload
-  Effect.Rethrow -> Damage.rethrow
+  Effect.Rethrow -> Damage.rethrow throwDice runSubgame resolving controller
   Effect.RerollStoredResults payload -> Damage.rerollStoredResults throwDice runSubgame resolving source controller legal payload
   Effect.FlipCoin payload -> Damage.flipCoinArm settleWith runSubgame resolving source controller legal payload
   Effect.Guess payload -> Zones.guess resolving source controller legal chosen payload
@@ -705,6 +705,7 @@ applyOneEffect runSubgame resolving source controller legal chosen effect = case
   Effect.OpenAttraction -> Counters.openAttraction (settleWith runSubgame) controller
   Effect.RollToVisit -> rollToVisit runSubgame controller
   Effect.Assemble payload -> Counters.assemble (settleWith runSubgame) resolving source controller legal payload
+  Effect.Crank -> Counters.crank controller
   Effect.Planeswalk ref -> Counters.planeswalk resolving source controller legal ref
   Effect.ChaosEnsues ref -> Counters.chaosEnsues resolving source controller legal ref
   Effect.Abandon -> Counters.abandon source

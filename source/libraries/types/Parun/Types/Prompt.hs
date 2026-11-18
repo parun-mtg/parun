@@ -858,7 +858,9 @@ data Prompt r where
   -- a chosen Parun.Types.ObjectRef.OneAmong names. Also CR 616.1:
   -- which Opposition Agent's exile applies to a search's finds. Also CR
   -- 608.2d: which creature of a paired fight's other group the ObjectId fights
-  -- (Ezuri's Predation). The Seq is ChooseAnyNumber's.
+  -- (Ezuri's Predation). Also which permanent that is a die a "reroll any die"
+  -- rerolls outside a roll (Parun.Types.Effect's Rethrow). The Seq is
+  -- ChooseAnyNumber's.
   ChoosePermanent :: Decider.Decider -> PlayerId.PlayerId -> ObjectId.ObjectId -> NonEmpty.NonEmpty ObjectId.ObjectId -> Seq.Seq (PlayerId.PlayerId, Set.Set ObjectId.ObjectId) -> Prompt ObjectId.ObjectId
   -- | CR 702.122a: which untapped permanents are tapped to crew, the Natural a
   -- power threshold rather than a size (Parun.Engine.Cost validates the sum).

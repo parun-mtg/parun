@@ -1308,6 +1308,9 @@ expansionOf keyword = case keyword of
         -- make a second instance mint a second row.
         KeywordExpansion.replacements = const []
       }
+  -- Mints nothing: Parun.Engine.Saga reads the keyword where CR 715.3a's
+  -- ability and CR 715.3c's action are decided.
+  Keyword.BedtimeStory -> mempty
   Keyword.Ravenous ->
     mempty
       { -- CR 702.156a's triggered half. Rule 702.156a states no redundancy clause,
@@ -5107,6 +5110,7 @@ functionsOnBattlefield keyword = case keyword of
   Keyword.Ravenous -> True
   Keyword.Reach -> True
   Keyword.ReadAhead -> True
+  Keyword.BedtimeStory -> True
   Keyword.Reconfigure _ -> True
   Keyword.Renown _ -> True
   Keyword.Riot -> True
@@ -5487,6 +5491,7 @@ familyOf keyword = case keyword of
   Keyword.Compleated -> Nothing
   Keyword.Reconfigure _ -> Just KeywordFamily.Reconfigure
   Keyword.ReadAhead -> Nothing
+  Keyword.BedtimeStory -> Nothing
   Keyword.Training -> Nothing
   Keyword.StartYourEngines -> Nothing
   Keyword.Ascend -> Nothing
@@ -5732,7 +5737,8 @@ mobilize n =
               Create.slot = Just mobilizeTokenSlot,
               -- CR 111.2 under CR 109.5: the keyword ability's own controller.
               Create.creator = PlayerRef.Relative PlayerRelation.You,
-              Create.linked = False
+              Create.linked = False,
+              Create.die = Nothing
             }
       arm =
         Effect.ArmDelayedTrigger
@@ -6829,7 +6835,8 @@ giftToken chosen tapped token =
           EntryRiders.defaultValue {EntryRiders.tapped = tapped},
         Create.slot = Nothing,
         Create.creator = chosen,
-        Create.linked = False
+        Create.linked = False,
+        Create.die = Nothing
       }
 
 -- | CR 702.174f's 1\/1 and CR 702.174i's 8\/8 blue creature token of this type,
@@ -6923,7 +6930,8 @@ afterlife n =
               Create.slot = Nothing,
               -- CR 111.2 under CR 109.5: the keyword ability's own controller.
               Create.creator = PlayerRef.Relative PlayerRelation.You,
-              Create.linked = False
+              Create.linked = False,
+              Create.die = Nothing
             }
    in Mint.trigger (TriggerCondition.Leaves (LeavesTrigger.dies LeavingPermanent.Self)) (Seq.singleton spawn)
 
@@ -7080,7 +7088,8 @@ fabricate n =
               Create.slot = Nothing,
               -- CR 111.2 under CR 109.5: the keyword ability's own controller.
               Create.creator = PlayerRef.Relative PlayerRelation.You,
-              Create.linked = False
+              Create.linked = False,
+              Create.die = Nothing
             }
    in Mint.triggerOf
         (TriggerCondition.Enters EntersTrigger.defaultValue)
@@ -7285,7 +7294,8 @@ attachToOwnToken token =
               Create.slot = Just attachedTokenSlot,
               -- CR 111.2 under CR 109.5: the keyword ability's own controller.
               Create.creator = PlayerRef.Relative PlayerRelation.You,
-              Create.linked = False
+              Create.linked = False,
+              Create.die = Nothing
             }
    in Mint.trigger (TriggerCondition.Enters EntersTrigger.defaultValue) (Seq.fromList [spawn, Effect.Attach attachedTokenSlot])
 

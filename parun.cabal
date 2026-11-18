@@ -549,6 +549,8 @@ library codec
     Parun.Codec.ControlClockSpec
     Parun.Codec.ControlDuration
     Parun.Codec.ControlDurationSpec
+    Parun.Codec.ControllerGrant
+    Parun.Codec.ControllerGrantSpec
     Parun.Codec.ControllerRelation
     Parun.Codec.ControllerRelationSpec
     Parun.Codec.ControlMargin
@@ -1704,6 +1706,8 @@ library codec
     Parun.Codec.ShownCardsSpec
     Parun.Codec.ShownComponent
     Parun.Codec.ShownComponentSpec
+    Parun.Codec.ShownDie
+    Parun.Codec.ShownDieSpec
     Parun.Codec.Shows
     Parun.Codec.ShowsSpec
     Parun.Codec.ShuffleIntoLibrary
@@ -3073,6 +3077,7 @@ library types
     Parun.Types.ControlChanged
     Parun.Types.ControlClock
     Parun.Types.ControlDuration
+    Parun.Types.ControllerGrant
     Parun.Types.ControllerRelation
     Parun.Types.ControlMargin
     Parun.Types.ControlPlayer
@@ -3418,6 +3423,7 @@ library types
     Parun.Types.Looked
     Parun.Types.LoopMembers
     Parun.Types.LoopTrail
+    Parun.Types.LossCause
     Parun.Types.LostPermanent
     Parun.Types.Loyalty
     Parun.Types.LoyaltyClause
@@ -3747,6 +3753,7 @@ library types
     Parun.Types.SetX
     Parun.Types.ShownCards
     Parun.Types.ShownComponent
+    Parun.Types.ShownDie
     Parun.Types.Shows
     Parun.Types.ShuffleIntoLibrary
     Parun.Types.Sickness
@@ -3935,6 +3942,7 @@ library uri
 library web
   import: library
   build-depends:
+    bytestring ^>=0.12.2,
     containers ^>={0.7, 0.8},
     parun:codec,
     parun:extra,
@@ -3943,6 +3951,7 @@ library web
     parun:play,
     parun:spec,
     parun:types,
+    parun:uri,
     text ^>=2.1.3,
 
   hs-source-dirs: source/libraries/web
@@ -3954,6 +3963,8 @@ library web
     Parun.Web.Board
     Parun.Web.Diff
     Parun.Web.DiffSpec
+    Parun.Web.Ending
+    Parun.Web.EndingSpec
     Parun.Web.Html
     Parun.Web.HtmlSpec
     Parun.Web.Line
@@ -3971,6 +3982,7 @@ library browser
   build-depends:
     bytestring ^>=0.12.2,
     containers ^>={0.7, 0.8},
+    parun:engine,
     parun:exceptions,
     parun:extra,
     parun:interpreter,

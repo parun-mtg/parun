@@ -223,6 +223,7 @@ zonesFunctionedAgainst itself delayed effect = case effect of
   Effect.AsYouCascade {} -> Set.empty
   Effect.Explore {} -> Set.empty
   Effect.Assemble {} -> Set.empty
+  Effect.Crank -> Set.empty
   Effect.Connive {} -> Set.empty
   Effect.Discard {} -> Set.empty
   Effect.LoseLife {} -> Set.empty

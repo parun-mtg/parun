@@ -960,31 +960,35 @@ handOff terminal seat = do
   pure handing
 
 -- | Adds the view's witnessed entries the client has not read yet to its
--- seat's news: the rest of the previous turn's, where the seat last looked
--- during it, and this turn's. Every request's view is read, answered
+-- seat's news ('unseen').
+collect :: (Monad m) => PlayerView.PlayerView -> Client m ()
+collect view = do
+  (seen, unread) <- State.gets (flip unseen view . Hotseat.seen)
+  State.modify' $ \h ->
+    h
+      { Hotseat.seen = seen,
+        Hotseat.news = Map.insertWith (flip (<>)) (PlayerView.viewer view) (Seq.fromList unread) (Hotseat.news h)
+      }
+
+-- | The view's witnessed entries not read yet, as sentences, and the marks
+-- moved past them: the rest of the previous turn's, where the seat last
+-- looked during it, and this turn's. Every request's view is read, answered
 -- automatically or not, since the view holds only those two turns' entries.
 -- A seat is sent a request every turn, even one it is controlled for: each
 -- priority asks the seat itself whether it concedes (CR 104.3a, 724.6). The
--- mark is kept per game, since a subgame's and a restarted game's turns are
--- numbered from 1 again (CR 728.1, 730.1a).
-collect :: (Monad m) => PlayerView.PlayerView -> Client m ()
-collect view = do
-  let seat = PlayerView.viewer view
-      mark = (seat, PlayerView.game view)
+-- mark is kept per seat and game, since a subgame's and a restarted game's
+-- turns are numbered from 1 again (CR 728.1, 730.1a).
+unseen :: Map.Map (PlayerId.PlayerId, Natural) (Natural, Natural) -> PlayerView.PlayerView -> (Map.Map (PlayerId.PlayerId, Natural) (Natural, Natural), [Text.Text])
+unseen seen view =
+  let mark = (PlayerView.viewer view, PlayerView.game view)
       turn = PlayerView.turn view
       entries = PlayerView.witnessed view
-  before <- State.gets (Map.lookup mark . Hotseat.seen)
-  let missed = case before of
+      missed = case Map.lookup mark seen of
         Just (t, n)
           | t == turn -> List.genericDrop n entries
           | t + 1 == turn -> List.genericDrop n (PlayerView.witnessedLastTurn view) <> entries
         _ -> entries
-      unread = Seq.fromList (Render.events view missed)
-  State.modify' $ \h ->
-    h
-      { Hotseat.seen = Map.insert mark (turn, Natural.length entries) (Hotseat.seen h),
-        Hotseat.news = Map.insertWith (flip (<>)) seat unread (Hotseat.news h)
-      }
+   in (Map.insert mark (turn, Natural.length entries) seen, Render.events view missed)
 
 -- | The lines showing the seat its news, emptying it: one line saying what
 -- happened since it last looked, where the screen was just handed to it,

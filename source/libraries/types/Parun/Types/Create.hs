@@ -3,6 +3,7 @@ module Parun.Types.Create where
 import qualified Parun.Types.EntryRiders as EntryRiders
 import qualified Parun.Types.PlayerRef as PlayerRef
 import qualified Parun.Types.Quantity as Quantity
+import qualified Parun.Types.ShownDie as ShownDie
 import qualified Parun.Types.SlotName as SlotName
 
 -- | CR 111.1's token creation: WHO creates them, how many, of what card,
@@ -36,6 +37,11 @@ data Create card ability = MkCreate
     creator :: PlayerRef.PlayerRef,
     -- | CR 607.2c: does another ability of the source refer to these tokens?
     -- Parun.Types.CreateCopy's `linked`. Tetravus' scenarios prove it.
-    linked :: Bool
+    linked :: Bool,
+    -- | The die each token IS, showing the number this settles to off the
+    -- pre-effect board (CR 608.2h) -- Pippa, Duchess of Dice's "it becomes a
+    -- green Die creature token", whose rulings have the token represented by the
+    -- die just rolled. Nothing for every other token.
+    die :: Maybe (ShownDie.ShownDie Quantity.Quantity)
   }
   deriving (Eq, Ord, Show)

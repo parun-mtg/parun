@@ -91,6 +91,7 @@ import qualified Parun.Types.RoomHalf as RoomHalf
 import qualified Parun.Types.RuleAbilities as RuleAbilities
 import qualified Parun.Types.Scratch as Scratch
 import qualified Parun.Types.SetPowerToughness as SetPowerToughness
+import qualified Parun.Types.ShownDie as ShownDie
 import qualified Parun.Types.Sickness as Sickness
 import Parun.Types.SlotName (SlotName)
 import qualified Parun.Types.Source as Source
@@ -319,6 +320,8 @@ viewOfCardLapsed lapsed face =
           -- sentence.
           Filter.designationValues = Map.empty,
           Filter.storedResults = Map.empty,
+          -- A die is a permanent's (Object.die), never a printed face's.
+          Filter.dieResult = Nothing,
           -- CR 717.2b gives a level to a PERMANENT, and this builder describes a
           -- printed face.
           Filter.classLevel = Nothing,
@@ -367,7 +370,7 @@ viewOfCardLapsed lapsed face =
           Filter.hasAbility = printedHasAbility activated face,
           -- CR 702.184c reaches a permanent's CONTROLLER; this builder describes
           -- a printed FACE with no controller and no board to grant it one.
-          Filter.grantsStationToughness = False,
+          Filter.controllerGrants = Set.empty,
           -- CR 700.5a off the printed face, which no text change reaches.
           Filter.devotionBonus = Devotion.bonusOf (Face.playerAbilities face),
           Filter.loyaltyIsToughness = False,
@@ -913,6 +916,8 @@ viewOfCharacteristics peers oid pc controller counters gs =
       -- CR 607.5: the results stored for the abilities layer 1a leaves it, so a
       -- copy's reading ability sees none its printed pair stored.
       Filter.storedResults = foldMap (Game.storedResultsUnder (Game.acquisitionOf oid gs)) (Game.lookupObject oid gs),
+      -- Live off the object, `designationValues`' posture above.
+      Filter.dieResult = Game.lookupObject oid gs >>= fmap ShownDie.result . Object.die,
       -- CR 717.2b: a designation too, so `designations`' posture again. Nothing for an
       -- id naming no object reads as level 1 at the read. LastKnown files no level, so
       -- a CR 608.2h asker would get 1 and not the level it left with; no printed card
@@ -971,9 +976,9 @@ viewOfCharacteristics peers oid pc controller counters gs =
       -- disjuncts: a layer-6 grant or wipe moves it (CR 613.1f), and a face-down
       -- permanent's projection holds no ability (CR 708.2a).
       Filter.hasAbility = Count.characteristicsHaveAbility (ManaAbility.abilityKinds (Subtype.intrinsicManaAbilityOf pc) (abilitiesFromCharacteristics peers pc oid gs)) pc,
-      -- CR 702.184c off the PROJECTION, applyModification's GrantsStationToughness
+      -- CR 702.184c / 702.179d off the PROJECTION, applyModification's GrantsController
       -- arm being layer 6's only writer.
-      Filter.grantsStationToughness = PC.grantsStationToughness pc,
+      Filter.controllerGrants = PC.controllerGrants pc,
       -- CR 700.5a off the copiable list `pc` carries, rewritten by layer 3 and
       -- emptied by no layer-6 removal (see the field's own comment).
       Filter.devotionBonus = Devotion.bonusOf (PC.playerAbilities pc),
@@ -2013,7 +2018,7 @@ noCharacteristics =
       PC.combatDamageOptions = Map.empty,
       -- CR 702.184c: an ability on the stack grants nothing to its
       -- controller's station abilities of its own.
-      PC.grantsStationToughness = False,
+      PC.controllerGrants = Set.empty,
       PC.tapPowerBonus = Map.empty,
       PC.tapsUsingToughness = Set.empty,
       PC.loyaltyIsToughness = False,
@@ -2218,8 +2223,8 @@ baseCharacteristics oid gs = case Game.faceOf oid gs of
               PC.combatDamageAmount = Nothing,
               PC.combatDamageOptions = Map.empty,
               -- CR 613.1's starting point, before layer 6 has run:
-              -- applyModification's GrantsStationToughness arm is the only writer.
-              PC.grantsStationToughness = False,
+              -- applyModification's GrantsController arm is the only writer.
+              PC.controllerGrants = Set.empty,
               PC.tapPowerBonus = Map.empty,
               PC.tapsUsingToughness = Set.empty,
               PC.loyaltyIsToughness = False,

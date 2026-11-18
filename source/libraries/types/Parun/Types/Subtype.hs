@@ -232,6 +232,7 @@ data Subtype
   | Deserter
   | Detective
   | Devil
+  | Die
   | Dinosaur
   | Djinn
   | Doctor

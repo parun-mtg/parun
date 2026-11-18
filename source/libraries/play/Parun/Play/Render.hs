@@ -12,6 +12,7 @@ import qualified Data.Maybe as Maybe
 import qualified Data.Set as Set
 import qualified Data.Text as Text
 import Numeric.Natural (Natural)
+import qualified Parun.Engine.Sba as Sba
 import qualified Parun.Engine.Subtype as Subtype
 import qualified Parun.Exceptions.InvalidCorpus as InvalidCorpus
 import qualified Parun.Oracle as Oracle
@@ -49,6 +50,7 @@ import qualified Parun.Types.Crewing as Crewing
 import qualified Parun.Types.DamageEvent as DamageEvent
 import qualified Parun.Types.DamagePrevented as DamagePrevented
 import qualified Parun.Types.Defense as Defense
+import qualified Parun.Types.Departure as Departure
 import qualified Parun.Types.Designation as Designation
 import qualified Parun.Types.DieResult as DieResult
 import qualified Parun.Types.Discarded as Discarded
@@ -61,6 +63,7 @@ import qualified Parun.Types.Exploited as Exploited
 import qualified Parun.Types.Face as Face
 import qualified Parun.Types.FacedDilemma as FacedDilemma
 import qualified Parun.Types.GameEvent as GameEvent
+import qualified Parun.Types.GameState as GameState
 import qualified Parun.Types.HalfUnlocked as HalfUnlocked
 import qualified Parun.Types.Hybrid as Hybrid
 import qualified Parun.Types.HybridPhyrexian as HybridPhyrexian
@@ -70,6 +73,7 @@ import qualified Parun.Types.LeftTheGame as LeftTheGame
 import qualified Parun.Types.LifeChange as LifeChange
 import qualified Parun.Types.LoggedEvent as LoggedEvent
 import qualified Parun.Types.Looked as Looked
+import qualified Parun.Types.LossCause as LossCause
 import qualified Parun.Types.Loyalty as Loyalty
 import qualified Parun.Types.ManaCost as ManaCost
 import qualified Parun.Types.ManaSymbol as ManaSymbol
@@ -87,8 +91,10 @@ import qualified Parun.Types.PermanentWasSacrificed as PermanentWasSacrificed
 import qualified Parun.Types.Phase as Phase
 import qualified Parun.Types.PlanarDieFace as PlanarDieFace
 import qualified Parun.Types.PlanarDieRolled as PlanarDieRolled
+import qualified Parun.Types.Player as Player
 import qualified Parun.Types.PlayerActed as PlayerActed
 import qualified Parun.Types.PlayerAction as PlayerAction
+import qualified Parun.Types.PlayerCounterKind as PlayerCounterKind
 import qualified Parun.Types.PlayerId as PlayerId
 import qualified Parun.Types.PlayerView as PlayerView
 import qualified Parun.Types.ProjectedCharacteristics as ProjectedCharacteristics
@@ -103,6 +109,7 @@ import qualified Parun.Types.SlotName as SlotName
 import qualified Parun.Types.SpellWasCast as SpellWasCast
 import qualified Parun.Types.SpellWasCopied as SpellWasCopied
 import qualified Parun.Types.StackedAbility as StackedAbility
+import qualified Parun.Types.Status as Status
 import qualified Parun.Types.StickerKind as StickerKind
 import qualified Parun.Types.StickerPut as StickerPut
 import qualified Parun.Types.TapState as TapState
@@ -646,6 +653,29 @@ result r = case r of
   Result.Won pid -> player pid <> Text.pack " wins."
   Result.TeamWon _ -> Text.pack "A team wins."
   Result.Drawn -> Text.pack "The game is a draw."
+
+-- | How each player who left the game left, in seating order: by conceding
+-- (CR 104.3a), a draw (CR 104.4), or losing, to each state-based action they
+-- meet (Sba.lossCauses) or, meeting none, to an effect (CR 104.3e).
+departures :: GameState.GameState -> [Text.Text]
+departures gs =
+  [ player pid <> how pid departure p
+  | pid <- GameState.seating gs,
+    Just p <- [Map.lookup pid (GameState.players gs)],
+    Status.Departed departure <- [Player.status p]
+  ]
+  where
+    how pid departure p = case departure of
+      Departure.Conceded -> Text.pack " conceded."
+      Departure.Drew -> Text.pack " drew the game."
+      Departure.Lost -> case Sba.lossCauses gs pid of
+        [] -> Text.pack " lost the game to an effect."
+        causes -> Text.pack " lost the game: " <> Text.intercalate (Text.pack " and ") (fmap (cause p) causes) <> Text.pack "."
+    cause p c = case c of
+      LossCause.NoLife -> Text.pack ("life total " <> show (Player.life p))
+      LossCause.EmptyLibrary -> Text.pack "drew from an empty library"
+      LossCause.Poison -> count (Map.findWithDefault 0 PlayerCounterKind.Poison (Player.counters p)) "poison counter"
+      LossCause.CommanderDamage -> Text.pack "21 or more combat damage from one commander"
 
 phase :: Phase.Phase -> Text.Text
 phase p = Text.pack $ case p of

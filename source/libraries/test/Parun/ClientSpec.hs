@@ -25,6 +25,7 @@ import Numeric.Natural (Natural)
 import qualified Parun.BotSpec as BotSpec
 import qualified Parun.CastProhibitionSpec as CastProhibitionSpec
 import qualified Parun.Engine.Binding as Binding
+import qualified Parun.Engine.Departure as Departure
 import qualified Parun.Engine.Driver as Driver
 import qualified Parun.Engine.Engine as Engine
 import qualified Parun.Engine.Event as Event
@@ -77,6 +78,7 @@ import qualified Parun.Types.DamageEvent as DamageEvent
 import qualified Parun.Types.DamageKind as DamageKind
 import qualified Parun.Types.Decider as Decider
 import qualified Parun.Types.Deck as Deck
+import qualified Parun.Types.Departure as Departure.Type
 import qualified Parun.Types.DieResult as DieResult
 import qualified Parun.Types.Dividing as Dividing
 import qualified Parun.Types.Drew as Drew
@@ -121,8 +123,10 @@ import qualified Parun.Types.Phase as Phase
 import qualified Parun.Types.Pile as Pile
 import qualified Parun.Types.PileDraw as PileDraw
 import qualified Parun.Types.PlayOptions as PlayOptions
+import qualified Parun.Types.Player as Player
 import qualified Parun.Types.PlayerActed as PlayerActed
 import qualified Parun.Types.PlayerAction as PlayerAction
+import qualified Parun.Types.PlayerCounterKind as PlayerCounterKind
 import qualified Parun.Types.PlayerId as PlayerId
 import qualified Parun.Types.PlayerView as PlayerView.Type
 import qualified Parun.Types.ProductionTag as ProductionTag
@@ -982,6 +986,25 @@ spec s registry = Spec.describe s "Client" $ do
           _ -> Nothing
     Spec.assertBool s (Maybe.isJust loser) ("won: " <> show (fmap fst outcome))
     Spec.assertBool s (any (\pid -> Render.player pid <> Text.pack " loses the game." `elem` pending sc) loser) ("shown after the last answer: " <> show (pending sc))
+
+  Spec.it s "CR 104.3c a finished game says how its loser left" $ do
+    matchup <- BotSpec.sevens s registry
+    case fst (against 3000 plays matchup) of
+      Right (Result.Won winner, gs) ->
+        let loser = if winner == S.alice then S.bob else S.alice
+         in Spec.assertEq s (Render.departures gs) [Render.player loser <> Text.pack " lost the game: drew from an empty library."]
+      outcome -> Spec.assertBool s False ("won: " <> show (fmap fst outcome))
+
+  Spec.it s "CR 704.5 a player who lost is told by every state-based action they met" $ do
+    let board = Setup.emptyGame S.bothPlayers
+        dying player = player {Player.life = -2, Player.counters = Map.singleton PlayerCounterKind.Poison 10}
+        settled = S.settleSba board {GameState.players = Map.adjust dying S.alice (GameState.players board), GameState.drewFromEmpty = Set.singleton S.bob}
+    Spec.assertEq s (Render.departures settled) [Text.pack "Player 1 lost the game: life total -2 and 10 poison counters.", Text.pack "Player 2 lost the game: drew from an empty library."]
+
+  Spec.it s "CR 104.3a CR 104.3e a concession and an effect's loss are told apart" $ do
+    let board = Setup.emptyGame S.bothPlayers
+        left = S.runPure S.identityAnswer board (Departure.leaveGame Departure.Type.Conceded S.alice >> Departure.leaveGame Departure.Type.Lost S.bob)
+    Spec.assertEq s (Render.departures left) [Text.pack "Player 1 conceded.", Text.pack "Player 2 lost the game to an effect."]
 
   Spec.it s "CR 103.5 a mulligan is asked before the first turn, not in its untap step" $ do
     gs <- started s registry

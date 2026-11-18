@@ -44290,6 +44290,9 @@
       "117": {"card":"Wing Snare"},
       "120": {"card":"Yavimaya Wurm"}
     },
+    "ULST": {
+      "40": {"card":"Pippa, Duchess of Dice"}
+    },
     "UMA": {
       "1": {"card":"All Is Dust"},
       "9": {"card":"Ancestor's Chosen"},
@@ -44379,6 +44382,7 @@
       "90": {"card":"Island"},
       "93": {"card":"Mountain"},
       "94": {"card":"Mountain"},
+      "68": {"card":"Pippa, Duchess of Dice"},
       "87": {"card":"Plains"},
       "88": {"card":"Plains"},
       "91": {"card":"Swamp"},
@@ -44537,6 +44541,7 @@
     "UNK": {
       "RZ06b": {"card":"Autumn Willow and Baron Sengir"},
       "RU02a": {"card":"Disguise Agent"},
+      "RZ03i": {"card":"Gomif, Fast Racer"},
       "UR02b": {"card":"Red Priest of Yawgmoth"},
       "RW02d": {"card":"Save Point"},
       "RZ04g": {"card":"Shahrazad and Sindbad"},

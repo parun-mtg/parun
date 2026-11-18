@@ -22,6 +22,7 @@ import qualified Parun.Types.Color as Color
 import qualified Parun.Types.CombatDamageAmount as CombatDamageAmount
 import qualified Parun.Types.CombatDamageObligation as CombatDamageObligation
 import qualified Parun.Types.CombatDamageOption as CombatDamageOption
+import qualified Parun.Types.ControllerGrant as ControllerGrant
 import qualified Parun.Types.CopyException as CopyException
 import qualified Parun.Types.Copyability as Copyability
 import qualified Parun.Types.Cost as Cost
@@ -120,7 +121,7 @@ testCharacteristics =
       PC.textChangedKeywords = Map.singleton Keyword.Trample 1,
       PC.combatDamageAmount = Just CombatDamageAmount.EqualToToughness,
       PC.combatDamageOptions = Map.singleton CombatDamageOption.ToDefendingCreature CombatDamageObligation.Optional,
-      PC.grantsStationToughness = True,
+      PC.controllerGrants = Set.singleton ControllerGrant.SpeedBeyondFour,
       PC.tapPowerBonus = Map.singleton KeywordFamily.Saddle 2,
       -- A different keyword from `tapPowerBonus` above, `textChangedKeywords`'
       -- reason.
@@ -196,7 +197,7 @@ testCharacteristicsJson =
     <> "\"textChangedKeywords\":[{\"key\":{\"type\":\"Trample\"},\"value\":1}],"
     <> "\"combatDamageAmount\":\"EqualToToughness\","
     <> "\"combatDamageOptions\":[{\"key\":\"ToDefendingCreature\",\"value\":\"Optional\"}],"
-    <> "\"grantsStationToughness\":true,"
+    <> "\"controllerGrants\":[\"SpeedBeyondFour\"],"
     <> "\"tapPowerBonus\":[{\"key\":\"Saddle\",\"value\":2}],"
     <> "\"tapsUsingToughness\":[\"Crew\"],"
     <> "\"loyaltyIsToughness\":true,"
@@ -262,7 +263,7 @@ minimalCharacteristics =
       PC.textChangedKeywords = Map.empty,
       PC.combatDamageAmount = Nothing,
       PC.combatDamageOptions = Map.empty,
-      PC.grantsStationToughness = False,
+      PC.controllerGrants = Set.empty,
       PC.tapPowerBonus = Map.empty,
       PC.tapsUsingToughness = Set.empty,
       PC.loyaltyIsToughness = False,

@@ -940,8 +940,9 @@ effect context e = case e of
           Target.EqualTo _ -> []
         [MkPredicate Nothing (Text.pack "add " <> phrase) [] (Target.names amount') (Just symbols) False]
   Effect.MoveToZone m -> moved context m
+  -- A token that IS a die (Create.die) has no wording yet, so it renders nothing.
   Effect.Create c
-    | Create.riders c == EntryRiders.defaultValue -> do
+    | Create.riders c == EntryRiders.defaultValue && Maybe.isNothing (Create.die c) -> do
         (one, many) <- Face.Oracle.token (Target.keyword context) (Create.card c)
         a <- Target.amounts context (Create.quantity c)
         let some q = case q of

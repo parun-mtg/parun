@@ -58,6 +58,7 @@ import qualified Parun.Types.Recipient as Recipient
 import qualified Parun.Types.RevealWindow as RevealWindow
 import qualified Parun.Types.RoomHalf as RoomHalf
 import qualified Parun.Types.RoomIndex as RoomIndex
+import qualified Parun.Types.ShownDie as ShownDie
 import qualified Parun.Types.Sickness as Sickness
 import qualified Parun.Types.SlotName as SlotName
 import qualified Parun.Types.Source as Source
@@ -187,6 +188,7 @@ spec s = Spec.describe s "Parun.Codec.Object" $ do
           Object.designations = Set.singleton Designation.Renowned,
           Object.designationValues = Map.singleton Designation.Monstrous 26,
           Object.storedResults = Map.singleton (Acquisition.Copied (Timestamp.MkTimestamp 41)) (Map.singleton StoredResult.MkStoredResult {StoredResult.sides = 6, StoredResult.value = 4} 2),
+          Object.die = Just ShownDie.MkShownDie {ShownDie.sides = 6, ShownDie.result = 43},
           Object.acquisition = Acquisition.Copied (Timestamp.MkTimestamp 42),
           Object.paidCosts =
             Map.singleton
@@ -260,6 +262,7 @@ spec s = Spec.describe s "Parun.Codec.Object" $ do
           <> ",\"designations\":[\"Renowned\"]"
           <> ",\"designationValues\":[{\"designation\":\"Monstrous\",\"value\":26}]"
           <> ",\"storedResults\":[{\"key\":{\"type\":\"Copied\",\"value\":41},\"value\":[{\"key\":{\"sides\":6,\"value\":4},\"value\":2}]}]"
+          <> ",\"die\":{\"sides\":6,\"result\":43}"
           <> ",\"acquisition\":{\"type\":\"Copied\",\"value\":42}"
           <> ",\"paidCosts\":[{\"key\":{\"type\":\"Squad\",\"value\":{\"mana\":[{\"type\":\"Generic\",\"value\":24}]}},\"value\":[{\"key\":{\"type\":\"Own\",\"value\":1},\"value\":25},{\"key\":{\"type\":\"Own\",\"value\":2},\"value\":0},{\"key\":{\"type\":\"Granted\",\"value\":[[4,6],1]},\"value\":3}]}]"
           <> ",\"tributePaid\":true"

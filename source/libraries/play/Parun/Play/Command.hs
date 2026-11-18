@@ -35,12 +35,15 @@ import qualified Parun.Registry as Registry
 import qualified Parun.Types.Deck as Deck
 import qualified Parun.Types.Format as Format
 import qualified Parun.Types.GameSettings as GameSettings
+import qualified Parun.Types.GameState as GameState
 import qualified Parun.Types.GraveyardOrder as GraveyardOrder
 import qualified Parun.Types.Hotseat as Hotseat
+import qualified Parun.Types.Key as Key.Type
 import qualified Parun.Types.Label as Label
 import qualified Parun.Types.PlayOptions as PlayOptions
 import qualified Parun.Types.PlayerId as PlayerId
 import qualified Parun.Types.PrintingTable as PrintingTable
+import qualified Parun.Types.Result as Result
 import qualified Parun.Types.Scenario as Scenario
 import qualified Parun.Types.Terminal as Terminal
 import qualified Parun.Types.Timed as Timed
@@ -132,17 +135,30 @@ refusals format lists = do
   let together = if Maybe.isJust format then fmap Legality.explain (Legality.checkGame GameSettings.plain (fmap (DeckList.deck . snd) lists)) else []
   pure (concat reports <> together)
 
--- | A game between the two decks under `format`, the one 'settle' names
--- (CR 100.2). With --json, each line protocol request goes out through
--- `send` and its reply comes back: over standard input and output here
--- ('exchange'), as values in the web client.
+-- | `parun play`'s game ('game'), its result said, its seed drawn where none
+-- is given and said, and its scenario saved where asked.
 play :: Protocol.Exchange IO -> PlayOptions.PlayOptions -> Registry.Registry Identity.Identity -> Maybe Format.Format -> (Deck.Deck, Deck.Deck) -> IO ()
-play send options registry format (one, two) = do
+play send options registry format decks = do
   IO.hSetBuffering IO.stdout IO.LineBuffering
+  seed <- maybe Key.fresh pure (PlayOptions.seed options)
+  (outcome, recorded) <- game send options registry format decks seed
+  Monad.forM_ (PlayOptions.save options) (`save` recorded)
+  case outcome of
+    Right (result, _) -> (if PlayOptions.json options then TextIO.hPutStrLn IO.stderr else TextIO.putStrLn) (Render.result result)
+    Left reason -> TextIO.hPutStrLn IO.stderr (Text.pack "Stopped: " <> reason <> Text.pack ".")
+  TextIO.hPutStrLn IO.stderr (Text.pack "Seed " <> Key.toHex seed <> Text.pack ".")
+
+-- | A game between the two decks under `format`, the one 'settle' names
+-- (CR 100.2), from the generator keyed by `seed`: its result and final state,
+-- or why it stopped first (Game.run); and the scenario it replays as, up to
+-- where it stopped. With --json, each line protocol request goes out through
+-- `send` and its reply comes back: over standard input and output in `parun
+-- play` ('exchange'), as values in the web client.
+game :: Protocol.Exchange IO -> PlayOptions.PlayOptions -> Registry.Registry Identity.Identity -> Maybe Format.Format -> (Deck.Deck, Deck.Deck) -> Key.Type.Key -> IO (Either Text.Text (Result.Result, GameState.GameState), Scenario.Scenario)
+game send options registry format (one, two) seed = do
   let reference :: Registry.Registry IO
       reference = Registry.hoist (pure . Identity.runIdentity) registry
       lookUp = Identity.runIdentity . Interpreter.chosenCard registry
-  seed <- maybe Key.fresh pure (PlayOptions.seed options)
   let people = filter (`Set.notMember` PlayOptions.bots options) [1, 2]
   let (tell, ask)
         | PlayOptions.json options = (TextIO.hPutStrLn IO.stderr, Protocol.playOrDraw send . idOf)
@@ -161,19 +177,14 @@ play send options registry format (one, two) = do
         _ -> screen
   entries <- IORef.newIORef Seq.empty
   let orders = Map.fromList [(idOf n, GraveyardOrder.Matters) | n <- Set.toList (PlayOptions.arrangesGraveyard options)]
-      observers = [Record.recording labels (Game.underneath . IORef.modifyIORef' entries . flip (Seq.|>)) | Maybe.isJust (PlayOptions.save options)]
+      observers = [Record.recording labels (Game.underneath . IORef.modifyIORef' entries . flip (Seq.|>))]
       interrupted e = case e of
         Exception.UserInterrupt -> pure (Left (Text.pack "interrupted"))
         _ -> Exception.throwIO e
       finish = if PlayOptions.json options then const (pure ()) else Client.ending terminal (fmap idOf people)
   outcome <- Exception.catch (Game.run reference format observers seats finish hotseat generator orders matchup) interrupted
-  Monad.forM_ (PlayOptions.save options) $ \path -> do
-    timeline <- IORef.readIORef entries
-    save path (saved (Registry.printings registry) (Text.pack "Played with parun play, seed " <> Key.toHex seed <> Text.pack ".") format orders matchup timeline)
-  case outcome of
-    Right (result, _) -> (if PlayOptions.json options then TextIO.hPutStrLn IO.stderr else TextIO.putStrLn) (Render.result result)
-    Left reason -> TextIO.hPutStrLn IO.stderr (Text.pack "Stopped: " <> reason <> Text.pack ".")
-  TextIO.hPutStrLn IO.stderr (Text.pack "Seed " <> Key.toHex seed <> Text.pack ".")
+  timeline <- IORef.readIORef entries
+  pure (outcome, saved (Registry.printings registry) (Text.pack "Played with parun play, seed " <> Key.toHex seed <> Text.pack ".") format orders matchup timeline)
 
 idOf :: Natural -> PlayerId.PlayerId
 idOf n = PlayerId.MkPlayerId (n - 1)
@@ -198,8 +209,12 @@ saved table description format orders matchup = Record.scenario table descriptio
 -- | Writes a scenario to `path`.
 save :: FilePath -> Scenario.Scenario -> IO ()
 save path scenario = do
-  ByteString.writeFile path (Encoding.encodeUtf8 (Common.render (Codec.encode Codec.Scenario.codec scenario) <> Text.pack "\n"))
+  ByteString.writeFile path (Encoding.encodeUtf8 (rendered scenario))
   IO.hPutStrLn IO.stderr ("Saved " <> path <> ".")
+
+-- | A scenario as its file holds it.
+rendered :: Scenario.Scenario -> Text.Text
+rendered scenario = Common.render (Codec.encode Codec.Scenario.codec scenario) <> Text.pack "\n"
 
 terminal :: Terminal.Terminal IO
 terminal =

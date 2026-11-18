@@ -47,6 +47,7 @@ import qualified Parun.Types.CompletedDungeon as CompletedDungeon
 import qualified Parun.Types.ControlChanged as ControlChanged
 import qualified Parun.Types.ControlClock as ControlClock
 import qualified Parun.Types.ControlWindow as ControlWindow
+import qualified Parun.Types.ControllerGrant as ControllerGrant
 import qualified Parun.Types.CostPortion as CostPortion
 import qualified Parun.Types.DamageEvent as DamageEvent
 import qualified Parun.Types.DamageTally as DamageTally
@@ -690,6 +691,7 @@ evaluateAgainst viewOf context gs announcedOn mOid mView quantity =
         -- every designation but a "Monstrosity X" is.
         Quantity.DesignationValue d -> fmap (toInteger . Map.findWithDefault 0 d . Filter.designationValues) mView
         Quantity.StoredResultsOfSameValue -> fmap (toInteger . greatestOfOneValue . Filter.storedResults) mView
+        Quantity.ItsDieResult -> fmap (maybe 0 toInteger . Filter.dieResult) mView
         -- CR 717.2d is applied HERE and nowhere else: a permanent with no level reads
         -- as level 1 for every rule and effect that asks, so the default belongs at the
         -- one read rather than in the field Filter.classLevel reports.
@@ -1346,26 +1348,32 @@ evaluateAgainst viewOf context gs announcedOn mOid mView quantity =
         -- AgainstExiledPile), which only ever repoint `mOid`/`mView`, and unmoved
         -- by whoever controls the stationing permanent
         -- NOW: Tapestry Warden's ruling gates on the station ability's controller
-        -- controlling the Warden as it resolves. grantsStationToughnessFor walks the
+        -- controlling the Warden as it resolves. grantedToController walks the
         -- battlefield through the same `viewOf` every other arm reads, so a snapshot
         -- caller (CR 608.2h) answers False rather than reaching for a live board it was
         -- never handed.
         Quantity.StationMeasure ->
-          let substitutes = maybe False (grantsStationToughnessFor viewOf gs) (Filter.perspective context)
+          let substitutes = maybe False (grantedToController viewOf gs ControllerGrant.StationsUsingToughness) (Filter.perspective context)
               greater = case (mView >>= Filter.toughness, mView >>= Filter.power) of
                 (Just t, Just p) -> t > p
                 _ -> False
            in if substitutes && greater then mView >>= Filter.toughness else mView >>= Filter.power
+        -- CR 702.179d / 109.5: the grant as StationMeasure reads it, for the
+        -- perspective's player. Parun.Engine.Speed's belowMaxSpeed is the one
+        -- author, and both of CR 603.4's checks hand it the trigger's controller.
+        Quantity.ControllerGranted grant ->
+          fmap (\you -> if grantedToController viewOf gs grant you then 1 else 0) (Filter.perspective context)
 
--- CR 702.184c: does `you` control ANY permanent that grants the toughness
--- substitution -- Modification.GrantsStationToughness's read, folded to the
--- per-player question Quantity.StationMeasure asks. False for a caller whose
--- `viewOf` cannot see the battlefield (a snapshot's own rebuild): rule 702.184c
--- asks about a LIVE grant, and that caller has no live board to walk.
-grantsStationToughnessFor :: Count.ViewOf -> GameState -> PlayerId.PlayerId -> Bool
-grantsStationToughnessFor viewOf gs you =
+-- CR 702.184c / 702.179d: does `you` control ANY permanent giving them that
+-- grant -- Modification.GrantsController's read, folded to the per-player
+-- question Quantity.StationMeasure and Quantity.ControllerGranted ask. False
+-- for a caller whose `viewOf` cannot see the battlefield (a snapshot's own
+-- rebuild): both rules ask about a LIVE grant, and that caller has no live
+-- board to walk.
+grantedToController :: Count.ViewOf -> GameState -> ControllerGrant.ControllerGrant -> PlayerId.PlayerId -> Bool
+grantedToController viewOf gs grant you =
   any
-    (maybe False (\v -> Filter.controller v == Just you && Filter.grantsStationToughness v) . viewOf)
+    (maybe False (\v -> Filter.controller v == Just you && Set.member grant (Filter.controllerGrants v)) . viewOf)
     (Set.toList (GameState.battlefield gs))
 
 -- Is this declared attack an attack on one of that player's OPPONENTS? CR 506.3
@@ -1797,6 +1805,7 @@ talliesWhatHappened quantity = case quantity of
   Quantity.HasDesignation _ -> False
   Quantity.DesignationValue _ -> False
   Quantity.StoredResultsOfSameValue -> False
+  Quantity.ItsDieResult -> False
   Quantity.ClassLevel -> False
   Quantity.WasForetold -> False
   Quantity.TributeWasPaid -> False
@@ -1844,6 +1853,7 @@ talliesWhatHappened quantity = case quantity of
   Quantity.WasCastFrom _ -> False
   Quantity.BlockersBeyond _ -> False
   Quantity.StationMeasure -> False
+  Quantity.ControllerGranted _ -> False
   Quantity.AgainstSlot _ -> False
   Quantity.AgainstExiledPile _ -> False
   Quantity.AgainstLastCardExiledWith _ -> False

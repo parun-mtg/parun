@@ -13,6 +13,7 @@ import qualified Parun.Types.CastFrom as CastFrom
 import qualified Parun.Types.CommanderColors as CommanderColors
 import qualified Parun.Types.CompletedDungeon as CompletedDungeon
 import qualified Parun.Types.ControlWindow as ControlWindow
+import qualified Parun.Types.ControllerGrant as ControllerGrant
 import qualified Parun.Types.Count as Count
 import qualified Parun.Types.CounterKind as CounterKind
 import qualified Parun.Types.DamageTally as DamageTally
@@ -169,6 +170,10 @@ data Quantity
     -- quantity is evaluated against that share one value, whatever their kinds
     -- of die; no stored result reads 0 (Centaur of Attention).
     StoredResultsOfSameValue
+  | -- | The result the die the object this quantity is evaluated against IS
+    -- shows (Parun.Types.ShownDie); no die reads 0 (Pippa, Duchess of Dice's Die
+    -- creature token).
+    ItsDieResult
   | -- | CR 717.2b: the level of the object this quantity is evaluated against;
     -- no level reads 1 (CR 717.2d, Parun.Types.ClassLevel.defaulted).
     ClassLevel
@@ -394,10 +399,14 @@ data Quantity
     -- Nothing when none does.
     AgainstLastCardExiledWith (AgainstLastCardExiledWith.AgainstLastCardExiledWith Quantity)
   | -- | CR 702.184c: the tapped creature's power, or its toughness where that is
-    -- greater and the ability's controller controls a permanent carrying
-    -- Modification.GrantsStationToughness. Engine-only, a leaf like Measure:
-    -- Parun.Engine.Keyword.station mints it and no card should author it.
+    -- greater and the ability's controller has ControllerGrant.StationsUsingToughness.
+    -- Engine-only, a leaf like Measure: Parun.Engine.Keyword.station mints it and
+    -- no card should author it.
     StationMeasure
+  | -- | CR 702.179d: 1 if CR 109.5's "you" controls a permanent giving them that
+    -- grant (Modification.GrantsController), else 0. Engine-only:
+    -- Parun.Engine.Speed mints it and no card should author it.
+    ControllerGranted ControllerGrant.ControllerGrant
   | -- | CR 601.2i: the inner quantity as this spell became cast, read on
     -- GameState.snapshots' boardAsCast; 0 for an object never cast.
     AsCast Quantity

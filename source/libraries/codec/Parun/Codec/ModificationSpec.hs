@@ -24,6 +24,7 @@ import qualified Parun.Types.Color as Color
 import qualified Parun.Types.CombatDamageAmount as CombatDamageAmount
 import qualified Parun.Types.CombatDamageObligation as CombatDamageObligation
 import qualified Parun.Types.CombatDamageOption as CombatDamageOption
+import qualified Parun.Types.ControllerGrant as ControllerGrant
 import qualified Parun.Types.Copyability as Copyability
 import qualified Parun.Types.Cost as Cost
 import qualified Parun.Types.CostComponent as CostComponent
@@ -431,13 +432,13 @@ spec s = Spec.describe s "Parun.Codec.Modification" $ do
       (Modification.AssignCombatDamageAs CombatDamageObligation.Mandatory CombatDamageOption.AsThoughUnblocked)
       " {\"type\":\"AssignCombatDamageAs\",\"value\":{\"obligation\":\"Mandatory\",\"option\":\"AsThoughUnblocked\"}} "
   -- layer 6, CR 702.184c: this object's controller's station abilities read
-  -- toughness instead of power. Payload-free, self-only.
-  Spec.it s "GrantsStationToughness" $
+  -- toughness instead of power. Self-only.
+  Spec.it s "GrantsController" $
     Common.assertCodec
       s
       codec
-      Modification.GrantsStationToughness
-      " {\"type\":\"GrantsStationToughness\"} "
+      (Modification.GrantsController ControllerGrant.StationsUsingToughness)
+      " {\"type\":\"GrantsController\",\"value\":\"StationsUsingToughness\"} "
   -- CR 702.122a / 702.171a: Deathless Pilot's "saddles Mounts and crews
   -- Vehicles as though its power were 2 greater".
   Spec.it s "TapsCounting" $

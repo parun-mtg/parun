@@ -16,6 +16,7 @@ import qualified Parun.Codec.Color as Color
 import qualified Parun.Codec.CombatDamageAmount as CombatDamageAmount
 import qualified Parun.Codec.CombatDamageObligation as CombatDamageObligation
 import qualified Parun.Codec.CombatDamageOption as CombatDamageOption
+import qualified Parun.Codec.ControllerGrant as ControllerGrant
 import qualified Parun.Codec.CopyException as CopyException
 import qualified Parun.Codec.Copyability as Copyability
 import qualified Parun.Codec.CostChoice as CostChoice
@@ -96,7 +97,7 @@ codec = Fields.object $ do
   textChangedKeywords <- Fields.defaulted "textChangedKeywords" Map.empty (Common.multiset Keyword.codec) PC.textChangedKeywords
   combatDamageAmount <- Fields.defaulted "combatDamageAmount" Nothing (Common.maybe CombatDamageAmount.codec) PC.combatDamageAmount
   combatDamageOptions <- Fields.defaulted "combatDamageOptions" Map.empty (Common.keyedList (Common.keyValue CombatDamageOption.codec CombatDamageObligation.codec)) PC.combatDamageOptions
-  grantsStationToughness <- Fields.defaulted "grantsStationToughness" False Common.boolean PC.grantsStationToughness
+  controllerGrants <- Fields.defaulted "controllerGrants" Set.empty (Common.set ControllerGrant.codec) PC.controllerGrants
   tapPowerBonus <- Fields.defaulted "tapPowerBonus" Map.empty (Common.multiset KeywordFamily.codec) PC.tapPowerBonus
   tapsUsingToughness <- Fields.defaulted "tapsUsingToughness" Set.empty (Common.set KeywordFamily.codec) PC.tapsUsingToughness
   loyaltyIsToughness <- Fields.defaulted "loyaltyIsToughness" False Common.boolean PC.loyaltyIsToughness
@@ -159,7 +160,7 @@ codec = Fields.object $ do
         PC.textChangedKeywords = textChangedKeywords,
         PC.combatDamageAmount = combatDamageAmount,
         PC.combatDamageOptions = combatDamageOptions,
-        PC.grantsStationToughness = grantsStationToughness,
+        PC.controllerGrants = controllerGrants,
         PC.tapPowerBonus = tapPowerBonus,
         PC.tapsUsingToughness = tapsUsingToughness,
         PC.loyaltyIsToughness = loyaltyIsToughness,

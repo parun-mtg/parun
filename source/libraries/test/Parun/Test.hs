@@ -246,6 +246,7 @@ import qualified Parun.Codec.ControlPlayerSpec
 import qualified Parun.Codec.ControlSidesSpec
 import qualified Parun.Codec.ControlSlotsSpec
 import qualified Parun.Codec.ControlSpanSpec
+import qualified Parun.Codec.ControllerGrantSpec
 import qualified Parun.Codec.ControllerRelationSpec
 import qualified Parun.Codec.ConvokingSpec
 import qualified Parun.Codec.CopyClauseSpec
@@ -795,6 +796,7 @@ import qualified Parun.Codec.SetHalfLockedSpec
 import qualified Parun.Codec.SetPowerToughnessSpec
 import qualified Parun.Codec.ShownCardsSpec
 import qualified Parun.Codec.ShownComponentSpec
+import qualified Parun.Codec.ShownDieSpec
 import qualified Parun.Codec.ShowsSpec
 import qualified Parun.Codec.ShuffleIntoLibrarySpec
 import qualified Parun.Codec.SicknessSpec
@@ -1106,6 +1108,7 @@ import qualified Parun.VisibilitySpec
 import qualified Parun.VoteSpec
 import qualified Parun.Web.AppSpec
 import qualified Parun.Web.DiffSpec
+import qualified Parun.Web.EndingSpec
 import qualified Parun.Web.HtmlSpec
 import qualified Parun.Web.LobbySpec
 import qualified Parun.Web.WireSpec
@@ -1357,6 +1360,7 @@ spec s reference corpus = do
   Parun.Codec.ControlDurationSpec.spec s
   Parun.Codec.ControlMarginSpec.spec s
   Parun.Codec.TargetedSubjectSpec.spec s
+  Parun.Codec.ControllerGrantSpec.spec s
   Parun.Codec.ControllerRelationSpec.spec s
   Parun.Codec.ControlPlayerNextSpec.spec s
   Parun.Codec.ControlPlayerSpec.spec s
@@ -1924,6 +1928,7 @@ spec s reference corpus = do
   Parun.Codec.SetPowerToughnessSpec.spec s
   Parun.Codec.ShownCardsSpec.spec s
   Parun.Codec.ShownComponentSpec.spec s
+  Parun.Codec.ShownDieSpec.spec s
   Parun.Codec.ShowsSpec.spec s
   Parun.Codec.ShuffleIntoLibrarySpec.spec s
   Parun.Codec.SicknessSpec.spec s
@@ -2248,6 +2253,7 @@ spec s reference corpus = do
   Parun.VoteSpec.spec s registry
   Parun.Web.AppSpec.spec s
   Parun.Web.DiffSpec.spec s
+  Parun.Web.EndingSpec.spec s
   Parun.Web.HtmlSpec.spec s
   Parun.Web.LobbySpec.spec s
   Parun.Web.WireSpec.spec s

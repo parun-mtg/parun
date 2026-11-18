@@ -205,11 +205,11 @@ restrictionMet pid srcId ability gs restriction = case restriction of
     Nothing -> False
     Just this -> unspent limit srcId this (Map.findWithDefault Map.empty srcId (TurnRegisters.activatedThisTurn (GameState.turn gs))) gs
   -- Goblin Bookie's "any time it makes sense": while a die is being rolled or a
-  -- coin has just been flipped, and not with nothing to reroll (docs/decisions.md, "Whether Goblin Bookie can be
+  -- coin has just been flipped, or while a permanent is a die to reroll -- Pippa,
+  -- Duchess of Dice's rulings let a Die creature be rerolled at any time -- and
+  -- not with nothing to reroll (docs/decisions.md, "Whether Goblin Bookie can be
   -- activated with nothing to reroll").
-  -- Not implemented: activating at priority to reroll a Die creature, which
-  -- Pippa, Duchess of Dice's rulings allow (#6221).
-  ActivationRestriction.DuringThrow -> Maybe.isJust (Scratch.throwing (GameState.scratch gs))
+  ActivationRestriction.DuringThrow -> Maybe.isJust (Scratch.throwing (GameState.scratch gs)) || not (null (Game.diceOnBattlefield gs))
   -- A payment rule, not a gate: Parun.Engine.Mana.admitsUnder spends only the
   -- mana it names (PaymentSubject.Activating's colours).
   ActivationRestriction.SpendOnly _ -> True
@@ -429,7 +429,8 @@ needsEmptyStack restriction = case restriction of
   -- 602.2a's move ends no turn and spends no activation.
   ActivationRestriction.TimesEachTurn _ -> False
   -- A die roll's modification step opens inside a resolution, never at a
-  -- payment's gate, so no move between the two can close it.
+  -- payment's gate, and CR 601.2a's move takes no die off the battlefield, so
+  -- no move between the two can close it.
   ActivationRestriction.DuringThrow -> False
   ActivationRestriction.SpendOnly _ -> False
   -- Not a stack question: `refusedMidPayment` is how the payment windows ask.

@@ -604,8 +604,11 @@ runTurnBasedActions phase = do
     -- CR 805.4b: each player on the active team draws.
     -- CR 503.1 gives the upkeep no turn-based action; the Unstable FAQ adds the
     -- crank (CR 701.45a leaving it out of the rules), the active player's, so
-    -- it takes the CR 800.4j guard.
-    Phase.Beginning BeginningStep.Upkeep -> Monad.mapM_ Contraption.crank live
+    -- it takes the CR 800.4j guard. The Gatherer rulings gate it on
+    -- controlling a Contraption; Clock of DOOOOOOOOOOOOM!'s crank has no gate.
+    Phase.Beginning BeginningStep.Upkeep -> Monad.forM_ live $ \pid -> do
+      gs <- State.get
+      Monad.when (Attraction.controlsSubtype Subtype.Contraption pid gs) (Contraption.crank pid)
     Phase.Beginning BeginningStep.DrawStep ->
       Monad.void (Event.inDrawOrder (\pid -> [ProposedEvent.WouldPerform PlayerInstruction.DrawCards Nothing pid 1, ProposedEvent.WouldDraw pid (DrawKind.TurnBased pid)]) live (Event.drawForTurn (Resolve.settleWith playSubgame)))
     -- CR 703.4h: choose the defending player. The active player's action (CR
@@ -649,10 +652,13 @@ runTurnBasedActions phase = do
       Monad.forM_ live $ \pid -> do
         archenemy <- State.gets (Archenemy.isArchenemy pid)
         Monad.when archenemy (Archenemy.setInMotion Nothing pid)
-      Monad.mapM_ advanceSagas live
+      Monad.mapM_ (advanceSagas phase) live
       Monad.forM_ live $ \pid -> do
         visits <- State.gets (Attraction.controlsSubtype Subtype.Attraction pid)
         Monad.when visits (Resolve.rollToVisit playSubgame pid)
+    -- CR 513.1 gives the end step no turn-based action; bedtime story moves CR
+    -- 715.3c's here for its Sagas (Saga.loreStepOf).
+    Phase.Ending EndingStep.EndStep -> Monad.mapM_ (advanceSagas phase) live
     -- CR 511.1: the end of combat step has no turn-based actions, so no arm here.
     -- CR 511.3's removal from combat is an end-of-STEP action; runStep does it.
     Phase.Ending EndingStep.Cleanup -> do
@@ -671,7 +677,8 @@ runTurnBasedActions phase = do
     _ -> pure ()
 
 -- CR 505.4 / 703.4f / 715.3c's ACTION half: one lore counter onto each Saga this
--- player controls that has one or more chapter abilities. Here rather than in
+-- player controls that has one or more chapter abilities and whose
+-- Saga.loreStepOf is `phase`. Here rather than in
 -- Parun.Engine.Saga, which sits below Parun.Engine.Event in the import graph and so
 -- can classify which Sagas advance but cannot call the CR 122.6 placement funnel.
 -- Through Event.putCounters, so the placement records the event CR 715.2b's
@@ -683,11 +690,11 @@ runTurnBasedActions phase = do
 -- though it DOES double the lore counter CR 715.3a's replacement gives it as it
 -- enters. The player it carries is rule 715.3c's "that player", which is
 -- load-bearing: a clause naming a PLAYER (Vorinclex) does reach this placement.
-advanceSagas :: PlayerId -> Game ()
-advanceSagas pid = do
+advanceSagas :: Phase.Phase -> PlayerId -> Game ()
+advanceSagas phase pid = do
   gs <- State.get
   let pcs = Projection.projectAll gs
-  Monad.mapM_ (\oid -> Event.putCounters (CounterCause.ByRule pid) oid CounterKind.Lore 1) (Saga.advancing (\oid -> Projection.controllerOf oid gs) pid pcs gs)
+  Monad.mapM_ (\oid -> Event.putCounters (CounterCause.ByRule pid) oid CounterKind.Lore 1) (Saga.advancing phase (\oid -> Projection.controllerOf oid gs) pid pcs gs)
 
 -- CR 603.3: put each triggered ability that fired since the last placement on the
 -- stack, in APNAP order (CR 603.3b), with each controller choosing the order

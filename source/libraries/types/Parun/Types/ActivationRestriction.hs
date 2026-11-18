@@ -179,11 +179,12 @@ data ActivationRestriction
     -- forgetting is free, the returning permanent being a new object with a new
     -- id.
     TimesEachTurn Natural
-  | -- | "Activate only any time it makes sense" (Goblin Bookie): activatable only
+  | -- | "Activate only any time it makes sense" (Goblin Bookie): activatable
     -- inside CR 706.2's modification of a die roll or over a coin just flipped
-    -- (CR 705.1), resolving at once. Parun.DiceSpec's Goblin Bookie group and
+    -- (CR 705.1), resolving at once, or at priority while a permanent is a die
+    -- (Pippa, Duchess of Dice's rulings). Parun.DiceSpec's Goblin Bookie group,
     -- the scenario coin/cr-705-1-goblin-bookie-reflips-another-player-s-won-flip
-    -- prove it.
+    -- and the pippa-duchess-of-dice scenarios prove it.
     DuringThrow
   | -- | CR 602.5e's "Activate only as an instant": the player must have priority
     -- (CR 304.5), so never inside a payment -- Rhystic Cave.

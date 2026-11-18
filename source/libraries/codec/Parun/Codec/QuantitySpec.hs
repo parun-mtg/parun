@@ -23,6 +23,7 @@ import qualified Parun.Types.CommanderColors as CommanderColors
 import qualified Parun.Types.Comparison as Comparison
 import qualified Parun.Types.CompletedDungeon as CompletedDungeon
 import qualified Parun.Types.ControlWindow as ControlWindow
+import qualified Parun.Types.ControllerGrant as ControllerGrant
 import qualified Parun.Types.Cost as Cost
 import qualified Parun.Types.Count as Count
 import qualified Parun.Types.CounterKind as CounterKind
@@ -415,6 +416,12 @@ spec s = Spec.describe s "Parun.Codec.Quantity" $ do
       Quantity.codec
       Quantity.StoredResultsOfSameValue
       " {\"type\":\"StoredResultsOfSameValue\"} "
+  Spec.it s "ItsDieResult" $
+    Common.assertCodec
+      s
+      Quantity.codec
+      Quantity.ItsDieResult
+      " {\"type\":\"ItsDieResult\"} "
   -- CR 717.2b: the object's LEVEL, also with nothing on the wire, and also not a
   -- member of Parun.Types.Designation -- rule 717.2b's designation is a number.
   Spec.it s "ClassLevel" $
@@ -965,6 +972,13 @@ spec s = Spec.describe s "Parun.Codec.Quantity" $ do
       Quantity.codec
       Quantity.StationMeasure
       " {\"type\":\"StationMeasure\"} "
+  -- CR 702.179d: the grant alone, CR 109.5's "you" being the context's.
+  Spec.it s "ControllerGranted carries the grant" $
+    Common.assertCodec
+      s
+      Quantity.codec
+      (Quantity.ControllerGranted ControllerGrant.SpeedBeyondFour)
+      " {\"type\":\"ControllerGranted\",\"value\":\"SpeedBeyondFour\"} "
   -- CR 601.2i: the wrapped quantity whole, recursing on the codec itself.
   Spec.it s "AsCast wraps a quantity" $
     Common.assertCodec

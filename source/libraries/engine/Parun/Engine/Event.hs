@@ -304,6 +304,7 @@ import qualified Parun.Types.SacrificeToEnter as SacrificeToEnter
 import qualified Parun.Types.Scratch as Scratch
 import qualified Parun.Types.Settle as Settle
 import qualified Parun.Types.ShownComponent as ShownComponent
+import qualified Parun.Types.ShownDie as ShownDie
 import qualified Parun.Types.Sickness as Sickness
 import qualified Parun.Types.SideDeck as SideDeck
 import Parun.Types.SkipWindow (SkipWindow)
@@ -5799,7 +5800,7 @@ apply settle batch applied batchPrevented candidate event =
                 | matched lot = lot {TokenLot.count = Replacement.scale gs candidate factor (TokenLot.count lot)}
                 | otherwise = lot
               scaled = maybe lots (\factor -> fmap (scaleLot factor) lots) scaling
-              lotOf card n = TokenLot.MkTokenLot {TokenLot.card = card, TokenLot.copy = Nothing, TokenLot.count = n, TokenLot.byEffect = True}
+              lotOf card n = TokenLot.MkTokenLot {TokenLot.card = card, TokenLot.copy = Nothing, TokenLot.count = n, TokenLot.byEffect = True, TokenLot.die = Nothing}
               swapFor card copy lot
                 | matched lot = lot {TokenLot.card = card, TokenLot.copy = copy}
                 | otherwise = lot
@@ -10939,13 +10940,13 @@ sacrificeIn settle asOf victims = simultaneously $ do
 --
 -- Not an event bracket of its own: the caller is the one CR 608.2f event, and
 -- under Event.together the entries are recorded after this returns anyway.
-createTokens :: Settle.Settle -> PlayerId -> Card -> Maybe PC.ProjectedCharacteristics -> Natural -> TapState.TapState -> Map.Map (CounterKind.CounterKind Keyword.Type.Keyword) Natural -> Maybe [Recipient.Recipient] -> Set Designation.Designation -> Game [ObjectId]
-createTokens settle controller card copy n tapped entering attached marks = do
+createTokens :: Settle.Settle -> PlayerId -> Card -> Maybe PC.ProjectedCharacteristics -> Maybe (ShownDie.ShownDie Natural) -> Natural -> TapState.TapState -> Map.Map (CounterKind.CounterKind Keyword.Type.Keyword) Natural -> Maybe [Recipient.Recipient] -> Set Designation.Designation -> Game [ObjectId]
+createTokens settle controller card copy die n tapped entering attached marks = do
   gs <- State.get
   if List.notElem controller (Game.stillPlaying gs)
     then pure []
     else do
-      let original = TokenLot.MkTokenLot {TokenLot.card = card, TokenLot.copy = copy, TokenLot.count = n, TokenLot.byEffect = not (Scratch.payingOnResolution (GameState.scratch gs))}
+      let original = TokenLot.MkTokenLot {TokenLot.card = card, TokenLot.copy = copy, TokenLot.count = n, TokenLot.byEffect = not (Scratch.payingOnResolution (GameState.scratch gs)), TokenLot.die = die}
           -- Every token of one lot, placed onto the battlefield. Interned ONCE
           -- per lot, not once per token: a lot's tokens are copies of one set of
           -- effect-defined characteristics (CR 111.3), so they name one entry.

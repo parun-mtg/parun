@@ -10,6 +10,7 @@ import qualified Parun.Codec.AtMost as AtMost
 import qualified Parun.Codec.CastFrom as CastFrom
 import qualified Parun.Codec.CommanderColors as CommanderColors
 import qualified Parun.Codec.CompletedDungeon as CompletedDungeon
+import qualified Parun.Codec.ControllerGrant as ControllerGrant
 import qualified Parun.Codec.Count as Count
 import qualified Parun.Codec.CounterKind as CounterKind
 import qualified Parun.Codec.DamageTally as DamageTally
@@ -138,6 +139,7 @@ codec =
       -- CR 701.37c's number, with the same designation on the wire that
       -- HasDesignation above carries: which mark's value is asked is a value.
       Arm.nullary "StoredResultsOfSameValue" Quantity.StoredResultsOfSameValue,
+      Arm.nullary "ItsDieResult" Quantity.ItsDieResult,
       Arm.payload "DesignationValue" Designation.codec Quantity.DesignationValue (\x -> case x of Quantity.DesignationValue y -> Just y; _ -> Nothing),
       -- CR 702.143c, nothing on the wire: the object is whichever one the
       -- quantity is evaluated against.
@@ -277,7 +279,8 @@ codec =
       -- CR 607.2a / 613.7d: which linked card to aim at, then what to read off it.
       Arm.payload "AgainstLastCardExiledWith" (AgainstLastCardExiledWith.codec codec) Quantity.AgainstLastCardExiledWith (\x -> case x of Quantity.AgainstLastCardExiledWith y -> Just y; _ -> Nothing),
       -- CR 702.184c, engine-only: Intensity's shape, nothing on the wire.
-      Arm.nullary "StationMeasure" Quantity.StationMeasure
+      Arm.nullary "StationMeasure" Quantity.StationMeasure,
+      Arm.payload "ControllerGranted" ControllerGrant.codec Quantity.ControllerGranted (\x -> case x of Quantity.ControllerGranted y -> Just y; _ -> Nothing)
     ]
 
 -- TurnTally.LandsPlayed's payload: the origins not counted, empty (Fastbond)
@@ -343,6 +346,7 @@ tagOf x = case x of
   Quantity.HasDesignation {} -> "HasDesignation"
   Quantity.DesignationValue {} -> "DesignationValue"
   Quantity.StoredResultsOfSameValue {} -> "StoredResultsOfSameValue"
+  Quantity.ItsDieResult {} -> "ItsDieResult"
   Quantity.WasForetold {} -> "WasForetold"
   Quantity.TributeWasPaid {} -> "TributeWasPaid"
   Quantity.TimesPaid {} -> "TimesPaid"
@@ -399,4 +403,5 @@ tagOf x = case x of
   Quantity.AgainstExiledPile {} -> "AgainstExiledPile"
   Quantity.AgainstLastCardExiledWith {} -> "AgainstLastCardExiledWith"
   Quantity.StationMeasure {} -> "StationMeasure"
+  Quantity.ControllerGranted {} -> "ControllerGranted"
   Quantity.AsCast {} -> "AsCast"

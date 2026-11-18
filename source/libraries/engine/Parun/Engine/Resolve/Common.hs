@@ -3884,6 +3884,8 @@ effectIsImpossible asked resolving source controller legal gs effect = case effe
   Effect.RollToVisit -> False
   -- The Unstable FAQ: assembling from an empty Contraption deck does nothing.
   Effect.Assemble _ -> null (Game.sideDeckOf SideDeck.Contraption controller gs)
+  -- The 2018-01-19 rulings: the CRANK! counter moves, Contraption or none.
+  Effect.Crank -> False
   -- CR 701.31a: only the planar controller of a Planechase game planeswalks.
   Effect.Planeswalk _ -> not (Planechase.canPlaneswalk controller gs)
   Effect.ChaosEnsues {} -> False

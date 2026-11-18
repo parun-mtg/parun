@@ -50,6 +50,8 @@ import qualified Parun.Types.GameSettings as GameSettings
 import Parun.Types.GameState (GameState)
 import qualified Parun.Types.GameState as GameState
 import qualified Parun.Types.Keyword as Keyword
+import Parun.Types.LossCause (LossCause)
+import qualified Parun.Types.LossCause as LossCause
 import qualified Parun.Types.MatchScope as MatchScope
 import qualified Parun.Types.Object as Object
 import Parun.Types.ObjectId (ObjectId)
@@ -97,16 +99,22 @@ import qualified Parun.Types.Zone as Zone
 -- CR 704.5a's disjunct alone is waived for a player an effect says doesn't lose
 -- for having 0 or less life (Lich); CR 810.8a's example asks it of the team,
 -- which PlayerEffect.precludes does.
-losesNow :: GameState -> PlayerId -> Bool
-losesNow gs pid = case Map.lookup pid (GameState.players gs) of
-  Nothing -> False
+lossCauses :: GameState -> PlayerId -> [LossCause]
+lossCauses gs pid = case Map.lookup pid (GameState.players gs) of
+  Nothing -> []
   Just player ->
-    Player.status player == Status.Playing
-      && ( (Player.life player <= 0 && not (PlayerEffect.precludes GameOutcome.LoseForZeroLife pid gs))
-             || Set.member pid (GameState.drewFromEmpty gs)
-             || Map.findWithDefault 0 PlayerCounterKind.Poison (Player.counters player) >= poisonThreshold gs pid
-             || Commander.lethalDamage pid gs
-         )
+    [LossCause.NoLife | Player.life player <= 0 && not (PlayerEffect.precludes GameOutcome.LoseForZeroLife pid gs)]
+      <> [LossCause.EmptyLibrary | Set.member pid (GameState.drewFromEmpty gs)]
+      <> [LossCause.Poison | Map.findWithDefault 0 PlayerCounterKind.Poison (Player.counters player) >= poisonThreshold gs pid]
+      <> [LossCause.CommanderDamage | Commander.lethalDamage pid gs]
+
+-- A player still in the game who meets any of lossCauses' state-based actions.
+-- A departed player keeps the state they left with, drewFromEmpty included
+-- (checkOnce), so lossCauses also says why a player who lost left.
+losesNow :: GameState -> PlayerId -> Bool
+losesNow gs pid =
+  maybe False ((== Status.Playing) . Player.status) (Map.lookup pid (GameState.players gs))
+    && not (null (lossCauses gs pid))
 
 -- CR 704.5c: ten poison counters; CR 704.6b / 810.8d in Two-Headed Giant, where
 -- CR 704.5c is ignored, a team's fifteen, and CR 810.11 five more for each

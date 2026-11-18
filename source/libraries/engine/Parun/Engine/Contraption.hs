@@ -89,12 +89,14 @@ unassembled pcs gs =
 crankCounterOf :: PlayerId -> GameState -> Designation.Designation
 crankCounterOf pid gs = maybe (NonEmpty.last Sector.sprockets) Player.crankCounter (Map.lookup pid (GameState.players gs))
 
--- | The Gatherer rulings: at the beginning of this player's upkeep, if they
--- control a Contraption, the CRANK! counter moves to their next sprocket, and
--- they may crank any number of the Contraptions on it, each cranking triggering
--- that Contraption's "whenever you crank this Contraption". The FAQ's "at the
+-- | The Gatherer rulings: this player's CRANK! counter moves to their next
+-- sprocket, and they may crank any number of the Contraptions on it, each
+-- cranking triggering that Contraption's "whenever you crank this
+-- Contraption". The upkeep's crank runs this only if they control a
+-- Contraption (Parun.Engine.Engine); Clock of DOOOOOOOOOOOOM!'s (Effect.Crank)
+-- runs it regardless, its text having no such condition. The FAQ's "at the
 -- start of your turn, if you have any assembled Contraptions" is the earlier
--- wording of the same action.
+-- wording of the upkeep's.
 --
 -- Cranking is always optional, so the Contraptions are offered as any number,
 -- none included, and asked even of one; the answer is filtered against what was
@@ -103,17 +105,16 @@ crankCounterOf pid gs = maybe (NonEmpty.last Sector.sprockets) Player.crankCount
 crank :: PlayerId -> Game ()
 crank pid = do
   gs <- State.get
-  Monad.when (Attraction.controlsSubtype Subtype.Contraption pid gs) $ do
-    let next = Sector.nextSprocket (crankCounterOf pid gs)
-    State.modify' (\g -> g {GameState.players = Map.adjust (\p -> p {Player.crankCounter = next}) pid (GameState.players g)})
-    moved <- State.get
-    let onIt oid = maybe False (Set.member next . Object.designations) (Game.lookupObject oid moved)
-        candidates = filter (\oid -> onIt oid && Set.member Subtype.Contraption (Projection.subtypesOf oid moved)) (Projection.controls pid moved)
-    case candidates of
-      [] -> pure ()
-      -- The prompt's object is the first Contraption offered: a turn-based
-      -- action has no source of its own to name.
-      first : _ -> do
-        chosen <- Game.choose (Prompt.ChooseAnyNumber (Decide.deciderFor pid moved) pid first AnyNumberOf.ToCrank candidates Nothing Seq.empty)
-        Monad.forM_ (filter (`Set.member` chosen) candidates) $ \oid ->
-          State.modify' (Event.recordEvent (GameEvent.PermanentActed (PermanentActed.MkPermanentActed PermanentAction.Crank oid Nothing)))
+  let next = Sector.nextSprocket (crankCounterOf pid gs)
+  State.modify' (\g -> g {GameState.players = Map.adjust (\p -> p {Player.crankCounter = next}) pid (GameState.players g)})
+  moved <- State.get
+  let onIt oid = maybe False (Set.member next . Object.designations) (Game.lookupObject oid moved)
+      candidates = filter (\oid -> onIt oid && Set.member Subtype.Contraption (Projection.subtypesOf oid moved)) (Projection.controls pid moved)
+  case candidates of
+    [] -> pure ()
+    -- The prompt's object is the first Contraption offered: the upkeep's
+    -- crank, a turn-based action, has no source of its own to name.
+    first : _ -> do
+      chosen <- Game.choose (Prompt.ChooseAnyNumber (Decide.deciderFor pid moved) pid first AnyNumberOf.ToCrank candidates Nothing Seq.empty)
+      Monad.forM_ (filter (`Set.member` chosen) candidates) $ \oid ->
+        State.modify' (Event.recordEvent (GameEvent.PermanentActed (PermanentActed.MkPermanentActed PermanentAction.Crank oid Nothing)))

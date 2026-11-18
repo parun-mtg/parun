@@ -434,7 +434,13 @@ affected context attached enchants a = case a of
             p <- Filter.phrase (Filter.Type.And rest) (Target.keyword context)
             Filter.describe Filter.Singular Target.permanent p
         [Target.MkReference (word <> Text.pack " " <> one) [] Filter.Singular []]
-    | otherwise -> Target.object context Target.Affected (ObjectRef.EachMatching f)
+    -- Free, as Parun.Oracle.Effect.modified reads them: the objects together
+    -- or, where they read together, each of them (Coppercoat Vanguard's "Each
+    -- other Human you control gets").
+    | otherwise ->
+        let together = Target.object context Target.Affected (ObjectRef.EachMatching f)
+            each = fmap (\r -> r {Target.number = Filter.Singular}) (Target.object context Target.Each (ObjectRef.EachMatching f))
+         in if null together then [] else together <> each
   _ -> []
   where
     attachedToSource = Filter.Type.HasAttached Filter.Type.IsSource

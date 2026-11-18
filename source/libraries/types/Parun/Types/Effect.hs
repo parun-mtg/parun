@@ -362,7 +362,7 @@ data Effect card ability
     -- this much, never below the card's printed floor (Spikeshell Harrier).
     --
     -- Whether an effect may push speed past 4 is IncreaseSpeed's question;
-    -- Parun.Engine.Speed.maxSpeed states parun's answer.
+    -- docs/synthetic-readings.md, "Whether an effect can raise speed past 4".
     DecreaseSpeed SpeedDecrease.SpeedDecrease
   | -- | CR 111: create this many tokens with the given effect-defined
     -- characteristics (CR 111.3), the `card` being the token's text embedded
@@ -711,8 +711,9 @@ data Effect card ability
     -- the roll in its body and the striation as its gate (Delina, Wild Mage).
     RollDie RollDie.RollDie
   | -- | CR 706.2b / 705.1: throw again the die whose modification step is
-    -- open, or the coin just flipped, discarding what it came up (Goblin
-    -- Bookie's "reflip any coin or reroll any die").
+    -- open, or the coin just flipped, discarding what it came up, or with
+    -- neither, a permanent that is a die (Goblin Bookie's "reflip any coin or
+    -- reroll any die", Pippa, Duchess of Dice's rulings).
     Rethrow
   | -- | CR 706.8b: the controller chooses any number of the stored results on
     -- the slot's permanent and rerolls them (Centaur of Attention). Choose, not
@@ -793,6 +794,11 @@ data Effect card ability
     -- ObjectRef is the permanent that assembles it (Wrench-Rigger's "it
     -- assembles"), Nothing where the player does (First Pick).
     Assemble (Maybe ObjectRef.ObjectRef)
+  | -- | The Unstable FAQ's crank, outside the upkeep (Clock of
+    -- DOOOOOOOOOOOOM!): the resolving controller's CRANK! counter moves to
+    -- their next sprocket and they crank any number of its Contraptions,
+    -- performed by Parun.Engine.Contraption.crank.
+    Crank
   | -- | CR 701.31: the resolving controller planeswalks, performed by
     -- Parun.Engine.Planechase.planeswalk; to the cards the ObjectRef names
     -- still in their planar deck, at once (Spatial Merging), or Nothing for its
