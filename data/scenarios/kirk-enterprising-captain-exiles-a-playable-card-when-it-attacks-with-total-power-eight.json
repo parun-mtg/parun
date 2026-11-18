@@ -1,0 +1,32 @@
+{
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "name": "alice",
+        "battlefield": [{"card": "Kirk, Enterprising Captain", "label": "kirk", "ready": true}, {"card": "Grizzly Bears", "label": "bears"}, {"card": "Llanowar Elves", "label": "elves"}],
+        "hand": [{"card": "Memnite", "label": "memnite"}],
+        "library": [{"card": "Island"}, {"card": "Forest"}, {"card": "Plains"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}]
+      },
+      {
+        "name": "bob",
+        "library": [{"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}]
+      }
+    ],
+    "step": "PrecombatMain"
+  },
+  "description": "Kirk, Enterprising Captain exiles the top card of its controller's library when it attacks while creatures they control have total power 8 or greater, and they may play that card this turn",
+  "note": "Kirk, Bears and Elves total 7: no trigger turn 1. Turn 3 Memnite makes 8, so Kirk's attack exiles the Forest (the Island was drawn), which alice then plays.",
+  "timeline": [
+    {"turn": 1, "step": "DeclareAttackers", "player": "alice", "do": {"Attack": ["$kirk"]}},
+    {"turn": 1, "step": "DeclareAttackers", "player": "alice", "check": {"View": {"of": "Stack", "is": []}}},
+    {"turn": 1, "step": "DeclareAttackers", "player": "alice", "check": {"Count": {"card": "Island", "player": "alice", "zone": "Exile", "count": 0}}},
+    {"turn": 3, "step": "PrecombatMain", "player": "alice", "do": {"Cast": {"object": "$memnite", "mana": []}}},
+    {"turn": 3, "step": "PrecombatMain", "player": "alice", "do": "Pass"},
+    {"turn": 3, "step": "DeclareAttackers", "player": "alice", "do": {"Attack": ["$kirk"]}},
+    {"turn": 3, "step": "DeclareAttackers", "player": "alice", "do": "Pass"},
+    {"turn": 3, "step": "DeclareAttackers", "player": "alice", "check": {"Count": {"card": "Forest", "player": "alice", "zone": "Exile", "count": 1}}},
+    {"turn": 3, "step": "PostcombatMain", "player": "alice", "do": {"PlayLand": "Forest"}},
+    {"turn": 3, "step": "PostcombatMain", "player": "alice", "check": {"Count": {"card": "Forest", "player": "alice", "zone": "Battlefield", "count": 1}}}
+  ]
+}

@@ -1,0 +1,32 @@
+{
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "name": "alice",
+        "battlefield": [{"card": "Jurati, Cordial Queen", "label": "jurati", "ready": true}, {"card": "Steel Overseer", "label": "thopter", "ready": true}, {"card": "Memnite", "label": "tok", "token": true}, {"card": "Ornithopter", "label": "tok2", "token": true}],
+        "library": [{"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}]
+      },
+      {
+        "name": "bob",
+        "battlefield": [{"card": "Memnite", "label": "theirs", "token": true}],
+        "library": [{"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}]
+      }
+    ],
+    "step": "DeclareAttackers"
+  },
+  "description": "Jurati, Cordial Queen creates a token copy of target artifact token its controller controls when one or more artifact creatures they control deal combat damage to a player",
+  "note": "Jurati and Steel Overseer both connect: one trigger. The nontoken Overseer and bob's token Memnite are refused.",
+  "timeline": [
+    {"turn": 1, "step": "DeclareAttackers", "player": "alice", "do": {"Attack": ["$jurati", "$thopter"]}},
+    {"turn": 1, "step": "DeclareBlockers", "player": "bob", "do": {"Block": {}}},
+    {"turn": 1, "step": "CombatDamage", "player": "alice", "refuse": {"ChooseTargets": {"target": ["$thopter"]}}},
+    {"turn": 1, "step": "CombatDamage", "player": "alice", "refuse": {"ChooseTargets": {"target": ["$theirs"]}}},
+    {"turn": 1, "step": "CombatDamage", "player": "alice", "do": {"ChooseTargets": {"target": ["$tok"]}}},
+    {"turn": 1, "step": "CombatDamage", "player": "alice", "do": "Pass"},
+    {"turn": 1, "step": "EndOfCombat", "player": "alice", "check": {"Life": {"player": "bob", "life": 16}}},
+    {"turn": 1, "step": "EndOfCombat", "player": "alice", "check": {"Count": {"card": "Memnite", "player": "alice", "zone": "Battlefield", "count": 2}}},
+    {"turn": 1, "step": "EndOfCombat", "player": "alice", "check": {"Count": {"card": "Ornithopter", "player": "alice", "zone": "Battlefield", "count": 1}}},
+    {"turn": 1, "step": "EndOfCombat", "player": "alice", "check": {"Count": {"card": "Memnite", "player": "bob", "zone": "Battlefield", "count": 1}}}
+  ]
+}

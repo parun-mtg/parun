@@ -1,0 +1,39 @@
+{
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "name": "alice",
+        "battlefield": [{"card": "Jefferies Tube", "label": "t1"}, {"card": "Jefferies Tube", "label": "t2"}, {"card": "Jefferies Tube", "label": "t3"}, {"card": "Grizzly Bears", "label": "bears", "ready": true}, {"card": "Memnite", "label": "memnite"}, {"card": "K'Vort-Class Raider", "label": "raider"}, {"card": "Island", "label": "i1"}, {"card": "Island", "label": "i2"}, {"card": "Island", "label": "i3"}, {"card": "Island", "label": "i4"}, {"card": "Island", "label": "i5"}, {"card": "Island", "label": "i6"}, {"card": "Island", "label": "i7"}, {"card": "Island", "label": "i8"}, {"card": "Island", "label": "i9"}],
+        "hand": [{"card": "Forest", "label": "forest"}],
+        "library": [{"card": "Swamp"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}]
+      },
+      {
+        "name": "bob",
+        "battlefield": [{"card": "Hill Giant", "label": "giant"}],
+        "library": [{"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}]
+      }
+    ],
+    "step": "PrecombatMain"
+  },
+  "description": "Jefferies Tube puts two charge counters on target artifact, makes target creature its controller controls unblockable this turn, and draws a card then may put a land from hand onto the battlefield tapped",
+  "note": "The unblockable target refuses bob's Giant. Bob is never asked to block, since his Giant can't block the Bears. The draw takes the Swamp, and the Forest goes onto the battlefield tapped.",
+  "timeline": [
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": {"Activate": {"object": "$t1", "ability": 0, "mana": ["$i1", "$i2", null], "targets": ["$raider"]}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass"},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Counters": {"object": "$raider", "kind": {"type": "Named", "value": "charge"}, "count": 2}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "refuse": {"Activate": {"object": "$t2", "ability": 1, "mana": ["$i3", "$i4", "$i5", null], "targets": ["$giant"]}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": {"Activate": {"object": "$t2", "ability": 1, "mana": ["$i3", "$i4", "$i5", null], "targets": ["$bears"]}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass"},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": {"Activate": {"object": "$t3", "ability": 2, "mana": ["$i6", "$i7", "$i8", "$i9"]}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass"},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": {"ChooseOptional": "Exercises"}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": {"Answer": {"prompt": "ChooseCardInHand", "with": "$forest"}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Count": {"card": "Swamp", "player": "alice", "zone": "Hand", "count": 1}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Count": {"card": "Forest", "player": "alice", "zone": "Battlefield", "count": 1}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Tapped": {"object": "Forest", "tapped": true}}},
+    {"turn": 1, "step": "DeclareAttackers", "player": "alice", "do": {"Attack": ["$bears"]}},
+    {"turn": 1, "step": "DeclareBlockers", "player": "alice", "check": {"Blockers": {"attacker": "$bears", "blockers": null}}},
+    {"turn": 1, "step": "EndOfCombat", "player": "alice", "check": {"Life": {"player": "bob", "life": 18}}}
+  ]
+}

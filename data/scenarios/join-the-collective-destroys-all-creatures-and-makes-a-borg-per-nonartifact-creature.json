@@ -1,0 +1,31 @@
+{
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "name": "alice",
+        "battlefield": [{"card": "Grizzly Bears", "label": "bears"}, {"card": "Ornithopter", "label": "thopter"}, {"card": "Plains", "label": "p1"}, {"card": "Plains", "label": "p2"}, {"card": "Plains", "label": "p3"}, {"card": "Plains", "label": "p4"}, {"card": "Plains", "label": "p5"}, {"card": "Plains", "label": "p6"}, {"card": "Plains", "label": "p7"}],
+        "hand": [{"card": "Join the Collective", "label": "join"}],
+        "library": [{"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}]
+      },
+      {
+        "name": "bob",
+        "battlefield": [{"card": "Hill Giant", "label": "giant"}, {"card": "Llanowar Elves", "label": "elves"}, {"card": "Memnite", "label": "memnite"}],
+        "library": [{"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}]
+      }
+    ],
+    "step": "PrecombatMain"
+  },
+  "description": "Join the Collective destroys all creatures and creates a 1/1 Borg artifact creature token for each nonartifact creature destroyed",
+  "note": "Five creatures die; Ornithopter and Memnite are artifacts, so three Borg.",
+  "timeline": [
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": {"Cast": {"object": "$join", "mana": ["$p1", "$p2", "$p3", "$p4", "$p5", "$p6", "$p7"]}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass"},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Count": {"card": "Borg Token", "player": "alice", "zone": "Battlefield", "count": 3}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"PowerToughness": {"object": "Borg Token", "power": 1, "toughness": 1}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Types": {"object": "Borg Token", "types": ["Artifact", "Creature"]}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Count": {"card": "Memnite", "player": "bob", "zone": "Graveyard", "count": 1}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Count": {"card": "Ornithopter", "player": "alice", "zone": "Graveyard", "count": 1}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Count": {"card": "Hill Giant", "player": "bob", "zone": "Graveyard", "count": 1}}}
+  ]
+}

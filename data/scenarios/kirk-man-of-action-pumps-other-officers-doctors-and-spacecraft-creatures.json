@@ -1,0 +1,28 @@
+{
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "name": "alice",
+        "battlefield": [{"card": "Kirk, Man of Action", "label": "kirk"}, {"card": "Academy Instructor", "label": "officer"}, {"card": "Indelicate Healer", "label": "doctor"}, {"card": "K'Vort-Class Raider", "label": "raider", "counters": [{"key": {"type": "Named", "value": "charge"}, "value": 4}]}, {"card": "Grizzly Bears", "label": "bears"}],
+        "library": [{"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}]
+      },
+      {
+        "name": "bob",
+        "battlefield": [{"card": "Academy Instructor", "label": "theirs"}],
+        "library": [{"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}]
+      }
+    ],
+    "step": "PrecombatMain"
+  },
+  "description": "Kirk, Man of Action gives other Officers, Artificers, Doctors, Pilots, Scientists and Spacecraft creatures its controller controls +2/+2",
+  "note": "Kirk is an Officer but not other; the Bears and bob's Officer are unchanged.",
+  "timeline": [
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"PowerToughness": {"object": "$kirk", "power": 3, "toughness": 3}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"PowerToughness": {"object": "$officer", "power": 2, "toughness": 5}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"PowerToughness": {"object": "$theirs", "power": 0, "toughness": 3}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"PowerToughness": {"object": "$doctor", "power": 5, "toughness": 5}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"PowerToughness": {"object": "$raider", "power": 7, "toughness": 5}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"PowerToughness": {"object": "$bears", "power": 2, "toughness": 2}}}
+  ]
+}

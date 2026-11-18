@@ -1,0 +1,38 @@
+{
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "name": "alice",
+        "battlefield": [{"card": "Janice Rand, Essential Aide", "label": "janice"}, {"card": "Forest", "label": "f1"}, {"card": "Forest", "label": "f2"}],
+        "hand": [{"card": "Grizzly Bears", "label": "bears", "commander": true}],
+        "library": [{"card": "Memnite", "label": "lm1"}, {"card": "Ornithopter", "label": "lo"}, {"card": "Plains"}, {"card": "Island"}, {"card": "Memnite", "label": "lm2"}, {"card": "Swamp"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}]
+      },
+      {
+        "name": "bob",
+        "library": [{"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}]
+      }
+    ],
+    "step": "PrecombatMain"
+  },
+  "description": "Janice Rand puts a +1/+1 counter on a commander its controller controls when it enters or attacks, then reveals until a land and puts that land onto the battlefield tapped",
+  "note": "Turn 1 the commander Bears enters: its counter, then Memnite and Ornithopter revealed past to the bottom and the Plains put onto the battlefield tapped. Turn 3 the Bears and Janice attack; Janice is no commander, so one trigger: a second counter on the Bears, none on Janice, and past the drawn Island and Memnite to the Swamp.",
+  "timeline": [
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": {"Cast": {"object": "$bears", "mana": ["$f1", "$f2"]}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass"},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass"},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": {"Answer": {"prompt": "Shuffle", "with": ["$lo", "$lm1"]}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Counters": {"object": "Grizzly Bears", "kind": {"type": "PlusOnePlusOne"}, "count": 1}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Count": {"card": "Plains", "player": "alice", "zone": "Battlefield", "count": 1}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Tapped": {"object": "Plains", "tapped": true}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Count": {"card": "Memnite", "player": "alice", "zone": "Library", "count": 2}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Count": {"card": "Ornithopter", "player": "alice", "zone": "Library", "count": 1}}},
+    {"turn": 3, "step": "DeclareAttackers", "player": "alice", "do": {"Attack": ["Grizzly Bears", "$janice"]}},
+    {"turn": 3, "step": "DeclareAttackers", "player": "alice", "do": "Pass"},
+    {"turn": 3, "step": "DeclareAttackers", "player": "alice", "check": {"Counters": {"object": "Grizzly Bears", "kind": {"type": "PlusOnePlusOne"}, "count": 2}}},
+    {"turn": 3, "step": "DeclareAttackers", "player": "alice", "check": {"Counters": {"object": "$janice", "kind": {"type": "PlusOnePlusOne"}, "count": 0}}},
+    {"turn": 3, "step": "DeclareAttackers", "player": "alice", "check": {"Count": {"card": "Swamp", "player": "alice", "zone": "Battlefield", "count": 1}}},
+    {"turn": 3, "step": "DeclareAttackers", "player": "alice", "check": {"Tapped": {"object": "Swamp", "tapped": true}}},
+    {"turn": 3, "step": "DeclareAttackers", "player": "alice", "check": {"Count": {"card": "Memnite", "player": "alice", "zone": "Library", "count": 2}}}
+  ]
+}

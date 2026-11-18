@@ -1,0 +1,37 @@
+{
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "name": "alice",
+        "battlefield": [{"card": "K'Vort-Class Raider", "label": "raider", "counters": [{"key": {"type": "Named", "value": "charge"}, "value": 4}]}, {"card": "K'Vort-Class Raider", "label": "low", "counters": [{"key": {"type": "Named", "value": "charge"}, "value": 3}]}, {"card": "Grizzly Bears", "label": "bears"}],
+        "library": [{"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}]
+      },
+      {
+        "name": "bob",
+        "battlefield": [{"card": "Hill Giant", "label": "giant"}],
+        "library": [{"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}]
+      }
+    ],
+    "step": "PrecombatMain"
+  },
+  "description": "K'Vort-Class Raider and creatures its controller controls have hexproof during that player's turn, and at 4 or more charge counters it is a 5/3 artifact creature with flying, menace and haste",
+  "note": "The three-counter Raider is no creature, so only its own \"this Spacecraft\" gives it hexproof; each creature alice controls takes one instance from each Raider. Bob's Giant never gains it, and on bob's turn nobody has it.",
+  "timeline": [
+    {"turn": 1, "step": "DeclareAttackers", "player": "alice", "do": {"Attack": []}},
+    {"turn": 2, "step": "DeclareAttackers", "player": "bob", "do": {"Attack": []}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Types": {"object": "$raider", "types": ["Artifact", "Creature"]}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"PowerToughness": {"object": "$raider", "power": 5, "toughness": 3}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Keywords": {"object": "$raider", "keyword": {"type": "Flying"}, "count": 1}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Keywords": {"object": "$raider", "keyword": {"type": "Menace"}, "count": 1}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Keywords": {"object": "$raider", "keyword": {"type": "Haste"}, "count": 1}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Types": {"object": "$low", "types": ["Artifact"]}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Keywords": {"object": "$low", "keyword": {"type": "Flying"}, "count": 0}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Keywords": {"object": "$raider", "keyword": {"type": "Hexproof"}, "count": 2}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Keywords": {"object": "$low", "keyword": {"type": "Hexproof"}, "count": 1}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Keywords": {"object": "$bears", "keyword": {"type": "Hexproof"}, "count": 2}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Keywords": {"object": "$giant", "keyword": {"type": "Hexproof"}, "count": 0}}},
+    {"turn": 2, "step": "PrecombatMain", "player": "bob", "check": {"Keywords": {"object": "$bears", "keyword": {"type": "Hexproof"}, "count": 0}}},
+    {"turn": 2, "step": "PrecombatMain", "player": "bob", "check": {"Keywords": {"object": "$raider", "keyword": {"type": "Hexproof"}, "count": 0}}}
+  ]
+}

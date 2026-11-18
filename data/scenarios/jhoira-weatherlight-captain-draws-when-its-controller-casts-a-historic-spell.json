@@ -1,0 +1,34 @@
+{
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "name": "alice",
+        "battlefield": [{"card": "Jhoira, Weatherlight Captain", "label": "jhoira"}, {"card": "Forest", "label": "f1"}, {"card": "Forest", "label": "f2"}],
+        "hand": [{"card": "Ornithopter", "label": "thopter"}, {"card": "Grizzly Bears", "label": "bears"}],
+        "library": [{"card": "Plains"}, {"card": "Plains"}, {"card": "Plains"}, {"card": "Plains"}, {"card": "Plains"}, {"card": "Plains"}, {"card": "Plains"}, {"card": "Plains"}, {"card": "Plains"}, {"card": "Plains"}]
+      },
+      {
+        "name": "bob",
+        "battlefield": [{"card": "Mountain", "label": "m"}],
+        "hand": [{"card": "Memnite", "label": "memnite"}],
+        "library": [{"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}]
+      }
+    ],
+    "step": "PrecombatMain"
+  },
+  "description": "Jhoira, Weatherlight Captain draws a card whenever its controller casts a historic spell",
+  "note": "Ornithopter is an artifact and draws; the Bears are not historic. Bob's Memnite, a historic spell he casts, draws alice nothing.",
+  "timeline": [
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": {"Cast": {"object": "$thopter", "mana": []}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"View": {"of": "Stack", "is": ["trigger of $jhoira", "Ornithopter"]}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass"},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Count": {"card": "Plains", "player": "alice", "zone": "Hand", "count": 1}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass"},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": {"Cast": {"object": "$bears", "mana": ["$f1", "$f2"]}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"View": {"of": "Stack", "is": ["Grizzly Bears"]}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass"},
+    {"turn": 2, "step": "PrecombatMain", "player": "bob", "do": {"Cast": {"object": "$memnite", "mana": []}}},
+    {"turn": 2, "step": "PrecombatMain", "player": "bob", "check": {"View": {"of": "Stack", "is": ["Memnite"]}}}
+  ]
+}

@@ -1,0 +1,41 @@
+{
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "name": "alice",
+        "battlefield": [{"card": "Jean-Luc Picard, Luminary", "label": "picard"}, {"card": "Grizzly Bears", "label": "bears"}, {"card": "K'Vort-Class Raider", "label": "raider"}, {"card": "Island", "label": "i1"}, {"card": "Island", "label": "i2"}, {"card": "Island", "label": "i3"}, {"card": "Island", "label": "i4"}, {"card": "Island", "label": "i5"}, {"card": "Island", "label": "i6"}, {"card": "Island", "label": "i7"}, {"card": "Island", "label": "i8"}, {"card": "Island", "label": "i9"}, {"card": "Island", "label": "i10"}],
+        "hand": [{"card": "Steel Overseer", "label": "overseer"}, {"card": "Juggernaut", "label": "jug1"}, {"card": "Juggernaut", "label": "jug2"}],
+        "library": [{"card": "Plains"}, {"card": "Plains"}, {"card": "Plains"}, {"card": "Plains"}, {"card": "Plains"}, {"card": "Plains"}, {"card": "Plains"}, {"card": "Plains"}, {"card": "Plains"}, {"card": "Plains"}]
+      },
+      {
+        "name": "bob",
+        "library": [{"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}]
+      }
+    ],
+    "step": "PrecombatMain"
+  },
+  "description": "Jean-Luc Picard, Luminary draws a card when another historic permanent with mana value 3 or greater enters under its controller's control, and the second draw each turn puts a +1/+1 counter on another creature and two charge counters on a Spacecraft",
+  "note": "Steel Overseer is historic at mana value 2 and draws nothing. Each Juggernaut draws; the second draw seeks out, refusing Picard itself as the other creature.",
+  "timeline": [
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": {"Cast": {"object": "$overseer", "mana": ["$i1", "$i2", null]}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass"},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"View": {"of": "Stack", "is": []}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Count": {"card": "Plains", "player": "alice", "zone": "Hand", "count": 0}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": {"Cast": {"object": "$jug1", "mana": ["$i3", "$i4", "$i5", "$i6", null]}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass"},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass"},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Count": {"card": "Plains", "player": "alice", "zone": "Hand", "count": 1}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"View": {"of": "Stack", "is": []}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": {"Cast": {"object": "$jug2", "mana": ["$i7", "$i8", "$i9", "$i10"]}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass"},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass"},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "refuse": {"ChooseTargets": {"creature": ["$picard"], "spacecraft": ["$raider"]}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": {"ChooseTargets": {"creature": ["$bears"], "spacecraft": ["$raider"]}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass"},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Count": {"card": "Plains", "player": "alice", "zone": "Hand", "count": 2}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Counters": {"object": "$bears", "kind": {"type": "PlusOnePlusOne"}, "count": 1}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Counters": {"object": "$raider", "kind": {"type": "Named", "value": "charge"}, "count": 2}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Counters": {"object": "$picard", "kind": {"type": "PlusOnePlusOne"}, "count": 0}}}
+  ]
+}

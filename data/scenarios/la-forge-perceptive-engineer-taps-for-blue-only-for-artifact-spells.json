@@ -1,0 +1,29 @@
+{
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "name": "alice",
+        "battlefield": [{"card": "La Forge, Perceptive Engineer", "label": "laforge", "ready": true}, {"card": "Island", "label": "i1", "tapped": true}],
+        "hand": [{"card": "Steel Overseer", "label": "overseer"}, {"card": "Faerie Miscreant", "label": "faerie"}],
+        "library": [{"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}]
+      },
+      {
+        "name": "bob",
+        "library": [{"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}]
+      }
+    ],
+    "step": "PrecombatMain"
+  },
+  "description": "La Forge, Perceptive Engineer taps for blue mana spendable only on an artifact spell",
+  "note": "Turn 1, with the Island tapped, La Forge's blue alone can't cast Faerie Miscreant, a nonartifact spell. Turn 3 it and the Island cast Steel Overseer.",
+  "timeline": [
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "refuse": {"Cast": {"object": "$faerie", "mana": ["$laforge"]}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Count": {"card": "Faerie Miscreant", "player": "alice", "zone": "Hand", "count": 1}}},
+    {"turn": 1, "step": "DeclareAttackers", "player": "alice", "do": {"Attack": []}},
+    {"turn": 3, "step": "PrecombatMain", "player": "alice", "do": {"Cast": {"object": "$overseer", "mana": ["$laforge", "$i1"]}}},
+    {"turn": 3, "step": "PrecombatMain", "player": "alice", "do": "Pass"},
+    {"turn": 3, "step": "PrecombatMain", "player": "alice", "check": {"Count": {"card": "Steel Overseer", "player": "alice", "zone": "Battlefield", "count": 1}}},
+    {"turn": 3, "step": "PrecombatMain", "player": "alice", "check": {"Tapped": {"object": "$laforge", "tapped": true}}}
+  ]
+}
