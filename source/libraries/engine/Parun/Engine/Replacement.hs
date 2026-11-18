@@ -2087,7 +2087,8 @@ candidateContext gs candidate =
         gs
         (ReplacementCandidate.slots candidate)
         (Projection.framedWith choices source gs (Projection.sourceContext gs (ReplacementCandidate.controller candidate) source))
-          { Filter.carrierChosenPlayer = Game.currentChoice Chosen.Players source gs >>= Map.lookup PlayerChoice.AsEntersOrTransforms
+          { Filter.carrierChosenPlayer = Game.currentChoice Chosen.Players source gs >>= Map.lookup PlayerChoice.AsEntersOrTransforms,
+            Filter.carrierStickers = Game.stickersOn source gs
           }
 
 -- CR 614.16: whether a token row's "an effect would create" reaches `lot`: a

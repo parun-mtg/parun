@@ -1,0 +1,87 @@
+{
+  "faces": [
+    {
+      "keywords": [
+        {
+          "type": "FirstStrike"
+        },
+        {
+          "type": "Protection",
+          "value": {
+            "quality": {
+              "type": "NameStartsLikeCarrierSticker"
+            },
+            "spares": null
+          }
+        }
+      ],
+      "manaCost": [
+        {
+          "type": "Generic",
+          "value": 1
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "White"
+          }
+        }
+      ],
+      "name": "Knight in _____ Armor",
+      "oracleText": "First strike\nAs this creature enters, you may put a name sticker on it.\nThis creature has protection from names that start with the same letter as a name sticker on it.",
+      "power": {
+        "type": "Literal",
+        "value": 2
+      },
+      "replacementEffects": [
+        {
+          "effect": {
+            "type": "EntryR",
+            "value": {
+              "matching": {
+                "type": "IsSource"
+              },
+              "rewrite": {
+                "type": "RunEffects",
+                "value": [
+                  {
+                    "type": "PutSticker",
+                    "value": {
+                      "kinds": [
+                        "Name"
+                      ],
+                      "optional": true,
+                      "player": {
+                        "type": "Relative",
+                        "value": "You"
+                      },
+                      "ref": {
+                        "type": "InSlot",
+                        "value": "self"
+                      }
+                    }
+                  }
+                ]
+              }
+            }
+          }
+        }
+      ],
+      "toughness": {
+        "type": "Literal",
+        "value": 1
+      },
+      "typeLine": {
+        "subtypes": [
+          "Human",
+          "Knight",
+          "Performer"
+        ],
+        "types": [
+          "Creature"
+        ]
+      }
+    }
+  ]
+}

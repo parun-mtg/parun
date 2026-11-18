@@ -1739,7 +1739,7 @@ effectObjectRefs effect =
         Effect.Ante (Ante.MkAnte _ ref _) -> read_ [ref]
         -- Proficient Pyrodancer's "a nonland permanent you own" and Scampire's "a
         -- creature card in your graveyard".
-        Effect.PutSticker (PutSticker.MkPutSticker _ ref _ _ _ _) -> [(CardInGraveyard : permanentQuestions, ref)]
+        Effect.PutSticker (PutSticker.MkPutSticker _ ref _ _ _ _ _) -> [(CardInGraveyard : permanentQuestions, ref)]
         Effect.SetOwner (SetOwner.MkSetOwner _ ref) -> read_ [ref]
         Effect.ExchangeOwnership (ExchangeOwnership.MkExchangeOwnership one other) -> read_ [one, other]
         -- No ObjectRef at all: the opcode names a library.

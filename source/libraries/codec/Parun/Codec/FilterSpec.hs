@@ -372,6 +372,12 @@ spec s = Spec.describe s "Parun.Codec.Filter" $ do
       codec
       Filter.OfChosenPlayer
       " {\"type\":\"OfChosenPlayer\"} "
+  Spec.it s "NameStartsLikeCarrierSticker" $
+    Common.assertCodec
+      s
+      codec
+      Filter.NameStartsLikeCarrierSticker
+      " {\"type\":\"NameStartsLikeCarrierSticker\"} "
   Spec.it s "OfRelatedPlayer" $
     Common.assertCodec
       s

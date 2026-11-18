@@ -3955,7 +3955,7 @@ effectIsImpossible asked resolving source controller legal gs effect = case effe
   -- on a named object it owns, at its cost and cap. The ChosenPermanents and
   -- ChosenCardInGraveyard reads are the candidate sets chosenPermanents and
   -- chosenCardsInGraveyard offer, the pure sweep answering nothing for them.
-  Effect.PutSticker (PutSticker.MkPutSticker player ref kinds cap free _) ->
+  Effect.PutSticker (PutSticker.MkPutSticker player ref kinds cap free _ _) ->
     let placers = playerRefPlayers legal resolving source controller gs player
         named = case ref of
           ObjectRef.ChosenPermanents choice -> chosenCandidates legal resolving controller source gs choice

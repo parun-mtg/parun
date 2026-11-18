@@ -272,6 +272,8 @@ data Filter keyword
   | -- | CR 702.16k: the candidate is an object the protection carrier's chosen
     -- player controls, or one they own that no other player controls.
     OfChosenPlayer
+  | -- | CR 702.16a / 123.6: a name of the candidate's starts with the same letter as a name sticker on the protection carrier, spaces and punctuation ignored (Knight in _____ Armor).
+    NameStartsLikeCarrierSticker
   | -- | CR 702.16i / 702.16k: the candidate is an object a player relating thus
     -- to the perspective controls, or owns while no player controls it, or that
     -- an aiming spell or ability such a player controls is aimed from.

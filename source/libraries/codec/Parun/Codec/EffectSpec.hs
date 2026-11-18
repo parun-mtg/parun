@@ -1375,7 +1375,7 @@ spec s = Spec.describe s "Parun.Codec.Effect" $ do
       s
       toJson
       fromJson
-      (Effect.PutSticker (PutSticker.MkPutSticker (PlayerRef.Relative PlayerRelation.You) (ObjectRef.InSlot (SlotName.MkSlotName (Text.pack "self"))) (Set.singleton StickerKind.Art) Nothing False (Just (SlotName.MkSlotName (Text.pack "placed")))))
+      (Effect.PutSticker (PutSticker.MkPutSticker (PlayerRef.Relative PlayerRelation.You) (ObjectRef.InSlot (SlotName.MkSlotName (Text.pack "self"))) (Set.singleton StickerKind.Art) Nothing False (Just (SlotName.MkSlotName (Text.pack "placed"))) False))
       " {\"type\":\"PutSticker\",\"value\":{\"player\":{\"type\":\"Relative\",\"value\":\"You\"},\"ref\":{\"type\":\"InSlot\",\"value\":\"self\"},\"kinds\":[\"Art\"],\"bound\":\"placed\"}} "
   -- CR 123.3c: Pin Collection's cap and waiver.
   Spec.it s "PutSticker with a ticket cap, free" $
@@ -1383,8 +1383,16 @@ spec s = Spec.describe s "Parun.Codec.Effect" $ do
       s
       toJson
       fromJson
-      (Effect.PutSticker (PutSticker.MkPutSticker (PlayerRef.Relative PlayerRelation.You) (ObjectRef.InSlot (SlotName.MkSlotName (Text.pack "self"))) (Set.singleton StickerKind.Ability) (Just (Quantity.InSlot (SlotName.MkSlotName (Text.pack "X")))) True Nothing))
+      (Effect.PutSticker (PutSticker.MkPutSticker (PlayerRef.Relative PlayerRelation.You) (ObjectRef.InSlot (SlotName.MkSlotName (Text.pack "self"))) (Set.singleton StickerKind.Ability) (Just (Quantity.InSlot (SlotName.MkSlotName (Text.pack "X")))) True Nothing False))
       " {\"type\":\"PutSticker\",\"value\":{\"player\":{\"type\":\"Relative\",\"value\":\"You\"},\"ref\":{\"type\":\"InSlot\",\"value\":\"self\"},\"kinds\":[\"Ability\"],\"ticketCap\":{\"type\":\"InSlot\",\"value\":\"X\"},\"free\":true}} "
+  -- CR 123.3: Knight in _____ Armor's "you may put".
+  Spec.it s "PutSticker, optional" $
+    Common.assertJsonCodec
+      s
+      toJson
+      fromJson
+      (Effect.PutSticker (PutSticker.MkPutSticker (PlayerRef.Relative PlayerRelation.You) (ObjectRef.InSlot (SlotName.MkSlotName (Text.pack "self"))) (Set.singleton StickerKind.Name) Nothing False Nothing True))
+      " {\"type\":\"PutSticker\",\"value\":{\"player\":{\"type\":\"Relative\",\"value\":\"You\"},\"ref\":{\"type\":\"InSlot\",\"value\":\"self\"},\"kinds\":[\"Name\"],\"optional\":true}} "
   -- CR 407.4: the anteing player, the objects, and the slot binding them.
   Spec.it s "Ante" $
     Common.assertJsonCodec

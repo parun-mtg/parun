@@ -828,8 +828,9 @@ runEntryEffects runSubgame = do
 -- One entered permanent's as-enters effects, in printed order.
 --
 -- `resolving` and `source` are both the permanent (CR 113.7), runPreventionRider's
--- posture. The slot maps are empty because a static ability targets nothing (CR
--- 115.10a).
+-- posture. The slot maps hold Binding.triggerSource alone, the permanent
+-- (Knight in _____ Armor's "put a name sticker on it"), because a static
+-- ability targets nothing (CR 115.10a).
 --
 -- CR 107.3m: an X these effects read is the one announced for the spell that
 -- became the permanent (Neverwinter Hydra's "roll X d6"), bound on the permanent
@@ -850,7 +851,7 @@ runEntryEffect runSubgame pending = do
   outerSubjects <- State.gets (Scratch.enteringSubjects . GameState.scratch)
   beside <- State.gets (Common.enteredBeside oid)
   State.modify' (\gs -> gs {GameState.scratch = (GameState.scratch gs) {Scratch.enteringBeside = Set.union outer beside, Scratch.enteringSubjects = Map.insert oid Nothing outerSubjects}})
-  Monad.void (runCarrying runSubgame oid (PendingEntryEffect.controller pending) Map.empty Map.empty (PendingEntryEffect.effects pending))
+  Monad.void (runCarrying runSubgame oid (PendingEntryEffect.controller pending) (Map.singleton Binding.triggerSource (Set.singleton (Recipient.ToObject oid))) Map.empty (PendingEntryEffect.effects pending))
   State.modify' (\gs -> gs {GameState.scratch = (GameState.scratch gs) {Scratch.enteringBeside = outer, Scratch.enteringSubjects = outerSubjects}})
   Foldable.for_ announced $ \_ -> State.modify' (setX before)
   -- CR 508.4: EntryRewrite.EntersAttacking, whose guards (CR 506.3) and

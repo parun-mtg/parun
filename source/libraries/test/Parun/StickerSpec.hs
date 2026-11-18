@@ -41,6 +41,7 @@ import qualified Parun.Engine.Resolve.Effect as Resolve
 import qualified Parun.Engine.Setup as Setup
 import qualified Parun.Engine.Stack as Stack
 import qualified Parun.Engine.Sticker as Sticker
+import qualified Parun.Engine.Target as Target
 import qualified Parun.Extra.Int as Int
 import qualified Parun.Extra.Natural as Natural
 import qualified Parun.MeldSpec as MeldSpec
@@ -105,6 +106,7 @@ import qualified Parun.Types.RoomHalf as RoomHalf
 import qualified Parun.Types.Settle as Settle
 import qualified Parun.Types.SlotName as SlotName
 import qualified Parun.Types.SpellWasCast as SpellWasCast
+import qualified Parun.Types.StackObjectKind as StackObjectKind
 import qualified Parun.Types.StepBegan as StepBegan
 import qualified Parun.Types.StickerContent as StickerContent
 import qualified Parun.Types.StickerKind as StickerKind
@@ -1290,6 +1292,64 @@ spec s registry = Spec.describe s "Sticker" $ do
           Nothing -> False
         (_, after, _) = entersNaming splash ((placingAt Nothing (nameSticker 0 1) 0) {namingPrefers = bobs}) g2
     Spec.assertEqWith s "CR 123.6d one Piker is tapped" (S.tappedCount S.bob after) 1
+  -- CR 123.6d: case is no part of a letter, and Knight in _____ Armor's ruling
+  -- skips spaces and punctuation, a blank's underscores among them; a digit or
+  -- a symbol is no letter to start with.
+  Spec.it s "CR 123.6d a name starts with its first letter, spaces and punctuation ignored" $ do
+    Spec.assertEqWith
+      s
+      "S, G, L, then none for +2 Mace and 1996 World Champion"
+      (fmap (NameWords.initialLetter . Text.pack) ["slimy", "_____ Goblin", "\"Lifetime\" Pass Holder", "+2 Mace", "1996 World Champion"])
+      [Just 19, Just 7, Just 12, Nothing, Nothing]
+  -- Knight in _____ Armor's "may" is asked once, as it enters. Slimy's S then
+  -- bars bob's Shock from targeting it while his Lightning Bolt still may;
+  -- declined, the Shock may too.
+  Spec.it s "CR 702.16b Knight in _____ Armor takes Slimy as it enters: Shock can't target it, Lightning Bolt can, and declining bars neither" $ do
+    sheets <- committedSheets
+    knight <- S.printingOf s registry "Knight in _____ Armor"
+    plains <- S.printingOf s registry "Plains"
+    shock <- S.printingOf s registry "Shock"
+    bolt <- S.printingOf s registry "Lightning Bolt"
+    let (card, g1) = S.addHandCard knight S.alice (mainPhaseForAlice (S.landsFor plains S.alice 2 (withSheets sheets (Setup.gameWith GameSettings.plain S.bothPlayers))))
+        (shockId, g2) = S.addHandCard shock S.bob g1
+        (boltId, board) = S.addHandCard bolt S.bob g2
+        entered ref =
+          let (_, after, asked) = castKicking (const 0) ref card board
+              aimable spellId printing = do
+                slot <- S.spellTargetSlot printing
+                knightId <- Maybe.listToMaybe (arrivals board after)
+                pure (Set.member (Recipient.ToCreature knightId) (Target.legalRecipients StackObjectKind.Spell (Just S.bob) spellId slot after))
+           in (aimable shockId shock, aimable boltId bolt, foldMap (`stickerKindsOn` after) (arrivals board after), asked)
+    Spec.assertEqWith s "CR 702.16b Slimy: Shock can't target it, Lightning Bolt can" (entered (Just slimy)) (Just False, Just True, [StickerKind.Name], 1)
+    Spec.assertEqWith s "CR 123.3 declined: no sticker, and Shock can target it" (entered Nothing) (Just True, Just True, [], 1)
+  -- Inferno's I against Illusion's and Night's, both sharing the board's
+  -- other damage, which shows it resolved.
+  Spec.it s "CR 702.16e Inferno's damage to a Knight in _____ Armor named Illusion is prevented, and to one named Night it is not" $ do
+    sheets <- committedSheets
+    knight <- S.printingOf s registry "Knight in _____ Armor"
+    mountain <- S.printingOf s registry "Mountain"
+    inferno <- S.printingOf s registry "Inferno"
+    let burned ref =
+          let (knightId, g1) = S.addPermanent knight S.alice (mainPhaseForAlice (S.landsFor mountain S.alice 7 (withSheets sheets (Setup.gameWith GameSettings.plain S.bothPlayers))))
+              (spell, board) = S.addHandCard inferno S.alice (Sticker.put S.alice knightId ref (Just 0) g1)
+              after = S.runPure S.identityAnswer board (S.cast S.alice spell >> drain)
+           in (Set.member knightId (GameState.battlefield after), S.lifeOf S.bob after)
+    Spec.assertEqWith s "CR 702.16e Illusion: the Knight lives" (burned (nameSticker 1 2)) (True, Just 14)
+    Spec.assertEqWith s "CR 702.16e Night: the 2/1 Knight died" (burned night) (False, Just 14)
+  Spec.it s "CR 702.16f a Knight in _____ Armor named Otter attacks: bob's Ornithopter can't block it, his Grizzly Bears can" $ do
+    sheets <- committedSheets
+    knight <- S.printingOf s registry "Knight in _____ Armor"
+    ornithopter <- S.printingOf s registry "Ornithopter"
+    bears <- S.printingOf s registry "Grizzly Bears"
+    let (knightId, g1) = S.addPermanent knight S.alice (withSheets sheets (Setup.gameWith GameSettings.plain S.bothPlayers))
+        (thopterId, g2) = S.addPermanent ornithopter S.bob (Sticker.put S.alice knightId otter (Just 0) g1)
+        (bearsId, g3) = S.addPermanent bears S.bob g2
+        board = mainPhaseForAlice g3
+        combat = board {GameState.turn = (GameState.turn board) {TurnRegisters.phase = Phase.Combat CombatStep.DeclareAttackers, TurnRegisters.combat = Combat.emptyCombat {Combat.Type.defenders = [S.bob]}}}
+        attacked = S.runPure S.aggressiveAnswer combat (Combat.declareAttackers S.manaPerformer S.alice >> drain)
+        blocks blocker = Combat.legalBlockDeclaration S.bob (Map.singleton blocker (Set.singleton knightId)) attacked
+    Spec.assertEqWith s "CR 702.16f the Ornithopter can't block it, the Bears can" (blocks thopterId, blocks bearsId) (False, True)
+    Spec.assertEqWith s "the Knight is attacking" (Map.member knightId (Combat.Type.attackers (TurnRegisters.combat (GameState.turn attacked)))) True
   -- A Good Day to Pie's return names the graveyard it moves the card out of, so
   -- CR 113.6m pins the ability there. _____ Goblin naming itself is the name
   -- sticker on a creature; its own "may" is the one every board below asks.

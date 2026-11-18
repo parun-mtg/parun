@@ -904,7 +904,7 @@ viewOfCharacteristics peers oid pc controller counters gs =
       Filter.counters = counters,
       -- CR 123.1: off the object, live, `designations`' posture; a departed
       -- object's are Count.lastKnownView's (CR 608.2h).
-      Filter.stickers = foldMap (\o -> Game.stickerContents (Object.stickers o) gs) (Game.lookupObject oid gs),
+      Filter.stickers = Game.stickersOn oid gs,
       -- CR 701.54b: a designation rather than a characteristic. Nothing for an id
       -- naming no object -- a designation dies with the permanent (CR 400.7).
       Filter.ringBearerFor = Game.lookupObject oid gs >>= Object.ringBearerFor,
