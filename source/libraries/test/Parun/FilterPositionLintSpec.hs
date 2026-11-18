@@ -2292,7 +2292,7 @@ filterPositionLintSpec s registry corpus = Spec.describe s "Lint" $ do
     -- exactly as an ordinary trigger's is); Venerable
     -- Warsinger, whose X is CR 603.2's own event amount; Stir the Grave, the first
     -- on a SPELL, whose X CR 601.2b announces one step before CR 601.2c chooses the
-    -- target; Dune Drifter, on an ENTERS trigger, whose X CR 107.3m inherits
+    -- target, and Blue Sun's Twilight likewise; Dune Drifter, on an ENTERS trigger, whose X CR 107.3m inherits
     -- from the spell that became its source; Synthetic Borrowed Exhumation, the first whose slot is also JOINTLY
     -- JUDGED (Parun.Engine.Target.jointlyJudged); Synthetic Measured Refrain, whose
     -- bound folds over what a sibling slot names (Parun.TargetSpec's "CR 700.2d a
@@ -2352,6 +2352,7 @@ filterPositionLintSpec s registry corpus = Spec.describe s "Lint" $ do
         ("Ratchet, Field Medic", 1),
         ("Venerable Warsinger", 1),
         ("Stir the Grave", 1),
+        ("Blue Sun's Twilight", 1),
         ("Dune Drifter", 1),
         ("Synthetic Borrowed Exhumation", 1),
         ("Synthetic Measured Refrain", 1),
