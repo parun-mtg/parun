@@ -19,7 +19,9 @@ jobs:
         with:
           name: parun-${{ github.sha }}-bench
           path: bench.json
-  # Nix covers Linux only, so the other platforms get GHC from ghcup.
+  # GHC from ghcup rather than Nix, whose binaries load their libraries from
+  # /nix/store: these are the binaries a user downloads. Haskell libraries link
+  # statically (cabal.project); only the system's C libraries stay dynamic.
   portable:
     name: Build ${{ matrix.os }}
     strategy:
@@ -27,6 +29,7 @@ jobs:
       matrix:
         os:
           - macos-latest
+          - ubuntu-latest
           - windows-latest
     runs-on: ${{ matrix.os }}
     steps:
@@ -48,6 +51,23 @@ jobs:
       - run: cabal configure --enable-optimization --flags=pedantic --jobs --semaphore
       - run: cabal build all
       - run: cabal run parun -- test --timeout=120s
+      - run: mkdir artifact
+      - run: cp "$(cabal list-bin -v0 parun)" artifact
+        shell: bash
+      # Platform-independent, so built once. A downloaded binary finds the data
+      # through the parun_datadir variable. No sdist: scenario file names
+      # overflow its ustar headers (gap #8709).
+      - if: runner.os == 'Linux'
+        run: |
+          git archive --output artifact/parun-data.tar.gz HEAD data
+          artifact/parun schema > artifact/schema.json
+          artifact/parun schema scenario > artifact/scenario-schema.json
+      # Tarred so the executable bit survives the upload's zip.
+      - run: tar --create --file artifact.tar --verbose artifact
+      - uses: actions/upload-artifact@v7
+        with:
+          name: parun-${{ github.sha }}-${{ runner.os }}-${{ runner.arch }}
+          path: artifact.tar
       - if: steps.cache.outputs.cache-hit != 'true'
         uses: actions/cache/save@v6
         with:
@@ -55,6 +75,42 @@ jobs:
             ${{ steps.haskell.outputs.cabal-store }}
             dist-newstyle
           key: ${{ steps.cache.outputs.cache-primary-key }}
+  # The web client (#8007) ready to serve, and the WASI command-line build.
+  wasm:
+    name: Wasm
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: nixbuild/nix-quick-install-action@v35
+      # Optimized, unlike CI's Wasm job, so it keeps a cache of its own.
+      - id: cache
+        uses: actions/cache/restore@v6
+        with:
+          path: dist-wasm
+          key: wasm-optimized-${{ hashFiles('flake.lock') }}-${{ github.sha }}
+          restore-keys: wasm-optimized-${{ hashFiles('flake.lock') }}-
+      - run: nix develop .#wasm --command script/build-web.sh artifact/web
+      - run: |
+          nix develop .#wasm --command wasm32-wasi-cabal build exe:parun \
+            --builddir=dist-wasm \
+            --enable-optimization \
+            --flags=pedantic \
+            --project-file=cabal.wasm.project
+          cp "$(nix develop .#wasm --command wasm32-wasi-cabal list-bin -v0 exe:parun \
+            --builddir=dist-wasm \
+            --enable-optimization \
+            --flags=pedantic \
+            --project-file=cabal.wasm.project)" artifact/parun.wasm
+      - if: steps.cache.outputs.cache-hit != 'true'
+        uses: actions/cache/save@v6
+        with:
+          path: dist-wasm
+          key: ${{ steps.cache.outputs.cache-primary-key }}
+      - run: tar --create --file artifact.tar --verbose artifact
+      - uses: actions/upload-artifact@v7
+        with:
+          name: parun-${{ github.sha }}-wasm
+          path: artifact.tar
   rules:
     name: Rules
     runs-on: ubuntu-latest
