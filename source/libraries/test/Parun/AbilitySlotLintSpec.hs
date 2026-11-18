@@ -75,6 +75,7 @@ import qualified Parun.Types.CardName as CardName
 import qualified Parun.Types.CardType as CardType
 import qualified Parun.Types.CastFromZone as CastFromZone
 import qualified Parun.Types.CastingPermission as CastingPermission
+import qualified Parun.Types.ChoosePlayer as ChoosePlayer
 import qualified Parun.Types.Chooser as Chooser
 import qualified Parun.Types.ChosenCardInGraveyard as ChosenCardInGraveyard
 import qualified Parun.Types.Clause as Clause
@@ -104,6 +105,7 @@ import qualified Parun.Types.EventShape as EventShape
 import qualified Parun.Types.ExiledPile as ExiledPile
 import qualified Parun.Types.Face as Face
 import qualified Parun.Types.Filter as Filter.Type
+import qualified Parun.Types.ForEach as ForEach
 import qualified Parun.Types.Gift as Gift
 import qualified Parun.Types.GrantPlayFromExile as GrantPlayFromExile
 import qualified Parun.Types.GrantZone as GrantZone
@@ -1429,6 +1431,22 @@ abilitySlotLintSpec s registry corpus = Spec.describe s "Lint" $ do
       s
       (not (triggeredAbilityOffends (modalTrigger (TriggerCondition.Enters EntersTrigger.defaultValue) [drawsSources (PlayerRef.Relative PlayerRelation.Opponent)])))
       "where a recipient naming no slot at all is accepted"
+  -- The same equality on ChoosePlayer's excluded players (Dack Fayden, Helping
+  -- Hand's "choose a different opponent"): read nowhere else, so a misspelt
+  -- slot, or the loop's reserved one outside its ForEach, would exclude nobody.
+  Spec.it s "the lint itself catches a dangling slot of a chosen player's exclusion" $ do
+    dack <- S.combinedFace <$> S.printingOf s registry "Dack Fayden, Helping Hand"
+    let misspelt = SlotName.MkSlotName (Text.pack "thoseChosenForOther")
+        respell effect = case effect of
+          Effect.ChoosePlayer choice -> Effect.ChoosePlayer choice {ChoosePlayer.excluding = Just misspelt}
+          Effect.ForEach loop -> Effect.ForEach loop {ForEach.body = fmap respell (ForEach.body loop)}
+          _ -> effect
+        respellMode mode = mode {Mode.clauses = fmap (\clause -> clause {Clause.effects = fmap respell (Clause.effects clause)}) (Mode.clauses mode)}
+        respellAbility ability = ability {TriggeredAbility.modal = (TriggeredAbility.modal ability) {Modal.modes = fmap respellMode (Modal.modes (TriggeredAbility.modal ability))}}
+        unlooped = Effect.ChoosePlayer (ChoosePlayer.MkChoosePlayer (PlayerScope.Related PlayerRelation.Opponent) (SlotName.MkSlotName (Text.pack "opponent")) (Just Binding.chosenForOthers))
+    Spec.assertBool s (not (any triggeredAbilityOffends (Face.triggeredAbilities dack))) "Dack Fayden, Helping Hand's exclusion inside its ForEach is accepted"
+    Spec.assertBool s (any (triggeredAbilityOffends . respellAbility) (Face.triggeredAbilities dack)) "a misspelt exclusion slot is rejected"
+    Spec.assertBool s (triggeredAbilityOffends (modalTrigger (TriggerCondition.Enters EntersTrigger.defaultValue) [lintMode [unlooped] []])) "the loop's reserved slot outside a ForEach is rejected"
   -- The same equality one field further out: CR 118.12's gate multiplier
   -- (Parun.Types.PayGate.perEach), which is a Quantity a clause carries outside
   -- its effects, so neither Resolve.slotsOf nor the payer field reaches it. A
