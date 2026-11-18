@@ -299,11 +299,16 @@ putCounters resolving source controller legal chosen (PutCounters.MkPutCounters 
       then pure []
       else Event.simultaneously . fmap concat . Monad.forM placements $ \(target, n) -> do
         settled <- Event.putCountersWithin totalAtMost cause target kind n
-        pure [target | settled > 0]
+        pure [(target, settled) | settled > 0]
   -- PutCounters.slot: the recipients the funnel settled at least one counter
-  -- on, so a placement CR 614 or CR 101.2 brought to none is not among them.
+  -- on, so a placement CR 614 or CR 101.2 brought to none is not among them,
+  -- and beside them the counters it settled in all, the Counter arm's shape:
+  -- Guinan, Ancient Advisor's "two or more +1/+1 counters ... this way" counts
+  -- what a Hardened Scales added (CR 614.16). On `resolving` alone, never the
+  -- source, so a later activation that places nothing reads no stale total.
   Monad.forM_ mSlot $ \slot ->
-    Monad.unless (null placed) (State.modify' (Common.bindObjectsSlot resolving slot (Seq.fromList placed)))
+    Monad.unless (null placed) . State.modify' . Common.overHolderBindings resolving . Map.insert slot $
+      (Binding.toObjects (Seq.fromList (fmap fst placed))) {Binding.Type.amount = Just (sum (fmap snd placed))}
 
 -- CR 608.2d: the chooser picks which of the objects the ref names get a
 -- part and how much, each chosen one at least one, the whole amount handed
