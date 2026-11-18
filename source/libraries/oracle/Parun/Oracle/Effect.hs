@@ -403,13 +403,16 @@ clause context c
       -- Free: "Then if" after the instructions before it (Tend the Sprigs).
       let thenIf = [(Text.pack "Then if " <> words' <> Text.pack ", " <> opened, ms) | Text.null word]
       -- Free: "unless" and the complement trail the instructions instead (The
-      -- Spot's Portal's "You lose 2 life unless you control a Villain").
+      -- Spot's Portal's "You lose 2 life unless you control a Villain"), and
+      -- "they control" where the instructions close on that player (Furnace
+      -- Punisher).
       let unlessed =
-            [ (Text.dropEnd 1 body <> Text.pack " unless " <> complement <> Text.pack ".", ms)
+            [ (Text.dropEnd 1 body <> Text.pack " unless " <> complement' <> Text.pack ".", ms)
             | Text.null word,
               Text.isSuffixOf (Text.pack ".") body,
               held <- foldMap pure (Trigger.unless gate),
-              (complement, False) <- condition context held
+              (complement, False) <- condition context held,
+              complement' <- complement : [Text.pack "they control " <> rest | Text.isSuffixOf (Text.pack " that player.") body, rest <- Maybe.maybeToList (Text.stripPrefix (Text.pack "that player controls ") complement)]
             ]
       (word <> Text.pack "If " <> words' <> Text.pack ", " <> opened, ms) : trailed <> thenIf <> unlessed
   | otherwise = do
