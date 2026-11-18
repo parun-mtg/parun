@@ -309,6 +309,13 @@ viewOfCardLapsed lapsed face =
           -- printed FACE with no object behind it, so the rule's own answer is
           -- False rather than an unknown.
           Filter.transformed = False,
+          -- CR 712.1 asks about the CARD, and this builder holds one printed face
+          -- of it: each reader holding the card overlays the answer
+          -- (referenceAdmits below).
+          --
+          -- Unprinted: a card asking it of a token lot (Parun.Engine.Replacement)
+          -- or of CR 612.7's reference faces would need the card here.
+          Filter.doubleFaced = False,
           -- CR 122.1a-b: a counter can sit on a card off the battlefield, but this
           -- builder describes a printed FACE, so there is nothing to be on.
           Filter.counters = Map.empty,
@@ -438,7 +445,7 @@ referenceAdmits :: Teams.Teams -> Maybe Integer -> Filter.Type.Filter Keyword ->
 referenceAdmits teams amount predicate card =
   Filter.matches
     ((Filter.contextFor teams Nothing Nothing) {Filter.slotAmount = amount})
-    (viewOfCard (Game.resolveFaceFor Nothing card))
+    ((viewOfCard (Game.resolveFaceFor Nothing card)) {Filter.doubleFaced = Card.isDoubleFaced card})
     predicate
 
 -- CR 208.1's PRINTED power box, for a card off the battlefield. Nothing for a
@@ -871,7 +878,7 @@ viewOfCharacteristics peers oid pc controller counters gs =
       --
       -- NOT scoped to the battlefield: CR 708.12's read is of a card, which an
       -- object in any zone either has or has not.
-      Filter.representedCard = fmap viewOfCard (Game.faceUpFaceOf oid gs),
+      Filter.representedCard = fmap (\face -> (viewOfCard face) {Filter.doubleFaced = Game.isDoubleFacedCard oid gs}) (Game.faceUpFaceOf oid gs),
       -- CR 406.3's rider, and the only site that fills the field. NO zone
       -- conjunct beside it, unlike the line above: Object.exiledFaceDown is
       -- per-incarnation state that only the move into exile writes, and CR 400.7
@@ -910,6 +917,9 @@ viewOfCharacteristics peers oid pc controller counters gs =
       -- wording, and the object it excludes -- a double-faced spell on the stack
       -- with its back face up (CR 712.8a) -- is reachable, so the conjunct
       -- stays.
+      -- CR 712.1, read off Object.source for `token` above's reason. False for
+      -- an id naming nothing; Count.lastKnownView answers over it.
+      Filter.doubleFaced = Game.isDoubleFacedCard oid gs,
       Filter.transformed =
         Set.member oid (GameState.battlefield gs)
           && not (Game.isFrontFaceUp oid gs)

@@ -645,6 +645,9 @@ data Filter keyword
     -- component under a merged permanent, so the merged half is a regression
     -- fence rather than a proof.
     Transformed
+  | -- | CR 712.1: the candidate is represented by a double-faced card or token
+    -- (Overgrown Pest's "a land or double-faced card").
+    IsDoubleFaced
   | -- | CR 701.54e: the candidate "is your Ring-bearer", asked of the Context's
     -- perspective (CR 109.5). ONE of the rule's three conjuncts -- "on the
     -- battlefield under your control" is spelled by the surrounding set.

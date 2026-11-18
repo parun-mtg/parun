@@ -4730,6 +4730,9 @@ filterReads f = case f of
   -- Reads nothing: CR 712.6c/e make which face is up the thing characteristics
   -- are read OFF rather than one of them, so no Modification writes Object.face.
   Filter.Type.Transformed -> Set.empty
+  -- Reads nothing, IsToken's reason: what represents an object is no
+  -- characteristic (CR 109.3).
+  Filter.Type.IsDoubleFaced -> Set.empty
   -- CR 109.3 / 613.1f: the aspect GainAbility, LoseNamedAbility and
   -- LoseAllAbilities write, Aspect having no finer grain than "the abilities".
   -- Parun.ProjectionSpec's "CR 613.8a a granted activated ability puts the
@@ -5000,6 +5003,7 @@ filterReadsPeers f = case f of
   Filter.Type.IsExiledFaceDown -> False
   Filter.Type.IsWarped -> False
   Filter.Type.Transformed -> False
+  Filter.Type.IsDoubleFaced -> False
   Filter.Type.IsInZone _ -> False
   Filter.Type.WasCastFrom _ -> False
   Filter.Type.TagWasSpent _ -> False

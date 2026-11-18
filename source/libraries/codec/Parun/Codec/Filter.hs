@@ -210,6 +210,7 @@ codec keywordCodec =
       Arm.nullary "IsExiledFaceDown" Filter.IsExiledFaceDown,
       Arm.nullary "IsWarped" Filter.IsWarped,
       Arm.nullary "Transformed" Filter.Transformed,
+      Arm.nullary "IsDoubleFaced" Filter.IsDoubleFaced,
       Arm.nullary "IsRingBearer" Filter.IsRingBearer,
       Arm.nullary "IsPaired" Filter.IsPaired,
       Arm.nullary "IsPairedWithSource" Filter.IsPairedWithSource,
@@ -446,6 +447,7 @@ tagOf x = case x of
   Filter.IsExiledFaceDown {} -> "IsExiledFaceDown"
   Filter.IsWarped {} -> "IsWarped"
   Filter.Transformed {} -> "Transformed"
+  Filter.IsDoubleFaced {} -> "IsDoubleFaced"
   Filter.IsRingBearer {} -> "IsRingBearer"
   Filter.IsPaired {} -> "IsPaired"
   Filter.IsPairedWithSource {} -> "IsPairedWithSource"

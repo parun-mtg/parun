@@ -24,6 +24,7 @@ import qualified Parun.Engine.Assimilate as Assimilate
 import qualified Parun.Engine.Attraction as Attraction
 import qualified Parun.Engine.Binding as Binding
 import qualified Parun.Engine.Blight as Blight
+import qualified Parun.Engine.Card as Card
 import qualified Parun.Engine.Cloak as Cloak
 import qualified Parun.Engine.Combat as Combat
 import qualified Parun.Engine.Contraption as Contraption
@@ -445,7 +446,7 @@ chooseCardName resolving source controller legal (ChooseCardName.MkChooseCardNam
     members <- Common.fromAmongMembers legal resolving legal slot
     g <- State.get
     let context = effectContext g resolving controller source legal (slotBindings resolving g)
-        nameable card = [Face.name face | face <- NonEmpty.toList (Card.Type.faces card), Filter.matches context (Projection.viewOfCard face) restriction]
+        nameable card = [Face.name face | face <- NonEmpty.toList (Card.Type.faces card), Filter.matches context ((Projection.viewOfCard face) {Filter.doubleFaced = Card.isDoubleFaced card}) restriction]
     pure (Set.toList (Set.fromList (foldMap nameable (Maybe.mapMaybe (`Game.cardOf` g) (Common.stillPresent g members)))))
   -- CR 101.4b: each chooser is told the names the choosers before them chose.
   -- Conundrum Sphinx drives three choosers through this arm, but no test reads

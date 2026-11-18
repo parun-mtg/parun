@@ -3043,6 +3043,17 @@ isToken oid gs = maybe False (sourceIsToken . Object.source) (lookupObject oid g
 isCardObject :: ObjectId -> GameState -> Bool
 isCardObject oid gs = maybe False (sourceIsCard . Object.source) (lookupObject oid gs)
 
+-- CR 712.1: is this object represented by a double-faced card or token (CR
+-- 111.10i, 707.8a)? Read off the card behind Object.source (cardOf), never the
+-- projection: CR 701.27d's first Example leaves a Clone copying a double-faced
+-- permanent one-faced. False for an unknown id.
+--
+-- Implementation-defined: a merged permanent answers by its topmost component,
+-- cardOf's reading (CR 731.2a), and a copy of a spell or card by the printing
+-- it names, cardOfSource's.
+isDoubleFacedCard :: ObjectId -> GameState -> Bool
+isDoubleFacedCard oid gs = maybe False Card.isDoubleFaced (cardOf oid gs)
+
 -- CR 108.2: the cards among a player's zone's members, where "card" is what the
 -- text says: a token awaiting CR 704.5d sits in the zone without being one.
 -- data/scenarios' deadly-brew-offers-no-token-a-thief-sacrificed,

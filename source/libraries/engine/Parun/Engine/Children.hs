@@ -697,6 +697,7 @@ filterChildren children predicate = case predicate of
   Filter.IsExiledFaceDown -> pure predicate
   Filter.IsWarped -> pure predicate
   Filter.Transformed -> pure predicate
+  Filter.IsDoubleFaced -> pure predicate
   Filter.IsRingBearer -> pure predicate
   Filter.IsPaired -> pure predicate
   Filter.IsPairedWithSource -> pure predicate

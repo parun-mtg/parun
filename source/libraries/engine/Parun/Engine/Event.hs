@@ -1866,18 +1866,19 @@ eligible predicate source pid gs =
       -- a wish that compares against it (Synthetic Wishful Djinn's "power less
       -- than this creature's"), with every other source-derived field.
       context = Projection.sourceContext gs (Just pid) source
-      matchesFace face = Filter.matches context (Projection.viewOfCard face) predicate
+      matchesFace doubleFaced face = Filter.matches context ((Projection.viewOfCard face) {Filter.doubleFaced = doubleFaced}) predicate
       admits printingId = case Game.cardOfPrinting printingId gs of
         Nothing -> False
-        Just card -> let face = Game.resolveFaceFor Nothing card in not (Conspiracy.isConspiracyFace face) && not (barred card) && matchesFace face
+        Just card -> let face = Game.resolveFaceFor Nothing card in not (Conspiracy.isConspiracyFace face) && not (barred card) && matchesFace (Card.isDoubleFaced card) face
       barred card = Game.isNontraditional card || Ante.barred (MatchScope.settings (GameState.match gs)) (Game.resolveFaceFor Nothing card)
       -- CR 108.5 and 407.3 whatever the facing: a face-down card is still what it is.
       barredPrinting printingId = maybe False barred (Game.cardOfPrinting printingId gs)
       -- Parun.Engine.Card.faceDownFace is the same substitution
       -- Parun.Engine.Game.faceOfObject performs for an object in this game, so
-      -- the two frames cannot disagree about what a face-down object is.
+      -- the two frames cannot disagree about what a face-down object is. Hidden
+      -- (CR 712.14), it answers as one-faced.
       admitsOutside entry = case OutsideObject.facing entry of
-        Facing.FaceDown state -> not (barredPrinting (OutsideObject.printing entry)) && matchesFace (Card.faceDownFace (FaceDownState.listed state))
+        Facing.FaceDown state -> not (barredPrinting (OutsideObject.printing entry)) && matchesFace False (Card.faceDownFace (FaceDownState.listed state))
         Facing.FaceUp -> admits (OutsideObject.printing entry)
       fromPool = fmap (\(printingId, _) -> OutsideCard.InPool printingId) (filter (\(printingId, n) -> n > 0 && admits printingId) (Map.toAscList pool))
       -- CR 108.3b scopes the reach to the acting player's OWN cards outside the
