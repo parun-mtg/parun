@@ -6,6 +6,7 @@ import qualified Data.Text as Text
 import qualified Parun.Codec.DrawRewrite as DrawRewrite
 import qualified Parun.JsonCodec.Common as Common
 import qualified Parun.Spec as Spec
+import qualified Parun.Types.CardSelection as CardSelection
 import qualified Parun.Types.DrawRewrite as DrawRewrite
 import qualified Parun.Types.Filter as Filter
 import qualified Parun.Types.FromOutsideTheGame as FromOutsideTheGame
@@ -73,8 +74,15 @@ spec s = Spec.describe s "Parun.Codec.DrawRewrite" $ do
     Common.assertCodec
       s
       (DrawRewrite.codec Common.natural)
-      DrawRewrite.RevealUntilChosenKind
-      " {\"type\":\"RevealUntilChosenKind\"} "
+      (DrawRewrite.RevealUntilChosenKind CardSelection.ByChoice)
+      " {\"type\":\"RevealUntilChosenKind\",\"value\":\"ByChoice\"} "
+  -- CR 614.1a / 401.4: Pavel Chekov, First Posting.
+  Spec.it s "RevealUntilChosenKind AtRandom" $
+    Common.assertCodec
+      s
+      (DrawRewrite.codec Common.natural)
+      (DrawRewrite.RevealUntilChosenKind CardSelection.AtRandom)
+      " {\"type\":\"RevealUntilChosenKind\",\"value\":\"AtRandom\"} "
   -- CR 614.1a / 614.5: Alhammarret's Archive.
   Spec.it s "DrawInstead" $
     Common.assertCodec

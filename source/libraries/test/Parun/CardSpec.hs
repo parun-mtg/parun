@@ -4498,7 +4498,7 @@ replacementEffectFilters replacementEffect = case replacementEffect of
   ReplacementEffect.DrawR (DrawR.MkDrawR _ _ DrawRewrite.YouDraw) -> []
   ReplacementEffect.DrawR (DrawR.MkDrawR _ _ (DrawRewrite.OthersMayPayLife _)) -> []
   ReplacementEffect.DrawR (DrawR.MkDrawR _ _ DrawRewrite.FromGraveyardOrLose) -> []
-  ReplacementEffect.DrawR (DrawR.MkDrawR _ _ DrawRewrite.RevealUntilChosenKind) -> []
+  ReplacementEffect.DrawR (DrawR.MkDrawR _ _ (DrawRewrite.RevealUntilChosenKind _)) -> []
   ReplacementEffect.DrawR (DrawR.MkDrawR _ _ (DrawRewrite.DrawInstead _)) -> []
   ReplacementEffect.DrawR (DrawR.MkDrawR _ _ DrawRewrite.DiscardThenDrawOrMill) -> []
   ReplacementEffect.DrawR (DrawR.MkDrawR _ _ (DrawRewrite.KeepOneOfTopThenDraw quantity)) -> quantityFilters quantity

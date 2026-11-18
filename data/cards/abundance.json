@@ -29,7 +29,8 @@
             "type": "DrawR",
             "value": {
               "rewrite": {
-                "type": "RevealUntilChosenKind"
+                "type": "RevealUntilChosenKind",
+                "value": "ByChoice"
               },
               "whose": {
                 "type": "You"
