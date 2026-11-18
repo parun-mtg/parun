@@ -636,6 +636,7 @@ filterChildren children predicate = case predicate of
   -- ONE: the one player the slot names, HeldByBound's reading.
   Filter.OfBoundPlayer name -> fmap Filter.OfBoundPlayer (slot children SlotArity.One name)
   Filter.IsPlayer _ -> pure predicate
+  Filter.IsPlayerInRole _ -> pure predicate
   -- ONE: the controller of the one object the slot names (CR 608.2h), read
   -- through Parun.Engine.Filter.slotOneObject.
   Filter.IsControllerOfBound name -> fmap Filter.IsControllerOfBound (slot children SlotArity.One name)

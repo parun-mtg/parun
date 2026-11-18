@@ -289,6 +289,8 @@ data Filter keyword
     -- -- "target opponent". Separate from HeldBy, which asks who holds
     -- an object candidate rather than who the candidate is (CR 109.1, CR 108.4).
     IsPlayer PlayerRelation.PlayerRelation
+  | -- | CR 102.1 / 115.1: the candidate is a PLAYER holding this role (Cmdr. Troi's "target opponent whose turn it is").
+    IsPlayerInRole TurnRole.TurnRole
   | -- | The candidate PLAYER is the controller of the object a slot names --
     -- Spikeshell Harrier's "each OTHER player". Answered by rewriting at
     -- Parun.Engine.Count.bakePerspective, and vacuously False outside a

@@ -2059,11 +2059,12 @@ data Context = MkContext
 -- alone, Parun.Engine.Target.slotContext and Parun.Engine.Resolve.Slots.effectContext
 -- being the only fillers.
 --
--- CR 102.1's active-player role (ControlledByRole Active, Nettling Imp) reads the
--- empty `activePlayers` here and matches nothing. What keeps a card out of that
--- position is construction rather than a lint: every engine Context built over a
--- game comes from contextIn below, which fills it, leaving only
--- Parun.Engine.Projection.View's slot-amount view, which judges no controller.
+-- CR 102.1's active-player role (ControlledByRole Active, Nettling Imp;
+-- IsPlayerInRole Active, Cmdr. Troi) reads the empty `activePlayers` here and
+-- matches nothing. What keeps a card out of that position is construction rather
+-- than a lint: every engine Context built over a game comes from contextIn below,
+-- which fills it, leaving only Parun.Engine.Projection.View's slot-amount view,
+-- which judges no controller and no player.
 -- An atom added
 -- here owes both halves of the same pair: which way its unfilled read answers,
 -- and what holds a card to the positions that fill it.
@@ -2525,13 +2526,7 @@ matches context view predicate = case predicate of
   -- (docs/decisions.md, "Which active player a targeting ability names under
   -- shared team turns").
   Filter.ControlledByRole role -> case controller view of
-    Just c ->
-      List.elem
-        c
-        ( case role of
-            TurnRole.Active -> activePlayers context
-            TurnRole.Defending -> defendingPlayers context
-        )
+    Just c -> List.elem c (roleHolders context role)
     Nothing -> False
   -- CR 603.2's "that player controls" and "target player owns". `bakeBound`
   -- below replaces the atom before either of CR 115's moments judges the slot; a
@@ -2749,6 +2744,15 @@ matches context view predicate = case predicate of
   Filter.IsPlayer relation -> case (playerIdentity view, perspective context) of
     (Just candidate, Just you) -> PlayerRelation.holds (teams context) relation you candidate
     _ -> False
+  -- ControlledByRole's two readings, asked of the candidate PLAYER rather than
+  -- an object's controller. Vacuously False for an object candidate.
+  --
+  -- Unprinted: "target defending player", which only some positions' Contexts
+  -- would fill; Parun.FilterPositionLintSpec's "CR 508.5 no card writes
+  -- IsPlayerInRole Defending" keeps it out of card data.
+  Filter.IsPlayerInRole role -> case playerIdentity view of
+    Just candidate -> List.elem candidate (roleHolders context role)
+    Nothing -> False
   -- The controller of the object a slot names, and False WHEREVER IT IS REACHED,
   -- for Controls' reason below: Parun.Engine.Count.bakePerspective
   -- answers it against the board, and this module holds none. An atom that
@@ -3163,6 +3167,14 @@ matches context view predicate = case predicate of
   Filter.Not f -> not (matches context view f)
   Filter.Unwritten f -> matches context view f
 
+-- | The players the Context hands a role: its active players (CR 102.1 / 805.4a)
+-- or its defending players (CR 506.2 / 508.5). The one reading
+-- ControlledByRole and IsPlayerInRole share.
+roleHolders :: Context -> TurnRole.TurnRole -> [PlayerId.PlayerId]
+roleHolders context role = case role of
+  TurnRole.Active -> activePlayers context
+  TurnRole.Defending -> defendingPlayers context
+
 -- Parun.Types.ActivationCriteria asked of an ability's facts. Each is compared
 -- and never inspected further. The one reading of every criterion, shared by
 -- the ability on the stack (IsActivatedAbility), a past activation
@@ -3530,6 +3542,7 @@ manaValueThresholds predicate = case predicate of
   Filter.OfSpecificPlayer _ -> []
   Filter.OfBoundPlayer _ -> []
   Filter.IsPlayer _ -> []
+  Filter.IsPlayerInRole _ -> []
   Filter.IsControllerOfBound _ -> []
   -- No threshold: the literal bounds a COUNT OF CARDS in a zone, not a mana
   -- value, so CR 601.3a's sample has nothing to learn from it.
@@ -3728,6 +3741,7 @@ statesAQuality predicate = case predicate of
   Filter.OfSpecificPlayer _ -> True
   Filter.OfBoundPlayer _ -> True
   Filter.IsPlayer _ -> True
+  Filter.IsPlayerInRole _ -> True
   Filter.IsControllerOfBound _ -> True
   Filter.CardsInZoneAtLeast _ _ -> True
   Filter.HoldsBoundAtLeast {} -> True
@@ -3926,6 +3940,7 @@ readsSourceValues predicate = case predicate of
   Filter.OfSpecificPlayer _ -> False
   Filter.OfBoundPlayer _ -> False
   Filter.IsPlayer _ -> False
+  Filter.IsPlayerInRole _ -> False
   Filter.IsControllerOfBound _ -> False
   Filter.CardsInZoneAtLeast _ _ -> False
   Filter.HoldsBoundAtLeast _ _ _ _ f -> readsSourceValues f
@@ -4066,6 +4081,7 @@ talliesWhatHappened predicate = case predicate of
   Filter.OfSpecificPlayer {} -> False
   Filter.OfBoundPlayer {} -> False
   Filter.IsPlayer {} -> False
+  Filter.IsPlayerInRole {} -> False
   Filter.IsControllerOfBound {} -> False
   Filter.CardsInZoneAtLeast {} -> False
   Filter.HoldsBoundAtLeast {} -> False

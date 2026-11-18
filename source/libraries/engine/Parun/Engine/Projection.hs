@@ -4562,6 +4562,7 @@ filterReads f = case f of
   Filter.Type.OfSpecificPlayer _ -> Set.singleton Controller
   Filter.Type.OfBoundPlayer _ -> Set.singleton Controller
   Filter.Type.IsPlayer _ -> Set.empty
+  Filter.Type.IsPlayerInRole _ -> Set.empty
   -- Reads a CONTROLLER rather than a characteristic (CR 109.3 lists none).
   Filter.Type.IsControllerOfBound _ -> Set.empty
   -- Over-declared deliberately, as CanHostSubject is: the atom reads every
@@ -4947,6 +4948,7 @@ filterReadsPeers f = case f of
   Filter.Type.OfSpecificPlayer _ -> False
   Filter.Type.OfBoundPlayer _ -> False
   Filter.Type.IsPlayer _ -> False
+  Filter.Type.IsPlayerInRole _ -> False
   Filter.Type.IsControllerOfBound _ -> False
   Filter.Type.CardsInZoneAtLeast _ _ -> False
   -- DESCENT for Controls' reason.
