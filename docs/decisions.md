@@ -221,6 +221,25 @@ Entries are ordered by the first rule each cites.
   `data/scenarios/wonder-man-hollywood-hero-and-a-spark-double-copy-let-his-power-up-activate-three-times.json`.
 - **Issue**: #6784.
 
+## Whether a Chain Veil grant adds to a twice-each-turn loyalty grant
+
+- **Question**: Kaito, Dancing Shadow's trigger lets Kaito's loyalty abilities
+  be activated "twice this turn rather than only once". If The Chain Veil's
+  last ability has also resolved that turn, may they be activated twice or
+  three times? Neither card's rulings say.
+- **Rules**: CR 606.3; CR of 2026-11-06.
+- **Decision**: Three times: each Chain Veil resolution adds one activation,
+  per its rulings, to whatever count the largest "twice rather than only
+  once" grant sets, which Kaito's ruling says does not stack with itself.
+- **Rejected**: Twice, the larger of the two counts: the Veil's rulings make
+  every resolution one more activation. Four, reading the Veil's "as though
+  none of its loyalty abilities have been activated" as forgetting the
+  activations made before it under Kaito's count: it makes the total depend
+  on the order of the two grants, as the Veil's own rulings' running count
+  does not.
+- **Site**: `Parun.Engine.Activatable.loyaltyOk`.
+- **Issue**: #8775.
+
 ## Which objects a cast trigger's "those creatures" names
 
 - **Question**: Storm, Windrider gives flying to "those creatures" a spell you

@@ -47,7 +47,9 @@
                               }
                             ]
                           },
-                          "relaxes": "Window"
+                          "relaxes": {
+                            "type": "Window"
+                          }
                         }
                       },
                       "players": {

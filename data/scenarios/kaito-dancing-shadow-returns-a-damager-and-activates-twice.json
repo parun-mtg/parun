@@ -76,7 +76,7 @@
     "step": "PrecombatMain"
   },
   "description": "CR 510.2 / 606.3 / 118.12: Kaito, Dancing Shadow's trigger returns one of the creatures that dealt bob combat damage, and so Kaito's loyalty abilities may be activated twice that turn",
-  "note": "Two attackers connect so the return is a choice; alice returns Hill Giant and keeps Grizzly Bears. The third activation is refused. Not implemented: a grant that does not stack across resolutions; the card grants only on the first resolution of the turn, stricter than printed when a declined first resolution is followed by a return (#8775).",
+  "note": "Two attackers connect so the return is a choice; alice returns Hill Giant and keeps Grizzly Bears. The third activation is refused.",
   "timeline": [
     {
       "do": {

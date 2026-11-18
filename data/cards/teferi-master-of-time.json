@@ -181,7 +181,9 @@
               "permanents": {
                 "type": "IsSource"
               },
-              "relaxes": "Window"
+              "relaxes": {
+                "type": "Window"
+              }
             }
           },
           "scope": {

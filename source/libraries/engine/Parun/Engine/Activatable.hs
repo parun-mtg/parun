@@ -33,6 +33,7 @@ import qualified Parun.Engine.Target as Target
 import qualified Parun.Engine.Turn as Turn
 import qualified Parun.Engine.Vanguard as Vanguard
 import qualified Parun.Extra.Integer as Integer
+import qualified Parun.Extra.Natural as Natural
 import qualified Parun.Types.AbilityFacts as AbilityFacts
 import qualified Parun.Types.AbilityKind as AbilityKind
 import qualified Parun.Types.AbilityName as AbilityName
@@ -396,20 +397,25 @@ activationSourcesGiven grants pcs pid gs =
 -- An effect letting the player activate one "as though none of its loyalty
 -- abilities have been activated this turn" (The Chain Veil) is one more
 -- activation per grant, each resolution counting, per the Veil's rulings; the
--- window stands. The grant is its holder's: it ignores every earlier
--- activation, whoever made it, and only its holder's own activations beyond the
--- turn's first spend it (graceUsed). data/scenarios/the-chain-veil proves the
--- count, and its each-players-grant-is-spent-by-their-own-activations scenario
--- the per-player spending.
+-- window stands. One letting them activate it "twice this turn rather than only
+-- once" (Kaito, Dancing Shadow) raises the turn's count to that many, the
+-- largest such grant winning, per Kaito's ruling that his grant is not
+-- additive; a Veil grant adds one on top of it (docs/decisions.md, "Whether a
+-- Chain Veil grant adds to a twice-each-turn loyalty grant"). The grant is its
+-- holder's: it ignores every earlier activation, whoever made it, and only its
+-- holder's own activations beyond the turn's first spend it (graceUsed).
+-- data/scenarios/the-chain-veil proves the count, and its
+-- each-players-grant-is-spent-by-their-own-activations scenario the per-player
+-- spending; data/scenarios' kaito-dancing-shadow cases prove the raised count.
 loyaltyOk :: PlayerId -> ObjectId -> ActivatedAbility.ActivatedAbility Card.Card (GrantedAbility.GrantedAbility Card.Card) -> GameState -> Bool
 loyaltyOk pid srcId ability gs =
   not (Loyalty.isLoyaltyCost (ActivatedAbility.cost ability))
-    || ( (Turn.sorcerySpeedWindow pid gs || PlayerEffect.loyaltyGrants LoyaltyClause.Window pid srcId gs > 0)
-           && ( not (loyaltyActivatedThisTurn srcId gs)
-                  || let grants = PlayerEffect.loyaltyGrants LoyaltyClause.OncePerTurn pid srcId gs
-                      in grants > 0 && graceUsed pid srcId gs < grants
-              )
-       )
+    || let grants = PlayerEffect.loyaltyGrants pid srcId gs
+           additional = length [() | LoyaltyClause.OncePerTurn <- grants]
+           times = maximum (1 : [n | LoyaltyClause.TimesEachTurn n <- grants])
+           grace = Natural.toIntSaturating times - 1 + additional
+        in (Turn.sorcerySpeedWindow pid gs || LoyaltyClause.Window `elem` grants)
+             && (not (loyaltyActivatedThisTurn srcId gs) || graceUsed pid srcId gs < grace)
 
 -- CR 602.5: ActivationRestriction.riderOk over the grants reaching this
 -- ability -- Leonin Shikari's reads CR 602.5d's clause as CR 602.5e's, Birgi's

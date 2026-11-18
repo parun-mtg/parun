@@ -317,7 +317,7 @@ spec s = Spec.describe s "Parun.Codec.PlayerEffect" $ do
       s
       PlayerEffect.codec
       (PlayerEffect.LoyaltyGrant (LoyaltyGrant.MkLoyaltyGrant LoyaltyClause.Window Filter.IsSource))
-      " {\"type\":\"LoyaltyGrant\",\"value\":{\"relaxes\":\"Window\",\"permanents\":{\"type\":\"IsSource\"}}} "
+      " {\"type\":\"LoyaltyGrant\",\"value\":{\"relaxes\":{\"type\":\"Window\"},\"permanents\":{\"type\":\"IsSource\"}}} "
   -- CR 602.2 / Piracy: "you may tap lands you don't control for mana".
   Spec.it s "MayTapForMana, Piracy's" $
     Common.assertCodec

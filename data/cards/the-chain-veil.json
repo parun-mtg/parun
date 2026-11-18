@@ -44,7 +44,9 @@
                                   }
                                 ]
                               },
-                              "relaxes": "OncePerTurn"
+                              "relaxes": {
+                                "type": "OncePerTurn"
+                              }
                             }
                           },
                           "players": {

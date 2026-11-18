@@ -298,26 +298,6 @@
                     }
                   },
                   {
-                    "condition": {
-                      "type": "Compares",
-                      "value": {
-                        "comparison": "Exactly",
-                        "measured": {
-                          "type": "AgainstSlot",
-                          "value": {
-                            "quantity": {
-                              "type": "TimesThisTurn",
-                              "value": "Resolved"
-                            },
-                            "slot": "thisAbility"
-                          }
-                        },
-                        "threshold": {
-                          "type": "Literal",
-                          "value": 1
-                        }
-                      }
-                    },
                     "effects": [
                       {
                         "type": "AffectPlayers",
@@ -331,7 +311,10 @@
                               "permanents": {
                                 "type": "IsSource"
                               },
-                              "relaxes": "OncePerTurn"
+                              "relaxes": {
+                                "type": "TimesEachTurn",
+                                "value": 2
+                              }
                             }
                           },
                           "players": {
