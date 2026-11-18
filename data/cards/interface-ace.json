@@ -36,8 +36,20 @@
                   "type": "UsingToughness"
                 },
                 "keywords": [
-                  "Crew",
-                  "Saddle"
+                  {
+                    "keyword": "Crew",
+                    "permanent": {
+                      "type": "HasSubtype",
+                      "value": "Vehicle"
+                    }
+                  },
+                  {
+                    "keyword": "Saddle",
+                    "permanent": {
+                      "type": "HasSubtype",
+                      "value": "Mount"
+                    }
+                  }
                 ]
               }
             }

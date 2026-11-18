@@ -992,7 +992,7 @@ applyModification textBoxOf viewOf src stamp gs oid unitTypes affected m pc =
         -- offsets add"), appended so Parun.Engine.Keyword.tapsCounted reads
         -- them in the timestamp order CR 613.11 applies them in.
         Modification.TapsCounting keywords count ->
-          pc {PC.tapCounts = Map.unionWith (<>) (PC.tapCounts pc) (Map.fromSet (const [count]) keywords)}
+          pc {PC.tapCounts = Map.unionWith (<>) (PC.tapCounts pc) (fmap (\permanent -> [(permanent, count)]) keywords)}
         -- Alchemy's "intensifies by N": an object with no starting intensity
         -- counts from 0.
         Modification.Intensify n ->

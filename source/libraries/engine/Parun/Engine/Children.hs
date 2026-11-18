@@ -3775,7 +3775,7 @@ modificationChildren c modification = case modification of
   Modification.AssignCombatDamage _ -> pure modification
   Modification.AssignCombatDamageAs {} -> pure modification
   Modification.GrantsController _ -> pure modification
-  Modification.TapsCounting {} -> pure modification
+  Modification.TapsCounting keywords count -> (`Modification.TapsCounting` count) <$> traverse (modificationFilter c) keywords
   Modification.LoyaltyIsToughness -> pure modification
   Modification.Intensify quantity -> Modification.Intensify <$> modificationQuantity c quantity
 

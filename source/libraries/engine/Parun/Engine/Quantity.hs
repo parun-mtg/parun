@@ -1391,7 +1391,8 @@ evaluateAgainst viewOf context gs announcedOn mOid mView quantity =
         -- never handed.
         --
         -- Without the substitution, the tapped creature's own TapsCounting
-        -- grants for station raise the power through
+        -- grants for station, where the ability's source matches the grant's
+        -- filter (Parun.Engine.Keyword.tapCountsOn), raise the power through
         -- Parun.Engine.Keyword.tapsCounted, crew's reader (Sulu, Heroic
         -- Helmsman). With it, they go unread (docs/decisions.md, "Whether a
         -- station power multiplier raises a toughness stationer").
@@ -1400,7 +1401,8 @@ evaluateAgainst viewOf context gs announcedOn mOid mView quantity =
               greater = case (mView >>= Filter.toughness, mView >>= Filter.power) of
                 (Just t, Just p) -> t > p
                 _ -> False
-              counts = foldMap (Map.findWithDefault [] TapKeyword.Station . Filter.tapCounts) mView
+              paying permanent = maybe False (\station -> Filter.matches context station permanent) (Filter.source context >>= viewOf)
+              counts = foldMap (Keyword.tapCountsOn paying TapKeyword.Station . Filter.tapCounts) mView
            in if substitutes && greater
                 then mView >>= Filter.toughness
                 else Keyword.tapsCounted counts (mView >>= Filter.power) (mView >>= Filter.toughness)

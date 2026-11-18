@@ -980,12 +980,13 @@ data View = MkView
     -- Empty on a player view: CR 109.1 gives a player no controller and so no
     -- permanent whose Modification this could be.
     controllerGrants :: Set.Set ControllerGrant.ControllerGrant,
-    -- CR 613.11: how this candidate counts toward each keyword that taps it.
+    -- CR 613.11: how this candidate counts toward each keyword that taps it,
+    -- on a permanent matching the paired filter.
     -- The projected mirror of ProjectedCharacteristics.tapCounts, empty for a
     -- printed face and a player. No Filter atom consults it: it is here for
     -- Parun.Engine.Quantity's StationMeasure arm, which reads the tapped
     -- creature through a View.
-    tapCounts :: Map.Map TapKeyword.TapKeyword [TapCount.TapCount],
+    tapCounts :: Map.Map TapKeyword.TapKeyword [(Filter.Filter Keyword.Type.Keyword, TapCount.TapCount)],
     -- CR 700.5a: how much this candidate's player abilities raise its
     -- controller's devotion (Parun.Engine.Devotion.bonusOf). Read off the
     -- COPIABLE list, which copy and text-changing effects write and no later

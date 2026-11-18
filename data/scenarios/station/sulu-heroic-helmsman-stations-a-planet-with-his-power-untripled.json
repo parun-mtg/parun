@@ -1,0 +1,29 @@
+{
+  "description": "Sulu, Heroic Helmsman stations a Planet with his power untripled",
+  "note": "CR 702.184a over Sulu's grant, which names Spacecraft: tapped to station Evendo, Waking Haven, a Land with no Spacecraft subtype, the 2/2 puts 2 charge counters on it, not 6.",
+  "board": {
+    "seats": [
+      {
+        "name": "alice",
+        "battlefield": [
+          { "card": "Evendo, Waking Haven", "label": "evendo", "ready": true },
+          { "card": "Sulu, Heroic Helmsman", "label": "sulu", "ready": true },
+          { "card": "Grizzly Bears", "label": "bears", "ready": true }
+        ]
+      },
+      { "name": "bob" }
+    ],
+    "active": "alice",
+    "step": "PrecombatMain"
+  },
+  "timeline": [
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": { "Answer": { "prompt": "ChooseTaps", "with": ["$sulu"] } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": { "Activate": { "object": "$evendo", "ability": 1 } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass" }
+  ],
+  "final": [
+    { "Counters": { "object": "$evendo", "kind": { "type": "Named", "value": "charge" }, "count": 2 } },
+    { "Tapped": { "object": "$sulu", "tapped": true } },
+    { "Tapped": { "object": "$bears", "tapped": false } }
+  ]
+}

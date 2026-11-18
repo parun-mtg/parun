@@ -1,5 +1,6 @@
 module Parun.Types.Modification where
 
+import qualified Data.Map.Strict as Map
 import qualified Data.Set as Set
 import qualified Parun.Types.AbilityName as AbilityName
 import qualified Parun.Types.CardAbilities as CardAbilities
@@ -473,9 +474,10 @@ data Modification ability
     -- player has the grant (Tapestry Warden, Gomif, Fast Racer). Self-only, like
     -- DestructionR: a fact about the controller, not a set of affected permanents.
     GrantsController ControllerGrant.ControllerGrant
-  | -- | CR 613.11: this creature counts toward the named keywords that tap it
-    -- (CR 702.122a, 702.171a, 702.184a) as the TapCount says.
-    TapsCounting (Set.Set TapKeyword.TapKeyword) TapCount.TapCount
+  | -- | CR 613.11: this creature counts toward each named keyword that taps it
+    -- (CR 702.122a, 702.171a, 702.184a), on a permanent matching that keyword's
+    -- filter, as the TapCount says.
+    TapsCounting (Map.Map TapKeyword.TapKeyword (Filter.Filter Keyword.Keyword)) TapCount.TapCount
   | -- | Alchemy's "intensifies by N" (Static Discharge): add N to the object's
     -- intensity, which no CR rule names.
     Intensify Quantity.Quantity

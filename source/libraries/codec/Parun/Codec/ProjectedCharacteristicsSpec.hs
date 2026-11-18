@@ -33,6 +33,7 @@ import qualified Parun.Types.CostDirection as CostDirection
 import qualified Parun.Types.CostReduction as CostReduction
 import qualified Parun.Types.Counterability as Counterability
 import qualified Parun.Types.Face as Face.Type
+import qualified Parun.Types.Filter as Filter
 import qualified Parun.Types.GrantedAbility as GrantedAbility
 import qualified Parun.Types.Keyword as Keyword
 import qualified Parun.Types.KeywordDesignator as KeywordDesignator
@@ -124,7 +125,7 @@ testCharacteristics =
       PC.combatDamageAmount = Just CombatDamageAmount.EqualToToughness,
       PC.combatDamageOptions = Map.singleton CombatDamageOption.ToDefendingCreature CombatDamageObligation.Optional,
       PC.controllerGrants = Set.singleton ControllerGrant.SpeedBeyondFour,
-      PC.tapCounts = Map.fromList [(TapKeyword.Crew, [TapCount.GreaterBy 2, TapCount.Multiplied 3]), (TapKeyword.Station, [TapCount.UsingToughness])],
+      PC.tapCounts = Map.fromList [(TapKeyword.Crew, [(Filter.HasSubtype Subtype.Vehicle, TapCount.GreaterBy 2), (Filter.HasSubtype Subtype.Vehicle, TapCount.Multiplied 3)]), (TapKeyword.Station, [(Filter.HasSubtype Subtype.Spacecraft, TapCount.UsingToughness)])],
       PC.loyaltyIsToughness = True,
       -- Parun.Codec.FaceSpec's own values for the four cost fields.
       PC.additionalCosts = [CostComponent.TapThis],
@@ -198,7 +199,7 @@ testCharacteristicsJson =
     <> "\"combatDamageAmount\":\"EqualToToughness\","
     <> "\"combatDamageOptions\":[{\"key\":\"ToDefendingCreature\",\"value\":\"Optional\"}],"
     <> "\"controllerGrants\":[\"SpeedBeyondFour\"],"
-    <> "\"tapCounts\":[{\"key\":\"Crew\",\"value\":[{\"type\":\"GreaterBy\",\"value\":2},{\"type\":\"Multiplied\",\"value\":3}]},{\"key\":\"Station\",\"value\":[{\"type\":\"UsingToughness\"}]}],"
+    <> "\"tapCounts\":[{\"key\":\"Crew\",\"value\":[{\"key\":{\"type\":\"HasSubtype\",\"value\":\"Vehicle\"},\"value\":{\"type\":\"GreaterBy\",\"value\":2}},{\"key\":{\"type\":\"HasSubtype\",\"value\":\"Vehicle\"},\"value\":{\"type\":\"Multiplied\",\"value\":3}}]},{\"key\":\"Station\",\"value\":[{\"key\":{\"type\":\"HasSubtype\",\"value\":\"Spacecraft\"},\"value\":{\"type\":\"UsingToughness\"}}]}],"
     <> "\"loyaltyIsToughness\":true,"
     <> "\"additionalCosts\":[{\"type\":\"TapThis\"}],"
     <> "\"additionalCostChoices\":[[{\"components\":[{\"type\":\"TapThis\"}],\"mana\":[]},{\"mana\":[{\"type\":\"Generic\",\"value\":1}]}]],"
