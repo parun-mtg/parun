@@ -36,6 +36,7 @@ import Parun.Types.Card (Card)
 import qualified Parun.Types.Compares as Compares
 import qualified Parun.Types.Comparison as Comparison
 import qualified Parun.Types.Condition as Condition
+import qualified Parun.Types.ControllerGrant as ControllerGrant
 import qualified Parun.Types.Effect as Effect
 import Parun.Types.GameState (GameState)
 import qualified Parun.Types.GameState as GameState
@@ -63,16 +64,13 @@ import qualified Parun.Types.TurnScope as TurnScope
 -- rule 702.179 names, and the one CR 702.178a's "as long as your speed is 4"
 -- compares against, so both readings share it.
 --
--- A PROJECT DECISION, not a reading the CR supports: nothing in rule 702.179
--- caps speed and nothing permits exceeding 4 either, so parun rules that an
--- effect may push speed past 4 and that a player at 4 OR MORE has max speed.
--- That is why every "Max speed --" card in data/cards/ writes CR 702.178a's
--- gate as AtLeast 4 rather than the rule's literal Exactly 4, proven by
--- the scenario speed/cr-702-178a-past-4-the-raceway-keeps-its-max-speed-ability.json.
--- If a future CR clarifies the other way, the edit is those gates and that case.
--- docs/decisions.md, "Whether speed can pass 4".
--- belowMaxSpeed below is NOT this question: CR 702.179d states its own "less
--- than 4" and caps only its own climb.
+-- A player at 4 OR MORE has max speed, as Gomif, Fast Racer's reminder text
+-- says, so every "Max speed --" card in data/cards/ writes CR 702.178a's gate as
+-- AtLeast 4 rather than the rule's literal Exactly 4, proven by the scenario
+-- speed/cr-702-178a-past-4-the-raceway-keeps-its-max-speed-ability.json, where
+-- Gomif lets CR 702.179d's own trigger pass 4. docs/decisions.md, "Whether
+-- speed can pass 4". belowMaxSpeed below is CR 702.179d's own "less than 4",
+-- the climb's only limit.
 maxSpeed :: Natural
 maxSpeed = 4
 
@@ -164,14 +162,29 @@ opponentsLoseLifeDuringYourTurn =
 -- read. AtMost (maxSpeed - 1) rather than a "less than" comparison, because
 -- Parun.Types.Comparison has no strict arm and speed is a whole number, so the two
 -- state the same set -- this is the pool's first producer for AtMost (#158).
+--
+-- Or "your speed can increase beyond 4" (Gomif, Fast Racer), which lifts that
+-- limit while its controller controls it. A disjunct of the Condition rather
+-- than a second minted ability, so the once-each-turn rider, keyed on the
+-- ability's value (Event.limitKey), stays one allowance; and read live at both
+-- checks, so a Gomif gone before the trigger resolves lifts nothing, proven by
+-- speed/cr-608-2a-gomif-gone-before-the-trigger-resolves-speed-stops-at-4.json.
 belowMaxSpeed :: Condition.Condition
 belowMaxSpeed =
-  Condition.Compares
-    ( Compares.MkCompares
-        (Quantity.Speed (PlayerRef.Relative PlayerRelation.You))
-        Comparison.AtMost
-        (Quantity.Literal (toInteger maxSpeed - 1))
-    )
+  Condition.Any
+    [ Condition.Compares
+        ( Compares.MkCompares
+            (Quantity.Speed (PlayerRef.Relative PlayerRelation.You))
+            Comparison.AtMost
+            (Quantity.Literal (toInteger maxSpeed - 1))
+        ),
+      Condition.Compares
+        ( Compares.MkCompares
+            (Quantity.ControllerGranted ControllerGrant.SpeedBeyondFour)
+            Comparison.AtLeast
+            (Quantity.Literal 1)
+        )
+    ]
 
 -- | CR 702.179d: the speed increase, paired with each player who has it, for
 -- Parun.Engine.Event.Trigger.inherentTriggers. "Associated with a player having

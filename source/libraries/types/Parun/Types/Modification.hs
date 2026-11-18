@@ -13,6 +13,7 @@ import qualified Parun.Types.Color as Color
 import qualified Parun.Types.CombatDamageAmount as CombatDamageAmount
 import qualified Parun.Types.CombatDamageObligation as CombatDamageObligation
 import qualified Parun.Types.CombatDamageOption as CombatDamageOption
+import qualified Parun.Types.ControllerGrant as ControllerGrant
 import qualified Parun.Types.CostKeyword as CostKeyword
 import qualified Parun.Types.Filter as Filter
 import qualified Parun.Types.FullText as FullText
@@ -470,11 +471,10 @@ data Modification ability
   | -- | CR 510.1b-c: this creature assigns all its combat damage where the
     -- option says instead, at its controller's choice or regardless.
     AssignCombatDamageAs CombatDamageObligation.CombatDamageObligation CombatDamageOption.CombatDamageOption
-  | -- | CR 702.184c: while this object's controller controls it, that player's
-    -- station abilities read the tapped creature's toughness where it exceeds
-    -- its power (Tapestry Warden). Self-only, like DestructionR: a fact about the
-    -- controller, not a set of affected permanents.
-    GrantsStationToughness
+  | -- | CR 702.184c / 702.179d: while this object's controller controls it, that
+    -- player has the grant (Tapestry Warden, Gomif, Fast Racer). Self-only, like
+    -- DestructionR: a fact about the controller, not a set of affected permanents.
+    GrantsController ControllerGrant.ControllerGrant
   | -- | CR 613.11: this creature counts toward the named keywords'
     -- tap-for-total-power costs (CR 702.122a, 702.171a) as the TapCount says.
     TapsCounting (Set.Set KeywordFamily.KeywordFamily) TapCount.TapCount

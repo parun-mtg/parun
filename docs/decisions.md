@@ -1166,24 +1166,25 @@ Entries are ordered by the first rule each cites.
 ## Whether speed can pass 4
 
 - **Question**: CR 702.179e says a player has max speed "if their speed is
-  4". No rule caps speed, and none says what a speed above 4 is.
-- **Rules**: CR 702.179e, 702.178a, 702.179b, 702.179c, 702.179d, 702.179f; the
-  reminder "Max speed is 4", Hazoret, Godseeker's rulings of 2025-02-07; CR of
-  2026-11-06.
-- **Decision**: An effect may push speed past 4, and a player at 4 or more has
-  max speed. Every max speed gate is written as `AtLeast 4`. Gomif, Fast
-  Racer, an un-set printing, says "Your speed can increase beyond 4. (You're
-  still at max speed at 4 or greater.)", which supports the max speed half.
+  4", and no rule says what a speed above 4 is. Gomif, Fast Racer's "Your
+  speed can increase beyond 4" lifts CR 702.179d's "less than 4"; does a
+  speed above 4 stay once Gomif leaves?
+- **Rules**: CR 702.179b, 702.179d, 702.179e, 702.179f, 702.178a; Gomif's
+  reminder "You're still at max speed at 4 or greater"; the reminder "Max
+  speed is 4", Hazoret, Godseeker's rulings of 2025-02-07; CR of 2026-11-06.
+- **Decision**: A player at 4 or more has max speed, as Gomif's reminder text
+  says: every max speed gate is written as `AtLeast 4`. A speed Gomif let
+  pass 4 stays when Gomif leaves; nothing lowers it.
 - **Rejected**: Reading "is 4" literally (`Exactly 4`), which switches off a
-  max speed ability at 5. Capping speed at 4: no rule states it, and CR
-  702.179d's "less than 4" limits only its own climb, though Gomif's need to
-  grant the excess implies a cap otherwise.
-- **Site**: `Parun.Engine.Speed.maxSpeed`, proved by the scenario
-  `speed/cr-702-178a-past-4-the-raceway-keeps-its-max-speed-ability.json`,
-  through Synthetic Speed Boost, and `Parun.SpeedSpec`'s "CR 702.178a past max
-  speed the Surveyor's ability is still offered". On regular printings speed never passes 4; Gomif is the
-  only printed producer.
-- **Issue**: #809.
+  max speed ability at 5. Speed falling to 4 when Gomif leaves: no rule or
+  ruling sets it, and Gomif lifts a trigger's condition rather than imposing
+  a cap that returns.
+- **Site**: `Parun.Engine.Speed.maxSpeed` and `belowMaxSpeed`, proved by the
+  scenarios `speed/cr-702-178a-past-4-the-raceway-keeps-its-max-speed-ability.json`
+  and `speed/cr-702-179d-a-speed-past-4-stays-after-gomif-leaves.json`, and
+  `Parun.SpeedSpec`'s "CR 702.178a past max speed the Surveyor's ability is
+  still offered".
+- **Issue**: #809, #5326.
 
 ## Whether Goblin Bookie can be activated with nothing to reroll
 

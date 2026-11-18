@@ -13,6 +13,7 @@ import qualified Parun.Codec.Color as Color
 import qualified Parun.Codec.CombatDamageAmount as CombatDamageAmount
 import qualified Parun.Codec.CombatDamageObligation as CombatDamageObligationCodec
 import qualified Parun.Codec.CombatDamageOption as CombatDamageOption
+import qualified Parun.Codec.ControllerGrant as ControllerGrant
 import qualified Parun.Codec.CostKeyword as CostKeyword
 import qualified Parun.Codec.Filter as Filter
 import qualified Parun.Codec.FullText as FullText
@@ -133,7 +134,7 @@ codec abilityCodec =
           Arm.nullary "SwitchPowerToughness" Modification.SwitchPowerToughness,
           Arm.payload "AssignCombatDamage" CombatDamageAmount.codec Modification.AssignCombatDamage (\x -> case x of Modification.AssignCombatDamage y -> Just y; _ -> Nothing),
           Arm.payload "AssignCombatDamageAs" combatDamageAs (uncurry Modification.AssignCombatDamageAs) (\x -> case x of Modification.AssignCombatDamageAs o y -> Just (o, y); _ -> Nothing),
-          Arm.nullary "GrantsStationToughness" Modification.GrantsStationToughness,
+          Arm.payload "GrantsController" ControllerGrant.codec Modification.GrantsController (\x -> case x of Modification.GrantsController y -> Just y; _ -> Nothing),
           Arm.payload "TapsCounting" tapsCounting (uncurry Modification.TapsCounting) (\x -> case x of Modification.TapsCounting k n -> Just (k, n); _ -> Nothing),
           Arm.payload "Intensify" Quantity.codec Modification.Intensify (\x -> case x of Modification.Intensify y -> Just y; _ -> Nothing),
           Arm.nullary "LoyaltyIsToughness" Modification.LoyaltyIsToughness
@@ -185,7 +186,7 @@ tagOf x = case x of
   Modification.SwitchPowerToughness {} -> "SwitchPowerToughness"
   Modification.AssignCombatDamage {} -> "AssignCombatDamage"
   Modification.AssignCombatDamageAs {} -> "AssignCombatDamageAs"
-  Modification.GrantsStationToughness {} -> "GrantsStationToughness"
+  Modification.GrantsController {} -> "GrantsController"
   Modification.TapsCounting {} -> "TapsCounting"
   Modification.Intensify {} -> "Intensify"
   Modification.LoyaltyIsToughness {} -> "LoyaltyIsToughness"
