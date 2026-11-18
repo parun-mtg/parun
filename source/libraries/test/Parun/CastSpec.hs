@@ -4380,6 +4380,40 @@ sharedEnumerationSpec s registry = Spec.describe s "SharedEnumeration" $ do
     Spec.assertBool s (any (\(oid, _, _) -> oid == anglerId) plain && any (\(oid, _, _) -> oid == thinkId) plain) "both the flashback and the disturb cast are offered"
     Spec.assertEqWith s "Serra Angel is ruled out, Think Twice and the Angler are not" (fmap (Cast.unpermittedInGraveyard gs) [angelId, thinkId, anglerId]) [True, False, False]
 
+  -- #6605: an effect beyond power and toughness rules a graveyard card out
+  -- unprojected unless its candidate set holds the card. Levitation's flying
+  -- reaches only the battlefield; Painter's Servant's colour reaches the
+  -- graveyard, so the card goes back to `castable`.
+  Spec.it s "#6605 an anthem confined to the battlefield leaves a buried card unprojected" $ do
+    let named = S.printingOf s registry
+    lands <- traverse named ["Mountain", "Mountain", "Island", "Island", "Island"]
+    levitation <- named "Levitation"
+    painter <- named "Painter's Servant"
+    angel <- named "Serra Angel"
+    thinkTwice <- named "Think Twice"
+    let board extra =
+          let base = List.foldl' (\g p -> snd (S.addPermanent p S.alice g)) (Setup.emptyGame S.bothPlayers) (extra <> lands)
+              (angelId, g1) = S.addGraveyardCard angel S.alice base
+              (thinkId, g2) = S.addGraveyardCard thinkTwice S.alice g1
+              gs =
+                g2
+                  { GameState.turn =
+                      (GameState.turn g2)
+                        { TurnRegisters.phase = Phase.PrecombatMain,
+                          TurnRegisters.activePlayer = S.alice,
+                          TurnRegisters.priority = Just S.alice
+                        }
+                  }
+           in (angelId, thinkId, gs)
+        plain gs = filter (\(oid, name, facing) -> Cast.castable S.alice oid name facing gs) (Cast.castProposals (const True) S.alice gs)
+        (angelL, thinkL, levitated) = board [levitation]
+        (angelP, _, painted) = board [levitation, painter]
+    Spec.assertEqWith s "under Levitation the enumeration offers what the plain one does" (Cast.castableSpells S.alice levitated) (plain levitated)
+    Spec.assertBool s (any (\(oid, _, _) -> oid == thinkL) (plain levitated)) "Think Twice's flashback is offered"
+    Spec.assertEqWith s "under Levitation Serra Angel is ruled out and Think Twice is not" (fmap (Cast.unpermittedInGraveyard levitated) [angelL, thinkL]) [True, False]
+    Spec.assertEqWith s "beside Painter's Servant the enumeration offers what the plain one does" (Cast.castableSpells S.alice painted) (plain painted)
+    Spec.assertEqWith s "and Serra Angel is left to castable" (Cast.unpermittedInGraveyard painted angelP) False
+
 -- CR 613.1f / 113.6e: Patriar's Humiliation's perpetual "loses all abilities"
 -- follows the card Unsummon returns to alice's hand
 -- (Parun.SpecialActionSpec.humiliatedBoard), so the flash or morph printed on it
