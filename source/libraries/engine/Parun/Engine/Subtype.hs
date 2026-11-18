@@ -36,9 +36,9 @@ subtypeMana subtype = case subtype of
   Subtype.Plains -> Just (ManaType.Colored Color.White)
   _ -> Nothing
 
--- | CR 305.6 \/ 602.1: does an object with these card types and these subtypes
--- have the intrinsic "{T}: Add [mana symbol]" activated ability -- the one rule
--- 305.6 gives it "even if the text box doesn't actually contain that text"?
+-- | CR 305.6 \/ 602.1: which intrinsic "{T}: Add [mana symbol]" activated
+-- abilities does an object with these card types and these subtypes have -- the
+-- ones rule 305.6 gives it "even if the text box doesn't actually contain that text"?
 --
 -- Both halves are needed: rule 305.6 gives it to "an object with the land card
 -- type AND a basic land type", so a Dryad Arbor that stopped being a land would
@@ -46,17 +46,19 @@ subtypeMana subtype = case subtype of
 --
 -- THE PRINTED question, asked by Parun.Engine.Projection.View's viewOfCard, which
 -- describes a card with no object to project and so no layer 6 to consult.
--- Every projected reader goes through intrinsicManaAbilityOf below instead;
+-- Every projected reader goes through intrinsicManaOf below instead;
 -- Parun.ProjectionSpec's "CR 305.6 / 602.1 a Mountain has an activated ability in
 -- every view builder" is what holds the three builders to one answer.
 --
--- Not a list of abilities: what the intrinsic ability DOES is
--- Parun.Engine.Mana.manaRoutesOfGiven's business, which reads `subtypeMana` below
--- for the mana it adds. This answers only whether there is one.
-intrinsicManaAbility :: Set.Set CardType.CardType -> Set.Set Subtype.Subtype -> Bool
-intrinsicManaAbility cardTypes subtypes =
-  Set.member CardType.Land cardTypes
-    && any (Maybe.isJust . subtypeMana) (Set.toList subtypes)
+-- The mana each such ability adds, one entry per ability in ascending order:
+-- CR 305.6 gives one per basic land type, so a Dryad Arbor has one and a dual
+-- with two types has two (Parun.Types.Measure's ActivatedAbilityCount counts
+-- them), and none at all is empty.
+intrinsicMana :: Set.Set CardType.CardType -> Set.Set Subtype.Subtype -> [ManaType.ManaType]
+intrinsicMana cardTypes subtypes =
+  if Set.member CardType.Land cardTypes
+    then Maybe.mapMaybe subtypeMana (Set.toAscList subtypes)
+    else []
 
 -- | The same CR 305.6 question asked of a PROJECTED object: rule 305.6's ability
 -- is an ability of the land, so CR 613.1f's layer-6 "loses all abilities" takes
@@ -68,10 +70,11 @@ intrinsicManaAbility cardTypes subtypes =
 -- Filter.HasActivatedAbility and the mana route cannot disagree about one
 -- object. CR 305.7's layer-4 strip needs no clause here: it rewrites `subtypes`,
 -- which this reads.
-intrinsicManaAbilityOf :: PC.ProjectedCharacteristics -> Bool
-intrinsicManaAbilityOf pc =
-  not (PC.lostAllAbilities pc)
-    && intrinsicManaAbility (PC.cardTypes pc) (PC.subtypes pc)
+intrinsicManaOf :: PC.ProjectedCharacteristics -> [ManaType.ManaType]
+intrinsicManaOf pc =
+  if PC.lostAllAbilities pc
+    then []
+    else intrinsicMana (PC.cardTypes pc) (PC.subtypes pc)
 
 -- | CR 205.3i / 305.6: Forest, Island, Mountain, Plains or Swamp -- the five
 -- `subtypeMana` names, so the list exists once.

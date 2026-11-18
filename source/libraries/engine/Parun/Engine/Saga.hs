@@ -204,7 +204,7 @@ tracksLore pc = isSaga pc && not (null (chaptersOf pc))
 -- wording: it says "each Saga", where CR 715.3c and CR 704.5s both add "with one
 -- or more chapter abilities". But both rows are intrinsic ABILITIES, so a CR
 -- 613.1f wipe takes them (PC.lostAllAbilities, the flag
--- Parun.Engine.Subtype.intrinsicManaAbilityOf reads): a Saga stripped as it
+-- Parun.Engine.Subtype.intrinsicManaOf reads): a Saga stripped as it
 -- enters gets no lore counter. The scenario
 -- saga/cr-613-1f-history-of-benalia-under-opalescence-and-humility-enters-with-no-lore
 -- proves it.

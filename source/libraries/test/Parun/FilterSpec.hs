@@ -189,7 +189,7 @@ blackCreature =
       Filter.manaSpentOnX = Mana.MkMana [],
       -- CR 602.1 / 605.1a: a vanilla creature as far as this axis goes, so the
       -- atom's own cases below say which view they want rather than inheriting it.
-      Filter.activatedAbilityKinds = Set.empty,
+      Filter.activatedAbilityKinds = [],
       Filter.hasAbility = False,
       Filter.controllerGrants = Set.empty,
       Filter.devotionBonus = 0,
@@ -298,7 +298,7 @@ devoidBigCreature =
       Filter.manaSpentTagColors = Map.empty,
       Filter.manaSpent = Mana.MkMana [],
       Filter.manaSpentOnX = Mana.MkMana [],
-      Filter.activatedAbilityKinds = Set.empty,
+      Filter.activatedAbilityKinds = [],
       Filter.hasAbility = False,
       Filter.controllerGrants = Set.empty,
       Filter.devotionBonus = 0,
@@ -2809,7 +2809,7 @@ spec s = Spec.describe s "Parun.Engine.Filter" $ do
   -- Zirda, the Dawnwaker's condition asks Nothing -- matches Nothing and
   -- ManaAbility and not NonManaAbility.
   Spec.describe s "HasActivatedAbility" $ do
-    let has kinds = blackCreature {Filter.activatedAbilityKinds = Set.fromList kinds}
+    let has kinds = blackCreature {Filter.activatedAbilityKinds = kinds}
         asks view kind = Filter.matches self view (Filter.Type.HasActivatedAbility kind)
     Spec.it s "matches a permanent whose view records a non-mana ability" $ do
       Spec.assertBool s (asks (has [AbilityKind.NonManaAbility]) (Just AbilityKind.NonManaAbility)) "has one"

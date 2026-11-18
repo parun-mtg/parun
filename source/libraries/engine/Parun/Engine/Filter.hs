@@ -928,10 +928,11 @@ data View = MkView
     -- one reader is Parun.Engine.Quantity's ManaSpent arm, answering Soul Burn's
     -- "the amount of {B} spent on X".
     manaSpentOnX :: Mana.Mana,
-    -- CR 602.1 / 605.1a: which kinds of activated ability does the candidate
-    -- have? The kinds and not the ability list, because that is the whole of what
-    -- Filter.HasActivatedAbility asks and this module holds no board to measure an
-    -- ability against.
+    -- CR 602.1 / 605.1a: the kind of each activated ability the candidate has,
+    -- one entry per ability (CR 113.2c's instances each counting), sorted. The
+    -- kinds and not the ability list, because that is the whole of what
+    -- Filter.HasActivatedAbility and Measure.ActivatedAbilityCount ask and this
+    -- module holds no board to measure an ability against.
     --
     -- Filled by the builders that hold an ability list -- Parun.Engine.Projection's
     -- two and Parun.Engine.Count.viewOfSnapshot -- which is what keeps CR 605.1a's
@@ -954,12 +955,12 @@ data View = MkView
     -- WIDER than the ability list, by exactly CR 305.6's intrinsic "{T}: Add
     -- [mana symbol]", which no ability list holds and which adds
     -- AbilityKind.ManaAbility: every builder answers it through
-    -- Parun.Engine.Subtype's intrinsicManaAbility -- intrinsicManaAbilityOf where
+    -- Parun.Engine.Subtype's intrinsicMana -- intrinsicManaOf where
     -- there is a projection to read CR 613.1f's layer-6 removal off -- and
     -- Parun.ProjectionSpec's "CR 305.6 / 602.1 a Mountain has an activated ability
     -- in every view builder" is what holds the three to one answer. Named apart
     -- from `activatedAbility` above, which asks whether the candidate IS one.
-    activatedAbilityKinds :: Set.Set AbilityKind.AbilityKind,
+    activatedAbilityKinds :: [AbilityKind.AbilityKind],
     -- CR 113.1a / 113.3: does the candidate have any ability at all, of any of
     -- CR 113.3's four kinds, keywords and intrinsic abilities included? What
     -- Filter.HasAbility asks. The abilities it reads are the ones the object
@@ -1280,7 +1281,7 @@ nobodyView =
       -- CR 113.1a: an activated ability is an ability OF AN OBJECT, and CR
       -- 109.1's list of what an object is has no player in it -- `keywords`
       -- above, one rule over.
-      activatedAbilityKinds = Set.empty,
+      activatedAbilityKinds = [],
       -- CR 113.1a: `activatedAbilityKinds` above, same sentence.
       hasAbility = False,
       -- CR 702.184c reaches a permanent's controller, and a player view built
@@ -2131,6 +2132,7 @@ measureOf measure = case measure of
   Measure.UnlockedDoors -> Just . toInteger . Set.size . unlockedHalves
   Measure.LockedDoors -> Just . toInteger . Set.size . lockedHalves
   Measure.ModesChosen -> fmap toInteger . modesChosen
+  Measure.ActivatedAbilityCount -> Just . toInteger . length . activatedAbilityKinds
 
 -- CR 306.5a: the printed loyalty a view carries for an object in zone `at`, Nothing
 -- on the battlefield (CR 306.5c). A printed X is 0 (CR 107.2) unless the stack
@@ -3045,7 +3047,7 @@ matches context view predicate = case predicate of
   -- the abilities. A live read: the projection is re-asked on every match, so a
   -- land Humility has stripped stops matching at once, and CR 702.29b's and CR
   -- 702.77b's abilities are in the list the builder measured.
-  Filter.HasActivatedAbility kind -> maybe (not (Set.null (activatedAbilityKinds view))) (`Set.member` activatedAbilityKinds view) kind
+  Filter.HasActivatedAbility kind -> maybe (not (null (activatedAbilityKinds view))) (`elem` activatedAbilityKinds view) kind
   -- CR 113.1a, applied by the builder that holds the abilities, the arm above's
   -- posture.
   Filter.HasAbility -> hasAbility view
@@ -3416,6 +3418,7 @@ manaValueThresholds predicate = case predicate of
       Measure.UnlockedDoors -> []
       Measure.LockedDoors -> []
       Measure.ModesChosen -> []
+      Measure.ActivatedAbilityCount -> []
       -- Reads power or toughness against the literal, so it bounds nothing.
       Measure.Power -> []
       Measure.Toughness -> []

@@ -231,6 +231,7 @@ measure m = case m of
   Measure.UnlockedDoors -> []
   Measure.LockedDoors -> []
   Measure.ModesChosen -> []
+  Measure.ActivatedAbilityCount -> []
 
 -- | What a name or pronoun owns: "its", "Spark's".
 possessive :: Text.Text -> Text.Text

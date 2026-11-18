@@ -2082,7 +2082,7 @@ stubView table oid =
                 -- CR 602.1: the table registers no abilities either, for the
                 -- reason `owner` above gives -- no Count in the pool filters on
                 -- one.
-                Filter.activatedAbilityKinds = Set.empty,
+                Filter.activatedAbilityKinds = [],
                 Filter.hasAbility = False,
                 -- CR 702.184c: the table registers no such grant, and no Count
                 -- in the pool reads this stub through Quantity.StationMeasure.
