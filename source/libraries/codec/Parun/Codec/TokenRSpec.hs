@@ -101,6 +101,7 @@ soldier :: Card.Card
 soldier =
   Card.MkCard
     { Card.layout = Layout.Normal,
+      Card.synthetic = False,
       Card.faces =
         NonEmpty.singleton
           Face.MkFace

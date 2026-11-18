@@ -186,13 +186,11 @@ runs slug =
         pure (Slug.fromText (Text.intercalate (Text.singleton '-') (List.take size start)))
 
 -- A parsed card of the Oracle card reference, which a synthetic is not: a card
--- no printing carries, written only to reach a rule, and filed as
--- `synthetic-*.json` (docs/design.md section 6).
+-- no printing carries, written only to reach a rule (docs/design.md section 6).
+-- Its file says so (Card.synthetic) rather than its name: a real card's name
+-- can start "Synthetic" (Synthetic Destiny).
 referenceCard :: (FilePath, Either Text.Text Card.Card) -> Maybe Card.Card
-referenceCard (path, parsed) =
-  if "synthetic-" `List.isPrefixOf` List.reverse (List.takeWhile (/= '/') (List.reverse path))
-    then Nothing
-    else either (const Nothing) Just parsed
+referenceCard (_, parsed) = either (const Nothing) (\card -> if Card.synthetic card then Nothing else Just card) parsed
 
 -- The slug a name is looked up by. `named` accepts a name or a slug for the
 -- same reason: slugify is idempotent, so the two are one lookup.

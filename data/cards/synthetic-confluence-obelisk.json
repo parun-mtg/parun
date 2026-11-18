@@ -169,5 +169,6 @@
         ]
       }
     }
-  ]
+  ],
+  "synthetic": true
 }

@@ -3869,7 +3869,7 @@ effectLintSpec s registry corpus = Spec.describe s "Lint" $ do
   -- card file: a card that repeats a face name must not be loadable.
   Spec.it s "the lint itself catches a card that repeats a face name" $ do
     let wax = vanillaFace "Wax" instantLine
-        offender = Card.Type.MkCard {Card.Type.layout = Layout.Split, Card.Type.faces = wax NonEmpty.:| [wax]}
+        offender = Card.Type.MkCard {Card.Type.synthetic = False, Card.Type.layout = Layout.Split, Card.Type.faces = wax NonEmpty.:| [wax]}
     Spec.assertBool s (distinctFaceNamesOffends offender) "two faces sharing one name are rejected"
   -- CR 709.5h names "a PARTICULAR half", and CR 709.5j says which halves there
   -- are: "Some cards refer to a 'door' of a Room permanent. A door is a half of

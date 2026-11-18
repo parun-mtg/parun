@@ -6985,6 +6985,7 @@ spiritToken :: Card
 spiritToken =
   Card.MkCard
     { Card.layout = Layout.Normal,
+      Card.synthetic = False,
       Card.faces =
         NonEmpty.singleton
           Face.MkFace
@@ -7230,6 +7231,7 @@ servoToken :: Card
 servoToken =
   Card.MkCard
     { Card.layout = Layout.Normal,
+      Card.synthetic = False,
       Card.faces =
         NonEmpty.singleton
           Face.MkFace
@@ -7436,6 +7438,7 @@ tokenCard ::
 tokenCard name typeLine colors stats abilities =
   Card.MkCard
     { Card.layout = Layout.Normal,
+      Card.synthetic = False,
       Card.faces =
         NonEmpty.singleton
           Face.MkFace

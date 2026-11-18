@@ -49,7 +49,7 @@ knowsMountain name
 -- 'CardSpec.mountainCard' is a basic land. A resolver answering with this is
 -- the case the encoder's equality check exists for.
 impostor :: Card.Card
-impostor = Card.MkCard Layout.Normal (NonEmpty.singleton (CardSpec.bareFace mountainName))
+impostor = Card.MkCard Layout.Normal (NonEmpty.singleton (CardSpec.bareFace mountainName)) False
 
 spec :: (Monad m, Monad n) => Spec.Spec m n -> n ()
 spec s = Spec.describe s "Parun.Codec.Printing" $ do

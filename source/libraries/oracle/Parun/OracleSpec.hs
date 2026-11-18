@@ -1232,7 +1232,7 @@ graveyard whose = TargetSlot.required (Pool.CardsInGraveyard (ZoneScope.Scoped (
 token :: String -> [Color.Color] -> [Subtype.Subtype] -> Integer -> [Keyword.Keyword] -> Card.Card
 token name colours subtypes size keywords =
   let face = Oracle.Face.bare (CardName.MkCardName (Text.pack name)) Nothing Nothing (Set.fromList colours) (TypeLine.MkTypeLine Set.empty (Set.singleton CardType.Creature) (Set.fromList subtypes)) (Just (Power.MkPower (Quantity.Literal size))) (Just (Toughness.MkToughness (Quantity.Literal size))) (Map.fromList (fmap (\k -> (k, 1)) keywords))
-   in Card.MkCard Layout.Normal (NonEmpty.singleton face)
+   in Card.MkCard Layout.Normal (NonEmpty.singleton face) False
 
 -- An instruction creating this many of the token.
 create :: Integer -> Card.Card -> Effect.Effect Card.Card (GrantedAbility.GrantedAbility Card.Card)
@@ -1347,7 +1347,7 @@ activated cost e = ActivatedAbility.MkActivatedAbility cost [] [] Nothing (paylo
 
 -- A normal card of one face named Spark, changed as given.
 withFace :: (Face.Face Card.Card -> Face.Face Card.Card) -> Card.Card
-withFace change = Card.MkCard Layout.Normal (NonEmpty.singleton (change (blank [])))
+withFace change = Card.MkCard Layout.Normal (NonEmpty.singleton (change (blank []))) False
 
 -- A card of the given layout whose faces carry the given keywords and nothing
 -- else.
@@ -1355,6 +1355,7 @@ card :: Layout.Layout -> [[Keyword.Keyword]] -> Card.Card
 card layout keywords =
   Card.MkCard
     { Card.layout = layout,
+      Card.synthetic = False,
       Card.faces = NonEmpty.fromList (fmap blank keywords)
     }
 

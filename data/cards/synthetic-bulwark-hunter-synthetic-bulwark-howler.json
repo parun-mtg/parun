@@ -92,5 +92,6 @@
   ],
   "layout": {
     "type": "Transforming"
-  }
+  },
+  "synthetic": true
 }

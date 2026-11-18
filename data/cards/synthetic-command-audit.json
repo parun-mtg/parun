@@ -76,5 +76,6 @@
         ]
       }
     }
-  ]
+  ],
+  "synthetic": true
 }
