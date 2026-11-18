@@ -4834,8 +4834,9 @@ mintedRemovalRestrictionsFor keyword =
 -- read, so a bare Filter.HasChosenColor quality bakes it into Filter.HasColor,
 -- an Or of them where several were chosen, and the empty Or -- protection from
 -- nothing -- where none was. CR 702.14a's "landwalk of the chosen type"
--- likewise (Traveler's Cloak): the granter's subtype choice, written in.
--- Parun.FilterPositionLintSpec's grantedChosen admits the bare atom alone, so
+-- likewise (Traveler's Cloak): the granter's subtype choice, written in. CR
+-- 702.16a's "protection from the chosen card type" likewise (Serra's
+-- Emissary). Parun.FilterPositionLintSpec's grantedChosen admits the bare atom alone, so
 -- a card burying it is rejected rather than misread.
 --
 -- CR 702.16p's spare (Benevolent Blessing) likewise, conjunct by conjunct: "you"
@@ -4843,8 +4844,8 @@ mintedRemovalRestrictionsFor keyword =
 -- `already`, the host's attachments stamped no later than the granter (CR
 -- 613.7e restamps each attach, so that is "already attached when the effect
 -- started to apply").
-grantedBy :: ObjectId -> Set.Set Color.Color -> Maybe () -> Maybe (NonEmpty.NonEmpty Subtype.Subtype) -> Maybe PlayerId -> [ObjectId] -> Keyword -> Keyword
-grantedBy granter chosen colorless subtype you already keyword = case withChoices chosen colorless subtype keyword of
+grantedBy :: ObjectId -> Set.Set Color.Color -> Maybe () -> Maybe (NonEmpty.NonEmpty Subtype.Subtype) -> Maybe CardType.CardType -> Maybe PlayerId -> [ObjectId] -> Keyword -> Keyword
+grantedBy granter chosen colorless subtype cardType you already keyword = case withChoices chosen colorless subtype cardType keyword of
   Keyword.Protection protection ->
     Keyword.Protection protection {Protection.spares = fmap spare (Protection.spares protection)}
   -- Scotty, Miracle Worker's "Scotty can't be beamed up to cast a spell this
@@ -4867,17 +4868,24 @@ grantedBy granter chosen colorless subtype you already keyword = case withChoice
 -- at all (Angelic Intervention). CR 702.11d's "hexproof from that color" (Mondo Gecko) likewise. CR 702.14a's
 -- Filter.HasChosenSubtype landwalk criterion, bare or a conjunct (Barbarian
 -- Guides' "snow landwalk of the chosen type"), with the chosen subtype written
--- in, and the empty Or, no land at all, where none was chosen.
+-- in, and the empty Or, no land at all, where none was chosen. A bare
+-- Filter.HasChosenCardType protection quality with the chosen card type
+-- written in, and the empty Or where none was (Serra's Emissary).
 -- grantedBy's first half, and Parun.Engine.Projection.freezeQuantities' whole
 -- answer for a resolution's grant (Stave Off), whose source has left the stack
 -- by the time the grant is projected.
-withChoices :: Set.Set Color.Color -> Maybe () -> Maybe (NonEmpty.NonEmpty Subtype.Subtype) -> Keyword -> Keyword
-withChoices chosen colorless subtype keyword = case keyword of
+withChoices :: Set.Set Color.Color -> Maybe () -> Maybe (NonEmpty.NonEmpty Subtype.Subtype) -> Maybe CardType.CardType -> Keyword -> Keyword
+withChoices chosen colorless subtype cardType keyword = case keyword of
   Keyword.Protection protection
     | Protection.quality protection == Filter.HasChosenColor ->
         Keyword.Protection
           protection
             { Protection.quality = baked
+            }
+    | Protection.quality protection == Filter.HasChosenCardType ->
+        Keyword.Protection
+          protection
+            { Protection.quality = maybe (Filter.Or []) Filter.HasCardType cardType
             }
   Keyword.Hexproof (Just Filter.HasChosenColor) -> Keyword.Hexproof (Just baked)
   Keyword.Landwalk criterion -> Keyword.Landwalk (landOf criterion)

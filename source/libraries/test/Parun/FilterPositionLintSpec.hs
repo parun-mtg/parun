@@ -1053,7 +1053,8 @@ hasChosenColorCounts card =
 -- (Cho-Manno's Blessing), and as freezeQuantities stores a resolution's (CR
 -- 608.2h, Stave Off). The atom buried in a quality stays an offence.
 -- CR 702.14a's "landwalk of the chosen type" likewise (Traveler's Cloak), the
--- criterion its subtype twin, bare or a conjunct (Barbarian Guides).
+-- criterion its subtype twin, bare or a conjunct (Barbarian Guides), and
+-- CR 702.16a's "protection from the chosen card type" (Serra's Emissary).
 grantedChosen :: (Keyword.Keyword -> Bool) -> Face.Face Card.Type.Card -> Int
 grantedChosen bareKeyword card =
   let bare m = case m of
@@ -1091,11 +1092,21 @@ hasChosenSubtypeCounts card =
       granted = grantedChosen bareSubtype (surveyedFace card)
    in (framed + granted, elsewhere - granted)
 
--- CR 205.2a's chosen card type in the source-framed positions alone: no mana
--- unit bakes it (Parun.Engine.Mana.sourceChoicesOf), so a restriction cannot
+-- CR 205.2a's chosen card type in the source-framed positions and a granted
+-- bare protection quality (grantedChosen, Serra's Emissary): no mana unit
+-- bakes it (Parun.Engine.Mana.sourceChoicesOf), so a restriction cannot
 -- answer it.
 hasChosenCardTypeCounts :: Surveyed -> (Int, Int)
-hasChosenCardTypeCounts = chosenValueCounts sourceFramed writesCardType hasChosenCardTypeTag
+hasChosenCardTypeCounts card =
+  let (framed, elsewhere) = chosenValueCounts sourceFramed writesCardType hasChosenCardTypeTag card
+      granted = grantedChosen bareCardType (surveyedFace card)
+   in (framed + granted, elsewhere - granted)
+
+-- grantedChosen's card-type atom: a bare protection quality.
+bareCardType :: Keyword.Keyword -> Bool
+bareCardType k = case k of
+  Keyword.Protection protection -> Protection.quality protection == Filter.Type.HasChosenCardType
+  _ -> False
 
 -- CR 607.2a's last-exiled atom, spelled once: IsLastExiledWithSource's tag.
 isLastExiledWithSourceTag :: Text.Text
@@ -4243,6 +4254,7 @@ filterPositionLintSpec s registry corpus = Spec.describe s "Lint" $ do
         ("Etchings of the Chosen", hasChosenSubtypeCounts, "an affected set and an activated ability's cost", (2, 0)),
         ("Pillar of Origins", hasChosenSubtypeCounts, "a mana restriction", (1, 0)),
         ("Umori, the Collector", hasChosenCardTypeCounts, "a player effect's cost change", (1, 0)),
+        ("Serra's Emissary", hasChosenCardTypeCounts, "a player's and a static grant's protection quality", (2, 0)),
         ("Throne of Eldraine", hasChosenColorCounts, "a mana restriction", (1, 0)),
         ("Kindred Discovery", hasChosenSubtypeCounts, "two trigger conditions", (2, 0)),
         ("Brass Herald", hasChosenSubtypeCounts, "an affected set and a resolution's own filter", (2, 0)),
@@ -4267,6 +4279,14 @@ filterPositionLintSpec s registry corpus = Spec.describe s "Lint" $ do
         untypedCost cost = cost {Cost.Type.components = fmap untyped (Cost.Type.components cost)}
         stripped = (S.combinedFace reunion) {Face.additionalCostChoices = fmap (CostChoice.MkCostChoice . fmap untypedCost . CostChoice.unwrap) (Face.additionalCostChoices (S.combinedFace reunion))}
     Spec.assertEqWith s "a behold cost choosing no type answers nothing" (hasChosenSubtypeCounts (survey stripped)) (0, 3)
+    -- Only a BARE granted card-type quality is baked: the same grant buried
+    -- in an And is read off the host and rejected.
+    emissary <- S.printingOf s registry "Serra's Emissary"
+    let bury m = case m of
+          Modification.GainKeyword (Keyword.Protection protection) -> Modification.GainKeyword (Keyword.Protection protection {Protection.quality = Filter.Type.And [Protection.quality protection]})
+          other -> other
+        buriedGrant = (S.combinedFace emissary) {Face.staticAbilities = fmap (\a -> a {StaticAbility.modifications = fmap bury (StaticAbility.modifications a)}) (Face.staticAbilities (S.combinedFace emissary))}
+    Spec.assertEqWith s "a buried granted card-type quality is rejected" (hasChosenCardTypeCounts (survey buriedGrant)) (1, 1)
   -- A colorless pick is baked only into a granted protection or hexproof
   -- quality (Parun.Engine.Keyword.withChoices); Parun.Engine.Event's
   -- chooseQuality names the readers that cannot see it.
