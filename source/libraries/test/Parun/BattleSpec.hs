@@ -86,6 +86,7 @@ import qualified Parun.Types.Printing as Printing
 import qualified Parun.Types.ProjectedCharacteristics as PC
 import qualified Parun.Types.Prompt as Prompt
 import qualified Parun.Types.Recipient as Recipient
+import qualified Parun.Types.Settle as Settle
 import qualified Parun.Types.TeamId as TeamId
 import qualified Parun.Types.Teams as Teams
 import qualified Parun.Types.TriggerCondition as TriggerCondition
@@ -289,7 +290,7 @@ damageSpec s registry = Spec.describe s "Damage" $ do
           Prompt.ChooseTargets _ _ _ sets -> S.preferring ((== Just giantId) . Recipient.objectOf) sets
           _ -> attackTheBattle battle p
         attacked = S.runPure returning gs (Combat.declareAttackers S.manaPerformer S.alice)
-        dealt = S.runPure returning attacked (Monad.void (Damage.dealCombatDamage (pure ())) >> Engine.settleForPriority)
+        dealt = S.runPure returning attacked (Monad.void (Damage.dealCombatDamage Settle.none) >> Engine.settleForPriority)
         resolved = S.runPure returning dealt Stack.resolveTop
     Spec.assertEqWith s "CR 603.2 the Hill Giant returned to the battlefield" (S.countOnBattlefieldByName (CardName.MkCardName (Text.pack "Hill Giant")) S.alice resolved) 1
     Spec.assertEqWith s "the Archpriest attacked the battle" (fmap (\a -> Map.lookup a (Combat.Type.attackers (TurnRegisters.combat (GameState.turn attacked)))) mine) [Just (AttackTarget.OfBattle battle)]

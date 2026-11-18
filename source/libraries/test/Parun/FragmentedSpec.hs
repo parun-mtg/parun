@@ -83,6 +83,7 @@ import qualified Parun.Types.PlayerId as PlayerId
 import qualified Parun.Types.Printing as Printing
 import qualified Parun.Types.Prompt as Prompt
 import qualified Parun.Types.Recipient as Recipient
+import qualified Parun.Types.Settle as Settle
 import qualified Parun.Types.Sickness as Sickness
 import qualified Parun.Types.StoredEffects as StoredEffects
 import qualified Parun.Types.TurnRegisters as TurnRegisters
@@ -190,7 +191,7 @@ spec s registry = Spec.describe s "a fragmented loop (CR 733.3)" $ do
     let (tombId, gs1) = S.addPermanent tomb S.alice (Setup.emptyGame S.bothPlayers)
         (poppetId, gs2) = S.addPermanent poppet S.alice gs1
         (islandId, gs3) = S.addPermanent island S.alice gs2
-        dead = S.runPure S.identityAnswer gs3 (Event.changeZone (pure ()) tombId Zone.Graveyard)
+        dead = S.runPure S.identityAnswer gs3 (Event.changeZone Settle.none tombId Zone.Graveyard)
         link source = CounterLink.MkCounterLink {CounterLink.source = source, CounterLink.acquisition = Acquisition.Own, CounterLink.moved = CounterLinked.PutWith CounterKind.PlusOnePlusOne}
         recurs source gs = Fragmented.digest gs {GameState.counteredWith = Map.singleton islandId (Set.singleton (link source))} == Fragmented.digest gs
     Spec.assertEqWith s "CR 733.3 a Grim Poppet's link is no new state" (recurs poppetId gs3) True

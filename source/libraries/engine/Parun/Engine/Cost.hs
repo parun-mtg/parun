@@ -211,6 +211,7 @@ import qualified Parun.Types.Sacrifice as Sacrifice
 import qualified Parun.Types.Scratch as Scratch
 import qualified Parun.Types.SecretChoice as SecretChoice
 import qualified Parun.Types.Selection as Selection
+import qualified Parun.Types.Settle as Settle
 import qualified Parun.Types.SlotName as SlotName
 import qualified Parun.Types.Source as Source
 import qualified Parun.Types.SpendTrigger as SpendTrigger
@@ -2614,7 +2615,7 @@ componentStatesHiddenQuality component = case component of
 -- CR 701.9a's discards of a DiscardCards cost, as ONE event group, binding
 -- Binding.discardedCard off what ARRIVED in a public zone (CR 400.7j),
 -- DiscardThis's posture: Necromancer's Stockpile's "the discarded card".
-discardsBound :: Game () -> PlayerId -> [ObjectId] -> Game Payment.Payment
+discardsBound :: Settle.Settle -> PlayerId -> [ObjectId] -> Game Payment.Payment
 discardsBound settle pid cards = do
   arrived <- Event.simultaneously (fmap Foldable.fold (Monad.mapM (Event.discardReturning settle DiscardCause.Ordinary Nothing pid) cards))
   State.gets (\after -> bindFindable Binding.discardedCard after arrived)
@@ -8415,7 +8416,7 @@ payPayable perform moment paidFor slots pid oid component = case component of
   -- is the proof.
   CostComponent.FlipCoin -> do
     statements <- Coin.statementsFor (Just pid)
-    _ <- Event.flipWinLoseCoin (Just (ManaAbilityPerformer.throwRecorded perform)) (ManaAbilityPerformer.reflipWindow perform) pid statements
+    _ <- Event.flipWinLoseCoin (ManaAbilityPerformer.settle perform) pid statements
     pure bindsNothing
   -- CR 702.174a's first ability, paid by naming the opponent the gift is
   -- promised to, through Prompt.ChooseOpponent carrying the promise it records,

@@ -45,6 +45,7 @@ import qualified Parun.Types.PlayerRelation as PlayerRelation
 import qualified Parun.Types.Power as Power
 import qualified Parun.Types.Prompt as Prompt
 import qualified Parun.Types.Quantity as Quantity
+import qualified Parun.Types.Settle as Settle
 import qualified Parun.Types.Subtype as Subtype
 import qualified Parun.Types.TapState as TapState
 import qualified Parun.Types.Toughness as Toughness
@@ -160,7 +161,7 @@ soldierToken =
 -- Parun.Engine.Resolve.Common.effectIsImpossible never refuses this arm.
 --
 -- `settle` is Event.drawSeries' (CR 614.11a).
-recruit :: Game () -> PlayerId -> Game ()
+recruit :: Settle.Settle -> PlayerId -> Game ()
 recruit settle pid = do
   -- CR 121.2a: the one-card draw is one replaceable instruction.
   Event.drawInstruction settle DrawKind.Other Set.empty pid 1

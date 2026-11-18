@@ -167,6 +167,7 @@ import qualified Parun.Types.Scaling as Scaling
 import qualified Parun.Types.SetClassLevel as SetClassLevel
 import qualified Parun.Types.SetHalfLocked as SetHalfLocked
 import qualified Parun.Types.SetX as SetX
+import qualified Parun.Types.Settle as Settle
 import qualified Parun.Types.SkipPhase as SkipPhase
 import Parun.Types.SlotName (SlotName)
 import qualified Parun.Types.Snapshots as Snapshots
@@ -180,7 +181,7 @@ import qualified Parun.Types.Uses as Uses
 import qualified Parun.Types.WithCounters as WithCounters
 import qualified Parun.Types.Zone as Zone
 
-create :: Game () -> ObjectId -> ObjectId -> PlayerId -> Map.Map SlotName (Set Recipient) -> Map.Map SlotName (Set Recipient) -> Create.Create Card.Type.Card (GrantedAbility.GrantedAbility Card.Type.Card) -> Game ()
+create :: Settle.Settle -> ObjectId -> ObjectId -> PlayerId -> Map.Map SlotName (Set Recipient) -> Map.Map SlotName (Set Recipient) -> Create.Create Card.Type.Card (GrantedAbility.GrantedAbility Card.Type.Card) -> Game ()
 create settle resolving source controller legal chosen (Create.MkCreate quantity card entry mSlot creator linked) = do
   gs <- State.get
   let viewOf = effectViewOf resolving source legal gs
@@ -275,7 +276,7 @@ create settle resolving source controller legal chosen (Create.MkCreate quantity
 -- The conjurer is the resolving CONTROLLER (CR 109.5's "you"). Not implemented:
 -- a printing that states one instead, which is a shape rather than one card --
 -- Parun.Types.Conjure lists the two forms (#3970).
-conjure :: Game () -> ObjectId -> ObjectId -> PlayerId -> Map.Map SlotName (Set Recipient) -> Conjure.Conjure Card.Type.Card -> Game ()
+conjure :: Settle.Settle -> ObjectId -> ObjectId -> PlayerId -> Map.Map SlotName (Set Recipient) -> Conjure.Conjure Card.Type.Card -> Game ()
 conjure settle resolving source controller legal (Conjure.MkConjure quantity cards selection destination mSlot) = do
   gs <- State.get
   let viewOf = effectViewOf resolving source legal gs
@@ -440,7 +441,7 @@ conjure settle resolving source controller legal (Conjure.MkConjure quantity car
     _ -> pure []
   Common.bindObjects resolving mSlot conjured
 
-createCopy :: Game () -> ObjectId -> ObjectId -> PlayerId -> Map.Map SlotName (Set Recipient) -> Map.Map SlotName (Set Recipient) -> CreateCopy.CreateCopy (GrantedAbility.GrantedAbility Card.Type.Card) -> Game ()
+createCopy :: Settle.Settle -> ObjectId -> ObjectId -> PlayerId -> Map.Map SlotName (Set Recipient) -> Map.Map SlotName (Set Recipient) -> CreateCopy.CreateCopy (GrantedAbility.GrantedAbility Card.Type.Card) -> Game ()
 createCopy settle resolving source controller legal chosen (CreateCopy.MkCreateCopy quantity ref entry mSlot exceptions creator linked) = do
   -- Asked before the board is read (CR 608.2d), so Twilight Diviner's "a copy
   -- of one of them" is chosen. Common.LastKnown, since the copy only reads its
@@ -2042,7 +2043,7 @@ mentor source controller legal slot = case legalOne slot legal >>= Recipient.obj
 -- The sacrifice and the marker are ONE event (Event.simultaneously): rule
 -- 702.110b makes the sacrifice the exploit, so CR 603.10a's look-back offers
 -- an exploiter that sacrificed itself its own trigger.
-exploit :: Game () -> ObjectId -> ObjectId -> PlayerId -> Map.Map SlotName (Set Recipient) -> Game ()
+exploit :: Settle.Settle -> ObjectId -> ObjectId -> PlayerId -> Map.Map SlotName (Set Recipient) -> Game ()
 exploit settle resolving source controller legal = do
   gs <- State.get
   let candidates =
@@ -2203,7 +2204,7 @@ unattach resolving source controller legal chosen ref = do
   movers <- Common.askingObjects Common.Present resolving source controller legal chosen ref
   Event.simultaneously (Monad.forM_ movers Event.detach)
 
-exileHaunting :: Game () -> ObjectId -> Map.Map SlotName (Set Recipient) -> ExileHaunting.ExileHaunting -> Game ()
+exileHaunting :: Settle.Settle -> ObjectId -> Map.Map SlotName (Set Recipient) -> ExileHaunting.ExileHaunting -> Game ()
 exileHaunting settle resolving legal (ExileHaunting.MkExileHaunting card slot) =
   case legalOne slot legal of
     Just recipient -> case Recipient.objectOf recipient of

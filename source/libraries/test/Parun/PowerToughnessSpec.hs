@@ -89,6 +89,7 @@ import qualified Parun.Types.Recipient as Recipient
 import qualified Parun.Types.Rounding as Rounding
 import qualified Parun.Types.Scope as Scope
 import qualified Parun.Types.Seat as Seat
+import qualified Parun.Types.Settle as Settle
 import qualified Parun.Types.Sickness as Sickness
 import qualified Parun.Types.SlotName as SlotName
 import qualified Parun.Types.StoredEffects as StoredEffects
@@ -326,7 +327,7 @@ spec s registry = Spec.describe s "Parun.Engine.PowerToughness" $ do
         (nightId, g1) = S.addPermanent nightmare S.alice gs0
         (_, g2) = S.addPermanent swamp S.alice g1
         (swamp2, g3) = S.addPermanent swamp S.alice g2
-        g4 = snd (Engine.runGamePure S.identityAnswer g3 (Event.changeZone (pure ()) swamp2 Zone.Graveyard))
+        g4 = snd (Engine.runGamePure S.identityAnswer g3 (Event.changeZone Settle.none swamp2 Zone.Graveyard))
     Spec.assertEqWith s "one Swamp: power 1" (Projection.powerOf nightId g2) (Just 1)
     Spec.assertEqWith s "a second Swamp enters: power 2" (Projection.powerOf nightId g3) (Just 2)
     Spec.assertEqWith s "it leaves again: power back to 1" (Projection.powerOf nightId g4) (Just 1)
@@ -1266,7 +1267,7 @@ ingesterSpec s registry = Spec.describe s "Phyrexian Ingester" $ do
     Spec.assertEqWith
       s
       "and it falls back to 3/3 once the exiled card leaves exile"
-      (S.powerToughnessOf ingesterId (foldr (\oid gs -> S.runPure S.identityAnswer gs (Event.changeZone (pure ()) oid Zone.Graveyard)) after (exiledNamed "Nessian Asp" after)))
+      (S.powerToughnessOf ingesterId (foldr (\oid gs -> S.runPure S.identityAnswer gs (Event.changeZone Settle.none oid Zone.Graveyard)) after (exiledNamed "Nessian Asp" after)))
       (Just (3, 3))
   -- The paired control, differing in exactly one thing: the "you may" is
   -- declined, so nothing is exiled and the link names nothing. The Russet Wolves

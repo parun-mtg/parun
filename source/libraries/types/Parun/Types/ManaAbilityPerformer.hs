@@ -2,11 +2,9 @@ module Parun.Types.ManaAbilityPerformer where
 
 import qualified Data.Map.Strict as Map
 import qualified Data.Set as Set
-import qualified Numeric.Natural as Natural
 import qualified Parun.Types.AbilityName as AbilityName
 import qualified Parun.Types.Card as Card
 import qualified Parun.Types.ClauseIndex as ClauseIndex
-import qualified Parun.Types.CoinFace as CoinFace
 import qualified Parun.Types.Effect as Effect
 import qualified Parun.Types.Game as Game
 import qualified Parun.Types.GrantedAbility as GrantedAbility
@@ -15,8 +13,8 @@ import qualified Parun.Types.PayGate as PayGate
 import qualified Parun.Types.PendingTrigger as PendingTrigger
 import qualified Parun.Types.PlayerId as PlayerId
 import qualified Parun.Types.Recipient as Recipient
+import qualified Parun.Types.Settle as Settle
 import qualified Parun.Types.SlotName as SlotName
-import qualified Parun.Types.Throw as Throw
 
 -- | CR 405.6c: how the closed half runs the NON-MANA effects of a mana ability
 -- -- the ability's source, its controller, and the effects themselves. CR 605.3b
@@ -38,9 +36,8 @@ import qualified Parun.Types.Throw as Throw
 -- whichever call site forgot it.
 --
 -- A RECORD rather than one function, so that CR 605.4a's triggered mana ability,
--- CR 118.12's resolution cost and CR 706's roll and CR 705.1's reflip window
--- for a cost's coin flip ride the same injection (the planar die's roll, CR
--- 901.9, too): the payment path needs them, and all live in
+-- CR 118.12's resolution cost and the Parun.Types.Settle a cost's zone changes
+-- and coin flips take ride the same injection: the payment path needs them, and all live in
 -- Parun.Engine.Resolve, so a parameter of each own would have to be threaded
 -- through every caller of Parun.Engine.Cost.pay for no gain.
 data ManaAbilityPerformer = MkManaAbilityPerformer
@@ -59,15 +56,8 @@ data ManaAbilityPerformer = MkManaAbilityPerformer
     -- recorded by ordinal (PayGate.offeredAt) -- and say whether the clause
     -- happens. Rhystic Cave's "unless any player pays {1}".
     payGate :: ObjectId.ObjectId -> PlayerId.PlayerId -> ClauseIndex.ClauseIndex -> PayGate.PayGate -> Map.Map ClauseIndex.ClauseIndex (Map.Map PlayerId.PlayerId Bool) -> Game.Game (Bool, Map.Map ClauseIndex.ClauseIndex (Map.Map PlayerId.PlayerId Bool)),
-    -- | CR 706.1: throw and record a roll settled below Resolve -- Pokey, the
-    -- Scallywagg's instead of a cost's coin flip (CR 614.6), the planar die
-    -- (CR 901.9) -- answering the kept results.
-    throwRecorded :: Throw.Throw -> Game.Game [Natural.Natural],
-    -- | CR 705.1: the window Goblin Bookie's reflip is activated in, over the
-    -- flipper's coin just flipped for a cost; answers whether it is flipped
-    -- again.
-    reflipWindow :: PlayerId.PlayerId -> CoinFace.CoinFace -> Game.Game Bool,
-    -- | CR 614.11a: run what a replacement queued in a draw's place, between
-    -- the draws Lich makes in place of a gain made in a life payment's place.
-    settle :: Game.Game ()
+    -- | What the payment path reaches of the resolver: CR 614.11a's queued
+    -- effects, CR 706's roll (Pokey, the Scallywagg's instead of a cost's coin
+    -- flip, the planar die) and CR 705.1's reflip window.
+    settle :: Settle.Settle
   }

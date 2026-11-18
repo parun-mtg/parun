@@ -80,6 +80,7 @@ import qualified Parun.Types.Prompt as Prompt
 import qualified Parun.Types.Recipient as Recipient
 import qualified Parun.Types.RestrictedCreatures as RestrictedCreatures
 import qualified Parun.Types.Seat as Seat
+import qualified Parun.Types.Settle as Settle
 import qualified Parun.Types.Sickness as Sickness
 import qualified Parun.Types.StoredEffects as StoredEffects
 import qualified Parun.Types.Subtype as Subtype
@@ -423,7 +424,7 @@ controlChangeSicknessSpec s registry = Spec.describe s "ControlChangeSickness" $
         -- The steal is observed the next time the board settles -- the CR
         -- 117.5 sweep, which runs wherever the board can change.
         stolen = S.runPure S.identityAnswer (S.attach aura creature withAura) Engine.settleForPriority
-        returned = S.runPure S.identityAnswer stolen (Event.changeZone (pure ()) aura Zone.Graveyard)
+        returned = S.runPure S.identityAnswer stolen (Event.changeZone Settle.none aura Zone.Graveyard)
     Spec.assertEqWith s "bob held it" (Projection.controllerOf creature stolen) (Just S.bob)
     Spec.assertEqWith s "alice has it back" (Projection.controllerOf creature returned) (Just S.alice)
     Spec.assertBool s (not (Combat.canAttack S.alice creature returned)) "but not continuously, so it cannot attack"
@@ -1280,7 +1281,7 @@ combatRestrictionSpec s registry = Spec.describe s "CombatRestrictions" $ do
     case mine of
       [creature] -> do
         let (aura, board) = pacifying pacifism creature gs
-            gone = S.runPure S.identityAnswer board (Event.changeZone (pure ()) aura Zone.Graveyard)
+            gone = S.runPure S.identityAnswer board (Event.changeZone Settle.none aura Zone.Graveyard)
         Spec.assertBool s (not (Combat.canAttack S.alice creature board)) "under the Aura it cannot attack"
         Spec.assertBool s (Combat.canAttack S.alice creature gone) "with the Aura in the graveyard it can again"
         -- The block half lifts on the same board. Asked of alice, who controls
@@ -1379,7 +1380,7 @@ combatRestrictionSpec s registry = Spec.describe s "CombatRestrictions" $ do
     let (gs, mine, theirs) = S.combatBoardOf [piker, winnower] [piker, troll]
     case (mine, theirs) of
       ([alicesPiker, winnowerId], [evenBlocker, oddBlocker]) -> do
-        let bare = S.runPure S.identityAnswer gs (Event.changeZone (pure ()) winnowerId Zone.Graveyard)
+        let bare = S.runPure S.identityAnswer gs (Event.changeZone Settle.none winnowerId Zone.Graveyard)
         Spec.assertBool s (not (Combat.canBlock S.bob evenBlocker gs)) "the mana value 2 creature cannot block"
         Spec.assertBool s (Combat.canBlock S.bob oddBlocker gs) "the mana value 3 creature beside it can"
         Spec.assertBool s (Combat.canBlock S.alice alicesPiker gs) "and the same card under the Winnower's own controller may block"
@@ -1480,7 +1481,7 @@ conditionalCombatRestrictionSpec s registry = Spec.describe s "Conditional Comba
     let (gs, mine, _) = S.combatBoardOf [blindSpotGiant, hillGiant] []
     case mine of
       [giant, hill] -> do
-        let gone = S.runPure S.identityAnswer gs (Event.changeZone (pure ()) hill Zone.Graveyard)
+        let gone = S.runPure S.identityAnswer gs (Event.changeZone Settle.none hill Zone.Graveyard)
         Spec.assertBool s (Combat.canAttack S.alice giant gs) "with the Hill Giant it may attack"
         Spec.assertBool s (not (Combat.canAttack S.alice giant gone)) "with the Hill Giant in the graveyard it may not"
         Spec.assertBool s (not (Combat.canBlock S.alice giant gone)) "nor block"

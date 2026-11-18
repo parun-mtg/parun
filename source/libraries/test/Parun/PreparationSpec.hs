@@ -77,6 +77,7 @@ import qualified Parun.Types.ObjectId as ObjectId
 import qualified Parun.Types.ProjectedCharacteristics as PC
 import qualified Parun.Types.Prompt as Prompt
 import qualified Parun.Types.Recipient as Recipient
+import qualified Parun.Types.Settle as Settle
 import qualified Parun.Types.Staged as Staged
 import qualified Parun.Types.Timed as Timed
 import qualified Parun.Types.TurnRegisters as TurnRegisters
@@ -270,7 +271,7 @@ spec s registry = Spec.describe s "Preparation" $ do
     aviatorId <- aliasOrFail s built "aviator"
     (_, attacked) <- S.runScriptOrFail s attackScript built S.combatGame
     Spec.assertEqWith s "the copy is there to lose" (length (prepareCopies attacked)) 1
-    let bounced = S.runPure S.identityAnswer attacked (Event.changeZone (pure ()) aviatorId Zone.Hand)
+    let bounced = S.runPure S.identityAnswer attacked (Event.changeZone Settle.none aviatorId Zone.Hand)
         swept = S.runPure S.identityAnswer bounced (Sba.checkStateBasedActions S.insteadOfLoss)
     Spec.assertEqWith s "CR 704.5e: the copy has ceased to exist" (prepareCopies swept) []
     Spec.assertEqWith s "and exile is empty" (Foldable.toList (GameState.exile swept)) []

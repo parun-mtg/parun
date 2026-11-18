@@ -163,6 +163,7 @@ import qualified Parun.Types.Reveal as Reveal
 import qualified Parun.Types.Scratch as Scratch
 import qualified Parun.Types.SetBasePowerToughness as SetBasePowerToughness
 import qualified Parun.Types.SetOwner as SetOwner
+import qualified Parun.Types.Settle as Settle
 import qualified Parun.Types.ShuffleIntoLibrary as ShuffleIntoLibrary
 import Parun.Types.SlotName (SlotName)
 import qualified Parun.Types.SpeedDecrease as SpeedDecrease
@@ -179,7 +180,7 @@ import qualified Parun.Types.VotePlayers as VotePlayers
 import qualified Parun.Types.Zone as Zone
 import qualified Parun.Types.ZonePair as ZonePair
 
-moveToZone :: Game () -> ObjectId -> ObjectId -> PlayerId -> Map.Map SlotName (Set Recipient) -> Map.Map SlotName (Set Recipient) -> MoveToZone.MoveToZone (GrantedAbility.GrantedAbility Card.Type.Card) -> Game ()
+moveToZone :: Settle.Settle -> ObjectId -> ObjectId -> PlayerId -> Map.Map SlotName (Set Recipient) -> Map.Map SlotName (Set Recipient) -> MoveToZone.MoveToZone (GrantedAbility.GrantedAbility Card.Type.Card) -> Game ()
 moveToZone settle resolving source controller legal chosen (MoveToZone.MkMoveToZone ref zone entry mSlot origin placement duration) =
   -- ONE object through CR 400.7's funnel, shared by the two arms below.
   let -- CR 400.7: the funnel mints a new incarnation in `zone`, owner-relative
@@ -533,7 +534,7 @@ moveToZone settle resolving source controller legal chosen (MoveToZone.MkMoveToZ
 -- (Scryfall o:"exchange your" -o:"life total" -o:control, 2026-09-26: Harness
 -- Infinity, Morality Shift, Mordenkainen). An exchange into a library with no
 -- shuffle would refute this.
-exchangeZones :: Game () -> ObjectId -> ObjectId -> PlayerId -> Map.Map SlotName (Set Recipient) -> ExchangeZones.ExchangeZones -> Game ()
+exchangeZones :: Settle.Settle -> ObjectId -> ObjectId -> PlayerId -> Map.Map SlotName (Set Recipient) -> ExchangeZones.ExchangeZones -> Game ()
 exchangeZones settle resolving source controller legal (ExchangeZones.MkExchangeZones player pair) = do
   before <- State.get
   let (one, other) = ZonePair.zones pair
@@ -582,7 +583,7 @@ exchangeZones settle resolving source controller legal (ExchangeZones.MkExchange
 -- which LibraryPosition cannot name, sends the other card to the bottom. CR
 -- 701.12d names no position, and no printed card exchanges with a card inside
 -- a library.
-exchangeCardZones :: Game () -> ObjectId -> ObjectId -> PlayerId -> Map.Map SlotName (Set Recipient) -> Map.Map SlotName (Set Recipient) -> ExchangeCardZones.ExchangeCardZones -> Game ()
+exchangeCardZones :: Settle.Settle -> ObjectId -> ObjectId -> PlayerId -> Map.Map SlotName (Set Recipient) -> Map.Map SlotName (Set Recipient) -> ExchangeCardZones.ExchangeCardZones -> Game ()
 exchangeCardZones settle resolving source controller legal chosen (ExchangeCardZones.MkExchangeCardZones one other) = do
   ones <- Common.askingObjects Common.Present resolving source controller legal chosen one
   current <- State.get
@@ -649,7 +650,7 @@ exchangeCardZones settle resolving source controller legal chosen (ExchangeCardZ
 -- Great Aurora's and Warp World's rulings count a melded or merged permanent
 -- once -- proved by the scenario
 -- the-great-aurora-counts-a-melded-permanent-once.
-shuffleIntoLibrary :: Game () -> ObjectId -> ObjectId -> PlayerId -> Map.Map SlotName (Set Recipient) -> ShuffleIntoLibrary.ShuffleIntoLibrary -> Game ()
+shuffleIntoLibrary :: Settle.Settle -> ObjectId -> ObjectId -> PlayerId -> Map.Map SlotName (Set Recipient) -> ShuffleIntoLibrary.ShuffleIntoLibrary -> Game ()
 shuffleIntoLibrary settle resolving source controller legal (ShuffleIntoLibrary.MkShuffleIntoLibrary named ref mSlot) = do
   gs <- State.get
   let targets = ListUtils.nubOrd (objectRefObjects legal resolving controller source gs ref)
@@ -700,7 +701,7 @@ exchangeOwnership resolving source controller legal (ExchangeOwnership.MkExchang
 -- and a move that names nobody writes nothing, so CR 118.12's "If you do"
 -- reads it as not having happened. The pure sweep, the read effectIsImpossible's
 -- Ante arm makes, so the offer and the instruction name the same objects.
-ante :: Game () -> ObjectId -> ObjectId -> PlayerId -> Map.Map SlotName (Set Recipient) -> Ante.Ante -> Game ()
+ante :: Settle.Settle -> ObjectId -> ObjectId -> PlayerId -> Map.Map SlotName (Set Recipient) -> Ante.Ante -> Game ()
 ante settle resolving source controller legal (Ante.MkAnte player ref mSlot) = do
   gs <- State.get
   let named = objectRefObjects legal resolving controller source gs ref
@@ -1341,7 +1342,7 @@ repeatIf applyLoopBody runSubgame resolving source controller legal chosen (Repe
   run Nothing
   State.modify' (\gs -> gs {GameState.bookkeeping = (GameState.bookkeeping gs) {Bookkeeping.repeatPicks = outer}})
 
-draw :: Game () -> ObjectId -> ObjectId -> PlayerId -> Map.Map SlotName (Set Recipient) -> Draw.Draw -> Game ()
+draw :: Settle.Settle -> ObjectId -> ObjectId -> PlayerId -> Map.Map SlotName (Set Recipient) -> Draw.Draw -> Game ()
 draw settle resolving source controller legal (Draw.MkDraw ref quantity mSlot mDrawers) = do
   gs <- State.get
   let viewOf = effectViewOf resolving source legal gs
@@ -1406,7 +1407,7 @@ draw settle resolving source controller legal (Draw.MkDraw ref quantity mSlot mD
   let grew pid cards = Seq.length cards > Seq.length (Map.findWithDefault Seq.empty pid before)
   Foldable.for_ mDrawers $ \name -> State.modify' (Common.bindPlayerSlot resolving name (Map.keysSet (Map.filterWithKey grew after)))
 
-mill :: Game () -> ObjectId -> ObjectId -> PlayerId -> Map.Map SlotName (Set Recipient) -> Mill.Mill -> Game ()
+mill :: Settle.Settle -> ObjectId -> ObjectId -> PlayerId -> Map.Map SlotName (Set Recipient) -> Mill.Mill -> Game ()
 mill settle resolving source controller legal (Mill.MkMill ref quantity mTally mSlot) = do
   gs <- State.get
   let viewOf = effectViewOf resolving source legal gs
@@ -1617,7 +1618,7 @@ arrangeInLibrary resolving source controller legal chosen (ArrangeInLibrary.MkAr
     Monad.mapM_ (Common.arrangeInLibrary arranger named end) (List.sortOn (\(_, holder) -> List.elemIndex holder (Game.apnapOrder gs)) piles)
   Common.bindObjects resolving slot named
 
-scry :: Game () -> ObjectId -> ObjectId -> PlayerId -> Map.Map SlotName (Set Recipient) -> PlayerQuantity.PlayerQuantity -> Game ()
+scry :: Settle.Settle -> ObjectId -> ObjectId -> PlayerId -> Map.Map SlotName (Set Recipient) -> PlayerQuantity.PlayerQuantity -> Game ()
 scry settle resolving source controller legal (PlayerQuantity.MkPlayerQuantity ref quantity) = do
   gs <- State.get
   let viewOf = effectViewOf resolving source legal gs
@@ -1642,7 +1643,7 @@ scry settle resolving source controller legal (PlayerQuantity.MkPlayerQuantity r
   -- move was impossible too.
   Monad.mapM_ (\(pid, _) -> State.modify' (Event.recordEvent (GameEvent.PlayerActed (PlayerActed.MkPlayerActed PlayerAction.Scry pid)))) decided
 
-surveil :: Game () -> ObjectId -> ObjectId -> PlayerId -> Map.Map SlotName (Set Recipient) -> Surveil.Surveil -> Game ()
+surveil :: Settle.Settle -> ObjectId -> ObjectId -> PlayerId -> Map.Map SlotName (Set Recipient) -> Surveil.Surveil -> Game ()
 surveil settle resolving source controller legal (Surveil.MkSurveil ref quantity mSlot) = do
   gs <- State.get
   let viewOf = effectViewOf resolving source legal gs
@@ -1735,7 +1736,7 @@ asYouCascade applyOneEffect runSubgame resolving source controller legal chosen 
           )
       )
 
-explore :: Game () -> ObjectId -> ObjectId -> PlayerId -> Map.Map SlotName (Set Recipient) -> ObjectRef -> Game ()
+explore :: Settle.Settle -> ObjectId -> ObjectId -> PlayerId -> Map.Map SlotName (Set Recipient) -> ObjectRef -> Game ()
 explore settle resolving source controller legal ref = do
   gs <- State.get
   -- CR 608.2c: the set is swept as this instruction is reached; an illegal slot
@@ -1751,7 +1752,7 @@ explore settle resolving source controller legal ref = do
   ordered <- Common.forEachOrder resolving Nothing id (Common.objectRefRecipients legal resolving controller source gs ref)
   Monad.mapM_ (Common.exploreOne settle resolving) (Maybe.mapMaybe Recipient.objectOf ordered)
 
-connive :: Game () -> ObjectId -> ObjectId -> PlayerId -> Map.Map SlotName (Set Recipient) -> Connive.Type.Connive -> Game ()
+connive :: Settle.Settle -> ObjectId -> ObjectId -> PlayerId -> Map.Map SlotName (Set Recipient) -> Connive.Type.Connive -> Game ()
 connive settle resolving source controller legal (Connive.Type.MkConnive quantity ref) = do
   gs <- State.get
   let viewOf = effectViewOf resolving source legal gs
@@ -1783,7 +1784,7 @@ connive settle resolving source controller legal (Connive.Type.MkConnive quantit
 -- hand, and a ref over CR 400.1's per-player zone can name several owners'
 -- cards at once. A card whose owner cannot be read is skipped rather than
 -- filed under the controller.
-discard :: Game () -> ObjectId -> ObjectId -> PlayerId -> Map.Map SlotName (Set Recipient) -> Map.Map SlotName (Set Recipient) -> Discard.Discard -> Game ()
+discard :: Settle.Settle -> ObjectId -> ObjectId -> PlayerId -> Map.Map SlotName (Set Recipient) -> Map.Map SlotName (Set Recipient) -> Discard.Discard -> Game ()
 discard settle resolving source controller legal chosen (Discard.These (TheseDiscard.MkTheseDiscard ref mDiscarded)) = do
   named <- Common.askingObjects Common.Present resolving source controller legal chosen ref
   gs <- State.get
@@ -1868,7 +1869,7 @@ discard settle resolving source controller legal _ (Discard.AnyNumber (AnyNumber
   doomed <- traverse pickFor victims
   Common.buryDiscards settle resolving mDiscarded doomed
 
-loseLife :: Game () -> ObjectId -> ObjectId -> PlayerId -> Map.Map SlotName (Set Recipient) -> LifeLoss.LifeLoss -> Game ()
+loseLife :: Settle.Settle -> ObjectId -> ObjectId -> PlayerId -> Map.Map SlotName (Set Recipient) -> LifeLoss.LifeLoss -> Game ()
 loseLife settle resolving source controller legal (LifeLoss.MkLifeLoss ref quantity cause mTally) = do
   gs <- State.get
   let viewOf = effectViewOf resolving source legal gs
@@ -1926,7 +1927,7 @@ loseLife settle resolving source controller legal (LifeLoss.MkLifeLoss ref quant
 -- across players sees one trigger event rather than one per seat. Nothing about
 -- the WRITES moves: the amounts already come off the one pre-effect `gs`, and
 -- what the bracket changes is the group the log stamps.
-gainLife :: Game () -> ObjectId -> ObjectId -> PlayerId -> Map.Map SlotName (Set Recipient) -> PlayerQuantity.PlayerQuantity -> Game ()
+gainLife :: Settle.Settle -> ObjectId -> ObjectId -> PlayerId -> Map.Map SlotName (Set Recipient) -> PlayerQuantity.PlayerQuantity -> Game ()
 gainLife settle resolving source controller legal (PlayerQuantity.MkPlayerQuantity ref quantity) = do
   gs <- State.get
   let viewOf = effectViewOf resolving source legal gs
@@ -1970,7 +1971,7 @@ gainLife settle resolving source controller legal (PlayerQuantity.MkPlayerQuanti
 -- loss counts), and 0 where the exchange did not happen or did not lower it.
 -- Bound even at 0, LoseLife's tally's posture. The four mister-negative-*
 -- scenarios are the proof.
-exchangeLifeTotals :: Game () -> ObjectId -> ObjectId -> PlayerId -> Map.Map SlotName (Set Recipient) -> LifeExchange.LifeExchange -> Game ()
+exchangeLifeTotals :: Settle.Settle -> ObjectId -> ObjectId -> PlayerId -> Map.Map SlotName (Set Recipient) -> LifeExchange.LifeExchange -> Game ()
 exchangeLifeTotals settle resolving source controller legal (LifeExchange.MkLifeExchange sides mTally) = do
   gs <- State.get
   let twoSides = case sides of
@@ -2020,7 +2021,7 @@ exchangeLifeTotals settle resolving source controller legal (LifeExchange.MkLife
 -- CR 701.12a's all-or-nothing: a side naming no single player, or no creature
 -- on the battlefield, or a life total CR 119.7-8 forbids reaching, cancels the
 -- whole exchange. Parun.ZoneChangeSpec's ExchangeValues group is the proof.
-exchangeValues :: Game () -> ObjectId -> ObjectId -> PlayerId -> Map.Map SlotName (Set Recipient) -> ExchangeValues.ExchangeValues -> Game ()
+exchangeValues :: Settle.Settle -> ObjectId -> ObjectId -> PlayerId -> Map.Map SlotName (Set Recipient) -> ExchangeValues.ExchangeValues -> Game ()
 exchangeValues settle resolving source controller legal (ExchangeValues.MkExchangeValues one other duration) = do
   gs <- State.get
   let single xs = case xs of
@@ -2084,7 +2085,7 @@ exchangeValues settle resolving source controller legal (ExchangeValues.MkExchan
 -- choice to its primary player (Game.heirOnDeparture's road). Asked in APNAP
 -- order, before any life moves. The scenario "CR 810.9d Biorhythm sets each
 -- team's life by the member the team chooses" proves it.
-setLifeTotal :: Game () -> ObjectId -> ObjectId -> PlayerId -> Map.Map SlotName (Set Recipient) -> PlayerQuantity.PlayerQuantity -> Game ()
+setLifeTotal :: Settle.Settle -> ObjectId -> ObjectId -> PlayerId -> Map.Map SlotName (Set Recipient) -> PlayerQuantity.PlayerQuantity -> Game ()
 setLifeTotal settle resolving source controller legal (PlayerQuantity.MkPlayerQuantity ref quantity) = do
   gs <- State.get
   let viewOf = effectViewOf resolving source legal gs
@@ -2182,7 +2183,7 @@ drawGame source controller = do
 -- team" under a shared team total (Game.lifeSharers): an assignment naming two
 -- is refused, which the scenario "CR 810.9f Reverse the Sands may not touch
 -- two members of a team" proves.
-redistributeLifeTotals :: Game () -> ObjectId -> PlayerId -> Game ()
+redistributeLifeTotals :: Settle.Settle -> ObjectId -> PlayerId -> Game ()
 redistributeLifeTotals settle source controller = do
   gs <- State.get
   let candidates = Players.table (Plane.rangePerspective source controller gs) gs
@@ -2274,7 +2275,7 @@ decreaseSpeed resolving source controller legal d = do
 -- chosen this way are sacrificed simultaneously" -- so every pick is taken
 -- first, in APNAP order, and only then does anything leave the battlefield.
 -- The candidate lists are read off ONE `gs` for the same reason.
-playerSacrifices :: Game () -> ObjectId -> ObjectId -> PlayerId -> Map.Map SlotName (Set Recipient) -> PlayerSacrifices.PlayerSacrifices -> Game ()
+playerSacrifices :: Settle.Settle -> ObjectId -> ObjectId -> PlayerId -> Map.Map SlotName (Set Recipient) -> PlayerSacrifices.PlayerSacrifices -> Game ()
 playerSacrifices settle resolving source controller legal (PlayerSacrifices.MkPlayerSacrifices players who filter_ quantity mPermanents) = do
   gs <- State.get
   let viewOf = effectViewOf resolving source legal gs

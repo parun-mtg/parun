@@ -86,6 +86,7 @@ import qualified Parun.Types.Prompt as Prompt
 import qualified Parun.Types.RangeOfInfluence as RangeOfInfluence
 import qualified Parun.Types.Recipient as Recipient
 import qualified Parun.Types.Result as Result
+import qualified Parun.Types.Settle as Settle
 import qualified Parun.Types.StackObjectKind as StackObjectKind
 import qualified Parun.Types.StepBegan as StepBegan
 import qualified Parun.Types.Timestamp as Timestamp
@@ -973,7 +974,7 @@ spec s registry = Spec.describe s "Range of influence" $ do
                   TurnRegisters.combat = Combat.emptyCombat {Combat.Type.defenders = [defender], Combat.Type.attackers = Map.fromList (fmap (\oid -> (oid, AttackTarget.OfPlayer defender)) attackers)}
                 }
           }
-        (Monad.void (Damage.dealCombatDamage (pure ())))
+        (Monad.void (Damage.dealCombatDamage Settle.none))
     -- CR 503.1: `pid`'s upkeep begins and its triggers resolve.
     upkeepOf pid gs =
       let upkeep = Phase.Beginning BeginningStep.Upkeep

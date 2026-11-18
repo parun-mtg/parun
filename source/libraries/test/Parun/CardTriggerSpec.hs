@@ -83,6 +83,7 @@ import qualified Parun.Types.Prompt as Prompt
 import qualified Parun.Types.Recipient as Recipient
 import qualified Parun.Types.Regenerability as Regenerability
 import qualified Parun.Types.Seat as Seat
+import qualified Parun.Types.Settle as Settle
 import qualified Parun.Types.SlotName as SlotName
 import qualified Parun.Types.Staged as Staged
 import qualified Parun.Types.StepBegan as StepBegan
@@ -2001,7 +2002,7 @@ spymastersVaultSpec s registry =
             (mongerId, g3) = S.addPermanent monger S.alice g2
             (pikerId, g4) = S.addPermanent piker S.alice g3
             (_, g5) = S.addLibraryCard giant S.alice g4
-            g6 = if killFirst then S.runPure S.identityAnswer g5 (Event.destroy (pure ()) Regenerability.Regenerable [pikerId]) else g5
+            g6 = if killFirst then S.runPure S.identityAnswer g5 (Event.destroy Settle.none Regenerability.Regenerable [pikerId]) else g5
             floated = S.runPure S.identityAnswer g6 (S.tapForMana swampId)
             ability = case Face.activatedAbilities (S.combinedFace vault) of
               _ : connive : _ -> connive
@@ -2414,7 +2415,7 @@ betrayalSpec s registry = Spec.describe s "CR 701.26a a becomes-tapped trigger" 
     case board of
       ([enchanted, _], _, gs) -> do
         let shielded = S.addRegenShield enchanted gs
-            after = settleAndResolve (S.runPure S.identityAnswer shielded (Event.destroy (pure ()) Regenerability.Regenerable [enchanted]))
+            after = settleAndResolve (S.runPure S.identityAnswer shielded (Event.destroy Settle.none Regenerability.Regenerable [enchanted]))
         Spec.assertEqWith s "CR 701.19a carol drew off the regeneration's tap" (handNames S.carol after) ["Island"]
         Spec.assertBool s (S.onBattlefield enchanted after) "the shield really stopped the destruction"
         Spec.assertEqWith s "and the regenerated creature really is tapped" (tapStatusOf enchanted after) (Just TapState.Tapped)
@@ -2802,7 +2803,7 @@ leylinePhantomSpec s registry = Spec.describe s "Leyline Phantom" $ do
                 k : rest -> Map.fromList ((k, n - List.genericLength rest) : fmap (\r -> (r, 1)) rest)
                 [] -> thresholds
               _ -> S.identityAnswer p
-            dealt = S.runPure dividing blocked (Monad.void (Damage.dealCombatDamage (pure ())) >> Engine.settleForPriority)
+            dealt = S.runPure dividing blocked (Monad.void (Damage.dealCombatDamage Settle.none) >> Engine.settleForPriority)
             resolved = S.runPure S.identityAnswer dealt Stack.resolveTop
         Spec.assertEqWith s "CR 603.2c one trigger for the step, not one per blocker" (length (TurnRegisters.stack (GameState.turn dealt))) 1
         Spec.assertEqWith s "CR 510.1c both blockers were dealt combat damage" (S.onBattlefield first dealt, S.onBattlefield second dealt) (False, False)

@@ -130,18 +130,18 @@ import qualified Parun.Types.SacrificeEffect as SacrificeEffect
 import qualified Parun.Types.Scratch as Scratch
 import qualified Parun.Types.Search as Search
 import qualified Parun.Types.SearchPlace as SearchPlace
+import qualified Parun.Types.Settle as Settle
 import Parun.Types.SlotName (SlotName)
 import qualified Parun.Types.StoredEffects as StoredEffects
 import qualified Parun.Types.StoredResult as StoredResult
 import qualified Parun.Types.TapState as TapState
 import qualified Parun.Types.Teams as Teams
-import qualified Parun.Types.Throw as Throw
 import qualified Parun.Types.TurnFaceDown as TurnFaceDown
 import qualified Parun.Types.Unblocking as Unblocking
 import qualified Parun.Types.Zone as Zone
 
-dealDamage :: (Game Result -> Game ()) -> (Game Result -> Game ()) -> Game Result -> ObjectId -> ObjectId -> PlayerId -> Map.Map SlotName (Set Recipient) -> DealDamage.DealDamage -> Game ()
-dealDamage runPreventionRiders runReplacementEffects runSubgame resolving source controller legal (DealDamage.MkDealDamage parts dealer sweep excess mTally mDamaged mExcessTally) = do
+dealDamage :: (Game Result -> Game ()) -> (Game Result -> Settle.Settle) -> Game Result -> ObjectId -> ObjectId -> PlayerId -> Map.Map SlotName (Set Recipient) -> DealDamage.DealDamage -> Game ()
+dealDamage runPreventionRiders settleWith runSubgame resolving source controller legal (DealDamage.MkDealDamage parts dealer sweep excess mTally mDamaged mExcessTally) = do
   gs <- State.get
   let viewOf = effectViewOf resolving source legal gs
       -- CR 120.1a: damage only to a battle, creature, or planeswalker, so every
@@ -218,10 +218,10 @@ dealDamage runPreventionRiders runReplacementEffects runSubgame resolving source
       else do
         -- ONE batch, not one call per recipient: CR 608.2f's "each such
         -- action is processed simultaneously".
-        settled <- Damage.applyDamage (runReplacementEffects runSubgame) rewritten
+        settled <- Damage.applyDamage (settleWith runSubgame) rewritten
         -- CR 614.1a: what a run-effects rewrite put in a replaced event's
         -- place runs inside this resolution too, and before the riders below.
-        runReplacementEffects runSubgame
+        Settle.queued (settleWith runSubgame)
         -- CR 615.5's "immediately afterward": a shield this damage spent runs
         -- its additional effect inside this resolution.
         runPreventionRiders runSubgame
@@ -259,8 +259,8 @@ dealDamage runPreventionRiders runReplacementEffects runSubgame resolving source
 -- CR 701.14. Every clause of the rule is one line here, and none of them is a
 -- read of what the effect IS: the amounts come off the projection, the kind is
 -- data, and the pair guard is arithmetic on two Maybes.
-fight :: (Game Result -> Game ()) -> (Game Result -> Game ()) -> Game Result -> ObjectId -> ObjectId -> PlayerId -> Map.Map SlotName (Set Recipient) -> Fight.Fight -> Game ()
-fight runPreventionRiders runReplacementEffects runSubgame resolving source controller legal (Fight.MkFight firstSlot secondSlot firstHop mExcessTally paired) = do
+fight :: (Game Result -> Game ()) -> (Game Result -> Settle.Settle) -> Game Result -> ObjectId -> ObjectId -> PlayerId -> Map.Map SlotName (Set Recipient) -> Fight.Fight -> Game ()
+fight runPreventionRiders settleWith runSubgame resolving source controller legal (Fight.MkFight firstSlot secondSlot firstHop mExcessTally paired) = do
   gs <- State.get
   -- CR 701.14b, and it is a guard on the PAIR: "if one or both creatures
   -- instructed to fight are no longer on the battlefield or are no longer
@@ -342,12 +342,12 @@ fight runPreventionRiders runReplacementEffects runSubgame resolving source cont
       if null events
         then pure 0
         else do
-          settled <- Damage.applyDamage (runReplacementEffects runSubgame) events
+          settled <- Damage.applyDamage (settleWith runSubgame) events
           -- The DealDamage arm's two drains, and for its reasons: a fight is an
           -- ordinary damage event, so a rewrite or a shield that applied to it
           -- runs inside this resolution rather than waiting for the next one.
           -- CR 614.1a's instead-effects first, then CR 615.5's riders.
-          runReplacementEffects runSubgame
+          Settle.queued (settleWith runSubgame)
           runPreventionRiders runSubgame
           -- CR 120.10, the DealDamage arm's reading: what the first creature
           -- SETTLED on the second (CR 120.4b), against the second's bar on the
@@ -732,12 +732,12 @@ activateManaAbilities performManaAbility runSubgame resolving source controller 
 -- Mana.moveMana writes in: the pools empty first, so a card naming one player
 -- on both sides nets the mana once. No gainer is CR 106.4's plain loss (Mana
 -- Short).
-moveMana :: Game () -> ObjectId -> ObjectId -> PlayerId -> Map.Map SlotName (Set Recipient) -> MoveMana.MoveMana -> Game ()
+moveMana :: Settle.Settle -> ObjectId -> ObjectId -> PlayerId -> Map.Map SlotName (Set Recipient) -> MoveMana.MoveMana -> Game ()
 moveMana settle resolving source controller legal (MoveMana.MkMoveMana fromRef toRef) = do
   gs <- State.get
   Mana.moveMana settle (Common.apnapPlayersOf fromRef legal resolving source controller gs) (foldMap (\ref -> Common.apnapPlayersOf ref legal resolving source controller gs) toRef)
 
-search :: Game () -> (Game Result -> ManaAbilityPerformer.ManaAbilityPerformer) -> Game Result -> ObjectId -> ObjectId -> PlayerId -> Map.Map SlotName (Set Recipient) -> Search.Search -> Game ()
+search :: Settle.Settle -> (Game Result -> ManaAbilityPerformer.ManaAbilityPerformer) -> Game Result -> ObjectId -> ObjectId -> PlayerId -> Map.Map SlotName (Set Recipient) -> Search.Search -> Game ()
 search settle performManaAbility runSubgame resolving source controller legal (Search.MkSearch searcherRef ownerRef zones outside quantity filter_ descriptions upTo destination counters subject foundSlot handSlot librarySlot differentIn exactly andOr top) =
   -- CR 701.23a: match each candidate through its own CR 613 projection --
   -- rule 613.1 names no zone, so a card in any of the searched zones is folded
@@ -1261,7 +1261,7 @@ search settle performManaAbility runSubgame resolving source controller legal (S
 -- GameState.players, which keep a departed seat's row -- and CR 801.10's
 -- within the controller's range, which CR 801.18 lifts for a planar source
 -- (Plane.rangePerspective).
-exileAllGraveyards :: Game () -> ObjectId -> PlayerId -> Game ()
+exileAllGraveyards :: Settle.Settle -> ObjectId -> PlayerId -> Game ()
 exileAllGraveyards settle source controller = do
   gs <- State.get
   let gyCards = concatMap (\pid -> Game.cardsIn Zone.Graveyard pid gs) (Players.table (Plane.rangePerspective source controller gs) gs)
@@ -1274,7 +1274,7 @@ exileAllGraveyards settle source controller = do
 --
 -- `settle` lands what a replacement queued in one draw's place before the next
 -- (CR 614.11a), the Draw arm's.
-exileHandThenDraw :: Game () -> PlayerId -> Game ()
+exileHandThenDraw :: Settle.Settle -> PlayerId -> Game ()
 exileHandThenDraw settle controller = do
   gs <- State.get
   let handIds = Game.zoneMembers Zone.Hand controller gs
@@ -1719,8 +1719,8 @@ rerollStoredResults throwDice runSubgame resolving source controller legal slot 
 -- Parun.Engine.Event.flipOneCoin, before the comparison here sees the face at
 -- all, which is why a statement of heads alone still loses this flip against a
 -- call of tails.
-flipCoinArm :: (Game Result -> Throw.Throw -> Game [Natural]) -> (Game Result -> PlayerId -> CoinFace.CoinFace -> Game Bool) -> Game Result -> ObjectId -> ObjectId -> PlayerId -> Map.Map SlotName (Set Recipient) -> FlipCoin.FlipCoin -> Game ()
-flipCoinArm throwRecorded reflipWindow runSubgame resolving source controller legal flipCoin = do
+flipCoinArm :: (Game Result -> Settle.Settle) -> Game Result -> ObjectId -> ObjectId -> PlayerId -> Map.Map SlotName (Set Recipient) -> FlipCoin.FlipCoin -> Game ()
+flipCoinArm settleWith runSubgame resolving source controller legal flipCoin = do
   gs <- State.get
   let viewOf = effectViewOf resolving source legal gs
       context = effectContext gs resolving controller source legal (slotBindings resolving gs)
@@ -1747,7 +1747,7 @@ flipCoinArm throwRecorded reflipWindow runSubgame resolving source controller le
           -- data/scenarios/coin/cr-705-2-only-the-flipping-player-calls-*.json
           -- proves it by what the engine ASKED rather than by anything the board
           -- shows.
-          CoinReading.Wins -> Event.flipWinLoseCoin (Just (throwRecorded runSubgame)) (reflipWindow runSubgame) flipper statements
+          CoinReading.Wins -> Event.flipWinLoseCoin (settleWith runSubgame) flipper statements
           -- CR 705.2's first sentence: the effect cares only about the face, so
           -- no Prompt.CallCoin is asked -- "no player wins or loses a coin flip
           -- for this kind of effect", so there is no call to make and nothing
@@ -1765,7 +1765,7 @@ flipCoinArm throwRecorded reflipWindow runSubgame resolving source controller le
           -- flipped a coin for that d20, the coin is called
           -- (Event.settleCoins).
           CoinReading.Heads -> do
-            (face, _) <- Event.flipOneCoin (Just (throwRecorded runSubgame)) (reflipWindow runSubgame) (Just flipper) Nothing statements
+            (face, _) <- Event.flipOneCoin (settleWith runSubgame) (Just flipper) Nothing statements
             pure (face == Just CoinFace.Heads)
         pure (if hit then acc + 1 else acc)
   -- Bound AFTER every coin, since the slot tallies all of one instruction's flips.
@@ -1842,7 +1842,7 @@ controlPlayerThisResolution controller legal (ControlPlayer.MkControlPlayer slot
       -- Not a player recipient or an illegal slot (CR 608.2b): no-op.
       _ -> gs
 
-destroy :: Game () -> ObjectId -> ObjectId -> PlayerId -> Map.Map SlotName (Set Recipient) -> Map.Map SlotName (Set Recipient) -> Destroy.Destroy -> Game ()
+destroy :: Settle.Settle -> ObjectId -> ObjectId -> PlayerId -> Map.Map SlotName (Set Recipient) -> Map.Map SlotName (Set Recipient) -> Destroy.Destroy -> Game ()
 destroy settle resolving source controller legal chosen (Destroy.MkDestroy ref regenerability mSlot mBuried mPermanents) = do
   -- CR 701.8: destroy them through the single funnel -- indestructible (CR
   -- 702.12b) and regeneration (CR 701.19a) are Event.destroy's to decide, and
@@ -1917,7 +1917,7 @@ destroy settle resolving source controller legal chosen (Destroy.MkDestroy ref r
   Monad.forM_ mPermanents $ \slot ->
     Monad.unless (null destroyed) (State.modify' (Common.bindObjectsSlot resolving slot (Seq.fromList (fmap fst destroyed))))
 
-sacrifice :: Game () -> ObjectId -> ObjectId -> PlayerId -> Map.Map SlotName (Set Recipient) -> Map.Map SlotName (Set Recipient) -> SacrificeEffect.SacrificeEffect -> Game ()
+sacrifice :: Settle.Settle -> ObjectId -> ObjectId -> PlayerId -> Map.Map SlotName (Set Recipient) -> Map.Map SlotName (Set Recipient) -> SacrificeEffect.SacrificeEffect -> Game ()
 sacrifice settle resolving source controller legal chosen (SacrificeEffect.MkSacrificeEffect ref sacrificer mSacrificed mPermanents) = do
   -- CR 701.21 through the single funnel, which is NOT Event.destroy (CR
   -- 701.21a): a sacrifice is not a destruction, so indestructible (CR 702.12b)

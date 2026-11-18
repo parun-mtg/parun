@@ -1,12 +1,8 @@
 {
-  "description": "CR 614.1a Pokey is not offered for Molten Sentry's entry flip",
-  "note": "The entry road has no CR 706 thrower, so Pokey's row is kept out of the offer (#5354): no ChooseSubstitute is scheduled, so one asked fails the scenario, and the one coin flipped comes up heads.",
   "board": {
     "active": "alice",
-    "step": "PrecombatMain",
     "seats": [
       {
-        "name": "alice",
         "battlefield": [
           {
             "card": "Mountain",
@@ -39,69 +35,91 @@
             "card": "Molten Sentry",
             "label": "sentry"
           }
-        ]
+        ],
+        "name": "alice"
       },
       {
         "name": "bob"
       }
-    ]
+    ],
+    "step": "PrecombatMain"
   },
+  "description": "CR 614.6 Pokey rolls a d20 for Molten Sentry's entry flip",
+  "note": "Alice rolls instead of flipping, declines Pokey's coin for that d20 and rolls 11, which is heads, so Molten Sentry enters as a 5/2 with haste. No FlipCoin answer is scheduled, so a coin flipped anyway fails the scenario.",
   "timeline": [
     {
-      "turn": 1,
-      "step": "PrecombatMain",
-      "player": "alice",
       "do": {
-        "Answer": {
-          "prompt": "FlipCoin",
-          "with": "Heads"
-        }
-      }
+        "ChooseOptional": "Exercises"
+      },
+      "player": "alice",
+      "source": "$pokey",
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PrecombatMain",
+      "do": {
+        "ChooseOptional": "Declines"
+      },
       "player": "alice",
+      "source": "$pokey",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Answer": {
+          "prompt": "RollDie",
+          "with": 11
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
       "do": {
         "Cast": {
-          "object": "$sentry",
           "mana": [
             "$m0",
             "$m1",
             "$m2",
             "$m3"
-          ]
+          ],
+          "object": "$sentry"
         }
-      }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PrecombatMain",
+      "do": "Pass",
       "player": "alice",
-      "do": "Pass"
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PrecombatMain",
-      "player": "alice",
       "check": {
         "View": {
-          "of": "Stack",
-          "is": []
+          "is": [],
+          "of": "Stack"
         }
-      }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PrecombatMain",
-      "player": "alice",
       "check": {
         "PowerToughness": {
           "object": "Molten Sentry",
           "power": 5,
           "toughness": 2
         }
-      }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
     }
   ]
 }

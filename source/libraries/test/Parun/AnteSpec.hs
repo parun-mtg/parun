@@ -45,6 +45,7 @@ import qualified Parun.Types.Player as Player
 import qualified Parun.Types.PlayerId as PlayerId
 import qualified Parun.Types.Prompt as Prompt
 import qualified Parun.Types.Result as Result
+import qualified Parun.Types.Settle as Settle
 import qualified Parun.Types.ShownComponent as ShownComponent
 import qualified Parun.Types.Source as Source
 import qualified Parun.Types.TeamId as TeamId
@@ -266,7 +267,7 @@ spec s registry = Spec.describe s "Ante" $ do
         sub = S.runPure S.identityAnswer (Setup.subgameStateFrom S.alice parent) (Setup.startGameFromCards S.performer Set.empty)
     case Event.bringInFrom (Event.arrivalOf OutsideDestination.Hand) S.bob birdId sub of
       (Just (inSub NonEmpty.:| []), crossed) -> do
-        let anted = S.departs Departure.Type.Conceded S.bob (S.runPure S.identityAnswer crossed (Event.changeZone (pure ()) inSub Zone.Ante))
+        let anted = S.departs Departure.Type.Conceded S.bob (S.runPure S.identityAnswer crossed (Event.changeZone Settle.none inSub Zone.Ante))
             back = Setup.funnelBack anted (Setup.applyCrossings anted parent)
         Spec.assertEqWith s "CR 730.5 bob's main-game library holds his nine and the Bird" (length (Game.zoneMembers Zone.Library S.bob back)) 10
       _ -> Spec.assertFailure s "the Bird was not brought in"
@@ -281,7 +282,7 @@ spec s registry = Spec.describe s "Ante" $ do
         parent = g1 {GameState.players = Map.adjust pooled S.bob (GameState.players g1)}
         sub = S.runPure S.identityAnswer (Setup.subgameStateFrom S.alice parent) (Setup.startGameFromCards S.performer Set.empty)
         (inSub, brought) = Event.bringIn (Event.arrivalOf OutsideDestination.Hand) S.bob birdPrinting sub
-        anted = S.departs Departure.Type.Conceded S.bob (S.runPure S.identityAnswer brought (Event.changeZone (pure ()) inSub Zone.Ante))
+        anted = S.departs Departure.Type.Conceded S.bob (S.runPure S.identityAnswer brought (Event.changeZone Settle.none inSub Zone.Ante))
         back = Setup.funnelBack anted (Setup.applyCrossings anted parent)
         poolOf pid gs = foldMap Player.outsideTheGame (Map.lookup pid (GameState.players gs))
     Spec.assertEqWith s "CR 730.5 bob's main-game library holds his nine and the Bird" (length (Game.zoneMembers Zone.Library S.bob back)) 10
@@ -344,7 +345,7 @@ spec s registry = Spec.describe s "Ante" $ do
     piker <- S.printingOf s registry "Goblin Piker"
     let (card, g1) = S.addObjectIn Zone.Graveyard piker S.alice (Setup.gameWith anteGame S.bothPlayers)
         g2 = g1 {GameState.objects = Map.adjust (\obj -> obj {Object.owner = S.bob}) card (GameState.objects g1)}
-        after = S.runPure S.identityAnswer g2 (Event.changeZone (pure ()) card Zone.Hand)
+        after = S.runPure S.identityAnswer g2 (Event.changeZone Settle.none card Zone.Hand)
     Spec.assertEqWith s "CR 400.1 alice's graveyard holds bob's card" (Game.pileHolderOf card g2) (Just S.alice)
     Spec.assertEqWith s "CR 400.1 alice's graveyard no longer holds it" (Game.zoneMembers Zone.Graveyard S.alice after) []
     Spec.assertEqWith s "CR 400.3 it is in bob's hand" (length (Game.zoneMembers Zone.Hand S.bob after)) 1
@@ -355,8 +356,8 @@ spec s registry = Spec.describe s "Ante" $ do
     piker <- S.printingOf s registry "Goblin Piker"
     let (start, g1) = S.addObjectIn Zone.Battlefield piker S.alice (Setup.gameWith anteGame S.threePlayers)
         twice = do
-          arrived <- Event.changeZoneReturning (pure ()) start Zone.Graveyard
-          Monad.forM_ arrived (\gy -> Event.changeZone (pure ()) gy Zone.Exile)
+          arrived <- Event.changeZoneReturning Settle.none start Zone.Graveyard
+          Monad.forM_ arrived (\gy -> Event.changeZone Settle.none gy Zone.Exile)
         after = S.runPure S.identityAnswer g1 twice
         zoneNow gs = fmap Object.zone (Maybe.mapMaybe (`Game.lookupObject` gs) (Game.currentIncarnations start gs))
     Spec.assertEqWith s "CR 400.7 it is followed into exile" (zoneNow after) [Zone.Exile]

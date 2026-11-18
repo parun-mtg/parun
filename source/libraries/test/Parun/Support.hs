@@ -150,6 +150,7 @@ import qualified Parun.Types.ScenarioFailure as ScenarioFailure
 import qualified Parun.Types.Scope as Scope
 import qualified Parun.Types.Scratch as Scratch
 import qualified Parun.Types.Seat as Seat
+import qualified Parun.Types.Settle as Settle
 import qualified Parun.Types.Sickness as Sickness
 import qualified Parun.Types.SlotName as SlotName
 import qualified Parun.Types.Snapshots as Snapshots
@@ -1294,7 +1295,7 @@ fightWith answer gs =
   snd . Engine.runGamePure answer gs $ do
     Combat.declareAttackers manaPerformer alice
     Combat.declareBlockers manaPerformer
-    Damage.dealCombatDamage (pure ())
+    Damage.dealCombatDamage Settle.none
 
 -- Build a board, run a script against one engine entry point, and fail the case
 -- on either error: the whole of the common case in one call. A case that wants

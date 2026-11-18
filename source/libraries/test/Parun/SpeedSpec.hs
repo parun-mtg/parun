@@ -62,6 +62,7 @@ import qualified Parun.Types.PlayerId as PlayerId
 import qualified Parun.Types.Printing as Printing
 import qualified Parun.Types.Prompt as Prompt
 import qualified Parun.Types.Recipient as Recipient
+import qualified Parun.Types.Settle as Settle
 import qualified Parun.Types.TriggerSource as TriggerSource
 import qualified Parun.Types.TurnRegisters as TurnRegisters
 import qualified Parun.Types.Zone as Zone
@@ -334,7 +335,7 @@ increaseSpec s registry = Spec.describe s "Increase" $ do
         (firstBolt, withFirst) = S.addHandCard lightningBolt S.alice withRaceway
         (gs0, secondBolt) = S.handOne lightningBolt withFirst
         early = castResolveSettle atBob S.alice firstBolt gs0
-        engines = S.runPure S.identityAnswer early (Cast.playLand (pure ()) False S.alice racewayId Nothing >> Engine.settleForPriority)
+        engines = S.runPure S.identityAnswer early (Cast.playLand Settle.none False S.alice racewayId Nothing >> Engine.settleForPriority)
         late = castResolveSettle atBob S.alice secondBolt engines
     Spec.assertEqWith s "the second Bolt raised alice's speed from 1 to 2" (speedOf S.alice late) (Just (Just 2))
     Spec.assertEqWith s "bob lost six life over the two Bolts" (S.lifeOf S.bob late) (fmap (subtract 6) (S.lifeOf S.bob gs0))

@@ -134,6 +134,7 @@ import qualified Parun.Types.Result as Result
 import qualified Parun.Types.Scope as Scope
 import qualified Parun.Types.Search as Search
 import qualified Parun.Types.SearchDestination as SearchDestination
+import qualified Parun.Types.Settle as Settle
 import qualified Parun.Types.Sickness as Sickness
 import qualified Parun.Types.SlotArity as SlotArity
 import qualified Parun.Types.SlotName as SlotName
@@ -199,7 +200,7 @@ targetSpec s registry = Spec.describe s "Target" $ do
   Spec.it s "CR 608.2b a creature that left its zone is no longer legal" $ do
     piker <- S.printingOf s registry "Goblin Piker"
     let (oid, gs) = S.addPermanent piker S.bob (Setup.emptyGame S.bothPlayers)
-        gone = S.runPure S.identityAnswer gs (Event.changeZone (pure ()) oid Zone.Graveyard)
+        gone = S.runPure S.identityAnswer gs (Event.changeZone Settle.none oid Zone.Graveyard)
     Spec.assertBool s (Target.stillLegal StackObjectKind.Spell Nothing Nothing Map.empty Acquisition.Own S.noSource (Recipient.ToCreature oid) (TargetSlot.required Pool.AnyTarget Nothing) gs) "legal while fielded"
     Spec.assertBool s (not (Target.stillLegal StackObjectKind.Spell Nothing Nothing Map.empty Acquisition.Own S.noSource (Recipient.ToCreature oid) (TargetSlot.required Pool.AnyTarget Nothing) gone)) "illegal once moved"
   Spec.it s "legalSets maps each slot to its legal recipients" $ do
@@ -226,7 +227,7 @@ targetSpec s registry = Spec.describe s "Target" $ do
   Spec.it s "CR 608.2b a creature that left is no longer a legal CreatureTarget" $ do
     piker <- S.printingOf s registry "Goblin Piker"
     let (oid, gs) = S.addPermanent piker S.bob (Setup.emptyGame S.bothPlayers)
-        gone = S.runPure S.identityAnswer gs (Event.changeZone (pure ()) oid Zone.Graveyard)
+        gone = S.runPure S.identityAnswer gs (Event.changeZone Settle.none oid Zone.Graveyard)
     Spec.assertBool s (Target.stillLegal StackObjectKind.Spell Nothing Nothing Map.empty Acquisition.Own S.noSource (Recipient.ToCreature oid) (TargetSlot.required Pool.Creatures Nothing) gs) "legal while fielded"
     Spec.assertBool s (not (Target.stillLegal StackObjectKind.Spell Nothing Nothing Map.empty Acquisition.Own S.noSource (Recipient.ToCreature oid) (TargetSlot.required Pool.Creatures Nothing) gone)) "illegal once moved"
   Spec.it s "CR 115 SpellOrPermanentTarget offers battlefield permanents and stack spells" $ do
@@ -1225,7 +1226,7 @@ resolveSpec s registry = Spec.describe s "Resolve" $ do
         (ripId, g1) = S.addPermanent restInPeace S.alice g0
         (deadId, g2) = S.addLibraryCard piker S.bob g1
         -- move the Piker into bob's graveyard
-        g3 = S.runPure S.identityAnswer g2 (Event.changeZone (pure ()) deadId Zone.Graveyard)
+        g3 = S.runPure S.identityAnswer g2 (Event.changeZone Settle.none deadId Zone.Graveyard)
         ability =
           Mint.trigger (TriggerCondition.Enters EntersTrigger.defaultValue) (Seq.fromList [Effect.ExileAllGraveyards])
         (abilId, g4) = Game.freshObjectId g3

@@ -30,7 +30,7 @@ import qualified Parun.Engine.Projection.Rewrite as Projection
 import qualified Parun.Engine.Projection.View as Projection
 import qualified Parun.Engine.Replacement as Replacement
 import qualified Parun.Engine.Resolve.Common as Common
-import Parun.Engine.Resolve.Effect (applyEffectWith, payGatePaid, runReplacementEffects)
+import Parun.Engine.Resolve.Effect (applyEffectWith, payGatePaid, settleWith)
 import Parun.Engine.Resolve.Slots (boundSlots, effectContext, resolvingAbilityName, resolvingKind, slotsAreExhaustive, slotsOf)
 import qualified Parun.Engine.SourceContext as SourceContext
 import qualified Parun.Engine.Target as Target
@@ -94,6 +94,7 @@ import qualified Parun.Types.ProposedEvent as ProposedEvent
 import Parun.Types.Recipient (Recipient)
 import qualified Parun.Types.Recipient as Recipient
 import Parun.Types.Result (Result)
+import qualified Parun.Types.Settle as Settle
 import Parun.Types.SlotName (SlotName)
 import qualified Parun.Types.Snapshots as Snapshots
 import qualified Parun.Types.Source as Source
@@ -343,7 +344,7 @@ resolveSpellWith runSubgame oid = do
               -- targets are still affected.
               Just targetSlot -> Target.stillLegalAmong (resolvingKind oid gs) Nothing (Just (spellController obj oid gs)) (Object.bindings obj) (Game.acquisitionOf oid gs) oid targetSlot recipients gs
          in if targetsAllIllegal oid gs
-              then Event.changeZone (runReplacementEffects runSubgame) oid Zone.Graveyard
+              then Event.changeZone (settleWith runSubgame) oid Zone.Graveyard
               else do
                 let effectController = spellController obj oid gs
                 -- CR 702.174j's spell ability, ahead of everything else the card
@@ -484,9 +485,9 @@ resolveSpellWith runSubgame oid = do
                     indexedClauses
                 firstOfName <- noteResolved oid effectController
                 applyEpic oid effectController
-                exiled <- applyParadigm (runReplacementEffects runSubgame) oid effectController firstOfName
-                encoded <- if exiled then pure True else applyCipher (runReplacementEffects runSubgame) oid effectController
-                Monad.unless encoded (finishSpell (runReplacementEffects runSubgame) oid face effectController)
+                exiled <- applyParadigm (settleWith runSubgame) oid effectController firstOfName
+                encoded <- if exiled then pure True else applyCipher (settleWith runSubgame) oid effectController
+                Monad.unless encoded (finishSpell (settleWith runSubgame) oid face effectController)
 
 -- CR 702.174b's instant-and-sorcery half: "If this spell's gift cost was paid,
 -- [effect]". A SPELL ability, where rule 702.174b's permanent half is a triggered
@@ -647,7 +648,7 @@ noteResolved oid controller = do
 -- armed with Expiry.Never for "for the rest of the game", epic's reason, and
 -- binds this id for Keyword.paradigmCopy to find in Snapshots.stackArchive.
 -- Parun.CastSpec's "Paradigm" group proves both abilities.
-applyParadigm :: Game () -> ObjectId -> PlayerId -> Bool -> Game Bool
+applyParadigm :: Settle.Settle -> ObjectId -> PlayerId -> Bool -> Game Bool
 applyParadigm settle oid controller firstOfName = do
   gs <- State.get
   if not (Keyword.Engine.hasParadigm (Map.keysSet (Projection.keywordsOf oid gs)))
@@ -679,7 +680,7 @@ applyParadigm settle oid controller firstOfName = do
 -- The creature is CHOSEN, not targeted (CR 115.1), from the permanents the
 -- controller controls that are creatures now -- read through the projection, so
 -- an animated land qualifies. No creature leaves nothing to ask.
-applyCipher :: Game () -> ObjectId -> PlayerId -> Game Bool
+applyCipher :: Settle.Settle -> ObjectId -> PlayerId -> Game Bool
 applyCipher settle oid controller = do
   gs <- State.get
   let represented = case fmap Object.source (Game.lookupObject oid gs) of
@@ -730,7 +731,7 @@ applyCipher settle oid controller = do
 -- Replacement.rowApplied says that row is what moved the card: a row the
 -- controller took ahead of it sends the spell somewhere else and CR 614.6 leaves
 -- the rider nothing to hang on.
-finishSpell :: Game () -> ObjectId -> Face.Face Card.Type.Card -> PlayerId -> Game ()
+finishSpell :: Settle.Settle -> ObjectId -> Face.Face Card.Type.Card -> PlayerId -> Game ()
 finishSpell settle oid face controller = do
   bought <- State.gets (maybe False Object.boughtBack . Game.lookupObject oid)
   Monad.when bought (State.modify' (snd . Replacement.installBuybackReturn oid controller))

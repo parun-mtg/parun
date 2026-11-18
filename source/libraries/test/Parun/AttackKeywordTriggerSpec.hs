@@ -56,6 +56,7 @@ import qualified Parun.Types.Pool as Pool
 import qualified Parun.Types.Prompt as Prompt
 import qualified Parun.Types.Quantity as Quantity.Type
 import qualified Parun.Types.Recipient as Recipient
+import qualified Parun.Types.Settle as Settle
 import qualified Parun.Types.SlotName as SlotName
 import qualified Parun.Types.StackObjectKind as StackObjectKind
 import qualified Parun.Types.TargetSlot as TargetSlot
@@ -595,7 +596,7 @@ trygonPredatorSpec s registry =
             -- the seam CR 603.3d's placement needs to be observable in, since a
             -- whole step would resolve the trigger as well.
             atDamage = S.runToStep (Phase.Combat CombatStep.CombatDamage) plan gs0
-            fought = S.runPure plan atDamage (Damage.dealCombatDamage (pure ()))
+            fought = S.runPure plan atDamage (Damage.dealCombatDamage Settle.none)
         pure (mine, theirs, others, S.runPure plan fought Engine.settleForPriority)
    in Spec.describe s "TrygonPredator" $ do
         -- THE proving test. CR 603.3d picks the target as the ability is put on
@@ -673,7 +674,7 @@ questingBeastSpec s registry =
             -- the trigger -- which leaves a state where the ability is on the
             -- stack and has not resolved.
             atDamage = S.runToStep (Phase.Combat CombatStep.CombatDamage) plan shrunk
-            fought = S.runPure plan atDamage (Damage.dealCombatDamage (pure ()))
+            fought = S.runPure plan atDamage (Damage.dealCombatDamage Settle.none)
             placed = S.runPure plan fought Engine.settleForPriority
         pure (mine, theirs, others, shrunk, placed)
    in Spec.describe s "QuestingBeast" $ do
@@ -716,7 +717,7 @@ larcenySpec s registry =
         let (gs0, _, _, _) = S.threePlayerCombat [larceny, piker] [] []
             stocked = List.foldl' (\g pid -> List.foldl' (\g2 _ -> snd (S.addHandCard piker pid g2)) g [(), (), ()]) gs0 [S.alice, S.bob, S.carol]
             atDamage = S.runToStep (Phase.Combat CombatStep.CombatDamage) plan stocked
-            fought = S.runPure plan atDamage (Damage.dealCombatDamage (pure ()))
+            fought = S.runPure plan atDamage (Damage.dealCombatDamage Settle.none)
             placed = S.runPure plan fought Engine.settleForPriority
         pure (stocked, placed)
    in Spec.describe s "Larceny" $ do

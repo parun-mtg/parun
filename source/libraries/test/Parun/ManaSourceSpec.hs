@@ -109,6 +109,7 @@ import qualified Parun.Types.RequirementArity as RequirementArity
 import qualified Parun.Types.RestrictedCreatures as RestrictedCreatures
 import qualified Parun.Types.RoomHalf as RoomHalf
 import qualified Parun.Types.Scope as Scope
+import qualified Parun.Types.Settle as Settle
 import qualified Parun.Types.SlotName as SlotName
 import qualified Parun.Types.StepBegan as StepBegan
 import qualified Parun.Types.StoredEffects as StoredEffects
@@ -1544,7 +1545,7 @@ interchangeableSourcesSpec s registry = Spec.describe s "Interchangeable mana so
         (twin, g2) = S.addPermanent piker S.alice g1
         (grown, board) = S.addPermanent piker S.alice g2
         counted = board {GameState.objects = Map.adjust (\o -> o {Object.counters = Map.singleton CounterKind.PlusOnePlusOne 1}) grown (GameState.objects board)}
-        moved = List.foldl' (\g oid -> S.runPure S.identityAnswer g (Event.changeZone (pure ()) oid Zone.Graveyard)) counted [plain, twin, grown]
+        moved = List.foldl' (\g oid -> S.runPure S.identityAnswer g (Event.changeZone Settle.none oid Zone.Graveyard)) counted [plain, twin, grown]
         cardOf gs oid = List.find (\card -> Count.Engine.departedAs gs card == Just oid) (Game.zoneMembers Zone.Graveyard S.alice gs)
         alike gs x y = Interchangeable.objects (Projection.projectAll gs) gs <$> cardOf gs x <*> cardOf gs y
         (holder, bound) = S.addPermanent piker S.alice moved
@@ -1788,7 +1789,7 @@ interchangeableSourcesSpec s registry = Spec.describe s "Interchangeable mana so
         (elfA, elfB) = case NonEmpty.toList elves of
           a : b : _ -> (a, b)
           _ -> (NonEmpty.head elves, NonEmpty.head elves)
-        hit pairs gs = S.runPure S.identityAnswer gs (Damage.applyDamage (pure ()) [Event.damageEvent gs DamageKind.Combat source (Recipient.ToCreature victim) 1 | (source, victim) <- pairs])
+        hit pairs gs = S.runPure S.identityAnswer gs (Damage.applyDamage Settle.none [Event.damageEvent gs DamageKind.Combat source (Recipient.ToCreature victim) 1 | (source, victim) <- pairs])
         apart = hit [(first, elfA), (second, elfB)] ready
         together = hit [(first, elfA), (first, elfB)] ready
         (offers, paid, after) = greenWindow apart
@@ -1816,7 +1817,7 @@ interchangeableSourcesSpec s registry = Spec.describe s "Interchangeable mana so
         (elfA, elfB) = case NonEmpty.toList elves of
           a : b : _ -> (a, b)
           _ -> (NonEmpty.head elves, NonEmpty.head elves)
-        hit pairs gs = S.runPure S.identityAnswer gs (Damage.applyDamage (pure ()) [Event.damageEvent gs DamageKind.Combat source (Recipient.ToCreature victim) 1 | (source, victim) <- pairs])
+        hit pairs gs = S.runPure S.identityAnswer gs (Damage.applyDamage Settle.none [Event.damageEvent gs DamageKind.Combat source (Recipient.ToCreature victim) 1 | (source, victim) <- pairs])
         apart = Engine.beginTurnOf S.bob (hit [(first, elfA), (second, elfB)] ready)
         together = Engine.beginTurnOf S.bob (hit [(first, elfA), (first, elfB)] ready)
         (offers, paid, after) = greenWindow apart
@@ -1840,7 +1841,7 @@ interchangeableSourcesSpec s registry = Spec.describe s "Interchangeable mana so
         (elfA, elfB) = case NonEmpty.toList elves of
           a : b : _ -> (a, b)
           _ -> (NonEmpty.head elves, NonEmpty.head elves)
-        hit amounts gs = S.runPure S.identityAnswer gs (Damage.applyDamage (pure ()) [Event.damageEvent gs DamageKind.Noncombat source (Recipient.ToPlayer S.bob) amount | (source, amount) <- amounts])
+        hit amounts gs = S.runPure S.identityAnswer gs (Damage.applyDamage Settle.none [Event.damageEvent gs DamageKind.Noncombat source (Recipient.ToPlayer S.bob) amount | (source, amount) <- amounts])
         apart = hit [(elfA, 2), (elfB, 1)] ready
         together = hit [(elfA, 1), (elfB, 1)] ready
         (offers, paid, after) = greenWindow apart

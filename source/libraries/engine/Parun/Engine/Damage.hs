@@ -56,6 +56,7 @@ import qualified Parun.Types.Prevention as Prevention
 import qualified Parun.Types.Prompt as Prompt
 import qualified Parun.Types.Recipient as Recipient
 import qualified Parun.Types.RuleWaiver as RuleWaiver
+import qualified Parun.Types.Settle as Settle
 import qualified Parun.Types.StoredEffects as StoredEffects
 import qualified Parun.Types.Teams as Teams
 import qualified Parun.Types.TurnRegisters as TurnRegisters
@@ -1093,7 +1094,7 @@ settleExcess board events = snd (List.mapAccumL share Map.empty events)
 --
 -- `settle` is Event.drawSeries', for the draws Lich makes in place of a gain
 -- the batch causes (CR 614.11a).
-applyDamage :: Game () -> [DamageEvent.DamageEvent] -> Game [DamageEvent.DamageEvent]
+applyDamage :: Settle.Settle -> [DamageEvent.DamageEvent] -> Game [DamageEvent.DamageEvent]
 applyDamage settle events = do
   (dealt, gains) <- Event.simultaneously (processDamage settle events)
   recordLifelinkGains gains
@@ -1108,7 +1109,7 @@ applyDamage settle events = do
 -- CR 614.1's funnel for the class, so a LifeGainR row resizes it -- and the
 -- record has to name what the player actually gained, or a "whenever you gain
 -- life" trigger would read the amount before the replacement.
-processDamage :: Game () -> [DamageEvent.DamageEvent] -> Game ([DamageEvent.DamageEvent], [(PlayerId, Natural)])
+processDamage :: Settle.Settle -> [DamageEvent.DamageEvent] -> Game ([DamageEvent.DamageEvent], [(PlayerId, Natural)])
 processDamage settle events = do
   (resolved, prevented) <- Event.resolveDamageBatch events
   -- The state the whole batch is read against: recipients are classified off it
@@ -1670,7 +1671,7 @@ lifelinkGains survivors =
 -- step is gone for the second.
 --
 -- `settle` is applyDamage's.
-dealCombatDamage :: Game () -> Game Bool
+dealCombatDamage :: Settle.Settle -> Game Bool
 dealCombatDamage settle = do
   gs <- State.get
   let combat = TurnRegisters.combat (GameState.turn gs)
@@ -1721,7 +1722,7 @@ dealCombatDamage settle = do
 -- bracket has closed. Per WAVE and not per combat: CR 510.4's second combat
 -- damage step is a second step, so a double striker that connects in both is
 -- two occurrences.
-dealWave :: Game () -> (ObjectId -> Bool) -> Game ()
+dealWave :: Settle.Settle -> (ObjectId -> Bool) -> Game ()
 dealWave settle assigns = do
   assignment <- gatherCombatDamage assigns
   (_, gains) <- Event.simultaneously (processDamage settle assignment)

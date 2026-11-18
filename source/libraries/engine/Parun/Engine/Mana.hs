@@ -134,6 +134,7 @@ import qualified Parun.Types.ProjectedCharacteristics as PC
 import qualified Parun.Types.Prompt as Prompt
 import qualified Parun.Types.Recipient as Recipient
 import qualified Parun.Types.Sacrifice as Sacrifice
+import qualified Parun.Types.Settle as Settle
 import Parun.Types.SlotName (SlotName)
 import qualified Parun.Types.SlotName as SlotName
 import qualified Parun.Types.SourceChoices as SourceChoices
@@ -1522,7 +1523,7 @@ movedMana answers losers gainers gs =
 -- this is emptyManaPools' charge, of what the move took, read on the state the
 -- move happens in. A self-targeted Drain Power still charges: the mana is lost
 -- before it is added back.
-moveMana :: Game () -> [PlayerId] -> [PlayerId] -> Game ()
+moveMana :: Settle.Settle -> [PlayerId] -> [PlayerId] -> Game ()
 moveMana settle losers gainers = do
   gs <- State.get
   answers <- chooseLossReplacements (fmap (\pid -> (pid, unitsOf (Game.poolOf pid gs))) losers)
@@ -1646,7 +1647,7 @@ keepsAtStepEnd gs pid unit = PlayerEffect.keepsUnspentMana pid gs unit || ManaUn
 -- Event.resolveLifeLoss, CR 614.1's funnel, carrying CR 119.3's ByEffect: this
 -- is an effect's loss and not a payment's, so a row scoped to a payment does not
 -- reach it.
-emptyManaPools :: Game () -> Game ()
+emptyManaPools :: Settle.Settle -> Game ()
 emptyManaPools settle = do
   gs <- State.get
   answers <- chooseLossReplacements (Map.toList (Map.mapWithKey (\pid -> filter (not . keepsAtStepEnd gs pid) . Mana.unwrap) (GameState.manaPool gs)))
@@ -1660,7 +1661,7 @@ emptyManaPools settle = do
 -- whom `gs` (the state the loss happened in) has the static, loses that much
 -- life. `settle` is Event.drawSeries', for the draws Lich makes in place of
 -- a gain made in the loss's place.
-chargeForLostMana :: Game () -> GameState -> Map.Map PlayerId Natural -> Game ()
+chargeForLostMana :: Settle.Settle -> GameState -> Map.Map PlayerId Natural -> Game ()
 chargeForLostMana settle gs losses =
   Event.simultaneously . Monad.forM_ (Map.toList (Map.filter (/= 0) losses)) $ \(pid, lost) ->
     Monad.when (PlayerEffect.losesLifeForUnspentMana pid gs) $ do
