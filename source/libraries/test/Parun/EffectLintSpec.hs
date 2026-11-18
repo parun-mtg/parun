@@ -2301,7 +2301,9 @@ effectLintSpec s registry corpus = Spec.describe s "Lint" $ do
           PlayerRef.HolderOfBound {} -> True
           -- A SET -- the arm above's plural, EachInSlot's answer.
           PlayerRef.HoldersOfBound {} -> False
-          -- One seat -- the arm above's answer, the host itself a player.
+          -- A SET -- a pile may hold several owners' cards.
+          PlayerRef.OwnersOfExiledBy _ _ -> False
+          -- One seat -- HolderOfBound's answer, the host itself a player.
           PlayerRef.PlayerHostOfBound _ -> True
           -- One seat -- the arm above's answer, the attacked player.
           PlayerRef.AttackedByBound _ -> True

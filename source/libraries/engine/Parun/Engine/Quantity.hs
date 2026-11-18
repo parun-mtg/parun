@@ -1546,6 +1546,8 @@ playerRefIsSlotless ref = case ref of
   -- The arm above's answer, for its reason.
   PlayerRef.HoldersOfBound {} -> False
   -- The arm above's answer: the object is named by a slot.
+  PlayerRef.OwnersOfExiledBy _ _ -> False
+  -- The arm above's answer: the object is named by a slot.
   PlayerRef.PlayerHostOfBound _ -> False
   -- The arm above's answer: the attacker is named by a slot.
   PlayerRef.AttackedByBound _ -> False
@@ -1629,6 +1631,7 @@ forCandidate pid =
         PlayerRef.Specific _ -> ref
         PlayerRef.HolderOfBound {} -> ref
         PlayerRef.HoldersOfBound {} -> ref
+        PlayerRef.OwnersOfExiledBy _ _ -> ref
         PlayerRef.PlayerHostOfBound _ -> ref
         PlayerRef.AttackedByBound _ -> ref
         PlayerRef.HolderOfObject _ _ -> ref
@@ -1685,6 +1688,9 @@ bakePlayerRef players objects ref = case ref of
   -- LEFT STANDING, EachInSlot's posture and for its reason: a set has no one
   -- object to bake to.
   PlayerRef.HoldersOfBound {} -> ref
+  -- LEFT STANDING, HolderOfBound ... Host's posture: the linked exile is a
+  -- board read.
+  PlayerRef.OwnersOfExiledBy _ _ -> ref
   -- LEFT STANDING, the arm above's posture and for its reason.
   PlayerRef.PlayerHostOfBound _ -> ref
   -- LEFT STANDING, the arm above's posture: what an attacker attacks is a board

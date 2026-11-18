@@ -78,7 +78,8 @@
                         "value": {
                           "highest": "highest",
                           "roller": {
-                            "type": "AnyPlayer"
+                            "type": "Relative",
+                            "value": "AnyPlayer"
                           },
                           "sides": 20,
                           "slot": "result"

@@ -44375,6 +44375,7 @@
     "UND": {
       "95": {"card":"Forest"},
       "96": {"card":"Forest"},
+      "6": {"card":"GO TO JAIL"},
       "89": {"card":"Island"},
       "90": {"card":"Island"},
       "93": {"card":"Mountain"},
@@ -44709,6 +44710,7 @@
       "169": {"card":"Arms Depot"},
       "109": {"card":"First Pick"},
       "216": {"card":"Forest"},
+      "8": {"card":"GO TO JAIL"},
       "188": {"card":"Head Banger"},
       "213": {"card":"Island"},
       "215": {"card":"Mountain"},

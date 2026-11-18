@@ -8,6 +8,7 @@ import qualified Parun.JsonCodec.Common as Common
 import qualified Parun.Spec as Spec
 import qualified Parun.Types.AttackingPlayers as AttackingPlayers
 import qualified Parun.Types.Comparison as Comparison
+import qualified Parun.Types.ExiledPile as ExiledPile
 import qualified Parun.Types.Gift as Gift
 import qualified Parun.Types.Holder as Holder
 import qualified Parun.Types.Hop as Hop
@@ -104,6 +105,12 @@ spec s = Spec.describe s "Parun.Codec.PlayerRef" $ do
       PlayerRef.codec
       (PlayerRef.AtGrant (PlayerRef.HolderOfBound Holder.Controller Hop.Itself (SlotName.MkSlotName (Text.pack "thatDepartedPermanent"))))
       " {\"type\":\"AtGrant\",\"value\":{\"type\":\"HolderOfBound\",\"value\":{\"holder\":\"Controller\",\"hop\":\"Itself\",\"slot\":\"thatDepartedPermanent\"}}} "
+  Spec.it s "OwnersOfExiledBy" $
+    Common.assertCodec
+      s
+      PlayerRef.codec
+      (PlayerRef.OwnersOfExiledBy ExiledPile.OwnAbilities (SlotName.MkSlotName (Text.pack "self")))
+      " {\"type\":\"OwnersOfExiledBy\",\"value\":{\"pile\":{\"type\":\"OwnAbilities\"},\"slot\":\"self\"}} "
   Spec.it s "PlayerHostOfBound" $
     Common.assertCodec
       s
