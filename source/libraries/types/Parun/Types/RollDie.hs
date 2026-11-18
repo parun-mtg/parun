@@ -2,8 +2,8 @@ module Parun.Types.RollDie where
 
 import qualified Numeric.Natural as Natural
 import qualified Parun.Types.DiceReading as DiceReading
+import qualified Parun.Types.PlayerRef as PlayerRef
 import qualified Parun.Types.PlayerRelation as PlayerRelation
-import qualified Parun.Types.PlayerScope as PlayerScope
 import qualified Parun.Types.Quantity as Quantity
 import qualified Parun.Types.SlotName as SlotName
 
@@ -69,7 +69,8 @@ import qualified Parun.Types.SlotName as SlotName
 -- ability" already says (Djinni Windseer, Parun.DiceSpec).
 --
 -- `roller` is CR 706.1's player the instruction is aimed at: You for every
--- printing but Chaos Dragon's "each player rolls a d20", which is AnyPlayer.
+-- printing but Chaos Dragon's "each player rolls a d20", which is AnyPlayer,
+-- and GO TO JAIL's "that player rolls", a slot.
 -- Each roller throws in APNAP order (CR 101.4) and is the player CR 706.2b's
 -- pick and CR 706.4's choice belong to. Where several roll, `slot` binds the
 -- highest result any of them used, and `other` is held by Parun.CardSpec's lint
@@ -94,7 +95,7 @@ data RollDie = MkRollDie
     reading :: DiceReading.DiceReading,
     slot :: SlotName.SlotName,
     other :: Maybe SlotName.SlotName,
-    roller :: PlayerScope.PlayerScope,
+    roller :: PlayerRef.PlayerRef,
     highest :: Maybe SlotName.SlotName,
     store :: Maybe SlotName.SlotName
   }
@@ -111,5 +112,5 @@ defaultReading = DiceReading.ChooseOne
 
 -- | What an instruction rolled by its controller writes (CR 109.5), and the
 -- value the codec elides.
-defaultRoller :: PlayerScope.PlayerScope
-defaultRoller = PlayerScope.Related PlayerRelation.You
+defaultRoller :: PlayerRef.PlayerRef
+defaultRoller = PlayerRef.Relative PlayerRelation.You

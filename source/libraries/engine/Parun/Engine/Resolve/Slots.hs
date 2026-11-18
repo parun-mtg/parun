@@ -481,8 +481,8 @@ riderSlots riders =
         Nothing -> Map.empty
    in joinSlots [attacked, blocked, hosted]
 
--- The slots a PlayerRef reads. InSlot, HolderOfBound, ChosenPlayerOfBound and
--- Attacking name one at arity One, and EachInSlot, HoldersOfBound,
+-- The slots a PlayerRef reads. InSlot, HolderOfBound, OwnersOfExiledBy,
+-- ChosenPlayerOfBound and Attacking name one at arity One, and EachInSlot, HoldersOfBound,
 -- EachPlayerExcept and EachOpponentExcept one at arity Many; the rest name
 -- none, and the arms below carry the reason for each arity that is not
 -- self-evident.
@@ -508,6 +508,9 @@ playerRefSlots ref = case ref of
   PlayerRef.HolderOfBound _ _ slot -> Map.singleton slot SlotArity.One
   -- Read at arity MANY: the plural of the arm above.
   PlayerRef.HoldersOfBound _ _ slot -> Map.singleton slot SlotArity.Many
+  -- Read at arity one for that arm's reason: a slot naming several objects
+  -- names no one source a pile is linked to.
+  PlayerRef.OwnersOfExiledBy _ slot -> Map.singleton slot SlotArity.One
   -- Read at arity one for that arm's reason.
   PlayerRef.PlayerHostOfBound slot -> Map.singleton slot SlotArity.One
   -- Read at arity one for that arm's reason.
@@ -1000,7 +1003,7 @@ effectPlayerRefs effect = case effect of
   -- one that picks a pile (CR 700.3).
   Effect.ChoosePermanents choice -> ChosenPermanents.chooser (ChoosePermanents.permanents choice) : Foldable.toList (ChoosePermanents.pileChooser choice)
   Effect.ChooseGroup {} -> []
-  Effect.RollDie {} -> []
+  Effect.RollDie rollDie -> [RollDie.roller rollDie]
   -- The seat that flips -- Mana Clash's target opponent (CR 705.2).
   Effect.FlipCoin flipCoin -> [FlipCoin.flipper flipCoin]
   Effect.ExileHandThenDraw -> []

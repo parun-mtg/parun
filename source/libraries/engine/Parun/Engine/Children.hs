@@ -1299,7 +1299,7 @@ effectChildren c effect = case effect of
           <*> pure reading
           <*> onSlot c named
           <*> traverse (onSlot c) other
-          <*> pure roller
+          <*> onPlayer c roller
           <*> traverse (onSlot c) highest
           <*> traverse (onSlot c) store
       )

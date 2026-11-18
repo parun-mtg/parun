@@ -254,6 +254,16 @@ namedUncut given gs ref =
         -- way and the seats deduplicated; an object no view answers for adds
         -- nobody. Krenko's Buzzcrusher's scenarios prove it.
         PlayerRef.HoldersOfBound holder hop slot -> fmap (Set.toList . Set.fromList . Maybe.mapMaybe (hopped hop Monad.>=> holderOf holder)) (slotObjects given slot)
+        -- CR 607.2a / 108.3: the owners of the cards in exile linked to the
+        -- object a slot names, through Game.linkedPile, the one sweep every
+        -- "exiled with" reader shares. The reader is named as printed (Nothing):
+        -- no card lends this reference, so an acquired reader never asks.
+        -- Unanswered where the slot names no one object. GO TO JAIL's
+        -- scenarios prove it.
+        PlayerRef.OwnersOfExiledBy pile slot -> do
+          src <- slotObject given slot
+          let pile' = Game.linkedPile you Nothing (acquisitionOf given src) pile src gs
+          Just (Set.toList (Set.fromList (Maybe.mapMaybe (ownerOf given) pile')))
         -- CR 303.4b / 303.4m: the player the object a slot names is attached
         -- to, read live -- Parun.Types.LastKnown.host records an object host
         -- only. Unanswered where the slot names no one object or its host is

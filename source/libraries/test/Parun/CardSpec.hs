@@ -6309,8 +6309,14 @@ lintSpec s registry corpus = Spec.describe s "Lint" $ do
           _ -> False
         offends effect = case effect of
           Effect.RollDie rollDie ->
-            (Maybe.isJust (RollDie.other rollDie) && (RollDie.count rollDie /= Quantity.Type.Literal 2 || RollDie.ignore rollDie /= 0 || RollDie.reading rollDie == DiceReading.Total || RollDie.roller rollDie /= PlayerScope.Related PlayerRelation.You))
+            (Maybe.isJust (RollDie.other rollDie) && (RollDie.count rollDie /= Quantity.Type.Literal 2 || RollDie.ignore rollDie /= 0 || RollDie.reading rollDie == DiceReading.Total || not (oneRoller (RollDie.roller rollDie))))
               || (RollDie.reading rollDie == DiceReading.Both && Maybe.isNothing (RollDie.other rollDie))
+          _ -> False
+        -- CR 109.5's "you" or one seat a slot names (GO TO JAIL's "that
+        -- player"); any other reference may name several.
+        oneRoller ref = case ref of
+          PlayerRef.Relative PlayerRelation.You -> True
+          PlayerRef.InSlot _ -> True
           _ -> False
         offenders = filter (anyFace (any offends . cardResolutionEffects) . Printing.card) ps
     -- A guard, since a pool binding no other result at all would pass saying

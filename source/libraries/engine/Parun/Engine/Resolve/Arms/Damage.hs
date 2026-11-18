@@ -1573,9 +1573,11 @@ rollDieArm throwDice runSubgame resolving source controller legal rollDie = do
         pure $ case RollDie.modifier rollDie of
           Nothing -> 0
           Just quantity -> Maybe.fromMaybe 0 (Quantity.evaluateFor viewOf context gs resolving source quantity)
-      -- CR 801.10's table: a roller is in the controller's range, still
-      -- playing, and in the instruction's scope.
-      rollers = filter (\pid -> Game.inRangeOf controller pid before && PlayerEffect.inScope pid controller before (RollDie.roller rollDie)) (Game.apnapOrder before)
+      -- CR 801.10's table: a roller is one the instruction names, which
+      -- playerRefPlayers cuts to the controller's range, in APNAP order (CR
+      -- 101.4).
+      named' = playerRefPlayers legal resolving source controller before (RollDie.roller rollDie)
+      rollers = filter (`elem` named') (Game.apnapOrder before)
   rolled <- Monad.forM rollers $ \roller -> do
     (results, throwers, thrown) <- throwDice runSubgame roller sides named (RollDie.ignore rollDie) perDie
     used <- case (RollDie.store rollDie, RollDie.reading rollDie) of
