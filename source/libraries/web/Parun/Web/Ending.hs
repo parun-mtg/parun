@@ -76,7 +76,7 @@ view ending =
                Element.el "h2" [] [] [Element.string "How it went"],
                summary (viewer ending) (trail ending),
                Element.el "h2" [] [] [Element.string "Game log"],
-               Element.el "ol" ["game-log"] [] (fmap (Log.item (viewer ending) Nothing False) (Foldable.toList (witnessed ending)))
+               Element.el "ul" ["game-log"] [] (fmap (Log.item (viewer ending) Nothing False) (Foldable.toList (witnessed ending)))
              ]
 
 -- | The page starting a game between these decks at once, shuffled by this
@@ -130,7 +130,7 @@ summary me samples =
             ["life-chart"]
             [Element.attr "viewBox" (Text.pack ("-4 -4 " <> show (width + 8) <> " " <> show (height + 8))), Element.attr "role" (Text.pack "img"), Element.attr "aria-label" (Text.pack "Life totals over the game")]
             (Element.el "line" ["zero"] [Element.attr "x1" (Text.pack "0"), Element.attr "x2" (Text.pack (show width)), Element.attr "y1" (Text.pack (show (y 0))), Element.attr "y2" (Text.pack (show (y 0)))] [] : fmap line seats),
-          Element.el "p" ["chart-axis"] [] [Element.string "Start", Element.string ("Turn " <> show turns)],
+          Element.el "p" ["chart-axis"] [] [Element.el "span" [] [] [Element.string "Start"], Element.el "span" [] [] [Element.string ("Turn " <> show turns)]],
           Element.el "ul" ["stats"] [] (fmap stat seats)
         ]
 

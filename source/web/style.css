@@ -1946,7 +1946,7 @@ main.ending h2 {
 
 .game-log {
   margin: 0;
-  padding: 0.8em 0.8em 0.8em 2.8em;
+  padding: 0.8em 0.8em 0.8em 2.2em;
   border-radius: var(--radius);
   background: var(--surface);
   font-size: 0.88rem;

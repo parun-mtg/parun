@@ -19,7 +19,7 @@ spec s = Spec.describe s "Parun.Web.Ending" $ do
       has "href=\"?mine=sets/a/x&amp;theirs=sets/b/y&amp;seed=00ff\""
       has "<a href=\"./\">New game</a>"
       has "<a href=\"data:application/json;charset=utf-8,%7b%7d\" download=\"parun-game.json\">Save as a scenario</a>"
-      has "<ol class=\"game-log\"><li class=\"turn\">Turn 1: your turn</li><li>Player 1 draws a card.</li><li class=\"minor\">Player 2 concedes.</li></ol>"
+      has "<ul class=\"game-log\"><li class=\"turn\">Turn 1: your turn</li><li>Player 1 draws a card.</li><li class=\"minor\">Player 2 concedes.</li></ul>"
       has "<div class=\"confetti\""
 
     Spec.it s "charts each seat's life and tells the game's numbers" $ do
