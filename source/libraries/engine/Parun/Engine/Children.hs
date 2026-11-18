@@ -3723,7 +3723,7 @@ modificationChildren c modification = case modification of
   -- The lender is a reserved name (Binding.acquiredFrom), never a card's.
   Modification.GainLentKeyword (LentKeyword.MkLentKeyword held instances lender triggered restrictions) ->
     fmap Modification.GainLentKeyword ((\k -> LentKeyword.MkLentKeyword k instances lender triggered) <$> modificationKeyword c held <*> traverse (modificationRestriction c) restrictions)
-  Modification.GainAbilitiesOfStickers -> pure modification
+  Modification.GainAbilitiesOfStickers stickered -> Modification.GainAbilitiesOfStickers <$> modificationFilter c stickered
   Modification.LoseAllAbilities -> pure modification
   Modification.LoseNamedAbility name -> Modification.LoseNamedAbility <$> modificationAbilityName c name
   Modification.LoseKeyword lost -> Modification.LoseKeyword <$> modificationKeyword c lost

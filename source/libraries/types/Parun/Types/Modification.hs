@@ -177,12 +177,9 @@ data Modification ability
     -- abilities, recorded as the keyword, that a resolving lend took.
     GainLentKeyword LentKeyword.LentKeyword
   | -- | layer 6, CR 613.1f / 123.7a: this object has the abilities printed on
-    -- the ability stickers on this effect's source, read off the stickers
-    -- (Pin Collection).
-    --
-    -- Not implemented: the stickers on objects other than the source
-    -- (Clandestine Chameleon) (#4935).
-    GainAbilitiesOfStickers
+    -- the ability stickers on each object the Filter matches, read off the
+    -- stickers (Pin Collection, Clandestine Chameleon).
+    GainAbilitiesOfStickers (Filter.Filter Keyword.Keyword)
   | LoseAllAbilities -- layer 6 (Humility)
   | -- | layer 6, CR 613.1f: this object loses the abilities carrying this name
     -- -- "this creature loses this ability", the clause every Licid prints ahead

@@ -3748,8 +3748,8 @@ modificationFilters modification = case modification of
     CostKeyword.BeamMeUp unreturnable -> keywordFramed (Maybe.maybeToList unreturnable)
   -- CR 702.5a again: the granted slot's own Filter, which is card text like any
   -- other and has to be swept. NOT [] -- this, LoseEnchant beside it,
-  -- GainKeyword above, GainKeywordsAmong, LoseKeyword, CantHaveKeyword,
-  -- SetCreatureSubtypesOfLastCardExiledWith and AddNamesMatching below are the
+  -- GainKeyword above, GainKeywordsAmong, GainAbilitiesOfStickers, LoseKeyword,
+  -- CantHaveKeyword, SetCreatureSubtypesOfLastCardExiledWith and AddNamesMatching below are the
   -- arms that answer with something, and every other one carries no Filter at
   -- all, LoseKeywordFamily's payload-free family included.
   Modification.GainEnchant slot -> targetSlotFilters slot
@@ -3770,7 +3770,8 @@ modificationFilters modification = case modification of
   -- Filter naming the exiled cards.
   Modification.GainCardAbilities (CardAbilities.MkCardAbilities _ cards _ _ _ extra) -> (Unframed, cards) : frame Unframed (concatMap conditionFilters (concatMap restrictionConditions extra))
   Modification.GainLentKeyword lent -> frame Unframed (concatMap conditionFilters (concatMap restrictionConditions (LentKeyword.restrictions lent)))
-  Modification.GainAbilitiesOfStickers -> []
+  -- The objects whose stickers are read.
+  Modification.GainAbilitiesOfStickers stickered -> [(Unframed, stickered)]
   Modification.SetBasePowerToughness (SetBasePowerToughness.MkSetBasePowerToughness p t) -> foldMap quantityFilters p <> foldMap quantityFilters t
   Modification.ModifyPowerToughness (ModifyPowerToughness.MkModifyPowerToughness p t) -> quantityFilters p <> quantityFilters t
   Modification.Intensify n -> quantityFilters n

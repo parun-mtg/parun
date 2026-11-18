@@ -202,7 +202,7 @@ layer m = case m of
   Modification.GainKeywordsAmong {} -> Layer.Ability
   Modification.GainCardAbilities _ -> Layer.Ability
   Modification.GainLentKeyword _ -> Layer.Ability
-  Modification.GainAbilitiesOfStickers -> Layer.Ability
+  Modification.GainAbilitiesOfStickers _ -> Layer.Ability
   Modification.LoseAllAbilities -> Layer.Ability
   -- CR 613.1f again, and the same layer as the wipe above: what differs is the
   -- SCOPE of the removal, never when it applies.
@@ -636,12 +636,17 @@ applyModification textBoxOf viewOf src stamp gs oid unitTypes affected m pc =
           | barred (PC.barredKeywords pc) (LentKeyword.keyword lent) -> pc
           | otherwise -> pc {PC.lentKeywords = PC.lentKeywords pc <> [lent]}
         -- CR 613.1f / 123.7a: the abilities printed on the ability stickers on
-        -- `src`, read off the stickers and never off src's projection, so a
-        -- layer-6 loss on src does not reach them. Each goes through the
-        -- GainKeyword or GainAbility arm, the receiver its source (CR 113.7).
-        -- Parun.StickerSpec's Shadowspear case proves it.
-        Modification.GainAbilitiesOfStickers ->
-          let granted = foldMap (concatMap (\p -> [grant | Just (StickerContent.Ability sticker) <- [Game.stickerContent (StickerPlacement.sticker p) gs], grant <- stickerGrants sticker]) . Object.stickers) (Game.lookupObject src gs)
+        -- each object `stickered` matches, read off the stickers and never off
+        -- that object's projection, so a layer-6 loss there does not reach
+        -- them. Each goes through the GainKeyword or GainAbility arm, the
+        -- receiver its source (CR 113.7). Parun.StickerSpec's Shadowspear
+        -- cases prove it, for Pin Collection and Clandestine Chameleon.
+        Modification.GainAbilitiesOfStickers stickered ->
+          let holding sid obj rest =
+                if not (Seq.null (Object.stickers obj)) && maybe False (\view -> Filter.matches context view stickered) (viewOf sid)
+                  then Foldable.toList (Object.stickers obj) <> rest
+                  else rest
+              granted = [grant | p <- Map.foldrWithKey holding [] (GameState.objects gs), Just (StickerContent.Ability sticker) <- [Game.stickerContent (StickerPlacement.sticker p) gs], grant <- stickerGrants sticker]
            in List.foldl' (flip (applyModification textBoxOf viewOf src stamp gs oid unitTypes affected)) pc granted
         -- CR 604.3: a CDA is a static ability, so this loses it too.
         Modification.LoseAllAbilities ->
@@ -1103,7 +1108,7 @@ cardTypesAfter m types = case m of
   Modification.GainKeywordsAmong {} -> types
   Modification.GainCardAbilities _ -> types
   Modification.GainLentKeyword _ -> types
-  Modification.GainAbilitiesOfStickers -> types
+  Modification.GainAbilitiesOfStickers _ -> types
   Modification.LoseAllAbilities -> types
   Modification.LoseNamedAbility _ -> types
   Modification.LoseKeyword _ -> types
@@ -2060,7 +2065,7 @@ freezeQuantities viewOf gs announcedOn source context m =
         Modification.GainKeywordsAmong {} -> Just m
         Modification.GainCardAbilities _ -> Just m
         Modification.GainLentKeyword _ -> Just m
-        Modification.GainAbilitiesOfStickers -> Just m
+        Modification.GainAbilitiesOfStickers _ -> Just m
         Modification.LoseAllAbilities -> Just m
         Modification.LoseNamedAbility _ -> Just m
         Modification.LoseKeyword _ -> Just m
@@ -2138,7 +2143,7 @@ quantitiesOf m = case m of
   Modification.GainKeywordsAmong {} -> []
   Modification.GainCardAbilities _ -> []
   Modification.GainLentKeyword _ -> []
-  Modification.GainAbilitiesOfStickers -> []
+  Modification.GainAbilitiesOfStickers _ -> []
   Modification.LoseAllAbilities -> []
   Modification.LoseNamedAbility _ -> []
   Modification.LoseKeyword _ -> []
@@ -2198,7 +2203,7 @@ referenceQuery m = case m of
   Modification.GainKeywordsAmong {} -> Nothing
   Modification.GainCardAbilities _ -> Nothing
   Modification.GainLentKeyword _ -> Nothing
-  Modification.GainAbilitiesOfStickers -> Nothing
+  Modification.GainAbilitiesOfStickers _ -> Nothing
   Modification.LoseAllAbilities -> Nothing
   Modification.LoseNamedAbility _ -> Nothing
   Modification.LoseKeyword _ -> Nothing
@@ -2272,7 +2277,7 @@ setsLandSubtype m = case m of
   Modification.GainKeywordsAmong {} -> False
   Modification.GainCardAbilities _ -> False
   Modification.GainLentKeyword _ -> False
-  Modification.GainAbilitiesOfStickers -> False
+  Modification.GainAbilitiesOfStickers _ -> False
   Modification.GainKeyword _ -> False
   Modification.GainKeywordAtManaCost _ -> False
   Modification.GainEnchant _ -> False
@@ -3663,7 +3668,7 @@ removesAbilities m = case m of
   Modification.GainKeywordsAmong {} -> False
   Modification.GainCardAbilities _ -> False
   Modification.GainLentKeyword _ -> False
-  Modification.GainAbilitiesOfStickers -> False
+  Modification.GainAbilitiesOfStickers _ -> False
   -- CR 305.7 strips a land's rules text, but as a layer-4 type change performed
   -- by setLandSubtypeTo and the two gates beside it, never a layer-6 removal.
   -- setsLandSubtype is the classification; this one answers CR 613.1f.
@@ -5047,7 +5052,7 @@ modificationWrites m = case m of
   Modification.GainKeywordsAmong {} -> Set.singleton Keywords
   Modification.GainCardAbilities _ -> Set.singleton Keywords
   Modification.GainLentKeyword _ -> Set.singleton Keywords
-  Modification.GainAbilitiesOfStickers -> Set.singleton Keywords
+  Modification.GainAbilitiesOfStickers _ -> Set.singleton Keywords
   Modification.LoseAllAbilities -> Set.singleton Keywords
   -- Writes ProjectedCharacteristics.activatedAbilities, which Aspect has no finer
   -- grain for than Keywords -- Filter.HasActivatedAbility, the atom that
@@ -5174,7 +5179,8 @@ modificationReads m = case m of
     _ -> Set.empty
   -- A resolving lend's record, read off its lender as it resolved.
   Modification.GainLentKeyword _ -> Set.empty
-  Modification.GainAbilitiesOfStickers -> Set.empty
+  -- The objects whose stickers it reads; a sticker itself is no Aspect.
+  Modification.GainAbilitiesOfStickers stickered -> filterReads stickered
   Modification.LoseAllAbilities -> Set.empty
   -- Carries a name, which is not a Quantity: a grant and a removal of one
   -- ability are independent, the later winning (CR 613.9's first example).
@@ -7210,7 +7216,7 @@ grantsKeywordWhere p m = case m of
   -- its triggered ones where it says so, and nothing else.
   Modification.GainLentKeyword lent -> p (LentKeyword.keyword lent)
   -- The sticker data is not in the modification, so True over-approximates.
-  Modification.GainAbilitiesOfStickers -> True
+  Modification.GainAbilitiesOfStickers _ -> True
   Modification.LoseAllAbilities -> False
   Modification.LoseNamedAbility _ -> False
   -- Take keywords AWAY, which is the opposite of what this asks.
@@ -7303,7 +7309,7 @@ grantsMintingType m = case m of
   Modification.GainKeywordsAmong {} -> False
   Modification.GainCardAbilities _ -> False
   Modification.GainLentKeyword _ -> False
-  Modification.GainAbilitiesOfStickers -> False
+  Modification.GainAbilitiesOfStickers _ -> False
   Modification.LoseAllAbilities -> False
   Modification.LoseNamedAbility _ -> False
   Modification.LoseKeyword _ -> False
@@ -7407,7 +7413,7 @@ grantsAbilityWhere p m = case m of
   Modification.GainCardAbilities _ -> False
   Modification.GainLentKeyword _ -> False
   -- The sticker data is not in the modification, so True over-approximates.
-  Modification.GainAbilitiesOfStickers -> True
+  Modification.GainAbilitiesOfStickers _ -> True
   Modification.LoseAllAbilities -> False
   Modification.LoseNamedAbility _ -> False
   Modification.LoseKeyword _ -> False
