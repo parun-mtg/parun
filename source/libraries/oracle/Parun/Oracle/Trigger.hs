@@ -137,8 +137,14 @@ event context creature c = case c of
     word <- ["it", that]
     subject <- also one
     -- CR 700.4: only a creature "dies"; a kind naming another card type and not
-    -- creature keeps the long form (Knight of Doves).
-    let verb = if noncreature f then "is put into a graveyard from the battlefield" else "dies"
+    -- creature keeps the long form (Knight of Doves). A choice of card types
+    -- one of which is not a creature takes either: "creature or artifact ...
+    -- dies" (Judge Magister Gabranth), "artifact or creature ... is put into a
+    -- graveyard from the battlefield" (Vat of Rebirth).
+    verb <-
+      if noncreature f
+        then ["is put into a graveyard from the battlefield"]
+        else "dies" : ["is put into a graveyard from the battlefield" | eitherKind f]
     [other ("Whenever " <> subject <> " " <> verb) [(becameSlot, word), (departedPermanent, word)]]
   TriggerCondition.Blocks (BlockTrigger.MkBlockTrigger BlockRole.Attacker f BlockCount.Once Batching.EachOccurrence Nothing) -> do
     (one, that) <- described context f
@@ -242,12 +248,25 @@ event context creature c = case c of
 -- names: the top-level conjuncts decide, so "a Bird" stays a creature.
 noncreature :: Filter.Type.Filter keyword -> Bool
 noncreature f =
-  let types = [t | Filter.Type.HasCardType t <- conjuncts f]
+  let types = [t | Filter.Type.HasCardType t <- topConjuncts f]
    in not (null types) && CardType.Creature `notElem` types
+
+-- | A filter's conjuncts: an @And@'s members, or the filter itself.
+topConjuncts :: Filter.Type.Filter keyword -> [Filter.Type.Filter keyword]
+topConjuncts g = case g of
+  Filter.Type.And gs -> gs
+  _ -> [g]
+
+-- | Whether a filter offers a choice of card types, one of them neither
+-- creature nor planeswalker: Oracle text words that event either way.
+eitherKind :: Filter.Type.Filter keyword -> Bool
+eitherKind f = any choice (topConjuncts f)
   where
-    conjuncts g = case g of
-      Filter.Type.And gs -> gs
-      _ -> [g]
+    choice g = case g of
+      Filter.Type.Or gs ->
+        let types = [t | Filter.Type.HasCardType t <- gs]
+         in length types == length gs && any (`notElem` [CardType.Creature, CardType.Planeswalker]) types
+      _ -> False
 
 -- | What the source's own event says after its name, the words opening it
 -- ("When", or "Whenever" for one that can recur), and the words the rest
