@@ -1,0 +1,129 @@
+{
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "battlefield": [
+          {
+            "card": "H.M.S. Bounty, Unlikely Timeship",
+            "counters": [
+              {
+                "key": {
+                  "type": "Named",
+                  "value": "charge"
+                },
+                "value": 7
+              }
+            ],
+            "label": "bounty",
+            "ready": true
+          },
+          {
+            "card": "Infinite Guideline Station",
+            "counters": [
+              {
+                "key": {
+                  "type": "Named",
+                  "value": "charge"
+                },
+                "value": 11
+              }
+            ],
+            "label": "station",
+            "ready": true
+          },
+          {
+            "card": "March of the Machines",
+            "label": "march"
+          }
+        ],
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ],
+        "name": "alice"
+      },
+      {
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ],
+        "name": "bob"
+      }
+    ],
+    "step": "PrecombatMain"
+  },
+  "description": "CR 722.2, 722.2a: below its threshold a Spacecraft lacks the triggered abilities printed in its last striation, so March of the Machines' 5/5 H.M.S. Bounty and Infinite Guideline Station draw nothing on attack or combat damage",
+  "note": "Each holds one charge counter short of its threshold. Infinite Guideline Station is itself multicolored, so its attack trigger would draw one.",
+  "timeline": [
+    {
+      "check": {
+        "Types": {
+          "object": "$bounty",
+          "types": [
+            "Artifact",
+            "Creature"
+          ]
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Attack": [
+          "$bounty",
+          "$station"
+        ]
+      },
+      "player": "alice",
+      "step": "DeclareAttackers",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Life": {
+          "life": 10,
+          "player": "bob"
+        }
+      },
+      "player": "alice",
+      "step": "CombatDamage",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Island",
+          "count": 0,
+          "player": "alice",
+          "zone": "Hand"
+        }
+      },
+      "player": "alice",
+      "step": "EndOfCombat",
+      "turn": 1
+    }
+  ]
+}

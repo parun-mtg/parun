@@ -72,6 +72,137 @@
               "value": {
                 "type": "Flying"
               }
+            },
+            {
+              "type": "GainAbility",
+              "value": {
+                "type": "Triggered",
+                "value": {
+                  "condition": {
+                    "type": "DealsDamage",
+                    "value": {
+                      "actor": {
+                        "type": "Self"
+                      },
+                      "kind": "Combat",
+                      "recipients": [
+                        {
+                          "type": "Player",
+                          "value": {
+                            "type": "Relative",
+                            "value": "AnyPlayer"
+                          }
+                        }
+                      ]
+                    }
+                  },
+                  "modal": {
+                    "modes": [
+                      {
+                        "clauses": [
+                          {
+                            "effects": [
+                              {
+                                "type": "Draw",
+                                "value": {
+                                  "player": {
+                                    "type": "Relative",
+                                    "value": "You"
+                                  },
+                                  "quantity": {
+                                    "type": "Literal",
+                                    "value": 1
+                                  }
+                                }
+                              }
+                            ]
+                          },
+                          {
+                            "condition": {
+                              "type": "All",
+                              "value": [
+                                {
+                                  "type": "Compares",
+                                  "value": {
+                                    "comparison": "AtLeast",
+                                    "measured": {
+                                      "type": "Count",
+                                      "value": {
+                                        "aggregation": {
+                                          "type": "Members"
+                                        },
+                                        "filter": {
+                                          "type": "And",
+                                          "value": [
+                                            {
+                                              "type": "HasSubtype",
+                                              "value": "Whale"
+                                            },
+                                            {
+                                              "type": "HeldBy",
+                                              "value": {
+                                                "holder": "Controller",
+                                                "relation": "You"
+                                              }
+                                            }
+                                          ]
+                                        },
+                                        "scope": {
+                                          "type": "InZone",
+                                          "value": {
+                                            "player": {
+                                              "type": "Relative",
+                                              "value": "AnyPlayer"
+                                            },
+                                            "zone": "Battlefield"
+                                          }
+                                        }
+                                      }
+                                    },
+                                    "threshold": {
+                                      "type": "Literal",
+                                      "value": 1
+                                    }
+                                  }
+                                },
+                                {
+                                  "type": "Compares",
+                                  "value": {
+                                    "comparison": "Exactly",
+                                    "measured": {
+                                      "type": "ExtraTurnsBegun",
+                                      "value": {
+                                        "type": "Relative",
+                                        "value": "You"
+                                      }
+                                    },
+                                    "threshold": {
+                                      "type": "Literal",
+                                      "value": 0
+                                    }
+                                  }
+                                }
+                              ]
+                            },
+                            "effects": [
+                              {
+                                "type": "TakeExtraTurn",
+                                "value": {
+                                  "player": {
+                                    "type": "Relative",
+                                    "value": "You"
+                                  },
+                                  "skips": []
+                                }
+                              }
+                            ]
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                }
+              }
             }
           ]
         }
@@ -114,131 +245,6 @@
                     "optionality": {
                       "type": "Optional"
                     }
-                  }
-                ]
-              }
-            ]
-          }
-        },
-        {
-          "condition": {
-            "type": "DealsDamage",
-            "value": {
-              "actor": {
-                "type": "Self"
-              },
-              "kind": "Combat",
-              "recipients": [
-                {
-                  "type": "Player",
-                  "value": {
-                    "type": "Relative",
-                    "value": "AnyPlayer"
-                  }
-                }
-              ]
-            }
-          },
-          "modal": {
-            "modes": [
-              {
-                "clauses": [
-                  {
-                    "effects": [
-                      {
-                        "type": "Draw",
-                        "value": {
-                          "player": {
-                            "type": "Relative",
-                            "value": "You"
-                          },
-                          "quantity": {
-                            "type": "Literal",
-                            "value": 1
-                          }
-                        }
-                      }
-                    ]
-                  },
-                  {
-                    "condition": {
-                      "type": "All",
-                      "value": [
-                        {
-                          "type": "Compares",
-                          "value": {
-                            "comparison": "AtLeast",
-                            "measured": {
-                              "type": "Count",
-                              "value": {
-                                "aggregation": {
-                                  "type": "Members"
-                                },
-                                "filter": {
-                                  "type": "And",
-                                  "value": [
-                                    {
-                                      "type": "HasSubtype",
-                                      "value": "Whale"
-                                    },
-                                    {
-                                      "type": "HeldBy",
-                                      "value": {
-                                        "holder": "Controller",
-                                        "relation": "You"
-                                      }
-                                    }
-                                  ]
-                                },
-                                "scope": {
-                                  "type": "InZone",
-                                  "value": {
-                                    "player": {
-                                      "type": "Relative",
-                                      "value": "AnyPlayer"
-                                    },
-                                    "zone": "Battlefield"
-                                  }
-                                }
-                              }
-                            },
-                            "threshold": {
-                              "type": "Literal",
-                              "value": 1
-                            }
-                          }
-                        },
-                        {
-                          "type": "Compares",
-                          "value": {
-                            "comparison": "Exactly",
-                            "measured": {
-                              "type": "ExtraTurnsBegun",
-                              "value": {
-                                "type": "Relative",
-                                "value": "You"
-                              }
-                            },
-                            "threshold": {
-                              "type": "Literal",
-                              "value": 0
-                            }
-                          }
-                        }
-                      ]
-                    },
-                    "effects": [
-                      {
-                        "type": "TakeExtraTurn",
-                        "value": {
-                          "player": {
-                            "type": "Relative",
-                            "value": "You"
-                          },
-                          "skips": []
-                        }
-                      }
-                    ]
                   }
                 ]
               }
