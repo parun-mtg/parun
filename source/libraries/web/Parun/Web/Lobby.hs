@@ -173,7 +173,7 @@ view lobby =
             "header"
             ["hero"]
             []
-            [ Element.el "h1" [] [] [Element.string "Parun"],
+            [ Element.el "h1" [] [] [Element.el "img" ["logo"] [Element.attr "src" (Text.pack "./icon.svg"), Element.attr "alt" Text.empty, Element.attr "width" (Text.pack "40"), Element.attr "height" (Text.pack "40")] [], Element.string "Parun"],
               Element.el "p" ["tagline"] [] [Element.string ("A Magic rules engine, running in your browser. " <> show (cardFiles lobby) <> " cards loaded.")]
             ],
           Element.el

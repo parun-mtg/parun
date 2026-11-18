@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
 # Builds the web client into a directory ready to serve (default dist-web/):
-# the page, its style sheet, manifest and icon, the service worker, the
+# the page, its style sheet, manifest and icons, the service worker, the
 # engine's Web Worker, the wasm module and its JavaScript FFI glue, the WASI
 # shim, and the data directory the engine mounts. Every file but the page,
-# its manifest and icon and the service worker is named by a hash of its
+# its manifest and icons and the service worker is named by a hash of its
 # contents, so a browser caches each until it changes, and the service
 # worker (sw.js) keeps them for later visits. Runs in the wasm dev shell;
 # serve the result with script/serve-web.sh:
@@ -21,7 +21,7 @@ rm -rf "$out"
 mkdir -p "$out"
 "$(wasm32-wasi-ghc --print-libdir)/post-link.mjs" -i "$wasm" -o "$out/ghc_wasm_jsffi.js"
 wasm-opt -Oz --strip-debug "$wasm" -o "$out/parun.wasm"
-cp source/web/index.html source/web/style.css source/web/page.js source/web/engine.js source/web/sw.js source/web/manifest.webmanifest source/web/icon.svg "$out/"
+cp source/web/index.html source/web/style.css source/web/page.js source/web/engine.js source/web/sw.js source/web/manifest.webmanifest source/web/icon.svg source/web/icon.png "$out/"
 cp -r "$BROWSER_WASI_SHIM/dist" "$out/browser_wasi_shim"
 chmod -R u+w "$out"
 # The data directory the engine mounts, reproducibly packed, with the cards as
