@@ -610,7 +610,7 @@ applyModification textBoxOf viewOf src stamp gs oid unitTypes affected m pc =
           let (zone, lenders) = case from of
                 LentCards.InExile -> (Zone.Exile, Set.toAscList (GameState.exile gs))
                 LentCards.TopOfYourLibrary -> (Zone.Library, foldMap (\you -> Maybe.maybeToList (Game.shownTop you gs)) (controllerOf src gs))
-                LentCards.InYourGraveyard -> (Zone.Graveyard, foldMap (\you -> Game.cardsIn Zone.Graveyard you gs) (controllerOf src gs))
+                LentCards.InGraveyards -> (Zone.Graveyard, concatMap (\pid -> Game.cardsIn Zone.Graveyard pid gs) (GameState.seating gs))
                 -- Not the receiver, which has its own abilities already.
                 LentCards.OnTheBattlefield -> (Zone.Battlefield, filter (/= oid) (Set.toAscList (GameState.battlefield gs)))
               cards = filter (maybe False (\view -> Filter.matches context view criterion) . viewOf) lenders
