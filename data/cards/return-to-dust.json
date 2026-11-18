@@ -1,0 +1,167 @@
+{
+  "faces": [
+    {
+      "manaCost": [
+        {
+          "type": "Generic",
+          "value": 2
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "White"
+          }
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "White"
+          }
+        }
+      ],
+      "name": "Return to Dust",
+      "oracleText": "Exile target artifact or enchantment. If you cast this spell during your main phase, you may exile up to one other target artifact or enchantment.",
+      "spell": {
+        "modes": [
+          {
+            "clauses": [
+              {
+                "effects": [
+                  {
+                    "type": "MoveToZone",
+                    "value": {
+                      "ref": {
+                        "type": "InSlot",
+                        "value": "target"
+                      },
+                      "zone": "Exile"
+                    }
+                  }
+                ]
+              },
+              {
+                "condition": {
+                  "type": "Any",
+                  "value": [
+                    {
+                      "type": "During",
+                      "value": {
+                        "scope": {
+                          "type": "PlayersTurn",
+                          "value": {
+                            "type": "Relative",
+                            "value": "You"
+                          }
+                        },
+                        "window": {
+                          "type": "Step",
+                          "value": {
+                            "type": "PrecombatMain"
+                          }
+                        }
+                      }
+                    },
+                    {
+                      "type": "During",
+                      "value": {
+                        "scope": {
+                          "type": "PlayersTurn",
+                          "value": {
+                            "type": "Relative",
+                            "value": "You"
+                          }
+                        },
+                        "window": {
+                          "type": "Step",
+                          "value": {
+                            "type": "PostcombatMain"
+                          }
+                        }
+                      }
+                    }
+                  ]
+                },
+                "effects": [
+                  {
+                    "type": "MoveToZone",
+                    "value": {
+                      "ref": {
+                        "type": "InSlot",
+                        "value": "other"
+                      },
+                      "zone": "Exile"
+                    }
+                  }
+                ]
+              }
+            ],
+            "targetSlots": {
+              "other": {
+                "count": {
+                  "type": "Printed",
+                  "value": {
+                    "least": 0,
+                    "most": 1
+                  }
+                },
+                "filter": {
+                  "type": "And",
+                  "value": [
+                    {
+                      "type": "Or",
+                      "value": [
+                        {
+                          "type": "HasCardType",
+                          "value": "Artifact"
+                        },
+                        {
+                          "type": "HasCardType",
+                          "value": "Enchantment"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "Not",
+                      "value": {
+                        "type": "IsBound",
+                        "value": "target"
+                      }
+                    }
+                  ]
+                },
+                "pool": {
+                  "type": "Permanents"
+                }
+              },
+              "target": {
+                "filter": {
+                  "type": "Or",
+                  "value": [
+                    {
+                      "type": "HasCardType",
+                      "value": "Artifact"
+                    },
+                    {
+                      "type": "HasCardType",
+                      "value": "Enchantment"
+                    }
+                  ]
+                },
+                "pool": {
+                  "type": "Permanents"
+                }
+              }
+            }
+          }
+        ]
+      },
+      "typeLine": {
+        "types": [
+          "Instant"
+        ]
+      }
+    }
+  ]
+}

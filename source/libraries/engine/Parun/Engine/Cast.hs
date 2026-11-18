@@ -3631,15 +3631,19 @@ isCastAnnouncementQuantity q = case q of
   Quantity.CastUsing _ -> True
   _ -> False
 
--- The Condition built ENTIRELY from such quantities -- Any/All fold the same
--- way Condition.holds itself does, so a mixed clause (none print one) is not
--- mistaken for a safe one.
+-- The Condition built ENTIRELY from such quantities, or from a phase window --
+-- Any/All fold the same way Condition.holds itself does, so a mixed clause (none
+-- print one) is not mistaken for a safe one. A window is decided at announcement
+-- because the phase cannot change while the spell is on the stack (CR 500.2), so
+-- the text defines the number of targets (CR 601.2c): Return to Dust's "if you
+-- cast this spell during your main phase", proved by its scenarios under
+-- data/scenarios/.
 isCastAnnouncementCondition :: Condition.Type.Condition -> Bool
 isCastAnnouncementCondition condition = case condition of
   Condition.Type.Compares c -> isCastAnnouncementQuantity (Compares.measured c) && isCastAnnouncementQuantity (Compares.threshold c)
   Condition.Type.Any conditions -> all isCastAnnouncementCondition conditions
   Condition.Type.All conditions -> all isCastAnnouncementCondition conditions
-  Condition.Type.During _ -> False
+  Condition.Type.During _ -> True
   Condition.Type.IsPrime measured -> isCastAnnouncementQuantity measured
 
 -- CR 702.33g/702.113b: does a clause's printed "if" hold ALREADY, at CR
@@ -3706,6 +3710,9 @@ fileCastBoard sid gs =
 --     CastUsing Overload clauses (one at 0, one at >=1) trim the SAME way
 --     castOverloaded did, through the general mechanism rather than a keyword
 --     name.
+--   * Condition.During answers True, the conservative "applies" default: with
+--     no board read here, an optional slot it gates stays on offer, and
+--     Cast.castProposed's clauseAppliesAt trims it against the live turn.
 holdsForCandidate :: Maybe Keyword -> Integer -> Condition.Type.Condition -> Bool
 holdsForCandidate castFor paid condition = case condition of
   Condition.Type.Compares c -> case (candidateQuantity castFor paid (Compares.measured c), candidateQuantity castFor paid (Compares.threshold c)) of
@@ -3714,9 +3721,7 @@ holdsForCandidate castFor paid condition = case condition of
   Condition.Type.Any conditions -> any (holdsForCandidate castFor paid) conditions
   Condition.Type.All conditions -> all (holdsForCandidate castFor paid) conditions
   Condition.Type.IsPrime measured -> maybe False Condition.prime (candidateQuantity castFor paid measured)
-  -- Unreachable past isCastAnnouncementCondition; False is the Compares arm's
-  -- answer for what it cannot read.
-  Condition.Type.During _ -> False
+  Condition.Type.During _ -> True
 
 -- holdsForCandidate's per-Quantity read, total only over
 -- isCastAnnouncementQuantity's three shapes -- everything else answers
