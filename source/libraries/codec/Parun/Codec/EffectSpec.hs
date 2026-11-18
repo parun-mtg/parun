@@ -2738,6 +2738,14 @@ spec s = Spec.describe s "Parun.Codec.Effect" $ do
       fromJson
       (Effect.Assemble Nothing)
       " {\"type\":\"Assemble\",\"value\":null} "
+  -- The Unstable FAQ's crank: nullary, the resolving controller cranking.
+  Spec.it s "Crank" $
+    Common.assertJsonCodec
+      s
+      toJson
+      fromJson
+      Effect.Crank
+      " {\"type\":\"Crank\"} "
   -- CR 701.33: nullary, "this scheme" being the effect's source (CR 314.7).
   Spec.it s "Abandon" $
     Common.assertJsonCodec

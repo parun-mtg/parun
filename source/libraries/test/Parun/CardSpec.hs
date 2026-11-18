@@ -5385,6 +5385,7 @@ effectFilters effect = case effect of
   -- reaches it, as PutCounters' does.
   Effect.Explore ref -> frame SourceHostFramed (objectRefFilters ref)
   Effect.Assemble ref -> foldMap (frame SourceHostFramed . objectRefFilters) ref
+  Effect.Crank -> []
   Effect.ArrangeInLibrary (ArrangeInLibrary.MkArrangeInLibrary ref _ _ _ _) -> frame SourceHostFramed (objectRefFilters ref)
   Effect.Connive (Connive.MkConnive quantity ref) -> frame Unframed (quantityFilters quantity) <> frame SourceHostFramed (objectRefFilters ref)
   -- The These arm's ref carries a Filter a card author writes -- Amnesia's

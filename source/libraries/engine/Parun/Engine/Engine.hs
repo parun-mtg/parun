@@ -604,8 +604,11 @@ runTurnBasedActions phase = do
     -- CR 805.4b: each player on the active team draws.
     -- CR 503.1 gives the upkeep no turn-based action; the Unstable FAQ adds the
     -- crank (CR 701.45a leaving it out of the rules), the active player's, so
-    -- it takes the CR 800.4j guard.
-    Phase.Beginning BeginningStep.Upkeep -> Monad.mapM_ Contraption.crank live
+    -- it takes the CR 800.4j guard. The Gatherer rulings gate it on
+    -- controlling a Contraption; Clock of DOOOOOOOOOOOOM!'s crank has no gate.
+    Phase.Beginning BeginningStep.Upkeep -> Monad.forM_ live $ \pid -> do
+      gs <- State.get
+      Monad.when (Attraction.controlsSubtype Subtype.Contraption pid gs) (Contraption.crank pid)
     Phase.Beginning BeginningStep.DrawStep ->
       Monad.void (Event.inDrawOrder (\pid -> [ProposedEvent.WouldPerform PlayerInstruction.DrawCards Nothing pid 1, ProposedEvent.WouldDraw pid (DrawKind.TurnBased pid)]) live (Event.drawForTurn (Resolve.runReplacementEffects playSubgame)))
     -- CR 703.4h: choose the defending player. The active player's action (CR
