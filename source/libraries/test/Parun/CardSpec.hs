@@ -6511,7 +6511,7 @@ lintSpec s registry corpus = Spec.describe s "Lint" $ do
     jailer <- S.printingOf s registry "Yixlid Jailer"
     let face = S.combinedFace jailer
         reaching affected = face {Face.staticAbilities = fmap (\ability -> ability {StaticAbility.affected = affected}) (Face.staticAbilities face)}
-        landSubtype = face {Face.staticAbilities = fmap (\ability -> ability {StaticAbility.affected = Affected.MatchingAnywhere (Filter.Type.And []), StaticAbility.modifications = [Modification.LandSubtype ChangeMode.Replace Subtype.Swamp]}) (Face.staticAbilities face)}
+        landSubtype = face {Face.staticAbilities = fmap (\ability -> ability {StaticAbility.affected = Affected.MatchingAnywhere (Filter.Type.And []), StaticAbility.modifications = pure (Modification.LandSubtype ChangeMode.Replace Subtype.Swamp)}) (Face.staticAbilities face)}
     Spec.assertBool s (not (stripsHandAbilities face)) "the real Yixlid Jailer is accepted"
     Spec.assertBool s (stripsHandAbilities (reaching (Affected.MatchingOffBattlefield (Filter.Type.IsInZone Zone.Hand)))) "cards in hands losing all abilities is rejected"
     Spec.assertBool s (stripsHandAbilities (reaching (Affected.MatchingAnywhere (Filter.Type.HasCardType CardType.Land)))) "lands in every zone losing all abilities is rejected"
