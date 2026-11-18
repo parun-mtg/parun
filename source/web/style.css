@@ -778,9 +778,25 @@ details.pile[open] {
   pointer-events: none;
 }
 
-.group > .card + .card {
-  margin-top: -1.9em;
-  transform: translateX(6px);
+/* An attachment tucks under the permanent it is attached to, its name
+   showing below it as a tab. */
+.group > .card:first-child {
+  z-index: 1;
+}
+
+#app .group > .card + .card {
+  min-height: 0;
+  margin-top: -8px;
+  padding-top: 12px;
+  border-top-width: 1px;
+  border-left: 4px solid var(--c);
+  border-radius: 0 0 8px 8px;
+  box-shadow: none;
+}
+
+.group > .card + .card .type,
+.group > .card + .card .foot:empty {
+  display: none;
 }
 
 .stack {
@@ -1251,7 +1267,7 @@ details.log[open] .latest {
 
 .log-list {
   margin: 0;
-  padding: 0 0.75em 0.6em 2.6em;
+  padding: 0 0.75em 0.6em 3.4em;
   max-height: 26dvh;
   overflow-y: auto;
   color: var(--muted);
@@ -1295,6 +1311,21 @@ details.log[open] .latest {
 
   details.log {
     flex: 1;
+  }
+
+  /* Wide screens show the log whether or not it was opened. */
+  details.log::details-content {
+    content-visibility: visible;
+    display: contents;
+  }
+
+  details.log > summary {
+    pointer-events: none;
+  }
+
+  details.log > summary::after,
+  details.log .latest {
+    display: none;
   }
 
   .log-list {
