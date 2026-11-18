@@ -532,7 +532,7 @@ Entries are ordered by the first rule each cites.
   not need to bound.
 - **Site**: `Parun.Engine.Event.castFromOutside`'s `spendRow`. Proved by the
   scenario
-  `cr-601-3-discord-s-permission-outlives-it-is-spent-by-one-cast-and-copies-nothing-once-it-has-left`.
+  `cr-601-3-discord-s-permission-outlives-it-is-spent-by-one-cast-and-copies-nothing-once-it-has`.
 - **Issue**: #5303.
 
 ## Whether a search printed over a portion of a library searches that library
@@ -661,7 +661,7 @@ Entries are ordered by the first rule each cites.
   other draws will be affected", which never mentions a replaced draw and so
   doesn't settle it.
 - **Site**: `Parun.Engine.Replacement.matchesPrinted`'s `DrawR` arm. The scenario
-  `cr-504-1-chains-of-mephistopheles-takes-alice-s-think-twice-draw-after-she-dredged-her-normal-draw`
+  `cr-504-1-chains-of-mephistopheles-takes-alice-s-think-twice-draw-after-she-dredged-her-normal`
   proves it.
 - **Issue**: #4781.
 
@@ -683,7 +683,7 @@ Entries are ordered by the first rule each cites.
   that only modifies CR 715.3c, and nothing in them creates a second ability.
 - **Site**: `Parun.Engine.Saga.loreStepOf`, run by
   `Parun.Engine.Engine.runTurnBasedActions`; proved by the scenario
-  night-of-the-flying-merfolk-enters-with-no-lore-and-gets-one-at-the-end-step-under-doubling-season.
+  night-of-the-flying-merfolk-enters-with-no-lore-and-gets-one-at-the-end-step-under-doubling.
 - **Issue**: #5290.
 
 ## The seat of a departed attacker's planeswalker
@@ -712,7 +712,7 @@ Entries are ordered by the first rule each cites.
   `Combat.removedDefending`. Proved by the scenarios
   mangara-draws-though-your-planeswalker-is-taken-after-both-of-its-attackers-died
   and
-  mangara-counts-a-departed-attackers-planeswalker-under-whoever-controlled-it-as-the-attacker-left.
+  mangara-counts-a-departed-attackers-planeswalker-under-whoever-controlled-it-as-the-attacker.
 - **Issue**: #5890.
 
 ## What Jin Sakai's "no other creatures are attacking that player" asks
@@ -2394,8 +2394,8 @@ Entries are ordered by the first rule each cites.
   `Parun.Engine.Event.Match.matchesTriggerGiven`'s `AbilityWatch` arm and by
   `Parun.Engine.Event.Match.additionalAttackTriggers` (Windcrag Siege). Proved
   by the scenarios
-  `firebender-ascension-does-not-count-a-counted-attack-ability-of-an-attacker-the-count-leaves-out`,
-  `firebender-ascension-counts-a-whenever-you-attack-a-player-ability-only-for-the-player-its-creature-attacked`
+  `firebender-ascension-does-not-count-a-counted-attack-ability-of-an-attacker-the-count-leaves`,
+  `firebender-ascension-counts-a-whenever-you-attack-a-player-ability-only-for-the-player-its`
   and `firebender-ascension-does-not-count-an-attacks-and-isnt-blocked-ability`.
 - **Issue**: #7226, #7288.
 
@@ -2539,7 +2539,7 @@ Entries are ordered by the first rule each cites.
   proved by the scenarios
   `cr-609-1-rain-of-gore-turns-a-lifelink-gain-from-its-controller-s-fight-spell-into-a-loss`
   and
-  `cr-614-1-rain-of-gore-turns-the-gain-words-of-worship-substitutes-for-a-draw-step-draw-into-a-loss`.
+  `cr-614-1-rain-of-gore-turns-the-gain-words-of-worship-substitutes-for-a-draw-step-draw-into-a`.
 - **Issue**: #5810.
 
 ## A resolving lend takes the lender's abilities as it resolves
@@ -2734,7 +2734,7 @@ Entries are ordered by the first rule each cites.
   departed attacker's planeswalker" already turned down for Mangara.
 - **Site**: `Parun.Engine.Game.attacked`, a FENCE: no scenario changes an
   attacked planeswalker's controller. The scenario
-  cr-508-5-sandswirl-wanderglyph-stops-an-opponent-who-attacked-your-planeswalker-from-casting-spells
+  cr-508-5-sandswirl-wanderglyph-stops-an-opponent-who-attacked-your-planeswalker-from-casting
   proves the planeswalker arm.
 - **Issue**: #8290.
 

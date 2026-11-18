@@ -2525,8 +2525,8 @@ attackProposalAllowedGiven limits alone bound proposal gs =
 -- other legal declarations by the first of its announcements each omits.
 -- Exponential at worst, on a board with many ways to attain CR 508.1d's
 -- maximum and no payable one. Parun.ScenarioSpec's
--- cr-508-1d-season-of-the-witch-destroys-a-creature-whose-toll-only-a-mana-creature-left-home-pays
--- and cr-508-1c-season-of-the-witch-destroys-a-creature-that-can-t-attack-alone-beside-its-cheaper-company
+-- cr-508-1d-season-of-the-witch-destroys-a-creature-whose-toll-only-a-mana-creature-left-home
+-- and cr-508-1c-season-of-the-witch-destroys-a-creature-that-can-t-attack-alone-beside-its-cheaper
 -- are the proof.
 --
 -- With no set-shaped restriction in force every candidate is in one: the

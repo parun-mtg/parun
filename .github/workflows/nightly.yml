@@ -96,10 +96,9 @@ jobs:
       # ldd exits nonzero on a binary that loads no shared library.
       - run: "! ldd artifact/parun"
       # Platform-independent, so built once. A downloaded binary finds the data
-      # through the parun_datadir variable. No sdist: scenario file names
-      # overflow its ustar headers (gap #8709).
+      # through the parun_datadir variable, the sdist's data directory.
       - run: |
-          git archive --output artifact/parun-data.tar.gz HEAD data
+          $MUSL cabal sdist --output-directory artifact
           artifact/parun schema > artifact/schema.json
           artifact/parun schema scenario > artifact/scenario-schema.json
       # Tarred so the executable bit survives the upload's zip.

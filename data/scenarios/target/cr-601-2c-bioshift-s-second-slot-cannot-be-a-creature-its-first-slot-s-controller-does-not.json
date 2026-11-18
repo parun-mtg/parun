@@ -68,7 +68,7 @@
     "step": "PrecombatMain"
   },
   "description": "CR 601.2c Bioshift's second slot cannot be a creature its first slot's controller does not control",
-  "note": "The CR 608.2b leg of cr-601-2c-bioshift-s-second-slot-cannot-be-a-creature-its-first-slot-s-controller-does-not-control: alice aims Bioshift from her giver Wall at her other Wall, and bob steals the giver in response with Ray of Command (the Haskell original set the controller directly). \"With the same controller\" is re-checked against `from`'s controller now, so `to` is illegal and no counter crosses.",
+  "note": "The CR 608.2b leg of cr-601-2c-bioshift-s-second-slot-cannot-be-a-creature-its-first-slot-s-controller-does-not-2: alice aims Bioshift from her giver Wall at her other Wall, and bob steals the giver in response with Ray of Command (the Haskell original set the controller directly). \"With the same controller\" is re-checked against `from`'s controller now, so `to` is illegal and no counter crosses.",
   "timeline": [
     {
       "do": {

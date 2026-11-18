@@ -1233,7 +1233,7 @@ candidateCostsGiven permitted pid name oid gs =
                 -- 702.170d permits the cast: one made under another permission
                 -- (Khan, Vengeful Heart's own, the turn it was plotted) pays what
                 -- that one prices. The scenario
-                -- khan-vengeful-heart-plotted-by-aven-interrupter-is-cast-the-same-turn-for-its-mana-cost-and-the-tax
+                -- khan-vengeful-heart-plotted-by-aven-interrupter-is-cast-the-same-turn-for-its-mana-cost-and-the
                 -- proves it. CR 716.3d's permission states no cost and falls
                 -- through to the `_` arm; Effect.GrantPlayFromExile's states one
                 -- only when it carries an alternative cost, which is the arm two
@@ -8124,7 +8124,7 @@ payPayable perform moment paidFor slots pid oid component = case component of
   -- (`revealPaying`); the scenarios
   -- cost/cr-701-20a-lasting-reveal-living-destiny-s-revealed-card-stays-revealed-while-it-is-cast
   -- and
-  -- cost/cr-701-20a-lasting-reveal-martyr-of-sands-revealed-cards-stay-revealed-while-its-ability-is-on-the-stack
+  -- cost/cr-701-20a-lasting-reveal-martyr-of-sands-revealed-cards-stay-revealed-while-its-ability-is-on
   -- are the proof.
   CostComponent.RevealCardsFromHand (CardsFromHand.MkCardsFromHand amount criterion) -> paidAnnounced amount $ \n -> do
     gs <- State.get

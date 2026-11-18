@@ -1472,7 +1472,7 @@ merenEndStepSpec s registry =
 -- Thragtusk, {4}{G} Creature -- Beast 5/3: "When this creature enters, you gain
 -- 5 life. When this creature leaves the battlefield, create a 3/3 green Beast
 -- creature token." That the enters trigger alone sees its arrival is
--- data/scenarios/zone-trigger/cr-603-6a-whole-card-casting-thragtusk-gains-5-life-and-its-leaves-trigger-stays-silent-on-the-way-in.json.
+-- data/scenarios/zone-trigger/cr-603-6a-whole-card-casting-thragtusk-gains-5-life-and-its-leaves-trigger-stays-silent-on-the.json.
 --
 -- Unsummon is what makes CR 400.7e's public-zone proviso a real test rather
 -- than one satisfied by construction, which is all it could be while a death

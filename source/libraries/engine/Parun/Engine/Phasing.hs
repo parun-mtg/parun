@@ -316,7 +316,7 @@ heldBy pid oid gs = Maybe.fromMaybe pid (Projection.controllerOf oid gs)
 -- what rides on it stays with it (CR 702.26g). It is only passed over: its row
 -- stands, so the first untap step on its schedule after the hold ends takes it.
 -- Scenarios teferi-timeless-voyager-held-creatures-miss-their-untap-step and
--- the-city-on-the-edge-of-forever-keeps-every-artifact-and-creature-phased-out-until-its-token-goes
+-- the-city-on-the-edge-of-forever-keeps-every-artifact-and-creature-phased-out-until-its-token
 -- are the proofs, stored and printed, and "CR 702.26n a held orphaned row waits out the hold" in
 -- Parun.PhasingSpec the orphaned half.
 phasingIn :: PlayerId -> GameState -> [ObjectId]

@@ -1,6 +1,6 @@
 {
   "description": "CR 603.6c, 603.10a, 704.5d: The Spot exiles alice's creature token, which then ceases to exist; Kaya, Spirits' Justice looks back at the token as a creature alice controlled and triggers, though no creature card is offered",
-  "note": "The board of kaya-spirits-justice-turns-a-token-into-a-flying-copy-of-a-creature-card-exiled-from-battlefield-and-graveyard-at-once with the Bears made a token and no graveyard target.",
+  "note": "The board of kaya-spirits-justice-turns-a-token-into-a-flying-copy-of-a-creature-card-exiled-from with the Bears made a token and no graveyard target.",
   "board": {
     "active": "alice",
     "step": "PrecombatMain",

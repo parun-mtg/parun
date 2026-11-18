@@ -688,7 +688,7 @@ carryGrants oid gs =
 -- effect overwrote is already gone (Event.unlinkLostPayments). So a
 -- Scrapshooter entering as Essence of the Wild gives the Host's gift to the
 -- opponent promised it, which the scenarios
--- cr-607-5-scrapshooter-entering-as-essence-of-the-wild-gives-the-host-s-gift-to-bob-and-not-its-own-to-carol
+-- cr-607-5-scrapshooter-entering-as-essence-of-the-wild-gives-the-host-s-gift-to-bob-and-not-its
 -- and cr-607-5-a-clone-of-scrapshooter-whose-paid-host-gift-was-lost-gives-no-gift
 -- prove.
 settlePromises :: ObjectId -> GameState.GameState -> GameState.GameState

@@ -938,7 +938,9 @@ corpusSpec s registry = Spec.describe s "Scenarios" $ do
 
 scenarioCase :: Spec.Spec IO n -> Registry.Registry IO -> FilePath -> n ()
 scenarioCase s registry path =
-  Spec.it s (reverse (takeWhile (/= '/') (reverse path))) $ do
+  Spec.it s name $ do
+    -- cabal sdist packs a ustar archive, whose name field holds 100 bytes.
+    Spec.assertBool s (ByteString.length (Encoding.encodeUtf8 (Text.pack name)) <= 100) (path <> ": a file name of at most 100 bytes")
     bytes <- ByteString.readFile path
     case Encoding.decodeUtf8' bytes of
       Left problem -> Spec.assertFailure s (path <> ": " <> show problem)
@@ -952,6 +954,8 @@ scenarioCase s registry path =
         case result of
           Left failure -> Spec.assertFailure s (path <> ": " <> Text.unpack (Scenario.Type.description scenario) <> ": " <> S.renderFailure failure)
           Right _ -> pure ()
+  where
+    name = reverse (takeWhile (/= '/') (reverse path))
 
 -- One scenario decoded and run, failing the case if it will not decode.
 runJson :: (Monad m) => Spec.Spec m n -> Registry.Registry m -> String -> m (Either ScenarioFailure.ScenarioFailure GameState.GameState)

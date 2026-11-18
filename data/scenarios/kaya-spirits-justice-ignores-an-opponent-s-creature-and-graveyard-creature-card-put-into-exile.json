@@ -1,6 +1,6 @@
 {
   "description": "CR 603.2c, 603.10a, 608.2f: The Spot exiles bob's creature and a creature card from bob's graveyard in one event; neither is a creature alice controls or a card in her graveyard, so Kaya, Spirits' Justice does not trigger",
-  "note": "The board of kaya-spirits-justice-turns-a-token-into-a-flying-copy-of-a-creature-card-exiled-from-battlefield-and-graveyard-at-once with the two targets moved to bob.",
+  "note": "The board of kaya-spirits-justice-turns-a-token-into-a-flying-copy-of-a-creature-card-exiled-from with the two targets moved to bob.",
   "board": {
     "active": "alice",
     "step": "PrecombatMain",

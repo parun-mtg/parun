@@ -603,7 +603,7 @@ spec s registry = Spec.describe s "Parun.Engine.Event (CR 400.11)" $ do
   -- its two cards are what the subgame hands back to her main-game library.
   --
   -- The sizing is the Death Wish scenario's
-  -- (outside-the-game/cr-604-2-730-4a-gameplay-death-wish-takes-titania-s-song-out-of-the-main-game-and-its-effect-goes-on-applying-there.json): one wish and eight Forests, so she
+  -- (outside-the-game/cr-604-2-730-4a-gameplay-death-wish-takes-titania-s-song-out-of-the-main-game-and-its-effect.json): one wish and eight Forests, so she
   -- holds the wish by turn 5 with three lands down, and bob decks on turn 6.
   -- Her main-game Plains and Mountains are lands outside the subgame too, so
   -- the offer has a choice in it; the answerer pins the township by id.
@@ -664,7 +664,7 @@ spec s registry = Spec.describe s "Parun.Engine.Event (CR 400.11)" $ do
   --
   -- The sizing is the Shahrazad-taking scenario's, which this board's second
   -- leg repeats:
-  -- outside-the-game/cr-730-5-gameplay-a-wish-that-takes-the-resolving-shahrazad-itself-still-finishes-resolving-with-the-winner-it-bound.json.
+  -- outside-the-game/cr-730-5-gameplay-a-wish-that-takes-the-resolving-shahrazad-itself-still-finishes-resolving.json.
   Spec.it s "CR 730.4a gameplay: Burning Wish takes a card out of a main-game graveyard and Spirit Mascot sees it leave" $ do
     plains <- S.printingOf s registry "Plains"
     mountain <- S.printingOf s registry "Mountain"
