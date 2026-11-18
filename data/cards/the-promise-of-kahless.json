@@ -1,0 +1,121 @@
+{
+  "faces": [
+    {
+      "manaCost": [
+        {
+          "type": "Generic",
+          "value": 4
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "Black"
+          }
+        }
+      ],
+      "name": "The Promise of Kahless",
+      "oracleText": "You may sacrifice a Klingon or Warrior. If you do, return all other Klingon and Warrior creature cards from your graveyard to the battlefield.",
+      "spell": {
+        "modes": [
+          {
+            "clauses": [
+              {
+                "effects": [
+                  {
+                    "type": "MoveToZone",
+                    "value": {
+                      "ref": {
+                        "type": "EachCardInGraveyard",
+                        "value": {
+                          "filter": {
+                            "type": "And",
+                            "value": [
+                              {
+                                "type": "HasCardType",
+                                "value": "Creature"
+                              },
+                              {
+                                "type": "Or",
+                                "value": [
+                                  {
+                                    "type": "HasSubtype",
+                                    "value": "Klingon"
+                                  },
+                                  {
+                                    "type": "HasSubtype",
+                                    "value": "Warrior"
+                                  }
+                                ]
+                              },
+                              {
+                                "type": "Not",
+                                "value": {
+                                  "type": "BeforeMove",
+                                  "value": {
+                                    "type": "IsBound",
+                                    "value": "thatSacrificedPermanent"
+                                  }
+                                }
+                              }
+                            ]
+                          },
+                          "graveyards": {
+                            "type": "Scoped",
+                            "value": {
+                              "type": "You"
+                            }
+                          }
+                        }
+                      },
+                      "zone": "Battlefield"
+                    }
+                  }
+                ],
+                "payGate": {
+                  "branch": "IfPaid",
+                  "cost": {
+                    "components": [
+                      {
+                        "type": "Sacrifice",
+                        "value": {
+                          "count": {
+                            "type": "Fixed",
+                            "value": 1
+                          },
+                          "whichPermanents": {
+                            "type": "Or",
+                            "value": [
+                              {
+                                "type": "HasSubtype",
+                                "value": "Klingon"
+                              },
+                              {
+                                "type": "HasSubtype",
+                                "value": "Warrior"
+                              }
+                            ]
+                          }
+                        }
+                      }
+                    ],
+                    "mana": []
+                  },
+                  "payer": {
+                    "type": "InSlot",
+                    "value": "you"
+                  }
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "typeLine": {
+        "types": [
+          "Sorcery"
+        ]
+      }
+    }
+  ]
+}
