@@ -2803,6 +2803,13 @@ tapsCounted counts power toughness
       TapCount.Multiplied k -> n * toInteger k
       TapCount.UsingToughness -> n
 
+-- CR 613.11: a creature's grants for one keyword that taps it, kept where
+-- the permanent whose cost it pays matches the grant's filter: Sulu, Heroic
+-- Helmsman stations Spacecraft, so not a Planet, proved by the scenario
+-- `sulu-heroic-helmsman-stations-a-planet-with-his-power-untripled`.
+tapCountsOn :: (Filter Keyword -> Bool) -> TapKeyword.TapKeyword -> Map TapKeyword.TapKeyword [(Filter Keyword, TapCount.TapCount)] -> [TapCount.TapCount]
+tapCountsOn paying keyword counts = [count | (permanent, count) <- Map.findWithDefault [] keyword counts, paying permanent]
+
 -- CR 702.184a's whole ability, crew's neighbour above and levelUp's below.
 --
 -- THE COST taps exactly ONE creature, so CostComponent.TapPermanents rather than

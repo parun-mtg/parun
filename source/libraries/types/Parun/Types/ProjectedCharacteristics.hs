@@ -27,6 +27,7 @@ import qualified Parun.Types.Counterability as Counterability
 import qualified Parun.Types.Defense as Defense
 import qualified Parun.Types.Effect as Effect
 import qualified Parun.Types.Face as Face
+import qualified Parun.Types.Filter as Filter
 import qualified Parun.Types.GrantedAbility as GrantedAbility
 import qualified Parun.Types.Keyword as Keyword
 import qualified Parun.Types.KeywordDesignator as KeywordDesignator
@@ -378,10 +379,10 @@ data ProjectedCharacteristics = MkProjectedCharacteristics
     -- by (Modification.Goaded), beside the one-shot Object.goadedBy. Not
     -- copiable (CR 701.15b).
     goadedBy :: Set.Set PlayerId.PlayerId,
-    -- | CR 613.11: how this creature counts toward each keyword that taps it
-    -- (Modification.TapsCounting), in timestamp order, read by
-    -- Parun.Engine.Keyword.tapsCounted.
-    tapCounts :: Map.Map TapKeyword.TapKeyword [TapCount.TapCount],
+    -- | CR 613.11: how this creature counts toward each keyword that taps it,
+    -- on a permanent matching the paired filter (Modification.TapsCounting),
+    -- in timestamp order, read by Parun.Engine.Keyword.tapsCounted.
+    tapCounts :: Map.Map TapKeyword.TapKeyword [(Filter.Filter Keyword.Keyword, TapCount.TapCount)],
     -- | Is this object's loyalty its toughness (Modification.LoyaltyIsToughness)?
     loyaltyIsToughness :: Bool,
     -- | CR 707.2 / 601.2b: the printed additional costs the copiable face

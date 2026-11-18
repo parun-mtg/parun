@@ -27,6 +27,7 @@ import qualified Parun.Codec.Counterability as Counterability
 import qualified Parun.Codec.Defense as Defense
 import qualified Parun.Codec.Effect as Effect
 import qualified Parun.Codec.Face as Face
+import qualified Parun.Codec.Filter as Filter
 import qualified Parun.Codec.GrantedAbility as GrantedAbility
 import qualified Parun.Codec.Keyword as Keyword
 import qualified Parun.Codec.KeywordDesignator as KeywordDesignator
@@ -102,7 +103,7 @@ codec = Fields.object $ do
   combatDamageOptions <- Fields.defaulted "combatDamageOptions" Map.empty (Common.keyedList (Common.keyValue CombatDamageOption.codec CombatDamageObligation.codec)) PC.combatDamageOptions
   controllerGrants <- Fields.defaulted "controllerGrants" Set.empty (Common.set ControllerGrant.codec) PC.controllerGrants
   goadedBy <- Fields.defaulted "goadedBy" Set.empty (Common.set PlayerId.codec) PC.goadedBy
-  tapCounts <- Fields.defaulted "tapCounts" Map.empty (Common.keyedList (Common.keyValue TapKeyword.codec (Common.list TapCount.codec))) PC.tapCounts
+  tapCounts <- Fields.defaulted "tapCounts" Map.empty (Common.keyedList (Common.keyValue TapKeyword.codec (Common.list (Common.keyValue (Filter.codec Keyword.codec) TapCount.codec)))) PC.tapCounts
   loyaltyIsToughness <- Fields.defaulted "loyaltyIsToughness" False Common.boolean PC.loyaltyIsToughness
   additionalCosts <- Fields.defaulted "additionalCosts" [] (Common.list (CostComponent.codec Keyword.codec)) PC.additionalCosts
   additionalCostChoices <- Fields.defaulted "additionalCostChoices" [] (Common.list CostChoice.codec) PC.additionalCostChoices

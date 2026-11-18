@@ -77,8 +77,13 @@ codec abilityCodec =
       tapsCounting =
         Fields.object $
           (,)
-            <$> Fields.required "keywords" (Common.set TapKeyword.codec) fst
+            <$> Fields.required "keywords" (Common.keyedList tapsFor) fst
             <*> Fields.required "count" TapCount.codec snd
+      tapsFor =
+        Fields.object $
+          (,)
+            <$> Fields.required "keyword" TapKeyword.codec fst
+            <*> Fields.required "permanent" (Filter.codec Keyword.codec) snd
       combatDamageAs =
         Fields.object $
           (,)

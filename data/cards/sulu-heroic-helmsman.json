@@ -37,8 +37,20 @@
                   "value": 3
                 },
                 "keywords": [
-                  "Crew",
-                  "Station"
+                  {
+                    "keyword": "Crew",
+                    "permanent": {
+                      "type": "HasSubtype",
+                      "value": "Vehicle"
+                    }
+                  },
+                  {
+                    "keyword": "Station",
+                    "permanent": {
+                      "type": "HasSubtype",
+                      "value": "Spacecraft"
+                    }
+                  }
                 ]
               }
             }

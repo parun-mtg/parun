@@ -3312,9 +3312,10 @@ dividesMixedRemoval spread owed offered division =
 -- with no power at all, which after CR 208.3 is every noncreature one.
 --
 -- Raised by the candidate's Modification.TapsCounting offsets and multipliers
--- for the keyword whose cost this is (Deathless Pilot, Sulu, Heroic
--- Helmsman), through Parun.Engine.Keyword.tapsCounted, and by none for a cost
--- printed outside a keyword. The scenario
+-- for the keyword whose cost this is, where `oid`, the permanent the cost is
+-- on, matches the grant's filter (Deathless Pilot, Sulu, Heroic Helmsman),
+-- through Parun.Engine.Keyword.tapsCounted, and by none for a cost printed
+-- outside a keyword. The scenario
 -- `deathless-pilot-crews-a-crew-4-vehicle-alone-where-a-bear-of-its-power-cannot`
 -- proves it.
 --
@@ -3323,14 +3324,15 @@ dividesMixedRemoval spread owed offered division =
 -- `interface-ace-crews-and-saddles-using-its-toughness-untapping-once`.
 -- The offsets then go unread (docs/decisions.md, "Whether a crew power offset
 -- raises a toughness crewer").
-tapPower :: Maybe TapKeyword.TapKeyword -> ObjectId -> GameState -> Integer
+tapPower :: Maybe TapKeyword.TapKeyword -> PlayerId -> ObjectId -> ObjectId -> GameState -> Integer
 tapPower keyword = tapPowerGiven keyword Map.empty
 
 -- The same power read off a board the caller already projected.
-tapPowerGiven :: Maybe TapKeyword.TapKeyword -> Map.Map ObjectId PC.ProjectedCharacteristics -> ObjectId -> GameState -> Integer
-tapPowerGiven keyword pcs candidate gs =
+tapPowerGiven :: Maybe TapKeyword.TapKeyword -> Map.Map ObjectId PC.ProjectedCharacteristics -> PlayerId -> ObjectId -> ObjectId -> GameState -> Integer
+tapPowerGiven keyword pcs pid oid candidate gs =
   let pc = Projection.projectGiven pcs candidate gs
-      counts = foldMap (\k -> Map.findWithDefault [] k (PC.tapCounts pc)) keyword
+      paying = Filter.matches (Projection.contextWithSlots gs (Just pid) (Just candidate) Map.empty) (Projection.viewsOf gs oid)
+      counts = foldMap (\k -> Keyword.tapCountsOn paying k (PC.tapCounts pc)) keyword
    in Maybe.fromMaybe 0 (Keyword.tapsCounted counts (PC.power pc) (PC.toughness pc))
 
 -- CR 205.3m: a tap candidate's creature types, off its projection -- so a
@@ -3544,7 +3546,7 @@ claimOfGiven board slots pid oid component gs =
         -- excludes them (Parun.Engine.Keyword's crew), so a crew cost's pool is the
         -- untapped creatures exactly.
         CostComponent.TapForTotalPower (TapForTotalPower.MkTapForTotalPower threshold criterion keyword)
-          | threshold > 0 -> reaching ClaimAxis.Tapping (toInteger threshold) (\candidate -> tapPowerGiven keyword (Snapshot.projected board) candidate gs) (tapCandidatesGiven board slots pid oid criterion gs)
+          | threshold > 0 -> reaching ClaimAxis.Tapping (toInteger threshold) (\candidate -> tapPowerGiven keyword (Snapshot.projected board) pid oid candidate gs) (tapCandidatesGiven board slots pid oid criterion gs)
           | otherwise -> Nothing
         -- CR 601.2f's "tapping permanents", on the TAPPING axis rather than a zone's,
         -- for the header's reason. ManaSpec's "a creature tapped for mana can still be
@@ -4090,7 +4092,7 @@ uncountedCeiling pid oid claims gs component = case component of
           ( alone
               ClaimAxis.Tapping
               threshold
-              (fmap (max 0 . (\candidate -> tapPower keyword candidate gs)) (tapCandidates Map.empty pid oid criterion gs))
+              (fmap (max 0 . (\candidate -> tapPower keyword pid oid candidate gs)) (tapCandidates Map.empty pid oid criterion gs))
           )
     | otherwise -> Nothing
   -- TapForTotalPower's arm above one zone over: CR 701.59a's number is a
@@ -4861,7 +4863,7 @@ canPayComponentGiven board slots pid oid component gs = case component of
   -- rather than a bound, and `>=` because CR 702.122a says "or greater". A
   -- threshold of 0 is payable by the empty set, with no special case.
   CostComponent.TapForTotalPower (TapForTotalPower.MkTapForTotalPower n criterion keyword) ->
-    sum (fmap (max 0 . (\candidate -> tapPowerGiven keyword (Snapshot.projected board) candidate gs)) (tapCandidatesGiven board slots pid oid criterion gs)) >= toInteger n
+    sum (fmap (max 0 . (\candidate -> tapPowerGiven keyword (Snapshot.projected board) pid oid candidate gs)) (tapCandidatesGiven board slots pid oid criterion gs)) >= toInteger n
   -- Sacrifice's arm read over tapping: the count is HOW MANY, so the question is
   -- a size and not a sum. "Untapped" is not asked here and is not missing -- CR
   -- 107.5's exclusion is not this component's, so a card that wants it prints it
@@ -7887,8 +7889,8 @@ payPayable perform moment paidFor slots pid oid component = case component of
     gs <- State.get
     let candidates = tapCandidates slots pid oid criterion gs
         decider = Decide.deciderFor pid gs
-    chosen <- Game.choose (Prompt.ChooseTapsForTotalPower decider pid oid (fmap (\c -> (c, tapPower keyword c gs)) candidates) n)
-    let totalPower = sum (fmap (\c -> tapPower keyword c gs) (Set.toAscList chosen))
+    chosen <- Game.choose (Prompt.ChooseTapsForTotalPower decider pid oid (fmap (\c -> (c, tapPower keyword pid oid c gs)) candidates) n)
+    let totalPower = sum (fmap (\c -> tapPower keyword pid oid c gs) (Set.toAscList chosen))
     if Set.isSubsetOf chosen (Set.fromList candidates) && totalPower >= toInteger n
       then do
         Event.simultaneously (Monad.mapM_ (tapObject pid) (Set.toAscList chosen))

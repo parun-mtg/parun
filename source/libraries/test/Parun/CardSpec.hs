@@ -3852,9 +3852,10 @@ modificationFilters modification = case modification of
   -- No Filter in any of these payloads to sweep.
   Modification.AssignCombatDamage _ -> []
   Modification.GrantsController _ -> []
-  Modification.TapsCounting {} -> []
   Modification.LoyaltyIsToughness -> []
   Modification.Goaded -> []
+  -- The permanent each keyword's cost sits on, card text like any other.
+  Modification.TapsCounting keywords _ -> unframed (Map.elems keywords)
   -- An enum payload holds neither.
   Modification.AssignCombatDamageAs {} -> []
 
