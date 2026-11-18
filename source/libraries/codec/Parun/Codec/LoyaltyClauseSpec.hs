@@ -7,11 +7,22 @@ import qualified Parun.Types.LoyaltyClause as LoyaltyClause
 
 spec :: (Monad m, Monad n) => Spec.Spec m n -> n ()
 spec s = Spec.describe s "Parun.Codec.LoyaltyClause" $ do
+  Spec.it s "Window" $
+    Common.assertCodec
+      s
+      LoyaltyClause.codec
+      LoyaltyClause.Window
+      " {\"type\":\"Window\"} "
   Spec.it s "OncePerTurn" $
     Common.assertCodec
       s
       LoyaltyClause.codec
       LoyaltyClause.OncePerTurn
-      " \"OncePerTurn\" "
-  Spec.it s "round trips every constructor" $ Common.assertEnumCodec s LoyaltyClause.codec
+      " {\"type\":\"OncePerTurn\"} "
+  Spec.it s "TimesEachTurn" $
+    Common.assertCodec
+      s
+      LoyaltyClause.codec
+      (LoyaltyClause.TimesEachTurn 2)
+      " {\"type\":\"TimesEachTurn\",\"value\":2} "
   Spec.it s "has a schema" $ Common.assertHasSchema s LoyaltyClause.codec

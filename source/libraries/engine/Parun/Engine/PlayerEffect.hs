@@ -2378,18 +2378,17 @@ keywordRiderGrantsGiven effects stamp srcId gs =
     matchesObjectFrom source (KeywordRiderGrant.permanents grant) srcId gs
   ]
 
--- CR 606.3: how many grants let `pid` activate the loyalty abilities of `srcId`
--- past that clause of the rule -- any at all lifts the window (The Wandering
--- Emperor), and each is one more activation this turn (The Chain Veil, whose
--- every resolution is a row of its own). The criterion is asked of the
+-- CR 606.3: the clauses of the rule that grants let `pid` relax for the
+-- loyalty abilities of `srcId`, one per grant -- The Wandering Emperor's window,
+-- each The Chain Veil resolution a row of its own. The criterion is asked of the
 -- permanent, from the effect's source, so `IsSource` is "her loyalty
 -- abilities".
-loyaltyGrants :: LoyaltyClause.LoyaltyClause -> PlayerId -> ObjectId -> GameState -> Int
-loyaltyGrants clause pid srcId gs =
-  let grants (source, effect) = case effect of
-        PlayerEffect.LoyaltyGrant grant -> LoyaltyGrant.relaxes grant == clause && matchesObjectFrom source (LoyaltyGrant.permanents grant) srcId gs
-        _ -> False
-   in length (filter grants (applying pid gs))
+loyaltyGrants :: PlayerId -> ObjectId -> GameState -> [LoyaltyClause.LoyaltyClause]
+loyaltyGrants pid srcId gs =
+  [ LoyaltyGrant.relaxes grant
+  | (source, PlayerEffect.LoyaltyGrant grant) <- applying pid gs,
+    matchesObjectFrom source (LoyaltyGrant.permanents grant) srcId gs
+  ]
 
 -- CR 116.2c: the life `pid` may pay for mana now, each beside an object the effect
 -- came from, one per distinct price and mana: two Channels offer one action, since

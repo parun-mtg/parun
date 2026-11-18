@@ -2303,6 +2303,7 @@ playerEffectChildren c effect = case effect of
         looksBack = case relaxes of
           LoyaltyClause.Window -> pure ()
           LoyaltyClause.OncePerTurn -> playerLooksBack c HistoryRead.Activations
+          LoyaltyClause.TimesEachTurn _ -> playerLooksBack c HistoryRead.Activations
      in fmap PlayerEffect.LoyaltyGrant (LoyaltyGrant.MkLoyaltyGrant relaxes <$ looksBack <*> playerFilter c permanents)
   PlayerEffect.MayTapForMana (TapForMana.MkTapForMana permanents restriction) ->
     fmap PlayerEffect.MayTapForMana (TapForMana.MkTapForMana <$> playerFilter c permanents <*> traverse (playerManaRestriction c) restriction)
