@@ -22,6 +22,7 @@ import qualified Parun.Types.Color as Color
 import qualified Parun.Types.Decider as Decider
 import qualified Parun.Types.GameState as GameState
 import qualified Parun.Types.ManaType as ManaType
+import qualified Parun.Types.ObjectId as ObjectId
 import qualified Parun.Types.Prompt as Prompt
 import qualified Parun.Types.Question as Question
 import qualified Parun.Types.Reply as R
@@ -92,6 +93,9 @@ spec s registry = Spec.describe s "WebQuestion" $ do
   Spec.it s "CR 509.1a blocks pair each blocker picked for with the attackers it blocks" $ do
     let request = asking (Text.pack "DeclareBlockers") (R.Object [(Text.pack "blockers", R.Array [R.Text (Text.pack "$3"), R.Text (Text.pack "$4")]), (Text.pack "attackers", R.Array [R.Text (Text.pack "$1")])])
     Spec.assertEqWith s "one block" (Question.Web.step request (picking request [Question.Web.MkToggle 1 0]) Question.Web.MkSubmit Text.empty) (Question.Web.MkReplied (R.Array [R.Array [R.Text (Text.pack "$4"), R.Array [R.Text (Text.pack "$1")]]]))
+    -- On the table, a blocker's tile is tapped first, then the attacker's.
+    Spec.assertEqWith s "table" (Question.Web.blocks request) (Just ([ObjectId.MkObjectId 3, ObjectId.MkObjectId 4], [ObjectId.MkObjectId 1]))
+    Spec.assertEqWith s "focus keeps picks" (Question.Web.step request (Set.singleton (1, 0)) (Question.Web.MkFocus 0) Text.empty) (Question.Web.MkPicking (Set.singleton (1, 0)))
 
   Spec.it s "CR 601.2c targets are exactly each slot's count, sent by slot" $ do
     let slot = R.Text (Text.pack "target")

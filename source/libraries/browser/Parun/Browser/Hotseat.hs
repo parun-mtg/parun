@@ -160,28 +160,33 @@ exchange lookUp page seatRef request = do
     pure reply
   where
     untilReady = Browser.next page >>= \(event, _) -> Monad.unless (event == Right Web.Question.MkReady) untilReady
-    answer pending picked = asking pending picked Nothing
-    asking pending picked reading = do
+    answer pending picked = asking pending picked Nothing Nothing
+    asking pending picked reading focus = do
       state <- IORef.readIORef seatRef
-      let screen = Web.Question.MkScreen picked reading (logged state) (Int.toNaturalSaturating (Seq.length (logged state) - decided state))
+      let screen = Web.Question.MkScreen picked reading (logged state) (Int.toNaturalSaturating (Seq.length (logged state) - decided state)) focus
       Browser.display page . fmap Right $ Web.Question.view pending screen
       (event, value) <- Browser.next page
       case event of
         Right (Web.Question.MkRead object)
           | Just shown <- Request.view pending,
             Just o <- Map.lookup object (Render.objects shown) ->
-              asking pending picked . Just . Web.Card.MkReading object . either (pure . Text.pack . Exception.displayException) id $ Web.Card.oracle lookUp o
+              (\r -> asking pending picked (Just r) focus) . Web.Card.MkReading object . either (pure . Text.pack . Exception.displayException) id $ Web.Card.oracle lookUp o
         Right e -> case Web.Question.step pending picked e value of
           Web.Question.MkReplied answered -> do
             Monad.when (e == Web.Question.MkAuto) . IORef.modifyIORef' seatRef $ \s -> s {paying = True}
             Monad.when (e == Web.Question.MkSkip) . IORef.modifyIORef' seatRef $ \s -> s {skipping = fmap PlayerView.turn (Request.view pending)}
             pure answered
           -- A pick made from the card's sheet leaves the sheet open.
-          Web.Question.MkPicking now -> asking pending now (if isToggle e then reading else Nothing)
-          Web.Question.MkRefused problem -> asking pending {Request.problem = Just problem} picked Nothing
-        Left _ -> asking pending picked reading
+          Web.Question.MkPicking now -> asking pending now (if isToggle e then reading else Nothing) (focusAfter e focus)
+          Web.Question.MkRefused problem -> asking pending {Request.problem = Just problem} picked Nothing focus
+        Left _ -> asking pending picked reading focus
+    focusAfter e focus = case e of
+      Web.Question.MkFocus g -> if focus == Just g then Nothing else Just g
+      Web.Question.MkClear -> Nothing
+      _ -> focus
     isToggle e = case e of
       Web.Question.MkToggle _ _ -> True
+      Web.Question.MkFocus _ -> True
       _ -> False
 
 -- | What the page keeps between request lines: the seat the screen last

@@ -1035,6 +1035,27 @@ details.pile[open] {
   justify-content: center;
 }
 
+#app button.card.focused {
+  outline: 3px solid var(--good);
+  outline-offset: 2px;
+  transform: translateY(-4px);
+}
+
+#app button.card.attacking {
+  box-shadow:
+    0 0 0 2px var(--danger),
+    0 0 12px color-mix(in srgb, var(--danger) 40%, transparent);
+}
+
+#app button.card.blocking::after {
+  content: "\1F6E1\FE0E";
+  position: absolute;
+  left: 4px;
+  bottom: 4px;
+  font-size: 0.9em;
+  color: var(--good);
+}
+
 /* ---------- The side panel: prompt and log ---------- */
 
 .side {
@@ -1082,6 +1103,31 @@ details.pile[open] {
 
 .passes > :only-child {
   grid-column: 1 / -1;
+}
+
+.news {
+  margin: 0;
+  padding: 0.45em 0.7em 0.45em 1.6em;
+  border-radius: var(--radius);
+  background: var(--surface-2);
+  font-size: 0.85rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.1em;
+}
+
+.news .more {
+  list-style: none;
+  margin-left: -0.9em;
+  color: var(--muted);
+  font-size: 0.9em;
+}
+
+.subhead {
+  font-size: 0.8rem;
+  color: var(--muted);
+  font-weight: 600;
+  margin-top: 0.3em;
 }
 
 .problem {

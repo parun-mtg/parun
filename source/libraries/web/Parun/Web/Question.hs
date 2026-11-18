@@ -17,6 +17,7 @@ import Numeric.Natural (Natural)
 import qualified Parun.Codec.ManaCost as Codec.ManaCost
 import qualified Parun.Codec.ManaUnit as Codec.ManaUnit
 import qualified Parun.Codec.Reply as Codec.Reply
+import qualified Parun.Extra.Int as Int
 import qualified Parun.Extra.Natural as Natural
 import qualified Parun.JsonCodec.Common as Common
 import qualified Parun.Play.Offer as Offer
@@ -56,6 +57,8 @@ data Event
     MkRead ObjectId.ObjectId
   | -- | Hides the card shown.
     MkClose
+  | -- | Makes this blocker the one the next attacker tapped is for.
+    MkFocus Natural
   | -- | Passes now, and every priority after it until the turn ends while
     -- the stack is empty (the seat's own stop, not the engine's choice).
     MkSkip
@@ -137,20 +140,22 @@ data Screen = MkScreen
     -- | Everything the seat has seen happen, oldest first.
     logged :: Seq.Seq Text.Text,
     -- | How many of the newest entries arrived since the seat last decided.
-    fresh :: Natural
+    fresh :: Natural,
+    -- | The blocker an attacker's tile assigns to when tapped (MkFocus).
+    focus :: Maybe Natural
   }
   deriving (Eq, Show)
 
 -- | A screen with nothing picked, read or logged.
 blank :: Screen
-blank = MkScreen Set.empty Nothing Seq.empty 0
+blank = MkScreen Set.empty Nothing Seq.empty 0 Nothing
 
 -- | The page for a request: the turn bar, the table with each tile marked
 -- for what tapping it does, the question docked with its answers, the log,
 -- and the sheet of the card being read.
 view :: Request.Request -> Screen -> Html.Html Event
 view request screen =
-  let marks = cues request (selected screen)
+  let marks = cues request (selected screen) (focus screen)
       board = Request.view request
    in Element.el "main" ["game"] [] $
         foldMap (\b -> [Board.turnBar b]) board
@@ -159,11 +164,25 @@ view request screen =
           <> [ Element.el "aside" ["side"] [] $
                  [ Element.el "section" ["prompt"] [Element.attr "aria-live" (Text.pack "polite")] $
                      [Element.el "p" ["problem"] [Element.attr "role" (Text.pack "alert")] [Html.text problem] | problem <- Maybe.maybeToList (Request.problem request)]
+                       <> news screen
                        <> form request (selected screen)
                  ]
                    <> [logView screen | not (Seq.null (logged screen))]
              ]
           <> Maybe.maybeToList (do b <- board; r <- reading screen; sheetFor request b marks r)
+
+-- | What happened since the seat last decided, the latest few, oldest
+-- first; the log holds the rest.
+news :: Screen -> [Html.Html msg]
+news screen =
+  let count = Natural.toIntSaturating (fresh screen)
+      shown = min 4 count
+      latest = Seq.drop (Seq.length (logged screen) - shown) (logged screen)
+   in [ Element.el "ul" ["news"] [Element.attr "aria-label" (Text.pack "Since your last decision")] $
+          [Element.el "li" ["more"] [] [Element.string ("\x2026and " <> show (count - shown) <> " more in the log")] | count > shown]
+            <> [Element.el "li" [] [] (Mana.rich t) | t <- Foldable.toList latest]
+      | shown > 0
+      ]
 
 -- | The log, newest first, the entries since the seat last decided lit; its
 -- summary the newest entry.
@@ -190,6 +209,7 @@ sheetFor request board marks r = do
         MkRead _ -> [primary (MkAnswer (R.Number i)) label | (i, label) <- Map.findWithDefault [] (Card.object r) (actionsByObject request)]
         MkToggle g i -> [primary (MkToggle g i) (Text.pack (if elem "chosen" (Card.marks cue) then "Unselect" else "Select"))]
         MkAnswer reply -> [primary (MkAnswer reply) (Text.pack "Use")]
+        MkFocus g -> [primary (MkFocus g) (Text.pack "Block with this")]
         _ -> []
   pure (Card.sheet board o r actions MkClose)
 
@@ -206,8 +226,8 @@ actionsByObject request = case (Text.unpack (Question.kind (Request.question req
 -- a card the seat may act with is lit and opens its sheet; a payment's
 -- sources pay when tapped; an option of a picker toggles when tapped, where
 -- it is offered once; every other tile opens its sheet.
-cues :: Request.Request -> Set.Set (Natural, Natural) -> Board.Marks Event
-cues request chosen =
+cues :: Request.Request -> Set.Set (Natural, Natural) -> Maybe Natural -> Board.Marks Event
+cues request chosen focused =
   let question = Request.question request
       offer = Question.offer question
       acting = actionsByObject request
@@ -222,13 +242,40 @@ cues request chosen =
       objects = once (\option -> Monad.mplus (Offer.objectOf option) (Offer.recipientObject option))
       players = once Offer.recipientPlayer
       toggled (g, i) = Card.MkCue [if Set.member (g, i) chosen then "chosen" else "choosable"] (MkToggle g i)
+      -- Blocks are made on the table: a blocker's tile, then the tile of the
+      -- attacker it blocks.
+      (blockers, attackers) = Maybe.fromMaybe ([], []) (blocks request)
+      blockerCue oid = do
+        g <- List.elemIndex oid blockers
+        let gn = Int.toNaturalSaturating g
+            assigned = any ((== gn) . fst) (Set.toList chosen)
+        pure (Card.MkCue [if focused == Just gn then "focused" else "choosable"] (MkFocus gn) `withMark` ["blocking" | assigned])
+      attackerCue oid = do
+        i <- Int.toNaturalSaturating <$> List.elemIndex oid attackers
+        pure $ case focused of
+          Just g -> Card.MkCue ["attacking", if Set.member (g, i) chosen then "chosen" else "choosable"] (MkToggle g i)
+          Nothing -> Card.MkCue ["attacking"] (MkRead oid)
       objectCue o =
         let oid = ObjectView.object o
-         in case (Map.lookup oid objects, Map.lookup oid sources) of
-              (Just gi, _) -> toggled gi
-              (_, Just source) -> Card.MkCue ["choosable"] (MkAnswer source)
+         in case (blockerCue oid, attackerCue oid, Map.lookup oid objects, Map.lookup oid sources) of
+              (Just cue, _, _, _) -> cue
+              (_, Just cue, _, _) -> cue
+              (_, _, Just gi, _) -> toggled gi
+              (_, _, _, Just source) -> Card.MkCue ["choosable"] (MkAnswer source)
               _ -> Card.MkCue ["playable" | Map.member oid acting] (MkRead oid)
    in Board.MkMarks objectCue (\pid -> fmap toggled (Map.lookup pid players))
+
+withMark :: Card.Cue msg -> [String] -> Card.Cue msg
+withMark cue extra = cue {Card.marks = Card.marks cue <> extra}
+
+-- | A block declaration's blockers and attackers, by id (CR 509.1a).
+blocks :: Request.Request -> Maybe ([ObjectId.ObjectId], [ObjectId.ObjectId])
+blocks request = do
+  Monad.guard $ Question.kind (Request.question request) == Text.pack "DeclareBlockers"
+  let offer = Question.offer (Request.question request)
+  blockers <- Protocol.field "blockers" offer >>= Protocol.arrayOf >>= traverse Offer.objectOf
+  attackers <- Protocol.field "attackers" offer >>= Protocol.arrayOf >>= traverse Offer.objectOf
+  pure (blockers, attackers)
 
 -- | Before a seat's question when the screen last showed another seat's.
 handOff :: PlayerId.PlayerId -> Html.Html Event
@@ -273,6 +320,7 @@ step request picked event typed = case event of
   MkClear -> MkPicking Set.empty
   MkRead _ -> MkPicking picked
   MkClose -> MkPicking picked
+  MkFocus _ -> MkPicking picked
   MkSkip -> maybe (MkRefused $ Text.pack "There is no pass to make.") (MkReplied . R.Number) $ passIndex request
   MkAuto -> maybe (MkRefused $ Text.pack "Auto can't pay the rest of this cost. Choose a source.") MkReplied $ auto request
 
@@ -425,9 +473,9 @@ form request picked = case Text.unpack (Question.kind question) of
       Just shown <- Request.view request,
       Just sources <- Protocol.field "sources" offer >>= Protocol.arrayOf >>= traverse Offer.manaSource ->
         Html.element (Text.pack "h2") [] [Html.text $ foldMap (\cost -> Text.pack "Paying " <> Render.manaCost cost <> Text.pack ". ") (Protocol.field "cost" offer >>= Offer.decoded Codec.ManaCost.codec) <> Text.pack (if kind == "ChooseManaSource" then "Choose a source." else "The cost is covered. Activate another source, or pay now.")]
-          : [button MkAuto (Text.pack "Auto") | Maybe.isJust (auto request)]
+          : [primary MkAuto (Text.pack "Pay automatically") | Maybe.isJust (auto request)]
             <> [button (MkAnswer source) (Offer.listedName shown source <> makes yields) | (source, yields) <- sources]
-            <> [button (MkAnswer R.Null) $ Text.pack (if kind == "ChooseManaSource" then "Stop paying" else "Pay now")]
+            <> [(if kind == "ChooseManaSource" then button else primary) (MkAnswer R.Null) $ Text.pack (if kind == "ChooseManaSource" then "Stop paying" else "Pay now")]
   kind
     | kind `elem` ["ChooseOptional", "ReverseManaAbilities"],
       Just shown <- Request.view request ->
@@ -473,6 +521,25 @@ form request picked = case Text.unpack (Question.kind question) of
         let entries = foldMap (fmap Just) (Protocol.field "entries" offer >>= Protocol.arrayOf) <> repeat Nothing
          in Html.element (Text.pack "h2") [] [Html.text $ capitalized (Question.kind question) <> foldMap (\source -> Text.pack " for " <> Offer.objectName shown source) (Protocol.field "source" offer) <> Text.pack "."]
               : [button (MkAnswer option) (maybe (name option) (Offer.entryName shown) entry) | (option, entry) <- zip options' entries]
+  "DeclareAttackers"
+    | Just attackers <- Protocol.arrayOf offer,
+      Just shown <- Request.view request ->
+        let count = Set.size picked
+         in [ heading "Declare attackers: tap your creatures to attack with them.",
+              Element.el "div" ["actions"] [] [toggle 0 i (Offer.listedName shown option) | (i, option) <- zip [0 ..] attackers],
+              Element.el "div" ["passes"] [] $
+                [primary MkSubmit (Text.pack (if count == 0 then "No attack" else "Attack with " <> show count))]
+                  <> [button (MkAnswer (R.Array attackers)) (Text.pack "All") | length attackers > 1, count < length attackers]
+            ]
+  "DeclareBlockers"
+    | Just chooser <- picker request ->
+        heading "Declare blockers: tap a creature of yours, then the attacker it blocks."
+          : concat
+            [ Element.el "h3" ["subhead"] [] [Html.text (title group)]
+                : [toggle g i label | (i, (_, label)) <- zip [0 ..] (options group)]
+            | (g, group) <- zip [0 ..] (groups chooser)
+            ]
+            <> [primary MkSubmit (Text.pack (if Set.null picked then "No blocks" else "Block"))]
   _
     | Just chooser <- picker request ->
         concat
