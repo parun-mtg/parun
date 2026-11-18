@@ -1,0 +1,334 @@
+{
+  "faces": [
+    {
+      "manaCost": [
+        {
+          "type": "Generic",
+          "value": 2
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "Black"
+          }
+        }
+      ],
+      "name": "Urborg Scavengers",
+      "oracleText": "Whenever this creature enters or attacks, exile target card from a graveyard. Put a +1/+1 counter on this creature.\nThis creature has flying as long as a card exiled with it has flying. The same is true for first strike, double strike, deathtouch, haste, hexproof, indestructible, lifelink, menace, reach, trample, and vigilance.",
+      "power": {
+        "type": "Literal",
+        "value": 2
+      },
+      "staticAbilities": [
+        {
+          "affected": {
+            "type": "Matching",
+            "value": {
+              "type": "IsSource"
+            }
+          },
+          "modifications": [
+            {
+              "type": "GainKeywordsAmong",
+              "value": {
+                "among": {
+                  "type": "IsExiledWithSource",
+                  "value": {
+                    "type": "OwnAbilities"
+                  }
+                },
+                "keyword": {
+                  "type": "OfKeyword",
+                  "value": {
+                    "type": "Flying"
+                  }
+                },
+                "zone": "Exile"
+              }
+            },
+            {
+              "type": "GainKeywordsAmong",
+              "value": {
+                "among": {
+                  "type": "IsExiledWithSource",
+                  "value": {
+                    "type": "OwnAbilities"
+                  }
+                },
+                "keyword": {
+                  "type": "OfKeyword",
+                  "value": {
+                    "type": "FirstStrike"
+                  }
+                },
+                "zone": "Exile"
+              }
+            },
+            {
+              "type": "GainKeywordsAmong",
+              "value": {
+                "among": {
+                  "type": "IsExiledWithSource",
+                  "value": {
+                    "type": "OwnAbilities"
+                  }
+                },
+                "keyword": {
+                  "type": "OfKeyword",
+                  "value": {
+                    "type": "DoubleStrike"
+                  }
+                },
+                "zone": "Exile"
+              }
+            },
+            {
+              "type": "GainKeywordsAmong",
+              "value": {
+                "among": {
+                  "type": "IsExiledWithSource",
+                  "value": {
+                    "type": "OwnAbilities"
+                  }
+                },
+                "keyword": {
+                  "type": "OfKeyword",
+                  "value": {
+                    "type": "Deathtouch"
+                  }
+                },
+                "zone": "Exile"
+              }
+            },
+            {
+              "type": "GainKeywordsAmong",
+              "value": {
+                "among": {
+                  "type": "IsExiledWithSource",
+                  "value": {
+                    "type": "OwnAbilities"
+                  }
+                },
+                "keyword": {
+                  "type": "OfKeyword",
+                  "value": {
+                    "type": "Haste"
+                  }
+                },
+                "zone": "Exile"
+              }
+            },
+            {
+              "type": "GainKeywordsAmong",
+              "value": {
+                "among": {
+                  "type": "IsExiledWithSource",
+                  "value": {
+                    "type": "OwnAbilities"
+                  }
+                },
+                "keyword": {
+                  "type": "OfFamily",
+                  "value": "Hexproof"
+                },
+                "zone": "Exile"
+              }
+            },
+            {
+              "type": "GainKeywordsAmong",
+              "value": {
+                "among": {
+                  "type": "IsExiledWithSource",
+                  "value": {
+                    "type": "OwnAbilities"
+                  }
+                },
+                "keyword": {
+                  "type": "OfKeyword",
+                  "value": {
+                    "type": "Indestructible"
+                  }
+                },
+                "zone": "Exile"
+              }
+            },
+            {
+              "type": "GainKeywordsAmong",
+              "value": {
+                "among": {
+                  "type": "IsExiledWithSource",
+                  "value": {
+                    "type": "OwnAbilities"
+                  }
+                },
+                "keyword": {
+                  "type": "OfKeyword",
+                  "value": {
+                    "type": "Lifelink"
+                  }
+                },
+                "zone": "Exile"
+              }
+            },
+            {
+              "type": "GainKeywordsAmong",
+              "value": {
+                "among": {
+                  "type": "IsExiledWithSource",
+                  "value": {
+                    "type": "OwnAbilities"
+                  }
+                },
+                "keyword": {
+                  "type": "OfKeyword",
+                  "value": {
+                    "type": "Menace"
+                  }
+                },
+                "zone": "Exile"
+              }
+            },
+            {
+              "type": "GainKeywordsAmong",
+              "value": {
+                "among": {
+                  "type": "IsExiledWithSource",
+                  "value": {
+                    "type": "OwnAbilities"
+                  }
+                },
+                "keyword": {
+                  "type": "OfKeyword",
+                  "value": {
+                    "type": "Reach"
+                  }
+                },
+                "zone": "Exile"
+              }
+            },
+            {
+              "type": "GainKeywordsAmong",
+              "value": {
+                "among": {
+                  "type": "IsExiledWithSource",
+                  "value": {
+                    "type": "OwnAbilities"
+                  }
+                },
+                "keyword": {
+                  "type": "OfKeyword",
+                  "value": {
+                    "type": "Trample"
+                  }
+                },
+                "zone": "Exile"
+              }
+            },
+            {
+              "type": "GainKeywordsAmong",
+              "value": {
+                "among": {
+                  "type": "IsExiledWithSource",
+                  "value": {
+                    "type": "OwnAbilities"
+                  }
+                },
+                "keyword": {
+                  "type": "OfKeyword",
+                  "value": {
+                    "type": "Vigilance"
+                  }
+                },
+                "zone": "Exile"
+              }
+            }
+          ]
+        }
+      ],
+      "toughness": {
+        "type": "Literal",
+        "value": 2
+      },
+      "triggeredAbilities": [
+        {
+          "condition": {
+            "type": "AnyOf",
+            "value": [
+              {
+                "type": "Enters",
+                "value": {}
+              },
+              {
+                "type": "Attacks",
+                "value": {
+                  "type": "Attacker",
+                  "value": {}
+                }
+              }
+            ]
+          },
+          "modal": {
+            "modes": [
+              {
+                "clauses": [
+                  {
+                    "effects": [
+                      {
+                        "type": "MoveToZone",
+                        "value": {
+                          "ref": {
+                            "type": "InSlot",
+                            "value": "target"
+                          },
+                          "zone": "Exile"
+                        }
+                      },
+                      {
+                        "type": "PutCounters",
+                        "value": {
+                          "kind": {
+                            "type": "PlusOnePlusOne"
+                          },
+                          "quantity": {
+                            "type": "Literal",
+                            "value": 1
+                          },
+                          "ref": {
+                            "type": "InSlot",
+                            "value": "self"
+                          }
+                        }
+                      }
+                    ]
+                  }
+                ],
+                "targetSlots": {
+                  "target": {
+                    "pool": {
+                      "type": "CardsInGraveyard",
+                      "value": {
+                        "type": "Scoped",
+                        "value": {
+                          "type": "AnyPlayer"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            ]
+          }
+        }
+      ],
+      "typeLine": {
+        "subtypes": [
+          "Spirit"
+        ],
+        "types": [
+          "Creature"
+        ]
+      }
+    }
+  ]
+}

@@ -1,0 +1,39 @@
+{
+  "board": {
+    "active": "alice",
+    "step": "PrecombatMain",
+    "seats": [
+      {
+        "name": "alice",
+        "battlefield": [{"card": "Sigarda, Font of Blessings", "label": "sigarda"}],
+        "library": [
+          {"card": "Elite Vanguard", "label": "ev"},
+          {"card": "Serra Angel", "label": "serra"},
+          {"card": "Savannah Lions", "label": "lions"},
+          {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}
+        ],
+        "manaPool": "WWWWWWWW"
+      },
+      {
+        "name": "bob",
+        "library": [{"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}]
+      }
+    ]
+  },
+  "description": "CR 601.2a / 401.5: Sigarda, Font of Blessings lets its controller look at the top card of their library any time and cast Angel and Human spells from there",
+  "note": "Elite Vanguard (Human) and then Serra Angel (Angel) are cast from the top; Savannah Lions (Cat, {W}) is then on top with WW still floating and is only seen by alice, not offered, ruling out a permission that admits any creature or ignores the subtype filter.",
+  "timeline": [
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"View": {"of": "Seers", "object": "$ev", "is": ["alice"]}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"View": {"of": "Offered", "player": "alice", "is": ["Pass", "Cast $ev"]}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": {"Cast": {"object": "$ev"}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass"},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Count": {"player": "alice", "zone": "Battlefield", "card": "Elite Vanguard", "count": 1}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"View": {"of": "Offered", "player": "alice", "is": ["Pass", "Cast $serra"]}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": {"Cast": {"object": "$serra"}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass"},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Count": {"player": "alice", "zone": "Battlefield", "card": "Serra Angel", "count": 1}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"View": {"of": "ManaPool", "player": "alice", "is": [{"manaType":{"type":"Colored","value":"White"},"tags":[],"retention":"Ordinary","restriction":null,"rider":null,"sourceChoices":null}, {"manaType":{"type":"Colored","value":"White"},"tags":[],"retention":"Ordinary","restriction":null,"rider":null,"sourceChoices":null}]}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"View": {"of": "Seers", "object": "$lions", "is": ["alice"]}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"View": {"of": "Offered", "player": "alice", "is": ["Pass"]}}}
+  ]
+}
