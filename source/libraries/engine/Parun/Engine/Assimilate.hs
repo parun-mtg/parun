@@ -25,6 +25,7 @@ import qualified Parun.Types.CounterKind as CounterKind
 import qualified Parun.Types.Duration as Duration
 import Parun.Types.Effect (Effect)
 import qualified Parun.Types.Effect as Effect
+import qualified Parun.Types.EntryCounter as EntryCounter
 import qualified Parun.Types.EntryRiders as EntryRiders
 import qualified Parun.Types.GainControl as GainControl
 import qualified Parun.Types.GrantedAbility as GrantedAbility
@@ -97,7 +98,7 @@ cardInstruction =
         MoveToZone.zone = Zone.Battlefield,
         MoveToZone.riders =
           EntryRiders.defaultValue
-            { EntryRiders.counters = Map.singleton CounterKind.PlusOnePlusOne (Quantity.Literal 1),
+            { EntryRiders.counters = Map.singleton (EntryCounter.unconditional CounterKind.PlusOnePlusOne) (Quantity.Literal 1),
               EntryRiders.characteristics = Seq.fromList borgArtifactCreature
             },
         MoveToZone.slot = Nothing,

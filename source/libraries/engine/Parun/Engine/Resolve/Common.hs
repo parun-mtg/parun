@@ -133,6 +133,7 @@ import qualified Parun.Types.Duration as Duration
 import Parun.Types.Effect (Effect)
 import qualified Parun.Types.Effect as Effect
 import qualified Parun.Types.EntryAttack as EntryAttack
+import qualified Parun.Types.EntryCounter as EntryCounter
 import qualified Parun.Types.EntryLink as EntryLink
 import qualified Parun.Types.EntryRiders as EntryRiders
 import qualified Parun.Types.ExchangeCardZones as ExchangeCardZones
@@ -4887,7 +4888,7 @@ attachFound settle asOf searcher host counters cardId = do
       | otherwise -> putOntoBattlefield settle asOf searcher TapState.Untapped counters cardId
     Just seed ->
       Foldable.toList
-        <$> Event.changeZoneAttaching settle (Just asOf) Set.empty cardId Zone.Battlefield LibraryPosition.defaultValue (Just seed) TapState.Untapped counters (Just searcher) Nothing Facing.FaceUp False CarryOver.NotCarried False Seq.empty
+        <$> Event.changeZoneAttaching settle (Just asOf) Set.empty cardId Zone.Battlefield LibraryPosition.defaultValue (Just seed) TapState.Untapped (Map.mapKeys EntryCounter.unconditional counters) (Just searcher) Nothing Facing.FaceUp False CarryOver.NotCarried False Seq.empty
 
 -- Put a found card onto the battlefield, untapped or tapped as the card says.
 --
@@ -4902,7 +4903,7 @@ attachFound settle asOf searcher host counters cardId = do
 putOntoBattlefield :: Settle.Settle -> GameState -> PlayerId -> TapState.TapState -> Map.Map (CounterKind.CounterKind Keyword.Type.Keyword) Natural -> ObjectId -> Game [ObjectId]
 putOntoBattlefield settle asOf searcher tapped counters cardId =
   Foldable.toList
-    <$> Event.changeZoneAttaching settle (Just asOf) Set.empty cardId Zone.Battlefield LibraryPosition.defaultValue Nothing tapped counters (Just searcher) Nothing Facing.FaceUp False CarryOver.NotCarried False Seq.empty
+    <$> Event.changeZoneAttaching settle (Just asOf) Set.empty cardId Zone.Battlefield LibraryPosition.defaultValue Nothing tapped (Map.mapKeys EntryCounter.unconditional counters) (Just searcher) Nothing Facing.FaceUp False CarryOver.NotCarried False Seq.empty
 
 -- `arranger` puts the cards `cards` names back into a pile -- `holder`'s
 -- library, or their side deck of a kind -- in an order they state: at the
