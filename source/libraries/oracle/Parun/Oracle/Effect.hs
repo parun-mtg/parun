@@ -499,6 +499,12 @@ paid context g predicates
                 text <-
                   [instruction <> Text.pack " unless " <> payment', Text.pack "unless " <> payment' <> Text.pack ", " <> instruction]
                     <> [instruction <> Text.pack " unless they " <> second <> each' | Target.wording who `Text.isPrefixOf` instruction || Target.wording who `Text.isSuffixOf` instruction]
+                    -- A payment closing on the source the instruction already
+                    -- named calls it "it" (Magmatic Sprinter).
+                    <> [ instruction <> Text.pack " unless " <> Target.wording who <> Text.pack " " <> stem <> Text.pack "it" <> each'
+                       | Target.self context `Text.isInfixOf` instruction,
+                         Just stem <- [Text.stripSuffix (Target.self context) pays]
+                       ]
                 [(Prose.sentence text, mentioned)]
               mayNot = [(Prose.sentence (Target.wording who <> Text.pack " may " <> second <> each') <> Text.pack " If they don't, " <> clauseText p <> Text.pack ".", mentioned) | branch == PayBranch.IfNotPaid, person == Target.Third]
           unless' <> mayNot

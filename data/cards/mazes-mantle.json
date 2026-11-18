@@ -70,7 +70,14 @@
                     "type": "And",
                     "value": [
                       {
-                        "type": "IsHostOfSource"
+                        "type": "HasCardType",
+                        "value": "Creature"
+                      },
+                      {
+                        "type": "HasAttached",
+                        "value": {
+                          "type": "IsSource"
+                        }
                       },
                       {
                         "type": "HasKeywordFamily",
@@ -117,7 +124,19 @@
                           "ref": {
                             "type": "EachMatching",
                             "value": {
-                              "type": "IsHostOfSource"
+                              "type": "And",
+                              "value": [
+                                {
+                                  "type": "HasCardType",
+                                  "value": "Creature"
+                                },
+                                {
+                                  "type": "HasAttached",
+                                  "value": {
+                                    "type": "IsSource"
+                                  }
+                                }
+                              ]
                             }
                           }
                         }

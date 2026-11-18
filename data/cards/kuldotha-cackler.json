@@ -114,8 +114,8 @@
       ],
       "typeLine": {
         "subtypes": [
-          "Phyrexian",
-          "Hyena"
+          "Hyena",
+          "Phyrexian"
         ],
         "types": [
           "Creature"
