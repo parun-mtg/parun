@@ -1726,7 +1726,12 @@ representativeEvents cond =
         -- The same one event, and NOT because the batch reading matches nothing:
         -- Event.matchesTrigger answers alike for both (its batch arm delegates to
         -- DealsDamage's), CR 603.2c's once-per-step scoping living in
-        -- Event.eventTriggers instead -- a OneOrMore Leaves' posture above.
+        -- Event.eventTriggers instead -- a OneOrMore Leaves' posture above. "Or
+        -- battle" adds damage to a battle, which binds the battle and no player.
+        TriggerCondition.PermanentsDealDamageToPlayer p
+          | PermanentsDealDamageToPlayer.orBattle p ->
+              noTable combatDamage
+                NonEmpty.:| [noTable (GameEvent.DamageDealt (DamageEvent.MkDamageEvent departed (Recipient.ToBattle arrived) 2 0 False False False 0 Nothing Nothing mempty False mempty mempty mempty mempty Nothing mempty mempty Nothing DamageKind.Combat))]
         TriggerCondition.PermanentsDealDamageToPlayer _ -> one combatDamage
         -- CR 726.2's and CR 727.2's damage, dealt to alice: the inherent
         -- abilities' "you" is the monarch or the holder, the player hit.
