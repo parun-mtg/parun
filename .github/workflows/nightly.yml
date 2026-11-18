@@ -3,6 +3,9 @@ on:
   schedule:
     - cron: 0 9 * * *
   workflow_dispatch:
+env:
+  # Track the GHC that nixpkgs' default package set uses.
+  GHC: 9.10.3
 jobs:
   build:
     name: Build
@@ -22,6 +25,7 @@ jobs:
   # GHC from ghcup rather than Nix, whose binaries load their libraries from
   # /nix/store: these are the binaries a user downloads. Haskell libraries link
   # statically (cabal.project); only the system's C libraries stay dynamic.
+  # Linux builds in the static job instead.
   portable:
     name: Build ${{ matrix.os }}
     strategy:
@@ -29,7 +33,6 @@ jobs:
       matrix:
         os:
           - macos-latest
-          - ubuntu-latest
           - windows-latest
     runs-on: ${{ matrix.os }}
     steps:
@@ -37,8 +40,7 @@ jobs:
       - id: haskell
         uses: haskell-actions/setup@v2
         with:
-          # Track the GHC that nixpkgs' default package set uses.
-          ghc-version: 9.10.3
+          ghc-version: ${{ env.GHC }}
           cabal-update: false
       - id: cache
         uses: actions/cache/restore@v6
@@ -54,13 +56,6 @@ jobs:
       - run: mkdir artifact
       - run: cp "$(cabal list-bin -v0 parun)" artifact
         shell: bash
-      # Platform-independent, so built once. A downloaded binary finds the data
-      # through the parun_datadir variable, the sdist's data directory.
-      - if: runner.os == 'Linux'
-        run: |
-          cabal sdist --output-directory artifact
-          artifact/parun schema > artifact/schema.json
-          artifact/parun schema scenario > artifact/scenario-schema.json
       # Tarred so the executable bit survives the upload's zip.
       - run: tar --create --file artifact.tar --verbose artifact
       - uses: actions/upload-artifact@v7
@@ -73,6 +68,49 @@ jobs:
           path: |
             ${{ steps.haskell.outputs.cabal-store }}
             dist-newstyle
+          key: ${{ steps.cache.outputs.cache-primary-key }}
+  # Linux links fully statically, against musl in an Alpine GHC image: glibc
+  # does not link statically, and ghcup's GHC loads libgmp dynamically. The
+  # empty cabal config names no package repository, which every dependency
+  # shipping with GHC allows.
+  static:
+    name: Build ubuntu-latest
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - run: >-
+          echo "MUSL=docker run --rm --env CABAL_CONFIG=/dev/null
+          --volume $PWD:$PWD --workdir $PWD
+          quay.io/benz0li/ghc-musl:$GHC" >> "$GITHUB_ENV"
+      - id: cache
+        uses: actions/cache/restore@v6
+        with:
+          path: dist-newstyle
+          key: ${{ runner.os }}-${{ runner.arch }}-musl-${{ env.GHC }}-${{ github.sha }}
+          restore-keys: ${{ runner.os }}-${{ runner.arch }}-musl-${{ env.GHC }}-
+      - run: $MUSL cabal configure --enable-executable-static --enable-optimization --flags=pedantic --jobs --semaphore
+      - run: $MUSL cabal build all
+      - run: $MUSL cabal run parun -- test --timeout=120s
+      - run: mkdir artifact
+      - run: cp "$($MUSL cabal list-bin -v0 parun)" artifact
+      # ldd exits nonzero on a binary that loads no shared library.
+      - run: "! ldd artifact/parun"
+      # Platform-independent, so built once. A downloaded binary finds the data
+      # through the parun_datadir variable, the sdist's data directory.
+      - run: |
+          $MUSL cabal sdist --output-directory artifact
+          artifact/parun schema > artifact/schema.json
+          artifact/parun schema scenario > artifact/scenario-schema.json
+      # Tarred so the executable bit survives the upload's zip.
+      - run: tar --create --file artifact.tar --verbose artifact
+      - uses: actions/upload-artifact@v7
+        with:
+          name: parun-${{ github.sha }}-${{ runner.os }}-${{ runner.arch }}
+          path: artifact.tar
+      - if: steps.cache.outputs.cache-hit != 'true'
+        uses: actions/cache/save@v6
+        with:
+          path: dist-newstyle
           key: ${{ steps.cache.outputs.cache-primary-key }}
   # The web client (#8007) ready to serve, and the WASI command-line build.
   wasm:
