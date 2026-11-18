@@ -226,6 +226,7 @@ withoutAnnouncement before entry between closed = do
   extraTurnUnderWay <- one (TurnRegisters.extraTurnUnderWay . GameState.turn)
   throwing <- one (Scratch.throwing . GameState.scratch)
   rethrowRequested <- one (Scratch.rethrowRequested . GameState.scratch)
+  rerolling <- one (Scratch.rerolling . GameState.scratch)
   activating <- one (Scratch.activating . GameState.scratch)
   -- Written only once a reversal is over, which no announcement spans.
   undone <- one (Bookkeeping.undone . GameState.bookkeeping)
@@ -305,6 +306,7 @@ withoutAnnouncement before entry between closed = do
               Scratch.loopPicks = loopPicks,
               Scratch.throwing = throwing,
               Scratch.rethrowRequested = rethrowRequested,
+              Scratch.rerolling = rerolling,
               Scratch.activating = activating
             },
         GameState.bookkeeping =

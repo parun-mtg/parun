@@ -328,6 +328,16 @@ combatReplaySpec s =
           Spec.assertEqWith s "round-trip" (Replay.decode p (Replay.encode p answer)) (Just answer)
           Spec.assertEqWith s "declines" (Replay.defaultAnswer p) Nothing
           Spec.assertEqWith s "a copy target's response does not answer it" (Replay.decode p (Replay.encode other answer)) Nothing
+        -- CR 706.2b: a Die creature or the die under way; ChooseEnlist is the
+        -- foil of the same Maybe-ObjectId head.
+        Spec.it s "ChooseRerolledDie records and replays a Maybe ObjectId, and rejects an enlist answer" $ do
+          let p = Prompt.ChooseRerolledDie decider S.alice oid (NonEmpty.fromList [ObjectId.MkObjectId 8])
+              answer = Just (ObjectId.MkObjectId 8)
+              other = Prompt.ChooseEnlist decider S.alice oid (NonEmpty.fromList [ObjectId.MkObjectId 8])
+          Spec.assertEqWith s "round-trip" (Replay.decode p (Replay.encode p answer)) (Just answer)
+          Spec.assertEqWith s "declining round trips" (Replay.decode p (Replay.encode p Nothing)) (Just Nothing)
+          Spec.assertEqWith s "declines" (Replay.defaultAnswer p) Nothing
+          Spec.assertEqWith s "an enlist response does not answer it" (Replay.decode p (Replay.encode other answer)) Nothing
         -- CR 601.3: the permission a play is made under, "none of them"
         -- included, has to survive a transcript; the enlist answer is the foil
         -- of the same Maybe-ObjectId head.

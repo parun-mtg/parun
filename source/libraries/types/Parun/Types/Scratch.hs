@@ -118,6 +118,10 @@ data Scratch = MkScratch
     -- | CR 706.2b: whether an ability activated inside that window asked for
     -- the die to be rerolled or the coin reflipped (Goblin Bookie).
     rethrowRequested :: !Bool,
+    -- | CR 706.2b: the Die creatures whose reroll is being thrown, which no
+    -- ability activated inside that throw may choose to reroll
+    -- (Parun.Engine.Resolve.Arms.Damage.rerollShownDie).
+    rerolling :: !(Set.Set ObjectId.ObjectId),
     -- | CR 602.2: the activations under way, innermost first, as each will be
     -- recorded once activated (Parun.Engine.Event.activating), which
     -- Moved.whileActivating records. Empty outside one. A mana ability's is
