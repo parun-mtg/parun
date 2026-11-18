@@ -446,24 +446,24 @@ spec s = Spec.describe s "Parun.Codec.Modification" $ do
     Common.assertCodec
       s
       codec
-      (Modification.TapsCounting (Set.fromList [TapKeyword.Crew, TapKeyword.Saddle]) (TapCount.GreaterBy 2))
-      " {\"type\":\"TapsCounting\",\"value\":{\"keywords\":[\"Crew\",\"Saddle\"],\"count\":{\"type\":\"GreaterBy\",\"value\":2}}} "
+      (Modification.TapsCounting (Map.fromList [(TapKeyword.Crew, Filter.HasSubtype Subtype.Vehicle), (TapKeyword.Saddle, Filter.HasSubtype Subtype.Mount)]) (TapCount.GreaterBy 2))
+      " {\"type\":\"TapsCounting\",\"value\":{\"keywords\":[{\"keyword\":\"Crew\",\"permanent\":{\"type\":\"HasSubtype\",\"value\":\"Vehicle\"}},{\"keyword\":\"Saddle\",\"permanent\":{\"type\":\"HasSubtype\",\"value\":\"Mount\"}}],\"count\":{\"type\":\"GreaterBy\",\"value\":2}}} "
   -- Interface Ace's "saddles Mounts and crews Vehicles using its toughness
   -- rather than its power".
   Spec.it s "TapsCounting using toughness" $
     Common.assertCodec
       s
       codec
-      (Modification.TapsCounting (Set.fromList [TapKeyword.Crew, TapKeyword.Saddle]) TapCount.UsingToughness)
-      " {\"type\":\"TapsCounting\",\"value\":{\"keywords\":[\"Crew\",\"Saddle\"],\"count\":{\"type\":\"UsingToughness\"}}} "
+      (Modification.TapsCounting (Map.fromList [(TapKeyword.Crew, Filter.HasSubtype Subtype.Vehicle), (TapKeyword.Saddle, Filter.HasSubtype Subtype.Mount)]) TapCount.UsingToughness)
+      " {\"type\":\"TapsCounting\",\"value\":{\"keywords\":[{\"keyword\":\"Crew\",\"permanent\":{\"type\":\"HasSubtype\",\"value\":\"Vehicle\"}},{\"keyword\":\"Saddle\",\"permanent\":{\"type\":\"HasSubtype\",\"value\":\"Mount\"}}],\"count\":{\"type\":\"UsingToughness\"}}} "
   -- CR 702.184a: Sulu, Heroic Helmsman's "stations Spacecraft and crews
   -- Vehicles as though his power were tripled".
   Spec.it s "TapsCounting for station" $
     Common.assertCodec
       s
       codec
-      (Modification.TapsCounting (Set.fromList [TapKeyword.Crew, TapKeyword.Station]) (TapCount.Multiplied 3))
-      " {\"type\":\"TapsCounting\",\"value\":{\"keywords\":[\"Crew\",\"Station\"],\"count\":{\"type\":\"Multiplied\",\"value\":3}}} "
+      (Modification.TapsCounting (Map.fromList [(TapKeyword.Crew, Filter.HasSubtype Subtype.Vehicle), (TapKeyword.Station, Filter.HasSubtype Subtype.Spacecraft)]) (TapCount.Multiplied 3))
+      " {\"type\":\"TapsCounting\",\"value\":{\"keywords\":[{\"keyword\":\"Crew\",\"permanent\":{\"type\":\"HasSubtype\",\"value\":\"Vehicle\"}},{\"keyword\":\"Station\",\"permanent\":{\"type\":\"HasSubtype\",\"value\":\"Spacecraft\"}}],\"count\":{\"type\":\"Multiplied\",\"value\":3}}} "
   -- Alchemy's "intensifies by 1" (Static Discharge).
   Spec.it s "Intensify" $
     Common.assertCodec
@@ -478,6 +478,13 @@ spec s = Spec.describe s "Parun.Codec.Modification" $ do
       codec
       Modification.LoyaltyIsToughness
       " {\"type\":\"LoyaltyIsToughness\"} "
+  -- CR 701.15b: Koloth, Tribble Hunter's "are goaded".
+  Spec.it s "Goaded" $
+    Common.assertCodec
+      s
+      codec
+      Modification.Goaded
+      " {\"type\":\"Goaded\"} "
   -- layer 6, CR 613.1f: a whole quoted activated ability, Presence of Gond's
   -- "{T}: Create a 1/1 green Elf Warrior creature token" reduced to its cost.
   Spec.it s "GainAbility" $

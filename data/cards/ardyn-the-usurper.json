@@ -123,8 +123,11 @@
                             {
                               "type": "SetPowerToughness",
                               "value": {
-                                "power": 5,
-                                "toughness": 5
+                                "type": "Numbers",
+                                "value": {
+                                  "power": 5,
+                                  "toughness": 5
+                                }
                               }
                             },
                             {

@@ -1,0 +1,44 @@
+{
+  "description": "CR 707.9a, 604.3a, 707.9d: Colossal Clone Master copying Tarmogoyf is as big as the differently named lands its controller controls, and the Goyf's own power and toughness ability is gone",
+  "note": "Three differently named lands (Island, Forest, Swamp) make it 3/3 while the Goyf, reading one instant in a graveyard, is 1/2; a Mountain played afterward makes it 4/4, so the ability is measured at every projection rather than settled on entry. Keeping the copied Goyf ability would leave it 1/2.",
+  "board": {
+    "seats": [
+      {
+        "name": "alice",
+        "battlefield": [
+          {"card": "Island", "ready": true},
+          {"card": "Island", "ready": true},
+          {"card": "Island", "ready": true},
+          {"card": "Island", "ready": true},
+          {"card": "Forest", "ready": true},
+          {"card": "Swamp", "ready": true}
+        ],
+        "hand": [
+          {"card": "Colossal Clone Master", "label": "master"},
+          {"card": "Mountain", "label": "mountain"}
+        ],
+        "graveyard": [
+          {"card": "Lightning Bolt"}
+        ]
+      },
+      {
+        "name": "bob",
+        "battlefield": [
+          {"card": "Tarmogoyf", "label": "goyf"}
+        ]
+      }
+    ],
+    "active": "alice",
+    "step": "PrecombatMain"
+  },
+  "timeline": [
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": {"Cast": {"object": "$master", "mana": ["Island", "Island#2", "Island#3", "Island#4", "Forest", "Swamp"]}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass"},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": {"ChooseCopyTarget": "$goyf"}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"PowerToughness": {"object": "Colossal Clone Master", "power": 3, "toughness": 3}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Names": {"object": "Colossal Clone Master", "names": ["Tarmogoyf"]}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"PowerToughness": {"object": "$goyf", "power": 1, "toughness": 2}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": {"PlayLand": "$mountain"}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"PowerToughness": {"object": "Colossal Clone Master", "power": 4, "toughness": 4}}}
+  ]
+}

@@ -62,6 +62,8 @@ import qualified Parun.Types.CardType as CardType
 import qualified Parun.Types.Claim as Claim.Type
 import qualified Parun.Types.ClaimAxis as ClaimAxis
 import qualified Parun.Types.Color as Color
+import qualified Parun.Types.ColorAmong as ColorAmong
+import qualified Parun.Types.ColorSpread as ColorSpread
 import qualified Parun.Types.Copyability as Copyability
 import qualified Parun.Types.Cost as Cost.Type
 import qualified Parun.Types.CounterKind as CounterKind
@@ -76,6 +78,7 @@ import qualified Parun.Types.EndingStep as EndingStep
 import qualified Parun.Types.Expiry as Expiry
 import qualified Parun.Types.Face as Face
 import qualified Parun.Types.Facing as Facing
+import qualified Parun.Types.Filter as Filter.Type
 import qualified Parun.Types.GameEvent as GameEvent
 import qualified Parun.Types.GameState as GameState
 import qualified Parun.Types.GrantedAbility as GrantedAbility
@@ -4156,6 +4159,7 @@ spec s registry = Spec.describe s "Parun.Engine.Mana" $ do
   activationAdjustmentSpec s registry
   wildGrowthSpec s registry
   manaFlareSpec s registry
+  omnathLocusOfAllSpec s
   autumnWillowSpec s registry
   tyvarSpec s registry
   yurlokSpec s registry
@@ -4483,6 +4487,20 @@ tapsYurlok yurlokId forestId p = case p of
 poolUnits :: GameState.GameState -> [ManaUnit.ManaUnit]
 poolUnits gs = case Game.poolOf S.alice gs of
   Mana.Type.MkMana units -> units
+
+-- Omnath, Locus of All's "add three mana in any combination of its colors"
+-- reads the card its look bound; its behaviours are scenarios beside the card.
+omnathLocusOfAllSpec :: (Monad m) => Spec.Spec m n -> n ()
+omnathLocusOfAllSpec s = Spec.describe s "Omnath, Locus of All" $ do
+  -- The dataflow lint walks this read, as it does Mana Flare's below.
+  Spec.it s "a production of the colours among a slot's cards reads that slot" $
+    let looked = SlotName.MkSlotName (Text.pack "looked")
+        among = ColorAmong.MkColorAmong (Filter.Type.IsBound looked) (Just ColorSpread.AnyCombination)
+     in Spec.assertEqWith
+          s
+          "the read"
+          (Resolve.slotsOf (Effect.AddMana (ManaAddition.MkManaAddition (PlayerRef.Relative PlayerRelation.You) (ManaProduction.ColorAmong among) (Quantity.Literal 3) ManaRetention.Ordinary Nothing Nothing Nothing False)))
+          (Map.singleton looked SlotArity.Many)
 
 -- Mana Flare (5ED, Oracle text checked on Scryfall, 2026-11-04): "Whenever a
 -- player taps a land for mana, that player adds one mana of any type that land

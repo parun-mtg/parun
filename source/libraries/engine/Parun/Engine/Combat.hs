@@ -2869,7 +2869,7 @@ attemptAttackDeclaration perform pid asked forced rejected = do
         -- refuses the toll (Cost.payToll), as paying it at CR 508.1j would.
         exerted <- fmap concat . Monad.forM attacking $ \oid -> do
           gsExert <- State.get
-          if not (Projection.hasKeyword Keyword.Exert oid gsExert)
+          if not (exertOffered oid gsExert)
             then pure []
             else do
               let you = attackerOf oid
@@ -3100,6 +3100,16 @@ bandable recorded gs =
               || any (\quality -> ofQuality quality oid gs oid && any (ofQuality quality oid gs) others) (bandsWithOtherOf oid gs)
     )
     (Map.toList recorded)
+
+-- CR 701.43d / 508.1g: whether this attacker is offered an exert -- an
+-- instance of the keyword whose gate, if any, it matches, read from the holder
+-- as every keyword-borne Filter is (Combat Celebrant's "if this creature hasn't
+-- been exerted this turn").
+exertOffered :: ObjectId -> GameState -> Bool
+exertOffered oid gs =
+  any
+    (maybe True (\gate -> ofQuality gate oid gs oid))
+    [gate | Keyword.Exert gate <- Map.keys (Projection.keywordsOf oid gs)]
 
 -- CR 702.22b: the qualities of this creature's "bands with other" abilities.
 bandsWithOtherOf :: ObjectId -> GameState -> [Filter.Type.Filter Keyword.Keyword]

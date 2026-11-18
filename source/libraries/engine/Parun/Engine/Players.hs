@@ -21,6 +21,7 @@ import Parun.Types.GameState (GameState)
 import qualified Parun.Types.GameState as GameState
 import qualified Parun.Types.Holder as Holder
 import qualified Parun.Types.Hop as Hop
+import qualified Parun.Types.LastKnown as LastKnown
 import qualified Parun.Types.Object as Object
 import Parun.Types.ObjectId (ObjectId)
 import qualified Parun.Types.Player as Player
@@ -198,6 +199,8 @@ namedUncut given gs ref =
         Holder.Controller -> controllerOf given
         Holder.Owner -> ownerOf given
         Holder.Caster -> (`Game.casterOf` gs)
+        -- CR 310.9e, or CR 608.2h's record of a departed battle.
+        Holder.Protector -> \oid -> Monad.join (Game.liveOrLastKnown Object.protector LastKnown.protector oid gs)
       -- CR 303.4b: the object a slot names, or what it is attached to.
       hopped hop = case hop of
         Hop.Itself -> Just

@@ -108,6 +108,7 @@ blackCreature =
       -- one -- and here the field is the Nothing every uncast object carries.
       Filter.castFrom = Nothing,
       Filter.castBy = Nothing,
+      Filter.protector = Nothing,
       -- CR 115.1: a permanent targets nothing; the Targets cases below build a
       -- stack view of their own.
       Filter.targets = Set.empty,
@@ -130,6 +131,7 @@ blackCreature =
       Filter.declaredAttackerThisCombat = False,
       Filter.declaredBlockerThisCombat = False,
       Filter.hadToAttackThisCombat = False,
+      Filter.goaded = False,
       Filter.leftLibraryThisTurn = Set.empty,
       Filter.dealtDamageThisTurn = [],
       Filter.lostLifeThisTurn = False,
@@ -222,6 +224,7 @@ devoidBigCreature =
       Filter.zone = Nothing,
       Filter.castFrom = Nothing,
       Filter.castBy = Nothing,
+      Filter.protector = Nothing,
       Filter.targets = Set.empty,
       Filter.targetViews = Map.empty,
       Filter.targetCount = 0,
@@ -242,6 +245,7 @@ devoidBigCreature =
       Filter.declaredAttackerThisCombat = False,
       Filter.declaredBlockerThisCombat = False,
       Filter.hadToAttackThisCombat = False,
+      Filter.goaded = False,
       Filter.leftLibraryThisTurn = Set.empty,
       Filter.dealtDamageThisTurn = [],
       Filter.lostLifeThisTurn = False,

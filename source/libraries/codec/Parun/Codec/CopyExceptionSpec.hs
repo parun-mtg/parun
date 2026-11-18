@@ -12,6 +12,7 @@ import qualified Parun.Types.CardType as CardType
 import qualified Parun.Types.ChangeMode as ChangeMode
 import qualified Parun.Types.Color as Color
 import qualified Parun.Types.CopyException as CopyException
+import qualified Parun.Types.CopyPowerToughness as CopyPowerToughness
 import qualified Parun.Types.Keyword as Keyword
 import qualified Parun.Types.Loyalty as Loyalty
 import qualified Parun.Types.RetainedCharacteristic as RetainedCharacteristic
@@ -30,15 +31,15 @@ spec s = Spec.describe s "Parun.Codec.CopyException" $ do
     Common.assertCodec
       s
       (CopyException.codec Common.text)
-      (CopyException.SetPowerToughness (SetPowerToughness.MkSetPowerToughness 7 7))
-      " {\"type\":\"SetPowerToughness\",\"value\":{\"power\":7,\"toughness\":7}} "
+      (CopyException.SetPowerToughness (CopyPowerToughness.Numbers (SetPowerToughness.MkSetPowerToughness 7 7)))
+      " {\"type\":\"SetPowerToughness\",\"value\":{\"type\":\"Numbers\",\"value\":{\"power\":7,\"toughness\":7}}} "
 
   Spec.it s "SetPowerToughness writes power before toughness" $
     Common.assertCodec
       s
       (CopyException.codec Common.text)
-      (CopyException.SetPowerToughness (SetPowerToughness.MkSetPowerToughness 4 5))
-      " {\"type\":\"SetPowerToughness\",\"value\":{\"power\":4,\"toughness\":5}} "
+      (CopyException.SetPowerToughness (CopyPowerToughness.Numbers (SetPowerToughness.MkSetPowerToughness 4 5)))
+      " {\"type\":\"SetPowerToughness\",\"value\":{\"type\":\"Numbers\",\"value\":{\"power\":4,\"toughness\":5}}} "
 
   Spec.it s "GainKeywords round-trips, ascending by keyword" $
     Common.assertCodec

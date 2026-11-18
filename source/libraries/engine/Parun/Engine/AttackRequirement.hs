@@ -378,7 +378,8 @@ gathering candidates targets gs =
       --
       -- No CR 305.7 or CR 604.2 gate and no CR 612.1 rewrite, fromStored's
       -- reasons: goad is a designation the game remembers rather than text a
-      -- permanent still prints. Walks `candidates` rather than the battlefield
+      -- permanent still prints, and a static ability's goad (Koloth, Tribble
+      -- Hunter) arrives through the projection, which gated it already. Walks `candidates` rather than the battlefield
       -- because that is the pruning fromStored gets from membership -- only a
       -- creature that can attack can obey either requirement.
       fromGoad creature =

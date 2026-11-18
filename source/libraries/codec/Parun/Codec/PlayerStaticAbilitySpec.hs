@@ -6,6 +6,7 @@ import qualified Parun.Spec as Spec
 import qualified Parun.Types.Compares as Compares
 import qualified Parun.Types.Comparison as Comparison
 import qualified Parun.Types.Condition as Condition
+import qualified Parun.Types.Filter as Filter
 import qualified Parun.Types.PlayerEffect as PlayerEffect
 import qualified Parun.Types.PlayerRef as PlayerRef
 import qualified Parun.Types.PlayerRelation as PlayerRelation
@@ -23,9 +24,9 @@ spec s = Spec.describe s "Parun.Codec.PlayerStaticAbility" $ do
         { PlayerStaticAbility.scope = PlayerScope.Related PlayerRelation.AnyPlayer,
           PlayerStaticAbility.condition = Nothing,
           PlayerStaticAbility.name = Nothing,
-          PlayerStaticAbility.effect = PlayerEffect.CantCastMoreThan 1
+          PlayerStaticAbility.effect = PlayerEffect.CantCastMoreThan (Filter.And []) 1
         }
-      " {\"scope\":{\"type\":\"AnyPlayer\"},\"effect\":{\"type\":\"CantCastMoreThan\",\"value\":1}} "
+      " {\"scope\":{\"type\":\"AnyPlayer\"},\"effect\":{\"type\":\"CantCastMoreThan\",\"value\":{\"count\":1}}} "
   -- The "as long as" clause (CR 611.3a) round-trips as its own key, and the
   -- case above proves the absent key still decodes -- so a decoder that dropped
   -- the field would keep that one green and fail here.
@@ -37,7 +38,7 @@ spec s = Spec.describe s "Parun.Codec.PlayerStaticAbility" $ do
         { PlayerStaticAbility.scope = PlayerScope.Related PlayerRelation.AnyPlayer,
           PlayerStaticAbility.condition = Just (Condition.Compares (Compares.MkCompares (Quantity.IsActivePlayer (PlayerRef.Relative PlayerRelation.You)) Comparison.Exactly (Quantity.Literal 1))),
           PlayerStaticAbility.name = Nothing,
-          PlayerStaticAbility.effect = PlayerEffect.CantCastMoreThan 1
+          PlayerStaticAbility.effect = PlayerEffect.CantCastMoreThan (Filter.And []) 1
         }
-      " {\"scope\":{\"type\":\"AnyPlayer\"},\"condition\":{\"type\":\"Compares\",\"value\":{\"measured\":{\"type\":\"IsActivePlayer\",\"value\":{\"type\":\"Relative\",\"value\":\"You\"}},\"comparison\":\"Exactly\",\"threshold\":{\"type\":\"Literal\",\"value\":1}}},\"effect\":{\"type\":\"CantCastMoreThan\",\"value\":1}} "
+      " {\"scope\":{\"type\":\"AnyPlayer\"},\"condition\":{\"type\":\"Compares\",\"value\":{\"measured\":{\"type\":\"IsActivePlayer\",\"value\":{\"type\":\"Relative\",\"value\":\"You\"}},\"comparison\":\"Exactly\",\"threshold\":{\"type\":\"Literal\",\"value\":1}}},\"effect\":{\"type\":\"CantCastMoreThan\",\"value\":{\"count\":1}}} "
   Spec.it s "has a schema" $ Common.assertHasSchema s PlayerStaticAbility.codec

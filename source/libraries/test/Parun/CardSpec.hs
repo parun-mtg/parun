@@ -167,6 +167,7 @@ import qualified Parun.Types.CombatRestriction as CombatRestriction
 import qualified Parun.Types.CommanderDeckRule as CommanderDeckRule
 import qualified Parun.Types.CompanionCondition as CompanionCondition
 import qualified Parun.Types.ComparedTo as ComparedTo
+import qualified Parun.Types.Comparison as Comparison
 import qualified Parun.Types.Condition as Condition.Type
 import qualified Parun.Types.Conjure as Conjure
 import qualified Parun.Types.ConjureCards as ConjureCards
@@ -176,6 +177,7 @@ import qualified Parun.Types.CopyClause as CopyClause
 import qualified Parun.Types.CopyDomain as CopyDomain
 import qualified Parun.Types.CopyException as CopyException
 import qualified Parun.Types.CopyOriginal as CopyOriginal
+import qualified Parun.Types.CopyPowerToughness as CopyPowerToughness
 import qualified Parun.Types.CopyStackObject as CopyStackObject
 import qualified Parun.Types.CopyTargets as CopyTargets
 import qualified Parun.Types.Copyability as Copyability
@@ -349,6 +351,8 @@ import qualified Parun.Types.ManaSpending as ManaSpending
 import qualified Parun.Types.ManaSymbol as ManaSymbol
 import qualified Parun.Types.ManaType as ManaType
 import qualified Parun.Types.ManifestDread as ManifestDread
+import qualified Parun.Types.Measure as Measure
+import qualified Parun.Types.Measures as Measures
 import qualified Parun.Types.Meld as Meld
 import qualified Parun.Types.Mill as Mill
 import qualified Parun.Types.MillTally as MillTally
@@ -378,6 +382,7 @@ import qualified Parun.Types.ObjectRestriction as ObjectRestriction
 import qualified Parun.Types.OfferCast as OfferCast
 import qualified Parun.Types.OnePer as OnePer
 import qualified Parun.Types.Onset as Onset
+import qualified Parun.Types.Operand as Operand
 import qualified Parun.Types.OrElse as OrElse
 import qualified Parun.Types.PayGate as PayGate
 import qualified Parun.Types.PerCreature as PerCreature
@@ -1994,6 +1999,27 @@ cardGainingLifeNamesEntrant card =
         _ -> False
    in any offends rows
 
+-- Unprinted: a cast limit whose Filter reads a quality an announcement could
+-- move (CR 601.3a), which Parun.Engine.PlayerEffect.prohibitsCasting judges
+-- without CantCastMatching's lookahead. Every printed limit names card types or
+-- subtypes, or nothing; CR 702.103b's bestow reaches those per candidate.
+cardCastLimitMovable :: Face.Face Card.Type.Card -> Bool
+cardCastLimitMovable card =
+  let rows =
+        fmap PlayerStaticAbility.effect (Face.playerAbilities card <> grantedPlayerAbilities card)
+          <> [effect | Effect.AffectPlayers (AffectPlayers.MkAffectPlayers _ _ effect) <- cardAuthoredEffects card]
+      fixed criterion = case criterion of
+        Filter.Type.And fs -> all fixed fs
+        Filter.Type.Or fs -> all fixed fs
+        Filter.Type.Not f -> fixed f
+        Filter.Type.HasCardType _ -> True
+        Filter.Type.HasSubtype _ -> True
+        _ -> False
+      offends effect = case effect of
+        PlayerEffect.CantCastMoreThan criterion _ -> not (fixed criterion)
+        _ -> False
+   in any offends rows
+
 -- CR 118.6: does any clause state a cost DESCRIBED in terms of another object's
 -- mana cost (Parun.Types.CostBasis) and a mana part of its own beside it?
 --
@@ -2217,6 +2243,7 @@ reservedSlots =
       Binding.attackingPlayer,
       Binding.damagersController,
       Binding.combatDamager,
+      Binding.combatDamagers,
       Binding.mentoredCreature,
       Binding.exploitedCreature,
       Binding.attachedHost,
@@ -3117,9 +3144,9 @@ keywordPayloadFilters keyword = case keyword of
   -- CR 717.2's payload is a level; the ability it indicates is the CARD's.
   Keyword.ClassLevel _ -> []
   Keyword.StartYourEngines -> []
-  -- CR 701.43d is payload-free: the linked trigger it permits is the CARD's own
-  -- TriggeredAbility, so any Filter in it is swept there rather than here.
-  Keyword.Exert -> []
+  -- CR 701.43d's linked trigger is the CARD's own TriggeredAbility, swept
+  -- there; the Filter here is the offer's gate.
+  Keyword.Exert gate -> Maybe.maybeToList gate
   Keyword.Enlist -> []
   -- CR 702.43a names no quality: the +1/+1 counters and the "target artifact
   -- creature" are written into the replacement effect and the ability
@@ -3825,8 +3852,10 @@ modificationFilters modification = case modification of
   -- No Filter in any of these payloads to sweep.
   Modification.AssignCombatDamage _ -> []
   Modification.GrantsController _ -> []
-  Modification.TapsCounting {} -> []
   Modification.LoyaltyIsToughness -> []
+  Modification.Goaded -> []
+  -- The permanent each keyword's cost sits on, card text like any other.
+  Modification.TapsCounting keywords _ -> unframed (Map.elems keywords)
   -- An enum payload holds neither.
   Modification.AssignCombatDamageAs {} -> []
 
@@ -4124,7 +4153,7 @@ playerEffectFilters playerEffect = case playerEffect of
   PlayerEffect.AlternativeActivationCost _ -> []
   PlayerEffect.CantCastSpells -> []
   PlayerEffect.CantActivateAbilities f _ -> [f]
-  PlayerEffect.CantCastMoreThan _ -> []
+  PlayerEffect.CantCastMoreThan f _ -> [f]
   -- CR 305.2 carries a bare count of extra land plays, not a Filter: it names
   -- how many lands, never which spells.
   PlayerEffect.PlayAdditionalLands _ -> []
@@ -4259,13 +4288,17 @@ playerEffectFilters playerEffect = case playerEffect of
   PlayerEffect.Precluded _ -> []
   PlayerEffect.Shows _ -> []
 
--- CR 707.9's "except ..." clauses. Only the GainKeywords arm reaches a Filter,
--- and only through the keyword it names; CR 707.9b's other arms name a pair of
--- literals, a name, colours, the absence of a mana cost, and sets over the parts
--- of CR 205.1's type line, none of which narrows anything.
+-- CR 707.9's "except ..." clauses. The GainKeywords arm reaches a Filter
+-- through the keyword it names, and a defined power and toughness through its
+-- Counts; CR 707.9b's other arms name a pair of literals, a name, colours, the
+-- absence of a mana cost, and sets over the parts of CR 205.1's type line, none
+-- of which narrows anything.
 copyExceptionFilters :: CopyException.CopyException (GrantedAbility.GrantedAbility Card.Type.Card) -> [(Framing, Filter.Type.Filter Keyword.Keyword)]
 copyExceptionFilters exception = case exception of
-  CopyException.SetPowerToughness _ -> []
+  CopyException.SetPowerToughness (CopyPowerToughness.Numbers _) -> []
+  -- AffectedSetFramed for cardFilters' characteristic-defining reason.
+  CopyException.SetPowerToughness (CopyPowerToughness.Defined defined) ->
+    frame AffectedSetFramed (concatMap quantityFilters [CharacteristicPT.power defined, CharacteristicPT.toughness defined])
   CopyException.GainKeywords keywords -> concatMap keywordFilters (Set.toList keywords)
   CopyException.CardTypes {} -> []
   CopyException.AddSubtypes _ -> []
@@ -6672,6 +6705,21 @@ lintSpec s registry corpus = Spec.describe s "Lint" $ do
     Spec.assertBool s (not (cardGainingLifeNamesEntrant (S.combinedFace crusher))) "Dr. Beverly Crusher, naming no entrant, is accepted"
     Spec.assertBool s (not (cardGainingLifeNamesEntrant face)) "Teysa Karlov's creature dying is accepted"
     Spec.assertBool s (cardGainingLifeNamesEntrant doctored) "her creature entrant under GainingLife is rejected"
+  -- Unprinted: a cast limit reading a quality an announcement could move,
+  -- which prohibitsCasting judges without a CR 601.3a lookahead: the corpus half.
+  Spec.it s "no card's cast limit reads a quality its announcement could move" $ do
+    ps <- S.allPrintings s corpus
+    Spec.assertEqWith s "no movable cast limit" (fmap (S.nameOf . Printing.card) (filter (anyFaceOrMinted cardCastLimitMovable . Printing.card) ps)) []
+  -- And the rejecting direction, against Phyrexian Censor misauthored on purpose.
+  Spec.it s "the lint itself catches a cast limit reading mana value" $ do
+    censor <- S.printingOf s registry "Phyrexian Censor"
+    let face = S.combinedFace censor
+        costly effect = case effect of
+          PlayerEffect.CantCastMoreThan _ n -> PlayerEffect.CantCastMoreThan (Filter.Type.Measures (Measures.MkMeasures Measure.ManaValue Comparison.AtLeast (Operand.Literal 4))) n
+          other -> other
+        doctored = face {Face.playerAbilities = fmap (\ability -> ability {PlayerStaticAbility.effect = costly (PlayerStaticAbility.effect ability)}) (Face.playerAbilities face)}
+    Spec.assertBool s (not (cardCastLimitMovable face)) "Phyrexian Censor's non-Phyrexian spells are accepted"
+    Spec.assertBool s (cardCastLimitMovable doctored) "a limit on spells with mana value 4 or greater is rejected"
   -- Parun.Engine.Cost.tapForManaWith adds a clause's shares as one, so an
   -- addition whose colour is chosen is its clause's only one: the corpus half.
   Spec.it s "CR 608.2c an addition choosing its source's colour is its clause's only addition" $ do

@@ -241,6 +241,10 @@ data View = MkView
     -- candidate permanent was -- what Holder.Caster reads, off
     -- Parun.Engine.Game.casterOf. Nothing wherever `castFrom` above is.
     castBy :: Maybe PlayerId.PlayerId,
+    -- CR 310.9e: the candidate's protector, what Holder.Protector reads, off
+    -- Object.protector (or LastKnown.protector). Nothing for anything not a
+    -- battle as it entered (CR 310.9a), and for a player or a printed face.
+    protector :: Maybe PlayerId.PlayerId,
     -- CR 115.1: what the candidate TARGETS, for a spell or ability on the stack
     -- -- the recipients CR 601.2c (602.2b, 603.3d) chose, read live off the
     -- object's target-slot bindings by Parun.Engine.Projection.View.targetsOfStackObject
@@ -391,6 +395,9 @@ data View = MkView
     -- CR 506.7: did an effect require this candidate to attack as this combat
     -- phase's attackers were declared? Membership of Combat.hadToAttack.
     hadToAttackThisCombat :: Bool,
+    -- | CR 701.15b: is the candidate goaded? Object.goadedBy or PC.goadedBy
+    -- non-empty.
+    goaded :: Bool,
     -- CR 121.1, 701.17a: how this candidate left a library earlier this turn.
     -- LAZY for `declaredThisTurn`'s reason -- nothing forces it unless a Filter
     -- contains LeftLibraryThisTurn.
@@ -980,12 +987,13 @@ data View = MkView
     -- Empty on a player view: CR 109.1 gives a player no controller and so no
     -- permanent whose Modification this could be.
     controllerGrants :: Set.Set ControllerGrant.ControllerGrant,
-    -- CR 613.11: how this candidate counts toward each keyword that taps it.
+    -- CR 613.11: how this candidate counts toward each keyword that taps it,
+    -- on a permanent matching the paired filter.
     -- The projected mirror of ProjectedCharacteristics.tapCounts, empty for a
     -- printed face and a player. No Filter atom consults it: it is here for
     -- Parun.Engine.Quantity's StationMeasure arm, which reads the tapped
     -- creature through a View.
-    tapCounts :: Map.Map TapKeyword.TapKeyword [TapCount.TapCount],
+    tapCounts :: Map.Map TapKeyword.TapKeyword [(Filter.Filter Keyword.Type.Keyword, TapCount.TapCount)],
     -- CR 700.5a: how much this candidate's player abilities raise its
     -- controller's devotion (Parun.Engine.Devotion.bonusOf). Read off the
     -- COPIABLE list, which copy and text-changing effects write and no later
@@ -1112,6 +1120,7 @@ nobodyView =
       -- CR 601.2a casts an OBJECT; a player was never cast either.
       castFrom = Nothing,
       castBy = Nothing,
+      protector = Nothing,
       -- CR 115.1: a player is never on the stack, so targets nothing.
       targets = Set.empty,
       targetViews = Map.empty,
@@ -1150,6 +1159,7 @@ nobodyView =
       declaredAttackerThisCombat = False,
       declaredBlockerThisCombat = False,
       hadToAttackThisCombat = False,
+      goaded = False,
       -- CR 701.17a mills CARDS, and a player is not one.
       leftLibraryThisTurn = Set.empty,
       -- CR 120.1 lets a player BE dealt damage, so unlike the two fields above
@@ -2221,13 +2231,15 @@ parityOf :: Integer -> Parity.Parity
 parityOf n = if even n then Parity.Even else Parity.Odd
 
 -- The player a holder atom reads off the candidate: its controller (CR 110.2),
--- Nothing for a player view and for a card in a hidden zone (CR 108.4), or its
--- owner (CR 108.3), Nothing off an object.
+-- Nothing for a player view and for a card in a hidden zone (CR 108.4), its
+-- owner (CR 108.3), Nothing off an object, its caster, or its protector (CR
+-- 310.9e), Nothing off anything that entered as no battle.
 heldBy :: Holder.Holder -> View -> Maybe PlayerId.PlayerId
 heldBy holder view = case holder of
   Holder.Controller -> controller view
   Holder.Owner -> owner view
   Holder.Caster -> castBy view
+  Holder.Protector -> protector view
 
 -- CR 105.2 / 205.3i / 205.3m / 709.4a: Filter.Shares' reading of each pair, as
 -- the test of a candidate against the anchored object's values, or against each member's
@@ -2269,6 +2281,7 @@ sharesAnchored trait anchor = case anchor of
     Trait.LandType -> Nothing
   Anchor.Bound (Just Holder.Owner) _ -> Nothing
   Anchor.Bound (Just Holder.Caster) _ -> Nothing
+  Anchor.Bound (Just Holder.Protector) _ -> Nothing
   Anchor.Bound Nothing slot -> case trait of
     -- A slot naming nothing leaves the bound side empty.
     Trait.Name -> Just (\context view -> meets (names view) (Map.findWithDefault Set.empty slot (slotNames context)))
@@ -2803,7 +2816,7 @@ matches context view predicate = case predicate of
   -- different player for every Siege (CR 310.12a), which Parun.BattleSpec's
   -- Synthetic Bulwark Snare trio is the board for.
   Filter.IsAttackingBattle relation -> case (attackingBattleProtector view, perspective context) of
-    (Just protector, Just p) -> PlayerRelation.holds (teams context) relation p protector
+    (Just guard, Just p) -> PlayerRelation.holds (teams context) relation p guard
     _ -> False
   -- CR 509.1g: the same live read IsAttacking is, off the other map. Never the
   -- question Parun.Engine.Combat.isBlocked asks: CR 509.1h keeps an attacker
@@ -2840,6 +2853,8 @@ matches context view predicate = case predicate of
   -- CR 506.7: the same record's requirement half, written as attackers were
   -- declared, so a goad applied since never makes it True.
   Filter.HadToAttackThisCombat -> hadToAttackThisCombat view
+  -- CR 701.15b: either carrier of the designation, as the view builder folds them.
+  Filter.IsGoaded -> goaded view
   -- CR 121.1, 701.17a: the same look-back, over how cards left a library. Like the
   -- atom above it cannot stop being true within a turn, and unlike it the
   -- candidate can stop EXISTING -- CR 400.7 mints a new object the moment the card
@@ -3542,6 +3557,7 @@ manaValueThresholds predicate = case predicate of
   Filter.DeclaredAttackedThisCombat _ -> []
   Filter.DeclaredBlockerThisCombat -> []
   Filter.HadToAttackThisCombat -> []
+  Filter.IsGoaded -> []
   Filter.LeftLibraryThisTurn _ -> []
   Filter.CantPayKeywordCost _ -> []
   Filter.DealtDamageThisTurn _ by _ -> foldMap manaValueThresholds by
@@ -3737,6 +3753,7 @@ statesAQuality predicate = case predicate of
   Filter.DeclaredAttackedThisCombat _ -> True
   Filter.DeclaredBlockerThisCombat -> True
   Filter.HadToAttackThisCombat -> True
+  Filter.IsGoaded -> True
   Filter.LeftLibraryThisTurn _ -> True
   Filter.CantPayKeywordCost _ -> True
   Filter.DealtDamageThisTurn {} -> True
@@ -3934,6 +3951,7 @@ readsSourceValues predicate = case predicate of
   Filter.DeclaredAttackedThisCombat _ -> False
   Filter.DeclaredBlockerThisCombat -> False
   Filter.HadToAttackThisCombat -> False
+  Filter.IsGoaded -> False
   Filter.LeftLibraryThisTurn _ -> False
   Filter.CantPayKeywordCost _ -> False
   Filter.DealtDamageThisTurn _ by _ -> any readsSourceValues by
@@ -4073,6 +4091,7 @@ talliesWhatHappened predicate = case predicate of
   Filter.DeclaredAttackedThisCombat {} -> False
   Filter.DeclaredBlockerThisCombat {} -> False
   Filter.HadToAttackThisCombat {} -> False
+  Filter.IsGoaded {} -> False
   Filter.LeftLibraryThisTurn {} -> False
   Filter.CantPayKeywordCost {} -> False
   -- Tymna the Weaver's ruling counts a player dealt combat damage who then

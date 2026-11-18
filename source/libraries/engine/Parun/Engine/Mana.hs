@@ -368,8 +368,10 @@ producedVisiting bound visited acquisition oid gs poolBoard production = case pr
   ManaProduction.DraftNoted card ->
     let noted = maybe Seq.empty (Map.findWithDefault Seq.empty card . Player.draftNotes) (Projection.controllerOf oid gs >>= (`Map.lookup` GameState.players gs))
      in among (fmap ManaType.Colored (Set.toList (Set.fromList [color | DraftNote.Color color <- Foldable.toList noted])))
+  -- Framed by the slots, so Omnath, Locus of All's "its colors" reads the card
+  -- its own look bound; its reveal scenario in data/scenarios proves it.
   ManaProduction.ColorAmong (ColorAmong.MkColorAmong matching spread) ->
-    let context = Projection.sourceContext gs (Projection.controllerOf oid gs) oid
+    let context = Projection.framedBySlots gs bound (Projection.sourceContext gs (Projection.controllerOf oid gs) oid)
         colorsOf other = maybe Set.empty (\view -> if Filter.matches context view matching then Filter.colors view else Set.empty) (Projection.fullView gs other)
         colors = fmap ManaType.Colored (Set.toList (foldMap colorsOf (Map.keys (GameState.objects gs))))
      in maybe (Settles colors) (`amongSpread` colors) spread

@@ -77,8 +77,13 @@ codec abilityCodec =
       tapsCounting =
         Fields.object $
           (,)
-            <$> Fields.required "keywords" (Common.set TapKeyword.codec) fst
+            <$> Fields.required "keywords" (Common.keyedList tapsFor) fst
             <*> Fields.required "count" TapCount.codec snd
+      tapsFor =
+        Fields.object $
+          (,)
+            <$> Fields.required "keyword" TapKeyword.codec fst
+            <*> Fields.required "permanent" (Filter.codec Keyword.codec) snd
       combatDamageAs =
         Fields.object $
           (,)
@@ -138,7 +143,8 @@ codec abilityCodec =
           Arm.payload "GrantsController" ControllerGrant.codec Modification.GrantsController (\x -> case x of Modification.GrantsController y -> Just y; _ -> Nothing),
           Arm.payload "TapsCounting" tapsCounting (uncurry Modification.TapsCounting) (\x -> case x of Modification.TapsCounting k n -> Just (k, n); _ -> Nothing),
           Arm.payload "Intensify" Quantity.codec Modification.Intensify (\x -> case x of Modification.Intensify y -> Just y; _ -> Nothing),
-          Arm.nullary "LoyaltyIsToughness" Modification.LoyaltyIsToughness
+          Arm.nullary "LoyaltyIsToughness" Modification.LoyaltyIsToughness,
+          Arm.nullary "Goaded" Modification.Goaded
         ]
 
 tagOf :: Modification.Modification ability -> String
@@ -191,3 +197,4 @@ tagOf x = case x of
   Modification.TapsCounting {} -> "TapsCounting"
   Modification.Intensify {} -> "Intensify"
   Modification.LoyaltyIsToughness {} -> "LoyaltyIsToughness"
+  Modification.Goaded {} -> "Goaded"

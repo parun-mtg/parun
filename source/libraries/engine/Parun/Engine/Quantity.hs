@@ -185,7 +185,7 @@ evaluateAgainst viewOf context gs announcedOn mOid mView quantity =
       -- the reader under both this fold and the Filter.DealtDamageThisTurn atom
       -- a player candidate answers, so they cannot come apart; see it for CR
       -- 120.3a's recipient and for CR 120.8's zero.
-      wasDealtDamage which kind by = Game.wasDealtDamage which kind by gs
+      wasDealtDamage which kind by = Game.wasDealtDamage which (Filter.perspective context) kind by gs
       -- CR 102.1's reference, resolved by Count.playersFor for every arm but the
       -- fold's own candidate. That one is answered HERE because this is where the
       -- candidate is: Count.evaluate's Scope.OverPlayers arm hands each candidate
@@ -900,10 +900,10 @@ evaluateAgainst viewOf context gs announcedOn mOid mView quantity =
           _ -> Nothing
         -- CR 508.1a / 608.2i: how many creatures that player has declared as attackers
         -- this turn -- rule 207.2c's raid, compared against 1. OpponentsAttacked's arm
-        -- in arity, and TalliedThisTurn's in footing: Nothing for a reference
-        -- naming anything but exactly one player, since "whose attack?" has no sum, and
-        -- a fold over TurnRegisters.events, whose extent Engine.beginTurnOf's clearing
-        -- makes "this turn".
+        -- in arity: Nothing for a reference naming anything but exactly one player,
+        -- since "whose attack?" has no sum. TalliedThisTurn's in footing: a fold over
+        -- TurnRegisters.events, whose extent Engine.beginTurnOf's clearing makes
+        -- "this turn".
         --
         -- The LOG and not Combat.declaredAttackers, which CR 511.3 clears at the end of
         -- combat -- so the postcombat main phase, where every raid trigger this answers
@@ -931,15 +931,14 @@ evaluateAgainst viewOf context gs announcedOn mOid mView quantity =
         Quantity.AttackersInTheirLastTurn ref -> case playersOf ref of
           Just [pid] -> Just (toInteger (Game.attackersInTheirLastTurn gs pid))
           _ -> Nothing
-        -- CR 608.2i: how many times that player did what the tally names this turn.
-        -- OpponentsAttacked's arm in shape -- live, one player only, resolved through the
-        -- same playersOf, and Nothing for a reference naming anything but exactly
-        -- one player, since "whose discards?" has no sum. An EMPTY record answers 0
-        -- rather than Nothing, as OpponentsAttacked's does: nobody having discarded
-        -- is an answered question. What is unanswered is only the reference.
-        Quantity.TalliedThisTurn tally ref -> case playersOf ref of
-          Just [pid] -> Just (talliedThisTurn tally pid gs)
-          _ -> Nothing
+        -- CR 608.2i: how many times the players the reference names did what the
+        -- tally names this turn, SUMMED -- Heliod, the Warped Eclipse's "each card
+        -- your opponents have drawn this turn". The history roster, LifeChanged's:
+        -- CR 800.4i finds an action taken by a player who has since left the game.
+        -- An EMPTY record answers 0 rather than Nothing: nobody having discarded is
+        -- an answered question. What is unanswered is only the reference.
+        Quantity.TalliedThisTurn tally ref ->
+          fmap (sum . fmap (\pid -> talliedThisTurn tally pid gs)) (historyPlayersOf ref)
         -- CR 119.3 / 608.2i: how much life the players the tally names gained or lost
         -- during the turn it names, SUMMED -- a live fold over that turn's log
         -- (Game.turnLog). Summed rather than asked of one player, so "an opponent
@@ -960,7 +959,7 @@ evaluateAgainst viewOf context gs announcedOn mOid mView quantity =
         -- An EMPTY log answers 0 rather than Nothing, as TalliedThisTurn's does.
         -- What is unanswered is only the reference.
         Quantity.LifeChanged tally -> case historyPlayersOf (LifeTally.player tally) of
-          Just pids -> Just (toInteger (Game.lifeChangedAmong (LifeTally.direction tally) (Game.turnLog (LifeTally.turn tally) gs) (`elem` pids)))
+          Just pids -> Just (toInteger (Game.lifeChangedAmong (LifeTally.direction tally) (Game.turnLog (LifeTally.turn tally) (Filter.perspective context) gs) (`elem` pids)))
           Nothing -> Nothing
         -- CR 120.1 / 608.2i: how many of the players this reference names were dealt
         -- damage during the turn the tally names. LifeChanged's arm in footing -- a
@@ -984,7 +983,9 @@ evaluateAgainst viewOf context gs announcedOn mOid mView quantity =
         -- so -- Tymna the Weaver's "opponents that were dealt combat damage".
         --
         -- The turn reaches back to the last one where a card says so -- Command the
-        -- Stage's "an opponent was dealt noncombat damage last turn".
+        -- Stage's "an opponent was dealt noncombat damage last turn" -- or over every
+        -- turn since the perspective's own last one, Marchesa, Resolute Monarch's
+        -- "since your last turn" (Game.turnLog).
         Quantity.PlayersDealtDamage tally ->
           let dealt = DamageTally.dealt tally
            in case historyPlayersOf (DealtDamage.recipient dealt) of
@@ -1026,7 +1027,7 @@ evaluateAgainst viewOf context gs announcedOn mOid mView quantity =
         -- The history roster, LifeChanged's: a spell cast by a player who has since
         -- left the game was still cast (CR 800.4i).
         Quantity.SpellsCast tally -> case historyPlayersOf (SpellTally.player tally) of
-          Just [pid] -> Just (toInteger (Map.findWithDefault 0 pid (Game.castsPerPlayer (Game.turnLog (SpellTally.turn tally) gs))))
+          Just [pid] -> Just (toInteger (Map.findWithDefault 0 pid (Game.castsPerPlayer (Game.turnLog (SpellTally.turn tally) (Filter.perspective context) gs))))
           _ -> Nothing
         -- CR 608.2n / 608.2i: how many times the ability this evaluation is aimed at
         -- has resolved this turn, activated or triggered, folded off the turn-scoped
@@ -1391,7 +1392,8 @@ evaluateAgainst viewOf context gs announcedOn mOid mView quantity =
         -- never handed.
         --
         -- Without the substitution, the tapped creature's own TapsCounting
-        -- grants for station raise the power through
+        -- grants for station, where the ability's source matches the grant's
+        -- filter (Parun.Engine.Keyword.tapCountsOn), raise the power through
         -- Parun.Engine.Keyword.tapsCounted, crew's reader (Sulu, Heroic
         -- Helmsman). With it, they go unread (docs/decisions.md, "Whether a
         -- station power multiplier raises a toughness stationer").
@@ -1400,7 +1402,8 @@ evaluateAgainst viewOf context gs announcedOn mOid mView quantity =
               greater = case (mView >>= Filter.toughness, mView >>= Filter.power) of
                 (Just t, Just p) -> t > p
                 _ -> False
-              counts = foldMap (Map.findWithDefault [] TapKeyword.Station . Filter.tapCounts) mView
+              paying permanent = maybe False (\station -> Filter.matches context station permanent) (Filter.source context >>= viewOf)
+              counts = foldMap (Keyword.tapCountsOn paying TapKeyword.Station . Filter.tapCounts) mView
            in if substitutes && greater
                 then mView >>= Filter.toughness
                 else Keyword.tapsCounted counts (mView >>= Filter.power) (mView >>= Filter.toughness)
@@ -1885,7 +1888,7 @@ talliesWhatHappened quantity = case quantity of
   Quantity.AttackersDeclaredThisCombat -> False
   Quantity.AttackedInLastTurnOf _ -> False
   Quantity.AttackersInTheirLastTurn _ -> False
-  Quantity.TalliedThisTurn _ _ -> False
+  Quantity.TalliedThisTurn _ _ -> True
   Quantity.LifeChanged _ -> True
   Quantity.PlayersDealtDamage _ -> True
   Quantity.DamageDealtToPlayersThisTurn _ -> True

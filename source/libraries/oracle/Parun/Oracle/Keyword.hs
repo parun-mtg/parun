@@ -325,7 +325,8 @@ printed self keyword = case keyword of
   Keyword.StartYourEngines -> [Text.pack "Start your engines!"]
   Keyword.JobSelect -> [Text.pack "Job select"]
   Keyword.Tiered -> [Text.pack "Tiered"]
-  Keyword.Exert -> [Text.pack "Exert"]
+  Keyword.Exert Nothing -> [Text.pack "Exert"]
+  Keyword.Exert (Just _) -> []
   Keyword.Enlist -> [Text.pack "Enlist"]
   Keyword.Bestow c -> Cost.keyworded self (keywordWord self) (Text.pack "Bestow") c
   Keyword.Station -> [Text.pack "Station"]
@@ -506,7 +507,7 @@ standalone =
     Keyword.StartYourEngines,
     Keyword.JobSelect,
     Keyword.Tiered,
-    Keyword.Exert,
+    Keyword.Exert Nothing,
     Keyword.Enlist,
     Keyword.Station,
     Keyword.UmbraArmor,

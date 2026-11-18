@@ -57,6 +57,7 @@ import qualified Parun.Types.Combat as Combat
 import qualified Parun.Types.Condition as Condition.Type
 import qualified Parun.Types.ContinuousEffect as ContinuousEffect
 import qualified Parun.Types.CopyException as CopyException
+import qualified Parun.Types.CopyPowerToughness as CopyPowerToughness
 import qualified Parun.Types.Copyability as Copyability
 import qualified Parun.Types.CounterKind as CounterKind
 import qualified Parun.Types.Counterability as Counterability
@@ -182,6 +183,7 @@ viewOfCardLapsed lapsed face =
           -- False against it -- `zone` above's reason.
           Filter.castFrom = Nothing,
           Filter.castBy = Nothing,
+          Filter.protector = Nothing,
           -- CR 115.1: a printed face is on no stack and targets nothing.
           Filter.targets = Set.empty,
           Filter.targetViews = Map.empty,
@@ -213,6 +215,8 @@ viewOfCardLapsed lapsed face =
           Filter.declaredAttackedBy = Set.empty,
           Filter.declaredBlockerThisCombat = False,
           Filter.hadToAttackThisCombat = False,
+          -- CR 701.15b: a designation rides a permanent, not a printed face.
+          Filter.goaded = False,
           -- CR 701.17a mills an OBJECT; this builder describes a printed FACE.
           -- viewOfCharacteristics is the view that holds an id and answers.
           Filter.leftLibraryThisTurn = Set.empty,
@@ -540,6 +544,9 @@ viewOfCharacteristics peers oid pc controller counters gs =
       -- CR 400.7d off the OBJECT beside it: the caster is a second stamp, which
       -- a controller CR 616.1 rewrote on entry does not move (Gather Specimens).
       Filter.castBy = Game.casterOf oid gs,
+      -- CR 310.9e off the OBJECT: a stored designation, not a characteristic,
+      -- which CR 310.9g keeps through a copy effect or the loss of the type.
+      Filter.protector = Object.protector =<< Game.lookupObject oid gs,
       -- CR 115.1 off the OBJECT's bindings, live: CR 601.2c fixed the targets and
       -- CR 115.7 can move them, so nothing here is a stamp. Empty for an id
       -- naming nothing and for everything off the stack.
@@ -757,6 +764,9 @@ viewOfCharacteristics peers oid pc controller counters gs =
       Filter.declaredAttackedBy = Count.declaredAttackedBy oid gs,
       Filter.declaredBlockerThisCombat = Count.declaredBlockerThisCombat oid gs,
       Filter.hadToAttackThisCombat = Count.hadToAttackThisCombat oid gs,
+      -- CR 701.15b: the one-shot carrier off the object and the continuous one
+      -- off `pc`, Parun.Engine.Goad.goadedBy's union.
+      Filter.goaded = not (Set.null (PC.goadedBy pc)) || maybe False (not . Set.null . Object.goadedBy) (Game.lookupObject oid gs),
       Filter.leftLibraryThisTurn = Count.leftLibraryThisTurn oid gs,
       Filter.dealtDamageThisTurn = Count.dealtDamageThisTurn oid gs,
       -- CR 119.3: only a player loses life.
@@ -1254,7 +1264,7 @@ applyCopyException this own snapshot exception = case exception of
   -- (Projection.applyCharacteristicPT). Not defensive, unlike
   -- Replacement.applyEntryOption's same write: Quicksilver Gargantuan copying a
   -- Tarmogoyf is exactly this case.
-  CopyException.SetPowerToughness (SetPowerToughness.MkSetPowerToughness p t) ->
+  CopyException.SetPowerToughness (CopyPowerToughness.Numbers (SetPowerToughness.MkSetPowerToughness p t)) ->
     snapshot
       { PC.power = Just p,
         PC.toughness = Just t,
@@ -1262,6 +1272,17 @@ applyCopyException this own snapshot exception = case exception of
         PC.baseToughness = Just t,
         PC.characteristicPT = Nothing
       }
+  -- CR 707.9a / 604.3a(2): the quoted ability joins the copiable values as a
+  -- characteristic-defining one, so layer 7a measures it (CR 613.4a) rather
+  -- than layer 7b. It REPLACES the copied one: docs/decisions.md, "Whether a
+  -- copy exception granting a power-and-toughness ability strips the copied
+  -- one". The copied boxes stay, since CR 707.9a adds an ability and states no
+  -- number. The scenarios
+  -- colossal-clone-master-copying-tarmogoyf-counts-differently-named-lands and
+  -- colossal-clone-master-s-power-and-toughness-ability-applies-before-godhead-of-awe-s
+  -- prove it.
+  CopyException.SetPowerToughness (CopyPowerToughness.Defined defined) ->
+    snapshot {PC.characteristicPT = Just defined}
   -- CR 707.9a: the gained abilities become part of the copiable values "along
   -- with any other abilities that were copied", so this ADDS rather than sets.
   -- unionWith (+) and not a plain union, Replacement.applyEntryOption's reason:
@@ -2035,6 +2056,7 @@ noCharacteristics =
       -- CR 702.184c: an ability on the stack grants nothing to its
       -- controller's station abilities of its own.
       PC.controllerGrants = Set.empty,
+      PC.goadedBy = Set.empty,
       PC.tapCounts = Map.empty,
       PC.loyaltyIsToughness = False,
       -- CR 601.2b / 601.2f: no card, so no printed costs either.
@@ -2241,6 +2263,8 @@ baseCharacteristics oid gs = case Game.faceOf oid gs of
               -- CR 613.1's starting point, before layer 6 has run:
               -- applyModification's GrantsController arm is the only writer.
               PC.controllerGrants = Set.empty,
+              -- CR 701.15b: goaded is not a copiable value.
+              PC.goadedBy = Set.empty,
               PC.tapCounts = Map.empty,
               PC.loyaltyIsToughness = False,
               -- CR 707.2: the cast-time costs printed in the rules text, copiable

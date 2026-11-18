@@ -830,8 +830,10 @@ data Keyword
     -- for its reason.
     Tiered
   | -- | 701.43d: "you may exert this creature as it attacks" is an optional cost
-    -- to attack (CR 508.1g), read by Parun.Engine.Combat.declareAttackers.
-    Exert
+    -- to attack (CR 508.1g), read by Parun.Engine.Combat.declareAttackers,
+    -- offered only while the creature matches the Filter (Combat Celebrant's "if
+    -- this creature hasn't been exerted this turn").
+    Exert (Maybe (Filter.Filter Keyword))
   | -- | 702.154a: "as this creature attacks, you may tap up to one untapped
     -- creature you control that you didn't choose to attack with and that either
     -- has haste or has been under your control continuously since this turn

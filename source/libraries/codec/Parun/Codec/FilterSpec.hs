@@ -481,6 +481,13 @@ spec s = Spec.describe s "Parun.Codec.Filter" $ do
       codec
       Filter.HadToAttackThisCombat
       " {\"type\":\"HadToAttackThisCombat\"} "
+  -- CR 701.15b: Kang, Suspicious Captain's "goaded creatures".
+  Spec.it s "IsGoaded" $
+    Common.assertCodec
+      s
+      codec
+      Filter.IsGoaded
+      " {\"type\":\"IsGoaded\"} "
   Spec.it s "DeclaredAttackedThisCombat" $
     Common.assertCodec
       s

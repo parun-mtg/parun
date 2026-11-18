@@ -5,10 +5,10 @@ import qualified Parun.Codec.CardName as CardName
 import qualified Parun.Codec.CardType as CardType
 import qualified Parun.Codec.ChangeMode as ChangeMode
 import qualified Parun.Codec.Color as Color
+import qualified Parun.Codec.CopyPowerToughness as CopyPowerToughness
 import qualified Parun.Codec.Keyword as Keyword
 import qualified Parun.Codec.Loyalty as Loyalty
 import qualified Parun.Codec.RetainedCharacteristic as RetainedCharacteristic
-import qualified Parun.Codec.SetPowerToughness as SetPowerToughness
 import qualified Parun.Codec.Subtype as Subtype
 import qualified Parun.Codec.Supertype as Supertype
 import qualified Parun.JsonCodec.Arm as Arm
@@ -33,7 +33,7 @@ codec abilityCodec =
             <*> Fields.required "colors" (Common.set Color.codec) snd
    in Arm.tagged
         tagOf
-        [ Arm.payload "SetPowerToughness" SetPowerToughness.codec CopyException.SetPowerToughness $ \x -> case x of
+        [ Arm.payload "SetPowerToughness" CopyPowerToughness.codec CopyException.SetPowerToughness $ \x -> case x of
             CopyException.SetPowerToughness y -> Just y
             _ -> Nothing,
           Arm.payload "GainKeywords" (Common.set Keyword.codec) CopyException.GainKeywords $ \x -> case x of

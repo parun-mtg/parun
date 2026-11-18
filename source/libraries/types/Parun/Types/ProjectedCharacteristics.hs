@@ -27,6 +27,7 @@ import qualified Parun.Types.Counterability as Counterability
 import qualified Parun.Types.Defense as Defense
 import qualified Parun.Types.Effect as Effect
 import qualified Parun.Types.Face as Face
+import qualified Parun.Types.Filter as Filter
 import qualified Parun.Types.GrantedAbility as GrantedAbility
 import qualified Parun.Types.Keyword as Keyword
 import qualified Parun.Types.KeywordDesignator as KeywordDesignator
@@ -34,6 +35,7 @@ import qualified Parun.Types.LentKeyword as LentKeyword
 import qualified Parun.Types.Loyalty as Loyalty
 import qualified Parun.Types.ManaCost as ManaCost
 import qualified Parun.Types.Modal as Modal
+import qualified Parun.Types.PlayerId as PlayerId
 import qualified Parun.Types.PlayerStaticAbility as PlayerStaticAbility
 import qualified Parun.Types.PrintedReplacement as PrintedReplacement
 import qualified Parun.Types.RuleAbilities as RuleAbilities
@@ -373,10 +375,14 @@ data ProjectedCharacteristics = MkProjectedCharacteristics
     -- permanent, so the fact is per-object here and folded to a per-player
     -- question at the sites that ask it.
     controllerGrants :: Set.Set ControllerGrant.ControllerGrant,
-    -- | CR 613.11: how this creature counts toward each keyword that taps it
-    -- (Modification.TapsCounting), in timestamp order, read by
-    -- Parun.Engine.Keyword.tapsCounted.
-    tapCounts :: Map.Map TapKeyword.TapKeyword [TapCount.TapCount],
+    -- | CR 701.15b: the players a continuous effect makes this creature goaded
+    -- by (Modification.Goaded), beside the one-shot Object.goadedBy. Not
+    -- copiable (CR 701.15b).
+    goadedBy :: Set.Set PlayerId.PlayerId,
+    -- | CR 613.11: how this creature counts toward each keyword that taps it,
+    -- on a permanent matching the paired filter (Modification.TapsCounting),
+    -- in timestamp order, read by Parun.Engine.Keyword.tapsCounted.
+    tapCounts :: Map.Map TapKeyword.TapKeyword [(Filter.Filter Keyword.Keyword, TapCount.TapCount)],
     -- | Is this object's loyalty its toughness (Modification.LoyaltyIsToughness)?
     loyaltyIsToughness :: Bool,
     -- | CR 707.2 / 601.2b: the printed additional costs the copiable face

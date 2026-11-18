@@ -1991,6 +1991,7 @@ stubView table oid =
                 -- is vacuously False against this stub.
                 Filter.castFrom = Nothing,
                 Filter.castBy = Nothing,
+                Filter.protector = Nothing,
                 -- CR 115.1: the stub is of a permanent, which targets nothing.
                 Filter.targets = Set.empty,
                 Filter.targetViews = Map.empty,
@@ -2012,6 +2013,7 @@ stubView table oid =
                 Filter.declaredAttackerThisCombat = False,
                 Filter.declaredBlockerThisCombat = False,
                 Filter.hadToAttackThisCombat = False,
+                Filter.goaded = False,
                 Filter.leftLibraryThisTurn = Set.empty,
                 Filter.dealtDamageThisTurn = [],
                 Filter.lostLifeThisTurn = False,

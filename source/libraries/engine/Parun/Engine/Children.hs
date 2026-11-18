@@ -136,6 +136,7 @@ import qualified Parun.Types.ControllerRelation as ControllerRelation
 import qualified Parun.Types.CopyClause as CopyClause
 import qualified Parun.Types.CopyException as CopyException
 import qualified Parun.Types.CopyOriginal as CopyOriginal
+import qualified Parun.Types.CopyPowerToughness as CopyPowerToughness
 import qualified Parun.Types.CopyStackObject as CopyStackObject
 import qualified Parun.Types.CopyTargets as CopyTargets
 import qualified Parun.Types.Cost as Cost
@@ -653,6 +654,7 @@ filterChildren children predicate = case predicate of
   Filter.DeclaredAttackerThisCombat -> pure predicate
   Filter.DeclaredBlockerThisCombat -> pure predicate
   Filter.HadToAttackThisCombat -> pure predicate
+  Filter.IsGoaded -> pure predicate
   Filter.DeclaredThisTurn _ -> pure predicate
   Filter.CouldAttackThisTurn -> pure predicate
   Filter.LeftLibraryThisTurn _ -> pure predicate
@@ -1619,8 +1621,8 @@ triggerConditionChildren c condition = case condition of
   TriggerCondition.IsDealtDamage (PermanentIsDealtDamage.MkPermanentIsDealtDamage (DealtDamage.MkDealtDamage recipient kind by) batching wholeBatch excess atLeast) ->
     fmap (\renamed -> TriggerCondition.IsDealtDamage (PermanentIsDealtDamage.MkPermanentIsDealtDamage (DealtDamage.MkDealtDamage renamed kind by) batching wholeBatch excess atLeast)) (actingChildren c recipient)
   TriggerCondition.PlayerIsDealtDamage (PlayerIsDealtDamage.MkPlayerIsDealtDamage dealt orTheirPlaneswalkers batching turn) -> fmap (TriggerCondition.PlayerIsDealtDamage . PlayerIsDealtDamage.MkPlayerIsDealtDamage dealt orTheirPlaneswalkers batching) (triggerTurn c turn)
-  TriggerCondition.PermanentsDealDamageToPlayer (PermanentsDealDamageToPlayer.MkPermanentsDealDamageToPlayer filter_ kind recipient oneOrMore anyController) ->
-    fmap (\renamed -> TriggerCondition.PermanentsDealDamageToPlayer (PermanentsDealDamageToPlayer.MkPermanentsDealDamageToPlayer renamed kind recipient oneOrMore anyController)) (triggerFilter c filter_)
+  TriggerCondition.PermanentsDealDamageToPlayer (PermanentsDealDamageToPlayer.MkPermanentsDealDamageToPlayer filter_ kind recipient oneOrMore anyController orBattle) ->
+    fmap (\renamed -> TriggerCondition.PermanentsDealDamageToPlayer (PermanentsDealDamageToPlayer.MkPermanentsDealDamageToPlayer renamed kind recipient oneOrMore anyController orBattle)) (triggerFilter c filter_)
   TriggerCondition.CreatureDealtCombatDamageToMonarch -> pure condition
   TriggerCondition.CreaturesDealtCombatDamageToInitiative -> pure condition
   TriggerCondition.PlayerTookInitiative -> pure condition
@@ -2056,7 +2058,7 @@ keywordChildren c keyword_ = case keyword_ of
   Keyword.StartYourEngines -> pure keyword_
   Keyword.JobSelect -> pure keyword_
   Keyword.Tiered -> pure keyword_
-  Keyword.Exert -> pure keyword_
+  Keyword.Exert gate -> fmap Keyword.Exert (traverse (keywordFilter c) gate)
   Keyword.Enlist -> pure keyword_
   Keyword.Bestow cost -> fmap Keyword.Bestow (keywordCost c cost)
   Keyword.Station -> pure keyword_
@@ -2274,7 +2276,7 @@ playerEffectChildren c effect = case effect of
   PlayerEffect.CantCastSpells -> pure effect
   PlayerEffect.CantActivateAbilities filter_ criteria -> PlayerEffect.CantActivateAbilities <$> playerFilter c filter_ <*> playerActivations c criteria
   -- CR 601.3's limit counts the turn's casts.
-  PlayerEffect.CantCastMoreThan _ -> effect <$ playerLooksBack c HistoryRead.Casts
+  PlayerEffect.CantCastMoreThan criterion limit -> PlayerEffect.CantCastMoreThan <$> playerFilter c criterion <*> pure limit <* playerLooksBack c HistoryRead.Casts
   PlayerEffect.ModifyCost modifier -> PlayerEffect.ModifyCost <$> costModifierChildren c modifier
   PlayerEffect.AlternativeActivationCost (AlternativeActivationCost.MkAlternativeActivationCost grantedBy onlyFirst cost) ->
     fmap PlayerEffect.AlternativeActivationCost (AlternativeActivationCost.MkAlternativeActivationCost <$> playerDesignator c grantedBy <*> traverse (onlyFirstChildren c HistoryRead.Activations) onlyFirst <*> pure cost)
@@ -3774,8 +3776,9 @@ modificationChildren c modification = case modification of
   Modification.AssignCombatDamage _ -> pure modification
   Modification.AssignCombatDamageAs {} -> pure modification
   Modification.GrantsController _ -> pure modification
-  Modification.TapsCounting {} -> pure modification
+  Modification.TapsCounting keywords count -> (`Modification.TapsCounting` count) <$> traverse (modificationFilter c) keywords
   Modification.LoyaltyIsToughness -> pure modification
+  Modification.Goaded -> pure modification
   Modification.Intensify quantity -> Modification.Intensify <$> modificationQuantity c quantity
 
 -- | A combat restriction's children (CR 508.1c, 509.1b). Its name, limit,
@@ -3968,7 +3971,8 @@ data CopyChildren ability effect f = MkCopyChildren
   { -- | A Filter a field holds: the objects a copy may copy, a chosen host
     -- (CR 303.4f).
     copyFilter :: Filter.Filter Keyword.Keyword -> f (Filter.Filter Keyword.Keyword),
-    -- | A Quantity a field holds: a counter amount (CR 614.1c).
+    -- | A Quantity a field holds: a counter amount (CR 614.1c), a defined
+    -- power or toughness (CR 707.9a).
     copyQuantity :: Quantity.Quantity -> f Quantity.Quantity,
     -- | The kind of counter a row places (CR 122.1).
     copyCounterKind :: CounterKind.CounterKind Keyword.Keyword -> f (CounterKind.CounterKind Keyword.Keyword),
@@ -4051,11 +4055,12 @@ copyClauseChildren c (CopyClause.MkCopyClause condition exceptions counters copi
     <*> traverse (withCountersChildren c) counters
     <*> pure copied
 
--- | A CR 707.9 exception's children. A power and toughness, card types,
--- supertypes and a name are left as they are.
+-- | A CR 707.9 exception's children. A literal power and toughness, card
+-- types, supertypes and a name are left as they are.
 copyExceptionChildren :: (Applicative f) => CopyChildren ability effect f -> CopyException.CopyException ability -> f (CopyException.CopyException ability)
 copyExceptionChildren c exception = case exception of
-  CopyException.SetPowerToughness _ -> pure exception
+  CopyException.SetPowerToughness (CopyPowerToughness.Numbers _) -> pure exception
+  CopyException.SetPowerToughness (CopyPowerToughness.Defined defined) -> CopyException.SetPowerToughness . CopyPowerToughness.Defined <$> characteristicPTChildren (copyQuantity c) defined
   CopyException.GainKeywords keywords -> CopyException.GainKeywords <$> traverseSet (copyKeyword c) keywords
   CopyException.GainThisAbility -> pure exception
   CopyException.CardTypes {} -> pure exception

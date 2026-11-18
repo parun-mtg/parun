@@ -70,6 +70,7 @@ import qualified Parun.Types.SpendScope as SpendScope
 import qualified Parun.Types.StackObjectKind as StackObjectKind
 import qualified Parun.Types.StateBasedAction as StateBasedAction
 import qualified Parun.Types.StatedFlip as StatedFlip
+import qualified Parun.Types.Subtype as Subtype
 import qualified Parun.Types.TapForMana as TapForMana
 import qualified Parun.Types.TargetRestriction as TargetRestriction
 import qualified Parun.Types.TriggeringMove as TriggeringMove
@@ -90,8 +91,15 @@ spec s = Spec.describe s "Parun.Codec.PlayerEffect" $ do
     Common.assertCodec
       s
       PlayerEffect.codec
-      (PlayerEffect.CantCastMoreThan 1)
-      " {\"type\":\"CantCastMoreThan\",\"value\":1} "
+      (PlayerEffect.CantCastMoreThan (Filter.And []) 1)
+      " {\"type\":\"CantCastMoreThan\",\"value\":{\"count\":1}} "
+  -- CR 601.3 / Phyrexian Censor: the limit counts only matching spells.
+  Spec.it s "CantCastMoreThan matching" $
+    Common.assertCodec
+      s
+      PlayerEffect.codec
+      (PlayerEffect.CantCastMoreThan (Filter.Not (Filter.HasSubtype Subtype.Phyrexian)) 1)
+      " {\"type\":\"CantCastMoreThan\",\"value\":{\"matching\":{\"type\":\"Not\",\"value\":{\"type\":\"HasSubtype\",\"value\":\"Phyrexian\"}},\"count\":1}} "
   -- CR 613.11 / 601.2f / Thalia: the tag Parun.Codec.CostModifier's payload rides.
   Spec.it s "ModifyCost" $
     Common.assertCodec
