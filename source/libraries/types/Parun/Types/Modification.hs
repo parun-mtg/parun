@@ -30,6 +30,7 @@ import qualified Parun.Types.Subtype as Subtype
 import qualified Parun.Types.SubtypeFamily as SubtypeFamily
 import qualified Parun.Types.Supertype as Supertype
 import qualified Parun.Types.TapCount as TapCount
+import qualified Parun.Types.TapKeyword as TapKeyword
 import qualified Parun.Types.TargetSlot as TargetSlot
 import qualified Parun.Types.Zone as Zone
 
@@ -474,9 +475,9 @@ data Modification ability
     -- player has the grant (Tapestry Warden, Gomif, Fast Racer). Self-only, like
     -- DestructionR: a fact about the controller, not a set of affected permanents.
     GrantsController ControllerGrant.ControllerGrant
-  | -- | CR 613.11: this creature counts toward the named keywords'
-    -- tap-for-total-power costs (CR 702.122a, 702.171a) as the TapCount says.
-    TapsCounting (Set.Set KeywordFamily.KeywordFamily) TapCount.TapCount
+  | -- | CR 613.11: this creature counts toward the named keywords that tap it
+    -- (CR 702.122a, 702.171a, 702.184a) as the TapCount says.
+    TapsCounting (Set.Set TapKeyword.TapKeyword) TapCount.TapCount
   | -- | Alchemy's "intensifies by N" (Static Discharge): add N to the object's
     -- intensity, which no CR rule names.
     Intensify Quantity.Quantity

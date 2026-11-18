@@ -2,6 +2,7 @@ module Parun.Types.DrawRewrite where
 
 import qualified Data.Sequence as Seq
 import qualified Numeric.Natural as Natural
+import qualified Parun.Types.CardSelection as CardSelection
 import qualified Parun.Types.FromOutsideTheGame as FromOutsideTheGame
 import qualified Parun.Types.Quantity as Quantity
 
@@ -64,9 +65,10 @@ data DrawRewrite effect
     FromGraveyardOrLose
   | -- | CR 614.1a / 701.20a: Abundance's "you may instead choose land or nonland
     -- and reveal cards from the top of your library until you reveal a card of
-    -- the chosen kind", that card to hand and the rest to the bottom in any
-    -- order.
-    RevealUntilChosenKind
+    -- the chosen kind", that card to hand and the rest to the bottom: ByChoice
+    -- in any order (CR 401.4), AtRandom in a random order (Pavel Chekov, First
+    -- Posting).
+    RevealUntilChosenKind CardSelection.CardSelection
   | -- | CR 614.1a / 614.5: Alhammarret's Archive's "draw two cards instead",
     -- each a new draw this row does not apply to.
     DrawInstead Natural.Natural

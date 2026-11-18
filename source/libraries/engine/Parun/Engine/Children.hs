@@ -226,6 +226,7 @@ import qualified Parun.Types.EntriesTrigger as EntriesTrigger
 import qualified Parun.Types.EntryAttack as EntryAttack
 import qualified Parun.Types.EntryBlock as EntryBlock
 import qualified Parun.Types.EntryController as EntryController
+import qualified Parun.Types.EntryCounter as EntryCounter
 import qualified Parun.Types.EntryFlip as EntryFlip
 import qualified Parun.Types.EntryHost as EntryHost
 import qualified Parun.Types.EntryOption as EntryOption
@@ -861,7 +862,7 @@ quantityChildren children quantity = case quantity of
   Quantity.Convokers -> pure quantity
   Quantity.ControlGained window ref -> fmap (Quantity.ControlGained window) (player children ref)
   Quantity.PlayedBy ref -> fmap Quantity.PlayedBy (player children ref)
-  Quantity.OpponentsAttacked ref -> fmap Quantity.OpponentsAttacked (player children ref)
+  Quantity.OpponentsAttacked window ref -> fmap (Quantity.OpponentsAttacked window) (player children ref)
   Quantity.AttackersDeclaredThisTurn ref -> fmap Quantity.AttackersDeclaredThisTurn (player children ref)
   Quantity.AttackersDeclaredThisCombat -> pure quantity
   Quantity.AttackedInLastTurnOf ref -> fmap Quantity.AttackedInLastTurnOf (player children ref)
@@ -2223,7 +2224,8 @@ data PlayerEffectChildren f = MkPlayerEffectChildren
     playerColor :: Color.Color -> f Color.Color,
     -- | A keyword an ability is designated by (CR 702), whole.
     playerDesignator :: KeywordDesignator.KeywordDesignator Keyword.Keyword -> f (KeywordDesignator.KeywordDesignator Keyword.Keyword),
-    -- | What narrows a cost modifier's abilities (CR 602.2b), whole.
+    -- | What narrows a cost modifier's (CR 602.2b) or a prohibition's (CR 602.5)
+    -- abilities, whole.
     playerActivations :: ActivationCriteria.ActivationCriteria Keyword.Keyword -> f (ActivationCriteria.ActivationCriteria Keyword.Keyword),
     -- | The zone a permission reaches into, whole.
     playerZone :: InZone.InZone -> f InZone.InZone,
@@ -2271,7 +2273,7 @@ playerEffectLeaves =
 playerEffectChildren :: (Applicative f) => PlayerEffectChildren f -> PlayerEffect.PlayerEffect -> f PlayerEffect.PlayerEffect
 playerEffectChildren c effect = case effect of
   PlayerEffect.CantCastSpells -> pure effect
-  PlayerEffect.CantActivateAbilities designator filter_ kind -> PlayerEffect.CantActivateAbilities <$> traverse (playerDesignator c) designator <*> playerFilter c filter_ <*> pure kind
+  PlayerEffect.CantActivateAbilities filter_ criteria -> PlayerEffect.CantActivateAbilities <$> playerFilter c filter_ <*> playerActivations c criteria
   -- CR 601.3's limit counts the turn's casts.
   PlayerEffect.CantCastMoreThan _ -> effect <$ playerLooksBack c HistoryRead.Casts
   PlayerEffect.ModifyCost modifier -> PlayerEffect.ModifyCost <$> costModifierChildren c modifier
@@ -2595,7 +2597,7 @@ drawRewriteChildren c rewrite = case rewrite of
   DrawRewrite.YouDraw -> pure rewrite
   DrawRewrite.OthersMayPayLife _ -> pure rewrite
   DrawRewrite.FromGraveyardOrLose -> pure rewrite
-  DrawRewrite.RevealUntilChosenKind -> pure rewrite
+  DrawRewrite.RevealUntilChosenKind _ -> pure rewrite
   DrawRewrite.DrawInstead _ -> pure rewrite
   DrawRewrite.DiscardThenDrawOrMill -> pure rewrite
   DrawRewrite.KeepOneOfTopThenDraw count -> DrawRewrite.KeepOneOfTopThenDraw <$> replacementQuantity c count
@@ -4093,7 +4095,7 @@ entryRidersChildren c (EntryRiders.MkEntryRiders tapped attacking blocking trans
     <$> traverse attack attacking
     <*> traverse block blocking
     <*> pure transformed
-    <*> traverseCounters c counters
+    <*> traverseEntryCounters counters
     <*> controller under
     <*> pure exiledFaceDown
     <*> traverse host attachedTo
@@ -4101,6 +4103,11 @@ entryRidersChildren c (EntryRiders.MkEntryRiders tapped attacking blocking trans
     <*> pure noted
     <*> traverse (copyModification c) characteristics
   where
+    -- Kind and gate (CR 614.12) alike; traverseCounters' merge on collision.
+    traverseEntryCounters =
+      fmap (Map.fromListWith (\greater lesser -> Quantity.Arithmetic (Arithmetic.Plus (Plus.MkPlus lesser greater))))
+        . traverse (\(EntryCounter.MkEntryCounter kind gate, amount) -> (,) <$> (EntryCounter.MkEntryCounter <$> copyCounterKind c kind <*> traverse (copyFilter c) gate) <*> copyQuantity c amount)
+        . Map.toList
     attack a = case a of
       EntryAttack.Chosen -> pure a
       EntryAttack.SameAs name -> EntryAttack.SameAs <$> copySlot c name

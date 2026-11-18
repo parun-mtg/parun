@@ -35,6 +35,7 @@ import qualified Parun.Types.ArmDelayedTrigger as ArmDelayedTrigger
 import qualified Parun.Types.AttachRestriction as AttachRestriction
 import qualified Parun.Types.AttackCompany as AttackCompany
 import qualified Parun.Types.AttackTrigger as AttackTrigger
+import qualified Parun.Types.AttackWindow as AttackWindow
 import qualified Parun.Types.AttackerTarget as AttackerTarget
 import qualified Parun.Types.AttackerTrigger as AttackerTrigger
 import qualified Parun.Types.Backup as Backup
@@ -130,6 +131,7 @@ import qualified Parun.Types.EndingStep as EndingStep
 import qualified Parun.Types.EntersTrigger as EntersTrigger
 import qualified Parun.Types.EntryAttack as EntryAttack
 import qualified Parun.Types.EntryController as EntryController
+import qualified Parun.Types.EntryCounter as EntryCounter
 import qualified Parun.Types.EntryR as EntryR
 import qualified Parun.Types.EntryRewrite as EntryRewrite
 import qualified Parun.Types.EntryRiders as EntryRiders
@@ -262,7 +264,9 @@ import qualified Parun.Types.StepBegins as StepBegins
 import qualified Parun.Types.Subtype as Subtype
 import qualified Parun.Types.Suspend as Suspend
 import qualified Parun.Types.TakeExtraTurn as TakeExtraTurn
+import qualified Parun.Types.TapCount as TapCount
 import qualified Parun.Types.TapForTotalPower as TapForTotalPower
+import qualified Parun.Types.TapKeyword as TapKeyword
 import qualified Parun.Types.TapPermanents as TapPermanents
 import qualified Parun.Types.TapState as TapState
 import qualified Parun.Types.TargetSlot as TargetSlot
@@ -2702,7 +2706,7 @@ crew payload =
               { -- CR 118.5: rule 702.122a's cost has no mana part, which is
                 -- `Just` an empty one and not the Nothing that means unpayable.
                 Cost.mana = Just (ManaCost.MkManaCost []),
-                Cost.components = [CostComponent.TapForTotalPower (TapForTotalPower.MkTapForTotalPower (Crew.power payload) criterion (Just KeywordFamily.Crew))]
+                Cost.components = [CostComponent.TapForTotalPower (TapForTotalPower.MkTapForTotalPower (Crew.power payload) criterion (Just TapKeyword.Crew))]
               },
           ActivatedAbility.modal =
             Mint.oneMode (Seq.fromList [becomes CardType.Artifact, becomes CardType.Creature]),
@@ -2760,7 +2764,7 @@ saddle n =
             Cost.MkCost
               { -- CR 118.5, crew's note above.
                 Cost.mana = Just (ManaCost.MkManaCost []),
-                Cost.components = [CostComponent.TapForTotalPower (TapForTotalPower.MkTapForTotalPower n criterion (Just KeywordFamily.Saddle))]
+                Cost.components = [CostComponent.TapForTotalPower (TapForTotalPower.MkTapForTotalPower n criterion (Just TapKeyword.Saddle))]
               },
           ActivatedAbility.modal =
             Mint.oneMode (Seq.singleton (Effect.Designate (Designate.MkDesignate Designation.Saddled Binding.triggerSource Nothing))),
@@ -2774,6 +2778,29 @@ saddle n =
           ActivatedAbility.copyability = Copyability.Copyable,
           ActivatedAbility.chosenPlayer = Nothing
         }
+
+-- CR 613.11: what a creature counts toward a keyword that taps it, off its
+-- Modification.TapsCounting grants for that keyword in timestamp order, given
+-- its power and toughness: crew's and saddle's (Parun.Engine.Cost.tapPowerGiven)
+-- and station's (Parun.Engine.Quantity's StationMeasure arm) one reader.
+--
+-- A UsingToughness grant replaces the power, and the power offsets and
+-- multipliers then go unread (docs/decisions.md, "Whether a crew power offset
+-- raises a toughness crewer"). Otherwise each grant applies to the power in
+-- turn, CR 613.11's timestamp order, a FENCE: no card in the pool grants an
+-- offset or a multiplier to another creature, so no board stacks two kinds.
+-- Sulu, Heroic Helmsman's multiplier is proved by the scenarios
+-- `sulu-heroic-helmsman-crews-a-crew-6-vehicle-alone-where-a-bear-of-his-power-cannot`
+-- and `sulu-heroic-helmsman-stations-six-charge-counters-off-his-power-of-two`.
+tapsCounted :: [TapCount.TapCount] -> Maybe Integer -> Maybe Integer -> Maybe Integer
+tapsCounted counts power toughness
+  | TapCount.UsingToughness `elem` counts = toughness
+  | otherwise = fmap (\p -> List.foldl' step p counts) power
+  where
+    step n count = case count of
+      TapCount.GreaterBy k -> n + toInteger k
+      TapCount.Multiplied k -> n * toInteger k
+      TapCount.UsingToughness -> n
 
 -- CR 702.184a's whole ability, crew's neighbour above and levelUp's below.
 --
@@ -2793,8 +2820,9 @@ saddle n =
 -- this turn may be tapped to do it.
 --
 -- THE EFFECT reads through Quantity.AgainstSlot on that reserved slot,
--- Unerring Sling's read, over Quantity.StationMeasure -- CR 702.184a's power
--- unless CR 702.184c's substitution applies (Tapestry Warden), which that
+-- Unerring Sling's read, over Quantity.StationMeasure -- CR 702.184a's power,
+-- as the tapped creature's own TapsCounting grants count it (Sulu, Heroic
+-- Helmsman), unless CR 702.184c's substitution applies (Tapestry Warden), which that
 -- arm asks live off the ability's OWN source rather than off the tapped
 -- creature. CR 608.2h's CURRENT information, the permanent being tapped
 -- rather than moved. The counters land on the source, named through
@@ -6162,7 +6190,7 @@ increment =
 -- re-read would shrink the pump to 0 the moment combat ended.
 melee :: TriggeredAbility Card (GrantedAbility.GrantedAbility Card)
 melee =
-  let bonus = Quantity.OpponentsAttacked (PlayerRef.Relative PlayerRelation.You)
+  let bonus = Quantity.OpponentsAttacked AttackWindow.ThisCombat (PlayerRef.Relative PlayerRelation.You)
       effect =
         Effect.ModifyTarget
           ( ModifyTarget.MkModifyTarget
@@ -6730,7 +6758,7 @@ returns kind =
           ( MoveToZone.MkMoveToZone
               (ObjectRef.InSlot Binding.became)
               Zone.Battlefield
-              EntryRiders.defaultValue {EntryRiders.counters = Map.singleton kind (Quantity.Literal 1), EntryRiders.under = EntryController.Owner}
+              EntryRiders.defaultValue {EntryRiders.counters = Map.singleton (EntryCounter.unconditional kind) (Quantity.Literal 1), EntryRiders.under = EntryController.Owner}
               Nothing
               Nothing
               LibraryPlacement.defaultValue

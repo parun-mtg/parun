@@ -2,10 +2,12 @@ module Parun.Codec.PlayerEffectSpec where
 
 import qualified Data.Set as Set
 import qualified Data.Text as Text
+import qualified Parun.Codec.Filter as Filter.Codec
 import qualified Parun.Codec.PlayerEffect as PlayerEffect
 import qualified Parun.JsonCodec.Common as Common
 import qualified Parun.Spec as Spec
 import qualified Parun.Types.AbilityKind as AbilityKind
+import qualified Parun.Types.ActivationCriteria as ActivationCriteria
 import qualified Parun.Types.Audience as Audience
 import qualified Parun.Types.BearersTrigger as BearersTrigger
 import qualified Parun.Types.CantSearchLibraries as CantSearchLibraries
@@ -39,6 +41,7 @@ import qualified Parun.Types.KeywordRiderGrant as KeywordRiderGrant
 import qualified Parun.Types.LandAllowance as LandAllowance
 import qualified Parun.Types.LoyaltyClause as LoyaltyClause
 import qualified Parun.Types.LoyaltyGrant as LoyaltyGrant
+import qualified Parun.Types.LoyaltyKind as LoyaltyKind
 import qualified Parun.Types.ManaCost as ManaCost
 import qualified Parun.Types.ManaFilter as ManaFilter
 import qualified Parun.Types.ManaSpending as ManaSpending
@@ -537,22 +540,22 @@ spec s = Spec.describe s "Parun.Codec.PlayerEffect" $ do
     Common.assertCodec
       s
       PlayerEffect.codec
-      (PlayerEffect.CantActivateAbilities Nothing (Filter.And []) Nothing)
+      (PlayerEffect.CantActivateAbilities (Filter.And []) Filter.Codec.everyActivation)
       " {\"type\":\"CantActivateAbilities\",\"value\":{}} "
   -- CR 702.193a / Kang the Conqueror's "power-up abilities can't be activated".
   Spec.it s "CantActivateAbilities naming a keyword" $
     Common.assertCodec
       s
       PlayerEffect.codec
-      (PlayerEffect.CantActivateAbilities (Just (KeywordDesignator.OfKeyword Keyword.PowerUp)) (Filter.And []) Nothing)
-      " {\"type\":\"CantActivateAbilities\",\"value\":{\"designator\":{\"type\":\"OfKeyword\",\"value\":{\"type\":\"PowerUp\"}}}} "
+      (PlayerEffect.CantActivateAbilities (Filter.And []) Filter.Codec.everyActivation {ActivationCriteria.grantedBy = Just (KeywordDesignator.OfKeyword Keyword.PowerUp)})
+      " {\"type\":\"CantActivateAbilities\",\"value\":{\"criteria\":{\"grantedBy\":{\"type\":\"OfKeyword\",\"value\":{\"type\":\"PowerUp\"}}}}} "
   -- CR 602.5 / Grand Abolisher's "abilities of artifacts, creatures, or
   -- enchantments", which names the sources.
   Spec.it s "CantActivateAbilities naming the sources" $
     Common.assertCodec
       s
       PlayerEffect.codec
-      (PlayerEffect.CantActivateAbilities Nothing (Filter.HasCardType CardType.Artifact) Nothing)
+      (PlayerEffect.CantActivateAbilities (Filter.HasCardType CardType.Artifact) Filter.Codec.everyActivation)
       " {\"type\":\"CantActivateAbilities\",\"value\":{\"sources\":{\"type\":\"HasCardType\",\"value\":\"Artifact\"}}} "
   -- CR 605.1a / Yuriko, Blade of the Mighty's "abilities that aren't mana
   -- abilities", which names the kind.
@@ -560,8 +563,15 @@ spec s = Spec.describe s "Parun.Codec.PlayerEffect" $ do
     Common.assertCodec
       s
       PlayerEffect.codec
-      (PlayerEffect.CantActivateAbilities Nothing (Filter.And []) (Just AbilityKind.NonManaAbility))
-      " {\"type\":\"CantActivateAbilities\",\"value\":{\"kind\":\"NonManaAbility\"}} "
+      (PlayerEffect.CantActivateAbilities (Filter.And []) Filter.Codec.everyActivation {ActivationCriteria.whichKind = Just AbilityKind.NonManaAbility})
+      " {\"type\":\"CantActivateAbilities\",\"value\":{\"criteria\":{\"whichKind\":\"NonManaAbility\"}}} "
+  -- CR 606.2 / The Immortal Sun's "planeswalkers' loyalty abilities".
+  Spec.it s "CantActivateAbilities naming loyalty abilities" $
+    Common.assertCodec
+      s
+      PlayerEffect.codec
+      (PlayerEffect.CantActivateAbilities (Filter.HasCardType CardType.Planeswalker) Filter.Codec.everyActivation {ActivationCriteria.whichLoyalty = Just LoyaltyKind.LoyaltyAbility})
+      " {\"type\":\"CantActivateAbilities\",\"value\":{\"sources\":{\"type\":\"HasCardType\",\"value\":\"Planeswalker\"},\"criteria\":{\"whichLoyalty\":\"LoyaltyAbility\"}}} "
   -- CR 305.1 / City in a Bottle's land half, whose Filter names the land
   -- (Damping Engine's writes the empty And instead).
   Spec.it s "CantPlayLands" $

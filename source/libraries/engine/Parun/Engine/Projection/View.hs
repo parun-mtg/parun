@@ -374,6 +374,9 @@ viewOfCardLapsed lapsed face =
           -- CR 702.184c reaches a permanent's CONTROLLER; this builder describes
           -- a printed FACE with no controller and no board to grant it one.
           Filter.controllerGrants = Set.empty,
+          -- CR 613.11 off a printed FACE, `controllerGrants` above's reason:
+          -- the grant is a static ability functioning on the battlefield.
+          Filter.tapCounts = Map.empty,
           -- CR 700.5a off the printed face, which no text change reaches.
           Filter.devotionBonus = Devotion.bonusOf (Face.playerAbilities face),
           Filter.loyaltyIsToughness = False,
@@ -985,6 +988,9 @@ viewOfCharacteristics peers oid pc controller counters gs =
       -- CR 702.184c / 702.179d off the PROJECTION, applyModification's GrantsController
       -- arm being layer 6's only writer.
       Filter.controllerGrants = PC.controllerGrants pc,
+      -- CR 613.11 off the PROJECTION, applyModification's TapsCounting arm
+      -- being its only writer.
+      Filter.tapCounts = PC.tapCounts pc,
       -- CR 700.5a off the copiable list `pc` carries, rewritten by layer 3 and
       -- emptied by no layer-6 removal (see the field's own comment).
       Filter.devotionBonus = Devotion.bonusOf (PC.playerAbilities pc),
@@ -2035,8 +2041,7 @@ noCharacteristics =
       -- controller's station abilities of its own.
       PC.controllerGrants = Set.empty,
       PC.goadedBy = Set.empty,
-      PC.tapPowerBonus = Map.empty,
-      PC.tapsUsingToughness = Set.empty,
+      PC.tapCounts = Map.empty,
       PC.loyaltyIsToughness = False,
       -- CR 601.2b / 601.2f: no card, so no printed costs either.
       PC.additionalCosts = [],
@@ -2244,8 +2249,7 @@ baseCharacteristics oid gs = case Game.faceOf oid gs of
               PC.controllerGrants = Set.empty,
               -- CR 701.15b: goaded is not a copiable value.
               PC.goadedBy = Set.empty,
-              PC.tapPowerBonus = Map.empty,
-              PC.tapsUsingToughness = Set.empty,
+              PC.tapCounts = Map.empty,
               PC.loyaltyIsToughness = False,
               -- CR 707.2: the cast-time costs printed in the rules text, copiable
               -- with it, so a card carrying a copy stamp or a conjured

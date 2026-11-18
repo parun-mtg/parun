@@ -30,7 +30,6 @@ import qualified Parun.Types.Face as Face
 import qualified Parun.Types.GrantedAbility as GrantedAbility
 import qualified Parun.Types.Keyword as Keyword
 import qualified Parun.Types.KeywordDesignator as KeywordDesignator
-import qualified Parun.Types.KeywordFamily as KeywordFamily
 import qualified Parun.Types.LentKeyword as LentKeyword
 import qualified Parun.Types.Loyalty as Loyalty
 import qualified Parun.Types.ManaCost as ManaCost
@@ -44,6 +43,8 @@ import qualified Parun.Types.SpendManaAsThough as SpendManaAsThough
 import qualified Parun.Types.StaticAbility as StaticAbility
 import qualified Parun.Types.Subtype as Subtype
 import qualified Parun.Types.Supertype as Supertype
+import qualified Parun.Types.TapCount as TapCount
+import qualified Parun.Types.TapKeyword as TapKeyword
 import qualified Parun.Types.TargetSlot as TargetSlot
 import qualified Parun.Types.Timestamp as Timestamp
 import qualified Parun.Types.TriggeredAbility as TriggeredAbility
@@ -377,15 +378,10 @@ data ProjectedCharacteristics = MkProjectedCharacteristics
     -- by (Modification.Goaded), beside the one-shot Object.goadedBy. Not
     -- copiable (CR 701.15b).
     goadedBy :: Set.Set PlayerId.PlayerId,
-    -- | CR 613.11: how much greater than its power this creature counts toward
-    -- each keyword's tap-for-total-power cost
-    -- (Modification.TapsCounting's GreaterBy), read by
-    -- Parun.Engine.Cost.tapPowerGiven. Summed across grants.
-    tapPowerBonus :: Map.Map KeywordFamily.KeywordFamily Natural.Natural,
-    -- | CR 613.11: the keywords whose tap-for-total-power costs count this
-    -- creature's toughness rather than its power (Modification.TapsCounting's
-    -- UsingToughness), read by Parun.Engine.Cost.tapPowerGiven.
-    tapsUsingToughness :: Set.Set KeywordFamily.KeywordFamily,
+    -- | CR 613.11: how this creature counts toward each keyword that taps it
+    -- (Modification.TapsCounting), in timestamp order, read by
+    -- Parun.Engine.Keyword.tapsCounted.
+    tapCounts :: Map.Map TapKeyword.TapKeyword [TapCount.TapCount],
     -- | Is this object's loyalty its toughness (Modification.LoyaltyIsToughness)?
     loyaltyIsToughness :: Bool,
     -- | CR 707.2 / 601.2b: the printed additional costs the copiable face

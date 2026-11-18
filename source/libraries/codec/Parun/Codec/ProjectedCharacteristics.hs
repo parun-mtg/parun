@@ -30,7 +30,6 @@ import qualified Parun.Codec.Face as Face
 import qualified Parun.Codec.GrantedAbility as GrantedAbility
 import qualified Parun.Codec.Keyword as Keyword
 import qualified Parun.Codec.KeywordDesignator as KeywordDesignator
-import qualified Parun.Codec.KeywordFamily as KeywordFamily
 import qualified Parun.Codec.LentKeyword as LentKeyword
 import qualified Parun.Codec.Loyalty as Loyalty
 import qualified Parun.Codec.ManaCost as ManaCost
@@ -44,6 +43,8 @@ import qualified Parun.Codec.SpendManaAsThough as SpendManaAsThough
 import qualified Parun.Codec.StaticAbility as StaticAbility
 import qualified Parun.Codec.Subtype as Subtype
 import qualified Parun.Codec.Supertype as Supertype
+import qualified Parun.Codec.TapCount as TapCount
+import qualified Parun.Codec.TapKeyword as TapKeyword
 import qualified Parun.Codec.TargetSlot as TargetSlot
 import qualified Parun.Codec.Timestamp as Timestamp
 import qualified Parun.Codec.TriggeredAbility as TriggeredAbility
@@ -101,8 +102,7 @@ codec = Fields.object $ do
   combatDamageOptions <- Fields.defaulted "combatDamageOptions" Map.empty (Common.keyedList (Common.keyValue CombatDamageOption.codec CombatDamageObligation.codec)) PC.combatDamageOptions
   controllerGrants <- Fields.defaulted "controllerGrants" Set.empty (Common.set ControllerGrant.codec) PC.controllerGrants
   goadedBy <- Fields.defaulted "goadedBy" Set.empty (Common.set PlayerId.codec) PC.goadedBy
-  tapPowerBonus <- Fields.defaulted "tapPowerBonus" Map.empty (Common.multiset KeywordFamily.codec) PC.tapPowerBonus
-  tapsUsingToughness <- Fields.defaulted "tapsUsingToughness" Set.empty (Common.set KeywordFamily.codec) PC.tapsUsingToughness
+  tapCounts <- Fields.defaulted "tapCounts" Map.empty (Common.keyedList (Common.keyValue TapKeyword.codec (Common.list TapCount.codec))) PC.tapCounts
   loyaltyIsToughness <- Fields.defaulted "loyaltyIsToughness" False Common.boolean PC.loyaltyIsToughness
   additionalCosts <- Fields.defaulted "additionalCosts" [] (Common.list (CostComponent.codec Keyword.codec)) PC.additionalCosts
   additionalCostChoices <- Fields.defaulted "additionalCostChoices" [] (Common.list CostChoice.codec) PC.additionalCostChoices
@@ -166,8 +166,7 @@ codec = Fields.object $ do
         PC.combatDamageOptions = combatDamageOptions,
         PC.controllerGrants = controllerGrants,
         PC.goadedBy = goadedBy,
-        PC.tapPowerBonus = tapPowerBonus,
-        PC.tapsUsingToughness = tapsUsingToughness,
+        PC.tapCounts = tapCounts,
         PC.loyaltyIsToughness = loyaltyIsToughness,
         PC.additionalCosts = additionalCosts,
         PC.additionalCostChoices = additionalCostChoices,

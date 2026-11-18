@@ -1947,6 +1947,8 @@ viewOfSnapshot deploy mController mOwner isToken counters zone home lapsed snaps
       -- CR 702.184c off the snapshot, which carries the field: the marker
       -- outlives the object exactly as a keyword or a P/T does.
       Filter.controllerGrants = PC.controllerGrants snapshot,
+      -- CR 613.11 off the snapshot, `controllerGrants` above's reason.
+      Filter.tapCounts = PC.tapCounts snapshot,
       -- CR 700.5a off the snapshot's copiable list, as the live builder reads it.
       Filter.devotionBonus = Devotion.bonusOf (PC.playerAbilities snapshot),
       Filter.loyaltyIsToughness = PC.loyaltyIsToughness snapshot,
@@ -2053,6 +2055,7 @@ overlaySnapshot deploy zone home lapsed snapshot live =
           Filter.activatedAbilityKinds = Filter.activatedAbilityKinds sampled,
           Filter.hasAbility = Filter.hasAbility sampled,
           Filter.controllerGrants = Filter.controllerGrants sampled,
+          Filter.tapCounts = Filter.tapCounts sampled,
           Filter.devotionBonus = Filter.devotionBonus sampled,
           Filter.loyaltyIsToughness = Filter.loyaltyIsToughness sampled,
           Filter.printedLoyalty = Filter.printedLoyalty sampled

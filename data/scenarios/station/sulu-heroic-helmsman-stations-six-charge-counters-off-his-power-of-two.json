@@ -1,0 +1,35 @@
+{
+  "description": "Sulu, Heroic Helmsman stations six charge counters off his power of two",
+  "note": "CR 702.184a / 702.184c over Sulu tripling his power for station: the 2/2 loads 6, then Deathless Pilot, whose offset names crew and saddle only, loads its plain power, 3 under the Frigate's own 2+ bonus, not 5.",
+  "board": {
+    "seats": [
+      {
+        "name": "alice",
+        "battlefield": [
+          { "card": "Lumen-Class Frigate", "label": "frigate", "ready": true },
+          { "card": "Sulu, Heroic Helmsman", "label": "sulu", "ready": true },
+          { "card": "Deathless Pilot", "label": "pilot", "ready": true },
+          { "card": "Grizzly Bears", "label": "bears", "ready": true }
+        ]
+      },
+      { "name": "bob" },
+      { "name": "carol" }
+    ],
+    "active": "alice",
+    "step": "PrecombatMain"
+  },
+  "timeline": [
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": { "Answer": { "prompt": "ChooseTaps", "with": ["$sulu"] } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": { "Activate": { "object": "$frigate", "ability": 0 } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass" },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "Counters": { "object": "$frigate", "kind": { "type": "Named", "value": "charge" }, "count": 6 } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": { "Answer": { "prompt": "ChooseTaps", "with": ["$pilot"] } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": { "Activate": { "object": "$frigate", "ability": 0 } } }
+  ],
+  "final": [
+    { "Counters": { "object": "$frigate", "kind": { "type": "Named", "value": "charge" }, "count": 9 } },
+    { "Tapped": { "object": "$sulu", "tapped": true } },
+    { "Tapped": { "object": "$pilot", "tapped": true } },
+    { "Tapped": { "object": "$bears", "tapped": false } }
+  ]
+}

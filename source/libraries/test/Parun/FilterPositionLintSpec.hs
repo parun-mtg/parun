@@ -128,6 +128,7 @@ import qualified Parun.Types.EachCardInHand as EachCardInHand
 import qualified Parun.Types.Effect as Effect
 import qualified Parun.Types.EntersTrigger as EntersTrigger
 import qualified Parun.Types.EntersWith as EntersWith
+import qualified Parun.Types.EntryCounter as EntryCounter
 import qualified Parun.Types.EntryFlip as EntryFlip
 import qualified Parun.Types.EntryOption as EntryOption
 import qualified Parun.Types.EntryR as EntryR
@@ -2969,7 +2970,7 @@ filterPositionLintSpec s registry corpus = Spec.describe s "Lint" $ do
         one = Quantity.Type.Literal 1
         slot = SlotName.MkSlotName (Text.pack "target")
         anywhere = ObjectRef.EachMatching (Filter.Type.HasCardType CardType.Creature)
-        riders = EntryRiders.defaultValue {EntryRiders.counters = Map.singleton kind one}
+        riders = EntryRiders.defaultValue {EntryRiders.counters = Map.singleton (EntryCounter.unconditional kind) one}
         -- CR 118.12's gate, whose multiplier is a Quantity and so writes the kind
         -- as a NUMBER (rule 702.24a's own count); see #2876. Its cost is empty, so
         -- the row below reports the multiplier rather than a walk that found the

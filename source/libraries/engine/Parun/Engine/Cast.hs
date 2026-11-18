@@ -729,7 +729,7 @@ payableCountedAtGiven modes pcs sources x extra spending pid oid gs cost =
       blindCost = Cost.plusComponents blind substituted
       (aimable, beyond) = castAimable (Cost.aimingKey pid oid gs blindCost) modes x pid oid gs
    in if Cost.readsBoundSlot blindCost || Cost.readsTargets pid oid gs
-        then beyond || any (\aiming -> askWith (adjustmentsFor aiming) aiming) aimable
+        then any (\aiming -> askWith (adjustmentsFor aiming) aiming) aimable || beyond
         else askWith blind Map.empty
 
 -- What CR 601.2c could still bind for this proposal: every aiming
@@ -766,11 +766,15 @@ payableCountedAtGiven modes pcs sources x extra spending pid oid gs cost =
 -- The Bool says a walk was cut short at Target.subsetBudget (`aimingsOf`), which
 -- payableCountedAtGiven answers as payable: a false offer CR 601.2h's payment
 -- takes back with nothing changed (CR 734.1), where a false refusal would deny
--- a legal cast.
+-- a legal cast. The list is lazy and asked before the Bool, so the gate stops
+-- at the first aiming that pays.
 --
--- Unprinted: an exact answer past the cap, owed only where an apart slot
+-- Not implemented: an exact answer past the cap for a Differing slot taking
+-- several targets whose candidates share many values (#8649).
+--
+-- Unprinted: an exact answer past the cap where an apart slot
 -- (Target.apartSlots), or an exclusion with a slot named between its two, sits
--- beside a slot taking several targets (Target.apartWide).
+-- beside a slot taking several targets (Target.cappedWalk).
 -- Parun.AbilitySlotLintSpec's "no card writes a joint check only the capped
 -- walk prices" keeps it out of card data.
 castAimable :: (Ord k) => (Recipient.Recipient -> k) -> Maybe (Seq.Seq ModeIndex.ModeIndex) -> Natural -> PlayerId -> ObjectId -> GameState -> ([Map.Map SlotName.SlotName (Set.Set Recipient.Recipient)], Bool)
@@ -822,11 +826,11 @@ castAimable key announced x pid oid gs = case Game.faceOf oid gs of
         -- (Target.poolSplits). The members of a slot the check tells apart one
         -- by one (Target.apartSlots) are each their own class, and the members
         -- of every other jointly judged slot are classed by what the check reads
-        -- of them (Target.jointSignature). Only where a class of one may sit in a
-        -- slot taking several targets does the walk stop at Target.subsetBudget
-        -- (Target.apartWide). Parun.CostSpec's "Drafna's Restoration",
-        -- "Synthetic Wide Verdict" and "Graceful Takedown" groups prove the
-        -- split and the classes.
+        -- of them (Target.jointSignature). Only where classes of one may sit in
+        -- a slot taking several targets does the walk stop at
+        -- Target.subsetBudget (Target.cappedWalk). Parun.CostSpec's "Drafna's
+        -- Restoration", "Synthetic Wide Verdict", "Graceful Takedown" and
+        -- "Behold the Sinister Six!" groups prove the split and the classes.
         aimingsOf slots =
           let sets = setsOf slots
               rangesOf legal = Target.aimingRanges Nothing (Just pid) oid (Just x) slots legal gs
@@ -841,8 +845,9 @@ castAimable key announced x pid oid gs = case Game.faceOf oid gs of
                  in \r -> (key r, joint (held r) r)
               walkOne narrowed = Target.aimingsBy Cost.aimedReferent (signatureIn narrowed) (rangesOf narrowed) narrowed
               walk = concatMap walkOne splits
-              capped = Target.apartWide apart ranges slots
-              -- Lazy, so only the visited prefix and one aiming past it are built.
+              capped = Target.cappedWalk apart ranges slots
+              -- Lazy, so only the prefix the gate asks of, and under a cap one
+              -- aiming past it, are built.
               (visited, beyond) = if capped then List.genericSplitAt Target.subsetBudget walk else (walk, [])
            in (filter (coherent slots) visited, not (null beyond))
         -- CR 700.2: the modes CR 601.2b announced, or every selection the printed
@@ -850,7 +855,7 @@ castAimable key announced x pid oid gs = case Game.faceOf oid gs of
         -- (Ojutai's Command) aims across both.
         selected modal = maybe (Modal.selections (Target.fillableModes StackObjectKind.Spell Nothing (Just pid) Map.empty oid enchant modal gs) (Modal.Type.selection modal)) pure announced
         walks = [aimingsOf (slotsOf modal chosen) | modal <- readings, chosen <- selected modal]
-     in (Set.toList (Set.fromList (concatMap fst walks)), any snd walks)
+     in (ListUtils.nubOrd (concatMap fst walks), any snd walks)
 
 -- CR 601.2b: the greatest value of X this player could actually pay for, which is
 -- what Prompt.ChooseX carries -- measured on the cost the cast is measuring, with
@@ -3631,15 +3636,19 @@ isCastAnnouncementQuantity q = case q of
   Quantity.CastUsing _ -> True
   _ -> False
 
--- The Condition built ENTIRELY from such quantities -- Any/All fold the same
--- way Condition.holds itself does, so a mixed clause (none print one) is not
--- mistaken for a safe one.
+-- The Condition built ENTIRELY from such quantities, or from a phase window --
+-- Any/All fold the same way Condition.holds itself does, so a mixed clause (none
+-- print one) is not mistaken for a safe one. A window is decided at announcement
+-- because the phase cannot change while the spell is on the stack (CR 500.2), so
+-- the text defines the number of targets (CR 601.2c): Return to Dust's "if you
+-- cast this spell during your main phase", proved by its scenarios under
+-- data/scenarios/.
 isCastAnnouncementCondition :: Condition.Type.Condition -> Bool
 isCastAnnouncementCondition condition = case condition of
   Condition.Type.Compares c -> isCastAnnouncementQuantity (Compares.measured c) && isCastAnnouncementQuantity (Compares.threshold c)
   Condition.Type.Any conditions -> all isCastAnnouncementCondition conditions
   Condition.Type.All conditions -> all isCastAnnouncementCondition conditions
-  Condition.Type.During _ -> False
+  Condition.Type.During _ -> True
   Condition.Type.IsPrime measured -> isCastAnnouncementQuantity measured
 
 -- CR 702.33g/702.113b: does a clause's printed "if" hold ALREADY, at CR
@@ -3706,6 +3715,9 @@ fileCastBoard sid gs =
 --     CastUsing Overload clauses (one at 0, one at >=1) trim the SAME way
 --     castOverloaded did, through the general mechanism rather than a keyword
 --     name.
+--   * Condition.During answers True, the conservative "applies" default: with
+--     no board read here, an optional slot it gates stays on offer, and
+--     Cast.castProposed's clauseAppliesAt trims it against the live turn.
 holdsForCandidate :: Maybe Keyword -> Integer -> Condition.Type.Condition -> Bool
 holdsForCandidate castFor paid condition = case condition of
   Condition.Type.Compares c -> case (candidateQuantity castFor paid (Compares.measured c), candidateQuantity castFor paid (Compares.threshold c)) of
@@ -3714,9 +3726,7 @@ holdsForCandidate castFor paid condition = case condition of
   Condition.Type.Any conditions -> any (holdsForCandidate castFor paid) conditions
   Condition.Type.All conditions -> all (holdsForCandidate castFor paid) conditions
   Condition.Type.IsPrime measured -> maybe False Condition.prime (candidateQuantity castFor paid measured)
-  -- Unreachable past isCastAnnouncementCondition; False is the Compares arm's
-  -- answer for what it cannot read.
-  Condition.Type.During _ -> False
+  Condition.Type.During _ -> True
 
 -- holdsForCandidate's per-Quantity read, total only over
 -- isCastAnnouncementQuantity's three shapes -- everything else answers

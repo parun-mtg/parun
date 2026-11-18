@@ -2555,6 +2555,106 @@ gracefulTakedownSpec s registry = Spec.describe s "Graceful Takedown" $ do
     Spec.assertBool s (S.castable S.alice paidId paid) "CR 601.2f bob's Hinata alone costs {2}{G}, which three Forests pay"
     Spec.assertBool s (not (S.castable S.alice shortId short)) "and two do not, though twelve enchanted creatures are 4096 subsets"
 
+-- Behold the Sinister Six! {6}{B} Sorcery: "Return up to six target creature
+-- cards with different names from your graveyard to the battlefield."
+--
+-- A Differing slot reads only the values its candidates share
+-- (Target.jointSignature), so distinctly named cards are one class.
+beholdTheSinisterSixSpec :: (Monad m, Monad n) => Spec.Spec m n -> Registry.Registry m -> n ()
+beholdTheSinisterSixSpec s registry = Spec.describe s "Behold the Sinister Six!" $ do
+  -- bob controls Hinata, Dawn-Crowned, so each target costs alice {1} more;
+  -- twelve distinctly named creature cards lie in her graveyard, 2510 aimings
+  -- subset by subset, and she controls `swamps` Swamps.
+  Spec.it s "CR 601.2f under Hinata the gate tries each target count of distinctly named cards, not each subset" $ do
+    swamp <- S.printingOf s registry "Swamp"
+    hinata <- S.printingOf s registry "Hinata, Dawn-Crowned"
+    behold <- S.printingOf s registry "Behold the Sinister Six!"
+    named <- traverse (S.printingOf s registry) distinctCreatures
+    let board swamps =
+          let withLands = S.landsFor swamp S.alice swamps (Setup.emptyGame S.bothPlayers)
+              (_, withHinata) = S.addPermanent hinata S.bob withLands
+              buried = List.foldl' (\g card -> snd (S.addGraveyardCard card S.alice g)) withHinata named
+           in inMainPhase (S.addHandCard behold S.alice buried)
+        (noneId, none) = board 0
+        (paidId, paid) = board 7
+        (walked, cut) = Cast.castAimable (const ()) Nothing 0 S.alice noneId none
+    Spec.assertEqWith s "CR 601.2c one aiming per target count from none to six, the walk not cut short" (length walked, cut) (7, False)
+    Spec.assertBool s (not (S.castable S.alice noneId none)) "CR 601.2f no aiming pays {6}{B} without a Swamp"
+    Spec.assertBool s (S.castable S.alice paidId paid) "and seven Swamps pay it with nothing targeted"
+  -- Two of each of those twelve: every name is shared, so each pair is its own
+  -- class, and the walk stops at Target.subsetBudget. Not implemented: an
+  -- exact answer past it (#8649).
+  Spec.it s "CR 601.2c under Hinata a walk over many shared names stops at the budget" $ do
+    hinata <- S.printingOf s registry "Hinata, Dawn-Crowned"
+    behold <- S.printingOf s registry "Behold the Sinister Six!"
+    named <- traverse (S.printingOf s registry) distinctCreatures
+    let withHinata = snd (S.addPermanent hinata S.bob (Setup.emptyGame S.bothPlayers))
+        buried = List.foldl' (\g card -> snd (S.addGraveyardCard card S.alice g)) withHinata (named <> named)
+        (heldId, gs) = inMainPhase (S.addHandCard behold S.alice buried)
+    Spec.assertBool s (snd (Cast.castAimable (const ()) Nothing 0 S.alice heldId gs)) "CR 601.2c the walk is cut short"
+  -- alice controls Hinata, so each target costs her {1} less, and one Swamp:
+  -- only six targets pay. Six Goblin Pikers lie in her graveyard ahead of
+  -- `others` distinctly named creature cards, so six names need five others.
+  Spec.it s "CR 601.2c under Hinata cards sharing a name are one target among six" $ do
+    swamp <- S.printingOf s registry "Swamp"
+    piker <- S.printingOf s registry "Goblin Piker"
+    hinata <- S.printingOf s registry "Hinata, Dawn-Crowned"
+    behold <- S.printingOf s registry "Behold the Sinister Six!"
+    named <- traverse (S.printingOf s registry) distinctCreatures
+    let board others =
+          let withLands = S.landsFor swamp S.alice 1 (Setup.emptyGame S.bothPlayers)
+              (_, withHinata) = S.addPermanent hinata S.alice withLands
+              withPikers = List.foldl' (\g _ -> snd (S.addGraveyardCard piker S.alice g)) withHinata [1 .. 6 :: Int]
+              buried = List.foldl' (\g card -> snd (S.addGraveyardCard card S.alice g)) withPikers (take others named)
+           in inMainPhase (S.addHandCard behold S.alice buried)
+        (sixId, six) = board 5
+        (fiveId, five) = board 4
+    Spec.assertBool s (S.castable S.alice sixId six) "CR 601.2f a Piker and five others are six names, which pay {6}{B} down to {B}"
+    Spec.assertBool s (not (S.castable S.alice fiveId five)) "and with four others a second Piker cannot be a sixth"
+
+-- Twelve vanilla creature cards, no two sharing a name.
+distinctCreatures :: [String]
+distinctCreatures =
+  [ "Aegis Turtle",
+    "Ageless Guardian",
+    "Alaborn Trooper",
+    "Alpha Tyrranax",
+    "Alpine Grizzly",
+    "Amphin Cutthroat",
+    "Ancient Brontodon",
+    "Ancient Carp",
+    "Ancient Crab",
+    "Armored Cancrix",
+    "Armored Warhorse",
+    "Axebane Stag"
+  ]
+
+-- Scout for Survivors {2}{W} Sorcery: "Return up to three target creature cards
+-- with total mana value 3 or less from your graveyard to the battlefield. Put a
+-- +1/+1 counter on each of them." alice controls Hinata, Dawn-Crowned, so each
+-- target costs her {1} less, and `plains` Plains; Serra Angel (mana value 5)
+-- lies in her graveyard ahead of Llanowar Elves (1). The slot's total classes
+-- the cards by mana value (Target.jointSignature), so the Elves alone is an
+-- aiming the Angel does not stand for.
+scoutForSurvivorsSpec :: (Monad m) => Spec.Spec m n -> Registry.Registry m -> n ()
+scoutForSurvivorsSpec s registry =
+  Spec.describe s "Scout for Survivors" . Spec.it s "CR 601.2c under Hinata cards the total tells apart are each their own aiming" $ do
+    plains <- S.printingOf s registry "Plains"
+    angel <- S.printingOf s registry "Serra Angel"
+    elves <- S.printingOf s registry "Llanowar Elves"
+    hinata <- S.printingOf s registry "Hinata, Dawn-Crowned"
+    scout <- S.printingOf s registry "Scout for Survivors"
+    let board lands =
+          let withLands = S.landsFor plains S.alice lands (Setup.emptyGame S.bothPlayers)
+              (_, withHinata) = S.addPermanent hinata S.alice withLands
+              (_, withAngel) = S.addGraveyardCard angel S.alice withHinata
+              (_, withElves) = S.addGraveyardCard elves S.alice withAngel
+           in inMainPhase (S.addHandCard scout S.alice withElves)
+        (paidId, paid) = board 2
+        (shortId, short) = board 1
+    Spec.assertBool s (S.castable S.alice paidId paid) "CR 601.2f the Elves alone pay {2}{W} down to {1}{W}, which two Plains pay"
+    Spec.assertBool s (not (S.castable S.alice shortId short)) "and one does not"
+
 -- alice's Urgent Necropsy over three Forests and a Swamp, `soils` Acidic Soils
 -- in her graveyard, and bob's `victim`, in her precombat main phase with
 -- priority. Returns the state, the Necropsy and bob's permanent.
@@ -2773,6 +2873,8 @@ spec s registry = Spec.describe s "Parun.Engine.Cost" $ do
   shredMemorySpec s registry
   wideVerdictSpec s registry
   gracefulTakedownSpec s registry
+  beholdTheSinisterSixSpec s registry
+  scoutForSurvivorsSpec s registry
   frailExhumationSpec s registry
   everbarkShamanSpec s registry
   putridRaptorSpec s registry

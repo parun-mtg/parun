@@ -1,0 +1,26 @@
+{
+  "description": "CR 601.2c, 505.1: Return to Dust cast during an opponent's main phase has no second target, so only one permanent is exiled",
+  "board": {
+    "active": "bob",
+    "step": "PrecombatMain",
+    "seats": [
+      {
+        "name": "alice",
+        "manaPool": "WWWW",
+        "hand": [{"card": "Return to Dust", "label": "dust"}]
+      },
+      {
+        "name": "bob",
+        "battlefield": [{"card": "Sol Ring", "label": "ring"}, {"card": "Glorious Anthem", "label": "anthem"}]
+      }
+    ]
+  },
+  "timeline": [
+    {"turn": 1, "step": "PrecombatMain", "player": "bob", "do": "Pass"},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": {"Cast": {"object": "$dust", "targets": ["$ring"]}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass"},
+    {"turn": 1, "step": "PrecombatMain", "player": "bob", "do": "Pass"},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Count": {"player": "bob", "zone": "Exile", "card": "Sol Ring", "count": 1}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Count": {"player": "bob", "zone": "Battlefield", "card": "Glorious Anthem", "count": 1}}}
+  ]
+}

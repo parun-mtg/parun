@@ -731,9 +731,11 @@ siblingBoundCardOffends :: Face.Face Card.Type.Card -> Bool
 siblingBoundCardOffends face =
   any (any siblingBoundOffends . Modal.modes) (faceModals face <> fmap ActivatedAbility.modal (grantedActivatedAbilities face) <> fmap TriggeredAbility.modal (grantedTriggeredAbilities face))
 
--- Does this mode write a joint check Parun.Engine.Cast.castAimable prices only
--- up to Target.subsetBudget (Target.apartWide)? A named slot is split where
--- its printed count takes at most one target.
+-- Does this mode write an apart or crowded joint check
+-- Parun.Engine.Cast.castAimable prices only up to Target.subsetBudget
+-- (Target.cappedWalk)? A wide Differing slot is capped too, and is not
+-- linted: Behold the Sinister Six! prints one (#8649). A named slot is split
+-- where its printed count takes at most one target.
 cappedWalkOffends :: Mode.Mode Card.Type.Card (GrantedAbility.GrantedAbility Card.Type.Card) -> Bool
 cappedWalkOffends mode =
   let slots = Mode.targetSlots mode

@@ -252,6 +252,7 @@ import qualified Parun.Types.EntersTrigger as EntersTrigger
 import qualified Parun.Types.EntersWith as EntersWith
 import qualified Parun.Types.EntriesTrigger as EntriesTrigger
 import qualified Parun.Types.EntryController as EntryController
+import qualified Parun.Types.EntryCounter as EntryCounter
 import qualified Parun.Types.EntryFlip as EntryFlip
 import qualified Parun.Types.EntryHost as EntryHost
 import qualified Parun.Types.EntryOption as EntryOption
@@ -2570,7 +2571,7 @@ protectionFromEach = Set.fromList (fmap (CardName.MkCardName . Text.pack) ["Irid
 -- which any subset of the domain satisfies. Council Guardian's per-colour
 -- grants, each gated on that colour's votes, are listed the same way.
 protectionListed :: Set.Set CardName.CardName
-protectionListed = Set.fromList (fmap (CardName.MkCardName . Text.pack) ["Akroma's Memorial", "Animar, Soul of Elements", "Council Guardian", "Great Sable Stag", "Paladin en-Vec", "Sword of Light and Shadow", "Sword of Wealth and Power", "Ureni, the Song Unending"])
+protectionListed = Set.fromList (fmap (CardName.MkCardName . Text.pack) ["Akroma's Memorial", "Animar, Soul of Elements", "Council Guardian", "Great Sable Stag", "Paladin en-Vec", "Sword of Light and Shadow", "Sword of Once and Future", "Sword of Wealth and Power", "Ureni, the Song Unending"])
 
 -- The qualities of each protection group a face prints: its own keywords, each
 -- static ability's grants, and every grant its resolution effects make.
@@ -2639,14 +2640,16 @@ protectionOffences face =
 -- Subtype became a Filter (#499). A new Filter-bearing keyword needs its arm
 -- added here by hand.
 -- The Filter positions an entry rider has: the counter KINDS it is keyed by (CR
--- 122.1b's keyword counter carries a whole Keyword) and the COUNTS it holds (CR
--- 122.6, each a Quantity, which may carry a Count whose Filter is card text),
--- and the host filter CR 303.4f's choice is narrowed by.
+-- 122.1b's keyword counter carries a whole Keyword) and each kind's entrant gate
+-- (CR 614.12), the COUNTS it holds (CR 122.6, each a Quantity, which may carry a
+-- Count whose Filter is card text), and the host filter CR 303.4f's choice is
+-- narrowed by.
 -- One function so the three effect arms that carry a rider cannot sweep
 -- different halves of it.
 riderFilters :: EntryRiders.EntryRiders Quantity.Type.Quantity (GrantedAbility.GrantedAbility Card.Type.Card) -> [(Framing, Filter.Type.Filter Keyword.Keyword)]
 riderFilters riders =
-  concatMap counterKindFilters (Map.keys (EntryRiders.counters riders))
+  concatMap (counterKindFilters . EntryCounter.kind) (Map.keys (EntryRiders.counters riders))
+    <> concatMap (foldMap (\f -> [(Unframed, f)]) . EntryCounter.onlyIf) (Map.keys (EntryRiders.counters riders))
     <> concatMap quantityFilters (Map.elems (EntryRiders.counters riders))
     -- CR 611.2e's effects, ModifyTarget's modification read.
     <> foldMap modificationFilters (EntryRiders.characteristics riders)
@@ -3616,7 +3619,7 @@ quantityKindFilters quantity = case quantity of
   Quantity.Type.NameStickers _ -> []
   Quantity.Type.PowerOfStickers -> []
   Quantity.Type.ToughnessOfStickers -> []
-  Quantity.Type.OpponentsAttacked _ -> []
+  Quantity.Type.OpponentsAttacked _ _ -> []
   Quantity.Type.AttackersDeclaredThisTurn _ -> []
   Quantity.Type.AttackersDeclaredThisCombat -> []
   Quantity.Type.AttackedInLastTurnOf _ -> []
@@ -4121,7 +4124,7 @@ playerEffectFilters playerEffect = case playerEffect of
         CostChange.Reduce _ -> []
   PlayerEffect.AlternativeActivationCost _ -> []
   PlayerEffect.CantCastSpells -> []
-  PlayerEffect.CantActivateAbilities _ f _ -> [f]
+  PlayerEffect.CantActivateAbilities f _ -> [f]
   PlayerEffect.CantCastMoreThan _ -> []
   -- CR 305.2 carries a bare count of extra land plays, not a Filter: it names
   -- how many lands, never which spells.
@@ -4499,7 +4502,7 @@ replacementEffectFilters replacementEffect = case replacementEffect of
   ReplacementEffect.DrawR (DrawR.MkDrawR _ _ DrawRewrite.YouDraw) -> []
   ReplacementEffect.DrawR (DrawR.MkDrawR _ _ (DrawRewrite.OthersMayPayLife _)) -> []
   ReplacementEffect.DrawR (DrawR.MkDrawR _ _ DrawRewrite.FromGraveyardOrLose) -> []
-  ReplacementEffect.DrawR (DrawR.MkDrawR _ _ DrawRewrite.RevealUntilChosenKind) -> []
+  ReplacementEffect.DrawR (DrawR.MkDrawR _ _ (DrawRewrite.RevealUntilChosenKind _)) -> []
   ReplacementEffect.DrawR (DrawR.MkDrawR _ _ (DrawRewrite.DrawInstead _)) -> []
   ReplacementEffect.DrawR (DrawR.MkDrawR _ _ DrawRewrite.DiscardThenDrawOrMill) -> []
   ReplacementEffect.DrawR (DrawR.MkDrawR _ _ (DrawRewrite.KeepOneOfTopThenDraw quantity)) -> quantityFilters quantity

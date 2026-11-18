@@ -1434,11 +1434,17 @@ apartSlots split slots =
 -- Must a walk over these slots stop at subsetBudget? Where an apart slot, or
 -- an exclusion with a slot named between its two (jointSignature's
 -- `crowded`), sits beside a slot taking several targets, that slot may hold
--- classes of one recipient, and the walk is every subset of them.
-apartWide :: Set SlotName -> Map SlotName (Natural, Natural) -> Map SlotName TargetSlot -> Bool
-apartWide apart ranges slots =
-  (not (Set.null apart) || not (null (crowdedPairs (Map.keysSet slots) slots)))
-    && any (\name -> maybe False ((> 1) . snd) (Map.lookup name ranges)) (Map.keys slots)
+-- classes of one recipient, and the walk is every subset of them. So may a
+-- Differing slot taking several, whose classes are as many as the values its
+-- candidates share.
+cappedWalk :: Set SlotName -> Map SlotName (Natural, Natural) -> Map SlotName TargetSlot -> Bool
+cappedWalk apart ranges slots =
+  let wide name = maybe False ((> 1) . snd) (Map.lookup name ranges)
+      differing slot = case TargetSlot.together slot of
+        Just (Together.Differing _) -> True
+        _ -> False
+   in ((not (Set.null apart) || not (null (crowdedPairs (Map.keysSet slots) slots))) && any wide (Map.keys slots))
+        || any wide (Map.keys (Map.filter differing slots))
 
 -- Every (excluder, excluded) pair of `exclusions` with a slot of `among` named
 -- between its two.
@@ -1460,11 +1466,15 @@ crowdedPairs among slots =
 --     filter keeps, so a gauge member is classed by its own count (`valueOf`
 --     with it alone bound), and the reader's members by their legality
 --     (`legalUnder`) at every value the gauge could give it;
---   * a `together` reads each member's zone or Differing values, and a `total`
---     each member's weight.
+--   * a `together` reads each member's zone, and a `total` each member's
+--     weight;
+--   * a Differing `together` reads only the values a member shares with
+--     another candidate: a value no other holds collides with nothing, so the
+--     distinctly named members of a "different names" slot are one class.
 --
--- Parun.CostSpec's "Synthetic Wide Verdict" and "Graceful Takedown" groups
--- prove the gauge and the exclusion.
+-- Parun.CostSpec's "Synthetic Wide Verdict", "Graceful Takedown", "Behold the
+-- Sinister Six!" and "Scout for Survivors" groups prove the gauge, the
+-- exclusion, the Differing values and the weights.
 jointSignature :: GameState -> (TargetSlot -> Map SlotName Binding.Type.Binding -> Maybe Integer) -> (Map SlotName Binding.Type.Binding -> TargetSlot -> Set Recipient) -> Set SlotName -> Map SlotName TargetSlot -> Map SlotName (Set Recipient) -> Set SlotName -> Recipient -> Either Recipient (Maybe (Zone.Zone, Maybe PlayerId), [Maybe (Set (DifferentIn.DifferentIn, DifferingValue.DifferingValue))], [Integer], [Maybe Integer], [Bool])
 jointSignature gs valueOf legalUnder apart slots sets =
   let declared = Map.keysSet slots
@@ -1473,11 +1483,14 @@ jointSignature gs valueOf legalUnder apart slots sets =
       -- Each reader's legal referents at every value its gauge could give it,
       -- built once for every recipient.
       legalAt = Map.fromList [(reader, [Set.map referent (legalUnder Map.empty slot {TargetSlot.amount = Just (Quantity.Type.Literal k)}) | k <- [0 .. toInteger (Natural.length (Map.findWithDefault Set.empty gauge sets))]]) | (reader, slot, gauge) <- gauges]
+      -- Per Differing axis, the values two or more candidates hold.
+      candidates = Set.map referent (Set.unions (Map.elems sets))
+      sharedOn = Map.fromList [(axis, Map.keysSet (Map.filter ((> 1) . Set.size) (Map.fromListWith Set.union [(v, Set.singleton c) | c <- Set.toList candidates, v <- foldMap Set.toList (differingValues axis gs c)]))) | Just (Together.Differing axis) <- fmap TargetSlot.together (Map.elems slots)]
    in \held r ->
         let heldSlots = Map.restrictKeys slots held
             crowded = any (\(a, b) -> Set.member a held && Set.member b held) (crowdedPairs held slots)
             zone = if any ((== Just Together.InOneZone) . TargetSlot.together) heldSlots then zoneHolding gs r else Nothing
-            differing = [differingValues axis gs r | Just (Together.Differing axis) <- fmap TargetSlot.together (Map.elems heldSlots)]
+            differing = [fmap (Set.intersection (Map.findWithDefault Set.empty axis sharedOn)) (differingValues axis gs r) | Just (Together.Differing axis) <- fmap TargetSlot.together (Map.elems heldSlots)]
             weights = [weighing gs weight r | Just (TotalCap.MkTotalCap weight _) <- fmap TargetSlot.total (Map.elems heldSlots)]
             counted = [valueOf slot (Map.singleton gauge (Binding.toRecipients (Set.singleton r))) | (_, slot, gauge) <- gauges, Set.member gauge held]
             legality = [Set.member (referent r) legal | (reader, _, _) <- gauges, Set.member reader held, legal <- Map.findWithDefault [] reader legalAt]

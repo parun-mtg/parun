@@ -4,6 +4,7 @@ import qualified Parun.Codec.Onset as Onset
 import qualified Parun.JsonCodec.Common as Common
 import qualified Parun.Spec as Spec
 import qualified Parun.Types.Onset as Onset
+import qualified Parun.Types.PhaseAnchor as PhaseAnchor
 import qualified Parun.Types.PlayerRef as PlayerRef
 import qualified Parun.Types.PlayerRelation as PlayerRelation
 
@@ -33,5 +34,11 @@ spec s = Spec.describe s "Parun.Codec.Onset" $ do
       Onset.codec
       Onset.FromThatExtraTurn
       " {\"type\":\"FromThatExtraTurn\"} "
+  Spec.it s "FromThatCombatPhase names the anchor the combat phase was added after" $
+    Common.assertCodec
+      s
+      Onset.codec
+      (Onset.FromThatCombatPhase PhaseAnchor.SecondMainPhase)
+      " {\"type\":\"FromThatCombatPhase\",\"value\":\"SecondMainPhase\"} "
   Spec.it s "has a schema" $
     Common.assertHasSchema s Onset.codec

@@ -153,7 +153,6 @@ import qualified Parun.Types.Holder as Holder
 import qualified Parun.Types.Hop as Hop
 import qualified Parun.Types.Keyword as Keyword.Type
 import qualified Parun.Types.KeywordCostPart as KeywordCostPart
-import qualified Parun.Types.KeywordFamily as KeywordFamily
 import qualified Parun.Types.KeywordInstance as KeywordInstance
 import qualified Parun.Types.LibraryPosition as LibraryPosition
 import qualified Parun.Types.LoggedEvent as LoggedEvent
@@ -219,6 +218,7 @@ import qualified Parun.Types.StoredEffects as StoredEffects
 import qualified Parun.Types.Subtype as Subtype.Type
 import qualified Parun.Types.SubtypeFamily as SubtypeFamily
 import qualified Parun.Types.TapForTotalPower as TapForTotalPower
+import qualified Parun.Types.TapKeyword as TapKeyword
 import qualified Parun.Types.TapPermanents as TapPermanents
 import qualified Parun.Types.TapState as TapState
 import qualified Parun.Types.TappedForMana as TappedForMana
@@ -3311,9 +3311,10 @@ dividesMixedRemoval spread owed offered division =
 -- The power a candidate contributes to CR 702.122a's total. Zero for a permanent
 -- with no power at all, which after CR 208.3 is every noncreature one.
 --
--- Raised by the candidate's Modification.TapsCounting offsets for the keyword
--- whose cost this is (Deathless Pilot), and by none for a cost printed outside
--- a keyword. The scenario
+-- Raised by the candidate's Modification.TapsCounting offsets and multipliers
+-- for the keyword whose cost this is (Deathless Pilot, Sulu, Heroic
+-- Helmsman), through Parun.Engine.Keyword.tapsCounted, and by none for a cost
+-- printed outside a keyword. The scenario
 -- `deathless-pilot-crews-a-crew-4-vehicle-alone-where-a-bear-of-its-power-cannot`
 -- proves it.
 --
@@ -3322,19 +3323,15 @@ dividesMixedRemoval spread owed offered division =
 -- `interface-ace-crews-and-saddles-using-its-toughness-untapping-once`.
 -- The offsets then go unread (docs/decisions.md, "Whether a crew power offset
 -- raises a toughness crewer").
-tapPower :: Maybe KeywordFamily.KeywordFamily -> ObjectId -> GameState -> Integer
+tapPower :: Maybe TapKeyword.TapKeyword -> ObjectId -> GameState -> Integer
 tapPower keyword = tapPowerGiven keyword Map.empty
 
 -- The same power read off a board the caller already projected.
-tapPowerGiven :: Maybe KeywordFamily.KeywordFamily -> Map.Map ObjectId PC.ProjectedCharacteristics -> ObjectId -> GameState -> Integer
+tapPowerGiven :: Maybe TapKeyword.TapKeyword -> Map.Map ObjectId PC.ProjectedCharacteristics -> ObjectId -> GameState -> Integer
 tapPowerGiven keyword pcs candidate gs =
   let pc = Projection.projectGiven pcs candidate gs
-      counted = case keyword of
-        Just k
-          | Set.member k (PC.tapsUsingToughness pc) -> PC.toughness pc
-          | otherwise -> fmap (+ toInteger (Map.findWithDefault 0 k (PC.tapPowerBonus pc))) (PC.power pc)
-        Nothing -> PC.power pc
-   in Maybe.fromMaybe 0 counted
+      counts = foldMap (\k -> Map.findWithDefault [] k (PC.tapCounts pc)) keyword
+   in Maybe.fromMaybe 0 (Keyword.tapsCounted counts (PC.power pc) (PC.toughness pc))
 
 -- CR 205.3m: a tap candidate's creature types, off its projection -- so a
 -- changeling holds every one (CR 702.73a) and a land type none.
@@ -3868,13 +3865,13 @@ manaActivationsOn grants rows effects measure pcs pid oid printedCost restrictio
         && not (ActivationProhibition.prohibitedGiven pcs grants rows AbilityKind.ManaAbility printedCost oid gs)
         -- CR 602.5's player-axis prohibition (Sen Triplets), read here for
         -- detain's reason: the sentence carves no mana ability out where CR
-        -- 702.61b does, so both of CR 605.3a's windows owe it. The stamp is what
-        -- a row naming a keyword (Kang the Conqueror's power-up) compares; no
+        -- 702.61b does, so both of CR 605.3a's windows owe it. The facts are
+        -- what a row's criteria compare (Kang the Conqueror's power-up); no
         -- mana ability in data/cards/ is under power-up, so on this road that
         -- is a regression fence rather than a proof. Asked as ManaAbility, so a
         -- row naming NonManaAbility (Yuriko, Blade of the Mighty) is no answer
         -- here.
-        && not (PlayerEffect.prohibitsActivatingGiven AbilityKind.ManaAbility (ActivatedAbility.keyword =<< ability) oid gs effects)
+        && not (PlayerEffect.prohibitsActivatingGiven (Game.abilityFacts AbilityKind.ManaAbility ability) oid gs effects)
         -- CR 602.5's printed "activate only ..." rider, which CR 605.1's own sentence
         -- keeps on a mana ability -- a timing restriction does not stop an ability
         -- being one. Here for sickness's and detain's reason, and it is the reason

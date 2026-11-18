@@ -1,7 +1,7 @@
 module Parun.Types.PlayerEffect where
 
 import qualified Numeric.Natural as Natural
-import qualified Parun.Types.AbilityKind as AbilityKind
+import qualified Parun.Types.ActivationCriteria as ActivationCriteria
 import qualified Parun.Types.AlternativeActivationCost as AlternativeActivationCost
 import qualified Parun.Types.BearersTrigger as BearersTrigger
 import qualified Parun.Types.CantSearchLibraries as CantSearchLibraries
@@ -20,7 +20,6 @@ import qualified Parun.Types.GameOutcome as GameOutcome
 import qualified Parun.Types.HexproofExemption as HexproofExemption
 import qualified Parun.Types.InZone as InZone
 import qualified Parun.Types.Keyword as Keyword
-import qualified Parun.Types.KeywordDesignator as KeywordDesignator
 import qualified Parun.Types.KeywordRiderGrant as KeywordRiderGrant
 import qualified Parun.Types.LandAllowance as LandAllowance
 import qualified Parun.Types.LoyaltyGrant as LoyaltyGrant
@@ -66,15 +65,13 @@ data PlayerEffect
     -- Parun.Engine.Cost.manaActivationsGiven reads it beside detain for CR
     -- 605.3a's windows.
     --
-    -- Nothing is every ability; Just a designator narrows it to the abilities
-    -- under that rule-702 keyword (Parun.Types.ActivatedAbility.keyword), Kang the
-    -- Conqueror's "power-up abilities can't be activated". The Filter names
-    -- the abilities' SOURCES, Grand Abolisher's "abilities of artifacts,
-    -- creatures, or enchantments"; the empty And is every source. The CR
-    -- 605.1a kind narrows it as Parun.Types.ActivationProhibition's does:
-    -- Nothing is both, and Yuriko, Blade of the Mighty's "abilities that
-    -- aren't mana abilities" names NonManaAbility.
-    CantActivateAbilities (Maybe (KeywordDesignator.KeywordDesignator Keyword.Keyword)) (Filter.Filter Keyword.Keyword) (Maybe AbilityKind.AbilityKind)
+    -- The Filter names the abilities' SOURCES, Grand Abolisher's "abilities of
+    -- artifacts, creatures, or enchantments"; the empty And is every source.
+    -- The criteria narrow it to some of their abilities: Kang the Conqueror's
+    -- "power-up abilities" (grantedBy), Yuriko, Blade of the Mighty's "abilities
+    -- that aren't mana abilities" (whichKind), The Immortal Sun's "loyalty
+    -- abilities" (whichLoyalty, CR 606.2).
+    CantActivateAbilities (Filter.Filter Keyword.Keyword) (ActivationCriteria.ActivationCriteria Keyword.Keyword)
   | -- | CR 601.3 / Rule of Law: this player can't cast more than this many spells
     -- each turn.
     CantCastMoreThan Natural.Natural

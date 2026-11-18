@@ -76,10 +76,12 @@
                           "effect": {
                             "type": "CantActivateAbilities",
                             "value": {
-                              "designator": {
-                                "type": "OfKeyword",
-                                "value": {
-                                  "type": "PowerUp"
+                              "criteria": {
+                                "grantedBy": {
+                                  "type": "OfKeyword",
+                                  "value": {
+                                    "type": "PowerUp"
+                                  }
                                 }
                               }
                             }

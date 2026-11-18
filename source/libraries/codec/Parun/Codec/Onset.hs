@@ -1,5 +1,6 @@
 module Parun.Codec.Onset where
 
+import qualified Parun.Codec.PhaseAnchor as PhaseAnchor
 import qualified Parun.Codec.PlayerRef as PlayerRef
 import qualified Parun.JsonCodec.Arm as Arm
 import qualified Parun.JsonCodec.Codec as Codec
@@ -11,7 +12,8 @@ codec =
     tagOf
     [ Arm.nullary "Immediately" Onset.Immediately,
       Arm.optionalPayload "FromNextTurnOf" PlayerRef.codec Onset.FromNextTurnOf (\x -> case x of Onset.FromNextTurnOf y -> Just y; _ -> Nothing),
-      Arm.nullary "FromThatExtraTurn" Onset.FromThatExtraTurn
+      Arm.nullary "FromThatExtraTurn" Onset.FromThatExtraTurn,
+      Arm.payload "FromThatCombatPhase" PhaseAnchor.codec Onset.FromThatCombatPhase (\x -> case x of Onset.FromThatCombatPhase y -> Just y; _ -> Nothing)
     ]
 
 tagOf :: Onset.Onset -> String
@@ -19,3 +21,4 @@ tagOf x = case x of
   Onset.Immediately {} -> "Immediately"
   Onset.FromNextTurnOf {} -> "FromNextTurnOf"
   Onset.FromThatExtraTurn {} -> "FromThatExtraTurn"
+  Onset.FromThatCombatPhase {} -> "FromThatCombatPhase"

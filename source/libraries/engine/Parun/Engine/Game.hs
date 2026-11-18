@@ -4583,6 +4583,18 @@ manaExpendedThisTurn gs pid =
 attackersDeclaredThisTurn :: GameState -> PlayerId -> Natural
 attackersDeclaredThisTurn gs pid = Natural.length (filter (declaredBy pid . LoggedEvent.event) (Foldable.toList (TurnRegisters.events (GameState.turn gs))))
 
+-- CR 508.1b / 508.3b: what that player declared creatures attacking this turn,
+-- attackersDeclaredThisTurn's log and scope -- a target attacked in an earlier
+-- combat phase (CR 500.8) stays, where Combat.declaredAttackedBy is cleared by CR
+-- 511.3.
+attackedThisTurnBy :: GameState -> PlayerId -> Set.Set AttackTarget.AttackTarget
+attackedThisTurnBy gs pid =
+  Set.fromList
+    [ AttackerDeclared.target declared
+    | declared <- Foldable.toList (attacksInLog (TurnRegisters.events (GameState.turn gs))),
+      AttackerDeclared.attackingPlayer declared == pid
+    ]
+
 -- CR 508.1a: a log's attacker declarations, in order.
 attacksInLog :: Seq.Seq LoggedEvent.LoggedEvent -> Seq.Seq AttackerDeclared.AttackerDeclared
 attacksInLog events = Seq.fromList (Maybe.mapMaybe (attackOf . LoggedEvent.event) (Foldable.toList events))

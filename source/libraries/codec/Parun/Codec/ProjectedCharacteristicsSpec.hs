@@ -36,7 +36,6 @@ import qualified Parun.Types.Face as Face.Type
 import qualified Parun.Types.GrantedAbility as GrantedAbility
 import qualified Parun.Types.Keyword as Keyword
 import qualified Parun.Types.KeywordDesignator as KeywordDesignator
-import qualified Parun.Types.KeywordFamily as KeywordFamily
 import qualified Parun.Types.LentKeyword as LentKeyword
 import qualified Parun.Types.ManaCost as ManaCost
 import qualified Parun.Types.ManaFilter as ManaFilter
@@ -58,6 +57,8 @@ import qualified Parun.Types.SpendScope as SpendScope
 import qualified Parun.Types.StaticAbility as StaticAbility
 import qualified Parun.Types.Subtype as Subtype
 import qualified Parun.Types.Supertype as Supertype
+import qualified Parun.Types.TapCount as TapCount
+import qualified Parun.Types.TapKeyword as TapKeyword
 import qualified Parun.Types.TargetSlot as TargetSlot
 import qualified Parun.Types.TextWord as TextWord
 import qualified Parun.Types.Timestamp as Timestamp
@@ -125,10 +126,7 @@ testCharacteristics =
       PC.combatDamageOptions = Map.singleton CombatDamageOption.ToDefendingCreature CombatDamageObligation.Optional,
       PC.controllerGrants = Set.singleton ControllerGrant.SpeedBeyondFour,
       PC.goadedBy = Set.singleton (PlayerId.MkPlayerId 2),
-      PC.tapPowerBonus = Map.singleton KeywordFamily.Saddle 2,
-      -- A different keyword from `tapPowerBonus` above, `textChangedKeywords`'
-      -- reason.
-      PC.tapsUsingToughness = Set.singleton KeywordFamily.Crew,
+      PC.tapCounts = Map.fromList [(TapKeyword.Crew, [TapCount.GreaterBy 2, TapCount.Multiplied 3]), (TapKeyword.Station, [TapCount.UsingToughness])],
       PC.loyaltyIsToughness = True,
       -- Parun.Codec.FaceSpec's own values for the four cost fields.
       PC.additionalCosts = [CostComponent.TapThis],
@@ -203,8 +201,7 @@ testCharacteristicsJson =
     <> "\"combatDamageOptions\":[{\"key\":\"ToDefendingCreature\",\"value\":\"Optional\"}],"
     <> "\"controllerGrants\":[\"SpeedBeyondFour\"],"
     <> "\"goadedBy\":[2],"
-    <> "\"tapPowerBonus\":[{\"key\":\"Saddle\",\"value\":2}],"
-    <> "\"tapsUsingToughness\":[\"Crew\"],"
+    <> "\"tapCounts\":[{\"key\":\"Crew\",\"value\":[{\"type\":\"GreaterBy\",\"value\":2},{\"type\":\"Multiplied\",\"value\":3}]},{\"key\":\"Station\",\"value\":[{\"type\":\"UsingToughness\"}]}],"
     <> "\"loyaltyIsToughness\":true,"
     <> "\"additionalCosts\":[{\"type\":\"TapThis\"}],"
     <> "\"additionalCostChoices\":[[{\"components\":[{\"type\":\"TapThis\"}],\"mana\":[]},{\"mana\":[{\"type\":\"Generic\",\"value\":1}]}]],"
@@ -271,8 +268,7 @@ minimalCharacteristics =
       PC.combatDamageOptions = Map.empty,
       PC.controllerGrants = Set.empty,
       PC.goadedBy = Set.empty,
-      PC.tapPowerBonus = Map.empty,
-      PC.tapsUsingToughness = Set.empty,
+      PC.tapCounts = Map.empty,
       PC.loyaltyIsToughness = False,
       PC.additionalCosts = [],
       PC.additionalCostChoices = [],

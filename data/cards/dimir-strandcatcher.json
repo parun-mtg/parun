@@ -73,7 +73,7 @@
                             "value": "You"
                           },
                           "quantity": {
-                            "type": "OpponentsAttacked",
+                            "type": "OpponentsAttackedThisCombat",
                             "value": {
                               "type": "Relative",
                               "value": "You"

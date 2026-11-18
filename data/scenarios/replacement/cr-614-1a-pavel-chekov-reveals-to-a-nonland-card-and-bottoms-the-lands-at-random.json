@@ -1,0 +1,30 @@
+{
+  "description": "CR 614.1a Pavel Chekov, First Posting replaces alice's draw: she chooses nonland, reveals Forest, Island and Swamp down to Grizzly Bears, takes the Bears and the three lands go to the bottom in a random order, not one she picks",
+  "note": "The order is a Shuffle answer, never ArrangeLibraryArrivals, and is neither the order revealed nor its reverse. Bob is shown each revealed card (CR 701.20a); the Mountain no one revealed stays on top.",
+  "board": {
+    "active": "alice",
+    "turn": 2,
+    "step": "Upkeep",
+    "seats": [
+      {
+        "name": "alice",
+        "battlefield": [{ "card": "Pavel Chekov, First Posting" }],
+        "library": [
+          { "card": "Forest", "label": "forest" },
+          { "card": "Island", "label": "island" },
+          { "card": "Swamp", "label": "swamp" },
+          { "card": "Grizzly Bears" },
+          { "card": "Mountain" }
+        ]
+      },
+      { "name": "bob", "library": [{ "card": "Plains" }] }
+    ]
+  },
+  "timeline": [
+    { "turn": 2, "step": "DrawStep", "player": "alice", "do": { "Answer": { "prompt": "ChooseLandOrNonland", "with": "Nonland" } } },
+    { "turn": 2, "step": "DrawStep", "player": "alice", "do": { "Answer": { "prompt": "Shuffle", "with": ["$island", "$forest", "$swamp"] } } },
+    { "turn": 2, "step": "DrawStep", "player": "alice", "check": { "Count": { "player": "alice", "zone": "Hand", "card": "Grizzly Bears", "count": 1 } } },
+    { "turn": 2, "step": "DrawStep", "player": "alice", "check": { "View": { "of": "Zone", "player": "alice", "zone": "Library", "is": ["Mountain", "Swamp", "Forest", "Island"] } } },
+    { "turn": 2, "step": "DrawStep", "player": "alice", "check": { "View": { "of": "Witnessed", "player": "bob", "is": ["Forest", "Island", "Swamp", "Grizzly Bears"] } } }
+  ]
+}

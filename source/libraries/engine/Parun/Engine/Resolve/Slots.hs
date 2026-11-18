@@ -969,6 +969,7 @@ effectPlayerRefs effect = case effect of
       Onset.FromNextTurnOf ref -> Maybe.maybeToList ref
       Onset.Immediately -> []
       Onset.FromThatExtraTurn -> []
+      Onset.FromThatCombatPhase _ -> []
   -- CR 400.1's zone reference, which lives inside the permission payloads rather
   -- than in a field of the opcode -- so the walk is
   -- Parun.Engine.PlayerEffect.playerRefsIn's and this arm joins it in, which is
@@ -1895,7 +1896,7 @@ drawRewriteReads rewrite = case rewrite of
   DrawRewrite.YouDraw -> ([], [])
   DrawRewrite.OthersMayPayLife _ -> ([], [])
   DrawRewrite.FromGraveyardOrLose -> ([], [])
-  DrawRewrite.RevealUntilChosenKind -> ([], [])
+  DrawRewrite.RevealUntilChosenKind _ -> ([], [])
   DrawRewrite.DrawInstead _ -> ([], [])
   DrawRewrite.DiscardThenDrawOrMill -> ([], [])
   DrawRewrite.KeepOneOfTopThenDraw quantity -> ([], [quantity])

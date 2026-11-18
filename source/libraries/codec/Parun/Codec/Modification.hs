@@ -30,6 +30,7 @@ import qualified Parun.Codec.Subtype as Subtype
 import qualified Parun.Codec.SubtypeFamily as SubtypeFamily
 import qualified Parun.Codec.Supertype as Supertype
 import qualified Parun.Codec.TapCount as TapCount
+import qualified Parun.Codec.TapKeyword as TapKeyword
 import qualified Parun.Codec.TargetSlot as TargetSlot
 import qualified Parun.Codec.Zone as Zone
 import qualified Parun.JsonCodec.Arm as Arm
@@ -76,7 +77,7 @@ codec abilityCodec =
       tapsCounting =
         Fields.object $
           (,)
-            <$> Fields.required "keywords" (Common.set KeywordFamily.codec) fst
+            <$> Fields.required "keywords" (Common.set TapKeyword.codec) fst
             <*> Fields.required "count" TapCount.codec snd
       combatDamageAs =
         Fields.object $

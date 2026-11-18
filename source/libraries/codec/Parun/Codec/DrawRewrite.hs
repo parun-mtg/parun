@@ -4,6 +4,7 @@ module Parun.Codec.DrawRewrite where
 
 import qualified Data.Sequence as Seq
 import qualified Data.Typeable as Typeable
+import qualified Parun.Codec.CardSelection as CardSelection
 import qualified Parun.Codec.FromOutsideTheGame as FromOutsideTheGame
 import qualified Parun.Codec.Quantity as Quantity
 import qualified Parun.JsonCodec.Arm as Arm
@@ -22,7 +23,7 @@ codec effectCodec =
       Arm.nullary "YouDraw" DrawRewrite.YouDraw,
       Arm.payload "OthersMayPayLife" Common.natural DrawRewrite.OthersMayPayLife (\x -> case x of DrawRewrite.OthersMayPayLife y -> Just y; _ -> Nothing),
       Arm.nullary "FromGraveyardOrLose" DrawRewrite.FromGraveyardOrLose,
-      Arm.nullary "RevealUntilChosenKind" DrawRewrite.RevealUntilChosenKind,
+      Arm.payload "RevealUntilChosenKind" CardSelection.codec DrawRewrite.RevealUntilChosenKind (\x -> case x of DrawRewrite.RevealUntilChosenKind y -> Just y; _ -> Nothing),
       Arm.payload "DrawInstead" Common.natural DrawRewrite.DrawInstead (\x -> case x of DrawRewrite.DrawInstead y -> Just y; _ -> Nothing),
       Arm.nullary "DiscardThenDrawOrMill" DrawRewrite.DiscardThenDrawOrMill,
       Arm.payload "KeepOneOfTopThenDraw" Quantity.codec DrawRewrite.KeepOneOfTopThenDraw (\x -> case x of DrawRewrite.KeepOneOfTopThenDraw y -> Just y; _ -> Nothing),

@@ -2,13 +2,12 @@ module Parun.Types.EntryRiders where
 
 import qualified Data.Map.Strict as Map
 import qualified Data.Sequence as Seq
-import qualified Parun.Types.CounterKind as CounterKind
 import qualified Parun.Types.EntryAttack as EntryAttack
 import qualified Parun.Types.EntryBlock as EntryBlock
 import qualified Parun.Types.EntryController as EntryController
+import qualified Parun.Types.EntryCounter as EntryCounter
 import qualified Parun.Types.EntryHost as EntryHost
 import qualified Parun.Types.FaceDownState as FaceDownState
-import qualified Parun.Types.Keyword as Keyword
 import qualified Parun.Types.Modification as Modification
 import qualified Parun.Types.PlayerRef as PlayerRef
 import qualified Parun.Types.PlayerRelation as PlayerRelation
@@ -115,6 +114,12 @@ import qualified Parun.Types.TapState as TapState
 -- board Parun.ReplacementSpec's Perennation group reads CR 614.5's one
 -- opportunity off, since both kinds are pending together before the entry's CR
 -- 616.1 loop begins.
+--
+-- Keyed by an EntryCounter, a kind plus the entrant it is conditioned on (CR
+-- 614.12): Chief Montgomery Scott's "+1/+1 counters on it if it's a creature
+-- and ... charge counters on it if it's a Spacecraft". Event.placeRiderCounters
+-- reads each gate once the entrant is materialized, so a creature Spacecraft
+-- gets both kinds. Lint-fenced to MoveToZone (Parun.EffectLintSpec).
 --
 -- The COUNT is the type parameter, and the two instantiations are the two sides
 -- of CR 608.2h. A card writes EntryRiders Quantity -- Printlifter Ooze's "the
@@ -232,7 +237,7 @@ data EntryRiders count ability = MkEntryRiders
     attacking :: Maybe EntryAttack.EntryAttack,
     blocking :: Maybe EntryBlock.EntryBlock,
     transformed :: Bool,
-    counters :: Map.Map (CounterKind.CounterKind Keyword.Keyword) count,
+    counters :: Map.Map EntryCounter.EntryCounter count,
     under :: EntryController.EntryController,
     exiledFaceDown :: Bool,
     attachedTo :: Maybe EntryHost.EntryHost,

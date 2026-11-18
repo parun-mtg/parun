@@ -18,7 +18,8 @@ import qualified Parun.Types.Timestamp as Timestamp
 --
 -- The arms are one LIFE CYCLE rather than independent choices, and it only
 -- ever narrows: AnyTurn stands still, an onset-gated entry goes
--- NextTurnOf or OnExtraTurn -> OnTurn n -> gone, and either live window goes
+-- NextTurnOf or OnExtraTurn -> OnTurn n -> gone or InCombatPhase -> gone, and
+-- either live window goes
 -- Lapsed -> gone as CR 514.2 ends a stated duration. Parun.Engine.Event is
 -- the only engine module that may case on this type, the standing
 -- Parun.Engine.Expiry has over Expiry, save Expiry.dropAtCleanup's lapse;
@@ -70,6 +71,10 @@ data TurnWindow
     -- begins. Dropped once that turn is no longer pending without having begun
     -- (CR 800.4k).
     OnExtraTurn Timestamp.Timestamp
+  | -- | Onset.FromThatCombatPhase: this turn's combat phase with this many
+    -- combat phases behind it in the schedule (Parun.Engine.Turn.addedCombatPhase),
+    -- and no other. Dropped as the next turn begins.
+    InCombatPhase Natural.Natural
   | -- | CR 514.2: a stated duration ended in this event group, whose events it still sees.
     Lapsed EventGroup.EventGroup
   deriving (Eq, Ord, Show)

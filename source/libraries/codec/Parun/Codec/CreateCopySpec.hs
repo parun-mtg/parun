@@ -8,6 +8,7 @@ import qualified Parun.Spec as Spec
 import qualified Parun.Types.CounterKind as CounterKind
 import qualified Parun.Types.CreateCopy as CreateCopy
 import qualified Parun.Types.EntryAttack as EntryAttack
+import qualified Parun.Types.EntryCounter as EntryCounter
 import qualified Parun.Types.EntryRiders as EntryRiders
 import qualified Parun.Types.ObjectRef as ObjectRef
 import qualified Parun.Types.PlayerRef as PlayerRef
@@ -41,7 +42,7 @@ spec s = Spec.describe s "Parun.Codec.CreateCopy" $ do
     Common.assertCodec
       s
       (CreateCopy.codec Common.text)
-      (CreateCopy.MkCreateCopy (Quantity.Literal 1) (ObjectRef.InSlot (SlotName.MkSlotName (Text.pack "target"))) EntryRiders.defaultValue {EntryRiders.counters = Map.singleton CounterKind.PlusOnePlusOne (Quantity.Literal 1)} Nothing [] (PlayerRef.Relative PlayerRelation.You) False)
+      (CreateCopy.MkCreateCopy (Quantity.Literal 1) (ObjectRef.InSlot (SlotName.MkSlotName (Text.pack "target"))) EntryRiders.defaultValue {EntryRiders.counters = Map.singleton (EntryCounter.unconditional CounterKind.PlusOnePlusOne) (Quantity.Literal 1)} Nothing [] (PlayerRef.Relative PlayerRelation.You) False)
       " {\"ref\":{\"type\":\"InSlot\",\"value\":\"target\"},\"riders\":{\"counters\":[{\"kind\":{\"type\":\"PlusOnePlusOne\"},\"count\":{\"type\":\"Literal\",\"value\":1}}]}} "
   -- Flamerush Rider's "tapped and attacking", and the slot its delayed exile
   -- names (CR 603.7c).

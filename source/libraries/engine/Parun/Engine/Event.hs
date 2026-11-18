@@ -108,6 +108,7 @@ import Parun.Types.CandidateId (CandidateId)
 import Parun.Types.Card (Card)
 import qualified Parun.Types.Card as Card.Type
 import qualified Parun.Types.CardName as CardName
+import qualified Parun.Types.CardSelection as CardSelection
 import qualified Parun.Types.CardType as CardType
 import qualified Parun.Types.CarryOver as CarryOver
 import qualified Parun.Types.Cause as Cause
@@ -176,6 +177,7 @@ import qualified Parun.Types.Effect as Effect.Type
 import qualified Parun.Types.EnteringTogether as EnteringTogether
 import qualified Parun.Types.EntersWith as EntersWith
 import qualified Parun.Types.EntryController as EntryController
+import qualified Parun.Types.EntryCounter as EntryCounter
 import qualified Parun.Types.EntryFlip as EntryFlip
 import qualified Parun.Types.EntryOrigin as EntryOrigin
 import qualified Parun.Types.EntryPrice as EntryPrice
@@ -5369,7 +5371,7 @@ apply settle batch applied batchPrevented candidate event =
       -- nonland and reveal cards from the top of your library until you reveal
       -- a card of the chosen kind. Put that card into your hand and put all
       -- other cards revealed this way on the bottom of your library in any
-      -- order."
+      -- order." Pavel Chekov, First Posting's is "in a random order".
       --
       -- The "may" and the choice are one question, never elided: declining
       -- leaves the event STANDING, Dredge's declining arm and for its reason.
@@ -5382,10 +5384,12 @@ apply settle batch applied batchPrevented candidate event =
       --
       -- The rest go to the bottom in an order the drawer states, asked at two
       -- or more (CR 401.4's count) and answered from the bottom inward, then
-      -- moved in reverse, Resolve.Effect.settleArrivals' order. The whole
+      -- moved in reverse, Resolve.Effect.settleArrivals' order. AtRandom
+      -- leaves the drawer unasked and shuffles the two or more instead,
+      -- KeepOneOfTopThenDraw's random order below. The whole
       -- rewrite runs before this call returns, which is CR 614.11a for a
       -- sequence of draws.
-      DrawRewrite.RevealUntilChosenKind -> do
+      DrawRewrite.RevealUntilChosenKind selection -> do
         gs <- State.get
         answer <- Game.choose (Prompt.ChooseLandOrNonland (Decide.deciderFor pid gs) pid (ReplacementCandidate.source candidate))
         case answer of
@@ -5400,11 +5404,12 @@ apply settle batch applied batchPrevented candidate event =
                 found = Maybe.listToMaybe rest
             Monad.mapM_ (reveal RevealCause.Ordinary pid) (passed <> Maybe.maybeToList found)
             Monad.forM_ found (\oid -> changeZone settle oid Zone.Hand)
-            ordered <- case passed of
-              _ : _ : _ -> do
+            ordered <- case (passed, selection) of
+              (_ : _ : _, CardSelection.ByChoice) -> do
                 asked <- State.get
                 order <- Game.choose (Prompt.ArrangeLibraryArrivals (Decide.deciderFor pid asked) pid LibraryPosition.Bottom passed)
                 pure (Game.permute passed order)
+              (_ : _ : _, CardSelection.AtRandom) -> Game.honourShuffle passed <$> Game.ask (Prompt.Shuffle passed)
               _ -> pure passed
             Monad.forM_ (reverse ordered) $ \oid ->
               changeZoneAttaching settle Nothing Set.empty oid Zone.Library LibraryPosition.Bottom Nothing TapState.Untapped Map.empty Nothing Nothing Facing.FaceUp False CarryOver.NotCarried False Seq.empty
@@ -7246,6 +7251,21 @@ placeEntryCounters candidate oid counters = do
       Nothing -> pure () -- unevaluable quantity: no counters (Resolve's PutCounters posture)
       Just n -> addEnteringCounters Nothing oid kind (Integer.toNaturalSaturating n)
 
+-- CR 122.6a: the counters an effect's rider says `oid` enters with, into the
+-- pending map through addEnteringCounters. Each kind's gate (EntryCounter.onlyIf)
+-- reads the entrant as it would exist on the battlefield (CR 614.12), which is
+-- the materialized object, and all of them before any is placed, so one kind
+-- cannot admit another: Chief Montgomery Scott's creature Spacecraft gets both.
+-- The scenario
+-- chief-montgomery-scott-gives-a-spacecraft-that-enters-as-a-creature-both-kinds
+-- proves it.
+placeRiderCounters :: ObjectId -> Map.Map EntryCounter.EntryCounter Natural -> Game ()
+placeRiderCounters oid entering = do
+  gs <- State.get
+  let admits = all (Filter.matches (Projection.sourceContext gs Nothing oid) (Projection.viewOfObject oid gs)) . EntryCounter.onlyIf
+      admitted = Map.fromListWith (+) [(EntryCounter.kind key, n) | (key, n) <- Map.toAscList entering, admits key]
+  Monad.mapM_ (uncurry (addEnteringCounters Nothing oid)) (Map.toAscList admitted)
+
 -- CR 614.1c: this permanent is going to enter with n more counters of a kind than
 -- it was a moment ago, put by `putter` -- Nothing for CR 122.6a's default, the
 -- object's controller. Written to the pending map rather than to the object; see
@@ -8385,7 +8405,7 @@ changeZoneResolvingReturning settle oid requestedDest = changeZoneAttaching sett
 -- door but changeZoneEntering, and stored only on a battlefield arrival.
 --
 -- `settle` is runEntry's, which every door carries.
-changeZoneAttaching :: Settle.Settle -> Maybe GameState -> Set ObjectId -> ObjectId -> Zone -> LibraryPosition.LibraryPosition -> Maybe Recipient.Recipient -> TapState.TapState -> Map.Map (CounterKind.CounterKind Keyword.Type.Keyword) Natural -> Maybe PlayerId -> Maybe CardName.CardName -> Facing.Facing -> Bool -> CarryOver.CarryOver -> Bool -> Seq.Seq (ObjectId, Modification.Modification (GrantedAbility.Type.GrantedAbility Card.Type.Card)) -> Game (Seq.Seq ObjectId)
+changeZoneAttaching :: Settle.Settle -> Maybe GameState -> Set ObjectId -> ObjectId -> Zone -> LibraryPosition.LibraryPosition -> Maybe Recipient.Recipient -> TapState.TapState -> Map.Map EntryCounter.EntryCounter Natural -> Maybe PlayerId -> Maybe CardName.CardName -> Facing.Facing -> Bool -> CarryOver.CarryOver -> Bool -> Seq.Seq (ObjectId, Modification.Modification (GrantedAbility.Type.GrantedAbility Card.Type.Card)) -> Game (Seq.Seq ObjectId)
 changeZoneAttaching settle = changeZoneWithCause settle Nothing
 
 -- CR 611.2e: one of the instruction's "is" effects over the permanent just
@@ -8574,7 +8594,7 @@ contestedKept oids = do
   after <- State.gets (Scratch.contested . GameState.scratch)
   pure (Set.fromList [oid | oid <- oids, Map.lookup oid after == Just Nothing])
 
-changeZoneWithCause :: Settle.Settle -> Maybe DiscardCause.DiscardCause -> Maybe GameState -> Set ObjectId -> ObjectId -> Zone -> LibraryPosition.LibraryPosition -> Maybe Recipient.Recipient -> TapState.TapState -> Map.Map (CounterKind.CounterKind Keyword.Type.Keyword) Natural -> Maybe PlayerId -> Maybe CardName.CardName -> Facing.Facing -> Bool -> CarryOver.CarryOver -> Bool -> Seq.Seq (ObjectId, Modification.Modification (GrantedAbility.Type.GrantedAbility Card.Type.Card)) -> Game (Seq.Seq ObjectId)
+changeZoneWithCause :: Settle.Settle -> Maybe DiscardCause.DiscardCause -> Maybe GameState -> Set ObjectId -> ObjectId -> Zone -> LibraryPosition.LibraryPosition -> Maybe Recipient.Recipient -> TapState.TapState -> Map.Map EntryCounter.EntryCounter Natural -> Maybe PlayerId -> Maybe CardName.CardName -> Facing.Facing -> Bool -> CarryOver.CarryOver -> Bool -> Seq.Seq (ObjectId, Modification.Modification (GrantedAbility.Type.GrantedAbility Card.Type.Card)) -> Game (Seq.Seq ObjectId)
 changeZoneWithCause settle discarded asOf batch oid requestedDest requestedPosition seed tapped entering under shown facing concealed carrying resolving defining = do
   yielded <- Set.member oid <$> contestedKept [oid]
   gs <- State.get
@@ -9633,7 +9653,7 @@ changeZoneWithCause settle discarded asOf batch oid requestedDest requestedPosit
                     -- rolls them back with the move. The Bronzehide Lion scenarios
                     -- under data/scenarios/aura prove it.
                     State.modify' (\g -> List.foldl' (storeEntryEffect newId) g defining)
-                    Monad.mapM_ (uncurry (addEnteringCounters Nothing newId)) (Map.toAscList entering)
+                    placeRiderCounters newId entering
                     -- CR 400.7d: for the span of the loop, the permanent names the
                     -- spell it is becoming, which the Moved event below does only
                     -- once it has entered (Ancient Imperiosaur's "each creature that
@@ -10979,7 +10999,7 @@ sacrificeIn settle asOf victims = simultaneously $ do
 --
 -- Not an event bracket of its own: the caller is the one CR 608.2f event, and
 -- under Event.together the entries are recorded after this returns anyway.
-createTokens :: Settle.Settle -> PlayerId -> Card -> Maybe PC.ProjectedCharacteristics -> Maybe (ShownDie.ShownDie Natural) -> Natural -> TapState.TapState -> Map.Map (CounterKind.CounterKind Keyword.Type.Keyword) Natural -> Maybe [Recipient.Recipient] -> Set Designation.Designation -> Game [ObjectId]
+createTokens :: Settle.Settle -> PlayerId -> Card -> Maybe PC.ProjectedCharacteristics -> Maybe (ShownDie.ShownDie Natural) -> Natural -> TapState.TapState -> Map.Map EntryCounter.EntryCounter Natural -> Maybe [Recipient.Recipient] -> Set Designation.Designation -> Game [ObjectId]
 createTokens settle controller card copy die n tapped entering attached marks = do
   gs <- State.get
   if List.notElem controller (Game.stillPlaying gs)
@@ -11131,7 +11151,7 @@ createTokens settle controller card copy die n tapped entering attached marks = 
               -- `placeObject` above having materialized every token first, which is what
               -- `siblingsOf` then hands each entry loop.
               let siblingsOf oid = Set.delete oid (Set.fromList kept)
-              Monad.mapM_ (\oid -> Monad.mapM_ (uncurry (addEnteringCounters Nothing oid)) (Map.toAscList entering)) kept
+              Monad.mapM_ (`placeRiderCounters` entering) kept
               refusals <- traverse (\oid -> (,) oid <$> runEntry settle (Just Zone.Battlefield) Nothing (siblingsOf oid) oid) kept
               let entered = [oid | (oid, Nothing) <- refusals]
               Monad.mapM_ unmake [oid | (oid, Just refusal) <- refusals, not (isDiverted refusal)]
@@ -13070,13 +13090,15 @@ armDelayed ability declared source controller captured armed expiry gs = case ar
 -- CR 500.7: "that turn" is the extra turn this resolution just created for the
 -- controller (Turn.thatExtraTurn). "That player's next turn" is the one seat
 -- `seat` reads the ref as, and none -- an unfilled or illegal slot -- arms
--- nothing.
+-- nothing. CR 500.8: "that combat" is the combat phase this resolution just
+-- added (Turn.addedCombatPhase), and none arms nothing.
 armOnset :: (PlayerRef.PlayerRef -> Maybe PlayerId) -> ObjectId -> PlayerId -> GameState -> Onset -> Maybe TurnWindow
 armOnset seat source controller gs onset = case onset of
   Onset.Immediately -> Just TurnWindow.AnyTurn
   Onset.FromNextTurnOf Nothing -> Just (TurnWindow.NextTurnOf Nothing)
   Onset.FromNextTurnOf (Just ref) -> fmap (TurnWindow.NextTurnOf . Just) (seat ref)
   Onset.FromThatExtraTurn -> fmap TurnWindow.OnExtraTurn (Turn.thatExtraTurn source controller gs)
+  Onset.FromThatCombatPhase anchor -> fmap TurnWindow.InCombatPhase (Turn.addedCombatPhase anchor gs)
 
 -- CR 603.7a: a turn has BEGUN, so settle every delayed entry waiting for one and
 -- drop every entry whose turn is now over. Engine.beginTurn calls this once the
@@ -13127,6 +13149,7 @@ settleOnsets begun gs =
           | Just stamp == begun ->
               entry {DelayedTrigger.window = TurnWindow.OnTurn (TurnRegisters.turnNumber (GameState.turn gs))}
         TurnWindow.OnExtraTurn _ -> entry
+        TurnWindow.InCombatPhase _ -> entry
         TurnWindow.AnyTurn -> entry
         -- Already settled, and this is a later turn -- `live` is what ends it.
         TurnWindow.OnTurn _ -> entry
@@ -13136,6 +13159,8 @@ settleOnsets begun gs =
         TurnWindow.NextTurnOf _ -> True
         TurnWindow.OnExtraTurn stamp -> any ((== stamp) . ExtraTurn.createdAt) (GameState.extraTurns gs)
         TurnWindow.OnTurn n -> n >= TurnRegisters.turnNumber (GameState.turn gs)
+        -- Armed this turn, which is now over.
+        TurnWindow.InCombatPhase _ -> False
         -- CR 514.2 ended it last turn; a turn whose cleanup no gather followed
         -- (CR 500.11's skipped ending phase) retires it here.
         TurnWindow.Lapsed _ -> False
