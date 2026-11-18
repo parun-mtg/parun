@@ -1441,6 +1441,23 @@ ancientTombSpec s registry = Spec.describe s "Ancient Tomb" $ do
 -- mana abilities include {T} in their activation cost, and "a permanent that's
 -- already tapped can't be tapped again to pay the cost", so an untapped source
 -- is tapped for mana at most once and adds what exactly one activation adds.
+-- CR 105.4: "two mana of different colors" yields each pair of two colors
+-- once, and no pair repeats a colour, so ten yields where any combination
+-- would give fifteen. data/scenarios/mana/firemind-vessel-adds-two-mana-of-different-colors.json
+-- takes one of them at the table.
+firemindVesselSpec :: (Monad m) => Spec.Spec m n -> Registry.Registry m -> n ()
+firemindVesselSpec s registry =
+  Spec.describe s "Firemind Vessel" . Spec.it s "CR 105.4 Firemind Vessel yields the ten pairs of different colors" $ do
+    vessel <- S.printingOf s registry "Firemind Vessel"
+    let (vesselId, gs) = S.addPermanent vessel S.alice (Setup.emptyGame S.bothPlayers)
+        colors = [minBound .. maxBound] :: [Color.Color]
+        pairs = [[ManaType.Colored a, ManaType.Colored b] | (a, i) <- zip colors [0 :: Int ..], (b, j) <- zip colors [0 ..], i < j]
+    Spec.assertEqWith
+      s
+      "each pair once, no colour twice"
+      (List.sort (fmap (List.sort . fmap ManaUnit.manaType . Mana.Type.unwrap) (Mana.manaYieldsOf vesselId gs)))
+      (List.sort (fmap List.sort pairs))
+
 palladiumMyrSpec :: (Monad m, Monad n) => Spec.Spec m n -> Registry.Registry m -> n ()
 palladiumMyrSpec s registry = Spec.describe s "Palladium Myr" $ do
   -- The fixture fact everything below rests on: two yields, and they differ in
@@ -4103,6 +4120,7 @@ spec s registry = Spec.describe s "Parun.Engine.Mana" $ do
   solRingSpec s registry
   ancientTombSpec s registry
   palladiumMyrSpec s registry
+  firemindVesselSpec s registry
   upwellingSpec s registry
   omnathSpec s registry
   priorityWindowSpec s registry

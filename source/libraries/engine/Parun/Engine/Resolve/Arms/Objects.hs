@@ -282,7 +282,7 @@ create settle resolving source controller legal chosen (Create.MkCreate quantity
 -- a printing that states one instead, which is a shape rather than one card --
 -- Parun.Types.Conjure lists the two forms (#3970).
 conjure :: Settle.Settle -> ObjectId -> ObjectId -> PlayerId -> Map.Map SlotName (Set Recipient) -> Conjure.Conjure Card.Type.Card -> Game ()
-conjure settle resolving source controller legal (Conjure.MkConjure quantity cards selection destination mSlot) = do
+conjure settle resolving source controller legal (Conjure.MkConjure quantity cards selection drafted destination mSlot) = do
   gs <- State.get
   let viewOf = effectViewOf resolving source legal gs
       context = effectContext gs resolving controller source legal (slotBindings resolving gs)
@@ -356,10 +356,23 @@ conjure settle resolving source controller legal (Conjure.MkConjure quantity car
       answered written answer = Maybe.fromMaybe (NonEmpty.head written) (List.find (\candidate -> Common.conjuredName candidate == answer) (NonEmpty.toList written))
       -- The question `selection` names, put over a list of NAMES of two or
       -- more; a one-name list is taken outright.
-      pickName names =
-        Maybe.fromMaybe (NonEmpty.head names) <$> case selection of
-          CardSelection.AtRandom -> Game.drawAmong Prompt.RandomCard (NonEmpty.toList names)
-          CardSelection.ByChoice -> Game.chooseAmong Prompt.ChooseConjuredCard controller (NonEmpty.toList names)
+      --
+      -- A DRAFT first narrows the names to three drawn at random, distinct
+      -- since Arena's "look at three random cards" shows three different
+      -- cards, each drawn through Prompt.RandomCard before the question is
+      -- put over the three. Three names or fewer are offered whole, no draw
+      -- raised: which of them a draw would leave out is no question there.
+      -- data/scenarios/conjure/big-spender-drafts-the-chosen-card-of-three-drawn-at-random-from-its-spellbook.json
+      -- proves both: a repeated draw and a choice outside the three are
+      -- refused.
+      offerOf names
+        | drafted && length names > 3 = Maybe.fromMaybe names . NonEmpty.nonEmpty <$> Game.drawDistinct Prompt.RandomCard 3 (NonEmpty.toList names)
+        | otherwise = pure names
+      pickName names = do
+        offered <- offerOf names
+        Maybe.fromMaybe (NonEmpty.head offered) <$> case selection of
+          CardSelection.AtRandom -> Game.drawAmong Prompt.RandomCard (NonEmpty.toList offered)
+          CardSelection.ByChoice -> Game.chooseAmong Prompt.ChooseConjuredCard controller (NonEmpty.toList offered)
       pickWritten written = fmap (\answer -> (answered written answer, Nothing)) (pickName (fmap Common.conjuredName written))
       -- A REFERENCE pick (CR 108.1) asks the interpreter which of the
       -- reference's cards the filter admits -- ONCE, off the pre-effect board

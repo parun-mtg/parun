@@ -870,6 +870,7 @@
       "144": {"card":"Elvish Rejuvenator"},
       "211": {"card":"Ezuri, Claw of Progress"},
       "494": {"card":"Ezuri, Claw of Progress"},
+      "306": {"card":"Firemind Vessel"},
       "147": {"card":"Food Chain"},
       "460": {"card":"Food Chain"},
       "347": {"card":"Gifts Ungiven"},
@@ -10484,6 +10485,7 @@
       "288": {"card":"Fierce Empath"},
       "222": {"card":"Fiery Confluence"},
       "536": {"card":"Fiery Confluence"},
+      "383": {"card":"Firemind Vessel"},
       "949": {"card":"Fireshrieker"},
       "848": {"card":"Fog Bank"},
       "449": {"card":"Forest"},
@@ -32065,6 +32067,7 @@
       "VIS-79": {"card":"Fireblast"},
       "DDS-37": {"card":"Firebolt"},
       "HOU-92": {"card":"Firebrand Archer"},
+      "WAR-237": {"card":"Firemind Vessel"},
       "UMA-130": {"card":"Firewing Phoenix"},
       "EMA-131": {"card":"Flame Jab"},
       "DD2-53": {"card":"Flame Javelin"},
@@ -45163,6 +45166,7 @@
       "229★": {"card":"Dovin, Hand of Control"},
       "11": {"card":"Enforcer Griffin"},
       "51": {"card":"Finale of Revelation"},
+      "237": {"card":"Firemind Vessel"},
       "262": {"card":"Forest"},
       "263": {"card":"Forest"},
       "264": {"card":"Forest"},
@@ -46402,6 +46406,9 @@
     },
     "YOTJ": {
       "10": {"card":"Pearl Collector"}
+    },
+    "YSNC": {
+      "10": {"card":"Big Spender"}
     },
     "YSOS": {
       "31": {"card":"Storm Crow"},

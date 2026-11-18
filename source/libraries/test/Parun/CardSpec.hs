@@ -5407,7 +5407,7 @@ effectFilters effect = case effect of
   -- A DUPLICATE names an object rather than writing a card out, so the Filters
   -- it can carry are the ref's, framed the way CreateCopy's arm below frames its
   -- own.
-  Effect.Conjure (Conjure.MkConjure quantity cards _ _ _) -> frame Unframed (quantityFilters quantity <> conjureReferenceFilters cards) <> foldMap (overFaces cardFilters) (ConjureCards.written cards) <> frame SourceHostFramed (conjureCardsRefFilters cards)
+  Effect.Conjure (Conjure.MkConjure quantity cards _ _ _ _) -> frame Unframed (quantityFilters quantity <> conjureReferenceFilters cards) <> foldMap (overFaces cardFilters) (ConjureCards.written cards) <> frame SourceHostFramed (conjureCardsRefFilters cards)
   -- An EachMatching ref's Filter is card text like RequireBlock's below, and the
   -- count's and the riders' Filters are as much card text as Create's. The
   -- exceptions frame themselves, BecomeCopy's arm below.
@@ -6097,7 +6097,7 @@ createToken face = Effect.Create (Create.MkCreate (Quantity.Type.Literal 1) (one
 
 -- "Conjure a card named ... into your hand", the card being `face`.
 conjureCard :: Face.Face Card.Type.Card -> Effect.Effect Card.Type.Card (GrantedAbility.GrantedAbility Card.Type.Card)
-conjureCard face = Effect.Conjure (Conjure.MkConjure Conjure.defaultQuantity (ConjureCards.Written (NonEmpty.singleton (oneFaced face))) Conjure.defaultSelection ConjureDestination.Hand Nothing)
+conjureCard face = Effect.Conjure (Conjure.MkConjure Conjure.defaultQuantity (ConjureCards.Written (NonEmpty.singleton (oneFaced face))) Conjure.defaultSelection False ConjureDestination.Hand Nothing)
 
 -- The same fanout for a lint that GATHERS rather than decides.
 overFaces :: (Face.Face Card.Type.Card -> [a]) -> Card.Type.Card -> [a]

@@ -1,0 +1,1883 @@
+{
+  "faces": [
+    {
+      "activatedAbilities": [
+        {
+          "cost": {
+            "components": [
+              {
+                "type": "Sacrifice",
+                "value": {
+                  "count": {
+                    "type": "Fixed",
+                    "value": 2
+                  },
+                  "whichPermanents": {
+                    "type": "HasCardType",
+                    "value": "Artifact"
+                  }
+                }
+              }
+            ],
+            "mana": []
+          },
+          "modal": {
+            "modes": [
+              {
+                "clauses": [
+                  {
+                    "effects": [
+                      {
+                        "type": "Conjure",
+                        "value": {
+                          "cards": {
+                            "type": "Written",
+                            "value": [
+                              {
+                                "faces": [
+                                  {
+                                    "activatedAbilities": [
+                                      {
+                                        "cost": {
+                                          "components": [
+                                            {
+                                              "type": "TapThis"
+                                            }
+                                          ],
+                                          "mana": [
+                                            {
+                                              "type": "Generic",
+                                              "value": 3
+                                            }
+                                          ]
+                                        },
+                                        "modal": {
+                                          "modes": [
+                                            {
+                                              "clauses": [
+                                                {
+                                                  "effects": [
+                                                    {
+                                                      "type": "Draw",
+                                                      "value": {
+                                                        "player": {
+                                                          "type": "Relative",
+                                                          "value": "You"
+                                                        },
+                                                        "quantity": {
+                                                          "type": "Literal",
+                                                          "value": 1
+                                                        }
+                                                      }
+                                                    }
+                                                  ]
+                                                }
+                                              ]
+                                            }
+                                          ]
+                                        }
+                                      }
+                                    ],
+                                    "manaCost": [
+                                      {
+                                        "type": "Generic",
+                                        "value": 3
+                                      }
+                                    ],
+                                    "name": "Arcane Encyclopedia",
+                                    "typeLine": {
+                                      "subtypes": [
+                                        "Book"
+                                      ],
+                                      "types": [
+                                        "Artifact"
+                                      ]
+                                    }
+                                  }
+                                ]
+                              },
+                              {
+                                "faces": [
+                                  {
+                                    "keywords": [
+                                      {
+                                        "type": "Crew",
+                                        "value": {
+                                          "power": 2
+                                        }
+                                      }
+                                    ],
+                                    "manaCost": [
+                                      {
+                                        "type": "Generic",
+                                        "value": 3
+                                      }
+                                    ],
+                                    "name": "Daredevil Dragster",
+                                    "power": {
+                                      "type": "Literal",
+                                      "value": 4
+                                    },
+                                    "toughness": {
+                                      "type": "Literal",
+                                      "value": 4
+                                    },
+                                    "triggeredAbilities": [
+                                      {
+                                        "condition": {
+                                          "type": "StepBegins",
+                                          "value": {
+                                            "phase": {
+                                              "type": "Combat",
+                                              "value": "EndOfCombat"
+                                            },
+                                            "scope": {
+                                              "type": "PlayersTurn",
+                                              "value": {
+                                                "type": "Relative",
+                                                "value": "AnyPlayer"
+                                              }
+                                            }
+                                          }
+                                        },
+                                        "intervening": {
+                                          "type": "Compares",
+                                          "value": {
+                                            "comparison": "AtLeast",
+                                            "measured": {
+                                              "type": "Count",
+                                              "value": {
+                                                "aggregation": {
+                                                  "type": "Members"
+                                                },
+                                                "filter": {
+                                                  "type": "And",
+                                                  "value": [
+                                                    {
+                                                      "type": "IsSource"
+                                                    },
+                                                    {
+                                                      "type": "Or",
+                                                      "value": [
+                                                        {
+                                                          "type": "DeclaredAttackerThisCombat"
+                                                        },
+                                                        {
+                                                          "type": "DeclaredBlockerThisCombat"
+                                                        }
+                                                      ]
+                                                    }
+                                                  ]
+                                                },
+                                                "scope": {
+                                                  "type": "InZone",
+                                                  "value": {
+                                                    "player": {
+                                                      "type": "Relative",
+                                                      "value": "AnyPlayer"
+                                                    },
+                                                    "zone": "Battlefield"
+                                                  }
+                                                }
+                                              }
+                                            },
+                                            "threshold": {
+                                              "type": "Literal",
+                                              "value": 1
+                                            }
+                                          }
+                                        },
+                                        "modal": {
+                                          "modes": [
+                                            {
+                                              "clauses": [
+                                                {
+                                                  "effects": [
+                                                    {
+                                                      "type": "PutCounters",
+                                                      "value": {
+                                                        "kind": {
+                                                          "type": "Named",
+                                                          "value": "velocity"
+                                                        },
+                                                        "quantity": {
+                                                          "type": "Literal",
+                                                          "value": 1
+                                                        },
+                                                        "ref": {
+                                                          "type": "InSlot",
+                                                          "value": "self"
+                                                        }
+                                                      }
+                                                    }
+                                                  ]
+                                                },
+                                                {
+                                                  "condition": {
+                                                    "type": "Compares",
+                                                    "value": {
+                                                      "comparison": "AtLeast",
+                                                      "measured": {
+                                                        "type": "AgainstSlot",
+                                                        "value": {
+                                                          "quantity": {
+                                                            "type": "ObjectCounters",
+                                                            "value": {
+                                                              "type": "Named",
+                                                              "value": "velocity"
+                                                            }
+                                                          },
+                                                          "slot": "self"
+                                                        }
+                                                      },
+                                                      "threshold": {
+                                                        "type": "Literal",
+                                                        "value": 2
+                                                      }
+                                                    }
+                                                  },
+                                                  "effects": [
+                                                    {
+                                                      "type": "Sacrifice",
+                                                      "value": {
+                                                        "ref": {
+                                                          "type": "InSlot",
+                                                          "value": "self"
+                                                        }
+                                                      }
+                                                    },
+                                                    {
+                                                      "type": "Draw",
+                                                      "value": {
+                                                        "player": {
+                                                          "type": "Relative",
+                                                          "value": "You"
+                                                        },
+                                                        "quantity": {
+                                                          "type": "Literal",
+                                                          "value": 2
+                                                        }
+                                                      }
+                                                    }
+                                                  ]
+                                                }
+                                              ]
+                                            }
+                                          ]
+                                        }
+                                      }
+                                    ],
+                                    "typeLine": {
+                                      "subtypes": [
+                                        "Vehicle"
+                                      ],
+                                      "types": [
+                                        "Artifact"
+                                      ]
+                                    }
+                                  }
+                                ]
+                              },
+                              {
+                                "faces": [
+                                  {
+                                    "manaCost": [
+                                      {
+                                        "type": "Generic",
+                                        "value": 2
+                                      }
+                                    ],
+                                    "name": "Diamond Mare",
+                                    "power": {
+                                      "type": "Literal",
+                                      "value": 1
+                                    },
+                                    "replacementEffects": [
+                                      {
+                                        "effect": {
+                                          "type": "EntryR",
+                                          "value": {
+                                            "matching": {
+                                              "type": "IsSource"
+                                            },
+                                            "rewrite": {
+                                              "type": "ChooseQuality",
+                                              "value": {
+                                                "type": "Colors",
+                                                "value": {
+                                                  "least": 1,
+                                                  "most": 1
+                                                }
+                                              }
+                                            }
+                                          }
+                                        }
+                                      }
+                                    ],
+                                    "toughness": {
+                                      "type": "Literal",
+                                      "value": 3
+                                    },
+                                    "triggeredAbilities": [
+                                      {
+                                        "condition": {
+                                          "type": "SpellCast",
+                                          "value": {
+                                            "scope": {
+                                              "type": "PlayersTurn",
+                                              "value": {
+                                                "type": "Relative",
+                                                "value": "AnyPlayer"
+                                              }
+                                            },
+                                            "spell": {
+                                              "type": "Matching",
+                                              "value": {
+                                                "type": "And",
+                                                "value": [
+                                                  {
+                                                    "type": "HeldBy",
+                                                    "value": {
+                                                      "holder": "Controller",
+                                                      "relation": "You"
+                                                    }
+                                                  },
+                                                  {
+                                                    "type": "HasChosenColor"
+                                                  }
+                                                ]
+                                              }
+                                            }
+                                          }
+                                        },
+                                        "modal": {
+                                          "modes": [
+                                            {
+                                              "clauses": [
+                                                {
+                                                  "effects": [
+                                                    {
+                                                      "type": "GainLife",
+                                                      "value": {
+                                                        "player": {
+                                                          "type": "Relative",
+                                                          "value": "You"
+                                                        },
+                                                        "quantity": {
+                                                          "type": "Literal",
+                                                          "value": 1
+                                                        }
+                                                      }
+                                                    }
+                                                  ]
+                                                }
+                                              ]
+                                            }
+                                          ]
+                                        }
+                                      }
+                                    ],
+                                    "typeLine": {
+                                      "subtypes": [
+                                        "Horse"
+                                      ],
+                                      "types": [
+                                        "Artifact",
+                                        "Creature"
+                                      ]
+                                    }
+                                  }
+                                ]
+                              },
+                              {
+                                "faces": [
+                                  {
+                                    "manaCost": [
+                                      {
+                                        "type": "Generic",
+                                        "value": 3
+                                      }
+                                    ],
+                                    "name": "Filigree Familiar",
+                                    "power": {
+                                      "type": "Literal",
+                                      "value": 2
+                                    },
+                                    "toughness": {
+                                      "type": "Literal",
+                                      "value": 2
+                                    },
+                                    "triggeredAbilities": [
+                                      {
+                                        "condition": {
+                                          "type": "Enters",
+                                          "value": {}
+                                        },
+                                        "modal": {
+                                          "modes": [
+                                            {
+                                              "clauses": [
+                                                {
+                                                  "effects": [
+                                                    {
+                                                      "type": "GainLife",
+                                                      "value": {
+                                                        "player": {
+                                                          "type": "Relative",
+                                                          "value": "You"
+                                                        },
+                                                        "quantity": {
+                                                          "type": "Literal",
+                                                          "value": 2
+                                                        }
+                                                      }
+                                                    }
+                                                  ]
+                                                }
+                                              ]
+                                            }
+                                          ]
+                                        }
+                                      },
+                                      {
+                                        "condition": {
+                                          "type": "Leaves",
+                                          "value": {
+                                            "destinations": [
+                                              {
+                                                "zone": "Graveyard"
+                                              }
+                                            ]
+                                          }
+                                        },
+                                        "modal": {
+                                          "modes": [
+                                            {
+                                              "clauses": [
+                                                {
+                                                  "effects": [
+                                                    {
+                                                      "type": "Draw",
+                                                      "value": {
+                                                        "player": {
+                                                          "type": "Relative",
+                                                          "value": "You"
+                                                        },
+                                                        "quantity": {
+                                                          "type": "Literal",
+                                                          "value": 1
+                                                        }
+                                                      }
+                                                    }
+                                                  ]
+                                                }
+                                              ]
+                                            }
+                                          ]
+                                        }
+                                      }
+                                    ],
+                                    "typeLine": {
+                                      "subtypes": [
+                                        "Fox"
+                                      ],
+                                      "types": [
+                                        "Artifact",
+                                        "Creature"
+                                      ]
+                                    }
+                                  }
+                                ]
+                              },
+                              {
+                                "faces": [
+                                  {
+                                    "activatedAbilities": [
+                                      {
+                                        "cost": {
+                                          "components": [
+                                            {
+                                              "type": "SacrificeThis"
+                                            }
+                                          ],
+                                          "mana": [
+                                            {
+                                              "type": "Generic",
+                                              "value": 3
+                                            }
+                                          ]
+                                        },
+                                        "modal": {
+                                          "modes": [
+                                            {
+                                              "clauses": [
+                                                {
+                                                  "effects": [
+                                                    {
+                                                      "type": "Draw",
+                                                      "value": {
+                                                        "player": {
+                                                          "type": "Relative",
+                                                          "value": "You"
+                                                        },
+                                                        "quantity": {
+                                                          "type": "Literal",
+                                                          "value": 1
+                                                        }
+                                                      }
+                                                    }
+                                                  ]
+                                                }
+                                              ]
+                                            }
+                                          ]
+                                        }
+                                      }
+                                    ],
+                                    "manaCost": [
+                                      {
+                                        "type": "Generic",
+                                        "value": 1
+                                      }
+                                    ],
+                                    "name": "Fountain of Renewal",
+                                    "triggeredAbilities": [
+                                      {
+                                        "condition": {
+                                          "type": "StepBegins",
+                                          "value": {
+                                            "phase": {
+                                              "type": "Beginning",
+                                              "value": "Upkeep"
+                                            },
+                                            "scope": {
+                                              "type": "PlayersTurn",
+                                              "value": {
+                                                "type": "Relative",
+                                                "value": "You"
+                                              }
+                                            }
+                                          }
+                                        },
+                                        "modal": {
+                                          "modes": [
+                                            {
+                                              "clauses": [
+                                                {
+                                                  "effects": [
+                                                    {
+                                                      "type": "GainLife",
+                                                      "value": {
+                                                        "player": {
+                                                          "type": "Relative",
+                                                          "value": "You"
+                                                        },
+                                                        "quantity": {
+                                                          "type": "Literal",
+                                                          "value": 1
+                                                        }
+                                                      }
+                                                    }
+                                                  ]
+                                                }
+                                              ]
+                                            }
+                                          ]
+                                        }
+                                      }
+                                    ],
+                                    "typeLine": {
+                                      "types": [
+                                        "Artifact"
+                                      ]
+                                    }
+                                  }
+                                ]
+                              },
+                              {
+                                "faces": [
+                                  {
+                                    "activatedAbilities": [
+                                      {
+                                        "cost": {
+                                          "components": [
+                                            {
+                                              "type": "TapThis"
+                                            }
+                                          ],
+                                          "mana": []
+                                        },
+                                        "modal": {
+                                          "modes": [
+                                            {
+                                              "clauses": [
+                                                {
+                                                  "effects": [
+                                                    {
+                                                      "type": "AddMana",
+                                                      "value": {
+                                                        "count": {
+                                                          "type": "Literal",
+                                                          "value": 3
+                                                        },
+                                                        "production": {
+                                                          "type": "AnyColor"
+                                                        }
+                                                      }
+                                                    }
+                                                  ]
+                                                }
+                                              ]
+                                            }
+                                          ]
+                                        }
+                                      }
+                                    ],
+                                    "manaCost": [
+                                      {
+                                        "type": "Generic",
+                                        "value": 5
+                                      }
+                                    ],
+                                    "name": "Gilded Lotus",
+                                    "typeLine": {
+                                      "types": [
+                                        "Artifact"
+                                      ]
+                                    }
+                                  }
+                                ]
+                              },
+                              {
+                                "faces": [
+                                  {
+                                    "activatedAbilities": [
+                                      {
+                                        "cost": {
+                                          "components": [
+                                            {
+                                              "type": "TapThis"
+                                            },
+                                            {
+                                              "type": "SacrificeThis"
+                                            }
+                                          ],
+                                          "mana": [
+                                            {
+                                              "type": "Generic",
+                                              "value": 1
+                                            }
+                                          ]
+                                        },
+                                        "modal": {
+                                          "modes": [
+                                            {
+                                              "clauses": [
+                                                {
+                                                  "effects": [
+                                                    {
+                                                      "type": "AddMana",
+                                                      "value": {
+                                                        "production": {
+                                                          "type": "AnyColor"
+                                                        }
+                                                      }
+                                                    }
+                                                  ]
+                                                }
+                                              ]
+                                            }
+                                          ]
+                                        }
+                                      },
+                                      {
+                                        "cost": {
+                                          "components": [
+                                            {
+                                              "type": "TapThis"
+                                            },
+                                            {
+                                              "type": "SacrificeThis"
+                                            }
+                                          ],
+                                          "mana": [
+                                            {
+                                              "type": "Generic",
+                                              "value": 2
+                                            }
+                                          ]
+                                        },
+                                        "modal": {
+                                          "modes": [
+                                            {
+                                              "clauses": [
+                                                {
+                                                  "effects": [
+                                                    {
+                                                      "type": "GainLife",
+                                                      "value": {
+                                                        "player": {
+                                                          "type": "Relative",
+                                                          "value": "You"
+                                                        },
+                                                        "quantity": {
+                                                          "type": "Literal",
+                                                          "value": 3
+                                                        }
+                                                      }
+                                                    }
+                                                  ]
+                                                }
+                                              ]
+                                            }
+                                          ]
+                                        }
+                                      }
+                                    ],
+                                    "manaCost": [
+                                      {
+                                        "type": "Generic",
+                                        "value": 2
+                                      }
+                                    ],
+                                    "name": "Golden Egg",
+                                    "triggeredAbilities": [
+                                      {
+                                        "condition": {
+                                          "type": "Enters",
+                                          "value": {}
+                                        },
+                                        "modal": {
+                                          "modes": [
+                                            {
+                                              "clauses": [
+                                                {
+                                                  "effects": [
+                                                    {
+                                                      "type": "Draw",
+                                                      "value": {
+                                                        "player": {
+                                                          "type": "Relative",
+                                                          "value": "You"
+                                                        },
+                                                        "quantity": {
+                                                          "type": "Literal",
+                                                          "value": 1
+                                                        }
+                                                      }
+                                                    }
+                                                  ]
+                                                }
+                                              ]
+                                            }
+                                          ]
+                                        }
+                                      }
+                                    ],
+                                    "typeLine": {
+                                      "subtypes": [
+                                        "Food"
+                                      ],
+                                      "types": [
+                                        "Artifact"
+                                      ]
+                                    }
+                                  }
+                                ]
+                              },
+                              {
+                                "faces": [
+                                  {
+                                    "activatedAbilities": [
+                                      {
+                                        "cost": {
+                                          "components": [
+                                            {
+                                              "type": "TapThis"
+                                            },
+                                            {
+                                              "type": "SacrificeThis"
+                                            }
+                                          ],
+                                          "mana": [
+                                            {
+                                              "type": "Generic",
+                                              "value": 2
+                                            }
+                                          ]
+                                        },
+                                        "modal": {
+                                          "modes": [
+                                            {
+                                              "clauses": [
+                                                {
+                                                  "effects": [
+                                                    {
+                                                      "type": "AddMana",
+                                                      "value": {
+                                                        "count": {
+                                                          "type": "Literal",
+                                                          "value": 2
+                                                        },
+                                                        "production": {
+                                                          "type": "AnyColor",
+                                                          "value": "DifferentColors"
+                                                        }
+                                                      }
+                                                    }
+                                                  ]
+                                                }
+                                              ]
+                                            }
+                                          ]
+                                        }
+                                      }
+                                    ],
+                                    "manaCost": [
+                                      {
+                                        "type": "Generic",
+                                        "value": 2
+                                      }
+                                    ],
+                                    "name": "Guild Globe",
+                                    "triggeredAbilities": [
+                                      {
+                                        "condition": {
+                                          "type": "Enters",
+                                          "value": {}
+                                        },
+                                        "modal": {
+                                          "modes": [
+                                            {
+                                              "clauses": [
+                                                {
+                                                  "effects": [
+                                                    {
+                                                      "type": "Draw",
+                                                      "value": {
+                                                        "player": {
+                                                          "type": "Relative",
+                                                          "value": "You"
+                                                        },
+                                                        "quantity": {
+                                                          "type": "Literal",
+                                                          "value": 1
+                                                        }
+                                                      }
+                                                    }
+                                                  ]
+                                                }
+                                              ]
+                                            }
+                                          ]
+                                        }
+                                      }
+                                    ],
+                                    "typeLine": {
+                                      "types": [
+                                        "Artifact"
+                                      ]
+                                    }
+                                  }
+                                ]
+                              },
+                              {
+                                "faces": [
+                                  {
+                                    "activatedAbilities": [
+                                      {
+                                        "cost": {
+                                          "components": [
+                                            {
+                                              "type": "TapThis"
+                                            }
+                                          ],
+                                          "mana": []
+                                        },
+                                        "modal": {
+                                          "modes": [
+                                            {
+                                              "clauses": [
+                                                {
+                                                  "effects": [
+                                                    {
+                                                      "type": "AddMana",
+                                                      "value": {
+                                                        "production": {
+                                                          "type": "Chosen"
+                                                        }
+                                                      }
+                                                    }
+                                                  ]
+                                                }
+                                              ]
+                                            }
+                                          ]
+                                        }
+                                      }
+                                    ],
+                                    "manaCost": [
+                                      {
+                                        "type": "Generic",
+                                        "value": 3
+                                      }
+                                    ],
+                                    "name": "Heraldic Banner",
+                                    "replacementEffects": [
+                                      {
+                                        "effect": {
+                                          "type": "EntryR",
+                                          "value": {
+                                            "matching": {
+                                              "type": "IsSource"
+                                            },
+                                            "rewrite": {
+                                              "type": "ChooseQuality",
+                                              "value": {
+                                                "type": "Colors",
+                                                "value": {
+                                                  "least": 1,
+                                                  "most": 1
+                                                }
+                                              }
+                                            }
+                                          }
+                                        }
+                                      }
+                                    ],
+                                    "staticAbilities": [
+                                      {
+                                        "affected": {
+                                          "type": "Matching",
+                                          "value": {
+                                            "type": "And",
+                                            "value": [
+                                              {
+                                                "type": "HasCardType",
+                                                "value": "Creature"
+                                              },
+                                              {
+                                                "type": "HeldBy",
+                                                "value": {
+                                                  "holder": "Controller",
+                                                  "relation": "You"
+                                                }
+                                              },
+                                              {
+                                                "type": "HasChosenColor"
+                                              }
+                                            ]
+                                          }
+                                        },
+                                        "modifications": [
+                                          {
+                                            "type": "ModifyPowerToughness",
+                                            "value": {
+                                              "power": {
+                                                "type": "Literal",
+                                                "value": 1
+                                              },
+                                              "toughness": {
+                                                "type": "Literal",
+                                                "value": 0
+                                              }
+                                            }
+                                          }
+                                        ]
+                                      }
+                                    ],
+                                    "typeLine": {
+                                      "types": [
+                                        "Artifact"
+                                      ]
+                                    }
+                                  }
+                                ]
+                              },
+                              {
+                                "faces": [
+                                  {
+                                    "activatedAbilities": [
+                                      {
+                                        "cost": {
+                                          "components": [
+                                            {
+                                              "type": "TapThis"
+                                            }
+                                          ],
+                                          "mana": []
+                                        },
+                                        "modal": {
+                                          "modes": [
+                                            {
+                                              "clauses": [
+                                                {
+                                                  "effects": [
+                                                    {
+                                                      "type": "AddMana",
+                                                      "value": {
+                                                        "production": {
+                                                          "type": "AnyColor"
+                                                        }
+                                                      }
+                                                    }
+                                                  ]
+                                                }
+                                              ]
+                                            }
+                                          ]
+                                        }
+                                      },
+                                      {
+                                        "cost": {
+                                          "components": [
+                                            {
+                                              "type": "TapThis"
+                                            }
+                                          ],
+                                          "mana": [
+                                            {
+                                              "type": "Generic",
+                                              "value": 2
+                                            }
+                                          ]
+                                        },
+                                        "modal": {
+                                          "modes": [
+                                            {
+                                              "clauses": [
+                                                {
+                                                  "effects": [
+                                                    {
+                                                      "type": "MoveToZone",
+                                                      "value": {
+                                                        "ref": {
+                                                          "type": "InSlot",
+                                                          "value": "target"
+                                                        },
+                                                        "zone": "Exile"
+                                                      }
+                                                    }
+                                                  ]
+                                                }
+                                              ],
+                                              "targetSlots": {
+                                                "target": {
+                                                  "pool": {
+                                                    "type": "CardsInGraveyard",
+                                                    "value": {
+                                                      "type": "Scoped",
+                                                      "value": {
+                                                        "type": "AnyPlayer"
+                                                      }
+                                                    }
+                                                  }
+                                                }
+                                              }
+                                            }
+                                          ]
+                                        }
+                                      }
+                                    ],
+                                    "manaCost": [
+                                      {
+                                        "type": "Generic",
+                                        "value": 3
+                                      }
+                                    ],
+                                    "name": "Honored Heirloom",
+                                    "typeLine": {
+                                      "types": [
+                                        "Artifact"
+                                      ]
+                                    }
+                                  }
+                                ]
+                              },
+                              {
+                                "faces": [
+                                  {
+                                    "activatedAbilities": [
+                                      {
+                                        "cost": {
+                                          "components": [
+                                            {
+                                              "type": "TapThis"
+                                            },
+                                            {
+                                              "type": "DiscardCards",
+                                              "value": {
+                                                "count": {
+                                                  "type": "Fixed",
+                                                  "value": 1
+                                                },
+                                                "whichCards": {
+                                                  "type": "And",
+                                                  "value": []
+                                                }
+                                              }
+                                            }
+                                          ],
+                                          "mana": []
+                                        },
+                                        "modal": {
+                                          "modes": [
+                                            {
+                                              "clauses": [
+                                                {
+                                                  "effects": [
+                                                    {
+                                                      "type": "ForbidBeingBlocked",
+                                                      "value": {
+                                                        "affected": {
+                                                          "type": "IsBound",
+                                                          "value": "target"
+                                                        },
+                                                        "blockers": {
+                                                          "type": "And",
+                                                          "value": []
+                                                        },
+                                                        "duration": {
+                                                          "type": "UntilEndOfTurn"
+                                                        }
+                                                      }
+                                                    }
+                                                  ]
+                                                }
+                                              ],
+                                              "targetSlots": {
+                                                "target": {
+                                                  "count": {
+                                                    "type": "Printed",
+                                                    "value": {
+                                                      "least": 0,
+                                                      "most": 1
+                                                    }
+                                                  },
+                                                  "pool": {
+                                                    "type": "Creatures"
+                                                  }
+                                                }
+                                              }
+                                            }
+                                          ]
+                                        }
+                                      }
+                                    ],
+                                    "manaCost": [
+                                      {
+                                        "type": "Generic",
+                                        "value": 2
+                                      }
+                                    ],
+                                    "name": "Key to the City",
+                                    "triggeredAbilities": [
+                                      {
+                                        "condition": {
+                                          "type": "BecomesTapState",
+                                          "value": {
+                                            "actor": {
+                                              "type": "Self"
+                                            },
+                                            "status": "Untapped"
+                                          }
+                                        },
+                                        "modal": {
+                                          "modes": [
+                                            {
+                                              "clauses": [
+                                                {
+                                                  "effects": [
+                                                    {
+                                                      "type": "Draw",
+                                                      "value": {
+                                                        "player": {
+                                                          "type": "Relative",
+                                                          "value": "You"
+                                                        },
+                                                        "quantity": {
+                                                          "type": "Literal",
+                                                          "value": 1
+                                                        }
+                                                      }
+                                                    }
+                                                  ],
+                                                  "payGate": {
+                                                    "branch": "IfPaid",
+                                                    "cost": {
+                                                      "mana": [
+                                                        {
+                                                          "type": "Generic",
+                                                          "value": 2
+                                                        }
+                                                      ]
+                                                    },
+                                                    "payer": {
+                                                      "type": "InSlot",
+                                                      "value": "you"
+                                                    }
+                                                  }
+                                                }
+                                              ]
+                                            }
+                                          ]
+                                        }
+                                      }
+                                    ],
+                                    "typeLine": {
+                                      "types": [
+                                        "Artifact"
+                                      ]
+                                    }
+                                  }
+                                ]
+                              },
+                              {
+                                "faces": [
+                                  {
+                                    "activatedAbilities": [
+                                      {
+                                        "cost": {
+                                          "components": [
+                                            {
+                                              "type": "TapThis"
+                                            }
+                                          ],
+                                          "mana": [
+                                            {
+                                              "type": "Generic",
+                                              "value": 1
+                                            }
+                                          ]
+                                        },
+                                        "modal": {
+                                          "modes": [
+                                            {
+                                              "clauses": [
+                                                {
+                                                  "effects": [
+                                                    {
+                                                      "type": "AddMana",
+                                                      "value": {
+                                                        "production": {
+                                                          "type": "AnyColor"
+                                                        }
+                                                      }
+                                                    }
+                                                  ]
+                                                }
+                                              ]
+                                            }
+                                          ]
+                                        }
+                                      }
+                                    ],
+                                    "manaCost": [
+                                      {
+                                        "type": "Generic",
+                                        "value": 2
+                                      }
+                                    ],
+                                    "name": "Prophetic Prism",
+                                    "triggeredAbilities": [
+                                      {
+                                        "condition": {
+                                          "type": "Enters",
+                                          "value": {}
+                                        },
+                                        "modal": {
+                                          "modes": [
+                                            {
+                                              "clauses": [
+                                                {
+                                                  "effects": [
+                                                    {
+                                                      "type": "Draw",
+                                                      "value": {
+                                                        "player": {
+                                                          "type": "Relative",
+                                                          "value": "You"
+                                                        },
+                                                        "quantity": {
+                                                          "type": "Literal",
+                                                          "value": 1
+                                                        }
+                                                      }
+                                                    }
+                                                  ]
+                                                }
+                                              ]
+                                            }
+                                          ]
+                                        }
+                                      }
+                                    ],
+                                    "typeLine": {
+                                      "types": [
+                                        "Artifact"
+                                      ]
+                                    }
+                                  }
+                                ]
+                              },
+                              {
+                                "faces": [
+                                  {
+                                    "activatedAbilities": [
+                                      {
+                                        "cost": {
+                                          "mana": [
+                                            {
+                                              "type": "Generic",
+                                              "value": 2
+                                            }
+                                          ]
+                                        },
+                                        "modal": {
+                                          "modes": [
+                                            {
+                                              "clauses": [
+                                                {
+                                                  "effects": [
+                                                    {
+                                                      "type": "ModifyTarget",
+                                                      "value": {
+                                                        "duration": {
+                                                          "type": "UntilEndOfTurn"
+                                                        },
+                                                        "modification": {
+                                                          "type": "CardType",
+                                                          "value": {
+                                                            "cardType": "Artifact",
+                                                            "mode": "InAddition"
+                                                          }
+                                                        },
+                                                        "ref": {
+                                                          "type": "InSlot",
+                                                          "value": "self"
+                                                        }
+                                                      }
+                                                    },
+                                                    {
+                                                      "type": "ModifyTarget",
+                                                      "value": {
+                                                        "duration": {
+                                                          "type": "UntilEndOfTurn"
+                                                        },
+                                                        "modification": {
+                                                          "type": "CardType",
+                                                          "value": {
+                                                            "cardType": "Creature",
+                                                            "mode": "InAddition"
+                                                          }
+                                                        },
+                                                        "ref": {
+                                                          "type": "InSlot",
+                                                          "value": "self"
+                                                        }
+                                                      }
+                                                    },
+                                                    {
+                                                      "type": "ModifyTarget",
+                                                      "value": {
+                                                        "duration": {
+                                                          "type": "UntilEndOfTurn"
+                                                        },
+                                                        "modification": {
+                                                          "type": "CreatureSubtype",
+                                                          "value": {
+                                                            "mode": "InAddition",
+                                                            "subtype": "Bear"
+                                                          }
+                                                        },
+                                                        "ref": {
+                                                          "type": "InSlot",
+                                                          "value": "self"
+                                                        }
+                                                      }
+                                                    },
+                                                    {
+                                                      "type": "ModifyTarget",
+                                                      "value": {
+                                                        "duration": {
+                                                          "type": "UntilEndOfTurn"
+                                                        },
+                                                        "modification": {
+                                                          "type": "Colors",
+                                                          "value": {
+                                                            "colors": [
+                                                              "Green"
+                                                            ],
+                                                            "mode": "Replace"
+                                                          }
+                                                        },
+                                                        "ref": {
+                                                          "type": "InSlot",
+                                                          "value": "self"
+                                                        }
+                                                      }
+                                                    },
+                                                    {
+                                                      "type": "ModifyTarget",
+                                                      "value": {
+                                                        "duration": {
+                                                          "type": "UntilEndOfTurn"
+                                                        },
+                                                        "modification": {
+                                                          "type": "SetBasePowerToughness",
+                                                          "value": {
+                                                            "power": {
+                                                              "type": "Literal",
+                                                              "value": 4
+                                                            },
+                                                            "toughness": {
+                                                              "type": "Literal",
+                                                              "value": 4
+                                                            }
+                                                          }
+                                                        },
+                                                        "ref": {
+                                                          "type": "InSlot",
+                                                          "value": "self"
+                                                        }
+                                                      }
+                                                    }
+                                                  ]
+                                                }
+                                              ]
+                                            }
+                                          ]
+                                        }
+                                      }
+                                    ],
+                                    "manaCost": [
+                                      {
+                                        "type": "Generic",
+                                        "value": 2
+                                      }
+                                    ],
+                                    "name": "Stuffed Bear",
+                                    "typeLine": {
+                                      "types": [
+                                        "Artifact"
+                                      ]
+                                    }
+                                  }
+                                ]
+                              },
+                              {
+                                "faces": [
+                                  {
+                                    "activatedAbilities": [
+                                      {
+                                        "cost": {
+                                          "components": [
+                                            {
+                                              "type": "TapThis"
+                                            }
+                                          ],
+                                          "mana": []
+                                        },
+                                        "modal": {
+                                          "modes": [
+                                            {
+                                              "clauses": [
+                                                {
+                                                  "effects": [
+                                                    {
+                                                      "type": "AddMana",
+                                                      "value": {
+                                                        "production": {
+                                                          "type": "OfType",
+                                                          "value": {
+                                                            "type": "Colorless"
+                                                          }
+                                                        }
+                                                      }
+                                                    }
+                                                  ]
+                                                }
+                                              ]
+                                            }
+                                          ]
+                                        }
+                                      },
+                                      {
+                                        "cost": {
+                                          "components": [
+                                            {
+                                              "type": "TapThis"
+                                            },
+                                            {
+                                              "type": "SacrificeThis"
+                                            }
+                                          ],
+                                          "mana": [
+                                            {
+                                              "type": "Variable"
+                                            },
+                                            {
+                                              "type": "Variable"
+                                            }
+                                          ]
+                                        },
+                                        "modal": {
+                                          "modes": [
+                                            {
+                                              "clauses": [
+                                                {
+                                                  "effects": [
+                                                    {
+                                                      "type": "Create",
+                                                      "value": {
+                                                        "card": {
+                                                          "faces": [
+                                                            {
+                                                              "activatedAbilities": [
+                                                                {
+                                                                  "cost": {
+                                                                    "components": [
+                                                                      {
+                                                                        "type": "TapThis"
+                                                                      },
+                                                                      {
+                                                                        "type": "SacrificeThis"
+                                                                      }
+                                                                    ],
+                                                                    "mana": []
+                                                                  },
+                                                                  "modal": {
+                                                                    "modes": [
+                                                                      {
+                                                                        "clauses": [
+                                                                          {
+                                                                            "effects": [
+                                                                              {
+                                                                                "type": "AddMana",
+                                                                                "value": {
+                                                                                  "production": {
+                                                                                    "type": "AnyColor"
+                                                                                  }
+                                                                                }
+                                                                              }
+                                                                            ]
+                                                                          }
+                                                                        ]
+                                                                      }
+                                                                    ]
+                                                                  }
+                                                                }
+                                                              ],
+                                                              "name": "Treasure Token",
+                                                              "typeLine": {
+                                                                "subtypes": [
+                                                                  "Treasure"
+                                                                ],
+                                                                "types": [
+                                                                  "Artifact"
+                                                                ]
+                                                              }
+                                                            }
+                                                          ]
+                                                        },
+                                                        "quantity": {
+                                                          "type": "InSlot",
+                                                          "value": "X"
+                                                        }
+                                                      }
+                                                    }
+                                                  ]
+                                                }
+                                              ]
+                                            }
+                                          ]
+                                        }
+                                      }
+                                    ],
+                                    "manaCost": [],
+                                    "name": "Treasure Vault",
+                                    "typeLine": {
+                                      "types": [
+                                        "Artifact",
+                                        "Land"
+                                      ]
+                                    }
+                                  }
+                                ]
+                              },
+                              {
+                                "faces": [
+                                  {
+                                    "keywords": [
+                                      {
+                                        "type": "Equip",
+                                        "value": {
+                                          "cost": {
+                                            "mana": [
+                                              {
+                                                "type": "Generic",
+                                                "value": 2
+                                              }
+                                            ]
+                                          },
+                                          "quality": null
+                                        }
+                                      }
+                                    ],
+                                    "manaCost": [
+                                      {
+                                        "type": "Generic",
+                                        "value": 1
+                                      }
+                                    ],
+                                    "name": "Zephyr Boots",
+                                    "staticAbilities": [
+                                      {
+                                        "affected": {
+                                          "type": "Attached"
+                                        },
+                                        "modifications": [
+                                          {
+                                            "type": "GainKeyword",
+                                            "value": {
+                                              "type": "Flying"
+                                            }
+                                          }
+                                        ]
+                                      }
+                                    ],
+                                    "triggeredAbilities": [
+                                      {
+                                        "condition": {
+                                          "type": "DealsDamage",
+                                          "value": {
+                                            "actor": {
+                                              "type": "Matching",
+                                              "value": {
+                                                "type": "HasAttached",
+                                                "value": {
+                                                  "type": "IsSource"
+                                                }
+                                              }
+                                            },
+                                            "kind": "Combat",
+                                            "recipients": [
+                                              {
+                                                "type": "Player",
+                                                "value": {
+                                                  "type": "Relative",
+                                                  "value": "AnyPlayer"
+                                                }
+                                              }
+                                            ]
+                                          }
+                                        },
+                                        "modal": {
+                                          "modes": [
+                                            {
+                                              "clauses": [
+                                                {
+                                                  "effects": [
+                                                    {
+                                                      "type": "Draw",
+                                                      "value": {
+                                                        "player": {
+                                                          "type": "Relative",
+                                                          "value": "You"
+                                                        },
+                                                        "quantity": {
+                                                          "type": "Literal",
+                                                          "value": 1
+                                                        }
+                                                      }
+                                                    },
+                                                    {
+                                                      "type": "Discard",
+                                                      "value": {
+                                                        "type": "Counted",
+                                                        "value": {
+                                                          "player": {
+                                                            "type": "Relative",
+                                                            "value": "You"
+                                                          },
+                                                          "quantity": {
+                                                            "type": "Literal",
+                                                            "value": 1
+                                                          }
+                                                        }
+                                                      }
+                                                    }
+                                                  ]
+                                                }
+                                              ]
+                                            }
+                                          ]
+                                        }
+                                      }
+                                    ],
+                                    "typeLine": {
+                                      "subtypes": [
+                                        "Equipment"
+                                      ],
+                                      "types": [
+                                        "Artifact"
+                                      ]
+                                    }
+                                  }
+                                ]
+                              }
+                            ]
+                          },
+                          "destination": {
+                            "type": "Hand"
+                          },
+                          "drafted": true,
+                          "selection": "ByChoice"
+                        }
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      ],
+      "keywords": [
+        {
+          "type": "Haste"
+        }
+      ],
+      "manaCost": [
+        {
+          "type": "Generic",
+          "value": 1
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "Red"
+          }
+        }
+      ],
+      "name": "Big Spender",
+      "oracleText": "Haste\nWhenever one or more creatures you control become blocked, create a Treasure token.\nSacrifice two artifacts: Draft a card from Big Spender's spellbook.",
+      "power": {
+        "type": "Literal",
+        "value": 2
+      },
+      "toughness": {
+        "type": "Literal",
+        "value": 1
+      },
+      "triggeredAbilities": [
+        {
+          "condition": {
+            "type": "Blocks",
+            "value": {
+              "batching": "OneOrMore",
+              "creature": {
+                "type": "And",
+                "value": [
+                  {
+                    "type": "HasCardType",
+                    "value": "Creature"
+                  },
+                  {
+                    "type": "HeldBy",
+                    "value": {
+                      "holder": "Controller",
+                      "relation": "You"
+                    }
+                  }
+                ]
+              },
+              "role": "Attacker"
+            }
+          },
+          "modal": {
+            "modes": [
+              {
+                "clauses": [
+                  {
+                    "effects": [
+                      {
+                        "type": "Create",
+                        "value": {
+                          "card": {
+                            "faces": [
+                              {
+                                "activatedAbilities": [
+                                  {
+                                    "cost": {
+                                      "components": [
+                                        {
+                                          "type": "TapThis"
+                                        },
+                                        {
+                                          "type": "SacrificeThis"
+                                        }
+                                      ],
+                                      "mana": []
+                                    },
+                                    "modal": {
+                                      "modes": [
+                                        {
+                                          "clauses": [
+                                            {
+                                              "effects": [
+                                                {
+                                                  "type": "AddMana",
+                                                  "value": {
+                                                    "production": {
+                                                      "type": "AnyColor"
+                                                    }
+                                                  }
+                                                }
+                                              ]
+                                            }
+                                          ]
+                                        }
+                                      ]
+                                    }
+                                  }
+                                ],
+                                "name": "Treasure Token",
+                                "typeLine": {
+                                  "subtypes": [
+                                    "Treasure"
+                                  ],
+                                  "types": [
+                                    "Artifact"
+                                  ]
+                                }
+                              }
+                            ]
+                          },
+                          "quantity": {
+                            "type": "Literal",
+                            "value": 1
+                          }
+                        }
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      ],
+      "typeLine": {
+        "subtypes": [
+          "Citizen",
+          "Devil"
+        ],
+        "types": [
+          "Creature"
+        ]
+      }
+    }
+  ]
+}

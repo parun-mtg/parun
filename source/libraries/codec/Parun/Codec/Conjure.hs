@@ -28,13 +28,15 @@ import qualified Parun.Types.Conjure as Conjure
 -- Parun.Codec.Create's required key: "conjure a card named Ornithopter" prints no
 -- number, so a card writing @1@ would be spelling out something the sentence
 -- does not say. The selection is elided the same way and for the same reason:
--- a card naming its card outright asks neither question. The destination has no
+-- a card naming its card outright asks neither question, and a draft is elided
+-- off as the rarer reading. The destination has no
 -- default to elide to -- every conjuring card states where the card goes.
 codec :: (Typeable.Typeable card) => Codec.Codec card -> Codec.Codec (Conjure.Conjure card)
 codec cardCodec = Fields.object $ do
   quantity <- Fields.defaulted "quantity" Conjure.defaultQuantity Quantity.codec Conjure.quantity
   cards <- Fields.required "cards" (ConjureCards.codec cardCodec) Conjure.cards
   selection <- Fields.defaulted "selection" Conjure.defaultSelection CardSelection.codec Conjure.selection
+  drafted <- Fields.defaulted "drafted" False Common.boolean Conjure.drafted
   destination <- Fields.required "destination" ConjureDestination.codec Conjure.destination
   slot <- Fields.defaulted "slot" Nothing (Common.maybe SlotName.codec) Conjure.slot
   pure
@@ -42,6 +44,7 @@ codec cardCodec = Fields.object $ do
       { Conjure.quantity = quantity,
         Conjure.cards = cards,
         Conjure.selection = selection,
+        Conjure.drafted = drafted,
         Conjure.destination = destination,
         Conjure.slot = slot
       }

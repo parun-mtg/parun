@@ -50,6 +50,10 @@ data Conjure card = MkConjure
     -- card" or "a card of your choice". Unobservable on a one-candidate list
     -- and on a duplicate, where neither question is asked.
     selection :: CardSelection.CardSelection,
+    -- | Whether that question is put over three distinct random candidates
+    -- rather than all of them: Alchemy\'s draft, Big Spender\'s "draft a card
+    -- from Big Spender\'s spellbook".
+    drafted :: Bool,
     -- | The zone it arrives in.
     destination :: ConjureDestination.ConjureDestination,
     -- | The slot the conjured cards are bound to, for a later clause to name --

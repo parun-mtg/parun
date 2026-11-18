@@ -7,4 +7,7 @@ data ColorSpread
     OneColor
   | -- | A choice per unit, "X mana in any combination of colors" (CR 105.4).
     AnyCombination
+  | -- | A choice per unit, no colour chosen twice, "two mana of different
+    -- colors" (CR 105.4).
+    DifferentColors
   deriving (Bounded, Enum, Eq, Ord, Show)
