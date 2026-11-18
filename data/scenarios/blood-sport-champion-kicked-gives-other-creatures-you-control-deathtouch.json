@@ -1,0 +1,37 @@
+{
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "name": "alice",
+        "battlefield": [{ "card": "Grizzly Bears", "label": "bears" }, { "card": "Swamp", "label": "s1" }, { "card": "Swamp", "label": "s2" }, { "card": "Swamp", "label": "s3" }, { "card": "Swamp", "label": "s4" }, { "card": "Swamp", "label": "s5" }, { "card": "Swamp", "label": "s6" }],
+        "hand": [{ "card": "Blood-Sport Champion", "label": "plain" }, { "card": "Blood-Sport Champion", "label": "kicked" }],
+        "library": [{ "card": "Island" }, { "card": "Island" }, { "card": "Island" }, { "card": "Island" }, { "card": "Island" }, { "card": "Island" }]
+      },
+      {
+        "name": "bob",
+        "battlefield": [{ "card": "Hill Giant", "label": "giant" }],
+        "library": [{ "card": "Island" }, { "card": "Island" }, { "card": "Island" }, { "card": "Island" }, { "card": "Island" }, { "card": "Island" }]
+      }
+    ],
+    "step": "PrecombatMain"
+  },
+  "description": "CR 702.33d, 603.4: Blood-Sport Champion's enters trigger, if it was kicked, gives the other creatures its controller controls deathtouch until end of turn",
+  "note": "The unkicked Champion enters with no trigger and the Bears stay without deathtouch. The kicked one gives the Bears and the first Champion deathtouch (a second instance beside its printed one, CR 702.2f), not bob's Hill Giant, and not itself a second instance. The first Champion on the battlefield is the older live object, the kicked one the second (CR 400.7).",
+  "timeline": [
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": { "Answer": { "prompt": "ChooseKicker", "with": 0 } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": { "Cast": { "object": "$plain", "mana": ["$s1", "$s2", null] } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass" },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "View": { "of": "Stack", "is": [] } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "Keywords": { "count": 0, "keyword": { "type": "Deathtouch" }, "object": "$bears" } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": { "Answer": { "prompt": "ChooseKicker", "with": 1 } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": { "Cast": { "object": "$kicked", "mana": ["$s3", "$s4", "$s5", "$s6"] } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass" },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "View": { "of": "Stack", "is": ["trigger of Blood-Sport Champion"] } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass" },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "Keywords": { "count": 1, "keyword": { "type": "Deathtouch" }, "object": "$bears" } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "Keywords": { "count": 2, "keyword": { "type": "Deathtouch" }, "object": "Blood-Sport Champion" } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "Keywords": { "count": 1, "keyword": { "type": "Deathtouch" }, "object": "Blood-Sport Champion#2" } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "Keywords": { "count": 0, "keyword": { "type": "Deathtouch" }, "object": "$giant" } } }
+  ]
+}

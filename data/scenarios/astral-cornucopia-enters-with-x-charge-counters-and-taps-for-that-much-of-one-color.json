@@ -1,0 +1,28 @@
+{
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "name": "alice",
+        "battlefield": [{ "card": "Plains", "label": "p1" }, { "card": "Plains", "label": "p2" }, { "card": "Plains", "label": "p3" }, { "card": "Plains", "label": "p4" }, { "card": "Plains", "label": "p5" }, { "card": "Plains", "label": "p6" }, { "card": "Plains", "label": "p7" }],
+        "hand": [{ "card": "Astral Cornucopia", "label": "cornucopia" }],
+        "library": [{ "card": "Island" }, { "card": "Island" }, { "card": "Island" }, { "card": "Island" }, { "card": "Island" }, { "card": "Island" }]
+      },
+      {
+        "name": "bob",
+        "library": [{ "card": "Island" }, { "card": "Island" }, { "card": "Island" }, { "card": "Island" }, { "card": "Island" }, { "card": "Island" }]
+      }
+    ],
+    "step": "PrecombatMain"
+  },
+  "description": "CR 107.3, 614.1c, 106.1b: Astral Cornucopia costs {X}{X}{X}, enters with X charge counters, and taps for that much mana of one chosen color",
+  "note": "X is 2, so six Plains pay the cost and a seventh stays untapped; two counters, then two green mana from a Plains-only board.",
+  "timeline": [
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": { "Cast": { "object": "$cornucopia", "x": 2, "mana": ["$p1", "$p2", "$p3", "$p4", "$p5", "$p6", null] } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "Tapped": { "object": "$p7", "tapped": false } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass" },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "Counters": { "count": 2, "kind": { "type": "Named", "value": "charge" }, "object": "Astral Cornucopia" } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": { "Take": { "action": "ActivateManaAbility Astral Cornucopia", "yields": [[{ "manaType": { "type": "Colored", "value": "Green" }, "restriction": null, "retention": "Ordinary", "rider": null, "sourceChoices": null, "tags": ["Artifact"] }, { "manaType": { "type": "Colored", "value": "Green" }, "restriction": null, "retention": "Ordinary", "rider": null, "sourceChoices": null, "tags": ["Artifact"] }]] } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "View": { "of": "ManaPool", "player": "alice", "is": [{ "manaType": { "type": "Colored", "value": "Green" }, "tags": ["Artifact"], "retention": "Ordinary", "restriction": null, "rider": null, "sourceChoices": null }, { "manaType": { "type": "Colored", "value": "Green" }, "tags": ["Artifact"], "retention": "Ordinary", "restriction": null, "rider": null, "sourceChoices": null }] } } }
+  ]
+}

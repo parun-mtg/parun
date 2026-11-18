@@ -1,0 +1,32 @@
+{
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "name": "alice",
+        "battlefield": [{ "card": "Ancient Greenwarden", "label": "warden" }, { "card": "Amanda Grayson, Logic's Link", "label": "amanda" }],
+        "graveyard": [{ "card": "Forest", "label": "forest" }],
+        "library": [{ "card": "Island" }, { "card": "Island" }, { "card": "Island" }, { "card": "Island" }, { "card": "Island" }, { "card": "Island" }]
+      },
+      {
+        "name": "bob",
+        "library": [{ "card": "Island" }, { "card": "Island" }, { "card": "Island" }, { "card": "Island" }, { "card": "Island" }, { "card": "Island" }]
+      }
+    ],
+    "step": "PrecombatMain"
+  },
+  "description": "CR 305.1, 603.2d: Ancient Greenwarden lets its controller play a land from their graveyard, and that land's entering triggers Amanda Grayson's landfall an additional time",
+  "note": "Each of the two landfall triggers targets a different creature, so the Greenwarden's two counters and Amanda's two show both resolved.",
+  "timeline": [
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": { "PlayLand": "$forest" } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": { "OrderTriggers": ["$amanda", "$amanda"] } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": { "ChooseTargets": { "target": ["$warden"] } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": { "ChooseTargets": { "target": ["$amanda"] } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "View": { "of": "Stack", "is": ["trigger of $amanda", "trigger of $amanda"] } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass" },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass" },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "Counters": { "count": 2, "kind": { "type": "PlusOnePlusOne" }, "object": "$warden" } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "Counters": { "count": 2, "kind": { "type": "PlusOnePlusOne" }, "object": "$amanda" } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "Count": { "card": "Forest", "count": 1, "player": "alice", "zone": "Battlefield" } } }
+  ]
+}

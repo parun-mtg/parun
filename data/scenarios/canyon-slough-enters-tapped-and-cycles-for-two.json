@@ -1,0 +1,30 @@
+{
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "name": "alice",
+        "battlefield": [{ "card": "Swamp", "label": "s1" }, { "card": "Mountain", "label": "m1" }],
+        "hand": [{ "card": "Canyon Slough", "label": "played" }, { "card": "Canyon Slough", "label": "cycled" }],
+        "library": [{ "card": "Hill Giant" }, { "card": "Island" }, { "card": "Island" }, { "card": "Island" }, { "card": "Island" }, { "card": "Island" }]
+      },
+      {
+        "name": "bob",
+        "library": [{ "card": "Island" }, { "card": "Island" }, { "card": "Island" }, { "card": "Island" }, { "card": "Island" }, { "card": "Island" }]
+      }
+    ],
+    "step": "PrecombatMain"
+  },
+  "description": "CR 614.1c, 702.29a, 305.6: Canyon Slough enters tapped, is a Swamp Mountain, and cycles for {2}",
+  "note": "The played Slough enters tapped and is a Swamp Mountain (CR 305.6 gives it the mana ability); the battlefield Slough is the second live one, created after the card left in hand (CR 400.7). The other cycles from hand for {2} paid by a Swamp and a Mountain and draws the Hill Giant on top.",
+  "timeline": [
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": { "PlayLand": "$played" } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "Tapped": { "object": "Canyon Slough#2", "tapped": true } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "Subtypes": { "object": "Canyon Slough#2", "subtypes": ["Mountain", "Swamp"] } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": { "Activate": { "object": "$cycled", "mana": ["$s1", "$m1"] } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "Count": { "card": "Canyon Slough", "count": 1, "player": "alice", "zone": "Graveyard" } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass" },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "Count": { "card": "Hill Giant", "count": 1, "player": "alice", "zone": "Hand" } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "Tapped": { "object": "$s1", "tapped": true } } }
+  ]
+}

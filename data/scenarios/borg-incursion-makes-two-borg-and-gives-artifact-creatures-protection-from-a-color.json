@@ -1,0 +1,31 @@
+{
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "name": "alice",
+        "battlefield": [{ "card": "Ornithopter", "label": "thopter" }, { "card": "Grizzly Bears", "label": "bears" }, { "card": "Plains", "label": "p1" }, { "card": "Plains", "label": "p2" }, { "card": "Plains", "label": "p3" }],
+        "hand": [{ "card": "Borg Incursion", "label": "incursion" }],
+        "library": [{ "card": "Island" }, { "card": "Island" }, { "card": "Island" }, { "card": "Island" }, { "card": "Island" }, { "card": "Island" }]
+      },
+      {
+        "name": "bob",
+        "battlefield": [{ "card": "Bronze Sable", "label": "sable" }],
+        "library": [{ "card": "Island" }, { "card": "Island" }, { "card": "Island" }, { "card": "Island" }, { "card": "Island" }, { "card": "Island" }]
+      }
+    ],
+    "step": "PrecombatMain"
+  },
+  "description": "CR 608.2c, 702.16a: Borg Incursion creates two Borg tokens, then gives every artifact creature its caster controls, the new tokens among them, protection from the chosen color",
+  "note": "The tokens exist before the group is read, so they gain protection too; the Grizzly Bears, not an artifact, and bob's Bronze Sable, not alice's, do not.",
+  "timeline": [
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": { "Cast": { "object": "$incursion", "mana": ["$p1", "$p2", "$p3"] } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass" },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": { "Answer": { "prompt": "ChooseColor", "with": "Red" } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "Count": { "card": "Borg Token", "count": 2, "player": "alice", "zone": "Battlefield" } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "Keywords": { "count": 1, "keyword": { "type": "Protection", "value": { "quality": { "type": "HasColor", "value": "Red" }, "spares": null } }, "object": "Borg Token#2" } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "Keywords": { "count": 1, "keyword": { "type": "Protection", "value": { "quality": { "type": "HasColor", "value": "Red" }, "spares": null } }, "object": "$thopter" } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "Keywords": { "count": 0, "keyword": { "type": "Protection", "value": { "quality": { "type": "HasColor", "value": "Red" }, "spares": null } }, "object": "$bears" } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "Keywords": { "count": 0, "keyword": { "type": "Protection", "value": { "quality": { "type": "HasColor", "value": "Red" }, "spares": null } }, "object": "$sable" } } }
+  ]
+}

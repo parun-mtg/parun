@@ -1,0 +1,32 @@
+{
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "name": "alice",
+        "battlefield": [{ "card": "Kolinahr Priest" }, { "card": "Astute Terraformer" }, { "card": "Grizzly Bears", "label": "bears" }, { "card": "Forest", "label": "f1" }, { "card": "Forest", "label": "f2" }],
+        "hand": [{ "card": "Amanda Grayson, Logic's Link", "label": "amanda" }, { "card": "Forest", "label": "drop" }],
+        "library": [{ "card": "Island" }, { "card": "Island" }, { "card": "Island" }, { "card": "Island" }, { "card": "Island" }, { "card": "Island" }]
+      },
+      {
+        "name": "bob",
+        "battlefield": [{ "card": "Hill Giant" }],
+        "library": [{ "card": "Island" }, { "card": "Island" }, { "card": "Island" }, { "card": "Island" }, { "card": "Island" }, { "card": "Island" }]
+      }
+    ],
+    "step": "PrecombatMain"
+  },
+  "description": "CR 702.41a, 601.2f: Affinity for Vulcans takes {1} off Amanda Grayson for each Vulcan its caster controls; landfall puts two +1/+1 counters on target creature they control",
+  "note": "Two Vulcans and a Grizzly Bears: the cost falls from {3}{G} to {1}{G}, paid by exactly two Forests. Counting every creature would leave {G}, and the second Forest's mana would float unspent. Bob's Hill Giant is no legal target for the landfall trigger.",
+  "timeline": [
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": { "Cast": { "object": "$amanda", "mana": ["$f1", "$f2"] } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "View": { "of": "ManaPool", "player": "alice", "is": [] } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass" },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "Count": { "card": "Amanda Grayson, Logic's Link", "count": 1, "player": "alice", "zone": "Battlefield" } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": { "PlayLand": "$drop" } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "refuse": { "ChooseTargets": { "target": ["Hill Giant"] } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": { "ChooseTargets": { "target": ["$bears"] } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass" },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "Counters": { "count": 2, "kind": { "type": "PlusOnePlusOne" }, "object": "$bears" } } }
+  ]
+}
