@@ -2,22 +2,28 @@
 <html lang="en">
   <head>
     <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+    <meta name="color-scheme" content="light dark">
+    <meta name="theme-color" content="#f4f1ea" media="(prefers-color-scheme: light)">
+    <meta name="theme-color" content="#15171c" media="(prefers-color-scheme: dark)">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
     <title>Parun</title>
-    <link rel="icon" href="data:,">
-    <style>
-      li.card { cursor: pointer; text-decoration: underline dotted; }
-      section.reading { border: 1px solid #999; padding: 0.5em; }
-      #insecure { background: #fdd; border: 1px solid #c99; padding: 0.5em; }
-      body.busy #app { opacity: 0.5; pointer-events: none; }
-      body.busy::after { content: "Working\2026"; position: fixed; top: 0.5em; right: 0.5em; padding: 0.25em 0.5em; background: #ffd; border: 1px solid #cc9; }
-    </style>
+    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ccircle cx='16' cy='16' r='14' fill='%232f6fd6'/%3E%3Ctext x='16' y='22' font-size='17' font-family='sans-serif' font-weight='700' text-anchor='middle' fill='white'%3EP%3C/text%3E%3C/svg%3E">
+    <!-- The theme before first paint: the choice saved by the theme button
+         (page.js), else the system's. -->
+    <script>
+      document.documentElement.dataset.theme = localStorage.getItem("parun-theme") ?? (matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light");
+    </script>
+    <link rel="stylesheet" href="./style.css">
     <script type="module" src="./page.js"></script>
   </head>
   <body>
     <p id="insecure" hidden>This page is not a secure context, so Safari runs the engine many times slower. Load it over https or from localhost (script/serve-web.sh).</p>
-    <div id="app"><p>Loading…</p></div>
-    <footer><small id="timings"></small> <small id="response"></small></footer>
+    <div id="app"><div class="splash"><h1>Parun</h1><div class="spinner" aria-hidden="true"></div><p class="phase" id="phase">Loading the engine…</p></div></div>
+    <div class="chrome"><button type="button" id="theme" aria-label="Switch between light and dark">Theme</button></div>
+    <footer class="diagnostics"><small id="timings"></small> <small id="response"></small></footer>
     <details hidden><summary>Trace</summary><pre id="trace"></pre></details>
   </body>
 </html>

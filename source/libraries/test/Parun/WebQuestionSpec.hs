@@ -4,7 +4,6 @@ module Parun.WebQuestionSpec where
 
 import qualified Data.Either as Either
 import qualified Data.Foldable as Foldable
-import qualified Data.Sequence as Seq
 import qualified Data.Set as Set
 import qualified Data.Text as Text
 import Numeric.Natural (Natural)
@@ -28,6 +27,7 @@ import qualified Parun.Types.Question as Question
 import qualified Parun.Types.Reply as R
 import qualified Parun.Types.Request as Request
 import qualified Parun.Types.Zone as Zone
+import qualified Parun.Web.Card as Card
 import qualified Parun.Web.Html as Html
 import qualified Parun.Web.Question as Question.Web
 
@@ -37,15 +37,27 @@ spec s registry = Spec.describe s "WebQuestion" $ do
     mountain <- S.printingOf s registry "Mountain"
     let (land, gs) = S.addObjectIn Zone.Hand mountain S.alice (Setup.emptyGame S.bothPlayers)
         request = requestFor gs (Prompt.ChooseAction (Decider.MkDecider S.alice) S.alice [Action.Pass, Action.Play land Nothing])
-        page = Html.toText $ Question.Web.view request Set.empty []
-    Spec.assertBool s (Text.pack "<button>Pass</button><button>Play Mountain</button>" `Text.isInfixOf` page) "buttons"
-    Spec.assertBool s (Text.pack "<p>Your hand:</p><ul><li class=\"card\">Mountain</li></ul>" `Text.isInfixOf` page) "hand"
-    -- The form follows the board and its heading: the second button is the main element's fourth child.
-    Spec.assertEqWith s "tap" (fmap (\event -> Question.Web.step request Set.empty event Text.empty) (Html.handler (Text.pack "click") (Seq.fromList [3]) (Question.Web.view request Set.empty []))) (Just (Question.Web.MkReplied (R.Number 1)))
+        view = Question.Web.view request Question.Web.blank
+        page = Html.toText view
+        tap label = Html.labelled (Text.pack "button") (Text.pack label) view >>= \path -> Html.handler (Text.pack "click") path view
+    Spec.assertBool s (Text.pack "<button class=\"primary\" type=\"button\">Pass</button>" `Text.isInfixOf` page) "pass"
+    Spec.assertEqWith s "tap" (fmap (\event -> Question.Web.step request Set.empty event Text.empty) (tap "Play Mountain")) (Just (Question.Web.MkReplied (R.Number 1)))
+    Spec.assertEqWith s "skip" (fmap (\event -> Question.Web.step request Set.empty event Text.empty) (tap "End turn")) (Just (Question.Web.MkReplied (R.Number 0)))
     Spec.assertEqWith s "not automatic" (Question.Web.automatic request) Nothing
-    -- The board: the turn, a heading per seat, then "Your hand:" and its list.
-    Spec.assertEqWith s "a card in hand is tapped to read it" (Html.handler (Text.pack "click") (Seq.fromList [0, 4, 0]) (Question.Web.view request Set.empty [])) (Just (Question.Web.MkRead land))
-    Spec.assertBool s (Text.pack "<section class=\"reading\"><p>Mountain</p><button>Close</button></section>" `Text.isInfixOf` Html.toText (Question.Web.view request Set.empty [Text.pack "Mountain"])) "reading"
+    -- The hand's Mountain is lit, since the seat may play it, and tapping it reads it.
+    Spec.assertBool s (Text.pack "<section class=\"hand\"" `Text.isInfixOf` page) "hand"
+    Spec.assertBool s (Text.pack "class=\"card c-land playable\"" `Text.isInfixOf` page) "playable"
+    Spec.assertEqWith s "a card in hand is tapped to read it" (Html.search isCard view >>= \path -> Html.handler (Text.pack "click") path view) (Just (Question.Web.MkRead land))
+    -- Reading it opens its sheet, whose button plays it.
+    let reading = Question.Web.view request Question.Web.blank {Question.Web.reading = Just (Card.MkReading land [Text.pack "({T}: Add {R}.)"])}
+        sheet = Html.search (\html -> Text.pack "<section class=\"sheet" `Text.isPrefixOf` Html.toText html) reading
+    Spec.assertBool s (Text.pack "<span class=\"ms ms-r\" title=\"{R}\">R</span>" `Text.isInfixOf` Html.toText reading) "oracle"
+    let action = do
+          at <- sheet
+          inner <- Html.at at reading
+          path <- Html.labelled (Text.pack "button") (Text.pack "Play Mountain") inner
+          Html.handler (Text.pack "click") (at <> path) reading
+    Spec.assertEqWith s "sheet action" action (Just (Question.Web.MkAnswer (R.Number 1)))
 
   Spec.it s "a priority offering only a pass, the hotseat's concession, and play or draw are answered unasked" $ do
     let gs = Setup.emptyGame S.bothPlayers
@@ -59,9 +71,11 @@ spec s registry = Spec.describe s "WebQuestion" $ do
         source = R.Object [(Text.pack "source", PromptOffer.object Protocol.namer land), (Text.pack "makes", R.Array [R.Array [Either.fromRight R.Null (Codec.Reply.fromValue (Codec.encode Codec.ManaType.codec (ManaType.Colored Color.Red)))]])]
         shown = requestFor gs (Prompt.ChooseAction (Decider.MkDecider S.alice) S.alice [Action.Pass])
         request = shown {Request.question = Question.MkQuestion S.alice (Text.pack "ChooseManaSource") (R.Object [(Text.pack "sources", R.Array [source])])}
-        page = Question.Web.view request Set.empty []
-    Spec.assertBool s (Text.pack "<h2>Choose a source.</h2><button>Your Mountain (makes R)</button><button>Stop paying</button>" `Text.isInfixOf` Html.toText page) "buttons"
-    Spec.assertEqWith s "tap" (fmap (\event -> Question.Web.step request Set.empty event Text.empty) (Html.handler (Text.pack "click") (Seq.fromList [2]) page)) (Just (Question.Web.MkReplied (PromptOffer.object Protocol.namer land)))
+        page = Question.Web.view request Question.Web.blank
+    Spec.assertBool s (Text.pack "<h2>Choose a source.</h2>" `Text.isInfixOf` Html.toText page) "heading"
+    Spec.assertEqWith s "tap" (fmap (\event -> Question.Web.step request Set.empty event Text.empty) (Html.labelled (Text.pack "button") (Text.pack "Your Mountain (makes R)") page >>= \path -> Html.handler (Text.pack "click") path page)) (Just (Question.Web.MkReplied (PromptOffer.object Protocol.namer land)))
+    -- The Mountain's tile on the battlefield pays too.
+    Spec.assertEqWith s "tile" (Html.search isCard page >>= \path -> Html.handler (Text.pack "click") path page) (Just (Question.Web.MkAnswer (PromptOffer.object Protocol.namer land)))
 
   Spec.it s "a bottom pick toggles cards and answers with exactly the count picked" $ do
     let request = asking (Text.pack "Bottom") (R.Object [(Text.pack "from", R.Array [R.Text (Text.pack "$1"), R.Text (Text.pack "$2")]), (Text.pack "count", R.Number 1)])
@@ -104,7 +118,7 @@ spec s registry = Spec.describe s "WebQuestion" $ do
 
   Spec.it s "CR 701.23b a search finds up to its count, none included" $ do
     let request = asking (Text.pack "Search") (R.Object [(Text.pack "from", R.Array [R.Text (Text.pack "$1"), R.Text (Text.pack "$2")]), (Text.pack "names", R.Array [R.Text (Text.pack "Forest"), R.Text (Text.pack "Plains")]), (Text.pack "count", R.Number 1)])
-    Spec.assertBool s (Text.pack "<button>Forest</button><button>Plains</button><button>Find</button>" `Text.isInfixOf` Html.toText (Question.Web.view request Set.empty [])) "names"
+    Spec.assertBool s (Text.pack "<button type=\"button\">Forest</button><button type=\"button\">Plains</button><button class=\"primary\" type=\"button\">Find</button>" `Text.isInfixOf` Html.toText (Question.Web.view request Question.Web.blank)) "names"
     Spec.assertEqWith s "none" (Question.Web.step request Set.empty Question.Web.MkSubmit Text.empty) (Question.Web.MkReplied (R.Array []))
     Spec.assertBool s (case Question.Web.step request (picking request [Question.Web.MkToggle 0 0, Question.Web.MkToggle 0 1]) Question.Web.MkSubmit Text.empty of Question.Web.MkRefused _ -> True; _ -> False) "too many"
 
@@ -120,8 +134,8 @@ spec s registry = Spec.describe s "WebQuestion" $ do
         listed = asking (Text.pack "ChooseWhatever") (R.Object [(Text.pack "options", R.Array [R.Text (Text.pack "Up"), R.Text (Text.pack "Down")])])
         ranged = asking (Text.pack "ChooseNumber") (R.Object [(Text.pack "least", R.Number 1), (Text.pack "greatest", R.Number 3)])
     Spec.assertEqWith s "ordered" (Question.Web.step ordered (Set.singleton (0, 1)) (Question.Web.MkToggle 0 0) Text.empty) (Question.Web.MkReplied (R.Array [R.Number 1, R.Number 0]))
-    Spec.assertBool s (Text.pack "<button>Up</button><button>Down</button>" `Text.isInfixOf` Html.toText (Question.Web.view listed Set.empty [])) "listed"
-    Spec.assertBool s (Text.pack "<button>1</button><button>2</button><button>3</button>" `Text.isInfixOf` Html.toText (Question.Web.view ranged Set.empty [])) "ranged"
+    Spec.assertBool s (Text.pack "<button type=\"button\">Up</button><button type=\"button\">Down</button>" `Text.isInfixOf` Html.toText (Question.Web.view listed Question.Web.blank)) "listed"
+    Spec.assertBool s (Text.pack "<button type=\"button\">1</button><button type=\"button\">2</button><button type=\"button\">3</button>" `Text.isInfixOf` Html.toText (Question.Web.view ranged Question.Web.blank)) "ranged"
 
   Spec.it s "a card name is typed as itself" $ do
     let request = asking (Text.pack "ChooseCardName") R.Null
@@ -130,9 +144,13 @@ spec s registry = Spec.describe s "WebQuestion" $ do
 
   Spec.it s "any other question shows its offer and reads a reply typed as JSON" $ do
     let request = bare (Text.pack "ChooseX") (R.Object [(Text.pack "least", R.Number 0)])
-    Spec.assertBool s (Text.pack "<pre>{&quot;least&quot;:0}</pre>" `Text.isInfixOf` Html.toText (Question.Web.view request Set.empty [])) "offer"
+    Spec.assertBool s (Text.pack "<pre>{&quot;least&quot;:0}</pre>" `Text.isInfixOf` Html.toText (Question.Web.view request Question.Web.blank)) "offer"
     Spec.assertEqWith s "read" (Question.Web.step request Set.empty Question.Web.MkTyped (Text.pack "3")) (Question.Web.MkReplied (R.Number 3))
     Spec.assertBool s (case Question.Web.step request Set.empty Question.Web.MkTyped (Text.pack "{") of Question.Web.MkRefused _ -> True; _ -> False) "refused"
+
+-- | Whether a node is a card's tile.
+isCard :: Html.Html msg -> Bool
+isCard html = Text.pack "<button class=\"card " `Text.isPrefixOf` Html.toText html
 
 -- | The request the line protocol sends for a prompt, with the deciding seat's view.
 requestFor :: GameState.GameState -> Prompt.Prompt r -> Request.Request

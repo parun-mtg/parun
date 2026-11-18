@@ -8,7 +8,9 @@ import qualified Data.Bifunctor as Bifunctor
 import qualified Data.Char as Char
 import qualified Data.Foldable as Foldable
 import qualified Data.List as List
+import qualified Data.Map.Strict as Map
 import qualified Data.Maybe as Maybe
+import qualified Data.Sequence as Seq
 import qualified Data.Set as Set
 import qualified Data.Text as Text
 import Numeric.Natural (Natural)
@@ -21,13 +23,18 @@ import qualified Parun.Play.Offer as Offer
 import qualified Parun.Play.Protocol as Protocol
 import qualified Parun.Play.Render as Render
 import qualified Parun.Types.ObjectId as ObjectId
+import qualified Parun.Types.ObjectView as ObjectView
 import qualified Parun.Types.PlayerId as PlayerId
+import qualified Parun.Types.PlayerView as PlayerView
 import qualified Parun.Types.Question as Question
 import qualified Parun.Types.Reply as R
 import qualified Parun.Types.Request as Request
 import qualified Parun.Web.Attribute as Attribute
 import qualified Parun.Web.Board as Board
+import qualified Parun.Web.Card as Card
+import qualified Parun.Web.Element as Element
 import qualified Parun.Web.Html as Html
+import qualified Parun.Web.Mana as Mana
 
 -- | What a tap or a typed line does to the answer under way.
 data Event
@@ -49,6 +56,9 @@ data Event
     MkRead ObjectId.ObjectId
   | -- | Hides the card shown.
     MkClose
+  | -- | Passes now, and every priority after it until the turn ends while
+    -- the stack is empty (the seat's own stop, not the engine's choice).
+    MkSkip
   deriving (Eq, Show)
 
 -- | Where an answer stands after an event.
@@ -102,6 +112,16 @@ automatic request = case Text.unpack (Question.kind question) of
     question = Request.question request
     offer = Question.offer question
 
+-- | Where a ChooseAction offer's pass sits.
+passIndex :: Request.Request -> Maybe Integer
+passIndex request = do
+  Monad.guard $ Question.kind (Request.question request) == Text.pack "ChooseAction"
+  options' <- Protocol.arrayOf (Question.offer (Request.question request))
+  fmap toInteger (List.findIndex isPass options')
+
+isPass :: R.Reply -> Bool
+isPass option = (Protocol.field "action" option >>= Offer.textOf) == Just (Text.pack "Pass")
+
 -- | The source auto pays a payment's next part with (Offer.autoSource).
 auto :: Request.Request -> Maybe R.Reply
 auto request = do
@@ -109,26 +129,116 @@ auto request = do
   shown <- Request.view request
   fst <$> Offer.autoSource shown (Question.offer $ Request.question request)
 
--- | The page for a request, with the options picked so far and the lines
--- describing the card the seat is reading, if any.
-view :: Request.Request -> Set.Set (Natural, Natural) -> [Text.Text] -> Html.Html Event
-view request picked reading =
-  Html.element
-    (Text.pack "main")
-    []
-    $ foldMap (\board -> [Board.view MkRead board]) (Request.view request)
-      <> [Html.element (Text.pack "section") [Attribute.MkProperty (Text.pack "class") (Text.pack "reading")] (fmap (\line -> Html.element (Text.pack "p") [] [Html.text line]) reading <> [button MkClose $ Text.pack "Close"]) | not (null reading)]
-      <> [Html.element (Text.pack "p") [Attribute.MkProperty (Text.pack "class") (Text.pack "problem")] [Html.text problem] | problem <- Maybe.maybeToList (Request.problem request)]
-      <> form request picked
+-- | What the question screen shows besides the request: the options picked
+-- so far, the card the seat is reading, and the game log.
+data Screen = MkScreen
+  { selected :: Set.Set (Natural, Natural),
+    reading :: Maybe Card.Reading,
+    -- | Everything the seat has seen happen, oldest first.
+    logged :: Seq.Seq Text.Text,
+    -- | How many of the newest entries arrived since the seat last decided.
+    fresh :: Natural
+  }
+  deriving (Eq, Show)
+
+-- | A screen with nothing picked, read or logged.
+blank :: Screen
+blank = MkScreen Set.empty Nothing Seq.empty 0
+
+-- | The page for a request: the turn bar, the table with each tile marked
+-- for what tapping it does, the question docked with its answers, the log,
+-- and the sheet of the card being read.
+view :: Request.Request -> Screen -> Html.Html Event
+view request screen =
+  let marks = cues request (selected screen)
+      board = Request.view request
+   in Element.el "main" ["game"] [] $
+        foldMap (\b -> [Board.turnBar b]) board
+          <> [Element.el "div" ["play-area"] [] (foldMap (\b -> [Board.view marks b]) board)]
+          <> foldMap (Board.hand marks) board
+          <> [ Element.el "aside" ["side"] [] $
+                 [ Element.el "section" ["prompt"] [Element.attr "aria-live" (Text.pack "polite")] $
+                     [Element.el "p" ["problem"] [Element.attr "role" (Text.pack "alert")] [Html.text problem] | problem <- Maybe.maybeToList (Request.problem request)]
+                       <> form request (selected screen)
+                 ]
+                   <> [logView screen | not (Seq.null (logged screen))]
+             ]
+          <> Maybe.maybeToList (do b <- board; r <- reading screen; sheetFor request b marks r)
+
+-- | The log, newest first, the entries since the seat last decided lit; its
+-- summary the newest entry.
+logView :: Screen -> Html.Html msg
+logView screen =
+  let entries = Seq.reverse (Seq.mapWithIndex (,) (logged screen))
+      newest = Natural.toIntSaturating (fresh screen)
+      total = Seq.length (logged screen)
+   in Element.el
+        "details"
+        ["log"]
+        []
+        [ Element.el "summary" [] [] [Element.el "span" ["k"] [] [Element.string "Log"], Element.el "span" ["latest"] [] (foldMap (\(_, t) -> [Element.text t]) (Seq.lookup 0 entries))],
+          Element.keyed "ol" ["log-list"] [Element.attr "reversed" Text.empty] (Foldable.toList (fmap (\(i, t) -> (Text.pack (show i), Element.el "li" ["fresh" | i >= total - newest] [] [Element.text t])) (Seq.take 300 entries)))
+        ]
+
+-- | The sheet for the card being read, with what the seat may do with it
+-- now: its actions, or picking it.
+sheetFor :: Request.Request -> PlayerView.PlayerView -> Board.Marks Event -> Card.Reading -> Maybe (Html.Html Event)
+sheetFor request board marks r = do
+  o <- Map.lookup (Card.object r) (Render.objects board)
+  let cue = Board.object marks o
+      actions = case Card.tap cue of
+        MkRead _ -> [primary (MkAnswer (R.Number i)) label | (i, label) <- Map.findWithDefault [] (Card.object r) (actionsByObject request)]
+        MkToggle g i -> [primary (MkToggle g i) (Text.pack (if elem "chosen" (Card.marks cue) then "Unselect" else "Select"))]
+        MkAnswer reply -> [primary (MkAnswer reply) (Text.pack "Use")]
+        _ -> []
+  pure (Card.sheet board o r actions MkClose)
+
+-- | Each object's actions in a ChooseAction offer, by index and label;
+-- every copy of a card in hand its own, though the prompt lists one
+-- (Offer.distinct).
+actionsByObject :: Request.Request -> Map.Map ObjectId.ObjectId [(Integer, Text.Text)]
+actionsByObject request = case (Text.unpack (Question.kind (Request.question request)), Request.view request, Protocol.arrayOf (Question.offer (Request.question request))) of
+  ("ChooseAction", Just shown, Just options') ->
+    Map.fromListWith (flip (<>)) [(oid, [(i, Offer.actionName shown option)]) | (i, option) <- zip [0 ..] options', Just oid <- [Protocol.field "object" option >>= Offer.objectOf]]
+  _ -> Map.empty
+
+-- | How each tile and seat looks and what tapping it does for this request:
+-- a card the seat may act with is lit and opens its sheet; a payment's
+-- sources pay when tapped; an option of a picker toggles when tapped, where
+-- it is offered once; every other tile opens its sheet.
+cues :: Request.Request -> Set.Set (Natural, Natural) -> Board.Marks Event
+cues request chosen =
+  let question = Request.question request
+      offer = Question.offer question
+      acting = actionsByObject request
+      sources = case Text.unpack (Question.kind question) of
+        kind | kind `elem` ["ChooseManaSource", "ChooseExtraManaSource"] -> Map.fromList [(oid, source) | (source, _) <- foldMap (Maybe.mapMaybe Offer.manaSource) (Protocol.field "sources" offer >>= Protocol.arrayOf), Just oid <- [Offer.objectOf source]]
+        _ -> Map.empty
+      offered :: [(Natural, Natural, R.Reply)]
+      offered = case picker request of
+        Just chooser | Maybe.isNothing (ordering request), Maybe.isNothing (piles request) -> [(g, i, option) | (g, group) <- zip [0 ..] (groups chooser), (i, (option, _)) <- zip [0 ..] (options group)]
+        _ -> []
+      once f = Map.mapMaybe (\xs -> case xs of [x] -> Just x; _ -> Nothing) (Map.fromListWith (<>) [(k, [(g, i)]) | (g, i, option) <- offered, Just k <- [f option]])
+      objects = once (\option -> Monad.mplus (Offer.objectOf option) (Offer.recipientObject option))
+      players = once Offer.recipientPlayer
+      toggled (g, i) = Card.MkCue [if Set.member (g, i) chosen then "chosen" else "choosable"] (MkToggle g i)
+      objectCue o =
+        let oid = ObjectView.object o
+         in case (Map.lookup oid objects, Map.lookup oid sources) of
+              (Just gi, _) -> toggled gi
+              (_, Just source) -> Card.MkCue ["choosable"] (MkAnswer source)
+              _ -> Card.MkCue ["playable" | Map.member oid acting] (MkRead oid)
+   in Board.MkMarks objectCue (\pid -> fmap toggled (Map.lookup pid players))
 
 -- | Before a seat's question when the screen last showed another seat's.
 handOff :: PlayerId.PlayerId -> Html.Html Event
 handOff seat =
-  Html.element
-    (Text.pack "main")
+  Element.el
+    "main"
+    ["handoff"]
     []
-    [ Html.element (Text.pack "p") [] [Html.text $ Text.pack "Pass the screen to " <> Render.player seat <> Text.pack "."],
-      button MkReady $ Text.pack "Ready"
+    [ Element.el "p" [] [] [Html.text $ Text.pack "Pass the screen to " <> Render.player seat <> Text.pack "."],
+      primary MkReady $ Text.pack "Ready"
     ]
 
 -- | What an event does, the options picked so far being `picked`.
@@ -163,6 +273,7 @@ step request picked event typed = case event of
   MkClear -> MkPicking Set.empty
   MkRead _ -> MkPicking picked
   MkClose -> MkPicking picked
+  MkSkip -> maybe (MkRefused $ Text.pack "There is no pass to make.") (MkReplied . R.Number) $ passIndex request
   MkAuto -> maybe (MkRefused $ Text.pack "Auto can't pay the rest of this cost. Choose a source.") MkReplied $ auto request
 
 bounds :: Group -> String
@@ -288,8 +399,27 @@ form request picked = case Text.unpack (Question.kind question) of
   "PlayOrDraw" -> heading "Play first or draw?" : [button (MkAnswer option) (Offer.tagName word) | option@(R.Text word) <- Foldable.fold (Protocol.arrayOf offer)]
   "DeclareMulligan" ->
     heading ("Keep this hand, or mulligan?" <> foldMap (\n -> " A mulligan puts " <> Text.unpack (Render.count n "card") <> " on the bottom.") (Protocol.field "bottom" offer >>= Protocol.naturalOf))
-      : [button (MkAnswer . R.Text $ Text.pack word) (Text.pack word) | word <- ["Keep", "Mulligan"]]
-  "ChooseAction" | Just shown <- Request.view request, Just options' <- Protocol.arrayOf offer -> heading "Choose an action." : [button (MkAnswer $ R.Number i) (Offer.actionName shown option) | (i, option) <- Offer.distinct shown options']
+      : [primary (MkAnswer . R.Text $ Text.pack "Keep") (Text.pack "Keep"), button (MkAnswer . R.Text $ Text.pack "Mulligan") (Text.pack "Mulligan")]
+  "ChooseManaToSpend"
+    | Just units <- Protocol.arrayOf offer,
+      Just shownUnits <- traverse (Offer.decoded Codec.ManaUnit.codec) units ->
+        heading "Choose the mana to spend." : [button (MkAnswer unit) (Offer.unitName shown) | (unit, shown) <- zip units shownUnits]
+  "ChooseAction"
+    | Just shown <- Request.view request,
+      Just options' <- Protocol.arrayOf offer ->
+        let (passes, rest) = List.partition (isPass . snd) (Offer.distinct shown options')
+            yours = PlayerView.active shown == PlayerView.viewer shown
+            settled = null (PlayerView.stack shown)
+            prompt
+              | not settled = "Respond, or pass to let the top of the stack resolve."
+              | yours = "Your turn. Play something, or pass to move on."
+              | otherwise = "Their turn. Respond, or pass."
+         in heading prompt
+              : [Element.el "div" ["actions"] [] [button (MkAnswer $ R.Number i) (Offer.actionName shown option) | (i, option) <- rest] | not (null rest)]
+                <> [ Element.el "div" ["passes"] [] $
+                       [primary (MkAnswer $ R.Number i) (Text.pack (if settled then "Pass" else "Pass and resolve")) | (i, _) <- passes]
+                         <> [button MkSkip (Text.pack (if yours then "End turn" else "Pass to my turn")) | settled, not (null passes)]
+                   ]
   kind
     | kind `elem` ["ChooseManaSource", "ChooseExtraManaSource"],
       Just shown <- Request.view request,
@@ -317,7 +447,7 @@ form request picked = case Text.unpack (Question.kind question) of
         heading (Text.unpack ((if kind == "ChooseX" then Text.pack "Choose " <> Foldable.fold (Protocol.field "variable" offer >>= Offer.textOf) else capitalized (Question.kind question)) <> foldMap (\source -> Text.pack " for " <> Offer.objectName shown source) (Protocol.field "source" offer)) <> " (" <> show least' <> " to " <> show greatest <> ").")
           : if greatest - least' <= 20
             then [button (MkAnswer . R.Number $ toInteger n) (Text.pack $ show n) | n <- [least' .. greatest]]
-            else [Html.element (Text.pack "input") [Attribute.MkProperty (Text.pack "placeholder") (Text.pack "A number"), Attribute.MkOn (Text.pack "change") MkTyped] []]
+            else [Html.element (Text.pack "input") [Attribute.MkProperty (Text.pack "placeholder") (Text.pack "A number"), Attribute.MkProperty (Text.pack "data-clear") Text.empty, Attribute.MkOn (Text.pack "change") MkTyped] []]
   _
     | Just (title', items) <- ordering request ->
         Html.element (Text.pack "h2") [] [Html.text title']
@@ -336,7 +466,7 @@ form request picked = case Text.unpack (Question.kind question) of
                 | (j, card) <- zip [0 ..] from
                 ]
                 <> [button (MkAnswer $ R.Array [R.Array [], R.Array from]) (Text.pack "Keep all on top"), button MkClear (Text.pack "Start over")]
-  "ChooseCardName" -> [heading "Name a card.", Html.element (Text.pack "input") [Attribute.MkProperty (Text.pack "placeholder") (Text.pack "A card's name"), Attribute.MkOn (Text.pack "change") MkTyped] []]
+  "ChooseCardName" -> [heading "Name a card.", Html.element (Text.pack "input") [Attribute.MkProperty (Text.pack "placeholder") (Text.pack "A card's name"), Attribute.MkProperty (Text.pack "data-clear") Text.empty, Attribute.MkOn (Text.pack "change") MkTyped] []]
   _
     | Just shown <- Request.view request,
       Just (options', name) <- Monad.mplus (fmap (\o -> (o, Offer.optionName shown)) (Protocol.field "options" offer >>= Protocol.arrayOf)) (fmap (\o -> (o, Offer.playerName)) (Protocol.field "players" offer >>= Protocol.arrayOf)) ->
@@ -350,11 +480,11 @@ form request picked = case Text.unpack (Question.kind question) of
               : [toggle g i label | (i, (_, label)) <- zip [0 ..] (options group)]
           | (g, group) <- zip [0 ..] (groups chooser)
           ]
-          <> [button MkSubmit $ send chooser]
+          <> [primary MkSubmit $ send chooser]
   _ ->
     [ heading (Text.unpack (Render.spaced (Question.kind question)) <> ":"),
       Html.element (Text.pack "pre") [] [Html.text . Common.render $ Codec.Reply.toValue offer],
-      Html.element (Text.pack "input") [Attribute.MkProperty (Text.pack "placeholder") (Text.pack "Reply as JSON"), Attribute.MkOn (Text.pack "change") MkTyped] []
+      Html.element (Text.pack "input") [Attribute.MkProperty (Text.pack "placeholder") (Text.pack "Reply as JSON"), Attribute.MkProperty (Text.pack "data-clear") Text.empty, Attribute.MkOn (Text.pack "change") MkTyped] []
     ]
   where
     question = Request.question request
@@ -364,4 +494,8 @@ form request picked = case Text.unpack (Question.kind question) of
     heading t = Html.element (Text.pack "h2") [] [Html.text $ Text.pack t]
 
 button :: Event -> Text.Text -> Html.Html Event
-button event label = Html.element (Text.pack "button") [Attribute.MkOn (Text.pack "click") event] [Html.text label]
+button event label = Element.button [] event (Mana.rich label)
+
+-- | The button that answers, set apart from the rest.
+primary :: Event -> Text.Text -> Html.Html Event
+primary event label = Element.button ["primary"] event (Mana.rich label)

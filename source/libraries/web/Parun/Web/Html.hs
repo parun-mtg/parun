@@ -9,6 +9,7 @@ import qualified Data.Foldable as Foldable
 import qualified Data.Sequence as Seq
 import qualified Data.Text as Text
 import Numeric.Natural (Natural)
+import qualified Parun.Extra.Int as Int
 import qualified Parun.Extra.Natural as Natural
 import qualified Parun.Web.Attribute as Attribute
 
@@ -121,3 +122,23 @@ escape = Text.concatMap $ \c -> case c of
   '>' -> Text.pack "&gt;"
   '"' -> Text.pack "&quot;"
   _ -> Text.singleton c
+
+-- | The text a node shows: its own, or its descendants' in order.
+content :: Html msg -> Text.Text
+content html = case html of
+  MkText t -> t
+  MkElement node -> foldMap content (childList (children node))
+
+-- | The path to the first node, in document order, that the predicate holds of.
+search :: (Html msg -> Bool) -> Html msg -> Maybe (Seq.Seq Natural)
+search wanted html
+  | wanted html = Just Seq.empty
+  | otherwise = case html of
+      MkText _ -> Nothing
+      MkElement node -> Foldable.asum (Seq.mapWithIndex (\i child -> fmap (Int.toNaturalSaturating i Seq.<|) (search wanted child)) (childList (children node)))
+
+-- | The path to the first element with this tag whose text is this.
+labelled :: Text.Text -> Text.Text -> Html msg -> Maybe (Seq.Seq Natural)
+labelled name label = search $ \html -> case html of
+  MkElement node -> tag node == name && content html == label
+  MkText _ -> False

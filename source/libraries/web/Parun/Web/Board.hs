@@ -1,33 +1,232 @@
--- | A seat's view of the game as a page: the turn, each player, the
--- battlefield by controller, the stack, the seat's hand, and what it saw
--- happen since it last decided. Each card is tapped to read it, sending what
--- `reading` makes of its id.
+-- | A seat's view of the game as a table: the turn and step, the other
+-- seats across the top, the stack between, and the seat's own battlefield
+-- and hand nearest it. Each permanent is a tile (Parun.Web.Card), its
+-- attachments tucked behind it; graveyards and exile open on a tap.
 module Parun.Web.Board where
 
+import qualified Data.List as List
+import qualified Data.Map.Strict as Map
+import qualified Data.Maybe as Maybe
 import qualified Data.Text as Text
 import qualified Parun.Play.Render as Render
+import qualified Parun.Types.BeginningStep as BeginningStep
+import qualified Parun.Types.CardType as CardType
+import qualified Parun.Types.CombatStep as CombatStep
+import qualified Parun.Types.EndingStep as EndingStep
+import qualified Parun.Types.Mana as Mana
+import qualified Parun.Types.ManaUnit as ManaUnit
 import qualified Parun.Types.ObjectId as ObjectId
 import qualified Parun.Types.ObjectView as ObjectView
+import qualified Parun.Types.Phase as Phase
+import qualified Parun.Types.PlayerCounterKind as PlayerCounterKind
+import qualified Parun.Types.PlayerId as PlayerId
 import qualified Parun.Types.PlayerView as PlayerView
+import qualified Parun.Types.Recipient as Recipient
 import qualified Parun.Types.SeatView as SeatView
-import qualified Parun.Web.Attribute as Attribute
+import qualified Parun.Web.Card as Card
+import qualified Parun.Web.Element as Element
 import qualified Parun.Web.Html as Html
+import qualified Parun.Web.Mana as Web.Mana
 
-view :: (ObjectId.ObjectId -> msg) -> PlayerView.PlayerView -> Html.Html msg
-view reading board =
-  Html.element (Text.pack "section") [] $
-    [Html.element (Text.pack "p") [] [Html.text $ Text.pack ("Turn " <> show (PlayerView.turn board) <> ", ") <> Render.phase (PlayerView.phase board) <> Text.pack ". " <> Render.player (PlayerView.active board) <> Text.pack " is active."]]
-      <> foldMap seat (PlayerView.seats board)
-      <> zone "Stack" (PlayerView.stack board)
-      <> foldMap (zone "Your hand" . Render.handOrder board . SeatView.hand) [s | s <- PlayerView.seats board, SeatView.player s == PlayerView.viewer board]
-      <> zone' "Since your last decision" (Render.events board $ Render.witnessed board)
+-- | How each tile and each seat looks and what tapping it sends.
+data Marks msg = MkMarks
+  { object :: ObjectView.ObjectView -> Card.Cue msg,
+    -- | A seat that may be tapped (as a target, say), and how.
+    seat :: PlayerId.PlayerId -> Maybe (Card.Cue msg)
+  }
+
+-- | The turn bar: whose turn, which step, and the phases as a strip with
+-- the current one lit.
+turnBar :: PlayerView.PlayerView -> Html.Html msg
+turnBar board =
+  let yours = PlayerView.active board == PlayerView.viewer board
+      current = phaseIndex (PlayerView.phase board)
+   in Element.el
+        "div"
+        ["turn-bar", if yours then "yours" else "theirs"]
+        []
+        [ Element.el
+            "p"
+            ["turn-label"]
+            []
+            [ Element.el "strong" [] [] [Element.string ("Turn " <> show (PlayerView.turn board))],
+              Element.text (Text.pack " \x00b7 " <> (if yours then Text.pack "Your " else possessive (PlayerView.active board)) <> Render.phase (PlayerView.phase board))
+            ],
+          Element.el "ol" ["phases"] [Element.attr "aria-hidden" (Text.pack "true")] [Element.el "li" [if i == current then "now" else if i < current then "past" else ""] [] [Element.string label] | (i, label) <- zip [0 :: Integer ..] ["Begin", "Main", "Combat", "Main 2", "End"]]
+        ]
+
+possessive :: PlayerId.PlayerId -> Text.Text
+possessive pid = name pid <> Text.pack "'s "
+
+-- | A seat's name as the table shows it.
+name :: PlayerId.PlayerId -> Text.Text
+name = Render.player
+
+phaseIndex :: Phase.Phase -> Integer
+phaseIndex p = case p of
+  Phase.Beginning step -> case step of
+    BeginningStep.Untap -> 0
+    BeginningStep.Upkeep -> 0
+    BeginningStep.DrawStep -> 0
+  Phase.PrecombatMain -> 1
+  Phase.Combat step -> case step of
+    CombatStep.BeginningOfCombat -> 2
+    CombatStep.DeclareAttackers -> 2
+    CombatStep.DeclareBlockers -> 2
+    CombatStep.CombatDamage -> 2
+    CombatStep.EndOfCombat -> 2
+  Phase.PostcombatMain -> 3
+  Phase.Ending step -> case step of
+    EndingStep.EndStep -> 4
+    EndingStep.Cleanup -> 4
+
+-- | The table: other seats, the stack, and the seat's own.
+view :: Marks msg -> PlayerView.PlayerView -> Html.Html msg
+view marks board =
+  let (mine, others) = List.partition ((== PlayerView.viewer board) . SeatView.player) (PlayerView.seats board)
+   in Element.el "div" ["table"] [] $
+        fmap (seatArea marks board False) others
+          <> stackArea marks board
+          <> fmap (seatArea marks board True) mine
+
+stackArea :: Marks msg -> PlayerView.PlayerView -> [Html.Html msg]
+stackArea marks board = case PlayerView.stack board of
+  [] -> []
+  items ->
+    [ Element.el
+        "section"
+        ["stack"]
+        [Element.attr "aria-label" (Text.pack "Stack")]
+        [ Element.el "h3" ["zone-title"] [] [Element.string "Stack", Element.el "span" ["hint"] [] [Element.string " top resolves first"]],
+          Element.keyed "div" ["stack-items"] [] [(key o, stackItem marks board o) | o <- items]
+        ]
+    ]
+
+stackItem :: Marks msg -> PlayerView.PlayerView -> ObjectView.ObjectView -> Html.Html msg
+stackItem marks board o =
+  let cue = object marks o
+      whose = foldMap (\p -> if p == PlayerView.viewer board then Text.pack "You" else name p) (ObjectView.controller o)
+   in Element.button
+        (["stack-item", Card.colour o] <> Card.marks cue)
+        (Card.tap cue)
+        ( [ Element.el "span" ["who"] [] [Element.text whose],
+            Element.el "span" ["name"] [] [Element.text (Render.nameOf board o)]
+          ]
+            <> [Element.el "span" ["detail"] [] (Web.Mana.rich line) | line <- Card.status board o]
+        )
+
+seatArea :: Marks msg -> PlayerView.PlayerView -> Bool -> SeatView.SeatView -> Html.Html msg
+seatArea marks board own s =
+  let pid = SeatView.player s
+      permanents = filter ((== Just pid) . ObjectView.controller) (PlayerView.battlefield board)
+      onBattlefield = Map.fromList [(ObjectView.object o, o) | o <- PlayerView.battlefield board]
+      -- An attachment rides with the permanent it is attached to, when that
+      -- is on the battlefield; otherwise it stands alone.
+      hostOf o = do
+        r <- ObjectView.attachedTo o
+        oid <- attachedObject r
+        if Map.member oid onBattlefield then Just oid else Nothing
+      riders = Map.fromListWith (flip (<>)) [(h, [o]) | o <- PlayerView.battlefield board, Just h <- [hostOf o]]
+      standing = filter (Maybe.isNothing . hostOf) permanents
+      (creatures, rest) = List.partition (Render.isA CardType.Creature) standing
+      (lands, others) = List.partition (Render.isA CardType.Land) rest
+      ridersOf o = Map.findWithDefault [] (ObjectView.object o) riders
+      tileOf o = Card.tile board (object marks o) o
+      -- Permanents the seat cannot tell apart on the table (the same tile,
+      -- nothing attached) share one tile with their count; tapping it acts
+      -- on the first.
+      alike a b = null (ridersOf a) && null (ridersOf b) && Html.toText (tileOf a) == Html.toText (tileOf b)
+      group objects = case objects of
+        [] -> []
+        o : alikeRest ->
+          [ ( key o,
+              Element.el
+                "div"
+                ["group"]
+                []
+                ( tileOf o
+                    : [Element.el "span" ["many"] [Element.attr "aria-label" (Text.pack (show (length objects) <> " of them"))] [Element.string ("\x00d7" <> show (length objects))] | not (null alikeRest)]
+                      <> fmap tileOf (ridersOf o)
+                )
+            )
+          ]
+      row cls objects = [Element.keyed "div" ["row", cls] [] (concatMap group (List.groupBy alike (Render.ordered board objects))) | not (null objects)]
+      front = row "front" creatures
+      back = row "back" (others <> lands)
+      field = Element.el "div" ["battlefield"] [] (if own then front <> back else back <> front)
+      empty = [Element.el "p" ["empty"] [] [Element.string "No permanents"] | null permanents]
+   in Element.el
+        "section"
+        ["seat", if own then "you" else "opponent", if PlayerView.active board == pid then "active" else ""]
+        [Element.attr "aria-label" (if own then Text.pack "Your side" else name pid)]
+        (if own then empty <> [field, seatHead marks board own s] else [seatHead marks board own s, field] <> empty)
+
+seatHead :: Marks msg -> PlayerView.PlayerView -> Bool -> SeatView.SeatView -> Html.Html msg
+seatHead marks board own s =
+  let pid = SeatView.player s
+      label = if own then Text.pack "You" else name pid
+      lifeBox = Element.keyed "span" ["life"] [Element.attr "title" (Text.pack "Life")] [(Text.pack (show (SeatView.life s)), Element.el "span" ["value"] [] [Element.string (show (SeatView.life s))])]
+      identity = case seat marks pid of
+        Just cue -> Element.button (["who"] <> Card.marks cue) (Card.tap cue) [Element.text label, lifeBox]
+        Nothing -> Element.el "div" ["who"] [] [Element.text label, lifeBox]
+      poison = Map.findWithDefault 0 PlayerCounterKind.Poison (SeatView.counters s)
+      pool = Mana.unwrap (SeatView.manaPool s)
+   in Element.el "div" ["seat-head"] [] $
+        [ identity,
+          Element.el
+            "div"
+            ["counts"]
+            []
+            ( [ Element.el "span" ["count"] [Element.attr "title" (Text.pack "Cards in hand")] [Element.el "span" ["k"] [] [Element.string "Hand"], Element.string (show (SeatView.handSize s))],
+                Element.el "span" ["count"] [Element.attr "title" (Text.pack "Cards in library")] [Element.el "span" ["k"] [] [Element.string "Library"], Element.string (show (SeatView.librarySize s))]
+              ]
+                <> [Element.el "span" ["count", "poison"] [] [Element.el "span" ["k"] [] [Element.string "Poison"], Element.string (show poison)] | poison > 0]
+                <> pile marks board "Graveyard" (SeatView.graveyard s)
+                <> pile marks board "Exile" (SeatView.exile s)
+            )
+        ]
+          <> [Element.el "div" ["pool"] [Element.attr "title" (Text.pack "Mana pool")] (Element.el "span" ["k"] [] [Element.string "Pool"] : concatMap (Web.Mana.rich . unit) pool) | not (null pool)]
+          <> [Element.el "div" ["seen"] [] (Element.el "span" ["k"] [] [Element.string "Seen in hand"] : fmap (\o -> Card.tile board (object marks o) o) (Render.handOrder board (SeatView.hand s))) | not own, not (null (SeatView.hand s))]
+          <> [Element.el "div" ["seen"] [] (Element.el "span" ["k"] [] [Element.string "Library, top first"] : fmap (\o -> Card.tile board (object marks o) o) (SeatView.library s)) | not (null (SeatView.library s))]
   where
-    seat s =
-      Html.element (Text.pack "h3") [] [Html.text $ Render.player (SeatView.player s) <> Text.pack (": " <> show (SeatView.life s) <> " life, " <> show (SeatView.handSize s) <> " in hand, " <> show (SeatView.librarySize s) <> " in library")]
-        : zone "Battlefield" (Render.ordered board [o | o <- PlayerView.battlefield board, ObjectView.controller o == Just (SeatView.player s)])
-          <> zone "Graveyard" (SeatView.graveyard s)
-    zone title objects = listing title [Html.element (Text.pack "li") [Attribute.MkProperty (Text.pack "class") (Text.pack "card"), Attribute.MkOn (Text.pack "click") . reading $ ObjectView.object o] [Html.text $ Render.describe board o] | o <- objects]
-    zone' title items = listing title [Html.element (Text.pack "li") [] [Html.text item] | item <- items]
-    listing title items
-      | null items = []
-      | otherwise = [Html.element (Text.pack "p") [] [Html.text $ Text.pack title <> Text.pack ":"], Html.element (Text.pack "ul") [] items]
+    unit u = Text.pack "{" <> Render.manaType (ManaUnit.manaType u) <> Text.pack "}"
+
+-- | A public pile, a chip opening to its cards; nothing while it is empty.
+pile :: Marks msg -> PlayerView.PlayerView -> String -> [ObjectView.ObjectView] -> [Html.Html msg]
+pile marks board title objects = case objects of
+  [] -> []
+  _ ->
+    [ Element.el
+        "details"
+        ["count", "pile"]
+        []
+        [ Element.el "summary" [] [] [Element.el "span" ["k"] [] [Element.string title], Element.string (show (length objects))],
+          Element.keyed "div" ["pile-cards"] [] [(key o, Card.tile board (object marks o) o) | o <- reverse objects]
+        ]
+    ]
+
+-- | The seat's hand, apart from the table so it is always in reach.
+hand :: Marks msg -> PlayerView.PlayerView -> [Html.Html msg]
+hand marks board = [handArea marks board s | s <- PlayerView.seats board, SeatView.player s == PlayerView.viewer board]
+
+handArea :: Marks msg -> PlayerView.PlayerView -> SeatView.SeatView -> Html.Html msg
+handArea marks board s =
+  Element.el
+    "section"
+    ["hand"]
+    [Element.attr "aria-label" (Text.pack "Your hand")]
+    [ Element.el "h3" ["zone-title"] [] [Element.string ("Hand \x00b7 " <> show (length (SeatView.hand s)))],
+      Element.keyed "div" ["hand-cards"] [] [(key o, Card.tile board (object marks o) o) | o <- Render.handOrder board (SeatView.hand s)]
+    ]
+
+key :: ObjectView.ObjectView -> Text.Text
+key o = Text.pack (show (ObjectId.unwrap (ObjectView.object o)))
+
+attachedObject :: Recipient.Recipient -> Maybe ObjectId.ObjectId
+attachedObject r = case r of
+  Recipient.ToCreature oid -> Just oid
+  Recipient.ToPlaneswalker oid -> Just oid
+  Recipient.ToBattle oid -> Just oid
+  Recipient.ToObject oid -> Just oid
+  Recipient.ToPlayer _ -> Nothing
+  Recipient.ToPile _ -> Nothing

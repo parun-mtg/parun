@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Builds the web client into a directory ready to serve (default dist-web/):
-# the page, the engine's Web Worker, the wasm module and its JavaScript FFI
+# the page and its style sheet, the engine's Web Worker, the wasm module and its JavaScript FFI
 # glue, the WASI shim, and the data directory the engine mounts. Every file
 # but index.html is named by a hash of its contents, so a browser caches each
 # until it changes and only index.html needs fetching afresh. Runs in the wasm
@@ -18,7 +18,7 @@ rm -rf "$out"
 mkdir -p "$out"
 "$(wasm32-wasi-ghc --print-libdir)/post-link.mjs" -i "$wasm" -o "$out/ghc_wasm_jsffi.js"
 wasm-opt -Oz --strip-debug "$wasm" -o "$out/parun.wasm"
-cp source/web/index.html source/web/page.js source/web/engine.js "$out/"
+cp source/web/index.html source/web/style.css source/web/page.js source/web/engine.js "$out/"
 cp -r "$BROWSER_WASI_SHIM/dist" "$out/browser_wasi_shim"
 chmod -R u+w "$out"
 # The data directory the engine mounts, reproducibly packed, with the cards as
@@ -60,4 +60,5 @@ address data.tar.gz engine.js
 address ghc_wasm_jsffi.js engine.js
 address engine.js page.js
 address page.js index.html
+address style.css index.html
 ls -l "$out"
