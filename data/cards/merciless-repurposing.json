@@ -1,0 +1,153 @@
+{
+  "faces": [
+    {
+      "manaCost": [
+        {
+          "type": "Generic",
+          "value": 4
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "Black"
+          }
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "Black"
+          }
+        }
+      ],
+      "name": "Merciless Repurposing",
+      "oracleText": "Exile target creature. Incubate 3. (Create an Incubator token with three +1/+1 counters on it and \"{2}: Transform this token.\" It transforms into a 0/0 Phyrexian artifact creature.)",
+      "spell": {
+        "modes": [
+          {
+            "clauses": [
+              {
+                "effects": [
+                  {
+                    "type": "MoveToZone",
+                    "value": {
+                      "ref": {
+                        "type": "InSlot",
+                        "value": "target"
+                      },
+                      "zone": "Exile"
+                    }
+                  },
+                  {
+                    "type": "Create",
+                    "value": {
+                      "card": {
+                        "faces": [
+                          {
+                            "activatedAbilities": [
+                              {
+                                "cost": {
+                                  "mana": [
+                                    {
+                                      "type": "Generic",
+                                      "value": 2
+                                    }
+                                  ]
+                                },
+                                "modal": {
+                                  "modes": [
+                                    {
+                                      "clauses": [
+                                        {
+                                          "effects": [
+                                            {
+                                              "type": "Transform",
+                                              "value": {
+                                                "type": "InSlot",
+                                                "value": "self"
+                                              }
+                                            }
+                                          ]
+                                        }
+                                      ]
+                                    }
+                                  ]
+                                }
+                              }
+                            ],
+                            "name": "Incubator Token",
+                            "typeLine": {
+                              "subtypes": [
+                                "Incubator"
+                              ],
+                              "types": [
+                                "Artifact"
+                              ]
+                            }
+                          },
+                          {
+                            "name": "Phyrexian Token",
+                            "power": {
+                              "type": "Literal",
+                              "value": 0
+                            },
+                            "toughness": {
+                              "type": "Literal",
+                              "value": 0
+                            },
+                            "typeLine": {
+                              "subtypes": [
+                                "Phyrexian"
+                              ],
+                              "types": [
+                                "Artifact",
+                                "Creature"
+                              ]
+                            }
+                          }
+                        ],
+                        "layout": {
+                          "type": "Transforming"
+                        }
+                      },
+                      "quantity": {
+                        "type": "Literal",
+                        "value": 1
+                      },
+                      "riders": {
+                        "counters": [
+                          {
+                            "count": {
+                              "type": "Literal",
+                              "value": 3
+                            },
+                            "kind": {
+                              "type": "PlusOnePlusOne"
+                            }
+                          }
+                        ]
+                      }
+                    }
+                  }
+                ]
+              }
+            ],
+            "targetSlots": {
+              "target": {
+                "pool": {
+                  "type": "Creatures"
+                }
+              }
+            }
+          }
+        ]
+      },
+      "typeLine": {
+        "types": [
+          "Instant"
+        ]
+      }
+    }
+  ]
+}
