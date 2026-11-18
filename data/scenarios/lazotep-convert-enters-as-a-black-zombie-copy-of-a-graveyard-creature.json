@@ -1,0 +1,192 @@
+{
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "battlefield": [
+          {
+            "card": "Mountain",
+            "label": "m1"
+          },
+          {
+            "card": "Invasion of Amonkhet",
+            "counters": [
+              {
+                "key": {
+                  "type": "Defense"
+                },
+                "value": 3
+              }
+            ],
+            "label": "invasion",
+            "protector": "bob"
+          }
+        ],
+        "hand": [
+          {
+            "card": "Lightning Bolt",
+            "label": "bolt"
+          }
+        ],
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ],
+        "name": "alice"
+      },
+      {
+        "graveyard": [
+          {
+            "card": "Hill Giant",
+            "label": "giant"
+          }
+        ],
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ],
+        "name": "bob"
+      }
+    ],
+    "step": "PrecombatMain"
+  },
+  "description": "Lazotep Convert, cast from a defeated Invasion of Amonkhet, enters as a 4/4 black Zombie copy of a creature card in a graveyard",
+  "final": [
+    {
+      "Names": {
+        "names": [
+          "Hill Giant"
+        ],
+        "object": "Invasion of Amonkhet"
+      }
+    },
+    {
+      "PowerToughness": {
+        "object": "Invasion of Amonkhet",
+        "power": 4,
+        "toughness": 4
+      }
+    },
+    {
+      "Subtypes": {
+        "object": "Invasion of Amonkhet",
+        "subtypes": [
+          "Giant",
+          "Zombie"
+        ]
+      }
+    },
+    {
+      "View": {
+        "is": [
+          "Black",
+          "Red"
+        ],
+        "object": "Invasion of Amonkhet",
+        "of": "Colors"
+      }
+    },
+    {
+      "Count": {
+        "card": "Hill Giant",
+        "count": 1,
+        "player": "bob",
+        "zone": "Graveyard"
+      }
+    }
+  ],
+  "note": "It copies Hill Giant from bob's graveyard: Hill Giant's name, red and black, Giant Zombie, 4/4 rather than 3/3. The Giant stays in the graveyard (no exile rider).",
+  "timeline": [
+    {
+      "do": {
+        "Cast": {
+          "mana": [
+            "$m1"
+          ],
+          "object": "$bolt",
+          "targets": [
+            "$invasion"
+          ]
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Answer": {
+          "prompt": "OfferedCast",
+          "with": "Exercises"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "ChooseCopyTarget": "$giant"
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    }
+  ]
+}
