@@ -433,6 +433,7 @@ import qualified Parun.Types.Reveal as Reveal
 import qualified Parun.Types.RevealedThisWay as RevealedThisWay
 import qualified Parun.Types.RollDie as RollDie
 import qualified Parun.Types.RollExtreme as RollExtreme
+import qualified Parun.Types.RollTotalsThisTurn as RollTotalsThisTurn
 import qualified Parun.Types.RollTrigger as RollTrigger
 import qualified Parun.Types.RuleAbilities as RuleAbilities
 import qualified Parun.Types.RulePermission as RulePermission
@@ -868,6 +869,7 @@ quantityChildren children quantity = case quantity of
   Quantity.SpellsCast (SpellTally.MkSpellTally ref turn) -> fmap (\renamed -> Quantity.SpellsCast (SpellTally.MkSpellTally renamed turn)) (player children ref)
   Quantity.TimesThisTurn _ -> pure quantity
   Quantity.ActivationsThisTurn (ActivationsThisTurn.MkActivationsThisTurn ref source criteria) -> fmap Quantity.ActivationsThisTurn (ActivationsThisTurn.MkActivationsThisTurn <$> player children ref <*> nest children source <*> activationCriteriaChildren children criteria)
+  Quantity.RollTotalsThisTurn (RollTotalsThisTurn.MkRollTotalsThisTurn ref total) -> fmap Quantity.RollTotalsThisTurn (RollTotalsThisTurn.MkRollTotalsThisTurn <$> player children ref <*> term children total)
   Quantity.PermanentsDiedThisTurn -> pure quantity
   Quantity.DamagePreventedThisWay -> pure quantity
   Quantity.SpellsCastUsingThisTurn _ -> pure quantity
@@ -4056,7 +4058,7 @@ copyExceptionChildren c exception = case exception of
   CopyException.SetColors mode colors -> CopyException.SetColors mode <$> traverseSet (copyColor c) colors
   CopyException.NoManaCost -> pure exception
   CopyException.GainAbility ability -> CopyException.GainAbility <$> copyAbility c ability
-  CopyException.DontCopyColors -> pure exception
+  CopyException.DontCopy _ -> pure exception
 
 -- | A counter row's children (CR 614.1c): each kind and its amount.
 withCountersChildren :: (Applicative f) => CopyChildren ability effect f -> WithCounters.WithCounters -> f WithCounters.WithCounters

@@ -633,6 +633,7 @@ import qualified Parun.Codec.ParityOperandSpec
 import qualified Parun.Codec.ParitySpec
 import qualified Parun.Codec.PartnerTextSpec
 import qualified Parun.Codec.PastActivationSpec
+import qualified Parun.Codec.PastRollSpec
 import qualified Parun.Codec.PastTurnSpec
 import qualified Parun.Codec.PayBranchSpec
 import qualified Parun.Codec.PayGateSpec
@@ -754,6 +755,7 @@ import qualified Parun.Codec.RestartSignalSpec
 import qualified Parun.Codec.RestrictedActionSpec
 import qualified Parun.Codec.RestrictedCreaturesSpec
 import qualified Parun.Codec.ResultSpec
+import qualified Parun.Codec.RetainedCharacteristicSpec
 import qualified Parun.Codec.ReturnEndingSpec
 import qualified Parun.Codec.ReturnPermanentsSpec
 import qualified Parun.Codec.ReturnWatchSpec
@@ -770,6 +772,7 @@ import qualified Parun.Codec.RollEndSpec
 import qualified Parun.Codec.RollExtremeSpec
 import qualified Parun.Codec.RollKindSpec
 import qualified Parun.Codec.RollModifierSpec
+import qualified Parun.Codec.RollTotalsThisTurnSpec
 import qualified Parun.Codec.RollTriggerSpec
 import qualified Parun.Codec.RoomHalfSpec
 import qualified Parun.Codec.RoomIndexSpec
@@ -1762,6 +1765,7 @@ spec s reference corpus = do
   Parun.Codec.PairwiseFrameSpec.spec s
   Parun.Codec.PartnerTextSpec.spec s
   Parun.Codec.PastActivationSpec.spec s
+  Parun.Codec.PastRollSpec.spec s
   Parun.Codec.PayBranchSpec.spec s
   Parun.Codec.PayGateSpec.spec s
   Parun.Codec.PerTargetSpec.spec s
@@ -1886,6 +1890,7 @@ spec s reference corpus = do
   Parun.Codec.RestartSignalSpec.spec s
   Parun.Codec.RestrictedCreaturesSpec.spec s
   Parun.Codec.ResultSpec.spec s
+  Parun.Codec.RetainedCharacteristicSpec.spec s
   Parun.Codec.ReturnEndingSpec.spec s
   Parun.Codec.ReturnPermanentsSpec.spec s
   Parun.Codec.ReturnWatchSpec.spec s
@@ -1900,6 +1905,7 @@ spec s reference corpus = do
   Parun.Codec.RevealSpec.spec s
   Parun.Codec.RevealWindowSpec.spec s
   Parun.Codec.RollDieSpec.spec s
+  Parun.Codec.RollTotalsThisTurnSpec.spec s
   Parun.Codec.RerollReachSpec.spec s
   Parun.Codec.RollEndSpec.spec s
   Parun.Codec.RollExtremeSpec.spec s

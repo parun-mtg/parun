@@ -66,6 +66,7 @@ import qualified Parun.Types.Plus as Plus
 import qualified Parun.Types.ProductionTag as ProductionTag
 import qualified Parun.Types.Quantity as Quantity
 import qualified Parun.Types.Quotient as Quotient
+import qualified Parun.Types.RollTotalsThisTurn as RollTotalsThisTurn
 import qualified Parun.Types.Rounding as Rounding
 import qualified Parun.Types.Scope as Scope
 import qualified Parun.Types.SlotName as SlotName
@@ -837,6 +838,13 @@ spec s = Spec.describe s "Parun.Codec.Quantity" $ do
             }
       )
       " {\"type\":\"ActivationsThisTurn\",\"value\":{\"activator\":{\"type\":\"Relative\",\"value\":\"You\"},\"source\":{\"type\":\"HasCardType\",\"value\":\"Planeswalker\"},\"criteria\":{\"whichLoyalty\":\"LoyaltyAbility\"}}} "
+  -- Free-Range Chicken's "any other total you have rolled this turn".
+  Spec.it s "RollTotalsThisTurn" $
+    Common.assertCodec
+      s
+      Quantity.codec
+      (Quantity.RollTotalsThisTurn RollTotalsThisTurn.MkRollTotalsThisTurn {RollTotalsThisTurn.roller = PlayerRef.Relative PlayerRelation.You, RollTotalsThisTurn.total = Quantity.Literal 7})
+      " {\"type\":\"RollTotalsThisTurn\",\"value\":{\"roller\":{\"type\":\"Relative\",\"value\":\"You\"},\"total\":{\"type\":\"Literal\",\"value\":7}}} "
   -- CR 702.69a with nothing on the wire: the count reads the whole of the
   -- event log's extent and names no object at all.
   Spec.it s "PermanentsDiedThisTurn is nullary" $

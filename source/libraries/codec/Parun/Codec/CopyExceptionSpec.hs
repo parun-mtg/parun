@@ -14,6 +14,7 @@ import qualified Parun.Types.Color as Color
 import qualified Parun.Types.CopyException as CopyException
 import qualified Parun.Types.Keyword as Keyword
 import qualified Parun.Types.Loyalty as Loyalty
+import qualified Parun.Types.RetainedCharacteristic as RetainedCharacteristic
 import qualified Parun.Types.SetPowerToughness as SetPowerToughness
 import qualified Parun.Types.Subtype as Subtype
 import qualified Parun.Types.Supertype as Supertype
@@ -132,14 +133,13 @@ spec s = Spec.describe s "Parun.Codec.CopyException" $ do
       (CopyException.SetLoyalty Loyalty.Variable)
       " {\"type\":\"SetLoyalty\",\"value\":{\"type\":\"Variable\"}} "
 
-  -- CR 707.9c's decline-to-copy arm is NULLARY too, so the tag alone is the
-  -- whole value.
-  Spec.it s "DontCopyColors round-trips as a bare tag" $
+  -- CR 707.9c's decline-to-copy arm carries the characteristic it retains.
+  Spec.it s "DontCopy carries its characteristic" $
     Common.assertCodec
       s
       (CopyException.codec Common.text)
-      CopyException.DontCopyColors
-      " {\"type\":\"DontCopyColors\"} "
+      (CopyException.DontCopy RetainedCharacteristic.Supertypes)
+      " {\"type\":\"DontCopy\",\"value\":\"Supertypes\"} "
 
   -- CR 707.9a's quoted ability rides the ability codec it is handed; a string
   -- stands in for a Parun.Types.GrantedAbility here.

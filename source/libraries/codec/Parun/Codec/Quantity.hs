@@ -38,6 +38,7 @@ import qualified Parun.Codec.PlayerRef as PlayerRef
 import qualified Parun.Codec.Plus as Plus
 import qualified Parun.Codec.ProductionTag as ProductionTag
 import qualified Parun.Codec.Quotient as Quotient
+import qualified Parun.Codec.RollTotalsThisTurn as RollTotalsThisTurn
 import qualified Parun.Codec.SlotName as SlotName
 import qualified Parun.Codec.SpellTally as SpellTally
 import qualified Parun.Codec.Times as Times
@@ -61,7 +62,7 @@ import qualified Parun.Types.Zone as ZoneType
 -- dispatching type, which is this one.
 --
 -- RECURSIVE, and directly so: @Negate@ names
--- 'codec' itself, and @Plus@, @Quotient@, @Times@, @Exponentiation@, @AgainstSlot@, @AgainstExiledPile@ and @Count@ each pass it to a payload codec that is
+-- 'codec' itself, and @Plus@, @Quotient@, @Times@, @Exponentiation@, @AgainstSlot@, @AgainstExiledPile@, @RollTotalsThisTurn@ and @Count@ each pass it to a payload codec that is
 -- parametric in the quantity for exactly that reason. That ties the same knot
 -- Parun.Codec.Filter already ties at the value level, and
 -- Parun.JsonSchema.Define.define breaks it at the schema level by registering the
@@ -234,6 +235,7 @@ codec =
       -- time" is the Comparison's.
       Arm.payload "TimesThisTurn" AbilityAct.codec Quantity.TimesThisTurn (\x -> case x of Quantity.TimesThisTurn y -> Just y; _ -> Nothing),
       Arm.payload "ActivationsThisTurn" ActivationsThisTurn.codec Quantity.ActivationsThisTurn (\x -> case x of Quantity.ActivationsThisTurn y -> Just y; _ -> Nothing),
+      Arm.payload "RollTotalsThisTurn" (RollTotalsThisTurn.codec codec) Quantity.RollTotalsThisTurn (\x -> case x of Quantity.RollTotalsThisTurn y -> Just y; _ -> Nothing),
       Arm.nullary "PermanentsDiedThisTurn" Quantity.PermanentsDiedThisTurn,
       Arm.nullary "DamagePreventedThisWay" Quantity.DamagePreventedThisWay,
       Arm.payload "SpellsCastUsingThisTurn" KeywordFamily.codec Quantity.SpellsCastUsingThisTurn (\x -> case x of Quantity.SpellsCastUsingThisTurn y -> Just y; _ -> Nothing),
@@ -384,6 +386,7 @@ tagOf x = case x of
   Quantity.SpellsCast {} -> "SpellsCast"
   Quantity.TimesThisTurn {} -> "TimesThisTurn"
   Quantity.ActivationsThisTurn {} -> "ActivationsThisTurn"
+  Quantity.RollTotalsThisTurn {} -> "RollTotalsThisTurn"
   Quantity.PermanentsDiedThisTurn {} -> "PermanentsDiedThisTurn"
   Quantity.DamagePreventedThisWay {} -> "DamagePreventedThisWay"
   Quantity.SpellsCastUsingThisTurn {} -> "SpellsCastUsingThisTurn"

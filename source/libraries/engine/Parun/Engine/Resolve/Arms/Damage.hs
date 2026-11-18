@@ -111,6 +111,7 @@ import Parun.Types.ObjectId (ObjectId)
 import Parun.Types.ObjectRef (ObjectRef)
 import qualified Parun.Types.ObjectRef as ObjectRef
 import qualified Parun.Types.OutsideDestination as OutsideDestination
+import qualified Parun.Types.PastRoll as PastRoll
 import qualified Parun.Types.PermanentActed as PermanentActed
 import qualified Parun.Types.PermanentAction as PermanentAction
 import qualified Parun.Types.PlayerActed as PlayerActed
@@ -135,11 +136,13 @@ import qualified Parun.Types.SearchPlace as SearchPlace
 import qualified Parun.Types.Settle as Settle
 import qualified Parun.Types.ShownDie as ShownDie
 import Parun.Types.SlotName (SlotName)
+import qualified Parun.Types.Source as Source
 import qualified Parun.Types.StoredEffects as StoredEffects
 import qualified Parun.Types.StoredResult as StoredResult
 import qualified Parun.Types.TapState as TapState
 import qualified Parun.Types.Teams as Teams
 import qualified Parun.Types.TurnFaceDown as TurnFaceDown
+import qualified Parun.Types.TurnRegisters as TurnRegisters
 import qualified Parun.Types.Unblocking as Unblocking
 import qualified Parun.Types.Zone as Zone
 
@@ -1660,6 +1663,18 @@ rollDieArm throwDice runSubgame resolving source controller legal rollDie = do
       State.modify' (Common.bindPlayerSlot resolving slot (Set.fromList [roller | (roller, m) <- kept, m == n]))
   Foldable.for_ (opening <> rerolled) $ \(roller, _, (throwers, thrown), _) ->
     Monad.unless (null thrown) (Common.recordRoll roller throwers thrown)
+  -- CR 706.1: each roller's total, filed against the rolling ability for
+  -- Quantity.RollTotalsThisTurn. Only an ability's: a spell has no "this
+  -- ability" to roll for.
+  ability <- State.gets (fmap Object.source . Game.lookupObject resolving)
+  let fileTotals rolling = Foldable.for_ rolled $ \(roller, _, _, results) ->
+        Monad.unless (null results) . State.modify' $ \g ->
+          let past = PastRoll.MkPastRoll {PastRoll.ability = rolling, PastRoll.resolution = resolving, PastRoll.roller = roller, PastRoll.total = toInteger (sum results)}
+           in g {GameState.turn = (GameState.turn g) {TurnRegisters.rollsThisTurn = TurnRegisters.rollsThisTurn (GameState.turn g) Seq.|> past}}
+  Foldable.for_ ability $ \rolling -> case rolling of
+    Source.OfAbility _ -> fileTotals rolling
+    Source.OfTrigger _ -> fileTotals rolling
+    _ -> pure ()
   -- CR 706.8a: every kept result, noted with its kind of die, on the slot's
   -- permanent.
   Foldable.for_ (RollDie.store rollDie >>= \slot -> legalOne slot legal >>= Recipient.objectOf) $ \target -> do

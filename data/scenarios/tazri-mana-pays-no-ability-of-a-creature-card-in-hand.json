@@ -1,0 +1,58 @@
+{
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "battlefield": [
+          {
+            "card": "Tazri, Stalwart Survivor",
+            "label": "tazri",
+            "ready": true
+          },
+          {
+            "card": "Chronomaton",
+            "label": "chrono",
+            "ready": true
+          },
+          {
+            "card": "Forest",
+            "label": "f"
+          }
+        ],
+        "hand": [
+          {
+            "card": "Angel of the God-Pharaoh",
+            "label": "angel"
+          }
+        ],
+        "name": "alice"
+      },
+      {
+        "name": "bob"
+      }
+    ],
+    "step": "PrecombatMain"
+  },
+  "description": "CR 109.2 Tazri's granted mana pays for an ability of a creature on the battlefield, not a creature card's cycling from hand",
+  "note": "Tazri and Chronomaton can each tap for Tazri's restricted mana and the Forest for {G}, so cycling the Angel ({2}) is payable only if the restricted mana may pay for it; Chronomaton's {1} ability stays offered.",
+  "timeline": [
+    {
+      "check": {
+        "View": {
+          "is": [
+            "Pass",
+            "Activate $chrono",
+            "ActivateManaAbility $tazri",
+            "ActivateManaAbility $chrono",
+            "ActivateManaAbility $f"
+          ],
+          "of": "Offered",
+          "player": "alice"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    }
+  ]
+}

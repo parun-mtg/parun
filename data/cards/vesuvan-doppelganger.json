@@ -42,7 +42,8 @@
                     {
                       "exceptions": [
                         {
-                          "type": "DontCopyColors"
+                          "type": "DontCopy",
+                          "value": "Colors"
                         },
                         {
                           "type": "GainAbility",
@@ -76,7 +77,8 @@
                                             "value": {
                                               "exceptions": [
                                                 {
-                                                  "type": "DontCopyColors"
+                                                  "type": "DontCopy",
+                                                  "value": "Colors"
                                                 },
                                                 {
                                                   "type": "GainThisAbility"

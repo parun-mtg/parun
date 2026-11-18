@@ -1261,6 +1261,23 @@ Entries are ordered by the first rule each cites.
   `cr-706-2b-pixie-guide-adds-a-die-to-clam-i-am-s-reroll`.
 - **Issue**: none.
 
+## Whether a copy of an ability rolls for this ability
+
+- **Question**: Free-Range Chicken compares a total with "any other total you
+  have rolled this turn for this ability". Does a copy of the ability (CR
+  707.10) roll for that ability, or for itself?
+- **Rules**: CR 706.1, 707.10, 707.10b; CR of 2026-11-06.
+- **Decision**: For that ability: a copy's rolls are filed under the
+  original's Source, and a copy reads the original's.
+- **Rejected**: A record of the copy's own. CR 707.10 makes a copy an ability
+  of its own, but CR 707.10b gives it the original's source and counts it as
+  the same ability for "how many times that ability has resolved", the
+  nearest per-turn record the rules address; Quantity.TimesThisTurn already
+  reads it that way.
+- **Site**: Parun.Engine.Quantity's RollTotalsThisTurn arm and
+  Parun.Engine.Resolve.Arms.Damage.rollDieArm. No scenario copies the ability.
+- **Issue**: #4873.
+
 ## Who rolled a Die creature's die
 
 - **Question**: Pippa, Duchess of Dice's rulings let Wall of Fortune reroll a

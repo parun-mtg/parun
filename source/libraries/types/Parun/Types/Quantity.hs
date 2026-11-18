@@ -37,6 +37,7 @@ import qualified Parun.Types.PlayerCounterTally as PlayerCounterTally
 import qualified Parun.Types.PlayerDesignationTally as PlayerDesignationTally
 import qualified Parun.Types.PlayerRef as PlayerRef
 import qualified Parun.Types.ProductionTag as ProductionTag
+import qualified Parun.Types.RollTotalsThisTurn as RollTotalsThisTurn
 import qualified Parun.Types.SlotName as SlotName
 import qualified Parun.Types.SpellTally as SpellTally
 import qualified Parun.Types.TurnKind as TurnKind
@@ -334,6 +335,12 @@ data Quantity
     -- match, read off TurnRegisters.activationsThisTurn -- The Chain Veil's "if you
     -- didn't activate a loyalty ability of a planeswalker this turn".
     ActivationsThisTurn ActivationsThisTurn.ActivationsThisTurn
+  | -- | CR 706.1 / 608.2i: how many totals that player rolled this turn for the
+    -- ability this quantity is evaluated against, in its other resolutions,
+    -- equal the total -- Free-Range Chicken's "any other total you have rolled
+    -- this turn for this ability", aimed through AgainstSlot over
+    -- "thisAbility" as TimesThisTurn is.
+    RollTotalsThisTurn (RollTotalsThisTurn.RollTotalsThisTurn Quantity)
   | -- | CR 700.4 \/ 608.2i: how many permanents, of any player, were put into a
     -- graveyard from the battlefield this turn -- gravestorm's count (CR
     -- 702.69a).

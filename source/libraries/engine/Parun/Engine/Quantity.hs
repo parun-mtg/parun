@@ -85,6 +85,7 @@ import qualified Parun.Types.ObjectDamage as ObjectDamage
 import Parun.Types.ObjectId (ObjectId)
 import qualified Parun.Types.ObjectSnapshot as ObjectSnapshot
 import qualified Parun.Types.PastActivation as PastActivation
+import qualified Parun.Types.PastRoll as PastRoll
 import qualified Parun.Types.Player as Player
 import qualified Parun.Types.PlayerCounterKind as PlayerCounterKind
 import qualified Parun.Types.PlayerCounterTally as PlayerCounterTally
@@ -96,6 +97,7 @@ import qualified Parun.Types.PowerToughnessSticker as PowerToughnessSticker
 import Parun.Types.Quantity (Quantity)
 import qualified Parun.Types.Quantity as Quantity
 import qualified Parun.Types.Quotient as Quotient
+import qualified Parun.Types.RollTotalsThisTurn as RollTotalsThisTurn
 import qualified Parun.Types.Rounding as Rounding
 import qualified Parun.Types.Scratch as Scratch
 import qualified Parun.Types.SideDeck as SideDeck
@@ -1075,6 +1077,25 @@ evaluateAgainst viewOf context gs announcedOn mOid mView quantity =
                     && Count.activationMeets (ActivationsThisTurn.criteria tally) past
              in Just (toInteger (length (filter counts (Foldable.toList (TurnRegisters.activationsThisTurn (GameState.turn gs))))))
           _ -> Nothing
+        -- CR 706.1 / 608.2i: off TurnRegisters.rollsThisTurn, keyed as
+        -- TimesThisTurn's Resolved count is, by the Source of the ability this
+        -- is aimed at, which a zone change renews (CR 400.7); a copy shares it
+        -- (docs/decisions.md, "Whether a copy of an ability rolls for this
+        -- ability"). The roller is CR 109.5's "you", the activating player, so
+        -- a new controller compares only their own rolls. "Other" leaves out
+        -- every roll of the asking resolution, which no printing words two of.
+        -- data/scenarios' free-range-chicken scenarios prove it.
+        Quantity.RollTotalsThisTurn tally -> do
+          oid <- mOid
+          obj <- Game.lookupObject oid gs <|> Map.lookup oid (Snapshots.stackArchive (GameState.snapshots gs))
+          pids <- historyPlayersOf (RollTotalsThisTurn.roller tally)
+          total <- recur (RollTotalsThisTurn.total tally)
+          let earlier past =
+                PastRoll.ability past == Object.source obj
+                  && PastRoll.resolution past /= oid
+                  && elem (PastRoll.roller past) pids
+                  && PastRoll.total past == total
+          pure (toInteger (length (filter earlier (Foldable.toList (TurnRegisters.rollsThisTurn (GameState.turn gs))))))
         -- CR 700.4 / 702.69a: how many permanents, of any controller, were put into
         -- a graveyard from the battlefield this turn. The arm above's log fold with
         -- no keying on the evaluation's own object: rule 702.69a counts the whole
@@ -1843,6 +1864,7 @@ talliesWhatHappened quantity = case quantity of
   Quantity.SpellsCast _ -> True
   Quantity.TimesThisTurn _ -> False
   Quantity.ActivationsThisTurn _ -> True
+  Quantity.RollTotalsThisTurn _ -> True
   Quantity.PermanentsDiedThisTurn -> False
   Quantity.DamagePreventedThisWay -> False
   Quantity.SpellsCastUsingThisTurn _ -> False
