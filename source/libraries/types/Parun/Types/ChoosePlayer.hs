@@ -13,6 +13,11 @@ import qualified Parun.Types.SlotName as SlotName
 -- shares, against CR 109.5's "you" -- the resolving controller.
 data ChoosePlayer = MkChoosePlayer
   { scope :: PlayerScope.PlayerScope,
-    slot :: SlotName.SlotName
+    slot :: SlotName.SlotName,
+    -- | Players a slot names that are not offered -- Dack Fayden, Helping
+    -- Hand's "for each of those permanents, choose a different opponent",
+    -- over the loop's Parun.Engine.Binding.chosenForOthers. A slot naming
+    -- nobody excludes nobody, as PlayerRef.EachPlayerExcept's does.
+    excluding :: Maybe SlotName.SlotName
   }
   deriving (Eq, Ord, Show)

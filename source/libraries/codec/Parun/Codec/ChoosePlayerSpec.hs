@@ -19,7 +19,8 @@ spec s = Spec.describe s "Parun.Codec.ChoosePlayer" $ do
       ChoosePlayer.codec
       ( ChoosePlayer.MkChoosePlayer
           { ChoosePlayer.scope = PlayerScope.Related PlayerRelation.Opponent,
-            ChoosePlayer.slot = SlotName.MkSlotName (Text.pack "opponent")
+            ChoosePlayer.slot = SlotName.MkSlotName (Text.pack "opponent"),
+            ChoosePlayer.excluding = Nothing
           }
       )
       " {\"scope\":{\"type\":\"Opponent\"},\"slot\":\"opponent\"} "
@@ -29,8 +30,20 @@ spec s = Spec.describe s "Parun.Codec.ChoosePlayer" $ do
       ChoosePlayer.codec
       ( ChoosePlayer.MkChoosePlayer
           { ChoosePlayer.scope = PlayerScope.Related PlayerRelation.AnyPlayer,
-            ChoosePlayer.slot = SlotName.MkSlotName (Text.pack "chosen")
+            ChoosePlayer.slot = SlotName.MkSlotName (Text.pack "chosen"),
+            ChoosePlayer.excluding = Nothing
           }
       )
       " {\"scope\":{\"type\":\"AnyPlayer\"},\"slot\":\"chosen\"} "
+  Spec.it s "MkChoosePlayer, a different opponent (Dack Fayden, Helping Hand)" $
+    Common.assertCodec
+      s
+      ChoosePlayer.codec
+      ( ChoosePlayer.MkChoosePlayer
+          { ChoosePlayer.scope = PlayerScope.Related PlayerRelation.Opponent,
+            ChoosePlayer.slot = SlotName.MkSlotName (Text.pack "opponent"),
+            ChoosePlayer.excluding = Just (SlotName.MkSlotName (Text.pack "thoseChosenForOthers"))
+          }
+      )
+      " {\"excluding\":\"thoseChosenForOthers\",\"scope\":{\"type\":\"Opponent\"},\"slot\":\"opponent\"} "
   Spec.it s "has a schema" $ Common.assertHasSchema s ChoosePlayer.codec

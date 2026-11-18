@@ -1066,11 +1066,18 @@ forEach applyEffectWith loopOffers runSubgame resolving source controller legal 
       scoped = Set.insert Binding.chosenForOthers (Set.union bodyDefined (Map.keysSet earlier))
       -- CR 608.2e: one action's choices are all made before it is processed,
       -- so a member's choice can be told what the loop has bound so far for
-      -- its other members (Binding.chosenForOthers).
+      -- its other members (Binding.chosenForOthers): the objects, and the
+      -- players a ChoosePlayer bound (Dack Fayden, Helping Hand).
       forOthers member made =
         let boundBy binding = Foldable.toList (Maybe.fromMaybe Seq.empty (Binding.Type.objects binding)) <> Maybe.mapMaybe Recipient.objectOf (foldMap Set.toList (Binding.Type.targets binding))
-            others = ListUtils.nubOrd (concatMap (concatMap boundBy . Map.elems) (Map.elems (Map.delete member made)))
-         in if null others then Map.empty else Map.singleton Binding.chosenForOthers (Binding.toObjects (Seq.fromList others))
+            playersBy binding = Set.fromList (Maybe.mapMaybe Recipient.playerOf (foldMap Set.toList (Binding.Type.targets binding)))
+            otherBindings = concatMap Map.elems (Map.elems (Map.delete member made))
+            others = ListUtils.nubOrd (concatMap boundBy otherBindings)
+            otherPlayers = foldMap playersBy otherBindings
+            parts = [Binding.toObjects (Seq.fromList others) | not (null others)] <> [Binding.toPlayers otherPlayers | not (Set.null otherPlayers)]
+         in case parts of
+              [] -> Map.empty
+              first : rest -> Map.singleton Binding.chosenForOthers (List.foldl' Common.joinAcross first rest)
       -- Whatever the scoped names held BEFORE the loop, to be put back at each
       -- step's start and once at the end.
       beforeLoop = Map.restrictKeys (bindingsOf gs0) scoped
