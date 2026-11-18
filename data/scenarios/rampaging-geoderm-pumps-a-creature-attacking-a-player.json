@@ -100,7 +100,7 @@
     ],
     "step": "BeginningOfCombat"
   },
-  "description": "CR 506.4: Rampaging Geoderm's attack trigger gives Grizzly Bears attacking a player +1/+1 until end of turn and no counter",
+  "description": "CR 508.1b: Rampaging Geoderm's attack trigger gives Grizzly Bears attacking a player +1/+1 until end of turn and no counter",
   "note": "The pair of the battle scenario: the same board with the Bears attacking bob, the battle still on the battlefield.",
   "timeline": [
     {

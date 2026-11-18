@@ -85,7 +85,7 @@
     ],
     "step": "PrecombatMain"
   },
-  "description": "CR 701.17a: Seed of Hope mills alice two, she takes the milled Grizzly Bears but not the milled Lightning Bolt or the Hill Giant already in her graveyard, and gains 2 life",
+  "description": "CR 701.17a: Seed of Hope mills alice two, alice takes the milled Grizzly Bears but not the milled Lightning Bolt or the Hill Giant already in her graveyard, and gains 2 life",
   "note": "The Bears is the only candidate, so no card prompt comes: the milled Bolt is not a permanent card, the Giant was in the graveyard before the mill, and the Elves, third from the top, is not milled. Either one offered would raise an unscheduled ChooseCardFromAmong.",
   "timeline": [
     {
