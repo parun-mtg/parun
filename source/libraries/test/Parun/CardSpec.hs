@@ -2543,10 +2543,10 @@ namedTokens =
       -- Ginger, Queen of Sweets' "a Gingerbrute token", its reminder text the
       -- card Gingerbrute's.
       CardName.MkCardName (Text.pack "Gingerbrute"),
-      -- Koma, World-Eater's "3/3 blue Serpent creature tokens named Koma's Coil".
       -- Kher Keep's "a 0/1 red Kobold creature token named Kobolds of Kher
       -- Keep".
       CardName.MkCardName (Text.pack "Kobolds of Kher Keep"),
+      -- Koma, World-Eater's "3/3 blue Serpent creature tokens named Koma's Coil".
       CardName.MkCardName (Text.pack "Koma's Coil"),
       -- Goblin Kaboomist's "a colorless artifact token named Land Mine".
       CardName.MkCardName (Text.pack "Land Mine"),
