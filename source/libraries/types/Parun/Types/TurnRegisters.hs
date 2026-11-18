@@ -18,6 +18,7 @@ import qualified Parun.Types.LoggedEvent as LoggedEvent
 import qualified Parun.Types.ModifiedRoll as ModifiedRoll
 import qualified Parun.Types.ObjectId as ObjectId
 import qualified Parun.Types.PastActivation as PastActivation
+import qualified Parun.Types.PastRoll as PastRoll
 import qualified Parun.Types.Phase as Phase
 import qualified Parun.Types.PlayerId as PlayerId
 import qualified Parun.Types.Timestamp as Timestamp
@@ -142,6 +143,11 @@ data TurnRegisters = MkTurnRegisters
     -- carries; cleared at turn handoff. A sequence for triggeredThisGame's
     -- reason: Parun.Engine.Event.withinTriggerLimit counts it.
     instructionsTakenThisTurn :: Seq.Seq AbilityTriggered.AbilityTriggered,
+    -- | CR 706.1: each roll instruction an activated or triggered ability
+    -- carried out this turn, oldest first, one entry per roller, for
+    -- Quantity.RollTotalsThisTurn; cleared at turn handoff. Written by
+    -- Parun.Engine.Resolve.Arms.Damage.rollDieArm.
+    rollsThisTurn :: Seq.Seq PastRoll.PastRoll,
     -- | CR 807.4b: where this turn picks up when the
     -- scheduler next works it; AtStepStart outside Grand Melee.
     turnResume :: TurnResume.TurnResume

@@ -30,6 +30,7 @@ import qualified Parun.Engine.Projection.View as Projection.View
 import qualified Parun.Engine.Stored as Stored
 import qualified Parun.Types.AbilityTriggered as AbilityTriggered
 import qualified Parun.Types.ActivatedAbility as ActivatedAbility
+import qualified Parun.Types.ActivatedAbilitySource as ActivatedAbilitySource
 import qualified Parun.Types.ActiveAttackProhibition as ActiveAttackProhibition
 import qualified Parun.Types.ActiveAttackRequirement as ActiveAttackRequirement
 import qualified Parun.Types.ActiveBlockRequirement as ActiveBlockRequirement
@@ -75,6 +76,7 @@ import qualified Parun.Types.Object as Object
 import Parun.Types.ObjectId (ObjectId)
 import qualified Parun.Types.ObjectSnapshot as ObjectSnapshot
 import qualified Parun.Types.PastActivation as PastActivation
+import qualified Parun.Types.PastRoll as PastRoll
 import qualified Parun.Types.PendingEntryEffect as PendingEntryEffect
 import qualified Parun.Types.PendingSkipEffect as PendingSkipEffect
 import qualified Parun.Types.PhasedOut as PhasedOut
@@ -95,6 +97,7 @@ import qualified Parun.Types.StoredKind as StoredKind
 import qualified Parun.Types.Timestamp as Timestamp
 import qualified Parun.Types.TriggerSource as TriggerSource
 import qualified Parun.Types.TriggeredAbility as TriggeredAbility
+import qualified Parun.Types.TriggeredAbilitySource as TriggeredAbilitySource
 import qualified Parun.Types.TurnRegisters as TurnRegisters
 
 -- | Whether choosing between these two objects is choosing between options the
@@ -623,7 +626,8 @@ affectedNames oid source gs affected = case affected of
 --     outsideCopies (CR 400.11), each keyed by the object it is about; and
 --     the logs triggeredThisGame (a "triggers only once" rider's spent
 --     triggerings), instructionsTakenThisTurn (CR 603.2h),
---     activationsThisTurn (CR 602.2) and each player's own last turn's attacks
+--     activationsThisTurn (CR 602.2), rollsThisTurn (CR 706.1) and each
+--     player's own last turn's attacks
 --     (Game.attacksInOwnLastTurn, CR 508.1a), by the object each entry names.
 --
 -- phasedOut and a crowning or planeswalk watch can never name a CANDIDATE
@@ -693,6 +697,7 @@ namedByRelation oid gs =
         || any (any (spentActivationNames oid) . Map.keys) (Map.elems (TurnRegisters.activatedThisTurn (GameState.turn gs)))
         || any (any (spentActivationNames oid) . Map.keys . Object.activatedOnce) (Map.elems (GameState.objects gs))
         || any (activationNames oid) (TurnRegisters.activationsThisTurn (GameState.turn gs))
+        || any (rollNames oid) (TurnRegisters.rollsThisTurn (GameState.turn gs))
         -- CR 807.4b: each parked Grand Melee turn's own, as the fields above.
         || any (keyed . TurnRegisters.activatedThisTurn) parked
         || any (keyed . TurnRegisters.stackedIn) parked
@@ -703,6 +708,7 @@ namedByRelation oid gs =
         || any (triggeredNames oid) [record | r <- parked, GameEvent.AbilityTriggered record <- fmap LoggedEvent.event (Foldable.toList (TurnRegisters.events r))]
         || any (any (any (spentActivationNames oid) . Map.keys) . Map.elems . TurnRegisters.activatedThisTurn) parked
         || any (any (activationNames oid) . TurnRegisters.activationsThisTurn) parked
+        || any (any (rollNames oid) . TurnRegisters.rollsThisTurn) parked
         || any (any (attackedLastTurnNames oid) . Game.attacksInOwnLastTurn gs) (GameState.seating gs)
         -- CR 106.3: a unit naming its producer (ManaUnit.producer), in a pool
         -- or among what paid for an object (CR 601.2h).
@@ -774,6 +780,17 @@ activationNames :: ObjectId -> PastActivation.PastActivation -> Bool
 activationNames oid entry = case entry of
   PastActivation.MkPastActivation _activator source _ability _kind targets ->
     any (\snapshot -> ObjectSnapshot.object snapshot == oid) (source : targets)
+
+-- Whether a roll an ability made this turn (CR 706.1) names this object, as
+-- the ability's source or its object on the stack. Positional for
+-- phasedOutNames' reason.
+rollNames :: ObjectId -> PastRoll.PastRoll -> Bool
+rollNames oid entry = case entry of
+  PastRoll.MkPastRoll ability resolution _roller _total ->
+    resolution == oid || case ability of
+      Source.OfAbility activated -> ActivatedAbilitySource.source activated == oid
+      Source.OfTrigger triggered -> TriggeredAbilitySource.source triggered == oid
+      _ -> False
 
 -- Whether an attack declared in its player's last turn (CR 508.1a) names this
 -- object, as the attacker or the planeswalker or battle attacked. Positional

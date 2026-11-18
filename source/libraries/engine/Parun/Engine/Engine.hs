@@ -2403,6 +2403,7 @@ closeTurn gs =
                 -- CR 603.2h's "that turn": a taken instruction frees its ability at
                 -- the next turn, for every object.
                 TurnRegisters.instructionsTakenThisTurn = Seq.empty,
+                TurnRegisters.rollsThisTurn = Seq.empty,
                 -- Cleared with the log they describe, as the boards below are.
                 TurnRegisters.scannedThrough = 0,
                 TurnRegisters.damageScannedThrough = 0
