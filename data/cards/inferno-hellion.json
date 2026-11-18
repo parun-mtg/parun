@@ -68,11 +68,15 @@
                         "value": [
                           {
                             "type": "DeclaredThisTurn",
-                            "value": "Attacker"
+                            "value": {
+                              "type": "Attacked"
+                            }
                           },
                           {
                             "type": "DeclaredThisTurn",
-                            "value": "Blocker"
+                            "value": {
+                              "type": "Blocked"
+                            }
                           }
                         ]
                       }

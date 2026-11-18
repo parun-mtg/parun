@@ -52,7 +52,9 @@
                                 },
                                 {
                                   "type": "DeclaredThisTurn",
-                                  "value": "Attacker"
+                                  "value": {
+                                    "type": "Attacked"
+                                  }
                                 }
                               ]
                             },

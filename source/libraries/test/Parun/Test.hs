@@ -337,6 +337,7 @@ import qualified Parun.Codec.DealtDamageToSpec
 import qualified Parun.Codec.DeciderSpec
 import qualified Parun.Codec.DeckLimitSpec
 import qualified Parun.Codec.DeclarationTriggerSpec
+import qualified Parun.Codec.DeclaredRoleSpec
 import qualified Parun.Codec.DefendersAreSpec
 import qualified Parun.Codec.DefenseSpec
 import qualified Parun.Codec.DefinedXSpec
@@ -1487,6 +1488,7 @@ spec s reference corpus = do
   Parun.Codec.PrintingTableSpec.spec s
   Parun.Codec.RuleFamilySpec.spec s
   Parun.Codec.DeclarationTriggerSpec.spec s
+  Parun.Codec.DeclaredRoleSpec.spec s
   Parun.Codec.DefendersAreSpec.spec s
   Parun.Codec.DefenseSpec.spec s
   Parun.Codec.DefinedXSpec.spec s

@@ -20,6 +20,7 @@ import qualified Parun.Codec.CounterKind as CounterKind
 import qualified Parun.Codec.CounterLinked as CounterLinked
 import qualified Parun.Codec.DamageKind as DamageKind
 import qualified Parun.Codec.DealtDamageTo as DealtDamageTo
+import qualified Parun.Codec.DeclaredRole as DeclaredRole
 import qualified Parun.Codec.Designation as Designation
 import qualified Parun.Codec.EnteredZone as EnteredZone
 import qualified Parun.Codec.ExiledPile as ExiledPile
@@ -154,7 +155,7 @@ codec keywordCodec =
       Arm.optionalPayload "DeclaredAttackedThisCombat" SlotName.codec Filter.DeclaredAttackedThisCombat (\x -> case x of Filter.DeclaredAttackedThisCombat y -> Just y; _ -> Nothing),
       Arm.nullary "IsBlocking" Filter.IsBlocking,
       Arm.payload "HasBlockStatus" BlockStatus.codec Filter.HasBlockStatus (\x -> case x of Filter.HasBlockStatus y -> Just y; _ -> Nothing),
-      Arm.payload "DeclaredThisTurn" BlockRole.codec Filter.DeclaredThisTurn (\x -> case x of Filter.DeclaredThisTurn y -> Just y; _ -> Nothing),
+      Arm.payload "DeclaredThisTurn" DeclaredRole.codec Filter.DeclaredThisTurn (\x -> case x of Filter.DeclaredThisTurn y -> Just y; _ -> Nothing),
       Arm.nullary "CouldAttackThisTurn" Filter.CouldAttackThisTurn,
       Arm.nullary "DeclaredAttackerThisCombat" Filter.DeclaredAttackerThisCombat,
       Arm.nullary "DeclaredBlockerThisCombat" Filter.DeclaredBlockerThisCombat,
