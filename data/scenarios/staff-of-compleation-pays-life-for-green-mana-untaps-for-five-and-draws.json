@@ -1,37 +1,222 @@
 {
-  "description": "CR 602.1a / 118.3b / 605.1a / 106.1b: Staff of Compleation taps and pays 2 life for one mana of any color, untaps for {5}, then taps and pays 4 life to draw a card",
-  "note": "the green mana pays for Grizzly Bears beside one colorless; the Staff untaps for the five colorless left; the draw puts the top Forest in alice's hand and her life goes 20, 18, 14.",
   "board": {
     "active": "alice",
-    "step": "PrecombatMain",
     "seats": [
       {
-        "name": "alice",
+        "battlefield": [
+          {
+            "card": "Staff of Compleation",
+            "label": "staff"
+          }
+        ],
+        "hand": [
+          {
+            "card": "Grizzly Bears",
+            "label": "bears"
+          }
+        ],
+        "library": [
+          {
+            "card": "Forest"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ],
         "manaPool": "CCCCCC",
-        "battlefield": [{"card": "Staff of Compleation", "label": "staff"}],
-        "hand": [{"card": "Grizzly Bears", "label": "bears"}],
-        "library": [{"card": "Forest"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}]
+        "name": "alice"
       },
       {
-        "name": "bob",
-        "library": [{"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}]
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ],
+        "name": "bob"
       }
-    ]
+    ],
+    "step": "PrecombatMain"
   },
+  "description": "CR 602.1a / 118.3b / 605.1a / 106.1b: Staff of Compleation taps and pays 2 life for one mana of any color, untaps for {5}, then taps and pays 4 life to draw a card",
+  "note": "the green mana pays for Grizzly Bears beside one colorless; the Staff untaps for the five colorless left; the draw puts the top Forest in alice's hand and her life goes 20, 18, 14.",
   "timeline": [
-    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": {"Take": {"action": "ActivateManaAbility $staff", "yields": [[{"manaType": {"type": "Colored", "value": "Green"}, "restriction": null, "retention": "Ordinary", "rider": null, "sourceChoices": null, "tags": [{"CardType": "Artifact"}]}]]}}},
-    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Life": {"player": "alice", "life": 18}}},
-    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Tapped": {"object": "$staff", "tapped": true}}},
-    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": {"Cast": {"object": "$bears", "mana": []}}},
-    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass"},
-    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Count": {"player": "alice", "zone": "Battlefield", "card": "Grizzly Bears", "count": 1}}},
-    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": {"Activate": {"object": "$staff", "ability": 4, "mana": []}}},
-    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass"},
-    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Tapped": {"object": "$staff", "tapped": false}}},
-    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": {"Activate": {"object": "$staff", "ability": 3, "mana": []}}},
-    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Life": {"player": "alice", "life": 14}}},
-    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass"},
-    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Count": {"player": "alice", "zone": "Hand", "card": "Forest", "count": 1}}},
-    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Tapped": {"object": "$staff", "tapped": true}}}
+    {
+      "do": {
+        "Take": {
+          "action": "ActivateManaAbility $staff",
+          "yields": [
+            [
+              {
+                "manaType": {
+                  "type": "Colored",
+                  "value": "Green"
+                },
+                "restriction": null,
+                "retention": "Ordinary",
+                "rider": null,
+                "sourceChoices": null,
+                "tags": [
+                  {
+                    "CardType": "Artifact"
+                  }
+                ]
+              }
+            ]
+          ]
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Life": {
+          "life": 18,
+          "player": "alice"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Tapped": {
+          "object": "$staff",
+          "tapped": true
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Cast": {
+          "mana": [],
+          "object": "$bears"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Grizzly Bears",
+          "count": 1,
+          "player": "alice",
+          "zone": "Battlefield"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Activate": {
+          "ability": 4,
+          "mana": [],
+          "object": "$staff"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Tapped": {
+          "object": "$staff",
+          "tapped": false
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Activate": {
+          "ability": 3,
+          "mana": [],
+          "object": "$staff"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Life": {
+          "life": 14,
+          "player": "alice"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Forest",
+          "count": 1,
+          "player": "alice",
+          "zone": "Hand"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Tapped": {
+          "object": "$staff",
+          "tapped": true
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    }
   ]
 }

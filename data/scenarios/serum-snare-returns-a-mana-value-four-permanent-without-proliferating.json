@@ -1,34 +1,155 @@
 {
-  "description": "CR 608.2c / 608.2h / 701.34a: Serum Snare returns target nonland permanent to its owner's hand and does not proliferate when that permanent's last-known mana value was 4",
-  "note": "bob's Hill Giant (mana value 4) goes to bob's hand; no proliferate choice is offered, so alice's Grizzly Bears keeps two +1/+1 counters and bob's poison stays at 1. The paired scenario returns a mana value 3 Gray Ogre and proliferates.",
   "board": {
     "active": "alice",
-    "step": "PrecombatMain",
     "seats": [
       {
-        "name": "alice",
-        "manaPool": "UC",
         "battlefield": [
-          {"card": "Grizzly Bears", "label": "bears", "counters": [{"key": {"type": "PlusOnePlusOne"}, "value": 2}]}
+          {
+            "card": "Grizzly Bears",
+            "counters": [
+              {
+                "key": {
+                  "type": "PlusOnePlusOne"
+                },
+                "value": 2
+              }
+            ],
+            "label": "bears"
+          }
         ],
-        "hand": [{"card": "Serum Snare", "label": "snare"}],
-        "library": [{"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}]
+        "hand": [
+          {
+            "card": "Serum Snare",
+            "label": "snare"
+          }
+        ],
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ],
+        "manaPool": "UC",
+        "name": "alice"
       },
       {
-        "name": "bob",
-        "counters": [{"key": "Poison", "value": 1}],
-        "battlefield": [{"card": "Hill Giant", "label": "giant"}],
-        "library": [{"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}]
+        "battlefield": [
+          {
+            "card": "Hill Giant",
+            "label": "giant"
+          }
+        ],
+        "counters": [
+          {
+            "key": "Poison",
+            "value": 1
+          }
+        ],
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ],
+        "name": "bob"
       }
-    ]
+    ],
+    "step": "PrecombatMain"
   },
+  "description": "CR 608.2c / 608.2h / 701.34a: Serum Snare returns target nonland permanent to its owner's hand and does not proliferate when that permanent's last-known mana value was 4",
+  "note": "bob's Hill Giant (mana value 4) goes to bob's hand; no proliferate choice is offered, so alice's Grizzly Bears keeps two +1/+1 counters and bob's poison stays at 1. The paired scenario returns a mana value 3 Gray Ogre and proliferates.",
   "timeline": [
-    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": {"Cast": {"object": "$snare", "targets": ["$giant"]}}},
-    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass"},
-    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Count": {"player": "bob", "zone": "Hand", "card": "Hill Giant", "count": 1}}},
-    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Counters": {"object": "$bears", "kind": {"type": "PlusOnePlusOne"}, "count": 2}}},
-    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"PlayerCounters": {"player": "bob", "kind": "Poison", "count": 1}}},
-    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass"},
-    {"turn": 1, "step": "BeginningOfCombat", "player": "alice", "check": {"PlayerCounters": {"player": "bob", "kind": "Poison", "count": 1}}}
+    {
+      "do": {
+        "Cast": {
+          "object": "$snare",
+          "targets": [
+            "$giant"
+          ]
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Hill Giant",
+          "count": 1,
+          "player": "bob",
+          "zone": "Hand"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Counters": {
+          "count": 2,
+          "kind": {
+            "type": "PlusOnePlusOne"
+          },
+          "object": "$bears"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "PlayerCounters": {
+          "count": 1,
+          "kind": "Poison",
+          "player": "bob"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "PlayerCounters": {
+          "count": 1,
+          "kind": "Poison",
+          "player": "bob"
+        }
+      },
+      "player": "alice",
+      "step": "BeginningOfCombat",
+      "turn": 1
+    }
   ]
 }

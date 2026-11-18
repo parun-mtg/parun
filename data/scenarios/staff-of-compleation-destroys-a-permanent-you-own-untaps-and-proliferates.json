@@ -1,13 +1,8 @@
 {
-  "description": "CR 602.1a / 118.3b / 108.3 / 701.8a / 701.34a: Staff of Compleation taps and pays 1 life to destroy target permanent its controller owns, untaps for {5}, then taps and pays 3 life to proliferate",
-  "note": "bob's Hill Giant under alice's control is refused as the target; alice's Grizzly Bears under bob's control is destroyed into alice's graveyard. After the untap, the proliferate takes alice's Gray Ogre from two +1/+1 counters to three and bob's poison from 1 to 2; alice's life goes 20, 19, 16.",
   "board": {
     "active": "alice",
-    "step": "PrecombatMain",
     "seats": [
       {
-        "name": "alice",
-        "manaPool": "CCCCC",
         "battlefield": [
           {
             "card": "Staff of Compleation",
@@ -15,7 +10,6 @@
           },
           {
             "card": "Gray Ogre",
-            "label": "ogre",
             "counters": [
               {
                 "key": {
@@ -23,12 +17,13 @@
                 },
                 "value": 2
               }
-            ]
+            ],
+            "label": "ogre"
           },
           {
             "card": "Grizzly Bears",
-            "label": "bears",
-            "controller": "bob"
+            "controller": "bob",
+            "label": "bears"
           }
         ],
         "library": [
@@ -44,23 +39,24 @@
           {
             "card": "Island"
           }
-        ]
+        ],
+        "manaPool": "CCCCC",
+        "name": "alice"
       },
       {
-        "name": "bob",
+        "battlefield": [
+          {
+            "card": "Hill Giant",
+            "controller": "alice",
+            "label": "giant"
+          }
+        ],
         "counters": [
           {
             "key": "Poison",
             "value": 1
           }
         ],
-        "battlefield": [
-          {
-            "card": "Hill Giant",
-            "label": "giant",
-            "controller": "alice"
-          }
-        ],
         "library": [
           {
             "card": "Island"
@@ -74,135 +70,136 @@
           {
             "card": "Island"
           }
-        ]
+        ],
+        "name": "bob"
       }
-    ]
+    ],
+    "step": "PrecombatMain"
   },
+  "description": "CR 602.1a / 118.3b / 108.3 / 701.8a / 701.34a: Staff of Compleation taps and pays 1 life to destroy target permanent its controller owns, untaps for {5}, then taps and pays 3 life to proliferate",
+  "note": "bob's Hill Giant under alice's control is refused as the target; alice's Grizzly Bears under bob's control is destroyed into alice's graveyard. After the untap, the proliferate takes alice's Gray Ogre from two +1/+1 counters to three and bob's poison from 1 to 2; alice's life goes 20, 19, 16.",
   "timeline": [
     {
-      "turn": 1,
-      "step": "PrecombatMain",
       "player": "alice",
       "refuse": {
         "Activate": {
-          "object": "$staff",
           "ability": 0,
           "mana": [],
+          "object": "$staff",
           "targets": [
             "$giant"
           ]
         }
-      }
+      },
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PrecombatMain",
-      "player": "alice",
       "do": {
         "Activate": {
-          "object": "$staff",
           "ability": 0,
           "mana": [],
+          "object": "$staff",
           "targets": [
             "$bears"
           ]
         }
-      }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PrecombatMain",
-      "player": "alice",
       "check": {
         "Life": {
-          "player": "alice",
-          "life": 19
+          "life": 19,
+          "player": "alice"
         }
-      }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PrecombatMain",
+      "do": "Pass",
       "player": "alice",
-      "do": "Pass"
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PrecombatMain",
-      "player": "alice",
       "check": {
         "Count": {
-          "player": "alice",
-          "zone": "Graveyard",
           "card": "Grizzly Bears",
-          "count": 1
+          "count": 1,
+          "player": "alice",
+          "zone": "Graveyard"
         }
-      }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PrecombatMain",
-      "player": "alice",
       "check": {
         "Count": {
-          "player": "alice",
-          "zone": "Battlefield",
           "card": "Hill Giant",
-          "count": 1
+          "count": 1,
+          "player": "alice",
+          "zone": "Battlefield"
         }
-      }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PrecombatMain",
-      "player": "alice",
       "do": {
         "Activate": {
-          "object": "$staff",
           "ability": 4,
-          "mana": []
+          "mana": [],
+          "object": "$staff"
         }
-      }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PrecombatMain",
+      "do": "Pass",
       "player": "alice",
-      "do": "Pass"
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PrecombatMain",
-      "player": "alice",
       "do": {
         "Activate": {
-          "object": "$staff",
           "ability": 2,
-          "mana": []
+          "mana": [],
+          "object": "$staff"
         }
-      }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PrecombatMain",
-      "player": "alice",
       "check": {
         "Life": {
-          "player": "alice",
-          "life": 16
+          "life": 16,
+          "player": "alice"
         }
-      }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PrecombatMain",
+      "do": "Pass",
       "player": "alice",
-      "do": "Pass"
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PrecombatMain",
-      "player": "alice",
       "do": {
         "Answer": {
           "prompt": "ChooseProliferate",
@@ -215,33 +212,36 @@
             ]
           ]
         }
-      }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PrecombatMain",
-      "player": "alice",
       "check": {
         "Counters": {
-          "object": "$ogre",
+          "count": 3,
           "kind": {
             "type": "PlusOnePlusOne"
           },
-          "count": 3
+          "object": "$ogre"
         }
-      }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PrecombatMain",
-      "player": "alice",
       "check": {
         "PlayerCounters": {
-          "player": "bob",
+          "count": 2,
           "kind": "Poison",
-          "count": 2
+          "player": "bob"
         }
-      }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
     }
   ]
 }
