@@ -150,6 +150,8 @@ Entries are ordered by the first rule each cites.
   after the player's previous turn would have ended, had there been one.
 - **Site**: `Parun.Engine.Game.arrivalSinceOwnLastTurn`, proved by the
   scenario `premature-burial-takes-a-creature-that-entered-before-alice-s-first-turn`.
+  `Parun.Engine.Game.turnLog`'s `SinceOwnLastTurn` reads the same way
+  (Marchesa, Resolute Monarch's "since your last turn").
 - **Issue**: #7285.
 
 ## Whether a mulligan-time action can be repeated before declaring

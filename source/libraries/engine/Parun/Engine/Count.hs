@@ -1497,7 +1497,7 @@ dealtDamageThisTurn oid = damageThisTurn ((== Just oid) . Game.damagedObject)
 damageThisTurn :: (GameEvent.GameEvent -> Bool) -> GameState -> [DamageEvent.DamageEvent]
 damageThisTurn admits gs =
   [ ev
-  | logged <- Foldable.toList (Game.turnLog WhichTurn.ThisTurn gs),
+  | logged <- Foldable.toList (Game.turnLog WhichTurn.ThisTurn Nothing gs),
     admits (LoggedEvent.event logged),
     GameEvent.DamageDealt ev <- [LoggedEvent.event logged]
   ]

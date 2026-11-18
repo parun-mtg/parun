@@ -185,7 +185,7 @@ evaluateAgainst viewOf context gs announcedOn mOid mView quantity =
       -- the reader under both this fold and the Filter.DealtDamageThisTurn atom
       -- a player candidate answers, so they cannot come apart; see it for CR
       -- 120.3a's recipient and for CR 120.8's zero.
-      wasDealtDamage which kind by = Game.wasDealtDamage which kind by gs
+      wasDealtDamage which kind by = Game.wasDealtDamage which (Filter.perspective context) kind by gs
       -- CR 102.1's reference, resolved by Count.playersFor for every arm but the
       -- fold's own candidate. That one is answered HERE because this is where the
       -- candidate is: Count.evaluate's Scope.OverPlayers arm hands each candidate
@@ -960,7 +960,7 @@ evaluateAgainst viewOf context gs announcedOn mOid mView quantity =
         -- An EMPTY log answers 0 rather than Nothing, as TalliedThisTurn's does.
         -- What is unanswered is only the reference.
         Quantity.LifeChanged tally -> case historyPlayersOf (LifeTally.player tally) of
-          Just pids -> Just (toInteger (Game.lifeChangedAmong (LifeTally.direction tally) (Game.turnLog (LifeTally.turn tally) gs) (`elem` pids)))
+          Just pids -> Just (toInteger (Game.lifeChangedAmong (LifeTally.direction tally) (Game.turnLog (LifeTally.turn tally) (Filter.perspective context) gs) (`elem` pids)))
           Nothing -> Nothing
         -- CR 120.1 / 608.2i: how many of the players this reference names were dealt
         -- damage during the turn the tally names. LifeChanged's arm in footing -- a
@@ -984,7 +984,9 @@ evaluateAgainst viewOf context gs announcedOn mOid mView quantity =
         -- so -- Tymna the Weaver's "opponents that were dealt combat damage".
         --
         -- The turn reaches back to the last one where a card says so -- Command the
-        -- Stage's "an opponent was dealt noncombat damage last turn".
+        -- Stage's "an opponent was dealt noncombat damage last turn" -- or over every
+        -- turn since the perspective's own last one, Marchesa, Resolute Monarch's
+        -- "since your last turn" (Game.turnLog).
         Quantity.PlayersDealtDamage tally ->
           let dealt = DamageTally.dealt tally
            in case historyPlayersOf (DealtDamage.recipient dealt) of
@@ -1026,7 +1028,7 @@ evaluateAgainst viewOf context gs announcedOn mOid mView quantity =
         -- The history roster, LifeChanged's: a spell cast by a player who has since
         -- left the game was still cast (CR 800.4i).
         Quantity.SpellsCast tally -> case historyPlayersOf (SpellTally.player tally) of
-          Just [pid] -> Just (toInteger (Map.findWithDefault 0 pid (Game.castsPerPlayer (Game.turnLog (SpellTally.turn tally) gs))))
+          Just [pid] -> Just (toInteger (Map.findWithDefault 0 pid (Game.castsPerPlayer (Game.turnLog (SpellTally.turn tally) (Filter.perspective context) gs))))
           _ -> Nothing
         -- CR 608.2n / 608.2i: how many times the ability this evaluation is aimed at
         -- has resolved this turn, activated or triggered, folded off the turn-scoped

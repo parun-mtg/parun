@@ -267,11 +267,13 @@ slotNames :: Asking r -> SlotName.SlotName -> r
 slotNames asking _slot = contextNames asking
 
 -- A history read of the turn a tally names: the turn in progress is read
--- (CR 733.3), and last turn's log, which no loop of this turn can grow, is not.
+-- (CR 733.3), as is a window reaching it, and last turn's log, which no loop of
+-- this turn can grow, is not.
 turnHistory :: (Monoid r) => Asking r -> WhichTurn.WhichTurn -> HistoryRead.HistoryRead -> r
 turnHistory asking which reading = case which of
   WhichTurn.ThisTurn -> history asking reading
   WhichTurn.LastTurn -> mempty
+  WhichTurn.SinceOwnLastTurn -> history asking reading
 
 -- Whether an atom reading the resolution context -- an enclosing target slot's
 -- amount, an attach's subject, a baked crew or attachment set -- might name the
