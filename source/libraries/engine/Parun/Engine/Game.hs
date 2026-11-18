@@ -347,6 +347,11 @@ stickerSheetOf ref gs = do
 stickerContents :: Seq.Seq StickerPlacement.StickerPlacement -> GameState -> Seq.Seq StickerContent.StickerContent
 stickerContents placements gs = Seq.fromList (Maybe.mapMaybe (\p -> stickerContent (StickerPlacement.sticker p) gs) (Foldable.toList placements))
 
+-- | CR 123.1: what the stickers on this object say now, oldest first; none
+-- for an id naming no object.
+stickersOn :: ObjectId -> GameState -> Seq.Seq StickerContent.StickerContent
+stickersOn oid gs = foldMap (\o -> stickerContents (Object.stickers o) gs) (lookupObject oid gs)
+
 -- | CR 123.2 / 123.6-123.9: what a sticker says, read off its sheet.
 stickerContent :: StickerRef.StickerRef -> GameState -> Maybe StickerContent.StickerContent
 stickerContent ref gs = do

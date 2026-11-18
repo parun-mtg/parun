@@ -492,6 +492,8 @@ slotContext reader perspective unannounced bindings acquisition source amount gs
             -- and a slot's own filter is judged against a candidate rather than
             -- against an aiming object -- so no atom here wants the aimer.
             Filter.aimingController = Nothing,
+            -- Empty, carrierChosenPlayer's companion and for its reason.
+            Filter.carrierStickers = Seq.empty,
             -- CR 607.2a's last exiled card is the MANA unit's, never a slot's.
             Filter.sourceLastExiled = Nothing,
             -- CR 607.5: the ability announcing the slot, so an acquired one's
@@ -752,6 +754,7 @@ targetable pcs rowsOf perspective source sourceView gs recipient =
               Filter.matches
                 (Filter.contextIn gs controller (Just source))
                   { Filter.carrierChosenPlayer = Game.currentChoice Chosen.Players oid gs >>= Map.lookup PlayerChoice.AsEntersOrTransforms,
+                    Filter.carrierStickers = Game.stickersOn oid gs,
                     Filter.aimingController = Just perspective
                   }
                 sourceView

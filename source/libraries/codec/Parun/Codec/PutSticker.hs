@@ -21,6 +21,7 @@ codec = Fields.object $ do
   ticketCap <- Fields.defaulted "ticketCap" Nothing (Common.maybe Quantity.codec) PutSticker.ticketCap
   free <- Fields.defaulted "free" False Common.boolean PutSticker.free
   bound <- Fields.defaulted "bound" Nothing (Common.maybe SlotName.codec) PutSticker.bound
+  optional <- Fields.defaulted "optional" False Common.boolean PutSticker.optional
   pure
     PutSticker.MkPutSticker
       { PutSticker.player = player,
@@ -28,5 +29,6 @@ codec = Fields.object $ do
         PutSticker.kinds = kinds,
         PutSticker.ticketCap = ticketCap,
         PutSticker.free = free,
-        PutSticker.bound = bound
+        PutSticker.bound = bound,
+        PutSticker.optional = optional
       }

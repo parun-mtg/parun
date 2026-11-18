@@ -141,6 +141,7 @@ codec keywordCodec =
       Arm.nullary "IsLastExiledWithSource" Filter.IsLastExiledWithSource,
       Arm.nullary "IsChosenObject" Filter.IsChosenObject,
       Arm.nullary "OfChosenPlayer" Filter.OfChosenPlayer,
+      Arm.nullary "NameStartsLikeCarrierSticker" Filter.NameStartsLikeCarrierSticker,
       Arm.payload "OfRelatedPlayer" PlayerRelation.codec Filter.OfRelatedPlayer (\x -> case x of Filter.OfRelatedPlayer y -> Just y; _ -> Nothing),
       -- Runtime-only, HeldByPlayer's treatment above.
       Arm.payload "OfSpecificPlayer" PlayerId.codec Filter.OfSpecificPlayer (\x -> case x of Filter.OfSpecificPlayer y -> Just y; _ -> Nothing),
@@ -385,6 +386,7 @@ tagOf x = case x of
   Filter.IsLastExiledWithSource -> "IsLastExiledWithSource"
   Filter.IsChosenObject -> "IsChosenObject"
   Filter.OfChosenPlayer {} -> "OfChosenPlayer"
+  Filter.NameStartsLikeCarrierSticker {} -> "NameStartsLikeCarrierSticker"
   Filter.OfRelatedPlayer {} -> "OfRelatedPlayer"
   Filter.OfSpecificPlayer {} -> "OfSpecificPlayer"
   Filter.OfBoundPlayer {} -> "OfBoundPlayer"

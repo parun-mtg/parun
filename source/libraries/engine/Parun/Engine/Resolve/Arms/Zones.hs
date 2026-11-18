@@ -719,12 +719,12 @@ ante settle resolving source controller legal (Ante.MkAnte player ref mSlot) = d
 -- 123.6b's position and CR 123.3c's payment. Placing nothing writes nothing,
 -- so happenedBetween reads it as not having happened.
 putSticker :: ObjectId -> ObjectId -> PlayerId -> Map.Map SlotName (Set Recipient) -> Map.Map SlotName (Set Recipient) -> PutSticker.PutSticker -> Game ()
-putSticker resolving source controller legal chosen (PutSticker.MkPutSticker player ref kinds cap free bound) = do
+putSticker resolving source controller legal chosen (PutSticker.MkPutSticker player ref kinds cap free bound optional) = do
   named <- Common.askingObjects Common.Present resolving source controller legal chosen ref
   placers <- State.gets (\gs -> playerRefPlayers legal resolving source controller gs player)
   Monad.forM_ placers $ \placer -> Monad.forM_ (ListUtils.nubOrd named) $ \oid -> do
     gs <- State.get
-    picked <- Sticker.place False placer oid kinds (Common.ticketCapOf resolving source controller legal gs cap) free
+    picked <- Sticker.place optional placer oid kinds (Common.ticketCapOf resolving source controller legal gs cap) free
     Monad.forM_ picked (\placed -> Monad.forM_ bound (\slot -> State.modify' (Common.bindStickerSlot resolving slot placed)))
 
 -- CR 701.24a alone: randomize the named libraries so no player knows their

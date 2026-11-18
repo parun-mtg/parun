@@ -21,6 +21,9 @@ data PutSticker = MkPutSticker
     free :: Bool,
     -- | CR 123.6e: the slot the placed sticker is bound under, for "that
     -- sticker".
-    bound :: Maybe SlotName.SlotName
+    bound :: Maybe SlotName.SlotName,
+    -- | CR 123.3: "you may put", the placer declining among the stickers
+    -- (Knight in _____ Armor's as-enters placement, which no clause wraps).
+    optional :: Bool
   }
   deriving (Eq, Ord, Show)

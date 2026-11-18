@@ -1052,7 +1052,7 @@ effectPlayerRefs effect = case effect of
   Effect.TakeExtraTurn takeExtraTurn -> [TakeExtraTurn.player takeExtraTurn]
   Effect.ShuffleIntoLibrary (ShuffleIntoLibrary.MkShuffleIntoLibrary named _ _) -> Maybe.maybeToList named
   Effect.Ante (Ante.MkAnte player _ _) -> [player]
-  Effect.PutSticker (PutSticker.MkPutSticker player _ _ _ _ _) -> [player]
+  Effect.PutSticker (PutSticker.MkPutSticker player _ _ _ _ _ _) -> [player]
   Effect.SetOwner (SetOwner.MkSetOwner player _) -> [player]
   Effect.ExchangeOwnership {} -> []
   Effect.Shuffle ref -> [ref]

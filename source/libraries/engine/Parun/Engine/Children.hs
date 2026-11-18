@@ -627,6 +627,7 @@ filterChildren children predicate = case predicate of
   Filter.IsLastExiledWithSource -> pure predicate
   Filter.IsChosenObject -> pure predicate
   Filter.OfChosenPlayer -> pure predicate
+  Filter.NameStartsLikeCarrierSticker -> pure predicate
   Filter.OfRelatedPlayer _ -> pure predicate
   Filter.OfSpecificPlayer _ -> pure predicate
   -- ONE: the one player the slot names, HeldByBound's reading.
@@ -1358,8 +1359,8 @@ effectChildren c effect = case effect of
   Effect.ShuffleIntoLibrary (ShuffleIntoLibrary.MkShuffleIntoLibrary library ref named) ->
     fmap Effect.ShuffleIntoLibrary (ShuffleIntoLibrary.MkShuffleIntoLibrary <$> traverse (onPlayer c) library <*> onObjectRef c ref <*> traverse (onSlot c) named)
   Effect.Ante (Ante.MkAnte who ref named) -> fmap Effect.Ante (Ante.MkAnte <$> onPlayer c who <*> onObjectRef c ref <*> traverse (onSlot c) named)
-  Effect.PutSticker (PutSticker.MkPutSticker who ref kinds cap free bound) ->
-    fmap Effect.PutSticker (PutSticker.MkPutSticker <$> onPlayer c who <*> onObjectRef c ref <*> pure kinds <*> traverse (onQuantity c) cap <*> pure free <*> traverse (onSlot c) bound)
+  Effect.PutSticker (PutSticker.MkPutSticker who ref kinds cap free bound optional) ->
+    fmap Effect.PutSticker (PutSticker.MkPutSticker <$> onPlayer c who <*> onObjectRef c ref <*> pure kinds <*> traverse (onQuantity c) cap <*> pure free <*> traverse (onSlot c) bound <*> pure optional)
   Effect.Shuffle who -> fmap Effect.Shuffle (onPlayer c who)
   Effect.OfferCast (OfferCast.MkOfferCast ref caster optionality verb offer repetition copied controlWhileResolving named) ->
     fmap

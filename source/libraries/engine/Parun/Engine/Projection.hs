@@ -4544,6 +4544,7 @@ filterReads f = case f of
   -- Reads the candidate's CONTROLLER, ControllerRelatesToBound's answer above: rule
   -- 702.16k's other half is an owner, which CR 108.3 never projects.
   Filter.Type.OfChosenPlayer -> Set.singleton Controller
+  Filter.Type.NameStartsLikeCarrierSticker -> Set.empty
   Filter.Type.OfRelatedPlayer _ -> Set.singleton Controller
   Filter.Type.OfSpecificPlayer _ -> Set.singleton Controller
   Filter.Type.OfBoundPlayer _ -> Set.singleton Controller
@@ -4926,6 +4927,7 @@ filterReadsPeers f = case f of
   -- The carrier's chosen player arrives on the Context; the candidate's own
   -- controller and owner are read off its view, so no PEER is projected.
   Filter.Type.OfChosenPlayer -> False
+  Filter.Type.NameStartsLikeCarrierSticker -> False
   Filter.Type.OfRelatedPlayer _ -> False
   Filter.Type.OfSpecificPlayer _ -> False
   Filter.Type.OfBoundPlayer _ -> False

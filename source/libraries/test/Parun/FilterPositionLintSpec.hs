@@ -1081,16 +1081,23 @@ chosenValueOffends counts tag card =
 ofChosenPlayerTag :: Text.Text
 ofChosenPlayerTag = Text.pack "OfChosenPlayer"
 
--- How many CR 702.16k chosen-player atoms this card carries inside a KEYWORD's
+-- The CR 123.6 carrier-sticker tag, spelled once.
+nameStartsLikeCarrierStickerTag :: Text.Text
+nameStartsLikeCarrierStickerTag = Text.pack "NameStartsLikeCarrierSticker"
+
+-- How many carrier atoms tagged `tag` this card carries inside a KEYWORD's
 -- own filter, and how many anywhere else. The second number is the offence; the
--- first is what True-Name Nemesis legitimately has one of.
-ofChosenPlayerCounts :: Surveyed -> (Int, Int)
-ofChosenPlayerCounts card =
-  let total wanted = sum (fmap (\(_, f) -> filterAtoms ofChosenPlayerTag f) (filter (\(framing, _) -> (framing == KeywordFramed) == wanted) (surveyedFilters card)))
+-- first is what True-Name Nemesis and Knight in _____ Armor legitimately have
+-- one of.
+carrierCounts :: Text.Text -> Surveyed -> (Int, Int)
+carrierCounts tag card =
+  let total wanted = sum (fmap (\(_, f) -> filterAtoms tag f) (filter (\(framing, _) -> (framing == KeywordFramed) == wanted) (surveyedFilters card)))
    in (total True, total False)
 
 -- CR 702.16k's chosen player is answerable only where
--- Filter.Context.carrierChosenPlayer is filled, and the four fillers are the four
+-- Filter.Context.carrierChosenPlayer is filled, and CR 123.6's carrier
+-- stickers only where Filter.Context.carrierStickers is, beside it; the four
+-- fillers are the four
 -- positions rule 702.16 reads a protection QUALITY in
 -- (Parun.Engine.Replacement.candidateContext, Parun.Engine.Target.targetable,
 -- Parun.Engine.AttachRestriction.barredBy,
@@ -1127,10 +1134,10 @@ ofChosenPlayerCounts card =
 -- Two offences under one name, for hasChosenNameOffends' two reasons: the
 -- traversal found the atom outside a keyword, or the traversal and the codec
 -- disagree about how many the card holds.
-ofChosenPlayerOffends :: Surveyed -> Bool
-ofChosenPlayerOffends card =
-  let (framed, elsewhere) = ofChosenPlayerCounts card
-   in elsewhere /= 0 || framed + elsewhere /= jsonAtoms ofChosenPlayerTag (Codec.encode (Face.Codec.codec Card.codec) (surveyedFace card))
+carrierOffends :: Text.Text -> Surveyed -> Bool
+carrierOffends tag card =
+  let (framed, elsewhere) = carrierCounts tag card
+   in elsewhere /= 0 || framed + elsewhere /= jsonAtoms tag (Codec.encode (Face.Codec.codec Card.codec) (surveyedFace card))
 
 -- How many atoms tagged `tag` in an encoding decode to one `wanted` admits:
 -- an anchored atom's trait and anchor are what tell its readings apart, and a
@@ -1871,16 +1878,17 @@ filterPositionLintSpec s registry corpus = Spec.describe s "Lint" $ do
         ("Sphinx Ambassador", 1), -- its move clause's gate
         ("Diviner's Lockbox", 1) -- its sacrifice clause's gate
       ]
-  -- CR 702.16k's chosen player in the same frame one atom over: answerable only
-  -- where a protection quality is read, and every one of those four positions
-  -- takes its filter off a keyword. See ofChosenPlayerOffends for the two
-  -- offences.
-  Spec.it s "CR 702.16k no card asks OfChosenPlayer outside a keyword's own filter" $ do
-    let offenders = fmap fst (filter (any ofChosenPlayerOffends . snd) pool)
-    Spec.assertEqWith s "the atom sits only in a keyword's filter" (fmap (S.nameOf . Printing.card) offenders) []
-    -- NOT vacuous: the pool authors the atom, and the card that does is
-    -- ACCEPTED here rather than skipped.
-    assertAuthors s registry pool "each author's atom is framed by its own keyword" ofChosenPlayerCounts [("True-Name Nemesis", 1)]
+  -- CR 702.16k's chosen player and CR 123.6's carrier stickers in the same
+  -- frame one atom over: answerable only where a protection quality is read,
+  -- and every one of those four positions takes its filter off a keyword. See
+  -- carrierOffends for the two offences.
+  Spec.it s "CR 702.16k no card asks OfChosenPlayer or NameStartsLikeCarrierSticker outside a keyword's own filter" $ do
+    Monad.forM_ [(ofChosenPlayerTag, "True-Name Nemesis"), (nameStartsLikeCarrierStickerTag, "Knight in _____ Armor")] $ \(tag, author) -> do
+      let offenders = fmap fst (filter (any (carrierOffends tag) . snd) pool)
+      Spec.assertEqWith s "the atom sits only in a keyword's filter" (fmap (S.nameOf . Printing.card) offenders) []
+      -- NOT vacuous: the pool authors the atom, and the card that does is
+      -- ACCEPTED here rather than skipped.
+      assertAuthors s registry pool "each author's atom is framed by its own keyword" (carrierCounts tag) [(author, 1)]
   -- The hole that bucket had while every keyword payload was KeywordFramed. CR
   -- 702.6c's equip quality is a payload that is NOT read as a keyword: rule
   -- 702.6a's minted ability carries it into a target slot, which
@@ -1894,20 +1902,21 @@ filterPositionLintSpec s registry corpus = Spec.describe s "Lint" $ do
         creatures = Filter.Type.HasCardType CardType.Creature
         -- Buried under both combinators, so a lint reading only the top of a
         -- Filter would miss it.
-        buried = Filter.Type.And [Filter.Type.Or [creatures, Filter.Type.OfChosenPlayer]]
         equipping quality = Keyword.Equip (Equip.MkEquip (Cost.Type.MkCost (Just (ManaCost.MkManaCost [])) []) [] quality EquipTarget.Creature Nothing)
-        offending = base {Face.keywords = Map.singleton (equipping (Just buried)) 1}
-        protecting = base {Face.keywords = Map.singleton (Keyword.Protection Protection.MkProtection {Protection.quality = buried, Protection.spares = Nothing}) 1}
-    -- Ordered FIRST, and the assertion this framing exists for.
-    Spec.assertBool s (ofChosenPlayerOffends (survey offending)) "OfChosenPlayer in an equip quality offends"
-    Spec.assertEqWith s "counted outside the keyword bucket" (ofChosenPlayerCounts (survey offending)) (0, 1)
-    -- The pair differing in exactly ONE thing: the same buried atom on the same
-    -- face, moved into a quality rule 702.16 really does read off the keyword.
-    Spec.assertBool s (not (ofChosenPlayerOffends (survey protecting))) "the same atom in a protection quality does not"
-    Spec.assertEqWith s "counted inside it" (ofChosenPlayerCounts (survey protecting)) (1, 0)
+    Monad.forM_ [(Filter.Type.OfChosenPlayer, ofChosenPlayerTag), (Filter.Type.NameStartsLikeCarrierSticker, nameStartsLikeCarrierStickerTag)] $ \(atom, tag) -> do
+      let buried = Filter.Type.And [Filter.Type.Or [creatures, atom]]
+          offending = base {Face.keywords = Map.singleton (equipping (Just buried)) 1}
+          protecting = base {Face.keywords = Map.singleton (Keyword.Protection Protection.MkProtection {Protection.quality = buried, Protection.spares = Nothing}) 1}
+      -- Ordered FIRST, and the assertion this framing exists for.
+      Spec.assertBool s (carrierOffends tag (survey offending)) "the atom in an equip quality offends"
+      Spec.assertEqWith s "counted outside the keyword bucket" (carrierCounts tag (survey offending)) (0, 1)
+      -- The pair differing in exactly ONE thing: the same buried atom on the same
+      -- face, moved into a quality rule 702.16 really does read off the keyword.
+      Spec.assertBool s (not (carrierOffends tag (survey protecting))) "the same atom in a protection quality does not"
+      Spec.assertEqWith s "counted inside it" (carrierCounts tag (survey protecting)) (1, 0)
     -- So the framing rejects the ATOM and not the position: the printed quality
     -- in the pool carries it and is accepted.
-    Spec.assertBool s (not (ofChosenPlayerOffends (survey (S.combinedFace blade)))) "Dúnedain Blade's own quality is accepted"
+    Spec.assertBool s (not (carrierOffends ofChosenPlayerTag (survey (S.combinedFace blade)))) "Dúnedain Blade's own quality is accepted"
     Spec.assertEqWith
       s
       "and arrives framed as a minted target slot"

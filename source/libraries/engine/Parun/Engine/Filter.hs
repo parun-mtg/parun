@@ -1833,11 +1833,18 @@ data Context = MkContext
     --
     -- Nothing in contextFor below, so the atom is vacuously False in every position
     -- but those four -- sourceAttachedTo's posture rather than slotControllers'.
-    -- What keeps a card out of the other positions is Parun.CardSpec's "CR 702.16k
-    -- no card asks OfChosenPlayer outside a keyword's own filter", the sweep
+    -- What keeps a card out of the other positions is
+    -- Parun.FilterPositionLintSpec's "CR 702.16k no card asks OfChosenPlayer or
+    -- NameStartsLikeCarrierSticker outside a keyword's own filter", the sweep
     -- sourceMeasures', slotNames', sourceAttachedTo's and sourceChosenNames'
     -- siblings each have.
     carrierChosenPlayer :: Maybe PlayerId.PlayerId,
+    -- CR 123.6: what the stickers on the protection CARRIER say, for
+    -- NameStartsLikeCarrierSticker (Knight in _____ Armor). Filled beside
+    -- carrierChosenPlayer by the same four positions and read live the same
+    -- way; empty in contextFor below, so the atom is vacuously False
+    -- elsewhere, and the same lint keeps a card to a keyword's own filter.
+    carrierStickers :: Seq.Seq StickerContent.StickerContent,
     -- CR 702.16b / CR 702.16k: the controller of the spell or ability being
     -- AIMED, which rule 702.16k's targeting clause names beside the source
     -- object's -- "can't be targeted by spells or abilities the specified player
@@ -2017,7 +2024,8 @@ data Context = MkContext
 -- CR 702.16k's chosen-player atom (True-Name Nemesis) is a further one a CARD may
 -- write, and it reads the Nothing here in every position but the four rule 702.16
 -- reads a protection quality in -- see carrierChosenPlayer above for the list and
--- for the lint that keeps a card to them.
+-- for the lint that keeps a card to them. CR 123.6's carrier-sticker atom (Knight
+-- in _____ Armor) reads carrierStickers' empty sequence the same way.
 --
 -- CR 105.2's chosen-colour atom (Gauntlet of Power) and CR 205.3's chosen-subtype
 -- atom (Obelisk of Urd) are two more a CARD may write, and they read the Nothing
@@ -2046,7 +2054,7 @@ data Context = MkContext
 -- here owes both halves of the same pair: which way its unfilled read answers,
 -- and what holds a card to the positions that fill it.
 contextFor :: Teams.Teams -> Maybe PlayerId.PlayerId -> Maybe ObjectId.ObjectId -> Context
-contextFor t p s = MkContext {teams = t, perspective = p, source = s, sourceMeasures = Map.empty, sourceColors = Set.empty, sourceSectors = Set.empty, sourceNames = Set.empty, sourceDealtDamage = Set.empty, sourceDealtDamageEarlier = Set.empty, sourceCrewed = Set.empty, sourceBefore = Nothing, slotAmount = Nothing, defendingPlayers = [], activePlayers = [], recipient = Nothing, shares = Map.empty, slotObjects = Map.empty, cantPayKeywordCost = Map.empty, slotNames = Map.empty, slotControllers = Map.empty, slotHostControllers = Map.empty, subjectHostCardTypes = Set.empty, slotCreatureTypes = Map.empty, slotCardTypes = Map.empty, slotColors = Map.empty, slotMeasures = Map.empty, slotPlayers = Map.empty, boundAmounts = Map.empty, slotStickers = Map.empty, slotVotes = Map.empty, boundUnannounced = False, sourceAttachedTo = Nothing, evaluated = Nothing, evaluatedView = Nothing, commanderCreatureTypes = Set.empty, sourceEntrants = Set.empty, sourceCountered = Map.empty, sourceOwner = Nothing, sourceChosenNames = Map.empty, carrierChosenPlayer = Nothing, aimingController = Nothing, sourceChosenColors = Set.empty, draftNotes = Map.empty, exiledBeforeGame = Map.empty, playerCounters = Map.empty, sourceChosenSubtype = Nothing, sourceChosenCardType = Nothing, sourceChosenNumber = Nothing, sourceChosenObjects = Set.empty, sourceLastExiled = Nothing, sourceExiled = Map.empty, sourceAcquisition = Nothing, reader = Nothing, candidateMeasures = Nothing, battlefieldViews = Seq.empty, zeroMissingPowerToughness = False, asCast = const (Just 0)}
+contextFor t p s = MkContext {teams = t, perspective = p, source = s, sourceMeasures = Map.empty, sourceColors = Set.empty, sourceSectors = Set.empty, sourceNames = Set.empty, sourceDealtDamage = Set.empty, sourceDealtDamageEarlier = Set.empty, sourceCrewed = Set.empty, sourceBefore = Nothing, slotAmount = Nothing, defendingPlayers = [], activePlayers = [], recipient = Nothing, shares = Map.empty, slotObjects = Map.empty, cantPayKeywordCost = Map.empty, slotNames = Map.empty, slotControllers = Map.empty, slotHostControllers = Map.empty, subjectHostCardTypes = Set.empty, slotCreatureTypes = Map.empty, slotCardTypes = Map.empty, slotColors = Map.empty, slotMeasures = Map.empty, slotPlayers = Map.empty, boundAmounts = Map.empty, slotStickers = Map.empty, slotVotes = Map.empty, boundUnannounced = False, sourceAttachedTo = Nothing, evaluated = Nothing, evaluatedView = Nothing, commanderCreatureTypes = Set.empty, sourceEntrants = Set.empty, sourceCountered = Map.empty, sourceOwner = Nothing, sourceChosenNames = Map.empty, carrierChosenPlayer = Nothing, carrierStickers = Seq.empty, aimingController = Nothing, sourceChosenColors = Set.empty, draftNotes = Map.empty, exiledBeforeGame = Map.empty, playerCounters = Map.empty, sourceChosenSubtype = Nothing, sourceChosenCardType = Nothing, sourceChosenNumber = Nothing, sourceChosenObjects = Set.empty, sourceLastExiled = Nothing, sourceExiled = Map.empty, sourceAcquisition = Nothing, reader = Nothing, candidateMeasures = Nothing, battlefieldViews = Seq.empty, zeroMissingPowerToughness = False, asCast = const (Just 0)}
 
 -- contextFor over a game: its teams (CR 102.4), its active players (CR 102.1,
 -- 805.4a), its draft notes (CR 905.2b), what was exiled before it (CR
@@ -2704,6 +2712,12 @@ matches context view predicate = case predicate of
   Filter.OfChosenPlayer -> case carrierChosenPlayer context of
     Nothing -> False
     Just pid -> ofPlayer (== Just pid) (aimingController context) view
+  -- A nameless candidate starts with no letter (Stet, Draconic Proofreader's
+  -- ruling), and a name or word starting with no letter matches none
+  -- (NameWords.initialLetter).
+  Filter.NameStartsLikeCarrierSticker ->
+    let stickered = Set.fromList [letter | StickerContent.Name word <- Foldable.toList (carrierStickers context), Just letter <- [NameWords.initialLetter word]]
+     in any (maybe False (`Set.member` stickered) . NameWords.initialLetter . CardName.unwrap) (Set.toList (names view))
   -- Rule 702.16k's reading per player, for rule 702.16i's "each of your
   -- opponents" (Absolute Virtue): the relation stands in for the chosen player,
   -- read against the perspective, the protection carrier's controller.
@@ -3495,6 +3509,7 @@ manaValueThresholds predicate = case predicate of
   Filter.IsLastExiledWithSource -> []
   Filter.IsChosenObject -> []
   Filter.OfChosenPlayer -> []
+  Filter.NameStartsLikeCarrierSticker -> []
   Filter.OfRelatedPlayer _ -> []
   Filter.OfSpecificPlayer _ -> []
   Filter.OfBoundPlayer _ -> []
@@ -3691,6 +3706,7 @@ statesAQuality predicate = case predicate of
   -- asks whether a search's description is trivially true, and "a card that
   -- player owns" is not.
   Filter.OfChosenPlayer -> True
+  Filter.NameStartsLikeCarrierSticker -> True
   Filter.OfRelatedPlayer _ -> True
   Filter.OfSpecificPlayer _ -> True
   Filter.OfBoundPlayer _ -> True
@@ -3887,6 +3903,7 @@ readsSourceValues predicate = case predicate of
   Filter.IsLastExiledWithSource -> False
   Filter.IsChosenObject -> False
   Filter.OfChosenPlayer -> False
+  Filter.NameStartsLikeCarrierSticker -> False
   Filter.OfRelatedPlayer _ -> False
   Filter.OfSpecificPlayer _ -> False
   Filter.OfBoundPlayer _ -> False
@@ -4025,6 +4042,7 @@ talliesWhatHappened predicate = case predicate of
   Filter.IsLastExiledWithSource {} -> False
   Filter.IsChosenObject {} -> False
   Filter.OfChosenPlayer {} -> False
+  Filter.NameStartsLikeCarrierSticker {} -> False
   Filter.OfRelatedPlayer {} -> False
   Filter.OfSpecificPlayer {} -> False
   Filter.OfBoundPlayer {} -> False

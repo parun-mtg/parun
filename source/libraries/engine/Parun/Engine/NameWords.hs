@@ -53,7 +53,14 @@ letterPosition c = fmap fst (List.find ((== Char.toUpper c) . snd) (zip [1 ..] a
 -- | CR 123.6d: whether the text's first letter, spaces and punctuation
 -- ignored (_____ _____ Rocketship's ruling), is the one at this position.
 beginsWithLetterAt :: Natural -> Text.Text -> Bool
-beginsWithLetterAt n text = (Text.find Char.isLetter text >>= letterPosition) == Just n
+beginsWithLetterAt n text = initialLetter text == Just n
+
+-- | CR 123.6d: the position of the letter the text starts with, spaces and
+-- punctuation, a blank's underscores among them, ignored (Knight in _____
+-- Armor's ruling); Nothing where it starts with no letter, a digit or a
+-- symbol, or holds nothing else.
+initialLetter :: Text.Text -> Maybe Natural
+initialLetter text = Text.find (\c -> not (Char.isSpace c || Char.isPunctuation c)) text >>= letterPosition
 
 -- | CR 123.6d: how many letters the text holds, either case; a space,
 -- hyphen or apostrophe is none.
