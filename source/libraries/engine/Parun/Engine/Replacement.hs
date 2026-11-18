@@ -1311,7 +1311,7 @@ stocked gs rewrite pid = case rewrite of
   DrawRewrite.YouDraw -> True
   DrawRewrite.OthersMayPayLife _ -> True
   DrawRewrite.FromGraveyardOrLose -> True
-  DrawRewrite.RevealUntilChosenKind -> True
+  DrawRewrite.RevealUntilChosenKind _ -> True
   DrawRewrite.DrawInstead _ -> True
   DrawRewrite.DiscardThenDrawOrMill -> True
   -- CR 614.11: an empty library still looks at nothing and then draws.
@@ -2648,7 +2648,7 @@ readsApplier re = case re of
   ReplacementEffect.DrawR (DrawR.MkDrawR _ _ DrawRewrite.FromGraveyardOrLose) -> False
   -- The library walked, the hand reached and the player asked are all the
   -- drawer the EVENT named. GainLife's answer, and for its reason.
-  ReplacementEffect.DrawR (DrawR.MkDrawR _ _ DrawRewrite.RevealUntilChosenKind) -> False
+  ReplacementEffect.DrawR (DrawR.MkDrawR _ _ (DrawRewrite.RevealUntilChosenKind _)) -> False
   -- The drawer is the one the EVENT named and the count the effect's own field.
   -- GainLife's answer, and for its reason.
   ReplacementEffect.DrawR (DrawR.MkDrawR _ _ (DrawRewrite.DrawInstead _)) -> False
@@ -2841,7 +2841,7 @@ readsSource effect = case effect of
   ReplacementEffect.DrawR (DrawR.MkDrawR _ _ DrawRewrite.FromGraveyardOrLose) -> False
   -- The source only names the prompt; what is revealed and where it goes do
   -- not depend on it.
-  ReplacementEffect.DrawR (DrawR.MkDrawR _ _ DrawRewrite.RevealUntilChosenKind) -> False
+  ReplacementEffect.DrawR (DrawR.MkDrawR _ _ (DrawRewrite.RevealUntilChosenKind _)) -> False
   ReplacementEffect.DrawR (DrawR.MkDrawR _ _ (DrawRewrite.DrawInstead _)) -> False
   ReplacementEffect.DrawR (DrawR.MkDrawR _ _ DrawRewrite.DiscardThenDrawOrMill) -> False
   -- The source only names the prompt once the count is baked; any other count

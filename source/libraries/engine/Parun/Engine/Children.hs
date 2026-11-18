@@ -2596,7 +2596,7 @@ drawRewriteChildren c rewrite = case rewrite of
   DrawRewrite.YouDraw -> pure rewrite
   DrawRewrite.OthersMayPayLife _ -> pure rewrite
   DrawRewrite.FromGraveyardOrLose -> pure rewrite
-  DrawRewrite.RevealUntilChosenKind -> pure rewrite
+  DrawRewrite.RevealUntilChosenKind _ -> pure rewrite
   DrawRewrite.DrawInstead _ -> pure rewrite
   DrawRewrite.DiscardThenDrawOrMill -> pure rewrite
   DrawRewrite.KeepOneOfTopThenDraw count -> DrawRewrite.KeepOneOfTopThenDraw <$> replacementQuantity c count

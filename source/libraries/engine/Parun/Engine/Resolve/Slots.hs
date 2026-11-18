@@ -1896,7 +1896,7 @@ drawRewriteReads rewrite = case rewrite of
   DrawRewrite.YouDraw -> ([], [])
   DrawRewrite.OthersMayPayLife _ -> ([], [])
   DrawRewrite.FromGraveyardOrLose -> ([], [])
-  DrawRewrite.RevealUntilChosenKind -> ([], [])
+  DrawRewrite.RevealUntilChosenKind _ -> ([], [])
   DrawRewrite.DrawInstead _ -> ([], [])
   DrawRewrite.DiscardThenDrawOrMill -> ([], [])
   DrawRewrite.KeepOneOfTopThenDraw quantity -> ([], [quantity])

@@ -108,6 +108,7 @@ import Parun.Types.CandidateId (CandidateId)
 import Parun.Types.Card (Card)
 import qualified Parun.Types.Card as Card.Type
 import qualified Parun.Types.CardName as CardName
+import qualified Parun.Types.CardSelection as CardSelection
 import qualified Parun.Types.CardType as CardType
 import qualified Parun.Types.CarryOver as CarryOver
 import qualified Parun.Types.Cause as Cause
@@ -5370,7 +5371,7 @@ apply settle batch applied batchPrevented candidate event =
       -- nonland and reveal cards from the top of your library until you reveal
       -- a card of the chosen kind. Put that card into your hand and put all
       -- other cards revealed this way on the bottom of your library in any
-      -- order."
+      -- order." Pavel Chekov, First Posting's is "in a random order".
       --
       -- The "may" and the choice are one question, never elided: declining
       -- leaves the event STANDING, Dredge's declining arm and for its reason.
@@ -5383,10 +5384,12 @@ apply settle batch applied batchPrevented candidate event =
       --
       -- The rest go to the bottom in an order the drawer states, asked at two
       -- or more (CR 401.4's count) and answered from the bottom inward, then
-      -- moved in reverse, Resolve.Effect.settleArrivals' order. The whole
+      -- moved in reverse, Resolve.Effect.settleArrivals' order. AtRandom
+      -- leaves the drawer unasked and shuffles the two or more instead,
+      -- KeepOneOfTopThenDraw's random order below. The whole
       -- rewrite runs before this call returns, which is CR 614.11a for a
       -- sequence of draws.
-      DrawRewrite.RevealUntilChosenKind -> do
+      DrawRewrite.RevealUntilChosenKind selection -> do
         gs <- State.get
         answer <- Game.choose (Prompt.ChooseLandOrNonland (Decide.deciderFor pid gs) pid (ReplacementCandidate.source candidate))
         case answer of
@@ -5401,11 +5404,12 @@ apply settle batch applied batchPrevented candidate event =
                 found = Maybe.listToMaybe rest
             Monad.mapM_ (reveal RevealCause.Ordinary pid) (passed <> Maybe.maybeToList found)
             Monad.forM_ found (\oid -> changeZone settle oid Zone.Hand)
-            ordered <- case passed of
-              _ : _ : _ -> do
+            ordered <- case (passed, selection) of
+              (_ : _ : _, CardSelection.ByChoice) -> do
                 asked <- State.get
                 order <- Game.choose (Prompt.ArrangeLibraryArrivals (Decide.deciderFor pid asked) pid LibraryPosition.Bottom passed)
                 pure (Game.permute passed order)
+              (_ : _ : _, CardSelection.AtRandom) -> Game.honourShuffle passed <$> Game.ask (Prompt.Shuffle passed)
               _ -> pure passed
             Monad.forM_ (reverse ordered) $ \oid ->
               changeZoneAttaching settle Nothing Set.empty oid Zone.Library LibraryPosition.Bottom Nothing TapState.Untapped Map.empty Nothing Nothing Facing.FaceUp False CarryOver.NotCarried False Seq.empty
