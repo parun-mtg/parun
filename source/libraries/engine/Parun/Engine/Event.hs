@@ -121,6 +121,7 @@ import Parun.Types.ClauseIndex (ClauseIndex)
 import qualified Parun.Types.CoinFace as CoinFace
 import qualified Parun.Types.CoinFlipped as CoinFlipped
 import qualified Parun.Types.Color as Color
+import qualified Parun.Types.ColorlessOption as ColorlessOption
 import qualified Parun.Types.Combat as Combat
 import qualified Parun.Types.CommandZoneDecision as CommandZoneDecision
 import qualified Parun.Types.CommittedCrime as CommittedCrime
@@ -231,6 +232,7 @@ import qualified Parun.Types.LoggedEvent as LoggedEvent
 import qualified Parun.Types.Looked as Looked
 import qualified Parun.Types.MadnessCost as MadnessCost
 import qualified Parun.Types.Mana as Mana
+import qualified Parun.Types.ManaType as ManaType
 import qualified Parun.Types.MatchScope as MatchScope
 import qualified Parun.Types.MeldSource as MeldSource
 import qualified Parun.Types.MergeComponent as MergeComponent
@@ -6159,7 +6161,20 @@ chooseQualityAs candidate quality oid = do
 -- Colours go one prompt per colour, each offering the CR 105.1 colours not yet
 -- chosen ("two colors" are two different ones), so only a fifth is forced; a
 -- range ("the color or colors of your choice") first asks how many, as a
--- Prompt.ChooseNumber, and a fixed count asks nothing. A subtype family's
+-- Prompt.ChooseNumber, and a fixed count asks nothing. Where colorless is
+-- offered too (CR 105.2c, Angelic Intervention), a prompt not yet answered
+-- with it offers the six as Prompt.ChooseManaType's types (CR 106.1b names the
+-- same six), colorless written to Object.chosenColorless.
+--
+-- Unprinted: a colorless pick read other than through a granted protection or
+-- hexproof quality, which Keyword.withChoices bakes -- every other reader of
+-- the choice (Filter.Context.sourceChosenColors, Modification.ChosenColor, a
+-- mana ability's chosen colour) sees only Object.chosenColors.
+-- Parun.FilterPositionLintSpec's "CR 105.2c no card reads a choice offering
+-- colorless but as a granted protection or hexproof quality" keeps it out of
+-- card data.
+--
+-- A subtype family's
 -- members (CR 305.6, 205.3m, 205.3j) are always all legal and
 -- distinguishable, so there is no one-option case to elide; where the card
 -- lists the types (Eclipsed Realms) only those are offered, and an answer
@@ -6178,7 +6193,7 @@ chooseQualityAs candidate quality oid = do
 -- data/scenarios/koh-the-face-stealer-has-the-triggered-ability-of-the-last-chosen-card.json.
 chooseQuality :: ChosenQuality.ChosenQuality -> PlayerId -> Maybe AbilityName.AbilityName -> Acquisition.Acquisition -> ObjectId -> Game ()
 chooseQuality quality chooser reader acquisition oid = case quality of
-  ChosenQuality.Colors range -> do
+  ChosenQuality.Colors range offered -> do
     let least = ChooseBetween.least range
         most = ChooseBetween.most range
     count <-
@@ -6188,11 +6203,20 @@ chooseQuality quality chooser reader acquisition oid = case quality of
           gs <- State.get
           answer <- Game.choose (Prompt.ChooseNumber (Decide.deciderFor chooser gs) chooser oid least NumberFloor.Least (Just most))
           pure (max least (min most answer))
-    let pick chosen _ = do
-          picked <- Game.chooseAmong (\decider who -> Prompt.ChooseColor decider who oid) chooser (filter (`Set.notMember` chosen) [minBound .. maxBound :: Color.Color])
-          pure (maybe chosen (`Set.insert` chosen) picked)
-    picked <- Monad.foldM pick Set.empty [1 .. count]
-    State.modify' (Game.recordChoice Chosen.Colors acquisition (const (Just picked)) oid)
+    let pick (chosen, colorless) _ = do
+          let remaining = filter (`Set.notMember` chosen) [minBound .. maxBound :: Color.Color]
+          case (offered, colorless) of
+            (ColorlessOption.OrColorless, Nothing) -> do
+              picked <- Game.chooseAmong (\decider who -> Prompt.ChooseManaType decider who oid) chooser (ManaType.Colorless : fmap ManaType.Colored remaining)
+              pure $ case picked of
+                Just ManaType.Colorless -> (chosen, Just ())
+                Just (ManaType.Colored color) -> (Set.insert color chosen, colorless)
+                Nothing -> (chosen, colorless)
+            _ -> do
+              picked <- Game.chooseAmong (\decider who -> Prompt.ChooseColor decider who oid) chooser remaining
+              pure (maybe chosen (`Set.insert` chosen) picked, colorless)
+    (picked, colorless) <- Monad.foldM pick (Set.empty, Nothing) [1 .. count]
+    State.modify' (Game.recordChoice Chosen.Colors acquisition (const (Just picked)) oid . Game.recordChoice Chosen.Colorless acquisition (const colorless) oid)
   ChosenQuality.Subtype ordinal distinct family among -> do
     gs <- State.get
     let earlier = ChoiceOrdinal.before ordinal (Game.choiceWithLastKnown Chosen.Subtype acquisition oid gs)
@@ -6243,7 +6267,7 @@ chooseQuality quality chooser reader acquisition oid = case quality of
 -- `before` held it (Game.restoreChoice).
 restoreQuality :: ChosenQuality.ChosenQuality -> Acquisition.Acquisition -> ObjectId -> GameState -> GameState -> GameState
 restoreQuality quality acquisition oid before = case quality of
-  ChosenQuality.Colors _ -> Game.restoreChoice Chosen.Colors acquisition oid before
+  ChosenQuality.Colors _ _ -> Game.restoreChoice Chosen.Colors acquisition oid before . Game.restoreChoice Chosen.Colorless acquisition oid before
   ChosenQuality.Subtype {} -> Game.restoreChoice Chosen.Subtype acquisition oid before
   ChosenQuality.CardType _ _ -> Game.restoreChoice Chosen.CardType acquisition oid before
   ChosenQuality.Number _ _ -> Game.restoreChoice Chosen.Number acquisition oid before
@@ -11880,6 +11904,7 @@ lastKnownFrom gs oid obj =
     (Object.chosenNames obj)
     (Object.chosenPlayers obj)
     (Object.chosenColors obj)
+    (Object.chosenColorless obj)
     (Object.chosenSubtype obj)
     (Object.chosenCardType obj)
     (Object.chosenNumber obj)

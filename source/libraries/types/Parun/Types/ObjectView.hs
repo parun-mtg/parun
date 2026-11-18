@@ -42,6 +42,8 @@ data ObjectView = MkObjectView
     targets :: [Recipient.Recipient],
     -- | CR 607.2d: Object.chosenColors, less a secret choice (PlayerChoice.SecretChooser) the seat is not privy to (CR 724.4).
     chosenColors :: Map.Map Acquisition.Acquisition (Set.Set Color.Color),
+    -- | CR 607.2d: Object.chosenColorless, less a secret choice the seat is not privy to.
+    chosenColorless :: Map.Map Acquisition.Acquisition (),
     -- | CR 607.2d: Object.chosenSubtype, less a secret choice the seat is not privy to.
     chosenSubtype :: Map.Map Acquisition.Acquisition (NonEmpty.NonEmpty Subtype.Subtype),
     -- | CR 607.2d: Object.chosenCardType, less a secret choice the seat is not privy to.

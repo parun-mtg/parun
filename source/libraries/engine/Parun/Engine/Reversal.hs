@@ -536,6 +536,7 @@ objectWith before entry between closed = do
   counterTimestamps <- field Object.counterTimestamps
   attachedTo <- field Object.attachedTo
   chosenColors <- field Object.chosenColors
+  chosenColorless <- field Object.chosenColorless
   chosenSubtype <- field Object.chosenSubtype
   chosenCardType <- field Object.chosenCardType
   chosenNames <- field Object.chosenNames
@@ -611,6 +612,7 @@ objectWith before entry between closed = do
         Object.counterTimestamps = counterTimestamps,
         Object.attachedTo = attachedTo,
         Object.chosenColors = chosenColors,
+        Object.chosenColorless = chosenColorless,
         Object.chosenSubtype = chosenSubtype,
         Object.chosenCardType = chosenCardType,
         Object.chosenNames = chosenNames,

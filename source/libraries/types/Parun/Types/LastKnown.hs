@@ -162,6 +162,9 @@ data LastKnown = MkLastKnown
     -- left (Pentarch Paladin destroyed in response, Parun.TargetSpec). Not a
     -- characteristic, for `chosenNames`' reason.
     chosenColors :: !(Map.Map Acquisition.Acquisition (Set.Set Color.Color)),
+    -- | Whether colorless was chosen instead, `chosenColors`'s sibling for
+    -- Object.chosenColorless.
+    chosenColorless :: !(Map.Map Acquisition.Acquisition ()),
     -- | The subtypes chosen for it as it entered, `chosenColors`'s sibling for
     -- Object.chosenSubtype.
     chosenSubtype :: !(Map.Map Acquisition.Acquisition (NonEmpty.NonEmpty Subtype.Subtype)),

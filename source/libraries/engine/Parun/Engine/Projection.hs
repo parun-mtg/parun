@@ -360,7 +360,7 @@ applyModification textBoxOf viewOf src stamp gs oid unitTypes affected m pc =
             chosen = Maybe.fromMaybe Set.empty (Game.currentChoice Chosen.Colors src gs)
             stampedBy limit attacher = maybe False ((<= limit) . Object.timestamp) (Game.lookupObject attacher gs)
             already = foldMap (\g -> filter (stampedBy (Object.timestamp g)) (Set.toList (Game.attachments oid gs))) granter
-            baked = Keyword.grantedBy src chosen (Game.currentChoice Chosen.Subtype src gs) (controllerOf src gs) already k
+            baked = Keyword.grantedBy src chosen (Game.currentChoice Chosen.Colorless src gs) (Game.currentChoice Chosen.Subtype src gs) (controllerOf src gs) already k
          in -- CR 113.11: no effect or keyword counter adds a keyword the
             -- object can't have, whichever came first. The scenarios under
             -- data/scenarios/archetype-of-courage prove the static grant, the
@@ -2048,7 +2048,7 @@ freezeQuantities viewOf gs announcedOn source context m =
                 _ -> Nothing
               acquisition = Game.readingAcquisition announcedOn source gs source
               chosen = Maybe.fromMaybe Set.empty (Game.choiceWithLastKnown Chosen.Colors acquisition source gs)
-           in Just (Modification.GainKeyword (Keyword.withQualityPlayers related bound (Keyword.withChoices chosen (Game.choiceWithLastKnown Chosen.Subtype acquisition source gs) k)))
+           in Just (Modification.GainKeyword (Keyword.withQualityPlayers related bound (Keyword.withChoices chosen (Game.choiceWithLastKnown Chosen.Colorless acquisition source gs) (Game.choiceWithLastKnown Chosen.Subtype acquisition source gs) k)))
         -- Its cost is derived at projection time, not evaluated from a Quantity,
         -- so there is nothing here to freeze.
         Modification.GainKeywordAtManaCost _ -> Just m

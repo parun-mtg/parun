@@ -7,6 +7,7 @@ import qualified Parun.Types.CardType as CardType
 import qualified Parun.Types.ChoiceDistinct as ChoiceDistinct
 import qualified Parun.Types.ChoiceOrdinal as ChoiceOrdinal
 import qualified Parun.Types.ChooseBetween as ChooseBetween
+import qualified Parun.Types.ColorlessOption as ColorlessOption
 import qualified Parun.Types.ExiledPile as ExiledPile
 import qualified Parun.Types.Filter as Filter
 import qualified Parun.Types.Keyword as Keyword
@@ -19,8 +20,8 @@ import qualified Parun.Types.SubtypeFamily as SubtypeFamily
 -- (CR 608.2d, Effect.ChooseQuality). A chosen card is written to its link to
 -- that object instead.
 data ChosenQuality
-  = -- | CR 105.4: between least and most different colours, the chooser picking how many, written to Object.chosenColors (Painter's Servant, Scuttlemutt).
-    Colors ChooseBetween.ChooseBetween
+  = -- | CR 105.4 / 105.2c: between least and most different colours, the chooser picking how many, or colorless where offered, written to Object.chosenColors and Object.chosenColorless (Painter's Servant, Scuttlemutt, Angelic Intervention).
+    Colors ChooseBetween.ChooseBetween ColorlessOption.ColorlessOption
   | -- | CR 205.3: one subtype of the family, of the listed ones where the card lists them, other than the earlier choices' where Distinct, written to Object.chosenSubtype at the ordinal, replacing it and every later one (Convincing Mirage, Illusionary Terrain, Vision Charm).
     Subtype ChoiceOrdinal.ChoiceOrdinal ChoiceDistinct.ChoiceDistinct SubtypeFamily.SubtypeFamily (Maybe (NonEmpty.NonEmpty Subtype.Subtype))
   | -- | CR 205.2a: one card type other than the first list's, of the second's where the card lists them, written to Object.chosenCardType (Umori, the Collector; Arachne, Psionic Weaver; Season of Gathering).

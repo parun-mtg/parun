@@ -133,6 +133,7 @@ objectView pid gs oid = do
         ObjectView.ability = abilityView pid gs oid,
         ObjectView.targets = Set.toList (Projection.View.targetsOfStackObject gs oid),
         ObjectView.chosenColors = chosen Chosen.Colors,
+        ObjectView.chosenColorless = chosen Chosen.Colorless,
         ObjectView.chosenSubtype = chosen Chosen.Subtype,
         ObjectView.chosenCardType = chosen Chosen.CardType,
         ObjectView.chosenNames = chosen Chosen.Names,

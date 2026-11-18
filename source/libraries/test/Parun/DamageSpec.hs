@@ -813,6 +813,7 @@ lastKnownRiderSpec s registry =
                     LastKnown.chosenPlayers = Map.empty,
                     -- CR 614.1c: nor a colour, a subtype or a card type.
                     LastKnown.chosenColors = Map.empty,
+                    LastKnown.chosenColorless = Map.empty,
                     LastKnown.chosenSubtype = Map.empty,
                     LastKnown.chosenCardType = Map.empty,
                     LastKnown.chosenNumber = Map.empty,

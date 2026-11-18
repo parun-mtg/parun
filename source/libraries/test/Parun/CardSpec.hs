@@ -5117,7 +5117,7 @@ searchFramed = fmap ((,) SearchFramed)
 -- the pile as ObjectRef.EachCardInExiledPile's are.
 chosenQualityFilters :: ChosenQuality.ChosenQuality -> [(Framing, Filter.Type.Filter Keyword.Keyword)]
 chosenQualityFilters quality = case quality of
-  ChosenQuality.Colors _ -> []
+  ChosenQuality.Colors _ _ -> []
   ChosenQuality.Subtype {} -> []
   ChosenQuality.CardType _ _ -> []
   ChosenQuality.Number _ _ -> []

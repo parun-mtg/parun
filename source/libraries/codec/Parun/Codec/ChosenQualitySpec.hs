@@ -10,6 +10,7 @@ import qualified Parun.Types.ChoiceDistinct as ChoiceDistinct
 import qualified Parun.Types.ChoiceOrdinal as ChoiceOrdinal
 import qualified Parun.Types.ChooseBetween as ChooseBetween
 import qualified Parun.Types.ChosenQuality as ChosenQuality
+import qualified Parun.Types.ColorlessOption as ColorlessOption
 import qualified Parun.Types.ExiledPile as ExiledPile
 import qualified Parun.Types.Filter as Filter
 import qualified Parun.Types.Subtype as Subtype
@@ -21,14 +22,20 @@ spec s = Spec.describe s "Parun.Codec.ChosenQuality" $ do
     Common.assertCodec
       s
       ChosenQuality.codec
-      (ChosenQuality.Colors (ChooseBetween.MkChooseBetween 2 2))
+      (ChosenQuality.Colors (ChooseBetween.MkChooseBetween 2 2) ColorlessOption.ColorsOnly)
       " {\"type\":\"Colors\",\"value\":{\"least\":2,\"most\":2}} "
   Spec.it s "Colors as a range (Scuttlemutt)" $
     Common.assertCodec
       s
       ChosenQuality.codec
-      (ChosenQuality.Colors (ChooseBetween.MkChooseBetween 1 5))
+      (ChosenQuality.Colors (ChooseBetween.MkChooseBetween 1 5) ColorlessOption.ColorsOnly)
       " {\"type\":\"Colors\",\"value\":{\"least\":1,\"most\":5}} "
+  Spec.it s "Colors offering colorless (Angelic Intervention)" $
+    Common.assertCodec
+      s
+      ChosenQuality.codec
+      (ChosenQuality.Colors (ChooseBetween.MkChooseBetween 1 1) ColorlessOption.OrColorless)
+      " {\"type\":\"Colors\",\"value\":{\"least\":1,\"most\":1,\"colorless\":\"OrColorless\"}} "
   Spec.it s "Number (Shapeshifter)" $
     Common.assertCodec
       s

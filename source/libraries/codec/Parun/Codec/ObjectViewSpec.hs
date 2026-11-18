@@ -93,6 +93,7 @@ hidden =
       ObjectView.ability = Nothing,
       ObjectView.targets = [],
       ObjectView.chosenColors = Map.empty,
+      ObjectView.chosenColorless = Map.empty,
       ObjectView.chosenSubtype = Map.empty,
       ObjectView.chosenCardType = Map.empty,
       ObjectView.chosenNames = Map.empty,
