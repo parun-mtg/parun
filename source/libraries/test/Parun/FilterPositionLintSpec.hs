@@ -3464,6 +3464,28 @@ filterPositionLintSpec s registry corpus = Spec.describe s "Lint" $ do
   -- (#199). The UNBAKED atom beside it is card data and is not swept -- Trygon
   -- Predator writes it, and Parun.Engine.Resolve.Slots.modeSlots is what checks the slot
   -- it names is one the ability's condition binds.
+  -- CR 508.5's role asked of a PLAYER candidate ("target defending player") is
+  -- unprinted (MTGJSON AtomicCards, 2026-11-18, no hit), and the Context fills
+  -- defendingPlayers only in the positions the ControlledByRole Defending lint
+  -- above names.
+  Spec.it s "CR 508.5 no card writes IsPlayerInRole Defending" $ do
+    ps <- S.allPrintings s corpus
+    let needle = atomJson (Filter.Type.IsPlayerInRole TurnRole.Defending)
+        atoms c = occurrences needle (Codec.encode (Face.Codec.codec Card.codec) c)
+        offenders = filter (anyFace ((/= 0) . atoms) . Printing.card) ps
+    Spec.assertEqWith s "no card writes the atom" (fmap (S.nameOf . Printing.card) offenders) []
+    -- Not vacuous: the same counter over a hand-built face carrying the atom in
+    -- a player target slot finds it, and Cmdr. Troi's Active one is not it.
+    piker <- S.printingOf s registry "Goblin Piker"
+    troi <- S.printingOf s registry "Cmdr. Troi, Outgoing Empath"
+    let targetSlot = TargetSlot.required Pool.Players (Just (Filter.Type.And [Filter.Type.IsPlayer PlayerRelation.Opponent, Filter.Type.IsPlayerInRole TurnRole.Defending]))
+        planted =
+          (S.combinedFace piker)
+            { Face.spell =
+                Mint.oneModeTargeting (Map.singleton (SlotName.MkSlotName (Text.pack "target")) targetSlot) Seq.empty
+            }
+    Spec.assertEqWith s "a planted atom is seen" (atoms planted) 1
+    Spec.assertEqWith s "and the Active one is not" (atoms (S.combinedFace troi)) 0
   Spec.it s "CR 603.2 no card writes HeldByPlayer" $ do
     ps <- S.allPrintings s corpus
     let atoms c = jsonAtoms (Text.pack "HeldByPlayer") (Codec.encode (Face.Codec.codec Card.codec) c)

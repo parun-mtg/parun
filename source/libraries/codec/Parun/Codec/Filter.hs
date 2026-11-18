@@ -110,6 +110,7 @@ codec keywordCodec =
       Arm.nullary "ControllerIsOwner" Filter.ControllerIsOwner,
       Arm.payload "HeldBy" heldBy (uncurry Filter.HeldBy) (\x -> case x of Filter.HeldBy h r -> Just (h, r); _ -> Nothing),
       Arm.payload "IsPlayer" PlayerRelation.codec Filter.IsPlayer (\x -> case x of Filter.IsPlayer y -> Just y; _ -> Nothing),
+      Arm.payload "IsPlayerInRole" TurnRole.codec Filter.IsPlayerInRole (\x -> case x of Filter.IsPlayerInRole y -> Just y; _ -> Nothing),
       Arm.payload "IsControllerOfBound" SlotName.codec Filter.IsControllerOfBound (\x -> case x of Filter.IsControllerOfBound y -> Just y; _ -> Nothing),
       Arm.payload "Controls" (controls keywordCodec) (uncurry Filter.Controls) (\x -> case x of Filter.Controls n y -> Just (n, y); _ -> Nothing),
       -- Natural rather than Common.integer above, so a negative literal is
@@ -362,6 +363,7 @@ tagOf x = case x of
   Filter.ControllerIsOwner {} -> "ControllerIsOwner"
   Filter.HeldBy {} -> "HeldBy"
   Filter.IsPlayer {} -> "IsPlayer"
+  Filter.IsPlayerInRole {} -> "IsPlayerInRole"
   Filter.IsControllerOfBound {} -> "IsControllerOfBound"
   Filter.Controls {} -> "Controls"
   Filter.CardsInZoneAtLeast {} -> "CardsInZoneAtLeast"

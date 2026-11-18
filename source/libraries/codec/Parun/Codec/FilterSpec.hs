@@ -143,6 +143,12 @@ spec s = Spec.describe s "Parun.Codec.Filter" $ do
       codec
       (Filter.ControlledByRole TurnRole.Active)
       " {\"type\":\"ControlledByRole\",\"value\":\"Active\"} "
+  Spec.it s "IsPlayerInRole Active" $
+    Common.assertCodec
+      s
+      codec
+      (Filter.IsPlayerInRole TurnRole.Active)
+      " {\"type\":\"IsPlayerInRole\",\"value\":\"Active\"} "
   Spec.it s "HeldByBound" $
     Common.assertCodec
       s
