@@ -107,7 +107,6 @@ import qualified Parun.Codec.AttackMeasureSpec
 import qualified Parun.Codec.AttackOptionSpec
 import qualified Parun.Codec.AttackRequirementSpec
 import qualified Parun.Codec.AttackTargetKindSpec
-import qualified Parun.Codec.AttackTargetRefSpec
 import qualified Parun.Codec.AttackTargetSpec
 import qualified Parun.Codec.AttackTriggerSpec
 import qualified Parun.Codec.AttackWindowSpec
@@ -730,6 +729,7 @@ import qualified Parun.Codec.QuotientSpec
 import qualified Parun.Codec.RangeOfInfluenceSpec
 import qualified Parun.Codec.ReachSpec
 import qualified Parun.Codec.ReadinessSpec
+import qualified Parun.Codec.RecipientRefSpec
 import qualified Parun.Codec.RecipientSpec
 import qualified Parun.Codec.RedirectDamageSpec
 import qualified Parun.Codec.ReferenceSpec
@@ -770,6 +770,8 @@ import qualified Parun.Codec.RevealedSpec
 import qualified Parun.Codec.RevealedThisWaySpec
 import qualified Parun.Codec.RiderClauseSpec
 import qualified Parun.Codec.RollDieSpec
+import qualified Parun.Codec.RollEndSpec
+import qualified Parun.Codec.RollExtremeSpec
 import qualified Parun.Codec.RollKindSpec
 import qualified Parun.Codec.RollModifierSpec
 import qualified Parun.Codec.RollTotalsThisTurnSpec
@@ -1249,7 +1251,6 @@ spec s reference corpus = do
   Parun.Codec.AttackRequirementSpec.spec s
   Parun.Codec.AttackTargetKindSpec.spec s
   Parun.Codec.AttackedDuringSpec.spec s
-  Parun.Codec.AttackTargetRefSpec.spec s
   Parun.Codec.AttackTargetSpec.spec s
   Parun.Codec.AudienceSpec.spec s
   Parun.Codec.BackupSpec.spec s
@@ -1868,6 +1869,7 @@ spec s reference corpus = do
   Parun.Codec.ReachSpec.spec s
   Parun.Codec.ReadinessSpec.spec s
   Parun.Codec.RecipientSpec.spec s
+  Parun.Codec.RecipientRefSpec.spec s
   Parun.Codec.RedirectDamageSpec.spec s
   Parun.Codec.ReferenceSpec.spec s
   Parun.Codec.RegenerabilitySpec.spec s
@@ -1909,6 +1911,8 @@ spec s reference corpus = do
   Parun.Codec.RollDieSpec.spec s
   Parun.Codec.RollTotalsThisTurnSpec.spec s
   Parun.Codec.RerollReachSpec.spec s
+  Parun.Codec.RollEndSpec.spec s
+  Parun.Codec.RollExtremeSpec.spec s
   Parun.Codec.RollModifierSpec.spec s
   Parun.Codec.RoomHalfSpec.spec s
   Parun.Codec.RoomIndexSpec.spec s

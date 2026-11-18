@@ -30,7 +30,6 @@ import qualified Parun.Types.AttachAll as AttachAll
 import qualified Parun.Types.AttachBound as AttachBound
 import qualified Parun.Types.AttachTarget as AttachTarget
 import qualified Parun.Types.AttackTargetKind as AttackTargetKind
-import qualified Parun.Types.AttackTargetRef as AttackTargetRef
 import qualified Parun.Types.BecomeCopy as BecomeCopy
 import qualified Parun.Types.BeginningStep as BeginningStep
 import qualified Parun.Types.Bid as Bid
@@ -202,6 +201,7 @@ import qualified Parun.Types.PutCountersFrom as PutCountersFrom
 import qualified Parun.Types.PutSticker as PutSticker
 import qualified Parun.Types.Quantity as Quantity
 import qualified Parun.Types.Reach as Reach
+import qualified Parun.Types.RecipientRef as RecipientRef
 import qualified Parun.Types.RedirectDamage as RedirectDamage
 import qualified Parun.Types.Regenerability as Regenerability
 import qualified Parun.Types.RemovalCount as RemovalCount
@@ -2314,7 +2314,7 @@ spec s = Spec.describe s "Parun.Codec.Effect" $ do
     Common.assertCodec
       s
       codec
-      (Effect.RequireAttack (RequireAttack.MkRequireAttack Duration.UntilEndOfTurn (RestrictedCreatures.Named (ObjectRef.InSlot (SlotName.MkSlotName (Text.pack "target")))) (Just (AttackTargetRef.Players (PlayerRef.Relative PlayerRelation.You)))))
+      (Effect.RequireAttack (RequireAttack.MkRequireAttack Duration.UntilEndOfTurn (RestrictedCreatures.Named (ObjectRef.InSlot (SlotName.MkSlotName (Text.pack "target")))) (Just (RecipientRef.Players (PlayerRef.Relative PlayerRelation.You)))))
       " {\"type\":\"RequireAttack\",\"value\":{\"duration\":{\"type\":\"UntilEndOfTurn\"},\"attacker\":{\"type\":\"Named\",\"value\":{\"type\":\"InSlot\",\"value\":\"target\"}},\"defender\":{\"type\":\"Players\",\"value\":{\"type\":\"Relative\",\"value\":\"You\"}}}} "
   Spec.it s "ForbidAttack" $
     Common.assertCodec
@@ -2520,7 +2520,7 @@ spec s = Spec.describe s "Parun.Codec.Effect" $ do
       s
       toJson
       fromJson
-      (Effect.RollDie RollDie.MkRollDie {RollDie.sides = 20, RollDie.count = Quantity.Literal 1, RollDie.ignore = 0, RollDie.modifier = Nothing, RollDie.reading = DiceReading.ChooseOne, RollDie.slot = SlotName.MkSlotName (Text.pack "result"), RollDie.other = Nothing, RollDie.roller = PlayerRef.Relative PlayerRelation.You, RollDie.highest = Nothing, RollDie.store = Nothing})
+      (Effect.RollDie RollDie.MkRollDie {RollDie.sides = 20, RollDie.count = Quantity.Literal 1, RollDie.ignore = 0, RollDie.modifier = Nothing, RollDie.reading = DiceReading.ChooseOne, RollDie.slot = SlotName.MkSlotName (Text.pack "result"), RollDie.other = Nothing, RollDie.roller = PlayerRef.Relative PlayerRelation.You, RollDie.extreme = Nothing, RollDie.store = Nothing})
       " {\"type\":\"RollDie\",\"value\":{\"sides\":20,\"slot\":\"result\"}} "
   -- CR 706.2's modifier, so the elided field above is not the only shape this
   -- arm round-trips.
@@ -2529,7 +2529,7 @@ spec s = Spec.describe s "Parun.Codec.Effect" $ do
       s
       toJson
       fromJson
-      (Effect.RollDie RollDie.MkRollDie {RollDie.sides = 20, RollDie.count = Quantity.Literal 1, RollDie.ignore = 0, RollDie.modifier = Just (Quantity.Literal 3), RollDie.reading = DiceReading.ChooseOne, RollDie.slot = SlotName.MkSlotName (Text.pack "result"), RollDie.other = Nothing, RollDie.roller = PlayerRef.Relative PlayerRelation.You, RollDie.highest = Nothing, RollDie.store = Nothing})
+      (Effect.RollDie RollDie.MkRollDie {RollDie.sides = 20, RollDie.count = Quantity.Literal 1, RollDie.ignore = 0, RollDie.modifier = Just (Quantity.Literal 3), RollDie.reading = DiceReading.ChooseOne, RollDie.slot = SlotName.MkSlotName (Text.pack "result"), RollDie.other = Nothing, RollDie.roller = PlayerRef.Relative PlayerRelation.You, RollDie.extreme = Nothing, RollDie.store = Nothing})
       " {\"type\":\"RollDie\",\"value\":{\"modifier\":{\"type\":\"Literal\",\"value\":3},\"sides\":20,\"slot\":\"result\"}} "
   Spec.it s "FlipCoin" $
     Common.assertJsonCodec
@@ -2855,8 +2855,9 @@ spec s = Spec.describe s "Parun.Codec.Effect" $ do
       fromJson
       (Effect.ChooseNewTargets (ObjectRef.InSlot (SlotName.MkSlotName (Text.pack "spell"))))
       " {\"type\":\"ChooseNewTargets\",\"value\":{\"type\":\"InSlot\",\"value\":\"spell\"}} "
-  -- CR 115.7a / 115.7b: Deflection's "change the target of target spell", and
-  -- Mizzium Meddler's "change a target ... to this creature".
+  -- CR 115.7a / 115.7b: Deflection's "change the target of target spell",
+  -- Mizzium Meddler's "change a target ... to this creature", and Ricochet's
+  -- "to the player with the lowest result".
   Spec.it s "ChangeTargets round-trips with and without a named new target" $ do
     Common.assertJsonCodec
       s
@@ -2868,8 +2869,14 @@ spec s = Spec.describe s "Parun.Codec.Effect" $ do
       s
       toJson
       fromJson
-      (Effect.ChangeTargets (ChangeTargets.MkChangeTargets (ObjectRef.InSlot (SlotName.MkSlotName (Text.pack "spell"))) (Just (ObjectRef.InSlot (SlotName.MkSlotName (Text.pack "self"))))))
-      " {\"type\":\"ChangeTargets\",\"value\":{\"objects\":{\"type\":\"InSlot\",\"value\":\"spell\"},\"onto\":{\"type\":\"InSlot\",\"value\":\"self\"}}} "
+      (Effect.ChangeTargets (ChangeTargets.MkChangeTargets (ObjectRef.InSlot (SlotName.MkSlotName (Text.pack "spell"))) (Just (RecipientRef.Permanents (ObjectRef.InSlot (SlotName.MkSlotName (Text.pack "self")))))))
+      " {\"type\":\"ChangeTargets\",\"value\":{\"objects\":{\"type\":\"InSlot\",\"value\":\"spell\"},\"onto\":{\"type\":\"Permanents\",\"value\":{\"type\":\"InSlot\",\"value\":\"self\"}}}} "
+    Common.assertJsonCodec
+      s
+      toJson
+      fromJson
+      (Effect.ChangeTargets (ChangeTargets.MkChangeTargets (ObjectRef.InSlot (SlotName.MkSlotName (Text.pack "spell"))) (Just (RecipientRef.Players (PlayerRef.InSlot (SlotName.MkSlotName (Text.pack "lowest")))))))
+      " {\"type\":\"ChangeTargets\",\"value\":{\"objects\":{\"type\":\"InSlot\",\"value\":\"spell\"},\"onto\":{\"type\":\"Players\",\"value\":{\"type\":\"InSlot\",\"value\":\"lowest\"}}}} "
   -- CR 701.36a: nullary, rule 701.36a fixing the quality, the count and the
   -- chooser, leaving an author nothing to write.
   Spec.it s "Populate" $

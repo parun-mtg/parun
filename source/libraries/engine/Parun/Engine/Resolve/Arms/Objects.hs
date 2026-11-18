@@ -69,7 +69,6 @@ import qualified Parun.Types.AttachAll as AttachAll
 import qualified Parun.Types.AttachBound as AttachBound
 import qualified Parun.Types.AttachTarget as AttachTarget
 import qualified Parun.Types.AttackTarget as AttackTarget
-import qualified Parun.Types.AttackTargetRef as AttackTargetRef
 import qualified Parun.Types.BecameDesignated as BecameDesignated
 import qualified Parun.Types.BecomeCopy as BecomeCopy
 import qualified Parun.Types.Binding as Binding.Type
@@ -156,6 +155,7 @@ import qualified Parun.Types.ProposedEvent as ProposedEvent
 import qualified Parun.Types.Quantity as Quantity.Type
 import Parun.Types.Recipient (Recipient)
 import qualified Parun.Types.Recipient as Recipient
+import qualified Parun.Types.RecipientRef as RecipientRef
 import qualified Parun.Types.RedirectDamage as RedirectDamage
 import qualified Parun.Types.Replace as Replace
 import qualified Parun.Types.ReplacementEffect as ReplacementEffect
@@ -958,11 +958,14 @@ chooseNewTargets :: ObjectId -> ObjectId -> PlayerId -> Map.Map SlotName (Set Re
 chooseNewTargets resolving source controller legal = Common.retargetEach (Common.chooseNewTargetsFor False source controller) legal resolving controller source
 
 -- CR 115.7a / 115.7b, the same walk with the stricter re-aim. `onto` is read
--- once, against the resolving effect's own bindings.
+-- once, against the resolving effect's own bindings, as the players or the
+-- objects it names.
 changeTargets :: ObjectId -> ObjectId -> PlayerId -> Map.Map SlotName (Set Recipient) -> ChangeTargets.ChangeTargets -> Game ()
 changeTargets resolving source controller legal (ChangeTargets.MkChangeTargets ref onto) = do
   gs <- State.get
-  let named = fmap (Set.fromList . objectRefObjects legal resolving controller source gs) onto
+  let named = flip fmap onto $ \recipients -> case recipients of
+        RecipientRef.Players who -> any (`elem` playerRefPlayers legal resolving source controller gs who) . Recipient.playerOf
+        RecipientRef.Permanents objects -> any (`elem` objectRefObjects legal resolving controller source gs objects) . Recipient.objectOf
   Common.retargetEach (Common.changeTargetsFor named source controller) legal resolving controller source ref
 
 -- CR 107.3a: each named object still on the stack takes its new X; one that
@@ -1764,8 +1767,8 @@ requireAttack resolving source controller legal (RequireAttack.MkRequireAttack d
           -- announcement.
           defenders = case defenderRef of
             Nothing -> [Nothing]
-            Just (AttackTargetRef.Players ref) -> fmap (Just . AttackTarget.OfPlayer) (playerRefPlayers legal resolving source controller gs ref)
-            Just (AttackTargetRef.Permanents ref) -> fmap Just (Maybe.mapMaybe announcement (objectRefObjects legal resolving controller source gs ref))
+            Just (RecipientRef.Players ref) -> fmap (Just . AttackTarget.OfPlayer) (playerRefPlayers legal resolving source controller gs ref)
+            Just (RecipientRef.Permanents ref) -> fmap Just (Maybe.mapMaybe announcement (objectRefObjects legal resolving controller source gs ref))
           announcement oid
             | Projection.isPlaneswalkerOf oid gs = Just (AttackTarget.OfPlaneswalker oid)
             | Projection.isBattleOf oid gs = Just (AttackTarget.OfBattle oid)

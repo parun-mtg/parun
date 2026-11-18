@@ -9,6 +9,8 @@ import qualified Parun.Types.PlayerRef as PlayerRef
 import qualified Parun.Types.PlayerRelation as PlayerRelation
 import qualified Parun.Types.Quantity as Quantity
 import qualified Parun.Types.RollDie as RollDie
+import qualified Parun.Types.RollEnd as RollEnd
+import qualified Parun.Types.RollExtreme as RollExtreme
 import qualified Parun.Types.SlotName as SlotName
 
 spec :: (Monad m, Monad n) => Spec.Spec m n -> n ()
@@ -28,7 +30,7 @@ spec s = Spec.describe s "Parun.Codec.RollDie" $ do
           RollDie.slot = SlotName.MkSlotName (Text.pack "result"),
           RollDie.other = Nothing,
           RollDie.roller = PlayerRef.Relative PlayerRelation.You,
-          RollDie.highest = Nothing,
+          RollDie.extreme = Nothing,
           RollDie.store = Nothing
         }
       " {\"sides\":20,\"slot\":\"result\"} "
@@ -47,7 +49,7 @@ spec s = Spec.describe s "Parun.Codec.RollDie" $ do
           RollDie.slot = SlotName.MkSlotName (Text.pack "result"),
           RollDie.other = Nothing,
           RollDie.roller = PlayerRef.Relative PlayerRelation.You,
-          RollDie.highest = Nothing,
+          RollDie.extreme = Nothing,
           RollDie.store = Nothing
         }
       " {\"modifier\":{\"type\":\"Literal\",\"value\":3},\"sides\":20,\"slot\":\"result\"} "
@@ -67,7 +69,7 @@ spec s = Spec.describe s "Parun.Codec.RollDie" $ do
           RollDie.slot = SlotName.MkSlotName (Text.pack "chosen"),
           RollDie.other = Just (SlotName.MkSlotName (Text.pack "other")),
           RollDie.roller = PlayerRef.Relative PlayerRelation.You,
-          RollDie.highest = Nothing,
+          RollDie.extreme = Nothing,
           RollDie.store = Nothing
         }
       " {\"count\":{\"type\":\"Literal\",\"value\":2},\"other\":\"other\",\"sides\":6,\"slot\":\"chosen\"} "
@@ -86,7 +88,7 @@ spec s = Spec.describe s "Parun.Codec.RollDie" $ do
           RollDie.slot = SlotName.MkSlotName (Text.pack "total"),
           RollDie.other = Nothing,
           RollDie.roller = PlayerRef.Relative PlayerRelation.You,
-          RollDie.highest = Nothing,
+          RollDie.extreme = Nothing,
           RollDie.store = Nothing
         }
       " {\"count\":{\"type\":\"InSlot\",\"value\":\"X\"},\"reading\":\"Total\",\"sides\":6,\"slot\":\"total\"} "
@@ -105,10 +107,10 @@ spec s = Spec.describe s "Parun.Codec.RollDie" $ do
           RollDie.slot = SlotName.MkSlotName (Text.pack "result"),
           RollDie.other = Nothing,
           RollDie.roller = PlayerRef.Relative PlayerRelation.AnyPlayer,
-          RollDie.highest = Just (SlotName.MkSlotName (Text.pack "highest")),
+          RollDie.extreme = Just RollExtreme.MkRollExtreme {RollExtreme.end = RollEnd.Highest, RollExtreme.slot = SlotName.MkSlotName (Text.pack "highest")},
           RollDie.store = Nothing
         }
-      " {\"highest\":\"highest\",\"roller\":{\"type\":\"Relative\",\"value\":\"AnyPlayer\"},\"sides\":20,\"slot\":\"result\"} "
+      " {\"extreme\":{\"end\":\"Highest\",\"slot\":\"highest\"},\"roller\":{\"type\":\"Relative\",\"value\":\"AnyPlayer\"},\"sides\":20,\"slot\":\"result\"} "
   -- CR 706.8a's store, Centaur of Attention's wire form: the field elides
   -- everywhere else.
   Spec.it s "five dice stored on the permanent" $
@@ -124,7 +126,7 @@ spec s = Spec.describe s "Parun.Codec.RollDie" $ do
           RollDie.slot = SlotName.MkSlotName (Text.pack "result"),
           RollDie.other = Nothing,
           RollDie.roller = PlayerRef.Relative PlayerRelation.You,
-          RollDie.highest = Nothing,
+          RollDie.extreme = Nothing,
           RollDie.store = Just (SlotName.MkSlotName (Text.pack "self"))
         }
       " {\"count\":{\"type\":\"Literal\",\"value\":5},\"sides\":6,\"slot\":\"result\",\"store\":\"self\"} "
@@ -144,7 +146,7 @@ spec s = Spec.describe s "Parun.Codec.RollDie" $ do
           RollDie.slot = SlotName.MkSlotName (Text.pack "result"),
           RollDie.other = Nothing,
           RollDie.roller = PlayerRef.Relative PlayerRelation.You,
-          RollDie.highest = Nothing,
+          RollDie.extreme = Nothing,
           RollDie.store = Nothing
         }
       " {\"count\":{\"type\":\"Literal\",\"value\":2},\"ignore\":1,\"sides\":20,\"slot\":\"result\"} "

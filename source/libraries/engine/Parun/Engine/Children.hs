@@ -57,7 +57,6 @@ import qualified Parun.Types.AttackCost as AttackCost
 import qualified Parun.Types.AttackCount as AttackCount
 import qualified Parun.Types.AttackLimitUnless as AttackLimitUnless
 import qualified Parun.Types.AttackRequirement as AttackRequirement
-import qualified Parun.Types.AttackTargetRef as AttackTargetRef
 import qualified Parun.Types.AttackTrigger as AttackTrigger
 import qualified Parun.Types.AttackedTrigger as AttackedTrigger
 import qualified Parun.Types.AttackerTarget as AttackerTarget
@@ -414,6 +413,7 @@ import qualified Parun.Types.Quantity as Quantity
 import qualified Parun.Types.RandomCard as RandomCard
 import qualified Parun.Types.RandomCardInGraveyard as RandomCardInGraveyard
 import qualified Parun.Types.Recipient as Recipient
+import qualified Parun.Types.RecipientRef as RecipientRef
 import qualified Parun.Types.RedirectDamage as RedirectDamage
 import qualified Parun.Types.Reinforce as Reinforce
 import qualified Parun.Types.RemovalCount as RemovalCount
@@ -433,6 +433,7 @@ import qualified Parun.Types.ReturnPermanents as ReturnPermanents
 import qualified Parun.Types.Reveal as Reveal
 import qualified Parun.Types.RevealedThisWay as RevealedThisWay
 import qualified Parun.Types.RollDie as RollDie
+import qualified Parun.Types.RollExtreme as RollExtreme
 import qualified Parun.Types.RollTotalsThisTurn as RollTotalsThisTurn
 import qualified Parun.Types.RollTrigger as RollTrigger
 import qualified Parun.Types.RuleAbilities as RuleAbilities
@@ -1266,7 +1267,7 @@ effectChildren c effect = case effect of
   Effect.RequireBlock (RequireBlock.MkRequireBlock duration blocker attacker arity) ->
     fmap Effect.RequireBlock (RequireBlock.MkRequireBlock <$> onDuration c duration <*> restrictedChildren c blocker <*> traverse (restrictedChildren c) attacker <*> pure arity)
   Effect.RequireAttack (RequireAttack.MkRequireAttack duration attacker defender) ->
-    fmap Effect.RequireAttack (RequireAttack.MkRequireAttack <$> onDuration c duration <*> restrictedChildren c attacker <*> traverse (attackTargetRefChildren c) defender)
+    fmap Effect.RequireAttack (RequireAttack.MkRequireAttack <$> onDuration c duration <*> restrictedChildren c attacker <*> traverse (recipientRefChildren c) defender)
   Effect.Prohibit (Prohibit.MkProhibit what duration affected) -> fmap Effect.Prohibit (Prohibit.MkProhibit what <$> onDuration c duration <*> restrictedChildren c affected)
   Effect.ForbidAttack (ForbidAttack.MkForbidAttack duration affected aimedAt) ->
     fmap Effect.ForbidAttack (ForbidAttack.MkForbidAttack <$> onDuration c duration <*> restrictedChildren c affected <*> traverse (onAimedAt c) aimedAt)
@@ -1293,7 +1294,7 @@ effectChildren c effect = case effect of
   Effect.ChoosePermanents (ChoosePermanents.MkChoosePermanents permanents named pileChooser rest linked) ->
     fmap Effect.ChoosePermanents (ChoosePermanents.MkChoosePermanents <$> onChosenPermanents c permanents <*> onSlot c named <*> traverse (onPlayer c) pileChooser <*> traverse (onSlot c) rest <*> pure linked)
   Effect.ChooseGroup (ChooseGroup.MkChooseGroup among named about) -> fmap Effect.ChooseGroup (ChooseGroup.MkChooseGroup <$> groupingChildren c among <*> onSlot c named <*> traverse (onObjectRef c) about)
-  Effect.RollDie (RollDie.MkRollDie sides count ignore modifier reading named other roller highest store) ->
+  Effect.RollDie (RollDie.MkRollDie sides count ignore modifier reading named other roller extreme store) ->
     fmap
       Effect.RollDie
       ( RollDie.MkRollDie sides
@@ -1304,7 +1305,7 @@ effectChildren c effect = case effect of
           <*> onSlot c named
           <*> traverse (onSlot c) other
           <*> onPlayer c roller
-          <*> traverse (onSlot c) highest
+          <*> traverse (\(RollExtreme.MkRollExtreme end players) -> RollExtreme.MkRollExtreme end <$> onSlot c players) extreme
           <*> traverse (onSlot c) store
       )
   Effect.Rethrow -> pure effect
@@ -1408,7 +1409,7 @@ effectChildren c effect = case effect of
   Effect.RepeatIf (RepeatIf.MkRepeatIf process condition ifHolds) -> fmap Effect.RepeatIf (RepeatIf.MkRepeatIf <$> traverse (onEffect c) process <*> onCondition c condition <*> traverse (onEffect c) ifHolds)
   Effect.Heal ref -> fmap Effect.Heal (onObjectRef c ref)
   Effect.ChooseNewTargets ref -> fmap Effect.ChooseNewTargets (onObjectRef c ref)
-  Effect.ChangeTargets (ChangeTargets.MkChangeTargets objects onto) -> fmap Effect.ChangeTargets (ChangeTargets.MkChangeTargets <$> onObjectRef c objects <*> traverse (onObjectRef c) onto)
+  Effect.ChangeTargets (ChangeTargets.MkChangeTargets objects onto) -> fmap Effect.ChangeTargets (ChangeTargets.MkChangeTargets <$> onObjectRef c objects <*> traverse (recipientRefChildren c) onto)
 
 -- | A damage clause's children: its recipients and its amount (CR 120.1).
 damagePartChildren :: (Applicative f) => EffectChildren card ability f -> DamagePart.DamagePart -> f DamagePart.DamagePart
@@ -1508,10 +1509,10 @@ restrictedChildren c restricted = case restricted of
   RestrictedCreatures.Matching filter_ -> fmap RestrictedCreatures.Matching (onFilter c filter_)
 
 -- | What an attack requirement is aimed at: players or permanents.
-attackTargetRefChildren :: (Applicative f) => EffectChildren card ability f -> AttackTargetRef.AttackTargetRef -> f AttackTargetRef.AttackTargetRef
-attackTargetRefChildren c defender = case defender of
-  AttackTargetRef.Players who -> fmap AttackTargetRef.Players (onPlayer c who)
-  AttackTargetRef.Permanents ref -> fmap AttackTargetRef.Permanents (onObjectRef c ref)
+recipientRefChildren :: (Applicative f) => EffectChildren card ability f -> RecipientRef.RecipientRef -> f RecipientRef.RecipientRef
+recipientRefChildren c defender = case defender of
+  RecipientRef.Players who -> fmap RecipientRef.Players (onPlayer c who)
+  RecipientRef.Permanents ref -> fmap RecipientRef.Permanents (onObjectRef c ref)
 
 -- | Who becomes the monarch: a slot, where one names them (CR 726).
 monarchTargetChildren :: (Applicative f) => EffectChildren card ability f -> MonarchTarget.MonarchTarget -> f MonarchTarget.MonarchTarget

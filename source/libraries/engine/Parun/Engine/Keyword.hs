@@ -34,7 +34,6 @@ import qualified Parun.Types.Arithmetic as Arithmetic
 import qualified Parun.Types.ArmDelayedTrigger as ArmDelayedTrigger
 import qualified Parun.Types.AttachRestriction as AttachRestriction
 import qualified Parun.Types.AttackCompany as AttackCompany
-import qualified Parun.Types.AttackTargetRef as AttackTargetRef
 import qualified Parun.Types.AttackTrigger as AttackTrigger
 import qualified Parun.Types.AttackerTarget as AttackerTarget
 import qualified Parun.Types.AttackerTrigger as AttackerTrigger
@@ -235,6 +234,7 @@ import qualified Parun.Types.Prototype as Prototype
 import qualified Parun.Types.PutCounters as PutCounters
 import qualified Parun.Types.PutIntoZoneTrigger as PutIntoZoneTrigger
 import qualified Parun.Types.Quantity as Quantity
+import qualified Parun.Types.RecipientRef as RecipientRef
 import qualified Parun.Types.Reinforce as Reinforce
 import qualified Parun.Types.RemoveCounters as RemoveCounters
 import qualified Parun.Types.Replace as Replace
@@ -2506,7 +2506,7 @@ encore cost =
           RequireAttack.MkRequireAttack
             { RequireAttack.duration = Duration.UntilEndOfTurn,
               RequireAttack.attacker = RestrictedCreatures.Named (ObjectRef.InSlot encoreTokenSlot),
-              RequireAttack.defender = Just (AttackTargetRef.Players (PlayerRef.InSlot encoreOpponentSlot))
+              RequireAttack.defender = Just (RecipientRef.Players (PlayerRef.InSlot encoreOpponentSlot))
             }
       loop =
         Effect.ForEach
