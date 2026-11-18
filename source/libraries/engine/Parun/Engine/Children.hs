@@ -2057,7 +2057,7 @@ keywordChildren c keyword_ = case keyword_ of
   Keyword.StartYourEngines -> pure keyword_
   Keyword.JobSelect -> pure keyword_
   Keyword.Tiered -> pure keyword_
-  Keyword.Exert -> pure keyword_
+  Keyword.Exert gate -> fmap Keyword.Exert (traverse (keywordFilter c) gate)
   Keyword.Enlist -> pure keyword_
   Keyword.Bestow cost -> fmap Keyword.Bestow (keywordCost c cost)
   Keyword.Station -> pure keyword_

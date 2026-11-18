@@ -1461,7 +1461,7 @@ expansionOf keyword = case keyword of
         -- spell on the stack, read at CR 601.2b by Parun.Engine.Cast.
         KeywordExpansion.triggered = const []
       }
-  Keyword.Exert ->
+  Keyword.Exert _ ->
     mempty
       { -- CR 701.43d's static ability mints NO triggered ability: the rule lets a card
         -- print a linked "when you do" beside it without saying what that ability does,
@@ -5084,7 +5084,7 @@ functionsOnBattlefield keyword = case keyword of
   Keyword.Evoke _ -> True
   Keyword.Evolve -> True
   Keyword.Exalted -> True
-  Keyword.Exert -> True
+  Keyword.Exert _ -> True
   Keyword.Exhaust -> True
   Keyword.Exploit -> True
   Keyword.Extort -> True
@@ -5533,7 +5533,7 @@ familyOf keyword = case keyword of
   Keyword.Forecast -> Nothing
   Keyword.PowerUp -> Nothing
   Keyword.ClassLevel _ -> Just KeywordFamily.ClassLevel
-  Keyword.Exert -> Nothing
+  Keyword.Exert _ -> Just KeywordFamily.Exert
   Keyword.Enlist -> Nothing
   Keyword.Persist -> Nothing
   Keyword.Undying -> Nothing

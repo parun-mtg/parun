@@ -41,6 +41,7 @@ import qualified Parun.Types.Ninjutsu as Ninjutsu
 import qualified Parun.Types.NinjutsuVariant as NinjutsuVariant
 import qualified Parun.Types.ObjectId as ObjectId
 import qualified Parun.Types.PartnerText as PartnerText
+import qualified Parun.Types.PermanentAction as PermanentAction
 import qualified Parun.Types.Protection as Protection
 import qualified Parun.Types.Prototype as Prototype
 import qualified Parun.Types.Reinforce as Reinforce
@@ -1580,14 +1581,21 @@ spec s = Spec.describe s "Parun.Codec.Keyword" $ do
       Keyword.codec
       Keyword.StartYourEngines
       " {\"type\":\"StartYourEngines\"} "
-  -- CR 701.43d. The one arm here that is not a rule 702 ability, and nullary
-  -- because rule 701.43d's sentence carries no parameter.
+  -- CR 701.43d. The one arm here that is not a rule 702 ability; rule
+  -- 701.43d's sentence carries no parameter, so an ungated exert has no value.
   Spec.it s "Exert" $
     Common.assertCodec
       s
       Keyword.codec
-      Keyword.Exert
+      (Keyword.Exert Nothing)
       " {\"type\":\"Exert\"} "
+
+  Spec.it s "Exert carries Combat Celebrant's gate" $
+    Common.assertCodec
+      s
+      Keyword.codec
+      (Keyword.Exert (Just (Filter.Not (Filter.ActedThisTurn PermanentAction.Exert))))
+      " {\"type\":\"Exert\",\"value\":{\"type\":\"Not\",\"value\":{\"type\":\"ActedThisTurn\",\"value\":\"Exert\"}}} "
   -- CR 702.154a. Nullary: rule 702.154a states the whole ability, so an enlist
   -- card prints no parameter for it.
   Spec.it s "Enlist" $

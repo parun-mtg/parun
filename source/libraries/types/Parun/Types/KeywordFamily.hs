@@ -361,4 +361,7 @@ data KeywordFamily
   | -- | CR 717.2: a class level bar, whatever its level; CR 717.2c's "to gain a
     -- Class level".
     ClassLevel
+  | -- | CR 701.43d: exert, gated or not. No card in the pool asks yet, and it is
+    -- owed at the keyword rather than at the first asker.
+    Exert
   deriving (Bounded, Enum, Eq, Ord, Show)
