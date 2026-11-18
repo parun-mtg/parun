@@ -3015,8 +3015,10 @@ castSpellWith perform timed offered applied widened pid oid name facing = Event.
           -- which puts the old name back with it.
           State.modify' (followIntoSpell (heldPermission oid held) oid sid)
           -- A card a resolved copy effect covers is cast as the copy, for the
-          -- same step's reason: followCopyIntoSpell.
+          -- same step's reason: followCopyIntoSpell for a timed copy,
+          -- carryCopyIntoSpell for a stamped one.
           State.modify' (followCopyIntoSpell oid sid)
+          State.modify' (carryCopyIntoSpell before oid sid)
           -- CR 106.6: mana that may be spent only to cast THIS card names the
           -- spell it has just become, for the same step's reason.
           State.modify' (followIntoPools oid sid)
@@ -3524,6 +3526,18 @@ followCopyIntoSpell old new gs =
           | Set.member old covered -> row {ActiveCopy.covers = CopyCoverage.These (Set.insert new (Set.delete old covered))}
         _ -> row
    in gs {GameState.stored = (GameState.stored gs) {StoredEffects.copyEffects = fmap follow (StoredEffects.copyEffects (GameState.stored gs))}}
+
+-- followCopyIntoSpell's ruling for a copy effect stating no duration: the
+-- stamp the card `old` carried in `before` (Binding.copyStamps) is stamped on
+-- the spell `new`, which Object.newIncarnation minted bare. The scenario "CR
+-- 707.2 a graveyard card that is a copy is priced at the copy's mana cost"
+-- proves it: the spell targets and resolves as the copy.
+carryCopyIntoSpell :: GameState -> ObjectId -> ObjectId -> GameState -> GameState
+carryCopyIntoSpell before old new gs = case Game.lookupObject old before of
+  Nothing -> gs
+  Just card ->
+    let stamps = Binding.copyStamps (Object.bindings card)
+     in gs {GameState.objects = Map.adjust (\o -> o {Object.bindings = Map.union stamps (Object.bindings o)}) new (GameState.objects gs)}
 
 -- CR 603.7g: the delayed triggered ability a static ability creates as its
 -- player takes the action it allows -- Spider Climb's "the controller of the
@@ -4638,13 +4652,14 @@ castProposed perform baseSpending pid oid sid printedFace castFrom preparedFor k
                       -- id). Stamped for EVERY spell, as `you` is: rule 201.5
                       -- attaches no condition, and CardSpec's dataflow lint
                       -- subtracts the reserved name rather than having a card
-                      -- declare it.
+                      -- declare it. The copy stamp carryCopyIntoSpell laid on
+                      -- is kept.
                       State.modify'
                         ( \g ->
                             g
                               { GameState.objects =
                                   Map.adjust
-                                    (\o -> o {Object.bindings = stampChooser (Binding.setAnnouncedTargets chosen (Binding.setYou pid (Binding.setTriggerSource sid (Target.stampDefendingPlayers sid chosen g (Map.unions [paidAlternative, Binding.fromAnnounced counts, Binding.setDivisions divisions (Binding.fromChoices chosen boundX chosenModes)])))))})
+                                    (\o -> o {Object.bindings = Map.union (Binding.copyStamps (Object.bindings o)) (stampChooser (Binding.setAnnouncedTargets chosen (Binding.setYou pid (Binding.setTriggerSource sid (Target.stampDefendingPlayers sid chosen g (Map.unions [paidAlternative, Binding.fromAnnounced counts, Binding.setDivisions divisions (Binding.fromChoices chosen boundX chosenModes)]))))))})
                                     sid
                                     (GameState.objects g)
                               }

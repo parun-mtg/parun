@@ -1748,11 +1748,11 @@ faceUpCopiable value oid gs = do
 copyStampOf :: Object.Object -> Maybe PC.ProjectedCharacteristics
 copyStampOf obj = Binding.copyOf (Object.bindings obj) Applicative.<|> Object.duplicate obj
 
--- CR 707.2 / 601.2b-f / 601.3: `face` with the cast-time values its copy stamp
+-- CR 707.2 / 601.2a-f / 601.3: `face` with the cast-time values its copy stamp
 -- carries laid over it -- mana cost, additional and alternative costs, its own
--- cost changes, its casting restrictions and its keywords -- so a card carrying
--- copiable values other than its printing's is cast at the copied card's price
--- and under its rules. data/scenarios/conjure's "a duplicate of a Clone costs /
+-- cost changes, its casting restrictions, its keywords, its spell abilities
+-- and its type line -- so a card carrying copiable values other than its
+-- printing's is cast at the copied card's price, under its rules and as it. data/scenarios/conjure's "a duplicate of a Clone costs /
 -- owes / offers / takes / has" cases prove every field but the cost choices. A
 -- stored copy row's stamp is laid in by `lookupLayerOne`, so a card that is a
 -- Missile drops its printed ones: the bombardment scenarios on Serra Avenger
@@ -1777,7 +1777,9 @@ castingFaceOf obj card face = case copyStampOf obj of
             Face.additionalCostChoices = PC.additionalCostChoices stamp,
             Face.alternativeCosts = PC.alternativeCosts stamp,
             Face.costReductions = PC.costReductions stamp,
-            Face.castingRestrictions = PC.castingRestrictions stamp
+            Face.castingRestrictions = PC.castingRestrictions stamp,
+            Face.spell = PC.spell stamp,
+            Face.typeLine = TypeLine.MkTypeLine (PC.supertypes stamp) (PC.cardTypes stamp) (PC.subtypes stamp)
           }
   _ -> face
 

@@ -48,7 +48,7 @@
     "step": "PrecombatMain"
   },
   "description": "CR 707.2 a graveyard card that is a copy is priced at the copy's mana cost",
-  "note": "Synthetic Mirror of the Fallen makes alice's graveyard Acidic Soil {2}{R} a copy of bob's Lightning Bolt {R}; no printing turns a graveyard card into a copy of anything, and rule 707 bars no zone. Lier is the pool's only static granter of flashback at the card's own mana cost, and it reaches instant and sorcery cards only, so both of the Mirror's slots name graveyard cards. Two Islands pay the Mirror and one Mountain is left: it pays the copied {R} and cannot pay the printed {2}{R}, so under the printed reading there is no cast at all and alice stays at 20. The cast offers no choice of cost, a second candidate would raise an unscheduled prompt. Acidic Soil deals alice 3 for her three lands (bob controls none, so the spells' resolutions read apart), CR 702.34a exiles it, and bob's Lightning Bolt is still in his graveyard (CR 707.2b).",
+  "note": "Synthetic Mirror of the Fallen makes alice's graveyard Acidic Soil {2}{R} a copy of bob's Lightning Bolt {R}; no printing turns a graveyard card into a copy of anything, and rule 707 bars no zone. Lier is the pool's only static granter of flashback at the card's own mana cost, and it reaches instant and sorcery cards only, so both of the Mirror's slots name graveyard cards. Two Islands pay the Mirror and one Mountain is left: it pays the copied {R} and cannot pay the printed {2}{R}, so under the printed reading there is no cast at all. The cast offers no choice of cost, a second candidate would raise an unscheduled prompt. The spell is cast as the copy (CR 601.2a; Bombardment's ruling of 2019-11-12), so it announces the Bolt's target and resolves as the Bolt: bob takes 3 and alice, who controls three lands, none, where Acidic Soil would have dealt her 3. CR 702.34a exiles it, and bob's Lightning Bolt is still in his graveyard (CR 707.2b).",
   "timeline": [
     {
       "do": {
@@ -77,7 +77,10 @@
           "mana": [
             "$mountain"
           ],
-          "object": "$soil"
+          "object": "$soil",
+          "targets": [
+            "$bob"
+          ]
         }
       },
       "player": "alice",
@@ -93,8 +96,19 @@
     {
       "check": {
         "Life": {
-          "life": 17,
+          "life": 20,
           "player": "alice"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Life": {
+          "life": 17,
+          "player": "bob"
         }
       },
       "player": "alice",
