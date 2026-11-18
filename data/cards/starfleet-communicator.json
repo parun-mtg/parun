@@ -1,0 +1,260 @@
+{
+  "faces": [
+    {
+      "keywords": [
+        {
+          "type": "Equip",
+          "value": {
+            "cost": {
+              "mana": [
+                {
+                  "type": "Generic",
+                  "value": 1
+                }
+              ]
+            },
+            "quality": null
+          }
+        }
+      ],
+      "manaCost": [
+        {
+          "type": "Generic",
+          "value": 3
+        }
+      ],
+      "name": "Starfleet Communicator",
+      "oracleText": "When you cast this spell, copy it. (The copy becomes a token.)\nEquipped creature has \"Whenever this creature attacks, draw X cards, then you may put up to X land cards from your hand onto the battlefield tapped, where X is the number of other creatures you control with a Communicator attached to them.\"\nEquip {1}",
+      "staticAbilities": [
+        {
+          "affected": {
+            "type": "Matching",
+            "value": {
+              "type": "And",
+              "value": [
+                {
+                  "type": "HasCardType",
+                  "value": "Creature"
+                },
+                {
+                  "type": "HasAttached",
+                  "value": {
+                    "type": "IsSource"
+                  }
+                }
+              ]
+            }
+          },
+          "modifications": [
+            {
+              "type": "GainAbility",
+              "value": {
+                "type": "Triggered",
+                "value": {
+                  "condition": {
+                    "type": "Attacks",
+                    "value": {
+                      "type": "Attacker",
+                      "value": {}
+                    }
+                  },
+                  "modal": {
+                    "modes": [
+                      {
+                        "clauses": [
+                          {
+                            "effects": [
+                              {
+                                "type": "Draw",
+                                "value": {
+                                  "player": {
+                                    "type": "Relative",
+                                    "value": "You"
+                                  },
+                                  "quantity": {
+                                    "type": "Count",
+                                    "value": {
+                                      "aggregation": {
+                                        "type": "Members"
+                                      },
+                                      "filter": {
+                                        "type": "And",
+                                        "value": [
+                                          {
+                                            "type": "HasCardType",
+                                            "value": "Creature"
+                                          },
+                                          {
+                                            "type": "HeldBy",
+                                            "value": {
+                                              "holder": "Controller",
+                                              "relation": "You"
+                                            }
+                                          },
+                                          {
+                                            "type": "Not",
+                                            "value": {
+                                              "type": "IsSource"
+                                            }
+                                          },
+                                          {
+                                            "type": "HasAttached",
+                                            "value": {
+                                              "type": "HasSubtype",
+                                              "value": "Communicator"
+                                            }
+                                          }
+                                        ]
+                                      },
+                                      "scope": {
+                                        "type": "InZone",
+                                        "value": {
+                                          "player": {
+                                            "type": "Relative",
+                                            "value": "AnyPlayer"
+                                          },
+                                          "zone": "Battlefield"
+                                        }
+                                      }
+                                    }
+                                  }
+                                }
+                              },
+                              {
+                                "type": "MoveToZone",
+                                "value": {
+                                  "ref": {
+                                    "type": "ChosenCardInHand",
+                                    "value": {
+                                      "count": {
+                                        "type": "UpTo",
+                                        "value": {
+                                          "type": "Count",
+                                          "value": {
+                                            "aggregation": {
+                                              "type": "Members"
+                                            },
+                                            "filter": {
+                                              "type": "And",
+                                              "value": [
+                                                {
+                                                  "type": "HasCardType",
+                                                  "value": "Creature"
+                                                },
+                                                {
+                                                  "type": "HeldBy",
+                                                  "value": {
+                                                    "holder": "Controller",
+                                                    "relation": "You"
+                                                  }
+                                                },
+                                                {
+                                                  "type": "Not",
+                                                  "value": {
+                                                    "type": "IsSource"
+                                                  }
+                                                },
+                                                {
+                                                  "type": "HasAttached",
+                                                  "value": {
+                                                    "type": "HasSubtype",
+                                                    "value": "Communicator"
+                                                  }
+                                                }
+                                              ]
+                                            },
+                                            "scope": {
+                                              "type": "InZone",
+                                              "value": {
+                                                "player": {
+                                                  "type": "Relative",
+                                                  "value": "AnyPlayer"
+                                                },
+                                                "zone": "Battlefield"
+                                              }
+                                            }
+                                          }
+                                        }
+                                      },
+                                      "filter": {
+                                        "type": "HasCardType",
+                                        "value": "Land"
+                                      },
+                                      "player": {
+                                        "type": "Relative",
+                                        "value": "You"
+                                      }
+                                    }
+                                  },
+                                  "riders": {
+                                    "tapped": "Tapped"
+                                  },
+                                  "zone": "Battlefield"
+                                }
+                              }
+                            ]
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                }
+              }
+            }
+          ]
+        }
+      ],
+      "triggeredAbilities": [
+        {
+          "condition": {
+            "type": "SpellCast",
+            "value": {
+              "scope": {
+                "type": "PlayersTurn",
+                "value": {
+                  "type": "Relative",
+                  "value": "AnyPlayer"
+                }
+              },
+              "spell": {
+                "type": "Self"
+              }
+            }
+          },
+          "modal": {
+            "modes": [
+              {
+                "clauses": [
+                  {
+                    "effects": [
+                      {
+                        "type": "CopyStackObject",
+                        "value": {
+                          "ref": {
+                            "type": "EachOnStack",
+                            "value": {
+                              "type": "IsSource"
+                            }
+                          }
+                        }
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      ],
+      "typeLine": {
+        "subtypes": [
+          "Communicator",
+          "Equipment"
+        ],
+        "types": [
+          "Artifact"
+        ]
+      }
+    }
+  ]
+}
