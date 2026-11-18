@@ -59,7 +59,9 @@
           "effect": {
             "type": "CantActivateAbilities",
             "value": {
-              "kind": "NonManaAbility"
+              "criteria": {
+                "whichKind": "NonManaAbility"
+              }
             }
           },
           "scope": {

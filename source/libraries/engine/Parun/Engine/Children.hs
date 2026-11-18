@@ -2222,7 +2222,8 @@ data PlayerEffectChildren f = MkPlayerEffectChildren
     playerColor :: Color.Color -> f Color.Color,
     -- | A keyword an ability is designated by (CR 702), whole.
     playerDesignator :: KeywordDesignator.KeywordDesignator Keyword.Keyword -> f (KeywordDesignator.KeywordDesignator Keyword.Keyword),
-    -- | What narrows a cost modifier's abilities (CR 602.2b), whole.
+    -- | What narrows a cost modifier's (CR 602.2b) or a prohibition's (CR 602.5)
+    -- abilities, whole.
     playerActivations :: ActivationCriteria.ActivationCriteria Keyword.Keyword -> f (ActivationCriteria.ActivationCriteria Keyword.Keyword),
     -- | The zone a permission reaches into, whole.
     playerZone :: InZone.InZone -> f InZone.InZone,
@@ -2270,7 +2271,7 @@ playerEffectLeaves =
 playerEffectChildren :: (Applicative f) => PlayerEffectChildren f -> PlayerEffect.PlayerEffect -> f PlayerEffect.PlayerEffect
 playerEffectChildren c effect = case effect of
   PlayerEffect.CantCastSpells -> pure effect
-  PlayerEffect.CantActivateAbilities designator filter_ kind -> PlayerEffect.CantActivateAbilities <$> traverse (playerDesignator c) designator <*> playerFilter c filter_ <*> pure kind
+  PlayerEffect.CantActivateAbilities filter_ criteria -> PlayerEffect.CantActivateAbilities <$> playerFilter c filter_ <*> playerActivations c criteria
   -- CR 601.3's limit counts the turn's casts.
   PlayerEffect.CantCastMoreThan _ -> effect <$ playerLooksBack c HistoryRead.Casts
   PlayerEffect.ModifyCost modifier -> PlayerEffect.ModifyCost <$> costModifierChildren c modifier
