@@ -1,0 +1,328 @@
+{
+  "board": {
+    "active": "alice",
+    "monarch": "carol",
+    "seats": [
+      {
+        "battlefield": [
+          {
+            "card": "Wastes",
+            "label": "w0",
+            "ready": true
+          },
+          {
+            "card": "Wastes",
+            "label": "w1",
+            "ready": true
+          }
+        ],
+        "hand": [
+          {
+            "card": "Ginger, Queen of Sweets",
+            "label": "ginger"
+          }
+        ],
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ],
+        "manaPool": "CCCCCC",
+        "name": "alice"
+      },
+      {
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ],
+        "name": "bob"
+      },
+      {
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ],
+        "name": "carol"
+      }
+    ],
+    "step": "PrecombatMain"
+  },
+  "description": "CR 726.3, 603.4, 111.4: Ginger, Queen of Sweets makes its controller the monarch on entering, creates a {1} Gingerbrute token at each player's upkeep while they are, and sacrifices itself for 6 life",
+  "note": "Carol starts as the monarch, so the crown is Ginger's doing. Tokens appear at bob's, carol's and alice's upkeeps, not only alice's. Ginger, summoning sick until alice's turn 4 (CR 302.6), is sacrificed then: 20 + 6 = 26.",
+  "timeline": [
+    {
+      "do": {
+        "Cast": {
+          "mana": [
+            null
+          ],
+          "object": "$ginger"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Monarch": {
+          "player": "alice"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Gingerbrute",
+          "count": 0,
+          "player": "alice",
+          "zone": "Battlefield"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Gingerbrute",
+          "count": 1,
+          "player": "alice",
+          "zone": "Battlefield"
+        }
+      },
+      "player": "alice",
+      "step": "DrawStep",
+      "turn": 2
+    },
+    {
+      "check": {
+        "ManaValue": {
+          "object": "Gingerbrute",
+          "value": 1
+        }
+      },
+      "player": "alice",
+      "step": "DrawStep",
+      "turn": 2
+    },
+    {
+      "check": {
+        "PowerToughness": {
+          "object": "Gingerbrute",
+          "power": 1,
+          "toughness": 1
+        }
+      },
+      "player": "alice",
+      "step": "DrawStep",
+      "turn": 2
+    },
+    {
+      "check": {
+        "Keywords": {
+          "count": 1,
+          "keyword": {
+            "type": "Haste"
+          },
+          "object": "Gingerbrute"
+        }
+      },
+      "player": "alice",
+      "step": "DrawStep",
+      "turn": 2
+    },
+    {
+      "check": {
+        "Types": {
+          "object": "Gingerbrute",
+          "types": [
+            "Artifact",
+            "Creature"
+          ]
+        }
+      },
+      "player": "alice",
+      "step": "DrawStep",
+      "turn": 2
+    },
+    {
+      "check": {
+        "Subtypes": {
+          "object": "Gingerbrute",
+          "subtypes": [
+            "Food",
+            "Golem"
+          ]
+        }
+      },
+      "player": "alice",
+      "step": "DrawStep",
+      "turn": 2
+    },
+    {
+      "check": {
+        "View": {
+          "is": [],
+          "object": "Gingerbrute",
+          "of": "Colors"
+        }
+      },
+      "player": "alice",
+      "step": "DrawStep",
+      "turn": 2
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Gingerbrute",
+          "count": 2,
+          "player": "alice",
+          "zone": "Battlefield"
+        }
+      },
+      "player": "alice",
+      "step": "DrawStep",
+      "turn": 3
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Gingerbrute",
+          "count": 3,
+          "player": "alice",
+          "zone": "Battlefield"
+        }
+      },
+      "player": "alice",
+      "step": "DrawStep",
+      "turn": 4
+    },
+    {
+      "do": {
+        "Activate": {
+          "ability": 0,
+          "mana": [
+            "$w0",
+            "$w1"
+          ],
+          "object": "Ginger, Queen of Sweets"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 4
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 4
+    },
+    {
+      "check": {
+        "Life": {
+          "life": 26,
+          "player": "alice"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 4
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Ginger, Queen of Sweets",
+          "count": 1,
+          "player": "alice",
+          "zone": "Graveyard"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 4
+    }
+  ]
+}

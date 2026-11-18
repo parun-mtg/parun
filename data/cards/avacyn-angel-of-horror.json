@@ -1,0 +1,170 @@
+{
+  "faces": [
+    {
+      "delayedAbilities": {
+        "return that card to the battlefield": {
+          "condition": {
+            "type": "StepBegins",
+            "value": {
+              "phase": {
+                "type": "Ending",
+                "value": "EndStep"
+              },
+              "scope": {
+                "type": "PlayersTurn",
+                "value": {
+                  "type": "Relative",
+                  "value": "AnyPlayer"
+                }
+              }
+            }
+          },
+          "modal": {
+            "modes": [
+              {
+                "clauses": [
+                  {
+                    "effects": [
+                      {
+                        "type": "MoveToZone",
+                        "value": {
+                          "origin": "Graveyard",
+                          "ref": {
+                            "type": "InSlot",
+                            "value": "became"
+                          },
+                          "zone": "Battlefield"
+                        }
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      },
+      "keywords": [
+        {
+          "type": "Deathtouch"
+        },
+        {
+          "type": "Flying"
+        }
+      ],
+      "manaCost": [
+        {
+          "type": "Generic",
+          "value": 5
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "Black"
+          }
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "Black"
+          }
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "Black"
+          }
+        }
+      ],
+      "name": "Avacyn, Angel of Horror",
+      "oracleText": "Flying, deathtouch\nWhenever Avacyn or another nontoken creature you control dies, return that card to the battlefield under your control at the beginning of the next end step.",
+      "power": {
+        "type": "Literal",
+        "value": 8
+      },
+      "toughness": {
+        "type": "Literal",
+        "value": 8
+      },
+      "triggeredAbilities": [
+        {
+          "condition": {
+            "type": "Leaves",
+            "value": {
+              "destinations": [
+                {
+                  "zone": "Graveyard"
+                }
+              ],
+              "permanent": {
+                "type": "Matching",
+                "value": {
+                  "type": "Or",
+                  "value": [
+                    {
+                      "type": "IsSource"
+                    },
+                    {
+                      "type": "And",
+                      "value": [
+                        {
+                          "type": "Not",
+                          "value": {
+                            "type": "IsToken"
+                          }
+                        },
+                        {
+                          "type": "HasCardType",
+                          "value": "Creature"
+                        },
+                        {
+                          "type": "HeldBy",
+                          "value": {
+                            "holder": "Controller",
+                            "relation": "You"
+                          }
+                        }
+                      ]
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "modal": {
+            "modes": [
+              {
+                "clauses": [
+                  {
+                    "effects": [
+                      {
+                        "type": "ArmDelayedTrigger",
+                        "value": {
+                          "name": "return that card to the battlefield"
+                        }
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      ],
+      "typeLine": {
+        "subtypes": [
+          "Angel"
+        ],
+        "supertypes": [
+          "Legendary"
+        ],
+        "types": [
+          "Creature"
+        ]
+      }
+    }
+  ]
+}

@@ -1,0 +1,188 @@
+{
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "battlefield": [
+          {
+            "card": "Nissa, Leyline Tamer",
+            "label": "nissa"
+          },
+          {
+            "card": "Exploration"
+          }
+        ],
+        "hand": [
+          {
+            "card": "Forest",
+            "label": "forest"
+          },
+          {
+            "card": "Plains",
+            "label": "plains"
+          }
+        ],
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Shock"
+          },
+          {
+            "card": "Hill Giant"
+          },
+          {
+            "card": "Swamp"
+          },
+          {
+            "card": "Grizzly Bears"
+          },
+          {
+            "card": "Mountain"
+          },
+          {
+            "card": "Divination"
+          }
+        ],
+        "name": "alice"
+      },
+      {
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ],
+        "name": "bob"
+      }
+    ],
+    "step": "PrecombatMain"
+  },
+  "description": "CR 207.2c / 701.20a: Nissa, Leyline Tamer's landfall draws a card each time, and only on its first resolution this turn reveals until a creature card, puts it onto the battlefield and the rest on the bottom",
+  "note": "The first landfall draws the Island, reveals Shock then Hill Giant: the Giant enters and Shock goes to the bottom. The second, via Exploration's extra land drop, draws the Swamp and reveals nothing, so the Grizzly Bears stay on top.",
+  "timeline": [
+    {
+      "do": {
+        "PlayLand": "$forest"
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Hill Giant",
+          "count": 1,
+          "player": "alice",
+          "zone": "Battlefield"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Island",
+          "count": 1,
+          "player": "alice",
+          "zone": "Hand"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "View": {
+          "is": [
+            "Swamp",
+            "Grizzly Bears",
+            "Mountain",
+            "Divination",
+            "Shock"
+          ],
+          "of": "Zone",
+          "player": "alice",
+          "zone": "Library"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "PlayLand": "$plains"
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Swamp",
+          "count": 1,
+          "player": "alice",
+          "zone": "Hand"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Grizzly Bears",
+          "count": 0,
+          "player": "alice",
+          "zone": "Battlefield"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "View": {
+          "is": [
+            "Grizzly Bears",
+            "Mountain",
+            "Divination",
+            "Shock"
+          ],
+          "of": "Zone",
+          "player": "alice",
+          "zone": "Library"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    }
+  ]
+}

@@ -1,0 +1,172 @@
+{
+  "faces": [
+    {
+      "activatedAbilities": [
+        {
+          "cost": {
+            "mana": [
+              {
+                "type": "OfType",
+                "value": {
+                  "type": "Colored",
+                  "value": "Red"
+                }
+              }
+            ]
+          },
+          "modal": {
+            "modes": [
+              {
+                "clauses": [
+                  {
+                    "effects": [
+                      {
+                        "type": "ModifyTarget",
+                        "value": {
+                          "duration": {
+                            "type": "UntilEndOfTurn"
+                          },
+                          "modification": {
+                            "type": "ModifyPowerToughness",
+                            "value": {
+                              "power": {
+                                "type": "Literal",
+                                "value": 1
+                              },
+                              "toughness": {
+                                "type": "Literal",
+                                "value": 0
+                              }
+                            }
+                          },
+                          "ref": {
+                            "type": "InSlot",
+                            "value": "self"
+                          }
+                        }
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      ],
+      "counterability": {
+        "type": "CantBeCountered"
+      },
+      "keywords": [
+        {
+          "type": "Flying"
+        },
+        {
+          "type": "Protection",
+          "value": {
+            "quality": {
+              "type": "HasColor",
+              "value": "White"
+            },
+            "spares": null
+          }
+        },
+        {
+          "type": "Protection",
+          "value": {
+            "quality": {
+              "type": "HasColor",
+              "value": "Blue"
+            },
+            "spares": null
+          }
+        },
+        {
+          "type": "Trample"
+        },
+        {
+          "type": "Morph",
+          "value": {
+            "cost": {
+              "mana": [
+                {
+                  "type": "Generic",
+                  "value": 3
+                },
+                {
+                  "type": "OfType",
+                  "value": {
+                    "type": "Colored",
+                    "value": "Red"
+                  }
+                },
+                {
+                  "type": "OfType",
+                  "value": {
+                    "type": "Colored",
+                    "value": "Red"
+                  }
+                },
+                {
+                  "type": "OfType",
+                  "value": {
+                    "type": "Colored",
+                    "value": "Red"
+                  }
+                }
+              ]
+            },
+            "variant": "Plain"
+          }
+        }
+      ],
+      "manaCost": [
+        {
+          "type": "Generic",
+          "value": 5
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "Red"
+          }
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "Red"
+          }
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "Red"
+          }
+        }
+      ],
+      "name": "Akroma, Angel of Fury",
+      "oracleText": "This spell can't be countered.\nFlying, trample, protection from white and from blue\n{R}: Akroma gets +1/+0 until end of turn.\nMorph {3}{R}{R}{R} (You may cast this card face down as a 2/2 creature for {3}. Turn her face up any time for her morph cost.)",
+      "power": {
+        "type": "Literal",
+        "value": 6
+      },
+      "toughness": {
+        "type": "Literal",
+        "value": 6
+      },
+      "typeLine": {
+        "subtypes": [
+          "Angel"
+        ],
+        "supertypes": [
+          "Legendary"
+        ],
+        "types": [
+          "Creature"
+        ]
+      }
+    }
+  ]
+}

@@ -1,0 +1,168 @@
+{
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "battlefield": [
+          {
+            "card": "Jhoira, Weatherlight Corsair",
+            "label": "jhoira",
+            "ready": true
+          }
+        ],
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ],
+        "name": "alice"
+      },
+      {
+        "library": [
+          {
+            "card": "Darksteel Relic"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ],
+        "name": "bob"
+      },
+      {
+        "library": [
+          {
+            "card": "Lightning Bolt"
+          },
+          {
+            "card": "History of Benalia"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ],
+        "name": "carol"
+      }
+    ],
+    "step": "BeginningOfCombat"
+  },
+  "description": "CR 700.6, 701.20a, 110.2a: Jhoira, Weatherlight Corsair attacking has its target opponent, not necessarily the one attacked, reveal until a historic permanent card, which its controller puts onto the battlefield, losing life equal to its mana value",
+  "note": "Jhoira attacks bob but targets carol. Lightning Bolt is not historic; History of Benalia is a Saga (mana value 3), so alice controls it and ends at 17; bob takes Jhoira's 4.",
+  "timeline": [
+    {
+      "do": {
+        "Attack": [
+          "$jhoira"
+        ]
+      },
+      "player": "alice",
+      "step": "DeclareAttackers",
+      "turn": 1
+    },
+    {
+      "do": {
+        "ChooseAttackTarget": "$bob"
+      },
+      "player": "alice",
+      "source": "$jhoira",
+      "step": "DeclareAttackers",
+      "turn": 1
+    },
+    {
+      "do": {
+        "ChooseTargets": {
+          "target": [
+            "$carol"
+          ]
+        }
+      },
+      "player": "alice",
+      "step": "DeclareAttackers",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "DeclareAttackers",
+      "turn": 1
+    },
+    {
+      "check": {
+        "View": {
+          "is": "alice",
+          "object": "History of Benalia",
+          "of": "Controller"
+        }
+      },
+      "player": "alice",
+      "step": "DeclareAttackers",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Life": {
+          "life": 17,
+          "player": "alice"
+        }
+      },
+      "player": "alice",
+      "step": "DeclareAttackers",
+      "turn": 1
+    },
+    {
+      "check": {
+        "View": {
+          "is": [
+            "Island#7",
+            "Island#8",
+            "Lightning Bolt"
+          ],
+          "of": "Zone",
+          "player": "carol",
+          "zone": "Library"
+        }
+      },
+      "player": "alice",
+      "step": "DeclareAttackers",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Darksteel Relic",
+          "count": 1,
+          "player": "bob",
+          "zone": "Library"
+        }
+      },
+      "player": "alice",
+      "step": "DeclareAttackers",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Life": {
+          "life": 16,
+          "player": "bob"
+        }
+      },
+      "player": "alice",
+      "step": "EndOfCombat",
+      "turn": 1
+    }
+  ]
+}

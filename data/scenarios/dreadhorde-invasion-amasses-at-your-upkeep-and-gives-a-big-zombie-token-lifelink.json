@@ -1,0 +1,418 @@
+{
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "battlefield": [
+          {
+            "card": "Dreadhorde Invasion",
+            "label": "inv"
+          },
+          {
+            "card": "Walking Corpse",
+            "counters": [
+              {
+                "key": {
+                  "type": "PlusOnePlusOne"
+                },
+                "value": 4
+              }
+            ],
+            "label": "z6",
+            "ready": true,
+            "token": true
+          },
+          {
+            "card": "Walking Corpse",
+            "counters": [
+              {
+                "key": {
+                  "type": "PlusOnePlusOne"
+                },
+                "value": 3
+              }
+            ],
+            "label": "z5",
+            "ready": true,
+            "token": true
+          },
+          {
+            "card": "Walking Corpse",
+            "counters": [
+              {
+                "key": {
+                  "type": "PlusOnePlusOne"
+                },
+                "value": 4
+              }
+            ],
+            "label": "corpse",
+            "ready": true
+          },
+          {
+            "card": "Grizzly Bears",
+            "counters": [
+              {
+                "key": {
+                  "type": "PlusOnePlusOne"
+                },
+                "value": 4
+              }
+            ],
+            "label": "bear",
+            "ready": true,
+            "token": true
+          }
+        ],
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ],
+        "name": "alice"
+      },
+      {
+        "battlefield": [
+          {
+            "card": "Walking Corpse",
+            "counters": [
+              {
+                "key": {
+                  "type": "PlusOnePlusOne"
+                },
+                "value": 4
+              }
+            ],
+            "label": "bobz",
+            "ready": true,
+            "token": true
+          }
+        ],
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ],
+        "life": 50,
+        "name": "bob"
+      }
+    ],
+    "step": "DeclareAttackers"
+  },
+  "description": "CR 701.47a / 508.1m / 702.15b: Dreadhorde Invasion makes alice lose 1 life and amass Zombies 1 at her upkeep only, and gives lifelink to an attacking Zombie token she controls only when its power is 6 or more",
+  "note": "Turn 1's attackers each miss one requirement: the 5/5 Zombie token is too small, the 6/6 Walking Corpse is no token, the 6/6 Bears token no Zombie, so a filter missing any one requirement raises a single trigger, not an ordering prompt. bob's upkeep leaves alice alone and his own 6/6 Zombie token attacks her without lifelink; hers costs 1 life and makes a 1/1 Army; then the 6/6 Zombie token attacks alone and gains her 6.",
+  "timeline": [
+    {
+      "do": {
+        "Attack": [
+          "$z5",
+          "$corpse",
+          "$bear"
+        ]
+      },
+      "player": "alice",
+      "step": "DeclareAttackers",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Block": {}
+      },
+      "player": "bob",
+      "step": "DeclareBlockers",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Keywords": {
+          "count": 0,
+          "keyword": {
+            "type": "Lifelink"
+          },
+          "object": "$z5"
+        }
+      },
+      "player": "alice",
+      "step": "DeclareBlockers",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Keywords": {
+          "count": 0,
+          "keyword": {
+            "type": "Lifelink"
+          },
+          "object": "$corpse"
+        }
+      },
+      "player": "alice",
+      "step": "DeclareBlockers",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Keywords": {
+          "count": 0,
+          "keyword": {
+            "type": "Lifelink"
+          },
+          "object": "$bear"
+        }
+      },
+      "player": "alice",
+      "step": "DeclareBlockers",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Life": {
+          "life": 20,
+          "player": "alice"
+        }
+      },
+      "player": "alice",
+      "step": "EndOfCombat",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Life": {
+          "life": 33,
+          "player": "bob"
+        }
+      },
+      "player": "alice",
+      "step": "EndOfCombat",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Life": {
+          "life": 20,
+          "player": "alice"
+        }
+      },
+      "player": "bob",
+      "step": "PrecombatMain",
+      "turn": 2
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Zombie Army Token",
+          "count": 0,
+          "player": "alice",
+          "zone": "Battlefield"
+        }
+      },
+      "player": "bob",
+      "step": "PrecombatMain",
+      "turn": 2
+    },
+    {
+      "do": {
+        "Attack": [
+          "$bobz"
+        ]
+      },
+      "player": "bob",
+      "step": "DeclareAttackers",
+      "turn": 2
+    },
+    {
+      "do": {
+        "Block": {}
+      },
+      "player": "alice",
+      "step": "DeclareBlockers",
+      "turn": 2
+    },
+    {
+      "check": {
+        "Keywords": {
+          "count": 0,
+          "keyword": {
+            "type": "Lifelink"
+          },
+          "object": "$bobz"
+        }
+      },
+      "player": "bob",
+      "step": "DeclareBlockers",
+      "turn": 2
+    },
+    {
+      "check": {
+        "Life": {
+          "life": 14,
+          "player": "alice"
+        }
+      },
+      "player": "bob",
+      "step": "EndOfCombat",
+      "turn": 2
+    },
+    {
+      "check": {
+        "Life": {
+          "life": 33,
+          "player": "bob"
+        }
+      },
+      "player": "bob",
+      "step": "EndOfCombat",
+      "turn": 2
+    },
+    {
+      "check": {
+        "Life": {
+          "life": 13,
+          "player": "alice"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 3
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Zombie Army Token",
+          "count": 1,
+          "player": "alice",
+          "zone": "Battlefield"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 3
+    },
+    {
+      "check": {
+        "Counters": {
+          "count": 1,
+          "kind": {
+            "type": "PlusOnePlusOne"
+          },
+          "object": "Zombie Army Token"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 3
+    },
+    {
+      "check": {
+        "PowerToughness": {
+          "object": "Zombie Army Token",
+          "power": 1,
+          "toughness": 1
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 3
+    },
+    {
+      "do": {
+        "Attack": [
+          "$z6"
+        ]
+      },
+      "player": "alice",
+      "step": "DeclareAttackers",
+      "turn": 3
+    },
+    {
+      "check": {
+        "Keywords": {
+          "count": 1,
+          "keyword": {
+            "type": "Lifelink"
+          },
+          "object": "$z6"
+        }
+      },
+      "player": "alice",
+      "step": "DeclareBlockers",
+      "turn": 3
+    },
+    {
+      "check": {
+        "Life": {
+          "life": 19,
+          "player": "alice"
+        }
+      },
+      "player": "alice",
+      "step": "EndOfCombat",
+      "turn": 3
+    },
+    {
+      "check": {
+        "Life": {
+          "life": 27,
+          "player": "bob"
+        }
+      },
+      "player": "alice",
+      "step": "EndOfCombat",
+      "turn": 3
+    }
+  ]
+}

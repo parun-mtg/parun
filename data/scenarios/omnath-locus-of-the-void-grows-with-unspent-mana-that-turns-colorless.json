@@ -1,0 +1,205 @@
+{
+  "description": "CR 106.4 / 500.5 / 613.4c / 207.2c: Omnath, Locus of the Void gets +1/+1 for each unspent mana of any type, its landfall adds {C}{C}, and the mana alice would lose as a step ends becomes colorless instead",
+  "note": "Floating {R}{G}, Omnath is 8/8; the Forest's landfall adds {C}{C} for 10/10. As the main phase ends all four stay, the red and green now colorless, and Omnath is still 10/10.",
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "name": "alice",
+        "battlefield": [
+          {
+            "card": "Omnath, Locus of the Void",
+            "label": "omnath"
+          }
+        ],
+        "hand": [
+          {
+            "card": "Forest",
+            "label": "forest"
+          }
+        ],
+        "manaPool": "RG"
+      },
+      {
+        "name": "bob"
+      }
+    ],
+    "step": "PrecombatMain"
+  },
+  "timeline": [
+    {
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1,
+      "check": {
+        "PowerToughness": {
+          "object": "$omnath",
+          "power": 8,
+          "toughness": 8
+        }
+      }
+    },
+    {
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1,
+      "do": {
+        "PlayLand": "$forest"
+      }
+    },
+    {
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1,
+      "do": "Pass"
+    },
+    {
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1,
+      "check": {
+        "View": {
+          "of": "ManaPool",
+          "player": "alice",
+          "is": [
+            {
+              "manaType": {
+                "type": "Colored",
+                "value": "Red"
+              },
+              "tags": [],
+              "retention": "Ordinary",
+              "restriction": null,
+              "rider": null,
+              "sourceChoices": null
+            },
+            {
+              "manaType": {
+                "type": "Colored",
+                "value": "Green"
+              },
+              "tags": [],
+              "retention": "Ordinary",
+              "restriction": null,
+              "rider": null,
+              "sourceChoices": null
+            },
+            {
+              "manaType": {
+                "type": "Colorless"
+              },
+              "tags": [
+                {
+                  "CardType": "Creature"
+                }
+              ],
+              "retention": "Ordinary",
+              "restriction": null,
+              "rider": null,
+              "sourceChoices": null
+            },
+            {
+              "manaType": {
+                "type": "Colorless"
+              },
+              "tags": [
+                {
+                  "CardType": "Creature"
+                }
+              ],
+              "retention": "Ordinary",
+              "restriction": null,
+              "rider": null,
+              "sourceChoices": null
+            }
+          ]
+        }
+      }
+    },
+    {
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1,
+      "check": {
+        "PowerToughness": {
+          "object": "$omnath",
+          "power": 10,
+          "toughness": 10
+        }
+      }
+    },
+    {
+      "player": "alice",
+      "step": "BeginningOfCombat",
+      "turn": 1,
+      "check": {
+        "View": {
+          "of": "ManaPool",
+          "player": "alice",
+          "is": [
+            {
+              "manaType": {
+                "type": "Colorless"
+              },
+              "tags": [],
+              "retention": "Ordinary",
+              "restriction": null,
+              "rider": null,
+              "sourceChoices": null
+            },
+            {
+              "manaType": {
+                "type": "Colorless"
+              },
+              "tags": [],
+              "retention": "Ordinary",
+              "restriction": null,
+              "rider": null,
+              "sourceChoices": null
+            },
+            {
+              "manaType": {
+                "type": "Colorless"
+              },
+              "tags": [
+                {
+                  "CardType": "Creature"
+                }
+              ],
+              "retention": "Ordinary",
+              "restriction": null,
+              "rider": null,
+              "sourceChoices": null
+            },
+            {
+              "manaType": {
+                "type": "Colorless"
+              },
+              "tags": [
+                {
+                  "CardType": "Creature"
+                }
+              ],
+              "retention": "Ordinary",
+              "restriction": null,
+              "rider": null,
+              "sourceChoices": null
+            }
+          ]
+        }
+      }
+    },
+    {
+      "player": "alice",
+      "step": "BeginningOfCombat",
+      "turn": 1,
+      "check": {
+        "PowerToughness": {
+          "object": "$omnath",
+          "power": 10,
+          "toughness": 10
+        }
+      }
+    }
+  ]
+}

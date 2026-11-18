@@ -1,0 +1,167 @@
+{
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "battlefield": [
+          {
+            "card": "Kher Keep",
+            "label": "keep"
+          },
+          {
+            "card": "Mountain",
+            "label": "m0",
+            "ready": true
+          },
+          {
+            "card": "Mountain",
+            "label": "m1",
+            "ready": true
+          }
+        ],
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ],
+        "name": "alice"
+      },
+      {
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ],
+        "name": "bob"
+      }
+    ],
+    "step": "PrecombatMain"
+  },
+  "description": "CR 111.1, 111.4: Kher Keep's {1}{R}, {T} ability creates a 0/1 red Kobold creature token named Kobolds of Kher Keep",
+  "note": "The token's name, colour, type, subtype and P/T are each checked, since the card's text sets every one of them.",
+  "timeline": [
+    {
+      "do": {
+        "Activate": {
+          "ability": 1,
+          "mana": [
+            "$m0",
+            "$m1",
+            null
+          ],
+          "object": "$keep"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Kobolds of Kher Keep",
+          "count": 1,
+          "player": "alice",
+          "zone": "Battlefield"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Names": {
+          "names": [
+            "Kobolds of Kher Keep"
+          ],
+          "object": "Kobolds of Kher Keep"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "PowerToughness": {
+          "object": "Kobolds of Kher Keep",
+          "power": 0,
+          "toughness": 1
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Types": {
+          "object": "Kobolds of Kher Keep",
+          "types": [
+            "Creature"
+          ]
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Subtypes": {
+          "object": "Kobolds of Kher Keep",
+          "subtypes": [
+            "Kobold"
+          ]
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "View": {
+          "is": [
+            "Red"
+          ],
+          "object": "Kobolds of Kher Keep",
+          "of": "Colors"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Tapped": {
+          "object": "$keep",
+          "tapped": true
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    }
+  ]
+}
