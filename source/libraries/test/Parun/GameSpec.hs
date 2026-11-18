@@ -2034,8 +2034,8 @@ cleanupStepSpec s registry = Spec.describe s "extra cleanup step (CR 514.3a)" $ 
     Spec.assertEqWith s "nobody was asked to act in the second cleanup step" asked 0
     Spec.assertEqWith s "the turn handed off" (TurnRegisters.activePlayer (GameState.turn again)) S.bob
     Spec.assertEqWith s "to turn 2" (TurnRegisters.turnNumber (GameState.turn again)) 2
-    Spec.assertEqWith s "starting at the untap step" (TurnRegisters.phase (GameState.turn again)) Turn.firstPhase
-    Spec.assertEqWith s "with a fresh schedule, not a third cleanup" (TurnRegisters.remaining (GameState.turn again)) Turn.laterPhases
+    Spec.assertEqWith s "starting at the untap step" (TurnRegisters.phase (GameState.turn again)) (Turn.firstPhase False)
+    Spec.assertEqWith s "with a fresh schedule, not a third cleanup" (TurnRegisters.remaining (GameState.turn again)) (Turn.laterPhases False)
     Spec.assertEqWith s "and alice took Megrim's 2 damage once, not twice" (S.lifeOf S.alice again) (Just 18)
 
   -- CR 514.3: "Normally, no player receives priority during the cleanup step,

@@ -27,6 +27,7 @@ spec s = Spec.describe s "Parun.Codec.TurnRegisters" $ do
         { TurnRegisters.activePlayer = PlayerId.MkPlayerId 4,
           TurnRegisters.phase = Phase.Beginning BeginningStep.Upkeep,
           TurnRegisters.remaining = Seq.empty,
+          TurnRegisters.phasesReversed = False,
           TurnRegisters.stack = [ObjectId.MkObjectId 7],
           TurnRegisters.stackedIn = Map.empty,
           TurnRegisters.priority = Just (PlayerId.MkPlayerId 5),

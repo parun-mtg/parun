@@ -44392,6 +44392,7 @@
       "88": {"card":"Plains"},
       "91": {"card":"Swamp"},
       "92": {"card":"Swamp"},
+      "29": {"card":"Topsy Turvy"},
       "30": {"card":"Wall of Fortune"}
     },
     "UNF": {
@@ -44543,7 +44544,8 @@
       "137": {"card":"Island"},
       "139": {"card":"Mountain"},
       "136": {"card":"Plains"},
-      "138": {"card":"Swamp"}
+      "138": {"card":"Swamp"},
+      "47": {"card":"Topsy Turvy"}
     },
     "UNK": {
       "RZ06b": {"card":"Autumn Willow and Baron Sengir"},

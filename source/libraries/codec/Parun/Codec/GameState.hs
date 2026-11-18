@@ -207,6 +207,7 @@ codec resolve = Fields.object $ do
   drewFromEmpty <- Fields.defaulted "drewFromEmpty" Set.empty (Common.set PlayerId.codec) GameState.drewFromEmpty
   fellShort <- Fields.defaulted "fellShort" 0 Common.natural (Bookkeeping.fellShort . GameState.bookkeeping)
   loopGroups <- Fields.defaulted "loopGroups" Map.empty (Common.naturalMap ObjectId.codec (Common.set SlotName.codec)) (Bookkeeping.loopGroups . GameState.bookkeeping)
+  turnOrderReversedByStatic <- Fields.defaulted "turnOrderReversedByStatic" False Common.boolean (Bookkeeping.turnOrderReversedByStatic . GameState.bookkeeping)
   landsPlayed <- Fields.defaulted "landsPlayed" Map.empty (Common.naturalMap PlayerId.codec Common.natural) GameState.landsPlayed
   cardsPlayed <- Fields.defaulted "cardsPlayed" Map.empty (Common.naturalMap ObjectId.codec PlayerId.codec) GameState.cardsPlayed
   keptFaceDown <- Fields.defaulted "keptFaceDown" Nothing (Common.maybe (Common.naturalMap ObjectId.codec Common.natural)) (Scratch.keptFaceDown . GameState.scratch)
@@ -312,7 +313,8 @@ codec resolve = Fields.object $ do
               Bookkeeping.repeatPicks = repeatPicks,
               Bookkeeping.undone = undone,
               Bookkeeping.fellShort = fellShort,
-              Bookkeeping.loopGroups = loopGroups
+              Bookkeeping.loopGroups = loopGroups,
+              Bookkeeping.turnOrderReversedByStatic = turnOrderReversedByStatic
             },
         GameState.snapshots =
           Snapshots.MkSnapshots

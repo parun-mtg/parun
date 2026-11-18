@@ -496,7 +496,8 @@ blankBookkeeping =
       Bookkeeping.repeatPicks = Nothing,
       Bookkeeping.undone = Map.empty,
       Bookkeeping.fellShort = 0,
-      Bookkeeping.loopGroups = Map.empty
+      Bookkeeping.loopGroups = Map.empty,
+      Bookkeeping.turnOrderReversedByStatic = False
     }
 
 -- The snapshots of a game nothing has happened in yet.

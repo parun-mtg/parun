@@ -427,9 +427,10 @@ settleAll pid = do
   State.put gs {GameState.objects = foldr (Map.adjust settle) (GameState.objects gs) ids}
 
 -- CR 302.6 / 305.2: what the turn's beginning owes each active player still
--- playing (CR 800.4j), run as its first untap step is reached and before CR
--- 500.11 is asked, so a skipped untap step or beginning phase owes it too, and a
--- CR 500.8 additional untap step does not repeat it.
+-- playing (CR 800.4j), run as its first step is reached and before CR 500.11
+-- is asked, so a skipped untap step or beginning phase owes it too, a CR 500.8
+-- additional untap step does not repeat it, and a turn whose phases are
+-- reversed (Topsy Turvy) owes it at its end step rather than its last.
 openTurn :: Game ()
 openTurn = do
   live <- State.gets (\gs -> filter (\pid -> List.elem pid (Game.stillPlaying gs)) (Turn.activePlayers gs))
@@ -511,6 +512,15 @@ sampleWorldSince = do
       let (ts, gs1) = Game.freshTimestamp gs
           stamp obj = obj {Object.worldSince = Just ts}
       State.put gs1 {GameState.objects = foldr (Map.adjust stamp) cleared toStamp}
+
+-- CR 101.4: whether static abilities reverse the turn order (Topsy Turvy),
+-- sampled into Bookkeeping.turnOrderReversedByStatic for Turn.turnOrder, which
+-- sits below the gather of static abilities. Nothing announces a static
+-- ability starting or stopping to apply, as nothing announces a change of
+-- control, so it samples.
+sampleTurnOrder :: Game ()
+sampleTurnOrder = State.modify' $ \gs ->
+  gs {GameState.bookkeeping = (GameState.bookkeeping gs) {Bookkeeping.turnOrderReversedByStatic = PlayerEffect.turnOrderReversedByStatic gs}}
 
 -- CR 514.1's cleanup discard -- NOT CR 514.2, the sweep beside it. The choice is
 -- the player's: trimming front-of-hand would be the engine choosing what to
@@ -1373,7 +1383,7 @@ settleForPriority = Monad.void performSettle
 -- that stores what a projection answers live -- sampleWorldSince for CR 704.5k,
 -- Event.sampleControl for CR 603.2, Exile.accrueLookers for CR 406.3,
 -- checkControlContinuity for CR 302.6, Combat.removeChanged for CR 506.4,
--- Ring.endOnControlChange for CR 701.54a.
+-- Ring.endOnControlChange for CR 701.54a, sampleTurnOrder for CR 101.4.
 --
 -- CR 704.3 makes "whenever a player would get priority" the coarsest moment
 -- anything outside a resolution could observe CR 611.2b's condition, so
@@ -1445,6 +1455,10 @@ settlePasses passes boards = do
   -- Also before the SBA pass: a permanent that just became world must be stamped
   -- before CR 704.5k reads the clock. No reason to loop.
   sampleWorldSince
+  -- Before placePendingTriggers, whose CR 603.3b order is the turn order.
+  -- Stamp-only, and a departure the SBA pass makes is seen on the pass it
+  -- forces.
+  sampleTurnOrder
   -- Unlike the other samples here it MAKES WORK: a GameEvent.ControlChanged
   -- it mints has to be scanned, so it runs before placePendingTriggers and joins
   -- the recursion guard below.
@@ -2456,6 +2470,10 @@ newTurn extra pid gs =
   let -- CR 805.4: every player whose turn this is, `pid` alone without the
       -- shared team turns option.
       takers = filter (Turn.sharesTurn gs pid) (GameState.seating gs)
+      -- CR 500.1 / Topsy Turvy: the order of the turn's phases, fixed as it
+      -- begins (docs/decisions.md, "When reversing a turn's phases takes
+      -- effect").
+      reversed = PlayerEffect.phasesReversed pid gs
       -- CR 807.4b: the players taking a parked Grand Melee turn, whose
       -- control (CR 724.1b) runs on through this one's beginning.
       parked = Map.elems (GameState.parkedTurns gs)
@@ -2476,8 +2494,9 @@ newTurn extra pid gs =
                   -- CR 500.7: which extra turn this is, for a duration naming it
                   -- (Expiry.DuringExtraTurn); Nothing on an ordinary turn.
                   TurnRegisters.extraTurnUnderWay = extra,
-                  TurnRegisters.phase = Turn.firstPhase,
-                  TurnRegisters.remaining = Turn.laterPhases,
+                  TurnRegisters.phase = Turn.firstPhase reversed,
+                  TurnRegisters.remaining = Turn.laterPhases reversed,
+                  TurnRegisters.phasesReversed = reversed,
                   TurnRegisters.turnResume = TurnResume.AtStepStart
                 },
             -- CR 500.7: the turn is one of each taker's turns of the game, and
@@ -2560,9 +2579,10 @@ runStep = do
 -- it (CR 614.1b) and moved on.
 enterStep :: Game (Maybe Phase.Phase)
 enterStep = do
-  -- The turn's first untap step is the one reached before fileTurnBegan files
-  -- the turn below.
-  opening <- State.gets (\gs -> TurnRegisters.phase (GameState.turn gs) == Phase.Beginning BeginningStep.Untap && Maybe.isNothing (TurnRegisters.permanentsAsTurnBegan (GameState.turn gs)))
+  -- The turn's first step -- its untap step, or the end step of a turn whose
+  -- phases are reversed -- is the one reached before fileTurnBegan files the
+  -- turn below.
+  opening <- State.gets (\gs -> let registers = GameState.turn gs in TurnRegisters.phase registers == Turn.firstPhase (TurnRegisters.phasesReversed registers) && Maybe.isNothing (TurnRegisters.permanentsAsTurnBegan registers))
   Monad.when opening openTurn
   -- CR 500.12: nothing happens between turns, so the board this turn's first
   -- step opens on is the board as the turn began, whatever skips that step (CR

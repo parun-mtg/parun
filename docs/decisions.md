@@ -2830,3 +2830,40 @@ Entries are ordered by the first rule each cites.
   `Parun.Types.RollEnd.LowestBreakingTies`, proved by the scenario
   `cr-706-1-the-players-tied-for-the-lowest-roll-reroll-until-one-is-lowest`.
 - **Issue**: #3990.
+
+## When reversing a turn's phases takes effect
+
+- **Question**: Topsy Turvy reverses "the phases of each player's turn". If it
+  enters or leaves the battlefield partway through a turn, does the rest of
+  that turn change order?
+- **Rules**: CR 500.1, 505.1a, 611.3a; Topsy Turvy's rulings say only that
+  steps keep their order and that an even number cancel out. CR of 2026-11-06.
+- **Decision**: No. A turn's phase order is fixed as it begins; a Topsy Turvy
+  arriving or leaving mid-turn changes the next turn.
+- **Rejected**: Reordering what is left of the turn, as CR 611.3a's effect
+  applying at every moment might suggest: a turn half taken has no place in
+  the reversed order to rejoin, and reordering it could repeat a phase already
+  taken or skip one still owed, which no phase-adding or skipping rule
+  describes.
+- **Site**: `Parun.Engine.Engine.newTurn`, proved by the scenario
+  `topsy-turvy-reverses-the-phases-of-the-next-turn`.
+- **Issue**: #5743.
+
+## Where a turn whose phases are reversed ends when an effect ends it
+
+- **Question**: CR 725.1d sends the game "straight to the cleanup step". In a
+  turn whose phases Topsy Turvy reversed, the ending phase comes first, so the
+  turn's other phases are scheduled after its cleanup step, or that step has
+  already passed. Do they still happen?
+- **Rules**: CR 725.1, 725.1d, 725.1f, 500.1. CR of 2026-11-06.
+- **Decision**: No. The turn ends after the cleanup step the effect jumps to
+  (and any further cleanup steps CR 725.1f adds); nothing scheduled after it
+  happens.
+- **Rejected**: Continuing with the phases scheduled after the cleanup step,
+  as an ordinary turn keeps a phase added after its ending phase: CR 725.1
+  calls the process ending the turn, and CR 725.1f has the turn finally end
+  after its cleanup steps, which a turn taking its main, combat and beginning
+  phases afterward would not.
+- **Site**: `Parun.Engine.Turn.jumpToCleanup`, proved by the scenario
+  `topsy-turvy-turn-ended-by-sundial-of-the-infinite-ends-at-its-cleanup-step`.
+- **Issue**: #5743.

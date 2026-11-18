@@ -68,6 +68,11 @@ data Bookkeeping = MkBookkeeping
     -- members under as a group (Parun.Engine.Resolve.Arms.Zones.forEach),
     -- which the loop writes whether or not its body did anything, so
     -- Parun.Engine.Resolve.Common.happenedBetween discounts those slots.
-    loopGroups :: !(Map.Map ObjectId.ObjectId (Set.Set SlotName.SlotName))
+    loopGroups :: !(Map.Map ObjectId.ObjectId (Set.Set SlotName.SlotName)),
+    -- | CR 101.4: whether static abilities reverse the turn order (Topsy
+    -- Turvy), sampled at each state-based action check
+    -- (Parun.Engine.Engine.sampleTurnOrder) for Parun.Engine.Turn.turnOrder,
+    -- which sits below the gather of static abilities.
+    turnOrderReversedByStatic :: !Bool
   }
   deriving (Eq, Ord, Show)

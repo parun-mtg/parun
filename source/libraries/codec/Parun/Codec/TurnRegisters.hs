@@ -43,6 +43,7 @@ codec = Fields.object $ do
   activePlayer <- Fields.required "activePlayer" PlayerId.codec TurnRegisters.activePlayer
   phase <- Fields.required "phase" Phase.codec TurnRegisters.phase
   remaining <- Fields.required "remaining" (Common.seq Phase.codec) TurnRegisters.remaining
+  phasesReversed <- Fields.defaulted "phasesReversed" False Common.boolean TurnRegisters.phasesReversed
   stack <- Fields.defaulted "stack" [] (Common.list ObjectId.codec) TurnRegisters.stack
   stackedIn <- Fields.defaulted "stackedIn" Map.empty (Common.naturalMap ObjectId.codec EventGroup.codec) TurnRegisters.stackedIn
   priority <- Fields.defaulted "priority" Nothing (Common.maybe PlayerId.codec) TurnRegisters.priority
@@ -72,6 +73,7 @@ codec = Fields.object $ do
       { TurnRegisters.activePlayer = activePlayer,
         TurnRegisters.phase = phase,
         TurnRegisters.remaining = remaining,
+        TurnRegisters.phasesReversed = phasesReversed,
         TurnRegisters.stack = stack,
         TurnRegisters.stackedIn = stackedIn,
         TurnRegisters.priority = priority,

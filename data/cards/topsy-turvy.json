@@ -1,0 +1,73 @@
+{
+  "faces": [
+    {
+      "manaCost": [
+        {
+          "type": "Generic",
+          "value": 2
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "Blue"
+          }
+        }
+      ],
+      "name": "Topsy Turvy",
+      "oracleText": "The phases of each player's turn are reversed. (The phases are, in reverse order, ending, second main, combat, first main, and beginning.)\nAs long as there are more than two players in the game, the turn order is reversed.",
+      "playerAbilities": [
+        {
+          "effect": {
+            "type": "PhasesReversed"
+          },
+          "scope": {
+            "type": "AnyPlayer"
+          }
+        },
+        {
+          "condition": {
+            "type": "Compares",
+            "value": {
+              "comparison": "GreaterThan",
+              "measured": {
+                "type": "Count",
+                "value": {
+                  "aggregation": {
+                    "type": "Members"
+                  },
+                  "filter": {
+                    "type": "And",
+                    "value": []
+                  },
+                  "scope": {
+                    "type": "OverPlayers",
+                    "value": {
+                      "type": "Relative",
+                      "value": "AnyPlayer"
+                    }
+                  }
+                }
+              },
+              "threshold": {
+                "type": "Literal",
+                "value": 2
+              }
+            }
+          },
+          "effect": {
+            "type": "TurnOrderReversed"
+          },
+          "scope": {
+            "type": "AnyPlayer"
+          }
+        }
+      ],
+      "typeLine": {
+        "types": [
+          "Enchantment"
+        ]
+      }
+    }
+  ]
+}

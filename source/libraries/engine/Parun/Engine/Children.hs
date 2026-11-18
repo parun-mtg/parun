@@ -2310,6 +2310,8 @@ playerEffectChildren c effect = case effect of
   PlayerEffect.SearchesTopOfLibraries _ -> pure effect
   PlayerEffect.StateBasedActionDoesntApply action exempted -> PlayerEffect.StateBasedActionDoesntApply action <$> playerFilter c exempted
   PlayerEffect.CantSetSchemesInMotion -> pure effect
+  PlayerEffect.PhasesReversed -> pure effect
+  PlayerEffect.TurnOrderReversed -> pure effect
   PlayerEffect.EntriesTrigger (EntriesTrigger.MkEntriesTrigger entrants bearers move triggering) ->
     fmap PlayerEffect.EntriesTrigger (EntriesTrigger.MkEntriesTrigger <$> playerFilter c entrants <*> playerFilter c bearers <*> pure move <*> pure triggering)
   PlayerEffect.BearersTrigger (BearersTrigger.MkBearersTrigger bearers abilities triggering) ->
