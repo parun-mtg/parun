@@ -1813,16 +1813,19 @@ bakeRowPlayers players =
 -- CR 611.2c: a combat restriction's stored class, every slot it names baked
 -- (Parun.Engine.Filter.bakeBound) since the slots die with this resolution: its
 -- players, its objects, and the players related to its objects' controllers
--- through the resolution's own CR 608.2h reader (effectContext). Read live afterwards, so a permanent
--- arriving later is in the class.
+-- through the resolution's own CR 608.2h reader (effectContext), and the
+-- colour its source has chosen (Filter.bakeChosenColors, Skrelv, Defector
+-- Mite). Read live afterwards, so a permanent arriving later is in the class.
 storedClass :: Map.Map SlotName (Set Recipient) -> ObjectId -> PlayerId -> ObjectId -> GameState -> Filter.Type.Filter Keyword.Type.Keyword -> Filter.Type.Filter Keyword.Type.Keyword
 storedClass legal resolving controller source gs =
-  Filter.bakeBound
-    (Map.union (Binding.playersIn legal) (Binding.playerSlots bindings))
-    (Binding.objectsBySlot legal bindings)
-    (fmap related (Filter.slotControllers (effectContext gs resolving controller source legal bindings)))
+  Filter.bakeChosenColors (Filter.sourceChosenColors context)
+    . Filter.bakeBound
+      (Map.union (Binding.playersIn legal) (Binding.playerSlots bindings))
+      (Binding.objectsBySlot legal bindings)
+      (fmap related (Filter.slotControllers context))
   where
     bindings = slotBindings resolving gs
+    context = effectContext gs resolving controller source legal bindings
     related pids relation = Set.fromList [q | q <- Game.stillPlaying gs, any (\p -> PlayerRelation.holds (Game.teams gs) relation p q) pids]
 
 -- CR 611.2c / 109.5: a rules-modifying continuous effect's class, storedClass's
