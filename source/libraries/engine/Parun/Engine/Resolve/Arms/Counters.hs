@@ -957,8 +957,10 @@ moveCounters resolving source controller legal (MoveCounters.MkMoveCounters from
       -- Where the player picks the kind ("two counters of one kind") it is
       -- that many of one kind, and under "up to one counter" at most one.
       --
-      -- Not implemented: a group destination under MovedKinds.EachAbsentKind,
-      -- which reads the one destination and moves nothing here (#4774).
+      -- Unprinted: a group destination under MovedKinds.EachAbsentKind, which
+      -- moves nothing here. Parun.EffectLintSpec's "no card moves counters onto
+      -- a group under a kinds arm the distribution cannot ask" keeps it out of
+      -- card data.
       distributePair candidates fromOne =
         -- Rule 122.5's first and fourth impossibilities, per recipient: the
         -- first object is not its own destination, and both ends are on the

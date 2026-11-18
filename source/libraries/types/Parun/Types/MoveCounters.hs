@@ -17,8 +17,9 @@ import qualified Parun.Types.SlotName as SlotName
 -- HOW MANY land on each is the player's answer
 -- (Parun.Types.Prompt's ChooseDistributedMovedCounters) rather than the card's.
 --
--- Not implemented: a group destination under MovedKinds.EachAbsentKind, which
--- moves nothing (#4774).
+-- Unprinted: a group destination under MovedKinds.EachAbsentKind, which moves
+-- nothing. Parun.EffectLintSpec's "no card moves counters onto a group under a
+-- kinds arm the distribution cannot ask" keeps it out of card data.
 --
 -- `kinds` is WHICH counters cross and how many of each; Parun.Types.MovedKinds is
 -- where every spelling the printed text uses for that is set out.
