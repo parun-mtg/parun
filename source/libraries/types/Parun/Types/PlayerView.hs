@@ -1,8 +1,11 @@
 module Parun.Types.PlayerView where
 
 import qualified Data.Map.Strict as Map
+import qualified Data.Set as Set
 import qualified Numeric.Natural as Natural
+import qualified Parun.Types.AttackTarget as AttackTarget
 import qualified Parun.Types.LoggedEvent as LoggedEvent
+import qualified Parun.Types.ObjectId as ObjectId
 import qualified Parun.Types.ObjectView as ObjectView
 import qualified Parun.Types.Phase as Phase
 import qualified Parun.Types.PlayerId as PlayerId
@@ -24,6 +27,10 @@ data PlayerView = MkPlayerView
     battlefield :: [ObjectView.ObjectView],
     -- | Top first, as TurnRegisters.stack.
     stack :: [ObjectView.ObjectView],
+    -- | CR 508.1b: each attacking creature and what it attacks, as Combat.attackers.
+    attackers :: Map.Map ObjectId.ObjectId AttackTarget.AttackTarget,
+    -- | CR 509.1a: each blocked attacker and the creatures blocking it, as Combat.blockers.
+    blockers :: Map.Map ObjectId.ObjectId (Set.Set ObjectId.ObjectId),
     -- | CR 807.5: each parked Grand Melee turn's stack, top first, by its
     -- marker's number (GameState.parkedTurns).
     parkedStacks :: Map.Map Natural.Natural [ObjectView.ObjectView],

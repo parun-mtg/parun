@@ -12,13 +12,16 @@ import qualified Parun.Engine.Decide as Decide
 import qualified Parun.Engine.Game as Game
 import qualified Parun.Engine.Projection as Projection
 import qualified Parun.Engine.Projection.View as Projection.View
+import qualified Parun.Engine.Summoning as Summoning
 import qualified Parun.Engine.Visibility as Visibility
 import qualified Parun.Extra.Natural as Natural
 import qualified Parun.Types.AbilityView as AbilityView
 import qualified Parun.Types.Acquisition as Acquisition
 import qualified Parun.Types.ActivatedAbilitySource as ActivatedAbilitySource
 import qualified Parun.Types.Bookkeeping as Bookkeeping
+import qualified Parun.Types.CardType as CardType
 import qualified Parun.Types.Chosen as Chosen
+import qualified Parun.Types.Combat as Combat
 import qualified Parun.Types.Facing as Facing
 import qualified Parun.Types.GameState as GameState
 import qualified Parun.Types.InherentTriggerSource as InherentTriggerSource
@@ -54,6 +57,8 @@ viewFor pid gs =
       PlayerView.seats = Maybe.mapMaybe (seatView pid gs) (GameState.seating gs),
       PlayerView.battlefield = Maybe.mapMaybe (objectView pid gs) (Foldable.toList (GameState.battlefield gs)),
       PlayerView.stack = Maybe.mapMaybe (objectView pid gs) (TurnRegisters.stack (GameState.turn gs)),
+      PlayerView.attackers = Combat.attackers (TurnRegisters.combat (GameState.turn gs)),
+      PlayerView.blockers = Combat.blockers (TurnRegisters.combat (GameState.turn gs)),
       PlayerView.parkedStacks = fmap (Maybe.mapMaybe (objectView pid gs) . TurnRegisters.stack) (GameState.parkedTurns gs),
       PlayerView.witnessed = witnessedIn (TurnRegisters.events (GameState.turn gs)),
       PlayerView.witnessedLastTurn = witnessedIn (Game.turnLog WhichTurn.LastTurn Nothing gs),
@@ -132,6 +137,10 @@ objectView pid gs oid = do
             else Nothing,
         ObjectView.ability = abilityView pid gs oid,
         ObjectView.targets = Set.toList (Projection.View.targetsOfStackObject gs oid),
+        ObjectView.summoningSick =
+          Game.zoneOf oid gs == Just Zone.Battlefield
+            && Set.member CardType.Creature (Projection.cardTypesOf oid gs)
+            && not (Summoning.settledOrHasty (Maybe.fromMaybe (Object.owner object) (Projection.View.controllerOf oid gs)) oid gs),
         ObjectView.chosenColors = chosen Chosen.Colors,
         ObjectView.chosenColorless = chosen Chosen.Colorless,
         ObjectView.chosenSubtype = chosen Chosen.Subtype,

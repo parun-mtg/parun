@@ -1,10 +1,13 @@
 module Parun.Codec.PlayerViewSpec where
 
 import qualified Data.Map.Strict as Map
+import qualified Data.Set as Set
 import qualified Parun.Codec.PlayerView as PlayerView
 import qualified Parun.Codec.SeatViewSpec as SeatViewSpec
 import qualified Parun.JsonCodec.Common as Common
 import qualified Parun.Spec as Spec
+import qualified Parun.Types.AttackTarget as AttackTarget
+import qualified Parun.Types.ObjectId as ObjectId
 import qualified Parun.Types.Phase as Phase
 import qualified Parun.Types.PlayerId as PlayerId
 import qualified Parun.Types.PlayerView as PlayerView
@@ -22,6 +25,13 @@ spec s = Spec.describe s "Parun.Codec.PlayerView" $ do
       PlayerView.codec
       testView {PlayerView.parkedStacks = Map.singleton 2 []}
       (viewJsonWith ",\"parkedStacks\":{\"2\":[]}")
+  -- CR 508.1b / 509.1a: an attacker, what it attacks, and its blocker.
+  Spec.it s "combat" $
+    Common.assertCodec
+      s
+      PlayerView.codec
+      testView {PlayerView.attackers = Map.singleton (ObjectId.MkObjectId 5) (AttackTarget.OfPlayer (PlayerId.MkPlayerId 0)), PlayerView.blockers = Map.singleton (ObjectId.MkObjectId 5) (Set.singleton (ObjectId.MkObjectId 6))}
+      (viewJsonWith ",\"attackers\":{\"5\":{\"type\":\"OfPlayer\",\"value\":0}},\"blockers\":{\"5\":[6]}")
   Spec.it s "has a schema" $ Common.assertHasSchema s PlayerView.codec
 
 testView :: PlayerView.PlayerView
@@ -36,6 +46,8 @@ testView =
       PlayerView.seats = [SeatViewSpec.testSeat],
       PlayerView.battlefield = [],
       PlayerView.stack = [],
+      PlayerView.attackers = Map.empty,
+      PlayerView.blockers = Map.empty,
       PlayerView.parkedStacks = Map.empty,
       PlayerView.witnessed = [],
       PlayerView.witnessedLastTurn = [],

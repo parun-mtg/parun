@@ -55,6 +55,7 @@ import qualified Parun.Types.CardName as CardName
 import qualified Parun.Types.Casting as Casting
 import qualified Parun.Types.Choices as Choices
 import qualified Parun.Types.Color as Color
+import qualified Parun.Types.Combat as Combat
 import qualified Parun.Types.ControlDuration as ControlDuration
 import qualified Parun.Types.CounterKind as CounterKind
 import qualified Parun.Types.DamageEvent as DamageEvent
@@ -97,6 +98,7 @@ import qualified Parun.Types.RevealCause as RevealCause
 import qualified Parun.Types.Revealed as Revealed
 import qualified Parun.Types.Seat as Seat
 import qualified Parun.Types.SeatView as SeatView
+import qualified Parun.Types.Sickness as Sickness
 import qualified Parun.Types.Source as Source
 import qualified Parun.Types.SpellWasCast as SpellWasCast
 import qualified Parun.Types.StackedAbility as StackedAbility
@@ -164,6 +166,26 @@ spec s registry = Spec.describe s "PlayerView" $ do
     Spec.assertGtWith s "the agenda changed for bob" (fst (leaks other single)) 0
     Spec.assertEqWith s "nor when two names become one" (snd (leaks other double)) []
     Spec.assertGtWith s "the double agenda changed for bob" (fst (leaks other double)) 0
+  Spec.it s "CR 302.6 a creature its controller has not controlled since their turn began shows summoning sick, unless it has haste" $ do
+    bears <- S.printingOf s registry "Grizzly Bears"
+    goblin <- S.printingOf s registry "Raging Goblin"
+    let (settledBears, placed) = S.addPermanent bears S.alice (Setup.emptyGame S.bothPlayers)
+        (freshBears, withBears) = S.addPermanent bears S.alice placed
+        (hasty, gs0) = S.addPermanent goblin S.alice withBears
+        unsettle o = o {Object.sickness = Sickness.Sick}
+        gs = gs0 {GameState.objects = foldr (Map.adjust unsettle) (GameState.objects gs0) [freshBears, hasty]}
+        sick oid = fmap ObjectView.summoningSick (List.find ((== oid) . ObjectView.object) (PlayerView.Type.battlefield (PlayerView.viewFor S.bob gs)))
+    Spec.assertEqWith s "settled" (sick settledBears) (Just False)
+    Spec.assertEqWith s "fresh" (sick freshBears) (Just True)
+    Spec.assertEqWith s "hasty" (sick hasty) (Just False)
+  Spec.it s "CR 508.1b / 509.1a every seat sees what attacks what, and what blocks it" $ do
+    let empty = Setup.emptyGame S.bothPlayers
+        attacker = ObjectId.MkObjectId 5
+        blocker = ObjectId.MkObjectId 6
+        turn = GameState.turn empty
+        gs = empty {GameState.turn = turn {TurnRegisters.combat = (TurnRegisters.combat turn) {Combat.attackers = Map.singleton attacker (AttackTarget.OfPlayer S.bob), Combat.blockers = Map.singleton attacker (Set.singleton blocker)}}}
+    Spec.assertEqWith s "attackers" (PlayerView.Type.attackers (PlayerView.viewFor S.bob gs)) (Map.singleton attacker (AttackTarget.OfPlayer S.bob))
+    Spec.assertEqWith s "blockers" (PlayerView.Type.blockers (PlayerView.viewFor S.alice gs)) (Map.singleton attacker (Set.singleton blocker))
   Spec.it s "an opponent's hand and library show only their sizes" $ do
     gs <- started s registry
     case seatOf S.alice (PlayerView.viewFor S.bob gs) of
