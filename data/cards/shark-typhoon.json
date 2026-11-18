@@ -1,0 +1,217 @@
+{
+  "faces": [
+    {
+      "keywords": [
+        {
+          "type": "Cycling",
+          "value": {
+            "cost": {
+              "mana": [
+                {
+                  "type": "Variable"
+                },
+                {
+                  "type": "Generic",
+                  "value": 1
+                },
+                {
+                  "type": "OfType",
+                  "value": {
+                    "type": "Colored",
+                    "value": "Blue"
+                  }
+                }
+              ]
+            },
+            "searchFor": null
+          }
+        }
+      ],
+      "manaCost": [
+        {
+          "type": "Generic",
+          "value": 5
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "Blue"
+          }
+        }
+      ],
+      "name": "Shark Typhoon",
+      "oracleText": "Whenever you cast a noncreature spell, create an X/X blue Shark creature token with flying, where X is that spell's mana value.\nCycling {X}{1}{U} ({X}{1}{U}, Discard this card: Draw a card.)\nWhen you cycle this card, create an X/X blue Shark creature token with flying.",
+      "triggeredAbilities": [
+        {
+          "condition": {
+            "type": "SpellCast",
+            "value": {
+              "scope": {
+                "type": "PlayersTurn",
+                "value": {
+                  "type": "Relative",
+                  "value": "AnyPlayer"
+                }
+              },
+              "spell": {
+                "type": "Matching",
+                "value": {
+                  "type": "And",
+                  "value": [
+                    {
+                      "type": "Not",
+                      "value": {
+                        "type": "HasCardType",
+                        "value": "Creature"
+                      }
+                    },
+                    {
+                      "type": "HeldBy",
+                      "value": {
+                        "holder": "Controller",
+                        "relation": "You"
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "modal": {
+            "modes": [
+              {
+                "clauses": [
+                  {
+                    "effects": [
+                      {
+                        "type": "Create",
+                        "value": {
+                          "card": {
+                            "faces": [
+                              {
+                                "colorIndicator": [
+                                  "Blue"
+                                ],
+                                "keywords": [
+                                  {
+                                    "type": "Flying"
+                                  }
+                                ],
+                                "name": "Shark Token",
+                                "power": {
+                                  "type": "AgainstSlot",
+                                  "value": {
+                                    "quantity": {
+                                      "type": "Measure",
+                                      "value": "ManaValue"
+                                    },
+                                    "slot": "thatSpell"
+                                  }
+                                },
+                                "toughness": {
+                                  "type": "AgainstSlot",
+                                  "value": {
+                                    "quantity": {
+                                      "type": "Measure",
+                                      "value": "ManaValue"
+                                    },
+                                    "slot": "thatSpell"
+                                  }
+                                },
+                                "typeLine": {
+                                  "subtypes": [
+                                    "Shark"
+                                  ],
+                                  "types": [
+                                    "Creature"
+                                  ]
+                                }
+                              }
+                            ]
+                          },
+                          "quantity": {
+                            "type": "Literal",
+                            "value": 1
+                          }
+                        }
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "condition": {
+            "type": "Discards",
+            "value": {
+              "subject": {
+                "type": "Self"
+              },
+              "way": "Cycled"
+            }
+          },
+          "modal": {
+            "modes": [
+              {
+                "clauses": [
+                  {
+                    "effects": [
+                      {
+                        "type": "Create",
+                        "value": {
+                          "card": {
+                            "faces": [
+                              {
+                                "colorIndicator": [
+                                  "Blue"
+                                ],
+                                "keywords": [
+                                  {
+                                    "type": "Flying"
+                                  }
+                                ],
+                                "name": "Shark Token",
+                                "power": {
+                                  "type": "InSlot",
+                                  "value": "X"
+                                },
+                                "toughness": {
+                                  "type": "InSlot",
+                                  "value": "X"
+                                },
+                                "typeLine": {
+                                  "subtypes": [
+                                    "Shark"
+                                  ],
+                                  "types": [
+                                    "Creature"
+                                  ]
+                                }
+                              }
+                            ]
+                          },
+                          "quantity": {
+                            "type": "Literal",
+                            "value": 1
+                          }
+                        }
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      ],
+      "typeLine": {
+        "types": [
+          "Enchantment"
+        ]
+      }
+    }
+  ]
+}

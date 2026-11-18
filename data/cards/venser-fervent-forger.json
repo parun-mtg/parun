@@ -1,0 +1,223 @@
+{
+  "faces": [
+    {
+      "keywords": [
+        {
+          "type": "Flash"
+        }
+      ],
+      "manaCost": [
+        {
+          "type": "Generic",
+          "value": 4
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "Red"
+          }
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "Red"
+          }
+        }
+      ],
+      "name": "Venser, Fervent Forger",
+      "oracleText": "Flash\nWhen Venser enters, choose one —\n• Copy target instant or sorcery spell an opponent controls twice. You may choose new targets for the copies.\n• Create two tokens that are copies of target permanent an opponent controls. They gain haste. At the beginning of the next end step, sacrifice them.",
+      "power": {
+        "type": "Literal",
+        "value": 5
+      },
+      "toughness": {
+        "type": "Literal",
+        "value": 3
+      },
+      "triggeredAbilities": [
+        {
+          "condition": {
+            "type": "Enters",
+            "value": {}
+          },
+          "modal": {
+            "modes": [
+              {
+                "clauses": [
+                  {
+                    "effects": [
+                      {
+                        "type": "CopyStackObject",
+                        "value": {
+                          "quantity": {
+                            "type": "Literal",
+                            "value": 2
+                          },
+                          "ref": {
+                            "type": "InSlot",
+                            "value": "spell"
+                          },
+                          "targets": {
+                            "type": "ChosenByController"
+                          }
+                        }
+                      }
+                    ]
+                  }
+                ],
+                "targetSlots": {
+                  "spell": {
+                    "filter": {
+                      "type": "And",
+                      "value": [
+                        {
+                          "type": "Or",
+                          "value": [
+                            {
+                              "type": "HasCardType",
+                              "value": "Instant"
+                            },
+                            {
+                              "type": "HasCardType",
+                              "value": "Sorcery"
+                            }
+                          ]
+                        },
+                        {
+                          "type": "HeldBy",
+                          "value": {
+                            "holder": "Controller",
+                            "relation": "Opponent"
+                          }
+                        }
+                      ]
+                    },
+                    "pool": {
+                      "type": "Spells"
+                    }
+                  }
+                }
+              },
+              {
+                "clauses": [
+                  {
+                    "effects": [
+                      {
+                        "type": "CreateCopy",
+                        "value": {
+                          "quantity": {
+                            "type": "Literal",
+                            "value": 2
+                          },
+                          "ref": {
+                            "type": "InSlot",
+                            "value": "target"
+                          },
+                          "slot": "token"
+                        }
+                      },
+                      {
+                        "type": "ModifyTarget",
+                        "value": {
+                          "duration": {
+                            "type": "Indefinite"
+                          },
+                          "modification": {
+                            "type": "GainKeyword",
+                            "value": {
+                              "type": "Haste"
+                            }
+                          },
+                          "ref": {
+                            "type": "InSlot",
+                            "value": "token"
+                          }
+                        }
+                      },
+                      {
+                        "type": "ArmDelayedTrigger",
+                        "value": {
+                          "ability": {
+                            "type": "Triggered",
+                            "value": {
+                              "condition": {
+                                "type": "StepBegins",
+                                "value": {
+                                  "phase": {
+                                    "type": "Ending",
+                                    "value": "EndStep"
+                                  },
+                                  "scope": {
+                                    "type": "PlayersTurn",
+                                    "value": {
+                                      "type": "Relative",
+                                      "value": "AnyPlayer"
+                                    }
+                                  }
+                                }
+                              },
+                              "modal": {
+                                "modes": [
+                                  {
+                                    "clauses": [
+                                      {
+                                        "effects": [
+                                          {
+                                            "type": "Sacrifice",
+                                            "value": {
+                                              "ref": {
+                                                "type": "InSlot",
+                                                "value": "token"
+                                              }
+                                            }
+                                          }
+                                        ]
+                                      }
+                                    ]
+                                  }
+                                ]
+                              }
+                            }
+                          },
+                          "name": "sacrifice them"
+                        }
+                      }
+                    ]
+                  }
+                ],
+                "targetSlots": {
+                  "target": {
+                    "filter": {
+                      "type": "HeldBy",
+                      "value": {
+                        "holder": "Controller",
+                        "relation": "Opponent"
+                      }
+                    },
+                    "pool": {
+                      "type": "Permanents"
+                    }
+                  }
+                }
+              }
+            ]
+          }
+        }
+      ],
+      "typeLine": {
+        "subtypes": [
+          "Human",
+          "Sorcerer"
+        ],
+        "supertypes": [
+          "Legendary"
+        ],
+        "types": [
+          "Creature"
+        ]
+      }
+    }
+  ]
+}

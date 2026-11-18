@@ -1,0 +1,72 @@
+{
+  "faces": [
+    {
+      "manaCost": [
+        {
+          "type": "Variable"
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "White"
+          }
+        }
+      ],
+      "name": "Secure the Wastes",
+      "oracleText": "Create X 1/1 white Warrior creature tokens.",
+      "spell": {
+        "modes": [
+          {
+            "clauses": [
+              {
+                "effects": [
+                  {
+                    "type": "Create",
+                    "value": {
+                      "card": {
+                        "faces": [
+                          {
+                            "colorIndicator": [
+                              "White"
+                            ],
+                            "name": "Warrior Token",
+                            "power": {
+                              "type": "Literal",
+                              "value": 1
+                            },
+                            "toughness": {
+                              "type": "Literal",
+                              "value": 1
+                            },
+                            "typeLine": {
+                              "subtypes": [
+                                "Warrior"
+                              ],
+                              "types": [
+                                "Creature"
+                              ]
+                            }
+                          }
+                        ]
+                      },
+                      "quantity": {
+                        "type": "InSlot",
+                        "value": "X"
+                      }
+                    }
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "typeLine": {
+        "types": [
+          "Instant"
+        ]
+      }
+    }
+  ]
+}

@@ -1,0 +1,332 @@
+{
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "battlefield": [
+          {
+            "card": "Plains",
+            "label": "p1"
+          },
+          {
+            "card": "Plains",
+            "label": "p2"
+          },
+          {
+            "card": "Island",
+            "label": "island"
+          },
+          {
+            "card": "Swamp",
+            "label": "swamp"
+          },
+          {
+            "card": "Mountain",
+            "label": "mountain"
+          },
+          {
+            "card": "Forest",
+            "label": "forest"
+          },
+          {
+            "card": "Wastes",
+            "label": "wastes"
+          },
+          {
+            "card": "Mirrex",
+            "label": "mirrex"
+          },
+          {
+            "card": "The Autonomous Furnace",
+            "label": "furnace"
+          },
+          {
+            "card": "Tropical Island",
+            "label": "trop"
+          },
+          {
+            "card": "Monument to Perfection",
+            "label": "monument"
+          }
+        ],
+        "library": [
+          {
+            "card": "Tropical Island",
+            "label": "trop2"
+          },
+          {
+            "card": "The Dross Pits",
+            "label": "pits"
+          },
+          {
+            "card": "Island",
+            "label": "l1"
+          },
+          {
+            "card": "Island",
+            "label": "l2"
+          },
+          {
+            "card": "Island",
+            "label": "l3"
+          },
+          {
+            "card": "Island",
+            "label": "l4"
+          }
+        ],
+        "name": "alice"
+      },
+      {
+        "battlefield": [],
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ],
+        "name": "bob"
+      }
+    ],
+    "step": "PrecombatMain"
+  },
+  "description": "CR 701.23a / 613.1d / 613.1f: Monument to Perfection searches for a basic, Sphere, or Locus land only, and once nine such lands with different names are in play it becomes a 9/9 Phyrexian Construct artifact creature with indestructible and toxic 9 and no other abilities",
+  "note": "Eight names (a second Plains and a Tropical Island add none) refuse the animation; the searched Dross Pits makes nine. Afterwards its search ability is gone though Monument and three lands are untapped.",
+  "timeline": [
+    {
+      "player": "alice",
+      "refuse": {
+        "Activate": {
+          "ability": 1,
+          "mana": [
+            "$p1",
+            "$p2",
+            "$island",
+            null
+          ],
+          "object": "$monument"
+        }
+      },
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Activate": {
+          "ability": 0,
+          "mana": [
+            "$p1",
+            "$p2",
+            "$island",
+            null
+          ],
+          "object": "$monument"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "player": "alice",
+      "refuse": {
+        "Answer": {
+          "prompt": "Search",
+          "with": [
+            "$trop2"
+          ]
+        }
+      },
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Answer": {
+          "prompt": "Search",
+          "with": [
+            "$pits"
+          ]
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Answer": {
+          "prompt": "Shuffle",
+          "with": [
+            "$l1",
+            "$trop2",
+            "$l2",
+            "$l3",
+            "$l4"
+          ]
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "The Dross Pits",
+          "count": 1,
+          "player": "alice",
+          "zone": "Hand"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "PlayLand": "The Dross Pits"
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Activate": {
+          "ability": 1,
+          "mana": [
+            "$swamp",
+            "$mountain",
+            "$forest",
+            null
+          ],
+          "object": "$monument"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 3
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 3
+    },
+    {
+      "check": {
+        "PowerToughness": {
+          "object": "$monument",
+          "power": 9,
+          "toughness": 9
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 3
+    },
+    {
+      "check": {
+        "Types": {
+          "object": "$monument",
+          "types": [
+            "Artifact",
+            "Creature"
+          ]
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 3
+    },
+    {
+      "check": {
+        "Subtypes": {
+          "object": "$monument",
+          "subtypes": [
+            "Construct",
+            "Phyrexian"
+          ]
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 3
+    },
+    {
+      "check": {
+        "Keywords": {
+          "count": 1,
+          "keyword": {
+            "type": "Toxic",
+            "value": 9
+          },
+          "object": "$monument"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 3
+    },
+    {
+      "check": {
+        "Keywords": {
+          "count": 1,
+          "keyword": {
+            "type": "Indestructible"
+          },
+          "object": "$monument"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 3
+    },
+    {
+      "player": "alice",
+      "refuse": {
+        "Activate": {
+          "ability": 0,
+          "mana": [
+            "$p1",
+            "$p2",
+            "$island",
+            null
+          ],
+          "object": "$monument"
+        }
+      },
+      "step": "PrecombatMain",
+      "turn": 3
+    },
+    {
+      "do": {
+        "Attack": []
+      },
+      "player": "alice",
+      "step": "DeclareAttackers",
+      "turn": 3
+    }
+  ]
+}

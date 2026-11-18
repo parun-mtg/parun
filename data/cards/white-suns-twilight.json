@@ -92,7 +92,7 @@
                         "type": "InSlot",
                         "value": "X"
                       },
-                      "slot": "tokens"
+                      "slot": "created"
                     }
                   }
                 ]
@@ -129,7 +129,7 @@
                               "type": "Not",
                               "value": {
                                 "type": "IsBound",
-                                "value": "tokens"
+                                "value": "created"
                               }
                             }
                           ]

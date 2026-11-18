@@ -1,0 +1,320 @@
+{
+  "faces": [
+    {
+      "activatedAbilities": [
+        {
+          "cost": {
+            "components": [
+              {
+                "type": "AddLoyaltyToThis",
+                "value": 1
+              }
+            ],
+            "mana": []
+          },
+          "modal": {
+            "modes": [
+              {
+                "clauses": [
+                  {
+                    "effects": [
+                      {
+                        "type": "RequireAttack",
+                        "value": {
+                          "attacker": {
+                            "type": "Named",
+                            "value": {
+                              "type": "InSlot",
+                              "value": "target"
+                            }
+                          },
+                          "defender": {
+                            "type": "Players",
+                            "value": {
+                              "type": "Relative",
+                              "value": "AnyPlayer"
+                            }
+                          },
+                          "duration": {
+                            "type": "UntilYourNextTurn"
+                          }
+                        }
+                      }
+                    ]
+                  }
+                ],
+                "targetSlots": {
+                  "target": {
+                    "count": {
+                      "type": "Printed",
+                      "value": {
+                        "least": 0,
+                        "most": 1
+                      }
+                    },
+                    "pool": {
+                      "type": "Creatures"
+                    }
+                  }
+                }
+              }
+            ]
+          }
+        },
+        {
+          "cost": {
+            "components": [
+              {
+                "type": "AddLoyaltyToThis",
+                "value": 1
+              }
+            ],
+            "mana": []
+          },
+          "modal": {
+            "modes": [
+              {
+                "clauses": [
+                  {
+                    "effects": [
+                      {
+                        "type": "Discard",
+                        "value": {
+                          "type": "Counted",
+                          "value": {
+                            "player": {
+                              "type": "Relative",
+                              "value": "You"
+                            },
+                            "quantity": {
+                              "type": "Literal",
+                              "value": 1
+                            }
+                          }
+                        }
+                      },
+                      {
+                        "type": "Draw",
+                        "value": {
+                          "player": {
+                            "type": "Relative",
+                            "value": "You"
+                          },
+                          "quantity": {
+                            "type": "Literal",
+                            "value": 1
+                          }
+                        }
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "cost": {
+            "components": [
+              {
+                "type": "AddLoyaltyToThis",
+                "value": 0
+              }
+            ],
+            "mana": []
+          },
+          "modal": {
+            "modes": [
+              {
+                "clauses": [
+                  {
+                    "effects": [
+                      {
+                        "type": "MoveToZone",
+                        "value": {
+                          "ref": {
+                            "type": "InSlot",
+                            "value": "target"
+                          },
+                          "zone": "Exile"
+                        }
+                      },
+                      {
+                        "type": "CreateCopy",
+                        "value": {
+                          "ref": {
+                            "type": "InSlot",
+                            "value": "target"
+                          },
+                          "slot": "token"
+                        }
+                      },
+                      {
+                        "type": "ModifyTarget",
+                        "value": {
+                          "duration": {
+                            "type": "Indefinite"
+                          },
+                          "modification": {
+                            "type": "GainKeyword",
+                            "value": {
+                              "type": "Haste"
+                            }
+                          },
+                          "ref": {
+                            "type": "InSlot",
+                            "value": "token"
+                          }
+                        }
+                      },
+                      {
+                        "type": "ArmDelayedTrigger",
+                        "value": {
+                          "ability": {
+                            "type": "Triggered",
+                            "value": {
+                              "condition": {
+                                "type": "StepBegins",
+                                "value": {
+                                  "phase": {
+                                    "type": "Ending",
+                                    "value": "EndStep"
+                                  },
+                                  "scope": {
+                                    "type": "PlayersTurn",
+                                    "value": {
+                                      "type": "Relative",
+                                      "value": "AnyPlayer"
+                                    }
+                                  }
+                                }
+                              },
+                              "modal": {
+                                "modes": [
+                                  {
+                                    "clauses": [
+                                      {
+                                        "effects": [
+                                          {
+                                            "type": "MoveToZone",
+                                            "value": {
+                                              "ref": {
+                                                "type": "InSlot",
+                                                "value": "token"
+                                              },
+                                              "zone": "Exile"
+                                            }
+                                          }
+                                        ]
+                                      }
+                                    ]
+                                  }
+                                ]
+                              }
+                            }
+                          },
+                          "name": "exile it"
+                        }
+                      }
+                    ]
+                  }
+                ],
+                "targetSlots": {
+                  "target": {
+                    "filter": {
+                      "type": "And",
+                      "value": [
+                        {
+                          "type": "Or",
+                          "value": [
+                            {
+                              "type": "HasCardType",
+                              "value": "Creature"
+                            },
+                            {
+                              "type": "HasSubtype",
+                              "value": "Equipment"
+                            }
+                          ]
+                        },
+                        {
+                          "type": "Measures",
+                          "value": {
+                            "comparison": "LessThan",
+                            "measure": "ManaValue",
+                            "operand": {
+                              "type": "OfSource",
+                              "value": "Loyalty"
+                            }
+                          }
+                        }
+                      ]
+                    },
+                    "pool": {
+                      "type": "CardsInGraveyard",
+                      "value": {
+                        "type": "Scoped",
+                        "value": {
+                          "type": "You"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            ]
+          }
+        }
+      ],
+      "keywords": [
+        {
+          "type": "Compleated"
+        }
+      ],
+      "loyalty": {
+        "type": "Literal",
+        "value": 5
+      },
+      "manaCost": [
+        {
+          "type": "Generic",
+          "value": 1
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "Red"
+          }
+        },
+        {
+          "type": "HybridPhyrexian",
+          "value": {
+            "left": "Red",
+            "right": "White"
+          }
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "White"
+          }
+        }
+      ],
+      "name": "Nahiri, the Unforgiving",
+      "oracleText": "Compleated ({R/W/P} can be paid with {R}, {W}, or 2 life. If life was paid, this planeswalker enters with two fewer loyalty counters.)\n[+1]: Until your next turn, up to one target creature attacks a player each combat if able.\n[+1]: Discard a card, then draw a card.\n[0]: Exile target creature or Equipment card with mana value less than Nahiri's loyalty from your graveyard. Create a token that's a copy of it. That token gains haste. Exile it at the beginning of the next end step.",
+      "typeLine": {
+        "subtypes": [
+          "Nahiri"
+        ],
+        "supertypes": [
+          "Legendary"
+        ],
+        "types": [
+          "Planeswalker"
+        ]
+      }
+    }
+  ]
+}

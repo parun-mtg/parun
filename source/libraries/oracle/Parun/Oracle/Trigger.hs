@@ -627,7 +627,10 @@ counted context n comparison k = case Count.scope n of
           -- Free for none: "you don't control a Glimmer creature" (Glimmer
           -- Seeker).
           [Filter.Type.HeldBy Holder.Controller PlayerRelation.You] -> [Text.pack "you control " <> some] <> denied
-          [Filter.Type.HeldBy Holder.Controller PlayerRelation.Opponent] -> [Text.pack "an opponent controls " <> some]
+          -- The count totals every opponent's permanents, so "an opponent
+          -- controls" reads the same only for "a": "your opponents control
+          -- eight or more lands" (Turbulent Crater).
+          [Filter.Type.HeldBy Holder.Controller PlayerRelation.Opponent] -> [Text.pack "an opponent controls " <> some | comparison == Comparison.AtLeast, k == 1] <> [Text.pack "your opponents control " <> some]
           [Filter.Type.HeldByBound Holder.Controller s] | Just word <- Map.lookup s (Target.bound context) -> [word <> Text.pack " controls " <> some]
           -- Free: "there are no Zombies on the battlefield" (Sarcomancy) or
           -- "no creatures are on the battlefield" (Pestilence, Sixth Edition),

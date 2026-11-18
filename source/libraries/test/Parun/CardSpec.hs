@@ -2543,10 +2543,10 @@ namedTokens =
       -- Ginger, Queen of Sweets' "a Gingerbrute token", its reminder text the
       -- card Gingerbrute's.
       CardName.MkCardName (Text.pack "Gingerbrute"),
-      -- Koma, World-Eater's "3/3 blue Serpent creature tokens named Koma's Coil".
       -- Kher Keep's "a 0/1 red Kobold creature token named Kobolds of Kher
       -- Keep".
       CardName.MkCardName (Text.pack "Kobolds of Kher Keep"),
+      -- Koma, World-Eater's "3/3 blue Serpent creature tokens named Koma's Coil".
       CardName.MkCardName (Text.pack "Koma's Coil"),
       -- Goblin Kaboomist's "a colorless artifact token named Land Mine".
       CardName.MkCardName (Text.pack "Land Mine"),
@@ -2638,7 +2638,7 @@ protectionFromEach = Set.fromList (fmap (CardName.MkCardName . Text.pack) ["Irid
 -- which any subset of the domain satisfies. Council Guardian's per-colour
 -- grants, each gated on that colour's votes, are listed the same way.
 protectionListed :: Set.Set CardName.CardName
-protectionListed = Set.fromList (fmap (CardName.MkCardName . Text.pack) ["Akroma, Angel of Fury", "Akroma's Memorial", "Animar, Soul of Elements", "Council Guardian", "Great Sable Stag", "Paladin en-Vec", "Sword of Light and Shadow", "Sword of Once and Future", "Sword of Wealth and Power", "Ureni, the Song Unending"])
+protectionListed = Set.fromList (fmap (CardName.MkCardName . Text.pack) ["Akroma, Angel of Fury", "Akroma's Memorial", "Animar, Soul of Elements", "Council Guardian", "Great Sable Stag", "Paladin en-Vec", "Sword of Forge and Frontier", "Sword of Light and Shadow", "Sword of Once and Future", "Sword of Wealth and Power", "Ureni, the Song Unending"])
 
 -- The qualities of each protection group a face prints: its own keywords, each
 -- static ability's grants, and every grant its resolution effects make.
