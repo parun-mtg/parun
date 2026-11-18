@@ -72,9 +72,10 @@ data PlayerEffect
     -- that aren't mana abilities" (whichKind), The Immortal Sun's "loyalty
     -- abilities" (whichLoyalty, CR 606.2).
     CantActivateAbilities (Filter.Filter Keyword.Keyword) (ActivationCriteria.ActivationCriteria Keyword.Keyword)
-  | -- | CR 601.3 / Rule of Law: this player can't cast more than this many spells
-    -- each turn.
-    CantCastMoreThan Natural.Natural
+  | -- | CR 601.3 / Rule of Law, Phyrexian Censor: this player can't cast more
+    -- than this many matching spells each turn; the Filter names both the spells
+    -- counted and those prohibited, the empty And every spell.
+    CantCastMoreThan (Filter.Filter Keyword.Keyword) Natural.Natural
   | -- | CR 613.11 / 601.2f / 602.2b / Thalia, Heartstone, Drought: matching
     -- spells or activated abilities cost more, less or an additional cost.
     ModifyCost CostModifier.CostModifier

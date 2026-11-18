@@ -72,6 +72,12 @@ codec =
           (,)
             <$> Fields.required "matching" filterCodec fst
             <*> Fields.defaulted "onlyFirst" Nothing (Common.maybe TurnScope.codec) snd
+      -- The filter absent is every spell (Rule of Law).
+      castLimit =
+        Fields.object $
+          (,)
+            <$> Fields.defaulted "matching" (Filter.Type.And []) filterCodec fst
+            <*> Fields.required "count" Common.natural snd
       -- The keywords absent are none: the next spell gains nothing (CR 611.2f).
       nextSpell =
         Fields.object $
@@ -100,7 +106,7 @@ codec =
         tagOf
         [ Arm.nullary "CantCastSpells" PlayerEffect.CantCastSpells,
           Arm.payload "CantActivateAbilities" activationBan (uncurry PlayerEffect.CantActivateAbilities) (\x -> case x of PlayerEffect.CantActivateAbilities y z -> Just (y, z); _ -> Nothing),
-          Arm.payload "CantCastMoreThan" Common.natural PlayerEffect.CantCastMoreThan (\x -> case x of PlayerEffect.CantCastMoreThan y -> Just y; _ -> Nothing),
+          Arm.payload "CantCastMoreThan" castLimit (uncurry PlayerEffect.CantCastMoreThan) (\x -> case x of PlayerEffect.CantCastMoreThan y z -> Just (y, z); _ -> Nothing),
           Arm.payload "ModifyCost" CostModifier.codec PlayerEffect.ModifyCost (\x -> case x of PlayerEffect.ModifyCost y -> Just y; _ -> Nothing),
           Arm.payload "AlternativeActivationCost" AlternativeActivationCost.codec PlayerEffect.AlternativeActivationCost (\x -> case x of PlayerEffect.AlternativeActivationCost y -> Just y; _ -> Nothing),
           Arm.payload "PlayAdditionalLands" LandAllowance.codec PlayerEffect.PlayAdditionalLands (\x -> case x of PlayerEffect.PlayAdditionalLands y -> Just y; _ -> Nothing),
