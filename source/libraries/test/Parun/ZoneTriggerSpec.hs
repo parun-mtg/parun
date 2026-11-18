@@ -2142,7 +2142,8 @@ representativeEvents cond =
 
 -- Every TriggerCondition, one inhabitant each. The payloads are arbitrary:
 -- eventBindings and eventBindingSlots both ignore them, which is itself part of
--- what the pin asserts.
+-- what the pin asserts -- save a Matching Enters' IsAttacking conjunct, which
+-- adds Binding.attackingCreature (Event.entersSlots).
 everyTriggerCondition :: [TriggerCondition.TriggerCondition]
 everyTriggerCondition =
   [ TriggerCondition.Enters EntersTrigger.defaultValue,
@@ -2363,6 +2364,9 @@ everyTriggerCondition =
     -- below is what says eventBindings fills it for each branch's event in turn.
     -- The empty pair alone would leave the AnyOf arm free to stamp nothing.
     TriggerCondition.AnyOf [TriggerCondition.Enters (EntersTrigger.matching (Filter.Type.And [])), TriggerCondition.TurnedFaceUp (TurnedFaceUpTrigger.matching (Filter.Type.And []))],
+    -- Arni Metalbrow's pair: an attacker and an entrant required to be
+    -- attacking share Binding.attackingCreature, so the intersection names it.
+    TriggerCondition.AnyOf [TriggerCondition.Attacks (AttackTrigger.Attacker AttackerTrigger.defaultValue {AttackerTrigger.creature = Filter.Type.And []}), TriggerCondition.Enters (EntersTrigger.matching (Filter.Type.And [Filter.Type.IsAttacking Nothing]))],
     -- Sacred Ground's narrowing, over the condition whose bindings it keeps.
     TriggerCondition.CausedBy CausedBy.MkCausedBy {CausedBy.controller = PlayerRelation.Opponent, CausedBy.sourceKeyword = Nothing, CausedBy.condition = TriggerCondition.Leaves (LeavesTrigger.dies (LeavingPermanent.Matching (Filter.Type.And [])))},
     TriggerCondition.TurnedFaceUp TurnedFaceUpTrigger.defaultValue,

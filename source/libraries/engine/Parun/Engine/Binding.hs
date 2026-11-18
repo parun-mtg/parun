@@ -1349,6 +1349,10 @@ blockedCreature = SlotName.MkSlotName (Text.pack "thatAttacker")
 -- side, and a payload naming the wrong one would still typecheck. Two slots make
 -- the mismatch a dead name instead.
 --
+-- Also CR 508.4's creature put onto the battlefield attacking, under a Matching
+-- Enters whose Filter requires it (Parun.Engine.Event.Binding.entersSlots), so
+-- "attacks or enters attacking" names one creature (Arni Metalbrow).
+--
 -- One object, never a group: the slot is stamped per declaration event, and the
 -- only condition that reads it is one that fires when the declaration named
 -- exactly one creature. Not a target (nothing was chosen), so the same CR 608.2b
