@@ -2063,6 +2063,7 @@ stubView table oid =
                 Filter.designations = Set.empty,
                 Filter.designationValues = Map.empty,
                 Filter.storedResults = Map.empty,
+                Filter.dieResult = Nothing,
                 Filter.classLevel = Nothing,
                 Filter.unlockedHalves = Set.empty,
                 Filter.lockedHalves = Set.empty,

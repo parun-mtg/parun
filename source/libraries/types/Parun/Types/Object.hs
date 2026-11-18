@@ -38,6 +38,7 @@ import qualified Parun.Types.Recipient as Recipient
 import qualified Parun.Types.RevealWindow as RevealWindow
 import qualified Parun.Types.RoomHalf as RoomHalf
 import qualified Parun.Types.RoomIndex as RoomIndex
+import qualified Parun.Types.ShownDie as ShownDie
 import qualified Parun.Types.Sickness as Sickness
 import qualified Parun.Types.SlotName as SlotName
 import qualified Parun.Types.Source as Source
@@ -590,6 +591,11 @@ data Object = MkObject
     -- Not a copiable value (CR 707.2) and per-incarnation (CR 400.7), for
     -- chosenColors's reasons.
     storedResults :: Map.Map Acquisition.Acquisition (Map.Map StoredResult.StoredResult Natural.Natural),
+    -- | The die this permanent IS and the result it shows: Pippa, Duchess of
+    -- Dice's Die creature token, stamped as it is created (Create.die) and
+    -- rerolled by Effect.Rethrow at priority; Quantity.ItsDieResult reads it.
+    -- Not a copiable value (CR 707.2) and per-incarnation (CR 400.7).
+    die :: Maybe (ShownDie.ShownDie Natural.Natural),
     -- | CR 607.5: the acquisition of the abilities its copy binding gives it --
     -- Own for the values it entered with, and Copied for a copy effect with no
     -- duration made since, which Parun.Engine.Game.acquisitionOf answers where
@@ -1072,6 +1078,7 @@ new o s z t =
       designations = Set.empty,
       designationValues = Map.empty,
       storedResults = Map.empty,
+      die = Nothing,
       acquisition = Acquisition.Own,
       paidCosts = Map.empty,
       -- CR 702.104b's record is written back by nothing: rule 702.104a's ability

@@ -2602,3 +2602,22 @@ Entries are ordered by the first rule each cites.
 - **Site**: `Parun.Engine.Event.offerOutside`, a FENCE: no scenario puts a
   merged permanent outside a subgame beside a Holodeck.
 - **Issue**: #8449.
+
+## What a copy of a Die creature's power and toughness are
+
+- **Question**: Pippa, Duchess of Dice's token is "a green Die creature token
+  with power and toughness each equal to its result", and her rulings have the
+  die represent it. A Clone copies it: is the copy's power and toughness the
+  number the die shows, or the definition, read against a die the copy lacks?
+- **Rules**: CR 111.3, 604.3, 613.4a, 707.2; Pippa's rulings of 2020-02-29
+  settle only the original. CR of 2026-11-06.
+- **Decision**: The definition. The token's power and toughness are a
+  characteristic-defining ability reading its own die, copied like any other
+  (CR 707.2); the copy is no die, so it is 0/0.
+- **Rejected**: Copying the shown number as a fixed power and toughness: the
+  number is the die's, not text the creating effect defined, and fixing it
+  would also freeze the original against its own rerolls.
+- **Site**: `Parun.Types.Quantity.ItsDieResult` on the token in
+  `data/cards/pippa-duchess-of-dice.json`, proved by the scenario
+  `pippa-duchess-of-dice-s-die-creature-copied-by-a-clone-is-no-die`.
+- **Issue**: #6221.

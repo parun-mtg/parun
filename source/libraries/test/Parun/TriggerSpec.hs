@@ -1722,7 +1722,7 @@ enchantedHostTriggerSpec s registry =
 zombieTokenOf :: Printing.Printing -> Printing.Printing -> Card.Type.Card
 zombieTokenOf sarcomancy pikerFallback =
   let created effect = case effect of
-        Effect.Create (Create.MkCreate _ card _ _ _ _) -> Just card
+        Effect.Create (Create.MkCreate _ card _ _ _ _ _) -> Just card
         _ -> Nothing
       abilityEffects = concatMap (Modal.allEffects . TriggeredAbility.modal) (Face.triggeredAbilities (S.combinedFace sarcomancy))
    in case Maybe.mapMaybe created abilityEffects of
@@ -2066,7 +2066,7 @@ matchedClausePassSpec s registry =
 
             batch = do
               Engine.runTurnBasedActions Phase.PrecombatMain
-              Event.createTokens (pure ()) S.alice (Printing.card giant) Nothing 1 TapState.Untapped Map.empty Nothing Set.empty
+              Event.createTokens (pure ()) S.alice (Printing.card giant) Nothing Nothing 1 TapState.Untapped Map.empty Nothing Set.empty
             advanced = S.runPure S.identityAnswer ready batch
             ((_, settled), asked) = State.runState (Engine.runGame (chronicleFirst chronicleId) advanced Engine.settleForPriority) []
         Spec.assertEqWith s "the Chronicle's chapter trigger on top, then chapter III, then its entering trigger" (triggerSourcesOnStack settled) [chronicleId, sagaId, chronicleId]

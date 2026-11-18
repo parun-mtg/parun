@@ -91,6 +91,7 @@ import qualified Parun.Types.RoomHalf as RoomHalf
 import qualified Parun.Types.RuleAbilities as RuleAbilities
 import qualified Parun.Types.Scratch as Scratch
 import qualified Parun.Types.SetPowerToughness as SetPowerToughness
+import qualified Parun.Types.ShownDie as ShownDie
 import qualified Parun.Types.Sickness as Sickness
 import Parun.Types.SlotName (SlotName)
 import qualified Parun.Types.Source as Source
@@ -319,6 +320,8 @@ viewOfCardLapsed lapsed face =
           -- sentence.
           Filter.designationValues = Map.empty,
           Filter.storedResults = Map.empty,
+          -- A die is a permanent's (Object.die), never a printed face's.
+          Filter.dieResult = Nothing,
           -- CR 717.2b gives a level to a PERMANENT, and this builder describes a
           -- printed face.
           Filter.classLevel = Nothing,
@@ -913,6 +916,8 @@ viewOfCharacteristics peers oid pc controller counters gs =
       -- CR 607.5: the results stored for the abilities layer 1a leaves it, so a
       -- copy's reading ability sees none its printed pair stored.
       Filter.storedResults = foldMap (Game.storedResultsUnder (Game.acquisitionOf oid gs)) (Game.lookupObject oid gs),
+      -- Live off the object, `designationValues`' posture above.
+      Filter.dieResult = Game.lookupObject oid gs >>= fmap ShownDie.result . Object.die,
       -- CR 717.2b: a designation too, so `designations`' posture again. Nothing for an
       -- id naming no object reads as level 1 at the read. LastKnown files no level, so
       -- a CR 608.2h asker would get 1 and not the level it left with; no printed card

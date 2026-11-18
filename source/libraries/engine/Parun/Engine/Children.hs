@@ -448,6 +448,7 @@ import qualified Parun.Types.SetClassLevel as SetClassLevel
 import qualified Parun.Types.SetHalfLocked as SetHalfLocked
 import qualified Parun.Types.SetOwner as SetOwner
 import qualified Parun.Types.SetX as SetX
+import qualified Parun.Types.ShownDie as ShownDie
 import qualified Parun.Types.ShuffleIntoLibrary as ShuffleIntoLibrary
 import qualified Parun.Types.SkipPhase as SkipPhase
 import qualified Parun.Types.SlotArity as SlotArity
@@ -834,6 +835,7 @@ quantityChildren children quantity = case quantity of
   Quantity.HasDesignation _ -> pure quantity
   Quantity.DesignationValue _ -> pure quantity
   Quantity.StoredResultsOfSameValue -> pure quantity
+  Quantity.ItsDieResult -> pure quantity
   Quantity.ClassLevel -> pure quantity
   Quantity.WasForetold -> pure quantity
   Quantity.TributeWasPaid -> pure quantity
@@ -1131,8 +1133,8 @@ effectChildren c effect = case effect of
   Effect.RedistributeLifeTotals -> pure effect
   Effect.IncreaseSpeed x -> fmap Effect.IncreaseSpeed (playerQuantityChildren c x)
   Effect.DecreaseSpeed (SpeedDecrease.MkSpeedDecrease who quantity floor_) -> fmap Effect.DecreaseSpeed (SpeedDecrease.MkSpeedDecrease <$> onPlayer c who <*> onQuantity c quantity <*> pure floor_)
-  Effect.Create (Create.MkCreate quantity card riders named creator linked) ->
-    fmap Effect.Create (Create.MkCreate <$> onQuantity c quantity <*> onCard c card <*> onEntryRiders c riders <*> traverse (onSlot c) named <*> onPlayer c creator <*> pure linked)
+  Effect.Create (Create.MkCreate quantity card riders named creator linked die) ->
+    fmap Effect.Create (Create.MkCreate <$> onQuantity c quantity <*> onCard c card <*> onEntryRiders c riders <*> traverse (onSlot c) named <*> onPlayer c creator <*> pure linked <*> traverse (\shown -> fmap (\r -> shown {ShownDie.result = r}) (onQuantity c (ShownDie.result shown))) die)
   Effect.Conjure (Conjure.MkConjure quantity cards selection destination named) ->
     fmap Effect.Conjure (Conjure.MkConjure <$> onQuantity c quantity <*> conjureCardsChildren c cards <*> pure selection <*> pure destination <*> traverse (onSlot c) named)
   Effect.CreateCopy (CreateCopy.MkCreateCopy quantity ref riders named exceptions creator linked) ->

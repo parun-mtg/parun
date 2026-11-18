@@ -3691,7 +3691,8 @@ filterPositionLintSpec s registry corpus = Spec.describe s "Lint" $ do
                               Create.riders = EntryRiders.defaultValue,
                               Create.slot = Nothing,
                               Create.creator = PlayerRef.Relative PlayerRelation.You,
-                              Create.linked = False
+                              Create.linked = False,
+                              Create.die = Nothing
                             }
                       ]
                       Map.empty
@@ -3844,7 +3845,8 @@ filterPositionLintSpec s registry corpus = Spec.describe s "Lint" $ do
                               Create.riders = EntryRiders.defaultValue,
                               Create.slot = Nothing,
                               Create.creator = PlayerRef.Relative PlayerRelation.You,
-                              Create.linked = False
+                              Create.linked = False,
+                              Create.die = Nothing
                             }
                       ]
                       Map.empty

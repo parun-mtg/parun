@@ -376,8 +376,14 @@ sheetContent sheet kind index = do
 tokenOfLot :: PlayerId -> PrintingId.PrintingId -> TokenLot.TokenLot -> Timestamp.Timestamp -> Object
 tokenOfLot owner printing lot ts =
   (Object.new owner (Source.OfToken printing) Zone.Battlefield ts)
-    { Object.bindings = maybe Map.empty (\pc -> Binding.setOwnCopy pc Map.empty) (TokenLot.copy lot)
+    { Object.bindings = maybe Map.empty (\pc -> Binding.setOwnCopy pc Map.empty) (TokenLot.copy lot),
+      Object.die = TokenLot.die lot
     }
+
+-- The permanents that ARE a die (Object.die), in id order: what "reroll any
+-- die" reaches outside a roll (Pippa, Duchess of Dice's rulings).
+diceOnBattlefield :: GameState -> [ObjectId]
+diceOnBattlefield gs = [oid | oid <- Set.toAscList (GameState.battlefield gs), Just obj <- [lookupObject oid gs], Maybe.isJust (Object.die obj)]
 
 freshPrintingId :: GameState -> (PrintingId.PrintingId, GameState)
 freshPrintingId gs =

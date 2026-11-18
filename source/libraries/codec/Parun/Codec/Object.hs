@@ -36,6 +36,7 @@ import qualified Parun.Codec.Recipient as Recipient
 import qualified Parun.Codec.RevealWindow as RevealWindow
 import qualified Parun.Codec.RoomHalf as RoomHalf
 import qualified Parun.Codec.RoomIndex as RoomIndex
+import qualified Parun.Codec.ShownDie as ShownDie
 import qualified Parun.Codec.Sickness as Sickness
 import qualified Parun.Codec.Source as Source
 import qualified Parun.Codec.StackedAbility as StackedAbility
@@ -144,6 +145,7 @@ codec = Fields.object $ do
   designations <- Fields.defaulted "designations" (Object.designations defaults) (Common.set Designation.codec) Object.designations
   designationValues <- Fields.defaulted "designationValues" (Object.designationValues defaults) (Common.keyedList designationValue) Object.designationValues
   storedResults <- Fields.defaulted "storedResults" (Object.storedResults defaults) (Common.keyedList (Common.keyValue Acquisition.codec (Common.multiset StoredResult.codec))) Object.storedResults
+  die <- Fields.defaulted "die" (Object.die defaults) (Common.maybe (ShownDie.codec Common.natural)) Object.die
   acquisition <- Fields.defaulted "acquisition" (Object.acquisition defaults) Acquisition.codec Object.acquisition
   paidCosts <- Fields.defaulted "paidCosts" (Object.paidCosts defaults) (Common.keyedList (Common.keyValue Keyword.codec (Common.keyedList (Common.keyValue KeywordInstance.codec Common.natural)))) Object.paidCosts
   tributePaid <- Fields.defaulted "tributePaid" (Object.tributePaid defaults) Common.boolean Object.tributePaid
@@ -220,6 +222,7 @@ codec = Fields.object $ do
         Object.designations = designations,
         Object.designationValues = designationValues,
         Object.storedResults = storedResults,
+        Object.die = die,
         Object.acquisition = acquisition,
         Object.paidCosts = paidCosts,
         Object.tributePaid = tributePaid,

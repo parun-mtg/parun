@@ -1899,6 +1899,8 @@ viewOfSnapshot deploy mController mOwner isToken counters zone home lapsed snaps
       Filter.designations = Set.empty,
       Filter.designationValues = Map.empty,
       Filter.storedResults = Map.empty,
+      -- Object.die, which a ProjectedCharacteristics does not carry.
+      Filter.dieResult = Nothing,
       -- CR 717.2b: a designation too, which a ProjectedCharacteristics does not
       -- carry and never could, so a past event records none -- `designations`
       -- above, same sentence.

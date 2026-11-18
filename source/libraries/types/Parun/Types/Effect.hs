@@ -711,8 +711,9 @@ data Effect card ability
     -- the roll in its body and the striation as its gate (Delina, Wild Mage).
     RollDie RollDie.RollDie
   | -- | CR 706.2b / 705.1: throw again the die whose modification step is
-    -- open, or the coin just flipped, discarding what it came up (Goblin
-    -- Bookie's "reflip any coin or reroll any die").
+    -- open, or the coin just flipped, discarding what it came up, or with
+    -- neither, a permanent that is a die (Goblin Bookie's "reflip any coin or
+    -- reroll any die", Pippa, Duchess of Dice's rulings).
     Rethrow
   | -- | CR 706.8b: the controller chooses any number of the stored results on
     -- the slot's permanent and rerolls them (Centaur of Attention). Choose, not

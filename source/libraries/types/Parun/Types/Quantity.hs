@@ -169,6 +169,10 @@ data Quantity
     -- quantity is evaluated against that share one value, whatever their kinds
     -- of die; no stored result reads 0 (Centaur of Attention).
     StoredResultsOfSameValue
+  | -- | The result the die the object this quantity is evaluated against IS
+    -- shows (Parun.Types.ShownDie); no die reads 0 (Pippa, Duchess of Dice's Die
+    -- creature token).
+    ItsDieResult
   | -- | CR 717.2b: the level of the object this quantity is evaluated against;
     -- no level reads 1 (CR 717.2d, Parun.Types.ClassLevel.defaulted).
     ClassLevel

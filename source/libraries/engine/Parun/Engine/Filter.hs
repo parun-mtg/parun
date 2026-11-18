@@ -806,6 +806,10 @@ data View = MkView
     -- `designationValues` above's route. Its one reader is Parun.Engine.Quantity's
     -- StoredResultsOfSameValue arm (Centaur of Attention).
     storedResults :: Map.Map StoredResult.StoredResult Natural.Natural,
+    -- The result the die this candidate IS shows, read off Object.die and
+    -- Nothing where there is no object or no die, `storedResults` above's route.
+    -- Its one reader is Parun.Engine.Quantity's ItsDieResult arm.
+    dieResult :: Maybe Natural.Natural,
     -- CR 717.2b: the level designation on this candidate, or Nothing for the
     -- overwhelming majority of permanents, which have never been given one. Read
     -- straight off Object.classLevel, for `designations` above's reason -- rule
@@ -1247,6 +1251,7 @@ nobodyView =
       -- above, same sentence.
       designationValues = Map.empty,
       storedResults = Map.empty,
+      dieResult = Nothing,
       -- CR 717.2b: a level is a designation A PERMANENT can have, and a player is
       -- not one -- `designations` above, same sentence.
       classLevel = Nothing,

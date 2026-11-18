@@ -6,6 +6,7 @@ import qualified Data.Typeable as Typeable
 import qualified Parun.Codec.EntryRiders as EntryRiders
 import qualified Parun.Codec.PlayerRef as PlayerRef
 import qualified Parun.Codec.Quantity as Quantity
+import qualified Parun.Codec.ShownDie as ShownDie
 import qualified Parun.Codec.SlotName as SlotName
 import qualified Parun.JsonCodec.Codec as Codec
 import qualified Parun.JsonCodec.Common as Common
@@ -36,6 +37,7 @@ codec cardCodec abilityCodec = Fields.object $ do
   -- CR 111.2 under CR 109.5: elided is "you", which is all but one printing.
   creator <- Fields.defaulted "creator" (PlayerRef.Relative PlayerRelation.You) PlayerRef.codec Create.creator
   linked <- Fields.defaulted "linked" False Common.boolean Create.linked
+  die <- Fields.defaulted "die" Nothing (Common.maybe (ShownDie.codec Quantity.codec)) Create.die
   pure
     Create.MkCreate
       { Create.quantity = quantity,
@@ -43,5 +45,6 @@ codec cardCodec abilityCodec = Fields.object $ do
         Create.riders = riders,
         Create.slot = slot,
         Create.creator = creator,
-        Create.linked = linked
+        Create.linked = linked,
+        Create.die = die
       }
