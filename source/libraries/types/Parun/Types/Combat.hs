@@ -165,7 +165,7 @@ data Combat = MkCombat
     --
     -- So anything asking whether a PLAYER OR PERMANENT was attacked THIS COMBAT
     -- PHASE reads this one or its per-player split below: Parun.Engine.Quantity's
-    -- OpponentsAttacked arm, rule 702.121a's "for each opponent you attacked
+    -- OpponentsAttacked arm under AttackWindow.ThisCombat, rule 702.121a's "for each opponent you attacked
     -- with a creature this combat", and Filter.DeclaredAttackedThisCombat, which
     -- answers CR 508.3b's whole subject list -- a permanent through
     -- Parun.Engine.Projection and a player through Parun.Engine.Count.playerView.
@@ -175,7 +175,7 @@ data Combat = MkCombat
     declaredAttacked :: Set.Set AttackTarget.AttackTarget,
     -- | CR 508.1b / 805.10a: `declaredAttacked` split by the attacking player
     -- whose creatures were declared at each target -- "you attacked", which
-    -- Parun.Engine.Quantity's OpponentsAttacked arm and a slotted
+    -- Parun.Engine.Quantity's OpponentsAttacked arm (AttackWindow.ThisCombat) and a slotted
     -- Filter.DeclaredAttackedThisCombat ask. Under the shared team
     -- turns option each player on the active team is an attacking player, so the
     -- whole record cannot answer for one of them (CR 805.10c).

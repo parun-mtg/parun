@@ -15,6 +15,7 @@ import qualified Parun.Types.AgainstSlot as AgainstSlot
 import qualified Parun.Types.Aggregation as Aggregation
 import qualified Parun.Types.Arithmetic as Arithmetic
 import qualified Parun.Types.AtMost as AtMost
+import qualified Parun.Types.AttackWindow as AttackWindow
 import qualified Parun.Types.CardName as CardName
 import qualified Parun.Types.CardType as CardType
 import qualified Parun.Types.CastFrom as CastFrom
@@ -669,21 +670,26 @@ spec s = Spec.describe s "Parun.Codec.Quantity" $ do
       Quantity.codec
       Quantity.ObjectCountersOfAnyKind
       " {\"type\":\"ObjectCountersOfAnyKind\"} "
-  -- CR 508.3b, with a PlayerRef and nothing else on the wire: what is counted is
-  -- the combat record. Rule 702.121a's melee is the Relative arm; the InSlot arm
-  -- beside it is the one a recursive decoder could lose a payload through, as
-  -- LifeTotal's and IsMonarch's are.
-  Spec.it s "OpponentsAttacked, relative and from a slot" $ do
+  -- CR 508.3b, the window as the tag and a PlayerRef alone on the wire, as
+  -- ControlGained's is. Rule 702.121a's melee is this combat's Relative arm; the
+  -- InSlot arm beside it is the one a recursive decoder could lose a payload
+  -- through, as LifeTotal's and IsMonarch's are.
+  Spec.it s "OpponentsAttacked, relative and from a slot, each window" $ do
     Common.assertCodec
       s
       Quantity.codec
-      (Quantity.OpponentsAttacked (PlayerRef.Relative PlayerRelation.You))
-      " {\"type\":\"OpponentsAttacked\",\"value\":{\"type\":\"Relative\",\"value\":\"You\"}} "
+      (Quantity.OpponentsAttacked AttackWindow.ThisCombat (PlayerRef.Relative PlayerRelation.You))
+      " {\"type\":\"OpponentsAttackedThisCombat\",\"value\":{\"type\":\"Relative\",\"value\":\"You\"}} "
     Common.assertCodec
       s
       Quantity.codec
-      (Quantity.OpponentsAttacked (PlayerRef.InSlot (SlotName.MkSlotName (Text.pack "target"))))
-      " {\"type\":\"OpponentsAttacked\",\"value\":{\"type\":\"InSlot\",\"value\":\"target\"}} "
+      (Quantity.OpponentsAttacked AttackWindow.ThisCombat (PlayerRef.InSlot (SlotName.MkSlotName (Text.pack "target"))))
+      " {\"type\":\"OpponentsAttackedThisCombat\",\"value\":{\"type\":\"InSlot\",\"value\":\"target\"}} "
+    Common.assertCodec
+      s
+      Quantity.codec
+      (Quantity.OpponentsAttacked AttackWindow.ThisTurn (PlayerRef.Relative PlayerRelation.You))
+      " {\"type\":\"OpponentsAttackedThisTurn\",\"value\":{\"type\":\"Relative\",\"value\":\"You\"}} "
   -- CR 508.1a, on OpponentsAttacked's terms: a PlayerRef and nothing else, with
   -- the same recursive-decoder pair. Mardu Skullhunter's is the Relative arm.
   Spec.it s "AttackersDeclaredThisTurn, relative and from a slot" $ do

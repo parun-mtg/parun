@@ -3616,7 +3616,7 @@ quantityKindFilters quantity = case quantity of
   Quantity.Type.NameStickers _ -> []
   Quantity.Type.PowerOfStickers -> []
   Quantity.Type.ToughnessOfStickers -> []
-  Quantity.Type.OpponentsAttacked _ -> []
+  Quantity.Type.OpponentsAttacked _ _ -> []
   Quantity.Type.AttackersDeclaredThisTurn _ -> []
   Quantity.Type.AttackersDeclaredThisCombat -> []
   Quantity.Type.AttackedInLastTurnOf _ -> []

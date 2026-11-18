@@ -35,6 +35,7 @@ import qualified Parun.Types.ArmDelayedTrigger as ArmDelayedTrigger
 import qualified Parun.Types.AttachRestriction as AttachRestriction
 import qualified Parun.Types.AttackCompany as AttackCompany
 import qualified Parun.Types.AttackTrigger as AttackTrigger
+import qualified Parun.Types.AttackWindow as AttackWindow
 import qualified Parun.Types.AttackerTarget as AttackerTarget
 import qualified Parun.Types.AttackerTrigger as AttackerTrigger
 import qualified Parun.Types.Backup as Backup
@@ -6162,7 +6163,7 @@ increment =
 -- re-read would shrink the pump to 0 the moment combat ended.
 melee :: TriggeredAbility Card (GrantedAbility.GrantedAbility Card)
 melee =
-  let bonus = Quantity.OpponentsAttacked (PlayerRef.Relative PlayerRelation.You)
+  let bonus = Quantity.OpponentsAttacked AttackWindow.ThisCombat (PlayerRef.Relative PlayerRelation.You)
       effect =
         Effect.ModifyTarget
           ( ModifyTarget.MkModifyTarget
