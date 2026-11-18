@@ -8,14 +8,45 @@ import qualified Parun.Web.Ending as Ending
 import qualified Parun.Web.Html as Html
 import qualified Parun.Web.Log as Log
 
-spec :: (Applicative m, Monad n) => Spec.Spec m n -> n ()
+spec :: (Monad m, Monad n) => Spec.Spec m n -> n ()
 spec s = Spec.describe s "Parun.Web.Ending" $ do
   Spec.describe s "view" $ do
-    Spec.it s "says how the game ended, links a new game and the scenario, and lists the log" $ do
-      Spec.assertEq s (Html.toText . Ending.view $ Ending.MkEnding Ending.MkWon [Text.pack "Player 1 wins.", Text.pack "Player 2 conceded."] (Text.pack "{}") (Seq.fromList [Log.MkTurn 1 (PlayerId.MkPlayerId 0), Log.MkEvent Log.MkMajor (Text.pack "Player 1 draws a card."), Log.MkEvent Log.MkMinor (Text.pack "Player 2 concedes.")]) (PlayerId.MkPlayerId 0) (Text.pack "sets/a/x", Text.pack "sets/b/y")) $
-        Text.pack "<main class=\"ending\"><section class=\"verdict won\"><h1>You win!</h1><p>Player 1 wins.</p><p>Player 2 conceded.</p></section><div class=\"ending-actions\"><a class=\"primary\" href=\"?mine=sets/a/x&amp;theirs=sets/b/y\">Rematch</a><a href=\"./\">New game</a><a href=\"data:application/json;charset=utf-8,%7b%7d\" download=\"parun-game.json\">Save as a scenario</a></div><h2>Game log</h2><ol class=\"game-log\"><li class=\"turn\">Turn 1: your turn</li><li>Player 1 draws a card.</li><li class=\"minor\">Player 2 concedes.</li></ol></main>"
+    Spec.it s "says how the game ended, links a rematch, the same shuffle, a new game and the scenario, and lists the log" $ do
+      let page = Html.toText (Ending.view ending)
+          has piece = Spec.assertBool s (Text.isInfixOf (Text.pack piece) page) piece
+      has "<section class=\"verdict won\"><h1>You win!</h1><p>Player 1 wins.</p><p>Player 2 conceded.</p></section>"
+      has "<a class=\"primary\" href=\"?mine=sets/a/x&amp;theirs=sets/b/y\">Rematch</a>"
+      has "href=\"?mine=sets/a/x&amp;theirs=sets/b/y&amp;seed=00ff\""
+      has "<a href=\"./\">New game</a>"
+      has "<a href=\"data:application/json;charset=utf-8,%7b%7d\" download=\"parun-game.json\">Save as a scenario</a>"
+      has "<ol class=\"game-log\"><li class=\"turn\">Turn 1: your turn</li><li>Player 1 draws a card.</li><li class=\"minor\">Player 2 concedes.</li></ol>"
+      has "<div class=\"confetti\""
+
+    Spec.it s "charts each seat's life and tells the game's numbers" $ do
+      let page = Html.toText (Ending.view ending)
+          has piece = Spec.assertBool s (Text.isInfixOf (Text.pack piece) page) piece
+      -- Life 20 to 17 to 0 for the bot over a chart 120 high whose floor is 0.
+      has "<polyline class=\"life-line them\" points=\"0,0 160,18 320,120\""
+      has "Player 2</strong>: ended on 0 life, lowest 0, biggest hit 17"
+      has "Turn 3"
 
   Spec.describe s "download" $ do
     Spec.it s "percent-encodes the text's UTF-8, a space and a number sign included" $ do
       Spec.assertEq s (Ending.download $ Text.pack "{\"name\": \"J\246tun #1\"}") $
         Text.pack "data:application/json;charset=utf-8,%7b%22name%22:%20%22J%c3%b6tun%20%231%22%7d"
+
+ending :: Ending.Ending
+ending =
+  Ending.MkEnding
+    { Ending.verdict = Ending.MkWon,
+      Ending.said = [Text.pack "Player 1 wins.", Text.pack "Player 2 conceded."],
+      Ending.scenario = Text.pack "{}",
+      Ending.witnessed = Seq.fromList [Log.MkTurn 1 you, Log.MkEvent Log.MkMajor (Text.pack "Player 1 draws a card."), Log.MkEvent Log.MkMinor (Text.pack "Player 2 concedes.")],
+      Ending.viewer = you,
+      Ending.decks = (Text.pack "sets/a/x", Text.pack "sets/b/y"),
+      Ending.trail = [(1, [(you, 20), (bot, 20)]), (2, [(you, 20), (bot, 17)]), (3, [(you, 20), (bot, 0)])],
+      Ending.seed = Text.pack "00ff"
+    }
+  where
+    you = PlayerId.MkPlayerId 0
+    bot = PlayerId.MkPlayerId 1

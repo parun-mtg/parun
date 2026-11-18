@@ -8,8 +8,10 @@ import qualified Control.Exception as Exception
 import qualified Control.Monad as Monad
 import qualified Data.ByteString as ByteString
 import qualified Data.Either as Either
+import qualified Data.Foldable as Foldable
 import qualified Data.Functor.Identity as Identity
 import qualified Data.IORef as IORef
+import qualified Data.List.NonEmpty as NonEmpty
 import qualified Data.Map.Lazy as LazyMap
 import qualified Data.Map.Strict as Map
 import qualified Data.Maybe as Maybe
@@ -23,6 +25,7 @@ import qualified Parun.Browser as Browser
 import qualified Parun.DeckList as DeckList
 import qualified Parun.Decks as Decks
 import qualified Parun.Engine.PlayerView as PlayerView.Engine
+import qualified Parun.Engine.Quantity as Quantity
 import qualified Parun.Exceptions.InvalidCorpus as InvalidCorpus
 import qualified Parun.Extra.Int as Int
 import qualified Parun.Extra.Integer as Integer
@@ -35,6 +38,8 @@ import qualified Parun.Play.Render as Render
 import qualified Parun.Registry as Registry
 import qualified Parun.Types.Card as Card
 import qualified Parun.Types.CardName as CardName
+import qualified Parun.Types.CardType as CardType
+import qualified Parun.Types.Face as Face
 import qualified Parun.Types.Key as Key
 import qualified Parun.Types.PlayOptions as PlayOptions
 import qualified Parun.Types.PlayerId as PlayerId
@@ -43,6 +48,8 @@ import qualified Parun.Types.Question as Question
 import qualified Parun.Types.Reply as R
 import qualified Parun.Types.Request as Request
 import qualified Parun.Types.Result as Result
+import qualified Parun.Types.SeatView as SeatView
+import qualified Parun.Types.TypeLine as TypeLine
 import qualified Parun.Web.Card as Web.Card
 import qualified Parun.Web.Element as Element
 import qualified Parun.Web.Ending as Ending
@@ -93,7 +100,7 @@ play page = do
                 two <- maybe (fmap (Maybe.fromMaybe Text.empty) random) pure (Lobby.theirs lobby)
                 maybe (choose lobby work) (\path -> pure (one, path)) (Map.lookup two byName)
               Left Lobby.MkRandom -> random >>= maybe (choose lobby work) (\name -> choose (Lobby.update (Lobby.MkPick name) Text.empty lobby) work)
-              Left e -> choose (Lobby.update e value lobby) work
+              Left e -> previewing (Lobby.update e value lobby) >>= \next -> choose next work
               Right _ -> choose lobby work
       -- A deck's colours come from the card files its lines name, each
       -- parsed only then.
@@ -103,6 +110,23 @@ play page = do
         Just (Right card) -> Lobby.cardColours card
         _ -> Set.empty
       prepared = Map.toList byName
+      -- The chosen decks' lists, read once each.
+      previewing lobby = do
+        let wanted = [name | name <- Maybe.catMaybes [Lobby.mine lobby, Lobby.theirs lobby], Map.notMember name (Lobby.previews lobby)]
+        read' <- Monad.forM wanted $ \name -> do
+          contents <- maybe (pure Text.empty) (fmap Encoding.decodeUtf8Lenient . ByteString.readFile) (Map.lookup name byName)
+          pure (name, [line n card | (n, card) <- Lobby.entries contents])
+        pure lobby {Lobby.previews = Map.union (Lobby.previews lobby) (Map.fromList read')}
+      line n name = case LazyMap.lookup (Registry.cardPath root (Registry.slugFor name)) byFile of
+        Just (Right c)
+          | face <- NonEmpty.head (Card.faces c) ->
+              let types = TypeLine.types (Face.typeLine face)
+                  kind
+                    | Set.member CardType.Land types = Lobby.MkLand
+                    | Set.member CardType.Creature types = Lobby.MkCreature
+                    | otherwise = Lobby.MkSpell
+               in Lobby.MkLine n name (Face.manaCost face) (Quantity.manaValueOf face) kind
+        _ -> Lobby.MkLine n name Nothing 0 Lobby.MkSpell
       say = Browser.display page . fmap Right . message
   initialLevel <- maybe Web.Question.MkStandard (Maybe.fromMaybe Web.Question.MkStandard . Web.Question.levelNamed) <$> Environment.lookupEnv "parun_level"
   -- A rematch names both decks (Ending.rematch) and skips the lobby.
@@ -114,19 +138,23 @@ play page = do
   Browser.display page . fmap Right $ starting (Lobby.deckName deckRoot one) (Lobby.deckName deckRoot two)
   registry <- Registry.defaultRegistry loaded :: IO (Registry.Registry Identity.Identity)
   -- The bot needs no screen, so the player is never handed it.
-  seatRef <- IORef.newIORef . MkSeat (Just player) False initialLevel Nothing False Nothing Map.empty Seq.empty 0 =<< Clock.getMonotonicTime
+  seatRef <- IORef.newIORef . MkSeat (Just player) False initialLevel Nothing False Seq.empty Nothing Map.empty Seq.empty 0 =<< Clock.getMonotonicTime
   listed <- (,) <$> Command.load registry one <*> Command.load registry two
   case listed of
     (Right first, Right second) -> do
       settled <- Command.settle Nothing [(one, first), (two, second)]
       case settled of
         Right format -> do
-          seed <- Key.fresh
+          -- A shared "same shuffle" link names its seed (Ending.rematch).
+          given <- (>>= Key.fromHex . Text.pack) <$> Environment.lookupEnv "parun_seed"
+          seed <- maybe Key.fresh pure given
           (outcome, recorded) <- Command.game (exchange (Identity.runIdentity . Interpreter.chosenCard registry) page seatRef) options registry format (DeckList.deck first, DeckList.deck second) seed
           -- What the player saw after their last decision: the killing blow, say.
           Monad.forM_ outcome $ IORef.modifyIORef' seatRef . witness . PlayerView.Engine.viewFor player . snd
-          seen <- logged <$> IORef.readIORef seatRef
-          Browser.display page . Ending.view $ Ending.MkEnding (verdictOf outcome) (either (\reason -> [Text.pack "The game stopped: " <> reason <> Text.pack "."]) (\(result, gs) -> Render.result result : Render.departures gs) outcome) (Command.rendered recorded) seen player (Lobby.deckName deckRoot one, Lobby.deckName deckRoot two)
+          finished <- IORef.readIORef seatRef
+          let seen = logged finished
+              trail = lives finished
+          Browser.display page . Ending.view $ Ending.MkEnding (verdictOf outcome) (either (\reason -> [Text.pack "The game stopped: " <> reason <> Text.pack "."]) (\(result, gs) -> Render.result result : Render.departures gs) outcome) (Command.rendered recorded) seen player (Lobby.deckName deckRoot one, Lobby.deckName deckRoot two) (Foldable.toList trail) (Key.toHex seed)
         Left problems -> say problems
     (first, second) -> say $ Either.fromLeft [] first <> Either.fromLeft [] second
 
@@ -261,6 +289,8 @@ data Seat = MkSeat
     skipping :: Maybe Natural,
     -- | Whether the seat conceded (Web.Question.MkConcede).
     conceding :: Bool,
+    -- | Each seat's life whenever it changed, beside the turn (Ending.trail).
+    lives :: Seq.Seq (Natural, [(PlayerId.PlayerId, Integer)]),
     -- | The view last drawn while watching, less whose priority it was.
     watched :: Maybe PlayerView.PlayerView,
     -- | How far the seat has read each game's log (Log.unseen).
@@ -282,7 +312,9 @@ freshOf state = Int.toNaturalSaturating (Seq.length (logged state) - decided sta
 witness :: PlayerView.PlayerView -> Seat -> Seat
 witness view state =
   let (moved, unread) = Log.unseen (marks state) view
-   in state {marks = moved, logged = logged state <> Seq.fromList unread}
+      now = [(SeatView.player seat, SeatView.life seat) | seat <- PlayerView.seats view]
+      changed = fmap snd (Seq.lookup (Seq.length (lives state) - 1) (lives state)) /= Just now
+   in state {marks = moved, logged = logged state <> Seq.fromList unread, lives = if changed then lives state Seq.|> (PlayerView.turn view, now) else lives state}
 
 message :: [Text.Text] -> Html.Html msg
 message said = Element.el "main" ["message"] [] [Element.el "p" [] [] [Html.text t] | t <- said]

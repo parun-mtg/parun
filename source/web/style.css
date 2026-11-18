@@ -458,6 +458,91 @@ main.lobby {
   font-weight: 600;
 }
 
+/* A chosen deck's list: its curve in the summary, its cards on opening. */
+.deck-preview {
+  margin: -0.4em 0 1em;
+  padding: 0.5em 0.75em;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface);
+}
+
+.deck-preview > summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1em;
+  cursor: pointer;
+  font-size: 0.9rem;
+}
+
+.preview-title {
+  font-weight: 600;
+}
+
+.curve {
+  display: inline-flex;
+  align-items: flex-end;
+  gap: 3px;
+  height: 36px;
+}
+
+.curve .bar {
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  align-items: center;
+  width: 14px;
+  height: 100%;
+}
+
+.curve .fill {
+  width: 100%;
+  min-height: 2px;
+  border-radius: 3px 3px 0 0;
+  background: var(--accent);
+}
+
+.curve .mv {
+  font-size: 0.6rem;
+  color: var(--muted);
+  line-height: 1.1;
+}
+
+.deck-sections {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 0.6em 1.2em;
+  padding-top: 0.6em;
+}
+
+.deck-section h3 {
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--muted);
+  margin-bottom: 0.2em;
+}
+
+.deck-line {
+  display: flex;
+  align-items: baseline;
+  gap: 0.5em;
+  font-size: 0.88rem;
+  padding: 0.05em 0;
+}
+
+.deck-line .copies {
+  min-width: 1.4em;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  color: var(--muted);
+}
+
+.deck-line .deck-card {
+  flex: 1;
+}
+
 .deck-tools {
   display: flex;
   gap: 0.5em;
@@ -1751,6 +1836,87 @@ main.ending h2 {
   color: var(--muted);
 }
 
+.summary {
+  padding: 0.8em;
+  border-radius: var(--radius);
+  background: var(--surface);
+}
+
+.life-chart {
+  width: 100%;
+  height: auto;
+  max-height: 200px;
+  overflow: visible;
+}
+
+.life-chart .zero {
+  stroke: var(--border-strong);
+  stroke-width: 1;
+  stroke-dasharray: 4 4;
+}
+
+.life-line {
+  stroke-width: 3;
+  stroke-linejoin: round;
+  stroke-linecap: round;
+}
+
+.life-line.you {
+  stroke: var(--link);
+}
+
+.life-line.them {
+  stroke: var(--danger-text);
+  stroke-dasharray: 8 4;
+}
+
+.chart-axis {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.75rem;
+  color: var(--muted);
+}
+
+.stats {
+  margin: 0.5em 0 0;
+  padding-left: 1.2em;
+  font-size: 0.9rem;
+}
+
+/* A win's confetti, falling once (none for reduced motion). */
+.confetti {
+  position: fixed;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+  z-index: 80;
+}
+
+.confetti span {
+  position: absolute;
+  top: -20px;
+  left: var(--x);
+  width: 9px;
+  height: 14px;
+  border-radius: 2px;
+  background: hsl(calc(var(--hue) * 60) 75% 55%);
+  animation: fall 3.2s var(--delay) ease-in forwards;
+}
+
+@keyframes fall {
+  to { transform: translateY(110vh) rotate(var(--spin)); }
+}
+
+:root[data-motion="reduced"] .confetti {
+  display: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .confetti {
+    display: none;
+  }
+}
+
 .game-log {
   margin: 0;
   padding: 0.8em 0.8em 0.8em 2.8em;
@@ -1782,6 +1948,17 @@ body:has(main.game) .chrome {
 }
 
 body:has(main.game) #settings-button {
+  width: 36px;
+  min-height: 36px !important;
+  height: 36px;
+  padding: 0 !important;
+  border-radius: 50% !important;
+  text-align: center !important;
+  font-size: 1.1rem;
+  line-height: 1;
+}
+
+#settings-button {
   width: 36px;
   min-height: 36px !important;
   height: 36px;

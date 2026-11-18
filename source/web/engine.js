@@ -80,10 +80,11 @@ phase("unpacked");
 // ?trace, passed on from the page, has Haskell time each step on standard
 // error (Parun.Browser.trace), which goes to the page's trace.
 const tracing = new URLSearchParams(location.search).has("trace");
-// A rematch's decks (?mine=…&theirs=…) skip the lobby (Parun.Web.Ending).
+// A rematch's decks (?mine=…&theirs=…) skip the lobby, and a shared seed
+// (&seed=…) shuffles as before (Parun.Web.Ending).
 const query = new URLSearchParams(location.search);
 // The auto-pass level the page kept (page.js) goes in as parun_level.
-const passed = ["mine", "theirs", "level"].filter((key) => query.has(key)).map((key) => `parun_${key}=${query.get(key)}`);
+const passed = ["mine", "theirs", "seed", "level"].filter((key) => query.has(key)).map((key) => `parun_${key}=${query.get(key)}`);
 const wasi = new WASI([], ["parun_datadir=/data", ...(tracing ? ["parun_trace=1"] : []), ...passed], [
   new OpenFile(new File([])),
   ConsoleStdout.lineBuffered((line) => console.log(line)),

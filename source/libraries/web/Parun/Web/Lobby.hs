@@ -25,6 +25,7 @@ import qualified Parun.Web.Card as Web.Card
 import qualified Parun.Web.Element as Element
 import qualified Parun.Web.Html as Html
 import qualified Parun.Web.Mana as Mana
+import qualified Text.Read as Read
 
 data Lobby = MkLobby
   { -- | The card files the registry holds.
@@ -40,7 +41,9 @@ data Lobby = MkLobby
     -- | What the deck list is filtered by.
     search :: Text.Text,
     -- | Each deck's colours, by its name (colours).
-    palette :: Map.Map Text.Text (Set.Set Color.Color)
+    palette :: Map.Map Text.Text (Set.Set Color.Color),
+    -- | The card lists of the decks chosen so far, by name.
+    previews :: Map.Map Text.Text [Line]
   }
   deriving (Eq, Show)
 
@@ -66,16 +69,16 @@ data Event
 
 -- | A lobby holding these decks, nothing chosen yet.
 new :: Natural -> Seq.Seq Text.Text -> Lobby
-new files names = MkLobby files names Nothing Nothing MkMine Text.empty Map.empty
+new files names = MkLobby files names Nothing Nothing MkMine Text.empty Map.empty Map.empty
 
 -- | A card's colours as a deck shows them: those of the mana symbols in
 -- its faces' costs.
 cardColours :: Card.Card -> Set.Set Color.Color
-cardColours card = foldMap (foldMap costColours . Face.manaCost) (Card.faces card)
+cardColours c = foldMap (foldMap costColours . Face.manaCost) (Card.faces c)
 
 -- | The colours a cost's symbols name (CR 105.2, 202.2).
 costColours :: ManaCost.ManaCost -> Set.Set Color.Color
-costColours cost =
+costColours printed =
   let ofType t = case t of
         ManaType.Colored c -> Set.singleton c
         ManaType.Colorless -> Set.empty
@@ -88,17 +91,68 @@ costColours cost =
         ManaSymbol.HybridPhyrexian h -> Set.fromList [HybridPhyrexian.left h, HybridPhyrexian.right h]
         ManaSymbol.Snow -> Set.empty
         ManaSymbol.Variable -> Set.empty
-   in foldMap symbol (ManaCost.unwrap cost)
+   in foldMap symbol (ManaCost.unwrap printed)
 
--- | A deck list's colours: those of each card a line names ("4 Forest",
--- "1 Shock (M19) 156"), by `colours`; other lines skipped.
+-- | A deck list's colours: those of each card a line names, by `colours`.
 deckColours :: (CardName.CardName -> Set.Set Color.Color) -> Text.Text -> Set.Set Color.Color
-deckColours colours contents =
-  let named line = do
+deckColours colours contents = foldMap colours (Set.fromList (fmap snd (entries contents)))
+
+-- | A deck list's lines that name a card ("4 Forest", "1 Shock (M19) 156"),
+-- each as its count and the card; other lines skipped.
+entries :: Text.Text -> [(Natural, CardName.CardName)]
+entries contents =
+  let entry line = do
         let (count, rest) = Text.span Char.isDigit (Text.strip line)
-        Monad.guard (not (Text.null count))
-        pure (CardName.MkCardName (Text.strip (fst (Text.breakOn (Text.pack " (") rest))))
-   in foldMap colours (Set.fromList (Maybe.mapMaybe named (Text.lines contents)))
+        n <- Read.readMaybe (Text.unpack count)
+        pure (n, CardName.MkCardName (Text.strip (fst (Text.breakOn (Text.pack " (") rest))))
+   in Maybe.mapMaybe entry (Text.lines contents)
+
+-- | A card of a deck's list, as the lobby previews it.
+data Line = MkLine
+  { copies :: Natural,
+    card :: CardName.CardName,
+    cost :: Maybe ManaCost.ManaCost,
+    -- | CR 202.3.
+    value :: Integer,
+    kind :: Kind
+  }
+  deriving (Eq, Show)
+
+-- | Which part of a list a card is shown in.
+data Kind
+  = MkCreature
+  | MkSpell
+  | MkLand
+  deriving (Eq, Ord, Show)
+
+-- | A deck's list: a curve of its spells by mana value (the last bar
+-- counting six and up), and its cards by kind.
+preview :: Text.Text -> [Line] -> Html.Html msg
+preview name lines' =
+  let total = sum (fmap copies lines')
+      spells = [l | l <- lines', kind l /= MkLand]
+      bars = [(mv, sum [copies l | l <- spells, inBar l]) | (mv, inBar) <- [(show n, \l -> value l == n) | n <- [0 .. 5]] <> [("6+", \l -> value l >= 6)]]
+      tallest = maximum (1 : fmap snd bars)
+      bar (mv, n) =
+        Element.el
+          "span"
+          ["bar"]
+          [Element.attr "title" (Text.pack (show n <> " at mana value " <> mv))]
+          [Element.el "span" ["fill"] [Element.attr "style" (Text.pack ("height:" <> show (div (n * 100) tallest) <> "%"))] [], Element.el "span" ["mv"] [] [Element.string mv]]
+      section title k =
+        let these = List.sortOn (\l -> (value l, CardName.unwrap (card l))) [l | l <- lines', kind l == k]
+         in [ Element.el "div" ["deck-section"] [] $
+                Element.el "h3" [] [] [Element.string (title <> " \x00b7 " <> show (sum (fmap copies these)))]
+                  : [Element.el "p" ["deck-line"] [] ([Element.el "span" ["copies"] [] [Element.string (show (copies l))], Element.el "span" ["deck-card"] [] [Element.text (CardName.unwrap (card l))]] <> foldMap (pure . Mana.cost) (cost l)) | l <- these]
+            | not (null these)
+            ]
+   in Element.el
+        "details"
+        ["deck-preview"]
+        []
+        [ Element.el "summary" [] [] [Element.el "span" ["preview-title"] [] [Element.text (label name), Element.string (" \x00b7 " <> show total <> " cards")], Element.el "span" ["curve"] [Element.attr "aria-hidden" (Text.pack "true")] (fmap bar bars)],
+          Element.el "div" ["deck-sections"] [] (section "Creatures" MkCreature <> section "Spells" MkSpell <> section "Lands" MkLand)
+        ]
 
 -- | A deck file's name beneath the root, less ".txt"; the path as given
 -- where the root does not prefix it.
@@ -169,41 +223,47 @@ view lobby =
         "main"
         ["lobby"]
         []
-        [ Element.el
-            "header"
-            ["hero"]
-            []
-            [ Element.el "h1" [] [] [Element.el "img" ["logo"] [Element.attr "src" (Text.pack "./icon.svg"), Element.attr "alt" Text.empty, Element.attr "width" (Text.pack "40"), Element.attr "height" (Text.pack "40")] [], Element.string "Parun"],
-              Element.el "p" ["tagline"] [] [Element.string ("A Magic rules engine, running in your browser. " <> show (cardFiles lobby) <> " cards loaded.")]
-            ],
-          Element.el
-            "section"
-            ["matchup"]
-            [Element.attr "aria-label" (Text.pack "Match-up")]
-            [ slot MkMine "You" (mine lobby) "Choose a deck",
-              Element.el "span" ["versus"] [] [Element.string "vs"],
-              slot MkTheirs "Bot" (theirs lobby) "Random deck",
-              Element.el
-                "button"
-                ["primary", "start"]
-                ([Element.attr "type" (Text.pack "button"), Element.on "click" MkStart] <> [Element.attr "disabled" Text.empty | Maybe.isNothing (mine lobby)])
-                [Element.string "Start game"]
-            ],
-          Element.el
-            "section"
-            ["deck-picker"]
-            []
-            ( [ Element.el
-                  "div"
-                  ["deck-tools"]
-                  []
-                  [ Element.el "label" ["sr-only"] [Element.attr "for" (Text.pack "deck-search")] [Element.string "Filter decks"],
-                    Element.el "input" ["search"] [Element.attr "id" (Text.pack "deck-search"), Element.attr "type" (Text.pack "search"), Element.attr "placeholder" (Text.pack "Filter decks or sets"), Element.attr "autocomplete" (Text.pack "off"), Element.on "input" MkSearch] [],
-                    Element.button ["random"] MkRandom [Element.string "Random"]
-                  ],
-                Element.el "p" ["choosing-for"] [] [Element.string (if choosing lobby == MkMine then "Choose your deck." else "Choose the bot's deck.")],
-                Element.keyed "div" ["sets"] [] [(group, Element.el "section" ["set"] [] [Element.el "h2" [] [] [Element.text group], Element.keyed "div" ["deck-list"] [] (fmap deck names)]) | (group, names) <- groups]
+        $ [ Element.el
+              "header"
+              ["hero"]
+              []
+              [ Element.el "h1" [] [] [Element.el "img" ["logo"] [Element.attr "src" (Text.pack "./icon.svg"), Element.attr "alt" Text.empty, Element.attr "width" (Text.pack "40"), Element.attr "height" (Text.pack "40")] [], Element.string "Parun"],
+                Element.el "p" ["tagline"] [] [Element.string ("A Magic rules engine, running in your browser. " <> show (cardFiles lobby) <> " cards loaded.")]
+              ],
+            Element.el
+              "section"
+              ["matchup"]
+              [Element.attr "aria-label" (Text.pack "Match-up")]
+              [ slot MkMine "You" (mine lobby) "Choose a deck",
+                Element.el "span" ["versus"] [] [Element.string "vs"],
+                slot MkTheirs "Bot" (theirs lobby) "Random deck",
+                Element.el
+                  "button"
+                  ["primary", "start"]
+                  ([Element.attr "type" (Text.pack "button"), Element.on "click" MkStart] <> [Element.attr "disabled" Text.empty | Maybe.isNothing (mine lobby)])
+                  [Element.string "Start game"]
               ]
-                <> [Element.el "p" ["empty"] [] [Element.string "No deck matches."] | null shown]
-            )
-        ]
+          ]
+          -- The list of the deck being chosen, or else of the player's.
+          <> [ preview name lines'
+             | name <- Maybe.maybeToList (Monad.mplus (if choosing lobby == MkMine then mine lobby else theirs lobby) (mine lobby)),
+               lines' <- Maybe.maybeToList (Map.lookup name (previews lobby))
+             ]
+          <> [ Element.el
+                 "section"
+                 ["deck-picker"]
+                 []
+                 ( [ Element.el
+                       "div"
+                       ["deck-tools"]
+                       []
+                       [ Element.el "label" ["sr-only"] [Element.attr "for" (Text.pack "deck-search")] [Element.string "Filter decks"],
+                         Element.el "input" ["search"] [Element.attr "id" (Text.pack "deck-search"), Element.attr "type" (Text.pack "search"), Element.attr "placeholder" (Text.pack "Filter decks or sets"), Element.attr "autocomplete" (Text.pack "off"), Element.on "input" MkSearch] [],
+                         Element.button ["random"] MkRandom [Element.string "Random"]
+                       ],
+                     Element.el "p" ["choosing-for"] [] [Element.string (if choosing lobby == MkMine then "Choose your deck." else "Choose the bot's deck.")],
+                     Element.keyed "div" ["sets"] [] [(group, Element.el "section" ["set"] [] [Element.el "h2" [] [] [Element.text group], Element.keyed "div" ["deck-list"] [] (fmap deck names)]) | (group, names) <- groups]
+                   ]
+                     <> [Element.el "p" ["empty"] [] [Element.string "No deck matches."] | null shown]
+                 )
+             ]

@@ -82,11 +82,13 @@ document.addEventListener("keydown", (event) => {
 });
 let tapped = null;
 
-function build(node) {
+// A node and its children; an svg and everything in it in SVG's namespace.
+function build(node, svg = false) {
   if ("text" in node) return document.createTextNode(node.text);
-  const element = document.createElement(node.tag);
+  const inSvg = svg || node.tag === "svg";
+  const element = inSvg ? document.createElementNS("http://www.w3.org/2000/svg", node.tag) : document.createElement(node.tag);
   for (const [name, value] of node.props) element.setAttribute(name, value);
-  for (const child of node.children) element.append(build(child));
+  for (const child of node.children) element.append(build(child, inSvg));
   return element;
 }
 
