@@ -792,16 +792,17 @@ prohibitsCasting pid oid variable gs =
    in any prohibits (applying pid gs)
 
 -- CR 602.5 / 101.2 / Sen Triplets: does an effect stop this player activating
--- an ability under this rule-702 stamp (Parun.Types.ActivatedAbility.keyword)?
--- The activation-side twin of prohibitsCasting above, and its own question
--- rather than a widening of that one: CR 602.2a makes an activated ability
--- neither a spell (CR 112.1) nor a special action (CR 116.1), so nothing on the
--- cast axis reaches it and Silence stops no activation.
+-- an ability with these facts? The activation-side twin of prohibitsCasting
+-- above, and its own question rather than a widening of that one: CR 602.2a
+-- makes an activated ability neither a spell (CR 112.1) nor a special action
+-- (CR 116.1), so nothing on the cast axis reaches it and Silence stops no
+-- activation.
 --
--- A row naming no designator refuses every ability (Sen Triplets); one naming
--- a designator refuses only the abilities it designates, Kang the Conqueror's
--- "power-up abilities" -- a citation compared to a citation, as
--- ActivationCriteria.grantedBy is.
+-- A row's criteria are asked of the facts by Filter.abilityMeets, the one
+-- reading a cost adjustment shares: Kang the Conqueror's "power-up abilities",
+-- Yuriko, Blade of the Mighty's "abilities that aren't mana abilities", The
+-- Immortal Sun's "loyalty abilities". The caller states the CR 605.1a kind, as
+-- ActivationProhibition.prohibitedGiven is told.
 --
 -- Given the rows the caller has already gathered, which is what lets
 -- Parun.Engine.Cost.manaActivationsGiven ask it inside its own hoisted sweep
@@ -811,23 +812,17 @@ prohibitsCasting pid oid variable gs =
 -- shows it (Grand Abolisher's "abilities of artifacts, creatures, or
 -- enchantments", whose ruling of 2011-09-22 leaves a cycling card in hand
 -- alone -- the card's Filter names the battlefield).
---
--- The caller says which CR 605.1a kind the ability is, as
--- ActivationProhibition.prohibitedGiven is told: a row naming a kind refuses
--- only that kind, Yuriko, Blade of the Mighty's "abilities that aren't mana
--- abilities".
-prohibitsActivatingGiven :: AbilityKind.AbilityKind -> Maybe Keyword -> ObjectId -> GameState -> [(RowSource, PlayerEffect)] -> Bool
-prohibitsActivatingGiven kind stamp srcId gs effects =
+prohibitsActivatingGiven :: AbilityFacts.AbilityFacts -> ObjectId -> GameState -> [(RowSource, PlayerEffect)] -> Bool
+prohibitsActivatingGiven facts srcId gs effects =
   let bars (row, effect) = case effect of
-        PlayerEffect.CantActivateAbilities designator sources barred ->
-          maybe True (\d -> any (Keyword.designates d) stamp) designator
-            && all (== kind) barred
+        PlayerEffect.CantActivateAbilities sources criteria ->
+          Filter.abilityMeets criteria facts
             && matchesObjectFrom row sources srcId gs
         _ -> False
    in any bars effects
 
-prohibitsActivating :: AbilityKind.AbilityKind -> Maybe Keyword -> ObjectId -> PlayerId -> GameState -> Bool
-prohibitsActivating kind stamp srcId pid gs = prohibitsActivatingGiven kind stamp srcId gs (applying pid gs)
+prohibitsActivating :: AbilityFacts.AbilityFacts -> ObjectId -> PlayerId -> GameState -> Bool
+prohibitsActivating facts srcId pid gs = prohibitsActivatingGiven facts srcId gs (applying pid gs)
 
 -- CR 305.1: does any effect prohibit `pid` from PLAYING this land?
 -- The play-side twin of prohibitsCasting above, and a separate question rather

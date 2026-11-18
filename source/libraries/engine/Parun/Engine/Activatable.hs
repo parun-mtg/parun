@@ -842,7 +842,7 @@ activatableGiven pools sources pid srcId ability gs =
         -- carries this conjunct too, for the CR 605.3a windows that never reach
         -- this function. Asked as NonManaAbility for the prohibition above's
         -- reason.
-        && not (PlayerEffect.prohibitsActivatingGiven AbilityKind.NonManaAbility (ActivatedAbility.keyword ability) srcId gs rows)
+        && not (PlayerEffect.prohibitsActivatingGiven (Game.abilityFacts AbilityKind.NonManaAbility (Just ability)) srcId gs rows)
         && sicknessOkGiven grants pcs pid srcId ability gs
         && riderOk pid srcId ability gs
         && loyaltyOk pid srcId ability gs

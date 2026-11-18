@@ -1,6 +1,6 @@
 module Parun.Codec.PlayerEffect where
 
-import qualified Parun.Codec.AbilityKind as AbilityKind
+import qualified Parun.Codec.ActivationCriteria as ActivationCriteria
 import qualified Parun.Codec.AlternativeActivationCost as AlternativeActivationCost
 import qualified Parun.Codec.BearersTrigger as BearersTrigger
 import qualified Parun.Codec.CantSearchLibraries as CantSearchLibraries
@@ -19,7 +19,6 @@ import qualified Parun.Codec.GameOutcome as GameOutcome
 import qualified Parun.Codec.HexproofExemption as HexproofExemption
 import qualified Parun.Codec.InZone as InZone
 import qualified Parun.Codec.Keyword as Keyword
-import qualified Parun.Codec.KeywordDesignator as KeywordDesignator
 import qualified Parun.Codec.KeywordRiderGrant as KeywordRiderGrant
 import qualified Parun.Codec.LandAllowance as LandAllowance
 import qualified Parun.Codec.LoyaltyGrant as LoyaltyGrant
@@ -49,14 +48,13 @@ import qualified Parun.Types.PlayerEffect as PlayerEffect
 codec :: Codec.Codec PlayerEffect.PlayerEffect
 codec =
   let filterCodec = Filter.codec Keyword.codec
-      -- The designator absent is every ability; the source Filter absent, the
-      -- empty And, every source; the kind absent, both kinds.
+      -- The source Filter absent, the empty And, is every source; the criteria
+      -- absent, every ability of one.
       activationBan =
         Fields.object $
-          (,,)
-            <$> Fields.defaulted "designator" Nothing (Common.maybe (KeywordDesignator.codec Keyword.codec)) (\(x, _, _) -> x)
-            <*> Fields.defaulted "sources" (Filter.Type.And []) filterCodec (\(_, x, _) -> x)
-            <*> Fields.defaulted "kind" Nothing (Common.maybe AbilityKind.codec) (\(_, _, x) -> x)
+          (,)
+            <$> Fields.defaulted "sources" (Filter.Type.And []) filterCodec fst
+            <*> Fields.defaulted "criteria" Filter.everyActivation (ActivationCriteria.codec Keyword.codec) snd
       -- The type absent is mana kept as it is (Upwelling).
       unspentMana =
         Fields.object $
@@ -101,7 +99,7 @@ codec =
    in Arm.tagged
         tagOf
         [ Arm.nullary "CantCastSpells" PlayerEffect.CantCastSpells,
-          Arm.payload "CantActivateAbilities" activationBan (\(y, z, w) -> PlayerEffect.CantActivateAbilities y z w) (\x -> case x of PlayerEffect.CantActivateAbilities y z w -> Just (y, z, w); _ -> Nothing),
+          Arm.payload "CantActivateAbilities" activationBan (uncurry PlayerEffect.CantActivateAbilities) (\x -> case x of PlayerEffect.CantActivateAbilities y z -> Just (y, z); _ -> Nothing),
           Arm.payload "CantCastMoreThan" Common.natural PlayerEffect.CantCastMoreThan (\x -> case x of PlayerEffect.CantCastMoreThan y -> Just y; _ -> Nothing),
           Arm.payload "ModifyCost" CostModifier.codec PlayerEffect.ModifyCost (\x -> case x of PlayerEffect.ModifyCost y -> Just y; _ -> Nothing),
           Arm.payload "AlternativeActivationCost" AlternativeActivationCost.codec PlayerEffect.AlternativeActivationCost (\x -> case x of PlayerEffect.AlternativeActivationCost y -> Just y; _ -> Nothing),
