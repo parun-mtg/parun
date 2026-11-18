@@ -1721,9 +1721,9 @@ triggerConditionChildren c condition = case condition of
   TriggerCondition.SpellCast (SpellCast.MkSpellCast spell turn zone ordinal phase copies while_) ->
     fmap TriggerCondition.SpellCast (SpellCast.MkSpellCast <$> actingChildren c spell <*> triggerTurn c turn <*> pure zone <*> traverse (triggerOrdinal c HistoryRead.Casts) ordinal <*> pure phase <*> pure copies <*> traverse (triggerState c) while_)
   TriggerCondition.AbilityActivated filter_ -> fmap TriggerCondition.AbilityActivated (triggerFilter c filter_)
-  TriggerCondition.BecomesTargeted (BecomesTargetedTrigger.MkBecomesTargetedTrigger subject relation kinds batching zones frequency) ->
+  TriggerCondition.BecomesTargeted (BecomesTargetedTrigger.MkBecomesTargetedTrigger subject relation kinds batching zones frequency sourceKeyword) ->
     fmap
-      (\renamed -> TriggerCondition.BecomesTargeted . BecomesTargetedTrigger.MkBecomesTargetedTrigger renamed relation kinds batching zones)
+      (\renamed frequency' -> TriggerCondition.BecomesTargeted (BecomesTargetedTrigger.MkBecomesTargetedTrigger renamed relation kinds batching zones frequency' sourceKeyword))
       ( case subject of
           TargetedSubject.Permanent permanent -> fmap TargetedSubject.Permanent (actingChildren c permanent)
           TargetedSubject.Player _ -> pure subject

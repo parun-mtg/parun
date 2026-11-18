@@ -622,12 +622,14 @@ firstPlacementOn which oid gs =
         _ -> False
    in Foldable.find placedOnIt (fmap LoggedEvent.event (TurnRegisters.events (GameState.turn gs)))
 
--- CR 601.2c: whether the condition's road and relation admit this targeting,
--- the relation read of the targeting object's controller against `you`.
+-- CR 601.2c: whether the condition's road, relation and keyword admit this
+-- targeting, the relation read of the targeting object's controller against
+-- `you`, the keyword off the event (CR 702.165a's "a backup ability").
 targetingAdmitted :: GameState -> PlayerId -> BecomesTargetedTrigger.BecomesTargetedTrigger -> BecameTarget.BecameTarget -> Bool
 targetingAdmitted gs you c t =
   Set.member (BecameTarget.kind t) (BecomesTargetedTrigger.kinds c)
     && PlayerRelation.holds (Game.teams gs) (BecomesTargetedTrigger.relation c) you (BecameTarget.controller t)
+    && all (\family -> BecameTarget.keyword t == Just family) (BecomesTargetedTrigger.sourceKeyword c)
 
 -- CR 601.2c: the first event this turn that made this recipient a target of a
 -- spell or ability the condition admits; Nothing for none.

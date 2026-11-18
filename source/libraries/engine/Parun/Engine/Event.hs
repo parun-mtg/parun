@@ -213,6 +213,7 @@ import qualified Parun.Types.HowMany as HowMany
 import qualified Parun.Types.InstructionR as InstructionR
 import qualified Parun.Types.InstructionRewrite as InstructionRewrite
 import qualified Parun.Types.Keyword as Keyword.Type
+import qualified Parun.Types.KeywordFamily as KeywordFamily
 import qualified Parun.Types.KeywordInstance as KeywordInstance
 import qualified Parun.Types.LandOrNonland as LandOrNonland
 import qualified Parun.Types.LastKnown as LastKnown
@@ -10622,10 +10623,31 @@ becameTarget announced source kind controller chosen =
                   { BecameTarget.targeted = targeted,
                     BecameTarget.source = source,
                     BecameTarget.kind = kind,
-                    BecameTarget.controller = controller
+                    BecameTarget.controller = controller,
+                    BecameTarget.keyword = keywordOf source announced
                   }
             )
             . fileBoardAfter announced
+
+-- CR 702.72c / 702.165a: the family of a keyword the source of stack object
+-- `oid` has whose expansion mints the triggered ability `oid` is -- a champion
+-- or backup ability. A CLASSIFICATION of the ability, never of an instruction.
+-- Read off the source as it stands, or its last known information once it
+-- has left (CR 113.7a): a backup creature an SBA killed before its trigger
+-- was put on the stack still aims a backup ability, proved by data/scenarios's
+-- mirror-shield-hoplite-copies-a-backup-ability-whose-creature-already-died.
+-- Nothing for a spell or a non-keyword ability.
+keywordOf :: ObjectId -> GameState -> Maybe KeywordFamily.KeywordFamily
+keywordOf oid gs = case fmap Object.source (Game.lookupObject oid gs) of
+  Just (Source.OfTrigger triggered) ->
+    Maybe.listToMaybe
+      [ family
+      | let src = TriggeredAbilitySource.source triggered,
+        (held, count) <- Map.toList (maybe (Projection.keywordsOf src gs) (PC.keywords . LastKnown.characteristics) (Game.lastKnownOf src gs)),
+        elem (TriggeredAbilitySource.ability triggered) (Keyword.abilitiesFor held count),
+        Just family <- [Keyword.familyOf held]
+      ]
+  _ -> Nothing
 
 -- CR 700.13: record a crime when what was just announced targets an opponent of
 -- `criminal`, a permanent, spell or ability one controls, or a card in one's
