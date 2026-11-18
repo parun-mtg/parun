@@ -171,7 +171,8 @@ seatHead marks board own s =
         Nothing -> Element.el "div" ["who"] [] [Element.text label, lifeBox]
       poison = Map.findWithDefault 0 PlayerCounterKind.Poison (SeatView.counters s)
       pool = Mana.unwrap (SeatView.manaPool s)
-   in Element.el "div" ["seat-head"] [] $
+      aimed = Card.targetingPlayer board pid
+   in Element.el "div" (["seat-head"] <> ["targeted" | not (null aimed)]) [Element.attr "title" (Text.pack "Targeted by " <> Render.listing aimed) | not (null aimed)] $
         [ identity,
           Element.el
             "div"

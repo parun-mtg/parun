@@ -4020,6 +4020,7 @@ library web
     Parun.Web.HtmlSpec
     Parun.Web.Lobby
     Parun.Web.LobbySpec
+    Parun.Web.Log
     Parun.Web.Mana
     Parun.Web.Patch
     Parun.Web.Question

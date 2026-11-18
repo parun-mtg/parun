@@ -4,6 +4,8 @@ module Parun.WebQuestionSpec where
 
 import qualified Data.Either as Either
 import qualified Data.Foldable as Foldable
+import qualified Data.Map.Strict as Map
+import qualified Data.Sequence as Seq
 import qualified Data.Set as Set
 import qualified Data.Text as Text
 import Numeric.Natural (Natural)
@@ -26,6 +28,7 @@ import qualified Parun.Types.GameState as GameState
 import qualified Parun.Types.ManaType as ManaType
 import qualified Parun.Types.ObjectId as ObjectId
 import qualified Parun.Types.Phase as Phase
+import qualified Parun.Types.PlayerView as PlayerView.Type
 import qualified Parun.Types.Prompt as Prompt
 import qualified Parun.Types.Question as Question
 import qualified Parun.Types.Reply as R
@@ -34,6 +37,7 @@ import qualified Parun.Types.TurnRegisters as TurnRegisters
 import qualified Parun.Types.Zone as Zone
 import qualified Parun.Web.Card as Card
 import qualified Parun.Web.Html as Html
+import qualified Parun.Web.Log as Log
 import qualified Parun.Web.Question as Question.Web
 
 spec :: (Monad m, Monad n) => Spec.Spec m n -> Registry.Registry m -> n ()
@@ -79,6 +83,15 @@ spec s registry = Spec.describe s "WebQuestion" $ do
         tap picked label = let view = Question.Web.view request Question.Web.blank {Question.Web.selected = picked} in Html.labelled (Text.pack "button") (Text.pack label) view >>= \path -> Html.handler (Text.pack "click") path view
     Spec.assertEqWith s "first" (tap Set.empty "Your Grizzly Bears 2/2 \x00d7\&2") (Just (Question.Web.MkToggle 0 0))
     Spec.assertEqWith s "then the next" (tap (Set.singleton (0, 0)) "1 of Your Grizzly Bears 2/2 \x00d7\&2") (Just (Question.Web.MkToggle 0 1))
+
+  Spec.it s "the log heads each turn the seat reads into, once" $ do
+    let view = PlayerView.viewFor S.alice (Setup.emptyGame S.bothPlayers)
+        (marks, first) = Log.unseen Map.empty view
+    Spec.assertEqWith s "heading" (take 1 first) [Log.MkTurn (PlayerView.Type.turn view) (PlayerView.Type.active view)]
+    Spec.assertEqWith s "read" (snd (Log.unseen marks view)) []
+    let event = Log.MkEvent Log.MkMajor . Text.pack
+        turn n = Log.MkTurn n S.alice
+    Spec.assertEqWith s "newest turn first, its heading on top" (fmap snd (Foldable.toList (Log.newestFirst (Seq.fromList (zip [0 :: Int ..] [event "a", turn 1, event "b", event "c", turn 2, event "d"]))))) [turn 2, event "d", turn 1, event "c", event "b", event "a"]
 
   Spec.it s "a priority offering only a pass, the hotseat's concession, and play or draw are answered unasked" $ do
     let gs = Setup.emptyGame S.bothPlayers

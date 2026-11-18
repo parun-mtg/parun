@@ -1053,6 +1053,23 @@ details.pile[open] {
   font-size: 0.72em;
 }
 
+.badge.target {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--accent-text);
+}
+
+#app button.card.targeted {
+  outline: 3px dotted var(--accent);
+  outline-offset: 3px;
+}
+
+.seat-head.targeted .who {
+  outline: 3px dotted var(--accent);
+  outline-offset: 3px;
+  border-radius: 999px;
+}
+
 .badge.attack {
   background: var(--danger);
   border-color: var(--danger);
@@ -1371,7 +1388,7 @@ details.log[open] .latest {
 
 .log-list {
   margin: 0;
-  padding: 0 0.75em 0.6em 3.4em;
+  padding: 0 0.75em 0.6em 2.2em;
   max-height: 26dvh;
   overflow-y: auto;
   color: var(--muted);
@@ -1379,6 +1396,24 @@ details.log[open] .latest {
 
 .log-list li {
   padding: 0.12em 0;
+}
+
+.log-list li.turn,
+.game-log li.turn,
+.news li.turn {
+  list-style: none;
+  margin: 0.5em 0 0.15em -1.2em;
+  font-weight: 700;
+  color: var(--text);
+  font-size: 0.9em;
+  border-bottom: 1px solid var(--border);
+}
+
+.log-list li.minor,
+.game-log li.minor,
+.news li.minor {
+  font-size: 0.88em;
+  font-style: italic;
 }
 
 .log-list li.fresh {

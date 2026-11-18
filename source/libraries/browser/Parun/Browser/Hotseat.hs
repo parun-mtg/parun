@@ -28,7 +28,6 @@ import qualified Parun.Extra.Int as Int
 import qualified Parun.Extra.Integer as Integer
 import qualified Parun.Extra.Natural as Natural
 import qualified Parun.Interpreter as Interpreter
-import qualified Parun.Play.Client as Client
 import qualified Parun.Play.Command as Command
 import qualified Parun.Play.Key as Key
 import qualified Parun.Play.Protocol as Protocol
@@ -49,6 +48,7 @@ import qualified Parun.Web.Element as Element
 import qualified Parun.Web.Ending as Ending
 import qualified Parun.Web.Html as Html
 import qualified Parun.Web.Lobby as Lobby
+import qualified Parun.Web.Log as Log
 import qualified Parun.Web.Question as Web.Question
 import qualified System.Environment as Environment
 
@@ -126,7 +126,7 @@ play page = do
           -- What the player saw after their last decision: the killing blow, say.
           Monad.forM_ outcome $ IORef.modifyIORef' seatRef . witness . PlayerView.Engine.viewFor player . snd
           seen <- logged <$> IORef.readIORef seatRef
-          Browser.display page . Ending.view $ Ending.MkEnding (verdictOf outcome) (either (\reason -> [Text.pack "The game stopped: " <> reason <> Text.pack "."]) (\(result, gs) -> Render.result result : Render.departures gs) outcome) (Command.rendered recorded) seen (Lobby.deckName deckRoot one, Lobby.deckName deckRoot two)
+          Browser.display page . Ending.view $ Ending.MkEnding (verdictOf outcome) (either (\reason -> [Text.pack "The game stopped: " <> reason <> Text.pack "."]) (\(result, gs) -> Render.result result : Render.departures gs) outcome) (Command.rendered recorded) seen player (Lobby.deckName deckRoot one, Lobby.deckName deckRoot two)
         Left problems -> say problems
     (first, second) -> say $ Either.fromLeft [] first <> Either.fromLeft [] second
 
@@ -245,10 +245,10 @@ data Seat = MkSeat
     skipping :: Maybe Natural,
     -- | Whether the seat conceded (Web.Question.MkConcede).
     conceding :: Bool,
-    -- | How far the seat has read each game's log (Client.unseen).
+    -- | How far the seat has read each game's log (Log.unseen).
     marks :: Map.Map (PlayerId.PlayerId, Natural) (Natural, Natural),
     -- | The entries read so far, oldest first: the game log the end shows.
-    logged :: Seq.Seq Text.Text,
+    logged :: Seq.Seq Log.Entry,
     -- | How many entries were logged when the seat last answered.
     decided :: Int,
     -- | When the last line was answered, the engine's work since then being
@@ -263,7 +263,7 @@ freshOf state = Int.toNaturalSaturating (Seq.length (logged state) - decided sta
 -- | The seat's state with the view's entries it has not read yet logged.
 witness :: PlayerView.PlayerView -> Seat -> Seat
 witness view state =
-  let (moved, unread) = Client.unseen (marks state) view
+  let (moved, unread) = Log.unseen (marks state) view
    in state {marks = moved, logged = logged state <> Seq.fromList unread}
 
 message :: [Text.Text] -> Html.Html msg

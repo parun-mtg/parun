@@ -22,8 +22,10 @@ import qualified Parun.Types.Face as Face
 import qualified Parun.Types.Loyalty as Loyalty
 import qualified Parun.Types.ObjectId as ObjectId
 import qualified Parun.Types.ObjectView as ObjectView
+import qualified Parun.Types.PlayerId as PlayerId
 import qualified Parun.Types.PlayerView as PlayerView
 import qualified Parun.Types.ProjectedCharacteristics as ProjectedCharacteristics
+import qualified Parun.Types.Recipient as Recipient
 import qualified Parun.Types.TapState as TapState
 import qualified Parun.Web.Element as Element
 import qualified Parun.Web.Html as Html
@@ -43,7 +45,7 @@ tile view cue o = case ObjectView.characteristics o of
   Nothing | Maybe.isNothing (ObjectView.face o) -> Element.button (["card", "back"] <> marks cue <> tapped o) (tap cue) [Element.el "span" ["name"] [] [Element.string "Hidden card"]]
   _ ->
     Element.button
-      (["card", colour o] <> marks cue <> tapped o <> combat view o <> ["sick" | ObjectView.summoningSick o])
+      (["card", colour o] <> marks cue <> tapped o <> combat view o <> ["sick" | ObjectView.summoningSick o] <> ["targeted" | not (null (targetedBy view (ObjectView.object o)))])
       (tap cue)
       [ Element.el "span" ["top"] [] $ [Element.el "span" ["name"] [] [Element.text (Render.nameOf view o)]] <> foldMap (pure . Mana.cost) (ObjectView.characteristics o >>= ProjectedCharacteristics.manaCost),
         -- On the table, what a permanent can do says more than its subtypes.
@@ -64,9 +66,27 @@ states :: PlayerView.PlayerView -> ObjectView.ObjectView -> [Html.Html msg]
 states view o =
   let shown cls label tip = Element.el "span" ["badge", "state", cls] [Element.attr "title" (Text.pack tip)] [Element.string label]
       kinds = combat view o
-   in [shown "attack" "Attacking" "Attacking" | elem "attacking" kinds]
+      by = targetedBy view (ObjectView.object o)
+   in [shown "target" "Target" ("Targeted by " <> Text.unpack (Render.listing by)) | not (null by)]
+        <> [shown "attack" "Attacking" "Attacking" | elem "attacking" kinds]
         <> [shown "block" "Blocking" "Blocking" | elem "blocking" kinds]
         <> [shown "sick" "Sick" "Summoning sick: can't attack or tap yet (CR 302.6)" | ObjectView.summoningSick o]
+
+-- | What on the stack targets the object, by name (CR 601.2c, 602.2b, 603.3d).
+targetedBy :: PlayerView.PlayerView -> ObjectId.ObjectId -> [Text.Text]
+targetedBy view oid = [Render.nameOf view item | item <- PlayerView.stack view, any (aims oid) (ObjectView.targets item)]
+  where
+    aims target r = case r of
+      Recipient.ToCreature x -> x == target
+      Recipient.ToPlaneswalker x -> x == target
+      Recipient.ToBattle x -> x == target
+      Recipient.ToObject x -> x == target
+      Recipient.ToPlayer _ -> False
+      Recipient.ToPile _ -> False
+
+-- | What on the stack targets the player, by name.
+targetingPlayer :: PlayerView.PlayerView -> PlayerId.PlayerId -> [Text.Text]
+targetingPlayer view pid = [Render.nameOf view item | item <- PlayerView.stack view, Recipient.ToPlayer pid `elem` ObjectView.targets item]
 
 -- | The keyword abilities the object has now, as Oracle text prints each,
 -- those short enough for a tile; granted ones included.

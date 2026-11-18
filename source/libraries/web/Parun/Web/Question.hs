@@ -37,6 +37,7 @@ import qualified Parun.Web.Board as Board
 import qualified Parun.Web.Card as Card
 import qualified Parun.Web.Element as Element
 import qualified Parun.Web.Html as Html
+import qualified Parun.Web.Log as Log
 import qualified Parun.Web.Mana as Mana
 
 -- | What a tap or a typed line does to the answer under way.
@@ -208,7 +209,7 @@ data Screen = MkScreen
   { selected :: Set.Set (Natural, Natural),
     reading :: Maybe Card.Reading,
     -- | Everything the seat has seen happen, oldest first.
-    logged :: Seq.Seq Text.Text,
+    logged :: Seq.Seq Log.Entry,
     -- | How many of the newest entries arrived since the seat last decided.
     fresh :: Natural,
     -- | The blocker an attacker's tile assigns to when tapped (MkFocus).
@@ -228,7 +229,7 @@ view :: Request.Request -> Screen -> Html.Html Event
 view request screen =
   table request screen (cues request (selected screen) (focus screen)) $
     [Element.el "p" ["problem"] [Element.attr "role" (Text.pack "alert")] [Html.text problem] | problem <- Maybe.maybeToList (Request.problem request)]
-      <> news screen
+      <> news (viewerOf request) screen
       <> form request (selected screen)
       <> [footer (level screen) (Maybe.isJust (passIndex request))]
 
@@ -243,7 +244,7 @@ watching request screen =
           | PlayerView.active b /= PlayerView.viewer b -> Text.unpack (Render.player (PlayerView.active b)) <> " is taking their turn\x2026"
         _ -> "Moving on\x2026"
    in table request screen (Board.MkMarks (Card.MkCue [] . MkRead . ObjectView.object) (const Nothing)) $
-        news screen <> [Element.el "p" ["waiting"] [] [Element.el "span" ["spinner", "small"] [Element.attr "aria-hidden" (Text.pack "true")] [], Element.string status]]
+        news (viewerOf request) screen <> [Element.el "p" ["waiting"] [] [Element.el "span" ["spinner", "small"] [Element.attr "aria-hidden" (Text.pack "true")] [], Element.string status]]
 
 -- | The prompt's foot: the level control, and conceding where the seat
 -- has priority to.
@@ -258,6 +259,10 @@ footer current concedable =
            Element.el "div" ["segmented"] [] [Element.el "button" ["on" | l == current] [Element.attr "type" (Text.pack "button"), Element.attr "data-level" (Text.pack (fst (levelName l))), Element.attr "aria-pressed" (Text.pack (if l == current then "true" else "false")), Element.on "click" (MkLevel l)] [Element.string (snd (levelName l))] | l <- [minBound .. maxBound]]
          ]
 
+-- | The seat the request asks, as its view names it.
+viewerOf :: Request.Request -> PlayerId.PlayerId
+viewerOf request = maybe (Question.seat (Request.question request)) PlayerView.viewer (Request.view request)
+
 -- | The game screen around a prompt's contents.
 table :: Request.Request -> Screen -> Board.Marks Event -> [Html.Html Event] -> Html.Html Event
 table request screen marks prompt =
@@ -268,36 +273,37 @@ table request screen marks prompt =
           <> foldMap (Board.hand marks) board
           <> [ Element.el "aside" ["side"] [] $
                  Element.el "section" ["prompt"] [Element.attr "aria-live" (Text.pack "polite")] prompt
-                   : [logView screen | not (Seq.null (logged screen))]
+                   : [logView (viewerOf request) screen | not (Seq.null (logged screen))]
              ]
           <> Maybe.maybeToList (do b <- board; r <- reading screen; sheetFor request b marks r)
 
 -- | What happened since the seat last decided, the latest few, oldest
 -- first; the log holds the rest.
-news :: Screen -> [Html.Html msg]
-news screen =
+news :: PlayerId.PlayerId -> Screen -> [Html.Html msg]
+news viewer screen =
   let count = Natural.toIntSaturating (fresh screen)
       shown = min 4 count
       latest = Seq.drop (Seq.length (logged screen) - shown) (logged screen)
    in [ Element.el "ul" ["news"] [Element.attr "aria-label" (Text.pack "Since your last decision")] $
           [Element.el "li" ["more"] [] [Element.string ("\x2026and " <> show (count - shown) <> " more in the log")] | count > shown]
-            <> [Element.el "li" [] [] (Mana.rich t) | t <- Foldable.toList latest]
+            <> fmap (Log.item viewer False) (Foldable.toList latest)
       | shown > 0
       ]
 
 -- | The log, newest first, the entries since the seat last decided lit; its
 -- summary the newest entry.
-logView :: Screen -> Html.Html msg
-logView screen =
-  let entries = Seq.reverse (Seq.mapWithIndex (,) (logged screen))
+logView :: PlayerId.PlayerId -> Screen -> Html.Html msg
+logView viewer screen =
+  let entries = Log.newestFirst (Seq.mapWithIndex (,) (logged screen))
       newest = Natural.toIntSaturating (fresh screen)
       total = Seq.length (logged screen)
+      latest = Foldable.find (not . Log.isTurn . snd) entries
    in Element.el
         "details"
         ["log"]
         []
-        [ Element.el "summary" [] [] [Element.el "span" ["k"] [] [Element.string "Log"], Element.el "span" ["latest"] [] (foldMap (\(_, t) -> [Element.text t]) (Seq.lookup 0 entries))],
-          Element.keyed "ol" ["log-list"] [Element.attr "reversed" Text.empty] (Foldable.toList (fmap (\(i, t) -> (Text.pack (show i), Element.el "li" ["fresh" | i >= total - newest] [] [Element.text t])) (Seq.take 300 entries)))
+        [ Element.el "summary" [] [] [Element.el "span" ["k"] [] [Element.string "Log"], Element.el "span" ["latest"] [] (foldMap (\(_, e) -> [Element.text (Log.sentence viewer e)]) latest)],
+          Element.keyed "ul" ["log-list"] [] (Foldable.toList (fmap (\(i, e) -> (Text.pack (show i), Log.item viewer (i >= total - newest) e)) (Seq.take 300 entries)))
         ]
 
 -- | The sheet for the card being read, with what the seat may do with it

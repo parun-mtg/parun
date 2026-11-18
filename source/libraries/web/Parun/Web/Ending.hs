@@ -9,9 +9,11 @@ import qualified Data.Foldable as Foldable
 import qualified Data.Sequence as Seq
 import qualified Data.Text as Text
 import qualified Data.Text.Encoding as Encoding
+import qualified Parun.Types.PlayerId as PlayerId
 import qualified Parun.Uri.Fragment as Fragment
 import qualified Parun.Web.Element as Element
 import qualified Parun.Web.Html as Html
+import qualified Parun.Web.Log as Log
 
 -- | How the game ended for the player the page plays.
 data Verdict
@@ -29,8 +31,10 @@ data Ending = MkEnding
     said :: [Text.Text],
     -- | The game as a scenario file (Command.rendered).
     scenario :: Text.Text,
-    -- | What the player saw happen, oldest first (Client.unseen).
-    witnessed :: Seq.Seq Text.Text,
+    -- | What the player saw happen, oldest first (Log.unseen).
+    witnessed :: Seq.Seq Log.Entry,
+    -- | The seat the page plays.
+    viewer :: PlayerId.PlayerId,
     -- | The player's deck and the bot's, by name (Lobby.deckName).
     decks :: (Text.Text, Text.Text)
   }
@@ -59,7 +63,7 @@ view ending =
               Element.el "a" [] [Element.attr "href" (download (scenario ending)), Element.attr "download" (Text.pack "parun-game.json")] [Element.string "Save as a scenario"]
             ],
           Element.el "h2" [] [] [Element.string "Game log"],
-          Element.el "ol" ["game-log"] [] [Element.el "li" [] [] [Element.text line] | line <- Foldable.toList (witnessed ending)]
+          Element.el "ol" ["game-log"] [] (fmap (Log.item (viewer ending) False) (Foldable.toList (witnessed ending)))
         ]
 
 -- | The page starting a game between these decks at once (engine.js passes
