@@ -900,10 +900,10 @@ evaluateAgainst viewOf context gs announcedOn mOid mView quantity =
           _ -> Nothing
         -- CR 508.1a / 608.2i: how many creatures that player has declared as attackers
         -- this turn -- rule 207.2c's raid, compared against 1. OpponentsAttacked's arm
-        -- in arity, and TalliedThisTurn's in footing: Nothing for a reference
-        -- naming anything but exactly one player, since "whose attack?" has no sum, and
-        -- a fold over TurnRegisters.events, whose extent Engine.beginTurnOf's clearing
-        -- makes "this turn".
+        -- in arity: Nothing for a reference naming anything but exactly one player,
+        -- since "whose attack?" has no sum. TalliedThisTurn's in footing: a fold over
+        -- TurnRegisters.events, whose extent Engine.beginTurnOf's clearing makes
+        -- "this turn".
         --
         -- The LOG and not Combat.declaredAttackers, which CR 511.3 clears at the end of
         -- combat -- so the postcombat main phase, where every raid trigger this answers
@@ -931,15 +931,14 @@ evaluateAgainst viewOf context gs announcedOn mOid mView quantity =
         Quantity.AttackersInTheirLastTurn ref -> case playersOf ref of
           Just [pid] -> Just (toInteger (Game.attackersInTheirLastTurn gs pid))
           _ -> Nothing
-        -- CR 608.2i: how many times that player did what the tally names this turn.
-        -- OpponentsAttacked's arm in shape -- live, one player only, resolved through the
-        -- same playersOf, and Nothing for a reference naming anything but exactly
-        -- one player, since "whose discards?" has no sum. An EMPTY record answers 0
-        -- rather than Nothing, as OpponentsAttacked's does: nobody having discarded
-        -- is an answered question. What is unanswered is only the reference.
-        Quantity.TalliedThisTurn tally ref -> case playersOf ref of
-          Just [pid] -> Just (talliedThisTurn tally pid gs)
-          _ -> Nothing
+        -- CR 608.2i: how many times the players the reference names did what the
+        -- tally names this turn, SUMMED -- Heliod, the Warped Eclipse's "each card
+        -- your opponents have drawn this turn". The history roster, LifeChanged's:
+        -- CR 800.4i finds an action taken by a player who has since left the game.
+        -- An EMPTY record answers 0 rather than Nothing: nobody having discarded is
+        -- an answered question. What is unanswered is only the reference.
+        Quantity.TalliedThisTurn tally ref ->
+          fmap (sum . fmap (\pid -> talliedThisTurn tally pid gs)) (historyPlayersOf ref)
         -- CR 119.3 / 608.2i: how much life the players the tally names gained or lost
         -- during the turn it names, SUMMED -- a live fold over that turn's log
         -- (Game.turnLog). Summed rather than asked of one player, so "an opponent
@@ -1885,7 +1884,7 @@ talliesWhatHappened quantity = case quantity of
   Quantity.AttackersDeclaredThisCombat -> False
   Quantity.AttackedInLastTurnOf _ -> False
   Quantity.AttackersInTheirLastTurn _ -> False
-  Quantity.TalliedThisTurn _ _ -> False
+  Quantity.TalliedThisTurn _ _ -> True
   Quantity.LifeChanged _ -> True
   Quantity.PlayersDealtDamage _ -> True
   Quantity.DamageDealtToPlayersThisTurn _ -> True

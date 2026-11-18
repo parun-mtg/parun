@@ -4,7 +4,7 @@ import qualified Data.Set as Set
 import qualified Parun.Types.PlayerAction as PlayerAction
 import qualified Parun.Types.Zone as Zone
 
--- | What Parun.Types.Quantity's TalliedThisTurn counts a player doing this turn.
+-- | What Parun.Types.Quantity's TalliedThisTurn counts players doing this turn.
 data TurnTally
   = -- | CR 701.9a: cards discarded, a cycled card included (CR 702.29a).
     CardsDiscarded
