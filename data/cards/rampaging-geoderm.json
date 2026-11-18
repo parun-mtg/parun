@@ -3,10 +3,10 @@
     {
       "keywords": [
         {
-          "type": "Trample"
+          "type": "Haste"
         },
         {
-          "type": "Haste"
+          "type": "Trample"
         }
       ],
       "manaCost": [
@@ -203,8 +203,8 @@
       ],
       "typeLine": {
         "subtypes": [
-          "Dinosaur",
-          "Beast"
+          "Beast",
+          "Dinosaur"
         ],
         "types": [
           "Creature"

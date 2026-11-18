@@ -3,10 +3,10 @@
     {
       "keywords": [
         {
-          "type": "Flying"
+          "type": "FirstStrike"
         },
         {
-          "type": "FirstStrike"
+          "type": "Flying"
         },
         {
           "type": "Haste"
@@ -199,10 +199,6 @@
                                   "type": "HasCardType",
                                   "value": "Battle"
                                 },
-                                "whatSource": {
-                                  "type": "And",
-                                  "value": []
-                                },
                                 "whoRecipient": {
                                   "type": "AnyPlayer"
                                 }
@@ -240,8 +236,8 @@
       ],
       "typeLine": {
         "subtypes": [
-          "Faerie",
-          "Dwarf"
+          "Dwarf",
+          "Faerie"
         ],
         "supertypes": [
           "Legendary"
