@@ -164,7 +164,7 @@
     ],
     "step": "Upkeep"
   },
-  "description": "CR 714.2 / 701.17a / 601.2d / 701.14a: Vorinclex transforms only as a sorcery; The Grand Evolution's chapters put up to two milled creatures onto the battlefield, distribute seven counters, give alice's creatures a fight ability, and return Vorinclex",
+  "description": "CR 701.27a / 715.2b / 701.17a / 601.2d / 701.14a: Vorinclex transforms only as a sorcery; The Grand Evolution's chapters put up to two milled creatures onto the battlefield, distribute seven counters, give alice's creatures a fight ability, and return Vorinclex",
   "note": "The activation is refused in upkeep with eight Forests open. Chapter I takes Hill Giant and Craw Wurm from ten milled cards and leaves Grizzly Bears; chapter II divides seven counters 3 and 4; chapter III brings Vorinclex back with no lore counters, whose search finds no Forest, and the Wurm's granted ability may target bob's Serra Angel but not alice's own Hill Giant; bob's Llanowar Elves give the slot a second legal target so the refusal is not absorbed by a lone target bound unasked.",
   "timeline": [
     {

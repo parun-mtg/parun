@@ -103,7 +103,7 @@
     ],
     "step": "PrecombatMain"
   },
-  "description": "CR 611.2b / 613.1d / 305.6: Wrenn and Realmbreaker's +1 makes a land a hasty, vigilant, hexproof 3/3 Elemental until alice's next turn, and her lands tap for any color",
+  "description": "CR 611.2a / 613.1d / 605.1a: Wrenn and Realmbreaker's +1 makes a land a hasty, vigilant, hexproof 3/3 Elemental until alice's next turn, and her lands tap for any color",
   "note": "After combat f2 pays Merfolk of the Pearl Trident's {U} through the granted ability; f1 has haste, vigilance and hexproof, attacks without tapping, stays a creature through bob's turn and is only a Forest again at alice's next upkeep.",
   "timeline": [
     {

@@ -88,7 +88,7 @@
     ],
     "step": "PrecombatMain"
   },
-  "description": "CR 603.5 / 509.1b: Tidal Terror's attack trigger lets its controller tap two other untapped creatures she controls; having done so, it can't be blocked this turn",
+  "description": "CR 603.5 / 509.1b: Tidal Terror's attack trigger lets its controller tap two other untapped creatures they control; having done so, it can't be blocked this turn",
   "note": "Alice taps Grizzly Bears and Memnite, leaving Llanowar Elves untapped; bob's Hill Giant is asked for no blocks (an unscheduled block prompt would fail the run) and the 5-power Terror hits bob to 15.",
   "timeline": [
     {
