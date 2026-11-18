@@ -1471,10 +1471,10 @@ palladiumMyrSpec s registry = Spec.describe s "Palladium Myr" $ do
     palladiumMyr <- S.printingOf s registry "Palladium Myr"
     let (_, g1) = S.addPermanent ashaya S.alice (Setup.emptyGame S.bothPlayers)
         (myrId, gs) = S.addPermanent palladiumMyr S.alice g1
-        -- CR 106.3: the Myr is an artifact whichever yield is taken, so both
-        -- units carry the artifact ProductionTag.CardType -- including the {G} Ashaya's land
-        -- grant adds, which is a land that is still an artifact.
-        artifactUnit t = ManaUnit.MkManaUnit {ManaUnit.manaType = t, ManaUnit.tags = Set.singleton (ProductionTag.CardType CardType.Artifact), ManaUnit.retention = ManaRetention.Ordinary, ManaUnit.restriction = Nothing, ManaUnit.rider = Nothing, ManaUnit.spendTrigger = Nothing, ManaUnit.sourceChoices = Nothing, ManaUnit.sourceLastExiled = Nothing, ManaUnit.producer = Nothing}
+        -- CR 106.3: the Myr is an artifact creature whichever yield is taken, so
+        -- both units carry both card-type tags -- including the {G} Ashaya's land
+        -- grant adds, which is a land that is still an artifact creature.
+        artifactUnit t = ManaUnit.MkManaUnit {ManaUnit.manaType = t, ManaUnit.tags = Set.fromList [ProductionTag.CardType CardType.Artifact, ProductionTag.CardType CardType.Creature], ManaUnit.retention = ManaRetention.Ordinary, ManaUnit.restriction = Nothing, ManaUnit.rider = Nothing, ManaUnit.spendTrigger = Nothing, ManaUnit.sourceChoices = Nothing, ManaUnit.sourceLastExiled = Nothing, ManaUnit.producer = Nothing}
         green = artifactUnit (ManaType.Colored Color.Green)
         colorless = artifactUnit ManaType.Colorless
     Spec.assertEqWith
