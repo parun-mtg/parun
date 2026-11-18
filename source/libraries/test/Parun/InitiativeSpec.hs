@@ -54,7 +54,7 @@ dungeonNamesOf pid gs =
   List.sort
     ( Maybe.mapMaybe
         (\oid -> fmap (show . CardName.unwrap . Face.name) (Game.faceOf oid gs))
-        (filter (\oid -> maybe False Dungeon.isDungeonFace (Game.faceOf oid gs)) (Game.zoneMembers Zone.Command pid gs))
+        (filter (`Dungeon.isDungeon` gs) (Game.zoneMembers Zone.Command pid gs))
     )
 
 -- The room this player's venture marker is on (CR 309.4), or Nothing when they

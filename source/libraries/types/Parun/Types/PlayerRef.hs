@@ -1,6 +1,7 @@
 module Parun.Types.PlayerRef where
 
 import qualified Parun.Types.AttackingPlayers as AttackingPlayers
+import qualified Parun.Types.ExiledPile as ExiledPile
 import qualified Parun.Types.Holder as Holder
 import qualified Parun.Types.Hop as Hop
 import qualified Parun.Types.ObjectId as ObjectId
@@ -158,6 +159,9 @@ data PlayerRef
     HolderOfBound Holder.Holder Hop.Hop SlotName.SlotName
   | -- | CR 608.2h: HolderOfBound's plural, the holders of every object a slot names, groups included.
     HoldersOfBound Holder.Holder Hop.Hop SlotName.SlotName
+  | -- | CR 607.2a / 108.3: the owners of the cards in exile the object a slot
+    -- names links to in this pile, GO TO JAIL's "the exiled card's owner".
+    OwnersOfExiledBy ExiledPile.ExiledPile SlotName.SlotName
   | -- | CR 303.4b / 303.4m: the player the object a slot names is attached
     -- to, Paradox Haze's "enchanted player".
     PlayerHostOfBound SlotName.SlotName

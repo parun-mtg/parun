@@ -1041,6 +1041,7 @@ playerRefNames asking x = case x of
   PlayerRef.Candidate -> mempty
   PlayerRef.HolderOfBound _holder _hop slotName -> slotNames asking slotName
   PlayerRef.HoldersOfBound _holder _hop slotName -> slotNames asking slotName
+  PlayerRef.OwnersOfExiledBy _exiledPile slotName -> slotNames asking slotName
   PlayerRef.PlayerHostOfBound slotName -> slotNames asking slotName
   PlayerRef.AttackedByBound slotName -> slotNames asking slotName
   PlayerRef.HolderOfObject _holder objectId -> names asking (== objectId)

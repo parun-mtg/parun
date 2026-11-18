@@ -17,9 +17,9 @@ import qualified Parun.Types.BecomeCopy as BecomeCopy
 -- Parun.Codec.AsCopy's reason: CR 707.9's "except ..." clause is absent from most
 -- printings, @newTargets@ for the same reason, and @duration@ is optional for the same reason -- most copy effects
 -- state none.
-codec :: (Typeable.Typeable ability, Eq ability) => Codec.Codec ability -> Codec.Codec (BecomeCopy.BecomeCopy ability)
-codec abilityCodec = Fields.object $ do
-  original <- Fields.required "original" CopyOriginal.codec BecomeCopy.original
+codec :: (Typeable.Typeable card, Typeable.Typeable ability, Eq ability) => Codec.Codec card -> Codec.Codec ability -> Codec.Codec (BecomeCopy.BecomeCopy card ability)
+codec cardCodec abilityCodec = Fields.object $ do
+  original <- Fields.required "original" (CopyOriginal.codec cardCodec) BecomeCopy.original
   subject <- Fields.required "subject" ObjectRef.codec BecomeCopy.subject
   duration <- Fields.defaulted "duration" Nothing (Common.maybe Duration.codec) BecomeCopy.duration
   exceptions <- Fields.defaulted "exceptions" [] (Common.list (CopyException.codec abilityCodec)) BecomeCopy.exceptions
