@@ -3,11 +3,15 @@ module Parun.Codec.PermanentsDealDamageToPlayerSpec where
 import qualified Parun.Codec.PermanentsDealDamageToPlayer as PermanentsDealDamageToPlayer
 import qualified Parun.JsonCodec.Common as Common
 import qualified Parun.Spec as Spec
+import qualified Parun.Types.Compares as Compares
+import qualified Parun.Types.Comparison as Comparison
+import qualified Parun.Types.Condition as Condition
 import qualified Parun.Types.DamageKind as DamageKind
 import qualified Parun.Types.Filter as Filter
 import qualified Parun.Types.Holder as Holder
 import qualified Parun.Types.PermanentsDealDamageToPlayer as PermanentsDealDamageToPlayer
 import qualified Parun.Types.PlayerRelation as PlayerRelation
+import qualified Parun.Types.Quantity as Quantity
 
 spec :: (Monad m, Monad n) => Spec.Spec m n -> n ()
 spec s = Spec.describe s "Parun.Codec.PermanentsDealDamageToPlayer" $ do
@@ -24,7 +28,8 @@ spec s = Spec.describe s "Parun.Codec.PermanentsDealDamageToPlayer" $ do
             PermanentsDealDamageToPlayer.recipient = PlayerRelation.You,
             PermanentsDealDamageToPlayer.oneOrMorePlayers = False,
             PermanentsDealDamageToPlayer.anyController = False,
-            PermanentsDealDamageToPlayer.orBattle = False
+            PermanentsDealDamageToPlayer.orBattle = False,
+            PermanentsDealDamageToPlayer.while = Nothing
           }
       )
       " {\"filter\":{\"type\":\"HeldBy\",\"value\":{\"holder\":\"Controller\",\"relation\":\"Opponent\"}},\"kind\":\"Combat\",\"recipient\":\"You\"} "
@@ -40,7 +45,8 @@ spec s = Spec.describe s "Parun.Codec.PermanentsDealDamageToPlayer" $ do
             PermanentsDealDamageToPlayer.recipient = PlayerRelation.AnyPlayer,
             PermanentsDealDamageToPlayer.oneOrMorePlayers = True,
             PermanentsDealDamageToPlayer.anyController = False,
-            PermanentsDealDamageToPlayer.orBattle = False
+            PermanentsDealDamageToPlayer.orBattle = False,
+            PermanentsDealDamageToPlayer.while = Nothing
           }
       )
       " {\"filter\":{\"type\":\"HeldBy\",\"value\":{\"holder\":\"Controller\",\"relation\":\"You\"}},\"oneOrMorePlayers\":true,\"recipient\":\"AnyPlayer\"} "
@@ -55,7 +61,8 @@ spec s = Spec.describe s "Parun.Codec.PermanentsDealDamageToPlayer" $ do
             PermanentsDealDamageToPlayer.recipient = PlayerRelation.You,
             PermanentsDealDamageToPlayer.oneOrMorePlayers = False,
             PermanentsDealDamageToPlayer.anyController = True,
-            PermanentsDealDamageToPlayer.orBattle = False
+            PermanentsDealDamageToPlayer.orBattle = False,
+            PermanentsDealDamageToPlayer.while = Nothing
           }
       )
       " {\"anyController\":true,\"filter\":{\"type\":\"And\",\"value\":[]},\"kind\":\"Combat\",\"recipient\":\"You\"} "
@@ -70,8 +77,25 @@ spec s = Spec.describe s "Parun.Codec.PermanentsDealDamageToPlayer" $ do
             PermanentsDealDamageToPlayer.recipient = PlayerRelation.AnyPlayer,
             PermanentsDealDamageToPlayer.oneOrMorePlayers = False,
             PermanentsDealDamageToPlayer.anyController = False,
-            PermanentsDealDamageToPlayer.orBattle = True
+            PermanentsDealDamageToPlayer.orBattle = True,
+            PermanentsDealDamageToPlayer.while = Nothing
           }
       )
       " {\"filter\":{\"type\":\"And\",\"value\":[]},\"kind\":\"Combat\",\"orBattle\":true,\"recipient\":\"AnyPlayer\"} "
+  -- Tamiyo, Upriser Crowned's "while you're the monarch".
+  Spec.it s "MkPermanentsDealDamageToPlayer, while" $
+    Common.assertCodec
+      s
+      PermanentsDealDamageToPlayer.codec
+      ( PermanentsDealDamageToPlayer.MkPermanentsDealDamageToPlayer
+          { PermanentsDealDamageToPlayer.filter = Filter.And [],
+            PermanentsDealDamageToPlayer.kind = Just DamageKind.Combat,
+            PermanentsDealDamageToPlayer.recipient = PlayerRelation.You,
+            PermanentsDealDamageToPlayer.oneOrMorePlayers = False,
+            PermanentsDealDamageToPlayer.anyController = True,
+            PermanentsDealDamageToPlayer.orBattle = False,
+            PermanentsDealDamageToPlayer.while = Just (Condition.Compares (Compares.MkCompares (Quantity.Literal 0) Comparison.Exactly (Quantity.Literal 0)))
+          }
+      )
+      " {\"anyController\":true,\"filter\":{\"type\":\"And\",\"value\":[]},\"kind\":\"Combat\",\"recipient\":\"You\",\"while\":{\"type\":\"Compares\",\"value\":{\"comparison\":\"Exactly\",\"measured\":{\"type\":\"Literal\",\"value\":0},\"threshold\":{\"type\":\"Literal\",\"value\":0}}}} "
   Spec.it s "has a schema" $ Common.assertHasSchema s PermanentsDealDamageToPlayer.codec

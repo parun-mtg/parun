@@ -2,6 +2,7 @@
 
 module Parun.Codec.PermanentsDealDamageToPlayer where
 
+import qualified Parun.Codec.Condition as Condition
 import qualified Parun.Codec.DamageKind as DamageKind
 import qualified Parun.Codec.Filter as Filter
 import qualified Parun.Codec.Keyword as Keyword
@@ -16,7 +17,7 @@ import qualified Parun.Types.PermanentsDealDamageToPlayer as PermanentsDealDamag
 -- the recipient, which is what "deal damage to a player" says. `kind` defaults
 -- to any damage and `oneOrMorePlayers` to that same "to a player", DamageTrigger's
 -- defaults, and `anyController` to the split per controller every printing
--- naming one wants, and `orBattle` to a player alone.
+-- naming one wants, `orBattle` to a player alone, and `while` to no gate.
 codec :: Codec.Codec PermanentsDealDamageToPlayer.PermanentsDealDamageToPlayer
 codec = Fields.object $ do
   filter_ <- Fields.required "filter" (Filter.codec Keyword.codec) PermanentsDealDamageToPlayer.filter
@@ -25,6 +26,7 @@ codec = Fields.object $ do
   oneOrMorePlayers <- Fields.defaulted "oneOrMorePlayers" False Common.boolean PermanentsDealDamageToPlayer.oneOrMorePlayers
   anyController <- Fields.defaulted "anyController" False Common.boolean PermanentsDealDamageToPlayer.anyController
   orBattle <- Fields.defaulted "orBattle" False Common.boolean PermanentsDealDamageToPlayer.orBattle
+  while_ <- Fields.defaulted "while" Nothing (Common.maybe Condition.codec) PermanentsDealDamageToPlayer.while
   pure
     PermanentsDealDamageToPlayer.MkPermanentsDealDamageToPlayer
       { PermanentsDealDamageToPlayer.filter = filter_,
@@ -32,5 +34,6 @@ codec = Fields.object $ do
         PermanentsDealDamageToPlayer.recipient = recipient,
         PermanentsDealDamageToPlayer.oneOrMorePlayers = oneOrMorePlayers,
         PermanentsDealDamageToPlayer.anyController = anyController,
-        PermanentsDealDamageToPlayer.orBattle = orBattle
+        PermanentsDealDamageToPlayer.orBattle = orBattle,
+        PermanentsDealDamageToPlayer.while = while_
       }

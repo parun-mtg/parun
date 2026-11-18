@@ -3998,7 +3998,7 @@ triggerConditionFilters triggerCondition = case triggerCondition of
   -- CR 603.2c's batch reading of the same written form carries the same Filter,
   -- swept the same way as a OneOrMore Leaves: answering [] here would exempt
   -- Pia Nalaar's "artifact creatures you control" from every corpus filter lint.
-  TriggerCondition.PermanentsDealDamageToPlayer p -> unframed [PermanentsDealDamageToPlayer.filter p]
+  TriggerCondition.PermanentsDealDamageToPlayer p -> unframed [PermanentsDealDamageToPlayer.filter p] <> foldMap (frame Unframed . conditionFilters) (PermanentsDealDamageToPlayer.while p)
   TriggerCondition.CreatureDealtCombatDamageToMonarch -> []
   TriggerCondition.CreaturesDealtCombatDamageToInitiative -> []
   TriggerCondition.PlayerTookInitiative -> []

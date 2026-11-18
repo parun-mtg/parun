@@ -1,5 +1,6 @@
 module Parun.Types.PermanentsDealDamageToPlayer where
 
+import qualified Parun.Types.Condition as Condition
 import qualified Parun.Types.DamageKind as DamageKind
 import qualified Parun.Types.Filter as Filter
 import qualified Parun.Types.Keyword as Keyword
@@ -27,6 +28,10 @@ data PermanentsDealDamageToPlayer = MkPermanentsDealDamageToPlayer
     anyController :: Bool,
     -- | CR 120.1a: "to a player OR BATTLE" (Zurgo and Ojutai), a battle
     -- recipient admitted beside the player, one occurrence per battle hit.
-    orBattle :: Bool
+    orBattle :: Bool,
+    -- | Tamiyo, Upriser Crowned's "WHILE YOU'RE THE MONARCH": a state asked of
+    -- the game the damage left (CR 603.2) and never re-checked, as
+    -- Parun.Types.SpellCast.while is. Nothing for damage at any time.
+    while :: Maybe Condition.Condition
   }
   deriving (Eq, Ord, Show)
