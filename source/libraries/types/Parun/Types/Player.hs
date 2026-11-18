@@ -8,6 +8,7 @@ import qualified Parun.Types.CardIdentity as CardIdentity
 import qualified Parun.Types.CardName as CardName
 import qualified Parun.Types.Designation as Designation
 import qualified Parun.Types.DraftNote as DraftNote
+import qualified Parun.Types.EventTeam as EventTeam
 import qualified Parun.Types.GraveyardOrder as GraveyardOrder
 import qualified Parun.Types.OutsideCard as OutsideCard
 import qualified Parun.Types.PlayerCounterKind as PlayerCounterKind
@@ -81,6 +82,10 @@ data Player = MkPlayer
     -- unique. An absent member means the player does not have that mark, and
     -- nothing in either rule takes one back.
     designations :: Set.Set PlayerDesignation.PlayerDesignation,
+    -- | The event team the player is on, fixed before the game and never
+    -- written in it; Nothing for a player on none (docs/decisions.md, "Where a
+    -- player's event team comes from").
+    eventTeam :: Maybe EventTeam.EventTeam,
     -- | CR 903.3: the cards this player designated as their commanders, empty
     -- outside a Commander game. The designation is made before the game begins
     -- and never changes.

@@ -55,6 +55,7 @@ import qualified Parun.Types.DealtDamage as DealtDamage
 import qualified Parun.Types.Devotion as Devotion
 import qualified Parun.Types.DraftNote as DraftNote
 import qualified Parun.Types.DraftNoteTally as DraftNoteTally
+import qualified Parun.Types.EventTeamTally as EventTeamTally
 import qualified Parun.Types.ExiledPile as ExiledPile
 import qualified Parun.Types.Exponentiation as Exponentiation
 import qualified Parun.Types.Face as Face
@@ -573,6 +574,11 @@ evaluateAgainst viewOf context gs announcedOn mOid mView quantity =
         Quantity.HasPlayerDesignation (PlayerDesignationTally.MkPlayerDesignationTally ref mark) -> case playersOf ref of
           Nothing -> Nothing
           Just pids -> Just (if any (\pid -> maybe False (Set.member mark . Player.designations) (Map.lookup pid (GameState.players gs))) pids then 1 else 0)
+        -- HasPlayerDesignation's disjunction over the named seats, over
+        -- Player.eventTeam.
+        Quantity.OnEventTeam (EventTeamTally.MkEventTeamTally ref team) -> case playersOf ref of
+          Nothing -> Nothing
+          Just pids -> Just (if any (\pid -> maybe False ((== Just team) . Player.eventTeam) (Map.lookup pid (GameState.players gs))) pids then 1 else 0)
         -- CR 103.1: is that player the starting player? IsMonarch's arm down to the
         -- arity argument -- there is exactly one starting player, so a disjunction over
         -- the named seats and a sum over them agree on every board.
@@ -1817,6 +1823,7 @@ talliesWhatHappened quantity = case quantity of
   Quantity.Speed _ -> False
   Quantity.IsMonarch _ -> False
   Quantity.HasPlayerDesignation {} -> False
+  Quantity.OnEventTeam {} -> False
   Quantity.IsStartingPlayer _ -> False
   Quantity.IsActivePlayer _ -> False
   Quantity.TurnsBegun {} -> False

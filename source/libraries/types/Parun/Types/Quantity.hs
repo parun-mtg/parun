@@ -21,6 +21,7 @@ import qualified Parun.Types.DealtDamage as DealtDamage
 import qualified Parun.Types.Designation as Designation
 import qualified Parun.Types.Devotion as Devotion
 import qualified Parun.Types.DraftNoteTally as DraftNoteTally
+import qualified Parun.Types.EventTeamTally as EventTeamTally
 import qualified Parun.Types.InZone as InZone
 import qualified Parun.Types.Keyword as Keyword
 import qualified Parun.Types.KeywordDesignator as KeywordDesignator
@@ -138,6 +139,9 @@ data Quantity
   | -- | CR 702.131c \/ 702.195b: 1 if that player has that rest-of-game mark, else
     -- 0; a player who has never had it reads 0.
     HasPlayerDesignation PlayerDesignationTally.PlayerDesignationTally
+  | -- | 1 if that player is on that event team, else 0 (docs/decisions.md,
+    -- "Where a player's event team comes from").
+    OnEventTeam EventTeamTally.EventTeamTally
   | -- | CR 103.1 \/ 103.1c: 1 if that player is the starting player -- the head
     -- of GameState.seating -- else 0.
     IsStartingPlayer PlayerRef.PlayerRef

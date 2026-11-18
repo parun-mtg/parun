@@ -9,6 +9,7 @@ import qualified Data.Set as Set
 import qualified Data.Text as Text
 import qualified Parun.Codec.CardName as CardName
 import qualified Parun.Codec.DraftNote as DraftNote
+import qualified Parun.Codec.EventTeam as EventTeam
 import qualified Parun.Codec.GraveyardOrder as GraveyardOrder
 import qualified Parun.Codec.Label as Label
 import qualified Parun.Codec.Placement as Placement
@@ -25,7 +26,7 @@ import qualified Parun.Types.ManaType as ManaType
 import qualified Parun.Types.Seat as Seat
 
 -- | Life defaults to CR 119.1's twenty, the mana pool to empty, speed to none
--- (CR 702.179b), and the graveyard order to Indifferent.
+-- (CR 702.179b), the event team to none, and the graveyard order to Indifferent.
 codec :: Codec.Codec Seat.Seat
 codec = Fields.object $ do
   name <- Fields.required "name" Label.codec Seat.name
@@ -35,6 +36,7 @@ codec = Fields.object $ do
   range <- Fields.defaulted "range" Nothing (Common.maybe Common.natural) Seat.range
   emperor <- Fields.defaulted "emperor" False Common.boolean Seat.emperor
   speed <- Fields.defaulted "speed" Nothing (Common.maybe Common.natural) Seat.speed
+  eventTeam <- Fields.defaulted "eventTeam" Nothing (Common.maybe EventTeam.codec) Seat.eventTeam
   graveyardOrder <- Fields.defaulted "graveyardOrder" GraveyardOrder.Type.Indifferent GraveyardOrder.codec Seat.graveyardOrder
   manaPool <- Fields.defaulted "manaPool" [] symbols Seat.manaPool
   battlefield <- Fields.defaulted "battlefield" Seq.empty (Common.seq Placement.codec) Seat.battlefield
@@ -58,6 +60,7 @@ codec = Fields.object $ do
         Seat.range = range,
         Seat.emperor = emperor,
         Seat.speed = speed,
+        Seat.eventTeam = eventTeam,
         Seat.graveyardOrder = graveyardOrder,
         Seat.manaPool = manaPool,
         Seat.battlefield = battlefield,

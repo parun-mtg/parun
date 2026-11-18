@@ -5291,6 +5291,8 @@ quantityReads q = case q of
   -- Reads Player.designations, which no Modification writes, so CR 613.8a's
   -- dependency cannot turn on it.
   Quantity.Type.HasPlayerDesignation {} -> Set.empty
+  -- Reads Player.eventTeam, which nothing writes in a game.
+  Quantity.Type.OnEventTeam {} -> Set.empty
   Quantity.Type.IsStartingPlayer _ -> Set.empty
   Quantity.Type.IsActivePlayer _ -> Set.empty
   Quantity.Type.TurnsBegun {} -> Set.empty

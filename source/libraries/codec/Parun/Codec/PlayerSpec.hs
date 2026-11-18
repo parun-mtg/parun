@@ -12,6 +12,7 @@ import qualified Parun.Types.CardName as CardName
 import qualified Parun.Types.Departure as Departure
 import qualified Parun.Types.Designation as Designation
 import qualified Parun.Types.DraftNote as DraftNote
+import qualified Parun.Types.EventTeam as EventTeam
 import qualified Parun.Types.GraveyardOrder as GraveyardOrder
 import qualified Parun.Types.OutsideCard as OutsideCard
 import qualified Parun.Types.Player as Player
@@ -44,6 +45,7 @@ spec s = Spec.describe s "Parun.Codec.Player" $ do
           Player.ringTemptations = 0,
           Player.speed = Nothing,
           Player.designations = Set.empty,
+          Player.eventTeam = Nothing,
           Player.commander = Set.empty,
           Player.commanderCasts = Map.empty,
           Player.commanderDamage = Map.empty,
@@ -85,6 +87,7 @@ spec s = Spec.describe s "Parun.Codec.Player" $ do
           Player.ringTemptations = 3,
           Player.speed = Just 4,
           Player.designations = Set.fromList [PlayerDesignation.CitysBlessing, PlayerDesignation.EnduringStory],
+          Player.eventTeam = Just EventTeam.SpeedDemons,
           Player.commander = Set.fromList [CardIdentity.MkCardIdentity 20 (PlayerId.MkPlayerId 1), CardIdentity.MkCardIdentity 21 (PlayerId.MkPlayerId 1)],
           Player.commanderCasts = Map.fromList [(CardIdentity.MkCardIdentity 20 (PlayerId.MkPlayerId 1), 6), (CardIdentity.MkCardIdentity 21 (PlayerId.MkPlayerId 1), 19)],
           Player.commanderDamage = Map.singleton (CardIdentity.MkCardIdentity 22 (PlayerId.MkPlayerId 2)) 8,
@@ -105,7 +108,7 @@ spec s = Spec.describe s "Parun.Codec.Player" $ do
           <> ",\"counters\":[{\"key\":\"Energy\",\"value\":2}"
           <> ",{\"key\":\"Poison\",\"value\":0}]"
           <> ",\"ringTemptations\":3,\"speed\":4"
-          <> ",\"designations\":[\"CitysBlessing\",\"EnduringStory\"]"
+          <> ",\"designations\":[\"CitysBlessing\",\"EnduringStory\"],\"eventTeam\":\"SpeedDemons\""
           <> ",\"commander\":[{\"serial\":20,\"startingOwner\":1},{\"serial\":21,\"startingOwner\":1}],\"commanderCasts\":[{\"key\":{\"serial\":20,\"startingOwner\":1},\"value\":6},{\"key\":{\"serial\":21,\"startingOwner\":1},\"value\":19}]"
           <> ",\"commanderDamage\":[{\"key\":{\"serial\":22,\"startingOwner\":2},\"value\":8}],\"dungeons\":[9,11],\"outsideTheGame\":{\"12\":13},\"chosenStickerSheets\":[0,2],\"completedDungeons\":10,\"completedDungeonNames\":[\"Tomb of Annihilation\",\"Undercity\"]"
           <> ",\"draftNotes\":[{\"key\":\"Lurking Automaton\",\"value\":[{\"type\":\"Number\",\"value\":4},{\"type\":\"Number\",\"value\":9}]}]"

@@ -194,6 +194,8 @@ gameWith settings order =
               -- 702.131b, 702.195a) or, for ascend, a resolving spell (CR 702.131a),
               -- and this function produces neither.
               Player.designations = Set.empty,
+              -- A scenario's seat sets it (Parun.Scenario); nothing else does.
+              Player.eventTeam = Nothing,
               Player.commander = Set.empty,
               Player.commanderCasts = Map.empty,
               -- CR 903.10a counts "over the course of the game", and no

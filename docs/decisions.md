@@ -98,6 +98,29 @@ Entries are ordered by the first rule each cites.
   and `cr-509-1a-false-orders-never-has-a-tapped-target-block.json`.
 - **Issue**: #5005.
 
+## Where a player's event team comes from
+
+- **Question**: Now THIS Is Aether Racing does one thing for a player on Team
+  Cloudspire and another for one on Team Speed Demons. The CR never mentions
+  these teams, and Scryfall lists no rulings. Where does a player's team come
+  from, and what does a player on neither get?
+- **Rules**: CR 102.3, 808.1 (a different team: a seating within one game),
+  601.2c; CR of 2026-11-06.
+- **Decision**: A pregame setting per player, fixed before the game and never
+  changed in it: a scenario seat's `eventTeam`, held as `Player.eventTeam`,
+  which a restart and a subgame keep. A player on no team gets neither
+  paragraph. Either way the spell has its target, since CR 601.2c drops one
+  only for a cost or mode chosen.
+- **Rejected**: A deck property: Winter's Demonmech's "you can't include this
+  card in your deck if you're on Team Cloudspire" puts the team ahead of the
+  deck. A game-wide setting (`GameSettings`): the teams are a player's, and
+  two players in one game may be on different ones.
+- **Site**: `Parun.Types.Quantity.OnEventTeam`, read in
+  `Parun.Engine.Quantity`, proved by the scenarios
+  `now-this-is-aether-racing-deals-3-damage-for-team-cloudspire` and
+  `now-this-is-aether-racing-exiles-two-to-play-for-team-speed-demons`.
+- **Issue**: #5304.
+
 ## Who is the active player while a turn is skipped
 
 - **Question**: CR 733.3 has the active player break a fragmented loop, and CR
