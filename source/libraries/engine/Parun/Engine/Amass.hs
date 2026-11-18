@@ -61,6 +61,7 @@ import qualified Parun.Types.PlayerRelation as PlayerRelation
 import qualified Parun.Types.Power as Power
 import qualified Parun.Types.Prompt as Prompt
 import qualified Parun.Types.Quantity as Quantity
+import qualified Parun.Types.Settle as Settle
 import qualified Parun.Types.StoredEffects as StoredEffects
 import qualified Parun.Types.Subtype as Subtype.Type
 import qualified Parun.Types.Surveil as Surveil
@@ -277,7 +278,7 @@ armiesOf pid gs =
 -- caller binds it under the effect's slot for a later clause of the same
 -- resolution to read (Surrounded by Orcs). Nothing is rule 701.47b's impossible
 -- choice, the empty pool below, and not a failed amass.
-amass :: Game () -> PlayerId -> ObjectId -> ObjectId -> AmassKind.AmassKind -> Natural -> Game (Maybe ObjectId)
+amass :: Settle.Settle -> PlayerId -> ObjectId -> ObjectId -> AmassKind.AmassKind -> Natural -> Game (Maybe ObjectId)
 amass settle pid source resolving kind n = do
   gs0 <- State.get
   -- First: the token, and only if they control no candidate.

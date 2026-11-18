@@ -130,6 +130,7 @@ import qualified Parun.Types.ReturnPermanents as ReturnPermanents
 import qualified Parun.Types.Sacrifice as Sacrifice
 import qualified Parun.Types.Scope as Scope
 import qualified Parun.Types.Seat as Seat
+import qualified Parun.Types.Settle as Settle
 import qualified Parun.Types.Sickness as Sickness
 import qualified Parun.Types.SlotName as SlotName
 import qualified Parun.Types.Staged as Staged
@@ -1192,8 +1193,8 @@ asmorSpec s registry =
       asmorPrinting <- S.printingOf s registry "Asmoranomardicadaistinaculdacar"
       vultures <- S.printingOf s registry "Circling Vultures"
       let (asmor, vulturesId, gs) = asmorBoard swamp asmorPrinting vultures
-          discarded = S.runPure S.identityAnswer gs (Event.discard (pure ()) DiscardCause.Ordinary S.alice vulturesId)
-          binned = S.runPure S.identityAnswer gs (Event.changeZone (pure ()) vulturesId Zone.Graveyard)
+          discarded = S.runPure S.identityAnswer gs (Event.discard Settle.none DiscardCause.Ordinary S.alice vulturesId)
+          binned = S.runPure S.identityAnswer gs (Event.changeZone Settle.none vulturesId Zone.Graveyard)
           nextTurn =
             (Engine.beginTurnOf S.alice discarded)
               { GameState.turn =
@@ -1217,7 +1218,7 @@ asmorSpec s registry =
       asmorPrinting <- S.printingOf s registry "Asmoranomardicadaistinaculdacar"
       vultures <- S.printingOf s registry "Circling Vultures"
       let (asmor, vulturesId, gs) = asmorBoard swamp asmorPrinting vultures
-          discarded = S.runPure S.identityAnswer gs (Event.discard (pure ()) DiscardCause.Ordinary S.alice vulturesId)
+          discarded = S.runPure S.identityAnswer gs (Event.discard Settle.none DiscardCause.Ordinary S.alice vulturesId)
           manaOf state = fmap Cost.Type.mana (Cost.costsFor S.alice (S.printingName asmorPrinting) asmor state)
           blackRed = ManaSymbol.Hybrid (Hybrid.MkHybrid (ManaType.Colored Color.Black) (ManaType.Colored Color.Red))
       Spec.assertEqWith s "undiscarded: the printed cost alone, unpayable" (manaOf gs) [Nothing]
@@ -1230,7 +1231,7 @@ asmorSpec s registry =
       asmorPrinting <- S.printingOf s registry "Asmoranomardicadaistinaculdacar"
       vultures <- S.printingOf s registry "Circling Vultures"
       let (asmor, vulturesId, gs) = asmorBoard swamp asmorPrinting vultures
-          discarded = S.runPure S.identityAnswer gs (Event.discard (pure ()) DiscardCause.Ordinary S.alice vulturesId)
+          discarded = S.runPure S.identityAnswer gs (Event.discard Settle.none DiscardCause.Ordinary S.alice vulturesId)
           cast = S.runPure S.identityAnswer discarded (S.cast S.alice asmor)
           resolved = S.runPure S.identityAnswer cast Stack.resolveTop
           -- CR 400.7 mints a new id on each move, so the permanent is the
@@ -2018,7 +2019,7 @@ championOfTheWeirdSpec s registry =
       (champion, _, brawler, _, gs) <- championBoard s registry True
       let resolved = S.runPure (beholdingOne brawler) (S.runPure (beholdingOne brawler) gs (S.cast S.alice champion)) Stack.resolveTop
           onField = filter (\o -> fmap S.nameOf (Game.cardOf o resolved) == Just (cardNamed "Champion of the Weird")) (Set.toList (GameState.battlefield resolved))
-          killed = S.runPure S.identityAnswer resolved (Event.destroy (pure ()) Regenerability.Regenerable onField)
+          killed = S.runPure S.identityAnswer resolved (Event.destroy Settle.none Regenerability.Regenerable onField)
           after = S.runPure S.identityAnswer killed Engine.priorityLoop
       Spec.assertEqWith s "CR 607.2q the Brawler is back in alice's hand" (S.countByName (cardNamed "Goblin Brawler") S.alice after) 1
       Spec.assertEqWith s "and nothing is left in exile" (namesIn Zone.Exile after) []
@@ -3131,7 +3132,7 @@ humiliationSpec s registry =
       board <- build (S.landsInPlay swamp 1) asmor
       let castableIn (mId, gs) =
             let (pikerId, held) = S.addHandCard piker S.alice gs
-                discarded = S.runPure S.identityAnswer held (Event.discard (pure ()) DiscardCause.Ordinary S.alice pikerId)
+                discarded = S.runPure S.identityAnswer held (Event.discard Settle.none DiscardCause.Ordinary S.alice pikerId)
              in maybe False (\oid -> S.castable S.alice oid discarded) mId
       Spec.assertBool s (not (castableIn (board True))) "CR 613.1f the humiliated card back in hand cannot be cast for {B/R}"
       Spec.assertBool s (castableIn (board False)) "the control: with the Piker humiliated instead, the Swamp pays {B/R}"

@@ -61,6 +61,7 @@ import qualified Parun.Types.ObjectId as ObjectId
 import qualified Parun.Types.ObjectRef as ObjectRef
 import qualified Parun.Types.Phase as Phase
 import qualified Parun.Types.Printing as Printing
+import qualified Parun.Types.Settle as Settle
 import qualified Parun.Types.TurnRegisters as TurnRegisters
 import qualified Parun.Types.Zone as Zone
 
@@ -340,7 +341,7 @@ spec s registry = Spec.describe s "ModalDoubleFaced" $ do
     birgi <- S.printingOf s registry "Birgi, God of Storytelling"
     let moveTo zone printing =
           let (oid, board) = handBoardOne printing
-           in (oid, S.runPure S.identityAnswer board (Monad.void (Event.changeZoneEntering (pure ()) oid zone LibraryPosition.defaultValue EntryRiders.defaultValue (Just S.alice))))
+           in (oid, S.runPure S.identityAnswer board (Monad.void (Event.changeZoneEntering Settle.none oid zone LibraryPosition.defaultValue EntryRiders.defaultValue (Just S.alice))))
         (zofId, zofAfter) = moveTo Zone.Battlefield zof
         (_, birgiAfter) = moveTo Zone.Battlefield birgi
         (buriedId, buried) = moveTo Zone.Graveyard zof

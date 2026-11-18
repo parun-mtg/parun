@@ -110,6 +110,7 @@ import qualified Parun.Types.Prompt as Prompt
 import qualified Parun.Types.Recipient as Recipient
 import qualified Parun.Types.Result as Result
 import qualified Parun.Types.RoomHalf as RoomHalf
+import qualified Parun.Types.Settle as Settle
 import qualified Parun.Types.StepBegan as StepBegan
 import qualified Parun.Types.Subtype as Subtype
 import qualified Parun.Types.TurnRegisters as TurnRegisters
@@ -717,7 +718,7 @@ spec s registry = Spec.describe s "Room" $ do
   -- all.
   Spec.it s "CR 709.5d a Room put onto the battlefield enters with both doors shut" $ do
     (roomId, _, gs) <- setUp s registry
-    let put = snd (Engine.runGamePure S.identityAnswer gs (Event.changeZoneEntering (pure ()) roomId Zone.Battlefield LibraryPosition.defaultValue plainEntry Nothing))
+    let put = snd (Engine.runGamePure S.identityAnswer gs (Event.changeZoneEntering Settle.none roomId Zone.Battlefield LibraryPosition.defaultValue plainEntry Nothing))
     case roomPermanent put of
       [permId] -> do
         Spec.assertEqWith

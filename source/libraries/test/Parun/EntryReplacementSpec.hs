@@ -60,6 +60,7 @@ import qualified Parun.Types.Recipient as Recipient
 import qualified Parun.Types.ReplacementEffect as ReplacementEffect
 import qualified Parun.Types.ReplacementEntry as ReplacementEntry
 import qualified Parun.Types.Response as Response
+import qualified Parun.Types.Settle as Settle
 import qualified Parun.Types.StoredEffects as StoredEffects
 import qualified Parun.Types.TapState as TapState
 import qualified Parun.Types.TurnRegisters as TurnRegisters
@@ -238,7 +239,7 @@ bloodthirstSpec s registry =
         S.runPure
           S.identityAnswer
           gs
-          (Damage.applyDamage (pure ()) [DamageEvent.MkDamageEvent src target amount 0 False False False 0 Nothing Nothing mempty False mempty mempty mempty mempty Nothing mempty mempty Nothing DamageKind.Noncombat])
+          (Damage.applyDamage Settle.none [DamageEvent.MkDamageEvent src target amount 0 False False False 0 Nothing Nothing mempty False mempty mempty mempty mempty Nothing mempty mempty Nothing DamageKind.Noncombat])
       enters = castAndResolve S.aggressiveAnswer
       vampireIn = newestNamed (CardName.MkCardName $ Text.pack "Bloodrage Vampire")
       woodKinIn = newestNamed (CardName.MkCardName $ Text.pack "Petrified Wood-Kin")
@@ -293,7 +294,7 @@ bloodthirstSpec s registry =
           vampire <- S.printingOf s registry "Bloodrage Vampire"
           sentry <- S.printingOf s registry "Ogre Sentry"
           let (gs0, held, _) = bloodthirstBoard swamp vampire sentry
-              after = enters (S.runPure S.identityAnswer gs0 (Event.payLife (pure ()) S.bob 6)) held
+              after = enters (S.runPure S.identityAnswer gs0 (Event.payLife Settle.none S.bob 6)) held
           case vampireIn after of
             Nothing -> Spec.assertFailure s "Bloodrage Vampire did not reach the battlefield"
             Just vamp -> Spec.assertEqWith s "no counters" (countersOn CounterKind.PlusOnePlusOne vamp after) 0
@@ -381,7 +382,7 @@ stuffyDollSpec s registry =
       -- A noncombat event's own path, enrageSpec's: applyDamage records the
       -- DamageDealt entries, the settle puts what they triggered on the stack
       -- (CR 603.3), and the priority loop resolves it.
-      dealing events gs = resolveAll (settleAll (S.runPure S.identityAnswer gs (Damage.applyDamage (pure ()) events)))
+      dealing events gs = resolveAll (settleAll (S.runPure S.identityAnswer gs (Damage.applyDamage Settle.none events)))
       noncombat src target amount = DamageEvent.MkDamageEvent src (Recipient.ToCreature target) amount 0 False False False 0 Nothing Nothing mempty False mempty mempty mempty mempty Nothing mempty mempty Nothing DamageKind.Noncombat
       lives g = (S.lifeOf S.alice g, S.lifeOf S.bob g, S.lifeOf S.carol g)
       chosenOn oid g = Game.lookupObject oid g >>= Map.lookup PlayerChoice.AsEntersOrTransforms . Map.findWithDefault Map.empty Acquisition.Own . Object.chosenPlayers
@@ -439,7 +440,7 @@ stuffyDollSpec s registry =
           case castDoll doll mountain S.carol of
             (gs, Just dollId, _) -> do
               let (pikerId, board) = S.addPermanent piker S.bob gs
-                  triggered = settleAll (S.runPure S.identityAnswer board (Damage.applyDamage (pure ()) [noncombat pikerId dollId 3]))
+                  triggered = settleAll (S.runPure S.identityAnswer board (Damage.applyDamage Settle.none [noncombat pikerId dollId 3]))
                   minusTwo = Modification.ModifyPowerToughness (ModifyPowerToughness.MkModifyPowerToughness (Quantity.Type.Literal (-2)) (Quantity.Type.Literal (-2)))
                   gone = settleAll (S.withEffect dollId minusTwo triggered)
                   after = resolveAll gone

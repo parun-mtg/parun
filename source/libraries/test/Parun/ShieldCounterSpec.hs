@@ -37,6 +37,7 @@ import qualified Parun.Types.Printing as Printing
 import qualified Parun.Types.Prompt as Prompt
 import qualified Parun.Types.Recipient as Recipient
 import qualified Parun.Types.Regenerability as Regenerability
+import qualified Parun.Types.Settle as Settle
 import qualified Parun.Types.Source as Source
 import qualified Parun.Types.StoredEffects as StoredEffects
 import qualified Parun.Types.Subtype as Subtype
@@ -134,8 +135,8 @@ shieldCounterSpec s registry = Spec.describe s "Shield counters (CR 122.1c)" $ d
     case bird of
       Nothing -> Spec.assertFailure s "the bird did not reach the battlefield"
       Just oid -> do
-        let byEffect = S.runPure S.identityAnswer entered (Event.destroy (pure ()) Regenerability.Regenerable [oid])
-            byRule = S.runPure S.identityAnswer entered (Event.destroyInBatch (pure ()) entered DestructionCause.ByRule Regenerability.Regenerable [oid])
+        let byEffect = S.runPure S.identityAnswer entered (Event.destroy Settle.none Regenerability.Regenerable [oid])
+            byRule = S.runPure S.identityAnswer entered (Event.destroyInBatch Settle.none entered DestructionCause.ByRule Regenerability.Regenerable [oid])
         Spec.assertEqWith s "setup: one shield counter, on both boards" (shields oid entered) 1
         Spec.assertBool s (Set.member oid (GameState.battlefield byEffect)) "an effect's destruction is replaced"
         Spec.assertEqWith s "spending the counter" (shields oid byEffect) 0
@@ -196,7 +197,7 @@ shieldCounterSpec s registry = Spec.describe s "Shield counters (CR 122.1c)" $ d
     Spec.assertEqWith s "setup: one counter, and two events it cannot both cover" (shields giant shielded) 1
     Spec.assertBool
       s
-      (wasAskedToOrderDamage (answersFor S.identityAnswer shielded (Damage.applyDamage (pure ()) batch)))
+      (wasAskedToOrderDamage (answersFor S.identityAnswer shielded (Damage.applyDamage Settle.none batch)))
       "alice was asked which damage the counter prevents"
     -- CR 615.6: a prevented event never happens, so the board says which of the two
     -- the counter reached twice over -- in what was marked and in what survived.
@@ -226,7 +227,7 @@ shieldCounterSpec s registry = Spec.describe s "Shield counters (CR 122.1c)" $ d
         after = settleDamage S.identityAnswer shielded batch
     Spec.assertBool
       s
-      (not (wasAskedToOrderDamage (answersFor S.identityAnswer shielded (Damage.applyDamage (pure ()) batch))))
+      (not (wasAskedToOrderDamage (answersFor S.identityAnswer shielded (Damage.applyDamage Settle.none batch))))
       "no OrderDamage was raised: two counters cover both events"
     Spec.assertEqWith s "neither event happened" (amounts after) []
     Spec.assertEqWith s "nothing is marked" (S.damageOf giant after) (Just 0)
@@ -260,7 +261,7 @@ shieldCounterSpec s registry = Spec.describe s "Shield counters (CR 122.1c)" $ d
     bolt <- S.printingOf s registry "Lightning Bolt"
     (guard_, punked) <- guardBoard True 1
     let once = S.settleSba (castAt guard_ bolt punked)
-        destroyed = S.runPure S.identityAnswer once (Event.destroy (pure ()) Regenerability.Regenerable [guard_])
+        destroyed = S.runPure S.identityAnswer once (Event.destroy Settle.none Regenerability.Regenerable [guard_])
     Spec.assertBool s (Set.member guard_ (GameState.battlefield once)) "setup: the 1/4 survived the Bolt"
     Spec.assertBool s (not (Set.member guard_ (GameState.battlefield destroyed))) "and an effect's destruction then goes unreplaced"
   -- CR 615.12a: "a prevention effect is applied to any particular unpreventable
@@ -276,7 +277,7 @@ shieldCounterSpec s registry = Spec.describe s "Shield counters (CR 122.1c)" $ d
     bolt <- S.printingOf s registry "Lightning Bolt"
     (guard_, punked) <- guardBoard True 2
     let once = S.settleSba (castAt guard_ bolt punked)
-        destroyed = S.runPure S.identityAnswer once (Event.destroy (pure ()) Regenerability.Regenerable [guard_])
+        destroyed = S.runPure S.identityAnswer once (Event.destroy Settle.none Regenerability.Regenerable [guard_])
     Spec.assertEqWith s "setup: two shield counters" (shields guard_ punked) 2
     Spec.assertEqWith s "the whole 3 is still marked" (S.damageOf guard_ once) (Just 3)
     Spec.assertEqWith s "one counter came off, not both" (shields guard_ once) 1
@@ -309,7 +310,7 @@ shieldCounterSpec s registry = Spec.describe s "Shield counters (CR 122.1c)" $ d
     Spec.assertEqWith s "setup: one counter, and two events it cannot both reach" (shields guard_ shielded) 1
     Spec.assertBool
       s
-      (wasAskedToOrderDamage (answersFor S.identityAnswer shielded (Damage.applyDamage (pure ()) batch)))
+      (wasAskedToOrderDamage (answersFor S.identityAnswer shielded (Damage.applyDamage Settle.none batch)))
       "alice was asked which of the two the counter goes to"
     Spec.assertEqWith s "spent on the unpreventable 3, it prevents nothing and both events happen" (amounts tookTheAvatar) [3, 2]
     Spec.assertEqWith s "so the 1/4 takes 5" (S.damageOf guard_ tookTheAvatar) (Just 5)

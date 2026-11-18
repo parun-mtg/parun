@@ -539,7 +539,7 @@ discardToHandSize pid = do
         -- for a rule 701.9a trigger -- then a trigger waiting during the cleanup
         -- step, CR 514.3a's condition (`cleanupException`).
         -- One event group: rule 514.1's discard is one action.
-        Event.simultaneously (Monad.mapM_ (Event.discard (Resolve.runReplacementEffects playSubgame) DiscardCause.Ordinary pid) toDiscard)
+        Event.simultaneously (Monad.mapM_ (Event.discard (Resolve.settleWith playSubgame) DiscardCause.Ordinary pid) toDiscard)
 
 -- CR 103.8a: in a two-player game the player who plays first skips the draw step
 -- of their first turn; CR 103.8b / 810.6, in Two-Headed Giant the team who plays
@@ -610,7 +610,7 @@ runTurnBasedActions phase = do
       gs <- State.get
       Monad.when (Attraction.controlsSubtype Subtype.Contraption pid gs) (Contraption.crank pid)
     Phase.Beginning BeginningStep.DrawStep ->
-      Monad.void (Event.inDrawOrder (\pid -> [ProposedEvent.WouldPerform PlayerInstruction.DrawCards Nothing pid 1, ProposedEvent.WouldDraw pid (DrawKind.TurnBased pid)]) live (Event.drawForTurn (Resolve.runReplacementEffects playSubgame)))
+      Monad.void (Event.inDrawOrder (\pid -> [ProposedEvent.WouldPerform PlayerInstruction.DrawCards Nothing pid 1, ProposedEvent.WouldDraw pid (DrawKind.TurnBased pid)]) live (Event.drawForTurn (Resolve.settleWith playSubgame)))
     -- CR 703.4h: choose the defending player. The active player's action (CR
     -- 507.1), and the one item on the list CR 800.4h hands to another seat rather
     -- than dropping, so it is NOT guarded here -- designateDefenders asks
@@ -624,7 +624,7 @@ runTurnBasedActions phase = do
       -- CR 510.4: deal this step's damage; if it was the first-strike step,
       -- splice a second combat damage step in after it. CR 510.3's between-steps
       -- priority and its SBA check come free from the step machinery.
-      needSecond <- Damage.dealCombatDamage (Resolve.runReplacementEffects playSubgame)
+      needSecond <- Damage.dealCombatDamage (Resolve.settleWith playSubgame)
       -- CR 614.1a: what a run-effects rewrite put in a replaced event's place
       -- runs HERE, before the step's SBA check and before the riders below.
       Resolve.runReplacementEffects playSubgame
@@ -1420,7 +1420,7 @@ settlePasses passes boards = do
   swept <- Expiry.sweepConditional
   -- CR 610.3's second one-shot effect, Palace Jailer's and Banisher Priest's
   -- alike: a return zone change is not something an Expiry sweep can perform.
-  returned <- MoveDuration.returnDue (Resolve.runReplacementEffects playSubgame)
+  returned <- MoveDuration.returnDue (Resolve.settleWith playSubgame)
   -- CR 610.4's second one-shot effect, the phasing twin of the return above.
   phasedIn <- State.state Phasing.phaseInDue
   -- CR 800.4c, checked here for CR 704.3's reason and not because it is a
@@ -1795,7 +1795,7 @@ priorityDecision trail = do
                         Action.Type.Play oid mName -> do
                           -- CR 116.2a: the special action, made under a
                           -- CR 601.3 permission (Cast.playLand).
-                          Event.takingSpecialAction $ Cast.playLand (Resolve.runReplacementEffects playSubgame) False p oid mName
+                          Event.takingSpecialAction $ Cast.playLand (Resolve.settleWith playSubgame) False p oid mName
                           grantAfterAction gs p
                           pure (PriorityWindow.Open trail')
                         Action.Type.Cast oid name facing -> do
@@ -1847,7 +1847,7 @@ priorityDecision trail = do
                         -- Ordinary and not ToPayCyclingCost, CR 702.29c's
                         -- cause being a cycling ability's cost.
                         Action.Type.DiscardFromHand oid -> do
-                          Event.takingSpecialAction $ Event.discard (Resolve.runReplacementEffects playSubgame) DiscardCause.Ordinary p oid
+                          Event.takingSpecialAction $ Event.discard (Resolve.settleWith playSubgame) DiscardCause.Ordinary p oid
                           grantAfterAction gs p
                           pure (PriorityWindow.Open trail')
                         -- CR 116.2k / 702.170b: a special action too, the
@@ -2781,7 +2781,7 @@ endPhase ending = do
   -- The ordering against a retention that ENDS at this same boundary is
   -- observable, and both carriers are read live: one swept afterwards would keep
   -- the pool across a boundary it no longer covers.
-  Mana.emptyManaPools (Resolve.runReplacementEffects playSubgame)
+  Mana.emptyManaPools (Resolve.settleWith playSubgame)
   -- CR 511.3: as soon as the end of combat step ends, creatures, battles and
   -- planeswalkers are removed from combat -- so this belongs at the END of that
   -- step and not in runTurnBasedActions, CR 511.1 giving the step no turn-based
@@ -2885,7 +2885,7 @@ endStep phase = do
       -- carries CR 500.5's pool empty, which is why the DEFAULT is the arm that
       -- runs it here: a step whose phase ends with it empties the pool once, in
       -- the rule's own "Then" position.
-      maybe (Mana.emptyManaPools (Resolve.runReplacementEffects playSubgame)) endPhase (Turn.phaseEndingAt phase)
+      maybe (Mana.emptyManaPools (Resolve.settleWith playSubgame)) endPhase (Turn.phaseEndingAt phase)
       -- CR 508.6 read on CR 500.1's span: the step-scoped half of the attack
       -- record ends with the step, so this runs at EVERY step's end and not
       -- just at combat's. See Parun.Engine.Combat.clearAttackedThisStep for why

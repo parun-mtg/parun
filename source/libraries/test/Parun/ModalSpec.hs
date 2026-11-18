@@ -56,6 +56,7 @@ import qualified Parun.Types.Printing as Printing
 import qualified Parun.Types.Prompt as Prompt
 import qualified Parun.Types.Quantity as Quantity
 import qualified Parun.Types.Recipient as Recipient
+import qualified Parun.Types.Settle as Settle
 import qualified Parun.Types.SlotName as SlotName
 import qualified Parun.Types.StackObjectKind as StackObjectKind
 import qualified Parun.Types.TargetSlot as TargetSlot
@@ -147,7 +148,7 @@ fizzleSpec s registry = Spec.describe s "Fizzle" $ do
         cast = snd (Engine.runGamePure answer gs1 (S.cast S.alice oid))
         -- CR 400.7: leaving the battlefield mints a new incarnation, so
         -- pikerOid's chosen recipient no longer names a legal target.
-        gone = S.runPure S.identityAnswer cast (Event.changeZone (pure ()) pikerOid Zone.Graveyard)
+        gone = S.runPure S.identityAnswer cast (Event.changeZone Settle.none pikerOid Zone.Graveyard)
         after = snd (Engine.runGamePure answer gone Stack.resolveTop)
     Spec.assertEqWith s "Chaos Charm in alice's graveyard, unresolved" (length (Game.zoneMembers Zone.Graveyard S.alice after)) 1
     Spec.assertEqWith s "no damage was dealt" (S.damageEventsOf after) []
@@ -251,7 +252,7 @@ activationModalSpec s registry = Spec.describe s "M4h activation modal (CR 602.2
             activated = snd (Engine.runGamePure answer gs2 (Activate.activateAbility S.alice srcId ability))
             -- CR 400.7: leaving the battlefield mints a new incarnation, so
             -- victimId's chosen recipient no longer names a legal target.
-            gone = S.runPure S.identityAnswer activated (Event.changeZone (pure ()) victimId Zone.Graveyard)
+            gone = S.runPure S.identityAnswer activated (Event.changeZone Settle.none victimId Zone.Graveyard)
             resolved = snd (Engine.runGamePure answer gone Stack.resolveTop)
          in do
               Spec.assertEqWith s "no damage was dealt" (S.damageEventsOf resolved) []
@@ -485,7 +486,7 @@ chooseTwoSpec s registry = Spec.describe s "ChooseTwo (CR 700.2)" $ do
         cast = snd (Engine.runGamePure answer gs (S.cast S.alice spellId))
         -- CR 400.7: leaving the battlefield mints a new incarnation, so pikerId's
         -- chosen recipient no longer names a legal target.
-        gone = S.runPure S.identityAnswer cast (Event.changeZone (pure ()) pikerId Zone.Graveyard)
+        gone = S.runPure S.identityAnswer cast (Event.changeZone Settle.none pikerId Zone.Graveyard)
         after = snd (Engine.runGamePure answer gone Stack.resolveTop)
     Spec.assertEqWith s "alice's hand is empty: no card was drawn" (length (Game.zoneMembers Zone.Hand S.alice after)) 0
     Spec.assertEqWith s "Cryptic Command is in alice's graveyard, unresolved" (length (Game.zoneMembers Zone.Graveyard S.alice after)) 1

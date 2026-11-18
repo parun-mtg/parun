@@ -63,6 +63,7 @@ import qualified Parun.Types.Prompt as Prompt
 import qualified Parun.Types.Protection as Protection
 import qualified Parun.Types.Recipient as Recipient
 import qualified Parun.Types.RoomHalf as RoomHalf
+import qualified Parun.Types.Settle as Settle
 import qualified Parun.Types.Staged as Staged
 import qualified Parun.Types.Subtype as Subtype
 import qualified Parun.Types.Supertype as Supertype
@@ -166,10 +167,10 @@ spec s registry = Spec.describe s "Flip" $ do
       Just oid -> do
         (_, flipped) <- S.runScriptOrFail s attackScript built S.combatGame
         Spec.assertEqWith s "flipped first" (halfReadings oid flipped) alternativeHalf
-        let (inHand, bounced) = S.runPureWith S.identityAnswer flipped (Event.changeZoneReturning (pure ()) oid Zone.Hand)
+        let (inHand, bounced) = S.runPureWith S.identityAnswer flipped (Event.changeZoneReturning Settle.none oid Zone.Hand)
         case Foldable.toList inHand of
           [handId] -> do
-            let (back, returned) = S.runPureWith S.identityAnswer bounced (Event.changeZoneReturning (pure ()) handId Zone.Battlefield)
+            let (back, returned) = S.runPureWith S.identityAnswer bounced (Event.changeZoneReturning Settle.none handId Zone.Battlefield)
             case Foldable.toList back of
               [returnedId] -> do
                 Spec.assertEqWith s "CR 710.4: the returning permanent is Akki Lavarunner again" (halfReadings returnedId returned) normalHalf

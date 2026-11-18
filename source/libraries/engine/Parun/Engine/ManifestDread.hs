@@ -34,6 +34,7 @@ import qualified Parun.Types.Object as Object
 import Parun.Types.ObjectId (ObjectId)
 import Parun.Types.PlayerId (PlayerId)
 import qualified Parun.Types.Prompt as Prompt
+import qualified Parun.Types.Settle as Settle
 import qualified Parun.Types.Zone as Zone
 
 -- | CR 701.40a's face-down 2\/2, the listing being the rule's and never a
@@ -74,7 +75,7 @@ riders =
 -- the move and never off the choice: CR 701.40f's refused manifest (Grafdigger's
 -- Cage) answers nothing, so Valgavoth's Onslaught's "those creatures" leaves the
 -- card out.
-manifestDread :: Game () -> ObjectId -> PlayerId -> Game [ObjectId]
+manifestDread :: Settle.Settle -> ObjectId -> PlayerId -> Game [ObjectId]
 manifestDread settle source pid = do
   gs <- State.get
   let looked = take 2 (Game.cardsIn Zone.Library pid gs)

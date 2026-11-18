@@ -235,6 +235,7 @@ import qualified Parun.Types.Sacrificer as Sacrificer
 import qualified Parun.Types.Scratch as Scratch
 import qualified Parun.Types.SearchDestination as SearchDestination
 import qualified Parun.Types.SetHalfLocked as SetHalfLocked
+import qualified Parun.Types.Settle as Settle
 import qualified Parun.Types.Sickness as Sickness
 import qualified Parun.Types.SideDeck as SideDeck
 import Parun.Types.SlotName (SlotName)
@@ -949,7 +950,7 @@ loopMembers resolving source controller legal chosen ref = case ref of
 -- asks CR 401.4's arrangement of what a redirect put into a library and CR
 -- 404.3's of what reached a graveyard. The cause
 -- is Event.resolvingDiscardCause's: a CR 118.12 cost is no effect.
-buryDiscards :: Game () -> ObjectId -> Maybe SlotName -> [(PlayerId, [ObjectId])] -> Game ()
+buryDiscards :: Settle.Settle -> ObjectId -> Maybe SlotName -> [(PlayerId, [ObjectId])] -> Game ()
 buryDiscards settle resolving mDiscarded doomed = do
   cause <- State.gets Event.resolvingDiscardCause
   moved <-
@@ -2725,9 +2726,9 @@ exileOrCease oid = do
   let cease :: Game ()
       cease = State.modify' (Game.cease oid)
   case fmap Object.source (Game.lookupObject oid gs) of
-    Just (Source.OfCard _) -> Event.changeZone (pure ()) oid Zone.Exile
-    Just (Source.OfToken _) -> Event.changeZone (pure ()) oid Zone.Exile
-    Just (Source.OfSpellCopy _) -> Event.changeZone (pure ()) oid Zone.Exile
+    Just (Source.OfCard _) -> Event.changeZone Settle.none oid Zone.Exile
+    Just (Source.OfToken _) -> Event.changeZone Settle.none oid Zone.Exile
+    Just (Source.OfSpellCopy _) -> Event.changeZone Settle.none oid Zone.Exile
     -- A REGRESSION FENCE rather than a proven behaviour: ceasing the copy in
     -- place reaches the same end state, since CR 725.1c's check would remove it
     -- from exile anyway (CR 704.5e), and no card in data/cards/ watches an object
@@ -2735,7 +2736,7 @@ exileOrCease oid = do
     -- to `cease` leaves the suite green. It is written the rule's way because CR
     -- 725.1b says "exile every object on the stack", not because a test pays for
     -- it.
-    Just (Source.OfCardCopy _) -> Event.changeZone (pure ()) oid Zone.Exile
+    Just (Source.OfCardCopy _) -> Event.changeZone Settle.none oid Zone.Exile
     -- Not represented by a card, so rule 725.1b's second sentence would remove
     -- them at CR 725.1c's check anyway; Game.cease is CR 608.2n's own mechanism
     -- for the three ability kinds and reaches the same end state one step
@@ -4639,7 +4640,7 @@ bindAmountSlot resolving source slot n gs =
 -- Effect.ExchangeLifeTotals' tally: read off the total rather than the funnel's
 -- answer, since a CR 614.6 arm writing the replacing event itself (Tainted
 -- Remedy's loss in a gain's place) leaves the funnel answering 0.
-changeLifeByDelta :: Game () -> PlayerId -> Integer -> Game Integer
+changeLifeByDelta :: Settle.Settle -> PlayerId -> Integer -> Game Integer
 changeLifeByDelta settle pid delta = do
   before <- State.gets lifeNow
   if delta < 0
@@ -4753,7 +4754,7 @@ distinctlyAssigned = go Set.empty
 -- One found card's move, a member of the search's batch whose board is `asOf`
 -- (Event.changeZoneInBatch). `counters` is Search.counters, frozen: what a card
 -- put onto the battlefield enters with (CR 122.6).
-putFound :: Game () -> ObjectId -> GameState -> PlayerId -> Maybe ObjectId -> SearchDestination.SearchDestination -> Map.Map (CounterKind.CounterKind Keyword.Type.Keyword) Natural -> ObjectId -> Game [ObjectId]
+putFound :: Settle.Settle -> ObjectId -> GameState -> PlayerId -> Maybe ObjectId -> SearchDestination.SearchDestination -> Map.Map (CounterKind.CounterKind Keyword.Type.Keyword) Natural -> ObjectId -> Game [ObjectId]
 putFound settle resolving asOf searcher subject destination counters cardId = case destination of
   -- Nature's Lore's "put that card onto the battlefield", and Evolving Wilds'
   -- "put it onto the battlefield tapped": CR 110.5b's default, or the card's
@@ -4849,7 +4850,7 @@ putFound settle resolving asOf searcher subject destination counters cardId = ca
 -- zone" for an Aura, and CR 301.5e / 303.4h's unattached entry for anything
 -- else: Danitha, Benalia's Hope's Equipment with Danitha gone, which the attach
 -- scenario named for CR 301.5e proves.
-attachFound :: Game () -> GameState -> PlayerId -> Maybe ObjectId -> Map.Map (CounterKind.CounterKind Keyword.Type.Keyword) Natural -> ObjectId -> Game [ObjectId]
+attachFound :: Settle.Settle -> GameState -> PlayerId -> Maybe ObjectId -> Map.Map (CounterKind.CounterKind Keyword.Type.Keyword) Natural -> ObjectId -> Game [ObjectId]
 attachFound settle asOf searcher host counters cardId = do
   gs <- State.get
   case host >>= \h -> Attach.entryAttachmentFor searcher cardId (Recipient.ToObject h) gs of
@@ -4870,7 +4871,7 @@ attachFound settle asOf searcher host counters cardId = do
 -- The tap state rides the move rather than a write after it, for CR 603.2e's
 -- reason: this is the permanent ENTERING tapped, and an ability that triggers
 -- when a permanent "becomes tapped" doesn't trigger if it enters in that state.
-putOntoBattlefield :: Game () -> GameState -> PlayerId -> TapState.TapState -> Map.Map (CounterKind.CounterKind Keyword.Type.Keyword) Natural -> ObjectId -> Game [ObjectId]
+putOntoBattlefield :: Settle.Settle -> GameState -> PlayerId -> TapState.TapState -> Map.Map (CounterKind.CounterKind Keyword.Type.Keyword) Natural -> ObjectId -> Game [ObjectId]
 putOntoBattlefield settle asOf searcher tapped counters cardId =
   Foldable.toList
     <$> Event.changeZoneAttaching settle (Just asOf) Set.empty cardId Zone.Battlefield LibraryPosition.defaultValue Nothing tapped counters (Just searcher) Nothing Facing.FaceUp False CarryOver.NotCarried False Seq.empty
@@ -4971,7 +4972,7 @@ decideSurveil n pid = do
 --
 -- Answers the ids the graveyard moves ARRIVED at (CR 400.7), in the order the
 -- surveiller chose them.
-applySurveil :: Game () -> (PlayerId, Maybe ([ObjectId], [ObjectId], [ObjectId])) -> Game [ObjectId]
+applySurveil :: Settle.Settle -> (PlayerId, Maybe ([ObjectId], [ObjectId], [ObjectId])) -> Game [ObjectId]
 applySurveil settle (pid, decision) = fmap Foldable.fold . Monad.forM decision $ \(onTop, beneath, toGraveyard) -> do
   -- Order-independent: Game.removeFromZones takes each mover out of the library
   -- by identity rather than by position.
@@ -5109,7 +5110,7 @@ clash resolving source controller = do
 -- library card is folded exactly as a permanent is, and a layer-4 type change
 -- (CR 613.1d) reaches it there. An id nothing is filed under projects no card
 -- types, so it is no land card -- the answer the printed face gave.
-exploreOne :: Game () -> ObjectId -> ObjectId -> Game ()
+exploreOne :: Settle.Settle -> ObjectId -> ObjectId -> Game ()
 exploreOne settle resolving oid = do
   -- CR 122.6 through the one counter funnel, so a CR 614.1 counter replacement
   -- (Hardened Scales) gets its opportunity against this placement too.
@@ -5166,7 +5167,7 @@ exploreOne settle resolving oid = do
 -- projection, exploreOne's reading: the hand incarnation is gone by then, and a
 -- double-faced card in a graveyard has only its front face's characteristics
 -- (CR 712.6a).
-conniveOne :: Game () -> Natural -> ObjectId -> Game ()
+conniveOne :: Settle.Settle -> Natural -> ObjectId -> Game ()
 conniveOne settle proposed oid = Monad.when (proposed > 0) $ do
   gs <- State.get
   -- CR 614.1a: the connive is one replaceable instruction, settled before the

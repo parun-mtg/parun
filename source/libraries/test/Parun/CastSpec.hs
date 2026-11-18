@@ -98,6 +98,7 @@ import qualified Parun.Types.RevealCause as RevealCause
 import qualified Parun.Types.Revealed as Revealed
 import qualified Parun.Types.Scratch as Scratch
 import qualified Parun.Types.Seat as Seat
+import qualified Parun.Types.Settle as Settle
 import qualified Parun.Types.Sickness as Sickness
 import qualified Parun.Types.SlotName as SlotName
 import qualified Parun.Types.Source as Source
@@ -120,7 +121,7 @@ sicknessSpec s registry = Spec.describe s "Sickness" $ do
     mountain <- S.printingOf s registry "Mountain"
     piker <- S.printingOf s registry "Goblin Piker"
     let (gs, oid) = S.pikerInHand mountain piker 3 Phase.PrecombatMain
-        after = S.runPure S.identityAnswer gs (Event.changeZone (pure ()) oid Zone.Battlefield)
+        after = S.runPure S.identityAnswer gs (Event.changeZone Settle.none oid Zone.Battlefield)
     case Game.zoneMembers Zone.Battlefield S.alice after of
       [] -> Spec.assertFailure s "expected a permanent"
       ids -> case filter (\o -> sicknessOf o after == Just Sickness.Sick) ids of
@@ -324,7 +325,7 @@ castSpec s registry = Spec.describe s "Cast" $ do
     mountain <- S.printingOf s registry "Mountain"
     lightningBolt <- S.printingOf s registry "Lightning Bolt"
     let (gs, oid) = S.boltInHand mountain lightningBolt 1 Phase.PrecombatMain
-        buried = S.runPure S.identityAnswer gs (Event.changeZone (pure ()) oid Zone.Graveyard)
+        buried = S.runPure S.identityAnswer gs (Event.changeZone Settle.none oid Zone.Graveyard)
     Spec.assertEqWith s "nothing castable" (Cast.castableSpells S.alice buried) []
   Spec.it s "CR 601.2c casting a Bolt stamps the chosen target on the stack object" $ do
     piker <- S.printingOf s registry "Goblin Piker"
@@ -3883,7 +3884,7 @@ mayhemSpec s registry = Spec.describe s "Mayhem" $ do
         plays gs = [oid | A.Play oid _ <- Action.legalActions S.alice gs, Game.zoneOf oid gs == Just Zone.Graveyard]
         played = case oscorpIn discarded of
           Just oid ->
-            let entered = S.runPure S.identityAnswer discarded (Cast.playLand (pure ()) False S.alice oid Nothing)
+            let entered = S.runPure S.identityAnswer discarded (Cast.playLand Settle.none False S.alice oid Nothing)
              in S.runPure S.identityAnswer (S.runPure S.identityAnswer entered (Engine.placePendingTriggers [])) Stack.resolveTop
           Nothing -> discarded
     Spec.assertEqWith s "the discarded Oscorp is the one land play offered from the graveyard" (plays discarded) (Maybe.maybeToList (oscorpIn discarded))
@@ -3907,7 +3908,7 @@ mayhemSpec s registry = Spec.describe s "Mayhem" $ do
     let (discarded, _) = mayhemBoards mountain piker oscorp reunion
         withParagon = snd (S.addPermanent paragon S.alice discarded)
         played = case Scenario.namedObjects Existence.Live (S.printingName oscorp) withParagon of
-          oid : _ -> S.runPure S.identityAnswer withParagon (Cast.playLand (pure ()) False S.alice oid Nothing)
+          oid : _ -> S.runPure S.identityAnswer withParagon (Cast.playLand Settle.none False S.alice oid Nothing)
           [] -> withParagon
     Spec.assertEqWith s "Oscorp arrived" (S.countOnBattlefieldByName (S.printingName oscorp) S.alice played) 1
     Spec.assertEqWith s "and the Paragon's use is unspent" (TurnRegisters.castPermissionsUsedThisTurn (GameState.turn played)) Map.empty

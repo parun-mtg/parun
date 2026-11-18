@@ -63,6 +63,7 @@ import Parun.Types.PlayerId (PlayerId)
 import qualified Parun.Types.PlayerRelation as PlayerRelation
 import qualified Parun.Types.Prompt as Prompt
 import qualified Parun.Types.ProposedEvent as ProposedEvent
+import qualified Parun.Types.Settle as Settle
 import qualified Parun.Types.SideDeck as SideDeck
 import qualified Parun.Types.Source as Source
 import qualified Parun.Types.Throw as Throw
@@ -339,8 +340,9 @@ faceOf n = case n of
   _ -> PlanarDieFace.Blank
 
 -- | CR 116.2i / 901.9: pay, then roll the planar die, through CR 706.2's
--- modifiers from other sources (ManaAbilityPerformer.throwRecorded, which
--- records PlayerAction.RollDice, CR 901.9d). The final face records
+-- modifiers from other sources (Settle.throwRecorded, which records
+-- PlayerAction.RollDice, CR 901.9d). The performer's Settle always carries a
+-- thrower (Resolve.Effect.settleWith), so a road with none rolls nothing. The final face records
 -- PlanarDieRolled, which CR 901.8's planeswalking ability triggers on, and for
 -- the chaos symbol ChaosEnsued, which CR 311.7's chaos abilities trigger on.
 -- A payment that fails restores the state, Parun.Engine.Companion.take's
@@ -352,7 +354,7 @@ roll perform pid = do
     noSource <- State.state Game.freshObjectId
     paid <- Cost.payAction perform before PaymentSubject.ForNeither 0 pid noSource (rollCost pid before)
     Monad.forM_ paid $ \_ -> do
-      kept <- ManaAbilityPerformer.throwRecorded perform (Throw.MkThrow {Throw.thrower = pid, Throw.kind = ThrowKind.PlanarDie, Throw.units = Seq.singleton 1, Throw.ignored = 0, Throw.instead = False})
+      kept <- maybe (pure []) ($ Throw.MkThrow {Throw.thrower = pid, Throw.kind = ThrowKind.PlanarDie, Throw.units = Seq.singleton 1, Throw.ignored = 0, Throw.instead = False}) (Settle.throwRecorded (ManaAbilityPerformer.settle perform))
       -- Exactly one: nothing adds a die to the planar die's roll.
       Foldable.for_ (Maybe.listToMaybe kept) $ \rolled -> do
         State.modify' (Event.recordEvent (GameEvent.PlanarDieRolled (PlanarDieRolled.MkPlanarDieRolled pid (faceOf rolled))))

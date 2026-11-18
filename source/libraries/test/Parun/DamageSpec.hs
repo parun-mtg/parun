@@ -83,6 +83,7 @@ import qualified Parun.Types.Regenerability as Regenerability
 import qualified Parun.Types.ReplacementEffect as ReplacementEffect
 import qualified Parun.Types.ReplacementOrigin as ReplacementOrigin
 import qualified Parun.Types.Result as Result
+import qualified Parun.Types.Settle as Settle
 import qualified Parun.Types.SlotName as SlotName
 import qualified Parun.Types.Snapshots as Snapshots
 import qualified Parun.Types.Source as Source
@@ -246,7 +247,7 @@ creatureSbaSpec s registry =
       let base = Setup.emptyGame S.bothPlayers
           goblinCard = Printing.card piker
           (tokId, gs) = S.addToken goblinCard S.alice base
-          inGrave = S.runPure S.identityAnswer gs (Event.changeZone (pure ()) tokId Zone.Graveyard)
+          inGrave = S.runPure S.identityAnswer gs (Event.changeZone Settle.none tokId Zone.Graveyard)
           -- The changeZone minted a new incarnation; find it in the graveyard.
           settled = S.settleSba inGrave
       Spec.assertEqWith s "before the SBA, a token sits in the graveyard" (length (Game.zoneMembers Zone.Graveyard S.alice inGrave)) 1
@@ -268,7 +269,7 @@ creatureSbaSpec s registry =
           -- A real 2/1 Piker (bob's) is the damage source; alice's 1/1 token takes 2.
           (srcId, gs1) = S.addPermanent piker S.bob base
           (tokId, gs2) = S.addToken goblinCard S.alice gs1
-          damaged = S.runPure S.identityAnswer gs2 (Damage.applyDamage (pure ()) [DamageEvent.MkDamageEvent srcId (Recipient.ToCreature tokId) 2 0 False False False 0 Nothing Nothing mempty False mempty mempty mempty mempty Nothing mempty mempty Nothing DamageKind.Combat])
+          damaged = S.runPure S.identityAnswer gs2 (Damage.applyDamage Settle.none [DamageEvent.MkDamageEvent srcId (Recipient.ToCreature tokId) 2 0 False False False 0 Nothing Nothing mempty False mempty mempty mempty mempty Nothing mempty mempty Nothing DamageKind.Combat])
           settled = S.settleSba damaged
       Spec.assertEqWith s "the token is gone from the battlefield" (S.creaturesInPlay S.alice settled) 0
       Spec.assertEqWith s "and NOT sitting in a graveyard (the falsifier)" (length (Game.zoneMembers Zone.Graveyard S.alice settled)) 0
@@ -279,7 +280,7 @@ creatureSbaSpec s registry =
           (victim, gs0) = S.addPermanent piker S.alice base -- 2/1
           shielded = S.addRegenShield victim gs0
           -- 2 combat damage is lethal to a 2/1; the shield replaces the CR 704.5g destruction.
-          damaged = S.runPure S.identityAnswer shielded (Damage.applyDamage (pure ()) [DamageEvent.MkDamageEvent victim (Recipient.ToCreature victim) 2 0 False False False 0 Nothing Nothing mempty False mempty mempty mempty mempty Nothing mempty mempty Nothing DamageKind.Combat])
+          damaged = S.runPure S.identityAnswer shielded (Damage.applyDamage Settle.none [DamageEvent.MkDamageEvent victim (Recipient.ToCreature victim) 2 0 False False False 0 Nothing Nothing mempty False mempty mempty mempty mempty Nothing mempty mempty Nothing DamageKind.Combat])
           settled = S.settleSba damaged
       Spec.assertEqWith s "survived (regenerated)" (Set.member victim (GameState.battlefield settled)) True
       case Game.lookupObject victim settled of
@@ -312,7 +313,7 @@ damageSpec s registry =
       piker <- S.printingOf s registry "Goblin Piker"
       let (oid, gs) = S.addPermanent piker S.alice (Setup.emptyGame S.bothPlayers)
           marked = S.markDamage oid 1 gs
-          after = S.runPure S.identityAnswer marked (Event.changeZone (pure ()) oid Zone.Graveyard)
+          after = S.runPure S.identityAnswer marked (Event.changeZone Settle.none oid Zone.Graveyard)
       case Game.zoneMembers Zone.Graveyard S.alice after of
         [] -> Spec.assertFailure s "expected a card in the graveyard"
         new : _ -> Spec.assertEqWith s "fresh object, no damage" (S.damageOf new after) (Just 0)
@@ -336,8 +337,8 @@ damageSpec s registry =
                 ActiveReplacement.choices = SourceChoices.MkSourceChoices Map.empty Set.empty Nothing Nothing Nothing Acquisition.Own
               }
           withShield = S.addReplacement shield gs0
-          combat = S.runPure S.identityAnswer withShield (Damage.applyDamage (pure ()) [DamageEvent.MkDamageEvent victim (Recipient.ToCreature victim) 2 0 False False False 0 Nothing Nothing mempty False mempty mempty mempty mempty Nothing mempty mempty Nothing DamageKind.Combat])
-          spell = S.runPure S.identityAnswer withShield (Damage.applyDamage (pure ()) [DamageEvent.MkDamageEvent victim (Recipient.ToCreature victim) 2 0 False False False 0 Nothing Nothing mempty False mempty mempty mempty mempty Nothing mempty mempty Nothing DamageKind.Noncombat])
+          combat = S.runPure S.identityAnswer withShield (Damage.applyDamage Settle.none [DamageEvent.MkDamageEvent victim (Recipient.ToCreature victim) 2 0 False False False 0 Nothing Nothing mempty False mempty mempty mempty mempty Nothing mempty mempty Nothing DamageKind.Combat])
+          spell = S.runPure S.identityAnswer withShield (Damage.applyDamage Settle.none [DamageEvent.MkDamageEvent victim (Recipient.ToCreature victim) 2 0 False False False 0 Nothing Nothing mempty False mempty mempty mempty mempty Nothing mempty mempty Nothing DamageKind.Noncombat])
       Spec.assertEqWith s "combat damage prevented -- none marked" (S.damageOf victim combat) (Just 0)
       Spec.assertEqWith s "combat damage prevented -- no event recorded" (S.damageEventsOf combat) []
       Spec.assertEqWith s "noncombat damage still dealt" (S.damageOf victim spell) (Just 2)
@@ -368,7 +369,7 @@ infectSpec s registry =
       piker <- S.printingOf s registry "Goblin Piker"
       let (oid, gs0) = S.addPermanent piker S.alice (Setup.emptyGame S.bothPlayers)
           ev = DamageEvent.MkDamageEvent oid (Recipient.ToPlayer S.bob) 3 0 False True False 0 Nothing Nothing mempty False mempty mempty mempty mempty Nothing mempty mempty Nothing DamageKind.Combat
-          after = S.runPure S.identityAnswer gs0 (Damage.applyDamage (pure ()) [ev])
+          after = S.runPure S.identityAnswer gs0 (Damage.applyDamage Settle.none [ev])
       Spec.assertEqWith s "bob has three poison" (S.playerCounterOf PlayerCounterKind.Poison S.bob after) 3
       Spec.assertEqWith s "bob's life unchanged" (S.lifeOf S.bob after) (Just 20)
       Spec.assertEqWith s "the source's controller gains no poison" (S.playerCounterOf PlayerCounterKind.Poison S.alice after) 0
@@ -378,7 +379,7 @@ infectSpec s registry =
       let (src, gs0) = S.addPermanent piker S.alice (Setup.emptyGame S.bothPlayers)
           (victim, gs1) = S.addPermanent piker S.bob gs0
           ev = DamageEvent.MkDamageEvent src (Recipient.ToCreature victim) 2 0 False True False 0 Nothing Nothing mempty False mempty mempty mempty mempty Nothing mempty mempty Nothing DamageKind.Combat
-          after = S.runPure S.identityAnswer gs1 (Damage.applyDamage (pure ()) [ev])
+          after = S.runPure S.identityAnswer gs1 (Damage.applyDamage Settle.none [ev])
       Spec.assertEqWith s "two -1/-1 counters" (fmap (Map.findWithDefault 0 CounterKind.MinusOneMinusOne . Object.counters) (Game.lookupObject victim after)) (Just 2)
       Spec.assertEqWith s "no marked damage" (S.damageOf victim after) (Just 0)
 
@@ -450,7 +451,7 @@ toxicSpec s registry =
       piker <- S.printingOf s registry "Goblin Piker"
       let (oid, gs0) = S.addPermanent piker S.alice (Setup.emptyGame S.bothPlayers)
           ev = DamageEvent.MkDamageEvent oid (Recipient.ToPlayer S.bob) 3 0 False False False 2 Nothing Nothing mempty False mempty mempty mempty mempty Nothing mempty mempty Nothing DamageKind.Combat
-          after = S.runPure S.identityAnswer gs0 (Damage.applyDamage (pure ()) [ev])
+          after = S.runPure S.identityAnswer gs0 (Damage.applyDamage Settle.none [ev])
       Spec.assertEqWith s "bob has two poison" (S.playerCounterOf PlayerCounterKind.Poison S.bob after) 2
       Spec.assertEqWith s "bob still lost the three life" (S.lifeOf S.bob after) (Just 17)
       Spec.assertEqWith s "the source's controller gains no poison" (S.playerCounterOf PlayerCounterKind.Poison S.alice after) 0
@@ -459,7 +460,7 @@ toxicSpec s registry =
       piker <- S.printingOf s registry "Goblin Piker"
       let (oid, gs0) = S.addPermanent piker S.alice (Setup.emptyGame S.bothPlayers)
           ev = DamageEvent.MkDamageEvent oid (Recipient.ToPlayer S.bob) 3 0 False False False 2 Nothing Nothing mempty False mempty mempty mempty mempty Nothing mempty mempty Nothing DamageKind.Noncombat
-          after = S.runPure S.identityAnswer gs0 (Damage.applyDamage (pure ()) [ev])
+          after = S.runPure S.identityAnswer gs0 (Damage.applyDamage Settle.none [ev])
       Spec.assertEqWith s "bob has no poison" (S.playerCounterOf PlayerCounterKind.Poison S.bob after) 0
       Spec.assertEqWith s "bob lost the three life" (S.lifeOf S.bob after) (Just 17)
 
@@ -471,7 +472,7 @@ toxicSpec s registry =
       piker <- S.printingOf s registry "Goblin Piker"
       let (oid, gs0) = S.addPermanent piker S.alice (Setup.emptyGame S.bothPlayers)
           ev = DamageEvent.MkDamageEvent oid (Recipient.ToPlayer S.bob) 3 0 False True False 2 Nothing Nothing mempty False mempty mempty mempty mempty Nothing mempty mempty Nothing DamageKind.Combat
-          after = S.runPure S.identityAnswer gs0 (Damage.applyDamage (pure ()) [ev])
+          after = S.runPure S.identityAnswer gs0 (Damage.applyDamage Settle.none [ev])
       Spec.assertEqWith s "bob has five poison" (S.playerCounterOf PlayerCounterKind.Poison S.bob after) 5
       Spec.assertEqWith s "bob's life unchanged" (S.lifeOf S.bob after) (Just 20)
 
@@ -521,7 +522,7 @@ toxicSpec s registry =
                 ActiveReplacement.choices = SourceChoices.MkSourceChoices Map.empty Set.empty Nothing Nothing Nothing Acquisition.Own
               }
           ev = DamageEvent.MkDamageEvent oid (Recipient.ToPlayer S.bob) 3 0 False False False 2 Nothing Nothing mempty False mempty mempty mempty mempty Nothing mempty mempty Nothing DamageKind.Combat
-          after = S.runPure S.identityAnswer (S.addReplacement shield gs0) (Damage.applyDamage (pure ()) [ev])
+          after = S.runPure S.identityAnswer (S.addReplacement shield gs0) (Damage.applyDamage Settle.none [ev])
       Spec.assertEqWith s "no poison" (S.playerCounterOf PlayerCounterKind.Poison S.bob after) 0
       Spec.assertEqWith s "no life lost" (S.lifeOf S.bob after) (Just 20)
 
@@ -670,7 +671,7 @@ lifelinkSpec s registry =
                 ActiveReplacement.choices = SourceChoices.MkSourceChoices Map.empty Set.empty Nothing Nothing Nothing Acquisition.Own
               }
           ev = DamageEvent.MkDamageEvent oid (Recipient.ToPlayer S.bob) 2 0 False False False 0 (Just S.alice) Nothing mempty False mempty mempty mempty mempty Nothing mempty mempty Nothing DamageKind.Combat
-          after = S.runPure S.identityAnswer (S.addReplacement shield gs0) (Damage.applyDamage (pure ()) [ev])
+          after = S.runPure S.identityAnswer (S.addReplacement shield gs0) (Damage.applyDamage Settle.none [ev])
       Spec.assertEqWith s "alice gained nothing" (S.lifeOf S.alice after) (Just 20)
       Spec.assertEqWith s "and bob lost nothing" (S.lifeOf S.bob after) (Just 20)
 
@@ -1407,14 +1408,14 @@ worldRuleSpec s registry =
     Spec.it s "CR 400.7 a world permanent that leaves and returns is world only since it returned" $ do
       (crossroads, livingPlane) <- worldPair s registry
       let (first, g0) = S.addPermanent crossroads S.alice (Setup.emptyGame S.bothPlayers)
-          (inHand, g1) = S.runPureWith S.identityAnswer g0 (Engine.settleForPriority >> Event.changeZoneReturning (pure ()) first Zone.Hand)
+          (inHand, g1) = S.runPureWith S.identityAnswer g0 (Engine.settleForPriority >> Event.changeZoneReturning Settle.none first Zone.Hand)
           (plane, g2) = S.addPermanent livingPlane S.alice g1
       case Foldable.toList inHand of
         [] -> Spec.assertFailure s "the Crossroads should have reached alice's hand"
         held : _ -> do
           -- The Living Plane is stamped on this settle, before the Crossroads is
           -- back on the battlefield to be stamped after it.
-          let (back, g3) = S.runPureWith S.identityAnswer g2 (Engine.settleForPriority >> Event.changeZoneReturning (pure ()) held Zone.Battlefield)
+          let (back, g3) = S.runPureWith S.identityAnswer g2 (Engine.settleForPriority >> Event.changeZoneReturning Settle.none held Zone.Battlefield)
               after = S.runPure S.identityAnswer g3 Engine.settleForPriority
           case Foldable.toList back of
             [] -> Spec.assertFailure s "the Crossroads should have returned to the battlefield"
@@ -1875,8 +1876,8 @@ killBlockerMidCombat victim answer gs =
   S.runPure answer gs $ do
     Combat.declareAttackers S.manaPerformer S.alice
     Combat.declareBlockers S.manaPerformer
-    Event.destroy (pure ()) Regenerability.Regenerable [victim]
-    Monad.void (Damage.dealCombatDamage (pure ()))
+    Event.destroy Settle.none Regenerability.Regenerable [victim]
+    Monad.void (Damage.dealCombatDamage Settle.none)
 
 -- Every DamageDealt event in the history addressed to `oid`, however much.
 damageEventsTo :: ObjectId.ObjectId -> GameState.GameState -> [DamageEvent.DamageEvent]
@@ -1976,7 +1977,7 @@ boltBlockerMidCombat blocks bolt blocker gs =
           Combat.declareBlockers S.manaPerformer
           S.cast S.alice bolt
           Monad.void Stack.resolveTop
-   in S.runPure S.aggressiveAnswer (S.settleSba declared) (Monad.void (Damage.dealCombatDamage (pure ())))
+   in S.runPure S.aggressiveAnswer (S.settleSba declared) (Monad.void (Damage.dealCombatDamage Settle.none))
 
 -- CR 509.1h's last sentence -- "A creature remains blocked even if all the
 -- creatures blocking it are removed from combat" -- is a STATUS the declaration
@@ -2026,8 +2027,8 @@ killAttackerMidCombat victim gs =
   S.runPure S.aggressiveAnswer gs $ do
     Combat.declareAttackers S.manaPerformer S.alice
     Combat.declareBlockers S.manaPerformer
-    Event.destroy (pure ()) Regenerability.Regenerable [victim]
-    Monad.void (Damage.dealCombatDamage (pure ()))
+    Event.destroy Settle.none Regenerability.Regenerable [victim]
+    Monad.void (Damage.dealCombatDamage Settle.none)
 
 departedAttackerSpec :: (Monad m, Monad n) => Spec.Spec m n -> Registry.Registry m -> n ()
 departedAttackerSpec s registry =

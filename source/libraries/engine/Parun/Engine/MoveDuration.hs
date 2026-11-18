@@ -39,6 +39,7 @@ import Parun.Types.PlayerId (PlayerId)
 import Parun.Types.ReturnEnding (ReturnEnding)
 import qualified Parun.Types.ReturnEnding as ReturnEnding
 import qualified Parun.Types.ReturnWatch as ReturnWatch
+import qualified Parun.Types.Settle as Settle
 import qualified Parun.Types.SideDeck as SideDeck
 import qualified Parun.Types.TurnRegisters as TurnRegisters
 import qualified Parun.Types.TurnedUpOffDeck as TurnedUpOffDeck
@@ -186,7 +187,7 @@ dueIn ending gs = case ending of
 -- Parun.Engine.Event.leaveTheGame drops a watch whose KEY (the moved object)
 -- leaves the game, never one whose source or controller does, so either
 -- duration survives its controller's departure.
-returnDue :: Game () -> Game Bool
+returnDue :: Settle.Settle -> Game Bool
 returnDue settle = do
   gs <- State.get
   let -- Left before Right, so a logged event's returns precede the unlogged.

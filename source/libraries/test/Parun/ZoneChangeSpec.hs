@@ -54,6 +54,7 @@ import qualified Parun.Types.Prompt as Prompt
 import qualified Parun.Types.Recipient as Recipient
 import qualified Parun.Types.Regenerability as Regenerability
 import qualified Parun.Types.Response as Response
+import qualified Parun.Types.Settle as Settle
 import qualified Parun.Types.Sickness as Sickness
 import qualified Parun.Types.StepBegan as StepBegan
 import qualified Parun.Types.Timestamp as Timestamp
@@ -282,7 +283,7 @@ pulmonicBoard s registry decision = do
       answer p = case p of
         Prompt.ChooseRedirect _ pid _ _ -> if pid == S.bob then decision else opposite
         _ -> S.identityAnswer p
-      after = S.runPure answer g2 (Event.destroy (pure ()) Regenerability.Regenerable [lymphId])
+      after = S.runPure answer g2 (Event.destroy Settle.none Regenerability.Regenerable [lymphId])
   pure (after, lymph, piker)
 
 -- Add k cards of a printing to pid's hand (each a fresh Hand-zone object).
@@ -671,7 +672,7 @@ zoneChangeSpec s registry = Spec.describe s "ZoneChange" $ do
     leng <- S.printingOf s registry "Library of Leng"
     let (_, withLeng) = S.addPermanent leng S.bob (S.landsInPlay swamp 3)
         (swampId, gs) = S.addHandCard swamp S.bob withLeng
-        after = S.runPure (lengAnswer OptionalDecision.Exercises) gs (Event.discard (pure ()) DiscardCause.Ordinary S.bob swampId)
+        after = S.runPure (lengAnswer OptionalDecision.Exercises) gs (Event.discard Settle.none DiscardCause.Ordinary S.bob swampId)
     Spec.assertEqWith s "bob's swamp is in his graveyard" (namesIn Zone.Graveyard S.bob after) [Just (S.printingName swamp)]
     Spec.assertEqWith s "and not in his library" (namesIn Zone.Library S.bob after) []
   -- Pulmonic Sliver's GRANTED "may" row (CR 614.1a), on a stolen Sliver: alice
@@ -709,7 +710,7 @@ zoneChangeSpec s registry = Spec.describe s "ZoneChange" $ do
         (bobs, g1) = S.addHandCard swamp S.bob stocked
         (alices, g2) = S.addHandCard swamp S.alice g1
         (carols, g3) = S.addHandCard swamp S.carol g2
-        after = S.runPure S.identityAnswer g3 (mapM_ (\oid -> Event.changeZone (pure ()) oid Zone.Graveyard) [bobs, alices, carols])
+        after = S.runPure S.identityAnswer g3 (mapM_ (\oid -> Event.changeZone Settle.none oid Zone.Graveyard) [bobs, alices, carols])
         enchanting = fmap Object.attachedTo (filter (\o -> Object.zone o == Zone.Battlefield && Maybe.isJust (Object.attachedTo o)) (Map.elems (GameState.objects after)))
     Spec.assertEqWith s "bob's card went to the bottom of bob's library" (namesIn Zone.Library S.bob after) [Just (S.printingName piker), Just (S.printingName swamp)]
     Spec.assertEqWith s "and not to bob's graveyard" (namesIn Zone.Graveyard S.bob after) []
@@ -755,7 +756,7 @@ drawCardSpec s registry = Spec.describe s "DrawCard" $ do
     piker <- S.printingOf s registry "Goblin Piker"
     let base = Setup.emptyGame S.bothPlayers
         (_, withCard) = S.addLibraryCard piker S.alice base
-        after = S.runPure S.identityAnswer withCard (Event.drawCard (pure ()) S.alice)
+        after = S.runPure S.identityAnswer withCard (Event.drawCard Settle.none S.alice)
     Spec.assertEqWith s "one card in hand" (S.handSize S.alice after) 1
     Spec.assertEqWith s "library empty" (Game.zoneMembers Zone.Library S.alice after) []
 

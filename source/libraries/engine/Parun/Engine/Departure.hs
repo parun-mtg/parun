@@ -61,6 +61,7 @@ import qualified Parun.Types.RangeOfInfluence as RangeOfInfluence
 import qualified Parun.Types.ReplacementBucket as ReplacementBucket
 import Parun.Types.Result (Result)
 import qualified Parun.Types.Result as Result
+import qualified Parun.Types.Settle as Settle
 import qualified Parun.Types.Source as Source
 import qualified Parun.Types.Status as Status
 import qualified Parun.Types.StoredEffects as StoredEffects
@@ -140,7 +141,7 @@ losing asOf replacing reason named = do
   -- nobody with it (CR 104.3i, 810.8a).
   let propose candidates =
         if replacing
-          then Set.fromList <$> Monad.filterM (fmap Maybe.isNothing . Event.applyReplacementsIn (pure ()) asOf Set.empty Set.empty . ProposedEvent.WouldLoseGame) candidates
+          then Set.fromList <$> Monad.filterM (fmap Maybe.isNothing . Event.applyReplacementsIn Settle.none asOf Set.empty Set.empty . ProposedEvent.WouldLoseGame) candidates
           else pure Set.empty
   replacedNamed <- propose (if reason == Departure.Lost then named else [])
   -- CR 101.2 / 104.3i: a general an effect says can't lose the game stays in
@@ -661,7 +662,7 @@ exileAll :: GameState -> [ObjectId] -> Game ()
 exileAll gs victims =
   let (hidden, seen) = List.partition (`Map.member` GameState.phasedOut gs) victims
    in Event.simultaneously $ do
-        Monad.mapM_ (\oid -> Event.changeZoneInBatch (pure ()) gs oid Zone.Exile) seen
+        Monad.mapM_ (\oid -> Event.changeZoneInBatch Settle.none gs oid Zone.Exile) seen
         Monad.mapM_ (exilePhasedOut gs) hidden
 
 -- CR 702.26n: a phased-out permanent exiled by CR 800.4a or CR 800.4c. CR

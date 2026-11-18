@@ -51,6 +51,7 @@ import qualified Parun.Types.Printing as Printing
 import qualified Parun.Types.PrintingTable as PrintingTable
 import qualified Parun.Types.Prompt as Prompt
 import qualified Parun.Types.Recipient as Recipient
+import qualified Parun.Types.Settle as Settle
 import qualified Parun.Types.StoredEffects as StoredEffects
 import qualified Parun.Types.Supertype as Supertype
 import qualified Parun.Types.TurnRegisters as TurnRegisters
@@ -730,7 +731,7 @@ spyKitCombat giant kit haloed =
                   TurnRegisters.combat = Combat.emptyCombat {Combat.Type.defenders = [S.alice]}
                 }
           }
-      fight = Combat.declareAttackers S.manaPerformer S.bob >> Combat.declareBlockers S.manaPerformer >> Damage.dealCombatDamage (pure ())
+      fight = Combat.declareAttackers S.manaPerformer S.bob >> Combat.declareBlockers S.manaPerformer >> Damage.dealCombatDamage Settle.none
    in (before, S.settleSba (S.runPure (S.attackTo S.alice) before fight))
 
 runedHaloSpec :: (Monad m, Monad n) => Spec.Spec m n -> Registry.Registry m -> n ()

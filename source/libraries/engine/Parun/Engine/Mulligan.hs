@@ -40,6 +40,7 @@ import Parun.Types.PlayerId (PlayerId)
 import qualified Parun.Types.Prompt as Prompt
 import qualified Parun.Types.Reveal as Reveal
 import qualified Parun.Types.RevealWindow as RevealWindow
+import qualified Parun.Types.Settle as Settle
 import qualified Parun.Types.TurnRegisters as TurnRegisters
 import qualified Parun.Types.Zone as Zone
 
@@ -84,7 +85,7 @@ openingHands perform seated = do
     owners
     ( \pid -> do
         n <- State.gets (startingHandSize pid)
-        Monad.replicateM_ (Natural.toIntSaturating n) (Event.drawCard (pure ()) pid)
+        Monad.replicateM_ (Natural.toIntSaturating n) (Event.drawCard Settle.none pid)
     )
   additionalHands owners
   mulliganRounds perform Map.empty owners
@@ -140,7 +141,7 @@ additionalHands owners = do
       answer <- Game.choose (Prompt.KeepHand decider pid hands)
       -- An index naming no hand keeps the last, so exactly one is always kept.
       let (before, after) = List.genericSplitAt (min answer (Natural.length (NonEmpty.tail hands))) (NonEmpty.toList hands)
-      Monad.forM_ (concat (before <> drop 1 after)) (\oid -> Event.changeZone (pure ()) oid Zone.Library)
+      Monad.forM_ (concat (before <> drop 1 after)) (\oid -> Event.changeZone Settle.none oid Zone.Library)
       Event.shuffleLibrary pid
 
 -- One additional hand: draw `size` cards and answer the cards that reached
@@ -148,7 +149,7 @@ additionalHands owners = do
 drawHand :: PlayerId -> Numeric.Natural.Natural -> Game [ObjectId]
 drawHand pid size = do
   before <- State.gets (Game.zoneMembers Zone.Hand pid)
-  Monad.replicateM_ (Natural.toIntSaturating size) (Event.drawCard (pure ()) pid)
+  Monad.replicateM_ (Natural.toIntSaturating size) (Event.drawCard Settle.none pid)
   State.gets (filter (`notElem` before) . Game.zoneMembers Zone.Hand pid)
 
 -- CR 103.5b / CR 103.6: every action the cards in this player's hand grant from
@@ -406,10 +407,10 @@ offerFor counts pid gs =
 takeMulligan :: Map.Map PlayerId Numeric.Natural.Natural -> PlayerId -> Game (Map.Map PlayerId Numeric.Natural.Natural)
 takeMulligan counts pid = do
   handIds <- State.gets (Game.zoneMembers Zone.Hand pid)
-  Monad.forM_ handIds (\oid -> Event.changeZone (pure ()) oid Zone.Library)
+  Monad.forM_ handIds (\oid -> Event.changeZone Settle.none oid Zone.Library)
   Event.shuffleLibrary pid
   handSize <- State.gets (startingHandSize pid)
-  Monad.replicateM_ (Natural.toIntSaturating handSize) (Event.drawCard (pure ()) pid)
+  Monad.replicateM_ (Natural.toIntSaturating handSize) (Event.drawCard Settle.none pid)
   -- The SAME offer the declaration prompt reported -- offerFor is a pure
   -- function of `counts`, `pid` and the seat roster, none of which the redraw
   -- touches -- so this bottoms exactly what the player was promised.
@@ -436,5 +437,5 @@ takeMulligan counts pid = do
       -- hand of 0 or 1, there is exactly one possible outcome; where the rules
       -- leave nothing to ask, don't prompt -- bottom whatever `n` names.
         pure (List.genericTake n newHand)
-  Monad.forM_ bottomChosen (\oid -> Event.changeZone (pure ()) oid Zone.Library)
+  Monad.forM_ bottomChosen (\oid -> Event.changeZone Settle.none oid Zone.Library)
   pure (Map.insert pid count counts)

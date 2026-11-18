@@ -123,6 +123,7 @@ import qualified Parun.Types.Prompt as Prompt
 import qualified Parun.Types.Recipient as Recipient
 import qualified Parun.Types.Regenerability as Regenerability
 import qualified Parun.Types.RuleFamily as RuleFamily
+import qualified Parun.Types.Settle as Settle
 import qualified Parun.Types.Source as Source
 import qualified Parun.Types.Status as Status
 import qualified Parun.Types.Subtype as Subtype.Type
@@ -242,7 +243,7 @@ chosenColorSpec s registry = Spec.describe s "Chosen color" $ do
           _ -> S.identityAnswer p
         cloned = S.runPure copying cloning (Stack.resolveTop >> Engine.settleForPriority)
         clones = filter (\oid -> fmap S.nameOf (Game.cardOf oid cloned) == Just (S.nameOf (Printing.card clone))) (Set.toList (GameState.battlefield cloned))
-        binned = List.foldl' (\g oid -> S.runPure S.identityAnswer g (Event.changeZone (pure ()) oid Zone.Graveyard)) cloned (namedIn piper Zone.Battlefield cloned)
+        binned = List.foldl' (\g oid -> S.runPure S.identityAnswer g (Event.changeZone Settle.none oid Zone.Graveyard)) cloned (namedIn piper Zone.Battlefield cloned)
     Spec.assertEqWith s "in the command zone" (colorsIn Zone.Command built) [Set.singleton Color.Blue]
     Spec.assertEqWith s "a blue spell" (colorsIn Zone.Stack cast) [Set.singleton Color.Blue]
     Spec.assertEqWith s "a blue permanent" (colorsIn Zone.Battlefield resolved) [Set.singleton Color.Blue]
@@ -289,8 +290,8 @@ designationSpec s registry = Spec.describe s "Designation" $ do
     let deck = Deck.MkDeck {Deck.cards = Map.fromList [(cid, 1), (mountain, 3)], Deck.commander = Map.singleton cid 1, Deck.vanguard = Nothing, Deck.dungeons = Set.empty, Deck.sideboard = Map.empty, Deck.conspiracies = Map.empty, Deck.sideDecks = Map.empty, Deck.stickerSheets = Seq.empty, Deck.draftNotes = Map.empty, Deck.exiledBeforeGame = Map.empty}
         built = S.runPure S.identityAnswer (Setup.emptyGame S.bothPlayers) (Setup.createDeck S.alice deck)
         cidsIn ids gs = filter (\oid -> fmap S.nameOf (Game.cardOf oid gs) == Just (S.printingName cid)) ids
-        intoPlay' oid gs = S.runPureWith S.identityAnswer gs (Event.changeZoneReturning (pure ()) oid Zone.Battlefield)
-        killed arrived gs = S.runPure reclaiming gs (Event.destroy (pure ()) Regenerability.Regenerable (Foldable.toList arrived) >> Engine.settleForPriority)
+        intoPlay' oid gs = S.runPureWith S.identityAnswer gs (Event.changeZoneReturning Settle.none oid Zone.Battlefield)
+        killed arrived gs = S.runPure reclaiming gs (Event.destroy Settle.none Regenerability.Regenerable (Foldable.toList arrived) >> Engine.settleForPriority)
     case (cidsIn (Game.zoneMembers Zone.Library S.alice built) built, inCommandZoneNamed cid built) of
       ([second], [commander]) -> do
         let (secondArrived, secondInPlay) = intoPlay' second built
@@ -316,7 +317,7 @@ designationSpec s registry = Spec.describe s "Designation" $ do
         built = S.runPure S.identityAnswer (Setup.emptyGame S.bothPlayers) (Setup.createDeck S.alice deck)
         named gs = filter (\oid -> fmap S.nameOf (Game.cardOf oid gs) == Just (S.printingName cid))
         cids = named built (Game.zoneMembers Zone.Library S.alice built <> inCommandZone built)
-        inPlay = List.foldl' (\g oid -> S.runPure S.identityAnswer g (Event.changeZone (pure ()) oid Zone.Graveyard)) built cids
+        inPlay = List.foldl' (\g oid -> S.runPure S.identityAnswer g (Event.changeZone Settle.none oid Zone.Graveyard)) built cids
         alike = Interchangeable.objects (Projection.projectAll inPlay) inPlay
     case List.partition (`Commander.isCommander` inPlay) (named inPlay (Game.zoneMembers Zone.Graveyard S.alice inPlay)) of
       ([commander], [first, second]) -> do
@@ -471,7 +472,7 @@ designationSpec s registry = Spec.describe s "Designation" $ do
         unstated = S.runPure S.identityAnswer (commanderBoard mountain walls 0) (Setup.createDeck S.bob (deckFor anafenza))
         binned base =
           let (pikerId, board) = S.addPermanent piker S.alice base
-           in S.runPure S.identityAnswer board (Event.changeZone (pure ()) pikerId Zone.Graveyard)
+           in S.runPure S.identityAnswer board (Event.changeZone Settle.none pikerId Zone.Graveyard)
     Spec.assertEqWith s "CR 113.6b the Warden's row states this zone and functions from it, so alice's creature is in her library" (length (Game.zoneMembers Zone.Library S.alice (binned stating))) 1
     Spec.assertEqWith s "and the graveyard the move aimed at is empty" (length (Game.zoneMembers Zone.Graveyard S.alice (binned stating))) 0
     Spec.assertEqWith s "CR 113.6p is still the other limb: bob's Anafenza states no zone, so alice's creature reaches her graveyard" (length (Game.zoneMembers Zone.Graveyard S.alice (binned unstated))) 1
@@ -684,7 +685,7 @@ partnerSpec s registry = Spec.describe s "Partner" $ do
         seated = gs {GameState.players = Map.adjust (\p -> p {Player.life = 40}) S.bob (GameState.players gs)}
         (rogOid, withRograkh) = asCommanderCard rograkh (S.addPermanent rograkh S.alice) seated
         (akiriOid, both) = asCommanderCard akiri (S.addPermanent akiri S.alice) withRograkh
-        hit n oid g = S.settleSba (S.runPure S.identityAnswer g (Damage.applyDamage (pure ()) [Event.damageEvent g DamageKind.Combat oid (Recipient.ToPlayer S.bob) n]))
+        hit n oid g = S.settleSba (S.runPure S.identityAnswer g (Damage.applyDamage Settle.none [Event.damageEvent g DamageKind.Combat oid (Recipient.ToPlayer S.bob) n]))
         eleven = hit 11 akiriOid (hit 11 rogOid both)
     Spec.assertEqWith s "CR 702.124d: eleven from each leaves bob in the game" (statusOf S.bob eleven) (Just Status.Playing)
     Spec.assertEqWith s "the two tallies stand apart at eleven each" (tallyFrom S.alice S.bob eleven) [11, 11]
@@ -983,7 +984,7 @@ ninjaIn s registry name zone = do
   printing <- S.printingOf s registry name
   board <- ninjutsuAttack s registry
   let (inHand, g0) = S.addHandCard printing S.alice board
-      moved = if zone == Zone.Hand then g0 else S.runPure S.identityAnswer g0 (Event.changeZone (pure ()) inHand zone)
+      moved = if zone == Zone.Hand then g0 else S.runPure S.identityAnswer g0 (Event.changeZone Settle.none inHand zone)
       declared = declaredAttack moved
   case [oid | oid <- Set.toList (Map.keysSet (GameState.objects declared)), fmap Object.zone (Game.lookupObject oid declared) == Just zone, fmap S.nameOf (Game.cardOf oid declared) == Just (S.nameOf (Printing.card printing))] of
     [oid] -> pure (oid, declared)
@@ -1108,7 +1109,7 @@ designating seats gs0 =
 intoPlay :: PlayerId.PlayerId -> GameState.GameState -> GameState.GameState
 intoPlay pid gs =
   let mine = filter (\oid -> fmap Object.owner (Game.lookupObject oid gs) == Just pid) (inCommandZone gs)
-   in List.foldl' (\g oid -> S.runPure S.identityAnswer g (Event.changeZone (pure ()) oid Zone.Battlefield)) gs mine
+   in List.foldl' (\g oid -> S.runPure S.identityAnswer g (Event.changeZone Settle.none oid Zone.Battlefield)) gs mine
 
 -- alice's commander on the battlefield, bob's still in the command zone.
 commanderDuel :: Printing.Printing -> Printing.Printing -> GameState.GameState
@@ -1148,7 +1149,7 @@ commanderDamageSpec s registry = Spec.describe s "CommanderDamage" $ do
       Nothing -> Spec.assertBool s False "expected alice's commander on the battlefield"
       Just oid -> do
         let event = Event.damageEvent board DamageKind.Noncombat oid (Recipient.ToPlayer S.bob) 21
-            after = S.settleSba (S.runPure S.identityAnswer board (Damage.applyDamage (pure ()) [event]))
+            after = S.settleSba (S.runPure S.identityAnswer board (Damage.applyDamage Settle.none [event]))
         Spec.assertEqWith s "bob lost the 21 life" (S.lifeOf S.bob after) (Just 19)
         Spec.assertEqWith s "nothing was tallied" (tallyFrom S.alice S.bob after) [0]
         Spec.assertEqWith s "and he is still playing" (statusOf S.bob after) (Just Status.Playing)
@@ -1159,7 +1160,7 @@ commanderDamageSpec s registry = Spec.describe s "CommanderDamage" $ do
     jedit <- S.printingOf s registry "Jedit Ojanen"
     let board = intoPlay S.carol (intoPlay S.bob (designating [(S.bob, jedit), (S.carol, jedit)] (Setup.emptyGame S.threePlayers)))
         seated = board {GameState.players = Map.adjust (\p -> p {Player.life = 40}) S.alice (GameState.players board)}
-        hit n oid g = S.settleSba (S.runPure S.identityAnswer g (Damage.applyDamage (pure ()) [Event.damageEvent g DamageKind.Combat oid (Recipient.ToPlayer S.alice) n]))
+        hit n oid g = S.settleSba (S.runPure S.identityAnswer g (Damage.applyDamage Settle.none [Event.damageEvent g DamageKind.Combat oid (Recipient.ToPlayer S.alice) n]))
     case (commanderInPlay S.bob seated, commanderInPlay S.carol seated) of
       (Just bobs, Just carols) -> do
         let after = hit 11 carols (hit 11 bobs seated)
@@ -1353,7 +1354,7 @@ restartSpec s registry = Spec.describe s "Restart" $ do
         -- exiles before it restarts, and because startGameFromCards intersects
         -- the exempt set with GameState.exile -- an exemption naming a card in
         -- the command zone reaches nothing at all.
-        let exiled = S.runPure S.identityAnswer gs (Event.changeZone (pure ()) cmd Zone.Exile)
+        let exiled = S.runPure S.identityAnswer gs (Event.changeZone Settle.none cmd Zone.Exile)
             -- CR 400.7 mints a fresh id on the way to exile, so the exempt set
             -- has to name the POST-move object, read back out of the zone.
             oid = case Set.toAscList (GameState.exile exiled) of
@@ -1418,7 +1419,7 @@ departureSpec s registry = Spec.describe s "Departure" $ do
         zoneOfJedit gs = case jedits gs of
           [oid] -> fmap Object.zone (Game.lookupObject oid gs)
           _ -> Nothing
-        buried = List.foldl' (\g oid -> S.runPure S.identityAnswer g (Event.changeZone (pure ()) oid Zone.Graveyard)) designated (jedits designated)
+        buried = List.foldl' (\g oid -> S.runPure S.identityAnswer g (Event.changeZone Settle.none oid Zone.Graveyard)) designated (jedits designated)
         lands = S.landsFor island S.carol 2 (S.landsFor swamp S.alice 5 buried)
         (riseId, g1) = S.addHandCard rise S.alice lands
         (rippleId, g2) = S.addHandCard ripple S.carol g1

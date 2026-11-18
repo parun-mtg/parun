@@ -60,6 +60,7 @@ import qualified Parun.Types.PregameExile as PregameExile
 import qualified Parun.Types.PrintingId as PrintingId
 import qualified Parun.Types.Prompt as Prompt
 import qualified Parun.Types.RestartSignal as RestartSignal
+import qualified Parun.Types.Settle as Settle
 import qualified Parun.Types.SideDeck as SideDeck
 import qualified Parun.Types.Source as Source
 import qualified Parun.Types.Status as Status
@@ -938,7 +939,7 @@ anteFromLibraries seated = do
   let anteOne pid = do
         gs <- State.get
         drawn <- Game.drawAmong Prompt.RandomObject (Game.zoneMembers Zone.Library pid gs)
-        Monad.forM_ drawn (\oid -> Event.changeZone (pure ()) oid Zone.Ante)
+        Monad.forM_ drawn (\oid -> Event.changeZone Settle.none oid Zone.Ante)
   Monad.when playing (Monad.forM_ seated anteOne)
 
 -- CR 103.2d / 123.2: each player who brought more than three sticker sheets

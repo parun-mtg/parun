@@ -141,6 +141,7 @@ import qualified Parun.Types.RevealCause as RevealCause
 import qualified Parun.Types.Revealed as Revealed
 import qualified Parun.Types.RollAdjustment as RollAdjustment
 import qualified Parun.Types.SearchPlace as SearchPlace
+import qualified Parun.Types.Settle as Settle
 import qualified Parun.Types.SlotName as SlotName
 import qualified Parun.Types.StoredResult as StoredResult
 import qualified Parun.Types.TapState as TapState
@@ -1399,7 +1400,7 @@ spec s registry = Spec.describe s "Client" $ do
     piker <- S.printingOf s registry "Goblin Piker"
     let (live, g1) = S.addPermanent bears S.alice (Setup.emptyGame S.bothPlayers)
         (dead, g2) = S.addPermanent piker S.alice g1
-        gs = S.runPure S.identityAnswer g2 (Event.destroy (pure ()) Regenerability.Regenerable [dead])
+        gs = S.runPure S.identityAnswer g2 (Event.destroy Settle.none Regenerability.Regenerable [dead])
         (picked, shown) = asking Hotseat.fresh {Hotseat.facing = Just S.alice} ["2"] gs (Prompt.ChooseCardFromAmong (Decider.MkDecider S.alice) S.alice live (live NonEmpty.:| [dead]))
     Spec.assertEqWith s "the options" (filter (\line -> any ((`Text.isPrefixOf` line) . Text.pack) ["  1. ", "  2. "]) shown) (fmap Text.pack ["  1. Your Grizzly Bears 2/2", "  2. Goblin Piker (it is gone)"])
     Spec.assertEqWith s "the departed one picked" picked (Right dead)

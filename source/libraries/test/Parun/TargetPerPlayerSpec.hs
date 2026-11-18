@@ -33,6 +33,7 @@ import qualified Parun.Types.ObjectId as ObjectId
 import qualified Parun.Types.PlayerId as PlayerId
 import qualified Parun.Types.Prompt as Prompt
 import qualified Parun.Types.Recipient as Recipient
+import qualified Parun.Types.Settle as Settle
 import qualified Parun.Types.Zone as Zone
 
 spec :: (Monad m, Monad n) => Spec.Spec m n -> Registry.Registry m -> n ()
@@ -58,7 +59,7 @@ spec s registry = Spec.describe s "Parun.Engine.Target" . Spec.describe s "PerPl
       -- the object ids each slot offers.
       enter :: Set.Set ObjectId.ObjectId -> ObjectId.ObjectId -> GameState.GameState -> (GameState.GameState, [[Set.Set ObjectId.ObjectId]])
       enter picks cardId gs =
-        State.runState (fmap snd (Engine.runGame (aiming picks) gs (Event.changeZone (pure ()) cardId Zone.Battlefield >> Engine.placePendingTriggers []))) []
+        State.runState (fmap snd (Engine.runGame (aiming picks) gs (Event.changeZone Settle.none cardId Zone.Battlefield >> Engine.placePendingTriggers []))) []
       resolve :: GameState.GameState -> GameState.GameState
       resolve gs = State.evalState (fmap snd (Engine.runGame (aiming Set.empty) gs Stack.resolveTop)) []
       named = Just . CardName.MkCardName . Text.pack
@@ -133,7 +134,7 @@ spec s registry = Spec.describe s "Parun.Engine.Target" . Spec.describe s "PerPl
       -- may" per member (FILTERED from the offer).
       resolveTaking :: Set.Set ObjectId.ObjectId -> GameState.GameState -> GameState.GameState
       resolveTaking takes gs = State.evalState (fmap snd (Engine.runGame (taking takes Set.empty) gs Stack.resolveTop)) []
-      exile oid gs = State.evalState (fmap snd (Engine.runGame (aiming Set.empty) gs (Event.changeZone (pure ()) oid Zone.Exile))) []
+      exile oid gs = State.evalState (fmap snd (Engine.runGame (aiming Set.empty) gs (Event.changeZone Settle.none oid Zone.Exile))) []
       -- How many permanents named `name` `pid` CONTROLS (not owns).
       controls name pid gs =
         length

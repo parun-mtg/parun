@@ -126,6 +126,7 @@ import qualified Parun.Types.Reply as R
 import qualified Parun.Types.Request as Request
 import qualified Parun.Types.RollAdjustment as RollAdjustment
 import qualified Parun.Types.SearchPlace as SearchPlace
+import qualified Parun.Types.Settle as Settle
 import qualified Parun.Types.SlotName as SlotName
 import qualified Parun.Types.StoredResult as StoredResult
 import qualified Parun.Types.Subtype as Subtype
@@ -322,7 +323,7 @@ spec s registry = Spec.describe s "Protocol" $ do
     let (live, g1) = S.addPermanent bears S.alice (Setup.emptyGame S.bothPlayers)
         (dead, g2) = S.addPermanent piker S.alice g1
         (held, g3) = S.addHandCard piker S.bob g2
-        gs = Event.forgetObject (S.runPure S.identityAnswer g3 (Event.destroy (pure ()) Regenerability.Regenerable [dead])) held
+        gs = Event.forgetObject (S.runPure S.identityAnswer g3 (Event.destroy Settle.none Regenerability.Regenerable [dead])) held
         offer among = PromptOffer.offerOf Protocol.namer gs (Prompt.ChooseCardFromAmong (Decider.MkDecider S.alice) S.alice live among)
         gone = offer (live NonEmpty.:| [dead, held])
     Spec.assertEqWith s "the Piker and the hand card have left the game" (fmap (`Map.member` GameState.objects gs) [live, dead, held]) [True, False, False]

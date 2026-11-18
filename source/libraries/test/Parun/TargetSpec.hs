@@ -140,6 +140,7 @@ import qualified Parun.Types.Printing as Printing
 import qualified Parun.Types.Prompt as Prompt
 import qualified Parun.Types.Quantity as Quantity.Type
 import qualified Parun.Types.Recipient as Recipient
+import qualified Parun.Types.Settle as Settle
 import qualified Parun.Types.SlotName as SlotName
 import qualified Parun.Types.StackObjectKind as StackObjectKind
 import qualified Parun.Types.Subtype as Subtype
@@ -1673,7 +1674,7 @@ spec s registry = Spec.describe s "Parun.Engine.Target" $ do
         placed = S.runPure (aimAtCardShuffling hisId) board (Engine.placePendingTriggers [])
         resolve g = S.runPure (aimAtCardShuffling hisId) g Stack.resolveTop
         shuffledIn = resolve placed
-        fizzled = resolve (S.runPure S.identityAnswer placed (Event.changeZone (pure ()) hisId Zone.Hand))
+        fizzled = resolve (S.runPure S.identityAnswer placed (Event.changeZone Settle.none hisId Zone.Hand))
     Spec.assertEqWith s "the enters trigger went on the stack" (length (TurnRegisters.stack (GameState.turn placed))) 1
     Spec.assertEqWith s "untouched, bob's library grew to three" (length (Game.zoneMembers Zone.Library S.bob shuffledIn)) 3
     Spec.assertEqWith s "taken to his hand in response, his library is the two it started with, in their original order -- not even shuffled" (Game.zoneMembers Zone.Library S.bob fizzled) [hisTopId, hisDeeperId]
@@ -2290,7 +2291,7 @@ warsingerSpec s registry =
             -- the trigger -- so `placed` is the state with the ability on the
             -- stack and its target already chosen.
             atDamage = S.runToStep (Phase.Combat CombatStep.CombatDamage) (warsingerPlan [tyrantId, wolvesId, boltId]) shrunk
-            fought = S.runPure (warsingerPlan [tyrantId, wolvesId, boltId]) atDamage (Damage.dealCombatDamage (pure ()))
+            fought = S.runPure (warsingerPlan [tyrantId, wolvesId, boltId]) atDamage (Damage.dealCombatDamage Settle.none)
             placed = S.runPure (warsingerPlan [tyrantId, wolvesId, boltId]) fought Engine.settleForPriority
         pure (mine, pikerId, shrunk, placed, S.runPure (warsingerPlan [tyrantId, wolvesId, boltId]) placed Engine.priorityLoop)
    in Spec.describe s "EnclosingAmount (CR 202.3)" $ do

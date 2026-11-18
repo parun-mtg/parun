@@ -71,6 +71,7 @@ import qualified Parun.Types.ReplacementEffect as ReplacementEffect
 import qualified Parun.Types.ReplacementEntry as ReplacementEntry
 import qualified Parun.Types.ReplacementOrigin as ReplacementOrigin
 import qualified Parun.Types.Response as Response
+import qualified Parun.Types.Settle as Settle
 import qualified Parun.Types.SourceChoices as SourceChoices
 import qualified Parun.Types.StepBegan as StepBegan
 import qualified Parun.Types.StoredEffects as StoredEffects
@@ -387,7 +388,7 @@ mendingHandsSpec s registry = Spec.describe s "Mending Hands (CR 615.7)" $ do
         (attacker, g2) = S.addPermanent pikerPrinting S.bob g1
         (g3, spellId) = S.handOne mendingHands g2
         shielded = castAndResolve (aimCreature victim) g3 spellId
-        strike g = S.runPure S.identityAnswer g (Damage.applyDamage (pure ()) [hit attacker (Recipient.ToCreature victim) 3])
+        strike g = S.runPure S.identityAnswer g (Damage.applyDamage Settle.none [hit attacker (Recipient.ToCreature victim) 3])
         once = strike shielded
         twice = strike once
         thrice = strike twice
@@ -420,7 +421,7 @@ mendingHandsSpec s registry = Spec.describe s "Mending Hands (CR 615.7)" $ do
         (attacker, g3) = S.addPermanent pikerPrinting S.bob g2
         (g4, spellId) = S.handOne mendingHands g3
         shielded = castAndResolve (aimCreature shieldedOne) g4 spellId
-        after = S.runPure S.identityAnswer shielded (Damage.applyDamage (pure ()) [hit attacker (Recipient.ToCreature bystander) 3])
+        after = S.runPure S.identityAnswer shielded (Damage.applyDamage Settle.none [hit attacker (Recipient.ToCreature bystander) 3])
     Spec.assertEqWith s "the unshielded creature takes all of it" (S.damageOf bystander after) (Just 3)
     Spec.assertEqWith s "and the shield was not spent on damage it does not cover" (length (StoredEffects.replacements (GameState.stored after))) 1
   -- CR 615.7 by the POINT rather than by the event: "each 1 damage that would be
@@ -609,7 +610,7 @@ packLeaderSpec s registry = Spec.describe s "Pack Leader (CR 611.2c)" $ do
         -- ONE source for every case, so each pair below differs in the recipient
         -- alone: the shield says nothing about its source, and a case that
         -- swapped sources would not be a twin of the one beside it.
-        strike src oid n = S.damageOf oid (S.runPure S.identityAnswer board (Damage.applyDamage (pure ()) [hit src (Recipient.ToCreature oid) n]))
+        strike src oid n = S.damageOf oid (S.runPure S.identityAnswer board (Damage.applyDamage Settle.none [hit src (Recipient.ToCreature oid) n]))
     case (mine, theirs) of
       ([leaderId, ourDog, ourPiker], [theirDog, theirPiker]) -> do
         let strikeFrom = strike theirPiker
@@ -782,7 +783,7 @@ atLife pid n gs = gs {GameState.players = Map.adjust (\p -> p {Player.life = n})
 -- Apply one damage batch under a given interpreter. Top-level rather than a
 -- `where` binding because the answer is rank-2 and GHC will not infer it.
 settleDamage :: (forall r. Prompt.Prompt r -> r) -> GameState.GameState -> [DamageEvent.DamageEvent] -> GameState.GameState
-settleDamage answer gs batch = S.runPure answer gs (Damage.applyDamage (pure ()) batch)
+settleDamage answer gs batch = S.runPure answer gs (Damage.applyDamage Settle.none batch)
 
 -- Aim every target slot at one creature. Mending Hands' slot is Pool.AnyTarget
 -- (CR 115.4), whose creature members are tagged ToCreature.

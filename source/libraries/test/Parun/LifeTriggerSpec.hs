@@ -51,6 +51,7 @@ import qualified Parun.Types.PlayerRef as PlayerRef
 import qualified Parun.Types.PlayerRelation as PlayerRelation
 import qualified Parun.Types.Prompt as Prompt
 import qualified Parun.Types.Recipient as Recipient
+import qualified Parun.Types.Settle as Settle
 import qualified Parun.Types.Subtype as Subtype
 import qualified Parun.Types.TriggerCondition as TriggerCondition
 import qualified Parun.Types.TriggerFrequency as TriggerFrequency
@@ -163,7 +164,7 @@ lifeGainTriggerSpec s registry =
                       _ -> Nothing
                   )
                   (S.eventsOf gs)
-              after n = S.runPure S.identityAnswer gs0 (Damage.applyDamage (pure ()) [evOf n])
+              after n = S.runPure S.identityAnswer gs0 (Damage.applyDamage Settle.none [evOf n])
           Spec.assertEqWith s "two damage records the gain" (gainsIn (after 2)) [S.alice]
           Spec.assertEqWith s "zero damage records nothing" (gainsIn (after 0)) []
 
@@ -596,7 +597,7 @@ enrageSpec s registry =
       -- entries, the settle gathers what they triggered and puts it on the stack
       -- (CR 603.3), and the priority loop resolves it. The narrowest path that
       -- shows the behaviour.
-      dealing events gs = resolveAll (settle (S.runPure S.identityAnswer gs (Damage.applyDamage (pure ()) events)))
+      dealing events gs = resolveAll (settle (S.runPure S.identityAnswer gs (Damage.applyDamage Settle.none events)))
       -- alice's library is stocked, or CR 104.3c decks her before the assertion
       -- runs.
       stock printing pid n gs = List.foldl' (\g _ -> snd (S.addLibraryCard printing pid g)) gs [1 .. (n :: Int)]
@@ -728,7 +729,7 @@ belltowerSphinxSpec :: (Monad m, Monad n) => Spec.Spec m n -> Registry.Registry 
 belltowerSphinxSpec s registry =
   let resolveAll gs = snd (Engine.runGamePure S.identityAnswer gs Engine.priorityLoop)
       settle gs = snd (Engine.runGamePure S.identityAnswer gs Engine.settleForPriority)
-      dealing events gs = resolveAll (settle (S.runPure S.identityAnswer gs (Damage.applyDamage (pure ()) events)))
+      dealing events gs = resolveAll (settle (S.runPure S.identityAnswer gs (Damage.applyDamage Settle.none events)))
       -- Every library is stocked past the largest mill, or the mill runs out of
       -- cards and both readings of the rule produce the same graveyard.
       stock printing pid n gs = List.foldl' (\g _ -> snd (S.addLibraryCard printing pid g)) gs [1 .. (n :: Int)]

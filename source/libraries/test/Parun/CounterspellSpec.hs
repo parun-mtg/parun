@@ -72,6 +72,7 @@ import qualified Parun.Types.Quantity as Quantity
 import qualified Parun.Types.Recipient as Recipient
 import qualified Parun.Types.Regenerability as Regenerability
 import qualified Parun.Types.Response as Response
+import qualified Parun.Types.Settle as Settle
 import qualified Parun.Types.SlotName as SlotName
 import qualified Parun.Types.StackObjectKind as StackObjectKind
 import qualified Parun.Types.StepBegan as StepBegan
@@ -1121,7 +1122,7 @@ moonmistShieldChain s registry swap = do
             Stack.resolveTop
       shielded = S.runPure S.identityAnswer evolved Stack.resolveTop
       hit src n = DamageEvent.MkDamageEvent src (Recipient.ToPlayer S.alice) n 0 False False False 0 Nothing Nothing mempty False mempty mempty mempty mempty Nothing mempty mempty Nothing DamageKind.Combat
-      after = S.runPure S.identityAnswer shielded (Damage.applyDamage (pure ()) [hit wolf 3, hit werewolf 3, hit piker 2])
+      after = S.runPure S.identityAnswer shielded (Damage.applyDamage Settle.none [hit wolf 3, hit werewolf 3, hit piker 2])
   pure (wolf, werewolf, piker, shielded, after)
 
 -- CR 612.1 through a quoted ability handed over by a RESOLUTION rather than by
@@ -1908,7 +1909,7 @@ fizzleSpec s registry = Spec.describe s "Fizzle" $ do
         -- Kill the sole real target before resolution: CR 608.2b makes it
         -- illegal (it's no longer a legal CreatureTarget), while the
         -- reserved slot -- never targeted -- stays vacuously legal.
-        gone = S.runPure S.identityAnswer withBindings (Event.changeZone (pure ()) victim Zone.Graveyard)
+        gone = S.runPure S.identityAnswer withBindings (Event.changeZone Settle.none victim Zone.Graveyard)
         mode = Mode.MkMode (Seq.singleton (Mint.mandatory (Seq.fromList [Effect.Destroy (Destroy.MkDestroy (ObjectRef.InSlot targetSlot) Regenerability.Regenerable Nothing Nothing Nothing), Effect.Draw (Draw.MkDraw (PlayerRef.Relative PlayerRelation.You) (Quantity.Literal 1) Nothing Nothing)]))) slots
         run = Resolve.resolveModes abilId source [(ModeInstance.MkModeInstance 0 (ModeIndex.MkModeIndex 0) 0 False, mode)]
         after = snd (Engine.runGamePure S.identityAnswer gone run)

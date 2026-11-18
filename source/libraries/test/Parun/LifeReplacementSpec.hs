@@ -33,6 +33,7 @@ import qualified Parun.Types.Printing as Printing
 import qualified Parun.Types.Prompt as Prompt
 import qualified Parun.Types.Recipient as Recipient
 import qualified Parun.Types.Regenerability as Regenerability
+import qualified Parun.Types.Settle as Settle
 import qualified Parun.Types.TurnRegisters as TurnRegisters
 import qualified Parun.Types.Zone as Zone
 
@@ -136,7 +137,7 @@ bloodletterSpec s registry = Spec.describe s "Bloodletter of Aclazotz (CR 119.4 
           S.runPure
             S.identityAnswer
             base
-            (Damage.applyDamage (pure ()) [DamageEvent.MkDamageEvent bobsPiker (Recipient.ToPlayer S.alice) 3 0 False False False 0 Nothing Nothing mempty False mempty mempty mempty mempty Nothing mempty mempty Nothing DamageKind.Noncombat])
+            (Damage.applyDamage Settle.none [DamageEvent.MkDamageEvent bobsPiker (Recipient.ToPlayer S.alice) 3 0 False False False 0 Nothing Nothing mempty False mempty mempty mempty mempty Nothing mempty mempty Nothing DamageKind.Noncombat])
     Spec.assertEqWith s "CR 119.4 the payment bypasses Worship's floor: 2 - 2 = 0" (S.lifeOf S.alice paid) (Just 0)
     Spec.assertEqWith s "CR 120.4c the same board's DAMAGE is still floored at 1" (S.lifeOf S.alice damaged) (Just 1)
   -- CR 120.4c is untouched by this unit, and this is the case that says so: the
@@ -151,7 +152,7 @@ bloodletterSpec s registry = Spec.describe s "Bloodletter of Aclazotz (CR 119.4 
           S.runPure
             S.identityAnswer
             g2
-            (Damage.applyDamage (pure ()) [DamageEvent.MkDamageEvent source (Recipient.ToPlayer S.bob) 3 0 False False False 0 Nothing Nothing mempty False mempty mempty mempty mempty Nothing mempty mempty Nothing DamageKind.Noncombat])
+            (Damage.applyDamage Settle.none [DamageEvent.MkDamageEvent source (Recipient.ToPlayer S.bob) 3 0 False False False 0 Nothing Nothing mempty False mempty mempty mempty mempty Nothing mempty mempty Nothing DamageKind.Noncombat])
     Spec.assertEqWith s "3 damage costs bob 6 life, not the 12 a second application would" (S.lifeOf S.bob after) (Just 14)
     Spec.assertEqWith s "CR 120.4b the damage event itself is undiminished" (fmap DamageEvent.amount (S.damageEventsOf after)) [3]
   -- CR 701.12c: "each player gains or loses the amount of life necessary to equal
@@ -225,7 +226,7 @@ wordsOfWorshipSpec s registry = Spec.describe s "Words of Worship (CR 614.11)" $
     wordsOfWorship <- S.printingOf s registry "Words of Worship"
     piker <- S.printingOf s registry "Goblin Piker"
     let (armed, _) = wordsBoard plains wordsOfWorship piker True
-        after = S.runPure S.identityAnswer armed (Event.drawCard (pure ()) S.alice)
+        after = S.runPure S.identityAnswer armed (Event.drawCard Settle.none S.alice)
     Spec.assertEqWith s "CR 614.1a alice is at 25, so the row applied" (S.lifeOf S.alice after) (Just 25)
     Spec.assertEqWith s "CR 614.6 nothing reached her hand" (S.handSize S.alice after) 0
     Spec.assertEqWith s "CR 614.6 and nothing left her library" (length (Game.zoneMembers Zone.Library S.alice after)) 2
@@ -236,7 +237,7 @@ wordsOfWorshipSpec s registry = Spec.describe s "Words of Worship (CR 614.11)" $
     wordsOfWorship <- S.printingOf s registry "Words of Worship"
     piker <- S.printingOf s registry "Goblin Piker"
     let (unarmed, _) = wordsBoard plains wordsOfWorship piker False
-        after = S.runPure S.identityAnswer unarmed (Event.drawCard (pure ()) S.alice)
+        after = S.runPure S.identityAnswer unarmed (Event.drawCard Settle.none S.alice)
     Spec.assertEqWith s "she gained nothing" (S.lifeOf S.alice after) (Just 20)
     Spec.assertEqWith s "CR 121.1 and drew the card" (S.handSize S.alice after) 1
     Spec.assertEqWith s "which came off her library" (length (Game.zoneMembers Zone.Library S.alice after)) 1
@@ -247,7 +248,7 @@ wordsOfWorshipSpec s registry = Spec.describe s "Words of Worship (CR 614.11)" $
     wordsOfWorship <- S.printingOf s registry "Words of Worship"
     piker <- S.printingOf s registry "Goblin Piker"
     let (armed, _) = wordsBoard plains wordsOfWorship piker True
-        after = S.runPure S.identityAnswer armed (Event.drawCard (pure ()) S.alice >> Event.drawCard (pure ()) S.alice)
+        after = S.runPure S.identityAnswer armed (Event.drawCard Settle.none S.alice >> Event.drawCard Settle.none S.alice)
     Spec.assertEqWith s "CR 614.3 the second draw gained nothing more" (S.lifeOf S.alice after) (Just 25)
     Spec.assertEqWith s "CR 121.1 and put one card in her hand" (S.handSize S.alice after) 1
   -- CR 614.11's first sentence: "these effects are applied even if no cards could
@@ -259,7 +260,7 @@ wordsOfWorshipSpec s registry = Spec.describe s "Words of Worship (CR 614.11)" $
     plains <- S.printingOf s registry "Plains"
     wordsOfWorship <- S.printingOf s registry "Words of Worship"
     let armed = emptyLibraryBoard plains wordsOfWorship
-        after = S.runPure S.identityAnswer armed (Event.drawCard (pure ()) S.alice)
+        after = S.runPure S.identityAnswer armed (Event.drawCard Settle.none S.alice)
     Spec.assertEqWith s "CR 614.11 the row applied off an empty library" (S.lifeOf S.alice after) (Just 25)
     Spec.assertBool s (not (Set.member S.alice (GameState.drewFromEmpty after))) "CR 121.4 no draw was attempted, so nothing is owed"
 
@@ -281,8 +282,8 @@ wordsOfWorshipSpec s registry = Spec.describe s "Words of Worship (CR 614.11)" $
     wordsOfWorship <- S.printingOf s registry "Words of Worship"
     piker <- S.printingOf s registry "Goblin Piker"
     let (armed, enchantment) = wordsBoard plains wordsOfWorship piker True
-        gone = S.runPure S.identityAnswer armed (Event.destroy (pure ()) Regenerability.Regenerable [enchantment])
-        after = S.runPure S.identityAnswer gone (Event.drawCard (pure ()) S.alice)
+        gone = S.runPure S.identityAnswer armed (Event.destroy Settle.none Regenerability.Regenerable [enchantment])
+        after = S.runPure S.identityAnswer gone (Event.drawCard Settle.none S.alice)
     Spec.assertBool s (not (Set.member enchantment (GameState.battlefield gone))) "setup: the enchantment really left the battlefield"
     Spec.assertEqWith s "CR 614.3 the row still applied, so alice is at 25" (S.lifeOf S.alice after) (Just 25)
     Spec.assertEqWith s "CR 614.6 and the draw still never happened" (S.handSize S.alice after) 0
@@ -513,7 +514,7 @@ ashiokSpec s registry = Spec.describe s "Ashiok, Wicked Manipulator (CR 119.4 / 
           S.runPure
             S.identityAnswer
             stocked
-            (Damage.applyDamage (pure ()) [DamageEvent.MkDamageEvent bobsPiker (Recipient.ToPlayer S.alice) 3 0 False False False 0 Nothing Nothing mempty False mempty mempty mempty mempty Nothing mempty mempty Nothing DamageKind.Noncombat])
+            (Damage.applyDamage Settle.none [DamageEvent.MkDamageEvent bobsPiker (Recipient.ToPlayer S.alice) 3 0 False False False 0 Nothing Nothing mempty False mempty mempty mempty mempty Nothing mempty mempty Nothing DamageKind.Noncombat])
     Spec.assertEqWith s "CR 120.4c alice loses the damage as life: 20 - 3 = 17" (S.lifeOf S.alice after) (Just 17)
     Spec.assertEqWith s "and her library, long enough to have covered it, is untouched" (length (Game.zoneMembers Zone.Library S.alice after)) 3
     Spec.assertEqWith s "with nothing exiled" (length (Game.zoneMembers Zone.Exile S.alice after)) 0

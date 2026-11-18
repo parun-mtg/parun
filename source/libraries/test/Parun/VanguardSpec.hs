@@ -51,6 +51,7 @@ import qualified Parun.Types.PlayerId as PlayerId
 import qualified Parun.Types.Printing as Printing
 import qualified Parun.Types.Prompt as Prompt
 import qualified Parun.Types.Recipient as Recipient
+import qualified Parun.Types.Settle as Settle
 import qualified Parun.Types.Snapshots as Snapshots
 import qualified Parun.Types.TurnRegisters as TurnRegisters
 import qualified Parun.Types.Zone as Zone
@@ -229,7 +230,7 @@ spec s registry = Spec.describe s "Vanguard" $ do
     let place vanguard =
           let (mine, g1) = S.addPermanent piker S.alice (built mountain vanguard)
               (theirs, board) = S.addPermanent piker S.bob g1
-              after = S.runPure S.identityAnswer board (Damage.applyDamage (pure ()) [hit mine (Recipient.ToPlayer S.bob) 3, hit theirs (Recipient.ToPlayer S.alice) 5])
+              after = S.runPure S.identityAnswer board (Damage.applyDamage Settle.none [hit mine (Recipient.ToPlayer S.bob) 3, hit theirs (Recipient.ToPlayer S.alice) 5])
            in (lifeLost S.bob board after, lifeLost S.alice board after)
         (bobLost, aliceLost) = place (Just mishra)
         (bobControl, aliceControl) = place Nothing

@@ -45,6 +45,7 @@ import qualified Parun.Types.ObjectId as ObjectId
 import qualified Parun.Types.Printing as Printing
 import qualified Parun.Types.Prompt as Prompt
 import qualified Parun.Types.Regenerability as Regenerability
+import qualified Parun.Types.Settle as Settle
 import qualified Parun.Types.Zone as Zone
 
 -- The inset cost (CR 719.3), written out so every board names the same symbols
@@ -99,7 +100,7 @@ spec s registry = Spec.describe s "Prototype" $ do
     case assemblerOn assembler resolved of
       Nothing -> Spec.assertFailure s "the prototyped spell did not resolve onto the battlefield"
       Just oid -> do
-        let dead = S.settleSba (S.runPure prototyping resolved (Event.destroy (pure ()) Regenerability.Regenerable [oid]))
+        let dead = S.settleSba (S.runPure prototyping resolved (Event.destroy Settle.none Regenerability.Regenerable [oid]))
             inGraveyard = Game.zoneMembers Zone.Graveyard S.alice dead
         Spec.assertEqWith
           s

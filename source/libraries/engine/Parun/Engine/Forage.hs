@@ -33,6 +33,7 @@ import qualified Parun.Types.PlayerActed as PlayerActed
 import qualified Parun.Types.PlayerAction as PlayerAction
 import Parun.Types.PlayerId (PlayerId)
 import qualified Parun.Types.Prompt as Prompt
+import qualified Parun.Types.Settle as Settle
 import qualified Parun.Types.Subtype as Subtype
 import qualified Parun.Types.Zone as Zone
 
@@ -93,7 +94,7 @@ canForage pid gs = length (exileCandidates pid gs) >= 3 || not (null (foodCandid
 -- for the COST caller too, where the alternative would be Parun.Engine.Cost's
 -- reject-not-repair: rule 701.61a states no way to fail once canForage holds, so
 -- a payment lost to a bad answer would be a refusal the rules do not offer.
-forage :: Game () -> PlayerId -> ObjectId -> Game Bool
+forage :: Settle.Settle -> PlayerId -> ObjectId -> Game Bool
 forage settle pid resolving = do
   gs <- State.get
   let cards = exileCandidates pid gs

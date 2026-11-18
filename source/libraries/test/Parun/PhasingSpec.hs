@@ -90,6 +90,7 @@ import qualified Parun.Types.Prohibition as Prohibition
 import qualified Parun.Types.Prompt as Prompt
 import qualified Parun.Types.Recipient as Recipient
 import qualified Parun.Types.RestrictedCreatures as RestrictedCreatures
+import qualified Parun.Types.Settle as Settle
 import qualified Parun.Types.StoredEffects as StoredEffects
 import qualified Parun.Types.TapState as TapState
 import qualified Parun.Types.Timestamp as Timestamp
@@ -975,7 +976,7 @@ attachedSpec s registry = Spec.describe s "Attached" $ do
     ripple <- S.printingOf s registry "Reality Ripple"
     let ((host, equip), spell, board) = equippedBoard island piker bonesplitter ripple
         gone = rippleAt equip spell board
-        dead = S.runPure S.identityAnswer gone (Event.changeZone (pure ()) host Zone.Graveyard)
+        dead = S.runPure S.identityAnswer gone (Event.changeZone Settle.none host Zone.Graveyard)
         back = untapStep S.alice dead
     Spec.assertEqWith s "setup: the Equipment phased out DIRECTLY" (Phasing.phasedOutStatus equip gone) (Just (PhasedOut.Directly S.alice))
     -- CR 400.7 mints a new object for the graveyard, so the id the attachment names

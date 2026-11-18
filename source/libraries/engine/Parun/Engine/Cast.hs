@@ -140,6 +140,7 @@ import qualified Parun.Types.ReplacementEffect as ReplacementEffect
 import qualified Parun.Types.ReplacementOrigin as ReplacementOrigin
 import qualified Parun.Types.RevealCause as RevealCause
 import qualified Parun.Types.Scratch as Scratch
+import qualified Parun.Types.Settle as Settle
 import qualified Parun.Types.SlotCount as SlotCount
 import qualified Parun.Types.SlotName as SlotName
 import qualified Parun.Types.Snapshots as Snapshots
@@ -3057,7 +3058,7 @@ landDropOpen pid gs =
 -- enters as that permission's `landEnters` says -- Lightstall Inquisitor's
 -- "each land played this way enters tapped" -- through installLandEntry's row.
 -- A player permission's rider is `riders` below.
-playLand :: Game () -> Bool -> PlayerId -> ObjectId -> Maybe CardName.CardName -> Game ()
+playLand :: Settle.Settle -> Bool -> PlayerId -> ObjectId -> Maybe CardName.CardName -> Game ()
 playLand settle offered pid oid mName = do
   -- CR 406.3a, the land half of the turn turnedUpForPlay states: a land played
   -- out of face-down exile is turned face up just before it is played, so the

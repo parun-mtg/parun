@@ -119,6 +119,7 @@ import qualified Parun.Types.Response as Response
 import Parun.Types.Result (Result)
 import qualified Parun.Types.RollAdjustment as RollAdjustment
 import qualified Parun.Types.Scratch as Scratch
+import qualified Parun.Types.Settle as Settle
 import Parun.Types.SlotName (SlotName)
 import qualified Parun.Types.Snapshots as Snapshots
 import qualified Parun.Types.StoredEffects as StoredEffects
@@ -447,7 +448,7 @@ offerCastOnce runSubgame context fits named caster optionality verb retake offer
     Nothing -> pure Nothing
     Just (Left (oid, mName, name)) -> do
       let play = do
-            Cast.playLand (runReplacementEffects runSubgame) True caster oid mName
+            Cast.playLand (settleWith runSubgame) True caster oid mName
             pure (Just (oid, Nothing))
       case optionality of
         CastObligation.Mandatory -> play
@@ -553,16 +554,16 @@ applyEffectWith runSubgame resolving source controller legal chosen effect = cau
 -- Exhaustive, not over Parun.Engine.Children: an interpreter, every arm a call into its own Parun.Engine.Resolve.Arms function.
 applyOneEffect :: Game Result -> ObjectId -> ObjectId -> PlayerId -> Map.Map SlotName (Set Recipient) -> Map.Map SlotName (Set Recipient) -> Effect Card.Type.Card (GrantedAbility.GrantedAbility Card.Type.Card) -> Game ()
 applyOneEffect runSubgame resolving source controller legal chosen effect = case effect of
-  Effect.DealDamage payload -> Damage.dealDamage runPreventionRiders runReplacementEffects runSubgame resolving source controller legal payload
-  Effect.Fight payload -> Damage.fight runPreventionRiders runReplacementEffects runSubgame resolving source controller legal payload
+  Effect.DealDamage payload -> Damage.dealDamage runPreventionRiders settleWith runSubgame resolving source controller legal payload
+  Effect.Fight payload -> Damage.fight runPreventionRiders settleWith runSubgame resolving source controller legal payload
   Effect.ModifyTarget payload -> Damage.modifyTarget resolving source controller legal chosen payload
   Effect.ChangeText payload -> Damage.changeText resolving source controller legal payload
   Effect.AddMana payload -> Damage.addMana resolving source controller legal payload
   Effect.ActivateManaAbilities payload -> Damage.activateManaAbilities performManaAbility runSubgame resolving source controller legal payload
-  Effect.MoveMana payload -> Damage.moveMana (runReplacementEffects runSubgame) resolving source controller legal payload
-  Effect.Search payload -> Damage.search (runReplacementEffects runSubgame) performManaAbility runSubgame resolving source controller legal payload
-  Effect.ExileAllGraveyards -> Damage.exileAllGraveyards (runReplacementEffects runSubgame) source controller
-  Effect.ExileHandThenDraw -> Damage.exileHandThenDraw (runReplacementEffects runSubgame) controller
+  Effect.MoveMana payload -> Damage.moveMana (settleWith runSubgame) resolving source controller legal payload
+  Effect.Search payload -> Damage.search (settleWith runSubgame) performManaAbility runSubgame resolving source controller legal payload
+  Effect.ExileAllGraveyards -> Damage.exileAllGraveyards (settleWith runSubgame) source controller
+  Effect.ExileHandThenDraw -> Damage.exileHandThenDraw (settleWith runSubgame) controller
   Effect.NoteManaSpent -> Damage.noteManaSpent resolving source
   Effect.RestartGame payload -> Damage.restartGame performHandAction runSubgame resolving source controller legal payload
   Effect.PlaySubgame payload -> Damage.playSubgame runSubgame resolving payload
@@ -573,12 +574,12 @@ applyOneEffect runSubgame resolving source controller legal chosen effect = case
   Effect.RollDie payload -> Damage.rollDieArm throwDice runSubgame resolving source controller legal payload
   Effect.Rethrow -> Damage.rethrow throwDice runSubgame resolving controller
   Effect.RerollStoredResults payload -> Damage.rerollStoredResults throwDice runSubgame resolving source controller legal payload
-  Effect.FlipCoin payload -> Damage.flipCoinArm throwRecorded reflipWindow runSubgame resolving source controller legal payload
+  Effect.FlipCoin payload -> Damage.flipCoinArm settleWith runSubgame resolving source controller legal payload
   Effect.Guess payload -> Zones.guess resolving source controller legal chosen payload
   Effect.ControlPlayerNext payload -> Damage.controlPlayerNext controller legal payload
   Effect.ControlPlayerThisResolution payload -> Damage.controlPlayerThisResolution controller legal payload
-  Effect.Destroy payload -> Damage.destroy (runReplacementEffects runSubgame) resolving source controller legal chosen payload
-  Effect.Sacrifice payload -> Damage.sacrifice (runReplacementEffects runSubgame) resolving source controller legal chosen payload
+  Effect.Destroy payload -> Damage.destroy (settleWith runSubgame) resolving source controller legal chosen payload
+  Effect.Sacrifice payload -> Damage.sacrifice (settleWith runSubgame) resolving source controller legal chosen payload
   Effect.TurnFaceDown payload -> Damage.turnFaceDown resolving source controller legal payload
   Effect.TurnFaceUp payload -> Damage.turnFaceUp resolving source controller legal payload
   Effect.RemoveFromCombat payload -> Damage.removeFromCombat resolving source controller legal payload
@@ -588,13 +589,13 @@ applyOneEffect runSubgame resolving source controller legal chosen effect = case
   Effect.ReselectAttack payload -> Damage.reselectAttack resolving source controller legal payload
   Effect.SwitchBlockers payload -> Damage.switchBlockers legal payload
   Effect.ExchangeBlocks payload -> Damage.exchangeBlocks legal payload
-  Effect.MoveToZone payload -> Zones.moveToZone (runReplacementEffects runSubgame) resolving source controller legal chosen payload
-  Effect.ExchangeZones payload -> Zones.exchangeZones (runReplacementEffects runSubgame) resolving source controller legal payload
-  Effect.ExchangeCardZones payload -> Zones.exchangeCardZones (runReplacementEffects runSubgame) resolving source controller legal chosen payload
-  Effect.ShuffleIntoLibrary payload -> Zones.shuffleIntoLibrary (runReplacementEffects runSubgame) resolving source controller legal payload
+  Effect.MoveToZone payload -> Zones.moveToZone (settleWith runSubgame) resolving source controller legal chosen payload
+  Effect.ExchangeZones payload -> Zones.exchangeZones (settleWith runSubgame) resolving source controller legal payload
+  Effect.ExchangeCardZones payload -> Zones.exchangeCardZones (settleWith runSubgame) resolving source controller legal chosen payload
+  Effect.ShuffleIntoLibrary payload -> Zones.shuffleIntoLibrary (settleWith runSubgame) resolving source controller legal payload
   Effect.SetOwner payload -> Zones.setOwner resolving source controller legal payload
   Effect.ExchangeOwnership payload -> Zones.exchangeOwnership resolving source controller legal payload
-  Effect.Ante payload -> Zones.ante (runReplacementEffects runSubgame) resolving source controller legal payload
+  Effect.Ante payload -> Zones.ante (settleWith runSubgame) resolving source controller legal payload
   Effect.PutSticker payload -> Zones.putSticker resolving source controller legal chosen payload
   Effect.Shuffle payload -> Zones.shuffle resolving source controller legal payload
   Effect.OfferCast payload -> Zones.offerCastArm offerCast runSubgame resolving source controller legal chosen payload
@@ -611,36 +612,36 @@ applyOneEffect runSubgame resolving source controller legal chosen effect = case
   Effect.Repeat payload -> Zones.repeatArm applyLoopBody runSubgame resolving source controller legal chosen payload
   Effect.RepeatIf payload -> Zones.repeatIf applyLoopBody runSubgame resolving source controller legal chosen payload
   Effect.Discover payload -> Zones.discover applyLoopBody runSubgame resolving source controller legal chosen payload
-  Effect.Draw payload -> Zones.draw (runReplacementEffects runSubgame) resolving source controller legal payload
-  Effect.Mill payload -> Zones.mill (runReplacementEffects runSubgame) resolving source controller legal payload
+  Effect.Draw payload -> Zones.draw (settleWith runSubgame) resolving source controller legal payload
+  Effect.Mill payload -> Zones.mill (settleWith runSubgame) resolving source controller legal payload
   Effect.Reveal payload -> Zones.reveal resolving source controller legal chosen payload
   Effect.LookAt payload -> Zones.lookAt resolving source controller legal chosen payload
   Effect.ArrangeInLibrary payload -> Zones.arrangeInLibrary resolving source controller legal chosen payload
-  Effect.Scry payload -> Zones.scry (runReplacementEffects runSubgame) resolving source controller legal payload
-  Effect.Surveil payload -> Zones.surveil (runReplacementEffects runSubgame) resolving source controller legal payload
+  Effect.Scry payload -> Zones.scry (settleWith runSubgame) resolving source controller legal payload
+  Effect.Surveil payload -> Zones.surveil (settleWith runSubgame) resolving source controller legal payload
   Effect.Fateseal payload -> Zones.fateseal resolving source controller legal payload
   Effect.Clash payload -> Zones.clash resolving source controller payload
   Effect.AsYouCascade payload -> Zones.asYouCascade applyOneEffect runSubgame resolving source controller legal chosen payload
-  Effect.Explore payload -> Zones.explore (runReplacementEffects runSubgame) resolving source controller legal payload
-  Effect.Connive payload -> Zones.connive (runReplacementEffects runSubgame) resolving source controller legal payload
-  Effect.Discard payload -> Zones.discard (runReplacementEffects runSubgame) resolving source controller legal chosen payload
-  Effect.LoseLife payload -> Zones.loseLife (runReplacementEffects runSubgame) resolving source controller legal payload
-  Effect.GainLife payload -> Zones.gainLife (runReplacementEffects runSubgame) resolving source controller legal payload
-  Effect.ExchangeLifeTotals payload -> Zones.exchangeLifeTotals (runReplacementEffects runSubgame) resolving source controller legal payload
-  Effect.ExchangeValues payload -> Zones.exchangeValues (runReplacementEffects runSubgame) resolving source controller legal payload
-  Effect.SetLifeTotal payload -> Zones.setLifeTotal (runReplacementEffects runSubgame) resolving source controller legal payload
+  Effect.Explore payload -> Zones.explore (settleWith runSubgame) resolving source controller legal payload
+  Effect.Connive payload -> Zones.connive (settleWith runSubgame) resolving source controller legal payload
+  Effect.Discard payload -> Zones.discard (settleWith runSubgame) resolving source controller legal chosen payload
+  Effect.LoseLife payload -> Zones.loseLife (settleWith runSubgame) resolving source controller legal payload
+  Effect.GainLife payload -> Zones.gainLife (settleWith runSubgame) resolving source controller legal payload
+  Effect.ExchangeLifeTotals payload -> Zones.exchangeLifeTotals (settleWith runSubgame) resolving source controller legal payload
+  Effect.ExchangeValues payload -> Zones.exchangeValues (settleWith runSubgame) resolving source controller legal payload
+  Effect.SetLifeTotal payload -> Zones.setLifeTotal (settleWith runSubgame) resolving source controller legal payload
   Effect.LoseGame payload -> Zones.loseGame resolving source controller legal payload
   Effect.WinGame payload -> Zones.winGame resolving source controller legal payload
   Effect.DrawGame -> Zones.drawGame source controller
-  Effect.RedistributeLifeTotals -> Zones.redistributeLifeTotals (runReplacementEffects runSubgame) source controller
+  Effect.RedistributeLifeTotals -> Zones.redistributeLifeTotals (settleWith runSubgame) source controller
   Effect.IncreaseSpeed payload -> Zones.increaseSpeed resolving source controller legal payload
   Effect.DecreaseSpeed payload -> Zones.decreaseSpeed resolving source controller legal payload
-  Effect.PlayerSacrifices payload -> Zones.playerSacrifices (runReplacementEffects runSubgame) resolving source controller legal payload
+  Effect.PlayerSacrifices payload -> Zones.playerSacrifices (settleWith runSubgame) resolving source controller legal payload
   Effect.Vote payload -> Zones.vote resolving source controller legal payload
   Effect.Bid payload -> Zones.bid resolving source controller legal payload
-  Effect.Create payload -> Objects.create (runReplacementEffects runSubgame) resolving source controller legal chosen payload
-  Effect.Conjure payload -> Objects.conjure (runReplacementEffects runSubgame) resolving source controller legal payload
-  Effect.CreateCopy payload -> Objects.createCopy (runReplacementEffects runSubgame) resolving source controller legal chosen payload
+  Effect.Create payload -> Objects.create (settleWith runSubgame) resolving source controller legal chosen payload
+  Effect.Conjure payload -> Objects.conjure (settleWith runSubgame) resolving source controller legal payload
+  Effect.CreateCopy payload -> Objects.createCopy (settleWith runSubgame) resolving source controller legal chosen payload
   Effect.BecomeCopy payload -> Objects.becomeCopy resolving source controller legal chosen payload
   Effect.CopyStackObject payload -> Objects.copyStackObject resolving source controller legal payload
   Effect.SetX payload -> Objects.setX resolving source controller legal payload
@@ -670,7 +671,7 @@ applyOneEffect runSubgame resolving source controller legal chosen effect = case
   Effect.BecomeProtector payload -> Objects.becomeProtector controller legal payload
   Effect.CounterAndMark payload -> Objects.counterAndMark controller legal payload
   Effect.Mentor payload -> Objects.mentor source controller legal payload
-  Effect.Exploit -> Objects.exploit (runReplacementEffects runSubgame) resolving source controller legal
+  Effect.Exploit -> Objects.exploit (settleWith runSubgame) resolving source controller legal
   Effect.GiveGift -> Objects.giveGift controller
   Effect.ItBecomes payload -> Objects.itBecomes payload
   Effect.Attach payload -> Objects.attach resolving source legal payload
@@ -680,15 +681,15 @@ applyOneEffect runSubgame resolving source controller legal chosen effect = case
   Effect.AttachBound payload -> Objects.attachBound resolving source controller legal payload
   Effect.AttachAll payload -> Objects.attachAll resolving source controller legal chosen payload
   Effect.Unattach payload -> Objects.unattach resolving source controller legal chosen payload
-  Effect.ExileHaunting payload -> Objects.exileHaunting (runReplacementEffects runSubgame) resolving legal payload
-  Effect.Counter payload -> Counters.counter (runReplacementEffects runSubgame) resolving source controller legal payload
+  Effect.ExileHaunting payload -> Objects.exileHaunting (settleWith runSubgame) resolving legal payload
+  Effect.Counter payload -> Counters.counter (settleWith runSubgame) resolving source controller legal payload
   Effect.PutCounters payload -> Counters.putCounters resolving source controller legal chosen payload
   Effect.Divide payload -> Counters.divide resolving source controller legal payload
   Effect.PutCountersFrom payload -> Counters.putCountersFrom resolving source controller legal payload
   Effect.ChooseCardName payload -> Counters.chooseCardName resolving source controller legal payload
   Effect.ChooseQuality payload -> Counters.chooseQuality resolving source controller payload
   Effect.FromOutsideTheGame payload -> Counters.fromOutsideTheGame source controller payload
-  Effect.ExileThisSpell -> Counters.exileThisSpell (runReplacementEffects runSubgame) resolving
+  Effect.ExileThisSpell -> Counters.exileThisSpell (settleWith runSubgame) resolving
   Effect.RemoveCounters payload -> Counters.removeCounters resolving source controller legal payload
   Effect.RemoveCountersAmong payload -> Counters.removeCountersAmong resolving source controller legal payload
   Effect.MoveCounters payload -> Counters.moveCounters resolving source controller legal payload
@@ -698,25 +699,25 @@ applyOneEffect runSubgame resolving source controller legal chosen effect = case
   Effect.Airbend payload -> Counters.airbend applyEffectWith runSubgame resolving source controller legal chosen payload
   Effect.Assimilate payload -> Counters.assimilate applyEffectWith runSubgame resolving source controller legal chosen payload
   Effect.Firebend payload -> Counters.firebend applyEffectWith runSubgame resolving source controller legal chosen payload
-  Effect.Amass payload -> Counters.amass (runReplacementEffects runSubgame) resolving source controller legal payload
+  Effect.Amass payload -> Counters.amass (settleWith runSubgame) resolving source controller legal payload
   Effect.Blight payload -> Counters.blight resolving source controller legal payload
   Effect.TemptWithTheRing -> Counters.temptWithTheRing controller
-  Effect.OpenAttraction -> Counters.openAttraction (runReplacementEffects runSubgame) controller
+  Effect.OpenAttraction -> Counters.openAttraction (settleWith runSubgame) controller
   Effect.RollToVisit -> rollToVisit runSubgame controller
-  Effect.Assemble payload -> Counters.assemble (runReplacementEffects runSubgame) resolving source controller legal payload
+  Effect.Assemble payload -> Counters.assemble (settleWith runSubgame) resolving source controller legal payload
   Effect.Crank -> Counters.crank controller
   Effect.Planeswalk ref -> Counters.planeswalk resolving source controller legal ref
   Effect.ChaosEnsues ref -> Counters.chaosEnsues resolving source controller legal ref
   Effect.Abandon -> Counters.abandon source
   Effect.SetInMotion ref -> Counters.setInMotion resolving source controller legal ref
   Effect.ClaimPrize -> Counters.claimPrize controller
-  Effect.Forage -> Counters.forage (runReplacementEffects runSubgame) resolving controller
-  Effect.Populate -> Counters.populate (runReplacementEffects runSubgame) resolving controller
+  Effect.Forage -> Counters.forage (settleWith runSubgame) resolving controller
+  Effect.Populate -> Counters.populate (settleWith runSubgame) resolving controller
   Effect.TimeTravel -> Counters.timeTravel resolving controller
-  Effect.Recruit -> Counters.recruit (runReplacementEffects runSubgame) controller
-  Effect.Learn -> Counters.learn (runReplacementEffects runSubgame) resolving source controller
-  Effect.Cloak payload -> Counters.cloak (runReplacementEffects runSubgame) resolving source controller legal chosen payload
-  Effect.ManifestDread payload -> Counters.manifestDread (runReplacementEffects runSubgame) resolving source controller legal payload
+  Effect.Recruit -> Counters.recruit (settleWith runSubgame) controller
+  Effect.Learn -> Counters.learn (settleWith runSubgame) resolving source controller
+  Effect.Cloak payload -> Counters.cloak (settleWith runSubgame) resolving source controller legal chosen payload
+  Effect.ManifestDread payload -> Counters.manifestDread (settleWith runSubgame) resolving source controller legal payload
   Effect.Venture payload -> Counters.venture controller payload
   Effect.GainPlayerCounters payload -> Counters.gainPlayerCounters resolving source controller legal payload
   Effect.RemovePlayerCounters payload -> Counters.removePlayerCounters resolving source controller legal payload
@@ -734,7 +735,7 @@ applyOneEffect runSubgame resolving source controller legal chosen effect = case
   Effect.Transform payload -> Counters.transform resolving source controller legal chosen payload
   Effect.Convert payload -> Counters.convert resolving source controller legal chosen payload
   Effect.Flip payload -> Counters.flipArm resolving source controller legal payload
-  Effect.Meld payload -> Counters.meld (runReplacementEffects runSubgame) resolving source controller legal payload
+  Effect.Meld payload -> Counters.meld (settleWith runSubgame) resolving source controller legal payload
   Effect.PhaseOut payload -> Counters.phaseOut resolving source controller legal payload
   Effect.AddPhases payload -> Counters.addPhases payload
   Effect.AddStep payload -> Counters.addStep payload
@@ -882,6 +883,17 @@ runReplacementEffects runSubgame = do
   queued <- State.gets (StoredEffects.pendingReplacementEffects . GameState.stored)
   State.modify' (\gs -> gs {GameState.stored = (GameState.stored gs) {StoredEffects.pendingReplacementEffects = Seq.empty}})
   Foldable.traverse_ (runDamageRewriteEffect runSubgame) queued
+
+-- The Parun.Types.Settle every road below Resolve takes from a resolution:
+-- runReplacementEffects, throwRecorded and reflipWindow around CR 730.1a's
+-- subgame runner.
+settleWith :: Game Result -> Settle.Settle
+settleWith runSubgame =
+  Settle.MkSettle
+    { Settle.queued = runReplacementEffects runSubgame,
+      Settle.throwRecorded = Just (throwRecorded runSubgame),
+      Settle.reflipWindow = reflipWindow runSubgame
+    }
 
 -- One replaced damage event's effects, in printed order.
 --
@@ -1365,9 +1377,7 @@ performManaAbility runSubgame =
     { ManaAbilityPerformer.effects = performManaAbilityEffects runSubgame,
       ManaAbilityPerformer.triggered = performTriggeredManaAbility runSubgame,
       ManaAbilityPerformer.payGate = performManaPayGate runSubgame,
-      ManaAbilityPerformer.throwRecorded = throwRecorded runSubgame,
-      ManaAbilityPerformer.reflipWindow = reflipWindow runSubgame,
-      ManaAbilityPerformer.settle = runReplacementEffects runSubgame
+      ManaAbilityPerformer.settle = settleWith runSubgame
     }
 
 -- CR 118.12 on a mana ability's clause, which CR 605.3b gives no stack object:
