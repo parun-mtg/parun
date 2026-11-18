@@ -132,8 +132,8 @@
     {
       "check": {
         "Count": {
-          "card": "Goblin Piker",
-          "count": 1,
+          "card": "Monk Token",
+          "count": 0,
           "player": "alice",
           "zone": "Battlefield"
         }
@@ -145,8 +145,8 @@
     {
       "check": {
         "Count": {
-          "card": "Monk Token",
-          "count": 0,
+          "card": "Goblin Piker",
+          "count": 1,
           "player": "alice",
           "zone": "Battlefield"
         }
