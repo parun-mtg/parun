@@ -10,6 +10,7 @@ import Numeric.Natural (Natural)
 import qualified Parun.Codec.ManaType as Codec.ManaType
 import qualified Parun.Codec.Reply as Codec.Reply
 import qualified Parun.Engine.PlayerView as PlayerView
+import qualified Parun.Engine.Projection as Projection
 import qualified Parun.Engine.Setup as Setup
 import qualified Parun.JsonCodec.Codec as Codec
 import qualified Parun.Play.Protocol as Protocol
@@ -62,6 +63,13 @@ spec s registry = Spec.describe s "WebQuestion" $ do
           path <- Html.labelled (Text.pack "button") (Text.pack "Play Mountain") inner
           Html.handler (Text.pack "click") (at <> path) reading
     Spec.assertEqWith s "sheet action" action (Just (Question.Web.MkAnswer (R.Number 1)))
+
+  Spec.it s "CR 602.1a an activated ability is offered by its Oracle text" $ do
+    sorcerer <- S.printingOf s registry "Prodigal Sorcerer"
+    let (oid, gs) = S.addPermanent sorcerer S.alice (Setup.emptyGame S.bothPlayers)
+        request = requestFor gs (Prompt.ChooseAction (Decider.MkDecider S.alice) S.alice (Action.Pass : fmap (Action.Activate oid) (Projection.abilitiesOf oid gs)))
+    -- The tap symbol is drawn ({T} as a glyph), so the text around it is matched.
+    Spec.assertBool s (Text.pack ": Prodigal Sorcerer deals 1 damage to any target." `Text.isInfixOf` Html.content (Question.Web.view request Question.Web.blank)) "labelled"
 
   Spec.it s "a priority offering only a pass, the hotseat's concession, and play or draw are answered unasked" $ do
     let gs = Setup.emptyGame S.bothPlayers

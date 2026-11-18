@@ -1355,7 +1355,7 @@ spec s registry = Spec.describe s "Client" $ do
           | any (Text.isPrefixOf (Text.pack "Paying ")) (pending at) = Just (Text.pack "auto")
           | any menuHeading (pending at),
             heading `notElem` written at =
-              Maybe.listToMaybe [Text.takeWhile Char.isDigit (Text.strip line) | line <- pending at, Text.isInfixOf (Text.pack ". Activate ability") line, Text.isSuffixOf (Text.pack " of Novijen Sages") line]
+              Maybe.listToMaybe [Text.takeWhile Char.isDigit (Text.strip line) | line <- pending at, Text.isInfixOf (Text.pack ". Novijen Sages: ") line]
           | otherwise = plays at
         counters = S.counterOf CounterKind.PlusOnePlusOne
         seats = Driver.bySeat (Map.singleton S.alice (Game.human (S.fixtureRegistry []) (screen 200 removes) (const (Right Nothing)))) botOrDefault

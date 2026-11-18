@@ -144,7 +144,11 @@ actionName view action =
         "Pass" -> Text.pack "Pass"
         "PlayLand" -> Text.pack "Play " <> subject
         "Cast" -> Text.pack "Cast " <> subject
-        "Activate" -> maybe (Text.pack "Activate an ability of ") (\i -> Text.pack ("Activate ability " <> show (i + 1) <> " of ")) (Protocol.field "ability" action >>= Protocol.naturalOf) <> subject
+        -- The ability's Oracle text where the offer carries it, which says
+        -- what it costs and does.
+        "Activate"
+          | Just text <- Protocol.field "text" action >>= textOf -> subject <> Text.pack ": " <> text
+          | otherwise -> maybe (Text.pack "Activate an ability of ") (\i -> Text.pack ("Activate ability " <> show (i + 1) <> " of ")) (Protocol.field "ability" action >>= Protocol.naturalOf) <> subject
         "ActivateManaAbility" -> Text.pack "Activate a mana ability of " <> subject
         -- CR 701.40c: which procedure, where two may turn one permanent up.
         "TurnFaceUp" -> Text.pack "Turn face up " <> subject <> foldMap (\p -> Text.pack " (" <> Render.spaced p <> Text.pack ")") (Protocol.field "procedure" action >>= textOf)
