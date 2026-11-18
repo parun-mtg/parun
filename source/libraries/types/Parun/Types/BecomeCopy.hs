@@ -17,17 +17,18 @@ import qualified Parun.Types.ObjectRef as ObjectRef
 -- priced at the copy's mana cost" is what proves the copiable values follow it
 -- there.
 --
--- The copy does NOT follow the card onto the stack. CR 400.7 makes a cast card a
--- new object, which CR 611.2c's fixed set of affected objects does not reach, so
--- the spell announces and resolves its own printed text -- the reading a Clone
--- dying as Clone gets. Parun.CastSpec's "CR 400.7 the copy cast from the graveyard
--- is a new object" proves it. Two independent roads hold it, which is why no
--- one-line mutation reddens that case: Parun.Types.Object.newIncarnation clears
--- `bindings` on the move, and Parun.Engine.Cast stamps the stack incarnation a
--- fresh binding map besides.
+-- A STAMPED copy does NOT follow the card onto the stack. CR 400.7 makes a cast
+-- card a new object, so the spell announces and resolves its own printed text --
+-- the reading a Clone dying as Clone gets. The scenario
+-- cr-400-7-the-copy-cast-from-the-graveyard-is-a-new-object-so proves it. Two
+-- independent roads hold it, which is why no one-line mutation reddens that
+-- case: Parun.Types.Object.newIncarnation clears `bindings` on the move, and
+-- Parun.Engine.Cast stamps the stack incarnation a fresh binding map besides. A
+-- copy with a DURATION does follow, by Bombardment's ruling: the cast trades the
+-- card for the spell in the row's fixed set (Parun.Engine.Cast.followCopyIntoSpell).
 --
--- Not implemented: Bombardment's rulings that a card cast as its Missile stays
--- one (#8554) and that a Missile keeps its own supertypes (#8555).
+-- Not implemented: Bombardment's ruling that a Missile keeps its own supertypes
+-- (#8555).
 --
 -- A SPELL on the stack is the third noun in CR 707.1's list: it resolves the
 -- copied text (Parun.Engine.Projection.View.spellFaceOf) with the original's
