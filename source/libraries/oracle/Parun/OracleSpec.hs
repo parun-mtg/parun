@@ -336,6 +336,12 @@ spec s = Spec.describe s "Parun.Oracle" $ do
     Spec.assertEq s [[Text.pack "You draw three cards and you lose 3 life.", Text.pack "You draw three cards and lose 3 life.", Text.pack "Draw three cards, then lose 3 life.", Text.pack "Draw three cards, then you lose 3 life.", Text.pack "Draw three cards. You lose 3 life.", Text.pack "Draw three cards.\nYou lose 3 life.", Text.pack "Draw three cards. Then you lose 3 life.", Text.pack "Draw three cards and you lose 3 life."]] (Oracle.abilities craving)
     let insurance = spell [clause [loseLife (PlayerRef.InSlot target) 2, draw (PlayerRef.Relative PlayerRelation.You) 1]] [(target, TargetSlot.required Pool.Players Nothing)]
     Spec.assertEq s [[Text.pack "Target player loses 2 life. Draw a card.", Text.pack "Target player loses 2 life.\nDraw a card.", Text.pack "Target player loses 2 life. Then draw a card.", Text.pack "Target player loses 2 life. You draw a card.", Text.pack "Target player loses 2 life.\nYou draw a card.", Text.pack "Target player loses 2 life. Then you draw a card.", Text.pack "Target player loses 2 life and you draw a card."]] (Oracle.abilities insurance)
+    -- One instruction for "you" and another player reads "each" (Commander
+    -- William Riker); another instruction does not.
+    let riker = spell [clause [draw (PlayerRef.Relative PlayerRelation.You) 2, draw (PlayerRef.InSlot target) 2]] [(target, TargetSlot.required Pool.Players Nothing)]
+    Spec.assertBool s (any (elem (Text.pack "You and target player each draw two cards.")) (Oracle.abilities riker)) "you and another player each draw"
+    let uneven = spell [clause [draw (PlayerRef.Relative PlayerRelation.You) 2, draw (PlayerRef.InSlot target) 1]] [(target, TargetSlot.required Pool.Players Nothing)]
+    Spec.assertBool s (not (any (any (Text.isInfixOf (Text.pack " each "))) (Oracle.abilities uneven))) "different instructions read each"
 
   -- CR 113.2c: text pairs with a card's abilities as a multiset, each ability in
   -- one of its own wordings. This tool pairs a spell's instructions as one unit,

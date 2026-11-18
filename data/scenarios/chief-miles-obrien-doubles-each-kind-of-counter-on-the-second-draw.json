@@ -1,0 +1,31 @@
+{
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "name": "alice",
+        "battlefield": [{"card": "Chief Miles O'Brien", "label": "obrien"}, {"card": "Grizzly Bears", "label": "bears", "counters": [{"key": {"type": "PlusOnePlusOne"}, "value": 2}, {"key": {"type": "Named", "value": "charge"}, "value": 1}]}, {"card": "Island", "label": "i1"}, {"card": "Island", "label": "i2"}, {"card": "Island", "label": "i3"}],
+        "hand": [{"card": "Divination", "label": "div"}],
+        "library": [{"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}]
+      },
+      {
+        "name": "bob",
+        "battlefield": [{"card": "Hill Giant", "label": "giant", "counters": [{"key": {"type": "PlusOnePlusOne"}, "value": 1}]}],
+        "library": [{"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}]
+      }
+    ],
+    "step": "PrecombatMain"
+  },
+  "description": "CR 122.1: whenever its controller draws their second card each turn, Chief Miles O'Brien doubles the number of each kind of counter on target artifact or creature they control",
+  "note": "Divination draws two cards; the second triggers. The Bears' two +1/+1 counters become four and the one charge counter two. Bob's Hill Giant is no legal target.",
+  "timeline": [
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": {"Cast": {"object": "$div", "mana": ["$i1", "$i2", "$i3"]}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass"},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "refuse": {"ChooseTargets": {"target": ["$giant"]}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": {"ChooseTargets": {"target": ["$bears"]}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass"},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Counters": {"count": 4, "kind": {"type": "PlusOnePlusOne"}, "object": "$bears"}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Counters": {"count": 2, "kind": {"type": "Named", "value": "charge"}, "object": "$bears"}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Counters": {"count": 1, "kind": {"type": "PlusOnePlusOne"}, "object": "$giant"}}}
+  ]
+}

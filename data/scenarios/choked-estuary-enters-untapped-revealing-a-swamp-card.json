@@ -1,0 +1,25 @@
+{
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "name": "alice",
+        "hand": [{"card": "Choked Estuary", "label": "land"}, {"card": "Swamp", "label": "swamp"}, {"card": "Forest", "label": "forest"}],
+        "library": [{"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}]
+      },
+      {
+        "name": "bob",
+        "library": [{"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}]
+      }
+    ],
+    "step": "PrecombatMain"
+  },
+  "description": "CR 614.1c: as Choked Estuary enters, its controller may reveal an Island or Swamp card from their hand; it enters untapped when they do",
+  "note": "The Forest in hand is neither an Island nor a Swamp card, so it can't be revealed; the Swamp can.",
+  "timeline": [
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": {"PlayLand": "$land"}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "refuse": {"Answer": {"prompt": "ChooseRevealOnEntry", "with": "$forest"}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": {"Answer": {"prompt": "ChooseRevealOnEntry", "with": "$swamp"}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Tapped": {"object": "Choked Estuary", "tapped": false}}}
+  ]
+}

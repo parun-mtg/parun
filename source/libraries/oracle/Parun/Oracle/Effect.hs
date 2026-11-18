@@ -782,7 +782,7 @@ joined context predicates = case predicates of
           <> imperativeAnd
     -- Free: two sentences (Afterlife Insurance), "and" (Bad Deal) or, after
     -- an imperative, ", then" (Macabre Waltz) or "and" (Sorcerer's Strongbox).
-    | implied p || implied q -> apart <> apartRestated <> together <> togetherX <> thenImperative <> andImperative <> imperativeAnd <> imperativeThen
+    | implied p || implied q -> apart <> apartRestated <> together <> togetherX <> thenImperative <> andImperative <> imperativeAnd <> imperativeThen <> eachDoes
     -- Free: "and" (Vampiric Feast), two sentences (Soul Shred) or, after an
     -- instruction naming no subject, ", then" (Rust Harvester).
     | otherwise -> together <> apart <> togetherX <> durationFirst <> durationFirstX <> subjectlessThen
@@ -820,6 +820,16 @@ joined context predicates = case predicates of
       andImperative = [(Prose.sentence (clauseText p <> Text.pack " and " <> verb q) <> trailing q, allMentions p <> mentions q) | Maybe.isNothing (subject p), implied q]
       -- Free: an imperative joined to a stated subject (Vampire Gourmand).
       imperativeAnd = [(Prose.sentence (verb p <> Text.pack " and " <> clauseText q) <> trailing q, allMentions p <> allMentions q) | implied p, not (implied q)]
+      -- Free: "you" and another player given one instruction, "each" (Commander
+      -- William Riker's "You and target opponent each draw two cards").
+      eachDoes =
+        [ (Prose.sentence (Text.pack "you and " <> Target.wording s <> Text.pack " each " <> verb p) <> trailing q, allMentions p <> allMentions q)
+        | implied p,
+          null (after p),
+          let (word, rest) = Text.breakOn (Text.pack " ") (verb p),
+          verb q == word <> Text.pack "s" <> rest,
+          Just s <- [subject q]
+        ]
       -- Free: an imperative followed by a stated subject after ", then" (Hire a
       -- Crew).
       imperativeThen = [(Prose.sentence (verb p <> Text.pack ", then " <> clauseText q) <> trailing q, allMentions p <> allMentions q) | implied p, not (implied q)]

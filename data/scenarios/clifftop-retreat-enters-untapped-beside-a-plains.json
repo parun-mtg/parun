@@ -1,0 +1,25 @@
+{
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "name": "alice",
+        "battlefield": [{"card": "Plains", "label": "plains"}],
+        "hand": [{"card": "Clifftop Retreat", "label": "land"}],
+        "library": [{"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}]
+      },
+      {
+        "name": "bob",
+        "battlefield": [{"card": "Mountain"}],
+        "library": [{"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}]
+      }
+    ],
+    "step": "PrecombatMain"
+  },
+  "description": "CR 614.1c: Clifftop Retreat enters untapped while its controller controls a Mountain or a Plains, and taps for {R} or {W}",
+  "note": "Alice's Plains is the one land that lets it enter untapped; bob's Mountain is not hers. Clifftop Retreat then adds red mana.",
+  "timeline": [
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": {"PlayLand": "$land"}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Tapped": {"object": "Clifftop Retreat", "tapped": false}}}
+  ]
+}

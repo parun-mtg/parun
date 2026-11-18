@@ -1,0 +1,28 @@
+{
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "name": "alice",
+        "battlefield": [{"card": "Krenko, Mob Boss", "label": "krenko", "commander": true}, {"card": "Grizzly Bears", "label": "bears", "ready": true}, {"card": "Hill Giant", "label": "giant", "ready": true}, {"card": "Memnite", "label": "memnite", "ready": true}, {"card": "Plains", "label": "p1"}, {"card": "Plains", "label": "p2"}, {"card": "Island", "label": "i1"}, {"card": "Island", "label": "i2"}],
+        "hand": [{"card": "Collective Override", "label": "override"}],
+        "library": [{"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}]
+      },
+      {
+        "name": "bob",
+        "battlefield": [{"card": "Serra Angel", "label": "angel", "ready": true}],
+        "library": [{"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}]
+      }
+    ],
+    "step": "PrecombatMain"
+  },
+  "description": "CR 700.2: with a commander under its caster's control, Collective Override may choose both modes; each counts the attacking creatures",
+  "note": "Alice attacks with two of her three creatures, and bob's Serra Angel doesn't attack: two Borg and two cards. Counting every creature would give four.",
+  "timeline": [
+    {"turn": 1, "step": "DeclareAttackers", "player": "alice", "do": {"Attack": ["$bears", "$giant"]}},
+    {"turn": 1, "step": "DeclareAttackers", "player": "alice", "do": {"Cast": {"object": "$override", "modes": [0, 1], "mana": ["$p1", "$p2", "$i1", "$i2"]}}},
+    {"turn": 1, "step": "DeclareAttackers", "player": "alice", "do": "Pass"},
+    {"turn": 1, "step": "DeclareAttackers", "player": "alice", "check": {"Count": {"card": "Borg Token", "count": 2, "player": "alice", "zone": "Battlefield"}}},
+    {"turn": 1, "step": "DeclareAttackers", "player": "alice", "check": {"Count": {"card": "Island", "count": 2, "player": "alice", "zone": "Hand"}}}
+  ]
+}
