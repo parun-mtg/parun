@@ -356,7 +356,9 @@ applyModification textBoxOf viewOf src stamp gs oid unitTypes affected m pc =
       -- Murderous Mimic's lenders. The scenarios under
       -- data/scenarios/marvin-murderous-mimic prove the copied and the Spy
       -- Kit-named source.
-      context = (SourceContext.sourceContext viewOf gs (controllerOf src gs) src) {Filter.sourceNames = foldMap Filter.names (viewOf src)}
+      -- Count.withSourceSlot binds CR 113.7's source slot, which a static
+      -- ability's quantity reads its host through.
+      context = Count.withSourceSlot (SourceContext.sourceContext viewOf gs (controllerOf src gs) src) {Filter.sourceNames = foldMap Filter.names (viewOf src)}
       granting = grantingTo pc
       grantingTo receiver k =
         let granter = Game.lookupObject src gs
