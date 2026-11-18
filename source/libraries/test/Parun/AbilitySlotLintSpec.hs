@@ -702,7 +702,7 @@ armingCastSlots :: Face.Face Card.Type.Card -> Set.Set SlotName.SlotName
 armingCastSlots card = if Set.null (castArmedAbilities card) then Set.empty else Set.singleton Keyword.Engine.becameSlot
 
 -- Does a slot of this mode bound itself by a fold over a sibling slot (CR
--- 202.3, CR 400.7j) in any shape but the one Target.membersGauge answers
+-- 400.7j) in any shape but the one Target.membersGauge answers
 -- exactly? Past Target.subsetBudget such a bound is judged fillable unasked
 -- (Target.jointlyFillableGiven), and no printed card writes one.
 siblingBoundOffends :: Mode.Mode Card.Type.Card (GrantedAbility.GrantedAbility Card.Type.Card) -> Bool
@@ -1215,7 +1215,7 @@ abilitySlotLintSpec s registry corpus = Spec.describe s "Lint" $ do
   -- exempt, and a printed card tripping this builds the exact answer.
   Spec.it s "no card writes a sibling bound only the capped search answers" $ do
     ps <- S.allPrintings s corpus
-    let exempt = Set.fromList (fmap Text.pack ["Synthetic Total Verdict"])
+    let exempt = Set.fromList (fmap (CardName.MkCardName . Text.pack) ["Synthetic Total Verdict"])
         offenders = Set.fromList (fmap (S.nameOf . Printing.card) (filter (anyFaceOrMinted siblingBoundCardOffends . Printing.card) ps))
     Spec.assertEqWith s "only the exempt synthetics write a sibling bound the capped search answers" offenders exempt
   -- The lint itself, on a doctored Synthetic Total Verdict: "tap any number of
