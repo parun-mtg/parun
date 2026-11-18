@@ -2455,30 +2455,33 @@ shredMemorySpec s registry =
 -- that are black." bob controls Hinata, Dawn-Crowned and an Ornithopter; alice
 -- controls `pikers` Goblin Pikers and no land, so no aiming pays.
 --
--- The victim's bound names the gauge slot, so the gauges are told apart one by
--- one and the gate walks every subset. Three Pikers are eight, each priced, and
--- the cast is refused. Sixteen are 65,536: the walk stops at
--- Target.subsetBudget and the cast is OFFERED, a false offer CR 601.2h's
--- payment takes back with nothing changed (CR 734.1).
+-- The victim's bound counts the gauge's black members, so a gauge member is
+-- classed by whether it counts (Target.jointSignature): every Piker is one
+-- class, and sixteen are seventeen aimings, not 65,536. Past
+-- Target.subsetBudget the cast is priced exactly: refused with no land, and
+-- offered once five Swamps pay the Ornithopter alone at {4}{B}.
 wideVerdictSpec :: (Monad m, Monad n) => Spec.Spec m n -> Registry.Registry m -> n ()
 wideVerdictSpec s registry = Spec.describe s "Synthetic Wide Verdict" $ do
-  Spec.it s "CR 601.2f under Hinata the gate's every-subset walk stops at the budget" $ do
+  Spec.it s "CR 601.2f under Hinata a gauge too wide to walk subset by subset is priced exactly" $ do
+    swamp <- S.printingOf s registry "Swamp"
     piker <- S.printingOf s registry "Goblin Piker"
     thopter <- S.printingOf s registry "Ornithopter"
     hinata <- S.printingOf s registry "Hinata, Dawn-Crowned"
     verdict <- S.printingOf s registry "Synthetic Wide Verdict"
-    let board pikers =
-          let (_, withHinata) = S.addPermanent hinata S.bob (Setup.emptyGame S.bothPlayers)
+    let board pikers lands =
+          let withLands = S.landsFor swamp S.alice lands (Setup.emptyGame S.bothPlayers)
+              (_, withHinata) = S.addPermanent hinata S.bob withLands
               (_, withThopter) = S.addPermanent thopter S.bob withHinata
               withPikers = List.foldl' (\g _ -> snd (S.addPermanent piker S.alice g)) withThopter [1 .. pikers :: Int]
            in inMainPhase (S.addHandCard verdict S.alice withPikers)
-        (narrowId, narrow) = board 3
-        (wideId, wide) = board 16
-        attempted = S.runPure S.identityAnswer wide (S.cast S.alice wideId)
+        (narrowId, narrow) = board 3 0
+        (wideId, wide) = board 16 0
+        (paidId, paid) = board 16 5
+        (shortId, short) = board 16 4
     Spec.assertBool s (not (S.castable S.alice narrowId narrow)) "CR 601.2f within the budget every aiming is priced, and none pays with no land"
-    Spec.assertBool s (S.castable S.alice wideId wide) "past the budget the cast is offered, and the search ends"
-    Spec.assertBool s (elem wideId (Game.zoneMembers Zone.Hand S.alice attempted)) "CR 734.1 the attempt is reversed: the Verdict is back in alice's hand"
-    Spec.assertEqWith s "and nothing is on the stack" (length (TurnRegisters.stack (GameState.turn attempted))) 0
+    Spec.assertBool s (not (S.castable S.alice wideId wide)) "past the budget too, and the cast is refused"
+    Spec.assertBool s (S.castable S.alice paidId paid) "CR 601.2f the Ornithopter alone costs {4}{B}, which five Swamps pay"
+    Spec.assertBool s (not (S.castable S.alice shortId short)) "and four do not"
   -- alice's Goblin Piker and Typhoid Rats, alike to the cost and not to the
   -- bound, against bob's Typhoid Rats (mana value 1) under his Hinata: the one
   -- legal announcement at two targets taps her Rats, and it costs {5}{B}. A
@@ -2500,6 +2503,57 @@ wideVerdictSpec s registry = Spec.describe s "Synthetic Wide Verdict" $ do
         (shortId, short) = board 5
     Spec.assertBool s (S.castable S.alice paidId paid) "CR 601.2f tapping her Rats to destroy his costs {5}{B}, which six Swamps pay"
     Spec.assertBool s (not (S.castable S.alice shortId short)) "and five do not"
+  -- bob's Typhoid Rats and Ornithopter, alike to the cost and not to the
+  -- victim's mana value, against alice's Typhoid Rats under his Hinata: the
+  -- Ornithopter alone costs {4}{B}. A gate that let the Rats stand for the
+  -- Ornithopter would find only the {5}{B} aiming tapping her Rats.
+  Spec.it s "CR 601.2c under Hinata victims the bound tells apart are each their own aiming" $ do
+    swamp <- S.printingOf s registry "Swamp"
+    rats <- S.printingOf s registry "Typhoid Rats"
+    thopter <- S.printingOf s registry "Ornithopter"
+    hinata <- S.printingOf s registry "Hinata, Dawn-Crowned"
+    verdict <- S.printingOf s registry "Synthetic Wide Verdict"
+    let board lands =
+          let withLands = S.landsFor swamp S.alice lands (Setup.emptyGame S.bothPlayers)
+              (_, withHinata) = S.addPermanent hinata S.bob withLands
+              (_, withRats) = S.addPermanent rats S.bob withHinata
+              (_, withThopter) = S.addPermanent thopter S.bob withRats
+              (_, withGauge) = S.addPermanent rats S.alice withThopter
+           in inMainPhase (S.addHandCard verdict S.alice withGauge)
+        (paidId, paid) = board 5
+        (shortId, short) = board 4
+    Spec.assertBool s (S.castable S.alice paidId paid) "CR 601.2f the Ornithopter alone costs {4}{B}, which five Swamps pay"
+    Spec.assertBool s (not (S.castable S.alice shortId short)) "and four do not"
+
+-- Graceful Takedown {1}{G} Sorcery: "Any number of target enchanted creatures
+-- you control and up to one other target creature you control each deal damage
+-- equal to their power to target creature you don't control." bob controls
+-- Hinata, Dawn-Crowned; alice controls twelve Goblin Pikers, each wearing her
+-- Holy Strength, and `forests` Forests. The "other" slot excludes its sibling,
+-- which reads only membership (Target.exclusions), so the Pikers are one class
+-- and the gate prices every aiming past Target.subsetBudget: the cheapest,
+-- bob's Hinata alone, costs {2}{G}.
+gracefulTakedownSpec :: (Monad m) => Spec.Spec m n -> Registry.Registry m -> n ()
+gracefulTakedownSpec s registry = Spec.describe s "Graceful Takedown" $ do
+  Spec.it s "CR 601.2f under Hinata an excluded slot too wide to walk subset by subset is priced exactly" $ do
+    forest <- S.printingOf s registry "Forest"
+    piker <- S.printingOf s registry "Goblin Piker"
+    strength <- S.printingOf s registry "Holy Strength"
+    hinata <- S.printingOf s registry "Hinata, Dawn-Crowned"
+    takedown <- S.printingOf s registry "Graceful Takedown"
+    let enchanted g _ =
+          let (pikerId, withPiker) = S.addPermanent piker S.alice g
+              (auraId, withAura) = S.addPermanent strength S.alice withPiker
+           in S.attach auraId pikerId withAura
+        board forests =
+          let withLands = S.landsFor forest S.alice forests (Setup.emptyGame S.bothPlayers)
+              (_, withHinata) = S.addPermanent hinata S.bob withLands
+              withPikers = List.foldl' enchanted withHinata [1 .. 12 :: Int]
+           in inMainPhase (S.addHandCard takedown S.alice withPikers)
+        (paidId, paid) = board 3
+        (shortId, short) = board 2
+    Spec.assertBool s (S.castable S.alice paidId paid) "CR 601.2f bob's Hinata alone costs {2}{G}, which three Forests pay"
+    Spec.assertBool s (not (S.castable S.alice shortId short)) "and two do not, though twelve enchanted creatures are 4096 subsets"
 
 -- alice's Urgent Necropsy over three Forests and a Swamp, `soils` Acidic Soils
 -- in her graveyard, and bob's `victim`, in her precombat main phase with
@@ -2718,6 +2772,7 @@ spec s registry = Spec.describe s "Parun.Engine.Cost" $ do
   drafnasRestorationSpec s registry
   shredMemorySpec s registry
   wideVerdictSpec s registry
+  gracefulTakedownSpec s registry
   frailExhumationSpec s registry
   everbarkShamanSpec s registry
   putridRaptorSpec s registry

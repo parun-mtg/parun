@@ -1392,26 +1392,93 @@ poolSplits legalUnder ranges slots sets =
          in Map.union chosen (Map.mapWithKey narrow sets)
    in (split, fmap (narrowed . Map.fromList) (traverse (\name -> fmap ((,) name) (answers name)) (Set.toList split)))
 
--- CR 601.2c: the slots whose targets the joint check may tell apart one from
--- another -- a slot whose filter or computed bound reads a sibling, or whose
--- pool names one poolSplits did not split (`split`), and every slot so read --
--- and a slot whose `together` keeps its targets' values apart
--- (togetherRefused). jointlyJudged's fourth way's other `together`, one zone,
--- reads only the zone holding each target and is not here.
-entangledSlots :: Set SlotName -> Map SlotName TargetSlot -> Set SlotName
-entangledSlots split slots =
+-- The siblings a slot's filter excludes (a printed "other", CR 601.2c), where
+-- its top-level Not (IsBound _) conjuncts are its only reads of a sibling;
+-- Nothing where it reads one any other way.
+exclusions :: Set SlotName -> TargetSlot -> Maybe (Set SlotName)
+exclusions declared slot =
+  let conjuncts = case TargetSlot.filter slot of
+        Nothing -> []
+        Just (Filter.Type.And fs) -> fs
+        Just f -> [f]
+      excluded f = case f of
+        Filter.Type.Not (Filter.Type.IsBound name) | Set.member name declared -> Just name
+        _ -> Nothing
+      (named, rest) = List.partition (Maybe.isJust . excluded) conjuncts
+   in if all (Set.disjoint declared . Filter.boundSlots) rest then Just (Set.fromList (Maybe.mapMaybe excluded named)) else Nothing
+
+-- CR 601.2c: the slots whose members the joint check tells apart one by one --
+-- a slot whose pool names one poolSplits did not split (`split`), whose filter
+-- reads a sibling other than by `exclusions`, or whose bound reads one in any
+-- shape but membersGauge's, and every slot so read. jointSignature classes
+-- every other slot's members.
+apartSlots :: Set SlotName -> Map SlotName TargetSlot -> Set SlotName
+apartSlots split slots =
   let declared = Map.keysSet slots
-      reads_ slot =
-        Set.union
-          (siblingReads declared slot)
-          (Set.difference (Set.intersection declared (foldMap Set.singleton (scopeSlot (TargetSlot.pool slot)))) split)
-      apart slot = case TargetSlot.together slot of
-        Just (Together.Differing _) -> True
-        _ -> False
-      tangle name slot =
-        let read_ = reads_ slot
-         in if Set.null read_ && not (apart slot) then Set.empty else Set.insert name read_
-   in Map.foldMapWithKey tangle slots
+      unsplit = Set.difference declared split
+      named slot = Set.intersection unsplit (foldMap Set.singleton (scopeSlot (TargetSlot.pool slot)))
+      filterReads slot = Set.intersection declared (foldMap Filter.boundSlots (TargetSlot.filter slot))
+      gauge slot = fmap fst (membersGauge declared slots slot)
+      apart name slot =
+        let byPool = named slot
+            byFilter = if Maybe.isJust (exclusions declared slot) then Set.empty else filterReads slot
+            bound = boundSiblings declared slot
+            byBound = if Maybe.isJust (gauge slot) then Set.empty else bound
+            read_ = Set.unions [byPool, byFilter, byBound]
+         in if Set.null read_ then Set.empty else Set.insert name read_
+   in Map.foldMapWithKey apart slots
+
+-- Must a walk over these slots stop at subsetBudget? Where an apart slot, or
+-- an exclusion with a slot named between its two (jointSignature's
+-- `crowded`), sits beside a slot taking several targets, that slot may hold
+-- classes of one recipient, and the walk is every subset of them.
+apartWide :: Set SlotName -> Map SlotName (Natural, Natural) -> Map SlotName TargetSlot -> Bool
+apartWide apart ranges slots =
+  (not (Set.null apart) || not (null (crowdedPairs (Map.keysSet slots) slots)))
+    && any (\name -> maybe False ((> 1) . snd) (Map.lookup name ranges)) (Map.keys slots)
+
+-- Every (excluder, excluded) pair of `exclusions` with a slot of `among` named
+-- between its two.
+crowdedPairs :: Set SlotName -> Map SlotName TargetSlot -> [(SlotName, SlotName)]
+crowdedPairs among slots =
+  let declared = Map.keysSet slots
+      between a b = any (\name -> min a b < name && name < max a b) among
+   in [(name, other) | (name, slot) <- Map.toList slots, other <- foldMap Set.toList (exclusions declared slot), between name other]
+
+-- CR 601.2c: what the joint check reads of one recipient beside the slots
+-- holding it (`held`), as aimingsBy's signature, or the recipient itself where
+-- it tells the recipient apart. Swapping two recipients alike here and held by
+-- the same slots changes no slot's verdict in jointlyIllegalGiven:
+--
+--   * an exclusion reads only membership, which aimingsBy settles exactly
+--     between two slots it deals next to each other, in name order, so a
+--     recipient also held by a slot named between the two is `crowded`;
+--   * a membersGauge bound reads how many of its gauge's members its count's
+--     filter keeps, so a gauge member is classed by its own count (`valueOf`
+--     with it alone bound), and the reader's members by their legality
+--     (`legalUnder`) at every value the gauge could give it;
+--   * a `together` reads each member's zone or Differing values, and a `total`
+--     each member's weight.
+--
+-- Parun.CostSpec's "Synthetic Wide Verdict" and "Graceful Takedown" groups
+-- prove the gauge and the exclusion.
+jointSignature :: GameState -> (TargetSlot -> Map SlotName Binding.Type.Binding -> Maybe Integer) -> (Map SlotName Binding.Type.Binding -> TargetSlot -> Set Recipient) -> Set SlotName -> Map SlotName TargetSlot -> Map SlotName (Set Recipient) -> Set SlotName -> Recipient -> Either Recipient (Maybe (Zone.Zone, Maybe PlayerId), [Maybe (Set (DifferentIn.DifferentIn, DifferingValue.DifferingValue))], [Integer], [Maybe Integer], [Bool])
+jointSignature gs valueOf legalUnder apart slots sets =
+  let declared = Map.keysSet slots
+      referent a = maybe a Recipient.ToObject (Recipient.objectOf a)
+      gauges = [(reader, slot, gauge) | (reader, slot) <- Map.toList slots, Just (gauge, _) <- [membersGauge declared slots slot]]
+      -- Each reader's legal referents at every value its gauge could give it,
+      -- built once for every recipient.
+      legalAt = Map.fromList [(reader, [Set.map referent (legalUnder Map.empty slot {TargetSlot.amount = Just (Quantity.Type.Literal k)}) | k <- [0 .. toInteger (Natural.length (Map.findWithDefault Set.empty gauge sets))]]) | (reader, slot, gauge) <- gauges]
+   in \held r ->
+        let heldSlots = Map.restrictKeys slots held
+            crowded = any (\(a, b) -> Set.member a held && Set.member b held) (crowdedPairs held slots)
+            zone = if any ((== Just Together.InOneZone) . TargetSlot.together) heldSlots then zoneHolding gs r else Nothing
+            differing = [differingValues axis gs r | Just (Together.Differing axis) <- fmap TargetSlot.together (Map.elems heldSlots)]
+            weights = [weighing gs weight r | Just (TotalCap.MkTotalCap weight _) <- fmap TargetSlot.total (Map.elems heldSlots)]
+            counted = [valueOf slot (Map.singleton gauge (Binding.toRecipients (Set.singleton r))) | (_, slot, gauge) <- gauges, Set.member gauge held]
+            legality = [Set.member (referent r) legal | (reader, _, _) <- gauges, Set.member reader held, legal <- Map.findWithDefault [] reader legalAt]
+         in if not (Set.disjoint held apart) || crowded then Left r else Right (zone, differing, weights, counted, legality)
 
 -- CR 601.2c: the counts each slot may be answered with, narrowed by its legal set
 -- exactly as chooseTargets narrows the offer (announcedRange, slotCapacities) --
