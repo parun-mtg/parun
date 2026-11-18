@@ -15,7 +15,8 @@ import qualified Parun.Types.ProjectedCharacteristics as ProjectedCharacteristic
 -- Parun.Engine.Resolve.Common.happenedBetween skips the whole record.
 data Snapshots state = MkSnapshots
   { -- | CR 608.2h / 113.7a: last known information, keyed by the id an object
-    -- had before it left a zone (CR 400.7). Grows for the whole game.
+    -- had before it left a zone (CR 400.7) or, a countered ability, ceased
+    -- (CR 701.6a). Grows for the whole game.
     lastKnown :: !(Map.Map ObjectId.ObjectId LastKnown.LastKnown),
     -- | CR 608.2h for a STACK object, keyed by the id it had before it left the
     -- stack (CR 400.7): the whole object, so an effect armed while it was still

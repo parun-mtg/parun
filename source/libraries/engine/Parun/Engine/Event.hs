@@ -10521,8 +10521,16 @@ counterOne settle before destination counterer source controller oid = do
     -- spell's own card and an ability has none -- the projection answers
     -- Counterable for one, so asking first would fall through to the graveyard
     -- move by accident.
+    --
+    -- CR 608.2h's record is filed as it ceases, as the zone-change funnel files a
+    -- countered spell's: Ertai Resurrected's "its controller draws a card" asks
+    -- who controlled the ability once it has gone. The
+    -- ertai-resurrected-counters-an-activated-ability-and-its-controller-draws
+    -- scenario proves it.
     Just _ | Game.isAbility oid gs -> do
-      State.modify' (Game.cease oid)
+      State.modify' $ \g ->
+        let ceased = Game.cease oid g
+         in ceased {GameState.snapshots = (GameState.snapshots ceased) {Snapshots.lastKnown = maybe id (Map.insert oid) (lastKnownRecord g oid) (Snapshots.lastKnown (GameState.snapshots ceased))}}
       State.modify'
         . recordEvent
         $ GameEvent.AbilityCountered
@@ -11844,9 +11852,10 @@ turnFaceDownToBottom kind holder oid gs = case Game.lookupObject oid gs of
 -- ceases, under the id it had while it existed. Nothing for an id that board
 -- does not hold.
 --
--- The ONE builder of a LastKnown: the zone-change funnel, forgetObject and
--- leaveTheGame all file what this answers, so no road out of a zone or out of
--- the game can come to remember an object differently.
+-- The ONE builder of a LastKnown: the zone-change funnel, forgetObject,
+-- leaveTheGame and counterOne's countered ability all file what this answers,
+-- so no road out of a zone, off the stack or out of the game can come to
+-- remember an object differently.
 lastKnownRecord :: GameState -> ObjectId -> Maybe LastKnown.LastKnown
 lastKnownRecord gs oid = fmap (lastKnownFrom gs oid) (Game.lookupObject oid gs)
 
