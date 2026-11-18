@@ -2305,7 +2305,7 @@ filterPositionLintSpec s registry corpus = Spec.describe s "Lint" $ do
     -- cards in its controller's graveyard.
     --
     -- Exactly, against the mana value: Chthonian Nightmare, Shelob, Dread
-    -- Weaver, Likeness Looter, Rydia, Summoner of Mist, Tamiyo, Compleated Sage, Synthetic Counted, Announced, Wide, Paired, Total and Divided
+    -- Weaver, Likeness Looter, The Mycosynth Gardens, Rydia, Summoner of Mist, Tamiyo, Compleated Sage, Synthetic Counted, Announced, Wide, Paired, Total and Divided
     -- Verdict, Synthetic Wide Muster on a modal trigger, Spell Blast and Detonate in a slot, and Fear of Change and Ornate Imitations in a reference
     -- pick, at the top level and
     -- inside a ForEachNumber body; Isareth the Awakener and Halo Forager in a
@@ -2365,6 +2365,7 @@ filterPositionLintSpec s registry corpus = Spec.describe s "Lint" $ do
         ("Chthonian Nightmare", 1),
         ("Shelob, Dread Weaver", 1),
         ("Likeness Looter", 1),
+        ("The Mycosynth Gardens", 1),
         ("Rydia, Summoner of Mist", 1),
         ("Tamiyo, Compleated Sage", 1),
         ("Liliana, Heretical Healer", 1),
