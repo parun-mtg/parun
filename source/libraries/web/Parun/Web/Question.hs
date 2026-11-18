@@ -118,9 +118,10 @@ automatic request = case Text.unpack (Question.kind question) of
     question = Request.question request
     offer = Question.offer question
 
--- | The picks a request's form starts with: combat damage divided so each
--- recipient in order takes lethal damage and the last the rest (CR 510.1c),
--- for the seat to change or confirm; nothing picked for any other.
+-- | The picks a request's form starts with: combat damage divided lethal to
+-- each recipient in turn and the rest to the last, a split a trampler's
+-- excess allows (CR 510.1c, 702.19b), for the seat to change or confirm;
+-- nothing picked for any other.
 initial :: Request.Request -> Set.Set (Natural, Natural)
 initial request = case (Text.unpack (Question.kind (Request.question request)), damageOf request) of
   ("AssignCombatDamage", Just (lethal, total)) ->
@@ -583,7 +584,7 @@ form request picked = case Text.unpack (Question.kind question) of
             ]
   "AssignCombatDamage"
     | Just chooser <- picker request ->
-        heading "Divide the combat damage. Each blocker in order takes lethal damage before the next."
+        heading "Divide the combat damage."
           : [ Element.el
                 "div"
                 ["amount-row"]

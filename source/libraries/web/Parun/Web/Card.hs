@@ -63,7 +63,7 @@ colour o =
         [] -> "c-none"
         _ -> "c-multi"
 
--- | A colour's symbol letter (CR 105.1).
+-- | A colour's mana symbol letter (CR 107.4).
 letterUpper :: Color.Color -> String
 letterUpper c = fmap Char.toUpper (letter c)
 
