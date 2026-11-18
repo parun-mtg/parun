@@ -6547,6 +6547,25 @@ lintSpec s registry corpus = Spec.describe s "Lint" $ do
     Spec.assertBool s (not (cardLimitDangles (renamed 0))) "as is one naming its first"
     Spec.assertBool s (cardLimitDangles (renamed 2)) "one naming a third clause is rejected"
     Spec.assertEqWith s "no dangling limit" (fmap (S.nameOf . Printing.card) offenders) []
+  -- CR 605.4a leaves a triggered mana ability no stack object, so nothing spends
+  -- its "triggers only once" rider (Event.withinTriggerLimit) or raises its CR
+  -- 700.2b mode choice (Engine.placeBorne). No printing carries either, so none
+  -- may; the doctored Wild Growths prove the lint is not vacuous.
+  Spec.it s "CR 605.1b no card writes a trigger limit or a mode choice on a triggered mana ability" $ do
+    ps <- S.allPrintings s corpus
+    growth <- S.printingOf s registry "Wild Growth"
+    let face = S.combinedFace growth
+        triggers f = Face.triggeredAbilities f <> delayedDeclarations f <> grantedTriggeredAbilities f
+        offends ability = TriggeredAbility.limit ability /= TriggerLimit.Unlimited || Modal.modeCount (TriggeredAbility.modal ability) > 1
+        offending f = any offends (filter ManaAbility.mayBeTriggeredManaAbility (triggers f))
+        doctor g = face {Face.triggeredAbilities = fmap g (Face.triggeredAbilities face)}
+        limited = doctor (\a -> a {TriggeredAbility.limit = TriggerLimit.OncePerGame})
+        modal = doctor (\a -> a {TriggeredAbility.modal = (TriggeredAbility.modal a) {Modal.modes = Modal.modes (TriggeredAbility.modal a) <> Modal.modes (TriggeredAbility.modal a)}})
+        offenders = filter (anyFace offending . Printing.card) ps
+    Spec.assertBool s (any ManaAbility.mayBeTriggeredManaAbility (triggers face) && not (offending face)) "Wild Growth's trigger is a triggered mana ability, and is accepted"
+    Spec.assertBool s (offending limited) "the lint itself catches a limited one"
+    Spec.assertBool s (offending modal) "the lint itself catches a two-mode one"
+    Spec.assertEqWith s "no offenders" (fmap (S.nameOf . Printing.card) offenders) []
   -- CR 608.2d's either-or, whose two branches must name each other: the corpus
   -- half, with the same shape the slot-name pair above has.
   Spec.it s "no card's either-or names a sibling that does not name it back" $ do
