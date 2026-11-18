@@ -1,0 +1,85 @@
+{
+  "faces": [
+    {
+      "counterRestrictions": [
+        {
+          "affected": {
+            "type": "Matching",
+            "value": {
+              "type": "And",
+              "value": [
+                {
+                  "type": "HasCardType",
+                  "value": "Creature"
+                },
+                {
+                  "type": "HeldBy",
+                  "value": {
+                    "holder": "Controller",
+                    "relation": "You"
+                  }
+                }
+              ]
+            }
+          },
+          "kind": {
+            "type": "MinusOneMinusOne"
+          }
+        }
+      ],
+      "keywords": [
+        {
+          "type": "Flying"
+        },
+        {
+          "type": "Indestructible"
+        }
+      ],
+      "manaCost": [
+        {
+          "type": "Generic",
+          "value": 9
+        }
+      ],
+      "name": "Darksteel Angel",
+      "oracleText": "Flying, indestructible\nYou can't lose the game and your opponents can't win the game.\nCreatures you control can't have -1/-1 counters put on them.",
+      "playerAbilities": [
+        {
+          "effect": {
+            "type": "Precluded",
+            "value": "Lose"
+          },
+          "scope": {
+            "type": "You"
+          }
+        },
+        {
+          "effect": {
+            "type": "Precluded",
+            "value": "Win"
+          },
+          "scope": {
+            "type": "Opponent"
+          }
+        }
+      ],
+      "power": {
+        "type": "Literal",
+        "value": 4
+      },
+      "toughness": {
+        "type": "Literal",
+        "value": 4
+      },
+      "typeLine": {
+        "subtypes": [
+          "Angel"
+        ],
+        "types": [
+          "Artifact",
+          "Creature"
+        ]
+      }
+    }
+  ]
+}
