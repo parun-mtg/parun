@@ -3119,9 +3119,9 @@ keywordPayloadFilters keyword = case keyword of
   -- CR 717.2's payload is a level; the ability it indicates is the CARD's.
   Keyword.ClassLevel _ -> []
   Keyword.StartYourEngines -> []
-  -- CR 701.43d is payload-free: the linked trigger it permits is the CARD's own
-  -- TriggeredAbility, so any Filter in it is swept there rather than here.
-  Keyword.Exert -> []
+  -- CR 701.43d's linked trigger is the CARD's own TriggeredAbility, swept
+  -- there; the Filter here is the offer's gate.
+  Keyword.Exert gate -> Maybe.maybeToList gate
   Keyword.Enlist -> []
   -- CR 702.43a names no quality: the +1/+1 counters and the "target artifact
   -- creature" are written into the replacement effect and the ability

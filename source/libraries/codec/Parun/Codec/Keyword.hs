@@ -45,7 +45,8 @@ import qualified Parun.Types.Keyword as Keyword
 -- 'Keyword.Hexproof' is 'Arm.optionalPayload'\'s first caller: CR 702.11b's
 -- bare hexproof has no "value" key at all (@{"type":"Hexproof"}@) where CR
 -- 702.11d's "hexproof from [quality]" does, both under the one constructor.
--- 'Keyword.Vanishing' is the same shape for CR 702.63b's sake.
+-- 'Keyword.Vanishing' is the same shape for CR 702.63b's sake, and
+-- 'Keyword.Exert' for an ungated exert's.
 codec :: Codec.Codec Keyword.Keyword
 codec =
   Arm.tagged
@@ -246,7 +247,7 @@ codec =
       Arm.nullary "Spree" Keyword.Spree,
       Arm.nullary "JobSelect" Keyword.JobSelect,
       Arm.nullary "Tiered" Keyword.Tiered,
-      Arm.nullary "Exert" Keyword.Exert,
+      Arm.optionalPayload "Exert" (Filter.codec codec) Keyword.Exert (\x -> case x of Keyword.Exert y -> Just y; _ -> Nothing),
       Arm.nullary "Enlist" Keyword.Enlist,
       Arm.payload "Bestow" (Cost.codec codec) Keyword.Bestow (\x -> case x of Keyword.Bestow y -> Just y; _ -> Nothing),
       Arm.nullary "Station" Keyword.Station,
