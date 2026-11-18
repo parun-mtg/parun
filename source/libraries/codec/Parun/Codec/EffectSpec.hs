@@ -43,6 +43,7 @@ import qualified Parun.Types.CardType as CardType
 import qualified Parun.Types.CastObligation as CastObligation
 import qualified Parun.Types.CastOffer as CastOffer.Type
 import qualified Parun.Types.CastRepetition as CastRepetition
+import qualified Parun.Types.ChangeCount as ChangeCount
 import qualified Parun.Types.ChangeTargets as ChangeTargets
 import qualified Parun.Types.ChangeText as ChangeText
 import qualified Parun.Types.ChooseBetween as ChooseBetween
@@ -2866,24 +2867,24 @@ spec s = Spec.describe s "Parun.Codec.Effect" $ do
   -- CR 115.7a / 115.7b: Deflection's "change the target of target spell",
   -- Mizzium Meddler's "change a target ... to this creature", and Ricochet's
   -- "to the player with the lowest result".
-  Spec.it s "ChangeTargets round-trips with and without a named new target" $ do
+  Spec.it s "ChangeTargets round-trips each count, with and without a named new target" $ do
     Common.assertJsonCodec
       s
       toJson
       fromJson
-      (Effect.ChangeTargets (ChangeTargets.MkChangeTargets (ObjectRef.InSlot (SlotName.MkSlotName (Text.pack "spell"))) Nothing))
+      (Effect.ChangeTargets (ChangeTargets.MkChangeTargets (ObjectRef.InSlot (SlotName.MkSlotName (Text.pack "spell"))) ChangeCount.Every Nothing))
       " {\"type\":\"ChangeTargets\",\"value\":{\"objects\":{\"type\":\"InSlot\",\"value\":\"spell\"}}} "
     Common.assertJsonCodec
       s
       toJson
       fromJson
-      (Effect.ChangeTargets (ChangeTargets.MkChangeTargets (ObjectRef.InSlot (SlotName.MkSlotName (Text.pack "spell"))) (Just (RecipientRef.Permanents (ObjectRef.InSlot (SlotName.MkSlotName (Text.pack "self")))))))
-      " {\"type\":\"ChangeTargets\",\"value\":{\"objects\":{\"type\":\"InSlot\",\"value\":\"spell\"},\"onto\":{\"type\":\"Permanents\",\"value\":{\"type\":\"InSlot\",\"value\":\"self\"}}}} "
+      (Effect.ChangeTargets (ChangeTargets.MkChangeTargets (ObjectRef.InSlot (SlotName.MkSlotName (Text.pack "spell"))) ChangeCount.One (Just (RecipientRef.Permanents (ObjectRef.InSlot (SlotName.MkSlotName (Text.pack "self")))))))
+      " {\"type\":\"ChangeTargets\",\"value\":{\"objects\":{\"type\":\"InSlot\",\"value\":\"spell\"},\"count\":\"One\",\"onto\":{\"type\":\"Permanents\",\"value\":{\"type\":\"InSlot\",\"value\":\"self\"}}}} "
     Common.assertJsonCodec
       s
       toJson
       fromJson
-      (Effect.ChangeTargets (ChangeTargets.MkChangeTargets (ObjectRef.InSlot (SlotName.MkSlotName (Text.pack "spell"))) (Just (RecipientRef.Players (PlayerRef.InSlot (SlotName.MkSlotName (Text.pack "lowest")))))))
+      (Effect.ChangeTargets (ChangeTargets.MkChangeTargets (ObjectRef.InSlot (SlotName.MkSlotName (Text.pack "spell"))) ChangeCount.Every (Just (RecipientRef.Players (PlayerRef.InSlot (SlotName.MkSlotName (Text.pack "lowest")))))))
       " {\"type\":\"ChangeTargets\",\"value\":{\"objects\":{\"type\":\"InSlot\",\"value\":\"spell\"},\"onto\":{\"type\":\"Players\",\"value\":{\"type\":\"InSlot\",\"value\":\"lowest\"}}}} "
   -- CR 701.36a: nullary, rule 701.36a fixing the quality, the count and the
   -- chooser, leaving an author nothing to write.

@@ -1410,7 +1410,7 @@ effectChildren c effect = case effect of
   Effect.RepeatIf (RepeatIf.MkRepeatIf process condition ifHolds) -> fmap Effect.RepeatIf (RepeatIf.MkRepeatIf <$> traverse (onEffect c) process <*> onCondition c condition <*> traverse (onEffect c) ifHolds)
   Effect.Heal ref -> fmap Effect.Heal (onObjectRef c ref)
   Effect.ChooseNewTargets ref -> fmap Effect.ChooseNewTargets (onObjectRef c ref)
-  Effect.ChangeTargets (ChangeTargets.MkChangeTargets objects onto) -> fmap Effect.ChangeTargets (ChangeTargets.MkChangeTargets <$> onObjectRef c objects <*> traverse (recipientRefChildren c) onto)
+  Effect.ChangeTargets (ChangeTargets.MkChangeTargets objects count onto) -> fmap Effect.ChangeTargets (ChangeTargets.MkChangeTargets <$> onObjectRef c objects <*> pure count <*> traverse (recipientRefChildren c) onto)
 
 -- | A damage clause's children: its recipients and its amount (CR 120.1).
 damagePartChildren :: (Applicative f) => EffectChildren card ability f -> DamagePart.DamagePart -> f DamagePart.DamagePart

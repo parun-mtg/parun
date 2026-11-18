@@ -1074,8 +1074,8 @@ effectPlayerRefs effect = case effect of
   Effect.RepeatIf {} -> []
   Effect.Heal {} -> []
   Effect.ChooseNewTargets {} -> []
-  -- CR 115.7b's player the target changes to (Ricochet).
-  Effect.ChangeTargets (ChangeTargets.MkChangeTargets _ onto) -> case onto of
+  -- CR 115.7's player the targets change to (Ricochet).
+  Effect.ChangeTargets (ChangeTargets.MkChangeTargets _ _ onto) -> case onto of
     Just (RecipientRef.Players ref) -> [ref]
     Just (RecipientRef.Permanents _) -> []
     Nothing -> []

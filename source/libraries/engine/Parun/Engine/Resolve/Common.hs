@@ -92,6 +92,7 @@ import qualified Parun.Types.CarryOver as CarryOver
 import qualified Parun.Types.CastOffer as CastOffer
 import qualified Parun.Types.CastOrigin as CastOrigin
 import qualified Parun.Types.Cause as Cause
+import qualified Parun.Types.ChangeCount as ChangeCount
 import qualified Parun.Types.ChoosePermanents as ChoosePermanents
 import qualified Parun.Types.ChooseQuality as ChooseQuality
 import qualified Parun.Types.Chooser as Chooser
@@ -3224,9 +3225,12 @@ retargetEach reaim legal resolving controller source ref = do
 -- change of target that draws a card the spell refuses leaves the old target,
 -- so the spell resolves" proves the refused draw.
 --
--- `onto`: CR 115.7b's change of one target to a named object, below.
-changeTargetsFor :: Maybe (Recipient -> Bool) -> ObjectId -> PlayerId -> PlayerId -> ObjectId -> Game ()
-changeTargetsFor onto source chooser controller oid = do
+-- `onto` narrows every new target, under either count, to the recipients it
+-- admits (Ricochet's "to the player with the lowest result"); Nothing admits
+-- any. The scenario "CR 115.7a Ricochet moves both of Ashling's Command's
+-- target words off the one player" proves the narrowed CR 115.7a change.
+changeTargetsFor :: ChangeCount.ChangeCount -> Maybe (Recipient -> Bool) -> ObjectId -> PlayerId -> PlayerId -> ObjectId -> Game ()
+changeTargetsFor count onto source chooser controller oid = do
   gs <- State.get
   Monad.forM_ (Game.lookupObject oid gs) $ \obj -> do
     let slots = stackTargetSlots obj oid gs
@@ -3235,12 +3239,13 @@ changeTargetsFor onto source chooser controller oid = do
         aimer = Maybe.fromMaybe oid (Game.abilitySourceOf oid gs)
         fresh = Target.legalSets (resolvingKind oid gs) (resolvingAbilityName oid gs) (Just controller) False seed aimer slots gs
         another old = Set.filter (\r -> not (any (Recipient.sameReferent r) old))
+        named = Maybe.fromMaybe (const True) onto
         rebind divide picked = do
           rebound <- divide (Object.bindings obj) picked
           Monad.forM_ rebound $ \bindings -> do
             let write o = o {Object.bindings = Map.union bindings (Object.bindings o)}
             State.modify' (\g -> g {GameState.objects = Map.adjust write oid (GameState.objects g)})
-    case onto of
+    case count of
       -- CR 115.7b: each OPTION is the current targets with one of them
       -- swapped for a recipient `named` admits, legal now in that slot and
       -- not already among its targets. Which target is the chooser's (Mizzium
@@ -3259,7 +3264,7 @@ changeTargetsFor onto source chooser controller oid = do
       -- "may"), so an answer that is not an option, "unchanged" included,
       -- takes the first, Game.chooseAmong's posture. The Spellskite scenario
       -- answering its targets unchanged proves it.
-      Just named -> do
+      ChangeCount.One -> do
         let refused = Target.jointlyIllegal (resolvingKind oid gs) (resolvingAbilityName oid gs) (Just controller) seed aimer slots
             already = refused current gs
             causes picked = or (Map.mapWithKey (\slot r -> not (Set.isSubsetOf r (Map.findWithDefault Set.empty slot already))) (refused picked gs))
@@ -3280,10 +3285,10 @@ changeTargetsFor onto source chooser controller oid = do
           first : _ -> do
             answer <- Game.choose (Prompt.ChooseTargets (Decide.deciderFor chooser gs) chooser oid asked)
             rebind (reaimDivisions chooser oid Map.empty) (if answer `elem` options then answer else first)
-      Nothing -> do
+      ChangeCount.Every -> do
         let -- CR 406.4's draws capped at the slot's count, chooseNewTargetsFor's
             -- cap. A REGRESSION FENCE: no test drives a pile through this road.
-            offer slot old = (Natural.length old, Target.piledOffer (Just (Natural.length old)) (Just chooser) gs (Target.inChooserRange source chooser gs (candidates old (Map.findWithDefault Set.empty slot fresh))))
+            offer slot old = (Natural.length old, Target.piledOffer (Just (Natural.length old)) (Just chooser) gs (Target.inChooserRange source chooser gs (Set.filter named (candidates old (Map.findWithDefault Set.empty slot fresh)))))
             candidates old = if Set.size old > 1 then id else another old
             asked = Map.mapWithKey offer current
             enough (n, offered) = Natural.length offered >= n
@@ -3303,6 +3308,7 @@ changeTargetsFor onto source chooser controller oid = do
             drawn <- traverse (fmap fst . Target.drawFromPiles (Just chooser)) answer
             let stands slot picked =
                   Set.isSubsetOf picked (Map.findWithDefault Set.empty slot fresh)
+                    && all named picked
                     && candidates (Map.findWithDefault Set.empty slot current) picked == picked
                 coherent = all Set.null (Target.jointlyIllegal (resolvingKind oid gs) (resolvingAbilityName oid gs) (Just controller) seed aimer slots drawn gs)
             Monad.when (and (Map.elems (Map.mapWithKey stands drawn)) && coherent) (rebind (changeDivisions chooser oid) drawn)
