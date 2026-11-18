@@ -1569,6 +1569,21 @@ finiteRange counting announced candidates count =
 -- bound stops at the division" prove it.
 membersBoundValues :: (Quantity -> Natural) -> Maybe Natural -> (Map SlotName Binding.Type.Binding -> Maybe Integer) -> Map SlotName Binding.Type.Binding -> Set SlotName -> Map SlotName TargetSlot -> Map SlotName (Set Recipient) -> TargetSlot -> Maybe [Integer]
 membersBoundValues counting announced valueOf base declared slots sets slot = do
+  (gauge, gaugeSlot) <- membersGauge declared slots slot
+  let candidates = Map.findWithDefault Set.empty gauge sets
+      total = toInteger (Natural.length candidates)
+      (lo, most) = announcedRange counting announced gaugeSlot (Natural.length candidates)
+      hi = toInteger (maybe most (min most) (divisionCap counting gaugeSlot))
+  matching <- valueOf (Map.insert gauge (Binding.toRecipients candidates) base)
+  pure (if toInteger lo > hi then [] else [max 0 (toInteger lo - (total - matching)) .. min hi matching])
+
+-- The gauge, by name and slot, of a slot whose bound is the shape
+-- membersBoundValues answers, or Nothing where it is any other.
+-- Parun.AbilitySlotLintSpec's "no card writes a sibling bound only the capped
+-- search answers" keeps every other shape folding over a sibling out of card
+-- data.
+membersGauge :: Set SlotName -> Map SlotName TargetSlot -> TargetSlot -> Maybe (SlotName, TargetSlot)
+membersGauge declared slots slot = do
   Quantity.Type.Count count <- TargetSlot.amount slot
   Scope.OverBound _ gauge <- Just (Count.Type.scope count)
   Aggregation.Members <- Just (Count.Type.aggregation count)
@@ -1581,12 +1596,7 @@ membersBoundValues counting announced valueOf base declared slots sets slot = do
         && Set.disjoint declared (foldMap Filter.boundSlots (TargetSlot.filter slot))
         && not (jointlyJudged declared gaugeSlot)
     )
-  let candidates = Map.findWithDefault Set.empty gauge sets
-      total = toInteger (Natural.length candidates)
-      (lo, most) = announcedRange counting announced gaugeSlot (Natural.length candidates)
-      hi = toInteger (maybe most (min most) (divisionCap counting gaugeSlot))
-  matching <- valueOf (Map.insert gauge (Binding.toRecipients candidates) base)
-  pure (if toInteger lo > hi then [] else [max 0 (toInteger lo - (total - matching)) .. min hi matching])
+  pure (gauge, gaugeSlot)
 
 -- The value a slot's CR 202.3 computed bound takes under these bindings.
 boundValueUnder :: Maybe AbilityName.AbilityName -> Maybe PlayerId -> Bool -> ObjectId -> GameState -> TargetSlot -> Map SlotName Binding.Type.Binding -> Maybe Integer
@@ -2494,8 +2504,12 @@ zoneHolding gs recipient = do
 -- Parun.TargetSpec's "CR 601.2c past the cap a non-Members sibling-count mode
 -- is offered, and the attempt is reversed" proves it.
 --
--- Not implemented: an exact answer past the cap for any other bound shape, which
--- CR 700.2e's other chooser and CR 603.3c's modal trigger can observe (#6139).
+-- Unprinted: an exact answer past the cap for a bound folding over a sibling in
+-- any shape but membersGauge's (another aggregation, a filter or pool reading
+-- the sibling, a gauge that is itself a reader), which CR 700.2e's other
+-- chooser and CR 603.3c's modal trigger could observe. Parun.AbilitySlotLintSpec's
+-- "no card writes a sibling bound only the capped search answers" keeps it out
+-- of card data.
 jointlyFillableGiven :: StackObjectKind.StackObjectKind -> Maybe AbilityName.AbilityName -> Pools -> Maybe PlayerId -> Map SlotName Binding.Type.Binding -> ObjectId -> Map SlotName TargetSlot -> Map SlotName (Set Recipient) -> GameState -> Bool
 jointlyFillableGiven kind reader pools perspective seed source slots sets gs =
   let declared = Map.keysSet slots

@@ -31,7 +31,7 @@ import qualified Data.Maybe as Maybe
 import qualified Data.Sequence as Seq
 import qualified Data.Set as Set
 import qualified Data.Text as Text
-import Parun.CardSpec (anyFace, anyFaceOrMinted, armedReads, cardAuthoredEffects, cardCounts, cardFilters, cardResolutionEffects, collectsEvidenceAsCost, createToken, declaresVariable, delayedDeclarations, discardsAsCost, effectCounts, effectWithNested, exilesCardAsCost, grantedActivatedAbilities, grantedTriggeredAbilities, instantLine, lintMode, mintingSpell, modalActivated, modalClauseConditions, modalSlotsOffend, oneEffectActivated, oneEffectTrigger, payGateBound, removesCountersAsCost, sacrificesAsCost, spellCostsOf, triggerConditionSlots, vanillaFace, waterbendsAsCost, withMinted)
+import Parun.CardSpec (anyFace, anyFaceOrMinted, armedReads, cardAuthoredEffects, cardCounts, cardFilters, cardResolutionEffects, collectsEvidenceAsCost, createToken, declaresVariable, delayedDeclarations, discardsAsCost, effectCounts, effectWithNested, exilesCardAsCost, faceModals, grantedActivatedAbilities, grantedTriggeredAbilities, instantLine, lintMode, mintingSpell, modalActivated, modalClauseConditions, modalSlotsOffend, oneEffectActivated, oneEffectTrigger, payGateBound, removesCountersAsCost, sacrificesAsCost, spellCostsOf, triggerConditionSlots, vanillaFace, waterbendsAsCost, withMinted)
 import qualified Parun.Engine.Binding as Binding
 import qualified Parun.Engine.Card as Card
 import qualified Parun.Engine.Children as Children
@@ -43,9 +43,11 @@ import qualified Parun.Engine.Keyword as Keyword.Engine
 import qualified Parun.Engine.Mint as Mint
 import qualified Parun.Engine.Modal as Modal
 import qualified Parun.Engine.Projection as Projection
+import qualified Parun.Engine.QuantitySlot as QuantitySlot
 import qualified Parun.Engine.Resolve as Resolve
 import qualified Parun.Engine.Resolve.Slots as Resolve
 import qualified Parun.Engine.RuleAbilities as RuleAbilities.Engine
+import qualified Parun.Engine.Target as Target
 import Parun.FilterPositionLintSpec (filterAtomsOf)
 import qualified Parun.Registry as Registry
 import qualified Parun.Spec as Spec
@@ -699,6 +701,26 @@ castArmedAbilities card = Set.fromList [name | CastingPermission.CastAsThoughItH
 armingCastSlots :: Face.Face Card.Type.Card -> Set.Set SlotName.SlotName
 armingCastSlots card = if Set.null (castArmedAbilities card) then Set.empty else Set.singleton Keyword.Engine.becameSlot
 
+-- Does a slot of this mode bound itself by a fold over a sibling slot (CR
+-- 202.3, CR 400.7j) in any shape but the one Target.membersGauge answers
+-- exactly? Past Target.subsetBudget such a bound is judged fillable unasked
+-- (Target.jointlyFillableGiven), and no printed card writes one.
+siblingBoundOffends :: Mode.Mode Card.Type.Card (GrantedAbility.GrantedAbility Card.Type.Card) -> Bool
+siblingBoundOffends mode =
+  let slots = Mode.targetSlots mode
+      declared = Map.keysSet slots
+      foldsSibling count = case Count.Type.scope count of
+        Scope.OverBound _ name -> Set.member name declared
+        _ -> False
+      bounds slot = Maybe.maybeToList (TargetSlot.amount slot) <> Maybe.maybeToList (SlotCount.quantity (TargetSlot.count slot)) <> Maybe.maybeToList (TargetSlot.divided slot)
+      offends slot = any (any foldsSibling . QuantitySlot.nestedCounts) (bounds slot) && Maybe.isNothing (Target.membersGauge declared slots slot)
+   in any offends slots
+
+-- Every modal a face carries, printed or granted.
+siblingBoundCardOffends :: Face.Face Card.Type.Card -> Bool
+siblingBoundCardOffends face =
+  any (any siblingBoundOffends . Modal.modes) (faceModals face <> fmap ActivatedAbility.modal (grantedActivatedAbilities face) <> fmap TriggeredAbility.modal (grantedTriggeredAbilities face))
+
 abilitySlotLintSpec :: (Monad n) => Spec.Spec IO n -> Registry.Registry IO -> [(FilePath, Either Text.Text Card.Type.Card)] -> n ()
 abilitySlotLintSpec s registry corpus = Spec.describe s "Lint" $ do
   -- The AbilityName half of the D4 dataflow lint (CR 603.7): an
@@ -1185,6 +1207,40 @@ abilitySlotLintSpec s registry corpus = Spec.describe s "Lint" $ do
       "a bound folding over the objects a slot names reports that slot"
       (Map.keysSet (Resolve.targetSlotSlots (TargetSlot.withAmount overBound (TargetSlot.required Pool.Permanents Nothing))))
       (Set.singleton target)
+  -- A bound folding over a sibling slot is answered exactly past
+  -- Target.subsetBudget only in Target.membersGauge's shape; any other (another
+  -- aggregation, a filter or pool reading the sibling, a gauge that is itself a
+  -- reader) is judged fillable there, so a mode no announcement completes stays
+  -- choosable (CR 700.2a). No printed card writes one; the synthetics below are
+  -- exempt, and a printed card tripping this builds the exact answer.
+  Spec.it s "no card writes a sibling bound only the capped search answers" $ do
+    ps <- S.allPrintings s corpus
+    let exempt = Set.fromList (fmap Text.pack ["Synthetic Total Verdict"])
+        offenders = Set.fromList (fmap (S.nameOf . Printing.card) (filter (anyFaceOrMinted siblingBoundCardOffends . Printing.card) ps))
+    Spec.assertEqWith s "only the exempt synthetics write a sibling bound the capped search answers" offenders exempt
+  -- The lint itself, on a doctored Synthetic Total Verdict: "tap any number of
+  -- target creatures you control, then destroy target creature an opponent
+  -- controls with mana value equal to" a fold over the tapped ones.
+  Spec.it s "the lint itself catches a sibling bound only the capped search answers" $ do
+    let gauge = SlotName.MkSlotName (Text.pack "gauge")
+        victim = SlotName.MkSlotName (Text.pack "victim")
+        verdict aggregation victimFilter =
+          Mode.MkMode
+            (Seq.singleton (Mint.mandatory (Seq.fromList [Effect.Tap (Tap.plain (ObjectRef.InSlot gauge)), Effect.Tap (Tap.plain (ObjectRef.InSlot victim))])))
+            ( Map.fromList
+                [ (gauge, TargetSlot.anyNumber Pool.Creatures Nothing),
+                  ( victim,
+                    TargetSlot.withAmount
+                      (Quantity.Type.Count (Count.Type.MkCount (Scope.OverBound BoundReading.AsBound gauge) (Filter.Type.HasCardType CardType.Creature) aggregation))
+                      (TargetSlot.required Pool.Creatures (Just (Filter.Type.And (Filter.Type.Measures (Measures.MkMeasures Measure.ManaValue Comparison.Exactly Operand.EnclosingAmount) : victimFilter))))
+                  )
+                ]
+            )
+    Spec.assertBool s (not (siblingBoundOffends (verdict Aggregation.Members []))) "a bare Members bound is accepted"
+    Spec.assertBool s (siblingBoundOffends (verdict (Aggregation.Total (Quantity.Type.Literal 1)) [])) "a Total bound is rejected"
+    Spec.assertBool s (siblingBoundOffends (verdict (Aggregation.Greatest (Quantity.Type.Literal 1)) [])) "a Greatest bound is rejected"
+    Spec.assertBool s (siblingBoundOffends (verdict Aggregation.DistinctNames [])) "a DistinctNames bound is rejected"
+    Spec.assertBool s (siblingBoundOffends (verdict Aggregation.Members [Filter.Type.Not (Filter.Type.IsBound gauge)])) "a Members bound whose slot's filter reads the gauge is rejected"
   -- The slot's FOURTH read: a CR 115.1 chooser naming its seat through a
   -- binding (Curse of Inertia's "that attacking player ... of their choice").
   -- Unreported, a card could hand its announcement to a player its condition
