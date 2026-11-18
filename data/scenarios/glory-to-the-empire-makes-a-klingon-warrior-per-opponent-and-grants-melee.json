@@ -1,0 +1,36 @@
+{
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "name": "alice",
+        "battlefield": [{"card": "Grizzly Bears", "label": "bears"}, {"card": "Mountain", "label": "m1"}, {"card": "Mountain", "label": "m2"}, {"card": "Mountain", "label": "m3"}, {"card": "Mountain", "label": "m4"}, {"card": "Mountain", "label": "m5"}, {"card": "Mountain", "label": "m6"}],
+        "hand": [{"card": "Glory to the Empire!", "label": "glory"}],
+        "library": [{"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}]
+      },
+      {
+        "name": "bob",
+        "battlefield": [{"card": "Hill Giant", "label": "giant"}],
+        "library": [{"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}]
+      },
+      {
+        "name": "carol",
+        "library": [{"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}]
+      }
+    ],
+    "step": "PrecombatMain"
+  },
+  "description": "Glory to the Empire! creates a 2/1 red Klingon Warrior with haste for each opponent its controller has, and gives creatures they control melee",
+  "note": "Three seats make two opponents, so two tokens. Alice's Grizzly Bears gains melee; bob's Hill Giant does not.",
+  "timeline": [
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": {"Cast": {"object": "$glory", "mana": ["$m1", "$m2", "$m3", "$m4", "$m5", "$m6"]}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass"},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass"},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Count": {"card": "Klingon Warrior Token", "count": 2, "player": "alice", "zone": "Battlefield"}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"PowerToughness": {"object": "Klingon Warrior Token", "power": 2, "toughness": 1}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Keywords": {"count": 1, "keyword": {"type": "Haste"}, "object": "Klingon Warrior Token"}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Keywords": {"count": 1, "keyword": {"type": "Melee"}, "object": "Klingon Warrior Token#2"}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Keywords": {"count": 1, "keyword": {"type": "Melee"}, "object": "$bears"}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Keywords": {"count": 0, "keyword": {"type": "Melee"}, "object": "$giant"}}}
+  ]
+}

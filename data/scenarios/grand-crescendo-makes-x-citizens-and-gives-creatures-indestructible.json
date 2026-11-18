@@ -1,0 +1,30 @@
+{
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "name": "alice",
+        "battlefield": [{"card": "Grizzly Bears", "label": "bears"}, {"card": "Plains", "label": "p1"}, {"card": "Plains", "label": "p2"}, {"card": "Plains", "label": "p3"}, {"card": "Plains", "label": "p4"}, {"card": "Plains", "label": "p5"}],
+        "hand": [{"card": "Grand Crescendo", "label": "gc"}],
+        "library": [{"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}]
+      },
+      {
+        "name": "bob",
+        "battlefield": [{"card": "Hill Giant", "label": "giant"}],
+        "library": [{"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}]
+      }
+    ],
+    "step": "PrecombatMain"
+  },
+  "description": "Grand Crescendo creates X 1/1 green and white Citizen tokens, then creatures its controller controls gain indestructible until end of turn",
+  "note": "X is 3. The new Citizens and alice's Grizzly Bears gain indestructible; bob's Hill Giant does not.",
+  "timeline": [
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": {"Cast": {"object": "$gc", "x": 3, "mana": ["$p1", "$p2", "$p3", "$p4", "$p5"]}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass"},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Count": {"card": "Citizen Token", "count": 3, "player": "alice", "zone": "Battlefield"}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"PowerToughness": {"object": "Citizen Token#3", "power": 1, "toughness": 1}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Keywords": {"count": 1, "keyword": {"type": "Indestructible"}, "object": "Citizen Token#3"}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Keywords": {"count": 1, "keyword": {"type": "Indestructible"}, "object": "$bears"}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Keywords": {"count": 0, "keyword": {"type": "Indestructible"}, "object": "$giant"}}}
+  ]
+}

@@ -1,0 +1,37 @@
+{
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "name": "alice",
+        "battlefield": [{"card": "Memnite", "label": "memnite"}, {"card": "Mountain", "label": "m1"}, {"card": "Mountain", "label": "m2"}, {"card": "Mountain", "label": "m3"}, {"card": "Mountain", "label": "m4"}, {"card": "Mountain", "label": "m5"}, {"card": "Mountain", "label": "m6"}],
+        "hand": [{"card": "Grilka, Widowed Warrior", "label": "grilka"}],
+        "library": [{"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}]
+      },
+      {
+        "name": "bob",
+        "battlefield": [{"card": "Hill Giant", "label": "giant", "tapped": true}, {"card": "Grizzly Bears", "label": "bears", "tapped": true}],
+        "library": [{"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}]
+      }
+    ],
+    "step": "PrecombatMain"
+  },
+  "description": "When Grilka enters, its controller gains control of target creature an opponent controls until end of turn, untaps it, and it gains trample, haste and a combat-damage trigger that makes that many tapped Treasures",
+  "note": "Alice's own Memnite can't be the target. Of bob's two tapped creatures, his Hill Giant comes over untapped, attacks, and its 3 damage makes 3 tapped Treasures.",
+  "timeline": [
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": {"Cast": {"object": "$grilka", "mana": ["$m1", "$m2", "$m3", "$m4", "$m5", "$m6"]}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass"},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "refuse": {"ChooseTargets": {"target": ["$memnite"]}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": {"ChooseTargets": {"target": ["$giant"]}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass"},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"View": {"of": "Controller", "object": "$giant", "is": "alice"}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Tapped": {"object": "$giant", "tapped": false}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Keywords": {"count": 1, "keyword": {"type": "Haste"}, "object": "$giant"}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Keywords": {"count": 1, "keyword": {"type": "Trample"}, "object": "$giant"}}},
+    {"turn": 1, "step": "DeclareAttackers", "player": "alice", "do": {"Attack": ["$giant"]}},
+    {"turn": 1, "step": "CombatDamage", "player": "alice", "do": "Pass"},
+    {"turn": 1, "step": "EndOfCombat", "player": "alice", "check": {"Life": {"life": 17, "player": "bob"}}},
+    {"turn": 1, "step": "EndOfCombat", "player": "alice", "check": {"Count": {"card": "Treasure Token", "count": 3, "player": "alice", "zone": "Battlefield"}}},
+    {"turn": 1, "step": "EndOfCombat", "player": "alice", "check": {"Tapped": {"object": "Treasure Token#3", "tapped": true}}}
+  ]
+}

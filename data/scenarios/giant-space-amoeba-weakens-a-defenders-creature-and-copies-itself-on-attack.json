@@ -1,0 +1,30 @@
+{
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "name": "alice",
+        "battlefield": [{"card": "Giant Space Amoeba", "label": "amoeba", "ready": true}, {"card": "Memnite", "label": "memnite"}],
+        "library": [{"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}]
+      },
+      {
+        "name": "bob",
+        "battlefield": [{"card": "Hill Giant", "label": "giant"}, {"card": "Grizzly Bears", "label": "bears"}],
+        "library": [{"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}]
+      }
+    ],
+    "step": "PrecombatMain"
+  },
+  "description": "Whenever Giant Space Amoeba attacks, target creature defending player controls gets -3/-0 until end of turn, then its controller creates a token that's a copy of it",
+  "note": "Alice's own Memnite can't be the target. Hill Giant becomes 0/3 and alice gets a second Amoeba, which isn't attacking.",
+  "timeline": [
+    {"turn": 1, "step": "DeclareAttackers", "player": "alice", "do": {"Attack": ["$amoeba"]}},
+    {"turn": 1, "step": "DeclareAttackers", "player": "alice", "refuse": {"ChooseTargets": {"target": ["$memnite"]}}},
+    {"turn": 1, "step": "DeclareAttackers", "player": "alice", "do": {"ChooseTargets": {"target": ["$giant"]}}},
+    {"turn": 1, "step": "DeclareAttackers", "player": "alice", "do": "Pass"},
+    {"turn": 1, "step": "DeclareAttackers", "player": "alice", "check": {"PowerToughness": {"object": "$giant", "power": 0, "toughness": 3}}},
+    {"turn": 1, "step": "DeclareAttackers", "player": "alice", "check": {"PowerToughness": {"object": "$bears", "power": 2, "toughness": 2}}},
+    {"turn": 1, "step": "DeclareAttackers", "player": "alice", "check": {"Count": {"card": "Giant Space Amoeba", "count": 2, "player": "alice", "zone": "Battlefield"}}},
+    {"turn": 1, "step": "DeclareAttackers", "player": "alice", "check": {"Attackers": {"attackers": {"$amoeba": "$bob"}}}}
+  ]
+}

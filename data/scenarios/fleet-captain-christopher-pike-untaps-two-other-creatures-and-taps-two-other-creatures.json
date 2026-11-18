@@ -1,0 +1,34 @@
+{
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "name": "alice",
+        "battlefield": [{"card": "Fleet Captain Christopher Pike", "label": "pike", "ready": true}, {"card": "Grizzly Bears", "label": "bears", "tapped": true}, {"card": "Hill Giant", "label": "giant", "tapped": true}, {"card": "Island", "label": "i1"}, {"card": "Island", "label": "i2"}, {"card": "Island", "label": "i3"}],
+        "library": [{"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}]
+      },
+      {
+        "name": "bob",
+        "battlefield": [{"card": "Serra Angel", "label": "angel"}, {"card": "Llanowar Elves", "label": "elves"}],
+        "library": [{"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}]
+      }
+    ],
+    "step": "PrecombatMain"
+  },
+  "description": "Fleet Captain Christopher Pike's {1}, {T} untaps two other target creatures and its {2}, {T} taps two other target creatures",
+  "note": "Pike can't target itself. On turn 1 it untaps alice's tapped Grizzly Bears and Hill Giant; on turn 3 it taps bob's Serra Angel and Llanowar Elves.",
+  "timeline": [
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "refuse": {"Activate": {"object": "$pike", "ability": 0, "targets": ["$pike", "$bears"], "mana": ["$i1", null]}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": {"Activate": {"object": "$pike", "ability": 0, "targets": ["$bears", "$giant"], "mana": ["$i1", null]}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass"},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Tapped": {"object": "$bears", "tapped": false}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Tapped": {"object": "$giant", "tapped": false}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Tapped": {"object": "$pike", "tapped": true}}},
+    {"turn": 2, "step": "DeclareAttackers", "player": "bob", "do": {"Attack": []}},
+    {"turn": 3, "step": "PrecombatMain", "player": "alice", "do": {"Activate": {"object": "$pike", "ability": 1, "targets": ["$angel", "$elves"], "mana": ["$i1", "$i2", null]}}},
+    {"turn": 3, "step": "PrecombatMain", "player": "alice", "do": "Pass"},
+    {"turn": 3, "step": "PrecombatMain", "player": "alice", "check": {"Tapped": {"object": "$angel", "tapped": true}}},
+    {"turn": 3, "step": "PrecombatMain", "player": "alice", "check": {"Tapped": {"object": "$elves", "tapped": true}}},
+    {"turn": 3, "step": "PrecombatMain", "player": "alice", "check": {"Tapped": {"object": "$bears", "tapped": false}}}
+  ]
+}

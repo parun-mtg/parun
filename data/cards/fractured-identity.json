@@ -1,0 +1,106 @@
+{
+  "faces": [
+    {
+      "manaCost": [
+        {
+          "type": "Generic",
+          "value": 3
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "White"
+          }
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "Blue"
+          }
+        }
+      ],
+      "name": "Fractured Identity",
+      "oracleText": "Exile target nonland permanent. Each player other than its controller creates a token that's a copy of it.",
+      "spell": {
+        "modes": [
+          {
+            "clauses": [
+              {
+                "effects": [
+                  {
+                    "type": "MoveToZone",
+                    "value": {
+                      "ref": {
+                        "type": "InSlot",
+                        "value": "permanent"
+                      },
+                      "zone": "Exile"
+                    }
+                  },
+                  {
+                    "type": "ForEach",
+                    "value": {
+                      "body": [
+                        {
+                          "type": "CreateCopy",
+                          "value": {
+                            "creator": {
+                              "type": "InSlot",
+                              "value": "player"
+                            },
+                            "ref": {
+                              "type": "InSlot",
+                              "value": "permanent"
+                            }
+                          }
+                        }
+                      ],
+                      "ref": {
+                        "type": "Players",
+                        "value": {
+                          "players": {
+                            "type": "Relative",
+                            "value": "AnyPlayer"
+                          },
+                          "who": {
+                            "type": "Not",
+                            "value": {
+                              "type": "IsControllerOfBound",
+                              "value": "permanent"
+                            }
+                          }
+                        }
+                      },
+                      "slot": "player"
+                    }
+                  }
+                ]
+              }
+            ],
+            "targetSlots": {
+              "permanent": {
+                "filter": {
+                  "type": "Not",
+                  "value": {
+                    "type": "HasCardType",
+                    "value": "Land"
+                  }
+                },
+                "pool": {
+                  "type": "Permanents"
+                }
+              }
+            }
+          }
+        ]
+      },
+      "typeLine": {
+        "types": [
+          "Sorcery"
+        ]
+      }
+    }
+  ]
+}
