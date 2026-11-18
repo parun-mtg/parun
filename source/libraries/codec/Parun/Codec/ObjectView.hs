@@ -44,6 +44,7 @@ codec = Fields.object $ do
   foretellCostReduction <- Fields.required "foretellCostReduction" (Common.maybe ManaCost.codec) ObjectView.foretellCostReduction
   ability <- Fields.required "ability" (Common.maybe AbilityView.codec) ObjectView.ability
   targets <- Fields.required "targets" (Common.list Recipient.codec) ObjectView.targets
+  summoningSick <- Fields.defaulted "summoningSick" False Common.boolean ObjectView.summoningSick
   chosenColors <- Fields.defaulted "chosenColors" Map.empty (Common.keyedList (Common.keyValue Acquisition.codec (Common.set Color.codec))) ObjectView.chosenColors
   chosenColorless <- Fields.defaulted "chosenColorless" Map.empty (Common.keySet Acquisition.codec) ObjectView.chosenColorless
   chosenSubtype <- Fields.defaulted "chosenSubtype" Map.empty (Common.keyedList (Common.keyValue Acquisition.codec (Common.nonEmpty Subtype.codec))) ObjectView.chosenSubtype
@@ -66,6 +67,7 @@ codec = Fields.object $ do
         ObjectView.foretellCostReduction = foretellCostReduction,
         ObjectView.ability = ability,
         ObjectView.targets = targets,
+        ObjectView.summoningSick = summoningSick,
         ObjectView.chosenColors = chosenColors,
         ObjectView.chosenColorless = chosenColorless,
         ObjectView.chosenSubtype = chosenSubtype,

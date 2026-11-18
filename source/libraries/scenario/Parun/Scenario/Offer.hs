@@ -4,6 +4,7 @@
 module Parun.Scenario.Offer where
 
 import qualified Data.Bifunctor as Bifunctor
+import qualified Data.Set as Set
 import qualified Data.Text as Text
 import qualified Parun.Codec.Cost as Codec.Cost
 import qualified Parun.Codec.FaceDownReason as Codec.FaceDownReason
@@ -16,6 +17,7 @@ import qualified Parun.Engine.Projection as Projection
 import qualified Parun.Extra.Int as Int
 import qualified Parun.Extra.Natural as Natural
 import qualified Parun.JsonCodec.Common as Common
+import qualified Parun.Oracle as Oracle
 import qualified Parun.Scenario.Reply as Reply
 import qualified Parun.Types.AbilityName as AbilityName
 import qualified Parun.Types.Action as Action
@@ -24,13 +26,15 @@ import qualified Parun.Types.FaceDownState as FaceDownState
 import qualified Parun.Types.Facing as Facing
 import qualified Parun.Types.GameState as GameState
 import qualified Parun.Types.ObjectId as ObjectId
+import qualified Parun.Types.ProjectedCharacteristics as ProjectedCharacteristics
 import qualified Parun.Types.Reply as R
 
 -- | An action as fields: its constructor, the object it acts on, then what
 -- tells it from the constructor's other offers on that object: the face or
 -- half a Play, Cast or Unlock names, a face-down Cast's reason (CR 708.6), an
 -- Activate's place among its source's abilities (Projection.abilitiesOf, as a
--- scenario's Activation names it), and the choice a TurnFaceUp, Ignore or Plot
+-- scenario's Activation names it) and its Oracle text where that renders, and
+-- the choice a TurnFaceUp, Ignore or Plot
 -- carries. An EndEffect's `offer` is its 1-based place among one source's
 -- offers to one seat (CR 116.2c).
 offer :: Reply.Namer -> GameState.GameState -> Action.Action -> R.Reply
@@ -40,7 +44,7 @@ offer namer gs action = R.Object ((Text.pack "action", R.Text (Text.pack kind)) 
       Action.Pass -> ("Pass", [])
       Action.Play oid name -> ("PlayLand", on oid <> foldMap named name)
       Action.Cast oid name facing -> ("Cast", on oid <> named name <> faceDown facing)
-      Action.Activate oid ability -> ("Activate", on oid <> [("ability", natural (Natural.length (takeWhile (/= ability) abilities))) | let abilities = Projection.abilitiesOf oid gs, ability `elem` abilities])
+      Action.Activate oid ability -> ("Activate", on oid <> [("ability", natural (Natural.length (takeWhile (/= ability) abilities))) | let { abilities = Projection.abilitiesOf oid gs }, ability `elem` abilities] <> [("text", R.Text text) | text <- take 1 (Oracle.activated (Oracle.contextOf (nameOf oid) []) ability)])
       Action.ActivateManaAbility oid -> ("ActivateManaAbility", on oid)
       Action.TurnFaceUp oid procedure -> ("TurnFaceUp", on oid <> [("procedure", Reply.encode (Reply.viaCodec Codec.TurnUpProcedure.codec) namer procedure)])
       Action.TurnConspiracyFaceUp oid -> ("TurnConspiracyFaceUp", on oid)
@@ -56,6 +60,10 @@ offer namer gs action = R.Object ((Text.pack "action", R.Text (Text.pack kind)) 
       Action.PayLifeForMana life mana -> ("PayLifeForMana", [("life", natural life), ("mana", Reply.encode (Reply.viaCodec Codec.ManaType.codec) namer mana)])
       Action.RollPlanarDie -> ("RollPlanarDie", [])
       Action.RerollShownDie stated die -> ("RerollShownDie", on stated <> [("die", Reply.encode Reply.object namer die)])
+    -- What the ability's Oracle text calls its source.
+    nameOf oid = case Set.toList (ProjectedCharacteristics.names (Projection.project oid gs)) of
+      [] -> Text.pack "this object"
+      names -> Text.intercalate (Text.pack " // ") (fmap CardName.unwrap names)
     on :: ObjectId.ObjectId -> [(String, R.Reply)]
     on oid = [("object", Reply.encode Reply.object namer oid)]
     named name = [("name", R.Text (CardName.unwrap name))]

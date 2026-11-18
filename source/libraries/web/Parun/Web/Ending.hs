@@ -1,46 +1,147 @@
--- | The web client's last screen: how the game ended, a link saving it as a
--- scenario, one starting another, and everything the player saw happen.
+-- | The web client's last screen: how the game ended for the player, a link
+-- saving it as a scenario, one starting another, and everything the player
+-- saw happen.
 module Parun.Web.Ending where
 
 import qualified Data.ByteString.Builder as Builder
 import qualified Data.ByteString.Lazy as LazyByteString
+import qualified Data.Containers.ListUtils as ListUtils
 import qualified Data.Foldable as Foldable
+import qualified Data.Maybe as Maybe
 import qualified Data.Sequence as Seq
 import qualified Data.Text as Text
 import qualified Data.Text.Encoding as Encoding
+import Numeric.Natural (Natural)
+import qualified Parun.Play.Render as Render
+import qualified Parun.Types.PlayerId as PlayerId
 import qualified Parun.Uri.Fragment as Fragment
-import qualified Parun.Web.Attribute as Attribute
+import qualified Parun.Web.Element as Element
 import qualified Parun.Web.Html as Html
+import qualified Parun.Web.Log as Log
+
+-- | How the game ended for the player the page plays.
+data Verdict
+  = MkWon
+  | MkLost
+  | MkDrawn
+  | -- | Play stopped before the game ended.
+    MkStopped
+  deriving (Eq, Show)
 
 data Ending = MkEnding
-  { -- | The result and how each player left (Render.result,
+  { verdict :: Verdict,
+    -- | The result and how each player left (Render.result,
     -- Render.departures), or why play stopped first.
     said :: [Text.Text],
     -- | The game as a scenario file (Command.rendered).
     scenario :: Text.Text,
-    -- | What the player saw happen, oldest first (Client.unseen).
-    witnessed :: Seq.Seq Text.Text
+    -- | What the player saw happen, oldest first (Log.unseen).
+    witnessed :: Seq.Seq Log.Entry,
+    -- | The seat the page plays.
+    viewer :: PlayerId.PlayerId,
+    -- | The player's deck and the bot's, by name (Lobby.deckName).
+    decks :: (Text.Text, Text.Text),
+    -- | Each seat's life as the game went, a sample whenever it changed,
+    -- each beside the turn it was in.
+    trail :: [(Natural, [(PlayerId.PlayerId, Integer)])],
+    -- | The game's shuffle seed, as 64 hexadecimal digits (Key.toHex).
+    seed :: Text.Text
   }
   deriving (Eq, Show)
 
 view :: Ending -> Html.Html msg
 view ending =
-  Html.element (Text.pack "main") [] $
-    [Html.element (Text.pack "h1") [] [Html.text $ Text.pack "Game over"]]
-      <> [Html.element (Text.pack "p") [] [Html.text line] | line <- said ending]
-      <> [ Html.element
-             (Text.pack "p")
-             []
-             [ Html.element (Text.pack "a") [property "href" $ download (scenario ending), property "download" $ Text.pack "parun-game.json"] [Html.text $ Text.pack "Save the game as a scenario"],
-               Html.text $ Text.pack " ",
-               -- The empty reference is the page itself, loaded afresh.
-               Html.element (Text.pack "a") [property "href" Text.empty] [Html.text $ Text.pack "Play again"]
-             ],
-           Html.element (Text.pack "h2") [] [Html.text $ Text.pack "Game log"],
-           Html.element (Text.pack "ol") [] [Html.element (Text.pack "li") [] [Html.text line] | line <- Foldable.toList $ witnessed ending]
-         ]
+  let (headline, tone) = case verdict ending of
+        MkWon -> ("You win!", "won")
+        MkLost -> ("You lose", "lost")
+        MkDrawn -> ("A draw", "drawn")
+        MkStopped -> ("Game over", "stopped")
+   in Element.el
+        "main"
+        ["ending"]
+        []
+        $ [confetti | verdict ending == MkWon]
+          <> [ Element.el "section" ["verdict", tone] [] $
+                 Element.el "h1" [] [] [Element.string headline] : [Element.el "p" [] [] [Element.text line] | line <- said ending],
+               Element.el
+                 "div"
+                 ["ending-actions"]
+                 []
+                 [ Element.el "a" ["primary"] [Element.attr "href" (rematch (decks ending) Nothing)] [Element.string "Rematch"],
+                   Element.el "a" [] [Element.attr "href" (rematch (decks ending) (Just (seed ending))), Element.attr "title" (Text.pack "The same decks, shuffled the same way: a link to share")] [Element.string "Same shuffle"],
+                   -- The page itself without a query: the lobby.
+                   Element.el "a" [] [Element.attr "href" (Text.pack "./")] [Element.string "New game"],
+                   Element.el "a" [] [Element.attr "href" (download (scenario ending)), Element.attr "download" (Text.pack "parun-game.json")] [Element.string "Save as a scenario"]
+                 ],
+               Element.el "h2" [] [] [Element.string "How it went"],
+               summary (viewer ending) (trail ending),
+               Element.el "h2" [] [] [Element.string "Game log"],
+               Element.el "ul" ["game-log"] [] (fmap (Log.item (viewer ending) Nothing False) (Foldable.toList (witnessed ending)))
+             ]
+
+-- | The page starting a game between these decks at once, shuffled by this
+-- seed where one is given (engine.js passes the query on as parun_mine,
+-- parun_theirs and parun_seed). A deck's name is a path of
+-- lowercase words, so nothing in it needs escaping in a query but what a
+-- fragment escapes too.
+rematch :: (Text.Text, Text.Text) -> Maybe Text.Text -> Text.Text
+rematch (mine, theirs) shuffle = Text.pack "?mine=" <> query mine <> Text.pack "&theirs=" <> query theirs <> foldMap (Text.pack "&seed=" <>) shuffle
   where
-    property = Attribute.MkProperty . Text.pack
+    query t = Encoding.decodeLatin1 (LazyByteString.toStrict . Builder.toLazyByteString . Fragment.encode $ Encoding.encodeUtf8Builder t)
+
+-- | Each seat's life through the game as a line chart, and the numbers it
+-- tells: turns played, and each seat's final and lowest life and biggest
+-- single loss.
+summary :: PlayerId.PlayerId -> [(Natural, [(PlayerId.PlayerId, Integer)])] -> Html.Html msg
+summary me samples =
+  let seats = ListUtils.nubOrd (concatMap (fmap fst . snd) samples)
+      lifeOf pid sample = Maybe.fromMaybe 0 (lookup pid (snd sample))
+      lives = [lifeOf pid sample | sample <- samples, pid <- seats]
+      lo = minimum (0 : lives)
+      hi = maximum (20 : lives)
+      width = 320 :: Integer
+      height = 120 :: Integer
+      count = length samples
+      x i = if count <= 1 then 0 else div (toInteger i * width) (toInteger (count - 1))
+      y life = height - div ((life - lo) * height) (max 1 (hi - lo))
+      name pid = if pid == me then Text.pack "You" else Render.player pid
+      line pid =
+        Element.el
+          "polyline"
+          ["life-line", if pid == me then "you" else "them"]
+          [Element.attr "points" (Text.unwords [Text.pack (show (x i) <> "," <> show (y (lifeOf pid sample))) | (i, sample) <- zip [0 :: Int ..] samples]), Element.attr "fill" (Text.pack "none")]
+          []
+      turns = maybe 0 fst (Maybe.listToMaybe (reverse samples))
+      drops pid = [lifeOf pid a - lifeOf pid b | (a, b) <- zip samples (drop 1 samples)]
+      stat pid =
+        Element.el
+          "li"
+          [if pid == me then "you" else "them"]
+          []
+          [ Element.el "strong" [] [] [Element.text (name pid)],
+            Element.text (Text.pack (": ended on " <> show (maybe 0 (lifeOf pid) (Maybe.listToMaybe (reverse samples))) <> " life, lowest " <> show (minimum (20 : fmap (lifeOf pid) samples)) <> ", biggest hit " <> show (maximum (0 : drops pid))))
+          ]
+   in Element.el
+        "section"
+        ["summary"]
+        []
+        [ Element.el
+            "svg"
+            ["life-chart"]
+            [Element.attr "viewBox" (Text.pack ("-4 -4 " <> show (width + 8) <> " " <> show (height + 8))), Element.attr "role" (Text.pack "img"), Element.attr "aria-label" (Text.pack "Life totals over the game")]
+            (Element.el "line" ["zero"] [Element.attr "x1" (Text.pack "0"), Element.attr "x2" (Text.pack (show width)), Element.attr "y1" (Text.pack (show (y 0))), Element.attr "y2" (Text.pack (show (y 0)))] [] : fmap line seats),
+          Element.el "p" ["chart-axis"] [] [Element.el "span" [] [] [Element.string "Start"], Element.el "span" [] [] [Element.string ("Turn " <> show turns)]],
+          Element.el "ul" ["stats"] [] (fmap stat seats)
+        ]
+
+-- | Confetti for a win: pieces falling at spread places and speeds, the same
+-- every time.
+confetti :: Html.Html msg
+confetti =
+  let piece i =
+        let r k = mod (i * 7919 + k * 104729) 1000
+         in Element.el "span" [] [Element.attr "style" (Text.pack ("--x:" <> show (div (r 1) 10) <> "%;--delay:" <> show (div (r 2) 1000) <> "." <> show (mod (r 2) 10) <> "s;--spin:" <> show (r 3 - 500) <> "deg;--hue:" <> show (mod (r 4) 6)))] []
+   in Element.el "div" ["confetti"] [Element.attr "aria-hidden" (Text.pack "true")] (fmap piece [1 .. 40 :: Integer])
 
 -- | A data URL holding the text as JSON (RFC 2397).
 download :: Text.Text -> Text.Text

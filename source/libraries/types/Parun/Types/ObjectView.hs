@@ -40,6 +40,8 @@ data ObjectView = MkObjectView
     ability :: Maybe AbilityView.AbilityView,
     -- | CR 601.2c / 602.2b / 603.3d: what a spell or ability on the stack targets, and empty for anything else.
     targets :: [Recipient.Recipient],
+    -- | CR 302.6: a creature on the battlefield that can't attack or pay {T} or {Q} costs yet, its controller not having controlled it since their most recent turn began and it lacking haste.
+    summoningSick :: Bool,
     -- | CR 607.2d: Object.chosenColors, less a secret choice (PlayerChoice.SecretChooser) the seat is not privy to (CR 724.4).
     chosenColors :: Map.Map Acquisition.Acquisition (Set.Set Color.Color),
     -- | CR 607.2d: Object.chosenColorless, less a secret choice the seat is not privy to.

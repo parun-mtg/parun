@@ -1,0 +1,128 @@
+-- | The web client's game log: what a seat saw happen, as Render.events
+-- tells it, headed by each turn as it began, the bookkeeping the board
+-- already shows set apart as minor.
+module Parun.Web.Log where
+
+import qualified Data.Foldable as Foldable
+import qualified Data.List as List
+import qualified Data.Map.Strict as Map
+import qualified Data.Maybe as Maybe
+import qualified Data.Sequence as Seq
+import qualified Data.Text as Text
+import Numeric.Natural (Natural)
+import qualified Parun.Extra.Natural as Natural
+import qualified Parun.Play.Render as Render
+import qualified Parun.Types.GameEvent as GameEvent
+import qualified Parun.Types.LoggedEvent as LoggedEvent
+import qualified Parun.Types.Moved as Moved
+import qualified Parun.Types.ObjectId as ObjectId
+import qualified Parun.Types.ObjectView as ObjectView
+import qualified Parun.Types.PlayerId as PlayerId
+import qualified Parun.Types.PlayerView as PlayerView
+import qualified Parun.Types.SeatView as SeatView
+import qualified Parun.Types.Zone as Zone
+import qualified Parun.Types.ZoneChange as ZoneChange
+import qualified Parun.Web.Element as Element
+import qualified Parun.Web.Html as Html
+import qualified Parun.Web.Mana as Mana
+
+-- | A line of the log.
+data Entry
+  = -- | A turn began: its number, and whose it is.
+    MkTurn Natural PlayerId.PlayerId
+  | -- | Something happened; minor when the board already shows it.
+    MkEvent Weight Text.Text
+  deriving (Eq, Show)
+
+data Weight
+  = MkMajor
+  | MkMinor
+  deriving (Eq, Show)
+
+-- | The entries of the view the seat has not read yet, and its marks (how
+-- far it has read each game's log: the turn, and how many of that turn's
+-- entries) moved past them: the rest of last turn's, where the seat last read during it,
+-- then a heading for this turn and its entries.
+unseen :: Map.Map (PlayerId.PlayerId, Natural) (Natural, Natural) -> PlayerView.PlayerView -> (Map.Map (PlayerId.PlayerId, Natural) (Natural, Natural), [Entry])
+unseen seen view =
+  let mark = (PlayerView.viewer view, PlayerView.game view)
+      turn = PlayerView.turn view
+      entries = PlayerView.witnessed view
+      heading = MkTurn turn (PlayerView.active view)
+      missed = case Map.lookup mark seen of
+        Just (t, n)
+          | t == turn -> told view (List.genericDrop n entries)
+          | t + 1 == turn -> told view (List.genericDrop n (PlayerView.witnessedLastTurn view)) <> [heading] <> told view entries
+        _ -> heading : told view entries
+   in (Map.insert mark (turn, Natural.length entries) seen, missed)
+
+-- | The entries as Render.events tells them, each run of minor or major
+-- ones told together so draws still group.
+told :: PlayerView.PlayerView -> [LoggedEvent.LoggedEvent] -> [Entry]
+told view logged =
+  let tell run = case run of
+        first : _ -> fmap (MkEvent (minor first)) (Render.events view run)
+        [] -> []
+   in concatMap tell (List.groupBy (\a b -> minor a == minor b) logged)
+
+-- | Minor: a resolving spell's move off the stack, which the board shows as
+-- it lands, and the mana spent on spells this turn (CR 700.14).
+minor :: LoggedEvent.LoggedEvent -> Weight
+minor logged = case LoggedEvent.event logged of
+  GameEvent.Moved m | ZoneChange.from (Moved.change m) == Zone.Stack -> MkMinor
+  GameEvent.Expended _ -> MkMinor
+  _ -> MkMajor
+
+-- | The entries' sentences, for the end of the game and the newest-first
+-- summary; headings as "Turn 5: Player 2".
+sentence :: PlayerId.PlayerId -> Entry -> Text.Text
+sentence viewer entry = case entry of
+  MkTurn n active -> Text.pack ("Turn " <> show n <> ": ") <> (if active == viewer then Text.pack "your turn" else Render.player active <> Text.pack "'s turn")
+  MkEvent _ t -> t
+
+-- | Whether an entry is a heading.
+isTurn :: Entry -> Bool
+isTurn entry = case entry of
+  MkTurn _ _ -> True
+  MkEvent _ _ -> False
+
+-- | An entry as a list item; where `linked` names the objects the seat can
+-- read and what tapping one sends, each name in the entry becomes a link
+-- to that object's sheet.
+item :: PlayerId.PlayerId -> Maybe (Map.Map Text.Text ObjectId.ObjectId, ObjectId.ObjectId -> msg) -> Bool -> Entry -> Html.Html msg
+item viewer linked fresh entry = case entry of
+  MkTurn _ _ -> Element.el "li" ["turn"] [] [Element.text (sentence viewer entry)]
+  MkEvent w t -> Element.el "li" (["fresh" | fresh] <> ["minor" | w == MkMinor]) [] (maybe (Mana.rich t) (\(known, reading) -> linking known reading t) linked)
+
+-- | The text, each name it holds a link (the longest where two start
+-- together), the rest drawn as Mana.rich draws it.
+linking :: Map.Map Text.Text ObjectId.ObjectId -> (ObjectId.ObjectId -> msg) -> Text.Text -> [Html.Html msg]
+linking known reading t =
+  let found = [(Text.length before, name, oid) | (name, oid) <- Map.toList known, not (Text.null name), let (before, after) = Text.breakOn name t, not (Text.null after)]
+   in case List.sortOn (\(at, name, _) -> (at, negate (Text.length name))) found of
+        [] -> Mana.rich t
+        (at, name, oid) : _ ->
+          Mana.rich (Text.take at t)
+            <> [Element.el "button" ["log-card"] [Element.attr "type" (Text.pack "button"), Element.on "click" (reading oid)] [Element.text name]]
+            <> linking known reading (Text.drop (at + Text.length name) t)
+
+-- | The names of the objects the view shows, each to one object, a card on
+-- the battlefield or the stack before one elsewhere.
+linkable :: PlayerView.PlayerView -> Map.Map Text.Text ObjectId.ObjectId
+linkable view =
+  let shown = PlayerView.battlefield view <> PlayerView.stack view <> concatMap (\seat -> SeatView.hand seat <> SeatView.graveyard seat <> SeatView.exile seat) (PlayerView.seats view)
+   in Map.fromListWith (\_ first -> first) [(Render.cardName o, ObjectView.object o) | o <- shown, Maybe.isNothing (ObjectView.ability o), Maybe.isJust (ObjectView.characteristics o)]
+
+-- | Entries, each beside something (its place), newest turn first, each
+-- turn's heading above its entries and those newest first.
+newestFirst :: Seq.Seq (a, Entry) -> Seq.Seq (a, Entry)
+newestFirst entries =
+  let turns = Foldable.foldl' (\acc x -> if isTurn (snd x) then Seq.singleton x Seq.<| acc else case Seq.viewl acc of current Seq.:< rest -> (current Seq.|> x) Seq.<| rest; Seq.EmptyL -> Seq.singleton (Seq.singleton x)) Seq.empty entries
+      ordered turn = case Seq.viewl turn of
+        first Seq.:< rest | isTurn (snd first) -> first Seq.<| Seq.reverse rest
+        _ -> Seq.reverse turn
+   in Foldable.fold (fmap ordered turns)
+
+-- | The events among the entries, oldest first.
+events :: Seq.Seq Entry -> [Text.Text]
+events = Foldable.foldr (\entry rest -> case entry of MkEvent _ t -> t : rest; MkTurn _ _ -> rest) []

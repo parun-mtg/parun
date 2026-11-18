@@ -3996,6 +3996,7 @@ library web
     parun:extra,
     parun:json,
     parun:json-codec,
+    parun:oracle,
     parun:play,
     parun:spec,
     parun:types,
@@ -4009,15 +4010,18 @@ library web
     Parun.Web.AppSpec
     Parun.Web.Attribute
     Parun.Web.Board
+    Parun.Web.Card
     Parun.Web.Diff
     Parun.Web.DiffSpec
+    Parun.Web.Element
     Parun.Web.Ending
     Parun.Web.EndingSpec
     Parun.Web.Html
     Parun.Web.HtmlSpec
-    Parun.Web.Line
     Parun.Web.Lobby
     Parun.Web.LobbySpec
+    Parun.Web.Log
+    Parun.Web.Mana
     Parun.Web.Patch
     Parun.Web.Question
     Parun.Web.Wire

@@ -43,6 +43,9 @@ spec s = Spec.describe s "Parun.Codec.ObjectView" $ do
       ObjectView.codec
       (hidden {ObjectView.targets = [Recipient.ToCreature (ObjectId.MkObjectId 3)]})
       "{\"object\":7,\"owner\":0,\"controller\":1,\"tapped\":true,\"damage\":2,\"counters\":[],\"attachedTo\":null,\"characteristics\":null,\"face\":null,\"foretellCostReduction\":null,\"ability\":null,\"targets\":[{\"type\":\"ToCreature\",\"value\":3}]}"
+  -- CR 302.6: a creature that came under its controller's control this turn.
+  Spec.it s "a summoning-sick creature" $
+    Common.assertCodec s ObjectView.codec hidden {ObjectView.summoningSick = True} (init hiddenJson <> ",\"summoningSick\":true}")
   Spec.it s "a hidden object" $
     Common.assertCodec
       s
@@ -92,6 +95,7 @@ hidden =
       ObjectView.foretellCostReduction = Nothing,
       ObjectView.ability = Nothing,
       ObjectView.targets = [],
+      ObjectView.summoningSick = False,
       ObjectView.chosenColors = Map.empty,
       ObjectView.chosenColorless = Map.empty,
       ObjectView.chosenSubtype = Map.empty,
