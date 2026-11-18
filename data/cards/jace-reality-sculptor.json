@@ -90,7 +90,11 @@
                         "type": "ArmDelayedTrigger",
                         "value": {
                           "duration": {
-                            "type": "UntilYourNextTurn"
+                            "type": "UntilNextTurnOf",
+                            "value": {
+                              "type": "Relative",
+                              "value": "You"
+                            }
                           },
                           "name": "it gets -5/-0"
                         }

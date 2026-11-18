@@ -117,7 +117,11 @@
                     "type": "AffectPlayers",
                     "value": {
                       "duration": {
-                        "type": "UntilYourNextTurn"
+                        "type": "UntilNextTurnOf",
+                        "value": {
+                          "type": "Relative",
+                          "value": "You"
+                        }
                       },
                       "effect": {
                         "type": "Cant",
@@ -137,7 +141,11 @@
                     "type": "AffectPlayers",
                     "value": {
                       "duration": {
-                        "type": "UntilYourNextTurn"
+                        "type": "UntilNextTurnOf",
+                        "value": {
+                          "type": "Relative",
+                          "value": "You"
+                        }
                       },
                       "effect": {
                         "type": "Cant",
@@ -157,7 +165,11 @@
                     "type": "AffectPlayers",
                     "value": {
                       "duration": {
-                        "type": "UntilYourNextTurn"
+                        "type": "UntilNextTurnOf",
+                        "value": {
+                          "type": "Relative",
+                          "value": "You"
+                        }
                       },
                       "effect": {
                         "type": "HasProtectionFrom",

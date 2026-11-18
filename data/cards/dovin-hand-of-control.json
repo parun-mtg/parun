@@ -25,7 +25,11 @@
                         "type": "PreventAllDamage",
                         "value": {
                           "duration": {
-                            "type": "UntilYourNextTurn"
+                            "type": "UntilNextTurnOf",
+                            "value": {
+                              "type": "Relative",
+                              "value": "You"
+                            }
                           },
                           "ref": {
                             "type": "InSlot",
@@ -38,7 +42,11 @@
                         "value": {
                           "direction": "DealtBy",
                           "duration": {
-                            "type": "UntilYourNextTurn"
+                            "type": "UntilNextTurnOf",
+                            "value": {
+                              "type": "Relative",
+                              "value": "You"
+                            }
                           },
                           "ref": {
                             "type": "InSlot",

@@ -1604,13 +1604,13 @@ slotsOf effect = joinTwo (joinTwo (joinSlots (fmap objectRefSlots (effectObjectR
   Effect.ChangeTargets _ -> Map.empty
 
 -- Every PlayerRef nested in a Duration: the seat CR 611.2a's window is counted
--- against, which only UntilEndOfNextTurnOf states. durationSlots' twin one type
--- over, and read by effectPlayerRefs rather than here, so the slot it names
--- reaches Parun.EffectLintSpec's singly-read classification the way every other
+-- against. durationSlots' twin one type over, and read by effectPlayerRefs
+-- rather than here, so the slot it names reaches Parun.EffectLintSpec's singly-read classification the way every other
 -- reference does.
 durationPlayerRefs :: Duration.Duration -> [PlayerRef]
 durationPlayerRefs duration = case duration of
   Duration.UntilEndOfNextTurnOf ref -> [ref]
+  Duration.UntilNextTurnOf ref -> [ref]
   -- The seat the WINDOW is counted against, read exactly as the arm above's is.
   Duration.DuringNextTurnOf ref -> [ref]
   Duration.DuringNextUntapStepOf ref -> [ref]
@@ -1621,7 +1621,6 @@ durationPlayerRefs duration = case duration of
   Duration.UntilEndOfTurn -> []
   Duration.Indefinite -> []
   Duration.Perpetual -> []
-  Duration.UntilYourNextTurn -> []
   Duration.UntilNextStepOf next -> [NextStepOf.player next]
   Duration.UntilEndOfYourNextTurn -> []
   -- A Condition's own references are Quantity.bakePlayerRef's half, reached
@@ -1640,12 +1639,12 @@ durationSlots duration = case duration of
   Duration.UntilEndOfTurn -> Map.empty
   Duration.Indefinite -> Map.empty
   Duration.Perpetual -> Map.empty
-  Duration.UntilYourNextTurn -> Map.empty
   Duration.UntilNextStepOf next -> playerRefSlots (NextStepOf.player next)
   Duration.UntilEndOfYourNextTurn -> Map.empty
   -- The seat the window is counted against, read exactly as every other
   -- PlayerRef position is (CR 601.2c).
   Duration.UntilEndOfNextTurnOf ref -> playerRefSlots ref
+  Duration.UntilNextTurnOf ref -> playerRefSlots ref
   Duration.DuringNextTurnOf ref -> playerRefSlots ref
   Duration.DuringNextUntapStepOf ref -> playerRefSlots ref
   Duration.DuringYourNextTurn -> Map.empty
@@ -2453,12 +2452,12 @@ durationSlotsAreExhaustive duration = case duration of
   Duration.UntilEndOfTurn -> True
   Duration.Indefinite -> True
   Duration.Perpetual -> True
-  Duration.UntilYourNextTurn -> True
   Duration.UntilNextStepOf _ -> True
   Duration.UntilEndOfYourNextTurn -> True
   -- playerRefSlots' answer is complete for every arm: a PlayerRef names at
   -- most one slot and nothing nested inside it names another.
   Duration.UntilEndOfNextTurnOf _ -> True
+  Duration.UntilNextTurnOf _ -> True
   Duration.DuringNextTurnOf _ -> True
   Duration.DuringNextUntapStepOf _ -> True
   Duration.DuringYourNextTurn -> True

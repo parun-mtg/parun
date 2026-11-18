@@ -132,7 +132,9 @@ arm resolving targets controller source duration gs = case duration of
   -- Alchemy's "perpetually": Never's lifetime under an arm a zone change can
   -- find (Parun.Engine.Event.perpetuate).
   Duration.Perpetual -> Just Expiry.Perpetual
-  Duration.UntilYourNextTurn -> Just (Expiry.AtTurnOf controller)
+  -- CR 611.2a: ends as the seat's next turn begins, the seat sampled once
+  -- through seatOf; a reference naming nobody stores nothing, as below.
+  Duration.UntilNextTurnOf ref -> Expiry.AtTurnOf <$> seatOf reading targets controller gs ref
   -- CR 611.2a: ends as the named step of that player's turn next begins. A
   -- duration armed during that very step outlives
   -- it: the step has already begun, so only a later beginning ends it. A
@@ -195,8 +197,8 @@ arm resolving targets controller source duration gs = case duration of
   -- names, and the first of that player's untap steps to begin is the next one.
   Duration.DuringNextUntapStepOf ref -> fmap Expiry.DuringUntapStepOf (seatOf reading targets controller gs ref)
   -- CR 611.2a: the arm above's window with the seat taken from CR 109.5's "you",
-  -- as UntilYourNextTurn takes it. Never Nothing -- a controller is always a
-  -- seat, so this window always begins.
+  -- as UntilNextTurnOf's Relative You takes it. Never Nothing -- a controller is
+  -- always a seat, so this window always begins.
   Duration.DuringYourNextTurn ->
     Just (Expiry.DuringTurnOf (AfterTurn.MkAfterTurn controller (TurnRegisters.turnNumber (GameState.turn gs))))
   -- CR 611.2a / 500.7: the extra turn this resolution created, named by its
@@ -223,7 +225,7 @@ arm resolving targets controller source duration gs = case duration of
           else Nothing
   -- CR 500.5a / 511.2: "until end of combat" is the end of the combat PHASE, so
   -- the stored window is PhaseSelector.CombatPhase and never the end of combat
-  -- step. Naming the phase is the whole of the arming: unlike UntilYourNextTurn
+  -- step. Naming the phase is the whole of the arming: unlike UntilNextTurnOf
   -- there is nothing about the game to bake in, because every producer arms it
   -- during combat and the sweep ends the effect at the first combat phase whose
   -- end it sees.
@@ -236,7 +238,7 @@ arm resolving targets controller source duration gs = case duration of
   -- CR 116.2c: nothing about the game's clock is baked in, because no window of
   -- the turn ends this -- the PRICE is carried through unchanged so the offer
   -- below can quote it and the payment charge it. The SEAT is baked, as
-  -- UntilYourNextTurn's is: for a Licid's "you" `controller` here is the resolving
+  -- UntilNextTurnOf's is: for a Licid's "you" `controller` here is the resolving
   -- object's controller, stamped at the ability's creation (CR 602.2a, Resolve's
   -- effectController), which is exactly CR 109.5's "the player who activated the
   -- ability" -- and unlike that rule's static-ability sentence it must not follow
@@ -276,11 +278,11 @@ arm resolving targets controller source duration gs = case duration of
   where
     reading = Game.readingAcquisition resolving source gs
 
--- The ONE seat a Duration.UntilEndOfNextTurnOf or DuringNextTurnOf reference
--- names, sampled as the window begins. One stored row names one turn, so a
--- reference naming several seats arms nothing; no printing states such a window
--- (Scryfall o:"each opponent's next turn", o:"opponents' next turns",
--- 2026-09-25, no hit).
+-- The ONE seat a Duration.UntilNextTurnOf, UntilEndOfNextTurnOf or
+-- DuringNextTurnOf reference names, sampled as the window begins. One stored row
+-- names one turn, so a reference naming several seats arms nothing; no printing
+-- states such a window (Scryfall o:"each opponent's next turn", o:"opponents'
+-- next turns", 2026-09-25, no hit).
 --
 -- Parun.Engine.Players' reading over the resolution's slots, CR 608.2h's last
 -- known information answering a controller or owner: Suspend Aggression's "its
@@ -326,7 +328,7 @@ perSeat duration = case duration of
   Duration.UntilEndOfTurn -> Nothing
   Duration.Indefinite -> Nothing
   Duration.Perpetual -> Nothing
-  Duration.UntilYourNextTurn -> Nothing
+  Duration.UntilNextTurnOf _ -> Nothing
   Duration.UntilNextStepOf _ -> Nothing
   Duration.UntilEndOfYourNextTurn -> Nothing
   Duration.DuringYourNextTurn -> Nothing

@@ -21,7 +21,11 @@
                         "type": "Replace",
                         "value": {
                           "duration": {
-                            "type": "UntilYourNextTurn"
+                            "type": "UntilNextTurnOf",
+                            "value": {
+                              "type": "Relative",
+                              "value": "You"
+                            }
                           },
                           "effect": {
                             "type": "PlaneswalkR",

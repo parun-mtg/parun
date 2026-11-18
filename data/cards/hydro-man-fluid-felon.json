@@ -172,7 +172,11 @@
                         "type": "ModifyTarget",
                         "value": {
                           "duration": {
-                            "type": "UntilYourNextTurn"
+                            "type": "UntilNextTurnOf",
+                            "value": {
+                              "type": "Relative",
+                              "value": "You"
+                            }
                           },
                           "modification": {
                             "type": "CardType",
@@ -191,7 +195,11 @@
                         "type": "ModifyTarget",
                         "value": {
                           "duration": {
-                            "type": "UntilYourNextTurn"
+                            "type": "UntilNextTurnOf",
+                            "value": {
+                              "type": "Relative",
+                              "value": "You"
+                            }
                           },
                           "modification": {
                             "type": "GainAbility",

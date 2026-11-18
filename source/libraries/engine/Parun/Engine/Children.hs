@@ -2769,7 +2769,7 @@ durationChildren c duration = case duration of
   Duration.UntilEndOfTurn -> pure duration
   Duration.Indefinite -> pure duration
   Duration.Perpetual -> pure duration
-  Duration.UntilYourNextTurn -> pure duration
+  Duration.UntilNextTurnOf whose -> Duration.UntilNextTurnOf <$> durationPlayer c whose
   Duration.UntilNextStepOf (NextStepOf.MkNextStepOf step whose) -> fmap Duration.UntilNextStepOf (NextStepOf.MkNextStepOf step <$> durationPlayer c whose)
   Duration.UntilEndOfYourNextTurn -> pure duration
   Duration.UntilEndOfNextTurnOf whose -> Duration.UntilEndOfNextTurnOf <$> durationPlayer c whose

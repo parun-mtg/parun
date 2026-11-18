@@ -13,6 +13,7 @@ import qualified Parun.Types.Duration as Duration
 import qualified Parun.Types.Filter as Filter
 import qualified Parun.Types.ForbidAttack as ForbidAttack
 import qualified Parun.Types.ObjectRef as ObjectRef
+import qualified Parun.Types.PlayerRef as PlayerRef
 import qualified Parun.Types.PlayerRelation as PlayerRelation
 import qualified Parun.Types.PlayerScope as PlayerScope
 import qualified Parun.Types.RestrictedCreatures as RestrictedCreatures
@@ -38,10 +39,10 @@ spec s = Spec.describe s "Parun.Codec.ForbidAttack" $ do
       s
       ForbidAttack.codec
       ( ForbidAttack.MkForbidAttack
-          { ForbidAttack.duration = Duration.UntilYourNextTurn,
+          { ForbidAttack.duration = Duration.UntilNextTurnOf (PlayerRef.Relative PlayerRelation.You),
             ForbidAttack.affected = RestrictedCreatures.Matching (Filter.HasCardType CardType.Creature),
             ForbidAttack.aimedAt = Just (AimedAt.MkAimedAt (AimedPlayers.Scoped (PlayerScope.Related PlayerRelation.You)) (Set.singleton AttackTargetKind.OfPlayer))
           }
       )
-      " {\"duration\":{\"type\":\"UntilYourNextTurn\"},\"affected\":{\"type\":\"Matching\",\"value\":{\"type\":\"HasCardType\",\"value\":\"Creature\"}},\"aimedAt\":{\"defenders\":{\"type\":\"Scoped\",\"value\":{\"type\":\"You\"}},\"kinds\":[\"OfPlayer\"]}} "
+      " {\"duration\":{\"type\":\"UntilNextTurnOf\",\"value\":{\"type\":\"Relative\",\"value\":\"You\"}},\"affected\":{\"type\":\"Matching\",\"value\":{\"type\":\"HasCardType\",\"value\":\"Creature\"}},\"aimedAt\":{\"defenders\":{\"type\":\"Scoped\",\"value\":{\"type\":\"You\"}},\"kinds\":[\"OfPlayer\"]}} "
   Spec.it s "has a schema" $ Common.assertHasSchema s ForbidAttack.codec
