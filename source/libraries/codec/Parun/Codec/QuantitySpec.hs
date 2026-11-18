@@ -35,6 +35,8 @@ import qualified Parun.Types.Designation as Designation
 import qualified Parun.Types.Devotion as Devotion
 import qualified Parun.Types.DistinctOf as DistinctOf
 import qualified Parun.Types.DraftNoteTally as DraftNoteTally
+import qualified Parun.Types.EventTeam as EventTeam
+import qualified Parun.Types.EventTeamTally as EventTeamTally
 import qualified Parun.Types.ExiledPile as ExiledPile
 import qualified Parun.Types.Exponentiation as Exponentiation
 import qualified Parun.Types.Filter as Filter
@@ -339,6 +341,12 @@ spec s = Spec.describe s "Parun.Codec.Quantity" $ do
       Quantity.codec
       (Quantity.HasPlayerDesignation (PlayerDesignationTally.MkPlayerDesignationTally (PlayerRef.Relative PlayerRelation.You) PlayerDesignation.EnduringStory))
       " {\"type\":\"HasPlayerDesignation\",\"value\":{\"player\":{\"type\":\"Relative\",\"value\":\"You\"},\"designation\":\"EnduringStory\"}} "
+  Spec.it s "OnEventTeam" $
+    Common.assertCodec
+      s
+      Quantity.codec
+      (Quantity.OnEventTeam (EventTeamTally.MkEventTeamTally (PlayerRef.Relative PlayerRelation.You) EventTeam.Cloudspire))
+      " {\"type\":\"OnEventTeam\",\"value\":{\"player\":{\"type\":\"Relative\",\"value\":\"You\"},\"team\":\"Cloudspire\"}} "
   -- CR 103.1, IsMonarch's shape and round-tripped the same two ways: Gemstone
   -- Caverns' gate is the Relative arm, and the InSlot arm beside it is the one a
   -- recursive decoder could lose a payload through.

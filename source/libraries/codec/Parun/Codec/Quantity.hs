@@ -18,6 +18,7 @@ import qualified Parun.Codec.DealtDamage as DealtDamage
 import qualified Parun.Codec.Designation as Designation
 import qualified Parun.Codec.Devotion as Devotion
 import qualified Parun.Codec.DraftNoteTally as DraftNoteTally
+import qualified Parun.Codec.EventTeamTally as EventTeamTally
 import qualified Parun.Codec.Exponentiation as Exponentiation
 import qualified Parun.Codec.InZone as InZone
 import qualified Parun.Codec.Keyword as Keyword
@@ -117,6 +118,7 @@ codec =
       -- CR 702.131c / 702.195b's marks, IsMonarch's 0/1 answer with the mark
       -- beside the reference, since a player may hold either or both.
       Arm.payload "HasPlayerDesignation" PlayerDesignationTally.codec Quantity.HasPlayerDesignation (\x -> case x of Quantity.HasPlayerDesignation y -> Just y; _ -> Nothing),
+      Arm.payload "OnEventTeam" EventTeamTally.codec Quantity.OnEventTeam (\x -> case x of Quantity.OnEventTeam y -> Just y; _ -> Nothing),
       Arm.payload "IsStartingPlayer" PlayerRef.codec Quantity.IsStartingPlayer (\x -> case x of Quantity.IsStartingPlayer y -> Just y; _ -> Nothing),
       Arm.payload "IsActivePlayer" PlayerRef.codec Quantity.IsActivePlayer (\x -> case x of Quantity.IsActivePlayer y -> Just y; _ -> Nothing),
       -- CR 500.7's count, flat as Parun.Codec.SkipWindow's whole turns: one tag
@@ -334,6 +336,7 @@ tagOf x = case x of
   Quantity.Speed {} -> "Speed"
   Quantity.IsMonarch {} -> "IsMonarch"
   Quantity.HasPlayerDesignation {} -> "HasPlayerDesignation"
+  Quantity.OnEventTeam {} -> "OnEventTeam"
   Quantity.IsStartingPlayer {} -> "IsStartingPlayer"
   Quantity.IsActivePlayer {} -> "IsActivePlayer"
   Quantity.TurnsBegun TurnKind.AnyTurn _ -> "TurnsBegun"

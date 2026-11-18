@@ -3565,6 +3565,7 @@ quantityKindFilters quantity = case quantity of
   Quantity.Type.Speed _ -> []
   Quantity.Type.IsMonarch _ -> []
   Quantity.Type.HasPlayerDesignation {} -> []
+  Quantity.Type.OnEventTeam {} -> []
   Quantity.Type.IsStartingPlayer _ -> []
   Quantity.Type.IsActivePlayer _ -> []
   Quantity.Type.TurnsBegun {} -> []

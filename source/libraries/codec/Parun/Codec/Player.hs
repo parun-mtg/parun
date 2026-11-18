@@ -9,6 +9,7 @@ import qualified Parun.Codec.CardIdentity as CardIdentity
 import qualified Parun.Codec.CardName as CardName
 import qualified Parun.Codec.Designation as Designation
 import qualified Parun.Codec.DraftNote as DraftNote
+import qualified Parun.Codec.EventTeam as EventTeam
 import qualified Parun.Codec.GraveyardOrder as GraveyardOrder
 import qualified Parun.Codec.OutsideCard as OutsideCard
 import qualified Parun.Codec.PlayerCounterKind as PlayerCounterKind
@@ -46,6 +47,7 @@ codec = Fields.object $ do
   ringTemptations <- Fields.defaulted "ringTemptations" 0 Common.natural Player.ringTemptations
   speed <- Fields.required "speed" (Common.maybe Common.natural) Player.speed
   designations <- Fields.defaulted "designations" Set.empty (Common.set PlayerDesignation.codec) Player.designations
+  eventTeam <- Fields.defaulted "eventTeam" Nothing (Common.maybe EventTeam.codec) Player.eventTeam
   commander <- Fields.defaulted "commander" Set.empty (Common.set CardIdentity.codec) Player.commander
   commanderCasts <- Fields.defaulted "commanderCasts" Map.empty (Common.multiset CardIdentity.codec) Player.commanderCasts
   commanderDamage <- Fields.defaulted "commanderDamage" Map.empty (Common.multiset CardIdentity.codec) Player.commanderDamage
@@ -70,6 +72,7 @@ codec = Fields.object $ do
         Player.ringTemptations = ringTemptations,
         Player.speed = speed,
         Player.designations = designations,
+        Player.eventTeam = eventTeam,
         Player.commander = commander,
         Player.commanderCasts = commanderCasts,
         Player.commanderDamage = commanderDamage,

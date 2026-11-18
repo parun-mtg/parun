@@ -411,6 +411,8 @@ import qualified Parun.Codec.EquipSpec
 import qualified Parun.Codec.EventExpirySpec
 import qualified Parun.Codec.EventGroupSpec
 import qualified Parun.Codec.EventShapeSpec
+import qualified Parun.Codec.EventTeamSpec
+import qualified Parun.Codec.EventTeamTallySpec
 import qualified Parun.Codec.ExcessDestinationSpec
 import qualified Parun.Codec.ExchangeBlocksSpec
 import qualified Parun.Codec.ExchangeSidesSpec
@@ -1815,6 +1817,8 @@ spec s reference corpus = do
   Parun.Codec.PlayersWhoSpec.spec s
   Parun.Codec.SuperlativeSpec.spec s
   Parun.Codec.PlayerDesignationSpec.spec s
+  Parun.Codec.EventTeamSpec.spec s
+  Parun.Codec.EventTeamTallySpec.spec s
   Parun.Codec.PlayerDesignationTallySpec.spec s
   Parun.Codec.PlayerDrawsNthCardSpec.spec s
   Parun.Codec.PlayerExpendsSpec.spec s

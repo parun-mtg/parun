@@ -238,6 +238,7 @@ import qualified Parun.Types.EntryRiders as EntryRiders
 import qualified Parun.Types.Equip as Equip
 import qualified Parun.Types.EventExpiry as EventExpiry
 import qualified Parun.Types.EventShape as EventShape
+import qualified Parun.Types.EventTeamTally as EventTeamTally
 import qualified Parun.Types.ExchangeBlocks as ExchangeBlocks
 import qualified Parun.Types.ExchangeCardZones as ExchangeCardZones
 import qualified Parun.Types.ExchangeOwnership as ExchangeOwnership
@@ -824,6 +825,7 @@ quantityChildren children quantity = case quantity of
   Quantity.Speed ref -> fmap Quantity.Speed (player children ref)
   Quantity.IsMonarch ref -> fmap Quantity.IsMonarch (player children ref)
   Quantity.HasPlayerDesignation (PlayerDesignationTally.MkPlayerDesignationTally ref mark) -> fmap (\renamed -> Quantity.HasPlayerDesignation (PlayerDesignationTally.MkPlayerDesignationTally renamed mark)) (player children ref)
+  Quantity.OnEventTeam (EventTeamTally.MkEventTeamTally ref team) -> fmap (\renamed -> Quantity.OnEventTeam (EventTeamTally.MkEventTeamTally renamed team)) (player children ref)
   Quantity.IsStartingPlayer ref -> fmap Quantity.IsStartingPlayer (player children ref)
   Quantity.IsActivePlayer ref -> fmap Quantity.IsActivePlayer (player children ref)
   Quantity.TurnsBegun kind ref -> fmap (Quantity.TurnsBegun kind) (player children ref)

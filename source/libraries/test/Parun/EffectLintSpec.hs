@@ -357,6 +357,7 @@ printedBoxQuantity quantity = case quantity of
   Quantity.Type.Speed {} -> False
   Quantity.Type.IsMonarch {} -> False
   Quantity.Type.HasPlayerDesignation {} -> False
+  Quantity.Type.OnEventTeam {} -> False
   Quantity.Type.IsStartingPlayer {} -> False
   Quantity.Type.IsActivePlayer {} -> False
   Quantity.Type.TurnsBegun {} -> False

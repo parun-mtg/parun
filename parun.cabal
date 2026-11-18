@@ -898,6 +898,10 @@ library codec
     Parun.Codec.EventGroupSpec
     Parun.Codec.EventShape
     Parun.Codec.EventShapeSpec
+    Parun.Codec.EventTeam
+    Parun.Codec.EventTeamSpec
+    Parun.Codec.EventTeamTally
+    Parun.Codec.EventTeamTallySpec
     Parun.Codec.ExcessDestination
     Parun.Codec.ExcessDestinationSpec
     Parun.Codec.ExchangeBlocks
@@ -3269,6 +3273,8 @@ library types
     Parun.Types.EventExpiry
     Parun.Types.EventGroup
     Parun.Types.EventShape
+    Parun.Types.EventTeam
+    Parun.Types.EventTeamTally
     Parun.Types.ExcessDestination
     Parun.Types.ExchangeBlocks
     Parun.Types.ExchangeCardZones

@@ -6,6 +6,7 @@ import qualified Data.Set as Set
 import Numeric.Natural (Natural)
 import qualified Parun.Types.CardName as CardName
 import qualified Parun.Types.DraftNote as DraftNote
+import qualified Parun.Types.EventTeam as EventTeam
 import qualified Parun.Types.GraveyardOrder as GraveyardOrder
 import qualified Parun.Types.Label as Label
 import qualified Parun.Types.ManaType as ManaType
@@ -29,6 +30,8 @@ data Seat = MkSeat
     emperor :: Bool,
     -- | CR 702.179b: the player's speed; Nothing for a player who has none.
     speed :: Maybe Natural,
+    -- | The player's event team (Player.eventTeam); Nothing for none.
+    eventTeam :: Maybe EventTeam.EventTeam,
     -- | CR 404.3: whether the player arranges cards put into their graveyard
     -- at the same time.
     graveyardOrder :: GraveyardOrder.GraveyardOrder,

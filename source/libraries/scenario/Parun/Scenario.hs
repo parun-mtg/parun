@@ -419,6 +419,7 @@ stage registry board =
               orders = Map.fromList (fmap (\(seat, pid) -> (pid, Seat.graveyardOrder seat)) (NonEmpty.toList seated))
               notes = Map.fromList (fmap (\(seat, pid) -> (pid, Seat.draftNotes seat)) (NonEmpty.toList seated))
               speeds = Map.fromList (fmap (\(seat, pid) -> (pid, Seat.speed seat)) (NonEmpty.toList seated))
+              eventTeams = Map.fromList (fmap (\(seat, pid) -> (pid, Seat.eventTeam seat)) (NonEmpty.toList seated))
               positioned =
                 base
                   { GameState.turn =
@@ -430,7 +431,7 @@ stage registry board =
                         },
                     GameState.turnsBegun = Map.singleton TurnKind.AnyTurn (turnsBegunBy base active (Board.turn board)),
                     GameState.manaPool = Map.fromList [(pid, Mana.Type.MkMana (fmap plainUnit (Seat.manaPool seat))) | (seat, pid) <- NonEmpty.toList seated, not (null (Seat.manaPool seat))],
-                    GameState.players = Map.mapWithKey (\pid p -> p {Player.life = Map.findWithDefault (Player.life p) pid lives, Player.counters = Map.findWithDefault (Player.counters p) pid counters, Player.graveyardOrder = Map.findWithDefault (Player.graveyardOrder p) pid orders, Player.draftNotes = Map.findWithDefault (Player.draftNotes p) pid notes, Player.speed = Map.findWithDefault (Player.speed p) pid speeds}) (GameState.players base),
+                    GameState.players = Map.mapWithKey (\pid p -> p {Player.life = Map.findWithDefault (Player.life p) pid lives, Player.counters = Map.findWithDefault (Player.counters p) pid counters, Player.graveyardOrder = Map.findWithDefault (Player.graveyardOrder p) pid orders, Player.draftNotes = Map.findWithDefault (Player.draftNotes p) pid notes, Player.speed = Map.findWithDefault (Player.speed p) pid speeds, Player.eventTeam = Map.findWithDefault (Player.eventTeam p) pid eventTeams}) (GameState.players base),
                     GameState.monarch = monarch
                   }
           case misseat of
