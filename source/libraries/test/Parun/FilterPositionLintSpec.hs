@@ -2293,6 +2293,11 @@ filterPositionLintSpec s registry corpus = Spec.describe s "Lint" $ do
     -- totals the creature that died (the trigger's "became"): Jackdaw Savior.
     -- The same in an enters trigger's slot, totalling the creature that
     -- entered: Clement, the Worrywort.
+    --
+    -- At most, against power, in an enters trigger's slot counting your lands:
+    -- Invasion of Lorwyn. At most, against the mana value, in a reflexive
+    -- trigger's slot counting the creatures its parent tapped: Invasion of New
+    -- Phyrexia's back face.
     assertAuthors
       s
       registry
@@ -2344,7 +2349,9 @@ filterPositionLintSpec s registry corpus = Spec.describe s "Lint" $ do
         ("Wishing Well", 1),
         ("Sidisi, Regent of the Mire", 1),
         ("Jackdaw Savior", 1),
-        ("Clement, the Worrywort", 1)
+        ("Clement, the Worrywort", 1),
+        ("Invasion of Lorwyn", 1),
+        ("Invasion of New Phyrexia", 1)
       ]
     -- The rejected side, which the sweep above cannot show while the pool has no
     -- offender: the SAME atom, buried under all three combinators, in a target
