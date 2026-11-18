@@ -1,0 +1,38 @@
+{
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "name": "alice",
+        "battlefield": [{"card": "Battle-Scarred Survivalist", "label": "scout"}, {"card": "Gagh Slinger", "label": "gagh"}, {"card": "Grizzly Bears", "label": "bears"}, {"card": "K't'inga-Class Battle Cruiser", "label": "old", "ready": true, "counters": [{"key": {"type": "Named", "value": "charge"}, "value": 4}]}, {"card": "Mountain", "label": "m1"}, {"card": "Mountain", "label": "m2"}, {"card": "Mountain", "label": "m3"}],
+        "hand": [{"card": "K't'inga-Class Battle Cruiser", "label": "cruiser"}],
+        "library": [{"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}]
+      },
+      {
+        "name": "bob",
+        "battlefield": [{"card": "Hill Giant", "label": "giant"}],
+        "library": [{"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}]
+      }
+    ],
+    "step": "PrecombatMain"
+  },
+  "description": "K't'inga-Class Battle Cruiser gives one or two target Klingons and/or Warriors its controller controls flying until end of turn when it enters or attacks, and at 4 or more charge counters it is a 5/5 flying artifact creature",
+  "note": "The entering one refuses the Bears. The stationed one is a 5/5 flyer and its attack gives the Bears nothing and Gagh Slinger flying.",
+  "timeline": [
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": {"Cast": {"object": "$cruiser", "mana": ["$m1", "$m2", "$m3"]}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass"},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "refuse": {"ChooseTargets": {"target": ["$bears"]}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": {"ChooseTargets": {"target": ["$scout"]}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass"},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Keywords": {"object": "$scout", "keyword": {"type": "Flying"}, "count": 1}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Keywords": {"object": "$gagh", "keyword": {"type": "Flying"}, "count": 0}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Types": {"object": "$old", "types": ["Artifact", "Creature"]}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"PowerToughness": {"object": "$old", "power": 5, "toughness": 5}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Keywords": {"object": "$old", "keyword": {"type": "Flying"}, "count": 1}}},
+    {"turn": 1, "step": "DeclareAttackers", "player": "alice", "do": {"Attack": ["$old"]}},
+    {"turn": 1, "step": "DeclareAttackers", "player": "alice", "do": {"ChooseTargets": {"target": ["$gagh", "$scout"]}}},
+    {"turn": 1, "step": "DeclareAttackers", "player": "alice", "do": "Pass"},
+    {"turn": 1, "step": "DeclareAttackers", "player": "alice", "check": {"Keywords": {"object": "$gagh", "keyword": {"type": "Flying"}, "count": 1}}},
+    {"turn": 1, "step": "DeclareAttackers", "player": "alice", "check": {"Keywords": {"object": "$bears", "keyword": {"type": "Flying"}, "count": 0}}}
+  ]
+}

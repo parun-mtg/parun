@@ -1,0 +1,30 @@
+{
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "name": "alice",
+        "battlefield": [{"card": "Kor, Cause of Vengeance", "label": "kor", "ready": true}, {"card": "Gagh Slinger", "label": "gagh"}, {"card": "Grizzly Bears", "label": "bears"}, {"card": "Memnite", "label": "memnite"}],
+        "library": [{"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}]
+      },
+      {
+        "name": "bob",
+        "library": [{"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}]
+      }
+    ],
+    "step": "DeclareAttackers"
+  },
+  "description": "Kor, Cause of Vengeance lets its controller sacrifice another creature when they attack, and if they do they draw a card and Klingons and Warriors they control get +2/+2 until end of turn",
+  "note": "Memnite is sacrificed. Gagh Slinger, not attacking, still gets +2/+2; the Bears do not.",
+  "timeline": [
+    {"turn": 1, "step": "DeclareAttackers", "player": "alice", "do": {"Attack": ["$kor"]}},
+    {"turn": 1, "step": "DeclareAttackers", "player": "alice", "do": {"ChooseToPay": {"decision": "Pays"}}},
+    {"turn": 1, "step": "DeclareAttackers", "player": "alice", "do": {"Answer": {"prompt": "ChooseSacrifices", "with": ["$memnite"]}}},
+    {"turn": 1, "step": "DeclareAttackers", "player": "alice", "do": "Pass"},
+    {"turn": 1, "step": "DeclareAttackers", "player": "alice", "check": {"Count": {"card": "Island", "player": "alice", "zone": "Hand", "count": 1}}},
+    {"turn": 1, "step": "DeclareAttackers", "player": "alice", "check": {"Count": {"card": "Memnite", "player": "alice", "zone": "Graveyard", "count": 1}}},
+    {"turn": 1, "step": "DeclareAttackers", "player": "alice", "check": {"PowerToughness": {"object": "$kor", "power": 6, "toughness": 6}}},
+    {"turn": 1, "step": "DeclareAttackers", "player": "alice", "check": {"PowerToughness": {"object": "$gagh", "power": 5, "toughness": 4}}},
+    {"turn": 1, "step": "DeclareAttackers", "player": "alice", "check": {"PowerToughness": {"object": "$bears", "power": 2, "toughness": 2}}}
+  ]
+}

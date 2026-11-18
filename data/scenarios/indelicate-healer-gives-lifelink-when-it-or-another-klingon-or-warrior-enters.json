@@ -1,0 +1,40 @@
+{
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "name": "alice",
+        "battlefield": [{"card": "Grizzly Bears", "label": "bears"}, {"card": "Plains", "label": "p1"}, {"card": "Plains", "label": "p2"}, {"card": "Plains", "label": "p3"}, {"card": "Mountain", "label": "m1"}, {"card": "Mountain", "label": "m2"}, {"card": "Mountain", "label": "m3"}],
+        "hand": [{"card": "Indelicate Healer", "label": "healer"}, {"card": "Memnite", "label": "memnite"}, {"card": "Gagh Slinger", "label": "gagh"}],
+        "library": [{"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}]
+      },
+      {
+        "name": "bob",
+        "battlefield": [{"card": "Hill Giant", "label": "giant"}],
+        "library": [{"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}]
+      }
+    ],
+    "step": "PrecombatMain"
+  },
+  "description": "Indelicate Healer gives creatures its controller controls lifelink until end of turn when it or another Klingon or Warrior they control enters",
+  "note": "Turn 1 the Healer's own entry grants lifelink to alice's Bears, not bob's Giant. Turn 3, after it wore off, Memnite (no Klingon or Warrior) triggers nothing and Gagh Slinger (Klingon Warrior) does.",
+  "timeline": [
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": {"Cast": {"object": "$healer", "mana": ["$p1", "$p2", "$p3", null]}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass"},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass"},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Keywords": {"object": "$bears", "keyword": {"type": "Lifelink"}, "count": 1}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Keywords": {"object": "Indelicate Healer", "keyword": {"type": "Lifelink"}, "count": 1}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Keywords": {"object": "$giant", "keyword": {"type": "Lifelink"}, "count": 0}}},
+    {"turn": 2, "step": "DeclareAttackers", "player": "bob", "do": {"Attack": []}},
+    {"turn": 3, "step": "PrecombatMain", "player": "alice", "check": {"Keywords": {"object": "$bears", "keyword": {"type": "Lifelink"}, "count": 0}}},
+    {"turn": 3, "step": "PrecombatMain", "player": "alice", "do": {"Cast": {"object": "$memnite", "mana": []}}},
+    {"turn": 3, "step": "PrecombatMain", "player": "alice", "do": "Pass"},
+    {"turn": 3, "step": "PrecombatMain", "player": "alice", "check": {"View": {"of": "Stack", "is": []}}},
+    {"turn": 3, "step": "PrecombatMain", "player": "alice", "check": {"Keywords": {"object": "$bears", "keyword": {"type": "Lifelink"}, "count": 0}}},
+    {"turn": 3, "step": "PrecombatMain", "player": "alice", "do": {"Cast": {"object": "$gagh", "mana": ["$m1", "$m2", "$m3", null]}}},
+    {"turn": 3, "step": "PrecombatMain", "player": "alice", "do": "Pass"},
+    {"turn": 3, "step": "PrecombatMain", "player": "alice", "do": "Pass"},
+    {"turn": 3, "step": "PrecombatMain", "player": "alice", "check": {"Keywords": {"object": "$bears", "keyword": {"type": "Lifelink"}, "count": 1}}},
+    {"turn": 3, "step": "PrecombatMain", "player": "alice", "check": {"Keywords": {"object": "Memnite", "keyword": {"type": "Lifelink"}, "count": 1}}}
+  ]
+}

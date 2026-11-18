@@ -1,0 +1,29 @@
+{
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "name": "alice",
+        "battlefield": [{"card": "Kes, Evolving Telepath", "label": "kes", "counters": [{"key": {"type": "Time"}, "value": 7}]}, {"card": "Reliquary Tower", "label": "tower"}],
+        "library": [{"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}]
+      },
+      {
+        "name": "bob",
+        "library": [{"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}]
+      }
+    ],
+    "step": "PrecombatMain"
+  },
+  "description": "Kes, Evolving Telepath puts a time counter on itself at its controller's end step, draws a card for each time counter on it, then is sacrificed with nine or more",
+  "note": "Seven counters become eight: eight cards and Kes stays. Turn 3 they become nine: nine more and Kes is sacrificed. Reliquary Tower keeps cleanup from asking for discards.",
+  "timeline": [
+    {"turn": 1, "step": "EndStep", "player": "alice", "do": "Pass"},
+    {"turn": 1, "step": "EndStep", "player": "alice", "check": {"Count": {"card": "Island", "player": "alice", "zone": "Hand", "count": 8}}},
+    {"turn": 1, "step": "EndStep", "player": "alice", "check": {"Count": {"card": "Kes, Evolving Telepath", "player": "alice", "zone": "Battlefield", "count": 1}}},
+    {"turn": 1, "step": "EndStep", "player": "alice", "check": {"Counters": {"object": "$kes", "kind": {"type": "Time"}, "count": 8}}},
+    {"turn": 3, "step": "DeclareAttackers", "player": "alice", "do": {"Attack": []}},
+    {"turn": 3, "step": "EndStep", "player": "alice", "do": "Pass"},
+    {"turn": 3, "step": "EndStep", "player": "alice", "check": {"Count": {"card": "Island", "player": "alice", "zone": "Hand", "count": 18}}},
+    {"turn": 3, "step": "EndStep", "player": "alice", "check": {"Count": {"card": "Kes, Evolving Telepath", "player": "alice", "zone": "Graveyard", "count": 1}}}
+  ]
+}

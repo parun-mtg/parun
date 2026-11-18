@@ -1,0 +1,30 @@
+{
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "name": "alice",
+        "battlefield": [{"card": "Julian Bashir, Frontier Doctor", "label": "julian", "ready": true, "counters": [{"key": {"type": "PlusOnePlusOne"}, "value": 2}]}],
+        "graveyard": [{"card": "Hill Giant", "label": "giant"}, {"card": "Grizzly Bears", "label": "bears"}, {"card": "Llanowar Elves", "label": "mine"}],
+        "library": [{"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}]
+      },
+      {
+        "name": "bob",
+        "graveyard": [{"card": "Llanowar Elves", "label": "elves"}],
+        "library": [{"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}]
+      }
+    ],
+    "step": "DeclareAttackers"
+  },
+  "description": "Julian Bashir returns target creature card with mana value at most its power from its controller's graveyard to the battlefield when it attacks",
+  "note": "Julian is 3/3 with two counters: the mana value 4 Hill Giant and bob's Elves (not in alice's graveyard) are refused, and the Bears return.",
+  "timeline": [
+    {"turn": 1, "step": "DeclareAttackers", "player": "alice", "do": {"Attack": ["$julian"]}},
+    {"turn": 1, "step": "DeclareAttackers", "player": "alice", "refuse": {"ChooseTargets": {"target": ["$giant"]}}},
+    {"turn": 1, "step": "DeclareAttackers", "player": "alice", "refuse": {"ChooseTargets": {"target": ["$elves"]}}},
+    {"turn": 1, "step": "DeclareAttackers", "player": "alice", "do": {"ChooseTargets": {"target": ["$bears"]}}},
+    {"turn": 1, "step": "DeclareAttackers", "player": "alice", "do": "Pass"},
+    {"turn": 1, "step": "DeclareAttackers", "player": "alice", "check": {"Count": {"card": "Grizzly Bears", "player": "alice", "zone": "Battlefield", "count": 1}}},
+    {"turn": 1, "step": "DeclareAttackers", "player": "alice", "check": {"Count": {"card": "Hill Giant", "player": "alice", "zone": "Graveyard", "count": 1}}}
+  ]
+}
