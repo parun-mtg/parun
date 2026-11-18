@@ -56,7 +56,7 @@ spec s = Spec.describe s "Parun.Codec.RulePermission" $ do
           Affected.Attached
           Nothing
           RuleWaiver.AttackSickness
-          (Just (AimedAt.MkAimedAt (AimedPlayers.Scoped (PlayerScope.Related PlayerRelation.Opponent)) (Set.fromList [AttackTargetKind.OfPlayer, AttackTargetKind.OfPlaneswalker])))
+          (Just (AimedAt.MkAimedAt (AimedPlayers.Scoped (PlayerScope.Related PlayerRelation.Opponent)) (Set.fromList [AttackTargetKind.OfPlayer, AttackTargetKind.OfPlaneswalker]) Nothing))
       )
       " {\"affected\":{\"type\":\"Attached\"},\"against\":{\"defenders\":{\"type\":\"Scoped\",\"value\":{\"type\":\"Opponent\"}},\"kinds\":[\"OfPlayer\",\"OfPlaneswalker\"]},\"waives\":\"AttackSickness\"} "
   Spec.it s "has a schema" $ Common.assertHasSchema s RulePermission.codec

@@ -1341,17 +1341,13 @@ cantAttackPlayer candidates players gs =
   let rows = gathered gs
       stored active = case ActiveAttackProhibition.aimedAt active of
         Nothing -> []
-        Just (AimedAt.MkAimedAt aimed kinds) ->
-          let barred = case aimed of
-                AimedPlayers.Scoped scope -> filter (\pid -> PlayerEffect.inScope pid (ActiveAttackProhibition.controller active) gs scope) players
-                AimedPlayers.BoundPlayer bound -> filter (== bound) players
-                -- Baked as the row is stored, so an unbaked slot names nobody.
-                AimedPlayers.EachInSlot _ -> []
-           in do
-                creature <- storedSubjects candidates gs active
-                pid <- barred
-                kind <- Set.toList kinds
-                pure (creature, pid, kind)
+        Just (AimedAt.MkAimedAt aimed kinds Nothing) -> do
+          creature <- storedSubjects candidates gs active
+          pid <- filter (storedAimsAt gs active aimed) players
+          kind <- Set.toList kinds
+          pure (creature, pid, kind)
+        -- Some of a seat's permanents only, `cantAttackPermanent`'s.
+        Just (AimedAt.MkAimedAt _ _ (Just _)) -> []
       -- One whole-board projection and one grant walk for the whole walk, both
       -- unforced until some permanent actually reaches `named`.
       pcs = Projection.projectAll gs
@@ -1385,6 +1381,33 @@ cantAttackPlayer candidates players gs =
       -- cantAttackDefender's shape. No printing gates this arm today.
       forSeat player = concatMap (fromRestriction player) (filter (not . lifted (Just player) gs) rows)
    in Set.fromList (concatMap forSeat players <> concatMap stored (liveAttackProhibitions gs))
+
+-- CR 508.1c: which (creature, permanent) announcements a stored row naming an
+-- AimedAt permanents filter forbids, Jace, Multiverse Architect's "creatures
+-- they control can't attack Jaces you control". `cantAttackPlayer`'s stored half
+-- keyed by the permanent, since the row bars some of a seat's planeswalkers and
+-- not others. Each of `permanents` comes with its defending player (CR 508.5)
+-- and its CR 506.3 kind; the filter is read live against the stored controller
+-- (CR 611.2c, CR 109.5), as `storedSubjects` reads the affected class.
+cantAttackPermanent :: [ObjectId] -> [(ObjectId, PlayerId, AttackTargetKind.AttackTargetKind)] -> GameState -> Set (ObjectId, ObjectId)
+cantAttackPermanent candidates permanents gs =
+  let fromRow active = case ActiveAttackProhibition.aimedAt active of
+        Just (AimedAt.MkAimedAt aimed kinds (Just f)) ->
+          let context = Projection.sourceContext gs (Just (ActiveAttackProhibition.controller active)) (ActiveAttackProhibition.source active)
+              barred (oid, pid, kind) = Set.member kind kinds && storedAimsAt gs active aimed pid && Filter.matches context (Projection.viewOfObject oid gs) f
+              subjects = storedSubjects candidates gs active
+           in [(creature, oid) | (oid, _, _) <- filter barred permanents, creature <- subjects]
+        _ -> []
+   in Set.fromList (concatMap fromRow (liveAttackProhibitions gs))
+
+-- Whether a stored row's AimedPlayers names this seat: CR 109.5 read against the
+-- controller the resolution stored.
+storedAimsAt :: GameState -> ActiveAttackProhibition.ActiveAttackProhibition -> AimedPlayers.AimedPlayers -> PlayerId -> Bool
+storedAimsAt gs active aimed pid = case aimed of
+  AimedPlayers.Scoped scope -> PlayerEffect.inScope pid (ActiveAttackProhibition.controller active) gs scope
+  AimedPlayers.BoundPlayer bound -> pid == bound
+  -- Baked as the row is stored, so an unbaked slot names nobody.
+  AimedPlayers.EachInSlot _ -> False
 
 -- The walk behind `blockLimit`, over the restrictions `select` keeps: the
 -- intersection of them, or mempty where none is in force. `attackLimit` spells

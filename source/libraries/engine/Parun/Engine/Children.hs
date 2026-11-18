@@ -29,6 +29,7 @@ import qualified Parun.Types.AgainstLastCardExiledWith as AgainstLastCardExiledW
 import qualified Parun.Types.AgainstSlot as AgainstSlot
 import qualified Parun.Types.Aggregation as Aggregation
 import qualified Parun.Types.AimedAt as AimedAt
+import qualified Parun.Types.AimedPlayers as AimedPlayers
 import qualified Parun.Types.AloneUnless as AloneUnless
 import qualified Parun.Types.AlternativeActivationCost as AlternativeActivationCost
 import qualified Parun.Types.AlternativeCost as AlternativeCost
@@ -1013,8 +1014,8 @@ data EffectChildren card ability f = MkEffectChildren
     onOnset :: Onset.Onset -> f Onset.Onset,
     -- | How long a moved object stays moved, whole.
     onMoveDuration :: MoveDuration.MoveDuration -> f MoveDuration.MoveDuration,
-    -- | What an attack restriction is aimed at, whole.
-    onAimedAt :: AimedAt.AimedAt -> f AimedAt.AimedAt,
+    -- | Whose side of the board an attack restriction is aimed at, whole.
+    onAimedPlayers :: AimedPlayers.AimedPlayers -> f AimedPlayers.AimedPlayers,
     -- | A choice of permanents (CR 608.2d), whole.
     onChosenPermanents :: ChosenPermanents.ChosenPermanents -> f ChosenPermanents.ChosenPermanents,
     -- | A subtype a choice of a quality lists (CR 205.3).
@@ -1055,7 +1056,7 @@ effectLeaves =
       onAffectedPlayers = pure,
       onOnset = pure,
       onMoveDuration = pure,
-      onAimedAt = pure,
+      onAimedPlayers = pure,
       onChosenPermanents = pure,
       onSubtype = pure
     }
@@ -1277,7 +1278,7 @@ effectChildren c effect = case effect of
     fmap Effect.RequireAttack (RequireAttack.MkRequireAttack <$> onDuration c duration <*> restrictedChildren c attacker <*> traverse (recipientRefChildren c) defender)
   Effect.Prohibit (Prohibit.MkProhibit what duration affected) -> fmap Effect.Prohibit (Prohibit.MkProhibit what <$> onDuration c duration <*> restrictedChildren c affected)
   Effect.ForbidAttack (ForbidAttack.MkForbidAttack duration affected aimedAt) ->
-    fmap Effect.ForbidAttack (ForbidAttack.MkForbidAttack <$> onDuration c duration <*> restrictedChildren c affected <*> traverse (onAimedAt c) aimedAt)
+    fmap Effect.ForbidAttack (ForbidAttack.MkForbidAttack <$> onDuration c duration <*> restrictedChildren c affected <*> traverse (aimedAtChildren c) aimedAt)
   Effect.ForbidBeingBlocked (ForbidBeingBlocked.MkForbidBeingBlocked duration affected barred) ->
     fmap Effect.ForbidBeingBlocked (ForbidBeingBlocked.MkForbidBeingBlocked <$> onDuration c duration <*> onFilter c affected <*> onFilter c barred)
   Effect.CreateEmblem (CreateEmblem.MkCreateEmblem card who) -> fmap Effect.CreateEmblem (CreateEmblem.MkCreateEmblem <$> onCard c card <*> onPlayer c who)
@@ -4334,3 +4335,8 @@ libraryPlacementChildren c placement = case placement of
   LibraryPlacement.ArrangedBy (ArrangedArrival.MkArrangedArrival position chooser) -> LibraryPlacement.ArrangedBy . ArrangedArrival.MkArrangedArrival position <$> countPlayer c chooser
   LibraryPlacement.Beneath quantity -> LibraryPlacement.Beneath <$> countQuantity c quantity
   LibraryPlacement.BeneathOrBottom quantity -> LibraryPlacement.BeneathOrBottom <$> countQuantity c quantity
+
+-- | An AimedAt's children: its players and its permanents filter.
+aimedAtChildren :: (Applicative f) => EffectChildren card ability f -> AimedAt.AimedAt -> f AimedAt.AimedAt
+aimedAtChildren c (AimedAt.MkAimedAt defenders kinds permanents) =
+  AimedAt.MkAimedAt <$> onAimedPlayers c defenders <*> pure kinds <*> traverse (onFilter c) permanents

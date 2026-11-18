@@ -1711,11 +1711,13 @@ forbidAttack resolving source controller legal (ForbidAttack.MkForbidAttack dura
             RestrictedCreatures.Matching f -> [RestrictedCreatures.Matching (Common.storedClass legal resolving controller source gs f)]
           -- A slot's players baked now, one row each, for the class's reason:
           -- the binding is gone once this resolution is over. A slot naming
-          -- nobody stores nothing (Chaos Dragon's "those players").
-          aims = case aimedAt of
-            Just (AimedAt.MkAimedAt (AimedPlayers.EachInSlot slot) kinds) ->
-              fmap (\pid -> Just (AimedAt.MkAimedAt (AimedPlayers.BoundPlayer pid) kinds)) (playerRefPlayers legal resolving source controller gs (PlayerRef.EachInSlot slot))
-            _ -> [aimedAt]
+          -- nobody stores nothing (Chaos Dragon's "those players"). The
+          -- permanents filter is a class, baked as the affected one is.
+          baked = fmap (\aim -> aim {AimedAt.permanents = fmap (Common.storedClass legal resolving controller source gs) (AimedAt.permanents aim)}) aimedAt
+          aims = case baked of
+            Just aim@(AimedAt.MkAimedAt (AimedPlayers.EachInSlot slot) _ _) ->
+              fmap (\pid -> Just aim {AimedAt.defenders = AimedPlayers.BoundPlayer pid}) (playerRefPlayers legal resolving source controller gs (PlayerRef.EachInSlot slot))
+            _ -> [baked]
           (ts, gs1) = Game.freshTimestamp gs
           stored = do
             subject <- subjects

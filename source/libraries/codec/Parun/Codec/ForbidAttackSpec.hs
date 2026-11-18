@@ -40,7 +40,7 @@ spec s = Spec.describe s "Parun.Codec.ForbidAttack" $ do
       ( ForbidAttack.MkForbidAttack
           { ForbidAttack.duration = Duration.UntilYourNextTurn,
             ForbidAttack.affected = RestrictedCreatures.Matching (Filter.HasCardType CardType.Creature),
-            ForbidAttack.aimedAt = Just (AimedAt.MkAimedAt (AimedPlayers.Scoped (PlayerScope.Related PlayerRelation.You)) (Set.singleton AttackTargetKind.OfPlayer))
+            ForbidAttack.aimedAt = Just (AimedAt.MkAimedAt (AimedPlayers.Scoped (PlayerScope.Related PlayerRelation.You)) (Set.singleton AttackTargetKind.OfPlayer) Nothing)
           }
       )
       " {\"duration\":{\"type\":\"UntilYourNextTurn\"},\"affected\":{\"type\":\"Matching\",\"value\":{\"type\":\"HasCardType\",\"value\":\"Creature\"}},\"aimedAt\":{\"defenders\":{\"type\":\"Scoped\",\"value\":{\"type\":\"You\"}},\"kinds\":[\"OfPlayer\"]}} "

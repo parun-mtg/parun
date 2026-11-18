@@ -48,7 +48,7 @@ spec s = Spec.describe s "Parun.Codec.ActiveAttackProhibition" $ do
           ActiveAttackProhibition.timestamp = Timestamp.MkTimestamp 2,
           ActiveAttackProhibition.expiry = Expiry.AtTurnOf (PlayerId.MkPlayerId 4),
           ActiveAttackProhibition.affected = RestrictedCreatures.Matching (Filter.HasCardType CardType.Creature),
-          ActiveAttackProhibition.aimedAt = Just (AimedAt.MkAimedAt (AimedPlayers.Scoped (PlayerScope.Related PlayerRelation.You)) (Set.singleton AttackTargetKind.OfPlayer))
+          ActiveAttackProhibition.aimedAt = Just (AimedAt.MkAimedAt (AimedPlayers.Scoped (PlayerScope.Related PlayerRelation.You)) (Set.singleton AttackTargetKind.OfPlayer) Nothing)
         }
       " {\"source\":1,\"controller\":4,\"timestamp\":2,\"expiry\":{\"type\":\"AtTurnOf\",\"value\":4},\"affected\":{\"type\":\"Matching\",\"value\":{\"type\":\"HasCardType\",\"value\":\"Creature\"}},\"aimedAt\":{\"defenders\":{\"type\":\"Scoped\",\"value\":{\"type\":\"You\"}},\"kinds\":[\"OfPlayer\"]}} "
   Spec.it s "has a schema" $

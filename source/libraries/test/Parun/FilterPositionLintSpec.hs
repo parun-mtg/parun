@@ -53,6 +53,7 @@ import qualified Parun.Types.Affected as Affected
 import qualified Parun.Types.AffectedPlayers as AffectedPlayers
 import qualified Parun.Types.AffectedUnless as AffectedUnless
 import qualified Parun.Types.Aggregation as Aggregation
+import qualified Parun.Types.AimedAt as AimedAt
 import qualified Parun.Types.AloneUnless as AloneUnless
 import qualified Parun.Types.AlternativeCost as AlternativeCost
 import qualified Parun.Types.Anchor as Anchor
@@ -209,6 +210,7 @@ import qualified Parun.Types.RemoveCounters as RemoveCounters
 import qualified Parun.Types.RemoveCountersAmong as RemoveCountersAmong
 import qualified Parun.Types.ReplacementEffect as ReplacementEffect
 import qualified Parun.Types.Reveal as Reveal
+import qualified Parun.Types.RulePermission as RulePermission
 import qualified Parun.Types.Sacrifice as Sacrifice
 import qualified Parun.Types.SacrificeAnyNumber as SacrificeAnyNumber
 import qualified Parun.Types.SacrificeEffect as SacrificeEffect
@@ -403,6 +405,22 @@ eachOccurrenceWholeBatches value = case value of
         here = [value | keyed "wholeBatch" (Value.boolean True), keyed "batching" (Value.String (String.MkString (Text.pack "EachOccurrence")))]
      in here <> concatMap (eachOccurrenceWholeBatches . Pair.value) pairs
   Value.Array a -> concatMap eachOccurrenceWholeBatches (Array.unwrap a)
+  Value.String _ -> []
+  Value.Null _ -> []
+  Value.Boolean _ -> []
+  Value.Number _ -> []
+
+-- Every encoded rule permission's `against` carrying a "permanents" key.
+filteredWaivers :: Value.Value -> [Value.Value]
+filteredWaivers value = case value of
+  Value.Object o ->
+    let pairs = Object.unwrap o
+        hasKey k v = case v of
+          Value.Object inner -> any (\p -> String.unwrap (Pair.name p) == Text.pack k) (Object.unwrap inner)
+          _ -> False
+        here = [Pair.value p | p <- pairs, String.unwrap (Pair.name p) == Text.pack "against", hasKey "permanents" (Pair.value p)]
+     in here <> concatMap (filteredWaivers . Pair.value) pairs
+  Value.Array a -> concatMap filteredWaivers (Array.unwrap a)
   Value.String _ -> []
   Value.Null _ -> []
   Value.Boolean _ -> []
@@ -3651,6 +3669,21 @@ filterPositionLintSpec s registry corpus = Spec.describe s "Lint" $ do
                 Mint.oneModeTargeting (Map.singleton (SlotName.MkSlotName (Text.pack "target")) (TargetSlot.required Pool.Creatures Nothing)) (Seq.singleton (Effect.GainControl (GainControl.MkGainControl (Duration.UntilEvent (DurationEvent.CardCast (ObjectId.MkObjectId 1))) (ObjectRef.InSlot (SlotName.MkSlotName (Text.pack "target"))) Nothing (PlayerRef.Relative PlayerRelation.You))))
             }
     Spec.assertEqWith s "a planted event is seen" (atoms planted) 1
+  -- Parun.Types.AimedAt's permanents filter is read only on a stored
+  -- ForbidAttack row (Parun.Engine.CombatRestriction.cantAttackPermanent);
+  -- Parun.Engine.RulePermission's waiver reach is keyed by seat and kind and
+  -- ignores it, so a card writing it there would be silently wider.
+  Spec.it s "CR 508.1c no card writes a permanents filter on a rule permission" $ do
+    ps <- S.allPrintings s corpus
+    saddlebrute <- S.printingOf s registry "Frenzied Saddlebrute"
+    let found = filteredWaivers . Codec.encode (Face.Codec.codec Card.codec)
+        offenders = filter (anyFace (not . null . found) . Printing.card) ps
+    Spec.assertEqWith s "no rule permission carries one" (fmap (S.nameOf . Printing.card) offenders) []
+    -- Not vacuous: the Saddlebrute's waiver narrowed to Jaces is seen.
+    let narrow permission = permission {RulePermission.against = fmap (\aimed -> aimed {AimedAt.permanents = Just (Filter.Type.HasSubtype Subtype.Jace)}) (RulePermission.against permission)}
+        base = S.combinedFace saddlebrute
+        planted = base {Face.rulePermissions = fmap narrow (Face.rulePermissions base)}
+    Spec.assertEqWith s "a planted filter is seen" (length (found planted)) 1
   -- The sweep above passes VACUOUSLY for every card but Aura Graft, and Aura
   -- Graft only exercises the ACCEPTING direction, so the rejecting direction is
   -- proven here instead -- hand-built, never a card file, because a card that
