@@ -3824,6 +3824,7 @@ modificationFilters modification = case modification of
   Modification.GrantsController _ -> []
   Modification.TapsCounting {} -> []
   Modification.LoyaltyIsToughness -> []
+  Modification.Goaded -> []
   -- An enum payload holds neither.
   Modification.AssignCombatDamageAs {} -> []
 

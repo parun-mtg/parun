@@ -63,6 +63,7 @@ sampleSnapshot =
       PC.combatDamageAmount = Nothing,
       PC.combatDamageOptions = Map.empty,
       PC.controllerGrants = Set.empty,
+      PC.goadedBy = Set.empty,
       PC.tapPowerBonus = Map.empty,
       PC.tapsUsingToughness = Set.empty,
       PC.loyaltyIsToughness = False,

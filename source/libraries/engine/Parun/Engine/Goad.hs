@@ -12,8 +12,9 @@
 -- leave a requirement unmet when the board admits no announcement obeying it.
 --
 -- This is CR 613.11's axis rather than the layer system's, for
--- Parun.Engine.Detain's reason: it modifies what the rules require, so
--- Parun.Engine.Projection never sees it.
+-- Parun.Engine.Detain's reason: it modifies what the rules require. The one-shot
+-- goad never reaches Parun.Engine.Projection; a continuous effect's goad
+-- (Modification.Goaded) rides its rules layer, after every characteristic.
 --
 -- Casing on rule 701.15 is the closed half reading its own rulebook, the
 -- standing Parun.Engine.Keyword has over rule 702 and Parun.Engine.Detain over
@@ -24,10 +25,12 @@ module Parun.Engine.Goad where
 import qualified Data.Map.Strict as Map
 import Data.Set (Set)
 import qualified Data.Set as Set
+import qualified Parun.Engine.Projection as Projection
 import qualified Parun.Types.GameState as GameState
 import qualified Parun.Types.Object as Object
 import Parun.Types.ObjectId (ObjectId)
 import Parun.Types.PlayerId (PlayerId)
+import qualified Parun.Types.ProjectedCharacteristics as PC
 
 -- CR 701.15a: goad this permanent until `until_`'s next turn. `until_` is the
 -- controller of the goading spell or ability (CR 109.5's "you"), resolved once
@@ -53,5 +56,12 @@ goad until_ oid gs =
 -- Who has goaded this permanent? CR 701.15b needs the SEATS and not merely a
 -- yes: the second requirement names "a player other than" each of them, so a
 -- creature two players have goaded owes two different exclusions.
+--
+-- Two carriers, one answer: the one-shot goad above, and a continuous effect's
+-- Modification.Goaded (Kang, Suspicious Captain's "for as long as"; Koloth,
+-- Tribble Hunter's static ability), which the projection folds into
+-- PC.goadedBy. CR 701.15d makes a seat on both one goader.
 goadedBy :: ObjectId -> GameState.GameState -> Set PlayerId
-goadedBy oid gs = maybe Set.empty Object.goadedBy (Map.lookup oid (GameState.objects gs))
+goadedBy oid gs = case Map.lookup oid (GameState.objects gs) of
+  Nothing -> Set.empty
+  Just o -> Set.union (Object.goadedBy o) (PC.goadedBy (Projection.project oid gs))

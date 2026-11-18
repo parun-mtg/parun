@@ -213,6 +213,8 @@ viewOfCardLapsed lapsed face =
           Filter.declaredAttackedBy = Set.empty,
           Filter.declaredBlockerThisCombat = False,
           Filter.hadToAttackThisCombat = False,
+          -- CR 701.15b: a designation rides a permanent, not a printed face.
+          Filter.goaded = False,
           -- CR 701.17a mills an OBJECT; this builder describes a printed FACE.
           -- viewOfCharacteristics is the view that holds an id and answers.
           Filter.leftLibraryThisTurn = Set.empty,
@@ -754,6 +756,9 @@ viewOfCharacteristics peers oid pc controller counters gs =
       Filter.declaredAttackedBy = Count.declaredAttackedBy oid gs,
       Filter.declaredBlockerThisCombat = Count.declaredBlockerThisCombat oid gs,
       Filter.hadToAttackThisCombat = Count.hadToAttackThisCombat oid gs,
+      -- CR 701.15b: the one-shot carrier off the object and the continuous one
+      -- off `pc`, Parun.Engine.Goad.goadedBy's union.
+      Filter.goaded = not (Set.null (PC.goadedBy pc)) || maybe False (not . Set.null . Object.goadedBy) (Game.lookupObject oid gs),
       Filter.leftLibraryThisTurn = Count.leftLibraryThisTurn oid gs,
       Filter.dealtDamageThisTurn = Count.dealtDamageThisTurn oid gs,
       -- CR 119.3: only a player loses life.
@@ -2029,6 +2034,7 @@ noCharacteristics =
       -- CR 702.184c: an ability on the stack grants nothing to its
       -- controller's station abilities of its own.
       PC.controllerGrants = Set.empty,
+      PC.goadedBy = Set.empty,
       PC.tapPowerBonus = Map.empty,
       PC.tapsUsingToughness = Set.empty,
       PC.loyaltyIsToughness = False,
@@ -2236,6 +2242,8 @@ baseCharacteristics oid gs = case Game.faceOf oid gs of
               -- CR 613.1's starting point, before layer 6 has run:
               -- applyModification's GrantsController arm is the only writer.
               PC.controllerGrants = Set.empty,
+              -- CR 701.15b: goaded is not a copiable value.
+              PC.goadedBy = Set.empty,
               PC.tapPowerBonus = Map.empty,
               PC.tapsUsingToughness = Set.empty,
               PC.loyaltyIsToughness = False,

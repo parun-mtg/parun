@@ -45,6 +45,7 @@ import qualified Parun.Types.ManaType as ManaType
 import qualified Parun.Types.Modal as Modal
 import qualified Parun.Types.Modification as Modification
 import qualified Parun.Types.PlayerEffect as PlayerEffect
+import qualified Parun.Types.PlayerId as PlayerId
 import qualified Parun.Types.PlayerRelation as PlayerRelation
 import qualified Parun.Types.PlayerScope as PlayerScope
 import qualified Parun.Types.PlayerStaticAbility as PlayerStaticAbility
@@ -123,6 +124,7 @@ testCharacteristics =
       PC.combatDamageAmount = Just CombatDamageAmount.EqualToToughness,
       PC.combatDamageOptions = Map.singleton CombatDamageOption.ToDefendingCreature CombatDamageObligation.Optional,
       PC.controllerGrants = Set.singleton ControllerGrant.SpeedBeyondFour,
+      PC.goadedBy = Set.singleton (PlayerId.MkPlayerId 2),
       PC.tapPowerBonus = Map.singleton KeywordFamily.Saddle 2,
       -- A different keyword from `tapPowerBonus` above, `textChangedKeywords`'
       -- reason.
@@ -200,6 +202,7 @@ testCharacteristicsJson =
     <> "\"combatDamageAmount\":\"EqualToToughness\","
     <> "\"combatDamageOptions\":[{\"key\":\"ToDefendingCreature\",\"value\":\"Optional\"}],"
     <> "\"controllerGrants\":[\"SpeedBeyondFour\"],"
+    <> "\"goadedBy\":[2],"
     <> "\"tapPowerBonus\":[{\"key\":\"Saddle\",\"value\":2}],"
     <> "\"tapsUsingToughness\":[\"Crew\"],"
     <> "\"loyaltyIsToughness\":true,"
@@ -267,6 +270,7 @@ minimalCharacteristics =
       PC.combatDamageAmount = Nothing,
       PC.combatDamageOptions = Map.empty,
       PC.controllerGrants = Set.empty,
+      PC.goadedBy = Set.empty,
       PC.tapPowerBonus = Map.empty,
       PC.tapsUsingToughness = Set.empty,
       PC.loyaltyIsToughness = False,
