@@ -13,6 +13,8 @@ const engine = new Worker(engineUrl, { type: "module" });
 // Safari runs WebAssembly far slower outside a secure context (#8419), and
 // plain http from a network address is not one.
 if (!isSecureContext) document.getElementById("insecure").hidden = false;
+// Once fetched, the engine is kept for later visits (sw.js).
+if ("serviceWorker" in navigator && isSecureContext) navigator.serviceWorker.register("./sw.js").catch((problem) => console.warn(problem));
 // With ?trace, the engine's step timings and the page's own go to a panel.
 const trace = new URLSearchParams(location.search).has("trace") ? document.getElementById("trace") : null;
 if (trace) {
@@ -34,25 +36,45 @@ function note(line) {
   if (phase) phase.textContent = `${what[0].toUpperCase()}${what.slice(1)}\u2026`;
 }
 
-// Light or dark: the system's until the button picks one, which is kept.
-const themeButton = document.getElementById("theme");
+// The settings menu: theme (the system's unless one is picked), card size
+// and motion, each kept and applied as an attribute of the page's root.
+const settingsButton = document.getElementById("settings-button");
+const settings = document.getElementById("settings");
 const dark = matchMedia("(prefers-color-scheme: dark)");
-function showTheme() {
-  const isDark = document.documentElement.dataset.theme === "dark";
-  themeButton.textContent = isDark ? "\u2600\uFE0E" : "\u263E\uFE0E";
-  themeButton.title = isDark ? "Light mode" : "Dark mode";
+const systemTheme = () => (dark.matches ? "dark" : "light");
+const chosen = { theme: localStorage.getItem("parun-theme") ?? "system", density: document.documentElement.dataset.density, motion: document.documentElement.dataset.motion };
+for (const [name, value] of Object.entries(chosen)) {
+  const input = settings.querySelector(`input[name="${name}"][value="${value}"]`);
+  if (input) input.checked = true;
 }
-themeButton.addEventListener("click", () => {
-  const next = document.documentElement.dataset.theme === "dark" ? "light" : "dark";
-  document.documentElement.dataset.theme = next;
-  localStorage.setItem("parun-theme", next);
-  showTheme();
+settings.addEventListener("change", ({ target }) => {
+  if (target.name === "theme") {
+    if (target.value === "system") localStorage.removeItem("parun-theme");
+    else localStorage.setItem("parun-theme", target.value);
+    document.documentElement.dataset.theme = target.value === "system" ? systemTheme() : target.value;
+  } else {
+    localStorage.setItem(`parun-${target.name}`, target.value);
+    document.documentElement.dataset[target.name] = target.value;
+  }
 });
 dark.addEventListener("change", () => {
-  if (localStorage.getItem("parun-theme") === null) document.documentElement.dataset.theme = dark.matches ? "dark" : "light";
-  showTheme();
+  if (localStorage.getItem("parun-theme") === null) document.documentElement.dataset.theme = systemTheme();
 });
-showTheme();
+function openSettings(open) {
+  settings.hidden = !open;
+  settingsButton.setAttribute("aria-expanded", String(open));
+  if (open) settings.querySelector("input:checked")?.focus();
+}
+settingsButton.addEventListener("click", () => openSettings(settings.hidden));
+document.addEventListener("click", (event) => {
+  if (!settings.hidden && !event.target.closest(".chrome")) openSettings(false);
+});
+document.addEventListener("keydown", (event) => {
+  if (event.key === "Escape" && !settings.hidden) {
+    openSettings(false);
+    settingsButton.focus();
+  }
+});
 let tapped = null;
 
 function build(node) {
@@ -69,9 +91,34 @@ function at(path) {
   return node;
 }
 
+// Each seat's life as the page shows it, by seat.
+function lives() {
+  return new Map(Array.from(root.querySelectorAll("[data-seat-life]"), (box) => [box.dataset.seatLife, Number(box.textContent)]));
+}
+
+// A life total that changed floats its difference up from the total.
+function floatChanges(before) {
+  for (const box of root.querySelectorAll("[data-seat-life]")) {
+    const was = before.get(box.dataset.seatLife);
+    const now = Number(box.textContent);
+    if (was === undefined || was === now) continue;
+    const rect = box.getBoundingClientRect();
+    const delta = document.createElement("div");
+    delta.className = `float-delta ${now > was ? "gain" : "loss"}`;
+    delta.textContent = `${now > was ? "+" : "\u2212"}${Math.abs(now - was)}`;
+    delta.setAttribute("aria-hidden", "true");
+    delta.style.left = `${rect.left + rect.width / 2}px`;
+    delta.style.top = `${rect.top}px`;
+    document.body.append(delta);
+    delta.addEventListener("animationend", () => delta.remove());
+    setTimeout(() => delta.remove(), 2000);
+  }
+}
+
 function apply(json) {
   document.body.classList.remove("busy");
-  const hadSheet = root.querySelector(".sheet") !== null;
+  const hadSheet = root.querySelector(".sheet-backdrop:not(.peek) .sheet") !== null;
+  const before = lives();
   if (tapped !== null) {
     document.getElementById("response").textContent = `last response ${Math.round(performance.now() - tapped)} ms`;
     tapped = null;
@@ -103,8 +150,9 @@ function apply(json) {
         throw new Error(`unknown patch ${patch.op}`);
     }
   }
+  floatChanges(before);
   // A sheet that just opened takes the focus, on its first action.
-  const sheet = root.querySelector(".sheet");
+  const sheet = root.querySelector(".sheet-backdrop:not(.peek) .sheet");
   if (sheet && !hadSheet) sheet.querySelector(".sheet-actions button, button.close")?.focus({ preventScroll: true });
 }
 
@@ -141,6 +189,35 @@ for (const type of events) {
   });
 }
 
+// A pointer resting on a card (a mouse, not a finger) previews its sheet
+// after a moment, and leaving the card ends the preview (Parun.Web.Card's
+// "peek" and "unpeek").
+const hovering = matchMedia("(hover: hover) and (pointer: fine)");
+let resting = null;
+let peeking = null;
+root.addEventListener("pointerover", (event) => {
+  const card = event.target.closest?.(".card, .stack-item");
+  if (!hovering.matches || !card || card === resting) return;
+  resting = card;
+  setTimeout(() => {
+    if (resting !== card || !card.isConnected || root.querySelector(".sheet-backdrop:not(.peek)")) return;
+    const path = pathOf(card);
+    if (path === null) return;
+    peeking = card;
+    engine.postMessage({ type: "peek", path, value: "" });
+  }, 450);
+});
+root.addEventListener("pointerout", (event) => {
+  const card = event.target.closest?.(".card, .stack-item");
+  if (!card || card.contains(event.relatedTarget)) return;
+  if (resting === card) resting = null;
+  if (peeking === card) {
+    peeking = null;
+    const path = pathOf(card);
+    if (path !== null) engine.postMessage({ type: "unpeek", path, value: "" });
+  }
+});
+
 // The keyboard: Escape closes the card sheet, and Enter or Space outside a
 // text box presses the prompt's main button.
 document.addEventListener("keydown", (event) => {
@@ -149,9 +226,27 @@ document.addEventListener("keydown", (event) => {
     root.querySelector(".sheet button.close")?.click();
     return;
   }
+  // Tab stays within an open card sheet, as within any dialog.
+  const sheet = root.querySelector(".sheet-backdrop:not(.peek) .sheet");
+  if (event.key === "Tab" && sheet) {
+    const stops = Array.from(sheet.querySelectorAll("button"));
+    const first = stops[0];
+    const last = stops[stops.length - 1];
+    if (event.shiftKey && document.activeElement === first) {
+      event.preventDefault();
+      last.focus();
+    } else if (!event.shiftKey && document.activeElement === last) {
+      event.preventDefault();
+      first.focus();
+    } else if (!sheet.contains(document.activeElement)) {
+      event.preventDefault();
+      first.focus();
+    }
+    return;
+  }
   const typing = event.target instanceof HTMLInputElement || event.target instanceof HTMLTextAreaElement;
   const onButton = event.target instanceof HTMLButtonElement || event.target instanceof HTMLSummaryElement;
-  if ((event.key === "Enter" || event.key === " ") && !typing && !onButton && !root.querySelector(".sheet")) {
+  if ((event.key === "Enter" || event.key === " ") && !typing && !onButton && !sheet) {
     const main = root.querySelector(".prompt button.primary:not(:disabled)");
     if (main) {
       event.preventDefault();

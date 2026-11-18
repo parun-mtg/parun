@@ -1,10 +1,12 @@
 #!/usr/bin/env bash
 # Builds the web client into a directory ready to serve (default dist-web/):
-# the page and its style sheet, the engine's Web Worker, the wasm module and its JavaScript FFI
-# glue, the WASI shim, and the data directory the engine mounts. Every file
-# but index.html is named by a hash of its contents, so a browser caches each
-# until it changes and only index.html needs fetching afresh. Runs in the wasm
-# dev shell; serve the result with script/serve-web.sh:
+# the page, its style sheet, manifest and icon, the service worker, the
+# engine's Web Worker, the wasm module and its JavaScript FFI glue, the WASI
+# shim, and the data directory the engine mounts. Every file but the page,
+# its manifest and icon and the service worker is named by a hash of its
+# contents, so a browser caches each until it changes, and the service
+# worker (sw.js) keeps them for later visits. Runs in the wasm dev shell;
+# serve the result with script/serve-web.sh:
 #   nix develop .#wasm --command script/build-web.sh
 #   script/serve-web.sh
 set -euo pipefail
@@ -14,11 +16,12 @@ cabal=(wasm32-wasi-cabal --project-file=cabal.wasm.project --builddir=dist-wasm 
 wasm=$("${cabal[@]}" list-bin -v0 --enable-optimization exe:parun-web)
 node --check source/web/page.js
 node --check source/web/engine.js
+node --check source/web/sw.js
 rm -rf "$out"
 mkdir -p "$out"
 "$(wasm32-wasi-ghc --print-libdir)/post-link.mjs" -i "$wasm" -o "$out/ghc_wasm_jsffi.js"
 wasm-opt -Oz --strip-debug "$wasm" -o "$out/parun.wasm"
-cp source/web/index.html source/web/style.css source/web/page.js source/web/engine.js "$out/"
+cp source/web/index.html source/web/style.css source/web/page.js source/web/engine.js source/web/sw.js source/web/manifest.webmanifest source/web/icon.svg "$out/"
 cp -r "$BROWSER_WASI_SHIM/dist" "$out/browser_wasi_shim"
 chmod -R u+w "$out"
 # The data directory the engine mounts, reproducibly packed, with the cards as

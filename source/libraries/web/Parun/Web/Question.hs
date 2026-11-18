@@ -65,6 +65,10 @@ data Event
     MkConcede
   | -- | Lets the page answer this much for the seat.
     MkLevel Level
+  | -- | Previews a card's text under a resting pointer.
+    MkPeek ObjectId.ObjectId
+  | -- | Ends the preview.
+    MkUnpeek
   | -- | Makes this blocker the one the next attacker tapped is for.
     MkFocus Natural
   | -- | Passes now, and every priority after it until the turn ends while
@@ -243,7 +247,7 @@ watching request screen =
           | not (null (PlayerView.stack b)) -> "Resolving\x2026"
           | PlayerView.active b /= PlayerView.viewer b -> Text.unpack (Render.player (PlayerView.active b)) <> " is taking their turn\x2026"
         _ -> "Moving on\x2026"
-   in table request screen (Board.MkMarks (Card.MkCue [] . MkRead . ObjectView.object) (const Nothing)) $
+   in table request screen (Board.MkMarks (\o -> Card.MkCue [] (MkRead (ObjectView.object o)) Nothing) (const Nothing)) $
         news (viewerOf request) screen <> [Element.el "p" ["waiting"] [] [Element.el "span" ["spinner", "small"] [Element.attr "aria-hidden" (Text.pack "true")] [], Element.string status]]
 
 -- | The prompt's foot: the level control, and conceding where the seat
@@ -272,7 +276,7 @@ table request screen marks prompt =
           <> [Element.el "div" ["play-area"] [] (foldMap (\b -> [Board.view marks b]) board)]
           <> foldMap (Board.hand marks) board
           <> [ Element.el "aside" ["side"] [] $
-                 Element.el "section" ["prompt"] [Element.attr "aria-live" (Text.pack "polite")] prompt
+                 Element.el "section" ["prompt"] [Element.attr "aria-label" (Text.pack "Your decision")] prompt
                    : [logView (viewerOf request) screen | not (Seq.null (logged screen))]
              ]
           <> Maybe.maybeToList (do b <- board; r <- reading screen; sheetFor request b marks r)
@@ -284,8 +288,8 @@ news viewer screen =
   let count = Natural.toIntSaturating (fresh screen)
       shown = min 4 count
       latest = Seq.drop (Seq.length (logged screen) - shown) (logged screen)
-   in [ Element.el "ul" ["news"] [Element.attr "aria-label" (Text.pack "Since your last decision")] $
-          [Element.el "li" ["more"] [] [Element.string ("\x2026and " <> show (count - shown) <> " more in the log")] | count > shown]
+   in [ Element.el "ul" ["news"] [Element.attr "aria-label" (Text.pack "Since your last decision"), Element.attr "aria-live" (Text.pack "polite")] $
+          [Element.el "li" ["more"] [] [Element.string ("\x2026\&and " <> show (count - shown) <> " more in the log")] | count > shown]
             <> fmap (Log.item viewer False) (Foldable.toList latest)
       | shown > 0
       ]
@@ -350,7 +354,7 @@ cues request chosen focused =
       once f = Map.mapMaybe (\xs -> case xs of [x] -> Just x; _ -> Nothing) (Map.fromListWith (<>) [(k, [(g, i)]) | (g, i, option) <- offered, Just k <- [f option]])
       objects = once (\option -> Monad.mplus (Offer.objectOf option) (Offer.recipientObject option))
       players = once Offer.recipientPlayer
-      toggled (g, i) = Card.MkCue [if Set.member (g, i) chosen then "chosen" else "choosable"] (MkToggle g i)
+      toggled (g, i) = Card.MkCue [if Set.member (g, i) chosen then "chosen" else "choosable"] (MkToggle g i) Nothing
       -- Blocks are made on the table: a blocker's tile, then the tile of the
       -- attacker it blocks.
       (blockers, attackers) = Maybe.fromMaybe ([], []) (blocks request)
@@ -358,21 +362,23 @@ cues request chosen focused =
         g <- List.elemIndex oid blockers
         let gn = Int.toNaturalSaturating g
             assigned = any ((== gn) . fst) (Set.toList chosen)
-        pure (Card.MkCue [if focused == Just gn then "focused" else "choosable"] (MkFocus gn) `withMark` ["blocking" | assigned])
+        pure (Card.MkCue [if focused == Just gn then "focused" else "choosable"] (MkFocus gn) Nothing `withMark` ["blocking" | assigned])
       attackerCue oid = do
         i <- Int.toNaturalSaturating <$> List.elemIndex oid attackers
         pure $ case focused of
-          Just g -> Card.MkCue ["attacking", if Set.member (g, i) chosen then "chosen" else "choosable"] (MkToggle g i)
-          Nothing -> Card.MkCue ["attacking"] (MkRead oid)
+          Just g -> Card.MkCue ["attacking", if Set.member (g, i) chosen then "chosen" else "choosable"] (MkToggle g i) Nothing
+          Nothing -> Card.MkCue ["attacking"] (MkRead oid) Nothing
       objectCue o =
         let oid = ObjectView.object o
          in case (blockerCue oid, attackerCue oid, Map.lookup oid objects, Map.lookup oid sources) of
               (Just cue, _, _, _) -> cue
               (_, Just cue, _, _) -> cue
               (_, _, Just gi, _) -> toggled gi
-              (_, _, _, Just source) -> Card.MkCue ["choosable"] (MkAnswer source)
-              _ -> Card.MkCue ["playable" | Set.member oid acting] (MkRead oid)
-   in Board.MkMarks objectCue (\pid -> fmap toggled (Map.lookup pid players))
+              (_, _, _, Just source) -> Card.MkCue ["choosable"] (MkAnswer source) Nothing
+              _ -> Card.MkCue ["playable" | Set.member oid acting] (MkRead oid) Nothing
+      -- Every tile previews its sheet under a resting pointer.
+      previewing o = (objectCue o) {Card.peek = Just (MkPeek (ObjectView.object o), MkUnpeek)}
+   in Board.MkMarks previewing (\pid -> fmap toggled (Map.lookup pid players))
 
 withMark :: Card.Cue msg -> [String] -> Card.Cue msg
 withMark cue extra = cue {Card.marks = Card.marks cue <> extra}
@@ -430,6 +436,8 @@ step request picked event typed = case event of
   MkRead _ -> MkPicking picked
   MkClose -> MkPicking picked
   MkFocus _ -> MkPicking picked
+  MkPeek _ -> MkPicking picked
+  MkUnpeek -> MkPicking picked
   MkLevel _ -> MkPicking picked
   MkConcede -> maybe (MkRefused $ Text.pack "Concede when you have priority.") (MkReplied . R.Number) $ passIndex request
   MkSkip -> maybe (MkRefused $ Text.pack "There is no pass to make.") (MkReplied . R.Number) $ passIndex request

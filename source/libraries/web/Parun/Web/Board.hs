@@ -106,9 +106,10 @@ stackItem :: Marks msg -> PlayerView.PlayerView -> ObjectView.ObjectView -> Html
 stackItem marks board o =
   let cue = object marks o
       whose = foldMap (\p -> if p == PlayerView.viewer board then Text.pack "You" else name p) (ObjectView.controller o)
-   in Element.button
+   in Element.el
+        "button"
         (["stack-item", Card.colour o] <> Card.marks cue)
-        (Card.tap cue)
+        ([Element.attr "type" (Text.pack "button"), Element.on "click" (Card.tap cue)] <> Card.peeking cue)
         ( [ Element.el "span" ["who"] [] [Element.text whose],
             Element.el "span" ["name"] [] [Element.text (Render.nameOf board o)]
           ]
@@ -165,7 +166,7 @@ seatHead :: Marks msg -> PlayerView.PlayerView -> Bool -> SeatView.SeatView -> H
 seatHead marks board own s =
   let pid = SeatView.player s
       label = if own then Text.pack "You" else name pid
-      lifeBox = Element.keyed "span" ["life"] [Element.attr "title" (Text.pack "Life")] [(Text.pack (show (SeatView.life s)), Element.el "span" ["value"] [] [Element.string (show (SeatView.life s))])]
+      lifeBox = Element.keyed "span" ["life"] [Element.attr "title" (Text.pack "Life"), Element.attr "data-seat-life" (Text.pack (show (PlayerId.unwrap pid)))] [(Text.pack (show (SeatView.life s)), Element.el "span" ["value"] [] [Element.string (show (SeatView.life s))])]
       identity = case seat marks pid of
         Just cue -> Element.button (["who"] <> Card.marks cue) (Card.tap cue) [Element.text label, lifeBox]
         Nothing -> Element.el "div" ["who"] [] [Element.text label, lifeBox]

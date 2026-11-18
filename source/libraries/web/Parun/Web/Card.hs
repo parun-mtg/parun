@@ -27,6 +27,7 @@ import qualified Parun.Types.PlayerView as PlayerView
 import qualified Parun.Types.ProjectedCharacteristics as ProjectedCharacteristics
 import qualified Parun.Types.Recipient as Recipient
 import qualified Parun.Types.TapState as TapState
+import qualified Parun.Web.Attribute as Attribute
 import qualified Parun.Web.Element as Element
 import qualified Parun.Web.Html as Html
 import qualified Parun.Web.Mana as Mana
@@ -35,7 +36,10 @@ import qualified Parun.Web.Mana as Mana
 data Cue msg = MkCue
   { -- | Extra classes: "playable", "choosable", "chosen".
     marks :: [String],
-    tap :: msg
+    tap :: msg,
+    -- | What a pointer resting on the tile sends, and what leaving it does
+    -- (page.js's "peek" and "unpeek"), where the tile previews its sheet.
+    peek :: Maybe (msg, msg)
   }
   deriving (Eq, Show)
 
@@ -44,9 +48,10 @@ tile :: PlayerView.PlayerView -> Cue msg -> ObjectView.ObjectView -> Html.Html m
 tile view cue o = case ObjectView.characteristics o of
   Nothing | Maybe.isNothing (ObjectView.face o) -> Element.button (["card", "back"] <> marks cue <> tapped o) (tap cue) [Element.el "span" ["name"] [] [Element.string "Hidden card"]]
   _ ->
-    Element.button
+    Element.el
+      "button"
       (["card", colour o] <> marks cue <> tapped o <> combat view o <> ["sick" | ObjectView.summoningSick o] <> ["targeted" | not (null (targetedBy view (ObjectView.object o)))])
-      (tap cue)
+      ([Element.attr "type" (Text.pack "button"), Element.attr "aria-label" (summary view cue o), Element.on "click" (tap cue)] <> peeking cue)
       [ Element.el "span" ["top"] [] $ [Element.el "span" ["name"] [] [Element.text (Render.nameOf view o)]] <> foldMap (pure . Mana.cost) (ObjectView.characteristics o >>= ProjectedCharacteristics.manaCost),
         -- On the table, what a permanent can do says more than its subtypes.
         case keywords o of
@@ -97,6 +102,34 @@ keywords o = case ObjectView.characteristics o of
     let self = Text.intercalate (Text.pack " // ") (fmap CardName.unwrap (Set.toList (ProjectedCharacteristics.names c)))
         short t = Text.length t <= 18 && not (Text.any (== '{') t)
      in ListUtils.nubOrd (concatMap (filter short . take 1 . Oracle.Keyword.printed self) (Map.keys (ProjectedCharacteristics.keywords c)))
+
+-- | The handlers a previewing tile has.
+peeking :: Cue msg -> [Attribute.Attribute msg]
+peeking cue = foldMap (\(on, off) -> [Element.on "peek" on, Element.on "unpeek" off]) (peek cue)
+
+-- | The tile read aloud: its name, type or keywords, power and toughness,
+-- status, and what tapping it does.
+summary :: PlayerView.PlayerView -> Cue msg -> ObjectView.ObjectView -> Text.Text
+summary view cue o =
+  let pt = case ObjectView.characteristics o of
+        Just c | Just p <- ProjectedCharacteristics.power c, Just t <- ProjectedCharacteristics.toughness c -> [Text.pack (show p <> "/" <> show t)]
+        _ -> []
+      doing =
+        [Text.pack "tapped" | ObjectView.tapped o == TapState.Tapped]
+          <> [Text.pack "attacking" | elem "attacking" (combat view o)]
+          <> [Text.pack "blocking" | elem "blocking" (combat view o)]
+          <> [Text.pack "summoning sick" | ObjectView.summoningSick o]
+          <> [Text.pack "targeted by " <> Render.listing by | let by = targetedBy view (ObjectView.object o), not (null by)]
+          <> [Text.pack (show (ObjectView.damage o) <> " damage") | ObjectView.damage o > 0]
+      action
+        | elem "playable" (marks cue) = [Text.pack "you can play or use it"]
+        | elem "chosen" (marks cue) = [Text.pack "chosen"]
+        | elem "choosable" (marks cue) = [Text.pack "can be chosen"]
+        | otherwise = []
+      kind = case keywords o of
+        [] -> [typeLine o]
+        words' -> [typeLine o, Text.intercalate (Text.pack ", ") words']
+   in Text.intercalate (Text.pack ", ") ([Render.nameOf view o] <> kind <> pt <> doing <> action)
 
 tapped :: ObjectView.ObjectView -> [String]
 tapped o = ["tapped" | ObjectView.tapped o == TapState.Tapped]
@@ -181,7 +214,9 @@ oracle lookUp o = do
 data Reading = MkReading
   { object :: ObjectId.ObjectId,
     -- | Its Oracle text, a line each (oracle), or why there is none.
-    text :: [Text.Text]
+    text :: [Text.Text],
+    -- | Opened by a tap, rather than previewed under a resting pointer.
+    pinned :: Bool
   }
   deriving (Eq, Show)
 
@@ -191,24 +226,24 @@ sheet :: PlayerView.PlayerView -> ObjectView.ObjectView -> Reading -> [Html.Html
 sheet view o reading actions close =
   Element.el
     "div"
-    ["sheet-backdrop"]
-    [Element.attr "role" (Text.pack "dialog"), Element.attr "aria-modal" (Text.pack "true")]
-    [ Element.button ["scrim"] close [Element.el "span" ["sr-only"] [] [Element.string "Close"]],
-      Element.el
-        "section"
-        ["sheet", colour o]
-        []
-        $ [ Element.el "header" [] [] $
-              [Element.el "h2" [] [] [Element.text (Render.nameOf view o)]]
-                <> foldMap (pure . Mana.cost) (ObjectView.characteristics o >>= ProjectedCharacteristics.manaCost),
-            Element.el "p" ["type-line"] [] [Element.text (fullType o)]
-          ]
-          <> [Element.el "p" ["status"] [] [Element.text line] | line <- status view o]
-          <> [Element.el "div" ["oracle"] [] [Element.el "p" [] [] (Mana.rich line) | line <- text reading, not (Text.null line)] | not (null (text reading))]
-          <> [Element.el "div" ["stats-row"] [] (badges o <> stats o) | not (null (badges o <> stats o))]
-          <> [Element.el "div" ["sheet-actions"] [] actions | not (null actions)]
-          <> [Element.button ["close"] close [Element.string "Close"]]
-    ]
+    ["sheet-backdrop", if pinned reading then "" else "peek"]
+    (if pinned reading then [Element.attr "role" (Text.pack "dialog"), Element.attr "aria-modal" (Text.pack "true")] else [Element.attr "aria-hidden" (Text.pack "true")])
+    $ [Element.button ["scrim"] close [Element.el "span" ["sr-only"] [] [Element.string "Close"]] | pinned reading]
+      <> [ Element.el
+             "section"
+             ["sheet", colour o]
+             []
+             $ [ Element.el "header" [] [] $
+                   [Element.el "h2" [] [] [Element.text (Render.nameOf view o)]]
+                     <> foldMap (pure . Mana.cost) (ObjectView.characteristics o >>= ProjectedCharacteristics.manaCost),
+                 Element.el "p" ["type-line"] [] [Element.text (fullType o)]
+               ]
+               <> [Element.el "p" ["status"] [] [Element.text line] | line <- status view o]
+               <> [Element.el "div" ["oracle"] [] [Element.el "p" [] [] (Mana.rich line) | line <- text reading, not (Text.null line)] | not (null (text reading))]
+               <> [Element.el "div" ["stats-row"] [] (badges o <> stats o) | not (null (badges o <> stats o))]
+               <> [Element.el "div" ["sheet-actions"] [] actions | pinned reading, not (null actions)]
+               <> [Element.button ["close"] close [Element.string "Close"] | pinned reading]
+         ]
 
 -- | The full type line: supertypes, card types, a dash, then subtypes.
 fullType :: ObjectView.ObjectView -> Text.Text

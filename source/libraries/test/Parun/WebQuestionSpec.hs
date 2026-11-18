@@ -58,7 +58,7 @@ spec s registry = Spec.describe s "WebQuestion" $ do
     Spec.assertBool s (Text.pack "class=\"card c-land playable\"" `Text.isInfixOf` page) "playable"
     Spec.assertEqWith s "a card in hand is tapped to read it" (Html.search isCard view >>= \path -> Html.handler (Text.pack "click") path view) (Just (Question.Web.MkRead land))
     -- Reading it opens its sheet, whose button plays it.
-    let reading = Question.Web.view request Question.Web.blank {Question.Web.reading = Just (Card.MkReading land [Text.pack "({T}: Add {R}.)"])}
+    let reading = Question.Web.view request Question.Web.blank {Question.Web.reading = Just (Card.MkReading land [Text.pack "({T}: Add {R}.)"] True)}
         sheet = Html.search (\html -> Text.pack "<section class=\"sheet" `Text.isPrefixOf` Html.toText html) reading
     Spec.assertBool s (Text.pack "<span class=\"ms ms-r\" title=\"{R}\">R</span>" `Text.isInfixOf` Html.toText reading) "oracle"
     let action = do
@@ -91,6 +91,9 @@ spec s registry = Spec.describe s "WebQuestion" $ do
     Spec.assertEqWith s "read" (snd (Log.unseen marks view)) []
     let event = Log.MkEvent Log.MkMajor . Text.pack
         turn n = Log.MkTurn n S.alice
+    let busy = Question.Web.blank {Question.Web.logged = Seq.fromList (fmap (event . show) [1 :: Int .. 6]), Question.Web.fresh = 6}
+        asked = requestFor (Setup.emptyGame S.bothPlayers) (Prompt.ChooseAction (Decider.MkDecider S.alice) S.alice [Action.Pass])
+    Spec.assertBool s (Text.pack "\x2026\&and 2 more in the log" `Text.isInfixOf` Html.content (Question.Web.view asked busy)) "news says how many more"
     Spec.assertEqWith s "newest turn first, its heading on top" (fmap snd (Foldable.toList (Log.newestFirst (Seq.fromList (zip [0 :: Int ..] [event "a", turn 1, event "b", event "c", turn 2, event "d"]))))) [turn 2, event "d", turn 1, event "c", event "b", event "a"]
 
   Spec.it s "a priority offering only a pass, the hotseat's concession, and play or draw are answered unasked" $ do

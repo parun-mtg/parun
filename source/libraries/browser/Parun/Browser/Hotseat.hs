@@ -213,9 +213,15 @@ exchange lookUp page seatRef request = do
       (event, value) <- Browser.next page
       case event of
         Right (Web.Question.MkRead object)
-          | Just shown <- Request.view pending,
-            Just o <- Map.lookup object (Render.objects shown) ->
-              (\r -> asking pending picked (Just r) focus) . Web.Card.MkReading object . either (pure . Text.pack . Exception.displayException) id $ Web.Card.oracle lookUp o
+          | Just r <- readingOf pending object True -> asking pending picked (Just r) focus
+        -- A preview shows only while no tapped sheet is open, and ends only
+        -- itself.
+        Right (Web.Question.MkPeek object)
+          | maybe True (not . Web.Card.pinned) reading,
+            Just r <- readingOf pending object False ->
+              asking pending picked (Just r) focus
+        Right Web.Question.MkUnpeek
+          | maybe False (not . Web.Card.pinned) reading -> asking pending picked Nothing focus
         Right e -> case Web.Question.step pending picked e value of
           Web.Question.MkReplied answered -> do
             Monad.when (e == Web.Question.MkAuto) . IORef.modifyIORef' seatRef $ \s -> s {paying = True}
@@ -230,6 +236,10 @@ exchange lookUp page seatRef request = do
             asking pending now (if isToggle e then reading else Nothing) (focusAfter e focus)
           Web.Question.MkRefused problem -> asking pending {Request.problem = Just problem} picked Nothing focus
         Left _ -> asking pending picked reading focus
+    readingOf pending object pinned = do
+      shown <- Request.view pending
+      o <- Map.lookup object (Render.objects shown)
+      pure (Web.Card.MkReading object (either (pure . Text.pack . Exception.displayException) id (Web.Card.oracle lookUp o)) pinned)
     focusAfter e focus = case e of
       Web.Question.MkFocus g -> if focus == Just g then Nothing else Just g
       Web.Question.MkClear -> Nothing

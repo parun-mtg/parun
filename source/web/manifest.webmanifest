@@ -1,0 +1,11 @@
+{
+  "name": "Parun",
+  "short_name": "Parun",
+  "description": "A Magic rules engine, running in your browser.",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#f4f1ea",
+  "theme_color": "#2557a7",
+  "icons": [{ "src": "icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" }]
+}
