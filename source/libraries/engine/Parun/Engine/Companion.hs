@@ -132,7 +132,7 @@ fulfilled :: CompanionCondition.CompanionCondition Keyword -> PlayerId -> GameSt
 fulfilled condition pid gs =
   let context = Filter.contextIn gs (Just pid) Nothing
       deck = filter (\(_, n) -> n > 0) (Map.toAscList (maybe Map.empty Player.startingDeck (Map.lookup pid (GameState.players gs))))
-      viewOf printingId = fmap (Projection.viewOfCard . Game.resolveFaceFor Nothing) (Game.cardOfPrinting printingId gs)
+      viewOf printingId = fmap (\card -> (Projection.viewOfCard (Game.resolveFaceFor Nothing card)) {Filter.doubleFaced = Card.isDoubleFaced card}) (Game.cardOfPrinting printingId gs)
       admits predicate printingId = maybe False (\view -> Filter.matches context view predicate) (viewOf printingId)
    in case condition of
         CompanionCondition.EachCard predicate -> all (admits predicate . fst) deck

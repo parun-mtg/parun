@@ -167,6 +167,7 @@ blackCreature =
       Filter.exiledFaceDown = False,
       Filter.warped = False,
       Filter.transformed = False,
+      Filter.doubleFaced = False,
       Filter.counters = Map.empty,
       Filter.stickers = Seq.empty,
       Filter.ringBearerFor = Nothing,
@@ -281,6 +282,7 @@ devoidBigCreature =
       Filter.exiledFaceDown = False,
       Filter.warped = False,
       Filter.transformed = False,
+      Filter.doubleFaced = False,
       Filter.counters = Map.empty,
       Filter.stickers = Seq.empty,
       Filter.ringBearerFor = Nothing,
@@ -2667,6 +2669,13 @@ spec s = Spec.describe s "Parun.Engine.Filter" $ do
     -- CR 406.2's exiled card is a card, and CR 109.1 makes a player none.
     Spec.it s "a player candidate is vacuously false" $ do
       Spec.assertBool s (not (Filter.matches self aPlayer Filter.Type.IsExiledFaceDown)) "player"
+
+  -- CR 712.1. A bare field read; data/scenarios/overgrown-pest-* and
+  -- invasion-of-pyrulea-* prove the builder.
+  Spec.describe s "IsDoubleFaced" $ do
+    Spec.it s "matches a view represented by a double-faced card" $ do
+      Spec.assertBool s (Filter.matches self (blackCreature {Filter.doubleFaced = True}) Filter.Type.IsDoubleFaced) "double-faced"
+      Spec.assertBool s (not (Filter.matches self blackCreature Filter.Type.IsDoubleFaced)) "one-faced"
 
   -- CR 701.27h. The atom itself is a bare field read; both of the rule's
   -- exclusions live in the BUILDER that fills the field, so the gameplay-level

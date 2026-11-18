@@ -381,6 +381,8 @@ offerCastOnce runSubgame context fits named caster optionality verb retake offer
               | CastOffer.reduction offer == 0 = if null applied then Cost.candidateCostsGiven True caster name oid proposed else applied
               | otherwise = fmap lessened (if null applied then Cost.candidateCostsGiven True caster name oid proposed else applied)
             announced = if CastOffer.reduction offer == 0 then applied else candidates
+            -- CR 712.1 asks of the card, which the printed face's view cannot.
+            faceView = (Projection.viewOfCard face) {Filter.doubleFaced = Game.isDoubleFacedCard oid gs}
          in -- CR 702.85a's second condition, asked of THIS HALF: the offer may
             -- state a quality the resulting spell must have, and CR 709.3a makes
             -- that a per-half question like the two above. Against the face's own
@@ -388,8 +390,8 @@ offerCastOnce runSubgame context fits named caster optionality verb retake offer
             -- the same source the reference did. An offer stating none narrows
             -- nothing. `fits` is the repetition's total asking the same half
             -- (CastRepetition.WithinTotal).
-            if maybe True (Filter.matches context (Projection.viewOfCard face)) (CastOffer.restriction offer)
-              && fits oid (Projection.viewOfCard face)
+            if maybe True (Filter.matches context faceView) (CastOffer.restriction offer)
+              && fits oid faceView
               && Cast.castableWhenOffered (CastOffer.spending offer) caster oid name candidates proposed
               then
                 -- CR 118.8c, read off the same candidates the cast will be

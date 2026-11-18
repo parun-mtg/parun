@@ -962,7 +962,7 @@ snapshotView viewOf context gs shape event = case event of
       -- is, the snapshot recording no zone -- Spider-Man 2099's "cast a spell this
       -- turn from anywhere other than your hand"
       -- (data/scenarios/spider-man-2099-deals-damage-after-a-land-played-from-the-graveyard.json).
-      castView = (viewOfSnapshot False (Just caster) (Game.ownerWithLastKnown spell gs) False Map.empty Zone.Stack Zone.Battlefield lapsed snapshot) {Filter.castFrom = Just (Game.castOrigin from), Filter.isCard = maybe False Game.sourceIsCard (Game.sourceOfWithLastKnown spell gs), Filter.identity = Just spell}
+      castView = (viewOfSnapshot False (Just caster) (Game.ownerWithLastKnown spell gs) False Map.empty Zone.Stack Zone.Battlefield lapsed snapshot) {Filter.castFrom = Just (Game.castOrigin from), Filter.isCard = maybe False Game.sourceIsCard (Game.sourceOfWithLastKnown spell gs), Filter.doubleFaced = maybe False Card.isDoubleFaced (Game.cardOfWithLastKnown spell gs), Filter.identity = Just spell}
   GameEvent.BecameMonarch _ -> Nothing
   GameEvent.TookInitiative _ -> Nothing
   GameEvent.MulliganDeclared _ -> Nothing
@@ -1259,7 +1259,7 @@ arrivalMatches arrival zc =
 departedView :: ViewOf -> GameState -> ZoneChange.ZoneChange -> PC.ProjectedCharacteristics -> Filter.View
 departedView viewOf gs zc snapshot = case Map.lookup (ZoneChange.departed zc) (Snapshots.lastKnown (GameState.snapshots gs)) of
   Just lastKnown -> lastKnownView viewOf (ZoneChange.departed zc) gs lastKnown {LastKnown.characteristics = snapshot}
-  Nothing -> (viewOfSnapshot (deployIn gs (ZoneChange.from zc)) Nothing Nothing (Game.isToken (ZoneChange.object zc) gs) Map.empty (ZoneChange.from zc) Zone.Battlefield Set.empty snapshot) {Filter.isCard = Game.isCardObject (ZoneChange.object zc) gs}
+  Nothing -> (viewOfSnapshot (deployIn gs (ZoneChange.from zc)) Nothing Nothing (Game.isToken (ZoneChange.object zc) gs) Map.empty (ZoneChange.from zc) Zone.Battlefield Set.empty snapshot) {Filter.isCard = Game.isCardObject (ZoneChange.object zc) gs, Filter.doubleFaced = Game.isDoubleFacedCard (ZoneChange.object zc) gs}
 
 -- CR 113.7a / 608.2h: `live`'s view of an object that exists, else the view of
 -- the record filed under its id once it has left (lastKnownView), else Nothing.
@@ -1349,6 +1349,7 @@ lastKnownView peers oid gs lastKnown =
       )
         { Filter.identity = Just oid,
           Filter.isCard = Game.sourceIsCard (LastKnown.source lastKnown),
+          Filter.doubleFaced = maybe False Card.isDoubleFaced (Game.cardOfSource gs (Just (LastKnown.source lastKnown))),
           Filter.tapped = LastKnown.tapped lastKnown,
           Filter.faceDown = LastKnown.faceDown lastKnown,
           -- CR 608.2h: the designations it had as it left, and their values.
@@ -1882,6 +1883,10 @@ viewOfSnapshot deploy mController mOwner isToken counters zone home lapsed snaps
       -- transformed permanents through Scope.InHistory, so nothing observes the
       -- difference between this and an answer the rule could give.
       Filter.transformed = False,
+      -- CR 712.1 asks of the card behind an object, and a snapshot records
+      -- characteristics only: each caller holding the object overlays it, as
+      -- `isCard` above.
+      Filter.doubleFaced = False,
       -- CR 122.1: a ProjectedCharacteristics records no counters -- CR 613.4c
       -- has already folded them into the power and toughness above, which is
       -- lossy in both directions -- so this comes from the arm, off CR 608.2h's

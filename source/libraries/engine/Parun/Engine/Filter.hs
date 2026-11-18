@@ -739,6 +739,12 @@ data View = MkView
     -- and none of the three is a lost distinction -- CR 701.27h asks about a
     -- permanent, and none of them is one.
     transformed :: Bool,
+    -- CR 712.1: is this candidate represented by a double-faced card or token?
+    -- Read off the card behind Object.source (Parun.Engine.Game.isDoubleFacedCard),
+    -- never the projection, `token` above's reason and CR 701.27d's first
+    -- Example: a Clone copying a double-faced permanent is one-faced. False for
+    -- a candidate with no card behind it. Filter.IsDoubleFaced is the reader.
+    doubleFaced :: Bool,
     -- | CR 122.1: the counters on the candidate, counted per kind. Not a
     -- characteristic -- CR 109.3's list has no counters in it -- so no projection
     -- writes it, and it deliberately survives ALONGSIDE the power and toughness
@@ -1254,6 +1260,7 @@ nobodyView =
       warped = False,
       -- CR 701.27h asks about a PERMANENT, and CR 109.1 makes a player none.
       transformed = False,
+      doubleFaced = False,
       -- CR 122.1 puts counters on an object OR a player, and a player's are
       -- Player.counters, read by Quantity.PlayerCounters. This field is the
       -- OBJECT half, so a player view has none of it.
@@ -3088,6 +3095,7 @@ matches context view predicate = case predicate of
   -- CR 701.27h, both exclusions inside the field: see the atom's own comment in
   -- Parun.Types.Filter, and the field below.
   Filter.Transformed -> transformed view
+  Filter.IsDoubleFaced -> doubleFaced view
   -- CR 602.1 with CR 605.1a's classification, applied by the builder that holds
   -- the abilities. A live read: the projection is re-asked on every match, so a
   -- land Humility has stripped stops matching at once, and CR 702.29b's and CR
@@ -3621,6 +3629,7 @@ manaValueThresholds predicate = case predicate of
   Filter.IsExiledFaceDown -> []
   Filter.IsWarped -> []
   Filter.Transformed -> []
+  Filter.IsDoubleFaced -> []
   Filter.IsRingBearer -> []
   Filter.IsPaired -> []
   Filter.IsPairedWithSource -> []
@@ -3824,6 +3833,7 @@ statesAQuality predicate = case predicate of
   Filter.IsExiledFaceDown -> True
   Filter.IsWarped -> True
   Filter.Transformed -> True
+  Filter.IsDoubleFaced -> True
   Filter.IsRingBearer -> True
   Filter.IsPaired -> True
   Filter.IsPairedWithSource -> True
@@ -4008,6 +4018,7 @@ readsSourceValues predicate = case predicate of
   Filter.IsExiledFaceDown -> False
   Filter.IsWarped -> False
   Filter.Transformed -> False
+  Filter.IsDoubleFaced -> False
   Filter.IsRingBearer -> False
   Filter.IsPaired -> False
   Filter.IsPairedWithSource -> False
@@ -4151,6 +4162,7 @@ talliesWhatHappened predicate = case predicate of
   Filter.IsExiledFaceDown {} -> False
   Filter.IsWarped {} -> False
   Filter.Transformed {} -> False
+  Filter.IsDoubleFaced {} -> False
   Filter.IsRingBearer {} -> False
   Filter.IsPaired {} -> False
   Filter.IsPairedWithSource {} -> False
