@@ -55,7 +55,7 @@
     "step": "PrecombatMain"
   },
   "description": "With one creature dead this turn, Darklight Phoenix does not return at the beginning of combat",
-  "note": "The pair of edgar-ancient-bloodlord-gains-a-life-per-sacrifice-and-darklight-phoenix-returns-after-two-deaths, one sacrifice short.",
+  "note": "The pair of edgar-ancient-bloodlord-gains-a-life-per-sacrifice-and-darklight-phoenix-returns-after-two, one sacrifice short.",
   "timeline": [
     {
       "do": {

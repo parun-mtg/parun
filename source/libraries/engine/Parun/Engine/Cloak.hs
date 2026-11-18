@@ -74,7 +74,7 @@ riders =
 -- The permanent enters under the player who cloaked, which is CR 110.2a: that
 -- player is the one the effect instructed, whoever's library the card came
 -- off. The scenario
--- etrata-deadly-fugitive-cloaks-the-top-card-of-the-damaged-opponent-s-library-under-her-controller
+-- etrata-deadly-fugitive-cloaks-the-top-card-of-the-damaged-opponent-s-library-under-her
 -- proves it.
 --
 -- The result is the permanent the cloak put onto the battlefield, none when the

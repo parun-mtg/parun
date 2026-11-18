@@ -79,7 +79,7 @@
     "step": "PrecombatMain"
   },
   "description": "CR 701.24c Dwell on the Past shuffles the targeted player's library even when both targeted cards have left the graveyard",
-  "note": "The control for cr-701-24c-dwell-on-the-past-shuffles-the-targeted-player-s-library-even-when-both-targeted-cards-have-left: the same board and cast with carol's Faerie Macabre left in her hand. Bob's graveyard loses exactly the two named cards, his library gains exactly two, and carol's graveyard Piker, the same printing as one of his, stays, so it was his graveyard the cards came from.",
+  "note": "The control for cr-701-24c-dwell-on-the-past-shuffles-the-targeted-player-s-library-even-when-both-targeted-2: the same board and cast with carol's Faerie Macabre left in her hand. Bob's graveyard loses exactly the two named cards, his library gains exactly two, and carol's graveyard Piker, the same printing as one of his, stays, so it was his graveyard the cards came from.",
   "timeline": [
     {
       "do": {
