@@ -1,0 +1,177 @@
+{
+  "faces": [
+    {
+      "counterability": {
+        "type": "CantBeCountered"
+      },
+      "keywords": [
+        {
+          "type": "Trample"
+        }
+      ],
+      "manaCost": [
+        {
+          "type": "Generic",
+          "value": 3
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "Green"
+          }
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "Green"
+          }
+        }
+      ],
+      "name": "Thrun, Breaker of Silence",
+      "oracleText": "This spell can't be countered.\nTrample\nThrun can't be the target of nongreen spells your opponents control or abilities from nongreen sources your opponents control.\nDuring your turn, Thrun has indestructible.",
+      "power": {
+        "type": "Literal",
+        "value": 5
+      },
+      "staticAbilities": [
+        {
+          "affected": {
+            "type": "Matching",
+            "value": {
+              "type": "IsSource"
+            }
+          },
+          "condition": {
+            "type": "Compares",
+            "value": {
+              "comparison": "Exactly",
+              "measured": {
+                "type": "IsActivePlayer",
+                "value": {
+                  "type": "Relative",
+                  "value": "You"
+                }
+              },
+              "threshold": {
+                "type": "Literal",
+                "value": 1
+              }
+            }
+          },
+          "modifications": [
+            {
+              "type": "GainKeyword",
+              "value": {
+                "type": "Indestructible"
+              }
+            }
+          ]
+        }
+      ],
+      "targetRestrictions": [
+        {
+          "affected": {
+            "type": "Matching",
+            "value": {
+              "type": "IsSource"
+            }
+          },
+          "aimers": {
+            "type": "And",
+            "value": [
+              {
+                "type": "Not",
+                "value": {
+                  "type": "HasColor",
+                  "value": "Green"
+                }
+              },
+              {
+                "type": "HeldBy",
+                "value": {
+                  "holder": "Controller",
+                  "relation": "Opponent"
+                }
+              }
+            ]
+          },
+          "kind": "Spell"
+        },
+        {
+          "affected": {
+            "type": "Matching",
+            "value": {
+              "type": "IsSource"
+            }
+          },
+          "aimers": {
+            "type": "And",
+            "value": [
+              {
+                "type": "Not",
+                "value": {
+                  "type": "HasColor",
+                  "value": "Green"
+                }
+              },
+              {
+                "type": "HeldBy",
+                "value": {
+                  "holder": "Controller",
+                  "relation": "Opponent"
+                }
+              }
+            ]
+          },
+          "kind": "ActivatedAbility"
+        },
+        {
+          "affected": {
+            "type": "Matching",
+            "value": {
+              "type": "IsSource"
+            }
+          },
+          "aimers": {
+            "type": "And",
+            "value": [
+              {
+                "type": "Not",
+                "value": {
+                  "type": "HasColor",
+                  "value": "Green"
+                }
+              },
+              {
+                "type": "HeldBy",
+                "value": {
+                  "holder": "Controller",
+                  "relation": "Opponent"
+                }
+              }
+            ]
+          },
+          "kind": "TriggeredAbility"
+        }
+      ],
+      "toughness": {
+        "type": "Literal",
+        "value": 5
+      },
+      "typeLine": {
+        "subtypes": [
+          "Shaman",
+          "Troll"
+        ],
+        "supertypes": [
+          "Legendary"
+        ],
+        "types": [
+          "Creature"
+        ]
+      }
+    }
+  ]
+}
