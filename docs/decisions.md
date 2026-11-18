@@ -2602,3 +2602,22 @@ Entries are ordered by the first rule each cites.
 - **Site**: `Parun.Engine.Event.offerOutside`, a FENCE: no scenario puts a
   merged permanent outside a subgame beside a Holodeck.
 - **Issue**: #8449.
+
+## Whether a reversed action restarts the pass count
+
+- **Question**: CR 734.2 keeps priority with a player whose action CR 734.1
+  reversed. Do the passes made before it still count toward CR 117.4's
+  succession, including when the payer keeps a mana ability activated while
+  making it?
+- **Rules**: CR 117.4, 117.3c, 605.3a, 734.1, 734.2; CR of 2026-11-06.
+- **Decision**: A reversal that undoes everything leaves the passes standing;
+  one where the payer keeps a mana ability restarts the count, as activating a
+  mana ability at priority does.
+- **Rejected**: Restarting on every reversal: the game rewinds to before the
+  action, so nothing was taken in between. Keeping the passes despite a kept
+  mana ability: that ability stands as an action taken (CR 605.3a), and its
+  mana sits in the pool when the next player is asked.
+- **Site**: `Parun.Engine.Engine.grantAfterAction`, proved by the scenarios
+  refuse/cr-734-2-a-reversed-cast-leaves-the-passes-before-it-standing and
+  refuse/cr-734-2-a-reversed-cast-that-keeps-its-mana-ability-restarts-the-passes.
+- **Issue**: #8443.
