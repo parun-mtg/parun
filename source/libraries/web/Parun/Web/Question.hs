@@ -6,6 +6,7 @@ module Parun.Web.Question where
 import qualified Control.Monad as Monad
 import qualified Data.Bifunctor as Bifunctor
 import qualified Data.Char as Char
+import qualified Data.Containers.ListUtils as ListUtils
 import qualified Data.Foldable as Foldable
 import qualified Data.List as List
 import qualified Data.Map.Strict as Map
@@ -580,7 +581,8 @@ form request picked = case Text.unpack (Question.kind question) of
       Just sources <- Protocol.field "sources" offer >>= Protocol.arrayOf >>= traverse Offer.manaSource ->
         Html.element (Text.pack "h2") [] [Html.text $ foldMap (\cost -> Text.pack "Paying " <> Render.manaCost cost <> Text.pack ". ") (Protocol.field "cost" offer >>= Offer.decoded Codec.ManaCost.codec) <> Text.pack (if kind == "ChooseManaSource" then "Choose a source." else "The cost is covered. Activate another source, or pay now.")]
           : [primary MkAuto (Text.pack "Pay automatically") | Maybe.isJust (auto request)]
-            <> [button (MkAnswer source) (Offer.listedName shown source <> makes yields) | (source, yields) <- sources]
+            -- Sources the seat can't tell apart are one button, for the first.
+            <> [button (MkAnswer source) (label <> many count) | (source : _, label, count) <- collapsed [(source, Offer.listedName shown source <> makes yields) | (source, yields) <- sources]]
             <> [(if kind == "ChooseManaSource" then button else primary) (MkAnswer R.Null) $ Text.pack (if kind == "ChooseManaSource" then "Stop paying" else "Pay now")]
   kind
     | kind `elem` ["ChooseOptional", "ReverseManaAbilities"],
@@ -632,7 +634,7 @@ form request picked = case Text.unpack (Question.kind question) of
       Just shown <- Request.view request ->
         let count = Set.size picked
          in [ heading "Declare attackers: tap your creatures to attack with them.",
-              Element.el "div" ["actions"] [] [toggle 0 i (Offer.listedName shown option) | (i, option) <- zip [0 ..] attackers],
+              Element.el "div" ["actions"] [] (toggles 0 [(i, Offer.listedName shown option) | (i, option) <- zip [0 ..] attackers]),
               Element.el "div" ["passes"] [] $
                 [primary MkSubmit (Text.pack (if count == 0 then "No attack" else "Attack with " <> show count))]
                   <> [button (MkAnswer (R.Array attackers)) (Text.pack "All") | length attackers > 1, count < length attackers]
@@ -655,7 +657,7 @@ form request picked = case Text.unpack (Question.kind question) of
         heading "Declare blockers: tap a creature of yours, then the attacker it blocks."
           : concat
             [ Element.el "h3" ["subhead"] [] [Html.text (title group)]
-                : [toggle g i label | (i, (_, label)) <- zip [0 ..] (options group)]
+                : toggles g [(i, label) | (i, (_, label)) <- zip [0 ..] (options group)]
             | (g, group) <- zip [0 ..] (groups chooser)
             ]
             <> [primary MkSubmit (Text.pack (if Set.null picked then "No blocks" else "Block"))]
@@ -663,7 +665,7 @@ form request picked = case Text.unpack (Question.kind question) of
     | Just chooser <- picker request ->
         concat
           [ Html.element (Text.pack "h2") [] [Html.text $ title group <> Text.pack (" (" <> bounds group <> ")")]
-              : [toggle g i label | (i, (_, label)) <- zip [0 ..] (options group)]
+              : toggles g [(i, label) | (i, (_, label)) <- zip [0 ..] (options group)]
           | (g, group) <- zip [0 ..] (groups chooser)
           ]
           <> [primary MkSubmit $ send chooser]
@@ -676,8 +678,29 @@ form request picked = case Text.unpack (Question.kind question) of
     question = Request.question request
     offer = Question.offer question
     toggle g i label = button (MkToggle g i) $ (if Set.member (g, i) picked then Text.pack "\x2713 " else Text.empty) <> label
+    -- Options the seat can't tell apart share a button: a tap picks the
+    -- first unpicked, or once all are picked drops the last.
+    toggles g labelled =
+      [ case indices of
+          [i] -> toggle g i label
+          _ ->
+            let chosen = filter (\i -> Set.member (g, i) picked) indices
+                next = case filter (\i -> not (Set.member (g, i) picked)) indices of
+                  i : _ -> i
+                  [] -> List.last indices
+             in button (MkToggle g next) ((if null chosen then Text.empty else Text.pack (show (length chosen) <> " of ")) <> label <> many (length indices))
+      | (indices, label, _) <- collapsed labelled
+      ]
+    many n = if n > 1 then Text.pack (" \x00d7" <> show n) else Text.empty
     makes yields = if null yields then Text.empty else Text.pack " (makes " <> Text.intercalate (Text.pack " or ") (fmap (foldMap Render.manaType) yields) <> Text.pack ")"
     heading t = Html.element (Text.pack "h2") [] [Html.text $ Text.pack t]
+
+-- | Options by label, each label once with every option bearing it, in the
+-- order labels first appear; the label's count is the third part.
+collapsed :: [(a, Text.Text)] -> [([a], Text.Text, Int)]
+collapsed labelled =
+  let order = ListUtils.nubOrd (fmap snd labelled)
+   in [(xs, label, length xs) | label <- order, let xs = [x | (x, l) <- labelled, l == label]]
 
 button :: Event -> Text.Text -> Html.Html Event
 button event label = Element.button [] event (Mana.rich label)
