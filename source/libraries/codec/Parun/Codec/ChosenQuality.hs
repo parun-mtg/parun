@@ -5,7 +5,7 @@ import qualified Data.Text as Text
 import qualified Parun.Codec.CardType as CardType
 import qualified Parun.Codec.ChoiceDistinct as ChoiceDistinct
 import qualified Parun.Codec.ChoiceOrdinal as ChoiceOrdinal
-import qualified Parun.Codec.ChooseBetween as ChooseBetween
+import qualified Parun.Codec.ColorlessOption as ColorlessOption
 import qualified Parun.Codec.ExiledPile as ExiledPile
 import qualified Parun.Codec.Filter as Filter
 import qualified Parun.Codec.Keyword as Keyword
@@ -17,13 +17,15 @@ import qualified Parun.JsonCodec.Common as Common
 import qualified Parun.JsonCodec.Fields as Fields
 import qualified Parun.Types.ChoiceDistinct as ChoiceDistinct
 import qualified Parun.Types.ChoiceOrdinal as ChoiceOrdinal
+import qualified Parun.Types.ChooseBetween as ChooseBetween
 import qualified Parun.Types.ChosenQuality as ChosenQuality
+import qualified Parun.Types.ColorlessOption as ColorlessOption
 
 codec :: Codec.Codec ChosenQuality.ChosenQuality
 codec =
   Arm.tagged
     tagOf
-    [ Arm.payload "Colors" ChooseBetween.codec ChosenQuality.Colors (\x -> case x of ChosenQuality.Colors y -> Just y; _ -> Nothing),
+    [ Arm.payload "Colors" colors (uncurry ChosenQuality.Colors) (\x -> case x of ChosenQuality.Colors range colorless -> Just (range, colorless); _ -> Nothing),
       Arm.payload "Subtype" subtype (\(ordinal, distinct, family, among) -> ChosenQuality.Subtype ordinal distinct family among) (\x -> case x of ChosenQuality.Subtype ordinal distinct family among -> Just (ordinal, distinct, family, among); _ -> Nothing),
       Arm.optionalPayload "CardType" cardType (uncurry ChosenQuality.CardType . Maybe.fromMaybe ([], Nothing)) (\x -> case x of ChosenQuality.CardType [] Nothing -> Just Nothing; ChosenQuality.CardType except among -> Just (Just (except, among)); _ -> Nothing),
       Arm.payload "Number" number (uncurry ChosenQuality.Number) (\x -> case x of ChosenQuality.Number least most -> Just (least, most); _ -> Nothing),
@@ -33,6 +35,14 @@ codec =
       Arm.payload "ExiledCard" exiledCard (uncurry ChosenQuality.ExiledCard) (\x -> case x of ChosenQuality.ExiledCard pile cards -> Just (pile, cards); _ -> Nothing)
     ]
   where
+    -- ChooseBetween's object, with colorless offered beside the colours where
+    -- the card says so.
+    colors =
+      Fields.objectWith (\(range, colorless) -> if ChooseBetween.least range > ChooseBetween.most range then Left (Text.pack "Colors: least must not exceed most") else Right (range, colorless)) $
+        (\least most colorless -> (ChooseBetween.MkChooseBetween least most, colorless))
+          <$> Fields.required "least" Common.natural (ChooseBetween.least . fst)
+          <*> Fields.required "most" Common.natural (ChooseBetween.most . fst)
+          <*> Fields.defaulted "colorless" ColorlessOption.ColorsOnly ColorlessOption.codec snd
     subtype =
       Fields.object $
         (,,,)

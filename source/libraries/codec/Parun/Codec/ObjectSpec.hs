@@ -144,6 +144,7 @@ spec s = Spec.describe s "Parun.Codec.Object" $ do
           Object.counterTimestamps = Map.singleton CounterKind.PlusOnePlusOne (Timestamp.MkTimestamp 7),
           Object.attachedTo = Just (Recipient.ToCreature (ObjectId.MkObjectId 8)),
           Object.chosenColors = Map.singleton Acquisition.Own (Set.singleton Color.Red),
+          Object.chosenColorless = Map.empty,
           Object.chosenSubtype = Map.singleton (Acquisition.Copied (Timestamp.MkTimestamp 43)) (Subtype.Goblin NonEmpty.:| [Subtype.Elf]),
           Object.chosenCardType = Map.singleton Acquisition.Own CardType.Creature,
           Object.chosenNumber = Map.singleton Acquisition.Own 5,

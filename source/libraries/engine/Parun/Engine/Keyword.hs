@@ -4842,8 +4842,8 @@ mintedRemovalRestrictionsFor keyword =
 -- `already`, the host's attachments stamped no later than the granter (CR
 -- 613.7e restamps each attach, so that is "already attached when the effect
 -- started to apply").
-grantedBy :: ObjectId -> Set.Set Color.Color -> Maybe (NonEmpty.NonEmpty Subtype.Subtype) -> Maybe PlayerId -> [ObjectId] -> Keyword -> Keyword
-grantedBy granter chosen subtype you already keyword = case withChoices chosen subtype keyword of
+grantedBy :: ObjectId -> Set.Set Color.Color -> Maybe () -> Maybe (NonEmpty.NonEmpty Subtype.Subtype) -> Maybe PlayerId -> [ObjectId] -> Keyword -> Keyword
+grantedBy granter chosen colorless subtype you already keyword = case withChoices chosen colorless subtype keyword of
   Keyword.Protection protection ->
     Keyword.Protection protection {Protection.spares = fmap spare (Protection.spares protection)}
   -- Scotty, Miracle Worker's "Scotty can't be beamed up to cast a spell this
@@ -4861,16 +4861,17 @@ grantedBy granter chosen subtype you already keyword = case withChoices chosen s
 
 -- CR 607.2d / 608.2h: a bare Filter.HasChosenColor protection quality with
 -- the chosen colours written in -- Filter.HasColor, an Or of them where several
--- were chosen, and the empty Or, protection from nothing, where none was.
--- CR 702.11d's "hexproof from that color" (Mondo Gecko) likewise. CR 702.14a's
+-- were chosen, and the empty Or, protection from nothing, where none was. CR
+-- 105.2c: colorless, where `colorless` says it was chosen instead, is no colour
+-- at all (Angelic Intervention). CR 702.11d's "hexproof from that color" (Mondo Gecko) likewise. CR 702.14a's
 -- Filter.HasChosenSubtype landwalk criterion, bare or a conjunct (Barbarian
 -- Guides' "snow landwalk of the chosen type"), with the chosen subtype written
 -- in, and the empty Or, no land at all, where none was chosen.
 -- grantedBy's first half, and Parun.Engine.Projection.freezeQuantities' whole
 -- answer for a resolution's grant (Stave Off), whose source has left the stack
 -- by the time the grant is projected.
-withChoices :: Set.Set Color.Color -> Maybe (NonEmpty.NonEmpty Subtype.Subtype) -> Keyword -> Keyword
-withChoices chosen subtype keyword = case keyword of
+withChoices :: Set.Set Color.Color -> Maybe () -> Maybe (NonEmpty.NonEmpty Subtype.Subtype) -> Keyword -> Keyword
+withChoices chosen colorless subtype keyword = case keyword of
   Keyword.Protection protection
     | Protection.quality protection == Filter.HasChosenColor ->
         Keyword.Protection
@@ -4885,9 +4886,13 @@ withChoices chosen subtype keyword = case keyword of
       Filter.HasChosenSubtype ordinal -> maybe (Filter.Or []) Filter.HasSubtype (ChoiceOrdinal.chosenAt ordinal =<< subtype)
       Filter.And filters -> Filter.And (fmap landOf filters)
       _ -> criterion
-    baked = case Set.toList chosen of
-      [color] -> Filter.HasColor color
-      colors -> Filter.Or (fmap Filter.HasColor colors)
+    noColor = Filter.Measures (Measures.MkMeasures Measure.ColorCount Comparison.Exactly (Operand.Literal 0))
+    picked = case colorless of
+      Just () -> noColor : fmap Filter.HasColor (Set.toList chosen)
+      Nothing -> fmap Filter.HasColor (Set.toList chosen)
+    baked = case picked of
+      [quality] -> quality
+      qualities -> Filter.Or qualities
 
 -- CR 702.16i / 608.2h: a bare Filter.OfRelatedPlayer protection quality with
 -- the players `related` answers for it written in -- an Or of Filter.OfSpecificPlayer,

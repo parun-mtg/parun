@@ -62,6 +62,7 @@ import qualified Parun.Types.Cloak as Cloak
 import qualified Parun.Types.CoinReading as CoinReading
 import qualified Parun.Types.Color as Color
 import qualified Parun.Types.ColorSpread as ColorSpread
+import qualified Parun.Types.ColorlessOption as ColorlessOption
 import qualified Parun.Types.Compares as Compares
 import qualified Parun.Types.Comparison as Comparison
 import qualified Parun.Types.Condition as Condition
@@ -2638,7 +2639,7 @@ spec s = Spec.describe s "Parun.Codec.Effect" $ do
       s
       toJson
       fromJson
-      (Effect.ChooseQuality (ChooseQuality.MkChooseQuality (ChosenQuality.Colors (ChooseBetween.MkChooseBetween 1 1)) False False))
+      (Effect.ChooseQuality (ChooseQuality.MkChooseQuality (ChosenQuality.Colors (ChooseBetween.MkChooseBetween 1 1) ColorlessOption.ColorsOnly) False False))
       " {\"type\":\"ChooseQuality\",\"value\":{\"quality\":{\"type\":\"Colors\",\"value\":{\"least\":1,\"most\":1}}}} "
   -- Shapeshifter: a choice its static ability reads.
   Spec.it s "ChooseQuality linked" $

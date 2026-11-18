@@ -84,6 +84,7 @@ import qualified Parun.Types.ChosenCardInGraveyard as ChosenCardInGraveyard
 import qualified Parun.Types.ChosenPermanents as ChosenPermanents
 import qualified Parun.Types.ChosenQuality as ChosenQuality
 import qualified Parun.Types.Clause as Clause
+import qualified Parun.Types.ColorlessOption as ColorlessOption
 import qualified Parun.Types.CombatRestriction as CombatRestriction
 import qualified Parun.Types.Compares as Compares
 import qualified Parun.Types.Comparison as Comparison
@@ -417,6 +418,38 @@ occurrences needle value
       Value.Null _ -> 0
       Value.Boolean _ -> 0
       Value.Number _ -> 0
+
+-- Whether this encoding offers colorless beside the colours (CR 105.2c).
+offersColorless :: Value.Value -> Bool
+offersColorless = (> 0) . occurrences (Value.String (String.MkString (Text.pack "OrColorless")))
+
+-- Whether this encoding offers colorless and reads the choice anywhere but a
+-- bare protection or hexproof quality: every reader of Object.chosenColors is
+-- tagged with a name holding "ChosenColor".
+colorlessOffends :: Value.Value -> Bool
+colorlessOffends value = offersColorless value && countValues reader value /= countValues baked value
+  where
+    chosenColor = atomJson Filter.Type.HasChosenColor
+    reader v = case v of
+      Value.String x -> Text.pack "ChosenColor" `Text.isInfixOf` String.unwrap x
+      _ -> False
+    named k o = [Pair.value pair | pair <- Object.unwrap o, String.unwrap (Pair.name pair) == Text.pack k]
+    baked v = case v of
+      Value.Object o ->
+        named "quality" o == [chosenColor]
+          || (named "type" o == [Value.String (String.MkString (Text.pack "Hexproof"))] && named "value" o == [chosenColor])
+      _ -> False
+
+-- How many values inside this one, itself included, satisfy the predicate.
+countValues :: (Value.Value -> Bool) -> Value.Value -> Int
+countValues p value =
+  fromEnum (p value) + case value of
+    Value.Array a -> sum (fmap (countValues p) (Array.unwrap a))
+    Value.Object o -> sum (fmap (countValues p . Pair.value) (Object.unwrap o))
+    Value.String _ -> 0
+    Value.Null _ -> 0
+    Value.Boolean _ -> 0
+    Value.Number _ -> 0
 
 -- An atom's own encoding, as a needle for `occurrences`.
 atomJson :: Filter.Type.Filter Keyword.Keyword -> Value.Value
@@ -965,7 +998,7 @@ afterChoice answers modal =
 -- Parun.Engine.Event.chooseQuality writes.
 writesColors :: ChosenQuality.ChosenQuality -> Bool
 writesColors quality = case quality of
-  ChosenQuality.Colors _ -> True
+  ChosenQuality.Colors _ _ -> True
   ChosenQuality.Subtype {} -> False
   ChosenQuality.CardType _ _ -> False
   ChosenQuality.Number _ _ -> False
@@ -977,7 +1010,7 @@ writesColors quality = case quality of
 -- Whether a choice of this quality answers HasChosenSubtype, writesColors' twin.
 writesSubtype :: ChosenQuality.ChosenQuality -> Bool
 writesSubtype quality = case quality of
-  ChosenQuality.Colors _ -> False
+  ChosenQuality.Colors _ _ -> False
   ChosenQuality.Subtype {} -> True
   ChosenQuality.CardType _ _ -> False
   ChosenQuality.Number _ _ -> False
@@ -989,7 +1022,7 @@ writesSubtype quality = case quality of
 -- Whether a choice of this quality answers HasChosenCardType, writesColors' twin.
 writesCardType :: ChosenQuality.ChosenQuality -> Bool
 writesCardType quality = case quality of
-  ChosenQuality.Colors _ -> False
+  ChosenQuality.Colors _ _ -> False
   ChosenQuality.Subtype {} -> False
   ChosenQuality.CardType _ _ -> True
   ChosenQuality.Number _ _ -> False
@@ -4193,6 +4226,21 @@ filterPositionLintSpec s registry corpus = Spec.describe s "Lint" $ do
         untypedCost cost = cost {Cost.Type.components = fmap untyped (Cost.Type.components cost)}
         stripped = (S.combinedFace reunion) {Face.additionalCostChoices = fmap (CostChoice.MkCostChoice . fmap untypedCost . CostChoice.unwrap) (Face.additionalCostChoices (S.combinedFace reunion))}
     Spec.assertEqWith s "a behold cost choosing no type answers nothing" (hasChosenSubtypeCounts (survey stripped)) (0, 3)
+  -- A colorless pick is baked only into a granted protection or hexproof
+  -- quality (Parun.Engine.Keyword.withChoices); Parun.Engine.Event's
+  -- chooseQuality names the readers that cannot see it.
+  Spec.it s "CR 105.2c no card reads a choice offering colorless but as a granted protection or hexproof quality" $ do
+    let faceJson = Codec.encode (Face.Codec.codec Card.codec) . surveyedFace
+    Spec.assertEqWith s "a colorless pick is read only where it is baked" (fmap (S.nameOf . Printing.card . fst) (filter (any (colorlessOffends . faceJson) . snd) pool)) []
+    -- NOT vacuous: the cards offering colorless are examined and accepted, and
+    -- one more reader beside Angelic Intervention's grant is rejected.
+    Monad.forM_ ["Angelic Intervention", "Giver of Runes"] $ \name -> do
+      printing <- S.printingOf s registry name
+      let face = Codec.encode (Face.Codec.codec Card.codec) (S.combinedFace printing)
+      Spec.assertEqWith s (name <> " offers colorless and is accepted") (offersColorless face, colorlessOffends face) (True, False)
+    intervention <- S.printingOf s registry "Angelic Intervention"
+    let doctored = Value.Array (Array.MkArray [Codec.encode (Face.Codec.codec Card.codec) (S.combinedFace intervention), atomJson Filter.Type.HasChosenColor])
+    Spec.assertBool s (colorlessOffends doctored) "a second reader of Angelic Intervention's choice is rejected"
   -- The rejecting direction, for both atoms: each buried under all three
   -- combinators and planted in a spell's positions, which cannot answer, then
   -- in source-framed ones, which can.
@@ -4246,7 +4294,7 @@ filterPositionLintSpec s registry corpus = Spec.describe s "Lint" $ do
         choosingAsItEnters quality = [PrintedReplacement.MkPrintedReplacement Nothing (ReplacementEffect.EntryR (EntryR.MkEntryR Filter.Type.IsSource (EntryRewrite.ChooseQuality quality))) Set.empty Nothing]
         drawing f = Effect.Draw (Draw.MkDraw (PlayerRef.InSlot Binding.you) (Quantity.Type.Count (Count.Type.MkCount (Scope.InZone (InZone.MkInZone Zone.Battlefield (PlayerRef.Relative PlayerRelation.AnyPlayer))) f Aggregation.Members)) Nothing Nothing)
     Monad.forM_
-      [ (Filter.Type.HasChosenColor, ChosenQuality.Colors (ChooseBetween.MkChooseBetween 1 1), hasChosenColorCounts, hasChosenColorTag),
+      [ (Filter.Type.HasChosenColor, ChosenQuality.Colors (ChooseBetween.MkChooseBetween 1 1) ColorlessOption.ColorsOnly, hasChosenColorCounts, hasChosenColorTag),
         (Filter.Type.HasChosenSubtype ChoiceOrdinal.First, ChosenQuality.Subtype ChoiceOrdinal.First ChoiceDistinct.MayRepeat SubtypeFamily.BasicLandType Nothing, hasChosenSubtypeCounts, hasChosenSubtypeTag),
         (Filter.Type.HasChosenCardType, ChosenQuality.CardType [] Nothing, hasChosenCardTypeCounts, hasChosenCardTypeTag)
       ]

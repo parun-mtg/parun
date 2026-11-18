@@ -2548,7 +2548,7 @@ entryRewriteChildren c rewrite = case rewrite of
 -- number and a CR 614.12c anchor word hold none.
 chosenQualityChildren :: (Applicative f) => (Subtype.Subtype -> f Subtype.Subtype) -> (Filter.Filter Keyword.Keyword -> f (Filter.Filter Keyword.Keyword)) -> ChosenQuality.ChosenQuality -> f ChosenQuality.ChosenQuality
 chosenQualityChildren onListed onCards quality = case quality of
-  ChosenQuality.Colors _ -> pure quality
+  ChosenQuality.Colors _ _ -> pure quality
   ChosenQuality.Subtype ordinal distinct family among -> ChosenQuality.Subtype ordinal distinct family <$> traverse (traverse onListed) among
   ChosenQuality.CardType _ _ -> pure quality
   ChosenQuality.Number _ _ -> pure quality

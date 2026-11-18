@@ -20,6 +20,8 @@ import qualified Parun.Types.Subtype as Subtype
 data Chosen a where
   -- | CR 105.1: the chosen colours (Object.chosenColors).
   Colors :: Chosen (Set.Set Color.Color)
+  -- | CR 105.2c: colorless chosen instead of a colour (Object.chosenColorless).
+  Colorless :: Chosen ()
   -- | CR 205.3: the chosen subtypes, in the order chosen (Object.chosenSubtype).
   Subtype :: Chosen (NonEmpty.NonEmpty Subtype.Subtype)
   -- | CR 205.2a: the chosen card type (Object.chosenCardType).

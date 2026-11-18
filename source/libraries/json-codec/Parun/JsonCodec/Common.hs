@@ -340,6 +340,15 @@ set c =
       Codec.schema = Schema.uniqueArray <$> Codec.schema c
     }
 
+-- | A map whose values carry nothing, as 'set' writes its keys.
+keySet :: (Ord k) => Codec.Codec k -> Codec.Codec (Map.Map k ())
+keySet c =
+  Codec.MkCodec
+    { Codec.encode = Codec.encode (set c) . Map.keysSet,
+      Codec.decode = fmap (Map.fromSet (const ())) . Codec.decode (set c),
+      Codec.schema = Codec.schema (set c)
+    }
+
 seq :: Codec.Codec a -> Codec.Codec (Seq.Seq a)
 seq c =
   Codec.MkCodec

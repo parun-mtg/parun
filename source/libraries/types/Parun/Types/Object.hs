@@ -240,18 +240,23 @@ data Object = MkObject
     -- and makes its own new choice (CR 707.5, CR 707.6).
     -- Per-incarnation: reset by newIncarnation (CR 400.7).
     --
-    -- One of SEVEN `chosen` fields -- chosenSubtype, chosenCardType, chosenNames,
+    -- One of EIGHT `chosen` fields -- chosenColorless, chosenSubtype, chosenCardType, chosenNames,
     -- chosenPlayers, chosenNumber and chosenObjects below are the others -- whose shared property is that each is read back OFF
     -- THE EFFECT'S SOURCE; an emblem starts with its maker's
     -- (Parun.Engine.Game.handChoices). `protector` below is chosen as the object enters too
     -- and is not one of them, being a designation rule 310 reads directly.
     --
-    -- All seven are KEYED BY THE ACQUISITION of the choosing ability, as
+    -- All eight are KEYED BY THE ACQUISITION of the choosing ability, as
     -- `storedResults` is (CR 607.5): a pair of linked abilities a copy effect
     -- brings never made the choice its reading ability asks after, so that
     -- reference is undefined (CR 607.5a) until the copy ends. An absent key is
     -- that undefined choice. data/scenarios/copy's CR 607.5a scenarios prove it.
     chosenColors :: Map.Map Acquisition.Acquisition (Set.Set Color.Color),
+    -- | CR 105.2c: the acquisitions whose choice of colours picked colorless
+    -- instead (ColorlessOption.OrColorless, Angelic Intervention). Read with
+    -- chosenColors, and not a copiable value and per-incarnation, for its
+    -- reasons.
+    chosenColorless :: Map.Map Acquisition.Acquisition (),
     -- | CR 614.1c: the subtypes this object's controller chose as it entered,
     -- in the order chosen -- a basic land type (Convincing Mirage), a creature
     -- type (Pillar of Origins), or two (Illusionary Terrain), read by a
@@ -1055,6 +1060,7 @@ new o s z t =
       attachedTo = Nothing,
       enteredUnder = Nothing,
       chosenColors = Map.empty,
+      chosenColorless = Map.empty,
       chosenSubtype = Map.empty,
       chosenCardType = Map.empty,
       chosenNames = Map.empty,

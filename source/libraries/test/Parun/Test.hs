@@ -215,6 +215,7 @@ import qualified Parun.Codec.CoinReadingSpec
 import qualified Parun.Codec.ColorAmongSpec
 import qualified Parun.Codec.ColorSpec
 import qualified Parun.Codec.ColorSpreadSpec
+import qualified Parun.Codec.ColorlessOptionSpec
 import qualified Parun.Codec.CombatDamageAmountSpec
 import qualified Parun.Codec.CombatDamageObligationSpec
 import qualified Parun.Codec.CombatDamageOptionSpec
@@ -1345,6 +1346,7 @@ spec s reference corpus = do
   Parun.Codec.ChangeCountSpec.spec s
   Parun.Codec.ChangeModeSpec.spec s
   Parun.Codec.ChoiceDistinctSpec.spec s
+  Parun.Codec.ColorlessOptionSpec.spec s
   Parun.Codec.ChoiceOrdinalSpec.spec s
   Parun.Codec.ColorSpec.spec s
   Parun.Codec.ColorSpreadSpec.spec s
