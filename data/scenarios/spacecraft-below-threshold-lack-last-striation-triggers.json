@@ -5,20 +5,6 @@
       {
         "battlefield": [
           {
-            "card": "Debris Field Crusher",
-            "counters": [
-              {
-                "key": {
-                  "type": "Named",
-                  "value": "charge"
-                },
-                "value": 7
-              }
-            ],
-            "label": "crusher",
-            "ready": true
-          },
-          {
             "card": "H.M.S. Bounty, Unlikely Timeship",
             "counters": [
               {
@@ -65,7 +51,6 @@
             "card": "Island"
           }
         ],
-        "manaPool": "RRRR",
         "name": "alice"
       },
       {
@@ -84,34 +69,17 @@
           }
         ],
         "name": "bob"
-      },
-      {
-        "library": [
-          {
-            "card": "Island"
-          },
-          {
-            "card": "Island"
-          },
-          {
-            "card": "Island"
-          },
-          {
-            "card": "Island"
-          }
-        ],
-        "name": "carol"
       }
     ],
     "step": "PrecombatMain"
   },
-  "description": "CR 722.2, 722.2a: below its threshold a Spacecraft lacks every ability printed in its last striation, so March of the Machines' 5/5s have no pump, no combat-damage draw and no attack draw",
+  "description": "CR 722.2, 722.2a: below its threshold a Spacecraft lacks the triggered abilities printed in its last striation, so March of the Machines' 5/5 H.M.S. Bounty and Infinite Guideline Station draw nothing on attack or combat damage",
   "note": "Each holds one charge counter short of its threshold. Infinite Guideline Station is itself multicolored, so its attack trigger would draw one.",
   "timeline": [
     {
       "check": {
         "Types": {
-          "object": "$crusher",
+          "object": "$bounty",
           "types": [
             "Artifact",
             "Creature"
@@ -119,17 +87,6 @@
         }
       },
       "player": "alice",
-      "step": "PrecombatMain",
-      "turn": 1
-    },
-    {
-      "player": "alice",
-      "refuse": {
-        "Activate": {
-          "ability": 0,
-          "object": "$crusher"
-        }
-      },
       "step": "PrecombatMain",
       "turn": 1
     },
@@ -142,12 +99,6 @@
       },
       "player": "alice",
       "step": "DeclareAttackers",
-      "turn": 1
-    },
-    {
-      "do": "Pass",
-      "player": "alice",
-      "step": "CombatDamage",
       "turn": 1
     },
     {
@@ -171,7 +122,7 @@
         }
       },
       "player": "alice",
-      "step": "CombatDamage",
+      "step": "EndOfCombat",
       "turn": 1
     }
   ]
