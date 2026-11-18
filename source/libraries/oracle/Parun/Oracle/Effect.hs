@@ -736,7 +736,8 @@ addedTogether p rest = case (mana p, rest) of
 -- keeps its "you" when joined to it by "and" (Bad Deal). When two share a
 -- subject the second drops it ("draws two cards and loses 2 life"). Three or
 -- more read one or two at a time: "Draw two cards, then discard two cards.
--- Untap up to three lands." (Frantic Search).
+-- Untap up to three lands." (Frantic Search), or, sharing one subject, as one
+-- series.
 joined :: Target.Context -> [Predicate] -> [(Text.Text, [SlotName.SlotName])]
 joined context predicates = case predicates of
   -- Free for an amount of damage: "equal to" or an X defined after (Sanctum of
@@ -749,12 +750,24 @@ joined context predicates = case predicates of
           (vx, e) <- equalToX (verb p),
           Text.pack " X damage to " `Text.isInfixOf` vx
         ]
-  _ : _ : _ : _ -> ListUtils.nubOrd $ do
-    (first, rest) <- [splitAt 1 predicates, splitAt 2 predicates]
-    (text, ms) <- joined context first
-    (next, ns) <- joined context rest
-    sentence' <- followedBy context text next
-    [(sentence', ms <> ns)]
+  -- Free: one subject's series, whose last step alone keeps "then"
+  -- (Faithful Mending's "You gain 2 life, draw two cards, then discard two
+  -- cards.").
+  p : rest@(_ : _ : _) -> ListUtils.nubOrd (apart <> series)
+    where
+      apart = do
+        (first, rest') <- [splitAt 1 predicates, splitAt 2 predicates]
+        (text, ms) <- joined context first
+        (next, ns) <- joined context rest'
+        sentence' <- followedBy context text next
+        [(sentence', ms <> ns)]
+      series =
+        [ (Prose.sentence (Text.intercalate (Text.pack ", ") (clauseText p : fmap verb middle) <> Text.pack ", then " <> verb q) <> trailing q, allMentions p <> foldMap mentions rest)
+        | all (sameSubject p) rest,
+          Just (middle, q) <- [List.unsnoc rest],
+          all (null . after) (p : middle),
+          all (Maybe.isNothing . mana) predicates
+        ]
   [p, q]
     | not (null (after p)) || Maybe.isJust (mana p) || Maybe.isJust (mana q) -> apart
     -- Free for "you": repeated (Ancient Craving) or not (Ambition's Cost).
