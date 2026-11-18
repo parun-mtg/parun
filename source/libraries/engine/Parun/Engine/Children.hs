@@ -432,6 +432,7 @@ import qualified Parun.Types.ReturnPermanents as ReturnPermanents
 import qualified Parun.Types.Reveal as Reveal
 import qualified Parun.Types.RevealedThisWay as RevealedThisWay
 import qualified Parun.Types.RollDie as RollDie
+import qualified Parun.Types.RollTotalsThisTurn as RollTotalsThisTurn
 import qualified Parun.Types.RollTrigger as RollTrigger
 import qualified Parun.Types.RuleAbilities as RuleAbilities
 import qualified Parun.Types.RulePermission as RulePermission
@@ -867,6 +868,7 @@ quantityChildren children quantity = case quantity of
   Quantity.SpellsCast (SpellTally.MkSpellTally ref turn) -> fmap (\renamed -> Quantity.SpellsCast (SpellTally.MkSpellTally renamed turn)) (player children ref)
   Quantity.TimesThisTurn _ -> pure quantity
   Quantity.ActivationsThisTurn (ActivationsThisTurn.MkActivationsThisTurn ref source criteria) -> fmap Quantity.ActivationsThisTurn (ActivationsThisTurn.MkActivationsThisTurn <$> player children ref <*> nest children source <*> activationCriteriaChildren children criteria)
+  Quantity.RollTotalsThisTurn (RollTotalsThisTurn.MkRollTotalsThisTurn ref total) -> fmap Quantity.RollTotalsThisTurn (RollTotalsThisTurn.MkRollTotalsThisTurn <$> player children ref <*> term children total)
   Quantity.PermanentsDiedThisTurn -> pure quantity
   Quantity.DamagePreventedThisWay -> pure quantity
   Quantity.SpellsCastUsingThisTurn _ -> pure quantity

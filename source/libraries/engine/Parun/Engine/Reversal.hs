@@ -189,6 +189,7 @@ withoutAnnouncement before entry between closed = do
   rollModifiersUsedThisTurn <- mapOfSets (TurnRegisters.rollModifiersUsedThisTurn . GameState.turn)
   freeCastsUsedThisTurn <- mapOfSets (TurnRegisters.freeCastsUsedThisTurn . GameState.turn)
   instructionsTakenThisTurn <- seqOf (TurnRegisters.instructionsTakenThisTurn . GameState.turn)
+  rollsThisTurn <- seqOf (TurnRegisters.rollsThisTurn . GameState.turn)
   triggeredThisGame <- seqOf (History.triggeredThisGame . GameState.history)
   pendingControl <- mapOf GameState.pendingControl
   control <- mapOf GameState.control
@@ -272,6 +273,7 @@ withoutAnnouncement before entry between closed = do
               TurnRegisters.rollModifiersUsedThisTurn = rollModifiersUsedThisTurn,
               TurnRegisters.freeCastsUsedThisTurn = freeCastsUsedThisTurn,
               TurnRegisters.instructionsTakenThisTurn = instructionsTakenThisTurn,
+              TurnRegisters.rollsThisTurn = rollsThisTurn,
               TurnRegisters.turnResume = turnResume,
               TurnRegisters.turnAnchor = turnAnchor,
               TurnRegisters.extraTurnUnderWay = extraTurnUnderWay

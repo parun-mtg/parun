@@ -1106,6 +1106,9 @@ quantityNames asking x =
           AbilityAct.Activated -> HistoryRead.Activations
           AbilityAct.Resolved -> HistoryRead.Resolutions
         Quantity.ActivationsThisTurn _ -> history asking HistoryRead.Activations
+        -- TurnRegisters.rollsThisTurn, which Parun.Engine.Fragmented.digest
+        -- compares, so no history.
+        Quantity.RollTotalsThisTurn _ -> mempty
         Quantity.PermanentsDiedThisTurn -> history asking HistoryRead.Deaths
         Quantity.DamagePreventedThisWay -> prevention asking
         Quantity.SpellsCastUsingThisTurn _ -> history asking HistoryRead.Casts

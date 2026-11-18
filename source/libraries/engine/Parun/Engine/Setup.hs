@@ -313,6 +313,7 @@ blankGame match order active =
             TurnRegisters.rollModifiersUsedThisTurn = mempty,
             TurnRegisters.freeCastsUsedThisTurn = mempty,
             TurnRegisters.instructionsTakenThisTurn = mempty,
+            TurnRegisters.rollsThisTurn = mempty,
             TurnRegisters.turnResume = TurnResume.AtStepStart,
             TurnRegisters.turnAnchor = Nothing,
             TurnRegisters.extraTurnUnderWay = Nothing

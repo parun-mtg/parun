@@ -149,6 +149,7 @@ import qualified Parun.Types.Recipient as Recipient
 import Parun.Types.ReplacementEffect (ReplacementEffect)
 import qualified Parun.Types.ReplacementEffect as ReplacementEffect
 import qualified Parun.Types.ReplacementProvenance as ReplacementProvenance
+import qualified Parun.Types.RollTotalsThisTurn as RollTotalsThisTurn
 import qualified Parun.Types.RuleAbilities as RuleAbilities
 import qualified Parun.Types.Scratch as Scratch
 import qualified Parun.Types.SetBasePowerToughness as SetBasePowerToughness
@@ -5344,6 +5345,8 @@ quantityReads q = case q of
   Quantity.Type.TimesThisTurn _ -> Set.empty
   -- Its Filter asks a past activation's snapshot, never a projection.
   Quantity.Type.ActivationsThisTurn _ -> Set.empty
+  -- The log names no aspect; the total is read like any term.
+  Quantity.Type.RollTotalsThisTurn tally -> quantityReads (RollTotalsThisTurn.total tally)
   Quantity.Type.PermanentsDiedThisTurn -> Set.empty
   Quantity.Type.DamagePreventedThisWay -> Set.empty
   Quantity.Type.SpellsCastUsingThisTurn _ -> Set.empty

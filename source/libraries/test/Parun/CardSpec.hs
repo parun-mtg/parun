@@ -449,6 +449,7 @@ import qualified Parun.Types.ReturnPermanents as ReturnPermanents
 import qualified Parun.Types.Reveal as Reveal
 import qualified Parun.Types.RevealedThisWay as RevealedThisWay
 import qualified Parun.Types.RollDie as RollDie
+import qualified Parun.Types.RollTotalsThisTurn as RollTotalsThisTurn
 import qualified Parun.Types.RuleAbilities as RuleAbilities
 import qualified Parun.Types.RulePermission as RulePermission
 import qualified Parun.Types.Sacrifice as Sacrifice
@@ -3624,6 +3625,7 @@ quantityKindFilters quantity = case quantity of
   Quantity.Type.TimesThisTurn _ -> []
   -- Its own Filter, which no Count holds and countFilters cannot see.
   Quantity.Type.ActivationsThisTurn tally -> [(Unframed, ActivationsThisTurn.source tally)]
+  Quantity.Type.RollTotalsThisTurn tally -> quantityKindFilters (RollTotalsThisTurn.total tally)
   Quantity.Type.PermanentsDiedThisTurn -> []
   Quantity.Type.DamagePreventedThisWay -> []
   Quantity.Type.SpellsCastUsingThisTurn {} -> []
