@@ -229,7 +229,7 @@ view request screen =
     [Element.el "p" ["problem"] [Element.attr "role" (Text.pack "alert")] [Html.text problem] | problem <- Maybe.maybeToList (Request.problem request)]
       <> news screen
       <> form request (selected screen)
-      <> [levels (level screen)]
+      <> [footer (level screen) (Maybe.isJust (passIndex request))]
 
 -- | The page while the game goes on without the seat: a request it was not
 -- asked (Hotseat answers it), its board shown as it stands, and in place of
@@ -244,16 +244,18 @@ watching request screen =
    in table request screen (Board.MkMarks (Card.MkCue [] . MkRead . ObjectView.object) (const Nothing)) $
         news screen <> [Element.el "p" ["waiting"] [] [Element.el "span" ["spinner", "small"] [Element.attr "aria-hidden" (Text.pack "true")] [], Element.string status]]
 
--- | The level control: how much the page answers for the seat.
-levels :: Level -> Html.Html Event
-levels current =
+-- | The prompt's foot: the level control, and conceding where the seat
+-- has priority to.
+footer :: Level -> Bool -> Html.Html Event
+footer current concedable =
   Element.el
     "div"
     ["levels"]
     [Element.attr "role" (Text.pack "group"), Element.attr "aria-label" (Text.pack "Automatic passing")]
-    [ Element.el "span" ["k"] [] [Element.string "Auto-pass"],
-      Element.el "div" ["segmented"] [] [Element.el "button" ["on" | l == current] [Element.attr "type" (Text.pack "button"), Element.attr "data-level" (Text.pack (fst (levelName l))), Element.attr "aria-pressed" (Text.pack (if l == current then "true" else "false")), Element.on "click" (MkLevel l)] [Element.string (snd (levelName l))] | l <- [minBound .. maxBound]]
-    ]
+    $ [Element.el "button" ["concede"] [Element.attr "type" (Text.pack "button"), Element.attr "data-confirm" (Text.pack "Concede this game?"), Element.on "click" MkConcede] [Element.string "Concede"] | concedable]
+      <> [ Element.el "span" ["k"] [] [Element.string "Auto-pass"],
+           Element.el "div" ["segmented"] [] [Element.el "button" ["on" | l == current] [Element.attr "type" (Text.pack "button"), Element.attr "data-level" (Text.pack (fst (levelName l))), Element.attr "aria-pressed" (Text.pack (if l == current then "true" else "false")), Element.on "click" (MkLevel l)] [Element.string (snd (levelName l))] | l <- [minBound .. maxBound]]
+         ]
 
 -- | The game screen around a prompt's contents.
 table :: Request.Request -> Screen -> Board.Marks Event -> [Html.Html Event] -> Html.Html Event
@@ -572,7 +574,6 @@ form request picked = case Text.unpack (Question.kind question) of
                        [primary (MkAnswer $ R.Number i) (Text.pack (if settled then "Pass" else "Pass and resolve")) | (i, _) <- passes]
                          <> [button MkSkip (Text.pack (if yours then "End turn" else "Pass to my turn")) | settled, not (null passes)]
                    ]
-                <> [Element.el "button" ["concede"] [Element.attr "type" (Text.pack "button"), Element.attr "data-confirm" (Text.pack "Concede this game?"), Element.on "click" MkConcede] [Element.string "Concede"] | not (null passes)]
   kind
     | kind `elem` ["ChooseManaSource", "ChooseExtraManaSource"],
       Just shown <- Request.view request,
