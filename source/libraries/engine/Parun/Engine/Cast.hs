@@ -1618,7 +1618,7 @@ permitsCastFromExile pid oid face gs =
 exileOpen :: PlayerId -> ObjectId -> Face.Face Card.Type.Card -> GameState -> Bool
 exileOpen pid oid face gs =
   exileGranted pid oid face gs
-    || (ownedBy pid oid gs && any (permitsFromZone Zone.Exile) (Cost.permissionsOf oid face gs))
+    || Cost.ownPermissionOpens Zone.Exile pid oid face gs
 
 -- exileOpen's five permissions something other than the card's own text gives
 -- it: what a card exiled face down may still be cast under, its text being
@@ -2452,16 +2452,6 @@ permitsCastWhileSearching :: ObjectId -> Face.Face Card.Type.Card -> GameState -
 permitsCastWhileSearching oid face gs =
   elem CastingPermission.CastFromLibraryWhileSearching (Cost.permissionsOf oid face gs)
 
--- CR 601.3 / 113.6f: does this permission the card carries for itself open
--- `zone` to its owner, whichever cost it admits? Cost.candidateCostsGiven prices
--- the cast, and offers nothing where the permission admits nothing.
-permitsFromZone :: Zone.Zone -> CastingPermission.CastingPermission -> Bool
-permitsFromZone zone permission = case permission of
-  CastingPermission.CastFrom from _ _ _ _ -> from == zone
-  CastingPermission.PlayFromGraveyard -> zone == Zone.Graveyard
-  CastingPermission.CastFromLibraryWhileSearching -> False
-  CastingPermission.CastAsThoughItHadFlash {} -> False
-
 -- CR 601.3c / 601.3d: does this card carry a permission to be cast as though
 -- it had flash? Cost.candidateCostsGiven asks its condition and prices it.
 isFlashPermission :: CastingPermission.CastingPermission -> Bool
@@ -2493,7 +2483,7 @@ isFlashPermission permission = case permission of
 -- to say "for this player".
 permitsCastFromGraveyard :: PlayerId -> ObjectId -> Face.Face Card.Type.Card -> GameState -> Bool
 permitsCastFromGraveyard pid oid face gs =
-  (ownedBy pid oid gs && (any (permitsFromZone Zone.Graveyard) (Cost.permissionsOf oid face gs) || permitsDisturb oid face gs))
+  (ownedBy pid oid gs && (any (Cost.permitsFromZone Zone.Graveyard) (Cost.permissionsOf oid face gs) || permitsDisturb oid face gs))
     || PlayerEffect.mayCastFrom pid Zone.Graveyard oid gs
     || permitsCastUnderPermission pid oid face gs
 

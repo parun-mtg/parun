@@ -416,6 +416,23 @@ permissionsOf oid face gs =
   filter (PlayerEffect.permissionHolds oid gs) (PC.castingPermissions (Projection.project oid gs))
     <> Keyword.castingPermissionsOf (TypeLine.types (Face.typeLine face)) (Map.keysSet (Projection.keywordsOf oid gs))
 
+-- CR 601.3 / 113.6f: does this permission the card carries for itself open
+-- `zone` to its owner, whichever cost it admits? candidateCostsGiven prices
+-- the cast, and offers nothing where the permission admits nothing.
+permitsFromZone :: Zone.Zone -> CastingPermission.CastingPermission -> Bool
+permitsFromZone zone permission = case permission of
+  CastingPermission.CastFrom from _ _ _ _ -> from == zone
+  CastingPermission.PlayFromGraveyard -> zone == Zone.Graveyard
+  CastingPermission.CastFromLibraryWhileSearching -> False
+  CastingPermission.CastAsThoughItHadFlash {} -> False
+
+-- CR 601.3 / 109.5: does a permission the card carries for itself (Khan,
+-- Vengeful Heart's "you may cast this card from exile") open `zone` to `pid`,
+-- its owner?
+ownPermissionOpens :: Zone.Zone -> PlayerId -> ObjectId -> Face.Face Card.Type.Card -> GameState -> Bool
+ownPermissionOpens zone pid oid face gs =
+  fmap Object.owner (Game.lookupObject oid gs) == Just pid && any (permitsFromZone zone) (permissionsOf oid face gs)
+
 -- CR 118.8 / 614.1d: a graveyard permission the card carries for itself that
 -- adds to a cast made under it -- a cost (Demonic Embrace) or entry counters
 -- (Hundred-Battle Veteran) -- and so is a way of its own
@@ -1210,21 +1227,27 @@ candidateCostsGiven permitted pid name oid gs =
                         -- ability") offers it here.
                         <> filter usingPermitted warped
                 -- CR 702.170d: a PLOTTED card is cast "without paying its mana
-                -- cost", CR 118.9's alternative cost. INSTEAD of the printed cost,
-                -- rule 702.170d being the only thing permitting this cast, and
-                -- only while it permits one: a plotted card cast under another
-                -- permission (Khan, Vengeful Heart's own, the turn it was plotted)
-                -- pays what that one prices. The scenario
+                -- cost", CR 118.9's alternative cost, and only while rule
+                -- 702.170d permits the cast: one made under another permission
+                -- (Khan, Vengeful Heart's own, the turn it was plotted) pays what
+                -- that one prices. The scenario
                 -- khan-vengeful-heart-plotted-by-aven-interrupter-is-cast-the-same-turn-for-its-mana-cost-and-the-tax
                 -- proves it. CR 716.3d's permission states no cost and falls
                 -- through to the `_` arm; Effect.GrantPlayFromExile's states one
                 -- only when it carries an alternative cost, which is the arm two
                 -- below.
                 --
-                -- Not implemented: casting a plotted card that another permission
-                -- also opens under that one, for the cost it prices (#8489).
+                -- CR 601.3: where the card's own permission opens it too, its
+                -- owner casts under either, so the printed cost and its
+                -- alternatives follow the free one. The scenarios
+                -- khan-vengeful-heart-plotted-by-aven-interrupter-is-cast-on-a-later-turn-for-its-mana-cost
+                -- and its for-free twin prove both.
+                --
+                -- Not implemented: a CR 716.3d permission or a player's CR 601.3
+                -- grant opening a plotted card beside rule 702.170d's (#8498).
                 Just Zone.Exile
-                  | permitsCastPlotted pid oid gs -> [untagged (withoutPayingManaCost face)]
+                  | permitsCastPlotted pid oid gs ->
+                      untagged (withoutPayingManaCost face) : (if ownPermissionOpens Zone.Exile pid oid face gs then ordinary else [])
                 -- CR 702.143a: a FORETOLD card is cast for its foretell cost, CR
                 -- 118.9's alternative cost, wrapped by withAdditional as flashback's
                 -- is. INSTEAD of the printed cost, the plotted arm's reason, and
