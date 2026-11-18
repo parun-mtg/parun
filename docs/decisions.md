@@ -1033,6 +1033,27 @@ Entries are ordered by the first rule each cites.
   permanent after a removal that had wiped its grant" and its face-up twin.
 - **Issue**: PR #1607.
 
+## Whose cards Yawgmoth's Testament sends from exile to the library
+
+- **Question**: Yawgmoth's Testament says "If a card would be put into your
+  graveyard or exile from anywhere this turn, put it on the bottom of your
+  library instead." Exile is shared (CR 400.1), so does "your" reach the exile
+  half, sparing an opponent's card exiled this turn?
+- **Rules**: CR 614.1a, 400.3, 109.5; CR of 2026-11-06. The card (CMB2) has no
+  ruling.
+- **Decision**: Yes: only a card its controller owns is redirected, to either
+  zone. "Put it on the bottom of your library" names the controller's library,
+  which CR 400.3 makes the owner's.
+- **Rejected**: Every card bound for exile, any owner's, which leaves "your
+  library" to CR 400.3 for an opponent's card and gives "your" one zone of the
+  two; the first paragraph's "cards you own from exile" is the same
+  owner-scoped reading of exile.
+- **Site**: `data/cards/yawgmoths-testament.json`'s exile ZoneChangeR row
+  (`whoseObject` You), proved by the scenario
+  `yawgmoths-testament-puts-itself-and-a-card-plotted-after-it-on-the-bottom-of-the-library`
+  for the controller's own card.
+- **Issue**: #8498.
+
 ## Plots That Span Centuries replaces a named scheme's set in motion with three off the deck
 
 - **Question**: Plots That Span Centuries' effect is waiting, and My Laughter
