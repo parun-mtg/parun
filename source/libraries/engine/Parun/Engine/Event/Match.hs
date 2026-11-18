@@ -1383,7 +1383,8 @@ armMatches bindings frozen board atEvent beforeEvent groupEvents gs bearer you c
   -- Chief Mechanic's "whenever ONE OR MORE artifact creatures you control deal
   -- combat damage to a player"), delegated because which
   -- damage events this condition admits is the singular arm's answer, filter,
-  -- kind and recipient alike (Norn's Decree's "deal combat damage to YOU"),
+  -- kind and recipient alike (Norn's Decree's "deal combat damage to YOU",
+  -- Zurgo and Ojutai's "to a player or battle"),
   -- and firing once for the CR 510.2 step is `batchScoped` below plus
   -- eventTriggers' dedup, never this arm.
   TriggerCondition.PermanentsDealDamageToPlayer p ->
@@ -1401,7 +1402,11 @@ armMatches bindings frozen board atEvent beforeEvent groupEvents gs bearer you c
           DamageTrigger.MkDamageTrigger
             { DamageTrigger.actor = ActingPermanent.Matching (PermanentsDealDamageToPlayer.filter p),
               DamageTrigger.kind = PermanentsDealDamageToPlayer.kind p,
-              DamageTrigger.recipients = Set.singleton (DamageRecipient.Player (PlayerRef.Relative (PermanentsDealDamageToPlayer.recipient p))),
+              DamageTrigger.recipients =
+                Set.fromList
+                  ( DamageRecipient.Player (PlayerRef.Relative (PermanentsDealDamageToPlayer.recipient p))
+                      : [DamageRecipient.Permanent CardType.Battle (Filter.Type.And []) | PermanentsDealDamageToPlayer.orBattle p]
+                  ),
               DamageTrigger.atLeast = 0
             }
       )

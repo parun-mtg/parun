@@ -2218,6 +2218,7 @@ reservedSlots =
       Binding.attackingPlayer,
       Binding.damagersController,
       Binding.combatDamager,
+      Binding.combatDamagers,
       Binding.mentoredCreature,
       Binding.exploitedCreature,
       Binding.attachedHost,
