@@ -9,6 +9,7 @@ import qualified Parun.Engine.Cast as Cast
 import qualified Parun.Engine.Companion as Companion
 import qualified Parun.Engine.Conspiracy as Conspiracy
 import qualified Parun.Engine.Cost as Cost
+import qualified Parun.Engine.Dice as Dice
 import qualified Parun.Engine.EndEffect as EndEffect
 import qualified Parun.Engine.FaceDown as FaceDown
 import qualified Parun.Engine.Foretell as Foretell
@@ -30,7 +31,9 @@ import qualified Parun.Types.Action as Action
 import qualified Parun.Types.CardName as CardName
 import qualified Parun.Types.Facing as Facing
 import Parun.Types.GameState (GameState)
+import qualified Parun.Types.ModifiedRoll as ModifiedRoll
 import Parun.Types.ObjectId (ObjectId)
+import qualified Parun.Types.PaymentSubject as PaymentSubject
 import qualified Parun.Types.PermissionVerb as PermissionVerb
 import Parun.Types.PlayerId (PlayerId)
 import qualified Parun.Types.SpecialAction as SpecialAction
@@ -306,6 +309,22 @@ legalActions pid gs =
       -- CR 116.2i / 901.9: rolling the planar die, on CR 116.2a's window with a
       -- cost that rises each time. Both are asked inside Planechase.canRoll.
       planarRolls = if Planechase.canRoll pid gs then [Action.RollPlanarDie] else []
+      -- Pippa, Duchess of Dice's ruling: a die-roll modifier's reroll taken on
+      -- a Die creature, by the modifier's payer -- CR 109.5's "you", its
+      -- object's controller -- while its budget and cost allow, the gate
+      -- Parun.Engine.Resolve.Effect's throwSettled puts to an offer inside a
+      -- roll.
+      --
+      -- Implementation-defined: CR 116.2 does not list it, so it is no special
+      -- action; like one it uses no stack and the player keeps priority.
+      shownDieRerolls =
+        ListUtils.nubOrd
+          [ Action.RerollShownDie stated die
+          | (stated, offer, die, _) <- Dice.shownDieRerolls gs,
+            Projection.controllerOf stated gs == Just pid,
+            Dice.withinLimit gs pid (Just stated) offer,
+            all (\cost -> Cost.canPay PaymentSubject.ForNeither pid stated cost gs) (ModifiedRoll.cost offer)
+          ]
       -- CR 116.2j / 702.106c: any time they have priority, CR 116.2b's window.
       conspiracies = fmap Action.TurnConspiracyFaceUp (Conspiracy.turnable pid gs)
       -- CR 702.29a: a HAND is a source of activations too, not just the
@@ -410,4 +429,4 @@ legalActions pid gs =
       -- Parun.ManaSpec's "the menu carries one activation per untapped source" is
       -- the proof.
       manaAbilityActivations = fmap Action.ActivateManaAbility manaSources
-   in Action.Pass : lands <> spells <> turnUps <> unlocks <> discards <> ignores <> endings <> laterPayments <> lifeForMana <> plots <> foretells <> suspends <> companions <> planarRolls <> conspiracies <> activations <> manaAbilityActivations
+   in Action.Pass : lands <> spells <> turnUps <> unlocks <> discards <> ignores <> endings <> laterPayments <> lifeForMana <> plots <> foretells <> suspends <> companions <> planarRolls <> conspiracies <> shownDieRerolls <> activations <> manaAbilityActivations

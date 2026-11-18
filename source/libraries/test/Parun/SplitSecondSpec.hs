@@ -130,6 +130,7 @@ isCast action = case action of
   A.Suspend _ -> False
   A.PutCompanionIntoHand -> False
   A.RollPlanarDie -> False
+  A.RerollShownDie _ _ -> False
   A.Ignore _ _ -> False
   A.EndEffect {} -> False
   A.MakeLaterPayment {} -> False
@@ -151,6 +152,7 @@ isActivate action = case action of
   A.Suspend _ -> False
   A.PutCompanionIntoHand -> False
   A.RollPlanarDie -> False
+  A.RerollShownDie _ _ -> False
   A.Ignore _ _ -> False
   A.EndEffect {} -> False
   A.MakeLaterPayment {} -> False
@@ -173,6 +175,7 @@ isManaAbility action = case action of
   A.Suspend _ -> False
   A.PutCompanionIntoHand -> False
   A.RollPlanarDie -> False
+  A.RerollShownDie _ _ -> False
   A.Ignore _ _ -> False
   A.EndEffect {} -> False
   A.MakeLaterPayment {} -> False

@@ -171,6 +171,7 @@ isPlay action = case action of
   Action.Type.Suspend _ -> False
   Action.Type.PutCompanionIntoHand -> False
   Action.Type.RollPlanarDie -> False
+  Action.Type.RerollShownDie _ _ -> False
   Action.Type.Ignore _ _ -> False
   Action.Type.EndEffect {} -> False
   Action.Type.MakeLaterPayment {} -> False
@@ -233,6 +234,7 @@ playing wanted action = case action of
   Action.Type.Suspend _ -> False
   Action.Type.PutCompanionIntoHand -> False
   Action.Type.RollPlanarDie -> False
+  Action.Type.RerollShownDie _ _ -> False
   Action.Type.Ignore _ _ -> False
   Action.Type.EndEffect {} -> False
   Action.Type.MakeLaterPayment {} -> False
@@ -255,6 +257,7 @@ casting wanted action = case action of
   Action.Type.Suspend _ -> False
   Action.Type.PutCompanionIntoHand -> False
   Action.Type.RollPlanarDie -> False
+  Action.Type.RerollShownDie _ _ -> False
   Action.Type.Ignore _ _ -> False
   Action.Type.EndEffect {} -> False
   Action.Type.MakeLaterPayment {} -> False
@@ -1946,6 +1949,7 @@ activating wanted action = case action of
   Action.Type.Suspend _ -> False
   Action.Type.PutCompanionIntoHand -> False
   Action.Type.RollPlanarDie -> False
+  Action.Type.RerollShownDie _ _ -> False
   Action.Type.Ignore _ _ -> False
   Action.Type.EndEffect {} -> False
   Action.Type.MakeLaterPayment {} -> False

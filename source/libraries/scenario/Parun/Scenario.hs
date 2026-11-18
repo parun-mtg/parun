@@ -1171,6 +1171,7 @@ withinOffer prompt chosen = case prompt of
   Prompt.Type.ChooseAttackTarget _ _ _ targets -> chosen `elem` targets
   Prompt.Type.ChooseEnlist _ _ _ objects -> all (`elem` objects) chosen
   Prompt.Type.ChooseEncode _ _ _ objects -> all (`elem` objects) chosen
+  Prompt.Type.ChooseRerolledDie _ _ _ objects -> all (`elem` objects) chosen
   Prompt.Type.ChooseSearchZones _ _ places -> all (`Set.member` places) chosen
   Prompt.Type.ChooseX _ _ _ _ least greatest -> least <= chosen && chosen <= greatest
   Prompt.Type.ChooseLearn _ _ _ modes -> all (`elem` modes) chosen

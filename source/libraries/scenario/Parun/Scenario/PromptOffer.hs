@@ -288,6 +288,7 @@ offerOf namer gs prompt = case prompt of
   Prompt.ChooseAttackTarget _ _ attacker targets -> choosing namer prompt "options" (Just attacker) [] (NonEmpty.toList targets)
   Prompt.ChooseEnlist _ _ source candidates -> choosing namer prompt "options" (Just source) [] (orNone candidates)
   Prompt.ChooseEncode _ _ source candidates -> choosing namer prompt "options" (Just source) [] (orNone candidates)
+  Prompt.ChooseRerolledDie _ _ source candidates -> choosing namer prompt "options" (Just source) [] (orNone candidates)
   Prompt.ChooseAssistant _ _ source players -> choosing namer prompt "players" (Just source) [] (orNone players)
   Prompt.ChooseCopyTarget _ _ source candidates -> choosing namer prompt "options" (Just source) [] (fmap Just candidates <> [Nothing])
   Prompt.ChooseRevealOnEntry _ _ source cards -> choosing namer prompt "options" (Just source) [] (orNone cards)

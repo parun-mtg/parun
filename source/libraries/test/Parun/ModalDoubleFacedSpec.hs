@@ -145,6 +145,7 @@ landPlays actions =
         A.Suspend _ -> Nothing
         A.PutCompanionIntoHand -> Nothing
         A.RollPlanarDie -> Nothing
+        A.RerollShownDie _ _ -> Nothing
         A.Ignore _ _ -> Nothing
         A.EndEffect {} -> Nothing
         A.MakeLaterPayment {} -> Nothing
