@@ -158,7 +158,9 @@
                 "type": "Colorless"
               },
               "tags": [
-                {"CardType": "Artifact"}
+                {
+                  "CardType": "Artifact"
+                }
               ],
               "retention": "Ordinary",
               "restriction": null,

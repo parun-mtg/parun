@@ -71,13 +71,13 @@
     {
       "do": {
         "Activate": {
-          "object": "$refueler",
           "mana": [
             "$loot",
             "$f1",
             null,
             null
           ],
+          "object": "$refueler",
           "yields": [
             [
               {
@@ -85,45 +85,45 @@
                   "type": "Colored",
                   "value": "Green"
                 },
+                "restriction": null,
+                "retention": "Ordinary",
+                "rider": null,
+                "sourceChoices": null,
                 "tags": [
                   {
                     "CardType": "Creature"
                   }
-                ],
-                "retention": "Ordinary",
-                "restriction": null,
-                "rider": null,
-                "sourceChoices": null
+                ]
               },
               {
                 "manaType": {
                   "type": "Colored",
                   "value": "Green"
                 },
+                "restriction": null,
+                "retention": "Ordinary",
+                "rider": null,
+                "sourceChoices": null,
                 "tags": [
                   {
                     "CardType": "Creature"
                   }
-                ],
-                "retention": "Ordinary",
-                "restriction": null,
-                "rider": null,
-                "sourceChoices": null
+                ]
               },
               {
                 "manaType": {
                   "type": "Colored",
                   "value": "Green"
                 },
+                "restriction": null,
+                "retention": "Ordinary",
+                "rider": null,
+                "sourceChoices": null,
                 "tags": [
                   {
                     "CardType": "Creature"
                   }
-                ],
-                "retention": "Ordinary",
-                "restriction": null,
-                "rider": null,
-                "sourceChoices": null
+                ]
               }
             ]
           ]

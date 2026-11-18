@@ -91,7 +91,9 @@
                   "value": "Red"
                 },
                 "tags": [
-                  {"CardType": "Artifact"}
+                  {
+                    "CardType": "Artifact"
+                  }
                 ],
                 "retention": "Ordinary",
                 "restriction": null,
@@ -106,7 +108,9 @@
                   "value": "Red"
                 },
                 "tags": [
-                  {"CardType": "Artifact"}
+                  {
+                    "CardType": "Artifact"
+                  }
                 ],
                 "retention": "Ordinary",
                 "restriction": null,

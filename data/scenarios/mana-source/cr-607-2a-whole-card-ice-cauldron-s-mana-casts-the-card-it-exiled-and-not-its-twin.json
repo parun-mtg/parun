@@ -160,7 +160,9 @@
                 "value": "Green"
               },
               "tags": [
-                {"CardType": "Artifact"}
+                {
+                  "CardType": "Artifact"
+                }
               ],
               "retention": "Ordinary",
               "restriction": {
@@ -177,7 +179,9 @@
                 "type": "Colorless"
               },
               "tags": [
-                {"CardType": "Artifact"}
+                {
+                  "CardType": "Artifact"
+                }
               ],
               "retention": "Ordinary",
               "restriction": {

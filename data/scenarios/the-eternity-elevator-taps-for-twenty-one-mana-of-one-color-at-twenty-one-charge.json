@@ -72,7 +72,9 @@
                 "rider": null,
                 "sourceChoices": null,
                 "tags": [
-                  {"CardType": "Artifact"}
+                  {
+                    "CardType": "Artifact"
+                  }
                 ]
               },
               {
@@ -85,7 +87,9 @@
                 "rider": null,
                 "sourceChoices": null,
                 "tags": [
-                  {"CardType": "Artifact"}
+                  {
+                    "CardType": "Artifact"
+                  }
                 ]
               },
               {
@@ -98,7 +102,9 @@
                 "rider": null,
                 "sourceChoices": null,
                 "tags": [
-                  {"CardType": "Artifact"}
+                  {
+                    "CardType": "Artifact"
+                  }
                 ]
               },
               {
@@ -111,7 +117,9 @@
                 "rider": null,
                 "sourceChoices": null,
                 "tags": [
-                  {"CardType": "Artifact"}
+                  {
+                    "CardType": "Artifact"
+                  }
                 ]
               },
               {
@@ -124,7 +132,9 @@
                 "rider": null,
                 "sourceChoices": null,
                 "tags": [
-                  {"CardType": "Artifact"}
+                  {
+                    "CardType": "Artifact"
+                  }
                 ]
               },
               {
@@ -137,7 +147,9 @@
                 "rider": null,
                 "sourceChoices": null,
                 "tags": [
-                  {"CardType": "Artifact"}
+                  {
+                    "CardType": "Artifact"
+                  }
                 ]
               },
               {
@@ -150,7 +162,9 @@
                 "rider": null,
                 "sourceChoices": null,
                 "tags": [
-                  {"CardType": "Artifact"}
+                  {
+                    "CardType": "Artifact"
+                  }
                 ]
               },
               {
@@ -163,7 +177,9 @@
                 "rider": null,
                 "sourceChoices": null,
                 "tags": [
-                  {"CardType": "Artifact"}
+                  {
+                    "CardType": "Artifact"
+                  }
                 ]
               },
               {
@@ -176,7 +192,9 @@
                 "rider": null,
                 "sourceChoices": null,
                 "tags": [
-                  {"CardType": "Artifact"}
+                  {
+                    "CardType": "Artifact"
+                  }
                 ]
               },
               {
@@ -189,7 +207,9 @@
                 "rider": null,
                 "sourceChoices": null,
                 "tags": [
-                  {"CardType": "Artifact"}
+                  {
+                    "CardType": "Artifact"
+                  }
                 ]
               },
               {
@@ -202,7 +222,9 @@
                 "rider": null,
                 "sourceChoices": null,
                 "tags": [
-                  {"CardType": "Artifact"}
+                  {
+                    "CardType": "Artifact"
+                  }
                 ]
               },
               {
@@ -215,7 +237,9 @@
                 "rider": null,
                 "sourceChoices": null,
                 "tags": [
-                  {"CardType": "Artifact"}
+                  {
+                    "CardType": "Artifact"
+                  }
                 ]
               },
               {
@@ -228,7 +252,9 @@
                 "rider": null,
                 "sourceChoices": null,
                 "tags": [
-                  {"CardType": "Artifact"}
+                  {
+                    "CardType": "Artifact"
+                  }
                 ]
               },
               {
@@ -241,7 +267,9 @@
                 "rider": null,
                 "sourceChoices": null,
                 "tags": [
-                  {"CardType": "Artifact"}
+                  {
+                    "CardType": "Artifact"
+                  }
                 ]
               },
               {
@@ -254,7 +282,9 @@
                 "rider": null,
                 "sourceChoices": null,
                 "tags": [
-                  {"CardType": "Artifact"}
+                  {
+                    "CardType": "Artifact"
+                  }
                 ]
               },
               {
@@ -267,7 +297,9 @@
                 "rider": null,
                 "sourceChoices": null,
                 "tags": [
-                  {"CardType": "Artifact"}
+                  {
+                    "CardType": "Artifact"
+                  }
                 ]
               },
               {
@@ -280,7 +312,9 @@
                 "rider": null,
                 "sourceChoices": null,
                 "tags": [
-                  {"CardType": "Artifact"}
+                  {
+                    "CardType": "Artifact"
+                  }
                 ]
               },
               {
@@ -293,7 +327,9 @@
                 "rider": null,
                 "sourceChoices": null,
                 "tags": [
-                  {"CardType": "Artifact"}
+                  {
+                    "CardType": "Artifact"
+                  }
                 ]
               },
               {
@@ -306,7 +342,9 @@
                 "rider": null,
                 "sourceChoices": null,
                 "tags": [
-                  {"CardType": "Artifact"}
+                  {
+                    "CardType": "Artifact"
+                  }
                 ]
               },
               {
@@ -319,7 +357,9 @@
                 "rider": null,
                 "sourceChoices": null,
                 "tags": [
-                  {"CardType": "Artifact"}
+                  {
+                    "CardType": "Artifact"
+                  }
                 ]
               },
               {
@@ -332,7 +372,9 @@
                 "rider": null,
                 "sourceChoices": null,
                 "tags": [
-                  {"CardType": "Artifact"}
+                  {
+                    "CardType": "Artifact"
+                  }
                 ]
               }
             ]

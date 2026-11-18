@@ -75,7 +75,14 @@
                 "retention": "Ordinary",
                 "rider": null,
                 "sourceChoices": null,
-                "tags": [{"CardType": "Artifact"}, {"CardType": "Creature"}]
+                "tags": [
+                  {
+                    "CardType": "Artifact"
+                  },
+                  {
+                    "CardType": "Creature"
+                  }
+                ]
               }
             ]
           ]

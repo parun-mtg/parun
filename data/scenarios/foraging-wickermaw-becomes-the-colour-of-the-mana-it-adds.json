@@ -81,7 +81,14 @@
                 "retention": "Ordinary",
                 "rider": null,
                 "sourceChoices": null,
-                "tags": [{"CardType": "Artifact"}, {"CardType": "Creature"}]
+                "tags": [
+                  {
+                    "CardType": "Artifact"
+                  },
+                  {
+                    "CardType": "Creature"
+                  }
+                ]
               }
             ]
           ]
@@ -100,7 +107,14 @@
                 "type": "Colored",
                 "value": "Blue"
               },
-              "tags": [{"CardType": "Artifact"}, {"CardType": "Creature"}],
+              "tags": [
+                {
+                  "CardType": "Artifact"
+                },
+                {
+                  "CardType": "Creature"
+                }
+              ],
               "retention": "Ordinary",
               "restriction": null,
               "rider": null,

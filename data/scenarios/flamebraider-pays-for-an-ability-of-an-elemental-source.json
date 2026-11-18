@@ -100,48 +100,48 @@
                   "type": "Colored",
                   "value": "Green"
                 },
-                "tags": [
-                  {
-                    "CardType": "Creature"
-                  }
-                ],
-                "retention": "Ordinary",
                 "restriction": {
-                  "casts": {
+                  "activations": {
                     "type": "HasSubtype",
                     "value": "Elemental"
                   },
-                  "activations": {
+                  "casts": {
                     "type": "HasSubtype",
                     "value": "Elemental"
                   }
                 },
+                "retention": "Ordinary",
                 "rider": null,
-                "sourceChoices": null
+                "sourceChoices": null,
+                "tags": [
+                  {
+                    "CardType": "Creature"
+                  }
+                ]
               },
               {
                 "manaType": {
                   "type": "Colored",
                   "value": "Green"
                 },
-                "tags": [
-                  {
-                    "CardType": "Creature"
-                  }
-                ],
-                "retention": "Ordinary",
                 "restriction": {
-                  "casts": {
+                  "activations": {
                     "type": "HasSubtype",
                     "value": "Elemental"
                   },
-                  "activations": {
+                  "casts": {
                     "type": "HasSubtype",
                     "value": "Elemental"
                   }
                 },
+                "retention": "Ordinary",
                 "rider": null,
-                "sourceChoices": null
+                "sourceChoices": null,
+                "tags": [
+                  {
+                    "CardType": "Creature"
+                  }
+                ]
               }
             ]
           ]

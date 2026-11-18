@@ -324,10 +324,10 @@
     {
       "do": {
         "Cast": {
-          "object": "$warrior",
           "mana": [
             "$wm"
           ],
+          "object": "$warrior",
           "yields": [
             [
               {
@@ -335,72 +335,72 @@
                   "type": "Colored",
                   "value": "Green"
                 },
-                "tags": [
-                  {
-                    "CardType": "Creature"
-                  }
-                ],
-                "retention": "Ordinary",
                 "restriction": {
-                  "casts": {
+                  "activations": {
                     "type": "HasSubtype",
                     "value": "Elf"
                   },
-                  "activations": {
+                  "casts": {
                     "type": "HasSubtype",
                     "value": "Elf"
                   }
                 },
+                "retention": "Ordinary",
                 "rider": null,
-                "sourceChoices": null
+                "sourceChoices": null,
+                "tags": [
+                  {
+                    "CardType": "Creature"
+                  }
+                ]
               },
               {
                 "manaType": {
                   "type": "Colored",
                   "value": "Green"
                 },
-                "tags": [
-                  {
-                    "CardType": "Creature"
-                  }
-                ],
-                "retention": "Ordinary",
                 "restriction": {
-                  "casts": {
+                  "activations": {
                     "type": "HasSubtype",
                     "value": "Elf"
                   },
-                  "activations": {
+                  "casts": {
                     "type": "HasSubtype",
                     "value": "Elf"
                   }
                 },
+                "retention": "Ordinary",
                 "rider": null,
-                "sourceChoices": null
+                "sourceChoices": null,
+                "tags": [
+                  {
+                    "CardType": "Creature"
+                  }
+                ]
               },
               {
                 "manaType": {
                   "type": "Colored",
                   "value": "Green"
                 },
-                "tags": [
-                  {
-                    "CardType": "Creature"
-                  }
-                ],
-                "retention": "Ordinary",
                 "restriction": {
-                  "casts": {
+                  "activations": {
                     "type": "HasSubtype",
                     "value": "Elf"
                   },
-                  "activations": {
+                  "casts": {
                     "type": "HasSubtype",
                     "value": "Elf"
                   }
                 },
+                "retention": "Ordinary",
                 "rider": null,
-                "sourceChoices": null
+                "sourceChoices": null,
+                "tags": [
+                  {
+                    "CardType": "Creature"
+                  }
+                ]
               }
             ]
           ]

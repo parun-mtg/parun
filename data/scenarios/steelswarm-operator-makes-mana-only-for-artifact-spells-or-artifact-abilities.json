@@ -117,7 +117,9 @@
                 "rider": null,
                 "sourceChoices": null,
                 "tags": [
-                  {"CardType": "Artifact"}
+                  {
+                    "CardType": "Artifact"
+                  }
                 ]
               }
             ]
@@ -174,7 +176,14 @@
                 "retention": "Ordinary",
                 "rider": null,
                 "sourceChoices": null,
-                "tags": [{"CardType": "Artifact"}, {"CardType": "Creature"}]
+                "tags": [
+                  {
+                    "CardType": "Artifact"
+                  },
+                  {
+                    "CardType": "Creature"
+                  }
+                ]
               }
             ]
           ]
@@ -229,7 +238,9 @@
                 "rider": null,
                 "sourceChoices": null,
                 "tags": [
-                  {"CardType": "Artifact"}
+                  {
+                    "CardType": "Artifact"
+                  }
                 ]
               },
               {
@@ -247,7 +258,9 @@
                 "rider": null,
                 "sourceChoices": null,
                 "tags": [
-                  {"CardType": "Artifact"}
+                  {
+                    "CardType": "Artifact"
+                  }
                 ]
               }
             ]
@@ -282,7 +295,14 @@
                 "retention": "Ordinary",
                 "rider": null,
                 "sourceChoices": null,
-                "tags": [{"CardType": "Artifact"}, {"CardType": "Creature"}]
+                "tags": [
+                  {
+                    "CardType": "Artifact"
+                  },
+                  {
+                    "CardType": "Creature"
+                  }
+                ]
               },
               {
                 "manaType": {
@@ -298,7 +318,14 @@
                 "retention": "Ordinary",
                 "rider": null,
                 "sourceChoices": null,
-                "tags": [{"CardType": "Artifact"}, {"CardType": "Creature"}]
+                "tags": [
+                  {
+                    "CardType": "Artifact"
+                  },
+                  {
+                    "CardType": "Creature"
+                  }
+                ]
               }
             ]
           ]

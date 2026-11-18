@@ -133,15 +133,15 @@
                   "type": "Colored",
                   "value": "Red"
                 },
+                "restriction": null,
+                "retention": "Ordinary",
+                "rider": null,
+                "sourceChoices": null,
                 "tags": [
                   {
                     "CardType": "Creature"
                   }
-                ],
-                "retention": "Ordinary",
-                "restriction": null,
-                "rider": null,
-                "sourceChoices": null
+                ]
               }
             ]
           ]

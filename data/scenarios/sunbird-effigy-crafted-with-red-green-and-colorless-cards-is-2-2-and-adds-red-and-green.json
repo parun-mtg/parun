@@ -159,7 +159,14 @@
                 "type": "Colored",
                 "value": "Red"
               },
-              "tags": [{"CardType": "Artifact"}, {"CardType": "Creature"}],
+              "tags": [
+                {
+                  "CardType": "Artifact"
+                },
+                {
+                  "CardType": "Creature"
+                }
+              ],
               "retention": "Ordinary",
               "restriction": null,
               "rider": null,
@@ -171,7 +178,14 @@
                 "type": "Colored",
                 "value": "Green"
               },
-              "tags": [{"CardType": "Artifact"}, {"CardType": "Creature"}],
+              "tags": [
+                {
+                  "CardType": "Artifact"
+                },
+                {
+                  "CardType": "Creature"
+                }
+              ],
               "retention": "Ordinary",
               "restriction": null,
               "rider": null,

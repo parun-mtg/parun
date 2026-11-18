@@ -101,13 +101,13 @@
     {
       "do": {
         "Cast": {
-          "object": "$giant",
           "mana": [
             "$c",
             "$m1",
             "$m2",
             "$m3"
           ],
+          "object": "$giant",
           "yields": [
             [
               {
@@ -115,20 +115,20 @@
                   "type": "Colored",
                   "value": "Green"
                 },
-                "tags": [
-                  {
-                    "CardType": "Creature"
-                  }
-                ],
-                "retention": "Ordinary",
                 "restriction": {
                   "casts": {
                     "type": "HasCardType",
                     "value": "Creature"
                   }
                 },
+                "retention": "Ordinary",
                 "rider": null,
-                "sourceChoices": null
+                "sourceChoices": null,
+                "tags": [
+                  {
+                    "CardType": "Creature"
+                  }
+                ]
               }
             ]
           ]

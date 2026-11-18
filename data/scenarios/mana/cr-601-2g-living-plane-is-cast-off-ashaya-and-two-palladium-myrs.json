@@ -55,7 +55,14 @@
                 "manaType": {
                   "type": "Colorless"
                 },
-                "tags": [{"CardType": "Artifact"}, {"CardType": "Creature"}],
+                "tags": [
+                  {
+                    "CardType": "Artifact"
+                  },
+                  {
+                    "CardType": "Creature"
+                  }
+                ],
                 "retention": "Ordinary",
                 "restriction": null,
                 "rider": null,
@@ -65,7 +72,14 @@
                 "manaType": {
                   "type": "Colorless"
                 },
-                "tags": [{"CardType": "Artifact"}, {"CardType": "Creature"}],
+                "tags": [
+                  {
+                    "CardType": "Artifact"
+                  },
+                  {
+                    "CardType": "Creature"
+                  }
+                ],
                 "retention": "Ordinary",
                 "restriction": null,
                 "rider": null,
@@ -78,7 +92,14 @@
                   "type": "Colored",
                   "value": "Green"
                 },
-                "tags": [{"CardType": "Artifact"}, {"CardType": "Creature"}],
+                "tags": [
+                  {
+                    "CardType": "Artifact"
+                  },
+                  {
+                    "CardType": "Creature"
+                  }
+                ],
                 "retention": "Ordinary",
                 "restriction": null,
                 "rider": null,

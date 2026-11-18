@@ -151,7 +151,9 @@
               },
               "tags": [
                 "Snow",
-                {"CardType": "Artifact"}
+                {
+                  "CardType": "Artifact"
+                }
               ],
               "retention": "Ordinary",
               "restriction": null,

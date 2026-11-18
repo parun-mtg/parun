@@ -174,7 +174,9 @@
                 "sourceChoices": null,
                 "sourceLastExiled": 21,
                 "tags": [
-                  {"CardType": "Artifact"}
+                  {
+                    "CardType": "Artifact"
+                  }
                 ]
               },
               {
@@ -193,7 +195,9 @@
                 "sourceChoices": null,
                 "sourceLastExiled": 21,
                 "tags": [
-                  {"CardType": "Artifact"}
+                  {
+                    "CardType": "Artifact"
+                  }
                 ]
               }
             ]

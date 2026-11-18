@@ -203,7 +203,11 @@
                 "type": "Colored",
                 "value": "Red"
               },
-              "tags": [{"CardType": "Creature"}],
+              "tags": [
+                {
+                  "CardType": "Creature"
+                }
+              ],
               "retention": "UntilEndOfCombat",
               "restriction": null,
               "rider": null,
@@ -214,7 +218,11 @@
                 "type": "Colored",
                 "value": "Red"
               },
-              "tags": [{"CardType": "Creature"}],
+              "tags": [
+                {
+                  "CardType": "Creature"
+                }
+              ],
               "retention": "UntilEndOfCombat",
               "restriction": null,
               "rider": null,
@@ -225,7 +233,11 @@
                 "type": "Colored",
                 "value": "Red"
               },
-              "tags": [{"CardType": "Creature"}],
+              "tags": [
+                {
+                  "CardType": "Creature"
+                }
+              ],
               "retention": "UntilEndOfCombat",
               "restriction": null,
               "rider": null,
@@ -236,7 +248,11 @@
                 "type": "Colored",
                 "value": "Red"
               },
-              "tags": [{"CardType": "Creature"}],
+              "tags": [
+                {
+                  "CardType": "Creature"
+                }
+              ],
               "retention": "UntilEndOfCombat",
               "restriction": null,
               "rider": null,
@@ -247,7 +263,11 @@
                 "type": "Colored",
                 "value": "Red"
               },
-              "tags": [{"CardType": "Creature"}],
+              "tags": [
+                {
+                  "CardType": "Creature"
+                }
+              ],
               "retention": "UntilEndOfCombat",
               "restriction": null,
               "rider": null,
@@ -258,7 +278,11 @@
                 "type": "Colored",
                 "value": "Red"
               },
-              "tags": [{"CardType": "Creature"}],
+              "tags": [
+                {
+                  "CardType": "Creature"
+                }
+              ],
               "retention": "UntilEndOfCombat",
               "restriction": null,
               "rider": null,

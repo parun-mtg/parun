@@ -82,10 +82,10 @@
       "do": {
         "Take": {
           "action": "ActivateManaAbility $baku",
-          "x": 3,
           "mana": [
             "$forest"
           ],
+          "x": 3,
           "yields": [
             [
               {
@@ -93,45 +93,45 @@
                   "type": "Colored",
                   "value": "Green"
                 },
+                "restriction": null,
+                "retention": "Ordinary",
+                "rider": null,
+                "sourceChoices": null,
                 "tags": [
                   {
                     "CardType": "Creature"
                   }
-                ],
-                "retention": "Ordinary",
-                "restriction": null,
-                "rider": null,
-                "sourceChoices": null
+                ]
               },
               {
                 "manaType": {
                   "type": "Colored",
                   "value": "Green"
                 },
+                "restriction": null,
+                "retention": "Ordinary",
+                "rider": null,
+                "sourceChoices": null,
                 "tags": [
                   {
                     "CardType": "Creature"
                   }
-                ],
-                "retention": "Ordinary",
-                "restriction": null,
-                "rider": null,
-                "sourceChoices": null
+                ]
               },
               {
                 "manaType": {
                   "type": "Colored",
                   "value": "Green"
                 },
+                "restriction": null,
+                "retention": "Ordinary",
+                "rider": null,
+                "sourceChoices": null,
                 "tags": [
                   {
                     "CardType": "Creature"
                   }
-                ],
-                "retention": "Ordinary",
-                "restriction": null,
-                "rider": null,
-                "sourceChoices": null
+                ]
               }
             ]
           ]

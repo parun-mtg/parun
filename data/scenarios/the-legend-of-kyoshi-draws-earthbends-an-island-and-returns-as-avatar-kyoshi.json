@@ -383,75 +383,75 @@
                   "type": "Colored",
                   "value": "Blue"
                 },
+                "restriction": null,
+                "retention": "Ordinary",
+                "rider": null,
+                "sourceChoices": null,
                 "tags": [
                   {
                     "CardType": "Creature"
                   }
-                ],
-                "retention": "Ordinary",
-                "restriction": null,
-                "rider": null,
-                "sourceChoices": null
+                ]
               },
               {
                 "manaType": {
                   "type": "Colored",
                   "value": "Blue"
                 },
+                "restriction": null,
+                "retention": "Ordinary",
+                "rider": null,
+                "sourceChoices": null,
                 "tags": [
                   {
                     "CardType": "Creature"
                   }
-                ],
-                "retention": "Ordinary",
-                "restriction": null,
-                "rider": null,
-                "sourceChoices": null
+                ]
               },
               {
                 "manaType": {
                   "type": "Colored",
                   "value": "Blue"
                 },
+                "restriction": null,
+                "retention": "Ordinary",
+                "rider": null,
+                "sourceChoices": null,
                 "tags": [
                   {
                     "CardType": "Creature"
                   }
-                ],
-                "retention": "Ordinary",
-                "restriction": null,
-                "rider": null,
-                "sourceChoices": null
+                ]
               },
               {
                 "manaType": {
                   "type": "Colored",
                   "value": "Blue"
                 },
+                "restriction": null,
+                "retention": "Ordinary",
+                "rider": null,
+                "sourceChoices": null,
                 "tags": [
                   {
                     "CardType": "Creature"
                   }
-                ],
-                "retention": "Ordinary",
-                "restriction": null,
-                "rider": null,
-                "sourceChoices": null
+                ]
               },
               {
                 "manaType": {
                   "type": "Colored",
                   "value": "Blue"
                 },
+                "restriction": null,
+                "retention": "Ordinary",
+                "rider": null,
+                "sourceChoices": null,
                 "tags": [
                   {
                     "CardType": "Creature"
                   }
-                ],
-                "retention": "Ordinary",
-                "restriction": null,
-                "rider": null,
-                "sourceChoices": null
+                ]
               }
             ]
           ]

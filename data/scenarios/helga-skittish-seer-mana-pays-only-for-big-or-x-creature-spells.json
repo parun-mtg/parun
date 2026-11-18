@@ -129,11 +129,11 @@
     {
       "do": {
         "Cast": {
-          "object": "$hh",
-          "x": 1,
           "mana": [
             "$helga"
           ],
+          "object": "$hh",
+          "x": 1,
           "yields": [
             [
               {
@@ -141,12 +141,6 @@
                   "type": "Colored",
                   "value": "Green"
                 },
-                "tags": [
-                  {
-                    "CardType": "Creature"
-                  }
-                ],
-                "retention": "Ordinary",
                 "restriction": {
                   "casts": {
                     "type": "And",
@@ -161,8 +155,8 @@
                           {
                             "type": "Measures",
                             "value": {
-                              "measure": "ManaValue",
                               "comparison": "AtLeast",
+                              "measure": "ManaValue",
                               "operand": {
                                 "type": "Literal",
                                 "value": 4
@@ -180,20 +174,20 @@
                     ]
                   }
                 },
+                "retention": "Ordinary",
                 "rider": null,
-                "sourceChoices": null
+                "sourceChoices": null,
+                "tags": [
+                  {
+                    "CardType": "Creature"
+                  }
+                ]
               },
               {
                 "manaType": {
                   "type": "Colored",
                   "value": "Green"
                 },
-                "tags": [
-                  {
-                    "CardType": "Creature"
-                  }
-                ],
-                "retention": "Ordinary",
                 "restriction": {
                   "casts": {
                     "type": "And",
@@ -208,8 +202,8 @@
                           {
                             "type": "Measures",
                             "value": {
-                              "measure": "ManaValue",
                               "comparison": "AtLeast",
+                              "measure": "ManaValue",
                               "operand": {
                                 "type": "Literal",
                                 "value": 4
@@ -227,8 +221,14 @@
                     ]
                   }
                 },
+                "retention": "Ordinary",
                 "rider": null,
-                "sourceChoices": null
+                "sourceChoices": null,
+                "tags": [
+                  {
+                    "CardType": "Creature"
+                  }
+                ]
               }
             ]
           ]
@@ -301,12 +301,12 @@
     {
       "do": {
         "Cast": {
-          "object": "$hg",
           "mana": [
             "$helga",
             "$f1",
             "$f2"
           ],
+          "object": "$hg",
           "yields": [
             [
               {
@@ -314,12 +314,6 @@
                   "type": "Colored",
                   "value": "Red"
                 },
-                "tags": [
-                  {
-                    "CardType": "Creature"
-                  }
-                ],
-                "retention": "Ordinary",
                 "restriction": {
                   "casts": {
                     "type": "And",
@@ -334,8 +328,8 @@
                           {
                             "type": "Measures",
                             "value": {
-                              "measure": "ManaValue",
                               "comparison": "AtLeast",
+                              "measure": "ManaValue",
                               "operand": {
                                 "type": "Literal",
                                 "value": 4
@@ -353,20 +347,20 @@
                     ]
                   }
                 },
+                "retention": "Ordinary",
                 "rider": null,
-                "sourceChoices": null
+                "sourceChoices": null,
+                "tags": [
+                  {
+                    "CardType": "Creature"
+                  }
+                ]
               },
               {
                 "manaType": {
                   "type": "Colored",
                   "value": "Red"
                 },
-                "tags": [
-                  {
-                    "CardType": "Creature"
-                  }
-                ],
-                "retention": "Ordinary",
                 "restriction": {
                   "casts": {
                     "type": "And",
@@ -381,8 +375,8 @@
                           {
                             "type": "Measures",
                             "value": {
-                              "measure": "ManaValue",
                               "comparison": "AtLeast",
+                              "measure": "ManaValue",
                               "operand": {
                                 "type": "Literal",
                                 "value": 4
@@ -400,8 +394,14 @@
                     ]
                   }
                 },
+                "retention": "Ordinary",
                 "rider": null,
-                "sourceChoices": null
+                "sourceChoices": null,
+                "tags": [
+                  {
+                    "CardType": "Creature"
+                  }
+                ]
               }
             ]
           ]

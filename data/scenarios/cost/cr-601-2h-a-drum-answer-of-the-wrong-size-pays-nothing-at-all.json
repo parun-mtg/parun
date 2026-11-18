@@ -48,7 +48,9 @@
                   "value": "Green"
                 },
                 "tags": [
-                  {"CardType": "Artifact"}
+                  {
+                    "CardType": "Artifact"
+                  }
                 ],
                 "retention": "Ordinary",
                 "restriction": null,
