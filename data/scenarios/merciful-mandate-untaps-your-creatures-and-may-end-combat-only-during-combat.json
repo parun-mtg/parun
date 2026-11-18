@@ -1,5 +1,5 @@
 {
-  "description": "CR 506.4: Merciful Mandate untaps its caster's creatures, and only during a combat phase offers to end it",
+  "description": "CR 725.2: Merciful Mandate untaps its caster's creatures, and only during a combat phase offers to end it",
   "note": "Cast in the precombat main phase it untaps the tapped Bears and asks nothing. Cast after attackers are declared it untaps both attackers and ends combat, so bob takes no damage. Bob's tapped Hill Giant stays tapped.",
   "board": {
     "active": "alice",
