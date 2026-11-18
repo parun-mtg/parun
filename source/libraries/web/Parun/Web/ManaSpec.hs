@@ -4,7 +4,9 @@ import qualified Data.ByteString as ByteString
 import qualified Data.Set as Set
 import qualified Data.Text as Text
 import qualified Data.Text.Encoding as Encoding
+import qualified Parun.Play.Render as Render
 import qualified Parun.Spec as Spec
+import qualified Parun.Types.PlanarDieFace as PlanarDieFace
 import qualified Parun.Web.Html as Html
 import qualified Parun.Web.Mana as Mana
 
@@ -53,3 +55,7 @@ spec s = Spec.describe s "Parun.Web.Mana" $ do
       Spec.assertBool s (Text.pack "<span class=\"loyalty level\"" `Text.isPrefixOf` page "[0]: Scry 1.") "zero"
     Spec.it s "leaves other brackets and braces as text" $
       Spec.assertEq s (page "[X] and [+] and {} and { G}") (Text.pack "[X] and [+] and {} and { G}")
+
+    Spec.it s "CR 107.11 and 107.12 the log draws the planar die's symbols" $ do
+      Spec.assertBool s (Text.pack "href=\"#ms-chaos\"" `Text.isInfixOf` page (Text.unpack (Render.planarFace PlanarDieFace.Chaos))) "chaos"
+      Spec.assertBool s (Text.pack "href=\"#ms-planeswalker\"" `Text.isInfixOf` page (Text.unpack (Render.planarFace PlanarDieFace.Planeswalker))) "planeswalker"

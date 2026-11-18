@@ -631,8 +631,10 @@ designation d = Text.pack $ case d of
 planarFace :: PlanarDieFace.PlanarDieFace -> Text.Text
 planarFace f = Text.pack $ case f of
   PlanarDieFace.Blank -> "a blank"
-  PlanarDieFace.Chaos -> "the chaos symbol"
-  PlanarDieFace.Planeswalker -> "the planeswalker symbol"
+  -- CR 107.12
+  PlanarDieFace.Chaos -> "{CHAOS}"
+  -- CR 107.11
+  PlanarDieFace.Planeswalker -> "{PW}"
 
 sideDeck :: SideDeck.SideDeck -> Text.Text
 sideDeck d = Text.pack $ case d of
