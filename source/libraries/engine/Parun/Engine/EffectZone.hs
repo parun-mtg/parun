@@ -376,6 +376,7 @@ zonesFunctionedAgainst itself delayed effect = case effect of
   -- of it. This opcode moves nothing -- it writes a permission onto objects an
   -- earlier effect already placed -- so it names no zone.
   Effect.GrantPlayFromExile {} -> Set.empty
+  Effect.GrantCopyCast {} -> Set.empty
   -- Descended into, unlike CR 615.5's rider above: rule 608.2f's body runs as
   -- part of THIS effect, so a move it states is a move this ability's effect
   -- states, and CR 113.6m reads it. The loop's own reference names the members

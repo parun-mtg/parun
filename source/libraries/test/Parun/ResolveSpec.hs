@@ -55,6 +55,7 @@ import qualified Parun.Types.BeginningStep as BeginningStep
 import qualified Parun.Types.CandidateCost as CandidateCost
 import qualified Parun.Types.Card as Card.Type
 import qualified Parun.Types.CardName as CardName
+import qualified Parun.Types.CardSelection as CardSelection
 import qualified Parun.Types.CardType as CardType
 import qualified Parun.Types.ChangeText as ChangeText
 import qualified Parun.Types.ChangeWord as ChangeWord
@@ -548,7 +549,7 @@ resolveSpec s registry = Spec.describe s "Resolve" $ do
   -- which its own Reveal binds, so the pool cannot observe the read either.
   Spec.it s "CR 201.4a slotsOf reads the slot a ChooseCardName draws names from" $ do
     let slot = SlotName.MkSlotName (Text.pack "revealed")
-        named among = Resolve.slotsOf (Effect.ChooseCardName (ChooseCardName.MkChooseCardName (PlayerRef.Relative PlayerRelation.You) (Filter.Type.And []) among))
+        named among = Resolve.slotsOf (Effect.ChooseCardName (ChooseCardName.MkChooseCardName (PlayerRef.Relative PlayerRelation.You) (Filter.Type.And []) among CardSelection.ByChoice))
     Spec.assertEqWith s "the among slot is a read" (named (Just slot)) (Map.singleton slot SlotArity.Many)
     Spec.assertEqWith s "and every name reads none" (named Nothing) Map.empty
   -- The same fence for CR 509.4's blocking rider, which the MoveToZone arm reads

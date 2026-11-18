@@ -130,6 +130,10 @@ data GameState = MkGameState
     -- clause of the same resolution to bring in (Event.holdFound), or where a
     -- permission lets a player play it at priority (Event.offerOutside).
     outsideFinds :: Map.Map ObjectId.ObjectId OutsideCard.OutsideCard,
+    -- | CR 601.3 / 707.13: the objects in GameState.outsideCopies that stand, while
+    -- their holder has priority, for the copies StoredEffects.copyCasts permits,
+    -- each keyed to its row's timestamp (Event.offerOutside).
+    copyStandIns :: Map.Map ObjectId.ObjectId Timestamp.Timestamp,
     -- | CR 707.13: the card names each object's ability has chosen to copy by
     -- name. Keyed by id, so CR 400.7's new object remembers none.
     namedCopyChoices :: Map.Map ObjectId.ObjectId (Set.Set CardName.CardName),

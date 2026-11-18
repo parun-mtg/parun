@@ -70,6 +70,7 @@ import qualified Parun.Types.CantBeBlockedBy as CantBeBlockedBy
 import qualified Parun.Types.CantBlockCreatures as CantBlockCreatures
 import qualified Parun.Types.Card as Card.Type
 import qualified Parun.Types.CardAbilities as CardAbilities
+import qualified Parun.Types.CardSelection as CardSelection
 import qualified Parun.Types.CardType as CardType
 import qualified Parun.Types.CastFromZone as CastFromZone
 import qualified Parun.Types.ChoiceDistinct as ChoiceDistinct
@@ -3998,7 +3999,7 @@ filterPositionLintSpec s registry corpus = Spec.describe s "Lint" $ do
               base {Face.enchant = [TargetSlot.required Pool.Permanents (Just buried)]}
             ),
             ( "CR 201.4a's own restriction on the choosing effect",
-              base {Face.spell = spellOf [Effect.ChooseCardName (ChooseCardName.MkChooseCardName (PlayerRef.Relative PlayerRelation.You) buried Nothing)] Map.empty}
+              base {Face.spell = spellOf [Effect.ChooseCardName (ChooseCardName.MkChooseCardName (PlayerRef.Relative PlayerRelation.You) buried Nothing CardSelection.ByChoice)] Map.empty}
             ),
             -- THE counter-example to the ObjectRef position accepted below, and
             -- the reason StandingHostFramed is a constructor of its own (#3320):

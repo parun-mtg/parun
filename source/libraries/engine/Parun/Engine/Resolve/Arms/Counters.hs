@@ -68,6 +68,7 @@ import qualified Parun.Types.BindPlayers as BindPlayers
 import qualified Parun.Types.Binding as Binding.Type
 import qualified Parun.Types.Blight as Blight.Type
 import qualified Parun.Types.Card as Card.Type
+import qualified Parun.Types.CardSelection as CardSelection
 import qualified Parun.Types.ChooseCardName as ChooseCardName
 import qualified Parun.Types.ChooseNumber as ChooseNumber
 import qualified Parun.Types.ChooseQuality as ChooseQuality
@@ -426,7 +427,7 @@ putCountersFrom resolving source controller legal (PutCountersFrom.MkPutCounters
 -- .contextFor and the resolution's own context both ask about a source (CR
 -- 113.7), and for a spell the two ids are the same object anyway.
 chooseCardName :: ObjectId -> ObjectId -> PlayerId -> Map.Map SlotName (Set Recipient) -> ChooseCardName.ChooseCardName -> Game ()
-chooseCardName resolving source controller legal (ChooseCardName.MkChooseCardName ref restriction among) = do
+chooseCardName resolving source controller legal (ChooseCardName.MkChooseCardName ref restriction among selection) = do
   gs <- State.get
   -- CR 201.4a: a slot confines the offer to the names of its cards the
   -- restriction admits (Alhammarret, High Arbiter), Common.chooseNameAmong's
@@ -444,11 +445,23 @@ chooseCardName resolving source controller legal (ChooseCardName.MkChooseCardNam
   -- Conundrum Sphinx drives three choosers through this arm, but no test reads
   -- the payload here; Null Chamber's entry twin in Parun.Engine.Event is the
   -- proven one.
+  --
+  -- At random, nobody chooses: the name is drawn among the names a choice
+  -- would offer, the confined list or every name of the Oracle card reference
+  -- the restriction admits (Prompt.ReferenceNames), and looked up as a chosen
+  -- name is. Discord, Lord of Disharmony's "every Magic card" is that
+  -- reference, the registry the interpreter holds (CR 108.1,
+  -- Parun.Interpreter.lookingUpCards), so a card the host loads no file for is
+  -- one randomness cannot name. Discord's scenarios prove the draw.
   let ask made chooser = do
         g <- State.get
-        picked <- case confined of
-          Nothing -> fmap Just (Game.choose (Prompt.ChooseCardName (Decide.deciderFor chooser g) chooser source restriction made) >>= Game.lookUpChosenName)
-          Just names -> Common.chooseNameAmong chooser source made names
+        picked <- case (selection, confined) of
+          (CardSelection.ByChoice, Nothing) -> fmap Just (Game.choose (Prompt.ChooseCardName (Decide.deciderFor chooser g) chooser source restriction made) >>= Game.lookUpChosenName)
+          (CardSelection.ByChoice, Just names) -> Common.chooseNameAmong chooser source made names
+          (CardSelection.AtRandom, _) -> do
+            names <- maybe (Game.ask (Prompt.ReferenceNames restriction)) pure confined
+            drawn <- Game.drawAmong Prompt.RandomCard (ListUtils.nubOrd names)
+            Monad.mapM Game.lookUpChosenName drawn
         pure (maybe made (\name -> made Seq.|> (chooser, name)) picked)
   picked <- fmap (Map.fromList . fmap (fmap Set.singleton) . Foldable.toList) (Monad.foldM ask Seq.empty (Common.apnapDecidersOf ref legal resolving source controller gs))
   -- CR 101.3: a reference naming NOBODY leaves nothing to do, so the write is

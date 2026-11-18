@@ -6,6 +6,7 @@ import qualified Parun.Types.ActiveAttackProhibition as ActiveAttackProhibition
 import qualified Parun.Types.ActiveAttackRequirement as ActiveAttackRequirement
 import qualified Parun.Types.ActiveBlockRequirement as ActiveBlockRequirement
 import qualified Parun.Types.ActiveCopy as ActiveCopy
+import qualified Parun.Types.ActiveCopyCast as ActiveCopyCast
 import qualified Parun.Types.ActiveEvasion as ActiveEvasion
 import qualified Parun.Types.ActiveLaterPayment as ActiveLaterPayment
 import qualified Parun.Types.ActiveObjectProhibition as ActiveObjectProhibition
@@ -46,6 +47,8 @@ data StoredKind r where
   IgnoredAbility :: StoredKind IgnoredAbility.IgnoredAbility
   -- | StoredEffects.laterPayments (CR 116.2c).
   LaterPayment :: StoredKind ActiveLaterPayment.ActiveLaterPayment
+  -- | StoredEffects.copyCasts (CR 601.3).
+  CopyCast :: StoredKind ActiveCopyCast.ActiveCopyCast
   -- | StoredEffects.delayedTriggers (CR 603.7).
   DelayedTrigger :: StoredKind DelayedTrigger.DelayedTrigger
   -- | StoredEffects.pendingPreventionRiders (CR 615.5).

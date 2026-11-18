@@ -516,6 +516,23 @@ Entries are ordered by the first rule each cites.
   `aven-mindcensor-keeps-panglacial-wurm-below-the-top-four-from-being-cast`.
 - **Issue**: #4342.
 
+## How many copies Discord, Lord of Disharmony's permission casts
+
+- **Question**: "Until your next end step, you may cast a copy of a spell with
+  that name". One copy over the duration, or any number of them?
+- **Rules**: CR 601.3, 611.2a, 707.12, 707.12a; Scryfall lists no ruling; CR
+  of 2026-11-06.
+- **Decision**: One. The cast spends the permission.
+- **Rejected**: Any number until the duration ends. The sentence names "a
+  copy" and its rider "a spell", where CR 707.12a's repeated choice is for an
+  effect that creates multiple copies; and each further cast would copy the
+  ability again, a loop the card's own "if you cast a spell this way" would
+  not need to bound.
+- **Site**: `Parun.Engine.Event.castFromOutside`'s `spendRow`. Proved by the
+  scenario
+  `cr-601-3-discord-s-permission-outlives-it-is-spent-by-one-cast-and-copies-nothing-once-it-has-left`.
+- **Issue**: #5303.
+
 ## Whether a search printed over a portion of a library searches that library
 
 - **Question**: Assemble the Team says "search the top third of your library".

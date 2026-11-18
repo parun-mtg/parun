@@ -25,7 +25,7 @@ import qualified Parun.Types.StoredKind as StoredKind
 -- here.
 traverseRows :: (Applicative f) => (forall r. StoredKind r -> r -> f (Maybe r)) -> StoredEffects -> f StoredEffects
 traverseRows edit stored = case stored of
-  StoredEffects.MkStoredEffects continuous copy replacement player block attack objectProhibition attackProhibition evasion ignored later delayed prevention replacing skip entry ->
+  StoredEffects.MkStoredEffects continuous copy replacement player block attack objectProhibition attackProhibition evasion ignored later copyCast delayed prevention replacing skip entry ->
     StoredEffects.MkStoredEffects
       <$> list (edit StoredKind.Continuous) continuous
       <*> list (edit StoredKind.Copy) copy
@@ -38,6 +38,7 @@ traverseRows edit stored = case stored of
       <*> list (edit StoredKind.Evasion) evasion
       <*> list (edit StoredKind.IgnoredAbility) ignored
       <*> list (edit StoredKind.LaterPayment) later
+      <*> list (edit StoredKind.CopyCast) copyCast
       <*> queue (edit StoredKind.DelayedTrigger) delayed
       <*> queue (edit StoredKind.PendingPreventionRider) prevention
       <*> queue (edit StoredKind.PendingReplacementEffect) replacing

@@ -14,6 +14,7 @@ import qualified Parun.Codec.ActiveAttackProhibition as ActiveAttackProhibition
 import qualified Parun.Codec.ActiveAttackRequirement as ActiveAttackRequirement
 import qualified Parun.Codec.ActiveBlockRequirement as ActiveBlockRequirement
 import qualified Parun.Codec.ActiveCopy as ActiveCopy
+import qualified Parun.Codec.ActiveCopyCast as ActiveCopyCast
 import qualified Parun.Codec.ActiveEvasion as ActiveEvasion
 import qualified Parun.Codec.ActiveLaterPayment as ActiveLaterPayment
 import qualified Parun.Codec.ActiveObjectProhibition as ActiveObjectProhibition
@@ -164,6 +165,7 @@ codec resolve = Fields.object $ do
   copyEffects <- Fields.defaulted "copyEffects" [] (Common.list ActiveCopy.codec) (StoredEffects.copyEffects . GameState.stored)
   replacements <- Fields.defaulted "replacements" [] (Common.list ActiveReplacement.codec) (StoredEffects.replacements . GameState.stored)
   laterPayments <- Fields.defaulted "laterPayments" [] (Common.list ActiveLaterPayment.codec) (StoredEffects.laterPayments . GameState.stored)
+  copyCasts <- Fields.defaulted "copyCasts" [] (Common.list ActiveCopyCast.codec) (StoredEffects.copyCasts . GameState.stored)
   pendingPreventionRiders <- Fields.defaulted "pendingPreventionRiders" Seq.empty (Common.seq Prevention.codec) (StoredEffects.pendingPreventionRiders . GameState.stored)
   pendingReplacementEffects <- Fields.defaulted "pendingReplacementEffects" Seq.empty (Common.seq PendingReplacementEffect.codec) (StoredEffects.pendingReplacementEffects . GameState.stored)
   pendingSkipEffects <- Fields.defaulted "pendingSkipEffects" Seq.empty (Common.seq PendingSkipEffect.codec) (StoredEffects.pendingSkipEffects . GameState.stored)
@@ -197,6 +199,7 @@ codec resolve = Fields.object $ do
   referenceNames <- Fields.defaulted "referenceNames" Map.empty (Common.keyedList (Common.keyValue (Filter.codec Keyword.codec) (Common.set CardName.codec))) (Bookkeeping.referenceNames . GameState.bookkeeping)
   outsideCopies <- Fields.defaulted "outsideCopies" Set.empty (Common.set ObjectId.codec) GameState.outsideCopies
   outsideFinds <- Fields.defaulted "outsideFinds" Map.empty (Common.naturalMap ObjectId.codec OutsideCard.codec) GameState.outsideFinds
+  copyStandIns <- Fields.defaulted "copyStandIns" Map.empty (Common.naturalMap ObjectId.codec Timestamp.codec) GameState.copyStandIns
   namedCopyChoices <- Fields.defaulted "namedCopyChoices" Map.empty (Common.naturalMap ObjectId.codec (Common.set CardName.codec)) GameState.namedCopyChoices
   notedCards <- Fields.defaulted "notedCards" Map.empty (Common.naturalMap ObjectId.codec PrintingId.codec) GameState.notedCards
   notedMana <- Fields.defaulted "notedMana" Map.empty (Common.naturalMap ObjectId.codec (Common.seq ManaType.codec)) GameState.notedMana
@@ -341,6 +344,7 @@ codec resolve = Fields.object $ do
               StoredEffects.evasions = evasions,
               StoredEffects.ignoredAbilities = ignoredAbilities,
               StoredEffects.laterPayments = laterPayments,
+              StoredEffects.copyCasts = copyCasts,
               StoredEffects.delayedTriggers = delayedTriggers,
               StoredEffects.pendingPreventionRiders = pendingPreventionRiders,
               StoredEffects.pendingReplacementEffects = pendingReplacementEffects,
@@ -355,6 +359,7 @@ codec resolve = Fields.object $ do
         GameState.restartSignal = restartSignal,
         GameState.outsideCopies = outsideCopies,
         GameState.outsideFinds = outsideFinds,
+        GameState.copyStandIns = copyStandIns,
         GameState.namedCopyChoices = namedCopyChoices,
         GameState.notedCards = notedCards,
         GameState.notedMana = notedMana,

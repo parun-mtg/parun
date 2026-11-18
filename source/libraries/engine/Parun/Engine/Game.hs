@@ -30,6 +30,7 @@ import qualified Parun.Types.Acquisition as Acquisition
 import qualified Parun.Types.ActivatedAbility as ActivatedAbility
 import qualified Parun.Types.ActivatedAbilitySource as ActivatedAbilitySource
 import qualified Parun.Types.ActiveCopy as ActiveCopy
+import qualified Parun.Types.ActiveCopyCast as ActiveCopyCast
 import qualified Parun.Types.ArmDelayedTrigger as ArmDelayedTrigger
 import qualified Parun.Types.Asked as Asked
 import qualified Parun.Types.AttackTarget as AttackTarget
@@ -237,9 +238,18 @@ zoneOf oid gs
   | otherwise = fmap Object.zone (lookupObject oid gs)
 
 -- CR 400.11: the objects Parun.Engine.Event.offerOutside stood in for the cards
--- `pid` owns outside the game, which a priority action may play or cast.
+-- `pid` owns outside the game, and for the copies a StoredEffects.copyCasts row
+-- lets them cast, which a priority action may play or cast.
 standInsOf :: PlayerId -> GameState -> [ObjectId]
-standInsOf pid gs = [oid | oid <- Map.keys (GameState.outsideFinds gs), fmap Object.owner (lookupObject oid gs) == Just pid]
+standInsOf pid gs = [oid | oid <- Map.keys (GameState.outsideFinds gs) <> Map.keys (GameState.copyStandIns gs), fmap Object.owner (lookupObject oid gs) == Just pid]
+
+-- CR 601.3: the StoredEffects.copyCasts row a copy Parun.Engine.Event.offerOutside
+-- stood in for (GameState.copyStandIns) permits; Nothing for any other object
+-- and for a row no longer stored.
+copyCastOf :: ObjectId -> GameState -> Maybe ActiveCopyCast.ActiveCopyCast
+copyCastOf oid gs = do
+  stamp <- Map.lookup oid (GameState.copyStandIns gs)
+  List.find ((== stamp) . ActiveCopyCast.timestamp) (StoredEffects.copyCasts (GameState.stored gs))
 
 -- CR 601.2a / 400.11: the origin of a cast out of what `zoneOf` answered for
 -- the card being cast, no zone being outside the game.

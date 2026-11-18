@@ -130,6 +130,7 @@ import qualified Parun.Types.ForbidBeingBlocked as ForbidBeingBlocked
 import qualified Parun.Types.FromAnywhere as FromAnywhere
 import qualified Parun.Types.FromOutsideTheGame as FromOutsideTheGame
 import qualified Parun.Types.GainControl as GainControl
+import qualified Parun.Types.GrantCopyCast as GrantCopyCast
 import qualified Parun.Types.GrantLookAtExiled as GrantLookAtExiled
 import qualified Parun.Types.GrantPlayFromExile as GrantPlayFromExile
 import qualified Parun.Types.GrantZone as GrantZone
@@ -2093,6 +2094,15 @@ spec s = Spec.describe s "Parun.Codec.Effect" $ do
       fromJson
       (Effect.ExchangeControl (ControlSides.WithSource (SlotName.MkSlotName (Text.pack "permanent"))))
       " {\"type\":\"ExchangeControl\",\"value\":{\"type\":\"WithSource\",\"value\":\"permanent\"}} "
+  -- Discord, Lord of Disharmony: CR 118.14's rider and the recopy's condition
+  -- written, the holder elided at CR 109.5's "you".
+  Spec.it s "GrantCopyCast" $
+    Common.assertJsonCodec
+      s
+      toJson
+      fromJson
+      (Effect.GrantCopyCast (GrantCopyCast.MkGrantCopyCast Duration.UntilEndOfTurn (PlayerRef.Relative PlayerRelation.You) ManaSpending.AnyType (Just (Condition.All []))))
+      " {\"type\":\"GrantCopyCast\",\"value\":{\"duration\":{\"type\":\"UntilEndOfTurn\"},\"spending\":\"AnyType\",\"recopy\":{\"type\":\"All\",\"value\":[]}}} "
   Spec.it s "GrantPlayFromExile round-trips both ObjectRef arms" $ do
     Common.assertJsonCodec
       s
@@ -2597,7 +2607,7 @@ spec s = Spec.describe s "Parun.Codec.Effect" $ do
       s
       toJson
       fromJson
-      (Effect.ChooseCardName (ChooseCardName.MkChooseCardName (PlayerRef.Relative PlayerRelation.You) (Filter.Not (Filter.HasCardType CardType.Land)) Nothing))
+      (Effect.ChooseCardName (ChooseCardName.MkChooseCardName (PlayerRef.Relative PlayerRelation.You) (Filter.Not (Filter.HasCardType CardType.Land)) Nothing CardSelection.ByChoice))
       " {\"type\":\"ChooseCardName\",\"value\":{\"player\":{\"type\":\"Relative\",\"value\":\"You\"},\"restriction\":{\"type\":\"Not\",\"value\":{\"type\":\"HasCardType\",\"value\":\"Land\"}}}} "
   -- Alhammarret, High Arbiter: the names of the revealed cards only.
   Spec.it s "ChooseCardName among" $
@@ -2605,8 +2615,16 @@ spec s = Spec.describe s "Parun.Codec.Effect" $ do
       s
       toJson
       fromJson
-      (Effect.ChooseCardName (ChooseCardName.MkChooseCardName (PlayerRef.Relative PlayerRelation.You) (Filter.And []) (Just (SlotName.MkSlotName (Text.pack "revealed")))))
+      (Effect.ChooseCardName (ChooseCardName.MkChooseCardName (PlayerRef.Relative PlayerRelation.You) (Filter.And []) (Just (SlotName.MkSlotName (Text.pack "revealed"))) CardSelection.ByChoice))
       " {\"type\":\"ChooseCardName\",\"value\":{\"among\":\"revealed\",\"player\":{\"type\":\"Relative\",\"value\":\"You\"},\"restriction\":{\"type\":\"And\",\"value\":[]}}} "
+  -- Discord, Lord of Disharmony: randomness picks the name.
+  Spec.it s "ChooseCardName at random" $
+    Common.assertJsonCodec
+      s
+      toJson
+      fromJson
+      (Effect.ChooseCardName (ChooseCardName.MkChooseCardName (PlayerRef.Relative PlayerRelation.You) (Filter.Not (Filter.HasCardType CardType.Land)) Nothing CardSelection.AtRandom))
+      " {\"type\":\"ChooseCardName\",\"value\":{\"player\":{\"type\":\"Relative\",\"value\":\"You\"},\"restriction\":{\"type\":\"Not\",\"value\":{\"type\":\"HasCardType\",\"value\":\"Land\"}},\"selection\":\"AtRandom\"}} "
   Spec.it s "ChooseQuality" $
     Common.assertJsonCodec
       s

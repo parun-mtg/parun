@@ -113,6 +113,7 @@ withoutAnnouncement before entry between closed = do
   copyEffects <- listOf (StoredEffects.copyEffects . GameState.stored)
   replacements <- listOf (StoredEffects.replacements . GameState.stored)
   laterPayments <- listOf (StoredEffects.laterPayments . GameState.stored)
+  copyCasts <- listOf (StoredEffects.copyCasts . GameState.stored)
   pendingPreventionRiders <- seqOf (StoredEffects.pendingPreventionRiders . GameState.stored)
   pendingReplacementEffects <- seqOf (StoredEffects.pendingReplacementEffects . GameState.stored)
   pendingSkipEffects <- seqOf (StoredEffects.pendingSkipEffects . GameState.stored)
@@ -156,6 +157,7 @@ withoutAnnouncement before entry between closed = do
   referenceNames <- newest (Bookkeeping.referenceNames . GameState.bookkeeping)
   outsideCopies <- setOf GameState.outsideCopies
   outsideFinds <- mapOf GameState.outsideFinds
+  copyStandIns <- mapOf GameState.copyStandIns
   namedCopyChoices <- mapOf GameState.namedCopyChoices
   notedCards <- mapOf GameState.notedCards
   notedMana <- mapOf GameState.notedMana
@@ -355,6 +357,7 @@ withoutAnnouncement before entry between closed = do
               StoredEffects.evasions = evasions,
               StoredEffects.ignoredAbilities = ignoredAbilities,
               StoredEffects.laterPayments = laterPayments,
+              StoredEffects.copyCasts = copyCasts,
               StoredEffects.delayedTriggers = delayedTriggers,
               StoredEffects.pendingPreventionRiders = pendingPreventionRiders,
               StoredEffects.pendingReplacementEffects = pendingReplacementEffects,
@@ -369,6 +372,7 @@ withoutAnnouncement before entry between closed = do
         GameState.restartSignal = restartSignal,
         GameState.outsideCopies = outsideCopies,
         GameState.outsideFinds = outsideFinds,
+        GameState.copyStandIns = copyStandIns,
         GameState.namedCopyChoices = namedCopyChoices,
         GameState.notedCards = notedCards,
         GameState.notedMana = notedMana,

@@ -49,6 +49,7 @@ import qualified Parun.Engine.Sticker as Sticker
 import qualified Parun.Engine.Warp as Warp
 import qualified Parun.Extra.Integer as Integer
 import qualified Parun.Extra.Natural as Natural
+import qualified Parun.Types.ActiveCopyCast as ActiveCopyCast
 import qualified Parun.Types.Affected as Affected
 import qualified Parun.Types.Again as Again
 import qualified Parun.Types.Ante as Ante
@@ -68,6 +69,7 @@ import qualified Parun.Types.CarryOver as CarryOver
 import qualified Parun.Types.CastObligation as CastObligation
 import qualified Parun.Types.CastOffer as CastOffer
 import qualified Parun.Types.CastRepetition as CastRepetition
+import qualified Parun.Types.Chosen as Chosen
 import qualified Parun.Types.ChosenCardFromAmong as ChosenCardFromAmong
 import qualified Parun.Types.Connive as Connive.Type
 import qualified Parun.Types.ContinuousEffect as ContinuousEffect
@@ -105,6 +107,7 @@ import qualified Parun.Types.GameEvent as GameEvent
 import qualified Parun.Types.GameOutcome as GameOutcome
 import qualified Parun.Types.GameSettings as GameSettings
 import qualified Parun.Types.GameState as GameState
+import qualified Parun.Types.GrantCopyCast as GrantCopyCast
 import qualified Parun.Types.GrantLookAtExiled as GrantLookAtExiled
 import qualified Parun.Types.GrantPlayFromExile as GrantPlayFromExile
 import qualified Parun.Types.GrantZone as GrantZone
@@ -889,6 +892,42 @@ grantPlayFromExile resolving source controller legal (GrantPlayFromExile.MkGrant
       GrantZone.Exile -> at == Zone.Exile
       GrantZone.Graveyard -> at == Zone.Graveyard
       GrantZone.AnyPublic -> not (Game.isHiddenZone at)
+
+-- CR 601.3 / 707.12: store a standing permission to cast one copy of the card
+-- with each name this resolution chose (CR 201.4, Object.chosenNames on the
+-- source), its printing looked up in the Oracle card reference (CR 108.1). The
+-- copy is created outside the game, as CR 707.13's is, each time its holder
+-- has priority (Event.offerOutside), and a cast spends the row. A name the
+-- reference does not answer stores nothing; so do grantPlayFromExile's empty
+-- and plural holders and its duration that never started (CR 611.2b).
+-- Discord, Lord of Disharmony's scenarios prove it.
+grantCopyCast :: ObjectId -> ObjectId -> PlayerId -> Map.Map SlotName (Set Recipient) -> GrantCopyCast.GrantCopyCast -> Game ()
+grantCopyCast resolving source controller legal (GrantCopyCast.MkGrantCopyCast duration player spending recopy) = do
+  gs <- State.get
+  let chosen = Maybe.fromMaybe Map.empty (Game.choiceWithLastKnown Chosen.Names (Game.readingAcquisition resolving source gs source) source gs)
+      names = ListUtils.nubOrd (foldMap Set.toList (Map.elems chosen))
+  case (playerRefPlayers legal resolving source controller gs player, Expiry.arm resolving legal controller source duration gs) of
+    ([holder], Just expiry) -> Monad.forM_ names $ \name -> do
+      found <- Game.lookUpCard name
+      Monad.forM_ found $ \printingId -> State.modify' $ \g ->
+        let (stamp, stamped) = Game.freshTimestamp g
+            row =
+              ActiveCopyCast.MkActiveCopyCast
+                { ActiveCopyCast.timestamp = stamp,
+                  ActiveCopyCast.printing = printingId,
+                  ActiveCopyCast.name = name,
+                  ActiveCopyCast.permission =
+                    (ExilePlayPermission.defaultValue holder source)
+                      { ExilePlayPermission.expiry = expiry,
+                        ExilePlayPermission.spending = spending,
+                        ExilePlayPermission.verb = PermissionVerb.Cast
+                      },
+                  ActiveCopyCast.ability = resolving,
+                  -- BAKED, grantPlayFromExile's condition's reason.
+                  ActiveCopyCast.recopy = fmap (Condition.bakeBound legal) recopy
+                }
+         in stamped {GameState.stored = (GameState.stored stamped) {StoredEffects.copyCasts = StoredEffects.copyCasts (GameState.stored stamped) <> [row]}}
+    _ -> pure ()
 
 -- CR 406.3: write the look permission onto every object the ObjectRef names,
 -- for each player the PlayerRef names (CR 109.5's "you" unless the card says

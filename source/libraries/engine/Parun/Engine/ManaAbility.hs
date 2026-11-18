@@ -528,6 +528,7 @@ manaProduced effect = case effect of
   Effect.OfferNamedCopy {} -> Nothing
   Effect.OfferNotedCopy {} -> Nothing
   Effect.GrantPlayFromExile {} -> Nothing
+  Effect.GrantCopyCast {} -> Nothing
   -- Descended into, unlike CR 615.5's rider above: rule 608.2f's body runs as
   -- part of THIS effect, so an AddMana in it would be mana this ability adds.
   -- No card in the pool writes one, and CR 605.1a would want it seen if one did.
@@ -741,6 +742,7 @@ playerChoice effect = case effect of
   Effect.OfferNamedCopy {} -> Nothing
   Effect.OfferNotedCopy {} -> Nothing
   Effect.GrantPlayFromExile {} -> Nothing
+  Effect.GrantCopyCast {} -> Nothing
   Effect.ForEach {} -> Nothing
   Effect.ForEachNumber {} -> Nothing
   Effect.Repeat {} -> Nothing
@@ -1047,6 +1049,7 @@ movesLibraryCard effect = case effect of
   -- Writes a permission onto objects an earlier effect already placed, and moves
   -- nothing itself.
   Effect.GrantPlayFromExile {} -> False
+  Effect.GrantCopyCast {} -> False
   -- Descended into for `manaProduced`'s reason: rule 608.2f's body runs as part
   -- of THIS effect.
   Effect.ForEach (ForEach.MkForEach _ _ _ body _ _ _) -> any movesLibraryCard body
