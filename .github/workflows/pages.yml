@@ -16,18 +16,13 @@ concurrency:
 permissions:
   contents: read
 jobs:
-  deploy:
-    name: Deploy
+  # Uploading and deploying in separate jobs, as GitHub's starter workflow does:
+  # deploy-pages run in the uploading job did not see the artifact.
+  upload:
+    name: Upload
     # A prerelease leaves the page on the latest release.
     if: github.event_name == 'workflow_dispatch' || !github.event.release.prerelease
     runs-on: ubuntu-latest
-    permissions:
-      contents: read
-      id-token: write
-      pages: write
-    environment:
-      name: github-pages
-      url: ${{ steps.deploy.outputs.page_url }}
     steps:
       - run: |
           gh release download "$TAG" --pattern 'parun-*-wasm.tar.gz' --repo "$GITHUB_REPOSITORY"
@@ -39,5 +34,16 @@ jobs:
       - uses: actions/upload-pages-artifact@v5
         with:
           path: web
+  deploy:
+    name: Deploy
+    needs: upload
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      pages: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deploy.outputs.page_url }}
+    steps:
       - id: deploy
         uses: actions/deploy-pages@v5
