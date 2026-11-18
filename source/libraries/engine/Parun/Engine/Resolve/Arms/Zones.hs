@@ -1035,7 +1035,8 @@ forEach applyEffectWith loopOffers runSubgame resolving source controller legal 
           [one] -> [one]
           _ -> take 1 swept
       _ -> pure swept
-  ordered <- Common.forEachOrder resolving (startingWith >>= Common.oneSeat legal resolving source controller gs0) (const (Just controller)) picked
+  let startSeat = startingWith >>= Common.oneSeat legal resolving source controller gs0
+  ordered <- Common.forEachOrder resolving startSeat (const (Just controller)) picked
   -- CR 118.12a per member: every offer is made before the first body runs.
   members <- maybe (pure ordered) (loopOffers runSubgame resolving source controller slot legal ordered) gate
   -- CR 101.4b: the body's picks are recorded for its later prompts
@@ -1161,7 +1162,24 @@ forEach applyEffectWith loopOffers runSubgame resolving source controller legal 
       -- The order is observable, so the active team names it: Hive Mind's
       -- copies, the scenario "CR 805.6 the active team names which teammate
       -- copies first for Hive Mind".
-      memberMajor = overMembers True (\member state -> Monad.foldM (step member) state body)
+      memberMajor = case startSeat of
+        Just seat -> inTurnOrder members seat (\member state -> Monad.foldM (step member) state body)
+        Nothing -> overMembers True (\member state -> Monad.foldM (step member) state body)
+      -- A walk starting with a named seat re-reads the turn order before each
+      -- member, from the seat of the member just done, so a Topsy Turvy one
+      -- member put onto the battlefield turns who is next: docs/decisions.md,
+      -- "Whether a round of Thieves' Auction re-reads the turn order". Ties
+      -- keep `members`' order, which is forEachOrder's.
+      inTurnOrder pending seat run state = case pending of
+        [] -> pure state
+        _ : _ -> do
+          gs <- State.get
+          let order = Game.turnOrderFrom seat gs
+              rank member = maybe (length order) (\pid -> Maybe.fromMaybe (length order) (List.elemIndex pid order)) (Common.recipientSeat gs member)
+              next = List.minimumBy (\a b -> compare (rank a) (rank b)) pending
+          state' <- run next state
+          seat' <- State.gets (\gs' -> Maybe.fromMaybe seat (Common.recipientSeat gs' next))
+          inTurnOrder (List.delete next pending) seat' run state'
       -- CR 608.2e / 608.2f's second sentence: the body's actions in written
       -- order, each one's choices made for every member and then the action
       -- processed for every member at once, before the next action's choices.
