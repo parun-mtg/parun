@@ -1,0 +1,25 @@
+{
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "name": "alice",
+        "battlefield": [{"card": "Swamp", "label": "swamp"}],
+        "hand": [{"card": "Clifftop Retreat", "label": "land"}],
+        "library": [{"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}]
+      },
+      {
+        "name": "bob",
+        "battlefield": [{"card": "Mountain"}, {"card": "Plains"}],
+        "library": [{"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}]
+      }
+    ],
+    "step": "PrecombatMain"
+  },
+  "description": "CR 614.1c: Clifftop Retreat enters tapped when its controller controls neither a Mountain nor a Plains",
+  "note": "Bob's Mountain and Plains are not alice's, and her Swamp is neither.",
+  "timeline": [
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": {"PlayLand": "$land"}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Tapped": {"object": "Clifftop Retreat", "tapped": true}}}
+  ]
+}

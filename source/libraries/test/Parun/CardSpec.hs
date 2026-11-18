@@ -106,7 +106,6 @@ import qualified Parun.Types.AttackCount as AttackCount
 import qualified Parun.Types.AttackLimitUnless as AttackLimitUnless
 import qualified Parun.Types.AttackRequirement as AttackRequirement
 import qualified Parun.Types.AttackTargetKind as AttackTargetKind
-import qualified Parun.Types.AttackTargetRef as AttackTargetRef
 import qualified Parun.Types.AttackTrigger as AttackTrigger
 import qualified Parun.Types.AttackedTrigger as AttackedTrigger
 import qualified Parun.Types.AttackerTarget as AttackerTarget
@@ -428,6 +427,7 @@ import qualified Parun.Types.PutSticker as PutSticker
 import qualified Parun.Types.Quantity as Quantity.Type
 import qualified Parun.Types.RandomCard as RandomCard
 import qualified Parun.Types.RandomCardInGraveyard as RandomCardInGraveyard
+import qualified Parun.Types.RecipientRef as RecipientRef
 import qualified Parun.Types.RedirectDamage as RedirectDamage
 import qualified Parun.Types.Regenerability as Regenerability
 import qualified Parun.Types.Reinforce as Reinforce
@@ -860,8 +860,8 @@ objectRefPositions =
         ("gain-control", Effect.GainControl (GainControl.MkGainControl Duration.UntilEndOfTurn (plantedRef "gc") Nothing (PlayerRef.Relative PlayerRelation.You)), [plantedRef "gc"]),
         ("require-block", Effect.RequireBlock (RequireBlock.MkRequireBlock Duration.UntilEndOfTurn (RestrictedCreatures.Named (plantedRef "rb-blocker")) (Just (RestrictedCreatures.Named (plantedRef "rb-attacker"))) RequirementArity.EachSubject), [plantedRef "rb-blocker", plantedRef "rb-attacker"]),
         ("prohibit", Effect.Prohibit (Prohibit.MkProhibit Prohibition.Regenerate Duration.UntilEndOfTurn (RestrictedCreatures.Named (plantedRef "cb"))), [plantedRef "cb"]),
-        ("require-attack", Effect.RequireAttack (RequireAttack.MkRequireAttack Duration.UntilEndOfTurn (RestrictedCreatures.Named (plantedRef "ra")) (Just (AttackTargetRef.Players (PlayerRef.Relative PlayerRelation.You)))), [plantedRef "ra"]),
-        ("require-attack-permanent", Effect.RequireAttack (RequireAttack.MkRequireAttack Duration.UntilEndOfTurn (RestrictedCreatures.Named (plantedRef "rp-attacker")) (Just (AttackTargetRef.Permanents (plantedRef "rp-defender")))), [plantedRef "rp-attacker", plantedRef "rp-defender"]),
+        ("require-attack", Effect.RequireAttack (RequireAttack.MkRequireAttack Duration.UntilEndOfTurn (RestrictedCreatures.Named (plantedRef "ra")) (Just (RecipientRef.Players (PlayerRef.Relative PlayerRelation.You)))), [plantedRef "ra"]),
+        ("require-attack-permanent", Effect.RequireAttack (RequireAttack.MkRequireAttack Duration.UntilEndOfTurn (RestrictedCreatures.Named (plantedRef "rp-attacker")) (Just (RecipientRef.Permanents (plantedRef "rp-defender")))), [plantedRef "rp-attacker", plantedRef "rp-defender"]),
         ("forbid-attack", Effect.ForbidAttack (ForbidAttack.MkForbidAttack Duration.UntilEndOfTurn (RestrictedCreatures.Named (plantedRef "fa")) Nothing), [plantedRef "fa"]),
         ("undesignate", Effect.Undesignate (Undesignate.MkUndesignate Designation.Suspected (plantedRef "us")), [plantedRef "us"]),
         ("shuffle-into-library", Effect.ShuffleIntoLibrary (ShuffleIntoLibrary.MkShuffleIntoLibrary Nothing (plantedRef "sl") Nothing), [plantedRef "sl"]),
@@ -879,7 +879,7 @@ objectRefPositions =
         ("for-each", Effect.ForEach (ForEach.MkForEach (plantedRef "fe") LoopMembers.Every (SlotName.MkSlotName (Text.pack "each")) Seq.empty False Nothing Nothing), [plantedRef "fe"]),
         ("heal", Effect.Heal (plantedRef "he"), [plantedRef "he"]),
         ("choose-new-targets", Effect.ChooseNewTargets (plantedRef "cnt"), [plantedRef "cnt"]),
-        ("change-targets", Effect.ChangeTargets (ChangeTargets.MkChangeTargets (plantedRef "ct") (Just (plantedRef "cto"))), [plantedRef "ct", plantedRef "cto"]),
+        ("change-targets", Effect.ChangeTargets (ChangeTargets.MkChangeTargets (plantedRef "ct") (Just (RecipientRef.Permanents (plantedRef "cto")))), [plantedRef "ct", plantedRef "cto"]),
         ("exchange-values", Effect.ExchangeValues (ExchangeValues.MkExchangeValues (ExchangedValue.Power (plantedRef "xv-power")) (ExchangedValue.Toughness (plantedRef "xv-toughness")) Duration.Indefinite), [plantedRef "xv-power", plantedRef "xv-toughness"])
       ]
 
@@ -930,7 +930,8 @@ playerRefPositions =
         ("skip-phase", Effect.SkipPhase SkipPhase.MkSkipPhase {SkipPhase.player = plantedPlayer "sn", SkipPhase.selector = SkipWindow.PartOfTurn PhaseSelector.CombatPhase, SkipPhase.uses = Uses.Once, SkipPhase.duration = Duration.Indefinite, SkipPhase.count = SkipPhase.defaultCount}, [plantedPlayer "sn"]),
         ("gain-player-counters", Effect.GainPlayerCounters (PlayerCounters.MkPlayerCounters (plantedPlayer "gp") PlayerCounterKind.Rad one), [plantedPlayer "gp"]),
         ("remove-player-counters", Effect.RemovePlayerCounters (RemovePlayerCounters.MkRemovePlayerCounters (plantedPlayer "rp") PlayerCounterKind.Rad one Nothing), [plantedPlayer "rp"]),
-        ("require-attack", Effect.RequireAttack (RequireAttack.MkRequireAttack Duration.UntilEndOfTurn (RestrictedCreatures.Named (plantedRef "ra")) (Just (AttackTargetRef.Players (plantedPlayer "ra-defender")))), [plantedPlayer "ra-defender"]),
+        ("require-attack", Effect.RequireAttack (RequireAttack.MkRequireAttack Duration.UntilEndOfTurn (RestrictedCreatures.Named (plantedRef "ra")) (Just (RecipientRef.Players (plantedPlayer "ra-defender")))), [plantedPlayer "ra-defender"]),
+        ("change-targets", Effect.ChangeTargets (ChangeTargets.MkChangeTargets (plantedRef "ct") (Just (RecipientRef.Players (plantedPlayer "ct-onto")))), [plantedPlayer "ct-onto"]),
         ("gain-control", Effect.GainControl (GainControl.MkGainControl Duration.Indefinite (plantedRef "gc") Nothing (plantedPlayer "gc")), [plantedPlayer "gc"]),
         ("join-attack", Effect.JoinAttack (JoinAttack.MkJoinAttack (plantedRef "ja") (plantedPlayer "ja")), [plantedPlayer "ja"]),
         ("blight", Effect.Blight (Blight.MkBlight (plantedPlayer "bl") one Nothing), [plantedPlayer "bl"]),
@@ -3751,8 +3752,8 @@ modificationFilters modification = case modification of
     CostKeyword.BeamMeUp unreturnable -> keywordFramed (Maybe.maybeToList unreturnable)
   -- CR 702.5a again: the granted slot's own Filter, which is card text like any
   -- other and has to be swept. NOT [] -- this, LoseEnchant beside it,
-  -- GainKeyword above, GainKeywordsAmong, LoseKeyword, CantHaveKeyword,
-  -- SetCreatureSubtypesOfLastCardExiledWith and AddNamesMatching below are the
+  -- GainKeyword above, GainKeywordsAmong, GainAbilitiesOfStickers, LoseKeyword,
+  -- CantHaveKeyword, SetCreatureSubtypesOfLastCardExiledWith and AddNamesMatching below are the
   -- arms that answer with something, and every other one carries no Filter at
   -- all, LoseKeywordFamily's payload-free family included.
   Modification.GainEnchant slot -> targetSlotFilters slot
@@ -3773,7 +3774,8 @@ modificationFilters modification = case modification of
   -- Filter naming the exiled cards.
   Modification.GainCardAbilities (CardAbilities.MkCardAbilities _ cards _ _ _ extra) -> (Unframed, cards) : frame Unframed (concatMap conditionFilters (concatMap restrictionConditions extra))
   Modification.GainLentKeyword lent -> frame Unframed (concatMap conditionFilters (concatMap restrictionConditions (LentKeyword.restrictions lent)))
-  Modification.GainAbilitiesOfStickers -> []
+  -- The objects whose stickers are read.
+  Modification.GainAbilitiesOfStickers stickered -> [(Unframed, stickered)]
   Modification.SetBasePowerToughness (SetBasePowerToughness.MkSetBasePowerToughness p t) -> foldMap quantityFilters p <> foldMap quantityFilters t
   Modification.ModifyPowerToughness (ModifyPowerToughness.MkModifyPowerToughness p t) -> quantityFilters p <> quantityFilters t
   Modification.Intensify n -> quantityFilters n
@@ -5540,8 +5542,8 @@ effectFilters effect = case effect of
       <> restrictedFilters attacker
       <> case defender of
         Nothing -> []
-        Just (AttackTargetRef.Players _) -> []
-        Just (AttackTargetRef.Permanents ref) -> frame SourceHostFramed (objectRefFilters ref)
+        Just (RecipientRef.Players _) -> []
+        Just (RecipientRef.Permanents ref) -> frame SourceHostFramed (objectRefFilters ref)
   -- CR 114.2's emblem is a whole card too.
   Effect.CreateEmblem emblem -> overFaces cardFilters (CreateEmblem.card emblem)
   Effect.BecomeMonarch _ -> []
@@ -5629,7 +5631,11 @@ effectFilters effect = case effect of
   Effect.RepeatIf (RepeatIf.MkRepeatIf process condition ifHolds) -> frame RepeatGateFramed (conditionFilters condition) <> concatMap effectFilters (process <> ifHolds)
   Effect.Heal ref -> frame SourceHostFramed (objectRefFilters ref)
   Effect.ChooseNewTargets ref -> frame SourceHostFramed (objectRefFilters ref)
-  Effect.ChangeTargets x -> frame SourceHostFramed (objectRefFilters (ChangeTargets.objects x) <> foldMap objectRefFilters (ChangeTargets.onto x))
+  Effect.ChangeTargets x ->
+    frame SourceHostFramed . (objectRefFilters (ChangeTargets.objects x) <>) $ case ChangeTargets.onto x of
+      Just (RecipientRef.Permanents ref) -> objectRefFilters ref
+      Just (RecipientRef.Players _) -> []
+      Nothing -> []
 
 -- Per MODE rather than through Modal.allTargetSlots, which is a Map.unions and so
 -- collapses two modes declaring the same slot name (#475) -- the cross-check

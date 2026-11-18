@@ -1,0 +1,28 @@
+{
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "name": "alice",
+        "battlefield": [{"card": "Island", "label": "i1"}, {"card": "Mountain", "label": "m1"}],
+        "hand": [{"card": "Coastal Peak", "label": "played"}, {"card": "Coastal Peak", "label": "cycled"}],
+        "library": [{"card": "Hill Giant"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}]
+      },
+      {
+        "name": "bob",
+        "library": [{"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}]
+      }
+    ],
+    "step": "PrecombatMain"
+  },
+  "description": "CR 614.1c, 702.29a, 305.6: Coastal Peak enters tapped, is an Island Mountain, and cycles for {2}",
+  "note": "The battlefield Peak is the second live one, created after the card left in hand (CR 400.7). The other cycles for {2} and draws the Hill Giant.",
+  "timeline": [
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": {"PlayLand": "$played"}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Tapped": {"object": "Coastal Peak#2", "tapped": true}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Subtypes": {"object": "Coastal Peak#2", "subtypes": ["Island", "Mountain"]}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": {"Activate": {"object": "$cycled", "mana": ["$i1", "$m1"]}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass"},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Count": {"card": "Hill Giant", "count": 1, "player": "alice", "zone": "Hand"}}}
+  ]
+}

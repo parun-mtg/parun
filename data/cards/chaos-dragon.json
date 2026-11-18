@@ -76,7 +76,10 @@
                       {
                         "type": "RollDie",
                         "value": {
-                          "highest": "highest",
+                          "extreme": {
+                            "end": "Highest",
+                            "slot": "highest"
+                          },
                           "roller": {
                             "type": "Relative",
                             "value": "AnyPlayer"

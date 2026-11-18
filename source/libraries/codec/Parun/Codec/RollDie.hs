@@ -5,6 +5,7 @@ module Parun.Codec.RollDie where
 import qualified Parun.Codec.DiceReading as DiceReading
 import qualified Parun.Codec.PlayerRef as PlayerRef
 import qualified Parun.Codec.Quantity as Quantity
+import qualified Parun.Codec.RollExtreme as RollExtreme
 import qualified Parun.Codec.SlotName as SlotName
 import qualified Parun.JsonCodec.Codec as Codec
 import qualified Parun.JsonCodec.Common as Common
@@ -21,9 +22,9 @@ import qualified Parun.Types.RollDie as RollDie
 -- Quantity the instruction adds. CR 706.1's `count` elides to one and `other`
 -- to nothing, and `reading` to the choice, for the same reason: every roll but
 -- the Endeavor cycle's and Neverwinter Hydra's throws one die and reads one
--- result. CR 706.1's `roller` elides to the controller and `highest` to
--- nothing: only Chaos Dragon has every player roll, and only GO TO JAIL names one
--- player. CR 706.8a's `store` elides
+-- result. CR 706.1's `roller` elides to the controller and `extreme` to
+-- nothing: only Chaos Dragon and Ricochet have every player roll, and only GO TO
+-- JAIL names one player. CR 706.8a's `store` elides
 -- to nothing: only Centaur of Attention stores its results. CR 706.6's `ignore`
 -- elides to zero: only Berserker's Frenzy ignores a roll of its own.
 codec :: Codec.Codec RollDie.RollDie
@@ -36,6 +37,6 @@ codec = Fields.object $ do
   slot <- Fields.required "slot" SlotName.codec RollDie.slot
   other <- Fields.defaulted "other" Nothing (Common.maybe SlotName.codec) RollDie.other
   roller <- Fields.defaulted "roller" RollDie.defaultRoller PlayerRef.codec RollDie.roller
-  highest <- Fields.defaulted "highest" Nothing (Common.maybe SlotName.codec) RollDie.highest
+  extreme <- Fields.defaulted "extreme" Nothing (Common.maybe RollExtreme.codec) RollDie.extreme
   store <- Fields.defaulted "store" Nothing (Common.maybe SlotName.codec) RollDie.store
-  pure RollDie.MkRollDie {RollDie.sides = sides, RollDie.count = count, RollDie.ignore = ignore, RollDie.modifier = modifier, RollDie.reading = reading, RollDie.slot = slot, RollDie.other = other, RollDie.roller = roller, RollDie.highest = highest, RollDie.store = store}
+  pure RollDie.MkRollDie {RollDie.sides = sides, RollDie.count = count, RollDie.ignore = ignore, RollDie.modifier = modifier, RollDie.reading = reading, RollDie.slot = slot, RollDie.other = other, RollDie.roller = roller, RollDie.extreme = extreme, RollDie.store = store}

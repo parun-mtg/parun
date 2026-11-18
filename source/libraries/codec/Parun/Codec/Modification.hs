@@ -100,7 +100,7 @@ codec abilityCodec =
           Arm.payload "GainKeywordsAmong" keywordsAmong (\(d, z, f) -> Modification.GainKeywordsAmong d z f) (\x -> case x of Modification.GainKeywordsAmong d z f -> Just (d, z, f); _ -> Nothing),
           Arm.payload "GainCardAbilities" CardAbilities.codec Modification.GainCardAbilities (\x -> case x of Modification.GainCardAbilities y -> Just y; _ -> Nothing),
           Arm.payload "GainLentKeyword" LentKeyword.codec Modification.GainLentKeyword (\x -> case x of Modification.GainLentKeyword y -> Just y; _ -> Nothing),
-          Arm.nullary "GainAbilitiesOfStickers" Modification.GainAbilitiesOfStickers,
+          Arm.payload "GainAbilitiesOfStickers" (Filter.codec Keyword.codec) Modification.GainAbilitiesOfStickers (\x -> case x of Modification.GainAbilitiesOfStickers y -> Just y; _ -> Nothing),
           Arm.nullary "LoseAllAbilities" Modification.LoseAllAbilities,
           Arm.payload "LoseNamedAbility" AbilityName.codec Modification.LoseNamedAbility (\x -> case x of Modification.LoseNamedAbility y -> Just y; _ -> Nothing),
           Arm.payload "LoseKeyword" Keyword.codec Modification.LoseKeyword (\x -> case x of Modification.LoseKeyword y -> Just y; _ -> Nothing),
@@ -152,7 +152,7 @@ tagOf x = case x of
   Modification.GainKeywordsAmong {} -> "GainKeywordsAmong"
   Modification.GainCardAbilities {} -> "GainCardAbilities"
   Modification.GainLentKeyword {} -> "GainLentKeyword"
-  Modification.GainAbilitiesOfStickers -> "GainAbilitiesOfStickers"
+  Modification.GainAbilitiesOfStickers _ -> "GainAbilitiesOfStickers"
   Modification.LoseAllAbilities {} -> "LoseAllAbilities"
   Modification.LoseNamedAbility {} -> "LoseNamedAbility"
   Modification.LoseKeyword {} -> "LoseKeyword"

@@ -1,0 +1,27 @@
+{
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "name": "alice",
+        "battlefield": [{"card": "Commander Spock", "label": "spock", "ready": true}, {"card": "Forest"}, {"card": "Plains"}],
+        "library": [{"card": "Mountain", "label": "mountain"}, {"card": "Hill Giant"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}]
+      },
+      {
+        "name": "bob",
+        "library": [{"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}]
+      }
+    ],
+    "step": "PrecombatMain"
+  },
+  "description": "Commander Spock's attack trigger may put a revealed land card onto the battlefield tapped, and then draws nothing",
+  "note": "The Mountain goes onto the battlefield tapped; the Hill Giant now on top is a different card, so it is not drawn.",
+  "timeline": [
+    {"turn": 1, "step": "DeclareAttackers", "player": "alice", "do": {"Attack": ["$spock"]}},
+    {"turn": 1, "step": "DeclareAttackers", "player": "alice", "do": "Pass"},
+    {"turn": 1, "step": "DeclareAttackers", "player": "alice", "do": {"ChooseOptional": "Exercises"}},
+    {"turn": 1, "step": "DeclareAttackers", "player": "alice", "check": {"Tapped": {"object": "Mountain", "tapped": true}}},
+    {"turn": 1, "step": "DeclareAttackers", "player": "alice", "check": {"Count": {"card": "Mountain", "count": 1, "player": "alice", "zone": "Battlefield"}}},
+    {"turn": 1, "step": "DeclareAttackers", "player": "alice", "check": {"Count": {"card": "Hill Giant", "count": 0, "player": "alice", "zone": "Hand"}}}
+  ]
+}

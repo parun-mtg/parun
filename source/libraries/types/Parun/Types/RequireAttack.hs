@@ -1,8 +1,8 @@
 module Parun.Types.RequireAttack where
 
-import qualified Parun.Types.AttackTargetRef as AttackTargetRef
 import qualified Parun.Types.Duration as Duration
 import qualified Parun.Types.ObjectRef as ObjectRef
+import qualified Parun.Types.RecipientRef as RecipientRef
 import qualified Parun.Types.RestrictedCreatures as RestrictedCreatures
 
 -- | The payload of Parun.Types.Effect's RequireAttack arm: CR 508.1d's
@@ -14,7 +14,7 @@ import qualified Parun.Types.RestrictedCreatures as RestrictedCreatures
 --
 -- The two sides are DIFFERENT types where Parun.Types.RequireBlock's are both
 -- ObjectRefs, and that is CR 508.1b: what a creature attacks is a player, a
--- planeswalker or a battle, which Parun.Types.AttackTargetRef names. Named fields
+-- planeswalker or a battle, which Parun.Types.RecipientRef names. Named fields
 -- all the same, so a card file reads as the sentence it transcribes.
 data RequireAttack = MkRequireAttack
   { duration :: Duration.Duration,
@@ -23,6 +23,6 @@ data RequireAttack = MkRequireAttack
     attacker :: RestrictedCreatures.RestrictedCreatures ObjectRef.ObjectRef,
     -- | Nothing names none, "attacks this turn if able" (Courtly Provocateur):
     -- any announcement CR 508.1b admits obeys it.
-    defender :: Maybe AttackTargetRef.AttackTargetRef
+    defender :: Maybe RecipientRef.RecipientRef
   }
   deriving (Eq, Ord, Show)

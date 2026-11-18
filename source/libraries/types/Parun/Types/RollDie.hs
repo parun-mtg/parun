@@ -5,6 +5,7 @@ import qualified Parun.Types.DiceReading as DiceReading
 import qualified Parun.Types.PlayerRef as PlayerRef
 import qualified Parun.Types.PlayerRelation as PlayerRelation
 import qualified Parun.Types.Quantity as Quantity
+import qualified Parun.Types.RollExtreme as RollExtreme
 import qualified Parun.Types.SlotName as SlotName
 
 -- | The payload of Parun.Types.Effect's RollDie arm (CR 706.1): which die to
@@ -76,9 +77,10 @@ import qualified Parun.Types.SlotName as SlotName
 -- highest result any of them used, and `other` is held by Parun.CardSpec's lint
 -- to the one-roller instruction.
 --
--- `highest` binds EVERY player whose used result was the highest of the
--- instruction's rollers, ties included, as players for a later clause to name
--- (Chaos Dragon's "those players"). Nothing where no clause reads it.
+-- `extreme` binds the players whose used results were at one end of the
+-- instruction's rollers', for a later clause to name: every player tied for the
+-- highest (Chaos Dragon's "those players"), or the one lowest, its ties
+-- rerolled (Ricochet). Nothing where no clause reads it.
 --
 -- `store` is CR 706.8a's "store those results on it": the slot naming the
 -- permanent every result the instruction kept is stored on (Centaur of
@@ -96,7 +98,7 @@ data RollDie = MkRollDie
     slot :: SlotName.SlotName,
     other :: Maybe SlotName.SlotName,
     roller :: PlayerRef.PlayerRef,
-    highest :: Maybe SlotName.SlotName,
+    extreme :: Maybe RollExtreme.RollExtreme,
     store :: Maybe SlotName.SlotName
   }
   deriving (Eq, Ord, Show)

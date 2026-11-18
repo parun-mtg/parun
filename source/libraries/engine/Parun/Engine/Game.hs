@@ -1728,12 +1728,15 @@ faceUpCopiable value oid gs = do
 copyStampOf :: Object.Object -> Maybe PC.ProjectedCharacteristics
 copyStampOf obj = Binding.copyOf (Object.bindings obj) Applicative.<|> Object.duplicate obj
 
--- CR 707.2 / 601.2b-f: `face` with the cast-time values its copy stamp carries
--- laid over it -- mana cost, additional and alternative costs, its own cost
--- reductions and its keywords -- so a card carrying copiable values other than
--- its printing's is cast at the copied card's price. data/scenarios/conjure's
--- "a duplicate of a Clone costs / owes / offers / takes / has" cases prove
--- every field but the cost choices.
+-- CR 707.2 / 601.2b-f / 601.3: `face` with the cast-time values its copy stamp
+-- carries laid over it -- mana cost, additional and alternative costs, its own
+-- cost changes, its casting restrictions and its keywords -- so a card carrying
+-- copiable values other than its printing's is cast at the copied card's price
+-- and under its rules. data/scenarios/conjure's "a duplicate of a Clone costs /
+-- owes / offers / takes / has" cases prove every field but the cost choices. A
+-- stored copy row's stamp is laid in by `lookupLayerOne`, so a card that is a
+-- Missile drops its printed ones: the bombardment scenarios on Serra Avenger
+-- and Dragon's Prey prove it.
 --
 -- The stamp describes the card's NORMAL characteristics alone, so it is laid
 -- over the front face and nothing else: CR 716.3a casts an Adventure with only
@@ -1753,7 +1756,8 @@ castingFaceOf obj card face = case copyStampOf obj of
             Face.additionalCosts = PC.additionalCosts stamp,
             Face.additionalCostChoices = PC.additionalCostChoices stamp,
             Face.alternativeCosts = PC.alternativeCosts stamp,
-            Face.costReductions = PC.costReductions stamp
+            Face.costReductions = PC.costReductions stamp,
+            Face.castingRestrictions = PC.castingRestrictions stamp
           }
   _ -> face
 
@@ -1777,7 +1781,9 @@ castableFacesOf obj card = case copyStampOf obj of
 -- land's copiable values plays as that land, and one carrying anything else
 -- offers no land face -- the printed card's back face included (CR 707.8).
 -- data/scenarios/conjure's "CR 707.2/305.1 a duplicate of a Clone of Dryad
--- Arbor" proves the first.
+-- Arbor" proves the first, and the scenario
+-- bombardment-leaves-a-forest-no-land-to-play the second for a stored copy row,
+-- which its callers lay in through `lookupLayerOne`.
 landFacesOf :: Object.Object -> Card -> [(Maybe CardName.CardName, Face Card)]
 landFacesOf obj card = case copyStampOf obj of
   Nothing -> Card.landFaces card

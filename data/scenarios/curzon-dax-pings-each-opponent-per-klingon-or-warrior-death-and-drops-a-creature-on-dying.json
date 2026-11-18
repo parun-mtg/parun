@@ -1,0 +1,42 @@
+{
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "name": "alice",
+        "battlefield": [{"card": "Curzon Dax, Bound by Blood", "label": "curzon"}, {"card": "Ambassador K'Ehleyr", "label": "kehleyr"}, {"card": "Glory-Bound Initiate", "label": "initiate"}, {"card": "Grizzly Bears", "label": "bears"}, {"card": "Mountain", "label": "m1"}, {"card": "Mountain", "label": "m2"}, {"card": "Mountain", "label": "m3"}, {"card": "Mountain", "label": "m4"}],
+        "hand": [{"card": "Pyroclasm", "label": "pyro"}, {"card": "Lightning Bolt", "label": "bolt"}, {"card": "Memnite", "label": "memnite"}, {"card": "Ornithopter", "label": "thopter"}, {"card": "Serra Angel", "label": "angel"}],
+        "library": [{"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}]
+      },
+      {
+        "name": "bob",
+        "library": [{"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}]
+      },
+      {
+        "name": "carol",
+        "library": [{"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}]
+      }
+    ],
+    "step": "PrecombatMain"
+  },
+  "description": "Curzon Dax deals 1 damage to each opponent whenever another Klingon or Warrior its controller controls dies; when it dies, its controller may put a creature card with mana value 3 or less from hand onto the battlefield",
+  "note": "Pyroclasm kills a Klingon, a Warrior and the Grizzly Bears: two triggers, so each opponent loses 2, not 3. Lightning Bolt then kills Curzon; Serra Angel's mana value 5 is refused and the Memnite is put in over the Ornithopter.",
+  "timeline": [
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": {"Cast": {"object": "$pyro", "mana": ["$m1", "$m2", null]}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass"},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass"},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass"},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Life": {"life": 18, "player": "bob"}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Life": {"life": 18, "player": "carol"}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Life": {"life": 20, "player": "alice"}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": {"Cast": {"object": "$bolt", "targets": ["$curzon"], "mana": ["$m3", null]}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass"},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass"},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": {"ChooseOptional": "Exercises"}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "refuse": {"Answer": {"prompt": "ChooseCardInHand", "with": "$angel"}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": {"Answer": {"prompt": "ChooseCardInHand", "with": "$memnite"}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Count": {"card": "Memnite", "count": 1, "player": "alice", "zone": "Battlefield"}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Count": {"card": "Serra Angel", "count": 1, "player": "alice", "zone": "Hand"}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Count": {"card": "Ornithopter", "count": 1, "player": "alice", "zone": "Hand"}}}
+  ]
+}

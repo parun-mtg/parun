@@ -70,7 +70,6 @@ import qualified Parun.Types.AttachR as AttachR
 import qualified Parun.Types.AttachRewrite as AttachRewrite
 import qualified Parun.Types.AttachTarget as AttachTarget
 import qualified Parun.Types.AttachedToBound as AttachedToBound
-import qualified Parun.Types.AttackTargetRef as AttackTargetRef
 import qualified Parun.Types.BecomeCopy as BecomeCopy
 import qualified Parun.Types.BoundReading as BoundReading
 import qualified Parun.Types.Card as Card.Type
@@ -220,6 +219,7 @@ import qualified Parun.Types.Quantity as Quantity.Type
 import qualified Parun.Types.RandomCard as RandomCard
 import qualified Parun.Types.RandomCardInGraveyard as RandomCardInGraveyard
 import qualified Parun.Types.Recipient as Recipient
+import qualified Parun.Types.RecipientRef as RecipientRef
 import qualified Parun.Types.RedirectDamage as RedirectDamage
 import qualified Parun.Types.Regenerability as Regenerability
 import qualified Parun.Types.RemovalCount as RemovalCount
@@ -1713,8 +1713,8 @@ effectObjectRefs effect =
           read_ (namedRef attacker)
             <> case defender of
               Nothing -> []
-              Just (AttackTargetRef.Players _) -> []
-              Just (AttackTargetRef.Permanents ref) -> read_ [ref]
+              Just (RecipientRef.Players _) -> []
+              Just (RecipientRef.Permanents ref) -> read_ [ref]
         Effect.CreateEmblem {} -> []
         Effect.BecomeMonarch {} -> []
         Effect.TakeTheInitiative {} -> []
@@ -1765,7 +1765,11 @@ effectObjectRefs effect =
         Effect.RepeatIf {} -> []
         Effect.Heal ref -> read_ [ref]
         Effect.ChooseNewTargets ref -> read_ [ref]
-        Effect.ChangeTargets x -> read_ (ChangeTargets.objects x : Maybe.maybeToList (ChangeTargets.onto x))
+        Effect.ChangeTargets x ->
+          read_ . (ChangeTargets.objects x :) $ case ChangeTargets.onto x of
+            Just (RecipientRef.Permanents ref) -> [ref]
+            Just (RecipientRef.Players _) -> []
+            Nothing -> []
 
 -- The chooser-shaped refs one effect writes where its position does not allow
 -- them: the lint's offenders. At a read position the CR 608.2d choice is made by

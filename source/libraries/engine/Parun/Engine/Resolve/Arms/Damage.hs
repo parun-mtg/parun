@@ -127,6 +127,8 @@ import qualified Parun.Types.ReselectAttack as ReselectAttack
 import Parun.Types.Result (Result)
 import qualified Parun.Types.Result as Result
 import qualified Parun.Types.RollDie as RollDie
+import qualified Parun.Types.RollEnd as RollEnd
+import qualified Parun.Types.RollExtreme as RollExtreme
 import qualified Parun.Types.SacrificeEffect as SacrificeEffect
 import qualified Parun.Types.Scratch as Scratch
 import qualified Parun.Types.Search as Search
@@ -1532,7 +1534,7 @@ chooseGroup resolving source controller legal (ChooseGroup.MkChooseGroup among s
 -- state a later effect of this resolution would. Nothing observes the order --
 -- the trigger goes on the stack only once this resolution finishes. Where
 -- several roll, `slot` binds the highest result any of them used and
--- `highest` every player who had it, ties included (Chaos Dragon).
+-- `extreme` the players at one end of them (Chaos Dragon, Ricochet).
 --
 -- ONE ENTRY PER INSTRUCTION, however many dice CR 706.1's count named, where
 -- FlipCoin below records one per coin: the condition reading this event is
@@ -1581,60 +1583,85 @@ rollDieArm throwDice runSubgame resolving source controller legal rollDie = do
       -- 101.4).
       named' = playerRefPlayers legal resolving source controller before (RollDie.roller rollDie)
       rollers = filter (`elem` named') (Game.apnapOrder before)
-  rolled <- Monad.forM rollers $ \roller -> do
-    (results, throwers, thrown) <- throwDice runSubgame roller sides named (RollDie.ignore rollDie) perDie
-    used <- case (RollDie.store rollDie, RollDie.reading rollDie) of
-      -- CR 706.8a: a storing instruction keeps every result rather than
-      -- using one, so CR 706.4's reading is never asked.
-      (Just _, _) -> pure Nothing
-      -- CR 706.4's total: every result read at once, so there is nothing to
-      -- choose, and the total of no dice is zero rather than unbound.
-      (Nothing, DiceReading.Total) -> pure (Just (sum results))
-      -- CR 706.4's text reading each of two results on its own: no choice
-      -- (Celebr-8000 prints none), the first die rolled at `slot` and the
-      -- second at `other`. The card's readers are symmetric in the two, so
-      -- which die lands where is unobservable. Any other number of results
-      -- leaves both unbound, `other`'s posture below.
-      (Nothing, DiceReading.Both) -> case results of
-        [first, second] -> do
-          Foldable.for_ (RollDie.other rollDie) $ \other -> State.modify' (Common.bindAmountSlot resolving source other second)
-          pure (Just first)
-        _ -> pure Nothing
-      (Nothing, DiceReading.ChooseOne) -> Monad.forM (NonEmpty.nonEmpty results) $ \offered -> do
-        gs <- State.get
-        -- CR 706.4: WHICH result the instruction uses, where it threw more
-        -- than one ("roll two d6 and choose one result"). A choice and not a
-        -- roll, so it goes through Game.choose and CR 724.5's controller may
-        -- make it. Elided where every result is the same number: both
-        -- bindings below come out the same whichever die is named, so no
-        -- board can tell the answers apart. FILTERED, NOT TRUSTED, the
-        -- ChooseBolster posture: an index past the end takes the first die
-        -- rolled.
-        index <-
-          if all (== NonEmpty.head offered) (NonEmpty.tail offered)
-            then pure 0
-            else do
-              answer <- Game.choose (Prompt.ChooseDieResult (Decide.deciderFor roller gs) roller (Just resolving) offered)
-              pure (if answer < List.genericLength results then answer else 0)
-        -- CR 706.4's "the other result", off the same throw rather than
-        -- re-derived from the count, FlipCoin's `misses` below and for its
-        -- reason. Only a two-die instruction has an "other": at any other
-        -- count what is left is not one number, and the slot stays unbound
-        -- rather than guessing which of them the card meant. Parun.CardSpec's
-        -- lint keeps data/cards/ to counts this can answer for, and to one
-        -- roller.
-        Foldable.for_ (RollDie.other rollDie) $ \other ->
-          case fmap snd (filter (\(i, _) -> i /= index) (zip [0 ..] results)) of
-            [rest] -> State.modify' (Common.bindAmountSlot resolving source other rest)
-            _ -> pure ()
-        pure (Replacement.at results index (NonEmpty.head offered))
-    pure (roller, used, (throwers, thrown), results)
-  let top = fmap maximum (NonEmpty.nonEmpty [n | (_, Just n, _, _) <- rolled])
-  Foldable.for_ top $ \n -> do
-    State.modify' (Common.bindAmountSlot resolving source (RollDie.slot rollDie) n)
-    Foldable.for_ (RollDie.highest rollDie) $ \slot ->
-      State.modify' (Common.bindPlayerSlot resolving slot (Set.fromList [roller | (roller, Just m, _, _) <- rolled, m == n]))
-  Foldable.for_ rolled $ \(roller, _, (throwers, thrown), _) ->
+      rollOne roller = do
+        (results, throwers, thrown) <- throwDice runSubgame roller sides named (RollDie.ignore rollDie) perDie
+        used <- case (RollDie.store rollDie, RollDie.reading rollDie) of
+          -- CR 706.8a: a storing instruction keeps every result rather than
+          -- using one, so CR 706.4's reading is never asked.
+          (Just _, _) -> pure Nothing
+          -- CR 706.4's total: every result read at once, so there is nothing to
+          -- choose, and the total of no dice is zero rather than unbound.
+          (Nothing, DiceReading.Total) -> pure (Just (sum results))
+          -- CR 706.4's text reading each of two results on its own: no choice
+          -- (Celebr-8000 prints none), the first die rolled at `slot` and the
+          -- second at `other`. The card's readers are symmetric in the two, so
+          -- which die lands where is unobservable. Any other number of results
+          -- leaves both unbound, `other`'s posture below.
+          (Nothing, DiceReading.Both) -> case results of
+            [first, second] -> do
+              Foldable.for_ (RollDie.other rollDie) $ \other -> State.modify' (Common.bindAmountSlot resolving source other second)
+              pure (Just first)
+            _ -> pure Nothing
+          (Nothing, DiceReading.ChooseOne) -> Monad.forM (NonEmpty.nonEmpty results) $ \offered -> do
+            gs <- State.get
+            -- CR 706.4: WHICH result the instruction uses, where it threw more
+            -- than one ("roll two d6 and choose one result"). A choice and not a
+            -- roll, so it goes through Game.choose and CR 724.5's controller may
+            -- make it. Elided where every result is the same number: both
+            -- bindings below come out the same whichever die is named, so no
+            -- board can tell the answers apart. FILTERED, NOT TRUSTED, the
+            -- ChooseBolster posture: an index past the end takes the first die
+            -- rolled.
+            index <-
+              if all (== NonEmpty.head offered) (NonEmpty.tail offered)
+                then pure 0
+                else do
+                  answer <- Game.choose (Prompt.ChooseDieResult (Decide.deciderFor roller gs) roller (Just resolving) offered)
+                  pure (if answer < List.genericLength results then answer else 0)
+            -- CR 706.4's "the other result", off the same throw rather than
+            -- re-derived from the count, FlipCoin's `misses` below and for its
+            -- reason. Only a two-die instruction has an "other": at any other
+            -- count what is left is not one number, and the slot stays unbound
+            -- rather than guessing which of them the card meant. Parun.CardSpec's
+            -- lint keeps data/cards/ to counts this can answer for, and to one
+            -- roller.
+            Foldable.for_ (RollDie.other rollDie) $ \other ->
+              case fmap snd (filter (\(i, _) -> i /= index) (zip [0 ..] results)) of
+                [rest] -> State.modify' (Common.bindAmountSlot resolving source other rest)
+                _ -> pure ()
+            pure (Replacement.at results index (NonEmpty.head offered))
+        pure (roller, used, (throwers, thrown), results)
+      usedBy current = [(roller, n) | (roller, Just n, _, _) <- current]
+      -- Ricochet's "reroll to break ties, if necessary": the players tied for
+      -- the lowest result reroll, each a fresh roll of the instruction's own
+      -- (CR 706.1), in APNAP order, until one is lowest (docs/decisions.md,
+      -- "Who rerolls Ricochet's tie"). Bounded by the tie alone: an answerer
+      -- that ties forever never ends it, as a die that did would not. Each
+      -- reroll is a roll a "whenever you roll" trigger sees.
+      breakTies current =
+        case fmap minimum (NonEmpty.nonEmpty (fmap snd (usedBy current))) of
+          Just low
+            | let tied = [roller | (roller, n) <- usedBy current, n == low],
+              length tied > 1 -> do
+                again <- Monad.forM tied rollOne
+                let renewed row@(roller, _, _, _) = Maybe.fromMaybe row (List.find (\(r, _, _, _) -> r == roller) again)
+                (settled, later) <- breakTies (fmap renewed current)
+                pure (settled, again <> later)
+          _ -> pure (current, [])
+  opening <- Monad.forM rollers rollOne
+  (rolled, rerolled) <- case fmap RollExtreme.end (RollDie.extreme rollDie) of
+    Just RollEnd.LowestBreakingTies -> breakTies opening
+    Just RollEnd.Highest -> pure (opening, [])
+    Nothing -> pure (opening, [])
+  let kept = usedBy rolled
+  Foldable.for_ (NonEmpty.nonEmpty (fmap snd kept)) $ \results -> do
+    State.modify' (Common.bindAmountSlot resolving source (RollDie.slot rollDie) (maximum results))
+    Foldable.for_ (RollDie.extreme rollDie) $ \(RollExtreme.MkRollExtreme end slot) -> do
+      let n = case end of
+            RollEnd.Highest -> maximum results
+            RollEnd.LowestBreakingTies -> minimum results
+      State.modify' (Common.bindPlayerSlot resolving slot (Set.fromList [roller | (roller, m) <- kept, m == n]))
+  Foldable.for_ (opening <> rerolled) $ \(roller, _, (throwers, thrown), _) ->
     Monad.unless (null thrown) (Common.recordRoll roller throwers thrown)
   -- CR 706.1: each roller's total, filed against the rolling ability for
   -- Quantity.RollTotalsThisTurn. Only an ability's: a spell has no "this

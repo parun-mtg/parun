@@ -1998,6 +1998,7 @@ characteristicsHaveAbility activated pc =
                   || PC.ruleAbilities pc /= mempty
                   || not (null (PC.specialActions pc))
                   || not (null (PC.costReductions pc))
+                  || not (null (PC.castingRestrictions pc))
                   || not (null (PC.alternativeCosts pc))
                   || not (null (PC.additionalCosts pc))
                   || not (null (PC.additionalCostChoices pc))

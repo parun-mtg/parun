@@ -1,0 +1,32 @@
+{
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "name": "alice",
+        "battlefield": [{"card": "Command Beacon", "label": "beacon"}],
+        "command": [{"card": "Tymna the Weaver", "label": "tymna", "commander": true}, {"card": "Akiri, Line-Slinger", "label": "akiri", "commander": true}],
+        "library": [{"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}]
+      },
+      {
+        "name": "bob",
+        "command": [{"card": "Ghalta, Primal Hunger", "label": "ghalta", "commander": true}],
+        "library": [{"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}]
+      }
+    ],
+    "step": "PrecombatMain"
+  },
+  "description": "CR 903.3: Command Beacon puts its controller's commander from the command zone into their hand, one of their choice when they have two",
+  "note": "Alice's two partners make the choice real; she takes Akiri and Tymna stays. She lets Akiri go to her hand rather than back to the command zone (CR 903.9b). Bob's Ghalta is not her commander and is not offered.",
+  "timeline": [
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": {"Activate": {"object": "$beacon", "ability": 1}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass"},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "refuse": {"Answer": {"prompt": "ChoosePermanent", "with": "$ghalta"}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": {"Answer": {"prompt": "ChoosePermanent", "with": "$akiri"}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": {"Answer": {"prompt": "ReturnCommander", "with": "Leaves"}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Count": {"card": "Akiri, Line-Slinger", "count": 1, "player": "alice", "zone": "Hand"}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Count": {"card": "Tymna the Weaver", "count": 0, "player": "alice", "zone": "Hand"}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Count": {"card": "Command Beacon", "count": 1, "player": "alice", "zone": "Graveyard"}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Count": {"card": "Ghalta, Primal Hunger", "count": 0, "player": "bob", "zone": "Hand"}}}
+  ]
+}

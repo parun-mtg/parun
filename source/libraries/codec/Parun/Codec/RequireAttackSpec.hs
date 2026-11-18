@@ -4,11 +4,11 @@ import qualified Data.Text as Text
 import qualified Parun.Codec.RequireAttack as RequireAttack
 import qualified Parun.JsonCodec.Common as Common
 import qualified Parun.Spec as Spec
-import qualified Parun.Types.AttackTargetRef as AttackTargetRef
 import qualified Parun.Types.Duration as Duration
 import qualified Parun.Types.ObjectRef as ObjectRef
 import qualified Parun.Types.PlayerRef as PlayerRef
 import qualified Parun.Types.PlayerRelation as PlayerRelation
+import qualified Parun.Types.RecipientRef as RecipientRef
 import qualified Parun.Types.RequireAttack as RequireAttack
 import qualified Parun.Types.RestrictedCreatures as RestrictedCreatures
 import qualified Parun.Types.SlotName as SlotName
@@ -23,7 +23,7 @@ spec s = Spec.describe s "Parun.Codec.RequireAttack" $ do
       ( RequireAttack.MkRequireAttack
           { RequireAttack.duration = Duration.UntilEndOfTurn,
             RequireAttack.attacker = RestrictedCreatures.Named (ObjectRef.InSlot (SlotName.MkSlotName (Text.pack "target"))),
-            RequireAttack.defender = Just (AttackTargetRef.Players (PlayerRef.Relative PlayerRelation.You))
+            RequireAttack.defender = Just (RecipientRef.Players (PlayerRef.Relative PlayerRelation.You))
           }
       )
       " {\"duration\":{\"type\":\"UntilEndOfTurn\"},\"attacker\":{\"type\":\"Named\",\"value\":{\"type\":\"InSlot\",\"value\":\"target\"}},\"defender\":{\"type\":\"Players\",\"value\":{\"type\":\"Relative\",\"value\":\"You\"}}} "

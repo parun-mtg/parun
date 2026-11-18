@@ -1727,8 +1727,10 @@ bakePlayerRef players objects ref = case ref of
   PlayerRef.HolderOfObject _ _ -> ref
   -- LEFT STANDING: baked as its grant applies (Resolve.Common.bakeAtGrant).
   PlayerRef.AtGrant _ -> ref
-  -- LEFT STANDING: not implemented, a stored condition reading the player an
-  -- object chose, which goes unanswered and ends (#4833).
+  -- Unprinted: a stored condition reading the player an object chose, which
+  -- standing here answers no one. Parun.AbilitySlotLintSpec's "CR 611.2b no
+  -- card writes a chosen player in a stored condition" keeps it out of card
+  -- data.
   PlayerRef.ChosenPlayerOfBound _ _ -> ref
   -- LEFT STANDING: the slot this names holds a PLAYER, but what the reference
   -- reads is the live combat record, which no baking can fix in place.

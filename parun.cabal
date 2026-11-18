@@ -288,8 +288,6 @@ library codec
     Parun.Codec.AttackTarget
     Parun.Codec.AttackTargetKind
     Parun.Codec.AttackTargetKindSpec
-    Parun.Codec.AttackTargetRef
-    Parun.Codec.AttackTargetRefSpec
     Parun.Codec.AttackTargetSpec
     Parun.Codec.AttackTrigger
     Parun.Codec.AttackTriggerSpec
@@ -1569,6 +1567,8 @@ library codec
     Parun.Codec.Readiness
     Parun.Codec.ReadinessSpec
     Parun.Codec.Recipient
+    Parun.Codec.RecipientRef
+    Parun.Codec.RecipientRefSpec
     Parun.Codec.RecipientSpec
     Parun.Codec.RedirectDamage
     Parun.Codec.RedirectDamageSpec
@@ -1651,6 +1651,10 @@ library codec
     Parun.Codec.RiderClauseSpec
     Parun.Codec.RollDie
     Parun.Codec.RollDieSpec
+    Parun.Codec.RollEnd
+    Parun.Codec.RollEndSpec
+    Parun.Codec.RollExtreme
+    Parun.Codec.RollExtremeSpec
     Parun.Codec.RollKind
     Parun.Codec.RollKindSpec
     Parun.Codec.RollModifier
@@ -2939,7 +2943,6 @@ library types
     Parun.Types.AttackRequirement
     Parun.Types.AttackTarget
     Parun.Types.AttackTargetKind
-    Parun.Types.AttackTargetRef
     Parun.Types.AttackTrigger
     Parun.Types.AttackWindow
     Parun.Types.Audience
@@ -3680,6 +3683,7 @@ library types
     Parun.Types.Reach
     Parun.Types.Readiness
     Parun.Types.Recipient
+    Parun.Types.RecipientRef
     Parun.Types.RedirectDamage
     Parun.Types.Reference
     Parun.Types.Regenerability
@@ -3727,6 +3731,8 @@ library types
     Parun.Types.RiderClause
     Parun.Types.RollAdjustment
     Parun.Types.RollDie
+    Parun.Types.RollEnd
+    Parun.Types.RollExtreme
     Parun.Types.RollKind
     Parun.Types.RollModifier
     Parun.Types.RollTotalsThisTurn

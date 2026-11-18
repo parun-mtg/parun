@@ -55,7 +55,6 @@ import qualified Parun.Types.AttachRewrite as AttachRewrite
 import qualified Parun.Types.AttachTarget as AttachTarget
 import qualified Parun.Types.AttachedToBound as AttachedToBound
 import qualified Parun.Types.AttackTarget as AttackTarget
-import qualified Parun.Types.AttackTargetRef as AttackTargetRef
 import qualified Parun.Types.AttackingPlayers as AttackingPlayers
 import qualified Parun.Types.BecomeCopy as BecomeCopy
 import qualified Parun.Types.Bid as Bid
@@ -68,6 +67,7 @@ import qualified Parun.Types.Card as Card.Type
 import qualified Parun.Types.CardAbilities as CardAbilities
 import qualified Parun.Types.CastOffer as CastOffer
 import qualified Parun.Types.CastRepetition as CastRepetition
+import qualified Parun.Types.ChangeTargets as ChangeTargets
 import qualified Parun.Types.ChangeText as ChangeText
 import qualified Parun.Types.ChooseCardName as ChooseCardName
 import qualified Parun.Types.ChooseGroup as ChooseGroup
@@ -246,6 +246,7 @@ import qualified Parun.Types.RandomCardInGraveyard as RandomCardInGraveyard
 import qualified Parun.Types.Reach as Reach
 import Parun.Types.Recipient (Recipient)
 import qualified Parun.Types.Recipient as Recipient
+import qualified Parun.Types.RecipientRef as RecipientRef
 import qualified Parun.Types.RedirectDamage as RedirectDamage
 import qualified Parun.Types.RemovalCount as RemovalCount
 import qualified Parun.Types.RemoveCounters as RemoveCounters
@@ -260,6 +261,7 @@ import qualified Parun.Types.RequireBlock as RequireBlock
 import qualified Parun.Types.RestrictedCreatures as RestrictedCreatures
 import qualified Parun.Types.Reveal as Reveal
 import qualified Parun.Types.RollDie as RollDie
+import qualified Parun.Types.RollExtreme as RollExtreme
 import qualified Parun.Types.SacrificeAnyNumber as SacrificeAnyNumber
 import qualified Parun.Types.SacrificeEffect as SacrificeEffect
 import qualified Parun.Types.SacrificeToEnter as SacrificeToEnter
@@ -974,8 +976,8 @@ effectPlayerRefs effect = case effect of
   Effect.RequireBlock {} -> []
   Effect.Prohibit {} -> []
   Effect.RequireAttack (RequireAttack.MkRequireAttack duration _ defender) -> case defender of
-    Just (AttackTargetRef.Players ref) -> ref : durationPlayerRefs duration
-    Just (AttackTargetRef.Permanents _) -> durationPlayerRefs duration
+    Just (RecipientRef.Players ref) -> ref : durationPlayerRefs duration
+    Just (RecipientRef.Permanents _) -> durationPlayerRefs duration
     Nothing -> durationPlayerRefs duration
   -- The players a slot names, where the restriction is aimed at them (Chaos
   -- Dragon's "those players").
@@ -1072,7 +1074,11 @@ effectPlayerRefs effect = case effect of
   Effect.RepeatIf {} -> []
   Effect.Heal {} -> []
   Effect.ChooseNewTargets {} -> []
-  Effect.ChangeTargets {} -> []
+  -- CR 115.7b's player the target changes to (Ricochet).
+  Effect.ChangeTargets (ChangeTargets.MkChangeTargets _ onto) -> case onto of
+    Just (RecipientRef.Players ref) -> [ref]
+    Just (RecipientRef.Permanents _) -> []
+    Nothing -> []
 
 -- CR 701.10f: whose pool a production doubles (ManaProduction.Pooled).
 productionPlayerRefs :: ManaProduction.ManaProduction -> [PlayerRef]
@@ -2764,8 +2770,8 @@ boundSlots effect = case effect of
   -- CR 706.4: the result the roller used, and, where the card reads it, the
   -- other result of the same instruction, for a later effect of this resolution
   -- to read as Quantity.InSlot.
-  -- The players who had the highest result, where several rolled.
-  Effect.RollDie rollDie -> Set.singleton (RollDie.slot rollDie) <> foldMap Set.singleton (RollDie.other rollDie) <> foldMap Set.singleton (RollDie.highest rollDie)
+  -- The players at one end of the results, where several rolled.
+  Effect.RollDie rollDie -> Set.singleton (RollDie.slot rollDie) <> foldMap Set.singleton (RollDie.other rollDie) <> foldMap (Set.singleton . RollExtreme.slot) (RollDie.extreme rollDie)
   -- CR 705.2: how many of the instruction's flips the flipping player won (or
   -- how many coins came up heads), and, where the card reads it, how many they
   -- lost, for a later effect of this resolution to read as Quantity.InSlot.
