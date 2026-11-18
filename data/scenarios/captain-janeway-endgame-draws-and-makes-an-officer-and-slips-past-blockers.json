@@ -1,0 +1,34 @@
+{
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "name": "alice",
+        "battlefield": [{"card": "Captain Janeway, Endgame", "label": "janeway", "ready": true}, {"card": "Memnite", "label": "memnite"}, {"card": "Grizzly Bears", "label": "bears", "ready": true}, {"card": "Island", "label": "i1"}, {"card": "Island", "label": "i2"}],
+        "library": [{"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}]
+      },
+      {
+        "name": "bob",
+        "battlefield": [{"card": "Hill Giant", "label": "giant"}],
+        "library": [{"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}]
+      }
+    ],
+    "step": "PrecombatMain"
+  },
+  "description": "Captain Janeway taps an untapped creature for {2} and can't be blocked this turn; her Officers' combat damage to a player draws a card and makes a 1/1 red Officer",
+  "note": "Janeway taps the Memnite to pay. Bob's Hill Giant then can't block her, though it can block the Grizzly Bears. One trigger fires: she draws one card and makes one Officer token. The Bears aren't an Officer, and their damage triggers nothing.",
+  "timeline": [
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": {"Activate": {"object": "$janeway", "mana": ["$i1", "$i2"]}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": {"Answer": {"prompt": "ChooseTaps", "with": ["$memnite"]}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass"},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Tapped": {"object": "$memnite", "tapped": true}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Tapped": {"object": "$janeway", "tapped": false}}},
+    {"turn": 1, "step": "DeclareAttackers", "player": "alice", "do": {"Attack": ["$janeway", "$bears"]}},
+    {"turn": 1, "step": "DeclareBlockers", "player": "bob", "refuse": {"Block": {"$giant": ["$janeway"]}}},
+    {"turn": 1, "step": "DeclareBlockers", "player": "bob", "do": {"Block": {}}},
+    {"turn": 1, "step": "CombatDamage", "player": "alice", "do": "Pass"},
+    {"turn": 1, "step": "EndOfCombat", "player": "alice", "check": {"Life": {"life": 15, "player": "bob"}}},
+    {"turn": 1, "step": "EndOfCombat", "player": "alice", "check": {"Count": {"card": "Island", "count": 1, "player": "alice", "zone": "Hand"}}},
+    {"turn": 1, "step": "EndOfCombat", "player": "alice", "check": {"Count": {"card": "Officer Token", "count": 1, "player": "alice", "zone": "Battlefield"}}}
+  ]
+}

@@ -1,0 +1,25 @@
+{
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "name": "alice",
+        "battlefield": [{"card": "Co-Option Adjutant", "label": "adjutant"}, {"card": "Memnite", "label": "memnite", "ready": true}, {"card": "Grizzly Bears", "label": "bears", "ready": true}],
+        "library": [{"card": "Hill Giant"}, {"card": "Serra Angel"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}]
+      },
+      {
+        "name": "bob",
+        "library": [{"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}]
+      }
+    ],
+    "step": "PrecombatMain"
+  },
+  "description": "CR 613.1f: Co-Option Adjutant gives artifact creatures its controller controls \"Whenever this creature deals combat damage to a player, draw a card\"",
+  "note": "The Memnite is an artifact creature and draws the Hill Giant; the Grizzly Bears are not, and draw nothing, so the Serra Angel stays on top.",
+  "timeline": [
+    {"turn": 1, "step": "DeclareAttackers", "player": "alice", "do": {"Attack": ["$memnite", "$bears"]}},
+    {"turn": 1, "step": "EndOfCombat", "player": "alice", "check": {"Life": {"life": 17, "player": "bob"}}},
+    {"turn": 1, "step": "EndOfCombat", "player": "alice", "check": {"Count": {"card": "Hill Giant", "count": 1, "player": "alice", "zone": "Hand"}}},
+    {"turn": 1, "step": "EndOfCombat", "player": "alice", "check": {"Count": {"card": "Serra Angel", "count": 0, "player": "alice", "zone": "Hand"}}}
+  ]
+}

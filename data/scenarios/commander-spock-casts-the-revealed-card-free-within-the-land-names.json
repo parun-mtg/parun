@@ -1,0 +1,27 @@
+{
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "name": "alice",
+        "battlefield": [{"card": "Commander Spock", "label": "spock", "ready": true}, {"card": "Forest"}, {"card": "Plains"}, {"card": "Island"}, {"card": "Swamp"}, {"card": "Swamp"}],
+        "library": [{"card": "Hill Giant", "label": "giant"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}]
+      },
+      {
+        "name": "bob",
+        "library": [{"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}]
+      }
+    ],
+    "step": "PrecombatMain"
+  },
+  "description": "Commander Spock's attack trigger reveals the top card; its controller casts it free when its mana value is at most their differently named lands, and draws nothing once it has left the top",
+  "note": "Five lands with four names allow mana value 4: the Hill Giant is cast free. Counting lands rather than names would allow 5 as well. With the Giant gone from the top, no card is drawn.",
+  "timeline": [
+    {"turn": 1, "step": "DeclareAttackers", "player": "alice", "do": {"Attack": ["$spock"]}},
+    {"turn": 1, "step": "DeclareAttackers", "player": "alice", "do": "Pass"},
+    {"turn": 1, "step": "DeclareAttackers", "player": "alice", "do": {"Answer": {"prompt": "OfferedCast", "with": "Exercises"}}},
+    {"turn": 1, "step": "DeclareAttackers", "player": "alice", "do": "Pass"},
+    {"turn": 1, "step": "DeclareAttackers", "player": "alice", "check": {"Count": {"card": "Hill Giant", "count": 1, "player": "alice", "zone": "Battlefield"}}},
+    {"turn": 1, "step": "DeclareAttackers", "player": "alice", "check": {"Count": {"card": "Island", "count": 0, "player": "alice", "zone": "Hand"}}}
+  ]
+}

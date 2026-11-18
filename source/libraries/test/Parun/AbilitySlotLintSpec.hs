@@ -32,6 +32,7 @@ import qualified Data.Sequence as Seq
 import qualified Data.Set as Set
 import qualified Data.Text as Text
 import Parun.CardSpec (anyFace, anyFaceOrMinted, armedReads, cardAuthoredEffects, cardCounts, cardFilters, cardResolutionEffects, collectsEvidenceAsCost, createToken, declaresVariable, delayedDeclarations, discardsAsCost, effectCounts, effectWithNested, exilesCardAsCost, faceModals, grantedActivatedAbilities, grantedTriggeredAbilities, instantLine, lintMode, mintingSpell, modalActivated, modalClauseConditions, modalSlotsOffend, oneEffectActivated, oneEffectTrigger, payGateBound, removesCountersAsCost, sacrificesAsCost, spellCostsOf, triggerConditionSlots, vanillaFace, waterbendsAsCost, withMinted)
+import qualified Parun.Codec.Condition as Condition.Codec
 import qualified Parun.Engine.Binding as Binding
 import qualified Parun.Engine.Card as Card
 import qualified Parun.Engine.Children as Children
@@ -48,7 +49,8 @@ import qualified Parun.Engine.Resolve as Resolve
 import qualified Parun.Engine.Resolve.Slots as Resolve
 import qualified Parun.Engine.RuleAbilities as RuleAbilities.Engine
 import qualified Parun.Engine.Target as Target
-import Parun.FilterPositionLintSpec (filterAtomsOf)
+import Parun.FilterPositionLintSpec (filterAtomsOf, jsonAtoms)
+import qualified Parun.JsonCodec.Codec as Codec
 import qualified Parun.Registry as Registry
 import qualified Parun.Spec as Spec
 import qualified Parun.Support as S
@@ -102,11 +104,15 @@ import qualified Parun.Types.EventShape as EventShape
 import qualified Parun.Types.ExiledPile as ExiledPile
 import qualified Parun.Types.Face as Face
 import qualified Parun.Types.Filter as Filter.Type
+import qualified Parun.Types.Gift as Gift
+import qualified Parun.Types.GrantPlayFromExile as GrantPlayFromExile
+import qualified Parun.Types.GrantZone as GrantZone
 import qualified Parun.Types.GrantedAbility as GrantedAbility
 import qualified Parun.Types.Holder as Holder
 import qualified Parun.Types.HowMany as HowMany
 import qualified Parun.Types.InZone as InZone
 import qualified Parun.Types.Keyword as Keyword
+import qualified Parun.Types.KeywordInstance as KeywordInstance
 import qualified Parun.Types.LeavesTrigger as LeavesTrigger
 import qualified Parun.Types.LeavingPermanent as LeavingPermanent
 import qualified Parun.Types.LibraryPlacement as LibraryPlacement
@@ -124,6 +130,7 @@ import qualified Parun.Types.Mode as Mode
 import qualified Parun.Types.ModeMemory as ModeMemory
 import qualified Parun.Types.ModeSelection as ModeSelection
 import qualified Parun.Types.Modification as Modification
+import qualified Parun.Types.ModifyTarget as ModifyTarget
 import qualified Parun.Types.MoveCounters as MoveCounters
 import qualified Parun.Types.MoveToZone as MoveToZone
 import qualified Parun.Types.MovedKinds as MovedKinds
@@ -139,6 +146,7 @@ import qualified Parun.Types.PermissionLimit as PermissionLimit
 import qualified Parun.Types.PermissionPool as PermissionPool
 import qualified Parun.Types.PermissionVerb as PermissionVerb
 import qualified Parun.Types.Phase as Phase
+import qualified Parun.Types.PlayerChoice as PlayerChoice
 import qualified Parun.Types.PlayerEffect as PlayerEffect
 import qualified Parun.Types.PlayerIsDealtDamage as PlayerIsDealtDamage
 import qualified Parun.Types.PlayerRef as PlayerRef
@@ -166,6 +174,7 @@ import qualified Parun.Types.StaticAbility as StaticAbility
 import qualified Parun.Types.StepBegins as StepBegins
 import qualified Parun.Types.Tap as Tap
 import qualified Parun.Types.TapPermanents as TapPermanents
+import qualified Parun.Types.TapState as TapState
 import qualified Parun.Types.TargetSlot as TargetSlot
 import qualified Parun.Types.TopOfLibrary as TopOfLibrary
 import qualified Parun.Types.TriggerCondition as TriggerCondition
@@ -1818,6 +1827,50 @@ abilitySlotLintSpec s registry corpus = Spec.describe s "Lint" $ do
                 (ObjectRef.InSlot (SlotName.MkSlotName (Text.pack "recipient")))
             )
     Spec.assertEqWith s "a counter move's giver puts its depth's Count in the sweep" (effectCounts moving) [counted]
+  -- CR 611.2b, swept over the pool. See chosenPlayerStoredOffends.
+  Spec.it s "CR 611.2b no card writes a chosen player in a stored condition" $ do
+    ps <- S.allPrintings s corpus
+    let offenders = filter (anyFace chosenPlayerStoredOffends . Printing.card) ps
+    Spec.assertBool s (any (anyFace (not . null . storedConditions) . Printing.card) ps) "the pool has a card storing a condition"
+    Spec.assertEqWith s "no stored condition reads a chosen player" (fmap (S.nameOf . Printing.card) offenders) []
+  -- The REJECTING direction, against planted faces: the condition on each of
+  -- the two carriers Condition.bakeBound bakes.
+  Spec.it s "the lint itself catches a chosen player in a stored condition" $ do
+    garland <- S.printingOf s registry "Garland, Royal Kidnapper"
+    hama <- S.printingOf s registry "Hama, the Bloodbender"
+    let chosen = PlayerRef.ChosenPlayerOfBound Binding.triggerSource (PlayerChoice.Promised Gift.Card (KeywordInstance.Own 1))
+        atMostTen = Condition.Type.Compares (Compares.MkCompares (Quantity.Type.LifeTotal chosen) Comparison.AtMost (Quantity.Type.Literal 10))
+        planted effect = (vanillaFace "Planted" instantLine) {Face.spell = Mint.oneMode (Seq.singleton effect)}
+        pump = Effect.ModifyTarget (ModifyTarget.MkModifyTarget (Duration.ForAsLongAs atMostTen) (Modification.GainKeyword Keyword.Flying) (ObjectRef.EachMatching (Filter.Type.HasCardType CardType.Creature)) Nothing)
+        permission = Effect.GrantPlayFromExile (GrantPlayFromExile.MkGrantPlayFromExile Duration.UntilEndOfTurn (PlayerRef.Relative PlayerRelation.You) (ObjectRef.InSlot (SlotName.MkSlotName (Text.pack "exiled"))) ManaSpending.AsProduced Nothing (Just atMostTen) PermissionVerb.Play 0 Nothing TapState.Untapped TapState.Untapped Nothing [] GrantZone.Exile)
+    Spec.assertBool s (not (anyFace chosenPlayerStoredOffends (Printing.card garland))) "the real Garland, Royal Kidnapper is accepted"
+    Spec.assertBool s (not (anyFace chosenPlayerStoredOffends (Printing.card hama))) "the real Hama, the Bloodbender is accepted"
+    Spec.assertBool s (chosenPlayerStoredOffends (planted pump)) "a for-as-long-as duration is rejected"
+    Spec.assertBool s (chosenPlayerStoredOffends (planted permission)) "an exile play permission's condition is rejected"
+
+-- CR 611.2b / 702.174a: Parun.Engine.Quantity.bakePlayerRef leaves
+-- PlayerRef.ChosenPlayerOfBound standing in a stored condition, where no slot
+-- names the object afterwards, so the condition would answer no one and the
+-- effect never start. No printing writes it, so this keeps it out of card data.
+-- Counted against the ENCODED condition, so a nested position is not a blind
+-- spot.
+chosenPlayerStoredOffends :: Face.Face Card.Type.Card -> Bool
+chosenPlayerStoredOffends =
+  any ((/= 0) . jsonAtoms (Text.pack "ChosenPlayerOfBound") . Codec.encode Condition.Codec.codec) . storedConditions
+
+-- Every condition a resolution stores, the two Parun.Engine.Condition.bakeBound
+-- bakes: a "for as long as" duration's (Parun.Engine.Expiry.arm) and an exile
+-- play permission's (Parun.Engine.Resolve.Arms.Zones).
+storedConditions :: Face.Face Card.Type.Card -> [Condition.Type.Condition]
+storedConditions card =
+  let durations = Const.getConst . Children.effectChildren Children.effectLeaves {Children.onDuration = \duration -> Const.Const [duration]}
+      held duration = case duration of
+        Duration.ForAsLongAs condition -> [condition]
+        _ -> []
+      permitted effect = case effect of
+        Effect.GrantPlayFromExile grant -> Maybe.maybeToList (GrantPlayFromExile.condition grant)
+        _ -> []
+   in concatMap (\effect -> concatMap held (durations effect) <> permitted effect) (cardAuthoredEffects card)
 
 -- Every AbilityName a face's layer-6 removals refer to. Both carriers of a
 -- Modification are swept: the printed ones on Face.staticAbilities, and the

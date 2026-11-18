@@ -1,0 +1,32 @@
+{
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "name": "alice",
+        "battlefield": [{"card": "Chief Kyle, Transporter Tech", "label": "kyle"}, {"card": "Grizzly Bears", "label": "bears", "counters": [{"key": {"type": "PlusOnePlusOne"}, "value": 1}]}],
+        "hand": [{"card": "Plains", "label": "drop"}],
+        "library": [{"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}]
+      },
+      {
+        "name": "bob",
+        "battlefield": [{"card": "Hill Giant", "label": "giant"}],
+        "library": [{"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}]
+      }
+    ],
+    "step": "PrecombatMain"
+  },
+  "description": "CR 603.7: Chief Kyle's landfall exiles another target creature its controller controls and returns it at the beginning of the next end step",
+  "note": "Kyle itself and bob's Hill Giant are no legal target. The Bears come back as a new object without their +1/+1 counter (CR 400.7).",
+  "timeline": [
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": {"PlayLand": "$drop"}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "refuse": {"ChooseTargets": {"target": ["$kyle"]}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "refuse": {"ChooseTargets": {"target": ["$giant"]}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": {"ChooseTargets": {"target": ["$bears"]}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass"},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Count": {"card": "Grizzly Bears", "count": 1, "player": "alice", "zone": "Exile"}}},
+    {"turn": 1, "step": "EndStep", "player": "alice", "do": "Pass"},
+    {"turn": 1, "step": "EndStep", "player": "alice", "check": {"Count": {"card": "Grizzly Bears", "count": 1, "player": "alice", "zone": "Battlefield"}}},
+    {"turn": 1, "step": "EndStep", "player": "alice", "check": {"Counters": {"count": 0, "kind": {"type": "PlusOnePlusOne"}, "object": "Grizzly Bears"}}}
+  ]
+}

@@ -1,0 +1,32 @@
+{
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "name": "alice",
+        "battlefield": [{"card": "Chekov and McCoy", "label": "chekov"}, {"card": "Forest", "label": "f1"}, {"card": "Forest", "label": "f2"}],
+        "hand": [{"card": "Battlegrowth", "label": "growth"}, {"card": "Battlegrowth", "label": "growth2"}],
+        "library": [{"card": "Hill Giant"}, {"card": "Serra Angel"}, {"card": "Memnite"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}]
+      },
+      {
+        "name": "bob",
+        "library": [{"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}]
+      }
+    ],
+    "step": "PrecombatMain"
+  },
+  "description": "Whenever its controller puts +1/+1 counters on Chekov and McCoy, they may draw that many cards, only once each turn",
+  "note": "Each Battlegrowth puts one counter on it. The first trigger draws one card, the Hill Giant; the second triggers too, but the draw has been done this turn, so nothing is asked and the Serra Angel stays on top.",
+  "timeline": [
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": {"Cast": {"object": "$growth", "mana": ["$f1", null]}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass"},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass"},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": {"ChooseOptional": "Exercises"}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Count": {"card": "Hill Giant", "count": 1, "player": "alice", "zone": "Hand"}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Count": {"card": "Serra Angel", "count": 0, "player": "alice", "zone": "Hand"}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": {"Cast": {"object": "$growth2", "mana": ["$f2"]}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass"},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Counters": {"count": 2, "kind": {"type": "PlusOnePlusOne"}, "object": "$chekov"}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Count": {"card": "Serra Angel", "count": 0, "player": "alice", "zone": "Hand"}}}
+  ]
+}

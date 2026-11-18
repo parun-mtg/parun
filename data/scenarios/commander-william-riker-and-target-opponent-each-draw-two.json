@@ -1,0 +1,31 @@
+{
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "name": "alice",
+        "battlefield": [{"card": "Commander William Riker", "label": "riker"}, {"card": "Mountain", "label": "m1"}],
+        "library": [{"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}]
+      },
+      {
+        "name": "bob",
+        "library": [{"card": "Plains"}, {"card": "Plains"}, {"card": "Plains"}, {"card": "Plains"}, {"card": "Plains"}, {"card": "Plains"}]
+      },
+      {
+        "name": "carol",
+        "library": [{"card": "Swamp"}, {"card": "Swamp"}, {"card": "Swamp"}, {"card": "Swamp"}, {"card": "Swamp"}, {"card": "Swamp"}]
+      }
+    ],
+    "step": "PrecombatMain"
+  },
+  "description": "Commander William Riker, with haste, taps the turn it arrives: its controller and target opponent each draw two cards",
+  "note": "Riker is not ready, so only haste lets {T} pay. Carol is the target and draws two; bob draws none.",
+  "timeline": [
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": {"Activate": {"object": "$riker", "targets": ["$carol"], "mana": ["$m1"]}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass"},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Count": {"card": "Island", "count": 2, "player": "alice", "zone": "Hand"}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Count": {"card": "Swamp", "count": 2, "player": "carol", "zone": "Hand"}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Count": {"card": "Plains", "count": 0, "player": "bob", "zone": "Hand"}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Keywords": {"count": 1, "keyword": {"type": "Vigilance"}, "object": "$riker"}}}
+  ]
+}
