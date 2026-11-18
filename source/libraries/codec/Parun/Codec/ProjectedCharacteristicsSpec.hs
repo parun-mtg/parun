@@ -33,6 +33,7 @@ import qualified Parun.Types.CostDirection as CostDirection
 import qualified Parun.Types.CostReduction as CostReduction
 import qualified Parun.Types.Counterability as Counterability
 import qualified Parun.Types.Face as Face.Type
+import qualified Parun.Types.Filter as Filter
 import qualified Parun.Types.GrantedAbility as GrantedAbility
 import qualified Parun.Types.Keyword as Keyword
 import qualified Parun.Types.KeywordDesignator as KeywordDesignator
@@ -97,7 +98,7 @@ testCharacteristics =
       PC.cardTypes = Set.singleton CardType.Creature,
       PC.subtypes = Set.singleton Subtype.Human,
       PC.staticAbilities = [StaticAbility.MkStaticAbility Affected.Attached Nothing Set.empty Nothing Nothing (NonEmpty.singleton (Modification.GainKeyword Keyword.Flying))],
-      PC.playerAbilities = [PlayerStaticAbility.MkPlayerStaticAbility {PlayerStaticAbility.scope = PlayerScope.Related PlayerRelation.AnyPlayer, PlayerStaticAbility.condition = Nothing, PlayerStaticAbility.name = Nothing, PlayerStaticAbility.effect = PlayerEffect.CantCastMoreThan 1}],
+      PC.playerAbilities = [PlayerStaticAbility.MkPlayerStaticAbility {PlayerStaticAbility.scope = PlayerScope.Related PlayerRelation.AnyPlayer, PlayerStaticAbility.condition = Nothing, PlayerStaticAbility.name = Nothing, PlayerStaticAbility.effect = PlayerEffect.CantCastMoreThan (Filter.And []) 1}],
       PC.grantedPlayerAbilities = [(Timestamp.MkTimestamp 3, PlayerStaticAbility.MkPlayerStaticAbility {PlayerStaticAbility.scope = PlayerScope.Related PlayerRelation.You, PlayerStaticAbility.condition = Nothing, PlayerStaticAbility.name = Nothing, PlayerStaticAbility.effect = PlayerEffect.NoMaximumHandSize})],
       PC.grantedStaticAbilities = [(Timestamp.MkTimestamp 4, StaticAbility.MkStaticAbility Affected.Attached Nothing Set.empty Nothing Nothing (NonEmpty.singleton (Modification.GainKeyword Keyword.Trample)))],
       PC.grantedRuleAbilities = RuleAbilitiesSpec.testRuleAbilities,
@@ -176,7 +177,7 @@ testCharacteristicsJson =
     <> "\"manaValue\":3,\"power\":1,\"toughness\":2,\"basePower\":1,\"baseToughness\":2,"
     <> "\"cardTypes\":[\"Creature\"],\"subtypes\":[\"Human\"],"
     <> "\"staticAbilities\":[{\"affected\":{\"type\":\"Attached\"},\"modifications\":[{\"type\":\"GainKeyword\",\"value\":{\"type\":\"Flying\"}}]}],"
-    <> "\"playerAbilities\":[{\"scope\":{\"type\":\"AnyPlayer\"},\"effect\":{\"type\":\"CantCastMoreThan\",\"value\":1}}],"
+    <> "\"playerAbilities\":[{\"scope\":{\"type\":\"AnyPlayer\"},\"effect\":{\"type\":\"CantCastMoreThan\",\"value\":{\"count\":1}}}],"
     <> "\"grantedPlayerAbilities\":[{\"key\":3,\"value\":{\"scope\":{\"type\":\"You\"},\"effect\":{\"type\":\"NoMaximumHandSize\"}}}],"
     <> "\"grantedStaticAbilities\":[{\"key\":4,\"value\":{\"affected\":{\"type\":\"Attached\"},\"modifications\":[{\"type\":\"GainKeyword\",\"value\":{\"type\":\"Trample\"}}]}}],"
     <> "\"grantedRuleAbilities\":"

@@ -80,7 +80,9 @@
         {
           "effect": {
             "type": "CantCastMoreThan",
-            "value": 1
+            "value": {
+              "count": 1
+            }
           },
           "scope": {
             "type": "AnyPlayer"

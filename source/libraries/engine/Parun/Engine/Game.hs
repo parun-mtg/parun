@@ -3585,9 +3585,8 @@ casterOf spell gs =
         $ GameState.turn gs
 
 -- CR 601.2i: how many spells each player cast during the turn this log holds
--- (turnLog's). Parun.Engine.PlayerEffect.castsThisTurn, Parun.Engine.Quantity's
--- SpellsCast arm and spellsCastLastTurn read seats out of it, so the readers
--- cannot disagree.
+-- (turnLog's). Parun.Engine.Quantity's SpellsCast arm and spellsCastLastTurn
+-- read seats out of it, so the readers cannot disagree.
 --
 -- SPARSE: a player who cast nothing has no entry, and every reader takes 0 for an
 -- absent one.

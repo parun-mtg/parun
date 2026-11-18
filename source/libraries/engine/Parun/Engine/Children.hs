@@ -2276,7 +2276,7 @@ playerEffectChildren c effect = case effect of
   PlayerEffect.CantCastSpells -> pure effect
   PlayerEffect.CantActivateAbilities filter_ criteria -> PlayerEffect.CantActivateAbilities <$> playerFilter c filter_ <*> playerActivations c criteria
   -- CR 601.3's limit counts the turn's casts.
-  PlayerEffect.CantCastMoreThan _ -> effect <$ playerLooksBack c HistoryRead.Casts
+  PlayerEffect.CantCastMoreThan criterion limit -> PlayerEffect.CantCastMoreThan <$> playerFilter c criterion <*> pure limit <* playerLooksBack c HistoryRead.Casts
   PlayerEffect.ModifyCost modifier -> PlayerEffect.ModifyCost <$> costModifierChildren c modifier
   PlayerEffect.AlternativeActivationCost (AlternativeActivationCost.MkAlternativeActivationCost grantedBy onlyFirst cost) ->
     fmap PlayerEffect.AlternativeActivationCost (AlternativeActivationCost.MkAlternativeActivationCost <$> playerDesignator c grantedBy <*> traverse (onlyFirstChildren c HistoryRead.Activations) onlyFirst <*> pure cost)

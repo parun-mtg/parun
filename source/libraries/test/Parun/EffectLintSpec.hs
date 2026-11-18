@@ -1146,7 +1146,7 @@ unpreventableScopeOffends scope playerEffect = case playerEffect of
   PlayerEffect.AlternativeActivationCost {} -> False
   PlayerEffect.CantCastSpells -> False
   PlayerEffect.CantActivateAbilities {} -> False
-  PlayerEffect.CantCastMoreThan _ -> False
+  PlayerEffect.CantCastMoreThan {} -> False
   PlayerEffect.PlayAdditionalLands _ -> False
   PlayerEffect.NoMaximumHandSize -> False
   PlayerEffect.SetMaximumHandSize _ -> False
@@ -1232,7 +1232,7 @@ unpreventablePatternOffends playerEffect = case playerEffect of
   PlayerEffect.AlternativeActivationCost {} -> False
   PlayerEffect.CantCastSpells -> False
   PlayerEffect.CantActivateAbilities {} -> False
-  PlayerEffect.CantCastMoreThan _ -> False
+  PlayerEffect.CantCastMoreThan {} -> False
   PlayerEffect.PlayAdditionalLands _ -> False
   PlayerEffect.NoMaximumHandSize -> False
   PlayerEffect.SetMaximumHandSize _ -> False
