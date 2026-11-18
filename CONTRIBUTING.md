@@ -67,8 +67,8 @@ To cut a release:
 1. Bump `version:` in `parun.cabal` and merge that to `main`.
 2. Run the Release workflow (`gh workflow run release.yml`, optionally with
    `-f ref=COMMIT`). It builds that commit without testing it and attaches its
-   assets, checksums and provenance attestations to a draft release named
-   `v` and the version.
+   assets and provenance attestations to a draft release named `v` and the
+   version.
 3. Edit the draft's notes and publish it. Publishing creates the tag and
    locks the release, and the Pages workflow deploys its web client.
 
