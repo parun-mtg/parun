@@ -125,7 +125,7 @@
     ],
     "step": "PrecombatMain"
   },
-  "description": "CR 603.4 / 702.164: Vivisection Evangelist's corrupted enters trigger destroys target creature or planeswalker an opponent controls when an opponent has three or more poison counters",
+  "description": "CR 603.4 / 122.1: Vivisection Evangelist's corrupted enters trigger destroys target creature or planeswalker an opponent controls when an opponent has three or more poison counters",
   "note": "Bob has the three poison counters but carol's planeswalker is destroyed: the condition reads any opponent, not the target's controller. Alice's own Serra Angel is refused as a target. Alice's own five poison counters would not count.",
   "timeline": [
     {
