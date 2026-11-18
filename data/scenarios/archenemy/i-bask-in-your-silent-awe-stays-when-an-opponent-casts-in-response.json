@@ -1,10 +1,8 @@
 {
   "board": {
     "active": "alice",
-    "step": "Upkeep",
     "seats": [
       {
-        "name": "alice",
         "library": [
           {
             "card": "Forest"
@@ -19,6 +17,7 @@
             "card": "Forest"
           }
         ],
+        "name": "alice",
         "sideDecks": [
           {
             "key": "Scheme",
@@ -36,7 +35,18 @@
         ]
       },
       {
-        "name": "bob",
+        "battlefield": [
+          {
+            "card": "Mountain",
+            "label": "mountain-1"
+          }
+        ],
+        "hand": [
+          {
+            "card": "Lightning Bolt",
+            "label": "bolt-1"
+          }
+        ],
         "library": [
           {
             "card": "Forest"
@@ -51,124 +61,134 @@
             "card": "Forest"
           }
         ],
-        "battlefield": [
-          {
-            "card": "Mountain",
-            "label": "mountain-1"
-          }
-        ],
-        "hand": [
-          {
-            "card": "Lightning Bolt",
-            "label": "bolt-1"
-          }
-        ]
+        "name": "bob"
       }
-    ]
+    ],
+    "step": "Upkeep"
   },
   "description": "CR 603.4 I Bask in Your Silent Awe stays when an opponent casts in response to its trigger",
   "note": "bob casts nothing on turn 2, so the upkeep trigger fires; he Bolts alice in response. The live turn is since her last turn ended, so the condition fails on resolution and the scheme stays.",
   "timeline": [
     {
-      "turn": 1,
-      "step": "PrecombatMain",
-      "player": "alice",
       "check": {
         "View": {
-          "of": "Zone",
-          "player": "alice",
-          "zone": "Command",
           "is": [
             "$bask"
-          ]
+          ],
+          "of": "Zone",
+          "player": "alice",
+          "zone": "Command"
         }
-      }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
-      "turn": 3,
-      "step": "Upkeep",
-      "player": "alice",
       "check": {
         "View": {
-          "of": "Stack",
           "is": [
             "trigger of $bask"
-          ]
+          ],
+          "of": "Stack"
         }
-      }
-    },
-    {
-      "turn": 3,
-      "step": "Upkeep",
+      },
       "player": "alice",
-      "do": "Pass"
+      "step": "Upkeep",
+      "turn": 3
     },
     {
-      "turn": 3,
+      "do": "Pass",
+      "player": "alice",
       "step": "Upkeep",
-      "player": "bob",
+      "turn": 3
+    },
+    {
       "do": {
         "Cast": {
+          "mana": [
+            "$mountain-1"
+          ],
           "object": "$bolt-1",
           "targets": [
             "$alice"
-          ],
-          "mana": [
-            "$mountain-1"
           ]
         }
-      }
-    },
-    {
-      "turn": 3,
-      "step": "Upkeep",
+      },
       "player": "bob",
-      "do": "Pass"
+      "step": "Upkeep",
+      "turn": 3
     },
     {
-      "turn": 3,
+      "do": "Pass",
+      "player": "bob",
       "step": "Upkeep",
-      "player": "alice",
+      "turn": 3
+    },
+    {
       "check": {
         "View": {
-          "of": "Stack",
+          "is": [
+            "Lightning Bolt",
+            "trigger of $bask"
+          ],
+          "of": "Stack"
+        }
+      },
+      "player": "alice",
+      "step": "Upkeep",
+      "turn": 3
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "Upkeep",
+      "turn": 3
+    },
+    {
+      "check": {
+        "View": {
           "is": [
             "trigger of $bask"
-          ]
+          ],
+          "of": "Stack"
         }
-      }
+      },
+      "player": "alice",
+      "step": "Upkeep",
+      "turn": 3
     },
     {
-      "turn": 3,
-      "step": "Upkeep",
+      "do": "Pass",
       "player": "alice",
-      "do": "Pass"
+      "step": "Upkeep",
+      "turn": 3
     },
     {
-      "turn": 3,
-      "step": "Upkeep",
-      "player": "alice",
       "check": {
         "View": {
-          "of": "Stack",
-          "is": []
+          "is": [],
+          "of": "Stack"
         }
-      }
+      },
+      "player": "alice",
+      "step": "Upkeep",
+      "turn": 3
     },
     {
-      "turn": 3,
-      "step": "Upkeep",
-      "player": "alice",
       "check": {
         "View": {
-          "of": "Zone",
-          "player": "alice",
-          "zone": "Command",
           "is": [
             "$bask"
-          ]
+          ],
+          "of": "Zone",
+          "player": "alice",
+          "zone": "Command"
         }
-      }
+      },
+      "player": "alice",
+      "step": "Upkeep",
+      "turn": 3
     }
   ]
 }

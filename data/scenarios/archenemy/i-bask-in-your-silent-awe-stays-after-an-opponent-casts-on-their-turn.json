@@ -1,10 +1,8 @@
 {
   "board": {
     "active": "alice",
-    "step": "Upkeep",
     "seats": [
       {
-        "name": "alice",
         "library": [
           {
             "card": "Forest"
@@ -19,6 +17,7 @@
             "card": "Forest"
           }
         ],
+        "name": "alice",
         "sideDecks": [
           {
             "key": "Scheme",
@@ -36,21 +35,6 @@
         ]
       },
       {
-        "name": "bob",
-        "library": [
-          {
-            "card": "Forest"
-          },
-          {
-            "card": "Forest"
-          },
-          {
-            "card": "Forest"
-          },
-          {
-            "card": "Forest"
-          }
-        ],
         "battlefield": [
           {
             "card": "Mountain",
@@ -70,100 +54,155 @@
             "card": "Lightning Bolt",
             "label": "bolt-2"
           }
-        ]
+        ],
+        "library": [
+          {
+            "card": "Forest"
+          },
+          {
+            "card": "Forest"
+          },
+          {
+            "card": "Forest"
+          },
+          {
+            "card": "Forest"
+          }
+        ],
+        "name": "bob"
       }
-    ]
+    ],
+    "step": "Upkeep"
   },
   "description": "I Bask in Your Silent Awe stays after an opponent casts on their turn, and limits them to one spell",
   "note": "bob casts one Bolt on turn 2; his second is not offered. On alice's turn 3 upkeep an opponent cast a spell since her last turn ended, so no trigger.",
   "timeline": [
     {
-      "turn": 1,
-      "step": "PrecombatMain",
-      "player": "alice",
       "check": {
         "View": {
-          "of": "Zone",
-          "player": "alice",
-          "zone": "Command",
           "is": [
             "$bask"
-          ]
+          ],
+          "of": "Zone",
+          "player": "alice",
+          "zone": "Command"
         }
-      }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
-      "turn": 2,
-      "step": "PrecombatMain",
-      "player": "bob",
       "do": {
         "Cast": {
-          "object": "$bolt-1",
-          "targets": [
-            "$alice"
-          ],
-          "mana": [
-            "$mountain-1"
+          "object": "$bolt-1"
+        }
+      },
+      "player": "bob",
+      "step": "PrecombatMain",
+      "turn": 2
+    },
+    {
+      "do": {
+        "Answer": {
+          "prompt": "ChooseTargets",
+          "with": [
+            [
+              "target",
+              [
+                [
+                  "Player",
+                  "alice"
+                ]
+              ]
+            ]
           ]
         }
-      }
+      },
+      "player": "bob",
+      "step": "PrecombatMain",
+      "turn": 2
     },
     {
-      "turn": 2,
-      "step": "PrecombatMain",
+      "do": {
+        "Answer": {
+          "prompt": "ChooseManaSource",
+          "with": "$mountain-1"
+        }
+      },
       "player": "bob",
-      "do": "Pass"
+      "step": "PrecombatMain",
+      "turn": 2
     },
     {
-      "turn": 2,
-      "step": "PrecombatMain",
+      "do": {
+        "Answer": {
+          "prompt": "ChooseExtraManaSource",
+          "with": null
+        }
+      },
       "player": "bob",
+      "step": "PrecombatMain",
+      "turn": 2
+    },
+    {
+      "do": "Pass",
+      "player": "bob",
+      "step": "PrecombatMain",
+      "turn": 2
+    },
+    {
       "check": {
         "Life": {
-          "player": "alice",
-          "life": 37
+          "life": 17,
+          "player": "alice"
         }
-      }
-    },
-    {
-      "turn": 2,
-      "step": "PrecombatMain",
+      },
       "player": "bob",
+      "step": "PrecombatMain",
+      "turn": 2
+    },
+    {
       "check": {
         "View": {
-          "of": "Offered",
-          "player": "bob",
           "is": [
-            "Pass"
-          ]
+            "Pass",
+            "PlayLand Forest#8",
+            "ActivateManaAbility $mountain-2"
+          ],
+          "of": "Offered",
+          "player": "bob"
         }
-      }
+      },
+      "player": "bob",
+      "step": "PrecombatMain",
+      "turn": 2
     },
     {
-      "turn": 3,
-      "step": "Upkeep",
-      "player": "alice",
       "check": {
         "View": {
-          "of": "Stack",
-          "is": []
+          "is": [],
+          "of": "Stack"
         }
-      }
+      },
+      "player": "alice",
+      "step": "Upkeep",
+      "turn": 3
     },
     {
-      "turn": 3,
-      "step": "Upkeep",
-      "player": "alice",
       "check": {
         "View": {
-          "of": "Zone",
-          "player": "alice",
-          "zone": "Command",
           "is": [
             "$bask"
-          ]
+          ],
+          "of": "Zone",
+          "player": "alice",
+          "zone": "Command"
         }
-      }
+      },
+      "player": "alice",
+      "step": "Upkeep",
+      "turn": 3
     }
   ]
 }
