@@ -46,14 +46,17 @@
   --ms-w-text: #3b3410;
   --ms-u: #aed2ef;
   --ms-u-text: #0d2c48;
-  --ms-b: #bdb4b6;
-  --ms-b-text: #1d1619;
+  --ms-b: #b09bc4;
+  --ms-b-text: #1b1222;
   --ms-r: #f2a68f;
   --ms-r-text: #4a1205;
   --ms-g: #9fd2ac;
   --ms-g-text: #0e3519;
+  --ms-c: #dde3e8;
+  --ms-c-text: #26313a;
   --ms-generic: #d4cfc8;
   --ms-generic-text: #2b2722;
+  --ms-rim: rgb(0 0 0 / 0.2);
 
   --radius: 10px;
   --card-w: 92px;
@@ -105,10 +108,12 @@
 
   --ms-w: #efe6b4;
   --ms-u: #9cc8ee;
-  --ms-b: #aaa0a4;
+  --ms-b: #a690bb;
   --ms-r: #ee9c84;
   --ms-g: #93cba1;
+  --ms-c: #c9d1d8;
   --ms-generic: #b9b4ad;
+  --ms-rim: rgb(255 255 255 / 0.25);
 }
 
 @media (min-width: 700px) {
@@ -230,70 +235,97 @@ pre {
   border-radius: var(--radius);
 }
 
-/* ---------- Mana symbols ---------- */
+/* ---------- Symbols ---------- */
 
-/* The Mana font by Andrew Gioia (https://github.com/andrewgioia/mana), under
-   the SIL Open Font License 1.1. The symbols it draws are copyright Wizards
-   of the Coast. */
-@font-face {
-  font-family: "Mana";
-  src: url("./mana.woff2") format("woff2");
-  font-display: block;
-}
-
-/* A glyph sits inside its circle at two thirds of the circle's size. */
-.ms.glyph {
-  font-family: "Mana";
-  font-weight: 400;
-  font-size: 0.74em;
-  min-width: 1.5em;
-  height: 1.5em;
-  padding: 0;
-  line-height: 1;
-}
-
-.ms.glyph.hybrid {
-  font-size: 0.48em;
-  letter-spacing: -0.08em;
-  min-width: 2.05em;
-  height: 2.05em;
+/* The symbols ({G}, {T}, {W/U}, [+1]) are Parun's own drawings: index.html
+   holds each motif once, in the hidden sprite, and Parun.Web.Mana composes a
+   symbol's circle from them, split for a hybrid. */
+.symbols {
+  position: absolute;
+  width: 0;
+  height: 0;
+  overflow: hidden;
 }
 
 .ms {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  min-width: 1.25em;
-  height: 1.25em;
-  padding: 0 0.15em;
+  display: inline-block;
   margin: 0 0.06em;
-  border-radius: 999px;
-  font-size: 0.78em;
-  font-weight: 700;
+  vertical-align: -0.2em;
   line-height: 1;
-  vertical-align: 0.08em;
-  background: var(--ms-generic);
-  color: var(--ms-generic-text);
-  box-shadow: inset 0 -1px 0 rgb(0 0 0 / 0.18);
 }
 
-.ms-w { background: var(--ms-w); color: var(--ms-w-text); }
-.ms-u { background: var(--ms-u); color: var(--ms-u-text); }
-.ms-b { background: var(--ms-b); color: var(--ms-b-text); }
-.ms-r { background: var(--ms-r); color: var(--ms-r-text); }
-.ms-g { background: var(--ms-g); color: var(--ms-g-text); }
-.ms-tap,
-.ms-untap { background: var(--ms-generic); font-size: 0.85em; }
-.ms-w.ms-u.hybrid { background: linear-gradient(135deg, var(--ms-w) 50%, var(--ms-u) 50%); }
-.ms-u.ms-b.hybrid { background: linear-gradient(135deg, var(--ms-u) 50%, var(--ms-b) 50%); }
-.ms-b.ms-r.hybrid { background: linear-gradient(135deg, var(--ms-b) 50%, var(--ms-r) 50%); }
-.ms-r.ms-g.hybrid { background: linear-gradient(135deg, var(--ms-r) 50%, var(--ms-g) 50%); }
-.ms-g.ms-w.hybrid { background: linear-gradient(135deg, var(--ms-g) 50%, var(--ms-w) 50%); }
-.ms-w.ms-b.hybrid { background: linear-gradient(135deg, var(--ms-w) 50%, var(--ms-b) 50%); }
-.ms-u.ms-r.hybrid { background: linear-gradient(135deg, var(--ms-u) 50%, var(--ms-r) 50%); }
-.ms-b.ms-g.hybrid { background: linear-gradient(135deg, var(--ms-b) 50%, var(--ms-g) 50%); }
-.ms-r.ms-w.hybrid { background: linear-gradient(135deg, var(--ms-r) 50%, var(--ms-w) 50%); }
-.ms-g.ms-u.hybrid { background: linear-gradient(135deg, var(--ms-g) 50%, var(--ms-u) 50%); }
+.ms > svg {
+  display: block;
+  width: 1.15em;
+  height: 1.15em;
+  overflow: visible;
+}
+
+.ms text {
+  fill: currentColor;
+  font-weight: 700;
+  text-anchor: middle;
+  dominant-baseline: central;
+}
+
+/* A number or a variable is its text in a circle, widening for a long one. */
+.ms.ms-generic {
+  min-width: 1.44em;
+  height: 1.44em;
+  padding: 0 0.25em;
+  box-sizing: border-box;
+  border-radius: 999px;
+  background: var(--ms-generic);
+  color: var(--ms-generic-text);
+  box-shadow: inset 0 0 0 1px var(--ms-rim);
+  font-size: 0.8em;
+  font-weight: 700;
+  text-align: center;
+  line-height: 1.44em;
+  vertical-align: -0.25em;
+  overflow: hidden;
+  font-variant-numeric: tabular-nums;
+}
+
+.ms .rim { fill: none; stroke: var(--ms-rim); stroke-width: 1; }
+.ms .bg-w { fill: var(--ms-w); }
+.ms .bg-u { fill: var(--ms-u); }
+.ms .bg-b { fill: var(--ms-b); }
+.ms .bg-r { fill: var(--ms-r); }
+.ms .bg-g { fill: var(--ms-g); }
+.ms .bg-c { fill: var(--ms-c); }
+.ms .bg-generic { fill: var(--ms-generic); }
+.ms .fg-w { color: var(--ms-w-text); }
+.ms .fg-u { color: var(--ms-u-text); }
+.ms .fg-b { color: var(--ms-b-text); }
+.ms .fg-r { color: var(--ms-r-text); }
+.ms .fg-g { color: var(--ms-g-text); }
+.ms .fg-c { color: var(--ms-c-text); }
+.ms .fg-generic { color: var(--ms-generic-text); }
+
+/* A loyalty cost: up for a gain, down for a loss, level for zero. */
+.loyalty {
+  display: inline-block;
+  min-width: 2em;
+  padding: 0.1em 0.35em;
+  margin: 0 0.1em;
+  background: var(--ms-generic);
+  color: var(--ms-generic-text);
+  font-weight: 700;
+  font-size: 0.85em;
+  text-align: center;
+  line-height: 1.2;
+  font-feature-settings: "tnum";
+  clip-path: polygon(0 0, 100% 0, 100% 100%, 0 100%);
+}
+.loyalty.up {
+  padding-top: 0.3em;
+  clip-path: polygon(50% 0, 100% 0.3em, 100% 100%, 0 100%, 0 0.3em);
+}
+.loyalty.down {
+  padding-bottom: 0.3em;
+  clip-path: polygon(0 0, 100% 0, 100% calc(100% - 0.3em), 50% 100%, 0 calc(100% - 0.3em));
+}
 
 .cost {
   white-space: nowrap;

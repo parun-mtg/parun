@@ -60,7 +60,7 @@ spec s registry = Spec.describe s "WebQuestion" $ do
     -- Reading it opens its sheet, whose button plays it.
     let reading = Question.Web.view request Question.Web.blank {Question.Web.reading = Just (Card.MkReading land [Text.pack "({T}: Add {R}.)"] True)}
         sheet = Html.search (\html -> Text.pack "<section class=\"sheet" `Text.isPrefixOf` Html.toText html) reading
-    Spec.assertBool s (Text.pack "<span class=\"ms ms-r glyph\" title=\"{R}\" role=\"img\" aria-label=\"red\">\xe603</span>" `Text.isInfixOf` Html.toText reading) "oracle"
+    Spec.assertBool s (Text.pack "<span class=\"ms\" title=\"{R}\" role=\"img\" aria-label=\"red\"><svg viewBox=\"0 0 32 32\" aria-hidden=\"true\"><circle class=\"bg-r\" cx=\"16\" cy=\"16\" r=\"16\"></circle><use class=\"fg-r\" href=\"#ms-r\"" `Text.isInfixOf` Html.toText reading) "oracle"
     let action = do
           at <- sheet
           inner <- Html.at at reading
@@ -72,7 +72,7 @@ spec s registry = Spec.describe s "WebQuestion" $ do
     sorcerer <- S.printingOf s registry "Prodigal Sorcerer"
     let (oid, gs) = S.addPermanent sorcerer S.alice (Setup.emptyGame S.bothPlayers)
         request = requestFor gs (Prompt.ChooseAction (Decider.MkDecider S.alice) S.alice (Action.Pass : fmap (Action.Activate oid) (Projection.abilitiesOf oid gs)))
-    -- The tap symbol is drawn ({T} as a glyph), so the text around it is matched.
+    -- The tap symbol is drawn, so the text around it is matched.
     Spec.assertBool s (Text.pack ": Prodigal Sorcerer deals 1 damage to any target." `Text.isInfixOf` Html.content (Question.Web.view request Question.Web.blank)) "labelled"
 
   Spec.it s "options the seat can't tell apart share one button, which picks the next" $ do

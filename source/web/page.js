@@ -82,14 +82,21 @@ document.addEventListener("keydown", (event) => {
 });
 let tapped = null;
 
+const svgNamespace = "http://www.w3.org/2000/svg";
+
 // A node and its children; an svg and everything in it in SVG's namespace.
 function build(node, svg = false) {
   if ("text" in node) return document.createTextNode(node.text);
   const inSvg = svg || node.tag === "svg";
-  const element = inSvg ? document.createElementNS("http://www.w3.org/2000/svg", node.tag) : document.createElement(node.tag);
+  const element = inSvg ? document.createElementNS(svgNamespace, node.tag) : document.createElement(node.tag);
   for (const [name, value] of node.props) element.setAttribute(name, value);
   for (const child of node.children) element.append(build(child, inSvg));
   return element;
+}
+
+// Whether a new child of this element belongs in SVG's namespace.
+function inSvg(parent) {
+  return parent?.namespaceURI === svgNamespace;
 }
 
 function at(path) {
@@ -156,7 +163,7 @@ function apply(json) {
     const node = at(patch.path);
     switch (patch.op) {
       case "replace":
-        node.replaceWith(build(patch.node));
+        node.replaceWith(build(patch.node, inSvg(node.parentNode)));
         break;
       case "set":
         node.setAttribute(patch.name, patch.value);
@@ -165,14 +172,14 @@ function apply(json) {
         node.removeAttribute(patch.name);
         break;
       case "append":
-        node.append(...patch.nodes.map((child) => build(child)));
+        node.append(...patch.nodes.map((child) => build(child, inSvg(node))));
         break;
       case "truncate":
         while (node.childNodes.length > patch.count) node.lastChild.remove();
         break;
       case "arrange": {
         const current = Array.from(node.childNodes);
-        node.replaceChildren(...patch.sources.map((source) => ("kept" in source ? current[source.kept] : build(source.node))));
+        node.replaceChildren(...patch.sources.map((source) => ("kept" in source ? current[source.kept] : build(source.node, inSvg(node)))));
         break;
       }
       default:
