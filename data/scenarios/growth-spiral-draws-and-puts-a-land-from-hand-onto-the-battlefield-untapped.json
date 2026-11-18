@@ -1,0 +1,30 @@
+{
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "name": "alice",
+        "battlefield": [{"card": "Forest", "label": "f1"}, {"card": "Island", "label": "i1"}],
+        "hand": [{"card": "Growth Spiral", "label": "spiral"}, {"card": "Plains", "label": "plains"}, {"card": "Grizzly Bears", "label": "bears"}],
+        "library": [{"card": "Mountain"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}]
+      },
+      {
+        "name": "bob",
+        "library": [{"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}]
+      }
+    ],
+    "step": "PrecombatMain"
+  },
+  "description": "Growth Spiral draws a card, then its controller may put a land card from their hand onto the battlefield, untapped",
+  "note": "Alice draws the Mountain on top of her library and puts the Plains from her hand onto the battlefield untapped; the Grizzly Bears is no land.",
+  "timeline": [
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": {"Cast": {"object": "$spiral", "mana": ["$f1", "$i1"]}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass"},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": {"ChooseOptional": "Exercises"}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "refuse": {"Answer": {"prompt": "ChooseCardInHand", "with": "$bears"}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": {"Answer": {"prompt": "ChooseCardInHand", "with": "$plains"}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Count": {"card": "Plains", "count": 1, "player": "alice", "zone": "Battlefield"}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Tapped": {"object": "Plains", "tapped": false}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Count": {"card": "Mountain", "count": 1, "player": "alice", "zone": "Hand"}}}
+  ]
+}

@@ -1,0 +1,30 @@
+{
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "name": "alice",
+        "battlefield": [{"card": "Mountain", "label": "m1"}, {"card": "Forest", "label": "f1"}, {"card": "Glorious Anthem", "label": "mine"}],
+        "hand": [{"card": "Hull Breach", "label": "breach"}],
+        "library": [{"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}]
+      },
+      {
+        "name": "bob",
+        "battlefield": [{"card": "Sol Ring", "label": "ring"}, {"card": "Ornithopter", "label": "thopter"}, {"card": "Glorious Anthem", "label": "anthem"}, {"card": "Grizzly Bears", "label": "bears"}],
+        "library": [{"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}]
+      }
+    ],
+    "step": "PrecombatMain"
+  },
+  "description": "Hull Breach's third mode destroys target artifact and target enchantment",
+  "note": "Bob's Sol Ring and Glorious Anthem are both destroyed; his Ornithopter and alice's own Glorious Anthem, the other candidates, are untouched.",
+  "timeline": [
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": {"Cast": {"object": "$breach", "modes": [2], "targetsBySlot": {"pairedArtifact": ["$ring"], "pairedEnchantment": ["$anthem"]}, "mana": ["$m1", "$f1"]}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass"},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Count": {"card": "Sol Ring", "count": 1, "player": "bob", "zone": "Graveyard"}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Count": {"card": "Glorious Anthem", "count": 1, "player": "bob", "zone": "Graveyard"}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Count": {"card": "Grizzly Bears", "count": 1, "player": "bob", "zone": "Battlefield"}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Count": {"card": "Ornithopter", "count": 1, "player": "bob", "zone": "Battlefield"}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Count": {"card": "Glorious Anthem", "count": 1, "player": "alice", "zone": "Battlefield"}}}
+  ]
+}

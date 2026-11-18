@@ -1,0 +1,30 @@
+{
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "name": "alice",
+        "battlefield": [{"card": "I.K.S. Negh'Var, Imperial Flagship", "label": "neghvar", "ready": true, "counters": [{"key": {"type": "Named", "value": "charge"}, "value": 10}]}, {"card": "Defense Force Aggressor", "label": "aggressor", "ready": true}, {"card": "Grizzly Bears", "label": "bears", "ready": true}],
+        "library": [{"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}]
+      },
+      {
+        "name": "bob",
+        "library": [{"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}]
+      }
+    ],
+    "step": "PrecombatMain"
+  },
+  "description": "I.K.S. Negh'Var, Imperial Flagship gives Klingons and Warriors its controller controls vigilance, and is a 6/6 flying, vigilant artifact creature at 10 or more charge counters",
+  "note": "Ten charge counters make it a creature. Defense Force Aggressor and the Negh'Var attack without tapping; Grizzly Bears taps.",
+  "timeline": [
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Types": {"object": "$neghvar", "types": ["Artifact", "Creature"]}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"PowerToughness": {"object": "$neghvar", "power": 6, "toughness": 6}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Keywords": {"count": 1, "keyword": {"type": "Flying"}, "object": "$neghvar"}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Keywords": {"count": 1, "keyword": {"type": "Vigilance"}, "object": "$aggressor"}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Keywords": {"count": 0, "keyword": {"type": "Vigilance"}, "object": "$bears"}}},
+    {"turn": 1, "step": "DeclareAttackers", "player": "alice", "do": {"Attack": ["$neghvar", "$aggressor", "$bears"]}},
+    {"turn": 1, "step": "DeclareAttackers", "player": "alice", "check": {"Tapped": {"object": "$neghvar", "tapped": false}}},
+    {"turn": 1, "step": "DeclareAttackers", "player": "alice", "check": {"Tapped": {"object": "$aggressor", "tapped": false}}},
+    {"turn": 1, "step": "DeclareAttackers", "player": "alice", "check": {"Tapped": {"object": "$bears", "tapped": true}}}
+  ]
+}

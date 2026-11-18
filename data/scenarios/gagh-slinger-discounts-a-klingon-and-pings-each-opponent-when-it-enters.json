@@ -1,0 +1,39 @@
+{
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "name": "alice",
+        "battlefield": [{"card": "Gagh Slinger", "label": "gagh"}, {"card": "Swamp", "label": "s1"}, {"card": "Forest", "label": "f1"}, {"card": "Forest", "label": "f2"}],
+        "hand": [{"card": "Battle-Scarred Survivalist", "label": "survivalist"}, {"card": "Grizzly Bears", "label": "bears"}],
+        "library": [{"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}]
+      },
+      {
+        "name": "bob",
+        "library": [{"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}]
+      },
+      {
+        "name": "carol",
+        "library": [{"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}]
+      }
+    ],
+    "step": "PrecombatMain"
+  },
+  "description": "Gagh Slinger makes Klingon spells and Warrior spells its controller casts cost {1} less, and deals 1 damage to each opponent whenever another Klingon or Warrior they control enters",
+  "note": "Battle-Scarred Survivalist is a Klingon but no Warrior, cast for {B} alone. Its entry costs bob and carol 1 life each and alice none. Grizzly Bears is neither: it can't be cast off one Forest, and its entry pings nobody.",
+  "timeline": [
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": {"Cast": {"object": "$survivalist", "mana": ["$s1", null]}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass"},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass"},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Life": {"life": 19, "player": "bob"}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Life": {"life": 19, "player": "carol"}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Life": {"life": 20, "player": "alice"}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "refuse": {"Cast": {"object": "$bears", "mana": ["$f1", null]}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": {"ChooseOptional": "Exercises"}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": {"Cast": {"object": "$bears", "mana": ["$f1", "$f2"]}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass"},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Count": {"card": "Grizzly Bears", "count": 1, "player": "alice", "zone": "Battlefield"}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Life": {"life": 19, "player": "bob"}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Life": {"life": 19, "player": "carol"}}}
+  ]
+}

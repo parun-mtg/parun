@@ -1,0 +1,30 @@
+{
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "name": "alice",
+        "battlefield": [{"card": "Gnarling Targ", "label": "targ", "ready": true}, {"card": "Defense Force Aggressor", "label": "aggressor", "ready": true}, {"card": "Battle-Scarred Survivalist", "label": "survivalist", "ready": true}, {"card": "Grizzly Bears", "label": "bears", "ready": true}],
+        "library": [{"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}]
+      },
+      {
+        "name": "bob",
+        "library": [{"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}]
+      }
+    ],
+    "step": "PrecombatMain"
+  },
+  "description": "Whenever its controller attacks, Gnarling Targ gives Klingons and Warriors they control +2/+0 and trample until end of turn",
+  "note": "Defense Force Aggressor (a Klingon Warrior) attacks; Battle-Scarred Survivalist (a Klingon) stays home and still gets the bonus. Grizzly Bears attacks and gets nothing.",
+  "timeline": [
+    {"turn": 1, "step": "DeclareAttackers", "player": "alice", "do": {"Attack": ["$targ", "$aggressor", "$bears"]}},
+    {"turn": 1, "step": "DeclareAttackers", "player": "alice", "do": "Pass"},
+    {"turn": 1, "step": "DeclareAttackers", "player": "alice", "check": {"PowerToughness": {"object": "$aggressor", "power": 4, "toughness": 1}}},
+    {"turn": 1, "step": "DeclareAttackers", "player": "alice", "check": {"Keywords": {"count": 1, "keyword": {"type": "Trample"}, "object": "$aggressor"}}},
+    {"turn": 1, "step": "DeclareAttackers", "player": "alice", "check": {"PowerToughness": {"object": "$survivalist", "power": 3, "toughness": 1}}},
+    {"turn": 1, "step": "DeclareAttackers", "player": "alice", "check": {"Keywords": {"count": 1, "keyword": {"type": "Trample"}, "object": "$survivalist"}}},
+    {"turn": 1, "step": "DeclareAttackers", "player": "alice", "check": {"PowerToughness": {"object": "$bears", "power": 2, "toughness": 2}}},
+    {"turn": 1, "step": "DeclareAttackers", "player": "alice", "check": {"Keywords": {"count": 0, "keyword": {"type": "Trample"}, "object": "$bears"}}},
+    {"turn": 1, "step": "DeclareAttackers", "player": "alice", "check": {"PowerToughness": {"object": "$targ", "power": 4, "toughness": 5}}}
+  ]
+}

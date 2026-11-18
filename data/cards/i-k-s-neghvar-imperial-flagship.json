@@ -1,0 +1,129 @@
+{
+  "faces": [
+    {
+      "keywords": [
+        {
+          "type": "Station"
+        }
+      ],
+      "manaCost": [
+        {
+          "type": "Generic",
+          "value": 3
+        }
+      ],
+      "name": "I.K.S. Negh'Var, Imperial Flagship",
+      "oracleText": "Klingons and Warriors you control have vigilance.\nStation (Tap another creature you control: Put charge counters equal to its power on this Spacecraft. Station only as a sorcery. It's an artifact creature at 10+.)\n10+ | Flying, vigilance",
+      "staticAbilities": [
+        {
+          "affected": {
+            "type": "Matching",
+            "value": {
+              "type": "And",
+              "value": [
+                {
+                  "type": "Or",
+                  "value": [
+                    {
+                      "type": "HasSubtype",
+                      "value": "Klingon"
+                    },
+                    {
+                      "type": "HasSubtype",
+                      "value": "Warrior"
+                    }
+                  ]
+                },
+                {
+                  "type": "HeldBy",
+                  "value": {
+                    "holder": "Controller",
+                    "relation": "You"
+                  }
+                }
+              ]
+            }
+          },
+          "modifications": [
+            {
+              "type": "GainKeyword",
+              "value": {
+                "type": "Vigilance"
+              }
+            }
+          ]
+        },
+        {
+          "affected": {
+            "type": "Matching",
+            "value": {
+              "type": "IsSource"
+            }
+          },
+          "condition": {
+            "type": "Compares",
+            "value": {
+              "comparison": "AtLeast",
+              "measured": {
+                "type": "ObjectCounters",
+                "value": {
+                  "type": "Named",
+                  "value": "charge"
+                }
+              },
+              "threshold": {
+                "type": "Literal",
+                "value": 10
+              }
+            }
+          },
+          "modifications": [
+            {
+              "type": "CardType",
+              "value": {
+                "cardType": "Creature",
+                "mode": "InAddition"
+              }
+            },
+            {
+              "type": "SetBasePowerToughness",
+              "value": {
+                "power": {
+                  "type": "Literal",
+                  "value": 6
+                },
+                "toughness": {
+                  "type": "Literal",
+                  "value": 6
+                }
+              }
+            },
+            {
+              "type": "GainKeyword",
+              "value": {
+                "type": "Flying"
+              }
+            },
+            {
+              "type": "GainKeyword",
+              "value": {
+                "type": "Vigilance"
+              }
+            }
+          ]
+        }
+      ],
+      "typeLine": {
+        "subtypes": [
+          "Spacecraft"
+        ],
+        "supertypes": [
+          "Legendary"
+        ],
+        "types": [
+          "Artifact"
+        ]
+      }
+    }
+  ]
+}

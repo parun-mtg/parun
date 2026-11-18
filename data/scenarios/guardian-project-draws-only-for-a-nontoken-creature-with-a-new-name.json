@@ -1,0 +1,36 @@
+{
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "name": "alice",
+        "battlefield": [{"card": "Guardian Project", "label": "gp"}, {"card": "Memnite", "label": "old"}, {"card": "Forest", "label": "f1"}, {"card": "Forest", "label": "f2"}],
+        "hand": [{"card": "Memnite", "label": "memnite"}, {"card": "Ornithopter", "label": "thopter"}, {"card": "Grizzly Bears", "label": "bears"}],
+        "graveyard": [{"card": "Ornithopter", "label": "deadthopter"}],
+        "library": [{"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}]
+      },
+      {
+        "name": "bob",
+        "battlefield": [{"card": "Grizzly Bears", "label": "bobbears"}],
+        "library": [{"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}]
+      }
+    ],
+    "step": "PrecombatMain"
+  },
+  "description": "Whenever a nontoken creature its controller controls enters, Guardian Project draws a card unless it shares a name with another creature they control or a creature card in their graveyard",
+  "note": "Memnite shares a name with alice's other Memnite and Ornithopter with the one in her graveyard, so neither draws. Grizzly Bears draws, though bob controls a Grizzly Bears too.",
+  "timeline": [
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": {"Cast": {"object": "$memnite", "mana": []}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass"},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"View": {"is": [], "of": "Stack"}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": {"Cast": {"object": "$thopter", "mana": []}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass"},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"View": {"is": [], "of": "Stack"}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Count": {"card": "Island", "count": 0, "player": "alice", "zone": "Hand"}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": {"Cast": {"object": "$bears", "mana": ["$f1", "$f2"]}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass"},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"View": {"is": ["trigger of $gp"], "of": "Stack"}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass"},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Count": {"card": "Island", "count": 1, "player": "alice", "zone": "Hand"}}}
+  ]
+}

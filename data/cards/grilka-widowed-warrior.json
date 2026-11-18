@@ -1,0 +1,242 @@
+{
+  "faces": [
+    {
+      "manaCost": [
+        {
+          "type": "Generic",
+          "value": 5
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "Red"
+          }
+        }
+      ],
+      "name": "Grilka, Widowed Warrior",
+      "oracleText": "When Grilka enters, gain control of target creature an opponent controls until end of turn. Untap it. Until end of turn, it gains trample, haste, and \"Whenever this creature deals combat damage to a player, create that many tapped Treasure tokens.\"",
+      "power": {
+        "type": "Literal",
+        "value": 5
+      },
+      "toughness": {
+        "type": "Literal",
+        "value": 5
+      },
+      "triggeredAbilities": [
+        {
+          "condition": {
+            "type": "Enters",
+            "value": {}
+          },
+          "modal": {
+            "modes": [
+              {
+                "clauses": [
+                  {
+                    "effects": [
+                      {
+                        "type": "GainControl",
+                        "value": {
+                          "duration": {
+                            "type": "UntilEndOfTurn"
+                          },
+                          "ref": {
+                            "type": "InSlot",
+                            "value": "target"
+                          }
+                        }
+                      },
+                      {
+                        "type": "Untap",
+                        "value": {
+                          "type": "InSlot",
+                          "value": "target"
+                        }
+                      },
+                      {
+                        "type": "ModifyTarget",
+                        "value": {
+                          "duration": {
+                            "type": "UntilEndOfTurn"
+                          },
+                          "modification": {
+                            "type": "GainKeyword",
+                            "value": {
+                              "type": "Trample"
+                            }
+                          },
+                          "ref": {
+                            "type": "InSlot",
+                            "value": "target"
+                          }
+                        }
+                      },
+                      {
+                        "type": "ModifyTarget",
+                        "value": {
+                          "duration": {
+                            "type": "UntilEndOfTurn"
+                          },
+                          "modification": {
+                            "type": "GainKeyword",
+                            "value": {
+                              "type": "Haste"
+                            }
+                          },
+                          "ref": {
+                            "type": "InSlot",
+                            "value": "target"
+                          }
+                        }
+                      },
+                      {
+                        "type": "ModifyTarget",
+                        "value": {
+                          "duration": {
+                            "type": "UntilEndOfTurn"
+                          },
+                          "modification": {
+                            "type": "GainAbility",
+                            "value": {
+                              "type": "Triggered",
+                              "value": {
+                                "condition": {
+                                  "type": "DealsDamage",
+                                  "value": {
+                                    "actor": {
+                                      "type": "Self"
+                                    },
+                                    "kind": "Combat",
+                                    "recipients": [
+                                      {
+                                        "type": "Player",
+                                        "value": {
+                                          "type": "Relative",
+                                          "value": "AnyPlayer"
+                                        }
+                                      }
+                                    ]
+                                  }
+                                },
+                                "modal": {
+                                  "modes": [
+                                    {
+                                      "clauses": [
+                                        {
+                                          "effects": [
+                                            {
+                                              "type": "Create",
+                                              "value": {
+                                                "card": {
+                                                  "faces": [
+                                                    {
+                                                      "activatedAbilities": [
+                                                        {
+                                                          "cost": {
+                                                            "components": [
+                                                              {
+                                                                "type": "TapThis"
+                                                              },
+                                                              {
+                                                                "type": "SacrificeThis"
+                                                              }
+                                                            ],
+                                                            "mana": []
+                                                          },
+                                                          "modal": {
+                                                            "modes": [
+                                                              {
+                                                                "clauses": [
+                                                                  {
+                                                                    "effects": [
+                                                                      {
+                                                                        "type": "AddMana",
+                                                                        "value": {
+                                                                          "production": {
+                                                                            "type": "AnyColor"
+                                                                          }
+                                                                        }
+                                                                      }
+                                                                    ]
+                                                                  }
+                                                                ]
+                                                              }
+                                                            ]
+                                                          }
+                                                        }
+                                                      ],
+                                                      "name": "Treasure Token",
+                                                      "typeLine": {
+                                                        "subtypes": [
+                                                          "Treasure"
+                                                        ],
+                                                        "types": [
+                                                          "Artifact"
+                                                        ]
+                                                      }
+                                                    }
+                                                  ]
+                                                },
+                                                "quantity": {
+                                                  "type": "InSlot",
+                                                  "value": "thatMuch"
+                                                },
+                                                "riders": {
+                                                  "tapped": "Tapped"
+                                                }
+                                              }
+                                            }
+                                          ]
+                                        }
+                                      ]
+                                    }
+                                  ]
+                                }
+                              }
+                            }
+                          },
+                          "ref": {
+                            "type": "InSlot",
+                            "value": "target"
+                          }
+                        }
+                      }
+                    ]
+                  }
+                ],
+                "targetSlots": {
+                  "target": {
+                    "filter": {
+                      "type": "HeldBy",
+                      "value": {
+                        "holder": "Controller",
+                        "relation": "Opponent"
+                      }
+                    },
+                    "pool": {
+                      "type": "Creatures"
+                    }
+                  }
+                }
+              }
+            ]
+          }
+        }
+      ],
+      "typeLine": {
+        "subtypes": [
+          "Klingon",
+          "Warrior"
+        ],
+        "supertypes": [
+          "Legendary"
+        ],
+        "types": [
+          "Creature"
+        ]
+      }
+    }
+  ]
+}

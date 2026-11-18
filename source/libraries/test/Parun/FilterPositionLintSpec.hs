@@ -1988,6 +1988,7 @@ filterPositionLintSpec s registry corpus = Spec.describe s "Lint" $ do
         ("Jaded Response", 1), -- its counter clause's "if"'s Count filter, Color at AnyPermanent
         ("Radagast the Brown", 1), -- its from-among choice's filter, negated, CreatureType at AnyPermanent
         ("Spellweaver Helix", 2), -- its intervening "if"'s Count filter and its choice's filter
+        ("Guardian Project", 2), -- its intervening "if"'s two Count filters
         ("Jester's Scepter", 1), -- its counter clause's "if"'s Count filter
         ("Deadly Cover-Up", 1), -- its search's filter, against its exiled card
         ("The Apprentice's Folly", 2), -- its chapters' target slots, negated, at AnyPermanent

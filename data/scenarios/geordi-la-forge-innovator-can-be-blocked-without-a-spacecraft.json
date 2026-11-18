@@ -1,0 +1,27 @@
+{
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "name": "alice",
+        "battlefield": [{"card": "Geordi La Forge, Innovator", "label": "geordi", "ready": true}, {"card": "Memnite", "label": "memnite"}],
+        "library": [{"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}]
+      },
+      {
+        "name": "bob",
+        "battlefield": [{"card": "Ornithopter", "label": "thopter"}],
+        "library": [{"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}]
+      }
+    ],
+    "step": "PrecombatMain"
+  },
+  "description": "Geordi La Forge, Innovator can be blocked while its controller controls no Spacecraft",
+  "note": "Alice's only artifact is Memnite, no Spacecraft, so bob's Ornithopter blocks Geordi; no combat damage reaches bob and alice draws nothing.",
+  "timeline": [
+    {"turn": 1, "step": "DeclareAttackers", "player": "alice", "do": {"Attack": ["$geordi"]}},
+    {"turn": 1, "step": "DeclareBlockers", "player": "bob", "do": {"Block": {"$thopter": ["$geordi"]}}},
+    {"turn": 1, "step": "DeclareBlockers", "player": "alice", "check": {"Blockers": {"attacker": "$geordi", "blockers": ["$thopter"]}}},
+    {"turn": 1, "step": "EndOfCombat", "player": "alice", "check": {"Life": {"life": 20, "player": "bob"}}},
+    {"turn": 1, "step": "EndOfCombat", "player": "alice", "check": {"Count": {"card": "Island", "count": 0, "player": "alice", "zone": "Hand"}}}
+  ]
+}
