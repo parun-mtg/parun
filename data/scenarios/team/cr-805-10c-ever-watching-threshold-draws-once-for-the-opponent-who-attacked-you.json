@@ -1,0 +1,38 @@
+{
+  "description": "CR 805.10c Ever-Watching Threshold draws once, for the opponent who attacked you",
+  "note": "Two-Headed Giant, carol and dave attacking: carol's Hill Giant goes at bob and dave's Grizzly Bears at alice. Each opponent's declaration triggers, but only dave attacked alice, so alice draws the Plains and not the Island.",
+  "board": {
+    "active": "carol",
+    "step": "BeginningOfCombat",
+    "sharedTeamTurns": true,
+    "seats": [
+      {
+        "name": "alice",
+        "team": 1,
+        "battlefield": [{ "card": "Ever-Watching Threshold" }],
+        "library": [{ "card": "Plains" }, { "card": "Island" }, { "card": "Swamp" }]
+      },
+      {
+        "name": "bob",
+        "team": 1
+      },
+      {
+        "name": "carol",
+        "team": 2,
+        "battlefield": [{ "card": "Hill Giant", "label": "cgiant", "ready": true }]
+      },
+      {
+        "name": "dave",
+        "team": 2,
+        "battlefield": [{ "card": "Grizzly Bears", "label": "dbears", "ready": true }]
+      }
+    ]
+  },
+  "timeline": [
+    { "turn": 1, "step": "DeclareAttackers", "player": "carol", "do": { "Attack": ["$cgiant", "$dbears"] } },
+    { "turn": 1, "step": "DeclareAttackers", "player": "carol", "source": "$cgiant", "do": { "ChooseAttackTarget": "$bob" } },
+    { "turn": 1, "step": "DeclareAttackers", "player": "carol", "source": "$dbears", "do": { "ChooseAttackTarget": "$alice" } },
+    { "turn": 1, "step": "PostcombatMain", "player": "carol", "check": { "Count": { "player": "alice", "zone": "Hand", "card": "Plains", "count": 1 } } },
+    { "turn": 1, "step": "PostcombatMain", "player": "carol", "check": { "Count": { "player": "alice", "zone": "Hand", "card": "Island", "count": 0 } } }
+  ]
+}

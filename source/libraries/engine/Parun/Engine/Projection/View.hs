@@ -208,7 +208,7 @@ viewOfCardLapsed lapsed face =
           Filter.declaredAttackerThisCombat = False,
           -- CR 508.3b's other half, False for the same reason: a printed face is
           -- in no combat, so nothing was declared attacking it.
-          Filter.declaredAttackedThisCombat = False,
+          Filter.declaredAttackedBy = Set.empty,
           Filter.declaredBlockerThisCombat = False,
           Filter.hadToAttackThisCombat = False,
           -- CR 701.17a mills an OBJECT; this builder describes a printed FACE.
@@ -747,7 +747,7 @@ viewOfCharacteristics peers oid pc controller counters gs =
       Filter.declaredThisTurn = Count.declaredThisTurn oid gs,
       Filter.couldAttackThisTurn = Count.couldAttackThisTurn oid gs,
       Filter.declaredAttackerThisCombat = Count.declaredAttackerThisCombat oid gs,
-      Filter.declaredAttackedThisCombat = Count.declaredAttackedThisCombat oid gs,
+      Filter.declaredAttackedBy = Count.declaredAttackedBy oid gs,
       Filter.declaredBlockerThisCombat = Count.declaredBlockerThisCombat oid gs,
       Filter.hadToAttackThisCombat = Count.hadToAttackThisCombat oid gs,
       Filter.leftLibraryThisTurn = Count.leftLibraryThisTurn oid gs,

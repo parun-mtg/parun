@@ -327,8 +327,9 @@ data View = MkView
     -- for, for an attacking creature whose AttackTarget is a player or a
     -- planeswalker, and for a battle mid-repair with no designation (CR 310.11).
     attackingBattleProtector :: Maybe PlayerId.PlayerId,
-    -- CR 508.3b: was this candidate DECLARED ATTACKED this COMBAT PHASE? Read
-    -- from TurnRegisters.combat like `attacking`, off Combat.declaredAttacked -- the
+    -- CR 508.3b / 805.10c: the attacking players who DECLARED an attack at this
+    -- candidate this COMBAT PHASE, empty if none did. Read from
+    -- TurnRegisters.combat like `attacking`, off Combat.declaredAttackedBy -- the
     -- half of the record `declaredAttackerThisCombat` below reads the other half
     -- of. A LOOK-BACK read within the phase, so CR 506.4's removal from combat
     -- leaves it standing.
@@ -338,7 +339,7 @@ data View = MkView
     -- board by Parun.Engine.Count.playerView for that candidate, exactly as
     -- `dealtDamageThisTurn` below is and for its reason: this builder holds a
     -- PlayerId and no board.
-    declaredAttackedThisCombat :: Bool,
+    declaredAttackedBy :: Set.Set PlayerId.PlayerId,
     -- CR 509.1g: is this candidate a blocking creature right now? Read from
     -- TurnRegisters.combat alongside `attacking` -- but from the OTHER map:
     -- Combat.blockers is keyed by attacker, and a blocking creature is a MEMBER
@@ -1116,10 +1117,10 @@ nobodyView =
       -- CR 508.3b lets a PLAYER be declared attacked, so unlike the field above
       -- this one asks a question a player candidate really can answer -- just not
       -- from here, this view being built from a PlayerId alone and holding no
-      -- combat record to read. False is therefore the DEFAULT and not the answer,
+      -- combat record to read. Empty is therefore the DEFAULT and not the answer,
       -- exactly as `dealtDamageThisTurn` below is: Parun.Engine.Count.playerView
       -- overwrites it from TurnRegisters.combat.
-      declaredAttackedThisCombat = False,
+      declaredAttackedBy = Set.empty,
       -- CR 509.1a: only a creature can block, either.
       blocking = False,
       -- CR 509.1h: block status is a status of an ATTACKING creature, and by CR
@@ -2796,8 +2797,12 @@ matches context view predicate = case predicate of
   Filter.DeclaredAttackerThisCombat -> declaredAttackerThisCombat view
   -- CR 508.3b: the other half of the same record, and the same look-back read.
   -- CR 508.4 keeps a creature put onto the battlefield attacking out of it, so
-  -- this is the past-tense "was attacked" and never "is being attacked".
-  Filter.DeclaredAttackedThisCombat -> declaredAttackedThisCombat view
+  -- this is the past-tense "was attacked" and never "is being attacked". A slot
+  -- narrows it to the attacking players it binds (CR 805.10c), read off the
+  -- Context as HeldByBound's count reads it.
+  Filter.DeclaredAttackedThisCombat Nothing -> not (Set.null (declaredAttackedBy view))
+  Filter.DeclaredAttackedThisCombat (Just slot) ->
+    not (Set.disjoint (declaredAttackedBy view) (Map.findWithDefault Set.empty slot (slotPlayers context)))
   -- CR 509.1a: the same read off the blocking half of that record.
   Filter.DeclaredBlockerThisCombat -> declaredBlockerThisCombat view
   -- CR 506.7: the same record's requirement half, written as attackers were
@@ -3500,7 +3505,7 @@ manaValueThresholds predicate = case predicate of
   Filter.DeclaredThisTurn _ -> []
   Filter.CouldAttackThisTurn -> []
   Filter.DeclaredAttackerThisCombat -> []
-  Filter.DeclaredAttackedThisCombat -> []
+  Filter.DeclaredAttackedThisCombat _ -> []
   Filter.DeclaredBlockerThisCombat -> []
   Filter.HadToAttackThisCombat -> []
   Filter.LeftLibraryThisTurn _ -> []
@@ -3694,7 +3699,7 @@ statesAQuality predicate = case predicate of
   Filter.DeclaredThisTurn _ -> True
   Filter.CouldAttackThisTurn -> True
   Filter.DeclaredAttackerThisCombat -> True
-  Filter.DeclaredAttackedThisCombat -> True
+  Filter.DeclaredAttackedThisCombat _ -> True
   Filter.DeclaredBlockerThisCombat -> True
   Filter.HadToAttackThisCombat -> True
   Filter.LeftLibraryThisTurn _ -> True
@@ -3890,7 +3895,7 @@ readsSourceValues predicate = case predicate of
   Filter.DeclaredThisTurn _ -> False
   Filter.CouldAttackThisTurn -> False
   Filter.DeclaredAttackerThisCombat -> False
-  Filter.DeclaredAttackedThisCombat -> False
+  Filter.DeclaredAttackedThisCombat _ -> False
   Filter.DeclaredBlockerThisCombat -> False
   Filter.HadToAttackThisCombat -> False
   Filter.LeftLibraryThisTurn _ -> False

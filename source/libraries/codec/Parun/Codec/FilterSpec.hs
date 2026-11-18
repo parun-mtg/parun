@@ -479,8 +479,14 @@ spec s = Spec.describe s "Parun.Codec.Filter" $ do
     Common.assertCodec
       s
       codec
-      Filter.DeclaredAttackedThisCombat
+      (Filter.DeclaredAttackedThisCombat Nothing)
       " {\"type\":\"DeclaredAttackedThisCombat\"} "
+  Spec.it s "DeclaredAttackedThisCombat with a slot" $
+    Common.assertCodec
+      s
+      codec
+      (Filter.DeclaredAttackedThisCombat (Just (SlotName.MkSlotName (Text.pack "thatAttackingPlayer"))))
+      " {\"type\":\"DeclaredAttackedThisCombat\",\"value\":\"thatAttackingPlayer\"} "
   Spec.it s "DeclaredBlockerThisCombat" $
     Common.assertCodec
       s
