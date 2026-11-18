@@ -2925,3 +2925,22 @@ Entries are ordered by the first rule each cites.
   `CopyPowerToughness.Defined` arm, proved by the scenario
   `colossal-clone-master-copying-tarmogoyf-counts-differently-named-lands`.
 - **Issue**: #8539.
+
+## Whether a round of Thieves' Auction re-reads the turn order
+
+- **Question**: "Starting with you, each player chooses" walks the players in
+  turn order. A player who takes a Topsy Turvy mid-round reverses that order.
+  Does the rest of the round follow the order fixed as the round began, or the
+  order now?
+- **Rules**: CR 101.4, 608.2f, 611.3a; CR of 2026-11-06.
+- **Decision**: The order now. Each next chooser is the first player who has
+  not yet chosen this round, in the turn order read from the player who just
+  chose.
+- **Rejected**: Fixing the round's order as it begins, as CR 608.2f fixes its
+  members: rule 101.4 names "the next player in turn order", read when that
+  player is next, and rule 611.3a has Topsy Turvy's reversal apply from the
+  moment it enters.
+- **Site**: `Parun.Engine.Resolve.Arms.Zones.forEach`'s `inTurnOrder`, proved
+  by the scenario
+  `thieves-auction-re-reads-turn-order-after-a-topsy-turvy-is-taken`.
+- **Issue**: #8723.

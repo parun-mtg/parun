@@ -1,0 +1,23 @@
+{
+  "description": "CR 101.4 / 611.3a: bob takes Topsy Turvy in Thieves' Auction's first round, so the round goes on in the reversed turn order from bob and dave chooses before carol",
+  "note": "Seated alice, bob, carol, dave. Priority passes reversed before the spell resolves. The auction exiles Topsy Turvy, so the round starts alice, bob. Once bob takes it, the next player in turn order who has not chosen is dave, not carol; carol's pick has one option and asks nobody.",
+  "board": {"active": "alice", "step": "PrecombatMain", "seats": [
+    {"name": "alice", "manaPool": "RRRRRRR", "battlefield": [{"card": "Topsy Turvy"}, {"card": "Grizzly Bears"}], "hand": [{"card": "Thieves' Auction", "label": "auction"}], "library": [{"card": "Swamp"}, {"card": "Swamp"}, {"card": "Swamp"}]},
+    {"name": "bob", "battlefield": [{"card": "Hill Giant"}], "library": [{"card": "Swamp"}, {"card": "Swamp"}, {"card": "Swamp"}]},
+    {"name": "carol", "battlefield": [{"card": "Island"}], "library": [{"card": "Swamp"}, {"card": "Swamp"}, {"card": "Swamp"}]},
+    {"name": "dave", "library": [{"card": "Swamp"}, {"card": "Swamp"}, {"card": "Swamp"}]}
+  ]},
+  "timeline": [
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": {"Cast": {"object": "$auction"}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass"},
+    {"turn": 1, "step": "PrecombatMain", "player": "dave", "do": "Pass"},
+    {"turn": 1, "step": "PrecombatMain", "player": "carol", "do": "Pass"},
+    {"turn": 1, "step": "PrecombatMain", "player": "bob", "do": "Pass"},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": {"Answer": {"prompt": "ChooseCardFromAmong", "with": "Grizzly Bears"}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "bob", "do": {"Answer": {"prompt": "ChooseCardFromAmong", "with": "Topsy Turvy"}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "dave", "do": {"Answer": {"prompt": "ChooseCardFromAmong", "with": "Hill Giant"}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Count": {"player": "dave", "zone": "Battlefield", "card": "Hill Giant", "count": 1}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Count": {"player": "carol", "zone": "Battlefield", "card": "Island", "count": 1}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Count": {"player": "bob", "zone": "Battlefield", "card": "Topsy Turvy", "count": 1}}}
+  ]
+}
