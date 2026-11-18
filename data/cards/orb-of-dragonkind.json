@@ -35,8 +35,17 @@
                           },
                           "restriction": {
                             "activations": {
-                              "type": "HasSubtype",
-                              "value": "Dragon"
+                              "type": "And",
+                              "value": [
+                                {
+                                  "type": "HasSubtype",
+                                  "value": "Dragon"
+                                },
+                                {
+                                  "type": "IsInZone",
+                                  "value": "Battlefield"
+                                }
+                              ]
                             },
                             "casts": {
                               "type": "HasSubtype",

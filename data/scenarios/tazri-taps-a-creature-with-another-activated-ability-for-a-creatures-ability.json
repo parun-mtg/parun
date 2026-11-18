@@ -71,8 +71,17 @@
                 },
                 "restriction": {
                   "activations": {
-                    "type": "HasCardType",
-                    "value": "Creature"
+                    "type": "And",
+                    "value": [
+                      {
+                        "type": "HasCardType",
+                        "value": "Creature"
+                      },
+                      {
+                        "type": "IsInZone",
+                        "value": "Battlefield"
+                      }
+                    ]
                   }
                 },
                 "retention": "Ordinary",

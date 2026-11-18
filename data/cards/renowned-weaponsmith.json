@@ -28,8 +28,17 @@
                           },
                           "restriction": {
                             "activations": {
-                              "type": "HasCardType",
-                              "value": "Artifact"
+                              "type": "And",
+                              "value": [
+                                {
+                                  "type": "HasCardType",
+                                  "value": "Artifact"
+                                },
+                                {
+                                  "type": "IsInZone",
+                                  "value": "Battlefield"
+                                }
+                              ]
                             },
                             "casts": {
                               "type": "HasCardType",
@@ -49,8 +58,17 @@
                           },
                           "restriction": {
                             "activations": {
-                              "type": "HasCardType",
-                              "value": "Artifact"
+                              "type": "And",
+                              "value": [
+                                {
+                                  "type": "HasCardType",
+                                  "value": "Artifact"
+                                },
+                                {
+                                  "type": "IsInZone",
+                                  "value": "Battlefield"
+                                }
+                              ]
                             },
                             "casts": {
                               "type": "HasCardType",
