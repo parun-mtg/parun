@@ -1,0 +1,561 @@
+{
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "battlefield": [
+          {
+            "card": "Grizzly Bears",
+            "label": "bears"
+          },
+          {
+            "card": "Plains",
+            "label": "plains"
+          },
+          {
+            "card": "Plains",
+            "label": "plains-2"
+          }
+        ],
+        "hand": [
+          {
+            "card": "Shahrazad",
+            "label": "shahrazad"
+          }
+        ],
+        "library": [
+          {
+            "card": "The Holodeck"
+          },
+          {
+            "card": "Ancient Tomb"
+          },
+          {
+            "card": "Mox Jet"
+          },
+          {
+            "card": "Mox Pearl"
+          },
+          {
+            "card": "Mox Ruby"
+          },
+          {
+            "card": "Mox Emerald"
+          },
+          {
+            "card": "Mox Sapphire"
+          },
+          {
+            "card": "Forest"
+          },
+          {
+            "card": "Forest"
+          }
+        ],
+        "name": "alice"
+      },
+      {
+        "library": [
+          {
+            "card": "Mountain"
+          },
+          {
+            "card": "Mountain"
+          },
+          {
+            "card": "Mountain"
+          },
+          {
+            "card": "Mountain"
+          },
+          {
+            "card": "Mountain"
+          },
+          {
+            "card": "Mountain"
+          },
+          {
+            "card": "Mountain"
+          },
+          {
+            "card": "Mountain"
+          },
+          {
+            "card": "Mountain"
+          }
+        ],
+        "name": "bob"
+      }
+    ],
+    "step": "PrecombatMain"
+  },
+  "description": "CR 730.4/730.4a gameplay: The Holodeck in a Shahrazad subgame casts a Grizzly Bears and plays a Plains alice owns in the main game, and each is gone from the main game's battlefield",
+  "note": "In the subgame alice's Holodeck offers her main-game Bears and both main-game Plains as cards outside the subgame (CR 730.4). She casts the Bears on her second turn, which is then offered no more, and plays a Plains on her third. Bob decks on his third turn. Back in the main game bob has halved to 10, and the Bears and one Plains have left the main game's battlefield (CR 730.4a) and come back to her library with the subgame's cards (CR 730.5).",
+  "timeline": [
+    {
+      "do": {
+        "Cast": {
+          "mana": [
+            "$plains",
+            "$plains-2"
+          ],
+          "object": "$shahrazad"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Answer": {
+          "prompt": "RandomFirstPlayer",
+          "with": "alice"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "depth": 1,
+      "do": {
+        "Answer": {
+          "prompt": "Shuffle",
+          "with": [
+            "The Holodeck",
+            "Ancient Tomb",
+            "Mox Jet",
+            "Mox Pearl",
+            "Mox Ruby",
+            "Mox Emerald",
+            "Mox Sapphire",
+            "Forest",
+            "Forest#2"
+          ]
+        }
+      },
+      "player": "alice",
+      "step": "Untap",
+      "turn": 1
+    },
+    {
+      "depth": 1,
+      "do": {
+        "Answer": {
+          "prompt": "Shuffle",
+          "with": [
+            "Mountain",
+            "Mountain#2",
+            "Mountain#3",
+            "Mountain#4",
+            "Mountain#5",
+            "Mountain#6",
+            "Mountain#7",
+            "Mountain#8",
+            "Mountain#9"
+          ]
+        }
+      },
+      "player": "alice",
+      "step": "Untap",
+      "turn": 1
+    },
+    {
+      "depth": 1,
+      "do": {
+        "Answer": {
+          "prompt": "DeclareMulligan",
+          "with": "Keep"
+        }
+      },
+      "player": "alice",
+      "step": "Untap",
+      "turn": 1
+    },
+    {
+      "depth": 1,
+      "do": {
+        "Answer": {
+          "prompt": "DeclareMulligan",
+          "with": "Keep"
+        }
+      },
+      "player": "bob",
+      "step": "Untap",
+      "turn": 1
+    },
+    {
+      "depth": 1,
+      "do": {
+        "PlayLand": "Ancient Tomb"
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "depth": 1,
+      "do": {
+        "Cast": {
+          "mana": [],
+          "object": "Mox Jet"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "depth": 1,
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "depth": 1,
+      "do": {
+        "Cast": {
+          "mana": [],
+          "object": "Mox Pearl"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "depth": 1,
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "depth": 1,
+      "do": {
+        "Cast": {
+          "mana": [],
+          "object": "Mox Ruby"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "depth": 1,
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "depth": 1,
+      "do": {
+        "Cast": {
+          "mana": [],
+          "object": "Mox Emerald"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "depth": 1,
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "depth": 1,
+      "do": {
+        "Cast": {
+          "mana": [],
+          "object": "Mox Sapphire"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "depth": 1,
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "depth": 1,
+      "do": {
+        "Cast": {
+          "mana": [
+            "Ancient Tomb",
+            "Mox Jet",
+            "Mox Pearl",
+            "Mox Ruby",
+            "Mox Emerald",
+            "Mox Sapphire"
+          ],
+          "object": "The Holodeck"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "depth": 1,
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "depth": 1,
+      "do": {
+        "Answer": {
+          "prompt": "ChooseDiscard",
+          "with": []
+        }
+      },
+      "player": "bob",
+      "step": "Cleanup",
+      "turn": 2
+    },
+    {
+      "depth": 1,
+      "do": {
+        "Answer": {
+          "prompt": "ChooseDiscard",
+          "with": []
+        }
+      },
+      "player": "bob",
+      "step": "Cleanup",
+      "turn": 4
+    },
+    {
+      "check": {
+        "View": {
+          "is": [
+            "Pass",
+            "PlayLand Forest#2",
+            "PlayLand Plains",
+            "PlayLand Plains#2",
+            "Cast Grizzly Bears",
+            "ActivateManaAbility Ancient Tomb",
+            "ActivateManaAbility Mox Jet",
+            "ActivateManaAbility Mox Pearl",
+            "ActivateManaAbility Mox Ruby",
+            "ActivateManaAbility Mox Emerald",
+            "ActivateManaAbility Mox Sapphire"
+          ],
+          "of": "Offered",
+          "player": "alice"
+        }
+      },
+      "depth": 1,
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 3
+    },
+    {
+      "depth": 1,
+      "do": {
+        "Cast": {
+          "mana": [
+            "Mox Emerald",
+            "Mox Jet",
+            null
+          ],
+          "object": "Grizzly Bears"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 3
+    },
+    {
+      "depth": 1,
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 3
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Grizzly Bears",
+          "count": 1,
+          "player": "alice",
+          "zone": "Battlefield"
+        }
+      },
+      "depth": 1,
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 3
+    },
+    {
+      "check": {
+        "View": {
+          "is": [
+            "Pass",
+            "PlayLand Forest",
+            "PlayLand Forest#2",
+            "PlayLand Plains",
+            "PlayLand Plains#2",
+            "ActivateManaAbility Ancient Tomb",
+            "ActivateManaAbility Mox Jet",
+            "ActivateManaAbility Mox Pearl",
+            "ActivateManaAbility Mox Ruby",
+            "ActivateManaAbility Mox Emerald",
+            "ActivateManaAbility Mox Sapphire"
+          ],
+          "of": "Offered",
+          "player": "alice"
+        }
+      },
+      "depth": 1,
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 5
+    },
+    {
+      "depth": 1,
+      "do": {
+        "PlayLand": "Plains"
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 5
+    },
+    {
+      "depth": 1,
+      "do": {
+        "Attack": []
+      },
+      "player": "alice",
+      "step": "DeclareAttackers",
+      "turn": 5
+    },
+    {
+      "do": {
+        "Answer": {
+          "prompt": "Shuffle",
+          "with": [
+            "Grizzly Bears",
+            "The Holodeck",
+            "Ancient Tomb",
+            "Mox Jet",
+            "Mox Pearl",
+            "Mox Ruby",
+            "Mox Emerald",
+            "Mox Sapphire",
+            "Forest",
+            "Forest#2",
+            "Plains#2"
+          ]
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Answer": {
+          "prompt": "Shuffle",
+          "with": [
+            "Mountain",
+            "Mountain#2",
+            "Mountain#3",
+            "Mountain#4",
+            "Mountain#5",
+            "Mountain#6",
+            "Mountain#7",
+            "Mountain#8",
+            "Mountain#9"
+          ]
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Life": {
+          "life": 10,
+          "player": "bob"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Grizzly Bears",
+          "count": 0,
+          "player": "alice",
+          "zone": "Battlefield"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Grizzly Bears",
+          "count": 1,
+          "player": "alice",
+          "zone": "Library"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Plains",
+          "count": 1,
+          "player": "alice",
+          "zone": "Battlefield"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Plains",
+          "count": 1,
+          "player": "alice",
+          "zone": "Library"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    }
+  ]
+}

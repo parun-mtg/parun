@@ -106,7 +106,8 @@
                               "type": "Members"
                             },
                             "filter": {
-                              "type": "DeclaredAttackedThisCombat"
+                              "type": "DeclaredAttackedThisCombat",
+                              "value": "thatAttackingPlayer"
                             },
                             "scope": {
                               "type": "OverPlayers",

@@ -4589,7 +4589,7 @@ filterReads f = case f of
   Filter.Type.IsAttackingBattle _ -> Set.singleton Types
   -- Reads nothing, for IsAttacking's reason and off the same record -- who was
   -- declared attacked is no characteristic of anything.
-  Filter.Type.DeclaredAttackedThisCombat -> Set.empty
+  Filter.Type.DeclaredAttackedThisCombat _ -> Set.empty
   -- Reads nothing, for IsAttacking's reason and off the same record.
   Filter.Type.IsBlocking -> Set.empty
   Filter.Type.HasBlockStatus _ -> Set.empty
@@ -4930,7 +4930,7 @@ filterReadsPeers f = case f of
   Filter.Type.HoldsBoundAtLeast _ _ _ _ g -> filterReadsPeers g
   Filter.Type.IsAttacking _ -> False
   Filter.Type.IsAttackingPlayer _ -> False
-  Filter.Type.DeclaredAttackedThisCombat -> False
+  Filter.Type.DeclaredAttackedThisCombat _ -> False
   Filter.Type.IsBlocking -> False
   Filter.Type.HasBlockStatus _ -> False
   Filter.Type.DeclaredThisTurn _ -> False

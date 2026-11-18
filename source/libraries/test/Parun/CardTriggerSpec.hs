@@ -479,12 +479,9 @@ anafenzaAttackSpec s registry =
 -- off the two subjects the printed sentence names -- alice herself, through
 -- Scope.OverPlayers, and a planeswalker she controls, through the battlefield.
 --
--- "THEY" is not read, and cannot be: CR 506.2 makes the attacking player the
--- active player, so every creature in a combat phase's declaration is that one
--- player's, and CR 506.4 removes a creature from combat the moment its
--- controller changes (Parun.Engine.Combat's controlChanged). So "they attacked
--- you" and "a creature attacked you" are the same question, by rule rather than
--- by the pool's current shape.
+-- "THEY" is the slot the trigger binds its attacking player under, which only
+-- the shared team turns option can tell from "a creature" (CR 805.10c); the
+-- team/ever-watching-threshold scenarios prove it.
 --
 -- Three boards, all three-seat, all with bob active and declaring:
 --

@@ -344,8 +344,10 @@ data Filter keyword
     -- DeclaredAttackerThisCombat below. A look-back read of
     -- Combat.declaredAttacked, so CR 508.4's creature put onto the battlefield
     -- attacking never makes it True and CR 506.4's removal never makes it False;
-    -- CR 511.3 clears the record with the rest of the combat phase's.
-    DeclaredAttackedThisCombat
+    -- CR 511.3 clears the record with the rest of the combat phase's. With a
+    -- slot, only a declaration by an attacking player the slot binds counts (CR
+    -- 805.10c): Firemane Commando's "none of those creatures attacked you".
+    DeclaredAttackedThisCombat (Maybe SlotName.SlotName)
   | -- | CR 509.1g: the candidate is a BLOCKING creature, not since removed under
     -- CR 506.4. Not the question HasBlockStatus below asks: CR 509.1h keeps a creature
     -- blocked once every blocker has left combat.

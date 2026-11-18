@@ -2584,6 +2584,25 @@ Entries are ordered by the first rule each cites.
   cr-707-9e-a-copy-effect-applied-after-dominion-saboteur-s-takes-back-its-copied-counters.
 - **Issue**: #8400.
 
+## Whether a subgame's play permission reaches a merged main-game permanent
+
+- **Question**: In a Shahrazad subgame, The Holodeck lets its controller play
+  a permanent card they own from outside the game. A melded or merged
+  permanent in the main game is one object of several cards (CR 701.42a,
+  731.2), offered to a wish whole. Can the Holodeck play it, or one of its
+  cards?
+- **Rules**: CR 305.1, 601.2a, 713.8, 730.4, 731.2, 731.3; CR of 2026-11-06.
+  No ruling on The Holodeck or Shahrazad covers it.
+- **Decision**: Neither. Casting or playing moves one card (CR 601.2a,
+  305.1), and the object outside the subgame is several, so nothing stands in
+  for it.
+- **Rejected**: Playing its topmost card or its combined face. The rest of
+  the object would have to stay in the main game while CR 730.4a takes the
+  object out of it, and a meld's combined face is no card to cast.
+- **Site**: `Parun.Engine.Event.offerOutside`, a FENCE: no scenario puts a
+  merged permanent outside a subgame beside a Holodeck.
+- **Issue**: #8449.
+
 ## Whether a reversed action restarts the pass count
 
 - **Question**: CR 734.2 keeps priority with a player whose action CR 734.1
