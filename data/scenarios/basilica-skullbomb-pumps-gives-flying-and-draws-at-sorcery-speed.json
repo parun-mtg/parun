@@ -1,0 +1,193 @@
+{
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "battlefield": [
+          {
+            "card": "Basilica Skullbomb",
+            "label": "bomb"
+          },
+          {
+            "card": "Grizzly Bears",
+            "label": "bears"
+          },
+          {
+            "card": "Memnite",
+            "label": "memnite"
+          },
+          {
+            "card": "Plains",
+            "label": "p1"
+          },
+          {
+            "card": "Plains",
+            "label": "p2"
+          },
+          {
+            "card": "Plains",
+            "label": "p3"
+          }
+        ],
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ],
+        "name": "alice"
+      },
+      {
+        "battlefield": [],
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ],
+        "name": "bob"
+      }
+    ],
+    "step": "PrecombatMain"
+  },
+  "description": "CR 602.2 / 602.5d / 611.2: Basilica Skullbomb's second ability, sacrificing it, gives a creature you control +2/+2 and flying until end of turn and draws a card, only as a sorcery",
+  "note": "The activation at beginning of combat is not offered (sorcery speed); back in the second main phase it resolves, the Bears are 4/4 with flying and alice has drawn one Island.",
+  "timeline": [
+    {
+      "player": "alice",
+      "refuse": {
+        "Activate": {
+          "ability": 1,
+          "mana": [
+            "$p1",
+            "$p2",
+            "$p3"
+          ],
+          "object": "$bomb",
+          "targets": [
+            "$bears"
+          ]
+        }
+      },
+      "step": "BeginningOfCombat",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Activate": {
+          "ability": 1,
+          "mana": [
+            "$p1",
+            "$p2",
+            "$p3"
+          ],
+          "object": "$bomb",
+          "targets": [
+            "$bears"
+          ]
+        }
+      },
+      "player": "alice",
+      "step": "PostcombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Basilica Skullbomb",
+          "count": 1,
+          "player": "alice",
+          "zone": "Graveyard"
+        }
+      },
+      "player": "alice",
+      "step": "PostcombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PostcombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "PowerToughness": {
+          "object": "$bears",
+          "power": 4,
+          "toughness": 4
+        }
+      },
+      "player": "alice",
+      "step": "PostcombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Keywords": {
+          "count": 1,
+          "keyword": {
+            "type": "Flying"
+          },
+          "object": "$bears"
+        }
+      },
+      "player": "alice",
+      "step": "PostcombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "PowerToughness": {
+          "object": "$memnite",
+          "power": 1,
+          "toughness": 1
+        }
+      },
+      "player": "alice",
+      "step": "PostcombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Island",
+          "count": 1,
+          "player": "alice",
+          "zone": "Hand"
+        }
+      },
+      "player": "alice",
+      "step": "PostcombatMain",
+      "turn": 1
+    }
+  ]
+}

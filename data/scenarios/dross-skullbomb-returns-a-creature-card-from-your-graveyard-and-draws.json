@@ -1,0 +1,212 @@
+{
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "battlefield": [
+          {
+            "card": "Dross Skullbomb",
+            "label": "bomb"
+          },
+          {
+            "card": "Swamp",
+            "label": "s1"
+          },
+          {
+            "card": "Swamp",
+            "label": "s2"
+          },
+          {
+            "card": "Swamp",
+            "label": "s3"
+          }
+        ],
+        "graveyard": [
+          {
+            "card": "Grizzly Bears",
+            "label": "bears"
+          },
+          {
+            "card": "Memnite",
+            "label": "memnite"
+          },
+          {
+            "card": "Lightning Bolt",
+            "label": "bolt"
+          }
+        ],
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ],
+        "name": "alice"
+      },
+      {
+        "battlefield": [],
+        "graveyard": [
+          {
+            "card": "Hill Giant",
+            "label": "giant"
+          }
+        ],
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ],
+        "name": "bob"
+      }
+    ],
+    "step": "PrecombatMain"
+  },
+  "description": "CR 602.2 / 115.1 / 400.7: Dross Skullbomb's second ability, sacrificing it, returns target creature card from your graveyard to your hand and draws a card",
+  "note": "Only alice's graveyard creature card is a legal target: bob's Hill Giant in his graveyard is refused. Alice ends with Grizzly Bears and one Island in hand.",
+  "timeline": [
+    {
+      "player": "alice",
+      "refuse": {
+        "Activate": {
+          "ability": 1,
+          "mana": [
+            "$s1",
+            "$s2",
+            "$s3"
+          ],
+          "object": "$bomb",
+          "targets": [
+            "$giant"
+          ]
+        }
+      },
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "player": "alice",
+      "refuse": {
+        "Activate": {
+          "ability": 1,
+          "mana": [
+            "$s1",
+            "$s2",
+            "$s3"
+          ],
+          "object": "$bomb",
+          "targets": [
+            "$bolt"
+          ]
+        }
+      },
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Activate": {
+          "ability": 1,
+          "mana": [
+            "$s1",
+            "$s2",
+            "$s3"
+          ],
+          "object": "$bomb",
+          "targets": [
+            "$bears"
+          ]
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Grizzly Bears",
+          "count": 1,
+          "player": "alice",
+          "zone": "Hand"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Island",
+          "count": 1,
+          "player": "alice",
+          "zone": "Hand"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Memnite",
+          "count": 1,
+          "player": "alice",
+          "zone": "Graveyard"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Dross Skullbomb",
+          "count": 1,
+          "player": "alice",
+          "zone": "Graveyard"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    }
+  ]
+}

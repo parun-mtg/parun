@@ -1,0 +1,148 @@
+{
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "battlefield": [
+          {
+            "card": "Myr Convert",
+            "label": "convert",
+            "ready": true
+          }
+        ],
+        "hand": [
+          {
+            "card": "Llanowar Elves",
+            "label": "elves"
+          }
+        ],
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ],
+        "name": "alice"
+      },
+      {
+        "battlefield": [],
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ],
+        "name": "bob"
+      }
+    ],
+    "step": "PrecombatMain"
+  },
+  "description": "CR 605.1a / 118.3 / 106.1a: Myr Convert's \"{T}, Pay 2 life: Add one mana of any color\" is a mana ability that pays for a coloured spell",
+  "note": "The Convert's mana pays Llanowar Elves' green pip; alice goes to 18 and the Convert is tapped.",
+  "timeline": [
+    {
+      "do": {
+        "Cast": {
+          "mana": [
+            "$convert"
+          ],
+          "object": "$elves",
+          "yields": [
+            [
+              {
+                "manaType": {
+                  "type": "Colored",
+                  "value": "Green"
+                },
+                "restriction": null,
+                "retention": "Ordinary",
+                "rider": null,
+                "sourceChoices": null,
+                "tags": [
+                  {
+                    "CardType": "Artifact"
+                  },
+                  {
+                    "CardType": "Creature"
+                  }
+                ]
+              }
+            ]
+          ]
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Llanowar Elves",
+          "count": 1,
+          "player": "alice",
+          "zone": "Battlefield"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Life": {
+          "life": 18,
+          "player": "alice"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Tapped": {
+          "object": "$convert",
+          "tapped": true
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    }
+  ]
+}

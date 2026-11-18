@@ -1,0 +1,173 @@
+{
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "battlefield": [
+          {
+            "card": "Maze Skullbomb",
+            "label": "bomb"
+          },
+          {
+            "card": "Grizzly Bears",
+            "label": "bears"
+          },
+          {
+            "card": "Memnite",
+            "label": "memnite"
+          },
+          {
+            "card": "Forest",
+            "label": "f1"
+          },
+          {
+            "card": "Forest",
+            "label": "f2"
+          },
+          {
+            "card": "Forest",
+            "label": "f3"
+          }
+        ],
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ],
+        "name": "alice"
+      },
+      {
+        "battlefield": [
+          {
+            "card": "Hill Giant",
+            "label": "giant"
+          }
+        ],
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ],
+        "name": "bob"
+      }
+    ],
+    "step": "PrecombatMain"
+  },
+  "description": "CR 602.2 / 611.2 / 702.19b: Maze Skullbomb's second ability, sacrificing it, gives a creature you control +3/+3 and trample until end of turn and draws a card",
+  "note": "Bob's Hill Giant is not a legal target (\"you control\"); the Bears become 5/5 with trample and alice draws one Island.",
+  "timeline": [
+    {
+      "player": "alice",
+      "refuse": {
+        "Activate": {
+          "ability": 1,
+          "mana": [
+            "$f1",
+            "$f2",
+            "$f3"
+          ],
+          "object": "$bomb",
+          "targets": [
+            "$giant"
+          ]
+        }
+      },
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Activate": {
+          "ability": 1,
+          "mana": [
+            "$f1",
+            "$f2",
+            "$f3"
+          ],
+          "object": "$bomb",
+          "targets": [
+            "$bears"
+          ]
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "PowerToughness": {
+          "object": "$bears",
+          "power": 5,
+          "toughness": 5
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Keywords": {
+          "count": 1,
+          "keyword": {
+            "type": "Trample"
+          },
+          "object": "$bears"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Island",
+          "count": 1,
+          "player": "alice",
+          "zone": "Hand"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    }
+  ]
+}

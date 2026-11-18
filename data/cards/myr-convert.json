@@ -1,0 +1,77 @@
+{
+  "faces": [
+    {
+      "activatedAbilities": [
+        {
+          "cost": {
+            "components": [
+              {
+                "type": "TapThis"
+              },
+              {
+                "type": "PayLife",
+                "value": {
+                  "type": "Fixed",
+                  "value": 2
+                }
+              }
+            ],
+            "mana": []
+          },
+          "modal": {
+            "modes": [
+              {
+                "clauses": [
+                  {
+                    "effects": [
+                      {
+                        "type": "AddMana",
+                        "value": {
+                          "production": {
+                            "type": "AnyColor"
+                          }
+                        }
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      ],
+      "keywords": [
+        {
+          "type": "Toxic",
+          "value": 1
+        }
+      ],
+      "manaCost": [
+        {
+          "type": "Generic",
+          "value": 2
+        }
+      ],
+      "name": "Myr Convert",
+      "oracleText": "Toxic 1 (Players dealt combat damage by this creature also get a poison counter.)\n{T}, Pay 2 life: Add one mana of any color.",
+      "power": {
+        "type": "Literal",
+        "value": 2
+      },
+      "toughness": {
+        "type": "Literal",
+        "value": 1
+      },
+      "typeLine": {
+        "subtypes": [
+          "Myr",
+          "Phyrexian"
+        ],
+        "types": [
+          "Artifact",
+          "Creature"
+        ]
+      }
+    }
+  ]
+}

@@ -1,0 +1,117 @@
+{
+  "faces": [
+    {
+      "activatedAbilities": [
+        {
+          "cost": {
+            "components": [
+              {
+                "type": "TapThis"
+              }
+            ],
+            "mana": []
+          },
+          "modal": {
+            "modes": [
+              {
+                "clauses": [
+                  {
+                    "effects": [
+                      {
+                        "type": "AddMana",
+                        "value": {
+                          "production": {
+                            "type": "OfType",
+                            "value": {
+                              "type": "Colored",
+                              "value": "White"
+                            }
+                          }
+                        }
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "cost": {
+            "components": [
+              {
+                "type": "TapThis"
+              },
+              {
+                "type": "SacrificeThis"
+              }
+            ],
+            "mana": [
+              {
+                "type": "Generic",
+                "value": 1
+              },
+              {
+                "type": "OfType",
+                "value": {
+                  "type": "Colored",
+                  "value": "White"
+                }
+              }
+            ]
+          },
+          "modal": {
+            "modes": [
+              {
+                "clauses": [
+                  {
+                    "effects": [
+                      {
+                        "type": "Draw",
+                        "value": {
+                          "player": {
+                            "type": "Relative",
+                            "value": "You"
+                          },
+                          "quantity": {
+                            "type": "Literal",
+                            "value": 1
+                          }
+                        }
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      ],
+      "name": "The Fair Basilica",
+      "oracleText": "This land enters tapped.\n{T}: Add {W}.\n{1}{W}, {T}, Sacrifice this land: Draw a card.",
+      "replacementEffects": [
+        {
+          "effect": {
+            "type": "EntryR",
+            "value": {
+              "matching": {
+                "type": "IsSource"
+              },
+              "rewrite": {
+                "type": "Tapped"
+              }
+            }
+          }
+        }
+      ],
+      "typeLine": {
+        "subtypes": [
+          "Sphere"
+        ],
+        "types": [
+          "Land"
+        ]
+      }
+    }
+  ]
+}

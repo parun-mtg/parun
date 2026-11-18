@@ -1,0 +1,108 @@
+{
+  "faces": [
+    {
+      "keywords": [
+        {
+          "type": "Equip",
+          "value": {
+            "cost": {
+              "mana": [
+                {
+                  "type": "Generic",
+                  "value": 2
+                },
+                {
+                  "type": "OfType",
+                  "value": {
+                    "type": "Colored",
+                    "value": "Red"
+                  }
+                }
+              ]
+            },
+            "quality": null
+          }
+        },
+        {
+          "type": "ForMirrodin"
+        }
+      ],
+      "manaCost": [
+        {
+          "type": "Generic",
+          "value": 1
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "Red"
+          }
+        }
+      ],
+      "name": "Hexgold Halberd",
+      "oracleText": "For Mirrodin! (When this Equipment enters, create a 2/2 red Rebel creature token, then attach this to it.)\nDuring your turn, equipped creature has first strike and trample.\nEquip {2}{R}",
+      "staticAbilities": [
+        {
+          "affected": {
+            "type": "Matching",
+            "value": {
+              "type": "And",
+              "value": [
+                {
+                  "type": "HasCardType",
+                  "value": "Creature"
+                },
+                {
+                  "type": "HasAttached",
+                  "value": {
+                    "type": "IsSource"
+                  }
+                }
+              ]
+            }
+          },
+          "condition": {
+            "type": "Compares",
+            "value": {
+              "comparison": "Exactly",
+              "measured": {
+                "type": "IsActivePlayer",
+                "value": {
+                  "type": "Relative",
+                  "value": "You"
+                }
+              },
+              "threshold": {
+                "type": "Literal",
+                "value": 1
+              }
+            }
+          },
+          "modifications": [
+            {
+              "type": "GainKeyword",
+              "value": {
+                "type": "FirstStrike"
+              }
+            },
+            {
+              "type": "GainKeyword",
+              "value": {
+                "type": "Trample"
+              }
+            }
+          ]
+        }
+      ],
+      "typeLine": {
+        "subtypes": [
+          "Equipment"
+        ],
+        "types": [
+          "Artifact"
+        ]
+      }
+    }
+  ]
+}

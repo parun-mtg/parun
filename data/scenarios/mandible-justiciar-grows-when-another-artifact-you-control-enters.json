@@ -1,0 +1,161 @@
+{
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "battlefield": [
+          {
+            "card": "Mandible Justiciar",
+            "label": "justiciar"
+          },
+          {
+            "card": "Forest",
+            "label": "f1"
+          },
+          {
+            "card": "Forest",
+            "label": "f2"
+          }
+        ],
+        "hand": [
+          {
+            "card": "Memnite",
+            "label": "memnite"
+          },
+          {
+            "card": "Grizzly Bears",
+            "label": "bears"
+          }
+        ],
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ],
+        "name": "alice"
+      },
+      {
+        "battlefield": [],
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ],
+        "name": "bob"
+      }
+    ],
+    "step": "PrecombatMain"
+  },
+  "description": "CR 603.2 / 603.6a / 611.2: Mandible Justiciar gets +1/+1 until end of turn whenever another artifact you control enters, not when a nonartifact or an opponent's artifact does",
+  "note": "Alice's Memnite triggers it to 3/2; her Grizzly Bears does not; at bob's turn the boost is gone.",
+  "timeline": [
+    {
+      "do": {
+        "Cast": {
+          "object": "$memnite"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "PowerToughness": {
+          "object": "$justiciar",
+          "power": 3,
+          "toughness": 2
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Cast": {
+          "mana": [
+            "$f1",
+            "$f2"
+          ],
+          "object": "$bears"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "PowerToughness": {
+          "object": "$justiciar",
+          "power": 3,
+          "toughness": 2
+        }
+      },
+      "player": "alice",
+      "step": "BeginningOfCombat",
+      "turn": 1
+    },
+    {
+      "check": {
+        "PowerToughness": {
+          "object": "$justiciar",
+          "power": 2,
+          "toughness": 1
+        }
+      },
+      "player": "bob",
+      "step": "PrecombatMain",
+      "turn": 2
+    }
+  ]
+}

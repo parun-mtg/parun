@@ -1,0 +1,116 @@
+{
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "battlefield": [
+          {
+            "attached": "bears",
+            "card": "Prosthetic Injector",
+            "label": "injector"
+          },
+          {
+            "card": "Grizzly Bears",
+            "label": "bears",
+            "ready": true
+          }
+        ],
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ],
+        "name": "alice"
+      },
+      {
+        "battlefield": [],
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ],
+        "name": "bob"
+      }
+    ],
+    "step": "PrecombatMain"
+  },
+  "description": "CR 702.164b-c / 510.2: Prosthetic Injector's equipped creature gets +0/+2 and has toxic 1, so its combat damage to a player also gives a poison counter",
+  "note": "The equipped Bears are 2/4 and deal 2 to bob, who also gets one poison counter.",
+  "timeline": [
+    {
+      "check": {
+        "PowerToughness": {
+          "object": "$bears",
+          "power": 2,
+          "toughness": 4
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Attack": [
+          "$bears"
+        ]
+      },
+      "player": "alice",
+      "step": "DeclareAttackers",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Life": {
+          "life": 18,
+          "player": "bob"
+        }
+      },
+      "player": "alice",
+      "step": "PostcombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "PlayerCounters": {
+          "count": 1,
+          "kind": "Poison",
+          "player": "bob"
+        }
+      },
+      "player": "alice",
+      "step": "PostcombatMain",
+      "turn": 1
+    }
+  ]
+}

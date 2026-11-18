@@ -1,0 +1,197 @@
+{
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "battlefield": [
+          {
+            "card": "Mountain",
+            "label": "m1"
+          },
+          {
+            "card": "Mountain",
+            "label": "m2"
+          },
+          {
+            "card": "Mountain",
+            "label": "m3"
+          },
+          {
+            "card": "Mountain",
+            "label": "m4"
+          }
+        ],
+        "hand": [
+          {
+            "card": "Chimney Rabble",
+            "label": "rabble"
+          }
+        ],
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ],
+        "name": "alice"
+      },
+      {
+        "battlefield": [],
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ],
+        "name": "bob"
+      }
+    ],
+    "step": "PrecombatMain"
+  },
+  "description": "CR 603.6a / 111.1: Chimney Rabble's enters trigger creates a 1/1 red Phyrexian Goblin creature token, and the Rabble has haste",
+  "note": "The token is a red 1/1 Goblin Phyrexian; the Rabble attacks the turn it is cast and bob, with no creature, goes to 17.",
+  "timeline": [
+    {
+      "do": {
+        "Cast": {
+          "mana": [
+            "$m1",
+            "$m2",
+            "$m3",
+            "$m4"
+          ],
+          "object": "$rabble"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Phyrexian Goblin Token",
+          "count": 1,
+          "player": "alice",
+          "zone": "Battlefield"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "PowerToughness": {
+          "object": "Phyrexian Goblin Token",
+          "power": 1,
+          "toughness": 1
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "View": {
+          "is": [
+            "Red"
+          ],
+          "object": "Phyrexian Goblin Token",
+          "of": "Colors"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Subtypes": {
+          "object": "Phyrexian Goblin Token",
+          "subtypes": [
+            "Goblin",
+            "Phyrexian"
+          ]
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Attack": [
+          "Chimney Rabble"
+        ]
+      },
+      "player": "alice",
+      "step": "DeclareAttackers",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Attackers": {
+          "attackers": {
+            "Chimney Rabble": "$bob"
+          }
+        }
+      },
+      "player": "alice",
+      "step": "DeclareAttackers",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Life": {
+          "life": 17,
+          "player": "bob"
+        }
+      },
+      "player": "alice",
+      "step": "PostcombatMain",
+      "turn": 1
+    }
+  ]
+}

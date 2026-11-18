@@ -1,0 +1,87 @@
+{
+  "faces": [
+    {
+      "keywords": [
+        {
+          "type": "Flash"
+        }
+      ],
+      "manaCost": [
+        {
+          "type": "Generic",
+          "value": 2
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "Blue"
+          }
+        }
+      ],
+      "name": "Chrome Prowler",
+      "oracleText": "Flash\nWhen this creature enters, tap target creature an opponent controls.",
+      "power": {
+        "type": "Literal",
+        "value": 3
+      },
+      "toughness": {
+        "type": "Literal",
+        "value": 2
+      },
+      "triggeredAbilities": [
+        {
+          "condition": {
+            "type": "Enters",
+            "value": {}
+          },
+          "modal": {
+            "modes": [
+              {
+                "clauses": [
+                  {
+                    "effects": [
+                      {
+                        "type": "Tap",
+                        "value": {
+                          "ref": {
+                            "type": "InSlot",
+                            "value": "target"
+                          }
+                        }
+                      }
+                    ]
+                  }
+                ],
+                "targetSlots": {
+                  "target": {
+                    "filter": {
+                      "type": "HeldBy",
+                      "value": {
+                        "holder": "Controller",
+                        "relation": "Opponent"
+                      }
+                    },
+                    "pool": {
+                      "type": "Creatures"
+                    }
+                  }
+                }
+              }
+            ]
+          }
+        }
+      ],
+      "typeLine": {
+        "subtypes": [
+          "Cat",
+          "Phyrexian"
+        ],
+        "types": [
+          "Artifact",
+          "Creature"
+        ]
+      }
+    }
+  ]
+}
