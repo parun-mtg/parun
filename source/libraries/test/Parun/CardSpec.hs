@@ -142,6 +142,7 @@ import qualified Parun.Types.CastingPermission as CastingPermission
 import qualified Parun.Types.CastingRestriction as CastingRestriction
 import qualified Parun.Types.CausedBy as CausedBy
 import qualified Parun.Types.ChangeCount as ChangeCount
+import qualified Parun.Types.ChangeMode as ChangeMode
 import qualified Parun.Types.ChangeTargets as ChangeTargets
 import qualified Parun.Types.ChangeText as ChangeText
 import qualified Parun.Types.CharacteristicPT as CharacteristicPT
@@ -1693,6 +1694,36 @@ handActionSlotsOffend card =
             defined = Resolve.definedSlots effects
          in not (Set.null (Set.difference (Set.difference wanted defined) handActionBound))
    in any offends (handActions card)
+
+-- CR 113.6 / 613.1f: does a static ability on this face take abilities away
+-- from cards in a hand? Its affected set must be able to reach a hand
+-- (MatchingAnywhere or MatchingOffBattlefield, with no zone atom ruling a hand
+-- out) and a modification must remove what a CR 103.5b or 103.6 action is:
+-- every ability (LoseAllAbilities), or a land's rules text (CR 305.7, a
+-- Gemstone Caverns). A hand action carries no name and is no keyword, so the
+-- other removals cannot reach one.
+stripsHandAbilities :: Face.Face Card.Type.Card -> Bool
+stripsHandAbilities card =
+  let removes m = case m of
+        Modification.LoseAllAbilities -> True
+        _ -> Projection.setsLandSubtype m
+      reachesHand affected = case affected of
+        Affected.MatchingAnywhere f -> not (excludesHand f)
+        Affected.MatchingOffBattlefield f -> not (excludesHand f)
+        _ -> False
+      offends ability = reachesHand (StaticAbility.affected ability) && any removes (StaticAbility.modifications ability)
+   in any offends (Face.staticAbilities card <> grantedStaticAbilities card)
+
+-- Can this Filter provably match nothing in a hand? Only a zone atom answers
+-- yes; every other atom is taken to reach one, the safe direction for
+-- stripsHandAbilities.
+excludesHand :: Filter.Type.Filter keyword -> Bool
+excludesHand f = case f of
+  Filter.Type.IsInZone zone -> zone /= Zone.Hand
+  Filter.Type.Not (Filter.Type.IsInZone Zone.Hand) -> True
+  Filter.Type.And fs -> any excludesHand fs
+  Filter.Type.Or fs -> all excludesHand fs
+  _ -> False
 
 -- CR 601.2c with CR 601.2b: does this modal read the announced X through a
 -- TARGET SLOT's count -- "each of X target creatures" (Rot-Curse Rakshasa),
@@ -6467,6 +6498,25 @@ lintSpec s registry corpus = Spec.describe s "Lint" $ do
     let face = S.combinedFace chancellor
     Spec.assertBool s (not (offends face)) "the real Chancellor of the Forge is accepted"
     Spec.assertBool s (offends face {Face.openingHandActions = [HandAction.MkHandAction Nothing []]}) "an action that does neither is rejected"
+  -- Mulligan.actionsFor reads the printed face, so an effect taking abilities
+  -- away from cards in a hand would leave their CR 103.5b and 103.6 actions
+  -- standing. No printed card writes one; that reader and Parun.Types.Face cite
+  -- this case.
+  Spec.it s "CR 113.6 no card writes an ability removal reaching a hand" $ do
+    ps <- S.allPrintings s corpus
+    let offenders = filter (anyFace stripsHandAbilities . Printing.card) ps
+    Spec.assertEqWith s "no card removes abilities from cards in a hand" (fmap (S.nameOf . Printing.card) offenders) []
+    -- Yixlid Jailer's "Cards in graveyards lose all abilities" is the shape one
+    -- zone over, so it is accepted, and moved to a hand it is rejected.
+    jailer <- S.printingOf s registry "Yixlid Jailer"
+    let face = S.combinedFace jailer
+        reaching affected = face {Face.staticAbilities = fmap (\ability -> ability {StaticAbility.affected = affected}) (Face.staticAbilities face)}
+        landSubtype = face {Face.staticAbilities = fmap (\ability -> ability {StaticAbility.affected = Affected.MatchingAnywhere (Filter.Type.And []), StaticAbility.modifications = pure (Modification.LandSubtype ChangeMode.Replace Subtype.Swamp)}) (Face.staticAbilities face)}
+    Spec.assertBool s (not (stripsHandAbilities face)) "the real Yixlid Jailer is accepted"
+    Spec.assertBool s (stripsHandAbilities (reaching (Affected.MatchingOffBattlefield (Filter.Type.IsInZone Zone.Hand)))) "cards in hands losing all abilities is rejected"
+    Spec.assertBool s (stripsHandAbilities (reaching (Affected.MatchingAnywhere (Filter.Type.HasCardType CardType.Land)))) "lands in every zone losing all abilities is rejected"
+    Spec.assertBool s (not (stripsHandAbilities (reaching (Affected.Matching (Filter.Type.And []))))) "permanents losing all abilities is accepted"
+    Spec.assertBool s (stripsHandAbilities landSubtype) "CR 305.7 a land type set in every zone is rejected"
   Spec.it s "the lint itself catches a hand action naming a slot nothing binds" $ do
     leyline <- S.printingOf s registry "Leyline of the Void"
     let face = S.combinedFace leyline

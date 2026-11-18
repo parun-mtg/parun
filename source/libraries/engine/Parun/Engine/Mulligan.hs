@@ -161,8 +161,11 @@ drawHand pid size = do
 -- which card it is.
 --
 -- Read straight off the face (Game.faceOf) and never through the projection:
--- these abilities function in the HAND (CR 113.6), where this reader takes the
--- printed card (#4709).
+-- these abilities function in the HAND (CR 113.6).
+--
+-- Unprinted: an effect taking abilities away from cards in a hand, which this
+-- printed read would miss. Parun.CardSpec's "CR 113.6 no card writes an ability
+-- removal reaching a hand" keeps it out of card data.
 actionsFor :: (Face.Face Card.Card -> [HandAction.HandAction Card.Card]) -> PlayerId -> GameState.GameState -> [((ObjectId, HandActionIndex.HandActionIndex), HandAction.HandAction Card.Card)]
 actionsFor field pid gs =
   let withActions oid = case Game.faceOf oid gs of

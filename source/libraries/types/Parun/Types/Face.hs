@@ -670,8 +670,11 @@ data Face card = MkFace
     -- | CR 103.5b: this face's "any time you could mulligan" actions, in printed
     -- order, each one a Parun.Types.HandAction -- its effects in written order,
     -- and the clause gating whether it may be taken (Serum Powder writes none).
-    -- Read directly from the card: the ability functions in the HAND (CR 113.6),
-    -- where this reader takes the printed card (#4709).
+    -- Read directly from the card: the ability functions in the HAND (CR 113.6).
+    --
+    -- Unprinted: an effect taking abilities away from cards in a hand, which
+    -- this printed read would miss. Parun.CardSpec's "CR 113.6 no card writes an
+    -- ability removal reaching a hand" keeps it out of card data.
     --
     -- A LIST OF ACTIONS and not one action's effects: nothing in CR 103 caps how
     -- many such actions a face may grant, and two are two separate offers a
@@ -680,9 +683,9 @@ data Face card = MkFace
     -- how a card that says nothing about this window is never offered one.
     mulliganActions :: [HandAction.HandAction card],
     -- | CR 103.6 / 103.6a / 103.6b: this face's opening-hand actions, shaped
-    -- exactly like mulliganActions above and read the same way (CR 113.6,
-    -- #4709) -- Leyline of Sanctity's rule 103.6a battlefield action, and
-    -- Chancellor of the Forge's rule 103.6b reveal.
+    -- exactly like mulliganActions above and read the same way, unprinted
+    -- removal included (CR 113.6) -- Leyline of Sanctity's rule 103.6a
+    -- battlefield action, and Chancellor of the Forge's rule 103.6b reveal.
     --
     -- The SIBLING of mulliganActions, not a reuse: the two windows are at different
     -- times (CR 103.5b sits AT a declaration, CR 103.6 opens once the whole
