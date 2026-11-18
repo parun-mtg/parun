@@ -8,12 +8,14 @@
     <style>
       li.card { cursor: pointer; text-decoration: underline dotted; }
       section.reading { border: 1px solid #999; padding: 0.5em; }
+      #insecure { background: #fdd; border: 1px solid #c99; padding: 0.5em; }
       body.busy #app { opacity: 0.5; pointer-events: none; }
       body.busy::after { content: "Working\2026"; position: fixed; top: 0.5em; right: 0.5em; padding: 0.25em 0.5em; background: #ffd; border: 1px solid #cc9; }
     </style>
     <script type="module" src="./page.js"></script>
   </head>
   <body>
+    <p id="insecure" hidden>This page is not a secure context, so Safari runs the engine many times slower. Load it over https or from localhost (script/serve-web.sh).</p>
     <div id="app"><p>Loading…</p></div>
     <footer><small id="timings"></small> <small id="response"></small></footer>
     <details hidden><summary>Trace</summary><pre id="trace"></pre></details>

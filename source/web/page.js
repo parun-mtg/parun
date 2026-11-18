@@ -7,6 +7,9 @@ const events = ["click", "input", "change"];
 const engineUrl = new URL("./engine.js", import.meta.url);
 engineUrl.search = location.search;
 const engine = new Worker(engineUrl, { type: "module" });
+// Safari runs WebAssembly far slower outside a secure context (#8419), and
+// plain http from a network address is not one.
+if (!isSecureContext) document.getElementById("insecure").hidden = false;
 // With ?trace, the engine's step timings and the page's own go to a panel.
 const trace = new URLSearchParams(location.search).has("trace") ? document.getElementById("trace") : null;
 if (trace) trace.closest("details").hidden = false;

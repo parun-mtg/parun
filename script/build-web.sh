@@ -4,9 +4,9 @@
 # glue, the WASI shim, and the data directory the engine mounts. Every file
 # but index.html is named by a hash of its contents, so a browser caches each
 # until it changes and only index.html needs fetching afresh. Runs in the wasm
-# dev shell; serve the result with any static server, e.g.
+# dev shell; serve the result with script/serve-web.sh:
 #   nix develop .#wasm --command script/build-web.sh
-#   python3 -m http.server -d dist-web
+#   script/serve-web.sh
 set -euo pipefail
 out=${1:-dist-web}
 cabal=(wasm32-wasi-cabal --project-file=cabal.wasm.project --builddir=dist-wasm --flags=pedantic)
