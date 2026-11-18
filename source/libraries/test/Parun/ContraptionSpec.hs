@@ -10,6 +10,7 @@
 -- Contraption") are the assemblers, Arms Depot ("Whenever you crank this
 -- Contraption, put two +1/+1 counters on target creature") the Contraption, and
 -- Steamflogger Boss the black-bordered card that doubles a Rigger's assembly.
+-- Clock of DOOOOOOOOOOOOM! cranks outside the upkeep (Effect.Crank).
 module Parun.ContraptionSpec where
 
 import qualified Control.Monad as Monad
@@ -20,6 +21,7 @@ import qualified Data.Set as Set
 import qualified Data.Text as Text
 import Numeric.Natural (Natural)
 import qualified Parun.DeckList as DeckList
+import qualified Parun.Engine.Activate as Activate
 import qualified Parun.Engine.Contraption as Contraption
 import qualified Parun.Engine.Engine as Engine
 import qualified Parun.Engine.Event as Event
@@ -40,6 +42,7 @@ import qualified Parun.Types.CardName as CardName
 import qualified Parun.Types.CounterKind as CounterKind
 import qualified Parun.Types.Deck as Deck
 import qualified Parun.Types.Designation as Designation
+import qualified Parun.Types.Face as Face
 import Parun.Types.Game (Game)
 import qualified Parun.Types.GameState as GameState
 import qualified Parun.Types.Keyword as Keyword
@@ -51,6 +54,7 @@ import qualified Parun.Types.Printing as Printing
 import qualified Parun.Types.Prompt as Prompt
 import qualified Parun.Types.Recipient as Recipient
 import qualified Parun.Types.SideDeck as SideDeck
+import qualified Parun.Types.TapState as TapState
 import qualified Parun.Types.TurnRegisters as TurnRegisters
 import qualified Parun.Types.Visibility as Visibility.Type
 import qualified Parun.Types.Zone as Zone
@@ -59,6 +63,7 @@ spec :: (Monad m, Monad n) => Spec.Spec m n -> Registry.Registry m -> n ()
 spec s registry = Spec.describe s "Contraption" $ do
   assembleSpec s registry
   crankSpec s registry
+  clockSpec s registry
   bossSpec s registry
   scrapyardSpec s registry
   newGameSpec s registry
@@ -233,6 +238,61 @@ crankSpec s registry = Spec.describe s "Crank" $ do
         (after, asked) = driving [] id (Just pikerId) gs Engine.runStep
     Spec.assertEqWith s "the Depot was offered to crank" (cranksOffered asked) [[depotId]]
     Spec.assertEqWith s "and its ability resolved in the upkeep" (plusCounters pikerId after) 2
+
+-- alice controls Clock of DOOOOOOOOOOOOM!, four Mountains and a Goblin Piker,
+-- in her precombat main phase, and an Arms Depot on `sprocket` if given.
+-- Answers the board, the Clock and the Piker.
+clockBoard :: Printing.Printing -> Printing.Printing -> Printing.Printing -> Maybe (Printing.Printing, Designation.Designation) -> (GameState.GameState, ObjectId, ObjectId)
+clockBoard clock mountain piker depot =
+  let (clockId, g1) = S.addPermanent clock S.alice (S.landsInPlay mountain 4)
+      (pikerId, g2) = S.addPermanent piker S.alice g1
+      withDepot = case depot of
+        Nothing -> g2
+        Just (printing, sprocket) ->
+          let (depotId, g3) = S.addPermanent printing S.alice g2
+           in g3 {GameState.objects = Map.adjust (\o -> o {Object.designations = Set.insert sprocket (Object.designations o)}) depotId (GameState.objects g3)}
+   in ( withDepot
+          { GameState.turn =
+              (GameState.turn withDepot)
+                { TurnRegisters.phase = Phase.PrecombatMain,
+                  TurnRegisters.activePlayer = S.alice,
+                  TurnRegisters.priority = Just S.alice
+                }
+          },
+        clockId,
+        pikerId
+      )
+
+-- Activate the Clock's one ability, then resolve everything.
+activateClock :: Printing.Printing -> ObjectId -> Game ()
+activateClock clock clockId = case Face.activatedAbilities (S.combinedFace clock) of
+  ability : _ -> Activate.activateAbility S.alice clockId ability >> Engine.priorityLoop
+  [] -> pure ()
+
+-- Clock of DOOOOOOOOOOOOM!: the crank as an activated ability, per its
+-- 2018-01-19 rulings.
+clockSpec :: (Monad m, Monad n) => Spec.Spec m n -> Registry.Registry m -> n ()
+clockSpec s registry = Spec.describe s "Clock of DOOOOOOOOOOOOM!" $ do
+  Spec.it s "the Clock moves the CRANK! counter and cranks Arms Depot in the main phase" $ do
+    clock <- S.printingOf s registry "Clock of DOOOOOOOOOOOOM!"
+    mountain <- S.printingOf s registry "Mountain"
+    piker <- S.printingOf s registry "Goblin Piker"
+    depot <- S.printingOf s registry "Arms Depot"
+    let (gs, clockId, pikerId) = clockBoard clock mountain piker (Just (depot, Designation.Sprocket1))
+        (after, asked) = driving [] id (Just pikerId) gs (activateClock clock clockId)
+    -- THE GAMEPLAY ASSERTION: the Depot's ability resolved onto the Piker.
+    Spec.assertEqWith s "two +1/+1 counters on the Piker" (plusCounters pikerId after) 2
+    Spec.assertEqWith s "one Depot offered to crank" (fmap length (cranksOffered asked)) [1]
+    Spec.assertEqWith s "the counter is on the first sprocket" (Contraption.crankCounterOf S.alice after) Designation.Sprocket1
+  Spec.it s "with no Contraption, the Clock still moves the CRANK! counter" $ do
+    clock <- S.printingOf s registry "Clock of DOOOOOOOOOOOOM!"
+    mountain <- S.printingOf s registry "Mountain"
+    piker <- S.printingOf s registry "Goblin Piker"
+    let (gs, clockId, pikerId) = clockBoard clock mountain piker Nothing
+        (after, asked) = driving [] id (Just pikerId) gs (activateClock clock clockId)
+    Spec.assertEqWith s "the counter moved to the first sprocket" (Contraption.crankCounterOf S.alice after) Designation.Sprocket1
+    Spec.assertEqWith s "nothing offered" (cranksOffered asked) []
+    Spec.assertEqWith s "and the Clock was tapped for it" (fmap Object.tapped (Game.lookupObject clockId after)) (Just TapState.Tapped)
 
 -- Steamflogger Boss: its lord half and its replacement.
 bossSpec :: (Monad m, Monad n) => Spec.Spec m n -> Registry.Registry m -> n ()

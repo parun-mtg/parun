@@ -793,6 +793,11 @@ data Effect card ability
     -- ObjectRef is the permanent that assembles it (Wrench-Rigger's "it
     -- assembles"), Nothing where the player does (First Pick).
     Assemble (Maybe ObjectRef.ObjectRef)
+  | -- | The Unstable FAQ's crank, outside the upkeep (Clock of
+    -- DOOOOOOOOOOOOM!): the resolving controller's CRANK! counter moves to
+    -- their next sprocket and they crank any number of its Contraptions,
+    -- performed by Parun.Engine.Contraption.crank.
+    Crank
   | -- | CR 701.31: the resolving controller planeswalks, performed by
     -- Parun.Engine.Planechase.planeswalk; to the cards the ObjectRef names
     -- still in their planar deck, at once (Spatial Merging), or Nothing for its

@@ -1470,6 +1470,10 @@ assemble settle resolving source controller legal ref = do
   let assembler = ref >>= \r -> Maybe.listToMaybe (Maybe.mapMaybe Recipient.objectOf (Common.objectRefRecipients legal resolving controller source gs r))
   Contraption.assemble settle assembler controller
 
+-- The Unstable FAQ's crank, by an instruction rather than the upkeep.
+crank :: PlayerId -> Game ()
+crank = Contraption.crank
+
 -- CR 701.31c: the cause is the planar die's exactly when this is CR 901.8's
 -- planeswalking ability resolving.
 planeswalk :: ObjectId -> ObjectId -> PlayerId -> Map.Map SlotName (Set Recipient) -> Maybe ObjectRef -> Game ()
