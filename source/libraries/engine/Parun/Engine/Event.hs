@@ -2132,22 +2132,37 @@ standIn pid printingId card gs =
       )
 
 -- CR 400.11 / 601.3: as `pid` is asked for a priority action, one `standIn` for
--- each printing in their sideboard pool, where a CastFrom permission opens
--- their cards outside the game (The Holodeck), so the play and cast roads
--- offer them as objects; the copies of one printing are indistinguishable, so
--- one stands for all. Any stand-in left from before is discarded first.
--- `eligible` admits the cards, so a Commander game offers none (CR 903.11).
+-- each printing in their sideboard pool and, in a subgame, each main-game card
+-- of theirs (CR 730.4), where a CastFrom permission opens their cards outside
+-- the game (The Holodeck), so the play and cast roads offer them as objects;
+-- the copies of one printing are indistinguishable, so one stands for all. Any
+-- stand-in left from before is discarded first. `eligible` admits the cards,
+-- so a Commander game offers none (CR 903.11).
 --
--- Not implemented: a subgame's main-game cards (CR 730.4), which `eligible`
--- also answers, are not stood in for (#8449).
+-- A main-game card's stand-in is its printed card face up, whatever its facing
+-- out there: it is played face up, and CR 601.3 asks whether that spell may be
+-- cast. It keeps the card's identity, kept because CR 108.3 states it, as
+-- `bringInFrom`'s arrival does; no scenario observes it.
+--
+-- A melded or merged main-game permanent is not stood in for: it is one object
+-- of several cards, and CR 601.2a and 305.1 move one card. docs/decisions.md,
+-- "Whether a subgame's play permission reaches a merged main-game permanent".
 offerOutside :: PlayerId -> GameState.GameState -> GameState.GameState
 offerOutside pid gs0 =
   let gs = discardOutsideFinds gs0
+      standing card = case card of
+        OutsideCard.InPool printingId -> Just (printingId, Nothing)
+        OutsideCard.InAnotherGame outerId -> case OutsideObject.cards <$> Map.lookup outerId (GameState.outsideObjects gs) of
+          Just (one NonEmpty.:| []) -> Just (ComponentCard.printing one, Just one)
+          _ -> Nothing
+      offer g card = case standing card of
+        Nothing -> g
+        Just (printingId, kept) ->
+          let (oid, g1) = standIn pid printingId card g
+           in g1 {GameState.objects = Map.adjust (\obj -> maybe obj (\one -> Game.representComponent (MergeComponent.OfCard one) obj) kept) oid (GameState.objects g1)}
    in case PlayerEffect.outsideGrants pid gs of
         [] -> gs
-        source : _ ->
-          let pool = [(printingId, card) | card@(OutsideCard.InPool printingId) <- eligible (Filter.Type.And []) source pid gs]
-           in Foldable.foldl' (\g (printingId, card) -> snd (standIn pid printingId card g)) gs pool
+        source : _ -> Foldable.foldl' offer gs (eligible (Filter.Type.And []) source pid gs)
 
 -- CR 400.11: `discardOutsideFinds`, sparing the stand-in a chosen priority
 -- action names.
@@ -2156,32 +2171,34 @@ keepOutsideFind kept gs = Foldable.foldl' (flip forgetFound) gs (filter ((/= kep
 
 -- CR 305.1 / 400.11b: play the land a stand-in names (`offerOutside`), its card
 -- brought in onto the battlefield under `pid` with the face `shown` up (CR
--- 712.9), spent from the pool. Entering, `conjureOntoBattlefield`'s road: no
--- zone was left. A CR 614.6 redirect places it where it says, and CR 614.1a's
+-- 712.9), keeping the stand-in's identity, and spent (`spendOutside`).
+-- Entering, `conjureOntoBattlefield`'s road: no zone was left. A CR 614.6 redirect places it where it says, and CR 614.1a's
 -- "instead" of an unpaid entry puts it into its owner's graveyard; either way it
 -- was played. Answers the land as it arrived, empty where it never came in.
 playFromOutside :: Game () -> PlayerId -> ObjectId -> Maybe CardName.CardName -> Game (Seq.Seq ObjectId)
 playFromOutside settle pid oid shown = do
   gs <- State.get
   case (Map.lookup oid (GameState.outsideFinds gs), Game.lookupObject oid gs) of
-    (Just (OutsideCard.InPool printingId), Just obj) -> do
+    (Just card, Just obj) | Just printingId <- Game.printingIdOfSource (Object.source obj) -> do
       State.modify' (forgetFound oid)
       let owner = Object.owner obj
           start = Bookkeeping.nextTimestamp (GameState.bookkeeping gs)
+          spend = spendOutside owner card
+          kept o = o {Object.face = shown, Object.identity = Object.identity obj <|> Object.identity o, Object.duplicate = Object.duplicate obj <|> Object.duplicate o}
       land <- State.state (mintCard owner (Just pid) printingId Zone.Battlefield LibraryPosition.defaultValue TapState.Untapped)
-      State.modify' (\g -> g {GameState.objects = Map.adjust (\o -> o {Object.face = shown}) land (GameState.objects g)})
+      State.modify' (\g -> g {GameState.objects = Map.adjust kept land (GameState.objects g)})
       refusal <- runEntry settle (Just Zone.Battlefield) Nothing Set.empty land
       case refusal of
         Nothing -> do
-          State.modify' (spendFromPool owner printingId)
+          State.modify' spend
           settleMinted start [land]
           pure (Seq.singleton land)
         Just EntryRefusal.Unpaid -> do
-          State.modify' (spendFromPool owner printingId)
+          State.modify' spend
           placeDiverted land Zone.Graveyard LibraryPosition.defaultValue
           pure (Seq.singleton land)
         Just diverted
-          | isDiverted diverted -> Seq.singleton land <$ State.modify' (spendFromPool owner printingId)
+          | isDiverted diverted -> Seq.singleton land <$ State.modify' spend
           | otherwise -> Seq.empty <$ unmake land
     _ -> pure Seq.empty
 
@@ -2259,6 +2276,21 @@ bringIn (zone, position) pid printingId gs =
   let (oid, gs1) = mintCard pid Nothing printingId zone position TapState.Untapped gs
    in (oid, spendFromPool pid printingId gs1)
 
+-- CR 400.11b / 730.4a: spend a card `owner` brings in from outside the game:
+-- one copy out of their pool (`spendFromPool`), or the entry of a game on hold,
+-- dropped and its outer id appended to GameState.broughtIn for the outer frame
+-- to apply (`bringInFrom`'s record). Nothing for an entry no longer there.
+spendOutside :: PlayerId -> OutsideCard.OutsideCard -> GameState.GameState -> GameState.GameState
+spendOutside owner card gs = case card of
+  OutsideCard.InPool printingId -> spendFromPool owner printingId gs
+  OutsideCard.InAnotherGame outerId
+    | Map.member outerId (GameState.outsideObjects gs) ->
+        gs
+          { GameState.outsideObjects = Map.delete outerId (GameState.outsideObjects gs),
+            GameState.broughtIn = GameState.broughtIn gs Seq.|> outerId
+          }
+    | otherwise -> gs
+
 -- CR 400.11b: take one copy of this printing out of the player's sideboard
 -- pool. One copy, not the entry: CR 100.2a's four-card limit is applied to the
 -- combined deck and sideboard (CR 100.4a), so copies of a card are COUNTED and a
@@ -2314,12 +2346,7 @@ bringInFrom (zone, position) pid outerId gs = case Map.lookup outerId (GameState
           let (oid, g1) = mintCard pid Nothing (ComponentCard.printing card) zone position TapState.Untapped g
            in (oids <> [oid], g1 {GameState.objects = Map.adjust (kept card) oid (GameState.objects g1)})
         (minted, gs1) = Foldable.foldl' (flip mint) ([], gs) (OutsideObject.cards entry)
-     in ( NonEmpty.nonEmpty minted,
-          gs1
-            { GameState.outsideObjects = Map.delete outerId (GameState.outsideObjects gs1),
-              GameState.broughtIn = GameState.broughtIn gs1 Seq.|> outerId
-            }
-        )
+     in (NonEmpty.nonEmpty minted, spendOutside pid (OutsideCard.InAnotherGame outerId) gs1)
 
 -- CR 614: settle a proposed zone change. Nothing means the move does not happen.
 -- The typed door changeZoneAttaching below uses, so the funnel itself never cases
@@ -8126,11 +8153,9 @@ castFromOutside caster oid requestedDest shown facing = do
                     Object.face = if arrived then shown else Nothing,
                     Object.facing = if arrived then facing else Facing.FaceUp
                   }
-          -- CR 400.11b: a stand-in's card (`offerOutside`) is brought in, so
-          -- the pool spends it.
-          let spend g = case Map.lookup oid (GameState.outsideFinds g) of
-                Just (OutsideCard.InPool printingId) -> spendFromPool (Object.owner obj) printingId g
-                _ -> g
+          -- CR 400.11b / 730.4a: a stand-in's card (`offerOutside`) is
+          -- brought in, so it is spent.
+          let spend g = maybe g (\card -> spendOutside (Object.owner obj) card g) (Map.lookup oid (GameState.outsideFinds g))
           State.modify' $ \g ->
             (spend g)
               { GameState.objects = Map.delete oid (GameState.objects g),
