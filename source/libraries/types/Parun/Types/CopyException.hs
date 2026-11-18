@@ -7,6 +7,7 @@ import qualified Parun.Types.ChangeMode as ChangeMode
 import qualified Parun.Types.Color as Color
 import qualified Parun.Types.Keyword as Keyword
 import qualified Parun.Types.Loyalty as Loyalty
+import qualified Parun.Types.RetainedCharacteristic as RetainedCharacteristic
 import qualified Parun.Types.SetPowerToughness as SetPowerToughness
 import qualified Parun.Types.Subtype as Subtype
 import qualified Parun.Types.Supertype as Supertype
@@ -191,28 +192,20 @@ data CopyException ability
   | -- | CR 707.9a: the copy gains this quoted ability ("except it has '{2}{U}{U}:
     -- Return this creature to its owner's hand'", Mercurial Pretender).
     GainAbility ability
-  | -- | CR 707.9c: the copy does not copy the original's colours and retains its
-    -- own instead (Vesuvan Doppelganger's "except it doesn't copy that creature's
-    -- color").
+  | -- | CR 707.9c: the copy does not copy the original's value of this
+    -- characteristic and retains its own instead (Vesuvan Doppelganger's
+    -- "except it doesn't copy that creature's color"; Bombardment's supertypes,
+    -- by its ruling).
     --
-    -- NULLARY and colour-only. CR 707.9c names no characteristic in particular,
-    -- but the only printed decline-to-copy clause is this one (Scryfall
-    -- @o:"doesn't copy"@, 2026-09-12, Vesuvan Doppelganger and nothing else; the
-    -- rule's second sentence, "certain characteristics are not copied", matches
-    -- no printing at all), so a payload naming which characteristic would have
-    -- exactly one inhabitant any card can write.
+    -- RETAINS rather than clears, which is what separates it from SetColors and
+    -- RemoveSupertypes: the exception states no value, so the copy keeps the
+    -- value it had before the copy effect applied -- its printed one on the CR
+    -- 707.5 entry road, and on CR 707.4's road the one its previous copiable
+    -- values carried.
     --
-    -- RETAINS rather than clears, which is what separates this arm from
-    -- SetColors: the exception states no value, so the copy keeps the colours it
-    -- had before the copy effect applied -- its printed ones on the CR 707.5
-    -- entry road, and on CR 707.4's road the ones its previous copiable values
-    -- carried, which for a Doppelganger that has copied before are still its
-    -- printed blue.
-    --
-    -- CR 707.9d's strip DOES apply here, unlike the additive type arms: an
-    -- effect that "doesn't copy a certain characteristic" drops the copied
-    -- object's characteristic-defining ability that defines it, and for colour
-    -- the colour indicator too. So the arm clears devoid (CR 702.114a) out of
-    -- the copied snapshot, exactly as SetColors does.
-    DontCopyColors
+    -- CR 707.9d's strip applies to colour: the arm clears devoid (CR 702.114a)
+    -- out of the copied snapshot, exactly as SetColors does. No
+    -- characteristic-defining ability defines a supertype, so it has nothing to
+    -- take there.
+    DontCopy RetainedCharacteristic.RetainedCharacteristic
   deriving (Eq, Ord, Show)

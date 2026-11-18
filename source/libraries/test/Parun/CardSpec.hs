@@ -4265,7 +4265,7 @@ copyExceptionFilters exception = case exception of
   CopyException.SetColors {} -> []
   CopyException.NoManaCost -> []
   -- CR 707.9c's clause names a characteristic and no keyword either.
-  CopyException.DontCopyColors -> []
+  CopyException.DontCopy _ -> []
   -- CR 707.9a's "this ability" carries no payload, so nothing to narrow. The
   -- ability it points at is the resolving one, which this walk reaches where the
   -- card prints it.

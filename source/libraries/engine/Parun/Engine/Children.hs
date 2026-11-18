@@ -4055,7 +4055,7 @@ copyExceptionChildren c exception = case exception of
   CopyException.SetColors mode colors -> CopyException.SetColors mode <$> traverseSet (copyColor c) colors
   CopyException.NoManaCost -> pure exception
   CopyException.GainAbility ability -> CopyException.GainAbility <$> copyAbility c ability
-  CopyException.DontCopyColors -> pure exception
+  CopyException.DontCopy _ -> pure exception
 
 -- | A counter row's children (CR 614.1c): each kind and its amount.
 withCountersChildren :: (Applicative f) => CopyChildren ability effect f -> WithCounters.WithCounters -> f WithCounters.WithCounters

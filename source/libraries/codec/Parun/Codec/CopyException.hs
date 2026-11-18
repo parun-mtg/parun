@@ -7,6 +7,7 @@ import qualified Parun.Codec.ChangeMode as ChangeMode
 import qualified Parun.Codec.Color as Color
 import qualified Parun.Codec.Keyword as Keyword
 import qualified Parun.Codec.Loyalty as Loyalty
+import qualified Parun.Codec.RetainedCharacteristic as RetainedCharacteristic
 import qualified Parun.Codec.SetPowerToughness as SetPowerToughness
 import qualified Parun.Codec.Subtype as Subtype
 import qualified Parun.Codec.Supertype as Supertype
@@ -64,7 +65,9 @@ codec abilityCodec =
             CopyException.SetColors mode y -> Just (mode, y)
             _ -> Nothing,
           Arm.nullary "NoManaCost" CopyException.NoManaCost,
-          Arm.nullary "DontCopyColors" CopyException.DontCopyColors,
+          Arm.payload "DontCopy" RetainedCharacteristic.codec CopyException.DontCopy $ \x -> case x of
+            CopyException.DontCopy y -> Just y
+            _ -> Nothing,
           Arm.payload "GainAbility" abilityCodec CopyException.GainAbility $ \x -> case x of
             CopyException.GainAbility y -> Just y
             _ -> Nothing
@@ -84,5 +87,5 @@ tagOf x = case x of
   CopyException.SetLoyalty {} -> "SetLoyalty"
   CopyException.SetColors {} -> "SetColors"
   CopyException.NoManaCost {} -> "NoManaCost"
-  CopyException.DontCopyColors {} -> "DontCopyColors"
+  CopyException.DontCopy {} -> "DontCopy"
   CopyException.GainAbility {} -> "GainAbility"
